@@ -112,6 +112,9 @@ public:
     // (Berkeley DB supports having several database tables in one file.) 
     void Open(const char* filename, const char* database,
               EOpenMode open_mode);
+    // Attach class to external BerkeleyDB file instance.
+    // Note: Should be already open.
+    void Attach(CBDB_RawFile& bdb_file);
     // Close file
     void Close();
     // Reopen database file. (Should be already open).
@@ -181,8 +184,9 @@ protected:
     DBT*              m_DBT_Data;
 
 private:
-    string           m_FileName;       // filename
-    string           m_Database;       // db name in file (optional)
+    bool             m_DB_Attached;  // "TRUE" if m_DB doesn't belog here
+    string           m_FileName;     // filename
+    string           m_Database;     // db name in file (optional)
     unsigned         m_PageSize;
     unsigned         m_CacheSize;
     EDuplicateKeys   m_DuplicateKeys;
@@ -214,6 +218,10 @@ public:
               EOpenMode open_mode);
     // Reopen the db file
     void Reopen(EOpenMode open_mode);
+
+    // Attach external Berkeley DB file.
+    // Note: Should be already open.
+    void Attach(CBDB_File& db_file);
 
     // Fetches the record corresponding to the current key value.
     EBDB_ErrCode Fetch();
@@ -281,6 +289,8 @@ private:
     void x_EndRead();
 
     EBDB_ErrCode x_Write(unsigned int flags, EAfterWrite write_flag);
+
+    void x_CheckConstructBuffers();
 
 private:
     auto_ptr<CBDB_BufferManager>   m_KeyBuf;
@@ -377,6 +387,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/07/22 19:21:04  kuznets
+ * Implemented support of attachable berkeley db files
+ *
  * Revision 1.12  2003/07/22 15:14:33  kuznets
  * + RawFile::CountRecs() function
  *

@@ -118,6 +118,7 @@ CBDB_RawFile::CBDB_RawFile(EDuplicateKeys dup_keys)
 : m_DB(0),
   m_DBT_Key(0),
   m_DBT_Data(0),
+  m_DB_Attached(false),
   m_PageSize(0),
   m_CacheSize(256 * 1024),
   m_DuplicateKeys(dup_keys)
@@ -152,12 +153,23 @@ void CBDB_RawFile::Close()
     x_Close(eThrowOnError);
 }
 
+void CBDB_RawFile::Attach(CBDB_RawFile& bdb_file)
+{
+   Close();
+   m_DB = bdb_file.m_DB;
+   m_DB_Attached = true; 
+}
 
 void CBDB_RawFile::x_Close(ECloseMode close_mode)
 {
     if ( m_FileName.empty() )
         return;
 
+    if (m_DB_Attached) {
+        m_DB = 0;
+        m_DB_Attached = false;
+    }
+    else
     if (m_DB) {
         int ret = m_DB->close(m_DB, 0);
         m_DB = 0;
@@ -191,8 +203,14 @@ void CBDB_RawFile::Open(const char* filename,
 void CBDB_RawFile::Reopen(EOpenMode open_mode)
 {
     _ASSERT(!m_FileName.empty());
+
+    if (m_DB_Attached) {
+        BDB_THROW(eInvalidOperation, "Cannot reopen attached object");
+    }
+
     int ret = m_DB->close(m_DB, 0);
     m_DB = 0;
+
     BDB_CHECK(ret, m_FileName.c_str());
     x_Open(m_FileName.c_str(),
            !m_Database.empty() ? m_Database.c_str() : 0,
@@ -204,6 +222,10 @@ void CBDB_RawFile::Remove(const char* filename, const char* database)
 {
     if (!database  ||  !*database)
         database = kDefaultDatabase;
+
+    if (m_DB_Attached) {
+        BDB_THROW(eInvalidOperation, "Cannot remove attached object");
+    }
 
     // temporary DB is used here, because BDB remove call invalidates the
     // DB argument redardless of the result.
@@ -238,6 +260,7 @@ unsigned int CBDB_RawFile::Truncate()
 void CBDB_RawFile::x_CreateDB()
 {
     _ASSERT(m_DB == 0);
+    _ASSERT(!m_DB_Attached);
 
 	CDB_guard guard(&m_DB);
 
@@ -343,6 +366,7 @@ unsigned CBDB_RawFile::CountRecs()
 
 void CBDB_RawFile::x_Create(const char* filename, const char* database)
 {
+    _ASSERT(!m_DB_Attached);
     u_int32_t open_flags = DB_CREATE;
 
     int ret = m_DB->open(m_DB,
@@ -423,17 +447,9 @@ void CBDB_File::Open(const char* filename,
         Close();
 
     CBDB_RawFile::Open(filename, database, open_mode);
+    x_CheckConstructBuffers();
 
-    if (!m_BufsAttached  &&  !m_BufsCreated) {
-        m_KeyBuf->Construct();
-        if ( m_DataBuf.get() ) {
-			m_DataBuf->Construct();
-            m_DataBuf->SetAllNull();
-		}
-        m_BufsCreated = 1;
-    }
     m_DB->app_private = (void*) m_KeyBuf.get();
-
 }
 
 
@@ -446,6 +462,11 @@ void CBDB_File::Reopen(EOpenMode open_mode)
     }
 }
 
+void CBDB_File::Attach(CBDB_File& db_file)
+{
+    CBDB_RawFile::Attach(db_file);
+    x_CheckConstructBuffers();
+}
 
 EBDB_ErrCode CBDB_File::Fetch()
 {
@@ -561,6 +582,18 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC* dbc, unsigned int bdb_flag)
 }
 
 
+void CBDB_File::x_CheckConstructBuffers()
+{
+    if (!m_BufsAttached  &&  !m_BufsCreated) {
+        m_KeyBuf->Construct();
+        if ( m_DataBuf.get() ) {
+			m_DataBuf->Construct();
+            m_DataBuf->SetAllNull();
+		}
+        m_BufsCreated = 1;
+    }
+}
+
 void CBDB_File::x_StartRead()
 {
     m_KeyBuf->Pack();
@@ -638,6 +671,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/07/22 19:21:19  kuznets
+ * Implemented support of attachable berkeley db files
+ *
  * Revision 1.16  2003/07/22 15:15:02  kuznets
  * + RawFile::CountRecs() function
  *
