@@ -263,6 +263,14 @@ void CBDB_RawFile::SetTransaction(CBDB_Transaction* trans)
     }
 }
 
+void CBDB_RawFile::x_RemoveTransaction(CBDB_Transaction* trans)
+{
+    if (trans == m_Trans) {
+        m_Trans = 0;
+    }
+}
+
+
 
 void CBDB_RawFile::x_CreateDB()
 {
@@ -755,6 +763,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/12/16 13:43:35  kuznets
+ * + CBDB_RawFile::x_RemoveTransaction
+ *
  * Revision 1.28  2003/12/12 19:12:21  kuznets
  * Fixed bug in transactional file opening
  *
