@@ -169,7 +169,7 @@ TOut ExtractBits(TIterator& start, size_t& bit_offset, size_t bit_count)
         = x_BitsPerElement(_Val_type(TIterator()));    
 #else
     static const size_t kBitsPerElement
-        = CHAR_BIT * sizeof(iterator_traits<TIterator>::value_type);
+        = CHAR_BIT * sizeof(typename iterator_traits<TIterator>::value_type);
 #endif
 
     const TOut kMask = (1 << bit_count) - 1;
@@ -347,6 +347,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/02/06 18:32:35  vasilche
+* Added missing typename keyword.
+*
 * Revision 1.4  2003/10/14 19:00:18  ucko
 * CResizingIterator::operator =: don't store empty partial elements (led
 * to off-by-one errors in some cases)
