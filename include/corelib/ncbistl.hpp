@@ -1,7 +1,7 @@
 #ifndef NCBISTL__HPP
 #define NCBISTL__HPP
 
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/10/30 20:08:32  vakatov
+* Fixes to (first-time) compile and test-run on MSVS++
+*
 * Revision 1.1  1998/10/21 19:22:51  vakatov
 * Initial revision
 *

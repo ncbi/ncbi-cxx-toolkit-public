@@ -1,7 +1,7 @@
 #ifndef NCBISTD__HPP
 #define NCBISTD__HPP
 
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/10/30 20:08:31  vakatov
+* Fixes to (first-time) compile and test-run on MSVS++
+*
 * Revision 1.5  1998/10/27 19:51:53  vakatov
 * + #include <ncbistre.hpp>
 * It was not really necessary to #include all this stuff to here,
@@ -45,8 +48,11 @@
 * ==========================================================================
 */
 
+#include <stdlib.h>
+
 #include <ncbitype.h>
 #include <ncbistl.hpp>
+#include <ncbidbg.hpp>
 #include <ncbistre.hpp>
 
 #endif /* NCBISTD__HPP */

@@ -1,7 +1,7 @@
 #ifndef NCBISTRE__HPP
 #define NCBISTRE__HPP
 
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -34,6 +34,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/10/30 20:08:33  vakatov
+* Fixes to (first-time) compile and test-run on MSVS++
+*
 * Revision 1.3  1998/10/28 22:43:17  vakatov
 * Catch the "strstrea.h" case(MSVC++ feature)
 *
@@ -56,7 +59,8 @@
 #if defined(HAVE_IOSTREAM)  &&  defined(NCBI_USE_NEW_IOSTREAM)
 #  include <fstream>
 #  include <strstream>
-#  define IO_PREFIX std
+#  define IO_PREFIX  std
+#  define IOS_BASE std::ios_base
 
 #elif defined(HAVE_IOSTREAM_H)
 #  include <fstream.h>
@@ -66,6 +70,7 @@
 #    include <strstream.h>
 #  endif
 #  define IO_PREFIX
+#  define IOS_BASE ::ios
 
 #else
 #  error "Cannot find neither <iostream> nor <iostream.h>!"

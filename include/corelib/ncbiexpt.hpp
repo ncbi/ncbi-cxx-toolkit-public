@@ -1,7 +1,7 @@
 #ifndef NCBIEXPT__HPP
 #define NCBIEXPT__HPP
 
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/10/30 20:08:30  vakatov
+* Fixes to (first-time) compile and test-run on MSVS++
+*
 * Revision 1.1  1998/10/23 22:38:36  vakatov
 * Initial revision
 *

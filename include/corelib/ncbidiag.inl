@@ -1,7 +1,7 @@
 #if defined(NCBIDIAG__HPP)  &&  !defined(NCBIDIAG__INL)
 #define NCBIDIAG__INL
 
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/10/30 20:08:25  vakatov
+* Fixes to (first-time) compile and test-run on MSVS++
+*
 * Revision 1.2  1998/10/27 23:08:15  vakatov
 * Finished with a draft redesign(from 1.1)
 *
@@ -54,32 +57,49 @@
 
 //////////////////////////////////////////////////////////////////
 // CDiagBuffer
-// (can be accessed only by "CDiag" and created only by GetDiagBuffer())
+// (can be accessed only by "CNcbiDiag" and created only by GetDiagBuffer())
 //
 
 class CDiagBuffer {
-    friend class CDiag;
+    friend class CNcbiDiag;
+    friend CNcbiDiag& Reset(CNcbiDiag& diag);
+    friend CNcbiDiag& Endm(CNcbiDiag& diag);
     friend CDiagBuffer& GetDiagBuffer(void);
     friend EDiagSev SetDiagPostSeverity(EDiagSev post_sev);
     friend EDiagSev SetDiagDieSeverity(EDiagSev die_sev);
     friend void SetDiagHandler(FDiagHandler func, void* data,
                                FDiagCleanup cleanup);
 private:
-    const CDiag*    m_Diag;    // present user
-    CNcbiOstrstream m_Stream;  // storage for the diagnostic message
+    const CNcbiDiag* m_Diag;    // present user
+    CNcbiOstrstream  m_Stream;  // storage for the diagnostic message
 
     CDiagBuffer(void);
+
+    //### This is temporary workaround to allow call the destructor of
+    //### static instance of "CDiagBuffer" defined in GetDiagBuffer()
+public:
     ~CDiagBuffer(void);
+private:
+    //###
 
     // formatted output
-    template<class X> void Put(const CDiag& diag, X& x);
+    template<class X> void Put(const CNcbiDiag& diag, X& x) {
+        if (diag.GetSeverity() < sm_PostSeverity)
+            return;
+        if (m_Diag != &diag) {
+            if ( m_Stream.pcount() )
+                Flush();
+            m_Diag = &diag;
+        }
+        m_Stream << x;
+    }
 
     void Flush  (void);
-    void Reset  (const CDiag& diag);  // reset content of the diag. message
-    void EndMess(const CDiag& diag);  // output current diag. message
+    void Reset  (const CNcbiDiag& diag);  // reset content of the diag. message
+    void EndMess(const CNcbiDiag& diag);  // output current diag. message
 
     // flush & detach the current user
-    void Detach(const CDiag* diag);
+    void Detach(const CNcbiDiag* diag);
 
     // (NOTE:  these two dont need to be protected by mutexes because it is not
     //  critical -- while not having a mutex around would save us a little
@@ -92,7 +112,7 @@ private:
                             const char* message_buf,
                             size_t      message_len);
 
-    // Symbolic name for the severity levels(used by CDiag::SeverityName)
+    // Symbolic name for the severity levels(used by CNcbiDiag::SeverityName)
     static const char* SeverityName[eDiag_Trace+1];
 
     // Application-wide diagnostic handler & Co.
@@ -105,71 +125,65 @@ private:
 
 
 ///////////////////////////////////////////////////////
-//  CDiag::
+//  CNcbiDiag::
 
-inline CDiag::CDiag(EDiagSev sev, const char* message, bool flush)
+inline CNcbiDiag::CNcbiDiag(EDiagSev sev, const char* message, bool flush)
  : m_Buffer(GetDiagBuffer())
 {
     m_Severity = sev;
-    m_Active = false;
     if ( message )
         (*this) << message;
     if ( flush )
-        (*this) << Flush;
+        (*this) << Endm;
 }
 
-inline CDiag::~CDiag(void) {
+inline CNcbiDiag::~CNcbiDiag(void) {
     m_Buffer.Detach(this);
 }
 
-template<class X> CDiag& CDiag::operator << (X& x) {
-    m_Buffer.Put(*this, x);
-    return *this;
-}
-
-inline CDiag& operator << (CDiag& (*f)(CDiag&)) {
-    return f(*this);
-}
-
-inline EDiagSev CDiag::GetSeverity(void) {
+inline EDiagSev CNcbiDiag::GetSeverity(void) const {
     return m_Severity;
+}
+
+inline const char* CNcbiDiag::SeverityName(EDiagSev sev) {
+    return CDiagBuffer::SeverityName[sev];
 }
 
 
 ///////////////////////////////////////////////////////
-//  CDiag:: manipulators
+//  CNcbiDiag:: manipulators
 
-inline CDiag& Reset(CDiag& diag)  {
+inline CNcbiDiag& Reset(CNcbiDiag& diag)  {
     diag.m_Buffer.Reset(diag);
     return diag;
 }
 
-inline CDiag& Endm(CDiag& diag)  {
+inline CNcbiDiag& Endm(CNcbiDiag& diag)  {
     diag.m_Buffer.EndMess(diag);
     return diag;
 }
 
-inline CDiag& Info(CDiag& diag)  {
+inline CNcbiDiag& Info(CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Info;
     return diag;
 }
-inline CDiag& Warning(CDiag& diag)  {
+inline CNcbiDiag& Warning(CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Warning;
     return diag;
 }
-inline CDiag& Error(CDiag& diag)  {
+inline CNcbiDiag& Error(CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Error;
     return diag;
 }
-inline CDiag& Fatal(CDiag& diag)  {
+inline CNcbiDiag& Fatal(CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Fatal;
     return diag;
 }
-inline CDiag& Trace(CDiag& diag)  {
+inline CNcbiDiag& Trace(CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Trace;
     return diag;
@@ -189,18 +203,6 @@ inline CDiagBuffer::~CDiagBuffer(void) {
     _ASSERT( !m_Stream.pcount() );
 }
 
-template<class X> void CDiagBuffer::Put(const CDiag& diag, X& x) {
-    if (diag.GetSeverity() < sm_PostSeverity)
-        return;
-
-    if (m_Diag != &diag) {
-        if ( m_Stream.pcount() )
-            Flush();
-        m_Diag = &diag;
-    }
-    m_Stream << x;
-}
-
 inline void CDiagBuffer::Flush(void) {
     if ( !m_Diag )
         return;
@@ -208,25 +210,25 @@ inline void CDiagBuffer::Flush(void) {
     EDiagSev sev = m_Diag->GetSeverity();
     if ( m_Stream.pcount() ) {
         const char* message = m_Stream.str();
-        m_Stream.freeze(false);
+        m_Stream.rdbuf()->freeze(0);
         DiagHandler(sev, message, m_Stream.pcount());
-        Reset(m_Diag);
+        Reset(*m_Diag);
     }
     if (sev >= sm_DieSeverity  &&  sev != eDiag_Trace)
         abort();
 }
 
-inline void CDiagBuffer::Reset(const CDiag& diag) {
+inline void CDiagBuffer::Reset(const CNcbiDiag& diag) {
     if (&diag == m_Diag)
-        _VERIFY( !m_Stream.rdbuf()->seekpos(0); );
+        _VERIFY( !m_Stream.rdbuf()->seekoff(0, IOS_BASE::beg, IOS_BASE::out) );
 }
 
-inline void CDiagBuffer::EndMess(const CDiag& diag) {
+inline void CDiagBuffer::EndMess(const CNcbiDiag& diag) {
     if (&diag == m_Diag)
         Flush();
 }
 
-inline void CDiagBuffer::Detach(const CDiag* diag) {
+inline void CDiagBuffer::Detach(const CNcbiDiag* diag) {
     if (diag == m_Diag) {
         Flush();
         m_Diag = 0;

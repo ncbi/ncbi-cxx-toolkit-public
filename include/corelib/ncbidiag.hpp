@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/10/30 20:08:20  vakatov
+* Fixes to (first-time) compile and test-run on MSVS++
+*
 * Revision 1.2  1998/10/27 23:06:58  vakatov
 * Use NCBI C++ interface to iostream's
 *
@@ -70,8 +73,13 @@ public:
     ~CNcbiDiag(void);
 
     EDiagSev GetSeverity(void) const;                      // current severity
-    template<class X> CNcbiDiag& operator << (X& x) const; // formatted output
-    CNcbiDiag& operator << (CNcbiDiag& (*f)(CNcbiDiag&));  // manipulators
+    template<class X> CNcbiDiag& operator <<(X& x) {      // formatted output
+        m_Buffer.Put(*this, x);
+        return *this;
+    }
+    CNcbiDiag& operator <<(CNcbiDiag& (*f)(CNcbiDiag&)) { // manipulators
+        return f(*this);
+    }
 
     // output manipulators for CNcbiDiag
     friend CNcbiDiag& Reset  (CNcbiDiag& diag); // reset content of curr.mess.
@@ -84,11 +92,13 @@ public:
     friend CNcbiDiag& Trace  (CNcbiDiag& diag); /// diagnostic message
 
     // a common symbolic name for the severity levels
-    static const char* SeverityName(void);
+    static const char* SeverityName(EDiagSev sev);
 
 private:
     EDiagSev     m_Severity;  // severity level for the current message
     CDiagBuffer& m_Buffer;    // this thread's error message buffer
+    // prohibit assignment
+    CNcbiDiag& operator =(const CNcbiDiag&) { _TROUBLE;  return *this; }
 };
 
 

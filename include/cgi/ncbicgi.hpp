@@ -1,7 +1,7 @@
 #ifndef NCBICGI__HPP
 #define NCBICGI__HPP
 
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/10/30 20:08:07  vakatov
+* Fixes to (first-time) compile and test-run on MSVS++
+*
 * Revision 1.7  1998/09/24 17:00:05  vakatov
 * <just a save >
 *

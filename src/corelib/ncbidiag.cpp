@@ -1,4 +1,4 @@
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/10/30 20:08:37  vakatov
+* Fixes to (first-time) compile and test-run on MSVS++
+*
 * Revision 1.1  1998/10/27 23:04:56  vakatov
 * Initial revision
 *
@@ -72,7 +75,7 @@ extern EDiagSev SetDiagPostSeverity(EDiagSev post_sev)
 {
     //## MUTEX_LOCK(s_Mutex);
     EDiagSev sev = CDiagBuffer::sm_PostSeverity;
-    CDiagBuffer::sm_PostSeverity = min_sev;
+    CDiagBuffer::sm_PostSeverity = post_sev;
     //## MUTEX_UNLOCK(s_Mutex);
     return sev;
 }
@@ -116,7 +119,7 @@ extern CDiagBuffer& GetDiagBuffer(void)
     //## }
     //## return *msg_buf;
 
-    static s_DiagBuffer;
+    static CDiagBuffer s_DiagBuffer;
     return s_DiagBuffer;
 }
 
@@ -140,11 +143,11 @@ static void s_ToStream_Handler(EDiagSev    sev,
     if ( !x_data )
         return;
 
-    ostream& os = *x_data.os;
-    os << CDiag::SeverityName(sev) << ":\t";
+    ostream& os = *x_data->os;
+    os << CNcbiDiag::SeverityName(sev) << ":\t";
     os.write(message_buf, message_len);
     os << endl;
-    if ( x_data.quick_flush )
+    if ( x_data->quick_flush )
         os << flush;
 }
 

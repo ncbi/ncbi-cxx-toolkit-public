@@ -1,7 +1,7 @@
 #ifndef NCBIDBG__HPP
 #define NCBIDBG__HPP
 
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/10/30 20:08:15  vakatov
+* Fixes to (first-time) compile and test-run on MSVS++
+*
 * Revision 1.2  1998/10/23 23:15:09  vakatov
 * Specify the diagnostics severity in the class initialization parameter
 *
@@ -59,7 +62,7 @@
     _trace_diag << _FILE_LINE << "Trouble!"; \
 }
 #  define _ASSERT(expr)  { \
-    if ( expr ) \
+    if ( !expr ) \
         { \
               CNcbiDiag _trace_diag(eDiag_Fatal); \
               _trace_diag << _FILE_LINE << "Assertion failed: " << #expr; \
