@@ -115,7 +115,7 @@ public:
 };
 
 
-extern "C" {
+//extern "C" {
 
 void NCBI_TestEntryPoint(CPluginManager<ITest>::TDriverInfoList&   info_list,
                          CPluginManager<ITest>::EEntryPointRequest method)
@@ -129,7 +129,7 @@ void NCBI_Test2EntryPoint(CPluginManager<ITest>::TDriverInfoList&   info_list,
     CHostEntryPointImpl<CTestCF2>::NCBI_EntryPointImpl(info_list, method);
 }
 
-}  // extern "C"
+//}  // extern "C"
 
 END_NCBI_SCOPE
 
@@ -140,8 +140,9 @@ USING_NCBI_SCOPE;
 static void s_TEST_PluginManager(void)
 {
     CPluginManager<ITest> pm;
+    CPluginManager<ITest>::FNCBI_EntryPoint ep = NCBI_TestEntryPoint;
 
-    pm.RegisterWithEntryPoint(NCBI_TestEntryPoint);
+    pm.RegisterWithEntryPoint(ep);
 
     try {
         ITest* itest = pm.CreateInstance();
@@ -164,12 +165,14 @@ static void s_TEST_PluginManager(void)
     try {
         ITest* itest = pm.CreateInstance("test_driver2");
         assert(0);
+        itest->GetA();
     } 
     catch (CPluginManagerException&)
     {
     }
 
-    pm.RegisterWithEntryPoint(NCBI_Test2EntryPoint);
+    ep = NCBI_Test2EntryPoint;
+    pm.RegisterWithEntryPoint(ep);
 
     try {
         ITest* itest2 = pm.CreateInstance("test_driver2");
@@ -241,6 +244,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/18 17:08:07  kuznets
+ * Fixed Workshop compile warnings
+ *
  * Revision 1.1  2003/11/18 14:47:34  kuznets
  * Initial revision
  *
