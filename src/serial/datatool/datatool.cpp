@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2001/12/13 19:32:41  juran
+* Make main()'s argv of type (const char*), for use with jTools.
+*
 * Revision 1.51  2001/10/17 18:19:52  grichenk
 * Updated to use CObjectOStreamXml::GetFileXXX
 *
@@ -551,7 +554,7 @@ void CDataTool::LoadDefinitions(CFileSet& fileSet,
 
 END_NCBI_SCOPE
 
-int main(int argc, char* argv[])
+int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
     return CDataTool().AppMain(argc, argv, 0, eDS_Default, 0, "datatool");
