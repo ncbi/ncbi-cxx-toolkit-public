@@ -60,6 +60,9 @@ USING_NCBI_SCOPE;
 inline double dbl_time(void)
 {
     struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+    
     gettimeofday(& tv, 0);
     
     return tv.tv_sec + double(tv.tv_usec) / 1000000.0;
@@ -955,6 +958,28 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-swiss]";
         
+        if (s == "-bigchunk") {
+            CSeqDB sp("month.wgs", 'n');
+            
+            cout << " num oids " << sp.GetNumSeqs() << endl;
+            
+            vector<Uint4> chunky;
+            chunky.resize(1000000);
+            
+            Uint4 b(0), e(0);
+            
+            CSeqDB::EOidListType et = sp.GetNextOIDChunk(b,e,chunky);
+            
+            cout << "et=" << et << ", chunky size=" << chunky.size() << endl;
+            
+            for(unsigned i = 0; i<chunky.size(); i++) {
+                cout << chunky[i] << endl;
+            }
+            
+            return 0;
+            
+        } else desc += " [-bigchunk]";
+        
         if (s == "-chunk") {
             cout << "enter db name:" << endl;
             
@@ -1036,6 +1061,63 @@ int test1(int argc, char ** argv)
             cout << "tleng:  " << phil.GetTotalLength() << endl;
             return 0;
         } else desc += " [-summary]";
+        
+        if (s == "-dogs") {
+            CSeqDB al("cfa_genome/cra_dog_assembly", 'n');
+            
+        } else desc += " [-dogs]";
+        
+        if (s == "-one") {
+            int xt_iter = 0;
+            const int Asize = 100;
+            double xt[Asize];
+            const char * tag[Asize];
+            
+            xt[xt_iter++] = dbl_time();
+            CSeqDB al("nr", 'p');
+            xt[xt_iter++] = dbl_time();
+            cerr << "hmmmmmm" << endl;
+            xt[xt_iter++] = dbl_time();
+            
+            const char * buf = 0;
+            
+            for (int j = 0; j<10; j++) {
+                xt[xt_iter++] = dbl_time();
+                al.GetSequence(1001, & buf);
+            }
+            int k01 = xt_iter;
+            xt[xt_iter++] = dbl_time();
+            
+            for(int i = 0; i<100000; i++) {
+                al.GetSequence(1001, & buf);
+            }
+            xt[xt_iter++] = dbl_time();
+            
+            for(int i = 0; i < Asize; i++) {
+                tag[i] = 0;
+            }
+            
+            tag[0] = "initial";
+            tag[1] = "getting nr";
+            tag[2] = "<nothing>";
+            tag[3] = "loop start...";
+            tag[k01] = "post loop";
+            tag[k01+1] = "post big loop (end)";
+            
+            double lastly = 0.0;
+            
+            for(int k = 0; k<xt_iter; k++) {
+                cerr << "xt[" << k
+                     << "]=" << xt[k]
+                     << "    diff=" << xt[k]-lastly
+                     << "  tag " << (tag[k] ? tag[k] : "-")
+                     << endl;
+                
+                lastly = xt[k];
+            }
+            
+            return 0;
+        } else desc += " [-one]";
         
 //         if (s == "-alias") {
 //             string dbname = "pdb";
