@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/09/26 18:12:27  gouriano
+* added HasMemberId method
+*
 * Revision 1.7  2001/08/15 20:53:04  juran
 * Heed warnings.
 *
@@ -89,6 +92,13 @@ TTypeInfo CObjectStackFrame::GetTypeInfo(void) const
             m_FrameType != eFrameChoiceVariant);
     _ASSERT(m_TypeInfo != 0);
     return m_TypeInfo;
+}
+
+inline
+bool CObjectStackFrame::HasMemberId(void) const
+{
+    return (m_FrameType == eFrameClassMember ||
+            m_FrameType == eFrameChoiceVariant) && (m_MemberId != 0);
 }
 
 inline

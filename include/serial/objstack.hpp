@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/09/26 18:12:27  gouriano
+* added HasMemberId method
+*
 * Revision 1.8  2001/05/17 14:59:47  lavr
 * Typos corrected
 *
@@ -108,6 +111,7 @@ public:
     
     EFrameType GetFrameType(void) const;
     TTypeInfo GetTypeInfo(void) const;
+    bool HasMemberId(void) const;
     const CMemberId& GetMemberId(void) const;
     void SetMemberId(const CMemberId& memberid);
 
