@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/08/13 15:45:00  gouriano
+* implemented generation of code, which uses AnyContent objects
+*
 * Revision 1.9  2003/04/29 18:29:34  gouriano
 * object data member initialization verification
 *
@@ -156,6 +159,21 @@ public:
     bool HaveSpecialRef(void) const;
 
     string GetRef(const CNamespace& ns) const;
+
+};
+
+class CAnyContentTypeStrings : public CStdTypeStrings
+{
+    typedef CStdTypeStrings CParent;
+public:
+    CAnyContentTypeStrings(const string& type);
+
+    EKind GetKind(void) const;
+
+    string GetInitializer(void) const;
+    string GetResetCode(const string& var) const;
+
+    void GenerateTypeCode(CClassContext& ctx) const;
 
 };
 

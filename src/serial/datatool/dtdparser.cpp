@@ -695,7 +695,7 @@ CDataType* DTDParser::x_Type(
             type = new CStringDataType();
             break;
         case DTDElement::eAny:
-            type = new CStringStoreDataType();  // ????
+            type = new CAnyContentDataType();
             break;
         case DTDElement::eEmpty:
             type = new CNullDataType();
@@ -999,6 +999,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.14  2003/08/13 15:45:54  gouriano
+ * implemented generation of code, which uses AnyContent objects
+ *
  * Revision 1.13  2003/06/24 20:55:42  gouriano
  * corrected code generation and serialization of non-empty unnamed containers (XML)
  *

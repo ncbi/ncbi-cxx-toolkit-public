@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/08/13 15:45:54  gouriano
+* implemented generation of code, which uses AnyContent objects
+*
 * Revision 1.27  2003/06/16 14:41:05  gouriano
 * added possibility to convert DTD to XML schema
 *
@@ -666,6 +669,65 @@ CTypeRef CBigIntDataType::GetTypeInfo(void)
 const char* CBigIntDataType::GetDefaultCType(void) const
 {
     return "Int8";
+}
+
+
+bool CAnyContentDataType::CheckValue(const CDataValue& value) const
+{
+    return true;
+}
+
+void CAnyContentDataType::PrintASN(CNcbiOstream& out, int indent) const
+{
+    out << GetASNKeyword();
+}
+
+void CAnyContentDataType::PrintDTDElement(CNcbiOstream& out) const
+{
+    out <<
+        "<!ELEMENT "<<XmlTagName()<<" "<<GetXMLContents()<<">";
+}
+
+void CAnyContentDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
+{
+    out << "<xs:any/>";
+}
+
+TObjectPtr CAnyContentDataType::CreateDefault(const CDataValue& value) const
+{
+    return new (string*)(new string(dynamic_cast<const CStringDataValue&>(value).GetValue()));
+}
+
+AutoPtr<CTypeStrings> CAnyContentDataType::GetFullCType(void) const
+{
+// TO BE CHANGED !!!
+    string type = GetVar("_type");
+    if ( type.empty() )
+        type = GetDefaultCType();
+    return AutoPtr<CTypeStrings>(new CAnyContentTypeStrings(type));
+}
+
+const char* CAnyContentDataType::GetDefaultCType(void) const
+{
+    return "ncbi::CAnyContentObject";
+}
+
+const char* CAnyContentDataType::GetASNKeyword(void) const
+{
+// not exactly, but...
+// (ASN.1 does not seem to suppport this type of data)
+    return "VisibleString";
+}
+
+const char* CAnyContentDataType::GetXMLContents(void) const
+{
+    return "ANY";
+}
+
+void CAnyContentDataType::GetXMLSchemaContents(string& type, string& contents) const
+{
+    type.erase();
+    contents.erase();
 }
 
 END_NCBI_SCOPE

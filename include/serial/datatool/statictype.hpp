@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/08/13 15:45:00  gouriano
+* implemented generation of code, which uses AnyContent objects
+*
 * Revision 1.11  2003/06/16 14:40:15  gouriano
 * added possibility to convert DTD to XML schema
 *
@@ -243,6 +246,22 @@ public:
     virtual string GetDefaultString(const CDataValue& value) const;
 
     CTypeRef GetTypeInfo(void);
+    virtual const char* GetDefaultCType(void) const;
+    virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetXMLContents(void) const;
+    virtual void GetXMLSchemaContents(string& type, string& contents) const;
+};
+
+class CAnyContentDataType : public CStaticDataType {
+public:
+    bool CheckValue(const CDataValue& value) const;
+    void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintDTDElement(CNcbiOstream& out) const;
+    void PrintXMLSchemaElement(CNcbiOstream& out) const;
+
+    TObjectPtr CreateDefault(const CDataValue& value) const;
+
+    AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetXMLContents(void) const;

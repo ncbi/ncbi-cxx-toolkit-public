@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/08/13 15:45:55  gouriano
+* implemented generation of code, which uses AnyContent objects
+*
 * Revision 1.12  2003/04/29 18:31:09  gouriano
 * object data member initialization verification
 *
@@ -227,6 +230,30 @@ bool CStringStoreTypeStrings::HaveSpecialRef(void) const
 string CStringStoreTypeStrings::GetRef(const CNamespace& /*ns*/) const
 {
     return "StringStore, ()";
+}
+
+CAnyContentTypeStrings::CAnyContentTypeStrings(const string& type)
+    : CParent(type)
+{
+}
+
+CTypeStrings::EKind CAnyContentTypeStrings::GetKind(void) const
+{
+    return eKindOther;
+}
+
+string CAnyContentTypeStrings::GetInitializer(void) const
+{
+    return string();
+}
+
+string CAnyContentTypeStrings::GetResetCode(const string& var) const
+{
+    return var+".Reset();\n";
+}
+
+void CAnyContentTypeStrings::GenerateTypeCode(CClassContext& /*ctx*/) const
+{
 }
 
 END_NCBI_SCOPE
