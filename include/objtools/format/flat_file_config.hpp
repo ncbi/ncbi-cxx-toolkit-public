@@ -102,7 +102,8 @@ public:
         fHideSourceFeatures    = 1 << 25,
         fShowFtableRefs        = 1 << 26,
         fOldFeaturesOrder      = 1 << 27,
-        fHideGapFeatures       = 1 << 28
+        fHideGapFeatures       = 1 << 28,
+        fNeverTranslateCDS     = 1 << 29
     };
 
     enum EView {
@@ -221,6 +222,7 @@ public:
     bool ShowFtableRefs        (void) const;
     bool OldFeaturesOrder      (void) const;
     bool HideGapFeatures       (void) const;
+    bool NeverTranslateCDS	   (void) const;
     // mode dependant flags
     bool SuppressLocalId     (void) const;
     bool ValidateFeatures    (void) const;
@@ -280,6 +282,7 @@ public:
     CFlatFileConfig& SetShowFtableRefs       (bool val = true);
     CFlatFileConfig& SetOldFeaturesOrder     (bool val = true);
     CFlatFileConfig& SetHideGapFeatures      (bool val = true);
+    CFlatFileConfig& SetNeverTranslateCDS    (bool val = true);
 
 private:
     // mode specific flags
@@ -349,6 +352,7 @@ CUSTOM_FLAG_IMP(ShowPeptides)
 CUSTOM_FLAG_IMP(ShowFtableRefs)
 CUSTOM_FLAG_IMP(OldFeaturesOrder)
 CUSTOM_FLAG_IMP(HideGapFeatures)
+CUSTOM_FLAG_IMP(NeverTranslateCDS)
 
 #undef CUSTOM_FLAG_IMP
 #undef CUSTOM_FLAG_GET
@@ -365,6 +369,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/03/02 16:25:30  shomrat
+* Added NeverTranslateCDS
+*
 * Revision 1.5  2004/11/24 16:47:04  shomrat
 * Standardize customization flags
 *
