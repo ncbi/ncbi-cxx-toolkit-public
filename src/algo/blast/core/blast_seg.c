@@ -1,4 +1,4 @@
-static char const rcsid[] = "$Id";
+static char const rcsid[] = "$Id$";
 /*
 * ===========================================================================
 *
@@ -128,7 +128,7 @@ static Boolean hasdash(SequencePtr win)
 
 /*------------------------------------------------------------(state_cmp)---*/
 
-static int LIBCALLBACK state_cmp(VoidPtr s1, VoidPtr s2)
+static int state_cmp(VoidPtr s1, VoidPtr s2)
 
 {
 	int *np1, *np2;
@@ -148,7 +148,7 @@ static void compon(SequencePtr win)
 	Int4 letter;
 	CharPtr seq, seqmax;
         Int4Ptr alphaindex;
-        BoolPtr alphaflag;
+        BooleanPtr alphaflag;
         Int4 alphasize;
 
         alphasize = win->palpha->alphasize;
@@ -300,7 +300,7 @@ static Int4 shiftwin1(SequencePtr win)
 	Int4 j, length;
 	Int4Ptr comp;
         Int4Ptr alphaindex;
-        BoolPtr alphaflag;
+        BooleanPtr alphaflag;
 
 	length = win->length;
 	comp = win->composition;
@@ -544,7 +544,9 @@ static FloatHi getprob(Int4Ptr sv, Int4 total, AlphaPtr palpha)
    }
    else
    {
-        ErrPostEx (SEV_ERROR, 0, 0, "Illegal value returned by lnass");
+        /*ErrPostEx (SEV_ERROR, 0, 0, "Illegal value returned by lnass");*/
+       /* FIXME: Use error reporting facility */
+       fprintf(stderr, "Illegal value returned by lnass\n");
    }
    ans = ans1 + ans2 - totseq;
 /*
@@ -787,7 +789,7 @@ static AlphaPtr AA20alpha_std (void)
 {
    AlphaPtr palpha;
    Int4Ptr alphaindex;
-   BoolPtr alphaflag;
+   BooleanPtr alphaflag;
    CharPtr alphachar;
    Uint1 c, i;
 
@@ -798,7 +800,7 @@ static AlphaPtr AA20alpha_std (void)
    palpha->lnalphasize = LN20;
 
    alphaindex = (Int4Ptr) MemNew (CHAR_SET * sizeof(Int4));
-   alphaflag = (BoolPtr) MemNew (CHAR_SET * sizeof(Boolean));
+   alphaflag = (BooleanPtr) MemNew (CHAR_SET * sizeof(Boolean));
    alphachar = (CharPtr) MemNew (palpha->alphasize * sizeof(Char));
 
    for (c=0, i=0; c<128; c++)
@@ -896,7 +898,7 @@ static AlphaPtr AlphaCopy (AlphaPtr palpha)
    pbeta->lnalphasize = palpha->lnalphasize;
 
    pbeta->alphaindex = (Int4Ptr) MemNew (CHAR_SET * sizeof(Int4));
-   pbeta->alphaflag = (BoolPtr) MemNew (CHAR_SET * sizeof(Boolean));
+   pbeta->alphaflag = (BooleanPtr) MemNew (CHAR_SET * sizeof(Boolean));
    pbeta->alphachar = (CharPtr) MemNew (palpha->alphasize * sizeof(Char));
 
    for (i=0; i<CHAR_SET; i++)
@@ -929,8 +931,10 @@ Int2 SeqBufferSeg (Uint1Ptr sequence, Int4 length, Int4 offset,
       sparamsp = SegParametersNewAa();
       SegParametersCheck (sparamsp);
       if (!sparamsp) {
-         ErrPostEx (SEV_WARNING, 0, 0, "null parameters object");
-         ErrShow();
+         /*ErrPostEx (SEV_WARNING, 0, 0, "null parameters object");*/
+         /*ErrShow();*/
+         /* FIXME: Use error reporting facility */
+         fprintf(stderr, "null parameters object\n");
          return -1;
       }
    }
