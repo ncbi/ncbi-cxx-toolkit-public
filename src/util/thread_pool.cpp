@@ -27,19 +27,6 @@
 *
 * File Description:
 *   Pools of generic request-handling threads.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2004/05/17 21:06:02  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.2  2002/11/04 21:29:22  grichenk
-* Fixed usage of const CRef<> and CRef<> constructor
-*
-* Revision 1.1  2001/12/11 19:54:45  ucko
-* Introduce thread pools.
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>
@@ -77,24 +64,47 @@ void CStdPoolOfThreads::KillAllThreads(bool wait)
     {{
         CMutexGuard guard(m_Mutex);
         m_MaxThreads = 0;  // Forbid spawning new threads
-        n = m_ThreadCount; // Capture for use without mutex
+        n = m_ThreadCount.Get(); // Capture for use without mutex
     }}
 
     auto_ptr<CSemaphore> sem;
     if (wait) {
         sem.reset(new CSemaphore(0, n));
     }
-    CFatalRequest* poison = new CFatalRequest(sem.get());
+    CRef<CStdRequest> poison(new CFatalRequest(sem.get()));
 
     for (unsigned int i = 0;  i < n;  i++) {
-        AcceptRequest(CRef<ncbi::CStdRequest>(poison));
+        AcceptRequest(poison);
     }
     if (wait) {
         // Wait for all threads to post to the semaphore
-        for (unsigned int i = 0;  i < n;  i++) {
+        for (unsigned int i = 0;  i < n  &&  m_ThreadCount.Get();  i++) {
             sem->Wait();
         }
     }
 }
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.4  2004/06/02 17:50:49  ucko
+* CPoolOfThreads: change type of m_Delta and m_ThreadCount to
+* CAtomicCounter to reduce need for m_Mutex.
+* KillAllThreads: make poison a CRef in the first place to make certain
+* it doesn't get GCed prematurely.
+* Move CVS log to end.
+*
+* Revision 1.3  2004/05/17 21:06:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
+* Revision 1.2  2002/11/04 21:29:22  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
+* Revision 1.1  2001/12/11 19:54:45  ucko
+* Introduce thread pools.
+*
+* ===========================================================================
+*/
