@@ -954,6 +954,7 @@ BlastHitSavingParametersFree(BlastHitSavingParameters* parameters);
  *            e-value [in]
  * @param query_info Query information, needed for calculating score cutoff 
  *                   from e-value [in]
+ * @param avg_subject_length average length of subject sequence [in]
  * @param parameters Resulting parameters [out]
  */
 NCBI_XBLAST_EXPORT
@@ -961,6 +962,7 @@ Int2 BlastHitSavingParametersNew(EBlastProgramType program_number,
         const BlastHitSavingOptions* options, 
         const BlastExtensionParameters* ext_params,
         BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
+        Int4 avg_subject_length,
         BlastHitSavingParameters* *parameters);
 
 /** Updates cutoff scores in hit saving parameters. 
@@ -971,12 +973,15 @@ Int2 BlastHitSavingParametersNew(EBlastProgramType program_number,
  *            e-value [in]
  * @param query_info Query information, needed for calculating score cutoff 
  *                   from e-value [in]
+ * @param avg_subject_length average length of subject sequence, used in sum_stats
+ *            mode [in]
  * @param parameters Preallocated parameters [in] [out]
  */
 NCBI_XBLAST_EXPORT
 Int2 BlastHitSavingParametersUpdate(EBlastProgramType program_number, 
         const BlastExtensionParameters* ext_params,
         BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
+        Int4 avg_subject_length,
         BlastHitSavingParameters* parameters);
 
 /** Initialize default options for PSI BLAST */
