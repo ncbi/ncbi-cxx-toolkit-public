@@ -198,6 +198,7 @@
 #  define NCBI_GUIWIDGETS_FLU_EXPORTS
 #  define NCBI_GUIWIDGETS_TABLE_EXPORTS
 #  define NCBI_GUIWIDGETS_TOPLEVEL_EXPORTS
+#  define NCBI_GUIWIDGETS_WORKSPACE_EXPORTS
 #endif
 
 
@@ -1098,6 +1099,15 @@
 #endif
 
 /*
+ * Export specifier for library gui_widgets_workspace
+ */
+#ifdef NCBI_GUIWIDGETS_WORKSPACE_EXPORTS
+#  define NCBI_GUIWIDGETS_WORKSPACE_EXPORT         __declspec(dllexport)
+#else
+#  define NCBI_GUIWIDGETS_WORKSPACE_EXPORT         __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library gui_widgets_fltable
  */
 #ifdef NCBI_GUIWIDGETS_FLTABLE_EXPORTS
@@ -1430,6 +1440,7 @@
 #  define NCBI_GUIWIDGETS_TABLE_EXPORT
 #  define NCBI_GUIWIDGETS_TAXPLOT_EXPORT
 #  define NCBI_GUIWIDGETS_TOPLEVEL_EXPORT
+#  define NCBI_GUIWIDGETS_WORKSPACE_EXPORT
 #  define NCBI_ID1_EXPORT
 #  define NCBI_ID2_EXPORT
 #  define NCBI_INSDSEQ_EXPORT
@@ -1511,6 +1522,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.73  2004/05/14 16:15:05  dicuccio
+ * Added export specifier for gui/widgets/workspace
+ *
  * Revision 1.72  2004/05/03 19:41:02  gorelenk
  * Added NCBI_XALNTOOL_EXPORT to static-only libraries section.
  *
