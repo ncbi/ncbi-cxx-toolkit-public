@@ -3,11 +3,30 @@
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
 #################################
 
-# Standard library build template
-#################################
+# Standard template to build a library (static or DLL)
+######################################################
 
 builddir = @builddir@
+
+
+# Configured makefile variables:
+#   tools, flags, paths
+#
 include $(builddir)/Makefile.mk
+
+
+# Project definition:
+#   code sources, library name, project-specific flags and tools
+#
 include $(srcdir)/Makefile.$(TMPL).lib
-@FORCE_STATIC_LIB@
+
+
+# Indicates whether DLLs are buildable in this configuration,
+# and if not -- then force the library to be built as static
+#
+include $(builddir)/Makefile.is_dll_support
+
+
+# Standard rules to build a library
+#
 include $(builddir)/Makefile.$(LIB_OR_DLL)
