@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2002/03/22 19:51:28  lavr
+ * Do not explicitly include <assert.h>: included from ncbi_core.h
+ *
  * Revision 6.33  2002/03/11 21:59:32  lavr
  * 'Client version' changed into 'Client revision'
  *
@@ -143,7 +146,6 @@
 #include "ncbi_servicep_lbsmd.h"
 #include "ncbi_servicep_dispd.h"
 #include <connect/ncbi_ansi_ext.h>
-#include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
