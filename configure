@@ -1826,7 +1826,7 @@ else
   for ac_dir in $ac_dummy; do
     test -z "$ac_dir" && ac_dir=.
     if test -f $ac_dir/$ac_word; then
-      ac_cv_prog_AR="ar cru"
+      ac_cv_prog_AR="ar cr"
       break
     fi
   done

@@ -664,7 +664,7 @@ fi
 
 #### Tools
 AC_PROG_RANLIB
-AC_CHECK_PROG(AR, ar, ar cru, ErrorCannotFind_AR)
+AC_CHECK_PROG(AR, ar, ar cr, ErrorCannotFind_AR)
 AC_CHECK_PROG(STRIP, strip, strip, :)
 
 
