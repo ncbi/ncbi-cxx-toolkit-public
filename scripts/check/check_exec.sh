@@ -36,7 +36,7 @@ trap 'kill $pid' 1 2 15
 $script_dir/check_exec_guard.sh $timeout $pid &
 
 # Wait ending of execution
-wait $pid
+wait $pid > /dev/null 2>&1
 status=$?
 
 # Return test exit code
