@@ -281,10 +281,12 @@ CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
 inline
 void CSeq_loc::CheckId(const CSeq_id*& id) const
 {
-    if ( m_IdCache == 0 ) {
-        x_CheckId(m_IdCache);
+    const CSeq_id* my_id = m_IdCache;
+    if ( my_id == 0 ) {
+        x_CheckId(my_id);
+        m_IdCache = my_id;
     }
-    x_UpdateId(id, m_IdCache);
+    x_UpdateId(id, my_id);
 }
 
 
@@ -432,6 +434,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/02/17 21:10:58  vasilche
+ * Fixed possible race condition in CSeq_loc::CheckId().
+ *
  * Revision 1.33  2004/01/29 21:07:08  shomrat
  * Made cache invalidation methods public
  *
