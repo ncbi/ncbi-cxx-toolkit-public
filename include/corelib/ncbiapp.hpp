@@ -1,5 +1,5 @@
-#ifndef NCBIAPP__HPP
-#define NCBIAPP__HPP
+#ifndef CORELIB___NCBIAPP__HPP
+#define CORELIB___NCBIAPP__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -34,7 +34,6 @@
  */
 
 #include <corelib/ncbistd.hpp>
-// These are placed here because MSVC gets confused by the predeclarations
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/version.hpp>
@@ -128,7 +127,7 @@ public:
     // and where to get the configuration file (see LoadConfig()) to load
     // to the application registry (accessible via GetConfig()).
     // Throw exception if:  (a) not-only instance;  (b) cannot load
-    // explicitly specified config.file;  (c) SetupDiag throws an exception. 
+    // explicitly specified config.file;  (c) SetupDiag throws an exception.
     int AppMain
     (int                argc,  // as in a regular "main(argc, argv, envp)"
      const char* const* argv,
@@ -170,14 +169,16 @@ public:
     // The name of this application, suitable for displaying
     // or for using as the base name for other files.
     // Will be the 'name' argument of AppMain if given.
-    // Otherwise will be taken from the actual name of the application file or argv[0].
-    string  GetProgramDisplayName(void) const;
-    
+    // Otherwise will be taken from the actual name of the application file
+    // or argv[0].
+    string GetProgramDisplayName(void) const;
+
 protected:
     // By default ArgDescriptions are enabled (i.e. required)
     void DisableArgDescriptions(void);
 
-    // Hide descriptions of the standard flags (-h, -logfile, -conffile, -version)
+    // Hide descriptions of the standard flags
+    //    -h, -logfile, -conffile, -version
     // in the usage message (you still can pass them in the cmd.-line)
     enum EHideStdArgs {
         fHideHelp     = 0x01,
@@ -220,8 +221,8 @@ protected:
     // Default method to try load (add to "reg") from the config.file.
     // If "conf" arg (as passed to AppMain()):
     //   NULL      -- dont even try to load registry from any file at all;
-    //   non-empty -- if "conf" contains a path, then try to load from the 
-    //                conf.file of name "conf" (only!). Else - see NOTE. 
+    //   non-empty -- if "conf" contains a path, then try to load from the
+    //                conf.file of name "conf" (only!). Else - see NOTE.
     //                TIP: if the path is not fully qualified then:
     //                     if it starts from "../" or "./" -- look starting
     //                     from the current working dir.
@@ -238,28 +239,21 @@ protected:
     //   - in the user home directory;
     //   - in the program dir.
     //
-    // Throw an exception if "conf" is non-empty, and cannot open file. 
+    // Throw an exception if "conf" is non-empty, and cannot open file.
     // Throw an exception if file exists, but contains some invalid entries.
     // Return TRUE only if the file was non-NULL, found and successfully read.
     virtual bool LoadConfig(CNcbiRegistry& reg, const string* conf);
 
     // Get home dir for current user
     string GetHomeDir(void);
-    
-    void    SetProgramDisplayName(const string& appname);    
 
-    // Find out the path and name of the executable file this app is running from.
-    // Will be accesible by: GetArguments.GetProgramName().
+    // Set app. name suitable for display or as a basename for other files.
+    // It can also be set by the user when calling AppMain().
+    void SetProgramDisplayName(const string& app_name);
+
+    // Find out the path and name of the executable file this app is running
+    // from.  Will be accesible by:  GetArguments.GetProgramName().
     string  FindProgramExecutablePath(int argc, const char* const* argv);
-    
-#if defined(NCBI_OS_DARWIN)
-    void    MacArgMunging
-    (
-        int *argcPtr,  
-        const char* const ** argvPtr,
-        const string& exepath
-    );
-#endif
 
 private:
     void x_SetupStdio(void);
@@ -276,7 +270,7 @@ private:
     THideStdArgs               m_HideArgs;
     TStdioSetupFlags           m_StdioFlags;
     char*                      m_CinBuffer;
-    string                     m_ProgramDisplayName; // app's basename, suitable for display.
+    string                     m_ProgramDisplayName;
 };
 
 
@@ -313,14 +307,21 @@ inline string  CNcbiApplication::GetProgramDisplayName(void) const {
     return m_ProgramDisplayName;
 }
 
+
 END_NCBI_SCOPE
+
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2003/06/23 18:02:21  vakatov
+ * CNcbiApplication::MacArgMunging() moved from header to the source file.
+ * Fixed, reformatted and added comments.
+ *
  * Revision 1.32  2003/06/16 13:52:27  rsmith
- * Add ProgramDisplayName member. Program name becomes real executable full path. Handle Mac special arg handling better.
+ * Add ProgramDisplayName member. Program name becomes real executable full
+ * path. Handle Mac special arg handling better.
  *
  * Revision 1.31  2003/06/05 18:14:34  lavr
  * SetStdioFlags(): comment from impl not to call twice or not from ctor
@@ -428,6 +429,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif // NCBIAPP__HPP
-
-
+#endif  /* CORELIB___NCBIAPP__HPP */
