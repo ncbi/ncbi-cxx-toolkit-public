@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2001/12/07 18:56:51  grichenk
+* Paths in "#include"-s made system-independent
+*
 * Revision 1.38  2001/12/03 14:50:27  juran
 * Eliminate "return value expected" warning.
 *
@@ -388,9 +391,9 @@ void CCodeGenerator::GenerateCode(void)
             ERR_POST(Fatal << "Cannot create file: " << fileName);
 
         iterate ( TOutputFiles, filei, m_Files ) {
-            out << "#include <" <<
-                Path(m_FileNamePrefix, BaseName(filei->first)) <<
-                suffix << ">\n";
+            out << "#include <" << GetStdPath(
+                Path(m_FileNamePrefix, BaseName(filei->first)) + suffix) <<
+                ">\n";
         }
 
         out.close();
