@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/01/25 17:13:22  lavr
+ * Added: close/free everything on program exit: useful to check memory leaks
+ *
  * Revision 6.7  2001/01/23 23:22:34  lavr
  * debug_printout was given an enum value (instead of "boolean" 1)
  *
@@ -67,6 +70,7 @@
 
 int main(int argc, const char* argv[])
 {
+    const char* service = "io_bounce";
     const char buffer[] = "UUUUUZZZZZZUUUUUUZUZUZZUZUZUZUZUZ\n";
     CONNECTOR connector;
     SConnNetInfo *info;
@@ -77,13 +81,14 @@ int main(int argc, const char* argv[])
 
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
-    info = ConnNetInfo_Create("io_bounce");
+    info = ConnNetInfo_Create(service);
     strcpy(info->host, "ray");
     info->debug_printout = eDebugPrintout_Some;
     info->stateless = 1;
     info->firewall = 1;
 
-    connector = SERVICE_CreateConnectorEx("io_bounce", fSERV_Any, info);
+    connector = SERVICE_CreateConnectorEx(service, fSERV_Any, info);
+    ConnNetInfo_Destroy(info);
 
     if (!connector) {
         printf("Failed to create service connector\n");
@@ -103,19 +108,24 @@ int main(int argc, const char* argv[])
     if (CONN_Write(conn, buffer, sizeof(buffer) - 1, &n) != eIO_Success ||
         n != sizeof(buffer) - 1) {
         printf("Error writing to connection\n");
+        CONN_Close(conn);
         exit (-1);
     }
     
     if (CONN_Wait(conn, eIO_Read, 0) != eIO_Success) {
         printf("Error waiting for reading\n");
+        CONN_Close(conn);
         exit(-1);
     }
 
     if (CONN_Read(conn, buf, sizeof(buf), &n, eIO_Plain) != eIO_Success) {
         printf("Error reading from connection\n");
+        CONN_Close(conn);
         exit(-1);
     }
+
     printf("%d bytes read from service:\n%.*s\n", (int)n, (int)n, buf);
+    CONN_Close(conn);
 
     return 0/*okay*/;
 }
