@@ -49,44 +49,48 @@ BEGIN_SCOPE(objects)
 
 const string kObjectManagerPtrName = "ObjectManagerPtr";
 
-static CObjectManager* s_ObjectManager = 0;
-DEFINE_STATIC_MUTEX(s_ObjectManagerInstanceMutex);
+typedef CObjectManager TInstance;
 
-CRef<CObjectManager> CObjectManager::GetInstance(void)
+static TInstance* s_Instance = 0;
+DEFINE_STATIC_FAST_MUTEX(s_InstanceMutex);
+
+CRef<TInstance> TInstance::GetInstance(void)
 {
-    CRef<CObjectManager> ret;
+    CRef<TInstance> ret;
     {{
-        CMutexGuard guard(s_ObjectManagerInstanceMutex);
-        ret.Reset(s_ObjectManager);
+        CFastMutexGuard guard(s_InstanceMutex);
+        ret.Reset(s_Instance);
         if ( !ret || ret->ReferencedOnlyOnce() ) {
             if ( ret ) {
                 ret.Release();
             }
-            ret.Reset(new CObjectManager);
+            ret.Reset(new TInstance);
+            s_Instance = ret;
         }
     }}
+    _ASSERT(ret == s_Instance);
     return ret;
+}
+
+
+static void s_ResetInstance(TInstance* instance)
+{
+    CFastMutexGuard guard(s_InstanceMutex);
+    if ( s_Instance == instance ) {
+        s_Instance = 0;
+    }
 }
 
 
 CObjectManager::CObjectManager(void)
     : m_Seq_id_Mapper(CSeq_id_Mapper::GetInstance())
 {
-    {{
-        CMutexGuard guard(s_ObjectManagerInstanceMutex);
-        s_ObjectManager = this;
-    }}
 }
 
 
 CObjectManager::~CObjectManager(void)
 {
-    {{
-        CMutexGuard guard(s_ObjectManagerInstanceMutex);
-        if ( s_ObjectManager == this ) {
-            s_ObjectManager = 0;
-        }
-    }}
+    s_ResetInstance(this);
     // delete scopes
     TWriteLockGuard guard(m_OM_Lock);
 
@@ -106,7 +110,7 @@ CObjectManager::~CObjectManager(void)
         CDataSource* pSource = m_mapToSource.begin()->second.GetPointer();
         _ASSERT(pSource);
         if ( !pSource->ReferencedOnlyOnce() ) {
-            ERR_POST("Attempt to delete Object Manager with used data sources");
+            ERR_POST("Attempt to delete Object Manager with used datasources");
         }
         m_mapToSource.erase(m_mapToSource.begin());
     }
@@ -503,6 +507,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2004/09/30 18:38:55  vasilche
+* Thread safe CObjectManager::GetInstance().
+*
 * Revision 1.42  2004/08/24 16:42:03  vasilche
 * Removed TAB symbols in sources.
 *
