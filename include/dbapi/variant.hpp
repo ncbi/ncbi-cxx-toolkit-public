@@ -124,7 +124,7 @@ public:
                                   const char* p);
 
     // Make "placeholder" CVariant by type, containing NULL value
-    CVariant(EDB_Type type);
+    CVariant(EDB_Type type, size_t size = 0);
 
     // Make DATETIME representation in long and short forms
     CVariant(const class CTime& v, EDateTimeFormat fmt);
@@ -237,6 +237,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.17  2003/12/10 21:13:42  kholodov
+ * Added: size argument in CVariant(EDB_Type) constructor
+ *
  * Revision 1.16  2003/11/18 16:58:52  kholodov
  * Added: operator=(const char*)
  *
