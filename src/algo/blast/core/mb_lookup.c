@@ -54,7 +54,7 @@ MBLookupTablePtr MBLookupTableDestruct(MBLookupTablePtr mb_lt)
       sfree(mb_lt->next_pos2);
    sfree(mb_lt->pv_array);
 
-   mb_lt = sfree(mb_lt);
+   sfree(mb_lt);
    return mb_lt;
 }
 

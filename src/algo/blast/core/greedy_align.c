@@ -214,7 +214,7 @@ MBSpacePtr MBSpaceNew()
     amount = MAX_SPACE;
     p->space_array = (ThreeValPtr) malloc(sizeof(ThreeVal)*amount);
     if (p->space_array == NULL) {
-       p = sfree(p);
+       sfree(p);
        return NULL;
     }
     p->used = 0; 
@@ -238,8 +238,8 @@ void MBSpaceFree(MBSpacePtr sp)
 
    while (sp) {
       next_sp = sp->next;
-      sp->space_array = sfree(sp->space_array);
-      sp = sfree(sp);
+      sfree(sp->space_array);
+      sfree(sp);
       sp = next_sp;
    }
 }

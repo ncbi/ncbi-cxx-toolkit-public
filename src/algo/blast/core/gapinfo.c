@@ -92,7 +92,7 @@ GapEditScriptDelete(GapEditScriptPtr old)
 	while (old)
 	{
 		next = old->next;
-		old = sfree(old);
+		sfree(old);
 		old = next;
 	}
 	return old;
@@ -120,7 +120,7 @@ GapEditBlockDelete(GapEditBlockPtr edit_block)
 
 	edit_block->esp = GapEditScriptDelete(edit_block->esp);
 
-	edit_block = sfree(edit_block);
+	sfree(edit_block);
 
 	return edit_block;
 }

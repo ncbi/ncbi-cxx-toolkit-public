@@ -115,7 +115,8 @@ BlastHSPPtr BlastHSPFree(BlastHSPPtr hsp)
    if (!hsp)
       return NULL;
    hsp->gap_info = GapEditBlockDelete(hsp->gap_info);
-   return (BlastHSPPtr) sfree(hsp);
+   sfree(hsp);
+   return NULL;
 }
 
 Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfoPtr query_info,
@@ -754,7 +755,8 @@ BlastHSPListPtr BlastHSPListFree(BlastHSPListPtr hsp_list)
    }
    sfree(hsp_list->hsp_array);
 
-   return sfree(hsp_list);
+   sfree(hsp_list);
+   return NULL;
 }
 
 /** Given a BlastHitListPtr with a heapified HSP list array, remove
@@ -849,7 +851,8 @@ static BlastHitListPtr BLAST_HitListFree(BlastHitListPtr hitlist)
    for (index = 0; index < hitlist->hsplist_count; ++index)
       BlastHSPListFree(hitlist->hsplist_array[index]);
    sfree(hitlist->hsplist_array);
-   return (BlastHitListPtr) sfree(hitlist);
+   sfree(hitlist);
+   return NULL;
 }
 
 static BlastHSPListPtr BlastHSPListDup(BlastHSPListPtr hsp_list)
@@ -1005,7 +1008,8 @@ BlastResultsPtr BLAST_ResultsFree(BlastResultsPtr results)
    for (index = 0; index < results->num_queries; ++index)
       BLAST_HitListFree(results->hitlist_array[index]);
    sfree(results->hitlist_array);
-   return (BlastResultsPtr) sfree(results);
+   sfree(results);
+   return NULL;
 }
 
 Int2 BLAST_SortResults(BlastResultsPtr results)
@@ -1460,9 +1464,9 @@ Int2 MergeHSPLists(BlastHSPListPtr hsp_list,
          BlastHSPFree(hsp_list->hsp_array[index]);
    }
 
-   hspp1 = sfree(hspp1);
-   hspp2 = sfree(hspp2);
-   index_array = sfree(index_array);
+   sfree(hspp1);
+   sfree(hspp2);
+   sfree(index_array);
    
    return 1;
 }

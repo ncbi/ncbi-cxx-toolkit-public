@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.5  2003/07/25 21:12:28  coulouri
+ * remove constructions of the form "return sfree();" and "a=sfree(a);"
+ *
  * Revision 1.4  2003/07/25 19:11:16  camacho
  * Change VoidPtr to const void* in compare functions
  *
@@ -64,9 +67,10 @@ Blast_MessageFree(Blast_MessagePtr blast_msg)
 	if (blast_msg == NULL)
 		return NULL;
 
-	blast_msg->message = sfree(blast_msg->message);
+	sfree(blast_msg->message);
 
-	return sfree(blast_msg);
+	sfree(blast_msg);
+	return NULL;
 }
 
 /*

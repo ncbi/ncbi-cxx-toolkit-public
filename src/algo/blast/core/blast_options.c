@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.40  2003/07/25 21:12:28  coulouri
+ * remove constructions of the form "return sfree();" and "a=sfree(a);"
+ *
  * Revision 1.39  2003/07/25 17:25:43  coulouri
  * in progres:
  *  * use malloc/calloc/realloc instead of Malloc/Calloc/Realloc
@@ -254,7 +257,8 @@ BlastQuerySetUpOptionsFree(QuerySetUpOptionsPtr options)
    BlastMaskFree(options->lcase_mask);
    sfree(options->filter_string);
 
-   return (QuerySetUpOptionsPtr) sfree(options);
+   sfree(options);
+   return NULL;
 }
 
 Int2
@@ -364,8 +368,8 @@ BlastInitialWordParametersPtr
 BlastInitialWordParametersFree(BlastInitialWordParametersPtr parameters)
 
 {
-	return sfree(parameters);
-	
+	sfree(parameters);
+	return NULL;
 
 }
 
@@ -557,7 +561,8 @@ Int2 BlastExtensionParametersNew(Uint1 program_number,
 BlastExtensionParametersPtr
 BlastExtensionParametersFree(BlastExtensionParametersPtr parameters)
 {
-   return sfree(parameters);
+  sfree(parameters);
+  return NULL;
 }
 
 
@@ -665,7 +670,7 @@ BlastScoringOptionsValidate(Uint1 program_number,
 
 				buffer = PrintMatrixMessage(options->matrix); 
                                 Blast_MessageWrite(blast_msg, 2, code, subcode, buffer);
-				buffer = sfree(buffer);
+				sfree(buffer);
 				return (Int2) code;
 				
 			}
@@ -677,7 +682,7 @@ BlastScoringOptionsValidate(Uint1 program_number,
 
 				buffer = PrintAllowedValuesMessage(options->matrix, options->gap_open, options->gap_extend, options->decline_align); 
                                 Blast_MessageWrite(blast_msg, 2, code, subcode, buffer);
-				buffer = sfree(buffer);
+				sfree(buffer);
 				return (Int2) code;
 			}
 		}
@@ -750,10 +755,11 @@ LookupTableOptionsFree(LookupTableOptionsPtr options)
 
 	if (options)
 	{
-		options->matrixname = sfree(options->matrixname);
+	  sfree(options->matrixname);
 	}
 
-	return (LookupTableOptionsPtr) sfree(options);
+	sfree(options);
+	return NULL;
 }
 
 Int2 
@@ -903,7 +909,8 @@ BlastHitSavingOptionsPtr
 BlastHitSavingOptionsFree(BlastHitSavingOptionsPtr options)
 
 {
-	return sfree(options);
+  sfree(options);
+  return NULL;
 }
 
 
@@ -979,7 +986,8 @@ BlastHitSavingParametersPtr
 BlastHitSavingParametersFree(BlastHitSavingParametersPtr parmameters)
 
 {
-	return sfree(parmameters);
+  sfree(parmameters);
+  return NULL;
 }
 
 
@@ -1050,7 +1058,8 @@ PSIBlastOptionsPtr PSIBlastOptionsFree(PSIBlastOptionsPtr psi_options)
    if (psi_options->isPatternSearch)
       sfree(psi_options->phi_pattern);
    
-   return (PSIBlastOptionsPtr) sfree(psi_options);
+   sfree(psi_options);
+   return NULL;
 }
 
 Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr PNTR db_options)
@@ -1068,8 +1077,8 @@ BlastDatabaseOptionsPtr
 BlastDatabaseOptionsFree(BlastDatabaseOptionsPtr db_options)
 {
    sfree(db_options->gen_code_string);
-   
-   return (BlastDatabaseOptionsPtr) sfree(db_options);
+   sfree(db_options);
+   return NULL;
 }
 
 Int2 BLAST_InitDefaultOptions(Uint1 program_number,

@@ -152,7 +152,7 @@ Int2 BLAST_ExtendWordInit(BLAST_SequenceBlkPtr query,
          (Int4Ptr) MemNew(diag_table->diag_array_length*sizeof(DiagStruct));
       
       if (buffer == NULL)	{
-         ewp = (BLAST_ExtendWordPtr) sfree(ewp);
+         sfree(ewp);
          return -1;
       }
          
@@ -295,7 +295,7 @@ MB_ExtendInitialHit(BLAST_SequenceBlkPtr query,
              ungapped_data->score >= word_params->cutoff_score) {
             BLAST_SaveInitialHit(init_hitlist, q_off, s_off, ungapped_data);
          } else {
-            ungapped_data = (BlastUngappedDataPtr) sfree(ungapped_data);
+            sfree(ungapped_data);
             /* Set diag_level to 0, indicating that any hit after this will 
                be new */
             diag_array_elem->diag_level = 0;
@@ -362,8 +362,7 @@ MB_ExtendInitialHit(BLAST_SequenceBlkPtr query,
                   BLAST_SaveInitialHit(init_hitlist, q_off, s_off, 
                                        ungapped_data);
                } else {
-                  ungapped_data = 
-                     (BlastUngappedDataPtr) sfree(ungapped_data);
+                  sfree(ungapped_data);
                   /* Set hit length back to 0 after ungapped extension 
                      failure */
                   estack[index].length = 0;
@@ -428,7 +427,7 @@ MB_ExtendInitialHit(BLAST_SequenceBlkPtr query,
             BLAST_SaveInitialHit(init_hitlist, q_off, s_off, 
                                  ungapped_data);
          } else {
-            ungapped_data = (BlastUngappedDataPtr) sfree(ungapped_data);
+            sfree(ungapped_data);
             /* Set hit length back to 0 after ungapped extension 
                failure */
             estack[index].length = 0;
@@ -752,7 +751,7 @@ BlastnExtendInitialHit(BLAST_SequenceBlkPtr query,
             saved */
          diag_array_elem->diag_level = 1;
       } else {
-         ungapped_data = (BlastUngappedDataPtr) sfree(ungapped_data);
+         sfree(ungapped_data);
          /* Set diag_level to 0, indicating that any hit after this will 
             be new */
          diag_array_elem->diag_level = 0;
@@ -1164,5 +1163,6 @@ BLAST_ExtendWordPtr BlastExtendWordFree(BLAST_ExtendWordPtr ewp)
 {
    BlastDiagTableFree(ewp->diag_table);
    MBStackTableFree(ewp->stack_table);
-   return (BLAST_ExtendWordPtr) sfree(ewp);
+   sfree(ewp);
+   return NULL;
 }

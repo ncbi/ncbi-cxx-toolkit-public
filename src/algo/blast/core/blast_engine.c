@@ -57,7 +57,8 @@ BlastCoreAuxStructFree(BlastCoreAuxStructPtr aux_struct)
    sfree(aux_struct->subject_offsets);
    BlastSeqSrcFree(aux_struct->bssp);
    
-   return (BlastCoreAuxStructPtr) sfree(aux_struct);
+   sfree(aux_struct);
+   return NULL;
 }
 
 /** Adjust HSP coordinates for out-of-frame gapped extension.
@@ -736,7 +737,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
 #endif
 
    BLAST_ThrInfoFree(thr_info); /* CC: Is this really needed? */
-   oid_list = (Int4Ptr) sfree(oid_list);
+   sfree(oid_list);
    BlastSequenceBlkFree(seq_arg.seq);
 
    /* Now sort the hit lists for all queries */
@@ -754,9 +755,9 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    BLAST_GapAlignStructFree(gap_align);
    BlastCoreAuxStructFree(aux_struct);
 
-   hit_params = (BlastHitSavingParametersPtr) sfree(hit_params);
-   ext_params = (BlastExtensionParametersPtr) sfree(ext_params);
-   word_params = (BlastInitialWordParametersPtr) sfree(word_params);
+   sfree(hit_params);
+   sfree(ext_params);
+   sfree(word_params);
 
    return status;
 }
@@ -809,7 +810,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
          score_options, NULL, NULL);
    }
    BlastCoreAuxStructFree(aux_struct);
-   word_params = (BlastInitialWordParametersPtr) sfree(word_params);
+   sfree(word_params);
 
    if (hit_options->is_gapped) {
       status = 
@@ -822,8 +823,8 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
    gap_align->sbp = NULL;
    BLAST_GapAlignStructFree(gap_align);
 
-   ext_params = (BlastExtensionParametersPtr) sfree(ext_params);
-   hit_params = (BlastHitSavingParametersPtr) sfree(hit_params);
+   sfree(ext_params);
+   sfree(hit_params);
 
    return status;
 }

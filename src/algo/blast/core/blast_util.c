@@ -95,9 +95,9 @@ Int2 BlastSequenceBlkClean(BLAST_SequenceBlkPtr seq_blk)
       return 1;
 
    if (seq_blk->sequence_allocated) 
-      seq_blk->sequence = sfree(seq_blk->sequence);
+      sfree(seq_blk->sequence);
    if (seq_blk->sequence_start_allocated)
-      seq_blk->sequence_start = sfree(seq_blk->sequence_start);
+      sfree(seq_blk->sequence_start);
 
    return 0;
 }
@@ -109,7 +109,8 @@ BLAST_SequenceBlkPtr BlastSequenceBlkFree(BLAST_SequenceBlkPtr seq_blk)
 
    BlastSequenceBlkClean(seq_blk);
 
-   return (BLAST_SequenceBlkPtr) sfree(seq_blk);
+   sfree(seq_blk);
+   return NULL;
 }
 
 Int2 BlastProgram2Number(const Char *program, Uint1 *number)
@@ -610,7 +611,8 @@ BlastQueryInfoPtr BlastQueryInfoFree(BlastQueryInfoPtr query_info)
    sfree(query_info->context_offsets);
    sfree(query_info->length_adjustments);
    sfree(query_info->eff_searchsp_array);
-   return (BlastQueryInfoPtr) sfree(query_info);
+   sfree(query_info);
+   return NULL;
 }
 
 #define PACK_MASK 0x03
@@ -834,10 +836,10 @@ Int2 BLAST_GetAllTranslations(Uint1Ptr nucl_seq, Uint1 encoding,
    }
 
    if (encoding == NCBI4NA_ENCODING) {
-      nucl_seq_rev = (Uint1Ptr) sfree(nucl_seq_rev);
+      sfree(nucl_seq_rev);
    } else { 
-      translation_table = (Uint1Ptr) sfree(translation_table);
-      translation_table_rc = (Uint1Ptr) sfree(translation_table_rc);
+      free(translation_table);
+      sfree(translation_table_rc);
    }
 
    /* All frames are ready. For the out-of-frame gapping option, allocate 

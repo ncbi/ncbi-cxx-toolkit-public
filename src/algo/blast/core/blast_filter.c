@@ -680,7 +680,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 				ptr++;
 			}
 		}
-		buffer = (CharPtr) sfree(buffer);
+	        sfree(buffer);
 	}
 
 	seqloc_num = 0;
@@ -735,7 +735,7 @@ start_timer;
 			repeat_slp = BioseqHitRangeEngineByLoc(myslp, "blastn", repeat_database, repeat_options, NULL, NULL, NULL, NULL, NULL, 0);
 stop_timer("after repeat filtering");
 			repeat_options = BLASTOptionDelete(repeat_options);
-			repeat_database = sfree(repeat_database);
+			sfree(repeat_database);
 			if (myslp_allocated)
 				SeqLocFree(myslp);
 			seqloc_num++;
@@ -775,7 +775,7 @@ one strand).  In that case we make up a double-stranded one as we wish to look a
 			}
 			vnp = ValNodeFree(vnp);
 			seqalign = SeqAlignSetFree(seqalign);
-			vs_database = sfree(vs_database);
+			sfree(vs_database);
 			if (myslp_allocated)
 				SeqLocFree(myslp);
 			seqloc_num++;
