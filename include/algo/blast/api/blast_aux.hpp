@@ -36,13 +36,31 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ddumpable.hpp>
 
+#include <objects/seqloc/Seq_loc.hpp>
+
 // NewBlast includes
 #include <blast_def.h>
 #include <blast_options.h>
 #include <blast_hits.h>
+#include <blast_filter.h>       // Needed for BlastMask & BlastSeqLoc
 #include <blast_util.h>
 
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
+
 BEGIN_NCBI_SCOPE
+
+/** Converts a CSeq_loc into a BlastMaskPtr structure used in NewBlast
+ * @param sl CSeq_loc to convert [in]
+ * @param index Number of frame/query number? this CSeq_loc applies to [in]
+ * @return Linked list of BlastMask structures
+ */
+BlastMaskPtr
+BLASTSeqLoc2BlastMask(const CSeq_loc& sl, int index);
+
+CRef<CSeq_loc>
+BLASTBlastMask2SeqLoc(BlastMaskPtr mask);
+
 
 
 /** Declares class to handle deallocating of the structure using the appropriate
@@ -107,6 +125,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/07/14 22:17:17  camacho
+* Convert CSeq_loc to BlastMaskPtr
+*
 * Revision 1.1  2003/07/10 18:34:19  camacho
 * Initial revision
 *

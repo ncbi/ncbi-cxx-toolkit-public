@@ -32,6 +32,11 @@
 
 #include <BlastAux.hpp>
 
+#include <objects/seqloc/Seq_interval.hpp>
+
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
+
 BEGIN_NCBI_SCOPE
 
 void
@@ -236,5 +241,56 @@ CBlastDatabaseOptionsPtr::DebugDump(CDebugDumpContext ddc, unsigned int depth) c
     if (!m_Ptr)
         return;
 
+}
+
+BlastMaskPtr
+x_CSeqLoc2BlastMask(const CSeq_loc& sl, int index)
+{
+    _ASSERT(sl.IsInt() || sl.IsPacked_int());
+
+    BlastSeqLocPtr bsl = NULL, curr = NULL, tail = NULL;
+    BlastMaskPtr mask = NULL;
+
+    switch (sl.Which()) {
+
+    case CSeq_loc::e_Packed_int:
+        ITERATE(list< CRef<CSeq_interval> >, itr, sl.GetPacked_int().Get()) {
+            curr = BlastSeqLocNew((*itr)->GetFrom(), (*itr)->GetTo());
+            if (!bsl) {
+                bsl = tail = curr;
+            } else {
+                tail->next = curr;
+                tail = tail->next;
+            }
+        }
+        break;
+
+    case CSeq_loc::e_Int:
+        bsl = BlastSeqLocNew(sl.GetInt().GetFrom(), sl.GetInt().GetTo());
+        break;
+
+    default:
+        break;
+    }
+
+    mask = (BlastMaskPtr) MemNew(sizeof(BlastMask));
+    mask->index = index;
+    mask->loc_list = (ValNodePtr) bsl;
+
+    return mask;
+}
+
+//TODO
+CRef<CSeq_loc>
+BLASTBlastMask2SeqLoc(BlastMaskPtr mask)
+{
+    CRef<CSeq_loc> retval;
+
+    if (!mask)
+        return retval;
+
+
+
+    return retval;
 }
 END_NCBI_SCOPE

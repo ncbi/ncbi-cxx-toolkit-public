@@ -36,9 +36,7 @@
 #include <BlastAux.hpp>
 #include <BlastException.hpp>
 
-#include <objects/seqloc/seqloc__.hpp>
-
-#include <blast_filter.h>       // Needed for BlastMask & BlastSeqLoc
+#include <objects/seqloc/Seq_loc.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -504,42 +502,6 @@ CBlastOption::GetLCaseMask() const
 }
 #endif
 
-static BlastMaskPtr
-x_CSeqLoc2BlastMask(const CSeq_loc& sl, int index)
-{
-    _ASSERT(sl.IsInt() || sl.IsPacked_int());
-
-    BlastSeqLocPtr bsl = NULL, curr = NULL, tail = NULL;
-    BlastMaskPtr mask = NULL;
-
-    switch (sl.Which()) {
-
-    case CSeq_loc::e_Packed_int:
-        ITERATE(list< CRef<CSeq_interval> >, itr, sl.GetPacked_int().Get()) {
-            curr = BlastSeqLocNew((*itr)->GetFrom(), (*itr)->GetTo());
-            if (!bsl) {
-                bsl = tail = curr;
-            } else {
-                tail->next = curr;
-                tail = tail->next;
-            }
-        }
-        break;
-
-    case CSeq_loc::e_Int:
-        bsl = BlastSeqLocNew(sl.GetInt().GetFrom(), sl.GetInt().GetTo());
-        break;
-
-    default:
-        break;
-    }
-
-    mask = (BlastMaskPtr) MemNew(sizeof(BlastMask));
-    mask->index = index;
-    mask->loc_list = (ValNodePtr) bsl;
-
-    return mask;
-}
 
 inline void 
 CBlastOption::SetLCaseMask(vector< CConstRef<CSeq_loc> >& sl_vector)
@@ -551,7 +513,7 @@ CBlastOption::SetLCaseMask(vector< CConstRef<CSeq_loc> >& sl_vector)
     // index corresponds to the query index in the case of query concatenation
     ITERATE(vector< CConstRef<CSeq_loc> >, itr, sl_vector) {
 
-        curr = x_CSeqLoc2BlastMask(**itr, index++);
+        curr = BLASTSeqLoc2BlastMask(**itr, index++);
         if (!mask) {
             mask = tail = curr;
         } else {
@@ -1026,6 +988,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/07/14 22:17:17  camacho
+* Convert CSeq_loc to BlastMaskPtr
+*
 * Revision 1.1  2003/07/10 18:34:19  camacho
 * Initial revision
 *
