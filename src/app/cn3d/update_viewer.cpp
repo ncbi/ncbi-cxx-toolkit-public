@@ -513,21 +513,27 @@ void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
 
         // skip if no VAST alignment found
         if (structureAlignment.IsSetId() && structureAlignment.GetId().front()->IsMmdb_id() &&
-            structureAlignment.GetId().front()->GetMmdb_id().Get() == 0) {
+            structureAlignment.GetId().front()->GetMmdb_id().Get() == 0)
+        {
             WARNINGMSG("VAST found no alignment for these chains");
+        }
 
-        } else {
-            // load in alignment, check format
+        else try {
+
             if (!structureAlignment.IsSetId() || !structureAlignment.GetId().front()->IsMmdb_id() ||
-                structureAlignment.GetId().front()->GetMmdb_id().Get() != master->identifier->mmdbID ||
                 structureAlignment.GetFeatures().size() != 1 ||
                 structureAlignment.GetFeatures().front()->GetFeatures().size() != 1 ||
                 !structureAlignment.GetFeatures().front()->GetFeatures().front()->IsSetLocation() ||
                 !structureAlignment.GetFeatures().front()->GetFeatures().front()->GetLocation().IsAlignment())
             {
-                ERRORMSG("VAST data does not contain exactly one alignment of recognized format");
-                continue;
+                throw "VAST data does not contain exactly one alignment of recognized format - "
+                    "possibly a problem with vastalign.cgi";
             }
+
+            if (structureAlignment.GetId().front()->GetMmdb_id().Get() != master->identifier->mmdbID)
+                throw "Master structure MMDB ID mismatch - check to see if this structure been updated";
+
+            // load in alignment, check format
             const CChem_graph_alignment& alignment =
                 structureAlignment.GetFeatures().front()->GetFeatures().front()->GetLocation().GetAlignment();
             if (alignment.GetDimension() != 2 || alignment.GetAlignment().size() != 2 ||
@@ -543,8 +549,7 @@ void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
                 alignment.GetAlignment().front()->GetResidues().GetInterval().size() !=
                     alignment.GetAlignment().back()->GetResidues().GetInterval().size())
             {
-                ERRORMSG("Unrecognized VAST data format");
-                continue;
+                throw "Unrecognized VAST data format";
             }
 
             // construct alignment from residue intervals
@@ -556,8 +561,7 @@ void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
                 if ((*i)->GetMolecule_id().Get() != master->identifier->moleculeID ||
                     (*j)->GetMolecule_id().Get() != (*s)->identifier->moleculeID)
                 {
-                    ERRORMSG("mismatch in molecule ids in alignment interval block");
-                    continue;
+                    throw "Mismatch in molecule ids in alignment interval block";
                 }
                 UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(newAlignment);
                 newBlock->SetRangeOfRow(0, (*i)->GetFrom().Get() - 1, (*i)->GetTo().Get() - 1);
@@ -567,7 +571,8 @@ void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
             }
 
             // add structure alignment to list
-            if (alignment.GetTransform().size() == 1) {
+            if (alignment.GetTransform().size() == 1)
+            {
                 structureAlignments->resize(structureAlignments->size() + 1);
                 structureAlignments->back().structureAlignment =
                     structureAlignment.SetFeatures().front()->SetFeatures().front();
@@ -576,7 +581,10 @@ void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
                 structureAlignments->back().slaveDomainID =
                     structureAlignment.GetFeatures().front()->GetFeatures().front()->GetId().Get();
             } else
-                WARNINGMSG("no structure alignment in VAST data blob");
+                throw "No structure alignment in VAST data blob";
+
+        } catch (const char *err) {
+            ERRORMSG("Failed to import VAST alignment: " << err);
         }
 
         // finalize alignment
@@ -1167,6 +1175,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2003/04/04 14:02:22  thiessen
+* more informative error messages on structure import
+*
 * Revision 1.62  2003/04/02 18:03:16  thiessen
 * fix wxString/string confusion
 *
