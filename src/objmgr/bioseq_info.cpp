@@ -269,6 +269,27 @@ const CBioseq_Info::TId& CBioseq_Info::GetId(void) const
 }
 
 
+bool CBioseq_Info::HasId(const CSeq_id_Handle& id) const
+{
+    return find(m_Id.begin(), m_Id.end(), id) != m_Id.end();
+}
+
+
+void CBioseq_Info::AddId(const CSeq_id_Handle& id)
+{
+    m_Id.push_back(id);
+}
+
+
+void CBioseq_Info::RemoveId(const CSeq_id_Handle& id)
+{
+    TId::iterator found = find(m_Id.begin(), m_Id.end(), id);
+    if(found != m_Id.end()) {
+        m_Id.erase(found);
+    }
+}
+
+
 bool CBioseq_Info::IsSetDescr(void) const
 {
     return m_Object->IsSetDescr();
@@ -748,6 +769,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/05/11 17:45:51  grichenk
+* Implemented HasId(), AddId() and RemoveId()
+*
 * Revision 1.19  2004/05/06 17:32:37  grichenk
 * Added CanGetXXXX() methods
 *
