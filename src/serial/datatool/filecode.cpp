@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/08/16 13:18:03  grichenk
+* Corrected calls to GetStdPath() -- moved '>' outside the call
+*
 * Revision 1.27  2001/08/15 20:27:14  juran
 * Convert native pathnames to unix-style for include directives.
 *
@@ -216,9 +219,9 @@ string CFileCode::Include(const string& s) const
     switch ( s[0] ) {
     case '<':
     case '"':
-        return s;
+        return s[0] + GetStdPath(s.substr(1, s.length()-2)) + s[s.length()-1];
     default:
-        return '<' + GetStdPath(s) + ".hpp>";
+        return '<' + GetStdPath(s + ".hpp") + ">";
     }
 }
 
