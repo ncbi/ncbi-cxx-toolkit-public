@@ -61,7 +61,7 @@ USING_SCOPE(objects);
 // NW algorithm encapsulation
 //
 
-class NCBI_XALGO_EXPORT CNWAligner
+class NCBI_XALGOALIGN_EXPORT CNWAligner
 {
 public:
     typedef int TScore;
@@ -216,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/08/04 15:43:19  dicuccio
+ * Modified export specifiers to be more flexible
+ *
  * Revision 1.24  2003/06/26 20:39:53  kapustin
  * Rename formal parameters in SetEndSpaceFree() to avoid conflict with macro under some configurations
  *

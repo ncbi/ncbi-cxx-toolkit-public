@@ -41,7 +41,7 @@ BEGIN_SCOPE(objects)
 
 /// This class defines functions for calculating
 /// properties of amino acid sequences.
-class NCBI_XALGO_EXPORT CProtProp
+class NCBI_XALGOSEQ_EXPORT CProtProp
 {
 public:
     /// Counts the numbers of occurrences of each residue type.
@@ -70,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/08/04 15:43:20  dicuccio
+ * Modified export specifiers to be more flexible
+ *
  * Revision 1.3  2003/07/01 19:00:44  ucko
  * Drop gratuitous GUI header inclusion; minor formal cleanups
  *

@@ -57,7 +57,7 @@ BEGIN_NCBI_SCOPE
 struct SCoordRect; // auxiliary structure, see below
 
 
-class NCBI_XALGO_EXPORT CMMAligner: public CNWAligner
+class NCBI_XALGOALIGN_EXPORT CMMAligner: public CNWAligner
 {
 public:
 
@@ -121,7 +121,7 @@ protected:
 
 // auxiliary structure
     
-struct NCBI_XALGO_EXPORT SCoordRect {
+struct NCBI_XALGOALIGN_EXPORT SCoordRect {
     size_t i1, j1, i2, j2;
     SCoordRect() {};
     SCoordRect(size_t l, size_t t, size_t r, size_t b):
@@ -141,6 +141,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/08/04 15:43:19  dicuccio
+ * Modified export specifiers to be more flexible
+ *
  * Revision 1.10  2003/06/17 17:20:28  kapustin
  * CNWAlignerException -> CAlgoAlignException
  *

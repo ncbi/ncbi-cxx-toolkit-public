@@ -45,12 +45,12 @@
 BEGIN_NCBI_SCOPE
 
 
-class NCBI_XALGO_EXPORT CAlgoException : public CException
+class NCBI_XALGOALIGN_EXPORT CAlgoException : public CException
 {
     NCBI_EXCEPTION_DEFAULT(CAlgoException,CException);
 };
 
-class NCBI_XALGO_EXPORT CAlgoAlignException : public CAlgoException 
+class NCBI_XALGOALIGN_EXPORT CAlgoAlignException : public CAlgoException 
 {
 public:
     enum EErrCode {
@@ -92,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/08/04 15:43:19  dicuccio
+ * Modified export specifiers to be more flexible
+ *
  * Revision 1.5  2003/06/17 17:20:28  kapustin
  * CNWAlignerException -> CAlgoAlignException
  *

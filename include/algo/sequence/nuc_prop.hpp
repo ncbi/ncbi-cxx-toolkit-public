@@ -41,7 +41,7 @@ BEGIN_SCOPE(objects)
 /// this class defines functions for calculating various
 /// properties of nucleotide sequences
 
-class NCBI_XALGO_EXPORT CNucProp
+class NCBI_XALGOSEQ_EXPORT CNucProp
 {
 public:
     /// Tally the occurrences of each non-ambiguous n-mer.
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/08/04 15:43:20  dicuccio
+ * Modified export specifiers to be more flexible
+ *
  * Revision 1.4  2003/07/28 11:54:02  dicuccio
  * Changed calling semantics of Int2Nmer to use std::string
  *

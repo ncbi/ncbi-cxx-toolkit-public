@@ -54,7 +54,7 @@ const unsigned char splice_type_count = 4;
 
 BEGIN_NCBI_SCOPE
 
-class NCBI_XALGO_EXPORT CNWAlignerMrna2Dna: public CNWAligner
+class NCBI_XALGOALIGN_EXPORT CNWAlignerMrna2Dna: public CNWAligner
 {
 public:
 
@@ -118,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/08/04 15:43:19  dicuccio
+ * Modified export specifiers to be more flexible
+ *
  * Revision 1.11  2003/06/17 17:20:28  kapustin
  * CNWAlignerException -> CAlgoAlignException
  *
