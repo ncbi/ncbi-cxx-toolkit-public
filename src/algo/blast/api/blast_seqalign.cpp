@@ -57,7 +57,7 @@ BEGIN_SCOPE(blast)
 #define GAP_VALUE -1
 #endif
 
-// Converts a frame into the appropriate strand
+/// Converts a frame into the appropriate strand
 static ENa_strand
 x_Frame2Strand(short frame)
 {
@@ -69,12 +69,16 @@ x_Frame2Strand(short frame)
         return eNa_strand_unknown;
 }
 
+/// Advances position in a sequence, according to an edit script instruction.
+/// @param pos Current position on input, next position on output  [in] [out]
+/// @param pos2advance How much the position should be advanced? [in]
+/// @return Current position.
 static int 
 x_GetCurrPos(int& pos, int pos2advance)
 {
     int retval;
 
-    if (pos < 0)
+    if (pos < 0) /// @todo FIXME: is this condition possible? 
         retval = -(pos + pos2advance - 1);
     else
         retval = pos;
@@ -82,6 +86,18 @@ x_GetCurrPos(int& pos, int pos2advance)
     return retval;
 }
 
+/// Finds the starting position of a sequence segment in an alignment, given an 
+/// editing script.
+/// @param curr_pos Current position on input, modified to next position on 
+///                 output [in] [out]
+/// @param esp Traceback editing script [in]
+/// @param strand Sequence strand [in]
+/// @param translate Is sequence translated? [in]
+/// @param length Sequence length [in]
+/// @param original_length Original (nucleotide) sequence length, if it is 
+///                        translated [in]
+/// @param frame Translating frame [in]
+/// @return Start position of the current alignment segment.
 static TSeqPos
 x_GetAlignmentStart(int& curr_pos, const GapEditScript* esp, 
         ENa_strand strand, bool translate, int length, int original_length, 
@@ -110,9 +126,16 @@ x_GetAlignmentStart(int& curr_pos, const GapEditScript* esp,
     return retval;
 }
 
-/// C++ version of GXECollectDataForSeqalign
+/// Fills vectors of start positions, lengths and strands for all alignment segments.
 /// Note that even though the edit_block is passed in, data for seqalign is
-/// collected from the esp argument for nsegs segments
+/// collected from the esp_head argument for nsegs segments. This editing script may
+/// not be the full editing scripg if a discontinuous alignment is being built.
+/// @param edit_block Traceback editing block. [in]
+/// @param esp_head Traceback editing script linked list [in]
+/// @param nsegs Number of alignment segments [in]
+/// @param starts Vector of starting positions to fill [out]
+/// @param lengths Vector of segment lengths to fill [out]
+/// @param strands Vector of segment strands to fill [out]
 static void
 x_CollectSeqAlignData(const GapEditBlock* edit_block, 
         const GapEditScript* esp_head, unsigned int nsegs,
@@ -215,6 +238,14 @@ x_CollectSeqAlignData(const GapEditBlock* edit_block,
         strands.resize(nsegs*2);
 }
 
+/// Creates a Dense-seg object from the starts, lengths and strands vectors and two 
+/// Seq-ids.
+/// @param master Query Seq-id [in]
+/// @param slave Subject Seq-ids [in]
+/// @param starts Vector of start positions for alignment segments [in]
+/// @param lengths Vector of alignment segments lengths [in]
+/// @param strands Vector of alignment segments strands [in]
+/// @return The Dense-seg object.
 static CRef<CDense_seg>
 x_CreateDenseg(const CSeq_id* master, const CSeq_id* slave,
         vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
@@ -244,6 +275,17 @@ x_CreateDenseg(const CSeq_id* master, const CSeq_id* slave,
     return dense_seg;
 }
 
+/// Creates a Std-seg object from the starts, lengths and strands vectors and two 
+/// Seq-ids for a translated search.
+/// @param master Query Seq-id [in]
+/// @param slave Subject Seq-ids [in]
+/// @param starts Vector of start positions for alignment segments [in]
+/// @param lengths Vector of alignment segments lengths [in]
+/// @param strands Vector of alignment segments strands [in]
+/// @param reverse Is order of sequences reversed? [in]
+/// @param translate_master Is query sequence translated? [in]
+/// @param translate_slave Is subject sequenec translated? [in]
+/// @return The Std-seg object.
 static CSeq_align::C_Segs::TStd
 x_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave, 
         vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
@@ -315,9 +357,10 @@ x_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave,
     return retval;
 }
 
-/// Clone of GXECorrectUASequence (tools/gapxdrop.c)
-/// Assumes eGapAlignDecline regions are to the right of eGapAlign{Ins,Del}.
-/// This function swaps them (eGapAlignDecline ends to the right of the gap)
+/// Checks if any decline-to-align segments immediately follow an insertion or 
+/// deletion, and swaps any such segments so indels are always to the right of 
+/// the decline-to-align segments.
+/// @param edit_block Traceback editing block [in] [out]
 static void 
 x_CorrectUASequence(GapEditBlock* edit_block)
 {
@@ -356,8 +399,18 @@ x_CorrectUASequence(GapEditBlock* edit_block)
     return;
 }
 
-/// C++ version of GXEMakeSeqAlign (tools/gapxdrop.c)
-/// Creates a Seq-align for a single HSP
+/// Creates a Seq-align for a single HSP from precalculated vectors of start 
+/// positions, lengths and strands of segments, sequence identifiers and other 
+/// information.
+/// @param master Query sequence identifier [in]
+/// @param slave Subject sequence identifier [in]
+/// @param starts Start positions of alignment segments [in]
+/// @param lengths Lengths of alignment segments [in]
+/// @param strands Strands of alignment segments [in]
+/// @param translate_master Is query translated? [in]
+/// @param translate_slave Is subject translated? [in]
+/// @param reverse Is order of sequences reversed? [in]
+/// @return Resulting Seq-align object.
 static CRef<CSeq_align>
 x_CreateSeqAlign(const CSeq_id* master, const CSeq_id* slave,
     vector<TSignedSeqPos> starts, vector<TSeqPos> lengths,
@@ -381,6 +434,12 @@ x_CreateSeqAlign(const CSeq_id* master, const CSeq_id* slave,
     return sar;
 }
 
+/// Converts a traceback editing block to a Seq-align, provided the 2 sequence 
+/// identifiers.
+/// @param edit_block Traceback editing block [in]
+/// @param id1 Query sequence identifier [in]
+/// @param id2 Subject sequence identifier [in]
+/// @return Resulting Seq-align object.
 static CRef<CSeq_align>
 x_GapEditBlock2SeqAlign(GapEditBlock* edit_block, 
         const CSeq_id* id1, const CSeq_id* id2)
@@ -461,25 +520,13 @@ x_GapEditBlock2SeqAlign(GapEditBlock* edit_block,
     }
 }
 
-/** Get the current position. */
-static Int4 get_current_pos(Int4* pos, Int4 length)
-{
-    Int4 val;
-    if(*pos < 0)
-        val = -(*pos + length -1);
-    else
-        val = *pos;
-    *pos += length;
-    return val;
-}
-
-/** This function is used for Out-Of-Frame traceback conversion
- * Convert an OOF EditScript chain to a SeqAlign of type StdSeg.
- * Used for a non-simple interval (i.e., one without subs. or 
- * deletions).  
- * The first SeqIdPtr in the chain of subject_id and query_id is 
- * duplicated for the SeqAlign.
-*/
+/// This function is used for out-of-frame traceback conversion
+/// Converts an OOF editing script chain to a Seq-align of type Std-seg.
+/// @param program BLAST program: blastx or tblastn.
+/// @param edit_block Traceback editing block produced by an out-of-frame 
+///                   gapped extension [in]
+/// @param query_id Query sequence identifier [in]
+/// @param subject_id Subject sequence identifier [in]
 static CRef<CSeq_align>
 x_OOFEditBlock2SeqAlign(EProgram program, 
     GapEditBlock* edit_block, 
@@ -548,7 +595,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
             
             first_shift = false;
 
-            slp1->SetInt().SetFrom(get_current_pos(&start1, curr->num));
+            slp1->SetInt().SetFrom(x_GetCurrPos(start1, curr->num));
             slp1->SetInt().SetTo(MIN(start1,original_length1) - 1);
             tmp.Reset(new CSeq_id(id1->AsFastaString()));
             slp1->SetInt().SetId(*tmp);
@@ -570,7 +617,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
             
             if(first_shift) { /* Second frameshift in a row */
                 /* Protein coordinates */
-                slp1->SetInt().SetFrom(get_current_pos(&start1, 1));
+                slp1->SetInt().SetFrom(x_GetCurrPos(start1, 1));
                 to1 = MIN(start1,original_length1) - 1;
                 slp1->SetInt().SetTo(to1);
                 tmp.Reset(new CSeq_id(id1->AsFastaString()));
@@ -578,7 +625,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
                 slp1->SetInt().SetStrand(strand1);
                 
                 /* Nucleotide scale shifted by op_type */
-                from2 = get_current_pos(&start2, 3);
+                from2 = x_GetCurrPos(start2, 3);
                 to2 = MIN(start2,original_length2) - 1;
                 slp2->SetInt().SetFrom(from2);
                 slp2->SetInt().SetTo(to2);
@@ -627,7 +674,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
             slp1->SetEmpty(*tmp);
             
             /* Nucleotide scale shifted by 3, protein gapped */
-            from2 = get_current_pos(&start2, curr->num*3);
+            from2 = x_GetCurrPos(start2, curr->num*3);
             to2 = MIN(start2,original_length2) - 1;
             slp2->SetInt().SetFrom(from2);
             slp2->SetInt().SetTo(to2);
@@ -651,11 +698,11 @@ x_OOFEditBlock2SeqAlign(EProgram program,
             first_shift = false;
 
             /* Protein coordinates */
-            from1 = get_current_pos(&start1, curr->num);
+            from1 = x_GetCurrPos(start1, curr->num);
             to1 = MIN(start1, original_length1) - 1;
             /* Adjusting last segment and new start point in
                nucleotide coordinates */
-            from2 = get_current_pos(&start2, curr->num*((Uint1)curr->op_type));
+            from2 = x_GetCurrPos(start2, curr->num*((Uint1)curr->op_type));
             to2 = start2 - 1;
             /* Chop off three bases and one residue at a time.
                Why does this happen, seems like a bug?
@@ -695,11 +742,11 @@ x_OOFEditBlock2SeqAlign(EProgram program,
 
             if(first_shift) { /* Second frameshift in a row */
                 /* Protein coordinates */
-                from1 = get_current_pos(&start1, 1);
+                from1 = x_GetCurrPos(start1, 1);
                 to1 = MIN(start1,original_length1) - 1;
 
                 /* Nucleotide scale shifted by op_type */
-                from2 = get_current_pos(&start2, (Uint1)curr->op_type);
+                from2 = x_GetCurrPos(start2, (Uint1)curr->op_type);
                 to2 = start2 - 1;
                 if (to2 >= original_length2) {
                     to2 = original_length2 -1;
@@ -737,7 +784,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
                old one */
 
             if(seq_int2_last) {
-                get_current_pos(&start2, curr->num*((Uint1)curr->op_type-3));
+                x_GetCurrPos(start2, curr->num*((Uint1)curr->op_type-3));
                 if(strand2 != eNa_strand_minus) {
                     seq_int2_last->SetTo(start2 - 1);
                 } else {
@@ -765,8 +812,8 @@ x_OOFEditBlock2SeqAlign(EProgram program,
                 tmp.Reset(new CSeq_id(id1->AsFastaString()));
                 slp1->SetEmpty(*tmp);
                 /* Simulating insertion of nucleotides */
-                from2 = get_current_pos(&start2, 
-                                        curr->num*((Uint1)curr->op_type-3));
+                from2 = x_GetCurrPos(start2, 
+                                     curr->num*((Uint1)curr->op_type-3));
                 to2 = MIN(start2,original_length2) - 1;
 
                 /* Transfer to DNA minus strand coordinates */
@@ -823,7 +870,13 @@ x_OOFEditBlock2SeqAlign(EProgram program,
     return seqalign;
 }
 
-/// Creates and initializes CScore with i (if it's non-zero) or d
+/// Creates and initializes CScore with a given name, and with integer or 
+/// double value. Integer value is used if it is not zero, otherwise 
+/// double value is assigned.
+/// @param ident_string Score type name [in]
+/// @param d Real value of the score [in]
+/// @param i Integer value of the score. [in]
+/// @return Resulting CScore object.
 static CRef<CScore> 
 x_MakeScore(const string& ident_string, double d = 0.0, int i = 0)
 {
@@ -843,7 +896,9 @@ x_MakeScore(const string& ident_string, double d = 0.0, int i = 0)
     return retval;
 }
 
-/// C++ version of GetScoreSetFromBlastHsp (tools/blastutl.c)
+/// Creates a list of score objects for a Seq-align, given an HSP structure.
+/// @param hsp Structure containing HSP information [in]
+/// @param scores Linked list of score objects to put into a Seq-align [out]
 static void
 x_BuildScoreList(const BlastHSP* hsp, CSeq_align::TScore& scores)
 {
@@ -881,6 +936,10 @@ x_BuildScoreList(const BlastHSP* hsp, CSeq_align::TScore& scores)
 }
 
 
+/// Given an HSP structure, creates a list of scores and inserts them into 
+/// a Seq-align.
+/// @param seqalign Seq-align object to fill [in] [out]
+/// @param hsp An HSP structure [in]
 static void
 x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp)
 {
@@ -890,6 +949,14 @@ x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp)
 }
 
 
+/// Creates a Dense-diag object from HSP information and sequence identifiers
+/// for a non-translated ungapped search.
+/// @param An HSP structure [in]
+/// @param query_id Query sequence identifier [in]
+/// @param subject_id Subject sequence identifier [in]
+/// @param query_length Length of the query [in]
+/// @param subject_length Length of the subject [in]
+/// @return Resulting Dense-diag object.
 CRef<CDense_diag>
 x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id, 
     const CSeq_id *subject_id,
@@ -932,6 +999,14 @@ x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id,
     return retval;
 }
 
+/// Creates a Std-seg object from HSP information and sequence identifiers
+/// for a translated ungapped search.
+/// @param An HSP structure [in]
+/// @param query_id Query sequence identifier [in]
+/// @param subject_id Subject sequence identifier [in]
+/// @param query_length Length of the query [in]
+/// @param subject_length Length of the subject [in]
+/// @return Resulting Std-seg object.
 CRef<CStd_seg>
 x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id, 
     const CSeq_id *subject_id,
@@ -1003,6 +1078,13 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id,
     return retval;
 }
 
+/// Creates a Seq-align from an HSP list for an ungapped search.
+/// @param program BLAST program [in]
+/// @param hsp_list HSP list structure [in]
+/// @param query_id Query sequence identifier [in]
+/// @param subject_id Subject sequence identifier [in]
+/// @param query_length Length of the query [in]
+/// @param subject_length Length of the subject [in]
 CRef<CSeq_align>
 BLASTUngappedHspListToSeqAlign(EProgram program, 
     BlastHSPList* hsp_list, const CSeq_id *query_id, 
@@ -1040,9 +1122,15 @@ BLASTUngappedHspListToSeqAlign(EProgram program,
     return retval;
 }
 
-// This is called for each query and each subject in the BLAST search
-// We always return CSeq_aligns of type disc to allow multiple HSPs
-// corresponding to the same query-subject pair to be grouped in one CSeq_align
+/// This is called for each query and each subject in a BLAST search.
+/// We always return CSeq_aligns of type disc to allow multiple HSPs
+/// corresponding to the same query-subject pair to be grouped in one CSeq_align.
+/// @param program BLAST program [in]
+/// @param hsp_list HSP list structure [in]
+/// @param query_id Query sequence identifier [in]
+/// @param subject_id Subject sequence identifier [in]
+/// @param is_ooframe Was this a search with out-of-frame gapping? [in]
+/// @return Resulting Seq-align object. 
 CRef<CSeq_align>
 BLASTHspListToSeqAlign(EProgram program, 
     BlastHSPList* hsp_list, const CSeq_id *query_id, 
@@ -1079,8 +1167,11 @@ BLASTHspListToSeqAlign(EProgram program,
 }
 
 
-/// Constructs an empty seq-align-set containing an empty discontinuous
-/// seq-align.
+/// Constructs an empty Seq-align-set containing an empty discontinuous
+/// seq-align, and appends it to a previously constructed Seq-align-set.
+/// @param sas Pointer to a Seq-align-set, to which new object should be 
+///            appended (if not NULL).
+/// @return Resulting Seq-align-set. 
 CSeq_align_set*
 x_CreateEmptySeq_align_set(CSeq_align_set* sas)
 {
@@ -1109,6 +1200,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2004/11/01 18:05:17  dondosha
+* Added doxygen comments
+*
 * Revision 1.48  2004/08/16 19:47:35  dondosha
 * Removed setting of splice_junction score type
 *
