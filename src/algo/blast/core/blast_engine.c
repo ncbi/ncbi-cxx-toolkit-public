@@ -40,6 +40,8 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_traceback.h>
+#include <algo/blast/core/phi_lookup.h>
+#include <algo/blast/core/phi_extend.h>
 
 #if 0
 extern OIDListPtr LIBCALL 
@@ -438,6 +440,9 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    Int2 status = 0;
    Boolean blastp = (lookup_wrap->lut_type == AA_LOOKUP_TABLE);
    Boolean mb_lookup = (lookup_wrap->lut_type == MB_LOOKUP_TABLE);
+   Boolean phi_lookup = (lookup_wrap->lut_type == PHI_AA_LOOKUP ||
+                         lookup_wrap->lut_type == PHI_NA_LOOKUP);
+   
    Boolean ag_blast = (Boolean)
       (word_options->extend_word_method & EXTEND_WORD_AG);
    Int4 offset_array_size = 0;
@@ -493,6 +498,8 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    } else {
       if (blastp) {
          aux_struct->WordFinder = BlastAaWordFinder;
+      } else if (phi_lookup) {
+         aux_struct->WordFinder = PHIBlastWordFinder;
       } else if (ag_blast) {
          aux_struct->WordFinder = BlastNaWordFinder_AG;
       } else {
@@ -832,6 +839,7 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
         LookupTableWrap** lookup_wrap_ptr)
 {
    LookupTableWrap* lookup_wrap;
+   Boolean is_na;
 
    /* Construct the lookup table. */
    *lookup_wrap_ptr = lookup_wrap = 
@@ -859,6 +867,13 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
                               lookup_segments);
       _BlastAaLookupFinalize((LookupTable*) lookup_wrap->lut);
       break;
+   case PHI_AA_LOOKUP: case PHI_NA_LOOKUP:
+      is_na = (lookup_options->lut_type == PHI_NA_LOOKUP);
+      PHILookupTableNew(lookup_options, 
+                        (PHILookupTable* *) &(lookup_wrap->lut), is_na, sbp);
+      
+      PHIBlastIndexQuery((PHILookupTable*) lookup_wrap->lut, query,
+                         lookup_segments, is_na);
    default:
       {
          /* FIXME - emit error condition here */
