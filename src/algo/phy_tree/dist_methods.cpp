@@ -168,7 +168,7 @@ CDistMethods::TTree *CDistMethods::NjTree(const TMatrix& dist_mat,
     TTree::TNodeList_I it2 = it1;
     ++it2;
     if ((*it1)->IsLeaf()) {
-        iter_swap(it1, it2);
+        swap(*it1, *it2);
     }
     double d = dmat((*it1)->GetValue().GetId(), (*it2)->GetValue().GetId());
     (*it2)->GetValue().SetDist(d);
@@ -339,6 +339,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/10 17:01:19  dicuccio
+ * Use swap() instead of iter_swap(), as the latter isn't found on MSVC
+ *
  * Revision 1.1  2004/02/10 15:15:58  jcherry
  * Initial version
  *
