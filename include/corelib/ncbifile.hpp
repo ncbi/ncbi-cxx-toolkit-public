@@ -42,6 +42,12 @@ struct FSSpec;
 #endif
 
 
+/** @addtogroup Files
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -471,6 +477,8 @@ private:
 };
 
 
+/* @} */
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -584,6 +592,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/03/31 16:54:25  siyan
+ * Added doxygen support
+ *
  * Revision 1.19  2003/02/05 22:07:32  ivanov
  * Added protect and sharing parameters to the CMemoryFile constructor.
  * Added CMemoryFile::Flush() method.
