@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/12/01 19:35:56  thiessen
+* better domain assignment; basic show/hide mechanism
+*
 * Revision 1.13  2000/08/25 14:22:00  thiessen
 * minor tweaks
 *
@@ -83,23 +86,23 @@
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/periodic_table.hpp"
-#include "cn3d/show_hide_manager.hpp"
 #include "cn3d/style_manager.hpp"
 #include "cn3d/molecule.hpp"
+#include "cn3d/show_hide_manager.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-Bond::Bond(StructureBase *parent) : StructureBase(parent), order(eUnknown), 
+Bond::Bond(StructureBase *parent) : StructureBase(parent), order(eUnknown),
     previousVirtual(NULL), nextVirtual(NULL)
 {
 }
-        
+
 const Bond* MakeBond(StructureBase *parent,
-    int mID1, int rID1, int aID1, 
-    int mID2, int rID2, int aID2, 
+    int mID1, int rID1, int aID1,
+    int mID2, int rID2, int aID2,
     int bondOrder)
 {
     // get StructureObject* parent
@@ -115,7 +118,7 @@ const Bond* MakeBond(StructureBase *parent,
     StructureObject::CoordSetList::const_iterator c, ce=object->coordSets.end();
     for (c=object->coordSets.begin(); c!=ce; c++) {
         if (!((*c)->atomSet->GetAtom(ap1, true, true)) ||
-            !((*c)->atomSet->GetAtom(ap2, true, true))) 
+            !((*c)->atomSet->GetAtom(ap2, true, true)))
             break;
     }
     if (c != ce) return NULL;

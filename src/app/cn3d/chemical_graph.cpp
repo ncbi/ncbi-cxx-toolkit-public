@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/12/01 19:35:56  thiessen
+* better domain assignment; basic show/hide mechanism
+*
 * Revision 1.16  2000/11/30 15:49:36  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -201,10 +204,10 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
             ERR_POST(Error << "confused by repeated Molecule-graph ID's");
         molecules[molecule->id] = molecule;
 
-        // set molecules' display list(s); each protein or nucleotide molecule
-        // gets its own display list(s) (one display list for each molecule for
+        // set molecules' display list; each protein or nucleotide molecule
+        // gets its own display list (one display list for each molecule for
         // each set of coordinates), while everything else - hets, solvents,
-        // inter-molecule bonds - goes in a single list(s).
+        // inter-molecule bonds - goes in a single list.
         for (unsigned int n=0; n<nAlts; n++) {
 
             if (molecule->IsProtein() || molecule->IsNucleotide()) {
@@ -235,7 +238,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
                 j->GetObject().GetAtom_id_2(),
                 order);
 
-            if (!bond) continue; // can happen bond if bond is to atom not present
+            if (!bond) continue; // can happen bond if bond is to atom not present in coordinates
 
             interMoleculeBonds.push_back(bond);
 
@@ -253,7 +256,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
             parentSet->frameMap[firstNewFrame + n].push_back(displayListOtherStart + n);
     }
 
-    // fill out secondary structure maps from NCBI ss assigments (in feature block)
+    // fill out secondary structure and domain maps from NCBI assigments (in feature block)
     FeatureList::const_iterator l, le = features.end();
     for (l=features.begin(); l!=le; l++) {
         if (l->GetObject().IsSetDescr()) {
@@ -271,6 +274,19 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
             }
         }
     }
+
+    // assign a domain ID to single-domain protein or NA molecules, i.e. when that molecule is not
+    // present in the domain feature list
+    MoleculeMap::iterator m, me = molecules.end();
+    for (m=molecules.begin(); m!=me; m++) {
+        if ((m->second->IsProtein() || m->second->IsNucleotide()) && m->second->nDomains == 0) {
+            int domainID = ++((const_cast<StructureSet*>(parentSet))->nDomains);
+            for (int r=0; r<m->second->residues.size(); r++)
+                (const_cast<Molecule*>(m->second))->residueDomains[r] = domainID;
+            (const_cast<StructureObject*>(object))->domainMap[domainID] = m->second;
+            (const_cast<Molecule*>(m->second))->nDomains = 1;
+        }
+    }
 }
 
 void ChemicalGraph::UnpackDomainFeatures(const CBiostruc_feature_set& featureSet)
@@ -284,7 +300,8 @@ void ChemicalGraph::UnpackDomainFeatures(const CBiostruc_feature_set& featureSet
             f->GetObject().GetLocation().GetSubgraph().IsResidues() &&
             f->GetObject().GetLocation().GetSubgraph().GetResidues().IsInterval()) {
 
-            int domainID = f->GetObject().GetId().Get();
+            // assign a "domain ID" successively (from 1) over the whole StructureSet
+            int domainID = ++((const_cast<StructureSet*>(parentSet))->nDomains);
 
             // find molecule and set regions, warning about overlaps
             Molecule *molecule = NULL;
@@ -301,9 +318,14 @@ void ChemicalGraph::UnpackDomainFeatures(const CBiostruc_feature_set& featureSet
                 }
                 molecule = const_cast<Molecule*>(m->second);
                 for (int r=i->GetObject().GetFrom().Get()-1; r<=i->GetObject().GetTo().Get()-1; r++) {
-                    if (molecule->residueDomains[r] != Molecule::NOT_SET) {
-                        ERR_POST(Warning << "Overlapping domain feature at moleculeID "
+                    if (r < 0 || r >= molecule->residues.size()) {
+                        ERR_POST(Error << "Bad residue range in domain feature for moleculeID "
                             << molecule->id << " residueID " << r+1);
+                        break;
+                    } else if (molecule->residueDomains[r] != Molecule::NOT_SET) {
+                        ERR_POST(Warning << "Overlapping domain feature for moleculeID "
+                            << molecule->id << " residueID " << r+1);
+                        break;
                     } else {
                         molecule->residueDomains[r] = domainID;
                     }
@@ -314,6 +336,7 @@ void ChemicalGraph::UnpackDomainFeatures(const CBiostruc_feature_set& featureSet
                 const StructureObject *object;
                 if (!GetParentOfType(&object)) return;
                 (const_cast<StructureObject*>(object))->domainMap[domainID] = molecule;
+                molecule->nDomains++;
             }
         }
     }
@@ -344,13 +367,17 @@ void ChemicalGraph::UnpackSecondaryStructureFeatures(const CBiostruc_feature_set
             }
             Molecule *molecule = const_cast<Molecule*>(m->second);
             for (int r=interval.GetFrom().Get()-1; r<=interval.GetTo().Get()-1; r++) {
-                if (molecule->residueSecondaryStructures[r] != Molecule::eCoil) {
+                if (r < 0 || r >= molecule->residues.size()) {
+                    ERR_POST(Error << "Bad residue range in sec. struc. feature for moleculeID "
+                        << molecule->id << " residueID " << r+1);
+                    break;
+                } if (molecule->residueSecondaryStructures[r] != Molecule::eCoil) {
                     ERR_POST(Warning << "Overlapping sec. struc. feature at moleculeID "
                         << molecule->id << " residueID " << r+1);
                 } else {
                     molecule->residueSecondaryStructures[r] =
                         (f->GetObject().GetType() == CBiostruc_feature::eType_helix) ?
-                            Molecule::eHelix : Molecule::eCoil;
+                            Molecule::eHelix : Molecule::eStrand;
                 }
             }
         }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/12/01 19:35:57  thiessen
+* better domain assignment; basic show/hide mechanism
+*
 * Revision 1.2  2000/08/17 18:33:12  thiessen
 * minor fixes to StyleManager
 *
@@ -40,6 +43,8 @@
 */
 
 #include "cn3d/show_hide_manager.hpp"
+#include "cn3d/structure_set.hpp"
+#include "cn3d/molecule.hpp"
 #include "cn3d/residue.hpp"
 
 USING_NCBI_SCOPE;
@@ -47,10 +52,60 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
-bool ShowHideManager::IsResidueHidden(const Residue *residue) const
+void ShowHideManager::Show(const StructureBase *entity, bool isShown)
 {
+    // make sure this is a valid entity
+    if (!entity || !(
+            dynamic_cast<const StructureObject *>(entity) ||
+            dynamic_cast<const Molecule *>(entity) ||
+            dynamic_cast<const Residue *>(entity))) {
+        ERR_POST(Error << "ShowHideManager::Show() - must be a StructureObject, Molecule, or Residue");
+        return;
+    }
+
+    EntitiesHidden::iterator e = entitiesHidden.find(entity);
+
+    // hide an entity
+    if (!isShown) {
+        entitiesHidden[entity] = true;
+    }
+
+    // show an entity
+    else {
+        if (e != entitiesHidden.end()) entitiesHidden.erase(e);
+    }
+}
+
+bool ShowHideManager::IsHidden(const StructureBase *entity) const
+{
+    if (entitiesHidden.size() == 0) return false;
+
+    const StructureObject *object;
+    const Molecule *molecule;
+    const Residue *residue;
+
+    EntitiesHidden::const_iterator e = entitiesHidden.find(entity);
+
+    if ((object = dynamic_cast<const StructureObject *>(entity)) != NULL) {
+        return (e != entitiesHidden.end());
+    }
+
+    else if ((molecule = dynamic_cast<const Molecule *>(entity)) != NULL) {
+        if (!molecule->GetParentOfType(&object)) return false;
+        return (entitiesHidden.find(object) != entitiesHidden.end() ||
+                e != entitiesHidden.end());
+    }
+
+    else if ((residue = dynamic_cast<const Residue *>(entity)) != NULL) {
+        if (!residue->GetParentOfType(&molecule) ||
+            !molecule->GetParentOfType(&object)) return false;
+        return (entitiesHidden.find(object) != entitiesHidden.end() ||
+                entitiesHidden.find(molecule) != entitiesHidden.end() ||
+                e != entitiesHidden.end());
+    }
+
+    ERR_POST(Error << "ShowHideManager::IsHidden() - must be a StructureObject, Molecule, or Residue");
     return false;
 }
 
 END_SCOPE(Cn3D)
-

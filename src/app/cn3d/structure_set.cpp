@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2000/12/01 19:35:57  thiessen
+* better domain assignment; basic show/hide mechanism
+*
 * Revision 1.36  2000/11/30 15:49:40  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -273,7 +276,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     lastDisplayList(OpenGLRenderer::NO_LIST),
     isMultipleStructure(mime.IsAlignstruc()),
     sequenceSet(NULL), alignmentSet(NULL), alignmentManager(NULL),
-    newAlignments(false), colors(new Colors())
+    newAlignments(false), colors(new Colors()), nDomains(0)
 {
     StructureObject *object;
     parentSet = this;
@@ -505,6 +508,9 @@ const int StructureObject::NO_MMDB_ID = -1;
 StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostruc, bool master) :
     StructureBase(parent), isMaster(master), mmdbID(NO_MMDB_ID), transformToMaster(NULL)
 {
+    // set numerical id simply based on # objects in parentSet
+    id = parentSet->objects.size() + 1;
+
     // get MMDB id
     CBiostruc::TId::const_iterator j, je=biostruc.GetId().end();
     for (j=biostruc.GetId().begin(); j!=je; j++) {

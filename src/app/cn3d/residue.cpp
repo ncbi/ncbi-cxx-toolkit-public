@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/12/01 19:35:57  thiessen
+* better domain assignment; basic show/hide mechanism
+*
 * Revision 1.17  2000/11/30 15:49:39  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -99,9 +102,9 @@
 #include "cn3d/molecule.hpp"
 #include "cn3d/periodic_table.hpp"
 #include "cn3d/opengl_renderer.hpp"
-#include "cn3d/show_hide_manager.hpp"
 #include "cn3d/style_manager.hpp"
 #include "cn3d/cn3d_colors.hpp"
+#include "cn3d/show_hide_manager.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

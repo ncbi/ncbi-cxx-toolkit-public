@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/12/01 19:35:57  thiessen
+* better domain assignment; basic show/hide mechanism
+*
 * Revision 1.1  2000/11/30 15:49:37  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -38,16 +41,45 @@
 
 #include "cn3d/cn3d_colors.hpp"
 
+USING_NCBI_SCOPE;
+
 
 BEGIN_SCOPE(Cn3D)
 
 Colors::Colors(void)
 {
-// default colors
+    // default colors
     colors[eHighlight].Set(1, 1, 0);
     colors[eHelix].Set(.1, .9, .1);
     colors[eStrand].Set(.9, .7, .2);
     colors[eCoil].Set(.3, .9, .9);
+
+    // colors for cycle1 (basically copied from Cn3D 3.0)
+    cycle1[0].Set(1, 0, 1);
+    cycle1[1].Set(0, 0, 1);
+    cycle1[2].Set(139.0/255, 87.0/255, 66.0/255);
+    cycle1[3].Set(0, 1, .5);
+    cycle1[4].Set(.5, .5, .5);
+    cycle1[5].Set(1, 165.0/255, 0);
+    cycle1[6].Set(1, 114.0/255, 86.0/255);
+    cycle1[7].Set(0, 1, 0);
+    cycle1[8].Set(0, 1, 1);
+    cycle1[9].Set(1, 236.0/255, 139.0/255);
+}
+
+const Vector& Colors::Get(eColor which, int n) const
+{
+    if (which >= 0 && n >= 0) {
+
+        if (which < eNumColors)
+            return colors[which];
+
+        else if (which == eCycle1)
+            return cycle1[n % nCycle1];
+    }
+
+    ERR_POST(Warning << "Colors::Get() - bad color #");
+    return colors[0];
 }
 
 END_SCOPE(Cn3D)

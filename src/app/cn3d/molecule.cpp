@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/12/01 19:35:57  thiessen
+* better domain assignment; basic show/hide mechanism
+*
 * Revision 1.19  2000/11/30 15:49:39  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -116,7 +119,7 @@ Molecule::Molecule(StructureBase *parent,
     const ResidueGraphList& standardDictionary,
     const ResidueGraphList& localDictionary) :
     StructureBase(parent), type(eOther), sequence(NULL),
-    gi(NOT_SET), pdbChain(' ')
+    gi(NOT_SET), pdbChain(' '), nDomains(0)
 {
     // get ID, name, and type
     id = graph.GetId().Get();

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/12/01 19:35:57  thiessen
+* better domain assignment; basic show/hide mechanism
+*
 * Revision 1.19  2000/11/30 15:49:40  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -118,9 +121,9 @@ void StyleSettings::SetToSecondaryStructure(void)
     proteinBackbone.colorScheme = eSecondaryStructure;
     nucleotideBackbone.colorScheme = eObject;
 
-    proteinSidechains.isOn = nucleotideSidechains.isOn = true;
+    proteinSidechains.isOn = nucleotideSidechains.isOn = false;
     proteinSidechains.style = nucleotideSidechains.style = eWire;
-    proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
+    proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eDomain;
 
     heterogens.isOn = true;
     heterogens.style = eBallAndStick;
@@ -161,7 +164,7 @@ void StyleSettings::SetToWireframe(void)
 {
     proteinBackbone.type = nucleotideBackbone.type = eComplete;
     proteinBackbone.style = nucleotideBackbone.style = eWire;
-    proteinBackbone.colorScheme = nucleotideBackbone.colorScheme = eObject;
+    proteinBackbone.colorScheme = nucleotideBackbone.colorScheme = eDomain;
 
     proteinSidechains.isOn = nucleotideSidechains.isOn = true;
     proteinSidechains.style = nucleotideSidechains.style = eWire;
@@ -309,7 +312,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
     const StructureObject *object;
     if (!molecule->GetParentOfType(&object)) return false;
 
-    if (object->parentSet->showHideManager->IsResidueHidden(residue))
+    if (object->parentSet->showHideManager->IsHidden(residue))
         ATOM_NOT_DISPLAYED;
 
     const StyleSettings& settings = GetStyleForResidue(object, atom.mID, atom.rID);
@@ -444,15 +447,18 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             }
             // if eAligned and not aligned, then use eObject coloring
 
-        case StyleSettings::eMolecule:
-            // should actually be a color cycle...
-
         case StyleSettings::eObject:
-            // should actually be a color cycle...
-            if (object->IsMaster())
-                atomStyle->color.Set(1,0,1);
-            else
-                atomStyle->color.Set(0,0,1);
+            atomStyle->color = object->parentSet->colors->Get(Colors::eCycle1, object->id - 1);
+            break;
+
+        case StyleSettings::eDomain:
+            atomStyle->color = (molecule->residueDomains[residue->id - 1] == Molecule::NOT_SET) ?
+                object->parentSet->colors->Get(Colors::eCycle1, 0) :
+                object->parentSet->colors->Get(Colors::eCycle1, molecule->residueDomains[residue->id - 1]);
+            break;
+
+        case StyleSettings::eMolecule:
+            atomStyle->color = object->parentSet->colors->Get(Colors::eCycle1, molecule->id - 1);
             break;
 
         case StyleSettings::eSecondaryStructure:
@@ -712,13 +718,19 @@ bool StyleManager::GetObjectStyle(const StructureObject *object, const Object3D&
     // set color
     switch (generalStyle.colorScheme) {
         case StyleSettings::eMolecule:
-            // should actually be a color cycle...
+            objectStyle->color = object->parentSet->colors->Get(Colors::eCycle1, object3D.moleculeID - 1);
+            break;
         case StyleSettings::eObject:
-            // should actually be a color cycle...
-            if (object->IsMaster())
-                objectStyle->color.Set(1,0,1);
-            else
-                objectStyle->color.Set(0,0,1);
+            objectStyle->color = object->parentSet->colors->Get(Colors::eCycle1, object->id - 1);
+            break;
+        case StyleSettings::eDomain:
+            {
+                int domainID = object->graph->molecules.find(object3D.moleculeID)->second->
+                    residueDomains[object3D.fromResidueID - 1];
+                objectStyle->color =
+                    object->parentSet->colors->
+                        Get(Colors::eCycle1, (domainID == Molecule::NOT_SET) ? 0 : domainID);
+            }
             break;
         case StyleSettings::eSecondaryStructure:
             // set by caller
