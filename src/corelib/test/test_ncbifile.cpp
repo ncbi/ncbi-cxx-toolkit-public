@@ -32,6 +32,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbitime.hpp>
 #include <stdio.h>
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -288,6 +289,10 @@ static void s_TEST_File(void)
          << ((other & CDirEntry::fWrite)   ? "w" : "-")
          << ((other & CDirEntry::fExecute) ? "x" : "-")
          << endl;
+    time_t ftime;
+    assert( f.GetTime(&ftime) );
+    CTime ft(ftime);
+    cout << "File creation time : " << ft.AsString("M/D/Y h:m:s Z") << endl;
     
     // Remove the file
     assert( f.Remove() );
@@ -513,6 +518,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2002/06/07 15:21:33  ivanov
+ * Added CDirEntry::GetTime() test example
+ *
  * Revision 1.14  2002/04/16 18:49:08  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.
