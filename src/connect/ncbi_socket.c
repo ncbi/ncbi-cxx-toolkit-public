@@ -33,6 +33,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2001/05/31 15:42:10  lavr
+ * INADDR_* constants are all and always in host byte order -
+ * this was mistakenly forgotten, and now fixed by use of htonl().
+ *
  * Revision 6.29  2001/05/23 21:03:35  vakatov
  * s_SelectStallsafe() -- fix for the interpretation of "default" R-on-W mode
  * (by A.Lavrentiev)
@@ -1601,7 +1605,7 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
     }
 
     host = inet_addr(hostname);
-    if (host == INADDR_NONE) {
+    if (host == htonl(INADDR_NONE)) {
         struct hostent* hp;
 #if defined(HAVE_GETHOSTBYNAME_R)
         struct hostent x_hp;
