@@ -811,7 +811,7 @@ void CId1ReaderBase::GetSNPBlob(CTSE_Info& tse_info,
 
     CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kSNP_ChunkId));
 
-    chunk->x_AddAnnotPlace(CTSE_Chunk_Info::eBioseq_set, kSNP_EntryId);
+    chunk->x_AddAnnotPlace(kSNP_EntryId);
 
     chunk->x_AddAnnotType("SNP", CSeqFeatData::eSubtype_variation,
                           CSeq_id_Handle::GetGiHandle(blob_id.GetSatKey()));
@@ -838,7 +838,7 @@ void CId1ReaderBase::GetSNPChunk(CTSE_Chunk_Info& chunk,
     CRef<CSeq_annot_SNP_Info> snp_annot = GetSNPAnnot(blob_id, conn);
     if ( snp_annot ) {
         CRef<CSeq_annot_Info> annot_info(new CSeq_annot_Info(*snp_annot));
-        CTSE_Chunk_Info::TPlace place(chunk.eBioseq_set, kSNP_EntryId);
+        CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kSNP_EntryId);
         chunk.x_LoadAnnot(place, annot_info);
     }
 }
