@@ -753,8 +753,7 @@ CBioseq_EditHandle CScope_Impl::GetEditHandle(const CBioseq_Handle& h)
                    "CScope::GetEditHandle: detach is not implemented");
     }
     
-    return CBioseq_EditHandle(h.GetSeq_id_Handle(),
-                              &const_cast<CBioseq_ScopeInfo&>(h.x_GetScopeInfo()));
+    return CBioseq_EditHandle(h);
 }
 
 
@@ -1312,6 +1311,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/03/31 19:23:13  vasilche
+* Fixed scope in CBioseq_Handle::GetEditHandle().
+*
 * Revision 1.7  2004/03/31 17:08:07  vasilche
 * Implemented ConvertSeqToSet and ConvertSetToSeq.
 *

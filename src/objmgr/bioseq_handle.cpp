@@ -610,9 +610,8 @@ CBioseq_Handle::CopyToSeq(const CSeq_entry_EditHandle& entry) const
 // CBioseq_EditHandle
 /////////////////////////////////////////////////////////////////////////////
 
-CBioseq_EditHandle::CBioseq_EditHandle(const CSeq_id_Handle& id,
-                                       CBioseq_ScopeInfo* bioseq_info)
-    : CBioseq_Handle(id, bioseq_info)
+CBioseq_EditHandle::CBioseq_EditHandle(const CBioseq_Handle& h)
+    : CBioseq_Handle(h)
 {
 }
 
@@ -754,6 +753,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2004/03/31 19:23:13  vasilche
+* Fixed scope in CBioseq_Handle::GetEditHandle().
+*
 * Revision 1.58  2004/03/29 20:13:06  vasilche
 * Implemented whole set of methods to modify Seq-entry object tree.
 * Added CBioseq_Handle::GetExactComplexityLevel().

@@ -331,8 +331,7 @@ public:
 protected:
     friend class CScope_Impl;
 
-    CBioseq_EditHandle(const CSeq_id_Handle& id,
-                       CBioseq_ScopeInfo* bioseq_info);
+    CBioseq_EditHandle(const CBioseq_Handle& h);
 
 public: // non-public section
     CBioseq_Info& x_GetInfo(void) const;
@@ -405,6 +404,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2004/03/31 19:23:13  vasilche
+* Fixed scope in CBioseq_Handle::GetEditHandle().
+*
 * Revision 1.54  2004/03/31 17:08:06  vasilche
 * Implemented ConvertSeqToSet and ConvertSetToSeq.
 *
