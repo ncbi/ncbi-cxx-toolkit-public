@@ -8,6 +8,6 @@ SRC = netcached
 REQUIRES = MT bdb
 
 
-LIB = ncbi_xcache_bdb$(STATIC) $(BDB_LIB) xthrserv xconnserv xconnect \
+LIB = ncbi_xcache_bdb$(STATIC) $(BDB_LIB) xthrserv xconnserv-static xconnect \
       xutil xncbi
 LIBS = $(BERKELEYDB_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)

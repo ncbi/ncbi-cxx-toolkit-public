@@ -2,7 +2,7 @@
 
 APP = test_netschedule_stress
 SRC = test_netschedule_stress
-LIB = xconnserv xconnect xutil xncbi
+LIB = xconnserv-static xconnect xutil xncbi
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
