@@ -594,7 +594,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             // generate getter
             inl = true;//!i->ref;
             if (!isNull) {
-                if (i->dataType && i->dataType->IsPrimitive()) {
+                if (kind == eKindEnum || (i->dataType && i->dataType->IsPrimitive())) {
                     if (CClassCode::GetDoxygenComments()) {
                         code.ClassPublic() <<
                             "\n"
@@ -783,14 +783,23 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                                 "    /// Assign a value to "<<i->cName<<" data member.\n"
                                 "    ///\n"
                                 "    /// @param value\n"
-                                "    ///   Reference to value.\n";
+                                "    ///   Value to assign\n";
                         }
-                        setters <<
-                            "    void Set"<<i->cName<<"(const "<<i->tName<<"& value);\n";
-                        inlineMethods <<
-                            "inline\n"
-                            "void "<<methodPrefix<<"Set"<<i->cName<<"(const "<<rType<<"& value)\n"
-                            "{\n";
+                        if (kind == eKindEnum || (i->dataType && i->dataType->IsPrimitive())) {
+                            setters <<
+                                "    void Set"<<i->cName<<"("<<i->tName<<" value);\n";
+                            inlineMethods <<
+                                "inline\n"
+                                "void "<<methodPrefix<<"Set"<<i->cName<<"("<<rType<<" value)\n"
+                                "{\n";
+                        } else {
+                            setters <<
+                                "    void Set"<<i->cName<<"(const "<<i->tName<<"& value);\n";
+                            inlineMethods <<
+                                "inline\n"
+                                "void "<<methodPrefix<<"Set"<<i->cName<<"(const "<<rType<<"& value)\n"
+                                "{\n";
+                        }
                         if ( i->delayed ) {
                             inlineMethods <<
                                 "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
@@ -1442,6 +1451,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2004/07/21 13:29:59  gouriano
+* Set and return primitive type data by value
+*
 * Revision 1.63  2004/05/17 21:03:13  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *

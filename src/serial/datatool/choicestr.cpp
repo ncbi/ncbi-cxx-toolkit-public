@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2004/07/21 13:29:59  gouriano
+* Set and return primitive type data by value
+*
 * Revision 1.50  2004/05/17 21:03:13  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -917,6 +920,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             string cType = i->type->GetCType(code.GetNamespace());
             string tType = "T" + i->cName;
             string rType = i->type->GetPrefixedCType(code.GetNamespace(),methodPrefix);
+            CTypeStrings::EKind kind = i->type->GetKind();
             bool isNull = x_IsNullType(i);
             bool isNullWithAtt = x_IsNullWithAttlist(i);
 
@@ -953,7 +957,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 code.ClassPublic() <<
                     "    bool Is"<<i->cName<<"(void) const;\n";
             }
-            if (i->dataType && i->dataType->IsPrimitive()) {
+            if (kind == eKindEnum || (i->dataType && i->dataType->IsPrimitive())) {
                 if (CClassCode::GetDoxygenComments()) {
                     code.ClassPublic() <<
                         "\n"
@@ -963,8 +967,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                         "    ///   Copy of the variant data.\n";
                 }
                 code.ClassPublic() <<
-                    "    "<<tType<<" Get"<<i->cName<<"(void) const;\n"
-                    "\n";
+                    "    "<<tType<<" Get"<<i->cName<<"(void) const;\n";
             } else {
                 if (!isNull) {
                     if (CClassCode::GetDoxygenComments()) {
@@ -1035,10 +1038,15 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                                 "    /// Select the variant and set its data.\n"
                                 "    ///\n"
                                 "    /// @param value\n"
-                                "    ///   Reference to variant data.\n";
+                                "    ///   Variant data.\n";
                         }
-                        setters <<
-                            "    void Set"<<i->cName<<"(const "<<tType<<"& value);\n";
+                        if (kind == eKindEnum || (i->dataType && i->dataType->IsPrimitive())) {
+                            setters <<
+                                "    void Set"<<i->cName<<"("<<tType<<" value);\n";
+                        } else {
+                            setters <<
+                                "    void Set"<<i->cName<<"(const "<<tType<<"& value);\n";
+                        }
                     }
                 }
             }
@@ -1127,7 +1135,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     "    return "STATE_MEMBER" == "STATE_PREFIX<<i->cName<<";\n"
                     "}\n"
                     "\n";
-                if (i->dataType && i->dataType->IsPrimitive()) {
+                if (kind == eKindEnum || (i->dataType && i->dataType->IsPrimitive())) {
                     code.MethodStart(inl) << rType;
                 } else if (!isNull) {
                     code.MethodStart(inl) << "const "<<rType<<"&";
@@ -1175,11 +1183,16 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     "}\n"
                     "\n";
                 if ( i->type->CanBeCopied() ) {
-                    bool set_inl = i->dataType && i->dataType->IsPrimitive();
+                    bool set_inl = (kind == eKindEnum || (i->dataType && i->dataType->IsPrimitive()));
                     if (!isNull) {
                         code.MethodStart(set_inl) <<
-                            "void "<<methodPrefix<<"Set"<<i->cName<<"("
-                            "const " << rType << "&" << " value)\n"
+                            "void "<<methodPrefix<<"Set"<<i->cName<<"(";
+                        if (set_inl) {
+                            code.Methods(set_inl) << rType;
+                        } else {
+                            code.Methods(set_inl) << "const " << rType << "&";
+                        }
+                        code.Methods(set_inl) << " value)\n"
                             "{\n"
                             "    Select("STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
                         if ( i->delayed ) {
