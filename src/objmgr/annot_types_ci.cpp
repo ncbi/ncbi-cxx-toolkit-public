@@ -173,7 +173,6 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
     : SAnnotSelector(params),
       m_Scope(bioseq.m_Scope)
 {
-    SetLimitTSE(&bioseq.GetTopLevelSeqEntry());
     x_Initialize(bioseq, start, stop);
 }
 
@@ -205,8 +204,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
     : SAnnotSelector(selector
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve_method)
-                     .SetLimitSeqEntry(entry)
-                     .SetLimitTSE(&bioseq.GetTopLevelSeqEntry())),
+                     .SetLimitSeqEntry(entry)),
       m_Scope(bioseq.m_Scope)
 {
     x_Initialize(bioseq, start, stop);
@@ -302,7 +300,6 @@ private:
     bool           m_Partial;
     CScope*        m_Scope;
     // temporaries for conversion results
-    CRef<CSeq_loc>      dst_loc;
     CRef<CSeq_interval> dst_int;
     CRef<CSeq_point>    dst_pnt;
 };
@@ -529,6 +526,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
     {
         const CSeq_loc_mix::Tdata& src_mix = src.GetMix().Get();
         CSeq_loc_mix::Tdata* dst_mix = 0;
+        CRef<CSeq_loc> dst_loc;
         ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
             if ( Convert(**i, dst_loc) ) {
                 if ( !dst_mix ) {
@@ -544,6 +542,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
     {
         const CSeq_loc_equiv::Tdata& src_equiv = src.GetEquiv().Get();
         CSeq_loc_equiv::Tdata* dst_equiv = 0;
+        CRef<CSeq_loc> dst_loc;
         ITERATE ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
             if ( Convert(**i, dst_loc) ) {
                 if ( !dst_equiv ) {
@@ -828,6 +827,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2003/03/20 20:36:06  vasilche
+* Fixed mapping of mix Seq-loc.
+*
 * Revision 1.57  2003/03/18 14:52:59  grichenk
 * Removed obsolete methods, replaced seq-id with seq-id handle
 * where possible. Added argument to limit annotations update to
