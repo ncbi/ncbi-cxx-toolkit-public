@@ -1,4 +1,4 @@
-MODULES = omssa access biblio blast blastdb cdd cn3d docsum \
+MODULES = omssa access biblio blast blastdb cdd cn3d docsum biotree \
           entrez2 entrezgene featdef gbseq general id1 id2 insdseq \
           medlars medline mim mla mmdb1 mmdb2 mmdb3 ncbimime objprt \
           proj pub pubmed scoremat seq seqalign seqblock seqcode \
