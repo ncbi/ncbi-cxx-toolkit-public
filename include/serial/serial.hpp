@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/07/14 18:58:04  vasilche
+* Fixed ASN.1 types/field naming.
+*
 * Revision 1.18  1999/07/13 20:54:05  vasilche
 * Fixed minor bugs.
 *
@@ -438,14 +441,16 @@ const CTypeInfo* Method(void) \
 BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, ())
 #define END_CLASS_INFO END_TYPE_INFO
 
-#define BEGIN_STRUCT_INFO(Class) \
+#define BEGIN_STRUCT_INFO2(Name, Class) \
 BEGIN_TYPE_INFO(NAME2(struct_, Class), NAME2(GetTypeInfo_struct_, Class), \
-                CStructInfo<CClass>, (#Class))
+                CStructInfo<CClass>, (Name))
+#define BEGIN_STRUCT_INFO(Class) BEGIN_STRUCT_INFO2(#Class, Class)
 #define END_STRUCT_INFO END_TYPE_INFO
 
-#define BEGIN_CHOICE_INFO(Class) \
+#define BEGIN_CHOICE_INFO2(Name, Class) \
 BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
-                CChoiceValNodeInfo, ())
+                CChoiceValNodeInfo, (Name))
+#define BEGIN_CHOICE_INFO(Class) BEGIN_CHOICE_INFO2(#Class, Class)
 #define END_CHOICE_INFO END_TYPE_INFO
 
 // adding members
@@ -472,8 +477,10 @@ BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
 #define CHOICE_MEMBER(Member, Choices) \
     ChoiceMemberInfo(&static_cast<const CClass*>(0)->Member, \
                      NAME2(GetTypeInfo_struct_, Choices))
+#define ADD_CHOICE_MEMBER2(Name, Member, Choices) \
+    info->AddMember(Name, CHOICE_MEMBER(Member, Choices))
 #define ADD_CHOICE_MEMBER(Member, Choices) \
-    info->AddMember(#Member, CHOICE_MEMBER(Member, Choices))
+    ADD_CHOICE_MEMBER2(#Member, Member, Choices)
 #define ADD_CHOICE_STD_VARIANT(Name, Member) \
     info->AddVariant(#Name, GetTypeRef(&static_cast<const valnode*>(0)->data.NAME2(Member, value)))
 #define ADD_CHOICE_VARIANT(Name, Type, Struct) \

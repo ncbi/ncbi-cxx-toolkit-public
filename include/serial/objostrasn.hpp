@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/14 18:58:04  vasilche
+* Fixed ASN.1 types/field naming.
+*
 * Revision 1.9  1999/07/09 16:32:54  vasilche
 * Added OCTET STRING write/read.
 *
@@ -115,8 +118,10 @@ protected:
     virtual void VNext(const Block& block);
     virtual void VEnd(const Block& block);
     virtual void StartMember(Member& member, const CMemberId& id);
+    virtual void EndMember(const Member& member);
 	virtual void Begin(const ByteBlock& block);
-	virtual void WriteBytes(const ByteBlock& block, const char* bytes, size_t length);
+	virtual void WriteBytes(const ByteBlock& block,
+                            const char* bytes, size_t length);
 	virtual void End(const ByteBlock& block);
 
     void WriteNewLine(void);

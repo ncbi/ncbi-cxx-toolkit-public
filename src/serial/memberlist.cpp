@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/07/14 18:58:08  vasilche
+* Fixed ASN.1 types/field naming.
+*
 * Revision 1.3  1999/07/07 18:18:32  vasilche
 * Fixed some bugs found by MS VC++
 *
@@ -88,6 +91,8 @@ const CMembers::TMembersByName& CMembers::GetMembersByName(void) const
         m_MembersByName.reset(members = new TMembersByName);
         for ( TIndex i = 0, size = m_Members.size(); i < size; ++i ) {
             const string& name = m_Members[i].GetName();
+            if ( name.empty() )
+                continue;
             if ( !members->insert(TMembersByName::
                       value_type(name, i)).second ) {
                 THROW1_TRACE(runtime_error, "duplicated member name: " + name);
@@ -120,7 +125,7 @@ CMembers::TIndex CMembers::FindMember(const string& name) const
     const TMembersByName& members = GetMembersByName();
     TMembersByName::const_iterator i = members.find(name);
     if ( i == members.end() )
-        return 0;
+        return -1;
     return i->second;
 }
 
@@ -129,7 +134,7 @@ CMembers::TIndex CMembers::FindMember(TTag tag) const
     const TMembersByTag& members = GetMembersByTag();
     TMembersByTag::const_iterator i = members.find(tag);
     if ( i == members.end() )
-        return 0;
+        return -1;
     return i->second;
 }
 

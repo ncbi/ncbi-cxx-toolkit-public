@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/14 18:58:02  vasilche
+* Fixed ASN.1 types/field naming.
+*
 * Revision 1.6  1999/07/13 20:18:04  vasilche
 * Changed types naming.
 *
@@ -71,7 +74,7 @@ BEGIN_NCBI_SCOPE
 class CSequenceTypeInfo : public CTypeInfo {
 public:
     CSequenceTypeInfo(TTypeInfo dataType)
-        : m_DataType(dataType)
+        : CTypeInfo(dataType->GetName()), m_DataType(dataType)
         {
         }
 
@@ -183,6 +186,10 @@ private:
 
 class CChoiceTypeInfo : public CTypeInfo {
 public:
+    CChoiceTypeInfo(TTypeInfo choices)
+        : CTypeInfo(choices->GetName()), m_ChoiceTypeInfo(choices)
+        { }
+
     static TObjectPtr& Get(TObjectPtr object)
         {
             return *static_cast<TObjectPtr*>(object);
@@ -191,10 +198,6 @@ public:
         {
             return *static_cast<const TObjectPtr*>(object);
         }
-
-    CChoiceTypeInfo(TTypeInfo choices)
-        : m_ChoiceTypeInfo(choices)
-        { }
 
     static TTypeInfo GetTypeInfo(TTypeInfo base)
         {
@@ -230,6 +233,10 @@ private:
 
 class CChoiceValNodeInfo : public CTypeInfo {
 public:
+    CChoiceValNodeInfo(const string& name)
+        : CTypeInfo(name)
+        { }
+
     void AddVariant(const CMemberId& id, const CTypeRef& type);
     void AddVariant(const string& name, const CTypeRef& type);
 

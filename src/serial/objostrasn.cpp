@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/07/14 18:58:10  vasilche
+* Fixed ASN.1 types/field naming.
+*
 * Revision 1.11  1999/07/13 20:18:20  vasilche
 * Changed types naming.
 *
@@ -107,7 +110,7 @@ void CObjectOStreamAsn::Write(TConstObjectPtr object, TTypeInfo typeInfo)
 
 void CObjectOStreamAsn::WriteStd(const char& data)
 {
-    m_Output << '\'';
+    m_Output << " \'";
     WriteEscapedChar(data);
     m_Output << '\'';
 }
@@ -146,62 +149,62 @@ void CObjectOStreamAsn::WriteEscapedChar(char c)
 
 void CObjectOStreamAsn::WriteStd(const unsigned char& data)
 {
-    m_Output << unsigned(data);
+    m_Output << ' ' << unsigned(data);
 }
 
 void CObjectOStreamAsn::WriteStd(const signed char& data)
 {
-    m_Output << int(data);
+    m_Output << ' ' << int(data);
 }
 
 void CObjectOStreamAsn::WriteStd(const short& data)
 {
-    m_Output << data;
+    m_Output << ' ' << data;
 }
 
 void CObjectOStreamAsn::WriteStd(const unsigned short& data)
 {
-    m_Output << data;
+    m_Output << ' ' << data;
 }
 
 void CObjectOStreamAsn::WriteStd(const int& data)
 {
-    m_Output << data;
+    m_Output << ' ' << data;
 }
 
 void CObjectOStreamAsn::WriteStd(const unsigned int& data)
 {
-    m_Output << data;
+    m_Output << ' ' << data;
 }
 
 void CObjectOStreamAsn::WriteStd(const long& data)
 {
-    m_Output << data;
+    m_Output << ' ' << data;
 }
 
 void CObjectOStreamAsn::WriteStd(const unsigned long& data)
 {
-    m_Output << data;
+    m_Output << ' ' << data;
 }
 
 void CObjectOStreamAsn::WriteStd(const float& data)
 {
-    m_Output << data;
+    m_Output << ' ' << data;
 }
 
 void CObjectOStreamAsn::WriteStd(const double& data)
 {
-    m_Output << data;
+    m_Output << ' ' << data;
 }
 
 void CObjectOStreamAsn::WriteNull(void)
 {
-    m_Output << "null";
+    m_Output << " null";
 }
 
 void CObjectOStreamAsn::WriteString(const string& str)
 {
-    m_Output << '\"';
+    m_Output << " \"";
     for ( string::const_iterator i = str.begin(); i != str.end(); ++i ) {
         WriteEscapedChar(*i);
     }
@@ -214,7 +217,7 @@ void CObjectOStreamAsn::WriteCString(const char* str)
         WriteNull();
     }
     else {
-	    m_Output << '\"';
+	    m_Output << " \"";
 		while ( *str ) {
 			WriteEscapedChar(*str++);
 		}
@@ -244,12 +247,12 @@ void CObjectOStreamAsn::WriteMemberSuffix(COObjectInfo& info)
 
 void CObjectOStreamAsn::WriteNullPointer(void)
 {
-    m_Output << "null";
+    WriteNull();
 }
 
 void CObjectOStreamAsn::WriteObjectReference(TIndex index)
 {
-    m_Output << '@' << index;
+    m_Output << " @" << index;
 }
 
 void CObjectOStreamAsn::WriteOtherTypeReference(TTypeInfo typeInfo)
@@ -267,33 +270,37 @@ void CObjectOStreamAsn::WriteNewLine(void)
 
 void CObjectOStreamAsn::VBegin(Block& )
 {
-    m_Output << '{';
-    ++m_Ident;
-    WriteNewLine();
+    m_Output << " {";
 }
 
 void CObjectOStreamAsn::VNext(const Block& block)
 {
     if ( !block.First() ) {
-        m_Output << " ,";
-        WriteNewLine();
+        m_Output << ',';
     }
 }
 
 void CObjectOStreamAsn::VEnd(const Block& )
 {
-    --m_Ident;
-    m_Output << " }";
+    WriteNewLine();
+    m_Output << '}';
 }
 
 void CObjectOStreamAsn::StartMember(Member& , const CMemberId& id)
 {
-    m_Output << id.GetName() << ' ';
+    ++m_Ident;
+    WriteNewLine();
+    m_Output << id.GetName();
+}
+
+void CObjectOStreamAsn::EndMember(const Member& )
+{
+    --m_Ident;
 }
 
 void CObjectOStreamAsn::Begin(const ByteBlock& )
 {
-	m_Output << '\'';
+	m_Output << " \'";
 }
 
 static const char* const HEX = "0123456789ABCDEF";

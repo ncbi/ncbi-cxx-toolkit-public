@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/07/14 18:58:09  vasilche
+* Fixed ASN.1 types/field naming.
+*
 * Revision 1.14  1999/07/13 20:18:18  vasilche
 * Changed types naming.
 *
@@ -469,7 +472,7 @@ string CObjectIStreamAsn::ReadId(void)
 			THROW1_TRACE(runtime_error, "unexpected char in id");
 	    }
 	    s += c;
-		while ( IsAlphaNum(c = GetChar()) ) {
+		while ( IsAlphaNum(c = GetChar()) || c == '-' ) {
 			s += c;
 	    }
 		UngetChar();
