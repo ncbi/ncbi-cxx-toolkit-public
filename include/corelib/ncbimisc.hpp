@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1998/12/15 17:38:16  vasilche
+* Added conversion functions string <> int.
+*
 * Revision 1.9  1998/12/04 23:36:30  vakatov
 * + NcbiEmptyCStr and NcbiEmptyString (const)
 *
@@ -57,6 +60,14 @@ BEGIN_NCBI_SCOPE
 
 const char   NcbiEmptyCStr[] = "";
 const string NcbiEmptyString;
+
+// conversion functions
+extern int StringToInt(const string& str);
+extern unsigned int StringToUInt(const string& str);
+extern double StringToDouble(const string& str);
+extern string IntToString(int value);
+extern string UIntToString(unsigned int value);
+extern string DoubleToString(double value);
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
