@@ -398,12 +398,13 @@ on SetProjectData()
 		AddGuiProject("gui_utils", {}, "utils")
 		-- AddGuiProject("gui_config", {}, "config")
 		AddProject(ProjectData("gui_config", {"fltk"}, Â
-			{GuiFileDataList("config", {"config_dlg.cpp", "feat_config.cpp", "config_mediator.cpp", "settings_set.cpp", "config___.cpp", "config__.cpp"})}))
+			{GuiFileDataList("config", {"feat_config.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "config___.cpp", "config__.cpp"})}))
 		
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
 		AddGuiProject("gui_multi_col_dlg", {}, "dialogs:col")
 		AddGuiProject("gui_dlg_registry", {}, "dialogs:registry")
 		AddGuiProject("gui_dlg_progress", {}, "dialogs:progress")
+		AddGuiProject("gui_dlg_config", {}, "dialogs:config")
 		-- AddGuiProject("gui_dlg_feature", {}, "dialogs:feature") -- empty
 		-- AddGuiProject("gui_dlg_general", {}, "dialogs:general") -- currently empty?
 		AddGuiProject("gui_opengl", {}, "opengl")
@@ -467,7 +468,7 @@ on SetProjectData()
 			GuiFileData("gui:core")}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl"}, gui_core_files)
 		
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_config", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_config", "gui_dlg_config", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
 		
 		-- PLUGINS --
 		
