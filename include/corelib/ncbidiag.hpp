@@ -33,6 +33,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/06/13 20:51:52  ivanov
+* + PushDiagPostPrefix(), PopPushDiagPostPrefix() - stack post prefix messages.
+* + ERR_POST_EX, LOG_POST_EX - macros for posting with error codes.
+* + ErrCode(code[,subcode]) - CNcbiDiag error code manipulator.
+* + eDPF_ErrCode, eDPF_ErrSubCode - new post flags.
+*
 * Revision 1.24  2001/05/17 14:50:58  lavr
 * Typos corrected
 *
@@ -121,6 +127,8 @@
 */
 
 #include <corelib/ncbistre.hpp>
+#include <list>
+
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
@@ -130,8 +138,14 @@ BEGIN_NCBI_SCOPE
 #define ERR_POST(message) \
     ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__) << message << NCBI_NS_NCBI::Endm )
 
+#define ERR_POST_EX(message, err_code, err_subcode) \
+    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__) << NCBI_NS_NCBI::ErrCode(err_code, err_subcode) << message << NCBI_NS_NCBI::Endm )
+
 #define LOG_POST(message) \
     ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error, eDPF_Log) << message << NCBI_NS_NCBI::Endm )
+
+#define LOG_POST_EX(message, err_code, err_subcode) \
+    ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error, eDPF_Log) << NCBI_NS_NCBI::ErrCode(err_code, err_subcode) << message << NCBI_NS_NCBI::Endm )
 
 
 // Severity level for the posted diagnostics
@@ -158,6 +172,8 @@ enum EDiagPostFlag {
     eDPF_Line         = 0x4,  // set by default #if _DEBUG;  else -- not set
     eDPF_Prefix       = 0x8,  // set by default (always)
     eDPF_Severity     = 0x10, // set by default (always)
+    eDPF_ErrCode      = 0x20, // set by default (always)
+    eDPF_ErrSubCode   = 0x40, // set by default (always)
 
     // set all flags
     eDPF_All          = 0x7FFF,
@@ -174,29 +190,36 @@ enum EDiagPostFlag {
 class CDiagBuffer;
 
 
-
 //////////////////////////////////////////////////////////////////
 // The diagnostics class
 
-class CNcbiDiag {
+class CNcbiDiag
+{
 public:
     CNcbiDiag(EDiagSev     sev        = eDiag_Error,
               unsigned int post_flags = eDPF_Default);
-    CNcbiDiag(const char* file, size_t line,
+    CNcbiDiag(const char*  file, size_t line,
               EDiagSev     sev        = eDiag_Error,
               unsigned int post_flags = eDPF_Default);
     ~CNcbiDiag(void);
 
 #if !defined(NO_INCLASS_TMPL)
     // formatted output
-    template<class X> CNcbiDiag& operator <<(const X& x) {
+    template<class X> CNcbiDiag& operator<< (const X& x) {
         m_Buffer.Put(*this, x);
         return *this;
     }
 #endif
 
+#if defined(NCBI_COMPILER_GCC)
+    // GCC compiler bug. Compiler not see "operator<<" for output manipulator 
+    // "ErrCode" and try apply for it 
+    // template<class X> CNcbiDiag& operator<< (const X& x).
+    CNcbiDiag& operator<< (const class ErrCode& err_code);
+#endif
+
     // manipulators
-    CNcbiDiag& operator <<(CNcbiDiag& (*f)(CNcbiDiag&)) {
+    CNcbiDiag& operator<< (CNcbiDiag& (*f)(CNcbiDiag&)) {
         return f(*this);
     }
 
@@ -220,21 +243,27 @@ public:
     CNcbiDiag& SetFile(const char* file);
     CNcbiDiag& SetLine(size_t line);
 
-    // get severity, file or line of the current message
-    EDiagSev     GetSeverity (void) const;
-    const char*  GetFile     (void) const;
-    size_t       GetLine     (void) const;
-    unsigned int GetPostFlags(void) const;
+    CNcbiDiag& SetErrorCode(int code = 0, int subcode = 0);
+
+    // get severity, file , line and error code of the current message
+    EDiagSev     GetSeverity    (void) const;
+    const char*  GetFile        (void) const;
+    size_t       GetLine        (void) const;
+    int          GetErrorCode   (void) const;
+    int          GetErrorSubCode(void) const;
+    unsigned int GetPostFlags   (void) const;
 
 #if !defined(NO_INCLASS_TMPL)
 private:
 #endif
 
-    EDiagSev     m_Severity;  // severity level of the current message
-    char         m_File[256]; // file name
-    size_t       m_Line;      // line #
-    CDiagBuffer& m_Buffer;    // this thread's error message buffer
-    unsigned int m_PostFlags; // bitwise OR of "EDiagPostFlag"
+    EDiagSev     m_Severity;   // severity level of the current message
+    char         m_File[256];  // file name
+    size_t       m_Line;       // line #
+    int          m_ErrCode;    // error code 
+    int          m_ErrSubCode; // error subcode
+    CDiagBuffer& m_Buffer;     // this thread's error message buffer
+    unsigned int m_PostFlags;  // bitwise OR of "EDiagPostFlag"
 
     // prohibit assignment
     CNcbiDiag(const CNcbiDiag&);
@@ -268,6 +297,10 @@ extern void UnsetDiagPostFlag(EDiagPostFlag flag);
 // Specify a string to prefix all subsequent error postings with
 extern void SetDiagPostPrefix(const char* prefix);
 
+// Push/pop a string to/from end list of prefix messages, adding to 
+// prefix all subsequent error
+extern void PushDiagPostPrefix(const char* prefix);
+extern void PopDiagPostPrefix();
 
 // Do not post messages which severity is less than "min_sev"
 // Return previous post-level
@@ -301,13 +334,17 @@ extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt = eDT_Default);
 struct SDiagMessage {
     SDiagMessage(EDiagSev severity, const char* buf, size_t len, void* data,
                  const char* file = 0, size_t line = 0,
-                 unsigned int flags = eDPF_Default, const char* prefix = 0);
+                 unsigned int flags = eDPF_Default, const char* prefix = 0,
+                 int err_code = 0, int err_subcode = 0);
+
     EDiagSev     m_Severity;
     const char*  m_Buffer;  // not guaranteed to be '\0'-terminated!
     size_t       m_BufferLen;
     void*        m_Data;
     const char*  m_File;
     size_t       m_Line;
+    int          m_ErrCode;
+    int          m_ErrSubCode;
     unsigned int m_Flags;   // bitwise OR of "EDiagPostFlag"
     const char*  m_Prefix;
 
@@ -353,6 +390,7 @@ extern bool IsDiagStream(const CNcbiOstream* os);
 // All inline function implementations and internal data
 // types, etc. are in this file
 #include <corelib/ncbidiag.inl>
+
 
 
 // (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)

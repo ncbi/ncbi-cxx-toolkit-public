@@ -30,6 +30,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/06/13 20:48:28  ivanov
+* + PushDiagPostPrefix(), PopPushDiagPostPrefix() - stack post prefix messages.
+* + ERR_POST_EX, LOG_POST_EX - macros for posting with error codes.
+* + ErrCode(code[,subcode]) - CNcbiDiag error code manipulator.
+* + eDPF_ErrCode, eDPF_ErrSubCode - new post flags.
+*
 * Revision 1.29  2001/06/05 20:58:16  vakatov
 * ~CDiagBuffer()::  to check for consistency and call "abort()" only
 * #if (_DEBUG > 1)
@@ -151,7 +157,6 @@ EDiagSev     CDiagBuffer::sm_PostSeverity   = eDiag_Warning;
 
 unsigned int CDiagBuffer::sm_PostFlags      = eDPF_Prefix | eDPF_Severity;
 
-char*        CDiagBuffer::sm_PostPrefix     = 0;
 EDiagSev     CDiagBuffer::sm_DieSeverity    = eDiag_Fatal;
 
 EDiagTrace   CDiagBuffer::sm_TraceDefault   = eDT_Default;
@@ -176,6 +181,7 @@ CDiagBuffer::CDiagBuffer(void)
     : m_Stream(new CNcbiOstrstream)
 {
     m_Diag = 0;
+    m_PostPrefix = 0;
 }
 
 CDiagBuffer::~CDiagBuffer(void)
@@ -194,7 +200,7 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
         CMutexGuard LOCK(s_DiagMutex);
         if ( CDiagBuffer::sm_HandlerFunc ) {
             mess.m_Data   = CDiagBuffer::sm_HandlerData;
-            mess.m_Prefix = CDiagBuffer::sm_PostPrefix;
+            mess.m_Prefix = GetDiagBuffer().m_PostPrefix;
             CDiagBuffer::sm_HandlerFunc(mess);
         }
     }
@@ -233,7 +239,8 @@ void CDiagBuffer::Flush(void)
         ostr->rdbuf()->freeze(0);
         SDiagMessage mess(sev, message, ostr->pcount(), 0,
                           m_Diag->GetFile(), m_Diag->GetLine(),
-                          m_Diag->GetPostFlags());
+                          m_Diag->GetPostFlags(), 0,
+                          m_Diag->GetErrorCode(), m_Diag->GetErrorSubCode());
         DiagHandler(mess);
 
 #if defined(NCBI_COMPILER_KCC)
@@ -270,6 +277,31 @@ bool CDiagBuffer::GetTraceEnabledFirstTime(void)
     return sm_TraceEnabled;
 }
 
+
+void CDiagBuffer::MakePrefix(void)
+{
+    delete[] m_PostPrefix;
+    string s;
+    bool first = true;
+    for ( TPrefixListCI p = m_PrefixList.begin(); 
+          p != m_PrefixList.end();  ++p ) 
+    {
+        if (first) {
+            first = false;
+        } else {
+            s += "::";
+        }
+        s += (*p);
+    }
+    size_t slength = s.length();
+    if ( slength ) {
+        m_PostPrefix = new char[slength+1];
+        strncpy(m_PostPrefix, s.data(), slength);
+        m_PostPrefix[slength] = 0;
+    } else {
+        m_PostPrefix = 0;
+    }
+}
 
 
 ///////////////////////////////////////////////////////
@@ -314,6 +346,14 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
     if ( IsSetDiagPostFlag(eDPF_Severity, m_Flags) )
         os << CNcbiDiag::SeverityName(m_Severity) << ": ";
 
+    // [<error code>]
+    if ( IsSetDiagPostFlag(eDPF_ErrCode, m_Flags)) {
+        os << "(" << m_ErrCode;
+        if ( IsSetDiagPostFlag(eDPF_ErrSubCode, m_Flags)) {
+            os << "." << m_ErrSubCode; 
+        }
+        os << ") ";
+    }
     // [<prefix>]
     if (m_Prefix  &&  *m_Prefix  &&  IsSetDiagPostFlag(eDPF_Prefix, m_Flags))
         os << '[' << m_Prefix << "] ";
@@ -355,12 +395,33 @@ extern void UnsetDiagPostFlag(EDiagPostFlag flag)
 extern void SetDiagPostPrefix(const char* prefix)
 {
     CMutexGuard LOCK(s_DiagMutex);
-    delete[] CDiagBuffer::sm_PostPrefix;
+    CDiagBuffer& buf = GetDiagBuffer();
+    delete[] buf.m_PostPrefix;
     if (prefix  &&  *prefix) {
-        CDiagBuffer::sm_PostPrefix = new char[strlen(prefix) + 1];
-        strcpy(CDiagBuffer::sm_PostPrefix, prefix);
+        buf.m_PostPrefix = new char[strlen(prefix) + 1];
+        strcpy(buf.m_PostPrefix, prefix);
     } else {
-        CDiagBuffer::sm_PostPrefix = 0;
+        buf.m_PostPrefix = 0;
+    }
+}
+
+extern void PushDiagPostPrefix(const char* prefix)
+{
+    if (prefix  &&  *prefix) {
+        CMutexGuard LOCK(s_DiagMutex);
+        CDiagBuffer& buf = GetDiagBuffer();
+        buf.m_PrefixList.push_back(prefix);
+        buf.MakePrefix();
+    }
+}
+
+extern void PopDiagPostPrefix()
+{
+    CMutexGuard LOCK(s_DiagMutex);
+    CDiagBuffer& buf = GetDiagBuffer();
+    if ( buf.m_PrefixList.size() ) {
+        buf.m_PrefixList.pop_back();
+        buf.MakePrefix(); 
     }
 }
 
@@ -525,7 +586,7 @@ extern bool IsDiagStream(const CNcbiOstream* os)
 //  CNcbiDiag::
 
 CNcbiDiag::CNcbiDiag(EDiagSev sev, unsigned int post_flags)
-    : m_Severity(sev), m_Line(0),
+    : m_Severity(sev), m_Line(0),  m_ErrCode(0), m_ErrSubCode(0),
       m_Buffer(GetDiagBuffer()), m_PostFlags(post_flags)
 {
     *m_File = '\0';
@@ -534,7 +595,7 @@ CNcbiDiag::CNcbiDiag(EDiagSev sev, unsigned int post_flags)
 
 CNcbiDiag::CNcbiDiag(const char* file, size_t line,
                      EDiagSev sev, unsigned int post_flags)
-    : m_Severity(sev), m_Line(line),
+    : m_Severity(sev), m_Line(line), m_ErrCode(0), m_ErrSubCode(0),
       m_Buffer(GetDiagBuffer()), m_PostFlags(post_flags)
 {
     SetFile(file);

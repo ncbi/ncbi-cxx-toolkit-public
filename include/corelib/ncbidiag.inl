@@ -33,6 +33,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/06/13 20:51:52  ivanov
+* + PushDiagPostPrefix(), PopPushDiagPostPrefix() - stack post prefix messages.
+* + ERR_POST_EX, LOG_POST_EX - macros for posting with error codes.
+* + ErrCode(code[,subcode]) - CNcbiDiag error code manipulator.
+* + eDPF_ErrCode, eDPF_ErrSubCode - new post flags.
+*
 * Revision 1.19  2001/05/17 14:51:04  lavr
 * Typos corrected
 *
@@ -119,6 +125,9 @@ class CDiagBuffer {
     friend void SetDiagPostFlag(EDiagPostFlag flag);
     friend void UnsetDiagPostFlag(EDiagPostFlag flag);
     friend void SetDiagPostPrefix(const char* prefix);
+    friend void PushDiagPostPrefix(const char* prefix);
+    friend void PopDiagPostPrefix();
+
 #if !defined(NO_INCLASS_TMPL)
     friend class CNcbiDiag;
     friend CNcbiDiag& Reset(CNcbiDiag& diag);
@@ -137,6 +146,14 @@ public:
 
     const CNcbiDiag* m_Diag;    // present user
     CNcbiOstream*    m_Stream;  // storage for the diagnostic message
+  
+    typedef list<string> TPrefixList;
+    typedef TPrefixList::const_iterator TPrefixListCI;
+    TPrefixList m_PrefixList;   // list string's to add to each posted message
+
+    // user-specified string to add to each posted message
+    // (can be constructed from m_PrefixList after push/pop operations)
+    char* m_PostPrefix;
 
     CDiagBuffer(void);
 
@@ -166,11 +183,11 @@ private:
     // flush & detach the current user
     void Detach(const CNcbiDiag* diag);
 
+    // compose post prefix on base list "m_PrefixList"
+    void MakePrefix(void);
+
     // the bitwise OR combination of "EDiagPostFlag"
     static unsigned int sm_PostFlags;
-
-    // user-specified string to add to each posted message
-    static char* sm_PostPrefix;
 
     // NOTE:  these three dont need to be protected by mutexes because it is
     // not critical, while not having a mutex around them saves us a little
@@ -209,6 +226,12 @@ inline CNcbiDiag& CNcbiDiag::SetLine(size_t line) {
     return *this;
 }
 
+inline CNcbiDiag& CNcbiDiag::SetErrorCode(int code, int subcode) {
+    m_ErrCode = code;
+    m_ErrSubCode = subcode;
+    return *this;
+}
+
 inline EDiagSev CNcbiDiag::GetSeverity(void) const {
     return m_Severity;
 }
@@ -219,6 +242,14 @@ inline const char* CNcbiDiag::GetFile(void) const {
 
 inline size_t CNcbiDiag::GetLine(void) const {
     return m_Line;
+}
+
+inline int CNcbiDiag::GetErrorCode(void) const {
+    return m_ErrCode;
+}
+
+inline int CNcbiDiag::GetErrorSubCode(void) const {
+    return m_ErrSubCode;
 }
 
 inline unsigned int CNcbiDiag::GetPostFlags(void) const {
@@ -246,6 +277,36 @@ inline
 const char* CNcbiDiag::SeverityName(EDiagSev sev) {
     return CDiagBuffer::sm_SeverityName[sev];
 }
+
+
+///////////////////////////////////////////////////////
+//  ErrCode - class for manipulator ErrCode
+
+class ErrCode
+{
+public:
+    ErrCode(int code, int subcode = 0) 
+        : m_Code(code), m_SubCode(subcode)
+    { }
+    int m_Code;
+    int m_SubCode;
+};
+
+// GCC compiler bug
+#if defined(NCBI_COMPILER_GCC)
+inline
+CNcbiDiag& CNcbiDiag::operator<< (const ErrCode& err_code)
+{
+    return SetErrorCode(err_code.m_Code, err_code.m_SubCode);
+}
+#else
+inline
+CNcbiDiag& operator<< (CNcbiDiag& diag, const ErrCode& e)
+{
+    return diag.SetErrorCode(e.m_Code, e.m_SubCode);
+}
+#endif
+
 
 
 ///////////////////////////////////////////////////////
@@ -301,7 +362,6 @@ CNcbiDiag& Trace(CNcbiDiag& diag)  {
 }
 
 
-
 ///////////////////////////////////////////////////////
 //  CDiagBuffer::
 
@@ -351,15 +411,18 @@ inline
 SDiagMessage::SDiagMessage(EDiagSev severity,
                            const char* buf, size_t len,
                            void* data, const char* file, size_t line,
-                           unsigned int flags, const char* prefix) {
-    m_Severity  = severity;
-    m_Buffer    = buf;
-    m_BufferLen = len;
-    m_Data      = data;
-    m_File      = file;
-    m_Line      = line;
-    m_Flags     = flags;
-    m_Prefix    = prefix;
+                           unsigned int flags, const char* prefix,
+                           int err_code, int err_subcode) {
+    m_Severity   = severity;
+    m_Buffer     = buf;
+    m_BufferLen  = len;
+    m_Data       = data;
+    m_File       = file;
+    m_Line       = line;
+    m_ErrCode    = err_code;
+    m_ErrSubCode = err_subcode;
+    m_Flags      = flags;
+    m_Prefix     = prefix;
 }
 
 #endif /* def NCBIDIAG__HPP  &&  ndef NCBIDIAG__INL */
