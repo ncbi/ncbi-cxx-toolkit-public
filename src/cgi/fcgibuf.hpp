@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/10/21 14:50:49  sandomir
+* optimization for overflow() (internal buffer added)
+*
 * Revision 1.3  1999/06/08 21:36:29  vakatov
 * #HAVE_NO_CHAR_TRAITS::  use "CT_XXX_TYPE" instead of "xxx_type" for
 * xxx = { "int", "char", "pos", "off" }
@@ -56,13 +59,19 @@ BEGIN_NCBI_SCOPE
 class CCgiObuffer : public IO_PREFIX::streambuf
 {
 public:
-    CCgiObuffer(FCGX_Stream* out);
+    
+    // FastCgi buffer is 8184 (in the current impl) but it looks
+    // like less number gives faster output
+    CCgiObuffer(FCGX_Stream* out, int bufsize = 512);
+    ~CCgiObuffer(void);
 
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
 
 private:
 
     FCGX_Stream* m_out;
+    char* m_buf; // internal buffer
+    int m_bufsize;
 };
 
 class CCgiIbuffer : public IO_PREFIX::streambuf

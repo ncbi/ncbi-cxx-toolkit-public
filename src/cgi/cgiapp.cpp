@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/10/21 14:50:49  sandomir
+* optimization for overflow() (internal buffer added)
+*
 * Revision 1.16  1999/07/09 18:50:21  sandomir
 * FASTCGI mode: if programs modification date changed, break out the loop
 *
@@ -160,7 +163,7 @@ CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
 
             try {
                 CNcbiEnvironment env(penv);
-                CCgiObuffer obuf(pfout);
+                CCgiObuffer obuf(pfout,512);              
                 CNcbiOstream ostr(&obuf);
                 CCgiIbuffer ibuf(pfin);
                 CNcbiIstream istr(&ibuf);

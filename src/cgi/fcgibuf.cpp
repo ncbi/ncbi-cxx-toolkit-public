@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/10/21 14:50:49  sandomir
+* optimization for overflow() (internal buffer added)
+*
 * Revision 1.6  1999/06/08 21:36:29  vakatov
 * #HAVE_NO_CHAR_TRAITS::  use "CT_XXX_TYPE" instead of "xxx_type" for
 * xxx = { "int", "char", "pos", "off" }
@@ -70,13 +73,21 @@
 
 BEGIN_NCBI_SCOPE
 
-
-CCgiObuffer::CCgiObuffer(FCGX_Stream* out)
-    : m_out(out)
+CCgiObuffer::CCgiObuffer(FCGX_Stream* out, int bufsize /*=512*/ )
+    : m_out(out), m_bufsize( bufsize <= 0 ? 1 : bufsize )
 {
     if ( !out || out->isReader ) {
         THROW1_TRACE(runtime_error, "CCgiObuffer: out is not writer");
     }
+
+    m_buf = new char[ m_bufsize ];
+    setp( m_buf, m_buf + m_bufsize );
+}
+
+CCgiObuffer::~CCgiObuffer(void)
+{
+    overflow( CT_EOF );
+    delete[] m_buf;
 }
 
 CT_INT_TYPE CCgiObuffer::overflow(CT_INT_TYPE c)
@@ -84,7 +95,8 @@ CT_INT_TYPE CCgiObuffer::overflow(CT_INT_TYPE c)
     FCGX_Stream* out = m_out;
     const CT_CHAR_TYPE* from = pbase(), * to = pptr();
     streamsize count = to - from;
-    streamsize bumpCount = count;
+    streamsize bumpCount = count;   
+
     while ( count > 0 ) {
         streamsize chunk = min(count, streamsize(out->stop - out->wrNext));
         if ( chunk == 0 ) {
@@ -105,8 +117,9 @@ CT_INT_TYPE CCgiObuffer::overflow(CT_INT_TYPE c)
             count -= chunk;
         }
     }
-    pbump(bumpCount);
-
+   
+    setp( m_buf, m_buf + m_bufsize );
+   
     if ( c == CT_EOF ) {
         return CT_EOF;
     }
