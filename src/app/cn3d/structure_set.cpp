@@ -513,7 +513,7 @@ void StructureSet::Load(int structureLimit)
         const CBiostruc *masterBiostruc = dataManager->GetMasterStructure();
         if (!masterBiostruc && dataManager->GetStructureList() && dataManager->GetStructureList()->size() == 1)
             masterBiostruc = dataManager->GetStructureList()->front().GetPointer();
-        if (masterBiostruc && structureLimit > 0)
+        if (masterBiostruc)
             objects.push_back(new StructureObject(this, *masterBiostruc, true));
         if (dataManager->GetSequences())
             LoadSequencesForSingleStructure();
@@ -1457,6 +1457,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.129  2003/02/05 14:55:22  thiessen
+* always load single structure even if structureLimit == 0
+*
 * Revision 1.128  2003/02/03 19:20:07  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

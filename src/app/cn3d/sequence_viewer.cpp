@@ -117,8 +117,6 @@ void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
 
 void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
 {
-//    int from, to, width = 50;
-
     SequenceDisplay *display = new SequenceDisplay(false, viewerWindow);
 
     // populate each line of the display with one sequence, with blank lines inbetween
@@ -537,6 +535,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2003/02/05 14:55:22  thiessen
+* always load single structure even if structureLimit == 0
+*
 * Revision 1.60  2003/02/03 19:20:05  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
