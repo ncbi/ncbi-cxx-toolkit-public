@@ -69,80 +69,87 @@ extern "C" {
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "unsigned int" keys
-int BDB_UintCompare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int BDB_UintCompare(DB*, const DBT* val1, const DBT* val2);
 
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "Int8" keys
-int BDB_Int8Compare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int BDB_Int8Compare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "int" keys
-int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "short int" keys
-int BDB_Int2Compare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int BDB_Int2Compare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "unsigned char" keys
-int BDB_UCharCompare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int BDB_UCharCompare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "float" keys
-int BDB_FloatCompare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int BDB_FloatCompare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "double" keys
-int BDB_DoubleCompare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int BDB_DoubleCompare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "C string" keys
-int BDB_StringCompare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int BDB_StringCompare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented length prefixed string keys
-int BDB_LStringCompare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int BDB_LStringCompare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "case insensitive C string" keys
-int BDB_StringCaseCompare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int
+BDB_StringCaseCompare(DB*, const DBT* val1, const DBT* val2);
 
 /// General purpose DBD comparison function
-int BDB_Compare(DB* db, const DBT* val1, const DBT* val2);
+int NCBI_BDB_EXPORT BDB_Compare(DB* db, const DBT* val1, const DBT* val2);
 
 
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "unsigned int" keys.
 /// Used when the data file is in a different byte order architecture.
-int BDB_ByteSwap_UintCompare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int
+BDB_ByteSwap_UintCompare(DB*, const DBT* val1, const DBT* val2);
 
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "Int8" keys
 /// Used when the data file is in a different byte order architecture.
-int BDB_ByteSwap_Int8Compare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int
+BDB_ByteSwap_Int8Compare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "int" keys
 /// Used when the data file is in a different byte order architecture.
-int BDB_ByteSwap_IntCompare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int
+BDB_ByteSwap_IntCompare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "short int" keys
 /// Used when the data file is in a different byte order architecture.
-int BDB_ByteSwap_Int2Compare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int
+BDB_ByteSwap_Int2Compare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "float" keys
 /// Used when the data file is in a different byte order architecture.
-int BDB_ByteSwap_FloatCompare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int
+BDB_ByteSwap_FloatCompare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "double" keys
 /// Used when the data file is in a different byte order architecture.
-int BDB_ByteSwap_DoubleCompare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int
+BDB_ByteSwap_DoubleCompare(DB*, const DBT* val1, const DBT* val2);
 
 
 }
@@ -2055,6 +2062,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/03/30 15:04:25  jcherry
+ * Added export specifiers
+ *
  * Revision 1.49  2005/03/15 14:45:48  kuznets
  * Optimization in record packing
  *
