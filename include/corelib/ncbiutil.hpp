@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/12/01 17:35:48  vasilche
+* Added missing typename keyword.
+*
 * Revision 1.8  1999/11/19 18:24:49  vasilche
 * Added ArrayDeleter and CDeleter for use in AutoPtr.
 *
@@ -182,7 +185,7 @@ struct CDeleter
 template<class Key, class Element>
 inline Element* GetMapElement(const map<Key, Element*>& m, const Key& key)
 {
-    map<Key, Element*>::const_iterator ptr = m.find(key);
+    typename map<Key, Element*>::const_iterator ptr = m.find(key);
     if ( ptr !=m.end() )
         return ptr->second;
     return 0;
@@ -208,7 +211,7 @@ inline bool InsertMapElement(map<Key, Element*>& m,
 template<class Key>
 inline string GetMapString(const map<Key, string>& m, const Key& key)
 {
-    map<Key, string>::const_iterator ptr = m.find(key);
+    typename map<Key, string>::const_iterator ptr = m.find(key);
     if ( ptr !=m.end() )
         return ptr->second;
     return string();
@@ -239,7 +242,7 @@ inline void DeleteElements( Cnt& cnt )
 template<class Key, class Element>
 inline void DeleteElements(map<Key, Element*>& m)
 {
-    for ( map<Key, Element*>::iterator i = m.begin(); i != m.end(); ++i ) {
+    for ( typename map<Key, Element*>::iterator i = m.begin(); i != m.end(); ++i ) {
         delete i->second;
     }
 	m.clear();
