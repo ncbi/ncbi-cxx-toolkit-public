@@ -962,7 +962,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
         BlastQueryInfo* query_info, BlastScoreBlk* sbp, 
         const BlastScoringOptions* score_options, const BlastSeqSrc* bssp)
 {
-   Int2 status;
+   Int2 status = 0;
    BlastHSPList** hsp_list_array;
    BlastHSP* hsp;
    Int4 index;

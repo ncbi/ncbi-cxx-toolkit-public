@@ -832,6 +832,7 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject,
                 MIN(subject->length - s_offsets[i] - lookup->wordsize,
                     query->length - q_offsets[i] - word_size));
 
+         right = 0;
          if (max_bases > 0) {
             s += lookup->wordsize;
             q += word_size;

@@ -3372,7 +3372,8 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
    Int4 private_q_start, private_s_start;
    Uint1* query=NULL,* subject=NULL;
    Boolean switch_seq = FALSE;
-   Int4 query_length, subject_length;
+   Int4 query_length = query_blk->length;
+   Int4 subject_length = subject_blk->length;
    Int4 subject_shift = 0;
     
    if (gap_align == NULL)
@@ -3385,22 +3386,18 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
       if (program == blast_type_blastx) {
          subject = subject_blk->sequence + s_length;
          query = query_blk->oof_sequence + CODON_LENGTH + q_length;
-         query_length = query_blk->length - CODON_LENGTH + 1;
-         subject_length = subject_blk->length;
+         query_length -= CODON_LENGTH - 1;
          switch_seq = TRUE;
       } else if (program == blast_type_tblastn) {
          subject = subject_blk->oof_sequence + CODON_LENGTH + s_length;
          query = query_blk->sequence + q_length;
-         query_length = query_blk->length;
-         subject_length = subject_blk->length - CODON_LENGTH + 1;
+         subject_length -= CODON_LENGTH - 1;
       }
    } else {
       q_length = init_hsp->q_off + 1;
       s_length = init_hsp->s_off + 1;
       query = query_blk->sequence;
       subject = subject_blk->sequence;
-      query_length = query_blk->length;
-      subject_length = subject_blk->length;
    }
 
    AdjustSubjectRange(&s_length, &subject_length, q_length, query_length, 
