@@ -3,7 +3,7 @@
 # Meta-makefile
 #################################
 
-SUB_PROJ = basic cgi dbapi objects objmgr alnmgr soap lds
+SUB_PROJ = basic cgi dbapi objects objmgr alnmgr soap lds netschedule
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
