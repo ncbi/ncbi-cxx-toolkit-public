@@ -84,46 +84,35 @@ BEGIN_NCBI_SCOPE
 ///
 /// Current interface version.
 ///
-/// It is just a boilerplate, to be hard-coded in the interface's header
+/// It is just a boilerplate, to be hard-coded in the concrete interface header
+/// @sa NCBI_PLUGIN_VERSION, CVersionInfo
 
 template <class TClass>
 class CInterfaceVersion
 {
 };
 
-/*****  Example:
 
-EMPTY_TEMPLATE
-class CInterfaceVersion<CFooBar>
-{
-public:
-    enum {
-        eMajor = 1,  // absolute (in)compatibility
-        eMinor = 2,  // backward (in)compatibility
-        ePatch = 3   // patch level
-    };
-};
-
-******/
-
-
-
-/// IInterfaceInfo<> --
+/// Macro to auto-setup the current interface version.
 ///
-/// Interface properties -- name, version.
+/// This macro must be "called" once per interface, usually in the
+/// very header that describes that interface.
+///
+/// Example:
+///    NCBI_PLUGIN_VERSION(IFooBar, 1, 3, 8);
+/// @sa CInterfaceVersion
 
-template <class TClass>
-class IInterfaceInfo
-{
-public:
-    // Name of the interface provided by the factory
-    virtual string GetName(void) = 0;
-
-    // Versions of the interface exported by the factory
-    virtual list<const CVersionInfo&> GetVersions(void) = 0;
-
-    virtual ~IInterfaceInfo(void) {}
-};
+#define NCBI_PLUGIN_VERSION(iface, major, minor, patch_level) \
+EMPTY_TEMPLATE \
+class CInterfaceVersion<iface> \
+{ \
+public: \
+    enum { \
+        eMajor      = major, \
+        eMinor      = minor, \
+        ePatchLevel = patch_level \
+    }; \
+}
 
 
 
@@ -134,7 +123,7 @@ public:
 /// It is to be implemented in drivers and exported by hosts.
 
 template <class TClass>
-class IClassFactory : public IInterfaceInfo<TClass>
+class IClassFactory
 {
 public:
     /// Create class instance
@@ -145,11 +134,17 @@ public:
     ///  the calling code's point of view.
     /// @return
     ///  NULL on any error (not found entry point, version mismatch, etc.)
-    virtual TClass* CreateInstance(const CVersionInfo& version = CVersionInfo
+    virtual TClass* CreateInstance(CVersionInfo version = CVersionInfo
                                    (CInterfaceVersion<TClass>::eMajor,
                                     CInterfaceVersion<TClass>::eMinor,
                                     CInterfaceVersion<TClass>::ePatchLevel))
         = 0;
+
+    // Name of the interface provided by the factory
+    virtual string GetName(void) = 0;
+
+    // Versions of the interface exported by the factory
+    virtual list<const CVersionInfo&> GetDriverVersions(void) = 0;
 
     virtual ~IClassFactory(void) {}
 };
@@ -172,6 +167,8 @@ public:
     typedef IClassFactory<TClass> TClassFactory;
 
     /// Create class instance
+    /// @return
+    ///  Never return NULL -- always throw exception on error.
     /// @sa GetFactory()
     TClass* CreateInstance(const string&       driver  = kEmptyStr,
                            const CVersionInfo& version = CVersionInfo
@@ -184,77 +181,82 @@ public:
 
     /// Get class factory
     ///
-    /// If more than one driver is eligible, then try to pick the driver with
+    /// If more than one (of registered) class factory contain eligible
+    /// driver candidates, then pick the class factory containing driver of
     /// the latest version.
     /// @param driver
     ///  Name of the driver. If passed empty, then -- any.
     /// @param version
-    ///  Version of the interface which the class factory implemented by
-    ///  the driver must be compatible with.
+    ///  Requested version. The returned driver can have a different (newer)
+    ///  version (provided that the new implementation is backward-compatible
+    ///  with the requested version.
     /// @return
     ///  Never return NULL -- always throw exception on error.
     TClassFactory* GetFactory(const string&       driver  = kEmptyStr,
                               const CVersionInfo& version = CVersionInfo
                               (CInterfaceVersion<TClass>::eMajor,
                                CInterfaceVersion<TClass>::eMinor,
-                               CInterfaceVersion<TClass>::ePatchLevel))
-    {
-        // ...TODO...
-    }
+                               CInterfaceVersion<TClass>::ePatchLevel));
 
-    /// 
-    class CFactoryInfo {
-        TClassFactory* m_Factory;     //!< Class factory (can be NULL)
-        string         m_DriverName;  //!< Driver name
-        CVersionInfo*  m_Version;     //!< Driver version (
-
-        SFactoryInfo(TClassFactory*      x_factory,
-                     const string&       x_driver) :
-        SFactoryInfo(const string&       x_driver,
-                     const CVersionInfo& x_version) :
-        factory(x_factory), driver(x_driver), version(x_version) {}
-            
+    /// Information about a driver, with maybe a pointer to an instantiated
+    /// class factory that contains the driver.
+    /// @sa FNCBI_EntryPoint
+    class SDriverInfo {
+        string         name;        //!< Driver name
+        CVersionInfo   version;     //!< Driver version
+        // It's the plugin manager's (and not SDriverInfo) responsibility to
+        // keep and then destroy class factories.
+        TClassFactory* factory;     //!< Class factory (can be NULL)
     };
 
-    /// List of information
-    typedef list<SFactoryInfo> TFactoryInfoList;
+    /// List of driver information.
+    ///
+    /// It is used to communicate using the entry points mechanism.
+    /// @sa FNCBI_EntryPoint
+    typedef list<SDriverInfo> TDriverInfoList;
 
     /// Register factory in the manager.
-    /// @param factory_info
     ///  
-    void RegisterFactory(const SFactoryInfo& factory_info,
-                         EOwnership          ownership = eTakeOwnership);
+    /// The registered factory will be owned by the manager.
+    /// @sa UnregisterFactory()
+    void RegisterFactory(TClassFactory& factory);
 
+    /// Unregister and release (un-own)
+    /// @sa RegisterFactory()
+    bool UnregisterFactory(TClassFactory& factory);
 
-    /// Plugin info entry point -- modes of operation
+    /// Actions performed by the entry point
+    /// @sa FNCBI_EntryPoint
     enum EEntryPointRequest {
-        /// Add info about plugins to the end of list.
+        /// Add info about all drivers exported through the entry point
+        /// to the end of list.
         ///
         /// "SFactoryInfo::factory" in the added info should be assigned NULL.
         eGetFactoryInfo,
 
-        /// Scan info list for the [name,version] pairs exported
-        /// by the given entry point.
+        /// Scan the driver info list passed to the entry point for the
+        /// [name,version] pairs exported by the given entry point.
         ///
-        /// For each pair found, if its "SFactoryInfo::factory" is NULL,
+        /// For each pair found, if its "SDriverInfo::factory" is NULL,
         /// instantiate its class factory and assign it to the
-        /// "SFactoryInfo::factory".
+        /// "SDriverInfo::factory".
         eInstantiateFactory
     };
 
-    /// Entry point to get plugin info, and (if requested) class factory.
+    /// Entry point to get drivers' info, and (if requested) their class
+    /// factori(es).
     ///
     /// This function is usually (but not necessarily) called by
     /// RegisterWithEntryPoint().
     ///
     /// Usually, it's called twice -- the first time to get the info
-    /// about the class factories exported by the entry point, and then
+    /// about the drivers exported by the entry point, and then
     /// to instantiate selected factories.
     ///
     /// Caller is responsible for the proper destruction (deallocation)
     /// of the instantiated factories.
-    typedef void (*FNCBI_EntryPoint)(TFactoryInfoList&   info_list,
-                                     EEntryPointRequest  method);
+    typedef void (*FNCBI_EntryPoint)(TDriverInfoList&   info_list,
+                                     EEntryPointRequest method);
 
     /// Register all factories exported by the plugin entry point.
     /// @sa RegisterFactory()
@@ -270,9 +272,15 @@ protected:
     CFastMutex m_Mutex;
 
 private:
-    /// List of factories presently registered with the plugin manager.
-    TFactoryInfoList m_FactoryInfo;      // NOTE: intentionally not multimap<> 
+    /// List of factories presently registered with (and owned by)
+    /// the plugin manager.
+    set<TClassFactory*> m_Factories;
 };
+
+
+
+!!!  The above API is by-and-large worked through, all the rest of
+!!!  the file is absolutely not...
 
 
 
@@ -392,6 +400,17 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/10/28 22:29:04  vakatov
+ * Draft-done with:
+ *   general terminology
+ *   CInterfaceVersion<>
+ *   NCBI_PLUGIN_VERSION()
+ *   IClassFactory<>
+ *   CPluginManager<>
+ * TODO:
+ *   Host-related API
+ *   DLL resolution
+ *
  * Revision 1.1  2003/10/28 00:12:23  vakatov
  * Initial revision
  *
