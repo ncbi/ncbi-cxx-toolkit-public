@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/01/03 18:59:09  vasilche
+ * Added missing include.
+ *
  * Revision 6.3  2001/01/03 16:39:05  vasilche
  * Added CAbstractObjectManager - stub for object manager.
  * CRange extracted to separate file.
@@ -57,6 +60,7 @@
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Seq_point.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
