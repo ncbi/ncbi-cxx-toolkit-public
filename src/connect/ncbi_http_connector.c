@@ -362,9 +362,9 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
 
     /* skip & printout the content, if server error was flagged */
     if (server_error  &&  uuu->net_info->debug_printout) {
-        size_t size;
-        char*  body;
         BUF    buf = 0;
+        char*  body;
+
         SOCK_SetTimeout(uuu->sock, eIO_Read, 0);
         status = SOCK_StripToPattern(uuu->sock, 0, 0, &buf, 0);
         assert(status != eIO_Success); /* cause reading until EOF */
@@ -893,6 +893,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.45  2003/04/30 17:01:42  lavr
+ * One (unnecessary) variable removed from s_ReadHeader()
+ *
  * Revision 6.44  2003/02/04 22:04:11  lavr
  * Minor fix in comment
  *
