@@ -89,13 +89,22 @@
 /* Define to 1 if NCBI GEO DB library is available. */
 #undef HAVE_LIBGEODB
 
+/* Define to 1 if libgif is available. */
+#undef HAVE_LIBGIF
+
 /* Define to 1 if ICONV is available, either in its own library or as part of
    the standard libraries. */
 #undef HAVE_LIBICONV
 
+/* Define to 1 if libjpeg is available. */
+#undef HAVE_LIBJPEG
+
 /* Define to 1 if KSTAT is available, either in its own library or as part of
    the standard libraries. */
 #undef HAVE_LIBKSTAT
+
+/* Define to 1 if libpng is available. */
+#undef HAVE_LIBPNG
 
 /* Define to 1 if NCBI PubMed libraries are available. */
 #undef HAVE_LIBPUBMED
@@ -122,6 +131,15 @@
 
 /* Define to 1 if SYBASE DBLib is available. */
 #undef HAVE_LIBSYBDB
+
+/* Define to 1 if libtiff is available. */
+#undef HAVE_LIBTIFF
+
+/* Define to 1 if libungif is available. */
+#undef HAVE_LIBUNGIF
+
+/* Define to 1 if libXpm is available. */
+#undef HAVE_LIBXPM
 
 /* Define to 1 if you have the <limits> header file. */
 #undef HAVE_LIMITS
@@ -251,6 +269,9 @@
 
 /* Define to 1 if you have the <windows.h> header file. */
 #undef HAVE_WINDOWS_H
+
+/* Define to 1 if the system has the type `wstring'. */
+#undef HAVE_WSTRING
 
 /* Define to 1 if wxWindows is available. */
 #undef HAVE_WXWINDOWS

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.189 2003/05/19 19:12:09 ucko Exp $
+#  $Id: configure.ac,v 1.190 2003/05/23 14:36:03 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -184,6 +184,26 @@ AC_ARG_WITH(odbc,
    [ --with-odbc=DIR         use ODBC installation in DIR])
 AC_ARG_WITH(odbc2,
    [ --without-odbc          do not use ODBC])
+AC_ARG_WITH(gif,
+   [ --with-gif=DIR          use lib(un)gif installation in DIR])
+AC_ARG_WITH(jpeg2,
+   [ --without-jpeg          do not use lib(un)gif])
+AC_ARG_WITH(jpeg,
+   [ --with-jpeg=DIR         use libjpeg installation in DIR])
+AC_ARG_WITH(jpeg2,
+   [ --without-jpeg          do not use libjpeg])
+AC_ARG_WITH(png,
+   [ --with-png=DIR          use libpng installation in DIR])
+AC_ARG_WITH(png2,
+   [ --without-png           do not use libpng])
+AC_ARG_WITH(tiff,
+   [ --with-tiff=DIR         use libtiff installation in DIR])
+AC_ARG_WITH(tiff2,
+   [ --without-tiff          do not use libtiff])
+AC_ARG_WITH(xpm,
+   [ --with-xpm=DIR          use libXpm installation in DIR])
+AC_ARG_WITH(xpm2,
+   [ --without-xpm           do not use libXpm])
 
 ## Optional projects
 AC_ARG_WITH(local-lbsm,
@@ -216,7 +236,7 @@ debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-sybase-new ftds mysql orbacus fltk opengl bdb odbc \
+sybase-new ftds mysql orbacus fltk opengl bdb odbc gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
 changequote(, )dnl
@@ -252,7 +272,8 @@ for x_arg in "$@" ; do
       | [[A-Z]*=*] \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
-      | --with-bdb=* | --with-odbc=* \
+      | --with-bdb=* | --with-odbc=* | --with-gif=* | --with-jpeg=* \
+      | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -1406,6 +1427,8 @@ else
    AC_DEFINE(NCBI_OS, "MAC", [Operating system name])
 fi
 
+AC_CHECK_TYPES(wstring,,,[#include <string>
+                          using std::wstring;])
 AC_CHECK_TYPES(socklen_t,,,[#include <sys/socket.h>])
 AC_CHECK_HEADERS(dlfcn.h sys/sockio.h sys/sysinfo.h)
 # for FreeTDS 0.60
@@ -2853,6 +2876,57 @@ fi
 # and then gripes about missing JTC stuff.
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
+
+### Image libraries
+: ${JPEG_PATH=$NCBI/gd}
+# Grr... jpeglib.h isn't especially well-behaved.
+NCBI_CHECK_THIRD_PARTY_LIB(jpeg,
+ AC_LANG_PROGRAM([#include <sys/types.h>
+                  #include <stdio.h>
+                  extern "C" {
+                  #include <jpeglib.h>
+                  }],
+    [struct jpeg_decompress_struct cinfo;
+     struct jpeg_error_mgr         jerr;
+     cinfo.err = jpeg_std_error(&jerr);
+ ]))
+
+: ${PNG_PATH=$NCBI/gd}
+NCBI_CHECK_THIRD_PARTY_LIB(png,
+ AC_LANG_PROGRAM([#include <png.h>],
+    [png_structp png_ptr
+      = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+ ]), -lz)
+
+: ${TIFF_PATH=/usr/sfw}
+NCBI_CHECK_THIRD_PARTY_LIB(tiff,
+ AC_LANG_PROGRAM([#include <tiffio.h>],
+    [TIFF* tiff = TIFFOpen("foo", "r");]), -lz)
+## etc.
+
+# Paths?
+NCBI_CHECK_THIRD_PARTY_LIB(ungif,
+ AC_LANG_PROGRAM([extern "C" {
+                  #include <gif_lib.h>
+                  }],
+    [GifFileType* fp = DGifOpenFileName("foo");]), $X_LIBS -lX11)
+if test "$with_ungif" = "no"; then
+   NCBI_CHECK_THIRD_PARTY_LIB(gif,
+    AC_LANG_PROGRAM([extern "C" {
+                     #include <gif_lib.h>
+                     }],
+       [GifFileType* fp = DGifOpenFileName("foo");]), $X_LIBS -lX11)
+else
+   AC_DEFINE(HAVE_LIBGIF, 1, [Define to 1 if libgif is available.])
+   GIF_INCLUDE=$UNGIF_INCLUDE
+   GIF_LIBS=$UNGIF_LIBS
+fi
+
+: ${XPM_PATH=`dirname $x_includes`}
+NCBI_CHECK_THIRD_PARTY_LIB(Xpm,
+ AC_LANG_PROGRAM([#include <X11/xpm.h>],
+    [XpmImage image; XpmInfo info;
+     XpmReadFileToXpmImage("foo", &image, &info);]), $X_LIBS -lX11)
 
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"

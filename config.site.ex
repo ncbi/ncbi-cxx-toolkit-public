@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: config.site.ex,v 1.3 2003/05/05 20:45:27 ucko Exp $
+# $Id: config.site.ex,v 1.4 2003/05/23 14:36:02 ucko Exp $
 
 ### You can control where the C++ Toolkit's configure script looks for
 ### various packages by copying or renaming this file to "config.site"
@@ -102,6 +102,12 @@
 
 # ORBACUS_PATH="$NCBI/corba/OB-4.0.1"
 
+### Image libraries
+
+# JPEG_PATH="$NCBI/gd"
+# PNG_PATH="$NCBI/gd"
+# TIFF_PATH="/usr/sfw"
+# XPM_PATH="/usr/X11"
 
 ### You shouldn't normally need to set anything below this point.
 

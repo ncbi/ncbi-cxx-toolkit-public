@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS8_INCLUDE FTDS8_LIBS FTDS_INCLUDE FTDS_LIBS freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial bdb dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS8_INCLUDE FTDS8_LIBS FTDS_INCLUDE FTDS_LIBS freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial bdb dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -910,6 +910,16 @@ Optional Packages:
  --with-orbacus=DIR      use ORBacus installation in DIR
  --with-odbc=DIR         use ODBC installation in DIR
  --without-odbc          do not use ODBC
+ --with-gif=DIR          use lib(un)gif installation in DIR
+ --without-jpeg          do not use lib(un)gif
+ --with-jpeg=DIR         use libjpeg installation in DIR
+ --without-jpeg          do not use libjpeg
+ --with-png=DIR          use libpng installation in DIR
+ --without-png           do not use libpng
+ --with-tiff=DIR         use libtiff installation in DIR
+ --without-tiff          do not use libtiff
+ --with-xpm=DIR          use libXpm installation in DIR
+ --without-xpm           do not use libXpm
  --without-local-lbsm    turn off support for IPC with locally running LBSMD
  --without-serial        do not build the serialization library and tools
  --with-objects          generate/build serializeable objects from ASNs
@@ -1722,6 +1732,66 @@ if test "${with_odbc2+set}" = set; then
 
 fi;
 
+# Check whether --with-gif or --without-gif was given.
+if test "${with_gif+set}" = set; then
+  withval="$with_gif"
+
+fi;
+
+# Check whether --with-jpeg2 or --without-jpeg2 was given.
+if test "${with_jpeg2+set}" = set; then
+  withval="$with_jpeg2"
+
+fi;
+
+# Check whether --with-jpeg or --without-jpeg was given.
+if test "${with_jpeg+set}" = set; then
+  withval="$with_jpeg"
+
+fi;
+
+# Check whether --with-jpeg2 or --without-jpeg2 was given.
+if test "${with_jpeg2+set}" = set; then
+  withval="$with_jpeg2"
+
+fi;
+
+# Check whether --with-png or --without-png was given.
+if test "${with_png+set}" = set; then
+  withval="$with_png"
+
+fi;
+
+# Check whether --with-png2 or --without-png2 was given.
+if test "${with_png2+set}" = set; then
+  withval="$with_png2"
+
+fi;
+
+# Check whether --with-tiff or --without-tiff was given.
+if test "${with_tiff+set}" = set; then
+  withval="$with_tiff"
+
+fi;
+
+# Check whether --with-tiff2 or --without-tiff2 was given.
+if test "${with_tiff2+set}" = set; then
+  withval="$with_tiff2"
+
+fi;
+
+# Check whether --with-xpm or --without-xpm was given.
+if test "${with_xpm+set}" = set; then
+  withval="$with_xpm"
+
+fi;
+
+# Check whether --with-xpm2 or --without-xpm2 was given.
+if test "${with_xpm2+set}" = set; then
+  withval="$with_xpm2"
+
+fi;
+
 ## Optional projects
 
 # Check whether --with-local-lbsm or --without-local-lbsm was given.
@@ -1793,7 +1863,7 @@ debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-sybase-new ftds mysql orbacus fltk opengl bdb odbc \
+sybase-new ftds mysql orbacus fltk opengl bdb odbc gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -1829,7 +1899,8 @@ echo "$as_me: error: \"  $x_arg:  requires value;  use --help to show usage\"" >
       | [A-Z]*=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
-      | --with-bdb=* | --with-odbc=* \
+      | --with-bdb=* | --with-odbc=* | --with-gif=* | --with-jpeg=* \
+      | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -5926,6 +5997,64 @@ _ACEOF
 cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS "MAC"
 _ACEOF
+
+fi
+
+echo "$as_me:$LINENO: checking for wstring" >&5
+echo $ECHO_N "checking for wstring... $ECHO_C" >&6
+if test "${ac_cv_type_wstring+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <string>
+                          using std::wstring;
+
+int
+main ()
+{
+if ((wstring *) 0)
+  return 0;
+if (sizeof (wstring))
+  return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_type_wstring=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_type_wstring=no
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_type_wstring" >&5
+echo "${ECHO_T}$ac_cv_type_wstring" >&6
+if test $ac_cv_type_wstring = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_WSTRING 1
+_ACEOF
+
 
 fi
 
@@ -12520,6 +12649,541 @@ fi
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
 
+### Image libraries
+: ${JPEG_PATH=$NCBI/gd}
+# Grr... jpeglib.h isn't especially well-behaved.
+if test "$with_jpeg" != "no"; then
+    case "$with_jpeg" in
+       yes | "" ) ;;
+       *        ) JPEG_PATH=$with_jpeg ;;
+    esac
+    if test -d "$JPEG_PATH"; then
+       in_path=" in $JPEG_PATH"
+       test -d "$JPEG_PATH/include" && JPEG_INCLUDE="-I$JPEG_PATH/include"
+       if test -d "$JPEG_PATH/lib${bit64_sfx}"; then
+          JPEG_LIBPATH="-L$JPEG_PATH/lib ${CONF_f_runpath}$JPEG_PATH/lib"
+       fi
+       JPEG_LIBS="$JPEG_LIBPATH -ljpeg "
+    else
+       JPEG_INCLUDE=""
+       JPEG_LIBS="-ljpeg "
+       in_path=
+    fi
+    echo "$as_me:$LINENO: checking for libjpeg$in_path" >&5
+echo $ECHO_N "checking for libjpeg$in_path... $ECHO_C" >&6
+if test "${ncbi_cv_lib_jpeg+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$JPEG_INCLUDE $orig_CPPFLAGS"
+       LIBS="$JPEG_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sys/types.h>
+                  #include <stdio.h>
+                  extern "C" {
+                  #include <jpeglib.h>
+                  }
+int
+main ()
+{
+struct jpeg_decompress_struct cinfo;
+     struct jpeg_error_mgr         jerr;
+     cinfo.err = jpeg_std_error(&jerr);
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_jpeg=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_jpeg=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_jpeg" >&5
+echo "${ECHO_T}$ncbi_cv_lib_jpeg" >&6
+    if test "$ncbi_cv_lib_jpeg" = "no"; then
+       with_jpeg="no"
+    fi
+ fi
+ if test "$with_jpeg" = "no"; then
+    JPEG_PATH="No_JPEG"
+    JPEG_INCLUDE=
+    JPEG_LIBS=
+    WithoutPackages="$WithoutPackages JPEG"
+ else
+    WithPackages="$WithPackages JPEG"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBJPEG 1
+_ACEOF
+
+ fi
+
+
+
+
+: ${PNG_PATH=$NCBI/gd}
+if test "$with_png" != "no"; then
+    case "$with_png" in
+       yes | "" ) ;;
+       *        ) PNG_PATH=$with_png ;;
+    esac
+    if test -d "$PNG_PATH"; then
+       in_path=" in $PNG_PATH"
+       test -d "$PNG_PATH/include" && PNG_INCLUDE="-I$PNG_PATH/include"
+       if test -d "$PNG_PATH/lib${bit64_sfx}"; then
+          PNG_LIBPATH="-L$PNG_PATH/lib ${CONF_f_runpath}$PNG_PATH/lib"
+       fi
+       PNG_LIBS="$PNG_LIBPATH -lpng -lz"
+    else
+       PNG_INCLUDE=""
+       PNG_LIBS="-lpng -lz"
+       in_path=
+    fi
+    echo "$as_me:$LINENO: checking for libpng$in_path" >&5
+echo $ECHO_N "checking for libpng$in_path... $ECHO_C" >&6
+if test "${ncbi_cv_lib_png+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$PNG_INCLUDE $orig_CPPFLAGS"
+       LIBS="$PNG_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <png.h>
+int
+main ()
+{
+png_structp png_ptr
+      = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_png=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_png=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_png" >&5
+echo "${ECHO_T}$ncbi_cv_lib_png" >&6
+    if test "$ncbi_cv_lib_png" = "no"; then
+       with_png="no"
+    fi
+ fi
+ if test "$with_png" = "no"; then
+    PNG_PATH="No_PNG"
+    PNG_INCLUDE=
+    PNG_LIBS=
+    WithoutPackages="$WithoutPackages PNG"
+ else
+    WithPackages="$WithPackages PNG"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBPNG 1
+_ACEOF
+
+ fi
+
+
+
+
+: ${TIFF_PATH=/usr/sfw}
+if test "$with_tiff" != "no"; then
+    case "$with_tiff" in
+       yes | "" ) ;;
+       *        ) TIFF_PATH=$with_tiff ;;
+    esac
+    if test -d "$TIFF_PATH"; then
+       in_path=" in $TIFF_PATH"
+       test -d "$TIFF_PATH/include" && TIFF_INCLUDE="-I$TIFF_PATH/include"
+       if test -d "$TIFF_PATH/lib${bit64_sfx}"; then
+          TIFF_LIBPATH="-L$TIFF_PATH/lib ${CONF_f_runpath}$TIFF_PATH/lib"
+       fi
+       TIFF_LIBS="$TIFF_LIBPATH -ltiff -lz"
+    else
+       TIFF_INCLUDE=""
+       TIFF_LIBS="-ltiff -lz"
+       in_path=
+    fi
+    echo "$as_me:$LINENO: checking for libtiff$in_path" >&5
+echo $ECHO_N "checking for libtiff$in_path... $ECHO_C" >&6
+if test "${ncbi_cv_lib_tiff+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$TIFF_INCLUDE $orig_CPPFLAGS"
+       LIBS="$TIFF_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <tiffio.h>
+int
+main ()
+{
+TIFF* tiff = TIFFOpen("foo", "r");
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_tiff=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_tiff=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_tiff" >&5
+echo "${ECHO_T}$ncbi_cv_lib_tiff" >&6
+    if test "$ncbi_cv_lib_tiff" = "no"; then
+       with_tiff="no"
+    fi
+ fi
+ if test "$with_tiff" = "no"; then
+    TIFF_PATH="No_TIFF"
+    TIFF_INCLUDE=
+    TIFF_LIBS=
+    WithoutPackages="$WithoutPackages TIFF"
+ else
+    WithPackages="$WithPackages TIFF"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBTIFF 1
+_ACEOF
+
+ fi
+
+
+
+## etc.
+
+# Paths?
+if test "$with_ungif" != "no"; then
+    case "$with_ungif" in
+       yes | "" ) ;;
+       *        ) UNGIF_PATH=$with_ungif ;;
+    esac
+    if test -d "$UNGIF_PATH"; then
+       in_path=" in $UNGIF_PATH"
+       test -d "$UNGIF_PATH/include" && UNGIF_INCLUDE="-I$UNGIF_PATH/include"
+       if test -d "$UNGIF_PATH/lib${bit64_sfx}"; then
+          UNGIF_LIBPATH="-L$UNGIF_PATH/lib ${CONF_f_runpath}$UNGIF_PATH/lib"
+       fi
+       UNGIF_LIBS="$UNGIF_LIBPATH -lungif $X_LIBS -lX11"
+    else
+       UNGIF_INCLUDE=""
+       UNGIF_LIBS="-lungif $X_LIBS -lX11"
+       in_path=
+    fi
+    echo "$as_me:$LINENO: checking for libungif$in_path" >&5
+echo $ECHO_N "checking for libungif$in_path... $ECHO_C" >&6
+if test "${ncbi_cv_lib_ungif+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$UNGIF_INCLUDE $orig_CPPFLAGS"
+       LIBS="$UNGIF_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+extern "C" {
+                  #include <gif_lib.h>
+                  }
+int
+main ()
+{
+GifFileType* fp = DGifOpenFileName("foo");
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_ungif=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_ungif=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_ungif" >&5
+echo "${ECHO_T}$ncbi_cv_lib_ungif" >&6
+    if test "$ncbi_cv_lib_ungif" = "no"; then
+       with_ungif="no"
+    fi
+ fi
+ if test "$with_ungif" = "no"; then
+    UNGIF_PATH="No_UNGIF"
+    UNGIF_INCLUDE=
+    UNGIF_LIBS=
+    WithoutPackages="$WithoutPackages UNGIF"
+ else
+    WithPackages="$WithPackages UNGIF"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBUNGIF 1
+_ACEOF
+
+ fi
+
+
+
+if test "$with_ungif" = "no"; then
+   if test "$with_gif" != "no"; then
+    case "$with_gif" in
+       yes | "" ) ;;
+       *        ) GIF_PATH=$with_gif ;;
+    esac
+    if test -d "$GIF_PATH"; then
+       in_path=" in $GIF_PATH"
+       test -d "$GIF_PATH/include" && GIF_INCLUDE="-I$GIF_PATH/include"
+       if test -d "$GIF_PATH/lib${bit64_sfx}"; then
+          GIF_LIBPATH="-L$GIF_PATH/lib ${CONF_f_runpath}$GIF_PATH/lib"
+       fi
+       GIF_LIBS="$GIF_LIBPATH -lgif $X_LIBS -lX11"
+    else
+       GIF_INCLUDE=""
+       GIF_LIBS="-lgif $X_LIBS -lX11"
+       in_path=
+    fi
+    echo "$as_me:$LINENO: checking for libgif$in_path" >&5
+echo $ECHO_N "checking for libgif$in_path... $ECHO_C" >&6
+if test "${ncbi_cv_lib_gif+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$GIF_INCLUDE $orig_CPPFLAGS"
+       LIBS="$GIF_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+extern "C" {
+                     #include <gif_lib.h>
+                     }
+int
+main ()
+{
+GifFileType* fp = DGifOpenFileName("foo");
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_gif=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_gif=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_gif" >&5
+echo "${ECHO_T}$ncbi_cv_lib_gif" >&6
+    if test "$ncbi_cv_lib_gif" = "no"; then
+       with_gif="no"
+    fi
+ fi
+ if test "$with_gif" = "no"; then
+    GIF_PATH="No_GIF"
+    GIF_INCLUDE=
+    GIF_LIBS=
+    WithoutPackages="$WithoutPackages GIF"
+ else
+    WithPackages="$WithPackages GIF"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBGIF 1
+_ACEOF
+
+ fi
+
+
+
+else
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBGIF 1
+_ACEOF
+
+   GIF_INCLUDE=$UNGIF_INCLUDE
+   GIF_LIBS=$UNGIF_LIBS
+fi
+
+: ${XPM_PATH=`dirname $x_includes`}
+if test "$with_xpm" != "no"; then
+    case "$with_xpm" in
+       yes | "" ) ;;
+       *        ) XPM_PATH=$with_xpm ;;
+    esac
+    if test -d "$XPM_PATH"; then
+       in_path=" in $XPM_PATH"
+       test -d "$XPM_PATH/include" && XPM_INCLUDE="-I$XPM_PATH/include"
+       if test -d "$XPM_PATH/lib${bit64_sfx}"; then
+          XPM_LIBPATH="-L$XPM_PATH/lib ${CONF_f_runpath}$XPM_PATH/lib"
+       fi
+       XPM_LIBS="$XPM_LIBPATH -lXpm $X_LIBS -lX11"
+    else
+       XPM_INCLUDE=""
+       XPM_LIBS="-lXpm $X_LIBS -lX11"
+       in_path=
+    fi
+    echo "$as_me:$LINENO: checking for libXpm$in_path" >&5
+echo $ECHO_N "checking for libXpm$in_path... $ECHO_C" >&6
+if test "${ncbi_cv_lib_xpm+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$XPM_INCLUDE $orig_CPPFLAGS"
+       LIBS="$XPM_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <X11/xpm.h>
+int
+main ()
+{
+XpmImage image; XpmInfo info;
+     XpmReadFileToXpmImage("foo", &image, &info);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_xpm=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_xpm=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_xpm" >&5
+echo "${ECHO_T}$ncbi_cv_lib_xpm" >&6
+    if test "$ncbi_cv_lib_xpm" = "no"; then
+       with_xpm="no"
+    fi
+ fi
+ if test "$with_xpm" = "no"; then
+    XPM_PATH="No_XPM"
+    XPM_INCLUDE=
+    XPM_LIBS=
+    WithoutPackages="$WithoutPackages XPM"
+ else
+    WithPackages="$WithPackages XPM"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBXPM 1
+_ACEOF
+
+ fi
+
+
+
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -18061,6 +18725,18 @@ s,@X_CFLAGS@,$X_CFLAGS,;t t
 s,@X_PRE_LIBS@,$X_PRE_LIBS,;t t
 s,@X_LIBS@,$X_LIBS,;t t
 s,@X_EXTRA_LIBS@,$X_EXTRA_LIBS,;t t
+s,@JPEG_INCLUDE@,$JPEG_INCLUDE,;t t
+s,@JPEG_LIBS@,$JPEG_LIBS,;t t
+s,@PNG_INCLUDE@,$PNG_INCLUDE,;t t
+s,@PNG_LIBS@,$PNG_LIBS,;t t
+s,@TIFF_INCLUDE@,$TIFF_INCLUDE,;t t
+s,@TIFF_LIBS@,$TIFF_LIBS,;t t
+s,@UNGIF_INCLUDE@,$UNGIF_INCLUDE,;t t
+s,@UNGIF_LIBS@,$UNGIF_LIBS,;t t
+s,@GIF_INCLUDE@,$GIF_INCLUDE,;t t
+s,@GIF_LIBS@,$GIF_LIBS,;t t
+s,@XPM_INCLUDE@,$XPM_INCLUDE,;t t
+s,@XPM_LIBS@,$XPM_LIBS,;t t
 s,@PROJECTS@,$PROJECTS,;t t
 s,@signature@,$signature,;t t
 s,@build_root@,$build_root,;t t
