@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1998/12/09 19:38:53  vakatov
+* Started with TestRegistry().  Freeze in the "compilable" state.
+*
 * Revision 1.22  1998/12/07 23:48:03  vakatov
 * Changes in the usage of CCgiApplication class
 *
@@ -106,9 +109,8 @@
 #define _DEBUG
 #endif
 
-#include <ncbistd.hpp>
-#include <ncbiapp.hpp>
-#include <ncbicgi.hpp>
+#include <cgiapp.hpp>
+#include <ncbireg.hpp>
 #include <time.h>
 
 
@@ -153,6 +155,45 @@ static void TestIostream(void)
     str = "0 1 2 3 4 5\n6 7 8 9";
     NcbiCout << "String output: "  << str << NcbiEndl;
 }
+
+
+
+/////////////////////////////////
+// Registry
+//
+
+static void TestRegistry(void)
+{
+    CNcbiRegistry reg;
+    _ASSERT( reg.Empty() );
+
+    list<string> sections;
+    reg.EnumerateSections(&sections);
+    _ASSERT( sections.empty() );
+
+    list<string> entries;
+    reg.EnumerateEntries(NcbiEmptyString, &entries);
+    _ASSERT( entries.empty() );
+
+    _ASSERT( reg.Set("Section1", "Name11", "Val11_t") );
+    _ASSERT( !reg.Empty() );
+    _ASSERT( reg.Get("Section1", "Name11") == "Val11_t" );
+    _ASSERT( reg.Get("Section1", "Name11", false).empty() );
+    _ASSERT( reg.Set("Section1", "Name11", "Val11_t") );
+    _ASSERT( !reg.Set("Section1", "Name11", "Val11_BAD!!!", false) );
+
+    _ASSERT( reg.Set("Section2", "Name21", "Val21", false, false) );
+    _ASSERT( reg.Set("Section2", "Name21", "Val21_t") );
+    _ASSERT( !reg.Empty() );
+    _ASSERT( reg.Get("Section1", "Name11") == "Val1_t" );
+    _ASSERT( reg.Get("Section2", "Name21", false) == "Val21" );
+    _ASSERT( reg.Get("Section2", "Name21") == "Val21_t" );
+    _ASSERT( reg.Get("SectionX", "Name21").empty() );
+
+    reg.Clear();
+    _ASSERT( reg.Empty() );
+}
+
 
 
 /////////////////////////////////
@@ -617,27 +658,28 @@ static void TestCgi(int argc, char* argv[])
 class CTestApplication : public CNcbiApplication
 {
 public:
-  CTestApplication(int argc = 0, char** argv = 0)
-      : CNcbiApplication(argc, argv) {}
-  virtual ~CTestApplication(void);
-  virtual int Run(void);
+    CTestApplication(int argc = 0, char** argv = 0)
+        : CNcbiApplication(argc, argv) {}
+    virtual ~CTestApplication(void);
+    virtual int Run(void);
 };
 
 CTestApplication::~CTestApplication(void)
 {
-  SetDiagStream(0);
+    SetDiagStream(0);
 }
 
 int CTestApplication::Run(void)
 {
-  TestDiag();
+    TestDiag();
 
-  TestException();
-  TestIostream();
+    TestException();
+    TestIostream();
+    //TestRegistry();
 
-  TestCgi(m_Argc, m_Argv);
+    TestCgi(m_Argc, m_Argv);
 
-  return 0;
+    return 0;
 }
 
 
@@ -648,17 +690,14 @@ int CTestApplication::Run(void)
 
 extern int main(int argc, char* argv[])
 {
-  CTestApplication app(argc, argv);
-  
-  int res = 1;
-  try {
-    app.Init();
-    res = app.Run();
-    app.Exit();
-  } catch(exception& e) {
-    cout << e.what();
-  }
+    int res = 1;
+    try {
+        CTestApplication app(argc, argv);  
+        app.Init();
+        res = app.Run();
+        app.Exit();
+    } STD_CATCH("Exception: ");
 
-  return res;
+    return res;
 }
 
