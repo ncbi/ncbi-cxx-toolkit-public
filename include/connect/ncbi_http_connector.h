@@ -39,6 +39,7 @@
 #include <connect/ncbi_connector.h>
 #include <connect/ncbi_connutil.h>
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -175,6 +176,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2002/09/19 18:06:39  lavr
+ * Additional blank line inserted after inclusion of headers
+ *
  * Revision 6.9  2002/09/06 15:41:13  lavr
  * Log moved to end
  *
