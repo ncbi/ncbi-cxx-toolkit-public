@@ -108,7 +108,7 @@ OBJ = $proj_name
 
 # PRE_LIBS = $(NCBI_C_LIBPATH) .....
 LIB        = xncbi
-# LIB      = xserial xhtml xcgi xncbi
+# LIB      = xser xhtml xcgi xncbi xconnect
 # LIBS     = $(NCBI_C_LIBPATH) -lncbi $(NETWORK_LIBS) $(ORIG_LIBS)
 
 # CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
