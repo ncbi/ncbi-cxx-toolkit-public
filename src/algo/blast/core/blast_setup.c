@@ -895,8 +895,8 @@ BLAST_GetQuerySeqLoc(FILE *infp, Boolean query_is_na,
    return done;
 }
 
-Int2 BLAST_SetUpSubject(CharPtr file_name, CharPtr blast_program, 
-        SeqLocPtr PNTR subject_slp, BLAST_SequenceBlkPtr PNTR subject)
+Int2 BLAST_SetUpSubject(Uint1 program_number, 
+        SeqLocPtr subject_slp, BLAST_SequenceBlkPtr PNTR subject)
 {
    FILE *infp2;
    Int2 status = 0;
@@ -904,28 +904,16 @@ Int2 BLAST_SetUpSubject(CharPtr file_name, CharPtr blast_program,
                                       sequence in two sequences case */
    Int4 buffer_length=0; /* Length of subject sequence for two sequences 
                             case */
-   Uint1 program_number;
    Boolean is_na;
    Uint1 encoding;
 
-   if ((infp2 = FileOpen(file_name, "r")) == NULL) {
-      ErrPostEx(SEV_FATAL, 0, 0, 
-                "blast: Unable to open second input file %s\n", 
-                file_name);
-      return (1);
-   }
-      
-   BlastProgram2Number(blast_program, &program_number);
    is_na = (program_number != blast_type_blastp && 
             program_number != blast_type_blastx);
  
-   BLAST_GetQuerySeqLoc(infp2, is_na, NULL, subject_slp, 0, NULL);
-   FileClose(infp2);
-
    /* Fill the sequence block for the subject sequence */
 
    encoding = (is_na ? NCBI2NA_ENCODING : BLASTP_ENCODING);
-   if ((status=BLAST_GetSubjectSequence(*subject_slp, &subject_buffer, 
+   if ((status=BLAST_GetSubjectSequence(subject_slp, &subject_buffer, 
                                         &buffer_length, encoding)))
       return status;
    
@@ -941,7 +929,7 @@ Int2 BLAST_SetUpSubject(CharPtr file_name, CharPtr blast_program,
       encoding = ((program_number == blast_type_blastn) ?
                   BLASTNA_ENCODING : NCBI4NA_ENCODING);
       if ((status = 
-           BLAST_GetSubjectSequence(*subject_slp, 
+           BLAST_GetSubjectSequence(subject_slp, 
               &((*subject)->sequence_start), &((*subject)->length), encoding)))
          return status;
       (*subject)->sequence_start_allocated = TRUE;

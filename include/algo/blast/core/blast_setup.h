@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.15  2003/06/17 21:09:26  dondosha
+* Moved file reading from BLAST_SetUpSubject to Main
+*
 * Revision 1.14  2003/06/11 16:14:02  dondosha
 * Added number of queries argument to BLAST_SetUpQuery
 *
@@ -212,13 +215,12 @@ Int2 BLAST_GetTranslatedSeqLoc(SeqLocPtr query_slp,
         Int4 genetic_code, SeqLocPtr PNTR protein_slp_head);
 
 /** Set up the subject sequence block in case of two sequences BLAST.
- * @param file_name File with the subject sequence FASTA [in]
- * @param blast_program Type of BLAST program [in]
- * @param subject_slp SeqLoc for the subject sequence [out]
+ * @param program_number Type of BLAST program [in]
+ * @param subject_slp SeqLoc for the subject sequence [in]
  * @param subject Subject sequence block [out]
  */
-Int2 BLAST_SetUpSubject(CharPtr file_name, CharPtr blast_program, 
-        SeqLocPtr PNTR subject_slp, BLAST_SequenceBlkPtr PNTR subject);
+Int2 BLAST_SetUpSubject(Uint1 program_number, 
+        SeqLocPtr subject_slp, BLAST_SequenceBlkPtr PNTR subject);
 
 /** "Main" setup routine for BLAST. Calculates all information for BLAST search
  * that is dependent on the ASN.1 structures.
