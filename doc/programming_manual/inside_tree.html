@@ -49,7 +49,9 @@ This section is provided for those developers who must work within the
 source tree. The Reference Manual sections provide more complete and technical
 discussion of the topics reviewed here, and many links to the relevant
 sections are provided. This page is provided as an overview of material
-presented in the <a href="../new_proj.html#ref_Makefile">Reference Manual</a>.&nbsp;<a NAME="checkout"></a>
+presented in the <a href="../new_proj.html#ref_Makefile">Reference Manual</a>.&nbsp;<a NAME="checkout">
+and on the <a href="../makefiles.html">Working with Makefiles</a> pages.
+
 <h3>
 <a href="../config.html#ref_Source">Checkout</a> the source tree and configure
 a build directory</h3>
@@ -192,7 +194,7 @@ the actual execution of <i>make</i>, but rather, defines what will happen
 at that time by directing the <i>configure</i> script in the creation of
 the <i>Makefile</i> that
 <i>will</i> be executed (see also the Reference
-Manual's description of <i><a href="../new_proj.html#ref_Makefile">Makefile
+Manual's description of <i><a href="../makefiles.html#ref_MakefilesTargets">Makefile
 targets</a></i>).
 <p><a NAME="example"></a>
 <h3>
@@ -343,6 +345,8 @@ not. In the second case,
 <i>make</i> is invoked as: <i>make -f $(srcdir)/Makefile.myProj</i>,
 so both the project makefile <i>and</i> the source files are non-local.
 For example:
+<font size="-1">
+<font size="-1">
 <pre><font color="#000080">####### Makefile.myProj
 
 include $(NCBI)/ncbi.mk
@@ -360,6 +364,9 @@ clean:
 
 purge: clean
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -rm&nbsp; $(builddir)/bin/myProj</font></pre>
+</font>
+</font>
+
 will cause the C program <i>myProj</i> to be built directly from <i>Makefile.myProj</i>
 using the default C compiler, library paths, include paths, and compilation
 flags defined in <i>ncbi.mk</i>. The executables and libraries generated
@@ -387,10 +394,14 @@ in the library</li>
 In addition, any of the make variables defined in <i>build/Makefile.mk</i>,
 such as <i>$CPPFLAGS, $LINK,</i> etc., can be referred to and/or redefined
 in the project makefile, e.g.:
+
+<font size="-1">
 <pre>CFLAGS&nbsp;&nbsp; = $(ORIG_CFLAGS)&nbsp;&nbsp; -abc -DFOOBAR_NOT_CPLUSPLUS
 CXXFLAGS = $(ORIG_CXXFLAGS) -xyz
 CPPFLAGS = $(ORIG_CPPFLAGS) -UFOO -DP1_PROJECT -I$(NCBI_C_INCLUDE)
 LINK&nbsp;&nbsp;&nbsp;&nbsp; = purify $(ORIG_LINK)</pre>
+</font>
+
 For a simple example, see <a href="../lxr/source/src/corelib/Makefile.corelib.lib">Makefile.corelib.lib</a>,
 and for additional documentation, refer to the <a href="../new_proj.html#ref_MakeProjLib">Reference
 Manual</a> section. This customized makefile can be used to build both
@@ -480,7 +491,7 @@ in the <i>build</i> tree and/or the creation/deletion of the associated
 <tr>
 <td>
 <address>
-<a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
+<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
 </td>
 
 <td><!-- <td align=center><i>$Revision$</i></td> --></td>

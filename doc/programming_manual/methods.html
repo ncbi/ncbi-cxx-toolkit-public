@@ -69,6 +69,7 @@ Here is an outline of the steps required to set things up:
 </ol>
 
 The following script will do this for you:
+<font size="-1">
 <font color = "#008080"><pre>
 #! /bin/sh
 
@@ -112,9 +113,12 @@ cd testmod
 sed "s/LOCAL_CPPFLAGS = -I./LOCAL_CPPFLAGS = -I..\/internal\/c++\/include\//"
     Makefile.testmod_app > tmp
 </pre>
+</font>
 <tt class=code>
 sed "s/LIB        = xncbi/LIB = seqset seq seqres seqloc seqalign seqfeat seqblock pub medline biblio general xser xncbi/" tmp > tmp2
-	</tt><pre>
+	</tt>
+
+<pre>
 NEWLIBS=../internal/c++/src/objects
 
 cat >tmp <<EOF
@@ -126,7 +130,9 @@ EOF
 cat tmp2 tmp > Makefile.testmod_app
 
 rm tmp*
-</pre></font>
+</pre>
+</font>
+
 <p>
 <a name="xmpl"></a><h3> An example </h3>
 As a simple example, we defined the following new methods:
@@ -151,7 +157,9 @@ The methods' declarations (above) are added to the header files for the <i>user<
 <i>include/objects</i> subdirectories <i>seqset, seq,</i> and <i>seqloc</i> respectively. The
 implementations are then added to the <i>user</i> classes <i>*.cpp</i> files.
 
-<font color = red><pre>// added to src/objects/seqset/Bioseq_set.cpp</pre></font><pre>
+<font color = red>
+<font size="-1">
+<pre>// added to src/objects/seqset/Bioseq_set.cpp</pre></font><pre>
 void CBioseq_set::Describe(int n) const
 {
   for ( list< CRef< CSeq_entry> >::const_iterator i = GetSeq_set().begin();
@@ -159,7 +167,13 @@ void CBioseq_set::Describe(int n) const
     (**i).Describe(n);
 }
 
-</pre><font color = red><pre>// added to src/objects/seqset/Seq_entry.cpp</pre></font><pre>
+</pre>
+</font>
+
+<font color = red><pre>// added to src/objects/seqset/Seq_entry.cpp</pre></font>
+
+<font size="-1">
+<pre>
 void CSeq_entry::Describe(int n) const
 {
   switch (Which()) {
@@ -176,7 +190,11 @@ void CSeq_entry::Describe(int n) const
   }
 }
 
-</pre><font color = red><pre>// added to src/objects/seq/BioSeq.cpp</pre></font><pre>
+</pre></font>
+<font color = red><pre>// added to src/objects/seq/BioSeq.cpp</pre></font>
+
+<font size="-1">
+<pre>
 void CBioseq::Describe() const
 {
     list< CRef< CSeq_id> > ids = GetId();
@@ -191,13 +209,23 @@ void CBioseq::Describe() const
     cout << endl;
 }
 
-</pre><font color = red><pre>// added to src/objects/seq/Seq_inst.cpp</pre></font><pre>
+</pre>
+</font>
+
+<font color = red><pre>// added to src/objects/seq/Seq_inst.cpp</pre></font>
+
+<font size="-1">
+<pre>
 void CSeq_inst::myGetLength() const
 {
   cout << "myGetLength: " << GetLength();
 }
 
-</pre><font color = red><pre>// added to src/objects/seqloc/Seq_id.cpp</pre></font><pre>
+</pre></font>
+<font color = red><pre>// added to src/objects/seqloc/Seq_id.cpp</pre></font>
+
+<font size="-1">
+<pre>
 void CSeq_id::Describe (void) const
 {
   cout << SelectionName(Which()) << ' ';
@@ -218,11 +246,13 @@ void CSeq_id::Describe (void) const
   }
 }
 </pre>
+</font>
 <p>
 Note that each of these object modules' libraries must now be re-compiled to
 include the newly defined methods. The application which uses these methods
 might then look something like:
 
+<font size="-1">
 <pre>
 int main(int argc, char* argv[])
 {
@@ -251,6 +281,7 @@ int main(int argc, char* argv[])
   }
 }
 </pre>
+</font>
 
 <a href="usrtypeinfo.html"> <i> previous</i> </a>
 &nbsp;&nbsp;&nbsp;
@@ -265,7 +296,7 @@ int main(int argc, char* argv[])
 
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
-		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
+		  <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
 		  <!-- <td align=center><i>$Revision$</i></td> -->
 		  <td align=right><i>$Date$</i></td>
 	 </table>

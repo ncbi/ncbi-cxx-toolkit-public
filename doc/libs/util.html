@@ -340,6 +340,7 @@ thread handles the request.
 </h2>
 Abstract class, derived from <a href="../lxr/ident?i=CThread&d=C">CThread</a>,
 for the threads in a pool.  Three virtual methods control its behavior:
+<font size="-1">
 <pre>
     virtual void Init(void) {} // called at beginning of Main()
 
@@ -348,6 +349,7 @@ for the threads in a pool.  Three virtual methods control its behavior:
 
     virtual void x_OnExit(void) {} // called by OnExit()
 </pre>
+</font>
 <hr WIDTH="100%">
 <h2>
   <a name="CStdThreadInPool"></a>class
@@ -429,7 +431,7 @@ Class for CRC32 checksum calculation.
 <!-- Begin footer content -->
 
 <address>
-<a href="mailto:vasilche@ncbi.nlm.nih.gov">Eugene Vasilchenko</a></address>
+<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Eugene Vasilchenko</a></address>
 
 <br><!-- Created: Mon Jan 29 13:58:54 EST 2001 --><!-- hhmts start -->Last
 modified: Mon Jan 29 13:58:56 EST 2001<!-- hhmts end -->

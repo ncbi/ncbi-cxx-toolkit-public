@@ -121,15 +121,17 @@
 	 do a member-by-member copying. This is not suitable and can be dangerous
 	 sometimes. And if you decide overwrite this default behaviour by your own
 	 code like:
-	 <pre>
+
+<pre>
 class CFoo {
     // a copy constructor for initialization
     CFoo(const CFoo& bar) { ... }
     // an overloaded assignment(=) operator
     CFoo& operator=(const CFoo& bar) { if (&bar != this) ... }
 };
-	 </pre>
-	 it is <b>extremely important</b> that:
+</pre>
+
+it is <b>extremely important</b> that:
 	 <ul>
 		<li> <b>both</b> copy constructor and overloaded assignment be defined
 		<li> they have <b>just the same</b> meaning that is
@@ -140,13 +142,14 @@ class CFoo {
 
 	 In many cases when you dont want to have the assignment and copy
 	 constructor at all, just add to your class something like:
+
 <pre>
 class CFoo {
-    .............................
+   .............................
 private:
-    // Prohibit default initialization and assignment
-    CFooClass(const CFooClass&) { _TROUBLE; }
-    CFooClass& operator=(const CFooClass&) { _TROUBLE;  return *this; }
+   // Prohibit default initialization and assignment
+   CFooClass(const CFooClass&) { _TROUBLE; }
+   CFooClass& operator=(const CFooClass&) { _TROUBLE; return *this;}
 };
 </pre>
 
@@ -183,10 +186,10 @@ private:
 
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
-		  <td><address><a href="mailto:lewisg@ncbi.nlm.nih.gov">Lewis Geer</a></address></td>
+		  <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Lewis Geer</a></address></td>
 		  <td align=right>($Revision$)</td></tr>
 		<tr>
-		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td></tr>
+		  <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td></tr>
 	 </table>
 
 <!--#include virtual="./ssi/footer.shtml" -->

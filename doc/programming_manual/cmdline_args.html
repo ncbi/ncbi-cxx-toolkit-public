@@ -147,8 +147,8 @@ CArgDescriptions::CreateArgs(argc, argv)&nbsp; --->&nbsp; CArgs</li>
 CArgs["some_arg_name"]&nbsp; --->&nbsp; CArgValue</li>
 
 <li>
-CArgValue::AsDouble()&nbsp; --->&nbsp; <i>double</i>,&nbsp;&nbsp;&nbsp;
-CArgValue::AsString()&nbsp; --->&nbsp; <i>string</i>,&nbsp;&nbsp;&nbsp;
+CArgValue::AsDouble()&nbsp; --->&nbsp; <i>double</i>,&nbsp;
+CArgValue::AsString()&nbsp; --->&nbsp; <i>string</i>,&nbsp;
 etc.</li>
 </ul>
 
@@ -157,29 +157,29 @@ etc.</li>
 and available argument types</h4>
 This API can describe and work with the command line arguments that fit
 the following profile:
-<p>//&nbsp;&nbsp;&nbsp; progname&nbsp; {<font color="#3333FF">arg_key</font>,
+<p>//&nbsp; progname&nbsp; {<font color="#3333FF">arg_key</font>,
 <font color="#3333FF">arg_key_opt</font>,
 <font color="#3333FF">arg_flag</font>}&nbsp;
 {<font color="#3333FF">arg_plain</font>}&nbsp; {<font color="#3333FF">arg_extra</font>}
 <br>//
-<br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#3333FF">arg_key</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-:=&nbsp; -&lt;key> &lt;value>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -- (mandatory)
-<br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#3333FF">arg_key_opt</font>&nbsp;&nbsp;
-:= [-&lt;key> &lt;value>]&nbsp;&nbsp;&nbsp; -- (optional)
-<br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#3333FF">arg_flag</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-:= -&lt;flag>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>// <font color="#3333FF">arg_key</font>
+:=&nbsp; -&lt;key> &lt;value>&nbsp; -- (mandatory)
+<br>// <font color="#3333FF">arg_key_opt</font>
+:= [-&lt;key> &lt;value>]&nbsp; -- (optional)
+<br>// <font color="#3333FF">arg_flag</font>&nbsp;
+:= -&lt;flag>
 -- (always optional)
-<br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#3333FF">arg_plain</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-:= &lt;value> | [value]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -- (dep. on
+<br>// <font color="#3333FF">arg_plain</font>
+:= &lt;value> | [value] -- (dep. on
 the constraint policy)
-<br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#3333FF">arg_extra</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-:= &lt;value> | [value]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -- (dep. on
+<br>// <font color="#3333FF">arg_extra</font>
+:= &lt;value> | [value] -- (dep. on
 the constraint policy)
 <br>//
-<br>//&nbsp;&nbsp;&nbsp; &lt;key> must be followed by &lt;value>
-<br>//&nbsp;&nbsp;&nbsp; &lt;flag> and &lt;key> are case-sensitive, and
+<br>//&nbsp; &lt;key> must be followed by &lt;value>
+<br>//&nbsp; &lt;flag> and &lt;key> are case-sensitive, and
 can contain only alphanumeric characters
-<br>//&nbsp;&nbsp;&nbsp; &lt;value> is an arbitrary string (additional
+<br>//&nbsp; &lt;value> is an arbitrary string (additional
 restrictions can be imposed upon the argument value)
 <br>//
 <br>// {<font color="#3333FF">arg_plain</font>} and {<font color="#3333FF">arg_extra</font>}
@@ -190,11 +190,11 @@ descriptions.
 for all of them.
 <br>// User can apply constraints on the <i>number</i> of position arguments.
 <p><font color="#FF0000">Examples:</font>
-<br><font color="#FF0000">&nbsp;&nbsp;&nbsp; MyProgram1 -reverse -depth
+<br><font color="#FF0000">&nbsp; MyProgram1 -reverse -depth
 5 -name Lisa -log foo.log 1.c 2.c 3.c</font>
-<br><font color="#FF0000">&nbsp;&nbsp;&nbsp; MyProgram2 -i foo.txt -o foo.html
+<br><font color="#FF0000">&nbsp; MyProgram2 -i foo.txt -o foo.html
 -color red</font>
-<br><font color="#FF0000">&nbsp;&nbsp;&nbsp; MyProgram3&nbsp; -a -quiet
+<br><font color="#FF0000">&nbsp; MyProgram3&nbsp; -a -quiet
 -pattern 'Error:'&nbsp; bar.txt</font>
 <p><a NAME="ref_CArgDescriptions"></a>
 <h3>
@@ -310,9 +310,9 @@ method is used to define a single description for a set of "extra" unnamed
 positional arguments of uniform type.
 <p>Any of the registered descriptions can be tested for existence and/or
 deleted using:
-<br><font color="#008080">&nbsp;&nbsp; bool Exist(const string&amp; name)
+<br><font color="#008080"> bool Exist(const string&amp; name)
 const;</font>
-<br><font color="#008080">&nbsp;&nbsp; void Delete(const string&amp; name);</font>
+<br><font color="#008080"> void Delete(const string&amp; name);</font>
 <h4>
 <a NAME="ref_CArgDescriptions_StdValueTypes"></a>Standard types (pre-defined
 restrictions) for the argument
@@ -320,21 +320,21 @@ restrictions) for the argument
 &nbsp;The
 <i>EType</i> enumeration is defined as:
 <br><font color="#008080">&nbsp; enum EType {</font>
-<br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eString
+<br><font color="#008080"> eString
 = 0, // an arbitrary string</font>
-<br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eAlnum,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br><font color="#008080"> eAlnum,&nbsp;
 // [a-zA-Z0-9]</font>
-<br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eBoolean,&nbsp;&nbsp;&nbsp;
+<br><font color="#008080"> eBoolean,&nbsp;
 // {'true', 't', 'false', 'f'},&nbsp; case-insensitive</font>
-<br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eInteger,&nbsp;&nbsp;&nbsp;
+<br><font color="#008080"> eInteger,&nbsp;
 // convertible to an integer number (long)</font>
-<br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eDouble,&nbsp;&nbsp;&nbsp;&nbsp;
+<br><font color="#008080"> eDouble,
 // convertible to a floating point number (double)</font>
-<br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eInputFile,&nbsp;
+<br><font color="#008080"> eInputFile,&nbsp;
 // name of file (must exist and be readable)</font>
-<br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eOutputFile&nbsp;
+<br><font color="#008080"> eOutputFile&nbsp;
 // name of file (must be writeable)</font>
-<br><font color="#008080">&nbsp;&nbsp; };</font>
+<br><font color="#008080"> };</font>
 <p>The last argument, <i>openflags</i>, has meaning only when the <i>EType</i>
 is <i>eInputFile</i> or
 <i>eOutputFile</i>, and constrains the mode in
@@ -350,9 +350,9 @@ Positional arguments on the command line are associated with their argument
 descriptions according to the order in which they occur, and the order
 in which their descriptions were registered. Thus, if your program contained
 the following lines:
-<br><font color="#008080">&nbsp;&nbsp; descriptions.AddPlain("n", "between
+<br><font color="#008080"> descriptions.AddPlain("n", "between
 1 and 10", eInteger);</font>
-<br><font color="#008080">&nbsp;&nbsp; descriptions.AddPlain("f", "between
+<br><font color="#008080"> descriptions.AddPlain("f", "between
 0 and 1", eDouble);</font>
 <br>then calling the program as: <i>myprog 1 0</i>, would bind the positional
 parameters as <i>n = 1</i> and <i>f = 0.0</i>.
@@ -424,22 +424,25 @@ positional arguments satisfied the constraint policy.
 to the user, but by themselves do not provide very useful information.
 Catching the exception and displaying it <i>along</i> with a usage message
 provides a sounder interface to the application, and can be done as follows.
-<pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ...executed inside CNcbiApplication::Run()
+<pre><font color="#008080">
+    // ...executed inside CNcbiApplication::Run()
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CArgDescriptions argDescr;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CNcbiArguments myArgs = GetArguments();
+   CArgDescriptions argDescr;
+   CNcbiArguments myArgs = GetArguments();
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; try {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDescr.CreateArgs(myArgs);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+   try {
+      argDescr.CreateArgs(myArgs);
+   }
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; catch (exception&amp; e) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; string a;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cerr &lt;&lt; e.what() &lt;&lt; endl;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDescr.SetUsageContext(myArgs[0], "(program description)");
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cerr &lt;&lt; argDesc.PrintUsage(a);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return (-1);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></pre>
+   catch (exception&amp; e) {
+      string a;
+      cerr &lt;&lt; e.what() &lt;&lt; endl;
+      argDescr.SetUsageContext(myArgs[0], "(program description)");
+      cerr &lt;&lt; argDesc.PrintUsage(a);
+      return (-1);
+   }
+</font></pre>
+
 The <i>CreateArgs()</i> method actually serves two purposes: (1) it verifies
 that all of the required arguments are present, and that the number of
 positional arguments is valid, and (2) it creates an instance of the <i>CArgs</i>
@@ -451,20 +454,21 @@ message that is generated. <i>PrintUsage(localString)</i> writes its message
 to the <i>localString, and</i> returns that <i>string</i>, so that it can
 be used with an output operator. The output generated when an exception
 occurs might look something like:
+
 <pre><font color="#000080">Must specify mandatory argument:&nbsp; "-i &lt;InputFile>"&nbsp;
 SYNOPSIS
-&nbsp;&nbsp; ./myApplic -text -i inputFile [-l logFile]&nbsp;
+ ./myApplic -text -i inputFile [-l logFile]&nbsp;
 
-DESCRIPTION&nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp; (program description)
+DESCRIPTION&nbsp;
+ (program description)
 
-OPERANDS&nbsp;&nbsp;&nbsp;
-&nbsp;-text&nbsp;&nbsp;&nbsp; Flag
-&nbsp;&nbsp; Use text input format
-&nbsp;-i InputFile&nbsp;&nbsp;&nbsp; InpFile, mandatory
-&nbsp;&nbsp; Input data file
-&nbsp;[-l logFile]&nbsp;&nbsp;&nbsp; OutFile, optional
-&nbsp;&nbsp; Log errors to &lt;logfile></font></pre>
+OPERANDS&nbsp;
+&nbsp;-text&nbsp; Flag
+ Use text input format
+&nbsp;-i InputFile&nbsp; InpFile, mandatory
+ Input data file
+&nbsp;[-l logFile]&nbsp; OutFile, optional
+ Log errors to &lt;logfile></font></pre>
 The usage message prints a synopsis of the program and its arguments, a
 description of the program, and a summary of each argument, as obtained
 from its description. For example, the input file argument's description
@@ -476,6 +480,8 @@ The <i>CArgs</i> class -- container of <i>CArgValue</i> objects, to access
 parsed arg. values</h1>
 The <i>CArgs</i> class provides a data structure where the arguments' values
 can be stored, and includes access routines in its public interface:
+
+<font size="-1">
 <pre><font color="#008080">class CArgs
 {
 public:
@@ -488,10 +494,12 @@ public:
                                                 // unnamed arg's index
     void Print(string& str) const;              // Print all arguments to "str"
 };</font></pre>
+</font>
+
 One of the most important capabilities of this class is not shown here
 however, as it is a public method implemented by private data members of
 the <i>CArgs</i> class:
-<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float f = args["f"].AsDouble();</pre>
+<pre>&nbsp; float f = args["f"].AsDouble();</pre>
 Here, <i>args</i> is an instance of <i>CArgs</i>, and we are accessing
 the value of the argument that followed the <i>-f</i> key on the command
 line.
@@ -503,21 +511,23 @@ The internal representation of this argument is an instance of a
 whose primary purpose is to provide type-validated loading through its
 <i>AsXxx()</i>
 methods:
+<font size="-1">
 <pre><font color="#008080">class CArgValue : public CObject
 {
 public:
 
-&nbsp;&nbsp;&nbsp; // These functions throw an exception on the wrong value type
+&nbsp; // These functions throw an exception on the wrong value type
 
-&nbsp;&nbsp;&nbsp; string&amp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AsString&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void) const;
-&nbsp;&nbsp;&nbsp; long&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AsInteger&nbsp;&nbsp;&nbsp;&nbsp; (void) const;
-&nbsp;&nbsp;&nbsp; double&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AsDouble&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void) const;
-&nbsp;&nbsp;&nbsp; bool&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AsBoolean&nbsp;&nbsp;&nbsp;&nbsp; (void) const;
-&nbsp;&nbsp;&nbsp; CNcbiIstream&amp;&nbsp; AsInputFile&nbsp; (EFlags) const;
-&nbsp;&nbsp;&nbsp; CNcbiOstream&amp;&nbsp; AsOutputFile (EFlags) const;
+&nbsp; string&amp;&nbsp; AsString&nbsp; (void) const;
+&nbsp; long AsInteger (void) const;
+&nbsp; double AsDouble&nbsp; (void) const;
+&nbsp; bool AsBoolean (void) const;
+&nbsp; CNcbiIstream&amp;&nbsp; AsInputFile&nbsp; (EFlags) const;
+&nbsp; CNcbiOstream&amp;&nbsp; AsOutputFile (EFlags) const;
 
-&nbsp;&nbsp;&nbsp; bool IsDefaultValue(void) const;
+&nbsp; bool IsDefaultValue(void) const;
 };</font></pre>
+</font>
 
 <h1>
 <a NAME="ref_CodeExamples"></a></h1>
@@ -530,7 +540,7 @@ demonstrates the usage of these classes for argument processing. See also
 and <i><a href="../lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
 for more examples.
 
-<p><a href="applic.html"><i>Previous</i>&nbsp;</a>&nbsp;&nbsp; <i><a href="../index.html">Up
+<p><a href="applic.html"><i>Previous</i>&nbsp;</a> <i><a href="../index.html">Up
 </a><a href="diag.html">Next&nbsp;</a></i>
 
 <br>
@@ -542,7 +552,7 @@ for more examples.
 <tr>
 <td>
 <address>
-<a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
+<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
 </td>
 
 <td><!-- <td align=center><i>$Revision$</i></td> --></td>
@@ -553,7 +563,7 @@ for more examples.
 <tr>
 <td>
 <address>
-<a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
+<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
 </td>
 </tr>
 </table>

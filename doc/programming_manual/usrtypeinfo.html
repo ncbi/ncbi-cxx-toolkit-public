@@ -218,7 +218,8 @@ ClassName)</a></i></li>
 virtual functions. For example, the <i>GetTypeInfo()</i> method for the
 <i><a href="iterators.html#CPerson">CPerson</a></i> class (used in the
 chapter on iterators) can be implemented as:
-<pre>
+<font size="-1">
+    <pre>
 BEGIN_NAMED_CLASS_INFO("CPerson", CPerson)
 {
     ADD_NAMED_STD_MEMBER("m_Name", m_Name);
@@ -227,8 +228,10 @@ BEGIN_NAMED_CLASS_INFO("CPerson", CPerson)
 }
 END_CLASS_INFO
 </pre>
-<font color="#000000">or, equivalently, as:</font>
-<pre>
+</font>
+    <font color="#000000">or, equivalently, as:</font>
+<font size="-1">
+    <pre>
 BEGIN_CLASS_INFO(CPerson)
 {
     ADD_STD_MEMBER(m_Name);
@@ -237,7 +240,8 @@ BEGIN_CLASS_INFO(CPerson)
 }
 END_CLASS_INFO
 </pre>
-<font color="#000000">Here, the <i>CPerson</i> class has two <i>string</i>
+</font>
+    <font color="#000000">Here, the <i>CPerson</i> class has two <i>string</i>
 data members, <i>m_Name</i> and
 <i>m_Addr</i>, as well as a pointer to
 an object of the same type (<i>CPerson*</i>). All built-in C++ types such
@@ -262,7 +266,8 @@ that will visit all objects of type <i>CA</i> and
 the <i>GetTypeInfo()</i> method on that abstract class. The
 <i>ABSTRACT_CLASS_INFO</i>
 macros do this for us:</font>
-<pre>
+<font size="-1">
+    <pre>
 BEGIN_ABSTRACT_CLASS_INFO(CBase)
 {
     // ... data member definitions for abstract base class
@@ -272,7 +277,8 @@ BEGIN_ABSTRACT_CLASS_INFO(CBase)
 }
 END_ABSTRACT_CLASS_INFO
 </pre>
-<font color="#000000">The <i><a href="../lxr/ident?i=ADD_SUB_CLASS">ADD_SUB_CLASS</a></i>
+</font>
+    <font color="#000000">The <i><a href="../lxr/ident?i=ADD_SUB_CLASS">ADD_SUB_CLASS</a></i>
 macro provides the class inheritance information for all objects - its
 usage is <i>not</i> restricted to abstract classes. However, each class
 listed as a subclass by these macros must also use the DERIVED_CLASS macros
@@ -292,7 +298,8 @@ whose parent classes also have the
 <i>GetTypeInfo()</i> method implemented.
 Data members inherited from parent classes should not be included in the
 derived class type information.</font>
-<pre>
+<font size="-1">
+    <pre>
 BEGIN_DERIVED_CLASS_INFO(CA, CBase)
 {
     // ... data members in CA not inherited from CBase
@@ -305,7 +312,8 @@ BEGIN_DERIVED_CLASS_INFO(CB, CBase)
 }
 END_DERIVED_CLASS_INFO
 </pre>
-<font color="#FF0000">NOTE:</font><font color="#000000"> The type information
+</font>
+    <font color="#FF0000">NOTE:</font><font color="#000000"> The type information
 for classes derived directly from <i>CObject</i> does
 <i>not</i> however,
 follow this protocol. In this special case, although the class is derived
@@ -338,7 +346,8 @@ IsInteger)</a></font></i>
 indicates whether or not the enumeration includes arbitrary integer values
 or only those explicitly specified.</font>
 <p><font color="#000000">Example usage:</font>
-<pre>
+<font size="-1">
+    <pre>
 // hpp file:
 enum EMyEnum {
     eZero = 0,
@@ -357,7 +366,8 @@ BEGIN_ENUM_INFO(EMyEnum, false)
 }
 END_ENUM_INFO
 </pre>
-<font color="#000000">Enumerated values are specified with the <i>ADD_ENUM_VALUE</i>
+</font>
+    <font color="#000000">Enumerated values are specified with the <i>ADD_ENUM_VALUE</i>
 macro. As a result of executing the above macro, a global function named
 <i>GetTypeInfo_enum_EMyEnum()</i> will be implemented.</font>
 <br>&nbsp;
@@ -379,7 +389,8 @@ postfixed with the scope operator (::). For example, if
 is itself defined in <i>CMyClass</i>, then we would use the following macros
 in the
 <i>*.cpp</i> file:</font>
-<pre>
+<font size="-1">
+    <pre>
 BEGIN_ENUM_IN_INFO(CMyClass::, EMyEnum, false)
 {
     ADD_ENUM_VALUE("zero", eZero);
@@ -389,6 +400,7 @@ BEGIN_ENUM_IN_INFO(CMyClass::, EMyEnum, false)
 }
 END_ENUM_IN_INFO
 </pre>
+</font>
 </ul>
 <font color="#000000">Again, when using the above macros to install type
 information, the corresponding class definitions
@@ -742,7 +754,7 @@ information for the <a href="choice.html"><i>choice</i> object's variants.</a>
 <tr>
 <td>
 <address>
-<a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
+<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
 </td>
 
 <td><!-- <td align=center><i>$Revision$</i></td> --></td>

@@ -601,6 +601,8 @@ retrieved from its <i><a href="#ref_CArgs">CArgs</a></i> container - is
 an instance of a
 <i>CArgValue</i>. The primary purpose of this class is
 to provide type-validated loading through a set of <i>AsXxx()</i> methods:
+
+<font size="-1">
 <pre><font color="#008080">class CArgValue : public CObject
 {
 public:
@@ -627,6 +629,8 @@ public:
 &nbsp;&nbsp;&nbsp; virtual CNcbiOstream&amp; AsOutputFile(void) const = 0;
 &nbsp;&nbsp;&nbsp; virtual void&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CloseFile&nbsp;&nbsp; (void) const = 0; // safe close&amp;destroy
 };</font></pre>
+</font>
+
 Each of these <i>AsXxx()</i> methods will access the string storing the
 requested variable's value, and attempt to convert that string to the specified
 type, using for example, functions such as <i>atoi() </i>or<i> atof()</i>.&nbsp;
@@ -668,7 +672,7 @@ for more examples.
 <tr>
 <td>
 <address>
-<a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
+<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
 </td>
 
 <td><!-- <td align=center><i>$Revision$</i></td> --></td>
@@ -679,7 +683,7 @@ for more examples.
 <tr>
 <td>
 <address>
-<a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
+<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
 </td>
 </tr>
 </table>

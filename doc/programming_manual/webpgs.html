@@ -412,27 +412,31 @@ class definition returns a null pointer (0).</li>
 <i><a href="../lxr/ident?i=Init">Init()</a></i> is called by all of the
 <i>CHTMLPage</i> constructors, and initializes <i>m_TagMap</i> as follows:</li>
 
-<pre>
+<font size="-1">
+    <pre>
 void CHTMLPage::Init(void)
 {
     AddTagMap("TITLE", CreateTagMapper(this, &amp;CHTMLPage::CreateTitle));
     AddTagMap("VIEW",&nbsp; CreateTagMapper(this, &amp;CHTMLPage::CreateView));
 }
 </pre>
-As described in the preceding section, <i><a href="../lxr/ident?i=CreateTagMapper">CreateTagMapper()</a></i>
+</font>
+    As described in the preceding section, <i><a href="../lxr/ident?i=CreateTagMapper">CreateTagMapper()</a></i>
 is an overloaded function that creates a tagmapper struct. In this case,
 <i>CreateTitle()</i> and <i>CreateView()</i> will be installed as the <i>m_Method</i>
 data members in the resulting tagmappers. In general, the type of struct
 created by <i>CreateTagMapper</i> depends on the argument types to that
 function. In its usage here, <i>CreateTagMapper</i> is a template function,
 whose arguments are a pointer to an object and a pointer to a class method:
-<pre>
+<font size="-1">
+    <pre>
 template&lt;class C>
 BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)(void)) {
     return new TagMapper&lt;C>(method);
 }
 </pre>
-The value returned is itself a template object, whose constructor expects
+</font>
+    The value returned is itself a template object, whose constructor expects
 a pointer to a method (which will be used as a callback to create an object
 of type <i>C</i>). Here, <i>AddTagMap()</i> installs <i>CreateTitle()</i>
 and <i>CreateView()</i> as the data member for the tagmapper associated
@@ -442,6 +446,7 @@ concepts more concrete. The following code excerpt uses the standard NCBI
 template and inserts a text node at the <i>VIEW</i> tag position (compare
 <a href="xmplOut.html">output</a> to <a href="ncbi_page.html">unaltered
 template</a>):
+<font size="-1">
 <pre>
 #include &lt;html/html.hpp>
 #include &lt;html/page.hpp>
@@ -463,6 +468,7 @@ int main()
     return 1;
 }
 </pre>
+</font>
 
 The name of the template file is stored in <i>m_TemplateFile</i>, and no
 further action on that file will be taken until <i>Page->Print(cout)</i>
@@ -574,6 +580,7 @@ of the template file and be appended as a child to the page. When <i>PrintBegin(
 is later invoked for the text node, <i>MapTagAll()</i> associates the <i>VIEW</i>
 string with the <i>CNCBINode</i>, and in turn, calls <i>Print()</i> on
 that node.
+<font size="-1">
 <pre>
 #include &lt;html/html.hpp>
 #include &lt;html/page.hpp>
@@ -605,6 +612,7 @@ int main()
     return 1;
 }
 </pre>
+</font>
 
 <a NAME="htmnode"></a>
 <h3>
@@ -719,6 +727,7 @@ method. One way to think of this is that the initial print call - which
 will ultimately be propagated to all of the child nodes - is initiated
 with a "null parent" <i>TMode</i> object that only specifies the mode of
 output.
+<font size="-1">
 <pre>
 CNcbiOstream&amp; CNCBINode::Print(CNcbiOstream&amp; os, TMode prev)
 {
@@ -736,12 +745,18 @@ CNcbiOstream&amp; CNCBINode::Print(CNcbiOstream&amp; os, TMode prev)
     PrintEnd(os, mode);
 }
 </pre>
+</font>
 In the first top-level call to <i>Print()</i>, <i>prev</i> is the default
 <i>TMode</i> object described above, with <i>NULL</i> values for <i>m_Previous</i>
 and <i>m_Node</i>. In the body of the <i>Print()</i> method however, a
 new <i>TMode</i> is created for subsequent recursion, with the following
 constructor used to create the new <i>TMode</i> at that level:
-<pre>TMode(const TMode* M, CNCBINode* N) : m_Mode(M->m_Mode),m_Node(N),m_Previous(M) {}</pre>
+
+
+<font size="-1">
+<pre>TMode(const TMode* M, CNCBINode* N) : m_Mode(M->m_Mode),m_Node(N),m_Previous(M) {}
+</pre>
+</font>
 where <i>M</i> is the <i>TMode</i> input parameter, and <i>N</i> is the
 <i>current</i> node.
 <p><a NAME="createsub"></a>Thus, the output encoding specified at the top
@@ -1638,7 +1653,7 @@ See also <i><a href="#CPagerBox">CPagerBox</a></i> and <i><a href="#CPager">CPag
 <tr>
 <td>
 <address>
-<a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
+<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
 </td>
 
 <td><!-- <td align=center><i>$Revision$</i></td> --></td>

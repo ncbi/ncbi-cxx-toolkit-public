@@ -166,7 +166,8 @@ _TRACE( "x + 5 = "  <<  (x + 5) ); </pre>
 	 <p>
 	 This way, the easy way of dealing with exception in the NCBI C++
 	 code will be like:
-	 <pre>
+<font size="-1">
+     <pre>
 class foreign_exception { ..... };
 class exception_derived_user : public exception { ..... };
 ...........
@@ -183,6 +184,7 @@ try {
 }
 // handle all the rest "standard" exceptions in a uniform way
 STD_CATCH ( "in SomeFunc(" << arg1 << "," << arg2 << ")" ); </pre>
+</font>
 
 	 <p>
 	 Here, if <i>SomeFunc</i> do <i>throw std::runtime_error("Invalid Arg2");</i>
@@ -209,7 +211,8 @@ Error: [in SomeFunc(qqq,888)] Exception: Invalid Arg2
 		  If the <a href="#ref_Tracing">tracing is on</a>, then the location
 		  of the <i>throw</i> in the source code and the thrown exception will
 		  be printed out to the current diagnostic stream, e.g.:
-<pre>
+<font size="-1">
+            <pre>
 THROW_TRACE(CParseException, ("Failed parsing(at pos. 123)", 123));
 
 "coretest.cpp", line 708: Trace: CParseException: {123}
@@ -223,6 +226,7 @@ THROW1_TRACE(CErrnoException, "Failed strtod('1e-999999', 0)");
 "coretest.cpp", line 718: Trace: CErrnoException:
 Failed strtod('1e-999999', 0): Result too large
 </pre>
+</font>
 
 
 		<li> <a name="ref_ExceptionThrowAbort"> </a>
@@ -300,7 +304,8 @@ int  f3(long)  throw(e1,e2); </pre>
 	 <b><i>SetDiagStream()</i></b> to specify output stream for the diagnostics
 	 (one can call <b><i>SetDiagStream(&amp;NcbiCerr)</i></b> to dump the diagnostics
     to the standard error output stream):
-	 <pre>
+<font size="-1">
+<pre>
 extern void SetDiagStream
 (CNcbiOstream* os,
  bool          quick_flush  = true,// do stream flush after every message
@@ -308,13 +313,15 @@ extern void SetDiagStream
  void*         cleanup_data = 0    // stream is changed (see SetDiagHandler)
  );
 </pre>
+</font>
 
 	 Using <b><i>SetDiagHandler()</i></b>, one can install his own
 	 handler object of type <b><i>CDiagHandler</i></b> to process
 	 messages posted via <b><i>CNcbiDiag</i></b>.
 	 The implementation of the <b><i>CStreamDiagHandler</i></b> in <i>"ncbidiag.cpp"</i>
 	 is a good example of how to do this.
-	 <pre>
+<font size="-1">
+<pre>
 class CDiagHandler
 {
 public:
@@ -326,9 +333,11 @@ extern void          SetDiagHandler(CDiagHandler* handler,
                                     bool can_delete = true);
 extern CDiagHandler* GetDiagHandler(bool take_ownership = false);
 </pre>
+</font>
 
 	 where:
-	 <pre>
+<font size="-1">
+<pre>
 struct SDiagMessage {
     SDiagMessage(EDiagSev severity, const char* buf, size_t len,
                  const char* file = 0, size_t line = 0,
@@ -346,6 +355,7 @@ struct SDiagMessage {
     const char*    m_Prefix;
 };
 	 </pre>
+</font>
 
 	 Installing a new handler typically destroys the previous handler,
 	 which can be a problem if you need to keep the old handler around
@@ -369,7 +379,8 @@ struct SDiagMessage {
 	 <p>
      For compatibility with older code, the diagnostic system also
      supports specifying simple callbacks:
-<pre>
+<font size="-1">
+     <pre>
 typedef void (*FDiagHandler)(const SDiagMessage& mess);
 
 typedef void (*FDiagCleanup)(void* data);
@@ -378,6 +389,7 @@ extern void SetDiagHandler(FDiagHandler func,
                            void*        data,
                            FDiagCleanup cleanup);
 </pre>
+</font>
      However, it is better to use the object-based interface for new code.
 
 	 <p></p>
@@ -409,7 +421,8 @@ extern void SetDiagHandler(FDiagHandler func,
 
 	 <p>
 	 For example, this code:
-	 <pre>
+<font size="-1">
+     <pre>
 int iii = 1234;
 CNcbiDiag diag1;
 
@@ -424,7 +437,8 @@ diag1 << Warning << "Discard this warning" << ++iii << Reset;
          // message discarded
 diag1 << "This is a warning " << iii;
 diag1 << Endm; </pre>
-	 will write to the diagnostic stream(if the latter was set with
+</font>
+     will write to the diagnostic stream(if the latter was set with
 	 <b><i>SetDiagStream()</i></b>):
 	 <pre>
 Error: Message1_Start 1234
@@ -484,7 +498,7 @@ ERR_POST(Warning << "...print double: " << ddd); </pre>
 
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
-		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
+		  <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
 <!-- <td align=center><i>$Revision$</i></td> -->
     <td align=right>($Date$)</td></tr>
 	 </table>

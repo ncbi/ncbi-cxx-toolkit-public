@@ -143,6 +143,8 @@ the stream. <i>GetDataFormat()</i> returns the enumerated <i>ESerialDataFormat</
 for the stream. <i>ReadFileHeader()</i> reads the first line from the file,
 and returns it in a string. This might be used for example, in the following
 context:
+
+<font size="-1">
 <pre><font color="#008080">&nbsp;&nbsp; auto_ptr&lt;CObjectIStream> in(CObjectIStream::Open(fname, eSerial_AsnText));
 &nbsp;&nbsp; string type = in.ReadFileHeader();
 &nbsp;
@@ -158,6 +160,8 @@ context:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ...
 &nbsp;&nbsp; }
 &nbsp;&nbsp; // ...</font></pre>
+</font>
+
 The <i>ReadFileHeader()</i> method for the base <i>CObjectIStream</i> class
 returns an empty string. Only those stream classes which specialize in
 ASN.1 text or XML formats have actual implementations for this method.
@@ -251,11 +255,14 @@ the following methods:
 </ul>
 Again, there are several <i>Open()</i> methods, which are static class
 methods that return a pointer to a newly created <i>CobjectOstream</i>:
+
+<font size="-1">
 <pre><font color="#008080">&nbsp;static CObjectOStream* Open(const string&amp; fileName, ESerialDataFormat format);
 &nbsp;static CObjectOStream* Open(ESerialDataFormat format,&nbsp;
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const string&amp; fileName, unsigned openFlags = 0);
 &nbsp;static CObjectOStream* Open(ESerialDataFormat format,&nbsp;
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CNcbiOstream&amp; os, bool deleteOutStream = false);</font></pre>
+</font>
 The <i>Write*()</i> methods correspond to the <i>Read*()</i> methods defined
 for the input streams. <i>Write()</i> first calls <i>WriteFileHeader()</i>,
 and then calls <i>WriteObject()</i>.
@@ -386,17 +393,25 @@ type information object. For example, to install a new
 <i>CReadObjectHook</i>
 for a
 <i>CBioseq</i>, one might use:
+<font size="-1">
 <pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CBioseq::GetTypeInfo()->SetGlobalReadObjectHook(myReadBioseqHook);</font></pre>
+</font>
 Alternatively, if the desired behavior is to trigger the specialized <i>Read</i>
 method only when the object occurs as a data member of a particular containing
 class, then the new hook should be derived from the <i>CReadClassMemberHook</i>,
 and registered with that member's type information object:
-<pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CBioseq::GetTypeInfo()->FindMember("Seq-inst")
+<font size="-1">
+<pre>
+<font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CBioseq::GetTypeInfo()->FindMember("Seq-inst")
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ->SetGlobalReadClassMemberHook(myReadSeqinstHook);</font></pre>
+</font>
+
 Similarly, one can install a read hook that will only be triggered when
 the object occurs as a choice variant:
+<font size="-1">
 <pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CSeq_entry::GetTypeInfo()->FindVariant("Bioseq")
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ->SetGlobalReadChoiceVariantHook(myReadBioseqHook);</font></pre>
+</font>
 The new hook classes for these examples should be derived from <i>CReadObjectHook</i>,
 <i>CReadClassMemberHook</i>,
 and <i>CReadChoiceVariantHook</i>, respectively. In the first case, all
@@ -409,8 +424,10 @@ in a <i>CSeq_entry</i> object.
 and a reference to a <i><a href="typeinfo.html#objinfo">CObjectInfo</a></i>.
 For example, the <i>CReadObjectHook</i> class declares the <i>ReadObject()</i>
 method as:
+<font size="-1">
 <pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp; virtual void ReadObject(CObjectIStream&amp; in,&nbsp;
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const CObjectInfo&amp; object) = 0;</font></pre>
+</font>
 The <i>ReadClassMember</i> and <i>ReadChoiceVariant</i> hooks differ from
 the <i>ReadObject</i> hook class, in that the second argument to the virtual
 <i>Read</i>
@@ -473,6 +490,7 @@ again, we have three base classes:
 <i>CWriteChoiceVariantHook</i></li>
 </ul>
 These classes define the pure virtual methods:
+<font size="-1">
 <pre><font color="#008080">CWriteObjectHook::WriteObject(CObjectOStream&amp;,
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const CConstObjectInfo&amp; object) = 0;
 
@@ -481,11 +499,13 @@ CWriteClassMemberHook::WriteClassMember(CObjectOStream&amp;,
 
 CWriteChoiceVariantHook::WriteChoiceVariant(CObjectOStream&amp;,
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const CConstObjectInfoCV&amp; variant) = 0;</font></pre>
+</font>
 Like the read hooks, your derived write hooks can be installed by invoking
 the
 <i>SetGlobalWriteObjectHook()</i> or <i>SetLocalWriteObjectHook()</i>
 methods for the appropriate type information objects. Corresponding to
 the examples for read hooks then, we would have:
+<font size="-1">
 <pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CBioseq::GetTypeInfo()->SetGlobalWriteObjectHook(myWriteBioseqHook);
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CBioseq::GetTypeInfo()->FindMember("Seq-inst")
@@ -493,6 +513,7 @@ the examples for read hooks then, we would have:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CSeq_entry::GetTypeInfo()->FindVariant("Bioseq")
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ->SetGlobalWriteChoiceVariantHook(myWriteBioseqHook);</font></pre>
+</font>
 The <i><a href="../lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i> and
 <i><a href="../lxr/source/src/serial/test/testserial.cpp">testserial.cpp</a></i>
 demo programs also demonstrate the usage of the <i>CWriteClassMemberHook</i>
@@ -502,6 +523,7 @@ class.
 The <i>Copy</i> hook classes</h3>
 As with the <i>Read</i> and <i>Write</i> hook classes, there are three
 base classes which define the following <i>Copy</i> methods:
+<font size="-1">
 <pre><font color="#008080">CCopyObjectHook::CopyObject(CObjectStreamCopier&amp;,
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const CConstObjectInfo&amp; object) = 0;
 
@@ -510,6 +532,7 @@ CCopyClassMemberHook::CopyClassMember(CObjectStreamCopier&amp;,
 
 CCopyChoiceVariantHook::CopyChoiceVariant(CObjectStreamCopier&amp;,
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const CConstObjectInfoCV&amp; variant) = 0;</font></pre>
+</font>
 Newly derived copy hooks can be installed by invoking the <i>SetGlobalCopyObjectHook()</i>
 or
 <i>SetLocalCopyObjectHook()</i> methods for the appropriate type information
@@ -551,6 +574,7 @@ Another example of using CharBlock with write hooks can be found in
 <i><a href="../lxr/source/src/serial/test/testserial.cpp">testserial.cpp</a></i>
 application.
 
+<font size="-1">
 <pre><font color="#008080">
 
 void CWriteMyObjectHook::WriteObject(CObjectOStream&amp; out,
@@ -601,6 +625,7 @@ void CWriteMyObjectHook::WriteObject(CObjectOStream&amp; out,
     out.EndClass();
 }
 </font></pre>
+</font>
 
 <p><i><a href="../index.html">up&nbsp;</a></i>&nbsp;&nbsp; <a href="asn.html"><i>next</i>&nbsp;</a>
 
@@ -613,7 +638,7 @@ void CWriteMyObjectHook::WriteObject(CObjectOStream&amp; out,
 <tr>
 <td>
 <address>
-<a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
+<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
 </td>
 
 <td><!-- <td align=center><i>$Revision$</i></td> --></td>

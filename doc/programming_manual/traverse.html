@@ -63,6 +63,7 @@ with the serializable object classes.</a></i>
 Accessing and Referencing Data Members</h3>
 Omitting some of the low-level details of the base class, we find the <i>CBiostruc_Base</i>
 class has essentially the following structure:
+<font size="-1">
 <pre>class CBiostruc_Base : public CObject
 {
 public:
@@ -94,6 +95,7 @@ private:
 &nbsp;&nbsp;&nbsp; TFeatures m_Features;
 &nbsp;&nbsp;&nbsp; TModel m_Model;
 };</pre>
+</font>
 
 <font color="#000000">With the exception of the structure's chemical graph,
 each of the class's private data members is actually a <i>list</i> of references
@@ -200,6 +202,7 @@ would have been to use an NCBI<i> <a href="iterators.html#stdType">CStdTypeItera
 that only visits strings. For example, we could implement the Visit function
 on a <i>CBiostruc::TDescr</i> as follows:</font>
 
+<font size="-1">
 <pre>
 void Visit (const CBiostruc::TDescr&amp; descList)
 {
@@ -212,6 +215,7 @@ void Visit (const CBiostruc::TDescr&amp; descList)
     }
 }
 </pre>
+</font>
 
 <font color="#000000">In this example, the iterator will skip over all
 but the string data members.</font><font color="#000000"></font>
@@ -242,7 +246,7 @@ Type Information</a></i>.</font>
 <tr>
 <td>
 <address>
-<a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
+<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
 </td>
 
 <td><!-- <td align=center><i>$Revision$</i></td> --></td>

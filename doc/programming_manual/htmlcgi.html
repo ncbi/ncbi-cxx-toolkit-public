@@ -87,6 +87,7 @@ feature. The <i>submit</i> button generates a fresh page with the new query stri
 The program uses three classes: <i>CCar, CCarAttr</i>, and <i>CCarCgi</i>. The <i>CCar</i> class
 knows nothing about HTML nodes or CGI objects - its only functions are to store the currently
 selected color and features, and compute the resulting price:
+<font size="-1">
 <font color="#808080"><pre>
 class CCar
 {
@@ -109,10 +110,13 @@ private:
     unsigned    m_BasePrice;
 };
 </pre></font>
+</font>
 Instead, the <i>CCar</i> class provides an interface to all of its data members, thus allowing the
 application to get/set features of the car as needed. The static utility class, <i>CCarAttr</i>,
 simply provides the sets of possible features and colors, which will be used by the application
 in generating the HTML form for submission:
+
+<font size="-1">
 <font color="#808080"><pre>
 class CCarAttr {
 public:
@@ -124,13 +128,16 @@ private:
     static set&lt;string> sm_Colors;
 };
 </pre></font>
+</font>
 
 Both of these classes are defined in a header file which is <i>#include</i>'d in the <i>*.cpp</i>
 files. Finally, the application class does most of the actual work, and this class must know
 about <i>CCar, CCarAttr, HTML,</i> and <i>CGI</i> objects. The <i>CCarCgi</i> class has the following
 interface:
 
-<font color="#808080"><pre>
+<font color="#808080">
+<font size="-1">
+<pre>
 class CCarCgi : public CCgiApplication
 {
 public:
@@ -149,6 +156,7 @@ private:
     static const char sm_FeatureTag[];
 };
 </pre></font>
+</font>
 
 The source code is distributed over three files:
 <ol>
@@ -182,7 +190,7 @@ The additional files needed to compile and run the program are:
 
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
-		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
+		  <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
 		  <!-- <td align=center><i>$Revision$</i></td> -->
 		  <td align=right><i>$Date$</i></td>
 	 </table>

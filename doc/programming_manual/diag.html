@@ -86,22 +86,25 @@ file.
 <i>manipulators</i> to control the message severity level. These can be
 invoked as in the following examples on diagnostic stream <i>diag</i>:
 <pre>
-    diag &lt;&lt; Info;       // set severity level to <i>eDiag_Info</i>
-    diag &lt;&lt; Warning;    // set severity level to <i>eDiag_Warning</i>
-    diag &lt;&lt; Error;      // set severity level to <i>eDiag_Error</i> [default]
-    diag &lt;&lt; Fatal;      // set severity level to <i>eDiag_Fatal</i>
-    diag &lt;&lt; Trace;      // set severity level to <i>eDiag_Trace</i></pre>
+  diag &lt;&lt; Info;     // set severity level to <i>eDiag_Info</i>
+  diag &lt;&lt; Warning;  // set severity level to <i>eDiag_Warning</i>
+  diag &lt;&lt; Error;    // set severity level to <i>eDiag_Error</i> [default]
+  diag &lt;&lt; Fatal;    // set severity level to <i>eDiag_Fatal</i>
+  diag &lt;&lt; Trace;    // set severity level to <i>eDiag_Trace</i></pre>
 
 <a NAME="PostFlags"></a>
 <h3>Post Flags</h3>
 The post flags define additional information that will appear along with
 the message body. The standard format of a message is:
-<center><pre>&nbsp;
-"&lt;file>", line &lt;line>:&lt;severity>: [&lt;prefix>] &lt;message body></pre></center>
+<center>
+<pre>
+&nbsp;"&lt;file>", line &lt;line>:&lt;severity>: [&lt;prefix>] &lt;message body>
+</pre></center>
 where the <i>file, line, severity</i> and <i>prefix</i> fields are displayed
 (or not) depending on the post flags
 <a href="../lxr/ident?i=EDiagPostFlag">EDiagPostFlag
 </a>associated with the <i>CNcbiDiag</i>:
+<font size="-1">
 <pre>enum EDiagPostFlag {
     eDPF_File         = 0x1,  // set by default #if _DEBUG;  else -- not set
     eDPF_LongFilename = 0x2,  // set by default #if _DEBUG;  else -- not set
@@ -122,6 +125,8 @@ where the <i>file, line, severity</i> and <i>prefix</i> fields are displayed
     // ignore all other flags, use global flags
     eDPF_Default      = 0x8000
 };</pre>
+</font>
+
 The default message format displays only the severity level and the message
 body. This can be overridden inside the constructor for a specific instance
 of <i>CNcbiDiag</i>, or globally, using <i><a href="../lxr/ident?i=SetDiagPostFlag">SetDiagPostFlag</a>(EDiagPostFlag
@@ -295,7 +300,7 @@ Installed Handler "diag.cpp", line 45: Critical: This is a test message</pre>
 <tr>
 <td>
 <address>
-<a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
+<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
 </td>
 
 <td><!-- <td align=center><i>$Revision$</i></td> --></td>
@@ -306,7 +311,7 @@ Installed Handler "diag.cpp", line 45: Critical: This is a test message</pre>
 <tr>
 <td>
 <address>
-<a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
+<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
 </td>
 </tr>
 </table>

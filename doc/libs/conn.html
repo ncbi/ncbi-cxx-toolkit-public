@@ -241,6 +241,7 @@ Internet.
 In order to create the socket connection the user has to create
 a socket connector first, then pass it to <i><b>CONN_Create()</b></i>,
 as in the following example:
+<font size="-1">
 <pre>
 #include &lt;connect/ncbi_socket_connector.h&gt;
 #include &lt;connect/ncbi_connection.h&gt;
@@ -265,6 +266,7 @@ else {
     }
 }
 </pre>
+</font>
 
 A variant form of this connector's constructor,
 <a href="../lxr/ident?i=SOCK_CreateConnectorEx"><i><b>SOCK_CreateConnectorEx()</b></i></a>,
@@ -501,6 +503,7 @@ The question mark does not appear if the URL has no arguments.
 
 <p>
 More elaborate form of the HTTP connector's constructor has the following prototype:
+<font size="-1">
 <pre>
 typedef int/*bool*/ (*FHttpParseHTTPHeader)
 (const char* http_header,
@@ -525,6 +528,7 @@ extern CONNECTOR <a href="../lxr/ident?i=HTTP_CreateConnectorEx">HTTP_CreateConn
  FHttpAdjustCleanup   adjust_cleanup  /* may be NULL                        */
  );
 </pre>
+</font>
 This form is assumed to be rarely used by the users directly, but it provides rich access to the internal management of HTTP connections.
 
 <p>
@@ -682,6 +686,7 @@ track of the logical sequence of transactions.
 <p>
 The following code fragment establishes service connection to
 the named service <tt>"io_bounce"</tt>, using only stateless servers:
+<font size="-1">
 <pre>
 CONNECTOR c;
 CONN conn;
@@ -698,6 +703,7 @@ else {
     ...
 }
 </pre>
+</font>
 
 The real type of the data channel can be obtained via call to
 <a href="#CONN_GetType"><i><b>CONN_GetType(</b></i><tt>conn</tt><i><b>)</b></i></a>.
@@ -971,6 +977,7 @@ in restriction that the server has additionally to have a certain (user-specifie
 from <a href="../tools/dispatcher/LBSMD.html#ref_HostEnvironment">LBSMD host environment</a> keyed <tt>"my_service_env"</tt>,
 the first word of which is assumed to be the name.
 
+<font size="-1">
 <pre>
 #include &lt;<a href="../lxr/source/include/connect/ncbi_service_connector.h">connect/ncbi_service_connector.h</a>&gt;
 #include &lt;ctype.h>
@@ -1077,6 +1084,7 @@ int main(int argc, char* argv[])
     return 0;
 }
 </pre>
+</font>
 <u>Note</u>: No network (indirect) mapping occurs in the above example because <tt>net_info</tt> is passed as <tt>NULL</tt>
 to the connector's constructor.
 
@@ -1103,7 +1111,7 @@ connects to the server's listening port.
 <table border=0 width="100%" cellspacing=0>
 <tr>
 <td align=left>
-  <address><a href="mailto:lavr@ncbi.nlm.nih.gov">Anton Lavrentiev</a></address>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Anton Lavrentiev</a></address>
 </td>
 <!-- <td align=center><i>$Revision$</i></td> -->
 <td align=right><i>$Date$</i></td>

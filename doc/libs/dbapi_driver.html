@@ -135,6 +135,7 @@ This program opens one connection to the server and selects the database
 names and the date when each database was created (assuming that table
 "sysdatabases" does exist). In this example the string "XXX" should be
 replaced with the real driver name.
+<font size="-1">
 <pre>#include &lt;iostream>
 #include &lt;dbapi/driver/public.hpp>
 #include &lt;dbapi/driver/exception.hpp>
@@ -203,6 +204,7 @@ int main()
     }
 }
 </pre>
+</font>
 
 
 
@@ -397,6 +399,7 @@ setting. The <i>SetLoginTimeout()</i> and <i>SetTimeout()</i> methods do
 the job. If you are going to work with text or image objects in your program,
 you need to call <i>SetMaxTextImageSize()</i> to define the maximal size
 for such objects. Objects which exceed this limit could be truncated.
+<font size="-1">
 <pre>
 class CMyHandlerForConnectionBoundErrors : public CDB_UserHandler
 {
@@ -438,6 +441,7 @@ int main()
     }
 }
 </pre>
+</font>
 The only way to get a connection to a server in <i>NCBI DBAPI driver</i>
 is through a <i>Connect()</i> method in <a href="../docxx/I_DriverContext.html">driver
 context</a>. The first three arguments: server name, user name and password
@@ -457,6 +461,7 @@ bin" first and opens a new connection only if it is necessary.
 <p>The <i>pool_name</i> argument is just an arbitrary string. Application
 could use this argument to assign a name to one or more connections (to
 create a connection pool) or to invoke a connection by name from this pool.
+<font size="-1">
 <pre>    ...
     // Create a pool of four connections (two to one server and two to another)
     // with the default database "DatabaseA"
@@ -492,6 +497,7 @@ create a connection pool) or to invoke a connection by name from this pool.
         ...
     }
 </pre>
+</font>
 
 Application could combine in one pool the connections to the different
 servers. This mechanism could also be used to group together the connections
@@ -510,6 +516,7 @@ contexts factory. The
 to solve these problems.
 <p>Let's rewrite our <a href="#ref_SampleProgram">Sample program</a> using the
 <b>Driver Manager</b>. The original text was.
+<font size="-1">
 <pre>#include &lt;iostream>
 #include &lt;dbapi/driver/public.hpp>
 #include &lt;dbapi/driver/exception.hpp>
@@ -535,7 +542,9 @@ int main()
                                                  "my_password", 0);
         ...
 </pre>
+</font>
 If we use the <b>Driver Manager</b> we could allow the driver name to be a program argument.
+<font size="-1">
 <pre>#include &lt;iostream>
 #include &lt;dbapi/driver/public.hpp>
 #include &lt;dbapi/driver/exception.hpp>
@@ -558,6 +567,7 @@ int main(int argc, const char* argv[])
                                                  "my_password", 0);
         ...
 </pre>
+</font>
 This fragment creates an instance of <b>Driver Manager</b>, dynamically loads driver's library,
 implicitly register this driver, creates the driver context and makes a connection to a server.
 If you don't want to load some drivers dynamically for any reason, but want to use the <b>Driver Manager</b>
@@ -620,6 +630,7 @@ object to populate the columns.</li>
 <b>Example</b>
 <p>Let's suppose that we want to insert a new row into table T described
 above.
+<font size="-1">
 <pre>CDB_Connection* con;
 ...
 // preparing the query
@@ -659,6 +670,8 @@ con->SendData(my_descr, my_text);
 
 delete my_descr; // we don't need this descriptor anymore
 ...</pre>
+</font>
+
 Recommended algorithm for updating the text/image data:
 <ul>
 <li>
@@ -680,6 +693,7 @@ Use <i>SendData()</i> method or <a href="../docxx/CDB_SendDataCmd.html">CDB_Send
 object to populate the columns.</li>
 </ul>
 <b>Example</b>
+<font size="-1">
 <pre>CDB_Connection* con;
 ...
 // preparing the query
@@ -720,6 +734,7 @@ con->SendData(my_descr, my_text);
 delete my_descr; // we don't need this descriptor anymore
 ...
 </pre>
+</font>
 
 
 <a name="ref_Results"></a>
@@ -730,6 +745,7 @@ Application has to retrieve all results from a current command prior to executin
 Not all of the results are always meaningful for the application (i.e. an RPC always
 returns a status result regardles of either a procedure has a "<em>return</em> something" statement or not),
 but all of them need to be retrieved. The following results loop is recommended for all types of the commands:
+<font size="-1">
 <pre>
 CDB_XXXCmd* cmd; // XXX could be Lang, RPC, etc.
 ...
@@ -772,6 +788,7 @@ while (cmd-&gt;HasMoreResults()) {
    delete res;
 }
 </pre>
+</font>
 
 If you don't want to process some particular type of result, just skip the <b>while</b>(res-&gt;Fetch()){...}
 in the corresponding <b>case</b>.
@@ -1132,7 +1149,7 @@ and can be pretty slow.
 <table border=0 width="100%" cellspacing=0>
 <tr>
 <td align=left>
-  <address><a href="mailto:cpp@ncbi.nlm.nih.gov">Vladimir Soussov, Denis Vakatov</a></address>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Vladimir Soussov, Denis Vakatov</a></address>
 </td>
 <!-- <td align=center><i>$Revision$</i></td> -->
 <td align=right><i>$Date$</i></td>

@@ -73,6 +73,7 @@ or use <i><b>Join()</b></i> to wait for the thread termination.
 The code should look like:
 <p>
 
+<font size="-1">
 <pre><font color="#008080">
 #include &lt;corelib/ncbistd.hpp&gt;
 #include &lt;corelib/ncbithr.hpp&gt;
@@ -120,6 +121,7 @@ int main(void)
 }
 
 </font></pre>
+</font>
 <p>
 
 The above simple application will start one child thread,
@@ -241,6 +243,7 @@ class destructor as <tt>protected</tt>.
 The following diagram shows typical thread life
 cycle.
 
+<font size="-1">
 <pre><font size=-1>
 Parent thread                Child thread                Parent thread                Child thread
     |                                                        |
@@ -280,6 +283,7 @@ Parent thread                Child thread                Parent thread          
                                                              |
 
 </font></pre>
+</font>
 <p>
 
 The diagram demonstrates that thread constructors called from the parent
@@ -602,7 +606,7 @@ The method should be used with care.
 <table border=0 width="100%" cellspacing=0>
 <tr>
 <td align=left>
-  <address><a href="mailto:grichenk@ncbi.nlm.nih.gov">Aleksey Grichenko</a></address>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Aleksey Grichenko</a></address>
 </td>
 <!-- <td align=center><i>$Revision$</i></td> -->
 <td align=right><i>$Date$</i></td>

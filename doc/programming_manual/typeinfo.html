@@ -144,6 +144,7 @@ we have an appropriate type information object available for
 <i>myObj</i>,
 and consider how this might be used:<a NAME="example"></a>
 
+<font size="-1">
 <pre>
 bool LoadObject(TypeInfo&amp; info, Object&amp; myObj, istream&amp; is)
 {
@@ -156,6 +157,7 @@ bool LoadObject(TypeInfo&amp; info, Object&amp; myObj, istream&amp; is)
     }
 }
 </pre>
+</font>
 Here, we assume that our type information object, <i>info</i>, stores information
 about the memory offset of each data member in <i>myObj</i>, and that such
 information can be retrieved using some sort of identifying member name
@@ -453,6 +455,7 @@ Usage of object type information</h3>
 We can now reconsider how our <i><a href="#example">LoadObject()</a></i>
 function might be implemented using the <i>CObjectInfo</i> class:
 
+<font size="-1">
 <pre>
 bool LoadObject(CObjectInfo&amp; info, CNcbiIStream&amp; is)
 {
@@ -469,6 +472,7 @@ bool LoadObject(CObjectInfo&amp; info, CNcbiIStream&amp; is)
     }
 }
 </pre>
+</font>
 
 Here, <i>"info"</i> contains pointers to the <i>CObject</i> itself as well
 as to its associated <i>CTypeInfo</i> object. For each member alias read
@@ -478,7 +482,8 @@ member. We then use the operator <i>()</i> to verify that the member was
 located, and if so, use the member's <i>CObjectInfo</i> to set a value
 in the function <i>SetValue()</i>:
 
-<pre>
+<font size="-1"><pre>
+
 void SetValue(const CObjectInfo&amp; obj, const string value)
 {
     if (obj.GetTypeFamily() == eTypeFamilyPrimitive) {
@@ -500,6 +505,7 @@ void SetValue(const CObjectInfo&amp; obj, const string value)
     }
 }
 </pre>
+</font>
 
 In this example, <i>SetValue()</i> can only assign primitive types. More
 generally however, the <i>CObjectInfo</i> class allows the assignment of
@@ -537,12 +543,14 @@ take a
 <i>CTypeInfo</i> argument. Using this class, it is easy to translate
 files between different formats; for example:
 
+<font size="-1">
 <pre>
 auto_ptr&lt;CObjectIStream>  in(CObjectIStream::Open("mydata.xml",eSerial_Xml));
 auto_ptr&lt;CObjectOStream> out(CObjectOStream::Open("mydata.asn",eSerial_AsnBinary));
 CObjectStreamCopier copier(*in, *out);
 copier.Copy (CBioseq_set::GetTypeInfo());
 </pre>
+</font>
 
 copies a <i>CBioseq_set</i> encoded in XML to a new file, reformatted in
 ASN.1 binary format.
@@ -560,7 +568,7 @@ ASN.1 binary format.
 <tr>
 <td>
 <address>
-<a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
+<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
 </td>
 
 <td><!-- <td align=center><i>$Revision$</i></td> --></td>
