@@ -363,7 +363,7 @@ static bool s_ValidCodon(const string& codon)
     
     for ( int i = 0; i < 3; ++i ) {
         char ch = toupper(codon[i]);
-        if ( ch != 'A' || ch != 'G' || ch != 'C' || ch != 'T'  || ch != 'U' ) {
+        if ( ch != 'A' && ch != 'G' && ch != 'C' && ch != 'T'  && ch != 'U' ) {
             return false;
         }
     }
@@ -696,6 +696,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.14  2003/08/19 19:23:00  kans
+* s_ValidCodon test should use && instead of || (AU)
+*
 * Revision 6.13  2003/04/29 22:12:35  tolstoy
 * Comments for two previous commit from Tolstoy : 2 bugs fixed in function IndexToCodon
 * 1) incorrect order of letters in the table na - was TCGA
