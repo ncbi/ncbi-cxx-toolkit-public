@@ -112,5 +112,41 @@ CSeqDB::~CSeqDB()
         delete m_Impl;
 }
 
+CSeqDBIter CSeqDB::Begin(void)
+{
+    return CSeqDBIter(this, 0);
+}
+
+bool CSeqDB::GetNextOID(TOID & oid)
+{
+    return m_Impl->GetNextOID(oid);
+}
+
+CSeqDBIter::CSeqDBIter(CSeqDB * db, TOID oid)
+    : m_DB    (db),
+      m_OID   (oid),
+      m_Data  (0),
+      m_Length((TOID) -1)
+{
+    if (m_DB->GetNextOID(m_OID)) {
+        x_GetSeq();
+    }
+}
+
+CSeqDBIter & CSeqDBIter::operator++(void)
+{
+    x_RetSeq();
+    
+    ++m_OID;
+    
+    if (m_DB->GetNextOID(m_OID)) {
+        x_GetSeq();
+    } else {
+        m_Length = (Uint4)-1;
+    }
+    
+    return *this;
+}
+
 END_NCBI_SCOPE
 
