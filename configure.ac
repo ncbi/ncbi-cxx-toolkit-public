@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.280 2004/03/23 15:47:11 vakatov Exp $
+#  $Id: configure.ac,v 1.281 2004/03/31 18:06:53 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -664,7 +664,8 @@ case "$host_os:$compiler" in
    LDFLAGS="-xildoff $LDFLAGS"
    AR=${AR:="$CXX $MT_FLAG -xar -o"}
    STRIP="@:"
-   if test "$with_debug" = "no" -a "$with_profiling" != "yes" ; then
+   if test "$with_debug" = "no" -a "$with_profiling" != "yes" \
+      -a "$with_strip" = "yes" ; then
       LDFLAGS="-s $LDFLAGS"
    fi
    CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/cxx_filter.$compiler.sh"
@@ -731,8 +732,8 @@ case "$host_os:$compiler" in
    ;;
 
  *:Compaq)
-   CPPFLAGS="-D__USE_STD_IOSTREAM $CPPFLAGS"
-   CXXFLAGS="-tweak -nocompress -distinguish_nested_enums $CXXFLAGS"
+   CPPFLAGS="-D__USE_STD_IOSTREAM -distinguish_nested_enums $CPPFLAGS"
+   CXXFLAGS="-tweak -nocompress $CXXFLAGS"
    case "$host_os" in
       osf*)
         # Suppress link warnings; otherwise, we get "weak symbol multiply
@@ -3243,11 +3244,16 @@ NCBI_CHECK_THIRD_PARTY_LIB(sqlite,
 
 
 ### OEChem
+# somewhat kludgish, as we now wanto to add in oeiupac and oedepict,
+# which depend on oechem....
 : ${OECHEM_PATH=$NCBI/oechem}
 NCBI_CHECK_THIRD_PARTY_LIB(oechem,
  AC_LANG_PROGRAM([#include <oechem.h>],
     [OEChem::OEMol mol; OEChem::OEConfBase* c = mol.GetActive();]),
- -loesystem -loeplatform -lz $NETWORK_LIBS)
+  -loeiupac -loedepict -loechem -loesystem -loeplatform -lz, $NETWORK_LIBS)
+if test -n "$OECHEM_LIBS"; then
+   OECHEM_LIBS=`echo $OECHEM_LIBS | sed -e 's/-loechem \(.*-loechem .*\)/\1/'`
+fi
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
 
