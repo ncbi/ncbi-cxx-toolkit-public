@@ -33,6 +33,7 @@
 */
 
 #include <corelib/ncbienv.hpp>
+#include <corelib/ncbitime.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <stdio.h>
 #include <time.h>
@@ -43,7 +44,7 @@
 #endif
 
 // Mac OS has unistd.h, but STDIN_FILENO is not defined
-#ifdef NCBI_OS_MAC 
+#ifdef NCBI_OS_MAC
 #  define STDIN_FILENO 0
 #endif
 
@@ -203,6 +204,20 @@ bool CCgiCookie::operator< (const CCgiCookie& cookie)
                         cookie.m_Name, cookie.m_Domain, cookie.m_Path);
 }
 
+
+void CCgiCookie::SetExpTime(const CTime& exp_time)
+{
+    _ASSERT(exp_time.IsGmtTime());
+
+    m_Expires.tm_sec   = exp_time.Second();
+    m_Expires.tm_min   = exp_time.Minute();
+    m_Expires.tm_hour  = exp_time.Hour();
+    m_Expires.tm_mday  = exp_time.Day();
+    m_Expires.tm_mon   = exp_time.Month()-1;
+    m_Expires.tm_wday  = exp_time.DayOfWeek();
+    m_Expires.tm_year  = exp_time.Year()-1900;
+    m_Expires.tm_isdst = -1;
+}
 
 
 ///////////////////////////////////////////////////////
@@ -699,7 +714,7 @@ static void s_ParseMultipartEntries(const string& boundary,
         }
         s_AddEntry(entries, name, str.substr(pos, next_boundary - pos),
                    num++, filename);
-        pos = next_boundary + 2*eol_size + boundary_size; 
+        pos = next_boundary + 2*eol_size + boundary_size;
     }
 }
 
@@ -1142,6 +1157,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.65  2003/02/19 17:50:47  kuznets
+* Added function AddExpTime to CCgiCookie class
+*
 * Revision 1.64  2002/09/17 19:57:50  ucko
 * Add position field to CGI entries; minor reformatting.
 *

@@ -48,6 +48,7 @@
 
 BEGIN_NCBI_SCOPE
 
+class CTime;
 
 ///////////////////////////////////////////////////////
 //
@@ -90,10 +91,11 @@ public:
     //  - set the property to "str" if "str" has valid format
     //  - throw the "invalid_argument" if "str" has invalid format
     void SetValue  (const string& str);
-    void SetDomain (const string& str);  // not spec'd by default
-    void SetPath   (const string& str);  // not spec'd by default
-    void SetExpDate(const tm& exp_date); // GMT time (infinite if all zeros)
-    void SetSecure (bool secure);        // "false" by default
+    void SetDomain (const string& str);    // not spec'd by default
+    void SetPath   (const string& str);    // not spec'd by default
+    void SetExpDate(const tm& exp_date);   // GMT time (infinite if all zeros)
+    void SetExpTime(const CTime& exp_time);// GMT time (infinite if all zeros)
+    void SetSecure (bool secure);          // "false" by default
 
     // All "const string& GetXXX(...)" methods beneath return reference
     // to "NcbiEmptyString" if the requested attributre is not set
@@ -699,6 +701,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.58  2003/02/19 17:50:30  kuznets
+* Added function AddExpTime to CCgiCookie class
+*
 * Revision 1.57  2002/09/17 19:57:35  ucko
 * Add position field to CGI entries; minor reformatting.
 *
