@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/01/05 14:25:20  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.11  2003/10/01 14:40:12  vasilche
 * Fixed CanGet() for members wihout 'set' flag.
 *
@@ -174,6 +177,12 @@ void CObjectTypeInfoMI::ResetGlobalReadHook(void) const
     GetNCMemberInfo()->ResetGlobalReadHook();
 }
 
+void CObjectTypeInfoMI::SetPathReadHook(CObjectIStream* in, const string& path,
+                                        CReadClassMemberHook* hook) const
+{
+    GetNCMemberInfo()->SetPathReadHook(in, path, hook);
+}
+
 void CObjectTypeInfoMI::SetLocalWriteHook(CObjectOStream& stream,
                                           CWriteClassMemberHook* hook) const
 {
@@ -193,6 +202,12 @@ void CObjectTypeInfoMI::ResetLocalWriteHook(CObjectOStream& stream) const
 void CObjectTypeInfoMI::ResetGlobalWriteHook(void) const
 {
     GetNCMemberInfo()->ResetGlobalWriteHook();
+}
+
+void CObjectTypeInfoMI::SetPathWriteHook(CObjectOStream* stream, const string& path,
+                                         CWriteClassMemberHook* hook) const
+{
+    GetNCMemberInfo()->SetPathWriteHook(stream, path, hook);
 }
 
 void CObjectTypeInfoMI::SetLocalSkipHook(CObjectIStream& stream,
@@ -216,6 +231,12 @@ void CObjectTypeInfoMI::ResetGlobalSkipHook(void) const
     GetNCMemberInfo()->ResetGlobalSkipHook();
 }
 
+void CObjectTypeInfoMI::SetPathSkipHook(CObjectIStream* stream, const string& path,
+                                        CSkipClassMemberHook* hook) const
+{
+    GetNCMemberInfo()->SetPathSkipHook(stream, path, hook);
+}
+
 void CObjectTypeInfoMI::SetLocalCopyHook(CObjectStreamCopier& stream,
                                          CCopyClassMemberHook* hook) const
 {
@@ -235,6 +256,13 @@ void CObjectTypeInfoMI::ResetLocalCopyHook(CObjectStreamCopier& stream) const
 void CObjectTypeInfoMI::ResetGlobalCopyHook(void) const
 {
     GetNCMemberInfo()->ResetGlobalCopyHook();
+}
+
+void CObjectTypeInfoMI::SetPathCopyHook(CObjectStreamCopier* stream,
+                                        const string& path,
+                                        CCopyClassMemberHook* hook) const
+{
+    GetNCMemberInfo()->SetPathCopyHook(stream,path,hook);
 }
 
 bool CConstObjectInfoMI::CanGet(void) const
@@ -313,6 +341,12 @@ void CObjectTypeInfoVI::ResetGlobalReadHook(void) const
     GetNCVariantInfo()->ResetGlobalReadHook();
 }
 
+void CObjectTypeInfoVI::SetPathReadHook(CObjectIStream* stream, const string& path,
+                                        CReadChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetPathReadHook(stream, path, hook);
+}
+
 void CObjectTypeInfoVI::SetLocalWriteHook(CObjectOStream& stream,
                                           CWriteChoiceVariantHook* hook) const
 {
@@ -333,6 +367,11 @@ void CObjectTypeInfoVI::ResetGlobalWriteHook(void) const
 {
     GetNCVariantInfo()->ResetGlobalWriteHook();
 }
+void CObjectTypeInfoVI::SetPathWriteHook(CObjectOStream* stream, const string& path,
+                                         CWriteChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetPathWriteHook(stream, path, hook);
+}
 
 void CObjectTypeInfoVI::SetLocalSkipHook(CObjectIStream& stream,
                                          CSkipChoiceVariantHook* hook) const
@@ -348,6 +387,12 @@ void CObjectTypeInfoVI::SetGlobalSkipHook(CSkipChoiceVariantHook* hook) const
 void CObjectTypeInfoVI::ResetLocalSkipHook(CObjectIStream& stream) const
 {
     GetNCVariantInfo()->ResetLocalSkipHook(stream);
+}
+
+void CObjectTypeInfoVI::SetPathSkipHook(CObjectIStream* stream, const string& path,
+                                         CSkipChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetPathSkipHook(stream, path, hook);
 }
 
 void CObjectTypeInfoVI::ResetGlobalSkipHook(void) const
@@ -376,6 +421,12 @@ void CObjectTypeInfoVI::ResetGlobalCopyHook(void) const
     GetNCVariantInfo()->ResetGlobalCopyHook();
 }
 
+void CObjectTypeInfoVI::SetPathCopyHook(CObjectStreamCopier* stream, const string& path,
+                                         CCopyChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetPathCopyHook(stream, path, hook);
+}
+
 void CObjectTypeInfoCV::SetLocalReadHook(CObjectIStream& stream,
                                          CReadChoiceVariantHook* hook) const
 {
@@ -395,6 +446,12 @@ void CObjectTypeInfoCV::ResetLocalReadHook(CObjectIStream& stream) const
 void CObjectTypeInfoCV::ResetGlobalReadHook(void) const
 {
     GetNCVariantInfo()->ResetGlobalReadHook();
+}
+
+void CObjectTypeInfoCV::SetPathReadHook(CObjectIStream* stream, const string& path,
+                                        CReadChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetPathReadHook(stream, path, hook);
 }
 
 void CObjectTypeInfoCV::SetLocalWriteHook(CObjectOStream& stream,
@@ -418,6 +475,12 @@ void CObjectTypeInfoCV::ResetGlobalWriteHook(void) const
     GetNCVariantInfo()->ResetGlobalWriteHook();
 }
 
+void CObjectTypeInfoCV::SetPathWriteHook(CObjectOStream* stream, const string& path,
+                                         CWriteChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetPathWriteHook(stream, path, hook);
+}
+
 void CObjectTypeInfoCV::SetLocalCopyHook(CObjectStreamCopier& stream,
                                          CCopyChoiceVariantHook* hook) const
 {
@@ -437,6 +500,12 @@ void CObjectTypeInfoCV::ResetLocalCopyHook(CObjectStreamCopier& stream) const
 void CObjectTypeInfoCV::ResetGlobalCopyHook(void) const
 {
     GetNCVariantInfo()->ResetGlobalCopyHook();
+}
+
+void CObjectTypeInfoCV::SetPathCopyHook(CObjectStreamCopier* stream, const string& path,
+                                        CCopyChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetPathCopyHook(stream, path, hook);
 }
 
 void CObjectTypeInfoCV::Init(const CConstObjectInfo& object)

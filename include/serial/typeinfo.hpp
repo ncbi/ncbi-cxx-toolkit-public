@@ -146,21 +146,29 @@ public:
     void SetLocalReadHook(CObjectIStream& in, CReadObjectHook* hook);
     void ResetGlobalReadHook(void);
     void ResetLocalReadHook(CObjectIStream& in);
+    void SetPathReadHook(CObjectIStream* in, const string& path,
+                         CReadObjectHook* hook);
 
     void SetGlobalWriteHook(CWriteObjectHook* hook);
     void SetLocalWriteHook(CObjectOStream& out, CWriteObjectHook* hook);
     void ResetGlobalWriteHook(void);
     void ResetLocalWriteHook(CObjectOStream& out);
+    void SetPathWriteHook(CObjectOStream* out, const string& path,
+                          CWriteObjectHook* hook);
 
     void SetGlobalSkipHook(CSkipObjectHook* hook);
     void SetLocalSkipHook(CObjectIStream& in, CSkipObjectHook* hook);
     void ResetGlobalSkipHook(void);
     void ResetLocalSkipHook(CObjectIStream& in);
+    void SetPathSkipHook(CObjectIStream* in, const string& path,
+                         CSkipObjectHook* hook);
 
     void SetGlobalCopyHook(CCopyObjectHook* hook);
     void SetLocalCopyHook(CObjectStreamCopier& copier, CCopyObjectHook* hook);
     void ResetGlobalCopyHook(void);
     void ResetLocalCopyHook(CObjectStreamCopier& copier);
+    void SetPathCopyHook(CObjectStreamCopier* copier, const string& path,
+                         CCopyObjectHook* hook);
 
     // default methods without checking hook
     void DefaultReadData(CObjectIStream& in, TObjectPtr object) const;
@@ -217,6 +225,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2004/01/05 14:24:09  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.44  2003/11/24 14:10:04  grichenk
 * Changed base class for CAliasTypeInfo to CPointerTypeInfo
 *

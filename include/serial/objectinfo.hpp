@@ -131,21 +131,29 @@ public:
     void SetGlobalReadHook(CReadObjectHook* hook) const;
     void ResetLocalReadHook(CObjectIStream& stream) const;
     void ResetGlobalReadHook(void) const;
+    void SetPathReadHook(CObjectIStream* stream, const string& path,
+                         CReadObjectHook* hook) const;
     void SetLocalWriteHook(CObjectOStream& stream,
                           CWriteObjectHook* hook) const;
     void SetGlobalWriteHook(CWriteObjectHook* hook) const;
     void ResetLocalWriteHook(CObjectOStream& stream) const;
     void ResetGlobalWriteHook(void) const;
+    void SetPathWriteHook(CObjectOStream* stream, const string& path,
+                          CWriteObjectHook* hook) const;
     void SetLocalSkipHook(CObjectIStream& stream,
                           CSkipObjectHook* hook) const;
     void SetGlobalSkipHook(CSkipObjectHook* hook) const;
     void ResetLocalSkipHook(CObjectIStream& stream) const;
     void ResetGlobalSkipHook(void) const;
+    void SetPathSkipHook(CObjectIStream* stream, const string& path,
+                         CSkipObjectHook* hook) const;
     void SetLocalCopyHook(CObjectStreamCopier& stream,
                           CCopyObjectHook* hook) const;
     void SetGlobalCopyHook(CCopyObjectHook* hook) const;
     void ResetLocalCopyHook(CObjectStreamCopier& stream) const;
     void ResetGlobalCopyHook(void) const;
+    void SetPathCopyHook(CObjectStreamCopier* stream, const string& path,
+                         CCopyObjectHook* hook) const;
 
 public: // mostly for internal use
     TTypeInfo GetTypeInfo(void) const;
@@ -344,6 +352,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/01/05 14:24:08  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.7  2003/07/29 18:47:46  vasilche
 * Fixed thread safeness of object stream hooks.
 *

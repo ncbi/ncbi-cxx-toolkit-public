@@ -36,6 +36,7 @@
 #include <corelib/ncbicntr.hpp>
 
 #include <serial/hookdatakey.hpp>
+#include <serial/pathhook.hpp>
 
 
 /** @addtogroup HookSupport
@@ -73,9 +74,11 @@ protected:
 
     void SetLocalHook(TLocalHooks& key, THook* hook);
     void SetGlobalHook(THook* hook);
+    void SetPathHook(CObjectStack* stk, const string& path, THook* hook);
 
     void ResetLocalHook(TLocalHooks& key);
     void ResetGlobalHook(void);
+    void ResetPathHook(CObjectStack* stk, const string& path);
 
     void ForgetLocalHook(TLocalHooks& key);
 
@@ -87,11 +90,16 @@ protected:
             }
             return const_cast<THook*>(hook);
         }
+    THook* GetPathHook(CObjectStack& stk) const
+        {
+            return const_cast<THook*>(m_PathHooks.GetHook(stk));
+        }
 
 private:
     friend class CLocalHookSetBase;
 
     CRef<THook>    m_GlobalHook;
+    CPathHook      m_PathHooks;
     CAtomicCounter m_HookCount; // including global hook
 };
 
@@ -140,6 +148,11 @@ public:
             CParent::SetGlobalHook(hook);
             m_CurrentFunction = m_HookFunction;
         }
+    void SetPathHook(CObjectStack* stk, const string& path, THook* hook)
+        {
+            CParent::SetPathHook(stk, path, hook);
+            m_CurrentFunction = m_HookFunction;
+        }
 
     void ResetLocalHook(TLocalHooks& key)
         {
@@ -151,10 +164,19 @@ public:
             CParent::ResetGlobalHook();
             m_CurrentFunction = HaveHooks()? m_HookFunction: m_DefaultFunction;
         }
+    void ResetPathHook(CObjectStack* stk, const string& path)
+        {
+            CParent::ResetPathHook(stk, path);
+            m_CurrentFunction = HaveHooks()? m_HookFunction: m_DefaultFunction;
+        }
 
     THook* GetHook(const TLocalHooks& key) const
         {
             return static_cast<THook*>(CParent::GetHook(key));
+        }
+    THook* GetPathHook(CObjectStack& stk) const
+        {
+            return static_cast<THook*>(CParent::GetPathHook(stk));
         }
 
 private:
@@ -174,6 +196,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/01/05 14:24:07  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.7  2003/07/29 18:47:46  vasilche
 * Fixed thread safeness of object stream hooks.
 *

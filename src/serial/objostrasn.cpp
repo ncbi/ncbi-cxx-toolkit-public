@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2004/01/05 14:25:21  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.82  2003/11/26 19:59:41  vasilche
 * GetPosition() and GetDataFormat() methods now are implemented
 * in parent classes CObjectIStream and CObjectOStream to avoid
@@ -966,8 +969,8 @@ void CObjectOStreamAsn::CopyChoice(const CChoiceTypeInfo* choiceType,
     }
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    copier.In().TopFrame().SetMemberId(variantInfo->GetId());
-    copier.Out().TopFrame().SetMemberId(variantInfo->GetId());
+    copier.In().SetTopMemberId(variantInfo->GetId());
+    copier.Out().SetTopMemberId(variantInfo->GetId());
     WriteMemberId(variantInfo->GetId());
 
     variantInfo->CopyVariant(copier);

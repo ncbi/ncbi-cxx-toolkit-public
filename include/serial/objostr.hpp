@@ -43,6 +43,7 @@
 #include <serial/objstack.hpp>
 #include <serial/hookdatakey.hpp>
 #include <serial/objhook.hpp>
+#include <serial/pathhook.hpp>
 
 
 /** @addtogroup ObjStreamSupport
@@ -468,6 +469,11 @@ protected:
     // report error about unended object stack frame
     virtual void UnendedFrame(void);
 
+    void SetPathWriteObjectHook( const string& path, CWriteObjectHook*        hook);
+    void SetPathWriteMemberHook( const string& path, CWriteClassMemberHook*   hook);
+    void SetPathWriteVariantHook(const string& path, CWriteChoiceVariantHook* hook);
+
+
     static CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out,
                                                 bool deleteOut);
     static CObjectOStream* OpenObjectOStreamAsnBinary(CNcbiOstream& out,
@@ -476,6 +482,8 @@ protected:
                                                 bool deleteOut);
 
 protected:
+    void x_SetPathHooks(bool set);
+
     COStreamBuffer m_Output;
 
     TFailFlags m_Fail;
@@ -493,6 +501,9 @@ protected:
 
 private:
     static ESerialVerifyData x_GetVerifyDataDefault(void);
+    CStreamObjectPathHook<CWriteObjectHook*>                m_PathWriteObjectHooks;
+    CStreamPathHook<CMemberInfo*, CWriteClassMemberHook*>   m_PathWriteMemberHooks;
+    CStreamPathHook<CVariantInfo*,CWriteChoiceVariantHook*> m_PathWriteVariantHooks;
 
 public:
     // hook support
@@ -515,6 +526,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2004/01/05 14:24:09  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.81  2003/11/26 19:59:38  vasilche
 * GetPosition() and GetDataFormat() methods now are implemented
 * in parent classes CObjectIStream and CObjectOStream to avoid

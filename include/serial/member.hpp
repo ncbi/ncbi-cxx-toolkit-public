@@ -150,22 +150,30 @@ public:
     void SetLocalReadHook(CObjectIStream& in, CReadClassMemberHook* hook);
     void ResetGlobalReadHook(void);
     void ResetLocalReadHook(CObjectIStream& in);
+    void SetPathReadHook(CObjectIStream* in, const string& path,
+                         CReadClassMemberHook* hook);
 
     void SetGlobalWriteHook(CWriteClassMemberHook* hook);
     void SetLocalWriteHook(CObjectOStream& out, CWriteClassMemberHook* hook);
     void ResetGlobalWriteHook(void);
     void ResetLocalWriteHook(CObjectOStream& out);
+    void SetPathWriteHook(CObjectOStream* out, const string& path,
+                          CWriteClassMemberHook* hook);
 
     void SetGlobalSkipHook(CSkipClassMemberHook* hook);
     void SetLocalSkipHook(CObjectIStream& in, CSkipClassMemberHook* hook);
     void ResetGlobalSkipHook(void);
     void ResetLocalSkipHook(CObjectIStream& in);
+    void SetPathSkipHook(CObjectIStream* in, const string& path,
+                         CSkipClassMemberHook* hook);
 
     void SetGlobalCopyHook(CCopyClassMemberHook* hook);
     void SetLocalCopyHook(CObjectStreamCopier& copier,
                           CCopyClassMemberHook* hook);
     void ResetGlobalCopyHook(void);
     void ResetLocalCopyHook(CObjectStreamCopier& copier);
+    void SetPathCopyHook(CObjectStreamCopier* copier, const string& path,
+                         CCopyClassMemberHook* hook);
 
     // default I/O (without hooks)
     void DefaultReadMember(CObjectIStream& in,
@@ -220,7 +228,6 @@ private:
     friend class CMemberInfoFunctions;
 };
 
-
 /* @} */
 
 
@@ -234,6 +241,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/01/05 14:24:08  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.32  2003/10/01 14:40:12  vasilche
 * Fixed CanGet() for members wihout 'set' flag.
 *

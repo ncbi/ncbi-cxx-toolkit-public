@@ -350,6 +350,125 @@ void CObjectIStream::UnendedFrame(void)
     Unended("internal error: unended object stack frame");
 }
 
+void CObjectIStream::x_SetPathHooks(bool set)
+{
+    if (!m_PathReadObjectHooks.IsEmpty()) {
+        CReadObjectHook* hook = m_PathReadObjectHooks.GetHook(*this);
+        if (hook) {
+            CTypeInfo* item = m_PathReadObjectHooks.FindType(*this);
+            if (item) {
+                if (set) {
+                    item->SetLocalReadHook(*this, hook);
+                } else {
+                    item->ResetLocalReadHook(*this);
+                }
+            }
+        }
+    }
+    if (!m_PathSkipObjectHooks.IsEmpty()) {
+        CSkipObjectHook* hook = m_PathSkipObjectHooks.GetHook(*this);
+        if (hook) {
+            CTypeInfo* item = m_PathSkipObjectHooks.FindType(*this);
+            if (item) {
+                if (set) {
+                    item->SetLocalSkipHook(*this, hook);
+                } else {
+                    item->ResetLocalSkipHook(*this);
+                }
+            }
+        }
+    }
+    if (!m_PathReadMemberHooks.IsEmpty()) {
+        CReadClassMemberHook* hook = m_PathReadMemberHooks.GetHook(*this);
+        if (hook) {
+            CMemberInfo* item = m_PathReadMemberHooks.FindItem(*this);
+            if (item) {
+                if (set) {
+                    item->SetLocalReadHook(*this, hook);
+                } else {
+                    item->ResetLocalReadHook(*this);
+                }
+            }
+        }
+    }
+    if (!m_PathSkipMemberHooks.IsEmpty()) {
+        CSkipClassMemberHook* hook = m_PathSkipMemberHooks.GetHook(*this);
+        if (hook) {
+            CMemberInfo* item = m_PathSkipMemberHooks.FindItem(*this);
+            if (item) {
+                if (set) {
+                    item->SetLocalSkipHook(*this, hook);
+                } else {
+                    item->ResetLocalSkipHook(*this);
+                }
+            }
+        }
+    }
+    if (!m_PathReadVariantHooks.IsEmpty()) {
+        CReadChoiceVariantHook* hook = m_PathReadVariantHooks.GetHook(*this);
+        if (hook) {
+            CVariantInfo* item = m_PathReadVariantHooks.FindItem(*this);
+            if (item) {
+                if (set) {
+                    item->SetLocalReadHook(*this, hook);
+                } else {
+                    item->ResetLocalReadHook(*this);
+                }
+            }
+        }
+    }
+    if (!m_PathSkipVariantHooks.IsEmpty()) {
+        CSkipChoiceVariantHook* hook = m_PathSkipVariantHooks.GetHook(*this);
+        if (hook) {
+            CVariantInfo* item = m_PathSkipVariantHooks.FindItem(*this);
+            if (item) {
+                if (set) {
+                    item->SetLocalSkipHook(*this, hook);
+                } else {
+                    item->ResetLocalSkipHook(*this);
+                }
+            }
+        }
+    }
+}
+
+void CObjectIStream::SetPathReadObjectHook(const string& path,
+                                           CReadObjectHook* hook)
+{
+    m_PathReadObjectHooks.SetHook(path,hook);
+    WatchPathHooks();
+}
+void CObjectIStream::SetPathSkipObjectHook(const string& path,
+                                           CSkipObjectHook* hook)
+{
+    m_PathSkipObjectHooks.SetHook(path,hook);
+    WatchPathHooks();
+}
+void CObjectIStream::SetPathReadMemberHook(const string& path,
+                                            CReadClassMemberHook* hook)
+{
+    m_PathReadMemberHooks.SetHook(path,hook);
+    WatchPathHooks();
+}
+void CObjectIStream::SetPathSkipMemberHook(const string& path,
+                                            CSkipClassMemberHook* hook)
+{
+    m_PathSkipMemberHooks.SetHook(path,hook);
+    WatchPathHooks();
+}
+void CObjectIStream::SetPathReadVariantHook(const string& path,
+                                            CReadChoiceVariantHook* hook)
+{
+    m_PathReadVariantHooks.SetHook(path,hook);
+    WatchPathHooks();
+}
+void CObjectIStream::SetPathSkipVariantHook(const string& path,
+                                            CSkipChoiceVariantHook* hook)
+{
+    m_PathSkipVariantHooks.SetHook(path,hook);
+    WatchPathHooks();
+}
+
 string CObjectIStream::GetStackTrace(void) const
 {
     return GetStackTraceASN();
@@ -1345,6 +1464,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.123  2004/01/05 14:25:20  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.122  2003/12/31 21:02:58  gouriano
 * added possibility to seek (when possible) in CObjectIStream
 *

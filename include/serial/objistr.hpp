@@ -42,6 +42,7 @@
 #include <serial/objstack.hpp>
 #include <serial/objhook.hpp>
 #include <serial/hookdatakey.hpp>
+#include <serial/pathhook.hpp>
 
 
 /** @addtogroup ObjStreamSupport
@@ -514,6 +515,13 @@ public:
     // report error about unended object stack frame
     virtual void UnendedFrame(void);
 
+    void SetPathReadObjectHook( const string& path, CReadObjectHook*        hook);
+    void SetPathSkipObjectHook( const string& path, CSkipObjectHook*        hook);
+    void SetPathReadMemberHook( const string& path, CReadClassMemberHook*   hook);
+    void SetPathSkipMemberHook( const string& path, CSkipClassMemberHook*   hook);
+    void SetPathReadVariantHook(const string& path, CReadChoiceVariantHook* hook);
+    void SetPathSkipVariantHook(const string& path, CSkipChoiceVariantHook* hook);
+
     // report error about class members
     void DuplicatedMember(const CMemberInfo* memberInfo);
     void ExpectedMember(const CMemberInfo* memberInfo);
@@ -543,6 +551,7 @@ protected:
     void RegisterObject(TTypeInfo typeInfo);
     void RegisterObject(TObjectPtr object, TTypeInfo typeInfo);
     const CReadObjectInfo& GetRegisteredObject(TObjectIndex index);
+    virtual void x_SetPathHooks(bool set);
 
 public:
     // open helpers
@@ -576,6 +585,12 @@ private:
 
     TFailFlags m_Fail;
     TFlags m_Flags;
+    CStreamObjectPathHook<CReadObjectHook*>                m_PathReadObjectHooks;
+    CStreamObjectPathHook<CSkipObjectHook*>                m_PathSkipObjectHooks;
+    CStreamPathHook<CMemberInfo*, CReadClassMemberHook*>   m_PathReadMemberHooks;
+    CStreamPathHook<CMemberInfo*, CSkipClassMemberHook*>   m_PathSkipMemberHooks;
+    CStreamPathHook<CVariantInfo*,CReadChoiceVariantHook*> m_PathReadVariantHooks;
+    CStreamPathHook<CVariantInfo*,CSkipChoiceVariantHook*> m_PathSkipVariantHooks;
 
 public:
     // hook support
@@ -645,6 +660,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.98  2004/01/05 14:24:08  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.97  2003/12/31 21:02:20  gouriano
 * added possibility to seek (when possible) in CObjectIStream
 *

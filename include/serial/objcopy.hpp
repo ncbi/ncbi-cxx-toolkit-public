@@ -39,6 +39,7 @@
 #include <serial/objistr.hpp>
 #include <serial/hookdatakey.hpp>
 #include <serial/objhook.hpp>
+#include <serial/pathhook.hpp>
 
 
 /** @addtogroup ObjStreamSupport
@@ -115,9 +116,17 @@ public:
     void ExpectedMember(const CMemberInfo* memberInfo);
     void DuplicatedMember(const CMemberInfo* memberInfo);
 
+    void SetPathCopyObjectHook( const string& path, CCopyObjectHook*        hook);
+    void SetPathCopyMemberHook( const string& path, CCopyClassMemberHook*   hook);
+    void SetPathCopyVariantHook(const string& path, CCopyChoiceVariantHook* hook);
+    void SetPathHooks(CObjectStack& stk, bool set);
+
 private:
     CObjectIStream& m_In;
     CObjectOStream& m_Out;
+    CStreamPathHook<CMemberInfo*, CCopyClassMemberHook*>   m_PathCopyMemberHooks;
+    CStreamPathHook<CVariantInfo*,CCopyChoiceVariantHook*> m_PathCopyVariantHooks;
+    CStreamObjectPathHook<CCopyObjectHook*>                m_PathCopyObjectHooks;
 
 public:
     // hook support
@@ -140,6 +149,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/01/05 14:24:08  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.13  2003/10/21 21:08:45  grichenk
 * Fixed aliases-related bug in XML stream
 *

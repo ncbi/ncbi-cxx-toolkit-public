@@ -259,6 +259,12 @@ void CObjectTypeInfo::ResetGlobalReadHook(void) const
     GetNCTypeInfo()->ResetGlobalReadHook();
 }
 
+void CObjectTypeInfo::SetPathReadHook(CObjectIStream* stream, const string& path,
+                         CReadObjectHook* hook) const
+{
+    GetNCTypeInfo()->SetPathReadHook(stream,path,hook);
+}
+
 void CObjectTypeInfo::SetLocalWriteHook(CObjectOStream& stream,
                                         CWriteObjectHook* hook) const
 {
@@ -278,6 +284,12 @@ void CObjectTypeInfo::ResetLocalWriteHook(CObjectOStream& stream) const
 void CObjectTypeInfo::ResetGlobalWriteHook(void) const
 {
     GetNCTypeInfo()->ResetGlobalWriteHook();
+}
+
+void CObjectTypeInfo::SetPathWriteHook(CObjectOStream* stream, const string& path,
+                          CWriteObjectHook* hook) const
+{
+    GetNCTypeInfo()->SetPathWriteHook(stream,path,hook);
 }
 
 void CObjectTypeInfo::SetLocalSkipHook(CObjectIStream& stream,
@@ -301,6 +313,12 @@ void CObjectTypeInfo::ResetGlobalSkipHook(void) const
     GetNCTypeInfo()->ResetGlobalSkipHook();
 }
 
+void CObjectTypeInfo::SetPathSkipHook(CObjectIStream* stream, const string& path,
+                         CSkipObjectHook* hook) const
+{
+    GetNCTypeInfo()->SetPathSkipHook(stream,path,hook);
+}
+
 void CObjectTypeInfo::SetLocalCopyHook(CObjectStreamCopier& stream,
                                        CCopyObjectHook* hook) const
 {
@@ -322,12 +340,21 @@ void CObjectTypeInfo::ResetGlobalCopyHook(void) const
     GetNCTypeInfo()->ResetGlobalCopyHook();
 }
 
+void CObjectTypeInfo::SetPathCopyHook(CObjectStreamCopier* stream, const string& path,
+                         CCopyObjectHook* hook) const
+{
+    GetNCTypeInfo()->SetPathCopyHook(stream,path,hook);
+}
+
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/01/05 14:25:20  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.6  2003/07/29 18:47:47  vasilche
 * Fixed thread safeness of object stream hooks.
 *

@@ -295,6 +295,68 @@ void CObjectOStream::UnendedFrame(void)
     Unended("internal error: unended object stack frame");
 }
 
+void CObjectOStream::x_SetPathHooks(bool set)
+{
+    if (!m_PathWriteObjectHooks.IsEmpty()) {
+        CWriteObjectHook* hook = m_PathWriteObjectHooks.GetHook(*this);
+        if (hook) {
+            CTypeInfo* item = m_PathWriteObjectHooks.FindType(*this);
+            if (item) {
+                if (set) {
+                    item->SetLocalWriteHook(*this, hook);
+                } else {
+                    item->ResetLocalWriteHook(*this);
+                }
+            }
+        }
+    }
+    if (!m_PathWriteMemberHooks.IsEmpty()) {
+        CWriteClassMemberHook* hook = m_PathWriteMemberHooks.GetHook(*this);
+        if (hook) {
+            CMemberInfo* item = m_PathWriteMemberHooks.FindItem(*this);
+            if (item) {
+                if (set) {
+                    item->SetLocalWriteHook(*this, hook);
+                } else {
+                    item->ResetLocalWriteHook(*this);
+                }
+            }
+        }
+    }
+    if (!m_PathWriteVariantHooks.IsEmpty()) {
+        CWriteChoiceVariantHook* hook = m_PathWriteVariantHooks.GetHook(*this);
+        if (hook) {
+            CVariantInfo* item = m_PathWriteVariantHooks.FindItem(*this);
+            if (item) {
+                if (set) {
+                    item->SetLocalWriteHook(*this, hook);
+                } else {
+                    item->ResetLocalWriteHook(*this);
+                }
+            }
+        }
+    }
+}
+
+void CObjectOStream::SetPathWriteObjectHook(const string& path,
+                                            CWriteObjectHook*   hook)
+{
+    m_PathWriteObjectHooks.SetHook(path,hook);
+    WatchPathHooks();
+}
+void CObjectOStream::SetPathWriteMemberHook(const string& path,
+                                            CWriteClassMemberHook*   hook)
+{
+    m_PathWriteMemberHooks.SetHook(path,hook);
+    WatchPathHooks();
+}
+void CObjectOStream::SetPathWriteVariantHook(const string& path,
+                                             CWriteChoiceVariantHook* hook)
+{
+    m_PathWriteVariantHooks.SetHook(path,hook);
+    WatchPathHooks();
+}
+
 string CObjectOStream::GetStackTrace(void) const
 {
     return GetStackTraceASN();
@@ -713,6 +775,7 @@ void CObjectOStream::CopyClassRandom(const CClassTypeInfo* classType,
         const CMemberInfo* memberInfo = classType->GetMemberInfo(index);
         copier.In().SetTopMemberId(memberInfo->GetId());
         SetTopMemberId(memberInfo->GetId());
+        copier.SetPathHooks(*this, true);
 
         if ( read[index] ) {
             copier.In().DuplicatedMember(memberInfo);
@@ -726,6 +789,7 @@ void CObjectOStream::CopyClassRandom(const CClassTypeInfo* classType,
             EndClassMember();
         }
         
+        copier.SetPathHooks(*this, false);
         copier.In().EndClassMember();
     }
 
@@ -759,6 +823,7 @@ void CObjectOStream::CopyClassSequential(const CClassTypeInfo* classType,
         const CMemberInfo* memberInfo = classType->GetMemberInfo(index);
         copier.In().SetTopMemberId(memberInfo->GetId());
         SetTopMemberId(memberInfo->GetId());
+        copier.SetPathHooks(*this, true);
 
         for ( TMemberIndex i = *pos; i < index; ++i ) {
             // init missing member
@@ -771,6 +836,7 @@ void CObjectOStream::CopyClassSequential(const CClassTypeInfo* classType,
         pos.SetIndex(index + 1);
 
         EndClassMember();
+        copier.SetPathHooks(*this, false);
         copier.In().EndClassMember();
     }
 
@@ -842,13 +908,15 @@ void CObjectOStream::CopyChoice(const CChoiceTypeInfo* choiceType,
                           "choice variant id expected");
         variantInfo = choiceType->GetVariantInfo(index);
     }
-    copier.In().TopFrame().SetMemberId(variantInfo->GetId());
-    copier.Out().TopFrame().SetMemberId(variantInfo->GetId());
+    copier.In().SetTopMemberId(variantInfo->GetId());
+    copier.Out().SetTopMemberId(variantInfo->GetId());
+    copier.SetPathHooks(copier.Out(), true);
     BeginChoiceVariant(choiceType, variantInfo->GetId());
 
     variantInfo->CopyVariant(copier);
 
     EndChoiceVariant();
+    copier.SetPathHooks(copier.Out(), false);
     copier.In().EndChoiceVariant();
     END_OBJECT_2FRAMES_OF(copier);
     copier.In().EndChoice();
@@ -943,6 +1011,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2004/01/05 14:25:21  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.92  2003/11/26 20:04:47  vasilche
 * Method put in wrong file.
 *

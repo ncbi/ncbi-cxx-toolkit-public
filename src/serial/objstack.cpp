@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/01/05 14:25:22  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.15  2003/10/27 19:18:03  grichenk
 * Reformatted object stream error messages
 *
@@ -102,6 +105,7 @@ CObjectStack::CObjectStack(void)
     for ( size_t i = 0; i < KInitialStackSize; ++i ) {
         m_Stack[i].Reset();
     }
+    m_WatchPathHooks = m_PathValid = false;
 }
 
 CObjectStack::~CObjectStack(void)
@@ -183,6 +187,90 @@ CObjectStack::TFrame& CObjectStack::PushFrameLong(void)
     m_StackEnd = newStack + newSize;
 
     return *(m_StackPtr = (newStack + depth + 1));
+}
+
+void CObjectStack::x_PushStackPath(void)
+{
+    if (!m_WatchPathHooks) {
+        m_PathValid = false;
+        return;
+    }
+    if (!m_PathValid) {
+        for ( size_t i = 1; i < GetStackDepth(); ++i ) {
+            const TFrame& frame = FetchFrameFromTop(i);
+            if (frame.HasTypeInfo()) {
+                // there is no "root" symbol
+                m_MemberPath = frame.GetTypeInfo()->GetName();
+                break;
+            }
+        }
+    }
+    const CMemberId& mem_id = TopFrame().GetMemberId();
+    if (mem_id.HasNotag() || mem_id.IsAttlist()) {
+        return;
+    }
+    // member separator symbol is '.'
+    m_MemberPath += '.';
+    const string& member = mem_id.GetName();
+    if (!member.empty()) {
+        m_MemberPath += member;
+    } else {
+        m_MemberPath += NStr::IntToString(mem_id.GetTag());
+    }
+    m_PathValid = true;
+    x_SetPathHooks(true);
+}
+
+void CObjectStack::x_PopStackPath(void)
+{
+    if (!m_WatchPathHooks) {
+        m_PathValid = false;
+        return;
+    }
+    if (GetStackDepth() == 1) {
+        x_SetPathHooks(false);
+        m_PathValid = false;
+    } else {
+        const TFrame& top = TopFrame();
+        if (top.HasMemberId()) {
+            const CMemberId& mem_id = top.GetMemberId();
+            if (mem_id.HasNotag() || mem_id.IsAttlist()) {
+                return;
+            }
+            x_SetPathHooks(false);
+            // member separator symbol is '.'
+            m_MemberPath.erase(m_MemberPath.find_last_of('.'));
+        }
+    }
+}
+
+const string& CObjectStack::GetStackPath(void)
+{
+    if (!m_PathValid && GetStackDepth()) {
+        _ASSERT(FetchFrameFromBottom(0).m_FrameType == TFrame::eFrameNamed);
+        _ASSERT(FetchFrameFromBottom(0).m_TypeInfo);
+        // there is no "root" symbol
+        m_MemberPath = FetchFrameFromBottom(0).GetTypeInfo()->GetName();
+        for ( size_t i = 1; i < GetStackDepth(); ++i ) {
+            const TFrame& frame = FetchFrameFromBottom(i);
+            if (frame.HasMemberId()) {
+                const CMemberId& mem_id = frame.GetMemberId();
+                if (mem_id.HasNotag() || mem_id.IsAttlist()) {
+                    continue;
+                }
+                // member separator symbol is '.'
+                m_MemberPath += '.';
+                const string& member = mem_id.GetName();
+                if (!member.empty()) {
+                    m_MemberPath += member;
+                } else {
+                    m_MemberPath += NStr::IntToString(mem_id.GetTag());
+                }
+            }
+        }
+        m_PathValid = true;
+    }
+    return m_MemberPath;
 }
 
 void CObjectStack::PopErrorFrame(void)

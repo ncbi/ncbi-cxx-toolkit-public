@@ -131,23 +131,31 @@ public:
                           CReadChoiceVariantHook* hook);
     void ResetGlobalReadHook(void);
     void ResetLocalReadHook(CObjectIStream& in);
+    void SetPathReadHook(CObjectIStream* in, const string& path,
+                         CReadChoiceVariantHook* hook);
 
     void SetGlobalWriteHook(CWriteChoiceVariantHook* hook);
     void SetLocalWriteHook(CObjectOStream& out,
                            CWriteChoiceVariantHook* hook);
     void ResetGlobalWriteHook(void);
     void ResetLocalWriteHook(CObjectOStream& out);
+    void SetPathWriteHook(CObjectOStream* out, const string& path,
+                          CWriteChoiceVariantHook* hook);
 
     void SetGlobalSkipHook(CSkipChoiceVariantHook* hook);
     void SetLocalSkipHook(CObjectIStream& in, CSkipChoiceVariantHook* hook);
     void ResetGlobalSkipHook(void);
     void ResetLocalSkipHook(CObjectIStream& in);
+    void SetPathSkipHook(CObjectIStream* in, const string& path,
+                         CSkipChoiceVariantHook* hook);
 
     void SetGlobalCopyHook(CCopyChoiceVariantHook* hook);
     void SetLocalCopyHook(CObjectStreamCopier& copier,
                           CCopyChoiceVariantHook* hook);
     void ResetGlobalCopyHook(void);
     void ResetLocalCopyHook(CObjectStreamCopier& copier);
+    void SetPathCopyHook(CObjectStreamCopier* copier, const string& path,
+                         CCopyChoiceVariantHook* hook);
 
     // default I/O (without hooks)
     void DefaultReadVariant(CObjectIStream& in,
@@ -203,6 +211,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/01/05 14:24:10  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.11  2003/07/29 18:47:47  vasilche
 * Fixed thread safeness of object stream hooks.
 *

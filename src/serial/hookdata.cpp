@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/01/05 14:25:20  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.8  2003/08/19 18:32:38  vasilche
 * Optimized reading and writing strings.
 * Avoid string reallocation when checking char values.
@@ -70,6 +73,7 @@
 #include <corelib/ncbistd.hpp>
 
 #include <serial/hookdata.hpp>
+#include <serial/objstack.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -142,6 +146,20 @@ void CHookDataBase::ResetGlobalHook(void)
     m_GlobalHook.Reset();
     m_HookCount.Add(-1);
     _ASSERT(m_HookCount.Get() >= 0);
+}
+
+void CHookDataBase::SetPathHook(CObjectStack* stk, const string& path, THook* hook)
+{
+    if (m_PathHooks.SetHook(stk, path, hook)) {
+        m_HookCount.Add(1);
+    }
+}
+
+void CHookDataBase::ResetPathHook(CObjectStack* stk, const string& path)
+{
+    if (m_PathHooks.SetHook(stk, path, 0)) {
+        m_HookCount.Add(-1);
+    }
 }
 
 

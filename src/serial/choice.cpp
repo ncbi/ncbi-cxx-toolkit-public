@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/01/05 14:25:19  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.35  2003/05/16 18:02:18  gouriano
 * revised exception error messages
 *
@@ -442,7 +445,7 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
             in.ThrowError(in.fFormatError, "choice variant id expected");
         variantInfo = choiceType->GetVariantInfo(index);
     }
-    in.TopFrame().SetMemberId(variantInfo->GetId());
+    in.SetTopMemberId(variantInfo->GetId());
 
     variantInfo->ReadVariant(in, objectPtr);
 
@@ -516,7 +519,7 @@ void CChoiceTypeInfoFunctions::SkipChoiceDefault(CObjectIStream& in,
         variantInfo = choiceType->GetVariantInfo(index);
     }
 
-    in.TopFrame().SetMemberId(variantInfo->GetId());
+    in.SetTopMemberId(variantInfo->GetId());
 
     variantInfo->SkipVariant(in);
 

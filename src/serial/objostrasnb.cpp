@@ -1071,8 +1071,8 @@ void CObjectOStreamAsnBinary::CopyChoice(const CChoiceTypeInfo* choiceType,
     }
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    copier.In().TopFrame().SetMemberId(variantInfo->GetId());
-    copier.Out().TopFrame().SetMemberId(variantInfo->GetId());
+    copier.In().SetTopMemberId(variantInfo->GetId());
+    copier.Out().SetTopMemberId(variantInfo->GetId());
     WriteTag(eContextSpecific, true, variantInfo->GetId().GetTag());
     WriteIndefiniteLength();
 
@@ -1143,6 +1143,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.84  2004/01/05 14:25:21  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.83  2003/12/23 19:36:24  ucko
 * Use "g" rather than "f" format for REALs to improve range.
 * Move CVS log to end.

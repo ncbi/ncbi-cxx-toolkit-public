@@ -78,7 +78,6 @@ public:
     TTypeInfo GetTypeInfo(void) const;
     bool HasMemberId(void) const;
     const CMemberId& GetMemberId(void) const;
-    void SetMemberId(const CMemberId& memberid);
 
     void SetNotag(bool set=true);
     bool GetNotag(void) const;
@@ -86,6 +85,9 @@ public:
     const char* GetFrameTypeName(void) const;
     string GetFrameInfo(void) const;
     string GetFrameName(void) const;
+
+protected:
+    void SetMemberId(const CMemberId& memberid);
 
 private:
     friend class CObjectStack;
@@ -135,14 +137,24 @@ public:
     const TFrame& FetchFrameFromBottom(size_t index) const;
 
     virtual void UnendedFrame(void);
+    const string& GetStackPath(void);
+
+    void WatchPathHooks(bool set=true);
+protected:
+    virtual void x_SetPathHooks(bool set) = 0;
 
 private:
     TFrame& PushFrame(void);
     TFrame& PushFrameLong(void);
+    void x_PushStackPath(void);
+    void x_PopStackPath(void);
 
     TFrame* m_Stack;
     TFrame* m_StackPtr;
     TFrame* m_StackEnd;
+    string  m_MemberPath;
+    bool    m_WatchPathHooks;
+    bool    m_PathValid;
 };
 
 #include <serial/objstack.inl>
@@ -210,6 +222,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/01/05 14:24:09  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.22  2003/10/27 19:18:03  grichenk
 * Reformatted object stream error messages
 *

@@ -41,7 +41,7 @@
 #define ClassRandomContentsMember(Func, Args) \
     { \
         const CMemberInfo* memberInfo = classType->GetMemberInfo(index); \
-        TopFrame().SetMemberId(memberInfo->GetId()); \
+        SetTopMemberId(memberInfo->GetId()); \
         _ASSERT(index >= kFirstMemberIndex && index <= read.size()); \
         if ( read[index] ) \
             DuplicatedMember(memberInfo); \
@@ -86,7 +86,7 @@
 #define ClassSequentialContentsMember(Func, Args) \
     { \
         const CMemberInfo* memberInfo = classType->GetMemberInfo(index); \
-        TopFrame().SetMemberId(memberInfo->GetId()); \
+        SetTopMemberId(memberInfo->GetId()); \
         for ( TMemberIndex i = *pos; i < index; ++i ) { \
             classType->GetMemberInfo(i)->NCBI_NAME2(Func,MissingMember)Args; \
         } \
@@ -124,6 +124,9 @@
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/01/05 14:24:08  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.4  2003/08/25 15:58:32  gouriano
 * added possibility to use namespaces in XML i/o streams
 *

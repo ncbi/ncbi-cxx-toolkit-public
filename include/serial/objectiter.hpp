@@ -183,21 +183,32 @@ public:
     void SetGlobalReadHook(CReadClassMemberHook* hook) const;
     void ResetLocalReadHook(CObjectIStream& stream) const;
     void ResetGlobalReadHook(void) const;
+    void SetPathReadHook(CObjectIStream* in, const string& path,
+                         CReadClassMemberHook* hook) const;
+
     void SetLocalWriteHook(CObjectOStream& stream,
                           CWriteClassMemberHook* hook) const;
     void SetGlobalWriteHook(CWriteClassMemberHook* hook) const;
     void ResetLocalWriteHook(CObjectOStream& stream) const;
     void ResetGlobalWriteHook(void) const;
+    void SetPathWriteHook(CObjectOStream* stream, const string& path,
+                          CWriteClassMemberHook* hook) const;
+
     void SetLocalSkipHook(CObjectIStream& stream,
                           CSkipClassMemberHook* hook) const;
     void SetGlobalSkipHook(CSkipClassMemberHook* hook) const;
     void ResetLocalSkipHook(CObjectIStream& stream) const;
     void ResetGlobalSkipHook(void) const;
+    void SetPathSkipHook(CObjectIStream* stream, const string& path,
+                         CSkipClassMemberHook* hook) const;
+
     void SetLocalCopyHook(CObjectStreamCopier& stream,
                           CCopyClassMemberHook* hook) const;
     void SetGlobalCopyHook(CCopyClassMemberHook* hook) const;
     void ResetLocalCopyHook(CObjectStreamCopier& stream) const;
     void ResetGlobalCopyHook(void) const;
+    void SetPathCopyHook(CObjectStreamCopier* stream, const string& path,
+                         CCopyClassMemberHook* hook) const;
 
 public: // mostly for internal use
     const CMemberInfo* GetMemberInfo(void) const;
@@ -237,21 +248,32 @@ public:
     void SetGlobalReadHook(CReadChoiceVariantHook* hook) const;
     void ResetLocalReadHook(CObjectIStream& stream) const;
     void ResetGlobalReadHook(void) const;
+    void SetPathReadHook(CObjectIStream* stream, const string& path,
+                         CReadChoiceVariantHook* hook) const;
+
     void SetLocalWriteHook(CObjectOStream& stream,
                           CWriteChoiceVariantHook* hook) const;
     void SetGlobalWriteHook(CWriteChoiceVariantHook* hook) const;
     void ResetLocalWriteHook(CObjectOStream& stream) const;
     void ResetGlobalWriteHook(void) const;
+    void SetPathWriteHook(CObjectOStream* stream, const string& path,
+                          CWriteChoiceVariantHook* hook) const;
+
     void SetLocalSkipHook(CObjectIStream& stream,
                           CSkipChoiceVariantHook* hook) const;
     void SetGlobalSkipHook(CSkipChoiceVariantHook* hook) const;
     void ResetLocalSkipHook(CObjectIStream& stream) const;
     void ResetGlobalSkipHook(void) const;
+    void SetPathSkipHook(CObjectIStream* stream, const string& path,
+                         CSkipChoiceVariantHook* hook) const;
+
     void SetLocalCopyHook(CObjectStreamCopier& stream,
                           CCopyChoiceVariantHook* hook) const;
     void SetGlobalCopyHook(CCopyChoiceVariantHook* hook) const;
     void ResetLocalCopyHook(CObjectStreamCopier& stream) const;
     void ResetGlobalCopyHook(void) const;
+    void SetPathCopyHook(CObjectStreamCopier* stream, const string& path,
+                         CCopyChoiceVariantHook* hook) const;
 
 public: // mostly for internal use
     const CVariantInfo* GetVariantInfo(void) const;
@@ -354,16 +376,24 @@ public:
     void SetGlobalReadHook(CReadChoiceVariantHook* hook) const;
     void ResetLocalReadHook(CObjectIStream& stream) const;
     void ResetGlobalReadHook(void) const;
+    void SetPathReadHook(CObjectIStream* stream, const string& path,
+                         CReadChoiceVariantHook* hook) const;
+
     void SetLocalWriteHook(CObjectOStream& stream,
                           CWriteChoiceVariantHook* hook) const;
     void SetGlobalWriteHook(CWriteChoiceVariantHook* hook) const;
     void ResetLocalWriteHook(CObjectOStream& stream) const;
     void ResetGlobalWriteHook(void) const;
+    void SetPathWriteHook(CObjectOStream* stream, const string& path,
+                          CWriteChoiceVariantHook* hook) const;
+
     void SetLocalCopyHook(CObjectStreamCopier& stream,
                           CCopyChoiceVariantHook* hook) const;
     void SetGlobalCopyHook(CCopyChoiceVariantHook* hook) const;
     void ResetLocalCopyHook(CObjectStreamCopier& stream) const;
     void ResetGlobalCopyHook(void) const;
+    void SetPathCopyHook(CObjectStreamCopier* stream, const string& path,
+                          CCopyChoiceVariantHook* hook) const;
 
 public: // mostly for internal use
     const CVariantInfo* GetVariantInfo(void) const;
@@ -445,6 +475,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/01/05 14:24:08  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.9  2003/09/30 17:12:30  gouriano
 * Modified TypeIterators to skip unset optional members
 *

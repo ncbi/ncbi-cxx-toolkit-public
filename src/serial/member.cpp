@@ -493,6 +493,13 @@ void CMemberInfo::ResetLocalReadHook(CObjectIStream& stream)
     m_ReadHookData.ResetLocalHook(stream.m_ClassMemberHookKey);
 }
 
+void CMemberInfo::SetPathReadHook(CObjectIStream* in, const string& path,
+                                  CReadClassMemberHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_ReadHookData.SetPathHook(in,path,hook);
+}
+
 void CMemberInfo::SetGlobalWriteHook(CWriteClassMemberHook* hook)
 {
     CMutexGuard guard(GetTypeInfoMutex());
@@ -516,6 +523,13 @@ void CMemberInfo::ResetLocalWriteHook(CObjectOStream& stream)
 {
     CMutexGuard guard(GetTypeInfoMutex());
     m_WriteHookData.ResetLocalHook(stream.m_ClassMemberHookKey);
+}
+
+void CMemberInfo::SetPathWriteHook(CObjectOStream* out, const string& path,
+                                   CWriteClassMemberHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_WriteHookData.SetPathHook(out,path,hook);
 }
 
 void CMemberInfo::SetGlobalSkipHook(CSkipClassMemberHook* hook)
@@ -543,6 +557,13 @@ void CMemberInfo::ResetLocalSkipHook(CObjectIStream& stream)
     m_SkipHookData.ResetLocalHook(stream.m_ClassMemberSkipHookKey);
 }
 
+void CMemberInfo::SetPathSkipHook(CObjectIStream* in, const string& path,
+                                  CSkipClassMemberHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_SkipHookData.SetPathHook(in,path,hook);
+}
+
 void CMemberInfo::SetGlobalCopyHook(CCopyClassMemberHook* hook)
 {
     CMutexGuard guard(GetTypeInfoMutex());
@@ -566,6 +587,13 @@ void CMemberInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
 {
     CMutexGuard guard(GetTypeInfoMutex());
     m_CopyHookData.ResetLocalHook(stream.m_ClassMemberHookKey);
+}
+
+void CMemberInfo::SetPathCopyHook(CObjectStreamCopier* stream, const string& path,
+                                  CCopyClassMemberHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_CopyHookData.SetPathHook(stream ? &(stream->In()) : 0,path,hook);
 }
 
 TObjectPtr CMemberInfo::CreateClass(void) const
@@ -880,6 +908,9 @@ void CMemberInfoFunctions::ReadHookedMember(CObjectIStream& stream,
 {
     CReadClassMemberHook* hook =
         memberInfo->m_ReadHookData.GetHook(stream.m_ClassMemberHookKey);
+    if ( !hook ) {
+        hook = memberInfo->m_ReadHookData.GetPathHook(stream);
+    }
     if ( hook ) {
         CObjectInfo object(classPtr, memberInfo->GetClassType());
         TMemberIndex index = memberInfo->GetIndex();
@@ -900,6 +931,9 @@ void CMemberInfoFunctions::ReadMissingHookedMember(CObjectIStream& stream,
 {
     CReadClassMemberHook* hook =
         memberInfo->m_ReadHookData.GetHook(stream.m_ClassMemberHookKey);
+    if ( !hook ) {
+        hook = memberInfo->m_ReadHookData.GetPathHook(stream);
+    }
     if ( hook ) {
         memberInfo->GetTypeInfo()->
             SetDefault(memberInfo->GetItemPtr(classPtr));
@@ -919,6 +953,9 @@ void CMemberInfoFunctions::WriteHookedMember(CObjectOStream& stream,
 {
     CWriteClassMemberHook* hook =
         memberInfo->m_WriteHookData.GetHook(stream.m_ClassMemberHookKey);
+    if ( !hook ) {
+        hook = memberInfo->m_WriteHookData.GetPathHook(stream);
+    }
     if ( hook ) {
         CConstObjectInfo object(classPtr, memberInfo->GetClassType());
         TMemberIndex index = memberInfo->GetIndex();
@@ -935,6 +972,9 @@ void CMemberInfoFunctions::SkipHookedMember(CObjectIStream& stream,
 {
     CSkipClassMemberHook* hook =
         memberInfo->m_SkipHookData.GetHook(stream.m_ClassMemberSkipHookKey);
+    if ( !hook ) {
+        hook = memberInfo->m_SkipHookData.GetPathHook(stream);
+    }
     if ( hook ) {
         CObjectTypeInfo type(memberInfo->GetClassType());
         TMemberIndex index = memberInfo->GetIndex();
@@ -951,6 +991,9 @@ void CMemberInfoFunctions::SkipMissingHookedMember(CObjectIStream& stream,
 {
     CSkipClassMemberHook* hook =
         memberInfo->m_SkipHookData.GetHook(stream.m_ClassMemberSkipHookKey);
+    if ( !hook ) {
+        hook = memberInfo->m_SkipHookData.GetPathHook(stream);
+    }
     if ( hook ) {
         CObjectTypeInfo type(memberInfo->GetClassType());
         TMemberIndex index = memberInfo->GetIndex();
@@ -967,6 +1010,9 @@ void CMemberInfoFunctions::CopyHookedMember(CObjectStreamCopier& stream,
 {
     CCopyClassMemberHook* hook =
         memberInfo->m_CopyHookData.GetHook(stream.m_ClassMemberHookKey);
+    if ( !hook ) {
+        hook = memberInfo->m_CopyHookData.GetPathHook(stream.In());
+    }
     if ( hook ) {
         CObjectTypeInfo type(memberInfo->GetClassType());
         TMemberIndex index = memberInfo->GetIndex();
@@ -983,6 +1029,9 @@ void CMemberInfoFunctions::CopyMissingHookedMember(CObjectStreamCopier& stream,
 {
     CCopyClassMemberHook* hook =
         memberInfo->m_CopyHookData.GetHook(stream.m_ClassMemberHookKey);
+    if ( !hook ) {
+        hook = memberInfo->m_CopyHookData.GetPathHook(stream.In());
+    }
     if ( hook ) {
         CObjectTypeInfo type(memberInfo->GetClassType());
         TMemberIndex index = memberInfo->GetIndex();
@@ -1054,6 +1103,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.36  2004/01/05 14:25:20  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.35  2003/11/13 14:07:37  gouriano
 * Elaborated data verification on read/write/get to enable skipping mandatory class data members
 *

@@ -212,10 +212,78 @@ void CObjectStreamCopier::CopyByteBlock(void)
     ib.End();
 }
 
+void CObjectStreamCopier::SetPathCopyObjectHook(const string& path,
+                                               CCopyObjectHook*   hook)
+{
+    m_PathCopyObjectHooks.SetHook(path,hook);
+    In().WatchPathHooks();
+    Out().WatchPathHooks();
+}
+void CObjectStreamCopier::SetPathCopyMemberHook(const string& path,
+                                                 CCopyClassMemberHook*   hook)
+{
+    m_PathCopyMemberHooks.SetHook(path,hook);
+    In().WatchPathHooks();
+    Out().WatchPathHooks();
+}
+void CObjectStreamCopier::SetPathCopyVariantHook(const string& path,
+                                                 CCopyChoiceVariantHook* hook)
+{
+    m_PathCopyVariantHooks.SetHook(path,hook);
+    In().WatchPathHooks();
+    Out().WatchPathHooks();
+}
+
+void CObjectStreamCopier::SetPathHooks(CObjectStack& stk, bool set)
+{
+    if (!m_PathCopyObjectHooks.IsEmpty()) {
+        CCopyObjectHook* hook = m_PathCopyObjectHooks.GetHook(stk);
+        if (hook) {
+            CTypeInfo* item = m_PathCopyObjectHooks.FindType(stk);
+            if (item) {
+                if (set) {
+                    item->SetLocalCopyHook(*this, hook);
+                } else {
+                    item->ResetLocalCopyHook(*this);
+                }
+            }
+        }
+    }
+    if (!m_PathCopyMemberHooks.IsEmpty()) {
+        CCopyClassMemberHook* hook = m_PathCopyMemberHooks.GetHook(stk);
+        if (hook) {
+            CMemberInfo* item = m_PathCopyMemberHooks.FindItem(stk);
+            if (item) {
+                if (set) {
+                    item->SetLocalCopyHook(*this, hook);
+                } else {
+                    item->ResetLocalCopyHook(*this);
+                }
+            }
+        }
+    }
+    if (!m_PathCopyVariantHooks.IsEmpty()) {
+        CCopyChoiceVariantHook* hook = m_PathCopyVariantHooks.GetHook(stk);
+        if (hook) {
+            CVariantInfo* item = m_PathCopyVariantHooks.FindItem(stk);
+            if (item) {
+                if (set) {
+                    item->SetLocalCopyHook(*this, hook);
+                } else {
+                    item->ResetLocalCopyHook(*this);
+                }
+            }
+        }
+    }
+}
+
 END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.12  2004/01/05 14:25:20  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.11  2003/07/29 18:47:47  vasilche
 * Fixed thread safeness of object stream hooks.
 *

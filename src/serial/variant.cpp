@@ -670,6 +670,9 @@ void CVariantInfoFunctions::ReadHookedVariant(CObjectIStream& stream,
 {
     CReadChoiceVariantHook* hook =
         variantInfo->m_ReadHookData.GetHook(stream.m_ChoiceVariantHookKey);
+    if (!hook) {
+        hook = variantInfo->m_ReadHookData.GetPathHook(stream);
+    }
     if ( hook ) {
         CObjectInfo choice(choicePtr, variantInfo->GetChoiceType());
         TMemberIndex index = variantInfo->GetIndex();
@@ -687,6 +690,9 @@ void CVariantInfoFunctions::WriteHookedVariant(CObjectOStream& stream,
 {
     CWriteChoiceVariantHook* hook =
         variantInfo->m_WriteHookData.GetHook(stream.m_ChoiceVariantHookKey);
+    if (!hook) {
+        hook = variantInfo->m_WriteHookData.GetPathHook(stream);
+    }
     if ( hook ) {
         CConstObjectInfo choice(choicePtr, variantInfo->GetChoiceType());
         TMemberIndex index = variantInfo->GetIndex();
@@ -703,6 +709,9 @@ void CVariantInfoFunctions::SkipHookedVariant(CObjectIStream& stream,
 {
     CSkipChoiceVariantHook* hook =
         variantInfo->m_SkipHookData.GetHook(stream.m_ChoiceVariantSkipHookKey);
+    if (!hook) {
+        hook = variantInfo->m_SkipHookData.GetPathHook(stream);
+    }
     if ( hook ) {
         CObjectTypeInfo type(variantInfo->GetChoiceType());
         TMemberIndex index = variantInfo->GetIndex();
@@ -719,6 +728,9 @@ void CVariantInfoFunctions::CopyHookedVariant(CObjectStreamCopier& stream,
 {
     CCopyChoiceVariantHook* hook =
         variantInfo->m_CopyHookData.GetHook(stream.m_ChoiceVariantHookKey);
+    if (!hook) {
+        hook = variantInfo->m_CopyHookData.GetPathHook(stream.In());
+    }
     if ( hook ) {
         CObjectTypeInfo type(variantInfo->GetChoiceType());
         TMemberIndex index = variantInfo->GetIndex();
@@ -755,6 +767,13 @@ void CVariantInfo::ResetLocalReadHook(CObjectIStream& stream)
     m_ReadHookData.ResetLocalHook(stream.m_ChoiceVariantHookKey);
 }
 
+void CVariantInfo::SetPathReadHook(CObjectIStream* in, const string& path,
+                                   CReadChoiceVariantHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_ReadHookData.SetPathHook(in,path,hook);
+}
+
 void CVariantInfo::SetGlobalWriteHook(CWriteChoiceVariantHook* hook)
 {
     CMutexGuard guard(GetTypeInfoMutex());
@@ -778,6 +797,13 @@ void CVariantInfo::ResetLocalWriteHook(CObjectOStream& stream)
 {
     CMutexGuard guard(GetTypeInfoMutex());
     m_WriteHookData.ResetLocalHook(stream.m_ChoiceVariantHookKey);
+}
+
+void CVariantInfo::SetPathWriteHook(CObjectOStream* out, const string& path,
+                                    CWriteChoiceVariantHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_WriteHookData.SetPathHook(out,path,hook);
 }
 
 void CVariantInfo::SetGlobalSkipHook(CSkipChoiceVariantHook* hook)
@@ -805,6 +831,13 @@ void CVariantInfo::ResetLocalSkipHook(CObjectIStream& stream)
     m_SkipHookData.ResetLocalHook(stream.m_ChoiceVariantSkipHookKey);
 }
 
+void CVariantInfo::SetPathSkipHook(CObjectIStream* in, const string& path,
+                                   CSkipChoiceVariantHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_SkipHookData.SetPathHook(in,path,hook);
+}
+
 void CVariantInfo::SetGlobalCopyHook(CCopyChoiceVariantHook* hook)
 {
     CMutexGuard guard(GetTypeInfoMutex());
@@ -830,11 +863,21 @@ void CVariantInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
     m_CopyHookData.ResetLocalHook(stream.m_ChoiceVariantHookKey);
 }
 
+void CVariantInfo::SetPathCopyHook(CObjectStreamCopier* stream, const string& path,
+                                   CCopyChoiceVariantHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_CopyHookData.SetPathHook(stream ? &(stream->In()) : 0,path,hook);
+}
+
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2004/01/05 14:25:23  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.12  2003/07/29 18:47:48  vasilche
 * Fixed thread safeness of object stream hooks.
 *

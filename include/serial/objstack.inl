@@ -158,6 +158,7 @@ CObjectStack::TFrame& CObjectStack::PushFrame(EFrameType type,
             type == TFrame::eFrameChoiceVariant);
     TFrame& frame = PushFrame(type);
     frame.m_MemberId = &memberId;
+    x_PushStackPath();
     return frame;
 }
 
@@ -168,6 +169,7 @@ void CObjectStack::PopFrame(void)
 #if defined(NCBI_SERIAL_IO_TRACE)
     TracePushFrame(false);
 #endif
+    x_PopStackPath();
     m_StackPtr->Reset();
     --m_StackPtr;
 }
@@ -205,7 +207,9 @@ CObjectStack::TFrame& CObjectStack::TopFrame(void)
 inline
 void CObjectStack::SetTopMemberId(const CMemberId& memberid)
 {
+    x_PopStackPath();
     TopFrame().SetMemberId(memberid);
+    x_PushStackPath();
 }
 
 inline
@@ -216,12 +220,24 @@ const CObjectStack::TFrame& CObjectStack::FetchFrameFromBottom(size_t index) con
     return *ptr;
 }
 
+inline
+void CObjectStack::WatchPathHooks(bool set)
+{
+    m_WatchPathHooks = set;
+    m_PathValid = false;
+    GetStackPath();
+}
+
+
 #endif /* def OBJSTACK__HPP  &&  ndef OBJSTACK__INL */
 
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/01/05 14:24:09  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.16  2003/08/25 15:58:32  gouriano
 * added possibility to use namespaces in XML i/o streams
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2004/01/05 14:25:22  gouriano
+* Added possibility to set serialization hooks by stack path
+*
 * Revision 1.43  2003/11/24 14:10:05  grichenk
 * Changed base class for CAliasTypeInfo to CPointerTypeInfo
 *
@@ -204,7 +207,6 @@
 #include <corelib/ncbithr.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/typeinfoimpl.hpp>
-#include <serial/objectinfo.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
@@ -429,6 +431,13 @@ void CTypeInfo::ResetGlobalReadHook(void)
     m_ReadHookData.ResetGlobalHook();
 }
 
+void CTypeInfo::SetPathReadHook(CObjectIStream* in, const string& path,
+                                CReadObjectHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_ReadHookData.SetPathHook(in,path,hook);
+}
+
 void CTypeInfo::SetGlobalWriteHook(CWriteObjectHook* hook)
 {
     CMutexGuard guard(GetTypeInfoMutex());
@@ -452,6 +461,13 @@ void CTypeInfo::ResetLocalWriteHook(CObjectOStream& stream)
 {
     CMutexGuard guard(GetTypeInfoMutex());
     m_WriteHookData.ResetLocalHook(stream.m_ObjectHookKey);
+}
+
+void CTypeInfo::SetPathWriteHook(CObjectOStream* out, const string& path,
+                                 CWriteObjectHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_WriteHookData.SetPathHook(out,path,hook);
 }
 
 void CTypeInfo::SetGlobalSkipHook(CSkipObjectHook* hook)
@@ -479,6 +495,13 @@ void CTypeInfo::ResetLocalSkipHook(CObjectIStream& stream)
     m_SkipHookData.ResetLocalHook(stream.m_ObjectSkipHookKey);
 }
 
+void CTypeInfo::SetPathSkipHook(CObjectIStream* in, const string& path,
+                                CSkipObjectHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_SkipHookData.SetPathHook(in,path,hook);
+}
+
 void CTypeInfo::SetGlobalCopyHook(CCopyObjectHook* hook)
 {
     CMutexGuard guard(GetTypeInfoMutex());
@@ -502,6 +525,13 @@ void CTypeInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
 {
     CMutexGuard guard(GetTypeInfoMutex());
     m_CopyHookData.ResetLocalHook(stream.m_ObjectHookKey);
+}
+
+void CTypeInfo::SetPathCopyHook(CObjectStreamCopier* copier, const string& path,
+                                CCopyObjectHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_CopyHookData.SetPathHook(copier ? &(copier->In()) : 0,path,hook);
 }
 
 void CTypeInfo::SetReadFunction(TTypeReadFunction func)
@@ -530,6 +560,9 @@ void CTypeInfoFunctions::ReadWithHook(CObjectIStream& stream,
 {
     CReadObjectHook* hook =
         objectType->m_ReadHookData.GetHook(stream.m_ObjectHookKey);
+    if (!hook) {
+        hook = objectType->m_ReadHookData.GetPathHook(stream);
+    }
     if ( hook )
         hook->ReadObject(stream, CObjectInfo(objectPtr, objectType));
     else
@@ -542,6 +575,9 @@ void CTypeInfoFunctions::WriteWithHook(CObjectOStream& stream,
 {
     CWriteObjectHook* hook =
         objectType->m_WriteHookData.GetHook(stream.m_ObjectHookKey);
+    if (!hook) {
+        hook = objectType->m_WriteHookData.GetPathHook(stream);
+    }
     if ( hook )
         hook->WriteObject(stream, CConstObjectInfo(objectPtr, objectType));
     else
@@ -553,6 +589,9 @@ void CTypeInfoFunctions::SkipWithHook(CObjectIStream& stream,
 {
     CSkipObjectHook* hook =
         objectType->m_SkipHookData.GetHook(stream.m_ObjectSkipHookKey);
+    if (!hook) {
+        hook = objectType->m_SkipHookData.GetPathHook(stream);
+    }
     if ( hook )
         hook->SkipObject(stream, objectType);
     else
@@ -564,6 +603,9 @@ void CTypeInfoFunctions::CopyWithHook(CObjectStreamCopier& stream,
 {
     CCopyObjectHook* hook =
         objectType->m_CopyHookData.GetHook(stream.m_ObjectHookKey);
+    if (!hook) {
+        hook = objectType->m_CopyHookData.GetPathHook(stream.In());
+    }
     if ( hook )
         hook->CopyObject(stream, objectType);
     else
