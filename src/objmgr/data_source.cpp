@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/04/05 20:27:52  grichenk
+* Fixed duplicate identifier warning
+*
 * Revision 1.30  2002/04/04 21:33:13  grichenk
 * Fixed GetSequence() for sequences with unresolved segments
 *
@@ -1392,22 +1395,22 @@ void CDataSource::x_DropFeature(const CSeq_feat& feat,
         // Find the TSE containing the feature
         TTSESet::iterator tse_info = tse_set->second.begin();
         for ( ; tse_info != tse_set->second.end(); ++tse_info) {
-            TAnnotMap::iterator annot = (*tse_info)->m_AnnotMap.find(
+            TAnnotMap::iterator annot_it = (*tse_info)->m_AnnotMap.find(
                 mapit->first);
-            if (annot == (*tse_info)->m_AnnotMap.end())
+            if (annot_it == (*tse_info)->m_AnnotMap.end())
                 continue;
-            TRangeMap::iterator rg = annot->second.begin(
+            TRangeMap::iterator rg = annot_it->second.begin(
                 mapit->second.GetOverlappingRange());
-            for ( ; rg != annot->second.end(); ++rg) {
+            for ( ; rg != annot_it->second.end(); ++rg) {
                 if (rg->second->IsFeat()  &&
                     &(rg->second->GetFeat()) == &feat)
                     break;
             }
-            if (rg == annot->second.end())
+            if (rg == annot_it->second.end())
                 continue;
             // Delete the feature from all indexes
-            annot->second.erase(rg);
-            if (annot->second.size() == 0) {
+            annot_it->second.erase(rg);
+            if (annot_it->second.size() == 0) {
                 tse_set->second.erase(tse_info);
             }
             if (tse_set->second.size() == 0) {
