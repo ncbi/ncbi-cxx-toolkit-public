@@ -98,11 +98,11 @@ CLookupTableOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) co
     ddc.Log("threshold", m_Ptr->threshold);
     ddc.Log("lut_type", m_Ptr->lut_type);
     ddc.Log("word_size", m_Ptr->word_size);
-    ddc.Log("alphabet_size", m_Ptr->alphabet_size);
     ddc.Log("mb_template_length", m_Ptr->mb_template_length);
     ddc.Log("mb_template_type", m_Ptr->mb_template_type);
     ddc.Log("max_positions", m_Ptr->max_positions);
-    ddc.Log("scan_step", m_Ptr->scan_step);
+    ddc.Log("variable_wordsize", m_Ptr->variable_wordsize);
+    ddc.Log("full_byte_scan", m_Ptr->full_byte_scan);
 }
 
 void
@@ -121,9 +121,6 @@ CBlastInitialWordOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*
         return;
 
     ddc.Log("window_size", m_Ptr->window_size);
-    ddc.Log("container_type", m_Ptr->container_type);
-    ddc.Log("extension_method", m_Ptr->extension_method);
-    ddc.Log("variable_wordsize", m_Ptr->variable_wordsize);
     ddc.Log("ungapped_extension", m_Ptr->ungapped_extension);
     ddc.Log("x_dropoff", m_Ptr->x_dropoff);
 }
@@ -186,7 +183,7 @@ CBlastHitSavingOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/)
     ddc.Log("cutoff_score", m_Ptr->cutoff_score);
     ddc.Log("percent_identity", m_Ptr->percent_identity);
     ddc.Log("do_sum_stats", m_Ptr->do_sum_stats);
-    ddc.Log("longest_longron", m_Ptr->longest_intron);
+    ddc.Log("longest_intron", m_Ptr->longest_intron);
 }
 void
 CBlastHitSavingParameters::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
@@ -604,6 +601,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.64  2005/01/10 13:33:18  madden
+ * Fix calls to ddc.Log for added/deleted options
+ *
  * Revision 1.63  2004/12/29 15:11:52  camacho
  * +CBlast_Message::DebugDump
  *
