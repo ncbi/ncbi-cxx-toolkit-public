@@ -742,9 +742,9 @@ As with HTTP connector, if network information structure is specified as
 
 <p>
 Normally the last parameter of <b><i>SERVICE_CreateConnectorEx()</i></b> is left <tt>NULL</tt>, which
-sets all additional parameters to their default values. Among others, default procedure of choosing
-an appropriate server is used by the connector when looking for mapping of name into server address.
-To see how this parameter can be used to change the mapping procedure
+sets all additional parameters to their default values. Among others, this includes default procedure
+of choosing an appropriate server when the connector is looking for a mapping of the service name
+into a server address. To see how this parameter can be used to change the mapping procedure
 please refer to a <a href="#ref_ServiceAPI">later section</a>.
 
 <p>
@@ -980,11 +980,21 @@ the first word of which is assumed to be the name.
 #define ENV_DB_KEY "my_service_env="
 
 
-/* This routine gets called when connector is about to close.
+/* This routine gets called when connector is about to be destructed.
  */
 static void s_CleanupData(void* data)
 {
     free(data); /* we kept database name there */
+}
+
+
+/* This routine gets called on each internal close of the connector
+ * (which may be followed by a subsequent internal open).
+ */
+static void s_Reset(void* data)
+{
+    /* just see that reset happens by printing DB name */
+    printf("Connection reset, DB: %s\n", (char*) data);
 }
 
 
@@ -1040,6 +1050,7 @@ int main(int argc, char* argv[])
 
     memset(&amp;params, 0, sizeof(params));
     params.data = db_name;                /* custom data, anything       */
+    params.reset = s_Reset;               /* reset routine, may be NULL  */
     params.cleanup = s_CleanupData;       /* cleanup routine, may be NULL*/
     params.get_net_info = s_GetNextInfo;  /* custom iterator routine     */
     if (!(c = <a href="../lxr/ident?i=SERVICE_CreateConnectorEx">SERVICE_CreateConnectorEx</a>("my_service",
