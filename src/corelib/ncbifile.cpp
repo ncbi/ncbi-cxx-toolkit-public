@@ -33,7 +33,9 @@
 
 #if !defined(NCBI_OS_MAC)
 #  include <sys/types.h>
-#  include <sys/stat.h>
+#  if defined(HAVE_SYS_STAT_H)
+#    include <sys/stat.h>
+#  endif
 #endif
 
 #include <stdio.h>
@@ -761,7 +763,11 @@ CDirEntry::EType CDirEntry::GetType(void) const
     return isDir ? eDir : eFile;
 #else
     struct stat st;
+#  if defined(NCBI_OS_MSWIN)
     if (stat(GetPath().c_str(), &st) != 0) {
+#  elif defined(NCBI_OS_UNIX)
+    if (lstat(GetPath().c_str(), &st) != 0) {
+#  endif
         return eUnknown;
     }
     if ( (st.st_mode & S_IFREG)  == S_IFREG ) {
@@ -1561,6 +1567,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2003/08/21 20:32:48  ivanov
+ * CDirEntry::GetType(): use lstat() instead stat() on UNIX
+ *
  * Revision 1.50  2003/08/08 13:37:17  siyan
  * Changed GetTmpNameExt to GetTmpNameEx in CFile, as this is the more
  * appropriate name.
