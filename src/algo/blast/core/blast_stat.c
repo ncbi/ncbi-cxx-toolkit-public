@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.55  2004/04/08 13:53:10  papadopo
+ * fix doxygen warning
+ *
  * Revision 1.54  2004/04/07 03:06:16  camacho
  * Added blast_encoding.[hc], refactoring blast_stat.[hc]
  *
@@ -3515,7 +3518,7 @@ RPSFreePSSM(Int4 **posMatrix, Int4 num_rows)
  *                          alignments, beta == 0)
  * @param query_length      the length of the query sequence
  * @param db_length         the length of the database
- * @param db_num_seq        the number of sequences in the database
+ * @param db_num_seqs       the number of sequences in the database
  * @param length_adjustment the computed value of the length adjustment [out]
  *
  * @return   0 if length_adjustment is known to be the largest integer less
