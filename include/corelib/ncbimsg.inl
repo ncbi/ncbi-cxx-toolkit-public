@@ -1,5 +1,5 @@
-#if defined(NCBIERR__HPP)  &&  !defined(NCBIERR__INL)
-#define NCBIERR__INL
+#if defined(NCBIMSG__HPP)  &&  !defined(NCBIMSG__INL)
+#define NCBIMSG__INL
 
 /*  $RCSfile$  $Revision$  $Date$
 * ===========================================================================
@@ -29,25 +29,48 @@
 * Author:  Denis Vakatov
 *
 * File Description:
-*   NCBI Error Handling API for C++(using STL)
+*   NCBI Message Handling API for C++(using STL)
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.6  1998/09/29 21:45:56  vakatov
-* *** empty log message ***
-*
-* Revision 1.5  1998/09/29 20:26:02  vakatov
-* Redesigning #1
+* Revision 1.7  1998/10/01 21:36:04  vakatov
+* Renamed everything to the "message handling"(rather than "error handling")
 *
 * ==========================================================================
 */
 
+//////////////////////////////////////////////////////////////////
+// CMsgBuffer -- FOR INTERNAL USE ONLY
+// (can be accessed only by "CMessage" and created only by g_GetMsgBuffer())
+class CMsgBuffer {
+    friend class CMessage;
+    friend CMsgBuffer& g_GetMsgBuffer(void);
+private:
+    const CMessage* m_Msg; // present user
+    ostrstream  m_Stream;  // content of the current message
+
+    CMsgBuffer(void);
+    ~CMsgBuffer(void);
+
+    // formatted output
+    template<class X> void f_Put(const CMessage& msg, X& x);
+
+    void f_Flush  (void);
+    void f_Reset  (const CMessage& msg);  // reset content of current message
+    void f_EndMess(const CMessage& msg);  // flush out current message
+
+    // flush & detach the current user
+    void f_Detach(const CMessage* msg);
+};
+
+
+
 
 ///////////////////////////////////////////////////////
-//  CErr::
+//  CMessage::
 
-inline CErr::CErr(EErrSeverity sev, const char* message, bool flush)
- : m_Buffer(g_GetErrBuffer())
+inline CMessage::CMessage(EMsgSeverity sev, const char* message, bool flush)
+ : m_Buffer(g_GetMsgBuffer())
 {
     m_Severity = sev;
     m_Active = false;
@@ -57,96 +80,107 @@ inline CErr::CErr(EErrSeverity sev, const char* message, bool flush)
         (*this) << Flush;
 }
 
-inline CErr::~CErr(void) {
+inline CMessage::~CMessage(void) {
     m_Buffer.f_Detach(this);
 }
 
-inline EErrSeverity CErr::f_GetSeverity(void) {
-    return m_Severity;
-}
-
-template<class X> CErr& CErr::operator << (X& x) {
+template<class X> CMessage& CMessage::operator << (X& x) {
     m_Buffer.f_Put(*this, x);
     return *this;
 }
 
-inline CErr& operator << (CErr& (*f)(CErr&)) {
+inline CMessage& operator << (CMessage& (*f)(CMessage&)) {
     return f(*this);
 }
 
-inline CErr& Reset(CErr& err)  {
-    err.m_Buffer.f_Reset(err);
-    return err;
+inline EMsgSeverity CMessage::f_GetSeverity(void) {
+    return m_Severity;
 }
 
-inline CErr& EndMess(CErr& err)  {
-    err.m_Buffer.f_EndMess(err);
-    return err;
+
+///////////////////////////////////////////////////////
+//  CMessage:: manipulators
+
+inline CMessage& Reset(CMessage& msg)  {
+    msg.m_Buffer.f_Reset(msg);
+    return msg;
 }
 
-inline CErr& Info(CErr& err)  {
-    err.m_Severity = eE_Info;
-    return err << EndMess;
+inline CMessage& EndMess(CMessage& msg)  {
+    msg.m_Buffer.f_EndMess(msg);
+    return msg;
 }
-inline CErr& Warning(CErr& err)  {
-    err.m_Severity = eE_Warning;
-    return err << EndMess;
+
+inline CMessage& Info(CMessage& msg)  {
+    msg.m_Severity = eM_Info;
+    return msg << EndMess;
 }
-inline CErr& Error(CErr& err)  {
-    err.m_Severity = eE_Error;
-    return err << EndMess;
+inline CMessage& Warning(CMessage& msg)  {
+    msg.m_Severity = eM_Warning;
+    return msg << EndMess;
 }
-inline CErr& Fatal(CErr& err)  {
-    err.m_Severity = eE_Fatal;
-    return err << EndMess;
+inline CMessage& Error(CMessage& msg)  {
+    msg.m_Severity = eM_Error;
+    return msg << EndMess;
+}
+inline CMessage& Fatal(CMessage& msg)  {
+    msg.m_Severity = eM_Fatal;
+    return msg << EndMess;
 }
 
 
 
 ///////////////////////////////////////////////////////
-//  CErrBuffer::
+//  CMsgBuffer::
 
-inline CErrBuffer::CErrBuffer(void) {
-    m_Err = 0;
+inline CMsgBuffer::CMsgBuffer(void) {
+    m_Msg = 0;
 }
 
-inline CErrBuffer::~CErrBuffer(void) {
-    ASSERT( !m_Err );
+inline CMsgBuffer::~CMsgBuffer(void) {
+    ASSERT( !m_Msg );
     ASSERT( !m_Stream.pcount() );
 }
 
-template<class X> void CErrBuffer::f_Put(const CErr& err, X& x) {
-    if (m_Err != &err) {
+template<class X> void CMsgBuffer::f_Put(const CMessage& msg, X& x) {
+    if (m_Msg != &msg) {
         if ( m_Stream.pcount() )
             f_Flush();
-        m_Err = &err;
+        m_Msg = &msg;
     }
     m_Stream << x;
 }
 
-inline void CErrBuffer::f_Flush(void) {
-    if ( !m_Err )
+inline void CMsgBuffer::f_Flush(void) {
+    if ( !m_Msg )
         return;
 
-    EErrSeverity sev = m_Err->f_GetSeverity();
+    EMsgSeverity sev = m_Msg->f_GetSeverity();
     if ( m_Stream.pcount() ) {
         VERIFY( f_FlushHook(sev, m_Stream.str(), m_Stream.pcount()) );
         m_Stream.freeze(false);
-        f_Reset(m_Err);
+        f_Reset(m_Msg);
     }
-    if (sev == eE_Fatal)
+    if (sev == eM_Fatal)
         abort();
 }
 
-inline void CErrBuffer::f_Reset(const CErr& err) {
-    if (&err == m_Err)
+inline void CMsgBuffer::f_Reset(const CMessage& msg) {
+    if (&msg == m_Msg)
         VERIFY( !m_Stream.rdbuf()->seekpos(0); );
 }
 
-inline void CErrBuffer::f_EndMess(const CErr& err) {
-    if (&err == m_Err)
+inline void CMsgBuffer::f_EndMess(const CMessage& msg) {
+    if (&msg == m_Msg)
         f_Flush();
 }
 
+inline void CMsgBuffer::f_Detach(const CMessage* msg) {
+    if (msg == m_Msg) {
+        f_Flush();
+        m_Msg = 0;
+    }
+}
 
-#endif /* def NCBIERR__HPP  &&  ndef NCBIERR__INL */
+
+#endif /* def NCBIMSG__HPP  &&  ndef NCBIMSG__INL */

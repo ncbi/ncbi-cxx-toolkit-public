@@ -1,5 +1,5 @@
-#ifndef NCBIERR__HPP
-#define NCBIERR__HPP
+#ifndef NCBIMSG__HPP
+#define NCBIMSG__HPP
 
 /*  $RCSfile$  $Revision$  $Date$
 * ===========================================================================
@@ -29,18 +29,12 @@
 * Author:  Denis Vakatov
 *
 * File Description:
-*   NCBI Error Handling API for C++(using STL)
+*   NCBI Message Handling API for C++(using STL)
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.6  1998/09/29 21:45:55  vakatov
-* *** empty log message ***
-*
-* Revision 1.5  1998/09/29 20:26:01  vakatov
-* Redesigning #1
-*
-* Revision 1.4  1998/09/25 22:58:01  vakatov
-* *** empty log message ***
+* Revision 1.7  1998/10/01 21:36:03  vakatov
+* Renamed everything to the "message handling"(rather than "error handling")
 *
 * ==========================================================================
 */
@@ -51,117 +45,75 @@
 
 using namespace std;
 
-namespace ncbi_err {
+namespace ncbi_msg {
 
     typedef enum {
-        eE_Info = 0,
-        eE_Warning,
-        eE_Error,
-        eE_Fatal   /* guarantees to exit(or abort) */ 
-    } EErrSeverity;
+        eM_Info = 0,
+        eM_Warning,
+        eM_Error,
+        eM_Fatal   // guarantees to exit(or abort)
+    } EMsgSeverity;
+
+    class CMsgBuffer;  // forward declaration of an internal class
 
 
     //////////////////////////////////////////////////////////////////
     //
-    class CErr {
+    class CMessage {
     public:
-        CErr(EErrSeverity sev=eE_Error, const char* message=0,
-             bool flush=false);
-        ~CErr(void);
+        CMessage(EMsgSeverity sev=eM_Error, const char* message=0,
+                 bool flush=false);
+        ~CMessage(void);
 
-        template<class X> CErr& operator << (X& x) const;  // formatted output
-        CErr& operator << (CErr& (*f)(CErr&));       // manipulators
+        EMsgSeverity f_GetSeverity(void) const;               // curr. severity
+        template<class X> CMessage& operator << (X& x) const; // formatted out
+        CMessage& operator << (CMessage& (*f)(CMessage&));    // manipulators
+
+        // output manipulators for CMessage
+        friend CMessage& Reset  (CMessage& msg); // reset content of curr.mess.
+        friend CMessage& Endm   (CMessage& msg); // flush curr.mess., start new
+        friend CMessage& Info   (CMessage& msg); /// these 4 manipulators first
+        friend CMessage& Warning(CMessage& msg); /// do a flush;  then they set
+        friend CMessage& Error  (CMessage& msg); /// severity for the next
+        friend CMessage& Fatal  (CMessage& msg); /// message
 
         // write the error diagnostics to output stream "os"
         static void f_SetStream(ostream& os=cerr);
         // do not post messages which severity is less than "min_sev"
-        static void f_SetPostLevel(EErrSeverity min_sev=eE_Error);
+        static EMsgSeverity f_SetPostLevel(EMsgSeverity min_sev=eM_Error);
         // abrupt the application if severity is >= "max_sev"
-        static void f_SetDieLevel(EErrSeverity max_sev=eE_Fatal);
-
-        EErrSeverity f_GetSeverity(void) const;
+        static EMsgSeverity f_SetDieLevel(EMsgSeverity max_sev=eM_Fatal);
 
     private:
-        EErrSeverity m_Severity;  // severity level for the current message
-        CErrBuffer&  m_Buffer;    // this thread's error message buffer
-    };
-
-    // Set of output manipulators for CErr
-    //
-    inline CErr& Reset  (const CErr& err); // reset content of curr. message
-    inline CErr& EndMess(const CErr& err); // flush curr.message, start new one
-
-    inline CErr& Info   (CErr& err);  ///  these 4 manipulators first do a
-    inline CErr& Warning(CErr& err);  ///  flush;  then they set severity
-    inline CErr& Error  (CErr& err);  ///  for the next message
-    inline CErr& Fatal  (CErr& err);  ///
-
-
-
-    //////////////////////////////////////////////////////////////////
-    //
-    class CErrBuffer {
-        friend class CErr;
-        friend CErrBuffer& g_GetErrBuffer(void);
-    private:
-        const CErr* m_Err;     // present user
-        ostrstream  m_Stream;  // content of the current message
-
-        CErrBuffer(void);
-        ~CErrBuffer(void);
-
-        // formatted output
-        template<class X> void f_Put(const CErr& err, X& x);
-
-        void f_Flush  (void);
-        void f_Reset  (const CErr& err);  // reset current message
-        void f_EndMess(const CErr& err);  // flush out current message
-
-        // flush & detach the current user
-        void f_Detach(const CErr* err);
+        EMsgSeverity  m_Severity;  // severity level for the current message
+        CMsgBuffer&   m_Buffer;    // this thread's error message buffer
     };
 
 
 
-
-    ////////////////////////////////////////////////////////////////////
-    // THE API BELOW IS MOSTLY FOR INTERNAL USE -- OR FOR ANYBODY WHO
-    // WANT TO PROVIDE HIS OWN ERROR-HANDLE CALLBACKS
-    ////////////////////////////////////////////////////////////////////
-
-
-    // Type of the callback for "CErrBuffer::f_Flush()"
-    // Return "true" if succeeded
-    typedef bool (*FFlushHook)(EErrSeverity severity, const char* message,
-                               void* data);
-
-    // The function to call when the hook is reset
-    typedef void (*FFlushDone)(void* data);
-
-    // The flush-hook callback and its data
-    class CFlushHook {
-    public:
-        FFlushHook f_Hook;
-        void*      m_Data;
-        FFlushDone f_Done;
-        CFlushHook(FFlushHook hook, void* data=0, FFlushDone done=0)
-            { f_Hook = hook;  m_Data = data;  f_Done = done; }
-    private:
-        CFlushHook(void) { NO_GOOD; }        
-    };
-
-    // Set new hook function&data to be called whenever the "f_Flush()"
-    // method gets called for any instance of "CErrBuffer" in the current
-    // thread
-    // NOTE:  "f_Done()" will be called for the replaced hook(if any)
-    extern void g_SetFlushHook(const SFlushHook& hook);
-
+    // Set new message handler("func"), data("data") and destructor("cleanup").
+    // "func(..., data)" is to be called when any instance of "CMessageBuffer"
+    // has a new error message completed and ready to post.
+    // "cleanup(data)" will be called whenever this hook gets replaced and
+    // on the program termination.
+    // NOTE 1:  "message_buf" is in general NOT '\0'-terminated
+    // NOTE 2:  "func()", "cleanup()" and "g_SetMessageHandler()" calls are
+    //          MT-protected, so that they will not be called simultaneously
+    //          from different threads
+    typedef void (*FMessageHandler)(EMsgSeverity severity,
+                                    const char* message_buf,
+                                    size_t message_len,
+                                    void* data);
+    typedef void (*FMessageCleanup)(void* data);
+    extern void g_SetMessageHandler(FMessageHandler func, void* data,
+                                    FMessageCleanup cleanup);
 
 
     ///////////////////////////////////////////////////////
-    // All inline function implementations are in this file
-#include <ncbierr.inl>
+    // All inline function implementations and internal data
+    // types, etc. are in this file
+#include <ncbimsg.inl>
 
-}  // namespace ncbi_err
+}  // namespace ncbi_msg
 
-#endif  /* NCBIERR__HPP */
+#endif  /* NCBIMSG__HPP */
