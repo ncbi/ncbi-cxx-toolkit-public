@@ -806,6 +806,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
             // If gzip header found, skip it
             if ( header_len ) {
                 m_Cache.erase(0, header_len);
+                inflateEnd(STREAM);
                 int errcode = inflateInit2(STREAM,
                                            header_len ? -MAX_WBITS :
                                                         m_WindowBits);
@@ -904,6 +905,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/02/15 19:14:53  ivanov
+ * CZipDecompressor::Process(): fixed memory leak if gzip file header present
+ * in compressed file
+ *
  * Revision 1.17  2004/11/23 16:57:21  ivanov
  * Fixed compilation warning
  *
