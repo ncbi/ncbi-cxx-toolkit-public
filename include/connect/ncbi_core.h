@@ -119,7 +119,8 @@ typedef enum {
  */
 typedef enum {
     eIO_WritePlain,
-    eIO_WritePersist
+    eIO_WritePersist,
+    eIO_WriteOutOfBand
 } EIO_WriteMethod;
 
 
@@ -480,6 +481,9 @@ extern NCBI_XCONNECT_EXPORT void REG_Set
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.26  2004/12/27 15:30:08  lavr
+ * +eIO_WriteOutOfBand
+ *
  * Revision 6.25  2004/03/12 23:26:22  gorelenk
  * Added export prefixes.
  *
