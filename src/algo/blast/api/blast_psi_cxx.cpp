@@ -84,7 +84,7 @@ CPssmEngine::Run()
     // this interface
     PSIDiagnosticsRequest request;
     memset((void*) &request, 0, sizeof(request));
-    request.residue_frequencies = true;
+    request.frequency_ratios = true;
 
     CPSIMatrix pssm;
     CPSIDiagnosticsResponse diagnostics;
@@ -302,8 +302,9 @@ CPssmEngine::x_PSIMatrix2ScoreMatrix(const PSIMatrix* pssm,
             for (unsigned int j = 0; j < pssm->nrows; j++) {
                 // FIXME: this needs to be updated after the scoremat.asn is
                 // updated, field: resFreqsPerPos
-                score_mat.SetPosFreqs().push_back(
-                    diagnostics->residue_freqs[i][j]);
+                //score_mat.SetPosFreqs().push_back(
+                //    diagnostics->residue_freqs[i][j]);
+                // will be fixed when scoremat.asn is updated
             }
         }
     }
@@ -313,8 +314,9 @@ CPssmEngine::x_PSIMatrix2ScoreMatrix(const PSIMatrix* pssm,
             for (unsigned int j = 0; j < pssm->nrows; j++) {
                 // FIXME: this needs to be updated after the scoremat.asn is
                 // updated, field weightedResFreqsPerPos
-                score_mat.SetRawFreqs().push_back(
-                    diagnostics->weighted_residue_freqs[i][j]);
+                //score_mat.SetRawFreqs().push_back(
+                //    diagnostics->weighted_residue_freqs[i][j]);
+                // will be fixed when scoremat.asn is updated
             }
         }
     }
@@ -324,7 +326,7 @@ CPssmEngine::x_PSIMatrix2ScoreMatrix(const PSIMatrix* pssm,
             for (unsigned int j = 0; j < pssm->nrows; j++) {
                 // FIXME: this needs to be updated after the scoremat.asn is
                 // updated, field freqRatios
-                score_mat.SetWeights().push_back(
+                score_mat.SetPosFreqs().push_back(
                     diagnostics->frequency_ratios[i][j]);
             }
         }
@@ -347,6 +349,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2004/10/06 18:21:08  camacho
+ * Fixed contents of posFreqs field in scoremat structure
+ *
  * Revision 1.11  2004/09/17 02:06:53  camacho
  * Renaming of diagnostics structure fields
  *
