@@ -46,50 +46,60 @@ BEGIN_NCBI_SCOPE
 //
 
 CCompressionStreambuf::CCompressionStreambuf(
-    CCompressionProcessor*              compressor,
-    CCompressionStream::ECompressorType compressor_type,
-    ios*                                stream,
-    CCompressionStream::EStreamType     stream_type,
-    streamsize                          in_buf_size,
-    streamsize                          out_buf_size)
+    CNcbiIos*                    stream,
+    CCompressionStreamProcessor* read_sp,
+    CCompressionStreamProcessor* write_sp)
 
-    : m_Compressor(compressor), m_CompressorType(compressor_type),
-      m_Stream(stream), m_StreamType(stream_type),
-      m_Buf(0), m_InBuf(0), m_OutBuf(0),
-      m_InBufSize(in_buf_size > 1 ?
-                  in_buf_size : kCompressionDefaultInBufSize),
-      m_OutBufSize(out_buf_size > 1 ?
-                   out_buf_size : kCompressionDefaultOutBufSize),
-      m_Finalized(false)
+    :  m_Stream(stream), m_Reader(read_sp), m_Writer(write_sp), m_Buf(0)
 {
-    if ( !compressor  ||  !stream ) {
+    // Check parameters
+    if ( !stream  ||  
+         !((read_sp   &&  read_sp->m_Processor) ||
+           (write_sp  &&  write_sp->m_Processor))) {
         return;
     }
 
-    // Allocate memory for buffers
-    auto_ptr<CT_CHAR_TYPE> bp(new CT_CHAR_TYPE[m_InBufSize + m_OutBufSize]);
-    m_InBuf = bp.get();
-    m_OutBuf = bp.get() + m_InBufSize;
+    // Get buffers sizes
+    streamsize read_bufsize = 0, write_bufsize = 0;
+    if ( m_Reader ) {
+        read_bufsize = m_Reader->m_InBufSize + m_Reader->m_OutBufSize;
+    }
+    if ( m_Writer ) {
+        write_bufsize = m_Writer->m_InBufSize + m_Writer->m_OutBufSize;
+    }
 
-    // Set the buffer pointers
+    // Allocate memory for all buffers at one time
+    auto_ptr<CT_CHAR_TYPE> bp(new CT_CHAR_TYPE[read_bufsize + write_bufsize]);
+    m_Buf = bp.get();
+    if ( !m_Buf ) {
+        return;
+    }
 
-    if ( stream_type == CCompressionStream::eST_Read ) {
-        setp(m_InBuf, m_InBuf + m_InBufSize);
-        // Init pointers for data reading from input underlying stream
-        m_InBegin = m_InBuf;
-        m_InEnd   = m_InBuf;
+    // Init processors and set the buffer pointers
+    if ( m_Reader ) {
+        m_Reader->m_InBuf  = m_Buf;
+        m_Reader->m_OutBuf = m_Buf + m_Reader->m_InBufSize;
+        m_Reader->m_Begin  = m_Reader->m_InBuf;
+        m_Reader->m_End    = m_Reader->m_InBuf;
+        // We wish to have underflow() called at the first read
+        setg(m_Reader->m_OutBuf, m_Reader->m_OutBuf, m_Reader->m_OutBuf);
+        m_Reader->m_Processor->Init();
     } else {
+        setg(0,0,0);
+    }
+    if ( m_Writer ) {
+        m_Writer->m_InBuf  = m_Buf + read_bufsize;
+        m_Writer->m_OutBuf = m_Writer->m_InBuf + m_Writer->m_InBufSize;
+        m_Writer->m_Begin  = m_Writer->m_OutBuf;
+        m_Writer->m_End    = m_Writer->m_OutBuf;
         // Use one character less for the input buffer than the really
         // available one (see overflow())
-        setp(m_InBuf, m_InBuf + m_InBufSize - 1);
+        setp(m_Writer->m_InBuf, m_Writer->m_InBuf + m_Writer->m_InBufSize - 1);
+        m_Writer->m_Processor->Init();
+    } else {
+        setp(0,0);
     }
-    // We wish to have underflow() called at the first read
-    setg(m_OutBuf, m_OutBuf, m_OutBuf);
-
-    // Init compression
-    m_Compressor->Init();
-
-    m_Buf= bp.release();
+    bp.release();
 }
 
 
@@ -100,91 +110,111 @@ CCompressionStreambuf::~CCompressionStreambuf()
 }
 
 
-void CCompressionStreambuf::Finalize(void)
+void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
 {
-    // To do nothing if a streambuf is already finalized or a compressor
-    // is idle
-    if ( !IsOkay()  ||  m_Finalized  ||  !m_Compressor->IsBusy() ) {
+    // Finalize read and write processors
+    if (dir == CCompressionStream::eReadWrite ) {
+        Finalize(CCompressionStream::eRead);
+        Finalize(CCompressionStream::eWrite);
+        return;
+    }
+
+    if ( !IsOkay() ) {
+        return;
+    }
+    // Check processor status
+    if ( !IsStreamProcessorOkey(dir) ) {
         return;
     }
     // Sync buffers
-    sync();
-
-    CT_CHAR_TYPE* buf = m_OutBuf;
-    unsigned long out_size = m_OutBufSize, out_avail = 0;
+    Sync(dir);
 
     // Finish
+    CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
+    CT_CHAR_TYPE* buf = sp->m_OutBuf;
+    unsigned long out_size = sp->m_OutBufSize, out_avail = 0;
+
     do {
-        if ( m_StreamType == CCompressionStream::eST_Read ) {
+        if ( dir == CCompressionStream::eRead ) {
             buf = egptr();
-            out_size = m_OutBuf + m_OutBufSize - egptr();
+            out_size = sp->m_OutBuf + sp->m_OutBufSize - egptr();
         }
-        m_LastStatus = m_Compressor->Finish(buf, out_size, &out_avail);
-        if ( m_LastStatus == CP::eStatus_Error ) {
+        sp->m_LastStatus = sp->m_Processor->Finish(buf, out_size, &out_avail);
+        if ( sp->m_LastStatus == CP::eStatus_Error ) {
            break;
         }
-        if ( m_StreamType == CCompressionStream::eST_Read ) {
+        if ( dir == CCompressionStream::eRead ) {
             // Update the get's pointers
-            setg(m_OutBuf, gptr(), egptr() + out_avail);
+            setg(sp->m_OutBuf, gptr(), egptr() + out_avail);
         } else {
             // Write the data to the underlying stream
-            if ( out_avail && m_Stream->rdbuf()->sputn(m_OutBuf, out_avail) !=
+            if ( out_avail  &&
+                 m_Stream->rdbuf()->sputn(sp->m_OutBuf, out_avail) !=
                  (streamsize)out_avail) {
                 break;
             }
         }
-    } while ( out_avail  &&  m_LastStatus == CP::eStatus_Overflow);
+    } while ( out_avail  &&  sp->m_LastStatus == CP::eStatus_Overflow);
 
     // Cleanup
-    m_Compressor->End();
-
-    // Streambuf is finalized
-    m_Finalized = true;
+    sp->m_Processor->End();
+    sp->m_Finalized = true;
 }
 
 
 int CCompressionStreambuf::sync()
 {
-    // To do nothing if a streambuf is already finalized or a compressor
-    // is idle
-    if ( !IsOkay()  ||  m_Finalized  ||  !m_Compressor->IsBusy() ) {
+    if ( !IsOkay() ) {
         return -1;
     }
-    // Process remaining data in the input buffer
-    if ( !Process() ) {
+    // Sync write processor buffers
+    if ( Sync(CCompressionStream::eWrite) != 0 ) {
+        return -1;
+    }
+    // Sync the underlying stream
+    return m_Stream->rdbuf()->PUBSYNC();
+}
+
+
+int CCompressionStreambuf::Sync(CCompressionStream::EDirection dir)
+{
+    // Check processor status
+    if ( !IsStreamProcessorOkey(dir) ) {
+        return -1;
+    }
+    // Process remaining data in the preprocessing buffer
+    if ( !Process(dir) ) {
         return -1;
     }
 
     // Flush
-    CT_CHAR_TYPE* buf = m_OutBuf;
-    unsigned long out_size = m_OutBufSize, out_avail = 0;
+    CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
+    CT_CHAR_TYPE* buf = sp->m_OutBuf;
+    unsigned long out_size = sp->m_OutBufSize, out_avail = 0;
     do {
-        if ( m_StreamType == CCompressionStream::eST_Read ) {
+        if ( dir == CCompressionStream::eRead ) {
             buf = egptr();
-            out_size = m_OutBuf + m_OutBufSize - egptr();
+            out_size = sp->m_OutBuf + sp->m_OutBufSize - egptr();
         }
-        m_LastStatus = m_Compressor->Flush(buf, out_size, &out_avail);
-        if ( m_LastStatus == CP::eStatus_Error ) {
+        sp->m_LastStatus = sp->m_Processor->Flush(buf, out_size, &out_avail);
+        if ( sp->m_LastStatus == CP::eStatus_Error ) {
            break;
         }
-        if ( m_StreamType == CCompressionStream::eST_Read ) {
+        if ( dir == CCompressionStream::eRead ) {
             // Update the get's pointers
-            setg(m_OutBuf, gptr(), egptr() + out_avail);
+            setg(sp->m_OutBuf, gptr(), egptr() + out_avail);
         } else {
             // Write the data to the underlying stream
-            if ( out_avail && m_Stream->rdbuf()->sputn(m_OutBuf, out_avail) !=
+            if ( out_avail  &&
+                 m_Stream->rdbuf()->sputn(sp->m_OutBuf, out_avail) !=
                  (streamsize)out_avail) {
                 return -1;
             }
         }
-    } while ( out_avail  &&  m_LastStatus == CP::eStatus_Overflow );
+    } while ( out_avail  &&  sp->m_LastStatus == CP::eStatus_Overflow );
 
-    // Sync the underlying stream
-    if ( m_Stream->rdbuf()->PUBSYNC() ) {
-        return -1;
-    }
     // Check status
-    if ( m_LastStatus != CP::eStatus_Success ) {
+    if ( sp->m_LastStatus != CP::eStatus_Success ) {
         return -1;
     }
     return 0;
@@ -193,9 +223,8 @@ int CCompressionStreambuf::sync()
 
 CT_INT_TYPE CCompressionStreambuf::overflow(CT_INT_TYPE c)
 {
-    // To do nothing if a streambuf is already finalized or a compressor
-    // is idle
-    if ( !IsOkay()  ||  m_Finalized  ||  !m_Compressor->IsBusy() ) {
+    // Check processor status
+    if ( !IsStreamProcessorOkey(CCompressionStream::eWrite) ) {
         return CT_EOF;
     }
     if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
@@ -207,7 +236,7 @@ CT_INT_TYPE CCompressionStreambuf::overflow(CT_INT_TYPE c)
         // Increment put pointer
         pbump(1);
     }
-    if ( Process() ) {
+    if ( ProcessStreamWrite() ) {
         return CT_NOT_EOF(CT_EOF);
     }
     return CT_EOF;
@@ -219,15 +248,15 @@ CT_INT_TYPE CCompressionStreambuf::underflow(void)
     // Here we don't make a check for the streambuf finalization because
     // underflow() can be called after Finalize() to read a rest of
     // produced data.
-    if ( !IsOkay() ) {
+    if ( !IsOkay()  ||  !m_Reader  ||  !m_Reader->m_Processor ) {
         return CT_EOF;
     }
 
     // Reset pointer to the processed data
-    setg(m_OutBuf, m_OutBuf, m_OutBuf);
+    setg(m_Reader->m_OutBuf, m_Reader->m_OutBuf, m_Reader->m_OutBuf);
 
     // Try to process next data
-    if ( !Process()  ||  gptr() == egptr() ) {
+    if ( !ProcessStreamRead()  ||  gptr() == egptr() ) {
         return CT_EOF;
     }
     return CT_TO_INT_TYPE(*gptr());
@@ -244,15 +273,16 @@ bool CCompressionStreambuf::ProcessStreamWrite()
     while ( in_avail ) {
         // Process next data piece
         unsigned long out_avail = 0;
-        m_LastStatus = m_Compressor->Process(in_buf + count - in_avail,
-                                             in_avail,
-                                             m_OutBuf, m_OutBufSize,
-                                             &in_avail, &out_avail);
-        if ( m_LastStatus != CP::eStatus_Success ) {
+        m_Writer->m_LastStatus = m_Writer->m_Processor->Process(
+            in_buf + count - in_avail, in_avail,
+            m_Writer->m_OutBuf, m_Writer->m_OutBufSize,
+            &in_avail, &out_avail);
+        if ( m_Writer->m_LastStatus != CP::eStatus_Success ) {
             return false;
         }
         // Write the data to the underlying stream
-        if ( out_avail  &&  m_Stream->rdbuf()->sputn(m_OutBuf, out_avail) !=
+        if ( out_avail  &&
+             m_Stream->rdbuf()->sputn(m_Writer->m_OutBuf, out_avail) !=
              (streamsize)out_avail) {
             return false;
         }
@@ -273,47 +303,52 @@ bool CCompressionStreambuf::ProcessStreamRead()
     do {
         in_avail  = 0;
         out_avail = 0;
-        out_size  = m_OutBuf + m_OutBufSize - egptr();
-
+        out_size  = m_Reader->m_OutBuf + m_Reader->m_OutBufSize - egptr();
+        
         // Refill the output buffer if necessary
-        if ( m_LastStatus != CP::eStatus_Overflow ) {
+        if ( m_Reader->m_LastStatus != CP::eStatus_Overflow ) {
             // Refill the input buffer if necessary
-            if ( m_InEnd == m_InBegin  ) {
-                n_read = m_Stream->rdbuf()->sgetn(m_InBuf, m_InBufSize);
+            if ( m_Reader->m_Begin == m_Reader->m_End  ||
+                 !m_Reader->m_LastOutAvail) {
+                n_read = m_Stream->rdbuf()->sgetn(m_Reader->m_InBuf,
+					                              m_Reader->m_InBufSize);
                 if ( !n_read ) {
                     // We can't read more of data
                     return false;
                 }
                 // Update the input buffer pointers
-                m_InBegin = m_InBuf;
-                m_InEnd   = m_InBuf + n_read;
+                m_Reader->m_Begin = m_Reader->m_InBuf;
+                m_Reader->m_End   = m_Reader->m_InBuf + n_read;
             }
-            // Process next data piece
-            in_len = m_InEnd - m_InBegin;
-            m_LastStatus = m_Compressor->Process(m_InBegin, in_len,
-                                                 egptr(), out_size,
-                                                 &in_avail, &out_avail);
-            if ( m_LastStatus != CP::eStatus_Success ) {
+            // Process next data portion
+            in_len = m_Reader->m_End - m_Reader->m_Begin;
+            m_Reader->m_LastStatus = m_Reader->m_Processor->Process(
+				m_Reader->m_Begin, in_len, egptr(), out_size,
+				&in_avail, &out_avail);
+            if ( m_Reader->m_LastStatus != CP::eStatus_Success ) {
                 return false;
             }
+            m_Reader->m_LastOutAvail = out_avail;
         } else {
             // Get unprocessed data size
-            in_len = m_InEnd - m_InBegin;
+            in_len = m_Reader->m_End - m_Reader->m_Begin;
         }
-
+        
         // Try to flush the compressor if it has not produced a data
         // via Process()
         if ( !out_avail ) { 
-            m_LastStatus = m_Compressor->Flush(egptr(), out_size, &out_avail);
-            if ( m_LastStatus != CP::eStatus_Success  &&
-                 m_LastStatus != CP::eStatus_Overflow ) {
+            m_Reader->m_LastStatus = m_Reader->m_Processor->Flush(
+				egptr(), out_size, &out_avail);
+            if ( m_Reader->m_LastStatus != CP::eStatus_Success  &&
+                 m_Reader->m_LastStatus != CP::eStatus_Overflow) {
                 return false;
             }
+            m_Reader->m_LastOutAvail = out_avail;
         }
         // Update pointer to an unprocessed data
-        m_InBegin += (in_len - in_avail);
+        m_Reader->m_Begin += (in_len - in_avail);
         // Update the get's pointers
-        setg(m_OutBuf, gptr(), egptr() + out_avail);
+        setg(m_Reader->m_OutBuf, gptr(), egptr() + out_avail);
 
     } while ( !out_avail );
 
@@ -324,9 +359,8 @@ bool CCompressionStreambuf::ProcessStreamRead()
 streamsize CCompressionStreambuf::xsputn(const CT_CHAR_TYPE* buf,
                                          streamsize count)
 {
-    // To do nothing if a streambuf is already finalized or a compressor
-    // is idle
-    if ( !IsOkay()  ||  m_Finalized  ||  !m_Compressor->IsBusy() ) {
+    // Check processor status
+    if ( !IsStreamProcessorOkey(CCompressionStream::eWrite) ) {
         return CT_EOF;
     }
     // Check parameters
@@ -349,7 +383,7 @@ streamsize CCompressionStreambuf::xsputn(const CT_CHAR_TYPE* buf,
         pbump(block_size);
 
         // Process block if necessary
-        if ( pptr() >= epptr()  &&  !Process() ) {
+        if ( pptr() >= epptr()  &&  !ProcessStreamWrite() ) {
             break;
         }
         done += block_size;
@@ -363,7 +397,7 @@ streamsize CCompressionStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize count)
     // We don't doing here a check for the streambuf finalization because
     // underflow() can be called after Finalize() to read a rest of
     // produced data.
-    if ( !IsOkay() ) {
+    if ( !IsOkay()  ||  !m_Reader->m_Processor ) {
         return 0;
     }
     // Check parameters
@@ -383,11 +417,12 @@ streamsize CCompressionStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize count)
             done += block_size;
             // Update get pointers.
             // Satisfy "usual backup condition", see standard: 27.5.2.4.3.13
-            *m_OutBuf = buf[done - 1];
-            setg(m_OutBuf, m_OutBuf + 1, m_OutBuf + 1);
+            *m_Reader->m_OutBuf = buf[done - 1];
+            setg(m_Reader->m_OutBuf, m_Reader->m_OutBuf + 1,
+                 m_Reader->m_OutBuf + 1);
         }
         // Process block if necessary
-        if ( done == count  ||  !Process() ) {
+        if ( done == count  ||  !ProcessStreamRead() ) {
             break;
         }
     }
@@ -401,6 +436,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/06/17 15:47:31  ivanov
+ * The second Compression API redesign. Rewritten CCompressionStreambuf to use
+ * I/O stream processors of class CCompressionStreamProcessor.
+ *
  * Revision 1.5  2003/06/04 21:11:11  ivanov
  * Get rid of non-initialized variables in the ProcessStream[Read|Write]
  *

@@ -53,24 +53,22 @@ class NCBI_XUTIL_EXPORT CCompressionStreambuf : public streambuf
 {
 public:
     // 'ctors
+    // If read/write stream processor is 0, that read/write operation
+    // will fail on this stream.
     CCompressionStreambuf(
-        CCompressionProcessor*              compressor,
-        CCompressionStream::ECompressorType compressor_type,
-        ios*                                stream,
-        CCompressionStream::EStreamType     stream_type,
-        streamsize                          in_buf_size,
-        streamsize                          out_buf_size
+        CNcbiIos*                    stream,
+        CCompressionStreamProcessor* read_stream_processor,
+        CCompressionStreamProcessor* write_stream_processor
     );
     virtual ~CCompressionStreambuf(void);
 
-    // Get current compressor
-    const CCompressionProcessor* GetCompressor(void) const;
     // Get streambuf status
     bool  IsOkay(void) const;
 
-    // Finalize stream's compression/decompression process.
-    // This function calls a compressor's Finish() and End() functions.
-    virtual void Finalize(void);
+    // Finalize stream's compression/decompression process for read/write.
+    // This function calls a processor's Finish() and End() functions.
+    virtual void Finalize(CCompressionStream::EDirection dir =
+            CCompressionStream::eReadWrite);
 
 protected:
     // Streambuf overloaded functions
@@ -83,31 +81,36 @@ protected:
     // This method is declared here to be disabled (exception) at run-time
     virtual streambuf*  setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
-    // Process a data from the input buffer and put result into the out buffer
-    bool Process(void);
+protected:
+    // Get compression/stream processor for specified I/O direction.
+    // Return 0 if a processor for the specified direction does not
+    // installed.
+    CCompressionProcessor* GetCompressionProcessor(
+         CCompressionStream::EDirection dir) const;
+    CCompressionStreamProcessor* GetStreamProcessor(
+         CCompressionStream::EDirection dir) const;
+
+    // Get stream processor's status
+    bool IsStreamProcessorOkey(
+         CCompressionStream::EDirection dir) const;
+
+    // Sync I/O buffers for the specified direction.
+    // Return 0 if the get area is empty and there are no more characters to
+    // output; otherwise, it returns -1 (EOF).
+    virtual int Sync(CCompressionStream::EDirection dir);
+
+    // Process a data from the input buffer and put result into the out.buffer
+    bool Process(CCompressionStream::EDirection dir);
     virtual bool ProcessStreamRead(void);
     virtual bool ProcessStreamWrite(void);
 
 protected:
-    CCompressionProcessor*
-                    m_Compressor;     // Copression object
-    CCompressionStream::ECompressorType
-                    m_CompressorType; // Compression/decompresson
-    ios*            m_Stream;         // Underlying I/O stream
-    CCompressionStream::EStreamType
-                    m_StreamType;     // Underlying stream type (Read/Write)
-    CT_CHAR_TYPE*   m_Buf;            // of size 2 * m_BufSize
-    CT_CHAR_TYPE*   m_InBuf;          // Input buffer,  m_Buf
-    CT_CHAR_TYPE*   m_OutBuf;         // Output buffer, m_Buf + m_InBufSize
-    streamsize      m_InBufSize;      // Input buffer size
-    streamsize      m_OutBufSize;     // Output buffer size
-
-    CT_CHAR_TYPE*   m_InBegin;        // Begin of unproc.data in the input buf
-    CT_CHAR_TYPE*   m_InEnd;          // End of unproc.data in the input buf
-
-    bool            m_Finalized;      // True if a Finalized() already done
-    CCompressionProcessor::EStatus
-                    m_LastStatus;     // Last compressor status
+    CNcbiIos*     m_Stream;   // Underlying I/O stream
+    CCompressionStreamProcessor* 
+                  m_Reader;   // Processor's info for reading from m_Stream
+    CCompressionStreamProcessor*
+                  m_Writer;   // Processor's info for writing into m_Stream
+    CT_CHAR_TYPE* m_Buf;      // Pointer to internal buffers
 };
 
 
@@ -118,15 +121,44 @@ protected:
 // Inline function
 //
 
-inline const CCompressionProcessor* CCompressionStreambuf::GetCompressor(void) const
+inline CCompressionProcessor*
+    CCompressionStreambuf::GetCompressionProcessor(
+        CCompressionStream::EDirection dir) const
 {
-    return m_Compressor;
+    return dir == CCompressionStream::eRead ? m_Reader->m_Processor :
+											  m_Writer->m_Processor;
 }
+
+
+inline CCompressionStreamProcessor*
+    CCompressionStreambuf::GetStreamProcessor(
+        CCompressionStream::EDirection dir) const
+{
+	return dir == CCompressionStream::eRead ? m_Reader : m_Writer;
+}
+
 
 inline bool CCompressionStreambuf::IsOkay(void) const
 {
-    return !!m_Buf;
+    return !!m_Stream  &&  !!m_Buf;
 };
+
+
+inline bool CCompressionStreambuf::IsStreamProcessorOkey(
+            CCompressionStream::EDirection dir) const
+{
+    CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
+    return IsOkay()  && sp  &&  !sp->m_Finalized  && 
+           sp->m_Processor  &&  sp->m_Processor->IsBusy();
+}
+
+
+inline bool CCompressionStreambuf::Process(CCompressionStream::EDirection dir)
+{
+    return dir == CCompressionStream::eRead ?
+                  ProcessStreamRead() :  ProcessStreamWrite();
+}
+
 
 inline streambuf* CCompressionStreambuf::setbuf(CT_CHAR_TYPE* /* buf */,
                                                 streamsize    /* buf_size */)
@@ -136,12 +168,6 @@ inline streambuf* CCompressionStreambuf::setbuf(CT_CHAR_TYPE* /* buf */,
     return this; // notreached
 }
 
-inline bool CCompressionStreambuf::Process(void)
-{
-    return m_StreamType == CCompressionStream::eST_Read ?
-                                ProcessStreamRead() :  ProcessStreamWrite();
-}
-
 
 END_NCBI_SCOPE
 
@@ -149,6 +175,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/17 15:47:31  ivanov
+ * The second Compression API redesign. Rewritten CCompressionStreambuf to use
+ * I/O stream processors of class CCompressionStreamProcessor.
+ *
  * Revision 1.3  2003/06/03 20:09:16  ivanov
  * The Compression API redesign. Added some new classes, rewritten old.
  *
