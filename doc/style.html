@@ -17,7 +17,8 @@
 		<li> <a href="#ref_NamingFunc">Functions</a>
 	 </ul>
 	 <li> <a href="#ref_Prefix">Name prefixing and/or the use of namespaces</a>
-	 <li> <a href="#ref_Indent">Code indentation and bracing</a> </ul>
+	 <li> <a href="#ref_Indent">Code indentation and bracing</a>
+	 <li> <a href="#ref_Class">Class declaration</a> </ul>
 
 
 	 <br></br>
@@ -104,7 +105,7 @@
 	 <br></br> <br></br>
 
 	 <a name="ref_Indent">
-    <h2> Code indentation and bracing </h2>
+    <h2>Code indentation and bracing </h2>
 
     4-spaces indentation only;  tabulation symbol should not be used
 	 for indentation.
@@ -135,7 +136,41 @@ switch (...) {
 class|struct|union <[C|S|U]TypeName> {
     .....;
 };
+
     </pre>
+
+
+
+	 <a name="ref_Class">
+    <h2>Class declaration</h2>
+
+	 <pre>
+class CFooClass {
+public:
+    // Constructors and Destructor (they are usually public)
+    CFooClass(bool init_bool=true);
+    CFooClass(int  init_int);
+    ~CFooClass(void);
+
+    // Members and Methods
+    // (NOTE:  the use of public data members is strictly discouraged!)
+    int   m_PublicData;
+    float PublicFunc(void);
+
+protected:
+    double m_ProtectedData;
+    static int ProtectedFunc(char ch);
+
+private:
+    int    m_PrivateData;
+    double PrivateFunc(int some_int=123);
+
+    // Friends
+    friend bool  SomeFriendFunc(void);
+    friend class CSomeFriendClass;
+};
+	 </pre>
+
 
 	 <hr>
 	 <table border=0 width="100%" cellspacing=0>
