@@ -78,6 +78,7 @@ public:
         e_Frequency,
         e_Function,
         e_Gene,
+        e_Insertion_seq,
         e_Label,
         e_Locus_tag,
         e_Map,
@@ -192,6 +193,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/05/28 16:20:05  shomrat
+* Added gbqual insertion_seq
+*
 * Revision 1.10  2003/04/15 14:48:13  shomrat
 * Removed AnyObj and display_object
 *
