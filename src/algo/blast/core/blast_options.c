@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.2  2003/04/01 17:42:33  dondosha
+ * Added arguments to BlastExtensionParametersNew
+ *
  * Revision 1.1  2003/03/31 18:22:30  camacho
  * Moved from parent directory
  *
@@ -286,7 +289,7 @@ BlastInitialWordParametersNew(BlastInitialWordOptionsPtr options, BLAST_ScoreBlk
 	(*parameters)->options = options;
 
 	(*parameters)->x_dropoff = 
-           (Int4) (options->x_dropoff*NCBIMATH_LN2/sbp->kbp_std[0]->Lambda);
+           ceil(options->x_dropoff*NCBIMATH_LN2/sbp->kbp_std[0]->Lambda);
 
 #if 0
         /* A fixed score cut-off can be set only if there is just one query 
@@ -409,10 +412,12 @@ BlastExtensionOptionsValidate(BlastExtensionOptionsPtr options, Blast_MessagePtr
 	return 0;
 }
 
-Int2 BlastExtensionParametersNew(BlastExtensionOptionsPtr options, 
-        BLAST_ScoreBlkPtr sbp, BlastExtensionParametersPtr *parameters)
+Int2 BlastExtensionParametersNew(CharPtr blast_program, 
+        BlastExtensionOptionsPtr options, BLAST_ScoreBlkPtr sbp, 
+        BlastExtensionParametersPtr *parameters)
 {
-   BLAST_KarlinBlkPtr kbp;
+   BLAST_KarlinBlkPtr kbp, kbp_gap;
+
 
    if (sbp->kbp) {
       if (sbp->kbp[0])
@@ -425,14 +430,21 @@ Int2 BlastExtensionParametersNew(BlastExtensionOptionsPtr options,
       return -1;
    }
 
+   if (StrCmp(blast_program, "blastn")) {
+      kbp_gap = sbp->kbp_gap[0];
+   } else {
+      kbp_gap = kbp;
+   }
+   
    *parameters = (BlastExtensionParametersPtr) 
       Malloc(sizeof(BlastExtensionParameters));
 
    (*parameters)->options = options;
    (*parameters)->gap_x_dropoff = 
-      (Int4) (options->gap_x_dropoff*NCBIMATH_LN2 / kbp->Lambda);
+      (Int4) (options->gap_x_dropoff*NCBIMATH_LN2 / kbp_gap->Lambda);
    (*parameters)->gap_x_dropoff_final = (Int4) 
-      (options->gap_x_dropoff_final*NCBIMATH_LN2 / kbp->Lambda);
+      (options->gap_x_dropoff_final*NCBIMATH_LN2 / kbp_gap->Lambda);
+
    (*parameters)->gap_trigger = 
       (options->gap_trigger*NCBIMATH_LN2 + kbp->logK) / kbp->Lambda;
 

@@ -413,11 +413,13 @@ BlastExtensionOptionsNew(const Char *program, Boolean greedy,
 Int2 BlastExtensionOptionsValidate(BlastExtensionOptionsPtr options, Blast_MessagePtr *blast_msg);
 
 /** Calculate the raw values for the X-dropoff parameters 
+ * @param blast_program Program name [in]
  * @param options Already allocated extension options [in]
  * @param sbp Structure containing statistical information [in]
  * @param parameters Extension parameters [out]
  */
-Int2 BlastExtensionParametersNew(BlastExtensionOptionsPtr options, 
+Int2 BlastExtensionParametersNew(CharPtr blast_program, 
+        BlastExtensionOptionsPtr options, 
         BLAST_ScoreBlkPtr sbp, BlastExtensionParametersPtr *parameters);
 
 /** Deallocate memory for BlastExtensionParameters. */
