@@ -107,7 +107,7 @@ const int ModMass[] = { 0, 1600, 0, 5702, 98 };
 //  Given a set of variable mods, sorts them into categories for quick access
 //
 
-class CMSMod {
+class NCBI_XOMSSA_EXPORT CMSMod {
 public:
     CMSMod(void) {};
     CMSMod(const CMSRequest::TVariable &Mods);
@@ -135,6 +135,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/03/04 02:22:49  lewisg
+* add msvc defines
+*
 * Revision 1.1  2004/03/01 18:24:07  lewisg
 * better mod handling
 *
