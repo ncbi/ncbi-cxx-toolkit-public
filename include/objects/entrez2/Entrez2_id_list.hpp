@@ -64,6 +64,13 @@ public:
     // so apps don't have to (de)marshal the list
     TUidIterator GetUidIterator();
     TConstUidIterator GetConstUidIterator() const;
+
+    // resize the container to hold a certain number of UIDs
+    void Resize(size_t size);
+
+    // set the container to a set of integer UIDs
+    void AssignUids(const vector<int>& uids);
+
     static const size_t sm_UidSize; // bytes
 
 private:
@@ -98,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/03/11 17:25:27  dicuccio
+ * Added API to resize the list and to assign from a vector of integers
+ *
  * Revision 1.2  2003/10/08 12:09:46  dicuccio
  * Added export specifier.  CVS log to bottom.
  *

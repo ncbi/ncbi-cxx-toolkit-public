@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2004/03/11 17:28:12  dicuccio
+ * Added API to resize the list and to assign from a vector of integers
+ *
  * Revision 1.1  2001/09/04 14:06:34  ucko
  * Add resizing iterators for sequences whose representation uses an
  * unnatural unit size -- for instance, ASN.1 octet strings corresponding
@@ -73,6 +76,29 @@ CEntrez2_id_list::GetConstUidIterator() const
 CEntrez2_id_list::~CEntrez2_id_list(void)
 {
 }
+
+
+void CEntrez2_id_list::Resize(size_t size)
+{
+    SetUids().resize(sm_UidSize * size);
+    SetNum(size);
+}
+
+
+void CEntrez2_id_list::AssignUids(const vector<int>& uids)
+{
+    Resize(uids.size());
+
+    TUidIterator it = GetUidIterator();
+    ITERATE (vector<int>, iter, uids) {
+        *it++ = *iter;
+    }
+}
+
+
+// append an item to the list
+void push_back(int uid);
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
