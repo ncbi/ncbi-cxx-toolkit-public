@@ -290,6 +290,116 @@ Boolean BLAST_SaveInitialHit(BlastInitHitList* init_hitlist,
    return TRUE;
 }
 
+/** Perform ungapped extension of a word hit
+ * @param query The query sequence [in]
+ * @param subject The subject sequence [in]
+ * @param matrix The scoring matrix [in]
+ * @param q_off The offset of a word in query [in]
+ * @param s_off The offset of a word in subject [in]
+ * @param cutoff The minimal score the ungapped alignment must reach [in]
+ * @param X The drop-off parameter for the ungapped extension [in]
+ * @param ungapped_data The ungapped extension information [out]
+ * @return TRUE if ungapped alignment score is below cutoff, indicating that 
+ *         this HSP should be deleted.
+ */
+static Int2
+s_NuclUngappedExtend(BLAST_SequenceBlk* query, 
+   BLAST_SequenceBlk* subject, Int4** matrix, 
+   Int4 q_off, Int4 s_off, Int4 X, 
+   BlastUngappedData** ungapped_data)
+{
+   Uint1* q;
+   Int4 sum, score;
+   Uint1 ch;
+   Uint1* subject0,* sf,* q_beg,* q_end,* s_end,* s,* start;
+   Int2 remainder, base;
+   Int4 q_avail, s_avail;
+   
+   base = 3 - (s_off % 4);
+   
+   subject0 = subject->sequence;
+   q_avail = query->length - q_off;
+   s_avail = subject->length - s_off;
+
+   q = q_beg = q_end = query->sequence + q_off;
+   s = s_end = subject0 + s_off/COMPRESSION_RATIO;
+   if (q_off < s_off) {
+      start = subject0 + (s_off-q_off)/COMPRESSION_RATIO;
+      remainder = 3 - ((s_off-q_off)%COMPRESSION_RATIO);
+   } else {
+      start = subject0;
+      remainder = 3;
+   }
+   
+   /* Find where positive scoring starts & ends within the word hit */
+   score = 0;
+   sum = 0;
+
+   /* extend to the left */
+   while ((s > start) || (s == start && base < remainder)) {
+      if (base == 3) {
+         s--;
+         base = 0;
+      } else {
+         ++base;
+      }
+      ch = *s;
+      if ((sum += matrix[*--q][NCBI2NA_UNPACK_BASE(ch, base)]) > 0) {
+         q_beg = q;
+         score += sum;
+         sum = 0;
+      } else if (sum < X) {
+         break;
+      }
+   }
+   
+   if (ungapped_data) {
+      if ((*ungapped_data = (BlastUngappedData*) 
+              malloc(sizeof(BlastUngappedData))) == NULL)
+         return -1;
+      (*ungapped_data)->q_start = q_beg - query->sequence;
+      (*ungapped_data)->s_start = 
+         s_off - (q_off - (*ungapped_data)->q_start);
+   }
+
+   if (q_avail < s_avail) {
+      sf = subject0 + (s_off + q_avail)/COMPRESSION_RATIO;
+      remainder = 3 - ((s_off + q_avail)%COMPRESSION_RATIO);
+   } else {
+      sf = subject0 + (subject->length)/COMPRESSION_RATIO;
+      remainder = 3 - ((subject->length)%COMPRESSION_RATIO);
+   }
+	
+   /* extend to the right */
+   q = q_end;
+   s = s_end;
+   sum = 0;
+   base = 3 - (s_off % COMPRESSION_RATIO);
+   
+   while (s < sf || (s == sf && base > remainder)) {
+      ch = *s;
+      if ((sum += matrix[*q++][NCBI2NA_UNPACK_BASE(ch, base)]) > 0) {
+         q_end = q;
+         score += sum;
+         sum = 0;
+      } else if (sum < X)
+         break;
+      if (base == 0) {
+         base = 3;
+         s++;
+      } else
+         base--;
+   }
+   
+   if (ungapped_data) {
+      (*ungapped_data)->length = q_end - q_beg;
+      (*ungapped_data)->score = score;
+      (*ungapped_data)->frame = 0;
+   }
+   
+   return 0;
+}
+
 /** Classic megablast initial word extension using diagonal array.
  * Updates the last hit information for a corresponding entry in the diagonal
  * array and saves hit if it has reached the word size and/or it is a second
@@ -368,9 +478,8 @@ s_MbDiagTableExtendHit(BLAST_SequenceBlk* query,
    if (hit_ready) {
       if (do_ungapped_extension) {
          /* Perform ungapped extension */
-         BlastnWordUngappedExtend(query, subject, matrix, q_off, s_off, 
-            word_params->cutoff_score, -word_params->x_dropoff, 
-            &ungapped_data);
+         s_NuclUngappedExtend(query, subject, matrix, q_off, s_off, 
+                              -word_params->x_dropoff, &ungapped_data);
          s_pos = ungapped_data->length - 1 + ungapped_data->s_start 
             + diag_table->offset;
          diag_array_elem->diag_level += 
@@ -480,9 +589,8 @@ s_MbStacksExtendInitialHit(BLAST_SequenceBlk* query,
          if (hit_ready) {
             if (do_ungapped_extension) {
                /* Perform ungapped extension */
-               BlastnWordUngappedExtend(query, subject, matrix, 
-                  q_off, s_off, word_params->cutoff_score, 
-                  -word_params->x_dropoff, &ungapped_data);
+               s_NuclUngappedExtend(query, subject, matrix, 
+                  q_off, s_off, -word_params->x_dropoff, &ungapped_data);
                s_pos = ungapped_data->length + ungapped_data->s_start;
                mb_stack[index].length += s_pos - mb_stack[index].level;
                mb_stack[index].level = s_pos;
@@ -550,10 +658,8 @@ s_MbStacksExtendInitialHit(BLAST_SequenceBlk* query,
       hit_ready = TRUE;
       if (do_ungapped_extension) {
          /* Perform ungapped extension */
-         BlastnWordUngappedExtend(query, subject, matrix, q_off, s_off, 
-                                  word_params->cutoff_score, 
-                                  -word_params->x_dropoff, 
-                                  &ungapped_data);
+         s_NuclUngappedExtend(query, subject, matrix, q_off, s_off, 
+                              -word_params->x_dropoff, &ungapped_data);
          mb_stack[stack_top].level = 
             ungapped_data->length + ungapped_data->s_start;
          mb_stack[stack_top].length = ungapped_data->length;
@@ -639,107 +745,6 @@ s_BlastNaExtendWordExit(Blast_ExtendWord* ewp, Int4 subject_length)
    return 0;
 }
 
-/* Description in blast_extend.h */
-Boolean
-BlastnWordUngappedExtend(BLAST_SequenceBlk* query, 
-   BLAST_SequenceBlk* subject, Int4** matrix, 
-   Int4 q_off, Int4 s_off, Int4 cutoff, Int4 X, 
-   BlastUngappedData** ungapped_data)
-{
-   Uint1* q;
-   Int4 sum, score;
-   Uint1 ch;
-   Uint1* subject0,* sf,* q_beg,* q_end,* s_end,* s,* start;
-   Int2 remainder, base;
-   Int4 q_avail, s_avail;
-   
-   base = 3 - (s_off % 4);
-   
-   subject0 = subject->sequence;
-   q_avail = query->length - q_off;
-   s_avail = subject->length - s_off;
-
-   q = q_beg = q_end = query->sequence + q_off;
-   s = s_end = subject0 + s_off/COMPRESSION_RATIO;
-   if (q_off < s_off) {
-      start = subject0 + (s_off-q_off)/COMPRESSION_RATIO;
-      remainder = 3 - ((s_off-q_off)%COMPRESSION_RATIO);
-   } else {
-      start = subject0;
-      remainder = 3;
-   }
-   
-   /* Find where positive scoring starts & ends within the word hit */
-   score = 0;
-   sum = 0;
-
-   /* extend to the left */
-   while ((s > start) || (s == start && base < remainder)) {
-      if (base == 3) {
-         s--;
-         base = 0;
-      } else {
-         ++base;
-      }
-      ch = *s;
-      if ((sum += matrix[*--q][NCBI2NA_UNPACK_BASE(ch, base)]) > 0) {
-         q_beg = q;
-         score += sum;
-         sum = 0;
-      } else if (sum < X) {
-         break;
-      }
-   }
-   
-   if (score >= cutoff && !ungapped_data) 
-      return FALSE;
-   
-   if (ungapped_data) {
-      *ungapped_data = (BlastUngappedData*) 
-         malloc(sizeof(BlastUngappedData));
-      (*ungapped_data)->q_start = q_beg - query->sequence;
-      (*ungapped_data)->s_start = 
-         s_off - (q_off - (*ungapped_data)->q_start);
-   }
-
-   if (q_avail < s_avail) {
-      sf = subject0 + (s_off + q_avail)/COMPRESSION_RATIO;
-      remainder = 3 - ((s_off + q_avail)%COMPRESSION_RATIO);
-   } else {
-      sf = subject0 + (subject->length)/COMPRESSION_RATIO;
-      remainder = 3 - ((subject->length)%COMPRESSION_RATIO);
-   }
-	
-   /* extend to the right */
-   q = q_end;
-   s = s_end;
-   sum = 0;
-   base = 3 - (s_off % COMPRESSION_RATIO);
-   
-   while (s < sf || (s == sf && base > remainder)) {
-      ch = *s;
-      if ((sum += matrix[*q++][NCBI2NA_UNPACK_BASE(ch, base)]) > 0) {
-         q_end = q;
-         score += sum;
-         sum = 0;
-      } else if (sum < X)
-         break;
-      if (base == 0) {
-         base = 3;
-         s++;
-      } else
-         base--;
-   }
-   
-   if (ungapped_data) {
-      (*ungapped_data)->length = q_end - q_beg;
-      (*ungapped_data)->score = score;
-      (*ungapped_data)->frame = 0;
-   }
-   
-   return (score < cutoff);
-}
-
 /** Mask for encoding in one integer a hit offset and whether that hit has 
  * already been extended and saved. The latter is put in the top bit of the
  * integer.
@@ -814,9 +819,8 @@ s_BlastnExtendInitialHit(BLAST_SequenceBlk* query,
    if (hit_ready) {
       if (word_options->ungapped_extension) {
          /* Perform ungapped extension */
-         BlastnWordUngappedExtend(query, subject, matrix, q_off, s_off, 
-            word_params->cutoff_score, -word_params->x_dropoff, 
-            &ungapped_data);
+         s_NuclUngappedExtend(query, subject, matrix, q_off, s_off, 
+                              -word_params->x_dropoff, &ungapped_data);
       
          last_hit = ungapped_data->length + ungapped_data->s_start 
             + diag_table->offset;
@@ -918,9 +922,8 @@ s_BlastnStacksExtendInitialHit(BLAST_SequenceBlk* query,
          if (hit_ready) {
             if (word_options->ungapped_extension) {
                /* Perform ungapped extension */
-               BlastnWordUngappedExtend(query, subject, matrix, q_off, s_off, 
-                  word_params->cutoff_score, -word_params->x_dropoff, 
-                  &ungapped_data);
+               s_NuclUngappedExtend(query, subject, matrix, q_off, s_off, 
+                                    -word_params->x_dropoff, &ungapped_data);
       
                last_hit = ungapped_data->length + ungapped_data->s_start;
             } else {
@@ -980,10 +983,8 @@ s_BlastnStacksExtendInitialHit(BLAST_SequenceBlk* query,
       hit_ready = TRUE;
       if (do_ungapped_extension) {
          /* Perform ungapped extension */
-         BlastnWordUngappedExtend(query, subject, matrix, q_off, s_off, 
-                                  word_params->cutoff_score, 
-                                  -word_params->x_dropoff, 
-                                  &ungapped_data);
+         s_NuclUngappedExtend(query, subject, matrix, q_off, s_off, 
+                              -word_params->x_dropoff, &ungapped_data);
          stack[stack_top].level = 
             (ungapped_data->length + ungapped_data->s_start);
       } else {
