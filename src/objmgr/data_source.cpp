@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2002/05/09 14:18:15  grichenk
+* More TSE conflict resolving rules for annotations
+*
 * Revision 1.40  2002/05/06 03:28:46  vakatov
 * OM/OM1 renaming
 *
@@ -561,7 +564,6 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
                     seq_piece->src_start = 0;
                     return true;
                 }
-                break;
             }
         case CSeqMap::eSeqGap:
             {
@@ -1223,6 +1225,7 @@ without the sequence but with references to the id and all dead TSEs
     }
     CMutexGuard guard(sm_DataSource_Mutex);
     x_ResolveLocationHandles(loc, history);
+    TTSESet non_history;
     iterate(CHandleRangeMap::TLocMap, hit, loc.GetMap()) {
         // Search for each seq-id handle from loc in the indexes
         TTSEMap::const_iterator tse_it = m_TSE_ref.find(hit->first);
@@ -1266,10 +1269,10 @@ without the sequence but with references to the id and all dead TSEs
             tse_set.insert(unique_from_history);
         }
         else if ( unique_live ) {
-            tse_set.insert(unique_live);
+            non_history.insert(unique_live);
         }
         else if (selected_with_seq.size() == 1) {
-            tse_set.insert(*selected_with_seq.begin());
+            non_history.insert(*selected_with_seq.begin());
         }
         else if (selected_with_seq.size() > 1) {
             //### Try to resolve the conflict with the help of loader
@@ -1280,8 +1283,35 @@ without the sequence but with references to the id and all dead TSEs
         iterate(TTSESet, tse, selected_with_ref) {
             if ( !(*tse)->m_Dead  ||  history.find(*tse) != history.end()) {
                 // Select only TSEs present in the history and live TSEs
-                tse_set.insert(*tse);
+                // Different sets for in-history and non-history TSEs for
+                // the future filtering.
+                if (history.find(*tse) != history.end()) {
+                    tse_set.insert(*tse); // in-history TSE
+                }
+                else {
+                    non_history.insert(*tse); // non-history TSE
+                }
             }
+        }
+    }
+    // Filter out TSEs not in the history yet and conflicting with any
+    // history TSE. The conflict may be caused by any seq-id, even not
+    // mentioned in the searched location.
+    bool conflict;
+    iterate (TTSESet, tse_it, non_history) {
+        conflict = false;
+        // Check each seq-id from the current TSE
+        iterate (CTSE_Info::TBioseqMap, seq_it, (*tse_it)->m_BioseqMap) {
+            iterate (CScope::TRequestHistory, hist_it, history) {
+                conflict = (*hist_it)->m_BioseqMap.find(seq_it->first) !=
+                    (*hist_it)->m_BioseqMap.end();
+                if ( conflict ) break;
+            }
+            if ( conflict ) break;
+        }
+        if ( !conflict ) {
+            // No conflicts found -- add the TSE to the resulting set
+            tse_set.insert(*tse_it);
         }
     }
 }
