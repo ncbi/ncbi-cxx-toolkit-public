@@ -66,10 +66,11 @@ public:
     CFeat_CI& operator= (const CFeat_CI& iter);
 
     CFeat_CI& operator++ (void);
-    CFeat_CI& operator++ (int);
     operator bool (void) const;
     const CSeq_feat& operator* (void) const;
     const CSeq_feat* operator-> (void) const;
+private:
+    CFeat_CI operator++ (int);
 };
 
 
@@ -119,13 +120,6 @@ CFeat_CI& CFeat_CI::operator++ (void)
 }
 
 inline
-CFeat_CI& CFeat_CI::operator++ (int)
-{
-    Walk();
-    return *this;
-}
-
-inline
 CFeat_CI::operator bool (void) const
 {
     return IsValid();
@@ -138,6 +132,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/12/05 19:28:30  grichenk
+* Prohibited postfix operator ++()
+*
 * Revision 1.12  2002/07/08 20:50:56  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

@@ -55,13 +55,14 @@ public:
 
     CBioseq_CI& operator= (const CBioseq_CI& bioseq_ci);
     CBioseq_CI& operator++ (void);
-    CBioseq_CI& operator++ (int);
     operator bool (void) const;
 
     const CBioseq_Handle& operator* (void) const;
     const CBioseq_Handle* operator-> (void) const;
 
 private:
+    CBioseq_CI operator++ (int);
+
     typedef set<CBioseq_Handle>              TBioseqHandleSet;
     typedef TBioseqHandleSet::const_iterator THandleIterator;
 
@@ -125,15 +126,6 @@ CBioseq_CI& CBioseq_CI::operator++ (void)
 }
 
 inline
-CBioseq_CI& CBioseq_CI::operator++ (int)
-{
-    if ( m_Scope  &&  m_Current != m_Handles.end() ) {
-        m_Current++;
-    }
-    return *this;
-}
-
-inline
 CBioseq_CI::operator bool (void) const
 {
     return m_Scope  &&  m_Current != m_Handles.end();
@@ -159,6 +151,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/12/05 19:28:29  grichenk
+* Prohibited postfix operator ++()
+*
 * Revision 1.3  2002/10/15 13:37:28  grichenk
 * Fixed inline declarations
 *

@@ -329,7 +329,7 @@ void CAnnotTypes_CI::x_SearchLocation(CHandleRangeMap& loc)
         }
         CTSE_Info& tse_info = const_cast<CTSE_Info&>(tse_it->GetObject());
         CAnnot_CI annot_it(tse_info, loc, m_Selector);
-        for ( ; annot_it; annot_it++ ) {
+        for ( ; annot_it; ++annot_it ) {
             m_AnnotSet.insert(CRef<CAnnotObject>(&(*annot_it)));
         }
     }
@@ -590,6 +590,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/12/05 19:28:32  grichenk
+* Prohibited postfix operator ++()
+*
 * Revision 1.26  2002/11/04 21:29:11  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *

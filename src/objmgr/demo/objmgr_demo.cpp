@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/12/05 19:28:33  grichenk
+* Prohibited postfix operator ++()
+*
 * Revision 1.10  2002/11/08 19:43:36  grichenk
 * CConstRef<> constructor made explicit
 *
@@ -171,7 +174,7 @@ int CDemoApp::Run(void)
     NcbiCout << "TSE sequences:" << NcbiEndl;
     CBioseq_CI bit;
     bit = CBioseq_CI(scope, handle.GetTopLevelSeqEntry());
-    for ( ; bit; bit++) {
+    for ( ; bit; ++bit) {
         NcbiCout << "    " << bit->GetSeqId()->DumpAsFasta() << NcbiEndl;
     }
 

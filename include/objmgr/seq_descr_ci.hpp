@@ -50,13 +50,14 @@ public:
     CDesc_CI& operator= (const CDesc_CI& iter);
 
     CDesc_CI& operator++ (void);
-    CDesc_CI& operator++ (int);
     operator bool (void) const;
 
     const CSeq_descr& operator*  (void) const;
     const CSeq_descr* operator-> (void) const;
 
 private:
+    CDesc_CI operator++ (int);
+
     // Move to the next entry containing a descriptor
     void x_Walk(void);
 
@@ -66,18 +67,15 @@ private:
 };
 
 
-inline
-CDesc_CI& CDesc_CI::operator++(int)
-{
-    return ++(*this);
-}
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/12/05 19:28:29  grichenk
+* Prohibited postfix operator ++()
+*
 * Revision 1.6  2002/07/08 20:50:56  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

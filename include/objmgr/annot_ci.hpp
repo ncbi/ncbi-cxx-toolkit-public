@@ -83,12 +83,13 @@ public:
     CAnnot_CI& operator= (const CAnnot_CI& iter);
 
     CAnnot_CI& operator++ (void);
-    CAnnot_CI& operator++ (int);
     operator bool (void) const;
     CAnnotObject& operator* (void) const;
     CAnnotObject* operator-> (void) const;
 
 private:
+    CAnnot_CI operator++ (int);
+
     typedef TRangeMap::iterator     TRangeIter;
 
     // Check if the location intersects with the current m_Location.
@@ -113,13 +114,6 @@ private:
 
 inline
 CAnnot_CI& CAnnot_CI::operator++(void)
-{
-    x_Walk();
-    return *this;
-}
-
-inline
-CAnnot_CI& CAnnot_CI::operator++(int)
 {
     x_Walk();
     return *this;
@@ -152,6 +146,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/12/05 19:28:29  grichenk
+* Prohibited postfix operator ++()
+*
 * Revision 1.10  2002/07/08 20:50:56  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

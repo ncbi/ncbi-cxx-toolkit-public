@@ -54,13 +54,13 @@ public:
     CSeqdesc_CI& operator= (const CSeqdesc_CI& iter);
 
     CSeqdesc_CI& operator++ (void); // prefix
-    CSeqdesc_CI  operator++ (int);  // postfix
     operator bool (void) const;
 
     const CSeqdesc& operator*  (void) const;
     const CSeqdesc* operator-> (void) const;
 
 private:
+    CSeqdesc_CI operator++ (int); // prohibit postfix
     typedef list< CRef<CSeqdesc> >::const_iterator TRawIterator;
 
     CDesc_CI            m_Outer;
@@ -77,6 +77,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/12/05 19:28:30  grichenk
+* Prohibited postfix operator ++()
+*
 * Revision 1.4  2002/07/08 20:50:56  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

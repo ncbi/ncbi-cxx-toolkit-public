@@ -56,10 +56,11 @@ public:
     CGraph_CI& operator= (const CGraph_CI& iter);
 
     CGraph_CI& operator++ (void);
-    CGraph_CI& operator++ (int);
     operator bool (void) const;
     const CSeq_graph& operator* (void) const;
     const CSeq_graph* operator-> (void) const;
+private:
+    CGraph_CI operator++ (int);
 };
 
 
@@ -91,13 +92,6 @@ CGraph_CI& CGraph_CI::operator++ (void)
 }
 
 inline
-CGraph_CI& CGraph_CI::operator++ (int)
-{
-    Walk();
-    return *this;
-}
-
-inline
 CGraph_CI::operator bool (void) const
 {
     return IsValid();
@@ -110,6 +104,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/12/05 19:28:30  grichenk
+* Prohibited postfix operator ++()
+*
 * Revision 1.11  2002/07/08 20:50:56  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

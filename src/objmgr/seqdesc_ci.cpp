@@ -113,14 +113,6 @@ CSeqdesc_CI& CSeqdesc_CI::operator++(void) // prefix
 }
 
 
-CSeqdesc_CI CSeqdesc_CI::operator++(int) // postfix
-{
-    CSeqdesc_CI old_value = *this;
-    ++*this;
-    return old_value;
-}
-
-
 CSeqdesc_CI::operator bool(void) const
 {
     return bool(m_Current)  &&  (m_Inner != m_InnerEnd  ||  m_Outer);
@@ -147,6 +139,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/12/05 19:28:32  grichenk
+* Prohibited postfix operator ++()
+*
 * Revision 1.5  2002/07/08 20:51:02  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex
