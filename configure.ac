@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.332 2004/11/18 20:05:06 ucko Exp $
+#  $Id: configure.ac,v 1.333 2004/11/22 22:32:10 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -987,8 +987,12 @@ fi
 
 #### Flags to enable (potentially unsafe) extra optimization.
 if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
-   case "$compiler" in
-      GCC )
+   case "$compiler:$compiler_version" in
+      GCC:2* )
+        # GCC 2.9x sometimes experiences internal errors at high optimization.
+        DEF_FAST_FLAGS="-O2"
+	;;
+      GCC:* )
         DEF_FAST_FLAGS="-O9 -finline-functions -ffast-math -fstrict-aliasing"
         if test "$with_profiling" != "yes"; then
            # incompatible with -pg
@@ -1009,13 +1013,13 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         # (Re)include ARCH_CFLAGS here because -fast implies -xtarget=native.
         DEF_FAST_FLAGS="$DEF_FAST_FLAGS $ARCH_CFLAGS"
         ;;
-      KCC )
+      KCC:* )
         DEF_FAST_FLAGS="+K3"
         case "$host_os" in
            solaris* )  DEF_FAST_FLAGS="$DEF_FAST_FLAGS -fast $ARCH_CFLAGS" ;;
         esac
         ;;
-      ICC )
+      ICC:* )
         if test "$with_mt" = "yes" -a "$compiler_version" -lt 800; then
            DEF_FAST_FLAGS="-O3 -ip"
         else
@@ -1025,7 +1029,7 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
       MIPSpro* )
         DEF_FAST_FLAGS="-O3 -Ofast"
         ;;
-      Compaq )
+      Compaq:* )
         DEF_FAST_FLAGS="-fast"
         ;;
       * )
