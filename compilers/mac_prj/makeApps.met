@@ -232,7 +232,7 @@ on SetProjectData()
 			"pub", "medline", "biblio", "general", "submit"}
 		
 		set objMgrLibs to {Â
-			"seq", "seqcode", "cdd", "seqset","sequtil",  Â
+			"seq", "seqcode", "cdd", "seqset", "sequtil", Â
 			"pub", "biblio", "pubmed", "medline", Â
 			"general", "submit", "xobjmgr", "id1", "id2", "xser", "xobjutil", "xobjread", "xutil", "xconnect", "xncbi", "z", "bz2", "xcompress"}
 		
@@ -248,7 +248,7 @@ on SetProjectData()
 		
 	end tell
 	
-		-- fluid
+	-- fluid
 	set saveCppExt to pCPlusPlusExt
 	set pCPlusPlusExt to ".cxx"
 	set fluidFileData to mkFileData(gFLTKRootFolder & "fluid")
@@ -271,16 +271,16 @@ on SetProjectData()
 		objMgrLibs & {"xvalidate"}, {}))
 	AddProject(DataPlusLibs(SimpleProjectData("id1_fetch_simple", "app:id1_fetch", {"C++", "sockets"}), Â
 		commonObjLibs & {"id1", "xconnect"}, {}))
-
-	if pBuildDemos then
-	---- DEMO ---
-	AddAppProject("demo_seqgraphic", {"fltk"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "xalnmgr"}, {"gui_core"})
-
-	AddAppProject("demo_regedit", {"fltk"}, "gui:dialogs:registry:demo", Â
-		{"gui_dlg_registry", "gui_utils", "w_flek", "w_fltable", "xncbi", "fltk"}, {})
 	
-	AddAppProject("test_toggletree", {"fltk"}, "gui:widgets:Flek:demo", Â
-		{"w_flek", "xncbi", "fltk"}, {})
+	if pBuildDemos then
+		---- DEMO ---
+		AddAppProject("demo_seqgraphic", {"fltk"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "xalnmgr", "w_gl"}, {"gui_core"})
+		
+		AddAppProject("demo_regedit", {"fltk"}, "gui:dialogs:registry:demo", Â
+			{"gui_dlg_registry", "gui_utils", "w_flek", "w_fltable", "xncbi", "fltk"}, {})
+		
+		AddAppProject("test_toggletree", {"fltk"}, "gui:widgets:Flek:demo", Â
+			{"w_flek", "xncbi", "fltk"}, {})
 	end if
 end SetProjectData
 
