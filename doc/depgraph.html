@@ -18,6 +18,20 @@ where <tt>dot</tt> comes from AT&T's
 package.  If you are at NCBI, you can find the source to
 <tt>depgraph</tt> and <tt>depgraph2dot</tt>
 <a href="http://intranet.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/src/internal/util/depgraph/">here.</a>
+<p>
+You can find a version of the graph which includes internal projects
+<a href="depgraph-full.pdf">here</a>.
+<!-- produced as follows:
+* \ls $NCBI/c++/Release/lib > all-libs
+* pick a single member of each static/dynamic triplet
+  (libfoo.a, libfoo.so, libfoo-static.a)
+* depgraph `cat all-libs` $NCBI/altlib/libncbi* /usr/lib/libm.a > depgraph-full.out
+* egrep -v 'altlib|/usr/lib' depgraph-full.out > depgraph-full.out2
+* depgraph2dot -landscape -simplify < depgraph-full.out2 > depgraph-full.dot
+* remove "; rotate = 90" from depgraph-full.dot
+* dot -Tps -o depgraph-full.out depgraph-full.dot
+* distall -pagesize 11 8.5 in depgraph-full.ps
+-->
 <br><br>
 <img src="depgraph.gif">
 </body>
