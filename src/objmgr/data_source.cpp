@@ -42,7 +42,6 @@
 #include <objmgr/impl/bioseq_set_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>
-#include <objmgr/seqmatch_info.hpp>
 #include <objmgr/data_loader.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/objmgr_exception.hpp>
@@ -70,7 +69,6 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
 
 CDataSource::CDataSource(void)
     : m_Loader(0),
@@ -111,7 +109,7 @@ CDataSource::~CDataSource(void)
 }
 
 
-TTSE_Lock CDataSource::GetTopEntry_Info(void)
+CDataSource::TTSE_Lock CDataSource::GetTopEntry_Info(void)
 {
     return m_ManualBlob;
 }
@@ -151,6 +149,7 @@ void CDataSource::DropAllTSEs(void)
             x_ForgetTSE(it->second);
         }
         if ( m_ManualBlob ) {
+            //_TRACE("TSE_Lock("<<&*m_ManualBlob<<") "<<&m_ManualBlob<<" unlock");
             _VERIFY(m_ManualBlob->m_LockCounter.Add(-1) == 0);
             m_ManualBlob.m_Info.Reset();
         }
@@ -160,98 +159,23 @@ void CDataSource::DropAllTSEs(void)
 }
 
 
-TTSE_Lock CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
-                                     const TTSE_LockSet& load_locks)
+CDataSource::TTSE_Lock CDataSource::AddTSE(CSeq_entry& tse,
+                                           CTSE_Info::TBlobState state)
 {
-    TTSE_LockSet all_tse;
-    size_t all_count = 0;
-    {{
-        TMainLock::TReadLockGuard guard(m_DSMainLock);
-#ifdef DEBUG_MAPS
-        debug::CReadGuard<TSeq_id2TSE_Set> g1(m_TSE_seq);
-#endif
-        TSeq_id2TSE_Set::const_iterator tse_set = m_TSE_seq.find(handle);
-        if ( tse_set == m_TSE_seq.end() ) {
-            return TTSE_Lock();
-        }
-#ifdef DEBUG_MAPS
-        debug::CReadGuard<TTSE_Set> g2(tse_set->second);
-#endif
-        ITERATE ( TTSE_Set, it, tse_set->second ) {
-            TTSE_Lock tse = x_LockTSE(**it, load_locks, fLockNoThrow);
-            if ( tse ) {
-                if ( all_tse.insert(tse).second ) {
-                    ++all_count;
-                }
-            }
-        }
-        if ( all_count == 0 ) {
-            return TTSE_Lock();
-        }
-    }}
-    if ( all_count == 1 ) {
-        // There is only one TSE, no matter live or dead
-        return *all_tse.begin();
-    }
-    // The map should not contain empty entries
-    _ASSERT(!all_tse.empty());
-    TTSE_LockSet live_tse;
-    size_t live_count = 0;
-    ITERATE ( TTSE_LockSet, tse, all_tse ) {
-        // Find live TSEs
-        if ( !(*tse)->IsDead() ) {
-            live_tse.insert(*tse);
-            ++live_count;
-        }
-    }
-
-    // Check live
-    if ( live_count == 1 ) {
-        // There is only one live TSE -- ok to use it
-        return *live_tse.begin();
-    }
-    else if ( live_count == 0 ) {
-        if ( m_Loader ) {
-            TTSE_Lock best = GetDataLoader()->ResolveConflict(handle, all_tse);
-            if ( best ) {
-                return best;
-            }
-        }
-        // No live TSEs -- try to select the best dead TSE
-        NCBI_THROW(CObjMgrException, eFindConflict,
-                   "Multiple seq-id matches found");
-    }
-    if ( m_Loader ) {
-        // Multiple live TSEs - try to resolve the conflict (the status of some
-        // TSEs may change)
-        TTSE_Lock best = GetDataLoader()->ResolveConflict(handle, live_tse);
-        if ( best ) {
-            return best;
-        }
-    }
-    NCBI_THROW(CObjMgrException, eFindConflict,
-               "Multiple live entries found");
-}
-
-
-TTSE_Lock CDataSource::AddTSE(CSeq_entry& tse,
-                              CTSE_Info::ESuppression_Level level)
-{
-    CRef<CTSE_Info> info(new CTSE_Info(tse, level));
+    CRef<CTSE_Info> info(new CTSE_Info(tse, state));
     return AddTSE(info);
 }
 
 
-TTSE_Lock CDataSource::AddTSE(CSeq_entry& tse,
-                              bool dead)
+CDataSource::TTSE_Lock CDataSource::AddTSE(CSeq_entry& tse,
+                                           bool dead)
 {
-    CTSE_Info::ESuppression_Level level = 
-        dead? CTSE_Info::eSuppression_dead: CTSE_Info::eSuppression_none;
-    return AddTSE(tse, level);
+    return AddTSE(tse,
+                  dead? CTSE_Info::fState_dead: CTSE_Info::fState_none);
 }
 
 
-TTSE_Lock CDataSource::AddTSE(CRef<CTSE_Info> info)
+CDataSource::TTSE_Lock CDataSource::AddTSE(CRef<CTSE_Info> info)
 {
     TTSE_Lock lock;
     _ASSERT(IsLoaded(*info));
@@ -374,12 +298,14 @@ void x_UnmapObject(Map& info_map, const Ref& ref, const Info& _DEBUG_ARG(info))
 void CDataSource::x_Map(CConstRef<CSeq_entry> obj, CTSE_Info* info)
 {
     x_MapObject(m_TSE_InfoMap, obj, Ref(info));
+    //LOG_POST(Warning << "CDataSource::x_MapTSE: " << m_TSE_InfoMap.size());
 }
 
 
 void CDataSource::x_Unmap(CConstRef<CSeq_entry> obj, CTSE_Info* info)
 {
     x_UnmapObject(m_TSE_InfoMap, obj, info);
+    //LOG_POST(Warning << "CDataSource::x_UnmapTSE: " << m_TSE_InfoMap.size());
 }
 
 
@@ -424,8 +350,9 @@ void CDataSource::x_Unmap(CConstRef<CBioseq> obj, CBioseq_Info* info)
 // CDataSource must be guarded by mutex
 /////////////////////////////////////////////////////////////////////////////
 
-TTSE_Lock CDataSource::FindTSE_Lock(const CSeq_entry& tse,
-                                    const TTSE_LockSet& history) const
+CDataSource::TTSE_Lock
+CDataSource::FindTSE_Lock(const CSeq_entry& tse,
+                          const TTSE_LockSet& /*history*/) const
 {
     TTSE_Lock ret;
     {{
@@ -441,7 +368,7 @@ TTSE_Lock CDataSource::FindTSE_Lock(const CSeq_entry& tse,
 
 CDataSource::TSeq_entry_Lock
 CDataSource::FindSeq_entry_Lock(const CSeq_entry& entry,
-                                const TTSE_LockSet& history) const
+                                const TTSE_LockSet& /*history*/) const
 {
     TSeq_entry_Lock ret;
     {{
@@ -457,7 +384,7 @@ CDataSource::FindSeq_entry_Lock(const CSeq_entry& entry,
 
 CDataSource::TSeq_annot_Lock
 CDataSource::FindSeq_annot_Lock(const CSeq_annot& annot,
-                                const TTSE_LockSet& history) const
+                                const TTSE_LockSet& /*history*/) const
 {
     TSeq_annot_Lock ret;
     {{
@@ -473,7 +400,7 @@ CDataSource::FindSeq_annot_Lock(const CSeq_annot& annot,
 
 CDataSource::TBioseq_Lock
 CDataSource::FindBioseq_Lock(const CBioseq& bioseq,
-                             const TTSE_LockSet& history) const
+                             const TTSE_LockSet& /*history*/) const
 {
     TBioseq_Lock ret;
     {{
@@ -687,41 +614,40 @@ CDataSource::x_GetRecords(const CSeq_id_Handle& idh,
 {
     TTSE_LockSet tse_set;
     if ( m_Loader ) {
-        TTSE_LockSet tse_set2 = m_Loader->GetRecords(idh, choice);
-        if ( !tse_set2.empty() ) {
-            tse_set.swap(tse_set2); // swap is faster
-            ITERATE ( TTSE_LockSet, it, tse_set ) {
-                CTSE_Info& tse_info = const_cast<CTSE_Info&>(**it);
-                tse_info.x_GetRecords(idh, choice == CDataLoader::eBioseqCore);
-            }
+        CDataLoader::TTSE_LockSet tse_set2 = m_Loader->GetRecords(idh, choice);
+        ITERATE ( CDataLoader::TTSE_LockSet, it, tse_set2 ) {
+            tse_set.AddLock(*it);
+            CTSE_Info& tse_info = const_cast<CTSE_Info&>(**it);
+            tse_info.x_GetRecords(idh, choice == CDataLoader::eBioseqCore);
         }
     }
     return tse_set;
 }
 
 
-CDataSource::TTSE_LockMap
-CDataSource::GetTSESetWithOrphanAnnots(const TSeq_id_HandleSet& ids,
-                                       const TTSE_LockSet& history)
+CDataSource::TTSE_LockMatchSet
+CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids)
 {
-    TTSE_LockMap annot_locks;
+    TTSE_LockMatchSet ret;
     // load all relevant TSEs
     TTSE_LockSet load_locks;
     if ( m_Loader ) {
-        ITERATE ( TSeq_id_HandleSet, id_it, ids ) {
-            TTSE_LockSet tse_set2 =
+        CDataLoader::TTSE_LockSet tse_set;
+        ITERATE ( TSeq_idSet, id_it, ids ) {
+            CDataLoader::TTSE_LockSet tse_set2 =
                 m_Loader->GetRecords(*id_it, CDataLoader::eOrphanAnnot);
-            if ( load_locks.empty() ) {
-                load_locks.swap(tse_set2);
+            if ( tse_set.empty() ) {
+                tse_set.swap(tse_set2);
             }
             else {
-                load_locks.insert(tse_set2.begin(), tse_set2.end());
+                tse_set.insert(tse_set2.begin(), tse_set2.end());
             }
         }
-        ITERATE ( TTSE_LockSet, tse_it, load_locks ) {
+        ITERATE ( CDataLoader::TTSE_LockSet, tse_it, tse_set ) {
+            load_locks.AddLock(*tse_it);
             CTSE_Info& tse_info = const_cast<CTSE_Info&>(**tse_it);
-            ITERATE ( TSeq_id_HandleSet, id_it, ids ) {
-                tse_info.x_GetRecords(*id_it, false);
+            ITERATE ( TSeq_idSet, id_it2, ids ) {
+                tse_info.x_GetRecords(*id_it2, false);
             }
         }
     }
@@ -732,49 +658,43 @@ CDataSource::GetTSESetWithOrphanAnnots(const TSeq_id_HandleSet& ids,
 #ifdef DEBUG_MAPS
     debug::CReadGuard<TSeq_id2TSE_Set> g1(m_TSE_annot);
 #endif
-    ITERATE ( TSeq_id_HandleSet, id_it, ids ) {
+    ITERATE ( TSeq_idSet, id_it, ids ) {
         TSeq_id2TSE_Set::const_iterator rtse_it = m_TSE_annot.find(*id_it);
         if ( rtse_it != m_TSE_annot.end() ) {
 #ifdef DEBUG_MAPS
             debug::CReadGuard<TTSE_Set> g2(rtse_it->second);
 #endif
             ITERATE ( TTSE_Set, tse, rtse_it->second ) {
-                if ( (*tse)->ContainsBioseqMatch(*id_it) ) {
+                if ( (*tse)->ContainsMatchingBioseq(*id_it) ) {
                     continue;
                 }
                 TTSE_Lock lock = x_LockTSE(**tse, load_locks, fLockNoThrow);
                 if ( lock ) {
-                    annot_locks[lock].insert(*id_it);
-                    continue;
-                }
-                lock = x_LockTSE(**tse, history, fLockNoThrow);
-                if ( lock ) {
-                    annot_locks[lock].insert(*id_it);
+                    ret[lock].insert(*id_it);
                     continue;
                 }
             }
         }
     }
-    return annot_locks;
+    return ret;
 }
 
 
-CDataSource::TTSE_LockMap
+CDataSource::TTSE_LockMatchSet
 CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
-                                       const TTSE_Lock& tse,
-                                       const TTSE_LockSet& history)
+                                       const TTSE_Lock& tse)
 {
-    TTSE_LockMap annot_locks;
+    TTSE_LockMatchSet ret;
 
-    TSeq_id_HandleSet ids;
+    CSeq_id_Handle::TMatches ids;
     ITERATE ( CBioseq_Info::TId, id_it, bioseq.GetId() ) {
-        id_it->GetMapper().GetReverseMatchingHandles(*id_it, ids);
+        id_it->GetReverseMatchingHandles(ids);
     }
 
     // add bioseq TSE annots
     {{
-        TSeq_id_HandleSet& dst = annot_locks[tse];
-        ITERATE ( TSeq_id_HandleSet, id_it, ids ) {
+        TSeq_idSet& dst = ret[tse];
+        ITERATE ( TSeq_idSet, id_it, ids ) {
             const_cast<CTSE_Info&>(*tse).x_GetRecords(*id_it, false);
             dst.insert(*id_it);
         }
@@ -783,12 +703,12 @@ CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
     // load all relevant TSEs
     TTSE_LockSet load_locks;
     if ( m_Loader ) {
-        TTSE_LockSet tse_set2 =
+        CDataLoader::TTSE_LockSet tse_set2 =
             m_Loader->GetExternalRecords(bioseq);
-        load_locks.swap(tse_set2);
-        ITERATE ( TTSE_LockSet, tse_it, load_locks ) {
+        ITERATE ( CDataLoader::TTSE_LockSet, tse_it, tse_set2 ) {
+            load_locks.AddLock(*tse_it);
             CTSE_Info& tse_info = const_cast<CTSE_Info&>(**tse_it);
-            ITERATE ( TSeq_id_HandleSet, id_it, ids ) {
+            ITERATE ( TSeq_idSet, id_it, ids ) {
                 tse_info.x_GetRecords(*id_it, false);
             }
         }
@@ -800,80 +720,27 @@ CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
 #ifdef DEBUG_MAPS
     debug::CReadGuard<TSeq_id2TSE_Set> g1(m_TSE_annot);
 #endif
-    ITERATE ( TSeq_id_HandleSet, id_it, ids ) {
+    ITERATE ( TSeq_idSet, id_it, ids ) {
         TSeq_id2TSE_Set::const_iterator rtse_it = m_TSE_annot.find(*id_it);
         if ( rtse_it != m_TSE_annot.end() ) {
 #ifdef DEBUG_MAPS
             debug::CReadGuard<TTSE_Set> g2(rtse_it->second);
 #endif
-            ITERATE ( TTSE_Set, tse, rtse_it->second ) {
-                if ( (*tse)->ContainsBioseqMatch(*id_it) ) {
+            ITERATE ( TTSE_Set, tse_it, rtse_it->second ) {
+                if ( (*tse_it)->ContainsMatchingBioseq(*id_it) ) {
                     continue;
                 }
-                TTSE_Lock lock = x_LockTSE(**tse, load_locks, fLockNoThrow);
+                TTSE_Lock lock = x_LockTSE(**tse_it, load_locks, fLockNoThrow);
                 if ( lock ) {
-                    annot_locks[lock].insert(*id_it);
-                    continue;
-                }
-                lock = x_LockTSE(**tse, history, fLockNoThrow);
-                if ( lock ) {
-                    annot_locks[lock].insert(*id_it);
+                    ret[lock].insert(*id_it);
                     continue;
                 }
             }
         }
     }
-    return annot_locks;
+    return ret;
 }
 
-/*
-CDataSource::TTSE_LockMap
-CDataSource::GetTSESetWithAnnots(const TSeq_id_HandleSet& ids,
-                                 const TTSE_LockSet& history,
-                                 bool orphan_annots)
-{
-    TTSE_LockSet annot_locks;
-    // load all relevant TSEs
-    CDataLoader::EChoice choice = orphan_annots?
-        CDataLoader::eOrphanAnnot: CDataLoader::eExtAnnot;
-    TTSE_LockSet load_locks = x_GetRecords(idh, choice);
-
-    UpdateAnnotIndex();
-
-    TAnnotLockReadGuard guard(*this);
-#ifdef DEBUG_MAPS
-    debug::CReadGuard<TSeq_id2TSE_Set> g1(m_TSE_annot);
-#endif
-    TSeq_id2TSE_Set::const_iterator rtse_it = m_TSE_annot.find(idh);
-    if ( rtse_it != m_TSE_annot.end() ) {
-#ifdef DEBUG_MAPS
-        debug::CReadGuard<TTSE_Set> g2(rtse_it->second);
-#endif
-        ITERATE ( TTSE_Set, tse, rtse_it->second ) {
-            if ( (*tse)->ContainsBioseqMatch(idh) ) {
-                // skip TSE containing sequence
-                continue;
-            }
-            TTSE_Lock lock = x_LockTSE(**tse, load_locks, fLockNoThrow);
-            if ( lock ) {
-                annot_locks.insert(lock);
-                continue;
-            }
-            lock = x_LockTSE(**tse, history, fLockNoThrow);
-            if ( lock ) {
-                annot_locks.insert(lock);
-                continue;
-            }
-        }
-    }
-    if ( idh.IsGi() && annot_locks.size() < load_locks.size() ) {
-        ERR_POST("GetTSESetWithAnnots("<<idh.AsString()<<", "<<
-                 orphan_annots<<").size() = "<<annot_locks.size()<<
-                 " load_locks.size() = "<<load_locks.size());
-    }
-    return annot_locks;
-}
-*/
 
 void CDataSource::x_IndexTSE(TSeq_id2TSE_Set& tse_map,
                              const CSeq_id_Handle& id,
@@ -963,131 +830,126 @@ void CDataSource::x_CleanupUnusedEntries(void)
 }
 
 
-CSeqMatch_Info CDataSource::BestResolve(CSeq_id_Handle idh)
-{
-    //### Lock all TSEs found, unlock all filtered out in the end.
-    TTSE_LockSet load_locks = x_GetRecords(idh, CDataLoader::eBioseqCore);
-    CSeqMatch_Info match;
-    TTSE_Lock tse = x_FindBestTSE(idh, load_locks);
-    if ( !tse ) {
-        // Try to find the best matching id (not exactly equal)
-        CRef<CSeq_id_Mapper> mapper = CSeq_id_Mapper::GetInstance();
-        if ( mapper->HaveMatchingHandles(idh) ) {
-            TSeq_id_HandleSet hset;
-            mapper->GetMatchingHandles(idh, hset);
-            ITERATE(TSeq_id_HandleSet, hit, hset) {
-                if ( *hit == idh ) // already checked
-                    continue;
-                if ( bool(tse)  &&  idh.IsBetter(*hit) ) // worse hit
-                    continue;
-                TTSE_Lock tmp_tse = x_FindBestTSE(*hit, load_locks);
-                if ( tmp_tse ) {
-                    tse = tmp_tse;
-                    idh = *hit;
-                }
-            }
-        }
-    }
-    if ( tse ) {
-        match = CSeqMatch_Info(idh, tse);
-    }
-    return match;
-}
 
-
-CSeqMatch_Info CDataSource::HistoryResolve(CSeq_id_Handle idh,
-                                           const TTSE_LockSet& history)
+CDataSource::TTSE_Lock
+CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
+                           const TTSE_LockSet& load_locks)
 {
-    CSeqMatch_Info match;
-    if ( !history.empty() ) {
-        TTSE_LockSet locks;
+    TTSE_LockSet all_tse;
+    {{
         TMainLock::TReadLockGuard guard(m_DSMainLock);
 #ifdef DEBUG_MAPS
         debug::CReadGuard<TSeq_id2TSE_Set> g1(m_TSE_seq);
 #endif
-        TSeq_id2TSE_Set::const_iterator tse_set = m_TSE_seq.find(idh);
-        if ( tse_set != m_TSE_seq.end() ) {
+        TSeq_id2TSE_Set::const_iterator tse_set = m_TSE_seq.find(handle);
+        if ( tse_set == m_TSE_seq.end() ) {
+            return TTSE_Lock();
+        }
 #ifdef DEBUG_MAPS
-            debug::CReadGuard<TTSE_Set> g2(tse_set->second);
+        debug::CReadGuard<TTSE_Set> g2(tse_set->second);
 #endif
-            ITERATE ( TTSE_Set, it, tse_set->second ) {
-                TTSE_Lock tse = x_LockTSE(**it, history, 
-                                          fLockNoManual | fLockNoThrow);
-                if ( !tse ) {
-                    continue;
-                }
-                
-                CSeqMatch_Info new_match(idh, tse);
-                _ASSERT(new_match.GetBioseq_Info());
-                if ( !match ) {
-                    match = new_match;
-                    continue;
-                }
-
-                if ( new_match.GetTSE_Info().IsDead() !=
-                     match.GetTSE_Info().IsDead() ) {
-                    if ( !new_match.GetTSE_Info().IsDead() ) {
-                        // old one is dead
-                        match = new_match;
-                    }
-                    continue;
-                }
-                CNcbiOstrstream s;
-                s << "CDataSource("<<GetName()<<"): "
-                    "multiple history matches: Seq-id="<<idh.AsString()<<
-                    ": seq1=["<<match.GetBioseq_Info()->IdString()<<
-                    "] seq2=["<<new_match.GetBioseq_Info()->IdString()<<"]";
-                string msg = CNcbiOstrstreamToString(s);
-                NCBI_THROW(CObjMgrException, eFindConflict, msg);
+        ITERATE ( TTSE_Set, it, tse_set->second ) {
+            TTSE_Lock tse = x_LockTSE(**it, load_locks, fLockNoThrow);
+            if ( tse ) {
+                all_tse.AddLock(tse);
             }
         }
+    }}
+    CDataLoader::TTSE_LockSet best_set = all_tse.GetBestTSEs();
+    if ( best_set.empty() ) {
+        // No TSE matches
+        return TTSE_Lock();
     }
-    return match;
+    CDataLoader::TTSE_LockSet::const_iterator it = best_set.begin();
+    _ASSERT(it != best_set.end());
+    if ( ++it == best_set.end() ) {
+        // Only one TSE matches
+        return *best_set.begin();
+    }
+
+    // We have multiple best TSEs
+    if ( m_Loader ) {
+        TTSE_Lock best = GetDataLoader()->ResolveConflict(handle, best_set);
+        if ( best ) {
+            // conflict resolved by data loader
+            return best;
+        }
+    }
+    // Cannot resolve conflict
+    NCBI_THROW(CObjMgrException, eFindConflict,
+               "Multiple seq-id matches found");
 }
 
 
-CSeqMatch_Info* CDataSource::ResolveConflict(const CSeq_id_Handle& id,
-                                             CSeqMatch_Info& info1,
-                                             CSeqMatch_Info& info2)
+SSeqMatch_DS CDataSource::x_GetSeqMatch(const CSeq_id_Handle& idh,
+                                        const TTSE_LockSet& locks)
 {
-    _ASSERT(info1.GetTSE_Lock() && info2.GetTSE_Lock());
-    if (&info1.GetTSE_Lock()->GetDataSource() != this  ||
-        &info2.GetTSE_Lock()->GetDataSource() != this) {
-        // Can not compare TSEs from different data sources or
-        // without a loader.
-        return 0;
+    SSeqMatch_DS ret;
+    ret.m_TSE_Lock = x_FindBestTSE(idh, locks);
+    if ( ret.m_TSE_Lock ) {
+        ret.m_Seq_id = idh;
+        ret.m_Bioseq = ret.m_TSE_Lock->FindBioseq(ret.m_Seq_id);
+        _ASSERT(ret);
     }
-    if (!m_Loader) {
-        if ( info1.GetIdHandle().IsBetter(info2.GetIdHandle()) ) {
-            return &info1;
+    else if ( idh.HaveMatchingHandles() ) { 
+        // Try to find the best matching id (not exactly equal)
+        CSeq_id_Handle::TMatches hset;
+        idh.GetMatchingHandles(hset);
+        ITERATE ( CSeq_id_Handle::TMatches, hit, hset ) {
+            if ( *hit == idh ) // already checked
+                continue;
+            if ( ret && ret.m_Seq_id.IsBetter(*hit) ) // worse hit
+                continue;
+            TTSE_Lock new_tse = x_FindBestTSE(*hit, locks);
+            if ( new_tse ) {
+                ret.m_TSE_Lock = new_tse;
+                ret.m_Seq_id = *hit;
+                ret.m_Bioseq = ret.m_TSE_Lock->FindBioseq(ret.m_Seq_id);
+                _ASSERT(ret);
+            }
         }
-        if ( info2.GetIdHandle().IsBetter(info1.GetIdHandle()) ) {
-            return &info2;
+    }
+    return ret;
+}
+
+
+SSeqMatch_DS CDataSource::BestResolve(CSeq_id_Handle idh)
+{
+    return x_GetSeqMatch(idh, x_GetRecords(idh, CDataLoader::eBioseqCore));
+}
+
+
+CDataSource::TSeqMatches CDataSource::GetMatches(CSeq_id_Handle idh,
+                                                 const TTSE_LockSet& history)
+{
+    TSeqMatches ret;
+
+    if ( !history.IsEmpty() ) {
+        TMainLock::TReadLockGuard guard(m_DSMainLock);
+        TSeq_id2TSE_Set::const_iterator tse_set = m_TSE_seq.find(idh);
+        if ( tse_set != m_TSE_seq.end() ) {
+            ITERATE ( TTSE_Set, it, tse_set->second ) {
+                TTSE_Lock tse_lock = history.FindLock(*it);
+                if ( !tse_lock ) {
+                    continue;
+                }
+                SSeqMatch_DS match(tse_lock, idh);
+                _ASSERT(match);
+                ret.push_back(match);
+            }
         }
-        return 0;
     }
-    TTSE_LockSet tse_set;
-    tse_set.insert(info1.GetTSE_Lock());
-    tse_set.insert(info2.GetTSE_Lock());
-    TTSE_Lock tse = m_Loader->ResolveConflict(id, tse_set);
-    if ( tse == info1.GetTSE_Lock() ) {
-        return &info1;
-    }
-    if ( tse == info2.GetTSE_Lock() ) {
-        return &info2;
-    }
-    return 0;
+
+    return ret;
 }
 
 
 void CDataSource::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {
     TTSE_LockSet locks;
-    TTSE_Lock tse = x_FindBestTSE(idh, locks);
-    if ( tse ) {
-        CConstRef<CBioseq_Info> bs_info = tse->FindBioseqMatch(idh);
-        _ASSERT(bs_info);
-        ids = bs_info->GetId();
+    SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
+    if ( match ) {
+        ids = match.m_Bioseq->GetId();
         return;
     }
     // Bioseq not found - try to request ids from loader if any.
@@ -1172,24 +1034,16 @@ void CDataSource::Prefetch(CPrefetchToken_Impl& token)
 }
 
 
-void CDataSource::DebugDump(CDebugDumpContext /*ddc*/,
-                            unsigned int /*depth*/) const
-{
-}
-
-
-TTSE_Lock CDataSource::x_LockTSE(const CTSE_Info& tse_info,
-                                 const TTSE_LockSet& locks,
-                                 TLockFlags flags)
+CDataSource::TTSE_Lock CDataSource::x_LockTSE(const CTSE_Info& tse_info,
+                                              const TTSE_LockSet& locks,
+                                              TLockFlags flags)
 {
     TTSE_Lock ret;
     _ASSERT(tse_info.Referenced());
     if ( (flags & fLockNoHistory) == 0 ) {
-        ITERATE ( TTSE_LockSet, it, locks ) {
-            if ( it->GetPointerOrNull() == &tse_info ) {
-                ret = *it;
-                return ret;
-            }
+        ret = locks.FindLock(&tse_info);
+        if ( ret ) {
+            return ret;
         }
     }
     if ( (flags & fLockNoManual) == 0 ) {
@@ -1318,6 +1172,7 @@ void CDataSource::x_SetLock(CTSE_Lock& lock, CConstRef<CTSE_Info> tse) const
     _ASSERT(!lock);
     _ASSERT(tse);
     lock.m_Info.Reset(&*tse);
+    //_TRACE("TSE_Lock("<<&*tse<<") "<<&lock<<" lock");
     if ( tse->m_LockCounter.Add(1) != 1 ) {
         return;
     }
@@ -1525,6 +1380,7 @@ void CTSE_Lock::x_Unlock(void)
 {
     _ASSERT(*this);
     const CTSE_Info* info = GetNonNullPointer();
+    //_TRACE("TSE_Lock("<<info<<") "<<this<<" unlock");
     if ( info->m_LockCounter.Add(-1) == 0 ) {
         info->GetDataSource().x_ReleaseLastLock(*this);
         _ASSERT(!*this);
@@ -1539,6 +1395,7 @@ bool CTSE_Lock::x_Lock(const CTSE_Info* info)
 {
     _ASSERT(!*this && info);
     m_Info.Reset(info);
+    //_TRACE("TSE_Lock("<<info<<") "<<this<<" lock");
     return info->m_LockCounter.Add(1) == 1;
 }
 
@@ -1548,8 +1405,75 @@ void CTSE_Lock::x_Relock(const CTSE_Info* info)
     _ASSERT(!*this && info);
     _ASSERT(info->m_LockCounter.Get() != 0);
     m_Info.Reset(info);
+    //_TRACE("TSE_Lock("<<info<<") "<<this<<" lock");
     info->m_LockCounter.Add(1);
 }
+
+
+bool CTSE_LockSet::IsEmpty(void) const
+{
+    return m_TSE_LockSet.empty();
+}
+
+
+void CTSE_LockSet::Clear(void)
+{
+    m_TSE_LockSet.clear();
+}
+
+
+CTSE_Lock CTSE_LockSet::FindLock(const CTSE_Info* info) const
+{
+    TTSE_LockSet::const_iterator it = m_TSE_LockSet.find(info);
+    if ( it == m_TSE_LockSet.end() ) {
+        return CTSE_Lock();
+    }
+    return it->second;
+}
+
+
+bool CTSE_LockSet::AddLock(const CTSE_Lock& lock)
+{
+    return m_TSE_LockSet.insert(TTSE_LockSet::value_type(&*lock, lock)).second;
+}
+
+
+bool CTSE_LockSet::RemoveLock(const CTSE_Lock& lock)
+{
+    return m_TSE_LockSet.erase(&*lock) != 0;
+}
+
+
+bool CTSE_LockSet::RemoveLock(const CTSE_Info* info)
+{
+    return m_TSE_LockSet.erase(info) != 0;
+}
+
+
+CDataLoader::TTSE_LockSet CTSE_LockSet::GetBestTSEs(void) const
+{
+    CDataLoader::TTSE_LockSet ret;
+    ITERATE ( TTSE_LockSet, it, m_TSE_LockSet ) {
+        if ( !ret.empty() ) {
+            if ( IsBetter(**ret.begin(), *it->first) ) {
+                continue;
+            }
+            else if ( IsBetter(*it->first, **ret.begin()) ) {
+                ret.clear();
+            }
+        }
+        ret.insert(it->second);
+    }
+    return ret;
+}
+
+
+bool CTSE_LockSet::IsBetter(const CTSE_Info& tse1,
+                            const CTSE_Info& tse2)
+{
+    return tse1.GetBlobOrder() < tse2.GetBlobOrder();
+}
+
 
 
 END_SCOPE(objects)

@@ -35,7 +35,6 @@
 
 #include <objmgr/impl/tse_info.hpp>
 
-#include <objects/seq/seq_id_mapper.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objmgr/data_loader.hpp>
 
@@ -77,7 +76,9 @@ class CBioseq_Info;
 class CBioseq_Handle;
 class CPrefetchToken_Impl;
 class CPrefetchThread;
-
+class CDSAnnotLockReadGuard;
+class CDSAnnotLockWriteGuard;
+class CScope_Impl;
 
 struct SBlobIdComp
 {
@@ -102,8 +103,20 @@ struct SBlobIdComp
 };
 
 
-class CDSAnnotLockReadGuard;
-class CDSAnnotLockWriteGuard;
+struct SSeqMatch_DS : public SSeqMatch_TSE
+{
+    SSeqMatch_DS(void)
+        {
+        }
+    SSeqMatch_DS(const CTSE_Lock& tse_lock, const CSeq_id_Handle& id)
+        : SSeqMatch_TSE(tse_lock->GetSeqMatch(id)),
+          m_TSE_Lock(tse_lock)
+        {
+        }
+
+    CTSE_Lock               m_TSE_Lock;
+};
+
 
 class NCBI_XOBJMGR_EXPORT CDataSource : public CObject
 {
@@ -116,15 +129,16 @@ public:
 
     // typedefs
     typedef int                                     TPriority;
-    typedef set<TTSE_Lock>                          TTSE_LockSet;
-    typedef map<TTSE_Lock, TSeq_id_HandleSet>       TTSE_LockMap;
-    typedef CTSE_Info::ESuppression_Level           ESuppression_Level;
+    typedef CTSE_Lock                               TTSE_Lock;
+    typedef CTSE_LockSet                            TTSE_LockSet;
+    typedef set<CSeq_id_Handle>                     TSeq_idSet;
+    typedef map<TTSE_Lock, TSeq_idSet>              TTSE_LockMatchSet;
     typedef CRef<CTSE_Info>                         TTSE_Ref;
     typedef CConstRef<CObject>                      TBlobId;
 
     /// Register new TSE (Top Level Seq-entry)
     TTSE_Lock AddTSE(CSeq_entry& se,
-                     ESuppression_Level level = CTSE_Info::eSuppression_none);
+                     CTSE_Info::TBlobState = CTSE_Info::fState_none);
     TTSE_Lock AddTSE(CSeq_entry& se,
                      bool dead);
     TTSE_Lock AddTSE(CRef<CTSE_Info> tse);
@@ -150,10 +164,6 @@ public:
     /// seq-ids for all bioseqs and the list of seq-ids used in annotations.
     //TTSE_Lock GetBlobById(const CSeq_id_Handle& idh);
 
-    /// Get Bioseq info by Seq-Id.
-    /// Return "NULL" handle if the Bioseq cannot be resolved.
-    //CConstRef<CBioseq_Info> GetBioseq_Info(const CSeqMatch_Info& info);
-
     // Remove TSE from the datasource, update indexes
     void DropAllTSEs(void);
     bool DropTSE(CTSE_Info& info);
@@ -170,11 +180,9 @@ public:
     void UpdateAnnotIndex(const CSeq_entry_Info& entry_info);
     void UpdateAnnotIndex(const CSeq_annot_Info& annot_info);
 
-    TTSE_LockMap GetTSESetWithOrphanAnnots(const TSeq_id_HandleSet& ids,
-                                           const TTSE_LockSet& history);
-    TTSE_LockMap GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
-                                           const TTSE_Lock& tse,
-                                           const TTSE_LockSet& history);
+    TTSE_LockMatchSet GetTSESetWithOrphanAnnots(const TSeq_idSet& ids);
+    TTSE_LockMatchSet GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
+                                                const TTSE_Lock& tse);
 
     // Fill the set with bioseq handles for all sequences from a given TSE.
     // Return empty tse lock if the entry was not found or is not a TSE.
@@ -188,25 +196,19 @@ public:
                     CSeq_inst::EMol filter,
                     TBioseqLevelFlag level);
 
-    CSeqMatch_Info BestResolve(CSeq_id_Handle idh);
-    CSeqMatch_Info HistoryResolve(CSeq_id_Handle idh,
-                                  const TTSE_LockSet& locks);
+    SSeqMatch_DS BestResolve(CSeq_id_Handle idh);
+    typedef vector<SSeqMatch_DS> TSeqMatches;
+    TSeqMatches GetMatches(CSeq_id_Handle idh, const TTSE_LockSet& locks);
 
     typedef vector<CSeq_id_Handle> TIds;
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
 
-    // Select the best of the two bioseqs if possible (e.g. dead vs live).
-    CSeqMatch_Info* ResolveConflict(const CSeq_id_Handle& id,
-                                    CSeqMatch_Info& info1,
-                                    CSeqMatch_Info& info2);
     bool IsLive(const CTSE_Info& tse);
 
     string GetName(void) const;
 
     TPriority GetDefaultPriority(void) const;
     void SetDefaultPriority(TPriority priority);
-
-    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
     // get locks
     enum FLockFlags {
@@ -271,6 +273,7 @@ private:
     friend class CSeq_annot_Info;
     friend class CBioseq_Info;
     friend class CPrefetchToken_Impl;
+    friend class CScope_Impl;
 
     // 
     void x_SetLock(CTSE_Lock& lock, CConstRef<CTSE_Info> tse) const;
@@ -296,8 +299,6 @@ private:
     void x_Map(CConstRef<CBioseq> obj, CBioseq_Info* info);
     void x_Unmap(CConstRef<CBioseq> obj, CBioseq_Info* info);
 
-    //void x_AttachMap(CSeq_entry_Info& bioseq, CSeqMap& seqmap);
-
     // lookup Xxx_Info objects
     // TSE
     CConstRef<CTSE_Info> x_FindTSE_Info(const CSeq_entry& tse) const;
@@ -314,6 +315,8 @@ private:
     // If no matches were found, return 0.
     TTSE_Lock x_FindBestTSE(const CSeq_id_Handle& handle,
                             const TTSE_LockSet& locks);
+    SSeqMatch_DS x_GetSeqMatch(const CSeq_id_Handle& idh,
+                               const TTSE_LockSet& locks);
 
     void x_SetDirtyAnnotIndex(CTSE_Info& tse);
     void x_ResetDirtyAnnotIndex(CTSE_Info& tse);
