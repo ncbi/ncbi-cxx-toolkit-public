@@ -50,8 +50,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 6.6  2001/04/24 21:15:23  lavr
-* Added functions: SERV_MapperName(), SERV_Penalize().
+* Revision 6.7  2001/04/24 21:18:41  lavr
+* Default timeout is set as a special value CONN_DEFAULT_TIMEOUT.
+* Removed wrong log for R6.6.
 *
 * Revision 6.5  2001/02/09 17:38:16  lavr
 * Typo fixed in comments
