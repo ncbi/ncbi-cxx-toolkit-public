@@ -300,14 +300,47 @@ static int/*bool*/ s_AllowSigPipe = 0/*false - mask SIGPIPE out*/;
 static void s_DoLogData
 (SOCK sock, EIO_Event event, const void* data, size_t size)
 {
+    const struct sockaddr_in* sin;
+    unsigned int host;
     char message[128];
-    assert(event == eIO_Read  ||  event == eIO_Write);
-    sprintf(message, "SOCK#%u -- %s at offset %lu",
-            (unsigned int) sock->id,
-            (event == eIO_Read) ? "read" : "written",
-            (unsigned long) ((event == eIO_Read) ?
-                             sock->n_read : sock->n_written));
-    CORE_DATA(data, size, message);
+
+    if ( !CORE_GetLOG() )
+        return;
+
+    switch (event) {
+    case eIO_Open:
+        sin = (struct sockaddr_in*) data;
+        memcpy(&host, &sin->sin_addr, sizeof(host));
+        if (SOCK_ntoa(host, message, sizeof(message)) != 0)
+            strcpy(message, "<unknown>");
+        CORE_LOGF(eLOG_Trace, ("SOCK#%u[%u] -- connecting to %s:%hu",
+                               (unsigned int) sock->id,
+                               (unsigned int) size,
+                               message, ntohs(sin->sin_port)));
+        break;
+    case eIO_Read:
+    case eIO_Write:
+        sprintf(message, "SOCK#%u[%u] -- %s at offset %lu",
+                (unsigned int) sock->id, (unsigned int) sock->sock,
+                (event == eIO_Read) ? "read" : "written",
+                (unsigned long) ((event == eIO_Read) ?
+                                 sock->n_read : sock->n_written));
+        CORE_DATA(data, size, message);
+        break;
+    case eIO_Close:
+        CORE_LOGF(eLOG_Trace, ("SOCK#%u[%u] -- closing "
+                               "(%lu byte%s out, %lu byte%s in)",
+                               (unsigned int) sock->id,
+                               (unsigned int) sock->sock,
+                               (unsigned long) sock->n_written,
+                               sock->n_written == 1 ? "" : "s",
+                               (unsigned long) sock->n_read,
+                               sock->n_read == 1 ? "" : "s"));
+        break;
+    default:
+        assert(0);
+        break;
+    }
 }
 
 
@@ -666,8 +699,11 @@ extern EIO_Status LSOCK_Create(unsigned short port,
         return eIO_Unknown;
     }
 
+    if (!(*lsock = (LSOCK) calloc(1, sizeof(LSOCK_struct)))) {
+        SOCK_CLOSE(x_lsock);
+        return eIO_Unknown;
+    }
     /* Success... */
-    *lsock = (LSOCK) calloc(1, sizeof(LSOCK_struct));
     (*lsock)->sock = x_lsock;
     return eIO_Success;
 }
@@ -727,8 +763,12 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
         x_port = addr.sin_port;
     }}
 
-    /* success:  create new SOCK structure */
-    *sock = (SOCK) calloc(1, sizeof(SOCK_struct));
+    /* create new SOCK structure */
+    if (!(*sock = (SOCK) calloc(1, sizeof(SOCK_struct)))) {
+        SOCK_CLOSE(x_sock);
+        return eIO_Unknown;
+    }
+    /* success */
     (*sock)->sock = x_sock;
     (*sock)->is_eof = 0/*false*/;
     (*sock)->r_status = eIO_Success;
@@ -804,12 +844,10 @@ static EIO_Status s_Connect(SOCK            sock,
                             unsigned short  port,
                             const STimeout* timeout)
 {
-    TSOCK_Handle   x_sock;
-    unsigned int   x_host;
-    unsigned short x_port;
-
+    TSOCK_Handle       x_sock;
+    unsigned int       x_host;
+    unsigned short     x_port;
     struct sockaddr_in server;
-    memset(&server, 0, sizeof(server));
 
     /* Initialize internals */
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
@@ -832,6 +870,7 @@ static EIO_Status s_Connect(SOCK            sock,
     x_port = (unsigned short) (port ? htons(port) : sock->port);
 
     /* Fill in the "server" struct */
+    memset(&server, 0, sizeof(server));
     memcpy(&server.sin_addr, &x_host, sizeof(x_host));
     server.sin_family = AF_INET;
     server.sin_port   = x_port;
@@ -854,14 +893,19 @@ static EIO_Status s_Connect(SOCK            sock,
         return eIO_Unknown;
     }
 
+    if (sock->log_data == eOn  ||
+        (sock->log_data == eDefault  &&  s_LogData == eOn)) {
+        s_DoLogData(sock, eIO_Open, &server, x_sock);
+    }
+
     /* Establish connection to the peer */
     if (connect(x_sock, (struct sockaddr*) &server, sizeof(server)) != 0) {
         if (SOCK_ERRNO != SOCK_EINTR  &&  SOCK_ERRNO != SOCK_EINPROGRESS  &&
             SOCK_ERRNO != SOCK_EWOULDBLOCK) {
             if ( CORE_GetLOG() ) {
                 char str[256];
-                sprintf(str, "[SOCK::s_Connect]  Failed connect() to %.64s:%d",
-                        host ? host : "???", (int) ntohs(x_port));
+                sprintf(str, "[SOCK::s_Connect]  Failed connect() to %.64s:%u",
+                        host ? host : "???", (unsigned int) ntohs(x_port));
                 CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error, str);
             }
             SOCK_CLOSE(x_sock);
@@ -903,7 +947,7 @@ static EIO_Status s_Connect(SOCK            sock,
             if (status != eIO_Success  ||  poll.revent != eIO_Write) {
                 if (status != eIO_Interrupt  ||  poll.revent != eIO_Write)
                     status = eIO_Unknown;
-                if (CORE_GetLOG()) {
+                if ( CORE_GetLOG() ) {
                     char str[256];
                     sprintf(str, "[SOCK::s_Connect]  Failed pending connect"
                             " to %.64s:%d (%.32s)", host ? host : "???",
@@ -970,6 +1014,11 @@ static EIO_Status s_Close(SOCK sock)
     if (SOCK_Shutdown(sock, eIO_Read) != eIO_Success) {
         CORE_LOG(eLOG_Warning,
                  "[SOCK::s_Close]  Cannot shutdown socket for reading");
+    }
+
+    if (sock->log_data == eOn  ||
+        (sock->log_data == eDefault  &&  s_LogData == eOn)) {
+        s_DoLogData(sock, eIO_Close, 0, 0);
     }
 
     for (;;) { /* close persistently - retry if interrupted by a signal */
@@ -1339,14 +1388,19 @@ static EIO_Status s_Write(SOCK        sock,
 }
 
 
-extern EIO_Status SOCK_Create(const char*     host,
-                              unsigned short  port,
-                              const STimeout* timeout,
-                              SOCK*           sock)
+extern EIO_Status SOCK_CreateEx(const char*     host,
+                                unsigned short  port,
+                                const STimeout* timeout,
+                                SOCK*           sock,
+                                ESwitch         log_data)
 {
     /* Allocate memory for the internal socket structure */
-    SOCK x_sock = (SOCK_struct*) calloc(1, sizeof(SOCK_struct));
+    SOCK x_sock;
+    if (!(x_sock = (SOCK_struct*) calloc(1, sizeof(SOCK_struct))))
+        return eIO_Unknown;
+    x_sock->id = ++s_ID_Counter * 1000;
     x_sock->sock = SOCK_INVALID;
+    x_sock->log_data = log_data;
 
     /* Connect */
     {{
@@ -1361,9 +1415,8 @@ extern EIO_Status SOCK_Create(const char*     host,
     BUF_SetChunkSize(&x_sock->buf, SOCK_BUF_CHUNK_SIZE);
 
     /* Success */
-    x_sock->log_data = eDefault;
+    x_sock->i_on_sig = eDefault;
     x_sock->r_on_w   = eDefault;
-    x_sock->id = ++s_ID_Counter * 1000;
     *sock = x_sock;
     return eIO_Success;
 }
@@ -1828,7 +1881,7 @@ extern int SOCK_gethostname(char*  name,
         return 0/*success*/;
 
     name[0] = '\0';
-    return 1/*failed*/;
+    return -1/*failed*/;
 }
 
 
@@ -2009,6 +2062,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.70  2002/12/04 16:55:02  lavr
+ * Implement logging on connect and close
+ *
  * Revision 6.69  2002/11/08 17:18:18  lavr
  * Minor change: spare -1 in >= by replacing it with >
  *
