@@ -53,6 +53,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CSeqDBAtlas; // WorkShop needs this forward declaration.
+
 
 /// CSeqDBFlushCB
 /// 
