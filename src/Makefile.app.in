@@ -67,7 +67,7 @@ $(XAPP): $(XOBJ) $(XLIBDEP)
 	$(LINK_WRAPPER) $(LINK) $(LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(LIBS) @f_outexe@$(XAPP) $(LINK_FILTER)
 	$(STRIP) $(XAPP)
 	$(POST_LINK) $(XAPP)
-	@if [ -d $(bindir) -a -w $(bindir) -a $(srcdir) != . ]; then \
+	@if [ '$(BINCOPY)' != '@:' -a -d $(bindir) -a -w $(bindir) -a $(srcdir) != . ]; then \
 	    echo $(BINCOPY) $(XAPP) $(bindir) && \
 	    $(BINCOPY) $(XAPP) $(bindir); \
 	fi

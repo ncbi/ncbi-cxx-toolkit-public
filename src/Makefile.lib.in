@@ -45,12 +45,12 @@ $(XLIB): $(XLIBOBJ)
 	@$(RANLIB) $(XLIB)
 	@echo $(srcdir) `pwd` $(TMPL) > $(XLIBDEP)
 	@$(TOUCH) -r $(XLIB) $(XLIBDEP)
-	@if [ -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
+	@if [ '$(BINCOPY)' != '@:' -a -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
 	    echo $(BINCOPY) $(XLIB) $(libdir) && \
 	    $(BINCOPY) $(XLIB) $(libdir) && \
 	    cd $(libdir) && $(RM) $(XLIBLINK) && $(LN_S) $(XLIB) $(XLIBLINK); \
 	fi
-	@if [ -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
+	@if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
 	    $(BINCOPY) $(XLIBDEP) $(status_dir) && \
 	    $(BINTOUCH) -r $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP) && \
 	    cd $(status_dir) && \
