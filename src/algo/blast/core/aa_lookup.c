@@ -33,6 +33,7 @@
 #include <aa_lookup.h>
 #include <util.h>
 
+static char const rcsid[] = "$Id$";
 
 static inline Int4 ComputeWordScore(Int4 ** matrix,
 				    Int4 wordsize,
