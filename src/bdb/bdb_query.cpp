@@ -352,7 +352,8 @@ public:
                     unsigned int arg_idx)
     {
         CBoyerMooreMatcher* matcher = GetMatcher(search_value, arg_idx);
-        CBDB_File::TUnifiedFieldIndex fidx = BDB_find_field(dbf, *matcher);
+        CBDB_File::TUnifiedFieldIndex fidx = 
+                BDB_find_field(dbf, *matcher, &m_TmpStr);
         
         return (fidx != 0);
     }
@@ -393,9 +394,14 @@ public:
                 int fidx = qnode.GetFiledIdx();
                 const CBDB_Field& fld = db_file.GetField(fidx);
                 
-                SyncArgValue(i, str_pool);
-
-                fld.ToString(*m_ArgValueVector[i]);
+                SyncArgValue(i, str_pool);                                
+                string& pool_str = *m_ArgValueVector[i];
+                
+                if (fld.IsNull()) {
+                    pool_str = kEmptyStr;
+                } else {
+                    fld.ToString(pool_str);
+                }
 
                 m_FieldVector[i] = &fld;
 
@@ -408,7 +414,6 @@ public:
             // (search services work like that)
             if ((check_mode == eCheckAll) && 
                 (qnode.GetType() == CBDB_QueryNode::eValue)) {
-
                 const string& v = qnode.GetValue();
                 const char* sz = "0";
                 if (IsAnyField(db_file, v, i)) {
@@ -418,7 +423,6 @@ public:
                 SyncArgValue(i, str_pool);
 
                 *m_ArgValueVector[i] = sz;
-
                 continue;
             }
 
@@ -481,6 +485,7 @@ protected:
     TArgValueVector       m_ArgValueVector;
     TStringMatcherVector  m_MatcherVector;
     TFieldVector          m_FieldVector;
+    string                m_TmpStr;
 };
 
 
@@ -689,7 +694,6 @@ public:
                 return;
             }
         }
-
         qnode.SetValue("1");
     }
 };
@@ -1129,6 +1133,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/06/28 12:16:49  kuznets
+ * Fixed bug incorrect search in NULL fields
+ *
  * Revision 1.13  2004/05/17 20:55:11  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
