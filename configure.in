@@ -121,7 +121,7 @@ fi
 #### Provide default environment setup for known platforms/compilers
 compiler_extra=
 case "$host:$compiler" in
- *-linux:GCC )
+ *-linux*:GCC )
    NETWORK_LIBS=${NETWORK_LIBS:=" "}
    ;;
 
@@ -144,8 +144,8 @@ case "$host:$compiler" in
    else
       compiler_extra="_32"
    fi
-   CFLAGS=${CFLAGS:="-mt $WS64_CFLAGS"}
-   CXXFLAGS=${CXXFLAGS:="-mt +w +w2 $WS64_CFLAGS"}
+   CFLAGS="-mt $WS64_CFLAGS"
+   CXXFLAGS="-mt +w +w2 $WS64_CFLAGS"
    LDFLAGS="-xildoff $WS64_CFLAGS $LDFLAGS"
    AR="$CXX -xar -o"
    RANLIB=":"
@@ -166,8 +166,8 @@ case "$host:$compiler" in
    ;;
 
  i*86*-pc-cygwin32:MSVC )
-   CFLAGS=${CFLAGS:="/W4 /Od /Zi /DEBUG /D_DEBUG"}
-   CXXFLAGS=${CXXFLAGS:="/W4 /Od /Zi /DEBUG /D_DEBUG"}
+   CFLAGS="/W4 /Od /Zi /DEBUG /D_DEBUG"
+   CXXFLAGS="/W4 /Od /Zi /DEBUG /D_DEBUG"
    CPPFLAGS="/nologo $CPPFLAGS"
    LDFLAGS=${LDFLAGS:="/DEBUG"}
    AR="lib.exe"
@@ -510,6 +510,9 @@ if test "$with_ncbi_c" = "no" ; then
    NCBI_C_PATH="No_NCBI_CToolkit"
    NCBI_C_INCLUDE=
    NCBI_C_LIBPATH=
+   NCBI_C_ncbi=
+else
+   NCBI_C_ncbi=${NCBI_C_ncbi:="-lncbi"}
 fi
 AC_MSG_RESULT([$NCBI_C_PATH])
 
@@ -601,6 +604,10 @@ CPPFLAGS="$orig_CPPFLAGS"
 
 dnl Optional projects
 dnl --------------------------------------------
+
+if test "$with_sybase" = "no" || test "$with_ncbi_c" = "no" || test "$with_sssdb" = "no" || test "$with_pubmed" = "no" ; then
+  with_internal="no"
+fi
 
 if test "$with_internal" = "yes" ; then
    internal="internal"
@@ -704,6 +711,8 @@ AC_SUBST(FASTCGI_OBJS)
 AC_SUBST(NCBI_SSSDB_INCLUDE)
 AC_SUBST(NCBI_SSSDB_LIBS)
 AC_SUBST(NCBI_PM_PATH)
+
+AC_SUBST(NCBI_C_ncbi)
 
 AC_SUBST(BINCOPY)
 
