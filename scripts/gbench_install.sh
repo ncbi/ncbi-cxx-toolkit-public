@@ -18,7 +18,7 @@ export DYLD_BIND_AT_LAUNCH
 
 algos='align basic external gnomon linkout phylo validator'
 docs='basic table'
-views='align graphic table taxplot text validator'
+views='align graphic phylo_tree table taxplot text validator'
 PLUGINS="ncbi_init"
 for t in algo doc view; do
    eval l=\$${t}s
