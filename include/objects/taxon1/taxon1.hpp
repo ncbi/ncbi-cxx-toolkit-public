@@ -57,7 +57,7 @@ class COrgRefCache;
 class ITaxon1Node;
 class ITreeIterator;
 
-class CTaxon1 {
+class NCBI_TAXON1_EXPORT CTaxon1 {
 public:
     typedef list< string > TNameList;
     typedef vector< int > TTaxIdList;
@@ -443,7 +443,7 @@ public:
 //-------------------------------------------------
 // This interface class represents an iterator to traverse the
 // partial taxonomy tree build by CTaxon1 object.
-class ITreeIterator : public CObject {
+class NCBI_TAXON1_EXPORT ITreeIterator : public CObject {
 public:
     //-------------------------------------------------
     // Get node pointed by this iterator
@@ -606,6 +606,9 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.13  2003/12/22 19:17:29  dicuccio
+// Added export specifiers
+//
 // Revision 1.12  2003/07/09 15:41:31  domrach
 // SearchTaxIdByName(), GetNameClass(), and GetNodeProperty() functions added
 //
