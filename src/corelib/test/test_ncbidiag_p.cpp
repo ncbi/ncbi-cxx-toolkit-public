@@ -60,6 +60,7 @@ private:
     void x_TestFormats(void);
     void x_CheckDiag(CNcbiDiag *diag, const string& desc, bool module_expected);
     void x_TestDiagCompileInfo();
+    void x_TestSeverity();
 
     int        m_Result;
     TNcbiDiags m_Diags;
@@ -118,7 +119,7 @@ void CTest::x_TestString(const char* str, int expects[])
 
         NcbiCout << setw(45) << (string) CNcbiOstrstreamToString(out) << " "
                  << ( expects[i] ? "accept" : "reject" ) << " expected - ";
-        if ( (tester.Check(*m_Diags[i]) == eDiagFilter_Accept)
+        if ( (tester.Check(*m_Diags[i], eDiag_Fatal) == eDiagFilter_Accept)
              == bool(expects[i])) {
             NcbiCout << "PASS";
         } else {
@@ -215,6 +216,11 @@ void CTest::x_TestFormats(void)
         int expects[] = { 0, 1, 0, 1, 0, 1, 0, 0, 1 };
         x_TestString( "module", expects );
     }
+    {
+        int expects[] = { 0, 1, 0, 1, 0, 1, 0, 0, 1 };
+        x_TestString( "[Warning]module", expects );
+    }
+
     {
         int expects[] = { 1, 0, 1, 0, 1, 0, 1, 1, 0 };
         x_TestString( "!module", expects );
@@ -318,12 +324,26 @@ void CTest::x_TestDiagCompileInfo()
     NcbiCout << "--------------------------\n";
 }
 
+void CTest::x_TestSeverity()
+{
+    SetDiagPostLevel(eDiag_Info);
+    SetDiagFilter(eDiagFilter_All, "[Error]module [Info]!module");
+
+    LOG_POST(Warning << MDiagModule("module") << "Test error 1");
+    LOG_POST(Error << MDiagModule("module") << "Test error 2");
+    LOG_POST(Warning << MDiagModule("module2") << "Test error 3");
+    LOG_POST(Info << MDiagModule("module3") << "Test error 4");
+}
+
 int CTest::Run(void)
 {
+/*
     x_TestBadFormats();
     x_TestPathes();
     x_TestFormats();
     x_TestDiagCompileInfo();
+*/
+    x_TestSeverity();
 
     NcbiCout << "**********************************************************************" 
              << NcbiEndl;
@@ -350,6 +370,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/12/13 14:40:28  kuznets
+ * Test for severity filtering
+ *
  * Revision 1.1  2004/09/21 18:15:46  kononenk
  * Added tests for "Diagnostic Message Filtering"
  *
