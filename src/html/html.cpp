@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  1999/01/28 21:58:08  vasilche
+* QueryBox now inherits from CHTML_table (not CHTML_form as before).
+* Use 'new CHTML_form("url", queryBox)' as replacement of old QueryBox.
+*
 * Revision 1.27  1999/01/28 16:59:01  vasilche
 * Added several constructors for CHTML_hr.
 * Added CHTMLNode::SetSize method.
@@ -464,6 +468,18 @@ CHTML_table* CHTML_table::SetCellPadding(int padding)
     return this;
 }
 
+CHTMLNode* CHTML_table::SetRowSpan(CHTMLNode* node, int span)
+{
+    node->SetAttribute(KHTMLAttributeName_rowspan, span);
+    return node;
+}
+
+CHTMLNode* CHTML_table::SetColSpan(CHTMLNode* node, int span)
+{
+    node->SetAttribute(KHTMLAttributeName_colspan, span);
+    return node;
+}
+
 int CHTML_table::sx_GetSpan(const CNCBINode* node,
                             const string& attributeName, CTableInfo* info)
 {
@@ -761,14 +777,27 @@ CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out)
 
 // form element
 
-CHTML_form::CHTML_form (const string& action, const string& method, const string& enctype)
+CHTML_form::CHTML_form(const string& action, const string& method, const string& enctype)
 {
     SetOptionalAttribute(KHTMLAttributeName_action, action);
     SetOptionalAttribute(KHTMLAttributeName_method, method);
     SetOptionalAttribute(KHTMLAttributeName_enctype, enctype);
 }
 
+CHTML_form::CHTML_form(const string& action, CNCBINode* node, const string& method, const string& enctype)
+{
+    SetOptionalAttribute(KHTMLAttributeName_action, action);
+    SetOptionalAttribute(KHTMLAttributeName_method, method);
+    SetOptionalAttribute(KHTMLAttributeName_enctype, enctype);
+    AppendChild(node);
+}
+
 void CHTML_form::AddHidden(const string& name, const string& value)
+{
+    AppendChild(new CHTML_hidden(name, value));
+}
+
+void CHTML_form::AddHidden(const string& name, int value)
 {
     AppendChild(new CHTML_hidden(name, value));
 }

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/01/28 21:58:09  vasilche
+* QueryBox now inherits from CHTML_table (not CHTML_form as before).
+* Use 'new CHTML_form("url", queryBox)' as replacement of old QueryBox.
+*
 * Revision 1.11  1999/01/21 21:13:00  vasilche
 * Added/used descriptions for HTML submit/select/text.
 * Fixed some bugs in paging.
@@ -98,7 +102,7 @@ CNCBINode* CPmFrontPage::CreateView(void)
     //
     // demo purposes only
     //
-    CQueryBox * QueryBox = new CQueryBox("http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query");
+    CQueryBox * QueryBox = new CQueryBox;
     QueryBox->m_Width = 400;
     QueryBox->m_BgColor = "#CCCCCFF";
     QueryBox->m_DispMax.m_Default = "20";
@@ -114,9 +118,10 @@ CNCBINode* CPmFrontPage::CreateView(void)
     QueryBox->m_Database.Add("p", "GenBank Protein Sequences");
     QueryBox->m_Database.Add("t", "Biomolecule 3D Structures");
     QueryBox->m_Database.Add("c", "Complete Genomes");
-    QueryBox->m_HiddenValues["form"] = "4";
 
-    return QueryBox;
+    CHTML_form* form = new CHTML_form("http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query", QueryBox);
+    form->AddHidden("fomr", 4);
+    return form;
 }
 
 
@@ -189,7 +194,7 @@ CNCBINode* CPmDocSumPage::CreateQueryBox(void)
     //
     // demo only
     //
-    CQueryBox * QueryBox = new CQueryBox("http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query");
+    CQueryBox* QueryBox = new CQueryBox;
     QueryBox->m_Width = 600;
     QueryBox->m_BgColor = "#FFFFFF";
     QueryBox->m_DispMax.m_Default = "20";
@@ -208,8 +213,9 @@ CNCBINode* CPmDocSumPage::CreateQueryBox(void)
     QueryBox->m_Databases["t"] = "Biomolecule 3D Structures";
     QueryBox->m_Databases["c"] = "Complete Genomes";
 */
-    QueryBox->m_HiddenValues["form"] = "4";
-    return QueryBox;
+    CHTML_form* form = new CHTML_form("http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query", QueryBox);
+    form->AddHidden("form", 4);
+    return form;
 }
 
 END_NCBI_SCOPE

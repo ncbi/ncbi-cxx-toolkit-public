@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/01/28 21:58:05  vasilche
+* QueryBox now inherits from CHTML_table (not CHTML_form as before).
+* Use 'new CHTML_form("url", queryBox)' as replacement of old QueryBox.
+*
 * Revision 1.23  1999/01/28 16:58:58  vasilche
 * Added several constructors for CHTML_hr.
 * Added CHTMLNode::SetSize method.
@@ -537,6 +541,9 @@ public:
     CHTML_table* SetCellSpacing(int spacing);
     CHTML_table* SetCellPadding(int padding);
 
+    static CHTMLNode* SetRowSpan(CHTMLNode* node, int span);
+    static CHTMLNode* SetColSpan(CHTMLNode* node, int span);
+
     virtual CNcbiOstream& PrintChildren(CNcbiOstream& out);
 
 protected:
@@ -571,8 +578,10 @@ class CHTML_form : public CHTML_form_Base
 
 public:
     CHTML_form(const string& action = NcbiEmptyString, const string& method = NcbiEmptyString, const string& enctype = NcbiEmptyString);
+    CHTML_form(const string& action, CNCBINode* node, const string& method = NcbiEmptyString, const string& enctype = NcbiEmptyString);
 
     void AddHidden(const string& name, const string& value);
+    void AddHidden(const string& name, int value);
 };
 
 // the textarea tag

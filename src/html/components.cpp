@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/01/28 21:58:07  vasilche
+* QueryBox now inherits from CHTML_table (not CHTML_form as before).
+* Use 'new CHTML_form("url", queryBox)' as replacement of old QueryBox.
+*
 * Revision 1.22  1999/01/21 21:12:58  vasilche
 * Added/used descriptions for HTML submit/select/text.
 * Fixed some bugs in paging.
@@ -216,11 +220,12 @@ CNCBINode* CTextInputDescription::CreateComponent(void) const
         return new CHTML_text(m_Name, m_Value);
 }
 
-CQueryBox::CQueryBox(const string& URL)
-    : CParent(URL),
-      m_Submit("cmd", "Search"), m_Database("db"),
+CQueryBox::CQueryBox(void)
+    : m_Submit("cmd", "Search"), m_Database("db"),
       m_Term("term"), m_DispMax("dispmax")
 {
+    SetCellSpacing(0);
+    SetCellPadding(5);
     m_Database.m_TextBefore = "Search ";
     m_Database.m_TextAfter = "for";
     m_DispMax.m_TextBefore = "Show ";
@@ -234,20 +239,22 @@ CNCBINode* CQueryBox::CloneSelf(void) const
 
 void CQueryBox::CreateSubNodes()
 {
+/*
     for ( map<string, string>::iterator i = m_HiddenValues.begin();
           i != m_HiddenValues.end(); ++i ) {
         AddHidden(i->first, i->second);
     }
+*/
+    SetBgColor(m_BgColor);
+    SetWidth(m_Width);
 
-    AppendChild(m_Database.CreateComponent());
-   
-    CHTML_table* table = new CHTML_table();
-    table->SetCellSpacing(0)->SetCellPadding(5)->SetBgColor(m_BgColor)->SetWidth(m_Width);
-    AppendChild(table);
+    CheckTable();
+    int row = CalculateNumberOfRows();
 
-    table->InsertAt(0, 0, m_Term.CreateComponent());
-    table->InsertAt(0, 0, m_Submit.CreateComponent());
-    table->InsertAt(1, 0, m_DispMax.CreateComponent()); 
+    SetColSpan(InsertAt(row, 0, m_Database.CreateComponent()), 2);
+    InsertAt(row + 1, 0, m_Term.CreateComponent());
+    InsertAt(row + 1, 0, m_Submit.CreateComponent());
+    InsertAt(row + 2, 0, m_DispMax.CreateComponent()); 
 }
 
 CNCBINode* CQueryBox::CreateComments(void)

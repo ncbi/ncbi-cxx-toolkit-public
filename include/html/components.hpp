@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/01/28 21:58:04  vasilche
+* QueryBox now inherits from CHTML_table (not CHTML_form as before).
+* Use 'new CHTML_form("url", queryBox)' as replacement of old QueryBox.
+*
 * Revision 1.18  1999/01/21 21:12:53  vasilche
 * Added/used descriptions for HTML submit/select/text.
 * Fixed some bugs in paging.
@@ -164,7 +168,7 @@ public:
     CNCBINode* CreateComponent(void) const;
 };
 
-class CQueryBox: public CHTML_form
+class CQueryBox: public CHTML_table
 {
     // parent class
     typedef CHTML_form CParent;
@@ -173,7 +177,7 @@ public:
 
     //////// 'tors
 
-    CQueryBox(const string& URL);
+    CQueryBox(void);
 
     ////////  members
 
@@ -183,7 +187,7 @@ public:
     int m_Width; // in pixels
     string m_BgColor;
 
-    map<string, string> m_HiddenValues;
+    //    map<string, string> m_HiddenValues;
 
     CSubmitDescription m_Submit;
     CSelectDescription m_Database;
