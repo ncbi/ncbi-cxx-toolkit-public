@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/09/19 14:21:03  thiessen
+* add search space size calculation to match scores with rpsblast (finally!)
+*
 * Revision 1.22  2002/09/05 17:39:53  thiessen
 * add bit score printout for BLAST/PSSM
 *
@@ -289,12 +292,13 @@ static BLAST_OptionsBlkPtr CreateBlastOptionsBlk(void)
     BLAST_OptionsBlkPtr bob = BLASTOptionNew("blastp", true);
 //    bob->db_length = 1000000;   // approx. # aligned columns in CDD database
     bob->db_length = 923758;    // size of in-house CDD database
-//    bob->is_rps_blast = TRUE;
-//    bob->no_check_score = FALSE;
-//    bob->discontinuous = TRUE;
     bob->scalingFactor = 1.0;
-//    bob->tweak_parameters = TRUE;   // causes score rescaling to occur
     return bob;
+}
+
+static void SetEffectiveSearchSpaceSize(BLAST_OptionsBlkPtr bob, Int4 queryLength)
+{
+    bob->searchsp_eff = BLASTCalculateSearchSpace(bob, 1, bob->db_length, queryLength);
 }
 
 void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *multiple,
@@ -373,6 +377,10 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
         TESTMSG("for BLAST: master range " <<
                 (masterSeqInt->from + 1) << " to " << (masterSeqInt->to + 1) << ", slave range " <<
                 (slaveSeqInt->from + 1) << " to " << (slaveSeqInt->to + 1));
+
+        // set search space size
+        SetEffectiveSearchSpaceSize(options, slaveSeqInt->to - slaveSeqInt->from + 1);
+        TESTMSG("effective search space size: " << ((int) options->searchsp_eff));
 
         // actually do the BLAST alignment
         SeqAlign *salp = NULL;
@@ -574,6 +582,9 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
 //        TESTMSG("for BLAST: master range " <<
 //                (masterSeqInt->from + 1) << " to " << (masterSeqInt->to + 1) << ", slave range " <<
 //                (slaveSeqInt->from + 1) << " to " << (slaveSeqInt->to + 1));
+
+        // set search space size
+        SetEffectiveSearchSpaceSize(options, slaveSeqInt->to - slaveSeqInt->from + 1);
 
         // actually do the BLAST alignment
 //        TESTMSG("calling BlastTwoSequencesByLocWithCallback()");
