@@ -1,7 +1,7 @@
 #ifndef PAGE__HPP
 #define PAGE__HPP
 
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1998/12/28 23:29:03  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.12  1998/12/28 21:48:13  vasilche
 * Made Lewis's 'tool' compilable
 *
@@ -74,10 +77,9 @@
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
-#include <html.hpp>
-#include <cgiapp.hpp>
-#include <nodemap.hpp>
+#include <corelib/cgiapp.hpp>
+#include <html/html.hpp>
+#include <html/nodemap.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -182,7 +184,7 @@ private:
     void Init(void);
 };
 
-#include <page.inl>
+#include <html/page.inl>
 
 END_NCBI_SCOPE
 

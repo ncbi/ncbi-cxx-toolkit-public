@@ -1,4 +1,4 @@
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1998/12/28 23:29:09  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.9  1998/12/28 16:48:08  vasilche
 * Removed creation of QueryBox in CHTMLPage::CreateView()
 * CQueryBox extends from CHTML_form
@@ -63,8 +66,8 @@
 * ===========================================================================
 */
 
-#include <components.hpp>
-#include <nodemap.hpp>
+#include <html/components.hpp>
+#include <html/nodemap.hpp>
 
 BEGIN_NCBI_SCOPE
 

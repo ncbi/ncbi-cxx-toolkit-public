@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/28 23:29:13  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.7  1998/12/28 16:48:12  vasilche
 * Removed creation of QueryBox in CHTMLPage::CreateView()
 * CQueryBox extends from CHTML_form
@@ -54,20 +57,16 @@
 *
 * Revision 1.1  1998/12/11 18:11:17  lewisg
 * frontpage added
-*
-
-*
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
-#include <ncbicgi.hpp>
-#include <html.hpp>
-#include <page.hpp>
-#include <factory.hpp>
-#include <cgiapp.hpp>
-#include <components.hpp>
-#include <querypages.hpp>
+#include <corelib/ncbicgi.hpp>
+#include <corelib/cgiapp.hpp>
+#include <html/html.hpp>
+#include <html/page.hpp>
+#include <html/factory.hpp>
+#include <html/components.hpp>
+#include <html/querypages.hpp>
 BEGIN_NCBI_SCOPE
 
 class CMyApp : public CSimpleCgiApp

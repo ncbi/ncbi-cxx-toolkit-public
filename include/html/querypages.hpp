@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/28 23:29:04  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.7  1998/12/28 21:48:14  vasilche
 * Made Lewis's 'tool' compilable
 *
@@ -56,13 +59,10 @@
 * Revision 1.1  1998/12/11 18:13:51  lewisg
 * frontpage added
 *
-
-*
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
-#include <page.hpp>
+#include <html/page.hpp>
 
 BEGIN_NCBI_SCOPE
 

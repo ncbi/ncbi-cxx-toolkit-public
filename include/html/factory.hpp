@@ -1,7 +1,7 @@
 #ifndef FACTORY__HPP
 #define FACTORY__HPP
 
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -36,8 +36,7 @@
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
-#include <ncbicgi.hpp>
+#include <corelib/ncbicgi.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE

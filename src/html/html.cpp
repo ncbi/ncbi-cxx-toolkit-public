@@ -1,4 +1,4 @@
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1998/12/28 23:29:09  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.16  1998/12/28 21:48:16  vasilche
 * Made Lewis's 'tool' compilable
 *
@@ -86,9 +89,7 @@
 */
 
 
-#include <ncbistd.hpp>
-#include <stl.hpp>
-#include <html.hpp>
+#include <html/html.hpp>
 #include <string>
 BEGIN_NCBI_SCOPE
 

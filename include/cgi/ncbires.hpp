@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1998/12/28 23:29:00  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.10  1998/12/28 15:43:11  sandomir
 * minor fixed in CgiApp and Resource
 *
@@ -67,7 +70,7 @@
 * ===========================================================================
 */
 
-#include <ncbicgi.hpp>
+#include <corelib/ncbicgi.hpp>
 
 #include <functional>
 

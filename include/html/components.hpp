@@ -1,7 +1,7 @@
 #ifndef COMPONENTS__HPP
 #define COMPONENTS__HPP
 
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1998/12/28 23:29:02  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.9  1998/12/28 16:48:04  vasilche
 * Removed creation of QueryBox in CHTMLPage::CreateView()
 * CQueryBox extends from CHTML_form
@@ -66,8 +69,7 @@
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
-#include <html.hpp>
+#include <html/html.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -1,7 +1,7 @@
 #ifndef HTML__HPP
 #define HTML__HPP
 
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1998/12/28 23:29:03  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.13  1998/12/28 21:48:12  vasilche
 * Made Lewis's 'tool' compilable
 *
@@ -80,7 +83,7 @@
 */
 
 
-#include <node.hpp>
+#include <html/node.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -695,7 +698,7 @@ public:
 };
 
 // inline functions
-#include <html.inl>
+#include <html/html.inl>
 
 END_NCBI_SCOPE
 
