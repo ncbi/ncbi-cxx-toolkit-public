@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/12/19 20:24:06  grichenk
+* Added normalization of intervals (from <= to).
+* Removed SetFrom() and SetTo(), added Set().
+*
 * Revision 1.7  2002/06/04 19:36:33  ucko
 * More fixes for empty ranges; CSeq_loc::GetTotalRange() now works again.
 *
@@ -73,11 +77,13 @@ public:
 
     // constructors
     CRange(void)
+        : m_From(GetEmptyFrom()), m_To(GetEmptyTo())
         {
         }
     CRange(position_type from, position_type to)
         : m_From(from), m_To(to)
         {
+            x_Normalize();
         }
     
     // parameters
@@ -101,7 +107,8 @@ public:
         }
     bool Empty(void) const
         {
-            return /*HaveEmptyBound() || */GetTo() < GetFrom();
+            return /*HaveEmptyBound() || */ // GetTo() < GetFrom();
+                IsEmptyFrom() && IsEmptyTo();
         }
     bool Regular(void) const
         {
@@ -114,24 +121,38 @@ public:
         }
 
     // modifiers
+    /*
     TThisType& SetFrom(position_type from)
         {
             m_From = from;
+            x_Normalize();
             return *this;
         }
     TThisType& SetTo(position_type to)
         {
             m_To = to;
+            x_Normalize();
+            return *this;
+        }
+    */
+    TThisType& Set(position_type from,
+                   position_type to)
+        {
+            m_From = from;
+            m_To = to;
+            x_Normalize();
             return *this;
         }
     TThisType& SetLength(position_type length)
         {
-            SetTo(GetFrom() + length - 1);
+            Set(GetFrom(), GetFrom() + length - 1);
+            x_Normalize();
             return *this;
         }
     TThisType& SetLengthDown(position_type length)
         {
-            SetFrom(GetTo() - length + 1);
+            Set(GetTo() - length + 1, GetTo());
+            x_Normalize();
             return *this;
         }
 
@@ -227,7 +248,7 @@ public:
     // empty range
     static position_type GetEmptyFrom(void)
         {
-            return GetPositionMax();
+            return GetPositionMax() - 1;
         }
     static position_type GetEmptyTo(void)
         {
@@ -253,14 +274,16 @@ public:
     // combine ranges
     TThisType& CombineFrom(position_type from)
         {
-            if ( from < GetFrom() )
-                SetFrom(from);
+            if ( from < GetFrom()  ||  IsEmptyFrom() )
+                m_From =from;
+            x_Normalize();
             return *this;
         }
     TThisType& CombineTo(position_type to)
         {
             if ( to > GetTo()  ||  IsEmptyTo() )
-                SetTo(to);
+                m_To = to;
+            x_Normalize();
             return *this;
         }
     TThisType& operator+=(TThisType range)
@@ -271,6 +294,18 @@ public:
         }
 
 private:
+    // Set from <= to
+    void x_Normalize(void)
+        {
+            if ( IsWholeFrom()  ||  IsWholeTo()
+                 ||  m_To >= m_From
+                 ||  IsEmptyFrom()  ||  IsEmptyTo() )
+                return;
+            position_type tmp = GetFrom();
+            m_From = m_To;
+            m_To = tmp;
+        }
+
     position_type m_From, m_To;
 };
 
