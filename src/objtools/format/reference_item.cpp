@@ -133,12 +133,13 @@ void CReferenceItem::FormatAffil(const CAffil& affil, string& result)
 
 static void s_FixPages(string& pages)
 {
+    static const string kNumeric = "0123456789";
     // Restore redundant leading digits of the second number if needed
-    SIZE_TYPE digits1 = pages.find_first_not_of("0123456789");
+    SIZE_TYPE digits1 = pages.find_first_not_of(kNumeric);
     if ( digits1 != NPOS) {
         SIZE_TYPE hyphen = pages.find('-', digits1);
         if ( hyphen != NPOS ) {
-            SIZE_TYPE digits2 = pages.find_first_not_of("0123456789",
+            SIZE_TYPE digits2 = pages.find_first_not_of(kNumeric,
                 hyphen + 1);
             digits2 -= hyphen + 1;
             if ( digits2 < digits1 ) {
@@ -161,7 +162,7 @@ static void s_FixPages(string& pages)
 
 
 CReferenceItem::CReferenceItem(const CSeqdesc& desc, CBioseqContext& ctx) :
-    CFlatItem(&ctx), m_PMID(0), m_MUID(0), m_Category(eUnknown), m_Serial(0),
+    CFlatItem(&ctx), m_PMID(0), m_MUID(0), m_Category(eUnpublished), m_Serial(0),
     m_JustUids(false), m_Prepub(CImprint::ePrepub_other)
 {
     _ASSERT(desc.IsPub());
@@ -180,7 +181,7 @@ CReferenceItem::CReferenceItem(const CSeqdesc& desc, CBioseqContext& ctx) :
 
 
 CReferenceItem::CReferenceItem(const CSeq_feat& feat, CBioseqContext& ctx) :
-    CFlatItem(&ctx), m_PMID(0), m_MUID(0), m_Category(eUnknown), m_Serial(0),
+    CFlatItem(&ctx), m_PMID(0), m_MUID(0), m_Category(eUnpublished), m_Serial(0),
     m_JustUids(false), m_Prepub(CImprint::ePrepub_other)
 {
     _ASSERT(feat.GetData().IsPub());
@@ -201,7 +202,7 @@ CReferenceItem::CReferenceItem
  CBioseqContext& ctx,
  const CSeq_loc* loc) :
     CFlatItem(&ctx), m_Pubdesc(&pub), m_Loc(loc), m_PMID(0), m_MUID(0),
-    m_Category(eUnknown), m_Serial(0), m_JustUids(false),
+    m_Category(eUnpublished), m_Serial(0), m_JustUids(false),
     m_Prepub(CImprint::ePrepub_other)
 {
     x_SetObject(pub);
@@ -237,9 +238,7 @@ static void s_MergeDuplicates
     while ( curr != refs.end() ) {
         if ( !*curr ) {
             curr = refs.erase(curr);
-            if ( curr == refs.end() ) {
-                break;
-            }
+            continue;
         }
         _ASSERT(*curr);
         bool remove = false;
@@ -257,10 +256,25 @@ static void s_MergeDuplicates
                 merge = false;
             }
         }
-        if ( (prev != curr)  &&  prev->NotEmpty() ) {
+        if (prev != curr) {
             const CReferenceItem& prev_ref = **prev;
-            if ( curr_ref.GetPMID() == prev_ref.GetPMID()  &&  curr_ref.GetPMID() != 0 ) {
+            if (curr_ref.GetPMID() == prev_ref.GetPMID()  &&  curr_ref.GetPMID() != 0) {
                 remove = true;
+            } else if (curr_ref.GetMUID() == prev_ref.GetMUID()  &&  curr_ref.GetMUID() != 0) {
+                remove = true;
+            } else if (curr_ref.GetUniqueStr() == prev_ref.GetUniqueStr()  &&
+                !IsBlankString(curr_ref.GetUniqueStr())) {
+                const CSeq_loc* curr_loc = curr_ref.GetLoc();
+                const CSeq_loc* prev_loc = prev_ref.GetLoc();
+                if (curr_loc != NULL  &&  prev_loc != NULL) {
+                    if (Compare(*curr_loc, *prev_loc) == eSame) {
+                        string curr_auth = CReferenceItem::GetAuthString(curr_ref.GetAuthors());
+                        string prev_auth = CReferenceItem::GetAuthString(prev_ref.GetAuthors());
+                        if (NStr::EqualNocase(curr_auth, prev_auth)) {
+                            remove = true;
+                        }
+                    }
+                }
             }
             if ( remove  &&
                  prev_ref.GetReftype() == CPubdesc::eReftype_seq  &&
@@ -652,8 +666,12 @@ void CReferenceItem::x_Init(const CCit_art& art, CBioseqContext& ctx)
 
 void CReferenceItem::x_Init(const CCit_jour& jour, CBioseqContext& ctx)
 {
-    x_SetJournal(jour.GetTitle(), ctx);
-    x_AddImprint(jour.GetImp(), ctx);
+    if (jour.IsSetTitle()) {
+        x_SetJournal(jour.GetTitle(), ctx);
+    }
+    if (jour.IsSetImp()) {
+        x_AddImprint(jour.GetImp(), ctx);
+    }
 }
 
 
@@ -946,28 +964,58 @@ void CReferenceItem::x_SetJournal(const CCit_gen& gen, CBioseqContext& ctx)
     }
 }
 
+/*
+void s_DoSup
+(const string& part_sup,
+ const string& part_supi,
+ srting& issue
+ string& volume)
+{
+    string str;
+
+    if (!IsBlankString(part_sup)) {
+        str += ' ';
+        str += part_sup;
+    }
+    if (IsBlankString(issue)  &&  IsBlankString(part_supi)) {
+        retval += str;
+        return;
+    }
+    
+   
+    if (!IsBlankString(part_supi)) {
+        issue += ' ';
+        issue += part_supi;
+    }
+   
+   
+}
+*/
 
 void CReferenceItem::x_AddImprint(const CImprint& imp, CBioseqContext& ctx)
 {
-    if ( !m_Date ) {
+    if (!m_Date) {
         m_Date.Reset(&imp.GetDate());
     }
-    if ( imp.IsSetVolume()  &&  !imp.GetVolume().empty()  ) {
+    if (imp.IsSetVolume()  &&  !IsBlankString(imp.GetVolume())) {
         m_Volume = imp.GetVolume();
-        if ( imp.IsSetPart_sup()  &&  !imp.GetPart_sup().empty() ) {
-            m_Volume += " (" + imp.GetPart_sup() + ")";
-        }
     }
-    
-    if ( imp.IsSetIssue()  &&  !imp.GetIssue().empty() ) {
+    if (imp.IsSetIssue()  &&  !IsBlankString(imp.GetIssue())) {
         m_Issue = imp.GetIssue();
-        if ( imp.IsSetPart_supi()  &&  !imp.GetPart_supi().empty() ) {
-            m_Issue += " (" + imp.GetPart_supi() + ")";
-        }
     }
     if ( imp.IsSetPages()  &&  !imp.GetPages().empty() ) {
         m_Pages = imp.GetPages();
         s_FixPages(m_Pages);
+    }
+    if (!m_Volume.empty()  ||  !m_Pages.empty()) {
+        if (imp.IsSetPart_sup()) {
+            m_Volume += ' ';
+            m_Volume += imp.GetPart_sup();
+        }
+        if (!m_Issue.empty()  &&  imp.IsSetPart_supi()) {
+            m_Issue += ' ';
+            m_Issue += imp.GetPart_supi();
+        }
     }
     if ( imp.IsSetPrepub() ) {
         m_Prepub = imp.GetPrepub();
@@ -977,7 +1025,6 @@ void CReferenceItem::x_AddImprint(const CImprint& imp, CBioseqContext& ctx)
         m_Category = ePublished;
     }
 }
-
 
 
 void CReferenceItem::GetAuthNames
@@ -999,8 +1046,11 @@ void CReferenceItem::GetAuthNames
             }
             const CPerson_id& pid = (*it)->GetName();
             string name;
-            pid.GetLabel(&name, CPerson_id::eGenbank);
-            authors.push_back(name);
+            if (pid.IsName()  ||  pid.IsMl()  ||  pid.IsStr()) {
+                name.erase();
+                pid.GetLabel(&name, CPerson_id::eGenbank);
+                authors.push_back(name);
+            }
         }
         break;
         
@@ -1050,7 +1100,12 @@ string CReferenceItem::GetAuthString(const CAuth_list* alp)
 
 void CReferenceItem::x_CleanData(void)
 {
-    StripSpaces(m_Journal);
+    // title
+    StripSpaces(m_Title);
+    ConvertQuotes(m_Title);
+
+    // journal
+    StripSpaces(m_Journal);  // internal spaces
     NStr::TruncateSpaces(m_Journal);
 }
 
@@ -1268,12 +1323,13 @@ bool LessEqual::operator()
         }
     }
 
+    // put sites after pubs that refer to all or a range of bases
     if ( ref1->GetReftype() != CPubdesc::eReftype_seq ) {
         return true;
     } else if ( ref2->GetReftype() != CPubdesc::eReftype_seq ) {
         return false;
     }
-    
+
     // next use AUTHOR string
     string auth1 = CReferenceItem::GetAuthString(ref1->GetAuthors());
     string auth2 = CReferenceItem::GetAuthString(ref2->GetAuthors());
@@ -1282,7 +1338,15 @@ bool LessEqual::operator()
         return comp < 0;
     }
 
-    // !!! unique string ???
+    // use unique label string to determine sort order
+    const string& uniquestr1 = ref1->GetUniqueStr();
+    const string& uniquestr2 = ref2->GetUniqueStr();
+    if (!uniquestr1.empty()  &&  !uniquestr2.empty()) {
+        int comp = NStr::CompareNocase(uniquestr1, uniquestr2);
+        if ( comp != 0 ) {
+            return comp < 0;
+        }
+    }
 
     if ( !m_SerialFirst ) {
         return ref1->GetSerial() < ref2->GetSerial();
@@ -1299,6 +1363,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/08/30 13:43:36  shomrat
+* fixed reference sorting
+*
 * Revision 1.19  2004/08/19 16:38:21  shomrat
 * Fixed patent format
 *
