@@ -131,7 +131,8 @@ public:
 
     static const type_info* GetTypeId(const void* object)
         {
-            return &typeid(Get(object));
+            const CClassType& x = Get(object);
+            return &typeid(x);
         }
 
     enum EGeneratedChoiceValues {
@@ -263,6 +264,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/01/27 17:07:35  ucko
+* CClassInfoHelper::GetTypeId: disambiguate for IBM VisualAge C++.
+*
 * Revision 1.8  2003/04/15 14:15:00  siyan
 * Added doxygen support
 *
