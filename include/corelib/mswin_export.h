@@ -991,6 +991,15 @@
 #endif
 
 /*
+ * Export specifier for library xreader_id2
+ */
+#ifdef NCBI_XREADER_CACHE_EXPORTS
+#  define NCBI_XREADER_CACHE_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_XREADER_CACHE_EXPORT __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library xreader_pubseqos
  */
 #ifdef NCBI_XREADER_PUBSEQOS_EXPORTS
@@ -1134,6 +1143,7 @@
 #  define NCBI_XREADER_EXPORT
 #  define NCBI_XREADER_ID1_EXPORT
 #  define NCBI_XREADER_ID2_EXPORT
+#  define NCBI_XREADER_CACHE_EXPORT
 #  define NCBI_XREADER_PUBSEQOS_EXPORT
 #  define NCBI_XREGEXP_EXPORT
 #  define NCBI_XSERIAL_EXPORT
@@ -1163,6 +1173,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.94  2005/03/10 21:04:55  vasilche
+ * Added NCBI_XREADER_CACHE_EXPORT.
+ *
  * Revision 1.93  2005/02/12 19:14:34  dicuccio
  * Added export specifiers for xalgowinmask.
  *
