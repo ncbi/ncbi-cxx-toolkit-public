@@ -169,7 +169,7 @@ void CAlnVec::SetAnchorConsensus(void)
 
     // we set the anchor to an invalid position beyond the end of the array
     // this is okay, as the anchor is not used to index into this array
-    m_Anchor = m_DS->GetNumseg();
+    m_Anchor = m_DS->GetDim();
 }
 
 
@@ -397,6 +397,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2002/09/19 17:40:16  todorov
+* fixed m_Anchor setting in case of consensus
+*
 * Revision 1.3  2002/09/05 19:30:39  dicuccio
 * - added ability to reference a consensus sequence for a given alignment
 * - added caching for CSeqVector objects (big performance gain)
