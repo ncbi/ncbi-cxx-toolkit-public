@@ -820,7 +820,6 @@ Int2 BLAST_ComputeTraceback(BlastResultsPtr results,
    BlastHSPListPtr hsp_list;
    SeqAlignPtr seqalign, last_seqalign = NULL;
    SeqIdPtr query_id, subject_id;
-   Int8 searchsp_eff;
    BLAST_ScoreBlkPtr sbp;
    Uint1 num_frames;
    Uint1 encoding;
