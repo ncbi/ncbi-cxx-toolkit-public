@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/03/07 14:06:23  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+* Added generation of reference counted objects.
+*
 * Revision 1.25  2000/02/17 20:02:44  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -137,329 +143,174 @@ using namespace NCBI_NS_NCBI::CObjectStreamAsnBinaryDefs;
 
 BEGIN_NCBI_SCOPE
 
+static inline
+TByte MakeTagByte(EClass c, bool constructed, ETag tag)
+{
+    return (c << 6) | (constructed? 0x20: 0) | tag;
+}
+
+static inline
+TByte MakeTagByte(EClass c, bool constructed)
+{
+    return (c << 6) | (constructed? 0x20: 0);
+}
+
+static inline
+ETag ExtractTag(TByte byte)
+{
+    return ETag(byte & 0x1f);
+}
+
+static inline
+bool IsLongTag(TByte byte)
+{
+    return ExtractTag(byte) == eLongTag;
+}
+
+static inline
+bool ExtractConstructed(TByte byte)
+{
+    return (byte & 0x20) != 0;
+}
+
+static inline
+TByte ExtractClassAndConstructed(TByte byte)
+{
+    return byte & 0xE0;
+}
+
 CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in)
-    : m_Input(in), m_LastTagState(eNoTagRead)
+    : m_Input(in)
 {
 #if CHECK_STREAM_INTEGRITY
-    m_CurrentPosition = 0;
     m_CurrentTagState = eTagStart;
     m_CurrentTagLimit = INT_MAX;
 #endif
+    m_CurrentTagLength = 0;
 }
 
 CObjectIStreamAsnBinary::~CObjectIStreamAsnBinary(void)
 {
+}
+
+inline
+TByte CObjectIStreamAsnBinary::PeekTagByte(size_t index = 0)
+{
 #if CHECK_STREAM_INTEGRITY
-    if ( !m_Limits.empty() || m_CurrentTagState != eTagStart ) {
-        ThrowError(eFormatError, "CObjectIStreamAsnBinary not finished");
-    }
+    if ( m_CurrentTagState != eTagStart )
+        THROW1_TRACE(runtime_error, "bad PeekTagByte call");
 #endif
+    return m_Input.PeekChar(index);
 }
 
+inline
+TByte CObjectIStreamAsnBinary::StartTag(void)
+{
 #if CHECK_STREAM_INTEGRITY
-inline
-void CObjectIStreamAsnBinary::StartTag(TByte code)
-{
-    m_Limits.push(m_CurrentTagLimit);
-    m_CurrentTagCode = code;
-    m_CurrentTagPosition = m_CurrentPosition;
-    m_CurrentTagState = (code & 0x1f) == eLongTag? eTagValue: eLengthStart;
-}
-
-inline
-void CObjectIStreamAsnBinary::EndTag(void)
-{
-    if ( m_Limits.empty() ) {
-        ThrowError(eFormatError, "too many tag ends");
-    }
-    m_CurrentTagState = eTagStart;
-    m_CurrentTagLimit = m_Limits.top();
-    m_Limits.pop();
-}
-
-inline
-void CObjectIStreamAsnBinary::SetTagLength(size_t length)
-{
-    size_t limit = m_CurrentPosition + 1 + length;
-    if ( limit > m_CurrentTagLimit ) {
-        ThrowError(eOverflow, "tag will overflow enclosing tag");
-    }
-    else
-        m_CurrentTagLimit = limit;
-    if ( m_CurrentTagCode & 0x20 ) // constructed
-        m_CurrentTagState = eTagStart;
-    else
-        m_CurrentTagState = eData;
-    if ( length == 0 )
-        EndTag();
-}
+    if ( m_CurrentTagLength != 0 )
+        THROW1_TRACE(runtime_error, "bad StartTag call");
 #endif
+    return PeekTagByte();
+}
 
-#if !CHECK_STREAM_INTEGRITY
-inline
-#endif
-unsigned char CObjectIStreamAsnBinary::ReadByte(void)
+TTag CObjectIStreamAsnBinary::PeekTag(void)
 {
-    char c;
-    m_Input.get(c);
-    CheckIOError(m_Input);
+    TByte byte = StartTag();
+    ETag sysTag = ExtractTag(byte);
+    if ( sysTag != eLongTag ) {
+        m_CurrentTagLength = 1;
 #if CHECK_STREAM_INTEGRITY
-    TByte byte = TByte(c);
-    if ( m_CurrentPosition >= m_CurrentTagLimit ) {
-        ThrowError(eOverflow, "tag size overflow");
-    }
-    switch ( m_CurrentTagState ) {
-    case eTagStart:
-        StartTag(byte);
-        break;
-    case eTagValue:
-        if ( byte & 0x80 )
-            m_CurrentTagState = eLengthStart;
-        break;
-    case eLengthStart:
-        if ( byte == 0 ) {
-            SetTagLength(0);
-            if ( m_CurrentTagCode == 0 )
-                EndTag();
-        }
-        else if ( byte == 0x80 ) {
-            if ( !(m_CurrentTagCode & 0x20) ) {
-                ThrowError(eFormatError,
-                           "cannot use indefinite form for primitive tag");
-            }
-            m_CurrentTagState = eTagStart;
-        }
-        else if ( byte < 0x80 ) {
-            SetTagLength(byte);
-        }
-        else {
-            m_CurrentTagLengthSize = byte - 0x80;
-            if ( m_CurrentTagLengthSize > sizeof(size_t) ) {
-                ThrowError(eOverflow, "too big length");
-            }
-            m_CurrentTagState = eLengthValueFirst;
-        }
-        break;
-    case eLengthValueFirst:
-        if ( byte == 0 ) {
-            ThrowError(eFormatError, "first byte of length is zero");
-        }
-        if ( --m_CurrentTagLengthSize == 0 ) {
-            SetTagLength(byte);
-		}
-		else {
-			m_CurrentTagLength = byte;
-			m_CurrentTagState = eLengthValue;
-		}
-		break;
-    case eLengthValue:
-        m_CurrentTagLength = (m_CurrentTagLength << 8) | byte;
-        if ( --m_CurrentTagLengthSize == 0 )
-            SetTagLength(m_CurrentTagLength);
-        break;
-    case eData:
-        if ( m_CurrentPosition + 1 == m_CurrentTagLimit )
-            EndTag();
-        break;
-    }
-    m_CurrentPosition++;
+        m_CurrentTagState = eTagParsed;
 #endif
-    return c;
-}
-
-inline
-signed char CObjectIStreamAsnBinary::ReadSByte(void)
-{
-    return ReadByte();
-}
-
-#if !CHECK_STREAM_INTEGRITY
-inline
-#endif
-void CObjectIStreamAsnBinary::ReadBytes(char* buffer, size_t count)
-{
-    if ( count == 0 )
-        return;
-#if CHECK_STREAM_INTEGRITY
-    if ( m_CurrentTagState != eData ) {
-        ThrowError(eIllegalCall, "ReadBytes only allowed in DATA");
-    }
-    if ( m_CurrentPosition + count > m_CurrentTagLimit ) {
-        ThrowError(eIllegalCall, "tag DATA overflow");
-    }
-    if ( (m_CurrentPosition += count) == m_CurrentTagLimit ) {
-        m_CurrentPosition--;
-        EndTag();
-        m_CurrentPosition++;
-    }
-#endif
-    m_Input.read(buffer, count);
-    CheckIOError(m_Input);
-}
-
-#if !CHECK_STREAM_INTEGRITY
-inline
-#endif
-void CObjectIStreamAsnBinary::SkipBytes(size_t count)
-{
-    if ( count == 0 )
-        return;
-#if CHECK_STREAM_INTEGRITY
-    if ( m_CurrentTagState != eData ) {
-        ThrowError(eIllegalCall, "SkipBytes only allowed in DATA");
-    }
-    if ( m_CurrentPosition + count > m_CurrentTagLimit ) {
-        ThrowError(eIllegalCall, "tag DATA overflow");
-    }
-    if ( (m_CurrentPosition += count) == m_CurrentTagLimit ) {
-        m_CurrentTagLimit--;
-        EndTag();
-        m_CurrentPosition++;
-    }
-#endif
-    m_Input.seekg(count, IOS_BASE::cur);
-    CheckIOError(m_Input);
-}
-
-void CObjectIStreamAsnBinary::ExpectByte(TByte byte)
-{
-    if ( ReadByte() != byte ) {
-        ThrowError(eFormatError, "expected " + NStr::IntToString(byte));
-    }
-}
-
-ETag CObjectIStreamAsnBinary::ReadSysTag(void)
-{
-    switch ( m_LastTagState ) {
-    case eNoTagRead:
-        m_LastTagState = eSysTagRead;
-        m_LastTagByte = ReadByte();
-        break;
-    case eSysTagRead:
-        ThrowError(eIllegalCall, "double tag read");
-    case eSysTagBack:
-        m_LastTagState = eSysTagRead;
-        break;
-    }
-    return ETag(m_LastTagByte & 0x1f);
-}
-
-void CObjectIStreamAsnBinary::BackSysTag(void)
-{
-    switch ( m_LastTagState ) {
-    case eNoTagRead:
-        ThrowError(eIllegalCall, "tag back without read");
-    case eSysTagBack:
-        ThrowError(eIllegalCall, "double tag back");
-    case eSysTagRead:
-        m_LastTagState = eSysTagBack;
-        break;
-    }
-}
-
-void CObjectIStreamAsnBinary::FlushSysTag(bool constructed)
-{
-    switch ( m_LastTagState ) {
-    case eNoTagRead:
-        ThrowError(eIllegalCall, "length read without tag");
-    case eSysTagRead:
-        break;
-    case eSysTagBack:
-        ThrowError(eIllegalCall, "length read with tag back");
-    }
-    if ( constructed && (m_LastTagByte & 0x20) == 0 ) {
-        ThrowError(eFormatError,
-                   "non indefinite length on constructed value");
-    }
-    if ( !constructed && (m_LastTagByte & 0x20) != 0 ) {
-        ThrowError(eFormatError,
-                   "indefinite length on primitive value");
-    }
-    m_LastTagState = eNoTagRead;
-}
-
-TTag CObjectIStreamAsnBinary::ReadTag(void)
-{
-    ETag sysTag = ReadSysTag();
-    if ( sysTag != eLongTag )
         return sysTag;
+    }
     TTag tag = 0;
-    TByte byte;
+    size_t i = 1;
+    const size_t KBitsInByte = 8; // ?
+    const size_t KTagBits = sizeof(tag) * KBitsInByte - 1;
     do {
-        if ( tag >= (1 << (sizeof(tag) * 8 - 1 - 7)) ) {
+        if ( tag >= (1 << (KTagBits - 7)) ) {
             ThrowError(eOverflow, "tag number is too big");
         }
-        byte = ReadByte();
+        byte = PeekTagByte(i++);
         tag = (tag << 7) | (byte & 0x7f);
     } while ( (byte & 0x80) == 0 );
+    m_CurrentTagLength = i;
+#if CHECK_STREAM_INTEGRITY
+    m_CurrentTagState = eTagParsed;
+#endif
     return tag;
 }
 
-inline
-ETag CObjectIStreamAsnBinary::GetLastTag(void) const
+TTag CObjectIStreamAsnBinary::PeekTag(EClass cls, bool constructed)
 {
-    return ETag(m_LastTagByte & 0x1f);
-}
-
-inline
-bool CObjectIStreamAsnBinary::LastTagWas(EClass c, bool constructed) const
-{
-    return m_LastTagState == eSysTagRead &&
-        (m_LastTagByte >> 5) == ((c << 1) | (constructed? 1: 0));
-}
-
-inline
-bool CObjectIStreamAsnBinary::LastTagWas(EClass c, bool constructed,
-                                         ETag tag) const
-{
-    return m_LastTagState == eSysTagRead &&
-        m_LastTagByte == ((c << 6) | (constructed? 0x20: 0) | tag);
-}
-
-ETag CObjectIStreamAsnBinary::ReadSysTag(EClass c, bool constructed)
-{
-    ETag tag = ReadSysTag();
-    if ( tag == eLongTag ) {
-        ThrowError(eFormatError, "unexpected long tag");
+    if ( ExtractClassAndConstructed(PeekTagByte()) !=
+         MakeTagByte(cls, constructed) ) {
+        ThrowError(eFormatError, "unexpected tag class/constructed");
     }
-
-    if ( !LastTagWas(c, constructed) ) {
-        ThrowError(eFormatError,
-                   "unexpected tag class/type: should be: " +
-                   NStr::IntToString(c) +  (constructed? "C": "p"));
-    }
-    return tag;
+    return PeekTag();
 }
 
-string CObjectIStreamAsnBinary::ReadClassTag(void)
+string CObjectIStreamAsnBinary::PeekClassTag(void)
 {
+    TByte byte = StartTag();
+    if ( ExtractTag(byte) != eLongTag ) {
+        ThrowError(eFormatError, "long tag expected");
+    }
     string name;
+    size_t i = 1;
     TByte c;
-    while ( ((c = ReadByte()) & 0x80) == 0 ) {
+    while ( ((c = PeekTagByte(i++)) & 0x80) == 0 ) {
         name += char(c);
+        if ( i > 1024 ) {
+            ThrowError(eOverflow, "tag number is too big");
+        }
     }
+    m_CurrentTagLength = i;
+#if CHECK_STREAM_INTEGRITY
+    m_CurrentTagState = eTagParsed;
+#endif
     return name + char(c & 0x7f);
 }
 
-TTag CObjectIStreamAsnBinary::ReadTag(EClass c, bool constructed)
+TByte CObjectIStreamAsnBinary::PeekAnyTag(void)
 {
-    TTag tag = ReadTag();
-    if ( !LastTagWas(c, constructed) ) {
-        ThrowError(eFormatError,
-                   "unexpected tag class/type: should be: " +
-                   NStr::IntToString(c) +  (constructed? "C": "p"));
+    TByte fByte = StartTag();
+    if ( ExtractTag(fByte) != eLongTag ) {
+        m_CurrentTagLength = 1;
+#if CHECK_STREAM_INTEGRITY
+        m_CurrentTagState = eTagParsed;
+#endif
+        return fByte;
     }
-    return tag;
+    size_t i = 1;
+    TByte byte;
+    do {
+        if ( i > 1024 ) {
+            ThrowError(eOverflow, "tag number is too big");
+        }
+        byte = PeekTagByte(i++);
+    } while ( (byte & 0x80) == 0 );
+    m_CurrentTagLength = i;
+#if CHECK_STREAM_INTEGRITY
+    m_CurrentTagState = eTagParsed;
+#endif
+    return fByte;
 }
 
 void CObjectIStreamAsnBinary::ExpectSysTag(EClass c, bool constructed,
                                            ETag tag)
 {
-    if ( ReadSysTag(c, constructed) != tag ) {
+    _ASSERT(tag != eLongTag);
+    if ( StartTag() != MakeTagByte(c, constructed, tag) ) {
         ThrowError(eFormatError,
-                   "unexpected tag: " + NStr::IntToString(GetLastTag()) +
+                   "unexpected tag: " + NStr::IntToString(m_Input.PeekChar()) +
                    ", should be: " + NStr::IntToString(tag));
     }
+    m_CurrentTagLength = 1;
+#if CHECK_STREAM_INTEGRITY
+    m_CurrentTagState = eTagParsed;
+#endif
 }
 
 inline
@@ -468,36 +319,91 @@ void CObjectIStreamAsnBinary::ExpectSysTag(ETag tag)
     ExpectSysTag(eUniversal, false, tag);
 }
 
+inline
+TByte CObjectIStreamAsnBinary::FlushTag(void)
+{
+#if CHECK_STREAM_INTEGRITY
+    if ( m_CurrentTagState != eTagParsed || m_CurrentTagLength == 0 )
+        THROW1_TRACE(runtime_error, "illegal FlushTag call");
+#endif
+    m_Input.SkipChars(m_CurrentTagLength);
+#if CHECK_STREAM_INTEGRITY
+    m_CurrentTagState = eLengthValue;
+#endif
+    return m_Input.GetChar();
+}
+
+inline
+bool CObjectIStreamAsnBinary::PeekIndefiniteLength(void)
+{
+#if CHECK_STREAM_INTEGRITY
+    if ( m_CurrentTagState != eTagParsed )
+        THROW1_TRACE(runtime_error, "illegal PeekIndefiniteLength call");
+#endif
+    return TByte(m_Input.PeekChar(m_CurrentTagLength)) == 0x80;
+}
+
+void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
+{
+    // indefinite length allowed only for constructed tags
+#if CHECK_STREAM_INTEGRITY
+    if ( !ExtractConstructed(m_Input.PeekChar()) )
+        THROW1_TRACE(runtime_error, "illegal ExpectIndefiniteLength call");
+#endif
+    if ( FlushTag() != 0x80 ) {
+        ThrowError(eFormatError, "indefinite length is expected");
+    }
+#if CHECK_STREAM_INTEGRITY
+    _ASSERT(m_CurrentTagLimit == INT_MAX);
+    // save tag limit
+    // tag limit is not changed
+    m_Limits.push(m_CurrentTagLimit);
+    m_CurrentTagState = eTagStart;
+    m_CurrentTagLength = 0;
+#endif
+}
+
+size_t CObjectIStreamAsnBinary::StartTagData(size_t length)
+{
+#if CHECK_STREAM_INTEGRITY
+    size_t newLimit = m_Input.GetStreamOffset() + length;
+    size_t currentLimit = m_CurrentTagLimit;
+    _ASSERT(m_CurrentTagLimit == INT_MAX);
+    m_Limits.push(currentLimit);
+    m_CurrentTagLimit = newLimit;
+    m_CurrentTagState = eData;
+#endif
+    return length;
+}
+
 size_t CObjectIStreamAsnBinary::ReadShortLength(void)
 {
-    FlushSysTag();
-    TByte byte = ReadByte();
+    TByte byte = FlushTag();
     if ( byte >= 0x80 ) {
         ThrowError(eFormatError, "short length expected");
     }
-    return byte;
+    return StartTagData(byte);
 }
 
-size_t CObjectIStreamAsnBinary::ReadLength(bool allowIndefinite)
+size_t CObjectIStreamAsnBinary::ReadLength(void)
 {
-    FlushSysTag();
-    TByte byte = ReadByte();
-    if ( byte < 0x80 )
-        return byte;
+    TByte byte = FlushTag();
+    if ( byte < 0x80 ) {
+        return StartTagData(byte);
+    }
     size_t lengthLength = byte - 0x80;
     if ( lengthLength == 0 ) {
-        if ( allowIndefinite )
-            return size_t(-1);
         ThrowError(eFormatError, "unexpected indefinite length");
     }
     if ( lengthLength > sizeof(size_t) ) {
         ThrowError(eOverflow, "length overflow");
     }
-    byte = ReadByte();
+    byte = m_Input.GetChar();
     if ( byte == 0 ) {
         ThrowError(eFormatError, "illegal length start");
     }
-    if ( size_t(-1) < size_t(0) ) {
+    if ( size_t(-1) < size_t(0) ) {        // size_t is signed
+        // check for sign overflow
         if ( lengthLength == sizeof(size_t) && (byte & 0x80) != 0 ) {
             ThrowError(eOverflow, "length overflow");
         }
@@ -505,8 +411,8 @@ size_t CObjectIStreamAsnBinary::ReadLength(bool allowIndefinite)
     lengthLength--;
     size_t length = byte;
     while ( lengthLength-- > 0 )
-        length = (length << 8) | ReadByte();
-    return length;
+        length = (length << 8) | TByte(m_Input.GetChar());
+    return StartTagData(length);
 }
 
 void CObjectIStreamAsnBinary::ExpectShortLength(size_t length)
@@ -517,17 +423,103 @@ void CObjectIStreamAsnBinary::ExpectShortLength(size_t length)
 }
 
 inline
-void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
+void CObjectIStreamAsnBinary::EndOfTag(void)
 {
-    FlushSysTag(true);
-    ExpectByte(0x80);
+#if CHECK_STREAM_INTEGRITY
+    if ( m_CurrentTagState != eData )
+        THROW1_TRACE(runtime_error, "illegal EndOfTag call");
+    // check for all bytes read
+    if ( m_CurrentTagLimit != INT_MAX ) {
+        if ( m_Input.GetStreamOffset() != m_CurrentTagLimit )
+            THROW1_TRACE(runtime_error,
+                         "illegal EndOfTag call: not all data bytes read");
+    }
+    m_CurrentTagState = eTagStart;
+    m_CurrentTagLength = 0;
+    // restore tag limit from stack
+    m_CurrentTagLimit = m_Limits.top();
+    m_Limits.pop();
+    _ASSERT(m_CurrentTagLimit == INT_MAX);
+#endif
+}
+
+void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
+{
+#if CHECK_STREAM_INTEGRITY
+    if ( m_CurrentTagState != eTagStart )
+        THROW1_TRACE(runtime_error, "illegal ExpectEndOfContent call");
+#endif
+    ExpectSysTag(eNone);
+    if ( FlushTag() != 0 ) {
+        ThrowError(eFormatError, "zero length expected");
+    }
+#if CHECK_STREAM_INTEGRITY
+    _ASSERT(m_CurrentTagLimit == INT_MAX);
+    // restore tag limit from stack
+    m_CurrentTagLimit = m_Limits.top();
+    m_Limits.pop();
+    _ASSERT(m_CurrentTagLimit == INT_MAX);
+    m_CurrentTagState = eTagStart;
+    m_CurrentTagLength = 0;
+#endif
 }
 
 inline
-void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
+TByte CObjectIStreamAsnBinary::ReadByte(void)
 {
-    ExpectSysTag(eNone);
-    ExpectShortLength(0);
+#if CHECK_STREAM_INTEGRITY
+    if ( m_CurrentTagState != eData )
+        THROW1_TRACE(runtime_error, "illegal ReadByte call");
+    if ( m_Input.GetStreamOffset() >= m_CurrentTagLimit )
+        ThrowError(eOverflow, "tag size overflow");
+#endif
+    return m_Input.GetChar();
+}
+
+inline
+signed char CObjectIStreamAsnBinary::ReadSByte(void)
+{
+    return ReadByte();
+}
+
+inline
+void CObjectIStreamAsnBinary::ExpectByte(TByte byte)
+{
+    if ( ReadByte() != byte ) {
+        ThrowError(eFormatError, "byte " + NStr::IntToString(byte) + " expected");
+    }
+}
+
+void CObjectIStreamAsnBinary::ReadBytes(char* buffer, size_t count)
+{
+#if CHECK_STREAM_INTEGRITY
+    if ( m_CurrentTagState != eData ) {
+        THROW1_TRACE(runtime_error, "illegal ReadBytes call");
+    }
+#endif
+    if ( count == 0 )
+        return;
+#if CHECK_STREAM_INTEGRITY
+    if ( m_Input.GetStreamOffset() + count > m_CurrentTagLimit )
+        ThrowError(eOverflow, "tag size overflow");
+#endif
+    m_Input.GetChars(buffer, count);
+}
+
+void CObjectIStreamAsnBinary::SkipBytes(size_t count)
+{
+#if CHECK_STREAM_INTEGRITY
+    if ( m_CurrentTagState != eData ) {
+        THROW1_TRACE(runtime_error, "illegal ReadBytes call");
+    }
+#endif
+    if ( count == 0 )
+        return;
+#if CHECK_STREAM_INTEGRITY
+    if ( m_Input.GetStreamOffset() + count > m_CurrentTagLimit )
+        ThrowError(eOverflow, "tag size overflow");
+#endif
+    m_Input.GetChars(count);
 }
 
 template<typename T>
@@ -561,6 +553,7 @@ void ReadStdSigned(CObjectIStreamAsnBinary& in, T& data)
         n = (n << 8) | in.ReadByte();
     }
     data = n;
+    in.EndOfTag();
 }
 
 template<typename T>
@@ -595,20 +588,25 @@ void ReadStdUnsigned(CObjectIStreamAsnBinary& in, T& data)
         n = (n << 8) | in.ReadByte();
     }
     data = n;
+    in.EndOfTag();
 }
 
 bool CObjectIStreamAsnBinary::ReadBool(void)
 {
     ExpectSysTag(eBoolean);
     ExpectShortLength(1);
-    return ReadByte() != 0;
+    bool ret = ReadByte() != 0;
+    EndOfTag();
+    return ret;
 }
 
 char CObjectIStreamAsnBinary::ReadChar(void)
 {
     ExpectSysTag(eGeneralString);
     ExpectShortLength(1);
-    return ReadByte();
+    char ret = ReadByte();
+    EndOfTag();
+    return ret;
 }
 
 int CObjectIStreamAsnBinary::ReadInt(void)
@@ -666,6 +664,7 @@ double CObjectIStreamAsnBinary::ReadDouble(void)
     length--;
     char buffer[32];
     ReadBytes(buffer, length);
+    EndOfTag();
     buffer[length] = 0;
     char* endptr;
     double data = strtod(buffer, &endptr);
@@ -677,25 +676,19 @@ double CObjectIStreamAsnBinary::ReadDouble(void)
 
 void CObjectIStreamAsnBinary::ReadString(string& s)
 {
-    s.erase();
     ExpectSysTag(eVisibleString);
-    size_t length = ReadLength();
-    s.reserve(length);
-    while ( length > 0 ) {
-        char buffer[128];
-        size_t count = length;
-        if ( count > sizeof(buffer) )
-            count = sizeof(buffer);
-        ReadBytes(buffer, count);
-        s.append(buffer, count);
-        length -= count;
-    }
+    ReadStringValue(s);
 }
 
 void CObjectIStreamAsnBinary::ReadStringStore(string& s)
 {
-    s.erase();
     ExpectSysTag(eApplication, false, eStringStore);
+    ReadStringValue(s);
+}
+
+void CObjectIStreamAsnBinary::ReadStringValue(string& s)
+{
+    s.erase();
     size_t length = ReadLength();
     s.reserve(length);
     while ( length > 0 ) {
@@ -707,6 +700,7 @@ void CObjectIStreamAsnBinary::ReadStringStore(string& s)
         s.append(buffer, count);
         length -= count;
     }
+    EndOfTag();
 }
 
 char* CObjectIStreamAsnBinary::ReadCString(void)
@@ -715,6 +709,7 @@ char* CObjectIStreamAsnBinary::ReadCString(void)
     size_t length = ReadLength();
 	char* s = static_cast<char*>(malloc(length + 1));
 	ReadBytes(s, length);
+    EndOfTag();
 	s[length] = 0;
     return s;
 }
@@ -727,20 +722,17 @@ void CObjectIStreamAsnBinary::VBegin(Block& block)
 
 bool CObjectIStreamAsnBinary::VNext(const Block& )
 {
-    if ( ReadSysTag() == eNone &&
-         LastTagWas(eUniversal, false) ) {
-        ExpectShortLength(0);
-        return false;
-    }
-    else {
-        BackSysTag();
-        return true;
-    }
+    return PeekTagByte() != MakeTagByte(eUniversal, false, eNone);
+}
+
+void CObjectIStreamAsnBinary::VEnd(const Block& )
+{
+    ExpectEndOfContent();
 }
 
 void CObjectIStreamAsnBinary::StartMember(Member& m, const CMemberId& member)
 {
-    TTag tag = ReadTag(eContextSpecific, true);
+    TTag tag = PeekTag(eContextSpecific, true);
     ExpectIndefiniteLength();
     if ( member.GetTag() != tag ) {
         ThrowError(eFormatError,
@@ -752,7 +744,7 @@ void CObjectIStreamAsnBinary::StartMember(Member& m, const CMemberId& member)
 
 void CObjectIStreamAsnBinary::StartMember(Member& m, const CMembers& members)
 {
-    TTag tag = ReadTag(eContextSpecific, true);
+    TTag tag = PeekTag(eContextSpecific, true);
     ExpectIndefiniteLength();
     TMemberIndex index = members.FindMember(tag);
     if ( index < 0 ) {
@@ -765,7 +757,7 @@ void CObjectIStreamAsnBinary::StartMember(Member& m, const CMembers& members)
 
 void CObjectIStreamAsnBinary::StartMember(Member& m, LastMember& lastMember)
 {
-    TTag tag = ReadTag(eContextSpecific, true);
+    TTag tag = PeekTag(eContextSpecific, true);
     ExpectIndefiniteLength();
     TMemberIndex index =
         lastMember.GetMembers().FindMember(tag, lastMember.GetIndex());
@@ -796,45 +788,43 @@ size_t CObjectIStreamAsnBinary::ReadBytes(const ByteBlock& ,
 	return length;
 }
 
+void CObjectIStreamAsnBinary::End(const ByteBlock& )
+{
+    EndOfTag();
+}
+
 void CObjectIStreamAsnBinary::ReadNull(void)
 {
     ExpectSysTag(eNull);
     ExpectShortLength(0);
+    EndOfTag();
 }
 
 CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
 {
-    ETag tag = ReadSysTag();
-    if ( LastTagWas(eUniversal, false) ) {
-        switch ( tag ) {
-        case eNull:
-            ExpectShortLength(0);
-            return eNullPointer;
-        default:
-            break;
-        }
+    TByte byte = PeekTagByte();
+    // variants:
+    //    eUniversal,   !constructed, eNull             -> NULL
+    //    eApplication,  constructed, eMemberReference  -> member reference
+    //    eApplication,  constructed, eLongTag          -> other class
+    //    eApplication, !constructed, eObjectReference  -> object reference
+    // any other -> this class
+    if ( byte == MakeTagByte(eUniversal, false, eNull) ) {
+        ExpectShortLength(0);
+        EndOfTag();
+        return eNullPointer;
     }
-    else if ( LastTagWas(eApplication, true) ) {
-        switch ( tag ) {
-        case eMemberReference:
-            ExpectIndefiniteLength();
-            return eMemberPointer;
-        case eLongTag:
-            return eOtherPointer;
-        default:
-            break;
-        }
+    else if ( byte == MakeTagByte(eApplication, true, eMemberReference) ) {
+        ExpectIndefiniteLength();
+        return eMemberPointer;
     }
-    else if ( LastTagWas(eApplication, false) ) {
-        switch ( tag) {
-        case eObjectReference:
-            return eObjectPointer;
-        default:
-            break;
-        }
+    else if ( byte == MakeTagByte(eApplication, true, eLongTag) ) {
+        return eOtherPointer;
+    }
+    else if ( byte == MakeTagByte(eApplication, false, eObjectReference) ) {
+        return eObjectPointer;
     }
     // by default: try this class
-    BackSysTag();
     return eThisPointer;
 }
 
@@ -877,7 +867,7 @@ CObjectIStream::TIndex CObjectIStreamAsnBinary::ReadObjectPointer(void)
 
 string CObjectIStreamAsnBinary::ReadOtherPointer(void)
 {
-    string className = ReadClassTag();
+    string className = PeekClassTag();
     ExpectIndefiniteLength();
     return className;
 }
@@ -889,29 +879,18 @@ void CObjectIStreamAsnBinary::ReadOtherPointerEnd(void)
 
 bool CObjectIStreamAsnBinary::SkipRealValue(void)
 {
-    if ( ReadSysTag() == eLongTag ) {
-        // long tag id
-        while ( (ReadByte() & 0x80) == 0 )
-            ;
-    }
-
-    if ( m_LastTagByte & 0x20 ) {
+    if ( PeekTagByte() == 0 && PeekTagByte(1) == 0 )
+        return false;
+    TByte byte = PeekAnyTag();
+    if ( ExtractConstructed(byte) ) {
         // constructed
         ExpectIndefiniteLength();
         while ( SkipRealValue() )
             ;
+        ExpectEndOfContent();
     }
     else {
-        size_t length = ReadLength(true);
-        if ( length == size_t(-1) ) {
-            // indefinite length
-            while ( SkipRealValue() )
-                ;
-        }
-        else if ( length == 0 )
-            return m_LastTagByte != 0;
-        else
-            SkipBytes(length);
+        SkipTagData();
     }
     return true;
 }
@@ -931,21 +910,88 @@ unsigned CObjectIStreamAsnBinary::GetAsnFlags(void)
 
 void CObjectIStreamAsnBinary::AsnOpen(AsnIo& )
 {
-    if ( m_LastTagByte == eSysTagRead ) {
+#if CHECK_STREAM_INTEGRITY
+    if ( m_CurrentTagState != eTagStart ) {
         ThrowError(eIllegalCall, "double tag read");
     }
+#endif
 }
 
 size_t CObjectIStreamAsnBinary::AsnRead(AsnIo& , char* data, size_t )
 {
-    if ( m_LastTagState == eSysTagBack ) {
-        m_LastTagByte = eNoTagRead;
-        *data = m_LastTagByte;
-        return 1;
-    }
-    *data = ReadByte();
+    *data = m_Input.GetChar();
     return 1;
 }
 #endif
+
+void CObjectIStreamAsnBinary::SkipBool(void)
+{
+    ExpectSysTag(eBoolean);
+    ExpectShortLength(1);
+    ReadByte();
+    EndOfTag();
+}
+
+void CObjectIStreamAsnBinary::SkipChar(void)
+{
+    ExpectSysTag(eGeneralString);
+    ExpectShortLength(1);
+    ReadByte();
+    EndOfTag();
+}
+
+void CObjectIStreamAsnBinary::SkipSNumber(void)
+{
+    ExpectSysTag(eInteger);
+    SkipTagData();
+}
+
+void CObjectIStreamAsnBinary::SkipFNumber(void)
+{
+    ExpectSysTag(eReal);
+    size_t length = ReadShortLength();
+    if ( length < 2 ) {
+        ThrowError(eFormatError, "too short REAL data");
+    }
+    if ( length > 32 ) {
+        ThrowError(eFormatError, "too long REAL data");
+    }
+
+    ExpectByte(eDecimal);
+    length--;
+    SkipBytes(length);
+    EndOfTag();
+}
+
+void CObjectIStreamAsnBinary::SkipString(void)
+{
+    ExpectSysTag(eVisibleString);
+    SkipTagData();
+}
+
+void CObjectIStreamAsnBinary::SkipStringStore(void)
+{
+    ExpectSysTag(eApplication, false, eStringStore);
+    SkipTagData();
+}
+
+void CObjectIStreamAsnBinary::SkipNull(void)
+{
+    ExpectSysTag(eNull);
+    ExpectShortLength(0);
+    EndOfTag();
+}
+
+void CObjectIStreamAsnBinary::SkipByteBlock(void)
+{
+	ExpectSysTag(eOctetString);
+    SkipTagData();
+}
+
+void CObjectIStreamAsnBinary::SkipTagData(void)
+{
+    SkipBytes(ReadLength());
+    EndOfTag();
+}
 
 END_NCBI_SCOPE

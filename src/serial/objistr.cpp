@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2000/03/07 14:06:22  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+* Added generation of reference counted objects.
+*
 * Revision 1.40  2000/02/17 20:02:43  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -302,10 +308,10 @@ void CObjectIStream::ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo)
     ReadData(object, typeInfo);
 }
 
-CObject CObjectIStream::ReadObject(void)
+CObjectInfo CObjectIStream::ReadObject(void)
 {
     try {
-        CObject object(MapType(ReadTypeName()));
+        CObjectInfo object(MapType(ReadTypeName()));
         ReadExternalObject(object.GetObject(), object.GetTypeInfo());
         return object;
     }
@@ -354,7 +360,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
     try {
         _TRACE("CObjectIStream::ReadPointer(" <<
                declaredType->GetName() << ")");
-        CObject info;
+        CObjectInfo info;
         switch ( ReadPointerType() ) {
         case eNullPointer:
             _TRACE("CObjectIStream::ReadPointer: null");
@@ -399,7 +405,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
                 TObjectPtr object = typeInfo->Create();
                 ReadExternalObject(object, typeInfo);
                 ReadOtherPointerEnd();
-                info = CObject(object, typeInfo);
+                info = CObjectInfo(object, typeInfo);
                 break;
             }
         default:
@@ -415,8 +421,8 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
             if ( info.GetTypeInfo()->FindMember(NcbiEmptyString) == 0 ) {
                 const CMemberInfo* parent =
                     info.GetTypeInfo()->GetMemberInfo(0);
-                info = CObject(parent->GetMember(info.GetObject()),
-                               parent->GetTypeInfo());
+                info = CObjectInfo(parent->GetMember(info.GetObject()),
+                                   parent->GetTypeInfo());
             }
             else {
                 SetFailFlags(eFormatError);
@@ -433,7 +439,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
     }
 }
 
-CObject CObjectIStream::ReadObjectInfo(void)
+CObjectInfo CObjectIStream::ReadObjectInfo(void)
 {
     _TRACE("CObjectIStream::ReadObjectInfo()");
     switch ( ReadPointerType() ) {
@@ -446,7 +452,7 @@ CObject CObjectIStream::ReadObjectInfo(void)
     case eMemberPointer:
         {
             _TRACE("CObjectIStream::ReadPointer: member...");
-            CObject info = ReadObjectInfo();
+            CObjectInfo info = ReadObjectInfo();
             SelectMember(info);
             return info;
         }
@@ -462,7 +468,7 @@ CObject CObjectIStream::ReadObjectInfo(void)
 #endif
             Read(object, typeInfo);
             ReadOtherPointerEnd();
-            return CObject(object, typeInfo);
+            return CObjectInfo(object, typeInfo);
         }
     default:
         break;  // error
@@ -472,7 +478,7 @@ CObject CObjectIStream::ReadObjectInfo(void)
     THROW1_TRACE(runtime_error, "illegal pointer type");
 }
 
-void CObjectIStream::SelectMember(CObject& object)
+void CObjectIStream::SelectMember(CObjectInfo& object)
 {
     const CClassInfoTmpl* classInfo =
         dynamic_cast<const CClassInfoTmpl*>(object.GetTypeInfo());
@@ -499,6 +505,35 @@ void CObjectIStream::ReadOtherPointerEnd(void)
 
 void CObjectIStream::ReadThisPointerEnd(void)
 {
+}
+
+void CObjectIStream::Skip(TTypeInfo typeInfo)
+{
+    try {
+        StackElement m(*this, typeInfo->GetName());
+        _TRACE("CObjectIStream::Skip(" << typeInfo->GetName() << ")");
+        string name = ReadTypeName();
+        if ( !name.empty() && name != typeInfo->GetName() )
+            THROW1_TRACE(runtime_error,
+                         "incompatible type " + name + "<>" +
+                         typeInfo->GetName());
+        SkipData(typeInfo);
+    }
+    catch (...) {
+        SetFailFlags(eFail);
+        throw;
+    }
+}
+
+void CObjectIStream::Skip(const CTypeRef& type)
+{
+    Skip(type.Get());
+}
+
+void CObjectIStream::SkipExternalObject(TTypeInfo typeInfo)
+{
+    _TRACE("CObjectIStream::SkipExternalObject(" << typeInfo->GetName() << ")");
+    SkipData(typeInfo);
 }
 
 void CObjectIStream::SkipValue(void)
@@ -617,6 +652,7 @@ CObjectIStream::Block::Block(EFixed , CObjectIStream& in)
       m_Finished(false), m_Size(0), m_NextIndex(0)
 {
     in.FBegin(*this);
+    _ASSERT(!Fixed());
 }
 
 CObjectIStream::Block::Block(CObjectIStream& in, bool randomOrder)
@@ -631,22 +667,30 @@ CObjectIStream::Block::Block(EFixed , CObjectIStream& in, bool randomOrder)
       m_Finished(false), m_Size(0), m_NextIndex(0)
 {
     in.FBegin(*this);
+    _ASSERT(!Fixed());
 }
 
 bool CObjectIStream::Block::Next(void)
 {
+#if 0
     if ( Fixed() ) {
         if ( GetNextIndex() >= GetSize() ) {
             return false;
         }
         GetStream().FNext(*this);
     }
-    else {
+    else
+#endif
+    {
+#if 0
         if ( Finished() ) {
             return false;
         }
+#endif
         if ( !GetStream().VNext(*this) ) {
+#if 0
             m_Finished = true;
+#endif
             return false;
         }
     }
@@ -660,7 +704,7 @@ CObjectIStream::Block::~Block(void)
         ERR_POST("Error in CObjectIStream: " << GetStream().MemberStack());
         return;
     }
-
+#if 0
     if ( Fixed() ) {
         if ( GetNextIndex() != GetSize() ) {
             GetStream().SetFailFlags(eFormatError);
@@ -668,11 +712,15 @@ CObjectIStream::Block::~Block(void)
         }
         GetStream().FEnd(*this);
     }
-    else {
+    else
+#endif
+    {
+#if 0
         if ( !Finished() ) {
             GetStream().SetFailFlags(eFormatError);
             THROW1_TRACE(runtime_error, "not all elements read");
         }
+#endif
         GetStream().VEnd(*this);
     }
 }
@@ -796,6 +844,71 @@ void CObjectIStream::ReadStringStore(string& s)
     ReadString(s);
 }
 
+void CObjectIStream::SkipUNumber(void)
+{
+    SkipSNumber();
+}
+
+void CObjectIStream::SkipSChar(void)
+{
+    SkipSNumber();
+}
+
+void CObjectIStream::SkipUChar(void)
+{
+    SkipUNumber();
+}
+
+void CObjectIStream::SkipShort(void)
+{
+    SkipSNumber();
+}
+
+void CObjectIStream::SkipUShort(void)
+{
+    SkipUNumber();
+}
+
+void CObjectIStream::SkipInt(void)
+{
+    SkipSNumber();
+}
+
+void CObjectIStream::SkipUInt(void)
+{
+    SkipUNumber();
+}
+
+void CObjectIStream::SkipLong(void)
+{
+    SkipSNumber();
+}
+
+void CObjectIStream::SkipULong(void)
+{
+    SkipUNumber();
+}
+
+void CObjectIStream::SkipFloat(void)
+{
+    SkipFNumber();
+}
+
+void CObjectIStream::SkipDouble(void)
+{
+    SkipFNumber();
+}
+
+void CObjectIStream::SkipCString(void)
+{
+    SkipString();
+}
+
+void CObjectIStream::SkipStringStore(void)
+{
+    SkipString();
+}
+
 CObjectIStream::TIndex CObjectIStream::RegisterObject(TObjectPtr object,
                                                       TTypeInfo typeInfo)
 {
@@ -805,14 +918,14 @@ CObjectIStream::TIndex CObjectIStream::RegisterObject(TObjectPtr object,
 #endif
 #if ALLOW_CYCLES
     TIndex index = m_Objects.size();
-    m_Objects.push_back(CObject(object, typeInfo));
+    m_Objects.push_back(CObjectInfo(object, typeInfo));
     return index;
 #else
     return TIndex(-1);
 #endif
 }
 
-const CObject& CObjectIStream::GetRegisteredObject(TIndex index) const
+const CObjectInfo& CObjectIStream::GetRegisteredObject(TIndex index) const
 {
 #if ALLOW_CYCLES
     if ( index >= m_Objects.size() ) {

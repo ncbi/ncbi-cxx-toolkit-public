@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/03/07 14:06:21  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+* Added generation of reference counted objects.
+*
 * Revision 1.6  2000/02/17 20:02:42  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -171,6 +177,13 @@ void CChoiceTypeInfoBase::ReadData(CObjectIStream& in,
     SetIndex(object, index);
     GetVariantTypeInfo(index)->
         ReadData(in, GetData(object, index));
+}
+
+void CChoiceTypeInfoBase::SkipData(CObjectIStream& in) const
+{
+    CObjectIStream::Member m(in, GetMembers());
+    TMemberIndex index = m.GetIndex();
+    GetVariantTypeInfo(index)->SkipData(in);
 }
 
 CGeneratedChoiceTypeInfo::CGeneratedChoiceTypeInfo(const char* name,

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/03/07 14:06:24  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+* Added generation of reference counted objects.
+*
 * Revision 1.4  2000/02/17 20:02:45  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -66,7 +72,7 @@ size_t BiggerBufferSize(size_t size)
 }
 
 CStreamBuffer::CStreamBuffer(CNcbiIstream& in)
-    : m_Input(in),
+    : m_Input(in), m_BufferOffset(0),
       m_BufferSize(KInitialBufferSize), m_Buffer(new char[KInitialBufferSize]),
       m_CurrentPos(m_Buffer), m_DataEndPos(m_Buffer),
       m_Line(1)
@@ -133,19 +139,21 @@ char* CStreamBuffer::FillBuffer(char* pos)
         memmove(newPos, m_CurrentPos, m_DataEndPos - m_CurrentPos);
         m_CurrentPos = newPos;
         m_DataEndPos -= erase;
+        m_BufferOffset += erase;
         pos -= erase;
     }
     size_t dataSize = m_DataEndPos - m_Buffer;
-    size_t size = pos - m_Buffer;
-    if ( size >= m_BufferSize ) {
+    size_t newPosOffset = pos - m_Buffer;
+    if ( newPosOffset >= m_BufferSize ) {
         // reallocate buffer
         size_t newSize = BiggerBufferSize(m_BufferSize);
-        while ( size >= newSize ) {
+        while ( newPosOffset >= newSize ) {
             newSize = BiggerBufferSize(newSize);
         }
         char* newBuffer = new char[newSize];
         memcpy(newBuffer, m_Buffer, dataSize);
         m_CurrentPos = newBuffer + (m_CurrentPos - m_Buffer);
+        pos = newBuffer + newPosOffset;
         m_DataEndPos = newBuffer + dataSize;
         delete[] m_Buffer;
         m_Buffer = newBuffer;
@@ -166,7 +174,54 @@ char* CStreamBuffer::FillBuffer(char* pos)
         m_DataEndPos += count;
         load -= count;
     }
+    _ASSERT(m_CurrentPos >= m_Buffer);
+    _ASSERT(pos >= m_CurrentPos);
+    _ASSERT(pos < m_DataEndPos);
+    _ASSERT(m_DataEndPos - m_Buffer <= m_BufferSize);
     return pos;
+}
+
+void CStreamBuffer::GetChars(char* buffer, size_t count)
+    THROWS((CSerialIOException))
+{
+    // cache pos
+    char* pos = m_CurrentPos;
+    for ( ;; ) {
+        size_t c = m_DataEndPos - pos;
+        if ( c >= count ) {
+            // all data is already in buffer -> copy it
+            memcpy(buffer, pos, count);
+            m_CurrentPos = pos + count;
+            return;
+        }
+        else {
+            memcpy(buffer, pos, c);
+            buffer += c;
+            pos += c;
+            count -= c;
+            pos = FillBuffer(pos);
+        }
+    }
+}
+
+void CStreamBuffer::GetChars(size_t count)
+    THROWS((CSerialIOException))
+{
+    // cache pos
+    char* pos = m_CurrentPos;
+    for ( ;; ) {
+        size_t c = m_DataEndPos - pos;
+        if ( c >= count ) {
+            // all data is already in buffer -> skip it
+            m_CurrentPos = pos + count;
+            return;
+        }
+        else {
+            pos += c;
+            count -= c;
+            pos = FillBuffer(pos);
+        }
+    }
 }
 
 void CStreamBuffer::SkipEndOfLine(char lastChar)

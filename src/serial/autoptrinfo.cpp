@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/03/07 14:06:21  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+* Added generation of reference counted objects.
+*
 * Revision 1.4  1999/12/28 18:55:49  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -96,6 +102,11 @@ void CAutoPointerTypeInfo::ReadData(CObjectIStream& in,
     else if ( dataType->GetRealTypeInfo(data) != dataType )
         THROW1_TRACE(runtime_error, "auto pointer have different type");
     in.ReadExternalObject(data, dataType);
+}
+
+void CAutoPointerTypeInfo::SkipData(CObjectIStream& in) const
+{
+    in.SkipExternalObject(GetDataTypeInfo());
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/03/07 14:06:24  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+* Added generation of reference counted objects.
+*
 * Revision 1.17  2000/02/17 20:02:45  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -207,20 +213,45 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
                                             TObjectPtr value) const
 {
     CObjectIStream::Block block(CObjectIStream::eFixed, in);
-    if ( !block.Next() )
+    if ( !block.Next() ) {
         THROW1_TRACE(runtime_error, "map key expected");
+    }
     {
         CObjectIStream::Member m(in, GetKeyId());
         GetKeyTypeInfo()->ReadData(in, key);
     }
-    if ( !block.Next() )
+    if ( !block.Next() ) {
         THROW1_TRACE(runtime_error, "map value expected");
+    }
     {
         CObjectIStream::Member m(in, GetValueId());
         GetValueTypeInfo()->ReadData(in, value);
     }
-    if ( block.Next() )
+    if ( block.Next() ) {
         THROW1_TRACE(runtime_error, "too many elements in map pair");
+    }
+}
+
+void CStlClassInfoMapImpl::SkipKeyValuePair(CObjectIStream& in) const
+{
+    CObjectIStream::Block block(CObjectIStream::eFixed, in);
+    if ( !block.Next() ) {
+        THROW1_TRACE(runtime_error, "map key expected");
+    }
+    {
+        CObjectIStream::Member m(in, GetKeyId());
+        GetKeyTypeInfo()->SkipData(in);
+    }
+    if ( !block.Next() ) {
+        THROW1_TRACE(runtime_error, "map value expected");
+    }
+    {
+        CObjectIStream::Member m(in, GetValueId());
+        GetValueTypeInfo()->SkipData(in);
+    }
+    if ( block.Next() ) {
+        THROW1_TRACE(runtime_error, "too many elements in map pair");
+    }
 }
 
 template<>

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/03/07 14:06:20  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+* Added generation of reference counted objects.
+*
 * Revision 1.33  2000/02/17 20:02:42  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -390,6 +396,16 @@ void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
     }
 }
 
+void CSequenceOfTypeInfo::SkipData(CObjectIStream& in) const
+{
+    _TRACE("SequenceOf<" << GetDataTypeInfo()->GetName() << ">::SkipData()");
+    CObjectIStream::Block block(in, RandomOrder());
+    TTypeInfo dataType = GetDataTypeInfo();
+    while ( block.Next() ) {
+        dataType->SkipData(in);
+    }
+}
+
 static CTypeInfoMap<CSetOfTypeInfo> CSetOfTypeInfo_map;
 
 TTypeInfo CSetOfTypeInfo::GetTypeInfo(TTypeInfo base)
@@ -556,6 +572,11 @@ void COctetStringTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
     }
 }
 
+void COctetStringTypeInfo::SkipData(CObjectIStream& in) const
+{
+    in.SkipByteBlock();
+}
+
 TTypeInfo COctetStringTypeInfo::GetTypeInfo(void)
 {
     static TTypeInfo typeInfo = 0;
@@ -642,6 +663,11 @@ void COldAsnTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
     if ( (Get(object) = m_ReadProc(CObjectIStream::AsnIo(in, GetName()), 0)) == 0 )
         THROW1_TRACE(runtime_error, "read fault");
+}
+
+void COldAsnTypeInfo::SkipData(CObjectIStream& in) const
+{
+    THROW1_TRACE(runtime_error, "cannot skip COldAsnTypeInfo");
 }
 
 END_NCBI_SCOPE

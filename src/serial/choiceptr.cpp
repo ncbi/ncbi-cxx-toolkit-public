@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/03/07 14:06:21  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+* Added generation of reference counted objects.
+*
 * Revision 1.11  2000/02/17 20:02:42  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -214,6 +220,15 @@ void CChoicePointerTypeInfo::ReadData(CObjectIStream& in,
     in.ReadExternalObject(data, dataType);
 }
 
+void CChoicePointerTypeInfo::SkipData(CObjectIStream& in) const
+{
+    CObjectIStream::Member m(in, m_Variants);
+    TTypeInfo dataType = m_VariantTypes[m.GetIndex()].Get();
+    if ( !dataType )
+        dataType = CNullTypeInfo::GetTypeInfo();
+    in.SkipExternalObject(dataType);
+}
+
 CNullTypeInfo::CNullTypeInfo(void)
     : CParent("0")
 {
@@ -249,6 +264,11 @@ void CNullTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
         THROW1_TRACE(runtime_error, "non null value");
     }
     in.ReadNull();
+}
+
+void CNullTypeInfo::SkipData(CObjectIStream& in) const
+{
+    in.SkipNull();
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/03/07 14:06:24  vasilche
+* Added stream buffering to ASN.1 binary input.
+* Optimized class loading/storing.
+* Fixed bugs in processing OPTIONAL fields.
+* Added generation of reference counted objects.
+*
 * Revision 1.13  2000/01/10 19:46:42  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -163,6 +169,11 @@ void CStdTypeInfo<void>::ReadData(CObjectIStream& , TObjectPtr ) const
 {
     throw runtime_error("void cannot be read");
 }
+
+void CStdTypeInfo<void>::SkipData(CObjectIStream& ) const
+{
+    throw runtime_error("void cannot be skipped");
+}
     
 void CStdTypeInfo<void>::WriteData(CObjectOStream& , TConstObjectPtr ) const
 {
@@ -226,6 +237,11 @@ void CStdTypeInfo<string>::ReadData(CObjectIStream& in, TObjectPtr object) const
 	in.ReadStd(Get(object));
 }
 
+void CStdTypeInfo<string>::SkipData(CObjectIStream& in) const
+{
+	in.SkipString();
+}
+
 void CStdTypeInfo<string>::WriteData(CObjectOStream& out, TConstObjectPtr object) const
 {
 	out.WriteStd(Get(object));
@@ -250,6 +266,11 @@ void CStringStoreTypeInfo::ReadData(CObjectIStream& in,
                                     TObjectPtr object) const
 {
 	in.ReadStringStore(Get(object));
+}
+
+void CStringStoreTypeInfo::SkipData(CObjectIStream& in) const
+{
+	in.SkipStringStore();
 }
 
 void CStringStoreTypeInfo::WriteData(CObjectOStream& out,
@@ -278,6 +299,11 @@ void CNullBoolTypeInfo::ReadData(CObjectIStream& in,
 {
 	in.ReadNull();
     Get(object) = true;
+}
+
+void CNullBoolTypeInfo::SkipData(CObjectIStream& in) const
+{
+	in.SkipNull();
 }
 
 void CNullBoolTypeInfo::WriteData(CObjectOStream& out,
