@@ -169,8 +169,8 @@ void CBlast2seqApplication::Init(void)
         "Perform only an ungapped alignment search?",
         CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("greedy", "greedy", 
-        "Use greedy algorithm for gapped extensions?",
-        CArgDescriptions::eBoolean, "F");
+        "Use greedy algorithm for gapped extensions: 0 no, 1 one-step, 2 two-step, 3 two-step with ungapped",
+        CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("gopen", "gapopen", "Penalty for opening a gap",
                             CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("gext", "gapext", "Penalty for extending a gap",
@@ -333,10 +333,22 @@ CBlast2seqApplication::ProcessCommandLineArgs(CBlastOptions& opt)
         opt.SetGapExtensionCost(args["gext"].AsInteger());
     }
 
-    if (args["greedy"].AsBoolean()) {
+    switch (args["greedy"].AsInteger()) {
+    case 1: /* Immediate greedy gapped extension with traceback */
         opt.SetGapExtnAlgorithm(EXTEND_GREEDY);
         opt.SetUngappedExtension(false);
+        break;
+    case 2: /* Two-step greedy extension, no ungapped extension */
+        opt.SetGapExtnAlgorithm(EXTEND_GREEDY_NO_TRACEBACK);
+        opt.SetUngappedExtension(false);
+        break;
+    case 3: /* Two-step greedy extension after ungapped extension*/
+        opt.SetGapExtnAlgorithm(EXTEND_GREEDY_NO_TRACEBACK);
+        break;
+    default: break;
     }
+
+
     if (args["xgap"].AsDouble()) {
         opt.SetGapXDropoff(args["xgap"].AsDouble());
     }
@@ -522,6 +534,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/10/27 20:52:29  dondosha
+ * Made greedy option an integer, to specify number of extension stages
+ *
  * Revision 1.27  2003/10/24 20:55:30  camacho
  * Rename GetDefaultStride
  *
