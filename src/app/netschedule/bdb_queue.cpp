@@ -170,6 +170,7 @@ CQueueDataBase::CQueueDataBase()
   m_PurgeLastId(0),
   m_PurgeSkipCnt(0),
   m_DeleteChkPointCnt(0),
+  m_FreeStatusMemCnt(0),
   m_LastR2P(time(0)),
   m_UdpPort(0)
 {}
@@ -1241,7 +1242,7 @@ void CQueueDataBase::CQueue::CheckExecutionTimeout()
         if (exp_time) {
             CWriteLockGuard guard(m_LQueue.rtl_lock);
             unsigned job_slot = tl.TimeLineSlot(exp_time);
-            if (job_slot == curr_slot) {
+            if (job_slot <= curr_slot) {
                 ++job_slot;
             }
             tl.AddObjectToSlot(job_slot, job_id);
@@ -1316,6 +1317,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/03/09 19:05:36  kuznets
+ * Fixed unintialized variable
+ *
  * Revision 1.12  2005/03/09 17:40:08  kuznets
  * Fixed GCC warning
  *
