@@ -15,7 +15,7 @@ builddir = $(NCBI)/$(VERSION_STABILITY)/$(BUILD_TYPE)/build
 include $(builddir)/Makefile.mk
 srcdir = .
 BINCOPY = @:
-LOCAL_CPPFLAGS = $(BLAST_CPPFLAGS) -I../
+LOCAL_CPPFLAGS = $(BLAST_CPPFLAGS) $(NCBI_C_INCLUDE) -I../../include -I../
 
 # Local definitions
 LIBBLASTXX = -L../ -lblastxx
@@ -42,7 +42,7 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 # CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 
 CFLAGS   = $(ORIG_CFLAGS)
-CXXFLAGS = $(ORIG_CXXFLAGS) $(NCBI_C_INCLUDE) -I../../include
+CXXFLAGS = $(ORIG_CXXFLAGS)
 LDFLAGS  = $(ORIG_LDFLAGS) $(BLAST_PROFILE)
 #                                                                         ###
 #############################################################################
