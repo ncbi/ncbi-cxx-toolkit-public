@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2001/05/11 18:20:11  thiessen
+* fix loading of cdd with repeated master structure
+*
 * Revision 1.57  2001/05/02 13:46:28  thiessen
 * major revision of stuff relating to saving of updates; allow stored null-alignments
 *
@@ -504,6 +507,8 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
     // for slaves->master - and thus also the identity of the master.
     static const int VALUE_NOT_SET = -1;
     int masterMMDBID = VALUE_NOT_SET;
+    bool gotMasterObject = false;
+
     if (mmdbIDs.size() == 1) {
         masterMMDBID = mmdbIDs[0];
     } else if (mmdbIDs.size() > 1) {
@@ -574,8 +579,9 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
             }
 
             if (gotBiostruc) {
-                // create new StructureObject
-                bool isMaster = (mmdbIDs[m] == masterMMDBID);
+                // create new StructureObject; if the master MMDB entry is also used for slave
+                // structures, make sure only first instance gets flagged as a master object
+                bool isMaster = (!gotMasterObject && mmdbIDs[m] == masterMMDBID);
                 StructureObject *object = new StructureObject(this, biostruc, isMaster, true);
                 if (!isMaster) {
                     if (!object->SetTransformToMaster(cdd->GetFeatures(), masterMMDBID))
@@ -584,6 +590,7 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
                             << ";\nwill likely require manual realignment");
                 }
                 objects.push_back(object);
+                if (isMaster) gotMasterObject = true;
             }
         }
     }
