@@ -54,17 +54,17 @@ CTL_Connection::CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
 
     ct_con_props(m_Link, CS_GET, CS_SERVERNAME,
                  buf, (CS_INT) (sizeof(buf) - 1), &outlen);
-    if((outlen > 0) && (buf[outlen] == '\0')) --outlen;
+    if((outlen > 0) && (buf[outlen-1] == '\0')) --outlen;
     m_Server.append(buf, (size_t) outlen);
 
     ct_con_props(m_Link, CS_GET, CS_USERNAME,
                  buf, (CS_INT) (sizeof(buf) - 1), &outlen);
-    if((outlen > 0) && (buf[outlen] == '\0')) --outlen;
+    if((outlen > 0) && (buf[outlen-1] == '\0')) --outlen;
     m_User.append(buf, (size_t) outlen);
 
     ct_con_props(m_Link, CS_GET, CS_PASSWORD,
                  buf, (CS_INT) (sizeof(buf) - 1), &outlen);
-    if((outlen > 0) && (buf[outlen] == '\0')) --outlen;
+    if((outlen > 0) && (buf[outlen-1] == '\0')) --outlen;
     m_Passwd.append(buf, (size_t) outlen);
 
     CS_BOOL flag;
@@ -728,6 +728,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/07/08 18:51:38  soussov
+ * fixed bug in constructor
+ *
  * Revision 1.14  2003/06/05 16:00:31  soussov
  * adds code for DumpResults and for the dumped results processing
  *
