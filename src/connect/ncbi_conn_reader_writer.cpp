@@ -42,10 +42,11 @@ ERW_Result CSocketReaderWriter::PendingCount(size_t* count)
     if (!m_Sock) {
         return eRW_Error;
     }
-    STimeout zero = {0, 0};
-    STimeout* tmp = m_Sock->GetTimeout(eIO_Read), tmo;
+    STimeout zero = {0, 0}, tmo;
+    const STimeout* tmp = m_Sock->GetTimeout(eIO_Read);
     if (tmp) {
         tmo = *tmp;
+        tmp = &tmo;
     }
     if (m_Sock->SetTimeout(eIO_Read, &zero) != eIO_Success) {
         return eRW_Error;
@@ -107,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2005/02/01 19:06:47  lavr
+ * Fix save/restore in CSocketReaderWriter::PendingCount()
+ *
  * Revision 1.2  2005/02/01 19:04:47  lavr
  * Proper timeout save/restore in CSocketReaderWriter::PendingCount()
  *
