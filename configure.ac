@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.215 2003/09/08 18:45:20 ucko Exp $
+#  $Id: configure.ac,v 1.216 2003/09/09 14:41:07 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -988,6 +988,11 @@ if   test "$with_runpath" = "no" ; then
 elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
    runpath="${CONF_f_runpath}${with_runpath}"
    pure_runpath=$with_runpath
+   case "$host_os:$compiler" in
+    linux*:GCC | *bsd*:GCC | cygwin*:GCC )
+      runpath="$runpath -Wl,-rpath-link,\$(libdir)"
+      ;;
+   esac
 elif test "$with_runpath" = "yes"  -o  "$with_dll" != "no" ; then
    runpath="${CONF_f_runpath}\$(libdir)"
    pure_runpath='${build_root}/lib'
