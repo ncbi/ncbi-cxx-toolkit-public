@@ -672,8 +672,8 @@ static void TestException_Aux(void)
         NCBI_REPORT_EXCEPTION("TEST CParseTemplException<CCoreException> ---> ",e);
     }
     catch (...) {
-        // should never be here
-        assert(0);
+        // Should never be here
+        _TROUBLE;
     }
 }
 
@@ -890,6 +890,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.89  2003/10/06 16:59:37  ivanov
+ * Use macro _TROUBLE instead assert(0)
+ *
  * Revision 1.88  2003/04/25 20:54:40  lavr
  * Add test for IgnoreDiagDieLevel() operations
  *
