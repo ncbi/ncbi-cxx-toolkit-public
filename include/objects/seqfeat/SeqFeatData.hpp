@@ -170,6 +170,111 @@ public:
 
     static E_Choice GetTypeFromSubtype (ESubtype subtype);
 
+    // List of available qualifiers for feature keys.
+    // For more information see: 
+    //   The DDBJ/EMBL/GenBank Feature Table: Definition
+    //   (http://www.ncbi.nlm.nih.gov/projects/collab/FT/index.html)
+    enum EQualifier
+    {
+        eQual_bad = 0,
+        eQual_allele,
+        eQual_anticodon,
+        eQual_bound_moiety,
+        eQual_cell_line,
+        eQual_cell_type,
+        eQual_chromosome,
+        eQual_citation,
+        eQual_clone,
+        eQual_clone_lib,
+        eQual_codon,
+        eQual_codon_start,
+        eQual_cons_splice,
+        eQual_country,
+        eQual_cultivar,
+        eQual_db_xref,
+        eQual_dev_stage,
+        eQual_direction,
+        eQual_EC_number,
+        eQual_ecotype,
+        eQual_environmental_sample,
+        eQual_estimated_length,
+        eQual_evidence,
+        eQual_exception,
+        eQual_focus,
+        eQual_frequency,
+        eQual_function,
+        eQual_gene,
+        eQual_germline,
+        eQual_haplotype,
+        eQual_insertion_seq,
+        eQual_isolate,
+        eQual_isolation_source,
+        eQual_label,
+        eQual_lab_host,
+        eQual_locus_tag,
+        eQual_map,
+        eQual_macronuclear,
+        eQual_mod_base,
+        eQual_mol_type,
+        eQual_note,
+        eQual_number,
+        eQual_operon,
+        eQual_organelle,
+        eQual_organism,
+        eQual_partial,
+        eQual_PCR_conditions,
+        eQual_phenotype,
+        eQual_pop_variant,
+        eQual_plasmid,
+        eQual_product,
+        eQual_protein_id,
+        eQual_proviral,
+        eQual_pseudo,
+        eQual_rearranged,
+        eQual_replace,
+        eQual_rpt_family,
+        eQual_rpt_type,
+        eQual_rpt_unit,
+        eQual_segment,
+        eQual_sequence_mol,
+        eQual_serotype,
+        eQual_serovar,
+        eQual_sex,
+        eQual_specific_host,
+        eQual_specimen_voucher,
+        eQual_standard_name,
+        eQual_strain,
+        eQual_sub_clone,
+        eQual_sub_species,
+        eQual_sub_strain,
+        eQual_tissue_lib,
+        eQual_tissue_type,
+        eQual_transgenic,
+        eQual_translation,
+        eQual_transl_except,
+        eQual_transl_table,
+        eQual_transposon,
+        eQual_usedin,
+        eQual_variety,
+        eQual_virion
+    };
+    typedef vector<EQualifier> TQualifiers;
+
+    // Test wheather a certain qualifier is legal for the feature
+    bool IsLegalQualifier(EQualifier qual) const;
+    static bool IsLegalQualifier(ESubtype subtype, EQualifier qual);
+
+    // Get a list of all the legal qualifiers for the feature.
+    const TQualifiers& GetLegalQualifiers(void) const;
+    static const TQualifiers& GetLegalQualifiers(ESubtype subtype);
+
+    // Get the list of all mandatory qualifiers for the feature.
+    const TQualifiers& GetMandatoryQualifiers(void) const;
+    static const TQualifiers& GetMandatoryQualifiers(ESubtype subtype);
+    
+    // Convert a qualifier from an enumerated value to a string representation.
+    static const string& GetQulifierAsString(EQualifier qual);
+
 private:
     mutable ESubtype m_Subtype; // cached
 
@@ -177,6 +282,13 @@ private:
     CSeqFeatData(const CSeqFeatData& value);
     CSeqFeatData& operator=(const CSeqFeatData& value);
 
+    typedef map<ESubtype, TQualifiers> TFeatQuals;
+    static void x_InitQuals(void);
+    static void x_InitLegalQuals(void);
+    static void x_InitMandatoryQuals(void);
+
+    static TFeatQuals sm_LegalQuals;
+    static TFeatQuals sm_MandatoryQuals;
 };
 
 
@@ -197,6 +309,29 @@ void CSeqFeatData::InvalidateSubtype(void)
 }
 
 
+inline
+bool CSeqFeatData::IsLegalQualifier(EQualifier qual) const
+{
+    x_InitQuals();  // does nothing if already intialized
+    return IsLegalQualifier(GetSubtype(), qual);
+}
+
+
+inline
+const CSeqFeatData::TQualifiers& CSeqFeatData::GetLegalQualifiers(void) const
+{
+    x_InitQuals();  // does nothing if already intialized
+    return GetLegalQualifiers(GetSubtype());
+}
+
+
+inline
+const CSeqFeatData::TQualifiers& CSeqFeatData::GetMandatoryQualifiers(void) const
+{
+    x_InitQuals();  // does nothing if already intialized
+    return GetMandatoryQualifiers(GetSubtype());
+}
+
 /////////////////// end of CSeqFeatData inline methods
 
 
@@ -211,6 +346,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/05/19 14:39:42  shomrat
+* Added list of qualifiers
+*
 * Revision 1.5  2003/10/24 17:13:49  shomrat
 * added gap, operaon and oriT subtypes
 *
