@@ -96,7 +96,7 @@ public:
     /// Set communication timeout (ReadWrite)
     void SetCommunicationTimeout(const STimeout& to);
     STimeout& SetCommunicationTimeout();
-    STimeout  GetCommunicationTimeout();
+    STimeout  GetCommunicationTimeout() const;
 
     /// Set socket (connected to the server)
     ///
@@ -429,6 +429,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/01/28 14:55:06  kuznets
+ * GetCommunicatioTimeout() declared const
+ *
  * Revision 1.20  2005/01/28 14:46:38  kuznets
  * Code clean-up, added PutData returning IWriter
  *

@@ -625,7 +625,7 @@ STimeout& CNetCacheClient::SetCommunicationTimeout()
     return m_Timeout; 
 }
 
-STimeout  CNetCacheClient::GetCommunicationTimeout()
+STimeout  CNetCacheClient::GetCommunicationTimeout() const
 { 
     return m_Timeout; 
 }
@@ -673,6 +673,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/01/28 14:55:14  kuznets
+ * GetCommunicatioTimeout() declared const
+ *
  * Revision 1.31  2005/01/28 14:46:58  kuznets
  * Code clean-up, added PutData returning IWriter
  *
