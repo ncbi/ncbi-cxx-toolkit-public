@@ -1266,8 +1266,8 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
             CRef<CSeq_interval> mapped = cvt->GetDstInterval();
             if ( revert_order ) {
                 if (last_int && cvt->GetSrc_to() == last_to - 1) {
-                    last_int->SetPartialRight(false);
-                    mapped->SetPartialLeft(false);
+                    last_int->SetPartialStop(false, eExtreme_Biological);
+                    mapped->SetPartialStart(false, eExtreme_Biological);
                     //last_int->ResetFuzz_from();
                     //mapped->ResetFuzz_to();
                 }
@@ -1275,8 +1275,8 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
             }
             else {
                 if (last_int && cvt->GetSrc_from() == last_to + 1) {
-                    last_int->SetPartialRight(false);
-                    mapped->SetPartialLeft(false);
+                    last_int->SetPartialStop(false, eExtreme_Biological);
+                    mapped->SetPartialStart(false, eExtreme_Biological);
                     //last_int->ResetFuzz_to();
                     //mapped->ResetFuzz_from();
                 }
@@ -1586,6 +1586,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2005/02/18 15:04:12  shomrat
+* IsPartialLeft changed to IsPartialStart
+*
 * Revision 1.50  2005/02/02 19:49:55  grichenk
 * Fixed more warnings
 *

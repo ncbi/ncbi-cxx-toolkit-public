@@ -1816,7 +1816,7 @@ void CCdregion_translate::TranslateCdregion (string& prot,
     }
 
     // if complete at 5' end, require valid start codon
-    if (offset == 0  &&  (! loc.IsPartialLeft ())) {
+    if (offset == 0  &&  (! loc.IsPartialStart (eExtreme_Biological))) {
         state = tbl.SetCodonState (bases [offset], bases [offset + 1], bases [offset + 2]);
         prot [0] = tbl.GetStartResidue (state);
     }
@@ -2623,6 +2623,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.120  2005/02/18 15:03:43  shomrat
+* IsPartialLeft changed to IsPartialStart
+*
 * Revision 1.119  2005/02/17 20:09:39  grichenk
 * GetId(CBioseq_Handle) uses existing vector of ids from the handle.
 *
