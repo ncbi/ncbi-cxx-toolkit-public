@@ -86,12 +86,12 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CObjectManager& objmgr,
             seqloc->SetWhole().Assign(*itr->GetId().front());
         }
         //CRef<CScope> s(scope);
-        SSeqLoc *slp = new SSeqLoc(seqloc, scope);
+        SSeqLoc sl(seqloc, scope);
 
         if (get_lcase_mask) {
-            slp->mask.Reset(lcase_mask[index++]);
+            sl.mask.Reset(lcase_mask[index++]);
         }
-        retval.push_back(*slp);
+        retval.push_back(sl);
     }
 
     return retval;
