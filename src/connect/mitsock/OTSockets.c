@@ -40,7 +40,7 @@
 
 /* 
  *
- * SocketsAPI.c -- external functions for manipulating STREAM and DGRAM sockets.
+ * OTSockets.c -- external functions for manipulating STREAM and DGRAM sockets.
  *
  * The prototypes and behavior of these calls is based on the Berkeley sockets API 
  * described in _Unix Network Programming_ by Richard Stevens.
@@ -48,10 +48,9 @@
  */
  
 #include <errno.h>
+#include <neterrno.h>
 #include <stdlib.h>				// malloc, free
 #include <string.h>				// memcpy, memset
-
-#include <neterrno.h>
 #include "SocketsInternal.h"
 
 static OTNotifyUPP gSocketNotifyUPP = NULL;
@@ -157,7 +156,6 @@ int socket(int family, int type, int protocol)
     goto abort;
 
   /* Install our notifier function to get idle events */
-  //theError = OTInstallNotifier(theSocket->ref, _SocketNotifyProc, nil);
   if (gSocketNotifyUPP == NULL) {
     gSocketNotifyUPP = NewOTNotifyUPP(_SocketNotifyProc);
   }
@@ -313,8 +311,7 @@ int fcntl(int sockFD, int command, int flags)
 	case F_SETFL:
 		/* set whether the socket is non-blocking */
 		if(flags & kO_NONBLOCK){
-		//	temp pjc... this doesn't work right yet...
-		//	OTSetNonBlocking(gSockets[sockFD]->ref);
+			OTSetNonBlocking(gSockets[sockFD]->ref);
 		}
 		else{
 			OTSetBlocking(gSockets[sockFD]->ref);
@@ -369,7 +366,7 @@ int setsockopt(
 
 	sp = gSockets[sockFD];
 
-	if ( sp != NULL)
+	if ( sp != NULL) /* warn if this unimplemented function is called */
 		return( EBADF);
 
 	/*
@@ -770,8 +767,8 @@ int select(int maxFDsExamined, fd_set *readFDs, fd_set *writeFDs,
     if (retVal != 0) break;
     
     /* If we have to keep going, call the idle proc.  
-       Gives time to other threads and other fun stuff. */
-    //  theError = Idle();
+       Gives time to other threads or applications */
+    theError = Idle();
     if(theError != noErr) goto abort;
     
   } while(waitForever || waitTicks >= TickCount());
@@ -972,16 +969,8 @@ abort:
  */
 int read(int sockFD, void *buffer, UInt32 numBytes)
 {
-  int theError = noErr;
-
   /* Read the data using recv (the same except flags == 0) */
-  theError = recv(sockFD, buffer, numBytes, 0);
-  if(theError != noErr)
-    goto abort;
-  
-abort:  
-  /* Clean up after the socket operation */
-  return(theError);
+  return( recv(sockFD, buffer, numBytes, 0));
 }
 
 
@@ -990,16 +979,8 @@ abort:
  */
 int write(int sockFD, void *buffer, UInt32 numBytes)
 {
-  int theError = noErr;
-  
   /* Write the data using send (the same except flags == 0) */
-  theError = send(sockFD, buffer, numBytes, 0);
-  if(theError != noErr)
-    goto abort;
-  
-abort:  
-  /* Clean up after the socket operation */
-  return(theError);
+  return( send(sockFD, buffer, numBytes, 0));
 }
 
 
@@ -1104,13 +1085,13 @@ int recv(int sockFD, void *buffer, UInt32 numBytes, int flags)
         }
   
       /* Handle those flags which we support */
-      if(flags & MSG_DONTWAIT && !OTIsNonBlocking(gSockets[sockFD]->ref))
+      if(flags & MSG_DONTWAIT && OTIsBlocking(gSockets[sockFD]->ref))
         {
           OTSetNonBlocking(gSockets[sockFD]->ref);
           resetToBlocking = true;
         }
 
-      if(!OTIsNonBlocking(gSockets[sockFD]->ref))
+      if(OTIsBlocking(gSockets[sockFD]->ref))
         {
           /* If we are blocking, we need to make sure we only ask for the amount available.
              This is because OTRcv will wait until it reads the entire amount requested! */
@@ -1118,14 +1099,12 @@ int recv(int sockFD, void *buffer, UInt32 numBytes, int flags)
           while(theError == kOTNoDataErr || readBytes <= 0) 
             {
               theError = OTCountDataBytes(gSockets[sockFD]->ref, &readBytes);
-              if((theError != noErr) && (theError != kOTNoDataErr)) 
-                {
+              if((theError != noErr) && (theError != kOTNoDataErr)){
 		          _HandleOTLook(sockFD, &theError);  /* Is it an OTLook Error? */
 	              _HandleOTErrors(&theError);
 		          goto abort_STREAM;
-		        }
-		    
-		      // temp pjc need to create ...  Idle();
+			  }
+		      theError = Idle();
             }
           
           /* Some data is available... make sure it is no more than the amount the caller wants */
@@ -1147,12 +1126,28 @@ retry:
           
           if(theError == kOTBadSyncErr)
 	        {
-	          // Idle();
+	          theError = Idle();
 	          goto retry;  /* retry... RAMDoubler is installed */
 	        }
           
 	      _HandleOTLook(sockFD, &theError);  /* Is it an OTLook Error? */
 	      _HandleOTErrors(&theError);
+	      if( theError == EAGAIN || theError == EWOULDBLOCK) {
+		   	  /*  If the call would block (we've requested non-blocking support), then
+	   		   *  abort the read, making sure the error is returned to the caller via
+		   	   *  [errno] to allow them to deal with retries.
+		   	   */
+	      	  bytesRead = 0;
+	      	  goto abort_STREAM;
+	      	  /*  Alternatively, use the following two lines and register an (optional) 
+	      	   *  idle handler with the idle library...  This would permit the creation
+	      	   *  of UI features like a spinning cursor or a "cmd-period" abort
+	      	   *
+	      	  theError = Idle();	// yield time to other stuff while we spin...
+	      	  goto retry;
+	      	   *
+	      	   */
+	    	}
 	      if(theError == ECONNRESET || theError == ENOTCONN || theError == kOTOutStateErr)
 	        {
 	          /* Just return EOF over and over for now */
@@ -1258,7 +1253,7 @@ int send(int sockFD, void *buffer, UInt32 numBytes, int flags)
       /* Handle those flags which we support */
       if(flags & MSG_OOB) 
         realFlags |= T_EXPEDITED;
-      if(flags & MSG_DONTWAIT && !OTIsNonBlocking(gSockets[sockFD]->ref))
+      if(flags & MSG_DONTWAIT && OTIsBlocking(gSockets[sockFD]->ref))
         {
           OTSetNonBlocking(gSockets[sockFD]->ref);
           resetToBlocking = true;
@@ -1277,8 +1272,7 @@ int send(int sockFD, void *buffer, UInt32 numBytes, int flags)
 	        continue;  /* the read end closed but we can still write */
 	      
 	      /* Fatal error */
-	      _HandleOTErrors(&bytesWritten);
-	      theError = bytesWritten;
+	      theError = _HandleOTErrors(&bytesWritten);
 	      goto abort_STREAM;
         }
         
@@ -1407,8 +1401,8 @@ retry:
   
   if(theError == kOTBadSyncErr)
     {
-      // Idle();
-      goto retry;  /* retry... RAMDoubler is installed */
+      theError = Idle();
+      goto retry;
     }
   
   _HandleOTLook(sockFD, &theError);  /* Is it an OTLook Error? */

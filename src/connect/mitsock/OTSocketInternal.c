@@ -45,9 +45,8 @@
  */
  
 #include <errno.h>
-#include <string.h>				// memcpu
-
 #include <neterrno.h>
+#include <string.h>				// memcpu
 #include "SocketsInternal.h"
 
 
@@ -240,20 +239,19 @@ pascal void _SocketNotifyProc(void *, OTEventCode code, OTResult result, void *c
   #pragma unused(result)
   #pragma unused(cookie)
   
-  OSStatus theError;
+  OSStatus theError = noErr;
   
   switch (code)
     {
     case kOTSyncIdleEvent:
-      theError = noErr; // Idle(); need to create an idle proc...
-      if(theError != noErr){
-        ncbi_SetErrno(theError);
-        }
-      break;
-    
-    default:
-      break;
-    }
+      	theError = Idle();
+		if(theError != noErr){
+			ncbi_SetErrno(theError);
+		}
+		break;
+	default:
+		break;
+	}
 }
 
 
@@ -270,17 +268,18 @@ pascal void _DNSNotifyProc(void *, OTEventCode code, OTResult result, void *cook
   switch (code)
     {
     case kOTSyncIdleEvent:
-      theError = noErr;
-    //  Idle();
-      if(theError != noErr){
-        ncbi_SetErrno(theError);
+    	theError = noErr;
+    	theError = Idle();
+		if(theError != noErr){
+			ncbi_SetErrno(theError);
         }
       break;
     
     case kOTProviderWillClose:
     case kOTProviderIsClosed:
-      /* OT is closing the provider out from underneath us.
-         We remove our reference to it so the next time we need it we'll reopen it. */
+      /*  OT is closing the provider out from underneath us.
+       *  We remove our reference to it so the next time we need it we'll reopen it. 
+       */
       (void) OTCloseProvider(gInternetServicesRef);
       gInternetServicesRef = kOTInvalidProviderRef;
       break;
@@ -323,7 +322,6 @@ OSStatus _DNSOpenInternetServices(void)
   /* Install our notifier function to get idle events */
   // 2001-03-28:  Joshua Juran
   // Carbon procs must be UPP's.
-  //theError = OTInstallNotifier(gInternetServicesRef, _DNSNotifyProc, nil);
   gDNSNotifyUPP = NewOTNotifyUPP(_DNSNotifyProc);
   theError = OTInstallNotifier(gInternetServicesRef, gDNSNotifyUPP, nil);
   if(theError != noErr)
