@@ -26,39 +26,8 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *    Non-ANSI, yet widely used functions
+ *   Non-ANSI, yet widely used functions
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.9  2002/03/19 22:12:28  lavr
- * strcasecmp and strncasecmp are optimized (for ASCII range)
- *
- * Revision 6.8  2001/12/04 15:57:22  lavr
- * Tiny style adjustement
- *
- * Revision 6.7  2000/12/28 21:27:52  lavr
- * ANSI C++ compliant use of malloc (explicit casting of result)
- *
- * Revision 6.6  2000/11/07 21:45:16  lavr
- * Removed isupper/islower checking in strlwr/strupr
- *
- * Revision 6.5  2000/11/07 21:19:38  vakatov
- * Compilation warning fixed;  plus, some code beautification...
- *
- * Revision 6.4  2000/10/18 21:15:53  lavr
- * strupr and strlwr added
- *
- * Revision 6.3  2000/10/06 16:40:23  lavr
- * <string.h> included now in <connect/ncbi_ansi_ext.h>
- * conditional preprocessor statements removed
- *
- * Revision 6.2  2000/05/17 16:11:02  lavr
- * Reorganized for use of HAVE_* defines
- *
- * Revision 6.1  2000/05/15 19:03:41  lavr
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_ansi_ext.h>
@@ -140,3 +109,41 @@ extern char* strlwr(char* s)
     }
     return s;
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.10  2002/09/24 15:05:45  lavr
+ * Log moved to end
+ *
+ * Revision 6.9  2002/03/19 22:12:28  lavr
+ * strcasecmp and strncasecmp are optimized (for ASCII range)
+ *
+ * Revision 6.8  2001/12/04 15:57:22  lavr
+ * Tiny style adjustement
+ *
+ * Revision 6.7  2000/12/28 21:27:52  lavr
+ * ANSI C++ compliant use of malloc (explicit casting of result)
+ *
+ * Revision 6.6  2000/11/07 21:45:16  lavr
+ * Removed isupper/islower checking in strlwr/strupr
+ *
+ * Revision 6.5  2000/11/07 21:19:38  vakatov
+ * Compilation warning fixed;  plus, some code beautification...
+ *
+ * Revision 6.4  2000/10/18 21:15:53  lavr
+ * strupr and strlwr added
+ *
+ * Revision 6.3  2000/10/06 16:40:23  lavr
+ * <string.h> included now in <connect/ncbi_ansi_ext.h>
+ * conditional preprocessor statements removed
+ *
+ * Revision 6.2  2000/05/17 16:11:02  lavr
+ * Reorganized for use of HAVE_* defines
+ *
+ * Revision 6.1  2000/05/15 19:03:41  lavr
+ * Initial revision
+ *
+ * ==========================================================================
+ */

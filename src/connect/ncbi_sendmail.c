@@ -26,7 +26,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *    Send mail
+ *   Send mail
  *
  */
 
@@ -450,6 +450,9 @@ const char* CORE_SendMailEx(const char*          to,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2002/09/24 15:05:45  lavr
+ * Log moved to end
+ *
  * Revision 6.14  2002/08/14 18:55:39  lavr
  * Close socket on error return (was forgotten)
  *

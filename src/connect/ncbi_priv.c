@@ -26,20 +26,8 @@
  * Author:  Denis Vakatov
  *
  * File Description:
- *    Private aux. code for the "ncbi_*.[ch]"
+ *   Private aux. code for the "ncbi_*.[ch]"
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.3  2002/06/18 18:39:38  ucko
- * Explicitly initialize global variables to avoid a MacOS X linker bug.
- *
- * Revision 6.2  2002/03/22 19:52:17  lavr
- * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
- *
- * Revision 6.1  2000/03/24 22:53:35  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include "ncbi_priv.h"
@@ -80,3 +68,22 @@ extern char* g_CORE_RegistryGET
     CORE_UNLOCK;
     return ret_value;
 }
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.4  2002/09/24 15:06:40  lavr
+ * Log moved to end
+ *
+ * Revision 6.3  2002/06/18 18:39:38  ucko
+ * Explicitly initialize global variables to avoid a MacOS X linker bug.
+ *
+ * Revision 6.2  2002/03/22 19:52:17  lavr
+ * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
+ *
+ * Revision 6.1  2000/03/24 22:53:35  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */

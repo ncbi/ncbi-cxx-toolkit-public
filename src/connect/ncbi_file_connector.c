@@ -31,31 +31,6 @@
  *   See in "connectr.h" for the detailed specification of the underlying
  *   connector("CONNECTOR", "SConnectorTag") methods and structures.
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.7  2002/04/26 16:32:36  lavr
- * Added setting of default timeout in meta-connector's setup routine
- *
- * Revision 6.6  2001/12/04 15:56:35  lavr
- * Use strdup() instead of explicit strcpy(malloc(...), ...)
- *
- * Revision 6.5  2001/01/25 17:04:43  lavr
- * Reversed:: DESTROY method calls free() to delete connector structure
- *
- * Revision 6.4  2001/01/23 23:11:20  lavr
- * Status virtual method implemented
- *
- * Revision 6.3  2001/01/11 16:38:16  lavr
- * free(connector) removed from s_Destroy function
- * (now always called from outside, in METACONN_Remove)
- *
- * Revision 6.2  2000/12/29 17:55:53  lavr
- * Adapted for use of new connector structure.
- *
- * Revision 6.1  2000/04/12 15:18:13  vakatov
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_ansi_ext.h>
@@ -337,3 +312,35 @@ extern CONNECTOR FILE_CreateConnectorEx
 
     return ccc;
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.8  2002/09/24 15:06:00  lavr
+ * Log moved to end
+ *
+ * Revision 6.7  2002/04/26 16:32:36  lavr
+ * Added setting of default timeout in meta-connector's setup routine
+ *
+ * Revision 6.6  2001/12/04 15:56:35  lavr
+ * Use strdup() instead of explicit strcpy(malloc(...), ...)
+ *
+ * Revision 6.5  2001/01/25 17:04:43  lavr
+ * Reversed:: DESTROY method calls free() to delete connector structure
+ *
+ * Revision 6.4  2001/01/23 23:11:20  lavr
+ * Status virtual method implemented
+ *
+ * Revision 6.3  2001/01/11 16:38:16  lavr
+ * free(connector) removed from s_Destroy function
+ * (now always called from outside, in METACONN_Remove)
+ *
+ * Revision 6.2  2000/12/29 17:55:53  lavr
+ * Adapted for use of new connector structure.
+ *
+ * Revision 6.1  2000/04/12 15:18:13  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */
