@@ -241,7 +241,7 @@ int main (int argc, char* argv[])
     delete set_cmd;
 
 
-    cout<< "driver " << driver_name;
+    //cout<< "driver " << driver_name;
 
     // Create table, insert data
     if(!selectOnly) {
