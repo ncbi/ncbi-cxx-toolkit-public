@@ -7703,6 +7703,98 @@ fi
 done
 
 
+## readdir_r() -- 2 different variants: 2-arg (trad. Solaris), 3-arg (POSIX).
+
+echo "$as_me:$LINENO: checking for readdir_r" >&5
+echo $ECHO_N "checking for readdir_r... $ECHO_C" >&6
+if test "${ncbi_cv_func_readdir_r+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ncbi_cv_func_readdir_r="no"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <dirent.h>
+int
+main ()
+{
+DIR* dir; struct dirent* entry; readdir_r(dir, entry, &entry);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_func_readdir_r=3
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+    if test "$ncbi_cv_func_readdir_r" = "no" ; then
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <dirent.h>
+int
+main ()
+{
+DIR* dir; struct dirent* entry; readdir_r(dir, entry);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_func_readdir_r=2
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+    fi
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_func_readdir_r" >&5
+echo "${ECHO_T}$ncbi_cv_func_readdir_r" >&6
+
+if test "$ncbi_cv_func_readdir_r" != "no" ; then
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_READDIR_R $ncbi_cv_func_readdir_r
+_ACEOF
+
+fi
+
 ### Check for typedefs, structures, and compiler features.
 echo "$as_me:$LINENO: checking for an ANSI C-conforming const" >&5
 echo $ECHO_N "checking for an ANSI C-conforming const... $ECHO_C" >&6

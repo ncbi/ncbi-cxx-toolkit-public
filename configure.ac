@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.252 2004/01/13 16:03:02 ucko Exp $
+#  $Id: configure.ac,v 1.253 2004/01/14 16:56:52 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1751,6 +1751,27 @@ fi
 dnl Too much overkill, and now wants getloadavg.c to exist.
 dnl AC_FUNC_GETLOADAVG
 AC_CHECK_FUNCS(getloadavg)
+
+## readdir_r() -- 2 different variants: 2-arg (trad. Solaris), 3-arg (POSIX).
+
+AC_CACHE_CHECK([for readdir_r], ncbi_cv_func_readdir_r,
+   [ncbi_cv_func_readdir_r="no"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <dirent.h>]],
+       [[DIR* dir; struct dirent* entry; readdir_r(dir, entry, &entry);]])],
+       [ncbi_cv_func_readdir_r=3])
+    if test "$ncbi_cv_func_readdir_r" = "no" ; then
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <dirent.h>]],
+       [[DIR* dir; struct dirent* entry; readdir_r(dir, entry);]])],
+       [ncbi_cv_func_readdir_r=2])
+    fi])
+
+if test "$ncbi_cv_func_readdir_r" != "no" ; then
+   AC_DEFINE_UNQUOTED(HAVE_READDIR_R, $ncbi_cv_func_readdir_r,
+    [If you have the `readdir_r' function, define to the number of
+     arguments it takes (normally 2 or 3).])
+fi
 
 ### Check for typedefs, structures, and compiler features.
 AC_C_CONST
