@@ -395,7 +395,7 @@ int CTime::DayOfWeek(void) const
     int c = Year() / 100;
     int y = Year() % 100;
     int m = Month() - 2;
-    if ( m < 0 ) {
+    if ( m <= 0 ) {
         m += 12;
         y--;
     }
@@ -1210,6 +1210,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/02/10 17:17:30  lavr
+ * Fix off-by-one bug in DayOfWeek() calculation
+ *
  * Revision 1.29  2002/10/24 15:16:37  ivanov
  * Fixed bug with using two obtainments of the current time in x_SetTime().
  *
