@@ -928,6 +928,13 @@ Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_type)
 
    remainder = stride % 4;
 
+   /*
+    The resulting stride is rounded to a number divisible by 4 
+    for all values except 6 and 7. This is done because scanning database 
+    with a stride divisible by 4 does not require splitting bytes of 
+    compressed sequences. For values 6 and 7 however the advantage of a 
+    larger stride outweighs the disadvantage of splitting the bytes.
+    */
    if (stride > 8 || (stride > 4 && remainder == 1) ) 
       stride -= remainder;
    return stride;
@@ -1569,6 +1576,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.131  2004/09/13 19:33:49  camacho
+ * Add comments
+ *
  * Revision 1.130  2004/08/16 19:45:14  dondosha
  * Implemented uneven gap linking of HSPs for blastx
  *
