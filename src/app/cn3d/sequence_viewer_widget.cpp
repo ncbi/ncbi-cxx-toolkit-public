@@ -119,6 +119,7 @@ private:
 
     void OnPaint(wxPaintEvent& event);
     void OnMouseEvent(wxMouseEvent& event);
+    void OnScrollWin(wxScrollWinEvent& event);
 
     SequenceViewerWidget_TitleArea *titleArea;
     ViewableAlignment *alignment;
@@ -165,6 +166,7 @@ public:
 BEGIN_EVENT_TABLE(SequenceViewerWidget_SequenceArea, wxScrolledWindow)
     EVT_PAINT               (SequenceViewerWidget_SequenceArea::OnPaint)
     EVT_MOUSE_EVENTS        (SequenceViewerWidget_SequenceArea::OnMouseEvent)
+    EVT_SCROLLWIN           (SequenceViewerWidget_SequenceArea::OnScrollWin)
 END_EVENT_TABLE()
 
 SequenceViewerWidget_SequenceArea::SequenceViewerWidget_SequenceArea(
@@ -537,6 +539,18 @@ void SequenceViewerWidget_SequenceArea::RemoveRubberband(wxDC& dc, int fromX, in
     }
 }
 
+void SequenceViewerWidget_SequenceArea::OnScrollWin(wxScrollWinEvent& event)
+{
+    // when scrolling happens via scrollbars (or movement keys), need to update status bar info.
+    // So, fake a (non-moving) mouse wheel event, which will trigger MouseOver.
+    wxMouseEvent fake(wxEVT_MOUSEWHEEL);
+    fake.m_wheelRotation = 0;
+    fake.m_wheelDelta = 120;
+    fake.m_linesPerAction = 3;
+    AddPendingEvent(fake);
+    event.Skip();   // continue to process this event normally
+}
+
 void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
 {
     static const ViewableAlignment *prevAlignment = NULL;
@@ -559,9 +573,39 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
     wxCoord mX, mY;
     event.GetPosition(&mX, &mY);
 
-    // translate visible area coordinates to cell coordinates
-    int vsX, vsY, cellX, cellY, MOX, MOY;
+    // get current view window location
+    int vsX, vsY;
     GetViewStart(&vsX, &vsY);
+
+    // handle wheel events
+    static wxCoord windowMX = 0, windowMY = 0;
+    bool wheelEvent = (event.GetEventType() == wxEVT_MOUSEWHEEL);
+    if (wheelEvent) {
+        if (dragging || windowMX < 0 || windowMY < 0 ||
+                windowMX >= GetClientSize().GetWidth() || windowMY >= GetClientSize().GetHeight())
+            return;
+        mX = windowMX;  // coords on mouse wheel event seem to be screen-relative, not window-relative
+        mY = windowMY;
+        static int accumulatedRotation = 0;
+        accumulatedRotation -= event.GetWheelRotation();    // move wheel up -> scroll up
+        int nDeltas = accumulatedRotation / event.GetWheelDelta();
+        if (nDeltas != 0) {
+            accumulatedRotation -= nDeltas * event.GetWheelDelta();
+            int toY = vsY + nDeltas * event.GetLinesPerAction();
+            if (toY < 0)
+                toY = 0;
+            else if (toY >= areaHeight)
+                toY = areaHeight - 1;
+            Scroll(-1, toY);
+            GetViewStart(&vsX, &vsY);   // update vsY so that MouseOver is called on new position
+        }
+    } else {
+        windowMX = mX;
+        windowMY = mY;
+    }
+
+    // translate visible area coordinates to cell coordinates
+    int cellX, cellY, MOX, MOY;
     cellX = MOX = vsX + mX / cellWidth;
     cellY = MOY = vsY + mY / cellHeight;
 
@@ -580,6 +624,9 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
         alignment->MouseOver(MOX, MOY);
     prevMOX = MOX;
     prevMOY = MOY;
+
+    if (wheelEvent)
+        return;
 
     // adjust for column/row selection
     if (mouseMode == SequenceViewerWidget::eSelectColumns)
@@ -1065,6 +1112,9 @@ void SequenceViewerWidget::Refresh(bool eraseBackground, const wxRect *rect)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2004/05/22 15:45:53  thiessen
+* support mouse wheel; update status bar on scroll
+*
 * Revision 1.41  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *
