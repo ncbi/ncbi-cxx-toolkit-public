@@ -153,9 +153,9 @@ typedef struct BlastSeqSrcIterator {
     BlastSeqSrcItrType  itr_type;
 
     /** Array of ordinal ids used when itr_type is eOidList */
-    unsigned int* oid_list;
+    int* oid_list;
     /** This is a half-closed interval [a,b) */
-    unsigned int  oid_range[2];
+    int  oid_range[2];
 
     /** Keep track of this iterator's current position */
     unsigned int  current_pos;
