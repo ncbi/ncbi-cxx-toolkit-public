@@ -43,7 +43,7 @@ void CAppNWA::Init()
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
                               "Global alignment application.\n"
-                              "Build 1.00.11 - 03/05/03");
+                              "Build 1.00.13 - 03/17/03");
 
     argdescr->AddDefaultKey
         ("matrix", "matrix", "scoring matrix",
@@ -155,7 +155,8 @@ void CAppNWA::x_RunOnPair() const
     if(bMrna2Dna && args["matrix"].AsString() != "nucl") {
         NCBI_THROW(CAppNWAException,
                    eInconsistentParameters,
-                   "Wrong matrix specified");
+                   "Spliced alignment assumes nucleotide sequences "
+                   "(matrix = nucl)");
     }
      
     if(bMrna2Dna && bMM) {
@@ -163,13 +164,6 @@ void CAppNWA::x_RunOnPair() const
                    eInconsistentParameters,
                    "Linear memory approach is not yet supported for the "
                    "spliced alignment algorithm");
-    }
-     
-    if(bEndSpaceFree && bMM) {
-        NCBI_THROW(CAppNWAException,
-                   eInconsistentParameters,
-                   "End-space free alignment is not yet "
-                   "supported in Myers-Miller algorithm");
     }
      
     if(bMT && !bMM) {
@@ -332,11 +326,15 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/03/17 15:32:28  kapustin
+ * Enabled end-space free alignments for all currently supported methods
+ *
  * Revision 1.12  2003/03/07 13:52:57  kapustin
  * Add a temporary check that -mm is not used with -esf
  *
  * Revision 1.11  2003/03/05 20:13:53  kapustin
- * Simplify FormatAsText(). Fix FormatAsSeqAlign(). Convert sequence alphabets to capitals
+ * Simplify FormatAsText(). Fix FormatAsSeqAlign(). Convert sequence alphabets
+ * to capitals
  *
  * Revision 1.10  2003/02/11 16:06:55  kapustin
  * Add end-space free alignment support
