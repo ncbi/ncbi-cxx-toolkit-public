@@ -1,5 +1,5 @@
-#ifndef DBAPI_DRIVER___IDRIVERMGR__HPP
-#define DBAPI_DRIVER___IDRIVERMGR__HPP
+#ifndef DBAPI_DRIVER___DRIVER_MGR__HPP
+#define DBAPI_DRIVER___DRIVER_MGR__HPP
 
 /* $Id$
  * ===========================================================================
@@ -41,21 +41,14 @@ BEGIN_NCBI_SCOPE
 class C_DriverMgr : public I_DriverMgr
 {
 public:
-    C_DriverMgr(unsigned int nof_drivers= 16) {
-        m_NofRoom= nof_drivers? nof_drivers : 16;
-        m_Drivers= new SDrivers[m_NofRoom];
-        m_NofDrvs= 0;
-    }
+    C_DriverMgr(unsigned int nof_drivers = 16);
+    virtual ~C_DriverMgr();
 
     FDBAPI_CreateContext GetDriver(const string& driver_name, 
-                                   string* err_msg= 0);
+                                   string*       err_msg = 0);
 
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
-
-    virtual ~C_DriverMgr() {
-        delete [] m_Drivers;
-    }
 
 protected:
     bool LoadDriverDll(const string& driver_name, string* err_msg);
@@ -67,10 +60,11 @@ private:
     struct SDrivers {
         string               drv_name;
         FDBAPI_CreateContext drv_func;
-    } *m_Drivers;
+    };
 
     unsigned int m_NofDrvs;
     unsigned int m_NofRoom;
+    SDrivers*    m_Drivers;
     CFastMutex   m_Mutex1;
     CFastMutex   m_Mutex2;
 };
@@ -83,6 +77,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/04/09 22:18:13  vakatov
+ * Moved code from the header
+ *
  * Revision 1.6  2002/04/09 20:05:57  vakatov
  * Identation
  *
@@ -107,4 +104,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  /* DBAPI_DRIVER___IDRIVERMGR__HPP */
+#endif  /* DBAPI_DRIVER___DRIVER_MGR__HPP */

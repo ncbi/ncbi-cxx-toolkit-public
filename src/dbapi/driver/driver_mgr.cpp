@@ -35,30 +35,24 @@
 BEGIN_NCBI_SCOPE
 
 
-void C_DriverMgr::RegisterDriver(const string&        driver_name,
-                                 FDBAPI_CreateContext driver_ctx_func)
+C_DriverMgr::C_DriverMgr(unsigned int nof_drivers)
+    : m_NofDrvs(0),
+      m_NofRoom(nof_drivers ? nof_drivers : 16),
+      m_Drivers(new SDrivers[m_NofRoom])
+      
 {
-    if(m_NofDrvs < m_NofRoom) {
-        CFastMutexGuard mg(m_Mutex2);
-        for(unsigned int i= m_NofDrvs; i--; ) {
-            if(m_Drivers[i].drv_name == driver_name) {
-                m_Drivers[i].drv_func= driver_ctx_func;
-                return;
-            }
-        }
-        m_Drivers[m_NofDrvs++].drv_func= driver_ctx_func;
-        m_Drivers[m_NofDrvs-1].drv_name= driver_name;
-    }
-    else {
-        throw CDB_ClientEx(eDB_Error, 101, "C_DriverMgr::RegisterDriver",
-                           "No space left for driver registration");
-    }
-	
+    return;
+}
+
+
+C_DriverMgr::~C_DriverMgr()
+{
+    delete [] m_Drivers;
 }
 
 
 FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name,
-					    string* err_msg)
+                                            string*       err_msg)
 {
     CFastMutexGuard mg(m_Mutex1);
     unsigned int i;
@@ -84,6 +78,28 @@ FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name,
 }
 
 
+void C_DriverMgr::RegisterDriver(const string&        driver_name,
+                                 FDBAPI_CreateContext driver_ctx_func)
+{
+    if(m_NofDrvs < m_NofRoom) {
+        CFastMutexGuard mg(m_Mutex2);
+        for(unsigned int i= m_NofDrvs; i--; ) {
+            if(m_Drivers[i].drv_name == driver_name) {
+                m_Drivers[i].drv_func= driver_ctx_func;
+                return;
+            }
+        }
+        m_Drivers[m_NofDrvs++].drv_func= driver_ctx_func;
+        m_Drivers[m_NofDrvs-1].drv_name= driver_name;
+    }
+    else {
+        throw CDB_ClientEx(eDB_Error, 101, "C_DriverMgr::RegisterDriver",
+                           "No space left for driver registration");
+    }
+	
+}
+
+
 bool C_DriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
 {
     try {
@@ -99,7 +115,7 @@ bool C_DriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
         return true;
     }
     catch (exception& e) {
-	if(err_msg) *err_msg= e.what();
+        if(err_msg) *err_msg= e.what();
         return false;
     }
 }
@@ -112,6 +128,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/04/09 22:18:15  vakatov
+ * Moved code from the header
+ *
  * Revision 1.8  2002/04/04 23:59:37  soussov
  * bug in RegisterDriver fixed
  *
