@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2000/10/13 20:59:12  vasilche
+* Avoid using of ssize_t absent on some compilers.
+*
 * Revision 1.53  2000/10/13 20:22:46  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -274,7 +277,7 @@ class CObjectIStream : public CObjectStack
 {
 public:
     // typedefs
-    typedef ssize_t TObjectIndex;
+    typedef int TObjectIndex;
 
     // open methods
     virtual void Open(const CRef<CByteSourceReader>& reader);

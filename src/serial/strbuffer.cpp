@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/10/13 20:59:21  vasilche
+* Avoid using of ssize_t absent on some compilers.
+*
 * Revision 1.18  2000/10/13 20:22:57  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -264,7 +267,7 @@ void CIStreamBuffer::FindChar(char c)
 }
 
 // this method is highly optimized
-ssize_t CIStreamBuffer::PeekFindChar(char c, size_t limit)
+size_t CIStreamBuffer::PeekFindChar(char c, size_t limit)
     THROWS1((CSerialIOException))
 {
     _ASSERT(limit > 0);
@@ -278,7 +281,7 @@ ssize_t CIStreamBuffer::PeekFindChar(char c, size_t limit)
         if ( found )
             return found - pos;
     }
-    return -1;
+    return limit;
 }
 
 char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/10/13 20:59:12  vasilche
+* Avoid using of ssize_t absent on some compilers.
+*
 * Revision 1.13  2000/10/13 20:22:46  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -106,7 +109,7 @@ class COObjectList;
 
 class CWriteObjectInfo {
 public:
-    typedef ssize_t TObjectIndex;
+    typedef int TObjectIndex;
     enum {
         eObjectIndexNotWritten = -1
     };
@@ -149,7 +152,7 @@ private:
 class COObjectList
 {
 public:
-    typedef ssize_t TObjectIndex;
+    typedef int TObjectIndex;
 
     COObjectList(void);
     ~COObjectList(void);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/10/13 20:59:12  vasilche
+* Avoid using of ssize_t absent on some compilers.
+*
 * Revision 1.17  2000/10/13 20:22:47  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -205,9 +208,10 @@ public:
     void FindChar(char c)
         THROWS1((CSerialIOException));
     // find specified symbol without skipping
-    // return relative offset of symbol from current position (-1 if not found)
-    // limit search by 'limit' symbols
-    ssize_t PeekFindChar(char c, size_t limit)
+    // limit - search by 'limit' symbols
+    // return relative offset of symbol from current position
+    //     (limit if not found)
+    size_t PeekFindChar(char c, size_t limit)
         THROWS1((CSerialIOException));
 
     const char* GetCurrentPos(void) const THROWS1_NONE

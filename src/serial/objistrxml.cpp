@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/10/13 20:59:21  vasilche
+* Avoid using of ssize_t absent on some compilers.
+*
 * Revision 1.12  2000/10/13 20:22:55  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -414,8 +417,9 @@ int CObjectIStreamXml::ReadEscapedChar(char endingChar)
     char c = m_Input.PeekChar();
     if ( c == '&' ) {
         m_Input.SkipChar();
-        ssize_t offset = m_Input.PeekFindChar(';', 32);
-        if ( offset < 0 )
+        const size_t limit = 32;
+        size_t offset = m_Input.PeekFindChar(';', limit);
+        if ( offset >= limit )
             ThrowError(eFormatError, "too long entity reference");
         const char* p = m_Input.GetCurrentPos(); // save entity string pointer
         m_Input.SkipChars(offset + 1); // skip it
