@@ -132,11 +132,17 @@ public:
         eAcc_wgs           = 7 << 8,
         eAcc_division_mask = 0xff00,
 
-        // Actual return values, grouped by Seq-id type
+        // Actual return values with EXAMPLE prefixes (to be followed
+        // by digits), grouped by Seq-id type.  In most cases, there
+        // are other prefixes with the same classification, and if not
+        // there could be.
         eAcc_unknown         = e_not_set | eAcc_other,
-        eAcc_unreserved_nuc  = e_not_set | 128 << 8 | fAcc_nuc,
-        eAcc_unreserved_prot = e_not_set | 128 << 8 | fAcc_prot,
-        eAcc_ambiguous_nuc   = e_not_set | 192 << 8 | fAcc_nuc,
+        eAcc_unreserved_nuc  = e_not_set | 128 << 8 | fAcc_nuc,  // XY
+        eAcc_unreserved_prot = e_not_set | 128 << 8 | fAcc_prot, // XYZ
+        eAcc_ambiguous_nuc   = e_not_set | 192 << 8 | fAcc_nuc,  // N0-N1
+        // Most N accessions are GenBank ESTs, but some low-numbered ones
+        // (now only used as primary accessions) were assigned haphazardly,
+        // and some are therefore ambiguous.
         eAcc_maybe_gb        = eAcc_ambiguous_nuc | 1,
         eAcc_maybe_embl      = eAcc_ambiguous_nuc | 2,
         eAcc_maybe_ddbj      = eAcc_ambiguous_nuc | 4,
@@ -151,81 +157,81 @@ public:
         eAcc_gibbmt = e_Gibbmt | eAcc_other,
         eAcc_giim   = e_Giim   | eAcc_other,
 
-        eAcc_gb_prot        = e_Genbank | eAcc_other      | fAcc_prot,
-        eAcc_gb_other_nuc   = e_Genbank | eAcc_other      | fAcc_nuc,
-        eAcc_gb_est         = e_Genbank | eAcc_est        | fAcc_nuc,
-        eAcc_gb_dirsub      = e_Genbank | eAcc_dirsub     | fAcc_nuc,
-        eAcc_gb_genome      = e_Genbank | eAcc_genome     | fAcc_nuc,
-        eAcc_gb_patent      = e_Genbank | eAcc_div_patent /* | fAcc_nuc */,
-        eAcc_gb_patent_prot = e_Genbank | eAcc_div_patent | fAcc_prot,
-        eAcc_gb_htgs        = e_Genbank | eAcc_htgs       | fAcc_nuc,
-        eAcc_gb_con         = e_Genbank | eAcc_con,
+        eAcc_gb_prot        = e_Genbank | eAcc_other      | fAcc_prot, // AAA
+        eAcc_gb_other_nuc   = e_Genbank | eAcc_other      | fAcc_nuc,  // AS
+        eAcc_gb_est         = e_Genbank | eAcc_est        | fAcc_nuc,  // H
+        eAcc_gb_dirsub      = e_Genbank | eAcc_dirsub     | fAcc_nuc,  // U
+        eAcc_gb_genome      = e_Genbank | eAcc_genome     | fAcc_nuc,  // AE
+        eAcc_gb_patent      = e_Genbank | eAcc_div_patent /* | fAcc_nuc */, //I
+        eAcc_gb_patent_prot = e_Genbank | eAcc_div_patent | fAcc_prot, // AAE
+        eAcc_gb_htgs        = e_Genbank | eAcc_htgs       | fAcc_nuc,  // AC
+        eAcc_gb_con         = e_Genbank | eAcc_con,                    // CH
         eAcc_gb_segset      = eAcc_gb_con, // for compatibility
-        eAcc_gb_wgs_nuc     = e_Genbank | eAcc_wgs        | fAcc_nuc,
-        eAcc_gb_wgs_prot    = e_Genbank | eAcc_wgs        | fAcc_prot,
-        eAcc_gsdb_dirsub    = e_Genbank | 128 << 8        | fAcc_nuc,
-        eAcc_gb_gsdb        = e_Genbank | 129 << 8        | fAcc_nuc,
-        eAcc_gb_gss         = e_Genbank | 130 << 8        | fAcc_nuc,
-        eAcc_gb_sts         = e_Genbank | 131 << 8        | fAcc_nuc,
-        eAcc_gb_backbone    = e_Genbank | 132 << 8        | fAcc_nuc,
-        eAcc_gb_cdna        = e_Genbank | 133 << 8        | fAcc_nuc,
+        eAcc_gb_wgs_nuc     = e_Genbank | eAcc_wgs        | fAcc_nuc,  // AAAA
+        eAcc_gb_wgs_prot    = e_Genbank | eAcc_wgs        | fAcc_prot, // EAA
+        eAcc_gsdb_dirsub    = e_Genbank | 128 << 8        | fAcc_nuc,  // J
+        eAcc_gb_gsdb        = e_Genbank | 129 << 8        | fAcc_nuc,  // AD
+        eAcc_gb_gss         = e_Genbank | 130 << 8        | fAcc_nuc,  // B
+        eAcc_gb_sts         = e_Genbank | 131 << 8        | fAcc_nuc,  // G
+        eAcc_gb_backbone    = e_Genbank | 132 << 8        | fAcc_nuc,  // S
+        eAcc_gb_cdna        = e_Genbank | 133 << 8        | fAcc_nuc,  // BC
 
-        eAcc_embl_prot      = e_Embl | eAcc_other      | fAcc_prot,
-        eAcc_embl_other_nuc = e_Embl | eAcc_other      | fAcc_nuc,
-        eAcc_embl_est       = e_Embl | eAcc_est        | fAcc_nuc,
-        eAcc_embl_dirsub    = e_Embl | eAcc_dirsub     | fAcc_nuc,
-        eAcc_embl_genome    = e_Embl | eAcc_genome     | fAcc_nuc,
-        eAcc_embl_patent    = e_Embl | eAcc_div_patent | fAcc_nuc,
-        eAcc_embl_htgs      = e_Embl | eAcc_htgs       | fAcc_nuc,
-        eAcc_embl_con       = e_Embl | eAcc_con        | fAcc_nuc,
-        eAcc_embl_wgs_nuc   = e_Embl | eAcc_wgs        | fAcc_nuc,
-        eAcc_embl_wgs_prot  = e_Embl | eAcc_wgs        | fAcc_prot,
+        eAcc_embl_prot      = e_Embl | eAcc_other      | fAcc_prot, // CAA
+        eAcc_embl_other_nuc = e_Embl | eAcc_other      | fAcc_nuc,  // N00060
+        eAcc_embl_est       = e_Embl | eAcc_est        | fAcc_nuc,  // F
+        eAcc_embl_dirsub    = e_Embl | eAcc_dirsub     | fAcc_nuc,  // V
+        eAcc_embl_genome    = e_Embl | eAcc_genome     | fAcc_nuc,  // AL
+        eAcc_embl_patent    = e_Embl | eAcc_div_patent | fAcc_nuc,  // A
+        eAcc_embl_htgs      = e_Embl | eAcc_htgs       | fAcc_nuc,  // unused
+        eAcc_embl_con       = e_Embl | eAcc_con        | fAcc_nuc,  // AN
+        eAcc_embl_wgs_nuc   = e_Embl | eAcc_wgs        | fAcc_nuc,  // CAAA
+        eAcc_embl_wgs_prot  = e_Embl | eAcc_wgs        | fAcc_prot, // unused
 
         eAcc_pir       = e_Pir       | eAcc_other | fAcc_prot,
         eAcc_swissprot = e_Swissprot | eAcc_other | fAcc_prot,
         eAcc_patent    = e_Patent    | eAcc_other,
 
-        eAcc_refseq_prot            = e_Other | eAcc_other  | fAcc_prot, //NP_
-        eAcc_refseq_genome          = e_Other | eAcc_genome | fAcc_nuc,  //NS_?
-        eAcc_refseq_wgs_nuc         = e_Other | eAcc_wgs    | fAcc_nuc,  //NZ_
-        eAcc_refseq_wgs_prot        = e_Other | eAcc_wgs    | fAcc_prot, //ZP_
-        eAcc_refseq_contig          = e_Other | eAcc_segset,             //NT_
-        eAcc_refseq_unreserved      = e_Other | 128 << 8,
-        eAcc_refseq_mrna            = e_Other | 129 << 8    | fAcc_nuc,  //NM_
-        eAcc_refseq_chromosome      = e_Other | 130 << 8    | fAcc_nuc,  //NC_
-        eAcc_refseq_genomic         = e_Other | 131 << 8    | fAcc_nuc,  //NG_
+        eAcc_refseq_prot            = e_Other | eAcc_other  | fAcc_prot,  //NP_
+        eAcc_refseq_genome          = e_Other | eAcc_genome | fAcc_nuc,   //NS_
+        eAcc_refseq_wgs_nuc         = e_Other | eAcc_wgs    | fAcc_nuc,   //NZ_
+        eAcc_refseq_wgs_prot        = e_Other | eAcc_wgs    | fAcc_prot,  //ZP_
+        eAcc_refseq_contig          = e_Other | eAcc_segset,              //NT_
+        eAcc_refseq_unreserved      = e_Other | 128 << 8,                 //AA_
+        eAcc_refseq_mrna            = e_Other | 129 << 8    | fAcc_nuc,   //NM_
+        eAcc_refseq_chromosome      = e_Other | 130 << 8    | fAcc_nuc,   //NC_
+        eAcc_refseq_genomic         = e_Other | 131 << 8    | fAcc_nuc,   //NG_
         // non-coding RNA
-        eAcc_refseq_ncrna           = e_Other | 132 << 8    | fAcc_nuc,  //NR_
-        eAcc_refseq_wgs_intermed    = e_Other | 133 << 8    | fAcc_nuc,  //NW_
-        eAcc_refseq_prot_predicted  = eAcc_refseq_prot  | fAcc_predicted,//XP_
-        eAcc_refseq_mrna_predicted  = eAcc_refseq_mrna  | fAcc_predicted,//XM_
-        eAcc_refseq_ncrna_predicted = eAcc_refseq_ncrna | fAcc_predicted,//XR_
+        eAcc_refseq_ncrna           = e_Other | 132 << 8    | fAcc_nuc,   //NR_
+        eAcc_refseq_wgs_intermed    = e_Other | 133 << 8    | fAcc_nuc,   //NW_
+        eAcc_refseq_prot_predicted  = eAcc_refseq_prot  | fAcc_predicted, //XP_
+        eAcc_refseq_mrna_predicted  = eAcc_refseq_mrna  | fAcc_predicted, //XM_
+        eAcc_refseq_ncrna_predicted = eAcc_refseq_ncrna | fAcc_predicted, //XR_
 
         eAcc_general = e_General | eAcc_other,
         eAcc_gi      = e_Gi      | eAcc_other,
 
-        eAcc_ddbj_prot      = e_Ddbj | eAcc_other      | fAcc_prot,
-        eAcc_ddbj_other_nuc = e_Ddbj | eAcc_other      | fAcc_nuc,
-        eAcc_ddbj_est       = e_Ddbj | eAcc_est        | fAcc_nuc,
-        eAcc_ddbj_dirsub    = e_Ddbj | eAcc_dirsub     | fAcc_nuc,
-        eAcc_ddbj_genome    = e_Ddbj | eAcc_genome     | fAcc_nuc,
-        eAcc_ddbj_patent    = e_Ddbj | eAcc_div_patent | fAcc_nuc,
-        eAcc_ddbj_htgs      = e_Ddbj | eAcc_htgs       | fAcc_nuc,
-        eAcc_ddbj_con       = e_Ddbj | eAcc_con        | fAcc_nuc,
-        eAcc_ddbj_wgs_nuc   = e_Ddbj | eAcc_wgs        | fAcc_nuc,
-        eAcc_ddbj_wgs_prot  = e_Ddbj | eAcc_wgs        | fAcc_prot,
+        eAcc_ddbj_prot      = e_Ddbj | eAcc_other      | fAcc_prot, // BAA
+        eAcc_ddbj_other_nuc = e_Ddbj | eAcc_other      | fAcc_nuc,  // N00028
+        eAcc_ddbj_est       = e_Ddbj | eAcc_est        | fAcc_nuc,  // C
+        eAcc_ddbj_dirsub    = e_Ddbj | eAcc_dirsub     | fAcc_nuc,  // D
+        eAcc_ddbj_genome    = e_Ddbj | eAcc_genome     | fAcc_nuc,  // AP
+        eAcc_ddbj_patent    = e_Ddbj | eAcc_div_patent | fAcc_nuc,  // E
+        eAcc_ddbj_htgs      = e_Ddbj | eAcc_htgs       | fAcc_nuc,  // AK
+        eAcc_ddbj_con       = e_Ddbj | eAcc_con        | fAcc_nuc,  // BA
+        eAcc_ddbj_wgs_nuc   = e_Ddbj | eAcc_wgs        | fAcc_nuc,  // BAAA
+        eAcc_ddbj_wgs_prot  = e_Ddbj | eAcc_wgs        | fAcc_prot, // GAA
 
         eAcc_prf = e_Prf | eAcc_other | fAcc_prot,
         eAcc_pdb = e_Pdb | eAcc_other | fAcc_prot,
 
-        eAcc_gb_tpa_nuc  = e_Tpg | eAcc_other | fAcc_nuc,
-        eAcc_gb_tpa_prot = e_Tpg | eAcc_other | fAcc_prot,
+        eAcc_gb_tpa_nuc  = e_Tpg | eAcc_other | fAcc_nuc,    // BK
+        eAcc_gb_tpa_prot = e_Tpg | eAcc_other | fAcc_prot,   // DAA
 
-        eAcc_embl_tpa_nuc  = e_Tpe | eAcc_other | fAcc_nuc,
-        eAcc_embl_tpa_prot = e_Tpe | eAcc_other | fAcc_prot,
+        eAcc_embl_tpa_nuc  = e_Tpe | eAcc_other | fAcc_nuc,  // BN
+        eAcc_embl_tpa_prot = e_Tpe | eAcc_other | fAcc_prot, // unused
 
-        eAcc_ddbj_tpa_nuc  = e_Tpd | eAcc_other | fAcc_nuc,
-        eAcc_ddbj_tpa_prot = e_Tpd | eAcc_other | fAcc_prot
+        eAcc_ddbj_tpa_nuc  = e_Tpd | eAcc_other | fAcc_nuc,  // BR
+        eAcc_ddbj_tpa_prot = e_Tpd | eAcc_other | fAcc_prot  // FAA
     };
 
     static E_Choice GetAccType(EAccessionInfo info)
@@ -376,6 +382,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.36  2004/01/09 19:54:13  ucko
+ * Give EXAMPLE prefixes to ease migration from hardcoded checks.
+ *
  * Revision 1.35  2003/10/24 14:55:10  ucko
  * Merged eAcc_con and eAcc_segset (had been mistakenly separated);
  * renamed eAcc_gb_segset to eAcc_gb_con, but left the old name as a synoynm.
