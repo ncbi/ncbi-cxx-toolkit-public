@@ -1121,9 +1121,12 @@ x_GetSequenceLengthAndId(const SSeqLoc* ss,          // [in]
     } else {
         ListNode* seqid_wrap;
         seqid_wrap = BLASTSeqSrcGetSeqId(seq_src, (void*) &oid);
-        if (seqid_wrap && seqid_wrap->choice == BLAST_SEQSRC_CPP_SEQID) {
+        ASSERT(seqid_wrap);
+        if (seqid_wrap->choice == BLAST_SEQSRC_CPP_SEQID) {
             *seqid = (CSeq_id*)seqid_wrap->ptr;
             ListNodeFree(seqid_wrap);
+        } else if (seqid_wrap->choice == BLAST_SEQSRC_CPP_SEQID_REF) {
+            *seqid = ((CRef<CSeq_id>*)seqid_wrap->ptr)->GetPointer();
         } else {
             /** FIXME!!! This is wrong, because the id created here will 
                 not be registered! However if sequence source returns a 
@@ -1356,6 +1359,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2004/04/06 20:47:14  dondosha
+* Check if BLASTSeqSrcGetSeqId returns a pointer to CRef instead of a simple pointer to CSeq_id
+*
 * Revision 1.35  2004/03/24 19:14:14  dondosha
 * BlastHSP structure does not have ordering_method field any more, but it does contain a splice_junction field
 *
