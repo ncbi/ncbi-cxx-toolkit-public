@@ -33,6 +33,12 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2001/06/20 21:26:18  vakatov
+ * As per A.Grichenko/A.Lavrentiev report:
+ *   SOCK_Shutdown() -- typo fixed (use "how" rather than "x_how").
+ *   SOCK_Shutdown(READ) -- do not call system shutdown if EOF was hit.
+ *   Whenever shutdown on both READ and WRITE:  do the WRITE shutdown first.
+ *
  * Revision 6.31  2001/06/04 21:03:08  vakatov
  * + HAVE_SOCKLEN_T
  *
@@ -901,13 +907,13 @@ static EIO_Status s_Close(SOCK sock)
     }
 
     /* Shutdown in both directions */
-    if (SOCK_Shutdown(sock, eIO_Read) != eIO_Success) {
-        CORE_LOG(eLOG_Warning,
-                 "[SOCK::s_Close]  Cannot shutdown socket for reading");
-    }
     if (SOCK_Shutdown(sock, eIO_Write) != eIO_Success) {
         CORE_LOG(eLOG_Warning,
                  "[SOCK::s_Close]  Cannot shutdown socket for writing");
+    }
+    if (SOCK_Shutdown(sock, eIO_Read) != eIO_Success) {
+        CORE_LOG(eLOG_Warning,
+                 "[SOCK::s_Close]  Cannot shutdown socket for reading");
     }
 
     /* Close (persistently retry if interrupted by a signal) */
@@ -1275,11 +1281,13 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
     switch ( how ) {
     case eIO_Read:
         if (sock->r_status == eIO_Closed) {
-            if ( !sock->is_eof ) {
-                return eIO_Success;  /* has been shutdown already */
-            } else {
-                sock->is_eof = 0/*false*/;  /* hit EOF, but not shutdown yet */
+            if ( sock->is_eof ) {
+                /* Hit EOF, but not shutdown yet. So, flag it as shutdown, but
+                 * do not call the actual system shutdown(), as it can cause
+                 * smart OS'es like Linux to complain. */
+                sock->is_eof = 0/*false*/;
             }
+            return eIO_Success;
         }
         x_how = SOCK_SHUTDOWN_RD;
         sock->r_status = eIO_Closed;
@@ -1292,8 +1300,8 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
         sock->w_status = eIO_Closed;
         break;
     case eIO_ReadWrite:
-        verify(SOCK_Shutdown(sock, eIO_Read ) == eIO_Success);
         verify(SOCK_Shutdown(sock, eIO_Write) == eIO_Success);
+        verify(SOCK_Shutdown(sock, eIO_Read ) == eIO_Success);
         return eIO_Success;
     default:
         CORE_LOG(eLOG_Warning, "[SOCK_Shutdown]  Invalid argument");
@@ -1302,7 +1310,7 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
 
     if (SOCK_SHUTDOWN(sock->sock, x_how) != 0) {
         CORE_LOGF(eLOG_Warning, ("[SOCK_Shutdown]  shutdown(%s) failed",
-                                 x_how == eIO_Read ? "read" : "write"));
+                                 how == eIO_Read ? "read" : "write"));
     }
     return eIO_Success;
 }
