@@ -12,7 +12,7 @@ SRC = objmgr_sample
 # the lines reading "### BEGIN/END COPIED SETTINGS" in any way.
 
 ### BEGIN COPIED SETTINGS
-LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
-      dbapi_driver xser xutil xconnect xncbi
+LIB = xobjmgr $(OBJMGR_LIBS)
+
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS

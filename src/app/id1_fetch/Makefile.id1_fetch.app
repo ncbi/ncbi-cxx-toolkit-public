@@ -4,8 +4,6 @@ REQUIRES = objects dbapi
 
 APP = id1_fetch
 SRC = id1_fetch
-LIB = xflat xalnmgr gbseq xobjutil xobjmgr id1cli id1 submit seqset \
-      $(SEQ_LIBS) pub medline biblio general dbapi_driver entrez2cli entrez2 \
-      xser xconnect xutil xncbi
+LIB = xflat xalnmgr gbseq xobjutil id1cli submit entrez2cli entrez2 $(OBJMGR_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
