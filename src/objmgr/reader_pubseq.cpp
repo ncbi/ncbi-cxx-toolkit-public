@@ -195,13 +195,7 @@ bool CPubseqReader::RetrieveSeqrefs(TSeqrefs& sr,
                                     const CSeq_id& seqId,
                                     TConn conn)
 {
-    try {
-        return x_RetrieveSeqrefs(sr, seqId, conn);
-    }
-    catch ( const CDB_Connection& ) {
-        Reconnect(conn);
-        throw;
-    }
+    return x_RetrieveSeqrefs(sr, seqId, conn);
 }
 
 
@@ -315,25 +309,19 @@ CPubseqBlobSource::CPubseqBlobSource(const CPubseqSeqref& seqId, TConn conn)
     : m_Seqref(seqId), m_Conn(conn),
       m_Cmd(seqId.x_GetConn(conn)->RPC("id_get_asn", 5))
 {
-    try {
-        CDB_Int giIn(seqId.Gi());
-        CDB_SmallInt satIn(seqId.Sat());
-        CDB_Int satKeyIn(seqId.SatKey());
-        CDB_Int z(0);
-        CDB_Int o(1);
+    CDB_Int giIn(seqId.Gi());
+    CDB_SmallInt satIn(seqId.Sat());
+    CDB_Int satKeyIn(seqId.SatKey());
+    CDB_Int z(0);
+    CDB_Int o(1);
 
-        m_Cmd->SetParam("@gi", &giIn);
-        m_Cmd->SetParam("@sat_key", &satKeyIn);
-        m_Cmd->SetParam("@sat", &satIn);
-        m_Cmd->SetParam("@maxplex", &z);
-        m_Cmd->SetParam("@outfmt", &z);
-        m_Cmd->SetParam("@ext_feat", &o);
-        m_Cmd->Send();
-    }
-    catch ( ... ) {
-        x_Reconnect();
-        throw;
-    }
+    m_Cmd->SetParam("@gi", &giIn);
+    m_Cmd->SetParam("@sat_key", &satKeyIn);
+    m_Cmd->SetParam("@sat", &satIn);
+    m_Cmd->SetParam("@maxplex", &z);
+    m_Cmd->SetParam("@outfmt", &z);
+    m_Cmd->SetParam("@ext_feat", &o);
+    m_Cmd->Send();
 }
 
 
@@ -365,55 +353,49 @@ CBlob* CPubseqBlobSource::RetrieveBlob(void)
 
 void CPubseqBlobSource::x_GetNextBlob(void)
 {
-    try {
-        // new row
-        CDB_VarChar descrOut("-");
-        CDB_Int classOut(0);
-        CDB_Int confidential(0),withdrawn(0);
+    // new row
+    CDB_VarChar descrOut("-");
+    CDB_Int classOut(0);
+    CDB_Int confidential(0),withdrawn(0);
     
-        while(m_Cmd->HasMoreResults()) {
-            _TRACE("next result");
-            if ( m_Cmd->HasFailed() && confidential.Value()>0 ||
-                 withdrawn.Value()>0 ) {
-                LOG_POST("GI(" << m_Seqref.Gi() <<") is private");
-                return;
-            }
-            
-            m_Result.reset(m_Cmd->Result());
-            if (m_Result.get() == 0 || m_Result->ResultType() != eDB_RowResult)
-                continue;
-            
-            while(m_Result->Fetch()) {
-                _TRACE("next fetch: " << m_Result->NofItems() << " items");
-                for ( unsigned pos = 0; pos < m_Result->NofItems(); ++pos ) {
-                    const string name = m_Result->ItemName(pos);
-                    _TRACE("next item: " << name);
-                    if(name == "asn1") {
-                        m_Blob.Reset(new CPubseqBlob(*this,
-                                                     classOut.Value(),
-                                                     descrOut.Value()));
-                        return;
-                    }
-                    else if(name == "confidential") {
-                        m_Result->GetItem(&confidential);
-                    }
-                    else if(name == "override") {
-                        m_Result->GetItem(&withdrawn);
-                    }
-                    else {
-                        m_Result->SkipItem();
-                    }
-                }
-            }
-        }
-        if(confidential.Value()>0 || withdrawn.Value()>0) {
+    while(m_Cmd->HasMoreResults()) {
+        _TRACE("next result");
+        if ( m_Cmd->HasFailed() && confidential.Value()>0 ||
+             withdrawn.Value()>0 ) {
             LOG_POST("GI(" << m_Seqref.Gi() <<") is private");
             return;
         }
+            
+        m_Result.reset(m_Cmd->Result());
+        if (m_Result.get() == 0 || m_Result->ResultType() != eDB_RowResult)
+            continue;
+            
+        while(m_Result->Fetch()) {
+            _TRACE("next fetch: " << m_Result->NofItems() << " items");
+            for ( unsigned pos = 0; pos < m_Result->NofItems(); ++pos ) {
+                const string name = m_Result->ItemName(pos);
+                _TRACE("next item: " << name);
+                if(name == "asn1") {
+                    m_Blob.Reset(new CPubseqBlob(*this,
+                                                 classOut.Value(),
+                                                 descrOut.Value()));
+                    return;
+                }
+                else if(name == "confidential") {
+                    m_Result->GetItem(&confidential);
+                }
+                else if(name == "override") {
+                    m_Result->GetItem(&withdrawn);
+                }
+                else {
+                    m_Result->SkipItem();
+                }
+            }
+        }
     }
-    catch ( ... ) {
-        x_Reconnect();
-        throw;
+    if(confidential.Value()>0 || withdrawn.Value()>0) {
+        LOG_POST("GI(" << m_Seqref.Gi() <<") is private");
+        return;
     }
 }
 
@@ -434,19 +416,14 @@ CPubseqBlob::~CPubseqBlob(void)
 
 CSeq_entry *CPubseqBlob::Seq_entry()
 {
-    try {
-        CResultByteSource src(m_Source.m_Result.get());
-        auto_ptr<CObjectIStream> in
-            (CObjectIStream::Create(eSerial_AsnBinary, src));
+    CResultByteSource src(m_Source.m_Result.get());
 
-        m_Seq_entry = new CSeq_entry;
+    auto_ptr<CObjectIStream> in
+        (CObjectIStream::Create(eSerial_AsnBinary, src));
 
-        *in >> *m_Seq_entry;
-    }
-    catch ( ... ) {
-        m_Source.x_Reconnect();
-        throw;
-    }
+    m_Seq_entry = new CSeq_entry;
+
+    *in >> *m_Seq_entry;
 
     return m_Seq_entry;
 }
@@ -493,6 +470,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.27  2003/05/13 20:14:40  vasilche
+* Catching exceptions and reconnection were moved from readers to genbank loader.
+*
 * Revision 1.26  2003/04/24 16:12:38  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

@@ -239,7 +239,8 @@ private:
                                    const CSeqref& srp,
                                    int from,int to, TMask blob_mask);
     bool            x_GetData(STSEinfo *tse,const CSeqref& srp,
-                              int from,int to, TMask blob_mask);
+                              int from,int to, TMask blob_mask,
+                              CReader::TConn conn);
     void            x_Check(STSEinfo *me);
 };
 
@@ -251,6 +252,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.34  2003/05/13 20:14:40  vasilche
+ * Catching exceptions and reconnection were moved from readers to genbank loader.
+ *
  * Revision 1.33  2003/05/13 18:32:10  vasilche
  * Fixed GBLOG_POST() macro.
  *

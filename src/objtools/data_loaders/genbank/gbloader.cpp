@@ -379,7 +379,7 @@ CGBDataLoader::x_UpdateDropList(STSEinfo *tse)
 void
 CGBDataLoader::x_DropTSEinfo(STSEinfo *tse)
 {
-    GBLOG_POST( "DropTse(" << tse <<")" );
+    LOG_POST( "DropTse(" << tse <<")" );
     if(!tse) return;
   
     m_Sr2TseInfo.erase(CCmpTSE(tse->key));
@@ -563,29 +563,37 @@ bool CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,
             g.Local();
             global_mutex_was_released=true;
 
-            int try_cnt=2;
-            while(try_cnt-->0) {
+            int try_cnt = 2;
+            while( try_cnt-- > 0 ) {
+                CReader::TConn conn = m_Locks.m_Pool.Select(tse);
                 try {
                     new_tse = new_tse ||
                         x_GetData(tse,
                                   **srp,
                                   lrange->first.GetFrom(),
                                   lrange->first.GetTo(),
-                                  blob_mask
+                                  blob_mask,
+                                  conn
                             );
                     break;
                 }
                 catch(const CIOException &e) {
-                    LOG_POST("ID connection failed: Reconnecting...." << e.what());
+                    LOG_POST(e.what());
+                    LOG_POST("GenBank connection failed: Reconnecting....");
+                    m_Driver->Reconnect(conn);
                 }
                 catch(const CDB_Exception &e) {
-                    LOG_POST("ID connection failed: Reconnecting...." << e.what());
+                    LOG_POST(e.what());
+                    LOG_POST("GenBank connection failed: Reconnecting....");
+                    m_Driver->Reconnect(conn);
                 }
                 catch(const exception &e) {
-                    LOG_POST("ID connection failed (exception): Reconnecting...." << e.what());
+                    LOG_POST(e.what());
+                    LOG_POST("GenBank connection failed: Reconnecting....");
+                    m_Driver->Reconnect(conn);
                 }
                 catch (...) {
-                    LOG_POST(CThread::GetSelf() << ":: Data request failed....");
+                    LOG_POST(CThread::GetSelf()<<":: Data request failed....");
                     g.Lock();
                     g.Lock(tse);
                     tse->locked--;
@@ -593,8 +601,9 @@ bool CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,
                     throw;
                 }
             }
-            if(try_cnt<0) {
-                LOG_POST("CGBLoader:GetData: Data Request failed :: exceeded maximum attempts count");
+            if ( try_cnt < 0 ) {
+                LOG_POST("CGBLoader:GetData: Data Request failed :: "
+                         "exceeded maximum attempts count");
                 g.Lock();
                 g.Lock(tse);
                 tse->locked--;
@@ -650,24 +659,25 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
     bool got = false;
     for ( int try_cnt = 2; !got && try_cnt > 0; --try_cnt ) {
         CTimerGuard tg(m_Timer);
+        CReader::TConn conn = m_Locks.m_Pool.Select(sr);
         try {
             osr.clear();
-            got = m_Driver->RetrieveSeqrefs(osr,
-                                            *x_GetSeqId(h),
-                                            m_Locks.m_Pool.Select(sr));
-            break;
+            got = m_Driver->RetrieveSeqrefs(osr, *x_GetSeqId(h), conn);
         }
         catch(const CIOException &e) {
             LOG_POST(e.what());
-            LOG_POST("ID connection failed: Reconnecting....");
+            LOG_POST("GenBank connection failed: Reconnecting....");
+            m_Driver->Reconnect(conn);
         }
         catch(const CDB_Exception &e) {
             LOG_POST(e.what());
-            LOG_POST("ID connection failed: Reconnecting....");
+            LOG_POST("GenBank connection failed: Reconnecting....");
+            m_Driver->Reconnect(conn);
         }
         catch(const exception &e) {
             LOG_POST(e.what());
-            LOG_POST("ID connection failed (exception): Reconnecting....");
+            LOG_POST("GenBank connection failed: Reconnecting....");
+            m_Driver->Reconnect(conn);
         }
     }
     if ( !got ) {
@@ -742,7 +752,8 @@ bool CGBDataLoader::x_NeedMoreData(CTSEUpload *tse_up,
 bool CGBDataLoader::x_GetData(STSEinfo *tse,
                               const CSeqref& srp,
                               int from,int to,
-                              TMask blob_mask)
+                              TMask blob_mask,
+                              CReader::TConn conn)
 {
     CTSEUpload *tse_up = &tse->m_upload;
     if(!x_NeedMoreData(tse_up,srp,from,to,blob_mask))
@@ -755,27 +766,30 @@ bool CGBDataLoader::x_GetData(STSEinfo *tse,
     if (tse_up->m_mode == CTSEUpload::eNone) {
         CSeqref::TBlobClass cl = blob_mask;
         int count=0;
-        for ( CRef<CBlobSource> bs(srp.GetBlobSource(from, to, cl,
-                                                     m_Locks.m_Pool.Select(tse)));
+        for ( CRef<CBlobSource> bs(srp.GetBlobSource(from, to, cl, conn));
               bs->HaveMoreBlobs(); ++count) {
             CRef<CBlob> blob(bs->RetrieveBlob());
-            GBLOG_POST( "GetBlob(" << srp.print() << ") " << from << ":"<< to << "  class("<<blob->Class()<<")");
+            GBLOG_POST("GetBlob(" << srp.print() << ") " <<
+                       from << ":"<< to << "  class("<<blob->Class()<<")");
             m_InvokeGC=true;
             if (blob->Class()==0) {
                 tse_up->m_tse    = blob->Seq_entry();
                 if(tse_up->m_tse) {
                     tse_up->m_mode   = CTSEUpload::eDone;
-                    GBLOG_POST( "GetBlob(" << srp.print() << ") " << "- whole blob retrieved");
+                    LOG_POST("GetBlob(" << srp.print() << ") " << "- "
+                             "whole blob retrieved");
                     new_tse=true;
                     tse->tseinfop=GetDataSource()->AddTSE(*(tse_up->m_tse));
                 }
                 else {
                     tse_up->m_mode   = CTSEUpload::eDone;
-                    LOG_POST( "GetBlob(" <<  ") " << "- retrieval of the whole blob failed - no data available");
+                    LOG_POST("GetBlob(" <<  ") " << "- "
+                             "retrieval of the whole blob failed - "
+                             "no data available");
                 }
             }
             else {
-                GBLOG_POST("GetBlob(" << srp.print() << ") " << "- partial load");
+                LOG_POST("GetBlob(" <<srp.print()<< ") " << "- partial load");
                 _ASSERT(tse_up->m_mode != CTSEUpload::eDone);
                 if(tse_up->m_mode != CTSEUpload::ePartial)
                     tse_up->m_mode = CTSEUpload::ePartial;
@@ -814,6 +828,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2003/05/13 20:14:40  vasilche
+* Catching exceptions and reconnection were moved from readers to genbank loader.
+*
 * Revision 1.65  2003/05/13 18:32:29  vasilche
 * Fixed use of GBLOG_POST() macro.
 *

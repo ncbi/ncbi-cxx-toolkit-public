@@ -52,13 +52,7 @@ bool CId1Reader::RetrieveSeqrefs(TSeqrefs& sr,
                                  const CSeq_id& seqId,
                                  TConn conn)
 {
-    try {
-        return x_RetrieveSeqrefs(sr, seqId, conn);
-    }
-    catch(const CIOException&) {
-        Reconnect(conn);
-        throw;
-    }
+    return x_RetrieveSeqrefs(sr, seqId, conn);
 }
 
 
@@ -149,27 +143,21 @@ void CId1Seqref::x_Reconnect(TConn conn) const
 CId1BlobSource::CId1BlobSource(const CId1Seqref& seqId, TConn conn)
     : m_Seqref(seqId), m_Conn(conn), m_Count(0)
 {
-    try {
-        CRef<CID1server_maxcomplex> params(new CID1server_maxcomplex);
-        params->SetMaxplex(eEntry_complexities_entry);
-        params->SetGi(seqId.Gi());
-        params->SetEnt(seqId.SatKey());
-        params->SetSat(NStr::IntToString(seqId.Sat()));
+    CRef<CID1server_maxcomplex> params(new CID1server_maxcomplex);
+    params->SetMaxplex(eEntry_complexities_entry);
+    params->SetGi(seqId.Gi());
+    params->SetEnt(seqId.SatKey());
+    params->SetSat(NStr::IntToString(seqId.Sat()));
 
-        CID1server_request id1_request;
-        id1_request.SetGetsefromgi(*params);
+    CID1server_request id1_request;
+    id1_request.SetGetsefromgi(*params);
 
-        {{
-            CObjectOStreamAsnBinary server_output(*x_GetService());
-            server_output << id1_request;
-            server_output.Flush();
-            m_Count = 1;
-        }}
-    }
-    catch ( ... ) {
-        x_Reconnect();
-        throw;
-    }
+    {{
+        CObjectOStreamAsnBinary server_output(*x_GetService());
+        server_output << id1_request;
+        server_output.Flush();
+        m_Count = 1;
+    }}
 }
 
 
@@ -225,34 +213,19 @@ CId1Blob::~CId1Blob(void)
 
 CSeq_entry* CId1Blob::Seq_entry()
 {
-    try {
-        auto_ptr<CObjectIStream>
-            objStream(CObjectIStream::Open(eSerial_AsnBinary,
-                                           *m_Source.x_GetService(), false));
-        CID1server_back id1_reply;
+    auto_ptr<CObjectIStream>
+        objStream(CObjectIStream::Open(eSerial_AsnBinary,
+                                       *m_Source.x_GetService(), false));
+    CID1server_back id1_reply;
 
-        *objStream >> id1_reply;
+    *objStream >> id1_reply;
 
-        if (id1_reply.IsGotseqentry())
-            m_Seq_entry = &id1_reply.SetGotseqentry();
-        else if (id1_reply.IsGotdeadseqentry())
-            m_Seq_entry = &id1_reply.SetGotdeadseqentry();
+    if (id1_reply.IsGotseqentry())
+        m_Seq_entry = &id1_reply.SetGotseqentry();
+    else if (id1_reply.IsGotdeadseqentry())
+        m_Seq_entry = &id1_reply.SetGotdeadseqentry();
 
-        return m_Seq_entry;
-    }
-    catch (exception& e) {
-        LOG_POST("TROUBLE: reader_id1: can not read Seq-entry from reply: "
-                 << e.what() );
-        m_Seq_entry = 0;
-        m_Source.x_Reconnect();
-        throw;
-    }
-    catch (...) {
-        LOG_POST("TROUBLE: reader_id1: can not read Seq-entry from reply");
-        m_Seq_entry = 0;
-        m_Source.x_Reconnect();
-        throw;
-    }
+    return m_Seq_entry;
 }
 
 
@@ -373,6 +346,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.37  2003/05/13 20:14:40  vasilche
+ * Catching exceptions and reconnection were moved from readers to genbank loader.
+ *
  * Revision 1.36  2003/04/24 16:12:38  vasilche
  * Object manager internal structures are splitted more straightforward.
  * Removed excessive header dependencies.
