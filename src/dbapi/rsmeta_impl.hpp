@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/02/05 17:24:02  kholodov
+* Put into NCBI scope
+*
 * Revision 1.1  2002/01/30 14:51:23  kholodov
 * User DBAPI implementation, first commit
 *
@@ -46,7 +49,9 @@
 #include "array.hpp"
 #include "active_obj.hpp"
 
-class ncbi::CDB_Result;
+BEGIN_NCBI_SCOPE
+
+class CDB_Result;
 
 class CResultSetMetaData : public CActiveObject, 
 			   public IEventListener,
@@ -115,5 +120,6 @@ string CResultSetMetaData::GetName(unsigned int idx) const
 }
 //====================================================================
 
+END_NCBI_SCOPE
 
 #endif // _RSMETA_IMPL_HPP_

@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/02/05 17:24:02  kholodov
+* Put into NCBI scope
+*
 * Revision 1.1  2002/01/30 14:51:22  kholodov
 * User DBAPI implementation, first commit
 *
@@ -43,6 +46,8 @@
 
 #include "stmt_impl.hpp"
 #include <map>
+
+BEGIN_NCBI_SCOPE
 
 class CCallableStatement : public CStatement,
 			   public ICallableStatement
@@ -79,5 +84,6 @@ private:
 };
 
 //====================================================================
+END_NCBI_SCOPE
 
 #endif // _CSTMT_IMPL_HPP_

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/02/05 17:24:02  kholodov
+* Put into NCBI scope
+*
 * Revision 1.1  2002/01/30 14:51:21  kholodov
 * User DBAPI implementation, first commit
 *
@@ -44,6 +47,8 @@
 #include "rs_impl.hpp"
 #include "basetmpl.hpp"
 #include <dbapi/driver/public.hpp>
+
+BEGIN_NCBI_SCOPE
 
 // implementation
 CCallableStatement::CCallableStatement(const string& proc,
@@ -118,3 +123,4 @@ int CCallableStatement::GetReturnStatus()
   return m_status;
 }
 
+END_NCBI_SCOPE
