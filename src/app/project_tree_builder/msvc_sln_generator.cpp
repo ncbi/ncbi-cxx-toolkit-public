@@ -279,7 +279,14 @@ CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream&     ofs,
 {
     ITERATE(list<SConfigInfo>, p, m_Configs) {
 
-        const string& config = (*p).m_Name;
+        const SConfigInfo& cfg_info = *p;
+
+        CMsvcPrjProjectContext context(project.m_Project);
+        if ( !context.IsConfigEnabled(cfg_info) ) {
+            continue;
+        }
+
+        const string& config = cfg_info.m_Name;
         ofs << '\t' 
             << '\t' 
             << project.m_GUID 
@@ -334,6 +341,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/02/24 21:15:31  gorelenk
+ * Added test for config availability for project to implementation  of
+ * member-function WriteProjectConfigurations of class CMsvcSolutionGenerator.
+ *
  * Revision 1.12  2004/02/20 22:53:26  gorelenk
  * Added analysis of ASN projects depends.
  *
