@@ -78,6 +78,7 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/OrgName.hpp>
 
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seqblock/EMBL_block.hpp>
@@ -2520,6 +2521,14 @@ bool CValidError_bioseq::IsSynthetic(const CBioseq& seq) const
                  source.GetOrigin() == CBioSource::eOrigin_synthetic ) {
                 return true;
             }
+            if ( source.CanGetOrg()  &&  source.GetOrg().CanGetOrgname() ) {
+                const COrgName& org_name = source.GetOrg().GetOrgname();
+                if ( org_name.CanGetDiv() ) {
+                    if ( NStr::CompareNocase(org_name.GetDiv(), "SYN") == 0 ) {
+                        return true;
+                    }
+                }
+            }
         }
     }
     return false;
@@ -3257,6 +3266,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2003/10/01 20:21:45  shomrat
+* fixed IsSynthetic to look at div if origin was not set
+*
 * Revision 1.47  2003/09/23 13:26:32  shomrat
 * Check DeltaLitOnly and allow test for terminal Ns
 *
