@@ -478,6 +478,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_FEAT_BadConflictFlag",
     "SEQ_FEAT_ConflictFlagSet",
     "SEQ_FEAT_LocusTagProblem",
+    "SEQ_FEAT_AltStartCodon",
 
     "SEQ_ALIGN_SeqIdProblem",
     "SEQ_ALIGN_StrandRev",
@@ -1047,6 +1048,9 @@ same as the instantiated product Bioseq.",
 be brought to the attention of the source database for possible correction.",
 //  SEQ_FEAT_LocusTagProblem
 "A gene locus_tag should be a single token, with no spaces.",
+//  SEQ_FEAT_AltStartCodon
+"An alternative start codon was used. This is rare, and it is expected that \
+confirmatory evidence will be cited.",
 
 /* SEQ_ALIGN */
 
@@ -1146,6 +1150,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2004/03/01 18:38:58  shomrat
+* Added alternative start codon error
+*
 * Revision 1.39  2004/02/25 15:52:15  shomrat
 * Added CollidingLocusTags error
 *

@@ -262,6 +262,7 @@ enum EErrType {
     eErr_SEQ_FEAT_BadConflictFlag,
     eErr_SEQ_FEAT_ConflictFlagSet,
     eErr_SEQ_FEAT_LocusTagProblem,
+    eErr_SEQ_FEAT_AltStartCodon,
 
     eErr_SEQ_ALIGN_SeqIdProblem,
     eErr_SEQ_ALIGN_StrandRev,
@@ -433,7 +434,7 @@ public:
     void ReportBioseqsWithNoMolinfo(void);
 
     bool IsNucAcc(const string& acc);
-    bool IsFarLocation(const CSeq_loc& loc) const;
+    bool IsFarLocation(const CSeq_loc& loc);
     CConstRef<CSeq_feat> GetCDSGivenProduct(const CBioseq& seq);
     const CSeq_entry* GetAncestor(const CBioseq& seq, CBioseq_set::EClass clss);
     bool IsSerialNumberInComment(const string& comment);
@@ -923,6 +924,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2004/03/01 18:39:21  shomrat
+* Added alternative start codon error
+*
 * Revision 1.56  2004/02/25 15:52:51  shomrat
 * Added CollidingLocusTags error
 *
