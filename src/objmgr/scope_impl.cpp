@@ -1171,6 +1171,32 @@ CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
 }
 
 
+CScope_Impl::TTSE_LockMatchSet
+CScope_Impl::GetTSESetWithAnnots(const CBioseq_Handle& bh)
+{
+    TTSE_LockMatchSet lock;
+    if ( bh ) {
+        TReadLockGuard rguard(m_Scope_Conf_RWLock);
+        CRef<CBioseq_ScopeInfo> binfo
+            (&const_cast<CBioseq_ScopeInfo&>(bh.x_GetScopeInfo()));
+        
+        _ASSERT(binfo->HasBioseq());
+        
+        CInitGuard init(binfo->m_BioseqAnnotRef_Info, m_MutexPool);
+        if ( init ) {
+            CRef<CBioseq_ScopeInfo::TTSE_MatchSetObject> match
+                (new CBioseq_ScopeInfo::TTSE_MatchSetObject);
+            x_GetTSESetWithBioseqAnnots(lock, match->GetData(), *binfo);
+            binfo->m_BioseqAnnotRef_Info = match;
+        }
+        else {
+            x_LockMatchSet(lock, *binfo->m_BioseqAnnotRef_Info);
+        }
+    }
+    return lock;
+}
+
+
 void CScope_Impl::x_AddTSESetWithAnnots(TTSE_LockMatchSet& lock,
                                         TTSE_MatchSet& match,
                                         const TTSE_LockMatchSet_DS& add,

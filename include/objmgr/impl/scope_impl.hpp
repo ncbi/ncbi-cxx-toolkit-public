@@ -262,6 +262,7 @@ private:
     CDataSource* GetFirstLoaderSource(void);
 
     TTSE_LockMatchSet GetTSESetWithAnnots(const CSeq_id_Handle& idh);
+    TTSE_LockMatchSet GetTSESetWithAnnots(const CBioseq_Handle& bh);
 
     void x_AttachToOM(CObjectManager& objmgr);
     void x_DetachFromOM(void);
