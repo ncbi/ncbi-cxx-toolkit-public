@@ -215,6 +215,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
 
     next_mask_slp = qsup_options->lcase_mask;
     mask_slp = NULL;
+    *filter_out = NULL;
 
     for (context = query_info->first_context;
          context <= query_info->last_context; ++context) {
