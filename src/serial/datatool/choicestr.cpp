@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/05/08 16:59:08  gouriano
+* added comment about the meaning of typedef for each class member
+*
 * Revision 1.43  2003/04/29 18:31:09  gouriano
 * object data member initialization verification
 *
@@ -782,11 +785,15 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         code.ClassPublic() <<
             "    // getters\n";
         setters <<
-            "    // setters\n";
+            "    // setters\n\n";
         ITERATE ( TVariants, i, m_Variants ) {
             string cType = i->type->GetCType(code.GetNamespace());
             string tType = "T" + i->cName;
             string rType = i->type->GetPrefixedCType(code.GetNamespace(),methodPrefix);
+
+// comment: typedef
+            code.ClassPublic()
+                << "    // typedef "<< cType <<" "<<tType<<"\n";
 
             if (i->attlist) {
                 code.ClassPublic() <<

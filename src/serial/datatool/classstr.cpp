@@ -348,7 +348,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         code.ClassPublic() <<
             "    // getters\n";
         setters <<
-            "    // setters\n";
+            "    // setters\n\n";
         size_t member_index = (size_t)-1;
         size_t set_index;
         size_t set_offset;
@@ -371,6 +371,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 } else {
                     code.ClassPublic() << "    // mandatory\n";
                 }
+// comment: typedef
+                code.ClassPublic()
+                    << "    // typedef "
+                    << i->type->GetCType(code.GetNamespace())
+                    <<" "<<i->tName<<"\n";
 
 // IsSetX
                 code.ClassPublic() <<
@@ -1191,6 +1196,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2003/05/08 16:59:08  gouriano
+* added comment about the meaning of typedef for each class member
+*
 * Revision 1.55  2003/05/06 13:34:36  gouriano
 * inline trivial Get methods
 *
