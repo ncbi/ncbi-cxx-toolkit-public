@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2004/05/17 21:03:03  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.44  2004/01/05 14:25:22  gouriano
 * Added possibility to set serialization hooks by stack path
 *
@@ -204,6 +207,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbithr.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/typeinfoimpl.hpp>

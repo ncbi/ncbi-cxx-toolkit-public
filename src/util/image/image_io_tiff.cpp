@@ -29,6 +29,7 @@
  *    CImageIOTiff -- interface class for reading/writing TIFF files
  */
 
+#include <ncbi_pch.hpp>
 #include "image_io_tiff.hpp"
 #include <corelib/ncbifile.hpp>
 #include <util/image/image.hpp>
@@ -468,6 +469,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/17 21:07:58  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.8  2004/02/19 22:57:57  ucko
  * Accommodate stricter implementations of CT_POS_TYPE.
  *

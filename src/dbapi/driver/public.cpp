@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/public.hpp>
 
 
@@ -739,6 +740,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/17 21:11:38  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.7  2003/06/20 19:11:25  vakatov
  * CDB_ResultProcessor::
  *  - added MS-Win DLL export macro

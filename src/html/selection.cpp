@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <html/html.hpp>
 #include <html/selection.hpp>
@@ -77,6 +78,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/17 20:59:50  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.6  2003/11/03 17:03:08  ivanov
  * Some formal code rearrangement. Move log to end.
  *

@@ -72,6 +72,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2004/05/17 21:06:02  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2001/07/05 16:55:41  vakatov
  * Added typedef CRandom::TValue and CRandom::GetMax() to allow for
  * seamless extension of this API in the future
@@ -82,6 +85,7 @@
  * ===========================================================================
  */
 
+#include <ncbi_pch.hpp>
 #include <util/random_gen.hpp>
 
 

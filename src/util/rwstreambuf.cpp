@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbidbg.hpp>
 #include <util/rwstreambuf.hpp>
 
@@ -282,6 +283,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2004/05/17 21:06:02  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.8  2004/05/17 15:49:39  lavr
  * Ownership arguments added, stored and processed in dtor
  *

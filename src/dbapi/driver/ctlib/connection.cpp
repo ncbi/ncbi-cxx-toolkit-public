@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <string.h>
 
@@ -729,6 +730,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/05/17 21:12:03  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.16  2003/09/23 19:38:22  soussov
  * cancels send_data cmd if it failes while processing results
  *

@@ -31,6 +31,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <limits.h>                     // for PATH_MAX
 #if defined(NCBI_OS_MSWIN) && !defined(PATH_MAX)
@@ -530,6 +531,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2004/05/17 20:58:13  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 6.23  2003/11/25 15:09:47  lavr
  * Allow CSocket::Connect() after closing with CSocket::Close()
  *

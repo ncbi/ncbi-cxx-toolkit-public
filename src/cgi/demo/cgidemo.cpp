@@ -31,6 +31,7 @@
  */
 
 // toolkit public headers
+#include <ncbi_pch.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <cgi/ncbicgir.hpp>
 
@@ -70,6 +71,9 @@ int main(int argc, char *argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/17 20:57:01  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.6  2003/02/21 22:02:23  vakatov
  * Minor code amendment to get rid of a compilation warning
  *

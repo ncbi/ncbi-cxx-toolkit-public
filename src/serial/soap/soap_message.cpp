@@ -30,6 +30,7 @@
 *   Hold the content of, send and receive SOAP messages
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/serial.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
@@ -251,6 +252,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/17 21:03:24  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.3  2003/12/04 20:56:03  gouriano
 * correct parameter names
 *

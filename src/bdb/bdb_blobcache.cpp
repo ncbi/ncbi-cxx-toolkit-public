@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_process.hpp>
@@ -1180,6 +1181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2004/05/17 20:55:11  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.51  2004/04/28 16:58:56  kuznets
  * Fixed deadlock in CBDB_Cache::Remove
  *

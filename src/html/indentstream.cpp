@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <html/indentstream.hpp>
 #include <string.h>
 
@@ -199,6 +200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/17 20:59:50  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2003/11/03 17:03:08  ivanov
  * Some formal code rearrangement. Move log to end.
  *

@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -260,6 +261,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/05/17 20:58:22  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.9  2003/09/29 16:34:00  ivanov
  * Increased the pipe buffer from 10kb to 25kb. Specify CreateConnector()'s buffer size parameter for the SingleBounceCheck test.
  *

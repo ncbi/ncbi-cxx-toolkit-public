@@ -35,6 +35,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <util/compress/zlib.hpp>
 
 #include <stdio.h>
@@ -882,6 +883,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/05/17 21:07:25  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.12  2004/05/10 19:25:09  ucko
  * +<stdio.h> for sprintf()
  *

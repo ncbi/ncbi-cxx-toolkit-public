@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.4  2004/05/17 20:58:22  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 6.3  2002/01/25 15:39:30  ucko
 * Completely reorganized threaded servers.
 *
@@ -42,6 +45,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>

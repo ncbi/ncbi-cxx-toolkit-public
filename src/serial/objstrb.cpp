@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/17 21:03:03  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.2  1999/06/07 20:10:04  vasilche
 * Avoid using of numeric_limits.
 *
@@ -39,6 +42,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/objstrb.hpp>
 #include <serial/stdtypes.hpp>

@@ -29,6 +29,7 @@
  *
  */
  
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
@@ -560,6 +561,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/17 21:16:06  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.8  2004/01/27 18:00:07  soussov
  * patches the SQLExecDirect bug
  *

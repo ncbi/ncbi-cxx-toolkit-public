@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <misc/cgi_redirect/redirect.hpp>
 #include <cgi/cgictx.hpp>
 
@@ -262,6 +263,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/17 21:01:48  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2004/03/19 16:10:42  ivanov
  * ProcessRequest(): use ctx.GetConfig()
  *

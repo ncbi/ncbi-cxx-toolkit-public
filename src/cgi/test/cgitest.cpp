@@ -31,6 +31,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
@@ -600,6 +601,9 @@ int main(int argc, const char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.20  2004/05/17 20:57:14  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.19  2004/04/26 16:39:34  ucko
  * Don't try to pass temporary CCgiCookies objects, even by const
  * reference, as CCgiCookies has no public copy constructor.

@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <util/md5.hpp>
 #include <util/util_exception.hpp>
 
@@ -279,6 +280,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/17 21:06:02  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2003/10/01 21:15:15  ivanov
  * Get rid of compilation warnings; some formal code rearrangement
  *

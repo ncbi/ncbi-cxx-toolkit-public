@@ -28,6 +28,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <html/html.hpp>
 #include <html/htmlhelper.hpp>
 
@@ -241,6 +242,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/05/17 20:59:50  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.16  2004/02/04 00:39:24  ucko
  * Revert last change -- check() was biting a lot of other code, so we
  * now centrally undefine it in the corelib headers that include CoreServices.h.

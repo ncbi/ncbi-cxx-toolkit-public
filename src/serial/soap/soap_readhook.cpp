@@ -33,6 +33,7 @@
 *   
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/objistr.hpp>
 #include "soap_envelope.hpp"
 #include "soap_readhook.hpp"
@@ -87,6 +88,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/05/17 21:03:24  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.1  2003/09/22 21:00:04  gouriano
 * Initial revision
 *

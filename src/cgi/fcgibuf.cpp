@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <fcgiapp.h>
 #include "fcgibuf.hpp"
@@ -140,6 +141,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.16  2004/05/17 20:56:50  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.15  2003/10/16 15:18:55  lavr
  * Multiple flush bug fixed from R1.13
  *

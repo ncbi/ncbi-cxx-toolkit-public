@@ -34,6 +34,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <connect/ncbi_pipe_connector.hpp>
 
 
@@ -279,6 +280,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2004/05/17 20:58:13  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.6  2003/11/12 17:46:38  lavr
  * Few (non-functional) rearrangements
  *

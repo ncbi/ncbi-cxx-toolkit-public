@@ -31,6 +31,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <typeinfo>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
@@ -230,6 +231,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/17 21:06:02  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2002/06/04 16:34:58  gouriano
  * added possibility to enable/disable debug dump breakpoints from registry
  *

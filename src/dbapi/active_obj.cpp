@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/05/17 21:10:28  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.7  2004/02/27 14:37:32  kholodov
 * Modified: set collection replaced by list for listeners
 *
@@ -58,6 +61,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include "active_obj.hpp"
 #include <corelib/ncbistre.hpp>
 #include <typeinfo>

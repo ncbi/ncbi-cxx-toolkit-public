@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.29  2004/05/17 21:10:28  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.28  2004/04/26 14:16:56  kholodov
 * Modified: recreate the command objects each time the Get...() is called
 *
@@ -122,6 +125,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/public.hpp>
 //#include <dbapi/driver/interfaces.hpp>
 //#include <dbapi/driver/exception.hpp>

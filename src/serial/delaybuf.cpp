@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/05/17 21:03:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.7  2002/11/04 21:29:20  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
@@ -64,6 +67,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/objostr.hpp>

@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <html/jsmenu.hpp>
 #include <html/html_exception.hpp>
 #include <corelib/ncbi_safe_static.hpp>
@@ -608,6 +609,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/05/17 20:59:50  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.30  2004/05/05 13:58:14  ivanov
  * Added DisableLocalConfig(). Do not print out empty menues.
  *

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/util/handle_stack.hpp>
 #include <string.h>
 
@@ -117,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/05/17 21:11:38  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.4  2001/11/06 17:59:53  lavr
  * Formatted uniformly as the rest of the library
  *

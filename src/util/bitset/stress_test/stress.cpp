@@ -33,6 +33,7 @@
 //#define BMSSE2OPT
 #define BMCOUNTOPT
 
+#include <ncbi_pch.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.8  2003/04/29 18:31:09  gouriano
 * object data member initialization verification
 *
@@ -63,6 +66,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/datatool/ptrstr.hpp>
 #include <serial/datatool/classctx.hpp>
 #include <serial/datatool/namespace.hpp>

@@ -30,6 +30,7 @@
  * ===========================================================================
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbi_limits.h>
 #include <util/regexp.hpp>
 #include <memory>
@@ -352,6 +353,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/17 21:06:02  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.6  2003/11/07 17:16:23  ivanov
  * Fixed  warnings on 64-bit Workshop compiler
  *

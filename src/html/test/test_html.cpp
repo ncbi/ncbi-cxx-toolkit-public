@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 
@@ -204,6 +205,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/17 21:00:08  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2002/04/16 19:05:21  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.

@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi bcp
 * $Log$
+* Revision 1.6  2004/05/17 21:17:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.5  2003/05/08 16:16:32  starchen
 * fixed bug in the query
 *
@@ -49,6 +52,7 @@
 *============================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include "dbapi_bcp.hpp"
 #include <string>
 

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <util/creaders/alnread.h>
 #include <util/creaders/alignment_file.hpp>
 
@@ -149,6 +150,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/17 21:07:45  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2004/02/19 12:48:40  dicuccio
  * Roll back to version 1.3
  *

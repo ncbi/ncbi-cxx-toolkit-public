@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "pbacktest.hpp"
 #include <corelib/ncbidbg.hpp>
 #include <util/stream_utils.hpp>
@@ -235,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/05/17 21:09:26  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.12  2003/12/18 03:42:14  ucko
  * Call peek() to force at least minimal blocking, since Readsome might
  * not block at all and accepting 0-byte reads could lead to spinning.

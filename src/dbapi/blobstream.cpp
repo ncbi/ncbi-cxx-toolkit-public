@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.7  2004/05/17 21:10:28  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.6  2004/03/12 16:27:09  sponomar
 * correct nested querys
 *
@@ -52,6 +55,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include "blobstream.hpp"
 
 #include <dbapi/driver/exception.hpp>

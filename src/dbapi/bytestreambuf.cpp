@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/05/17 21:10:28  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.8  2002/07/12 13:34:11  kholodov
 * Fixed: incorrect length reported for NULL BLOB
 *
@@ -60,6 +63,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <exception>
 #include <algorithm>
 #include "bytestreambuf.hpp"

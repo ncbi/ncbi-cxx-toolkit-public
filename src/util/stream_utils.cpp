@@ -32,6 +32,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <util/util_exception.hpp>
 #include <util/stream_utils.hpp>
@@ -491,6 +492,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.42  2004/05/17 21:06:02  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.41  2004/02/03 13:13:46  lavr
  * ios::xalloc() is universal; HAVE_XALLOC is deprecated and removed
  *

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <misc/cgi_redirect/redirect.hpp>
 
 
@@ -70,6 +71,9 @@ int main(int argc, const char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2004/05/17 21:01:48  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2004/02/09 19:32:32  ivanov
  * Initial revision
  *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/05/17 21:03:13  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.19  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
 *
@@ -87,6 +90,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/alexer.hpp>
 #include <serial/datatool/atoken.hpp>

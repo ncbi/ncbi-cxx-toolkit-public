@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <bdb/bdb_cursor.hpp>
 #include <db.h>
 
@@ -484,6 +485,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/05/17 20:55:11  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.12  2004/05/06 19:19:22  rotmistr
  * Cursor KeyDupCount added
  *

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.7  2004/05/17 21:10:28  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.6  2004/04/12 14:25:33  kholodov
 * Modified: resultset caching scheme, fixed single connection handling
 *
@@ -57,6 +60,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include "conn_impl.hpp"
 #include "bulkinsert.hpp"
 #include <dbapi/driver/exception.hpp>

@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include "Web_Env.hpp"
 
 // generated classes
@@ -51,6 +52,9 @@ CWeb_Env::~CWeb_Env(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/05/17 21:04:05  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.1  2004/01/21 15:20:00  grichenk
 * Initial revision
 *

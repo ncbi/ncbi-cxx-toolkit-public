@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <bdb/bdb_util.hpp>
 #include <util/strsearch.hpp>
 
@@ -152,6 +153,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/17 20:55:12  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2004/03/11 13:15:40  kuznets
  * Minor bugfix
  *

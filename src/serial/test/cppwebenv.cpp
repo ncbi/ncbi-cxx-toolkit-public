@@ -1,3 +1,4 @@
+#include <ncbi_pch.hpp>
 #include <ncbiconf.h>
 #if HAVE_NCBI_C
 #include "cppwebenv.hpp"

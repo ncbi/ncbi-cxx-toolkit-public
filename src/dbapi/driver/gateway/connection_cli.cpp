@@ -32,6 +32,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/gateway/internal_cli.hpp>
 
 BEGIN_NCBI_SCOPE

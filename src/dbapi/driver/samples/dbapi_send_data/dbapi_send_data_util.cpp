@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi bcp
 * $Log$
+* Revision 1.7  2004/05/17 21:17:42  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.6  2003/02/27 20:21:35  starchen
 * correct a lang call
 *
@@ -49,6 +52,7 @@
 *============================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include "dbapi_send_data.hpp"
 
 const char*  file_name[] = {

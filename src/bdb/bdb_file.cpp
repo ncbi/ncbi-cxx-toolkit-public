@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_env.hpp>
 #include <bdb/bdb_trans.hpp>
@@ -879,6 +880,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/05/17 20:55:11  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.36  2004/05/06 18:18:14  rotmistr
  * Cursor Update/Delete implemented
  *

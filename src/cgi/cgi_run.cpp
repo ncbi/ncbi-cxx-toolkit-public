@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2004/05/17 20:56:50  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.4  2003/03/24 16:14:31  ucko
  * +IsFastCGI (always false)
  *
@@ -47,6 +50,7 @@
  * ===========================================================================
  */
 
+#include <ncbi_pch.hpp>
 #include <cgi/cgiapp.hpp>
 
 BEGIN_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/17 21:03:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.2  2000/10/13 20:22:55  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -43,6 +46,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/item.hpp>
 

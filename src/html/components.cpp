@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <html/components.hpp>
 #include <html/nodemap.hpp>
 
@@ -329,6 +330,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/05/17 20:59:50  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.33  2004/01/30 14:03:21  lavr
  * Cosmetic change to sync with .hpp
  *

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/gateway/interfaces.hpp>
 #include <dbapi/driver/samples/dbapi_driver_samples.hpp>
@@ -74,6 +75,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/17 21:14:41  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2002/03/14 22:53:22  sapojnik
  * Inheriting from I_ interfaces instead of CDB_ classes from driver/public.hpp
  *

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 #include <string.h>
@@ -447,6 +448,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/05/17 21:16:05  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.4  2003/05/08 20:30:24  soussov
  * CDB_LongChar CDB_LongBinary added
  *

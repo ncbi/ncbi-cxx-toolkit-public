@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.29  2004/05/17 21:10:28  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.28  2004/04/08 15:56:58  kholodov
 * Multiple bug fixes and optimizations
 *
@@ -127,6 +130,7 @@
 *
 */ 
 
+#include <ncbi_pch.hpp>
 #include <dbapi/variant.hpp>
 #include <algorithm>
 //#include "basetmpl.hpp"

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
 
@@ -85,6 +86,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/17 21:12:13  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2002/04/25 16:43:17  soussov
  * makes it plain
  *

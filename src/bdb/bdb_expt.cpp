@@ -31,6 +31,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <bdb/bdb_expt.hpp>
 
 #include <db.h>
@@ -50,6 +51,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/17 20:55:11  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2003/06/27 18:56:36  dicuccio
  * Uninlined strerror() adaptor
  *

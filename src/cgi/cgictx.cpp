@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
 #include <cgi/ncbires.hpp>
@@ -286,6 +287,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.37  2004/05/17 20:56:50  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.36  2004/05/11 12:43:55  kuznets
 * Changes to control HTTP parsing (CCgiRequest flags)
 *

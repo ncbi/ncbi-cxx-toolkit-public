@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
 
 
@@ -752,6 +753,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/17 21:12:03  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.8  2003/06/05 16:00:31  soussov
  * adds code for DumpResults and for the dumped results processing
  *

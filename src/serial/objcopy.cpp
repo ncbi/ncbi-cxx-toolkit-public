@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
 
@@ -281,6 +282,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.13  2004/05/17 21:03:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.12  2004/01/05 14:25:20  gouriano
 * Added possibility to set serialization hooks by stack path
 *

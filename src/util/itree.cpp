@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <util/itree.hpp>
 
@@ -280,6 +281,9 @@ void CIntervalTree::Stat(const TTreeNode* node, SStat& stat) const
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/05/17 21:06:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.6  2003/02/07 16:54:02  vasilche
 * Pass all structures with size > sizeof int by reference.
 * Move cvs log to the end of files.

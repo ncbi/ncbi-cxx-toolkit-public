@@ -32,6 +32,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 
@@ -67,6 +68,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/17 21:16:37  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2003/03/14 14:27:32  ivanov
  * Get rid of an unused variable
  *

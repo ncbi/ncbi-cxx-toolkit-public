@@ -29,6 +29,7 @@
 *   CTypeInfo classes for primitive leaf types.
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/stdtypesimpl.hpp>
 #include <serial/typeinfoimpl.hpp>
@@ -1550,6 +1551,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2004/05/17 21:03:03  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.43  2004/04/26 16:40:59  ucko
 * Tweak for GCC 3.4 compatibility.
 *

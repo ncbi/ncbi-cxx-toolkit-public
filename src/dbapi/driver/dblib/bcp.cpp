@@ -36,6 +36,7 @@
 #  include <dbapi/driver/msdblib/interfaces.hpp>
 #  include <dbapi/driver/msdblib/interfaces_p.hpp>
 #endif
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 #include <string.h>
 
@@ -458,6 +459,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/17 21:12:41  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.8  2002/07/02 16:05:49  soussov
  * splitting Sybase dblib and MS dblib
  *

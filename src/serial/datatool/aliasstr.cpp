@@ -29,6 +29,7 @@
 *   Type info for aliased type generation: includes, used classes, C code etc.
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/type.hpp>
@@ -438,6 +439,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/05/17 21:03:13  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.6  2004/05/03 19:31:03  gouriano
 * Made generation of DOXYGEN-style comments optional
 *

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <bdb/bdb_query.hpp>
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_util.hpp>
@@ -1128,6 +1129,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/05/17 20:55:11  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.12  2004/03/23 16:58:18  kuznets
  * Fixed compilation warning (GCC)
  *

@@ -28,6 +28,7 @@
  * File Description:
  * 
  */   
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 #include <vector>
@@ -729,6 +730,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/05/17 21:08:53  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.2  2003/10/14 14:51:14  ucko
 * Fix for GCC 2.95, whose operator[] const returns a copy rather than a
 * const reference, by substituting *x.begin().

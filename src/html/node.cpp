@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_safe_static.hpp>
@@ -361,6 +362,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/05/17 20:59:50  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.32  2004/03/10 20:12:53  ivanov
  * DoAppendChild(): added check on endless recursion
  *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.35  2003/06/16 14:41:05  gouriano
 * added possibility to convert DTD to XML schema
 *
@@ -126,6 +129,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbireg.hpp>

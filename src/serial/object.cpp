@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/05/17 21:03:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.15  2001/05/17 15:07:07  lavr
 * Typos corrected
 *
@@ -103,6 +106,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/object.hpp>
 #include <serial/typeinfo.hpp>

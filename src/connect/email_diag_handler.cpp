@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <connect/email_diag_handler.hpp>
 #include <connect/ncbi_sendmail.h>
 
@@ -58,6 +59,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2004/05/17 20:58:13  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 6.2  2003/01/17 19:44:46  lavr
  * Reduce dependencies
  *

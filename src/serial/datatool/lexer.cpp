@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.17  2004/02/25 19:45:20  gouriano
 * Made it possible to define DEFAULT for data members of type REAL
 *
@@ -82,6 +85,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/datatool/lexer.hpp>
 #include <serial/datatool/tokens.hpp>
 

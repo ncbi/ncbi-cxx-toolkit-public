@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbi_bswap.hpp>
 #include <bdb/bdb_types.hpp>
 #include <db.h>
@@ -877,6 +878,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/05/17 20:55:11  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.22  2004/05/06 15:42:19  rotmistr
  * Changed Char type to UChar
  *

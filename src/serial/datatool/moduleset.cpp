@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.34  2003/05/14 14:42:22  gouriano
 * added generation of XML schema
 *
@@ -115,6 +118,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <typeinfo>
 #include <serial/datatool/moduleset.hpp>
 #include <serial/datatool/module.hpp>

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/05/17 21:03:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.29  2003/05/16 18:02:18  gouriano
 * revised exception error messages
 *
@@ -162,6 +165,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/choiceptr.hpp>
 #include <serial/typeref.hpp>
 #include <serial/classinfo.hpp>

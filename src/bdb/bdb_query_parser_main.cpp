@@ -32,6 +32,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <bdb/bdb_query.hpp>
 #include <bdb/bdb_expt.hpp>
 #include <bdb/bdb_query_parser.hpp>
@@ -216,6 +217,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/05/17 20:55:11  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.4  2004/03/10 16:19:24  kuznets
  * Improved parser to handle single word requests
  *

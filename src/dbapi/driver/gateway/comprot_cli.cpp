@@ -31,6 +31,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/gateway/comprot_cli.hpp>
 
 BEGIN_NCBI_SCOPE

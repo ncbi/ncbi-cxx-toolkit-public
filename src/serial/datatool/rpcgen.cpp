@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/rpcgen.hpp>
 
@@ -516,6 +517,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.12  2004/03/25 21:57:13  ucko
 * Allow request and reply elements to have anonymous (internal) types.
 *

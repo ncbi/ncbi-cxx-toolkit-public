@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/util/parameters.hpp>
 #include <ctype.h>
 
@@ -226,6 +227,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/05/17 21:11:38  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.12  2003/06/04 18:18:46  soussov
  * Sets m_Params to 0 if no params in constructor
  *

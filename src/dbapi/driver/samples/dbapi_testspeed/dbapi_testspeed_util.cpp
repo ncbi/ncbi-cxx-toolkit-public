@@ -30,6 +30,7 @@
 *============================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include "dbapi_testspeed.hpp"
 #include <string>
 

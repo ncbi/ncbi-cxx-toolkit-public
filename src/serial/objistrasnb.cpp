@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2004/05/17 21:03:03  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.69  2004/03/23 15:39:23  gouriano
 * Added setup options for skipping unknown data members
 *
@@ -299,6 +302,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
 

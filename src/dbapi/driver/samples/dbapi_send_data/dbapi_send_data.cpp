@@ -24,6 +24,7 @@
  * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include "dbapi_send_data.hpp"
 #include <map> 
 

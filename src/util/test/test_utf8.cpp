@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <util/utf8.hpp>
@@ -134,6 +135,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/17 21:09:26  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2002/06/30 03:24:08  vakatov
  * Get rid of warnings caused by constless char* initialization
  *

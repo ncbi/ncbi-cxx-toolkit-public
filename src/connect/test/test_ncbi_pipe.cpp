@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
@@ -427,6 +428,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.22  2004/05/17 20:58:22  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 6.21  2003/12/04 16:29:22  ivanov
  * Added f*OnClose flags test
  *

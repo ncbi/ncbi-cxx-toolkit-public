@@ -29,6 +29,7 @@
 *   Framework for a multithreaded network server
 */
 
+#include <ncbi_pch.hpp>
 #include <connect/threaded_server.hpp>
 
 #include <connect/ncbi_socket.hpp>
@@ -102,6 +103,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.11  2004/05/17 20:58:13  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 6.10  2003/08/12 19:28:11  ucko
 * Throw CThreadedServerException for abnormal exits.
 *

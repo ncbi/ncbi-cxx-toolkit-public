@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 
@@ -250,6 +251,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/17 21:16:37  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2002/06/13 21:29:22  soussov
  * numeric added; double and float separated
  *

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <util/checksum.hpp>
 
@@ -286,6 +287,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/05/17 21:06:02  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.10  2003/10/17 20:22:30  kuznets
  * Minor code clean-up.
  * Also increased checksum buffer up to 4K

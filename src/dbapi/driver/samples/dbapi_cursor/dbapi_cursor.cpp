@@ -24,6 +24,7 @@
  * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include "dbapi_cursor.hpp"
 #include <map> 
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/05/17 21:03:03  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.10  2004/03/30 20:28:15  gouriano
 * Corrected stream iterators to handle implicit containers
 *
@@ -70,6 +73,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/objectio.hpp>
 #include <serial/objistr.hpp>

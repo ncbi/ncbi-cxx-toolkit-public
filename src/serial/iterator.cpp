@@ -29,6 +29,7 @@
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/exception.hpp>
@@ -391,6 +392,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/05/17 21:03:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.24  2004/04/26 16:40:59  ucko
 * Tweak for GCC 3.4 compatibility.
 *

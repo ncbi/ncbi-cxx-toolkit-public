@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.13  2003/08/13 15:45:55  gouriano
 * implemented generation of code, which uses AnyContent objects
 *
@@ -117,6 +120,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/datatool/stdstr.hpp>
 #include <serial/datatool/classctx.hpp>
 

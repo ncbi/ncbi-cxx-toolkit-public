@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <html/page.hpp>
 
 
@@ -115,6 +116,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/05/17 20:59:50  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.9  2004/02/02 14:14:45  ivanov
  * Added TagMapper to functons and class methods which used a data parameter
  *

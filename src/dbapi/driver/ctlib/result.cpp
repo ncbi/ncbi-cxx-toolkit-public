@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
@@ -1114,6 +1115,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/05/17 21:12:03  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.17  2003/04/29 21:15:35  soussov
  * new datatypes CDB_LongChar and CDB_LongBinary added
  *

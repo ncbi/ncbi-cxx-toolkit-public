@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -247,6 +248,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/17 20:58:22  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.8  2004/02/23 15:23:43  lavr
  * New (last) parameter "how" added in CONN_Write() API call
  *

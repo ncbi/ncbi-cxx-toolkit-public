@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi language call
 * $Log$
+* Revision 1.5  2004/05/17 21:17:29  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.4  2003/08/05 19:23:58  vakatov
 * MSSQL2 --> MS_DEV1
 *
@@ -43,6 +46,7 @@
 *============================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 
 char* getParam(char tag, int argc, char* argv[], bool* flag= 0);

@@ -34,6 +34,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <util/strsearch.hpp>
 #include <algorithm>
 #include <vector>
@@ -259,6 +260,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/05/17 21:06:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.15  2004/04/01 14:14:02  lavr
 * Spell "occurred", "occurrence", and "occurring"
 *

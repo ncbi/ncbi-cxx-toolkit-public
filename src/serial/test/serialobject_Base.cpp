@@ -1,3 +1,4 @@
+#include <ncbi_pch.hpp>
 #include "serialobject.hpp"
 #include <serial/serialbase.hpp>
 #include <serial/serialimpl.hpp>

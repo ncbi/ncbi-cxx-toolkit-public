@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/exception.hpp>
 
 
@@ -621,6 +622,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/05/17 21:11:38  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.11  2003/11/04 22:22:01  vakatov
  * Factorize the code (especially the reporting one) through better inheritance.
  * +CDB_Exception::TypeString()

@@ -29,6 +29,7 @@
  *    CImageIOPng -- interface class for reading/writing PNG files
  */
 
+#include <ncbi_pch.hpp>
 #include "image_io_png.hpp"
 #include <util/image/image.hpp>
 #include <util/image/image_exception.hpp>
@@ -583,6 +584,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/05/17 21:07:58  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.4  2003/12/20 17:50:53  dicuccio
  * Fixed bugs in reading of subimage - don't declare image in try block; use
  * correct height.  Dropped unnecessary finalization - don't need to scan whole

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.13  2004/05/17 21:10:28  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.12  2004/04/22 11:29:53  ivanov
 * Use pointer to driver manager instance instead auto_ptr
 *
@@ -73,6 +76,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver_mgr.hpp>
 #include "ds_impl.hpp"
 

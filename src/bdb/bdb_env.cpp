@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <bdb/bdb_env.hpp>
 #include <db.h>
 
@@ -187,6 +188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/05/17 20:55:11  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.19  2004/04/08 18:10:23  vakatov
  * Rollback to R1.17, as <db_config.h> is not a part of standard BerkleyDB\
  * installation (as we have it, at least). Must be done in a different way.

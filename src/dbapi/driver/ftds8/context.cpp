@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/ftds/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
@@ -469,6 +470,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/05/17 21:13:37  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.25  2004/03/24 13:54:05  friedman
  * Fixed mutex comment
  *

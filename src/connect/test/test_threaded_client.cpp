@@ -30,6 +30,7 @@
 *   test_threaded_server
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_conn_stream.hpp>
@@ -157,6 +158,9 @@ int main(int argc, const char* argv[]) {
 * ===========================================================================
 *
 * $Log$
+* Revision 6.7  2004/05/17 20:58:22  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 6.6  2004/05/17 16:01:55  ucko
 * Use SleepMilliSec to sleep only a fraction of a second at a time.
 * Move CVS log to end.

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
 
 #include <dbapi/driver/exception.hpp>
@@ -919,6 +920,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/05/17 21:11:38  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.16  2004/01/21 18:07:35  sapojnik
  * AssignValue() for misc. int, float, double accepts less capable types; only no loss type conversions allowed
  *

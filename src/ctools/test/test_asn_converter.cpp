@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
@@ -179,6 +180,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/05/17 20:59:15  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.2  2003/12/23 19:37:30  ucko
 * Add a Score test that treats IN as the real number to try converting.
 *

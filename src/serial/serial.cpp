@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/05/17 21:03:03  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.26  2003/08/14 20:03:58  vasilche
 * Avoid memory reallocation when reading over preallocated object.
 * Simplified CContainerTypeInfo iterators interface.
@@ -128,6 +131,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <serial/serial.hpp>

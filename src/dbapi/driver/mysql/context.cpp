@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/mysql/interfaces.hpp>
 
 
@@ -112,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/17 21:15:34  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.6  2004/04/07 13:41:47  gorelenk
  * Added export prefix to implementations of DBAPI_E_* functions.
  *

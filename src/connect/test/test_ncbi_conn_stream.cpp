@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include "../ncbi_priv.h"               /* CORE logging facilities */
@@ -238,6 +239,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2004/05/17 20:58:22  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 6.32  2004/04/01 14:14:02  lavr
  * Spell "occurred", "occurrence", and "occurring"
  *

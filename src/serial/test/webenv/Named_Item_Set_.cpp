@@ -35,6 +35,7 @@
  */
 
 // standard includes
+#include <ncbi_pch.hpp>
 #include <serial/serialimpl.hpp>
 
 // generated includes

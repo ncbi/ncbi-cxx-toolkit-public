@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.16  2004/05/17 21:10:28  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.15  2004/04/26 14:16:56  kholodov
 * Modified: recreate the command objects each time the Get...() is called
 *
@@ -91,6 +94,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include "conn_impl.hpp"
 #include "cursor_impl.hpp"
 #include "rs_impl.hpp"

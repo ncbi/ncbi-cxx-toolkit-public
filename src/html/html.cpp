@@ -28,6 +28,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <html/html.hpp>
 #include <html/htmlhelper.hpp>
 #include <html/indentstream.hpp>
@@ -2315,6 +2316,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.103  2004/05/17 20:59:50  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.102  2004/04/05 16:19:57  ivanov
  * Added support for Sergey Kurdin's popup menu with configurations
  *

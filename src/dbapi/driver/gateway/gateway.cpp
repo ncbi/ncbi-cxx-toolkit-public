@@ -31,6 +31,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/gateway/internal_cli.hpp>
 
 #ifdef NCBI_OS_MSWIN
@@ -335,6 +336,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/17 21:14:35  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.6  2003/05/19 21:51:51  sapojnik
  * Client portion of gateway driver back in C++ tree - now assembles as dll, and runs on Sparc Solaris
  *

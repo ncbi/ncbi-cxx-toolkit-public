@@ -32,6 +32,7 @@
 *      CCgiRequest   -- full CGI request
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbitime.hpp>
 #include <cgi/cgi_exception.hpp>
@@ -1227,6 +1228,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.76  2004/05/17 20:56:50  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.75  2003/11/24 18:14:58  ucko
 * CCgiRequest::ParseEntries: Swallow "amp;" (case-insensitive) after &
 * for the sake of some older browsers that misparse HREF attributes.

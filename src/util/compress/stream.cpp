@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "streambuf.hpp"
 #include <memory>
 
@@ -168,6 +169,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/17 21:07:25  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.8  2004/05/10 11:56:08  ivanov
  * Added gzip file format support
  *

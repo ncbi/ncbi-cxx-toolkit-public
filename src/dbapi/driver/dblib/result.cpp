@@ -36,6 +36,7 @@
 #  include <dbapi/driver/msdblib/interfaces.hpp>
 #  include <dbapi/driver/msdblib/interfaces_p.hpp>
 #endif
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
 
@@ -1554,6 +1555,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/05/17 21:12:41  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.20  2004/04/08 19:05:51  gorelenk
  * Changed declalation of s_GenericGetItem (added 'const' to 'BYTE* d_ptr')
  * and fixed compilation errors on MSVC 7.10 .

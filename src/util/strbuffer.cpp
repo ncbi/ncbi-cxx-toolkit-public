@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2004/05/17 21:06:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.40  2004/05/10 14:51:13  gouriano
 * Work with unsigned number (division/modulus ops) when writing an integer
 *
@@ -185,6 +188,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <util/strbuffer.hpp>

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/05/17 21:03:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.1  2003/08/19 18:32:38  vasilche
 * Optimized reading and writing strings.
 * Avoid string reallocation when checking char values.
@@ -67,6 +70,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <serial/hookdatakey.hpp>

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -322,6 +323,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/17 20:58:22  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2003/09/04 19:13:43  ivanov
  * Added loop for read/write operations
  *

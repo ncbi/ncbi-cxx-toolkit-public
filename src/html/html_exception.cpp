@@ -28,6 +28,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <html/html_exception.hpp>
 #include <html/node.hpp>
 
@@ -71,6 +72,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/17 20:59:50  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2004/02/03 19:42:42  ivanov
  * Changed order of trace names in ReportExtra()
  *

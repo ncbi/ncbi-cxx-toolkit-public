@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "pbacktest.hpp"
 #include <corelib/ncbidiag.hpp>
 #include <stdio.h>                 // remove()
@@ -62,6 +63,9 @@ int main(int argc, char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.9  2004/05/17 21:09:26  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.8  2003/11/21 19:59:16  lavr
  * Minor code reindentation due to the last change
  *

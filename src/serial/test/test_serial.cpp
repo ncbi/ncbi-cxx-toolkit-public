@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "test_serial.hpp"
 #include "serialobject.hpp"
 #include <serial/serial.hpp>
@@ -773,6 +774,9 @@ void PrintAsnPointerValue(CNcbiOstream& out, const CConstObjectInfo& object)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2004/05/17 21:03:33  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.63  2004/01/21 15:18:15  grichenk
  * Re-arranged webenv files for serial test
  *

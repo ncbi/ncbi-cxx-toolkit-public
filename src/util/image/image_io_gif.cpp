@@ -33,6 +33,7 @@
 // we include gif_lib.h first because of a conflict with windows.h
 // (DrawText() is both a giflib function and a Win32 GDI function)
 //
+#include <ncbi_pch.hpp>
 #include <ncbiconf.h>
 #ifdef HAVE_LIBGIF
 // alas, poor giflib... it isn't extern'ed
@@ -482,6 +483,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/17 21:07:58  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2003/12/16 15:49:36  dicuccio
  * Large re-write of image handling.  Added improved error-handling and support
  * for streams-based i/o (via hooks into each client library).

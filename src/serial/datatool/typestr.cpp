@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.22  2003/10/21 13:48:51  grichenk
 * Redesigned type aliases in serialization library.
 * Fixed the code (removed CRef-s, added explicit
@@ -119,6 +122,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/typestr.hpp>
 #include <serial/datatool/classctx.hpp>

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2004/05/17 21:03:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.74  2004/03/25 15:57:08  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *
@@ -318,6 +321,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbimtx.hpp>

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2004/05/17 21:03:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.37  2004/03/25 15:57:08  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *
@@ -190,6 +193,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/choice.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/05/17 21:03:03  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.5  2004/01/16 22:10:44  ucko
 * Tweak to use a proxy class to avoid clashing with new support for
 * feeding CSerialObject to streams.
@@ -51,6 +54,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/serializable.hpp>
 #include <serial/exception.hpp>
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/05/17 21:03:04  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.12  2003/03/10 18:54:26  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -71,6 +74,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/typeref.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/exception.hpp>

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
 
 
@@ -442,6 +443,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/17 21:12:03  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.8  2003/10/07 16:09:48  soussov
  * adds code which prevents ct_cancel(NULL, m_Cmd, CS_CANCEL_CURRENT) call if command is canceled while retrieving results
  *

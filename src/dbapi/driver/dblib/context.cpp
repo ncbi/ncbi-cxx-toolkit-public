@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbimtx.hpp>
 #ifndef USE_MS_DBLIB
 #  include <dbapi/driver/dblib/interfaces.hpp>
@@ -500,6 +501,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/05/17 21:12:41  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.29  2004/04/08 12:18:35  ivanov
  * Fixed name of export specifier for DBAPI_E_msdblib()
  *

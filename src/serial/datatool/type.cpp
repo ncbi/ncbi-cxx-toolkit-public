@@ -29,6 +29,7 @@
 *   Base class for type description
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/datatool/type.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <serial/datatool/value.hpp>
@@ -691,6 +692,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.79  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.78  2004/05/12 21:02:49  ucko
 * ForbidVar: Make sure to use exactly the right type of pair, since
 * WorkShop won't interconvert.

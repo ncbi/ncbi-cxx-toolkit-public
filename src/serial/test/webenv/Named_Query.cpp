@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include "Named_Query.hpp"
 
 // generated classes
@@ -51,6 +52,9 @@ CNamed_Query::~CNamed_Query(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/05/17 21:04:04  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.1  2004/01/21 15:19:50  grichenk
 * Initial revision
 *

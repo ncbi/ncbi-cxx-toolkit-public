@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/generate.hpp>
@@ -869,6 +870,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.45  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.44  2004/05/17 14:50:54  gouriano
 * Added possibility to include precompiled header
 *

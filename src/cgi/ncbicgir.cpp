@@ -31,6 +31,7 @@
 */
 
 
+#include <ncbi_pch.hpp>
 #include <cgi/ncbicgir.hpp>
 #include <cgi/cgi_exception.hpp>
 #include <time.h>
@@ -201,6 +202,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.21  2004/05/17 20:56:50  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.20  2003/07/14 20:26:39  vakatov
 * CCgiResponse::SetHeaderValue() -- date format to conform with RFC1123
 *

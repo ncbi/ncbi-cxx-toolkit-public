@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <util/format_guess.hpp>
 #include <corelib/ncbifile.hpp>
 
@@ -238,6 +239,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/05/17 21:06:02  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.16  2004/04/01 12:17:20  kuznets
  * Added 'N' to the legal DNA alphabet. (isDNA_Alphabet)
  *

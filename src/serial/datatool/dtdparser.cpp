@@ -32,6 +32,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/dtdparser.hpp>
 #include <serial/datatool/tokens.hpp>
@@ -1013,6 +1014,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.18  2004/05/17 21:03:14  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.17  2004/04/27 18:38:53  gouriano
  * In FixEmbeddedNames() not to use the same "fixed" name twice
  *

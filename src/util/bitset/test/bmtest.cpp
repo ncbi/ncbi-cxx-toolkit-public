@@ -29,6 +29,7 @@
  *   
  */   
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <util/bitset/ncbi_bitset.hpp>
 
@@ -106,6 +107,9 @@ int main(int, const char**)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/05/17 21:06:57  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.1  2004/04/14 14:47:29  kuznets
 * Initial revision
 *

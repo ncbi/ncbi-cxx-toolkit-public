@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <util/utf8.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -319,6 +320,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/17 21:06:02  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2002/01/24 20:10:21  vinokuro
  * Skip characters processing has been fixed in StringToAscii function.
  *

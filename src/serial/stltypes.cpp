@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2004/05/17 21:03:03  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.40  2004/04/02 16:57:09  gouriano
 * made it possible to create named CTypeInfo for containers
 *
@@ -199,6 +202,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/stltypesimpl.hpp>
 #include <serial/exception.hpp>
 #include <serial/classinfo.hpp>

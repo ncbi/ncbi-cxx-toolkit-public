@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_trans.hpp>
 
@@ -362,6 +363,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/05/17 20:55:11  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.16  2004/03/12 15:08:04  kuznets
  * Removed unnecessary DB_NODUPDATA flag (db->put)
  *

@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
@@ -1885,6 +1886,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2004/05/17 20:55:27  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.44  2004/04/28 12:18:27  kuznets
  * Remove obsolete IntCache test
  *

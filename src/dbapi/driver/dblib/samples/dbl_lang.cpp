@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/dblib/interfaces.hpp>
 
@@ -90,6 +91,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/17 21:13:08  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.7  2003/08/05 19:23:43  vakatov
  * MSSQL2 --> MS_DEV1
  *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/17 21:06:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.2  2002/11/04 21:29:22  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
@@ -39,6 +42,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <util/thread_pool.hpp>
 

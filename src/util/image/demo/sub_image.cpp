@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
@@ -148,6 +149,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/05/17 21:08:03  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.4  2003/12/20 17:49:25  dicuccio
  * Changed sub_image to use streams instead of file names.  Changed to us implicit
  * format guessing.

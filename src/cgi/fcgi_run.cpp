@@ -30,6 +30,7 @@
  *   NOTE:  see also a stub function in "cgi_run.cpp".
  */
 
+#include <ncbi_pch.hpp>
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgi_exception.hpp>
 
@@ -526,6 +527,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.43  2004/05/17 20:56:50  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.42  2004/02/02 18:00:25  vakatov
  * Changed these special codes to 111 and 112 as to avoid possible quick-look
  * blunders caused by their similarity to HTTP status codes.

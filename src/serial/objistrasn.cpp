@@ -29,6 +29,7 @@
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/objistrasn.hpp>
@@ -1298,6 +1299,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.92  2004/05/17 21:03:03  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.91  2004/05/04 17:05:17  gouriano
 * Check double for overflow
 *

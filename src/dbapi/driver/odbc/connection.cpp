@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <string.h>
 #ifdef HAVE_ODBCSS_H
@@ -599,6 +600,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/05/17 21:16:05  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.4  2003/06/05 16:02:04  soussov
  * adds code for DumpResults and for the dumped results processing
  *

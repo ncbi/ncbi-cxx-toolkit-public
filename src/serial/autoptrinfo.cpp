@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/05/17 21:03:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.18  2003/05/16 18:02:18  gouriano
 * revised exception error messages
 *
@@ -119,6 +122,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <serial/typemap.hpp>
 #include <serial/objistr.hpp>

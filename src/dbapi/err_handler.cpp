@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2004/05/17 21:10:28  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.1  2002/11/25 15:18:30  kholodov
 * First commit
 *
@@ -38,6 +41,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include "err_handler.hpp"
 
 BEGIN_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/17 21:03:04  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.2  2000/11/07 17:25:42  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -45,6 +48,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/typemap.hpp>
 #include <serial/typemapimpl.hpp>

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/05/17 21:03:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.7  2004/05/13 18:31:07  gouriano
 * Corrected GetRealTypeInfo
 *
@@ -55,6 +58,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/aliasinfo.hpp>
 #include <serial/serialbase.hpp>
 #include <serial/serialutil.hpp>

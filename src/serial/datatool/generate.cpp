@@ -29,6 +29,7 @@
 *   Main generator: collects all types, classes and files.
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbifile.hpp>
 #include <algorithm>
@@ -803,6 +804,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.57  2004/05/13 15:49:49  ucko
 * When generating doxygen headers, list them in .cvsignore.
 *

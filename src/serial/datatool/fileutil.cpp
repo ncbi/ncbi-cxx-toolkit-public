@@ -29,6 +29,7 @@
 *   Some file utilities functions/classes.
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbifile.hpp>
@@ -548,6 +549,9 @@ END_NCBI_SCOPE
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.27  2004/04/29 20:12:36  gouriano
 * GetStdPath tweaked
 *

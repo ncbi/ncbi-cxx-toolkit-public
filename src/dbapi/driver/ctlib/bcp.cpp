@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 #include <string.h>
@@ -432,6 +433,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/17 21:12:02  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.7  2003/01/31 16:49:38  lavr
  * Remove unused variable "e" from catch() clause
  *

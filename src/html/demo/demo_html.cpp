@@ -30,6 +30,7 @@
  */
 
 // Toolkit public headers
+#include <ncbi_pch.hpp>
 #include <cgi/ncbicgir.hpp>
 #include <html/html.hpp>
 
@@ -86,6 +87,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/05/17 20:59:56  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.12  2003/11/03 17:01:48  ivanov
  * Some code rearrangement
  *

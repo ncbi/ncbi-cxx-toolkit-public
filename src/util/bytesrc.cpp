@@ -31,6 +31,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <util/bytesrc.hpp>
 #include <util/util_exception.hpp>
@@ -664,6 +665,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/05/17 21:06:02  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.32  2003/12/31 20:51:33  gouriano
  * added possibility to seek (when possible) in CByteSourceReader
  *

@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "../../util/test/pbacktest.hpp"
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
@@ -69,6 +70,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2004/05/17 20:58:22  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.11  2004/04/01 14:14:02  lavr
  * Spell "occurred", "occurrence", and "occurring"
  *

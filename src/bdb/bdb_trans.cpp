@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <bdb/bdb_trans.hpp>
 #include <bdb/bdb_file.hpp>
 #include <db.h>
@@ -109,6 +110,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/17 20:55:11  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2003/12/16 13:44:47  kuznets
  * Added disconnect call to dependent file objects when transaction closes.
  *

@@ -29,6 +29,7 @@
 *   Type info for class generation: includes, used classes, C code etc.
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/datatool/enumstr.hpp>
 #include <serial/datatool/classctx.hpp>
 #include <serial/datatool/srcutil.hpp>
@@ -216,6 +217,9 @@ END_NCBI_SCOPE
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.18  2003/04/29 18:31:09  gouriano
 * object data member initialization verification
 *

@@ -29,6 +29,7 @@
 *   main datatool file: argument processing and task manager
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiargs.hpp>
 
@@ -566,6 +567,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.72  2004/05/17 21:03:13  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.71  2004/05/17 14:50:54  gouriano
 * Added possibility to include precompiled header
 *

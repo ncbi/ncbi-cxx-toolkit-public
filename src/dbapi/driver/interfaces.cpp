@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/interfaces.hpp>
 #include <dbapi/driver/public.hpp>
 
@@ -275,6 +276,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/17 21:11:38  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.8  2003/07/17 20:44:57  soussov
  * connections pool improvements
  *

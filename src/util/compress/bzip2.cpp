@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <util/compress/bzip2.hpp>
 
 
@@ -577,6 +578,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/17 21:07:25  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.8  2004/05/10 12:03:18  ivanov
  * The real changes in R1.7 was:
  *     Added calls to increase the number of processed/output bytes.

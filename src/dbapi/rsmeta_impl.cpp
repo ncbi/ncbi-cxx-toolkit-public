@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.7  2004/05/17 21:10:28  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.6  2003/11/04 21:39:03  vakatov
 * Minor style fixes;  also explicitly put into the NCBI_SCOPE.
 *
@@ -56,6 +59,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/public.hpp>
 

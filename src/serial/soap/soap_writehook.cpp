@@ -31,6 +31,7 @@
 *   
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/objostr.hpp>
 #include "soap_envelope.hpp"
 #include "soap_writehook.hpp"
@@ -66,6 +67,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/17 21:03:24  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.2  2004/01/22 20:43:48  gouriano
 * Added check for non-empty namespace
 *

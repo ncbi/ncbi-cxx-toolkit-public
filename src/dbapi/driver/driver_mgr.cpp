@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 #include <corelib/ncbidll.hpp>
 
@@ -207,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/05/17 21:11:38  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.14  2003/11/19 15:33:55  ucko
  * Adjust for CDll API change.
  *

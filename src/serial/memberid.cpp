@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/05/17 21:03:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.17  2003/09/16 14:48:36  gouriano
 * Enhanced AnyContent objects to support XML namespaces and attribute info items.
 *
@@ -102,6 +105,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/memberid.hpp>
 #include <serial/memberlist.hpp>

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/05/17 20:59:07  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.11  2001/02/13 20:44:23  vakatov
 * Use `reinterpret_cast<IoFuncType>(WriteAsn)' instead of a more safe
 * (but not-compilable by MIPSpro7.3 compiler on IRIX) `extern "C"'
@@ -71,6 +74,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <ctools/asn/asnio.hpp>
 #include <algorithm>

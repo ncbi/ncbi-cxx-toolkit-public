@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/05/17 20:56:50  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.30  2002/04/10 17:04:39  vakatov
 * CNcbiRelocateCommand::Execute() -- temp. un-fix:  do not set Status
 *
@@ -124,6 +127,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 

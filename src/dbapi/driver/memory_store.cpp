@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "memory_store.hpp"
 #include <string.h>
 
@@ -540,6 +541,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/17 21:11:38  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.7  2003/10/28 19:37:08  soussov
  * fixes memory leak in CMemStore::Truncate
  *

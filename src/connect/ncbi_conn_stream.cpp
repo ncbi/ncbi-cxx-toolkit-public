@@ -32,6 +32,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "ncbi_ansi_ext.h"
 #include "ncbi_conn_streambuf.hpp"
 #include <connect/ncbi_conn_stream.hpp>
@@ -290,6 +291,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2004/05/17 20:58:13  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 6.30  2004/03/22 16:54:32  ivanov
  * Cosmetic changes
  *

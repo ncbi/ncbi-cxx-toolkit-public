@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <util/tables/raw_scoremat.h>
 
@@ -187,6 +188,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/05/17 21:09:13  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2003/08/22 01:32:36  ucko
  * Fix for GCC 2.95.
  *

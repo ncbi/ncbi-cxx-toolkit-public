@@ -28,6 +28,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <connect/ncbi_pipe.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <memory>
@@ -1342,6 +1343,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/05/17 20:58:13  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.36  2003/12/04 16:28:52  ivanov
  * CPipeHandle::Close(): added handling new create flags f*OnClose.
  * Added GetProcessHandle(). Throw/catch string exceptions instead char*.

@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <util/resize_iter.hpp>
 
@@ -75,6 +76,9 @@ int main(int argc, char** argv) {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/17 21:09:26  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2004/02/12 20:11:48  ucko
  * Use NStr::PrintableString, since we may get non-ASCII characters.
  *

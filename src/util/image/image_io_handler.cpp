@@ -30,6 +30,7 @@
  *                             and writers
  */
 
+#include <ncbi_pch.hpp>
 #include "image_io_handler.hpp"
 #include <util/image/image_exception.hpp>
 
@@ -46,6 +47,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/17 21:07:58  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2003/06/03 15:17:13  dicuccio
  * Initial revision of image library
  *

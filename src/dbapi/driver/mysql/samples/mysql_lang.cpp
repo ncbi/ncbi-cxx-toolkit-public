@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/mysql/interfaces.hpp>
 
@@ -170,6 +171,9 @@ int main(int argc, char **argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/17 21:15:48  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.7  2004/03/24 19:45:16  vysokolo
  * Added blob support
  *

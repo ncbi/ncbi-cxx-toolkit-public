@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <connect/ncbi_namedpipe.hpp>
 #include <corelib/ncbi_system.hpp>
 
@@ -1234,6 +1235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/05/17 20:58:13  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.25  2004/03/22 17:03:20  ivanov
  * Replaced static member CNamedPipe::kDefaultPipeSize with enum values
  * for default and system pipe buffer size (by Denis Vakatov).

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.32  2004/05/17 21:10:28  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.31  2004/04/26 14:14:27  kholodov
 * Added: ExecteQuery() method
 *
@@ -144,6 +147,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include "stmt_impl.hpp"
 #include "cstmt_impl.hpp"
 #include "conn_impl.hpp"

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.34  2004/05/12 18:33:01  gouriano
 * Added type conversion check (when using _type DEF file directive)
 *
@@ -159,6 +162,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/statictype.hpp>
 #include <serial/datatool/stdstr.hpp>

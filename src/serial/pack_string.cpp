@@ -28,6 +28,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/pack_string.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objectiter.hpp>

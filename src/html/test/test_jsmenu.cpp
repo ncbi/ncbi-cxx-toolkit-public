@@ -29,6 +29,7 @@
  * 
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -347,6 +348,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/05/17 21:00:08  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.9  2004/04/05 16:19:57  ivanov
  * Added support for Sergey Kurdin's popup menu with configurations
  *

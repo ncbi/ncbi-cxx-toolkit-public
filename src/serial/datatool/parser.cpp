@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.34  2004/02/26 16:24:59  gouriano
 * Skip datatype constraints when parsing ASN.1 spec
 *
@@ -117,6 +120,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/datatool/parser.hpp>
 #include <serial/datatool/tokens.hpp>
 #include <serial/datatool/module.hpp>

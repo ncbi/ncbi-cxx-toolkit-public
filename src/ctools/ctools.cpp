@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>  // C++ Toolkit stuff, must go first!
 #include <ctools/ctools.h>
 #include <ncbimsg.h>            // C   Toolkit error and message posting
@@ -99,6 +100,9 @@ void SetupCToolkitErrPost(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2004/05/17 20:59:00  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.6  2003/11/13 16:01:48  lavr
  * Log moved to end
  *

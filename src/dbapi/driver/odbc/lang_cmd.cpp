@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <stdio.h>
 #include <dbapi/driver/odbc/interfaces.hpp>
 
@@ -517,6 +518,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/17 21:16:06  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.7  2003/11/07 17:14:20  soussov
  * work around the odbc bug. It can not handle properly the fractions of msecs
  *

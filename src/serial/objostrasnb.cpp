@@ -29,6 +29,7 @@
 *   ASN.1 binary object output stream.
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
 
@@ -1139,6 +1140,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.88  2004/05/17 21:03:03  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.87  2004/05/04 17:04:43  gouriano
 * Check double for being finite
 *

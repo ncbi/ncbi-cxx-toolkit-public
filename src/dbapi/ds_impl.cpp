@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include "ds_impl.hpp"
 #include "conn_impl.hpp"
 #include "err_handler.hpp"
@@ -144,6 +145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/05/17 21:10:28  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.12  2003/11/04 21:36:02  vakatov
  * Minor style fixes
  *

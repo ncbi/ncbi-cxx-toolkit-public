@@ -36,6 +36,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/datatool/dtdaux.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -319,6 +320,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2004/05/17 21:03:13  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2002/11/14 21:02:15  gouriano
  * auxiliary classes to use by DTD parser
  *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.28  2003/06/16 14:41:05  gouriano
 * added possibility to convert DTD to XML schema
 *
@@ -132,6 +135,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/datatool/reftype.hpp>
 #include <serial/datatool/unitype.hpp>
 #include <serial/datatool/statictype.hpp>

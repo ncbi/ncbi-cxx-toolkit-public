@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/05/17 21:03:03  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.27  2003/12/01 19:04:23  grichenk
 * Moved Add and Sub from serialutil to ncbimisc, made them methods
 * of CRawPointer class.
@@ -149,6 +152,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/exception.hpp>
 #include <serial/objlist.hpp>

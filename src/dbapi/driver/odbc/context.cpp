@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
@@ -412,6 +413,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/05/17 21:16:05  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.13  2004/04/07 13:41:48  gorelenk
  * Added export prefix to implementations of DBAPI_E_* functions.
  *

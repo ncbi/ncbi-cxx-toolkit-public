@@ -29,6 +29,7 @@
  *    CImageIORaw -- interface class for reading/writing Windows RAW files
  */
 
+#include <ncbi_pch.hpp>
 #include "image_io_raw.hpp"
 #include <util/image/image.hpp>
 #include <util/image/image_exception.hpp>
@@ -158,6 +159,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/17 21:07:58  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2003/12/16 15:48:11  dicuccio
  * Added support for RAW image files
  *

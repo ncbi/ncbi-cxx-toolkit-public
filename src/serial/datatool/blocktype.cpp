@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2004/05/17 21:03:13  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.49  2003/11/21 16:59:11  gouriano
 * Correct conversion of ASN spec into XML schema in case of containers
 *
@@ -206,6 +209,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/blocktype.hpp>
 #include <serial/datatool/unitype.hpp>

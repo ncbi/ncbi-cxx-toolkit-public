@@ -33,6 +33,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "ncbi_ansi_ext.h"
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
@@ -245,6 +246,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2004/05/17 20:58:13  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 6.17  2003/05/14 03:52:50  lavr
  * Minor change: use of default's parameter default value removed in CNcbiDiag
  *

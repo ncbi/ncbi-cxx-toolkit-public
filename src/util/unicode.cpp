@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <util/unicode.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -358,6 +359,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2004/05/17 21:06:02  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2004/05/13 21:18:12  ucko
  * Respect constness in UnicodeToAscii.
  *

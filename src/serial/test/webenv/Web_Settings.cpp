@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include "Web_Settings.hpp"
 
 // generated classes
@@ -51,6 +52,9 @@ CWeb_Settings::~CWeb_Settings(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/05/17 21:04:05  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.1  2004/01/21 15:20:02  grichenk
 * Initial revision
 *

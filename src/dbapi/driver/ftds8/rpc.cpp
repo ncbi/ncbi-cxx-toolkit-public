@@ -29,6 +29,7 @@
  *
  */
  
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/ftds/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
@@ -544,6 +545,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/05/17 21:13:37  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.11  2003/08/13 18:04:05  soussov
  * fixes copy/paste bug for DateTime
  *

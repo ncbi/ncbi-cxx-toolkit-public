@@ -29,6 +29,7 @@
  *    CImageIOBmp -- interface class for reading/writing Windows BMP files
  */
 
+#include <ncbi_pch.hpp>
 #include "image_io_bmp.hpp"
 #include <util/image/image.hpp>
 #include <util/image/image_exception.hpp>
@@ -71,6 +72,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/17 21:07:58  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2003/12/16 15:49:36  dicuccio
  * Large re-write of image handling.  Added improved error-handling and support
  * for streams-based i/o (via hooks into each client library).

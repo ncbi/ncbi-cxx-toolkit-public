@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <util/checksum.hpp>
 
@@ -156,6 +157,9 @@ int main(int argc, char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/05/17 21:09:26  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.1  2003/07/29 21:29:26  ucko
 * Add MD5 support (cribbed from the C Toolkit)
 *

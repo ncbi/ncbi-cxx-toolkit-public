@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/17 21:03:13  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.3  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
 *
@@ -43,6 +46,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/datatool/comments.hpp>

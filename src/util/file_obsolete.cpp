@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <util/file_obsolete.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbifile.hpp>
@@ -120,6 +121,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/17 21:06:02  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2004/01/09 17:57:15  lavr
  * Resolve signed/unsigned comparison issues
  * Avoid file removal should Remove() get bad "tmode"

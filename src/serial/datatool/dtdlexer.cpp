@@ -32,6 +32,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/datatool/dtdlexer.hpp>
 #include <serial/datatool/tokens.hpp>
 
@@ -288,6 +289,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2004/05/17 21:03:14  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.6  2004/01/16 19:56:52  gouriano
  * Minor correction when parsing end-of-line
  *

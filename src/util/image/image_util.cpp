@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <util/image/image_util.hpp>
 #include <util/image/image_exception.hpp>
 #include <corelib/ncbi_limits.hpp>
@@ -211,6 +212,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/17 21:07:58  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2003/12/18 13:50:54  dicuccio
  * Added FlipX() and FlipY() routines to flip an image about an axis
  *

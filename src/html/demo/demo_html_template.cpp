@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <html/page.hpp>
@@ -323,6 +324,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/17 20:59:56  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2004/02/10 18:49:38  ivanov
  * Get rid of compilation warning
  *

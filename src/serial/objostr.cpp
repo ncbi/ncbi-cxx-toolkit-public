@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbimtx.hpp>
@@ -998,6 +999,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.95  2004/05/17 21:03:03  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.94  2004/02/09 18:22:34  gouriano
 * enforced checking environment vars when setting initialization
 * verification parameters

@@ -29,6 +29,7 @@
 *   Standard serialization exceptions
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/exception.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -128,6 +129,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/05/17 21:03:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.12  2004/05/11 15:56:36  gouriano
 * Change GetErrCode method prototype to return TErrCode - to be able to
 * safely cast EErrCode to an eInvalid

@@ -32,6 +32,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 
@@ -231,6 +232,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/17 20:55:18  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2003/04/30 14:58:11  kuznets
  * Initial release
  *

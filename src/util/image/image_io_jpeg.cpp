@@ -29,6 +29,7 @@
  *    CImageIOJpeg -- interface class for reading/writing JPEG files
  */
 
+#include <ncbi_pch.hpp>
 #include "image_io_jpeg.hpp"
 #include <util/image/image.hpp>
 #include <util/image/image_exception.hpp>
@@ -714,6 +715,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/17 21:07:58  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.7  2004/01/31 17:52:10  dicuccio
  * Added support for black & white JPG images (color components = 1).  Fixed
  * reading of sub-images

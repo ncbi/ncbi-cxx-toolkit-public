@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <html/components.hpp>
 #include <html/page.hpp>
 #include <html/jsmenu.hpp>
@@ -560,6 +561,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2004/05/17 20:59:50  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.43  2004/02/04 17:15:22  ivanov
  * Added debug function GeneratePageInternalName()
  *

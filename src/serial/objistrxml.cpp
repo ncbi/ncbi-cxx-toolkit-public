@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2004/05/17 21:03:03  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.59  2004/04/28 19:24:29  gouriano
 * Corrected reading of containers
 *
@@ -250,6 +253,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/objistrxml.hpp>
 #include <serial/enumvalues.hpp>

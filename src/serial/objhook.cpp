@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/05/17 21:03:03  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.9  2003/08/11 15:25:52  grichenk
 * Added possibility to reset an object member from
 * a read hook (including non-optional members).
@@ -73,6 +76,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/objhook.hpp>
 #include <serial/objectinfo.hpp>

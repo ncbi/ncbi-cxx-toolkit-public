@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 #include "blobstore.hpp"
@@ -222,6 +223,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/17 21:18:21  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2004/05/03 16:47:10  soussov
  * initial commit
  *

@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "ncbi_conn_streambuf.hpp"
 #include <corelib/ncbidbg.hpp>
 #include <connect/ncbi_conn_exception.hpp>
@@ -293,6 +294,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.46  2004/05/17 20:58:13  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 6.45  2004/02/23 15:23:39  lavr
  * New (last) parameter "how" added in CONN_Write() API call
  *

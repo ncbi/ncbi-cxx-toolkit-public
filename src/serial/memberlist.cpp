@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/05/17 21:03:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.35  2004/01/08 17:37:04  gouriano
 * Added possibility to search for container members, that could be empty
 *
@@ -170,6 +173,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/exception.hpp>
 #include <serial/memberlist.hpp>

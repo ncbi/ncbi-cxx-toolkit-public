@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <sqlite/sqlite.hpp>
 #include <sqlite/sqlite_exception.hpp>
 #include <corelib/ncbifile.hpp>
@@ -289,6 +290,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/17 21:05:24  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2003/09/29 12:24:17  dicuccio
  * Initial revision
  *

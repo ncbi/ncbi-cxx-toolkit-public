@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
 * Revision 1.5  2000/08/25 15:59:22  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -58,6 +61,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/datatool/mcontainer.hpp>
 #include <serial/datatool/namespace.hpp>
 

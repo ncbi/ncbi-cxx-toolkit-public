@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/mysql/interfaces.hpp>
 
 
@@ -314,6 +315,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/17 21:15:34  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
  * Revision 1.7  2004/03/25 22:40:37  vysokolo
  * Atting eDB_Text type
  *
