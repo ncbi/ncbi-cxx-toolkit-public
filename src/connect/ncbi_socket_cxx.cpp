@@ -369,11 +369,13 @@ CListeningSocket::CListeningSocket(void)
 }
 
 
-CListeningSocket::CListeningSocket(unsigned short port, unsigned short backlog)
+CListeningSocket::CListeningSocket(unsigned short port,
+                                   unsigned short backlog,
+                                   TLSCE_Flags    flags)
     : m_Socket(0),
       m_IsOwned(eTakeOwnership)
 {
-    if (LSOCK_Create(port, backlog, &m_Socket) != eIO_Success)
+    if (LSOCK_CreateEx(port, backlog, &m_Socket, flags) != eIO_Success)
         m_Socket = 0;
 }
 
@@ -385,12 +387,13 @@ CListeningSocket::~CListeningSocket(void)
 
 
 EIO_Status CListeningSocket::Listen(unsigned short port,
-                                    unsigned short backlog)
+                                    unsigned short backlog,
+                                    TLSCE_Flags    flags)
 {
     if ( m_Socket )
         return eIO_Unknown;
 
-    EIO_Status status = LSOCK_Create(port, backlog, &m_Socket);
+    EIO_Status status = LSOCK_CreateEx(port, backlog, &m_Socket, flags);
     if (status != eIO_Success)
         m_Socket = 0;
     return status;
@@ -407,11 +410,16 @@ EIO_Status CListeningSocket::Accept(CSocket*&       sock,
     EIO_Status status = LSOCK_Accept(m_Socket, timeout, &x_sock);
     if (status != eIO_Success) {
         sock = 0;
-    } else if ( !(sock = new CSocket) ) {
-        SOCK_CloseEx(x_sock, 1);
-        status = eIO_Unknown;
-    } else
+    } else {
+        try {
+            sock = new CSocket;
+        } catch (...) {
+            sock = 0;
+            SOCK_CloseEx(x_sock, 1);
+            throw;
+        }
         sock->Reset(x_sock, eTakeOwnership, eCopyTimeoutsToSOCK);
+    }
     return status;
 }
 
@@ -531,6 +539,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2004/07/23 19:05:26  lavr
+ * CListeningSocket(), CListeningSocket::Listen() to accept flags
+ *
  * Revision 6.24  2004/05/17 20:58:13  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

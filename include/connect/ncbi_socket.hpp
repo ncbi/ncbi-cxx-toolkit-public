@@ -272,7 +272,9 @@ class NCBI_XCONNECT_EXPORT CListeningSocket : public CPollable
 public:
     CListeningSocket(void);
     // NOTE:  "port" ought to be in host byte order
-    CListeningSocket(unsigned short port, unsigned short backlog = 5);
+    CListeningSocket(unsigned short port,
+                     unsigned short backlog = 5,
+                     TLSCE_Flags    flags   = fLSCE_LogDefault);
 
     // Call Close(), then self-destruct
     virtual ~CListeningSocket(void);
@@ -282,7 +284,9 @@ public:
     EIO_Status GetStatus(void) const;
 
     // NOTE:  "port" ought to be in host byte order
-    EIO_Status Listen(unsigned short port, unsigned short backlog = 5);
+    EIO_Status Listen(unsigned short port,
+                      unsigned short backlog = 5,
+                      TLSCE_Flags    flags   = fLSCE_LogDefault);
 
     // NOTE: the created "CSocket" will own its underlying "SOCK"
     EIO_Status Accept(CSocket*& sock,
@@ -613,6 +617,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2004/07/23 19:05:13  lavr
+ * CListeningSocket(), CListeningSocket::Listen() to accept flags
+ *
  * Revision 6.36  2003/11/25 15:07:40  lavr
  * CSocket::GetStatus() to pass eIO_Open to SOCK_Status()
  *
