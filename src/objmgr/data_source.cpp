@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2002/07/01 15:40:58  grichenk
+* Fixed 'tse_set' warning.
+* Removed duplicate call to tse_set.begin().
+* Fixed version resolving for annotation iterators.
+* Fixed strstream bug in KCC.
+*
 * Revision 1.53  2002/06/28 17:30:42  grichenk
 * Duplicate seq-id: ERR_POST() -> THROW1_TRACE() with the seq-id
 * list.
@@ -886,14 +892,14 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
         iterate ( CBioseq::TId, id, seq->GetId() ) {
             // Find the bioseq index
             CSeq_id_Handle key = GetIdMapper().GetHandle(**id);
-            TTSESet& tse_set = m_TSE_seq[key];
-            TTSESet::iterator tse_it = tse_set.begin();
-            for (tse_it = tse_set.begin(); tse_it != tse_set.end(); ++tse_it) {
+            TTSESet& seq_tse_set = m_TSE_seq[key];
+            TTSESet::iterator tse_it = seq_tse_set.begin();
+            for ( ; tse_it != seq_tse_set.end(); ++tse_it) {
                 if ((*tse_it)->m_TSE == &tse)
                     break;
             }
-            if (tse_it == tse_set.end()) {
-                tse_set.insert(tse_info);
+            if (tse_it == seq_tse_set.end()) {
+                seq_tse_set.insert(tse_info);
             }
             else {
                 tse_info = *tse_it;
@@ -903,29 +909,23 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
                 // No duplicate bioseqs in the same TSE
                 string sid1, sid2, si_conflict;
                 {{
-                    strstream os;
+                    CNcbiOstrstream os;
                     iterate (CBioseq::TId, id_it, found->second->m_Entry->GetSeq().GetId()) {
                         os << (*id_it)->DumpAsFasta() << " | ";
                     }
-                    sid1 = os.str();
-                    sid1.resize(os.pcount());
-                    os.freeze(0);
+                    sid1 = CNcbiOstrstreamToString(os);
                 }}
                 {{
-                    strstream os;
+                    CNcbiOstrstream os;
                     iterate (CBioseq::TId, id_it, seq->GetId()) {
                         os << (*id_it)->DumpAsFasta() << " | ";
                     }
-                    sid2 = os.str();
-                    sid2.resize(os.pcount());
-                    os.freeze(0);
+                    sid2 = CNcbiOstrstreamToString(os);
                 }}
                 {{
-                    strstream os;
+                    CNcbiOstrstream os;
                     os << (*id)->DumpAsFasta();
-                    si_conflict = os.str();
-                    si_conflict.resize(os.pcount());
-                    os.freeze(0);
+                    sid2 = CNcbiOstrstreamToString(os);
                 }}
                 THROW1_TRACE(runtime_error,
                     " duplicate Bioseq id '" + si_conflict + "' present in" +
@@ -1428,10 +1428,26 @@ void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc,
 {
     CHandleRangeMap tmp(GetIdMapper());
     iterate ( CHandleRangeMap::TLocMap, it, loc.GetMap() ) {
+        CSeq_id_Handle idh = it->first;
         CTSE_Info* tse_info = x_FindBestTSE(it->first, history);
+        if ( !tse_info ) {
+            // Try to find the best matching id (not exactly equal)
+            const CSeq_id& id = GetIdMapper().GetSeq_id(idh);
+            TSeq_id_HandleSet hset;
+            GetIdMapper().GetMatchingHandles(id, hset);
+            iterate(TSeq_id_HandleSet, hit, hset) {
+                if ( tse_info  &&  idh.IsBetter(*hit) )
+                    continue;
+                CTSE_Info* tmp_tse = x_FindBestTSE(*hit, history);
+                if ( tmp_tse ) {
+                    tse_info = tmp_tse;
+                    idh = *hit;
+                }
+            }
+        }
         if (tse_info != 0) {
             TBioseqMap::const_iterator info =
-                tse_info->m_BioseqMap.find(it->first);
+                tse_info->m_BioseqMap.find(idh);
             if (info == tse_info->m_BioseqMap.end()) {
                 // Just copy the existing range map
                 tmp.AddRanges(it->first, it->second);
@@ -1440,7 +1456,11 @@ void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc,
                 // Create range list for each synonym of a seq_id
                 const CBioseq_Info::TSynonyms& syn = info->second->m_Synonyms;
                 iterate ( CBioseq_Info::TSynonyms, syn_it, syn ) {
-                    tmp.AddRanges(*syn_it, it->second);
+                    CHandleRange rg(*syn_it);
+                    iterate (CHandleRange::TRanges, rit, it->second.GetRanges()) {
+                        rg.AddRange(rit->first, rit->second);
+                    }
+                    tmp.AddRanges(*syn_it, rg);
                 }
             }
         }
