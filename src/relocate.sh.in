@@ -16,6 +16,13 @@ src_tree=`pwd`
 bld_tree=`(cd "${script_dir}/.." ; pwd)`
 status_dir=$bld_tree/status
 
+for x_arg in "$@" ; do
+  case "$x_arg" in
+    --drop-suffix )  extra_sed='s%/c[+][+][^/ '\''"]*%/c++%g' ;;
+    * )  Usage "Unknown argument \"$x_arg\""
+  esac
+done
+
 if test -x "$src_tree/scripts/hello.sh"  &&  test -f "$bld_tree/inc/ncbiconf.h" ; then
    cat <<EOF
 Adjusting makefiles for:
@@ -37,18 +44,29 @@ fi
 #### Substitute for the new $(builddir)
 
 files="\
-Makefile.mk Makefile.meta Makefile.lib.tmpl Makefile.app.tmpl"
+Makefile.mk Makefile.meta Makefile.lib.tmpl Makefile.app.tmpl install.sh"
 
 for f in $files ; do
    fff="$script_dir/$f"
-   sed 's%^\(builddir *= *\).*%\1'$script_dir'%; s%^\(build_root *= *\).*%\1'$bld_tree'%; s%^\(top_srcdir *= *\).*%\1'$src_tree'%; s%\(status_dir *= *\).*%\1'$status_dir'%' "$fff" |
-   sed 's%/netopt/ncbi_tools\.[^/ ]*%/netopt/ncbi_tools%g' |
-   sed 's/^ *BINCOPY *=.*/BINCOPY = @:/; s/^ *BINTOUCH *=.*/BINTOUCH = @:/' > "$fff.tmp"
+   sed '
+      s%^\(builddir *= *\).*%\1'$script_dir'%;
+      s%^\(build_root *= *\).*%\1'$bld_tree'%;
+      s%^\(top_srcdir *= *\).*%\1'$src_tree'%;
+      s%^\(old_srcdir='\''\).*\('\''\) *$%\1'$src_tree'\2%
+      s%^\(status_dir *= *\).*%\1'$status_dir'%;
+      s%^\(runpath *=[^/]*\)/[^:]*/lib%\1$bld_tree/lib%
+      s%/netopt/ncbi_tools\.[^/ ]*%/netopt/ncbi_tools%g;
+      s%^ *BINCOPY *=.*%BINCOPY = @:%;
+      s%^ *BINTOUCH *=.*%BINTOUCH = @:%;
+      '"$extra_sed"'
+   ' "$fff" > "$fff.tmp"
    if test $? -ne 0 ; then
       echo "[$script_name]  Error in processing file \"$f\"!" 
       exit 2
    fi
 done
+
+chmod +x "$script_dir"/*.sh.tmp
 
 for f in $files ; do
    fff="$script_dir/$f"
