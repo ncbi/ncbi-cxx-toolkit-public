@@ -46,7 +46,8 @@ public:
         eConsensusNotPresent,
         eInvalidRow,
         eInvalidSegment,
-        eInvalidDenseg
+        eInvalidDenseg,
+        eUnknownMergeFailure
     };
 
     NCBI_EXCEPTION_DEFAULT(CAlnException,CException);
@@ -58,6 +59,7 @@ public:
         case eInvalidRow:           return "eInvalidRow";
         case eInvalidSegment:       return "eInvalidSegment";
         case eInvalidDenseg:        return "eInvalidDenseg";
+        case eUnknownMergeFailure:  return "eUnknownMergeFailure";
         default:                    return CException::GetErrCodeString();
         }
     }
@@ -72,6 +74,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/09/27 17:35:44  todorov
+ * added a merge exception
+ *
  * Revision 1.2  2002/09/26 18:13:52  todorov
  * introducing a few new exceptions
  *

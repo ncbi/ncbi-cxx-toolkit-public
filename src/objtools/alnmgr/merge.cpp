@@ -139,6 +139,14 @@ void CAlnMix::x_Merge()
     } else {
         AlnMgr2IndexSeqAlign(sap);
     }
+
+    if (!((AMAlignIndex2Ptr)(sap->saip))->sharedaln) {
+        NCBI_THROW(CAlnException, eUnknownMergeFailure,
+                   string("CAlnMix::x_Merge(): ") + 
+                   (m_MergeFlags & fGen2EST ? "Gen2EST":"Nucl2Nucl") +
+                   " merge failed. " 
+                   "Try using different merge parameters!");
+    }
     
     // convert back to c++
     CRef<CSeq_align> shared = new CSeq_align();
@@ -158,6 +166,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/09/27 17:35:08  todorov
+* added a merge exception
+*
 * Revision 1.1  2002/08/23 14:43:53  ucko
 * Add the new C++ alignment manager to the public tree (thanks, Kamen!)
 *
