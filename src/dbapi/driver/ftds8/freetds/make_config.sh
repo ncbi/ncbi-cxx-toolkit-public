@@ -42,9 +42,9 @@ cat > $tdsconf <<EOF
 EOF
 
 # Grep necessary defines
-for d in BSD_COMP HAVE_ARPA_INET_H HAVE_ATOLL HAVE_MALLOC_H HAVE_NETINET_IN_H \
-         HAVE_SYS_SOCKET_H HAVE_SYS_TYPES_H HAVE_VASPRINTF INADDR_NONE \
-         SIZEOF_.\* STDC_HEADERS WORDS_BIGENDIAN; do
+for d in BSD_COMP HAVE_ARPA_INET_H HAVE_ATOLL HAVE_GETPAGESIZE HAVE_MALLOC_H \
+         HAVE_NETINET_IN_H HAVE_SYS_SOCKET_H HAVE_SYS_TYPES_H HAVE_VASPRINTF \
+         INADDR_NONE STDC_HEADERS WORDS_BIGENDIAN; do
     grep "^#define $d " $ncbiconf >> $tdsconf
 done
 
@@ -52,11 +52,9 @@ done
 sed -ne 's/\(#define HAVE_\)\(GET....BY...._R\) \([0-9]\)/\1FUNC_\2_\3 1/p' \
     $ncbiconf >> $tdsconf
 sed -ne 's/#define HAVE_LIBICONV/#define HAVE_ICONV/p' $ncbiconf >> $tdsconf
+sed -ne 's/#define SIZEOF_LONG_LONG 8/#define HAVE_INT64 1/p' $ncbiconf >> $tdsconf
 
 cat >> $tdsconf <<EOF
-#if SIZEOF_LONG == 8  ||  SIZEOF_LONG_LONG == 8  ||  SIZEOF___INT64 == 8
-#define INT64 1
-#endif
 
 #endif  /* $DEF_NAME */
 EOF
