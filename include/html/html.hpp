@@ -1033,6 +1033,7 @@ class NCBI_XHTML_EXPORT CHTML_a : public CHTMLInlineElement
     typedef CHTMLInlineElement CParent;
     static const char sm_TagName[];
 public:
+    CHTML_a(void);
     CHTML_a(const string& href);
     CHTML_a(const string& href, const char* text);
     CHTML_a(const string& href, const string& text);
@@ -1343,6 +1344,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2003/12/31 19:00:45  ivanov
+ * Added default constructor for CHTML_a
+ *
  * Revision 1.69  2003/12/02 14:18:52  ivanov
  * AttachPopupMenu() comment changes
  *

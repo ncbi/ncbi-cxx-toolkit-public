@@ -231,6 +231,13 @@ CHTML_menu::CHTML_menu(const string& type, bool compact)
 }
 
 inline
+CHTML_a::CHTML_a(void)
+    : CParent(sm_TagName)
+{
+    return;
+}
+
+inline
 CHTML_a::CHTML_a(const string& href)
     : CParent(sm_TagName)
 {
@@ -574,6 +581,9 @@ CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2003/12/31 19:00:45  ivanov
+ * Added default constructor for CHTML_a
+ *
  * Revision 1.32  2003/11/05 18:41:06  dicuccio
  * Added export specifiers
  *
