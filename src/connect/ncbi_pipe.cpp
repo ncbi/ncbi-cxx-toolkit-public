@@ -144,7 +144,7 @@ CPipe::CPipe()
 }
 
 
-CPipe::CPipe(const char *cmdname, const char *const *args, 
+CPipe::CPipe(const char *cmdname, const vector<string> args, 
              const EMode mode_stdin, const EMode mode_stdout, 
              const EMode mode_stderr)
 {
@@ -166,7 +166,7 @@ void CPipe::Init()
 }
 
 
-void CPipe::Open(const char *cmdname, const char *const *args,
+void CPipe::Open(const char *cmdname, const vector<string> args,
                  const EMode mode_stdin, const EMode mode_stdout, 
                  const EMode mode_stderr)
 {
@@ -197,13 +197,17 @@ void CPipe::Open(const char *cmdname, const char *const *args,
     }
 
     // Spawn the child process
-    if ( args ) {
-        m_Pid = CExec::SpawnVP(CExec::eNoWait, cmdname, args);
-    } else {
-        char* x_args[2];
-        x_args[1] = 0;
-        m_Pid = CExec::SpawnVP(CExec::eNoWait, cmdname, x_args);
+
+    size_t cnt = args.size(), i = 0;
+    const char** x_args = new const char*[cnt+2];
+    
+    iterate(vector<string>, arg, args) {
+         x_args[i+1] = arg->c_str();
+         i++;
     }
+    x_args[cnt+1] = 0;
+    m_Pid = CExec::SpawnVP(CExec::eNoWait, cmdname, x_args);
+    delete[] x_args;
     if ( m_Pid == -1 ) {
         s_ThrowException("Error execution a child process");
     }
@@ -260,6 +264,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/06/10 18:35:27  ivanov
+ * Changed argument's type of a running child program from char*[]
+ * to vector<string>
+ *
  * Revision 1.1  2002/06/10 16:59:39  ivanov
  * Initial revision
  *

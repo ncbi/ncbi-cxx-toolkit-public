@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <stdio.h>
+#include <vector>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <io.h>
@@ -85,10 +86,10 @@ public:
     // Constructors.
     // Second constructor just calls Open(). Trows exceptions on errors.
     CPipe();
-    CPipe(const char *cmdname, const char *const *args = 0,
-           const EMode mode_stdin  = eDefaultStdIn,
-           const EMode mode_stdout = eDefaultStdOut,
-           const EMode mode_stderr = eDefaultStdErr);
+    CPipe(const char *cmdname, const vector<string> args,
+          const EMode mode_stdin  = eDefaultStdIn,
+          const EMode mode_stdout = eDefaultStdOut,
+          const EMode mode_stderr = eDefaultStdErr);
 
 
     // If pipe was created that destructor waits for new child process
@@ -96,16 +97,14 @@ public:
     ~CPipe(void);
 
     // Function create a pipe and executes a command with the vector of 
-    // arguments "args" (using CExec::SpawnVP(), starting index of 
-    // arguments in array is 1 -- see CExec class).
-    // The other end of the pipe is associated with the spawned commands
-    // standard input or standard output (according open mode). 
-    // If some pipe was opened that it will be closed.
+    // arguments "args". The other end of the pipe is associated with the
+    // spawned commands standard input or standard output (according open 
+    // mode). If some pipe was opened that it will be closed.
     // The function throws on an error.
-    void Open(const char *cmdname, const char *const *args = 0,
-           const EMode mode_stdin  = eDefaultStdIn,
-           const EMode mode_stdout = eDefaultStdOut,
-           const EMode mode_stderr = eDefaultStdErr);
+    void Open(const char *cmdname, const vector<string> args,
+              const EMode mode_stdin  = eDefaultStdIn,
+              const EMode mode_stdout = eDefaultStdOut,
+              const EMode mode_stderr = eDefaultStdErr);
 
     // Waits for new spawned child process and closes associated pipe.
     // Return exit code of child process if it has terminate succesfully, 
@@ -145,6 +144,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/06/10 18:35:13  ivanov
+ * Changed argument's type of a running child program from char*[]
+ * to vector<string>
+ *
  * Revision 1.1  2002/06/10 16:57:04  ivanov
  * Initial revision
  *

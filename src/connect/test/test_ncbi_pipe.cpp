@@ -41,7 +41,7 @@ USING_NCBI_SCOPE;
 
 
 #define TEST_RESULT    99   // Test exit code
-#define BUFFER_SIZE  1024   // Size of read buffer
+#define BUFFER_SIZE  4096   // Size of read buffer
 
 
 ////////////////////////////////
@@ -125,27 +125,26 @@ int CTest::Run(void)
     // Initialization of variables and structures
     const string app = GetArguments().GetProgramName();
     string str;
-    char* args[4];
+    vector<string> args;
 
     // Pipe for reading
-    args[1] = "-l";
-    args[2] = 0;
+    args.push_back("-l");
     CPipe pipe("ls", args, CPipe::eDoNotUse, CPipe::eText);
     s_ReadPipe(&pipe);
     assert(pipe.Close() == 0);
 
     // Pipe for writing
-    args[1] = "one_argument";
-    args[2] = 0;
+    args.clear();
+    args.push_back("one argument");
     pipe.Open(app.c_str(), args, CPipe::eText, CPipe::eDoNotUse);
     s_WritePipe(&pipe, "Child, are You ready?");
     Delay();
     assert(pipe.Close() == TEST_RESULT);
 
     // Bi-directional pipe
-    args[1] = "two";
-    args[2] = "arguments";
-    args[3] = 0;
+    args.clear();
+    args.push_back("two");
+    args.push_back("arguments");
     pipe.Open(app.c_str(), args);
     s_WritePipe(&pipe, "Child, are You ready again?");
     Delay();
@@ -192,6 +191,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2002/06/10 18:35:29  ivanov
+ * Changed argument's type of a running child program from char*[]
+ * to vector<string>
+ *
  * Revision 6.1  2002/06/10 17:00:30  ivanov
  * Initial revision
  *
