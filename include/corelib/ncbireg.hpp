@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/04/06 15:46:29  grichenk
+* Added thread-safety to CNcbiRegistry:: methods
+*
 * Revision 1.9  1999/09/02 21:53:23  vakatov
 * Allow '-' and '.' in the section/entry name
 *
@@ -145,7 +148,7 @@ public:
     //
     // Valid flags := { ePersistent }
     // If "ePersistent" flag is set then dont search in transients at all.
-    const string& Get(const string& section, const string& name,
+    string Get(const string& section, const string& name,
                       TFlags flags = 0) const;
 
     // Set the configuration parameter value(unset if "value" is empty)

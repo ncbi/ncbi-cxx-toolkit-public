@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/04/06 15:46:30  grichenk
+* Added thread-safety to CNcbiRegistry:: methods
+*
 * Revision 1.13  2001/01/30 22:13:28  vakatov
 * Write() -- use "s_Endl" instead of "NcbiEndl"
 *
@@ -71,6 +74,7 @@
 */
 
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbimtx.hpp>
 
 // Platform-specific EndOfLine
 #if   defined(NCBI_OS_MAC)
@@ -140,6 +144,9 @@ static bool s_IsNameSection(const string& str)
 }
 
 
+
+// Protective mutex for registry Get() and Set() functions
+static CFastMutex s_RegMutex;
 
 
 CNcbiRegistry::CNcbiRegistry(void) {}
@@ -306,6 +313,7 @@ Error in reading the registry: '" + str + "'", line);
 bool CNcbiRegistry::Write(CNcbiOstream& os)
 const
 {
+    CFastMutexGuard LOCK(s_RegMutex);
     for (TRegistry::const_iterator section = m_Registry.begin();
          section != m_Registry.end();  section++) {
         // write section header
@@ -361,8 +369,8 @@ void CNcbiRegistry::Clear(void)
 }
 
 
-const string& CNcbiRegistry::Get(const string& section, const string& name,
-                                 TFlags flags)
+string CNcbiRegistry::Get(const string& section, const string& name,
+                          TFlags flags)
 const
 {
     CHECK_FLAGS("Get", flags, ePersistent);
@@ -379,6 +387,8 @@ const
         _TRACE("CNcbiRegistry::Get():  bad or empty entry name: " + name);
         return NcbiEmptyString;
     }
+
+    CFastMutexGuard LOCK(s_RegMutex);
 
     // find section
     TRegistry::const_iterator find_section = m_Registry.find(x_section);
@@ -417,6 +427,8 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
         _TRACE("CNcbiRegistry::Set():  bad or empty entry name: " + name);
         return false;
     }
+
+    CFastMutexGuard LOCK(s_RegMutex);
 
     // find section
     TRegistry::iterator find_section = m_Registry.find(x_section);
@@ -473,6 +485,8 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
 void CNcbiRegistry::EnumerateSections(list<string>* sections)
 const
 {
+    CFastMutexGuard LOCK(s_RegMutex);
+
     sections->clear();
     for (TRegistry::const_iterator section = m_Registry.begin();
          section != m_Registry.end();  section++) {
@@ -485,6 +499,8 @@ void CNcbiRegistry::EnumerateEntries(const string& section,
                                      list<string>* entries)
 const
 {
+    CFastMutexGuard LOCK(s_RegMutex);
+
     entries->clear();
 
     // find section
