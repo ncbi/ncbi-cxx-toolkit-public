@@ -37,6 +37,8 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/annot_object.hpp>
+#include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/impl/snp_annot_info.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -374,6 +376,36 @@ Uint4 CAnnotObject_Ref::GetAnnotObjectIndex(void) const
 
 
 inline
+const CSeq_annot_Info& CAnnotObject_Ref::GetSeq_annot_Info(void) const
+{
+    _ASSERT(m_ObjectType == eType_Seq_annot_Info);
+    return static_cast<const CSeq_annot_Info&>(*m_Object);
+}
+
+
+inline
+const CSeq_annot_SNP_Info& CAnnotObject_Ref::GetSeq_annot_SNP_Info(void) const
+{
+    _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
+    return static_cast<const CSeq_annot_SNP_Info&>(*m_Object);
+}
+
+
+inline
+const CAnnotObject_Info& CAnnotObject_Ref::GetAnnotObject_Info(void) const
+{
+    return GetSeq_annot_Info().GetAnnotObject_Info(GetAnnotObjectIndex());
+}
+
+
+inline
+const SSNP_Info& CAnnotObject_Ref::GetSNP_Info(void) const
+{
+    return GetSeq_annot_SNP_Info().GetSNP_Info(GetAnnotObjectIndex());
+}
+
+
+inline
 bool CAnnotObject_Ref::IsPartial(void) const
 {
     return (m_MappedFlags & fMapped_Partial) != 0;
@@ -652,6 +684,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2004/02/06 18:31:53  vasilche
+* Fixed annot sorting class - deal with different annot types (graph align feat).
+*
 * Revision 1.63  2004/02/05 19:53:39  grichenk
 * Fixed type matching in SAnnotSelector. Added IncludeAnnotType().
 *

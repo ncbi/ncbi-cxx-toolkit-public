@@ -107,43 +107,13 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
 }
 
 
-const CSeq_annot_Info& CAnnotObject_Ref::GetSeq_annot_Info(void) const
-{
-    _ASSERT(m_ObjectType == eType_Seq_annot_Info);
-    return static_cast<const CSeq_annot_Info&>(*m_Object);
-}
-
-
-const CSeq_annot_SNP_Info& CAnnotObject_Ref::GetSeq_annot_SNP_Info(void) const
-{
-    _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
-    return static_cast<const CSeq_annot_SNP_Info&>(*m_Object);
-}
-
-
-const CAnnotObject_Info& CAnnotObject_Ref::GetAnnotObject_Info(void) const
-{
-    _ASSERT(m_ObjectType == eType_Seq_annot_Info);
-    return static_cast<const CSeq_annot_Info&>
-        (*m_Object).GetAnnotObject_Info(m_AnnotObject_Index);
-}
-
-
-const SSNP_Info& CAnnotObject_Ref::GetSNP_Info(void) const
-{
-    _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
-    return static_cast<const CSeq_annot_SNP_Info&>
-        (*m_Object).GetSNP_Info(m_AnnotObject_Index);
-}
-
-
 const CSeq_annot& CAnnotObject_Ref::GetSeq_annot(void) const
 {
     if ( m_ObjectType == eType_Seq_annot_SNP_Info ) {
         return GetSeq_annot_SNP_Info().GetSeq_annot();
     }
     else {
-        return GetAnnotObject_Info().GetSeq_annot();
+        return GetSeq_annot_Info().GetSeq_annot();
     }
 }
 
@@ -284,8 +254,135 @@ bool CAnnotObject_Ref::operator<(const CAnnotObject_Ref& ref) const
 // CAnnotObject_Ref comparision
 /////////////////////////////////////////////////////////////////////////////
 
-template<class ObjectLess>
-struct CAnnotObject_Ref_Less : public ObjectLess
+struct CAnnotObjectType_Less
+{
+    bool operator()(const CAnnotObject_Ref& x,
+                    const CAnnotObject_Ref& y) const;
+
+    static const CSeq_loc& GetLocation(const CAnnotObject_Ref& ref,
+                                       const CSeq_feat& feat);
+};
+
+
+const CSeq_loc& CAnnotObjectType_Less::GetLocation(const CAnnotObject_Ref& ref,
+                                                   const CSeq_feat& feat)
+{
+    if ( ref.GetMappedObjectType() == ref.eMappedObjType_Seq_loc &&
+         !ref.IsProduct() ) {
+        return ref.GetMappedSeq_loc();
+    }
+    else {
+        return feat.GetLocation();
+    }
+}
+
+
+bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
+                                       const CAnnotObject_Ref& y) const
+{
+    // gather x annotation type
+    const CSeq_annot* x_annot;
+    const CAnnotObject_Info* x_info;
+    CSeq_annot::C_Data::E_Choice x_annot_type;
+    if ( !x.IsSNPFeat() ) {
+        const CSeq_annot_Info& annot_info = x.GetSeq_annot_Info();
+        x_annot = &annot_info.GetSeq_annot();
+        x_info = &annot_info.GetAnnotObject_Info(x.GetAnnotObjectIndex());
+        x_annot_type = x_info->GetAnnotType();
+    }
+    else {
+        x_annot = &x.GetSeq_annot_SNP_Info().GetSeq_annot();
+        x_info = 0;
+        x_annot_type = CSeq_annot::C_Data::e_Ftable;
+    }
+
+    // gather y annotation type
+    const CSeq_annot* y_annot;
+    const CAnnotObject_Info* y_info;
+    CSeq_annot::C_Data::E_Choice y_annot_type;
+    if ( !y.IsSNPFeat() ) {
+        const CSeq_annot_Info& annot_info = y.GetSeq_annot_Info();
+        y_annot = &annot_info.GetSeq_annot();
+        y_info = &annot_info.GetAnnotObject_Info(y.GetAnnotObjectIndex());
+        y_annot_type = y_info->GetAnnotType();
+    }
+    else {
+        y_annot = &y.GetSeq_annot_SNP_Info().GetSeq_annot();
+        y_info = 0;
+        y_annot_type = CSeq_annot::C_Data::e_Ftable;
+    }
+
+    // compare by annotation type (feature, align, graph)
+    if ( x_annot_type != y_annot_type ) {
+        return x_annot_type < y_annot_type;
+    }
+
+    if ( x_annot_type == CSeq_annot::C_Data::e_Ftable ) {
+        // compare features by type
+        if ( bool(x_info) != bool(y_info) ) {
+            CSeqFeatData::E_Choice x_feat_type = CSeqFeatData::e_Imp;
+            CSeqFeatData::ESubtype x_feat_subtype =
+                CSeqFeatData::eSubtype_variation;
+            if ( x_info ) {
+                x_feat_type = x_info->GetFeatType();
+                x_feat_subtype = x_info->GetFeatSubtype();
+            }
+
+            CSeqFeatData::E_Choice y_feat_type = CSeqFeatData::e_Imp;
+            CSeqFeatData::ESubtype y_feat_subtype =
+                CSeqFeatData::eSubtype_variation;
+            if ( y_info ) {
+                y_feat_type = y_info->GetFeatType();
+                y_feat_subtype = y_info->GetFeatSubtype();
+            }
+
+            // one is simple SNP feature, another is some complex feature
+            if ( x_feat_type != y_feat_type ) {
+                int x_order = CSeq_feat::GetTypeSortingOrder(x_feat_type);
+                int y_order = CSeq_feat::GetTypeSortingOrder(y_feat_type);
+                if ( x_order != y_order ) {
+                    return x_order < y_order;
+                }
+            }
+
+            // non-variations first
+            if ( x_feat_subtype != y_feat_subtype ) {
+                return x_feat_subtype < y_feat_subtype;
+            }
+
+            // both are variations but one is simple and another is not.
+            // required order: simple first.
+            // if !x_info == true -> x - simple, y - complex -> return true
+            // if !x_info == false -> x - complex, y - simple -> return false
+            return !x_info;
+        }
+
+        if ( x_info ) {
+            // both are complex features
+            try {
+                const CSeq_feat* x_feat = x_info->GetFeatFast();
+                const CSeq_feat* y_feat = y_info->GetFeatFast();
+                _ASSERT(x_feat && y_feat);
+                int diff = x_feat->CompareNonLocation(*y_feat,
+                                                      GetLocation(x, *x_feat),
+                                                      GetLocation(y, *y_feat));
+                if ( diff != 0 ) {
+                    return diff < 0;
+                }
+            }
+            catch ( exception& /*ignored*/ ) {
+                // do not fail sort when compare function throws an exception
+            }
+        }
+    }
+    if ( x_annot != y_annot ) {
+        return x_annot < y_annot;
+    }
+    return x.GetAnnotObjectIndex() < y.GetAnnotObjectIndex();
+}
+
+
+struct CAnnotObject_Less
 {
     // Compare CRef-s: both must be features
     bool operator()(const CAnnotObject_Ref& x,
@@ -307,13 +404,13 @@ struct CAnnotObject_Ref_Less : public ObjectLess
                     return x_to > y_to;
                 }
             }
-            return x_less(x, y);
+            return type_less(x, y);
         }
+    CAnnotObjectType_Less type_less;
 };
 
 
-template<class ObjectReverseLess>
-struct CAnnotObject_Ref_Reverse_Less : public ObjectReverseLess
+struct CAnnotObject_LessReverse
 {
     // Compare CRef-s: both must be features
     bool operator()(const CAnnotObject_Ref& x,
@@ -335,112 +432,10 @@ struct CAnnotObject_Ref_Reverse_Less : public ObjectReverseLess
                     return x_from < y_from;
                 }
             }
-            return x_less(x, y);
+            return type_less(x, y);
         }
+    CAnnotObjectType_Less type_less;
 };
-
-
-struct CFeat_Less
-{
-    static bool x_less(const CAnnotObject_Ref& x, const CAnnotObject_Ref& y);
-
-    static const CSeq_feat& x_GetFeat(const CAnnotObject_Ref& x);
-    static const CSeq_loc& x_GetLocation(const CAnnotObject_Ref& x);
-};
-
-
-struct CAnnotObject_Less
-{
-    static bool x_less(const CAnnotObject_Ref& x, const CAnnotObject_Ref& y);
-};
-
-
-const CSeq_feat& CFeat_Less::x_GetFeat(const CAnnotObject_Ref& x)
-{
-    const CAnnotObject_Info& x_info = x.GetAnnotObject_Info();
-    _ASSERT(x_info.GetFeatFast());
-    return *x_info.GetFeatFast();
-}
-
-
-const CSeq_loc& CFeat_Less::x_GetLocation(const CAnnotObject_Ref& x)
-{
-    if ( x.GetMappedObjectType() == x.eMappedObjType_Seq_loc ) {
-        return x.GetMappedSeq_loc();
-    }
-    const CSeq_feat& x_feat = x_GetFeat(x);
-    return x.IsProduct()? x_feat.GetProduct(): x_feat.GetLocation();
-}
-
-
-bool CFeat_Less::x_less(const CAnnotObject_Ref& x, const CAnnotObject_Ref& y)
-{
-    if ( !x.IsSNPFeat() && !y.IsSNPFeat() ) {
-        try {
-            int diff = x_GetFeat(x).CompareNonLocation(x_GetFeat(y),
-                                                       x_GetLocation(x),
-                                                       x_GetLocation(y));
-            if ( diff != 0 ) {
-                return diff < 0;
-            }
-        }
-        catch ( exception& /*ignored*/ ) {
-            // do not fail sort when compare function throws an exception
-        }
-    }
-    else if ( !y.IsSNPFeat() ) {
-        const CAnnotObject_Info& y_info = y.GetAnnotObject_Info();
-        const CSeq_feat* y_feat = y_info.GetFeatFast();
-        _ASSERT(y_feat);
-        const CSeqFeatData& y_data = y_feat->GetData();
-        int x_order = CSeq_feat::GetTypeSortingOrder(CSeqFeatData::e_Imp);
-        int y_order = CSeq_feat::GetTypeSortingOrder(y_data.Which());
-        if ( x_order != y_order ) {
-            return x_order < y_order;
-        }
-        CSeqFeatData::ESubtype y_subtype = y_data.GetSubtype();
-        if ( CSeqFeatData::eSubtype_variation != y_subtype ) {
-            return CSeqFeatData::eSubtype_variation < y_order;
-        }
-        // both are SNP but x is simple, and y is not, so x is first
-        return true;
-    }
-    else if ( !x.IsSNPFeat() ) {
-        const CAnnotObject_Info& x_info = x.GetAnnotObject_Info();
-        const CSeq_feat* x_feat = x_info.GetFeatFast();
-        _ASSERT(x_feat);
-        const CSeqFeatData& x_data = x_feat->GetData();
-        int x_order = CSeq_feat::GetTypeSortingOrder(x_data.Which());
-        int y_order = CSeq_feat::GetTypeSortingOrder(CSeqFeatData::e_Imp);
-        if ( x_order != y_order ) {
-            return x_order < y_order;
-        }
-        CSeqFeatData::ESubtype x_subtype = x_data.GetSubtype();
-        if ( x_subtype != CSeqFeatData::eSubtype_variation ) {
-            return x_subtype < CSeqFeatData::eSubtype_variation;
-        }
-        // both are SNP but y is simple, and x is not, so y is first
-        return false;
-    }
-    const CSeq_annot& x_annot = x.GetSeq_annot();
-    const CSeq_annot& y_annot = y.GetSeq_annot();
-    if ( &x_annot != &y_annot ) {
-        return &x_annot < &y_annot;
-    }
-    return x.GetAnnotObjectIndex() < y.GetAnnotObjectIndex();
-}
-
-
-bool CAnnotObject_Less::x_less(const CAnnotObject_Ref& x,
-                               const CAnnotObject_Ref& y)
-{
-    const CSeq_annot& x_annot = x.GetSeq_annot();
-    const CSeq_annot& y_annot = y.GetSeq_annot();
-    if ( &x_annot != &y_annot ) {
-        return &x_annot < &y_annot;
-    }
-    return x.GetAnnotObjectIndex() < y.GetAnnotObjectIndex();
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -720,24 +715,10 @@ void CAnnotTypes_CI::x_Sort(void)
     _ASSERT(m_DataCollector->m_AnnotMappingSet.empty());
     switch ( m_SortOrder ) {
     case eSortOrder_Normal:
-        if ( GetAnnotType() == CSeq_annot::C_Data::e_Ftable ) {
-            sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                 CAnnotObject_Ref_Less<CFeat_Less>());
-        }
-        else {
-            sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                 CAnnotObject_Ref_Less<CAnnotObject_Less>());
-        }
+        sort(m_AnnotSet.begin(), m_AnnotSet.end(), CAnnotObject_Less());
         break;
     case eSortOrder_Reverse:
-        if ( GetAnnotType() == CSeq_annot::C_Data::e_Ftable ) {
-            sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                 CAnnotObject_Ref_Reverse_Less<CFeat_Less>());
-        }
-        else {
-            sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                 CAnnotObject_Ref_Reverse_Less<CAnnotObject_Less>());
-        }
+        sort(m_AnnotSet.begin(), m_AnnotSet.end(), CAnnotObject_LessReverse());
         break;
     default:
         // do nothing
@@ -1361,6 +1342,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.111  2004/02/06 18:31:54  vasilche
+* Fixed annot sorting class - deal with different annot types (graph align feat).
+*
 * Revision 1.110  2004/02/05 19:53:40  grichenk
 * Fixed type matching in SAnnotSelector. Added IncludeAnnotType().
 *
