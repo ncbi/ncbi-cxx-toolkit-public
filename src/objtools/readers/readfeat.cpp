@@ -54,6 +54,7 @@
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/Gb_qual.hpp>
 
 #include <objtools/readers/readfeat.hpp>
 
@@ -230,6 +231,8 @@ private:
                                    EQual qtype, const string& val);
     bool x_AddQualifierToRna (CSeqFeatData& sfdata,
                               EQual qtype, const string& val);
+    bool x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
+                              EQual qtype, const string& qual, const string& val);
 
     TFeatReaderMap m_FeatKeys;
     TQualReaderMap m_QualKeys;
@@ -749,6 +752,37 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (CSeqFeatData& sfdata,
 }
 
 
+bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
+                                                     EQual qtype, const string& qual, const string& val)
+
+{
+    switch (qtype) {
+        eQual_allele:
+        eQual_clone:
+        eQual_cons_splice:
+        eQual_function:
+        eQual_label:
+        eQual_replace:
+        eQual_rpt_family:
+        eQual_rpt_type:
+        eQual_rpt_unit:
+        eQual_standard_name:
+        eQual_usedin:
+            {
+                CSeq_feat::TQual& qlist = sfp->SetQual ();
+                CRef<CGb_qual> gbq (new CGb_qual);
+                gbq->SetQual (qual);
+                gbq->SetVal (val);
+                qlist.push_back (gbq);
+                return true;
+            }
+        default:
+            break;
+    }
+    return false;
+}
+
+
 bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                                                          const string& qual, const string& val)
 
@@ -771,9 +805,37 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                 case CSeqFeatData::e_Rna:
                     if (x_AddQualifierToRna (sfdata, qtyp, val)) return true;
                     break;
+                case CSeqFeatData::e_Imp:
+                    if (x_AddQualifierToImp (sfp, sfdata, qtyp, qual, val)) return true;
+                   break;
                 default:
                    break;
             }
+            switch (qtyp) {
+                eQual_pseudo:
+                    sfp->SetPseudo (true);
+                    return true;
+                eQual_partial:
+                    sfp->SetPartial (true);
+                    return true;
+                eQual_exception:
+                    sfp->SetExcept (true);
+                    sfp->SetExcept_text (val);
+                    return true;
+                eQual_evidence:
+                    if (val == "experimental") {
+                        sfp->SetExp_ev (CSeq_feat::eExp_ev_experimental);
+                    } else if (val == "not_experimental" || val == "non_experimental" ||
+                               val == "not-experimental" || val == "non-experimental") {
+                        sfp->SetExp_ev (CSeq_feat::eExp_ev_not_experimental);
+                    }
+                    return true;
+                eQual_note:
+                    break;
+                default:
+                    break;
+            }
+
         }
     }
     return true;
