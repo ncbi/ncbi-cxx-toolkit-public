@@ -1,5 +1,6 @@
 [-]
 _export = NCBI_ENTREZ2_EXPORT
+clients = client
 
 [client]
 class   = CEntrez2Client

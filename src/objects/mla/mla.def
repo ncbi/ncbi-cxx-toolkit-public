@@ -1,3 +1,6 @@
+[-]
+clients = client
+
 [client]
 class              = CMLAClient
 service            = MedArch

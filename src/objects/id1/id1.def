@@ -1,5 +1,6 @@
 [-]
 _export = NCBI_ID1_EXPORT
+clients = client
 
 [client]
 class                 = CID1Client
