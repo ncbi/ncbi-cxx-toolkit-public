@@ -610,6 +610,19 @@ void CBDB_File::x_SetByteSwapped(bool bswp)
     }
 }
 
+void CBDB_File::Verify(const char* filename, 
+                       const char* database, 
+                       FILE* backup)
+{
+    if (m_DB == 0) {
+        x_CreateDB();
+    }
+    x_CheckConstructBuffers();
+    m_DB->app_private = (void*) m_KeyBuf.get();
+
+    /*int ret = */
+    m_DB->verify(m_DB, filename, database, backup, backup ? DB_SALVAGE: 0);
+}
 
 EBDB_ErrCode CBDB_File::x_Fetch(unsigned int flags)
 {
@@ -980,6 +993,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/08/12 19:13:24  kuznets
+ * +CBDB_File::Verify()
+ *
  * Revision 1.41  2004/06/29 12:26:53  kuznets
  * Added functions to bulk copy fields and field structures
  *

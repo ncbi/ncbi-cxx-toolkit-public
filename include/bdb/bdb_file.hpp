@@ -339,6 +339,9 @@ public:
 	/// (MUST have the same structure)
 	void CopyFrom(const CBDB_File& dbf);
 
+    /// Run database verification (DB->verify)
+    void Verify(const char* filename, const char* database, FILE* backup);
+
 protected:
     /// Unpack internal record buffers
     void Discard();
@@ -513,6 +516,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/08/12 19:13:18  kuznets
+ * +CBDB_File::Verify()
+ *
  * Revision 1.33  2004/06/29 12:26:34  kuznets
  * Added functions to bulk copy fields and field structures
  *
