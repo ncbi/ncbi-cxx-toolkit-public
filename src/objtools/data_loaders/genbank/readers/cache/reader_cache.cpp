@@ -63,15 +63,13 @@ const size_t SCacheInfo::IDS_SIZE  = 4;
 
 string SCacheInfo::GetBlobKey(const CBlob_id& blob_id)
 {
-    char szBlobKeyBuf[256];
-    if ( blob_id.GetSubSat() == 0 ) {
-        sprintf(szBlobKeyBuf, "%i-%i", blob_id.GetSat(), blob_id.GetSatKey());
+    CNcbiOstrstream oss;
+    oss << blob_id.GetSat();
+    if ( blob_id.GetSubSat() != 0 ) {
+        oss << '.' << blob_id.GetSubSat();
     }
-    else {
-        sprintf(szBlobKeyBuf, "%i.%i-%i",
-                blob_id.GetSat(), blob_id.GetSubSat(), blob_id.GetSatKey());
-    }
-    return szBlobKeyBuf;
+    oss << '-' << blob_id.GetSatKey();
+    return CNcbiOstrstreamToString(oss);
 }
 
 
