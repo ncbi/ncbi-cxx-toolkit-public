@@ -454,10 +454,10 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
     CRef<CAlnChunk>  chunk    = new CAlnChunk();
 
         
+    chunk->SetRange().SetFrom(m_AlnMap.m_DS->GetStarts()
+                              [seg_from * m_AlnMap.m_DS->GetDim()
+                              + m_Row]);
     if ( !chunk->IsGap() ) {
-        chunk->SetRange().SetFrom(m_AlnMap.m_DS->GetStarts()
-                                  [seg_from * m_AlnMap.m_DS->GetDim()
-                                   + m_Row]);
         chunk->SetRange().SetTo(chunk->GetRange().GetFrom()
                                 + m_AlnMap.m_DS->GetLens()[seg_from] - 1);
     } else {
@@ -537,6 +537,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2002/09/19 22:09:07  todorov
+* fixed a problem due to switching of lines during code cleanup
+*
 * Revision 1.5  2002/09/18 19:24:54  todorov
 * fixing the flags on the extreme end only if delta
 *
