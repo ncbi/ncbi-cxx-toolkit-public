@@ -42,7 +42,7 @@ extern "C" {
 
 
 /* Default values for the structure below */
-#define MX_HOST         "ncbi"
+#define MX_HOST         "nes"
 #define MX_PORT         25
 #define MX_TIMEOUT      120
 
@@ -115,6 +115,9 @@ extern const char* CORE_SendMailEx(const char* to,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/08/14 16:38:55  lavr
+ * Change default MX from "ncbi" to "nes"
+ *
  * Revision 6.6  2002/06/12 20:07:32  lavr
  * Tiny correction of file description
  *
