@@ -79,7 +79,7 @@
  *  @ingroup CORELIB
  */
 
-/** @defgroup Exception Portable Exception Handling
+/** @defgroup Exec Portable Exec Handling
  *  @ingroup CORELIB
  */
 
