@@ -394,10 +394,8 @@ CRef<CSeq_loc> CBioseq_Handle::MapLocation(const CSeq_loc& loc) const
             conv_set.Add(*cvt);
         }
     }
-    CRef<CSeq_loc> dst(new CSeq_loc);
-    if (!conv_set.Convert(loc, &dst)) {
-        dst.Reset();
-    }
+    CRef<CSeq_loc> dst;
+    conv_set.Convert(loc, &dst);
     return dst;
 }
 
@@ -408,6 +406,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2004/01/28 22:10:10  grichenk
+* Removed extra seq-loc initialization in MapLocation
+*
 * Revision 1.51  2004/01/23 16:14:47  grichenk
 * Implemented alignment mapping
 *
