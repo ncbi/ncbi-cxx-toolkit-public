@@ -6,6 +6,7 @@ property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
 property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
 property pSqliteRootFolder : "" -- full path of the Sqlite source folder. Optional
 property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
+property pImageLibsFolder : "sw:" -- root folder for the image libraries and headers.
 
 property pSaveContinueOnErrors : false
 -- true if we want to save compilation errors in a file and continue.
@@ -275,7 +276,7 @@ on SetProjectData()
 		
 		AddSimpleProject("xutil", {}, "util")
 		AddSimpleProject("regexp", {}, "util:regexp")
-		AddSimpleProject("ximage", {}, "util:image")
+		AddSimpleProject("ximage", {"images"}, "util:image")
 		AddSimpleProjectExceptFiles("z", {}, "util:compress:zlib", Â
 			{"example.c", "maketree.c", "minigzip.c"})
 		AddSimpleProjectListFiles("bz2", {}, "util:compress:bzip2", Â
@@ -286,8 +287,11 @@ on SetProjectData()
 		AddSimpleProject("creaders", {}, "util:creaders")
 		
 		AddSimpleProject("xalgoalign", {}, "algo:align")
+		AddSimpleProject("xalgosplign", {}, "algo:align:splign")
 		
 		AddSimpleProject("xalgoseq", {}, "algo:sequence")
+		AddSimpleProject("xstruct_dp", {}, "algo:structure:struct_dp")
+		-- AddSimpleProject("xstruct_util", {}, "algo:structure:struct_util")
 		AddSimpleProject("xalgognomon", {}, "algo:gnomon")
 		AddSimpleProject("xalgophytree", {}, "algo:phy_tree")
 		AddSimpleProject("fastme", {}, "algo:phy_tree:fastme")
@@ -345,6 +349,7 @@ on SetProjectData()
 		AddSimpleProjectListFiles("biblio", {}, "objects:biblio", {"biblio__", "biblio___", "label_util"})
 		AddSimpleProjectListFiles("xnetblast", {}, "objects:blast", {"blast__", "blast___"})
 		AddSimpleProjectListFiles("xnetblastcli", {}, "objects:blast", {"blastclient", "blastclient_"})
+		AddObject("biotree")
 		AddObject("blastdb")
 		AddObject("cdd")
 		AddObject("cn3d")
@@ -398,6 +403,10 @@ on SetProjectData()
 		AddSimpleProject("xobjutil", {}, "objmgr:util")
 		AddSimpleProjectExceptFiles("id2_split", {}, "objmgr:split", {"split_cache.cpp"})
 		AddSimpleProject("xalnmgr", {}, "objtools:alnmgr")
+		AddSimpleProject("xalntool", {}, "objtools:align")
+		AddSimpleProject("xobjedit", {}, "objtools:edit")
+		AddSimpleProject("xobjwrite", {}, "objtools:writers")
+		AddSimpleProject("seqdb", {}, "objtools:readers:seqdb")
 		AddSimpleProject("xcddalignview", {}, "objtools:cddalignview")
 		AddSimpleProject("xflat", {}, "objtools:flat")
 		AddSimpleProject("lds", {}, "objtools:lds")
@@ -454,7 +463,7 @@ on SetProjectData()
 		AddGuiProject("w_aln_text", {}, "widgets:aln_textaln")
 		AddGuiProject("w_flu", {}, "widgets:FLU")
 		AddGuiProject("w_seq_graphic", {}, "widgets:seq_graphic")
-		AddGuiProject("w_toplevel", {}, "widgets:toplevel")
+		-- AddGuiProject("w_toplevel", {}, "widgets:toplevel")
 		AddGuiProject("w_fltable", {}, "widgets:Fl_Table")
 		AddGuiProject("w_hit_matrix", {}, "widgets:hit_matrix")
 		AddGuiProject("w_taxtree", {}, "widgets:tax_tree")
@@ -469,18 +478,21 @@ on SetProjectData()
 		--AddGuiProject("w_seq_info", {}, "widgets:seq_info") -- empty
 		-- AddGuiProject("w_table", {}, "widgets:table") -- merged into w_fltk
 		
+		AddSimpleProjectListFiles("gui_project", {}, "gui:core", {"gui_project__.cpp", "gui_project___.cpp"})
+		
 		-- FLTK library.
 		set saveCppExt to pCPlusPlusExt
 		set pCPlusPlusExt to ".cxx"
-		AddProject(ProjectData("fltk", {"fltklib"}, {mkFileDataExceptFiles(gFLTKRootFolder & "src", Â
+		AddProject(ProjectData("fltk", {"fltklib", "images"}, {mkFileDataExceptFiles(gFLTKRootFolder & "src", Â
 			{"cmap.cxx", "dump_compose.c", "fl_color_mac.cxx", "fl_color_win32.cxx", Â
 				"fl_dnd_mac.cxx", "fl_dnd_win32.cxx", "fl_dnd_x.cxx", "fl_draw_image_mac.cxx", Â
 				"fl_draw_image_win32.cxx", "fl_font_mac.cxx", "fl_font_win32.cxx", "fl_font_x.cxx", Â
 				"fl_font_xft.cxx", "Fl_get_key_mac.cxx", "Fl_get_key_win32.cxx", "Fl_mac.cxx", Â
 				"fl_read_image_mac.cxx", "fl_read_image_win32.cxx", "fl_set_fonts_mac.cxx", Â
 				"fl_set_fonts_win32.cxx", "fl_set_fonts_x.cxx", "fl_set_fonts_xft.cxx", Â
-				"fl_set_gray.cxx", "Fl_win32.cxx", "scandir_win32.c"})})) --"Fl_Sys_Menu_Bar.cxx", 
+				"fl_set_gray.cxx", "fl_vertex_quartz.cxx", "Fl_win32.cxx", "scandir_win32.c"})})) --"Fl_Sys_Menu_Bar.cxx", 
 		set pCPlusPlusExt to saveCppExt
+		
 		
 	end if
 	
@@ -495,28 +507,29 @@ on SetProjectData()
 			{"dbapi_driver", "id1", "id2", "xobjmgr", "ncbi_xloader_genbank", "xobjutil", "ncbi_xreader_id1"}
 		set ObjTools to {"xconnect", "xncbi", "xser", "xutil", "xobjread", "creaders", "xalnmgr", "regexp", "tables"}
 		set LdsLibs to {"bdb", "lds", "lds_admin", "libdb"}
+		
 		set CompressLibs to {"z", "bz2", "xcompress"}
 		set UsualStatics to MostObjects & ObjTools
 		
 		-- gui_core ( contains:  xgbplugin, gui_core)
 		set gui_core_files to {Â
 			GuiFileDataList("gui:plugin", {"plugin__.cpp", "plugin___.cpp"}), Â
-			GuiFileDataExcept("gui:core", {"settings_builtin.cpp"})}
-		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl"}, gui_core_files)
+			GuiFileDataExcept("gui:core", {"FolderInfo.cpp", "GBProject.cpp", "GBWorkspace.cpp", "ProjectDescr.cpp", "ProjectFolder.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "WorkspaceFolder.cpp"})}
+		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl", "images"}, gui_core_files)
 		
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "gui_dlg", "gui_dlg_config", "gui_dlg_progress", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "gui_dlg", "gui_dlg_config", "gui_dlg_progress", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
 		
 		-- PLUGINS --
 		
 		-- Basic/Required plugins
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
-			{"xflat", "ncbi_xloader_lds", "gbseq", "xalgophytree", "fastme"})
+			{"xflat", "ncbi_xloader_lds", "gbseq", "xalgophytree", "fastme", "biotree", "xobjwrite"})
 		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"id1cli", "ncbi_xloader_lds", "ncbi_xreader_id1c", "ncbi_xloader_trace"})
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
 			{"xalgoseq", "gui_multi_col_dlg", "xloader_cdd", "cdd", "scoremat", "cn3d", "mmdb"})
 		
 		-- Algorithm plugins
-		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "scoremat", "xblast", "xnetblast", "xnetblastcli", "seqdb", "blastdb"})
+		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "xalgosplign", "scoremat", "xblast", "xnetblast", "xnetblastcli", "seqdb", "blastdb"})
 		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate"})
 		AddProject(DataPlusLibs(ProjectData("gui_algo_external", Â
 			{"plugin", "fltk", "libdl"}, Â
@@ -533,7 +546,7 @@ on SetProjectData()
 		--  
 		AddPlugin("gui_doc_table", {"sqlitelib"}, "plugins:doc:table", Â
 			{"xsqlite", "ncbi_xloader_table", "xobjmanip"})
-
+		
 		-- View plugins
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
 			{"w_aln_crossaln", "w_aln_multi", "w_aln_data", "gui_graph", "w_gl", "w_hit_matrix", "w_seq_graphic"})
@@ -788,7 +801,6 @@ on CopyHeaders()
 		set confFolder to folder "compilers" of folder (my ModuleRoot())
 		set prefixFolder to folder "mac_prj" of confFolder
 		
-		-- my UpdateRenameHeader("ncbiconf.mac", confFolder, "ncbiconf.h", "")
 		if gFLTKRootFolder is not "" then
 			my UpdateRenameHeader("fltk-config.h", prefixFolder, "config.h", folder gFLTKRootFolder)
 		end if
@@ -955,6 +967,9 @@ on SetupTarget(proj, targetIndex)
 		if projFeatures contains "sqlitelib" then
 			my AppendAccessPath(gSqliteRootFolder & "lib:", false, false)
 		end if
+		if projFeatures contains "images" then
+			my PushAccessPath(pImageLibsFolder & "include", false, false)
+		end if
 		
 		-- Are we assuming a .c or a .cpp extension?
 		if projFeatures contains "C++" then
@@ -1010,12 +1025,16 @@ on SetupTarget(proj, targetIndex)
 		-- Add user libraries.
 		set filesToAdd to {}
 		repeat with i in projLibs
-			if exists file (gLibsDir & i & fileNameSuffix & pStaticLibExt) of application "Finder" then
+			if exists file (i) of application "Finder" then
+				copy i to end of filesToAdd
+			else if exists file (gLibsDir & i & fileNameSuffix & pStaticLibExt) of application "Finder" then
 				copy (gLibsDir & i & fileNameSuffix & pStaticLibExt) to end of filesToAdd
 			end if
 		end repeat
 		repeat with i in dynaLibs
-			if exists file (gLibsDir & i & fileNameSuffix & pDynaLibExt) of application "Finder" then
+			if exists file (i) of application "Finder" then
+				copy i to end of filesToAdd
+			else if exists file (gLibsDir & i & fileNameSuffix & pDynaLibExt) of application "Finder" then
 				copy (gLibsDir & i & fileNameSuffix & pDynaLibExt) to end of filesToAdd
 			end if
 		end repeat
@@ -1025,6 +1044,17 @@ on SetupTarget(proj, targetIndex)
 			if projFeatures contains "DLL" or projFeatures contains "plugin" then
 				my PushAccessPath(pDLRootFolder & "lib", false, false)
 				copy (POSIX path of pDLRootFolder) & "lib/libdl.a" to end of filesToAdd
+			end if
+		end if
+		
+		if projFeatures contains "images" then
+			if projFeatures contains "DLL" or projFeatures contains "plugin" then
+				my PushAccessPath(pImageLibsFolder & "lib", false, false)
+				copy "/usr/lib/libcc_dynamic.a" to end of filesToAdd
+				copy (POSIX path of pImageLibsFolder) & "lib/libpng.a" to end of filesToAdd
+				copy (POSIX path of pImageLibsFolder) & "lib/libjpeg.a" to end of filesToAdd
+				copy (POSIX path of pImageLibsFolder) & "lib/libtiff.a" to end of filesToAdd
+				-- copy (POSIX path of pImageLibsFolder) & "lib/libgif.a" to end of filesToAdd
 			end if
 		end if
 		

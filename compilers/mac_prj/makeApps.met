@@ -4,7 +4,11 @@ property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
 property pRootFolderPath : "" -- full path of the parent of the toolkit directory. Optional
 property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
 property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
-property pDLRootFolder : "sw:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
+property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
+property pImageLibsFolder : "sw:" -- root folder for the image libraries and headers.
+
+-- do test/demo applications
+property pBuildDemos : true
 
 property pSaveContinueOnErrors : false
 -- true if we want to save compilation errors in a file and continue.
@@ -31,9 +35,6 @@ property pCreateProfiledTargets : false
 
 -- Whether to compile anything.
 property pShouldBuild : true
-
--- do test/demo applications
-property pBuildDemos : false
 
 property pStationeryName : "ApplicationStationery"
 
@@ -182,23 +183,24 @@ on mkFileDataNoULExcept(fullPath, notFiles) -- Get all the files, minus those wh
 	return fileData
 end mkFileDataNoULExcept
 
-on AppData(projName, features, section, staticLibs, dynamicLibs)
-	set appProjData to ProjectData(projName, features, {mkFileDataNoUL(gSourceDir & section)})
-	return DataPlusLibs(appProjData, staticLibs, dynamicLibs)
-end AppData
-
-on AppDataExcept(projName, features, section, notFiles, staticLibs, dynamicLibs)
-	set appProjData to ProjectData(projName, features, {mkFileDataNoULExcept(gSourceDir & section, notFiles)})
-	return DataPlusLibs(appProjData, staticLibs, dynamicLibs)
-end AppDataExcept
 
 on AddAppProject(projName, features, section, staticLibs, dynamicLibs)
-	AddProject(AppData(projName, features, section, staticLibs, dynamicLibs))
+	set appProjData to ProjectData(projName, features, {mkFileDataNoUL(gSourceDir & section)})
+	set appProjData to DataPlusLibs(appProjData, staticLibs, dynamicLibs)
+	AddProject(appProjData)
 end AddAppProject
 
 on AddAppProjectExcept(projName, features, section, notFiles, staticLibs, dynamicLibs)
-	AddProject(AppDataExcept(projName, features, section, notFiles, staticLibs, dynamicLibs))
+	set appProjData to ProjectData(projName, features, {mkFileDataNoULExcept(gSourceDir & section, notFiles)})
+	set appProjData to DataPlusLibs(appProjData, staticLibs, dynamicLibs)
+	AddProject(appProjData)
 end AddAppProjectExcept
+
+on AddAppProjectList(projName, features, section, theFiles, staticLibs, dynamicLibs)
+	set appProjData to ProjectData(projName, features, {mkFileDataListFiles(gSourceDir & section, theFiles)})
+	set appProjData to DataPlusLibs(appProjData, staticLibs, dynamicLibs)
+	AddProject(appProjData)
+end AddAppProjectList
 
 on DataPlusSources(dataRec, newSrcs)
 	repeat with i in newSrcs
@@ -259,8 +261,10 @@ on SetProjectData()
 			"seqcode", "seqalign", "seqfeat", "seqblock", "sequtil", Â
 			"pub", "medline", "biblio", "general", "submit"}
 		
+		set CompressLibs to {"z", "bz2", "xcompress"}
+		
 		set objMgrLibs to {Â
-			"seq", "seqcode", "cdd", "seqset", "sequtil", "seqsplit", "pub", "biblio", "pubmed", "medline", "general", "submit", "xobjmgr", "id1", "id2", "xser", "xobjutil", "xobjread", "xutil", "xconnect", "xncbi", "z", "bz2", "xcompress", "ncbi_xloader_genbank", "ncbi_xreader_id1"}
+			"seq", "seqcode", "cdd", "seqset", "sequtil", "seqsplit", "pub", "biblio", "pubmed", "medline", "general", "submit", "xobjmgr", "id1", "id2", "xser", "xobjutil", "xobjread", "xutil", "xconnect", "xncbi", "ncbi_xloader_genbank", "ncbi_xreader_id1"} & CompressLibs
 		
 		-- datatool
 		set myName to "datatool"
@@ -278,12 +282,12 @@ on SetProjectData()
 	set saveCppExt to pCPlusPlusExt
 	set pCPlusPlusExt to ".cxx"
 	set fluidFileData to mkFileData(gFLTKRootFolder & "fluid")
-	AddProject(DataPlusLibs(ProjectData("fluid", {"fltklib"}, {fluidFileData}), {"fltk"}, {}))
+	AddProject(DataPlusLibs(ProjectData("fluid", {"fltklib", "images"}, {fluidFileData}), {"fltk", "z"}, {}))
 	set pCPlusPlusExt to saveCppExt
 	
 	---------- GENOME WORK BENCH ----------
 	AddAppProjectExcept("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", {"windows_registry.cpp"}, Â
-		{"w_table", "w_fltable"}, {"gui_core"})
+		{"w_table", "w_fltable", "w_workspace"}, {"gui_core"})
 	AddAppProject("gbench_plugin_scan", {"libdl", "cmdline", "plainname"}, "gui:gbench:gbench_plugin_scan", Â
 		{}, {"gui_core"})
 	
@@ -301,6 +305,10 @@ on SetProjectData()
 	if pBuildDemos then
 		---- DEMO ---
 		
+		AddAppProjectList("demo_win_manager", {"fltk", "images"}, "gui:widgets:workspace:demo", {"demo_win_manager.cpp"}, {"w_workspace", "w_fltk", "w_flu", "gui_opengl", "gui_print", "gui_utils", "ximage", "xconnect", "xutil", "xncbi", "fltk"} & CompressLibs, {})
+		
+		AddAppProjectList("demo_workspace", {"fltk", "images"}, "gui:widgets:workspace:demo", {"demo_workspace.cpp"}, {"w_workspace", "w_fltk", "w_flu", "gui_opengl", "gui_print", "gui_utils", "ximage", "xconnect", "xutil", "xncbi", "fltk"} & CompressLibs, {})
+		
 		AddAppProject("bdbtest", {"bdb"}, "bdb:test", {"bdb", "libdb", "xncbi", "xutil"}, {})
 		
 		AddAppProject("test_density_map", {"libdl"}, "gui:utils:demo:test_density_map", Â
@@ -313,11 +321,8 @@ on SetProjectData()
 		AddAppProject("demo_regedit", {"fltk"}, "gui:dialogs:registry:demo", Â
 			{"gui_dlg_registry", "gui_utils", "w_flu", "w_fltk", "w_fltable", "xncbi", "fltk"}, {})
 		
-		AddAppProject("test_treebrowser", {"fltk"}, "gui:widgets:fl:demo", Â
+		AddAppProjectList("demo_treebrowser", {"fltk"}, "gui:widgets:fl:demo", {"test_treebrowser"}, Â
 			{"w_flu", "xncbi", "w_fltk", "fltk"}, {})
-		
-		AddProject(DataPlusLibs(SimpleProjectData("test_treebrowser", "gui:widgets:fl:demo", {"C++", "fltk"}), Â
-			{"w_flu", "xncbi", "w_fltk", "fltk"}, {}))
 		
 		(* -- experimental
 		AddAppProject("featgroup_config_dlg", {"fltk"}, "gui:config:featgroup", Â
@@ -755,6 +760,15 @@ on SetupTarget(proj, targetIndex)
 			my PushAccessPath(pDLRootFolder & "include", false, false)
 			my PushAccessPath(pDLRootFolder & "lib", false, false)
 			copy (POSIX path of pDLRootFolder) & "lib/libdl.a" to end of filesToAdd
+		end if
+		
+		if projFeatures contains "images" then
+			my PushAccessPath(pImageLibsFolder & "lib", false, false)
+			copy "/usr/lib/libcc_dynamic.a" to end of filesToAdd
+			copy (POSIX path of pImageLibsFolder) & "lib/libpng.a" to end of filesToAdd
+			copy (POSIX path of pImageLibsFolder) & "lib/libjpeg.a" to end of filesToAdd
+			copy (POSIX path of pImageLibsFolder) & "lib/libtiff.a" to end of filesToAdd
+			-- copy (POSIX path of pImageLibsFolder) & "lib/libgif.a" to end of filesToAdd
 		end if
 		
 		try
