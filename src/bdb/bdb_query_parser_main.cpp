@@ -108,6 +108,12 @@ public:
         return r;
     }
 
+    /// Skip number of characters
+    void Skip(int num)
+    {
+        m_Ptr += num;
+    }
+
     void UnGetChar() { --m_Ptr; }
 
     void AttachQueryClause(CBDB_Query::TQueryClause* qc)
@@ -190,6 +196,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/25 13:40:39  kuznets
+ * + CBDB_QueryParserEnvironment::Skip
+ *
  * Revision 1.2  2004/02/24 19:26:14  kuznets
  * Fix compilation(GCC & SUN Workshop)
  *
