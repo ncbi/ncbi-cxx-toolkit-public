@@ -34,7 +34,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
-#include <corelib/ncbi_safe_static.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 #include <map>
 
@@ -57,12 +56,12 @@ BEGIN_NCBI_SCOPE
 
 class NCBI_DBAPI_EXPORT CDriverManager : public C_DriverMgr
 {
-    friend class CSafeStaticPtr<CDriverManager>;
-
 public:
-
     // Get a single instance of CDriverManager
     static CDriverManager& GetInstance();
+
+    // Remove instance of CDriverManager
+    static void RemoveInstance();
 
     // Create datasource object
     class IDataSource* CreateDs(const string& driver_name,
@@ -75,11 +74,9 @@ public:
     void DestroyDs(const string& driver_name);
 
 protected:
-
     // Prohibit explicit construction and destruction
     CDriverManager();
     virtual ~CDriverManager();
-
 
     // Put the new data source into the internal list with
     // corresponding driver name, return previous, if already exists
@@ -87,6 +84,12 @@ protected:
 				  class I_DriverContext* ctx);
 
     map<string, class IDataSource*> m_ds_list;
+
+private:
+    static auto_ptr<CDriverManager> sm_Instance;
+    DECLARE_CLASS_STATIC_MUTEX(sm_Mutex);
+
+    friend class auto_ptr<CDriverManager>;
 };
 
 
@@ -99,6 +102,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/12/17 14:57:00  ivanov
+ * Changed type of the Driver Manager instance to auto_ptr.
+ * Added RemoveInstance() method.
+ *
  * Revision 1.5  2003/12/15 20:05:41  ivanov
  * Added export specifier for building DLLs in MS Windows.
  *

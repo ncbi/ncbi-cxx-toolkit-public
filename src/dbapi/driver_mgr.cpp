@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.11  2003/12/17 14:56:33  ivanov
+* Changed type of the Driver Manager instance to auto_ptr.
+* Added RemoveInstance() method.
+*
 * Revision 1.10  2003/02/10 17:30:05  kholodov
 * Fixed: forgot to add actual deletion code to DestroyDs()
 *
@@ -70,16 +74,34 @@
 #include "ds_impl.hpp"
 
 #include <corelib/ncbistr.hpp>
-#include <corelib/ncbidll.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
-static CSafeStaticPtr<CDriverManager> singleDM;
+
+auto_ptr<CDriverManager> CDriverManager::sm_Instance;
+DEFINE_CLASS_STATIC_MUTEX(CDriverManager::sm_Mutex);
+
 
 CDriverManager& CDriverManager::GetInstance()
 {
-    return singleDM.Get();
+    if ( !sm_Instance.get() ) {
+        CMutexGuard GUARD(sm_Mutex);
+        // Check again with the lock to avoid races
+        if ( !sm_Instance.get() ) {
+            sm_Instance.reset(new CDriverManager);
+        }
+    }
+    return *sm_Instance;
 }
+
+
+void CDriverManager::RemoveInstance()
+{
+    CMutexGuard GUARD(sm_Mutex);
+    sm_Instance.reset(0);
+}
+
 
 CDriverManager::CDriverManager()
 {
@@ -172,5 +194,6 @@ void CDriverManager::DestroyDs(const string& driver_name)
         m_ds_list.erase(i_ds);
     }
 }
+
 
 END_NCBI_SCOPE
