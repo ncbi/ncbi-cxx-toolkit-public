@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/01/11 16:59:02  vasilche
+* Changed macros generation for compilation on MS VC.
+*
 * Revision 1.23  1999/12/01 17:36:25  vasilche
 * Fixed CHOICE processing.
 *
@@ -202,12 +205,11 @@ CNcbiOstream& CClassCode::GenerateCPP(CNcbiOstream& code) const
     code << NcbiEndl;
     if ( GetClassType() != eAlias ) {
         if ( GetClassType() == eAbstract )
-            code << "BEGIN_ABSTRACT_CLASS_INFO3(\"";
+            code << "BEGIN_ABSTRACT_BASE_CLASS_INFO2(\"";
         else
-            code << "BEGIN_CLASS_INFO3(\"";
-        code << GetType()->IdName() << "\", " <<
-            GetClassName() << ", " << GetClassName() << "_Base)" << NcbiEndl <<
-            '{' << NcbiEndl;
+            code << "BEGIN_BASE_CLASS_INFO2(\"";
+        code << GetType()->IdName() << "\", " << GetClassName() << ")\n" <<
+            "{\n";
         if ( GetParentType() ) {
             code << "    SET_PARENT_CLASS(" <<
                 GetParentClass() << ")->SetOptional();" << NcbiEndl;
