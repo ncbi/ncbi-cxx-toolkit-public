@@ -34,6 +34,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/01/20 17:54:13  vakatov
+* CCgiContext:: constructor to get "CNcbiArguments*" instead of raw argc/argv.
+* All virtual member function implementations moved away from the header.
+*
 * Revision 1.13  1999/12/23 17:16:11  golikov
 * CtxMsgs made not HTML lib depended
 *
@@ -104,7 +108,6 @@
 *
 * Revision 1.1  1998/11/02 22:10:12  sandomir
 * CNcbiApplication added; netest sample updated
-*
 * ===========================================================================
 */
 
@@ -121,47 +124,39 @@ class CNcbiResource;
 class CCgiContext;
 class CCgiApplication;
 
+
 class CCgiServerContext
 {
 public:
-    virtual ~CCgiServerContext( void )
-        { }
+    virtual ~CCgiServerContext(void);
 };
 
 
 class CCtxMsg
 {
 public:
-
-    virtual ~CCtxMsg()
-        {}
-
-    virtual CNcbiOstream& Write( CNcbiOstream& ) const = 0;
+    virtual ~CCtxMsg(void);
+    virtual CNcbiOstream& Write(CNcbiOstream& os) const = 0;
 };
 
 inline CNcbiOstream& operator<<(CNcbiOstream& os, const CCtxMsg& msg) {
     return msg.Write(os);
 }
 
+
 class CCtxMsgString : public CCtxMsg
 {
-
 public:
-
-    CCtxMsgString( const string& str)
-        : m_s(str) {}
-
-    virtual ~CCtxMsgString()
-        {}
-
-    virtual CNcbiOstream& Write( CNcbiOstream& os ) const
-        { return os << m_s << sm_nl; }
+    CCtxMsgString(const string& str) : m_s(str) {}
+    virtual ~CCtxMsgString(void);
+    virtual CNcbiOstream& Write(CNcbiOstream& os) const;
 
     static string sm_nl;
-
 private:
     string m_s;
 };
+
+
 
 //
 // class CCgiContext
@@ -176,18 +171,20 @@ private:
 class CCgiContext
 {
 public:
-    
-    CCgiContext( CCgiApplication& app, CNcbiEnvironment* env = 0,
-                 CNcbiIstream* in = 0, CNcbiOstream* out = 0,
-                 int argc = 0, char** argv = 0 );
-    virtual ~CCgiContext( void );
+    CCgiContext(CCgiApplication&        app,
+                const CNcbiArguments*   args = 0 /* D: app.GetArguments()   */,
+                const CNcbiEnvironment* env  = 0 /* D: app.GetEnvironment() */,
+                CNcbiIstream*           inp  = 0 /* see ::CCgiRequest(istr) */,
+                CNcbiOstream*           out  = 0 /* see ::CCgiResponse(out) */
+                );
+    virtual ~CCgiContext(void);
 
     const CCgiApplication& GetApp(void) const;
 
     const CNcbiRegistry& GetConfig(void) const;
     CNcbiRegistry& GetConfig(void);
     
-    // these methods will throw exception if no server context set
+    // these methods will throw exception if no server context is set
     const CNcbiResource& GetResource(void) const;
     CNcbiResource& GetResource(void);
 
@@ -202,7 +199,7 @@ public:
     CCgiServerContext& GetServCtx(void);
 
     //message buffer functions
-    CNcbiOstream& PrintMsg( CNcbiOstream& os );
+    CNcbiOstream& PrintMsg(CNcbiOstream& os);
 
     void PutMsg(const string& msg);
     void PutMsg(CCtxMsg* msg);

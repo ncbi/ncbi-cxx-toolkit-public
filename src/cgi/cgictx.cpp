@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/01/20 17:54:15  vakatov
+* CCgiContext:: constructor to get "CNcbiArguments*" instead of raw argc/argv.
+* All virtual member function implementations moved away from the header.
+*
 * Revision 1.17  1999/12/23 17:16:18  golikov
 * CtxMsgs made not HTML lib depended
 *
@@ -98,26 +102,57 @@ BEGIN_NCBI_SCOPE
 
 string CCtxMsgString::sm_nl = "\n";
 
+
+CCgiServerContext::~CCgiServerContext(void) {
+    return;
+}
+
+
+CCtxMsg::~CCtxMsg(void) {
+    return;
+}
+
+
+CCtxMsgString::~CCtxMsgString(void) {
+    return;
+}
+
+CNcbiOstream& CCtxMsgString::Write(CNcbiOstream& os) const {
+    return os << m_s << sm_nl;
+}
+
+
 //
 // class CCgiContext
 //
 
-CCgiContext::CCgiContext( CCgiApplication& app, CNcbiEnvironment* env,
-                          CNcbiIstream* in, CNcbiOstream* out,
-                          int argc, char** argv )
-    : m_app(app), m_request( 0 ),  m_response(out)
+CCgiContext::CCgiContext(CCgiApplication&        app,
+                         const CNcbiArguments*   args,
+                         const CNcbiEnvironment* env,
+                         CNcbiIstream*           inp,
+                         CNcbiOstream*           out)
+: m_app(app),
+  m_request(0),
+  m_response(out)
 {
     try {
-        m_request.reset( new CCgiRequest(argc, argv, env, in) );
-    } catch( exception& e ) {
-        _TRACE( "CCgiContext::CCgiContext: " << e.what() );
-        PutMsg( "Bad request" );
-        string buf;
-        CNcbiIstrstream dummy( buf.data(), buf.size() );
-        m_request.reset( new CCgiRequest( argc, argv, env, &dummy, 
-                                          CCgiRequest::fIgnoreQueryString ) );
+        if ( !args )
+            args = &app.GetArguments();
+        if ( !env )
+            env = &app.GetEnvironment();
+
+        m_request.reset(new CCgiRequest(args, env, inp));
+    } catch (exception& e) {
+        _TRACE("CCgiContext::CCgiContext: " << e.what());
+        PutMsg("Bad request");
+
+        char buf[1];
+        CNcbiIstrstream dummy(buf, 0);
+        m_request.reset(new CCgiRequest
+                        (args, env, &dummy, CCgiRequest::fIgnoreQueryString));
     }
 }
+
 
 CCgiContext::~CCgiContext( void )
 {
@@ -155,14 +190,15 @@ CCgiServerContext& CCgiContext::x_GetServCtx( void ) const
 
 string CCgiContext::GetRequestValue(const string& name) const
 {
-    TCgiEntries& entries = const_cast<TCgiEntries&>( 
-                                                GetRequest().GetEntries() );
+    TCgiEntries& entries = const_cast<TCgiEntries&>  // (workaround WS5.0 bug)
+        (GetRequest().GetEntries() );
     pair<TCgiEntriesI, TCgiEntriesI> range = entries.equal_range(name);
-    if ( range.second == range.first )
+    if (range.second == range.first)
         return NcbiEmptyString;
+
     const string& value = range.first->second;
-    while ( ++range.first != range.second ) {
-        if ( range.first->second != value ) {
+    while (++range.first != range.second) {
+        if (range.first->second != value) {
             THROW1_TRACE(runtime_error,
                          "duplicated entries in request with name: " +
                          name + ": " + value + "!=" + range.first->second);
@@ -189,7 +225,7 @@ void CCgiContext::ReplaceRequestValue(const string& name,
     AddRequestValue(name, value);
 }
 
-const string& CCgiContext::GetSelfURL( void ) const
+const string& CCgiContext::GetSelfURL(void) const
 {
     if( m_selfURL.empty() ) {
         m_selfURL = "http://";
