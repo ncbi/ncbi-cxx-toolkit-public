@@ -1049,7 +1049,7 @@ bool CBDB_Cache::HasBlobs(const string&  key,
     }
 
     const char* skey = m_CacheAttrDB->key;
-    int overflow = m_CacheAttrDB->overflow;
+    //int overflow = m_CacheAttrDB->overflow;
     const char* ssubkey = m_CacheAttrDB->subkey;
     int version = m_CacheAttrDB->version;
 
@@ -2294,6 +2294,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.106  2005/03/02 14:40:25  kuznets
+ * Eliminated warning (unused var)
+ *
  * Revision 1.105  2005/02/22 14:06:28  kuznets
  * Bug fix
  *
