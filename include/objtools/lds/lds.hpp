@@ -81,6 +81,8 @@ public:
 
     const string& GetAlias() const { return m_Alias; }
 
+    void SetAlias(const string& alias) { m_Alias = alias; }
+
     // Loads types map from m_ObjectTypeDB to memory.
     void LoadTypeMap();
 
@@ -126,6 +128,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/10/09 19:55:30  kuznets
+ * +SetAlias function
+ *
  * Revision 1.16  2003/10/09 18:10:50  kuznets
  * LoadTypeMap() made public
  *
