@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/12/09 07:38:13  vakatov
+* Got rid of a minor GCC warning (fixed member's order of initialization)
+*
 * Revision 1.31  2001/10/22 15:16:22  grichenk
 * Optimized CTypeInfo::IsCObject()
 *
@@ -188,40 +191,48 @@ typedef CTypeInfoFunctions TFunc;
 
 CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(),
+      m_IsCObject(false),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
       m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
-      m_SkipFunction(&CVoidTypeFunctions::Skip),
-      m_IsCObject(false)
+      m_SkipFunction(&CVoidTypeFunctions::Skip)
 {
+    return;
 }
+
 
 CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(name),
+      m_IsCObject(false),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
       m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
-      m_SkipFunction(&CVoidTypeFunctions::Skip),
-      m_IsCObject(false)
+      m_SkipFunction(&CVoidTypeFunctions::Skip)
 {
+    return;
 }
+
 
 CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(name),
+      m_IsCObject(false),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
       m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
-      m_SkipFunction(&CVoidTypeFunctions::Skip),
-      m_IsCObject(false)
+      m_SkipFunction(&CVoidTypeFunctions::Skip)
 {
+    return;
 }
+
 
 CTypeInfo::~CTypeInfo(void)
 {
+    return;
 }
+
 
 const string& CTypeInfo::GetModuleName(void) const
 {
