@@ -214,10 +214,17 @@ typedef struct BlastInitialWordParameters {
 } BlastInitialWordParameters;
 	
 
+typedef enum EBlastPrelimGapExt {
+    eDynProgExt,                /**< standard affine gapping */
+    eGreedyExt,                 /**< Greedy extension (megaBlast) */
+    eGreedyWithTracebackExt     /**< Greedy extension with Traceback
+                               calculated. */
+} EBlastPrelimGapExt;
+
 typedef enum EBlastTbackExt {
-    eDynProg,          /**< standard affine gapping */
-    eGreedy,           /**< Greedy extension (megaBlast) */
-    eSmithWaterman     /**< Smith-waterman finds optimal scores, then ALIGN_EX
+    eDynProgTbck,          /**< standard affine gapping */
+    eGreedyTbck,           /**< Greedy extension (megaBlast) */
+    eSmithWatermanTbck     /**< Smith-waterman finds optimal scores, then ALIGN_EX
                             to find alignment. */
 } EBlastTbackExt;
 
@@ -232,10 +239,10 @@ typedef struct BlastExtensionOptions {
    double gap_x_dropoff; /**< X-dropoff value for gapped extension (in bits) */
    double gap_x_dropoff_final;/**< X-dropoff value for the final gapped 
                                   extension (in bits) */
-   double gap_trigger;/**< Score in bits for starting gapped extension */
-   Int4 algorithm_type; /**< E.g. for blastn: dynamic programming; 
-                           greedy without traceback; greedy with traceback */
-   EBlastTbackExt eTbackExt; /**< type of traceback extension. */
+   double gap_trigger; /**< Score in bits for starting gapped extension */
+   enum EBlastPrelimGapExt ePrelimGapExt; /**< type of preliminary gapped extension (normally) for calculating
+                              score. */
+   enum EBlastTbackExt eTbackExt; /**< type of traceback extension. */
    Boolean compositionBasedStats; /**< if TRUE use composition-based stats. */
    Boolean skip_traceback; /**< Is traceback information needed in results? */
 } BlastExtensionOptions;
