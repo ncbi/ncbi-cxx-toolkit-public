@@ -48,7 +48,8 @@ public:
         eOutOfMemory,
         eMemoryLimit,
         eNotSupported,
-        eInvalidCharacter
+        eInvalidCharacter,
+        eMaxErrCode
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
@@ -72,9 +73,6 @@ public:
     NCBI_EXCEPTION_DEFAULT(CBlastException,CException);
 };
 
-// Function to throw a CBlastException, given the error code and message
-void ThrowBlastException(CBlastException::EErrCode code, const char* message);
-
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -82,6 +80,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/03/15 22:59:24  dondosha
+* Removed unnecessary function ThrowBlastException
+*
 * Revision 1.7  2004/03/13 00:27:04  dondosha
 * Added function to throw a CBlastException given code and message
 *
