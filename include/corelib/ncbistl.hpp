@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/05/21 21:46:17  vakatov
+* SIZE_TYPE, NPOS -- moved from <ncbistl.hpp> to <ncbistr.hpp> and
+* made non-macros (to avoid possible name clashes)
+*
 * Revision 1.20  2000/12/23 05:46:05  vakatov
 * [MSVC++]  disable warning C4250
 *
@@ -136,15 +140,7 @@ namespace NCBI_NS_NCBI { /* the fake one, +"std" */ NCBI_USING_NAMESPACE_STD; }
 namespace NCBI_NS_NCBI { /* the fake one */ }
 
 
-// SIZE_TYPE and NPOS 
-#if !defined(SIZE_TYPE)
-#  define SIZE_TYPE NCBI_NS_STD::string::size_type
-#endif
-
-#if !defined(NPOS)
-#  define NPOS NCBI_NS_STD::string::npos
-#endif
-
+// name concatenation
 #if !defined(NCBI_NAME2)
 #  define NCBI_NAME2(Name1, Name2) Name1##Name2
 #endif
@@ -155,6 +151,7 @@ namespace NCBI_NS_NCBI { /* the fake one */ }
 #  define NCBI_EAT_SEMICOLON(UniqueName) \
 typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
 #endif
+
 
 // fix nonstandard 'for' statement behaviour on MSVC
 #if defined(NCBI_OS_MSWIN) && !defined(for)

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/05/21 21:46:17  vakatov
+* SIZE_TYPE, NPOS -- moved from <ncbistl.hpp> to <ncbistr.hpp> and
+* made non-macros (to avoid possible name clashes)
+*
 * Revision 1.5  2001/05/17 14:54:18  lavr
 * Typos corrected
 *
@@ -81,7 +85,14 @@ private:
 #define kEmptyStr       NcbiEmptyString
 
 
+// SIZE_TYPE and NPOS
+
+typedef NCBI_NS_STD::string::size_type SIZE_TYPE;
+static const SIZE_TYPE NPOS = NCBI_NS_STD::string::npos;
+
+
 // String-processing utilities
+
 class NStr
 {
 public:
@@ -233,6 +244,7 @@ bool AStrEquiv(const Arg1& x, const Arg2& y, Pred pr)
 {  
     return pr.Equals(x, y);
 }
+
 
 #include <corelib/ncbistr.inl>
 
