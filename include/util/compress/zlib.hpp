@@ -35,12 +35,7 @@
  */
 
 #include <util/compress/stream.hpp>
-
-#ifdef USE_LOCAL_ZLIB
-#  include <util/compress/zlib/zutil.h>
-#else
-#  include <zlib.h>
-#endif
+#include <zlib.h>
 
 #ifndef DEF_MEM_LEVEL
 #  if MAX_MEM_LEVEL >= 8
@@ -385,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/11/08 14:01:59  gouriano
+ * Removed USE_LOCAL_ZLIB
+ *
  * Revision 1.10  2004/05/14 15:16:46  vakatov
  * Take into account only USE_LOCAL_ZLIB, and not NCBI_COMPILER_MSVC
  *
