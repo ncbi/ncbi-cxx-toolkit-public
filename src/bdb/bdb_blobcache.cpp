@@ -302,10 +302,10 @@ public:
                     if (m_BytesInBuffer) {
                         m_OverflowFile->write((char*)m_Buffer, 
                                               m_BytesInBuffer);
-                        delete m_Buffer;
-                        m_Buffer = 0;
-                        m_BytesInBuffer = 0;
                     }
+                    delete m_Buffer;
+                    m_Buffer = 0;
+                    m_BytesInBuffer = 0;
                 }
             }
         }
@@ -356,7 +356,7 @@ private:
     {
         m_OverflowFile = new CNcbiOfstream();
         string path;
-        s_MakeOverflowFileName(path, m_Path, m_BlobKey, m_Version);
+        s_MakeOverflowFileName(path, m_Path, m_BlobKey, m_Version, m_SubKey);
         LOG_POST(Info << "LC: Making overflow file " << path);
         m_OverflowFile->open(path.c_str(), 
                              IOS_BASE::out | 
@@ -2007,6 +2007,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2003/12/30 16:29:12  kuznets
+ * Fixed a bug in overflow file naming.
+ *
  * Revision 1.37  2003/12/29 18:47:20  kuznets
  * Cache opening changed to use free threaded environment.
  *
