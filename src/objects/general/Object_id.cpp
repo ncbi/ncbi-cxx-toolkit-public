@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/08/31 16:05:54  clausen
+ * Removed upper casing.
+ *
  * Revision 6.5  2000/12/26 17:28:51  vasilche
  * Simplified and formatted code.
  *
@@ -63,50 +66,52 @@
 // generated classes
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
 
 // destructor
 CObject_id::~CObject_id(void)
 {
+    return;
 }
+
 
 // match for identity
 bool CObject_id::Match(const CObject_id& oid2) const
 {
-	E_Choice type = Which();
+    E_Choice type = Which();
 
-	if ( type != oid2.Which() )
-		return false;
+    if ( type != oid2.Which() )
+        return false;
 
-	switch ( type ) {
+    switch ( type ) {
     case e_Id:
         return GetId() == oid2.GetId();
     case e_Str:
         return PNocase().Equals(GetStr(), oid2.GetStr());
     default:
         return false;
-	}
+    }
 }
 
-    // format contents into a stream
+
+// format contents into a stream
 ostream& CObject_id::AsString(ostream &s) const
 {
-	switch (Which())
-	{
-		case e_Id:
-			s << GetId();
-			break;
-		case e_Str:
-			s << Upcase(GetStr());
-			break;
-		default:
-			break;
-	}
-	return s;
+    switch ( Which() ) {
+    case e_Id:
+        s << GetId();
+        break;
+    case e_Str:
+        s << GetStr(); // no Upcase() on output as per Ostell 7/2001 - Karl
+        break;
+    default:
+        break;
+    }
+    return s;
 }
 
-END_objects_SCOPE // namespace ncbi::objects::
 
+END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 

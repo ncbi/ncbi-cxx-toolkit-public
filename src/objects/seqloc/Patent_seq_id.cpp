@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/08/31 16:03:58  clausen
+ * Removed upper casing.
+ *
  * Revision 6.6  2000/12/29 18:11:41  ostell
  * added Upcase
  *
@@ -53,50 +56,48 @@
  * Revision 6.1  2000/11/30 18:39:27  ostell
  * added Textseq_id.Match
  *
- *
  * ===========================================================================
  */
 
-// standard includes
-
-// generated includes
 #include <objects/seqloc/Patent_seq_id.hpp>
 #include <objects/biblio/Id_pat.hpp>
 
-// generated classes
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
 
 // destructor
 CPatent_seq_id::~CPatent_seq_id(void)
 {
+    return;
 }
+
 
 // comparison function
 bool CPatent_seq_id::Match(const CPatent_seq_id& psip2) const
 {
-	return GetSeqid() == psip2.GetSeqid() && GetCit().Match(psip2.GetCit());
+    return GetSeqid() == psip2.GetSeqid()  &&  GetCit().Match(psip2.GetCit());
 }
 
-    // format a FASTA style string
+
+// format a FASTA style string
 ostream& CPatent_seq_id::AsFastaString(ostream& s) const
 {
-	const CId_pat& idp = GetCit();
+    const CId_pat& idp = GetCit();
 	
-	s << Upcase(idp.GetCountry()) << '|';
+    s << idp.GetCountry() << '|';  // no Upcase per Ostell - Karl 7/2001
 
-	if (idp.GetId().IsNumber())
-		s << Upcase(idp.GetId().GetNumber());
-	else
-		s << Upcase(idp.GetId().GetApp_number());
-	s << '|' << GetSeqid();
-	return s;
+    if ( idp.GetId().IsNumber() ) {
+        s << idp.GetId().GetNumber();
+    } else {
+        s << idp.GetId().GetApp_number();
+    }
+    s << '|' << GetSeqid();
+    return s;
 }
 
-END_objects_SCOPE // namespace ncbi::objects::
 
+END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
-/* Original file checksum: lines: 61, chars: 1898, CRC32: 4f8b6180 */
