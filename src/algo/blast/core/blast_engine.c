@@ -157,9 +157,14 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
       CharPtr genetic_code=NULL;
       ValNodePtr vnp;
       GeneticCodePtr gcp;
+      Int4 length;
       /* Preallocate buffer for the translated sequences */
-      translation_buffer = (Uint1Ptr) 
-         Malloc(3 + readdb_get_maxlen(rdfp)/CODON_LENGTH);
+      if (rdfp)
+         length = readdb_get_maxlen(rdfp);
+      else
+         length = subject_blk->length;
+
+      translation_buffer = (Uint1Ptr) Malloc(3 + length/CODON_LENGTH);
 
       gcp = GeneticCodeFind(1, NULL);
       for (vnp = (ValNodePtr)gcp->data.ptrvalue; vnp != NULL; 
@@ -637,13 +642,16 @@ BLAST_SearchEngine(const Uint1 blast_program, BLAST_SequenceBlkPtr query,
       or without traceback */
    total_hits = 
       BLAST_SearchEngineCore(query, lookup, query_info, rdfp, subject,
-         ewp, gap_align, score_options, word_params, ext_params, hit_params, 
-         results, return_stats);
+         ewp, gap_align, score_options, word_params, ext_params, 
+         hit_params, results, return_stats);
 
    BlastExtendWordFree(ewp);
 
-   status = BLAST_ComputeTraceback(*results, query, query_info, rdfp, 
-               subject, gap_align, score_options, ext_params, hit_params);
+   if (hit_options->is_gapped) {
+      status = 
+         BLAST_ComputeTraceback(*results, query, query_info, rdfp, subject,
+            gap_align, score_options, ext_params, hit_params);
+   }
 
    /* Do not destruct score block here */
    gap_align->sbp = NULL;
