@@ -21,6 +21,7 @@ OBJ = \
 	cn3d_blast \
 	cn3d_colors \
 	cn3d_main_wxwin \
+	cn3d_png \
 	cn3d_threader \
 	conservation_colorer \
 	coord_set \
@@ -32,6 +33,7 @@ OBJ = \
 	opengl_renderer \
 	periodic_table \
 	preferences_dialog \
+	progress_meter \
 	residue \
 	sequence_display \
 	sequence_set \
@@ -52,30 +54,31 @@ OBJ = \
 	wx_tools
 
 LIB = \
-	cdd ncbimime cn3d mmdb1 mmdb2 mmdb3	seqset \
+	cdd ncbimime cn3d mmdb1 mmdb2 mmdb3 seqset \
 	$(SEQ_LIBS) pub medline	biblio general \
 	xser xutil xctools xconnect xncbi
 
 
-# Development configuration for Paul Thiessen...
+# Development configuration
 WX_CONFIG = $(HOME)/Programs/wxWindows/install/bin/wxgtk$(D_SFX)-2.3-config
 WX_CPPFLAGS = $(shell $(WX_CONFIG) --cppflags)
 WX_LIBS = $(shell $(WX_CONFIG) --libs) $(shell $(WX_CONFIG) --gl-libs)
 GTK_CONFIG = $(HOME)/Programs/GTK-1.2-$(DEBUG_SFX)/install/bin/gtk-config
 GTK_CFLAGS = $(shell $(GTK_CONFIG) --cflags)
+
 # ...the following two assignments switch to the development configuration:
 WXWIN_INCLUDE = $(WX_CPPFLAGS) $(GTK_CFLAGS)
 WXWIN_LIBS    = $(WX_LIBS)
 
 
 CPPFLAGS = \
+   $(ORIG_CPPFLAGS) \
    -I$(srcdir)/.. \
-   $(NCBI_C_INCLUDE) \
-   $(WXWIN_INCLUDE) $(GTK_CFLAGS) \
-   $(ORIG_CPPFLAGS)
+   $(WXWIN_INCLUDE) \
+   $(NCBI_C_INCLUDE)
 
 LIBS = \
-   $(NCBI_C_LIBPATH) \
-      -lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi \
+   $(ORIG_LIBS) \
    $(WXWIN_LIBS) \
-   $(ORIG_LIBS)
+   $(NCBI_C_LIBPATH) \
+      -lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi

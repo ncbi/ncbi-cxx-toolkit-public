@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/10/23 13:53:38  thiessen
+* add PNG export
+*
 * Revision 1.34  2001/10/17 17:46:27  thiessen
 * save camera setup and rotation center in files
 *
@@ -154,6 +157,8 @@
 
 #include "cn3d/vector_math.hpp"
 
+class wxFont;
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -243,6 +248,13 @@ public:
     // restore to saved view settings
     void RestoreSavedView(void);
 
+    // get current gl viewport - array of four int's: x, y, width, height
+    void GetViewport(int *viewport);
+
+    // set font used by OpenGL to the wxFont associated with the glCanvas
+    bool SetGLFont(int firstChar, int nChars, int fontBase);
+    const wxFont& GetGLFont(void) const;
+
 private:
 
     StructureSet *structureSet;
@@ -266,8 +278,6 @@ private:
     unsigned int currentFrame;
     std::vector < bool > displayListEmpty;
     bool IsFrameEmpty(unsigned int frame) const;
-
-    // stuff for storing transparent spheres (done during Construct())
     unsigned int currentDisplayList;
 
     // stuff for rendering transparent spheres (done during Display())

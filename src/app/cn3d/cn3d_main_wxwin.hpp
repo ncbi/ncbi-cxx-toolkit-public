@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2001/10/23 13:53:37  thiessen
+* add PNG export
+*
 * Revision 1.49  2001/10/17 17:46:27  thiessen
 * save camera setup and rotation center in files
 *
@@ -294,6 +297,7 @@ public:
         // File menu
             MID_OPEN,
             MID_SAVE,
+            MID_PNG,
             MID_REFIT_ALL,
             MID_LIMIT_STRUCT,
             MID_PREFERENCES,
@@ -386,6 +390,7 @@ private:
     // menu-associated methods
     void OnOpen(wxCommandEvent& event);
     void OnSave(wxCommandEvent& event);
+    void OnPNG(wxCommandEvent& event);
     void OnLimit(wxCommandEvent& event);
     void OnAlignStructures(wxCommandEvent& event);
     void OnAdjustView(wxCommandEvent& event);
@@ -421,8 +426,9 @@ public:
     OpenGLRenderer *renderer;
 
     // font stuff - setup from registry, and measure using currently selected font
-    void SetGLFontFromRegistry(void);
+    void SetGLFontFromRegistry(double fontScale = 1.0);
     bool MeasureText(const std::string& text, int *width, int *height);
+    const wxFont& GetGLFont(void) const { return font; }
 
 private:
     void OnPaint(wxPaintEvent& event);

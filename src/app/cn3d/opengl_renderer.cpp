@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2001/10/23 13:53:38  thiessen
+* add PNG export
+*
 * Revision 1.52  2001/10/17 17:46:22  thiessen
 * save camera setup and rotation center in files
 *
@@ -198,6 +201,7 @@
 
 #elif defined(__WXGTK__)
 #include <GL/glx.h>
+#include <gdk/gdk.h>    // needed for GdkFont
 
 #elif defined(__WXMAC__)
 #define DONT_USE_GL_DIR
@@ -1590,6 +1594,54 @@ void OpenGLRenderer::RestoreSavedView(void)
         initialViewFromASN->GetRotation_center().GetZ());
 
     NewView();
+}
+
+void OpenGLRenderer::GetViewport(int *viewport)
+{
+    glCanvas->SetCurrent();
+    GLint viewportGL[4];    // just in case GLint != int
+    glGetIntegerv(GL_VIEWPORT, viewportGL);
+    for (int i=0; i<4; i++) viewport[i] = (int) viewportGL[i];
+}
+
+const wxFont& OpenGLRenderer::GetGLFont(void) const
+{
+    return glCanvas->GetGLFont();
+}
+
+bool OpenGLRenderer::SetGLFont(int firstChar, int nChars, int fontBase)
+{
+    bool okay = true;
+
+#if defined(__WXMSW__)
+    HDC hdc = wglGetCurrentDC();
+    HGDIOBJ currentFont = SelectObject(hdc, reinterpret_cast<HGDIOBJ>(GetGLFont().GetHFONT()));
+    if (!wglUseFontBitmaps(hdc, firstChar, nChars, fontBase)) {
+        ERR_POST(Error << "OpenGLRenderer::SetGLFont() - wglUseFontBitmaps() failed");
+        okay = false;
+    }
+    SelectObject(hdc, currentFont);
+
+#elif defined(__WXGTK__)
+    glXUseXFont(gdk_font_id(GetGLFont().GetInternalFont()), firstChar, nChars, fontBase);
+
+#elif defined(__WXMAC__)
+    wxFontRefData *fontRefData = (wxFontRefData *) GetGLFont().GetRefData();
+    if (RealFont(fontRefData->m_macFontNum, fontRefData->m_macFontSize)) {
+        if (aglUseFont(aglGetCurrentContext(),
+                (GLint) fontRefData->m_macFontNum,
+                fontRefData->m_macFontStyle, fontRefData->m_macFontSize,
+                firstChar, nChars, fontBase) != GL_TRUE) {
+            ERR_POST(Error << "OpenGLRenderer::SetGLFont() - aglUseFont() failed");
+            okay = false;
+        }
+    } else {
+        ERR_POST(Error << "OpenGLRenderer::SetGLFont() - RealFont() returned false");
+        okay = false;
+    }
+#endif
+
+    return okay;
 }
 
 END_SCOPE(Cn3D)

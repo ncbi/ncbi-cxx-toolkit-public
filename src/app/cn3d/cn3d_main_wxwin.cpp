@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.99  2001/10/23 13:53:37  thiessen
+* add PNG export
+*
 * Revision 1.98  2001/10/20 20:16:32  thiessen
 * don't use wxDefaultPosition for dialogs (win2000 problem)
 *
@@ -414,13 +417,10 @@
 #include "cn3d/cdd_annot_dialog.hpp"
 #include "cn3d/preferences_dialog.hpp"
 #include "cn3d/cdd_ref_dialog.hpp"
+#include "cn3d/cn3d_png.hpp"
 
 #include <wx/file.h>
 #include <wx/fontdlg.h>
-
-#ifdef __WXGTK__
-#include <gdk/gdk.h>    // needed for GdkFont
-#endif
 
 #include <ncbienv.h>
 
@@ -804,6 +804,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU      (MID_EXIT,                                Cn3DMainFrame::OnExit)
     EVT_MENU      (MID_OPEN,                                Cn3DMainFrame::OnOpen)
     EVT_MENU      (MID_SAVE,                                Cn3DMainFrame::OnSave)
+    EVT_MENU      (MID_PNG,                                 Cn3DMainFrame::OnPNG)
     EVT_MENU_RANGE(MID_ZOOM_IN,  MID_ALL_FRAMES,            Cn3DMainFrame::OnAdjustView)
     EVT_MENU_RANGE(MID_SHOW_HIDE,  MID_SHOW_SELECTED,       Cn3DMainFrame::OnShowHide)
     EVT_MENU      (MID_REFIT_ALL,                           Cn3DMainFrame::OnAlignStructures)
@@ -847,6 +848,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     wxMenu *menu = new wxMenu;
     menu->Append(MID_OPEN, "&Open");
     menu->Append(MID_SAVE, "&Save");
+    menu->Append(MID_PNG, "Export &PNG");
     menu->AppendSeparator();
     menu->Append(MID_REFIT_ALL, "&Realign Structures");
     menu->Append(MID_LIMIT_STRUCT, "&Limit Structures");
@@ -1007,6 +1009,11 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
         logFrame->Destroy();
         logFrame = NULL;
     }
+}
+
+void Cn3DMainFrame::OnPNG(wxCommandEvent& event)
+{
+    ExportPNG(glCanvas);
 }
 
 void Cn3DMainFrame::OnAnimate(wxCommandEvent& event)
@@ -1627,7 +1634,7 @@ Cn3DGLCanvas::~Cn3DGLCanvas(void)
     delete renderer;
 }
 
-void Cn3DGLCanvas::SetGLFontFromRegistry(void)
+void Cn3DGLCanvas::SetGLFontFromRegistry(double fontScale)
 {
     // get font info from registry, and create wxFont
     int size, family, style, weight;
@@ -1645,39 +1652,20 @@ void Cn3DGLCanvas::SetGLFontFromRegistry(void)
     }
 
     // create new font - assignment uses object reference to copy
+    if (fontScale != 1.0 && fontScale > 0.0) size *= fontScale;
     wxFont newFont(size, family, style, weight, underlined,
             (faceName == FONT_FACENAME_UNKNOWN) ? "" : faceName.c_str());
     font = newFont;
 
     // set up font display lists in dc and renderer
-    SetCurrent();
     if (!memoryDC.Ok()) {
         wxBitmap bitmap(1, 1, -1);
         memoryDC.SelectObject(bitmap);
     }
     memoryDC.SetFont(font);
 
-#if defined(__WXMSW__)
-    HDC hdc = wglGetCurrentDC();
-    HGDIOBJ currentFont = SelectObject(hdc, reinterpret_cast<HGDIOBJ>(font.GetHFONT()));
-    if (!wglUseFontBitmaps(hdc, 0, 256, renderer->FONT_BASE))
-        ERR_POST(Error << "OpenGLRenderer::SetFont() - wglUseFontBitmaps() failed");
-    SelectObject(hdc, currentFont);
-
-#elif defined(__WXGTK__)
-    glXUseXFont(gdk_font_id(font.GetInternalFont()), 0, 256, renderer->FONT_BASE);
-
-#elif defined(__WXMAC__)
-    wxFontRefData *fontRefData = (wxFontRefData *) font.GetRefData();
-    if (RealFont(fontRefData->m_macFontNum, fontRefData->m_macFontSize)) {
-        if (aglUseFont(aglGetCurrentContext(),
-                (GLint) fontRefData->m_macFontNum,
-                fontRefData->m_macFontStyle, fontRefData->m_macFontSize,
-                0, 256, renderer->FONT_BASE) != GL_TRUE)
-            ERR_POST(Error << "OpenGLRenderer::SetFont() - aglUseFont() failed");
-    } else
-        ERR_POST(Error << "OpenGLRenderer::SetFont() - RealFont() returned false");
-#endif
+    SetCurrent();
+    renderer->SetGLFont(0, 256, renderer->FONT_BASE);
 }
 
 bool Cn3DGLCanvas::MeasureText(const std::string& text, int *width, int *height)
