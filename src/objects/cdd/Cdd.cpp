@@ -83,6 +83,8 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 
+#include <cstdio>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -951,8 +953,8 @@ void CCdd::Make_GI_or_PDB_String(CRef<CSeq_id> SeqID, std::string& Str, bool Pad
 
   // pad with spaces to length of Len
   if (Pad) {
-    while (strlen(Str.c_str()) < Len) {
-      Str += " ";
+    if (Str.size() < Len) {
+      Str.append(Len - Str.size(), ' ');
     }
   }
 }
@@ -1379,6 +1381,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2002/10/10 20:56:12  hurwitz
+ * fixed ugly code
+ *
  * Revision 1.16  2002/10/09 21:22:49  hurwitz
  * small change to previous commit
  *
