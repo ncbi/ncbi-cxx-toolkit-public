@@ -24,7 +24,8 @@ seqdb_src \
 bl2seq \
 db_blast \
 db_traceback \
-psiblast_options
+psiblast_options \
+blast_objmgr_tools
 
 SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
