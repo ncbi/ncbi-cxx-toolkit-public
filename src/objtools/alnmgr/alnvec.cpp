@@ -517,9 +517,10 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
 {
     int score = 0;
 
-    string::const_iterator res1 = s1.begin();
-    string::const_iterator res2 = s2.begin();
-
+    const char * res1 = s1.c_str();
+    const char * res2 = s2.c_str();
+    const char * end1 = res1 + s1.length();
+    
     if (s1_is_prot  &&  s2_is_prot) {
         if (s_AlnVecBlosum62Map.empty()) {
             // initialize Blosum62Map
@@ -534,18 +535,16 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
         }            
 
         // use BLOSUM62 matrix
-        for ( ;  res1 != s1.end();  res1++, res2++) {
+        for ( ;  res1 != end1;  res1++, res2++) {
             score += s_AlnVecBlosum62Map[*res1][*res2];
         }
     } else if ( !s1_is_prot  &&  !s2_is_prot ) {
         // use match score/mismatch penalty
-        for ( ; res1 != s1.end();  res1++, res2++) {
-            if (*res1 && *res2) {
-                if (*res1 == *res2) {
-                    score += 1;
-                } else {
-                    score -= 3;
-                }
+        for ( ; res1 != end1;  res1++, res2++) {
+            if (*res1 == *res2) {
+                score += 1;
+            } else {
+                score -= 3;
             }
         }
     } else {
@@ -619,6 +618,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2003/01/29 20:54:37  todorov
+* CalculateScore speed optimization
+*
 * Revision 1.20  2003/01/27 22:48:41  todorov
 * Changed CreateConsensus accordingly too
 *
