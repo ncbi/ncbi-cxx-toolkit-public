@@ -441,18 +441,6 @@ public:
         return m_ReqOpts;
     }
     
-    /// Validate the options
-    bool Validate() const
-    {
-        // Not yet..
-        return true;
-    }
-
-    void DebugDump(CDebugDumpContext /*ddc*/, unsigned int /*depth*/) const
-    {
-        // Not yet..
-    }
-
     typedef vector< CConstRef<objects::CSeq_loc> > TSeqLocVector;
     
 //     // Basic mandatory functions
@@ -644,7 +632,6 @@ public:
     bool Validate() const
     {
         bool local_okay  = m_Local  ? (m_Local ->Validate()) : true;
-        bool remote_okay = m_Remote ? (m_Remote->Validate()) : true;
         
         return local_okay && remote_okay;
     }
@@ -1620,9 +1607,6 @@ public:
         if (m_Local) {
             m_Local->DebugDump(ddc, depth);
         }
-        if (m_Remote) {
-            m_Remote->DebugDump(ddc, depth);
-        }
     }
     
     void DoneDefaults() const
@@ -2432,6 +2416,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2004/02/24 22:42:11  bealer
+* - Remove undefined methods from CBlastOptionsRemote.
+*
 * Revision 1.49  2004/02/24 13:16:35  dondosha
 * Commented out argument names in unimplemented function, to eliminate compiler warnings
 *
