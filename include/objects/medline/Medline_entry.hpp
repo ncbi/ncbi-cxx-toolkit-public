@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2004/02/24 15:53:44  grichenk
+ * Redesigned GetLabel(), moved most functionality from pub to biblio
+ *
  * Revision 1.3  2002/12/26 12:41:07  dicuccio
  * Added Win32 export specifiers
  *
@@ -55,7 +58,6 @@
 
 // generated includes
 #include <objects/medline/Medline_entry_.hpp>
-#include <objects/pub/Pub.hpp>
 
 // generated classes
 
@@ -73,7 +75,7 @@ public:
     ~CMedline_entry(void);
     
     // Appends a label to "label" based on content
-    void GetLabel(string* label) const;
+    void GetLabel(string* label, bool unique = false) const;
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -90,15 +92,6 @@ private:
 inline
 CMedline_entry::CMedline_entry(void)
 {
-}
-
-inline
-void CMedline_entry::GetLabel(string* label) const
-{
-    // Wrap CMedline_entry in CPub and call CPub::GetLabel()
-    CPub pub;
-    pub.SetMedline(const_cast<CMedline_entry&>(*this));
-    pub.GetLabel(label);
 }
 
 /////////////////// end of CMedline_entry inline methods

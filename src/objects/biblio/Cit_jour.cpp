@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2004/02/24 15:53:46  grichenk
+ * Redesigned GetLabel(), moved most functionality from pub to biblio
+ *
  * Revision 6.1  2002/01/10 20:06:13  clausen
  * Added GetLabel
  *
@@ -46,6 +49,7 @@
 
 // generated includes
 #include <objects/biblio/Cit_jour.hpp>
+#include <objects/biblio/label_util.hpp>
 
 // generated classes
 
@@ -57,6 +61,13 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CCit_jour::~CCit_jour(void)
 {
 }
+
+
+void CCit_jour::GetLabel(string* label) const
+{
+    GetLabelContent(label, false, 0, &GetImp(), &GetTitle(), 0, this);
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2004/02/24 15:53:45  grichenk
+ * Redesigned GetLabel(), moved most functionality from pub to biblio
+ *
  * Revision 6.1  2002/01/10 20:06:13  clausen
  * Added GetLabel
  *
@@ -46,6 +49,12 @@
 
 // generated includes
 #include <objects/biblio/Cit_art.hpp>
+#include <objects/biblio/Imprint.hpp>
+#include <objects/biblio/Title.hpp>
+#include <objects/biblio/Cit_jour.hpp>
+#include <objects/biblio/Cit_book.hpp>
+#include <objects/biblio/Cit_proc.hpp>
+#include <objects/biblio/label_util.hpp>
 
 // generated classes
 
@@ -57,6 +66,79 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CCit_art::~CCit_art(void)
 {
 }
+
+
+void CCit_art::GetLabel(string* label, bool unique) const
+{
+    const CCit_jour*  journal = 0;
+    const CCit_book*  book = 0;
+    const CImprint*   imprint = 0;
+    const CAuth_list* authors = 0;
+    const CTitle*     title = 0;
+    const string*     titleunique = 0;
+    if ( IsSetAuthors() ) {
+        authors = &GetAuthors();
+    }
+    if ( IsSetTitle() ) {
+        const CRef<CTitle::C_E>& ce = GetTitle().Get().front();
+        switch ( ce->Which() ) {
+        case CTitle::C_E::e_Name:
+            titleunique = &ce->GetName();
+            break;
+        case CTitle::C_E::e_Tsub:
+            titleunique = &ce->GetTsub();
+            break;
+        case CTitle::C_E::e_Trans:
+            titleunique = &ce->GetTrans();
+            break;
+        case CTitle::C_E::e_Jta:
+            titleunique = &ce->GetJta();
+            break;
+        case CTitle::C_E::e_Iso_jta:
+            titleunique = &ce->GetIso_jta();
+            break;
+        case CTitle::C_E::e_Ml_jta:
+            titleunique = &ce->GetMl_jta();
+            break;
+        case CTitle::C_E::e_Coden:
+            titleunique = &ce->GetCoden();
+            break;
+        case CTitle::C_E::e_Issn:
+            titleunique = &ce->GetIssn();
+            break;
+        case CTitle::C_E::e_Abr:
+            titleunique = &ce->GetAbr();
+            break;
+        case CTitle::C_E::e_Isbn:
+            titleunique = &ce->GetIsbn();
+            break;
+        default:
+            break;
+        }
+    }
+    switch ( GetFrom().Which() ) {
+    case CCit_art::C_From::e_Journal:
+        journal = &GetFrom().GetJournal();
+        imprint = &journal->GetImp();
+        title = &journal->GetTitle();
+        break;
+    case CCit_art::C_From::e_Book:
+        book = &GetFrom().GetBook();
+        imprint = &book->GetImp();
+        authors = &book->GetAuthors();
+        title = &book->GetTitle();
+        break;
+    case CCit_art::C_From::e_Proc:
+        book = &GetFrom().GetProc().GetBook();
+        imprint = &book->GetImp();
+        authors = &book->GetAuthors();
+        title = &book->GetTitle();
+    default:
+        break;
+    }
+    GetLabelContent(label, unique, authors, imprint, title, book, journal);
+}   
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

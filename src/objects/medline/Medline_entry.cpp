@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2004/02/24 15:53:47  grichenk
+ * Redesigned GetLabel(), moved most functionality from pub to biblio
+ *
  * Revision 6.1  2002/01/10 20:02:34  clausen
  * Added GetLabel
  *
@@ -46,6 +49,7 @@
 
 // generated includes
 #include <objects/medline/Medline_entry.hpp>
+#include <objects/biblio/Cit_art.hpp>
 
 // generated classes
 
@@ -57,6 +61,24 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CMedline_entry::~CMedline_entry(void)
 {
 }
+
+
+void CMedline_entry::GetLabel(string* label, bool unique) const
+{
+    // Add Medline specific label, then treat as cit-art
+    if ( IsSetPmid() ) {
+        *label += "PM" + NStr::IntToString(GetPmid().Get());
+    }
+    else if ( IsSetUid() ) {
+        *label += "NLM" + NStr::IntToString(GetUid());
+    }
+    else {
+        *label += "No Medline found";
+    }
+    *label += " ";
+    GetCit().GetLabel(label, unique);
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

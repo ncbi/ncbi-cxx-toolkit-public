@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2004/02/24 15:53:46  grichenk
+ * Redesigned GetLabel(), moved most functionality from pub to biblio
+ *
  * Revision 6.1  2002/01/10 20:06:14  clausen
  * Added GetLabel
  *
@@ -46,6 +49,8 @@
 
 // generated includes
 #include <objects/biblio/Cit_pat.hpp>
+#include <objects/biblio/label_util.hpp>
+#include <objects/general/Date.hpp>
 
 // generated classes
 
@@ -57,6 +62,29 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CCit_pat::~CCit_pat(void)
 {
 }
+
+
+void CCit_pat::GetLabel(string* label) const
+{
+    string date;
+    string* date_ptr = &date;
+    if ( IsSetDate_issue() ) {
+        GetDate_issue().GetDate(&date, true);
+    }
+    else if ( IsSetApp_date() ) {
+        GetApp_date().GetDate(&date, true);
+    }
+    else {
+        date_ptr = 0;
+    }
+
+    GetLabelContent(label, false, &GetAuthors(), 0, 0, 0, 0,
+        &GetCountry(),
+        IsSetNumber() ? &GetNumber() :
+            (IsSetApp_number() ? &GetApp_number() : 0),
+        0, date_ptr);
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2004/02/24 15:53:41  grichenk
+ * Redesigned GetLabel(), moved most functionality from pub to biblio
+ *
  * Revision 1.3  2002/12/26 12:38:37  dicuccio
  * Added Win32 export specifiers
  *
@@ -55,7 +58,6 @@
 
 // generated includes
 #include <objects/biblio/Cit_art_.hpp>
-#include <objects/pub/Pub.hpp>
 
 // generated classes
 
@@ -73,7 +75,7 @@ public:
     ~CCit_art(void);
     
     // Appends a label onto "label" based on content
-    void GetLabel(string* label) const;
+    void GetLabel(string* label, bool unique = false) const;
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -91,15 +93,6 @@ inline
 CCit_art::CCit_art(void)
 {
 }
-
-inline
-void CCit_art::GetLabel(string* label) const
-{
-    // Wrap CCit_art in CPub and call CPub::GetLabel()
-    CPub pub;
-    pub.SetArticle(const_cast<CCit_art&>(*this));
-    pub.GetLabel(label);
-}   
 
 
 /////////////////// end of CCit_art inline methods

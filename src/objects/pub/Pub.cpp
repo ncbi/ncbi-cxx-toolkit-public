@@ -36,26 +36,18 @@
 
 #include <objects/pub/Pub.hpp>
 
-#include <objects/general/Date.hpp>
-#include <objects/general/Person_id.hpp>
-
 #include <objects/pub/Pub_equiv.hpp>
 
 #include <objects/biblio/PubMedId.hpp>
 #include <objects/biblio/Cit_art.hpp>
 #include <objects/biblio/Cit_jour.hpp>
 #include <objects/biblio/Cit_book.hpp>
-#include <objects/biblio/Auth_list.hpp>
-#include <objects/biblio/Imprint.hpp>
-#include <objects/biblio/Title.hpp>
 #include <objects/biblio/Cit_proc.hpp>
 #include <objects/biblio/Cit_let.hpp>
 #include <objects/biblio/Cit_sub.hpp>
 #include <objects/biblio/Cit_pat.hpp>
 #include <objects/biblio/Id_pat.hpp>
 #include <objects/biblio/Cit_gen.hpp>
-#include <objects/biblio/Author.hpp>
-
 #include <objects/medline/Medline_entry.hpp>
 
 // generated classes
@@ -69,85 +61,11 @@ CPub::~CPub(void)
 {
 }
 
-// Gets information from an article needed to determine a label
-// for a pub of type article
-inline
-static void s_CitArt
-(const CCit_art&    art, 
- const CCit_jour**  journal, 
- const CCit_book**  book,
- const CImprint**   imprint, 
- const CAuth_list** authors, 
- const CTitle**     title, 
- const string**     titleunique)
- {
-    if (art.IsSetAuthors()) {
-        *authors = &art.GetAuthors();
-    }
-    if (art.IsSetTitle()) {
-        const CRef<CTitle::C_E>& ce = art.GetTitle().Get().front();
-        switch (ce->Which()) {
-        case CTitle::C_E::e_Name:
-            *titleunique = &ce->GetName();
-            break;
-        case CTitle::C_E::e_Tsub:
-            *titleunique = &ce->GetTsub();
-            break;
-        case CTitle::C_E::e_Trans:
-            *titleunique = &ce->GetTrans();
-            break;
-        case CTitle::C_E::e_Jta:
-            *titleunique = &ce->GetJta();
-            break;
-        case CTitle::C_E::e_Iso_jta:
-            *titleunique = &ce->GetIso_jta();
-            break;
-        case CTitle::C_E::e_Ml_jta:
-            *titleunique = &ce->GetMl_jta();
-            break;
-        case CTitle::C_E::e_Coden:
-            *titleunique = &ce->GetCoden();
-            break;
-        case CTitle::C_E::e_Issn:
-            *titleunique = &ce->GetIssn();
-            break;
-        case CTitle::C_E::e_Abr:
-            *titleunique = &ce->GetAbr();
-            break;
-        case CTitle::C_E::e_Isbn:
-            *titleunique = &ce->GetIsbn();
-            break;
-        default:
-            break;
-        }
-    }
-    switch (art.GetFrom().Which()) {
-    case CCit_art::C_From::e_Journal:
-        *journal = &art.GetFrom().GetJournal();
-        *imprint = &(**journal).GetImp();
-        *title = &(**journal).GetTitle();
-        break;
-    case CCit_art::C_From::e_Book:
-        *book = &art.GetFrom().GetBook();
-        *imprint = &(**book).GetImp();
-        *authors = &(**book).GetAuthors();
-        *title = &(**book).GetTitle();
-        break;
-    case CCit_art::C_From::e_Proc:
-        *book = &art.GetFrom().GetProc().GetBook();
-        *imprint = &(**book).GetImp();
-        *authors = &(**book).GetAuthors();
-        *title = &(**book).GetTitle();
-    default:
-        break;
-    }    
- }
 
 // Appends a label to "label"
-void CPub::GetLabel
-(string*    label,
- ELabelType type,
- bool       unique) const
+void CPub::GetLabel(string*    label,
+                    ELabelType type,
+                    bool       unique) const
 {
     static const char* s_PubTypes[14] = {
         "Unknown",
@@ -169,38 +87,22 @@ void CPub::GetLabel
     if (!label) {
         return;
     }
-    
+
     // Get the index into the s_PubTypes array corresponding to pub type
     int idx = static_cast<int>(Which());
     idx = idx >= 0 && idx < 14 ? idx : 0;
-    
+
     if (type == eType) {
         // Append pub type to label and return
         *label += s_PubTypes[idx];
         return;
     }
-    
+
     if (type == eBoth) {
         // Append pub type to label
         *label += string(s_PubTypes[idx]) + ": ";
     }
 
-    const string* titleunique = 0;
-    const string* title1 = 0;
-    const string* title2 = 0;
-    const string* volume = 0;
-    const string* issue = 0;
-    const string* pages = 0;
-    const string* part_sup = 0;
-    const string* part_supi = 0;
-    const CCit_jour* journal = 0;
-    const CCit_book* book = 0;
-    const CAuth_list* authors = 0;
-    const CImprint* imprint = 0;
-    const CTitle* title = 0;
-    const CDate* date = 0;
-    bool unpublished = false;
-       
     switch (Which()) {
     case e_Muid:
         *label += "NLM" + NStr::IntToString(GetMuid());
@@ -212,223 +114,40 @@ void CPub::GetLabel
         GetEquiv().GetLabel(label);
         break;
     case e_Medline:
-        // Add Medline specific label, then treat as pub
-        if (GetMedline().IsSetPmid()) {
-            *label += "PM" + NStr::IntToString(GetMedline().GetPmid().Get());
-        } else if (GetMedline().IsSetUid()) {
-            *label += "NLM" + NStr::IntToString(GetMedline().GetUid());
-        } else {
-            *label += "No Medline found";
-        }
-        *label += " ";                
-        s_CitArt(GetMedline().GetCit(), &journal, &book, &imprint, &authors,
-            &title, &titleunique);
+        GetMedline().GetLabel(label, unique);
         break;   
     case e_Article:
-        s_CitArt(GetArticle(), &journal, &book, &imprint, &authors, &title, 
-            &titleunique);
+        GetArticle().GetLabel(label, unique);
         break;
     case e_Journal:
-        journal = &GetJournal();
-        imprint = &journal->GetImp();
-        title = &journal->GetTitle();
+        GetJournal().GetLabel(label);
         break;
     case e_Book:
-        book = &GetBook();
-        imprint = &book->GetImp();
-        authors = &book->GetAuthors();
-        title = &book->GetTitle();
+        GetBook().GetLabel(label);
         break;
     case e_Proc:
-        book = &GetProc().GetBook();
-        imprint = &book->GetImp();
-        authors = &book->GetAuthors();
-        title = &book->GetTitle();
+        GetProc().GetLabel(label);
         break;
     case e_Man:
-        book = &GetMan().GetCit();
-        imprint = &book->GetImp();
-        authors = &book->GetAuthors();
-        title = &book->GetTitle();
+        GetMan().GetLabel(label);
         break;
     case e_Sub:
-        authors = &GetSub().GetAuthors();
-        imprint = GetSub().IsSetImp() ? &GetSub().GetImp() : 0;
-        date = GetSub().IsSetDate() ? &GetSub().GetDate() : 0;
+        GetSub().GetLabel(label);
         break;
     case e_Patent:
-        authors = &GetPatent().GetAuthors();
-        date = GetPatent().IsSetDate_issue() ? &GetPatent().GetDate_issue() : 
-            (GetPatent().IsSetApp_date() ? &GetPatent().GetApp_date() : 0);
-        title1 = &GetPatent().GetCountry();
-        title2 = GetPatent().IsSetNumber() ? &GetPatent().GetNumber() :
-            (GetPatent().IsSetApp_number() ? &GetPatent().GetApp_number() : 0);
+        GetPatent().GetLabel(label);
         break;
     case e_Pat_id:
     {
-        title1 = &GetPat_id().GetCountry();
-        const CId_pat::C_Id& id = GetPat_id().GetId();
-        title2 = id.IsNumber() ? &id.GetNumber() :(id.IsApp_number() ? 
-            &id.GetApp_number() : 0);
+        GetPat_id().GetLabel(label);
         break;
     }
     case e_Gen:
-        if (GetGen().IsSetSerial_number()) {
-            *label += "[" + NStr::IntToString(GetGen().GetSerial_number()) +
-                "]";
-        }
-        if (GetGen().IsSetMuid()) {
-            *label += "NLM" + NStr::IntToString(GetGen().GetMuid());
-        }
-        date = GetGen().IsSetDate() ? &GetGen().GetDate() : 0;
-        title = GetGen().IsSetJournal() ? &GetGen().GetJournal() : 0;
-        authors = GetGen().IsSetAuthors() ? &GetGen().GetAuthors() : 0;
-        volume = GetGen().IsSetVolume() ? &GetGen().GetVolume() : 0;
-        issue = GetGen().IsSetIssue() ? &GetGen().GetIssue() : 0;
-        pages = GetGen().IsSetPages() ? &GetGen().GetPages() : 0;
-        if (GetGen().IsSetCit()) {
-            if (GetGen().GetCit().find("Unpublished") != string::npos) {
-                unpublished = true;
-            } else if (!title) {
-                title2 = &GetGen().GetCit();
-            }
-        }
-        if (GetGen().IsSetTitle()) {
-            titleunique = &GetGen().GetTitle();
-        } else if (title2) {
-            titleunique = title2;
-        } else if (!title && GetGen().IsSetCit()) {
-            titleunique = &GetGen().GetCit();
-        }
-        if (!title && !authors && !GetGen().IsSetTitle() && !volume &&
-            !pages && !issue) {
-            titleunique = 0;
-            if (GetGen().IsSetCit()) {
-                string cit(GetGen().GetCit());
-                if (!unique) {
-                    try {
-                        cit.resize(cit.find_last_of('|'));
-                    } catch(length_error&) {}
-                }   
-                *label += cit;
-            }
-            return;
-        }
+        GetGen().GetLabel(label, unique);
         break;       
     default:
         break;
     }
-    
-    if (imprint) {
-        date = !date ? &imprint->GetDate() : date;
-        volume = !volume && imprint->IsSetVolume() ? &imprint->GetVolume() : 
-            volume;
-        issue = !issue && imprint->IsSetIssue() ? &imprint->GetIssue() : issue;
-        pages = !pages && imprint->IsSetPages() ? &imprint->GetPages() : pages;
-        part_sup = imprint->IsSetPart_sup() ? &imprint->GetPart_sup() : 0;
-        part_supi = imprint->IsSetPart_supi() ? &imprint->GetPart_supi() : 0;
-    }
-    
-    if (authors) {
-        switch (authors->GetNames().Which()) {
-        case CAuth_list::C_Names::e_Std:
-            if (authors->GetNames().GetStd().size() > 0) {
-                const CPerson_id& id = 
-                    authors->GetNames().GetStd().front()->GetName();
-                    id.GetLabel(label);
-            }
-            break;
-        case CAuth_list::C_Names::e_Ml:
-            if (authors->GetNames().GetMl().size() > 0) {
-                *label += authors->GetNames().GetMl().front();
-            }
-            break;
-        case CAuth_list::C_Names::e_Str:
-            if (authors->GetNames().GetStr().size() > 0) {
-                *label += authors->GetNames().GetStr().front();
-            }
-            break;
-        default:
-            break;
-        }
-    }
-    
-    string::size_type z = label->size();
-    if (date) {
-        if (z == 0 || label->substr(z-1, 1).compare(" ") == 0) {
-          *label += "(";
-        } else {
-          *label += " (";
-        }
-        string tmp;
-        if (Which() == e_Sub) {
-            date->GetDate(&tmp);
-            *label += tmp + ")";
-        }else {
-            date->GetDate(&tmp, true);
-            *label += tmp + ")";
-        }
-    }
-    
-    if (title && !titleunique) {
-        try {
-            titleunique = &title->GetTitle();
-        } catch(exception&) {}
-    }
-    
-    if (title && !title2) {
-        try {
-            title2 = &title->GetTitle();
-        } catch(exception&) {}
-    }
-    
-    if (title2) {
-        if (book) {
-            *label += " (in) " + *title2;
-        } else if (title1) {
-            *label += " " + *title1 + *title2;
-        } else {
-            *label += " " + *title2;
-        }
-    }
-    
-    if (volume) {
-        if (part_sup) {
-            *label += " " + *volume + *part_sup + ":";
-        } else {
-            *label += " " + *volume + ":";
-        }
-    }
-    
-    if (issue) {
-        if (part_supi) {
-            *label += "(" + *issue + *part_supi + ")";
-        } else {
-            *label += "(" + *issue + ")";
-        }
-    }
-    
-    if (pages) {
-        *label += *pages;
-    }
-    
-    if (unpublished) {
-        *label += "Unpublished";
-    }
-    
-    // If unique paramter true, then add unique tag to end of label
-    // constructed from the first character of each whitespace separated
-    // word in titleunique
-    if (unique && titleunique && !titleunique->empty()) {
-        CNcbiIstrstream is(titleunique->c_str(), titleunique->size());
-        string tag, word;
-        int cnt = 0;
-        while ( (is >> word) && (cnt++ < 40) ) {
-            tag += word[0];
-        }
-        *label += "|" + tag;
-    }
-           
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -438,6 +157,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2004/02/24 15:53:48  grichenk
+ * Redesigned GetLabel(), moved most functionality from pub to biblio
+ *
  * Revision 6.5  2003/11/21 14:45:02  grichenk
  * Replaced runtime_error with CException
  *

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2004/02/24 15:53:43  grichenk
+ * Redesigned GetLabel(), moved most functionality from pub to biblio
+ *
  * Revision 1.4  2002/12/26 12:38:37  dicuccio
  * Added Win32 export specifiers
  *
@@ -76,6 +79,10 @@ public:
     // comparison function
     bool Match(const CId_pat& idp2) const;
     static bool Id_Match(const C_Id& id1, const C_Id& id2);
+
+    // Appends a label onto "label" based on content
+    void GetLabel(string* label) const;
+
 private:
     // Prohibit copy constructor & assignment operator
     CId_pat(const CId_pat&);

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2004/02/24 15:53:42  grichenk
+ * Redesigned GetLabel(), moved most functionality from pub to biblio
+ *
  * Revision 1.3  2002/12/26 12:38:37  dicuccio
  * Added Win32 export specifiers
  *
@@ -55,7 +58,6 @@
 
 // generated includes
 #include <objects/biblio/Cit_book_.hpp>
-#include <objects/pub/Pub.hpp>
 
 // generated classes
 
@@ -92,14 +94,7 @@ CCit_book::CCit_book(void)
 {
 }
 
-inline
-void CCit_book::GetLabel(string* label) const
-{
-    // Wrap CCit_book in CPub and call CPub::GetLabel()
-    CPub pub;
-    pub.SetBook(const_cast<CCit_book&>(*this));
-    pub.GetLabel(label);
-}
+
 /////////////////// end of CCit_book inline methods
 
 

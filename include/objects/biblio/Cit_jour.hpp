@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2004/02/24 15:53:42  grichenk
+ * Redesigned GetLabel(), moved most functionality from pub to biblio
+ *
  * Revision 1.3  2002/12/26 12:38:37  dicuccio
  * Added Win32 export specifiers
  *
@@ -55,7 +58,6 @@
 
 // generated includes
 #include <objects/biblio/Cit_jour_.hpp>
-#include <objects/pub/Pub.hpp>
 
 // generated classes
 
@@ -90,15 +92,6 @@ private:
 inline
 CCit_jour::CCit_jour(void)
 {
-}
-
-inline
-void CCit_jour::GetLabel(string* label) const
-{
-    // Wrap CCit_jour in CPub and call CPub::GetLabel()
-    CPub pub;
-    pub.SetJournal(const_cast<CCit_jour&>(*this));
-    pub.GetLabel(label);
 }
 
 

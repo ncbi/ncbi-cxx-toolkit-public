@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2004/02/24 15:53:43  grichenk
+ * Redesigned GetLabel(), moved most functionality from pub to biblio
+ *
  * Revision 1.3  2002/12/26 12:38:37  dicuccio
  * Added Win32 export specifiers
  *
@@ -95,10 +98,7 @@ CCit_proc::CCit_proc(void)
 inline
 void CCit_proc::GetLabel(string* label) const
 {
-    // Wrap CCit_proc in CPub and call CPub::GetLabel()
-    CPub pub;
-    pub.SetProc(const_cast<CCit_proc&>(*this));
-    pub.GetLabel(label);
+    GetBook().GetLabel(label);
 }
 
 /////////////////// end of CCit_proc inline methods

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2004/02/24 15:53:46  grichenk
+ * Redesigned GetLabel(), moved most functionality from pub to biblio
+ *
  * Revision 6.2  2000/12/26 17:28:46  vasilche
  * Simplified and formatted code.
  *
@@ -49,6 +52,7 @@
 
 // generated includes
 #include <objects/biblio/Id_pat.hpp>
+#include <objects/biblio/label_util.hpp>
 
 // generated classes
 
@@ -60,6 +64,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CId_pat::~CId_pat(void)
 {
 }
+
 
 bool CId_pat::Id_Match(const C_Id& id1, const C_Id& id2)
 {
@@ -79,12 +84,23 @@ bool CId_pat::Id_Match(const C_Id& id1, const C_Id& id2)
     }
 }
 	
+
 // comparison function
 bool CId_pat::Match(const CId_pat& idp2) const
 {
     return AStrEquiv(GetCountry(), idp2.GetCountry(), PNocase()) &&
         Id_Match(GetId(), idp2.GetId());
 }
+
+
+void CId_pat::GetLabel(string* label) const
+{
+    GetLabelContent(label, false, 0, 0, 0, 0, 0,
+        &GetCountry(),
+        GetId().IsNumber() ? &GetId().GetNumber() :
+            (GetId().IsApp_number() ? &GetId().GetApp_number() : 0));
+}
+
 	
 END_objects_SCOPE // namespace ncbi::objects::
 
