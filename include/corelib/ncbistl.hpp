@@ -34,7 +34,7 @@
  */
 
 #include <ncbiconf.h>
-#include <corelib/mswin_export.hpp>
+#include <corelib/mswin_export.h>
 
 
 // Get rid of some warnings in MSVC++ 6.00
@@ -122,6 +122,9 @@ typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/01/07 21:34:05  lavr
+ * mswin_export.hpp -> mswin_export.h
+ *
  * Revision 1.28  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
