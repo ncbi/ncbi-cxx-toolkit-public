@@ -1,3 +1,5 @@
+#include <ncbi_pch.hpp>
+
 /* A Bison parser, made from newick.ypp
    by GNU bison 1.35.  */
 
@@ -45,8 +47,6 @@
  * File Description:  bison parser for Newick format phylogenetic trees
  *
  */
-
-#include <ncbi_pch.hpp>
 
 /*
  * Meant to be used in conjunction with flex lexer defined
@@ -1270,8 +1270,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.4  2005/03/30 20:33:30  jcherry
- * Deal with labels on internal nodes
+ * Revision 1.5  2005/03/30 21:40:38  jcherry
+ * #include <ncbi_pch.hpp> must come before #define's
  *
  * Revision 1.2  2004/05/25 14:42:45  jcherry
  * #include <ncbi_pch.hpp>
