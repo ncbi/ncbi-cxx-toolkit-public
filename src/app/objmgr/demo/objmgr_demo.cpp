@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Aleksey Grichenko
+* Author:  Aleksey Grichenko, Eugene Vasilchenko
 *
 * File Description:
 *   Examples of using the C++ object manager
@@ -320,70 +320,35 @@ int CDemoApp::Run(void)
                 }}
 
                 // setup blob cache
-                CCachedId1Reader* rdr;
-//                string cache_mode = args["cache_mode"].AsString();
-				// unconditionally force "new" cache mode (TODO: clean up)
-				string cache_mode = "new";  
-				
-                if ( cache_mode == "new" ) {
-                    blob_cache.reset(new CBDB_Cache());
-
+                blob_cache.reset(new CBDB_Cache());
+                
+                {{
                     ICache::TTimeStampFlags flags =
                         ICache::fTimeStampOnRead |
                         ICache::fExpireLeastFrequentlyUsed |
                         ICache::fPurgeOnStartup;
                     blob_cache->SetTimeStampPolicy(flags, cache_age*24*60*60);
-
-                    blob_cache->Open(cache_path.c_str(), "blobs");
-
-                    rdr = new CCachedId1Reader(5, blob_cache.get());
-                }
-                else {
-					_ASSERT(0);
-/*					
-                    bdb_cache.reset(new CBDB_BLOB_Cache());
-
-                    bdb_cache->Open(cache_path.c_str());
                     
-                    // Cache cleaning
-                    // Objects age should be assigned in days, negative value
-                    // means cleaning is disabled
-                    if (cache_age) {
-                        CTime time_stamp(CTime::eCurrent);
-                        time_t age = time_stamp.GetTimeT();
-                        
-                        age -= 60 * 60 * 24 * cache_age;
-                        
-                        bdb_cache->Purge(age);
-                    }
-
-                    rdr = new CCachedId1Reader(5, bdb_cache.get());
-*/					
-                }
+                    blob_cache->Open(cache_path.c_str(), "blobs");
+                }}
+                CCachedId1Reader* rdr =
+                    new CCachedId1Reader(5, blob_cache.get());
                 id1_reader.reset(rdr);
 
-                int id_days = args["id_cache_days"].AsInteger();
-                if ( cache_mode != "old" ) {
+                {{
+                    int id_days = args["id_cache_days"].AsInteger();
+                    
                     id_cache.reset(new CBDB_Cache());
-
+                    
                     ICache::TTimeStampFlags flags =
                         ICache::fTimeStampOnCreate|
                         ICache::fCheckExpirationAlways;
                     id_cache->SetTimeStampPolicy(flags, id_days*24*60*60);
-
+                    
                     id_cache->Open((cache_path+"/id").c_str(), "ids");
+                }}
+                rdr->SetIdCache(id_cache.get());
 
-                    rdr->SetIdCache(id_cache.get());
-                }
-                else {
-					_ASSERT(0);
-/*					
-                    bdb_cache->GetIntCache()->
-                        SetExpirationTime(id_days*24*60*60);
-
-                    rdr->SetIdCache(bdb_cache->GetIntCache());
-*/					
-                }
                 LOG_POST(Info << "ID1 cache enabled in " << cache_path);
             }
             catch(CException& e) {
@@ -760,7 +725,7 @@ int CDemoApp::Run(void)
                     NcbiCout << MSerial_AsnText << *it;
                 }
             }
-            NcbiCout << "Align count (whole, any):       " << count << NcbiEndl;
+            NcbiCout << "Align count (whole, any):       " <<count<<NcbiEndl;
         }
     }
 
@@ -787,6 +752,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2004/06/30 22:15:20  vasilche
+* Removed obsolete code for old blob cache interface.
+*
 * Revision 1.68  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *
