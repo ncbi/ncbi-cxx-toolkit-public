@@ -60,8 +60,7 @@ typedef struct PsiDesc {
 
 typedef struct PsiInfo {
     Uint4 query_sz;  /**< Size of the query */
-    Uint4 num_seqs;  /**< Number of sequences in involved w/o including
-                                 the query */
+    Uint4 num_seqs;  /**< Number of distinct sequences aligned with the query */
 } PsiInfo;
 
 /** This structure is to be populated at the API level from the Seq-aligns */
@@ -80,7 +79,8 @@ typedef struct PsiAlignmentData {
                                   num_seqs + 1. */
     Boolean* use_sequences;  /**< Determines if sequences must be used or not.
                                   This dynamically allocated array has a length
-                                  of num_seqs + 1. */
+                                  of num_seqs + 1 (the additional element is
+                                  for the query) */
 
     PsiInfo* dimensions;     /**< Dimensions of the multiple sequence alignment
                                (query size by number of sequences aligned + 1
@@ -127,9 +127,11 @@ PSIMatrixFree(PsiMatrix* matrix);
  * creating a PSSM.
  */
 typedef struct PsiDiagnostics {
-    double** info_content;
-    Uint4 ncols;     /**< Number of columns in the matrix above
-                                 (query size+1) */
+    double* gapless_column_weights; /**< collected while calculating sequence
+                                      weights */
+
+    double* info_content;       /**< position information content (query_sz)*/
+
     /* FIXME: add sequence weights */
 } PsiDiagnostics;
 
