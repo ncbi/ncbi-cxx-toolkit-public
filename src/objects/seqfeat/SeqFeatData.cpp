@@ -39,9 +39,10 @@
 // generated includes
 #include <ncbi_pch.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
-
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
+#include <objects/seq/Pubdesc.hpp>
+#include <objects/general/User_object.hpp>
 
 #include <algorithm>
 #include <util/static_map.hpp>
@@ -1747,8 +1748,25 @@ START_SUBTYPE(comment)  // same as misc_feature
     ADD_QUAL(usedin);
 END_SUBTYPE
 
-//START_SUBTYPE(bond)
-//END_SUBTYPE
+START_SUBTYPE(bond)  // same as misc_feature
+    ADD_QUAL(allele);
+    ADD_QUAL(citation);
+    ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
+    ADD_QUAL(function);
+    ADD_QUAL(gene);
+    ADD_QUAL(label);
+    ADD_QUAL(locus_tag);
+    ADD_QUAL(map);
+    ADD_QUAL(note);
+    ADD_QUAL(number);
+    ADD_QUAL(old_locus_tag);
+    ADD_QUAL(phenotype);
+    ADD_QUAL(product);
+    ADD_QUAL(pseudo);
+    ADD_QUAL(standard_name);
+    ADD_QUAL(usedin);
+END_SUBTYPE
 
 START_SUBTYPE(site)  //  same as misc_feature
     ADD_QUAL(allele);
@@ -1782,14 +1800,48 @@ END_SUBTYPE
 //START_SUBTYPE(num)
 //END_SUBTYPE
 
-//START_SUBTYPE(psec_str)
-//END_SUBTYPE
+START_SUBTYPE(psec_str)  //  same as misc_feature
+    ADD_QUAL(allele);
+    ADD_QUAL(citation);
+    ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
+    ADD_QUAL(function);
+    ADD_QUAL(gene);
+    ADD_QUAL(label);
+    ADD_QUAL(locus_tag);
+    ADD_QUAL(map);
+    ADD_QUAL(note);
+    ADD_QUAL(number);
+    ADD_QUAL(old_locus_tag);
+    ADD_QUAL(phenotype);
+    ADD_QUAL(product);
+    ADD_QUAL(pseudo);
+    ADD_QUAL(standard_name);
+    ADD_QUAL(usedin);
+END_SUBTYPE
 
 //START_SUBTYPE(non_std_residue)
 //END_SUBTYPE
 
-//START_SUBTYPE(het)
-//END_SUBTYPE
+START_SUBTYPE(het)  //  same as misc_feature
+    ADD_QUAL(allele);
+    ADD_QUAL(citation);
+    ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
+    ADD_QUAL(function);
+    ADD_QUAL(gene);
+    ADD_QUAL(label);
+    ADD_QUAL(locus_tag);
+    ADD_QUAL(map);
+    ADD_QUAL(note);
+    ADD_QUAL(number);
+    ADD_QUAL(old_locus_tag);
+    ADD_QUAL(phenotype);
+    ADD_QUAL(product);
+    ADD_QUAL(pseudo);
+    ADD_QUAL(standard_name);
+    ADD_QUAL(usedin);
+END_SUBTYPE
 
 //START_SUBTYPE(biosrc)
 //END_SUBTYPE
@@ -1921,7 +1973,6 @@ const string& CSeqFeatData::GetQulifierAsString(EQualifier qual)
     return (iter != sc_QualPairs.end()) ? iter->second : kEmptyStr;
 }
 
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -1930,6 +1981,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.19  2004/10/18 17:43:33  shomrat
+* Added legal qualifiers for bond, psec_str and het feature types
+*
 * Revision 6.18  2004/08/24 16:05:19  shomrat
 * Added operon qual to otherRNA
 *
