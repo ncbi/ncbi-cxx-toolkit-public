@@ -137,6 +137,7 @@ enum EErrType {
     eErr_SEQ_INST_TerminalNs,
     eErr_SEQ_INST_UnexpectedIdentifierChange,
     eErr_SEQ_INST_InternalNsInSeqLit,
+    eErr_SEQ_INST_SeqLitGapLength0,
 
     eErr_SEQ_DESCR_BioSourceMissing,
     eErr_SEQ_DESCR_InvalidForType,
@@ -895,6 +896,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2003/10/27 14:14:11  shomrat
+* added eErr_SEQ_INST_SeqLitGapLength0
+*
 * Revision 1.45  2003/10/24 17:56:07  shomrat
 * added ValidateOperon
 *
