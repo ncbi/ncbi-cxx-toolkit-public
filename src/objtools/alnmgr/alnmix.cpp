@@ -301,6 +301,17 @@ void CAlnMix::Add(const CDense_seg &ds)
                                     GetSeqData(start2, start2 + len, s2);
                             }
 
+                            //verify that we were able to load all data
+                            if (s1.length() != len || s2.length() != len) {
+                                string errstr = string("CAlnMix::Add(): ")
+                                    + "Unable to load data for segment "
+                                    + NStr::IntToString(seg) +
+                                    ", rows " + NStr::IntToString(row1) +
+                                    " and " + NStr::IntToString(row2);
+                                NCBI_THROW(CAlnException, eInvalidSegment,
+                                           errstr);
+                            }
+
                             match->m_Score = 
                                 CAlnVec::CalculateScore
                                 (s1, s2, aln_seq1->m_IsAA, aln_seq2->m_IsAA);
@@ -1242,6 +1253,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2003/03/05 16:18:17  todorov
+* + str len err check
+*
 * Revision 1.31  2003/02/24 19:01:31  vasilche
 * Use faster version of CSeq_id::Assign().
 *

@@ -515,6 +515,18 @@ static map<char, map<char, int> >  s_AlnVecBlosum62Map;
 int CAlnVec::CalculateScore(const string& s1, const string& s2,
                             bool s1_is_prot, bool s2_is_prot)
 {
+    // check the lengths
+    if (s1_is_prot == s2_is_prot  &&  s1.length() != s2.length()) {
+        NCBI_THROW(CAlnException, eInvalidRequest,
+                   "CAlnVec::CalculateScore(): "
+                   "Strings should have equal lenghts.");
+    } else if (s1.length() * (s1_is_prot ? 1 : 3) !=
+               s1.length() * (s1_is_prot ? 1 : 3)) {
+        NCBI_THROW(CAlnException, eInvalidRequest,
+                   "CAlnVec::CalculateScore(): "
+                   "Strings lengths do not match.");
+    }        
+
     int score = 0;
 
     const char * res1 = s1.c_str();
@@ -548,7 +560,7 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
             }
         }
     } else {
-        NCBI_THROW(CAlnException, eMergeFailure,
+        NCBI_THROW(CAlnException, eInvalidRequest,
                    "CAlnVec::CalculateScore(): "
                    "Mixing prot and nucl not implemented yet.");
     }
@@ -618,6 +630,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2003/03/05 16:18:17  todorov
+* + str len err check
+*
 * Revision 1.22  2003/02/11 21:32:44  todorov
 * fMinGap optional merging algorithm
 *
