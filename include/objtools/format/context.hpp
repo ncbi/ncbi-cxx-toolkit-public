@@ -37,18 +37,18 @@
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
-#include <objects/seq/Seq_ext.hpp>
-#include <objects/seq/Seg_ext.hpp>
 #include <objects/seq/MolInfo.hpp>
-#include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/submit/Submit_block.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/annot_selector.hpp>
-#include <objmgr/scope.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
 
-#include <objtools/format/flat_file_flags.hpp>
+#include <util/range.hpp>
+
+#include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/items/reference_item.hpp>
 
 #include <memory>
@@ -56,100 +56,97 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CFFContext;
+class CScope;
+class CMasterContext;
+class CFlatFileContext;
 
 
-// When formatting segmented bioseq CMasterContext holds information
-// on the Master bioseq.
-class CMasterContext : public CObject
-{
-public:
-    CMasterContext(const CBioseq_Handle& h, CFFContext& ctx);
-    ~CMasterContext(void);
-
-    //const CBioseq& GetBioseq(void) const { return *m_Seq; }
-    const CBioseq_Handle& GetHandle(void) const { return m_Handle; }
-    //const CBioseq_Handle& GetHandle(void) const { return m_Handle; }
-    SIZE_TYPE GetNumSegments(void) const;
-    const string& GetBaseName(void) const { return m_BaseName; }
-
-    SIZE_TYPE GetPartNumber(const CBioseq_Handle& seq) const;
-
-private:
-    void x_SetBaseName(void);
-
-    // data
-    string             m_BaseName;
-    CBioseq_Handle     m_Handle;
-    //CConstRef<CBioseq> m_Seq;
-    mutable CFFContext*   m_Ctx;
-};
-
-
+/////////////////////////////////////////////////////////////////////////////
+//
+// CBioseqContext
+//
 // information on the bioseq being formatted
+
 class CBioseqContext : public CObject
 {
 public:
     // types
-    typedef CRef<CReferenceItem> TRef;
-    typedef vector<TRef> TReferences;
+    typedef CRef<CReferenceItem>    TRef;
+    typedef vector<TRef>            TReferences;
+    typedef CRange<TSeqPos>         TRange;
 
-    CBioseqContext(const CBioseq_Handle& seq, CFFContext& ctx);
-    //const CBioseq_Handle& GetHandle(void);
-    const CBioseq_Handle& GetHandle(void) const;
+    // constructor
+    CBioseqContext(const CBioseq_Handle& seq, CFlatFileContext& ffctx,
+        CMasterContext* mctx = 0);
+    // destructor
+    ~CBioseqContext(void);
 
-    SIZE_TYPE GetNumSegments(void) const;
+    // Get the bioseq's handle
+    CBioseq_Handle& GetHandle(void) { return m_Handle; }
+    CScope& GetScope(void) { return m_Handle.GetScope(); }
 
-    bool IsPart(void) const;
-    SIZE_TYPE GetPartNumber(void) const;
+    // -- id information
+    CSeq_id* GetPrimaryId(void) { return m_PrimaryId; }
+    const CSeq_id& GetPreferredSynonym(const CSeq_id& id) const;
+    const string& GetAccession(void) const { return m_Accession; }
+    int  GetGI(void) const { return m_Gi; }
+    
+    // molecular type (nucleotide / protein)
+    bool IsProt(void) const { return m_IsProt;  }
+    bool IsNuc (void) const { return !m_IsProt; }
+
+    CSeq_inst::TRepr  GetRepr   (void) const { return m_Repr;    }
+    CSeq_inst::TMol   GetMol    (void) const { return m_Mol;     }
+    const CMolInfo*   GetMolinfo(void) const { return m_Molinfo; }
+    CMolInfo::TTech   GetTech   (void) const;
+    CMolInfo::TBiomol GetBiomol (void) const;
+    const CBioseq::TId& GetBioseqIds(void) const;
+
+    // segmented bioseq
+    bool IsSegmented(void) const { return m_Repr == CSeq_inst::eRepr_seg; }
+    bool HasParts(void) const { return m_HasParts; }
+    
+    // part of a segmented bioseq
+    bool IsPart(void) const { return m_IsPart; }
+    SIZE_TYPE GetPartNumber   (void) const { return m_PartNumber; }
+    SIZE_TYPE GetTotalNumParts(void) const;
+    CMasterContext& GetMaster (void) { return *m_Master; }
+    void SetMaster(CMasterContext& mctx) { m_Master.Reset(&mctx); }
+
+    // delta sequence
+    bool IsDelta(void) const { return m_Repr == CSeq_inst::eRepr_delta; }
+    bool IsDeltaLitOnly(void) const { return m_IsDeltaLitOnly; }
+
+    // Whole Genome Shotgun
+    bool IsWGS      (void) const { return m_IsWGS;       }
+    bool IsWGSMaster(void) const { return m_IsWGSMaster; }
+    const string& GetWGSMasterAccn(void) const { return m_WGSMasterAccn; }
+    const string& GetWGSMasterName(void) const { return m_WGSMasterName; }
+
+    TReferences& SetReferences(void) { return m_References; }
+    const TReferences& GetReferences(void) const { return m_References; }
+
+    // range on the bioseq to be formatted. the location is either
+    // whole or an interval (no complex locations allowed)
+    const CSeq_loc& GetLocation(void) const { return *m_Location; }
+    CSeq_loc_Mapper* GetMapper(void) { return m_Mapper; }
 
     bool DoContigStyle(void) const;
+    bool ShowGBBSource(void) const { return m_ShowGBBSource; }
+
+    bool IsInGPS(void) const { return m_IsInGPS; }  // Is in a gene-prod set?
+
+    // type of bioseq?
+    bool IsGED            (void) const { return m_IsGED; }  // Genbank, EMBL or DDBJ
+    bool IsPDB            (void) const { return m_IsPDB; }
+    bool IsSP             (void) const { return m_IsSP;  }  // SwissProt
+    bool IsTPA            (void) const { return m_IsTPA; }  // Third-Party Annotation
+    bool IsPatent         (void) const { return m_IsPatent; }
+    bool IsGbGenomeProject(void) const { return m_IsGbGenomeProject; } // AE
+    bool IsNcbiCONDiv     (void) const { return m_IsNcbiCONDiv; }      // CH
     
-    bool IsProt(void) const;
-    CSeq_inst::TRepr  GetRepr  (void) const;
-    CMolInfo::TTech   GetTech  (void) const;
-    CMolInfo::TBiomol GetBiomol(void) const;
-    CSeq_inst::TMol   GetMol   (void) const;
-
-    bool IsSegmented(void) const;
-    bool HasParts(void) const;
-
-    bool IsDelta(void) const;
-    bool IsDeltaLitOnly(void) const;
-
-    const string& GetAccession(void) const; // ???
-    CSeq_id* GetPrimaryId(void);
-    const CSeq_id* GetPrimaryId(void) const;
-
-    int  GetGI(void) const;
-    const string& GetWGSMasterAccn(void) const;
-    const string& GetWGSMasterName(void) const;
-
-    TReferences& SetReferences(void);
-    const TReferences& GetReferences(void) const;
-
-    const CSeq_id& GetPreferredSynonym(const CSeq_id& id) const;
-
-    const CSeq_loc* GetLocation(void) const;
-    void SetLocation(const CSeq_loc* loc);
-
-    bool ShowGBBSource(void) const;
-    bool IsGPS(void) const;  // Is embeded in a gene-prod set?
-
-    // ID queries
-    bool IsGED(void) const;  // Genbank, EMBL or DDBJ
-    bool IsPDB(void) const;
-    bool IsSP (void) const;  // SwissProt
-    bool IsTPA(void) const;  // Third-Party Annotation
-    bool IsPatent(void) const;
-    bool IsGbGenomeProject(void) const; // AE
-    bool IsNcbiCONDiv(void) const;      // CH
-    bool IsGI(void) const;
-    bool IsWGS(void) const;
-    bool IsWGSMaster(void) const;
-    bool IsHup(void) const;  // ??? should move to global
     // RefSeq ID queries
-    bool IsRefSeq(void) const;
+    bool IsRefSeq(void) const { return m_IsRefSeq; }
     bool IsRSCompleteGenomic  (void) const;  // NC_
     bool IsRSIncompleteGenomic(void) const;  // NG_
     bool IsRSMRna             (void) const;  // NM_
@@ -163,1104 +160,169 @@ public:
     bool IsRSWGSNuc           (void) const;  // NZ_
     bool IsRSWGSProt          (void) const;  // ZP_
     
+    bool IsHup(void) const { return m_IsHup; }  // !!! should move to global?
+    // global data from CFlatFileContext
+    const CSubmit_block* GetSubmitBlock(void) const;
+    const CSeq_entry_Handle& GetEntry(void) const;
+    const CFlatFileConfig& Config(void) const;
+    const SAnnotSelector* GetAnnotSelector(void) const;
+    const CSeq_loc* GetMasterLocation(void) const;
+
 private:
-    //SIZE_TYPE  x_CountSegs(const CBioseq_Handle& seq) const;
+    void x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc);
+    void x_SetId(void);
     bool x_HasParts(void) const;
     bool x_IsDeltaLitOnly(void) const;
     bool x_IsPart(void) const;
     CBioseq_Handle x_GetMasterForPart(void) const;
-    SIZE_TYPE x_GetPartNumber(const CBioseq_Handle& seq) const;
-    bool x_IsGPS(void) const;
+    SIZE_TYPE x_GetPartNumber(void);
+    bool x_IsInGPS(void) const;
+    void x_SetLocation(const CSeq_loc* user_loc = 0);
     
-    
-    void x_SetId(void);
-    void x_SetAccession(const CBioseq& seq);
-
-    CSeq_inst::TRepr x_GetRepr(const CBioseq_Handle& seq) const;
-    const CMolInfo*  x_GetMolinfo(void);
+    CSeq_inst::TRepr x_GetRepr(void) const;
+    const CMolInfo* x_GetMolInfo(void) const;
 
     // data
     CBioseq_Handle        m_Handle;
-    CSeq_inst::TRepr      m_Repr;
-    CConstRef<CMolInfo>   m_Molinfo;
-    CSeq_inst::TMol       m_Mol;
-    string                m_Accession;  // !!! should be string& ?
     CRef<CSeq_id>         m_PrimaryId;
+    string                m_Accession;
     string                m_WGSMasterAccn;
     string                m_WGSMasterName;
-    TReferences           m_References;
 
-    SIZE_TYPE   m_SegsCount;     // # of segments (set iff bioseq is segmented)
+    CSeq_inst::TRepr      m_Repr;
+    CSeq_inst::TMol       m_Mol;
+    CConstRef<CMolInfo>   m_Molinfo; 
+
+    // segmented bioseq
+    bool        m_HasParts;
+    // part of a segmented bioseq
     bool        m_IsPart;
     SIZE_TYPE   m_PartNumber;
-    bool        m_HasParts;
+    // delta bioseq
     bool        m_IsDeltaLitOnly;
 
     bool m_IsProt;  // Protein
-    bool m_IsGPS;   // Gene-Prod Set
+    bool m_IsInGPS; // Gene-Prod Set
     bool m_IsGED;   // Genbank, Embl or Ddbj
     bool m_IsPDB;
     bool m_IsSP;    // SwissProt
     bool m_IsTPA;   // Third Party Annotation
     bool m_IsRefSeq;
     unsigned int m_RefseqInfo;
-    bool m_IsGbGenomeProject;       // GenBank Genome project data
-    bool m_IsNcbiCONDiv;            // NCBI CON division
+    bool m_IsGbGenomeProject;  // GenBank Genome project data
+    bool m_IsNcbiCONDiv;       // NCBI CON division
     bool m_IsPatent;
     bool m_IsGI;
     bool m_IsWGS;
     bool m_IsWGSMaster;
     bool m_IsHup;
-    int  m_GI;
+    int  m_Gi;
     bool m_ShowGBBSource;
     
+    TReferences             m_References;
     CConstRef<CSeq_loc>     m_Location;
-    mutable CFFContext*     m_Ctx;
-    const CMasterContext*   m_Master;
-};
-
-
-// FlatContext
-
-class CFFContext : public CObject
-{
-public:
- 
-    // types
-    typedef CBioseqContext::TRef              TRef;
-    typedef CBioseqContext::TReferences       TReferences;
-
-    // constructor
-    CFFContext(CScope& scope, TFormat format, TMode mode, TStyle style,
-        TView view, TFlatFileFlags flags);
-
-    // destructor
-    ~CFFContext(void);
-
-    TFormat GetFormat(void) const;
-    void SetFormat(TFormat format);
-    bool IsFormatGenBank(void) const {
-        return GetFormat() == eFormat_GenBank;
-    }
-    bool IsFormatEMBL   (void) const {
-        return GetFormat() == eFormat_EMBL;
-    }
-    bool IsFormatDDBJ   (void) const {
-        return GetFormat() == eFormat_DDBJ;
-    }
-    bool IsFormatGBSeq  (void) const {
-        return GetFormat() == eFormat_GBSeq;
-    }
-    bool IsFormatFTable (void) const {
-        return GetFormat() == eFormat_FTable;
-    }
-
-    TMode GetMode(void) const;
-    void SetMode(TMode mode);
-    bool IsModeRelease(void) const {
-        return GetMode() == eMode_Release;
-    }
-    bool IsModeEntrez (void) const {
-        return GetMode() == eMode_Entrez;
-    }
-    bool IsModeGBench (void) const {
-        return GetMode() == eMode_GBench;
-    }
-    bool IsModeDump   (void) const {
-        return GetMode() == eMode_Dump;
-    }
-
-    TStyle GetStyle(void) const;
-    void SetStyle(TStyle style);
-    bool IsStyleNormal (void) const {
-        return GetStyle() == eStyle_Normal;
-    }
-    bool IsStyleSegment(void) const {
-        return GetStyle() == eStyle_Segment;
-    }
-    bool IsStyleMaster (void) const {
-        return GetStyle() == eStyle_Master;
-    }
-    bool IsStyleContig (void) const {
-        return GetStyle() == eStyle_Contig;
-    }
-    bool DoContigStyle(void);
-
-    //TFilter GetFilterFlags(void) const;
-    //void SetFilterFlags(TFilter filter_flags);
-    TView GetView(void) const;
-    void SetView(TView view);
-    bool ViewNuc(void) const  { return (m_View & fViewNucleotides) != 0; }
-    bool ViewProt(void) const { return (m_View & fViewProteins) != 0; }
-
-    const CSeq_entry_Handle& GetTSE(void) const;
-    void SetTSE(const CSeq_entry_Handle& tse);
-
-    const CBioseq& GetActiveBioseq(void) const;
-    void SetActiveBioseq(const CBioseq_Handle& seq);
-
-    const CBioseq* GetMasterBioseq(void) const;
-    void SetMasterBioseq(const CBioseq_Handle& master);
-
-    const CSeq_loc* GetLocation(void) const;
-    void SetLocation(const CSeq_loc* loc);
-    
-    CScope& GetScope (void);
-    void SetScope(CScope& scope);
-
-    const CSubmit_block* GetSeqSubmit(void) const;
-    void SetSubmit(const CSubmit_block& sub);
-
-    const CBioseq_Handle& GetHandle(void) const;
-    //const CBioseq_Handle& GetHandle(void) const;
-    void SetHandle(CBioseq_Handle& handle);
-
-    const string& GetAccession(void) const;
-    const string& GetWGSMasterAccn(void) const;
-    const string& GetWGSMasterName(void) const;
-    CSeq_id* GetPrimaryId(void);
-    const CSeq_id* GetPrimaryId(void) const;
-    int  GetGI(void) const;
-    const CSeq_id& GetPreferredSynonym(const CSeq_id& id) const;
-    CSeq_inst::TRepr  GetRepr  (void) const;
-    CMolInfo::TTech   GetTech  (void) const;
-    CMolInfo::TBiomol GetBiomol(void) const;
-    CSeq_inst::TMol   GetMol   (void) const;
-    TReferences& SetReferences(void);
-    const TReferences& GetReferences(void) const;
-
-    bool IsSegmented(void) const;
-    bool HasParts(void) const;
-    SIZE_TYPE GetNumParts(void) const;
-
-    bool IsDelta(void) const;
-    bool IsDeltaLitOnly(void) const;
-
-    bool IsPart(void) const;
-    SIZE_TYPE GetPartNumber(void) const;
-
-    // flags calculated by examining data in record
-    bool IsProt(void) const;
-    bool IsNa(void) const { return !IsProt(); }
-    bool IsGED(void) const;  // Genbank, EMBL or DDBJ
-    bool IsPDB(void) const;
-    bool IsSP (void) const;  // SwissProt
-    bool IsTPA(void) const;  // Third-Party Annotation
-    bool IsPatent(void) const;
-    bool IsGbGenomeProject(void) const; // AE
-    bool IsNcbiCONDiv(void) const;      // CH
-    bool IsGI(void) const;
-    bool IsWGS(void) const;
-    bool IsWGSMaster(void) const;
-    bool IsHup(void) const;  // ??? should move to global
-    // RefSeq ID queries
-    bool IsRefSeq(void) const;
-    bool IsRSCompleteGenomic  (void) const;  // NC_
-    bool IsRSIncompleteGenomic(void) const;  // NG_
-    bool IsRSMRna             (void) const;  // NM_
-    bool IsRSNonCodingRna     (void) const;  // NR_
-    bool IsRSProtein          (void) const;  // NP_
-    bool IsRSContig           (void) const;  // NT_
-    bool IsRSIntermedWGS      (void) const;  // NW_
-    bool IsRSPredictedMRna    (void) const;  // XM_
-    bool IsRSPredictedNCRna   (void) const;  // XR_
-    bool IsRSPredictedProtein (void) const;  // XP_
-    bool IsRSWGSNuc           (void) const;  // NZ_
-    bool IsRSWGSProt          (void) const;  // ZP_
-    
-    const CMasterContext* Master(void) const { return m_Master; }
-    const CBioseqContext* Bioseq(void) const { return m_Bioseq; }
-
-    const SAnnotSelector* GetAnnotSelector(void) const;
-    SAnnotSelector* SetAnnotSelector(void);
-    void SetAnnotSelector(const SAnnotSelector&);
-
-    // flags
-    bool SuppressLocalId   (void) const { return x_Flags().SuppressLocalId();    }
-    bool ValidateFeats     (void) const { return x_Flags().ValidateFeats();      }
-    bool IgnorePatPubs     (void) const { return x_Flags().IgnorePatPubs();      }
-    bool DropShortAA       (void) const { return x_Flags().DropShortAA();        }
-    bool AvoidLocusColl    (void) const { return x_Flags().AvoidLocusColl();     }
-    bool IupacaaOnly       (void) const { return x_Flags().IupacaaOnly();        }
-    bool DropBadCitGens    (void) const { return x_Flags().DropBadCitGens();     }
-    bool NoAffilOnUnpub    (void) const { return x_Flags().NoAffilOnUnpub();     }
-    bool DropIllegalQuals  (void) const { return x_Flags().DropIllegalQuals();   }
-    bool CheckQualSyntax   (void) const { return x_Flags().CheckQualSyntax();    }
-    bool NeedRequiredQuals (void) const { return x_Flags().NeedRequiredQuals();  }
-    bool NeedOrganismQual  (void) const { return x_Flags().NeedOrganismQual();   }
-    bool NeedAtLeastOneRef (void) const { return x_Flags().NeedAtLeastOneRef();  }
-    bool CitArtIsoJta      (void) const { return x_Flags().CitArtIsoJta();       }
-    bool DropBadDbxref     (void) const { return x_Flags().DropBadDbxref();      }
-    bool UseEmblMolType    (void) const { return x_Flags().UseEmblMolType();     }
-    bool HideBankItComment (void) const { return x_Flags().HideBankItComment();  }
-    bool CheckCDSProductId (void) const { return x_Flags().CheckCDSProductId();  }
-    bool SuppressSegLoc    (void) const { return x_Flags().SuppressSegLoc();     }
-    bool SrcQualsToNote    (void) const { return x_Flags().SrcQualsToNote();     }
-    bool HideEmptySource   (void) const { return x_Flags().HideEmptySource();    }
-    bool GoQualsToNote     (void) const { return x_Flags().GoQualsToNote();      }
-    bool GeneSynsToNote    (void) const { return x_Flags().GeneSynsToNote();     }
-    bool SelenocysteineToNote(void) const { return x_Flags().SelenocysteineToNote(); }
-    bool ForGBRelease      (void) const { return x_Flags().ForGBRelease();       }
-    bool HideUnclassPartial(void) const { return x_Flags().HideUnclassPartial(); }
-
-    bool HideImpFeats       (void) const { return x_Flags().HideImpFeats();        }
-    bool HideSnpFeats       (void) const { return x_Flags().HideSnpFeats();        }
-    bool HideExonFeats      (void) const { return x_Flags().HideExonFeats();       }
-    bool HideIntronFeats    (void) const { return x_Flags().HideIntronFeats();     }
-    bool HideRemImpFeats    (void) const { return x_Flags().HideRemImpFeats();     }
-    bool HideGeneRIFs       (void) const { return x_Flags().HideGeneRIFs();        }
-    bool OnlyGeneRIFs       (void) const { return x_Flags().OnlyGeneRIFs();        }
-    bool HideCDSProdFeats   (void) const { return x_Flags().HideCDSProdFeats();    }
-    bool HideCDDFeats       (void) const { return x_Flags().HideCDDFeats();        }
-    bool LatestGeneRIFs     (void) const { return x_Flags().LatestGeneRIFs();      }
-    bool ShowContigFeatures (void) const { return x_Flags().ShowContigFeatures();  }
-    bool ShowContigSources  (void) const { return x_Flags().ShowContigSources();   }
-    bool ShowContigAndSeq   (void) const { return x_Flags().ShowContigAndSeq();    }
-    bool CopyGeneToCDNA     (void) const { return x_Flags().CopyGeneToCDNA();      }
-    bool CopyCDSFromCDNA    (void) const { return x_Flags().CopyCDSFromCDNA();     }
-    bool HideSourceFeats    (void) const { return x_Flags().HideSourceFeats();     }
-    bool AlwaysTranslateCDS (void) const { return x_Flags().AlwaysTranslateCDS();  }
-    bool ShowFarTranslations(void) const { return x_Flags().ShowFarTranslations(); }
-    bool TranslateIfNoProd  (void) const { return x_Flags().TranslateIfNoProd();   }
-    bool ShowTranscript     (void) const { return x_Flags().ShowTranscript();      }
-    bool ShowPeptides       (void) const { return x_Flags().ShowPeptides();        }
-    bool ShowFtableRefs     (void) const { return x_Flags().ShowFtableRefs();      }
-    bool OldFeatsOrder      (void) const { return x_Flags().OldFeatsOrder();       }
-    bool DoHtml             (void) const { return x_Flags().DoHtml();              }
-
-    bool ShowGBBSource(void) const;
-    bool IsGPS(void) const;
-
-private:
-
-    class CFlags : public CObject
-    {
-    public:
-        CFlags(TMode mode, TFlatFileFlags flags);
-        
-        // mode dependant flags
-        bool SuppressLocalId     (void) const { return m_SuppressLocalId;       }
-        bool ValidateFeats       (void) const { return m_ValidateFeats;        }
-        bool IgnorePatPubs       (void) const { return m_IgnorePatPubs;        }
-        bool DropShortAA         (void) const { return m_DropShortAA;          }
-        bool AvoidLocusColl      (void) const { return m_AvoidLocusColl;       }
-        bool IupacaaOnly         (void) const { return m_IupacaaOnly;          }
-        bool DropBadCitGens      (void) const { return m_DropBadCitGens;       }
-        bool NoAffilOnUnpub      (void) const { return m_NoAffilOnUnpub;       }
-        bool DropIllegalQuals    (void) const { return m_DropIllegalQuals;     }
-        bool CheckQualSyntax     (void) const { return m_CheckQualSyntax;      }
-        bool NeedRequiredQuals   (void) const { return m_NeedRequiredQuals;    }
-        bool NeedOrganismQual    (void) const { return m_NeedOrganismQual;     }
-        bool NeedAtLeastOneRef   (void) const { return m_NeedAtLeastOneRef;    }
-        bool CitArtIsoJta        (void) const { return m_CitArtIsoJta;         }
-        bool DropBadDbxref       (void) const { return m_DropBadDbxref;        }
-        bool UseEmblMolType      (void) const { return m_UseEmblMolType;       }
-        bool HideBankItComment   (void) const { return m_HideBankItComment;    }
-        bool CheckCDSProductId   (void) const { return m_CheckCDSProductId;    }
-        bool SuppressSegLoc      (void) const { return m_SuppressSegLoc;       }
-        bool SrcQualsToNote      (void) const { return m_SrcQualsToNote;       }
-        bool HideEmptySource     (void) const { return m_HideEmptySource;      }
-        bool GoQualsToNote       (void) const { return m_GoQualsToNote;        }
-        bool GeneSynsToNote      (void) const { return m_GeneSynsToNote;       }
-        bool SelenocysteineToNote(void) const { return m_SelenocysteineToNote; }
-        bool ForGBRelease        (void) const { return m_ForGBRelease;         }
-        bool HideUnclassPartial  (void) const { return m_HideUnclassPartial;   }
-
-        // custumizable flags
-        bool HideImpFeats       (void) const { return m_HideImpFeats;        }
-        bool HideSnpFeats       (void) const { return m_HideSnpFeats;        }
-        bool HideExonFeats      (void) const { return m_HideExonFeats;       }
-        bool HideIntronFeats    (void) const { return m_HideIntronFeats;     }
-        bool HideRemImpFeats    (void) const { return m_HideRemImpFeats;     }
-        bool HideGeneRIFs       (void) const { return m_HideGeneRIFs;        }
-        bool OnlyGeneRIFs       (void) const { return m_OnlyGeneRIFs;        }
-        bool HideCDSProdFeats   (void) const { return m_HideCDSProdFeats;    }
-        bool HideCDDFeats       (void) const { return m_HideCDDFeats;        }
-        bool LatestGeneRIFs     (void) const { return m_LatestGeneRIFs;      }
-        bool ShowContigFeatures (void) const { return m_ShowContigFeatures;  }
-        bool ShowContigSources  (void) const { return m_ShowContigSources;   }
-        bool ShowContigAndSeq   (void) const { return m_ShowContigAndSeq;    }
-        bool CopyGeneToCDNA     (void) const { return m_CopyGeneToCDNA;      }
-        bool CopyCDSFromCDNA    (void) const { return m_CopyCDSFromCDNA;     }
-        bool HideSourceFeats    (void) const { return m_HideSourceFeats;     }
-        bool AlwaysTranslateCDS (void) const { return m_AlwaysTranslateCDS;  }
-        bool ShowFarTranslations(void) const { return m_ShowFarTranslations; }
-        bool TranslateIfNoProd  (void) const { return m_TranslateIfNoProd;   }
-        bool ShowTranscript     (void) const { return m_ShowTranscript;      }
-        bool ShowPeptides       (void) const { return m_ShowPeptides;        }
-        bool ShowFtableRefs     (void) const { return m_ShowFtableRefs;      }
-        bool OldFeatsOrder      (void) const { return m_OldFeatsOrder;       }
-        bool DoHtml             (void) const { return m_DoHtml;              }
-        
-    private:
-        // setup
-        void x_SetReleaseFlags(void);
-        void x_SetEntrezFlags(void);
-        void x_SetGBenchFlags(void);
-        void x_SetDumpFlags(void);
-
-        // flags
-        bool m_SuppressLocalId;
-        bool m_ValidateFeats;
-        bool m_IgnorePatPubs;
-        bool m_DropShortAA;
-        bool m_AvoidLocusColl;
-        bool m_IupacaaOnly;
-        bool m_DropBadCitGens;
-        bool m_NoAffilOnUnpub;
-        bool m_DropIllegalQuals;
-        bool m_CheckQualSyntax;
-        bool m_NeedRequiredQuals;
-        bool m_NeedOrganismQual;
-        bool m_NeedAtLeastOneRef;
-        bool m_CitArtIsoJta;
-        bool m_DropBadDbxref;
-        bool m_UseEmblMolType;
-        bool m_HideBankItComment;
-        bool m_CheckCDSProductId;
-        bool m_SuppressSegLoc;
-        bool m_SrcQualsToNote;
-        bool m_HideEmptySource;
-        bool m_GoQualsToNote;
-        bool m_GeneSynsToNote;
-        bool m_SelenocysteineToNote;
-        bool m_ForGBRelease;
-        bool m_HideUnclassPartial;   // hide unclassified partial
-
-        // custom flags
-        bool m_HideImpFeats;
-        bool m_HideSnpFeats;
-        bool m_HideExonFeats;
-        bool m_HideIntronFeats;
-        bool m_HideRemImpFeats;
-        bool m_HideGeneRIFs;
-        bool m_OnlyGeneRIFs;
-        bool m_HideCDSProdFeats;
-        bool m_HideCDDFeats;
-        bool m_LatestGeneRIFs;
-        bool m_ShowContigFeatures;
-        bool m_ShowContigSources;
-        bool m_ShowContigAndSeq;
-        bool m_CopyGeneToCDNA;
-        bool m_CopyCDSFromCDNA;
-        bool m_HideSourceFeats;
-        bool m_AlwaysTranslateCDS;
-        bool m_ShowFarTranslations;
-        bool m_TranslateIfNoProd;
-        bool m_ShowTranscript;
-        bool m_ShowPeptides;
-        bool m_ShowFtableRefs;
-        bool m_OldFeatsOrder;
-        bool m_DoHtml;
-    };
-
-    const CFlags& x_Flags(void) const { return m_Flags; }
-
-    // data
-    TFormat          m_Format;
-    TMode            m_Mode;
-    TStyle           m_Style;
-    TView            m_View;
-    CFlags           m_Flags;
-
-    CSeq_entry_Handle        m_TSE;
-    CRef<CScope  >           m_Scope;
-    CConstRef<CSubmit_block> m_SeqSub;
-    
-    CRef<CMasterContext> m_Master;
-    CRef<CBioseqContext> m_Bioseq;
-
-    auto_ptr<SAnnotSelector>    m_Selector;
+    CRef<CSeq_loc_Mapper>   m_Mapper;
+    CFlatFileContext&       m_FFCtx;
+    CRef<CMasterContext>    m_Master;
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// CMasterContext
+//
+// When formatting segmented bioseq CMasterContext holds information
+// on the Master bioseq.
+
+class CMasterContext : public CObject
+{
+public:
+    // constructor
+    CMasterContext(const CBioseq_Handle& master);
+    // destructor
+    ~CMasterContext(void);
+
+    // Get the segmented bioseq's handle
+    const CBioseq_Handle& GetHandle(void) const { return m_Handle;   }
+    // Get the number of parts
+    SIZE_TYPE GetNumParts          (void) const { return m_NumParts; }
+    // Get the base name
+    const string& GetBaseName      (void) const { return m_BaseName; }
+
+    // Find the serial number of a part in the segmented bioseq
+    SIZE_TYPE GetPartNumber(const CBioseq_Handle& part);
+
+private:
+    void x_SetBaseName(void);
+    void x_SetNumParts(void);
+
+    // data
+    CBioseq_Handle    m_Handle;
+    string            m_BaseName;
+    SIZE_TYPE         m_NumParts;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// CFlatFileContext
+
+class CFlatFileContext : public CObject
+{
+public:
+    // types
+    typedef CRef<CBioseqContext>            TSection;
+    typedef vector< CRef<CBioseqContext> >  TSections;
+
+    // constructor
+    CFlatFileContext(const CFlatFileConfig& cfg) : m_Cfg(cfg) {}
+    // destructor
+    ~CFlatFileContext(void) {}
+
+    const CSeq_entry_Handle& GetEntry(void) const { return m_Entry;  }
+    void SetEntry(const CSeq_entry_Handle& entry) { m_Entry = entry; }
+
+    const CSubmit_block* GetSubmitBlock(void) const { return m_Submit; }
+    void SetSubmit(const CSubmit_block& sub) { m_Submit = &sub; }
+
+    const CFlatFileConfig& GetConfig(void) const { return m_Cfg; }
+
+    const SAnnotSelector* GetAnnotSelector(void) const;
+    SAnnotSelector& SetAnnotSelector(void);
+    void SetAnnotSelector(const SAnnotSelector&);
+
+    const CSeq_loc* GetLocation(void) const { return m_Loc; }
+    void SetLocation(const CSeq_loc* loc) { m_Loc.Reset(loc); }
+
+    void AddSection(TSection& section) { m_Sections.push_back(section); }
+
+private:
+
+    CFlatFileConfig             m_Cfg;
+    CSeq_entry_Handle           m_Entry;
+    TSections                   m_Sections;
+    CConstRef<CSubmit_block>    m_Submit;
+    auto_ptr<SAnnotSelector>    m_Selector;
+    CConstRef<CSeq_loc>         m_Loc;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
 // inline methods
 
+// -------- CBioseqContext
 
-/****************************************************************************/
-/*                                CFFContext                              */
-/****************************************************************************/
-
-inline
-TFormat CFFContext::GetFormat(void) const
-{
-    return m_Format;
-}
-
-
-inline
-void CFFContext::SetFormat(TFormat format)
-{
-    m_Format = format;
-}
-
-
-inline
-TMode CFFContext::GetMode(void) const
-{
-    return m_Mode;
-}
-
-
-inline
-void CFFContext::SetMode(TMode mode)
-{
-    m_Mode = mode;
-}
-
-
-inline
-TStyle CFFContext::GetStyle(void) const
-{
-    return m_Style;
-}
-
-
-inline
-void CFFContext::SetStyle(TStyle style)
-{
-    m_Style = style;
-}
-
-
-inline
-bool CFFContext::DoContigStyle(void)
-{
-    return m_Bioseq->DoContigStyle();
-}
-
-
-inline
-TView CFFContext::GetView(void) const
-{
-    return m_View;
-}
-
-
-inline
-void CFFContext::SetView(TView view)
-{
-    m_View = view;
-}
-
-
-inline
-CScope& CFFContext::GetScope (void)
-{
-    return *m_Scope;
-}
-
-
-inline
-void CFFContext::SetScope(CScope& scope)
-{
-    m_Scope.Reset(&scope);
-}
-
-
-inline
-const CSubmit_block* CFFContext::GetSeqSubmit(void) const
-{
-    return m_SeqSub;
-}
-
-
-inline
-void CFFContext::SetSubmit(const CSubmit_block& sub)
-{
-    m_SeqSub.Reset(&sub);
-}
-
-
-inline
-const CSeq_entry_Handle& CFFContext::GetTSE(void) const
-{
-    return m_TSE;
-}
-
-
-inline
-void CFFContext::SetTSE(const CSeq_entry_Handle& tse)
-{
-    m_TSE = tse;
-}
-
-
-inline
-const string& CFFContext::GetAccession(void) const
-{
-    return m_Bioseq->GetAccession();
-}
-
-
-inline 
-CSeq_id* CFFContext::GetPrimaryId(void)
-{
-    return m_Bioseq->GetPrimaryId();
-}
-
-
-inline 
-const CSeq_id* CFFContext::GetPrimaryId(void) const
-{
-    return m_Bioseq->GetPrimaryId();
-}
-
-
-inline
-CSeq_inst::TRepr CFFContext::GetRepr(void) const
-{
-    return m_Bioseq->GetRepr();
-}
-
-
-inline
-CMolInfo::TTech CFFContext::GetTech(void) const
-{
-    return m_Bioseq->GetTech();
-}
-
-
-inline
-CMolInfo::TBiomol CFFContext::GetBiomol(void) const
-{
-    return m_Bioseq->GetBiomol();
-}
-
-
-inline
-CSeq_inst::TMol CFFContext::GetMol(void) const
-{
-    return m_Bioseq->GetMol();
-}
-
-
-inline
-bool CFFContext::IsSegmented(void) const
-{
-    return m_Bioseq->IsSegmented();
-}
-
-
-inline
-bool CFFContext::HasParts(void) const
-{
-    return m_Bioseq->HasParts();
-}
-
-
-inline
-SIZE_TYPE CFFContext::GetNumParts(void) const
-{
-    return m_Master->GetNumSegments();
-}
-
-
-inline
-bool CFFContext::IsDelta(void) const
-{
-    return m_Bioseq->IsDelta();
-}
-
-
-inline
-bool CFFContext::IsDeltaLitOnly(void) const
-{
-    return m_Bioseq->IsDeltaLitOnly();
-}
-
-
-inline
-bool CFFContext::IsPart(void) const
-{
-    return m_Bioseq->IsPart();
-}
-
-
-inline
-SIZE_TYPE CFFContext::GetPartNumber(void) const
-{
-    return m_Bioseq->GetPartNumber();
-}
-
-
-inline
-const string& CFFContext::GetWGSMasterAccn(void) const
-{
-    return m_Bioseq->GetWGSMasterAccn();
-}
-
-
-inline
-const string& CFFContext::GetWGSMasterName(void) const
-{
-    return m_Bioseq->GetWGSMasterName();
-}
-
-
-inline
-CFFContext::TReferences& CFFContext::SetReferences(void)
-{
-    return m_Bioseq->SetReferences();
-}
-
-
-inline
-const CFFContext::TReferences& CFFContext::GetReferences(void) const
-{
-    return m_Bioseq->GetReferences();
-}
-
-
-inline
-int CFFContext::GetGI(void) const
-{
-    return m_Bioseq->GetGI();
-}
-
-
-inline
-const CSeq_id& CFFContext::GetPreferredSynonym(const CSeq_id& id) const
-{
-    return m_Bioseq->GetPreferredSynonym(id);
-}
-
-
-inline 
-bool CFFContext::IsHup(void) const
-{
-    return m_Bioseq->IsHup();
-}
-
-
-inline
-const CBioseq& CFFContext::GetActiveBioseq(void) const
-{
-    return *m_Bioseq->GetHandle().GetBioseqCore();
-}
-
-
-inline
-const CSeq_loc* CFFContext::GetLocation(void) const
-{
-    return m_Bioseq->GetLocation();
-}
-
-
-inline
-void CFFContext::SetLocation(const CSeq_loc* loc)
-{
-    m_Bioseq->SetLocation(loc);
-}
-
-/*
-inline
-CBioseq_Handle& CFFContext::GetHandle(void)
-{
-    return m_Bioseq->GetHandle();
-}
-*/
-
-inline
-const CBioseq_Handle& CFFContext::GetHandle(void) const
-{
-    return m_Bioseq->GetHandle();
-}
-
-
-inline
-bool CFFContext::IsGED(void) const
-{
-    return m_Bioseq->IsGED();
-}
-
-
-inline
-bool CFFContext::IsPDB(void) const
-{
-    return m_Bioseq->IsPDB();
-}
-
-
-inline
-bool CFFContext::IsSP(void) const
-{
-    return m_Bioseq->IsSP();
-}
-
-
-inline
-bool CFFContext::IsTPA(void) const
-{
-    return m_Bioseq->IsTPA();
-}
-
-
-inline
-bool CFFContext::IsRSCompleteGenomic(void) const
-{
-    return m_Bioseq->IsRSCompleteGenomic();
-}
-
-
-inline
-bool CFFContext::IsRSIncompleteGenomic(void) const
-{
-    return m_Bioseq->IsRSIncompleteGenomic();
-}
-
-
-inline
-bool CFFContext::IsRSMRna(void) const
-{
-    return m_Bioseq->IsRSMRna();
-}
-
-
-inline
-bool CFFContext::IsRSNonCodingRna(void) const
-{
-    return m_Bioseq->IsRSNonCodingRna();
-}
-
-inline
-bool CFFContext::IsRSProtein(void) const
-{
-    return m_Bioseq->IsRSProtein();
-}
-
-
-inline
-bool CFFContext::IsRSContig(void) const
-{
-    return m_Bioseq->IsRSContig();
-}
-
-
-inline
-bool CFFContext::IsRSIntermedWGS(void) const
-{
-    return m_Bioseq->IsRSIntermedWGS();
-}
-
-
-inline
-bool CFFContext::IsRSPredictedMRna(void) const
-{
-    return m_Bioseq->IsRSPredictedMRna();
-}
-
-
-inline
-bool CFFContext::IsRSPredictedNCRna(void) const
-{
-    return m_Bioseq->IsRSPredictedNCRna();
-}
-
-
-inline
-bool CFFContext::IsRSPredictedProtein(void) const
-{
-    return m_Bioseq->IsRSPredictedProtein();
-}
-
-
-inline
-bool CFFContext::IsRSWGSNuc(void) const
-{
-    return m_Bioseq->IsRSWGSNuc();
-}
-
-
-inline
-bool CFFContext::IsRSWGSProt(void) const
-{
-    return m_Bioseq->IsRSWGSProt();
-}
-
-
-inline
-bool CFFContext::IsGbGenomeProject(void) const
-{
-    return m_Bioseq->IsGbGenomeProject();
-}
-
-
-inline
-bool CFFContext::IsNcbiCONDiv(void) const
-{
-    return m_Bioseq->IsNcbiCONDiv();
-}
-
-
-inline
-bool CFFContext::IsPatent(void) const
-{
-    return m_Bioseq->IsPatent();
-}
-
-
-inline
-bool CFFContext::IsRefSeq(void) const
-{
-    return m_Bioseq->IsRefSeq();
-}
-
-
-inline
-bool CFFContext::IsGI(void) const
-{
-    return m_Bioseq->IsGI();
-}
-
-
-inline
-bool CFFContext::IsWGS(void) const
-{
-    return m_Bioseq->IsWGS();
-}
-
-
-inline
-bool CFFContext::IsWGSMaster(void) const
-{
-    return m_Bioseq->IsWGSMaster();
-}
-
-
-inline
-bool CFFContext::IsProt(void) const
-{
-    return m_Bioseq->IsProt();
-}
-
-
-inline
-bool CFFContext::ShowGBBSource(void) const
-{
-    return m_Bioseq->ShowGBBSource();
-}
-
-
-inline
-bool CFFContext::IsGPS(void) const
-{
-    return m_Bioseq->IsGPS();
-}
-
-
-inline
-const SAnnotSelector* CFFContext::GetAnnotSelector(void) const
-{
-    return m_Selector.get();
-}
-
-
-inline
-SAnnotSelector* CFFContext::SetAnnotSelector(void)
-{
-    if ( m_Selector.get() == 0 ) {
-        m_Selector.reset(new SAnnotSelector);
-    }
-
-    return m_Selector.get();
-}
-
-
-inline
-void CFFContext::SetAnnotSelector(const SAnnotSelector& sel)
-{
-    m_Selector.reset(new SAnnotSelector(sel));
-}
-
-
-/****************************************************************************/
-/*                               CMasterContext                             */
-/****************************************************************************/
-
-/****************************************************************************/
-/*                               CBioseqContext                             */
-/****************************************************************************/
-
-
-inline
-SIZE_TYPE CBioseqContext::GetNumSegments(void) const
-{
-    return m_SegsCount;
-}
-
-
-inline
-bool CBioseqContext::IsPart(void) const
-{
-    return m_IsPart;
-}
-
-
-inline
-SIZE_TYPE CBioseqContext::GetPartNumber(void) const
-{
-    return m_PartNumber;
-}
-
-/*
-inline
-CBioseq_Handle& CBioseqContext::GetHandle(void)
-{
-    return m_Handle;
-}
-*/
-
-inline
-const CBioseq_Handle& CBioseqContext::GetHandle(void) const
-{
-    return m_Handle;
-}
-
-
-inline
-bool CBioseqContext::IsProt(void) const
-{
-    return m_IsProt;
-}
-
-
-inline
-const string& CBioseqContext::GetAccession(void) const
-{
-    return m_Accession;
-}
-
-
-inline
-CSeq_id* CBioseqContext::GetPrimaryId(void)
-{
-    return m_PrimaryId;
-}
-
-
-inline
-CBioseqContext::TReferences& CBioseqContext::SetReferences(void)
-{
-    return m_References;
-}
-
-
-inline
-const CBioseqContext::TReferences& CBioseqContext::GetReferences(void) const
-{
-    return m_References;
-}
-
-
-inline
-const CSeq_id* CBioseqContext::GetPrimaryId(void) const
-{
-    return m_PrimaryId;
-}
-
-
-inline
-CSeq_inst::TRepr CBioseqContext::GetRepr(void) const
-{
-    return m_Repr;
-}
-
-
-inline
-CMolInfo::TTech CBioseqContext::GetTech(void) const
-{
-    return (!m_Molinfo.IsNull()  &&  m_Molinfo->CanGetTech()) ? 
-        m_Molinfo->GetTech() : CMolInfo::eTech_unknown;
-}
-
-
-inline
-CMolInfo::TBiomol CBioseqContext::GetBiomol(void) const
-{
-    return (!m_Molinfo.IsNull()  &&  m_Molinfo->CanGetBiomol()) ? 
-        m_Molinfo->GetBiomol() : CMolInfo::eBiomol_unknown;
-}
-
-
-inline
-CSeq_inst::TMol CBioseqContext::GetMol(void) const
-{
-    return m_Mol;
-}
-
-
-inline
-bool CBioseqContext::IsSegmented(void) const
-{
-    return GetRepr() == CSeq_inst::eRepr_seg;
-}
-
-
-inline
-bool CBioseqContext::HasParts(void) const
-{
-    return m_HasParts;
-}
-
-
-inline
-bool CBioseqContext::IsDelta(void) const
-{
-    return GetRepr() == CSeq_inst::eRepr_delta;
-}
-
-
-inline
-bool CBioseqContext::IsDeltaLitOnly(void) const
-{
-    return m_IsDeltaLitOnly;
-}
-
-
-inline
-const string& CBioseqContext::GetWGSMasterAccn(void) const
-{
-    return m_WGSMasterAccn;
-}
-
-
-inline
-const string& CBioseqContext::GetWGSMasterName(void) const
-{
-    return m_WGSMasterName;
-}
-
-
-inline
-bool CBioseqContext::IsGED(void) const
-{
-    return m_IsGED;
-}
-
-
-inline
-bool CBioseqContext::IsPDB(void) const
-{
-    return m_IsPDB;
-}
-
-
 inline
-bool CBioseqContext::IsSP(void) const
+const CBioseq::TId& CBioseqContext::GetBioseqIds(void) const
 {
-    return m_IsSP;
+    return m_Handle.GetBioseqCore()->GetId();
 }
 
-
 inline
-bool CBioseqContext::IsTPA(void) const
+SIZE_TYPE CBioseqContext::GetTotalNumParts(void) const
 {
-    return m_IsTPA;
+    return m_Master->GetNumParts();
 }
-
 
 inline
 bool CBioseqContext::IsRSCompleteGenomic(void)  const
@@ -1268,13 +330,11 @@ bool CBioseqContext::IsRSCompleteGenomic(void)  const
     return m_RefseqInfo == CSeq_id::eAcc_refseq_chromosome;  // NC_
 }
 
-
 inline
 bool CBioseqContext::IsRSIncompleteGenomic(void)  const
 {
     return m_RefseqInfo == CSeq_id::eAcc_refseq_genomic;  // NG_
 }
-
 
 inline
 bool CBioseqContext::IsRSMRna(void)  const
@@ -1282,13 +342,11 @@ bool CBioseqContext::IsRSMRna(void)  const
     return m_RefseqInfo == CSeq_id::eAcc_refseq_mrna;  // NM_
 }
 
-
 inline
 bool CBioseqContext::IsRSNonCodingRna(void)  const
 {
     return m_RefseqInfo == CSeq_id::eAcc_refseq_ncrna;  // NR_
 }
-
 
 inline
 bool CBioseqContext::IsRSProtein(void)  const
@@ -1296,13 +354,11 @@ bool CBioseqContext::IsRSProtein(void)  const
     return m_RefseqInfo == CSeq_id::eAcc_refseq_prot;  // NP_
 }
 
-
 inline
 bool CBioseqContext::IsRSContig(void)  const
 {
     return m_RefseqInfo == CSeq_id::eAcc_refseq_contig;  // NT_
 }
-
 
 inline
 bool CBioseqContext::IsRSIntermedWGS(void)  const
@@ -1310,13 +366,11 @@ bool CBioseqContext::IsRSIntermedWGS(void)  const
     return m_RefseqInfo == CSeq_id::eAcc_refseq_wgs_intermed;  // NW_
 }
 
-
 inline
 bool CBioseqContext::IsRSPredictedMRna(void)  const
 {
     return m_RefseqInfo == CSeq_id::eAcc_refseq_mrna_predicted;  // XM_
 }
-
 
 inline
 bool CBioseqContext::IsRSPredictedNCRna(void)  const
@@ -1324,13 +378,11 @@ bool CBioseqContext::IsRSPredictedNCRna(void)  const
     return m_RefseqInfo == CSeq_id::eAcc_refseq_ncrna_predicted;  // XR_
 }
 
-
 inline
 bool CBioseqContext::IsRSPredictedProtein(void)  const
 {
     return m_RefseqInfo == CSeq_id::eAcc_refseq_prot_predicted;  // XP_
 }
-
 
 inline
 bool CBioseqContext::IsRSWGSNuc(void)  const
@@ -1338,102 +390,80 @@ bool CBioseqContext::IsRSWGSNuc(void)  const
     return m_RefseqInfo == CSeq_id::eAcc_refseq_wgs_nuc;  // NZ_
 }
 
-
 inline
 bool CBioseqContext::IsRSWGSProt(void)  const
 {
     return m_RefseqInfo == CSeq_id::eAcc_refseq_wgs_prot;  // ZP_
 }
 
+inline
+const CFlatFileConfig& CBioseqContext::Config(void) const
+{
+    return m_FFCtx.GetConfig();
+}
 
 inline
-bool CBioseqContext::IsGbGenomeProject(void)  const
+const CSubmit_block* CBioseqContext::GetSubmitBlock(void) const
 {
-    return m_IsGbGenomeProject;
+    return m_FFCtx.GetSubmitBlock();
+}
+
+inline
+const CSeq_entry_Handle& CBioseqContext::GetEntry(void) const
+{
+    return m_FFCtx.GetEntry();
+}
+
+inline
+const SAnnotSelector* CBioseqContext::GetAnnotSelector(void) const
+{
+    return m_FFCtx.GetAnnotSelector();
+}
+
+inline
+const CSeq_loc* CBioseqContext::GetMasterLocation(void) const
+{
+    return m_FFCtx.GetLocation();
 }
 
 
 inline
-bool CBioseqContext::IsNcbiCONDiv(void)  const
+CMolInfo::TTech CBioseqContext::GetTech(void) const
 {
-    return m_IsNcbiCONDiv;
-}
-
-
-inline    
-bool CBioseqContext::IsPatent(void) const
-{
-    return m_IsPatent;
+    return m_Molinfo ? m_Molinfo->GetTech() : CMolInfo::eTech_unknown;
 }
 
 
 inline
-bool CBioseqContext::IsRefSeq(void) const
+CMolInfo::TBiomol CBioseqContext::GetBiomol(void) const
 {
-    return m_IsRefSeq;
+    return m_Molinfo ? m_Molinfo->GetBiomol() : CMolInfo::eBiomol_unknown;
+}
+
+
+// -------- CFlatFileContext
+
+inline
+const SAnnotSelector* CFlatFileContext::GetAnnotSelector(void) const
+{
+    return m_Selector.get();
+}
+
+inline
+SAnnotSelector& CFlatFileContext::SetAnnotSelector(void)
+{
+    if ( m_Selector.get() == 0 ) {
+        m_Selector.reset(new SAnnotSelector);
+    }
+
+    return *m_Selector;
 }
 
 
 inline
-bool CBioseqContext::IsGI(void) const
+void CFlatFileContext::SetAnnotSelector(const SAnnotSelector& sel)
 {
-    return m_IsGI;
-}
-
-
-inline
-bool CBioseqContext::IsWGS(void) const
-{
-    return m_IsWGS;
-}
-
-
-inline
-bool CBioseqContext::IsWGSMaster(void) const
-{
-    return m_IsWGSMaster;
-}
-
-
-inline
-bool CBioseqContext::IsHup(void) const
-{
-    return m_IsHup;
-}
-
-
-inline
-int CBioseqContext::GetGI(void) const
-{
-    return m_GI;
-}
-
-
-inline
-bool CBioseqContext::ShowGBBSource(void) const
-{
-    return m_ShowGBBSource;
-}
-
-
-inline
-bool CBioseqContext::IsGPS(void) const
-{
-    return m_IsGPS;
-}
-
-
-inline
-const CSeq_loc* CBioseqContext::GetLocation(void) const
-{
-    return m_Location;
-}
-
-
-inline
-void CBioseqContext::SetLocation(const CSeq_loc* loc)
-{
-    m_Location.Reset(loc);
+    m_Selector.reset(new SAnnotSelector(sel));
 }
 
 
@@ -1444,6 +474,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/04/22 15:41:38  shomrat
+* Refactoring of context
+*
 * Revision 1.13  2004/03/31 17:14:00  shomrat
 * name changes
 *
