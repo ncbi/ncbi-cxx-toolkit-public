@@ -53,7 +53,7 @@ CBioSource::~CBioSource(void)
 }
 
 
-int CBioSource::GetGcode(void) const
+int CBioSource::GetGenCode(void) const
 {
     try {
         int genome = 0;
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2002/11/26 19:01:11  shomrat
+* Bug fix in GetGenCode
+*
 * Revision 6.1  2002/11/26 18:50:31  shomrat
 * Add GetGenCode
 *
