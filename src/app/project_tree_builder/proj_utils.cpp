@@ -26,11 +26,13 @@
  * Author:  Viatcheslav Gorelenkov
  *
  */
+
 #include <ncbi_pch.hpp>
 #include <app/project_tree_builder/proj_utils.hpp>
+
 BEGIN_NCBI_SCOPE
 
-string ParentDir (const string& dir_abs)
+string ParentDir(const string& dir_abs)
 {
     string parent_dir_abs = CDirEntry::AddTrailingPathSeparator(dir_abs);
     parent_dir_abs += "..";
@@ -41,9 +43,13 @@ string ParentDir (const string& dir_abs)
 }
 
 END_NCBI_SCOPE
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/10/12 16:17:57  ivanov
+ * + CSrcToFilterInserterWithPch::InsertFile(). Some cosmetics.
+ *
  * Revision 1.3  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *
