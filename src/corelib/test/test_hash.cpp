@@ -31,6 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <stdlib.h>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -41,24 +42,6 @@
 BEGIN_NCBI_SCOPE
 
 
-template<> struct hash<const string>
-{
-    size_t operator()(const string& s) const
-    {
-        return __stl_hash_string(s.c_str());
-    }
-};
-
-
-template<> struct hash<string>
-{
-    size_t operator()(const string& s) const
-    {
-        return __stl_hash_string(s.c_str());
-    }
-};
-
-
 class CTestHash : public CNcbiApplication
 {
 public:
@@ -66,6 +49,9 @@ public:
     int Run(void);
 };
 
+
+int MaxHashSize = 10000;
+int ReadLoops = 1000;
 
 void CTestHash::Init(void)
 {
@@ -76,6 +62,17 @@ void CTestHash::Init(void)
     d->SetUsageContext("test_hash",
                        "test hash classes");
 
+    d->AddDefaultKey("elements", "Elements",
+         "Number of elements in containers",
+         CArgDescriptions::eInteger, "10000");
+
+    d->AddDefaultKey("cycles", "Cycles",
+                     "Number of read/search cycles over the whole container",
+                     CArgDescriptions::eInteger, "1000");
+
+    d->AddFlag("test_std",
+               "Compare results to statndard (non-hash) containers");
+
     SetupArgDescriptions(d.release());
 }
 
@@ -85,135 +82,245 @@ string GetKey(int i)
     return "test" + NStr::IntToString(i);
 }
 
-const int kMaxHashSize = 10000;
-
-
 #define CHECK_RESULT(val) \
     if ( !(val) ) { \
     NcbiCout << "FAILED: " << #val << NcbiEndl; \
-        return 1; \
+        return false; \
     }
+
+#define START_TEST(loops) \
+    start = CTime(CTime::eCurrent); \
+    for (int loop = 0; loop < (loops); loop++) {
+
+#define STOP_TEST \
+    } \
+    stop = CTime(CTime::eCurrent); \
+    NcbiCout << "done, \t" << stop.DiffTimeSpan(start).AsString() << NcbiEndl;
+
+// #define hash_map map
+
+typedef vector<string> TKeys;
+
+template<class TMap>
+bool TestMap(TMap& hm, const string& map_name, const TKeys& keys)
+{
+    NcbiCout << "*** Testing " << map_name << " ***" << NcbiEndl;
+
+    CTime start, stop;
+
+    NcbiCout << "Populating...         ";
+    START_TEST(1)
+    for (int i = 0; i < MaxHashSize; i++) {
+        pair<typename TMap::iterator, bool> res = hm.insert(
+            typename TMap::value_type(keys[i], i));
+        CHECK_RESULT(res.second);
+    }
+    CHECK_RESULT(int(hm.size()) == MaxHashSize);
+    STOP_TEST
+
+    NcbiCout << "Re-populating...      ";
+    START_TEST(1)
+    for (int i = 0; i < MaxHashSize; i++) {
+        pair<typename TMap::iterator, bool> res = hm.insert(
+            typename TMap::value_type(keys[i], i+1));
+        CHECK_RESULT(!res.second);
+        CHECK_RESULT(hm.count(res.first->first) == 1);
+    }
+    CHECK_RESULT(int(hm.size()) == MaxHashSize);
+    STOP_TEST
+
+    NcbiCout << "Testing values...     ";
+    START_TEST(ReadLoops)
+    ITERATE(typename TMap, map_it, hm) {
+        CHECK_RESULT(map_it->first == keys[map_it->second]);
+    }
+    STOP_TEST
+
+    NcbiCout << "Changing values...    ";
+    START_TEST(1)
+    for (int i = 0; i < MaxHashSize; i++) {
+        CHECK_RESULT(hm[keys[i]] == i);
+        hm[keys[i]] = i+1;
+        CHECK_RESULT(hm[keys[i]] == i+1);
+    }
+    CHECK_RESULT(int(hm.size()) == MaxHashSize);
+    STOP_TEST
+
+    NcbiCout << "Searching...          ";
+    START_TEST(ReadLoops)
+    for (int i = 0; i < MaxHashSize; i++) {
+        typename TMap::const_iterator f = hm.find(keys[i]);
+        CHECK_RESULT(f != hm.end());
+        CHECK_RESULT(f->second == i+1);
+    }
+    STOP_TEST
+
+    NcbiCout << "Cleaning...           ";
+    START_TEST(1)
+    hm.clear();
+    CHECK_RESULT(hm.empty());
+    STOP_TEST
+    NcbiCout << NcbiEndl;
+    return true;
+}
+
+
+template<class TMultimap>
+bool TestMultimap(TMultimap& hmm, const string& map_name, const TKeys& keys)
+{
+    NcbiCout << "*** Testing " << map_name << " ***" << NcbiEndl;
+
+    CTime start, stop;
+
+    NcbiCout << "Populating...         ";
+    START_TEST(1)
+    for (int i = 0; i < MaxHashSize; i++) {
+        hmm.insert(typename TMultimap::value_type(keys[i], i));
+        hmm.insert(typename TMultimap::value_type(keys[i], i+1));
+        CHECK_RESULT(hmm.count(keys[i]) == 2);
+    }
+    CHECK_RESULT(int(hmm.size()) == MaxHashSize*2);
+    STOP_TEST
+
+    NcbiCout << "Testing values...     ";
+    START_TEST(ReadLoops)
+    ITERATE(typename TMultimap, map_it, hmm) {
+        CHECK_RESULT(map_it->first == keys[map_it->second]  ||
+            map_it->first == keys[map_it->second - 1]);
+    }
+    STOP_TEST
+
+    NcbiCout << "Searching...          ";
+    START_TEST(ReadLoops)
+    for (int i = 0; i < MaxHashSize; i++) {
+        typename TMultimap::const_iterator f = hmm.find(keys[i]);
+        CHECK_RESULT(f != hmm.end());
+        CHECK_RESULT(f->second == i  ||  f->second == i+1);
+    }
+    STOP_TEST
+
+    NcbiCout << "Cleaning...           ";
+    START_TEST(1)
+    hmm.clear();
+    CHECK_RESULT(hmm.empty());
+    STOP_TEST
+    NcbiCout << NcbiEndl;
+    return true;
+}
+
+
+template<class TSet>
+bool TestSet(TSet& hs, const string& set_name, const TKeys& keys)
+{
+    NcbiCout << "*** Testing " << set_name << " ***" << NcbiEndl;
+
+    CTime start, stop;
+
+    NcbiCout << "Populating...         ";
+    START_TEST(1)
+    for (int i = 0; i < MaxHashSize; i++) {
+        pair<typename TSet::const_iterator, bool> res = hs.insert(keys[i]);
+        CHECK_RESULT(res.second);
+    }
+    STOP_TEST
+
+    NcbiCout << "Re-populating...      ";
+    START_TEST(1)
+    for (int i = 0; i < MaxHashSize; i++) {
+        pair<typename TSet::const_iterator, bool> res = hs.insert(keys[i]);
+        CHECK_RESULT(!res.second);
+    }
+    STOP_TEST
+
+    NcbiCout << "Searching...          ";
+    START_TEST(ReadLoops)
+    for (int i = 0; i < MaxHashSize; i++) {
+        typename TSet::const_iterator f = hs.find(keys[i]);
+        CHECK_RESULT(f != hs.end());
+    }
+    STOP_TEST
+
+    NcbiCout << "Cleaning...           ";
+    START_TEST(1)
+    hs.clear();
+    CHECK_RESULT(hs.empty());
+    STOP_TEST
+    NcbiCout << NcbiEndl;
+    return true;
+}
 
 
 int CTestHash::Run(void)
 {
-    {{
-        typedef hash_map<string, int> THashMap;
-        THashMap hm;
+    // Get arguments
+    CArgs args = GetArgs();
+    MaxHashSize = args["elements"].AsInteger();
+    ReadLoops = args["cycles"].AsInteger();
+    bool test_std = args["test_std"].HasValue();
 
-        NcbiCout << "Populating hash_map... ";
-        for (int i = 0; i < kMaxHashSize; i++) {
-            pair<THashMap::const_iterator, bool> res = hm.insert(
-                THashMap::value_type(GetKey(i), i));
-            CHECK_RESULT(res.second);
-        }
-        CHECK_RESULT(int(hm.size()) == kMaxHashSize);
-        NcbiCout << "OK" << NcbiEndl;
+    NcbiCout << "Testing with " << MaxHashSize << " elements, "
+        << ReadLoops << " read cycles" << NcbiEndl;
 
-        NcbiCout << "Re-populating hash_map... ";
-        for (int i = 0; i < kMaxHashSize; i++) {
-            pair<THashMap::const_iterator, bool> res = hm.insert(
-                THashMap::value_type(GetKey(i), i+1));
-            CHECK_RESULT(!res.second);
-            CHECK_RESULT(hm.count(res.first->first) == 1);
-        }
-        CHECK_RESULT(int(hm.size()) == kMaxHashSize);
-        NcbiCout << "OK" << NcbiEndl;
+    TKeys keys;
+    set<int> hashes;
+    hash_set<string> b_hs;
+    for (int i = 0; i < MaxHashSize + 1; i++) {
+        int key = i;
+        keys.push_back(GetKey(key));
+        hashes.insert(hash<string>()(keys.back()));
+        b_hs.insert(keys.back());
+    }
+    random_shuffle(keys.begin(), keys.end());
 
-        NcbiCout << "Testing mapped values... ";
-        ITERATE(THashMap, map_it, hm) {
-            CHECK_RESULT(map_it->first == GetKey(map_it->second));
-        }
-        NcbiCout << "OK" << NcbiEndl;
-
-        NcbiCout << "Changing values... ";
-        for (int i = 0; i < kMaxHashSize; i++) {
-            CHECK_RESULT(hm[GetKey(i)] == i);
-            hm[GetKey(i)] = i+1;
-            CHECK_RESULT(hm[GetKey(i)] == i+1);
-        }
-        CHECK_RESULT(int(hm.size()) == kMaxHashSize);
-        NcbiCout << "OK" << NcbiEndl;
-
-        NcbiCout << "Searching hash_map... ";
-        for (int i = 0; i < kMaxHashSize; i++) {
-            THashMap::const_iterator f = hm.find(GetKey(i));
-            CHECK_RESULT(f != hm.end());
-            CHECK_RESULT(f->second == i+1);
-        }
-        NcbiCout << "OK" << NcbiEndl;
-
-        NcbiCout << "Cleaning hash_map... ";
-        hm.clear();
-        CHECK_RESULT(hm.empty());
-        NcbiCout << "OK" << NcbiEndl;
-    }}
+    set<int> bhashes;
+    for (int i = 0; i < MaxHashSize + 1; i++) {
+        bhashes.insert(hash<string>()(keys[i])%b_hs.bucket_count());
+    }
+    NcbiCout << "keys: " << keys.size()
+        << ", hashes: " << hashes.size()
+        << ", bucket: " << b_hs.bucket_count()
+        << ", bhashes: " << bhashes.size()
+        << NcbiEndl << NcbiEndl;
 
     {{
-        typedef hash_multimap<string, int> THashMultiap;
-        THashMultiap hmm;
-
-        NcbiCout << "Populating hash_multimap... ";
-        for (int i = 0; i < kMaxHashSize; i++) {
-            hmm.insert(THashMultiap::value_type(GetKey(i), i));
-            hmm.insert(THashMultiap::value_type(GetKey(i), i+1));
-            CHECK_RESULT(hmm.count(GetKey(i)) == 2);
+        hash_map<string, int> hm;
+        if ( !TestMap(hm, "hash_map", keys) ) {
+            return 1;
         }
-        CHECK_RESULT(hmm.size() == kMaxHashSize*2);
-        NcbiCout << "OK" << NcbiEndl;
-
-        NcbiCout << "Testing mapped values... ";
-        ITERATE(THashMultiap, map_it, hmm) {
-            CHECK_RESULT(map_it->first == GetKey(map_it->second)  ||
-                map_it->first == GetKey(map_it->second - 1));
-        }
-        NcbiCout << "OK" << NcbiEndl;
-
-        NcbiCout << "Searching hash_multimap... ";
-        for (int i = 0; i < kMaxHashSize; i++) {
-            THashMultiap::const_iterator f = hmm.find(GetKey(i));
-            CHECK_RESULT(f != hmm.end());
-            CHECK_RESULT(f->second == i  ||  f->second == i+1);
-        }
-        NcbiCout << "OK" << NcbiEndl;
-
-        NcbiCout << "Cleaning hash_multimap... ";
-        hmm.clear();
-        CHECK_RESULT(hmm.empty());
-        NcbiCout << "OK" << NcbiEndl;
     }}
+    if ( test_std ) {
+        map<string, int> stdm;
+        if ( !TestMap(stdm, "map", keys) ) {
+            return 1;
+        }
+    }
 
     {{
-        typedef hash_set<string> THashSet;
-        THashSet hs;
-
-        NcbiCout << "Populating hash_set... ";
-        for (int i = 0; i < kMaxHashSize; i++) {
-            pair<THashSet::const_iterator, bool> res = hs.insert(GetKey(i));
-            CHECK_RESULT(res.second);
+        hash_multimap<string, int> hmm;
+        if ( !TestMultimap(hmm, "hash_multimap", keys) ) {
+            return 1;
         }
-        NcbiCout << "OK" << NcbiEndl;
-
-        NcbiCout << "Re-populating hash_set... ";
-        for (int i = 0; i < kMaxHashSize; i++) {
-            pair<THashSet::const_iterator, bool> res = hs.insert(GetKey(i));
-            CHECK_RESULT(!res.second);
-        }
-        NcbiCout << "OK" << NcbiEndl;
-
-        NcbiCout << "Searching hash_set... ";
-        for (int i = 0; i < kMaxHashSize; i++) {
-            THashSet::const_iterator f = hs.find(GetKey(i));
-            CHECK_RESULT(f != hs.end());
-            CHECK_RESULT(*f == GetKey(i));
-        }
-        NcbiCout << "OK" << NcbiEndl;
-
-        NcbiCout << "Cleaning hash_set... ";
-        hs.clear();
-        CHECK_RESULT(hs.empty());
-        NcbiCout << "OK" << NcbiEndl;
     }}
+    if ( test_std ) {
+        multimap<string, int> stdmm;
+        if ( !TestMultimap(stdmm, "multimap", keys) ) {
+            return 1;
+        }
+    }
+
+    {{
+        hash_set<string> hs;
+        if ( !TestSet(hs, "hash_set", keys) ) {
+            return 1;
+        }
+    }}
+    if ( test_std ) {
+        set<string> stds;
+        if ( !TestSet(stds, "set", keys) ) {
+            return 1;
+        }
+    }
+
     return 0;
 }
 
@@ -228,6 +335,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/09 16:33:02  grichenk
+ * Improved test
+ *
  * Revision 1.1  2005/02/08 18:45:51  grichenk
  * Initial revision
  *
