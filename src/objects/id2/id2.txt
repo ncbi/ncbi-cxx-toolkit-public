@@ -2,7 +2,8 @@
 
   ID2 Protocol:
 
-			 Protocol details
+			 Request
+			 Reply
 			 Transmission of Split data
 			 TSE Sources
 			 Authentication
@@ -12,9 +13,18 @@
 
 -----------------------------------------------------------------------------
 
----------------------- Protocol details
+---------------------- Request
 
-Every request may get several replies. In this case
+Requests (unlike replies) must be assembled into packages (ID2-Request-Packet).
+This is to allow for a convenience of sending several requests at once --
+without having to up-read the replies to previously sent requests from the
+same package (otherwise, if one does not do such an up-read there can be
+a deadlock in the client-server communication).
+
+
+---------------------- Reply
+
+Every request may result in several replies. In this case
 all but last reply will have end-of-reply member FALSE and
 the last one will have end-of-reply member TRUE.
 
@@ -32,6 +42,7 @@ as end-of-reply.
 If connection doesn't support streaming like HTTP all replies on request
 have to be sent in one piece. In this case they will be streamed inside
 of this data piece.
+
 
 ---------------------- Split
 
@@ -58,6 +69,7 @@ will allow caching clients to know when to reload new version of splitted TSE.
 It's convenient to use last chunk id in chunk set as split-version but
 this is not required by protocol.
 
+
 ---------------------- TSE Sources
 
 There are possibly several current TSE containing information about
@@ -68,9 +80,11 @@ So all TSE are considered to have 'source name' - string.
 It is assumed that sequence itself (if any) is located in source
 with empty name.
 
+
 ---------------------- Authentication
 
 Client authentication can be implemented using optional 'params' field.
+
 
 ---------------------- PARAM packages
 
@@ -138,4 +152,4 @@ Server params:
 5.
 
 -----------------------------------------------------------------------------
-$Id: id2.txt,v 1.1 2004/03/25 21:13:47 vakatov Exp $
+$Id: id2.txt,v 1.2 2004/03/30 19:58:57 vakatov Exp $
