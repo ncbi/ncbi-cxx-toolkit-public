@@ -254,7 +254,7 @@ void ParseVersionString(const string&  vstr,
     _ASSERT(ver);
     _ASSERT(!vstr.empty());
 
-    *program_name = kEmptyStr;
+    program_name->erase();
 
 
     string lo_vstr(vstr); NStr::ToLower(lo_vstr);
@@ -326,6 +326,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/04/05 20:52:59  kuznets
+ * Cosmetics...
+ *
  * Revision 1.11  2005/04/05 14:35:33  kuznets
  * Version parsing changed to support version less names
  *
