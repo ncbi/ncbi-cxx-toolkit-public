@@ -44,6 +44,8 @@
 #include <objtools/lds/lds_db.hpp>
 #include <objtools/lds/lds_expt.hpp>
 
+#include <objtools/lds/lds_query.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -52,58 +54,33 @@ CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& db,
                              const map<string, int>& type_map,
                              int object_id)
 {
-    db.object_db.object_id = object_id;
-    if (db.object_db.Fetch() != eBDB_Ok)
+    CLDS_Query query(db);
+    CLDS_Query::SObjectDescr obj_descr = 
+        query.GetObjectDescr(type_map, object_id, true);
+
+    if (!obj_descr.is_object || obj_descr.id <= 0) {
         return CRef<CSeq_entry>();
-
-    int tse_id = db.object_db.TSE_object_id;
-    if (tse_id) {
-        LDS_THROW(eWrongEntry, "Non top-level SeqEntry.");
     }
 
-    // Check the object type here
-    //
-    int object_type = db.object_db.object_type;
-    string str_type;
-    for (map<string, int>::const_iterator tit = type_map.begin();
-         tit != type_map.end();
-         ++tit) {
-        if (tit->second == object_type) {
-            str_type = tit->first;
-            break;
-        }
-    } // for
-
-    int file_id = db.object_db.file_id;
-
-    db.file_db.file_id = file_id;
-    if (db.file_db.Fetch() != eBDB_Ok) {
-        LDS_THROW(eRecordNotFound, "File record not found.");
-    }
-
-    CFormatGuess::EFormat format = 
-                (CFormatGuess::EFormat)(int)db.file_db.format;
-    const char* fname = db.file_db.file_name;
-
-    CNcbiIfstream in(fname, IOS_BASE::in | IOS_BASE::binary);
+    CNcbiIfstream in(obj_descr.file_name.c_str(), 
+                     IOS_BASE::in | IOS_BASE::binary);
     if (!in.is_open()) {
         string msg = "Cannot open file:";
-        msg.append(fname);
+        msg.append(obj_descr.file_name);
         LDS_THROW(eFileNotFound, msg);
     }
-    size_t offset = db.object_db.file_offset;
 
-    switch (format) {
+    switch (obj_descr.format) {
     case CFormatGuess::eFasta:
         return ReadFasta(in, fReadFasta_AssumeNuc);
     case CFormatGuess::eTextASN:
     case CFormatGuess::eXml:
     case CFormatGuess::eBinaryASN:
         {
-        in.seekg(offset);
+        in.seekg(obj_descr.offset);
         auto_ptr<CObjectIStream> 
-               is(CObjectIStream::Open(FormatGuess2Serial(format), in));
-        if (str_type == "Bioseq") {
+               is(CObjectIStream::Open(FormatGuess2Serial(obj_descr.format), in));
+        if (obj_descr.type_str == "Bioseq") {
             //
             // If object is a bare Bioseq: read it and 
             // construct a Seq_entry on it
@@ -114,7 +91,7 @@ CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& db,
             seq_entry->SetSeq(*bioseq);
             return seq_entry;
         } else 
-        if (str_type == "Seq-entry") {
+        if (obj_descr.type_str == "Seq-entry") {
             CRef<CSeq_entry> seq_entry(new CSeq_entry());
             is->Read(ObjectInfo(*seq_entry));
             return seq_entry;
@@ -127,6 +104,7 @@ CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& db,
     default:
         LDS_THROW(eNotImplemented, "Not implemeneted yet.");
     }
+
 }
 
 
@@ -136,6 +114,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/10 20:10:09  kuznets
+ * Code clean up
+ *
  * Revision 1.3  2003/06/23 18:57:31  kuznets
  * LDS_LoadTSE corrected to read XML serialization format.
  *
