@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/11/17 22:13:23  gouriano
+* in CSerialObject::Assign: on self-assignment issue a warning only
+*
 * Revision 1.18  2003/11/17 14:39:15  gouriano
 * Prohibit assignment of a serial object to itself
 *
@@ -111,8 +114,9 @@ CSerialObject::~CSerialObject()
 void CSerialObject::Assign(const CSerialObject& source)
 {
     if (this == &source) {
-        NCBI_THROW(CSerialException,eIllegalCall,
-                   "Cannot assign a serial object to itself");
+        ERR_POST(Warning <<
+            "CSerialObject::Assign(): an attempt to assign a serial object to itself");
+        return;
     }
     if ( typeid(source) != typeid(*this) ) {
         ERR_POST(Fatal <<
