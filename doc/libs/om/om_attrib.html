@@ -342,56 +342,8 @@ Any annotation iterator
 starts with the following data: sequence location
 (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/SEQLOC.HTML">Seq_loc</a>)
 and a Scope. In turn, Seq_loc refers to a Seq_id. Examining
-all   Data   Sources  in the Scope, iterator object finds all top-level
-seq.entries,    which  contain  annotations pointing to the proper Seq_id.
-After that the    special  filtering  rules are to be applied:
-</p>
-
-<ol>
-  <li>If a top-level seq.entry (TSE) contains bio sequence identified by the
-    Seq_id, include the TSE into the resulting TSE set. If multiple TSEs contain
-    bio sequence, possibly identified by ID (e.g., different versions of the
-    same accession, while ID specifies accession only), select the live TSE and
-    ignore dead entries. If all TSEs selected are dead, report an error - we
-    cannot decide which one is acceptable. (The latest information about the
-    ID sequence will always include good annotations for this sequence).</li>
-  <li>If multiple TSEs contain bioseqs, possibly identified by ID, and one
-    of these TSEs has been recorded in the Scope's history, select this
-    TSE    and  ignore other entries. If more than one TSE can be found in the
-    Scope's    history,  report an error. (This means, the user has explicitly
-    selected   a dead sequence  for his query).</li>
-  <li>If a TSE, containing only references to ID (but no bioseqs identified
-    by ID) is live, include it into the resulting set. (Live TSE always
-    contains      information, which may be used to describe the sequence, even
-    if the sequence     itself is already dead).</li>
-  <li>From dead TSEs not containing the ID bioseq itself select only those
-    found in the scope's history. (Dead TSE means it is not good anymore
-    and    should not be used to describe the ID sequence, no matter live or
-    dead.  History  record means the user has explicitly selected the dead TSE
-    for his  query).</li>
-</ol>
-
-<p>
-The algorithm for selecting TSEs is as follows:
-</p>
-
-<ol>
-  <li>Select all TSEs, containing annotations with references to the ID;</li>
-  <li>Find all TSEs from the set selected in (1), containing bioseqs identified
-    by ID;</li>
-  <li>Check the scope's history for TSEs found in (2). If there is more than
-    one match - report an error. If there is one match, select it and ignore
-    others, proceed to (5). If there are no matches, proceed to (4).</li>
-  <li>Check whether any of the TSEs from the (2) set is live. If there is
-    no live TSE and the set contains multiple dead TSEs, report an error.
-    Otherwise    select the live or the only dead TSE.</li>
-  <li>From the set of TSEs found in (1) exclude all TSEs selected in (2).</li>
-  <li>From (5) select live TSEs, include all in the resulting set.</li>
-  <li>From (5) select dead TSEs. From the resulting set select TSEs contained
-    in the scope's history.</li>
-</ol>
-
-<p>
+all   Data   Sources  in the Scope, iterator object finds 
+all appropriate annotations.
 Annotation iterator is a base class for defining other iterators (feature,
 graph and alignment) - it is not used directly.
 </p>
