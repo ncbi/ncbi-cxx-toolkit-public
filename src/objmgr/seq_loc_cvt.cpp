@@ -140,9 +140,8 @@ void CSeq_loc_Conversion::CombineWith(CSeq_loc_Conversion& cvt)
     _ASSERT( !overlap.Empty() );
 
     TSeqPos new_dst_from = cvt.ConvertPos(overlap.GetFrom());
-    TSeqPos new_dst_to = cvt.ConvertPos(overlap.GetTo());
     _ASSERT(new_dst_from != kInvalidSeqPos);
-    _ASSERT(new_dst_to != kInvalidSeqPos);
+    _ASSERT(cvt.ConvertPos(overlap.GetTo()) != kInvalidSeqPos);
     bool new_reverse = cvt.m_Reverse ? !m_Reverse : m_Reverse;
     if (overlap.GetFrom() > dst_rg.GetFrom()) {
         TSeqPos l_trunc = overlap.GetFrom() - dst_rg.GetFrom();
@@ -323,6 +322,119 @@ void CSeq_loc_Conversion::SetDstLoc(CRef<CSeq_loc>* dst)
 }
 
 
+void CSeq_loc_Conversion::ConvertPacked_int(const CSeq_loc& src,
+                                            CRef<CSeq_loc>* dst)
+{
+    _ASSERT(src.Which() == CSeq_loc::e_Packed_int);
+    const CPacked_seqint::Tdata& src_ints = src.GetPacked_int().Get();
+    CPacked_seqint::Tdata* dst_ints = 0;
+    ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
+        if ( ConvertInterval(**i) ) {
+            if ( !dst_ints ) {
+                dst->Reset(new CSeq_loc);
+                dst_ints = &(*dst)->SetPacked_int().Set();
+            }
+            dst_ints->push_back(GetDstInterval());
+        }
+    }
+}
+
+
+void CSeq_loc_Conversion::ConvertPacked_pnt(const CSeq_loc& src,
+                                            CRef<CSeq_loc>* dst)
+{
+    _ASSERT(src.Which() == CSeq_loc::e_Packed_pnt);
+    const CPacked_seqpnt& src_pack_pnts = src.GetPacked_pnt();
+    if ( !GoodSrcId(src_pack_pnts.GetId()) ) {
+        return;
+    }
+    const CPacked_seqpnt::TPoints& src_pnts = src_pack_pnts.GetPoints();
+    CPacked_seqpnt::TPoints* dst_pnts = 0;
+    ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
+        TSeqPos dst_pos = ConvertPos(*i);
+        if ( dst_pos != kInvalidSeqPos ) {
+            if ( !dst_pnts ) {
+                dst->Reset(new CSeq_loc);
+                CPacked_seqpnt& pnts = (*dst)->SetPacked_pnt();
+                pnts.SetId(GetDstId());
+                dst_pnts = &pnts.SetPoints();
+                if ( src_pack_pnts.IsSetStrand() ) {
+                    pnts.SetStrand(ConvertStrand(src_pack_pnts.GetStrand()));
+                }
+            }
+            dst_pnts->push_back(dst_pos);
+            m_TotalRange += TRange(dst_pos, dst_pos);
+        }
+    }
+}
+
+
+void CSeq_loc_Conversion::ConvertMix(const CSeq_loc& src,
+                                     CRef<CSeq_loc>* dst)
+{
+    _ASSERT(src.Which() == CSeq_loc::e_Mix);
+    const CSeq_loc_mix::Tdata& src_mix = src.GetMix().Get();
+    CSeq_loc_mix::Tdata* dst_mix = 0;
+    CRef<CSeq_loc> dst_loc;
+    ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
+        if ( Convert(**i, &dst_loc, eCnvAlways) ) {
+            if ( !dst_mix ) {
+                dst->Reset(new CSeq_loc);
+                dst_mix = &(*dst)->SetMix().Set();
+            }
+            _ASSERT(dst_loc);
+            dst_mix->push_back(dst_loc);
+        }
+    }
+}
+
+
+void CSeq_loc_Conversion::ConvertEquiv(const CSeq_loc& src,
+                                       CRef<CSeq_loc>* dst)
+{
+    _ASSERT(src.Which() == CSeq_loc::e_Equiv);
+    const CSeq_loc_equiv::Tdata& src_equiv = src.GetEquiv().Get();
+    CSeq_loc_equiv::Tdata* dst_equiv = 0;
+    CRef<CSeq_loc> dst_loc;
+    ITERATE ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
+        if ( Convert(**i, &dst_loc, eCnvAlways) ) {
+            if ( !dst_equiv ) {
+                dst->Reset(new CSeq_loc);
+                dst_equiv = &(*dst)->SetEquiv().Set();
+            }
+            dst_equiv->push_back(dst_loc);
+        }
+    }
+}
+
+
+void CSeq_loc_Conversion::ConvertBond(const CSeq_loc& src,
+                                      CRef<CSeq_loc>* dst)
+{
+    _ASSERT(src.Which() == CSeq_loc::e_Bond);
+    const CSeq_bond& src_bond = src.GetBond();
+    CSeq_bond* dst_bond = 0;
+    if ( ConvertPoint(src_bond.GetA()) ) {
+        dst->Reset(new CSeq_loc);
+        dst_bond = &(*dst)->SetBond();
+        dst_bond->SetA(*GetDstPoint());
+        if ( src_bond.IsSetB() ) {
+            dst_bond->SetB().Assign(src_bond.GetB());
+        }
+    }
+    if ( src_bond.IsSetB() ) {
+        if ( ConvertPoint(src_bond.GetB()) ) {
+            if ( !dst_bond ) {
+                dst->Reset(new CSeq_loc);
+                dst_bond = &(*dst)->SetBond();
+                dst_bond->SetA().Assign(src_bond.GetA());
+            }
+            dst_bond->SetB(*GetDstPoint());
+        }
+    }
+}
+
+
 bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst,
                                   EConvertFlag flag)
 {
@@ -374,100 +486,27 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst,
     }
     case CSeq_loc::e_Packed_int:
     {
-        const CPacked_seqint::Tdata& src_ints = src.GetPacked_int().Get();
-        CPacked_seqint::Tdata* dst_ints = 0;
-        ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
-            if ( ConvertInterval(**i) ) {
-                if ( !dst_ints ) {
-                    dst->Reset(loc = new CSeq_loc);
-                    dst_ints = &loc->SetPacked_int().Set();
-                }
-                dst_ints->push_back(GetDstInterval());
-            }
-        }
+        ConvertPacked_int(src, dst);
         break;
     }
     case CSeq_loc::e_Packed_pnt:
     {
-        const CPacked_seqpnt& src_pack_pnts = src.GetPacked_pnt();
-        if ( !GoodSrcId(src_pack_pnts.GetId()) ) {
-            break;
-        }
-        const CPacked_seqpnt::TPoints& src_pnts = src_pack_pnts.GetPoints();
-        CPacked_seqpnt::TPoints* dst_pnts = 0;
-        ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
-            TSeqPos dst_pos = ConvertPos(*i);
-            if ( dst_pos != kInvalidSeqPos ) {
-                if ( !dst_pnts ) {
-                    dst->Reset(loc = new CSeq_loc);
-                    CPacked_seqpnt& pnts = loc->SetPacked_pnt();
-                    pnts.SetId(GetDstId());
-                    dst_pnts = &pnts.SetPoints();
-                    if ( src_pack_pnts.IsSetStrand() ) {
-                        pnts.SetStrand(ConvertStrand(src_pack_pnts.GetStrand()));
-                    }
-                }
-                dst_pnts->push_back(dst_pos);
-                m_TotalRange += TRange(dst_pos, dst_pos);
-            }
-        }
+        ConvertPacked_pnt(src, dst);
         break;
     }
     case CSeq_loc::e_Mix:
     {
-        const CSeq_loc_mix::Tdata& src_mix = src.GetMix().Get();
-        CSeq_loc_mix::Tdata* dst_mix = 0;
-        CRef<CSeq_loc> dst_loc;
-        ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
-            if ( Convert(**i, &dst_loc, eCnvAlways) ) {
-                if ( !dst_mix ) {
-                    dst->Reset(loc = new CSeq_loc);
-                    dst_mix = &loc->SetMix().Set();
-                }
-                _ASSERT(dst_loc);
-                dst_mix->push_back(dst_loc);
-            }
-        }
+        ConvertMix(src, dst);
         break;
     }
     case CSeq_loc::e_Equiv:
     {
-        const CSeq_loc_equiv::Tdata& src_equiv = src.GetEquiv().Get();
-        CSeq_loc_equiv::Tdata* dst_equiv = 0;
-        CRef<CSeq_loc> dst_loc;
-        ITERATE ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
-            if ( Convert(**i, &dst_loc, eCnvAlways) ) {
-                if ( !dst_equiv ) {
-                    dst->Reset(loc = new CSeq_loc);
-                    dst_equiv = &loc->SetEquiv().Set();
-                }
-                dst_equiv->push_back(dst_loc);
-            }
-        }
+        ConvertEquiv(src, dst);
         break;
     }
     case CSeq_loc::e_Bond:
     {
-        const CSeq_bond& src_bond = src.GetBond();
-        CSeq_bond* dst_bond = 0;
-        if ( ConvertPoint(src_bond.GetA()) ) {
-            dst->Reset(loc = new CSeq_loc);
-            dst_bond = &loc->SetBond();
-            dst_bond->SetA(*GetDstPoint());
-            if ( src_bond.IsSetB() ) {
-                dst_bond->SetB().Assign(src_bond.GetB());
-            }
-        }
-        if ( src_bond.IsSetB() ) {
-            if ( ConvertPoint(src_bond.GetB()) ) {
-                if ( !dst_bond ) {
-                    dst->Reset(loc = new CSeq_loc);
-                    dst_bond = &loc->SetBond();
-                    dst_bond->SetA().Assign(src_bond.GetA());
-                }
-                dst_bond->SetB(*GetDstPoint());
-            }
-        }
+        ConvertBond(src, dst);
         break;
     }
     default:
@@ -698,6 +737,182 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
 }
 
 
+bool CSeq_loc_Conversion_Set::ConvertPacked_int(const CSeq_loc& src,
+                                                CRef<CSeq_loc>* dst,
+                                                unsigned int loc_index)
+{
+    bool res = false;
+    _ASSERT(src.Which() == CSeq_loc::e_Packed_int);
+    const CPacked_seqint::Tdata& src_ints = src.GetPacked_int().Get();
+    CPacked_seqint::Tdata& dst_ints = (*dst)->SetPacked_int().Set();
+    ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
+        CRef<CSeq_loc> dst_int(new CSeq_loc);
+        bool mapped = ConvertInterval(**i, &dst_int, loc_index);
+        if (mapped) {
+            if ( dst_int->IsInt() ) {
+                dst_ints.push_back(CRef<CSeq_interval>(&dst_int->SetInt()));
+            }
+            else if ( dst_int->IsPacked_int() ) {
+                CPacked_seqint::Tdata& splitted = dst_int->SetPacked_int().Set();
+                dst_ints.merge(splitted);
+            }
+            else {
+                _ASSERT("this cannot happen" && 0);
+            }
+        }
+        m_Partial |= !mapped;
+        res |= mapped;
+    }
+    return res;
+}
+
+
+bool CSeq_loc_Conversion_Set::ConvertPacked_pnt(const CSeq_loc& src,
+                                                CRef<CSeq_loc>* dst,
+                                                unsigned int loc_index)
+{
+    bool res = false;
+    _ASSERT(src.Which() == CSeq_loc::e_Packed_pnt);
+    const CPacked_seqpnt& src_pack_pnts = src.GetPacked_pnt();
+    const CPacked_seqpnt::TPoints& src_pnts = src_pack_pnts.GetPoints();
+    CRef<CSeq_loc> tmp(new CSeq_loc);
+    // using mix, not point, since mappings may have
+    // different strand, fuzz etc.
+    CSeq_loc_mix::Tdata& locs = tmp->SetMix().Set();
+    ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
+        bool mapped = false;
+        TRangeIterator mit = BeginRanges(
+            CSeq_id_Handle::GetHandle(src_pack_pnts.GetId()),
+            *i, *i,
+            loc_index);
+        for ( ; mit; ++mit) {
+            CSeq_loc_Conversion& cvt = *mit->second;
+            cvt.Reset();
+            if ( !cvt.GoodSrcId(src_pack_pnts.GetId()) ) {
+                continue;
+            }
+            TSeqPos dst_pos = cvt.ConvertPos(*i);
+            if ( dst_pos != kInvalidSeqPos ) {
+                CRef<CSeq_loc> pnt(new CSeq_loc);
+                pnt->SetPnt(*cvt.GetDstPoint());
+                _ASSERT(pnt);
+                locs.push_back(pnt);
+                m_TotalRange += cvt.GetTotalRange();
+                mapped = true;
+                break;
+            }
+        }
+        m_Partial |= !mapped;
+        res |= mapped;
+    }
+    return res;
+}
+
+
+bool CSeq_loc_Conversion_Set::ConvertMix(const CSeq_loc& src,
+                                         CRef<CSeq_loc>* dst,
+                                         unsigned int loc_index)
+{
+    bool res = false;
+    _ASSERT(src.Which() == CSeq_loc::e_Mix);
+    const CSeq_loc_mix::Tdata& src_mix = src.GetMix().Get();
+    CRef<CSeq_loc> dst_loc;
+    CSeq_loc_mix::Tdata& dst_mix = (*dst)->SetMix().Set();
+    ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
+        dst_loc.Reset(new CSeq_loc);
+        if ( Convert(**i, &dst_loc, loc_index) ) {
+            _ASSERT(dst_loc);
+            dst_mix.push_back(dst_loc);
+            res = true;
+        }
+    }
+    m_Partial |= !res;
+    return res;
+}
+
+
+bool CSeq_loc_Conversion_Set::ConvertEquiv(const CSeq_loc& src,
+                                           CRef<CSeq_loc>* dst,
+                                           unsigned int loc_index)
+{
+    bool res = false;
+    _ASSERT(src.Which() == CSeq_loc::e_Equiv);
+    const CSeq_loc_equiv::Tdata& src_equiv = src.GetEquiv().Get();
+    CRef<CSeq_loc> dst_loc;
+    CSeq_loc_equiv::Tdata& dst_equiv = (*dst)->SetEquiv().Set();
+    ITERATE ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
+        if ( Convert(**i, &dst_loc, loc_index) ) {
+            dst_equiv.push_back(dst_loc);
+            res = true;
+        }
+    }
+    m_Partial |= !res;
+    return res;
+}
+
+
+bool CSeq_loc_Conversion_Set::ConvertBond(const CSeq_loc& src,
+                                          CRef<CSeq_loc>* dst,
+                                          unsigned int loc_index)
+{
+    bool res = false;
+    _ASSERT(src.Which() == CSeq_loc::e_Bond);
+    const CSeq_bond& src_bond = src.GetBond();
+    // using mix, not bond, since mappings may have
+    // different strand, fuzz etc.
+    (*dst)->SetBond();
+    CRef<CSeq_point> pntA;
+    CRef<CSeq_point> pntB;
+    {{
+        TRangeIterator mit = BeginRanges(
+            CSeq_id_Handle::GetHandle(src_bond.GetA().GetId()),
+            src_bond.GetA().GetPoint(), src_bond.GetA().GetPoint(),
+            loc_index);
+        for ( ; mit  &&  !bool(pntA); ++mit) {
+            CSeq_loc_Conversion& cvt = *mit->second;
+            cvt.Reset();
+            if (cvt.ConvertPoint(src_bond.GetA())) {
+                pntA = cvt.GetDstPoint();
+                m_TotalRange += cvt.GetTotalRange();
+                res = true;
+            }
+        }
+    }}
+    if ( src_bond.IsSetB() ) {
+        TRangeIterator mit = BeginRanges(
+            CSeq_id_Handle::GetHandle(src_bond.GetB().GetId()),
+            src_bond.GetB().GetPoint(), src_bond.GetB().GetPoint(),
+            loc_index);
+        for ( ; mit  &&  !bool(pntB); ++mit) {
+            CSeq_loc_Conversion& cvt = *mit->second;
+            cvt.Reset();
+            if (!bool(pntB)  &&  cvt.ConvertPoint(src_bond.GetB())) {
+                pntB = cvt.GetDstPoint();
+                m_TotalRange += cvt.GetTotalRange();
+                res = true;
+            }
+        }
+    }
+    CSeq_bond& dst_bond = (*dst)->SetBond();
+    if ( bool(pntA)  ||  bool(pntB) ) {
+        if ( bool(pntA) ) {
+            dst_bond.SetA(*pntA);
+        }
+        else {
+            dst_bond.SetA().Assign(src_bond.GetA());
+        }
+        if ( bool(pntB) ) {
+            dst_bond.SetB(*pntB);
+        }
+        else if ( src_bond.IsSetB() ) {
+            dst_bond.SetB().Assign(src_bond.GetB());
+        }
+    }
+    m_Partial |= (!bool(pntA)  ||  !bool(pntB));
+    return res;
+}
+
+
 bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src,
                                       CRef<CSeq_loc>* dst,
                                       unsigned int loc_index)
@@ -759,148 +974,27 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src,
     }
     case CSeq_loc::e_Packed_int:
     {
-        const CPacked_seqint::Tdata& src_ints = src.GetPacked_int().Get();
-        CPacked_seqint::Tdata& dst_ints = (*dst)->SetPacked_int().Set();
-        ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
-            CRef<CSeq_loc> dst_int(new CSeq_loc);
-            bool mapped = ConvertInterval(**i, &dst_int, loc_index);
-            if (mapped) {
-                if ( dst_int->IsInt() ) {
-                    dst_ints.push_back(CRef<CSeq_interval>(&dst_int->SetInt()));
-                }
-                else if ( dst_int->IsPacked_int() ) {
-                    CPacked_seqint::Tdata& splitted = dst_int->SetPacked_int().Set();
-                    dst_ints.merge(splitted);
-                }
-                else {
-                    _ASSERT("this cannot happen" && 0);
-                }
-            }
-            m_Partial |= !mapped;
-            res |= mapped;
-        }
+        res |= ConvertPacked_int(src, dst, loc_index);
         break;
     }
     case CSeq_loc::e_Packed_pnt:
     {
-        const CPacked_seqpnt& src_pack_pnts = src.GetPacked_pnt();
-        const CPacked_seqpnt::TPoints& src_pnts = src_pack_pnts.GetPoints();
-        CRef<CSeq_loc> tmp(new CSeq_loc);
-        // using mix, not point, since mappings may have
-        // different strand, fuzz etc.
-        CSeq_loc_mix::Tdata& locs = tmp->SetMix().Set();
-        ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
-            bool mapped = false;
-            TRangeIterator mit = BeginRanges(
-                CSeq_id_Handle::GetHandle(src_pack_pnts.GetId()),
-                *i, *i,
-                loc_index);
-            for ( ; mit; ++mit) {
-                CSeq_loc_Conversion& cvt = *mit->second;
-                cvt.Reset();
-                if ( !cvt.GoodSrcId(src_pack_pnts.GetId()) ) {
-                    continue;
-                }
-                TSeqPos dst_pos = cvt.ConvertPos(*i);
-                if ( dst_pos != kInvalidSeqPos ) {
-                    CRef<CSeq_loc> pnt(new CSeq_loc);
-                    pnt->SetPnt(*cvt.GetDstPoint());
-                    _ASSERT(pnt);
-                    locs.push_back(pnt);
-                    m_TotalRange += cvt.GetTotalRange();
-                    mapped = true;
-                    break;
-                }
-            }
-            m_Partial |= !mapped;
-            res |= mapped;
-        }
+        res |= ConvertPacked_pnt(src, dst, loc_index);
         break;
     }
     case CSeq_loc::e_Mix:
     {
-        const CSeq_loc_mix::Tdata& src_mix = src.GetMix().Get();
-        CRef<CSeq_loc> dst_loc;
-        CSeq_loc_mix::Tdata& dst_mix = (*dst)->SetMix().Set();
-        ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
-            dst_loc.Reset(new CSeq_loc);
-            if ( Convert(**i, &dst_loc, loc_index) ) {
-                _ASSERT(dst_loc);
-                dst_mix.push_back(dst_loc);
-                res = true;
-            }
-        }
-        m_Partial |= !res;
+        res = ConvertMix(src, dst, loc_index);
         break;
     }
     case CSeq_loc::e_Equiv:
     {
-        const CSeq_loc_equiv::Tdata& src_equiv = src.GetEquiv().Get();
-        CRef<CSeq_loc> dst_loc;
-        CSeq_loc_equiv::Tdata& dst_equiv = (*dst)->SetEquiv().Set();
-        ITERATE ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
-            if ( Convert(**i, &dst_loc, loc_index) ) {
-                dst_equiv.push_back(dst_loc);
-                res = true;
-            }
-        }
-        m_Partial |= !res;
+        res = ConvertEquiv(src, dst, loc_index);
         break;
     }
     case CSeq_loc::e_Bond:
     {
-        const CSeq_bond& src_bond = src.GetBond();
-        // using mix, not bond, since mappings may have
-        // different strand, fuzz etc.
-        (*dst)->SetBond();
-        CRef<CSeq_point> pntA;
-        CRef<CSeq_point> pntB;
-        {{
-            TRangeIterator mit = BeginRanges(
-                CSeq_id_Handle::GetHandle(src_bond.GetA().GetId()),
-                src_bond.GetA().GetPoint(), src_bond.GetA().GetPoint(),
-                loc_index);
-            for ( ; mit  &&  !bool(pntA); ++mit) {
-                CSeq_loc_Conversion& cvt = *mit->second;
-                cvt.Reset();
-                if (cvt.ConvertPoint(src_bond.GetA())) {
-                    pntA = cvt.GetDstPoint();
-                    m_TotalRange += cvt.GetTotalRange();
-                    res = true;
-                }
-            }
-        }}
-        if ( src_bond.IsSetB() ) {
-            TRangeIterator mit = BeginRanges(
-                CSeq_id_Handle::GetHandle(src_bond.GetB().GetId()),
-                src_bond.GetB().GetPoint(), src_bond.GetB().GetPoint(),
-                loc_index);
-            for ( ; mit  &&  !bool(pntB); ++mit) {
-                CSeq_loc_Conversion& cvt = *mit->second;
-                cvt.Reset();
-                if (!bool(pntB)  &&  cvt.ConvertPoint(src_bond.GetB())) {
-                    pntB = cvt.GetDstPoint();
-                    m_TotalRange += cvt.GetTotalRange();
-                    res = true;
-                }
-            }
-        }
-        CSeq_bond& dst_bond = (*dst)->SetBond();
-        if ( bool(pntA)  ||  bool(pntB) ) {
-            if ( bool(pntA) ) {
-                dst_bond.SetA(*pntA);
-            }
-            else {
-                dst_bond.SetA().Assign(src_bond.GetA());
-            }
-            if ( bool(pntB) ) {
-                dst_bond.SetB(*pntB);
-            }
-            else if ( src_bond.IsSetB() ) {
-                dst_bond.SetB().Assign(src_bond.GetB());
-            }
-        }
-        m_Partial |= (!bool(pntA)  ||  !bool(pntB));
+        res = ConvertBond(src, dst, loc_index);
         break;
     }
     default:
@@ -926,6 +1020,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/07/19 17:41:34  grichenk
+* Simplified switches in Convert() methods.
+*
 * Revision 1.31  2004/07/19 14:24:00  grichenk
 * Simplified and fixed mapping through annot.locs
 *

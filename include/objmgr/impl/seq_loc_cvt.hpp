@@ -180,6 +180,12 @@ private:
             return TRange(m_Src_from, m_Src_to);
         }
 
+    void ConvertPacked_int(const CSeq_loc& src, CRef<CSeq_loc>* dst);
+    void ConvertPacked_pnt(const CSeq_loc& src, CRef<CSeq_loc>* dst);
+    void ConvertMix(const CSeq_loc& src, CRef<CSeq_loc>* dst);
+    void ConvertEquiv(const CSeq_loc& src, CRef<CSeq_loc>* dst);
+    void ConvertBond(const CSeq_loc& src, CRef<CSeq_loc>* dst);
+
     // Translation parameters:
     //   Source id and bounds:
     CSeq_id_Handle m_Src_id_Handle;
@@ -253,6 +259,22 @@ private:
     bool ConvertInterval(const CSeq_interval& src,
                          CRef<CSeq_loc>* dst,
                          unsigned int loc_index);
+
+    bool ConvertPacked_int(const CSeq_loc& src,
+                           CRef<CSeq_loc>* dst,
+                           unsigned int loc_index);
+    bool ConvertPacked_pnt(const CSeq_loc& src,
+                           CRef<CSeq_loc>* dst,
+                           unsigned int loc_index);
+    bool ConvertMix(const CSeq_loc& src,
+                    CRef<CSeq_loc>* dst,
+                    unsigned int loc_index);
+    bool ConvertEquiv(const CSeq_loc& src,
+                      CRef<CSeq_loc>* dst,
+                      unsigned int loc_index);
+    bool ConvertBond(const CSeq_loc& src,
+                     CRef<CSeq_loc>* dst,
+                     unsigned int loc_index);
 
     CRef<CSeq_loc_Conversion> m_SingleConv;
     unsigned int              m_SingleIndex;
@@ -341,6 +363,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/07/19 17:41:34  grichenk
+* Simplified switches in Convert() methods.
+*
 * Revision 1.20  2004/07/19 14:24:00  grichenk
 * Simplified and fixed mapping through annot.locs
 *
