@@ -1589,7 +1589,7 @@ fi;
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug optimization dll static runpath mt 64 \
+debug optimization dll static runpath mt 64 projects \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
 sybase-new ftds orbacus \
@@ -1615,7 +1615,7 @@ for x_arg in "$@" ; do
    fi
 
    case "$x_arg" in
-      --with-extra-action= | --exec-prefix= \
+      --with-extra-action= | --exec-prefix= | --with-projects= \
       | --cache-file= | --build= | --host= | --target= | --with-runpath= )
       { { echo "$as_me:$LINENO: error: \"  $x_arg:  requires value;  use --help to show usage\"" >&5
 echo "$as_me: error: \"  $x_arg:  requires value;  use --help to show usage\"" >&2;}
@@ -7979,9 +7979,29 @@ case "$with_lib_rebuilds" in
 esac
 
 case "$with_projects" in
- /* | "" ) PROJECTS=$with_projects
+ "") if test -r projects; then
+        { echo "$as_me:$LINENO: using default projects file \"projects\"." >&5
+echo "$as_me: using default projects file \"projects\"." >&6;}
+        with_projects=projects
+        PROJECTS="\$(top_srcdir)/projects"
+
+     else
+        PROJECTS=""
+
+        if test -f projects; then
+           { echo "$as_me:$LINENO: WARNING: default projects file \"projects\" is unreadable." >&5
+echo "$as_me: WARNING: default projects file \"projects\" is unreadable." >&2;}
+        elif test -h projects; then
+           { echo "$as_me:$LINENO: WARNING: default projects file \"projects\" is a dangling link." >&5
+echo "$as_me: WARNING: default projects file \"projects\" is a dangling link." >&2;}
+        fi
+     fi
+     ;;
+ no) PROJECTS=""
+; with_projects= ;;
+ /*) PROJECTS=$with_projects
  ;;
- *       ) PROJECTS="\$(top_srcdir)/$with_projects"
+ * ) PROJECTS="\$(top_srcdir)/$with_projects"
  ;;
 esac
 

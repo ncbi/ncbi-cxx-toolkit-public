@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.40 2002/03/15 20:15:20 ucko Exp $
+#  $Id: configure.ac,v 1.41 2002/03/15 21:42:33 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -173,7 +173,7 @@ AC_ARG_WITH(manuals,
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug optimization dll static runpath mt 64 \
+debug optimization dll static runpath mt 64 projects \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
 sybase-new ftds orbacus \
@@ -201,7 +201,7 @@ for x_arg in "$@" ; do
    fi
 
    case "$x_arg" in
-      --with-extra-action= | --exec-prefix= \
+      --with-extra-action= | --exec-prefix= | --with-projects= \
       | --cache-file= | --build= | --host= | --target= | --with-runpath= )
       AC_MSG_ERROR(["  $x_arg:  requires value;  use --help to show usage"])
       ;;
@@ -2278,8 +2278,22 @@ case "$with_lib_rebuilds" in
 esac
 
 case "$with_projects" in
- /* | "" ) AC_SUBST(PROJECTS, $with_projects) ;;
- *       ) AC_SUBST(PROJECTS, "\$(top_srcdir)/$with_projects") ;;
+ "") if test -r projects; then
+        AC_MSG_NOTICE([using default projects file "projects".])
+        with_projects=projects
+        AC_SUBST(PROJECTS, "\$(top_srcdir)/projects")
+     else
+        AC_SUBST(PROJECTS, "")
+        if test -f projects; then
+           AC_MSG_WARN([default projects file "projects" is unreadable.])
+        elif test -h projects; then
+           AC_MSG_WARN([default projects file "projects" is a dangling link.])
+        fi
+     fi
+     ;;
+ no) AC_SUBST(PROJECTS, ""); with_projects= ;;
+ /*) AC_SUBST(PROJECTS, $with_projects) ;;
+ * ) AC_SUBST(PROJECTS, "\$(top_srcdir)/$with_projects") ;;
 esac
 
 
