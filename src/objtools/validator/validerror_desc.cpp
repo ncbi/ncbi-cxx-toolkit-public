@@ -136,7 +136,7 @@ void CValidError_desc::ValidateComment
 (const string& comment,
  const CSeqdesc& desc)
 {
-    if ( m_Imp.IsSerialNumberInComment(desc.GetComment()) ) {
+    if ( m_Imp.IsSerialNumberInComment(comment) ) {
         PostErr(eDiag_Info, eErr_SEQ_DESCR_SerialInComment,
             "Comment may refer to reference by serial number - "
             "attach reference specific comments to the reference "
@@ -200,6 +200,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/05/28 16:28:18  shomrat
+* Use the comment variable
+*
 * Revision 1.5  2003/03/31 14:40:24  shomrat
 * $id: -> $id$
 *
