@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.327 2004/10/07 20:28:21 ucko Exp $
+#  $Id: configure.ac,v 1.328 2004/10/08 14:58:58 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -683,6 +683,7 @@ case "$host_os:$compiler" in
    ;;
 
  solaris*:WorkShop* )
+   CPPFLAGS="-D__EXTENSIONS__ $CPPFLAGS"
    CXXFLAGS="+w +w2 $CXXFLAGS"
    DEPFLAGS="-xM1"
    LDFLAGS="-xildoff $LDFLAGS"
@@ -1940,6 +1941,8 @@ if test "$ncbi_cv_func_getservbyname_r" != "no" ; then
 fi
 
 
+AC_LANG_PUSH(C)
+# some of these can lose in C++ due to the way autoconf works
 AC_CHECK_FUNCS(localtime_r pthread_setconcurrency pthread_atfork)
 
 AC_SEARCH_LIBS(sched_yield, rt,
@@ -1950,8 +1953,6 @@ AC_SEARCH_LIBS(sched_yield, rt,
 
 ### Check for other standard library functions
 
-AC_LANG_PUSH(C)
-# some of these can lose in C++ due to the way autoconf works
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(strcasecmp strdup sysmp timegm atoll vasprintf vsnprintf \
                getpagesize)

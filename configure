@@ -3866,6 +3866,7 @@ case "$host_os:$compiler" in
    ;;
 
  solaris*:WorkShop* )
+   CPPFLAGS="-D__EXTENSIONS__ $CPPFLAGS"
    CXXFLAGS="+w +w2 $CXXFLAGS"
    DEPFLAGS="-xM1"
    LDFLAGS="-xildoff $LDFLAGS"
@@ -8006,6 +8007,14 @@ _ACEOF
 fi
 
 
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+# some of these can lose in C++ due to the way autoconf works
+
 
 
 
@@ -8207,14 +8216,6 @@ fi
 
 
 ### Check for other standard library functions
-
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-# some of these can lose in C++ due to the way autoconf works
 
 
 for ac_func in vprintf
