@@ -31,6 +31,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/06/19 20:08:31  vakatov
+* CCgiRequest::{Set,Get}InputStream()  -- to provide safe access to the
+* requests' content body
+*
 * Revision 1.9  2001/01/30 23:17:33  vakatov
 * + CCgiRequest::GetEntry()
 *
@@ -288,18 +292,20 @@ static void TestCgi_Request_Static(void)
     _ASSERT( !TestIndexes(indexes, "++") );
 }
 
-static void TestCgi_Request_Full(CNcbiIstream* istr,
+static void TestCgi_Request_Full(CNcbiIstream*         istr,
                                  const CNcbiArguments* args = 0,
-                                 bool indexes_as_entries = true)
+                                 CCgiRequest::TFlags   flags = 0)
 {
-    CCgiRequest CCR(args, 0, istr, indexes_as_entries);
+    CCgiRequest CCR(args, 0, istr, flags);
 
     NcbiCout << "\n\nCCgiRequest::\n";
 
     try {
         NcbiCout << "GetContentLength(): "
                  << CCR.GetContentLength() << NcbiEndl;
-    } STD_CATCH ("TestCgi_Request_Full");
+    }
+    STD_CATCH ("TestCgi_Request_Full");
+
     NcbiCout << "GetRandomProperty(\"USER_AGENT\"): "
              << CCR.GetRandomProperty("USER_AGENT").c_str() << NcbiEndl;
     NcbiCout << "GetRandomProperty(\"MY_RANDOM_PROP\"): "
@@ -359,10 +365,17 @@ static void TestCgi_Request_Full(CNcbiIstream* istr,
 
     TCgiIndexes indexes = CCR.GetIndexes();
     NcbiCout << "\nCCgiRequest::  ISINDEX values:\n";
-    if ( indexes.empty() )
+    if ( indexes.empty() ) {
         NcbiCout << "No ISINDEX values specified" << NcbiEndl;
-    else
+    } else {
         PrintIndexes(indexes);
+    }
+
+    CNcbiIstream* is = CCR.GetInputStream();
+    if ( is ) {
+        NcbiCout << "\nUn-parsed content body:\n";
+        NcbiCout << is->rdbuf() << NcbiEndl << NcbiEndl;
+    }
 }
 
 static void TestCgiMisc(void)
@@ -408,6 +421,21 @@ static void TestCgi(const CNcbiArguments& args)
         TestCgi_Request_Full(&istr);
     } STD_CATCH("TestCgi(POST only)");
 
+    try { // POST, fDoNotParseContent
+        char inp_str[] = "post11=val11&post12void=&post13=val13";
+        CNcbiIstrstream istr(inp_str);
+        char len[32];
+        _ASSERT(::sprintf(len, "CONTENT_LENGTH=%ld", (long)::strlen(inp_str)));
+        _ASSERT( !::putenv(len) );
+
+        _ASSERT( !::putenv("SERVER_PORT=") );
+        _ASSERT( !::putenv("REMOTE_ADDRESS=") );
+        _ASSERT( !::putenv("REQUEST_METHOD=POST") );
+        _ASSERT( !::putenv("QUERY_STRING=") );
+        _ASSERT( !::putenv("HTTP_COOKIE=") );
+        TestCgi_Request_Full(&istr, 0, CCgiRequest::fDoNotParseContent);
+    } STD_CATCH("TestCgi(POST only)");
+
     try { // POST + aux. functions
         char inp_str[] = "post22void=&post23void=";
         CNcbiIstrstream istr(inp_str);
@@ -444,7 +472,7 @@ static void TestCgi(const CNcbiArguments& args)
         CNcbiIstrstream istr(inp_str);
         _ASSERT( !::putenv("QUERY_STRING=get_isidx1+get_isidx2+get_isidx3") );
         _ASSERT( !::putenv("HTTP_COOKIE=cook1=val1; cook2=val2;") );
-        TestCgi_Request_Full(&istr, 0, false);
+        TestCgi_Request_Full(&istr, 0, CCgiRequest::fIndexesNotEntries);
     } STD_CATCH("TestCgi(GET ISINDEX + COOKIES)");
 
     try { // GET REGULAR, NO '='

@@ -36,6 +36,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2001/06/19 20:08:29  vakatov
+* CCgiRequest::{Set,Get}InputStream()  -- to provide safe access to the
+* requests' content body
+*
 * Revision 1.49  2001/06/13 21:04:35  vakatov
 * Formal improvements and general beautifications of the CGI lib sources.
 *
@@ -431,34 +435,35 @@ typedef list<string>                 TCgiIndexes;
 class CNcbiArguments;
 class CNcbiEnvironment;
 
-// Constant returned by GetContentLength() when Content-Length: header
-// is missing
-static const size_t kContentLengthUnknown = size_t(-1);
-
 
 //
 class CCgiRequest
 {
 public:
     // Startup initialization:
-    //   retrieve request's properties and cookies from environment
-    //   retrieve request's entries from "$QUERY_STRING"
-    // If "$REQUEST_METHOD" == "POST" then add entries from stream "istr"
+    //   retrieve request's properties and cookies from environment;
+    //   retrieve request's entries from "$QUERY_STRING".
+    // If "$REQUEST_METHOD" == "POST" and "$CONTENT_TYPE" is empty or either
+    // "application/x-www-form-urlencoded" or "multipart/form-data",
+    // and "fDoNotParseContent" flag is not set,
+    // then retrieve and parse entries from the input stream "istr".
     // If "$REQUEST_METHOD" is undefined then try to retrieve the request's
     // entries from the 1st cmd.-line argument, and do not use "$QUERY_STRING"
-    // and "istr" at all
+    // and "istr" at all.
     typedef int TFlags;
     enum Flags {
-        // dont handle indexes as regular FORM entries with empty value
+        // do not handle indexes as regular FORM entries with empty value
         fIndexesNotEntries  = 0x1,
         // do not parse $QUERY_STRING
         fIgnoreQueryString  = 0x2,
-        // own the passed "env" (and destroy them it in destructor)
-        fOwnEnvironment     = 0x4
+        // own the passed "env" (and destroy it in the destructor)
+        fOwnEnvironment     = 0x4,
+        // do not automatically parse the request's content body (from "istr")
+        fDoNotParseContent  = 0x8
     };
     CCgiRequest(const         CNcbiArguments*   args = 0,
                 const         CNcbiEnvironment* env  = 0,
-                CNcbiIstream* istr  = 0 /* NcbiCin */,
+                CNcbiIstream* istr  = 0 /*NcbiCin*/,
                 TFlags        flags = 0);
     // args := CNcbiArguments(argc,argv), env := CNcbiEnvironment(envp)
     CCgiRequest(int                argc,
@@ -483,10 +488,11 @@ public:
     //        FastCGI application, the set (and values) of env.variables change
     //        from request to request, and they differ from those returned
     //        by CNcbiApplication::GetEnvironment()!
-    const string& GetRandomProperty(const string& key, bool http=true) const;
+    const string& GetRandomProperty(const string& key, bool http = true) const;
 
-    // Get content length (using value of the property 'eCgi_ContentLength')
-    // may return kContentLengthUnknown if Content-Length header is missing
+    // Get content length using value of the property 'eCgi_ContentLength'.
+    // Return "kContentLengthUnknown" if Content-Length header is missing.
+    static const size_t kContentLengthUnknown;
     size_t GetContentLength(void) const;
 
     // Retrieve the request cookies
@@ -510,6 +516,19 @@ public:
     // was "true"(default).
     const TCgiIndexes& GetIndexes(void) const;
     TCgiIndexes& GetIndexes(void);
+
+    // Return pointer to the input stream.
+    // Return NULL if the input stream is absent, or if it has been
+    // automagically read and parsed already (the "POST" method, and empty or
+    // "application/x-www-form-urlencoded" or "multipart/form-data" type,
+    // and "fDoNotParseContent" flag was not passed to the constructor).
+    CNcbiIstream* GetInputStream(void) const;
+
+    // Set input stream to "is".
+    // If "own" is set to TRUE then this stream will be destroyed
+    // as soon as SetInputStream() gets called with another stream pointer.
+    // NOTE: SetInputStream(0) will be called in ::~CCgiRequest().
+    void SetInputStream(CNcbiIstream* is, bool own = false);
 
     // Decode the URL-encoded(FORM or ISINDEX) string "str" into a set of
     // entries <"name", "value"> and add them to the "entries" set.
@@ -536,6 +555,9 @@ private:
     TCgiIndexes m_Indexes;
     // set of the request cookies(already retrieved; cached)
     CCgiCookies m_Cookies;
+    // input stream
+    CNcbiIstream* m_Input; 
+    bool          m_OwnInput;
 
     // the real constructor code
     void x_Init(const CNcbiArguments*   args,
@@ -678,6 +700,10 @@ inline TCgiIndexes& CCgiRequest::GetIndexes(void) {
 }
 inline const TCgiIndexes& CCgiRequest::GetIndexes(void) const {
     return m_Indexes;
+}
+
+inline CNcbiIstream* CCgiRequest::GetInputStream(void) const {
+    return m_Input;
 }
 
 

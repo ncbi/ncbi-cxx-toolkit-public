@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2001/06/19 20:08:30  vakatov
+* CCgiRequest::{Set,Get}InputStream()  -- to provide safe access to the
+* requests' content body
+*
 * Revision 1.48  2001/06/13 21:04:37  vakatov
 * Formal improvements and general beautifications of the CGI lib sources.
 *
@@ -472,7 +476,7 @@ CCgiCookie* CCgiCookies::Find
                         (*iter)->GetPath(), name, domain, path))
         iter++;
 
-    /* found exact match? */
+    // find exact match
     if (iter != m_Cookies.end()  &&
         !s_CookieLess(name, domain, path, (*iter)->GetName(),
                       (*iter)->GetDomain(), (*iter)->GetPath())) {
@@ -481,8 +485,6 @@ CCgiCookie* CCgiCookies::Find
         _ASSERT( path.compare((*iter)->GetPath()) == 0 );
         return *iter;
     }
-
-    /* not found */
     return 0;
 }
 
@@ -746,24 +748,24 @@ static void s_ParseQuery(const string& str,
 
 static void s_ParseMultipartEntries(const string& boundary,
                                     const string& str,
-                                    TCgiEntries& entries)
+                                    TCgiEntries&  entries)
 {
     // some constants in string
-    const string NameStart("Content-Disposition: form-data; name=\"");
-    const string Eol(HTTP_EOL);
+    const string s_NameStart("Content-Disposition: form-data; name=\"");
+    const string s_Eol(HTTP_EOL);
 
     SIZE_TYPE pos = 0;
     SIZE_TYPE partStart = 0;
     string name;
     for ( ;; ) {
-        SIZE_TYPE eol = str.find(Eol, pos);
-        if ( eol == NPOS )
+        SIZE_TYPE eol = str.find(s_Eol, pos);
+        if (eol == NPOS) {
             throw CParseException("CCgiRequest::ParseMultipartQuery(\"" +
                                   boundary + "\"): unexpected eof: " + 
                                   str.substr(pos), 0);
-        
-        if ( eol == pos + boundary.size() &&
-             NStr::Compare(str, pos, boundary.size(), boundary) == 0 ) {
+        }
+        else if (eol == pos + boundary.size()  &&
+                 NStr::Compare(str, pos, boundary.size(), boundary) == 0) {
             // boundary
             if ( partStart == NPOS ) // in header
                 throw CParseException("CCgiRequest::ParseMultipartQuery(\"" +
@@ -771,7 +773,7 @@ static void s_ParseMultipartEntries(const string& boundary,
                                       str.substr(pos), 0);
 
             if ( partStart != 0 ) {
-                SIZE_TYPE partEnd = pos - Eol.size();
+                SIZE_TYPE partEnd = pos - s_Eol.size();
                 entries.insert(TCgiEntries::value_type(name,
                     str.substr(partStart, partEnd - partStart)));
             }
@@ -779,9 +781,9 @@ static void s_ParseMultipartEntries(const string& boundary,
             partStart = NPOS;
             name = kEmptyStr;
         }
-        else if ( eol == pos + boundary.size() + 2 &&
-                  NStr::Compare(str, pos, boundary.size(), boundary) == 0  &&
-                  str[eol-1] == '-' && str[eol-2] == '-') {
+        else if (eol == pos + boundary.size() + 2  &&
+                 NStr::Compare(str, pos, boundary.size(), boundary) == 0  &&
+                 str[eol-1] == '-'  &&  str[eol-2] == '-') {
             // last boundary
             if ( partStart == NPOS ) // in header
                 throw CParseException("CCgiRequest::ParseMultipartQuery(\"" +
@@ -789,48 +791,46 @@ static void s_ParseMultipartEntries(const string& boundary,
                                       str.substr(pos), 0);
 
             if ( partStart != 0 ) {
-                SIZE_TYPE partEnd = pos - Eol.size();
+                SIZE_TYPE partEnd = pos - s_Eol.size();
                 entries.insert(TCgiEntries::value_type(name,
                     str.substr(partStart, partEnd - partStart)));
             }
             return;
         }
-        else {
-            if ( partStart == NPOS ) {
-               // in header
-                if (pos + NameStart.size() <= eol  &&
-                    NStr::Compare(str, pos, NameStart.size(), NameStart) ==0) {
-                    SIZE_TYPE nameStart = pos + NameStart.size();
-                    SIZE_TYPE nameEnd = str.find('\"', nameStart);
-                    if ( nameEnd == NPOS )
-                        throw CParseException("\
+        else if (partStart == NPOS) {
+            // in header
+            if (pos + s_NameStart.size() <= eol  &&
+                NStr::Compare(str, pos, s_NameStart.size(), s_NameStart) ==0) {
+                SIZE_TYPE nameStart = pos + s_NameStart.size();
+                SIZE_TYPE nameEnd = str.find('\"', nameStart);
+                if ( nameEnd == NPOS )
+                    throw CParseException("\
 CCgiRequest::ParseMultipartQuery(\"" + boundary + "\"): bad name header " + 
-                                              str.substr(pos), 0);
-
-                    // new name
-                    name = str.substr(nameStart, nameEnd - nameStart);
-                }
-                else if ( eol == pos ) {
-                    // end of header
-                    partStart = eol + Eol.size();
-                }
-                else {
-                    _TRACE("unknown header: \"" <<
-                           str.substr(pos, eol - pos) << '"' );
-                }
+                                          str.substr(pos), 0);
+                
+                // new name
+                name = str.substr(nameStart, nameEnd - nameStart);
+            }
+            else if ( eol == pos ) {
+                // end of header
+                partStart = eol + s_Eol.size();
+            }
+            else {
+                _TRACE("unknown header: \"" <<
+                       str.substr(pos, eol - pos) << '"' );
             }
         }
-        pos = eol + Eol.size();
+        pos = eol + s_Eol.size();
     }
 }
 
-static void s_ParsePostQuery(const string& contentType, const string& str,
-                             TCgiEntries&  entries)
+static void s_ParsePostQuery(const string& content_type, const string& str,
+                             TCgiEntries& entries)
 {
-    if ( contentType.empty() ||
-         contentType == "application/x-www-form-urlencoded" ) {
-        // remove trailing end of line '\n' (which could appear if
-        // Content-Length was not specified)
+    if (content_type.empty()  ||
+        content_type == "application/x-www-form-urlencoded") {
+        // remove trailing end of line '\r' and/or '\n'
+        // (this can happen if Content-Length: was not specified)
         SIZE_TYPE err_pos;
         SIZE_TYPE eol = str.find_first_of("\r\n");
         if ( eol != NPOS ) {
@@ -844,24 +844,26 @@ static void s_ParsePostQuery(const string& contentType, const string& str,
         return;
     }
 
-    if ( NStr::StartsWith(contentType, "multipart/form-data") ) {
+    if ( NStr::StartsWith(content_type, "multipart/form-data") ) {
         string start = "boundary=";
-        SIZE_TYPE pos = contentType.find(start);
+        SIZE_TYPE pos = content_type.find(start);
         if ( pos == NPOS )
             throw CParseException("CCgiRequest::ParsePostQuery(\"" +
-                                  contentType + "\"): no boundary field", 0);
-        s_ParseMultipartEntries("--" + contentType.substr(pos + start.size()),
+                                  content_type + "\"): no boundary field", 0);
+        s_ParseMultipartEntries("--" + content_type.substr(pos + start.size()),
                                 str, entries);
         return;
     }
 
-    // if unknown content type, then just ignore the content data
+    // The caller function thinks that s_ParsePostQuery() knows how to parse
+    // this content type, but s_ParsePostQuery() apparently cannot do it...
+    _TROUBLE;
 }
 
 
 CCgiRequest::~CCgiRequest(void)
 {
-    return;
+    SetInputStream(0);
 }
 
 
@@ -899,7 +901,7 @@ void CCgiRequest::x_Init
  CNcbiIstream*           istr,
  TFlags                  flags)
 {
-    // environment...
+    // Setup environment variables
     _ASSERT( !m_Env );
     m_Env = env;
     if ( !m_Env ) {
@@ -911,111 +913,124 @@ void CCgiRequest::x_Init
         m_OwnEnv.reset(const_cast<CNcbiEnvironment*>(m_Env));
     }
 
-    // cache "standard" properties
-    for (size_t prop = 0;  prop < (size_t)eCgi_NProperties;  prop++) {
-        x_GetPropertyByName(GetPropertyName((ECgiProp)prop));
+    // Cache "standard" properties
+    for (size_t prop = 0;  prop < (size_t) eCgi_NProperties;  prop++) {
+        x_GetPropertyByName(GetPropertyName((ECgiProp) prop));
     }
 
-    // compose cookies
+    // Compose cookies
     m_Cookies.Add(GetProperty(eCgi_HttpCookie));
 
-    // parse entries or indexes, if any
-    const string* query_string = 0;
-    if ( GetProperty(eCgi_RequestMethod).empty() ) {
-        // special case("$REQUEST_METHOD" undefined, so use cmd.-line args)
-        if (args  &&  args->Size() > 1)
-            query_string = &(*args)[1];
-    }
-    else if ( !(flags & fIgnoreQueryString) ) {
-        // regular case -- read from "$QUERY_STRING"
-        query_string = &GetProperty(eCgi_QueryString);
-    }
+    // Parse entries or indexes from "$QUERY_STRING" or cmd.-line args
+    {{
+        const string* query_string = 0;
+        if ( GetProperty(eCgi_RequestMethod).empty() ) {
+            // special case: "$REQUEST_METHOD" undefined, so use cmd.-line args
+            if (args  &&  args->Size() > 1)
+                query_string = &(*args)[1];
+        }
+        else if ( !(flags & fIgnoreQueryString) ) {
+            // regular case -- read from "$QUERY_STRING"
+            query_string = &GetProperty(eCgi_QueryString);
+        }
+
+        if ( query_string ) {
+            s_ParseQuery(*query_string, m_Entries, m_Indexes,
+                         (flags & fIndexesNotEntries) == 0);
+        }
+    }}
 
     // POST method?
-    if ( AStrEquiv(GetProperty(eCgi_RequestMethod), "POST", PNocase())) {
+    if ( AStrEquiv(GetProperty(eCgi_RequestMethod), "POST", PNocase()) ) {
         if ( !istr )
             istr = &NcbiCin;  // default input stream
-        size_t len = GetContentLength();
-        string str;
-        if ( len == kContentLengthUnknown ) {
-            // read data until end of file
-            for (;;) {
-                char buffer[1024];
-                istr->read(buffer, sizeof(buffer));
-                size_t count = istr->gcount();
-                if ( count == 0 ) {
-                    if ( istr->eof() ) {
-                        break; // end of data
-                    }
-                    else {
-                        THROW1_TRACE(runtime_error, "\
+
+        const string& content_type = GetProperty(eCgi_ContentType);
+        if ((flags & fDoNotParseContent) == 0  &&
+            (content_type.empty()  ||
+             content_type == "application/x-www-form-urlencoded"  ||
+             NStr::StartsWith(content_type, "multipart/form-data"))) {
+            // Automagically retrieve and parse content into entries
+            string str;
+            size_t len = GetContentLength();
+            if (len == kContentLengthUnknown) {
+                // read data until end of file
+                for (;;) {
+                    char buffer[1024];
+                    istr->read(buffer, sizeof(buffer));
+                    size_t count = istr->gcount();
+                    if ( count == 0 ) {
+                        if ( istr->eof() ) {
+                            break; // end of data
+                        }
+                        else {
+                            THROW1_TRACE(runtime_error, "\
 CCgiRequest::x_Init() -- error in reading POST content: read fault");
+                        }
                     }
+                    str.append(buffer, count);
                 }
-                str.append(buffer, count);
             }
+            else {
+                str.resize(len);
+                for (size_t pos = 0;  pos < len;  ) {
+                    istr->read(&str[pos], len - pos);
+                    size_t count = istr->gcount();
+                    if ( count == 0 ) {
+                        if ( istr->eof() ) {
+                            THROW1_TRACE(runtime_error, "\
+CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF");
+                        }
+                        else {
+                            THROW1_TRACE(runtime_error, "\
+CCgiRequest::x_Init() -- error in reading POST content: read fault");
+                        }
+                    }
+                    pos += count;
+                }
+            }
+            // parse query from the POST content
+            s_ParsePostQuery(content_type, str, m_Entries);
+            m_Input = 0;
         }
         else {
-            str.resize(len);
-            for ( size_t pos = 0; pos < len; ) {
-                istr->read(&str[pos], len - pos);
-                size_t count = istr->gcount();
-                if ( count == 0 ) {
-                    if ( istr->eof() ) {
-                        THROW1_TRACE(runtime_error, "\
-CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF");
-                    }
-                    else {
-                        THROW1_TRACE(runtime_error, "\
-CCgiRequest::x_Init() -- error in reading POST content: read fault");
-                    }
-                }
-                pos += count;
-            }
+            // Let the user to retrieve and parse the content
+            m_Input    = istr;
+            m_OwnInput = false;
         }
-        // parse query from the POST content
-        s_ParsePostQuery(GetProperty(eCgi_ContentType), str, m_Entries);
+    } else {
+        m_Input = 0;
     }
 
-    // parse "$QUERY_STRING"(or cmd.-line arg)
-    if ( query_string ) {
-        s_ParseQuery(*query_string, m_Entries, m_Indexes,
-                     (flags & fIndexesNotEntries) == 0);
-    }
-
-    if ( m_Entries.find(kEmptyStr) != m_Entries.end() ) {
+    // Check for an IMAGEMAP input entry like: "Command.x=5&Command.y=3" and
+    // put them with empty string key for better access
+    if (m_Entries.find(kEmptyStr) != m_Entries.end()) {
         // there is already empty name key
-        ERR_POST("empty key name: we'll not check for IMAGE names");
+        ERR_POST("empty key name:  we will not check for IMAGE names");
         return;
     }
-
-    // check for IMAGE input entries like: "Command.x=5&Command.y=3" and
-    // put them with empty string key for better access
-    string imageName;
-    for ( TCgiEntriesI i = m_Entries.begin(); i != m_Entries.end(); ++i ) {
+    string image_name;
+    iterate (TCgiEntries, i, m_Entries) {
         const string& entry = i->first;
-        SIZE_TYPE size = entry.size();
-        // check for our case
-        if ( size > 2 && NStr::Compare(entry, size - 2, 2, ".x") == 0 ) {
-            // get base name of IMAGE
-            string name = entry.substr(0, size - 2);
-            // check for .y part
-            if ( m_Entries.find(name + ".y") != m_Entries.end() ) {
-                // name is correct IMAGE name
-                if ( imageName.empty() ) {
-                    // is't first name - Ok
-                    imageName = name;
-                }
-                else {
-                    // is't second name - error: we will not change anything
-                    ERR_POST("duplicated IMAGE name: \"" << imageName <<
-                             "\" and \"" << name << "\"");
-                    return;
-                }
-            }
+
+        // check for our case ("*.x")
+        if ( !NStr::EndsWith(entry, ".x") )
+            continue;
+
+        // get base name of IMAGE, check for the presence of ".y" part
+        string name = entry.substr(0, entry.size() - 2);
+        if (m_Entries.find(name + ".y") == m_Entries.end())
+            continue;
+
+        // it is a correct IMAGE name
+        if ( !image_name.empty() ) {
+            ERR_POST("duplicated IMAGE name: \"" << image_name <<
+                     "\" and \"" << name << "\"");
+            return;
         }
+        image_name = name;
     }
-    m_Entries.insert(TCgiEntries::value_type(kEmptyStr, imageName));
+    m_Entries.insert(TCgiEntries::value_type(kEmptyStr, image_name));
 }
 
 
@@ -1054,12 +1069,26 @@ const
 }
 
 
+const size_t CCgiRequest::kContentLengthUnknown = (size_t)(-1);
+
+
 size_t CCgiRequest::GetContentLength(void) const
 {
     const string& str = GetProperty(eCgi_ContentLength);
-    if ( str.empty() )
+    if ( str.empty() ) {
         return kContentLengthUnknown;
-    return size_t(NStr::StringToUInt(str));
+    }
+    return (size_t) NStr::StringToUInt(str);
+}
+
+
+void CCgiRequest::SetInputStream(CNcbiIstream* is, bool own)
+{
+    if (m_Input  &&  m_OwnInput  &&  is != m_Input) {
+        delete m_Input;
+    }
+    m_Input    = is;
+    m_OwnInput = own;
 }
 
 
