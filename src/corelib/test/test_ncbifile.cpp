@@ -302,14 +302,30 @@ static void s_TEST_File(void)
     assert( !CFile("file_2").Exists() );
 
     // Create temporary file
+    const string kTestData = "testdata";
     fstream* stream = CFile::CreateTmpFile();
     assert( stream );
-    *stream << "test data";
+    assert( (*stream).good() );
+    *stream << kTestData;
+    assert( (*stream).good() );
+    (*stream).flush();
+    (*stream).seekg(0);
+    string str;
+    (*stream) >> str;
+    assert( (*stream).eof() );
+    assert( str == kTestData );
     delete stream;
 
     stream = CFile::CreateTmpFile("test.tmp");
     assert( stream );
-    *stream << "test data";
+    assert( (*stream).good() );
+    *stream << kTestData;
+    assert( (*stream).good() );
+    (*stream).flush();
+    (*stream).seekg(0);
+    (*stream) >> str;
+    assert( (*stream).eof() );
+    assert( str == kTestData );
     delete stream;
 
     // Get temporary file name
@@ -570,6 +586,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/02/14 19:26:51  ivanov
+ * Added more checks for CreateTmpFile()
+ *
  * Revision 1.18  2003/02/05 22:08:26  ivanov
  * Enlarged CMemoryFile test
  *
