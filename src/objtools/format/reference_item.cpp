@@ -320,8 +320,9 @@ CReferenceItem::CReferenceItem(const CSeq_feat& feat, CBioseqContext& ctx) :
     } else {
         m_Loc.Reset(&(feat.GetLocation()));
     }
-    m_Loc = SeqLocMergeOne(ctx.GetHandle(), *m_Loc, fMergeIntervals | fFuseAbutting);
-    //m_Loc = Seq_loc_Merge(*m_Loc, eMerge, ePreserveStrand, &ctx.GetScope());
+    //m_Loc = SeqLocMergeOne(ctx.GetHandle(), *m_Loc, fMergeIntervals | fFuseAbutting);
+
+    m_Loc = Seq_loc_Merge(*m_Loc, CSeq_loc::fMerge_All, &ctx.GetScope());
 
     x_GatherInfo(ctx);
 }
@@ -350,6 +351,7 @@ static void s_MergeDuplicates
             continue;
         }
         _ASSERT(*curr);
+
         bool remove = false;
         bool merge  = true;
 
@@ -397,18 +399,18 @@ static void s_MergeDuplicates
         } else {
             merge = false;
         }
-        if ( remove ) {
-            CConstRef<CSeq_loc> merged_loc;
-            if ( merge  &&  (curr_ref.GetLoc() != 0) ) {
-                merged_loc.Reset(SeqLocMerge(ctx.GetHandle(),
-                    *(*prev)->GetLoc(), *curr_ref.GetLoc(),
-                    fFuseAbutting | fMergeIntervals));
+
+        if (remove) {
+            if (merge  &&  (curr_ref.GetLoc() != NULL)) {
+                CRef<CSeq_loc> merged_loc(new CSeq_loc);
+                merged_loc->Assign(*curr_ref.GetLoc());
+                merged_loc->Add(*(*prev)->GetLoc());
+
+                merged_loc =
+                    Seq_loc_Merge(*merged_loc, CSeq_loc::fMerge_All, &ctx.GetScope());
+                (*prev)->SetLoc(merged_loc);
             }
-            (*prev)->SetLoc(merged_loc);
             curr = refs.erase(curr);
-            if ( curr == refs.end() ) {
-                break;
-            }
         } else {
             prev = curr;
             ++curr;
@@ -1485,6 +1487,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2004/11/19 15:14:43  shomrat
+* Replace SeqLocMerge with new Seq_loc_Merge
+*
 * Revision 1.25  2004/11/18 21:27:40  grichenk
 * Removed default value for scope argument in seq-loc related functions.
 *

@@ -1047,7 +1047,7 @@ static bool s_CopyCDSFromCDNA(CBioseqContext& ctx)
     return ctx.IsInGPS()  &&  !ctx.IsInNucProt()  &&  ctx.Config().CopyCDSFromCDNA();
 }
 
-
+/*
 static void s_FixLocation(CConstRef<CSeq_loc>& feat_loc, CBioseqContext& ctx)
 {
     if ( !feat_loc->IsMix() ) {
@@ -1057,14 +1057,14 @@ static void s_FixLocation(CConstRef<CSeq_loc>& feat_loc, CBioseqContext& ctx)
     bool partial5 = feat_loc->IsPartialLeft();
     bool partial3 = feat_loc->IsPartialRight();
 
-    CRef<CSeq_loc> loc(SeqLocMerge(ctx.GetHandle(), feat_loc->GetMix().Get(),
+    CRef<CSeq_loc> loc = Seq_loc_Merge(SeqLocMerge(ctx.GetHandle(), feat_loc->GetMix().Get(),
         fFuseAbutting | fMergeIntervals));
     loc->SetPartialLeft(partial5);
     loc->SetPartialRight(partial3);
 
     feat_loc.Reset(loc);
 }
-
+*/
 
 void CFlatGatherer::x_GatherFeaturesOnLocation
 (const CSeq_loc& loc,
@@ -1102,7 +1102,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
         CConstRef<CSeq_loc> feat_loc(&original_feat.GetLocation());
         if (mapper) {
             feat_loc.Reset(mapper->Map(*feat_loc));
-            s_FixLocation(feat_loc, ctx);
+            //s_FixLocation(feat_loc, ctx);
         }
         if (!feat_loc  ||  feat_loc->IsNull()) {
             continue;
@@ -1400,6 +1400,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2004/11/19 15:14:27  shomrat
+* Replace SeqLocMerge with new Seq_loc_Merge
+*
 * Revision 1.32  2004/11/15 20:08:46  shomrat
 * Subtract locations from source with focus
 *
