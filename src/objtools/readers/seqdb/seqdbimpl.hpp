@@ -93,6 +93,8 @@ public:
     const string & GetDBNameList(void) const;
     
 private:
+    string x_FixString(const string &) const;
+    
     string                m_DBNames;
     mutable CSeqDBMemPool m_MemPool;
     CSeqDBAliasFile       m_Aliases;

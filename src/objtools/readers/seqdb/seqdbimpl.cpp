@@ -184,7 +184,7 @@ Uint8 CSeqDBImpl::GetTotalLength(void) const
 
 string CSeqDBImpl::GetTitle(void) const
 {
-    return m_Aliases.GetTitle(m_VolSet);
+    return x_FixString( m_Aliases.GetTitle(m_VolSet) );
 }
 
 char CSeqDBImpl::GetSeqType(void) const
@@ -198,7 +198,7 @@ char CSeqDBImpl::GetSeqType(void) const
 string CSeqDBImpl::GetDate(void) const
 {
     if (const CSeqDBVol * vol = m_VolSet.GetVol(0)) {
-        return vol->GetDate();
+        return x_FixString( vol->GetDate() );
     }
     return string();
 }
@@ -233,6 +233,24 @@ Uint4 CSeqDBImpl::GetMaxLength(void) const
 const string & CSeqDBImpl::GetDBNameList(void) const
 {
     return m_DBNames;
+}
+
+// This is a work-around for bad data in the database; probably the
+// fault of formatdb.  The problem is that the database date field has
+// an incorrect length - possibly a general problem with string
+// handling in formatdb?  In any case, this method trims a string to
+// the minimum of its length and the position of the first NULL.  This
+// technique will not work if the date field is null terminated, but
+// apparently it usually is, in spite of the length bug.
+
+string CSeqDBImpl::x_FixString(const string & s) const
+{
+    for(Uint4 i = 0; i < s.size(); i++) {
+        if (s[i] == char(0)) {
+            return string(s,0,i);
+        }
+    }
+    return s;
 }
 
 END_NCBI_SCOPE
