@@ -118,6 +118,9 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
 
                 //project id will be defined latter
                 const string proj_name = *n;
+                if (proj_name[0] == '#') {
+                    break;
+                }
         
                 string applib_mfilepath = 
                     CDirEntry::ConcatPath(source_base_dir,
@@ -379,6 +382,7 @@ bool CCyclicDepends::IsCyclic(const CProjKey&       proj_id,
     // We look into all chais
     ITERATE(TDependsChains, p, chains) {
         TDependsChain one_chain = *p;
+        TDependsChain original_chain = *p;
         // remember original size of chain
         size_t orig_size = one_chain.size();
         // remove all non-unique elements
@@ -386,7 +390,7 @@ bool CCyclicDepends::IsCyclic(const CProjKey&       proj_id,
         one_chain.unique();
         // if size of the chain is altered - we have a cycle.
         if (one_chain.size() != orig_size) {
-            *cycle_found = one_chain;
+            *cycle_found = original_chain;
             return true;
         }
     }
@@ -481,6 +485,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/12/20 15:29:01  gouriano
+ * Preserve original dependency chain for reporting
+ *
  * Revision 1.6  2004/12/06 18:12:20  gouriano
  * Improved diagnostics
  *
