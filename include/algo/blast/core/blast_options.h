@@ -664,6 +664,18 @@ Int2 BlastFormattingOptionsNew(const Uint1 program, CharPtr file_out,
 BlastFormattingOptionsPtr 
 BlastFormattingOptionsFree(BlastFormattingOptionsPtr format_options);
 
+/** Initialize default options for PSI BLAST */
+Int2 PSIBlastOptionsNew(PSIBlastOptionsPtr PNTR psi_options);
+
+/** Deallocate PSI BLAST options */
+PSIBlastOptionsPtr PSIBlastOptionsFree(PSIBlastOptionsPtr psi_options);
+
+/** Initialize default database options */
+Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr PNTR db_options);
+
+/** Deallocate database options */
+BlastDatabaseOptionsPtr 
+BlastDatabaseOptionsFree(BlastDatabaseOptionsPtr db_options);
 
 /** Initialize all the BLAST search options structures with the default
  * values.
