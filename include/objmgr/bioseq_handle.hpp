@@ -291,6 +291,12 @@ public:
     CConstRef<CSeqMap> GetSeqMapByLocation(const CSeq_loc& location,
                                            ESequenceViewMode mode) const;
 
+    /// Return CSeq_loc referencing the given range and strand on the bioseq
+    CRef<CSeq_loc> GetRangeSeq_loc(TSeqPos start,
+                                   TSeqPos stop,
+                                   ENa_strand strand
+                                   = eNa_strand_unknown) const;
+
     /// Map a seq-loc from the bioseq's segment to the bioseq
     CRef<CSeq_loc> MapLocation(const CSeq_loc& loc) const;
 
@@ -598,6 +604,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2004/11/01 19:31:56  grichenk
+* Added GetRangeSeq_loc()
+*
 * Revision 1.62  2004/10/29 16:29:47  grichenk
 * Prepared to remove deprecated methods, added new constructors.
 *

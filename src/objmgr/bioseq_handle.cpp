@@ -786,6 +786,24 @@ void CBioseq_EditHandle::SetInst_Hist(TInst_Hist& v) const
 }
 
 
+CRef<CSeq_loc> CBioseq_Handle::GetRangeSeq_loc(TSeqPos start,
+                                               TSeqPos stop,
+                                               ENa_strand strand) const
+{
+    CRef<CSeq_id> id(new CSeq_id);
+    CConstRef<CSeq_id> orig_id = GetSeqId();
+    if ( !orig_id ) {
+        NCBI_THROW(CObjMgrException, eOtherError,
+            "CRangeSeq_loc -- can not get seq-id to create seq-loc");
+    }
+    id->Assign(*orig_id);
+    CRef<CSeq_interval> interval(new CSeq_interval(*id, start, stop, strand));
+    CRef<CSeq_loc> res(new CSeq_loc);
+    res->SetInt(*interval);
+    return res;
+}
+
+
 #if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
 // !!!!! Deprecated methods !!!!!
 
@@ -819,6 +837,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2004/11/01 19:31:56  grichenk
+* Added GetRangeSeq_loc()
+*
 * Revision 1.73  2004/10/29 16:29:47  grichenk
 * Prepared to remove deprecated methods, added new constructors.
 *
