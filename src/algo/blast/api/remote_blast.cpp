@@ -80,7 +80,7 @@ s_SendRequest(CRef<CBlast4_request_body> body,
         //throw some_kind_of_nothing();
         CBlast4Client().Ask(*request, *reply);
     }
-    catch(CEofException & e) {
+    catch(const CEofException&) {
         ERR_POST(Error << "Unexpected EOF when contacting netblast server"
                  " - unable to complete request.");
 #if defined(NCBI_OS_UNIX)
@@ -360,7 +360,7 @@ void CRemoteBlast::x_SubmitSearch(void)
     try {
         reply = s_SendRequest(body, m_Verbose);
     }
-    catch(CEofException & e) {
+    catch(const CEofException&) {
         m_Err = "Unexpected EOF when contacting netblast server - unable to submit request.";
         return;
     }
@@ -410,7 +410,7 @@ void CRemoteBlast::x_CheckResults(void)
             m_Pending = s_SearchPending(r);
             try_again = false;
         }
-        catch(CEofException & e) {
+        catch(const CEofException&) {
             --m_ErrIgn;
             
             if (m_ErrIgn == 0) {
@@ -609,6 +609,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/03/12 22:07:03  camacho
+* Remove unused variables
+*
 * Revision 1.4  2004/02/26 22:24:46  gorelenk
 * Include for <unistd.h> moved to be after
 * #include <corelib/ncbi_system.hpp>.
