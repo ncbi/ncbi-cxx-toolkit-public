@@ -91,9 +91,8 @@ CBlastProteinOptionsHandle::SetGappedExtensionDefaults()
 void
 CBlastProteinOptionsHandle::SetScoringOptionsDefaults()
 {
-    const char * mname = "BLOSUM62";
-    SetMatrixName(mname);
-    SetMatrixPath(FindMatrixPath(mname, true).c_str());
+    SetMatrixName(BLAST_DEFAULT_MATRIX); // BLOSUM62
+    SetMatrixPath(FindMatrixPath(BLAST_DEFAULT_MATRIX, true).c_str());
     SetGapOpeningCost(BLAST_GAP_OPEN_PROT);
     SetGapExtensionCost(BLAST_GAP_EXTN_PROT);
     SetGappedMode();
@@ -148,6 +147,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/02/10 16:09:47  dondosha
+ * Use BLAST_DEFAULT_MATRIX macro instead of "BLOSUM62"
+ *
  * Revision 1.15  2005/01/11 17:50:39  dondosha
  * Removed total HSP limit option
  *
