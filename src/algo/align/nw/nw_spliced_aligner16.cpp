@@ -37,11 +37,11 @@
 
 BEGIN_NCBI_SCOPE
 
-static unsigned char donor[splice_type_count_16][2] = {
+unsigned char g_nwspl_donor[splice_type_count_16][2] = {
     {'G','T'}, {'G','C'}, {'A','T'}, {'?','?'}
 };
 
-static unsigned char acceptor[splice_type_count_16][2] = {
+unsigned char g_nwspl_acceptor[splice_type_count_16][2] = {
     {'A','G'}, {'A','G'}, {'A','C'}, {'?','?'}
 };
 
@@ -184,7 +184,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (
         // detect donor candidate
         if(N2 > 2) {
             for( char st = splice_type_count_16 - 2; st >= 0; --st ) {
-                if( seq2[1] == donor[st][0] && seq2[2] == donor[st][1]) {
+                if( seq2[1] == g_nwspl_donor[st][0] && seq2[2] == g_nwspl_donor[st][1]) {
                     jAllDonors[st][jTail[st]] = j;
                     vAllDonors[st][jTail[st]] = V;
                     ++(jTail[st]);
@@ -262,7 +262,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (
             Uint2 tracer_dnr = 0xFFFF;
             Uint2 tracer_acc = 0;
             for(char st = splice_type_count_16 - 1; st >= 0; --st) {
-                if(seq2[j-1] == acceptor[st][0] && seq2[j] == acceptor[st][1]
+                if(seq2[j-1] == g_nwspl_acceptor[st][0] && seq2[j] == g_nwspl_acceptor[st][1]
                    && vBestDonor[st] > kInfMinus || st == 3) {
                     vAcc = vBestDonor[st] + m_Wi[st];
                     if(vAcc > V) {
@@ -285,8 +285,8 @@ CNWAligner::TScore CSplicedAligner16::x_Align (
             if(j < N2 - 2) {
                 for( char st = splice_type_count_16 - 1; st >= 0; --st ) {
                     
-                    if( seq2[j+1] == donor[st][0] &&
-                        seq2[j+2] == donor[st][1] &&
+                    if( seq2[j+1] == g_nwspl_donor[st][0] &&
+                        seq2[j+2] == g_nwspl_donor[st][1] &&
                         V > vBestDonor[st]  ) {
                         
                         jAllDonors[st][jTail[st]] = j;
@@ -314,7 +314,12 @@ CNWAligner::TScore CSplicedAligner16::x_Align (
 
     }
 
+    try {
     x_DoBackTrace(backtrace_matrix, N1, N2, transcript);
+    }
+    catch(exception&) { // GCC hack
+      throw;
+    }
 
     return V;
 }
@@ -449,7 +454,7 @@ CNWAligner::TScore CSplicedAligner16::x_ScoreByTranscript() const
 
             if(state1 != 2) {
                 for(unsigned char i = 0; i < splice_type_count_16; ++i) {
-                    if(*p2 == donor[i][0] && *(p2 + 1) == donor[i][1]
+                    if(*p2 == g_nwspl_donor[i][0] && *(p2 + 1) == g_nwspl_donor[i][1]
                        || i == splice_type_count_16 - 1) {
                         score += m_Wi[i];
                         break;
@@ -521,6 +526,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/10/14 19:29:24  kapustin
+ * Dismiss static keyword as a local-to-compilation-unit flag. Use longer name since unnamed namespaces are not everywhere supported
+ *
  * Revision 1.4  2003/09/30 19:50:04  kapustin
  * Make use of standard score matrix interface
  *
