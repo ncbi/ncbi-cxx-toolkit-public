@@ -1,4 +1,4 @@
-/*   ncbimath.c
+/*   ncbi_math.c
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* File Name:  ncbimath.c
+* File Name:  ncbi_math.c
 *
 * Author:  Gish, Kans, Ostell, Schuler
 *
@@ -42,6 +42,9 @@
 * 12-22-93 Schuler     Converted ERRPOST((...)) to ErrPostEx(...)
 *
 * $Log$
+* Revision 1.1  2003/08/02 16:31:48  camacho
+* Moved ncbimath.c -> ncbi_math.c
+*
 * Revision 1.1  2003/08/01 21:03:46  madden
 * Cleaned up version of file for C++ toolkit
 *
@@ -90,7 +93,7 @@
 #define THIS_MODULE g_corelib
 #define THIS_FILE _this_file
 
-#include "ncbimath.h"
+#include "ncbi_math.h"
 
 extern char * g_corelib;
 static char * _this_file = __FILE__;
