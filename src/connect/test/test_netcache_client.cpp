@@ -253,6 +253,42 @@ void CTestNetCacheClient::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
+static
+void s_RemoveBLOB_Test(const string& host, unsigned short port)
+{
+    CNetCacheClient nc(host, port);
+
+    char z = 'Z';
+    string key = nc.PutData(&z, 1, 1);
+
+    NcbiCout << "Removing: " << key << NcbiEndl;
+    nc.Remove(key);
+    z = 0;
+
+    CNetCacheClient::EReadResult rr =  nc.GetData(key, &z, 1);
+    assert(rr == CNetCacheClient::eNotFound);
+}
+
+static
+void s_ReadUpdateCharTest(const string& host, unsigned short port)
+{
+    CNetCacheClient nc("graceland", 9000);
+
+    char z = 'Z';
+    string key = nc.PutData(&z, 1, 100);
+
+    z = 'Q';
+    nc.PutData(key, &z, 1, 100);
+
+    z = 0;
+    size_t blob_size = 0;
+    CNetCacheClient::EReadResult rr =  
+        nc.GetData(key, &z, 1, &blob_size);
+
+    assert(rr == CNetCacheClient::eReadComplete);
+    assert(z == 'Q');
+    assert(blob_size == 1);
+}
 
 
 int CTestNetCacheClient::Run(void)
@@ -346,6 +382,9 @@ int CTestNetCacheClient::Run(void)
     exists = s_CheckExists(host, port, key);
     assert(!exists);
 
+    s_RemoveBLOB_Test(host, port);
+
+    s_ReadUpdateCharTest(host, port);
 
 /*
     unsigned delay = 70;
@@ -399,6 +438,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/11/09 20:05:31  kuznets
+ * Two new tests from Yuri Kapustin
+ *
  * Revision 1.13  2004/11/09 19:08:28  kuznets
  * Correct test for BLOB not found
  *
