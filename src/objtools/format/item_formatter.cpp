@@ -101,7 +101,15 @@ CFlatItemFormatter* CFlatItemFormatter::New(CFlatFileConfig::TFormat format)
     return 0;
 }
 
-    
+void CFlatItemFormatter::SetContext(CFlatFileContext& ctx)
+{
+    m_Ctx.Reset(&ctx);
+    if (ctx.GetConfig().DoHTML()) {
+        SetWrapFlags() |= NStr::fWrap_HTMLPre;
+    }
+}
+
+
 CFlatItemFormatter::~CFlatItemFormatter(void)
 {
 }
@@ -167,11 +175,10 @@ list<string>& CFlatItemFormatter::Wrap
  const string& body,
  EPadContext where) const
 {
-    NStr::TWrapFlags flags = NStr::fWrap_FlatFile;
     string tag2;
     Pad(tag, tag2, where);
     const string& indent = (where == eFeat ? m_FeatIndent : m_Indent);
-    NStr::Wrap(body, width, l, flags, indent, tag2);
+    NStr::Wrap(body, width, l, m_WrapFlags, indent, tag2);
     NON_CONST_ITERATE (list<string>, it, l) {
         TrimSpaces(*it, indent.length());
     }
@@ -185,11 +192,10 @@ list<string>& CFlatItemFormatter::Wrap
  const string& body,
  EPadContext where) const
 {
-    NStr::TWrapFlags flags = NStr::fWrap_FlatFile;
     string tag2;
     Pad(tag, tag2, where);
     const string& indent = (where == eFeat ? m_FeatIndent : m_Indent);
-    NStr::Wrap(body, GetWidth(), l, flags, indent, tag2);
+    NStr::Wrap(body, GetWidth(), l, m_WrapFlags, indent, tag2);
     NON_CONST_ITERATE (list<string>, it, l) {
         TrimSpaces(*it, indent.length());
     }
@@ -717,6 +723,8 @@ static void s_FormatCitSub
     string date;
     if (sub.IsSetDate()) {
         DateToString(sub.GetDate(), date, true);
+    } else {
+        date = "~?~????";
     }
     ((journal += '(') += date) += ')';
 
@@ -1055,6 +1063,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2005/02/07 15:00:31  shomrat
+* initial support for HTML format
+*
 * Revision 1.19  2005/01/12 16:45:37  shomrat
 * Code refactoring, moved journal formatting to format classes
 *
