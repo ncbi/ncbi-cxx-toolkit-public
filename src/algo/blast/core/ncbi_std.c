@@ -198,6 +198,28 @@ ListNodePtr ListNodeFree (ListNodePtr vnp)
 
 /*****************************************************************************
 *
+*   ListNodeFreeData(vnp)
+*   	frees whole chain of ListNodes
+*       frees associated data pointers - BEWARE of this if these are not
+*           allocated single memory block structures.
+*
+*****************************************************************************/
+ListNodePtr ListNodeFreeData (ListNodePtr vnp)
+{
+	ListNodePtr next;
+
+	while (vnp != NULL)
+	{
+		sfree(vnp->ptr);
+		next = vnp->next;
+		sfree(vnp);
+		vnp = next;
+	}
+	return NULL;
+}
+
+/*****************************************************************************
+*
 *   ListNodeLen(vnp)
 *      returns the number of nodes in the linked list
 *
