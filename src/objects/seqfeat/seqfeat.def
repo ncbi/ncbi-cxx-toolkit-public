@@ -11,3 +11,12 @@ stops._type     = TSeqPos
 qual._type      = vector
 xref._type      = vector
 dbxref._type    = vector
+
+[Gene-ref]
+db._type        = vector
+
+[Org-ref]
+db._type        = vector
+
+[Prot-ref]
+db._type        = vector
