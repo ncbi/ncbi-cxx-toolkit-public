@@ -1992,6 +1992,11 @@ TSeqPos CSeqportUtil_implementation::Convert
 {
     CSeq_data::E_Choice from_code = in_seq.Which();
 
+    // adjust uLength
+    if ( uLength == 0 ) {
+        uLength = numeric_limits<TSeqPos>::max();
+    }
+
     if(to_code == CSeq_data::e_not_set || from_code == CSeq_data::e_not_set) {
         throw std::runtime_error("to_code or from_code not set");
     }
@@ -2319,7 +2324,10 @@ TSeqPos CSeqportUtil_implementation::Complement
     const
 {
     _ASSERT(out_seq != 0);
-    
+
+    if ( uLength == 0 ) {
+        uLength = numeric_limits<TSeqPos>::max();
+    }
     CSeq_data::E_Choice in_code = in_seq.Which();
     _ASSERT(in_code != CSeq_data::e_not_set);
 
@@ -2370,6 +2378,10 @@ TSeqPos CSeqportUtil_implementation::Reverse
     const
 {
     _ASSERT(out_seq != 0);
+
+    if ( uLength == 0 ) {
+        uLength = numeric_limits<TSeqPos>::max();
+    }
 
     CSeq_data::E_Choice in_code = in_seq.Which();
     _ASSERT(in_code != CSeq_data::e_not_set);
@@ -2431,6 +2443,10 @@ TSeqPos CSeqportUtil_implementation::ReverseComplement
     const
 {
     _ASSERT(out_seq != 0);
+
+    if ( uLength == 0 ) {
+        uLength = numeric_limits<TSeqPos>::max();
+    }
 
     CSeq_data::E_Choice in_code = in_seq.Which();
     _ASSERT(in_code != CSeq_data::e_not_set);
@@ -6454,6 +6470,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2003/11/06 22:15:58  shomrat
+ * fixed behavior for default length value
+ *
  * Revision 6.18  2003/11/06 16:12:32  shomrat
  * changed seqport_util to use sequtil
  *
