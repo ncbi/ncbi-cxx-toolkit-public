@@ -328,11 +328,8 @@ bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat)
     // }
 
     // check overlapping gene
-    CConstRef<CSeq_feat> overlap = GetBestOverlappingFeat(
-        feat.GetLocation(),
-        CSeqFeatData::e_Gene,
-        eOverlap_Contains,
-        *m_Scope);
+    CConstRef<CSeq_feat> overlap = 
+        GetOverlappingGene(feat.GetLocation(), *m_Scope);
     if ( overlap ) {
         if ( (overlap->CanGetPseudo()  &&  overlap->GetPseudo())  ||
              (overlap->GetData().GetGene().CanGetPseudo()  &&
@@ -1399,11 +1396,7 @@ void CValidError_feat::ValidatePeptideOnCodonBoundry
     } 
     // } DEBUG
 
-    CConstRef<CSeq_feat> cds = GetBestOverlappingFeat(
-        loc,
-        CSeqFeatData::e_Cdregion,
-        eOverlap_Contains,
-        *m_Scope);
+    CConstRef<CSeq_feat> cds = GetOverlappingCDS(loc, *m_Scope);
     if ( !cds ) {
         return;
     }
@@ -1862,11 +1855,8 @@ void CValidError_feat::ValidateBadGeneOverlap(const CSeq_feat& feat)
     // This implementation should be changed once the above is supported
 
     // look for overlapping genes
-    CConstRef<CSeq_feat> gene = GetBestOverlappingFeat(
-        feat.GetLocation(),
-        CSeqFeatData::e_Gene,
-        eOverlap_Contains,
-        *m_Scope);
+    CConstRef<CSeq_feat> gene = 
+        GetOverlappingGene(feat.GetLocation(), *m_Scope);
     if ( gene ) {
         return;
     }
@@ -2334,11 +2324,8 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     } 
     // } DEBUG
     
-    CConstRef<CSeq_feat> overlap = GetBestOverlappingFeat(
-        feat.GetLocation(),
-        CSeqFeatData::e_Gene,
-        eOverlap_Contains,
-        *m_Scope);
+    CConstRef<CSeq_feat> overlap = 
+        GetOverlappingGene(feat.GetLocation(), *m_Scope);
     if ( !overlap ) {
         return;
     }
@@ -2380,11 +2367,8 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
 
 void CValidError_feat::ValidateOperon(const CSeq_feat& gene)
 {
-    CConstRef<CSeq_feat> operon = GetBestOverlappingFeat(
-        gene.GetLocation(),
-        CSeqFeatData::eSubtype_operon,
-        eOverlap_Contains,
-        *m_Scope);
+    CConstRef<CSeq_feat> operon = 
+        GetOverlappingOperon(gene.GetLocation(), *m_Scope);
     if ( !operon  ||  !operon->CanGetQual() ) {
         return;
     }
@@ -2624,6 +2608,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2004/02/05 20:08:32  shomrat
+* Using convenience functions for overlapping features
+*
 * Revision 1.46  2004/01/16 20:09:15  shomrat
 * Implemented check for locus tag problem
 *
