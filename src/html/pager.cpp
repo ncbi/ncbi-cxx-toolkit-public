@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/06/07 15:21:05  vasilche
+* Fixed some warnings.
+*
 * Revision 1.14  1999/06/04 16:35:29  golikov
 * Fix
 *
@@ -215,9 +218,7 @@ int CPager::GetDisplayPage(CCgiRequest& request)
 int CPager::GetPageSize(CCgiRequest& request, int defaultPageSize)
 {
     const TCgiEntries& entries = request.GetEntries();
-    TCgiEntriesCI entry = entries.find(KParam_DisplayPage);
-
-    entry = entries.find(KParam_PageSize);
+    TCgiEntriesCI entry = entries.find(KParam_PageSize);
     if ( entry != entries.end() ) {
         try {
             int pageSize = NStr::StringToInt(entry->second);

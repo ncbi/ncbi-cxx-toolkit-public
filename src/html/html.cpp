@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  1999/06/07 15:21:05  vasilche
+* Fixed some warnings.
+*
 * Revision 1.42  1999/05/28 18:03:51  vakatov
 * CHTMLNode::  added attribute "CLASS"
 *
@@ -591,12 +594,12 @@ CHTML_tr* CHTML_table::Row(TIndex needRow)  // todo: exception
         }
     }
 
+    // add needed empty rows (needRow > 0 here)
     CHTML_tr* trNode;
-    while ( row <= needRow ) {
+    do {
         // add needed rows
         AppendChild(trNode = new CHTML_tr);
-        ++row;
-    }
+    } while ( ++row <= needRow );
     return trNode;
 }
 

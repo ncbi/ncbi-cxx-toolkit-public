@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  1999/06/07 15:21:04  vasilche
+* Fixed some warnings.
+*
 * Revision 1.28  1999/04/22 14:20:19  vasilche
 * Now CHTML_select::AppendOption and CHTML_option constructor accept option
 * name always as first argument.
@@ -403,19 +406,13 @@ CNCBINode* CSmallPagerBox::CloneSelf(void) const
 
 void CSmallPagerBox::CreateSubNodes()
 {
-    CHTML_table * Table;
-
-    try {
-        Table = new CHTML_table();
-        Table->SetCellSpacing(0)->SetCellPadding(0)->SetBgColor(m_BgColor)->SetWidth(m_Width)->SetAttribute("border", 0);
-        AppendChild(Table);
-        
-        Table->InsertAt(0, 0, new CPageList);
-        Table->InsertAt(0, 1, new CHTMLText(NStr::IntToString(m_NumResults) + ((m_NumResults==1)?" result":" results")));
-    }
-    catch (...) {
-        delete Table;
-    }
+    CHTML_table* Table = new CHTML_table();
+    AppendChild(Table);
+    Table->SetCellSpacing(0)->SetCellPadding(0)->SetBgColor(m_BgColor)
+        ->SetWidth(m_Width)->SetAttribute("border", 0);
+    
+    Table->InsertAt(0, 0, new CPageList);
+    Table->InsertAt(0, 1, new CHTMLText(NStr::IntToString(m_NumResults) + ((m_NumResults==1)?" result":" results")));
 }
 
 END_NCBI_SCOPE

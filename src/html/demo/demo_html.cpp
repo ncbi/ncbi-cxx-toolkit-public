@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/07 15:21:09  vasilche
+* Fixed some warnings.
+*
 * Revision 1.4  1999/05/11 15:52:01  vakatov
 * Added missing "return" (1 on error)
 *
@@ -58,9 +61,9 @@ USING_NCBI_SCOPE;  // this turns on the ncbi namespace
 extern "C" int main() 
 {
     CCgiResponse Response; // used to write out the html
-    CHTML_html * Html; // the following are tags used in the page.
-    CHTML_body * Body;
-    CHTML_form * Form;
+    CHTML_html * Html = 0; // the following are tags used in the page.
+    CHTML_body * Body = 0;
+    CHTML_form * Form = 0;
 
     try {
         // write out the Content-type header
