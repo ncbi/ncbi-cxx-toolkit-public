@@ -400,18 +400,19 @@ one and three of <i><b>HTTP_CreateConnector()</b></i>. HTTP user header field
 passed as NULL meaning to use the environment, registry and defaults as described above).
 
 <p>
-The third parameter specified a callback to be activated to
+The third parameter specifies a callback to be activated to
 parse the HTTP reply header (passed as a single string, with CR-LF -carriage return/line feed- characters incorporated to divide header lines). This callback
 also gets some custom data <tt>adjust_data</tt>, which supplied in the fifth argument of the connector's constructor, and a boolean value "true" if parsed response code from the server was not okay. The callback can return "false", which is considered the same way as having an error from the HTTP server.
-Return value "true" retains the pre-parsed error condition (or its lack).
-Parse header callback is <i>NOT</i> called if <i><b>fHCC_KeepHeader</b></i> is set in flags.
+Return value "true" retains the pre-parsed error condition
+<tt>server_error</tt>.
+This callback is <i>NOT</i> called if <i><b>fHCC_KeepHeader</b></i> is set in flags.
 
 <p>
 The forth argument is a callback, which gets control when an attempt to connect
 to the HTTP server has failed. On entry, this callback has current <tt>SConnNetInfo</tt>, which is requested to be adjusted in a faith that
 the connection to the HTTP server will finally succeed. That is the callback
 can change anything in the info structure, and the new parameters will be kept for all further connection attempts, until changed by this callback again.
-The number of successive failed attempts is given in the last callback's arguments. Note that the value 0 there should never be seen by the application.
+The number of successive failed attempts is given in the last callback's argument. Note that the value 0 there should never be seen by the application.
 The callback return value "true" means successful adjustment. Return value
 "false" stops the connection trying and returns an error to the application.
 
@@ -422,7 +423,7 @@ extended constructor.
 
 <p>
 Note that any callbacks can be specified as NULL, which means that no action
-is foreseen by the application, and default behavior occur.
+is foreseen by the application, and default behavior occurs.
 
 <p>
 <hr>
@@ -438,7 +439,7 @@ This is the most complex connector in the library. It can initiate data exchange
 sits on top of either HTTP or SOCKET connectors.
 
 <p>
-The library provides these two forms of conector's constructors:
+The library provides these two forms of conector's constructor:
 <pre>
 SERVICE_CreateConnector(const char* sevice_name);
 
@@ -451,7 +452,8 @@ SERVICE_CreateConnectorEx
 The second form is an equivalence of using 
 <i><b>SERVICE_CreateConnectorEx(</b></i><tt>service_name, 0, 0</tt><i><b>)</b></i>.
 
-A named service is a CGI or standalone server (which can be of one of two supported types), which runs at the NCBI site, and made accessible for the outside world. Special software, which runs on the NCBI Web-servers, called
+A named service is a CGI or standalone server (which can be of one of two supported types), which runs at the NCBI site, and made accessible
+by the outside world. Special software, which runs on the NCBI Web-servers, called
 dispatcher, allows automatic switching to the appropriate server without
 having the client to know <i>a priori</i> the connection point. That is,
 the client just uses the main entry gate of the NCBI Web (usually, <tt>www.ncbi.nlm.nih.gov</tt>) with a request to have a service "service",
@@ -461,7 +463,7 @@ actually running the server), or rejected. To the client,
 the entire process of dispatching is seen as completely transparent.
 
 <p>
-Dispatching <i>per se</i> is implemented on top of HTTP protocol, parsed by a
+Dispatching <i>per se</i> is implemented on top of the HTTP protocol, and parsed by a
 CGI program, <tt>dispd.cgi</tt> (or another dispatching CGI), which is
 available on the NCBI Web. On every server, which runs named services, another program, called load-balancing daemon, is executing. This daemon supports having the same service running on different machines, and allows to choose one machine which is less loaded. When <tt>dispd.cgi</tt> receives a request for a named service, it first consults the load-balancing table, broadcasted by each load-balancing daemon, and re-assembled in a network-wide form on each server. When the requested server is detected, the client request can be passed, or a dedicated connection to the server can be established. The dispatching is made such a way that it can be also used directly from the Internet browsers.
 
@@ -478,9 +480,10 @@ The named service facility uses the following distinction of server types:
   </ul>
   <li>NCBID servers are those run by a special engine CGI, called
       <tt>ncbid.cgi</tt>, a configurable program, which can convert byte-stream
-      output from another program (server) started by request
+      output from another program (server) started by the request
       from dispatcher, to an HTTP-compliant reply (that is a packet
-      having both HTTP header and body).
+      having both HTTP header and body, and suitable e.g. for the Internet
+      browsers).
   <li>Standalone servers, like mailing daemons, are those, which are
       listening on their own onto the network for incoming connections.
 </ul>
