@@ -1,4 +1,4 @@
---$Revision: 6.2 $
+--$Revision: 6.3 $
 --*********************************************************
 --
 -- ASN.1 and XML for the components of a GenBank format sequence
@@ -29,7 +29,8 @@ BEGIN
 --    Date  DD-Mon-YYYY
 --    Authors   LastName, Intials (with periods)
 --   Journal   JounalName Volume (issue), page-range (year)
---   FeatureLocations as per GenBank feature table
+--   FeatureLocations as per GenBank feature table, but FeatureIntervals
+--    may also be provided as a convenience
 --   FeatureQualifiers  as per GenBank feature table
 --   Primary has a string that represents a table to construct
 --    a third party (TPA) sequence.
@@ -146,12 +147,18 @@ GBSeq ::= SEQUENCE {
 	GBFeature ::= SEQUENCE {
 		key VisibleString ,
 		location VisibleString ,
+		intervals SEQUENCE OF GBInterval OPTIONAL ,
 		quals SEQUENCE OF GBQualifier OPTIONAL }
+
+	GBInterval ::= SEQUENCE {
+		from INTEGER OPTIONAL ,
+		to INTEGER OPTIONAL ,
+		point INTEGER OPTIONAL ,
+		accession VisibleString }
 
 	GBQualifier ::= SEQUENCE {
 		name VisibleString ,
 		value VisibleString OPTIONAL }
-
 
 	GBSet ::= SEQUENCE OF GBSeq
 		
