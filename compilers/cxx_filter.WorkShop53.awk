@@ -67,7 +67,7 @@ function print_if_interesting()
       m ~ /^".*\/include\/CC\/Cstd\/\.\/algorithm.cc", line 427: .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/deque", line (639|671|679): .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/fstream", line (277|321|364): .*::rdbuf hides/ ||
-      m ~ /^".*\/include\/CC\/Cstd\/\.\/list", line (543|544): .*non-const reference/ ||
+      m ~ /^".*\/include\/CC\/Cstd\/\.\/list", line (541|543|544): .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/ostream", line 331: Warning: The else-branch should return a value/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/sstream", line (165|207): .*::rdbuf hides/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/string", line (1622|1640): .*non-const reference/ ||
