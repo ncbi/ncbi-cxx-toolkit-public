@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2000/11/22 19:40:51  vakatov
+ * s_Test3() -- fixed:  Exist() --> IsProvided()
+ *
  * Revision 6.11  2000/11/20 19:49:40  vakatov
  * Test0::  printout all arg values
  *
@@ -316,14 +319,14 @@ static CArgs* s_Test3(CArgDescriptions& arg_desc, int argc, const char* argv[])
 
     CArgs* args = arg_desc.CreateArgs(argc, argv);
 
-    if (args->Exist("k1"))
+    if (args->IsProvided("k1"))
         cout << "k1=" << (*args)["k1"].AsString() << endl;
-    if (args->Exist("k2"))
+    if (args->IsProvided("k2"))
         cout << "k2=" << (*args)["k2"].AsString() << endl;
 
-    if (args->Exist("f1"))
+    if (args->IsProvided("f1"))
         cout << "f1 was provided" << endl;
-    if (args->Exist("f2"))
+    if (args->IsProvided("f2"))
         cout << "f2 was provided" << endl;
 
     return args;
