@@ -318,11 +318,13 @@ on SetProjectData()
 		
 		AddAppProject("demo_seqgraphic", {"fltk", "libdl"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "w_gl", "w_flu", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "ximage", "xalnmgr", "xregexp", "regexp", "tables"} & objMgrLibs, {})
 		
+		(*
 		AddAppProject("demo_regedit", {"fltk"}, "gui:dialogs:registry:demo", Â
 			{"gui_dlg_registry", "gui_utils", "w_flu", "w_fltk", "w_fltable", "xncbi", "fltk"}, {})
 		
 		AddAppProjectList("demo_treebrowser", {"fltk"}, "gui:widgets:fl:demo", {"test_treebrowser"}, Â
 			{"w_flu", "xncbi", "w_fltk", "fltk"}, {})
+		*)
 		
 		(* -- experimental
 		AddAppProject("featgroup_config_dlg", {"fltk"}, "gui:config:featgroup", Â
