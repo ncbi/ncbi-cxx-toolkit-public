@@ -166,6 +166,10 @@ BlastInitialWordParametersFree(BlastInitialWordParameters* parameters)
 
 }
 
+/** Compute the default cutoff expect value for ungapped extensions
+ * @param program The blast program type
+ * @return The default per-program expect value
+ */
 static double GetUngappedCutoff(Uint1 program)
 {
    switch(program) {
@@ -1246,7 +1250,9 @@ Int2 BLAST_ValidateOptions(Uint1 program_number,
    return status;
 }
 
+/** machine epsilon assumed by CalculateLinkHSPCutoffs */
 #define MY_EPS 1.0e-9
+
 void
 CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, BlastHitSavingParameters* hit_params, 
@@ -1329,6 +1335,9 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.111  2004/05/26 16:04:54  papadopo
+ * fix doxygen errors
+ *
  * Revision 1.110  2004/05/24 17:26:21  camacho
  * Fix PC warning
  *
