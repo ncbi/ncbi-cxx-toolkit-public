@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-#define DISABLE_SPLIT_DESCRIPTIONS true
+#define DISABLE_SPLIT_DESCRIPTIONS false
 
 
 SSplitterParams::SSplitterParams(void)
@@ -172,6 +172,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/07/12 16:55:47  vasilche
+* Fixed split info for descriptions and Seq-data to load them properly.
+*
 * Revision 1.10  2004/06/30 20:56:32  vasilche
 * Added splitting of Seqdesr objects (disabled yet).
 *

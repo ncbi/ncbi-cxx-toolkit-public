@@ -57,22 +57,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 
-#include <objects/seqsplit/ID2S_Split_Info.hpp>
-#include <objects/seqsplit/ID2S_Chunk_Id.hpp>
-#include <objects/seqsplit/ID2S_Chunk.hpp>
-#include <objects/seqsplit/ID2S_Chunk_Data.hpp>
-#include <objects/seqsplit/ID2S_Chunk_Info.hpp>
-#include <objects/seqsplit/ID2S_Chunk_Content.hpp>
-#include <objects/seqsplit/ID2S_Sequence_Piece.hpp>
-#include <objects/seqsplit/ID2S_Seq_data_Info.hpp>
-#include <objects/seqsplit/ID2S_Seq_annot_Info.hpp>
-#include <objects/seqsplit/ID2S_Feat_type_Info.hpp>
-#include <objects/seqsplit/ID2_Seq_loc.hpp>
-#include <objects/seqsplit/ID2_Id_Range.hpp>
-#include <objects/seqsplit/ID2_Seq_range.hpp>
-#include <objects/seqsplit/ID2_Interval.hpp>
-#include <objects/seqsplit/ID2_Packed_Seq_ints.hpp>
-#include <objects/seqsplit/ID2S_Seq_descr_Info.hpp>
+#include <objects/seqsplit/seqsplit__.hpp>
 
 #include <objmgr/split/blob_splitter.hpp>
 #include <objmgr/split/object_splitinfo.hpp>
@@ -440,35 +425,84 @@ CID2S_Chunk_Data& CBlobSplitterImpl::GetChunkData(TChunkData& chunk_data,
 }
 
 
+void CBlobSplitterImpl::AddIdRange(TIdRanges& info, int start, int end)
+{
+    CRef<CID2_Id_Range> range(new CID2_Id_Range);
+    range->SetStart(start);
+    int count = end-start+1;
+    _ASSERT(count >= 1);
+    if ( count != 1 ) {
+        range->SetCount(count);
+    }
+    info.push_back(range);
+}
+
+
+void CBlobSplitterImpl::AddIdRange(CID2S_Seq_descr_Info& info,
+                                   int start, int end)
+{
+    if ( start > end ) {
+        return;
+    }
+    if ( start < 0 ) {
+        _ASSERT(end < 0);
+        AddIdRange(info.SetBioseq_sets(), -end, -start);
+    }
+    else {
+        _ASSERT(start > 0);
+        AddIdRange(info.SetBioseqs(), start, end);
+    }
+}
+
+
+void CBlobSplitterImpl::AddIdRange(CID2S_Seq_annot_place_Info& info,
+                                   int start, int end)
+{
+    if ( start > end ) {
+        return;
+    }
+    if ( start < 0 ) {
+        _ASSERT(end < 0);
+        AddIdRange(info.SetBioseq_sets(), -end, -start);
+    }
+    else {
+        _ASSERT(start > 0);
+        AddIdRange(info.SetBioseqs(), start, end);
+    }
+}
+
+
 void CBlobSplitterImpl::MakeID2Chunk(int chunk_id, const SChunkInfo& info)
 {
     TChunkData chunk_data;
     TChunkContent chunk_content;
 
-    typedef set<int> TAllDescrs;
-    TAllDescrs all_descrs;
+    typedef set<int> TPlaces;
+    TPlaces all_descrs;
+    TPlaces all_annot_places;
     typedef map<CAnnotName, SAllAnnots> TAllAnnots;
     TAllAnnots all_annots;
     CSeqsRange all_data;
 
     ITERATE ( SChunkInfo::TChunkSeq_descr, it, info.m_Seq_descr ) {
-        int gi = it->first;
+        int place_id = it->first;
+        all_descrs.insert(place_id);
         CID2S_Chunk_Data::TDescrs& dst =
-            GetChunkData(chunk_data, gi).SetDescrs();
+            GetChunkData(chunk_data, place_id).SetDescrs();
         dst.push_back(Ref(const_cast<CSeq_descr*>(&*it->second->m_Descr)));
-        all_descrs.insert(gi);
     }
 
     ITERATE ( SChunkInfo::TChunkAnnots, it, info.m_Annots ) {
         int place_id = it->first;
-        CID2S_Chunk_Data& data = GetChunkData(chunk_data, place_id);
-        ITERATE ( SChunkInfo::TIdAnnots, annot_it, it->second ) {
-            CRef<CSeq_annot> annot = MakeSeq_annot(*annot_it->first,
-                                                   annot_it->second);
-            data.SetAnnots().push_back(annot);
+        all_annot_places.insert(place_id);
+        CID2S_Chunk_Data::TAnnots& dst =
+            GetChunkData(chunk_data, place_id).SetAnnots();
+        ITERATE ( SChunkInfo::TIdAnnots, ait, it->second ) {
+            CRef<CSeq_annot> annot = MakeSeq_annot(*ait->first, ait->second);
+            dst.push_back(annot);
 
             // collect locations
-            CAnnotName name = CSeq_annot_SplitInfo::GetName(*annot_it->first);
+            CAnnotName name = CSeq_annot_SplitInfo::GetName(*ait->first);
             all_annots[name].Add(*annot);
         }
     }
@@ -573,31 +607,30 @@ void CBlobSplitterImpl::MakeID2Chunk(int chunk_id, const SChunkInfo& info)
         CRef<CID2S_Chunk_Content> content(new CID2S_Chunk_Content);
         CID2S_Seq_descr_Info& info = content->SetSeq_descr();
         info.SetType_mask(-1);
-        int start_gi = -2, end_gi = -2;
-        ITERATE ( TAllDescrs, it, all_descrs ) {
-            if ( *it != end_gi+1 ) {
-                if ( start_gi > 0 ) {
-                    CRef<CID2_Id_Range> range(new CID2_Id_Range);
-                    range->SetStart(start_gi);
-                    int count = end_gi-start_gi+1;
-                    if ( count != 1 ) {
-                        range->SetCount(count);
-                    }
-                    info.SetBioseqs().push_back(range);
-                }
-                start_gi = *it;
+        int start = *all_descrs.begin()-1, end = start-2;
+        ITERATE ( TPlaces, it, all_descrs ) {
+            if ( *it != end+1 ) {
+                AddIdRange(info, start, end);
+                start = *it;
             }
-            end_gi = *it;
+            end = *it;
         }
-        if ( start_gi > 0 ) {
-            CRef<CID2_Id_Range> range(new CID2_Id_Range);
-            range->SetStart(start_gi);
-            int count = end_gi-start_gi+1;
-            if ( count != 1 ) {
-                range->SetCount(count);
+        AddIdRange(info, start, end);
+        chunk_content.push_back(content);
+    }
+
+    if ( !all_annot_places.empty() ) {
+        CRef<CID2S_Chunk_Content> content(new CID2S_Chunk_Content);
+        CID2S_Seq_annot_place_Info& info = content->SetSeq_annot_place();
+        int start = *all_annot_places.begin()-1, end = start-2;
+        ITERATE ( TPlaces, it, all_annot_places ) {
+            if ( *it != end+1 ) {
+                AddIdRange(info, start, end);
+                start = *it;
             }
-            info.SetBioseqs().push_back(range);
+            end = *it;
         }
+        AddIdRange(info, start, end);
         chunk_content.push_back(content);
     }
 
@@ -733,6 +766,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/07/12 16:55:47  vasilche
+* Fixed split info for descriptions and Seq-data to load them properly.
+*
 * Revision 1.12  2004/06/30 20:56:32  vasilche
 * Added splitting of Seqdesr objects (disabled yet).
 *

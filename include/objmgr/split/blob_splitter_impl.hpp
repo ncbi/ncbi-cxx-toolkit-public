@@ -40,6 +40,7 @@
 #include <memory>
 #include <map>
 #include <vector>
+#include <list>
 
 #include <objmgr/split/blob_splitter_params.hpp>
 #include <objmgr/split/split_blob.hpp>
@@ -67,6 +68,9 @@ class CID2S_Chunk_Id;
 class CID2S_Chunk;
 class CID2S_Chunk_Data;
 class CID2S_Chunk_Content;
+class CID2S_Seq_descr_Info;
+class CID2S_Seq_annot_place_Info;
+class CID2_Id_Range;
 class CID2_Seq_loc;
 class CBlobSplitter;
 class CBlobSplitterImpl;
@@ -132,6 +136,11 @@ public:
     CRef<CID2_Seq_loc> MakeLoc(const CSeqsRange& range) const;
     CRef<CID2_Seq_loc> MakeLoc(int gi, const CSeqsRange::TRange& range) const;
 
+    typedef list< CRef<CID2_Id_Range> > TIdRanges;
+    void AddIdRange(TIdRanges& info, int start, int end);
+    void AddIdRange(CID2S_Seq_descr_Info& info, int start, int end);
+    void AddIdRange(CID2S_Seq_annot_place_Info& info, int start, int end);
+
     typedef vector<CAnnotObject_SplitInfo> TAnnotObjects;
     CRef<CSeq_annot> MakeSeq_annot(const CSeq_annot& src,
                                    const TAnnotObjects& objs);
@@ -174,6 +183,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/07/12 16:55:47  vasilche
+* Fixed split info for descriptions and Seq-data to load them properly.
+*
 * Revision 1.8  2004/06/30 20:56:32  vasilche
 * Added splitting of Seqdesr objects (disabled yet).
 *
