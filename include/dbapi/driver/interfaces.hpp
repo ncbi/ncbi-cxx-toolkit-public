@@ -334,7 +334,7 @@ public:
 
 class NCBI_DBAPIDRIVER_EXPORT I_Result : public CDB_BaseEnt
 {
-protected:
+public:
     // Get type of the result
     virtual EDB_ResType ResultType() const = 0;
 
@@ -587,6 +587,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/06/05 20:26:39  soussov
+ * makes I_Result interface public
+ *
  * Revision 1.21  2003/06/05 15:53:31  soussov
  * adds DumpResults method for LangCmd and RPC, SetResultProcessor method for Connection interface
  *
