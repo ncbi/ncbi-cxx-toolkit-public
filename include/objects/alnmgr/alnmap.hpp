@@ -137,7 +137,7 @@ public:
     TSignedSeqPos GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos)     const;
     TSignedSeqPos GetSeqPosFromAlnPos(TSeqPos aln_pos, TNumrow for_row) const;
     TSignedSeqPos GetSeqPosFromSeqPos(TNumrow row, TSeqPos seq_pos,
-                                      TNumrow for_row) const;
+                                      TNumrow for_row)                  const;
     TSeqPos       GetBestSeqPosFromAlnPos(TNumrow for_row,
 
  
@@ -202,7 +202,7 @@ public:
         TSegTypeFlags m_TypeFlags;
         TSignedRange  m_SignedRange;
     };
-private:
+
 
 protected:
     class CNumSegWithOffset
@@ -223,6 +223,14 @@ protected:
     CAlnMap(const CAlnMap& value);
     CAlnMap& operator=(const CAlnMap& value);
 
+    // internal version of SetAnchor(), abstracted to deal with data
+    // outside of a CDense_seg
+    void x_SetAnchor(const vector<TSignedSeqPos>& starts,
+                     const vector<TSeqPos>& lens,
+                     TNumrow numrow, TNumseg numseg,
+                     TNumrow anchor);
+
+    friend CConstRef<CAlnChunk> CAlnChunkVec::operator[](TNumchunk i) const;
 
     // internal functions for handling alignment segments
     void              x_CreateAlnStarts (void);
@@ -465,6 +473,9 @@ CAlnMap::GetTypeAtAlnPos(TNumrow row, TSeqPos aln_pos) const
 ////////////////// end of inline methods //////////////////
 ///////////////////////////////////////////////////////////
 
+* in the underlying CDense_seg
+* Added exception class; currently used only on access of non-existent
+* consensus.
 *
 * Revision 1.3  2002/09/05 19:31:18  dicuccio
 * - added ability to reference a consensus sequence for a given alignment
