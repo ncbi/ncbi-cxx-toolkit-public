@@ -219,6 +219,12 @@ public:
     /// Remove all non-active LOG files
     void CleanLog();
 
+    /// Set transaction log file size
+    void SetLogFileMax(unsigned fl_size)
+    {
+        m_LogSizeMax = fl_size;
+    }
+
     /// Number of records in scanned at once by Purge
     /// Cache is exclusively locks an internal mutex while 
     /// scanning the batch and all other threads is getting locked.
@@ -245,6 +251,7 @@ public:
     /// Checkpoint the database at least as often as every bytes of 
     /// log file are written. 
     void SetCheckpoint(unsigned int bytes) { m_CheckPointInterval = bytes; }
+
 
 
     // ICache interface 
@@ -444,6 +451,8 @@ private:
     unsigned                m_CleanLogOnPurge;
     /// Number of times we run purge
     unsigned                m_PurgeCount;
+    /// transaction log size
+    unsigned                m_LogSizeMax;
     /// Purge thread
     CRef<CCacheCleanerThread>  m_PurgeThread;
     /// Flag that Purge is already running
@@ -532,6 +541,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/03/23 17:22:54  kuznets
+ * SetLogFileMax()
+ *
  * Revision 1.49  2005/02/22 13:01:53  kuznets
  * +HasBlobs()
  *
