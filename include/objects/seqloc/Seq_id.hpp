@@ -40,6 +40,7 @@
 
 // generated includes
 #include <objects/seqloc/Seq_id_.hpp>
+#include <corelib/ncbi_limits.hpp>
 #include <serial/serializable.hpp>
 
 // generated classes
@@ -235,6 +236,9 @@ public:
     virtual void WriteAsFasta(ostream& out) const;
     const CSerializable& DumpAsFasta(void)  const { return Dump(eAsFasta); }
 
+    // For use with FindBestChoice from <corelib/ncbiutil.hpp>
+    static int Score(const CRef<CSeq_id>& id);
+
 private:
     void x_Init 
     (CSeq_id_Base::E_Choice the_type,
@@ -264,6 +268,20 @@ bool CSeq_id::Match (const CSeq_id& sid2) const
 }
 
 
+inline
+int CSeq_id::Score(const CRef<CSeq_id>& id)
+{
+    switch (id->Which()) {
+    case e_not_set:                               return kMax_Int;
+    case e_Giim: case e_Gi:                       return 20;
+    case e_General: case e_Gibbsq: case e_Gibbmt: return 15;
+    case e_Local: case e_Patent:                  return 10;
+    case e_Other:                                 return 8;
+    default:                                      return 5;
+    }
+}
+
+
 /////////////////// end of CSeq_id inline methods
 
 
@@ -274,6 +292,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2002/08/22 21:25:26  ucko
+ * Added a standard score function for FindBestChoice corresponding to
+ * the table in SeqIdFindWorst.
+ *
  * Revision 1.22  2002/08/16 19:25:14  ucko
  * +eAcc_refseq_wgs_*
  *
