@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.326 2004/10/06 20:33:38 ucko Exp $
+#  $Id: configure.ac,v 1.327 2004/10/07 20:28:21 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1808,10 +1808,6 @@ AC_CHECK_HEADERS(dlfcn.h ieeefp.h poll.h sys/sockio.h sys/sysinfo.h)
 # for FreeTDS 0.60
 AC_CHECK_HEADERS(arpa/inet.h malloc.h netinet/in.h sys/socket.h)
 
-### Check for some reentrant library functions (only needed in MT mode)
-
-if test "$with_mt" = "yes" ; then
-
 ## gethostbyname_r() -- 2 different variants: 5-arg (Solaris), 6-arg (Linux).
 
 AC_CACHE_CHECK([for gethostbyname_r], ncbi_cv_func_gethostbyname_r,
@@ -1950,9 +1946,6 @@ AC_SEARCH_LIBS(sched_yield, rt,
     AC_DEFINE(HAVE_SCHED_YIELD, 1,
               [Define to 1 if you have the `sched_yield' function.])
 )
-
-fi
-### ...reentrant versions of some standard library functions, MT functions
 
 
 ### Check for other standard library functions

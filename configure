@@ -7661,10 +7661,6 @@ fi
 done
 
 
-### Check for some reentrant library functions (only needed in MT mode)
-
-if test "$with_mt" = "yes" ; then
-
 ## gethostbyname_r() -- 2 different variants: 5-arg (Solaris), 6-arg (Linux).
 
 echo "$as_me:$LINENO: checking for gethostbyname_r" >&5
@@ -8208,9 +8204,6 @@ _ACEOF
 
 fi
 
-
-fi
-### ...reentrant versions of some standard library functions, MT functions
 
 
 ### Check for other standard library functions
