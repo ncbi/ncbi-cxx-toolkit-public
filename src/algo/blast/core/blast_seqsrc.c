@@ -136,7 +136,7 @@ Int4 BlastSeqSrcIteratorNext(const BlastSeqSrc* bssp, BlastSeqSrcIterator* itr)
     ASSERT(itr);
     ASSERT(bssp->IterNext);
 
-    return (*bssp->IterNext)(bssp, itr);
+    return (*bssp->IterNext)((void*) bssp, itr);
 }
 
 /*****************************************************************************/
