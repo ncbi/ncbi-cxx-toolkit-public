@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.127  2002/03/07 15:45:50  thiessen
+* compile fix ; extra file load messages
+*
 * Revision 1.126  2002/03/04 15:52:13  thiessen
 * hide sequence windows instead of destroying ; add perspective/orthographic projection choice
 *
@@ -864,9 +867,10 @@ bool Cn3DApp::OnInit(void)
 #endif
 
     // get file name from command line, if present
-    if (argc == 2)
+    if (argc == 2) {
+        TESTMSG("command line file: " << argv[1]);
         structureWindow->LoadFile(argv[1]);
-    else {
+    } else {
         if (argc > 2) ERR_POST(Error << "\nUsage: cn3d [filename]");
         structureWindow->glCanvas->renderer->AttachStructureSet(NULL);
     }
@@ -978,7 +982,10 @@ short Cn3DApp::MacHandleAEODoc(const WXAPPLEEVENTREF event, WXAPPLEEVENTREF repl
     }
 
     // actually open the file
-    if (*filename) structureWindow->LoadFile(filename);
+    if (*filename) {
+        TESTMSG("apple open event file: " << filename);
+        structureWindow->LoadFile(filename);
+    }
 
     // borrowed from wxApp::MacHandleAEODoc
     ProcessSerialNumber PSN ;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/03/07 15:45:45  thiessen
+* compile fix ; extra file load messages
+*
 * Revision 1.5  2002/02/27 16:29:40  thiessen
 * add model type flag to general mime type
 *
@@ -95,11 +98,11 @@ static bool CreateCacheFolder(void)
 static bool GetBiostrucFromCacheFolder(int mmdbID, EModel_type modelType, CBiostruc *biostruc)
 {
     // try to load from cache
-    TESTMSG("looking for " << mmdbID << " (model type " << modelType << ") in cache:");
+    TESTMSG("looking for " << mmdbID << " (model type " << (int) modelType << ") in cache:");
     std::string err, cacheFile = GetCacheFilePath(mmdbID, modelType);
     if (!ReadASNFromFile(cacheFile.c_str(), biostruc, true, &err)) {
         ERR_POST(Warning << "failed to load " << mmdbID
-            << " (model type " << modelType << ") from cache: " << err);
+            << " (model type " << (int) modelType << ") from cache: " << err);
         return false;
     }
 
@@ -140,7 +143,7 @@ static bool GetBiostrucViaHTTPAndAddToCache(int mmdbID, EModel_type modelType, C
             // add to cache
             if (CreateCacheFolder() &&
                 WriteASNToFile(GetCacheFilePath(mmdbID, modelType).c_str(), *biostruc, true, &err)) {
-                TESTMSG("stored " << mmdbID << " (model type " << modelType << ") in cache");
+                TESTMSG("stored " << mmdbID << " (model type " << (int) modelType << ") in cache");
                 // trim cache to appropriate size if we've added a new file
                 int size;
                 if (RegistryGetInteger(REG_CACHE_SECTION, REG_CACHE_MAX_SIZE, &size))
