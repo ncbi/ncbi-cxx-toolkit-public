@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/07/27 13:30:10  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.8  2000/07/17 22:36:45  thiessen
 * fix vector_math typo; correctly set initial view
 *
@@ -67,9 +70,6 @@
 
 #include "cn3d/structure_base.hpp"
 #include "cn3d/vector_math.hpp"
-
-USING_NCBI_SCOPE;
-using namespace objects;
 
 BEGIN_SCOPE(Cn3D)
 
@@ -109,7 +109,7 @@ class AtomSet : public StructureBase
 {
     friend StructureSet;
 public:
-    AtomSet(StructureBase *parent, const CAtomic_coordinates& coords);
+    AtomSet(StructureBase *parent, const ncbi::objects::CAtomic_coordinates& coords);
     ~AtomSet(void);
 
     // public data
@@ -139,9 +139,9 @@ private:
 
 public:
     const std::string* GetActiveEnsemble(void) const { return activeEnsemble; }
-    bool HasTemp(void) const { return (atomMap.size()>0 && (*((*(atomMap.begin())).second.begin()))->HasTemp()); }
-    bool HasOccup(void) const { return (atomMap.size()>0 && (*((*(atomMap.begin())).second.begin()))->HasOccup()); }
-    bool HasAlt(void) const { return (atomMap.size()>0 && (*((*(atomMap.begin())).second.begin()))->HasAlt()); }
+    bool HasTemp(void) const { return (atomMap.size()>0 && (*(atomMap.begin()->second.begin()))->HasTemp()); }
+    bool HasOccup(void) const { return (atomMap.size()>0 && (*(atomMap.begin()->second.begin()))->HasOccup()); }
+    bool HasAlt(void) const { return (atomMap.size()>0 && (*(atomMap.begin()->second.begin()))->HasAlt()); }
 };
 
 END_SCOPE(Cn3D)

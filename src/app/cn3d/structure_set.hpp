@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/07/27 13:30:10  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.12  2000/07/18 16:49:44  thiessen
 * more friendly rotation center setting
 *
@@ -81,9 +84,6 @@
 #include "cn3d/structure_base.hpp"
 #include "cn3d/vector_math.hpp"
 
-USING_NCBI_SCOPE;
-using namespace objects;
-
 BEGIN_SCOPE(Cn3D)
 
 // StructureSet is the top-level container. It holds a set of SturctureObjects;
@@ -95,7 +95,7 @@ class OpenGLRenderer;
 class StructureSet : public StructureBase
 {
 public:
-    StructureSet(const CNcbi_mime_asn1& mime);
+    StructureSet(const ncbi::objects::CNcbi_mime_asn1& mime);
     //~StructureSet(void);
 
     // public data
@@ -124,14 +124,15 @@ class CoordSet;
 class StructureObject : public StructureBase
 {
 public:
-    StructureObject(StructureBase *parent, const CBiostruc& biostruc, bool master);
-    //~StructureObject(void);
+    StructureObject(StructureBase *parent, const ncbi::objects::CBiostruc& biostruc, bool master);
 
     // public data
     static const int NO_MMDB_ID;
     int mmdbID;
     std::string pdbID;
     Matrix *transformToMaster;
+
+    ~StructureObject(void) { if (transformToMaster) delete transformToMaster; }
 
     // an object has one ChemicalGraph that can be applied to one or more 
     // CoordSets to generate the object's model(s)
@@ -141,7 +142,7 @@ public:
 
     // public methods
     bool DrawAll(const StructureBase *data) const;
-    bool SetTransformToMaster(const CBiostruc_annot_set& annot, int masterMMDBID);
+    bool SetTransformToMaster(const ncbi::objects::CBiostruc_annot_set& annot, int masterMMDBID);
 
 private:
     const bool isMaster;

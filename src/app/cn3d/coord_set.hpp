@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/27 13:30:10  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.2  2000/07/16 23:18:34  thiessen
 * redo of drawing system
 *
@@ -46,9 +49,6 @@
 
 #include "cn3d/structure_base.hpp"
 
-USING_NCBI_SCOPE;
-using namespace objects;
-
 BEGIN_SCOPE(Cn3D)
 
 class AtomSet;
@@ -62,7 +62,7 @@ class CoordSet : public StructureBase
 {
 public:
     CoordSet(StructureBase *parent, 
-                const CBiostruc_model::TModel_coordinates& modelCoords);
+                const ncbi::objects::CBiostruc_model::TModel_coordinates& modelCoords);
     //~CoordSet(void);
 
     // public data

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/27 13:30:10  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.1  2000/07/12 23:30:47  thiessen
 * now draws basic CPK model
 *
@@ -43,7 +46,6 @@
 
 #include "cn3d/vector_math.hpp"
 
-USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/07/27 13:30:51  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.6  2000/07/18 16:50:10  thiessen
 * more friendly rotation center setting
 *
@@ -64,7 +67,7 @@
 #include "cn3d/periodic_table.hpp"
 
 USING_NCBI_SCOPE;
-using namespace objects;
+USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 

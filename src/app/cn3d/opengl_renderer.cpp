@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/07/27 13:30:51  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.8  2000/07/18 16:50:11  thiessen
 * more friendly rotation center setting
 *
@@ -76,7 +79,7 @@
 #include "cn3d/structure_set.hpp"
 
 USING_NCBI_SCOPE;
-using namespace objects;
+USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
@@ -200,7 +203,7 @@ void OpenGLRenderer::ResetCamera(void)
     if (structureSet) { // for structure
         cameraAngleRad = DegreesToRad(35.0);
         // calculate camera distance so that structure fits exactly in
-        // the window in any rotation (based StructureSet's maxDistFromCenter)
+        // the window in any rotation (based on structureSet's maxDistFromCenter)
         GLint Viewport[4];
         glGetIntegerv(GL_VIEWPORT, Viewport);
         double angle = cameraAngleRad, aspect = ((double)(Viewport[2])) / Viewport[3];
@@ -324,8 +327,8 @@ void OpenGLRenderer::Construct(void)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
+    SetColor(GL_NONE, 0, 0, 0); // reset color caches in SetColor
     if (structureSet) {
-        SetColor(GL_AMBIENT, 2, 2, 2); // reset color caches in SetColor
         glNewList(FIRST_LIST, GL_COMPILE);
         structureSet->DrawAll();
         glEndList();
@@ -339,6 +342,11 @@ void OpenGLRenderer::SetColor(int type, float red, float green, float blue, floa
 {
     static GLfloat pr, pg, pb, pa;
     static GLenum pt = GL_NONE;
+
+    if (type == GL_NONE) {
+        pt = GL_NONE;
+        return;
+    }
 
 //#ifdef _DEBUG
     if (red == 0.0 && green == 0.0 && blue == 0.0)
@@ -476,9 +484,11 @@ void OpenGLRenderer::ConstructLogo(void)
 void OpenGLRenderer::PushMatrix(const Matrix* m) const
 {
     glPushMatrix();
-    GLdouble g[16];
-    Matrix2GL(*m, g);
-    glMultMatrixd(g);
+    if (m) {
+        GLdouble g[16];
+        Matrix2GL(*m, g);
+        glMultMatrixd(g);
+    }
 }
 
 void OpenGLRenderer::PopMatrix(void) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/27 13:30:51  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.3  2000/07/16 23:19:10  thiessen
 * redo of drawing system
 *
@@ -49,7 +52,7 @@
 #include "cn3d/atom_set.hpp"
 
 USING_NCBI_SCOPE;
-using namespace objects;
+USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/07/27 13:30:51  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.5  2000/07/17 22:37:18  thiessen
 * fix vector_math typo; correctly set initial view
 *
@@ -65,7 +68,7 @@
 #include "cn3d/opengl_renderer.hpp"
 
 USING_NCBI_SCOPE;
-using namespace objects;
+USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/07/27 13:30:51  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.11  2000/07/18 16:50:11  thiessen
 * more friendly rotation center setting
 *
@@ -75,8 +78,8 @@
 #include "cn3d/main.hpp"
 
 USING_NCBI_SCOPE;
-using namespace objects;
-using namespace Cn3D;
+USING_SCOPE(objects);
+USING_SCOPE(Cn3D);
 
 
 // Set the NCBI diagnostic streams to go to this method, which then pastes them

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/07/27 13:30:10  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.7  2000/07/16 23:18:34  thiessen
 * redo of drawing system
 *
@@ -62,10 +65,7 @@
 #define LIST_TYPE std::list
 
 #include <map>
-
 #include <corelib/ncbidiag.hpp>
-
-USING_NCBI_SCOPE;
 
 #define TESTMSG(stream) ERR_POST(Info << stream)
 //#define TESTMSG(stream)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/07/27 13:30:10  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.6  2000/07/18 16:49:44  thiessen
 * more friendly rotation center setting
 *
@@ -59,8 +62,6 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbidiag.hpp>
-
-USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
@@ -94,7 +95,7 @@ public:
         if (i == 0) return x;
         else if (i == 1) return y;
         else if (i == 2) return z;
-        else ERR_POST(Error << "Vector operator [] access out of range : " << i);
+        else ERR_POST(ncbi::Error << "Vector operator [] access out of range : " << i);
         return 0.0;
     }
     friend Vector operator + (const Vector& a, const Vector& b)
@@ -160,7 +161,7 @@ public:
     }
 };
 
-inline CNcbiOstream& operator << (CNcbiOstream& s, const Vector& v)
+inline ncbi::CNcbiOstream& operator << (ncbi::CNcbiOstream& s, const Vector& v)
 {
     return s << '<' << v.x << ',' << v.y << ',' << v.z << '>';
 }

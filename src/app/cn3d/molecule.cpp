@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/27 13:30:51  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.4  2000/07/18 02:41:33  thiessen
 * fix bug in virtual bonds and altConfs
 *
@@ -53,7 +56,7 @@
 #include "cn3d/bond.hpp"
 
 USING_NCBI_SCOPE;
-using namespace objects;
+USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
@@ -75,7 +78,6 @@ Molecule::Molecule(StructureBase *parent,
 
     // load residues from SEQUENCE OF Residue, storing virtual bonds along the way
     Residue *prevResidue = NULL;
-    int alphaID1, alphaID2;
     CMolecule_graph::TResidue_sequence::const_iterator i, ie=graph.GetResidue_sequence().end();
     for (i=graph.GetResidue_sequence().begin(); i!=ie; i++) {
 
@@ -87,14 +89,12 @@ Molecule::Molecule(StructureBase *parent,
 
         if (prevResidue) {
             // virtual bonds
-            alphaID1 = prevResidue->alphaID;
-            if (alphaID1 == Residue::NO_ALPHA_ID) continue;
-            alphaID2 = residue->alphaID;
-            if (alphaID2 == Residue::NO_ALPHA_ID) continue;
+            if (prevResidue->alphaID == Residue::NO_ALPHA_ID) continue;
+            if (residue->alphaID == Residue::NO_ALPHA_ID) continue;
             const Bond *bond = MakeBond(this, 
-                id, prevResidue->id, alphaID1,
-                id, residue->id, alphaID2,
-                Bond::eSingle);
+                id, prevResidue->id, prevResidue->alphaID,
+                id, residue->id, residue->alphaID,
+                Bond::eOther);
             if (bond) virtualBonds.push_back(bond);
         }
         prevResidue = residue;

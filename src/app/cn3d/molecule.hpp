@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/27 13:30:10  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.3  2000/07/17 04:21:09  thiessen
 * now does correct structure alignment transformation
 *
@@ -54,16 +57,13 @@
 #include "cn3d/structure_base.hpp"
 #include "cn3d/residue.hpp"
 
-USING_NCBI_SCOPE;
-using namespace objects;
-
 BEGIN_SCOPE(Cn3D)
 
 // A Molecule is generally a fully connected set of atoms - e.g. a protein chain,
 // heterogen, etc. For proteins and nucleotides, it is divided into an ordered
 // sequence of Residues, along with inter-residue bonds.
 
-typedef list< CRef< CResidue_graph > > ResidueGraphList;
+typedef list< ncbi::CRef< ncbi::objects::CResidue_graph > > ResidueGraphList;
 
 class Bond;
 
@@ -71,20 +71,20 @@ class Molecule : public StructureBase
 {
 public:
     Molecule(StructureBase *parent,
-        const CMolecule_graph& graph,
+        const ncbi::objects::CMolecule_graph& graph,
         const ResidueGraphList& standardDictionary,
         const ResidueGraphList& localDictionary);
     //~Molecule(void);
 
     // public data
     enum eType {
-        eDNA = CBiomol_descr::eMolecule_type_dna,
-        eRNA = CBiomol_descr::eMolecule_type_rna,
-        eProtein = CBiomol_descr::eMolecule_type_protein,
-        eBiopolymer = CBiomol_descr::eMolecule_type_other_biopolymer,
-        eSolvent = CBiomol_descr::eMolecule_type_solvent,
-        eNonpolymer = CBiomol_descr::eMolecule_type_other_nonpolymer,
-        eOther = CBiomol_descr::eMolecule_type_other
+        eDNA = ncbi::objects::CBiomol_descr::eMolecule_type_dna,
+        eRNA = ncbi::objects::CBiomol_descr::eMolecule_type_rna,
+        eProtein = ncbi::objects::CBiomol_descr::eMolecule_type_protein,
+        eBiopolymer = ncbi::objects::CBiomol_descr::eMolecule_type_other_biopolymer,
+        eSolvent = ncbi::objects::CBiomol_descr::eMolecule_type_solvent,
+        eNonpolymer = ncbi::objects::CBiomol_descr::eMolecule_type_other_nonpolymer,
+        eOther = ncbi::objects::CBiomol_descr::eMolecule_type_other
     };
     eType type;
     int id;
@@ -104,7 +104,7 @@ public:
     { 
         ResidueMap::const_iterator info=residues.find(rID);
         if (info != residues.end()) return (*info).second->GetAtomInfo(aID);
-        ERR_POST(Warning << "Molecule #" << id << ": can't find residue #" << rID);
+        ERR_POST(ncbi::Warning << "Molecule #" << id << ": can't find residue #" << rID);
         return NULL;
     }
     //bool Draw(const StructureBase *data) const;

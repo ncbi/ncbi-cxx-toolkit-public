@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/27 13:30:10  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.4  2000/07/17 11:58:58  thiessen
 * fix nucleotide virtual bonds
 *
@@ -55,12 +58,9 @@
 
 #include "cn3d/structure_base.hpp"
 
-USING_NCBI_SCOPE;
-using namespace objects;
-
 BEGIN_SCOPE(Cn3D)
 
-typedef list< CRef< CResidue_graph > > ResidueGraphList;
+typedef list< ncbi::CRef< ncbi::objects::CResidue_graph > > ResidueGraphList;
 
 // a Residue is a set of bonds that connect one residue of a larger Molecule.
 // Its constructor is where most of the work of decoding the ASN1 graph is done,
@@ -73,7 +73,7 @@ class Residue : public StructureBase
 {
 public:
     Residue(StructureBase *parent,
-        const CResidue& residue, int moleculeID,
+        const ncbi::objects::CResidue& residue, int moleculeID,
         const ResidueGraphList& standardDictionary,
         const ResidueGraphList& localDictionary);
     ~Residue(void);
@@ -87,10 +87,10 @@ public:
     int alphaID; // ID of "alpha" atom (C-alpha or P)
 
     enum eType {
-        eDNA = CResidue_graph::eResidue_type_deoxyribonucleotide,
-        eRNA = CResidue_graph::eResidue_type_ribonucleotide,
-        eAminoAcid = CResidue_graph::eResidue_type_amino_acid,
-        eOther = CResidue_graph::eResidue_type_other
+        eDNA = ncbi::objects::CResidue_graph::eResidue_type_deoxyribonucleotide,
+        eRNA = ncbi::objects::CResidue_graph::eResidue_type_ribonucleotide,
+        eAminoAcid = ncbi::objects::CResidue_graph::eResidue_type_amino_acid,
+        eOther = ncbi::objects::CResidue_graph::eResidue_type_other
     };
     eType type;
 
@@ -120,7 +120,7 @@ public:
     { 
         AtomInfoMap::const_iterator info=atomInfos.find(aID);
         if (info != atomInfos.end()) return (*info).second;
-        ERR_POST(Warning << "Residue #" << id << ": can't find atom #" << aID);
+        ERR_POST(ncbi::Warning << "Residue #" << id << ": can't find atom #" << aID);
         return NULL;
     }
 };

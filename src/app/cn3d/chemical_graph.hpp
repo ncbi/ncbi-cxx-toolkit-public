@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/27 13:30:10  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.4  2000/07/16 23:18:33  thiessen
 * redo of drawing system
 *
@@ -56,9 +59,6 @@
 #include "cn3d/molecule.hpp"
 #include "cn3d/residue.hpp"
 
-USING_NCBI_SCOPE;
-using namespace objects;
-
 BEGIN_SCOPE(Cn3D)
 
 // The ChemicalGraph is the set of bonds that link the atoms (from CoordSets).
@@ -71,7 +71,7 @@ class Bond;
 class ChemicalGraph : public StructureBase
 {
 public:
-    ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph);
+    ChemicalGraph(StructureBase *parent, const ncbi::objects::CBiostruc_graph& graph);
     //~ChemicalGraph(void);
 
     // public data
@@ -85,7 +85,7 @@ public:
     { 
         MoleculeMap::const_iterator info=molecules.find(mID);
         if (info != molecules.end()) return (*info).second->GetAtomInfo(rID, aID);
-        ERR_POST(Warning << "Graph: can't find molecule #" << mID);
+        ERR_POST(ncbi::Warning << "Graph: can't find molecule #" << mID);
         return NULL;
     }
     //bool Draw(const StructureBase *data) const;

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/07/27 13:30:10  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.5  2000/07/18 16:49:43  thiessen
 * more friendly rotation center setting
 *
@@ -62,7 +65,6 @@
 #include "cn3d/structure_set.hpp"
 #include "cn3d/opengl_renderer.hpp"
 
-using namespace Cn3D;
 
 class Cn3DMainFrame;
 
@@ -83,8 +85,8 @@ public:
     ~Cn3DGLCanvas(void);
 
     // public data
-    StructureSet *structureSet;
-    OpenGLRenderer renderer;
+    Cn3D::StructureSet *structureSet;
+    Cn3D::OpenGLRenderer renderer;
 
     // public methods
     void OnPaint(wxPaintEvent& event);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/27 13:30:10  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.2  2000/07/16 23:18:33  thiessen
 * redo of drawing system
 *
@@ -47,9 +50,6 @@
 
 #include "cn3d/structure_base.hpp"
 
-USING_NCBI_SCOPE;
-using namespace objects;
-
 BEGIN_SCOPE(Cn3D)
 
 class AtomSet;
@@ -61,13 +61,13 @@ class Bond : public StructureBase
 {
 public:
     enum eBondOrder {
-        eSingle = CInter_residue_bond::eBond_order_single, 
-        ePartialDouble = CInter_residue_bond::eBond_order_partial_double, 
-        eAromatic = CInter_residue_bond::eBond_order_aromatic, 
-        eDouble = CInter_residue_bond::eBond_order_double,
-        eTriple = CInter_residue_bond::eBond_order_triple,
-        eOther = CInter_residue_bond::eBond_order_other,
-        eUnknown = CInter_residue_bond::eBond_order_unknown 
+        eSingle = ncbi::objects::CInter_residue_bond::eBond_order_single, 
+        ePartialDouble = ncbi::objects::CInter_residue_bond::eBond_order_partial_double, 
+        eAromatic = ncbi::objects::CInter_residue_bond::eBond_order_aromatic, 
+        eDouble = ncbi::objects::CInter_residue_bond::eBond_order_double,
+        eTriple = ncbi::objects::CInter_residue_bond::eBond_order_triple,
+        eOther = ncbi::objects::CInter_residue_bond::eBond_order_other,
+        eUnknown = ncbi::objects::CInter_residue_bond::eBond_order_unknown 
     };
 
     Bond(StructureBase *parent) : StructureBase(parent) { }
@@ -87,7 +87,7 @@ private:
 };
 
 const Bond* MakeBond(StructureBase *parent, 
-    const CAtom_pntr& atomPtr1, const CAtom_pntr& atomPtr2, 
+    const ncbi::objects::CAtom_pntr& atomPtr1, const ncbi::objects::CAtom_pntr& atomPtr2, 
     int bondOrder = Bond::eUnknown);
 const Bond* MakeBond(StructureBase *parent,
     int mID1, int rID1, int aID1, int mID2, int rID2, int aID2, 

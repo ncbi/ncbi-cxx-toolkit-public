@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/07/27 13:30:51  thiessen
+* remove 'using namespace ...' from all headers
+*
 * Revision 1.7  2000/07/18 02:41:32  thiessen
 * fix bug in virtual bonds and altConfs
 *
@@ -70,7 +73,7 @@
 #include "cn3d/vector_math.hpp"
 
 USING_NCBI_SCOPE;
-using namespace objects;
+USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
@@ -185,9 +188,9 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
 
         // store pointer in map - key+altConfID must be unique
         const AtomPntrKey& key = MakeKey(
-            (*(i_mID++)).GetObject().Get(),
-            (*(i_rID++)).GetObject().Get(),
-            (*(i_aID++)).GetObject().Get());
+            (i_mID++)->GetObject().Get(),
+            (i_rID++)->GetObject().Get(),
+            (i_aID++)->GetObject().Get());
         if (atomMap.find(key) != atomMap.end()) {
             AtomAltList::const_iterator i_atom, e=atomMap[key].end();
             for (i_atom=atomMap[key].begin(); i_atom!=e; i_atom++) {
