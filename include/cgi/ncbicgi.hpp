@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1998/11/17 23:47:13  vakatov
+* + CCgiRequest::EMedia
+*
 * Revision 1.10  1998/11/17 02:02:08  vakatov
 * Compiles through with SunPro C++ 5.0
 *
@@ -64,28 +67,26 @@ public:
     // All SetXXX() methods beneath:
     //  - set the property to "str" if "str" has valid format
     //  - throw the "invalid_argument" if "str" has invalid format
-    void SetName   (const string& str);
-    void SetValue  (const string& str);
-    void SetDomain (const string& str);
-    // Wed, 09 Aug 1995 07:49:37 GMT
-    // Wednesday, 09-Aug-94 07:49:37 GMT
-    // Wed Aug 9 07:49:37 1994  (this is ANSI C "asctime()")
-    void SetExpDate(const string& str);
-    void SetExpDate(const tm& exp_date);
+    void SetName      (const string& str);
+    void SetValue     (const string& str);
+    void SetDomain    (const string& str);
+    void SetValidPath (const string& str);
+    // "Wed Aug 9 07:49:37 1994\n\0"  (that is, the exact ANSI C "asctime()")
+    void SetExpDate   (const string& str);
+    void SetExpDate   (const tm& exp_date);
+    void SetSecure    (bool secure);
 
     // All GetXXX() methods beneath:
     //  - return "true"  and copy the property to the "str" if the prop. is set
     //  - return "false" and empty the "str" if the property is not set
     //  - throw the "invalid_argument" exception if argument is a zero pointer
-    bool GetName   (string* str) const;
-    bool GetValue  (string* str) const;
-    bool GetDomain (string* str) const;
-    bool GetExpDate(string* str) const;
-    bool GetExpDate(tm*     exp_date);
-
-    // Is secure
-    bool GetSecure(void);
-    void SetSecure(bool secure);
+    bool GetName      (string*  str) const;
+    bool GetValue     (string*  str) const;
+    bool GetDomain    (string*  str) const;
+    bool GetValidPath (string*  str) const;
+    bool GetExpDate   (string*  str) const;
+    bool GetExpDate   (tm* exp_date) const;
+    bool GetSecure    (void)         const;
 
     // Compose and write to output stream "os":
     //   "Set-cookie: name=value; expires=date; path=val_path; domain=dom_name;
@@ -169,8 +170,14 @@ enum ECgiProp {
 //
 class CCgiRequest {
 public:
-    // the startup initialization using environment and/or standard input
-    CCgiRequest(void);
+    // the startup initialization
+    enum EMedia { // where to get the request content from
+        eMedia_CommandLine,
+        eMedia_QueryString,
+        eMedia_StandardInput,
+        eMedia_Default // automagic choice
+    };
+    CCgiRequest(EMedia media=eMedia_Default);
 
     // get "standard" properties(empty string if not found)
     const string& GetProperty(ECgiProp prop);
@@ -232,7 +239,7 @@ private:
 
 ///////////////////////////////////////////////////////
 // All inline function implementations are in this file
-// #include <ncbicgi.inl>
+//#include <ncbicgi.inl>
 
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
