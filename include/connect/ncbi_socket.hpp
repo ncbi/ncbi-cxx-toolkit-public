@@ -164,11 +164,13 @@ public:
     virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const;
 
     // NOTE:  use CSocketAPI::SetReadOnWrite() to set the default value
-    void SetReadOnWrite(ESwitch read_on_write = eOn);
+    ESwitch SetReadOnWrite(ESwitch read_on_write = eOn);
     // NOTE:  use CSocketAPI::SetDataLogging() to set the default value
-    void SetDataLogging(ESwitch log = eOn);
+    ESwitch SetDataLogging(ESwitch log = eOn);
     // NOTE:  use CSocketAPI::SetInterruptOnSignal() to set the default value
-    void SetInterruptOnSignal(ESwitch interrupt = eOn);
+    ESwitch SetInterruptOnSignal(ESwitch interrupt = eOn);
+    // NOTE:  use CSocketAPI::SetReuseAddress() to set the default value
+    void    SetReuseAddress(ESwitch reuse = eOff);
 
     bool IsClientSide(void) const;
     bool IsServerSide(void) const;
@@ -326,9 +328,10 @@ public:
     static EIO_Status Shutdown       (void);
 
     // Defaults  (see also per-socket CSocket::SetReadOnWrite, etc.)
-    static void SetReadOnWrite       (ESwitch read_on_write);
-    static void SetDataLogging       (ESwitch log);
-    static void SetInterruptOnSignal (ESwitch interrupt);
+    static ESwitch SetReadOnWrite       (ESwitch read_on_write);
+    static ESwitch SetDataLogging       (ESwitch log);
+    static ESwitch SetInterruptOnSignal (ESwitch interrupt);
+    static ESwitch SetReuseAddress      (ESwitch reuse);
 
     // NOTE:  use CSocket::Wait() to wait for I/O event(s) on a single socket
     struct SPoll {
@@ -422,24 +425,28 @@ inline EIO_Status CSocket::GetOSHandle(void* hnd_buf, size_t hnd_siz) const
 }
 
  
-inline void CSocket::SetReadOnWrite(ESwitch read_on_write)
+inline ESwitch CSocket::SetReadOnWrite(ESwitch read_on_write)
 {
-    if ( m_Socket )
-        SOCK_SetReadOnWrite(m_Socket, read_on_write);
+    return m_Socket? SOCK_SetReadOnWrite(m_Socket, read_on_write) : eDefault;
 }
 
 
-inline void CSocket::SetDataLogging(ESwitch log)
+inline ESwitch CSocket::SetDataLogging(ESwitch log)
 {
-    if ( m_Socket )
-        SOCK_SetDataLogging(m_Socket, log);
+    return m_Socket? SOCK_SetDataLogging(m_Socket, log) : eDefault;
 }
 
 
-inline void CSocket::SetInterruptOnSignal(ESwitch interrupt)
+inline ESwitch CSocket::SetInterruptOnSignal(ESwitch interrupt)
+{
+    return m_Socket? SOCK_SetInterruptOnSignal(m_Socket, interrupt) : eDefault;
+}
+
+
+inline void CSocket::SetReuseAddress(ESwitch reuse)
 {
     if ( m_Socket )
-        SOCK_SetInterruptOnSignal(m_Socket, interrupt);
+        SOCK_SetReuseAddress(m_Socket, reuse);
 }
 
 
@@ -540,21 +547,27 @@ inline EIO_Status CSocketAPI::Shutdown(void)
 }
 
 
-inline void CSocketAPI::SetReadOnWrite(ESwitch read_on_write)
+inline ESwitch CSocketAPI::SetReadOnWrite(ESwitch read_on_write)
 {
-    SOCK_SetReadOnWriteAPI(read_on_write);
+    return SOCK_SetReadOnWriteAPI(read_on_write);
 }
 
 
-inline void CSocketAPI::SetDataLogging(ESwitch log)
+inline ESwitch CSocketAPI::SetDataLogging(ESwitch log)
 {
-    SOCK_SetDataLoggingAPI(log);
+    return SOCK_SetDataLoggingAPI(log);
 }
 
 
-inline void CSocketAPI::SetInterruptOnSignal(ESwitch interrupt)
+inline ESwitch CSocketAPI::SetInterruptOnSignal(ESwitch interrupt)
 {
-    SOCK_SetInterruptOnSignalAPI(interrupt);
+    return SOCK_SetInterruptOnSignalAPI(interrupt);
+}
+
+
+inline ESwitch CSocketAPI::SetReuseAddress(ESwitch reuse)
+{
+    return SOCK_SetReuseAddressAPI(reuse);
 }
 
 
@@ -591,6 +604,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2003/10/23 12:14:52  lavr
+ * Socket feature setters made returning old feature values
+ *
  * Revision 6.30  2003/10/09 19:58:26  vakatov
  * Fine-tune the set of included CORELIB headers, mostly to avoid the weird
  * dependence of XNCBI library on ICC 7.1.

@@ -75,6 +75,8 @@
  *  SOCK_SetReadOnWrite
  *  SOCK_SetInterruptOnSignalAPI
  *  SOCK_SetInterruptOnSignal
+ *  SOCK_SetReuseAddressAPI
+ *  SOCK_SetReuseAddress
  *
  * Datagram Socket:
  *
@@ -183,15 +185,19 @@ typedef struct SOCK_tag*  SOCK;  /* socket:  handle                     */
 /* By default ("log" == eDefault, which is eOff), the data is not logged.
  * To start logging the data, call this func with "log" == eOn.
  * To stop  logging the data, call this func with "log" == eOff.
+ * Return prior setting.
  */
-extern NCBI_XCONNECT_EXPORT void SOCK_SetDataLoggingAPI(ESwitch log);
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLoggingAPI
+(ESwitch log
+ );
 
 
 /* Control the data logging for socket "sock" individually.
  * To reset to the global default behavior (as set by SOCK_SetDataLoggingAPI),
  * call this function with "log" == eDefault.
+ * Return prior setting.
  */
-extern NCBI_XCONNECT_EXPORT void SOCK_SetDataLogging
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLogging
 (SOCK    sock,
  ESwitch log
  );
@@ -204,13 +210,17 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetDataLogging
 
 
 /* By default ("on_off" == eDefault,eOff), I/O is restartable if interrupted.
+ * Return prior setting.
  */
-extern NCBI_XCONNECT_EXPORT void SOCK_SetInterruptOnSignalAPI(ESwitch on_off);
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignalAPI
+(ESwitch on_off
+ );
 
 
 /* Control sockets individually. eDefault causes the use of global API flag.
+ * Return prior setting.
  */
-extern NCBI_XCONNECT_EXPORT void SOCK_SetInterruptOnSignal
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignal
 (SOCK    sock,
  ESwitch on_off
  );
@@ -224,11 +234,15 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetInterruptOnSignal
 
 /* By default ("on_off" == eDefault,eOff), address is not marked for reuse
  * in SOCK, but is always reused for LSOCK.
+ * Return prior setting.
  */
-extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddressAPI(ESwitch on_off);
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReuseAddressAPI
+(ESwitch on_off
+ );
 
 
 /* Control sockets individually (Note: only boolean value is available here.)
+ * No return value is available.
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
 (SOCK        sock,
@@ -693,15 +707,19 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_GetOSHandle
  * from inside SOCK_Write(). If you want to automagically upread the data
  * (and cache it in the internal socket buffer) when the write operation
  * is not immediately available, call this func with "on_off" == eOn.
+ * Return prior setting.
  */
-extern NCBI_XCONNECT_EXPORT void SOCK_SetReadOnWriteAPI(ESwitch on_off);
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWriteAPI
+(ESwitch on_off
+ );
 
 
 /* Control the reading-while-writing feature for socket "sock" individually.
  * To reset to the global default behavior (as set by
  * SOCK_SetReadOnWriteAPI), call this function with "on_off" == eDefault.
+ * Return prior setting.
  */
-extern NCBI_XCONNECT_EXPORT void SOCK_SetReadOnWrite
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWrite
 (SOCK    sock,
  ESwitch on_off
  );
@@ -918,6 +936,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.43  2003/10/23 12:14:33  lavr
+ * Socket feature setters made returning old feature values
+ *
  * Revision 6.42  2003/09/23 21:04:43  lavr
  * SOCK_Abort():  argument comment removed as irrelevant (cut&paste mishap)
  *

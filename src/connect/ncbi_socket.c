@@ -719,17 +719,21 @@ static void s_DoLog
 }
 
 
-extern void SOCK_SetDataLoggingAPI(ESwitch log)
+extern ESwitch SOCK_SetDataLoggingAPI(ESwitch log)
 {
+    ESwitch old = s_Log;
     if (log == eDefault)
         log = eOff;
     s_Log = log;
+    return old;
 }
 
 
-extern void SOCK_SetDataLogging(SOCK sock, ESwitch log)
+extern ESwitch SOCK_SetDataLogging(SOCK sock, ESwitch log)
 {
+    ESwitch old = sock->log;
     sock->log = log;
+    return old;
 }
 
 
@@ -3082,38 +3086,50 @@ extern EIO_Status SOCK_GetOSHandle(SOCK   sock,
 }
 
 
-extern void SOCK_SetReadOnWriteAPI(ESwitch on_off)
+extern ESwitch SOCK_SetReadOnWriteAPI(ESwitch on_off)
 {
+    ESwitch old = s_ReadOnWrite;
     if (on_off == eDefault)
         on_off = eOff;
     s_ReadOnWrite = on_off;
+    return old;
 }
 
 
-extern void SOCK_SetReadOnWrite(SOCK sock, ESwitch on_off)
+extern ESwitch SOCK_SetReadOnWrite(SOCK sock, ESwitch on_off)
 {
-    if (sock->type != eSOCK_Datagram)
+    if (sock->type != eSOCK_Datagram) {
+        ESwitch old = sock->r_on_w;
         sock->r_on_w = on_off;
+        return old;
+    }
+    return eDefault;
 }
 
 
-extern void SOCK_SetInterruptOnSignalAPI(ESwitch on_off)
+extern ESwitch SOCK_SetInterruptOnSignalAPI(ESwitch on_off)
 {
+    ESwitch old = s_InterruptOnSignal;
     if (on_off == eDefault)
         on_off = eOff;
     s_InterruptOnSignal = on_off;
+    return old;
 }
 
 
-extern void SOCK_SetInterruptOnSignal(SOCK sock, ESwitch on_off)
+extern ESwitch SOCK_SetInterruptOnSignal(SOCK sock, ESwitch on_off)
 {
+    ESwitch old = sock->i_on_sig;
     sock->i_on_sig = on_off;
+    return old;
 }
 
 
-extern void SOCK_SetReuseAddressAPI(ESwitch on_off)
+extern ESwitch SOCK_SetReuseAddressAPI(ESwitch on_off)
 {
+    int old = s_ReuseAddress;
     s_ReuseAddress = on_off == eOn ? 1 : 0;
+    return old ? eOn : eOff;
 }
 
 
@@ -3923,6 +3939,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.134  2003/10/23 12:15:07  lavr
+ * Socket feature setters made returning old feature values
+ *
  * Revision 6.133  2003/10/14 14:40:44  lavr
  * SOCK_gethostbyname(): fix to obtain local host name in case of empty input
  *
