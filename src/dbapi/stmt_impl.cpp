@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.23  2004/07/19 15:51:57  kholodov
+* Fixed: unwanted resultset cleanup while calling ExecuteUpdate()
+*
 * Revision 1.22  2004/05/17 21:10:28  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -235,7 +238,9 @@ IResultSet* CStatement::ExecuteQuery(const string& sql)
 void CStatement::ExecuteUpdate(const string& sql)
 {
     Execute(sql);
-    while( HasMoreResults() );
+    //while( HasMoreResults() );
+    GetBaseCmd()->DumpResults();
+    m_rowCount = GetBaseCmd()->RowCount();
 }
 
 void CStatement::ExecuteLast()
