@@ -171,11 +171,26 @@ to compare Bioseq   handles created by different Scopes.
                                        ESequenceViewMode mode,
                                        bool use_iupac_coding = false,
                                        bool plus_strand = true) const;
-
-    // Get sequence's title (used in various flat-file formats.)
-    string GetTitle(TGetTitleFlags flags = 0);
 </pre>
 
+<p>
+There are also some external utility functions which accept Bioseq
+handles; in particular,
+<a href="../../lxr/source/include/objects/util/sequence.hpp">&lt;objects/util/sequence.hpp&gt;</a>
+declares (within namespace <tt>ncbi::objects::sequence::</tt>)
+</p>
+<pre>
+// Get sequence's title (used in various flat-file formats.)
+enum EGetTitleFlags {
+    fGetTitle_Reconstruct = 0x1, // ignore existing title Seqdesc.
+    fGetTitle_Organism    = 0x2  // append [organism]
+};
+typedef int TGetTitleFlags;
+string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags = 0);
+</pre>
+<p>
+This function is available in the <tt>xobjutil</tt> library.
+</p>
 
 <h3><a name="Seq_vector"></a>Seq vector.</h3>
 <p>
