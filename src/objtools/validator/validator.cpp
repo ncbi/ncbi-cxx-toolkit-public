@@ -470,6 +470,7 @@ const string CValidErrItem::sm_Terse [] = {
     "RefGeneTrackingWithoutStatus",
     "UnwantedCompleteFlag",
     "CollidingPublications",
+    "TransgenicProblem",
     END(SEQ_DESCR),
 
     BEGIN(GENERIC),
@@ -869,6 +870,9 @@ the title also says it is a complete sequence or complete genome.",
 //  SEQ_DESCR_CollidingPublications
 "Multiple publication descriptors with the same PMID or MUID apply to a Bioseq. \
 The lower-level ones are redundant, and should be removed.",
+//  SEQ_DESCR_TransgenicProblem
+"A BioSource descriptor with /transgenic set must be accompanied by a BioSource \
+feature on the nucleotide record.",
 
 END(SEQ_DESCR),
 
@@ -1306,6 +1310,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2004/07/29 17:08:20  shomrat
+* + SEQ_DESCR_TransgenicProblem
+*
 * Revision 1.49  2004/07/29 16:07:58  shomrat
 * Separated error message from offending object's description; Added error group
 *
