@@ -10,12 +10,13 @@
 if test -z "$1" ; then
 cat << EOF
 USAGE: Go to the root c++ directory and run:
-  ./compilers/`basename $0` build_dir [--without-debug] [--without-fastcgi]
+  ./compilers/`basename $0` build_dir [flags]
 
   build_dir           - name of the target build directory(e.g. just ".")
-  --without-debug     - to build the release versions of libs and apps
-  --without-fastcgi   - to explicitely prohibit the use of Fast-CGI library
-  --without-internal  - do not build internal projects
+  flags (optional):
+    --without-debug     - build the release versions of libs and apps
+    --without-fastcgi   - explicitely prohibit the use of Fast-CGI library
+    --without-internal  - do not build internal projects
 EOF
 
 exit 1
