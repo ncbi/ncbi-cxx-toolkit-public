@@ -49,8 +49,8 @@
 #include <list>
 #include <stdio.h>
 
-#include <omssa.hpp>
-#include <SpectrumSet.hpp>
+#include "omssa.hpp"
+#include "SpectrumSet.hpp"
 #include <readdb.h>
 
 
@@ -258,6 +258,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.10  2004/03/16 22:09:11  gorelenk
+  Changed include for private header.
+
   Revision 1.9  2004/03/01 18:24:08  lewisg
   better mod handling
 
