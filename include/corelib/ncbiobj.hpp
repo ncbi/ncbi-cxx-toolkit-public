@@ -291,8 +291,10 @@ public:
     TObjectType* Release(void)
         {
             TObjectType* ptr = m_Ptr;
-            if ( !ptr )
-                NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
+            if ( !ptr ) {
+                NCBI_THROW(CCoreException,eNullPtr,
+                           "Attempt to release NULL pointer");
+            }
             m_Ptr = 0;
             CRefBase<C>::ReleaseReference(ptr);
             return ptr;
@@ -320,8 +322,10 @@ public:
     TObjectType* GetNonNullPointer(void)
         {
             TObjectType* ptr = m_Ptr;
-            if ( !ptr )
-                NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
+            if ( !ptr ) {
+                NCBI_THROW(CCoreException,eNullPtr,
+                           "Attempt to access NULL pointer.");
+            }
             return m_Ptr;
         }
     inline
@@ -360,8 +364,10 @@ public:
     const TObjectType* GetNonNullPointer(void) const
         {
             const TObjectType* ptr = m_Ptr;
-            if ( !ptr )
-                NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
+            if ( !ptr ) {
+                NCBI_THROW(CCoreException,eNullPtr,
+                           "Attempt to access NULL pointer.");
+            }
             return m_Ptr;
         }
     const TObjectType* GetPointerOrNull(void) const THROWS_NONE
@@ -509,8 +515,10 @@ public:
     TObjectType* Release(void)
         {
             TObjectType* ptr = m_Ptr;
-            if ( !ptr )
-                NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
+            if ( !ptr ) {
+                NCBI_THROW(CCoreException,eNullPtr,
+                           "Attempt to release NULL pointer.");
+            }
             m_Ptr = 0;
             CRefBase<C>::ReleaseReference(ptr);
             return ptr;
@@ -543,8 +551,10 @@ public:
     TObjectType* GetNonNullPointer(void) const
         {
             TObjectType* ptr = m_Ptr;
-            if ( !ptr )
-                NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
+            if ( !ptr ) {
+                NCBI_THROW(CCoreException,eNullPtr,
+                           "Attempt to access NULL pointer.");
+            }
             return m_Ptr;
         }
     inline
@@ -751,6 +761,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2002/11/26 14:25:34  dicuccio
+ * Added more explicit error reporting for thrown exceptions.
+ *
  * Revision 1.39  2002/11/08 19:43:29  grichenk
  * CConstRef<> constructor made explicit
  *
