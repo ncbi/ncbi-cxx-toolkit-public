@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/05/11 13:45:06  thiessen
+* set up data directory
+*
 * Revision 1.12  2001/05/11 02:10:42  thiessen
 * add better merge fail indicators; tweaks to windowing/taskbar
 *
@@ -78,13 +81,12 @@
 #include "cn3d/messenger.hpp"
 #include "cn3d/cn3d_threader.hpp"
 #include "cn3d/alignment_manager.hpp"
+#include "cn3d/structure_base.hpp"
 
 USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
-
-wxFrame * GlobalTopWindow(void);    // from cn3d_main_wxwin
 
 ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
         const char* title, const wxPoint& pos, const wxSize& size) :

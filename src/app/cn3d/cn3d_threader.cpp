@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/05/11 13:45:06  thiessen
+* set up data directory
+*
 * Revision 1.14  2001/05/11 02:10:42  thiessen
 * add better merge fail indicators; tweaks to windowing/taskbar
 *
@@ -438,7 +441,7 @@ static const int NUM_RES_TYPES = 21;
 Rcx_Ptl * Threader::CreateRcxPtl(double weightContacts)
 {
     Rcx_Ptl*  pmf;
-    char      FileName[256] = "ContactPotential";
+    char      *FileName = "ContactPotential";
     char      ResName[32];
     char      Path[512];
     Int4      i, j, k;
@@ -448,12 +451,11 @@ Rcx_Ptl * Threader::CreateRcxPtl(double weightContacts)
     static const int kPeptideIndex = 20;
 
     /* open the contact potential for reading */
-//    FindPath("ncbi", "ncbi", "data", Path, sizeof(Path));
-//    StrCat(Path, FileName);
-    StrCpy(Path, FileName);
+    StrCpy(Path, GetDataDir().c_str());
+    StrCat(Path, FileName);
     auto_ptr<CNcbiIfstream> InFile(new CNcbiIfstream(Path));
     if (!(*InFile)) {
-        ERR_POST(Error << "Threader::CreateRcxPtl() - can't open " << FileName << " for reading");
+        ERR_POST(Error << "Threader::CreateRcxPtl() - can't open " << Path << " for reading");
         return NULL;
     }
 

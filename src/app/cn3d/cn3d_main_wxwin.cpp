@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/05/11 13:45:06  thiessen
+* set up data directory
+*
 * Revision 1.35  2001/05/11 02:10:41  thiessen
 * add better merge fail indicators; tweaks to windowing/taskbar
 *
@@ -222,14 +225,25 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 
+// from C-toolkit ncbienv.h - for setting registry parameter; used here to avoid having to
+// bring in lots of C-toolkit headers
+extern "C" {
+    extern int Nlm_SetAppParam(const char* file, const char* section, const char* type, const char* value);
+}
+
+
 BEGIN_SCOPE(Cn3D)
 
-// global strings for various directories
+// global strings for various directories - will include trailing path separator character
 std::string
     workingDir,     // current working directory
     userDir,        // directory of latest user-selected file
     programDir,     // directory where Cn3D executable lives
     dataDir;        // 'data' directory with external data files
+const std::string& GetWorkingDir(void) { return workingDir; }
+const std::string& GetUserDir(void) { return userDir; }
+const std::string& GetProgramDir(void) { return programDir; }
+const std::string& GetDataDir(void) { return dataDir; }
 
 // top-level window (the main structure window)
 static wxFrame *topWindow = NULL;
@@ -306,11 +320,19 @@ bool Cn3DApp::OnInit(void)
         programDir = workingDir;
     else
         programDir = workingDir + wxFILE_SEP_PATH + programDir;
+    workingDir = workingDir + wxFILE_SEP_PATH;
+    programDir = programDir + wxFILE_SEP_PATH;
+
+    // set data dir, and register the path in C toolkit registry (mainly for BLAST code)
+    dataDir = programDir + "data" + wxFILE_SEP_PATH;
+    Nlm_SetAppParam("ncbi", "ncbi", "data", dataDir.c_str());
+
     TESTMSG("working dir: " << workingDir.c_str());
     TESTMSG("program dir: " << programDir.c_str());
+    TESTMSG("data dir: " << dataDir.c_str());
 
     // read dictionary
-    wxString dictFile = wxString(programDir.c_str()) + wxFILE_SEP_PATH + "bstdt.val";
+    wxString dictFile = wxString(dataDir.c_str()) + "bstdt.val";
     LoadStandardDictionary(dictFile.c_str());
 
     // get file name from command line, if present
@@ -588,11 +610,11 @@ void Cn3DMainFrame::LoadFile(const char *filename)
     }
 
     if (wxIsAbsolutePath(filename))
-        userDir = wxPathOnly(filename).c_str();
+        userDir = std::string(wxPathOnly(filename).c_str()) + wxFILE_SEP_PATH;
     else if (wxPathOnly(filename) == "")
         userDir = workingDir;
     else
-        userDir = workingDir + wxFILE_SEP_PATH + wxPathOnly(filename).c_str();
+        userDir = workingDir + wxPathOnly(filename).c_str() + wxFILE_SEP_PATH;
     TESTMSG("user dir: " << userDir.c_str());
 
     // try to decide if what ASN type this is, and if it's binary or ascii
@@ -644,10 +666,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         readOK = ReadASNFromFile(filename, *cdd, isBinary, err);
         SetDiagPostLevel(eDiag_Info);
         if (readOK) {
-            wxString cddDir(userDir.c_str());
-            cddDir += wxFILE_SEP_PATH;
-            TESTMSG("cddDir: '" << cddDir.c_str() << "'");
-            glCanvas->structureSet = new StructureSet(cdd, cddDir.c_str());
+            glCanvas->structureSet = new StructureSet(cdd, userDir.c_str());
         } else {
             ERR_POST(Warning << "error: " << err);
             delete cdd;
