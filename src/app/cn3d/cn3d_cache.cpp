@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/09/11 01:39:35  thiessen
+* fix cache file touch
+*
 * Revision 1.7  2002/08/15 22:13:13  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -64,6 +67,7 @@
 #include <wx/wx.h>
 #include <wx/datetime.h>
 #include <wx/file.h>
+#include <wx/filename.h>
 
 #include "cn3d/cn3d_cache.hpp"
 #include "cn3d/cn3d_tools.hpp"
@@ -110,7 +114,8 @@ static bool GetBiostrucFromCacheFolder(int mmdbID, EModel_type modelType, CBiost
 
     // if successful, 'touch' the file to mark it as recently used
     TESTMSG("loaded " << cacheFile);
-    if (!WriteASNToFile(cacheFile.c_str(), *biostruc, true, &err))  // gotta be a better way!
+    wxFileName fn(cacheFile.c_str());
+    if (!fn.Touch())
         ERR_POST(Warning << "error touching " << cacheFile);
 
     return true;
