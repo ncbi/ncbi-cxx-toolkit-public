@@ -4,7 +4,7 @@ all:
 
 # Solaris only!
 CXX = purify /netopt/forte6u2/bin/CC
-pure:
+blast2seq.pure:
 	cd .. && make -f Makefile.blastxx_lib
 	make APP=blast2seq.pure CXX="$(CXX)" -f Makefile.blast2seq_app
 
