@@ -562,9 +562,7 @@ void StructureSet::Load(int structureLimit)
             alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
     }
 
-#ifdef _DEBUG
     VerifyFrameMap();
-#endif
 
     // setup show/hide items
     showHideManager->ConstructShowHideArray(this);
@@ -803,6 +801,7 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary, unsigned int
 // in the map. Also, make sure that total # display lists in all frames adds up.
 void StructureSet::VerifyFrameMap(void) const
 {
+    TRACEMSG("# display lists: " << (lastDisplayList - OpenGLRenderer::FIRST_LIST + 1));
     for (unsigned int l=OpenGLRenderer::FIRST_LIST; l<=lastDisplayList; ++l) {
         bool found = false;
         for (unsigned int f=0; f<frameMap.size(); ++f) {
@@ -1153,9 +1152,6 @@ StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostru
             // don't know how to deal with these...
             if (i->GetObject().GetType() == eModel_type_ncbi_vector ||
                 i->GetObject().GetType() == eModel_type_other) continue;
-
-//            // special case, typically for loading CDD's, when we're only interested in a single model type
-//            if (isRawBiostrucFromMMDB && i->GetObject().GetType() != eModel_type_ncbi_all_atom) continue;
 
             // otherwise, assume all models in this set are of same type
             if (i->GetObject().GetType() == eModel_type_ncbi_backbone)
@@ -1519,6 +1515,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.142  2004/07/27 15:23:04  thiessen
+* show # display lists in log
+*
 * Revision 1.141  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *
