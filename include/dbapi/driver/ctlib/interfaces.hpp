@@ -61,7 +61,7 @@ class CTL_CursorResult;
 //  CTLibContext::
 //
 
-class CTLibContext : public I_DriverContext
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTLibContext : public I_DriverContext
 {
     friend class CDB_Connection;
 
@@ -133,7 +133,7 @@ private:
 //  CTL_Connection::
 //
 
-class CTL_Connection : public I_Connection
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_Connection : public I_Connection
 {
     friend class CTLibContext;
     friend class CDB_Connection;
@@ -207,7 +207,7 @@ private:
 //  CTL_LangCmd::
 //
 
-class CTL_LangCmd : public I_LangCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_LangCmd : public I_LangCmd
 {
     friend class CTL_Connection;
 protected:
@@ -249,7 +249,7 @@ private:
 //  CTL_RPCCmd::
 //
 
-class CTL_RPCCmd : public I_RPCCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RPCCmd : public I_RPCCmd
 {
     friend class CTL_Connection;
 protected:
@@ -294,7 +294,7 @@ private:
 //  CTL_CursorCmd::
 //
 
-class CTL_CursorCmd : public I_CursorCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorCmd : public I_CursorCmd
 {
     friend class CTL_Connection;
 protected:
@@ -339,7 +339,7 @@ private:
 //  CTL_BCPInCmd::
 //
 
-class CTL_BCPInCmd : public I_BCPInCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_BCPInCmd : public I_BCPInCmd
 {
     friend class CTL_Connection;
 protected:
@@ -380,7 +380,7 @@ private:
 //  CTL_SendDataCmd::
 //
 
-class CTL_SendDataCmd : public I_SendDataCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_SendDataCmd : public I_SendDataCmd
 {
     friend class CTL_Connection;
 protected:
@@ -404,7 +404,7 @@ private:
 //  CTL_RowResult::
 //
 
-class CTL_RowResult : public I_Result
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RowResult : public I_Result
 {
     friend class CTL_LangCmd;
     friend class CTL_RPCCmd;
@@ -446,7 +446,7 @@ protected:
 //  CTL_CursorResult::
 //
 
-class CTL_ParamResult : public CTL_RowResult
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_ParamResult : public CTL_RowResult
 {
     friend class CTL_LangCmd;
     friend class CTL_RPCCmd;
@@ -456,7 +456,7 @@ protected:
 };
 
 
-class CTL_ComputeResult : public CTL_RowResult
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_ComputeResult : public CTL_RowResult
 {
     friend class CTL_LangCmd;
     friend class CTL_RPCCmd;
@@ -466,7 +466,7 @@ protected:
 };
 
 
-class CTL_StatusResult :  public CTL_RowResult
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_StatusResult :  public CTL_RowResult
 {
     friend class CTL_LangCmd;
     friend class CTL_RPCCmd;
@@ -476,7 +476,7 @@ protected:
 };
 
 
-class CTL_CursorResult :  public CTL_RowResult
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorResult :  public CTL_RowResult
 {
     friend class CTL_CursorCmd;
 protected:
@@ -495,7 +495,7 @@ protected:
 
 #define CTL_ITDESCRIPTOR_TYPE_MAGNUM 0xc00
 
-class CTL_ITDescriptor : public I_ITDescriptor
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_ITDescriptor : public I_ITDescriptor
 {
     friend class CTL_RowResult;
     friend class CTL_Connection;
@@ -544,6 +544,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/02/13 16:06:36  ivanov
+ * Added export specifier NCBI_DBAPIDRIVER_CTLIB_EXPORT for class definitions
+ *
  * Revision 1.10  2002/03/28 00:37:01  vakatov
  * CTL_CursorCmd::  use CTL_CursorResult rather than I_Result (fix access)
  *
