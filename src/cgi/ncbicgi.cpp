@@ -643,12 +643,16 @@ static void s_ParseMultipartEntries(const string&  boundary,
             NStr::Compare(str, pos, boundary.size(), boundary) == 0) {
             // boundary
             if (partStart == NPOS) {
-                s_AddEntry(entries, name, kEmptyStr);
+                s_AddEntry(entries,    name, kEmptyStr);
+                s_AddEntry(entries_ex, name, kEmptyStr, filename);
             }
             else if (partStart != 0) {
                 SIZE_TYPE partEnd = pos - s_Eol.size();
                 s_AddEntry(entries,
                            name, str.substr(partStart, partEnd - partStart));
+                s_AddEntry(entries_ex,
+                           name, str.substr(partStart, partEnd - partStart),
+                           filename);
             }
             partStart = NPOS;
             name = kEmptyStr;
@@ -1142,6 +1146,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.55  2002/07/05 20:45:46  ucko
+* Add a couple of missing calls to the extended version of s_AddEntry.
+*
 * Revision 1.54  2002/07/03 20:24:31  ucko
 * Extend to support learning uploaded files' names; move CVS logs to end.
 *
