@@ -826,11 +826,11 @@ AC_MSG_RESULT([$NCBI_C_PATH])
 AC_MSG_CHECKING(if Fast-CGI library is available)
 if test "$with_fastcgi" != "no" ; then
    FASTCGI_PATH=${FASTCGI_PATH:="$NCBI"}
-   FASTCGI_INCLUDE="-I$FASTCGI_PATH/include"
+   FASTCGI_INCLUDE="-I$FASTCGI_PATH/include${bit64_sfx}"
    if test "$with_debug" = "no" ; then
-      FASTCGI_LIBS="-L$FASTCGI_PATH/lib -lfcgi $NETWORK_LIBS"
+      FASTCGI_LIBS="-L$FASTCGI_PATH/lib${bit64_sfx} -lfcgi $NETWORK_LIBS"
    else
-      FASTCGI_LIBS="-L$FASTCGI_PATH/altlib -lfcgi $NETWORK_LIBS"
+      FASTCGI_LIBS="-L$FASTCGI_PATH/altlib${bit64_sfx} -lfcgi $NETWORK_LIBS"
    fi
    FASTCGI_OBJS="fcgibuf"
    CPPFLAGS="$FASTCGI_INCLUDE $orig_CPPFLAGS"
@@ -922,7 +922,7 @@ AC_MSG_CHECKING(if NCBI PubMed libraries are available)
 if test "$with_ncbi_c" = "no" ; then
    with_pubmed="no"
 elif test "$with_pubmed" != "no" ; then
-   NCBI_PM_PATH=${NCBI_PM_PATH:="/net/neptune/pubmed1/Cvs${bit64_sfx}"}
+   NCBI_PM_PATH=${NCBI_PM_PATH:="$NCBI/pubmed${bit64_sfx}"}
    CPPFLAGS="-I$NCBI_PM_PATH/pmentrez/include/Ncbi $NCBI_C_INCLUDE $orig_CPPFLAGS"
    LIBS="-L$NCBI_PM_PATH/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
    AC_TRY_LINK(
