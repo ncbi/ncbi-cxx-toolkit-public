@@ -81,7 +81,6 @@ static CTime s_GetModTime(const string& filename)
 {
     CTime mtime;
     if ( !CDirEntry(filename).GetTime(&mtime) ) {
-        // ERR_POST("s_GetModTime(): " << strerror(errno));
         NCBI_THROW(CCgiErrnoException, eModTime,
                    "Cannot get modification time of the CGI executable "
                    + filename);
@@ -527,6 +526,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.44  2004/08/04 15:57:56  vakatov
+ * Minor cosmetics
+ *
  * Revision 1.43  2004/05/17 20:56:50  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
