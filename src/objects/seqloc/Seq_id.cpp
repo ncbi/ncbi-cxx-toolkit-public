@@ -472,7 +472,9 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
     NStr::ToUpper(pfx);
     switch (pfx.size()) {
     case 0:
-        if (main_size == 4  ||  (main_size > 4  &&  acc[4] == '|')) {
+        if (acc.find_first_not_of("0123456789") == NPOS) { // just digits
+            return eAcc_gi;
+        } else if (main_size == 4  ||  (main_size > 4  &&  acc[4] == '|')) {
             return eAcc_pdb;
         } else {
             return eAcc_unknown;
@@ -1355,6 +1357,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.69  2004/01/20 16:59:38  ucko
+ * CSeq_id::IdentifyAccession: identify IDs consisting solely of digits as GIs.
+ *
  * Revision 6.68  2004/01/16 17:39:17  vasilche
  * Fixed parsing 'gnl|xxx|999' format - integer tag detection.
  *
