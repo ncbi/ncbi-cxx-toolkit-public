@@ -224,12 +224,17 @@ const CSeq_id& GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
                 return best;
             }
         }}
+        break;
 
     case eGetId_Best:
         {{
             CScope::TIds ids = scope.GetIds(id);
-            CSeq_id_Handle idh = FindBestChoice(ids, ScoreSeqIdHandle);
-            return *idh.GetSeqId();
+            if (ids.size() != 0) {
+                CSeq_id_Handle idh = FindBestChoice(ids, ScoreSeqIdHandle);
+                return *idh.GetSeqId();
+            } else {
+                return id;
+            }
         }}
 
     default:
@@ -237,7 +242,7 @@ const CSeq_id& GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
     }
 
     NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
-               "No best seq-id could be found");
+               "sequence::GetId(): request could not be filled");
 }
 
 
@@ -2526,6 +2531,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.111  2005/01/04 14:52:11  dicuccio
+* Bug Fixes:
+* - sequence::GetId(..., eGetId_ForceAcc): removed unententional fall-through
+* - sequence::GetId(..., eGetId_Best): at least one ID is always available
+*
 * Revision 1.110  2004/12/16 20:48:01  shomrat
 * cast char to Uint1 for array access
 *
