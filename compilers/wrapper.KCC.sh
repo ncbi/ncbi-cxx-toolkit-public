@@ -9,7 +9,7 @@ count=60
 guard() {
     n=0
     while [ $n -lt $count ]; do
-	kill -0 $1 || return
+	kill -0 $1 >/dev/null 2>&1 || return
 	sleep $interval
 	n=`expr $n + 1`
     done
