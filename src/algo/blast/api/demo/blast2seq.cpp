@@ -46,7 +46,7 @@
 #include <objtools/readers/fasta.hpp>
 
 #include <algo/blast/api/bl2seq.hpp>
-#include <algo/blast/api/blast_input.hpp>
+#include "blast_input.hpp"
 
 #include <objects/seqalign/Seq_align_set.hpp>
 
@@ -485,6 +485,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/09/09 15:43:43  ucko
+ * Fix #include directive for blast_input.hpp.
+ *
  * Revision 1.16  2003/09/05 18:24:28  camacho
  * Restoring printing of SeqAlign, fix setting of default word extension method
  *
