@@ -50,8 +50,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CAccessionItem::CAccessionItem(CFFContext& ctx) :
-    CFlatItem(ctx), m_ExtraAccessions(0)
+CAccessionItem::CAccessionItem(CBioseqContext& ctx) :
+    CFlatItem(&ctx), m_ExtraAccessions(0), m_IsSetRegion(false)
 {
     x_GatherInfo(ctx);
 }
@@ -71,7 +71,7 @@ void CAccessionItem::Format
 /***************************************************************************/
 
 
-void CAccessionItem::x_GatherInfo(CFFContext& ctx)
+void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
 {
     if ( ctx.GetPrimaryId() == 0 ) {
         x_SetSkip();
@@ -80,8 +80,7 @@ void CAccessionItem::x_GatherInfo(CFFContext& ctx)
 
     m_Accession = ctx.GetPrimaryId()->GetSeqIdString();
 
-    if ( ctx.IsWGS()  &&
-        (ctx.GetLocation() == 0  ||  ctx.GetLocation()->IsWhole()) ) {
+    if ( ctx.IsWGS()  && ctx.GetLocation().IsWhole() ) {
         size_t acclen = m_Accession.length();
         m_WGSAccession = m_Accession;
         if ( acclen == 12  &&  !NStr::EndsWith(m_WGSAccession, "000000") ) {
@@ -115,6 +114,14 @@ void CAccessionItem::x_GatherInfo(CFFContext& ctx)
             }
         }
     }
+
+    if ( !ctx.GetLocation().IsWhole() ) {
+        // specific region is set
+        const CSeq_loc& loc = ctx.GetLocation();
+        m_Region.SetFrom(loc.GetStart(kInvalidSeqPos) + 1);
+        m_Region.SetTo(loc.GetEnd(kInvalidSeqPos) + 1);
+        m_IsSetRegion = true;
+    }
 }
 
 
@@ -126,6 +133,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/04/22 15:50:40  shomrat
+* Changes in context; + Region
+*
 * Revision 1.3  2004/04/13 16:44:59  shomrat
 * Added WGS accession
 *
