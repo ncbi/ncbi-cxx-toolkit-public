@@ -128,12 +128,11 @@ CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh,
         if ( (found = m_cache.find(oid_list[0])) != m_cache.end()){
             return locks;
         }
-        
-        CRef<CBioseq> bsr = m_seqdb->GetBioseq(oid_list[0]);
-        list< CRef<CSeq_id> > id_list = m_seqdb->GetSeqIDs(oid_list[0]);
-        if(id_list.size() > bsr->SetId().size()){
-            bsr->SetId().clear();
-            bsr->SetId() = id_list;
+        CRef<CBioseq> bsr;
+        if(seq_id->Which() == CSeq_id::e_Gi){
+            bsr = m_seqdb->GetBioseq(oid_list[0], seq_id->GetGi());
+        } else {
+            bsr = m_seqdb->GetBioseq(oid_list[0]);
         }
         CRef<CSeq_entry> ser(new CSeq_entry());
         ser->Select(CSeq_entry::e_Seq);
@@ -239,6 +238,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.16  2004/11/10 20:13:10  jianye
+ * specify gi when finding oid
+ *
  * Revision 1.15  2004/10/28 17:54:52  bealer
  * - Remove unsupported soon-to-disappear default arguments to GetBioseq().
  *
