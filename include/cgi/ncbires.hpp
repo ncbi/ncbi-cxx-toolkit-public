@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/11 15:57:31  sandomir
+* CNcbiDatabase: public keyword added
+*
 * Revision 1.4  1998/12/10 17:36:54  sandomir
 * ncbires.cpp added
 *
@@ -194,6 +197,8 @@ class CNcbiQueryResult;
 
 class CNcbiDatabase
 {
+public:
+
   CNcbiDatabase( const CNcbiDatabaseInfo& dbinfo );
   virtual ~CNcbiDatabase( void );
 
