@@ -173,7 +173,7 @@ void MakeIDX()
   string s;
   while((c = cin.get()) && c != EOF) {
     if(c == '>') {
-      pos = cin.tellg() - 1;
+      pos = size_t(cin.tellg()) - 1;
       cin >> s;
       cout << s << '\t' << pos << endl;
     }
