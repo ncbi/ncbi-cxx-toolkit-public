@@ -1,4 +1,4 @@
---$Revision: 1.2 $
+--$Revision: 1.3 $
 --********************************************************************
 --
 --  Publication common set
@@ -28,7 +28,8 @@ Pub ::= CHOICE {
     proc Cit-proc ,      -- proceedings of a meeting
     patent Cit-pat ,
     pat-id Id-pat ,      -- identify a patent
-    man Cit-let }        -- manuscript, thesis, or letter
+    man Cit-let ,        -- manuscript, thesis, or letter
+    equiv Pub-equiv }    -- to cite a variety of ways
 
 Pub-equiv ::= SET OF Pub   -- equivalent identifiers for same citation
 
