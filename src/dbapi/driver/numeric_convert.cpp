@@ -67,7 +67,7 @@ unsigned char*  longlong_to_numeric (Int8 l_num, unsigned int prec, unsigned cha
             l_num *= (-1);
             cs_num[0] = 0x1;
         }
-        while (l_num != 0 && number >= 0) {
+        while (l_num != 0 && number >= cs_num) {
             Int8 rem = l_num%256;
             *number = (unsigned char)rem;
             l_num = l_num/256;
@@ -129,6 +129,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/03/20 20:08:06  soussov
+ * fixed typo in longlong_to_numeric
+ *
  * Revision 1.7  2003/03/20 19:54:09  vakatov
  * Indented. Added CVS Log.
  *
