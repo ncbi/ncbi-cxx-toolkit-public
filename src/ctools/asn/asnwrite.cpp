@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/02/10 05:00:17  lavr
+* ctools added in #includes
+*
 * Revision 1.7  2000/11/29 17:25:16  vasilche
 * Added possibility to change ASNIO mode (mainly for XML output).
 * Fixed warnings on 64 bit compilers.
@@ -58,7 +61,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <asn/asnwrite.hpp>
+#include <ctools/asn/asnwrite.hpp>
 
 BEGIN_NCBI_SCOPE
 
