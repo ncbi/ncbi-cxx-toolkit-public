@@ -23,13 +23,11 @@ PROJ_KET = ; \
 fi
 
 all:
-	@$(PROJ_BRA) all     $(PROJ_KET)
-
-install:
-	@$(PROJ_BRA) install $(PROJ_KET)
-
+	@$(PROJ_BRA) all   $(PROJ_KET)
 clean:
-	@$(PROJ_BRA) clean   $(PROJ_KET)
+	@$(PROJ_BRA) clean $(PROJ_KET)
+purge:
+	@$(PROJ_BRA) purge $(PROJ_KET)
 
 
 ### Recursive build -- in the [SUBPROJ] directories
@@ -44,10 +42,8 @@ SUB_KET = ) ; \
 fi
 
 all_r: all
-	@$(SUB_BRA) all_r     $(SUB_KET)
-
-install_r: install
-	@$(SUB_BRA) install_r $(SUB_KET)
-
+	@$(SUB_BRA) all_r   $(SUB_KET)
 clean_r: clean
-	@$(SUB_BRA) clean_r   $(SUB_KET)
+	@$(SUB_BRA) clean_r $(SUB_KET)
+purge_r: purge 
+	@$(SUB_BRA) purge_r $(SUB_KET)

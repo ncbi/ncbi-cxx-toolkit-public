@@ -45,10 +45,8 @@ $(XAPP): $(XOBJ) $(XLIBDEP)
 
 ### Standard targets(non-recursive)
 
-all: $(APP)
-
-install: all
-	$(COPY) $(APP) $(bindir)/
+all: $(XAPP)
+	$(COPY) $(XAPP) $(bindir)/
 
 clean:
 	-$(RMDIR) SunWS_cache
@@ -56,3 +54,7 @@ clean:
 	-$(RM) *@obj_ext@
 	-$(RM) $(APP:=@exe_ext@)
 	-$(RM) *~
+	-$(RM) *.dep
+
+purge: clean
+	-$(RM) $(bindir)/$(XAPP)

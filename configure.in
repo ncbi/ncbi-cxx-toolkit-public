@@ -271,37 +271,59 @@ AC_OUTPUT(
 ${makefiles},
 
 ### Create and render the "$exec_prefix" directory
-set -x
-
 incdir="$SAVE_incdir"
 libdir="$SAVE_libdir"
 bindir="$SAVE_bindir"
+builddir="$SAVE_builddir"
+exec_prefix="$SAVE_exec_prefix"
+makefiles="$SAVE_makefiles"
 
+echo "Library directory:  $libdir"
+echo "Binary  directory:  $bindir"
+echo "Include directory:  $incdir"
 mkdir -p "$libdir" "$bindir" "$incdir"
+
+echo "Configured header:  $incdir/ncbiconf.h"
 mv "$top_srcdir/config.h" "$incdir/ncbiconf.h"
 
 if test "$exec_prefix" != "$top_srcdir" ; then
-   builddir="$SAVE_builddir"
+   echo "Build   directory:  $builddir"
    if test ! -d  "$builddir" ; then
       mkdir -p "$builddir"
    fi
 
    src_dir="$top_srcdir"/src
-   cd "$src_dir"  &&  find . -name 'Makefile*' -print |
+   echo "Deploy  makefiles:\n\t$src_dir  -->  $builddir"
+
+   cd "$src_dir"
+   find . -name 'Makefile*' -print |
    grep -v 'Makefile.*\.in' | grep -v 'Makefile*~' | 
    while read x_makefile ; do
       dest_dir="$builddir"/`dirname "$x_makefile"`
       if test ! -d "$dest_dir" ; then
          mkdir -p "$dest_dir"
       fi
-      cp -p "$src_dir/$x_makefile" "$dest_dir/"
+      cp -p "$src_dir/$x_makefile" "$dest_dir"/
    done
-   cd "$top_srcdir"  &&  rm ${SAVE_makefiles}
+
+   cd "$top_srcdir"
+   rm ${makefiles}
+
+   status_dir="$exec_prefix/status"
+   echo "Status  directory:  $status_dir"
+   if test ! -d  "$status_dir" ; then
+      mkdir -p "$status_dir"
+   fi
+   cp -p config.status config.cache config.log configure "$status_dir"/
+
+   echo "Configuration completed."
 fi,
 
 SAVE_incdir="$incdir"
 SAVE_libdir="$libdir"
 SAVE_bindir="$bindir"
 SAVE_builddir="$builddir"
-SAVE_makefiles="${makefiles}"
+SAVE_exec_prefix="$exec_prefix"
+SAVE_makefiles="$makefiles"
 )
+

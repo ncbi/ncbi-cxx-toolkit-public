@@ -44,8 +44,6 @@ $(XLIB): $(XLIBOBJ)
 ### Standard targets
 
 all: $(XLIB) $(XOBJ)
-
-install: all
 	$(COPY) $(XLIB) $(XOBJ) $(libdir)/
 
 clean:
@@ -56,3 +54,5 @@ clean:
 	-$(RM) $(XOBJ)
 	-$(RM) *~
 
+purge: clean
+	-cd $(libdir)  &&  $(RM) $(XLIB) $(XOBJ)
