@@ -644,7 +644,7 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
         NCBI_THROW(CBlastException, eBadParameter, "Invalid encoding");
     }
 
-    return make_pair(AutoPtr<Uint1, CDeleter<Uint1> >(buf), buflen);
+    return make_pair(AutoPtr<Uint1, CDeleter<Uint1> >(buf), sv.size());
 }
 
 #if 0
@@ -837,6 +837,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2003/11/04 17:14:22  dondosha
+* Length in subject sequence block C structure should not include sentinels
+*
 * Revision 1.46  2003/10/31 19:45:03  camacho
 * Fix setting of subject sequence length
 *
