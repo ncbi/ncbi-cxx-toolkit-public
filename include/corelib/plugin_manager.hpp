@@ -94,7 +94,8 @@ class NCBI_XNCBI_EXPORT CPluginManagerException : public CCoreException
 public:
     /// Error types that CTime can generate.
     enum EErrCode {
-        eResolveFailure       ///< Cannot resolve interface driver
+        eResolveFailure,       ///< Cannot resolve interface driver
+        eParameterMissing      ///< Missing mandatory parameter
     };
 
     /// Translate from the error code value to its string representation.
@@ -102,6 +103,7 @@ public:
     {
         switch (GetErrCode()) {
         case eResolveFailure:   return "eResolveFailure";
+        case eParameterMissing: return "eParameterMissing";
         default:    return CException::GetErrCodeString();
         }
     }
@@ -781,6 +783,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/07/26 13:44:45  kuznets
+ * + parameter missing excpetion type
+ *
  * Revision 1.22  2004/04/26 14:46:36  ucko
  * Fix a typo in FreezeResolution, and make sure to give
  * UnregisterFactory a return value per its prototype.
