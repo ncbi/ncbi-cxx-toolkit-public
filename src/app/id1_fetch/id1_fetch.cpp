@@ -518,6 +518,9 @@ bool CId1FetchApp::LookUpGI(int gi)
     if (use_objmgr) {
         // What about db, ent, and maxplex?
         handle = m_Scope->GetBioseqHandle(id);
+        if ( !handle ) {
+            ERR_POST(Fatal << "Bioseq not found: " << id.DumpAsFasta());
+        }
     }
 
     // Dump server response in the specified format
@@ -905,6 +908,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2002/06/28 17:25:53  grichenk
+* +Error message if a GI was not found
+*
 * Revision 1.34  2002/06/12 16:51:55  lavr
 * Take advantage of CONNECT_Init()
 *
