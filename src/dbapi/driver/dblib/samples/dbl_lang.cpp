@@ -42,7 +42,7 @@ int main()
     try {
         CDBLibContext my_context;
 
-        SampleDBAPI_Lang(my_context);
+        SampleDBAPI_Lang(my_context, "MOZART");
     } catch (CDB_Exception& e) {
         CDB_UserHandler_Stream myExHandler(&cerr);
 
@@ -57,6 +57,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/10/25 00:18:04  vakatov
+ * SampleDBAPI_XXX() to accept yet another arg -- server name
+ *
  * Revision 1.2  2001/10/24 16:37:26  lavr
  * Finish log with horizontal rule
  *
