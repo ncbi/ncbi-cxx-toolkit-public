@@ -418,9 +418,7 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		-- OpenGL
 		copy "FW_OpenGL" to the end of children of fworks
 		addPair({isa:"PBXFileReference", |lastKnownFileType|:"wrapper.framework", |name|:"OpenGL.framework", |path|:"/System/Library/Frameworks/OpenGL.framework", |refType|:"0", |sourceTree|:"<absolute>"}, "FW_OpenGL")
-		-- AppServices
-		copy "FW_AppServices" to the end of children of fworks
-		addPair({isa:"PBXFileReference", |lastKnownFileType|:"wrapper.framework", |name|:"ApplicationServices.framework", |path|:"/System/Library/Frameworks/ApplicationServices.framework", |refType|:"0", |sourceTree|:"<absolute>"}, "FW_AppServices")
+		
 		
 		(* Add ROOT objects and groups *)
 		addPair(rootObject, "ROOT_OBJECT")
@@ -608,6 +606,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/03/25 15:22:33  lebedev
+ * ApplicationServices framework dependency removed
+ *
  * Revision 1.25  2005/03/24 15:37:51  lebedev
  * Build phase for release GBench disk image added
  *
