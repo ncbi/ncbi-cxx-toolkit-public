@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2002/10/22 15:06:13  gouriano
+* added possibillity to use quoted syntax form for generated include files
+*
 * Revision 1.42  2002/10/01 17:04:31  gouriano
 * corrections to eliminate redundant info in the generation report
 *
@@ -146,6 +149,7 @@ CCodeGenerator::CCodeGenerator(void)
 {
 	m_MainFiles.SetModuleContainer(this);
 	m_ImportFiles.SetModuleContainer(this); 
+    m_UseQuotedForm = false;
 }
 
 CCodeGenerator::~CCodeGenerator(void)
@@ -160,6 +164,11 @@ const CNcbiRegistry& CCodeGenerator::GetConfig(void) const
 string CCodeGenerator::GetFileNamePrefix(void) const
 {
     return m_FileNamePrefix;
+}
+
+void CCodeGenerator::UseQuotedForm(bool use)
+{
+    m_UseQuotedForm = use;
 }
 
 void CCodeGenerator::SetFileNamePrefix(const string& prefix)
@@ -341,6 +350,7 @@ void CCodeGenerator::GenerateCode(void)
     list<string> listGenerated, listUntouched;
     iterate ( TOutputFiles, filei, m_Files ) {
         CFileCode* code = filei->second.get();
+        code->UseQuotedForm(m_UseQuotedForm);
         code->GenerateCode();
         string fileName;
         code->GenerateHPP(m_HPPDir, fileName);
@@ -452,9 +462,9 @@ void CCodeGenerator::GenerateCode(void)
             ERR_POST(Fatal << "Cannot create file: " << fileName);
 
         iterate ( TOutputFiles, filei, m_Files ) {
-            out << "#include <" << GetStdPath(
+            out << "#include " << (m_UseQuotedForm ? '\"' : '<') << GetStdPath(
                 Path(m_FileNamePrefix, BaseName(filei->first)) + suffix) <<
-                ">\n";
+                (m_UseQuotedForm ? '\"' : '>') << "\n";
         }
 
         out.close();

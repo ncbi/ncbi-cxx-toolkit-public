@@ -157,6 +157,8 @@ void CDataTool::Init(void)
     d->AddOptionalKey("or", "prefix",
                       "add prefix to generated file names",
                       CArgDescriptions::eString);
+    d->AddFlag("orq",
+               "use quoted syntax form for generated include files");
     d->AddFlag("ors",
                "add source file dir to generated file names");
     d->AddFlag("orm",
@@ -382,6 +384,8 @@ bool CDataTool::GenerateCode(void)
     // set file names prefixes
     if ( const CArgValue& orF = args["or"] )
         generator.SetFileNamePrefix(orF.AsString());
+    if ( args["orq"] )
+        generator.UseQuotedForm(true);
     if ( args["ors"] )
         generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
     if ( args["orm"] )
@@ -441,6 +445,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2002/10/22 15:06:12  gouriano
+* added possibillity to use quoted syntax form for generated include files
+*
 * Revision 1.55  2002/10/15 13:57:09  gouriano
 * recognize DTD files and handle them using DTD lexer/parser
 *

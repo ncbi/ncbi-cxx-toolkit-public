@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/10/22 15:07:00  gouriano
+* added possibillity to use quoted syntax form for generated include files
+*
 * Revision 1.5  2000/11/27 18:19:31  vasilche
 * Datatool now conforms CNcbiApplication requirements.
 *
@@ -148,6 +151,7 @@ public:
     // generation interface
     const CNcbiRegistry& GetConfig(void) const;
     string GetFileNamePrefix(void) const;
+    void UseQuotedForm(bool use);
     void SetFileNamePrefix(const string& prefix);
     EFileNamePrefixSource GetFileNamePrefixSource(void) const;
     void SetFileNamePrefixSource(EFileNamePrefixSource source);
@@ -192,6 +196,7 @@ private:
     string m_FileNamePrefix;
     EFileNamePrefixSource m_FileNamePrefixSource;
     CNamespace m_DefaultNamespace;
+    bool m_UseQuotedForm;
 
     TOutputFiles m_Files;
 };

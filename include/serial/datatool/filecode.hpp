@@ -72,7 +72,7 @@ public:
 
     bool AddType(const CDataType* type);
 
-    string Include(const string& s) const;
+    string Include(const string& s, bool addExt=false) const;
     const string& GetFileBaseName(void) const
         {
             return m_BaseName;
@@ -99,6 +99,7 @@ public:
     void AddINLCode(const CNcbiOstrstream& code);
     void AddCPPCode(const CNcbiOstrstream& code);
 
+    void UseQuotedForm(bool use);
     void GenerateCode(void);
     void GenerateHPP(const string& path, string& fileName) const;
     void GenerateCPP(const string& path, string& fileName) const;
@@ -112,6 +113,7 @@ public:
     CNcbiOstream& WriteLogKeyword(CNcbiOstream& out) const;
 
 private:
+    bool m_UseQuotedForm;
     // file names
     string m_BaseName;
     string m_HeaderPrefix;
@@ -145,6 +147,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2002/10/22 15:07:01  gouriano
+* added possibillity to use quoted syntax form for generated include files
+*
 * Revision 1.12  2002/10/01 14:21:10  gouriano
 * added more generation report data
 *

@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 CFileCode::CFileCode(const string& baseName)
     : m_BaseName(baseName)
 {
+    m_UseQuotedForm = false;
     return;
 }
 
@@ -121,7 +122,7 @@ string CFileCode::GetUserHPPDefine(void) const
 }
 
 
-string CFileCode::Include(const string& s) const
+string CFileCode::Include(const string& s, bool addExt) const
 {
     if ( s.empty() )
         THROW1_TRACE(runtime_error, "Empty file name");
@@ -131,7 +132,10 @@ string CFileCode::Include(const string& s) const
     case '"':
         return s[0] + GetStdPath(s.substr(1, s.length()-2)) + s[s.length()-1];
     default:
-        return '<' + GetStdPath(s + ".hpp") + ">";
+        return
+            (m_UseQuotedForm ? '\"' : '<') +
+            GetStdPath(addExt ? (s+ ".hpp") : s) +
+            (m_UseQuotedForm ? '\"' : '>');
     }
 }
 
@@ -187,6 +191,10 @@ void CFileCode::AddCPPCode(const CNcbiOstrstream& code)
         CNcbiOstrstreamToString(const_cast<CNcbiOstrstream&>(code));
 }
 
+void CFileCode::UseQuotedForm(bool use)
+{
+    m_UseQuotedForm = use;
+}
 
 void CFileCode::GenerateCode(void)
 {
@@ -320,7 +328,7 @@ void CFileCode::GenerateHPP(const string& path, string& fileName) const
             "// generated includes\n";
         iterate ( TIncludes, i, m_HPPIncludes ) {
             header <<
-                "#include " << Include(*i) << "\n";
+                "#include " << Include(*i, true) << "\n";
         }
         header <<
             '\n';
@@ -421,12 +429,12 @@ void CFileCode::GenerateCPP(const string& path, string& fileName) const
         "#include <serial/serialimpl.hpp>\n"
         "\n"
         "// generated includes\n"
-        "#include <" << GetStdPath(GetUserHPPName()) << ">\n";
+        "#include " << Include(GetUserHPPName()) << "\n";
 
     if ( !m_CPPIncludes.empty() ) {
         iterate ( TIncludes, i, m_CPPIncludes ) {
             code <<
-                "#include " << Include(*i) << "\n";
+                "#include " << Include(*i, true) << "\n";
         }
     }
 
@@ -647,7 +655,7 @@ void CFileCode::GenerateUserHPPCode(CNcbiOstream& header) const
     header <<
         "\n"
         "// generated includes\n"
-        "#include <" << GetStdPath(GetBaseHPPName()) << ">\n";
+        "#include " << Include(GetBaseHPPName()) << "\n";
     
     CNamespace ns;
     if ( !m_Classes.empty() ) {
@@ -676,7 +684,7 @@ void CFileCode::GenerateUserCPPCode(CNcbiOstream& code) const
         "// standard includes\n"
         "\n"
         "// generated includes\n"
-        "#include <" << GetStdPath(GetUserHPPName()) << ">\n";
+        "#include " << Include(GetUserHPPName()) << "\n";
 
     CNamespace ns;
     if ( !m_Classes.empty() ) {
@@ -716,6 +724,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.36  2002/10/22 15:06:13  gouriano
+* added possibillity to use quoted syntax form for generated include files
+*
 * Revision 1.35  2002/10/15 13:56:15  gouriano
 * removed explicit reference to ASN (could be DTD now)
 *
