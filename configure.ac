@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.75 2002/05/23 15:36:25 ucko Exp $
+#  $Id: configure.ac,v 1.76 2002/05/23 22:22:56 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -298,7 +298,7 @@ ncbi_compiler="UNKNOWN"
 ncbi_compiler_ver="0"
 
 if test "$GCC" = "yes" ; then
-   compiler_ver="`$CXX --version 2>&1`"
+   compiler_ver="`$CXX -dumpversion 2>&1`"
    case "$compiler_ver" in
      2.95* | 2.96* | 3.* )
        compiler="GCC"
@@ -406,14 +406,6 @@ changequote([, ])dnl
        esac
        echo
     fi ;;
-  GCC:3* )
-    # Need to specify runpath for compiler-provided libraries
-    libgcc_s=`$CXX -print-file-name=libgcc_s.so`
-    case "$host_os" in
-       osf*) LDFLAGS="-Wl,-rpath,`dirname $libgcc_s` $LDFLAGS" ;;
-       *)    LDFLAGS="-Wl,-R`dirname $libgcc_s` $LDFLAGS" ;;
-    esac
-    ;;
 esac
 
 
@@ -523,6 +515,7 @@ case "$host_os:$compiler" in
    RANLIB=":"
    CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/cxx_filter.$compiler.sh"
    serial_ws50_rtti_kludge="rtti"
+   ncbicntr="ncbicntr_workshop"
    ;;
 
  solaris*:KCC )
@@ -582,6 +575,13 @@ case "$host_os:$compiler" in
    # all over the place.
    case "$host_os" in osf*) LDFLAGS="-Wl,-S $LDFLAGS" ;; esac
    ;;
+
+  darwin*:GCC)
+   # XXX -- there's a distinction between shared libraries (dylibs) and
+   # loadable objects (bundles).
+   # See <http://fink.sourceforge.net/doc/porting/shared.php>.
+   CONF_dll_ext=".dylib"
+   ;;
 esac
 
 
@@ -636,8 +636,16 @@ if test "$with_64" = "yes" ; then
 changequote(, )dnl
     sparc-sun-solaris*:WorkShop5[23] )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
+      # Redundant for programs, but necessary for dlopen-able shared libs,
+      # at least in the x86 ReleaseMT configuration.
+      LIBS="-lCstd $LIBS"
       ;;
 changequote([, ])dnl
+    sparc-*:GCC )
+      # May not work prior to GCC 3.1.
+      ARCH_CFLAGS="-m64"
+      ;;
+
     mips-sgi-irix*:MIPSpro73 )
       ARCH_CFLAGS="-64"
       CPPFLAGS="$ARCH_CFLAGS $CPPFLAGS"
@@ -665,6 +673,9 @@ else
 changequote(, )dnl
     solaris*:WorkShop5[23] )
       MATH_LIBS=" "
+      # Redundant for programs, but necessary for dlopen-able shared libs,
+      # at least in the x86 ReleaseMT configuration.
+      LIBS="-lCstd $LIBS"
       ;;
 changequote([, ])dnl
     irix*:MIPSpro73 | irix*:KCC )
@@ -725,6 +736,10 @@ fi
 # Generate position-independent code (PIC)
 if test -z "$CFLAGS_DLL"  -a  -z "$CXXFLAGS_DLL" ; then
    case "$host_os:$compiler" in
+    darwin*:GCC )
+      CFLAGS_DLL="-fno-common"
+      CXXFLAGS_DLL="-fno-common"
+      ;;
     *:GCC | linux*:KCC )
       CFLAGS_DLL="-fPIC"
       CXXFLAGS_DLL="-fPIC"
@@ -736,6 +751,17 @@ if test -z "$CFLAGS_DLL"  -a  -z "$CXXFLAGS_DLL" ; then
       ;;
    esac
 fi
+
+case "$compiler:$compiler_version" in
+  GCC:3* )
+    # Need to specify runpath for compiler-provided libraries
+    libstdcxx=`$CXX $LDFLAGS -print-file-name=libstdc++.a`
+    case "$host_os" in
+       osf*) LDFLAGS="-Wl,-rpath,`dirname $libstdcxx` $LDFLAGS" ;;
+       *)    LDFLAGS="-Wl,-R`dirname $libstdcxx` $LDFLAGS" ;;
+    esac
+    ;;
+esac
 
 # Provide runpath to the C++ Toolkit (or as specified by --with-runpath=) DLLs
 if test -z "$CONF_f_runpath" ; then
@@ -829,6 +855,12 @@ case "$compiler" in
       solaris* )
         # See http://realm.progsoc.uts.edu.au/~subtle/solaris28_link.html
         LINK_DLL="$CXX $ARCH_CFLAGS -shared -mimpure-text -o"
+        ;;
+      darwin* )
+        # XXX -- there's a distinction between shared libraries (dylibs)
+        # and loadable objects (bundles).
+        # See <http://fink.sourceforge.net/doc/porting/shared.php>.
+        LINK_DLL="$CXX $ARCH_CFLAGS -dynamiclib -o"
         ;;
       * )
         LINK_DLL="$CXX $ARCH_CFLAGS -shared -o"
@@ -1144,9 +1176,10 @@ elif test "$x_have_unistd" = "yes" ; then
      aix)     AC_DEFINE(NCBI_OS_AIX,     1, [Define to 1 on AIX.])          ;;
      *bsd)    AC_DEFINE(NCBI_OS_BSD,     1, [Define to 1 on *BSD.])         ;;
      cygwin)  AC_DEFINE(NCBI_OS_CYGWIN,  1, [Define to 1 on Cygwin.])       ;;
+     darwin)  AC_DEFINE(NCBI_OS_DARWIN,  1, [Define to 1 on Mac OS X.])     ;;
      irix)    AC_DEFINE(NCBI_OS_IRIX,    1, [Define to 1 on IRIX.])         ;;
      linux)   AC_DEFINE(NCBI_OS_LINUX,   1, [Define to 1 on Linux.])        ;;
-     osf)     AC_DEFINE(NCBI_OS_OSF1,    1, [Define to 1 on Digital Unix.]) ;;
+     osf)     AC_DEFINE(NCBI_OS_OSF1,    1, [Define to 1 on Tru64 Unix.])   ;;
      solaris) AC_DEFINE(NCBI_OS_SOLARIS, 1, [Define to 1 on Solaris.])      ;;
    esac
 else
@@ -1155,7 +1188,7 @@ else
 fi
 
 AC_CHECK_TYPES(socklen_t,,,[#include <sys/socket.h>])
-AC_CHECK_HEADERS(sys/sockio.h sys/sysinfo.h)
+AC_CHECK_HEADERS(dlfcn.h sys/sockio.h sys/sysinfo.h)
 
 ### Check for some reentrant library functions (only needed in MT mode)
 
@@ -1361,6 +1394,10 @@ AC_MSG_RESULT()
 
 
 AC_CHECK_FUNCS(timegm)
+
+AC_SEARCH_LIBS(sched_yield, rt,
+    AC_DEFINE(HAVE_SCHED_YIELD, 1, [Define to 1 if sched_yield exists.])
+)
 
 ### Check for typedefs, structures, and compiler features.
 AC_C_CONST
@@ -2595,6 +2632,7 @@ AC_SUBST(CXX_FILTER)
 AC_SUBST(KeepStateTarget)
 AC_SUBST(Rules)
 AC_SUBST(serial_ws50_rtti_kludge)
+AC_SUBST(ncbicntr)
 
 AC_SUBST(UNIX_SRC)
 AC_SUBST(UNIX_USR_PROJ)

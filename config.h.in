@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
 /* Define to 1 if you have the <fstream> header file. */
 #undef HAVE_FSTREAM
 
@@ -107,6 +110,9 @@
 
 /* Define to 1 if PUBSEQ service is available. */
 #undef HAVE_PUBSEQ_OS
+
+/* Define to 1 if sched_yield exists. */
+#undef HAVE_SCHED_YIELD
 
 /* Define to 1 if union semun exists. */
 #undef HAVE_SEMUN
@@ -234,6 +240,9 @@
 /* Define to 1 on Cygwin. */
 #undef NCBI_OS_CYGWIN
 
+/* Define to 1 on Mac OS X. */
+#undef NCBI_OS_DARWIN
+
 /* Define to 1 on IRIX. */
 #undef NCBI_OS_IRIX
 
@@ -246,7 +255,7 @@
 /* Define to 1 on Windows. */
 #undef NCBI_OS_MSWIN
 
-/* Define to 1 on Digital Unix. */
+/* Define to 1 on Tru64 Unix. */
 #undef NCBI_OS_OSF1
 
 /* Define to 1 on Solaris. */

@@ -2902,7 +2902,7 @@ ncbi_compiler="UNKNOWN"
 ncbi_compiler_ver="0"
 
 if test "$GCC" = "yes" ; then
-   compiler_ver="`$CXX --version 2>&1`"
+   compiler_ver="`$CXX -dumpversion 2>&1`"
    case "$compiler_ver" in
      2.95* | 2.96* | 3.* )
        compiler="GCC"
@@ -3052,14 +3052,6 @@ echo "$as_me: WARNING: Configuration has been canceled by user." >&2;} ; exit ;;
        esac
        echo
     fi ;;
-  GCC:3* )
-    # Need to specify runpath for compiler-provided libraries
-    libgcc_s=`$CXX -print-file-name=libgcc_s.so`
-    case "$host_os" in
-       osf*) LDFLAGS="-Wl,-rpath,`dirname $libgcc_s` $LDFLAGS" ;;
-       *)    LDFLAGS="-Wl,-R`dirname $libgcc_s` $LDFLAGS" ;;
-    esac
-    ;;
 esac
 
 
@@ -3169,6 +3161,7 @@ case "$host_os:$compiler" in
    RANLIB=":"
    CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/cxx_filter.$compiler.sh"
    serial_ws50_rtti_kludge="rtti"
+   ncbicntr="ncbicntr_workshop"
    ;;
 
  solaris*:KCC )
@@ -3228,6 +3221,13 @@ case "$host_os:$compiler" in
    # all over the place.
    case "$host_os" in osf*) LDFLAGS="-Wl,-S $LDFLAGS" ;; esac
    ;;
+
+  darwin*:GCC)
+   # XXX -- there's a distinction between shared libraries (dylibs) and
+   # loadable objects (bundles).
+   # See <http://fink.sourceforge.net/doc/porting/shared.php>.
+   CONF_dll_ext=".dylib"
+   ;;
 esac
 
 
@@ -3279,7 +3279,15 @@ if test "$with_64" = "yes" ; then
       ;;
     sparc-sun-solaris*:WorkShop5[23] )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
+      # Redundant for programs, but necessary for dlopen-able shared libs,
+      # at least in the x86 ReleaseMT configuration.
+      LIBS="-lCstd $LIBS"
       ;;
+    sparc-*:GCC )
+      # May not work prior to GCC 3.1.
+      ARCH_CFLAGS="-m64"
+      ;;
+
     mips-sgi-irix*:MIPSpro73 )
       ARCH_CFLAGS="-64"
       CPPFLAGS="$ARCH_CFLAGS $CPPFLAGS"
@@ -3308,6 +3316,9 @@ else
       ;;
     solaris*:WorkShop5[23] )
       MATH_LIBS=" "
+      # Redundant for programs, but necessary for dlopen-able shared libs,
+      # at least in the x86 ReleaseMT configuration.
+      LIBS="-lCstd $LIBS"
       ;;
     irix*:MIPSpro73 | irix*:KCC )
       ARCH_CFLAGS="-n32"
@@ -3367,6 +3378,10 @@ fi
 # Generate position-independent code (PIC)
 if test -z "$CFLAGS_DLL"  -a  -z "$CXXFLAGS_DLL" ; then
    case "$host_os:$compiler" in
+    darwin*:GCC )
+      CFLAGS_DLL="-fno-common"
+      CXXFLAGS_DLL="-fno-common"
+      ;;
     *:GCC | linux*:KCC )
       CFLAGS_DLL="-fPIC"
       CXXFLAGS_DLL="-fPIC"
@@ -3378,6 +3393,17 @@ if test -z "$CFLAGS_DLL"  -a  -z "$CXXFLAGS_DLL" ; then
       ;;
    esac
 fi
+
+case "$compiler:$compiler_version" in
+  GCC:3* )
+    # Need to specify runpath for compiler-provided libraries
+    libstdcxx=`$CXX $LDFLAGS -print-file-name=libstdc++.a`
+    case "$host_os" in
+       osf*) LDFLAGS="-Wl,-rpath,`dirname $libstdcxx` $LDFLAGS" ;;
+       *)    LDFLAGS="-Wl,-R`dirname $libstdcxx` $LDFLAGS" ;;
+    esac
+    ;;
+esac
 
 # Provide runpath to the C++ Toolkit (or as specified by --with-runpath=) DLLs
 if test -z "$CONF_f_runpath" ; then
@@ -3472,6 +3498,12 @@ case "$compiler" in
       solaris* )
         # See http://realm.progsoc.uts.edu.au/~subtle/solaris28_link.html
         LINK_DLL="$CXX $ARCH_CFLAGS -shared -mimpure-text -o"
+        ;;
+      darwin* )
+        # XXX -- there's a distinction between shared libraries (dylibs)
+        # and loadable objects (bundles).
+        # See <http://fink.sourceforge.net/doc/porting/shared.php>.
+        LINK_DLL="$CXX $ARCH_CFLAGS -dynamiclib -o"
         ;;
       * )
         LINK_DLL="$CXX $ARCH_CFLAGS -shared -o"
@@ -5008,6 +5040,11 @@ cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS_CYGWIN 1
 _ACEOF
        ;;
+     darwin)
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_OS_DARWIN 1
+_ACEOF
+     ;;
      irix)
 cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS_IRIX 1
@@ -5022,7 +5059,7 @@ _ACEOF
 cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS_OSF1 1
 _ACEOF
- ;;
+   ;;
      solaris)
 cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS_SOLARIS 1
@@ -5102,7 +5139,8 @@ fi
 
 
 
-for ac_header in sys/sockio.h sys/sysinfo.h
+
+for ac_header in dlfcn.h sys/sockio.h sys/sysinfo.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
@@ -5969,6 +6007,120 @@ _ACEOF
 
 fi
 done
+
+
+echo "$as_me:$LINENO: checking for library containing sched_yield" >&5
+echo $ECHO_N "checking for library containing sched_yield... $ECHO_C" >&6
+if test "${ac_cv_search_sched_yield+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+ac_cv_search_sched_yield=no
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char sched_yield ();
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+sched_yield ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_sched_yield="none required"
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+if test "$ac_cv_search_sched_yield" = no; then
+  for ac_lib in rt; do
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char sched_yield ();
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+sched_yield ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_sched_yield="-l$ac_lib"
+break
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+  done
+fi
+LIBS=$ac_func_search_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_search_sched_yield" >&5
+echo "${ECHO_T}$ac_cv_search_sched_yield" >&6
+if test "$ac_cv_search_sched_yield" != no; then
+  test "$ac_cv_search_sched_yield" = "none required" || LIBS="$ac_cv_search_sched_yield $LIBS"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_SCHED_YIELD 1
+_ACEOF
+
+
+fi
 
 
 ### Check for typedefs, structures, and compiler features.
@@ -12530,6 +12682,7 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -13259,6 +13412,7 @@ s,@CXX_FILTER@,$CXX_FILTER,;t t
 s,@KeepStateTarget@,$KeepStateTarget,;t t
 s,@Rules@,$Rules,;t t
 s,@serial_ws50_rtti_kludge@,$serial_ws50_rtti_kludge,;t t
+s,@ncbicntr@,$ncbicntr,;t t
 s,@UNIX_SRC@,$UNIX_SRC,;t t
 s,@UNIX_USR_PROJ@,$UNIX_USR_PROJ,;t t
 s,@compiler@,$compiler,;t t
