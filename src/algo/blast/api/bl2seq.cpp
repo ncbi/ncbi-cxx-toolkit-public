@@ -253,7 +253,7 @@ CBl2Seq::x_SetupQuery()
         TSeqPos orig_length = sequence::GetLength(*m_Query, m_Scope);
         TSeqPos trans_len = 
             mi_QueryInfo->context_offsets[mi_QueryInfo->last_context] + 1;
-        char* genetic_code = BLASTFindGeneticCode(m_Options->GetGeneticCode());
+        Uint1Ptr gc = BLASTFindGeneticCode(m_Options->GetQueryGeneticCode());
 
         if ( !(translation = (Uint1*) Malloc(sizeof(Uint1)*trans_len)))
             NCBI_THROW(CBlastException, eOutOfMemory, "Translation buffer");
@@ -272,10 +272,11 @@ CBl2Seq::x_SetupQuery()
             short frame = i < 3 ? i+1 : -i+2;
 
             BLAST_GetTranslation(buf_var, buf_var+orig_length+1, orig_length,
-                    frame, &translation[offset], genetic_code);
+                    frame, &translation[offset], gc);
         }
 
         MemFree(buf);
+        if (gc) delete [] gc;
 
         // don't count the sentinel bytes
         BlastSetUp_SeqBlkNew(translation, trans_len, 0, &mi_Query, true);
@@ -457,6 +458,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/07/23 21:30:40  camacho
+* Calls to options member functions
+*
 * Revision 1.3  2003/07/15 19:21:36  camacho
 * Use correct strands and sequence buffer length
 *
