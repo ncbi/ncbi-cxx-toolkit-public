@@ -740,9 +740,10 @@ private:
 class CSeqDBAtlas {
     /// Default slice sizes and limits used by the atlas.
     enum {
-        eTriggerGC        = 1024 * 1024 * 256,
-        eDefaultBound     = 1024 * 1024 * 1024,
-        eDefaultSliceSize = 1024 * 1024 * 128
+        eTriggerGC        = 1024 * 1024 * 128,
+        eDefaultBound     = 1024 * 1024 * 512,
+        eDefaultSliceSize = 1024 * 1024 * 128,
+        eDefaultOverhang  = 1024 * 1024 * 4
     };
     
 public:
@@ -1042,6 +1043,18 @@ public:
     ///   The size in bytes of the new region or allocation.
     void PossiblyGarbageCollect(Uint8 space_needed);
     
+    /// Return the current overhang amount.
+    /// 
+    /// This returns the amount of memory to map past the end of the
+    /// (end-of-map) slice boundary.  This is intended to prevent.
+    /// 
+    /// @return
+    ///   Atlas will map this much data past the slice-end-boundary.
+    Uint8 GetOverhang()
+    {
+        return eDefaultOverhang;
+    }
+    
     /// Return the current slice size.
     /// 
     /// This returns the current slice size used for mmap() style
@@ -1276,6 +1289,8 @@ private:
         ///   Returns true if the first object comes before the second one.
         inline bool operator()(const CRegionMap* L, const CRegionMap* R) const
         {
+            _ASSERT(L);
+            _ASSERT(R);
             return *L < *R;
         }
     };

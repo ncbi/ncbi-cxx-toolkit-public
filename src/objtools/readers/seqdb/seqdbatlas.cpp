@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 
 #include "seqdbatlas.hpp"
+#include <memory>
 #include <algorithm>
 #include <objtools/readers/seqdb/seqdbcommon.hpp>
 
@@ -334,6 +335,7 @@ void CRegionMap::x_Roundup(TIndx       & begin,
     
     const Uint4 block_size  = 1024 * 512;
     Uint4 large_slice = (Uint4)atlas->GetLargeSliceSize();
+    Uint4 overhang    = (Uint4)atlas->GetOverhang();
     Uint4 small_slice = (Uint4)large_slice / 16;
     
     if (small_slice < block_size) {
@@ -368,18 +370,24 @@ void CRegionMap::x_Roundup(TIndx       & begin,
             align = small_slice;
         }
     } else {
-        // File mode, align to block.  This only helps if there is
-        // another sequence in the same block that interest us.
+        // File mode, align to block.  (This only helps if there are
+        // other sequences completely included in the same blocks that
+        // interest us.)
         
         penalty = 2;
         align = block_size;
+        
+        // Also, do not use overhang logic, because the overhang size
+        // is tuned for the memory mapping case.
+        
+        overhang = 0;
     }
     
     if (align > 1) {
         // Integer math can do the rounding.
         
         TIndx new_begin = (begin / align) * align;
-        TIndx new_end = ((end + align - 1) / align) * align;
+        TIndx new_end = ((end + align - 1) / align) * align + overhang;
         
         if ((new_end + align) > file_size) {
             new_end = file_size;
@@ -393,28 +401,32 @@ void CRegionMap::x_Roundup(TIndx       & begin,
         end   = new_end;
     }
     
-    // Final consideration, which naturally clobbers all previous
-    // processing.  Since we don't actually have support for the
-    // aforementioned in CMemoryFile (yet), the code cannot portably
-    // do any of those things.  In UNIX like systems, we will use mmap
-    // directly, but on other platforms, the roundup will revert to
-    // the whole-file-method for now.  It is possible that other
-    // systems also have this ability, in which case ors and elses
-    // could be added to the following #if.
+    // Should be true on all architectures now, due to the CMemoryFile
+    // map/segment work.
     
-    bool have_range_mmap = false;
-    
-#if defined(NCBI_OS_UNIX)
-    have_range_mmap = true;
-#endif
+    bool have_range_mmap = true;
     
     if (! have_range_mmap) {
         begin = 0;
         end   = file_size;
         
-        // Prefer larger items to last longer..
+        // This code biases larger items to last longer, ie to garbage
+        // collect irregular or short items first.  This is basically
+        // an "intuitive" decision on my part, intended to improve
+        // memory layout (i.e. to decrease the occurrence of internal
+        // memory fragmentation), which in most cases can be seen as
+        // fragmentation of large areas by small elements.  [Note that
+        // the effectiveness of this technique on reducing internal
+        // fragmentation has not been measured.]
         
-        penalty = ((file_size > large_slice)
+        // In theory, no memory management strategy can guarantee a
+        // reasonable lower bound on memory exhaustion from internal
+        // fragmentation.  (An exception would be systems with memory
+        // compaction, which is normally considered infeasible for C
+        // language.)  Also, These concerns probably have little
+        // significance on a 64 bit memory architecture.
+        
+        penalty = ((file_size > (large_slice+overhang))
                    ? 0
                    : 1);
     }
@@ -531,44 +543,59 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
     
     PossiblyGarbageCollect(end - begin);
     
-    CRegionMap * nregion = new CRegionMap(strp, fid, begin, end);
+    CRegionMap * nregion = 0;
     
-    auto_ptr<CRegionMap> newmap(nregion);
-    
-    m_NameOffsetLookup.insert(nregion);
-    
-    if (rmap)
-        *rmap = nregion;
-    
-    if (m_UseMmap) {
-        if (newmap->MapMmap(this)) {
+    try {
+        nregion = new CRegionMap(strp, fid, begin, end);
+        
+        // new() should have thrown, but some old implementations are
+        // said to be non-compliant in this regard:
+        
+        if (! nregion) {
+            throw std::bad_alloc();
+        }
+        
+        auto_ptr<CRegionMap> newmap(nregion);
+        
+        m_NameOffsetLookup.insert(nregion);
+        
+        if (rmap)
+            *rmap = nregion;
+        
+        if (m_UseMmap) {
+            if (newmap->MapMmap(this)) {
+                retval = newmap->Data(begin, end);
+                newmap->AddRef();
+            }
+        }
+        
+#ifdef _DEBUG
+        if (m_UseMmap && (!retval)) {
+            cerr << "Warning: mmap failed, trying file mapping..." << endl;
+        }
+#endif
+        
+        if (retval == 0 && newmap->MapFile(this)) {
             retval = newmap->Data(begin, end);
             newmap->AddRef();
         }
+
+        newmap->GetBoundaries(start, begin, end);
+    
+        if (retval == 0) {
+            NCBI_THROW(CSeqDBException, eFileErr, "File did not exist.");
+        }
+    
+        m_AddressLookup[nregion->Data()] = nregion;
+    
+        m_CurAlloc += (end-begin);
+    
+        m_Regions.push_back(newmap.release());
     }
-    
-#ifdef _DEBUG
-    if (m_UseMmap && (!retval)) {
-        cerr << "Warning: mmap failed, trying file mapping..." << endl;
+    catch(std::bad_alloc) {
+        NCBI_THROW(CSeqDBException, eMemErr,
+                   "CSeqDBAtlas::x_GetRegion: allocation failed.");
     }
-#endif
-    
-    if (retval == 0 && newmap->MapFile(this)) {
-        retval = newmap->Data(begin, end);
-        newmap->AddRef();
-    }
-    
-    newmap->GetBoundaries(start, begin, end);
-    
-    if (retval == 0) {
-        NCBI_THROW(CSeqDBException, eFileErr, "File did not exist.");
-    }
-    
-    m_AddressLookup[nregion->Data()] = nregion;
-    
-    m_CurAlloc += (end-begin);
-    
-    m_Regions.push_back(newmap.release());
     
     return retval;
 }
@@ -647,38 +674,42 @@ void CSeqDBAtlas::x_RetRegionNonRecent(const char * datap)
     }
 }
 
-#if _DEBUG
 void CSeqDBAtlas::ShowLayout(bool locked, TIndx index)
-#else
-void CSeqDBAtlas::ShowLayout(bool locked, TIndx)
-#endif
 {
-    if (! locked) {
-        m_Lock.Lock();
+    // This odd looking construction is for debugging existing
+    // binaries with the help of a debugger.  By setting the static
+    // value (in the debugger) the user can override the default
+    // behavior (whichever is compiled in).
+    
+    static int enabled = 0;
+    
+#ifdef _DEBUG
+#ifdef VERBOSE
+    if (enabled == 0) {
+        enabled = 1;
     }
+#endif
+#endif
+    
+    if (enabled == 1) {
+        if (! locked) {
+            m_Lock.Lock();
+        }
 
-//     CFastMutexGuard guard;
-//     if (! locked) {
-//         guard.Guard(m_Lock);
-//     }
+        // MSVC cannot use Uint8 here... as in "ostream << [Uint8]".
     
-    // MSVC fails to grok "ostream << [Uint8]". (Okalee-dokalee...)
+        cerr << "\n\nShowing layout (index " << NStr::UInt8ToString((Uint8)index)
+             << "), current alloc = " << m_CurAlloc << endl;
     
-#if _DEBUG
-    cout << "\n\nShowing layout (index " << NStr::UInt8ToString((Uint8)index)
-         << "), current alloc = " << m_CurAlloc << endl;
-#endif
+        for(unsigned i = 0; i < m_Regions.size(); i++) {
+            m_Regions[i]->Show();
+        }
     
-    for(unsigned i = 0; i < m_Regions.size(); i++) {
-        m_Regions[i]->Show();
-    }
+        cerr << "\n\n" << endl;
     
-#if _DEBUG
-    cout << "\n\n" << endl;
-#endif
-    
-    if (! locked) {
-        m_Lock.Unlock();
+        if (! locked) {
+            m_Lock.Unlock();
+        }
     }
 }
 
@@ -697,8 +728,24 @@ char * CSeqDBAtlas::Alloc(Uint4 length, CSeqDBLockHold & locked)
     
     // Allocate/clear
     
-    char * newcp = new char[length];
-    memset(newcp, 0, length);
+    char * newcp = 0;
+    
+    try {
+        newcp = new char[length];
+        
+        // new() should have thrown, but some old implementations are
+        // said to be non-compliant in this regard:
+        
+        if (! newcp) {
+            throw std::bad_alloc();
+        }
+        
+        memset(newcp, 0, length);
+    }
+    catch(std::bad_alloc) {
+        NCBI_THROW(CSeqDBException, eMemErr,
+                   "CSeqDBAtlas::Alloc: allocation failed.");
+    }
     
     // Add to pool.
     
@@ -750,11 +797,26 @@ bool CSeqDBAtlas::x_Free(const char * freeme)
 
 void CRegionMap::Show()
 {
-#if VERBOSE
-    cout << " [" << static_cast<const void*>(m_Data) << "]-["
-         << static_cast<const void*>(m_Data + m_End - m_Begin) << "]: "
-         << *m_Fname << ", ref=" << m_Ref << " size=" << (m_End - m_Begin) << endl;
+    // This odd looking construction is for debugging existing
+    // binaries with the help of a debugger.  By setting the static
+    // value (in the debugger) the user can override the default
+    // behavior (whichever is compiled in).
+    
+    static int enabled = 0;
+    
+#ifdef _DEBUG
+#ifdef VERBOSE
+    if (enabled == 0) {
+        enabled = 1;
+    }
 #endif
+#endif
+    
+    if (enabled == 1) {
+        cout << " [" << static_cast<const void*>(m_Data) << "]-["
+             << static_cast<const void*>(m_Data + m_End - m_Begin) << "]: "
+             << *m_Fname << ", ref=" << m_Ref << " size=" << (m_End - m_Begin) << endl;
+    }
 }
 
 CRegionMap::CRegionMap(const string * fname, Uint4 fid, TIndx begin, TIndx end)
@@ -792,10 +854,20 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
     TIndx flength = (TIndx) file.GetLength();
     
     if (file.Exists()) {
-        m_MemFile = new CMemoryFileMap(*m_Fname);
-        
-        if (! m_MemFile)
-            return false;
+        try {
+            m_MemFile = new CMemoryFileMap(*m_Fname);
+            
+            // new() should have thrown, but some old implementations are
+            // said to be non-compliant in this regard:
+            
+            if (! m_MemFile) {
+                throw std::bad_alloc();
+            }
+        }
+        catch(std::bad_alloc) {
+            NCBI_THROW(CSeqDBException, eMemErr,
+                       "CSeqDBAtlas::MapMmap: allocation failed.");
+        }
         
         if ((m_Begin != 0) || (m_End != flength)) {
             x_Roundup(m_Begin, m_End, m_Penalty, flength, true, atlas);
@@ -878,10 +950,21 @@ bool CRegionMap::MapFile(CSeqDBAtlas * atlas)
     
     TIndx rdsize = (TIndx) rdsize8;
     
-    char * newbuf = new char[rdsize];
+    char * newbuf = 0;
     
-    if (! newbuf) {
-        return false;
+    try {
+        newbuf = new char[rdsize];
+        
+        // new() should have thrown, but some old implementations are
+        // said to be non-compliant in this regard:
+        
+        if (! newbuf) {
+            throw std::bad_alloc();
+        }
+    }
+    catch(std::bad_alloc) {
+        NCBI_THROW(CSeqDBException, eMemErr,
+                   "CSeqDBAtlas::MapFile: allocation failed.");
     }
     
     unsigned amt_read = 0;
