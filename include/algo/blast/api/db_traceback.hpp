@@ -45,6 +45,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
+/// Class to perform a traceback stage of the BLAST search, given precomputed
+/// results of the preliminary stage.
 class NCBI_XBLAST_EXPORT CDbBlastTraceback : public CDbBlast
 {
 public:
@@ -81,6 +83,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/07/06 15:47:26  dondosha
+* Added doxygen comment
+*
 * Revision 1.7  2004/06/24 15:55:16  dondosha
 * Added doxygen file description
 *
