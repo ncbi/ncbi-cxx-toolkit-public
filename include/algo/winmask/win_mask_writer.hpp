@@ -84,7 +84,7 @@ public:
      **
      **/
     virtual void Print( objects::CSeq_entry_Handle & seh, const objects::CBioseq & seq,
-                        const CSeqMasker::t_mask_list & mask ) = 0;
+                        const CSeqMasker::TMaskList & mask ) = 0;
 
 protected:
 
@@ -115,6 +115,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/02/12 19:58:04  dicuccio
+ * Corrected file type issues introduced by CVS (trailing return).  Updated
+ * typedef names to match C++ coding standard.
+ *
  * Revision 1.1  2005/02/12 19:15:11  dicuccio
  * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
  *

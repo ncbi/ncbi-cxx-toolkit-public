@@ -50,10 +50,10 @@ class NCBI_XALGOWINMASK_EXPORT CDustMasker
 public:
 
     /**\brief Type representing a masked subsequence of a sequence. */
-    typedef CSeqMasker::t_masked_interval t_masked_interval;
+    typedef CSeqMasker::TMaskedInterval TMaskedInterval;
 
     /**\brief Type representing a list of masked segments. */
-    typedef CSeqMasker::t_mask_list t_mask_list;
+    typedef CSeqMasker::TMaskList TMaskList;
 
     /**
      **\brief Object constructor.
@@ -78,7 +78,7 @@ public:
      **\return pointer to a list of dusted sequences
      **
      **/
-    t_mask_list * operator()( const std::string & data );
+    TMaskList * operator()( const std::string & data );
 
 private:
 
@@ -92,6 +92,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/02/12 19:58:03  dicuccio
+ * Corrected file type issues introduced by CVS (trailing return).  Updated
+ * typedef names to match C++ coding standard.
+ *
  * Revision 1.1  2005/02/12 19:15:11  dicuccio
  * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
  *

@@ -116,10 +116,10 @@ CSeqMasker::~CSeqMasker()
 }
 
 //-------------------------------------------------------------------------
-CSeqMasker::t_mask_list *
+CSeqMasker::TMaskList *
 CSeqMasker::operator()( const string & data ) const
 {
-    t_mask_list * mask = new t_mask_list;
+    TMaskList * mask = new TMaskList;
 
     if( window_size > data.size() )
     {
@@ -153,7 +153,7 @@ CSeqMasker::operator()( const string & data ) const
             if( end > start )
                 if( window.Start() > cend )
                 {
-                    mask->push_back( t_masked_interval( start, end ) );
+                    mask->push_back( TMaskedInterval( start, end ) );
                     start = end = cend = 0;
                 }
         }
@@ -162,7 +162,7 @@ CSeqMasker::operator()( const string & data ) const
             if( end  > start )
                 if( window.Start() > cend + 1 )
                 {
-                    mask->push_back( t_masked_interval( start, end ) );
+                    mask->push_back( TMaskedInterval( start, end ) );
                     start = end = cend = 0;
                 }
                 else cend = window.End();
@@ -173,7 +173,7 @@ CSeqMasker::operator()( const string & data ) const
             {
                 if( window.Start() > cend + 1 )
                 {
-                    mask->push_back( t_masked_interval( start, end ) );
+                    mask->push_back( TMaskedInterval( start, end ) );
                     start = window.Start();
                 }
             }
@@ -187,7 +187,7 @@ CSeqMasker::operator()( const string & data ) const
         score->PostAdvance( window_step );
     }
 
-    if( end > start ) mask->push_back( t_masked_interval( start, end ) );
+    if( end > start ) mask->push_back( TMaskedInterval( start, end ) );
 
     delete &window;
 
@@ -196,9 +196,9 @@ CSeqMasker::operator()( const string & data ) const
         if( mask->size() < 2 ) return mask;
 
         mlist masked, unmasked;
-        t_mask_list::iterator jtmp = mask->end();
+        TMaskList::iterator jtmp = mask->end();
 
-        for( t_mask_list::iterator i = mask->begin(), j = --jtmp; 
+        for( TMaskList::iterator i = mask->begin(), j = --jtmp; 
              i != j; )
         {
             masked.push_back( mitem( i->first, i->second, unit_size, 
@@ -324,7 +324,7 @@ CSeqMasker::operator()( const string & data ) const
         mask->clear();
 
         for( mlist::const_iterator i = masked.begin(); i != masked.end(); ++i )
-            mask->push_back( t_masked_interval( i->start, i->end ) );
+            mask->push_back( TMaskedInterval( i->start, i->end ) );
     }
 
     return mask;
@@ -468,7 +468,7 @@ CSeqMasker::mitem::mitem( Uint4 arg_start, Uint4 arg_end, Uint1 unit_size,
 : start( arg_start ), end( arg_end ), avg( 0.0 )
 {
     const Uint1 & window_size = owner.window_size;
-    const CSeqMaskerWindow::t_unit & ambig_unit = owner.lstat.AmbigUnit();
+    const CSeqMaskerWindow::TUnit & ambig_unit = owner.lstat.AmbigUnit();
     CSeqMaskerScore * const score = owner.score_p3;
     CSeqMaskerWindow * window = NULL;
 
@@ -499,18 +499,18 @@ CSeqMasker::mitem::mitem( Uint4 arg_start, Uint4 arg_end, Uint1 unit_size,
 }
 
 //----------------------------------------------------------------------------
-void CSeqMasker::MergeMaskInfo( t_mask_list * dest, const t_mask_list * src )
+void CSeqMasker::MergeMaskInfo( TMaskList * dest, const TMaskList * src )
 {
     if( src->empty() )
         return;
 
-    t_mask_list::const_iterator si( src->begin() );
-    t_mask_list::const_iterator send( src->end() );
-    t_mask_list::iterator di( dest->begin() );
-    t_mask_list::iterator dend( dest->end() );
-    std::auto_ptr< t_mask_list > res( new t_mask_list );
-    t_masked_interval seg;
-    t_masked_interval next_seg;
+    TMaskList::const_iterator si( src->begin() );
+    TMaskList::const_iterator send( src->end() );
+    TMaskList::iterator di( dest->begin() );
+    TMaskList::iterator dend( dest->end() );
+    std::auto_ptr< TMaskList > res( new TMaskList );
+    TMaskedInterval seg;
+    TMaskedInterval next_seg;
 
     if( di != dend && di->first < si->first )
         seg = *(di++);
@@ -548,6 +548,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/02/12 19:58:04  dicuccio
+ * Corrected file type issues introduced by CVS (trailing return).  Updated
+ * typedef names to match C++ coding standard.
+ *
  * Revision 1.1  2005/02/12 19:15:11  dicuccio
  * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
  *

@@ -54,19 +54,19 @@ public:
     /**
      **\brief Type representing a masked interval within a sequence.
      **
-     ** If A is an object of type t_masked_interval, then A.first is
+     ** If A is an object of type TMaskedInterval, then A.first is
      ** the offset (starting from 0) of the beginning of the
      ** interval; A.second is the offset of the end of the interval.
      **
      **/
-    typedef pair< string::size_type, string::size_type > t_masked_interval;
+    typedef pair< string::size_type, string::size_type > TMaskedInterval;
 
     /**
      **\brief A type representing the total of masking information 
      **       about a sequence.
      **
      **/
-    typedef vector< t_masked_interval > t_mask_list;
+    typedef vector< TMaskedInterval > TMaskList;
 
     /**
      **\brief Represents different error situations that can occur
@@ -110,7 +110,7 @@ public:
      **\param dest this list will contain the merged data
      **\param src the other results list
      **/
-    static void MergeMaskInfo( t_mask_list * dest, const t_mask_list * src );
+    static void MergeMaskInfo( TMaskList * dest, const TMaskList * src );
 
     /**
      **\brief Object constructor.
@@ -183,7 +183,7 @@ public:
      **\return pointer to the list of masked intervals
      **
      **/
-    t_mask_list * operator()( const string & data ) const;
+    TMaskList * operator()( const string & data ) const;
 
     /**
      **\brief Internal class encapsulating unit frequency information
@@ -233,7 +233,7 @@ public:
          **       ambiguous characters.
          **
          **/
-        CSeqMaskerWindow::t_unit AmbigUnit() const { return ambig_unit; }
+        CSeqMaskerWindow::TUnit AmbigUnit() const { return ambig_unit; }
 
     private:
 
@@ -275,7 +275,7 @@ public:
         /**\internal
          **\brief Unit value to use for units with ambiguities.
          **/
-        CSeqMaskerWindow::t_unit ambig_unit;
+        CSeqMaskerWindow::TUnit ambig_unit;
     };
 
 private:
@@ -455,6 +455,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/02/12 19:58:03  dicuccio
+ * Corrected file type issues introduced by CVS (trailing return).  Updated
+ * typedef names to match C++ coding standard.
+ *
  * Revision 1.1  2005/02/12 19:15:11  dicuccio
  * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
  *

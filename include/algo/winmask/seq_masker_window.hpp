@@ -56,13 +56,13 @@ public:
      **\brief Integer type used to represent units within a window.
      **
      **/
-    typedef Uint4 t_unit;
+    typedef Uint4 TUnit;
 
     /**
      **\brief type representing an array of consecutive units.
      **
      **/
-    typedef vector< t_unit > t_units;
+    typedef vector< TUnit > TUnits;
 
     /**
      **\brief Table used to translate bases from iupacna to 
@@ -120,7 +120,7 @@ public:
      **\return the value of the requested unit
      **
      **/
-    t_unit operator[]( Uint1 index ) const
+    TUnit operator[]( Uint1 index ) const
     {
         return first_unit + index < NumUnits() ? 
             units[first_unit + index] :
@@ -189,9 +189,9 @@ protected:
     Uint4 window_step;          /**< The amount of bases by which the window advances under operator++() */
     Uint4 start;            /**< The start of the current window. */
     Uint4 end;              /**< The end if the current window. */
-    t_units::size_type first_unit;  /**< The position in the array of units of the first unit of the current window. */
-    t_units units;          /**< The array of units. */
-    t_unit unit_mask;           /**< The mask to use when accessing the integer value of a unit. */
+    TUnits::size_type first_unit;  /**< The position in the array of units of the first unit of the current window. */
+    TUnits units;          /**< The array of units. */
+    TUnit unit_mask;           /**< The mask to use when accessing the integer value of a unit. */
 
 private:
 
@@ -210,6 +210,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/02/12 19:58:03  dicuccio
+ * Corrected file type issues introduced by CVS (trailing return).  Updated
+ * typedef names to match C++ coding standard.
+ *
  * Revision 1.1  2005/02/12 19:15:11  dicuccio
  * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
  *

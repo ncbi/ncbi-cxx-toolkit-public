@@ -328,17 +328,17 @@ int CWinMaskApplication::Run (void)
                 CSeqportUtil::Convert( seqdata, dest.get(), CSeq_data::e_Iupacna, 
                                        0, len );
                 const string & data = dest->GetIupacna().Get();
-                auto_ptr< CSeqMasker::t_mask_list > mask_info( theMasker( data ) );
+                auto_ptr< CSeqMasker::TMaskList > mask_info( theMasker( data ) );
 
                 if( duster != 0 ) // Dust and merge with mask_info
                 {
-                    auto_ptr< CSeqMasker::t_mask_list > dust_info( (*duster)( data ) );
+                    auto_ptr< CSeqMasker::TMaskList > dust_info( (*duster)( data ) );
                     CSeqMasker::MergeMaskInfo( mask_info.get(), dust_info.get() );
                 }
 
                 theWriter.Print( seh, bioseq, *mask_info );
 
-                for( CSeqMasker::t_mask_list::const_iterator i = mask_info->begin();
+                for( CSeqMasker::TMaskList::const_iterator i = mask_info->begin();
                      i != mask_info->end(); ++i )
                     masked += i->second - i->first + 1;
 
@@ -359,6 +359,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/02/12 19:58:04  dicuccio
+ * Corrected file type issues introduced by CVS (trailing return).  Updated
+ * typedef names to match C++ coding standard.
+ *
  * Revision 1.1  2005/02/12 19:15:11  dicuccio
  * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
  *

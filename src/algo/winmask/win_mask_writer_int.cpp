@@ -37,11 +37,11 @@ BEGIN_NCBI_SCOPE
 
 //-------------------------------------------------------------------------
 void CWinMaskWriterInt::Print( objects::CSeq_entry_Handle & seh, const objects::CBioseq & seq, 
-                               const CSeqMasker::t_mask_list & mask )
+                               const CSeqMasker::TMaskList & mask )
 {
     PrintId( seh, seq );
 
-    for( CSeqMasker::t_mask_list::const_iterator i = mask.begin();
+    for( CSeqMasker::TMaskList::const_iterator i = mask.begin();
          i != mask.end(); ++i )
         os << i->first << " - " << i->second << "\n";
 }
@@ -53,6 +53,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/02/12 19:58:04  dicuccio
+ * Corrected file type issues introduced by CVS (trailing return).  Updated
+ * typedef names to match C++ coding standard.
+ *
  * Revision 1.1  2005/02/12 19:15:11  dicuccio
  * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
  *

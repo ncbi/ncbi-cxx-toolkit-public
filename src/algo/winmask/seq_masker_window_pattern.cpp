@@ -50,8 +50,8 @@ CSeqMaskerWindowPattern::CSeqMaskerWindowPattern( const string & arg_data,
 pattern( arg_pattern )
 {
     Uint1 cusz = unit_size - CSeqMaskerUtil::BitCount( pattern );
-    unit_mask = (cusz < 4*sizeof( t_unit )) ? ((1<<(2*cusz)) - 1) 
-        : ~((t_unit)0);
+    unit_mask = (cusz < 4*sizeof( TUnit )) ? ((1<<(2*cusz)) - 1) 
+        : ~((TUnit)0);
     FillWindow( 0 );
 }
 
@@ -63,7 +63,7 @@ void CSeqMaskerWindowPattern::Advance( Uint4 step )
 
 //-------------------------------------------------------------------------
 bool CSeqMaskerWindowPattern::MakeUnit( Uint4 ustart, 
-                                        t_unit & result ) const
+                                        TUnit & result ) const
 {
     result = 0;
 
@@ -84,7 +84,7 @@ bool CSeqMaskerWindowPattern::MakeUnit( Uint4 ustart,
 void CSeqMaskerWindowPattern::FillWindow( Uint4 winstart )
 {
     first_unit = 0;
-    t_unit unit = 0;
+    TUnit unit = 0;
     Int4 iter = 0;
     end = winstart + unit_size - 1;
     Uint4 wstart = winstart;
@@ -117,6 +117,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/02/12 19:58:04  dicuccio
+ * Corrected file type issues introduced by CVS (trailing return).  Updated
+ * typedef names to match C++ coding standard.
+ *
  * Revision 1.1  2005/02/12 19:15:11  dicuccio
  * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
  *

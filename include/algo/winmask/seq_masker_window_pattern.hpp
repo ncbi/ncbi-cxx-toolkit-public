@@ -92,7 +92,7 @@ protected:
      **        otherwise
      **
      **/
-    bool MakeUnit( Uint4 ustart, t_unit & result ) const;
+    bool MakeUnit( Uint4 ustart, TUnit & result ) const;
 
     /**\internal
      **\brief Fill the array of units for a window that starts
@@ -116,6 +116,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/02/12 19:58:03  dicuccio
+ * Corrected file type issues introduced by CVS (trailing return).  Updated
+ * typedef names to match C++ coding standard.
+ *
  * Revision 1.1  2005/02/12 19:15:11  dicuccio
  * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
  *

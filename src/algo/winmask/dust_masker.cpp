@@ -73,7 +73,7 @@ CDustMasker::CDustMasker( Uint4 arg_window, Uint4 arg_level, Uint4 arg_linker )
 CDustMasker::~CDustMasker(){}
 
 //------------------------------------------------------------------------------
-CDustMasker::t_mask_list * CDustMasker::operator()( const std::string & data )
+CDustMasker::TMaskList * CDustMasker::operator()( const std::string & data )
 {
     // Transform to BLASTNA.
     std::string data_blastna;
@@ -90,7 +90,7 @@ CDustMasker::t_mask_list * CDustMasker::operator()( const std::string & data )
                    level, window, linker, &blast_loc );
 
     // Convert to the output type.
-    t_mask_list * result( new t_mask_list );
+    TMaskList * result( new TMaskList );
 
     while( blast_loc )
     {
@@ -114,6 +114,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/02/12 19:58:04  dicuccio
+ * Corrected file type issues introduced by CVS (trailing return).  Updated
+ * typedef names to match C++ coding standard.
+ *
  * Revision 1.1  2005/02/12 19:15:11  dicuccio
  * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
  *

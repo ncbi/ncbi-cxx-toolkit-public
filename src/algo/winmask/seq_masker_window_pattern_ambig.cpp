@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 //-------------------------------------------------------------------------
 CSeqMaskerWindowPatternAmbig::CSeqMaskerWindowPatternAmbig( 
                                                            const string & arg_data, Uint1 arg_unit_size, Uint1 arg_window_size,
-                                                           Uint4 window_step, Uint4 arg_pattern, t_unit arg_ambig_unit,
+                                                           Uint4 window_step, Uint4 arg_pattern, TUnit arg_ambig_unit,
                                                            Uint4 window_start, Uint1 arg_unit_step )
 : CSeqMaskerWindowPattern( arg_data, arg_unit_size, arg_window_size,
                            window_step, arg_pattern, arg_unit_step ),
@@ -58,7 +58,7 @@ void CSeqMaskerWindowPatternAmbig::Advance( Uint4 step )
 void CSeqMaskerWindowPatternAmbig::FillWindow( Uint4 winstart )
 {
     first_unit = 0;
-    t_unit unit = 0;
+    TUnit unit = 0;
     Int4 iter = 0;
     end = winstart + unit_size - 1;
 
@@ -79,6 +79,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/02/12 19:58:04  dicuccio
+ * Corrected file type issues introduced by CVS (trailing return).  Updated
+ * typedef names to match C++ coding standard.
+ *
  * Revision 1.1  2005/02/12 19:15:11  dicuccio
  * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
  *

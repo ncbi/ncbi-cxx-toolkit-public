@@ -66,7 +66,7 @@ public:
                                   Uint1 arg_unit_size, 
                                   Uint1 arg_window_size,
                                   Uint4 window_step, Uint4 arg_pattern, 
-                                  t_unit arg_ambig_unit,
+                                  TUnit arg_ambig_unit,
                                   Uint4 window_start = 0,
                                   Uint1 arg_unit_step = 1 );
 
@@ -93,7 +93,7 @@ protected:
      **\brief Value to use for units containing ambiguity characters.
      **
      **/
-    t_unit ambig_unit;
+    TUnit ambig_unit;
 
 private:
 
@@ -118,6 +118,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/02/12 19:58:03  dicuccio
+ * Corrected file type issues introduced by CVS (trailing return).  Updated
+ * typedef names to match C++ coding standard.
+ *
  * Revision 1.1  2005/02/12 19:15:11  dicuccio
  * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
  *
