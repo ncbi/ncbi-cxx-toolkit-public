@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/06/06 19:47:38  clausen
+* Removed usage of fGetTitle_Accession
+*
 * Revision 1.7  2002/05/06 03:28:53  vakatov
 * OM/OM1 renaming
 *
@@ -122,13 +125,11 @@ int CTitleTester::Run(void)
     if (args["reconstruct"]) {
         flags |= CBioseq_Handle::fGetTitle_Reconstruct;
     }
-    if (args["accession"]) {
-        flags |= CBioseq_Handle::fGetTitle_Accession;
-    }
     if (args["organism"]) {
         flags |= CBioseq_Handle::fGetTitle_Organism;
     }
-    NcbiCout << handle.GetTitle(flags) << NcbiEndl;
+    NcbiCout << GetTitle(handle, flags) << NcbiEndl;
+    NcbiCout << GetTitle(handle, flags) << NcbiEndl;
     return 0;
 }
 
