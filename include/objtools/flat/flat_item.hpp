@@ -82,25 +82,25 @@ private:
 
 
 // derived classes (or their proxies) predeclared here, for (minor) convenience
-class  CFlatForehead;
-struct SFlatHead;
-struct SFlatKeywords;
-struct SFlatSegment;
-struct SFlatSource;
-struct SFlatReference;
-struct SFlatComment;
-struct SFlatPrimary;
-class  CFlatFeatHeader;
-struct SFlatFeature;
-struct SFlatDataHeader;
-struct SFlatData;
-struct SFlatContig;
-struct SFlatWGSRange;
-struct SFlatGenomeInfo;
-class  CFlatTail;
+class CFlatForehead;
+class CFlatHead;
+class CFlatKeywords;
+class CFlatSegment;
+class CFlatSource;
+class CFlatReference;
+class CFlatComment;
+class CFlatPrimary;
+class CFlatFeatHeader;
+class CFlatFeature;
+class CFlatDataHeader;
+class CFlatData;
+class CFlatContig;
+class CFlatWGSRange;
+class CFlatGenomeInfo;
+class CFlatTail;
 
 // another useful predeclaration...
-struct SFlatContext;
+class CFlatContext;
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -109,6 +109,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/03/21 18:47:47  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.2  2003/03/10 21:59:41  ucko
 * Fix keywords (struct/class) in forward declarations to match reality.
 *

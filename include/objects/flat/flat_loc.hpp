@@ -40,38 +40,43 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 // forward declarations
-class  CInt_fuzz;
-class  CSeq_id;
-class  CSeq_interval;
-class  CSeq_loc;
-struct SFlatContext;
+class CInt_fuzz;
+class CSeq_id;
+class CSeq_interval;
+class CSeq_loc;
+class CFlatContext;
 
 
-struct SFlatLoc : public CObject // derived from CObject to allow for caching
+class CFlatLoc : public CObject // derived from CObject to allow for caching
 {
+public:
     struct SInterval
     {
         string          m_Accession;
         CRange<TSeqPos> m_Range; // 1-based; should be finite
     };
+    typedef vector<SInterval> TIntervals;
     
-    SFlatLoc(const CSeq_loc& loc, SFlatContext& ctx);
-    
-    string            m_String;    // whole location, as a GB-style string
-    vector<SInterval> m_Intervals; // individual intervals/points
+    CFlatLoc(const CSeq_loc& loc, CFlatContext& ctx);
 
+    const string&     GetString(void)    const { return m_String;    }
+    const TIntervals& GetIntervals(void) const { return m_Intervals; }
+    
 private:
+    string     m_String;    // whole location, as a GB-style string
+    TIntervals m_Intervals; // individual intervals/points
+
     void x_Add   (const CSeq_loc& loc, CNcbiOstrstream& oss,
-                  SFlatContext& ctx);
+                  CFlatContext& ctx);
     void x_Add   (const CSeq_interval& si, CNcbiOstrstream& oss,
-                  SFlatContext& ctx);
+                  CFlatContext& ctx);
     // these convert from 0-based to 1-based coordinates in the process
     void x_AddPnt(TSeqPos pnt, const CInt_fuzz* fuzz, CNcbiOstrstream& oss,
-                  SFlatContext& ctx);
+                  CFlatContext& ctx);
     void x_AddInt(TSeqPos from, TSeqPos to, const string& accn);
 
     static void x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
-                        SFlatContext& ctx, string *s = 0);
+                        CFlatContext& ctx, string *s = 0);
 };
 
 
@@ -82,6 +87,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/21 18:47:47  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.1  2003/03/10 16:39:08  ucko
 * Initial check-in of new flat-file generator
 *

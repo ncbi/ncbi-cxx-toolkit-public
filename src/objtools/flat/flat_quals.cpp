@@ -68,25 +68,25 @@ static const char* s_AAName(unsigned char aa, bool is_ascii)
 
 
 inline
-static bool s_IsNote(SFlatContext& ctx, IFlatQV::TFlags flags)
+static bool s_IsNote(CFlatContext& ctx, IFlatQV::TFlags flags)
 {
     return ((flags & IFlatQV::fIsNote)
-            &&  ctx.m_Formatter->GetMode() != IFlatFormatter::eMode_Dump);
+            &&  ctx.GetFormatter().GetMode() != IFlatFormatter::eMode_Dump);
 }
 
 
 void CFlatStringQV::Format(TFlatQuals& q, const string& name,
-                           SFlatContext& ctx, IFlatQV::TFlags flags) const
+                           CFlatContext& ctx, IFlatQV::TFlags flags) const
 {
     x_AddFQ(q, s_IsNote(ctx, flags) ? "note" : name, m_Value, m_Style);
 }
 
 
 void CFlatCodeBreakQV::Format(TFlatQuals& q, const string& name,
-                              SFlatContext& ctx, IFlatQV::TFlags) const
+                              CFlatContext& ctx, IFlatQV::TFlags) const
 {
     ITERATE (CCdregion::TCode_break, it, m_Value) {
-        string pos = SFlatLoc((*it)->GetLoc(), ctx).m_String;
+        string pos = CFlatLoc((*it)->GetLoc(), ctx).GetString();
         string aa  = "OTHER";
         switch ((*it)->GetAa().Which()) {
         case CCode_break::C_Aa::e_Ncbieaa:
@@ -113,7 +113,7 @@ CFlatCodonQV::CFlatCodonQV(unsigned int codon, unsigned char aa, bool is_ascii)
 }
 
 
-void CFlatCodonQV::Format(TFlatQuals& q, const string& name, SFlatContext& ctx,
+void CFlatCodonQV::Format(TFlatQuals& q, const string& name, CFlatContext& ctx,
                           IFlatQV::TFlags) const
 {
     if ( !m_Checked ) {
@@ -124,7 +124,7 @@ void CFlatCodonQV::Format(TFlatQuals& q, const string& name, SFlatContext& ctx,
 
 
 void CFlatExpEvQV::Format(TFlatQuals& q, const string& name,
-                          SFlatContext&, IFlatQV::TFlags) const
+                          CFlatContext&, IFlatQV::TFlags) const
 {
     const char* s = 0;
     switch (m_Value) {
@@ -133,12 +133,12 @@ void CFlatExpEvQV::Format(TFlatQuals& q, const string& name,
     default:                                   break;
     }
     if (s) {
-        x_AddFQ(q, name, s, SFlatQual::eUnquoted);
+        x_AddFQ(q, name, s, CFlatQual::eUnquoted);
     }
 }
 
 
-void CFlatIllegalQV::Format(TFlatQuals& q, const string&, SFlatContext &ctx,
+void CFlatIllegalQV::Format(TFlatQuals& q, const string&, CFlatContext &ctx,
                             IFlatQV::TFlags) const
 {
     // XXX - return if too strict
@@ -147,7 +147,7 @@ void CFlatIllegalQV::Format(TFlatQuals& q, const string&, SFlatContext &ctx,
 
 
 void CFlatMolTypeQV::Format(TFlatQuals& q, const string& name,
-                            SFlatContext& ctx, IFlatQV::TFlags flags) const
+                            CFlatContext& ctx, IFlatQV::TFlags flags) const
 {
     const char* s = 0;
     switch (m_Biomol) {
@@ -187,7 +187,7 @@ void CFlatMolTypeQV::Format(TFlatQuals& q, const string& name,
 
 
 void CFlatOrgModQV::Format(TFlatQuals& q, const string& name,
-                           SFlatContext& ctx, IFlatQV::TFlags flags) const
+                           CFlatContext& ctx, IFlatQV::TFlags flags) const
 {
     switch (m_Value->GetSubtype()) {
     case COrgMod::eSubtype_other:
@@ -206,7 +206,7 @@ void CFlatOrgModQV::Format(TFlatQuals& q, const string& name,
 
 
 void CFlatOrganelleQV::Format(TFlatQuals& q, const string& name,
-                              SFlatContext&, IFlatQV::TFlags) const
+                              CFlatContext&, IFlatQV::TFlags) const
 {
     const string& organelle
         = CBioSource::GetTypeInfo_enum_EGenome()->FindName(m_Value, true);
@@ -229,7 +229,7 @@ void CFlatOrganelleQV::Format(TFlatQuals& q, const string& name,
 
     case CBioSource::eGenome_macronuclear: case CBioSource::eGenome_proviral:
     case CBioSource::eGenome_virion:
-        x_AddFQ(q, organelle, kEmptyStr, SFlatQual::eEmpty);
+        x_AddFQ(q, organelle, kEmptyStr, CFlatQual::eEmpty);
         break;
 
     case CBioSource::eGenome_plasmid: case CBioSource::eGenome_transposon:
@@ -248,13 +248,13 @@ void CFlatOrganelleQV::Format(TFlatQuals& q, const string& name,
 
 
 void CFlatPubSetQV::Format(TFlatQuals& q, const string& name,
-                           SFlatContext& ctx, IFlatQV::TFlags) const
+                           CFlatContext& ctx, IFlatQV::TFlags) const
 {
     bool found = false;
-    ITERATE (vector<CRef<SFlatReference> >, it, ctx.m_References) {
+    ITERATE (vector<CRef<CFlatReference> >, it, ctx.GetReferences()) {
         if ((*it)->Matches(*m_Value)) {
-            x_AddFQ(q, name, '[' + NStr::IntToString((*it)->m_Serial) + ']',
-                    SFlatQual::eUnquoted);
+            x_AddFQ(q, name, '[' + NStr::IntToString((*it)->GetSerial()) + ']',
+                    CFlatQual::eUnquoted);
             found = true;
         }
     }
@@ -263,10 +263,10 @@ void CFlatPubSetQV::Format(TFlatQuals& q, const string& name,
 
 
 void CFlatSeqDataQV::Format(TFlatQuals& q, const string& name,
-                            SFlatContext& ctx, IFlatQV::TFlags) const
+                            CFlatContext& ctx, IFlatQV::TFlags) const
 {
     string s;
-    CSeqVector v = ctx.m_Handle.GetScope().GetBioseqHandle(*m_Value)
+    CSeqVector v = ctx.GetHandle().GetScope().GetBioseqHandle(*m_Value)
         .GetSequenceView(*m_Value, CBioseq_Handle::eViewConstructed,
                          CBioseq_Handle::eCoding_Iupac);
     v.GetSeqData(0, v.size(), s);
@@ -275,7 +275,7 @@ void CFlatSeqDataQV::Format(TFlatQuals& q, const string& name,
 
 
 void CFlatSeqIdQV::Format(TFlatQuals& q, const string& name,
-                          SFlatContext& ctx, IFlatQV::TFlags) const
+                          CFlatContext& ctx, IFlatQV::TFlags) const
 {
     // XXX - add link in HTML mode
     x_AddFQ(q, name, ctx.GetPreferredSynonym(*m_Value).GetSeqIdString(true));
@@ -283,14 +283,14 @@ void CFlatSeqIdQV::Format(TFlatQuals& q, const string& name,
 
 
 void CFlatSubSourceQV::Format(TFlatQuals& q, const string& name,
-                              SFlatContext& ctx, IFlatQV::TFlags flags) const
+                              CFlatContext& ctx, IFlatQV::TFlags flags) const
 {
     switch (m_Value->GetSubtype()) {
     case CSubSource::eSubtype_germline:
     case CSubSource::eSubtype_rearranged:
     case CSubSource::eSubtype_transgenic:
     case CSubSource::eSubtype_environmental_sample:
-        x_AddFQ(q, name, kEmptyStr, SFlatQual::eEmpty);
+        x_AddFQ(q, name, kEmptyStr, CFlatQual::eEmpty);
         break;
 
     case CSubSource::eSubtype_other:
@@ -309,7 +309,7 @@ void CFlatSubSourceQV::Format(TFlatQuals& q, const string& name,
 
 
 void CFlatXrefQV::Format(TFlatQuals& q, const string& name,
-                         SFlatContext& ctx, IFlatQV::TFlags flags) const
+                         CFlatContext& ctx, IFlatQV::TFlags flags) const
 {
     // XXX - add link in HTML mode?
     ITERATE (TXref, it, m_Value) {
@@ -331,6 +331,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/03/21 18:49:17  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.2  2003/03/11 15:37:51  kuznets
 * iterate -> ITERATE
 *

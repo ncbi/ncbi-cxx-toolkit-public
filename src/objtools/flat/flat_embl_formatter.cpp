@@ -46,63 +46,63 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-void CFlatEMBLFormatter::FormatHead(const SFlatHead& head)
+void CFlatEMBLFormatter::FormatHead(const CFlatHead& head)
 {
     list<string> l;
     {{
         CNcbiOstrstream id_line;
         string          locus;
-        TParent::Pad(head.m_Locus, locus, 9);
+        TParent::Pad(head.GetLocus(), locus, 9);
         id_line << locus << " standard; ";
-        if (head.m_Topology == CSeq_inst::eTopology_circular) {
+        if (head.GetTopology() == CSeq_inst::eTopology_circular) {
             id_line << "circular ";
         }
         id_line << head.GetMolString() << "; "
-                << Upcase(head.m_Division) << "; "
-                << m_Context->m_Length << ' ' << Upcase(m_Context->GetUnits())
-                << '.';
+                << Upcase(head.GetDivision()) << "; "
+                << m_Context->GetLength() << ' '
+                << Upcase(m_Context->GetUnits()) << '.';
         Wrap(l, "ID", CNcbiOstrstreamToString(id_line));
         m_Stream->AddParagraph(l);
         l.clear();
     }}
     x_AddXX();
     {{
-        string acc = m_Context->m_PrimaryID->GetSeqIdString(false);
-        ITERATE (list<string>, it, head.m_SecondaryIDs) {
+        string acc = m_Context->GetPrimaryID().GetSeqIdString(false);
+        ITERATE (list<string>, it, head.GetSecondaryIDs()) {
             acc += "; " + *it;
         }
         Wrap(l, "AC", acc + ';');
         l.push_back("XX   ");
-        Wrap(l, "SV", m_Context->m_Accession);
-        m_Stream->AddParagraph(l, m_Context->m_PrimaryID);
+        Wrap(l, "SV", m_Context->GetAccession());
+        m_Stream->AddParagraph(l, &m_Context->GetPrimaryID());
         l.clear();
     }}
     x_AddXX();
     {{
         string date;
-        FormatDate(*head.m_UpdateDate, date);
+        FormatDate(head.GetUpdateDate(), date);
         Wrap(l, "DT", date);
-        m_Stream->AddParagraph(l, head.m_UpdateDate);
+        m_Stream->AddParagraph(l, &head.GetUpdateDate());
         l.clear();
         date.erase();
-        FormatDate(*head.m_CreateDate, date);
+        FormatDate(head.GetCreateDate(), date);
         Wrap(l, "DT", date);
-        m_Stream->AddParagraph(l, head.m_CreateDate);
+        m_Stream->AddParagraph(l, &head.GetCreateDate());
         l.clear();
     }}
     x_AddXX();
-    Wrap(l, "DE", head.m_Definition);
+    Wrap(l, "DE", head.GetDefinition());
     m_Stream->AddParagraph(l);
     // DBSOURCE for EMBLPEPT?
 }
 
 
-void CFlatEMBLFormatter::FormatKeywords(const SFlatKeywords& keys)
+void CFlatEMBLFormatter::FormatKeywords(const CFlatKeywords& keys)
 {
     x_AddXX();
     list<string>   l, kw;
     vector<string> v;
-    ITERATE (list<string>, it, keys.m_Keywords) {
+    ITERATE (list<string>, it, keys.GetKeywords()) {
         v.push_back(*it);
     }
     sort(v.begin(), v.end());
@@ -118,43 +118,43 @@ void CFlatEMBLFormatter::FormatKeywords(const SFlatKeywords& keys)
 }
 
 
-void CFlatEMBLFormatter::FormatSegment(const SFlatSegment& seg)
+void CFlatEMBLFormatter::FormatSegment(const CFlatSegment& seg)
 {
     x_AddXX();
     list<string> l;
     // Done as comment (no corresponding line type)
-    Wrap(l, "CC", "SEGMENT " + NStr::IntToString(seg.m_Num) + " of "
-         + NStr::IntToString(seg.m_Count));
+    Wrap(l, "CC", "SEGMENT " + NStr::IntToString(seg.GetNum()) + " of "
+         + NStr::IntToString(seg.GetCount()));
     m_Stream->AddParagraph(l);
 }
 
 
-void CFlatEMBLFormatter::FormatSource(const SFlatSource& source)
+void CFlatEMBLFormatter::FormatSource(const CFlatSource& source)
 {
     x_AddXX();
     list<string> l;
     {{
-        string name = source.m_FormalName;
-        if ( !source.m_CommonName.empty() ) {
-            name += " (" + source.m_CommonName + ')';
+        string name = source.GetFormalName();
+        if ( !source.GetCommonName().empty() ) {
+            name += " (" + source.GetCommonName() + ')';
         }
         Wrap(l, "OS", name);
     }}
-    Wrap(l, "OC", source.m_Lineage + '.');
-    m_Stream->AddParagraph(l, source.m_Descriptor);
+    Wrap(l, "OC", source.GetLineage() + '.');
+    m_Stream->AddParagraph(l, &source.GetDescriptor());
     // XXX -- OG (Organelle)?
 }
 
 
-void CFlatEMBLFormatter::FormatReference(const SFlatReference& ref)
+void CFlatEMBLFormatter::FormatReference(const CFlatReference& ref)
 {
     x_AddXX();
     list<string> l;
-    Wrap(l, "RN", '[' + NStr::IntToString(ref.m_Serial) + ']');
-    Wrap(l, "RC", ref.m_Remark, eSubp);
-    // Wrap(l, "RC", "CONSORTIUM: " + ref.m_Consortium, eSubp);
+    Wrap(l, "RN", '[' + NStr::IntToString(ref.GetSerial()) + ']');
+    Wrap(l, "RC", ref.GetRemark(), eSubp);
+    // Wrap(l, "RC", "CONSORTIUM: " + ref.GetConsortium(), eSubp);
     Wrap(l, "RP", ref.GetRange(*m_Context), eSubp);
-    ITERATE (set<int>, it, ref.m_MUIDs) {
+    ITERATE (set<int>, it, ref.GetMUIDs()) {
         if (DoHTML()) {
             Wrap(l, "RX",
                  "MEDLINE; <a href=\"" + ref.GetMedlineURL(*it) + "\">"
@@ -166,10 +166,11 @@ void CFlatEMBLFormatter::FormatReference(const SFlatReference& ref)
     }
     
     {{
+        const list<string>& raw_authors = ref.GetAuthors();
         list<string> authors;
-        ITERATE (list<string>, it, ref.m_Authors) {
+        ITERATE (list<string>, it, raw_authors) {
             authors.push_back(NStr::Replace(*it, ",", " ")
-                              + (&*it == &ref.m_Authors.back() ? ';' : ','));
+                              + (&*it == &raw_authors.back() ? ';' : ','));
         }
         string tag;
         NStr::WrapList(authors, m_Stream->GetWidth(), " ", l, 0,
@@ -183,17 +184,17 @@ void CFlatEMBLFormatter::FormatReference(const SFlatReference& ref)
         Wrap(l, "RL", journal,     eSubp);
     }}
 
-    m_Stream->AddParagraph(l, ref.m_Pubdesc);
+    m_Stream->AddParagraph(l, &ref.GetPubdesc());
 }
 
 
-void CFlatEMBLFormatter::FormatComment(const SFlatComment& comment)
+void CFlatEMBLFormatter::FormatComment(const CFlatComment& comment)
 {
-    if (comment.m_Comment.empty()) {
+    if (comment.GetComment().empty()) {
         return;
     }
     x_AddXX();
-    string comment2 = ExpandTildes(comment.m_Comment, eTilde_newline);
+    string comment2 = ExpandTildes(comment.GetComment(), eTilde_newline);
     if ( !NStr::EndsWith(comment2, ".") ) {
         comment2 += '.';
     }
@@ -203,17 +204,17 @@ void CFlatEMBLFormatter::FormatComment(const SFlatComment& comment)
 }
 
 
-void CFlatEMBLFormatter::FormatPrimary(const SFlatPrimary& primary)
+void CFlatEMBLFormatter::FormatPrimary(const CFlatPrimary& primary)
 {
     x_AddXX();
     list<string> l;
     Wrap(l, "AH", primary.GetHeader());
-    ITERATE (SFlatPrimary::TPieces, it, primary.m_Pieces) {
+    ITERATE (CFlatPrimary::TPieces, it, primary.GetPieces()) {
         string s;        
         Wrap(l, "AS", it->Format(s));
     }
     m_Stream->AddParagraph
-        (l, &m_Context->m_Handle.GetBioseqCore()->GetInst().GetHist());
+        (l, &m_Context->GetHandle().GetBioseqCore()->GetInst().GetHist());
 }
 
 
@@ -227,14 +228,14 @@ void CFlatEMBLFormatter::FormatFeatHeader(void)
 }
 
 
-void CFlatEMBLFormatter::FormatDataHeader(const SFlatDataHeader& dh)
+void CFlatEMBLFormatter::FormatDataHeader(const CFlatDataHeader& dh)
 {
     x_AddXX();
     list<string> l;
     CNcbiOstrstream oss;
-    oss << "Sequence " << m_Context->m_Length << ' '
+    oss << "Sequence " << m_Context->GetLength() << ' '
         << Upcase(m_Context->GetUnits()) << ';';
-    if ( !dh.m_IsProt ) {
+    if ( !m_Context->IsProt() ) {
         TSeqPos a, c, g, t, other;
         dh.GetCounts(a, c, g, t, other);
         oss << ' ' << a << " A; " << c << " C; " << g << " G; " << t << " T; "
@@ -245,13 +246,13 @@ void CFlatEMBLFormatter::FormatDataHeader(const SFlatDataHeader& dh)
 }
 
 
-void CFlatEMBLFormatter::FormatData(const SFlatData& data)
+void CFlatEMBLFormatter::FormatData(const CFlatData& data)
 {
     static const TSeqPos kChunkSize = 1200; // 20 lines
 
     string     buf;
-    CSeqVector v = m_Context->m_Handle.GetSequenceView
-        (*data.m_Loc, CBioseq_Handle::eViewConstructed,
+    CSeqVector v = m_Context->GetHandle().GetSequenceView
+        (data.GetLoc(), CBioseq_Handle::eViewConstructed,
          CBioseq_Handle::eCoding_Iupac);
     for (TSeqPos pos = 0;  pos < v.size();  pos += kChunkSize) {
         list<string>    lines;
@@ -274,22 +275,22 @@ void CFlatEMBLFormatter::FormatData(const SFlatData& data)
         }
         NStr::Split(CNcbiOstrstreamToString(oss), "\n", lines);
         // should use narrower location
-        m_Stream->AddParagraph(lines, data.m_Loc);
+        m_Stream->AddParagraph(lines, &data.GetLoc());
     }
 }
 
 
-void CFlatEMBLFormatter::FormatContig(const SFlatContig& contig)
+void CFlatEMBLFormatter::FormatContig(const CFlatContig& contig)
 {
     x_AddXX();
     list<string> l;
-    Wrap(l, "CO", SFlatLoc(*contig.m_Loc, *m_Context).m_String);
+    Wrap(l, "CO", CFlatLoc(contig.GetLoc(), *m_Context).GetString());
     m_Stream->AddParagraph
-        (l, &m_Context->m_Handle.GetBioseqCore()->GetInst().GetExt());
+        (l, &m_Context->GetHandle().GetBioseqCore()->GetInst().GetExt());
 }
 
 
-void CFlatEMBLFormatter::FormatWGSRange(const SFlatWGSRange& range)
+void CFlatEMBLFormatter::FormatWGSRange(const CFlatWGSRange& range)
 {
     // Done as comment (no corresponding line type)
     x_AddXX();
@@ -297,27 +298,27 @@ void CFlatEMBLFormatter::FormatWGSRange(const SFlatWGSRange& range)
     if (DoHTML()) {
         Wrap(l, "CC",
              "WGS: <a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?"
-             "db=Nucleotide&cmd=Search&term=" + range.m_First + ':'
-             + range.m_Last + "[ACCN]\">" + range.m_First + "-" + range.m_Last
-             + "</a>");
+             "db=Nucleotide&cmd=Search&term=" + range.GetFirstID() + ':'
+             + range.GetLastID() + "[ACCN]\">"
+             + range.GetFirstID() + "-" + range.GetLastID() + "</a>");
     } else {
-        Wrap(l, "CC", "WGS: " + range.m_First + "-" + range.m_Last);
+        Wrap(l, "CC", "WGS: " + range.GetFirstID() + "-" + range.GetLastID());
     }
-    m_Stream->AddParagraph(l, range.m_UO);
+    m_Stream->AddParagraph(l, &range.GetUserObject());
 }
 
 
-void CFlatEMBLFormatter::FormatGenomeInfo(const SFlatGenomeInfo& g)
+void CFlatEMBLFormatter::FormatGenomeInfo(const CFlatGenomeInfo& g)
 {
     // Done as comment (no corresponding line type)
     x_AddXX();
     list<string> l;
-    string s = "GENOME: " + g.m_Accession;
-    if ( !g.m_Moltype.empty()) {
-        s += " (" + g.m_Moltype + ')';
+    string s = "GENOME: " + g.GetAccession();
+    if ( !g.GetMoltype().empty()) {
+        s += " (" + g.GetMoltype() + ')';
     }
     Wrap(l, "CC", s);
-    m_Stream->AddParagraph(l, g.m_UO);
+    m_Stream->AddParagraph(l, &g.GetUserObject());
 }
 
 
@@ -340,6 +341,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/03/21 18:49:17  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.2  2003/03/11 15:37:51  kuznets
 * iterate -> ITERATE
 *

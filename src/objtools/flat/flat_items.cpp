@@ -62,9 +62,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-SFlatKeywords::SFlatKeywords(const SFlatContext& ctx)
+CFlatKeywords::CFlatKeywords(const CFlatContext& ctx)
 {
-    for (CSeqdesc_CI it(ctx.m_Handle);  it;  ++it) {
+    for (CSeqdesc_CI it(ctx.GetHandle());  it;  ++it) {
         switch (it->Which()) {
         // Grr, MSVC won't let me handle everything with a single template.
         case CSeqdesc::e_Pir:
@@ -114,9 +114,9 @@ SFlatKeywords::SFlatKeywords(const SFlatContext& ctx)
 }
 
 
-SFlatSource::SFlatSource(const SFlatContext& ctx)
+CFlatSource::CFlatSource(const CFlatContext& ctx)
 {
-    for (CSeqdesc_CI it(ctx.m_Handle);  it;  ++it) {
+    for (CSeqdesc_CI it(ctx.GetHandle());  it;  ++it) {
         switch (it->Which()) {
         case CSeqdesc::e_Org:
         case CSeqdesc::e_Source:
@@ -146,14 +146,14 @@ SFlatSource::SFlatSource(const SFlatContext& ctx)
 }
 
 
-SFlatComment::SFlatComment(const SFlatContext& ctx)
+CFlatComment::CFlatComment(const CFlatContext& ctx)
 {
     string delim;
-    for (CSeqdesc_CI it(ctx.m_Handle, CSeqdesc::e_Comment);  it;  ++it) {
+    for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Comment);  it;  ++it) {
         m_Comment += delim + it->GetComment();
         delim = '\n';
     }
-    for (CFeat_CI it(ctx.m_Handle.GetScope(), *ctx.m_Location,
+    for (CFeat_CI it(ctx.GetHandle().GetScope(), ctx.GetLocation(),
                      CSeqFeatData::e_Comment);
          it;  ++it) {
         if (it->IsSetComment()) { // ought to be, but just in case...
@@ -164,10 +164,10 @@ SFlatComment::SFlatComment(const SFlatContext& ctx)
 }
 
 
-SFlatPrimary::SFlatPrimary(const SFlatContext& ctx)
-    : m_IsRefSeq(ctx.m_IsRefSeq)
+CFlatPrimary::CFlatPrimary(const CFlatContext& ctx)
+    : m_IsRefSeq(ctx.IsRefSeq())
 {
-    const CSeq_inst& inst = ctx.m_Handle.GetBioseqCore()->GetInst();
+    const CSeq_inst& inst = ctx.GetHandle().GetBioseqCore()->GetInst();
     if ( !inst.IsSetHist()  ||  !inst.GetHist().IsSetAssembly()) {
         return;
     }
@@ -189,7 +189,7 @@ SFlatPrimary::SFlatPrimary(const SFlatContext& ctx)
 }
 
 
-const char* SFlatPrimary::GetHeader(void) const
+const char* CFlatPrimary::GetHeader(void) const
 {
     if (m_IsRefSeq) {
         return
@@ -201,7 +201,7 @@ const char* SFlatPrimary::GetHeader(void) const
 }
 
 
-string& SFlatPrimary::SPiece::Format(string& s) const
+string& CFlatPrimary::SPiece::Format(string& s) const
 {
     s += NStr::IntToString(m_Span.GetFrom()) + '-'
         + NStr::IntToString(m_Span.GetTo());
@@ -216,7 +216,7 @@ string& SFlatPrimary::SPiece::Format(string& s) const
 }
 
 
-void SFlatDataHeader::GetCounts(TSeqPos& a, TSeqPos& c, TSeqPos& g, TSeqPos& t,
+void CFlatDataHeader::GetCounts(TSeqPos& a, TSeqPos& c, TSeqPos& g, TSeqPos& t,
                                 TSeqPos& other) const
 {
     if ( !m_IsProt
@@ -249,9 +249,9 @@ void SFlatDataHeader::GetCounts(TSeqPos& a, TSeqPos& c, TSeqPos& g, TSeqPos& t,
 }
 
 
-SFlatWGSRange::SFlatWGSRange(const SFlatContext& ctx)
+CFlatWGSRange::CFlatWGSRange(const CFlatContext& ctx)
 {
-    for (CSeqdesc_CI desc(ctx.m_Handle, CSeqdesc::e_User);  desc;  ++desc) {
+    for (CSeqdesc_CI desc(ctx.GetHandle(), CSeqdesc::e_User);  desc;  ++desc) {
         const CUser_object& uo = desc->GetUser();
         if ( !uo.GetType().IsStr()
             ||  NStr::CompareNocase(uo.GetType().GetStr(), "WGSProjects")) {
@@ -279,20 +279,20 @@ SFlatWGSRange::SFlatWGSRange(const SFlatContext& ctx)
     if (m_First.empty()  ||  m_Last.empty()) {
         // complain?
         // reconstruct from other info
-        SIZE_TYPE digit_pos = ctx.m_Accession.find_first_of("0123456789");
-        string    prefix    = ctx.m_Accession.substr(0, digit_pos + 2);
+        SIZE_TYPE digit_pos = ctx.GetAccession().find_first_of("0123456789");
+        string    prefix    = ctx.GetAccession().substr(0, digit_pos + 2);
         m_First = prefix + "000001";
         CNcbiOstrstream oss;
         oss << prefix << setw(6) << setfill('0')
-            << ctx.m_Handle.GetBioseqCore()->GetInst().GetLength();
+            << ctx.GetHandle().GetBioseqCore()->GetInst().GetLength();
         m_Last = CNcbiOstrstreamToString(oss);
     }
 }
 
 
-SFlatGenomeInfo::SFlatGenomeInfo(const SFlatContext& ctx)
+CFlatGenomeInfo::CFlatGenomeInfo(const CFlatContext& ctx)
 {
-    for (CSeqdesc_CI desc(ctx.m_Handle, CSeqdesc::e_User);  desc;  ++desc) {
+    for (CSeqdesc_CI desc(ctx.GetHandle(), CSeqdesc::e_User);  desc;  ++desc) {
         const CUser_object& uo = desc->GetUser();
         if ( !uo.GetType().IsStr()
             ||  NStr::CompareNocase(uo.GetType().GetStr(), "GenomeProject")) {
@@ -306,10 +306,10 @@ SFlatGenomeInfo::SFlatGenomeInfo(const SFlatContext& ctx)
             const string& label = (*it)->GetLabel().GetStr();
             if        ( !NStr::CompareNocase(label, "accession") ) {
                 // san-check
-                m_Accession = (*it)->GetData().GetStr();
+                m_Accession = &(*it)->GetData().GetStr();
             } else if ( !NStr::CompareNocase(label, "Moltype") ) {
                 // san-check
-                m_Moltype   = (*it)->GetData().GetStr();
+                m_Moltype   = &(*it)->GetData().GetStr();
             }
         }
         if ( !m_UO ) {
@@ -328,6 +328,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/03/21 18:49:17  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.3  2003/03/11 15:37:51  kuznets
 * iterate -> ITERATE
 *

@@ -35,13 +35,11 @@
 #include <objects/flat/flat_head.hpp>
 
 #include <corelib/ncbiutil.hpp>
-#include <serial/enumvalues.hpp>
 #include <serial/iterator.hpp>
 
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Bioseq.hpp>
-#include <objects/seqblock/EMBL_block.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seqblock/PDB_block.hpp>
 #include <objects/seqblock/PDB_replace.hpp>
@@ -65,7 +63,7 @@ BEGIN_SCOPE(objects)
 
 
 inline
-void SFlatHead::x_AddDate(const CDate& date)
+void CFlatHead::x_AddDate(const CDate& date)
 {
     if (m_UpdateDate.Empty()
         ||  date.Compare(*m_UpdateDate) == CDate::eCompare_after) {
@@ -78,28 +76,29 @@ void SFlatHead::x_AddDate(const CDate& date)
 }
 
 
-SFlatHead::SFlatHead(SFlatContext& ctx)
+CFlatHead::CFlatHead(CFlatContext& ctx)
     : m_Strandedness(CSeq_inst::eStrand_not_set),
       m_Topology    (CSeq_inst::eTopology_not_set),
+      m_GBDivision  (0),
       m_Context     (&ctx)
 {
-    CScope&                     scope = ctx.m_Handle.GetScope();
-    CBioseq_Handle::TBioseqCore seq   = ctx.m_Handle.GetBioseqCore();
+    CScope&                     scope = ctx.GetHandle().GetScope();
+    CBioseq_Handle::TBioseqCore seq   = ctx.GetHandle().GetBioseqCore();
     ctx.m_PrimaryID = FindBestChoice(seq->GetId(), CSeq_id::Score);
-    ctx.m_Accession = ctx.m_PrimaryID->GetSeqIdString(true);
+    ctx.m_Accession = ctx.GetPrimaryID().GetSeqIdString(true);
     {{
-        const CTextseq_id* tsid = m_Context->m_PrimaryID->GetTextseq_Id();
+        const CTextseq_id* tsid = ctx.GetPrimaryID().GetTextseq_Id();
         if (tsid  &&  tsid->IsSetName()) {
             m_Locus = tsid->GetName();
         } else if (tsid  &&  tsid->IsSetAccession()) {
             m_Locus = tsid->GetAccession();
         } else {
             // complain?
-            m_Locus = m_Context->m_PrimaryID->GetSeqIdString(false);
+            m_Locus = ctx.GetPrimaryID().GetSeqIdString(false);
         }
     }}
     ITERATE (CBioseq::TId, it, seq->GetId()) {
-        if (*it != ctx.m_PrimaryID) {
+        if (*it != &ctx.GetPrimaryID()) {
             m_OtherIDs.push_back(*it);
         }
         switch ((*it)->Which()) {
@@ -131,26 +130,25 @@ SFlatHead::SFlatHead(SFlatContext& ctx)
         m_Topology     = inst.GetTopology();
     }}
 
-    ctx.m_Length = sequence::GetLength(*ctx.m_Location, &scope);
-    m_Definition = sequence::GetTitle(ctx.m_Handle);
+    ctx.m_Length = sequence::GetLength(ctx.GetLocation(), &scope);
+    m_Definition = sequence::GetTitle(ctx.GetHandle());
     if ( !NStr::EndsWith(m_Definition, ".") ) {
         m_Definition += '.';
     }
-    if (ctx.m_IsProt) { // populate m_SourceIDs
+    if (ctx.IsProt()) { // populate m_SourceIDs
         x_AddDBSource();
     }
 
-    IFlatFormatter::EDatabase db = ctx.m_Formatter->GetDatabase();
-    for (CSeqdesc_CI it(ctx.m_Handle);  it;  ++it) {
+    for (CSeqdesc_CI it(ctx.GetHandle());  it;  ++it) {
         switch (it->Which()) {
             // bother translating old GIBB-* data?
         case CSeqdesc::e_Org:
         case CSeqdesc::e_Source:
-            if (m_Division.empty()  &&  db != IFlatFormatter::eDB_EMBL) {
+            if ( !m_GBDivision ) {
                 // iterate to deal with hybrids
                 for (CTypeConstIterator<COrgName> orgn(*it);  orgn;  ++orgn) {
                     if (orgn->IsSetDiv()) {
-                        m_Division = orgn->GetDiv();
+                        m_GBDivision = &orgn->GetDiv();
                         BREAK(orgn);
                     }
                 }
@@ -168,8 +166,8 @@ SFlatHead::SFlatHead(SFlatContext& ctx)
             if (gb.IsSetEntry_date()) {
                 x_AddDate(gb.GetEntry_date());
             }
-            if (db != IFlatFormatter::eDB_EMBL  &&  gb.IsSetDiv()) {
-                m_Division = gb.GetDiv();
+            if (gb.IsSetDiv()) {
+                m_GBDivision = &gb.GetDiv();
             }
             break;
         }
@@ -197,9 +195,8 @@ SFlatHead::SFlatHead(SFlatContext& ctx)
         case CSeqdesc::e_Embl:
         {
             const CEMBL_block& embl = it->GetEmbl();
-            if (db == IFlatFormatter::eDB_EMBL  &&  embl.IsSetDiv()) {
-                m_Division = CEMBL_block::GetTypeInfo_enum_EDiv()
-                    ->FindName(embl.GetDiv(), true);
+            if (embl.IsSetDiv()) {
+                m_EMBLDivision = embl.GetDiv();
             }
             x_AddDate(embl.GetCreation_date()); // mandatory field
             x_AddDate(embl.GetUpdate_date()); // mandatory field
@@ -242,12 +239,12 @@ SFlatHead::SFlatHead(SFlatContext& ctx)
 }
 
 
-const char* SFlatHead::GetMolString(void) const
+const char* CFlatHead::GetMolString(void) const
 {
-    const IFlatFormatter& f = *m_Context->m_Formatter;
+    const IFlatFormatter& f = m_Context->GetFormatter();
     if (f.GetDatabase() == IFlatFormatter::eDB_EMBL
         &&  f.GetMode() <= IFlatFormatter::eMode_Entrez) {
-        switch (m_Context->m_Biomol) {
+        switch (m_Context->GetBiomol()) {
         case CMolInfo::eBiomol_genomic:
         case CMolInfo::eBiomol_other_genetic:
         case CMolInfo::eBiomol_genomic_mRNA:
@@ -268,7 +265,7 @@ const char* SFlatHead::GetMolString(void) const
             return "AA ";
 
         default:
-            switch (m_Context->m_Mol) {
+            switch (m_Context->GetMol()) {
             case CSeq_inst::eMol_dna: return "DNA";
             case CSeq_inst::eMol_rna: return "RNA";
             case CSeq_inst::eMol_aa:  return "AA ";
@@ -276,7 +273,7 @@ const char* SFlatHead::GetMolString(void) const
             }
         }
     } else {
-        switch (m_Context->m_Biomol) {
+        switch (m_Context->GetBiomol()) {
         case CMolInfo::eBiomol_genomic:          return "DNA";
         case CMolInfo::eBiomol_pre_RNA:          return "RNA";
         case CMolInfo::eBiomol_mRNA:             return "mRNA";
@@ -291,7 +288,7 @@ const char* SFlatHead::GetMolString(void) const
         case CMolInfo::eBiomol_snoRNA:           return "snoRNA";
         case CMolInfo::eBiomol_transcribed_RNA:  return "RNA";
         default:
-            switch (m_Context->m_Mol) {
+            switch (m_Context->GetMol()) {
             case CSeq_inst::eMol_dna: return "DNA";
             case CSeq_inst::eMol_rna: return "RNA";
             case CSeq_inst::eMol_aa:  return " AA";
@@ -318,9 +315,9 @@ static int s_ScoreForDBSource(const CRef<CSeq_id>& x) {
 }
 
 
-void SFlatHead::x_AddDBSource(void)
+void CFlatHead::x_AddDBSource(void)
 {
-    CBioseq_Handle::TBioseqCore seq = m_Context->m_Handle.GetBioseqCore();
+    CBioseq_Handle::TBioseqCore seq = m_Context->GetHandle().GetBioseqCore();
     const CSeq_id* id = FindBestChoice(seq->GetId(), s_ScoreForDBSource);
 
     if ( !id ) {
@@ -360,11 +357,11 @@ void SFlatHead::x_AddDBSource(void)
     case CSeq_id::e_Tpg: case CSeq_id::e_Tpe: case CSeq_id::e_Tpd:
     {
         set<CBioseq_Handle> sources;
-        CScope&             scope = m_Context->m_Handle.GetScope();
-        for (CFeat_CI it(scope, *m_Context->m_Location,
+        CScope&             scope = m_Context->GetHandle().GetScope();
+        for (CFeat_CI it(scope, m_Context->GetLocation(),
                          CSeqFeatData::e_not_set,
-                         SAnnotSelector::eOverlap_Intervals, CFeat_CI::eResolve_TSE,
-                         CFeat_CI::e_Product);
+                         SAnnotSelector::eOverlap_Intervals,
+                         CFeat_CI::eResolve_TSE, CFeat_CI::e_Product);
              it;  ++it) {
             for (CTypeConstIterator<CSeq_id> id2(it->GetLocation());
                  id2;  ++id2) {
@@ -387,7 +384,7 @@ void SFlatHead::x_AddDBSource(void)
 }
 
 
-string SFlatHead::x_FormatDBSourceID(const CSeq_id& id) {
+string CFlatHead::x_FormatDBSourceID(const CSeq_id& id) {
     switch (id.Which()) {
     case CSeq_id::e_Local:
     {
@@ -410,7 +407,7 @@ string SFlatHead::x_FormatDBSourceID(const CSeq_id& id) {
         }
         if (pdb.IsSetRel()) {
             s += sep + "release ";
-            m_Context->m_Formatter->FormatDate(pdb.GetRel(), s);
+            m_Context->GetFormatter().FormatDate(pdb.GetRel(), s);
             sep = ",";
         }
         return s;
@@ -442,7 +439,7 @@ string SFlatHead::x_FormatDBSourceID(const CSeq_id& id) {
                 acc += '.' + NStr::IntToString(tsid->GetVersion());
             }
             s += comma + sep + "accession "
-                + m_Context->m_Formatter->GetAccnLink(acc);
+                + m_Context->GetFormatter().GetAccnLink(acc);
             sep = " ";
         }
         if (tsid->IsSetRelease()) {
@@ -457,9 +454,10 @@ string SFlatHead::x_FormatDBSourceID(const CSeq_id& id) {
 }
 
 
-void SFlatHead::x_AddPIRBlock(void)
+void CFlatHead::x_AddPIRBlock(void)
 {
-    for (CSeqdesc_CI dsc(m_Context->m_Handle, CSeqdesc::e_Pir);  dsc;  ++dsc) {
+    for (CSeqdesc_CI dsc(m_Context->GetHandle(), CSeqdesc::e_Pir);
+         dsc;  ++dsc) {
         m_ProteinBlock = &*dsc;
         break;
     }
@@ -526,9 +524,10 @@ void SFlatHead::x_AddPIRBlock(void)
 }
 
 
-void SFlatHead::x_AddSPBlock(void)
+void CFlatHead::x_AddSPBlock(void)
 {
-    for (CSeqdesc_CI dsc(m_Context->m_Handle, CSeqdesc::e_Sp);  dsc;  ++dsc) {
+    for (CSeqdesc_CI dsc(m_Context->GetHandle(), CSeqdesc::e_Sp);
+         dsc;  ++dsc) {
         m_ProteinBlock = &*dsc;
         break;
     }
@@ -593,7 +592,7 @@ void SFlatHead::x_AddSPBlock(void)
             }
             if (s) {
                 string acc = (*it)->GetSeqIdString(true);
-                xrefs.push_back(s + m_Context->m_Formatter->GetAccnLink(acc));
+                xrefs.push_back(s +m_Context->GetFormatter().GetAccnLink(acc));
             }
         }
         if ( !xrefs.empty() ) {
@@ -621,9 +620,10 @@ void SFlatHead::x_AddSPBlock(void)
 }
 
 
-void SFlatHead::x_AddPRFBlock(void)
+void CFlatHead::x_AddPRFBlock(void)
 {
-    for (CSeqdesc_CI dsc(m_Context->m_Handle, CSeqdesc::e_Prf);  dsc;  ++dsc) {
+    for (CSeqdesc_CI dsc(m_Context->GetHandle(), CSeqdesc::e_Prf);
+         dsc;  ++dsc) {
         m_ProteinBlock = &*dsc;
         break;
     }
@@ -655,9 +655,10 @@ void SFlatHead::x_AddPRFBlock(void)
 }
 
 
-void SFlatHead::x_AddPDBBlock(void)
+void CFlatHead::x_AddPDBBlock(void)
 {
-    for (CSeqdesc_CI dsc(m_Context->m_Handle, CSeqdesc::e_Pdb);  dsc;  ++dsc) {
+    for (CSeqdesc_CI dsc(m_Context->GetHandle(), CSeqdesc::e_Pdb);
+         dsc;  ++dsc) {
         m_ProteinBlock = &*dsc;
         break;
     }
@@ -667,7 +668,7 @@ void SFlatHead::x_AddPDBBlock(void)
     const CPDB_block& pdb = m_ProteinBlock->GetPdb();
     {{
         string s("deposition: ");
-        m_Context->m_Formatter->FormatDate(pdb.GetDeposition(), s);
+        m_Context->GetFormatter().FormatDate(pdb.GetDeposition(), s);
         m_DBSource.push_back(s);
     }}
     m_DBSource.push_back("class: " + pdb.GetClass());
@@ -684,7 +685,7 @@ void SFlatHead::x_AddPDBBlock(void)
                 ("ids replaced: " + NStr::Join(pdb.GetSource(), ", "));
         }
         string s("replacement date: ");
-        m_Context->m_Formatter->FormatDate(rep.GetDate(), s);
+        m_Context->GetFormatter().FormatDate(rep.GetDate(), s);
         m_DBSource.push_back(s);
     }
     NON_CONST_ITERATE (list<string>, it, m_DBSource) {
@@ -700,6 +701,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/03/21 18:49:17  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.3  2003/03/18 21:56:06  grichenk
 * Removed obsolete class CAnnot_CI
 *

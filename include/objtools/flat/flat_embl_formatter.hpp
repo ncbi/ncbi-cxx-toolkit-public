@@ -52,21 +52,21 @@ public:
 protected:    
     EDatabase GetDatabase(void) const { return eDB_EMBL; }
 
-    void FormatHead      (const SFlatHead& head);
-    void FormatKeywords  (const SFlatKeywords& keys);
-    void FormatSegment   (const SFlatSegment& seg);
-    void FormatSource    (const SFlatSource& source);
-    void FormatReference (const SFlatReference& ref);
-    void FormatComment   (const SFlatComment& comment);
-    void FormatPrimary   (const SFlatPrimary& prim); // TPAs
+    void FormatHead      (const CFlatHead& head);
+    void FormatKeywords  (const CFlatKeywords& keys);
+    void FormatSegment   (const CFlatSegment& seg);
+    void FormatSource    (const CFlatSource& source);
+    void FormatReference (const CFlatReference& ref);
+    void FormatComment   (const CFlatComment& comment);
+    void FormatPrimary   (const CFlatPrimary& prim); // TPAs
     void FormatFeatHeader(void);
-    // void FormatFeature   (const SFlatFeature& feat);
-    void FormatDataHeader(const SFlatDataHeader& dh);
-    void FormatData      (const SFlatData& data);
+    // void FormatFeature   (const CFlatFeature& feat);
+    void FormatDataHeader(const CFlatDataHeader& dh);
+    void FormatData      (const CFlatData& data);
     // alternatives to DataHeader + Data...
-    void FormatContig    (const SFlatContig& contig);
-    void FormatWGSRange  (const SFlatWGSRange& range);
-    void FormatGenomeInfo(const SFlatGenomeInfo& g); // NS_*
+    void FormatContig    (const CFlatContig& contig);
+    void FormatWGSRange  (const CFlatWGSRange& range);
+    void FormatGenomeInfo(const CFlatGenomeInfo& g); // NS_*
 
     string& Pad(const string& s, string& out, EPadContext where);
 
@@ -108,6 +108,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/21 18:47:47  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.1  2003/03/10 16:39:08  ucko
 * Initial check-in of new flat-file generator
 *

@@ -47,22 +47,28 @@ BEGIN_SCOPE(objects)
 
 
 // low-level formatted qualifier
-struct SFlatQual : public CObject
+class CFlatQual : public CObject
 {
+public:
     enum EStyle {
         eEmpty,   // /name [value ignored]
         eQuoted,  // /name="value"
         eUnquoted // /name=value
     };
 
-    SFlatQual(const string& name, const string& value, EStyle style = eQuoted)
+    CFlatQual(const string& name, const string& value, EStyle style = eQuoted)
         : m_Name(name), m_Value(value), m_Style(style)
         { }
 
+    const string& GetName (void) const { return m_Name;  }
+    const string& GetValue(void) const { return m_Value; }
+    EStyle        GetStyle(void) const { return m_Style; }
+
+private:
     string m_Name, m_Value;
     EStyle m_Style;
 };
-typedef vector<CRef<SFlatQual> > TFlatQuals;
+typedef vector<CRef<CFlatQual> > TFlatQuals;
 
 
 // abstract qualifier value -- see flat_quals.hpp for derived classes
@@ -76,34 +82,48 @@ public:
     typedef int TFlags; // binary OR of EFlags
 
     virtual void Format(TFlatQuals& quals, const string& name,
-                        SFlatContext& ctx, TFlags flags = 0) const = 0;
+                        CFlatContext& ctx, TFlags flags = 0) const = 0;
 
 protected:
     static void x_AddFQ(TFlatQuals& q, const string& n, const string& v,
-                        SFlatQual::EStyle st = SFlatQual::eQuoted)
-        { q.push_back(CRef<SFlatQual>(new SFlatQual(n, v, st))); }
+                        CFlatQual::EStyle st = CFlatQual::eQuoted)
+        { q.push_back(CRef<CFlatQual>(new CFlatQual(n, v, st))); }
 };
 
 
-struct SFlatFeature : public CObject
+class CFlatFeature : public CObject
 {
-    string                   m_Key;
-    CRef<SFlatLoc>           m_Loc;
-    vector<CRef<SFlatQual> > m_Quals;
-    CConstRef<CSeq_feat>     m_Feat;
+public:
+    CFlatFeature(const string& key, const CFlatLoc& loc, const CSeq_feat& feat)
+        : m_Key(key), m_Loc(&loc), m_Feat(&feat) { }
+
+    typedef vector<CRef<CFlatQual> > TQuals;
+
+    const string&    GetKey  (void) const { return m_Key;   }
+    const CFlatLoc&  GetLoc  (void) const { return *m_Loc;  }
+    const TQuals&    GetQuals(void) const { return m_Quals; }
+    const CSeq_feat& GetFeat (void) const { return *m_Feat; }
+
+    TQuals& SetQuals(void) { return m_Quals; }
+
+private:
+    string               m_Key;
+    CConstRef<CFlatLoc>  m_Loc;
+    TQuals               m_Quals;
+    CConstRef<CSeq_feat> m_Feat;
 };
 
 
 class IFlattishFeature : public IFlatItem
 {
 public:
-    CRef<SFlatFeature> Format(void) const;
+    CRef<CFlatFeature> Format(void) const;
     void Format(IFlatFormatter& f) const { f.FormatFeature(*Format()); }
     bool operator<(const IFlattishFeature& f2) const 
         { return m_Feat->Compare(*f2.m_Feat, *m_Loc, *f2.m_Loc) < 0; }
 
 protected:
-    IFlattishFeature(const CSeq_feat& feat, SFlatContext& ctx,
+    IFlattishFeature(const CSeq_feat& feat, CFlatContext& ctx,
                      const CSeq_loc* loc = 0)
         : m_Feat(&feat), m_Context(&ctx),
           m_Loc(loc ? loc : &feat.GetLocation())
@@ -113,21 +133,21 @@ protected:
     virtual void x_FormatQuals(void) const = 0;
 
     CConstRef<CSeq_feat>        m_Feat;
-    mutable CRef<SFlatContext>  m_Context;
+    mutable CRef<CFlatContext>  m_Context;
     // below fields populated on demand
     mutable CConstRef<CSeq_loc> m_Loc;
-    mutable CRef<SFlatFeature>  m_FF; // cached here
+    mutable CRef<CFlatFeature>  m_FF; // cached here
 };
 
 
 class CFlattishFeature : public IFlattishFeature
 {
 public:
-    CFlattishFeature(const CSeq_feat& feat, SFlatContext& ctx,
+    CFlattishFeature(const CSeq_feat& feat, CFlatContext& ctx,
                      const CSeq_loc* loc = 0, bool is_product = false)
         : IFlattishFeature(feat, ctx, loc), m_IsProduct(is_product)
         { }
-    CFlattishFeature(const CMappedFeat& feat, SFlatContext& ctx,
+    CFlattishFeature(const CMappedFeat& feat, CFlatContext& ctx,
                      const CSeq_loc* loc = 0, bool is_product = false)
         : IFlattishFeature(feat.GetOriginalFeature(), ctx,
                            loc ? loc : &feat.GetLocation()),
@@ -163,18 +183,18 @@ private:
 class CFlattishSourceFeature : public IFlattishFeature
 {
 public:
-    CFlattishSourceFeature(const CSeq_feat& feat, SFlatContext& ctx,
+    CFlattishSourceFeature(const CSeq_feat& feat, CFlatContext& ctx,
                            const CSeq_loc* loc = 0)
         : IFlattishFeature(feat, ctx, loc), m_WasDesc(false)
         { }
-    CFlattishSourceFeature(const CMappedFeat& feat, SFlatContext& ctx,
+    CFlattishSourceFeature(const CMappedFeat& feat, CFlatContext& ctx,
                            const CSeq_loc* loc = 0)
         : IFlattishFeature(feat.GetOriginalFeature(), ctx,
                            loc ? loc : &feat.GetLocation()),
           m_WasDesc(false)
         { }
-    CFlattishSourceFeature(const CBioSource& src, SFlatContext& ctx);
-    CFlattishSourceFeature(const COrg_ref& org,   SFlatContext& ctx);
+    CFlattishSourceFeature(const CBioSource& src, CFlatContext& ctx);
+    CFlattishSourceFeature(const COrg_ref& org,   CFlatContext& ctx);
 
 private:
     void x_AddQuals(void)                  const;
@@ -206,8 +226,9 @@ private:
 
 inline
 CFlattishSourceFeature::CFlattishSourceFeature(const CBioSource& src,
-                                               SFlatContext& ctx)
-    : IFlattishFeature(*new CSeq_feat, ctx, ctx.m_Location), m_WasDesc(true)
+                                               CFlatContext& ctx)
+    : IFlattishFeature(*new CSeq_feat, ctx, &ctx.GetLocation()),
+      m_WasDesc(true)
 {
     CSeq_feat& feat = const_cast<CSeq_feat&>(*m_Feat);
     feat.SetData().SetBiosrc(const_cast<CBioSource&>(src));
@@ -217,8 +238,9 @@ CFlattishSourceFeature::CFlattishSourceFeature(const CBioSource& src,
 
 inline
 CFlattishSourceFeature::CFlattishSourceFeature(const COrg_ref& org,
-                                               SFlatContext& ctx)
-    : IFlattishFeature(*new CSeq_feat, ctx, ctx.m_Location), m_WasDesc(true)
+                                               CFlatContext& ctx)
+    : IFlattishFeature(*new CSeq_feat, ctx, &ctx.GetLocation()),
+      m_WasDesc(true)
 {
     CSeq_feat& feat = const_cast<CSeq_feat&>(*m_Feat);
     feat.SetData().SetOrg(const_cast<COrg_ref&>(org));
@@ -234,7 +256,7 @@ void CFlattishFeature::x_FormatQual(EFeatureQualifier slot, const string& name,
     pair<TQCI, TQCI> range
         = const_cast<const TQuals&>(m_Quals).equal_range(slot);
     for (TQCI it = range.first;  it != range.second;  ++it) {
-        it->second->Format(m_FF->m_Quals, name, *m_Context, flags);
+        it->second->Format(m_FF->SetQuals(), name, *m_Context, flags);
     }
 }
 
@@ -248,7 +270,7 @@ void CFlattishSourceFeature::x_FormatQual(ESourceQualifier slot,
     pair<TQCI, TQCI> range
         = const_cast<const TQuals&>(m_Quals).equal_range(slot);
     for (TQCI it = range.first;  it != range.second;  ++it) {
-        it->second->Format(m_FF->m_Quals, name, *m_Context,
+        it->second->Format(m_FF->SetQuals(), name, *m_Context,
                            flags | IFlatQV::fIsSource);
     }
 }
@@ -261,6 +283,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/21 18:47:47  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.1  2003/03/10 16:39:08  ucko
 * Initial check-in of new flat-file generator
 *

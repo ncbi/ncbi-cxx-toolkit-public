@@ -42,7 +42,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-SFlatLoc::SFlatLoc(const CSeq_loc& loc, SFlatContext& ctx)
+CFlatLoc::CFlatLoc(const CSeq_loc& loc, CFlatContext& ctx)
 {
     if (&loc == ctx.m_CachedLoc  &&  ctx.m_CachedFlatLoc != 0) {
         *this = *ctx.m_CachedFlatLoc;
@@ -63,8 +63,8 @@ SFlatLoc::SFlatLoc(const CSeq_loc& loc, SFlatContext& ctx)
 }
 
 
-void SFlatLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
-                     SFlatContext& ctx)
+void CFlatLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
+                     CFlatContext& ctx)
 {
     string accn;
     switch (loc.Which()) {
@@ -78,8 +78,8 @@ void SFlatLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
     {
         x_AddID(loc.GetWhole(), oss, ctx, &accn);
         TSeqPos l;
-        if (accn == ctx.m_Accession) {
-            l = ctx.m_Handle.GetBioseqCore()->GetInst().GetLength();
+        if (accn == ctx.GetAccession()) {
+            l = ctx.GetHandle().GetBioseqCore()->GetInst().GetLength();
         } else {
             l = sequence::GetLength(loc.GetWhole());
         }
@@ -161,14 +161,14 @@ void SFlatLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
 
     default:
         NCBI_THROW(CException, eUnknown,
-                   "SFlatLoc::SFlatloc: unsupported (sub)location type "
+                   "CFlatLoc::CFlatloc: unsupported (sub)location type "
                    + NStr::IntToString(loc.Which()));
     }
 }
 
 
-void SFlatLoc::x_Add(const CSeq_interval& si, CNcbiOstrstream& oss,
-                     SFlatContext& ctx)
+void CFlatLoc::x_Add(const CSeq_interval& si, CNcbiOstrstream& oss,
+                     CFlatContext& ctx)
 {
     string  accn;
     TSeqPos from = si.GetFrom(), to = si.GetTo();
@@ -189,14 +189,14 @@ void SFlatLoc::x_Add(const CSeq_interval& si, CNcbiOstrstream& oss,
 }
 
 
-void SFlatLoc::x_AddPnt(TSeqPos pnt, const CInt_fuzz* fuzz,
-                        CNcbiOstrstream& oss, SFlatContext& ctx)
+void CFlatLoc::x_AddPnt(TSeqPos pnt, const CInt_fuzz* fuzz,
+                        CNcbiOstrstream& oss, CFlatContext& ctx)
 {
     // need to convert to 1-based coordinates
     if (fuzz == 0) {
         oss << pnt + 1;
     } else if (fuzz->IsLim()) {
-        bool h = ctx.m_Formatter->DoHTML();
+        bool h = ctx.GetFormatter().DoHTML();
         switch (fuzz->GetLim()) {
         case CInt_fuzz::eLim_gt: oss << (h ? "&gt;" : ">") << pnt + 1; break;
         case CInt_fuzz::eLim_lt: oss << (h ? "&lt;" : "<") << pnt + 1; break;
@@ -248,7 +248,7 @@ void SFlatLoc::x_AddPnt(TSeqPos pnt, const CInt_fuzz* fuzz,
 }
 
 
-void SFlatLoc::x_AddInt(TSeqPos from, TSeqPos to, const string& accn)
+void CFlatLoc::x_AddInt(TSeqPos from, TSeqPos to, const string& accn)
 {
     // need to convert to 1-based coordinates
     SInterval ival;
@@ -259,12 +259,12 @@ void SFlatLoc::x_AddInt(TSeqPos from, TSeqPos to, const string& accn)
 }
 
 
-void SFlatLoc::x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
-                       SFlatContext& ctx, string* s)
+void CFlatLoc::x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
+                       CFlatContext& ctx, string* s)
 {
     const CSeq_id& id2 = ctx.GetPreferredSynonym(id);
     string         acc = id2.GetSeqIdString(true);
-    if (&id2 != ctx.m_PrimaryID) {
+    if (&id2 != &ctx.GetPrimaryID()) {
         oss << acc << ':';
     }
     if (s) {
@@ -280,6 +280,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/03/21 18:49:17  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.3  2003/03/11 17:00:21  ucko
 * Delimit join(...) elements with ", \b" as a hint to NStr::Wrap.
 *

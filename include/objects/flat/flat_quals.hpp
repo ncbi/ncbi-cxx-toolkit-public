@@ -54,8 +54,8 @@ class CFlatBoolQV : public IFlatQV
 {
 public:
     CFlatBoolQV(bool value) : m_Value(value) { }
-    void Format(TFlatQuals& q, const string& n, SFlatContext&, TFlags) const
-        { if (m_Value) { x_AddFQ(q, n, kEmptyStr, SFlatQual::eEmpty); } }
+    void Format(TFlatQuals& q, const string& n, CFlatContext&, TFlags) const
+        { if (m_Value) { x_AddFQ(q, n, kEmptyStr, CFlatQual::eEmpty); } }
 
 private:
     bool m_Value;
@@ -66,8 +66,8 @@ class CFlatIntQV : public IFlatQV
 {
 public:
     CFlatIntQV(int value) : m_Value(value) { }
-    void Format(TFlatQuals& q, const string& n, SFlatContext&, TFlags) const
-        { x_AddFQ(q, n, NStr::IntToString(m_Value), SFlatQual::eUnquoted); }
+    void Format(TFlatQuals& q, const string& n, CFlatContext&, TFlags) const
+        { x_AddFQ(q, n, NStr::IntToString(m_Value), CFlatQual::eUnquoted); }
 
 private:
     int m_Value;
@@ -82,14 +82,14 @@ class CFlatStringQV : public IFlatQV
 {
 public:
     CFlatStringQV(const string& value,
-                  SFlatQual::EStyle style = SFlatQual::eQuoted)
+                  CFlatQual::EStyle style = CFlatQual::eQuoted)
         : m_Value(value), m_Style(style) { }
-    void Format(TFlatQuals& quals, const string& name, SFlatContext& ctx,
+    void Format(TFlatQuals& quals, const string& name, CFlatContext& ctx,
                 TFlags flags) const;
 
 private:
     string            m_Value;
-    SFlatQual::EStyle m_Style;
+    CFlatQual::EStyle m_Style;
 };
 
 
@@ -97,7 +97,7 @@ class CFlatCodeBreakQV : public IFlatQV
 {
 public:
     CFlatCodeBreakQV(const CCdregion::TCode_break value) : m_Value(value) { }
-    void Format(TFlatQuals& quals, const string& name, SFlatContext& ctx,
+    void Format(TFlatQuals& quals, const string& name, CFlatContext& ctx,
                 TFlags flags) const;
 
 private:
@@ -110,7 +110,7 @@ class CFlatCodonQV : public IFlatQV
 public:
     CFlatCodonQV(unsigned int codon, unsigned char aa, bool is_ascii = true);
     CFlatCodonQV(const string& value); // for imports
-    void Format(TFlatQuals& quals, const string& name, SFlatContext& ctx,
+    void Format(TFlatQuals& quals, const string& name, CFlatContext& ctx,
                 TFlags flags) const;
 
 private:
@@ -123,7 +123,7 @@ class CFlatExpEvQV : public IFlatQV
 {
 public:
     CFlatExpEvQV(CSeq_feat::TExp_ev value) : m_Value(value) { }
-    void Format(TFlatQuals& quals, const string& name, SFlatContext& ctx,
+    void Format(TFlatQuals& quals, const string& name, CFlatContext& ctx,
                 TFlags flags) const;
 
 private:
@@ -135,7 +135,7 @@ class CFlatIllegalQV : public IFlatQV
 {
 public:
     CFlatIllegalQV(const CGb_qual& value) : m_Value(&value) { }
-    void Format(TFlatQuals& quals, const string& name, SFlatContext& ctx,
+    void Format(TFlatQuals& quals, const string& name, CFlatContext& ctx,
                 TFlags flags) const;
 
 private:
@@ -147,7 +147,7 @@ class CFlatLabelQV : public CFlatStringQV
 {
 public:
     CFlatLabelQV(const string& value)
-        : CFlatStringQV(value, SFlatQual::eUnquoted) { }
+        : CFlatStringQV(value, CFlatQual::eUnquoted) { }
     // XXX - should override Format to check syntax
 };
 
@@ -159,7 +159,7 @@ public:
     typedef CSeq_inst::TMol   TMol;
 
     CFlatMolTypeQV(TBiomol biomol, TMol mol) : m_Biomol(biomol), m_Mol(mol) { }
-    void Format(TFlatQuals& quals, const string& name, SFlatContext& ctx,
+    void Format(TFlatQuals& quals, const string& name, CFlatContext& ctx,
                 TFlags flags) const;
 
 private:
@@ -172,7 +172,7 @@ class CFlatOrgModQV : public IFlatQV
 {
 public:
     CFlatOrgModQV(const COrgMod& value) : m_Value(&value) { }
-    void Format(TFlatQuals& quals, const string& name, SFlatContext& ctx,
+    void Format(TFlatQuals& quals, const string& name, CFlatContext& ctx,
                 TFlags flags) const;
 
 private:
@@ -184,7 +184,7 @@ class CFlatOrganelleQV : public IFlatQV
 {
 public:
     CFlatOrganelleQV(CBioSource::TGenome value) : m_Value(value) { }
-    void Format(TFlatQuals& quals, const string& name, SFlatContext& ctx,
+    void Format(TFlatQuals& quals, const string& name, CFlatContext& ctx,
                 TFlags flags) const;
 
 private:
@@ -196,7 +196,7 @@ class CFlatPubSetQV : public IFlatQV
 {
 public:
     CFlatPubSetQV(const CPub_set& value) : m_Value(&value) { }
-    void Format(TFlatQuals& quals, const string& name, SFlatContext& ctx,
+    void Format(TFlatQuals& quals, const string& name, CFlatContext& ctx,
                 TFlags flags) const;
 
 private:
@@ -208,7 +208,7 @@ class CFlatSeqDataQV : public IFlatQV
 {
 public:
     CFlatSeqDataQV(const CSeq_loc& value) : m_Value(&value) { }
-    void Format(TFlatQuals& quals, const string& name, SFlatContext& ctx,
+    void Format(TFlatQuals& quals, const string& name, CFlatContext& ctx,
                 TFlags flags) const;
 
 private:
@@ -220,7 +220,7 @@ class CFlatSeqIdQV : public IFlatQV
 {
 public:
     CFlatSeqIdQV(const CSeq_id& value) : m_Value(&value) { }
-    void Format(TFlatQuals& quals, const string& name, SFlatContext& ctx,
+    void Format(TFlatQuals& quals, const string& name, CFlatContext& ctx,
                 TFlags flags) const;
 
 private:
@@ -232,9 +232,9 @@ class CFlatSeqLocQV : public IFlatQV
 {
 public:
     CFlatSeqLocQV(const CSeq_loc& value) : m_Value(&value) { }
-    void Format(TFlatQuals& q, const string& n, SFlatContext& ctx,
+    void Format(TFlatQuals& q, const string& n, CFlatContext& ctx,
                 TFlags) const
-        { x_AddFQ(q, n, SFlatLoc(*m_Value, ctx).m_String); }
+        { x_AddFQ(q, n, CFlatLoc(*m_Value, ctx).GetString()); }
 
 private:
     CConstRef<CSeq_loc> m_Value;
@@ -245,7 +245,7 @@ class CFlatSubSourceQV : public IFlatQV
 {
 public:
     CFlatSubSourceQV(const CSubSource& value) : m_Value(&value) { }
-    void Format(TFlatQuals& quals, const string& name, SFlatContext& ctx,
+    void Format(TFlatQuals& quals, const string& name, CFlatContext& ctx,
                 TFlags flags) const;
 
 private:
@@ -258,7 +258,7 @@ class CFlatXrefQV : public IFlatQV
 public:
     typedef CSeq_feat::TDbxref TXref;
     CFlatXrefQV(const TXref& value) : m_Value(value) { }
-    void Format(TFlatQuals& quals, const string& name, SFlatContext& ctx,
+    void Format(TFlatQuals& quals, const string& name, CFlatContext& ctx,
                 TFlags flags) const;
 
 private:
@@ -276,6 +276,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/21 18:47:47  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.1  2003/03/10 16:39:08  ucko
 * Initial check-in of new flat-file generator
 *

@@ -36,7 +36,10 @@
 
 #include <objects/flat/flat_formatter.hpp>
 
+#include <serial/enumvalues.hpp>
+
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/seqblock/EMBL_block.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -44,31 +47,29 @@ BEGIN_SCOPE(objects)
 
 // Ultimately split into several paragraphs in a format-dependent manner
 // (e.g., LOCUS, DEFINITION, ACCESSION, [PID,] VERSION, DBSOURCE for GenPept)
-struct SFlatHead : public IFlatItem
+class CFlatHead : public IFlatItem
 {
 public:
     // also fills in some fields of ctx, which we don't bother duplicating
-    SFlatHead(SFlatContext& ctx);
+    CFlatHead(CFlatContext& ctx);
     void Format(IFlatFormatter& f) const { f.FormatHead(*this); }
 
+    typedef CEMBL_block::TDiv    TEMBLDiv;
     typedef CSeq_inst::TStrand   TStrand;
     typedef CSeq_inst::TTopology TTopology;
 
-    string              m_Locus;
-    TStrand             m_Strandedness;
-    TTopology           m_Topology;
-    string              m_Division; // XXX -- varies with format
-    CConstRef<CDate>    m_UpdateDate;
-    CConstRef<CDate>    m_CreateDate;
-    string              m_Definition;
-    CBioseq::TId        m_OtherIDs; // current
-    list<string>        m_SecondaryIDs; // predecessors
-    list<string>        m_DBSource; // for proteins; relatively free-form
-    CConstRef<CSeqdesc> m_ProteinBlock;
-
-    CRef<SFlatContext> m_Context;
-
-    const char*          GetMolString(void) const;
+    const string&       GetLocus       (void) const { return m_Locus;         }
+    TStrand             GetStrandedness(void) const { return m_Strandedness;  }
+    const char*         GetMolString   (void) const;
+    TTopology           GetTopology    (void) const { return m_Topology;      }
+    string              GetDivision    (void) const;
+    const CDate&        GetUpdateDate  (void) const { return *m_UpdateDate;   }
+    const CDate&        GetCreateDate  (void) const { return *m_CreateDate;   }
+    const string        GetDefinition  (void) const { return m_Definition;    }
+    const CBioseq::TId& GetOtherIDs    (void) const { return m_OtherIDs;      }
+    const list<string>& GetSecondaryIDs(void) const { return m_SecondaryIDs;  }
+    const list<string>& GetDBSource    (void) const { return m_DBSource;      }
+    const CSeqdesc*     GetProteinBlock(void) const { return m_ProteinBlock;  }
 
 private:
     void x_AddDate(const CDate& date);
@@ -80,7 +81,36 @@ private:
     void x_AddSPBlock(void);
     void x_AddPRFBlock(void);
     void x_AddPDBBlock(void);
+
+    string              m_Locus;
+    TStrand             m_Strandedness;
+    TTopology           m_Topology;
+    const string*       m_GBDivision;
+    TEMBLDiv            m_EMBLDivision;
+    CConstRef<CDate>    m_UpdateDate;
+    CConstRef<CDate>    m_CreateDate;
+    string              m_Definition;
+    CBioseq::TId        m_OtherIDs; // current
+    list<string>        m_SecondaryIDs; // predecessors
+    list<string>        m_DBSource; // for proteins; relatively free-form
+    CConstRef<CSeqdesc> m_ProteinBlock;
+
+    CRef<CFlatContext>  m_Context;
 };
+
+
+inline
+string CFlatHead::GetDivision(void) const
+{
+    if (m_Context->GetFormatter().GetDatabase() == IFlatFormatter::eDB_EMBL) {
+        return CEMBL_block::GetTypeInfo_enum_EDiv()->FindName
+            (m_EMBLDivision, true);
+    } else if (m_GBDivision) {
+        return *m_GBDivision;
+    } else {
+        return "UNK";
+    }
+}
 
 
 END_SCOPE(objects)
@@ -90,6 +120,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/21 18:47:47  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.1  2003/03/10 16:39:08  ucko
 * Initial check-in of new flat-file generator
 *

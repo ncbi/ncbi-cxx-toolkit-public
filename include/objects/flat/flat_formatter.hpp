@@ -108,11 +108,11 @@ public:
 
     // Users should *not* normally supply context!
     void Format(const CSeq_entry& entry, IFlatItemOStream& out,
-                TFilterFlags flags = 0, SFlatContext* context = 0);
+                TFilterFlags flags = 0, CFlatContext* context = 0);
     void Format(const CBioseq& seq, IFlatItemOStream& out,
-                SFlatContext* context = 0);
+                CFlatContext* context = 0);
     void Format(const CSeq_loc& loc, bool adjust_coords,
-                IFlatItemOStream& out, SFlatContext* context = 0);
+                IFlatItemOStream& out, CFlatContext* context = 0);
 
     bool              DoHTML     (void) const
         { return (m_Flags & fProduceHTML) != 0; }
@@ -122,23 +122,23 @@ public:
     void AddItem(CConstRef<IFlatItem> i) { i->Format(*this); }
 
     // callbacks for the items to use
-    virtual void BeginSequence   (SFlatContext& ctx)
+    virtual void BeginSequence   (CFlatContext& ctx)
         { m_Context.Reset(&ctx);  m_Context->m_Formatter = this; }
-    virtual void FormatHead      (const SFlatHead& head)       = 0;
-    virtual void FormatKeywords  (const SFlatKeywords& keys)   = 0;
-    virtual void FormatSegment   (const SFlatSegment& seg)     = 0;
-    virtual void FormatSource    (const SFlatSource& source)   = 0;
-    virtual void FormatReference (const SFlatReference& ref)   = 0;
-    virtual void FormatComment   (const SFlatComment& comment) = 0;
-    virtual void FormatPrimary   (const SFlatPrimary& prim)    = 0; // TPAs
+    virtual void FormatHead      (const CFlatHead& head)       = 0;
+    virtual void FormatKeywords  (const CFlatKeywords& keys)   = 0;
+    virtual void FormatSegment   (const CFlatSegment& seg)     = 0;
+    virtual void FormatSource    (const CFlatSource& source)   = 0;
+    virtual void FormatReference (const CFlatReference& ref)   = 0;
+    virtual void FormatComment   (const CFlatComment& comment) = 0;
+    virtual void FormatPrimary   (const CFlatPrimary& prim)    = 0; // TPAs
     virtual void FormatFeatHeader(void)                        = 0;
-    virtual void FormatFeature   (const SFlatFeature& feat)    = 0;
-    virtual void FormatDataHeader(const SFlatDataHeader& dh)   = 0;
-    virtual void FormatData      (const SFlatData& data)       = 0;
+    virtual void FormatFeature   (const CFlatFeature& feat)    = 0;
+    virtual void FormatDataHeader(const CFlatDataHeader& dh)   = 0;
+    virtual void FormatData      (const CFlatData& data)       = 0;
     // alternatives to DataHeader + Data...
-    virtual void FormatContig    (const SFlatContig& contig)   = 0;
-    virtual void FormatWGSRange  (const SFlatWGSRange& range)  = 0;
-    virtual void FormatGenomeInfo(const SFlatGenomeInfo& g)    = 0; // NS_*
+    virtual void FormatContig    (const CFlatContig& contig)   = 0;
+    virtual void FormatWGSRange  (const CFlatWGSRange& range)  = 0;
+    virtual void FormatGenomeInfo(const CFlatGenomeInfo& g)    = 0; // NS_*
     virtual void EndSequence     (void)                        = 0;
 
     enum ETildeStyle {
@@ -157,13 +157,13 @@ protected:
     EMode              m_Mode;
     EStyle             m_Style;
     TFlags             m_Flags;
-    CRef<SFlatContext> m_Context; // for sequence currently being formatted
+    CRef<CFlatContext> m_Context; // for sequence currently being formatted
 
 private:
     bool x_FormatSegments(const CBioseq& seq, IFlatItemOStream& out,
-                          SFlatContext& ctx);
-    void x_FormatReferences(SFlatContext& ctx, IFlatItemOStream& out);
-    void x_FormatFeatures(SFlatContext& ctx, IFlatItemOStream& out,
+                          CFlatContext& ctx);
+    void x_FormatReferences(CFlatContext& ctx, IFlatItemOStream& out);
+    void x_FormatFeatures(CFlatContext& ctx, IFlatItemOStream& out,
                           bool source);
 };
 
@@ -209,6 +209,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/03/21 18:47:47  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.2  2003/03/10 22:00:20  ucko
 * Add a redundant "!= 0" to DoHTML to suppress a MSVC warning.
 *

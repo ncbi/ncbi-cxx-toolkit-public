@@ -48,26 +48,25 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CRef<SFlatFeature> IFlattishFeature::Format(void) const
+CRef<CFlatFeature> IFlattishFeature::Format(void) const
 {
     // extremely rough cut for now -- qualifiers still in progress!
     if (m_FF) {
         return m_FF;
     }
 
-    m_FF.Reset(new SFlatFeature);
-    m_FF->m_Key = m_Feat->GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
-    m_FF->m_Loc.Reset(new SFlatLoc(*m_Loc, *m_Context));
+    m_FF.Reset(new CFlatFeature
+               (m_Feat->GetData().GetKey(CSeqFeatData::eVocabulary_genbank),
+                *new CFlatLoc(*m_Loc, *m_Context), *m_Feat));
     x_AddQuals();
     x_FormatQuals();
-    m_FF->m_Feat = m_Feat;
     return m_FF;
 }
 
 
 void CFlattishFeature::x_AddQuals(void) const
 {
-    CScope&             scope = m_Context->m_Handle.GetScope();
+    CScope&             scope = m_Context->GetHandle().GetScope();
     const CSeqFeatData& data  = m_Feat->GetData();
     m_Type = data.GetSubtype();
     // add various generic qualifiers...
@@ -79,7 +78,7 @@ void CFlattishFeature::x_AddQuals(void) const
             x_AddQual(eFQ_coded_by, new CFlatSeqLocQV(m_Feat->GetLocation()));
         } else {
             CBioseq_Handle prod = scope.GetBioseqHandle(m_Feat->GetProduct());
-            if ( !m_Context->m_IsProt ) {
+            if ( !m_Context->IsProt() ) {
                 EFeatureQualifier slot
                     = ((prod.GetBioseqCore()->GetInst().GetMol()
                         == CSeq_inst::eMol_aa)
@@ -196,7 +195,7 @@ void CFlattishFeature::x_AddQuals(const CCdregion& cds) const
     if (m_IsProduct) {
         return; // We don't need directions when we have the sequence!
     }
-    CScope& scope = m_Context->m_Handle.GetScope();
+    CScope& scope = m_Context->GetHandle().GetScope();
     CConstRef<CSeq_feat> prod
         = sequence::GetBestOverlappingFeat(m_Feat->GetProduct(),
                                            CSeqFeatData::e_Prot,
@@ -215,8 +214,8 @@ void CFlattishFeature::x_AddQuals(const CCdregion& cds) const
         if (id == 255) { // none found, so substitute default
             id = 1;
         }
-        if (id != 1
-            ||  dynamic_cast<CFlatGBSeqFormatter*>(m_Context->m_Formatter)) {
+        if (id != 1  ||
+            dynamic_cast<CFlatGBSeqFormatter*>(&m_Context->GetFormatter())) {
             x_AddQual(eFQ_transl_table, new CFlatIntQV(id));
         }
         const string& ncbieaa = cds.GetCode().GetNcbieaa();
@@ -349,7 +348,7 @@ void CFlattishFeature::x_ImportQuals(const CSeq_feat::TQual& quals) const
             // XXX -- each of these should really get its own class
             // (to verify correct syntax)
             x_AddQual(slot, new CFlatStringQV((*it)->GetVal(),
-                                              SFlatQual::eUnquoted));
+                                              CFlatQual::eUnquoted));
             break;
         case eFQ_label:
             x_AddQual(slot, new CFlatLabelQV((*it)->GetVal()));
@@ -369,7 +368,7 @@ void CFlattishFeature::x_ImportQuals(const CSeq_feat::TQual& quals) const
 
 void CFlattishFeature::x_FormatQuals(void) const
 {
-    m_FF->m_Quals.reserve(m_Quals.size());
+    m_FF->SetQuals().reserve(m_Quals.size());
 
 #define DO_QUAL(x) x_FormatQual(eFQ_##x, #x)
     DO_QUAL(partial);
@@ -481,7 +480,7 @@ void CFlattishSourceFeature::x_AddQuals(void) const
     _ASSERT(data.IsOrg()  ||  data.IsBiosrc());
     // add various generic qualifiers...
     x_AddQual(eSQ_mol_type,
-              new CFlatMolTypeQV(m_Context->m_Biomol, m_Context->m_Mol));
+              new CFlatMolTypeQV(m_Context->GetBiomol(), m_Context->GetMol()));
     if (m_Feat->IsSetComment()) {
         x_AddQual(eSQ_seqfeat_note, new CFlatStringQV(m_Feat->GetComment()));
     }
@@ -635,7 +634,7 @@ void CFlattishSourceFeature::x_AddQuals(const CBioSource& src) const
 
 void CFlattishSourceFeature::x_FormatQuals(void) const
 {
-    m_FF->m_Quals.reserve(m_Quals.size());
+    m_FF->SetQuals().reserve(m_Quals.size());
 
 #define DO_QUAL(x) x_FormatQual(eSQ_##x, #x)
     DO_QUAL(organism);
@@ -755,6 +754,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/03/21 18:49:17  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.3  2003/03/11 15:37:51  kuznets
 * iterate -> ITERATE
 *

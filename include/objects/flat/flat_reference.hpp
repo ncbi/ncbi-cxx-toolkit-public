@@ -61,7 +61,7 @@ class CPub_equiv;
 class CPub_set;
 class CTitle;
 
-struct SFlatReference : public IFlatItem
+class CFlatReference : public IFlatItem
 {
 public:
     enum ECategory {
@@ -71,10 +71,10 @@ public:
         eSubmission   // direct submission
     };
 
-    SFlatReference(const CPubdesc& pub, const CSeq_loc* loc,
-                   const SFlatContext& ctx);
+    CFlatReference(const CPubdesc& pub, const CSeq_loc* loc,
+                   const CFlatContext& ctx);
     // also drops duplicates and cleans up remaining items
-    static void Sort(vector<CRef<SFlatReference> >& v, SFlatContext& ctx);
+    static void Sort(vector<CRef<CFlatReference> >& v, CFlatContext& ctx);
 
     void Format (IFlatFormatter& f)  const;
     bool Matches(const CPub_set& ps) const;
@@ -85,13 +85,23 @@ public:
     string GetMedlineURL(int muid) const { return x_GetURL(muid); }
     string GetPubMedURL (int pmid) const { return x_GetURL(pmid); }
 
-    string GetRange(const SFlatContext& ctx) const;
+    string GetRange(const CFlatContext& ctx) const;
 
     // typically has to go through m_Pub(desc), since we don't want to store
     // format-dependent strings
-    void GetTitles(string& title, string& journal, const SFlatContext& ctx)
+    void GetTitles(string& title, string& journal, const CFlatContext& ctx)
         const;
 
+    const CPubdesc&     GetPubdesc   (void) const { return *m_Pubdesc;   }
+    const CSeq_loc&     GetLoc       (void) const { return *m_Loc;       }
+    const set<int>&     GetPMIDs     (void) const { return m_PMIDs;      }
+    const set<int>&     GetMUIDs     (void) const { return m_MUIDs;      }
+    int                 GetSerial    (void) const { return m_Serial;     }
+    const list<string>& GetAuthors   (void) const { return m_Authors;    }
+    const string&       GetConsortium(void) const { return m_Consortium; }
+    const string&       GetRemark    (void) const { return m_Remark;     }
+
+private: // XXX - many of these should become pointers
     CConstRef<CPubdesc>  m_Pubdesc;
     CConstRef<CPub>      m_Pub; // main entry
     CConstRef<CSeq_loc>  m_Loc; // null if from a descriptor
@@ -110,22 +120,21 @@ public:
     CConstRef<CDate>     m_Date;
     string               m_Remark;
 
-private:
     static string x_GetURL(int id);
 
-    void x_Init(const CPub&           pub,  const SFlatContext& ctx);
-    void x_Init(const CCit_gen&       gen,  const SFlatContext& ctx);
-    void x_Init(const CCit_sub&       sub,  const SFlatContext& ctx);
-    void x_Init(const CMedline_entry& mle,  const SFlatContext& ctx);
-    void x_Init(const CCit_art&       art,  const SFlatContext& ctx);
-    void x_Init(const CCit_jour&      jour, const SFlatContext& ctx);
-    void x_Init(const CCit_book&      book, const SFlatContext& ctx);
-    void x_Init(const CCit_pat&       pat,  const SFlatContext& ctx);
-    void x_Init(const CCit_let&       man,  const SFlatContext& ctx);
+    void x_Init(const CPub&           pub,  const CFlatContext& ctx);
+    void x_Init(const CCit_gen&       gen,  const CFlatContext& ctx);
+    void x_Init(const CCit_sub&       sub,  const CFlatContext& ctx);
+    void x_Init(const CMedline_entry& mle,  const CFlatContext& ctx);
+    void x_Init(const CCit_art&       art,  const CFlatContext& ctx);
+    void x_Init(const CCit_jour&      jour, const CFlatContext& ctx);
+    void x_Init(const CCit_book&      book, const CFlatContext& ctx);
+    void x_Init(const CCit_pat&       pat,  const CFlatContext& ctx);
+    void x_Init(const CCit_let&       man,  const CFlatContext& ctx);
 
     void x_AddAuthors(const CAuth_list& auth);
-    void x_SetJournal(const CTitle& title, const SFlatContext& ctx);
-    void x_AddImprint(const CImprint& imp, const SFlatContext& ctx);
+    void x_SetJournal(const CTitle& title, const CFlatContext& ctx);
+    void x_AddImprint(const CImprint& imp, const CFlatContext& ctx);
 };
 
 
@@ -134,7 +143,7 @@ private:
 // INLINE METHODS
 
 
-inline string SFlatReference::x_GetURL(int id)
+inline string CFlatReference::x_GetURL(int id)
 {
     return "http://www.ncbi.nlm.nih.gov/entrez/utils/qmap.cgi?uid="
         + NStr::IntToString(id) + "&form=6&db=m&Dopt=r";
@@ -147,6 +156,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/21 18:47:47  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.1  2003/03/10 16:39:08  ucko
 * Initial check-in of new flat-file generator
 *

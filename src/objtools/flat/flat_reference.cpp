@@ -120,8 +120,8 @@ static void s_FormatAffil(const CAffil& affil, string& result)
 }
 
 
-SFlatReference::SFlatReference(const CPubdesc& pub, const CSeq_loc* loc,
-                               const SFlatContext& ctx)
+CFlatReference::CFlatReference(const CPubdesc& pub, const CSeq_loc* loc,
+                               const CFlatContext& ctx)
     : m_Pubdesc(&pub), m_Loc(loc), m_Category(eUnknown), m_Serial(0)
 {
     ITERATE (CPub_equiv::Tdata, it, pub.GetPub().Get()) {
@@ -136,7 +136,7 @@ SFlatReference::SFlatReference(const CPubdesc& pub, const CSeq_loc* loc,
 }
 
 
-void SFlatReference::Sort(vector<CRef<SFlatReference> >& v, SFlatContext& ctx)
+void CFlatReference::Sort(vector<CRef<CFlatReference> >& v, CFlatContext& ctx)
 {
     // XXX -- implement!
 
@@ -147,9 +147,9 @@ void SFlatReference::Sort(vector<CRef<SFlatReference> >& v, SFlatContext& ctx)
 }
 
 
-string SFlatReference::GetRange(const SFlatContext& ctx) const
+string CFlatReference::GetRange(const CFlatContext& ctx) const
 {
-    bool is_embl = ctx.m_Formatter->GetDatabase() == IFlatFormatter::eDB_EMBL;
+    bool is_embl = ctx.GetFormatter().GetDatabase() == IFlatFormatter::eDB_EMBL;
     if (is_embl  &&  m_Loc.Empty()) {
         return kEmptyStr;
     }
@@ -159,12 +159,12 @@ string SFlatReference::GetRange(const SFlatContext& ctx) const
     }
     string delim;
     const char* to = is_embl ? "-" : " to ";
-    for (CSeq_loc_CI it(m_Loc ? *m_Loc : *ctx.m_Location);  it;  ++it) {
+    for (CSeq_loc_CI it(m_Loc ? *m_Loc : ctx.GetLocation());  it;  ++it) {
         CSeq_loc_CI::TRange range = it.GetRange();
         if (it.IsWhole()) {
-            range.SetTo
-                (sequence::GetLength(it.GetSeq_id(), &ctx.m_Handle.GetScope())
-                 - 1);
+            range.SetTo(sequence::GetLength(it.GetSeq_id(),
+                                            &ctx.GetHandle().GetScope())
+                        - 1);
         }
         if (it.IsPoint()) {
             oss << range.GetFrom() + 1;
@@ -180,8 +180,8 @@ string SFlatReference::GetRange(const SFlatContext& ctx) const
 }
 
 
-void SFlatReference::GetTitles(string& title, string& journal,
-                               const SFlatContext& ctx) const
+void CFlatReference::GetTitles(string& title, string& journal,
+                               const CFlatContext& ctx) const
 {
     // XXX - kludged for now (should move more logic from x_Init to here)
     title = m_Title;
@@ -190,12 +190,12 @@ void SFlatReference::GetTitles(string& title, string& journal,
         return;
     }
 
-    if (ctx.m_Formatter->GetDatabase() == IFlatFormatter::eDB_EMBL) {
-        if (m_Category == SFlatReference::eSubmission) {
+    if (ctx.GetFormatter().GetDatabase() == IFlatFormatter::eDB_EMBL) {
+        if (m_Category == CFlatReference::eSubmission) {
             journal = "Submitted ";
             if (m_Date) {
                 journal += '(';
-                ctx.m_Formatter->FormatDate(*m_Date, journal);
+                ctx.GetFormatter().FormatDate(*m_Date, journal);
                 journal += ") ";
             }
             journal += "to the EMBL/GenBank/DDBJ databases.\n" + m_Journal;
@@ -214,11 +214,11 @@ void SFlatReference::GetTitles(string& title, string& journal,
             }
         }
     } else { // NCBI or DDBJ
-        if (m_Category == SFlatReference::eSubmission) {
+        if (m_Category == CFlatReference::eSubmission) {
             journal = "Submitted ";
             if (m_Date) {
                 journal += '(';
-                ctx.m_Formatter->FormatDate(*m_Date, journal);
+                ctx.GetFormatter().FormatDate(*m_Date, journal);
                 journal += ") ";
             }
             journal += m_Journal;
@@ -244,13 +244,13 @@ void SFlatReference::GetTitles(string& title, string& journal,
 
 
 // can't go in the header, as IFlatFormatter isn't yet known
-void SFlatReference::Format(IFlatFormatter& f) const
+void CFlatReference::Format(IFlatFormatter& f) const
 {
     f.FormatReference(*this);
 }
 
 
-bool SFlatReference::Matches(const CPub_set& ps) const
+bool CFlatReference::Matches(const CPub_set& ps) const
 {
     // compare IDs
     CTypesConstIterator it;
@@ -290,7 +290,7 @@ bool SFlatReference::Matches(const CPub_set& ps) const
 }
 
 
-void SFlatReference::x_Init(const CPub& pub, const SFlatContext& ctx)
+void CFlatReference::x_Init(const CPub& pub, const CFlatContext& ctx)
 {
     switch (pub.Which()) {
     case CPub::e_Gen:      x_Init(pub.GetGen(), ctx);             break;
@@ -314,7 +314,7 @@ void SFlatReference::x_Init(const CPub& pub, const SFlatContext& ctx)
 }
 
 
-void SFlatReference::x_Init(const CCit_gen& gen, const SFlatContext& ctx)
+void CFlatReference::x_Init(const CCit_gen& gen, const CFlatContext& ctx)
 {
     if (gen.IsSetCit()  &&  NStr::CompareNocase(gen.GetCit(), "unpublished")) {
         m_Category = eUnpublished;
@@ -352,7 +352,7 @@ void SFlatReference::x_Init(const CCit_gen& gen, const SFlatContext& ctx)
 }
 
 
-void SFlatReference::x_Init(const CCit_sub& sub, const SFlatContext& /* ctx */)
+void CFlatReference::x_Init(const CCit_sub& sub, const CFlatContext& /* ctx */)
 {
     m_Category = eSubmission;
     x_AddAuthors(sub.GetAuthors());
@@ -370,7 +370,7 @@ void SFlatReference::x_Init(const CCit_sub& sub, const SFlatContext& /* ctx */)
 }
 
 
-void SFlatReference::x_Init(const CMedline_entry& mle, const SFlatContext& ctx)
+void CFlatReference::x_Init(const CMedline_entry& mle, const CFlatContext& ctx)
 {
     m_Category = ePublished;
     if (mle.IsSetUid()) {
@@ -384,7 +384,7 @@ void SFlatReference::x_Init(const CMedline_entry& mle, const SFlatContext& ctx)
 }
 
 
-void SFlatReference::x_Init(const CCit_art& art, const SFlatContext& ctx)
+void CFlatReference::x_Init(const CCit_art& art, const CFlatContext& ctx)
 {
     if (art.IsSetTitle()  &&  !art.GetTitle().Get().empty() ) {
         m_Title = art.GetTitle().GetTitle();
@@ -422,14 +422,14 @@ void SFlatReference::x_Init(const CCit_art& art, const SFlatContext& ctx)
 }
 
 
-void SFlatReference::x_Init(const CCit_jour& jour, const SFlatContext& ctx)
+void CFlatReference::x_Init(const CCit_jour& jour, const CFlatContext& ctx)
 {
     x_SetJournal(jour.GetTitle(), ctx);
     x_AddImprint(jour.GetImp(), ctx);
 }
 
 
-void SFlatReference::x_Init(const CCit_book& book, const SFlatContext& ctx)
+void CFlatReference::x_Init(const CCit_book& book, const CFlatContext& ctx)
 {
     // XXX -- should add more stuff to m_Journal (exactly what depends on
     // the format and whether this is for an article)
@@ -443,12 +443,12 @@ void SFlatReference::x_Init(const CCit_book& book, const SFlatContext& ctx)
 }
 
 
-void SFlatReference::x_Init(const CCit_pat& pat, const SFlatContext& ctx)
+void CFlatReference::x_Init(const CCit_pat& pat, const CFlatContext& ctx)
 {
     m_Title = pat.GetTitle();
     x_AddAuthors(pat.GetAuthors());
     int seqid = 0;
-    ITERATE (CBioseq::TId, it, ctx.m_Handle.GetBioseqCore()->GetId()) {
+    ITERATE (CBioseq::TId, it, ctx.GetHandle().GetBioseqCore()->GetId()) {
         if ((*it)->IsPatent()) {
             seqid = (*it)->GetPatent().GetSeqid();
         }
@@ -459,7 +459,7 @@ void SFlatReference::x_Init(const CCit_pat& pat, const SFlatContext& ctx)
         m_Journal = "Patent: " + pat.GetCountry() + ' ' + pat.GetNumber()
             + '-' + pat.GetDoc_type() + ' ' + NStr::IntToString(seqid);
         if (pat.IsSetDate_issue()) {
-            ctx.m_Formatter->FormatDate(pat.GetDate_issue(), m_Journal);
+            ctx.GetFormatter().FormatDate(pat.GetDate_issue(), m_Journal);
         }
         m_Journal += ';';
     } else {
@@ -468,7 +468,7 @@ void SFlatReference::x_Init(const CCit_pat& pat, const SFlatContext& ctx)
 }
 
 
-void SFlatReference::x_Init(const CCit_let& man, const SFlatContext& ctx)
+void CFlatReference::x_Init(const CCit_let& man, const CFlatContext& ctx)
 {
     x_Init(man.GetCit(), ctx);
     if (man.IsSetType()  &&  man.GetType() == CCit_let::eType_thesis) {
@@ -507,7 +507,7 @@ static string& s_FixMedlineName(string& s)
 }
 
 
-void SFlatReference::x_AddAuthors(const CAuth_list& auth)
+void CFlatReference::x_AddAuthors(const CAuth_list& auth)
 {
     typedef CAuth_list::C_Names TNames;
     const TNames& names = auth.GetNames();
@@ -569,7 +569,7 @@ void SFlatReference::x_AddAuthors(const CAuth_list& auth)
 }
 
 
-void SFlatReference::x_SetJournal(const CTitle& title, const SFlatContext& ctx)
+void CFlatReference::x_SetJournal(const CTitle& title, const CFlatContext& ctx)
 {
     ITERATE (CTitle::Tdata, it, title.Get()) {
         if ((*it)->IsIso_jta()) {
@@ -577,7 +577,7 @@ void SFlatReference::x_SetJournal(const CTitle& title, const SFlatContext& ctx)
             return;
         }
     }
-    if (ctx.m_Formatter->GetMode() == IFlatFormatter::eMode_Release) {
+    if (ctx.GetFormatter().GetMode() == IFlatFormatter::eMode_Release) {
         // complain
     } else if ( !title.Get().empty() ) {
         m_Journal = title.GetTitle();
@@ -585,7 +585,7 @@ void SFlatReference::x_SetJournal(const CTitle& title, const SFlatContext& ctx)
 }
 
 
-void SFlatReference::x_AddImprint(const CImprint& imp, const SFlatContext& ctx)
+void CFlatReference::x_AddImprint(const CImprint& imp, const CFlatContext& ctx)
 {
     if ( !m_Date ) {
         m_Date.Reset(&imp.GetDate());
@@ -640,6 +640,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/03/21 18:49:17  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.4  2003/03/11 15:37:51  kuznets
 * iterate -> ITERATE
 *

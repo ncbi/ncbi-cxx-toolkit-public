@@ -85,19 +85,19 @@ CFlatGBSeqFormatter::~CFlatGBSeqFormatter()
 }
 
 
-void CFlatGBSeqFormatter::BeginSequence(SFlatContext& context)
+void CFlatGBSeqFormatter::BeginSequence(CFlatContext& context)
 {
     IFlatFormatter::BeginSequence(context);
     m_Seq.Reset(new CGBSeq);
 }
 
 
-void CFlatGBSeqFormatter::FormatHead(const SFlatHead& head)
+void CFlatGBSeqFormatter::FormatHead(const CFlatHead& head)
 {
-    m_Seq->SetLocus (head.m_Locus);
-    m_Seq->SetLength(m_Context->m_Length);
+    m_Seq->SetLocus (head.GetLocus());
+    m_Seq->SetLength(m_Context->GetLength());
 
-    switch (head.m_Strandedness) {
+    switch (head.GetStrandedness()) {
     case CSeq_inst::eStrand_ss:
         m_Seq->SetStrandedness(CGBSeq::eStrandedness_single_stranded);
         break;
@@ -113,7 +113,7 @@ void CFlatGBSeqFormatter::FormatHead(const SFlatHead& head)
 
     {{
         CGBSeq::TMoltype mt = CGBSeq::eMoltype_nucleic_acid;
-        switch (m_Context->m_Biomol) {
+        switch (m_Context->GetBiomol()) {
         case CMolInfo::eBiomol_genomic:
         case CMolInfo::eBiomol_other_genetic:
         case CMolInfo::eBiomol_genomic_mRNA:
@@ -135,7 +135,7 @@ void CFlatGBSeqFormatter::FormatHead(const SFlatHead& head)
         case CMolInfo::eBiomol_snoRNA:   mt = CGBSeq::eMoltype_snorna;   break;
 
         default:
-            switch (m_Context->m_Mol) {
+            switch (m_Context->GetMol()) {
             case CSeq_inst::eMol_dna:  mt = CGBSeq::eMoltype_dna;      break;
             case CSeq_inst::eMol_rna:  mt = CGBSeq::eMoltype_rna;      break;
             case CSeq_inst::eMol_aa:   mt = CGBSeq::eMoltype_peptide;  break;
@@ -145,125 +145,125 @@ void CFlatGBSeqFormatter::FormatHead(const SFlatHead& head)
         m_Seq->SetMoltype(mt);
     }}
 
-    if (head.m_Topology == CSeq_inst::eTopology_circular) {
+    if (head.GetTopology() == CSeq_inst::eTopology_circular) {
         m_Seq->SetTopology(CGBSeq::eTopology_circular);
         // otherwise, stays at linear (default)
     }
 
-    m_Seq->SetDivision(head.m_Division);
-    FormatDate(*head.m_UpdateDate, m_Seq->SetUpdate_date());
-    FormatDate(*head.m_CreateDate, m_Seq->SetCreate_date());
-    m_Seq->SetDefinition(head.m_Definition);
-    if (m_Context->m_PrimaryID->GetTextseq_Id()) {
+    m_Seq->SetDivision(head.GetDivision());
+    FormatDate(head.GetUpdateDate(), m_Seq->SetUpdate_date());
+    FormatDate(head.GetCreateDate(), m_Seq->SetCreate_date());
+    m_Seq->SetDefinition(head.GetDefinition());
+    if (m_Context->GetPrimaryID().GetTextseq_Id()) {
         m_Seq->SetPrimary_accession
-            (m_Context->m_PrimaryID->GetSeqIdString(false));
-        m_Seq->SetAccession_version(m_Context->m_Accession);
+            (m_Context->GetPrimaryID().GetSeqIdString(false));
+        m_Seq->SetAccession_version(m_Context->GetAccession());
     }
 
     {{
         // why "other", then?
         CRef<CGBSeqid> id
-            (new CGBSeqid(m_Context->m_PrimaryID->AsFastaString()));
+            (new CGBSeqid(m_Context->GetPrimaryID().AsFastaString()));
         m_Seq->SetOther_seqids().push_back(id);
     }}
-    ITERATE (CBioseq::TId, it, head.m_OtherIDs) {
+    ITERATE (CBioseq::TId, it, head.GetOtherIDs()) {
         CRef<CGBSeqid> id(new CGBSeqid((*it)->AsFastaString()));
         m_Seq->SetOther_seqids().push_back(id);
     }
-    ITERATE (list<string>, it, head.m_SecondaryIDs) {
+    ITERATE (list<string>, it, head.GetSecondaryIDs()) {
         CRef<CGBSecondary_accn> accn(new CGBSecondary_accn(*it));
         m_Seq->SetSecondary_accessions().push_back(accn);
     }
 
-    if ( !head.m_DBSource.empty() ) {
-        m_Seq->SetSource_db(NStr::Join(head.m_DBSource, " "));
+    if ( !head.GetDBSource().empty() ) {
+        m_Seq->SetSource_db(NStr::Join(head.GetDBSource(), " "));
     }
 }
 
 
-void CFlatGBSeqFormatter::FormatKeywords(const SFlatKeywords& keys)
+void CFlatGBSeqFormatter::FormatKeywords(const CFlatKeywords& keys)
 {
-    ITERATE (list<string>, it, keys.m_Keywords) {
+    ITERATE (list<string>, it, keys.GetKeywords()) {
         CRef<CGBKeyword> key(new CGBKeyword(*it));
         m_Seq->SetKeywords().push_back(key);
     }
 }
 
 
-void CFlatGBSeqFormatter::FormatSegment(const SFlatSegment& segment)
+void CFlatGBSeqFormatter::FormatSegment(const CFlatSegment& segment)
 {
-    m_Seq->SetSegment(NStr::IntToString(segment.m_Num) + " of "
-                      + NStr::IntToString(segment.m_Count));
+    m_Seq->SetSegment(NStr::IntToString(segment.GetNum()) + " of "
+                      + NStr::IntToString(segment.GetCount()));
 }
 
 
-void CFlatGBSeqFormatter::FormatSource(const SFlatSource& source)
+void CFlatGBSeqFormatter::FormatSource(const CFlatSource& source)
 {
     {{
-        string name = source.m_FormalName;
-        if ( !source.m_CommonName.empty() ) {
-            name += " (" + source.m_CommonName + ")";
+        string name = source.GetFormalName();
+        if ( !source.GetCommonName().empty() ) {
+            name += " (" + source.GetCommonName() + ")";
         }
         m_Seq->SetSource(name);
     }}
-    m_Seq->SetOrganism(source.m_FormalName);
-    m_Seq->SetTaxonomy(source.m_Lineage);
+    m_Seq->SetOrganism(source.GetFormalName());
+    m_Seq->SetTaxonomy(source.GetLineage());
 }
 
 
-void CFlatGBSeqFormatter::FormatReference(const SFlatReference& ref)
+void CFlatGBSeqFormatter::FormatReference(const CFlatReference& ref)
 {
     CRef<CGBReference> gbref(new CGBReference);
-    gbref->SetReference(NStr::IntToString(ref.m_Serial)
+    gbref->SetReference(NStr::IntToString(ref.GetSerial())
                         + ref.GetRange(*m_Context));
-    ITERATE (list<string>, it, ref.m_Authors) {
+    ITERATE (list<string>, it, ref.GetAuthors()) {
         CRef<CGBAuthor> author(new CGBAuthor(*it));
         gbref->SetAuthors().push_back(author);
     }
-    if ( !ref.m_Consortium.empty() ) {
-        gbref->SetConsortium(ref.m_Consortium);
+    if ( !ref.GetConsortium().empty() ) {
+        gbref->SetConsortium(ref.GetConsortium());
     }
     ref.GetTitles(gbref->SetTitle(), gbref->SetJournal(), *m_Context);
     if ( gbref->GetTitle().empty() ) {
         gbref->ResetTitle();
     }
-    if ( !ref.m_MUIDs.empty() ) {
-        gbref->SetMedline(*ref.m_MUIDs.begin());
+    if ( !ref.GetMUIDs().empty() ) {
+        gbref->SetMedline(*ref.GetMUIDs().begin());
     }
-    if ( !ref.m_PMIDs.empty() ) {
-        gbref->SetPubmed(*ref.m_PMIDs.begin());
+    if ( !ref.GetPMIDs().empty() ) {
+        gbref->SetPubmed(*ref.GetPMIDs().begin());
     }
-    if ( !ref.m_Remark.empty() ) {
-        gbref->SetRemark(ref.m_Remark);
+    if ( !ref.GetRemark().empty() ) {
+        gbref->SetRemark(ref.GetRemark());
     }
     m_Seq->SetReferences().push_back(gbref);
 }
 
 
-void CFlatGBSeqFormatter::FormatComment(const SFlatComment& comment)
+void CFlatGBSeqFormatter::FormatComment(const CFlatComment& comment)
 {
-    if ( !comment.m_Comment.empty() ) {
-        m_Seq->SetComment(comment.m_Comment);
+    if ( !comment.GetComment().empty() ) {
+        m_Seq->SetComment(comment.GetComment());
     }
 }
 
 
-void CFlatGBSeqFormatter::FormatPrimary(const SFlatPrimary& primary)
+void CFlatGBSeqFormatter::FormatPrimary(const CFlatPrimary& primary)
 {
     m_Seq->SetPrimary(primary.GetHeader());
-    ITERATE (SFlatPrimary::TPieces, it, primary.m_Pieces) {
+    ITERATE (CFlatPrimary::TPieces, it, primary.GetPieces()) {
         m_Seq->SetPrimary() += '~';
         it->Format(m_Seq->SetPrimary());
     }
 }
 
 
-void CFlatGBSeqFormatter::FormatFeature(const SFlatFeature& feat)
+void CFlatGBSeqFormatter::FormatFeature(const CFlatFeature& feat)
 {
     CRef<CGBFeature> gbfeat(new CGBFeature);
-    gbfeat->SetKey(feat.m_Key);
-    gbfeat->SetLocation(feat.m_Loc->m_String);
-    ITERATE (vector<SFlatLoc::SInterval>, it, feat.m_Loc->m_Intervals) {
+    gbfeat->SetKey(feat.GetKey());
+    gbfeat->SetLocation(feat.GetLoc().GetString());
+    ITERATE (vector<CFlatLoc::SInterval>, it, feat.GetLoc().GetIntervals()) {
         CRef<CGBInterval> ival(new CGBInterval);
         if (it->m_Range.GetLength() == 1) {
             ival->SetPoint(it->m_Range.GetFrom());
@@ -274,11 +274,11 @@ void CFlatGBSeqFormatter::FormatFeature(const SFlatFeature& feat)
         ival->SetAccession(it->m_Accession);
         gbfeat->SetIntervals().push_back(ival);
     }
-    ITERATE (vector<CRef<SFlatQual> >, it, feat.m_Quals) {
+    ITERATE (vector<CRef<CFlatQual> >, it, feat.GetQuals()) {
         CRef<CGBQualifier> qual(new CGBQualifier);
-        qual->SetName((*it)->m_Name);
-        if ((*it)->m_Style != SFlatQual::eEmpty) {
-            qual->SetValue((*it)->m_Value);
+        qual->SetName((*it)->GetName());
+        if ((*it)->GetStyle() != CFlatQual::eEmpty) {
+            qual->SetValue((*it)->GetValue());
         }
         gbfeat->SetQuals().push_back(qual);
     }
@@ -286,18 +286,18 @@ void CFlatGBSeqFormatter::FormatFeature(const SFlatFeature& feat)
 }
 
 
-void CFlatGBSeqFormatter::FormatData(const SFlatData& data)
+void CFlatGBSeqFormatter::FormatData(const CFlatData& data)
 {
-    CSeqVector v = m_Context->m_Handle.GetSequenceView
-        (*data.m_Loc, CBioseq_Handle::eViewConstructed,
+    CSeqVector v = m_Context->GetHandle().GetSequenceView
+        (data.GetLoc(), CBioseq_Handle::eViewConstructed,
          CBioseq_Handle::eCoding_Iupac);
     v.GetSeqData(0, v.size(), m_Seq->SetSequence());
 }
 
 
-void CFlatGBSeqFormatter::FormatContig(const SFlatContig& contig)
+void CFlatGBSeqFormatter::FormatContig(const CFlatContig& contig)
 {
-    m_Seq->SetContig(SFlatLoc(*contig.m_Loc, *m_Context).m_String);
+    m_Seq->SetContig(CFlatLoc(contig.GetLoc(), *m_Context).GetString());
 }
 
 
@@ -318,6 +318,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/03/21 18:49:17  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.2  2003/03/11 15:37:51  kuznets
 * iterate -> ITERATE
 *

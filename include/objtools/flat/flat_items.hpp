@@ -49,46 +49,59 @@ BEGIN_SCOPE(objects)
 class CFlatForehead : public IFlatItem
 {
 public:
-    CFlatForehead(SFlatContext& ctx) : m_Context(&ctx) { }
+    CFlatForehead(CFlatContext& ctx) : m_Context(&ctx) { }
     void Format(IFlatFormatter& f) const { f.BeginSequence(*m_Context); }
 
 private:
-    mutable CRef<SFlatContext> m_Context;
+    mutable CRef<CFlatContext> m_Context;
 };
 
 
-// SFlatHead split into flat_head.hpp
+// CFlatHead split into flat_head.hpp
 
 
-struct SFlatKeywords : public IFlatItem
+class CFlatKeywords : public IFlatItem
 {
 public:
-    SFlatKeywords(const SFlatContext& ctx);
+    CFlatKeywords(const CFlatContext& ctx);
     void Format(IFlatFormatter& f) const { f.FormatKeywords(*this); }
+    const list<string>& GetKeywords(void) const { return m_Keywords; }
 
+private:
     list<string> m_Keywords;
 };
 
 
-struct SFlatSegment : public IFlatItem
+class CFlatSegment : public IFlatItem
 {
 public:
-    SFlatSegment(const SFlatContext& ctx)
-        : m_Num(ctx.m_SegmentNum), m_Count(ctx.m_SegmentCount) { }
+    CFlatSegment(const CFlatContext& ctx)
+        : m_Num(ctx.GetSegmentNum()), m_Count(ctx.GetSegmentCount()) { }
     void Format(IFlatFormatter& f) const { f.FormatSegment(*this); }
 
+    unsigned int GetNum  (void) const { return m_Num;   }
+    unsigned int GetCount(void) const { return m_Count; }
+
+private:
     unsigned int m_Num, m_Count;
 };
 
 
 // SOURCE/ORGANISM, not source feature
-struct SFlatSource : public IFlatItem
+class CFlatSource : public IFlatItem
 {
 public:
-    SFlatSource(const SFlatContext& ctx);
+    CFlatSource(const CFlatContext& ctx);
     void Format(IFlatFormatter& f) const { f.FormatSource(*this); }
     string GetTaxonomyURL(void) const;
 
+    int             GetTaxID     (void) const { return m_TaxID;       }
+    const string&   GetFormalName(void) const { return m_FormalName;  }
+    const string&   GetCommonName(void) const { return m_FormalName;  }
+    const string&   GetLineage   (void) const { return m_Lineage;     }
+    const CSeqdesc& GetDescriptor(void) const { return *m_Descriptor; }
+
+private:
     int                 m_TaxID;
     string              m_FormalName;
     string              m_CommonName;
@@ -97,23 +110,26 @@ public:
 };
 
 
-// SFlatReference split into flat_reference.hpp
+// CFlatReference split into flat_reference.hpp
 
 
-struct SFlatComment : public IFlatItem
+class CFlatComment : public IFlatItem
 {
 public:
-    SFlatComment(const SFlatContext& ctx);
+    CFlatComment(const CFlatContext& ctx);
     void Format(IFlatFormatter& f) const { f.FormatComment(*this); }
 
+    const string& GetComment(void) const { return m_Comment; }
+
+private:
     string m_Comment;
 };
 
 
-struct SFlatPrimary : public IFlatItem
+class CFlatPrimary : public IFlatItem
 {
 public:
-    SFlatPrimary(const SFlatContext& ctx);
+    CFlatPrimary(const CFlatContext& ctx);
     void Format(IFlatFormatter& f) const { f.FormatPrimary(*this); }
 
     typedef CRange<TSignedSeqPos> TRange;
@@ -128,11 +144,13 @@ public:
     };
     typedef list<SPiece> TPieces;
 
+    // for usual tabular format (even incorporated in GBSet!)
+    const char*    GetHeader(void) const;
+    const TPieces& GetPieces(void) const { return m_Pieces; }
+
+private:
     bool    m_IsRefSeq;
     TPieces m_Pieces;
-
-    // for usual tabular format (even incorporated in GBSet!)
-    const char* GetHeader(void) const;
 };
 
 
@@ -145,14 +163,15 @@ public:
 };
 
 
-// SFlatFeature, CFlattishFeature, etc. split into flat_feature.hpp
+// CFlatFeature, CFlattishFeature, etc. split into flat_feature.hpp
 
 
-struct SFlatDataHeader : public IFlatItem
+class CFlatDataHeader : public IFlatItem
 {
-    SFlatDataHeader(const SFlatContext& ctx)
-        : m_Loc(ctx.m_Location), m_Handle(ctx.m_Handle),
-          m_IsProt(ctx.m_IsProt),
+public:
+    CFlatDataHeader(const CFlatContext& ctx)
+        : m_Loc(&ctx.GetLocation()), m_Handle(ctx.GetHandle()),
+          m_IsProt(ctx.IsProt()),
           m_As(0), m_Cs(0), m_Gs(0), m_Ts(0), m_Others(0)
         { }
     void Format(IFlatFormatter& f) const
@@ -160,6 +179,7 @@ struct SFlatDataHeader : public IFlatItem
     void GetCounts(TSeqPos& a, TSeqPos& c, TSeqPos& g, TSeqPos& t,
                    TSeqPos& other) const;
 
+private:
     CConstRef<CSeq_loc> m_Loc;
     CBioseq_Handle      m_Handle;
     bool                m_IsProt;
@@ -167,42 +187,62 @@ struct SFlatDataHeader : public IFlatItem
 };
 
 
-struct SFlatData : public IFlatItem
+class CFlatData : public IFlatItem
 {
 public:
-    SFlatData(const SFlatContext& ctx) : m_Loc(ctx.m_Location) { }
+    CFlatData(const CFlatContext& ctx) : m_Loc(&ctx.GetLocation()) { }
     void Format(IFlatFormatter& f) const { f.FormatData(*this); }
 
+    const CSeq_loc& GetLoc(void) const { return *m_Loc; }
+
+private:
     CConstRef<CSeq_loc> m_Loc;
 };
 
 
-struct SFlatContig : public IFlatItem
+class CFlatContig : public IFlatItem
 {
-    SFlatContig(const SFlatContext& ctx) : m_Loc(ctx.m_Location) { }
+public:
+    CFlatContig(const CFlatContext& ctx) : m_Loc(&ctx.GetLocation()) { }
     void Format(IFlatFormatter& f) const { f.FormatContig(*this); }
 
+    const CSeq_loc& GetLoc(void) const { return *m_Loc; }
+
+private:
     CConstRef<CSeq_loc> m_Loc;
 };
 
 
-struct SFlatWGSRange : public IFlatItem
+class CFlatWGSRange : public IFlatItem
 {
-    SFlatWGSRange(const SFlatContext& ctx);
+public:
+    CFlatWGSRange(const CFlatContext& ctx);
     void Format(IFlatFormatter& f) const { f.FormatWGSRange(*this); }
 
+    const string&       GetFirstID   (void) const { return m_First; }
+    const string&       GetLastID    (void) const { return m_Last;  }
+    const CUser_object& GetUserObject(void) const { return *m_UO;   }
+
+private:
     string                  m_First, m_Last; // IDs in range
     CConstRef<CUser_object> m_UO;
 };
 
 
-struct SFlatGenomeInfo : public IFlatItem
+class CFlatGenomeInfo : public IFlatItem
 {
-    SFlatGenomeInfo(const SFlatContext& ctx);
+public:
+    CFlatGenomeInfo(const CFlatContext& ctx);
     void Format(IFlatFormatter& f) const { f.FormatGenomeInfo(*this); }
 
-    string                  m_Accession;
-    string                  m_Moltype; // stored as a string in the ASN.1
+    const string&       GetAccession (void) const { return *m_Accession; }
+    const string&       GetMoltype   (void) const
+        { return m_Moltype ? *m_Moltype : kEmptyStr; }
+    const CUser_object& GetUserObject(void) const { return *m_UO;        }
+
+private:
+    const string*           m_Accession;
+    const string*           m_Moltype; // stored as a string in the ASN.1
     CConstRef<CUser_object> m_UO;
 };
 
@@ -222,7 +262,7 @@ public:
 
 
 inline
-string SFlatSource::GetTaxonomyURL(void) const {
+string CFlatSource::GetTaxonomyURL(void) const {
     return "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id="
         + NStr::IntToString(m_TaxID);
 }
@@ -235,6 +275,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/03/21 18:47:47  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.2  2003/03/10 22:05:13  ucko
 * -SFlatKeywords::x_AddKeys (MSVC didn't like it :-/)
 *

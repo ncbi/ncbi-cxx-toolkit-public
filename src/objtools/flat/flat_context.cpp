@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-void SFlatContext::SetFlags(const CSeq_entry& entry, bool do_parents)
+void CFlatContext::SetFlags(const CSeq_entry& entry, bool do_parents)
 {
     if (do_parents  &&  entry.GetParentEntry()) {
         SetFlags(*entry.GetParentEntry(), true);
@@ -82,7 +82,7 @@ void SFlatContext::SetFlags(const CSeq_entry& entry, bool do_parents)
 }
 
 
-const CSeq_id& SFlatContext::GetPreferredSynonym(const CSeq_id& id) const
+const CSeq_id& CFlatContext::GetPreferredSynonym(const CSeq_id& id) const
 {
     if (id.IsGi()  &&  id.GetGi() == m_GI) {
         return *m_PrimaryID;
@@ -99,7 +99,7 @@ const CSeq_id& SFlatContext::GetPreferredSynonym(const CSeq_id& id) const
 }
 
 
-const char* SFlatContext::GetUnits(bool abbrev) const
+const char* CFlatContext::GetUnits(bool abbrev) const
 {
     if (m_IsWGSMaster) {
         return abbrev ? "rc" : "bases"; // XXX - not "records"?
@@ -119,6 +119,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/03/21 18:49:17  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.2  2003/03/11 15:37:51  kuznets
 * iterate -> ITERATE
 *

@@ -50,9 +50,10 @@ class CSeq_entry;
 // should allocate it on the heap rather than on the stack, as some
 // other types store long-lived CRefs.
 
-struct SFlatContext : public CObject
+class CFlatContext : public CObject
 {
-    SFlatContext(void)
+public:
+    CFlatContext(void)
         : m_Formatter(0), m_AdjustCoords(false), m_InSegSet(false),
           m_SegmentNum(0), m_SegmentCount(0), m_GI(0), m_Length(0),
           m_Mol(CSeq_inst::eMol_not_set), m_Biomol(CMolInfo::eBiomol_unknown),
@@ -67,32 +68,58 @@ struct SFlatContext : public CObject
 
     const char* GetUnits(bool abbrev = true) const;
 
-    typedef CMolInfo::TBiomol TBiomol;
+    typedef CMolInfo::TBiomol             TBiomol;
+    typedef CSeq_inst::TMol               TMol;
+    typedef vector<CRef<CFlatReference> > TReferences;
 
-    IFlatFormatter*               m_Formatter;
-    CConstRef<CSeq_loc>           m_Location;
-    bool                          m_AdjustCoords;
-    CBioseq_Handle                m_Handle;
-    // everything below is technically redundant but useful to keep around
-    bool                          m_InSegSet;
-    unsigned int                  m_SegmentNum, m_SegmentCount;
-    vector<CRef<SFlatReference> > m_References;
-    int                           m_GI;
-    string                        m_Accession; // with version
-    CConstRef<CSeq_id>            m_PrimaryID; // corresponds to above accn
-    TSeqPos                       m_Length;
-    CSeq_inst::TMol               m_Mol;
-    TBiomol                       m_Biomol;
-    bool                          m_IsProt;
-    bool                          m_IsTPA;
-    bool                          m_IsWGSMaster;
-    bool                          m_IsRefSeq;
-    bool                          m_IsRefSeqGenome;
+    // accessors; real data is now private
+    IFlatFormatter&    GetFormatter   (void) const { return *m_Formatter;     }
+    const CSeq_loc&    GetLocation    (void) const { return *m_Location;      }
+    bool               AdjustCoords   (void) const { return m_AdjustCoords;   }
+    const CBioseq_Handle& GetHandle   (void) const { return m_Handle;         }
+    bool               InSegSet       (void) const { return m_InSegSet;       }
+    unsigned int       GetSegmentNum  (void) const { return m_SegmentNum;     }
+    unsigned int       GetSegmentCount(void) const { return m_SegmentCount;   }
+    const TReferences& GetReferences  (void) const { return m_References;     }
+    int                GetGI          (void) const { return m_GI;             }
+    const string&      GetAccession   (void) const { return m_Accession;      }
+    const CSeq_id&     GetPrimaryID   (void) const { return *m_PrimaryID;     }
+    TSeqPos            GetLength      (void) const { return m_Length;         }
+    TMol               GetMol         (void) const { return m_Mol;            }
+    TBiomol            GetBiomol      (void) const { return m_Biomol;         }
+    bool               IsProt         (void) const { return m_IsProt;         }
+    bool               IsTPA          (void) const { return m_IsTPA;          }
+    bool               IsWGSMaster    (void) const { return m_IsWGSMaster;    }
+    bool               IsRefSeq       (void) const { return m_IsRefSeq;       }
+    bool               IsRefSeqGenome (void) const { return m_IsRefSeqGenome; }
 
 private:
-    friend struct SFlatLoc;
+    IFlatFormatter*     m_Formatter;
+    CConstRef<CSeq_loc> m_Location;
+    bool                m_AdjustCoords;
+    CBioseq_Handle      m_Handle;
+    // everything below is technically redundant but useful to keep around
+    bool                m_InSegSet;
+    unsigned int        m_SegmentNum, m_SegmentCount;
+    TReferences         m_References;
+    int                 m_GI;
+    string              m_Accession; // with version
+    CConstRef<CSeq_id>  m_PrimaryID; // corresponds to above accn
+    TSeqPos             m_Length;
+    TMol                m_Mol;
+    TBiomol             m_Biomol;
+    bool                m_IsProt;
+    bool                m_IsTPA;
+    bool                m_IsWGSMaster;
+    bool                m_IsRefSeq;
+    bool                m_IsRefSeqGenome;
     CConstRef<CSeq_loc> m_CachedLoc;
-    CConstRef<SFlatLoc> m_CachedFlatLoc;
+    CConstRef<CFlatLoc> m_CachedFlatLoc;
+
+    friend class IFlatFormatter; // for m_Cached*
+    // these help with initialization
+    friend class CFlatHead;
+    friend class CFlatLoc;
 };
 
 
@@ -103,6 +130,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/21 18:47:47  ucko
+* Turn most structs into (accessor-requiring) classes; replace some
+* formerly copied fields with pointers to the original data.
+*
 * Revision 1.1  2003/03/10 16:39:08  ucko
 * Initial check-in of new flat-file generator
 *
