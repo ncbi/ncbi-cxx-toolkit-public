@@ -238,8 +238,8 @@ bool CFindRSites::x_IsAmbig(char nuc)
 /// (e.g., string, vector<char>, CSeqVector),
 /// but it must yield ncbi8na.
 template<class Seq>
-void CFindRSites::x_Find(const Seq& seq, const vector<CREnzyme>& enzymes,
-                         vector<CRef<CREnzResult> >& results)
+void x_FindRSite(const Seq& seq, const vector<CREnzyme>& enzymes,
+                 vector<CRef<CREnzResult> >& results)
 {
 
     results.clear();
@@ -284,8 +284,8 @@ void CFindRSites::x_Find(const Seq& seq, const vector<CREnzyme>& enzymes,
                                            fsm_pat_size));
             // add pattern to fsm
             // (add only fsm_pat_size of it)
-            x_AddPattern(pat.substr(0, fsm_pat_size), fsm,
-                         patterns.size() - 1);
+            CFindRSites::x_AddPattern(pat.substr(0, fsm_pat_size), fsm,
+                                      patterns.size() - 1);
 
             // if the pattern is not pallindromic,
             // do a search for its complement too
@@ -307,8 +307,8 @@ void CFindRSites::x_Find(const Seq& seq, const vector<CREnzyme>& enzymes,
                                                fsm_pat_size));
                 // add pattern to fsm
                 // (add only fsm_pat_size of it)
-                x_AddPattern(comp.substr(0, fsm_pat_size), fsm,
-                             patterns.size() - 1);
+                CFindRSites::x_AddPattern(comp.substr(0, fsm_pat_size), fsm,
+                                          patterns.size() - 1);
             }
         }
     }
@@ -321,7 +321,7 @@ void CFindRSites::x_Find(const Seq& seq, const vector<CREnzyme>& enzymes,
 
     int state = fsm.GetInitialState();
     for (unsigned int i = 0;  i < seq.size();  i++) {
-        if (x_IsAmbig(seq[i])) {
+        if (CFindRSites::x_IsAmbig(seq[i])) {
             ambig_nucs.push_back(i);
         }
         state = fsm.GetNextState(state, seq[i]);
@@ -355,7 +355,7 @@ void CFindRSites::x_Find(const Seq& seq, const vector<CREnzyme>& enzymes,
                         bool ambig = false;
                         for (unsigned int n = begin_pos;  n <= end_pos;
                              n++) {
-                            if (x_IsAmbig(seq[n])) {
+                            if (CFindRSites::x_IsAmbig(seq[n])) {
                                 ambig = true;
                                 break;
                             }
@@ -500,7 +500,7 @@ void CFindRSites::Find(const string& seq,
                        const vector<CREnzyme>& enzymes,
                        vector<CRef<CREnzResult> >& results)
 {
-    x_Find(seq, enzymes, results);
+    x_FindRSite(seq, enzymes, results);
 }
 
 
@@ -508,7 +508,7 @@ void CFindRSites::Find(const vector<char>& seq,
                        const vector<CREnzyme>& enzymes,
                        vector<CRef<CREnzResult> >& results)
 {
-    x_Find(seq, enzymes, results);
+    x_FindRSite(seq, enzymes, results);
 }
 
 
@@ -520,7 +520,7 @@ void CFindRSites::Find(const CSeqVector& seq,
     CSeqVector vec(seq);
     vec.SetNcbiCoding();
     vec.GetSeqData(0, vec.size(), seq_ncbi8na);
-    x_Find(seq_ncbi8na, enzymes, results);
+    x_FindRSite(seq_ncbi8na, enzymes, results);
 }
 
 
@@ -531,6 +531,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/08/22 14:25:58  ucko
+ * Fix for MSVC, which seems to have problems with member templates.
+ *
  * Revision 1.8  2003/08/22 02:17:18  ucko
  * Fix WorkShop compilation.
  *

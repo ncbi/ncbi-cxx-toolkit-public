@@ -393,8 +393,8 @@ private:
     static bool x_IsAmbig(char nuc);
 
     template<class Seq>
-    static void x_Find(const Seq& seq, const vector<CREnzyme>& enzymes,
-                       vector<CRef<CREnzResult> >& results);
+    friend void x_FindRSite(const Seq& seq, const vector<CREnzyme>& enzymes,
+                            vector<CRef<CREnzResult> >& results);
 };
 
 
@@ -407,6 +407,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/08/22 14:25:53  ucko
+ * Fix for MSVC, which seems to have problems with member templates.
+ *
  * Revision 1.13  2003/08/22 02:17:13  ucko
  * Fix WorkShop compilation.
  *
