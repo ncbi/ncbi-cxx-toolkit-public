@@ -88,9 +88,9 @@ class CAlnMgrTestApp : public CNcbiApplication
     void             View8(int aln_pos);
     void             GetSeqPosFromAlnPosDemo();
 private:
-    CRef<CAlnVec> m_AV;
     CRef<CObjectManager> m_ObjMgr;
     CRef<CScope>  m_Scope;
+    CRef<CAlnVec> m_AV;
 };
 
 void CAlnMgrTestApp::Init(void)
@@ -603,6 +603,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/02/03 19:52:25  todorov
+* m_AV declared after m_OM so that its ref to scope is distroyed first
+*
 * Revision 1.18  2004/01/16 22:11:48  ucko
 * Explicitly call DumpAsFasta() on Seq-ids intended to appear in FASTA format.
 *
