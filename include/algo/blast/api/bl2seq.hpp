@@ -131,10 +131,10 @@ public:
     ///       {Results for query i and subject M (discontinuous Seq-align)} ]
     /// Discontinuous Seq-aligns are used to allow grouping of multiple HSPs
     /// that correspond to that query-subject alignment.
-    virtual TSeqAlignVector Run() THROWS((CBlastException));
+    virtual TSeqAlignVector Run();
 
     /// Runs the search but does not produce seqalign output
-    virtual void PartialRun() THROWS((CBlastException));
+    virtual void PartialRun();
 
     /// Retrieves regions filtered on the query/queries
     //const TSeqLocVector& GetFilteredQueryRegions() const;
@@ -144,6 +144,10 @@ public:
 
     /// Retrieves the list of HSP results from the engine
     BlastHSPResults* GetResults() const;
+
+    /// Returns error messages/warnings. Caller is responsible for deallocating
+    /// return value if any
+    Blast_Message* GetErrorMessage() const;
 
 protected:
     /// Process the queries, do setup, and build the lookup table.
@@ -185,6 +189,8 @@ private:
     CBlastExtensionParameters           mi_clsExtnParams;      ///< internal: raw scores computed from options
     CBlastGapAlignStruct                mi_clsGapAlign;        ///< internal: gapped alignment information
     CBlastDatabaseOptions               mi_clsDbOptions;       ///< internal: genetic code information
+    /// Stores any warnings emitted during query setup
+    CBlast_Message                      mi_clsBlastMessage;
 
     /// Results for all queries and subjects together
     BlastHSPResults*                    mi_pResults;
@@ -305,6 +311,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2005/01/06 15:40:19  camacho
+* Add methods to retrieve error messages/warnings
+*
 * Revision 1.37  2004/09/13 12:44:11  madden
 * Use BlastSeqLoc rather than ListNode
 *
