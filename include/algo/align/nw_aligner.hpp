@@ -139,7 +139,7 @@ public:
     };
 
     // guiding hits
-    void  SetGuides(const vector<size_t>& v1, const vector<size_t>& v2)
+    void  SetGuides(const vector<size_t>& guides)
         throw (CNWAlignerException);
 
 protected:
@@ -177,9 +177,11 @@ protected:
     TScore                    m_score;
     vector<size_t>            m_guides;
 
-    virtual TScore x_Run (const char* seg1, size_t len1,
-                          const char* seg2, size_t len2,
-                          vector<ETranscriptSymbol>* transcript);
+    virtual TScore x_Run   ();
+    virtual TScore x_Align (const char* seg1, size_t len1,
+                            const char* seg2, size_t len2,
+                            vector<ETranscriptSymbol>* transcript);
+
     virtual void   x_DoBackTrace(const unsigned char* backtrace_matrix,
                           size_t N1, size_t N2,
                           vector<ETranscriptSymbol>* transcript);
@@ -201,6 +203,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/04/14 18:58:19  kapustin
+ * x_Run() -> x_Align()
+ *
  * Revision 1.18  2003/04/10 19:14:04  kapustin
  * Introduce guiding hits approach
  *
