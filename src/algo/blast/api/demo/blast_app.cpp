@@ -604,13 +604,15 @@ void CBlastApplication::FormatResults(const CDbBlast* blaster,
                          program == eTblastx);
 
         /// @todo Print output header here
-
+        CBlastDbDataLoader::EDbType kDbType = 
+            (db_is_na ? CBlastDbDataLoader::eNucleotide :
+                        CBlastDbDataLoader::eProtein);
         CBlastDbDataLoader::RegisterInObjectManager(*m_ObjMgr,
-            args["db"].AsString(),
-            db_is_na ? CBlastDbDataLoader::eNucleotide :
-                       CBlastDbDataLoader::eProtein,
-            CObjectManager::eDefault);
+            args["db"].AsString(), kDbType, CObjectManager::eDefault);
 
+        format_options.SetDbLoaderName(
+            CBlastDbDataLoader::GetLoaderNameFromArgs(args["db"].AsString(), 
+                                                      kDbType));
         /* Format the results */
         TSeqLocInfoVector maskv =
             BlastMaskLoc2CSeqLoc(blaster->GetFilteredQueryRegions(), 
