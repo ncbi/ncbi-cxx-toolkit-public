@@ -66,7 +66,7 @@ const size_t CNamedPipe::kDefaultBufferSize = 0;
 // Auxiliary functions
 //
 
-STimeout* s_SetTimeout(const STimeout* from, STimeout* to)
+static STimeout* s_SetTimeout(const STimeout* from, STimeout* to)
 {
     if ( !from ) {
         return const_cast<STimeout*> (kInfiniteTimeout);
@@ -76,7 +76,7 @@ STimeout* s_SetTimeout(const STimeout* from, STimeout* to)
     return to;
 }
 
-string s_FormatErrorMessage(const string& where, const string& what)
+static string s_FormatErrorMessage(const string& where, const string& what)
 {
     return "[NamedPipe::" + where + "]  " + what + ".";
 }
@@ -122,21 +122,24 @@ public:
                     const STimeout* timeout);
     EIO_Status Write(const void* buf, size_t count, size_t* n_written,
                      const STimeout* timeout);
-
-    // auxiliary
-
-    long TimeoutToMSec(const STimeout* timeout);
+    EIO_Status Status(EIO_Event direction);
 
 private:
-    HANDLE  m_Pipe;      // pipe I/O handle
-    string  m_PipeName;  // pipe name 
-    size_t  m_Bufsize;   // I/O buffer size
+    long TimeoutToMSec(const STimeout* timeout) const;
+
+private:
+    HANDLE      m_Pipe;        // pipe I/O handle
+    string      m_PipeName;    // pipe name 
+    size_t      m_Bufsize;     // I/O buffer size
+    EIO_Status  m_ReadStatus;  // last read status
+    EIO_Status  m_WriteStatus; // last write status
 };
 
 
 CNamedPipeHandle::CNamedPipeHandle()
     : m_Pipe(INVALID_HANDLE_VALUE), m_PipeName(kEmptyStr),
-      m_Bufsize(CNamedPipe::kDefaultBufferSize)
+      m_Bufsize(CNamedPipe::kDefaultBufferSize),
+      m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed)
 {
     return;
 }
@@ -325,6 +328,8 @@ EIO_Status CNamedPipeHandle::Close(void)
     FlushFileBuffers(m_Pipe);
 	CloseHandle(m_Pipe);
     m_Pipe = INVALID_HANDLE_VALUE;
+    m_ReadStatus  = eIO_Closed;
+    m_WriteStatus = eIO_Closed;
     return eIO_Success;
 }
 
@@ -340,9 +345,6 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             throw "Pipe is closed";
         }
         if ( !count ) {
-            if ( n_read ) {
-                *n_read = 0;
-            }
             return eIO_Success;
         }
 
@@ -373,14 +375,14 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             SleepMilliSec(x_sleep);
         } while (x_timeout == INFINITE  ||  x_timeout);
 
+        // Data is available to read or time out
+        if ( !bytes_avail ) {
+            return eIO_Timeout;
+        }
         // We must read only "count" bytes of data regardless of the number
         // available to read
         if (bytes_avail > count) {
             bytes_avail = count;
-        }
-        // Data is available to read or time out
-        if ( !bytes_avail ) {
-            return eIO_Timeout;
         }
         if (!ReadFile(m_Pipe, buf, count, &bytes_avail, NULL)) {
             throw "Failed to read data from the named pipe";
@@ -393,6 +395,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
     catch (const char* what) {
         ERR_POST(s_FormatErrorMessage("Read", what));
     }
+    m_ReadStatus = status;
     return status;
 }
 
@@ -409,9 +412,6 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
             throw "Pipe is closed";
         }
         if ( !count ) {
-            if ( n_written ) {
-                *n_written = 0;
-            }
             return eIO_Success;
         }
 
@@ -452,12 +452,29 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
     catch (const char* what) {
         ERR_POST(s_FormatErrorMessage("Write", what));
     }
+    m_WriteStatus = status;
     return status;
 }
 
 
+EIO_Status CNamedPipeHandle::Status(EIO_Event direction)
+{
+    switch ( direction ) {
+    case eIO_Read:
+        return m_ReadStatus;
+    case eIO_Write:
+        return m_WriteStatus;
+    default:
+        // Should never get here
+        assert(0);
+        break;
+    }
+    return eIO_InvalidArg;
+}
+
+
 // Convert STimeout value to number of milliseconds
-long CNamedPipeHandle::TimeoutToMSec(const STimeout* timeout)
+long CNamedPipeHandle::TimeoutToMSec(const STimeout* timeout) const
 {
     return timeout ? (timeout->sec * 1000) + (timeout->usec / 1000) 
                    : INFINITE;
@@ -503,10 +520,10 @@ public:
                      const STimeout* timeout);
     EIO_Status Write(const void* buf, size_t count, size_t* n_written,
                      const STimeout* timeout);
+    EIO_Status Status(EIO_Event direction);
 
-    // auxiliary
-
-    // Close socket persistently - retry if interupted by a signal
+private:
+    // Close socket persistently
     bool CloseSocket(int sock);
 
 private:
@@ -843,9 +860,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             throw "Pipe is closed";
         }
         if ( !count ) {
-            if ( n_read ) {
-                *n_read = 0;
-            }
+            // *n_read == 0
             return eIO_Success;
         }
         status = SOCK_SetTimeout(m_IoSocket, eIO_Read, timeout);
@@ -871,9 +886,7 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
             throw "Pipe is closed";
         }
         if ( !count ) {
-            if ( n_written ) {
-                *n_written = 0;
-            }
+            // *n_written == 0
             return eIO_Success;
         }
         status = SOCK_SetTimeout(m_IoSocket, eIO_Write, timeout);
@@ -886,6 +899,15 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
         ERR_POST(s_FormatErrorMessage("Write", what));
     }
     return status;
+}
+
+
+EIO_Status CNamedPipeHandle::Status(EIO_Event direction)
+{
+    if ( !m_IoSocket ) {
+        return eIO_Unknown;
+    }
+    return SOCK_Status(m_IoSocket, direction);
 }
 
 
@@ -917,7 +939,6 @@ bool CNamedPipeHandle::CloseSocket(int sock)
 
 CNamedPipe::CNamedPipe(void)
     : m_PipeName(kEmptyStr), m_PipeHandle(0), m_Bufsize(kDefaultBufferSize),
-      m_ReadStatus(eIO_Closed),m_WriteStatus(eIO_Closed),
       m_OpenTimeout(0), m_ReadTimeout(0), m_WriteTimeout(0)
 {
     // Create a new OS-specific pipe handle
@@ -936,9 +957,6 @@ EIO_Status CNamedPipe::Close()
     if ( !m_PipeHandle ) {
         return eIO_Unknown;
     }
-    m_ReadStatus  = eIO_Closed;
-    m_WriteStatus = eIO_Closed;
-
     return m_PipeHandle->Close();
 }
      
@@ -954,9 +972,7 @@ EIO_Status CNamedPipe::Read(void* buf, size_t count, size_t* n_read)
     if ( !m_PipeHandle ) {
         return eIO_Unknown;
     }
-    EIO_Status status = m_PipeHandle->Read(buf, count, n_read, m_ReadTimeout);
-    m_ReadStatus = status;
-    return status;
+    return m_PipeHandle->Read(buf, count, n_read, m_ReadTimeout);
 }
 
 
@@ -971,26 +987,16 @@ EIO_Status CNamedPipe::Write(const void* buf, size_t count, size_t*  n_written)
     if ( !m_PipeHandle ) {
         return eIO_Unknown;
     }
-    EIO_Status status = m_PipeHandle->Write(buf, count, n_written,
-                                            m_WriteTimeout);
-    m_WriteStatus = status;
-    return status;
+    return m_PipeHandle->Write(buf, count, n_written, m_WriteTimeout);
 }
 
 
 EIO_Status CNamedPipe::Status(EIO_Event direction)
 {
-    switch ( direction ) {
-    case eIO_Read:
-        return m_ReadStatus;
-    case eIO_Write:
-        return m_WriteStatus;
-    default:
-        // Should never get here
-        assert(0);
-        break;
+    if ( !m_PipeHandle ) {
+        return eIO_Unknown;
     }
-    return eIO_InvalidArg;
+    return m_PipeHandle->Status(direction);
 }
 
 
@@ -1133,11 +1139,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/08/28 16:03:05  ivanov
+ * Use os-specific Status() function
+ *
  * Revision 1.8  2003/08/25 14:41:22  lavr
  * Employ new k..Timeout constants
  *
  * Revision 1.7  2003/08/20 14:22:20  ivanov
- * Get read of warning -- double variable declaration
+ * Get rid of warning -- double variable declaration
  *
  * Revision 1.6  2003/08/19 21:02:12  ivanov
  * Other fix for error messages and comments.
