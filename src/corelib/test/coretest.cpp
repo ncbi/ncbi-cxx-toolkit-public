@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1998/11/19 23:41:14  vakatov
+* Tested version of "CCgiCookie::" and "CCgiCookies::"
+*
 * Revision 1.8  1998/11/13 00:18:08  vakatov
 * Added a test for the "unexpected" exception.
 * Turned off "hardware" exception tests for UNIX.
@@ -54,6 +57,9 @@
 */
 
 #include <ncbistd.hpp>
+#include <ncbicgi.hpp>
+#include <time.h>
+
 
 // This is to use the ANSI C++ standard templates without the "std::" prefix
 // and to use NCBI C++ entities without the "ncbi::" prefix
@@ -153,7 +159,7 @@ static void TestException_Soft(void)
         NcbiCerr << "CATCH logic " << e.what() << NcbiEndl; }
     catch (runtime_error& e) {
         NcbiCerr << "CATCH runtime " << e.what() << NcbiEndl; }
-    catch (bad_exception& e) {
+    catch (bad_exception&) {
         NcbiCerr << "CATCH bad " << NcbiEndl; }
     STD_CATCH_ALL ("try { TE_unexpected(); }");
 }
@@ -200,6 +206,66 @@ static void TestException(void)
 }
 
 
+
+/////////////////////////////////
+// CGI
+//
+
+static void TestCgi_Cookies(void)
+{
+    CCgiCookies cookies("coo1=kie1BAD1;coo2=kie2_ValidPath; ");
+    cookies.Add("  coo1=kie1BAD2;CooT=KieT_ExpTime  ");
+
+    string str = "  Coo11=Kie11_OK; Coo2=Kie2BAD;  coo1=Kie1_OK; Coo5=kie5";
+    cookies.Add(str);
+    cookies.Add("RemoveThisCookie", "BAD");
+    cookies.Add(str);
+
+    cookies.Find("Coo2")->SetValue("Kie2_OK");
+
+    CCgiCookie c1("Coo5", "Kie5BAD");
+    CCgiCookie c2(c1);
+    c2.SetValue("Kie5_Dom_Sec");
+    c2.SetDomain("aaa.bbb.ccc");
+    c2.SetSecure(true);
+
+    cookies.Add(c1);
+    cookies.Add(c2);
+
+    CCgiCookie* c3 = cookies.Find("coo2");
+    c3->SetValidPath("coo2_ValidPath");
+
+    _ASSERT( !cookies.Remove("NoSuchCookie") );
+    _ASSERT( cookies.Remove("RemoveThisCookie") );
+    _ASSERT( !cookies.Remove("RemoveThisCookie") );
+    _ASSERT( !cookies.Find("RemoveThisCookie") );
+
+    string dom5;
+    _ASSERT( cookies.Find("Coo5")->GetDomain(&dom5) );
+    _ASSERT( dom5 == "aaa.bbb.ccc" );
+    _ASSERT( !cookies.Find("coo2")->GetDomain(&dom5) );
+    _ASSERT( dom5 == "aaa.bbb.ccc" );
+
+    time_t timer = time(0);
+    tm *date = gmtime(&timer);
+    CCgiCookie *ct = cookies.Find("CooT");
+    ct->SetExpDate(*date);
+    
+    NcbiCerr << "\n\nCookies:\n\n" << cookies << NcbiEndl;
+}
+
+static void TestCgi_Request(void)
+{
+
+}
+
+static void TestCgi(void)
+{
+    TestCgi_Cookies();
+    TestCgi_Request();
+}
+
+
 /////////////////////////////////
 // MAIN
 //
@@ -207,6 +273,7 @@ extern int main(void)
 {
     TestDiag();
     TestException();
+    TestCgi();
 
     return 0;
 }

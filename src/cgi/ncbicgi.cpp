@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/11/19 23:41:12  vakatov
+* Tested version of "CCgiCookie::" and "CCgiCookies::"
+*
 * Revision 1.3  1998/11/19 20:02:51  vakatov
 * Logic typo:  actually, the cookie string does not contain "Cookie: "
 *
@@ -113,8 +116,8 @@ bool CCgiCookie::GetExpDate(string* str) const
     if ( s_ZeroTime(m_Expires) )
         return false;
 
-    char cs[26];
-    if ( !::strftime(cs, sizeof(cs), "%a %b %d %H:%M:%S %Y\n", &m_Expires) )
+    char cs[25];
+    if ( !::strftime(cs, sizeof(cs), "%a %b %d %H:%M:%S %Y", &m_Expires) )
         throw runtime_error("CCgiCookie::GetExpDate() -- strftime() failed");
     *str = cs;
     return true;
@@ -150,6 +153,7 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os) const
     if ( GetSecure() )
         os << "; secure";
 
+    os << NcbiEndl;
     return os;
 }
 
@@ -201,7 +205,7 @@ CCgiCookie* CCgiCookies::Add(const CCgiCookie& cookie)
 void CCgiCookies::Add(const string& str)
 {
     for (SIZE_TYPE pos = str.find_first_not_of(" \t\n"); ; ){
-        SIZE_TYPE pos_beg = str.find_last_not_of(' ', pos);
+        SIZE_TYPE pos_beg = str.find_first_not_of(' ', pos);
         if (pos_beg == NPOS)
             return; // done
         SIZE_TYPE pos_mid = str.find_first_of('=', pos_beg);
@@ -218,10 +222,20 @@ void CCgiCookies::Add(const string& str)
             pos = NPOS; // about to finish
         }
 
-        Add(str.substr(pos_beg, pos_mid-1), str.substr(pos_mid+1, pos_end));
+        Add(str.substr(pos_beg, pos_mid-pos_beg),
+            str.substr(pos_mid+1, pos_end-pos_mid));
     }
 
     throw runtime_error("Invalid cookie string: `" + str + "'");
+}
+
+CNcbiOstream& CCgiCookies::Write(CNcbiOstream& os) const
+{
+    for (TCookies::const_iterator iter = m_Cookies.begin();
+         iter != m_Cookies.end();  iter++) {
+        os << *(*iter);
+    }
+    return os;
 }
 
 CCgiCookies::TCookies::iterator CCgiCookies::x_Find(const string& name) const

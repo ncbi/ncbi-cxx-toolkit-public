@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1998/11/19 23:41:09  vakatov
+* Tested version of "CCgiCookie::" and "CCgiCookies::"
+*
 * Revision 1.14  1998/11/19 20:02:49  vakatov
 * Logic typo:  actually, the cookie string does not contain "Cookie: "
 *
@@ -85,7 +88,7 @@ public:
 
     // Compose and write to output stream "os":
     //   "Set-Cookie: name=value; expires=date; path=val_path; domain=dom_name;
-    //    expires"
+    //    expires\n"
     // (here, only "name=value" is mandatory)
     CNcbiOstream& Write(CNcbiOstream& os) const;
 
@@ -111,8 +114,7 @@ public:
     bool GetValue     (string*  str) const;
     bool GetDomain    (string*  str) const;
     bool GetValidPath (string*  str) const;
-    // "Wed Aug 9 07:49:37 1994\n\0"  (that is, the exact ANSI C "asctime()")
-    bool GetExpDate   (string*  str) const;
+    bool GetExpDate   (string*  str) const;  // "Wed Aug 9 07:49:37 1994"
     bool GetExpDate   (tm* exp_date) const;
     bool GetSecure    (void)         const;
 
@@ -153,7 +155,10 @@ public:
     void Add(const string& str); // "name1=value1; name2=value2; ..."
 
     CCgiCookie* Find(const string& name) const;  // return zero if can not find
-    bool RemoveCookie(const string& name);  // return "false" if can not find
+    bool Remove(const string& name);  // return "false" if can not find
+
+    // Printout all cookies into the stream "os"(see also CCgiCookie::Write())
+    CNcbiOstream& Write(CNcbiOstream& os) const;
 
 private:
     typedef list<CCgiCookie*> TCookies;
@@ -161,6 +166,11 @@ private:
     void x_Add(CCgiCookie* cookie);
     TCookies::iterator x_Find(const string& name) const;
 };  // CCgiCookies
+
+
+inline CNcbiOstream& operator<<(CNcbiOstream& os, const CCgiCookies& cookies) {
+    return cookies.Write(os);
+}
 
 
 
@@ -212,19 +222,21 @@ public:
     };
     CCgiRequest(EMedia media=eMedia_Default);
 
-    // get "standard" properties(empty string if not found)
+    // Get "standard" properties(empty string if not found)
     const string& GetProperty(ECgiProp prop);
-    // get random client properties("HTTP_<key>")
+    // Get random client properties("HTTP_<key>")
     const string& GetRandomProperty(const string& key);
-    // auxiliaries(to convert from the "string" representation)
+    // Auxiliaries(to convert from the "string" representation)
     Uint2  GetServerPort(void);
     Uint4  GetServerAddr(void);  // (in the network byte order)
     size_t GetContentLength(void);
 
-    // set of cookies received from the client
+    // Get a set of raw cookies received from the client
     const TCgiCookies& GetCookies(void) const;
+    // Add all request's cookies to the specified cookie set "cookies"
+    void GetCookies(CCgiCookies* cookies) const;
 
-    // set of entries(decoded) received from the client
+    // Get a set of entries(decoded) received from the client
     const TCgiEntries& GetEntries(void);
 
     /* DANGER!!!  Direct access to the data received from client
@@ -241,15 +253,13 @@ public:
     // Fetch cookies from "str", add them to "cookies"
     // Format of the string:  "name1=value1; name2=value2; ..."
     // Original cookie of the same name will be overriden by the new ones
-    // Return the resultant set of cookies
-    static TCgiCookies& ParseCookies(const string& str, TCgiCookies& cookies);
+    static void ParseCookies(const string& str, TCgiCookies& cookies);
 
     // Decode the URL-encoded stream "istr" into a set of entries
     // (<name, value>) and add them to the "entries" set
     // The new entries are added without overriding the original ones, even
     // if they have the same names
-    // Return the resultant set of entries
-    static TCgiEntries& ParseContent(CNcbiIstream& istr, TCgiEntries& entries);
+    static void ParseEntries(CNcbiIstream& istr, TCgiEntries& entries);
 
 private:
     // "true" after m_Entries() or m_Content() call
