@@ -50,7 +50,8 @@ public:
     /// Report results as Seq-locs
     /// seq must be in ncbi8na
     template<class Seq>
-    static void FindOrfs(const Seq& seq, vector<CRef<CSeq_loc> >& results,
+    static void FindOrfs(const Seq& seq,
+                         vector<CRef<objects::CSeq_loc> >& results,
                          unsigned int min_length_bp = 3)
     {
         vector<TSeqPos> begins, ends;
@@ -58,10 +59,10 @@ public:
         // find ORFs on the forward sequence and report them as-is
         FindForwardOrfs(seq, begins, ends, min_length_bp);
         for (unsigned int i = 0;  i < begins.size();  i++) {
-            CRef<CSeq_loc> orf(new CSeq_loc);
+            CRef<objects::CSeq_loc> orf(new objects::CSeq_loc);
             orf->SetInt().SetFrom(begins[i]);
             orf->SetInt().SetTo(ends[i]);
-            orf->SetInt().SetStrand(eNa_strand_plus);
+            orf->SetInt().SetStrand(objects::eNa_strand_plus);
             results.push_back(orf);
         }
 
@@ -72,10 +73,10 @@ public:
         CSeqMatch::CompNcbi8na(comp);
         FindForwardOrfs(comp, begins, ends, min_length_bp);
         for (unsigned int i = 0;  i < begins.size();  i++) {
-            CRef<CSeq_loc> orf(new CSeq_loc);
+            CRef<objects::CSeq_loc> orf(new objects::CSeq_loc);
             orf->SetInt().SetFrom(comp.length() - ends[i] - 1);
             orf->SetInt().SetTo(comp.length() - begins[i] - 1);
-            orf->SetInt().SetStrand(eNa_strand_minus);
+            orf->SetInt().SetStrand(objects::eNa_strand_minus);
             results.push_back(orf);
         }
     }
@@ -84,14 +85,14 @@ public:
     /// Overloaded version of above to take CSeqVector.
     /// Template above should perhaps be made to work with this
     /// (when new CSeqportUtil is ready; but what to do about vec coding?).
-    static void FindOrfs(CSeqVector& vec, vector<CRef<CSeq_loc> >& results,
+    static void FindOrfs(const CSeqVector& orig_vec,
+                         vector<CRef<objects::CSeq_loc> >& results,
                          unsigned int min_length_bp = 3)
     {
         string seq8na;  // will contain ncbi8na
-        CSeqVector::TCoding orig_coding = vec.GetCoding();
+        CSeqVector vec(orig_vec);
         vec.SetNcbiCoding();
-        vec.GetSeqData( (TSeqPos) 0, vec.size(), seq8na );
-        vec.SetCoding(orig_coding);      // politely restore coding
+        vec.GetSeqData(0, vec.size(), seq8na);
         FindOrfs(seq8na, results, min_length_bp);
     }
 
@@ -174,7 +175,7 @@ public:
 private:
     TSeqPos m_From;
     TSeqPos m_To;
-    ENa_strand m_Strand;
+    objects::ENa_strand m_Strand;
 };
 
 
@@ -185,6 +186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/08/19 10:21:24  dicuccio
+ * Compilation fixes - use objects:: namespace where appropriate
+ *
  * Revision 1.7  2003/08/18 20:07:04  dicuccio
  * Corrected export specifiers
  *
