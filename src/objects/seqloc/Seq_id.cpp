@@ -293,6 +293,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'G': case 'P':           return eAcc_ddbj_genome;
             case 'H':                     return eAcc_gb_segset;
             case 'J': case 'M':           return eAcc_embl_dirsub;
+            case 'K':                     return eAcc_ddbj_htgs;
             case 'L':                     return eAcc_embl_genome;
             case 'N':                     return eAcc_embl_con;
             case 'Q': case 'Z':           return eAcc_gb_gss;
@@ -1085,6 +1086,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.48  2003/01/15 18:27:13  ucko
+ * +AK (accidentally skipped earlier -- sigh)
+ *
  * Revision 6.47  2003/01/10 15:57:30  ucko
  * Identify CB as gb_est.
  *
