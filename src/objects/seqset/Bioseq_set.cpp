@@ -43,6 +43,7 @@
 // generated includes
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_annot.hpp> // to make KCC happy
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
@@ -198,6 +199,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/10/07 17:10:54  ucko
+ * Include Seq-annot.hpp to make KCC happy.
+ *
  * Revision 1.6  2002/10/03 18:57:12  clausen
  * Removed extra whitespace
  *
