@@ -9,8 +9,7 @@
 APP = demo_nwa
 SRC = nwa starter
 
-LIB = xalgoalign xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio \
-      general xser xconnect xutil xncbi
+LIB = xalgoalign $(OBJMGR_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
