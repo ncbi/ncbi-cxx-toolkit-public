@@ -1108,7 +1108,7 @@ CTaxon1::GetAllNames(int tax_id, TNameList& lNames, bool unique)
                 if( !unique ) {
                     lNames.push_back( (*i)->GetOname() );
                 } else {
-                    lNames.push_back( (*i)->IsSetUname() ?
+                    lNames.push_back( ((*i)->IsSetUname() && !(*i)->GetUname().empty()) ?
                                       (*i)->GetUname() :
                                       (*i)->GetOname() );
                 }
@@ -1789,6 +1789,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.19  2003/10/23 18:52:47  domrach
+ * Unique name bug fixed
+ *
  * Revision 6.18  2003/07/09 15:41:31  domrach
  * SearchTaxIdByName(), GetNameClass(), and GetNodeProperty() functions added
  *
