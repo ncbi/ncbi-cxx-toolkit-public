@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.28  2004/03/02 19:37:56  kholodov
+* Added: process close event from CStatement to CResultSet
+*
 * Revision 1.27  2004/03/01 16:21:55  kholodov
 * Fixed: double deletion in calling subsequently CResultset::Close() and delete
 *
@@ -367,6 +370,7 @@ ostream& CResultSet::GetBlobOStream(size_t blob_size,
 
 void CResultSet::Close()
 {
+    _TRACE("CResultSet::Close(): deleting CDB_Result " << (void*)m_rs);
     delete m_rs;
     Notify(CDbapiClosedEvent(this));
     m_rs = 0;
@@ -379,9 +383,17 @@ void CResultSet::Close()
 void CResultSet::Action(const CDbapiEvent& e) 
 {
     _TRACE(GetIdent() << " " << (void*)this 
-           << ": '" << e.GetName() 
-           << "' received from " << e.GetSource()->GetIdent());
- 
+              << ": '" << e.GetName() 
+              << "' received from " << e.GetSource()->GetIdent());
+    if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
+        CStatement *stmt;
+        if( (stmt = dynamic_cast<CStatement*>(e.GetSource())) != 0 ) {
+            if( stmt->GetCDB_Result() == m_rs ) {
+                _TRACE("CDB_Result " << (void*)m_rs << " has been already deleted"); 
+                m_rs = 0;
+            }
+        }
+    }
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
 
         RemoveListener(e.GetSource());

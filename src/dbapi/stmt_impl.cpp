@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.17  2004/03/02 19:37:56  kholodov
+* Added: process close event from CStatement to CResultSet
+*
 * Revision 1.16  2004/03/01 16:21:55  kholodov
 * Fixed: double deletion in calling subsequently CResultset::Close() and delete
 *
@@ -248,6 +251,7 @@ int CStatement::GetRowCount()
 
 void CStatement::Close()
 {
+    _TRACE("CStatement::Close(): deleting CDB_Result " << (void*)m_rs);
     delete m_rs;
     delete m_cmd;
     m_cmd = 0;
@@ -257,10 +261,10 @@ void CStatement::Close()
             delete m_conn;
             m_conn = 0;
         }
-        Notify(CDbapiClosedEvent(this));
     }
 
     ClearParamList();
+    Notify(CDbapiClosedEvent(this));
 }
   
 void CStatement::Cancel()
@@ -290,7 +294,7 @@ void CStatement::Action(const CDbapiEvent& e)
     }
     if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
         CResultSet *rs;
-        if((rs = dynamic_cast<CResultSet*>(e.GetSource())) != 0 ) {
+        if( m_rs != 0 && (rs = dynamic_cast<CResultSet*>(e.GetSource())) != 0 ) {
             if( rs->GetCDB_Result() == m_rs ) {
                 _TRACE("Clearing cached CDB_Result " << (void*)m_rs); 
                 m_rs = 0;
