@@ -609,15 +609,18 @@ public:
 /// string value from CDiagBuffer::sm_SeverityName[].
 #define DIAG_POST_LEVEL "DIAG_POST_LEVEL"
 
-/// Set severity of post messages.
+/// Set severity of post messages. 
 ///
 /// This function has effect only if:
 ///   - Environment variable $DIAG_POST_LEVEL is not set, and
 ///   - Registry value of DIAG_POST_LEVEL, section DEBUG is not set 
 ///
 /// Do not post messages where severity is less than "min_sev"
+/// Another way to do filtering is to call SetDiagFilter
 /// @return
 ///   Return previous post-level.
+///
+/// @sa SetDiagFilter
 NCBI_XNCBI_EXPORT
 extern EDiagSev SetDiagPostLevel(EDiagSev post_sev = eDiag_Error);
 
@@ -822,6 +825,12 @@ enum EDiagFilter {
 
 
 /// Set diagnostic filter
+///
+/// Diagnostic filter acts as a second level filtering mechanism
+/// (the primary established by global error post level)
+/// @sa SetDiagPostLevel
+///
+///
 /// @param what
 ///    Filter is set for
 /// @param filter_str
@@ -1097,6 +1106,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.78  2004/12/13 19:39:18  kuznets
+ * Improved doxy comments for filtering functions
+ *
  * Revision 1.77  2004/09/22 14:59:49  kononenk
  * Fix for VC++ export
  *
