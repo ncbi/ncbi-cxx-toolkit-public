@@ -303,7 +303,9 @@ void CBDB_RawFile::x_Open(const char* filename,
                              kOpenFileMask
                              );
         if ( ret ) {
-            if (open_mode == eCreate) {
+            if (open_mode == eCreate || 
+                open_mode == eReadWriteCreate)
+            {
                 x_Create(filename, database);
             }
             else {
@@ -313,6 +315,8 @@ void CBDB_RawFile::x_Open(const char* filename,
             }
         }
     } // else open_mode == Create
+
+    m_OpenMode = open_mode;
 }
 
 
@@ -325,6 +329,11 @@ void CBDB_RawFile::SetPageSize(unsigned int page_size)
     m_PageSize = page_size;
 }
 
+void CBDB_RawFile::Sync()
+{
+    int ret = m_DB->sync(m_DB, 0);
+    BDB_CHECK(ret, FileName().c_str());
+}
 
 void CBDB_RawFile::x_Create(const char* filename, const char* database)
 {
@@ -623,6 +632,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/07/18 20:11:32  kuznets
+ * Implemented ReadWrite or Create open mode.
+ *
  * Revision 1.13  2003/07/16 13:33:33  kuznets
  * Added error condition if cursor is created on unopen file.
  *
