@@ -78,8 +78,7 @@ struct NCBI_XOBJMGR_EXPORT SIdAnnotObjs
     SIdAnnotObjs(const SIdAnnotObjs& objs);
     
     typedef CRange<TSeqPos>                                  TRange;
-    typedef CRangeMultimap<SAnnotObject_Index,
-                           TRange::position_type>            TRangeMap;
+    typedef CRangeMultimap<SAnnotObject_Index, TSeqPos>      TRangeMap;
     typedef vector<TRangeMap>                                TAnnotSet;
     typedef vector<CRef<CSeq_annot_SNP_Info> >               TSNPSet;
 
@@ -362,6 +361,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2004/02/19 17:17:00  vasilche
+* Formatting.
+*
 * Revision 1.45  2004/02/04 18:05:33  grichenk
 * Added annotation filtering by set of types/subtypes.
 * Renamed *Choice to *Type in SAnnotSelector.
