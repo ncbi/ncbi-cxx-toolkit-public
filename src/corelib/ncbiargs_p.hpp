@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/01/22 23:07:15  vakatov
+ * CArgValue::AsInteger() to return "int" (rather than "long")
+ *
  * Revision 1.1  2000/12/24 00:05:46  vakatov
  * Initial revision
  *
@@ -85,7 +88,7 @@ public:
     virtual bool HasValue(void) const;
 
     virtual const string&  AsString (void) const;
-    virtual long           AsInteger(void) const;
+    virtual int            AsInteger(void) const;
     virtual double         AsDouble (void) const;
     virtual bool           AsBoolean(void) const;
 
@@ -103,7 +106,7 @@ public:
     virtual bool HasValue(void) const;
 
     virtual const string&  AsString (void) const;
-    virtual long           AsInteger(void) const;
+    virtual int            AsInteger(void) const;
     virtual double         AsDouble (void) const;
     virtual bool           AsBoolean(void) const;
 
@@ -121,9 +124,9 @@ class CArg_Integer : public CArg_String
 {
 public:
     CArg_Integer(const string& name, const string& value);
-    virtual long AsInteger(void) const;
+    virtual int AsInteger(void) const;
 private:
-    long m_Integer;
+    int m_Integer;
 };
 
 

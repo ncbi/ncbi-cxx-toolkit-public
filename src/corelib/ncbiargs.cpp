@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.31  2001/01/22 23:07:14  vakatov
+ * CArgValue::AsInteger() to return "int" (rather than "long")
+ *
  * Revision 1.30  2001/01/03 17:45:35  vakatov
  * + <ncbi_limits.h>
  *
@@ -264,7 +267,7 @@ bool CArg_NoValue::HasValue(void) const
    ARG_THROW("Attempt to use unassigned optional argument", "NULL")
 
 const string& CArg_NoValue::AsString    (void) const { THROW_CArg_NoValue; }
-long          CArg_NoValue::AsInteger   (void) const { THROW_CArg_NoValue; }
+int           CArg_NoValue::AsInteger   (void) const { THROW_CArg_NoValue; }
 double        CArg_NoValue::AsDouble    (void) const { THROW_CArg_NoValue; }
 bool          CArg_NoValue::AsBoolean   (void) const { THROW_CArg_NoValue; }
 CNcbiIstream& CArg_NoValue::AsInputFile (void) const { THROW_CArg_NoValue; }
@@ -296,7 +299,7 @@ const string& CArg_String::AsString(void) const
 }
 
 
-long CArg_String::AsInteger(void) const
+int CArg_String::AsInteger(void) const
 { ARG_THROW("Attempt to cast to a wrong (Integer) type", AsString()); }
 double CArg_String::AsDouble(void) const
 { ARG_THROW("Attempt to cast to a wrong (Double) type", AsString()); }
@@ -318,7 +321,7 @@ inline CArg_Integer::CArg_Integer(const string& name, const string& value)
     : CArg_String(name, value)
 {
     try {
-        m_Integer = NStr::StringToLong(value);
+        m_Integer = NStr::StringToInt(value);
     } catch (exception& e) {
         _TRACE(e.what());
         ARG_THROW("Integer value expected", value);
@@ -326,7 +329,7 @@ inline CArg_Integer::CArg_Integer(const string& name, const string& value)
 }
 
 
-long CArg_Integer::AsInteger(void) const
+int CArg_Integer::AsInteger(void) const
 {
     return m_Integer;
 }
@@ -1150,7 +1153,7 @@ const CArgValue& CArgs::operator[] (const string& name) const
         if (!name.empty()  &&  name[0] == '#') {
             size_t idx;
             try {
-                idx = NStr::StringToULong(name.c_str() + 1);
+                idx = NStr::StringToUInt(name.c_str() + 1);
             } catch (...) {
                 idx = kMax_UInt;
             }
@@ -2251,7 +2254,7 @@ CArgAllow_Strings::~CArgAllow_Strings(void)
 //  CArgAllow_Integers::
 //
 
-CArgAllow_Integers::CArgAllow_Integers(long x_min, long x_max)
+CArgAllow_Integers::CArgAllow_Integers(int x_min, int x_max)
     : CArgAllow()
 {
     if (x_min <= x_max) {
@@ -2266,7 +2269,7 @@ CArgAllow_Integers::CArgAllow_Integers(long x_min, long x_max)
 
 bool CArgAllow_Integers::Verify(const string& value) const
 {
-    long val = NStr::StringToLong(value);
+    int val = NStr::StringToInt(value);
     return (m_Min <= val  &&  val <= m_Max);
 }
 

@@ -37,6 +37,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.18  2001/01/22 23:07:12  vakatov
+ * CArgValue::AsInteger() to return "int" (rather than "long")
+ *
  * Revision 1.17  2000/12/24 00:12:59  vakatov
  * Radically revamped NCBIARGS.
  * Introduced optional key and posit. args without default value.
@@ -205,7 +208,7 @@ public:
 
     // These functions throw an exception if you requested the wrong
     // value type (e.g. if called "AsInteger()" for a "boolean" arg).
-    virtual long   AsInteger(void) const = 0;
+    virtual int    AsInteger(void) const = 0;
     virtual double AsDouble (void) const = 0;
     virtual bool   AsBoolean(void) const = 0;
 
@@ -306,7 +309,7 @@ public:
     enum EType {
         eString = 0, // an arbitrary string
         eBoolean,    // {'true', 't', 'false', 'f'},  case-insensitive
-        eInteger,    // conversible into an integer number (long)
+        eInteger,    // conversible into an integer number (int)
         eDouble,     // conversible into a floating point number (double)
         eInputFile,  // name of file (must exist and be readable)
         eOutputFile, // name of file (must be writeable)
@@ -632,13 +635,13 @@ private:
 class CArgAllow_Integers : public CArgAllow
 {
 public:
-    CArgAllow_Integers(long x_min, long x_max);
+    CArgAllow_Integers(int x_min, int x_max);
 protected:
     virtual bool   Verify(const string& value) const;
     virtual string GetUsage(void) const;
 private:
-    long m_Min;
-    long m_Max;
+    int m_Min;
+    int m_Max;
 };
 
 
