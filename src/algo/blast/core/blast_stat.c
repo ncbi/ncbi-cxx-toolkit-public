@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.69  2004/05/06 15:05:13  camacho
+ * Fix to previous commit
+ *
  * Revision 1.68  2004/05/06 14:44:27  camacho
  * Made Blast_ScoreFreqDestruct non-static
  *
@@ -884,7 +887,7 @@ BlastScoreBlkFree(BlastScoreBlk* sbp)
     
     for (index=0; index<sbp->number_of_contexts; index++) {
         if (sbp->sfp)
-            sbp->sfp[index] = BlastScoreFreqDestruct(sbp->sfp[index]);
+            sbp->sfp[index] = Blast_ScoreFreqDestruct(sbp->sfp[index]);
         if (sbp->kbp_std)
             sbp->kbp_std[index] = Blast_KarlinBlkDestruct(sbp->kbp_std[index]);
         if (sbp->kbp_gap_std)
@@ -1745,7 +1748,7 @@ Blast_ScoreFreqNew(Int4 score_min, Int4 score_max)
 	sfp->sprob = (double*) calloc(range, sizeof(double));
 	if (sfp->sprob == NULL) 
 	{
-		BlastScoreFreqDestruct(sfp);
+		Blast_ScoreFreqDestruct(sfp);
 		return NULL;
 	}
 
@@ -2384,7 +2387,7 @@ Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp)
 	BlastKarlinBlkCalc(kbp_ideal, sfp);
 	stdrfp = Blast_ResFreqDestruct(stdrfp);
 
-	sfp = BlastScoreFreqDestruct(sfp);
+	sfp = Blast_ScoreFreqDestruct(sfp);
 
 	return kbp_ideal;
 }
