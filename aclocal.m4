@@ -1,7 +1,17 @@
-# autoconf 2.53's version of this breaks our (unorthodox) usage of
+# autoconf 2.53+'s version of this breaks our (unorthodox) usage of
 # CONFIG_FILES and certain substvars; substitute a tame version.
+# (Also, we favor amq -w over pwd because we don't want to end up with
+# /net paths.)
 m4_define([_AC_SRCPATHS],
 [#ac_builddir=. # Useless!
+dnl Try to find a version of pwd that yields /net paths.
+PATH=$PATH:/usr/sbin:/sbin
+export PATH
+if amq -w >/dev/null 2>&1; then
+   smart_pwd='amq -w'
+else
+   smart_pwd='pwd'
+fi
 
 dnl Base source directories on path to *input* file.
 if test -n "$ac_file_in"; then
@@ -33,13 +43,13 @@ case $srcdir in
     ac_srcdir=$ac_top_builddir$srcdir$ac_dir_suffix
     ac_top_srcdir=$ac_top_builddir$srcdir ;;
 esac
-# Don't blindly perform a `cd $1/$ac_foo && pwd` since $ac_foo can be
+# Don't blindly perform a `cd $1/$ac_foo && $smart_pwd` since $ac_foo can be
 # absolute.
-ac_abs_builddir=`cd $1 && pwd`
-ac_abs_top_builddir=`cd $1 && cd ${ac_top_builddir}. && pwd`
+ac_abs_builddir=`cd $1 && $smart_pwd`
+ac_abs_top_builddir=`cd $1 && cd ${ac_top_builddir}. && $smart_pwd`
 ac_builddir=$ac_abs_top_builddir/build # Much more useful than "."!
-ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && pwd`
-ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && pwd`
+ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
+ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
 ])# _AC_SRCPATHS
 
 

@@ -964,6 +964,13 @@ if test "$ac_init_help" = "recursive"; then
   for ac_dir in : $ac_subdirs_all; do test "x$ac_dir" = x: && continue
     test -d $ac_dir || continue
     #ac_builddir=. # Useless!
+PATH=$PATH:/usr/sbin:/sbin
+export PATH
+if amq -w >/dev/null 2>&1; then
+   smart_pwd='amq -w'
+else
+   smart_pwd='pwd'
+fi
 
 if test -n "$ac_file_in"; then
    ac_dir_in=`(dirname "$ac_file_in") 2>/dev/null ||
@@ -1005,13 +1012,13 @@ case $srcdir in
     ac_srcdir=$ac_top_builddir$srcdir$ac_dir_suffix
     ac_top_srcdir=$ac_top_builddir$srcdir ;;
 esac
-# Don't blindly perform a `cd "$ac_dir"/$ac_foo && pwd` since $ac_foo can be
+# Don't blindly perform a `cd "$ac_dir"/$ac_foo && $smart_pwd` since $ac_foo can be
 # absolute.
-ac_abs_builddir=`cd "$ac_dir" && pwd`
-ac_abs_top_builddir=`cd "$ac_dir" && cd ${ac_top_builddir}. && pwd`
+ac_abs_builddir=`cd "$ac_dir" && $smart_pwd`
+ac_abs_top_builddir=`cd "$ac_dir" && cd ${ac_top_builddir}. && $smart_pwd`
 ac_builddir=$ac_abs_top_builddir/build # Much more useful than "."!
-ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && pwd`
-ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && pwd`
+ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
+ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
 
     cd $ac_dir
     # Check for guested configure; otherwise get Cygnus style configure.
@@ -19895,6 +19902,13 @@ echo "$as_me: error: cannot create directory \"$ac_dir\"" >&2;}
    { (exit 1); exit 1; }; }; }
 
   #ac_builddir=. # Useless!
+PATH=$PATH:/usr/sbin:/sbin
+export PATH
+if amq -w >/dev/null 2>&1; then
+   smart_pwd='amq -w'
+else
+   smart_pwd='pwd'
+fi
 
 if test -n "$ac_file_in"; then
    ac_dir_in=`(dirname "$ac_file_in") 2>/dev/null ||
@@ -19936,13 +19950,13 @@ case $srcdir in
     ac_srcdir=$ac_top_builddir$srcdir$ac_dir_suffix
     ac_top_srcdir=$ac_top_builddir$srcdir ;;
 esac
-# Don't blindly perform a `cd "$ac_dir"/$ac_foo && pwd` since $ac_foo can be
+# Don't blindly perform a `cd "$ac_dir"/$ac_foo && $smart_pwd` since $ac_foo can be
 # absolute.
-ac_abs_builddir=`cd "$ac_dir" && pwd`
-ac_abs_top_builddir=`cd "$ac_dir" && cd ${ac_top_builddir}. && pwd`
+ac_abs_builddir=`cd "$ac_dir" && $smart_pwd`
+ac_abs_top_builddir=`cd "$ac_dir" && cd ${ac_top_builddir}. && $smart_pwd`
 ac_builddir=$ac_abs_top_builddir/build # Much more useful than "."!
-ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && pwd`
-ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && pwd`
+ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
+ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
 
 
   case $INSTALL in
@@ -20265,6 +20279,13 @@ echo X"$ac_dest" |
   	  /^X\(\/\).*/{ s//\1/; q; }
   	  s/.*/./; q'`
   #ac_builddir=. # Useless!
+PATH=$PATH:/usr/sbin:/sbin
+export PATH
+if amq -w >/dev/null 2>&1; then
+   smart_pwd='amq -w'
+else
+   smart_pwd='pwd'
+fi
 
 if test -n "$ac_file_in"; then
    ac_dir_in=`(dirname "$ac_file_in") 2>/dev/null ||
@@ -20306,13 +20327,13 @@ case $srcdir in
     ac_srcdir=$ac_top_builddir$srcdir$ac_dir_suffix
     ac_top_srcdir=$ac_top_builddir$srcdir ;;
 esac
-# Don't blindly perform a `cd "$ac_dir"/$ac_foo && pwd` since $ac_foo can be
+# Don't blindly perform a `cd "$ac_dir"/$ac_foo && $smart_pwd` since $ac_foo can be
 # absolute.
-ac_abs_builddir=`cd "$ac_dir" && pwd`
-ac_abs_top_builddir=`cd "$ac_dir" && cd ${ac_top_builddir}. && pwd`
+ac_abs_builddir=`cd "$ac_dir" && $smart_pwd`
+ac_abs_top_builddir=`cd "$ac_dir" && cd ${ac_top_builddir}. && $smart_pwd`
 ac_builddir=$ac_abs_top_builddir/build # Much more useful than "."!
-ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && pwd`
-ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && pwd`
+ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
+ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
 
 
   { echo "$as_me:$LINENO: executing $ac_dest commands" >&5
