@@ -34,7 +34,6 @@
  */
 
 #include <corelib/ncbiexpt.hpp>
-#include <objects/alnmgr/alnmap.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -44,7 +43,10 @@ class CAlnException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
-        eConsensusNotPresent
+        eConsensusNotPresent,
+        eInvalidRow,
+        eInvalidSegment,
+        eInvalidDenseg
     };
 
     NCBI_EXCEPTION_DEFAULT(CAlnException,CException);
@@ -53,6 +55,9 @@ public:
     {
         switch (GetErrCode()) {
         case eConsensusNotPresent:  return "eConsensusNotPresent";
+        case eInvalidRow:           return "eInvalidRow";
+        case eInvalidSegment:       return "eInvalidSegment";
+        case eInvalidDenseg:        return "eInvalidDenseg";
         default:                    return CException::GetErrCodeString();
         }
     }
@@ -67,6 +72,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/09/26 18:13:52  todorov
+ * introducing a few new exceptions
+ *
  * Revision 1.1  2002/09/25 18:16:26  dicuccio
  * Reworked computation of consensus sequence - this is now stored directly
  * in the underlying CDense_seg
