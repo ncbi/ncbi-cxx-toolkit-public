@@ -199,6 +199,8 @@ void AgpRead(CNcbiIstream& is,
                 catch (invalid_argument& e) {
                     comp_id.Reset(new CSeq_id);
                 }
+            } else {
+                comp_id.Reset(new CSeq_id);
             }
             if (comp_id->Which() == CSeq_id::e_not_set) {
                 // not a recognized format, or request to force a local id
@@ -249,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.11  2005/01/26 21:24:58  jcherry
+ * Fix for "force local id" case
+ *
  * Revision 1.10  2005/01/26 20:58:48  jcherry
  * More robust and controllable handling of component ids
  *
