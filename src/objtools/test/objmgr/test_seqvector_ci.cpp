@@ -97,6 +97,7 @@ void CTestApp::Init(void)
     arg_desc->AddDefaultKey("seed", "RandomSeed",
                             "Force random seed",
                             CArgDescriptions::eInteger, "0");
+    arg_desc->AddFlag("no_scope", "Use seq vector with null scope");
 
     // Program description
     string prog_description = "Test for CSeqVector_CI\n";
@@ -267,7 +268,13 @@ int CTestApp::Run(void)
     cout << "Testing gi " << gi << endl;
 
     // Create seq-vector
-    m_Vect = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    if ( !args["no_scope"] ) {
+        m_Vect = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    }
+    else {
+        m_Vect = CSeqVector(handle.GetSeqMap(), *(CScope*)0,
+                            CBioseq_Handle::eCoding_Iupac);
+    }
     // Prepare reference data
     m_Vect.GetSeqData(0, m_Vect.size(), m_RefBuf);
 
@@ -486,6 +493,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/04/12 16:49:56  vasilche
+* Added option to test CSeqVector with null scope.
+*
 * Revision 1.2  2004/04/09 20:35:32  vasilche
 * Fixed test on short sequences (<100).
 *
