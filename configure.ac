@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.240 2003/11/26 16:03:15 ucko Exp $
+#  $Id: configure.ac,v 1.241 2003/12/02 16:41:51 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -851,7 +851,7 @@ CXXFLAGS="$ARCH_CFLAGS $CXXFLAGS"
 LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
 
 
-### large file support
+### large file support (switch to AC_SYS_LARGEFILE?)
 if test "$with_lfs" = "yes" ; then
    LFSFLAGS="-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
    CPPFLAGS="$LFSFLAGS $CPPFLAGS"
@@ -1268,8 +1268,10 @@ elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
    pure_runpath=`echo ${with_runpath} | sed s/{}/$root_base/`
    runpath="${CONF_f_runpath}${pure_runpath}"
    case "$host_os:$compiler" in
-    linux*:GCC | *bsd*:GCC | cygwin*:GCC )
-      runpath="$runpath -Wl,-rpath-link,\$(libdir)"
+    *:GCC )
+      if `$CXX -print-prog-name=ld` --version 2>&1 | grep GNU >/dev/null; then
+         runpath="$runpath -Wl,-rpath-link,\$(libdir)"
+      fi
       ;;
     darwin* )
       # Needed for a few gui projects, including gbench_plugin_scan;
