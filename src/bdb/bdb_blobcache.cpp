@@ -234,9 +234,9 @@ private:
         s_MakeOverflowFileName(path, m_Path, m_BlobKey.c_str(), m_Version);
         LOG_POST(Info << "LC: Making overflow file " << path);
         m_OverflowFile->open(path, 
-                             ios_base::out | 
-                             ios_base::trunc | 
-                             ios_base::binary);
+                             IOS_BASE::out | 
+                             IOS_BASE::trunc | 
+                             IOS_BASE::binary);
         if (!m_OverflowFile->is_open()) {
             LOG_POST(Info << "LC Error:Cannot create overflow file " << path);
             delete m_OverflowFile;
@@ -398,7 +398,7 @@ bool CBDB_BLOB_Cache::Read(const string& key,
         s_MakeOverflowFileName(path, m_Path.c_str(), key.c_str(), version);
 
         auto_ptr<CNcbiIfstream>  overflow_file(new CNcbiIfstream());
-        overflow_file->open(path, ios_base::in | ios_base::binary);
+        overflow_file->open(path, IOS_BASE::in | IOS_BASE::binary);
         if (!overflow_file->is_open()) {
             return false;
         }
@@ -559,7 +559,7 @@ IReader* CBDB_BLOB_Cache::GetReadStream(const string& key,
         char path[2048];
         s_MakeOverflowFileName(path, m_Path.c_str(), key.c_str(), version);
         auto_ptr<CNcbiIfstream>  overflow_file(new CNcbiIfstream());
-        overflow_file->open(path, ios_base::in | ios_base::binary);
+        overflow_file->open(path, IOS_BASE::in | IOS_BASE::binary);
         if (!overflow_file->is_open()) {
             return 0;
         }
@@ -634,6 +634,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/10/16 00:30:57  ucko
+ * ios_base -> IOS_BASE (should fix GCC 2.95 build)
+ *
  * Revision 1.8  2003/10/15 18:39:13  kuznets
  * Fixed minor incompatibility with the C++ language.
  *
