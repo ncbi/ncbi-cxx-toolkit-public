@@ -12,8 +12,6 @@
 ###########################################################################
 
 
-#@script_shell@
-
-#SYBASE="@SYBASE_PATH@"
-#export SYBASE
-#exec "$@"
+SYBASE="C:\\Sybase"
+export SYBASE
+exec "$@"
