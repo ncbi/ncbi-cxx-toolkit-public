@@ -85,6 +85,11 @@ public:
         eDuplicatesEnable
     };
 
+    enum EIgnoreError {
+        eIgnoreError,
+        eThrowOnError
+    };
+
 public:
     CBDB_RawFile(EDuplicateKeys dup_keys=eDuplicatesDisable);
     virtual ~CBDB_RawFile();
@@ -163,11 +168,7 @@ protected:
                 EOpenMode open_mode);
     void x_Create(const char* filename, const char* database);
 
-    enum ECloseMode {
-        eIgnoreError,
-        eThrowOnError
-    };
-    void x_Close(ECloseMode close_mode);
+    void x_Close(EIgnoreError close_mode);
 
     // Create m_DB member, set page, cache parameters
     void x_CreateDB();
@@ -229,7 +230,7 @@ public:
     EBDB_ErrCode Insert(EAfterWrite write_flag = eDiscardData);
 
     /// Delete record corresponding to the current key value.
-    EBDB_ErrCode Delete();
+    EBDB_ErrCode Delete(EIgnoreError on_error=eThrowOnError);
 
     /// Update record corresponding to the current key value. If record does not exist
     /// it will be inserted.
@@ -388,6 +389,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/10/15 18:10:09  kuznets
+ * Several functions(Close, Delete) received optional parameter to ignore
+ * errors (if any).
+ *
  * Revision 1.20  2003/09/26 21:08:30  kuznets
  * Comments reformatting for doxygen
  *

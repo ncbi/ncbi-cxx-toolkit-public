@@ -119,7 +119,7 @@ void CBDB_RawFile::SetEnv(CBDB_Env& env)
     m_Env = &env;
 }
 
-void CBDB_RawFile::x_Close(ECloseMode close_mode)
+void CBDB_RawFile::x_Close(EIgnoreError close_mode)
 {
     if ( m_FileName.empty() )
         return;
@@ -221,7 +221,7 @@ unsigned int CBDB_RawFile::Truncate()
 
 void CBDB_RawFile::SetCacheSize(unsigned int cache_size)
 {
-    if (!m_DB) {
+    if (m_DB) {
         int ret = m_DB->set_cachesize(m_DB, 0, m_CacheSize, 1);
         BDB_CHECK(ret, 0);
     }
@@ -524,14 +524,16 @@ EBDB_ErrCode CBDB_File::UpdateInsert(EAfterWrite write_flag)
 }
 
 
-EBDB_ErrCode CBDB_File::Delete()
+EBDB_ErrCode CBDB_File::Delete(EIgnoreError on_error)
 {
     m_KeyBuf->PrepareDBT_ForWrite(m_DBT_Key);
     int ret = m_DB->del(m_DB,
                         0,           // DB_TXN*
                         m_DBT_Key,
                         0);
-    BDB_CHECK(ret, FileName().c_str());
+    if (on_error != eIgnoreError) {
+        BDB_CHECK(ret, FileName().c_str());
+    }
     Discard();
     return eBDB_Ok;
 }
@@ -688,6 +690,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/10/15 18:11:00  kuznets
+ * Several functions(Close, Delete) received optional parameter to ignore
+ * errors (if any).
+ *
  * Revision 1.24  2003/09/17 18:18:21  kuznets
  * Fixed some memory allocation bug in key cloning.
  *
