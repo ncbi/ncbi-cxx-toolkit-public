@@ -351,6 +351,7 @@ static EDB_Type s_GetDataType(DBPROCESS* cmd, int n)
     switch (dbcoltype(cmd, n)) {
     case SYBBINARY:    return (dbcollen(cmd, n) > 255) ? eDB_LongBinary : 
                                                          eDB_VarBinary;
+    case SYBBITN:                                                         
     case SYBBIT:       return eDB_Bit;
     case SYBCHAR:      return (dbcollen(cmd, n) > 255) ? eDB_LongChar :
                                                          eDB_VarChar;
@@ -1468,6 +1469,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/02/24 20:22:12  soussov
+ * SYBBITN processing added
+ *
  * Revision 1.12  2003/04/29 21:15:03  soussov
  * new datatypes CDB_LongChar and CDB_LongBinary added
  *
