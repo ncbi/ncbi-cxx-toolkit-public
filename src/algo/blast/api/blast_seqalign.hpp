@@ -42,8 +42,8 @@
 #include <algo/blast/api/blast_option.hpp>
 
 // NewBlast includes
-#include <blast_hits.h>
-#include <gapinfo.h>
+#include <algo/blast/core/blast_hits.h>
+#include <algo/blast/core/gapinfo.h>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -80,6 +80,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/08/11 15:18:50  dondosha
+* Added algo/blast/core to all #included headers
+*
 * Revision 1.7  2003/08/11 13:58:51  dicuccio
 * Added export specifiers.  Fixed problem with unimplemented private copy ctor
 * (truly make unimplemented)

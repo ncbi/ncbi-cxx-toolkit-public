@@ -35,8 +35,8 @@
 #include <algo/blast/api/blast_setup.hpp>
 
 // NewBlast includes
-#include <blast_extend.h>
-#include <blast_gapalign.h>
+#include <algo/blast/core/blast_extend.h>
+#include <algo/blast/core/blast_gapalign.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -484,6 +484,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/08/11 15:17:39  dondosha
+* Added algo/blast/core to all #included headers
+*
 * Revision 1.8  2003/08/08 19:43:07  dicuccio
 * Compilation fixes: #include file rearrangement; fixed use of 'list' and
 * 'vector' as variable names; fixed missing ostrea<< for __int64

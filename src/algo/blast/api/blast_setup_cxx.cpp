@@ -49,8 +49,8 @@
 #include <algo/blast/api/blast_exception.hpp>
 
 // NewBlast includes
-#include <blast_util.h>
-#include <blastkar.h>
+#include <algo/blast/core/blast_util.h>
+#include <algo/blast/core/blastkar.h>
 
 #include <algorithm>
 
@@ -355,6 +355,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/08/11 15:17:39  dondosha
+* Added algo/blast/core to all #included headers
+*
 * Revision 1.11  2003/08/11 14:00:41  dicuccio
 * Indenting changes.  Fixed use of C++ namespaces (USING_SCOPE(objects) inside of
 * BEGIN_NCBI_SCOPE block)
