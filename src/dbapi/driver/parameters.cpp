@@ -39,6 +39,7 @@ BEGIN_NCBI_SCOPE
 CDB_Params::CDB_Params(unsigned int nof_params)
 {
     m_NofParams = nof_params;
+    m_Params= 0;
     if (m_NofParams != 0) {
         m_Params = new SParam[m_NofParams];
         for (unsigned int i = 0;  i < m_NofParams;  m_Params[i++].status = 0)
@@ -178,7 +179,7 @@ bool CDB_Params::SetParam(unsigned int param_no, const string& param_name,
 
 CDB_Params::~CDB_Params()
 {
-    if ( !m_NofParams )
+    if ( !m_NofParams  || !m_Params)
         return;
 
     for (unsigned int i = 0;  i < m_NofParams;  i++) {
@@ -225,6 +226,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/06/04 18:18:46  soussov
+ * Sets m_Params to 0 if no params in constructor
+ *
  * Revision 1.11  2002/12/02 17:00:07  soussov
  * replacing delete m_Params with delete [] m_Params
  *
