@@ -379,9 +379,12 @@ public:
     void Chunks  (CAlnMap::TGetChunkFlags flags = CAlnMap::fAlnSegsOnly);
 
     /// Fasta style Ids
-    const string& GetId   (CAlnMap::TNumrow row) const;
-    void          PrintId (CAlnMap::TNumrow row) const;
-    void          PrintRow(CAlnMap::TNumrow row) const;
+    const string& GetId      (CAlnMap::TNumrow row) const;
+
+    /// Field printers
+    void          PrintId    (CAlnMap::TNumrow row) const;
+    void          PrintNumRow(CAlnMap::TNumrow row) const;
+    void          PrintSeqPos(TSeqPos pos) const;
 
 private:
     const CAlnMap&         m_AlnMap;
@@ -390,6 +393,7 @@ private:
 protected:
     size_t                 m_IdFieldLen;
     size_t                 m_RowFieldLen;
+    size_t                 m_SeqPosFieldLen;
     const CAlnMap::TNumrow m_NumRows;
     CNcbiOstream*          m_Out;
 };
@@ -714,6 +718,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2005/03/15 22:18:01  todorov
+* + PrintSeqPos
+*
 * Revision 1.42  2005/03/15 19:18:11  todorov
 * + CAlnMapPrinter::PrintRow
 *

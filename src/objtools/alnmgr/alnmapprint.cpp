@@ -44,7 +44,8 @@ CAlnMapPrinter::CAlnMapPrinter(const CAlnMap& aln_map,
     : m_AlnMap(aln_map),
       m_IdFieldLen(28),
       m_RowFieldLen(0),
-      m_NumRows(m_NumRows),
+      m_SeqPosFieldLen(0),
+      m_NumRows(aln_map.GetNumRows()),
       m_Out(&out)
 {
     m_Ids.resize(m_NumRows);
@@ -56,6 +57,7 @@ CAlnMapPrinter::CAlnMapPrinter(const CAlnMap& aln_map,
     }
     m_IdFieldLen += 2;
     m_RowFieldLen = NStr::IntToString(m_NumRows).length() + 2;
+    m_SeqPosFieldLen = 10;
 }
 
 
@@ -69,12 +71,21 @@ CAlnMapPrinter::PrintId(CAlnMap::TNumrow row) const
 
 
 void
-CAlnMapPrinter::PrintRow(CAlnMap::TNumrow row) const
+CAlnMapPrinter::PrintNumRow(CAlnMap::TNumrow row) const
 {
     _ASSERT(row <= m_NumRows);
     m_Out->width(m_RowFieldLen);
-    m_Out->setf(ios_base::right, ios_base::adjustfield);
+    m_Out->setf(ios_base::left, ios_base::adjustfield);
     *m_Out << row;
+}
+
+
+void
+CAlnMapPrinter::PrintSeqPos(TSeqPos pos) const
+{
+    m_Out->width(m_SeqPosFieldLen);
+    m_Out->setf(ios_base::left, ios_base::adjustfield);
+    *m_Out << pos;
 }
 
 
@@ -184,6 +195,9 @@ void CAlnMapPrinter::Chunks(CAlnMap::TGetChunkFlags flags)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/03/15 22:16:44  todorov
+ * + PrintSeqPos
+ *
  * Revision 1.2  2005/03/15 19:17:16  todorov
  * + PrintRow
  *

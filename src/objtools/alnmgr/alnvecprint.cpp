@@ -188,9 +188,11 @@ void CAlnVecPrinter::PopsetStyle(int scrn_width,
             TSeqPos pos = 0, aln_len = m_AlnVec.GetAlnStop() + 1;
             do {
                 for (row = 0; row < nrows; row++) {
-                    PrintRow(row);
+                    PrintNumRow(row);
                     PrintId(row);
+                    PrintSeqPos(scrn_lefts[row].front());
                     *m_Out << scrn_lefts[row].front();
+
                     *m_Out << buffer[row].substr(pos, scrn_width)
                            << " "
                            << scrn_rights[row].front()
@@ -387,6 +389,9 @@ void CAlnVecPrinter::ClustalStyle(int scrn_width,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/03/15 22:17:32  todorov
+ * + PrintSeqPos
+ *
  * Revision 1.1  2005/03/15 17:43:36  todorov
  * Initial revision
  *
