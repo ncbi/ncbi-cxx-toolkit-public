@@ -80,6 +80,8 @@ public:
     BlastHSPResults* GetResults() const;
     BlastReturnStat* GetReturnStats() const;
     BlastScoreBlk* GetScoreBlk() const;
+    const CBlastQueryInfo& GetQueryInfo() const;
+
 
 protected:
     virtual int SetupSearch();
@@ -184,6 +186,12 @@ inline BlastScoreBlk* CDbBlast::GetScoreBlk() const
     return mi_pScoreBlock;
 }
 
+inline const CBlastQueryInfo& CDbBlast::GetQueryInfo() const
+{
+    return mi_clsQueryInfo;
+
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -191,6 +199,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/12/10 20:08:59  dondosha
+* Added function to retrieve the query info structure
+*
 * Revision 1.4  2003/12/08 22:43:05  dondosha
 * Added getters for score block and return stats structures
 *
