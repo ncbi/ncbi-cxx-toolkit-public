@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
 * Revision 1.31  2002/09/05 18:38:57  thiessen
 * add sort by highlights
 *
@@ -268,11 +271,11 @@ void Messenger::RemoveSequenceViewer(const ViewerBase *sequenceViewer)
     }
 }
 
-void Messenger::SequenceWindowsSave(void)
+void Messenger::SequenceWindowsSave(bool prompt)
 {
     SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
     for (q=sequenceViewers.begin(); q!=qe; q++)
-        (*q)->SaveDialog();
+        (*q)->SaveDialog(prompt);
 }
 
 void Messenger::NewSequenceViewerFont(void)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
 * Revision 1.63  2002/08/15 22:13:14  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -321,7 +324,7 @@ public:
 
     // public methods
     void LoadFile(const char *filename);
-    bool SaveDialog(bool canCancel);
+    bool SaveDialog(bool prompt, bool canCancel);
     void SetWindowTitle(void);
     void DialogTextChanged(const MultiTextDialog *changed);
     void DialogDestroyed(const MultiTextDialog *destroyed);
@@ -329,7 +332,8 @@ public:
     enum {
         // File menu
             MID_OPEN,
-            MID_SAVE,
+            MID_SAVE_SAME,
+            MID_SAVE_AS,
             MID_PNG,
             MID_REFIT_ALL,
             MID_LIMIT_STRUCT,

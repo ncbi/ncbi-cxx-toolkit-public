@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
 * Revision 1.48  2002/08/15 22:13:18  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -280,7 +283,7 @@ void UpdateViewerWindow::OnCloseWindow(wxCloseEvent& event)
             event.Veto();
             return;
         }
-        SaveDialog(false);
+        SaveDialog(true, false);
         viewer->GUIDestroyed(); // make sure UpdateViewer knows the GUI is gone
         GlobalMessenger()->UnPostRedrawSequenceViewer(viewer);  // don't try to redraw after destroyed!
     }
@@ -376,18 +379,22 @@ void UpdateViewerWindow::OnDelete(wxCommandEvent& event)
     }
 }
 
-bool UpdateViewerWindow::SaveDialog(bool canCancel)
+bool UpdateViewerWindow::SaveDialog(bool prompt, bool canCancel)
 {
     // quick & dirty check for whether save is necessary, by whether Undo is enabled
     if (!menuBar->IsEnabled(MID_UNDO)) return true;
 
-    int option = wxYES_NO | wxYES_DEFAULT | wxICON_EXCLAMATION | wxCENTRE;
-    if (canCancel) option |= wxCANCEL;
+    int option = wxID_YES;
 
-    wxMessageDialog dialog(NULL, "Do you want to keep the changes to these updates?", "", option);
-    option = dialog.ShowModal();
+    if (prompt) {
+        option = wxYES_NO | wxYES_DEFAULT | wxICON_EXCLAMATION | wxCENTRE;
+        if (canCancel) option |= wxCANCEL;
 
-    if (option == wxID_CANCEL) return false; // user cancelled this operation
+        wxMessageDialog dialog(NULL, "Do you want to keep the changes to these updates?", "", option);
+        option = dialog.ShowModal();
+
+        if (option == wxID_CANCEL) return false; // user cancelled this operation
+    }
 
     if (option == wxID_YES)
         updateViewer->SaveAlignments();     // save data

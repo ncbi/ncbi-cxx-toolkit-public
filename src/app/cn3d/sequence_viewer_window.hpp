@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
 * Revision 1.20  2002/09/05 18:38:58  thiessen
 * add sort by highlights
 *
@@ -198,12 +201,8 @@ private:
     DECLARE_EVENT_TABLE()
 
 public:
-    // ask if user wants to save edits; return value indicates whether program should
-    // continue after this dialog - i.e., returns false if user hits 'cancel';
-    // program should then abort the operation that engendered this function call.
-    // 'canCancel' tells whether or not a 'cancel' button is even displayed - thus
-    // if 'canCancel' is false, the function will always return true.
-    bool SaveDialog(bool canCancel);
+
+    bool SaveDialog(bool prompt, bool canCancel);
 
     bool DoDeleteRow(void) const { return menuBar->IsChecked(MID_DELETE_ROW); }
     bool DoRealignRow(void) const { return menuBar->IsChecked(MID_REALIGN_ROW); }

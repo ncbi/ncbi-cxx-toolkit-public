@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
 * Revision 1.14  2002/08/15 22:13:18  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -255,6 +258,16 @@ void ViewerBase::MakeResidueVisible(const Molecule *molecule, int seqIndex)
     if (displayStack.back()->GetDisplayCoordinates(molecule, seqIndex,
             (*viewerWindow)->GetCurrentJustification(), &column, &row))
         (*viewerWindow)->MakeCellVisible(column, row);
+}
+
+void ViewerBase::SaveDialog(bool prompt)
+{
+    if (*viewerWindow) (*viewerWindow)->SaveDialog(prompt, false);
+}
+
+void ViewerBase::Refresh(void)
+{
+    if (*viewerWindow) (*viewerWindow)->Refresh();
 }
 
 END_SCOPE(Cn3D)

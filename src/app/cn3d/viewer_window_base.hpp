@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
 * Revision 1.21  2002/08/15 22:13:19  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -134,6 +137,13 @@ public:
 
     // displays a new alignment, and whether to enable the editor and column selection
     void NewDisplay(SequenceDisplay *display, bool enableSelectByColumn);
+
+    // if 'prompt', ask if user wants to save edits; return value indicates whether program
+    // should continue after this dialog - i.e., returns false if user hits 'cancel';
+    // program should then abort the operation that engendered this function call.
+    // 'canCancel' tells whether or not a 'cancel' button is even displayed - thus
+    // if 'canCancel' is false, the function will always return true.
+    virtual bool SaveDialog(bool prompt, bool canCancel) = 0;
 
     // updates alignment (e.g. if width or # rows has changed); doesn't change scroll
     void UpdateDisplay(SequenceDisplay *display);

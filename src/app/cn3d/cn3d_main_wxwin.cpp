@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.155  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
 * Revision 1.154  2002/09/06 13:06:31  thiessen
 * fix menu accelerator conflicts
 *
@@ -1132,7 +1135,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_CLOSE     (                                         Cn3DMainFrame::OnCloseWindow)
     EVT_MENU      (MID_EXIT,                                Cn3DMainFrame::OnExit)
     EVT_MENU      (MID_OPEN,                                Cn3DMainFrame::OnOpen)
-    EVT_MENU      (MID_SAVE,                                Cn3DMainFrame::OnSave)
+    EVT_MENU_RANGE(MID_SAVE_SAME, MID_SAVE_AS,              Cn3DMainFrame::OnSave)
     EVT_MENU      (MID_PNG,                                 Cn3DMainFrame::OnPNG)
     EVT_MENU_RANGE(MID_ZOOM_IN,  MID_ALL_FRAMES,            Cn3DMainFrame::OnAdjustView)
     EVT_MENU_RANGE(MID_SHOW_HIDE,  MID_SHOW_SELECTED,       Cn3DMainFrame::OnShowHide)
@@ -1168,7 +1171,8 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menuBar = new wxMenuBar;
     wxMenu *menu = new wxMenu;
     menu->Append(MID_OPEN, "&Open");
-    menu->Append(MID_SAVE, "&Save");
+    menu->Append(MID_SAVE_SAME, "&Save\tCtrl+S");
+    menu->Append(MID_SAVE_AS, "Save &As...");
     menu->Append(MID_PNG, "&Export PNG");
     menu->AppendSeparator();
     menu->Append(MID_REFIT_ALL, "&Realign Structures");
@@ -1372,8 +1376,8 @@ void Cn3DMainFrame::OnExit(wxCommandEvent& event)
 {
     timer.Stop();
     GlobalMessenger()->RemoveStructureWindow(this); // don't bother with any redraws since we're exiting
-    GlobalMessenger()->SequenceWindowsSave();       // save any edited alignment and updates first
-    SaveDialog(false);                              // give structure window a chance to save data
+    GlobalMessenger()->SequenceWindowsSave(true);   // save any edited alignment and updates first
+    SaveDialog(true, false);                        // give structure window a chance to save data
     SaveFavorites();
 
     // remove help window if present
@@ -1734,22 +1738,27 @@ void Cn3DMainFrame::OnPreferences(wxCommandEvent& event)
     int result = dialog.ShowModal();
 }
 
-bool Cn3DMainFrame::SaveDialog(bool canCancel)
+bool Cn3DMainFrame::SaveDialog(bool prompt, bool canCancel)
 {
     // check for whether save is necessary
     if (!glCanvas->structureSet || !glCanvas->structureSet->HasDataChanged())
         return true;
 
-    int option = wxYES_NO | wxYES_DEFAULT | wxICON_EXCLAMATION | wxCENTRE;
-    if (canCancel) option |= wxCANCEL;
+    int option = wxID_YES;
 
-    wxMessageDialog dialog(NULL, "Do you want to save your work to a file?", "", option);
-    option = dialog.ShowModal();
+    if (prompt) {
+        option = wxYES_NO | wxYES_DEFAULT | wxICON_EXCLAMATION | wxCENTRE;
+        if (canCancel) option |= wxCANCEL;
 
-    if (option == wxID_CANCEL) return false; // user cancelled this operation
+        wxMessageDialog dialog(NULL, "Do you want to save your work to a file?", "", option);
+        option = dialog.ShowModal();
+
+        if (option == wxID_CANCEL) return false; // user cancelled this operation
+    }
 
     if (option == wxID_YES) {
         wxCommandEvent event;
+        event.SetId(prompt ? MID_SAVE_AS : MID_SAVE_SAME);
         OnSave(event);    // save data
     }
 
@@ -2114,8 +2123,8 @@ void Cn3DMainFrame::LoadFile(const char *filename)
 void Cn3DMainFrame::OnOpen(wxCommandEvent& event)
 {
     if (glCanvas->structureSet) {
-        GlobalMessenger()->SequenceWindowsSave();   // give sequence window a chance to save an edited alignment
-        SaveDialog(false);                          // give structure window a chance to save data
+        GlobalMessenger()->SequenceWindowsSave(true);   // give sequence window a chance to save
+        SaveDialog(true, false);                        // give structure window a chance to save data
     }
 
     const wxString& filestr = wxFileSelector("Choose a text or binary ASN1 file to open", userDir.c_str(),
@@ -2130,25 +2139,39 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
 {
     if (!glCanvas->structureSet) return;
 
+    // determine whether to prompt user for filename
+    bool prompt = (event.GetId() == MID_SAVE_AS);
+    if (!prompt) {
+        wxString dir = wxString(userDir.c_str()).MakeLower();
+        // always prompt if this file is stored in some temp folder (e.g. browser cache)
+        if (dir.Contains("cache") || dir.Contains("temp") || dir.Contains("tmp"))
+            prompt = true;
+    }
+
     // force a save of any edits to alignment and updates first
-    GlobalMessenger()->SequenceWindowsSave();
+    GlobalMessenger()->SequenceWindowsSave(prompt);
+
+    if (!prompt && !glCanvas->structureSet->HasDataChanged()) return;
 
     wxString outputFolder = wxString(userDir.c_str(), userDir.size() - 1); // remove trailing /
     wxString outputFilename;
 
-    wxFileName fn(currentFile.c_str());
-    wxFileDialog dialog(this, "Choose a filename for output", outputFolder,
+    if (prompt) {
+        wxFileName fn(currentFile.c_str());
+        wxFileDialog dialog(this, "Choose a filename for output", outputFolder,
 #ifdef __WXGTK__
-        fn.GetFullName(),
+            fn.GetFullName(),
 #else
-        fn.GetName(),
+            fn.GetName(),
 #endif
-        "All Files|*.*|Binary ASN (*.val)|*.val|ASCII CDD (*.acd)|*.acd|ASCII ASN (*.prt)|*.prt",
-        wxSAVE | wxOVERWRITE_PROMPT);
-    dialog.SetFilterIndex(fn.GetExt() == "val" ? 1 : (fn.GetExt() == "acd" ? 2 :
-        (fn.GetExt() == "prt" ? 3 : 0)));
-    if (dialog.ShowModal() == wxID_OK)
-        outputFilename = dialog.GetPath();
+            "All Files|*.*|Binary ASN (*.val)|*.val|ASCII CDD (*.acd)|*.acd|ASCII ASN (*.prt)|*.prt",
+            wxSAVE | wxOVERWRITE_PROMPT);
+        dialog.SetFilterIndex(fn.GetExt() == "val" ? 1 : (fn.GetExt() == "acd" ? 2 :
+            (fn.GetExt() == "prt" ? 3 : 0)));
+        if (dialog.ShowModal() == wxID_OK)
+            outputFilename = dialog.GetPath();
+    } else
+        outputFilename = (userDir + currentFile).c_str();
 
     TESTMSG("save file: '" << outputFilename.c_str() << "'");
 

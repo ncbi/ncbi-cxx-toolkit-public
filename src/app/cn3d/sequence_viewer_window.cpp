@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
 * Revision 1.38  2002/09/06 13:06:31  thiessen
 * fix menu accelerator conflicts
 *
@@ -243,7 +246,7 @@ void SequenceViewerWindow::OnCloseWindow(wxCloseEvent& event)
             event.Veto();
             return;
         }
-        SaveDialog(false);
+        SaveDialog(true, false);
         viewer->GetCurrentDisplay()->RemoveBlockBoundaryRows();
         viewer->GUIDestroyed(); // make sure SequenceViewer knows the GUI is gone
         GlobalMessenger()->UnPostRedrawSequenceViewer(viewer);  // don't try to redraw after destroyed!
@@ -304,14 +307,15 @@ bool SequenceViewerWindow::RequestEditorEnable(bool enable)
 
     // turn off editor
     else {
-        return SaveDialog(true);
+        return SaveDialog(true, true);
     }
 }
 
-bool SequenceViewerWindow::SaveDialog(bool canCancel)
+bool SequenceViewerWindow::SaveDialog(bool prompt, bool canCancel)
 {
-    static bool overrideCanCancel = false, prevCanCancel;
+    static bool overrideCanCancel = false, prevPrompt, prevCanCancel;
     if (overrideCanCancel) {
+        prompt = prevPrompt;
         canCancel = prevCanCancel;
         overrideCanCancel = false;
     }
@@ -320,6 +324,7 @@ bool SequenceViewerWindow::SaveDialog(bool canCancel)
     // if so, then need to turn off editor pretending it was done from 'enable editor' menu item
     if (menuBar->IsChecked(MID_ENABLE_EDIT)) {
         overrideCanCancel = true;
+        prevPrompt = prompt;
         prevCanCancel = canCancel;
         Command(MID_ENABLE_EDIT);
         return true;
@@ -331,13 +336,17 @@ bool SequenceViewerWindow::SaveDialog(bool canCancel)
         return true;
     }
 
-    int option = wxYES_NO | wxYES_DEFAULT | wxICON_EXCLAMATION | wxCENTRE;
-    if (canCancel) option |= wxCANCEL;
+    int option = wxID_YES;
 
-    wxMessageDialog dialog(NULL, "Do you want to keep the changes to this alignment?", "", option);
-    option = dialog.ShowModal();
+    if (prompt) {
+        option = wxYES_NO | wxYES_DEFAULT | wxICON_EXCLAMATION | wxCENTRE;
+        if (canCancel) option |= wxCANCEL;
 
-    if (option == wxID_CANCEL) return false; // user cancelled this operation
+        wxMessageDialog dialog(NULL, "Do you want to keep the changes to this alignment?", "", option);
+        option = dialog.ShowModal();
+
+        if (option == wxID_CANCEL) return false; // user cancelled this operation
+    }
 
     if (option == wxID_YES)
         sequenceViewer->SaveAlignment();    // save data

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
 * Revision 1.12  2002/06/13 14:54:07  thiessen
 * add sort by self-hit
 *
@@ -97,7 +100,7 @@ class ViewerBase
 public:
 
     // to update/remove the GUI window
-    virtual void Refresh(void) = 0; // must be implemented by derived class
+    void Refresh(void);
     void DestroyGUI(void);
 
     // ask whether the editor is enabled for this viewer
@@ -111,8 +114,8 @@ public:
     void RevertAlignment(void);
     void KeepOnlyStackTop(void);
 
-    // tell viewer to save its data (does nothing unless overridden)
-    virtual void SaveDialog(void) { }
+    // tell viewer to save its data
+    virtual void SaveDialog(bool prompt);
 
     // to be notified of font change
     void NewFont(void);

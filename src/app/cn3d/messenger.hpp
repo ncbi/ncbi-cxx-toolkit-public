@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
 * Revision 1.21  2002/09/05 18:38:57  thiessen
 * add sort by highlights
 *
@@ -153,7 +156,7 @@ public:
     void ProcessRedraws(void);
 
     // called if the application is about to exit - tell sequence window(s) to save
-    void SequenceWindowsSave(void);
+    void SequenceWindowsSave(bool prompt);
 
     // called to notify all sequence viewers that their font should be changed
     void NewSequenceViewerFont(void);

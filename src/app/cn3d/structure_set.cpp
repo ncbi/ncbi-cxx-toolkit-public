@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.108  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
 * Revision 1.107  2002/08/15 22:13:17  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -1069,7 +1072,7 @@ void StructureSet::RemoveUnusedSequences(void)
 bool StructureSet::SaveASNData(const char *filename, bool doBinary)
 {
     // force a save of any edits to alignment and updates first (it's okay if this has already been done)
-    GlobalMessenger()->SequenceWindowsSave();
+    GlobalMessenger()->SequenceWindowsSave(true);
     /*if (dataManager->HasDataChanged())*/ RemoveUnusedSequences();
 
     // create and temporarily attach a style dictionary, and annotation set + camera info

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
 * Revision 1.28  2002/08/13 20:46:38  thiessen
 * add global block aligner
 *
@@ -140,12 +143,7 @@ public:
 
     void EnableDerivedEditorMenuItems(bool enabled);
 
-    // ask if user wants to save edits; return value indicates whether program should
-    // continue after this dialog - i.e., returns false if user hits 'cancel';
-    // program should then abort the operation that engendered this function call.
-    // 'canCancel' tells whether or not a 'cancel' button is even displayed - thus
-    // if 'canCancel' is false, the function will always return true.
-    bool SaveDialog(bool canCancel);
+    bool SaveDialog(bool prompt, bool canCancel);
 
     void SetWindowTitle(void);
 

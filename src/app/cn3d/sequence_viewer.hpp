@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
 * Revision 1.27  2002/09/03 13:15:58  thiessen
 * add A2M export
 *
@@ -97,8 +100,6 @@ public:
 
     SequenceViewer(AlignmentManager *alnMgr);
     ~SequenceViewer(void);
-
-    void Refresh(void);
 
     // to create displays from unaligned sequence(s), or multiple alignment
     typedef std::list < const Sequence * > SequenceList;

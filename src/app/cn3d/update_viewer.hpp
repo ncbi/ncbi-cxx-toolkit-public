@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
 * Revision 1.16  2002/08/13 20:46:37  thiessen
 * add global block aligner
 *
@@ -111,7 +114,6 @@ public:
     UpdateViewer(AlignmentManager *alnMgr);
     ~UpdateViewer(void);
 
-    void Refresh(void);             // refreshes the window only if present
     void CreateUpdateWindow(void);  // (re)creates the window
 
     // add new pairwise alignments to the update window
@@ -132,7 +134,7 @@ public:
     void SetInitialState(void);
 
     // functions to save edited data
-    void SaveDialog(void);
+    void SaveDialog(bool prompt);
     void SaveAlignments(void);
 
     // run BLAST on given pairwise alignment - if BLAST is successful, then alignment will be

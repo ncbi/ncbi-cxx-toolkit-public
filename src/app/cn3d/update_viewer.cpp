@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
 * Revision 1.44  2002/08/15 22:13:18  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -242,9 +245,9 @@ void UpdateViewer::SetInitialState(void)
     PushAlignment();
 }
 
-void UpdateViewer::SaveDialog(void)
+void UpdateViewer::SaveDialog(bool prompt)
 {
-    if (updateWindow) updateWindow->SaveDialog(false);
+    if (updateWindow) updateWindow->SaveDialog(prompt, false);
 }
 
 void UpdateViewer::CreateUpdateWindow(void)
@@ -264,11 +267,6 @@ void UpdateViewer::CreateUpdateWindow(void)
             GlobalMessenger()->UnPostRedrawSequenceViewer(this);
         }
     }
-}
-
-void UpdateViewer::Refresh(void)
-{
-    if (updateWindow) updateWindow->Refresh();
 }
 
 void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
 * Revision 1.54  2002/09/03 13:15:58  thiessen
 * add A2M export
 *
@@ -241,16 +244,6 @@ void SequenceViewer::CreateSequenceWindow(void)
             GlobalMessenger()->UnPostRedrawSequenceViewer(this);
         }
     }
-}
-
-void SequenceViewer::Refresh(void)
-{
-    if (sequenceWindow) sequenceWindow->Refresh();
-}
-
-void SequenceViewer::SaveDialog(void)
-{
-    if (sequenceWindow) sequenceWindow->SaveDialog(false);
 }
 
 void SequenceViewer::SaveAlignment(void)
