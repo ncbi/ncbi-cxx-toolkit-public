@@ -54,7 +54,9 @@ BEGIN_SCOPE(objects)
 
 
 CMutexPool_Base<CScope> CScope::sm_Scope_MP;
+#if !defined(NCBI_COMPILER_GCC)  &&  !defined(NCBI_COMPILER_KCC)
 EMPTY_TEMPLATE
+#endif
 CMutex CMutexPool_Base<CScope>::sm_Pool[kMutexPoolSize];
 
 CScope::CScope(CObjectManager& objmgr)
@@ -374,6 +376,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/08/08 19:51:24  ucko
+* Omit EMPTY_TEMPLATE for GCC and KCC, as it evidently leads to link errors(!)
+*
 * Revision 1.25  2002/08/08 14:28:00  ucko
 * Add EMPTY_TEMPLATE to explicit instantiations.
 *

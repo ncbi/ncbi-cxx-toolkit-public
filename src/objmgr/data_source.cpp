@@ -62,9 +62,13 @@ BEGIN_SCOPE(objects)
 
 CMutexPool_Base<CDataSource::TTSESet> CDataSource::sm_TSESet_MP;
 CMutexPool_Base<CDataSource> CDataSource::sm_DataSource_MP;
+#if !defined(NCBI_COMPILER_GCC)  &&  !defined(NCBI_COMPILER_KCC)
 EMPTY_TEMPLATE
+#endif
 CMutex CMutexPool_Base<CDataSource::TTSESet>::sm_Pool[kMutexPoolSize];
+#if !defined(NCBI_COMPILER_GCC)  &&  !defined(NCBI_COMPILER_KCC)
 EMPTY_TEMPLATE
+#endif
 CMutex CMutexPool_Base<CDataSource>::sm_Pool[kMutexPoolSize];
 
 
@@ -1909,6 +1913,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2002/08/08 19:51:16  ucko
+* Omit EMPTY_TEMPLATE for GCC and KCC, as it evidently leads to link errors(!)
+*
 * Revision 1.59  2002/08/08 14:28:00  ucko
 * Add EMPTY_TEMPLATE to explicit instantiations.
 *
