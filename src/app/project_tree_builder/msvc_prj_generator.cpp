@@ -596,7 +596,7 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
     build_info->m_Outputs = outputs;
 
     //Additional Dependencies
-    //build_info->m_AdditionalDependencies = tool_exe_location;
+    build_info->m_AdditionalDependencies = "$(InputDir)$(InputName).def";
 }
 
 
@@ -605,6 +605,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/03/16 21:26:26  gorelenk
+ * Added generation dependencies from $(InputDir)$(InputName).def
+ * to s_CreateDatatoolCustomBuildInfo.
+ *
  * Revision 1.27  2004/03/15 22:22:01  gorelenk
  * Changed implementation of s_CreateDatatoolCustomBuildInfo.
  *
