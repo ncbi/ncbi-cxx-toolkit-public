@@ -1,6 +1,6 @@
 #ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] =
-    "$Id";
+    "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 /* ===========================================================================
@@ -288,13 +288,6 @@ void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
     buffer[ci] |= vec.size()%COMPRESSION_RATIO;
 }
 
-/** Sets up internal query data structure for the BLAST search.
- * @param queries Vector of query locations [in]
- * @param options Options for the BLAST search [in]
- * @param qinfo Query information structure [in]
- * @param seqblk Query sequences data structure [out]
- * @param blast_msg structure to contain error messages
- */
 void
 SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
              const CBlastQueryInfo& qinfo, BLAST_SequenceBlk** seqblk,
@@ -532,9 +525,11 @@ SetupSubjects(const TSeqLocVector& subjects,
 }
 
 SBlastSequence
-GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
-            ENa_strand strand, ESentinelType sentinel,
-            string* warnings) 
+GetSequence(const objects::CSeq_loc& sl, Uint1 encoding, 
+            objects::CScope* scope,
+            objects::ENa_strand strand, 
+            ESentinelType sentinel,
+            std::string* warnings) 
 {
     Uint1* buf = NULL;          // buffer to write sequence
     Uint1* buf_var = NULL;      // temporary pointer to buffer
@@ -944,6 +939,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2005/03/04 16:53:27  camacho
+* more doxygen fixes
+*
 * Revision 1.37  2005/03/04 16:07:05  camacho
 * doxygen fixes
 *

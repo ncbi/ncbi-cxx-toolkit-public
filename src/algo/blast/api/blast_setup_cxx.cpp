@@ -1,5 +1,9 @@
-/*  $Id$
- * ===========================================================================
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] =
+    "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
+/* ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -43,8 +47,8 @@
  */
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
-USING_SCOPE(ncbi::objects);
 
 Uint1
 GetQueryEncoding(EProgram program)
@@ -105,7 +109,8 @@ GetSubjectEncoding(EProgram program)
 }
 
 TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
-                                 ENa_strand strand, ESentinelType sentinel)
+                                 objects::ENa_strand strand, 
+                                 ESentinelType sentinel)
                                  THROWS((CBlastException))
 {
     TSeqPos retval = 0;
@@ -411,6 +416,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.80  2005/03/04 16:53:27  camacho
+ * more doxygen fixes
+ *
  * Revision 1.79  2005/01/21 17:38:57  camacho
  * Handle zero-length sequences
  *

@@ -39,6 +39,11 @@
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/api/blast_exception.hpp>
 
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
+
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
@@ -77,7 +82,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
 /** Sets up internal subject data structure for the BLAST search.
  * @param subjects Vector of subject locations [in]
- * @param prog BLAST program [in]
+ * @param program BLAST program [in]
  * @param seqblk_vec Vector of subject sequence data structures [out]
  * @param max_subjlen Maximal length of the subject sequences [out]
  */
@@ -91,11 +96,18 @@ SetupSubjects(const TSeqLocVector& subjects,
 /// of BLAST (it's a malloc'ed array of Uint1 and its length)
 /// FIXME: do not confuse with blast_seg.c's SSequence
 struct SBlastSequence {
-    TAutoUint1Ptr   data;
-    TSeqPos         length;
+    TAutoUint1Ptr   data;       /**< Sequence data */
+    TSeqPos         length;     /**< Length of the buffer above (not
+                                  necessarily sequence length!) */
 
+    /** Default constructor */
     SBlastSequence()
         : data(NULL), length(0) {}
+
+    /** Parametrized constructor 
+     * @param d buffer containing sequence data [in]
+     * @param l length of buffer above [in]
+     */
     SBlastSequence(Uint1* d, TSeqPos l)
         : data(d), length(l) {}
 };
@@ -216,10 +228,15 @@ GetSubjectEncoding(EProgram program);
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2005/03/04 16:53:27  camacho
+* more doxygen fixes
+*
 * Revision 1.33  2005/03/04 16:07:05  camacho
 * doxygen fixes
 *
