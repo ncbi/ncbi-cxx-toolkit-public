@@ -109,6 +109,7 @@ const char* CLocMapperException::GetErrCodeString(void) const
 const char* CLoaderException::GetErrCodeString(void) const
 {
     switch ( GetErrCode() ) {
+    case eNotImplemented:   return "eNotImplemented";
     case eNoData:           return "eNoData";
     case ePrivateData:      return "ePrivateData";
     case eConnectionFailed: return "eConnectionFailed";

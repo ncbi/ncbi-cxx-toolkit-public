@@ -133,6 +133,7 @@ class NCBI_XOBJMGR_EXPORT CLoaderException : public CObjMgrException
 {
 public:
     enum EErrCode {
+        eNotImplemented,
         eNoData,
         ePrivateData,
         eConnectionFailed,
@@ -171,6 +172,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/12/22 15:56:11  vasilche
+* Added CLoaderException::eNotImplemented.
+*
 * Revision 1.11  2004/12/13 15:19:20  grichenk
 * Doxygenized comments
 *
