@@ -54,8 +54,8 @@ BEGIN_NCBI_SCOPE
 CCodeGenerator::CCodeGenerator(void)
     : m_ExcludeRecursion(false), m_FileNamePrefixSource(eFileName_FromNone)
 {
-	m_MainFiles.SetModuleContainer(this);
-	m_ImportFiles.SetModuleContainer(this); 
+    m_MainFiles.SetModuleContainer(this);
+    m_ImportFiles.SetModuleContainer(this); 
     m_UseQuotedForm = false;
     m_CreateCvsignore = false;
 }
@@ -544,6 +544,14 @@ void CCodeGenerator::GenerateCode(void)
                     }
                 }
 
+// doxygen header
+                if ( !is_cpp  &&  CClassCode::GetDoxygenComments()
+                     &&  !module_names.empty() ) {
+                    CDirEntry entry(GetMainModules().GetModuleSets().front()
+                                    ->GetSourceFileName());
+                    ignoreFile << entry.GetBase() << "_doxygen.h" << endl;
+                }
+
 // file list
                 if ( is_cpp && !m_FileListFileName.empty() ) {
                     CDirEntry entry(Path(m_FileNamePrefix,m_FileListFileName));
@@ -795,6 +803,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2004/05/13 15:49:49  ucko
+* When generating doxygen headers, list them in .cvsignore.
+*
 * Revision 1.56  2004/05/03 19:31:03  gouriano
 * Made generation of DOXYGEN-style comments optional
 *
