@@ -84,26 +84,19 @@ int CImageTestApp::Run(void)
     //
     string base = args["base"].AsString();
 
-    vector<string> image_names;
-    image_names.push_back(base + ".bmp");
-    image_names.push_back(base + ".jpg");
-    image_names.push_back(base + ".png");
-    image_names.push_back(base + ".rgb");
-    image_names.push_back(base + ".tiff");
-    image_names.push_back(base + ".gif");
-    image_names.push_back(base + ".xpm");
-
-    CImageIO::EType fmts[7] = {
+    const int max_fmts = 8;
+    CImageIO::EType fmts[max_fmts] = {
         CImageIO::eBmp,
         CImageIO::eJpeg,
         CImageIO::ePng,
         CImageIO::eGif,
         CImageIO::eSgi,
         CImageIO::eTiff,
-        CImageIO::eXpm
+        CImageIO::eXpm,
+        CImageIO::eRaw
     };
 
-    const char* extensions[7] = {
+    const char* extensions[max_fmts] = {
         ".bmp",
         ".jpg",
         ".png",
@@ -111,7 +104,13 @@ int CImageTestApp::Run(void)
         ".sgi",
         ".tiff",
         ".xpm",
+        ".raw"
     };
+
+    vector<string> image_names;
+    for (int i = 0;  i < max_fmts;  ++i) {
+        image_names.push_back(base + extensions[i]);
+    }
 
     cout << "testing image read/write..." << endl;
     ITERATE (vector<string>, iter, image_names) {
@@ -129,7 +128,7 @@ int CImageTestApp::Run(void)
         image->SetDepth(3);
 
         // write in a multitude of formats
-        for (int i = 0;  i < 7;  ++i) {
+        for (int i = 0;  i < max_fmts;  ++i) {
             string fname (*iter + extensions[i]);
             cout << "trying to write: " << fname << endl;
             if (CImageIO::WriteImage(*image, fname, fmts[i])) {
@@ -165,11 +164,11 @@ int CImageTestApp::Run(void)
         }
 
         subimage->SetDepth(3);
-        if (CImageIO::WriteImage(*subimage, *iter + ".sub-3.png",
+        if (CImageIO::WriteImage(*subimage, *iter + ".sub-3.jpg",
                                  CImageIO::ePng)) {
             cout << "wrote subset (" << x << ", " << y << ", "
                 << x+width << ", " << y+height << ") to file "
-                << *iter + ".sub.png"
+                << *iter + ".sub.jpg"
                 << endl;
         }
     }
@@ -229,6 +228,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/12/16 15:49:38  dicuccio
+ * Large re-write of image handling.  Added improved error-handling and support
+ * for streams-based i/o (via hooks into each client library).
+ *
  * Revision 1.1  2003/06/03 15:17:14  dicuccio
  * Initial revision of image library
  *

@@ -48,304 +48,86 @@ BEGIN_NCBI_SCOPE
 
 
 //
-// ReadImage()
-// read a PNG format image into memory, returning the image itself
-// This version reads the entire image
+// internal message handler for PNG images
 //
-CImage* CImageIOPng::ReadImage(const string& file)
+static void s_PngReadErrorHandler(png_structp png_ptr, png_const_charp msg)
 {
-    // open our file for reading
-    FILE* fp = fopen(file.c_str(), "rb");
-    if ( !fp ) {
-        string msg("CImageIOPng::ReadImage(): can't open file ");
-        msg += file;
-        msg += " for reading";
-        NCBI_THROW(CImageException, eReadError, msg);
-    }
+    string str("Error reading PNG file: ");
+    str += msg;
+    NCBI_THROW(CImageException, eReadError, str);
+}
 
-    // initialize png stuff
-    png_structp png_ptr =
-        png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+
+//
+// internal message handler for PNG images
+//
+static void s_PngWriteErrorHandler(png_structp png_ptr, png_const_charp msg)
+{
+    string str("Error writing PNG file: ");
+    str += msg;
+    NCBI_THROW(CImageException, eWriteError, str);
+}
+
+
+//
+// internal handler: translate PNG warnings to NCBI warnings
+//
+static void s_PngWarningHandler(png_structp png_ptr, png_const_charp msg)
+{
+    LOG_POST(Warning << "Warning in PNG file: " << msg);
+}
+
+
+//
+// initialize PNG reading
+//
+static void s_PngReadInit(png_structp& png_ptr,
+                          png_infop&   info_ptr,
+                          png_infop&   end_info_ptr)
+{
+    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL,
+                                     s_PngReadErrorHandler,
+                                     s_PngWarningHandler);
     if ( !png_ptr ) {
         NCBI_THROW(CImageException, eReadError,
                    "CImageIOPng::ReadImage(): png_create_read_struct() failed");
     }
 
-    png_infop info_ptr = png_create_info_struct(png_ptr);
+    info_ptr = png_create_info_struct(png_ptr);
     if ( !info_ptr ) {
-        png_destroy_read_struct(&png_ptr, NULL, NULL);
         NCBI_THROW(CImageException, eReadError,
                    "CImageIOPng::ReadImage(): png_create_info_struct() failed");
     }
 
-    png_infop end_info_ptr = png_create_info_struct(png_ptr);
+    end_info_ptr = png_create_info_struct(png_ptr);
     if ( !end_info_ptr ) {
-        png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
         NCBI_THROW(CImageException, eReadError,
                    "CImageIOPng::ReadImage(): png_create_info_struct() failed");
     }
-
-    // begin reading our image
-    png_init_io(png_ptr, fp);
-    png_read_info(png_ptr, info_ptr);
-
-    // store and validate our image's parameters
-    size_t width           = info_ptr->width;
-    size_t height          = info_ptr->height;
-    size_t depth           = info_ptr->channels;
-    png_byte color_type = info_ptr->color_type;
-    png_byte bit_depth  = info_ptr->bit_depth;
-
-    // we support only RGB and RGBA images
-    if ( color_type != PNG_COLOR_TYPE_RGB  &&
-         color_type != PNG_COLOR_TYPE_RGB_ALPHA ) {
-        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
-        fclose(fp);
-
-        string msg("CImageIOPng::ReadImage(): unhandled color type: ");
-        msg += NStr::IntToString((int)color_type);
-        NCBI_THROW(CImageException, eReadError, msg);
-    }
-
-    // ...and only with a bit depth of 8
-    if (bit_depth != 8) {
-        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
-        fclose(fp);
-
-        string msg("CImageIOPng::ReadImage(): unhandled bit depth: ");
-        msg += NStr::IntToString((int)bit_depth);
-        NCBI_THROW(CImageException, eReadError, msg);
-    }
-
-    // this goes along with RGB or RGBA
-    if (depth != 3  &&  depth != 4) {
-        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
-        fclose(fp);
-
-        string msg("CImageIOPng::ReadImage(): unhandled image channels: ");
-        msg += NStr::IntToString((int)depth);
-        NCBI_THROW(CImageException, eReadError, msg);
-    }
-
-    png_read_update_info(png_ptr, info_ptr);
-
-    // allocate our image and read, line by line
-    CRef<CImage> image(new CImage(width, height, depth));
-    unsigned char* row_ptr = image->SetData();
-    for (size_t i = 0;  i < height;  ++i) {
-        png_read_row(png_ptr, row_ptr, NULL);
-        row_ptr += width * depth;
-    }
-
-    // close and return
-    png_read_end(png_ptr, end_info_ptr);
-    png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
-    fclose(fp);
-
-    return image.Release();
 }
 
 
 //
-// ReadImage()
-// read a PNG format image into memory, returning the image itself
-// This version reads a subpart of an image
+// initialize PNG writing
 //
-CImage* CImageIOPng::ReadImage(const string& file,
-                               size_t x, size_t y, size_t w, size_t h)
+static void s_PngWriteInit(png_structp& png_ptr,
+                           png_infop&   info_ptr,
+                           const CImage& image,
+                           CImageIO::ECompress compress)
 {
-    // open our file for reading
-    FILE* fp = fopen(file.c_str(), "rb");
-    if ( !fp ) {
-        string msg("CImageIOPng::ReadImage(): can't open file ");
-        msg += file;
-        msg += " for reading";
-        NCBI_THROW(CImageException, eReadError, msg);
-    }
-
-    // initialize png stuff
-    png_structp png_ptr =
-        png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL,
+                                      s_PngWriteErrorHandler,
+                                      s_PngWarningHandler);
     if ( !png_ptr ) {
-        fclose(fp);
-        NCBI_THROW(CImageException, eReadError,
-                   "CImageIOPng::ReadImage(): png_create_read_struct() failed");
-    }
-
-    png_infop info_ptr = png_create_info_struct(png_ptr);
-    if ( !info_ptr ) {
-        png_destroy_read_struct(&png_ptr, NULL, NULL);
-        fclose(fp);
-        NCBI_THROW(CImageException, eReadError,
-                   "CImageIOPng::ReadImage(): png_create_info_struct() failed");
-    }
-
-    png_infop end_info_ptr = png_create_info_struct(png_ptr);
-    if ( !end_info_ptr ) {
-        png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
-        fclose(fp);
-        NCBI_THROW(CImageException, eReadError,
-                   "CImageIOPng::ReadImage(): png_create_info_struct() failed");
-    }
-
-    // begin reading
-    png_init_io(png_ptr, fp);
-    png_read_info(png_ptr, info_ptr);
-
-    // store and validate our image's parameters
-    size_t width           = info_ptr->width;
-    size_t height          = info_ptr->height;
-    size_t depth           = info_ptr->channels;
-    png_byte color_type = info_ptr->color_type;
-    png_byte bit_depth  = info_ptr->bit_depth;
-
-    // validate against CImage supprt
-    // we only deal with RGB or RGBA images, 8 bits per pixel
-    if ( color_type != PNG_COLOR_TYPE_RGB  &&
-         color_type != PNG_COLOR_TYPE_RGB_ALPHA ) {
-        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
-        fclose(fp);
-
-        string msg("CImageIOPng::ReadImage(): unhandled color type: ");
-        msg += NStr::IntToString((int)color_type);
-        NCBI_THROW(CImageException, eReadError, msg);
-    }
-
-    if (bit_depth != 8) {
-        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
-        fclose(fp);
-
-        string msg("CImageIOPng::ReadImage(): unhandled bit depth: ");
-        msg += NStr::IntToString((int)bit_depth);
-        NCBI_THROW(CImageException, eReadError, msg);
-    }
-
-    if (depth != 3  &&  depth != 4) {
-        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
-        fclose(fp);
-
-        string msg("CImageIOPng::ReadImage(): unhandled image channels: ");
-        msg += NStr::IntToString((int)depth);
-        NCBI_THROW(CImageException, eReadError, msg);
-    }
-
-    // further validation: make sure we're actually on the image
-    if (x >= width  ||  y >= height) {
-        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
-        fclose(fp);
-
-        string msg("CImageIOJpeg::ReadImage(): invalid starting position: ");
-        msg += NStr::IntToString(x);
-        msg += ", ";
-        msg += NStr::IntToString(y);
-        NCBI_THROW(CImageException, eReadError, msg);
-    }
-
-    // clamp our width and height to the image size
-    if (x + w >= width) {
-        w = width - x;
-        LOG_POST(Warning
-                 << "CImageIOPng::ReadImage(): clamped width to " << w);
-    }
-
-    if (y + h >= height) {
-        h = height - y;
-        LOG_POST(Warning
-                 << "CImageIOPng::ReadImage(): clamped height to " << h);
-    }
-
-    png_read_update_info(png_ptr, info_ptr);
-
-    // allocate our image
-    CRef<CImage> image(new CImage(w, h, depth));
-    unsigned char* to_data = image->SetData();
-    size_t to_stride = image->GetWidth() * image->GetDepth();
-
-    // allocate a scanline for this image
-    AutoPtr<unsigned char, ArrayDeleter<unsigned char> > row
-        (new unsigned char[width * depth]);
-    unsigned char* row_ptr = row.get();
-
-    size_t i;
-
-    // read up to our starting scan line
-    for (i = 0;  i < y;  ++i) {
-        png_read_row(png_ptr, row_ptr, NULL);
-    }
-
-    // read and convert the scanlines of interest
-    for ( ;  i < y + h;  ++i) {
-        png_read_row(png_ptr, row_ptr, NULL);
-        memcpy(to_data, row_ptr, to_stride);
-        to_data += to_stride;
-    }
-
-    // read the rest of the image (do we need this?)
-    for ( ;  i < height;  ++i) {
-        png_read_row(png_ptr, row_ptr, NULL);
-    }
-
-    // close up shop
-    png_read_end(png_ptr, end_info_ptr);
-    png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
-    fclose(fp);
-
-    return image.Release();
-}
-
-
-//
-// WriteImage()
-// write an image to a file in PNG format
-// This version writes the entire image
-//
-void CImageIOPng::WriteImage(const CImage& image, const string& file,
-                             CImageIO::ECompress compress)
-{
-    // make sure we've got an image
-    if ( !image.GetData() ) {
         NCBI_THROW(CImageException, eWriteError,
-                   "CImageIOPng::WriteImage(): "
-                   "attempt to write an empty image");
+                   "CImageIOPng::WriteImage(): png_create_read_struct() failed");
     }
 
-    // validate our image - we need RGB or RGBA images
-    if (image.GetDepth() != 3  &&  image.GetDepth() != 4) {
-        string msg("CImageIOPng::WriteImage(): invalid image depth: ");
-        msg += NStr::IntToString(image.GetDepth());
-        NCBI_THROW(CImageException, eWriteError, msg);
-    }
-
-    // open our file for writing
-    FILE* fp = fopen(file.c_str(), "wb");
-    if ( !fp ) {
-        string msg("CImageIOPng::WriteImage(): can't open file ");
-        msg += file;
-        msg += " for reading";
-        NCBI_THROW(CImageException, eReadError, msg);
-    }
-
-    // initialize png stuff
-    png_structp png_ptr =
-        png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-    if ( !png_ptr ) {
-        fclose(fp);
-
-        NCBI_THROW(CImageException, eReadError,
-                   "CImageIOPng::ReadImage(): png_create_read_struct() failed");
-    }
-
-    png_infop info_ptr = png_create_info_struct(png_ptr);
+    info_ptr = png_create_info_struct(png_ptr);
     if ( !info_ptr ) {
-        png_destroy_read_struct(&png_ptr, NULL, NULL);
-        fclose(fp);
-
-        NCBI_THROW(CImageException, eReadError,
-                   "CImageIOPng::ReadImage(): png_create_info_struct() failed");
+        NCBI_THROW(CImageException, eWriteError,
+                   "CImageIOPng::WriteImage(): png_create_info_struct() failed");
     }
-
-    // begin writing data
-    png_init_io(png_ptr, fp);
 
     png_byte color_type = PNG_COLOR_TYPE_RGB;
     if (image.GetDepth() == 4) {
@@ -376,23 +158,311 @@ void CImageIOPng::WriteImage(const CImage& image, const string& file,
         break;
     }
 
-    // now, write!
-    png_write_info(png_ptr, info_ptr);
+}
 
-    // write our image, line-by-line
-    unsigned char* row_ptr = const_cast<unsigned char*> (image.GetData());
-    size_t width  = image.GetWidth();
-    size_t height = image.GetHeight();
-    size_t depth  = image.GetDepth();
-    for (size_t i = 0;  i < height;  ++i) {
-        png_write_row(png_ptr, row_ptr);
-        row_ptr += width * depth;
+
+//
+// validate our input
+//
+static void s_PngReadValidate(png_structp png_ptr,
+                              png_infop info_ptr,
+                              size_t& width,
+                              size_t& height,
+                              size_t& depth,
+                              size_t& x, size_t& y, size_t& w, size_t& h)
+{
+    // store and validate our image's parameters
+    width        = info_ptr->width;
+    height       = info_ptr->height;
+    depth        = info_ptr->channels;
+    png_byte color_type = info_ptr->color_type;
+    png_byte bit_depth  = info_ptr->bit_depth;
+
+    // we support only RGB and RGBA images
+    if ( color_type != PNG_COLOR_TYPE_RGB  &&
+         color_type != PNG_COLOR_TYPE_RGB_ALPHA ) {
+        string msg("CImageIOPng::ReadImage(): unhandled color type: ");
+        msg += NStr::IntToString((int)color_type);
+        NCBI_THROW(CImageException, eReadError, msg);
     }
 
-    // standard clean-up
-    png_write_end(png_ptr, info_ptr);
+    // ...and only with a bit depth of 8
+    if (bit_depth != 8) {
+        string msg("CImageIOPng::ReadImage(): unhandled bit depth: ");
+        msg += NStr::IntToString((int)bit_depth);
+        NCBI_THROW(CImageException, eReadError, msg);
+    }
+
+    // this goes along with RGB or RGBA
+    if (depth != 3  &&  depth != 4) {
+        string msg("CImageIOPng::ReadImage(): unhandled image channels: ");
+        msg += NStr::IntToString((int)depth);
+        NCBI_THROW(CImageException, eReadError, msg);
+    }
+
+    if (x != -1  &&  y != -1  &&  w != -1  &&  h != -1) {
+        // further validation: make sure we're actually on the image
+        if (x >= width  ||  y >= height) {
+            string msg("CImageIOPng::ReadImage(): invalid starting position: ");
+            msg += NStr::IntToString(x);
+            msg += ", ";
+            msg += NStr::IntToString(y);
+            NCBI_THROW(CImageException, eReadError, msg);
+        }
+
+        // clamp our width and height to the image size
+        if (x + w >= width) {
+            w = width - x;
+            LOG_POST(Warning
+                     << "CImageIOPng::ReadImage(): clamped width to " << w);
+        }
+
+        if (y + h >= height) {
+            h = height - y;
+            LOG_POST(Warning
+                     << "CImageIOPng::ReadImage(): clamped height to " << h);
+        }
+    }
+
+    png_read_update_info(png_ptr, info_ptr);
+}
+
+
+//
+// our local i/o handlers
+//
+static void s_PngRead(png_structp png_ptr, png_bytep data, png_size_t len)
+{
+    CNcbiIfstream* istr =
+        reinterpret_cast<CNcbiIfstream*>(png_get_io_ptr(png_ptr));
+    if (istr) {
+        istr->read(reinterpret_cast<char*>(data), len);
+    }
+}
+
+
+static void s_PngWrite(png_structp png_ptr, png_bytep data, png_size_t len)
+{
+    CNcbiOfstream* ostr =
+        reinterpret_cast<CNcbiOfstream*>(png_get_io_ptr(png_ptr));
+    if (ostr) {
+        ostr->write(reinterpret_cast<char*>(data), len);
+    }
+}
+
+
+static void s_PngFlush(png_structp png_ptr)
+{
+    CNcbiOfstream* ostr =
+        reinterpret_cast<CNcbiOfstream*>(png_get_io_ptr(png_ptr));
+    if (ostr) {
+        ostr->flush();
+    }
+}
+
+
+//
+// finalize our structures
+//
+static void s_PngReadFinalize(png_structp& png_ptr,
+                              png_infop&   info_ptr,
+                              png_infop&   end_info_ptr)
+{
+    png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
+}
+
+
+static void s_PngWriteFinalize(png_structp& png_ptr,
+                              png_infop&    info_ptr)
+{
     png_destroy_write_struct(&png_ptr, &info_ptr);
-    fclose(fp);
+}
+
+
+//
+// ReadImage()
+// read a PNG format image into memory, returning the image itself
+// This version reads the entire image
+//
+CImage* CImageIOPng::ReadImage(CNcbiIstream& istr)
+{
+    png_structp png_ptr  = NULL;
+    png_infop   info_ptr = NULL;
+    png_infop   end_ptr  = NULL;
+    CRef<CImage> image;
+
+    try {
+        // create our PNG structures
+        s_PngReadInit(png_ptr, info_ptr, end_ptr);
+
+        // begin reading our image
+        png_set_read_fn(png_ptr, &istr, s_PngRead);
+        png_read_info(png_ptr, info_ptr);
+
+        // store and validate our image's parameters
+        size_t width  = 0;
+        size_t height = 0;
+        size_t depth  = 0;
+        size_t x = -1;
+        size_t y = -1;
+        size_t w = -1;
+        size_t h = -1;
+        s_PngReadValidate(png_ptr, info_ptr,
+                          width, height, depth,
+                          x, y, w, h);
+
+        // allocate our image and read, line by line
+        image.Reset(new CImage(width, height, depth));
+        unsigned char* row_ptr = image->SetData();
+        for (size_t i = 0;  i < height;  ++i) {
+            png_read_row(png_ptr, row_ptr, NULL);
+            row_ptr += width * depth;
+        }
+
+        // read the end pointer
+        png_read_end(png_ptr, end_ptr);
+
+        // close and return
+        s_PngReadFinalize(png_ptr, info_ptr, end_ptr);
+    }
+    catch (...) {
+        // destroy everything
+        s_PngReadFinalize(png_ptr, info_ptr, end_ptr);
+
+        // rethrow
+        throw;
+    }
+
+    return image.Release();
+}
+
+
+//
+// ReadImage()
+// read a PNG format image into memory, returning the image itself
+// This version reads a subpart of an image
+//
+CImage* CImageIOPng::ReadImage(CNcbiIstream& istr,
+                               size_t x, size_t y, size_t w, size_t h)
+{
+    png_structp png_ptr  = NULL;
+    png_infop   info_ptr = NULL;
+    png_infop   end_ptr  = NULL;
+    CRef<CImage> image;
+
+    try {
+        // create our PNG structures
+        s_PngReadInit(png_ptr, info_ptr, end_ptr);
+
+        // begin reading our image
+        png_set_read_fn(png_ptr, &istr, s_PngRead);
+        png_read_info(png_ptr, info_ptr);
+
+        // store and validate our image's parameters
+        size_t width  = 0;
+        size_t height = 0;
+        size_t depth  = 0;
+        s_PngReadValidate(png_ptr, info_ptr, width, height, depth,
+                          x, y, w, y);
+
+        // allocate our image
+        CRef<CImage> image(new CImage(w, h, depth));
+        unsigned char* to_data   = image->SetData();
+        size_t         to_stride = image->GetWidth() * image->GetDepth();
+        size_t         to_offs   = x * image->GetDepth();
+
+        // allocate a scanline for this image
+        vector<unsigned char> row(width * depth);
+        unsigned char* row_ptr = &row[0];
+
+        size_t i;
+
+        // read up to our starting scan line
+        for (i = 0;  i < y;  ++i) {
+            png_read_row(png_ptr, row_ptr, NULL);
+        }
+
+        // read and convert the scanlines of interest
+        for ( ;  i < y + h;  ++i) {
+            png_read_row(png_ptr, row_ptr, NULL);
+            memcpy(to_data, row_ptr + to_offs, to_stride);
+            to_data += to_stride;
+        }
+
+        // read the rest of the image (do we need this?)
+        for ( ;  i < height;  ++i) {
+            png_read_row(png_ptr, row_ptr, NULL);
+        }
+
+        // read the end pointer
+        png_read_end(png_ptr, end_ptr);
+
+        // close and return
+        s_PngReadFinalize(png_ptr, info_ptr, end_ptr);
+    }
+    catch (...) {
+        // destroy everything
+        s_PngReadFinalize(png_ptr, info_ptr, end_ptr);
+
+        // rethrow
+        throw;
+    }
+
+    return image.Release();
+}
+
+
+//
+// WriteImage()
+// write an image to a file in PNG format
+// This version writes the entire image
+//
+void CImageIOPng::WriteImage(const CImage& image, CNcbiOstream& ostr,
+                             CImageIO::ECompress compress)
+{
+    // make sure we've got an image
+    if ( !image.GetData() ) {
+        NCBI_THROW(CImageException, eWriteError,
+                   "CImageIOPng::WriteImage(): "
+                   "attempt to write an empty image");
+    }
+
+    // validate our image - we need RGB or RGBA images
+    if (image.GetDepth() != 3  &&  image.GetDepth() != 4) {
+        string msg("CImageIOPng::WriteImage(): invalid image depth: ");
+        msg += NStr::IntToString(image.GetDepth());
+        NCBI_THROW(CImageException, eWriteError, msg);
+    }
+
+    png_structp png_ptr  = NULL;
+    png_infop   info_ptr = NULL;
+
+    try {
+        // initialize png stuff
+        s_PngWriteInit(png_ptr, info_ptr, image, compress);
+
+        // begin writing data
+        png_set_write_fn(png_ptr, &ostr, s_PngWrite, s_PngFlush);
+        png_write_info(png_ptr, info_ptr);
+
+        // write our image, line-by-line
+        unsigned char* row_ptr = const_cast<unsigned char*> (image.GetData());
+        size_t width  = image.GetWidth();
+        size_t height = image.GetHeight();
+        size_t depth  = image.GetDepth();
+        for (size_t i = 0;  i < height;  ++i) {
+            png_write_row(png_ptr, row_ptr);
+            row_ptr += width * depth;
+        }
+
+        // standard clean-up
+        png_write_end(png_ptr, info_ptr);
+        s_PngWriteFinalize(png_ptr, info_ptr);
+    }
+    catch (...) {
+        s_PngWriteFinalize(png_ptr, info_ptr);
+        throw;
+    }
 }
 
 
@@ -401,7 +471,7 @@ void CImageIOPng::WriteImage(const CImage& image, const string& file,
 // write an image to a file in PNG format
 // This version writes only a subpart of the image
 //
-void CImageIOPng::WriteImage(const CImage& image, const string& file,
+void CImageIOPng::WriteImage(const CImage& image, CNcbiOstream& ostr,
                              size_t x, size_t y, size_t w, size_t h,
                              CImageIO::ECompress compress)
 {
@@ -412,103 +482,49 @@ void CImageIOPng::WriteImage(const CImage& image, const string& file,
                    "attempt to write an empty image");
     }
 
-    // validate our position as inside the image
-    if (x >= image.GetWidth()  ||  y >= image.GetHeight()) {
-        string msg("CImageIOPng::WriteImage(): invalid image position: ");
-        msg += NStr::IntToString(x);
-        msg += ", ";
-        msg += NStr::IntToString(y);
+    // validate our image - we need RGB or RGBA images
+    if (image.GetDepth() != 3  &&  image.GetDepth() != 4) {
+        string msg("CImageIOPng::WriteImage(): invalid image depth: ");
+        msg += NStr::IntToString(image.GetDepth());
         NCBI_THROW(CImageException, eWriteError, msg);
     }
 
-    // clamp our width and height
-    if (x+w >= image.GetWidth()) {
-        w = image.GetWidth() - x;
-        LOG_POST(Warning
-                 << "CImageIOPng::WriteImage(): clamped width to " << w);
+    png_structp png_ptr  = NULL;
+    png_infop   info_ptr = NULL;
+
+    try {
+        // initialize png stuff
+        s_PngWriteInit(png_ptr, info_ptr, image, compress);
+
+        // begin writing data
+        png_set_write_fn(png_ptr, &ostr, s_PngWrite, s_PngFlush);
+        png_write_info(png_ptr, info_ptr);
+
+        // write our image
+        // we plan to march through only part of our image
+        // get a pointer to the start of our scan line
+        //
+        // NB: the const cast is necessary as png_write_row takes a non-const
+        // pointer (go figure...)
+        unsigned char* from_data = const_cast<unsigned char*>(image.GetData());
+        from_data += (y * image.GetWidth() + x) * image.GetDepth();
+        size_t from_stride = image.GetWidth() * image.GetDepth();
+
+        // march out h scan lines
+        for (size_t i = 0;  i < h;  ++i) {
+            png_write_row(png_ptr, from_data);
+            from_data += from_stride;
+        }
+
+
+        // standard clean-up
+        png_write_end(png_ptr, info_ptr);
+        s_PngWriteFinalize(png_ptr, info_ptr);
     }
-
-    if (y+h >= image.GetHeight()) {
-        h = image.GetHeight() - y;
-        LOG_POST(Warning
-                 << "CImageIOPng::WriteImage(): clamped height to " << h);
+    catch (...) {
+        s_PngWriteFinalize(png_ptr, info_ptr);
+        throw;
     }
-
-    // open our file
-    FILE* fp = fopen(file.c_str(), "wb");
-    if ( !fp ) {
-        string msg("CImageIOPng::WriteImage(): can't open file ");
-        msg += file;
-        msg += " for writing";
-        NCBI_THROW(CImageException, eReadError, msg);
-    }
-
-    // initialize png stuff
-    png_structp png_ptr =
-        png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-    if ( !png_ptr ) {
-        NCBI_THROW(CImageException, eReadError,
-                   "CImageIOPng::ReadImage(): png_create_read_struct() failed");
-    }
-
-    png_infop info_ptr = png_create_info_struct(png_ptr);
-    if ( !info_ptr ) {
-        png_destroy_read_struct(&png_ptr, NULL, NULL);
-        NCBI_THROW(CImageException, eReadError,
-                   "CImageIOPng::ReadImage(): png_create_info_struct() failed");
-    }
-
-    // begin writing
-    png_init_io(png_ptr, fp);
-
-    png_byte color_type = PNG_COLOR_TYPE_RGB;
-    if (image.GetDepth() == 4) {
-        color_type = PNG_COLOR_TYPE_RGBA;
-    }
-    png_set_IHDR(png_ptr, info_ptr,
-                 w, h, 8, color_type,
-                 PNG_INTERLACE_NONE,
-                 PNG_COMPRESSION_TYPE_BASE,
-                 PNG_FILTER_TYPE_BASE);
-
-    // set our compression quality
-    switch (compress) {
-    case CImageIO::eCompress_None:
-        png_set_compression_level(png_ptr, Z_NO_COMPRESSION);
-        break;
-    case CImageIO::eCompress_Low:
-        png_set_compression_level(png_ptr, Z_BEST_SPEED);
-        break;
-    case CImageIO::eCompress_Medium:
-        png_set_compression_level(png_ptr, Z_DEFAULT_COMPRESSION);
-        break;
-    case CImageIO::eCompress_High:
-        png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
-        break;
-    default:
-        LOG_POST(Error << "unknown compression type: " << (int)compress);
-        break;
-    }
-
-    // now, write!
-    png_write_info(png_ptr, info_ptr);
-
-    // we plan to march through only part of our image
-    // get a pointer to the start of our scan line
-    unsigned char* from_data = const_cast<unsigned char*> (image.GetData());
-    from_data += (y * image.GetWidth() + x) * image.GetDepth();
-    size_t from_stride = image.GetWidth() * image.GetDepth();
-
-    // march out h scan lines
-    for (size_t i = 0;  i < h;  ++i) {
-        png_write_row(png_ptr, from_data);
-        from_data += from_stride;
-    }
-
-    // close up and return
-    png_write_end(png_ptr, info_ptr);
-    png_destroy_write_struct(&png_ptr, &info_ptr);
-    fclose(fp);
 }
 
 
@@ -525,14 +541,14 @@ END_NCBI_SCOPE
 BEGIN_NCBI_SCOPE
 
 
-CImage* CImageIOPng::ReadImage(const string& file)
+CImage* CImageIOPng::ReadImage(CNcbiIstream& file)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOPng::ReadImage(): PNG format not supported");
 }
 
 
-CImage* CImageIOPng::ReadImage(const string& file,
+CImage* CImageIOPng::ReadImage(CNcbiIstream& file,
                                size_t, size_t, size_t, size_t)
 {
     NCBI_THROW(CImageException, eUnsupported,
@@ -540,7 +556,7 @@ CImage* CImageIOPng::ReadImage(const string& file,
 }
 
 
-void CImageIOPng::WriteImage(const CImage& image, const string& file,
+void CImageIOPng::WriteImage(const CImage& image, CNcbiOstream& file,
                              CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
@@ -548,7 +564,7 @@ void CImageIOPng::WriteImage(const CImage& image, const string& file,
 }
 
 
-void CImageIOPng::WriteImage(const CImage& image, const string& file,
+void CImageIOPng::WriteImage(const CImage& image, CNcbiOstream& file,
                              size_t, size_t, size_t, size_t,
                              CImageIO::ECompress)
 {
@@ -565,6 +581,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/12/16 15:49:37  dicuccio
+ * Large re-write of image handling.  Added improved error-handling and support
+ * for streams-based i/o (via hooks into each client library).
+ *
  * Revision 1.2  2003/11/03 15:19:57  dicuccio
  * Added optional compression parameter
  *

@@ -47,6 +47,9 @@
 BEGIN_NCBI_SCOPE
 
 
+//
+// TIFFlib error / warning handlers
+//
 static void s_TiffReadErrorHandler(const char* module, const char* fmt,
                                    va_list args)
 {
@@ -80,6 +83,97 @@ static void s_TiffWarningHandler(const char* module, const char* fmt,
 
 
 //
+// TIFFLib i/o handlers
+//
+static tsize_t s_TIFFReadHandler(thandle_t handle, tdata_t data, tsize_t len)
+{
+    CNcbiIfstream* istr = reinterpret_cast<CNcbiIfstream*>(handle);
+    if (istr) {
+        istr->read(reinterpret_cast<char*>(data), len);
+        return istr->gcount();
+    }
+    return 0;
+}
+
+static tsize_t s_TIFFWriteHandler(thandle_t handle, tdata_t data, tsize_t len)
+{
+    std::ofstream* ostr = reinterpret_cast<std::ofstream*>(handle);
+    if (ostr) {
+        ostr->write(reinterpret_cast<char*>(data), len);
+        if (*ostr) {
+            return len;
+        }
+    }
+    return -1;
+}
+
+// dummy i/o handler.  TIFFLib tries to read from files opened for writing
+static tsize_t s_TIFFDummyIOHandler(thandle_t, tdata_t, tsize_t)
+{
+    return -1;
+}
+
+static toff_t s_TIFFSeekHandler(thandle_t handle, toff_t offset,
+                                int whence)
+{
+    CNcbiIfstream* istr = reinterpret_cast<CNcbiIfstream*>(handle);
+    if (istr) {
+        switch (whence) {
+        case SEEK_SET:
+            istr->seekg(offset, ios::beg);
+            break;
+
+        case SEEK_CUR:
+            istr->seekg(offset, ios::cur);
+            break;
+
+        case SEEK_END:
+            istr->seekg(offset, ios::end);
+            break;
+        }
+
+        return istr->tellg();
+    }
+    return -1;
+}
+
+static int s_TIFFCloseHandler(thandle_t handle)
+{
+    std::ofstream* ostr = reinterpret_cast<std::ofstream*>(handle);
+    if (ostr) {
+        ostr->flush();
+        if ( !*ostr ) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static toff_t s_TIFFSizeHandler(thandle_t handle)
+{
+    toff_t offs = 0;
+    CNcbiIfstream* istr = reinterpret_cast<CNcbiIfstream*>(handle);
+    if (istr) {
+        size_t curr_pos = istr->tellg();
+        istr->seekg(0, ios::end);
+        offs = istr->tellg();
+        istr->seekg(curr_pos, ios::beg);
+    }
+    return offs;
+}
+
+static int s_TIFFMapFileHandler(thandle_t, tdata_t*, toff_t*)
+{
+    return -1;
+}
+
+static void s_TIFFUnmapFileHandler(thandle_t, tdata_t, toff_t)
+{
+}
+
+
+
+//
 // ReadImage()
 // read an image in TIFF format.  This uses a fairly inefficient read, in that
 // the data, once read, must be copied into the actual image.  This is largely
@@ -87,25 +181,31 @@ static void s_TiffWarningHandler(const char* module, const char* fmt,
 // implementation details may change at a future date to use a more efficient
 // read mechanism
 //
-CImage* CImageIOTiff::ReadImage(const string& file)
+CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
 {
-    TIFF* tiff = NULL;
-    uint32* raster = NULL;
-    TIFFErrorHandler old_err_handler = NULL;
+    TIFF*            tiff             = NULL;
+    uint32*          raster           = NULL;
+    TIFFErrorHandler old_err_handler  = NULL;
     TIFFErrorHandler old_warn_handler = NULL;
     CRef<CImage> image;
-
     try {
 
         old_err_handler  = TIFFSetErrorHandler(&s_TiffReadErrorHandler);
         old_warn_handler = TIFFSetWarningHandler(&s_TiffWarningHandler);
 
         // open our file
-        TIFF* tiff = TIFFOpen(file.c_str(), "r");
+        tiff = TIFFClientOpen("", "rm",
+                              reinterpret_cast<thandle_t>(&istr),
+                              s_TIFFReadHandler,
+                              s_TIFFDummyIOHandler,
+                              s_TIFFSeekHandler,
+                              s_TIFFCloseHandler,
+                              s_TIFFSizeHandler,
+                              s_TIFFMapFileHandler,
+                              s_TIFFUnmapFileHandler);
         if ( !tiff ) {
-            string msg("x_ReadTiff(): error reading file ");
-            msg += file;
-            NCBI_THROW(CImageException, eReadError, msg);
+            NCBI_THROW(CImageException, eReadError,
+                       "CImageIOTiff::ReadImage(): error opening file ");
         }
 
         // extract the size parameters
@@ -119,9 +219,8 @@ CImage* CImageIOTiff::ReadImage(const string& file)
         if ( !TIFFReadRGBAImage(tiff, width, height, raster, 1) ) {
             _TIFFfree(raster);
 
-            string msg("x_ReadTiff(): error reading file ");
-            msg += file;
-            NCBI_THROW(CImageException, eReadError, msg);
+            NCBI_THROW(CImageException, eReadError,
+                       "CImageIOTiff::ReadImage(): error reading file");
         }
 
         // now we need to copy this data and pack it appropriately
@@ -174,10 +273,10 @@ CImage* CImageIOTiff::ReadImage(const string& file)
 // read a sub-image from a file.  We use a brain-dead implementation that reads
 // the whole image in, then subsets it.  This may change in the future.
 //
-CImage* CImageIOTiff::ReadImage(const string& file,
+CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr,
                                 size_t x, size_t y, size_t w, size_t h)
 {
-    CRef<CImage> image(ReadImage(file));
+    CRef<CImage> image(ReadImage(istr));
     return image->GetSubImage(x, y, w, h);
 }
 
@@ -186,10 +285,10 @@ CImage* CImageIOTiff::ReadImage(const string& file,
 // WriteImage()
 // write an image to a file in TIFF format
 //
-void CImageIOTiff::WriteImage(const CImage& image, const string& file,
+void CImageIOTiff::WriteImage(const CImage& image, CNcbiOstream& ostr,
                               CImageIO::ECompress)
 {
-    TIFF* fp = NULL;
+    TIFF* tiff = NULL;
     TIFFErrorHandler old_err_handler = NULL;
     TIFFErrorHandler old_warn_handler = NULL;
 
@@ -203,33 +302,40 @@ void CImageIOTiff::WriteImage(const CImage& image, const string& file,
         old_warn_handler = TIFFSetWarningHandler(&s_TiffWarningHandler);
 
         // open our file
-        fp = TIFFOpen(file.c_str(), "w");
-        if ( !fp ) {
-            string msg("CImageIOTiff::WriteImage(): cannot open file ");
-            msg += file;
-            msg += " for writing";
-            NCBI_THROW(CImageException, eWriteError, msg);
+        //ostr.open(file.c_str(), ios::out|ios::binary);
+        tiff = TIFFClientOpen("", "wm",
+                              reinterpret_cast<thandle_t>(&ostr),
+                              s_TIFFDummyIOHandler,
+                              s_TIFFWriteHandler,
+                              s_TIFFSeekHandler,
+                              s_TIFFCloseHandler,
+                              s_TIFFSizeHandler,
+                              s_TIFFMapFileHandler,
+                              s_TIFFUnmapFileHandler);
+        if ( !tiff ) {
+            NCBI_THROW(CImageException, eWriteError,
+                       "CImageIOTiff::WriteImage(): cannot write file");
         }
 
         // set a bunch of standard fields, defining our image dimensions
-        TIFFSetField(fp, TIFFTAG_IMAGEWIDTH,        image.GetWidth());
-        TIFFSetField(fp, TIFFTAG_IMAGELENGTH,       image.GetHeight());
-        TIFFSetField(fp, TIFFTAG_BITSPERSAMPLE,     8);
-        TIFFSetField(fp, TIFFTAG_SAMPLESPERPIXEL,   image.GetDepth());
-        TIFFSetField(fp, TIFFTAG_ROWSPERSTRIP,      image.GetHeight());
+        TIFFSetField(tiff, TIFFTAG_IMAGEWIDTH,        image.GetWidth());
+        TIFFSetField(tiff, TIFFTAG_IMAGELENGTH,       image.GetHeight());
+        TIFFSetField(tiff, TIFFTAG_BITSPERSAMPLE,     8);
+        TIFFSetField(tiff, TIFFTAG_SAMPLESPERPIXEL,   image.GetDepth());
+        TIFFSetField(tiff, TIFFTAG_ROWSPERSTRIP,      image.GetHeight());
 
         // TIFF options
-        TIFFSetField(fp, TIFFTAG_COMPRESSION,   COMPRESSION_DEFLATE);
-        TIFFSetField(fp, TIFFTAG_PHOTOMETRIC,   PHOTOMETRIC_RGB);
-        TIFFSetField(fp, TIFFTAG_FILLORDER,     FILLORDER_MSB2LSB);
-        TIFFSetField(fp, TIFFTAG_PLANARCONFIG,  PLANARCONFIG_CONTIG);
+        TIFFSetField(tiff, TIFFTAG_COMPRESSION,   COMPRESSION_DEFLATE);
+        TIFFSetField(tiff, TIFFTAG_PHOTOMETRIC,   PHOTOMETRIC_RGB);
+        TIFFSetField(tiff, TIFFTAG_FILLORDER,     FILLORDER_MSB2LSB);
+        TIFFSetField(tiff, TIFFTAG_PLANARCONFIG,  PLANARCONFIG_CONTIG);
 
         // write our information
-        TIFFWriteEncodedStrip(fp, 0,
+        TIFFWriteEncodedStrip(tiff, 0,
                               const_cast<void*>
                               (reinterpret_cast<const void*> (image.GetData())),
                               image.GetWidth() * image.GetHeight() * image.GetDepth());
-        TIFFClose(fp);
+        TIFFClose(tiff);
 
         TIFFSetErrorHandler(old_err_handler);
         TIFFSetWarningHandler(old_warn_handler);
@@ -237,14 +343,13 @@ void CImageIOTiff::WriteImage(const CImage& image, const string& file,
     catch (...) {
 
         // close our file and wipe it from the system
-        TIFFClose(fp);
-        CFile f(file);
-        if (f.Exists()) {
-            f.Remove(CFile::eNonRecursive);
+        if (tiff) {
+            TIFFClose(tiff);
+            tiff = NULL;
         }
 
         // restore the standard error handlers
-        TIFFSetErrorHandler(old_err_handler);
+        TIFFSetErrorHandler  (old_err_handler);
         TIFFSetWarningHandler(old_warn_handler);
 
         throw;
@@ -258,12 +363,12 @@ void CImageIOTiff::WriteImage(const CImage& image, const string& file,
 // implementation in that we subset the image first, then write the sub-image
 // out.
 //
-void CImageIOTiff::WriteImage(const CImage& image, const string& file,
+void CImageIOTiff::WriteImage(const CImage& image, CNcbiOstream& ostr,
                               size_t x, size_t y, size_t w, size_t h,
                               CImageIO::ECompress compress)
 {
     CRef<CImage> subimage(image.GetSubImage(x, y, w, h));
-    WriteImage(*subimage, file, compress);
+    WriteImage(*subimage, ostr, compress);
 }
 
 
@@ -280,14 +385,14 @@ END_NCBI_SCOPE
 BEGIN_NCBI_SCOPE
 
 
-CImage* CImageIOTiff::ReadImage(const string&)
+CImage* CImageIOTiff::ReadImage(CNcbiIstream&)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOTiff::ReadImage(): TIFF format not supported");
 }
 
 
-CImage* CImageIOTiff::ReadImage(const string&,
+CImage* CImageIOTiff::ReadImage(CNcbiIstream&,
                                 size_t, size_t, size_t, size_t)
 {
     NCBI_THROW(CImageException, eUnsupported,
@@ -295,7 +400,7 @@ CImage* CImageIOTiff::ReadImage(const string&,
 }
 
 
-void CImageIOTiff::WriteImage(const CImage&, const string&,
+void CImageIOTiff::WriteImage(const CImage&, CNcbiOstream&,
                               CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
@@ -303,7 +408,7 @@ void CImageIOTiff::WriteImage(const CImage&, const string&,
 }
 
 
-void CImageIOTiff::WriteImage(const CImage&, const string&,
+void CImageIOTiff::WriteImage(const CImage&, CNcbiOstream&,
                               size_t, size_t, size_t, size_t,
                               CImageIO::ECompress)
 {
@@ -320,6 +425,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/12/16 15:49:37  dicuccio
+ * Large re-write of image handling.  Added improved error-handling and support
+ * for streams-based i/o (via hooks into each client library).
+ *
  * Revision 1.3  2003/12/12 17:49:04  dicuccio
  * Intercept libtiff error messages and translate them into LOG_POST()/exception
  * where appropriate

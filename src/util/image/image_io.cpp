@@ -32,6 +32,7 @@
 #include <util/image/image_io.hpp>
 #include <util/image/image_exception.hpp>
 
+#include "image_io_raw.hpp"
 #include "image_io_bmp.hpp"
 #include "image_io_gif.hpp"
 #include "image_io_jpeg.hpp"
@@ -64,6 +65,7 @@ static const struct SMagicInfo kMagicTable[] = {
     { CImageIO::eTiff,    4, "II*\0" },
     { CImageIO::eTiff,    4, "MM\0*" }, // this one might need to be { 'M', 'M', 0, '*' }
     { CImageIO::eXpm,     7, "/* XPM */" },
+    { CImageIO::eRaw,     4, "RAW\0" },
 
     // must be last
     { CImageIO::eUnknown, 0, "" }
@@ -77,11 +79,16 @@ CImageIO::EType CImageIO::GetTypeFromMagic(const string& file)
         return eUnknown;
     }
 
+    return GetTypeFromMagic(i_file);
+}
+
+CImageIO::EType CImageIO::GetTypeFromMagic(CNcbiIstream& istr)
+{
     // magic numbers live in the first few bytes
     unsigned char magic[kMaxMagic];
     memset(magic, 0x00, kMaxMagic);
-    i_file.read((char *)magic, kMaxMagic);
-    i_file.close();
+    istr.read((char *)magic, kMaxMagic);
+    istr.seekg(-istr.gcount(), ios::cur);
 
     // we just compare against our (small) table of known image magic values
     for (const SMagicInfo* i = kMagicTable;  i->m_Length;  ++i) {
@@ -103,15 +110,16 @@ struct SExtMagicInfo
 };
 
 static const SExtMagicInfo kExtensionMagicTable[] = {
-    { CImageIO::eBmp, "bmp" },
-    { CImageIO::eGif, "gif" },
+    { CImageIO::eBmp,  "bmp" },
+    { CImageIO::eGif,  "gif" },
     { CImageIO::eJpeg, "jpeg" },
     { CImageIO::eJpeg, "jpg" },
-    { CImageIO::ePng, "png" },
-    { CImageIO::eSgi, "sgi" },
+    { CImageIO::ePng,  "png" },
+    { CImageIO::eSgi,  "sgi" },
     { CImageIO::eTiff, "tif" },
     { CImageIO::eTiff, "tiff" },
-    { CImageIO::eXpm, "xpm" },
+    { CImageIO::eXpm,  "xpm" },
+    { CImageIO::eRaw,  "raw" },
 
     // must be last
     { CImageIO::eUnknown, NULL }
@@ -147,9 +155,16 @@ CImageIO::EType CImageIO::GetTypeFromFileName(const string& fname)
 //
 CImage* CImageIO::ReadImage(const string& file)
 {
+    CNcbiIfstream istr(file.c_str(), ios::in|ios::binary);
+    return ReadImage(istr);
+}
+
+
+CImage* CImageIO::ReadImage(CNcbiIstream& istr)
+{
     try {
-        CRef<CImageIOHandler> handler(x_GetHandler(GetTypeFromMagic(file)));
-        return handler->ReadImage(file);
+        CRef<CImageIOHandler> handler(x_GetHandler(GetTypeFromMagic(istr)));
+        return handler->ReadImage(istr);
     }
     catch (CImageException& e) {
         LOG_POST(Error << "Error reading image: " << e.what());
@@ -166,9 +181,17 @@ CImage* CImageIO::ReadImage(const string& file)
 CImage* CImageIO::ReadSubImage(const string& file,
                                size_t x, size_t y, size_t w, size_t h)
 {
+    CNcbiIfstream istr(file.c_str(), ios::in|ios::binary);
+    return ReadSubImage(istr, x, y, w, h);
+}
+
+
+CImage* CImageIO::ReadSubImage(CNcbiIstream& istr,
+                               size_t x, size_t y, size_t w, size_t h)
+{
     try {
-        CRef<CImageIOHandler> handler(x_GetHandler(GetTypeFromMagic(file)));
-        return handler->ReadImage(file, x, y, w, h);
+        CRef<CImageIOHandler> handler(x_GetHandler(GetTypeFromMagic(istr)));
+        return handler->ReadImage(istr, x, y, w, h);
     }
     catch (CImageException& e) {
         LOG_POST(Error << "Error reading subimage: " << e.what());
@@ -189,8 +212,23 @@ bool CImageIO::WriteImage(const CImage& image, const string& file,
         if (type == eUnknown) {
             type = GetTypeFromFileName(file);
         }
+    }
+    catch (CImageException& e) {
+        LOG_POST(Error << "Error writing image: " << e.what());
+        return false;
+    }
+
+    CNcbiOfstream ostr(file.c_str(), ios::out|ios::binary);
+    return WriteImage(image, ostr, type, compress);
+}
+
+
+bool CImageIO::WriteImage(const CImage& image, CNcbiOstream& ostr,
+                          EType type, ECompress compress)
+{
+    try {
         CRef<CImageIOHandler> handler(x_GetHandler(type));
-        handler->WriteImage(image, file, compress);
+        handler->WriteImage(image, ostr, compress);
         return true;
     }
     catch (CImageException& e) {
@@ -214,8 +252,25 @@ bool CImageIO::WriteSubImage(const CImage& image,
         if (type == eUnknown) {
             type = GetTypeFromFileName(file);
         }
+    }
+    catch (CImageException& e) {
+        LOG_POST(Error << "Error writing image: " << e.what());
+        return false;
+    }
+
+    CNcbiOfstream ostr(file.c_str(), ios::out|ios::binary);
+    return WriteSubImage(image, ostr, x, y, w, h, type, compress);
+}
+
+
+bool CImageIO::WriteSubImage(const CImage& image,
+                             CNcbiOstream& ostr,
+                             size_t x, size_t y, size_t w, size_t h,
+                             EType type, ECompress compress)
+{
+    try {
         CRef<CImageIOHandler> handler(x_GetHandler(type));
-        handler->WriteImage(image, file, x, y, w, h, compress);
+        handler->WriteImage(image, ostr, x, y, w, h, compress);
         return true;
     }
     catch (CImageException& e) {
@@ -254,6 +309,9 @@ CImageIOHandler* CImageIO::x_GetHandler(EType type)
     case eGif:
         return new CImageIOGif();
 
+    case eRaw:
+        return new CImageIORaw();
+
     case eTiff:
         return new CImageIOTiff();
     }
@@ -265,6 +323,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/12/16 15:49:35  dicuccio
+ * Large re-write of image handling.  Added improved error-handling and support
+ * for streams-based i/o (via hooks into each client library).
+ *
  * Revision 1.2  2003/11/03 15:19:57  dicuccio
  * Added optional compression parameter
  *

@@ -56,26 +56,24 @@ class CImageIOGif : public CImageIOHandler
 public:
 
     // read GIF images from files
-    CImage* ReadImage(const string& file);
-    CImage* ReadImage(const string& file,
+    CImage* ReadImage(CNcbiIstream& istr);
+    CImage* ReadImage(CNcbiIstream& istr,
                       size_t x, size_t y, size_t w, size_t h);
 
     // write images to file in GIF format
-    void WriteImage(const CImage& image, const string& file,
+    void WriteImage(const CImage& image, CNcbiOstream& ostr,
                     CImageIO::ECompress compress);
-    void WriteImage(const CImage& image, const string& file,
+    void WriteImage(const CImage& image, CNcbiOstream& ostr,
                     size_t x, size_t y, size_t w, size_t h,
                     CImageIO::ECompress compress);
+
 private:
 
-    // read a single line from the file
-    void x_ReadLine(GifFileType* fp, unsigned char* data);
-
-    // unpack a single row of data
     void x_UnpackData(GifFileType* fp,
                       const unsigned char* from_data,
                       unsigned char* to_data);
 
+    void x_ReadLine(GifFileType* fp, unsigned char* data);
 };
 
 
@@ -84,6 +82,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/12/16 15:49:36  dicuccio
+ * Large re-write of image handling.  Added improved error-handling and support
+ * for streams-based i/o (via hooks into each client library).
+ *
  * Revision 1.2  2003/11/03 15:19:57  dicuccio
  * Added optional compression parameter
  *

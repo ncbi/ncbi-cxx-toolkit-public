@@ -154,7 +154,7 @@ void CImage::SetDepth(size_t depth)
     case 4:
         if (m_Depth == 3) {
             // expand our data.
-            // we do this by creating a new data strip
+            // we do this by expanding in-place
             m_Data.resize(m_Width * m_Height * 4);
             m_Depth = 4;
 
@@ -163,6 +163,10 @@ void CImage::SetDepth(size_t depth)
             TImageStrip::const_reverse_iterator from_data(m_Data.end());
             TImageStrip::const_reverse_iterator end_data (m_Data.begin());
             TImageStrip::reverse_iterator       to_data  (m_Data.end());
+
+            // march to the actual end of the data
+            from_data += m_Width * m_Height;
+
             for ( ;  from_data != end_data;  ) {
                 // insert an alpha channel - this is the first because we're
                 // marching backwards
@@ -285,6 +289,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/12/16 15:49:35  dicuccio
+ * Large re-write of image handling.  Added improved error-handling and support
+ * for streams-based i/o (via hooks into each client library).
+ *
  * Revision 1.4  2003/10/02 15:37:33  ivanov
  * Get rid of compilation warnings
  *

@@ -55,14 +55,16 @@ public:
     virtual ~CImageIOHandler();
 
     // read HANDLER images from files
-    virtual CImage* ReadImage(const string& file) = 0;
-    virtual CImage* ReadImage(const string& file,
+    virtual CImage* ReadImage(CNcbiIstream& istr) = 0;
+    virtual CImage* ReadImage(CNcbiIstream& istr,
                               size_t x, size_t y, size_t w, size_t h) = 0;
 
     // write images to file in HANDLER format
-    virtual void WriteImage(const CImage& image, const string& file,
+    virtual void WriteImage(const CImage& image,
+                            CNcbiOstream& ostr,
                             CImageIO::ECompress compress) = 0;
-    virtual void WriteImage(const CImage& image, const string& file,
+    virtual void WriteImage(const CImage& image,
+                            CNcbiOstream& ostr,
                             size_t x, size_t y, size_t w, size_t h,
                             CImageIO::ECompress compress) = 0;
 
@@ -74,6 +76,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/12/16 15:49:36  dicuccio
+ * Large re-write of image handling.  Added improved error-handling and support
+ * for streams-based i/o (via hooks into each client library).
+ *
  * Revision 1.2  2003/11/03 15:19:57  dicuccio
  * Added optional compression parameter
  *

@@ -35,13 +35,13 @@
 
 BEGIN_NCBI_SCOPE
 
-CImage* CImageIOSgi::ReadImage(const string&)
+CImage* CImageIOSgi::ReadImage(CNcbiIstream&)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOSgi::ReadImage(): SGI format read unimplemented");
 }
 
-CImage* CImageIOSgi::ReadImage(const string&,
+CImage* CImageIOSgi::ReadImage(CNcbiIstream&,
                                size_t, size_t, size_t, size_t)
 {
     NCBI_THROW(CImageException, eUnsupported,
@@ -49,14 +49,14 @@ CImage* CImageIOSgi::ReadImage(const string&,
                "read unimplemented");
 }
 
-void CImageIOSgi::WriteImage(const CImage&, const string&,
+void CImageIOSgi::WriteImage(const CImage&, CNcbiOstream&,
                              CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOSgi::WriteImage(): SGI format write unimplemented");
 }
 
-void CImageIOSgi::WriteImage(const CImage&, const string&,
+void CImageIOSgi::WriteImage(const CImage&, CNcbiOstream&,
                              size_t, size_t, size_t, size_t,
                              CImageIO::ECompress)
 {
@@ -71,6 +71,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/12/16 15:49:37  dicuccio
+ * Large re-write of image handling.  Added improved error-handling and support
+ * for streams-based i/o (via hooks into each client library).
+ *
  * Revision 1.2  2003/11/03 15:19:57  dicuccio
  * Added optional compression parameter
  *

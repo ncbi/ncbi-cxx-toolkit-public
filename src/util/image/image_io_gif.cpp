@@ -38,9 +38,13 @@
 // alas, poor giflib... it isn't extern'ed
 extern "C" {
 #  include <gif_lib.h>
+
+    /// !@#$%^ libunfig mis-spelled the prototype in their header,
+    /// so we must add it here
+    GifFileType *EGifOpen(void *userPtr, OutputFunc writeFunc);
+
 };
 #endif
-
 
 #include "image_io_gif.hpp"
 #include <util/image/image.hpp>
@@ -56,126 +60,153 @@ extern "C" {
 
 BEGIN_NCBI_SCOPE
 
+
+
+static int s_GifRead(GifFileType* file, GifByteType* data, int len)
+{
+    CNcbiIstream* istr = reinterpret_cast<CNcbiIstream*>(file->UserData);
+    if (istr) {
+        istr->read(reinterpret_cast<char*>(data), len);
+        return istr->gcount();
+    }
+    return -1;
+}
+
+
+static int s_GifWrite(GifFileType* file, const GifByteType* data, int len)
+{
+    CNcbiOstream* ostr = reinterpret_cast<CNcbiOstream*>(file->UserData);
+    if (ostr) {
+        ostr->write(reinterpret_cast<const char*>(data), len);
+        if ( *ostr ) {
+            return len;
+        }
+    }
+    return -1;
+}
+
+
 //
 // ReadImage()
 // read an entire GIF image into memory.  This will read only the first image
 // in an image set.
 //
-CImage* CImageIOGif::ReadImage(const string& file)
+CImage* CImageIOGif::ReadImage(CNcbiIstream& istr)
 {
-    // open our file for reading
-    GifFileType* fp = DGifOpenFileName(file.c_str());
-    if ( !fp ) {
-        string msg("CImageIOGif::ReadImage(): cannot open file ");
-        msg += file;
-        msg += " for reading";
-        NCBI_THROW(CImageException, eReadError, msg);
-    }
+    GifFileType* fp = NULL;
+    CRef<CImage> image;
 
-    // allocate an image
-    CRef<CImage> image(new CImage(fp->SWidth, fp->SHeight, 3));
-    memset(image->SetData(), fp->SBackGroundColor,
-           image->GetWidth() * image->GetHeight() * image->GetDepth());
-
-    // we also allocate a single row
-    // this row is a color indexed row, and will be decoded row-by-row into the
-    // image
-    AutoPtr<unsigned char, ArrayDeleter<unsigned char> > row_data
-        (new unsigned char[image->GetWidth()]);
-    unsigned char* row_ptr = row_data.get();
-
-    bool done = false;
-    while ( !done ) {
-        // determine what sort of record type we have
-        // these can be image, extension, or termination
-        GifRecordType type;
-        if (DGifGetRecordType(fp, &type) == GIF_ERROR) {
-            DGifCloseFile(fp);
-            string msg("CImageIOGif::ReadImage(): error reading file ");
-            msg += file;
-            NCBI_THROW(CImageException, eReadError, msg);
+    try {
+        // open our file for reading
+        fp = DGifOpen(&istr, s_GifRead);
+        if ( !fp ) {
+            NCBI_THROW(CImageException, eReadError,
+                       "CImageIOGif::ReadImage(): "
+                       "cannot open file for reading");
         }
 
-        switch (type) {
-        case IMAGE_DESC_RECORD_TYPE:
-            //
-            // we only support the first image in a gif
-            //
-            if (DGifGetImageDesc(fp) == GIF_ERROR) {
-                DGifCloseFile(fp);
-                string msg("CImageIOGif::ReadImage(): error reading file ");
-                msg += file;
-                NCBI_THROW(CImageException, eReadError, msg);
+        // allocate an image
+        image.Reset(new CImage(fp->SWidth, fp->SHeight, 3));
+        memset(image->SetData(), fp->SBackGroundColor,
+               image->GetWidth() * image->GetHeight() * image->GetDepth());
+
+        // we also allocate a single row
+        // this row is a color indexed row, and will be decoded row-by-row into the
+        // image
+        vector<unsigned char> row_data(image->GetWidth());
+        unsigned char* row_ptr = &row_data[0];
+
+        bool done = false;
+        while ( !done ) {
+            // determine what sort of record type we have
+            // these can be image, extension, or termination
+            GifRecordType type;
+            if (DGifGetRecordType(fp, &type) == GIF_ERROR) {
+                NCBI_THROW(CImageException, eReadError,
+                    "CImageIOGif::ReadImage(): error reading file");
             }
 
-            if (fp->Image.Interlace) {
-                // interlaced images are a bit more complex
-                size_t row = fp->Image.Top;
-                size_t col = fp->Image.Left;
-                size_t wid = fp->Image.Width;
-                size_t ht  = fp->Image.Height;
+            switch (type) {
+            case IMAGE_DESC_RECORD_TYPE:
+                //
+                // we only support the first image in a gif
+                //
+                if (DGifGetImageDesc(fp) == GIF_ERROR) {
+                    NCBI_THROW(CImageException, eReadError,
+                        "CImageIOGif::ReadImage(): error reading file");
+                }
 
-                static int interlaced_offs[4] = { 0, 4, 2, 1 };
-                static int interlaced_jump[4] = { 8, 8, 4, 2 };
-                for (size_t i = 0;  i < 4;  ++i) {
-                    for (size_t j = row + interlaced_offs[i];
-                         j < row + ht;  j += interlaced_jump[i]) {
+                if (fp->Image.Interlace) {
+                    // interlaced images are a bit more complex
+                    size_t row = fp->Image.Top;
+                    size_t col = fp->Image.Left;
+                    size_t wid = fp->Image.Width;
+                    size_t ht  = fp->Image.Height;
+
+                    static int interlaced_offs[4] = { 0, 4, 2, 1 };
+                    static int interlaced_jump[4] = { 8, 8, 4, 2 };
+                    for (size_t i = 0;  i < 4;  ++i) {
+                        for (size_t j = row + interlaced_offs[i];
+                             j < row + ht;  j += interlaced_jump[i]) {
+                            x_ReadLine(fp, row_ptr);
+                            x_UnpackData(fp, row_ptr,
+                                         image->SetData() +
+                                         (j * wid + col) * image->GetDepth());
+                        }
+                    }
+                } else {
+                    size_t col = fp->Image.Left;
+                    size_t wid = fp->Image.Width;
+                    size_t ht  = fp->Image.Height;
+
+                    for (size_t i = 0;  i < ht;  ++i) {
                         x_ReadLine(fp, row_ptr);
                         x_UnpackData(fp, row_ptr,
                                      image->SetData() +
-                                     (j * wid + col) * image->GetDepth());
+                                     (i * wid + col) * image->GetDepth());
                     }
                 }
-            } else {
-                size_t col = fp->Image.Left;
-                size_t wid = fp->Image.Width;
-                size_t ht  = fp->Image.Height;
+                break;
 
-                for (size_t i = 0;  i < ht;  ++i) {
-                    x_ReadLine(fp, row_ptr);
-                    x_UnpackData(fp, row_ptr,
-                                 image->SetData() +
-                                 (i * wid + col) * image->GetDepth());
-                }
-            }
-            break;
+            case EXTENSION_RECORD_TYPE:
+                {{
+                     int ext_code;
+                     GifByteType* extension;
 
-        case EXTENSION_RECORD_TYPE:
-            {{
-                 int ext_code;
-                 GifByteType* extension;
-
-                 // we ignore extension blocks
-                 if (DGifGetExtension(fp, &ext_code, &extension) == GIF_ERROR) {
-                     DGifCloseFile(fp);
-                     string msg("CImageIOGif::ReadImage(): "
-                                "error reading file ");
-                     msg += file;
-                     NCBI_THROW(CImageException, eReadError, msg);
-                 }
-                 while (extension != NULL) {
-                     if (DGifGetExtensionNext(fp, &extension) == GIF_OK) {
-                         continue;
+                     // we ignore extension blocks
+                     if (DGifGetExtension(fp, &ext_code, &extension) == GIF_ERROR) {
+                         NCBI_THROW(CImageException, eReadError,
+                                    "CImageIOGif::ReadImage(): "
+                                    "error reading file");
                      }
+                     while (extension != NULL) {
+                         if (DGifGetExtensionNext(fp, &extension) == GIF_OK) {
+                             continue;
+                         }
 
-                     DGifCloseFile(fp);
-                     string msg("CImageIOGif::ReadImage(): "
-                                "error reading file ");
-                     msg += file;
-                     NCBI_THROW(CImageException, eReadError, msg);
-                 }
-             }}
-            break;
+                         NCBI_THROW(CImageException, eReadError,
+                                    "CImageIOGif::ReadImage(): "
+                                    "error reading file");
+                     }
+                 }}
+                break;
 
-        default:
-            // terminate record - break our of our while()
-            done = true;
-            break;
+            default:
+                // terminate record - break our of our while()
+                done = true;
+                break;
+            }
         }
+
+        // close up and exit
+        DGifCloseFile(fp);
+    }
+    catch (...) {
+        DGifCloseFile(fp);
+        fp = NULL;
+        throw;
     }
 
-    // close up and exit
-    DGifCloseFile(fp);
     return image.Release();
 }
 
@@ -184,12 +215,12 @@ CImage* CImageIOGif::ReadImage(const string& file)
 // ReadImage
 // this version returns a sub-image from the desired image.
 //
-CImage* CImageIOGif::ReadImage(const string& file,
+CImage* CImageIOGif::ReadImage(CNcbiIstream& istr,
                                size_t x, size_t y, size_t w, size_t h)
 {
     // we use a brain-dead implementation here - this can be done in a more
     // memory-efficient manner...
-    CRef<CImage> image(ReadImage(file));
+    CRef<CImage> image(ReadImage(istr));
     return image->GetSubImage(x, y, w, h);
 }
 
@@ -198,163 +229,154 @@ CImage* CImageIOGif::ReadImage(const string& file,
 // WriteImage()
 // this writes out a GIF image.
 //
-void CImageIOGif::WriteImage(const CImage& image, const string& file,
+void CImageIOGif::WriteImage(const CImage& image, CNcbiOstream& ostr,
                              CImageIO::ECompress)
 {
     if ( !image.GetData() ) {
-        string msg("CImageIOGif::WriteImage(): "
-                   "cannot write empty image to file ");
-        msg += file;
-        NCBI_THROW(CImageException, eWriteError, msg);
-    }
-
-    // first, we need to split our image into red/green/blue channels
-    // we do this to get proper GIF quantization
-    AutoPtr<unsigned char, ArrayDeleter<unsigned char> > red;
-    AutoPtr<unsigned char, ArrayDeleter<unsigned char> > green;
-    AutoPtr<unsigned char, ArrayDeleter<unsigned char> > blue;
-
-    size_t size = image.GetWidth() * image.GetHeight();
-    unsigned char* red_ptr   = NULL;
-    unsigned char* green_ptr = NULL;
-    unsigned char* blue_ptr  = NULL;
-    const unsigned char* from_data = image.GetData();
-    const unsigned char* end_data  = image.GetData() + size * image.GetDepth();
-
-    switch (image.GetDepth()) {
-    case 3:
-        {{
-             red.reset (new unsigned char[size]);
-             green.reset(new unsigned char[size]);
-             blue.reset (new unsigned char[size]);
-             red_ptr   = red.get();
-             green_ptr = green.get();
-             blue_ptr  = blue.get();
-
-             for ( ;  from_data != end_data;  ) {
-                 *red_ptr++   = *from_data++;
-                 *green_ptr++ = *from_data++;
-                 *blue_ptr++  = *from_data++;
-             }
-         }}
-        break;
-
-    case 4:
-        {{
-             LOG_POST(Warning <<
-                      "CImageIOGif::WriteImage(): "
-                      "ignoring alpha channel in file " << file);
-             red.reset (new unsigned char[size]);
-             green.reset(new unsigned char[size]);
-             blue.reset (new unsigned char[size]);
-             red_ptr   = red.get();
-             green_ptr = green.get();
-             blue_ptr  = blue.get();
-
-             for ( ;  from_data != end_data;  ) {
-                 *red_ptr++   = *from_data++;
-                 *green_ptr++ = *from_data++;
-                 *blue_ptr++  = *from_data++;
-
-                 // alpha channel ignored - should we use this to compute a
-                 // scaled rgb?
-                 ++from_data;
-             }
-         }}
-        break;
-
-    default:
         NCBI_THROW(CImageException, eWriteError,
-                   "CImageIOGif::WriteImage(): unsupported image depth");
+                   "CImageIOGif::WriteImage(): "
+                   "cannot write empty image to file");
     }
 
-    // now, create a GIF color map object
-    int cmap_size = 256;
-    ColorMapObject* cmap = MakeMapObject(cmap_size, NULL);
-    if ( !cmap ) {
-        NCBI_THROW(CImageException, eWriteError,
-                   "CImageIOGif::WriteImage(): failed to allocate color map");
-    }
+    ColorMapObject* cmap = NULL;
+    GifFileType* fp = NULL;
 
-    // we also allocate a strip of data to hold the indexed colors
-    AutoPtr<unsigned char, ArrayDeleter<unsigned char> > qdata
-        (new unsigned char[size]);
+    try {
+        // first, we need to split our image into red/green/blue channels
+        // we do this to get proper GIF quantization
+        size_t size = image.GetWidth() * image.GetHeight();
+        vector<unsigned char> red  (size);
+        vector<unsigned char> green(size);
+        vector<unsigned char> blue (size);
 
-    // quantize our colors
-    if (QuantizeBuffer(image.GetWidth(), image.GetHeight(), &cmap_size,
-                       red.get(), green.get(), blue.get(),
-                       qdata.get(), cmap->Colors) == GIF_ERROR) {
-        free(cmap);
-        NCBI_THROW(CImageException, eWriteError,
-                   "CImageIOGif::WriteImage(): failed to quantize image");
-    }
+        unsigned char* red_ptr   = &red[0];
+        unsigned char* green_ptr = &green[0];
+        unsigned char* blue_ptr  = &blue[0];
+        const unsigned char* from_data = image.GetData();
+        const unsigned char* end_data  = image.GetData() + size * image.GetDepth();
 
-    //
-    // we are now ready to write our file
-    //
+        switch (image.GetDepth()) {
+        case 3:
+            {{
+                 for ( ;  from_data != end_data;  ) {
+                     *red_ptr++   = *from_data++;
+                     *green_ptr++ = *from_data++;
+                     *blue_ptr++  = *from_data++;
+                 }
+             }}
+            break;
 
-    // open our file
-    GifFileType* fp = EGifOpenFileName(const_cast<char*> (file.c_str()), false);
-    if ( !fp ) {
-        free(cmap);
+        case 4:
+            {{
+                 LOG_POST(Warning <<
+                          "CImageIOGif::WriteImage(): "
+                          "ignoring alpha channel");
+                 for ( ;  from_data != end_data;  ) {
+                     *red_ptr++   = *from_data++;
+                     *green_ptr++ = *from_data++;
+                     *blue_ptr++  = *from_data++;
 
-        string msg("CImageIOGif::WriteImage(): failed to open file ");
-        msg += file;
-        msg += " for writing";
-        NCBI_THROW(CImageException, eWriteError, msg);
-    }
+                     // alpha channel ignored - should we use this to compute a
+                     // scaled rgb?
+                     ++from_data;
+                 }
+             }}
+            break;
 
-    // write the GIF screen description
-    if (EGifPutScreenDesc(fp, image.GetWidth(), image.GetHeight(),
-                          8, 0, cmap) == GIF_ERROR) {
-        EGifCloseFile(fp);
-        free(cmap);
-
-        string msg("CImageIOGif::WriteImage(): failed to write GIF screen "
-                   "description for file ");
-        msg += file;
-        NCBI_THROW(CImageException, eWriteError, msg);
-    }
-
-    // write the GIF image description
-    if (EGifPutImageDesc(fp, 0, 0, image.GetWidth(), image.GetHeight(),
-                         false, NULL) == GIF_ERROR) {
-        EGifCloseFile(fp);
-        free(cmap);
-
-        string msg("CImageIOGif::WriteImage(): failed to write GIF image "
-                   "description for file ");
-        msg += file;
-        NCBI_THROW(CImageException, eWriteError, msg);
-    }
-
-    // put our data
-    unsigned char* out_data = qdata.get();
-    for (size_t i = 0;  i < image.GetHeight();  ++i) {
-        if (EGifPutLine(fp, out_data, image.GetWidth()) == GIF_ERROR) {
-            EGifCloseFile(fp);
-            free(cmap);
-
-            string msg("CImageIOGif::WriteImage(): error writing line ");
-            msg += NStr::IntToString(i);
-            msg += " to file ";
-            msg += file;
-            NCBI_THROW(CImageException, eWriteError, msg);
+        default:
+            NCBI_THROW(CImageException, eWriteError,
+                       "CImageIOGif::WriteImage(): unsupported image depth");
         }
 
-        out_data += image.GetWidth();
-    }
+        // reset the color channel pointers!
+        red_ptr   = &red[0];
+        green_ptr = &green[0];
+        blue_ptr  = &blue[0];
 
-    // clean-up and close
-    if (EGifCloseFile(fp) == GIF_ERROR) {
+        // now, create a GIF color map object
+        int cmap_size = 256;
+        cmap = MakeMapObject(cmap_size, NULL);
+        if ( !cmap ) {
+            NCBI_THROW(CImageException, eWriteError,
+                       "CImageIOGif::WriteImage(): failed to allocate color map");
+        }
+
+        // we also allocate a strip of data to hold the indexed colors
+        vector<unsigned char> qdata(size);
+        unsigned char* qdata_ptr = &qdata[0];
+
+        // quantize our colors
+        if (QuantizeBuffer(image.GetWidth(), image.GetHeight(), &cmap_size,
+                           red_ptr, green_ptr, blue_ptr,
+                           qdata_ptr, cmap->Colors) == GIF_ERROR) {
+            free(cmap);
+            NCBI_THROW(CImageException, eWriteError,
+                       "CImageIOGif::WriteImage(): failed to quantize image");
+        }
+
+        //
+        // we are now ready to write our file
+        //
+
+        // open our file
+        fp = EGifOpen(&ostr, s_GifWrite);
+        if ( !fp ) {
+            NCBI_THROW(CImageException, eWriteError,
+                       "CImageIOGif::WriteImage(): failed to open file");
+        }
+
+        // write the GIF screen description
+        if (EGifPutScreenDesc(fp, image.GetWidth(), image.GetHeight(),
+                              8, 0, cmap) == GIF_ERROR) {
+            NCBI_THROW(CImageException, eWriteError,
+                "CImageIOGif::WriteImage(): failed to write GIF screen "
+                "description");
+        }
+
+        // write the GIF image description
+        if (EGifPutImageDesc(fp, 0, 0, image.GetWidth(), image.GetHeight(),
+                             false, NULL) == GIF_ERROR) {
+            NCBI_THROW(CImageException, eWriteError,
+                       "CImageIOGif::WriteImage(): failed to write GIF image "
+                       "description");
+        }
+
+        // put our data
+        for (size_t i = 0;  i < image.GetHeight();  ++i) {
+            if (EGifPutLine(fp, qdata_ptr, image.GetWidth()) == GIF_ERROR) {
+                string msg("CImageIOGif::WriteImage(): error writing line ");
+                msg += NStr::IntToString(i);
+                NCBI_THROW(CImageException, eWriteError, msg);
+            }
+
+            qdata_ptr += image.GetWidth();
+        }
+
+        // clean-up and close
+        if (EGifCloseFile(fp) == GIF_ERROR) {
+            fp = NULL;
+            NCBI_THROW(CImageException, eWriteError,
+                       "CImageIOGif::WriteImage(): error closing file");
+        }
+
         free(cmap);
-
-        string msg("CImageIOGif::WriteImage(): error closing file ");
-        msg += file;
-        NCBI_THROW(CImageException, eWriteError, msg);
     }
+    catch (...) {
+        if (fp) {
+            if (EGifCloseFile(fp) == GIF_ERROR) {
+                LOG_POST(Error
+                    << "CImageIOGif::WriteImage(): error closing file");
+            }
+            fp = NULL;
+        }
 
-    free(cmap);
+        if (cmap) {
+            free(cmap);
+            cmap = NULL;
+        }
+
+        throw;
+    }
 }
 
 
@@ -364,12 +386,12 @@ void CImageIOGif::WriteImage(const CImage& image, const string& file,
 // implementation currently - subset the image and write it out, rather than
 // simply quantizing just the sub-image's data
 //
-void CImageIOGif::WriteImage(const CImage& image, const string& file,
+void CImageIOGif::WriteImage(const CImage& image, CNcbiOstream& ostr,
                              size_t x, size_t y, size_t w, size_t h,
                              CImageIO::ECompress compress)
 {
     CRef<CImage> subimage(image.GetSubImage(x, y, w, h));
-    WriteImage(*subimage, file, compress);
+    WriteImage(*subimage, ostr, compress);
 }
 
 
@@ -419,14 +441,14 @@ END_NCBI_SCOPE
 
 BEGIN_NCBI_SCOPE
 
-CImage* CImageIOGif::ReadImage(const string&)
+CImage* CImageIOGif::ReadImage(CNcbiIstream&)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOGif::ReadImage(): GIF format read unimplemented");
 }
 
 
-CImage* CImageIOGif::ReadImage(const string&,
+CImage* CImageIOGif::ReadImage(CNcbiIstream&,
                                size_t, size_t, size_t, size_t)
 {
     NCBI_THROW(CImageException, eUnsupported,
@@ -435,7 +457,7 @@ CImage* CImageIOGif::ReadImage(const string&,
 }
 
 
-void CImageIOGif::WriteImage(const CImage&, const string&,
+void CImageIOGif::WriteImage(const CImage&, CNcbiOstream&,
                              CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
@@ -443,7 +465,7 @@ void CImageIOGif::WriteImage(const CImage&, const string&,
 }
 
 
-void CImageIOGif::WriteImage(const CImage&, const string&,
+void CImageIOGif::WriteImage(const CImage&, CNcbiOstream&,
                              size_t, size_t, size_t, size_t,
                              CImageIO::ECompress)
 {
@@ -460,6 +482,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/12/16 15:49:36  dicuccio
+ * Large re-write of image handling.  Added improved error-handling and support
+ * for streams-based i/o (via hooks into each client library).
+ *
  * Revision 1.4  2003/11/03 15:19:57  dicuccio
  * Added optional compression parameter
  *

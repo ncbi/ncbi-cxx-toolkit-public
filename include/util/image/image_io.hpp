@@ -82,6 +82,7 @@ public:
     };
 
     // retrieve an image type from its magic number
+    static EType GetTypeFromMagic(CNcbiIstream& istr);
     static EType GetTypeFromMagic(const string& file);
 
     // retrieve an image type from its file name
@@ -91,20 +92,29 @@ public:
 
     // read an image from a file, returning the object for user management
     static CImage* ReadImage(const string& file);
+    static CImage* ReadImage(CNcbiIstream& istr);
 
     // read only part of an image from a file
+    static CImage* ReadSubImage(CNcbiIstream& istr,
+                                size_t x, size_t y, size_t w, size_t h);
     static CImage* ReadSubImage(const string& file,
                                 size_t x, size_t y, size_t w, size_t h);
 
     // write an image to a file in a specified format.  If the format type is
     // eUnknown, it will be guessed from the file extension.
+    static bool WriteImage(const CImage& image, CNcbiOstream& ostr,
+                           EType type,
+                           ECompress compress = eCompress_Default);
     static bool WriteImage(const CImage& image, const string& file,
                            EType type = eUnknown,
                            ECompress compress = eCompress_Default);
 
     // write only part of an image to a file
-    static bool WriteSubImage(const CImage& image,
-                              const string& file,
+    static bool WriteSubImage(const CImage& image, CNcbiOstream& ostr,
+                              size_t x, size_t y, size_t w, size_t h,
+                              EType type,
+                              ECompress compress = eCompress_Default);
+    static bool WriteSubImage(const CImage& image, const string& file,
                               size_t x, size_t y, size_t w, size_t h,
                               EType type = eUnknown,
                               ECompress compress = eCompress_Default);
@@ -121,6 +131,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/12/16 15:49:38  dicuccio
+ * Large re-write of image handling.  Added improved error-handling and support
+ * for streams-based i/o (via hooks into each client library).
+ *
  * Revision 1.4  2003/11/03 15:17:29  dicuccio
  * Added optional compression parameter
  *
