@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.191 2003/05/23 17:41:53 ucko Exp $
+#  $Id: configure.ac,v 1.192 2003/05/30 17:16:00 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1427,8 +1427,18 @@ else
    AC_DEFINE(NCBI_OS, "MAC", [Operating system name])
 fi
 
-AC_CHECK_TYPES(wstring,,,[#include <string>
-                          using std::wstring;])
+# AC_CHECK_TYPES is insufficient, as linking may still fail :-/
+AC_CACHE_CHECK([for wstring], ac_cv_type_wstring_linkable,
+   [AC_LINK_IFELSE([AC_LANG_PROGRAM(
+       [[#include <string>
+         using std::wstring;]],
+       [[wstring ws, ws2; ws.find_first_of(ws2);]])],
+       [ac_cv_type_wstring_linkable=yes], [ac_cv_type_wstring_linkable=no])])
+if test "$ac_cv_type_wstring_linkable" = "yes"; then
+   AC_DEFINE(HAVE_WSTRING, 1,
+      [Define to 1 if the system has the type `wstring'.])
+fi
+
 AC_CHECK_TYPES(socklen_t,,,[#include <sys/socket.h>])
 AC_CHECK_HEADERS(dlfcn.h sys/sockio.h sys/sysinfo.h)
 # for FreeTDS 0.60
