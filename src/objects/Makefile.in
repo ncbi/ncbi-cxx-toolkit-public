@@ -5,7 +5,7 @@
 
 USR_PROJ = sources
 
-SUB_PROJ = mim entrez2 general seqcode biblio medline pub pubmed seqloc seqalign seqblock seqfeat seqres seqset seq objmgr asn2asn medlars submit proj mmdb1 mmdb2 mmdb3 cdd cn3d ncbimime access featdef objprt id1 util
+SUB_PROJ = mim entrez2 general seqcode biblio medline pub pubmed seqloc seqalign seqblock seqfeat seqres seqset seq asn2asn medlars submit proj mmdb1 mmdb2 mmdb3 cdd cn3d ncbimime access featdef objprt id1 objmgr util
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
