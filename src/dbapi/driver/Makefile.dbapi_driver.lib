@@ -1,9 +1,11 @@
 # $Id$
 
 SRC = handle_stack numeric_convert parameters \
-         exception interfaces public types \
-         memory_store pointer_pot driver_mgr
+      exception interfaces public types \
+      memory_store pointer_pot driver_mgr
 
-LIB    = dbapi_driver
+LIB      = dbapi_driver
+
+LIB_OR_DLL = both
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SYBASE_INCLUDE)
