@@ -205,10 +205,14 @@ FindMatrixPath(const char* matrix_name, bool is_prot)
         return retval;
     }
     
+    string path("");
+
     // Obtain the matrix path from the ncbi configuration file
-    CMetaRegistry::SEntry sentry;
-    sentry = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    string path = sentry.registry ? sentry.registry->Get("NCBI", "Data") : "";
+    try {
+        CMetaRegistry::SEntry sentry;
+        sentry = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+        path = sentry.registry ? sentry.registry->Get("NCBI", "Data") : "";
+    } catch (const CRegistryException&) { /* ignore */ }
     
     full_path = CFile::MakePath(path, mtx);
     if (CFile(full_path).Exists()) {
@@ -386,7 +390,6 @@ GetNumberOfFrames(EProgram p)
     return retval;
 }
 
-
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -396,6 +399,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.74  2004/08/17 20:01:57  camacho
+ * Handle misconfigured NCBI configuration file
+ *
  * Revision 1.73  2004/08/17 15:13:00  ivanov
  * Moved GetProgramFromBlastProgramType() from blast_setup_cxx.cpp
  * to blast_options_cxx.cpp
