@@ -223,6 +223,10 @@ void CValidError_feat::ValidateSeqFeatData
             "]", feat);
         break;
     }
+
+    if ( !data.IsGene() ) {
+        ValidateGeneXRef(feat);
+    }
 }
 
 
@@ -536,7 +540,6 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
     if (gene.IsSetDb ()) {
         m_Imp.ValidateDbxref(gene.GetDb(), feat);
     }
-    ValidateGeneXRef(feat);
 }
 
 
@@ -2019,17 +2022,14 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     if ( !overlap ) {
         return;
     }
-        
-    const CGene_ref* overlap_xref = overlap->GetGeneXref();
-    if ( !overlap_xref ) {
-        return;
-    }
     
-    string label, overlap_label;
+    const CGene_ref& gene = overlap->GetData().GetGene();
+
+    string label, gene_label;
     grp->GetLabel(&label);
-    overlap_xref->GetLabel(&overlap_label);
+    gene.GetLabel(&gene_label);
     
-    if ( NStr::CompareNocase(label, overlap_label) == 0 ) {
+    if ( NStr::CompareNocase(label, gene_label) == 0 ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryGeneXref,
             "Unnecessary gene cross-reference " + label, feat);
     }
@@ -2231,6 +2231,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2003/05/14 21:20:50  shomrat
+* Changes to ValidateGeneXRef
+*
 * Revision 1.27  2003/05/05 15:36:15  shomrat
 * Implemented ValidateCdsProductId
 *
