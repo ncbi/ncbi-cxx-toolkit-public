@@ -365,7 +365,7 @@ public:
     TFlags SetFlags(TFlags flags);
     TFlags ClearFlags(TFlags flags);
 
-    class ByteBlock
+    class NCBI_XSERIAL_EXPORT ByteBlock
     {
     public:
         ByteBlock(CObjectIStream& in);
@@ -391,7 +391,7 @@ public:
 
         friend class CObjectIStream;
     };
-    class CharBlock
+    class NCBI_XSERIAL_EXPORT CharBlock
     {
     public:
         CharBlock(CObjectIStream& in);
@@ -421,7 +421,7 @@ public:
 
 #if HAVE_NCBI_C
     // ASN.1 interface
-    class AsnIo
+    class NCBI_XSERIAL_EXPORT AsnIo
     {
     public:
         AsnIo(CObjectIStream& in, const string& rootTypeName);
@@ -615,6 +615,7 @@ public:
 inline
 bool GoodVisibleChar(char c);
 
+NCBI_XSERIAL_EXPORT
 char ReplaceVisibleChar(char c, EFixNonPrint fix_method, size_t at_line);
 
 inline
@@ -670,6 +671,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.104  2004/08/17 14:36:23  dicuccio
+* Added export specifiers for nested classes
+*
 * Revision 1.103  2004/04/30 13:28:40  gouriano
 * Remove obsolete function declarations
 *

@@ -293,7 +293,7 @@ public:
 
     class ByteBlock;
     friend class ByteBlock;
-    class ByteBlock
+    class NCBI_XSERIAL_EXPORT ByteBlock
     {
     public:
         ByteBlock(CObjectOStream& out, size_t length);
@@ -335,7 +335,7 @@ public:
     };
 
 #if HAVE_NCBI_C
-    class AsnIo
+    class NCBI_XSERIAL_EXPORT AsnIo
     {
     public:
         AsnIo(CObjectOStream& out, const string& rootTypeName);
@@ -526,6 +526,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2004/08/17 14:36:43  dicuccio
+* Added export specifiers for nested classes
+*
 * Revision 1.86  2004/05/24 18:12:24  gouriano
 * In text output files make indentation optional
 *
