@@ -174,7 +174,9 @@ void CObject::operator delete[](void* ptr)
 // initialization in debug mode
 void CObject::InitCounter(void)
 {
-    if ( m_Counter.Get() != eCounterNew ) {
+    // This code can't use Get(), which may block waiting for an
+    // update that will never happen.
+    if ( m_Counter.m_Value != eCounterNew ) {
         // takes care of statically allocated case
         m_Counter.Set(eCounterNotInHeap);
     }
@@ -193,7 +195,7 @@ void CObject::InitCounter(void)
         }}
 #else // USE_HEAPOBJ_LIST
 #  if USE_COMPLEX_MASK
-        inStack = GetSecondCounter(this)->Get() != eCounterNew;
+        inStack = GetSecondCounter(this)->m_Value != eCounterNew;
 #  endif // USE_COMPLEX_MASK
         // m_Counter == eCounterNew -> possibly in heap
         if (!inStack) {
@@ -375,6 +377,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2003/03/06 19:40:52  ucko
+ * InitCounter: read m_Value directly rather than going through Get(), which
+ * would end up spinning forever if it came across NCBI_COUNTER_RESERVED_VALUE.
+ *
  * Revision 1.34  2002/11/27 12:53:45  dicuccio
  * Added CObject::ThrowNullPointerException() to get around some inlining issues.
  *
