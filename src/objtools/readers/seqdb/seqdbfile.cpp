@@ -177,7 +177,11 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
 {
     // Input validation
     
-    _ASSERT(! dbname.empty());
+    if (dbname.empty()) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Error: dbname should not be an empty string.");
+    }
     
     if ((prot_nucl != kSeqTypeProt) && (prot_nucl != kSeqTypeNucl)) {
         NCBI_THROW(CSeqDBException,
