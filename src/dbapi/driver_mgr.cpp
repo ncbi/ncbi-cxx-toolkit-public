@@ -97,7 +97,7 @@ IDataSource* CDriverManager::CreateDs(const string&        driver_name,
         return (*i_ds).second;
     }
 
-    I_DriverContext* ctx = Get_I_DriverContext( driver_name, attr );
+    I_DriverContext* ctx = GetDriverContextFromMap( driver_name, attr );
     if ( !ctx ) {
         throw CDbapiException
             ("CDriverManager::CreateDs() -- Failed to get context for driver: "
@@ -125,9 +125,9 @@ IDataSource* CDriverManager::CreateDsFrom(const string& drivers,
             for( ; i_param != entries.end(); ++i_param ) {
                 attr[*i_param] = reg->Get(*i_name, *i_param);
             }
-            ctx = Get_I_DriverContext( *i_name, &attr );
+            ctx = GetDriverContextFromMap( *i_name, &attr );
         } else {
-            ctx = Get_I_DriverContext( *i_name, NULL );
+            ctx = GetDriverContextFromMap( *i_name, NULL );
         }
 
         if( ctx != 0 ) {
@@ -140,7 +140,7 @@ IDataSource* CDriverManager::CreateDsFrom(const string& drivers,
 IDataSource* CDriverManager::RegisterDs(const string& driver_name,
                                         I_DriverContext* ctx)
 {
-    IDataSource *ds = new CDataSource(ctx);
+    IDataSource *ds = CreateDs( ctx );
     m_ds_list[driver_name] = ds;
     return ds;
 }
@@ -149,9 +149,20 @@ void CDriverManager::DestroyDs(const string& driver_name)
 {
     map<string, IDataSource*>::iterator i_ds = m_ds_list.find(driver_name);
     if (i_ds != m_ds_list.end()) {
-        delete (*i_ds).second;
+        DeleteDs(i_ds->second);
         m_ds_list.erase(i_ds);
     }
+}
+
+IDataSource*
+CDriverManager::CreateDs(I_DriverContext* ctx)
+{
+    return new CDataSource(ctx);
+}
+
+void CDriverManager::DeleteDs(const IDataSource* const ds)
+{
+    delete ds;
 }
 
 END_NCBI_SCOPE
@@ -159,6 +170,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.16  2005/03/08 17:12:58  ssikorsk
+* Allow to add a driver search path for the driver manager
+*
 * Revision 1.15  2005/03/01 15:22:55  ssikorsk
 * Database driver manager revamp to use "core" CPluginManager
 *

@@ -42,14 +42,29 @@
 BEGIN_NCBI_SCOPE
 
 
+///////////////////////////////////////////////////////////////////////////////
+TPluginManagerParamTree*
+MakePluginManagerParamTree(const string& driver_name, const map<string, string>* attr)
+{
+    typedef map<string, string>::const_iterator TCIter;
+    CMemoryRegistry reg;
+    TCIter citer = attr->begin();
+    TCIter cend = attr->end();
+
+    for ( ; citer != cend; ++citer ) {
+        reg.Set( driver_name, citer->first, citer->second );
+    }
+
+    TPluginManagerParamTree* const tr = CConfig::ConvertRegToTree(reg);
+
+    return tr;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 class C_xDriverMgr : public I_DriverMgr
 {
 public:
-    C_xDriverMgr(unsigned int nof_drivers= 16) {
-        m_NofRoom= nof_drivers? nof_drivers : 16;
-        m_Drivers= new SDrivers[m_NofRoom];
-        m_NofDrvs= 0;
-    }
+    C_xDriverMgr(unsigned int nof_drivers= 16);
 
     FDBAPI_CreateContext GetDriver(const string& driver_name,
                                    string* err_msg= 0);
@@ -60,6 +75,18 @@ public:
     virtual ~C_xDriverMgr() {
         delete [] m_Drivers;
     }
+
+public:
+    /// Add path for the DLL lookup
+    void AddDllSearchPath(const string& path);
+
+    I_DriverContext* GetDriverContext(
+        const string& driver_name,
+        const TPluginManagerParamTree* const attr = NULL);
+
+    I_DriverContext* GetDriverContext(
+        const string& driver_name,
+        const map<string, string>* attr = NULL);
 
 protected:
     bool LoadDriverDll(const string& driver_name, string* err_msg);
@@ -77,7 +104,77 @@ private:
     unsigned int m_NofRoom;
     CFastMutex m_Mutex1;
     CFastMutex m_Mutex2;
+
+private:
+    typedef CPluginManager<I_DriverContext> TContextManager;
+    typedef CPluginManagerStore::CPMMaker<I_DriverContext> TContextManagerStore;
+
+    CRef<TContextManager>   m_ContextManager;
 };
+
+C_xDriverMgr::C_xDriverMgr( unsigned int nof_drivers )
+{
+    m_NofRoom= nof_drivers? nof_drivers : 16;
+    m_Drivers= new SDrivers[m_NofRoom];
+    m_NofDrvs= 0;
+
+    ///////////////////////////////////
+    bool created = false;
+
+    m_ContextManager.Reset( TContextManagerStore::Get( &created ) );
+    _ASSERT( m_ContextManager );
+}
+
+void
+C_xDriverMgr::AddDllSearchPath(const string& path)
+{
+    m_ContextManager->AddDllSearchPath( path );
+}
+
+I_DriverContext*
+C_xDriverMgr::GetDriverContext(
+    const string& driver_name,
+    const TPluginManagerParamTree* const attr)
+{
+    I_DriverContext* drv = NULL;
+
+    try {
+        drv = m_ContextManager->CreateInstance(
+            driver_name,
+            NCBI_INTERFACE_VERSION(I_DriverContext),
+            attr
+            );
+    }
+    catch( const CPluginManagerException& e ) {
+        throw CDB_ClientEx(eDB_Fatal, 300, "C_xDriverMgr::GetDriverContext", e.GetMsg() );
+    }
+    catch ( const exception& e ) {
+        throw CDB_ClientEx(eDB_Fatal, 300, "C_xDriverMgr::GetDriverContext",
+            driver_name + " is not available :: " + e.what() );
+    }
+    catch ( ... ) {
+        throw CDB_ClientEx(eDB_Fatal, 300, "C_xDriverMgr::GetDriverContext",
+            driver_name + " was unable to load due an unknown error" );
+    }
+
+    return drv;
+}
+
+I_DriverContext*
+C_xDriverMgr::GetDriverContext(
+    const string& driver_name,
+    const map<string, string>* attr)
+{
+    const TPluginManagerParamTree* nd = NULL;
+
+    if ( attr != NULL ) {
+        TPluginManagerParamTree* pt = MakePluginManagerParamTree(driver_name, attr);
+        _ASSERT(pt);
+        nd = pt->FindNode( driver_name );
+    }
+
+    return GetDriverContext(driver_name, nd);
+}
 
 void C_xDriverMgr::RegisterDriver(const string&        driver_name,
                                   FDBAPI_CreateContext driver_ctx_func)
@@ -122,7 +219,7 @@ FDBAPI_CreateContext C_xDriverMgr::GetDriver(const string& driver_name,
         }
     }
 
-    throw CDB_ClientEx(eDB_Error, 200, "C_DriverMgr::GetDriver",
+    throw CDB_ClientEx(eDB_Error, 200, "C_xDriverMgr::GetDriver",
                        "internal error");
 }
 
@@ -140,7 +237,7 @@ bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
         }
         FDriverRegister reg = entry_point();
         if(!reg) {
-            throw CDB_ClientEx(eDB_Fatal, 300, "C_DriverMgr::LoadDriverDll",
+            throw CDB_ClientEx(eDB_Fatal, 300, "C_xDriverMgr::LoadDriverDll",
                                "driver reports an unrecoverable error "
                                "(e.g. conflict in libraries)");
         }
@@ -181,6 +278,7 @@ C_DriverMgr::~C_DriverMgr()
 void C_DriverMgr::RegisterDriver(const string&        driver_name,
                                  FDBAPI_CreateContext driver_ctx_func)
 {
+    _ASSERT( s_DrvMgr );
     s_DrvMgr->RegisterDriver(driver_name, driver_ctx_func);
 }
 
@@ -188,25 +286,33 @@ I_DriverContext* C_DriverMgr::GetDriverContext(const string&       driver_name,
                                                string*             err_msg,
                                                const map<string,string>* attr)
 {
-    return Get_I_DriverContext( driver_name, attr );
+    _ASSERT( s_DrvMgr );
+    return s_DrvMgr->GetDriverContext( driver_name, attr );
 }
 
-///////////////////////////////////////////////////////////////////////////////
-TPluginManagerParamTree*
-MakePluginManagerParamTree(const string& driver_name, const map<string, string>* attr)
+void
+C_DriverMgr::AddDllSearchPath(const string& path)
 {
-    typedef map<string, string>::const_iterator TCIter;
-    CMemoryRegistry reg;
-    TCIter citer = attr->begin();
-    TCIter cend = attr->end();
+    _ASSERT( s_DrvMgr );
+    s_DrvMgr->AddDllSearchPath( path );
+}
 
-    for ( ; citer != cend; ++citer ) {
-        reg.Set( driver_name, citer->first, citer->second );
-    }
+I_DriverContext*
+C_DriverMgr::GetDriverContextFromTree(
+    const string& driver_name,
+    const TPluginManagerParamTree* const attr)
+{
+    _ASSERT( s_DrvMgr );
+    return s_DrvMgr->GetDriverContext( driver_name, attr );
+}
 
-    TPluginManagerParamTree* const tr = CConfig::ConvertRegToTree(reg);
-
-    return tr;
+I_DriverContext*
+C_DriverMgr::GetDriverContextFromMap(
+    const string& driver_name,
+    const map<string, string>* attr)
+{
+    _ASSERT( s_DrvMgr );
+    return s_DrvMgr->GetDriverContext( driver_name, attr );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -256,6 +362,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/03/08 17:12:58  ssikorsk
+ * Allow to add a driver search path for the driver manager
+ *
  * Revision 1.19  2005/03/02 17:45:58  ssikorsk
  * Handle attr == NULL in Get_I_DriverContext
  *

@@ -55,6 +55,9 @@ BEGIN_NCBI_SCOPE
 //  Static class for registering drivers and getting the datasource
 //
 
+// Forward declaration
+class IDataSource;
+
 class NCBI_DBAPI_EXPORT CDriverManager : public C_DriverMgr
 {
 public:
@@ -65,10 +68,10 @@ public:
     static void RemoveInstance();
 
     // Create datasource object
-    class IDataSource* CreateDs(const string& driver_name,
+    IDataSource* CreateDs(const string& driver_name,
                 const map<string, string> *attr = 0);
 
-    class IDataSource* CreateDsFrom(const string& drivers,
+    IDataSource* CreateDsFrom(const string& drivers,
 				    const IRegistry* reg = 0);
 
     // Destroy datasource object
@@ -87,6 +90,11 @@ protected:
     map<string, class IDataSource*> m_ds_list;
 
 private:
+    static IDataSource* CreateDs(I_DriverContext* ctx);
+    // This function will just call the delete operator.
+    static void DeleteDs(const IDataSource* const ds);
+
+private:
     static CDriverManager* sm_Instance;
     DECLARE_CLASS_STATIC_MUTEX(sm_Mutex);
 };
@@ -100,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/03/08 17:13:10  ssikorsk
+ * Allow to add a driver search path for the driver manager
+ *
  * Revision 1.9  2005/03/01 15:21:52  ssikorsk
  * Database driver manager revamp to use "core" CPluginManager
  *

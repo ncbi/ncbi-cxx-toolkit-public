@@ -61,6 +61,18 @@ public:
                                       const map<string, string>* attr = 0);
 
     virtual ~C_DriverMgr();
+
+public:
+    /// Add path for the DLL lookup
+    void AddDllSearchPath(const string& path);
+
+    I_DriverContext* GetDriverContextFromTree(
+        const string& driver_name,
+        const TPluginManagerParamTree* const attr = NULL);
+
+    I_DriverContext* GetDriverContextFromMap(
+        const string& driver_name,
+        const map<string, string>* attr = NULL);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -72,7 +84,7 @@ public:
     {
         CPluginManager_DllResolver* resolver =
             new CPluginManager_DllResolver
-            (CInterfaceVersion<I_DriverContext>::GetName(), 
+            (CInterfaceVersion<I_DriverContext>::GetName(),
              kEmptyStr,
              CVersionInfo::kAny,
              CDll::eNoAutoUnload);
@@ -95,6 +107,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/03/08 17:13:10  ssikorsk
+ * Allow to add a driver search path for the driver manager
+ *
  * Revision 1.15  2005/03/03 19:06:49  ssikorsk
  * Do not unload database drivers with the PluginManager
  *
