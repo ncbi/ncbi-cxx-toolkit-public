@@ -32,9 +32,6 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
-#if 0
-#  include <connect/ncbi_socket.h>
-#endif
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 
@@ -185,6 +182,10 @@ CCgiContext* CCgiApplication::CreateContext
     return new CCgiContext(*this, args, env, inp, out, ifd, ofd);
 }
 
+void CCgiApplication::SetCafService(CCookieAffinity* caf)
+{
+    m_caf.reset(caf);
+}
 
 // Flexible diagnostics support
 //
@@ -216,7 +217,7 @@ private:
 };
 
 
-CCgiApplication::CCgiApplication(void)
+CCgiApplication::CCgiApplication(void) : m_hostIP(0)
 {
     DisableArgDescriptions();
     RegisterDiagFactory("stderr", new CStderrDiagFactory);
@@ -229,6 +230,7 @@ CCgiApplication::~CCgiApplication(void)
     iterate (TDiagFactoryMap, it, m_DiagFactories) {
         delete it->second;
     }
+    if ( m_hostIP ) free(m_hostIP);
 }
 
 
@@ -468,24 +470,32 @@ void CCgiApplication::x_AddLBCookie()
     bool secure = reg.GetBool("CGI-LB", "Secure", false,
                               CNcbiRegistry::eErrPost);
 
-    string host = reg.GetString("CGI-LB", "Host", kEmptyStr,
-                                CNcbiRegistry::eReturn);
+    string host;
 
-    if ( host.empty() ) {
-#if 0
-        unsigned int ip_addr = SOCK_gethostbyname(0);
-        char buf[100];
-        int res = SOCK_ntoa(ip_addr, buf, sizeof(buf));
-        if (res == 0) {
-            host = buf;
-        }
-        else {
-            ERR_POST("CCgiApp::x_AddLBCookie -- SOCK_ntoa error:" << res);
-        }
-#else
-        ERR_POST("CCgiApp::x_AddLBCookie -- Host address undefined");
-#endif
+    // Getting host configuration can take some time
+    // for fast CGIs we try to avoid overhead and call it only once
+    // m_hostIP variable keeps the cached value
+
+    if ( m_hostIP ) {     // repeated call
+        host = m_hostIP;
     }
+    else {               // first time call
+        host = reg.GetString("CGI-LB", "Host", kEmptyStr,
+                             CNcbiRegistry::eReturn);
+        if ( host.empty() ) {
+            if ( m_caf.get() ) {
+                char  host_ip[64] = {0,};
+                m_caf->GetHostIP(host_ip, sizeof(host_ip));
+                m_hostIP = m_caf->Encode(host_ip, 0);
+                host = m_hostIP;
+            }
+            else {
+                ERR_POST("CGI-LB: 'Host' not specified.");
+            }
+        }
+    }
+
+
     CCgiCookie cookie(cookie_name, host, domain, path);
     if (life_span > 0) {
         CTime exp_time(CTime::eCurrent, CTime::eGmt);
@@ -674,6 +684,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2003/02/25 14:11:11  kuznets
+* Added support of CCookieAffinity service interface, host IP address, cookie encoding
+*
 * Revision 1.39  2003/02/21 22:20:44  vakatov
 * Get rid of a compiler warning
 *

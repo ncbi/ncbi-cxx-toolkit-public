@@ -39,6 +39,7 @@
 #include <cgi/ncbicgi.hpp>
 #include <cgi/ncbicgir.hpp>
 #include <cgi/ncbires.hpp>
+#include <cgi/caf.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -108,6 +109,10 @@ protected:
     // Class factory for statistics class
     virtual CCgiStatistics* CreateStat();
 
+    // Attach cookie affinity service interface. Pointer ownership goes to
+    // CCgiApplication
+    void SetCafService(CCookieAffinity* caf);
+
 private:
     // If FastCGI-capable, and run as a Fast-CGI then iterate through
     // the FastCGI loop -- doing initialization and running ProcessRequest()
@@ -140,6 +145,9 @@ private:
 
     typedef map<string, CDiagFactory*> TDiagFactoryMap;
     TDiagFactoryMap           m_DiagFactories;
+
+    auto_ptr<CCookieAffinity> m_caf;         // Cookie affinity service pointer
+    char*                     m_hostIP;      // Cookie affinity host IP buffer
 };
 
 
@@ -196,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2003/02/25 14:10:56  kuznets
+* Added support of CCookieAffinity service interface, host IP address, cookie encoding
+*
 * Revision 1.31  2003/02/19 17:51:34  kuznets
 * Added generation of load balancing cookie
 *

@@ -37,18 +37,18 @@ BEGIN_NCBI_SCOPE
 // CCookieAffinity::
 //
 // Cookie affinity service interface definition.
-// 
+//
 //
 
 class CCookieAffinity
 {
 public:
-    virtual ~CCookieAffinity()=0 {}
+    virtual ~CCookieAffinity() {}
 
     // Return result of encryption of "string" with "key"; 0 if failed
     // return string to be free()'d by the caller
     virtual char* Encode(const char* str, const char* key)=0;
-    
+
     // Return IP address of the current host, 0 if failed
     virtual char* GetHostIP(char* buf, unsigned int bufsize)=0;
 };
@@ -58,6 +58,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2003/02/25 14:10:56  kuznets
+* Added support of CCookieAffinity service interface, host IP address, cookie encoding
+*
 * Revision 1.1  2003/02/21 20:27:39  kuznets
 * + cookie affinity lib (caf)
 *
