@@ -57,8 +57,6 @@ static char s_GetSeqTypeChar(CSeqDB::ESeqType seqtype)
     NCBI_THROW(CSeqDBException,
                eArgErr,
                "Invalid sequence type specified.");
-    
-    return '-';
 }
 
 /// Helper function to build private implementation object.
