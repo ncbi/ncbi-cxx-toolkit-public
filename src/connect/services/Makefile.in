@@ -4,12 +4,12 @@
 #################################
 
 # Meta-makefile for project "Connect":
-#  - library:  "xconnect"
-#  - tests:    "test/*.*"
-#  - daemons:  "daemons/*.*"
+#  - libraries:  "connect", "xconnect"
+#  - tests:      "test/*.*"
+#  - daemons:    "daemons/*.*"
 #################################
 
-LIB_PROJ = connect
+LIB_PROJ = connect xconnect
 SUB_PROJ = test
 
 UNIX_SUB_PROJ = daemons
