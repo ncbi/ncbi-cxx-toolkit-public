@@ -2,7 +2,7 @@ This is a DEMO of script "SRC/NEW_PROJECT.SH"
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-/tmp> $NCBI/c++/src/new_project.sh
+/tmp> $NCBI/c++/scripts/new_project.sh
 USAGE:  new_project.sh <name> <type> [builddir]
 SYNOPSIS:
    Create a model makefile "Makefile.<name>_<type>" to build
@@ -18,7 +18,7 @@ ARGUMENTS:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-/tmp> $NCBI/c++/src/new_project.sh foo app
+/tmp> $NCBI/c++/scripts/new_project.sh foo app
 Created a model makefile "/tmp/foo/Makefile.foo_app".
 
 
