@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/02/03 15:03:55  vasilche
+* Added check for wrong link names.
+*
 * Revision 1.2  1999/02/02 17:57:47  vasilche
 * Added CHTML_table::Row(int row).
 * Linkbar now have equal image spacing.
@@ -79,8 +82,8 @@ public:
 
     //    const TLinkBarTemplate* GetTemplate(void) const;
 
-    void AddLink(const string& name, const string& linkUrl)
-        { m_Links.insert(map<string, string>::value_type(name, linkUrl)); }
+    void AddLink(const string& name, const string& linkUrl);
+
     //    string GetLink(const string& name) const;
 
     virtual void CreateSubNodes(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/02/03 15:03:58  vasilche
+* Added check for wrong link names.
+*
 * Revision 1.2  1999/02/02 17:57:50  vasilche
 * Added CHTML_table::Row(int row).
 * Linkbar now have equal image spacing.
@@ -76,6 +79,19 @@ CLinkBar::CLinkBar(const TLinkBarTemplate* templ)
 
 CLinkBar::~CLinkBar(void)
 {
+}
+
+void CLinkBar::AddLink(const string& name, const string& linkUrl)
+{
+    m_Links.insert(map<string, string>::value_type(name, linkUrl));
+    
+    // check that this link is in template
+    for ( TLinkBarTemplate::const_iterator i = m_Template->begin();
+          i != m_Template->end(); ++i ) {
+        if ( i->m_LinkName == name )
+            return;
+    }
+    _TRACE("CLinkBar::AddLink: name " << name << " is not in template");
 }
 
 void CLinkBar::CreateSubNodes(void)
