@@ -67,6 +67,10 @@
 #    include <ncbi_mslextras.h>
 #  endif
 
+#  if !defined(HAVE_LCHOWN)
+#    define lchown chown
+#  endif
+
 #else
 #  error "File API defined only for MS Windows and UNIX platforms"
 
@@ -2907,6 +2911,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.90  2005/03/22 15:45:57  ucko
+ * Always use regular chown rather than lchown when the latter is unavailable.
+ *
  * Revision 1.89  2005/03/22 14:20:48  ivanov
  * + CDirEntry:: operator=, Copy, CopyToDir, Get/SetBackupSuffix, Backup,
  *               IsLink, LookupLink, DereferenceLink, IsNewer, Get/SetOwner
