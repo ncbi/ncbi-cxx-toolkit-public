@@ -1,0 +1,14 @@
+# $Id$
+
+SRC = dbapi_blob_cache
+
+LIB    = dbapi_cache
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(CMPRS_INCLUDE)
+
+# Build shared version when possible
+LIB_OR_DLL = both
+
+# Dependencies for shared library
+DLL_LIB = dbapi_driver xcompress $(CMPRS_LIB) xutil xncbi
+LIBS    = $(CMPRS_LIBS) $(ORIG_LIBS)

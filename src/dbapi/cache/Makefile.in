@@ -1,0 +1,7 @@
+# $Id$
+
+LIB_PROJ = dbapi_cache
+#APP_PROJ = dbapi_cache_test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
