@@ -65,7 +65,7 @@ const STimeout kTimeout     = {2, 0};  // I/O timeout
 // Delay a some time. Needs only for more proper output.
 static void Delay() 
 {
-    SleepMilliSec(300);
+    //    SleepMilliSec(300);
 }
 
 
@@ -88,7 +88,7 @@ static string s_ReadFile(FILE* fs)
 static void s_WriteFile(FILE* fs, string message) 
 {
     write(fileno(fs), message.c_str(), message.length());
-    cerr << "Wrote to file stream " << message.length() << " bytes:" << endl;
+    cerr << "Written to file stream " << message.length() << " bytes:" << endl;
     cerr << message << endl;
 }
 
@@ -139,7 +139,6 @@ int CTest::Run(void)
 #if defined(NCBI_OS_UNIX)
     args.push_back("-l");
     connector = PIPE_CreateConnector("ls", args, CPipe::fStdIn_Close);
-    Delay();
 #elif defined (NCBI_OS_MSWIN)
     string cmd = GetEnvironment().Get("COMSPEC");
     args.push_back("/c");
@@ -151,6 +150,9 @@ int CTest::Run(void)
     CONN_SetTimeout(conn, eIO_Read,  &kTimeout);
     CONN_SetTimeout(conn, eIO_Close, &kTimeout);
     Delay();
+    status = CONN_Write(conn, buf, kBufferSize, &n_written);
+    assert(status == eIO_Unknown);
+    assert(n_written == 0);
     size_t n_read_total = 0;
     do {
         status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPersist);
@@ -160,8 +162,7 @@ int CTest::Run(void)
     NcbiCout << endl;
     NcbiCout.flush();
     assert(n_read_total > 0); 
-    assert(status == eIO_Success  ||  status == eIO_Timeout  ||
-           status == eIO_Closed);
+    assert(status == eIO_Closed);
     assert(CONN_Close(conn) == eIO_Success);
 
     // Pipe connector for writing
@@ -173,6 +174,9 @@ int CTest::Run(void)
     CONN_SetTimeout(conn, eIO_Write, &kTimeout);
     CONN_SetTimeout(conn, eIO_Close, &kTimeout);
     Delay();
+    status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPlain);
+    assert(status == eIO_Unknown);
+    assert(n_read == 0);
     message = "Child, are you ready?";
     status = CONN_Write(conn, message.c_str(), message.length(), &n_written);
     assert(status == eIO_Success);
@@ -189,6 +193,9 @@ int CTest::Run(void)
     CONN_SetTimeout(conn, eIO_ReadWrite, &kTimeout);
     CONN_SetTimeout(conn, eIO_Close,     &kTimeout);
     Delay();
+    status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPlain);
+    assert(status == eIO_Timeout);
+    assert(n_read == 0);
     message = "Child, are you ready again?";
     status = CONN_Write(conn, message.c_str(), message.length(), &n_written);
     assert(status == eIO_Success);
@@ -198,7 +205,11 @@ int CTest::Run(void)
     assert(status == eIO_Success);
     assert(n_read == message.length());
     assert(memcmp(buf, message.c_str(), n_read) == 0);
+    status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPlain);
+    assert(status == eIO_Closed);
+    assert(n_read == 0);
     assert(CONN_Close(conn) == eIO_Success);
+    status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPlain);
 
     LOG_POST("\nTEST execution completed successfully!\n");
     CORE_SetLOG(0);
@@ -245,6 +256,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/09/09 19:42:19  ivanov
+ * Added more checks
+ *
  * Revision 1.3  2003/09/05 14:04:20  ivanov
  * CONN_Read(..., eIO_ReadPersist) can return eIO_Closed also
  *
