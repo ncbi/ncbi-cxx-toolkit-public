@@ -60,6 +60,7 @@ Int2 BLAST_ComputeTraceback(BlastResultsPtr results,
         ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject, 
         BlastGapAlignStructPtr gap_align,
         BlastScoringOptionsPtr score_options,
+        BlastExtensionParametersPtr ext_params,
         BlastHitSavingParametersPtr hit_params);
 
 
