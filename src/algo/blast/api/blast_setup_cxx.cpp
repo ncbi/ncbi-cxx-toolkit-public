@@ -46,6 +46,7 @@
 
 // NewBlast includes
 #include <blast_util.h>
+#include <blastkar.h>
 
 // C Toolkit includes
 #include <objfeat.h>
@@ -248,6 +249,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/07/24 18:22:50  camacho
+* #include blastkar.h
+*
 * Revision 1.2  2003/07/23 21:29:06  camacho
 * Update BLASTFindGeneticCode to get genetic code string with C++ toolkit
 *
