@@ -539,7 +539,7 @@ void TreeReRoot(TTreeNode& new_root_node)
     TreeTraceToRoot(new_root_node, trace);
 
     TTreeNode* local_root = &new_root_node;
-    ITERATE(vector<const TTreeNode*>, it, trace) {
+    ITERATE(typename vector<const TTreeNode*>, it, trace) {
         TTreeNode* node = const_cast<TTreeNode*>(*it);
         TTreeNode* parent = node->GetParent();
         if (parent)
@@ -806,7 +806,7 @@ void CTreeNode<TValue>::MoveSubnodes(TTreeType* src_tree_node)
 {
     _ASSERT(!IsParent(*src_tree_node));
     TNodeList& src_nodes = src_tree_node->m_Nodes;
-    ITERATE(TNodeList, it, src_nodes) {
+    ITERATE(typename TNodeList, it, src_nodes) {
         AddNode(*it);
     }
     src_nodes.clear();
@@ -987,6 +987,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/04/12 15:17:46  vasilche
+ * Added missing typename keyword.
+ *
  * Revision 1.30  2004/04/12 13:28:25  kuznets
  * + MoveSubnodes
  *
