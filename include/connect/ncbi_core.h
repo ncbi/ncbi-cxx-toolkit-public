@@ -34,6 +34,7 @@
  *********************************
  * I/O status and direction:
  *    enum:       EIO_ReadMethod
+ *    enum:       EIO_WriteMethod
  *    enum:       EIO_Status,  verbal: IO_StatusStr()
  *    enum:       EIO_Event
  *
@@ -62,6 +63,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2002/08/07 16:28:25  lavr
+ * Added EIO_WriteMethod; EIO_ReadMethod enums changed; log moved to end
+ *
  * Revision 6.15  2002/05/06 19:07:48  lavr
  * Added notes to EIO_Event enum type
  *
@@ -145,10 +149,22 @@ extern "C" {
 /* I/O read method
  */
 typedef enum {
-    eIO_Plain,  /* read the presently available data only                  */
-    eIO_Peek,   /* eREAD_Plain, but dont discard the data from input queue */
-    eIO_Persist /* try to read exactly "size" bytes;  wait for enough data */
+    eIO_ReadPlain, /* read presently available data only                     */
+    eIO_ReadPeek,  /* eIO_ReadPeek but dont discard the data from input queue*/
+    eIO_ReadPersist, /* try to read exactly "n" bytes; wait for enough data  */
+    // deprecated
+    eIO_Plain   = eIO_ReadPlain,
+    eIO_Peek    = eIO_ReadPeek,
+    eIO_Persist = eIO_ReadPersist
 } EIO_ReadMethod;
+
+
+/* I/O write method
+ */
+typedef enum {
+    eIO_WritePlain,
+    eIO_WritePersist
+} EIO_WriteMethod;
 
 
 /* I/O event (or direction)
