@@ -333,7 +333,7 @@ void CCodeGenerator::GenerateCode(void)
 
     // generate Doxygen group description
     if (!module_names.empty()) {
-        const string& ingroup_name =
+        string ingroup_name =
             m_DoxygenIngroup.empty() ? "DatatoolGeneratedClasses" : m_DoxygenIngroup;
         CDirEntry entry(GetMainModules().GetModuleSets().front()->GetSourceFileName());
         string fileName =
@@ -795,6 +795,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2004/04/30 02:05:05  ucko
+* Make ingroup_name a full-fledged string rather than a reference,
+* since it may be initialized by a temporary and should never be big
+* enough for copying to be an issue.
+*
 * Revision 1.54  2004/04/29 20:11:39  gouriano
 * Generate DOXYGEN-style comments in C++ headers
 *
