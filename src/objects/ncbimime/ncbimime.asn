@@ -1,4 +1,4 @@
---$Revision: 6.3 $
+--$Revision: 6.4 $
 --****************************************************************
 --
 --  NCBI MIME type (chemical/ncbi-asn1-ascii and chemical/ncbi-asn1-binary)
@@ -17,9 +17,10 @@ IMPORTS Biostruc, Biostruc-annot-set FROM MMDB
 	
 Ncbi-mime-asn1 ::= CHOICE {
 	entrez	Entrez-general,			-- just a structure
-	alignstruc	Biostruc-align,			-- structure alignment
+	alignstruc	Biostruc-align,			-- structures & sequences & alignments
 	alignseq	Biostruc-align-seq,	-- sequence alignment
-    strucseq    Biostruc-seq		-- structure & sequence 
+    strucseq    Biostruc-seq,	-- structure & sequences
+    strucseqs   Biostruc-seqs	    -- structure & sequences & alignments 
 	-- others may be added here in the future
 }
 
@@ -34,9 +35,14 @@ Biostruc-align-seq ::= SEQUENCE {	-- display seq structure align only
 	sequences SET OF Seq-entry,	-- sequences
 	seqalign SET OF Seq-annot }	
 
-Biostruc-seq ::= SEQUENCE {	-- display  structure seq 
+Biostruc-seq ::= SEQUENCE {	-- display  structure seq added by yanli 
     structure Biostruc,
 	sequences SET OF Seq-entry }
+
+Biostruc-seqs ::= SEQUENCE { -- display blast alignment along with neighbor's structure added by yanli 
+    structure Biostruc,
+	sequences SET OF Seq-entry,	-- sequences
+	seqalign SET OF Seq-annot }
 
 Entrez-style ::= ENUMERATED {
 	docsum (1),
