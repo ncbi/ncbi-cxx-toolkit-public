@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/12/29 13:58:39  vasilche
+* Added THROWS_NONE.
+*
 * Revision 1.13  1999/12/28 21:04:18  vasilche
 * Removed three more implicit virtual destructors.
 *
@@ -128,12 +131,12 @@ extern void DoDbgPrint(const char* file, int line,
 /////////////////////////////////
 //  CErrnoException
 
-CErrnoException::CErrnoException(const string& what)
-    throw() : runtime_error(what + ": " + ::strerror(errno)) {
-        m_Errno = errno;
+CErrnoException::CErrnoException(const string& what) THROWS_NONE
+    : runtime_error(what + ": " + ::strerror(errno)), m_Errno(errno)
+{
 }
 
-CErrnoException::~CErrnoException(void)
+CErrnoException::~CErrnoException(void) THROWS_NONE
 {
 }
 
@@ -150,12 +153,12 @@ static string s_ComposeParse(const string& what, SIZE_TYPE pos)
     return str.append("{").append(s).append("} ").append(what);
 }
 
-CParseException::CParseException(const string& what, SIZE_TYPE pos)
-    throw() : runtime_error(s_ComposeParse(what,pos)) {
-        m_Pos = pos;
+CParseException::CParseException(const string& what, SIZE_TYPE pos) THROWS_NONE
+    : runtime_error(s_ComposeParse(what,pos)), m_Pos(pos)
+{
 }
 
-CParseException::~CParseException(void)
+CParseException::~CParseException(void) THROWS_NONE
 {
 }
 

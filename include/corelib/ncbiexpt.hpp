@@ -35,6 +35,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/12/29 13:58:37  vasilche
+* Added THROWS_NONE.
+*
 * Revision 1.19  1999/12/28 21:04:14  vasilche
 * Removed three more implicit virtual destructors.
 *
@@ -323,8 +326,8 @@ class CErrnoException : public runtime_error {
     int m_Errno;
 public:
     // Report description of "errno" along with "what"
-    CErrnoException(const string& what) throw();
-    ~CErrnoException(void);
+    CErrnoException(const string& what) THROWS_NONE;
+    ~CErrnoException(void) THROWS_NONE;
     int GetErrno(void) const THROWS_NONE { return m_Errno; }
 };
 
@@ -333,8 +336,8 @@ class CParseException : public runtime_error {
     SIZE_TYPE m_Pos;
 public:
     // Report "pos" along with "what"
-    CParseException(const string& what, SIZE_TYPE pos) throw();
-    ~CParseException(void);
+    CParseException(const string& what, SIZE_TYPE pos) THROWS_NONE;
+    ~CParseException(void) THROWS_NONE;
     SIZE_TYPE GetPos(void) const THROWS_NONE { return m_Pos; }
 };
 
