@@ -491,8 +491,7 @@ public:
     // Nodes that are 'levels' levels below subtree root are considered
     // terminal nodes.
     // Returns: Action code (see EAction description)
-    EAction TraverseDownward(I4Each&,
-			     unsigned levels=numeric_limits<unsigned>::max());
+    EAction TraverseDownward(I4Each&, unsigned levels = kMax_UInt);
 
     //--------------------------------------------------
     // This function arranges 'upward' traverse mode when lower nodes are
@@ -508,8 +507,7 @@ public:
     // Nodes that are 'levels' levels below subtree root are considered
     // terminal nodes.
     // Returns: Action code (see EAction description)
-    EAction TraverseUpward(I4Each&,
-			   unsigned levels=numeric_limits<unsigned>::max());
+    EAction TraverseUpward(I4Each&, unsigned levels = kMax_UInt);
 
     //--------------------------------------------------
     // This function arranges 'level by level' traverse mode when nodes are 
@@ -526,9 +524,7 @@ public:
     // Nodes that are 'levels' levels below subtree root are considered
     // terminal nodes.
     // Returns: Action code (see EAction description)
-    EAction TraverseLevelByLevel(I4Each&,
-				 unsigned levels =
-				 numeric_limits<unsigned>::max());
+    EAction TraverseLevelByLevel(I4Each&, unsigned levels = kMax_UInt);
 
     //--------------------------------------------------
     // This function arranges traverse of all ancestors of the node in  
@@ -566,6 +562,10 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.11  2003/05/08 15:56:42  ucko
+// Use kMax_UInt instead of numeric_limits<>, which still seems to have
+// issues on Windows. :-/
+//
 // Revision 1.10  2003/05/07 01:56:46  vakatov
 // Cut&Paste typo fixed
 //
