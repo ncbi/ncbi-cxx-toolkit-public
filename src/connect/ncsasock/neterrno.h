@@ -22,6 +22,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.1  1997/10/19 23:15:59  kans
+* latest CodeWarrior needs EACCES defined here
+*
 * Revision 6.0  1997/08/25 18:37:34  madden
 * Revision changed to 6.0
 *
@@ -72,7 +75,7 @@ extern long errno_long;     /* same as errno, but of known length (for variable 
 #endif /* ENOMEM */
 
 #ifdef __MWERKS__
-/*#define	EACCES		13*/		/* Permission denied */
+#define	EACCES		13		/* Permission denied */
 #endif /* __MWERKS__ */
 
 #ifndef EFAULT
