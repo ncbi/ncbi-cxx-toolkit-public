@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2001/07/19 19:14:38  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
 * Revision 1.71  2001/07/12 17:35:15  thiessen
 * change domain mapping ; add preliminary cdd annotation GUI
 *
@@ -433,8 +436,8 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime->GetStrucseqs().GetSeqalign());
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
-		styleManager->SetGlobalRenderingStyle(StyleSettings::eWormDisplay);
-        styleManager->SetGlobalColorScheme(StyleSettings::eBySecondaryStructure);
+        styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeDisplay);
+        styleManager->SetGlobalColorScheme(StyleSettings::eByAligned);
         if (mime->GetStrucseqs().IsSetStyle_dictionary())
             styleDictionary = &(mime->GetStrucseqs().GetStyle_dictionary());
         if (mime->GetStrucseqs().IsSetUser_annotations())

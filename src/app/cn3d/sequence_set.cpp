@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2001/07/19 19:14:38  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
 * Revision 1.33  2001/07/10 16:39:55  thiessen
 * change selection control keys; add CDD name/notes dialogs
 *
@@ -416,13 +419,21 @@ Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
 CSeq_id * Sequence::CreateSeqId(void) const
 {
     CSeq_id *sid = new CSeq_id();
+    FillOutSeqId(sid);
+    return sid;
+}
+
+void Sequence::FillOutSeqId(ncbi::objects::CSeq_id *sid) const
+{
     if (identifier->pdbID.size() > 0 && identifier->pdbChain != MoleculeIdentifier::VALUE_NOT_SET) {
         sid->SetPdb().SetMol().Set(identifier->pdbID);
         if (identifier->pdbChain != ' ') sid->SetPdb().SetChain(identifier->pdbChain);
-    } else { // use gi
+    } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) { // use gi
         sid->SetGi(identifier->gi);
+    } else {
+        ERR_POST(Error << "Sequence::FillOutSeqId() - can't do Seq-id on sequence "
+            << identifier->ToString());
     }
-    return sid;
 }
 
 int Sequence::GetOrSetMMDBLink(void) const
@@ -455,7 +466,7 @@ static bool MSWin_OpenDocument(const char* doc_name)
 #endif
 
 // code borrowed (and modified a lot) from Nlm_LaunchWebPage in bspview.c
-static void LaunchWebPage(const char *url)
+void LaunchWebPage(const char *url)
 {
     if(!url) return;
     TESTMSG("launching url " << url);

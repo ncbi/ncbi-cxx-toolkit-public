@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/07/19 19:12:46  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
 * Revision 1.1  2001/07/12 17:34:22  thiessen
 * change domain mapping ; add preliminary cdd annotation GUI
 *
@@ -42,6 +45,7 @@
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbiobj.hpp>
 
 #if defined(__WXMSW__)
 #include <wx/msw/winundef.h>
@@ -54,11 +58,14 @@
 
 #include <objects/cdd/Align_annot_set.hpp>
 #include <objects/cdd/Feature_evidence.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 
 
 BEGIN_SCOPE(Cn3D)
 
 class StructureSet;
+class BlockMultipleAlignment;
+class Sequence;
 
 class CDDAnnotateDialog : public wxDialog
 {
@@ -69,14 +76,34 @@ private:
 
     StructureSet *structureSet;
 
+    // alignment info
+    const BlockMultipleAlignment *alignment;
+    const Sequence *master;
+    typedef std::list < ncbi::CRef < ncbi::objects::CSeq_interval > > IntervalList;
+    IntervalList intervals;     // highlighted+aligned intervals on master
+
     // edit a copy of the data; flag changes
     ncbi::CRef < ncbi::objects::CAlign_annot_set > annotSet;
     bool changed;
+
+    // action functions
+    void NewAnnotation(void);
+    void DeleteAnnotation(void);
+    void EditAnnotation(void);
+    void HighlightAnnotation(void);
+    void NewEvidence(void);
+    void DeleteEvidence(void);
+    void EditEvidence(void);
+    void LaunchEvidence(void);
 
     // event callbacks
     void OnCloseWindow(wxCommandEvent& event);
     void OnButton(wxCommandEvent& event);
     void OnSelection(wxCommandEvent& event);
+
+    // other utility functions
+    void SetupGUIControls(int selectAnnot, int selectEvidence);
+    bool HighlightInterval(const ncbi::objects::CSeq_interval& interval);
 
     DECLARE_EVENT_TABLE()
 };
@@ -84,7 +111,7 @@ private:
 class CDDEvidenceDialog : public wxDialog
 {
 public:
-    CDDEvidenceDialog(wxWindow *parent);
+    CDDEvidenceDialog(wxWindow *parent, const ncbi::objects::CFeature_evidence& initial);
 
 private:
     bool changed;
@@ -92,13 +119,16 @@ private:
     // event callbacks
     void OnCloseWindow(wxCommandEvent& event);
     void OnButton(wxCommandEvent& event);
-    void OnSelection(wxCommandEvent& event);
+    void OnChange(wxCommandEvent& event);
+
+    // utility functions
+    void SetupGUIControls(void);
 
     DECLARE_EVENT_TABLE()
 
 public:
-    bool DataChanged(void) const { return changed; }
-    bool GetData(ncbi::objects::CFeature_evidence *evidence) const;
+    bool HasDataChanged(void) const { return changed; }
+    bool GetData(ncbi::objects::CFeature_evidence *evidence);
 };
 
 END_SCOPE(Cn3D)

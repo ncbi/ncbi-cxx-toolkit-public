@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/07/19 19:14:38  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
 * Revision 1.25  2001/06/07 19:05:38  thiessen
 * functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
 *
@@ -120,6 +123,10 @@
 #include "cn3d/sequence_viewer_widget.hpp"
 #include "cn3d/viewable_alignment.hpp"
 #include "cn3d/cn3d_tools.hpp"
+
+#if defined(__WXMSW__)
+#include <wx/msw/winundef.h>
+#endif
 
 USING_NCBI_SCOPE;
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/07/19 19:14:38  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
 * Revision 1.5  2001/05/17 18:34:26  thiessen
 * spelling fixes; change dialogs to inherit from wxDialog
 *
@@ -153,7 +156,7 @@ void ShowHideDialog::OnSelection(wxCommandEvent& event)
 {
     // update selection list
     int i;
-    for (i=0; i<listBox->Number(); i++)
+    for (i=0; i<listBox->GetCount(); i++)
         (*itemsEnabled)[i] = listBox->Selected(i);
 
     if (callbackObject) {
@@ -162,19 +165,17 @@ void ShowHideDialog::OnSelection(wxCommandEvent& event)
 
         // apply changes
         int pV = listBox->GetScrollPos(wxVERTICAL);
-        listBox->Show(false);
-        for (i=0; i<listBox->Number(); i++) {
+        for (i=0; i<listBox->GetCount(); i++) {
             listBox->SetSelection(i, (*itemsEnabled)[i]);
             beforeChange[i] = (*itemsEnabled)[i];
         }
         // horrible kludge to keep vertical scroll at same position...
-        if (pV >= 0 && pV < listBox->Number()) {
-            listBox->SetSelection(listBox->Number() - 1, true);
-            listBox->SetSelection(listBox->Number() - 1, (*itemsEnabled)[listBox->Number() - 1]);
+        if (pV >= 0 && pV < listBox->GetCount()) {
+            listBox->SetSelection(listBox->GetCount() - 1, true);
+            listBox->SetSelection(listBox->GetCount() - 1, (*itemsEnabled)[listBox->GetCount() - 1]);
             listBox->SetSelection(pV, true);
             listBox->SetSelection(pV, (*itemsEnabled)[pV]);
         }
-        listBox->Show(true);
         applyB->Enable(true);
     }
 

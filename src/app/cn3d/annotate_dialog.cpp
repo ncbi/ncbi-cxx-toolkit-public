@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/07/19 19:14:38  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
 * Revision 1.2  2001/07/04 19:39:16  thiessen
 * finish user annotation system
 *
@@ -215,12 +218,12 @@ void AnnotateDialog::OnSelection(wxCommandEvent& event)
 
     // deselect everything in the other box
     int e, o;
-    for (o=0; o<otherBox->Number(); o++) otherBox->SetSelection(o, false);
+    for (o=0; o<otherBox->GetCount(); o++) otherBox->SetSelection(o, false);
 
     // turn on corresponding item in other box
-    for (e=0; e<eventBox->Number(); e++) {
+    for (e=0; e<eventBox->GetCount(); e++) {
         if (eventBox->Selected(e)) {
-            for (o=0; o<otherBox->Number(); o++) {
+            for (o=0; o<otherBox->GetCount(); o++) {
                 if (otherBox->GetClientData(o) == eventBox->GetClientData(e)) {
                     otherBox->SetSelection(o, true);
                     break;
@@ -254,7 +257,7 @@ void AnnotateDialog::SetButtonStates(void)
     bTurnOn->Enable(availableSelected && !displayedSelected);
     bTurnOff->Enable(displayedSelected);
     bMoveUp->Enable(displayedSelected && displayed->GetSelection() > 0);
-    bMoveDown->Enable(displayedSelected && displayed->GetSelection() < displayed->Number() - 1);
+    bMoveDown->Enable(displayedSelected && displayed->GetSelection() < displayed->GetCount() - 1);
 
     bNew->Enable(HighlightsPresent());
     bEdit->Enable(availableSelected);
@@ -340,7 +343,7 @@ void AnnotateDialog::NewAnnotation(void)
 
         // set selection to new annotation
         DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(available, ID_L_AVAILABLE, wxListBox)
-        available->SetSelection(available->Number() - 1);
+        available->SetSelection(available->GetCount() - 1);
 
     } else { // wxCANCEL
         if (!styleManager->RemoveUserAnnotation(newAnnotation))

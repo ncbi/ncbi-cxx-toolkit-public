@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/07/19 19:12:46  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
 * Revision 1.19  2001/07/10 16:39:32  thiessen
 * change selection control keys; add CDD name/notes dialogs
 *
@@ -207,6 +210,10 @@ public:
 
     // free color storage
     void FreeColors(void);
+
+    // highlight aligned columns based on master indexes (mainly for alignment annotations);
+    // returns false if any residue in the range is unaligned (or out of range), true on success
+    bool HighlightAlignedColumnsOfMasterRange(int from, int to) const;
 
 
     ///// editing functions /////

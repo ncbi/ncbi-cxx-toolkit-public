@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/07/19 19:14:38  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
 * Revision 1.1  2001/07/12 17:35:15  thiessen
 * change domain mapping ; add preliminary cdd annotation GUI
 *
@@ -39,9 +42,20 @@
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
+#include <objects/cdd/Align_annot.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Packed_seqint.hpp>
+#include <objects/pub/Pub.hpp>
+#include <objects/biblio/PubMedId.hpp>
+
 #include "cn3d/cdd_annot_dialog.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/messenger.hpp"
+#include "cn3d/alignment_manager.hpp"
+#include "cn3d/block_multiple_alignment.hpp"
+#include "cn3d/sequence_set.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -62,12 +76,12 @@
 #define ID_L_ANNOT 10000
 #define ID_B_NEW_ANNOT 10001
 #define ID_B_DEL_ANNOT 10002
-#define ID_B_RENAME 10003
+#define ID_B_EDIT_ANNOT 10003
 #define ID_B_HIGHLIGHT 10004
 #define ID_L_EVID 10005
 #define ID_B_NEW_EVID 10006
 #define ID_B_DEL_EVID 10007
-#define ID_B_EDIT 10008
+#define ID_B_EDIT_EVID 10008
 #define ID_B_LAUNCH 10009
 #define ID_B_DONE 10010
 #define ID_B_CANCEL 10011
@@ -87,6 +101,7 @@ wxSizer *SetupEvidenceDialog( wxPanel *parent, bool call_fit = TRUE, bool set_si
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
@@ -99,6 +114,14 @@ BEGIN_SCOPE(Cn3D)
         return; \
     }
 
+#define DECLARE_AND_FIND_WINDOW_RETURN_FALSE_ON_ERR(var, id, type) \
+    type *var; \
+    var = wxDynamicCast(FindWindow(id), type); \
+    if (!var) { \
+        ERR_POST(Error << "Can't find window with id " << id); \
+        return false; \
+    }
+
 BEGIN_EVENT_TABLE(CDDAnnotateDialog, wxDialog)
     EVT_CLOSE       (       CDDAnnotateDialog::OnCloseWindow)
     EVT_BUTTON      (-1,    CDDAnnotateDialog::OnButton)
@@ -108,14 +131,48 @@ END_EVENT_TABLE()
 CDDAnnotateDialog::CDDAnnotateDialog(wxWindow *parent, StructureSet *set) :
     wxDialog(parent, -1, "CDD Annotations", wxPoint(400, 100), wxDefaultSize,
         wxCAPTION | wxSYSTEM_MENU), // not resizable
-    structureSet(set), annotSet(set->GetCopyOfCDDAnnotSet()), changed(false)
+    structureSet(set), changed(false)
 {
+    // copy the existing annot set, or make a new one
+    annotSet.Reset(set->GetCopyOfCDDAnnotSet());
+    if (annotSet.IsNull())
+        annotSet.Reset(new CAlign_annot_set());
+
+    // fill out alignment information
+    alignment = structureSet->alignmentManager->GetCurrentMultipleAlignment();
+    master = alignment->GetMaster();
+
+    // find intervals of aligned residues of the master sequence that are currently highlighted
+    int first = 0, last = 0;
+    while (first < master->Length()) {
+        // find first highlighted residue
+        while (first < master->Length() &&
+               !(GlobalMessenger()->IsHighlighted(master, first) &&
+                 alignment->IsAligned(0, first))) first++;
+        if (first >= master->Length()) break;
+        // find last in contiguous stretch of highlighted residues
+        last = first;
+        while (last + 1 < master->Length() &&
+               GlobalMessenger()->IsHighlighted(master, last + 1) &&
+               alignment->IsAligned(0, last + 1)) last++;
+        // create Seq-interval
+        CRef < CSeq_interval > interval(new CSeq_interval());
+        interval->SetFrom(first);
+        interval->SetTo(last);
+        master->FillOutSeqId(&(interval->SetId()));
+        intervals.push_back(interval);
+        first = last + 2;
+    }
+
     // construct the panel
     wxSizer *topSizer = SetupCDDAnnotDialog(this, false);
 
     // call sizer stuff
     topSizer->Fit(this);
     topSizer->SetSizeHints(this);
+
+    // set initial GUI state
+    SetupGUIControls(0, 0);
 }
 
 // same as hitting done button
@@ -140,16 +197,32 @@ void CDDAnnotateDialog::OnButton(wxCommandEvent& event)
             break;
 
         // annotation buttons
-        case ID_B_NEW_ANNOT: {
+        case ID_B_NEW_ANNOT:
+            NewAnnotation();
             break;
-        }
+        case ID_B_DEL_ANNOT:
+            DeleteAnnotation();
+            break;
+        case ID_B_EDIT_ANNOT:
+            EditAnnotation();
+            break;
+        case ID_B_HIGHLIGHT:
+            HighlightAnnotation();
+            break;
 
         // evidence buttons
-        case ID_B_NEW_EVID: {
-            CDDEvidenceDialog dialog(this);
-            dialog.ShowModal();
+        case ID_B_NEW_EVID:
+            NewEvidence();
             break;
-        }
+        case ID_B_DEL_EVID:
+            DeleteEvidence();
+            break;
+        case ID_B_EDIT_EVID:
+            EditEvidence();
+            break;
+        case ID_B_LAUNCH:
+            LaunchEvidence();
+            break;
 
         default:
             event.Skip();
@@ -158,16 +231,380 @@ void CDDAnnotateDialog::OnButton(wxCommandEvent& event)
 
 void CDDAnnotateDialog::OnSelection(wxCommandEvent& event)
 {
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(evids, ID_L_EVID, wxListBox)
+
+    if (event.GetEventObject() == annots)
+        SetupGUIControls(annots->GetSelection(), 0);
+    else
+        SetupGUIControls(annots->GetSelection(), evids->GetSelection());
 }
 
+void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
+{
+    // get GUI control pointers
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(evids, ID_L_EVID, wxListBox)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bNewAnnot, ID_B_NEW_ANNOT, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bDelAnnot, ID_B_DEL_ANNOT, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bEditAnnot, ID_B_EDIT_ANNOT, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bHighlight, ID_B_HIGHLIGHT, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bNewEvid, ID_B_NEW_EVID, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bDelEvid, ID_B_DEL_EVID, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bEditEvid, ID_B_EDIT_EVID, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bLaunch, ID_B_LAUNCH, wxButton)
+
+    // fill out annots listbox
+    annots->Clear();
+    CAlign_annot *selectedAnnot = NULL;
+    CAlign_annot_set::Tdata::const_iterator a, ae = annotSet->Get().end();
+    for (a=annotSet->Get().begin(); a!=ae; a++) {
+        if ((*a)->IsSetDescription())
+            annots->Append((*a)->GetDescription().c_str(), a->GetPointer());
+        else
+            annots->Append("(no description)", a->GetPointer());
+    }
+    if (selectAnnot < annots->GetCount())
+        annots->SetSelection(selectAnnot);
+    else if (annots->GetCount() > 0)
+        annots->SetSelection(0);
+    if (annots->GetCount() > 0)
+        selectedAnnot = reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
+
+    // fill out evidence listbox
+    evids->Clear();
+    CFeature_evidence *selectedEvid = NULL;
+    if (selectedAnnot && selectedAnnot->IsSetEvidence()) {
+        CAlign_annot::TEvidence::const_iterator e, ee = selectedAnnot->GetEvidence().end();
+        for (e=selectedAnnot->GetEvidence().begin(); e!=ee; e++) {
+            // get evidence "title" depending on type
+            wxString evidTitle;
+            if ((*e)->IsComment())
+                evidTitle.Printf("Comment: %s", (*e)->GetComment().c_str());
+            else if ((*e)->IsReference() && (*e)->GetReference().IsPmid())
+                evidTitle.Printf("PMID: %i", (*e)->GetReference().GetPmid().Get());
+            else
+                evidTitle = "(unknown type)";
+            evids->Append(evidTitle, e->GetPointer());
+        }
+        if (selectEvidence < evids->GetCount())
+            evids->SetSelection(selectEvidence);
+        else if (evids->GetCount() > 0)
+            evids->SetSelection(0);
+        if (evids->GetCount() > 0)
+            selectedEvid = reinterpret_cast<CFeature_evidence*>(evids->GetClientData(evids->GetSelection()));
+    }
+
+    // set button states
+    bNewAnnot->Enable(intervals.size() > 0);
+    bDelAnnot->Enable(selectedAnnot != NULL);
+    bEditAnnot->Enable(selectedAnnot != NULL);
+    bHighlight->Enable(selectedAnnot != NULL);
+    bNewEvid->Enable(selectedAnnot != NULL);
+    bDelEvid->Enable(selectedEvid != NULL);
+    bEditEvid->Enable(selectedEvid != NULL);
+    bLaunch->Enable(selectedEvid != NULL &&
+        selectedEvid->IsReference() && selectedEvid->GetReference().IsPmid());
+}
+
+void CDDAnnotateDialog::NewAnnotation(void)
+{
+    if (intervals.size() == 0) {
+        ERR_POST(Warning << "CDDAnnotateDialog::NewAnnotation() - no aligned+highlighted residues!");
+        return;
+    }
+
+    // get description from user
+    wxString descr = wxGetTextFromUser(
+        "Enter a description for the new annotation:", "Description");
+    if (descr.size() == 0) return;
+
+    // create a new annotation
+    CRef < CAlign_annot > annot(new CAlign_annot());
+    annot->SetDescription(descr.c_str());
+
+    // fill out location
+    if (intervals.size() == 1) {
+        annot->SetLocation().SetInt(intervals.front());
+    } else {
+        CRef < CPacked_seqint > packed(new CPacked_seqint());
+        packed->Set() = intervals;  // copy list
+        annot->SetLocation().SetPacked_int(packed);
+    }
+
+    // add to annotation list
+    annotSet->Set().push_back(annot);
+    changed = true;
+
+    // update GUI
+    SetupGUIControls(annotSet->Get().size() - 1, 0);
+}
+
+void CDDAnnotateDialog::DeleteAnnotation(void)
+{
+    // get selection
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
+    if (annots->GetCount() == 0 || annots->GetSelection() < 0) return;
+    CAlign_annot *selectedAnnot =
+        reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
+    if (!selectedAnnot) {
+        ERR_POST(Error << "CDDAnnotateDialog::DeleteAnnotation() - error getting annotation pointer");
+        return;
+    }
+
+    // confirm with user
+    int confirm = wxMessageBox("This will remove the selected annotation and all the\n"
+        "evidence associated with it. Is this correct?", "Confirm", wxOK | wxCANCEL | wxCENTRE, this);
+    if (confirm != wxOK) return;
+
+    // actually delete the annotation
+    CAlign_annot_set::Tdata::iterator a, ae = annotSet->Set().end();
+    for (a=annotSet->Set().begin(); a!=ae; a++) {
+        if (*a == selectedAnnot) {
+            annotSet->Set().erase(a);
+            changed = true;
+            break;
+        }
+    }
+
+    // update GUI
+    SetupGUIControls(0, 0);
+}
+
+void CDDAnnotateDialog::EditAnnotation(void)
+{
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(evids, ID_L_EVID, wxListBox)
+
+    // get selection
+    if (annots->GetCount() == 0 || annots->GetSelection() < 0) return;
+    CAlign_annot *selectedAnnot =
+        reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
+    if (!selectedAnnot) {
+        ERR_POST(Error << "CDDAnnotateDialog::EditAnnotation() - error getting annotation pointer");
+        return;
+    }
+
+    if (intervals.size() > 0) {
+        // move the annotation?
+        int move = wxMessageBox("Do you want to move the annotation to the currently\n"
+            "highlighted and aligned residues?", "Move?", wxYES_NO | wxCANCEL | wxCENTRE, this);
+        if (move == wxCANCEL)
+            return;
+        else if (move == wxYES) {
+            // change location
+            if (intervals.size() == 1) {
+                selectedAnnot->SetLocation().SetInt(intervals.front());
+            } else {
+                CRef < CPacked_seqint > packed(new CPacked_seqint());
+                packed->Set() = intervals;  // copy list
+                selectedAnnot->SetLocation().SetPacked_int(packed);
+            }
+            changed = true;
+        }
+    }
+
+    // edit description
+    wxString initial;
+    if (selectedAnnot->IsSetDescription()) initial = selectedAnnot->GetDescription().c_str();
+    wxString descr = wxGetTextFromUser(
+        "Enter a description for the new annotation:", "Description", initial);
+    if (descr.size() > 0 && descr != selectedAnnot->GetDescription().c_str()) {
+        selectedAnnot->SetDescription(descr.c_str());
+        changed = true;
+    }
+
+    // update GUI
+    SetupGUIControls(annots->GetSelection(), evids->GetSelection());
+}
+
+bool CDDAnnotateDialog::HighlightInterval(const ncbi::objects::CSeq_interval& interval)
+{
+    // make sure annotation sequence matches master sequence
+    if (!IsAMatch(master, interval.GetId())) {
+        ERR_POST(Error << "CDDAnnotateDialog::HighlightInterval() - interval Seq-id/master sequence mismatch");
+        return false;
+    }
+
+    // do the highlighting
+    bool okay = alignment->HighlightAlignedColumnsOfMasterRange(interval.GetFrom(), interval.GetTo());
+    if (!okay)
+        ERR_POST(Error << "CDDAnnotateDialog::HighlightInterval() - problem highlighting from "
+            << interval.GetFrom() << " to " << interval.GetTo());
+    return okay;
+}
+
+void CDDAnnotateDialog::HighlightAnnotation(void)
+{
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bNewAnnot, ID_B_NEW_ANNOT, wxButton)
+
+    // get selection
+    if (annots->GetCount() == 0 || annots->GetSelection() < 0) return;
+    CAlign_annot *selectedAnnot =
+        reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
+    if (!selectedAnnot) {
+        ERR_POST(Error << "CDDAnnotateDialog::HighlightAnnotation() - error getting annotation pointer");
+        return;
+    }
+
+    // highlight annotation's intervals, and reset class 'intervals' list to new highlights
+    GlobalMessenger()->RemoveAllHighlights(false);
+    intervals.clear();
+    if (selectedAnnot->GetLocation().IsInt()) {
+        if (HighlightInterval(selectedAnnot->GetLocation().GetInt())) {
+            CRef < CSeq_interval > intRef(&(selectedAnnot->SetLocation().SetInt()));
+            intervals.push_back(intRef);
+        }
+    } else if (selectedAnnot->GetLocation().IsPacked_int()) {
+        CPacked_seqint::Tdata::iterator s,
+            se = selectedAnnot->SetLocation().SetPacked_int().Set().end();
+        for (s=selectedAnnot->SetLocation().SetPacked_int().Set().begin(); s!=se; s++) {
+            if (!HighlightInterval(**s)) break;
+            CRef < CSeq_interval > intRef(&(**s));
+            intervals.push_back(intRef);
+        }
+    }
+
+    // enable 'new' button if necessary
+    bNewAnnot->Enable(intervals.size() > 0);
+}
+
+void CDDAnnotateDialog::NewEvidence(void)
+{
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
+
+    // get selected annotation
+    if (annots->GetCount() == 0 || annots->GetSelection() < 0) return;
+    CAlign_annot *selectedAnnot =
+        reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
+    if (!selectedAnnot) {
+        ERR_POST(Error << "CDDAnnotateDialog::NewEvidence() - error getting annotation pointer");
+        return;
+    }
+
+    // create default comment evidence
+    CRef < CFeature_evidence > newEvidence(new CFeature_evidence());
+    newEvidence->SetComment("");
+
+    // bring up evidence editor
+    CDDEvidenceDialog dialog(this, *newEvidence);
+    int result = dialog.ShowModal();
+
+    // add new evidence
+    if (result == wxOK) {
+        dialog.GetData(newEvidence.GetPointer());
+        selectedAnnot->SetEvidence().push_back(newEvidence);
+        SetupGUIControls(annots->GetSelection(), selectedAnnot->GetEvidence().size() - 1);
+        changed = true;
+    }
+}
+
+void CDDAnnotateDialog::DeleteEvidence(void)
+{
+    // get selected annotation
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
+    if (annots->GetCount() == 0 || annots->GetSelection() < 0) return;
+    CAlign_annot *selectedAnnot =
+        reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
+    if (!selectedAnnot) {
+        ERR_POST(Error << "CDDAnnotateDialog::DeleteEvidence() - error getting annotation pointer");
+        return;
+    }
+
+    // get selected evidence
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(evids, ID_L_EVID, wxListBox)
+    if (evids->GetCount() == 0 || evids->GetSelection() < 0) return;
+    CFeature_evidence *selectedEvidence =
+        reinterpret_cast<CFeature_evidence*>(evids->GetClientData(evids->GetSelection()));
+    if (!selectedEvidence) {
+        ERR_POST(Error << "CDDAnnotateDialog::DeleteEvidence() - error getting evidence pointer");
+        return;
+    }
+
+    // confirm with user
+    int confirm = wxMessageBox("This will remove the selected evidence from\n"
+        "the selected annotation. Is this correct?", "Confirm", wxOK | wxCANCEL | wxCENTRE, this);
+    if (confirm != wxOK) return;
+
+    // delete evidence from annotation's list
+    CAlign_annot::TEvidence::iterator e, ee = selectedAnnot->SetEvidence().end();
+    for (e=selectedAnnot->SetEvidence().begin(); e!=ee; e++) {
+        if (*e == selectedEvidence) {
+            selectedAnnot->SetEvidence().erase(e);
+            changed = true;
+            break;
+        }
+    }
+    if (e == ee) {
+        ERR_POST(Error << "CDDAnnotateDialog::DeleteEvidence() - evidence pointer not found in annotation");
+        return;
+    }
+
+    // update GUI
+    SetupGUIControls(annots->GetSelection(), 0);
+}
+
+void CDDAnnotateDialog::EditEvidence(void)
+{
+    // get selected evidence
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(evids, ID_L_EVID, wxListBox)
+    if (evids->GetCount() == 0 || evids->GetSelection() < 0) return;
+    CFeature_evidence *selectedEvidence =
+        reinterpret_cast<CFeature_evidence*>(evids->GetClientData(evids->GetSelection()));
+    if (!selectedEvidence) {
+        ERR_POST(Error << "CDDAnnotateDialog::DeleteEvidence() - error getting evidence pointer");
+        return;
+    }
+
+    // bring up evidence editor
+    CDDEvidenceDialog dialog(this, *selectedEvidence);
+    int result = dialog.ShowModal();
+
+    // update evidence
+    if (result == wxOK && dialog.HasDataChanged()) {
+        dialog.GetData(selectedEvidence);
+        changed = true;
+        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
+        SetupGUIControls(annots->GetSelection(), evids->GetSelection());
+    }
+}
+
+void CDDAnnotateDialog::LaunchEvidence(void)
+{
+    // get selected evidence
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(evids, ID_L_EVID, wxListBox)
+    if (evids->GetCount() == 0 || evids->GetSelection() < 0) return;
+    CFeature_evidence *selectedEvidence =
+        reinterpret_cast<CFeature_evidence*>(evids->GetClientData(evids->GetSelection()));
+    if (!selectedEvidence) {
+        ERR_POST(Error << "CDDAnnotateDialog::LaunchEvidence() - error getting evidence pointer");
+        return;
+    }
+
+    // launch URL given PMID
+    if (selectedEvidence->IsReference() && selectedEvidence->GetReference().IsPmid()) {
+        wxString url;
+        url.Printf("http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?"
+            "cmd=Retrieve&db=PubMed&dopt=Abstract&list_uids=%i",
+            selectedEvidence->GetReference().GetPmid().Get());
+        LaunchWebPage(url);
+    } else {
+        ERR_POST(Error << "CDDAnnotateDialog::LaunchEvidence() - can't launch web page on that evidence type");
+    }
+}
+
+
+///// CDDEvidenceDialog stuff /////
 
 BEGIN_EVENT_TABLE(CDDEvidenceDialog, wxDialog)
     EVT_CLOSE       (       CDDEvidenceDialog::OnCloseWindow)
     EVT_BUTTON      (-1,    CDDEvidenceDialog::OnButton)
-    EVT_RADIOBUTTON (-1,    CDDEvidenceDialog::OnSelection)
+    EVT_RADIOBUTTON (-1,    CDDEvidenceDialog::OnChange)
+    EVT_TEXT        (-1,    CDDEvidenceDialog::OnChange)
 END_EVENT_TABLE()
 
-CDDEvidenceDialog::CDDEvidenceDialog(wxWindow *parent) :
+CDDEvidenceDialog::CDDEvidenceDialog(wxWindow *parent, const ncbi::objects::CFeature_evidence& initial) :
     wxDialog(parent, -1, "CDD Annotations", wxPoint(400, 100), wxDefaultSize,
         wxCAPTION | wxSYSTEM_MENU), // not resizable
     changed(false)
@@ -178,6 +615,28 @@ CDDEvidenceDialog::CDDEvidenceDialog(wxWindow *parent) :
     // call sizer stuff
     topSizer->Fit(this);
     topSizer->SetSizeHints(this);
+
+    // set initial states
+    if (initial.IsComment()) {
+        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(rComment, ID_R_COMMENT, wxRadioButton)
+        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tComment, ID_T_COMMENT, wxTextCtrl)
+        rComment->SetValue(true);
+        tComment->SetValue(initial.GetComment().c_str());
+        tComment->SetFocus();
+    } else if (initial.IsReference() && initial.GetReference().IsPmid()) {
+        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(rPMID, ID_R_PMID, wxRadioButton)
+        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tPMID, ID_T_PMID, wxTextCtrl)
+        rPMID->SetValue(true);
+        wxString pmid;
+        pmid.Printf("%i", initial.GetReference().GetPmid().Get());
+        tPMID->SetValue(pmid);
+        tPMID->SetFocus();
+    } else {
+        ERR_POST(Error << "CDDEvidenceDialog::CDDEvidenceDialog() - "
+            "don't (yet) know how to edit this evidence type");
+    }
+    SetupGUIControls();
+    changed = false;
 }
 
 // same as hitting cancel button
@@ -189,9 +648,11 @@ void CDDEvidenceDialog::OnCloseWindow(wxCommandEvent& event)
 void CDDEvidenceDialog::OnButton(wxCommandEvent& event)
 {
     switch (event.GetId()) {
-        case ID_B_EDIT_OK:
-            EndModal(wxOK);
+        case ID_B_EDIT_OK: {
+            CFeature_evidence test;
+            if (GetData(&test)) EndModal(wxOK);
             break;
+        }
         case ID_B_EDIT_CANCEL:
             EndModal(wxCANCEL);
             break;
@@ -200,13 +661,57 @@ void CDDEvidenceDialog::OnButton(wxCommandEvent& event)
     }
 }
 
-void CDDEvidenceDialog::OnSelection(wxCommandEvent& event)
+void CDDEvidenceDialog::OnChange(wxCommandEvent& event)
 {
+    changed = true;
+    SetupGUIControls();
 }
 
-bool CDDEvidenceDialog::GetData(ncbi::objects::CFeature_evidence *evidence) const
+void CDDEvidenceDialog::SetupGUIControls(void)
 {
-    return true;
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(rComment, ID_R_COMMENT, wxRadioButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(stComment, ID_ST_COMMENT, wxStaticText)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tComment, ID_T_COMMENT, wxTextCtrl)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(rPMID, ID_R_PMID, wxRadioButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(stPMID, ID_ST_PMID, wxStaticText)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tPMID, ID_T_PMID, wxTextCtrl)
+
+    stComment->Enable(rComment->GetValue());
+    tComment->Enable(rComment->GetValue());
+    stPMID->Enable(rPMID->GetValue());
+    tPMID->Enable(rPMID->GetValue());
+}
+
+bool CDDEvidenceDialog::GetData(ncbi::objects::CFeature_evidence *evidence)
+{
+    DECLARE_AND_FIND_WINDOW_RETURN_FALSE_ON_ERR(rComment, ID_R_COMMENT, wxRadioButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_FALSE_ON_ERR(rPMID, ID_R_PMID, wxRadioButton)
+
+    if (rComment->GetValue()) {
+        DECLARE_AND_FIND_WINDOW_RETURN_FALSE_ON_ERR(tComment, ID_T_COMMENT, wxTextCtrl)
+        if (tComment->GetValue().size() > 0) {
+            evidence->SetComment(tComment->GetValue().c_str());
+            return true;
+        } else {
+            ERR_POST(Error << "CDDEvidenceDialog::GetData() - comment must not be zero-length");
+            return false;
+        }
+    }
+
+    else if (rPMID->GetValue()) {
+        DECLARE_AND_FIND_WINDOW_RETURN_FALSE_ON_ERR(tPMID, ID_T_PMID, wxTextCtrl)
+        unsigned long pmid;
+        if (tPMID->GetValue().ToULong(&pmid)) {
+            evidence->SetReference().SetPmid().Set(pmid);
+            return true;
+        } else {
+            ERR_POST(Error << "CDDEvidenceDialog::GetData() - PMID must be a positive integer");
+            return false;
+        }
+    }
+
+    ERR_POST(Error << "CDDEvidenceDialog::GetData() - unknown evidence type");
+    return false;
 }
 
 END_SCOPE(Cn3D)
@@ -237,7 +742,7 @@ wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit, bool set_sizer )
     wxButton *item7 = new wxButton( parent, ID_B_DEL_ANNOT, "Delete", wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item7, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item8 = new wxButton( parent, ID_B_RENAME, "Rename", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item8 = new wxButton( parent, ID_B_EDIT_ANNOT, "Edit", wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item8, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxButton *item9 = new wxButton( parent, ID_B_HIGHLIGHT, "Highlight", wxDefaultPosition, wxDefaultSize, 0 );
@@ -262,7 +767,7 @@ wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit, bool set_sizer )
     wxButton *item15 = new wxButton( parent, ID_B_DEL_EVID, "Delete", wxDefaultPosition, wxDefaultSize, 0 );
     item13->Add( item15, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item16 = new wxButton( parent, ID_B_EDIT, "Edit", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item16 = new wxButton( parent, ID_B_EDIT_EVID, "Edit", wxDefaultPosition, wxDefaultSize, 0 );
     item13->Add( item16, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxButton *item17 = new wxButton( parent, ID_B_LAUNCH, "Launch", wxDefaultPosition, wxDefaultSize, 0 );

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/07/19 19:14:38  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
 * Revision 1.24  2001/07/10 16:39:54  thiessen
 * change selection control keys; add CDD name/notes dialogs
 *
@@ -1446,6 +1449,37 @@ bool BlockMultipleAlignment::ClearMarks(void)
 {
     if (markBlocks.size() == 0) return false;
     markBlocks.clear();
+    return true;
+}
+
+bool BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange(int from, int to) const
+{
+    const Sequence *master = GetMaster();
+
+    // check to make sure whole range is aligned
+    for (int i=from; i<=to; i++) {
+        if (i < 0 || i >= master->Length() || !IsAligned(0, i)) {
+            ERR_POST(Error << "BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange() - "
+                " range error or unaligned at " << i);
+            return false;
+        }
+    }
+
+    // get start and end blocks and offsets
+    const Block
+        *fromBlock = GetBlock(0, from),
+        *toBlock = GetBlock(0, to);
+    int
+        fromBlockOffset = from - fromBlock->GetRangeOfRow(0)->from,
+        toBlockOffset = to - toBlock->GetRangeOfRow(0)->from;
+
+    // highlight aligned range of each row
+    for (int row=0; row<NRows(); row++) {
+        GlobalMessenger()->AddHighlights(GetSequenceOfRow(row),
+            fromBlock->GetRangeOfRow(row)->from + fromBlockOffset,
+            toBlock->GetRangeOfRow(row)->from + toBlockOffset);
+    }
+
     return true;
 }
 

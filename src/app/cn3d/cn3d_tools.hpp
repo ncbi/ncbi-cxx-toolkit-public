@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/07/19 19:12:46  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
 * Revision 1.2  2001/05/31 18:46:26  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -44,6 +47,7 @@
 
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbidiag.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 #include <string>
 
@@ -61,12 +65,19 @@ const std::string& GetDataDir(void);    // 'data' directory with external data f
 // bring the log window forward (implemented in cn3d_main_wxwin.cpp)
 extern void RaiseLogWindow(void);
 
+// launch web browser on given URL (implemented in sequence_set.cpp)
+extern void LaunchWebPage(const char *url);
+
 // top-level window (the main structure window) (implemented in cn3d_main_wxwin.cpp)
 extern wxFrame * GlobalTopWindow(void);
 
 // diagnostic output (mainly for debugging)
 #define TESTMSG(stream) ERR_POST(Info << stream)
 //#define TESTMSG(stream)
+
+// test for match between Sequence and Seq-id (implemented in alignment_set.cpp)
+class Sequence;
+extern bool IsAMatch(const Sequence *seq, const ncbi::objects::CSeq_id& sid);
 
 END_SCOPE(Cn3D)
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/07/19 19:14:38  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
 * Revision 1.21  2001/06/21 02:02:33  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -123,7 +126,7 @@ BEGIN_SCOPE(Cn3D)
 typedef std::list < const CSeq_align * > SeqAlignList;
 typedef std::list < CRef < CSeq_id > > SeqIdList;
 
-static bool IsAMatch(const Sequence *seq, const CSeq_id& sid)
+bool IsAMatch(const Sequence *seq, const CSeq_id& sid)
 {
     if (sid.IsGi()) {
         return (sid.GetGi() == seq->identifier->gi);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/07/19 19:12:46  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
 * Revision 1.21  2001/06/21 02:01:07  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -152,8 +155,10 @@ public:
     bool isProtein;
 
     int Length(void) const { return sequenceString.size(); }
-	ncbi::objects::CSeq_id * CreateSeqId(void) const;
     int GetOrSetMMDBLink(void) const;
+
+    ncbi::objects::CSeq_id * CreateSeqId(void) const;
+    void FillOutSeqId(ncbi::objects::CSeq_id *sid) const;
 
     // launch web browser with entrez page for this sequence
     void LaunchWebBrowserWithInfo(void) const;
