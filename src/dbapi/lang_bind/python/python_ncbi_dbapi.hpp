@@ -161,6 +161,7 @@ public:
     bool NextRS(void);
     IResultSet& GetRS(void);
     const IResultSet& GetRS(void) const;
+    bool HasRS(void) const;
 
 private:
     void DumpResult(void);
@@ -196,6 +197,7 @@ public:
     bool NextRS(void);
     IResultSet& GetRS(void);
     const IResultSet& GetRS(void) const;
+    bool HasRS(void) const;
 
 private:
     void DumpResult(void);
@@ -786,6 +788,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/02/17 18:39:23  ssikorsk
+* Improved the "callproc" function
+*
 * Revision 1.4  2005/02/17 15:06:30  ssikorsk
 * Setup TDS version with different database and driver types
 *

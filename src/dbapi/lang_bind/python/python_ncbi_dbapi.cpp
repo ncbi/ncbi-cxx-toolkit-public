@@ -164,12 +164,18 @@ CConnection::CConnection(
 
 CConnection::~CConnection(void)
 {
-    DecRefCount( m_DefTransaction );
+    try {
+        DecRefCount( m_DefTransaction );
 
-    _ASSERT( m_TransList.empty() );
+        _ASSERT( m_TransList.empty() );
 
-    m_DM.DestroyDs( m_ConnParam.GetDriverName() );
-    m_DS = NULL;                        // ;-)
+        m_DM.DestroyDs( m_ConnParam.GetDriverName() );
+        m_DS = NULL;                        // ;-)
+    }
+    catch ( ... )
+    {
+        // Just ignore it ...
+    }
 }
 
 IConnection*
@@ -359,7 +365,12 @@ CDMLConnPool::GetLocalStmt(void) const
 void
 CDMLConnPool::commit(void) const
 {
-    if ( m_TransType == eImplicitTrans && m_Started && m_DMLConnection.get() != NULL ) {
+    if (
+        m_TransType == eImplicitTrans &&
+        m_Started &&
+        m_DMLConnection.get() != NULL &&
+        m_DMLConnection->IsAlive()
+    ) {
         try {
             GetLocalStmt().ExecuteUpdate( "COMMIT TRANSACTION" );
             GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
@@ -373,7 +384,12 @@ CDMLConnPool::commit(void) const
 void
 CDMLConnPool::rollback(void) const
 {
-    if ( m_TransType == eImplicitTrans && m_Started && m_DMLConnection.get() != NULL ) {
+    if (
+        m_TransType == eImplicitTrans &&
+        m_Started &&
+        m_DMLConnection.get() != NULL &&
+        m_DMLConnection->IsAlive()
+    ) {
         try {
             GetLocalStmt().ExecuteUpdate( "ROLLBACK TRANSACTION" );
             GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
@@ -407,10 +423,16 @@ CTransaction::CTransaction(
 
 CTransaction::~CTransaction(void)
 {
-    CloseInternal();
+    try {
+        CloseInternal();
 
-    // Unregister this transaction with the parent connection ...
-    GetParentConnection().DestroyTransaction(this);
+        // Unregister this transaction with the parent connection ...
+        GetParentConnection().DestroyTransaction(this);
+    }
+    catch ( ... )
+    {
+        // Ignore it ...
+    }
 }
 
 pythonpp::CObject
@@ -589,7 +611,12 @@ CStmtHelper::CStmtHelper(CTransaction* trans, const string& stmt, EStatementType
 
 CStmtHelper::~CStmtHelper(void)
 {
-    Close();
+    try {
+        Close();
+    }
+    catch ( ... )
+    {
+    }
 }
 
 void
@@ -755,6 +782,12 @@ CStmtHelper::GetRS(void) const
 }
 
 bool
+CStmtHelper::HasRS(void) const
+{
+    return m_RS.get() != NULL;
+}
+
+bool
 CStmtHelper::NextRS(void)
 {
     _ASSERT( m_Stmt.get() );
@@ -803,7 +836,13 @@ CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans, const string& stmt
 
 CCallableStmtHelper::~CCallableStmtHelper(void)
 {
-    Close();
+    try {
+        Close();
+    }
+    catch ( ... )
+    {
+        // Ignore all exceptions ...
+    }
 }
 
 void
@@ -948,6 +987,12 @@ CCallableStmtHelper::GetRS(void) const
 }
 
 bool
+CCallableStmtHelper::HasRS(void) const
+{
+    return m_RS.get() != NULL;
+}
+
+bool
 CCallableStmtHelper::NextRS(void)
 {
     _ASSERT( m_Stmt.get() );
@@ -1069,10 +1114,16 @@ CCursor::CCursor(CTransaction* trans)
 
 CCursor::~CCursor(void)
 {
-    CloseInternal();
+    try {
+        CloseInternal();
 
-    // Unregister this cursor with the parent transaction ...
-    GetTransaction().DestroyCursor(this);
+        // Unregister this cursor with the parent transaction ...
+        GetTransaction().DestroyCursor(this);
+    }
+    catch ( ... )
+    {
+        // Just ignore it ...
+    }
 }
 
 void
@@ -1087,7 +1138,7 @@ pythonpp::CObject
 CCursor::callproc(const pythonpp::CTuple& args)
 {
     int num_of_arguments = 0;
-    size_t args_size = args.size();
+    const size_t args_size = args.size();
 
     m_RowsNum = -1;                     // As required by the specification ...
 
@@ -1131,7 +1182,17 @@ CCursor::callproc(const pythonpp::CTuple& args)
     m_CallableStmtHelper.Execute();
     m_RowsNum = m_StmtHelper.GetRowCount();
 
-    return pythonpp::CNone();
+    if ( m_CallableStmtHelper.HasRS() ) {
+        IResultSet& rs = m_CallableStmtHelper.GetRS();
+
+        if ( rs.GetResultType() == eDB_ParamResult ) {
+            if ( rs.Next() ) {
+                return MakeTupleFromResult( rs );
+            }
+        }
+    }
+
+    return pythonpp::CTuple();
 }
 
 pythonpp::CObject
@@ -1153,7 +1214,7 @@ CCursor::close(const pythonpp::CTuple& args)
 pythonpp::CObject
 CCursor::execute(const pythonpp::CTuple& args)
 {
-    size_t args_size = args.size();
+    const size_t args_size = args.size();
 
     // Process function's arguments ...
     if ( args_size == 0 ) {
@@ -1251,7 +1312,7 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
 pythonpp::CObject
 CCursor::executemany(const pythonpp::CTuple& args)
 {
-    size_t args_size = args.size();
+    const size_t args_size = args.size();
 
     // Process function's arguments ...
     if ( args_size == 0 ) {
@@ -2184,6 +2245,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/02/17 18:39:23  ssikorsk
+* Improved the "callproc" function
+*
 * Revision 1.8  2005/02/17 15:06:30  ssikorsk
 * Setup TDS version with different database and driver types
 *
