@@ -46,58 +46,64 @@ NCBI_USING_NAMESPACE_STD;
 BEGIN_NCBI_SCOPE
 
 //==============================================================================
-//                            BoyerMooreMatcher
+//                            CBoyerMooreMatcher
 //==============================================================================
 
 // Public:
 // =======
 
-BoyerMooreMatcher::BoyerMooreMatcher(const string &pattern, 
-                                     bool caseSensitive,
-                                     bool wholeWord) :
-    m_pattern(pattern), m_patlen(pattern.length()), 
-    m_caseSensitive(caseSensitive), m_wholeWord(wholeWord),
-    m_last_occurance(ALPHABET_SIZE)
+CBoyerMooreMatcher::CBoyerMooreMatcher
+(const string& pattern, 
+ bool case_sensitive,
+ bool whole_word) :
+m_Pattern(pattern), 
+m_PatLen(pattern.length()), 
+m_CaseSensitive(case_sensitive), 
+m_WholeWord(whole_word),
+m_LastOccurance(sm_AlphabetSize)
 {
-    if ( !m_caseSensitive ) {
-        NStr::ToUpper(m_pattern);
+    if ( !m_CaseSensitive ) {
+        NStr::ToUpper(m_Pattern);
     }
-
-    // For each character in the alpahbet compute its last occurance in the pattern.
-    int i;
+    
+    // For each character in the alpahbet compute its last occurance in 
+    // the pattern.
+    size_t i;
     
     // Initilalize vector
-    unsigned int size = m_last_occurance.size();
-    for ( i = 0; i < size; ++i ) {
-        m_last_occurance[i] = m_patlen;
+    size_t size = m_LastOccurance.size();
+    for ( i = 0;  i < size;  ++i ) {
+        m_LastOccurance[i] = m_PatLen;
     }
-
+    
     // compute right-most occurance
-    for ( i = 0; i < (int)m_patlen - 1; ++i ) {
-        m_last_occurance[(int)m_pattern[i]] = m_patlen - i - 1;
+    for ( i = 0;  i < (int)m_PatLen - 1;  ++i ) {
+        m_LastOccurance[(int)m_Pattern[i]] = m_PatLen - i - 1;
     }
 }
 
 
-int BoyerMooreMatcher::search (const string &text, unsigned int shift) const
+int CBoyerMooreMatcher::Search(const string& text, unsigned int shift) const
 {
     unsigned int text_len = text.length();
-
-    while ( shift + m_patlen <= text_len ) {
-        int j = m_patlen - 1;
-
-        for ( char text_char = m_caseSensitive ? text[shift + j] : toupper(text[shift + j]);
-              j >= 0 && m_pattern[j] == text_char;
-              text_char = m_caseSensitive ? text[shift + j] : toupper(text[shift + j]) ) {
+    
+    while ( shift + m_PatLen <= text_len ) {
+        int j = m_PatLen - 1;
+        
+        for ( char text_char = 
+                m_CaseSensitive ? text[shift + j] : toupper(text[shift + j]);
+              j >= 0  &&  m_Pattern[j] == text_char;
+              text_char = 
+                m_CaseSensitive ? text[shift + j] : toupper(text[shift + j]) ) {
             --j;
         }
-        if ( j == -1 && IsWholeWord(text, shift) ) {
+        if ( (j == -1)  &&  IsWholeWord(text, shift) ) {
             return  shift;
         } else {
-            shift += m_last_occurance[text[shift + j]];
+            shift += m_LastOccurance[text[shift + j]];
         }
     }
-
+    
     return -1;
 }
 
@@ -105,28 +111,35 @@ int BoyerMooreMatcher::search (const string &text, unsigned int shift) const
 // Private:
 // ========
 
-const int BoyerMooreMatcher::ALPHABET_SIZE = 256;     // assuming ASCII
+// Constants
+const int CBoyerMooreMatcher::sm_AlphabetSize = 256;     // assuming ASCII
 
-bool BoyerMooreMatcher::IsWholeWord (const string &text, int pos) const
+
+// Member Functions
+bool CBoyerMooreMatcher::IsWholeWord(const string& text, int pos) const
 {
-    bool left = true, right = true;
-    if ( !m_wholeWord ) {
+    if ( !m_WholeWord ) {
         return true;
     }
-
+    
+    bool left  = true, 
+        right = true;
+    
     // check on the right
     if ( pos > 0 ) {
         right = isspace(text[pos - 1]) != 0;
     }
-
+    
     // check on the left
-    pos += m_patlen;
+    pos += m_PatLen;
     if ( pos < text.length() ) {
         left = isspace(text[pos]) != 0;
     }
-
-    return right && left;
+    
+    return (right  &&  left);
 }
+
+
 END_NCBI_SCOPE
 
 
@@ -134,6 +147,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/11/05 23:01:13  shomrat
+* Coding style changes
+*
 * Revision 1.2  2002/11/03 21:59:14  kans
 * BoyerMoore takes caseSensitive, wholeWord parameters (MS)
 *
