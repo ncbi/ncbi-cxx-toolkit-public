@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/04/15 21:56:47  vakatov
+* Introduced NcbiMin/NcbiMax to workaround some portability issues with
+* the standard "min/max"
+*
 * Revision 1.18  1999/04/14 21:20:31  vakatov
 * Dont use "snprintf()" as it is not quite portable yet
 *
@@ -150,6 +154,7 @@ bool AStrEquiv( const string& x, const string& y, Pred pr )
 
 
 // auto_ptr
+
 #if defined(HAVE_NO_AUTO_PTR)
 template <class X> class auto_ptr {
 public:
@@ -188,6 +193,19 @@ private:
     auto_ptr<X>& operator=(auto_ptr<X>&) {}
 };
 #endif /* HAVE_NO_AUTO_PTR */
+
+
+// min/max
+
+template <class T>
+inline const T& NcbiMin(const T& a, const T& b) {
+  return b < a ? b : a;
+}
+
+template <class T>
+inline const T& NcbiMax(const T& a, const T& b) {
+  return  a < b ? b : a;
+}
 
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
