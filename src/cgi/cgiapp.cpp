@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/06/03 21:47:20  vakatov
+* CCgiApplication::LoadConfig():  patch for R1.12
+*
 * Revision 1.12  1999/05/27 16:42:42  vakatov
 * CCgiApplication::LoadConfig():  if the executable name is "*.exe" then
 * compose the default registry file name as "*.ini" rather than
@@ -215,7 +218,8 @@ CNcbiRegistry* CCgiApplication::LoadConfig(void)
 {
     auto_ptr<CNcbiRegistry> config(new CNcbiRegistry);
     string fileName = m_Argv[0];
-    if (fileName.find_last_of(".exe") == fileName.length() - 1)
+    if (fileName.length() > 4  &&
+        fileName.substr(fileName.length() - 4, 4).compare(".exe") == 0)
         fileName.resize(fileName.length() - 4);
     fileName += ".ini";
 
