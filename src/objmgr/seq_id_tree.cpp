@@ -556,6 +556,10 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
     const CTextseq_id& tid = x_Get(id);
     TWriteLockGuard guard(m_TreeLock);
     CSeq_id_Info* info = x_FindInfo(tid);
+    if ( info  &&  !info->GetSeqId()->Equals(id) ) {
+        // Need equal IDs, not just matching
+        info = 0;
+    }
     if ( !info ) {
         info = CreateInfo(id);
 
@@ -737,8 +741,13 @@ void CSeq_id_Textseq_Tree::FindReverseMatch(const CSeq_id_Handle& id,
         tid.Reset();
         tid.SetAccession(orig_tid.GetAccession());
         id_list.insert(FindOrCreate(*tmp));
+        if ( v ) {
+            tid.SetVersion(orig_tid.GetVersion());
+            id_list.insert(FindOrCreate(*tmp));
+        }
         if ( v && r ) {
             // A.r (without v)
+            tid.ResetVersion();
             tid.SetRelease(orig_tid.GetRelease());
             id_list.insert(FindOrCreate(*tmp));
         }
@@ -748,7 +757,7 @@ void CSeq_id_Textseq_Tree::FindReverseMatch(const CSeq_id_Handle& id,
         tid.Reset();
         tid.SetName(orig_tid.GetName());
         id_list.insert(FindOrCreate(*tmp));
-        if ( v ) {
+        if ( 0 && v ) {
             // N.v
             tid.SetVersion(orig_tid.GetVersion());
             id_list.insert(FindOrCreate(*tmp));
@@ -1616,6 +1625,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/04/21 13:37:13  grichenk
+* Fixed reverse matching IDs
+*
 * Revision 1.9  2004/02/19 17:53:09  vasilche
 * Explicit creation of CSeq_id_Handle.
 *
