@@ -247,7 +247,7 @@ public:
             return TThisType(max(GetFrom(), r.GetFrom()),
                              min(GetToOpen(), r.GetToOpen()));
         }
-    TThisType IntersectWith(const TThisType& r)
+    TThisType& IntersectWith(const TThisType& r)
         {
             m_From = max(GetFrom(), r.GetFrom());
             m_ToOpen = min(GetToOpen(), r.GetToOpen());
@@ -354,6 +354,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/01/16 17:21:44  vasilche
+* Added & to return value of IntersectWith().
+*
 * Revision 1.15  2003/10/27 16:57:59  dicuccio
 * Added typedefs for T{Signed}SeqRange
 *
