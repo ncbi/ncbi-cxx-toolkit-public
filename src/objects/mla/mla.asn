@@ -1,4 +1,4 @@
---$Revision: 5.1 $
+--$Revision: 5.2 $
 --********************************************************************
 --
 --  Network MEDLINE Archive message formats
@@ -41,7 +41,8 @@ Mla-request ::= CHOICE {
     citmatchpmid [12] Pub,      -- citation match, PMID on out
     getmripmids [13] INTEGER,   -- get PMIDs for an MRI
     getaccpmids [14] Medline-si,-- get PMIDs for an Accessions
-    citlstpmids [15] Pub        -- generate list of PMID for Pub
+    citlstpmids [15] Pub,       -- generate list of PMID for Pub
+    getmleuid [16] INTEGER      -- get MedlineEntry by Medline id
     }
 
 --**********************************************************************
