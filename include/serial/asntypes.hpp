@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/06/16 16:31:03  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.27  2000/06/07 19:45:41  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -252,7 +255,8 @@ public:
 
 };
 
-class CChoiceTypeInfo : public CChoiceTypeInfoBase {
+/*
+class CAsnChoiceTypeInfo : public CChoiceTypeInfoBase {
     typedef CChoiceTypeInfoBase CParent;
 public:
     typedef valnode TObjectType;
@@ -280,6 +284,7 @@ protected:
     virtual void SetIndex(TObjectPtr object, TMemberIndex index) const;
     virtual TObjectPtr x_GetData(TObjectPtr object, TMemberIndex index) const;
 };
+*/
 
 class COctetStringTypeInfo : public CTypeInfo {
     typedef CTypeInfo CParent;

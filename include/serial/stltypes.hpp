@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/06/16 16:31:08  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.41  2000/06/01 19:06:58  vasilche
 * Added parsing of XML data.
 *
@@ -206,7 +209,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CClassInfoTmpl;
+class CClassTypeInfo;
 
 class CStlOneArgTemplate : public CTypeInfo
 {
@@ -813,7 +816,7 @@ public:
     CStlClassInfoMapImpl(const CTypeRef& keyType, const CTypeRef& valueType);
     ~CStlClassInfoMapImpl(void);
 
-    const CClassInfoTmpl* GetElementType(void) const;
+    const CClassTypeInfo* GetElementType(void) const;
 
     void WriteKeyAndValue(CObjectOStream& out, CObjectStackClass& cls,
                           TConstObjectPtr key, TConstObjectPtr value) const;
@@ -825,7 +828,7 @@ public:
                             TConstObjectPtr value1, TConstObjectPtr value2) const;
 
 private:
-    mutable AutoPtr<const CClassInfoTmpl> m_ElementType;
+    mutable AutoPtr<const CClassTypeInfo> m_ElementType;
 };
 
 class CMapArrayWriterBase : public CObjectArrayWriter
@@ -974,33 +977,37 @@ public:
     typedef typename TObjectType::iterator CIterator;
     static const CConstIterator& Iterator(const CConstChildrenIterator& cc)
         {
-            return static_cast<const CObjectFor<CConstIterator>*>(cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
+            return static_cast<const CObjectFor<CConstIterator>*>
+                (cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
         }
     static CConstIterator& Iterator(CConstChildrenIterator& cc)
         {
-            return static_cast<CObjectFor<CConstIterator>*>(cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
+            return static_cast<CObjectFor<CConstIterator>*>
+                (cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
         }
     static const CIterator& Iterator(const CChildrenIterator& cc)
         {
-            return static_cast<const CObjectFor<CIterator>*>(cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
+            return static_cast<const CObjectFor<CIterator>*>
+                (cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
         }
     static CIterator& Iterator(CChildrenIterator& cc)
         {
-            return static_cast<CObjectFor<CIterator>*>(cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
+            return static_cast<CObjectFor<CIterator>*>
+                (cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
         }
-    static size_t Index(const CConstChildrenIterator& cc)
+    static int Index(const CConstChildrenIterator& cc)
         {
             return cc.GetIndex().m_Index;
         }
-    static size_t& Index(CConstChildrenIterator& cc)
+    static int& Index(CConstChildrenIterator& cc)
         {
             return cc.GetIndex().m_Index;
         }
-    static size_t Index(const CChildrenIterator& cc)
+    static int Index(const CChildrenIterator& cc)
         {
             return cc.GetIndex().m_Index;
         }
-    static size_t& Index(CChildrenIterator& cc)
+    static int& Index(CChildrenIterator& cc)
         {
             return cc.GetIndex().m_Index;
         }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/06/16 16:31:20  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.2  2000/06/07 19:45:59  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -696,7 +699,7 @@ CObjectIStream::EPointerType CObjectIStreamXml::ReadPointerType(void)
     return eThisPointer;
 }
 
-CObjectIStreamXml::TIndex CObjectIStreamXml::ReadObjectPointer(void)
+CObjectIStreamXml::TObjectIndex CObjectIStreamXml::ReadObjectPointer(void)
 {
     ThrowError(eIllegalCall, "unimplemented");
     return 0;

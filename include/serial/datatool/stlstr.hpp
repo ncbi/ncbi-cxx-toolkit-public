@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/06/16 16:31:13  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.6  2000/04/17 19:11:05  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -82,6 +85,7 @@
 
 #include <serial/tool/typestr.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <serial/tool/classctx.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -97,6 +101,8 @@ public:
                           AutoPtr<CTypeStrings> type);
     ~CTemplate1TypeStrings(void);
 
+    EKind GetKind(void) const;
+
     const string& GetTemplateName(void) const
         {
             return m_TemplateName;
@@ -109,16 +115,12 @@ public:
     string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
 
-    bool CanBeKey(void) const;
-    bool CanBeInSTL(void) const;
-    bool NeedSetFlag(void) const;
-    
     string GetIsSetCode(const string& var) const;
 
     void GenerateTypeCode(CClassContext& ctx) const;
 
 protected:
-    void AddTemplateInclude(TIncludes& hpp) const;
+    void AddTemplateInclude(CClassContext::TIncludes& hpp) const;
 
     virtual string GetRefTemplate(void) const;
     virtual const CNamespace& GetTemplateNamespace(void) const;
@@ -178,9 +180,6 @@ public:
 
     void GenerateTypeCode(CClassContext& ctx) const;
 
-protected:
-    virtual string GetRefTemplate(void) const;
-
 private:
     AutoPtr<CTypeStrings> m_Arg2Type;
 };
@@ -205,11 +204,10 @@ public:
     CVectorTypeStrings(const string& charType);
     ~CVectorTypeStrings(void);
 
+    EKind GetKind(void) const;
+
     string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
-
-    bool CanBeKey(void) const;
-    bool CanBeInSTL(void) const;
 
     void GenerateTypeCode(CClassContext& ctx) const;
 

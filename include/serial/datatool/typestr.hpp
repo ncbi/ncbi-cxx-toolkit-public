@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/06/16 16:31:13  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.6  2000/04/17 19:11:05  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -82,28 +85,48 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/tool/namespace.hpp>
-#include <set>
+#include <corelib/ncbiutil.hpp>
 
 BEGIN_NCBI_SCOPE
 
 class CClassContext;
+class CNamespace;
 
 class CTypeStrings {
 public:
-    typedef set< string > TIncludes;
     CTypeStrings(void);
     CTypeStrings(const CNamespace& ns);
     virtual ~CTypeStrings(void);
 
+    // kind of C++ representation
+    enum EKind {
+        eKindStd, // standard type
+        eKindEnum, // enum
+        eKindString, // std::string
+        eKindPointer, // plain pointer
+        eKindRef, // CRef<>
+        eKindObject, // class (CHOICE, SET, SEQUENCE) inherited from CObject
+        eKindClass, // any other class (CHOICE, SET, SEQUENCE)
+        eKindContainer, // stl container
+        eKindOther
+    };
+    virtual EKind GetKind(void) const = 0;
+
     virtual string GetCType(const CNamespace& ns) const = 0;
+    virtual bool HaveSpecialRef(void) const;
     virtual string GetRef(void) const = 0;
 
-    virtual bool CanBeKey(void) const;
-    virtual bool CanBeInSTL(void) const;
-    virtual bool IsObject(void) const;
-    virtual bool IsString(void) const;
-    virtual bool NeedSetFlag(void) const;
+    // for external types
+    virtual const CNamespace& GetNamespace(void) const;
+
+    // for enum types
+    virtual const string& GetEnumName(void) const;
+
+    bool CanBeKey(void) const;
+    bool CanBeCopied(void) const;
+    bool NeedSetFlag(void) const;
+
+    static void AdaptForSTL(AutoPtr<CTypeStrings>& type);
 
     virtual string NewInstance(const string& init) const;
 
@@ -111,8 +134,6 @@ public:
     virtual string GetDestructionCode(const string& expr) const;
     virtual string GetIsSetCode(const string& var) const;
     virtual string GetResetCode(const string& var) const;
-
-    virtual CTypeStrings* ToPointer(void);
 
     virtual void GenerateCode(CClassContext& ctx) const;
     virtual void GenerateUserHPPCode(CNcbiOstream& out) const;

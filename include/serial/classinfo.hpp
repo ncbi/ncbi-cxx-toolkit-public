@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/06/16 16:31:04  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.30  2000/06/01 19:06:55  vasilche
 * Added parsing of XML data.
 *
@@ -155,13 +158,8 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiobj.hpp>
-#include <serial/typeinfo.hpp>
+#include <serial/classinfob.hpp>
 #include <serial/memberlist.hpp>
-#include <map>
-#include <list>
-#include <vector>
-#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -170,23 +168,23 @@ class CObjectOStream;
 class COObjectList;
 class CMemberId;
 class CMemberInfo;
+class CClassInfoHelperBase;
 
-class CClassInfoTmpl : public CTypeInfo {
-    typedef CTypeInfo CParent;
+class CClassTypeInfo : public CClassTypeInfoBase {
+    typedef CClassTypeInfoBase CParent;
+protected:
+    typedef const type_info* (*TGetTypeIdFunction)(TConstObjectPtr object);
+    enum {
+        eIteratorIndexParentClass = -1
+    };
+
+    friend class CClassInfoHelperBase;
+
+    CClassTypeInfo(const type_info& ti, size_t size);
+    CClassTypeInfo(const string& name, const type_info& ti, size_t size);
+    CClassTypeInfo(const char* name, const type_info& ti, size_t size);
+
 public:
-    typedef CMembers::TIndex TIndex;
-    typedef vector<pair<CMemberId, CTypeRef> > TSubClasses;
-    typedef map<TTypeInfo, bool> TContainedTypes;
-
-    CClassInfoTmpl(const type_info& ti, size_t size);
-    CClassInfoTmpl(const string& name, const type_info& ti, size_t size);
-    CClassInfoTmpl(const char* name, const type_info& ti, size_t size);
-    virtual ~CClassInfoTmpl(void);
-
-    const type_info& GetId(void) const
-        { return m_Id; }
-
-    virtual size_t GetSize(void) const;
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr object1,
@@ -194,24 +192,11 @@ public:
     virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
-    // returns type info of pointer to this type
-    static TTypeInfo GetPointerTypeInfo(const type_info& id,
-                                        const CTypeRef& typeRef);
-
-    CMembersInfo& GetMembers(void)
-        {
-            return m_Members;
-        }
-    const CMembersInfo& GetMembers(void) const
-        {
-            return m_Members;
-        }
-
     bool RandomOrder(void) const
         {
             return m_RandomOrder;
         }
-    CClassInfoTmpl* SetRandomOrder(bool random = true)
+    CClassTypeInfo* SetRandomOrder(bool random = true)
         {
             m_RandomOrder = random;
             return this;
@@ -221,19 +206,11 @@ public:
         {
             return m_Implicit;
         }
-    CClassInfoTmpl* SetImplicit(bool implicit = true)
+    CClassTypeInfo* SetImplicit(bool implicit = true)
         {
             m_Implicit = implicit;
             return this;
         }
-
-    // finds type info (throws runtime_error if absent)
-    static TTypeInfo GetClassInfoByName(const string& name);
-    static TTypeInfo GetClassInfoById(const type_info& id);
-    static TTypeInfo GetClassInfoBy(const type_info& id,
-                                    void (*creator)(void));
-
-    void SetParentClass(TTypeInfo parentClass);
 
     void AddSubClass(const CMemberId& id, const CTypeRef& type);
     void AddSubClass(const char* id, TTypeInfoGetter getter);
@@ -244,26 +221,30 @@ public:
             return m_SubClasses.get();
         }
 
-    virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const;
+    TTypeInfo GetParentTypeInfo(void) const;
+    void SetParentClass(TTypeInfo parentClass);
+    void SetGetTypeIdFunction(TGetTypeIdFunction func);
 
-    virtual bool IsType(TTypeInfo type) const;
-    virtual bool MayContainType(TTypeInfo type) const;
-    virtual bool HaveChildren(TConstObjectPtr object) const;
+public:
+
+    // iterators interface
     virtual void BeginTypes(CChildrenTypesIterator& cc) const;
+    virtual TTypeInfo GetChildType(const CChildrenTypesIterator& cc) const;
+
+    virtual bool HaveChildren(TConstObjectPtr object) const;
     virtual void Begin(CConstChildrenIterator& cc) const;
     virtual void Begin(CChildrenIterator& cc) const;
-    virtual bool ValidTypes(const CChildrenTypesIterator& cc) const;
     virtual bool Valid(const CConstChildrenIterator& cc) const;
     virtual bool Valid(const CChildrenIterator& cc) const;
-    virtual TTypeInfo GetChildType(const CChildrenTypesIterator& cc) const;
     virtual void GetChild(const CConstChildrenIterator& cc,
                           CConstObjectInfo& child) const;
     virtual void GetChild(const CChildrenIterator& cc,
                           CObjectInfo& child) const;
-    virtual void NextType(CChildrenTypesIterator& cc) const;
     virtual void Next(CConstChildrenIterator& cc) const;
     virtual void Next(CChildrenIterator& cc) const;
     virtual void Erase(CChildrenIterator& cc) const;
+
+    const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const;
 
 protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
@@ -273,184 +254,20 @@ protected:
     virtual void WriteData(CObjectOStream& out,
                            TConstObjectPtr object) const;
 
-    TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
-    TTypeInfo GetParentTypeInfo(void) const;
+    virtual bool IsType(TTypeInfo typeInfo) const;
+    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
+    virtual bool CalcMayContainType(TTypeInfo typeInfo) const;
 
+    virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
     void RegisterSubClasses(void) const;
-    void UpdateClassInfo(const void* /*object*/)
-        {
-            // do nothing
-        }
-    void UpdateClassInfo(const CObject* object);
 
 private:
-    const type_info& m_Id;
-    size_t m_Size;
     bool m_RandomOrder;
     bool m_Implicit;
-
-    CMembersInfo m_Members;
-
-    const CClassInfoTmpl* m_ParentClassInfo;
+    const CClassTypeInfo* m_ParentClassInfo;
     auto_ptr<TSubClasses> m_SubClasses;
-    mutable auto_ptr<TContainedTypes> m_ContainedTypes;
 
-    // class mapping
-    typedef list<CClassInfoTmpl*> TClasses;
-    typedef map<const type_info*, const CClassInfoTmpl*,
-        CTypeInfoOrder> TClassesById;
-    typedef map<string, const CClassInfoTmpl*> TClassesByName;
-
-    static TClasses* sm_Classes;
-    static TClassesById* sm_ClassesById;
-    static TClassesByName* sm_ClassesByName;
-
-    void Register(void);
-    void Deregister(void) const;
-    static TClasses& Classes(void);
-    static TClassesById& ClassesById(void);
-    static TClassesByName& ClassesByName(void);
-
-};
-
-class CStructInfoTmpl : public CClassInfoTmpl
-{
-    typedef CClassInfoTmpl CParent;
-public:
-    CStructInfoTmpl(const string& name, const type_info& id, size_t size)
-        : CParent(name, id, size)
-        {
-        }
-
-    virtual TObjectPtr Create(void) const;
-};
-
-template<class Class>
-class CStructInfo : public CStructInfoTmpl
-{
-    typedef CStructInfoTmpl CParent;
-public:
-    typedef Class TObjectType;
-    CStructInfo(const string& name)
-        : CParent(name, typeid(Class), sizeof(Class))
-        {
-        }
-    CStructInfo(const char* name)
-        : CParent(name, typeid(Class), sizeof(Class))
-        {
-        }
-
-    virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const
-        {
-            return &typeid(*static_cast<const TObjectType*>(object));
-        }
-};
-
-class CCObjectClassInfo : public CClassInfoTmpl
-{
-    typedef CClassInfoTmpl CParent;
-public:
-    CCObjectClassInfo(void)
-        : CParent(typeid(CObject), sizeof(CObject))
-        {
-        }
-
-    virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const;
-};
-
-class CGeneratedClassInfo : public CClassInfoTmpl
-{
-    typedef CClassInfoTmpl CParent;
-public:
-    typedef TObjectPtr (*TCreateFunction)(void);
-    typedef const type_info* (*TGetTypeIdFunction)(TConstObjectPtr object);
-    typedef void (*TPostReadFunction)(TObjectPtr object);
-    typedef void (*TPreWriteFunction)(TConstObjectPtr object);
-
-    CGeneratedClassInfo(const char* name,
-                        const type_info& typeId, size_t size,
-                        TCreateFunction createFunction,
-                        TGetTypeIdFunction getTypeIdFunction);
-
-    void SetPostRead(TPostReadFunction func);
-    void SetPreWrite(TPreWriteFunction func);
-
-protected:
-    virtual TObjectPtr Create(void) const;
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-    virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const;
-
-private:
-    TCreateFunction m_CreateFunction;
     TGetTypeIdFunction m_GetTypeIdFunction;
-    TPostReadFunction m_PostReadFunction;
-    TPreWriteFunction m_PreWriteFunction;
-};
-
-template<class CLASS>
-class CAbstractClassInfo : public CClassInfoTmpl
-{
-    typedef CClassInfoTmpl CParent;
-public:
-    typedef CLASS TObjectType;
-
-    CAbstractClassInfo(void)
-        : CParent(typeid(TObjectType), sizeof(TObjectType))
-        {
-            const TObjectType* object = 0;
-            UpdateClassInfo(object);
-        }
-    CAbstractClassInfo(const string& name)
-        : CParent(name, typeid(TObjectType), sizeof(TObjectType))
-        {
-            const TObjectType* object = 0;
-            UpdateClassInfo(object);
-        }
-    CAbstractClassInfo(const char* name)
-        : CParent(name, typeid(TObjectType), sizeof(TObjectType))
-        {
-            const TObjectType* object = 0;
-            UpdateClassInfo(object);
-        }
-    CAbstractClassInfo(const char* name, const type_info& info)
-        : CParent(name, info, sizeof(TObjectType))
-        {
-            const TObjectType* object = 0;
-            UpdateClassInfo(object);
-        }
-
-    virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const
-        {
-            return &typeid(*static_cast<const TObjectType*>(object));
-        }
-};
-
-template<class CLASS>
-class CClassInfo : public CAbstractClassInfo<CLASS>
-{
-    typedef CAbstractClassInfo<CLASS> CParent;
-public:
-    CClassInfo(void)
-        {
-        }
-    CClassInfo(const string& name)
-        : CParent(name)
-        {
-        }
-    CClassInfo(const char* name)
-        : CParent(name)
-        {
-        }
-    CClassInfo(const char* name, const type_info& info)
-        : CParent(name, info)
-        {
-        }
-
-    virtual TObjectPtr Create(void) const
-        {
-            return new TObjectType();
-        }
 };
 
 //#include <serial/classinfo.inl>

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2000/06/16 16:31:07  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.40  2000/06/07 19:45:43  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -237,8 +240,8 @@ public:
 class CObjectOStream : public CObjectStack
 {
 public:
-    typedef unsigned TIndex;
-    typedef int TMemberIndex;
+    typedef CWriteObjectInfo::TObjectIndex TObjectIndex;
+    typedef CMembers::TMemberIndex TMemberIndex;
 
     static CObjectOStream* Open(ESerialDataFormat format,
                                 const string& fileName,
@@ -460,7 +463,7 @@ protected:
                               CWriteObjectInfo& info,
                               TTypeInfo declaredTypeInfo);
     virtual void WriteNullPointer(void) = 0;
-    virtual void WriteObjectReference(TIndex index) = 0;
+    virtual void WriteObjectReference(TObjectIndex index) = 0;
     virtual void WriteThis(TConstObjectPtr object,
                            CWriteObjectInfo& info);
     virtual void WriteOther(TConstObjectPtr object,

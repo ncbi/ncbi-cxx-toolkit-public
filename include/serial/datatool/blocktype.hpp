@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/06/16 16:31:12  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.3  2000/05/24 20:08:30  vasilche
 * Implemented DTD generation.
 *
@@ -69,7 +72,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CClassInfoTmpl;
+class CClassTypeInfo;
 
 class CDataMember {
 public:
@@ -150,7 +153,7 @@ public:
     AutoPtr<CTypeStrings> GetRefCType(void) const;
 
 protected:
-    virtual CClassInfoTmpl* CreateClassInfo(void);
+    virtual CClassTypeInfo* CreateClassInfo(void);
 };
 
 class CDataSetType : public CDataContainerType {
@@ -161,7 +164,7 @@ public:
     virtual const char* GetASNKeyword(void) const;
 
 protected:
-    CClassInfoTmpl* CreateClassInfo(void);
+    CClassTypeInfo* CreateClassInfo(void);
 };
 
 class CDataSequenceType : public CDataContainerType {

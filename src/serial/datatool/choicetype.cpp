@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/06/16 16:31:38  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.12  2000/05/24 20:09:28  vasilche
 * Implemented DTD generation.
 *
@@ -93,82 +96,30 @@
 
 BEGIN_NCBI_SCOPE
 
-class CChoiceTypeInfoAnyType : public CChoiceTypeInfoBase
-{
-    typedef CChoiceTypeInfoBase CParent;
-public:
-    typedef AnyType TDataType;
-    typedef struct {
-        TMemberIndex index;
-        TDataType data;
-    } TObjectType;
-    typedef CType<TObjectType> TType;
-
-    CChoiceTypeInfoAnyType(const string& name);
-    CChoiceTypeInfoAnyType(const char* name);
-    ~CChoiceTypeInfoAnyType(void);
-
-    // object getters:
-    static TObjectType& Get(TObjectPtr object)
+struct CAnyTypeChoice {
+    AnyType data;
+    int index;
+    CAnyTypeChoice(void)
+        : index(-1)
         {
-            return TType::Get(object);
         }
-    static const TObjectType& Get(TConstObjectPtr object)
-        {
-            return TType::Get(object);
-        }
-
-    size_t GetSize(void) const;
-    virtual TObjectPtr Create(void) const;
-
-protected:
-    virtual TMemberIndex GetIndex(TConstObjectPtr object) const;
-    virtual void SetIndex(TObjectPtr object, TMemberIndex index) const;
-    virtual TObjectPtr x_GetData(TObjectPtr object, TMemberIndex index) const;
 };
 
-CChoiceTypeInfoAnyType::CChoiceTypeInfoAnyType(const string& name)
-    : CParent(name)
+TObjectPtr CreateAnyTypeChoice(TTypeInfo /*typeInfo*/)
 {
+    return new CAnyTypeChoice();
 }
 
-CChoiceTypeInfoAnyType::CChoiceTypeInfoAnyType(const char* name)
-    : CParent(name)
+int GetIndexAnyTypeChoice(TConstObjectPtr object)
 {
+    const CAnyTypeChoice* choice = static_cast<const CAnyTypeChoice*>(object);
+    return choice->index;
 }
 
-CChoiceTypeInfoAnyType::~CChoiceTypeInfoAnyType(void)
+void SetIndexAnyTypeChoice(TObjectPtr object, int index)
 {
-}
-
-size_t CChoiceTypeInfoAnyType::GetSize(void) const
-{
-    return TType::GetSize();
-}
-
-TObjectPtr CChoiceTypeInfoAnyType::Create(void) const
-{
-    TObjectType* obj = new TObjectType;
-    obj->index = -1;
-    return obj;
-}
-
-CChoiceTypeInfoAnyType::TMemberIndex
-CChoiceTypeInfoAnyType::GetIndex(TConstObjectPtr object) const
-{
-    return Get(object).index;
-}
-
-void CChoiceTypeInfoAnyType::SetIndex(TObjectPtr object,
-                                      TMemberIndex index) const
-{
-    Get(object).index = index;
-}
-
-TObjectPtr CChoiceTypeInfoAnyType::x_GetData(TObjectPtr object,
-                                             TMemberIndex /*index*/) const
-{
-    return &Get(object).data;
+    CAnyTypeChoice* choice = static_cast<CAnyTypeChoice*>(object);
+    choice->index = index;
 }
 
 const char* CChoiceDataType::GetASNKeyword(void) const
@@ -207,13 +158,16 @@ bool CChoiceDataType::CheckValue(const CDataValue& value) const
 
 CTypeInfo* CChoiceDataType::CreateTypeInfo(void)
 {
-    auto_ptr<CChoiceTypeInfoBase>
-        typeInfo(new CChoiceTypeInfoAnyType(GlobalName()));
+    auto_ptr<CChoiceTypeInfo>
+        typeInfo(new CChoiceTypeInfo(GlobalName(),
+                                     sizeof(CAnyTypeChoice), typeid(CAnyTypeChoice),
+                                     &CreateAnyTypeChoice,
+                                     &GetIndexAnyTypeChoice, &SetIndexAnyTypeChoice));
     for ( TMembers::const_iterator i = GetMembers().begin();
           i != GetMembers().end(); ++i ) {
         CDataMember* member = i->get();
-        typeInfo->AddVariant(member->GetName(),
-                             member->GetType()->GetTypeInfo());
+        typeInfo->GetMembers().AddMember(member->GetName(), 0,
+                                         member->GetType()->GetTypeInfo());
     }
     return typeInfo.release();
 }

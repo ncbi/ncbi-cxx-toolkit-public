@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/06/16 16:31:07  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.9  2000/04/06 16:10:51  vasilche
 * Fixed bug with iterators in choices.
 * Removed unneeded calls to ReadExternalObject/WriteExternalObject.
@@ -89,32 +92,41 @@ class COObjectList;
 
 class CWriteObjectInfo {
 public:
-    typedef int TIndex;
+    typedef int TObjectIndex;
+    enum {
+        eObjectIndexNotWritten = -1
+    };
 
     CWriteObjectInfo(TTypeInfo typeInfo = 0)
-        : m_TypeInfo(typeInfo), m_Index(-1)
+        : m_TypeInfo(typeInfo), m_Index(eObjectIndexNotWritten)
         {
         }
 
     bool IsWritten(void) const
-        { return m_Index != TIndex(-1); }
-    TIndex GetIndex(void) const
-        { return m_Index; }
+        {
+            return m_Index != eObjectIndexNotWritten;
+        }
+    TObjectIndex GetIndex(void) const
+        {
+            return m_Index;
+        }
 
     TTypeInfo GetTypeInfo(void) const
-        { return m_TypeInfo; }
+        {
+            return m_TypeInfo;
+        }
 
 private:
     friend class COObjectList;
 
     TTypeInfo m_TypeInfo;
-    TIndex m_Index;
+    TObjectIndex m_Index;
 };
 
 class COObjectList
 {
 public:
-    typedef unsigned TIndex;
+    typedef int TObjectIndex;
 
     COObjectList(void);
     ~COObjectList(void);
@@ -139,7 +151,7 @@ private:
     typedef map<TConstObjectPtr, CWriteObjectInfo> TObjects;
 
     TObjects m_Objects;
-    TIndex m_NextObjectIndex;
+    TObjectIndex m_NextObjectIndex;
 };
 
 #include <serial/objlist.inl>

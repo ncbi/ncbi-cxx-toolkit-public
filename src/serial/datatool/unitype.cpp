@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/06/16 16:31:41  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.11  2000/05/24 20:09:30  vasilche
 * Implemented DTD generation.
 *
@@ -175,9 +178,7 @@ bool CUniSequenceDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
 AutoPtr<CTypeStrings> CUniSequenceDataType::GetFullCType(void) const
 {
     AutoPtr<CTypeStrings> tData = GetElementType()->GetFullCType();
-    if ( !tData->CanBeInSTL() ) {
-        tData.reset(tData.release()->ToPointer());
-    }
+    CTypeStrings::AdaptForSTL(tData);
     string templ = GetVar("_type");
     if ( templ.empty() )
         templ = "list";
@@ -206,15 +207,13 @@ AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
     const CDataSequenceType* seq =
         dynamic_cast<const CDataSequenceType*>(GetElementType());
     if ( seq && seq->GetMembers().size() == 2 ) {
-        if ( !seq->GetMembers().front()->Optional() &&
-             !seq->GetMembers().back()->Optional() ) {
-            AutoPtr<CTypeStrings> tKey =
-                seq->GetMembers().front()->GetType()->GetFullCType();
+        const CDataMember& keyMember = *seq->GetMembers().front();
+        const CDataMember& valueMember = *seq->GetMembers().back();
+        if ( !keyMember.Optional() && !valueMember.Optional() ) {
+            AutoPtr<CTypeStrings> tKey = keyMember.GetType()->GetFullCType();
             if ( tKey->CanBeKey() ) {
-                AutoPtr<CTypeStrings> tValue =
-                    seq->GetMembers().back()->GetType()->GetFullCType();
-                if ( !tValue->CanBeInSTL() )
-                    tValue.reset(tValue.release()->ToPointer());
+                AutoPtr<CTypeStrings> tValue = valueMember.GetType()->GetFullCType();
+                CTypeStrings::AdaptForSTL(tValue);
                 if ( templ.empty() )
                     templ = "multimap";
                 return AutoPtr<CTypeStrings>(new CMapTypeStrings(templ,
@@ -224,9 +223,7 @@ AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
         }
     }
     AutoPtr<CTypeStrings> tData = GetElementType()->GetFullCType();
-    if ( !tData->CanBeInSTL() ) {
-        tData.reset(tData.release()->ToPointer());
-    }
+    CTypeStrings::AdaptForSTL(tData);
     if ( templ.empty() ) {
         if ( tData->CanBeKey() ) {
             templ = "multiset";

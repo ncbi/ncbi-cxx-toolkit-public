@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/06/16 16:31:41  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.15  2000/04/17 19:11:09  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -97,6 +100,7 @@
 #include <serial/tool/typestr.hpp>
 #include <serial/tool/classctx.hpp>
 #include <serial/tool/ptrstr.hpp>
+#include <serial/tool/namespace.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -106,6 +110,16 @@ CTypeStrings::CTypeStrings(void)
 
 CTypeStrings::~CTypeStrings(void)
 {
+}
+
+const CNamespace& CTypeStrings::GetNamespace(void) const
+{
+    return CNamespace::KEmptyNamespace;
+}
+
+const string& CTypeStrings::GetEnumName(void) const
+{
+    THROW1_TRACE(runtime_error, "illegal call");
 }
 
 string CTypeStrings::GetInitializer(void) const
@@ -123,29 +137,47 @@ string CTypeStrings::GetResetCode(const string& /*var*/) const
     return NcbiEmptyString;
 }
 
+bool CTypeStrings::HaveSpecialRef(void) const
+{
+    return false;
+}
+
 bool CTypeStrings::CanBeKey(void) const
 {
-    return true;
+    switch ( GetKind() ) {
+    case eKindStd:
+    case eKindEnum:
+    case eKindString:
+        return true;
+    default:
+        return false;
+    }
 }
 
-bool CTypeStrings::CanBeInSTL(void) const
+bool CTypeStrings::CanBeCopied(void) const
 {
-    return true;
-}
-
-bool CTypeStrings::IsObject(void) const
-{
-    return false;
-}
-
-bool CTypeStrings::IsString(void) const
-{
-    return false;
+    switch ( GetKind() ) {
+    case eKindStd:
+    case eKindEnum:
+    case eKindString:
+    case eKindPointer:
+    case eKindRef:
+        return true;
+    default:
+        return false;
+    }
 }
 
 bool CTypeStrings::NeedSetFlag(void) const
 {
-    return true;
+    switch ( GetKind() ) {
+    case eKindPointer:
+    case eKindRef:
+    case eKindContainer:
+        return false;
+    default:
+        return true;
+    }
 }
 
 string CTypeStrings::NewInstance(const string& init) const
@@ -155,15 +187,26 @@ string CTypeStrings::NewInstance(const string& init) const
 
 string CTypeStrings::GetIsSetCode(const string& /*var*/) const
 {
-    return "...";
+    THROW1_TRACE(runtime_error, "illegal call");
 }
 
-CTypeStrings* CTypeStrings::ToPointer(void)
+void CTypeStrings::AdaptForSTL(AutoPtr<CTypeStrings>& type)
 {
-    if ( IsObject() )
-        return new CRefTypeStrings(this);
-    else
-        return new CPointerTypeStrings(this);
+    switch ( type->GetKind() ) {
+    case eKindStd:
+    case eKindEnum:
+    case eKindString:
+    case eKindPointer:
+    case eKindRef:
+        // already suitable for STL
+        break;
+    case eKindObject:
+        type.reset(new CRefTypeStrings(type.release()));
+        break;
+    default:
+        type.reset(new CPointerTypeStrings(type.release()));
+        break;
+    }
 }
 
 void CTypeStrings::GenerateCode(CClassContext& ctx) const

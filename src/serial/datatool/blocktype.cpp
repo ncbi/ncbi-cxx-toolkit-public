@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/06/16 16:31:37  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.18  2000/05/24 20:57:14  vasilche
 * Use new macro _DEBUG_ARG to avoid warning about unused argument.
 *
@@ -106,11 +109,11 @@
 
 BEGIN_NCBI_SCOPE
 
-class CContainerTypeInfo : public CClassInfoTmpl
+class CContainerTypeInfo : public CClassTypeInfo
 {
 public:
     CContainerTypeInfo(const string& name, size_t memberCount)
-        : CClassInfoTmpl(name, typeid(void), 0),
+        : CClassTypeInfo(name, typeid(void), 0),
           m_MemberCount(memberCount), m_IsSetCount(0)
         {
         }
@@ -224,7 +227,7 @@ CTypeInfo* CDataContainerType::CreateTypeInfo(void)
     return CreateClassInfo();
 }
 
-CClassInfoTmpl* CDataContainerType::CreateClassInfo(void)
+CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
 {
     auto_ptr<CContainerTypeInfo>
         typeInfo(new CContainerTypeInfo(GlobalName(), GetMembers().size()));
@@ -345,7 +348,7 @@ bool CDataSetType::CheckValue(const CDataValue& value) const
     return true;
 }
 
-CClassInfoTmpl* CDataSetType::CreateClassInfo(void)
+CClassTypeInfo* CDataSetType::CreateClassInfo(void)
 {
     return CParent::CreateClassInfo()->SetRandomOrder();
 }

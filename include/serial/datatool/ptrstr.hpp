@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/06/16 16:31:13  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.3  2000/04/17 19:11:05  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -69,12 +72,10 @@ public:
 
     void GenerateTypeCode(CClassContext& ctx) const;
 
+    EKind GetKind(void) const;
+
     string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
-
-    bool CanBeKey(void) const;
-    bool CanBeInSTL(void) const;
-    bool NeedSetFlag(void) const;
 
     string GetInitializer(void) const;
     string GetDestructionCode(const string& expr) const;
@@ -92,6 +93,8 @@ public:
     CRefTypeStrings(CTypeStrings* type);
     CRefTypeStrings(AutoPtr<CTypeStrings> type);
     ~CRefTypeStrings(void);
+
+    EKind GetKind(void) const;
 
     string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;

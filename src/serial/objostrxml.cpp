@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/06/16 16:31:22  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.3  2000/06/07 19:46:00  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -76,7 +79,7 @@ ESerialDataFormat CObjectOStreamXml::GetDataFormat(void) const
 
 void CObjectOStreamXml::WriteTypeName(const string& name)
 {
-    if ( m_Output.GetIndentLevel() == 0 ) {
+    if ( m_Output.ZeroIndentLevel() ) {
         m_Output.PutString("<!DOCTYPE ");
         m_Output.PutString(name);
         m_Output.PutString(" SYSTEM \"ncbi.dtd\">");
@@ -231,10 +234,10 @@ void CObjectOStreamXml::WriteNullPointer(void)
     WriteNull();
 }
 
-void CObjectOStreamXml::WriteObjectReference(TIndex index)
+void CObjectOStreamXml::WriteObjectReference(TObjectIndex index)
 {
     m_Output.PutString("<object index=");
-    m_Output.PutUInt(index);
+    m_Output.PutInt(index);
     m_Output.PutString("/>");
 }
 
@@ -453,8 +456,7 @@ void CObjectOStreamXml::WriteClassContents(CObjectClassWriter& writer,
                                            const CMembersInfo& members)
 {
     TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
-    if ( parentClassInfo &&
-         parentClassInfo != CObjectGetTypeInfo::GetTypeInfo() )
+    if ( parentClassInfo )
         writer.WriteParentClass(*this, parentClassInfo);
     
     writer.WriteMembers(*this, members);

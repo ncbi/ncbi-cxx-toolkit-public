@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/06/16 16:31:22  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.22  2000/06/07 19:46:00  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -274,8 +277,7 @@ void CPointerTypeInfo::GetPointedObject(CObjectInfo& object) const
 
 bool CPointerTypeInfo::MayContainType(TTypeInfo typeInfo) const
 {
-    return GetDataTypeInfo()->IsType(typeInfo) ||
-        GetDataTypeInfo()->MayContainType(typeInfo);
+    return GetDataTypeInfo()->IsOrMayContainType(typeInfo);
 }
 
 bool CPointerTypeInfo::HaveChildren(TConstObjectPtr object) const

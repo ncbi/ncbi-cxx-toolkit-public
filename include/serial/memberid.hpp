@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/06/16 16:31:05  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.8  2000/05/24 20:08:12  vasilche
 * Implemented XML dump.
 *
@@ -79,6 +82,9 @@ class CMembers;
 class CMemberId {
 public:
     typedef int TTag;
+    enum {
+        eNoExplicitTag = -1
+    };
 
     CMemberId(void);
     CMemberId(TTag tag);

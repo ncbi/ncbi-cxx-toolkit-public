@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/06/16 16:31:40  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.5  2000/04/17 19:11:09  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -107,6 +110,11 @@ CStdTypeStrings::CStdTypeStrings(const string& type)
     }
 }
 
+CTypeStrings::EKind CStdTypeStrings::GetKind(void) const
+{
+    return eKindStd;
+}
+
 string CStdTypeStrings::GetCType(const CNamespace& ns) const
 {
     if ( m_Namespace )
@@ -117,10 +125,13 @@ string CStdTypeStrings::GetCType(const CNamespace& ns) const
 
 string CStdTypeStrings::GetRef(void) const
 {
+    return "STD, ("+m_Namespace.ToString()+m_CType+')';
+#if 0
     if ( m_Namespace )
         return "&NCBI_NS_NCBI::CStdTypeInfo< "+m_Namespace.ToString()+m_CType+" >::GetTypeInfo";
     else
         return "&NCBI_NS_NCBI::CStdTypeInfo< "+m_CType+" >::GetTypeInfo";
+#endif
 }
 
 string CStdTypeStrings::GetInitializer(void) const
@@ -138,6 +149,16 @@ string CStdTypeStrings::GetTypeInfoCode(const string& externalName,
         "NCBI_NS_NCBI::GetStdTypeInfoGetter(MEMBER_PTR("+memberName+")))";
 }
 
+CTypeStrings::EKind CNullTypeStrings::GetKind(void) const
+{
+    return eKindStd;
+}
+
+bool CNullTypeStrings::HaveSpecialRef(void) const
+{
+    return true;
+}
+
 string CNullTypeStrings::GetCType(const CNamespace& /*ns*/) const
 {
     return "bool";
@@ -145,7 +166,8 @@ string CNullTypeStrings::GetCType(const CNamespace& /*ns*/) const
 
 string CNullTypeStrings::GetRef(void) const
 {
-    return "&NCBI_NS_NCBI::CNullBoolTypeInfo::GetTypeInfo";
+    return "null, ()";
+    //return "&NCBI_NS_NCBI::CNullBoolTypeInfo::GetTypeInfo";
 }
 
 string CNullTypeStrings::GetTypeInfoCode(const string& externalName,
@@ -164,9 +186,9 @@ CStringTypeStrings::CStringTypeStrings(const string& type)
 {
 }
 
-bool CStringTypeStrings::IsString(void) const
+CTypeStrings::EKind CStringTypeStrings::GetKind(void) const
 {
-    return true;
+    return eKindString;
 }
 
 string CStringTypeStrings::GetInitializer(void) const
@@ -189,9 +211,15 @@ CStringStoreTypeStrings::CStringStoreTypeStrings(const string& type)
 {
 }
 
+bool CStringStoreTypeStrings::HaveSpecialRef(void) const
+{
+    return true;
+}
+
 string CStringStoreTypeStrings::GetRef(void) const
 {
-    return "&NCBI_NS_NCBI::CStringStoreTypeInfo::GetTypeInfo";
+    return "StringStore, ()";
+    //return "&NCBI_NS_NCBI::CStringStoreTypeInfo::GetTypeInfo";
 }
 
 string CStringStoreTypeStrings::GetTypeInfoCode(const string& externalName,

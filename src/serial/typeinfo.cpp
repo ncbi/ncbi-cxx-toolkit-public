@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/06/16 16:31:22  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.21  2000/06/07 19:46:01  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -173,12 +176,27 @@ void CTypeInfo::GetPointedObject(CObjectInfo& /*object*/) const
     THROW1_TRACE(runtime_error, "illegal call");
 }
 
+bool CTypeInfo::IsOrMayContainType(TTypeInfo typeInfo) const
+{
+    return this == typeInfo;
+}
+
 bool CTypeInfo::IsType(TTypeInfo typeInfo) const
 {
     return this == typeInfo;
 }
 
 bool CTypeInfo::MayContainType(TTypeInfo /*typeInfo*/) const
+{
+    return false;
+}
+
+bool CTypeInfo::IsCObject(void) const
+{
+    return false;
+}
+
+bool CTypeInfo::IsParentClassOf(const CClassTypeInfo* classInfo) const
 {
     return false;
 }

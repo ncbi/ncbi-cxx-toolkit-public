@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/06/16 16:31:05  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.6  2000/05/09 16:38:33  vasilche
 * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
 * Added write context to CObjectOStream.
@@ -64,6 +67,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <serial/serialdef.hpp>
+#include <serial/typeinfo.hpp>
 #include <memory>
 
 BEGIN_NCBI_SCOPE
@@ -99,8 +103,6 @@ public:
         {
             return m_TypeInfo;
         }
-
-    static bool IsCObject(TTypeInfo typeInfo);
 
 private:
     TTypeInfo m_TypeInfo;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/06/16 16:31:39  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.4  2000/04/17 19:11:09  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -52,6 +55,7 @@
 
 #include <serial/tool/ptrstr.hpp>
 #include <serial/tool/classctx.hpp>
+#include <serial/tool/namespace.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -69,19 +73,9 @@ CPointerTypeStrings::~CPointerTypeStrings(void)
 {
 }
 
-bool CPointerTypeStrings::CanBeKey(void) const
+CTypeStrings::EKind CPointerTypeStrings::GetKind(void) const
 {
-    return false;
-}
-
-bool CPointerTypeStrings::CanBeInSTL(void) const
-{
-    return true;
-}
-
-bool CPointerTypeStrings::NeedSetFlag(void) const
-{
-    return false;
+    return eKindPointer;
 }
 
 string CPointerTypeStrings::GetCType(const CNamespace& ns) const
@@ -91,7 +85,8 @@ string CPointerTypeStrings::GetCType(const CNamespace& ns) const
 
 string CPointerTypeStrings::GetRef(void) const
 {
-    return "&NCBI_NS_NCBI::CPointerTypeInfo::GetTypeInfo, "+GetDataType()->GetRef();
+    return "POINTER, ("+GetDataType()->GetRef()+')';
+    //return "&NCBI_NS_NCBI::CPointerTypeInfo::GetTypeInfo, "+GetDataType()->GetRef();
 }
 
 string CPointerTypeStrings::GetInitializer(void) const
@@ -137,6 +132,11 @@ CRefTypeStrings::~CRefTypeStrings(void)
 {
 }
 
+CTypeStrings::EKind CRefTypeStrings::GetKind(void) const
+{
+    return eKindRef;
+}
+
 string CRefTypeStrings::GetCType(const CNamespace& ns) const
 {
     return ns.GetNamespaceRef(CNamespace::KNCBINamespace)+"CRef< "+GetDataType()->GetCType(ns)+" >";
@@ -144,7 +144,8 @@ string CRefTypeStrings::GetCType(const CNamespace& ns) const
 
 string CRefTypeStrings::GetRef(void) const
 {
-    return "&NCBI_NS_NCBI::CRefTypeInfo< "+GetDataType()->GetCType(CNamespace::KEmptyNamespace)+" >::GetTypeInfo, "+GetDataType()->GetRef();
+    return "STL_CRef, ("+GetDataType()->GetRef()+')';
+    //return "&NCBI_NS_NCBI::CRefTypeInfo< "+GetDataType()->GetCType(CNamespace::KEmptyNamespace)+" >::GetTypeInfo, "+GetDataType()->GetRef();
 }
 
 string CRefTypeStrings::GetInitializer(void) const

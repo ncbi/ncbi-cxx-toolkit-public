@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/06/16 16:31:39  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.31  2000/05/24 20:57:14  vasilche
 * Use new macro _DEBUG_ARG to avoid warning about unused argument.
 *
@@ -325,6 +328,26 @@ void CCodeGenerator::GenerateCode(void)
             }
         }
         fileList << "\n";
+    }
+
+    if ( !m_CombiningFileName.empty() ) {
+        // write combined files *__.cpp and *___.cpp
+        for ( int i = 0; i < 2; ++i ) {
+            const char* suffix = i? "_.cpp": ".cpp";
+            string fileName = m_CombiningFileName + "__" + suffix;
+            
+            CDelayedOfstream out(fileName.c_str());
+            if ( !out )
+                ERR_POST(Fatal << "Cannot create file: "<<fileName);
+            
+            iterate ( TOutputFiles, filei, m_Files ) {
+                out << "#include \""<<BaseName(filei->first)<<suffix<<"\"\n";
+            }
+
+            out.close();
+            if ( !out )
+                ERR_POST(Fatal << "Error writing file "<<fileName);
+        }
     }
 }
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/06/16 16:31:06  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.1  2000/03/29 15:55:20  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -46,14 +49,18 @@
 inline
 CObject* CObjectInfo::GetCObjectPtr(TObjectPtr objectPtr, TTypeInfo typeInfo)
 {
-    if ( !IsCObject(typeInfo) )
+    if ( !typeInfo->IsCObject() )
         return 0;
+#if 1
+    return static_cast<CObject*>(objectPtr);
+#else
     CObject* object = static_cast<CObject*>(objectPtr);
     if ( object->ReferenceCount() == 0 ) {
         ERR_POST("CObjectInfo() with non referenced object");
         return 0;
     }
     return object;
+#endif
 }
 
 inline
@@ -102,14 +109,18 @@ inline
 const CObject* CConstObjectInfo::GetCObjectPtr(TConstObjectPtr objectPtr,
                                                TTypeInfo typeInfo)
 {
-    if ( !IsCObject(typeInfo) )
+    if ( !typeInfo->IsCObject() )
         return 0;
+#if 1
+    return static_cast<const CObject*>(objectPtr);
+#else
     const CObject* object = static_cast<const CObject*>(objectPtr);
     if ( object->ReferenceCount() == 0 ) {
         ERR_POST("CObjectInfo() with non referenced object");
         return 0;
     }
     return object;
+#endif
 }
 
 inline

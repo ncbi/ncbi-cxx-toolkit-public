@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/06/16 16:31:05  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.9  2000/06/15 19:26:33  vasilche
 * Fixed compilation error on Mac.
 *
@@ -85,10 +88,12 @@ class CDelayBuffer;
 
 class CMemberInfo {
 public:
+    static const size_t eNoOffset = size_t(-1);
+
     CMemberInfo(size_t offset, const CTypeRef& type)
         : m_Optional(false), m_Pointer(false), m_ObjectPointer(false),
           m_Offset(offset), m_Type(type),
-          m_SetFlagOffset(size_t(-1)), m_DelayOffset(size_t(-1)),
+          m_SetFlagOffset(eNoOffset), m_DelayOffset(eNoOffset),
           m_Default(0)
         {
         }
@@ -151,7 +156,7 @@ public:
 
     bool HaveSetFlag(void) const
         {
-            return m_SetFlagOffset != size_t(-1);
+            return m_SetFlagOffset != eNoOffset;
         }
     size_t GetSetFlagOffset(void) const
         {
@@ -170,10 +175,16 @@ public:
             m_SetFlagOffset = size_t(setFlag);
             return this;
         }
+    CMemberInfo* SetOptional(const bool* setFlag)
+        {
+            SetOptional();
+            SetSetFlag(setFlag);
+            return this;
+        }
 
     bool CanBeDelayed(void) const
         {
-            return m_DelayOffset != size_t(-1);
+            return m_DelayOffset != eNoOffset;
         }
     CMemberInfo* SetDelayBuffer(CDelayBuffer* buffer)
         {

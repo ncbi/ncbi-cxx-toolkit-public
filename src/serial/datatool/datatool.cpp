@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/06/16 16:31:39  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.33  2000/05/24 20:09:29  vasilche
 * Implemented DTD generation.
 *
@@ -145,22 +148,23 @@ void GenerateHelp(void)
         "\n"
         "DataTool 1.0 code generation arguments (all optional):\n"
         "\n"
-        "  -oH          display this message\n"
-        "  -oA          generate C++ files for all types\n"
-        "  -ot <types>  generate C++ files for listed types\n"
-        "  -ox <types>  exclude listed types from generation\n"
-        "  -oX          turn off recursive type generation\n"
-        "  -od <file>   C++ code definition file\n"
-        "  -on <ns>     Put generated classes in namespace <ns>\n"
-        "  -of <file>   write list of generated C++ files\n"
-        "  -opm <dir>   directory for searching source modules\n"
-        "  -oph <dir>   directory for generated *.hpp files\n"
-        "  -opc <dir>   directory for generated *.cpp files\n"
-        "  -or <prefix> add prefix to generated file names\n"
-        "  -ors         add source file dir to generated file names\n"
-        "  -orm         add module name to generated file names\n"
-        "  -orA         combine all -or* prefixes\n"
-        "  -oR <dir>    set -op* and -or* arguments for NCBI dir tree\n" <<
+        "  -oH            display this message\n"
+        "  -oA            generate C++ files for all types\n"
+        "  -ot <types>    generate C++ files for listed types\n"
+        "  -ox <types>    exclude listed types from generation\n"
+        "  -oX            turn off recursive type generation\n"
+        "  -on <ns>       Put generated classes in namespace <ns>\n"
+        "  -od <file>     C++ code definition file\n"
+        "  -of <file>     write list of generated C++ files\n"
+        "  -oc <basename> write combining C++ files\n"
+        "  -opm <dir>     directory for searching source modules\n"
+        "  -oph <dir>     directory for generated *.hpp files\n"
+        "  -opc <dir>     directory for generated *.cpp files\n"
+        "  -or <prefix>   add prefix to generated file names\n"
+        "  -ors           add source file dir to generated file names\n"
+        "  -orm           add module name to generated file names\n"
+        "  -orA           combine all -or* prefixes\n"
+        "  -oR <dir>      set -op* and -or* arguments for NCBI dir tree\n" <<
         NcbiFlush;
 }
 
@@ -334,6 +338,13 @@ int main(int argc, const char*argv[])
                 case 'f':
                     generator.SetFileListFileName(FileOutArgument(argv[++i]));
                     break;
+                case 'c':
+                    {
+                        string arg = FileOutArgument(argv[++i]);
+                        generator.SetCombiningFileName(arg);
+                        generator.SetFileListFileName(arg+".def");
+                    }
+                    break;
                 case 'p':
                     // set directories
                     switch ( arg[3] ) {
@@ -447,7 +458,7 @@ void LoadDefinitions(CFileSet& fileSet,
     iterate ( list<FileInfo>, fi, names ) {
         const string& name = *fi;
         if ( fi->type != eSerial_AsnText ) {
-            ERR_POST("data definition format not supported: " << name);
+            ERR_POST(Fatal << "data definition format not supported: " << name);
             continue;
         }
         try {
@@ -457,10 +468,10 @@ void LoadDefinitions(CFileSet& fileSet,
             fileSet.AddFile(parser.Modules(name));
         }
         catch (exception& exc) {
-            ERR_POST("Parsing failed: " << exc.what());
+            ERR_POST(Fatal << "Parsing failed: " << exc.what());
         }
         catch (...) {
-            ERR_POST("Parsing failed: " << name);
+            ERR_POST(Fatal << "Parsing failed: " << name);
         }
     }
 }

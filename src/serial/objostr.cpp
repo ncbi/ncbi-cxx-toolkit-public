@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/06/16 16:31:21  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.41  2000/06/07 19:46:00  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -465,8 +468,7 @@ void CObjectOStream::WriteClass(CObjectClassWriter& writer,
     BeginClass(cls);
     
     TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
-    if ( parentClassInfo &&
-         parentClassInfo != CObjectGetTypeInfo::GetTypeInfo() )
+    if ( parentClassInfo )
         writer.WriteParentClass(*this, parentClassInfo);
 
     writer.WriteMembers(*this, members);

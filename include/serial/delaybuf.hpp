@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/06/16 16:31:04  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.2  2000/06/01 19:06:55  vasilche
 * Added parsing of XML data.
 *
@@ -56,7 +59,10 @@ class CMemberInfo;
 class CDelayBuffer
 {
 public:
-    typedef int TIndex;
+    typedef int TMemberIndex;
+    enum {
+        eNoMemberIndex = -1
+    };
 
     CDelayBuffer(void)
         {
@@ -82,7 +88,7 @@ public:
         }
 
     bool DelayRead(CObjectIStream& in, TObjectPtr object,
-                   TIndex index, const CMemberInfo* memberInfo);
+                   TMemberIndex index, const CMemberInfo* memberInfo);
     void Forget(void);
     
     void Update(void)
@@ -105,7 +111,7 @@ public:
         {
             const SInfo* info = m_Info.get();
             if ( !info )
-                return -1;
+                return eNoMemberIndex;
             else
                 return info->m_Index;
         }

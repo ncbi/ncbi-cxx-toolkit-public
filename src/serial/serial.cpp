@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/06/16 16:31:22  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.7  2000/02/01 21:47:23  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Added buffering to CObjectIStreamAsn.
@@ -60,10 +63,16 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serial.hpp>
 #include <serial/serialimpl.hpp>
+#include <serial/serialbase.hpp>
 #include <serial/ptrinfo.hpp>
+#include <serial/classinfo.hpp>
+#include <serial/choice.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <serial/memberlist.hpp>
+#if HAVE_NCBI_C
+# include <asn.h>
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -121,6 +130,27 @@ void Write(CObjectOStream& out, TConstObjectPtr object, const CTypeRef& type)
 void Read(CObjectIStream& in, TObjectPtr object, const CTypeRef& type)
 {
     in.Read(object, type.Get());
+}
+
+// add member functions
+CMemberInfo*
+AddMember(CMembersInfo& info, const char* name, const void* member,
+          TTypeInfo typeInfo)
+{
+    return info.AddMember(name, member, typeInfo);
+}
+
+CMemberInfo*
+AddMember(CMembersInfo& info, const char* name, CMemberInfo* memberInfo)
+{
+    return info.AddMember(name, memberInfo);
+}
+
+CMemberInfo*
+AddMember(CMembersInfo& info, const char* name, const void* member,
+          const CTypeRef& typeRef)
+{
+    return info.AddMember(name, member, typeRef);
 }
 
 // one argument:
@@ -187,6 +217,111 @@ AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter2 f, TTypeInfoGetter f1, TTypeInfoGetter f2)
 {
     return info.AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, f1, f2)));
+}
+
+CChoiceTypeInfo* CClassInfoHelperBase::CreateChoiceInfo(const char* name, size_t size,
+                                                        const type_info& ti,
+                                                        TCreateFunction createFunc,
+                                                        TWhichFunction whichFunc,
+                                                        TSelectFunction selectFunc,
+                                                        TResetFunction resetFunc)
+{
+    return new CChoiceTypeInfo(name, size, ti, createFunc,
+                               whichFunc, selectFunc, resetFunc);
+}
+
+CClassTypeInfo* CClassInfoHelperBase::CreateClassInfo(const char* name, size_t size,
+                                                      const type_info& id)
+{
+    return new CClassTypeInfo(name, id, size);
+}
+
+CClassTypeInfo* CClassInfoHelperBase::CreateClassInfo(const char* name, size_t size,
+                                                      const type_info& id,
+                                                      TGetTypeIdFunction func)
+{
+    CClassTypeInfo* info = new CClassTypeInfo(name, id, size);
+    info->SetGetTypeIdFunction(func);
+    return info;
+}
+
+#if HAVE_NCBI_C
+static TObjectPtr CreateAsnStruct(TTypeInfo info)
+{
+    TObjectPtr object = calloc(info->GetSize(), 1);
+    if ( !object )
+        THROW_TRACE(bad_alloc, ());
+    return object;
+}
+
+CClassTypeInfo* CClassInfoHelperBase::CreateAsnStructInfo(const char* name,
+                                                          size_t size,
+                                                          const type_info& id)
+{
+    CClassTypeInfo* info = CreateClassInfo(name, size, id);
+    info->SetCreateFunction(&CreateAsnStruct);
+    return info;
+}
+
+static int WhichAsn(TConstObjectPtr object)
+{
+    const valnode* node = static_cast<const valnode*>(object);
+    return node->choice - 1;
+}
+
+static void SelectAsn(TObjectPtr object, int index)
+{
+    valnode* node = static_cast<valnode*>(object);
+    node->choice = index + 1;
+}
+
+CChoiceTypeInfo* CClassInfoHelperBase::CreateAsnChoiceInfo(const char* name)
+{
+    return CreateChoiceInfo(name, sizeof(valnode), typeid(valnode), &CreateAsnStruct,
+                            &WhichAsn, &SelectAsn);
+}
+#endif
+
+void CClassInfoHelperBase::SetCreateFunction(CClassTypeInfo* info,
+                                             TCreateFunction func)
+{
+    info->SetCreateFunction(func);
+}
+
+void CClassInfoHelperBase::SetPreWriteFunction(CClassTypeInfo* info,
+                                               TPreWriteFunction func)
+{
+    info->SetPreWriteFunction(func);
+}
+
+void CClassInfoHelperBase::SetPostReadFunction(CClassTypeInfo* info,
+                                               TPostReadFunction func)
+{
+    info->SetPostReadFunction(func);
+}
+
+void CClassInfoHelperBase::UpdateCObject(CClassTypeInfo* info,
+                                         const CObject* /*object*/)
+{
+    info->SetIsCObject();
+}
+
+void CClassInfoHelperBase::SetPreWriteFunction(CChoiceTypeInfo* info,
+                                               TPreWriteFunction func)
+{
+    info->SetPreWriteFunction(func);
+}
+
+void CClassInfoHelperBase::SetPostReadFunction(CChoiceTypeInfo* info,
+                                               TPostReadFunction func)
+{
+    info->SetPostReadFunction(func);
+}
+
+void CClassInfoHelperBase::UpdateCObject(CChoiceTypeInfo* info,
+                                         const CObject* /*object*/)
+{
+    info->SetIsCObject();
 }
 
 END_NCBI_SCOPE

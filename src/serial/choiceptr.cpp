@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/06/16 16:31:18  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.17  2000/06/07 19:45:57  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -157,11 +160,11 @@ TTypeInfo CChoicePointerTypeInfo::GetVariantType(TMemberIndex index) const
 
 void CChoicePointerTypeInfo::Init(void)
 {
-    const CClassInfoTmpl::TSubClasses* subclasses =
-        dynamic_cast<const CClassInfoTmpl&>(*GetDataTypeInfo()).SubClasses();
+    const CClassTypeInfoBase::TSubClasses* subclasses =
+        dynamic_cast<const CClassTypeInfo&>(*GetDataTypeInfo()).SubClasses();
     if ( !subclasses )
         return;
-    for ( CClassInfoTmpl::TSubClasses::const_iterator i = subclasses->begin();
+    for ( CClassTypeInfo::TSubClasses::const_iterator i = subclasses->begin();
           i != subclasses->end(); ++i ) {
         m_Variants.AddMember(i->first, 0, i->second.Get());
     }
@@ -174,7 +177,7 @@ CChoicePointerTypeInfo::VariantsByType(void) const
     if ( !variants ) {
         m_VariantsByType.reset(variants = new TVariantsByType);
 
-        for ( TIndex i = 0, size = GetVariants().GetSize();
+        for ( TMemberIndex i = 0, size = GetVariants().GetMembersCount();
               i != size; ++i ) {
             TTypeInfo type = GetVariantType(i);
             const type_info* id;
@@ -186,7 +189,7 @@ CChoicePointerTypeInfo::VariantsByType(void) const
                        << ".AddSubClass: null");
             }
             else {
-                id = &dynamic_cast<const CClassInfoTmpl&>(*type).GetId();
+                id = &dynamic_cast<const CClassTypeInfo&>(*type).GetId();
                 _TRACE(GetDataTypeInfo()->GetName()
                        << ".AddSubClass: " << id->name());
             }
@@ -200,7 +203,7 @@ CChoicePointerTypeInfo::VariantsByType(void) const
     return *variants;
 }
 
-CChoicePointerTypeInfo::TIndex
+CChoicePointerTypeInfo::TMemberIndex
 CChoicePointerTypeInfo::FindVariant(TConstObjectPtr object) const
 {    
     const TVariantsByType& variants = VariantsByType();
@@ -210,8 +213,10 @@ CChoicePointerTypeInfo::FindVariant(TConstObjectPtr object) const
         id = &typeid(void);
     }
     else {
-        id = dynamic_cast<const CClassInfoTmpl*>(GetDataTypeInfo())->
-            GetCPlusPlusTypeInfo(object);
+        const CClassTypeInfo* classInfo =
+            dynamic_cast<const CClassTypeInfo*>(GetDataTypeInfo());
+        _ASSERT(classInfo);
+        id = classInfo->GetCPlusPlusTypeInfo(object);
     }
     TVariantsByType::const_iterator p = variants.find(id);
     if ( p == variants.end() )
@@ -223,7 +228,7 @@ void CChoicePointerTypeInfo::WriteData(CObjectOStream& out,
                                        TConstObjectPtr object) const
 {
     TConstObjectPtr data = GetObjectPointer(object);
-    TIndex index = FindVariant(data);
+    TMemberIndex index = FindVariant(data);
     const CMemberId& id = GetVariants().GetMemberId(index);
     TTypeInfo dataType = GetVariantType(index);
     if ( !dataType )

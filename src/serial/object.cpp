@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/06/16 16:31:19  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.1  2000/03/29 15:55:27  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -43,13 +46,9 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/object.hpp>
 #include <serial/typeinfo.hpp>
+#include <serial/classinfob.hpp>
 
 BEGIN_NCBI_SCOPE
-
-bool CObjectTypeInfo::IsCObject(TTypeInfo typeInfo)
-{
-    return typeInfo->IsType(0);
-}
 
 CObjectInfo::CObjectInfo(TTypeInfo typeInfo)
     : CObjectTypeInfo(typeInfo), m_ObjectPtr(typeInfo->Create()),

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/06/16 16:31:06  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.2  2000/06/07 19:45:43  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -66,7 +69,7 @@ public:
 
 protected:
     EPointerType ReadPointerType(void);
-    TIndex ReadObjectPointer(void);
+    TObjectIndex ReadObjectPointer(void);
     string ReadOtherPointer(void);
 
     virtual bool ReadBool(void);

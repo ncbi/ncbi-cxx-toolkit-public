@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/06/16 16:31:19  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.7  2000/05/24 20:08:46  vasilche
 * Implemented XML dump.
 *
@@ -66,7 +69,8 @@
 BEGIN_NCBI_SCOPE
 
 CMemberId::CMemberId(const string& name)
-    : m_MemberList(0), m_Name(name), m_ExplicitTag(-1), m_Tag(-1)
+    : m_MemberList(0), m_Name(name),
+      m_ExplicitTag(eNoExplicitTag), m_Tag(eNoExplicitTag)
 {
 }
 
@@ -76,7 +80,8 @@ CMemberId::CMemberId(const string& name, TTag tag)
 }
 
 CMemberId::CMemberId(const char* name)
-    : m_MemberList(0), m_Name(name), m_ExplicitTag(-1), m_Tag(-1)
+    : m_MemberList(0), m_Name(name), 
+      m_ExplicitTag(eNoExplicitTag), m_Tag(eNoExplicitTag)
 {
 }
 

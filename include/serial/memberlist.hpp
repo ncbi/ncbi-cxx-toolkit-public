@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/06/16 16:31:05  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.12  2000/06/01 19:06:56  vasilche
 * Added parsing of XML data.
 *
@@ -90,7 +93,6 @@
 #include <serial/lightstr.hpp>
 #include <serial/memberid.hpp>
 #include <serial/member.hpp>
-#include <serial/iteratorbase.hpp>
 #include <vector>
 #include <map>
 
@@ -108,18 +110,14 @@ class CObjectInfo;
 class CMembers {
 public:
     typedef CMemberId::TTag TTag;
-    typedef int TIndex;
+    typedef int TMemberIndex;
     typedef vector<CMemberId> TMembers;
-    typedef map<CLightString, TIndex> TMembersByName;
-    typedef map<TTag, TIndex> TMembersByTag;
+    typedef map<CLightString, TMemberIndex> TMembersByName;
+    typedef map<TTag, TMemberIndex> TMembersByTag;
 
     CMembers(void);
     ~CMembers(void);
 
-    size_t GetSize(void) const
-        {
-            return m_Members.size();
-        }
     bool Empty(void) const
         {
             return m_Members.empty();
@@ -129,29 +127,27 @@ public:
         {
             return m_Members;
         }
-    TMembers::const_iterator begin(void) const
-        {
-            return m_Members.begin();
-        }
-    TMembers::const_iterator end(void) const
-        {
-            return m_Members.end();
-        }
+
     const TMembersByName& GetMembersByName(void) const;
     const TMembersByTag& GetMembersByTag(void) const;
     void UpdateMemberTags(void);
 
     void AddMember(const CMemberId& id);
 
-    const CMemberId& GetMemberId(TIndex index) const
+    TMemberIndex GetMembersCount(void) const
         {
+            return GetMembers().size();
+        }
+    const CMemberId& GetMemberId(TMemberIndex index) const
+        {
+            _ASSERT(index >= 0 && index < GetMembersCount());
             return m_Members[index];
         }
 
-    TIndex FindMember(const CLightString& name) const;
-    TIndex FindMember(const CLightString& name, TIndex pos) const;
-    TIndex FindMember(TTag tag) const;
-    TIndex FindMember(TTag tag, TIndex pos) const;
+    TMemberIndex FindMember(const CLightString& name) const;
+    TMemberIndex FindMember(const CLightString& name, TMemberIndex pos) const;
+    TMemberIndex FindMember(TTag tag) const;
+    TMemberIndex FindMember(TTag tag, TMemberIndex pos) const;
 
 private:
     TMembers m_Members;
@@ -166,7 +162,7 @@ class CMembersInfo : public CMembers
 {
 public:
     typedef vector<CMemberInfo*> TMembersInfo;
-    typedef map<size_t, TIndex> TMembersByOffset;
+    typedef map<size_t, TMemberIndex> TMembersByOffset;
 
     CMembersInfo(void);
     ~CMembersInfo(void);
@@ -175,6 +171,9 @@ public:
     CMemberInfo* AddMember(const CMemberId& id, CMemberInfo* member);
     CMemberInfo* AddMember(const CMemberId& id,
                            TConstObjectPtr member, TTypeInfo type);
+    CMemberInfo* AddMember(const CMemberId& id,
+                           TConstObjectPtr member, const CTypeRef& type);
+    CMemberInfo* AddMember(const char* name, CMemberInfo* member);
     CMemberInfo* AddMember(const char* name,
                            TConstObjectPtr member, TTypeInfo type);
     CMemberInfo* AddMember(const char* name,
@@ -183,41 +182,18 @@ public:
     const TMembersByOffset& GetMembersByOffset(void) const;
     size_t GetFirstMemberOffset(void) const;
 
-    const CMemberInfo* GetMemberInfo(TIndex index) const
+    const CMemberInfo* GetMemberInfo(TMemberIndex index) const
         {
+            _ASSERT(index >= 0 && index < GetMembersCount());
             return m_MembersInfo[index];
         }
-
-    bool MayContainType(TTypeInfo type) const;
-    bool HaveChildren(TConstObjectPtr object) const;
-
-    const CMemberInfo* GetMemberInfo(const CChildrenTypesIterator& cc) const;
-    const CMemberInfo* GetMemberInfo(const CConstChildrenIterator& cc) const;
-    const CMemberInfo* GetMemberInfo(const CChildrenIterator& cc) const;
-
-    void BeginTypes(CChildrenTypesIterator& cc) const;
-    void Begin(CConstChildrenIterator& cc) const;
-    void Begin(CChildrenIterator& cc) const;
-    bool ValidTypes(const CChildrenTypesIterator& cc) const;
-    bool Valid(const CConstChildrenIterator& cc) const;
-    bool Valid(const CChildrenIterator& cc) const;
-    TTypeInfo GetChildType(const CChildrenTypesIterator& cc) const;
-    void GetChild(const CConstChildrenIterator& cc,
-                  CConstObjectInfo& child) const;
-    void GetChild(const CChildrenIterator& cc,
-                  CObjectInfo& child) const;
-    void NextType(CChildrenTypesIterator& cc) const;
-    void Next(CConstChildrenIterator& cc) const;
-    void Next(CChildrenIterator& cc) const;
-
-    //void Erase(CChildrenIterator& cc) const;
 
 private:
     TMembersInfo m_MembersInfo;
     mutable auto_ptr<TMembersByOffset> m_MembersByOffset;
 };
 
-#include <serial/memberlist.inl>
+//#include <serial/memberlist.inl>
 
 END_NCBI_SCOPE
 

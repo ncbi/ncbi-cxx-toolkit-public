@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/06/16 16:31:13  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.2  2000/04/07 19:26:09  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -111,6 +114,10 @@ public:
         {
             m_FileListFileName = file;
         }
+    void SetCombiningFileName(const string& file)
+        {
+            m_CombiningFileName = file;
+        }
 
     CFileSet& GetMainModules(void)
         {
@@ -168,6 +175,7 @@ private:
     TTypeNames m_GenerateTypes;
     bool m_ExcludeRecursion;
     string m_FileListFileName;
+    string m_CombiningFileName;
     string m_HPPDir;
     string m_CPPDir;
     string m_FileNamePrefix;

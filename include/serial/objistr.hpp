@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/06/16 16:31:06  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.43  2000/06/07 19:45:42  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -193,6 +196,7 @@
 #include <serial/object.hpp>
 #include <serial/strbuffer.hpp>
 #include <serial/objstack.hpp>
+#include <memory>
 #include <vector>
 #include <list>
 
@@ -256,7 +260,7 @@ public:
 class CObjectIStream : public CObjectStack
 {
 public:
-    typedef unsigned TIndex;
+    typedef int TObjectIndex;
 
     static CObjectIStream* Create(ESerialDataFormat format);
     static CObjectIStream* Create(ESerialDataFormat format,
@@ -658,9 +662,10 @@ public:
 
 protected:
     // low level readers
-    CObjectInfo ReadObjectInfo(void);
+    typedef pair<TObjectPtr,TTypeInfo> TReadObjectInfo;
+    TReadObjectInfo ReadObjectInfo(void);
     virtual EPointerType ReadPointerType(void) = 0;
-    virtual TIndex ReadObjectPointer(void) = 0;
+    virtual TObjectIndex ReadObjectPointer(void) = 0;
     virtual void ReadThisPointerEnd(void);
     virtual string ReadOtherPointer(void) = 0;
     virtual void ReadOtherPointerEnd(void);
@@ -699,7 +704,7 @@ protected:
 
     virtual void UnendedFrame(void);
 
-    const CObjectInfo& GetRegisteredObject(TIndex index) const;
+    const TReadObjectInfo& GetRegisteredObject(TObjectIndex index) const;
     void RegisterObject(TObjectPtr object, TTypeInfo typeInfo);
 
     void ReadData(TObjectPtr object, TTypeInfo typeInfo)
@@ -716,7 +721,7 @@ protected:
     CIStreamBuffer m_Input;
 
 private:
-    vector<CObjectInfo> m_Objects;
+    vector<TReadObjectInfo> m_Objects;
 
     unsigned m_Fail;
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/06/16 16:31:40  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.11  2000/05/24 20:09:29  vasilche
 * Implemented DTD generation.
 *
@@ -78,6 +81,7 @@
 #include <serial/tool/blocktype.hpp>
 #include <serial/tool/enumtype.hpp>
 #include <serial/classinfo.hpp>
+#include <serial/serialbase.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -136,9 +140,7 @@ TTypeInfo CReferenceDataType::GetRealTypeInfo(void)
 
 CTypeInfo* CReferenceDataType::CreateTypeInfo(void)
 {
-    CClassInfoTmpl* info = new CClassInfoTmpl(m_UserTypeName,
-                                              typeid(void),
-                                              sizeof(AnyType));
+    CClassTypeInfo* info = CClassInfoHelper<AnyType>::CreateClassInfo(m_UserTypeName.c_str());
     info->SetImplicit(true);
     info->GetMembers().AddMember("", 0, ResolveOrThrow()->GetTypeInfo());
     return info;

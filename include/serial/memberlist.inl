@@ -33,113 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/06/16 16:31:05  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.1  2000/04/10 18:01:52  vasilche
 * Added Erase() for STL types in type iterators.
 *
 * ===========================================================================
 */
-
-inline
-bool CMembersInfo::HaveChildren(TConstObjectPtr /*object*/) const
-{
-    return !m_MembersInfo.empty();
-}
-
-inline
-const CMemberInfo*
-CMembersInfo::GetMemberInfo(const CChildrenTypesIterator& cc) const
-{
-    return m_MembersInfo[cc.GetIndex().m_Index];
-}
-
-inline
-const CMemberInfo*
-CMembersInfo::GetMemberInfo(const CConstChildrenIterator& cc) const
-{
-    return m_MembersInfo[cc.GetIndex().m_Index];
-}
-
-inline
-const CMemberInfo*
-CMembersInfo::GetMemberInfo(const CChildrenIterator& cc) const
-{
-    return m_MembersInfo[cc.GetIndex().m_Index];
-}
-
-inline
-void CMembersInfo::BeginTypes(CChildrenTypesIterator& cc) const
-{
-    cc.GetIndex().m_Index = 0;
-}
-
-inline
-void CMembersInfo::Begin(CConstChildrenIterator& cc) const
-{
-    cc.GetIndex().m_Index = 0;
-}
-
-inline
-void CMembersInfo::Begin(CChildrenIterator& cc) const
-{
-    cc.GetIndex().m_Index = 0;
-}
-
-inline
-bool CMembersInfo::ValidTypes(const CChildrenTypesIterator& cc) const
-{
-    return cc.GetIndex().m_Index < m_MembersInfo.size();
-}
-
-inline
-bool CMembersInfo::Valid(const CConstChildrenIterator& cc) const
-{
-    return cc.GetIndex().m_Index < m_MembersInfo.size();
-}
-
-inline
-bool CMembersInfo::Valid(const CChildrenIterator& cc) const
-{
-    return cc.GetIndex().m_Index < m_MembersInfo.size();
-}
-
-inline
-TTypeInfo CMembersInfo::GetChildType(const CChildrenTypesIterator& cc) const
-{
-    return GetMemberInfo(cc)->GetTypeInfo();
-}
-
-inline
-void CMembersInfo::GetChild(const CConstChildrenIterator& cc,
-                            CConstObjectInfo& child) const
-{
-    const CMemberInfo* member = GetMemberInfo(cc);
-    child.Set(member->GetMember(cc.GetParentPtr()), member->GetTypeInfo());
-}
-
-inline
-void CMembersInfo::GetChild(const CChildrenIterator& cc,
-                         CObjectInfo& child) const
-{
-    const CMemberInfo* member = GetMemberInfo(cc);
-    child.Set(member->GetMember(cc.GetParentPtr()), member->GetTypeInfo());
-}
-
-inline
-void CMembersInfo::NextType(CChildrenTypesIterator& cc) const
-{
-    ++cc.GetIndex().m_Index;
-}
-
-inline
-void CMembersInfo::Next(CConstChildrenIterator& cc) const
-{
-    ++cc.GetIndex().m_Index;
-}
-
-inline
-void CMembersInfo::Next(CChildrenIterator& cc) const
-{
-    ++cc.GetIndex().m_Index;
-}
 
 #endif /* def MEMBERLIST__HPP  &&  ndef MEMBERLIST__INL */

@@ -4,14 +4,14 @@
 #################################
 
 LIBOBJ = \
-  objostrxml objistrxml objstack bytesrc \
+  classinfob \
   object iterator typeref typeinfo stdtypes ptrinfo autoptrinfo choiceptr \
   member memberid memberlist classinfo \
   stltypes enumerated choice asntypes \
   serial serialasn delaybuf \
-  exception strbuffer objistr objostr objlist \
+  exception strbuffer objistr objostr objlist objstack bytesrc \
   $(serial_ws50_rtti_kludge) \
-  objostrasn objistrasn objostrasnb objistrasnb
+  objostrasn objistrasn objostrasnb objistrasnb objostrxml objistrxml
 
 LIB    = xser
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/06/16 16:31:04  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.2  2000/05/04 16:23:09  vasilche
 * Updated CTypesIterator and CTypesConstInterator interface.
 *
@@ -50,7 +53,7 @@ BEGIN_NCBI_SCOPE
 
 class CChildIndex {
 public:
-    size_t m_Index;
+    int m_Index;
     CRef<CObject> m_AnyIterator;
 };
 

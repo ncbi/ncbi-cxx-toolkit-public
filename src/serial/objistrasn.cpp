@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2000/06/16 16:31:19  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.47  2000/06/07 19:45:59  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -231,7 +234,6 @@
 #include <corelib/ncbiutil.hpp>
 #include <serial/objistrasn.hpp>
 #include <serial/member.hpp>
-#include <serial/classinfo.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
 #include <math.h>
@@ -809,11 +811,6 @@ void CObjectIStreamAsn::SkipByteBlock(void)
 	Expect('H', true);
 }
 
-CObjectIStreamAsn::TIndex CObjectIStreamAsn::ReadIndex(void)
-{
-    return ReadUInt();
-}
-
 void CObjectIStreamAsn::ReadArray(CObjectArrayReader& reader,
                                   TTypeInfo /*arrayType*/,
                                   bool /*randomOrder*/,
@@ -925,12 +922,10 @@ void CObjectIStreamAsn::ReadClassRandom(CObjectClassReader& reader,
     Expect('{', true);
 
     TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
-    if ( parentClassInfo &&
-         parentClassInfo != CObjectGetTypeInfo::GetTypeInfo() ) {
+    if ( parentClassInfo )
         reader.ReadParentClass(*this, parentClassInfo);
-    }
     
-    size_t memberCount = members.GetSize();
+    size_t memberCount = members.GetMembersCount();
 
     char c = SkipWhiteSpace();
     if ( c == '}' ) {
@@ -993,10 +988,8 @@ void CObjectIStreamAsn::ReadClassSequential(CObjectClassReader& reader,
     Expect('{', true);
 
     TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
-    if ( parentClassInfo &&
-         parentClassInfo != CObjectGetTypeInfo::GetTypeInfo() ) {
+    if ( parentClassInfo )
         reader.ReadParentClass(*this, parentClassInfo);
-    }
     
     TMemberIndex pos = -1;
     char c = SkipWhiteSpace();
@@ -1043,7 +1036,7 @@ void CObjectIStreamAsn::ReadClassSequential(CObjectClassReader& reader,
     }
 
     // init all absent members
-    size_t end = members.GetSize();
+    size_t end = members.GetMembersCount();
     for ( size_t i = pos + 1; i < end; ++i ) {
         reader.AssignMemberDefault(*this, members, i);
     }
@@ -1160,9 +1153,9 @@ CObjectIStream::EPointerType CObjectIStreamAsn::ReadPointerType(void)
     }
 }
 
-CObjectIStream::TIndex CObjectIStreamAsn::ReadObjectPointer(void)
+CObjectIStream::TObjectIndex CObjectIStreamAsn::ReadObjectPointer(void)
 {
-    return ReadIndex();
+    return ReadInt();
 }
 
 string CObjectIStreamAsn::ReadOtherPointer(void)

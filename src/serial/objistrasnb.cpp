@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2000/06/16 16:31:20  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.36  2000/06/07 19:45:59  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -170,7 +173,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objistrasnb.hpp>
-#include <serial/classinfo.hpp>
 #include <serial/member.hpp>
 #include <serial/memberid.hpp>
 #include <serial/enumvalues.hpp>
@@ -950,12 +952,10 @@ void CObjectIStreamAsnBinary::ReadClassRandom(CObjectClassReader& reader,
     ExpectIndefiniteLength();
 
     TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
-    if ( parentClassInfo &&
-         parentClassInfo != CObjectGetTypeInfo::GetTypeInfo() ) {
+    if ( parentClassInfo )
         reader.ReadParentClass(*this, parentClassInfo);
-    }
 
-    size_t memberCount = members.GetSize();
+    size_t memberCount = members.GetMembersCount();
 
     if ( HaveMoreElements() ) {
         vector<bool> read(memberCount);
@@ -1003,10 +1003,8 @@ void CObjectIStreamAsnBinary::ReadClassSequential(CObjectClassReader& reader,
     ExpectIndefiniteLength();
 
     TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
-    if ( parentClassInfo &&
-         parentClassInfo != CObjectGetTypeInfo::GetTypeInfo() ) {
+    if ( parentClassInfo )
         reader.ReadParentClass(*this, parentClassInfo);
-    }
     
     TMemberIndex pos = -1;
     if ( HaveMoreElements() ) {
@@ -1036,7 +1034,7 @@ void CObjectIStreamAsnBinary::ReadClassSequential(CObjectClassReader& reader,
     }
 
     // init all absent members
-    size_t end = members.GetSize();
+    size_t end = members.GetMembersCount();
     for ( size_t i = pos + 1; i < end; ++i ) {
         reader.AssignMemberDefault(*this, members, i);
     }
@@ -1154,10 +1152,10 @@ CObjectIStreamAsnBinary::ReadEnum(const CEnumeratedTypeValues& values)
     return make_pair(value, true);
 }
 
-CObjectIStream::TIndex CObjectIStreamAsnBinary::ReadObjectPointer(void)
+CObjectIStream::TObjectIndex CObjectIStreamAsnBinary::ReadObjectPointer(void)
 {
-    unsigned data;
-    ReadStdUnsigned(*this, data);
+    TObjectIndex data;
+    ReadStdSigned(*this, data);
     return data;
 }
 

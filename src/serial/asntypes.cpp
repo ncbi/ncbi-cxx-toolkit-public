@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2000/06/16 16:31:17  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.40  2000/06/07 19:45:57  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -191,7 +194,7 @@
 #include <serial/objstack.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
-#include <serial/classinfo.hpp>
+#include <serial/classinfob.hpp>
 #include <serial/typemap.hpp>
 #include <asn.h>
 
@@ -254,9 +257,9 @@ void CSequenceOfTypeInfo::Init(void)
             SetChoiceNext();
             m_DataType = asnType;
         }
-        else if ( dynamic_cast<const CClassInfoTmpl*>(asnType) != 0 ) {
+        else if ( dynamic_cast<const CClassTypeInfoBase*>(asnType) != 0 ) {
             // user types
-            if ( dynamic_cast<const CClassInfoTmpl*>(asnType)->
+            if ( dynamic_cast<const CClassTypeInfoBase*>(asnType)->
                  GetMembers().GetFirstMemberOffset() < sizeof(void*) ) {
                 THROW1_TRACE(runtime_error,
                              "CSequenceOfTypeInfo: incompatible type: " +
@@ -448,6 +451,7 @@ public:
             object = *nextPtr;
             if ( !object )
                 object = *nextPtr = m_SequenceType->CreateData();
+            m_Object = object;
             m_ElementType->ReadData(in, Data(object));
         }
 
@@ -510,6 +514,7 @@ bool CSetOfTypeInfo::RandomOrder(void) const
     return true;
 }
 
+#if 0
 CChoiceTypeInfo::CChoiceTypeInfo(const string& name)
     : CParent(name)
 {
@@ -550,6 +555,7 @@ TObjectPtr CChoiceTypeInfo::x_GetData(TObjectPtr object, TMemberIndex ) const
 {
     return &Get(object).data;
 }
+#endif
 
 COctetStringTypeInfo::COctetStringTypeInfo(void)
     : CParent("OCTET STRING")

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/06/16 16:31:08  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.26  2000/05/24 20:08:16  vasilche
 * Implemented XML dump.
 *
@@ -142,7 +145,7 @@ BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
 class CObjectOStream;
-class CClassInfoTmpl;
+class CClassTypeInfo;
 class COObjectList;
 class CTypeRef;
 class CMemberId;
@@ -154,17 +157,23 @@ class CConstChildrenIterator;
 class CChildrenIterator;
 
 // this structure is used for sorting C++ standard type_info class by pointer
-struct CTypeInfoOrder
+struct CLessTypeInfo
 {
     // to avoid warning under MSVS, where type_info::before() erroneously
     // returns int, we'll define overloaded functions:
     static bool ToBool(bool b)
-        { return b; }
+        {
+            return b;
+        }
     static bool ToBool(int i)
-        { return i != 0; }
+        {
+            return i != 0;
+        }
 
     bool operator()(const type_info* i1, const type_info* i2) const
-		{ return ToBool(i1->before(*i2)); }
+		{
+            return ToBool(i1->before(*i2));
+        }
 };
 
 // CTypeInfo class contains all information about C++ types (both basic and
@@ -213,6 +222,8 @@ public:
     // set object to copy of another one
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const = 0;
 
+    // return true if type is inherited from CObject
+    virtual bool IsCObject(void) const;
     // return true CTypeInfo of object (redefined in polimorfic classes)
     virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
 
@@ -238,6 +249,8 @@ public:
 
     virtual bool IsType(TTypeInfo type) const;
     virtual bool MayContainType(TTypeInfo type) const;
+    virtual bool IsOrMayContainType(TTypeInfo type) const;
+    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
     virtual bool HaveChildren(TConstObjectPtr obj) const;
 
 protected:
@@ -263,7 +276,6 @@ protected:
 private:
     friend class CObjectOStream;
     friend class CObjectIStream;
-    friend class CClassInfoTmpl;
 
     CTypeInfo(const CTypeInfo&);
     CTypeInfo& operator=(const CTypeInfo&);

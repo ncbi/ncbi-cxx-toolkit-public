@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/06/16 16:31:03  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.15  2000/06/01 19:06:55  vasilche
 * Added parsing of XML data.
 *
@@ -112,9 +115,9 @@ class CChoicePointerTypeInfo : public CPointerTypeInfo
 {
     typedef CPointerTypeInfo CParent;
 public:
-    typedef CMembers::TIndex TIndex;
+    typedef CMembers::TMemberIndex TMemberIndex;
     typedef vector<CTypeRef> TVariantTypes;
-    typedef map<const type_info*, TIndex, CTypeInfoOrder> TVariantsByType;
+    typedef map<const type_info*, TMemberIndex, CLessTypeInfo> TVariantsByType;
 
     CChoicePointerTypeInfo(TTypeInfo typeInfo);
 #ifdef TYPENAME
@@ -147,7 +150,7 @@ protected:
 private:
     void Init(void);
     const TVariantsByType& VariantsByType(void) const;
-    TIndex FindVariant(TConstObjectPtr object) const;
+    TMemberIndex FindVariant(TConstObjectPtr object) const;
 
     CMembersInfo m_Variants;
     mutable auto_ptr<TVariantsByType> m_VariantsByType;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/06/16 16:31:12  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.8  2000/05/03 14:38:10  vasilche
 * SERIAL: added support for delayed reading to generated classes.
 * DATATOOL: added code generation for delayed reading.
@@ -132,7 +135,8 @@ protected:
     void GenerateClassCode(CClassCode& code,
                            CNcbiOstream& getters,
                            const string& methodPrefix,
-                           const string& codeClassName) const;
+                           bool haveUserClass,
+                           const string& classPrefix) const;
 
 private:
     TVariants m_Variants;
@@ -146,7 +150,6 @@ public:
     CChoiceRefTypeStrings(const string& className, const CNamespace& ns,
                           const string& fileName);
 
-    bool CanBeInSTL(void) const;
 };
 
 END_NCBI_SCOPE

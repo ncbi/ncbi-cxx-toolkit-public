@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/06/16 16:31:13  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.5  2000/04/17 19:11:05  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -82,6 +85,7 @@
 */
 
 #include <serial/tool/typestr.hpp>
+#include <serial/tool/namespace.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -89,6 +93,8 @@ class CStdTypeStrings : public CTypeStrings
 {
 public:
     CStdTypeStrings(const string& type);
+
+    EKind GetKind(void) const;
 
     string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
@@ -105,6 +111,10 @@ private:
 class CNullTypeStrings : public CTypeStrings
 {
 public:
+    EKind GetKind(void) const;
+
+    bool HaveSpecialRef(void) const;
+
     string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
     string GetInitializer(void) const;
@@ -119,7 +129,7 @@ class CStringTypeStrings : public CStdTypeStrings
 public:
     CStringTypeStrings(const string& type);
 
-    bool IsString(void) const;
+    EKind GetKind(void) const;
 
     string GetInitializer(void) const;
     string GetResetCode(const string& var) const;
@@ -133,6 +143,8 @@ class CStringStoreTypeStrings : public CStringTypeStrings
     typedef CStringTypeStrings CParent;
 public:
     CStringStoreTypeStrings(const string& type);
+
+    bool HaveSpecialRef(void) const;
 
     string GetRef(void) const;
 

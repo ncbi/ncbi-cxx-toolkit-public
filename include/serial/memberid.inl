@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/06/16 16:31:05  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.5  2000/05/24 20:08:12  vasilche
 * Implemented XML dump.
 *
@@ -53,7 +56,7 @@
 
 inline
 CMemberId::CMemberId(void)
-    : m_MemberList(0), m_ExplicitTag(-1), m_Tag(-1)
+    : m_MemberList(0), m_ExplicitTag(eNoExplicitTag), m_Tag(eNoExplicitTag)
 {
 }
 

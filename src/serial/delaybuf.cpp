@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/06/16 16:31:19  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.2  2000/05/03 14:38:13  vasilche
 * SERIAL: added support for delayed reading to generated classes.
 * DATATOOL: added code generation for delayed reading.
@@ -43,7 +46,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/delaybuf.hpp>
-#include <serial/serialbase.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <serial/bytesrc.hpp>
@@ -56,7 +58,7 @@ CDelayBuffer::~CDelayBuffer(void)
 }
 
 bool CDelayBuffer::DelayRead(CObjectIStream& in, TObjectPtr object,
-                             TIndex index, const CMemberInfo* memberInfo)
+                             TMemberIndex index, const CMemberInfo* memberInfo)
 {
     if ( !memberInfo->CanBeDelayed() )
         return false;
@@ -111,7 +113,7 @@ bool CDelayBuffer::CopyTo(CObjectOStream& out) const
 }
 
 CDelayBuffer::SInfo::SInfo(TObjectPtr object,
-                           TIndex index, const CMemberInfo* memberInfo,
+                           TMemberIndex index, const CMemberInfo* memberInfo,
                            ESerialDataFormat format,
                            const CRef<CByteSource>& source)
     : m_Object(object), m_Index(index), m_MemberInfo(memberInfo),

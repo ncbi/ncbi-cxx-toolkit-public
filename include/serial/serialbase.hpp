@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/06/16 16:31:07  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.3  2000/05/04 16:21:36  vasilche
 * Fixed bug in choice reset.
 *
@@ -54,24 +57,69 @@
 BEGIN_NCBI_SCOPE
 
 // forward declaration
-class CGeneratedClassInfo;
-class CGeneratedChoiceInfo;
+class CClassTypeInfoBase;
+class CClassTypeInfo;
+class CChoiceTypeInfo;
 class CDelayBufferData;
 
 // these methods are external to avoid inclusion of big headers
-void DoSetPostRead(CGeneratedClassInfo* info,
-                   void (*func)(void* object));
-void DoSetPreWrite(CGeneratedClassInfo* info,
-                   void (*func)(const void* object));
-void DoSetPostRead(CGeneratedChoiceInfo* info,
-                   void (*func)(void* object));
-void DoSetPreWrite(CGeneratedChoiceInfo* info,
-                   void (*func)(const void* object));
+class CClassInfoHelperBase
+{
+protected:
+    typedef const type_info* (*TGetTypeIdFunction)(TConstObjectPtr object);
+    typedef TObjectPtr (*TCreateFunction)(TTypeInfo info);
+    typedef int (*TWhichFunction)(TConstObjectPtr object);
+    typedef void (*TResetFunction)(TObjectPtr object);
+    typedef void (*TSelectFunction)(TObjectPtr object, int index);
+    typedef void (*TSelectDelayFunction)(TObjectPtr object, int index);
+    typedef void (*TPostReadFunction)(TTypeInfo info, TObjectPtr object);
+    typedef void (*TPreWriteFunction)(TTypeInfo info, TConstObjectPtr object);
+
+    static CChoiceTypeInfo* CreateChoiceInfo(const char* name, size_t size,
+                                             const type_info& ti,
+                                             TCreateFunction createFunc,
+                                             TWhichFunction whichFunc,
+                                             TSelectFunction selectFunc,
+                                             TResetFunction resetFunc = 0);
+
+public:
+#if HAVE_NCBI_C
+    static CChoiceTypeInfo* CreateAsnChoiceInfo(const char* name);
+    static CClassTypeInfo* CreateAsnStructInfo(const char* name, size_t size,
+                                               const type_info& id);
+#endif
+    
+protected:
+    static void SetCreateFunction(CClassTypeInfo* info, TCreateFunction func);
+    static void SetPostReadFunction(CClassTypeInfo* info, TPostReadFunction func);
+    static void SetPreWriteFunction(CClassTypeInfo* info, TPreWriteFunction func);
+    static void UpdateCObject(CClassTypeInfo* /*info*/, const void* /*object*/)
+        {
+            // do nothing
+        }
+    static void UpdateCObject(CClassTypeInfo* info, const CObject* object);
+
+    static void SetPostReadFunction(CChoiceTypeInfo* info, TPostReadFunction func);
+    static void SetPreWriteFunction(CChoiceTypeInfo* info, TPreWriteFunction func);
+    static void UpdateCObject(CChoiceTypeInfo* /*info*/, const void* /*object*/)
+        {
+            // do nothing
+        }
+    static void UpdateCObject(CChoiceTypeInfo* info, const CObject* object);
+
+    static CClassTypeInfo* CreateClassInfo(const char* name, size_t size,
+                                           const type_info& id,
+                                           TGetTypeIdFunction func);
+private:
+    static CClassTypeInfo* CreateClassInfo(const char* name, size_t size,
+                                           const type_info& id);
+};
 
 // template collecting all helper methods for generated classes
 template<class C>
-class CClassInfoHelper
+class CClassInfoHelper : public CClassInfoHelperBase
 {
+    typedef CClassInfoHelperBase CParent;
 public:
     typedef C CClassType;
 
@@ -84,10 +132,11 @@ public:
             return *static_cast<const CClassType*>(object);
         }
 
-    static void* Create(void)
+    static void* Create(TTypeInfo /*typeInfo*/)
         {
-            return CClassType::New();
+            return new CClassType();
         }
+
     static const type_info* GetTypeId(const void* object)
         {
             return &typeid(Get(object));
@@ -97,18 +146,18 @@ public:
             Get(object).Reset();
         }
 
-    static void PostRead(void* object)
+    static void PostRead(TTypeInfo /*info*/, void* object)
         {
             Get(object).PostRead();
         }
-    static void PreWrite(const void* object)
+    static void PreWrite(TTypeInfo /*info*/, const void* object)
         {
             Get(object).PreWrite();
         }
 
     static int Which(const void* object)
         {
-            return Get(object).Which()-1;
+            return Get(object).Which() - 1;
         }
     static void ResetChoice(void* object)
         {
@@ -126,100 +175,102 @@ public:
             Get(object).SelectDelayBuffer(E_Choice(index+1));
         }
 
-    static void SetPostRead(NCBI_NS_NCBI::CGeneratedClassInfo* info)
+    static void SetPostRead(NCBI_NS_NCBI::CClassTypeInfo* info)
         {
-            DoSetPostRead(info, &PostRead);
+            SetPostReadFunction(info, &PostRead);
         }
-    static void SetPreWrite(NCBI_NS_NCBI::CGeneratedClassInfo* info)
+    static void SetPreWrite(NCBI_NS_NCBI::CClassTypeInfo* info)
         {
-            DoSetPreWrite(info, &PreWrite);
+            SetPreWriteFunction(info, &PreWrite);
         }
-    static void SetPostRead(NCBI_NS_NCBI::CGeneratedChoiceInfo* info)
+    static void SetReadWriteMethods(NCBI_NS_NCBI::CClassTypeInfo* info)
         {
-            DoSetPostRead(info, &PostRead);
+            const CClassType* object = 0;
+            UpdateCObject(info, object);
+            NCBISERSetPostRead(object, info);
+            NCBISERSetPreWrite(object, info);
         }
-    static void SetPreWrite(NCBI_NS_NCBI::CGeneratedChoiceInfo* info)
+    static void SetPostRead(NCBI_NS_NCBI::CChoiceTypeInfo* info)
         {
-            DoSetPreWrite(info, &PreWrite);
+            SetPostReadFunction(info, &PostRead);
+        }
+    static void SetPreWrite(NCBI_NS_NCBI::CChoiceTypeInfo* info)
+        {
+            SetPreWriteFunction(info, &PreWrite);
+        }
+    static void SetReadWriteMethods(NCBI_NS_NCBI::CChoiceTypeInfo* info)
+        {
+            const CClassType* object = 0;
+            UpdateCObject(info, object);
+            NCBISERSetPostRead(object, info);
+            NCBISERSetPreWrite(object, info);
         }
 
-    static void SetMethods(NCBI_NS_NCBI::CGeneratedClassInfo* info)
+    static CClassTypeInfo* CreateAbstractClassInfo(const char* name)
         {
-            const CClassType* const object = 0;
-            NCBISERSetPostRead(info, object);
-            NCBISERSetPreWrite(info, object);
+            CClassTypeInfo* info =
+                CParent::CreateClassInfo(name, sizeof(CClassType),
+                                         typeid(CClassType), &GetTypeId);
+            SetReadWriteMethods(info);
+            return info;
         }
-    static void SetMethods(NCBI_NS_NCBI::CGeneratedChoiceInfo* info)
+    static CClassTypeInfo* CreateClassInfo(const char* name)
         {
-            const CClassType* const object = 0;
-            NCBISERSetPostRead(info, object);
-            NCBISERSetPreWrite(info, object);
+            CClassTypeInfo* info = CreateAbstractClassInfo(name);
+            SetCreateFunction(info, &Create);
+            return info;
         }
 
-    static CGeneratedClassInfo* CreateClassInfo(const char* name)
+    static CChoiceTypeInfo* CreateChoiceInfo(const char* name)
         {
-            CGeneratedClassInfo* info =
-                new CGeneratedClassInfo(name,
-                                        typeid(CClassType),
-                                        sizeof(CClassType),
-                                        &Create, &GetTypeId);
-            SetMethods(info);
+            CChoiceTypeInfo* info =
+                CParent::CreateChoiceInfo(name, sizeof(CClassType),
+                                          typeid(CClassType), &Create,
+                                          &Which, &Select, &ResetChoice);
+            SetReadWriteMethods(info);
             return info;
         }
-    static CGeneratedChoiceInfo* CreateChoiceInfo(const char* name)
+
+    static CClassTypeInfo* CreateAsnStructInfo(const char* name)
         {
-            CGeneratedChoiceInfo* info =
-                new CGeneratedChoiceInfo(name,
-                                         sizeof(CClassType),
-                                         &Create, &Which,
-                                         &ResetChoice, &Select);
-            SetMethods(info);
-            return info;
+            return CParent::CreateAsnStructInfo(name,
+                                                sizeof(CClassType),
+                                                typeid(CClassType));
         }
 };
-
-template<class CInfo, class C>
-inline
-void SetPostReadSet(CInfo* info, const C* /*object*/)
-{
-    NCBI_NS_NCBI::CClassInfoHelper<C>::SetPostRead(info);
-}
-
-template<class CInfo, class C>
-inline
-void SetPreWriteSet(CInfo* info, const C* /*object*/)
-{
-    NCBI_NS_NCBI::CClassInfoHelper<C>::SetPreWrite(info);
-}
 
 END_NCBI_SCOPE
 
 // these methods must be defined in root namespace so they have prefix NCBISER
 
 // default functions do nothing
-static inline
-void NCBISERSetPostRead(void* /*info*/, const void* /*object*/)
+template<class CInfo>
+inline
+void NCBISERSetPostRead(const void* /*object*/, CInfo* /*info*/)
 {
 }
 
-static inline
-void NCBISERSetPreWrite(void* /*info*/, const void* /*object*/)
+template<class CInfo>
+inline
+void NCBISERSetPreWrite(const void* /*object*/, CInfo* /*info*/)
 {
 }
 
 // define for declaring specific function
 #define NCBISER_HAVE_POST_READ(Class) \
 template<class CInfo> \
-inline void NCBISERSetPostRead(CInfo* info, const Class* object) \
+inline \
+void NCBISERSetPostRead(const Class* /*object*/, CInfo* info) \
 { \
-    NCBI_NS_NCBI::SetPostReadSet(info, object); \
+    NCBI_NS_NCBI::CClassInfoHelper<Class>::SetPostRead(info); \
 }
 
 #define NCBISER_HAVE_PRE_WRITE(Class) \
 template<class CInfo> \
-inline void NCBISERSetPreWrite(CInfo* info, const Class* object) \
+inline \
+void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 { \
-    NCBI_NS_NCBI::SetPreWriteSet(info, object); \
+    NCBI_NS_NCBI::CClassInfoHelper<Class>::SetPreWrite(info); \
 }
 
 #endif  /* SERIALBASE__HPP */

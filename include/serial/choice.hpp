@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/06/16 16:31:03  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.11  2000/06/01 19:06:54  vasilche
 * Added parsing of XML data.
 *
@@ -87,68 +90,69 @@
 
 #include <serial/typeinfo.hpp>
 #include <serial/typeref.hpp>
-//#include <serial/memberid.hpp>
-#include <serial/memberlist.hpp>
+#include <serial/classinfob.hpp>
 
 BEGIN_NCBI_SCOPE
 
 class CChoiceTypeInfoReader;
+class CClassInfoHelperBase;
 
-class CChoiceTypeInfoBase : public CTypeInfo {
-    typedef CTypeInfo CParent;
+class CChoiceTypeInfo : public CClassTypeInfoBase {
+    typedef CClassTypeInfoBase CParent;
 public:
-    CChoiceTypeInfoBase(const string& name);
-    CChoiceTypeInfoBase(const char* name);
-    ~CChoiceTypeInfoBase(void);
+    typedef TMemberIndex TChoiceIndex;
+    enum {
+        eEmptyIndex = -1
+    };
 
-    void AddVariant(const CMemberId& id, const CTypeRef& type);
-    void AddVariant(const string& name, const CTypeRef& type);
-    void AddVariant(const char* name, const CTypeRef& type);
+    typedef TChoiceIndex (*TWhichFunction)(TConstObjectPtr object);
+    typedef void (*TResetFunction)(TObjectPtr object);
+    typedef void (*TSelectFunction)(TObjectPtr object, TChoiceIndex index);
+    typedef void (*TSelectDelayFunction)(TObjectPtr object, TChoiceIndex index);
 
+    CChoiceTypeInfo(const string& name,
+                    size_t size,
+                    const type_info& ti,
+                    TCreateFunction createFunc,
+                    TWhichFunction whichFunc,
+                    TSelectFunction selectFunc,
+                    TResetFunction resetFunc = 0);
+    CChoiceTypeInfo(const char* name,
+                    size_t size,
+                    const type_info& ti,
+                    TCreateFunction createFunc,
+                    TWhichFunction whichFunc,
+                    TSelectFunction selectFunc,
+                    TResetFunction resetFunc = 0);
+
+protected:
+    friend class CClassInfoHelperBase;
+
+public:
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const;
     virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
-    TMemberIndex GetVariantsCount(void) const;
-    TTypeInfo GetVariantTypeInfo(TMemberIndex index) const;
-
-    CMembersInfo& GetMembers(void)
-        {
-            return m_Members;
-        }
-    const CMembersInfo& GetMembers(void) const
-        {
-            return m_Members;
-        }
-
-    virtual bool MayContainType(TTypeInfo type) const;
+    // iterators interface
     virtual bool HaveChildren(TConstObjectPtr object) const;
-    virtual void BeginTypes(CChildrenTypesIterator& cc) const;
     virtual void Begin(CConstChildrenIterator& cc) const;
     virtual void Begin(CChildrenIterator& cc) const;
-    virtual bool ValidTypes(const CChildrenTypesIterator& cc) const;
     virtual bool Valid(const CConstChildrenIterator& cc) const;
     virtual bool Valid(const CChildrenIterator& cc) const;
-    virtual TTypeInfo GetChildType(const CChildrenTypesIterator& cc) const;
     virtual void GetChild(const CConstChildrenIterator& cc,
                           CConstObjectInfo& child) const;
     virtual void GetChild(const CChildrenIterator& cc,
                           CObjectInfo& child) const;
-    virtual void NextType(CChildrenTypesIterator& cc) const;
     virtual void Next(CConstChildrenIterator& cc) const;
     virtual void Next(CChildrenIterator& cc) const;
     virtual void Erase(CChildrenIterator& cc) const;
 
-protected:
-    friend class CChoiceTypeInfoReader;
+    TMemberIndex GetIndex(TConstObjectPtr object) const;
+    void ResetIndex(TObjectPtr object) const;
+    void SetIndex(TObjectPtr object, TMemberIndex index) const;
+    void SetDelayIndex(TObjectPtr object, TMemberIndex index) const;
 
-    virtual TMemberIndex GetIndex(TConstObjectPtr object) const = 0;
-    virtual void ResetIndex(TObjectPtr object) const;
-    virtual void SetIndex(TObjectPtr object, TMemberIndex index) const = 0;
-    virtual void SetDelayIndex(TObjectPtr object, TMemberIndex index) const;
-    virtual TObjectPtr x_GetData(TObjectPtr object,
-                                 TMemberIndex index) const = 0;
     TConstObjectPtr GetData(TConstObjectPtr object, TMemberIndex index) const
         {
             return x_GetData(const_cast<TObjectPtr>(object), index);
@@ -158,6 +162,14 @@ protected:
             return x_GetData(object, index);
         }
 
+private:
+    TObjectPtr x_GetData(TObjectPtr object, TMemberIndex index) const;
+
+protected:
+    void SetSelectDelayFunction(TSelectDelayFunction func);
+
+    friend class CChoiceTypeInfoReader;
+
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
 
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
@@ -165,57 +177,10 @@ protected:
     virtual void SkipData(CObjectIStream& in) const;
 
 private:
-    CMembersInfo m_Members;
-};
-
-class CGeneratedChoiceInfo : public CChoiceTypeInfoBase
-{
-    typedef CChoiceTypeInfoBase CParent;
-public:
-    typedef int TChoiceIndex;
-    typedef TObjectPtr (*TCreateFunction)(void);
-    typedef TChoiceIndex (*TWhichFunction)(TConstObjectPtr object);
-    typedef void (*TResetFunction)(TObjectPtr object);
-    typedef void (*TSelectFunction)(TObjectPtr object, TChoiceIndex index);
-    typedef void (*TSelectDelayFunction)(TObjectPtr object, TChoiceIndex index);
-    typedef void (*TPostReadFunction)(TObjectPtr object);
-    typedef void (*TPreWriteFunction)(TConstObjectPtr object);
-
-    CGeneratedChoiceInfo(const char* name,
-                         size_t size,
-                         TCreateFunction createFunc,
-                         TWhichFunction whichFunc,
-                         TResetFunction resetFunc,
-                         TSelectFunction selectFunc);
-    
-    void SetSelectDelay(TSelectDelayFunction func);
-    void SetPostRead(TPostReadFunction func);
-    void SetPreWrite(TPreWriteFunction func);
-    
-protected:
-    size_t GetSize(void) const;
-    TObjectPtr Create(void) const;
-
-    TMemberIndex GetIndex(TConstObjectPtr object) const;
-    void ResetIndex(TObjectPtr object) const;
-    void SetIndex(TObjectPtr object, TMemberIndex index) const;
-    void SetDelayIndex(TObjectPtr object, TMemberIndex index) const;
-    TObjectPtr x_GetData(TObjectPtr object, TMemberIndex index) const;
-
-protected:
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-
-private:
-    size_t m_Size;
-    TCreateFunction m_CreateFunction;
     TWhichFunction m_WhichFunction;
     TResetFunction m_ResetFunction;
     TSelectFunction m_SelectFunction;
     TSelectDelayFunction m_SelectDelayFunction;
-    TPostReadFunction m_PostReadFunction;
-    TPreWriteFunction m_PreWriteFunction;
 };
 
 END_NCBI_SCOPE

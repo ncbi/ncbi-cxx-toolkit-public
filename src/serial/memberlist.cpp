@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/06/16 16:31:19  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.14  2000/06/07 19:45:58  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -122,7 +125,7 @@ const CMembers::TMembersByName& CMembers::GetMembersByName(void) const
         m_MembersByName.reset(members = new TMembersByName);
         // TMembers is vector so we'll use index access instead iterator
         // because we need index value to inser in map too
-        for ( TIndex i = 0, size = m_Members.size(); i < size; ++i ) {
+        for ( TMemberIndex i = 0, size = m_Members.size(); i < size; ++i ) {
             const string& name = m_Members[i].GetName();
             if ( !members->insert(TMembersByName::value_type(name,
                                                              i)).second ) {
@@ -139,10 +142,10 @@ const CMembers::TMembersByTag& CMembers::GetMembersByTag(void) const
     TMembersByTag* members = m_MembersByTag.get();
     if ( !members ) {
         m_MembersByTag.reset(members = new TMembersByTag);
-        TTag currentTag = -1;
+        TTag currentTag = CMemberId::eNoExplicitTag;
         // TMembers is vector so we'll use index access instead iterator
         // because we need index value to inser in map too
-        for ( TIndex i = 0, size = m_Members.size(); i < size; ++i ) {
+        for ( TMemberIndex i = 0, size = m_Members.size(); i < size; ++i ) {
             TTag t = m_Members[i].GetTag();
             if ( t < 0 ) {
                 if ( i == 0 && m_Members[i].GetName().empty() ) {
@@ -163,7 +166,7 @@ const CMembers::TMembersByTag& CMembers::GetMembersByTag(void) const
 
 void CMembers::UpdateMemberTags(void)
 {
-    TTag currentTag = -1;
+    TTag currentTag = CMemberId::eNoExplicitTag;
     // TMembers is vector so we'll use index access instead iterator
     // because we need index value to inser in map too
     non_const_iterate ( TMembers, i, m_Members ) {
@@ -171,7 +174,7 @@ void CMembers::UpdateMemberTags(void)
         if ( t < 0 ) {
             if ( i == m_Members.begin() && i->GetName().empty() ) {
                 // parent class - skip it
-                i->m_Tag = -1;
+                i->m_Tag = CMemberId::eNoExplicitTag;
                 continue;
             }
             t = currentTag + 1;
@@ -181,7 +184,7 @@ void CMembers::UpdateMemberTags(void)
     }
 }
 
-CMembers::TIndex CMembers::FindMember(const CLightString& name) const
+CMembers::TMemberIndex CMembers::FindMember(const CLightString& name) const
 {
     const TMembersByName& members = GetMembersByName();
     TMembersByName::const_iterator i = members.find(name);
@@ -190,8 +193,8 @@ CMembers::TIndex CMembers::FindMember(const CLightString& name) const
     return i->second;
 }
 
-CMembers::TIndex CMembers::FindMember(const CLightString& name,
-                                      TIndex pos) const
+CMembers::TMemberIndex CMembers::FindMember(const CLightString& name,
+                                      TMemberIndex pos) const
 {
     for ( size_t i = pos + 1, size = m_Members.size(); i < size; ++i ) {
         if ( name == m_Members[i].GetName() )
@@ -200,7 +203,7 @@ CMembers::TIndex CMembers::FindMember(const CLightString& name,
     return -1;
 }
 
-CMembers::TIndex CMembers::FindMember(TTag tag) const
+CMembers::TMemberIndex CMembers::FindMember(TTag tag) const
 {
     const TMembersByTag& members = GetMembersByTag();
     TMembersByTag::const_iterator i = members.find(tag);
@@ -209,7 +212,7 @@ CMembers::TIndex CMembers::FindMember(TTag tag) const
     return i->second;
 }
 
-CMembers::TIndex CMembers::FindMember(TTag tag, TIndex pos) const
+CMembers::TMemberIndex CMembers::FindMember(TTag tag, TMemberIndex pos) const
 {
     for ( size_t i = pos + 1, size = m_Members.size(); i < size; ++i ) {
         if ( m_Members[i].GetTag() == tag )
@@ -241,6 +244,19 @@ CMemberInfo* CMembersInfo::AddMember(const CMemberId& name,
                                      TTypeInfo type)
 {
     return AddMember(name, new CRealMemberInfo(size_t(member), type));
+}
+
+CMemberInfo* CMembersInfo::AddMember(const CMemberId& name,
+                                     TConstObjectPtr member,
+                                     const CTypeRef& type)
+{
+    return AddMember(name, new CRealMemberInfo(size_t(member), type));
+}
+
+CMemberInfo* CMembersInfo::AddMember(const char* name,
+                                     CMemberInfo* member)
+{
+    return AddMember(CMemberId(name),  member);
 }
 
 CMemberInfo* CMembersInfo::AddMember(const char* name,
@@ -277,7 +293,7 @@ CMembersInfo::GetMembersByOffset(void) const
         m_MembersByOffset.reset(members = new TMembersByOffset);
         // fill map
         
-        for ( TIndex i = 0, size = m_MembersInfo.size();
+        for ( TMemberIndex i = 0, size = m_MembersInfo.size();
               i != size; ++i ) {
             const CMemberInfo& info = *m_MembersInfo[i];
             size_t offset = info.GetOffset();
@@ -299,17 +315,6 @@ CMembersInfo::GetMembersByOffset(void) const
         }
     }
     return *members;
-}
-
-bool CMembersInfo::MayContainType(TTypeInfo typeInfo) const
-{
-    iterate ( TMembersInfo, i, m_MembersInfo ) {
-        TTypeInfo childType = (*i)->GetTypeInfo();
-        if ( childType->IsType(typeInfo) ||
-            childType->MayContainType(typeInfo) )
-            return true;
-    }
-    return false;
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2000/06/16 16:31:18  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.46  2000/06/07 19:45:57  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -220,26 +223,102 @@
 #include <serial/objostr.hpp>
 #include <serial/iteratorbase.hpp>
 #include <serial/delaybuf.hpp>
-#include <set>
+#include <serial/stdtypes.hpp>
 
 BEGIN_NCBI_SCOPE
 
-static
-string ClassName(const type_info& id)
+CClassTypeInfo::CClassTypeInfo(const type_info& ti, size_t size)
+    : CParent(ti, size), m_RandomOrder(false), m_Implicit(false),
+      m_ParentClassInfo(0), m_GetTypeIdFunction(0)
 {
-    const char* s = id.name();
-    if ( memcmp(s, "class ", 6) == 0 ) {
-        // MSVC
-        return s + 6;
-    }
-    else if ( isdigit(*s ) ) {
-        // GCC
-        while ( isdigit(*s) )
-            ++s;
-        return s;
-    }
-    else {
-        return s;
+}
+
+CClassTypeInfo::CClassTypeInfo(const string& name, const type_info& ti, size_t size)
+    : CParent(name, ti, size), m_RandomOrder(false), m_Implicit(false),
+      m_ParentClassInfo(0), m_GetTypeIdFunction(0)
+{
+}
+
+CClassTypeInfo::CClassTypeInfo(const char* name, const type_info& ti, size_t size)
+    : CParent(name, ti, size), m_RandomOrder(false), m_Implicit(false),
+      m_ParentClassInfo(0), m_GetTypeIdFunction(0)
+{
+}
+
+void CClassTypeInfo::AddSubClass(const CMemberId& id,
+                                 const CTypeRef& type)
+{
+    TSubClasses* subclasses = m_SubClasses.get();
+    if ( !subclasses )
+        m_SubClasses.reset(subclasses = new TSubClasses);
+    subclasses->push_back(make_pair(id, type));
+}
+
+void CClassTypeInfo::AddSubClassNull(const CMemberId& id)
+{
+    AddSubClass(id, CTypeRef(TTypeInfo(0)));
+}
+
+void CClassTypeInfo::AddSubClass(const char* id, TTypeInfoGetter getter)
+{
+    AddSubClass(CMemberId(id), getter);
+}
+
+void CClassTypeInfo::AddSubClassNull(const char* id)
+{
+    AddSubClassNull(CMemberId(id));
+}
+
+TTypeInfo CClassTypeInfo::GetParentTypeInfo(void) const
+{
+    return m_ParentClassInfo;
+}
+
+void CClassTypeInfo::SetParentClass(TTypeInfo parentType)
+{
+    const CClassTypeInfo* parentClass =
+        dynamic_cast<const CClassTypeInfo*>(parentType);
+    _ASSERT(parentClass != 0);
+    _ASSERT(IsCObject() == parentClass->IsCObject());
+    _ASSERT(!m_ParentClassInfo);
+    m_ParentClassInfo = parentClass;
+}
+
+void CClassTypeInfo::SetGetTypeIdFunction(TGetTypeIdFunction func)
+{
+    _ASSERT(m_GetTypeIdFunction == 0);
+    _ASSERT(func != 0);
+    m_GetTypeIdFunction = func;
+}
+
+const type_info* CClassTypeInfo::GetCPlusPlusTypeInfo(TConstObjectPtr object) const
+{
+    if ( m_GetTypeIdFunction ) 
+        return m_GetTypeIdFunction(object);
+    return 0;
+}
+
+TTypeInfo CClassTypeInfo::GetRealTypeInfo(TConstObjectPtr object) const
+{
+    const type_info* ti = GetCPlusPlusTypeInfo(object);
+    if ( ti == 0 || ti == &GetId() )
+        return this;
+    RegisterSubClasses();
+    return GetClassInfoById(*ti);
+}
+
+void CClassTypeInfo::RegisterSubClasses(void) const
+{
+    const TSubClasses* subclasses = m_SubClasses.get();
+    if ( subclasses ) {
+        for ( TSubClasses::const_iterator i = subclasses->begin();
+              i != subclasses->end();
+              ++i ) {
+            const CClassTypeInfo* classInfo = 
+                dynamic_cast<const CClassTypeInfo*>(i->second.Get());
+            if ( classInfo )
+                classInfo->RegisterSubClasses();
+        }
     }
 }
 
@@ -303,203 +382,10 @@ void AssignMemberDefault(TObjectPtr object,
     AssignMemberDefault(object, members.GetMemberInfo(index));
 }
 
-CClassInfoTmpl::CClassInfoTmpl(const type_info& id, size_t size)
-    : CParent(ClassName(id)), m_Id(id), m_Size(size),
-      m_RandomOrder(false), m_Implicit(false), m_ParentClassInfo(0)
-{
-    Register();
-}
-
-CClassInfoTmpl::CClassInfoTmpl(const string& name, const type_info& id,
-                               size_t size)
-    : CParent(name), m_Id(id), m_Size(size),
-      m_RandomOrder(false), m_Implicit(false), m_ParentClassInfo(0)
-{
-    Register();
-}
-
-CClassInfoTmpl::CClassInfoTmpl(const char* name, const type_info& id,
-                               size_t size)
-    : CParent(name), m_Id(id), m_Size(size),
-      m_RandomOrder(false), m_Implicit(false), m_ParentClassInfo(0)
-{
-    Register();
-}
-
-CClassInfoTmpl::~CClassInfoTmpl(void)
-{
-    Deregister();
-}
-
-CClassInfoTmpl::TClasses* CClassInfoTmpl::sm_Classes = 0;
-CClassInfoTmpl::TClassesById* CClassInfoTmpl::sm_ClassesById = 0;
-CClassInfoTmpl::TClassesByName* CClassInfoTmpl::sm_ClassesByName = 0;
-
-inline
-CClassInfoTmpl::TClasses& CClassInfoTmpl::Classes(void)
-{
-    TClasses* classes = sm_Classes;
-    if ( !classes ) {
-        classes = sm_Classes = new TClasses;
-    }
-    return *classes;
-}
-
-inline
-CClassInfoTmpl::TClassesById& CClassInfoTmpl::ClassesById(void)
-{
-    TClassesById* classes = sm_ClassesById;
-    if ( !classes ) {
-        classes = sm_ClassesById = new TClassesById;
-        const TClasses& cc = Classes();
-        for ( TClasses::const_iterator i = cc.begin(); i != cc.end(); ++i ) {
-            const CClassInfoTmpl* info = *i;
-            if ( info->GetId() != typeid(void) ) {
-                _TRACE("class by id: " << info->GetId().name()
-                       << " : " << info->GetName());
-                if ( !classes->insert(
-                         TClassesById::value_type(&info->GetId(),
-                                                  info)).second ) {
-                    THROW1_TRACE(runtime_error, "duplicated class ids");
-                }
-            }
-        }
-    }
-    return *classes;
-}
-
-inline
-CClassInfoTmpl::TClassesByName& CClassInfoTmpl::ClassesByName(void)
-{
-    TClassesByName* classes = sm_ClassesByName;
-    if ( !classes ) {
-        classes = sm_ClassesByName = new TClassesByName;
-        const TClasses& cc = Classes();
-        for ( TClasses::const_iterator i = cc.begin(); i != cc.end(); ++i ) {
-            const CClassInfoTmpl* info = *i;
-            if ( !info->GetName().empty() ) {
-                _TRACE("class by name: " << " : " <<
-                       info->GetName() << info->GetId().name());
-                if ( !classes->insert(
-                         TClassesByName::value_type(info->GetName(),
-                                                    info)).second ) {
-                    THROW1_TRACE(runtime_error, "duplicated class names");
-                }
-            }
-        }
-    }
-    return *classes;
-}
-
-void CClassInfoTmpl::Register(void)
-{
-    delete sm_ClassesById;
-    sm_ClassesById = 0;
-    delete sm_ClassesByName;
-    sm_ClassesByName = 0;
-    Classes().push_back(this);
-}
-
-void CClassInfoTmpl::Deregister(void) const
-{
-}
-
-void CClassInfoTmpl::RegisterSubClasses(void) const
-{
-    const TSubClasses* subclasses = m_SubClasses.get();
-    if ( subclasses ) {
-        for ( TSubClasses::const_iterator i = subclasses->begin();
-              i != subclasses->end();
-              ++i ) {
-            const CClassInfoTmpl* classInfo = 
-                dynamic_cast<const CClassInfoTmpl*>(i->second.Get());
-            if ( classInfo )
-                classInfo->RegisterSubClasses();
-        }
-    }
-}
-
-TTypeInfo CClassInfoTmpl::GetClassInfoById(const type_info& id)
-{
-    TClassesById& types = ClassesById();
-    TClassesById::iterator i = types.find(&id);
-    if ( i == types.end() ) {
-        string msg("class not found: ");
-        msg += id.name();
-        THROW1_TRACE(runtime_error, msg);
-    }
-    return i->second;
-}
-
-TTypeInfo CClassInfoTmpl::GetClassInfoByName(const string& name)
-{
-    TClassesByName& classes = ClassesByName();
-    TClassesByName::iterator i = classes.find(name);
-    if ( i == classes.end() ) {
-        string msg("class not found: ");
-        msg += name;
-        THROW1_TRACE(runtime_error, msg);
-    }
-    return i->second;
-}
-
-TTypeInfo CClassInfoTmpl::GetRealTypeInfo(TConstObjectPtr object) const
-{
-    const type_info* ti = GetCPlusPlusTypeInfo(object);
-    if ( ti == 0 || ti == &GetId() )
-        return this;
-    RegisterSubClasses();
-    return GetClassInfoById(*ti);
-}
-
-size_t CClassInfoTmpl::GetSize(void) const
-{
-    return m_Size;
-}
-
-void CClassInfoTmpl::UpdateClassInfo(const CObject* /* object */)
-{
-    SetParentClass(CObjectGetTypeInfo::GetTypeInfo());
-}
-
-void CClassInfoTmpl::SetParentClass(TTypeInfo parentType)
-{
-    const CClassInfoTmpl* parentClass =
-        dynamic_cast<const CClassInfoTmpl*>(parentType);
-    _ASSERT(parentClass != 0);
-    _ASSERT(!m_ParentClassInfo ||
-            m_ParentClassInfo == CObjectGetTypeInfo::GetTypeInfo());
-    m_ParentClassInfo = parentClass;
-}
-
-void CClassInfoTmpl::AddSubClass(const CMemberId& id,
-                                 const CTypeRef& type)
-{
-    TSubClasses* subclasses = m_SubClasses.get();
-    if ( !subclasses )
-        m_SubClasses.reset(subclasses = new TSubClasses);
-    subclasses->push_back(make_pair(id, type));
-}
-
-void CClassInfoTmpl::AddSubClassNull(const CMemberId& id)
-{
-    AddSubClass(id, CTypeRef(TTypeInfo(0)));
-}
-
-void CClassInfoTmpl::AddSubClass(const char* id, TTypeInfoGetter getter)
-{
-    AddSubClass(CMemberId(id), getter);
-}
-
-void CClassInfoTmpl::AddSubClassNull(const char* id)
-{
-    AddSubClassNull(CMemberId(id));
-}
-
 inline
 const CMemberInfo* GetImplicitMember(const CMembersInfo& members)
 {
-    _ASSERT(members.GetSize() == 1);
+    _ASSERT(members.GetMembersCount() == 1);
     return members.GetMemberInfo(0);
 }
 
@@ -521,7 +407,7 @@ public:
         {
             TConstObjectPtr obj = m_Object;
         
-            size_t memberCount = members.GetSize();
+            size_t memberCount = members.GetMembersCount();
             for ( size_t index = 0; index < memberCount; ++index ) {
                 const CMemberInfo* info = members.GetMemberInfo(index);
                 bool haveSetFlag = info->HaveSetFlag();
@@ -582,7 +468,9 @@ public:
             const CMemberInfo* info = members.GetMemberInfo(index);
             TObjectPtr obj = m_Object;
             if ( info->CanBeDelayed() &&
-                 info->GetDelayBuffer(obj).DelayRead(in, obj, -1, info) ) {
+                 info->GetDelayBuffer(obj).DelayRead(in, obj,
+                                                     CDelayBuffer::eNoMemberIndex,
+                                                     info) ) {
                 // we've got delayed buffer
             }
             else {
@@ -644,27 +532,28 @@ public:
         }
 };
 
-void CClassInfoTmpl::WriteData(CObjectOStream& out,
+void CClassTypeInfo::WriteData(CObjectOStream& out,
                                TConstObjectPtr object) const
 {
+    DoPreWrite(object);
     if ( Implicit() ) {
         // special case: class contains only one implicit member
         // we'll behave as this one member
-        const CMemberInfo* info = GetImplicitMember(m_Members);
+        const CMemberInfo* info = GetImplicitMember(GetMembers());
         out.WriteNamedType(this, info->GetTypeInfo(), GetMember(info, object));
     }
     else {
         CClassInfoClassWriter writer(object);
-        out.WriteClass(writer, this, m_Members, RandomOrder());
+        out.WriteClass(writer, this, GetMembers(), RandomOrder());
     }
 }
 
-void CClassInfoTmpl::SkipData(CObjectIStream& in) const
+void CClassTypeInfo::SkipData(CObjectIStream& in) const
 {
     if ( Implicit() ) {
         // special case: class contains only one implicit member
         // we'll behave as this one member
-        const CMemberInfo* info = GetImplicitMember(m_Members);
+        const CMemberInfo* info = GetImplicitMember(GetMembers());
         in.SkipNamedType(this, info->GetTypeInfo());
     }
     else {
@@ -673,53 +562,37 @@ void CClassInfoTmpl::SkipData(CObjectIStream& in) const
     }
 }
 
-void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
+void CClassTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
     if ( Implicit() ) {
         // special case: class contains only one implicit member
         // we'll behave as this one member
-        const CMemberInfo* info = GetImplicitMember(m_Members);
+        const CMemberInfo* info = GetImplicitMember(GetMembers());
         in.ReadNamedType(this, info->GetTypeInfo(), GetMember(info, object));
     }
     else {
         CClassInfoClassReader reader(object);
         in.ReadClass(reader, this, GetMembers(), RandomOrder());
     }
+    DoPostRead(object);
 }
 
-const type_info*
-CCObjectClassInfo::GetCPlusPlusTypeInfo(TConstObjectPtr object) const
-{
-    return &typeid(*static_cast<const CObject*>(object));
-}
-
-TTypeInfo CObjectGetTypeInfo::GetTypeInfo(void)
-{
-    static TTypeInfo typeInfo = new CCObjectClassInfo;
-    return typeInfo;
-}
-
-TTypeInfo CClassInfoTmpl::GetParentTypeInfo(void) const
-{
-    return m_ParentClassInfo;
-}
-
-bool CClassInfoTmpl::IsDefault(TConstObjectPtr /*object*/) const
+bool CClassTypeInfo::IsDefault(TConstObjectPtr /*object*/) const
 {
     return false;
 }
 
-void CClassInfoTmpl::SetDefault(TObjectPtr dst) const
+void CClassTypeInfo::SetDefault(TObjectPtr dst) const
 {
-    for ( TMemberIndex i = 0, size = m_Members.GetSize(); i < size; ++i ) {
-        AssignMemberDefault(dst, m_Members, i);
+    for ( TMemberIndex i = 0, size = GetMembersCount(); i < size; ++i ) {
+        AssignMemberDefault(dst, GetMembers(), i);
     }
 }
 
-bool CClassInfoTmpl::Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
+bool CClassTypeInfo::Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
 {
-    for ( TMemberIndex i = 0, size = m_Members.GetSize(); i < size; ++i ) {
-        const CMemberInfo* info = m_Members.GetMemberInfo(i);
+    for ( TMemberIndex i = 0, size = GetMembersCount(); i < size; ++i ) {
+        const CMemberInfo* info = GetMemberInfo(i);
         if ( !info->GetTypeInfo()->Equals(GetMember(info, object1),
                                           GetMember(info, object2)) )
             return false;
@@ -731,10 +604,10 @@ bool CClassInfoTmpl::Equals(TConstObjectPtr object1, TConstObjectPtr object2) co
     return true;
 }
 
-void CClassInfoTmpl::Assign(TObjectPtr dst, TConstObjectPtr src) const
+void CClassTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
-    for ( TMemberIndex i = 0, size = m_Members.GetSize(); i < size; ++i ) {
-        const CMemberInfo* info = m_Members.GetMemberInfo(i);
+    for ( TMemberIndex i = 0, size = GetMembersCount(); i < size; ++i ) {
+        const CMemberInfo* info = GetMemberInfo(i);
         info->GetTypeInfo()->Assign(GetMember(info, dst),
                                     GetMember(info, src));
         if ( info->HaveSetFlag() ) {
@@ -743,186 +616,140 @@ void CClassInfoTmpl::Assign(TObjectPtr dst, TConstObjectPtr src) const
     }
 }
 
-const type_info* CClassInfoTmpl::GetCPlusPlusTypeInfo(TConstObjectPtr ) const
+bool CClassTypeInfo::IsType(TTypeInfo typeInfo) const
 {
-    return 0;
+    return typeInfo->IsParentClassOf(this);
 }
 
-bool CClassInfoTmpl::IsType(TTypeInfo typeInfo) const
+bool CClassTypeInfo::IsParentClassOf(const CClassTypeInfo* typeInfo) const
 {
-    if ( typeInfo == this )
-        return true;
-    TTypeInfo parentType = m_ParentClassInfo;
-    if ( parentType )
-        return parentType->IsType(typeInfo);
+    for ( ; typeInfo; typeInfo = typeInfo->m_ParentClassInfo ) {
+        if ( typeInfo == this )
+            return true;
+    }
     return false;
 }
 
-bool CClassInfoTmpl::MayContainType(TTypeInfo typeInfo) const
+void CClassTypeInfo::BeginTypes(CChildrenTypesIterator& cc) const
 {
-    TContainedTypes* cache = m_ContainedTypes.get();
-    if ( cache ) {
-        TContainedTypes::const_iterator found = cache->find(typeInfo);
-        if ( found != cache->end() )
-            return found->second;
-        (*cache)[typeInfo] = false;
+    if ( m_ParentClassInfo )
+        cc.GetIndex().m_Index = eIteratorIndexParentClass;
+    else
+        CParent::BeginTypes(cc);
+}
+
+TTypeInfo CClassTypeInfo::GetChildType(const CChildrenTypesIterator& cc) const
+{
+    if ( cc.GetIndex().m_Index == eIteratorIndexParentClass ) {
+        _ASSERT(m_ParentClassInfo);
+        return m_ParentClassInfo;
+    }
+    else
+        return CParent::GetChildType(cc);
+}
+
+bool CClassTypeInfo::CalcMayContainType(TTypeInfo typeInfo) const
+{
+    const CClassTypeInfoBase* parentClass = m_ParentClassInfo;
+    return parentClass && parentClass->MayContainType(typeInfo) ||
+        CParent::CalcMayContainType(typeInfo);
+}
+
+bool CClassTypeInfo::HaveChildren(TConstObjectPtr object) const
+{
+    TTypeInfo parentClassInfo = GetParentTypeInfo();
+    if ( parentClassInfo && parentClassInfo->HaveChildren(object) )
+        return true;
+    return !GetMembers().Empty();
+}
+
+void CClassTypeInfo::Begin(CConstChildrenIterator& cc) const
+{
+    cc.GetIndex().m_Index = m_ParentClassInfo? eIteratorIndexParentClass: 0;
+}
+
+void CClassTypeInfo::Begin(CChildrenIterator& cc) const
+{
+    cc.GetIndex().m_Index = m_ParentClassInfo? eIteratorIndexParentClass: 0;
+}
+
+bool CClassTypeInfo::Valid(const CConstChildrenIterator& cc) const
+{
+    return cc.GetIndex().m_Index < GetMembersCount();
+}
+
+bool CClassTypeInfo::Valid(const CChildrenIterator& cc) const
+{
+    return cc.GetIndex().m_Index < GetMembersCount();
+}
+
+void CClassTypeInfo::GetChild(const CConstChildrenIterator& cc,
+                              CConstObjectInfo& child) const
+{
+    int index = cc.GetIndex().m_Index;
+    if ( index == eIteratorIndexParentClass ) {
+        _ASSERT(GetParentTypeInfo());
+        child.Set(cc.GetParentPtr(), GetParentTypeInfo());
     }
     else {
-        m_ContainedTypes.reset(cache = new TContainedTypes);
+        const CMemberInfo* member = GetMemberInfo(index);
+        child.Set(member->GetMember(cc.GetParentPtr()), member->GetTypeInfo());
     }
-    bool contains = GetMembers().MayContainType(typeInfo);
-    (*cache)[typeInfo] = contains;
-    return contains;
 }
 
-bool CClassInfoTmpl::HaveChildren(TConstObjectPtr object) const
+void CClassTypeInfo::GetChild(const CChildrenIterator& cc,
+                              CObjectInfo& child) const
 {
-    return GetMembers().HaveChildren(object);
+    int index = cc.GetIndex().m_Index;
+    if ( index == eIteratorIndexParentClass ) {
+        _ASSERT(GetParentTypeInfo());
+        child.Set(cc.GetParentPtr(), GetParentTypeInfo());
+    }
+    else {
+        const CMemberInfo* member = GetMemberInfo(index);
+        child.Set(member->GetMember(cc.GetParentPtr()), member->GetTypeInfo());
+    }
 }
 
-void CClassInfoTmpl::BeginTypes(CChildrenTypesIterator& cc) const
+void CClassTypeInfo::Next(CConstChildrenIterator& cc) const
 {
-    GetMembers().BeginTypes(cc);
+    ++cc.GetIndex().m_Index;
 }
 
-void CClassInfoTmpl::Begin(CConstChildrenIterator& cc) const
+void CClassTypeInfo::Next(CChildrenIterator& cc) const
 {
-    GetMembers().Begin(cc);
+    ++cc.GetIndex().m_Index;
 }
 
-void CClassInfoTmpl::Begin(CChildrenIterator& cc) const
+void CClassTypeInfo::Erase(CChildrenIterator& cc) const
 {
-    GetMembers().Begin(cc);
-}
+    int index = cc.GetIndex().m_Index;
+    if ( index == eIteratorIndexParentClass )
+        THROW1_TRACE(runtime_error, "cannot erase parent class");
 
-bool CClassInfoTmpl::ValidTypes(const CChildrenTypesIterator& cc) const
-{
-    return GetMembers().ValidTypes(cc);
-}
-
-bool CClassInfoTmpl::Valid(const CConstChildrenIterator& cc) const
-{
-    return GetMembers().Valid(cc);
-}
-
-bool CClassInfoTmpl::Valid(const CChildrenIterator& cc) const
-{
-    return GetMembers().Valid(cc);
-}
-
-TTypeInfo CClassInfoTmpl::GetChildType(const CChildrenTypesIterator& cc) const
-{
-    return GetMembers().GetChildType(cc);
-}
-
-void CClassInfoTmpl::GetChild(const CConstChildrenIterator& cc,
-                                CConstObjectInfo& child) const
-{
-    GetMembers().GetChild(cc, child);
-}
-
-void CClassInfoTmpl::GetChild(const CChildrenIterator& cc,
-                         CObjectInfo& child) const
-{
-    GetMembers().GetChild(cc, child);
-}
-
-void CClassInfoTmpl::NextType(CChildrenTypesIterator& cc) const
-{
-    GetMembers().NextType(cc);
-}
-
-void CClassInfoTmpl::Next(CConstChildrenIterator& cc) const
-{
-    GetMembers().Next(cc);
-}
-
-void CClassInfoTmpl::Next(CChildrenIterator& cc) const
-{
-    GetMembers().Next(cc);
-}
-
-void CClassInfoTmpl::Erase(CChildrenIterator& cc) const
-{
-    const CMemberInfo* info = GetMembers().GetMemberInfo(cc);
+    const CMemberInfo* info = GetMemberInfo(cc.GetIndex().m_Index);
     if ( info->GetDefault() )
         THROW1_TRACE(runtime_error, "cannot erase member with default value");
 
     AssignMemberDefault(cc.GetParentPtr(), info);
 }
 
-TObjectPtr CStructInfoTmpl::Create(void) const
+class CCObjectClassInfo : public CStdTypeInfo<void>
 {
-    TObjectPtr object = calloc(GetSize(), 1);
-    if ( object == 0 )
-        THROW_TRACE(bad_alloc, ());
-    _TRACE("Create: " << GetName() << ": " << NStr::PtrToString(object));
-    return object;
+    typedef CTypeInfo CParent;
+public:
+    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
+};
+
+TTypeInfo CObjectGetTypeInfo::GetTypeInfo(void)
+{
+    static TTypeInfo typeInfo = new CCObjectClassInfo;
+    return typeInfo;
 }
 
-CGeneratedClassInfo::CGeneratedClassInfo(const char* name,
-                                         const type_info& typeId,
-                                         size_t size,
-                                         TCreateFunction cF,
-                                         TGetTypeIdFunction gTIF)
-    : CParent(name, typeId, size),
-      m_CreateFunction(cF), m_GetTypeIdFunction(gTIF),
-      m_PostReadFunction(0), m_PreWriteFunction(0)
+bool CCObjectClassInfo::IsParentClassOf(const CClassTypeInfo* classInfo) const
 {
-}
-
-void CGeneratedClassInfo::SetPostRead(TPostReadFunction func)
-{
-    _ASSERT(m_PostReadFunction == 0);
-    _ASSERT(func != 0);
-    m_PostReadFunction = func;
-}
-
-void CGeneratedClassInfo::SetPreWrite(TPreWriteFunction func)
-{
-    _ASSERT(m_PreWriteFunction == 0);
-    _ASSERT(func != 0);
-    m_PreWriteFunction = func;
-}
-
-void DoSetPostRead(CGeneratedClassInfo* info,
-                   void (*func)(TObjectPtr object))
-{
-    info->SetPostRead(func);
-}
-
-void DoSetPreWrite(CGeneratedClassInfo* info,
-                   void (*func)(TConstObjectPtr object))
-{
-    info->SetPreWrite(func);
-}
-
-TObjectPtr CGeneratedClassInfo::Create(void) const
-{
-    if ( m_CreateFunction )
-        return m_CreateFunction();
-    return CParent::Create();
-}
-
-const type_info* CGeneratedClassInfo::GetCPlusPlusTypeInfo(TConstObjectPtr object) const
-{
-    return m_GetTypeIdFunction(object);
-}
-
-void CGeneratedClassInfo::WriteData(CObjectOStream& out,
-                                    TConstObjectPtr object) const
-{
-    if ( m_PreWriteFunction )
-        m_PreWriteFunction(object);
-    CParent::WriteData(out, object);
-}
-
-void CGeneratedClassInfo::ReadData(CObjectIStream& in,
-                                   TObjectPtr object) const
-{
-    CParent::ReadData(in, object);
-    if ( m_PostReadFunction )
-        m_PostReadFunction(object);
+    return classInfo->IsCObject();
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/06/16 16:31:06  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.34  2000/06/07 19:45:42  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -208,7 +211,7 @@ public:
     void ReadBytes(TByte* bytes, unsigned size);
 
 protected:
-    TIndex ReadIndex(void);
+    TObjectIndex ReadIndex(void);
 
     // action: read ID into local buffer
     // return: ID pointer and length
@@ -274,7 +277,7 @@ protected:
 
 private:
     virtual EPointerType ReadPointerType(void);
-    virtual TIndex ReadObjectPointer(void);
+    virtual TObjectIndex ReadObjectPointer(void);
     virtual string ReadOtherPointer(void);
 
     void SkipObjectData(void);

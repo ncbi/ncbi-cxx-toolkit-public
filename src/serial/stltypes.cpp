@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/06/16 16:31:22  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.24  2000/06/01 19:07:05  vasilche
 * Added parsing of XML data.
 *
@@ -132,6 +135,7 @@
 
 #include <serial/stltypes.hpp>
 #include <serial/classinfo.hpp>
+#include <serial/serialbase.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -156,8 +160,7 @@ void CStlOneArgTemplate::SetDataId(const CMemberId& id)
 
 bool CStlOneArgTemplate::MayContainType(TTypeInfo typeInfo) const
 {
-    return GetDataTypeInfo()->IsType(typeInfo) ||
-        GetDataTypeInfo()->MayContainType(typeInfo);
+    return GetDataTypeInfo()->IsOrMayContainType(typeInfo);
 }
 
 bool CStlOneArgTemplate::HaveChildren(TConstObjectPtr object) const
@@ -216,10 +219,8 @@ void CStlTwoArgsTemplate::SetValueId(const CMemberId& id)
 bool CStlTwoArgsTemplate::MayContainType(TTypeInfo typeInfo) const
 {
     return
-        GetKeyTypeInfo()->IsType(typeInfo) ||
-        GetKeyTypeInfo()->MayContainType(typeInfo) ||
-        GetValueTypeInfo()->IsType(typeInfo) ||
-        GetValueTypeInfo()->MayContainType(typeInfo);
+        GetKeyTypeInfo()->IsOrMayContainType(typeInfo) ||
+        GetValueTypeInfo()->IsOrMayContainType(typeInfo);
 }
 
 bool CStlTwoArgsTemplate::HaveChildren(TConstObjectPtr object) const
@@ -272,11 +273,11 @@ bool CStlClassInfoMapImpl::EqualsKeyValuePair(TConstObjectPtr key1,
         GetValueTypeInfo()->Equals(value1, value2);
 }
 
-const CClassInfoTmpl* CStlClassInfoMapImpl::GetElementType(void) const
+const CClassTypeInfo* CStlClassInfoMapImpl::GetElementType(void) const
 {
     if ( !m_ElementType ) {
-        CClassInfoTmpl* classInfo =
-            new CClassInfoTmpl("", typeid(void), 0);
+        CClassTypeInfo* classInfo =
+            CClassInfoHelper<bool>::CreateAbstractClassInfo("");
         m_ElementType.reset(classInfo);
         classInfo->GetMembers().AddMember(GetKeyId(), 0);
         classInfo->GetMembers().AddMember(GetValueId(), 0);

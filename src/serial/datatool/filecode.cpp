@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/06/16 16:31:39  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.21  2000/04/28 16:58:16  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -442,7 +445,7 @@ void CFileCode::GenerateHPP(const string& path) const
         "#endif // " << hppDefine << "\n";
     header.close();
     if ( !header )
-        ERR_POST("Error writing file " << fileName);
+        ERR_POST(Fatal << "Error writing file " << fileName);
 }
 
 void CFileCode::GenerateCPP(const string& path) const
@@ -492,7 +495,7 @@ void CFileCode::GenerateCPP(const string& path) const
 
     code.close();
     if ( !code )
-        ERR_POST("Error writing file " << fileName);
+        ERR_POST(Fatal << "Error writing file " << fileName);
 }
 
 bool CFileCode::GenerateUserHPP(const string& path) const
@@ -581,7 +584,7 @@ bool CFileCode::GenerateUserCPP(const string& path) const
 
     code.close();
     if ( !code )
-        ERR_POST("Error writing file " << fileName);
+        ERR_POST(Fatal << "Error writing file " << fileName);
     return true;
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2000/06/16 16:31:21  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.40  2000/06/07 19:46:00  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -232,7 +235,7 @@ ESerialDataFormat CObjectOStreamAsn::GetDataFormat(void) const
 
 void CObjectOStreamAsn::WriteTypeName(const string& name)
 {
-    if ( m_Output.GetIndentLevel() == 0 ) {
+    if ( m_Output.ZeroIndentLevel() ) {
         WriteId(name);
         m_Output.PutString(" ::= ");
     }
@@ -383,10 +386,10 @@ void CObjectOStreamAsn::WriteNullPointer(void)
     WriteNull();
 }
 
-void CObjectOStreamAsn::WriteObjectReference(TIndex index)
+void CObjectOStreamAsn::WriteObjectReference(TObjectIndex index)
 {
     m_Output.PutChar('@');
-    m_Output.PutUInt(index);
+    m_Output.PutInt(index);
 }
 
 void CObjectOStreamAsn::WriteOther(TConstObjectPtr object,
@@ -465,8 +468,7 @@ void CObjectOStreamAsn::WriteClass(CObjectClassWriter& writer,
     m_Output.IncIndentLevel();
     
     TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
-    if ( parentClassInfo &&
-         parentClassInfo != CObjectGetTypeInfo::GetTypeInfo() )
+    if ( parentClassInfo )
         writer.WriteParentClass(*this, parentClassInfo);
 
     writer.WriteMembers(*this, members);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/06/16 16:31:13  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.5  2000/05/24 20:08:31  vasilche
 * Implemented DTD generation.
 *
@@ -101,6 +104,9 @@ public:
 
     void SetEnumNamespace(const CNamespace& ns);
 
+    EKind GetKind(void) const;
+    const string& GetEnumName(void) const;
+
     string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
     string GetInitializer(void) const;
@@ -126,6 +132,10 @@ public:
                         const string& cName,
                         const CNamespace& ns,
                         const string& fileName);
+
+    EKind GetKind(void) const;
+    const CNamespace& GetNamespace(void) const;
+    const string& GetEnumName(void) const;
 
     string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/06/16 16:31:38  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.6  2000/05/24 20:09:28  vasilche
 * Implemented DTD generation.
 *
@@ -112,6 +115,16 @@ CEnumTypeStrings::CEnumTypeStrings(const string& externalName,
 {
 }
 
+CTypeStrings::EKind CEnumTypeStrings::GetKind(void) const
+{
+    return eKindEnum;
+}
+
+const string& CEnumTypeStrings::GetEnumName(void) const
+{
+    return m_EnumName;
+}
+
 string CEnumTypeStrings::GetCType(const CNamespace& /*ns*/) const
 {
     return m_CType;
@@ -119,7 +132,8 @@ string CEnumTypeStrings::GetCType(const CNamespace& /*ns*/) const
 
 string CEnumTypeStrings::GetRef(void) const
 {
-    return "NCBI_NS_NCBI::CreateEnumeratedTypeInfo("+GetCType(CNamespace::KEmptyNamespace)+"(0), GetEnumInfo_"+m_EnumName+"())";
+    return "ENUM, ("+m_CType+", "+m_EnumName+')';
+    //return "NCBI_NS_NCBI::CreateEnumeratedTypeInfo("+GetCType(CNamespace::KEmptyNamespace)+"(0), GetEnumInfo_"+m_EnumName+"())";
 }
 
 string CEnumTypeStrings::GetInitializer(void) const
@@ -131,37 +145,49 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 {
     string methodPrefix = ctx.GetMethodPrefix();
     bool inClass = !methodPrefix.empty();
-    CNcbiOstrstream hpp, cpp;
-    hpp <<
-        "enum "<<m_EnumName<<" {";
-    cpp <<
-        "const NCBI_NS_NCBI::CEnumeratedTypeValues* "<<methodPrefix<<"GetEnumInfo_"<<m_EnumName<<"(void)\n"
-        "{\n"
-        "    static NCBI_NS_NCBI::CEnumeratedTypeValues* enumInfo = 0;\n"
-        "    if ( !enumInfo ) {\n"
-        "        enumInfo = new NCBI_NS_NCBI::CEnumeratedTypeValues(\""<<GetExternalName()<<"\", "<<m_IsInteger<<");\n"
-        "        "<<m_EnumName<<" enumValue;\n";
-    iterate ( TValues, i, m_Values ) {
-        if ( i != m_Values.begin() )
-            hpp << ',';
-        string id = Identifier(i->first, false);
+    {
+        // generated enum
+        CNcbiOstrstream hpp;
+        hpp <<
+            "enum "<<m_EnumName<<" {";
+        iterate ( TValues, i, m_Values ) {
+            if ( i != m_Values.begin() )
+                hpp << ',';
+            string id = Identifier(i->first, false);
+            hpp << "\n"
+                "    "<<m_ValuesPrefix<<id<<" = "<<i->second;
+        }
         hpp << "\n"
-            "    "<<m_ValuesPrefix<<id<<" = "<<i->second;
-        cpp <<
-            "        enumInfo->AddValue(\""<<i->first<<"\", enumValue = "<<m_ValuesPrefix<<id<<");\n";
+            "};\n"
+            "\n";
+        // prototype of GetEnumInfo function
+        if ( inClass )
+            hpp << "static ";
+        hpp <<
+            "const NCBI_NS_NCBI::CEnumeratedTypeValues* GetEnumInfo_"
+            <<m_EnumName<<"(void);\n"
+            "\n";
+        ctx.AddHPPCode(hpp);
     }
-    hpp << "\n"
-        "};\n"
-        <<(inClass? "static ": "")<<
-        "const NCBI_NS_NCBI::CEnumeratedTypeValues* GetEnumInfo_"
-         <<m_EnumName<<"(void);\n"
-        "\n";
-    cpp <<
-        "    }\n"
-        "    return enumInfo;\n"
-        "}\n";
-    ctx.AddHPPCode(hpp);
-    ctx.AddCPPCode(cpp);
+    {
+        // definition of GetEnumInfo function
+        CNcbiOstrstream cpp;
+        cpp <<
+            "BEGIN_NAMED_ENUM_INFO(\""<<GetExternalName()<<"\", "<<
+            methodPrefix<<"GetEnumInfo_"<<m_EnumName<<", "<<
+            m_EnumName<<", "<<(m_IsInteger?"true":"false")<<")\n"
+            "{\n";
+        iterate ( TValues, i, m_Values ) {
+            string id = Identifier(i->first, false);
+            cpp <<
+                "    ADD_ENUM_VALUE(\""<<i->first<<"\", "<<m_ValuesPrefix<<id<<");\n";
+        }
+        cpp <<
+            "}\n"
+            "END_ENUM_INFO\n"
+            "\n";
+        ctx.AddCPPCode(cpp);
+    }
 }
 
 string CEnumTypeStrings::GetTypeInfoCode(const string& externalName,
@@ -183,6 +209,21 @@ CEnumRefTypeStrings::CEnumRefTypeStrings(const string& enumName,
 {
 }
 
+CTypeStrings::EKind CEnumRefTypeStrings::GetKind(void) const
+{
+    return eKindEnum;
+}
+
+const CNamespace& CEnumRefTypeStrings::GetNamespace(void) const
+{
+    return m_Namespace;
+}
+
+const string& CEnumRefTypeStrings::GetEnumName(void) const
+{
+    return m_EnumName;
+}
+
 string CEnumRefTypeStrings::GetCType(const CNamespace& ns) const
 {
     if ( !m_CType.empty() && m_CType != m_EnumName )
@@ -193,7 +234,11 @@ string CEnumRefTypeStrings::GetCType(const CNamespace& ns) const
 
 string CEnumRefTypeStrings::GetRef(void) const
 {
-    return "NCBI_NS_NCBI::CreateEnumeratedTypeInfo("+GetCType(CNamespace::KEmptyNamespace)+"(0), "+m_Namespace.ToString()+"GetEnumInfo_"+m_EnumName+"())";
+    if ( !m_CType.empty() && m_CType != m_EnumName || m_Namespace.IsEmpty() )
+        return "ENUM, ("+m_CType+", "+m_EnumName+')';
+    else
+        return "ENUM_IN, ("+m_CType+", "+m_Namespace.ToString()+", "+m_EnumName+')';
+    //return "NCBI_NS_NCBI::CreateEnumeratedTypeInfo("+GetCType(CNamespace::KEmptyNamespace)+"(0), "+m_Namespace.ToString()+"GetEnumInfo_"+m_EnumName+"())";
 }
 
 string CEnumRefTypeStrings::GetInitializer(void) const

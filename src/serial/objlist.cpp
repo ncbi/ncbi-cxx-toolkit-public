@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/06/16 16:31:21  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.15  2000/04/06 16:10:59  vasilche
 * Fixed bug with iterators in choices.
 * Removed unneeded calls to ReadExternalObject/WriteExternalObject.
@@ -100,7 +103,6 @@
 #include <serial/objlist.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/member.hpp>
-#include <serial/classinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -156,7 +158,7 @@ CWriteObjectInfo& COObjectList::RegisterObject(TConstObjectPtr object,
 
 void COObjectList::CheckAllWritten(void) const
 {
-    if ( m_NextObjectIndex != m_Objects.size() )
+    if ( m_NextObjectIndex != TObjectIndex(m_Objects.size()) )
         THROW1_TRACE(runtime_error, "not all objects written");
 }
 

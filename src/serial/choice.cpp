@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/06/16 16:31:17  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.16  2000/06/07 19:45:57  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -118,106 +121,83 @@
 
 BEGIN_NCBI_SCOPE
 
-typedef CChoiceTypeInfoBase::TMemberIndex TMemberIndex;
+typedef CChoiceTypeInfo::TMemberIndex TMemberIndex;
 
-CChoiceTypeInfoBase::CChoiceTypeInfoBase(const string& name)
-    : CParent(name)
+CChoiceTypeInfo::CChoiceTypeInfo(const char* name,
+                                 size_t size,
+                                 const type_info& ti,
+                                 TCreateFunction createFunc,
+                                 TWhichFunction whichFunc,
+                                 TSelectFunction selectFunc,
+                                 TResetFunction resetFunc)
+    : CParent(name, ti, size),
+      m_WhichFunction(whichFunc),
+      m_ResetFunction(resetFunc), m_SelectFunction(selectFunc),
+      m_SelectDelayFunction(0)
 {
+    SetCreateFunction(createFunc);
 }
 
-CChoiceTypeInfoBase::CChoiceTypeInfoBase(const char* name)
-    : CParent(name)
+CChoiceTypeInfo::CChoiceTypeInfo(const string& name,
+                                 size_t size,
+                                 const type_info& ti,
+                                 TCreateFunction createFunc,
+                                 TWhichFunction whichFunc,
+                                 TSelectFunction selectFunc,
+                                 TResetFunction resetFunc)
+    : CParent(name, ti, size),
+      m_WhichFunction(whichFunc),
+      m_ResetFunction(resetFunc), m_SelectFunction(selectFunc),
+      m_SelectDelayFunction(0)
 {
+    SetCreateFunction(createFunc);
 }
 
-CChoiceTypeInfoBase::~CChoiceTypeInfoBase(void)
+bool CChoiceTypeInfo::IsDefault(TConstObjectPtr object) const
 {
+    return object == 0 || GetIndex(object) == eEmptyIndex;
 }
 
-void CChoiceTypeInfoBase::AddVariant(const CMemberId& id,
-                                     const CTypeRef& typeRef)
-{
-    m_Members.AddMember(id, 0, typeRef.Get());
-}
-
-void CChoiceTypeInfoBase::AddVariant(const string& name,
-                                     const CTypeRef& typeRef)
-{
-    AddVariant(CMemberId(name), typeRef);
-}
-
-void CChoiceTypeInfoBase::AddVariant(const char* name,
-                                     const CTypeRef& typeRef)
-{
-    AddVariant(CMemberId(name), typeRef);
-}
-
-TMemberIndex CChoiceTypeInfoBase::GetVariantsCount(void) const
-{
-    return m_Members.GetSize();
-}
-
-TTypeInfo CChoiceTypeInfoBase::GetVariantTypeInfo(TMemberIndex index) const
-{
-    return m_Members.GetMemberInfo(index)->GetTypeInfo();
-}
-
-bool CChoiceTypeInfoBase::IsDefault(TConstObjectPtr object) const
-{
-    return object == 0 || GetIndex(object) == -1;
-}
-
-void CChoiceTypeInfoBase::ResetIndex(TObjectPtr object) const
-{
-    SetIndex(object, -1);
-}
-
-void CChoiceTypeInfoBase::SetDelayIndex(TObjectPtr /*object*/,
-                                          TMemberIndex /*index*/) const
-{
-    THROW1_TRACE(runtime_error, "illegal call");
-}
-
-bool CChoiceTypeInfoBase::Equals(TConstObjectPtr object1,
+bool CChoiceTypeInfo::Equals(TConstObjectPtr object1,
                                  TConstObjectPtr object2) const
 {
     TMemberIndex index = GetIndex(object1);
     if ( index != GetIndex(object2) )
         return false;
-    if ( index == -1 )
+    if ( index == eEmptyIndex )
         return true;
-    if ( index >= 0 && index < GetVariantsCount() ) {
-        return GetVariantTypeInfo(index)->Equals(GetData(object1, index),
-                                                 GetData(object2, index));
+    if ( index >= 0 && index < GetMembersCount() ) {
+        return GetMemberTypeInfo(index)->Equals(GetData(object1, index),
+                                                GetData(object2, index));
     }
     return false;
 }
 
-void CChoiceTypeInfoBase::SetDefault(TObjectPtr dst) const
+void CChoiceTypeInfo::SetDefault(TObjectPtr dst) const
 {
     ResetIndex(dst);
 }
 
-void CChoiceTypeInfoBase::Assign(TObjectPtr dst, TConstObjectPtr src) const
+void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
     TMemberIndex index = GetIndex(src);
-    if ( index >= 0 && index < GetVariantsCount() ) {
+    if ( index >= 0 && index < GetMembersCount() ) {
         SetIndex(dst, index);
-        GetVariantTypeInfo(index)->Assign(GetData(dst, index),
-                                          GetData(src, index));
+        GetMemberTypeInfo(index)->Assign(GetData(dst, index),
+                                         GetData(src, index));
     }
     else {
         ResetIndex(dst);
     }
 }
 
-void CChoiceTypeInfoBase::WriteData(CObjectOStream& out,
-                                    TConstObjectPtr object) const
+void CChoiceTypeInfo::WriteData(CObjectOStream& out, TConstObjectPtr object) const
 {
+    DoPreWrite(object);
     TMemberIndex index = GetIndex(object);
-    if ( index >= 0 && index < GetVariantsCount() ) {
-        const CMemberInfo* info = m_Members.GetMemberInfo(index);
-        const CMemberId& id = m_Members.GetMemberId(index);
+    if ( index >= 0 && index < GetMembersCount() ) {
+        const CMemberInfo* info = GetMemberInfo(index);
+        const CMemberId& id = GetMemberId(index);
         if ( info->CanBeDelayed() ) {
              const CDelayBuffer& buffer = info->GetDelayBuffer(object);
              if ( buffer ) {
@@ -239,7 +219,7 @@ void CChoiceTypeInfoBase::WriteData(CObjectOStream& out,
 class CChoiceTypeInfoReader : public CObjectChoiceReader
 {
 public:
-    CChoiceTypeInfoReader(const CChoiceTypeInfoBase* choice,
+    CChoiceTypeInfoReader(const CChoiceTypeInfo* choice,
                           TObjectPtr object)
         : m_Choice(choice), m_Object(object)
         {
@@ -248,7 +228,7 @@ public:
     virtual void ReadChoiceVariant(CObjectIStream& in,
                                    const CMembersInfo& members, int index)
         {
-            const CChoiceTypeInfoBase* choice = m_Choice;
+            const CChoiceTypeInfo* choice = m_Choice;
             TObjectPtr obj = m_Object;
             const CMemberInfo* m = members.GetMemberInfo(index);
             bool sameIndex = (index == choice->GetIndex(obj));
@@ -272,7 +252,7 @@ public:
         }
 
 private:
-    const CChoiceTypeInfoBase* m_Choice;
+    const CChoiceTypeInfo* m_Choice;
     TObjectPtr m_Object;
 };
 
@@ -286,180 +266,53 @@ public:
         }
 };
 
-void CChoiceTypeInfoBase::ReadData(CObjectIStream& in,
-                                   TObjectPtr object) const
+void CChoiceTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
     CChoiceTypeInfoReader reader(this, object);
-    in.ReadChoice(reader, this, m_Members);
+    in.ReadChoice(reader, this, GetMembers());
+    DoPostRead(object);
 }
 
-void CChoiceTypeInfoBase::SkipData(CObjectIStream& in) const
+void CChoiceTypeInfo::SkipData(CObjectIStream& in) const
 {
     CChoiceTypeInfoSkipper skipper;
-    in.ReadChoice(skipper, this, m_Members);
+    in.ReadChoice(skipper, this, GetMembers());
 }
 
-bool CChoiceTypeInfoBase::MayContainType(TTypeInfo typeInfo) const
-{
-    return GetMembers().MayContainType(typeInfo);
-}
-
-bool CChoiceTypeInfoBase::HaveChildren(TConstObjectPtr object) const
-{
-    return GetIndex(object) >= 0;
-}
-
-void CChoiceTypeInfoBase::BeginTypes(CChildrenTypesIterator& cc) const
-{
-    GetMembers().BeginTypes(cc);
-}
-
-void CChoiceTypeInfoBase::Begin(CConstChildrenIterator& cc) const
-{
-    cc.GetIndex().m_Index = 0;
-}
-
-void CChoiceTypeInfoBase::Begin(CChildrenIterator& cc) const
-{
-    cc.GetIndex().m_Index = 0;
-}
-
-bool CChoiceTypeInfoBase::ValidTypes(const CChildrenTypesIterator& cc) const
-{
-    return GetMembers().ValidTypes(cc);
-}
-
-bool CChoiceTypeInfoBase::Valid(const CConstChildrenIterator& cc) const
-{
-    return cc.GetIndex().m_Index == 0 && GetIndex(cc.GetParentPtr()) >= 0;
-}
-
-bool CChoiceTypeInfoBase::Valid(const CChildrenIterator& cc) const
-{
-    return cc.GetIndex().m_Index == 0 && GetIndex(cc.GetParentPtr()) >= 0;
-}
-
-TTypeInfo CChoiceTypeInfoBase::GetChildType(const CChildrenTypesIterator& cc) const
-{
-    return GetMembers().GetChildType(cc);
-}
-
-void CChoiceTypeInfoBase::GetChild(const CConstChildrenIterator& cc,
-                                CConstObjectInfo& child) const
-{
-    TMemberIndex index = GetIndex(cc.GetParentPtr());
-    _ASSERT(index >= 0 && index < GetVariantsCount());
-    child.Set(GetData(cc.GetParentPtr(), index), GetVariantTypeInfo(index));
-}
-
-void CChoiceTypeInfoBase::GetChild(const CChildrenIterator& cc,
-                                CObjectInfo& child) const
-{
-    TMemberIndex index = GetIndex(cc.GetParentPtr());
-    _ASSERT(index >= 0 && index < GetVariantsCount());
-    child.Set(GetData(cc.GetParentPtr(), index), GetVariantTypeInfo(index));
-}
-
-void CChoiceTypeInfoBase::NextType(CChildrenTypesIterator& cc) const
-{
-    GetMembers().NextType(cc);
-}
-
-void CChoiceTypeInfoBase::Next(CConstChildrenIterator& cc) const
-{
-    ++cc.GetIndex().m_Index;
-}
-
-void CChoiceTypeInfoBase::Next(CChildrenIterator& cc) const
-{
-    ++cc.GetIndex().m_Index;
-}
-
-void CChoiceTypeInfoBase::Erase(CChildrenIterator& cc) const
-{
-    ResetIndex(cc.GetParentPtr());
-}
-
-CGeneratedChoiceInfo::CGeneratedChoiceInfo(const char* name,
-                                           size_t size,
-                                           TCreateFunction createFunc,
-                                           TWhichFunction whichFunc,
-                                           TResetFunction resetFunc,
-                                           TSelectFunction selectFunc)
-    : CParent(name), m_Size(size),
-      m_CreateFunction(createFunc), m_WhichFunction(whichFunc),
-      m_ResetFunction(resetFunc), m_SelectFunction(selectFunc),
-      m_SelectDelayFunction(0), m_PostReadFunction(0), m_PreWriteFunction(0)
-{
-}
-
-void CGeneratedChoiceInfo::SetSelectDelay(TSelectDelayFunction func)
+void CChoiceTypeInfo::SetSelectDelayFunction(TSelectDelayFunction func)
 {
     _ASSERT(m_SelectDelayFunction == 0);
     _ASSERT(func != 0);
     m_SelectDelayFunction = func;
 }
 
-void CGeneratedChoiceInfo::SetPostRead(TPostReadFunction func)
-{
-    _ASSERT(m_PostReadFunction == 0);
-    _ASSERT(func != 0);
-    m_PostReadFunction = func;
-}
-
-void CGeneratedChoiceInfo::SetPreWrite(TPreWriteFunction func)
-{
-    _ASSERT(m_PreWriteFunction == 0);
-    _ASSERT(func != 0);
-    m_PreWriteFunction = func;
-}
-
-void DoSetPostRead(CGeneratedChoiceInfo* info,
-                   void (*func)(TObjectPtr object))
-{
-    info->SetPostRead(func);
-}
-
-void DoSetPreWrite(CGeneratedChoiceInfo* info, void
-                   (*func)(TConstObjectPtr object))
-{
-    info->SetPreWrite(func);
-}
-
-size_t CGeneratedChoiceInfo::GetSize(void) const
-{
-    return m_Size;
-}
-
-TObjectPtr CGeneratedChoiceInfo::Create(void) const
-{
-    return m_CreateFunction();
-}
-
-TMemberIndex CGeneratedChoiceInfo::GetIndex(TConstObjectPtr object) const
+TMemberIndex CChoiceTypeInfo::GetIndex(TConstObjectPtr object) const
 {
     return m_WhichFunction(object);
 }
 
-void CGeneratedChoiceInfo::ResetIndex(TObjectPtr object) const
+void CChoiceTypeInfo::ResetIndex(TObjectPtr object) const
 {
-    m_ResetFunction(object);
+    if ( m_ResetFunction )
+        m_ResetFunction(object);
+    else
+        m_SelectFunction(object, eEmptyIndex);
 }
 
-void CGeneratedChoiceInfo::SetIndex(TObjectPtr object,
-                                    TMemberIndex index) const
+void CChoiceTypeInfo::SetIndex(TObjectPtr object,
+                               TMemberIndex index) const
 {
     m_SelectFunction(object, index);
 }
 
-void CGeneratedChoiceInfo::SetDelayIndex(TObjectPtr object,
-                                           TMemberIndex index) const
+void CChoiceTypeInfo::SetDelayIndex(TObjectPtr object,
+                                    TMemberIndex index) const
 {
     m_SelectDelayFunction(object, index);
 }
 
-TObjectPtr CGeneratedChoiceInfo::x_GetData(TObjectPtr object,
-                                           TMemberIndex index) const
+TObjectPtr CChoiceTypeInfo::x_GetData(TObjectPtr object,
+                                      TMemberIndex index) const
 {
     _ASSERT(object != 0);
     _ASSERT(GetIndex(object) == index);
@@ -476,20 +329,68 @@ TObjectPtr CGeneratedChoiceInfo::x_GetData(TObjectPtr object,
     return memberPtr;
 }
 
-void CGeneratedChoiceInfo::WriteData(CObjectOStream& out,
-                                     TConstObjectPtr object) const
+bool CChoiceTypeInfo::HaveChildren(TConstObjectPtr object) const
 {
-    if ( m_PreWriteFunction )
-        m_PreWriteFunction(object);
-    CParent::WriteData(out, object);
+    TTypeInfo parentClass = GetParentTypeInfo();
+    if ( parentClass && parentClass->HaveChildren(object) )
+        return true;
+    return GetIndex(object) >= 0;
 }
 
-void CGeneratedChoiceInfo::ReadData(CObjectIStream& in,
-                                    TObjectPtr object) const
+void CChoiceTypeInfo::Begin(CConstChildrenIterator& cc) const
 {
-    CParent::ReadData(in, object);
-    if ( m_PostReadFunction )
-        m_PostReadFunction(object);
+    cc.GetIndex().m_Index = 0;
+}
+
+void CChoiceTypeInfo::Begin(CChildrenIterator& cc) const
+{
+    cc.GetIndex().m_Index = 0;
+}
+
+bool CChoiceTypeInfo::Valid(const CConstChildrenIterator& cc) const
+{
+    int index = cc.GetIndex().m_Index;
+    return index == 0 && GetIndex(cc.GetParentPtr()) >= 0; // variant
+}
+
+bool CChoiceTypeInfo::Valid(const CChildrenIterator& cc) const
+{
+    int index = cc.GetIndex().m_Index;
+    return index == 0 && GetIndex(cc.GetParentPtr()) >= 0; // variant
+}
+
+void CChoiceTypeInfo::GetChild(const CConstChildrenIterator& cc,
+                               CConstObjectInfo& child) const
+{
+    _ASSERT(cc.GetIndex().m_Index == 0);
+    TMemberIndex variant = GetIndex(cc.GetParentPtr());
+    _ASSERT(variant >= 0 && variant < GetMembersCount());
+    child.Set(GetData(cc.GetParentPtr(), variant), GetMemberTypeInfo(variant));
+}
+
+void CChoiceTypeInfo::GetChild(const CChildrenIterator& cc,
+                                CObjectInfo& child) const
+{
+    _ASSERT(cc.GetIndex().m_Index == 0);
+    TMemberIndex variant = GetIndex(cc.GetParentPtr());
+    _ASSERT(variant >= 0 && variant < GetMembersCount());
+    child.Set(GetData(cc.GetParentPtr(), variant), GetMemberTypeInfo(variant));
+}
+
+void CChoiceTypeInfo::Next(CConstChildrenIterator& cc) const
+{
+    ++cc.GetIndex().m_Index;
+}
+
+void CChoiceTypeInfo::Next(CChildrenIterator& cc) const
+{
+    ++cc.GetIndex().m_Index;
+}
+
+void CChoiceTypeInfo::Erase(CChildrenIterator& cc) const
+{
+    _ASSERT(cc.GetIndex().m_Index == 0);
+    ResetIndex(cc.GetParentPtr());
 }
 
 END_NCBI_SCOPE

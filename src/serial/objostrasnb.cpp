@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2000/06/16 16:31:21  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.37  2000/06/07 19:46:00  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -649,10 +652,10 @@ bool CObjectOStreamAsnBinary::WriteEnum(const CEnumeratedTypeValues& values,
     return true;
 }
 
-void CObjectOStreamAsnBinary::WriteObjectReference(TIndex index)
+void CObjectOStreamAsnBinary::WriteObjectReference(TObjectIndex index)
 {
     WriteTag(eApplication, false, eObjectReference);
-    WriteUNumberValue(*this, index);
+    WriteSNumberValue(*this, index);
 }
 
 void CObjectOStreamAsnBinary::WriteNullPointer(void)
@@ -731,8 +734,7 @@ void CObjectOStreamAsnBinary::WriteClass(CObjectClassWriter& writer,
     WriteIndefiniteLength();
     
     TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
-    if ( parentClassInfo &&
-         parentClassInfo != CObjectGetTypeInfo::GetTypeInfo() )
+    if ( parentClassInfo )
         writer.WriteParentClass(*this, parentClassInfo);
 
     writer.WriteMembers(*this, members);
@@ -740,7 +742,7 @@ void CObjectOStreamAsnBinary::WriteClass(CObjectClassWriter& writer,
     WriteEndOfContent();
 }
 
-void CObjectOStreamAsnBinary::WriteClassMember(CObjectClassWriter& writer,
+void CObjectOStreamAsnBinary::WriteClassMember(CObjectClassWriter& ,
                                                const CMemberId& id,
                                                TTypeInfo memberTypeInfo,
                                                TConstObjectPtr memberPtr)

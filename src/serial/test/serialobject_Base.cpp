@@ -1,4 +1,5 @@
 #include "serialobject.hpp"
+#include <serial/serialbase.hpp>
 #include <serial/serialimpl.hpp>
 #if HAVE_NCBI_C
 # include <asn.h>

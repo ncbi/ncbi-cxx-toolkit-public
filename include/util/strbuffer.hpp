@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/06/16 16:31:08  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.12  2000/06/01 19:06:59  vasilche
 * Added parsing of XML data.
 *
@@ -253,6 +256,10 @@ public:
             return m_LineLength;
         }
 
+    bool ZeroIndentLevel(void) const THROWS1_NONE
+        {
+            return m_IndentLevel == 0;
+        }
     size_t GetIndentLevel(size_t step = 2) const THROWS1_NONE
         {
             return m_IndentLevel / step;

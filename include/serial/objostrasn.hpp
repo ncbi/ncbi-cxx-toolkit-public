@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/06/16 16:31:07  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
 * Revision 1.25  2000/06/07 19:45:43  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -166,7 +169,7 @@ protected:
 #endif
 
     virtual void WriteNullPointer(void);
-    virtual void WriteObjectReference(TIndex index);
+    virtual void WriteObjectReference(TObjectIndex index);
     virtual void WriteOther(TConstObjectPtr object,
                             CWriteObjectInfo& info);
     void WriteId(const string& str);
