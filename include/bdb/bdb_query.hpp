@@ -78,6 +78,8 @@ public:
     CBDB_QueryNode(const CBDB_QueryNode& qnode);
     CBDB_QueryNode& operator=(const CBDB_QueryNode& qnode);
 
+    ~CBDB_QueryNode();
+
     ENodeType     GetType() const { return m_NodeType; }
     ELogicalType  GetLogicType() const;
     EOperatorType GetOperatorType() const;
@@ -112,7 +114,10 @@ class NCBI_BDB_EXPORT CBDB_Query
 public:
     typedef CTreeNode<CBDB_QueryNode> TQueryClause;
 
-    CBDB_Query();
+    /// Contruct the query. If QueryClause is NOT NULL takes the ownership.
+    /// @param 
+    ///   qc  Query clause. (Should be created by new)
+    CBDB_Query(TQueryClause* qc = 0);
     ~CBDB_Query();
 
     TQueryClause& GetQueryClause() { return *m_QueryClause; }
@@ -131,6 +136,32 @@ public:
     TQueryClause* NewOperatorNode(CBDB_QueryNode::EOperatorType otype,  
                                   const string&   arg1, 
                                   const string&   arg2);
+
+    /// Creates new logical node of the query
+    /// @sa NewOperatorNode
+    static
+    TQueryClause* NewLogicalNode(CBDB_QueryNode::ELogicalType otype,  
+                                 TQueryClause*  arg1, 
+                                 TQueryClause*  arg2);
+
+    /// Creates new operator node of the query
+    /// Caller is responsible for destruction 
+    /// (in most cases the result is immediately added to the query tree).
+    ///
+    /// Function receives two argument nodes which are attached to the 
+    /// result clause. In terms of memory management caller does not need 
+    /// to deallocate them.
+    ///
+    /// @param
+    ///   otype - type of the operator to create
+    /// @param 
+    ///   arg1  - argument node.
+    /// @param 
+    ///   arg2  - argument node.
+    static
+    TQueryClause* NewOperatorNode(CBDB_QueryNode::EOperatorType ltype,  
+                                  TQueryClause*  arg1, 
+                                  TQueryClause*  arg2);
 
 
 private:
@@ -207,6 +238,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/24 14:11:44  kuznets
+ * Some improvement of CBDB_Query here and there. Additional constructor
+ * parameter, NewOperatorNode helper function.
+ *
  * Revision 1.3  2004/02/19 17:35:15  kuznets
  * + BDB_PrintQueryTree (tree printing utility function for debugging)
  *
