@@ -82,6 +82,7 @@ const CUser_field& CUser_object::GetField(const string& str,
         } else if (field_ref) {
             switch (field_ref->GetData().Which()) {
             case CUser_field::TData::e_Object:
+                obj_ref.Reset(&field_ref->GetData().GetObject());
                 break;
             case CUser_field::TData::e_Objects:
                 break;
@@ -148,7 +149,8 @@ bool CUser_object::HasField(const string& str,
 // on a set of user-defined delimiters
 //
 CUser_field& CUser_object::SetField(const string& str,
-                                    const string& delim)
+                                    const string& delim,
+                                    const string& obj_subtype)
 {
     list<string> toks;
     NStr::Split(str, delim, toks);
@@ -156,10 +158,7 @@ CUser_field& CUser_object::SetField(const string& str,
     CRef<CUser_object> obj_ref(this);
     CRef<CUser_field>  field_ref;
     ITERATE(list<string>, iter, toks) {
-        // recurse - make our field an object
-        if (field_ref) {
-            obj_ref.Reset(&field_ref->SetData().SetObject());
-        }
+        field_ref.Reset();
 
         // find the named field at this object's level
         NON_CONST_ITERATE(TData, field_iter, obj_ref->SetData()) {
@@ -175,7 +174,11 @@ CUser_field& CUser_object::SetField(const string& str,
         if ( !field_ref ) {
             field_ref.Reset(new CUser_field());
             field_ref->SetLabel().SetStr(*iter);
+            field_ref->SetData().SetObject().SetClass("NCBI");
+            field_ref->SetData().SetObject().SetType().SetStr(obj_subtype);
             obj_ref->SetData().push_back(field_ref);
+
+            obj_ref.Reset(&field_ref->SetData().SetObject());
         }
     }
 
@@ -581,6 +584,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.10  2004/10/28 18:40:54  dicuccio
+* Corrected field recursion.  Added optional type string to classes
+*
 * Revision 6.9  2004/09/21 15:08:11  kans
 * added EParseField parameter to AddField so it can optionally interpret the string value as numeric
 *
