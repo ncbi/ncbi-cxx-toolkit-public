@@ -28,7 +28,30 @@
  */
 
 /** @file blast_engine.c
- * High level BLAST functions
+ * High level BLAST functions. The hierarchy of function calls, starting from
+ * the top level in the BLAST core, is described below.
+ * <pre>
+ * Preliminary stage of the BLAST search:
+ *
+ *    Blast_RunPreliminarySearch 
+ *        BLAST_GapAlignSetUp
+ *        BLAST_PreliminarySearchEngine
+ *            if (RPS BLAST) {
+ *                s_RPSPreliminarySearchEngine
+                      s_BlastSearchEngineCore
+ *            } else {
+ *                for (all sequences in the database) 
+ *                    s_BlastSearchEngineCore
+ *            }
+ * 
+ * Full BLAST search, including preliminary search and traceback:
+ *
+ *    Blast_RunFullSearch 
+ *        BLAST_GapAlignSetUp
+ *        BLAST_PreliminarySearchEngine
+ *        BLAST_ComputeTraceback
+ *
+ * </pre>
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -191,10 +214,10 @@ static Int2
 s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* query, 
    BlastQueryInfo* query_info_in, BLAST_SequenceBlk* subject, 
    LookupTableWrap* lookup, BlastGapAlignStruct* gap_align, 
-   BlastScoringParameters* score_params, 
-   BlastInitialWordParameters* word_params, 
-   BlastExtensionParameters* ext_params, 
-   BlastHitSavingParameters* hit_params, 
+   const BlastScoringParameters* score_params, 
+   const BlastInitialWordParameters* word_params, 
+   const BlastExtensionParameters* ext_params, 
+   const BlastHitSavingParameters* hit_params, 
    const BlastDatabaseOptions* db_options,
    BlastDiagnostics* diagnostics,
    BlastCoreAuxStruct* aux_struct,
@@ -371,7 +394,6 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
          status = 1;
          break;
       }
- 
       combined_hsp_list = Blast_HSPListFree(combined_hsp_list);
    } /* End loop on frames */
 
@@ -543,37 +565,45 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
    return status;
 }
 
-Int4 
-BLAST_RPSSearchEngine(EBlastProgramType program_number, 
+/** Performs the preliminary stage of an RPS BLAST search, after all set up has
+ * already been done.
+ * @param program_number Type of BLAST program [in]
+ * @param query The query sequence [in]
+ * @param query_info Additional query information [in]
+ * @param seq_src Structure containing BLAST database [in]
+ * @param score_params Hit scoring parameters [in]
+ * @param lookup_wrap The lookup table, constructed earlier [in] 
+ * @param aux_struct Wrapper for auxiliary structures used in preliminary
+ *                   search [in]
+ * @param word_params Parameters for processing initial word hits [in]
+ * @param ext_params Parameters for the gapped extension [in]
+ * @param gap_align Structure containing scoring block and memory allocated
+ *                  for gapped alignment. [in]
+ * @param hit_params Parameters for saving the HSPs [in]
+ * @param hsp_stream Placeholder for saving HSP lists [in]
+ * @param diagnostics Return statistics containing numbers of hits on 
+ *                    different stages of the search. Statistics saved only 
+ *                    for the allocated parts of the structure. [in] [out]
+ */
+static Int2 
+s_RPSPreliminarySearchEngine(EBlastProgramType program_number, 
    BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
-   const BlastSeqSrc* seq_src,  BlastScoreBlk* sbp,
-   const BlastScoringOptions* score_options, 
-   LookupTableWrap* lookup_wrap,
-   const BlastInitialWordOptions* word_options, 
-   const BlastExtensionOptions* ext_options, 
-   const BlastHitSavingOptions* hit_options,
-   const BlastEffectiveLengthsOptions* eff_len_options,
-   const PSIBlastOptions* psi_options, 
-   BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics, 
-   BlastHSPResults** results)
+   const BlastSeqSrc* seq_src,
+   const BlastScoringParameters* score_params, 
+   LookupTableWrap* lookup_wrap, BlastCoreAuxStruct* aux_struct,
+   const BlastInitialWordParameters* word_params, 
+   const BlastExtensionParameters* ext_params, 
+   BlastGapAlignStruct* gap_align,
+   const BlastHitSavingParameters* hit_params,
+   BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics)
 {
-   BlastCoreAuxStruct* aux_struct = NULL;
    BlastHSPList* hsp_list = NULL;
-   BlastScoringParameters* score_params = NULL;
-   BlastInitialWordParameters* word_params = NULL;
-   BlastExtensionParameters* ext_params = NULL;
-   BlastHitSavingParameters* hit_params = NULL;
-   BlastEffectiveLengthsParameters* eff_len_params = NULL;
-   BlastGapAlignStruct* gap_align;
    Int2 status = 0;
    Int8 dbsize;
    Int4 num_db_seqs;
    Uint4 avg_subj_length = 0;
    BlastRPSLookupTable *lookup = (BlastRPSLookupTable *)lookup_wrap->lut;
    BLAST_SequenceBlk concat_db;
-   BlastQueryInfo concat_db_info;
-   BlastRPSAuxInfo *rps_info;
-   BlastRawCutoffs* raw_cutoffs = NULL;
    BlastQueryInfo* one_query_info = NULL;
    BLAST_SequenceBlk* one_query = NULL;
    Int4 index;
@@ -582,29 +612,9 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
        program_number != eBlastTypeRpsTblastn)
       return -1;
 
-   if ((status =
-       s_BlastSetUpAuxStructures(seq_src, lookup_wrap, word_options,
-          ext_options, hit_options, query, &aux_struct)) != 0)
-      return status;
-
-   if ((status = 
-        BLAST_GapAlignSetUp(program_number, seq_src, score_options, 
-           eff_len_options, ext_options, hit_options, query_info, sbp, 
-           &score_params, &ext_params, &hit_params, &eff_len_params, 
-           &gap_align)) != 0)
-      return status;
-
-   BlastInitialWordParametersNew(program_number, word_options, 
-      hit_params, sbp, query_info, BLASTSeqSrcGetAvgSeqLen(seq_src), 
-      &word_params);
-   /* Update the parameters for linking HSPs, if necessary. */
-   BlastLinkHSPParametersUpdate(word_params, hit_params, 
-                                score_options->gapped_calculation);
-      
    /* modify scoring and gap alignment structures for
       use with RPS blast. */
 
-   rps_info = lookup->rps_aux_info;
    gap_align->positionBased = TRUE;
    gap_align->sbp->posMatrix = lookup->rps_pssm;
 
@@ -632,7 +642,7 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
    BlastExtendWordFree(aux_struct->ewp);
    /* First argument in BlastExtendWordNew is false because RPS search is 
       never a blastn search. */
-   BlastExtendWordNew(FALSE, concat_db.length, word_options, 
+   BlastExtendWordNew(FALSE, concat_db.length, word_params->options, 
                       avg_subj_length, &aux_struct->ewp);
 
    /* Run the search; the input query is what gets scanned
@@ -672,41 +682,16 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
    BlastQueryInfoFree(one_query_info);
    BlastSequenceBlkFree(one_query);
 
-   /* Fill the cutoff values in the diagnostics structure */
-   if (diagnostics->cutoffs)
-      raw_cutoffs = diagnostics->cutoffs;
-
-   s_FillReturnCutoffsInfo(raw_cutoffs, score_params, word_params, ext_params, 
-                           hit_params);
-
-   /* Do the traceback. After this call, query and 
-      subject have reverted to their traditional meanings. */
-   memset(&concat_db_info, 0, sizeof(concat_db_info)); /* fill in QueryInfo */
-   concat_db_info.num_queries = num_db_seqs;
-   concat_db_info.first_context = 0;
-   concat_db_info.last_context = num_db_seqs - 1;
-   OffsetArrayToContextOffsets(& concat_db_info,
-                               lookup->rps_seq_offsets,
-                               program_number);
-   
-   BLAST_RPSTraceback(program_number, hsp_stream, seq_src, 
-            &concat_db_info, query, query_info, gap_align, 
-            score_params, ext_params, hit_params, 
-            rps_info->karlin_k, results);
-
-   /* free the internal structures used */
-   /* Do not destruct score block here */
-
+   /* Restore original settings in the gapped alignment structure. */
    gap_align->sbp->posMatrix = NULL;
    gap_align->positionBased = FALSE;
-   gap_align->sbp = NULL;
-   BLAST_GapAlignStructFree(gap_align);
-   s_BlastCoreAuxStructFree(aux_struct);
-   sfree(score_params);
-   sfree(hit_params);
-   sfree(ext_params);
-   sfree(word_params);
-   sfree(eff_len_params);
+
+   /* Fill the cutoff values in the diagnostics structure */
+   if (diagnostics && diagnostics->cutoffs) {
+      s_FillReturnCutoffsInfo(diagnostics->cutoffs, score_params, word_params,
+                              ext_params, hit_params);
+   }
+
    return status;
 }
 
@@ -729,7 +714,6 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    GetSeqArg seq_arg;
    Int2 status = 0;
    Int8 db_length = 0;
-   BlastRawCutoffs* raw_cutoffs = NULL;
    Boolean prelim_traceback;
    const BlastScoringOptions* score_options = score_params->options;
    const BlastHitSavingOptions* hit_options = hit_params->options;
@@ -739,16 +723,31 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    BlastScoreBlk* sbp = gap_align->sbp;
    BlastSeqSrcIterator* itr;
 
-   BlastInitialWordParametersNew(program_number, word_options, 
-      hit_params, sbp, query_info, BLASTSeqSrcGetAvgSeqLen(seq_src), &word_params);
-   /* Update the parameters for linking HSPs, if necessary. */
-   BlastLinkHSPParametersUpdate(word_params, hit_params, gapped_calculation);
-   
    if ((status = 
        s_BlastSetUpAuxStructures(seq_src, lookup_wrap, word_options, 
           ext_options, hit_options, query, &aux_struct)) != 0)
       return status;
 
+   BlastInitialWordParametersNew(program_number, word_options, 
+      hit_params, sbp, query_info, BLASTSeqSrcGetAvgSeqLen(seq_src), 
+      &word_params);
+
+   /* For RPS BLAST, there is no loop over subject sequences, so the preliminary
+      search engine is done in a separate function. */
+   if (program_number == eBlastTypeRpsBlast || 
+       program_number == eBlastTypeRpsTblastn) {
+      status =         
+         s_RPSPreliminarySearchEngine(program_number, query, query_info, 
+            seq_src, score_params, lookup_wrap, aux_struct, word_params, 
+            ext_params, gap_align, hit_params, hsp_stream, diagnostics);
+      word_params = BlastInitialWordParametersFree(word_params);
+      s_BlastCoreAuxStructFree(aux_struct);
+      return status;
+   }
+
+   /* Update the parameters for linking HSPs, if necessary. */
+   BlastLinkHSPParametersUpdate(word_params, hit_params, gapped_calculation);
+   
    prelim_traceback = (ext_options->ePrelimGapExt == eGreedyWithTracebackExt);
 
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
@@ -845,11 +844,10 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    itr = BlastSeqSrcIteratorFree(itr);
 
    /* Fill the cutoff values in the diagnostics structure */
-   if (diagnostics && diagnostics->cutoffs)
-      raw_cutoffs = diagnostics->cutoffs;
-
-   s_FillReturnCutoffsInfo(raw_cutoffs, score_params, word_params, ext_params, 
-                         hit_params);
+   if (diagnostics && diagnostics->cutoffs) {
+      s_FillReturnCutoffsInfo(diagnostics->cutoffs, score_params, word_params, 
+                              ext_params, hit_params);
+   }
 
    if (hit_options->phi_align) {
       /* Save the product of effective occurrencies of pattern in query and
@@ -865,8 +863,66 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    return status;
 }
 
+Int2 
+Blast_RunPreliminarySearch(EBlastProgramType program, 
+   BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
+   const BlastSeqSrc* seq_src, const BlastScoringOptions* score_options,
+   BlastScoreBlk* sbp, LookupTableWrap* lookup_wrap,
+   const BlastInitialWordOptions* word_options, 
+   const BlastExtensionOptions* ext_options,
+   const BlastHitSavingOptions* hit_options,
+   const BlastEffectiveLengthsOptions* eff_len_options,
+   const PSIBlastOptions* psi_options, const BlastDatabaseOptions* db_options, 
+   BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics)
+{
+   Int2 status = 0;
+   BlastScoringParameters* score_params = NULL;/**< Scoring parameters */
+   BlastExtensionParameters* ext_params = NULL;/**< Gapped extension 
+                                                    parameters */
+   BlastHitSavingParameters* hit_params = NULL;/**< Hit saving parameters */
+   BlastEffectiveLengthsParameters* eff_len_params = NULL; /**< Parameters 
+                                          for effective lengths calculations */
+   BlastGapAlignStruct* gap_align = NULL; /**< Gapped alignment structure */
+   
+   /* Use a local diagnostics structure, because the one passed in an input 
+      argument can be shared between multiple threads, so we don't want to pass
+      it to the engine and have a lot of mutex contention. */
+   BlastDiagnostics* local_diagnostics = Blast_DiagnosticsInit();
+
+   if ((status = 
+        BLAST_GapAlignSetUp(program, seq_src, score_options, 
+                            eff_len_options, ext_options, hit_options, 
+                            query_info, sbp, &score_params, &ext_params, 
+                            &hit_params, &eff_len_params, &gap_align)) != 0)
+      return status;
+   
+   if ((status=
+        BLAST_PreliminarySearchEngine(program, query, query_info, 
+                                      seq_src, gap_align, score_params, 
+                                      lookup_wrap, word_options, 
+                                      ext_params, hit_params, eff_len_params,
+                                      psi_options, db_options, hsp_stream, 
+                                      local_diagnostics)) != 0)
+      return status;
+
+   /* Do not destruct score block here */
+   gap_align->sbp = NULL;
+   gap_align = BLAST_GapAlignStructFree(gap_align);
+   
+   score_params = BlastScoringParametersFree(score_params);
+   hit_params = BlastHitSavingParametersFree(hit_params);
+   ext_params = BlastExtensionParametersFree(ext_params);
+   eff_len_params = BlastEffectiveLengthsParametersFree(eff_len_params);
+    
+   /* Now update the input diagonistics structure. */
+   Blast_DiagnosticsUpdate(diagnostics, local_diagnostics);
+   Blast_DiagnosticsFree(local_diagnostics);
+
+   return status;
+}
+
 Int4 
-BLAST_SearchEngine(EBlastProgramType program_number, 
+Blast_RunFullSearch(EBlastProgramType program_number, 
    BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
    const BlastSeqSrc* seq_src,  BlastScoreBlk* sbp,
    const BlastScoringOptions* score_options, 
@@ -877,8 +933,8 @@ BLAST_SearchEngine(EBlastProgramType program_number,
    const BlastEffectiveLengthsOptions* eff_len_options,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
-   BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics,
-   BlastHSPResults** results)
+   BlastHSPStream* hsp_stream, const BlastRPSInfo* rps_info, 
+   BlastDiagnostics* diagnostics, BlastHSPResults** results)
 {
    Int4 status = 0;
    BlastScoringParameters* score_params = NULL;
@@ -887,15 +943,6 @@ BLAST_SearchEngine(EBlastProgramType program_number,
    BlastEffectiveLengthsParameters* eff_len_params = NULL;
    BlastGapAlignStruct* gap_align;
 
-   if (program_number == eBlastTypeRpsBlast || 
-       program_number == eBlastTypeRpsTblastn) {
-      return          
-         BLAST_RPSSearchEngine(program_number, query, query_info, 
-            seq_src, sbp, score_options, lookup_wrap, 
-            word_options, ext_options, hit_options, eff_len_options, 
-            psi_options, hsp_stream, diagnostics, results);
-   }
-   
    if ((status = 
         BLAST_GapAlignSetUp(program_number, seq_src, score_options, 
            eff_len_options, ext_options, hit_options, query_info, sbp, 
@@ -916,7 +963,7 @@ BLAST_SearchEngine(EBlastProgramType program_number,
    if((status = 
       BLAST_ComputeTraceback(program_number, hsp_stream, query, query_info,
          seq_src, gap_align, score_params, ext_params, hit_params,
-         eff_len_params, db_options, psi_options, results)) != 0)
+         eff_len_params, db_options, psi_options, rps_info, results)) != 0)
       return status;
 
    /* Do not destruct score block here */
