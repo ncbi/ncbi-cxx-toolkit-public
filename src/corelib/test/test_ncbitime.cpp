@@ -50,6 +50,18 @@ static void s_TestMisc(void)
     cout << "Test Misc" << endl;
     cout << "---------------------------" << endl << endl;
 
+    // Print current time
+    {{
+        CTime t(CTime::eCurrent);
+        cout << "[" << t.AsString() << "]" << endl;
+        cout << "[" << (t++).AsString() << "]" << endl;
+        cout << "[" << (t++).AsString() << "]" << endl;
+        cout << "[" << (t++).AsString() << "]" << endl;
+        cout << "[" << (++t).AsString() << "]" << endl;
+        cout << "[" << (++t).AsString() << "]" << endl;
+    }}
+
+    // Month and Day name<->num conversion
     {{
         assert(CTime::MonthNameToNum("Jan")              == CTime::eJanuary); 
         assert(CTime::MonthNameToNum("January")          == 1); 
@@ -75,157 +87,246 @@ static void s_TestMisc(void)
         try {
             CTime::MonthNameToNum("Month"); 
         } catch (CTimeException& e) {
-            NCBI_REPORT_EXCEPTION("",e);
+            NCBI_REPORT_EXCEPTION("", e);
         }
-    
     }}
 
-    CTime t1(CTime::eCurrent);
-    cout << "[" << t1.AsString() << "]" << endl;
-    cout << "[" << (t1++).AsString() << "]" << endl;
-    cout << "[" << (t1++).AsString() << "]" << endl;
-    cout << "[" << (t1++).AsString() << "]" << endl;
-    cout << "[" << (++t1).AsString() << "]" << endl;
-    cout << "[" << (++t1).AsString() << "]" << endl;
+    // String <-> CTime conversion
+    {{
+        {{
+            CTime t;
+            cout << "[" << t.AsString() << "]" << endl;
+            assert(t.AsString() == "");
+        }}
+        {{
+            CTime t(2000, 365 / 2);
+            CTime::SetFormat("M/D/Y h:m:s");
+            cout << "[" << t.AsString() << "]" << endl;
+            assert(t.AsString() == "06/30/2000 00:00:00");
+        }}
+        cout << endl;
+        {{
+            CTime::SetFormat("M/D/Y");
 
-    CTime t2;
-    cout << "[" << t2.AsString() << "]" << endl;
-    assert(t2.AsString() == "");
+            cout << "Year 2000 problem:" << endl << endl;
+            CTime t(1999, 12, 30); 
+            t++; cout << "[" << t.AsString() << "] " << endl;
+            assert(t.AsString() == "12/31/1999");
+            t++; cout << "[" << t.AsString() << "] " << endl;
+            assert(t.AsString() == "01/01/2000");
+            t++; cout << "[" << t.AsString() << "] " << endl;
+            assert(t.AsString() == "01/02/2000");
+            t="02/27/2000";
+            t++; cout << "[" << t.AsString() << "] " << endl;
+            assert(t.AsString() == "02/28/2000");
+            t++; cout << "[" << t.AsString() << "] " << endl;
+            assert(t.AsString() == "02/29/2000");
+            t++; cout << "[" << t.AsString() << "] " << endl;
+            assert(t.AsString() == "03/01/2000");
+            t++; cout << "[" << t.AsString() << "] " << endl;
+            assert(t.AsString() == "03/02/2000");
+        }}
+        cout << endl;
+        {{
+            CTime::SetFormat("M/D/Y h:m:s");
+            cout << "String assignment:" << endl;
+            try {
+                CTime t("02/15/2000 01:12:33");
+                cout << "[" << t.AsString() << "]" << endl;
+                assert(t.AsString() == "02/15/2000 01:12:33");
+                t = "3/16/2001 02:13:34";
+                cout << "[" << t.AsString() << "]" << endl;
+                assert(t.AsString() == "03/16/2001 02:13:34");
+            } catch (CException& e) {
+                NCBI_REPORT_EXCEPTION("",e);
+            }
+        }}
+        cout << endl;
+    }}
 
-    CTime t3(2000, 365 / 2);
-    cout << "[" << t3.AsString() << "]" << endl;
-    assert(t3.AsString() == "06/30/2000 00:00:00");
-    cout << endl;
+    // Addition
+    {{
+        CTime::SetFormat("M/D/Y h:m:s.S");
+        {{
+            cout << "Adding Nanoseconds:" << endl;
+            CTime t;
+            for (CTime tmp(1999, 12, 31, 23, 59, 59, 999999995);
+                 tmp <= CTime(2000, 1, 1, 0, 0, 0, 000000003);
+                 t = tmp, tmp.AddNanoSecond(2)) {
+                 cout << "[" << tmp.AsString() << "] " << endl;
+            }
+            assert(t.AsString() == "01/01/2000 00:00:00.000000003");
+        }}
+        cout << endl;
+        {{
+            cout << "Current time with NS (10 cicles)" << endl;
+            CTime t;
+            for (int i = 0; i < 10; i++) {
+                 t.SetCurrent();
+                 cout << "[" << t.AsString() << "] " << endl;
+            }
+        }}
+        cout << endl;
 
-    CTime::SetFormat("M/D/Y");
+        CTime::SetFormat("M/D/Y h:m:s");
+        {{
+            cout << "Adding seconds:" << endl;
+            CTime t;
+            for (CTime tmp(1999, 12, 31, 23, 59, 5);
+                 tmp <= CTime(2000, 1, 1, 0, 1, 20);
+                 t = tmp, tmp.AddSecond(11)) {
+                 cout << "[" << tmp.AsString() << "] " << endl;
+            }
+            assert(t.AsString() == "01/01/2000 00:01:17");
+        }}
+        cout << endl;
+        {{
+            cout << "Adding minutes:" << endl;
+            for (CTime t(1999, 12, 31, 23, 45);
+                 t <= CTime(2000, 1, 1, 0, 15);
+                 t.AddMinute(11)) {
+                 cout << "[" << t.AsString() << "] " << endl;
+            }
+        }}
+        cout << endl;
+        {{
+            cout << "Adding hours:" << endl;
+            for (CTime t(1999, 12, 31);
+                 t <= CTime(2000, 1, 1, 15);
+                 t.AddHour(11)) {
+                 cout << "[" << t.AsString() << "] " << endl;
+            }
+        }}
+        cout << endl;
+        {{
+            cout << "Adding months:" << endl;
+            for (CTime t(1998, 12, 29);
+                 t <= CTime(1999, 4, 1);
+                 t.AddMonth()) {
+                 cout << "[" << t.AsString() << "] " << endl;
+            }
+        }}
+        cout << endl;
+    }}
 
-    cout << "Year 2000 problem:" << endl << endl;
-    CTime t4(1999, 12, 30); 
-    t4++; cout << "[" << t4.AsString() << "] " << endl;
-    assert(t4.AsString() == "12/31/1999");
-    t4++; cout << "[" << t4.AsString() << "] " << endl;
-    assert(t4.AsString() == "01/01/2000");
-    t4++; cout << "[" << t4.AsString() << "] " << endl;
-    assert(t4.AsString() == "01/02/2000");
-    t4="02/27/2000";
-    t4++; cout << "[" << t4.AsString() << "] " << endl;
-    assert(t4.AsString() == "02/28/2000");
-    t4++; cout << "[" << t4.AsString() << "] " << endl;
-    assert(t4.AsString() == "02/29/2000");
-    t4++; cout << "[" << t4.AsString() << "] " << endl;
-    assert(t4.AsString() == "03/01/2000");
-    t4++; cout << "[" << t4.AsString() << "] " << endl;
-    assert(t4.AsString() == "03/02/2000");
-    cout << endl;
+    // Difference
+    {{
+        CTime t7(2000, 10, 1, 12, 3, 45,1);
+        CTime t8(2000, 10, 2, 14, 55, 1,2);
 
-    CTime::SetFormat("M/D/Y h:m:s");
-    cout << "String assignment:" << endl;
-    try {
-        CTime t5("02/15/2000 01:12:33");
-        cout << "[" << t5.AsString() << "]" << endl;
-        assert(t5.AsString() == "02/15/2000 01:12:33");
-        t5 = "3/16/2001 02:13:34";
-        cout << "[" << t5.AsString() << "]" << endl;
-        assert(t5.AsString() == "03/16/2001 02:13:34");
-    } catch (CException& e) {
-        NCBI_REPORT_EXCEPTION("",e);
-    }
-    cout << endl;
+        cout << "[" << t7.AsString() << " - " << t8.AsString() << "]" << endl;
+        printf("DiffDay        = %.2f\n", t8.DiffDay   (t7));
+        assert((t8.DiffDay(t7)-1.12) < 0.01);
+        printf("DiffHour       = %.2f\n", t8.DiffHour  (t7));
+        assert((t8.DiffHour(t7)-26.85) < 0.01);
+        printf("DiffMinute     = %.2f\n", t8.DiffMinute(t7));
+        assert((t8.DiffMinute(t7)-1611.27) < 0.01);
+        printf("DiffSecond     = %d\n",   t8.DiffSecond(t7));
+        assert(t8.DiffSecond(t7) == 96676);
+        printf("DiffNanoSecond = %.0f\n", t8.DiffNanoSecond(t7));
+    }}
 
-    CTime::SetFormat("M/D/Y h:m:s.S");
+    // Datebase formats conversion
+    {{
+        CTime t1(2000, 1, 1, 1, 1, 1, 10000000);
+        CTime::SetFormat("M/D/Y h:m:s.S");
 
-    cout << "Adding Nanoseconds:" << endl;
-    CTime t;
-    for (CTime t6(1999, 12, 31, 23, 59, 59, 999999995);
-         t6 <= CTime(2000, 1, 1, 0, 0, 0, 000000003);
-         t = t6, t6.AddNanoSecond(2)) {
-         cout << "[" << t6.AsString() << "] " << endl;
-    }
-    assert(t.AsString() == "01/01/2000 00:00:00.000000003");
-    cout << endl;
+        cout << endl << "DB time formats [" << t1.AsString() << "]" << endl;
 
-    cout << "Current time with NS (10 cicles)" << endl;
-    for (int i = 0; i < 10; i++) {
-         t.SetCurrent();
-         cout << "[" << t.AsString() << "] " << endl;
-    }
-    cout << endl;
+        TDBTimeU dbu = t1.GetTimeDBU();
+        TDBTimeI dbi = t1.GetTimeDBI();
 
-    CTime::SetFormat("M/D/Y h:m:s");
+        cout << "DBU days             = " << dbu.days << endl;
+        cout << "DBU time (min)       = " << dbu.time << endl;
+        cout << "DBI days             = " << dbi.days << endl;
+        cout << "DBI time (1/300 sec) = " << dbi.time << endl;
+        cout << endl;
+        CTime t2;
+        t2.SetTimeDBU(dbu);
+        cout << "Time from DBU        = " << t2.AsString() << endl;
+        t2.SetTimeDBI(dbi);
+        cout << "Time from DBI        = " << t2.AsString() << endl;
 
-    cout << "Adding seconds:" << endl;
-    for (CTime t6(1999, 12, 31, 23, 59, 5);
-         t6 <= CTime(2000, 1, 1, 0, 1, 20);
-         t = t6, t6.AddSecond(11)) {
-         cout << "[" << t6.AsString() << "] " << endl;
-    }
-    assert(t.AsString() == "01/01/2000 00:01:17");
-    cout << endl;
+        CTime::SetFormat("M/D/Y h:m:s");
+        dbi.days = 37093;
+        dbi.time = 12301381;
+        t2.SetTimeDBI(dbi);
+        cout << "Time from DBI        = " << t2.AsString() << endl;
+        assert(t2.AsString() == "07/23/2001 11:23:24");
+    }}
 
-    cout << "Adding minutes:" << endl;
-    for (CTime t61(1999, 12, 31, 23, 45);
-         t61 <= CTime(2000, 1, 1, 0, 15);
-         t61.AddMinute(11)) {
-         cout << "[" << t61.AsString() << "] " << endl;
-    }
-    cout << endl;
+    // Set* functions
+    {{
+        CTime::SetFormat("M/D/Y h:m:s");
+        CTime t(2000, 1, 31);
 
-    cout << "Adding hours:" << endl;
-    for (CTime t62(1999, 12, 31);
-         t62 <= CTime(2000, 1, 1, 15);
-         t62.AddHour(11)) {
-         cout << "[" << t62.AsString() << "] " << endl;
-    }
-    cout << endl;
+        t.SetMonth(2);
+        assert(t.AsString() == "02/29/2000 00:00:00");
+        t.SetYear(2001);
+        assert(t.AsString() == "02/28/2001 00:00:00");
+        t.SetMonth(4);
+        assert(t.AsString() == "04/28/2001 00:00:00");
+        t.SetDay(31);
+        assert(t.AsString() == "04/30/2001 00:00:00");
+        t.SetHour(6);
+        assert(t.AsString() == "04/30/2001 06:00:00");
+        t.SetMinute(37);
+        assert(t.AsString() == "04/30/2001 06:37:00");
+        t.SetSecond(59);
+        assert(t.AsString() == "04/30/2001 06:37:59");
+    }}
 
-    cout << "Adding months:" << endl;
-    for (CTime t63(1998, 12, 29);
-         t63 <= CTime(1999, 4, 1);
-         t63.AddMonth()) {
-         cout << "[" << t63.AsString() << "] " << endl;
-    }
-    cout << endl;
+    // Day of week
+    {{   
+        CTime t(1900, 1, 1);
+        int i;
+        for (i = 1; t <= CTime(2030, 12, 31); t++,i++) {
+            assert(t.DayOfWeek() == (i%7));
+        }
+    }}
 
-    CTime t7(2000, 10, 1, 12, 3, 45,1);
-    CTime t8(2000, 10, 2, 14, 55, 1,2);
+    // Number of days in the month
+    {{
+        CTime t(2000, 1, 31);
+        assert(t.DaysInMonth() == 31);
+        t.SetMonth(2);
+        assert(t.DaysInMonth() == 29);
+        t.SetYear(2001);
+        assert(t.DaysInMonth() == 28);
+        t.SetMonth(4);
+        assert(t.DaysInMonth() == 30);
+    }}
 
-    cout << "[" << t7.AsString() << " - " << t8.AsString() << "]" << endl;
-    printf("DiffDay        = %.2f\n", t8.DiffDay   (t7));
-    assert((t8.DiffDay(t7)-1.12) < 0.01);
-    printf("DiffHour       = %.2f\n", t8.DiffHour  (t7));
-    assert((t8.DiffHour(t7)-26.85) < 0.01);
-    printf("DiffMinute     = %.2f\n", t8.DiffMinute(t7));
-    assert((t8.DiffMinute(t7)-1611.27) < 0.01);
-    printf("DiffSecond     = %d\n",   t8.DiffSecond(t7));
-    assert(t8.DiffSecond(t7) == 96676);
-    printf("DiffNanoSecond = %.0f\n", t8.DiffNanoSecond(t7));
-    //    assert(t8.DiffNanoSecond(t7) == 96676000000001);
+    // Week number in the year/month
+    {{
+        CTime t(1970, 1, 1);
+        int i;
+        char buf[3];
 
-    CTime t9(2000, 1, 1, 1, 1, 1, 10000000);
-    CTime::SetFormat("M/D/Y h:m:s.S");
+        time_t gt = t.GetTimeT();
 
-    cout << endl << "DB time formats [" << t9.AsString() << "]" << endl;
+        for (i = 1; t <= CTime(2030, 12, 31); i++, t++, gt += 24*3600) {
+            struct tm *today = gmtime(&gt);
+            assert(today != 0);
+            int week_num_rtl, week_num, month_week_num;
 
-    TDBTimeU dbu = t9.GetTimeDBU();
-    TDBTimeI dbi = t9.GetTimeDBI();
+            // Sunday-based weeks
+            strftime(buf, sizeof(buf), "%U", today);
+            week_num_rtl   = NStr::StringToInt(buf) + 1;
+            week_num       = t.YearWeekNumber(/*CTime::eSunday*/);
+            assert(week_num_rtl == week_num);
+            month_week_num = t.MonthWeekNumber(/*CTime::eSunday*/);
+            assert(month_week_num >= 1  &&  month_week_num <= 6);
 
-    cout << "DBU days             = " << dbu.days << endl;
-    cout << "DBU time (min)       = " << dbu.time << endl;
-    cout << "DBI days             = " << dbi.days << endl;
-    cout << "DBI time (1/300 sec) = " << dbi.time << endl;
-    cout << endl;
-    CTime t10;
-    t10.SetTimeDBU(dbu);
-    cout << "Time from DBU        = " << t10.AsString() << endl;
-    t10.SetTimeDBI(dbi);
-    cout << "Time from DBI        = " << t10.AsString() << endl;
-
-    CTime::SetFormat("M/D/Y h:m:s");
-    dbi.days = 37093;
-    dbi.time = 12301381;
-    t10.SetTimeDBI(dbi);
-    cout << "Time from DBI        = " << t10.AsString() << endl;
-    assert(t10.AsString() == "07/23/2001 11:23:24");
+            // Monday-based weeks
+            strftime(buf, sizeof(buf), "%W", today);
+            week_num_rtl   = NStr::StringToInt(buf) + 1;
+            week_num       = t.YearWeekNumber(CTime::eMonday);
+            assert(week_num_rtl == week_num);
+            month_week_num = t.MonthWeekNumber(CTime::eMonday);
+            assert(month_week_num >= 1  &&  month_week_num <= 6);
+        }
+    }}
 
     cout << endl;
 }
@@ -384,7 +485,7 @@ static void s_TestGMT(void)
         CTime t(2001, 4, 1);
         t.SetFormat("M/D/Y h:m:s w");
         int i;
-        for (i=0; t<=CTime(2001, 4, 10); t++,i++) {
+        for (i = 0; t <= CTime(2001, 4, 10); t++,i++) {
             cout << t.AsString() << " is " << t.DayOfWeek() << endl;
             assert(t.DayOfWeek() == (i%7));
         }
@@ -395,8 +496,8 @@ static void s_TestGMT(void)
         cout << "Test GetTimeT" << endl;
 
         time_t timer=time(0);
-        CTime tg(CTime::eCurrent, CTime::eGmt, CTime::eDefault);
-        CTime tl(CTime::eCurrent, CTime::eLocal, CTime::eDefault);
+        CTime tg(CTime::eCurrent, CTime::eGmt, CTime::eTZPrecissionDefault);
+        CTime tl(CTime::eCurrent, CTime::eLocal, CTime::eTZPrecissionDefault);
         CTime t(timer);
         cout << "[" << t.AsString() << "] " << endl;
         cout << tg.GetTimeT()/3600 << " - " << tl.GetTimeT()/3600 << " - ";
@@ -471,7 +572,7 @@ static void s_TestGMT(void)
         CTime::SetFormat("M/D/Y h:m:s");
         CTime t("04/01/2001 01:01:00");
         CTime tn;
-        t.SetTimeZonePrecision(CTime::eDefault);
+        t.SetTimeZonePrecision(CTime::eTZPrecissionDefault);
         cout << "init  [" << t.AsString() << "]" << endl;
 
         t.SetTimeZoneFormat(CTime::eGmt);
@@ -668,6 +769,7 @@ int main()
     } catch (CException& e) {
         ERR_POST(Fatal << e);
     }
+
     // Success
     return 0;
 }
@@ -676,6 +778,10 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.19  2003/11/25 19:56:38  ivanov
+ * Renamed eDefault to eTZPrecissionDefault.
+ * Some cosmetic changes.
+ *
  * Revision 6.18  2003/10/03 18:27:20  ivanov
  * Added tests for month and day of week names conversion functions
  *
