@@ -419,8 +419,9 @@ const char* CORE_SendMailEx(const char*          to,
         CORE_LOG(eLOG_Warning,"[SendMail]  Subject ignored in as-is messages");
 
     if (!s_SockWrite(sock, "X-Mailer: CORE_SendMail (NCBI "
-                     NCBI_SENDMAIL_TOOLKIT " Toolkit)" MX_CRLF))
+                     NCBI_SENDMAIL_TOOLKIT " Toolkit)" MX_CRLF)) {
         SENDMAIL_RETURN("Write error in sending mailer information");
+    }
 
     assert(sizeof(buffer) > sizeof(MX_CRLF) && sizeof(MX_CRLF) >= 3);
 
@@ -435,7 +436,7 @@ const char* CORE_SendMailEx(const char*          to,
                     k += sizeof(MX_CRLF) - 1;
                     newline = 1/*true*/;
                 } else {
-                    if (info->header[n] != '\r'  ||  !newline)
+                    if (info->header[n] != '\r'  ||  info->header[n+1] != '\n')
                         buffer[k++] = info->header[n];
                     newline = 0/*false*/;
                 }
@@ -465,7 +466,7 @@ const char* CORE_SendMailEx(const char*          to,
                     k += sizeof(MX_CRLF) - 1;
                     newline = 1/*true*/;
                 } else {
-                    if (body[n] != '\r'  ||  !newline) {
+                    if (body[n] != '\r'  ||  (n+1 < m  &&  body[n+1] != '\n')){
                         if (body[n] == '.'  &&  (newline  ||  !n)) {
                             buffer[k++] = '.';
                             buffer[k++] = '.';
@@ -508,6 +509,9 @@ const char* CORE_SendMailEx(const char*          to,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2005/03/18 16:35:39  lavr
+ * Fix \r\n parse bug in both header and body
+ *
  * Revision 6.22  2004/01/07 19:51:36  lavr
  * Try to obtain user name from USERNAME env.var. on Windows, else fallback
  *
