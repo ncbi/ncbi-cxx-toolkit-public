@@ -31,6 +31,10 @@
 #include <html/html.hpp>
 #include <html/htmlhelper.hpp>
 
+// Darwin's <AssertMacros.h> defines check as a variant of assert....
+#ifdef check
+#  undef check
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -242,6 +246,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/02/03 22:59:58  ucko
+ * Make sure to avoid getting check() from Darwin's AssertMacros.h.
+ *
  * Revision 1.14  2004/02/02 15:14:03  ivanov
  * Fixed compilation warnings
  *
