@@ -35,33 +35,15 @@
 BEGIN_NCBI_SCOPE
 
 
-inline static bool isATGC(char ch)
+static bool isDNA_Alphabet(char ch)
 {
-    if (ch == 'A' || ch == 'T' || ch == 'G' || ch == 'C') {
-        return true;
-    }
-    return false;
+    return ::strchr("ATGC", ch) != 0;
 }
 
-
-inline static bool isURY(char ch)
+// Check if letter belongs to amino acid alphabet
+static bool isProtein_Alphabet(char ch)
 {
-    if (ch == 'U' ||
-        ch == 'R' ||
-        ch == 'Y' ||
-        ch == 'K' ||
-        ch == 'M' ||
-        ch == 'S' ||
-        ch == 'W' ||
-        ch == 'B' ||
-        ch == 'D' ||
-        ch == 'H' ||
-        ch == 'V' ||
-        ch == 'N' ) 
-    {
-        return true;
-    }
-    return false;
+    return ::strchr("ACDEFGHIKLMNPQRSTVWYBZ", ch) != 0;
 }
 
 
@@ -72,22 +54,22 @@ CFormatGuess::SequenceType(const char* str, unsigned length)
         length = ::strlen(str);
 
     unsigned ATGC_content = 0;
-    unsigned URY_content = 0;
+    unsigned amino_acid_content = 0;
 
     for (unsigned i = 0; i < length; ++i) {
         unsigned char ch = str[i];
         char upch = toupper(ch);
 
-        if (isATGC(upch)) {
+        if (isDNA_Alphabet(upch)) {
             ++ATGC_content;
         }
-        if (isURY(upch)) {
-            ++URY_content;
+        if (isProtein_Alphabet(upch)) {
+            ++amino_acid_content;
         }
     }
 
     double dna_content = (double)ATGC_content / (double)length;
-    double prot_content = (double)URY_content / (double)length;
+    double prot_content = (double)amino_acid_content / (double)length;
 
     if (dna_content > 0.7) {
         return eNucleotide;
@@ -140,7 +122,7 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
 
     
     unsigned ATGC_content = 0;
-    unsigned URY_content = 0;
+    unsigned amino_acid_content = 0;
 
     unsigned alpha_content = 0;
 
@@ -151,16 +133,16 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
         if (isalnum(ch) || isspace(ch)) {
             ++alpha_content;
         }
-        if (isATGC(upch)) {
+        if (isDNA_Alphabet(upch)) {
             ++ATGC_content;
         }
-        if (isURY(upch)) {
-            ++URY_content;
+        if (isProtein_Alphabet(upch)) {
+            ++amino_acid_content;
         }
     }
 
     double dna_content = (double)ATGC_content / (double)count;
-    double prot_content = (double)URY_content / (double)count;
+    double prot_content = (double)amino_acid_content / (double)count;
     double a_content = (double)alpha_content / (double)count;
     if (buf[0] == '>') {
         if (dna_content > 0.7 && a_content > 0.91) {
@@ -206,6 +188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/20 20:58:04  kuznets
+ * Cleaned up amino-acid alphabet recognition.
+ *
  * Revision 1.3  2003/05/13 15:18:02  kuznets
  * added sequence type guessing function
  *
