@@ -224,7 +224,7 @@ public:
     }
 
     /// Copy constructor.
-    AutoPtr(const AutoPtr<X>& p)
+    AutoPtr(const AutoPtr<X, Del>& p)
         : m_Ptr(0), m_Owner(p.m_Owner)
     {
         m_Ptr = p.x_Release();
@@ -237,7 +237,7 @@ public:
     }
 
     /// Assignment operator.
-    AutoPtr& operator=(const AutoPtr<X>& p)
+    AutoPtr<X, Del>& operator=(const AutoPtr<X, Del>& p)
     {
         if (this != &p) {
             bool owner = p.m_Owner;
@@ -248,7 +248,7 @@ public:
     }
 
     /// Assignment operator.
-    AutoPtr& operator=(X* p)
+    AutoPtr<X, Del>& operator=(X* p)
     {
         reset(p);
         return *this;
@@ -296,7 +296,7 @@ private:
     /// Release for const object.
     X* x_Release(void) const
     {
-        return const_cast<AutoPtr<X>*>(this)->release();
+        return const_cast<AutoPtr<X, Del>*>(this)->release();
     }
 };
 
@@ -409,6 +409,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2003/09/17 15:17:30  vasilche
+ * Fixed self references in template class AutoPtr.
+ *
  * Revision 1.65  2003/08/14 12:48:18  siyan
  * Documentation changes.
  *
