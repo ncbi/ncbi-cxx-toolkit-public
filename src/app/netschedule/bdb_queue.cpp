@@ -32,6 +32,7 @@
 
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbi_limits.h>
 #include <connect/netschedule_client.hpp>
 #include <connect/ncbi_socket.hpp>
 
@@ -363,6 +364,9 @@ unsigned int CQueueDataBase::GetNextId()
     {{
     CFastMutexGuard guard(m_IdLock);
 
+    if (m_MaxId >= kMax_I4) {
+        m_MaxId = 0;
+    }
     if (++m_MaxId == 0) {
         ++m_MaxId;
     }
@@ -632,6 +636,14 @@ CQueueDataBase::CQueue::CQueue(CQueueDataBase& db, const string& queue_name)
 {
 }
 
+unsigned CQueueDataBase::CQueue::CountRecs()
+{
+    SQueueDB& db = m_LQueue.db;
+    CFastMutexGuard guard(m_LQueue.lock);
+	db.SetTransaction(0);
+    return db.CountRecs();
+}
+
 unsigned int 
 CQueueDataBase::CQueue::Submit(const string& input,
                                unsigned      host_addr,
@@ -693,6 +705,12 @@ CQueueDataBase::CQueue::Submit(const string& input,
     js_guard.Release();
 
     return job_id;
+}
+
+unsigned 
+CQueueDataBase::CQueue::CountStatus(CNetScheduleClient::EJobStatus st) const
+{
+    return m_LQueue.status_tracker.CountStatus(st);
 }
 
 void CQueueDataBase::CQueue::Cancel(unsigned int job_id)
@@ -1556,6 +1574,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/03/21 13:07:28  kuznets
+ * Added some statistical functions
+ *
  * Revision 1.18  2005/03/17 20:37:07  kuznets
  * Implemented FPUT
  *

@@ -376,6 +376,11 @@ public:
         /// 0 means job ended in any way.
         time_t CheckExecutionTimeout(unsigned job_id, time_t curr_time);
 
+        unsigned CountStatus(CNetScheduleClient::EJobStatus) const;
+
+        /// Count database records
+        unsigned CountRecs();
+
     private:
         CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
 
@@ -433,6 +438,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/03/21 13:07:28  kuznets
+ * Added some statistical functions
+ *
  * Revision 1.13  2005/03/17 20:37:07  kuznets
  * Implemented FPUT
  *
