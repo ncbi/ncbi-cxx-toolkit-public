@@ -396,7 +396,8 @@ const CScope::TRequestHistory& CScope::x_GetHistory(void)
 
 void CScope::x_AddToHistory(CTSE_Info& tse)
 {
-    m_History.insert(CTSE_Lock(&tse));
+    if (!m_History.insert(CTSE_Lock(&tse)).second)
+        return;
     NON_CONST_ITERATE (CTSE_Info::TBioseqMap, bsi, tse.m_BioseqMap) {
         CBioseq_Handle bsh(bsi->first, *this, *bsi->second);
         m_Cache[bsi->first] = bsh;
@@ -528,6 +529,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2003/03/19 21:55:50  grichenk
+* Avoid re-mapping TSEs in x_AddToHistory() if already indexed
+*
 * Revision 1.52  2003/03/18 14:52:59  grichenk
 * Removed obsolete methods, replaced seq-id with seq-id handle
 * where possible. Added argument to limit annotations update to
