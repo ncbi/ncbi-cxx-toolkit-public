@@ -60,21 +60,24 @@ rebuild-libs:
 	   (cd "$$builddir" && $(MAKE) $(MFLAGS) libs srcdir="$$srcdir") ; \
 	done
 
-$(XAPP): rebuild-libs $(XOBJ) $(XLIBDEP)
+$(XAPP): $(XOBJ) $(XLIBDEP)
 	$(LINK) $(LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(LIBS) @f_outexe@$(XAPP)
 	$(STRIP) $(XAPP)
 	$(POST_LINK) $(XAPP)
 	$(BINCOPY) $(XAPP) $(bindir)/$(XAPP)
 
 
-### Temporary measure to smooth .*.dep move
-$(status_dir)/.%.dep: $(libdir)/.%.dep
-	@mv $< $@
+### Standard targets (non-recursive)
 
+all: rebuild-libs .WAIT $(XAPP)
 
-### Standard targets(non-recursive)
-
-all: $(XAPP)
+# Ensure that gmake -j and Sun dmake -j will complete rebuild-libs
+# before considering $(XAPP).  (Unfortunately, this means gmake -j
+# will also build only one object at a time; finer-grained control is
+# impossible.)
+.NOTPARALLEL:
+.WAIT:
+	@:
 
 clean:
 	-$(RMDIR) SunWS_cache
