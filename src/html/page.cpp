@@ -201,7 +201,7 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
     }
 
     // special case: stream large templates on the first pass to reduce latency
-    if (out) {
+    if (out  &&  !m_UsePopupMenus ) {
         auto_ptr<CNCBINode> node(new CNCBINode);
 
         while (is) {
@@ -313,7 +313,13 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
         while (false);
     }
 
-    return new CHTMLText(str);
+    {{
+        auto_ptr<CHTMLText> node(new CHTMLText(str));
+        if (out) {
+            node->Print(*out, mode);
+        }
+        return node.release();
+    }}
 }
 
 
@@ -401,6 +407,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.35  2003/05/15 00:07:05  ucko
+ * x_CreateTemplate: don't assume out implies !m_UsePopupMenus
+ *
  * Revision 1.34  2003/05/14 21:54:27  ucko
  * Adjust interface to allow automatic streaming of large templates when
  * not using JavaScript menus.
