@@ -38,11 +38,17 @@
 
 // generated includes
 #include <ncbi_pch.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
+#include <objects/seqloc/Giimport_id.hpp>
+#include <objects/seqloc/Patent_seq_id.hpp>
+#include <objects/seqloc/PDB_seq_id.hpp>
+
+#include <objects/biblio/Id_pat.hpp>
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -360,7 +366,7 @@ int CSeq_id::CompareOrdered(const CSeq_id& sid2) const
     case e_Patent:
         return GetPatent().Compare(sid2.GetPatent());
     case e_General:
-        return 0;
+        return GetGeneral().Compare(sid2.GetGeneral());
     case e_Gi:
         return GetGi() - sid2.GetGi();
     case e_Pdb:
@@ -1499,6 +1505,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.80  2004/05/28 20:09:44  johnson
+ * Added Compare for seq-id type General (CDbtag)
+ *
  * Revision 6.79  2004/05/21 14:41:46  dicuccio
  * Moved database tag for general IDs to content part of label
  *

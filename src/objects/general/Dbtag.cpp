@@ -142,6 +142,16 @@ bool CDbtag::Match(const CDbtag& dbt2) const
 }
 
 
+int CDbtag::Compare(const CDbtag& dbt2) const
+{
+    int ret = PNocase().Compare(GetDb(), dbt2.GetDb());
+    if (ret == 0) {
+        ret = GetTag().Compare(dbt2.GetTag());
+    }
+    return ret;
+}
+
+
 // Appends a label to "label" based on content of CDbtag 
 void CDbtag::GetLabel(string* label) const
 {
@@ -239,6 +249,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.16  2004/05/28 20:09:44  johnson
+ * Added Compare for seq-id type General (CDbtag)
+ *
  * Revision 6.15  2004/05/19 17:21:39  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *

@@ -129,8 +129,9 @@ public:
     // destructor
     ~CDbtag(void);
 
-    // check for identity
+    // Comparison functions
     bool Match(const CDbtag& dbt2) const;
+    int Compare(const CDbtag& dbt2) const;
     
     // Appends a label to "label" based on content of CDbtag
     void GetLabel(string* label) const;
@@ -181,6 +182,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/28 20:09:44  johnson
+ * Added Compare for seq-id type General (CDbtag)
+ *
  * Revision 1.7  2004/04/23 16:55:29  shomrat
  * + IsApprovedNoCase
  *
