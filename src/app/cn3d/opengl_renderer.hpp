@@ -157,6 +157,8 @@ public:
     void EnableStereo(bool enableStereo);
 
     double GetRotateSpeed(void) const { return rotateSpeed; }
+    
+    void RecreateQuadric(void);
 
 private:
 
@@ -229,6 +231,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/12/04 15:49:41  thiessen
+* fix stereo and PNG export problems on Mac
+*
 * Revision 1.40  2003/12/03 15:46:36  thiessen
 * adjust so spin increment is accurate
 *

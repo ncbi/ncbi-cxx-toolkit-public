@@ -168,6 +168,8 @@ void OpenGLRenderer::Init(void) const
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_NORMALIZE);
     glDisable(GL_SCISSOR_TEST);
+    
+    RecreateQuadric();
 }
 
 
@@ -315,6 +317,8 @@ void OpenGLRenderer::EnableStereo(bool enableStereo)
 {
     TRACEMSG("turning " << (enableStereo ? "on" : "off" ) << " stereo");
     stereoOn = enableStereo;
+    if (!stereoOn)
+        NewView();
 }
 
 void OpenGLRenderer::ResetCamera(void)
@@ -618,17 +622,22 @@ void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
     RestoreSavedView(); // load initial view if present
 }
 
-void OpenGLRenderer::Construct(void)
+void OpenGLRenderer::RecreateQuadric(void)
 {
-    // (re)initialize global qobj (do it here, since on Mac, drawing into memory buffer requires new qobj)
-    if (qobj) gluDeleteQuadric(qobj);
-    qobj = gluNewQuadric();
-    if (!qobj) ERRORMSG("unable to allocate a GLUQuadricObj");
+    if (qobj)
+        gluDeleteQuadric(qobj);
+    if (!(qobj = gluNewQuadric())) {
+        ERRORMSG("unable to create a new GLUQuadricObj");
+        return;
+    }
     gluQuadricDrawStyle(qobj, (GLenum) GLU_FILL);
     gluQuadricNormals(qobj, (GLenum) GLU_SMOOTH);
     gluQuadricOrientation(qobj, (GLenum) GLU_OUTSIDE);
     gluQuadricTexture(qobj, GL_FALSE);
+}
 
+void OpenGLRenderer::Construct(void)
+{
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
@@ -1601,6 +1610,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2003/12/04 15:49:40  thiessen
+* fix stereo and PNG export problems on Mac
+*
 * Revision 1.72  2003/11/15 16:08:36  thiessen
 * add stereo
 *

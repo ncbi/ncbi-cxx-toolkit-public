@@ -386,6 +386,11 @@ static void write_row_callback(png_structp png_ptr, png_uint_32 row, int pass)
 
 bool ExportPNG(Cn3DGLCanvas *glCanvas)
 {
+#if !defined(__WXMSW__) && !defined(__WXGTK__) && !defined(__WXMAC__)
+    ERRORMSG("PNG export not (yet) implemented on this platform");
+    return false;
+#endif
+
     if (!glCanvas || !glCanvas->renderer) {
         ERRORMSG("ExportPNG() - bad glCanvas parameter");
         return false;
@@ -398,39 +403,6 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
     unsigned char *rowStorage = NULL;
     png_structp png_ptr = NULL;
     png_infop info_ptr = NULL;
-
-    // platform-specific variables for setting up in-memory rendering context
-#if defined(__WXMSW__)
-    HDC hdc = NULL, current_hdc = NULL;
-    HGLRC hglrc = NULL, current_hglrc = NULL;
-    HGDIOBJ current_hgdiobj = NULL;
-    HBITMAP hbm = NULL;
-    PIXELFORMATDESCRIPTOR pfd;
-    int nPixelFormat;
-
-#elif defined(__WXGTK__)
-    GLint glSize;
-    int nAttribs, attribs[20];
-    XVisualInfo *visinfo = NULL;
-    bool localVI = false;
-    Pixmap xPixmap = 0;
-    GLXContext currentCtx = NULL, glCtx = NULL;
-    GLXPixmap glxPixmap = 0;
-    GLXDrawable currentXdrw = 0;
-    Display *display;
-    int (*currentXErrHandler)(Display *, XErrorEvent *) = NULL;
-
-#elif defined(__WXMAC__)
-	unsigned char *base = NULL;
-    GLint attrib[20], glSize;
-    int na = 0;
-    AGLPixelFormat fmt = NULL;
-    AGLContext ctx = NULL, currentCtx;
-
-#else
-    ERRORMSG("PNG export not (yet) implemented on this platform");
-    return false;
-#endif
 
     outputWidth = glCanvas->GetClientSize().GetWidth();		// initial size
     outputHeight = glCanvas->GetClientSize().GetHeight();
@@ -472,6 +444,13 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         if (!out) throw "can't open file for writing";
 
 #if defined(__WXMSW__)
+        HDC hdc = NULL, current_hdc = NULL;
+        HGLRC hglrc = NULL, current_hglrc = NULL;
+        HGDIOBJ current_hgdiobj = NULL;
+        HBITMAP hbm = NULL;
+        PIXELFORMATDESCRIPTOR pfd;
+        int nPixelFormat;
+
         current_hglrc = wglGetCurrentContext(); // save to restore later
         current_hdc = wglGetCurrentDC();
 
@@ -515,6 +494,17 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         }
 
 #elif defined(__WXGTK__)
+        GLint glSize;
+        int nAttribs, attribs[20];
+        XVisualInfo *visinfo = NULL;
+        bool localVI = false;
+        Pixmap xPixmap = 0;
+        GLXContext currentCtx = NULL, glCtx = NULL;
+        GLXPixmap glxPixmap = 0;
+        GLXDrawable currentXdrw = 0;
+        Display *display;
+        int (*currentXErrHandler)(Display *, XErrorEvent *) = NULL;
+
         currentCtx = glXGetCurrentContext(); // save current context info
         currentXdrw = glXGetCurrentDrawable();
         display = GDK_DISPLAY();
@@ -555,25 +545,27 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         if (gotAnXError) throw "Got an X error creating GLXPixmap";
 
         // try to share display lists with "regular" context
-#if 0
-	// seems to be too flaky - fails on Linux/Mesa, Solaris
-        glCtx = glXCreateContext(display, visinfo, currentCtx, False);
-        if (!glCtx || !glXMakeCurrent(display, glxPixmap, glCtx)) {
-            WARNINGMSG("failed to make GLXPixmap rendering context with shared display lists");
-            if (glCtx) glXDestroyContext(display, glCtx);
-#endif
+	// ... seems to be too flaky - fails on Linux/Mesa, Solaris
+//        glCtx = glXCreateContext(display, visinfo, currentCtx, False);
+//        if (!glCtx || !glXMakeCurrent(display, glxPixmap, glCtx)) {
+//            WARNINGMSG("failed to make GLXPixmap rendering context with shared display lists");
+//            if (glCtx) glXDestroyContext(display, glCtx);
             shareDisplayLists = false;
 
             // try to create context without shared lists
             glCtx = glXCreateContext(display, visinfo, NULL, False);
             if (!glCtx || !glXMakeCurrent(display, glxPixmap, glCtx))
                 throw "failed to make GLXPixmap rendering context without shared display lists";
-#if 0
-        }
-#endif
+//        }
         if (gotAnXError) throw "Got an X error setting GLX context";
 
 #elif defined(__WXMAC__)
+        unsigned char *base = NULL;
+        GLint attrib[20], glSize;
+        int na = 0;
+        AGLPixelFormat fmt = NULL;
+        AGLContext ctx = NULL, currentCtx;
+
     	currentCtx = aglGetCurrentContext();
 
     	// Mac pixels seem to always be 32-bit
@@ -612,6 +604,8 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         	throw "aglSetOffScreen failed";
         if (!aglSetCurrentContext(ctx))
         	throw "aglSetCurrentContext failed";
+
+        glCanvas->renderer->RecreateQuadric();	// Macs have context-sensitive quadrics...
 #endif
 
         TRACEMSG("interlaced: " << interlaced << ", nChunks: " << nChunks
@@ -719,52 +713,53 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         png_write_end(png_ptr, info_ptr);
         success = true;
 
+        // general cleanup
+        if (out) fclose(out);
+        if (rowStorage) delete rowStorage;
+        if (png_ptr) {
+            if (info_ptr)
+                png_destroy_write_struct(&png_ptr, &info_ptr);
+            else
+                png_destroy_write_struct(&png_ptr, NULL);
+        }
+        if (progressMeter) {
+            progressMeter->Close(true);
+            progressMeter->Destroy();
+            progressMeter = NULL;
+        }
+
+    // platform-specific cleanup, restore context
+#if defined(__WXMSW__)
+        if (current_hdc && current_hglrc) wglMakeCurrent(current_hdc, current_hglrc);
+        if (hglrc) wglDeleteContext(hglrc);
+        if (hbm) DeleteObject(hbm);
+        if (hdc) DeleteDC(hdc);
+    
+#elif defined(__WXGTK__)
+        gotAnXError = false;
+        if (glCtx) {
+            glXMakeCurrent(display, currentXdrw, currentCtx);
+            glXDestroyContext(display, glCtx);
+        }
+        if (glxPixmap) glXDestroyGLXPixmap(display, glxPixmap);
+        if (xPixmap) XFreePixmap(display, xPixmap);
+        if (localVI && visinfo) XFree(visinfo);
+        if (gotAnXError) WARNINGMSG("Got an X error destroying GLXPixmap context");
+        XSetErrorHandler(currentXErrHandler);
+    
+#elif defined(__WXMAC__)
+        aglSetCurrentContext(currentCtx);
+        if (ctx) aglDestroyContext(ctx);
+        if (fmt) aglDestroyPixelFormat(fmt);
+        if (base) delete[] base;
+        glCanvas->renderer->RecreateQuadric();	// Macs have context-sensitive quadrics...
+#endif
+
     } catch (const char *err) {
         ERRORMSG("Error creating PNG: " << err);
     } catch (exception& e) {
         ERRORMSG("Uncaught exception while creating PNG: " << e.what());
     }
-
-    // general cleanup
-    if (out) fclose(out);
-    if (rowStorage) delete rowStorage;
-    if (png_ptr) {
-        if (info_ptr)
-            png_destroy_write_struct(&png_ptr, &info_ptr);
-        else
-            png_destroy_write_struct(&png_ptr, NULL);
-    }
-    if (progressMeter) {
-        progressMeter->Close(true);
-        progressMeter->Destroy();
-        progressMeter = NULL;
-    }
-
-    // platform-specific cleanup, restore context
-#if defined(__WXMSW__)
-    if (current_hdc && current_hglrc) wglMakeCurrent(current_hdc, current_hglrc);
-    if (hglrc) wglDeleteContext(hglrc);
-    if (hbm) DeleteObject(hbm);
-    if (hdc) DeleteDC(hdc);
-
-#elif defined(__WXGTK__)
-    gotAnXError = false;
-    if (glCtx) {
-        glXMakeCurrent(display, currentXdrw, currentCtx);
-        glXDestroyContext(display, glCtx);
-    }
-    if (glxPixmap) glXDestroyGLXPixmap(display, glxPixmap);
-    if (xPixmap) XFreePixmap(display, xPixmap);
-    if (localVI && visinfo) XFree(visinfo);
-    if (gotAnXError) WARNINGMSG("Got an X error destroying GLXPixmap context");
-    XSetErrorHandler(currentXErrHandler);
-
-#elif defined(WIN_MAC)
-	aglSetCurrentContext(currentCtx);
-	if (ctx) aglDestroyContext(ctx);
-	if (fmt) aglDestroyPixelFormat(fmt);
-	if (base) delete base;
-#endif
 
     // reset font after "regular" context restore
     glCanvas->SuspendRendering(false);
@@ -878,6 +873,9 @@ wxSizer *SetupPNGOptionsDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/12/04 15:49:39  thiessen
+* fix stereo and PNG export problems on Mac
+*
 * Revision 1.17  2003/11/15 16:08:35  thiessen
 * add stereo
 *
