@@ -67,8 +67,10 @@ CSocket::CSocket(const string&   host,
         o_timeout  = &oo_timeout;
     } else
         o_timeout  = 0;
-    if (SOCK_CreateEx(x_host, port, o_timeout, &m_Socket, log) != eIO_Success)
+    if (SOCK_CreateEx(x_host, port, o_timeout, &m_Socket, 0, 0, log)
+        != eIO_Success) {
         m_Socket = 0;
+    }
 }
 
 
@@ -130,7 +132,8 @@ EIO_Status CSocket::Connect(const string&   host,
         } else
             o_timeout = 0;
     }
-    EIO_Status status = SOCK_CreateEx(x_host, port, o_timeout, &m_Socket, log);
+    EIO_Status status = SOCK_CreateEx(x_host, port, o_timeout,
+                                      &m_Socket, 0, 0, log);
     if (status == eIO_Success) {
         SOCK_SetTimeout(m_Socket, eIO_Read,  r_timeout);
         SOCK_SetTimeout(m_Socket, eIO_Write, w_timeout);
@@ -279,47 +282,23 @@ void CSocket::GetPeerAddress(unsigned int* host, unsigned short* port,
 //  CDatagramSocket::
 //
 
-CDatagramSocket::CDatagramSocket(void)
-    : CSocket()
+CDatagramSocket::CDatagramSocket(ESwitch log)
 {
-    return;
-}
-
-
-CDatagramSocket::CDatagramSocket(unsigned short  port,
-                                 ESwitch         log_data)
-    : CSocket()
-{
-    if (DSOCK_CreateEx(port, &m_Socket, log_data) != eIO_Success)
+    if (DSOCK_CreateEx(&m_Socket, log) != eIO_Success)
         m_Socket = 0;
 }
 
 
-EIO_Status CDatagramSocket::Bind(unsigned short  port,
-                                 ESwitch         log_data)
+EIO_Status CDatagramSocket::Bind(unsigned short  port)
 {
-    if ( m_Socket )
-        return eIO_Unknown;
-
-    EIO_Status status = DSOCK_CreateEx(port, &m_Socket, log_data);
-    if (status != eIO_Success)
-        m_Socket = 0;
-    return status;
+    return m_Socket ? DSOCK_Bind(m_Socket, port) : eIO_Closed;
 }
 
 
 EIO_Status CDatagramSocket::Connect(const string&  host,
                                     unsigned short port)
 {
-    if ( !m_Socket ) {
-        EIO_Status status = DSOCK_Create(0, &m_Socket);
-        if (status != eIO_Success) {
-            m_Socket = 0;
-            return status;
-        }
-    }
-
-    return DSOCK_Connect(m_Socket, host.c_str(), port);
+    return m_Socket ? DSOCK_Connect(m_Socket, host.c_str(), port) : eIO_Closed;
 }
 
 
@@ -346,7 +325,6 @@ EIO_Status CDatagramSocket::Recv(void*           buf,
 
     if ( !m_Socket )
         return eIO_Closed;
-
     status = DSOCK_RecvMsg(m_Socket, buf, buflen, maxmsglen,
                            msglen, &addr, sender_port);
     if ( sender_host )
@@ -360,6 +338,8 @@ EIO_Status CDatagramSocket::Recv(void*           buf,
 /////////////////////////////////////////////////////////////////////////////
 //  CListeningSocket::
 //
+
+const STimeout *const CListeningSocket::kInfiniteTimeout = (const STimeout*) 0;
 
 CListeningSocket::CListeningSocket(void)
     : m_Socket(0),
@@ -523,6 +503,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2003/05/14 03:50:54  lavr
+ * Match changes in ncbi_socket.hpp
+ *
  * Revision 6.14  2003/04/30 17:03:33  lavr
  * Modified prototypes for CDatagramSocket::Send() and CDatagramSocket::Recv()
  *
