@@ -526,11 +526,13 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
 string NStr::PtrToString(const void* value)
 {
     char buffer[64];
-#ifdef NCBI_OS_MSWIN
-    ::sprintf(buffer, "0x%p", value);
-#else
-    ::sprintf(buffer, "%p", value);
-#endif
+    ::sprintf(buffer+2, "%p", value);
+    if (buffer[3] == '0'  &&  buffer[4] == 'x')
+        return buffer + 2;
+
+    // need to add leading "0x"
+    buffer[0] = '0';
+    buffer[1] = 'x';
     return buffer;
 }
 
@@ -553,8 +555,10 @@ const void* NStr::StringToPtr(const string& str)
     return reinterpret_cast<const void*> (NStr::StringToULong(s, 16));
 #elif SIZEOF_VOIDP == 8
     return reinterpret_cast<const void*> (NStr::StringToUInt8(s, 16));
-#endif
+#else
+# error "NStr::StringToPtr():  SIZEOF_VOIDP is neither 4 nor 8"
    _ASSERT(0); 
+#endif
 }
 
 
@@ -1010,6 +1014,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.84  2003/03/04 00:02:21  vakatov
+ * NStr::PtrToString() -- use runtime check for "0x"
+ * NStr::StringToPtr() -- minor polishing
+ *
  * Revision 1.83  2003/02/27 15:34:01  lavr
  * Bugfix in converting string to double [spurious dots], some reformatting
  *
