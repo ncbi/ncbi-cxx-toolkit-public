@@ -61,24 +61,28 @@ enum EOwnership {
 
 
 /// Whether a value is nullable.
-enum ENullable
-{
+enum ENullable {
     eNullable,          ///< Value can be null
     eNotNullable        ///< Value cannot be null
 };
 
 
 /// Whether a value is nullable.
-enum ESign
-{
+enum ESign {
     eNegative = -1,     ///< Value is negative
     eZero     =  0,     ///< Value is zero
     ePositive =  1      ///< Value is positive
 };
 
 
-#if defined(HAVE_NO_AUTO_PTR)
+/// Whether a value to truncate/round.
+enum ERound {
+    eTrunc,             ///< Value must be truncated
+    eRound              ///< Value must be rounded
+};
 
+
+#if defined(HAVE_NO_AUTO_PTR)
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -448,6 +452,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2004/09/27 13:48:42  ivanov
+ * + ERound enum
+ *
  * Revision 1.72  2004/09/07 16:21:11  ivanov
  * Added ESign enum
  *
