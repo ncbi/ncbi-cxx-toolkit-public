@@ -50,6 +50,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.6  2001/04/24 21:15:23  lavr
+* Added functions: SERV_MapperName(), SERV_Penalize().
+*
 * Revision 6.5  2001/02/09 17:38:16  lavr
 * Typo fixed in comments
 *
@@ -97,7 +100,7 @@ class CConn_IOStream : public iostream
 {
 public:
     CConn_IOStream(CONNECTOR       connector,
-                   const STimeout* timeout  = 0, /* means infinite */
+                   const STimeout* timeout  = CONN_DEFAULT_TIMEOUT,
                    streamsize      buf_size = kConn_DefBufSize,
                    bool            do_tie   = true);
     CONN GetCONN() const;
@@ -119,7 +122,7 @@ public:
     CConn_SocketStream(const string&   host,         /* host to connect to  */
                        unsigned short  port,         /* ... and port number */
                        unsigned int    max_try  = 3, /* number of attempts  */
-                       const STimeout* timeout  = 0,
+                       const STimeout* timeout  = CONN_DEFAULT_TIMEOUT,
                        streamsize      buf_size = kConn_DefBufSize);
 };
 
@@ -142,6 +145,10 @@ public:
  * (details: <connect/ncbi_connutil.h>).
  *
  * THCC_Flags and other details: <connect/ncbi_http_connector.h>.
+ *
+ * Provided 'timeout' is set at connection level, and if different from
+ * CONN_DEFAULT_TIMEOUT, it overrides value supplied by HTTP connector
+ * (the latter value is kept in SConnNetInfo::timeout).
  */
 
 class CConn_HttpStream : public CConn_IOStream
@@ -153,13 +160,13 @@ public:
                      const string&   user_header = kEmptyStr,
                      unsigned short  port        = 80,
                      THCC_Flags      flags       = fHCC_AutoReconnect,
-                     const STimeout* timeout     = 0,
+                     const STimeout* timeout     = CONN_DEFAULT_TIMEOUT,
                      streamsize      buf_size    = kConn_DefBufSize);
     
     CConn_HttpStream(const SConnNetInfo* info        = 0,
                      const string&       user_header = kEmptyStr,
                      THCC_Flags          flags       = fHCC_AutoReconnect,
-                     const STimeout*     timeout     = 0,
+                     const STimeout*     timeout     = CONN_DEFAULT_TIMEOUT,
                      streamsize          buf_size    = kConn_DefBufSize);
 };
 
@@ -173,6 +180,10 @@ public:
  * Additional specifications can be passed in the SConnNetInfo structure,
  * otherwise created by using service name as a registry section
  * to obtain the information from (details: <connect/ncbi_connutil.h>).
+ *
+ * Provided 'timeout' is set at connection level, and if different from
+ * CONN_DEFAULT_TIMEOUT, it overrides value supplied by underlying connector
+ * (the latter value is kept in SConnNetInfo::timeout).
  */
 
 class CConn_ServiceStream : public CConn_IOStream
@@ -181,7 +192,7 @@ public:
     CConn_ServiceStream(const string&       service,
                         TSERV_Type          types    = fSERV_Any,
                         const SConnNetInfo* info     = 0,
-                        const STimeout*     timeout  = 0,
+                        const STimeout*     timeout  = CONN_DEFAULT_TIMEOUT,
                         streamsize          buf_size = kConn_DefBufSize);
 };
 

@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2001/04/24 21:15:35  lavr
+ * Added functions: SERV_MapperName(), SERV_Penalize().
+ *
  * Revision 6.13  2001/03/02 20:05:56  lavr
  * SERV_LOCALHOST addad; SERV_OpenSimple() made more documented
  *
@@ -141,6 +144,22 @@ SERV_ITER SERV_OpenEx
  */
 const SSERV_Info* SERV_GetNextInfo
 (SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
+ );
+
+
+/* Get name of current service mapper.
+ */
+const char* SERV_MapperName
+(SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
+ );
+
+
+/* Penalize server returned last from SERV_GetNextInfo.
+ * Return 0 if failed, 1 if successful.
+ */
+int/*bool*/ SERV_Penalize
+(SERV_ITER           iter,          /* handle obtained via 'SERV_Open*' call */
+ double              penalty        /* penalty in a range [0..100] (percents)*/
  );
 
 
