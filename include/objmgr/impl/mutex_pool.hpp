@@ -34,8 +34,11 @@
 */
 
 
-#include <corelib/ncbimtx.hpp>
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
+
+#include <list>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -57,11 +60,6 @@ class NCBI_XOBJMGR_EXPORT CInitMutexPool
 public:
     CInitMutexPool(void);
     ~CInitMutexPool(void);
-
-protected:
-    friend class CInitGuard;
-    friend class CInitMutex_Base;
-
 
     class NCBI_XOBJMGR_EXPORT CPoolMutex : public CObject
     {
@@ -89,8 +87,11 @@ protected:
     };
     typedef CPoolMutex TMutex;
 
-    CRef<TMutex> AcquireMutex(CInitMutex_Base& mutex);
-    void ReleaseMutex(CInitMutex_Base& mutex);
+protected:
+    friend class CInitGuard;
+
+    bool AcquireMutex(CInitMutex_Base& init, CRef<TMutex>& mutex);
+    void ReleaseMutex(CInitMutex_Base& init, CRef<TMutex>& mutex);
 
 private:
     typedef list< CRef<TMutex> > TMutexList;
@@ -106,9 +107,9 @@ private:
 class NCBI_XOBJMGR_EXPORT CInitMutex_Base
 {
 public:
-    operator const void*(void) const
+    operator bool(void) const
         {
-            return m_Object.GetPointerOrNull();
+            return m_Object;
         }
     bool operator!(void) const
         {
@@ -128,7 +129,6 @@ protected:
             _ASSERT(!m_Mutex);
         }
 
-    friend class CInitGuard;
     friend class CInitMutexPool;
 
     typedef CInitMutexPool::TMutex TMutex;
@@ -228,13 +228,13 @@ public:
 class NCBI_XOBJMGR_EXPORT CInitGuard
 {
 public:
-    CInitGuard(CInitMutex_Base& mutex, CInitMutexPool& pool)
-        : m_InitMutex(mutex)
+    CInitGuard(CInitMutex_Base& init, CInitMutexPool& pool)
+        : m_Init(init)
         {
-            if ( !mutex ) {
-                m_Mutex = pool.AcquireMutex(mutex);
+            if ( !init && pool.AcquireMutex(init, m_Mutex) ) {
+                _ASSERT(m_Mutex);
                 m_Guard.Guard(m_Mutex->GetMutex());
-                if ( mutex ) {
+                if ( init ) {
                     x_Release();
                 }
             }
@@ -254,7 +254,7 @@ public:
     // true means that this thread should perform initialization
     operator bool(void) const
         {
-            return !m_InitMutex;
+            return !m_Init;
         }
 
 protected:
@@ -263,14 +263,13 @@ protected:
     void x_Release(void)
         {
             _ASSERT(m_Mutex);
-            _ASSERT(m_InitMutex);
-            CInitMutexPool& pool = m_Mutex->GetPool();
+            _ASSERT(m_Init);
+            m_Mutex->GetPool().ReleaseMutex(m_Init, m_Mutex);
+            _ASSERT(!m_Mutex);
             m_Guard.Release();
-            m_Mutex.Reset();
-            pool.ReleaseMutex(m_InitMutex);
         }
 
-    CInitMutex_Base& m_InitMutex;
+    CInitMutex_Base& m_Init;
     CRef<TMutex>     m_Mutex;
     CMutexGuard      m_Guard;
 
@@ -286,6 +285,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/06/25 17:09:27  vasilche
+* Fixed locking in CInitMutexPool.
+*
 * Revision 1.1  2003/06/19 18:23:45  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.

@@ -50,36 +50,50 @@ CInitMutexPool::~CInitMutexPool(void)
 }
 
 
-CRef<CInitMutexPool::TMutex>
-CInitMutexPool::AcquireMutex(CInitMutex_Base& init)
+bool CInitMutexPool::AcquireMutex(CInitMutex_Base& init, CRef<TMutex>& mutex)
 {
-    CRef<TMutex> ret(init.m_Mutex);
-    if ( !ret ) {
+    _ASSERT(!mutex);
+    CRef<TMutex> local(init.m_Mutex);
+    if ( !local ) {
         CFastMutexGuard guard(m_Pool_Mtx);
-        if ( !init.m_Mutex ) {
+        if ( init )
+            return false;
+        local = init.m_Mutex;
+        if ( !local ) {
             if ( m_MutexList.empty() ) {
-                init.m_Mutex.Reset(new TMutex(*this));
+                local.Reset(new TMutex(*this));
+                local->DoDeleteThisObject();
             }
             else {
-                init.m_Mutex = m_MutexList.front();
+                local = m_MutexList.front();
                 m_MutexList.pop_front();
             }
+            init.m_Mutex = local;
         }
-        ret = init.m_Mutex;
     }
-    return ret;
+    _ASSERT(local);
+    mutex = local;
+    return true;
 }
 
 
-void CInitMutexPool::ReleaseMutex(CInitMutex_Base& init)
+void CInitMutexPool::ReleaseMutex(CInitMutex_Base& init, CRef<TMutex>& mutex)
 {
     _ASSERT(init);
-    CRef<TMutex> mutex(init.m_Mutex);
-    if ( mutex ) {
+    CRef<TMutex> local(mutex);
+    mutex.Reset();
+    _ASSERT(local);
+    if ( init.m_Mutex ) {
         CFastMutexGuard guard(m_Pool_Mtx);
         init.m_Mutex.Reset();
-        if ( mutex->ReferencedOnlyOnce() ) {
-            m_MutexList.push_back(mutex);
+        if ( local->ReferencedOnlyOnce() ) {
+            m_MutexList.push_back(local);
+        }
+    }
+    else {
+        if ( local->ReferencedOnlyOnce() ) {
+            CFastMutexGuard guard(m_Pool_Mtx);
+            m_MutexList.push_back(local);
         }
     }
 }
@@ -91,6 +105,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/06/25 17:09:28  vasilche
+* Fixed locking in CInitMutexPool.
+*
 * Revision 1.2  2003/06/24 14:25:18  vasilche
 * Removed obsolete CTSE_Guard class.
 * Used separate mutexes for bioseq and annot maps.
