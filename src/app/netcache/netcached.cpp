@@ -52,10 +52,35 @@
 
 USING_NCBI_SCOPE;
 
-const unsigned int kNetCacheBufSize = 2048;
+const unsigned int kNetCacheBufSize = 64 * 1024;
 const unsigned int kObjectTimeout = 60 * 60; ///< Default timeout in seconds
 
 DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex);
+
+/// NetCache internal exception
+///
+/// @internal
+class CNetCacheServerException : public CException
+{
+public:
+    enum EErrCode {
+        eTimeout,
+        eCommunicationError,
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eTimeout:            return "eTimeout";
+        case eCommunicationError: return "eCommunicationError";
+        default:                  return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CNetCacheServerException, CException);
+};
+
 
 
 /// Netcache threaded server
@@ -71,8 +96,15 @@ public:
         : CThreadedServer(port),
           m_MaxId(0),
           m_Cache(cache),
-          m_Shutdown(false)
+          m_Shutdown(false),
+          m_InactivityTimeout(30)
     {
+        char hostname[256];
+        int status = SOCK_gethostname(hostname, sizeof(hostname));
+        if (status == 0) {
+            m_Host = hostname;
+        }
+
         m_MaxThreads = max_threads ? max_threads : 25;
         m_InitThreads = init_threads ? 
             (init_threads < m_MaxThreads ? init_threads : 2)  : 10;
@@ -89,7 +121,8 @@ public:
         eError,
         ePut,
         eGet,
-        eShutdown
+        eShutdown,
+        eVersion
     } ERequestType;
 
 private:
@@ -123,6 +156,9 @@ private:
     /// Process "SHUTDOWN" request
     void ProcessShutdown(CSocket& sock, const Request& req);
 
+    /// Process "VERSION" request
+    void ProcessVersion(CSocket& sock, const Request& req);
+
     /// Returns FALSE when socket is closed or cannot be read
     bool ReadStr(CSocket& sock, string* str);
 
@@ -143,10 +179,17 @@ private:
     void WaitForId(unsigned int id);
 
 private:
+    /// Host name where server runs
+    string          m_Host;
+    /// ID counter
     unsigned        m_MaxId;
-    bm::bvector<>   m_UsedIds;   ///< Set of ids in use
+    /// Set of ids in use (PUT)
+    bm::bvector<>   m_UsedIds;
     ICache*         m_Cache;
-    bool            m_Shutdown;  ///< Shutdown request
+    /// Flags that server received a shutdown request
+    bool            m_Shutdown; 
+    /// Time to wait for the client (seconds)
+    unsigned        m_InactivityTimeout;
 };
 
 /// @internal
@@ -184,13 +227,15 @@ private:
 
 /// @internal
 static
-bool s_WaitForReadSocket(CSocket& sock)
+bool s_WaitForReadSocket(CSocket& sock, unsigned time_to_wait)
 {
-    STimeout to = {10, 0};
+    STimeout to = {time_to_wait, 0};
     EIO_Status io_st = sock.Wait(eIO_Read, &to);
     switch (io_st) {
     case eIO_Success:
         return true;
+    case eIO_Timeout:
+        NCBI_THROW(CNetCacheServerException, eTimeout, kEmptyStr);
     default:
         return false;
     }
@@ -203,7 +248,7 @@ bool s_WaitForReadSocket(CSocket& sock)
 ///
 struct ThreadData
 {
-    ThreadData() : buffer(new char[kNetCacheBufSize*2]) {}
+    ThreadData() : buffer(new char[kNetCacheBufSize + 256]) {}
     AutoPtr<char, ArrayDeleter<char> >  buffer;
 };
 
@@ -220,12 +265,19 @@ CRef< CTls<ThreadData> > s_tls(new CTls<ThreadData>);
 
 void CNetCacheServer::Process(SOCK sock)
 {
-//LOG_POST("Connection...");
+    string auth, request;
 
     try {
         CSocket socket;
         socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
+
+        // Set socket parameters
+
         socket.DisableOSSendDelay();
+        STimeout to = {m_InactivityTimeout, 0};
+        socket.SetTimeout(eIO_ReadWrite , &to);
+
+        // Set thread local data (buffers, etc.)
 
         ThreadData* tdata = s_tls->GetValue();
         if (tdata) {
@@ -234,16 +286,15 @@ void CNetCacheServer::Process(SOCK sock)
             s_tls->SetValue(tdata, TlsCleanup);
         }
 
-        string auth, request;
-        s_WaitForReadSocket(socket);
+        // Process request
+
+        s_WaitForReadSocket(socket, m_InactivityTimeout);
 
         if (ReadStr(socket, &auth)) {
-//LOG_POST(Info << "Client=" << auth);
             
-            s_WaitForReadSocket(socket);
+            s_WaitForReadSocket(socket, m_InactivityTimeout);
 
             if (ReadStr(socket, &request)) {                
-//LOG_POST(Info << "Request=" << request);
                 Request req;
                 ParseRequest(request, &req);
 
@@ -256,6 +307,9 @@ void CNetCacheServer::Process(SOCK sock)
                     break;
                 case eShutdown:
                     ProcessShutdown(socket, req);
+                    break;
+                case eVersion:
+                    ProcessVersion(socket, req);
                     break;
                 case eError:
                     WriteMsg(socket, "ERR:", req.err_msg);
@@ -275,19 +329,20 @@ void CNetCacheServer::Process(SOCK sock)
         // I'm reading fixed length sized buffer, so any huge ill formed 
         // request still will end up with an error on the client side
         // (considered a client's fault (DDOS attempt))
-        STimeout to;
         to.sec = to.usec = 0;
         char buf[1024];
         socket.SetTimeout(eIO_Read, &to);
         size_t n_read;
         socket.Read(buf, sizeof(buf), &n_read);
     } 
+    catch (CNetCacheServerException &ex)
+    {
+        LOG_POST("Server error: " << ex.what());
+    }
     catch (exception& ex)
     {
-cerr << "Exception in command processing!" << endl;
-        ERR_POST(ex.what());
+        LOG_POST("Execution error in command " << request << " " << ex.what());
     }
-//LOG_POST("Connection closed.");
 }
 
 void CNetCacheServer::ProcessShutdown(CSocket& sock, const Request& req)
@@ -300,6 +355,11 @@ void CNetCacheServer::ProcessShutdown(CSocket& sock, const Request& req)
     STimeout to;
     to.sec = 10; to.usec = 0;
     CSocket shut_sock("localhost", port, &to);    
+}
+
+void CNetCacheServer::ProcessVersion(CSocket& sock, const Request& req)
+{
+    WriteMsg(sock, "OK:", "NCBI NetCache server version=1.1");
 }
 
 void CNetCacheServer::ProcessGet(CSocket& sock, const Request& req)
@@ -342,13 +402,10 @@ format_err:
     
 
 
-//LOG_POST(Info << "GET request key=" << req_id);
     auto_ptr<IReader> rdr(m_Cache->GetReadStream(req_id, 0, kEmptyStr));
     if (!rdr.get()) {
 blob_not_found:
         WriteMsg(sock, "ERR:", "BLOB not found.");
-//LOG_POST(Info << "GET failed. BLOB not found." << req_id);
-
         return;
     }
     
@@ -360,25 +417,33 @@ blob_not_found:
     bool read_flag = false;
     size_t bytes_read;
     do {
-        ERW_Result io_res =
-         rdr->Read(buf, kNetCacheBufSize, &bytes_read);
-        if (io_res == eRW_Success) {
-            if (bytes_read) {
-                if (!read_flag) {
-                    read_flag = true;
-                    WriteMsg(sock, "OK:", "BLOB found.");
-                }
-                // translate cache to the client
-                size_t n_written;
-
-                EIO_Status io_st = 
-                  sock.Write(buf, bytes_read, &n_written);
-                if (io_st != eIO_Success) {
-                    break;
-                }
-            } else {
-                break;
+        ERW_Result io_res = rdr->Read(buf, kNetCacheBufSize, &bytes_read);
+        if (io_res == eRW_Success && bytes_read) {
+            if (!read_flag) {
+                read_flag = true;
+                WriteMsg(sock, "OK:", "BLOB found.");
             }
+
+            // translate BLOB fragment to the network
+            do {
+                size_t n_written;
+                EIO_Status io_st;
+                io_st = sock.Write(buf, bytes_read, &n_written);
+                switch (io_st) {
+                case eIO_Success:
+                    break;
+                case eIO_Timeout:
+                    NCBI_THROW(CNetCacheServerException, 
+                                    eTimeout, kEmptyStr);
+                    break;
+                default:
+                    NCBI_THROW(CNetCacheServerException, 
+                                    eCommunicationError, kEmptyStr);
+                    break;
+                } // switch
+                bytes_read -= n_written;
+            } while (bytes_read > 0);
+
         } else {
             break;
         }
@@ -398,7 +463,7 @@ void CNetCacheServer::ProcessPut(CSocket& sock, const Request& req)
     CIdBusyGuard guard(&m_UsedIds, transaction_id);
 
     WriteMsg(sock, "ID:", rid);
-//LOG_POST(Info << "PUT request. Generated key=" << rid);
+    //LOG_POST(Info << "PUT request. Generated key=" << rid);
     auto_ptr<IWriter> 
         iwrt(m_Cache->GetWriteStream(rid, 0, kEmptyStr));
 
@@ -415,7 +480,6 @@ void CNetCacheServer::ProcessPut(CSocket& sock, const Request& req)
 
     while (ReadBuffer(sock, buf, &buffer_length)) {
         if (buffer_length) {
-
             size_t bytes_written;
             ERW_Result res = 
                 iwrt->Write(buf, buffer_length, &bytes_written);
@@ -553,13 +617,19 @@ void CNetCacheServer::ParseRequest(const string& reqstr, Request* req)
         return;
     } // PUT
 
+    if (strncmp(s, "VERSION", 7) == 0) {
+        req->req_type = eVersion;
+        return;
+    } // PUT
+
+
     req->req_type = eError;
     req->err_msg = "Unknown request";
 }
 
 bool CNetCacheServer::ReadBuffer(CSocket& sock, char* buf, size_t* buffer_length)
 {
-    if (!s_WaitForReadSocket(sock)) {
+    if (!s_WaitForReadSocket(sock, m_InactivityTimeout)) {
         *buffer_length = 0;
         return true;
     }
@@ -571,6 +641,7 @@ bool CNetCacheServer::ReadBuffer(CSocket& sock, char* buf, size_t* buffer_length
         break;
     case eIO_Timeout:
         *buffer_length = 0;
+        NCBI_THROW(CNetCacheServerException, eTimeout, kEmptyStr);
         break;
     default: // invalid socket or request
         return false;
@@ -598,7 +669,7 @@ bool CNetCacheServer::ReadStr(CSocket& sock, string* str)
             flag = false;
             break;
         case eIO_Timeout:
-            // TODO: add repetition counter or another protector here
+            NCBI_THROW(CNetCacheServerException, eTimeout, kEmptyStr);
             break;
         default: // invalid socket or request, bailing out
             return false;
@@ -646,12 +717,8 @@ void CNetCacheServer::GenerateRequestId(const Request& req,
     *id_str += "_";
     *id_str += tmp;
 
-    char hostname[256];
-    int status = SOCK_gethostname(hostname, sizeof(hostname));
-    if (status == 0) {
-        *id_str += "_";
-        *id_str += hostname;
-    }
+    *id_str += "_";
+    *id_str += m_Host;    
 
     CTime time_stamp(CTime::eCurrent);
     unsigned tm = (unsigned)time_stamp.GetTimeT();
@@ -680,7 +747,6 @@ private:
 
 void CNetCacheDApp::Init(void)
 {
-//    SetDiagPostLevel(eDiag_Warning);
     SetDiagPostLevel(eDiag_Info);
 
     // Setup command line arguments and parameters
@@ -802,6 +868,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/10/25 16:06:18  kuznets
+ * Better timeout handling, use larger network bufers, VERSION command
+ *
  * Revision 1.15  2004/10/21 17:21:42  kuznets
  * Reallocated buffer replaced with TLS data
  *
