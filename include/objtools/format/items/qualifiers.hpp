@@ -161,7 +161,8 @@ public:
     const_iterator end(void) const { return m_Quals.end(); }
     
     void AddQual(const Key& key, const IFlatQVal* value) {
-        m_Quals.insert(TQualMMap::value_type(key, CConstRef<IFlatQVal>(value)));
+        m_Quals.insert(typename TQualMMap::value_type
+                       (key, CConstRef<IFlatQVal>(value)));
     }
     
     bool HasQual(const Key& key) const {
@@ -495,6 +496,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/04/26 16:49:27  ucko
+* Add an explicit "typename" annotation required by GCC 3.4.
+*
 * Revision 1.8  2004/04/22 15:39:05  shomrat
 * Changes in context
 *
