@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.6 2004/05/27 20:52:41 lewisg Exp $
+-- $Id: omssa.asn,v 1.7 2004/05/27 21:07:33 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -56,15 +56,15 @@ MSEnzymes ::= INTEGER {
 -- enumerate modifications
 
 MSMod ::= INTEGER {
-    Kmethyl (0),          -- methylation of K
-    Moxy (1),             -- oxidation of methionine
-    Ccarboxymethyl (2),   -- carboxymethyl cysteine
-    Ccarbamidomethyl(3),  -- carbamidomethyl cysteine
-    KQdeamidation (4),      -- deamidation of K and Q
-    Cpropionamide (5),    -- propionamide cysteine
-    Sphosphorylation (6), -- phosphorylation of S
-    Tphosphorylation (7), -- phosphorylation of T
-    Yphosphorylation (8), -- phosphorylation of Y    
+    kmethyl (0),          -- methylation of K
+    moxy (1),             -- oxidation of methionine
+    ccarboxymethyl (2),   -- carboxymethyl cysteine
+    ccarbamidomethyl(3),  -- carbamidomethyl cysteine
+    kqdeamidation (4),    -- deamidation of K and Q
+    cpropionamide (5),    -- propionamide cysteine
+    sphosphorylation (6), -- phosphorylation of S
+    tphosphorylation (7), -- phosphorylation of T
+    yphosphorylation (8), -- phosphorylation of Y    
     none(255)
     }
 
