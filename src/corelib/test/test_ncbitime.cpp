@@ -25,21 +25,15 @@
  * Authors:  Anton Butanayev, Denis Vakatov
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/11/21 15:22:57  vakatov
+ * Do not enforce "_DEBUG" -- it messes up the MSVC++ compilation
+ *
  * Revision 6.1  2000/11/20 22:17:49  vakatov
  * Added NCBI date/time class CTime ("ncbitime.[ch]pp") and
  * its test suite ("test/test_ncbitime.cpp")
  *
  * ===========================================================================
  */
-
-
-// _ASSERT() to work in Release mode as well
-#if !defined(_DEBUG)
-#  define _DEBUG
-#endif
-#if defined(NDEBUG)
-#  undef NDEBUG
-#endif
 
 
 #include <corelib/ncbitime.hpp>
