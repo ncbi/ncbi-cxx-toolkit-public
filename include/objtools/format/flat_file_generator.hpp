@@ -99,12 +99,13 @@ public:
         fHideIntronFeatures   = 0x8000,
         fHideMiscFeatures     = 0x10000,
         fHideCDSProdFeatures  = 0x20000,
-        fShowTranscriptions   = 0x40000,
-        fShowPeptides         = 0x80000,
-        fHideGeneRIFs         = 0x100000,
-        fOnlyGeneRIFs         = 0x200000,
-        fLatestGeneRIFs       = 0x400000,
-        fShowContigAndSeq     = 0x800000
+        fHideCDDFeats         = 0x40000,
+        fShowTranscriptions   = 0x80000,
+        fShowPeptides         = 0x100000,
+        fHideGeneRIFs         = 0x200000,
+        fOnlyGeneRIFs         = 0x400000,
+        fLatestGeneRIFs       = 0x800000,
+        fShowContigAndSeq     = 0x1000000
     };
 
     enum EFilterFlags {
@@ -164,6 +165,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/11 16:40:33  shomrat
+* added HideCDDFeats flag
+*
 * Revision 1.3  2004/01/15 16:57:08  dicuccio
 * Added private unimplemented copy ctor to satisfy MSVC
 *
