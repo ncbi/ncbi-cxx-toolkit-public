@@ -1,6 +1,7 @@
 #include <algo/blast/core/blast_def.h> /* for sfree() macro */
 #include <algo/blast/core/ncbi_std.h>
 
+#ifndef NCBI_C_TOOLKIT
 void * MemDup (const void *orig, size_t size)
 {
 	void*	copy;
@@ -14,6 +15,7 @@ void * MemDup (const void *orig, size_t size)
 	memcpy(copy, orig, size);
 		return copy;
 }
+#endif
 
 /*****************************************************************************
 *
@@ -65,7 +67,7 @@ ListNode* ListNodeAdd (ListNode** head)
 *      sets newnode->ptr = value
 *
 *****************************************************************************/
-ListNode* ListNodeAddPointer (ListNode** head, Int2 choice, 
+ListNode* ListNodeAddPointer (ListNode** head, Uint1 choice, 
                                 void *value)
 {
 	ListNode* newnode;
@@ -73,7 +75,7 @@ ListNode* ListNodeAddPointer (ListNode** head, Int2 choice,
 	newnode = ListNodeAdd(head);
 	if (newnode != NULL)
 	{
-		newnode->choice = (Uint1)choice;
+		newnode->choice = choice;
 		newnode->ptr = value;
 	}
 
@@ -90,7 +92,7 @@ ListNode* ListNodeAddPointer (ListNode** head, Int2 choice,
 *      if str == NULL, does not add a ListNode
 *
 *****************************************************************************/
-ListNode* ListNodeCopyStr (ListNode** head, Int2 choice, char* str)
+ListNode* ListNodeCopyStr (ListNode** head, Uint1 choice, char* str)
 {
 	ListNode* newnode;
 
@@ -99,7 +101,7 @@ ListNode* ListNodeCopyStr (ListNode** head, Int2 choice, char* str)
 	newnode = ListNodeAdd(head);
 	if (newnode != NULL)
 	{
-		newnode->choice = (Uint1)choice;
+		newnode->choice = choice;
 		newnode->ptr = strdup(str);
 	}
 
