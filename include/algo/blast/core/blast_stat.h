@@ -343,6 +343,13 @@ Int2 Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp);
 BLAST_ScoreFreq*
 Blast_ScoreFreqNew(Int4 score_min, Int4 score_max);
 
+/** Deallocates the score frequencies structure 
+ * @param sfp the structure to deallocate [in]
+ * @return NULL
+ */
+BLAST_ScoreFreq*
+Blast_ScoreFreqDestruct(BLAST_ScoreFreq* sfp);
+
 /** Fills a buffer with the 'standard' alphabet 
  * (given by STD_AMINO_ACID_FREQS[index].ch).
  *

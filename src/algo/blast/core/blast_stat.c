@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.68  2004/05/06 14:44:27  camacho
+ * Made Blast_ScoreFreqDestruct non-static
+ *
  * Revision 1.67  2004/05/05 21:16:24  camacho
  * Make Blast_GetStdAlphabet and Blast_ScoreFreqNew non-static
  *
@@ -834,8 +837,8 @@ BlastScoreBlkNew(Uint1 alphabet, Int4 number_of_contexts)
 	return sbp;
 }
 
-static BLAST_ScoreFreq*
-BlastScoreFreqDestruct(BLAST_ScoreFreq* sfp)
+BLAST_ScoreFreq*
+Blast_ScoreFreqDestruct(BLAST_ScoreFreq* sfp)
 {
 	if (sfp == NULL)
 		return NULL;
