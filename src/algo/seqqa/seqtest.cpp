@@ -55,8 +55,7 @@ CRef<CSeq_test_result> CSeqTest::x_SkeletalTestResult(const string& test_name)
     CRef<CSeq_test_result> result(new CSeq_test_result());
 
     result->SetTest(test_name);
-    CDate curr_date(CTime(CTime::eCurrent));
-    result->SetDate().Assign(curr_date);
+    result->SetDate().SetToTime(CTime(CTime::eCurrent));
 
     result->SetOutput_data().SetType().SetStr("Seq-test-result");
     result->SetOutput_data().SetClass("NCBI");
@@ -188,7 +187,7 @@ CSeqTestManager::RunTests(const CSerialObject& obj,
         CRef<CSeq_test_result_set> ref = 
             RunTests(*static_cast<CSerialObject *>(iter.Get().GetObjectPtr()),
                      ctx);
-        if (ref  &&  ref->Get().size()) {
+        if (bool(ref)  &&  ref->Get().size()) {
             CRef<CSeqTestResults> r(new CSeqTestResults());
             r->SetResults(*ref);
             results.push_back(r);
@@ -206,6 +205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/10/06 21:09:50  jcherry
+ * Fixed msvc compile errors
+ *
  * Revision 1.1  2004/10/06 19:57:15  jcherry
  * Initial version
  *
