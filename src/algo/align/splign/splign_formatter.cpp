@@ -180,6 +180,18 @@ CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(const CSplign::TResults*
 }
 
 
+double CalcIdentity(const string& transcript)
+{
+    Uint4 matches = 0;
+    ITERATE(string, ii, transcript) { 
+        if(*ii == 'M') {
+            ++matches;  // std::count() not supported by some compilers
+        }
+    }
+    return double(matches) / transcript.size();
+}
+
+
 CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
     const vector<size_t>& boxes,
     const vector<string>& transcripts,
@@ -206,6 +218,8 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
       sa->Reset();
       sa->SetDim(2);
       sa->SetType(CSeq_align::eType_global);
+      
+      // add dynprog score
       CRef<CScore> score (new CScore);
       CRef<CObject_id> id (new CObject_id);
       id->SetStr("splign");
@@ -215,6 +229,16 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
       score->SetValue(*val);
       CSeq_align::TScore& scorelist = sa->SetScore();
       scorelist.push_back(score);
+
+      // add percent identity
+      CRef<CScore> idty (new CScore);
+      CRef<CObject_id> id_idty (new CObject_id);
+      id_idty->SetStr("idty");
+      idty->SetId(*id_idty);
+      CRef< CScore::C_Value > val_idty (new CScore::C_Value);
+      val_idty->SetReal(CalcIdentity(transcripts[i]));
+      idty->SetValue(*val_idty);
+      scorelist.push_back(idty);
 
       CRef<CSeq_align::C_Segs> segs (new CSeq_align::C_Segs);
       CDense_seg& ds = segs->SetDenseg();
@@ -255,6 +279,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2005/01/07 20:56:41  kapustin
+ * Specify percent identity score when in ASN mode
+ *
  * Revision 1.14  2005/01/04 15:48:41  kapustin
  * Move SetSeqIds() implementation to the cpp file
  *
