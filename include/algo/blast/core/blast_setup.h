@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.3  2003/04/03 14:17:45  coulouri
+* fix warnings, remove unused parameter
+*
 * Revision 1.2  2003/04/02 17:21:23  dondosha
 * Changed functions parameters to accommodate calculation of ungapped cutoff score
 *
@@ -157,7 +160,6 @@ BlastSetUp_GetSequence(SeqLocPtr slp, Boolean use_blastna, Boolean concatenate,
  * @param lookup_options options for lookup table. [in]
  * @param word_options options for initial word finding. [in]
  * @param hit_options options for saving hits. [in]
- * @param full_dna_length length of DNA (blastx/tblastx). [in]
  * @param concatenate concatenate all SeqLoc's if TRUE. [in]
  * @param frame frame info. (blastx/tblastx) [in]
  * @param seq_blocks BLAST_SequenceBlkPtr blocks. [out]
@@ -180,7 +182,6 @@ const BlastEffectiveLengthsOptionsPtr eff_len_options,
 const LookupTableOptionsPtr     lookup_options, 
 const BlastInitialWordOptionsPtr word_options, 
 const BlastHitSavingOptionsPtr hit_options,   
-Int4 full_dna_length,                        
 Boolean concatenate,                        
 const Int4Ptr frame,                       
 ValNodePtr *seq_blocks,                   
