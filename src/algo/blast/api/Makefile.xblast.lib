@@ -4,7 +4,10 @@ include $(srcdir)/../core/Makefile.blast.lib
 
 ASN_DEP = seq xnetblast scoremat
 
-SRC_CXX = bl2seq db_blast blast_aux blast_options_cxx blast_setup_cxx blast_seqalign \
+SRC_CXX = blast_aux \
+blast_options_cxx \
+blast_setup_cxx \
+blast_seqalign \
 blast_options_handle \
 blast_prot_options \
 blastx_options \
@@ -14,6 +17,10 @@ blast_nucl_options \
 disc_nucl_options \
 blast_rps_options \
 remote_blast \
+multiseq_src \
+blast_exception \
+bl2seq \
+db_blast \
 db_traceback
 
 SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
