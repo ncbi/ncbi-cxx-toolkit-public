@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.26  2001/12/07 21:11:01  grichenk
+ * Fixed includes to work with the updated datatool
+ *
  * Revision 1.25  2001/12/07 21:03:47  ucko
  * Add #includes required by new datatool version.
  *
@@ -145,6 +148,9 @@
 #include <objects/entrez2/Entrez2_id_list.hpp>
 #include <objects/entrez2/Entrez2_reply.hpp>
 #include <objects/entrez2/Entrez2_request.hpp>
+#include <objects/entrez2/E2Request.hpp>
+#include <objects/entrez2/Entrez2_db_id.hpp>
+#include <objects/entrez2/E2Reply.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
 #include <objects/general/Dbtag.hpp>
