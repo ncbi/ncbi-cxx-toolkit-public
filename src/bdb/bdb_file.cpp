@@ -290,9 +290,6 @@ void CBDB_RawFile::x_Open(const char* filename,
             open_flags = 0;
             break;
         }
-        if (DuplicatesAllowed()) {
-            open_flags |= DB_DUP;
-        }
 
         int ret = m_DB->open(m_DB,
                              0,                    // DB_TXN*
@@ -632,6 +629,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/07/21 18:33:28  kuznets
+ * Fixed bug with duplicate key tables
+ *
  * Revision 1.14  2003/07/18 20:11:32  kuznets
  * Implemented ReadWrite or Create open mode.
  *
