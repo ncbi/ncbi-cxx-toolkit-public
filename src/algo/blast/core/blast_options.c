@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.15  2003/05/07 17:44:31  dondosha
+ * Assign ungapped xdropoff default correctly for protein programs
+ *
  * Revision 1.14  2003/05/06 20:29:57  dondosha
  * Fix in filling effective length options
  *
@@ -281,9 +284,12 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptionsPtr options,
    if (!options)
       return 1;
 
-   if (StringCmp(program, "blastn") || !greedy) {
-      /* Ungapped extension is performed in all cases except when greedy
-         gapped extension is used */
+   /* Ungapped extension is performed in all cases except when greedy
+      gapped extension is used */
+   if (StringCmp(program, "blastn")) {
+      options->extend_word_method |= EXTEND_WORD_UNGAPPED;
+      options->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
+   } else if (!greedy) {
       options->extend_word_method |= EXTEND_WORD_UNGAPPED;
       options->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_NUCL;
    }
