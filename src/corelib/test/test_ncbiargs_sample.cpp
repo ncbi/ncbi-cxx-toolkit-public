@@ -87,7 +87,9 @@ void CArgTestApplication::Init(void)
          "This is a mandatory plain (named positional) argument",
          CArgDescriptions::eString);
     arg_desc->SetConstraint
-        ("barfooetc", &(*new CArgAllow_Strings, "foo", "bar", "etc"));
+        ("barfooetc", 
+        &(*new CArgAllow_Strings, "foo", "bar", "etc"),
+        CArgDescriptions::eConstraint);
 
     arg_desc->AddDefaultKey
         ("kd", "DefaultKey",
@@ -249,6 +251,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2004/12/15 15:36:01  kuznets
+ * +Constraint invert
+ *
  * Revision 6.9  2004/12/03 14:49:56  kuznets
  * Better example on how multiple arguments work
  *
