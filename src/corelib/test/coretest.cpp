@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2000/06/23 19:57:19  vakatov
+* TestDiag() -- added tests for the switching diag.handlers
+*
 * Revision 1.63  2000/06/11 01:47:34  vakatov
 * IsDiagSet(0) to return TRUE if the diag stream is unset
 *
@@ -541,8 +544,15 @@ static void TestDiag(void)
     NcbiCout << "FLUSHed diag: " << n_flush << " bytes" << NcbiEndl <<NcbiEndl;
 
     SetDiagStream(&NcbiCerr);
+    diag << "***ERROR*** THIS MESSAGE MUST NOT BE VISIBLE!!!\n\n";
+    SetDiagStream(0);
+    diag << Endm;
+    diag << "01234";
+
+    SetDiagStream(&NcbiCerr);
     _ASSERT(  IsDiagStream(&NcbiCerr) );
     _ASSERT( !IsDiagStream(&NcbiCout) );
+    diag << "56789" << Endm;
     diag <<   "[Set Diag Stream(cerr)]  Diagnostics double = " << d << Endm;
     ERR_POST("[Set Diag Stream(cerr)]  Std.Diag. double = "    << d );
     _TRACE  ( "[Set Diag Stream(cerr)]  Trace double = "       << d );
