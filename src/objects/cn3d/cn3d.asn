@@ -1,4 +1,4 @@
---$Revision: 1.2 $
+--$Revision: 1.3 $
 --**********************************************************************
 --
 --  Definitions for Cn3D-specific data (rendering settings,
@@ -166,7 +166,9 @@ Cn3d-user-annotation ::= SEQUENCE {
 -- between annotations that are turned on, the last annotation in this list
 -- that contains these residues will be used as the display style for these
 -- residues.
-Cn3d-user-annotations ::= SEQUENCE OF Cn3d-user-annotation
+Cn3d-user-annotations ::= SEQUENCE {
+    annotations SEQUENCE OF Cn3d-user-annotation
+}
 
 END
 
