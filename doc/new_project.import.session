@@ -1,0 +1,128 @@
+This is a DEMO of script "SRC/IMPORT_PROJECT.SH"
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+/tmp> $NCBI/ver0.0/c++/src/import_project.sh
+
+USAGE:  import_project.sh <cvs_tree_path> [builddir]
+-- retrieve a project (and all its sub-projects) located in directories
+    internal/c++/src/<cvs_tree_path>
+    internal/c++/include/<cvs_tree_path>
+of the NCBI C++ CVS tree, and convert all "Makefile.*.{lib,app}" and
+(the customized makefile inserts) into the real makefiles
+"Makefile.*_{lib,app}" to allow one to build these libs/apps
+using pre-built NCBI C++ toolkit deployed in [builddir].
+Note:  by default, [builddir] will be:  /netopt/ncbi_tools/ver0.0/c++/Debug/build.
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+/tmp> $NCBI/ver0.0/c++/src/import_project.sh internal/hello
+
+cvs checkout: Updating internal/c++/include/internal/hello
+U internal/c++/include/internal/hello/hellocmd.hpp
+U internal/c++/include/internal/hello/hellores.hpp
+cvs checkout: Updating internal/c++/src/internal/hello
+U internal/c++/src/internal/hello/Makefile.hello.app
+U internal/c++/src/internal/hello/Makefile.in
+U internal/c++/src/internal/hello/README
+U internal/c++/src/internal/hello/helloapp.cpp
+U internal/c++/src/internal/hello/helloapp.hpp
+U internal/c++/src/internal/hello/hellocmd.cpp
+U internal/c++/src/internal/hello/hellores.cpp
+cvs checkout: Updating internal/c++/src/internal/hello/html
+U internal/c++/src/internal/hello/html/nosidebar.html
+U internal/c++/src/internal/hello/html/template.html
+Scanning and creating makefiles under /tmp/internal/c++/src/...
+Creating "internal/hello/Makefile.hello_app"  (from "internal/hello/Makefile.hello.app")
+DONE
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+/tmp> cd internal/c++/src/internal/hello/
+/tmp/internal/c++/src/internal/hello> cat Makefile.hello_app 
+
+
+# Makefile:  internal/hello/Makefile.hello_app
+#
+# This file is generated from "internal/hello/Makefile.hello.app"
+# by shell script "import_project.sh"
+
+
+###  PATH TO A PRE-BUILT C++ TOOLKIT  ###
+builddir = /netopt/ncbi_tools/ver0.0/c++/Debug/build
+# builddir = $(NCBI)/ver0.0/c++/Release/build
+
+
+###  DEFAULT COMPILATION FLAGS  -- DON'T EDIT OR MOVE THESE 3 LINES !!!  ###
+include $(builddir)/Makefile.mk
+BINCOPY = :
+LOCAL_CPPFLAGS =  -I../../../include -I../../../include/internal
+
+
+#############################################################################
+###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
+
+#################################
+# $Id: new_project.import.session,v 1.1 1999/11/26 21:34:27 vakatov Exp $
+# Author:  Lewis Geer
+#################################
+
+# Build program "hello.cgi"
+#################################
+
+APP = hello.cgi
+OBJ = helloapp hellores hellocmd
+LIB = xhtml xcgi xncbi
+
+LIBS = \
+  $(FASTCGI_LIBS) \
+  $(NETWORK_LIBS) \
+  $(ORIG_LIBS)
+
+# PRE_LIBS = 
+# LIBS     = $(ORIG_LIBS)
+# CPPFLAGS = $(ORIG_CPPFLAGS)
+# CFLAGS   = $(ORIG_CFLAGS)
+# CXXFLAGS = $(ORIG_CXXFLAGS)
+# LDFLAGS  = $(ORIG_LDFLAGS)
+#                                                                         ###
+#############################################################################
+
+
+###  APPLICATION BUILD RULES  -- DON'T EDIT OR MOVE THIS LINE !!!  ###
+include $(builddir)/Makefile.app
+
+
+###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) BELOW HERE  ###
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+/tmp/internal/c++/src/internal/hello> make -f Makefile.hello_app
+
+
+/netopt/SUNWspro6/bin/CC -c  -mt +w +w2 -g -I../../../include -I../../../include/internal -D_DEBUG  -I/netopt/ncbi_tools.master/ver0.0/c++/Debug/inc -I/netopt/ncbi_tools.master/ver0.0/c++/include -I/netopt/ncbi_tools.master/ver0.0/c++/include/internal helloapp.cpp -o helloapp.o
+
+/netopt/SUNWspro6/bin/CC -c  -mt +w +w2 -g -I../../../include -I../../../include/internal -D_DEBUG  -I/netopt/ncbi_tools.master/ver0.0/c++/Debug/inc -I/netopt/ncbi_tools.master/ver0.0/c++/include -I/netopt/ncbi_tools.master/ver0.0/c++/include/internal hellores.cpp -o hellores.o
+
+/netopt/SUNWspro6/bin/CC -c  -mt +w +w2 -g -I../../../include -I../../../include/internal -D_DEBUG  -I/netopt/ncbi_tools.master/ver0.0/c++/Debug/inc -I/netopt/ncbi_tools.master/ver0.0/c++/include -I/netopt/ncbi_tools.master/ver0.0/c++/include/internal hellocmd.cpp -o hellocmd.o
+
+/netopt/SUNWspro6/bin/CC -xildoff -g helloapp.o hellores.o hellocmd.o  -L/netopt/ncbi_tools.master/ver0.0/c++/Debug/lib -lxhtml -lxcgi -lxncbi -L/netopt/ncbi_tools/altlib -lfcgi  -lsocket -lnsl  -Bstatic -L/netopt/SUNWspro6/bin/../SC5.0/lib -lm -Bdynamic -o hello.cgi
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+/tmp/internal/c++/src/internal/hello> hello.cgi
+
+Content-Type: text/html

@@ -1,0 +1,68 @@
+This is a DEMO of script "SRC/NEW_PROJECT.SH"
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+/tmp> $NCBI/ver0.0/c++/src/new_project.sh
+USAGE:  new_project.sh <name> <type> [builddir]
+SYNOPSIS:
+   Create a model makefile "Makefile.<name>_<type>" to build
+   a library or an application that uses pre-built NCBI C++ toolkit.
+ARGUMENTS:
+   <name>      -- name of the project (will be subst. to the makefile name)
+   <type>      -- one of {lib, app} (whether to build library or application)
+   [builddir]  -- path to the pre-built NCBI C++ toolkit
+                  (default = /netopt/ncbi_tools/ver0.0/c++/Debug/build)
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+/tmp> $NCBI/ver0.0/c++/src/new_project.sh foo app
+Created a model makefile "/tmp/foo/Makefile.foo_app".
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+/tmp> cd foo/
+/tmp/foo> cat Makefile.foo_app 
+
+# Makefile:  /tmp/foo/Makefile.foo_app
+# This file was originally generated from by shell script "new_project.sh"
+
+###  PATH TO A PRE-BUILT C++ TOOLKIT  ###
+builddir = /netopt/ncbi_tools/ver0.0/c++/Debug/build
+# builddir = $(NCBI)/ver0.0/c++/Release/build
+
+
+###  DEFAULT COMPILATION FLAGS  -- DON'T EDIT OR MOVE THESE 3 LINES !!!  ###
+include $(builddir)/Makefile.mk
+BINCOPY = :
+LOCAL_CPPFLAGS = -I.
+
+
+#############################################################################
+###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
+APP = foo
+OBJ = foo
+
+# PRE_LIBS = $(NCBI_C_LIBPATH) .....
+LIB        = xncbi
+# LIBS     = $(NCBI_C_LIBPATH) -lncbi $(NETWORK_LIBS) $(ORIG_LIBS)
+
+# CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
+# CFLAGS   = $(ORIG_CFLAGS)
+# CXXFLAGS = $(ORIG_CXXFLAGS)
+# LDFLAGS  = $(ORIG_LDFLAGS)
+#                                                                         ###
+#############################################################################
+
+
+###  APPLICATION BUILD RULES  -- DON'T EDIT OR MOVE THIS LINE !!!  ###
+include $(builddir)/Makefile.app
+
+
+###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) BELOW HERE  ###
+
