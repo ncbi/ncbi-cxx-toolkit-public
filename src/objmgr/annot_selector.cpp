@@ -95,6 +95,24 @@ SAnnotSelector::SAnnotSelector(TFeatType feat,
 }
 
 
+SAnnotSelector::SAnnotSelector(TFeatSubtype feat_subtype)
+    : SAnnotTypeSelector(feat_subtype),
+      m_FeatProduct(false),
+      m_ResolveDepth(kMax_Int),
+      m_OverlapType(eOverlap_Intervals),
+      m_ResolveMethod(eResolve_TSE),
+      m_SegmentSelect(eSegmentSelect_All),
+      m_SortOrder(eSortOrder_Normal),
+      m_LimitObjectType(eLimit_None),
+      m_UnresolvedFlag(eIgnoreUnresolved),
+      m_MaxSize(kMax_UInt),
+      m_NoMapping(false),
+      m_AdaptiveDepth(false),
+      m_ExcludeExternal(false)
+{
+}
+
+
 SAnnotSelector::SAnnotSelector(const SAnnotSelector& sel)
 {
     *this = sel;
@@ -570,6 +588,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/03/14 18:19:02  grichenk
+* Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
+* SAnnotSelector.
+*
 * Revision 1.21  2005/01/06 16:41:31  grichenk
 * Removed deprecated methods
 *

@@ -102,6 +102,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
                    bool       feat_product = false);
     SAnnotSelector(TFeatType  feat,
                    bool       feat_product = false);
+    SAnnotSelector(TFeatSubtype feat_subtype);
+
     SAnnotSelector(const SAnnotSelector& sel);
     SAnnotSelector& operator=(const SAnnotSelector& sel);
     ~SAnnotSelector(void);
@@ -407,6 +409,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2005/03/14 18:19:02  grichenk
+* Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
+* SAnnotSelector.
+*
 * Revision 1.43  2005/01/12 17:16:13  vasilche
 * Avoid performance warning on MSVC.
 *

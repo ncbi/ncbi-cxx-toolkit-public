@@ -113,7 +113,7 @@ void CSourceItem::x_GatherInfo(CBioseqContext& ctx)
     } 
     
     // if no descriptor was found, try a source feature
-    CFeat_CI fsrc_it(ctx.GetHandle(), SAnnotSelector(CSeqFeatData::e_Biosrc));
+    CFeat_CI fsrc_it(ctx.GetHandle(), CSeqFeatData::e_Biosrc);
     if ( fsrc_it ) {
         const CSeq_feat& src_feat = fsrc_it->GetOriginalFeature();
         x_SetSource(src_feat.GetData().GetBiosrc(), src_feat);
@@ -311,6 +311,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/03/14 18:19:02  grichenk
+* Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
+* SAnnotSelector.
+*
 * Revision 1.11  2005/02/07 15:01:27  shomrat
 * Added Taxid
 *

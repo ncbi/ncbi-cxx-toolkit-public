@@ -882,11 +882,7 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
 
         if (gene_id != 0) {
             CFeat_CI feat_it(scope, mrna_feat.GetLocation(),
-                             SAnnotSelector()
-                             //.SetExcludeExternal()
-                             .SetFeatSubtype(CSeqFeatData::eSubtype_gene)
-                             .SetOverlapIntervals()
-                             .SetResolveTSE());
+                             CSeqFeatData::eSubtype_gene);
 
             for ( ;  feat_it;  ++feat_it) {
                 // make sure the feature contains our feature of interest
@@ -916,11 +912,7 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
         string ref_str;
         ref->GetLabel(&ref_str);
         CFeat_CI feat_it(scope, mrna_feat.GetLocation(),
-                         SAnnotSelector()
-                         //.SetExcludeExternal()
-                         .SetFeatSubtype(CSeqFeatData::eSubtype_gene)
-                         .SetOverlapIntervals()
-                         .SetResolveTSE());
+                         CSeqFeatData::eSubtype_gene);
         for ( ;  feat_it;  ++feat_it) {
             // make sure the feature contains our feature of interest
             sequence::ECompare comp =
@@ -974,11 +966,7 @@ CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& cds_feat,
         string ref_str;
         ref->GetLabel(&ref_str);
         CFeat_CI feat_it(scope, cds_feat.GetLocation(),
-                         SAnnotSelector()
-                         //.SetExcludeExternal()
-                         .SetFeatSubtype(CSeqFeatData::eSubtype_gene)
-                         .SetOverlapIntervals()
-                         .SetResolveTSE());
+                         CSeqFeatData::eSubtype_gene);
         for ( ;  feat_it;  ++feat_it) {
             // make sure the feature contains our feature of interest
             sequence::ECompare comp =
@@ -1031,11 +1019,7 @@ void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
     }
 
     CFeat_CI feat_it(scope, gene_feat.GetLocation(),
-                     SAnnotSelector()
-                     //.SetExcludeExternal()
-                     .SetFeatSubtype(CSeqFeatData::eSubtype_mRNA)
-                     .SetOverlapTotalRange()
-                     .SetResolveAll());
+                     CSeqFeatData::eSubtype_mRNA);
 
     /// first, check to see if we can match based on gene_id
     if (gene_id) {
@@ -1307,11 +1291,10 @@ const CSeq_feat* GetmRNAForProduct(const CBioseq& product, CScope* scope)
 const CSeq_feat* GetmRNAForProduct(const CBioseq_Handle& bsh)
 {
     if ( bsh ) {
-        SAnnotSelector as;
-        as.SetFeatSubtype(CSeqFeatData::eSubtype_mRNA)
+        SAnnotSelector as(CSeqFeatData::eSubtype_mRNA);
+        as.SetByProduct();
             //.SetExcludeExternal()
-            .SetByProduct();
-
+ 
         CFeat_CI fi(bsh, as);
         if ( fi ) {
             return &(fi->GetOriginalFeature());
@@ -2635,6 +2618,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.123  2005/03/14 18:19:02  grichenk
+* Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
+* SAnnotSelector.
+*
 * Revision 1.122  2005/02/28 17:10:56  vasilche
 * Do not exclude external annotations as they are marked properly by ID2 reader now.
 *

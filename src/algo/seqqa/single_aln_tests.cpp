@@ -88,8 +88,7 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
 
     CBioseq_Handle xcript_hand
         = scope.GetBioseqHandle(disc.front()->GetSeq_id(0));
-    SAnnotSelector sel;
-    sel.SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+    SAnnotSelector sel(CSeqFeatData::eSubtype_cdregion);
     sel.SetResolveDepth(0);
     CFeat_CI it(xcript_hand, sel);
     bool has_cds(it);
@@ -472,6 +471,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/03/14 18:19:02  grichenk
+ * Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
+ * SAnnotSelector.
+ *
  * Revision 1.12  2005/02/28 16:10:17  jcherry
  * Initialize variables to eliminate compilation warnings
  *

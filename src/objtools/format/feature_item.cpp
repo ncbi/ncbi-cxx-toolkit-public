@@ -1133,7 +1133,7 @@ const CProt_ref* CFeatureItem::x_AddProteinQuals(CBioseq_Handle& prot) const
     }
 
     const CProt_ref* pref = 0;
-    CFeat_CI prot_feat(prot, SAnnotSelector(CSeqFeatData::e_Prot));
+    CFeat_CI prot_feat(prot, CSeqFeatData::e_Prot);
     if ( prot_feat ) {
         pref = &(prot_feat->GetData().GetProt());
         if ( prot_feat->IsSetComment() ) {
@@ -3550,6 +3550,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2005/03/14 18:19:02  grichenk
+* Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
+* SAnnotSelector.
+*
 * Revision 1.47  2005/03/07 17:18:28  shomrat
 * Supress overlap operon check if no operon in context; force protein_id accession
 *

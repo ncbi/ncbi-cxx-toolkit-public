@@ -750,7 +750,7 @@ void CValidError_bioseq::ValidatemRNABioseqContext(const CBioseq_Handle& seq)
             }
         }
         if ( genomicgrp != 0 ) {
-            CFeat_CI mrna_gene(seq, SAnnotSelector(CSeqFeatData::e_Gene));
+            CFeat_CI mrna_gene(seq, CSeqFeatData::e_Gene);
             if ( mrna_gene ) {
                 const CGene_ref& mrnagrp = mrna_gene->GetData().GetGene();
                 if ( !s_EqualGene_ref(*genomicgrp, mrnagrp) ) {
@@ -2039,7 +2039,7 @@ void CValidError_bioseq::CheckSoureDescriptor(const CBioseq_Handle& bsh)
 
     if (m_Imp.IsTransgenic(di->GetSource())  &&
         CSeq_inst::IsNa(bsh.GetInst_Mol())) {
-        if (!CFeat_CI(bsh, SAnnotSelector(CSeqFeatData::e_Biosrc))) {
+        if (!CFeat_CI(bsh, CSeqFeatData::e_Biosrc)) {
             PostErr(eDiag_Warning, eErr_SEQ_DESCR_TransgenicProblem,
                 "Transgenic source descriptor requires presence of source feature",
                 *(bsh.GetBioseqCore()));
@@ -2067,7 +2067,7 @@ void CValidError_bioseq::CheckForPubOnBioseq(const CBioseq& seq)
 
     // Check for CPubdesc on the biodseq
     if ( !CSeqdesc_CI( bsh, CSeqdesc::e_Pub)  &&
-         !CFeat_CI(bsh, SAnnotSelector(CSeqFeatData::e_Pub)) ) {
+         !CFeat_CI(bsh, CSeqFeatData::e_Pub) ) {
         m_Imp.AddBioseqWithNoPub(seq);
     }
 }
@@ -2077,7 +2077,7 @@ void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
 {
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     
-    for ( CFeat_CI fi(bsh, SAnnotSelector(CSeqFeatData::e_Gene)); fi; ++fi ) {
+    for ( CFeat_CI fi(bsh, CSeqFeatData::e_Gene); fi; ++fi ) {
         const CSeq_loc& loc = fi->GetOriginalFeature().GetLocation();
         if ( !IsOneBioseq(loc, m_Scope) ) {  // skip segmented 
             continue;
@@ -2341,7 +2341,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
         CBioseq_Handle parent = s_GetParent(bsh);
         if ( parent ) {
             TSeqPos parent_len = parent.IsSetInst_Length() ? bsh.GetInst_Length() : 0;
-            for ( CFeat_CI it(parent, SAnnotSelector(CSeqFeatData::e_Prot)); it; ++it ) {
+            for ( CFeat_CI it(parent, CSeqFeatData::e_Prot); it; ++it ) {
                 CSeq_loc::TRange range = it->GetLocation().GetTotalRange();
                 
                 if ( range.IsWhole()  ||
@@ -2438,7 +2438,7 @@ void CValidError_bioseq::x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& se
 void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq)
 {
     // nothing to validate if there aren't any genes
-    if (!CFeat_CI(seq, SAnnotSelector(CSeqFeatData::e_Gene))) {
+    if (!CFeat_CI(seq, CSeqFeatData::e_Gene)) {
         return;
     }
 
@@ -2913,7 +2913,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                     if ( !seq.IsAa()  &&
                         !(seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg)  &&
                         !(m_Imp.GetAncestor(seq, CBioseq_set::eClass_parts) != 0) ) {
-                        if ( !CFeat_CI(bsh, SAnnotSelector(CSeqFeatData::e_Biosrc)) ) {
+                        if ( !CFeat_CI(bsh, CSeqFeatData::e_Biosrc) ) {
                             PostErr(eDiag_Error,
                                 eErr_SEQ_DESCR_UnnecessaryBioSourceFocus,
                                 "BioSource descriptor has focus, "
@@ -3288,7 +3288,7 @@ void CValidError_bioseq::ValidateCollidingGenes(const CBioseq& seq)
     // Loop through genes and insert into multimap sorted by
     // gene label / locus_tag -- case insensitive
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-    for ( CFeat_CI fi(bsh, SAnnotSelector(CSeqFeatData::e_Gene)); fi; ++fi ) {
+    for ( CFeat_CI fi(bsh, CSeqFeatData::e_Gene); fi; ++fi ) {
         const CSeq_feat& feat = fi->GetOriginalFeature();
         // record label
         string label;
@@ -3907,6 +3907,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.95  2005/03/14 18:19:02  grichenk
+* Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
+* SAnnotSelector.
+*
 * Revision 1.94  2005/02/18 15:07:10  shomrat
 * CSeq_loc interface changes
 *

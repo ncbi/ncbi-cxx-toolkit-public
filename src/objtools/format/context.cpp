@@ -213,8 +213,9 @@ void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
 
 bool CBioseqContext::x_HasOperon(void) const
 {
-    return CFeat_CI(m_Handle.GetScope(), *m_Location, SAnnotSelector().
-        SetFeatSubtype(CSeqFeatData::eSubtype_operon));
+    return CFeat_CI(m_Handle.GetScope(),
+                    *m_Location,
+                    CSeqFeatData::eSubtype_operon);
 }
 
 
@@ -617,6 +618,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2005/03/14 18:19:02  grichenk
+* Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
+* SAnnotSelector.
+*
 * Revision 1.35  2005/03/07 17:17:27  shomrat
 * Check if a Bioseq has an operon feature
 *

@@ -367,7 +367,7 @@ void CValidError_bioseqset::ValidateGenProdSet(const CBioseq_set& seqset)
     const CBioseq& seq = (*se_list_it)->GetSeq();
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
 
-    CFeat_CI fi(bsh, SAnnotSelector(CSeqFeatData::e_Rna));
+    CFeat_CI fi(bsh, CSeqFeatData::e_Rna);
     for (; fi; ++fi) {
         if ( fi->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA ) {
             if ( fi->IsSetProduct() ) {
@@ -418,6 +418,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2005/03/14 18:19:02  grichenk
+* Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
+* SAnnotSelector.
+*
 * Revision 1.15  2004/11/01 19:33:10  grichenk
 * Removed deprecated methods
 *

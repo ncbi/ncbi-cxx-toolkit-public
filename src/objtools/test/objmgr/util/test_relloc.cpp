@@ -85,8 +85,7 @@ int CRelLocTester::Run(void)
 
     CBioseq_Handle handle = scope.GetBioseqHandle(id); 
     CConstRef<CSeq_loc> parent;
-    for (CFeat_CI it(handle,
-        SAnnotSelector(CSeqFeatData::e_Cdregion));  it;  ++it) {
+    for (CFeat_CI it(handle, CSeqFeatData::e_Cdregion);  it;  ++it) {
         parent = &it->GetLocation();
         BREAK(it);
     }
@@ -144,6 +143,10 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/03/14 18:19:02  grichenk
+* Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
+* SAnnotSelector.
+*
 * Revision 1.10  2004/11/18 21:27:40  grichenk
 * Removed default value for scope argument in seq-loc related functions.
 *

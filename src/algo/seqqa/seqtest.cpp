@@ -76,8 +76,7 @@ CSeqTest::x_TestAllCdregions(const CSerialObject& obj,
         return ref;
     }
 
-    SAnnotSelector sel;
-    sel.SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+    SAnnotSelector sel(CSeqFeatData::eSubtype_cdregion);
     sel.SetResolveDepth(0);
     CSeq_loc loc;
     loc.SetWhole().Assign(*id);
@@ -210,6 +209,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/03/14 18:19:02  grichenk
+ * Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
+ * SAnnotSelector.
+ *
  * Revision 1.7  2005/01/12 17:17:08  vasilche
  * Avoid performance warning on MSVC.
  *

@@ -361,7 +361,7 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
     if ( src_desc ) {
         bsrc = &(src_desc->GetSource());
     } else {
-        CFeat_CI feat(bsh, SAnnotSelector(CSeqFeatData::e_Biosrc));
+        CFeat_CI feat(bsh, CSeqFeatData::e_Biosrc);
         if ( feat ) {
             bsrc = &(feat->GetData().GetBiosrc());
         } else if ( ctx.IsProt() ) {
@@ -605,6 +605,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2005/03/14 18:19:02  grichenk
+* Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
+* SAnnotSelector.
+*
 * Revision 1.16  2005/02/17 15:58:42  grichenk
 * Changes sequence::GetId() to return CSeq_id_Handle
 *

@@ -349,7 +349,7 @@ void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) c
     }
 
     // gather references from features
-    CFeat_CI it(scope, loc, SAnnotSelector(CSeqFeatData::e_Pub));
+    CFeat_CI it(scope, loc, CSeqFeatData::e_Pub);
     for ( ; it; ++it) {
         CBioseqContext::TRef ref(new CReferenceItem(it->GetOriginalFeature(),
             *m_Current));
@@ -378,8 +378,7 @@ void CFlatGatherer::x_GatherCDSReferences(TReferences& refs) const
 
     CScope& scope = m_Current->GetScope();
 
-    SAnnotSelector sel(CSeqFeatData::e_Pub);
-    for (CFeat_CI it(m_Current->GetScope(), cds_loc, sel); it; ++it) {
+    for (CFeat_CI it(m_Current->GetScope(), cds_loc, CSeqFeatData::e_Pub); it; ++it) {
         const CSeq_feat& feat = it->GetOriginalFeature();
         if (TestForOverlap(cds_loc, feat.GetLocation(), eOverlap_Contains, kInvalidSeqPos, &scope) > 0) {
             CBioseqContext::TRef ref(new CReferenceItem(feat, *m_Current, &cds_prod));
@@ -811,7 +810,7 @@ void CFlatGatherer::x_FeatComments(CBioseqContext& ctx) const
     CScope *scope = &ctx.GetScope();
     const CSeq_loc& loc = ctx.GetLocation();
 
-    for (CFeat_CI it(ctx.GetScope(), loc, SAnnotSelector(CSeqFeatData::e_Comment));
+    for (CFeat_CI it(ctx.GetScope(), loc, CSeqFeatData::e_Comment);
         it; ++it) {
         ECompare comp = Compare(it->GetLocation(), loc, scope);
 
@@ -1362,7 +1361,7 @@ void CFlatGatherer::x_CopyCDSFromCDNA
         return;
     }
     // NB: There is only one CDS on an mRNA
-    CFeat_CI cds(cdna, SAnnotSelector(CSeqFeatData::e_Cdregion));
+    CFeat_CI cds(cdna, CSeqFeatData::e_Cdregion);
     if ( cds ) {
         // map mRNA location to the genomic
         CSeq_loc_Mapper mapper(feat,
@@ -1603,6 +1602,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2005/03/14 18:19:02  grichenk
+* Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
+* SAnnotSelector.
+*
 * Revision 1.42  2005/02/18 15:08:54  shomrat
 * CSeq_loc interface changes
 *
