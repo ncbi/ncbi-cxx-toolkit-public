@@ -159,9 +159,12 @@ public:
 /// Then, facilitate the process of instantiating the class given
 /// the registered pool of drivers, and also taking into accont the driver name
 /// and/or version as requested by the calling code.
+///
+/// Template class is protected by mutex and safe for use from diffrent threads
+///
 
 template <class TClass>
-class NCBI_XNCBI_EXPORT CPluginManager
+class CPluginManager
 {
 public:
     typedef IClassFactory<TClass> TClassFactory;
@@ -203,7 +206,7 @@ public:
     /// Information about a driver, with maybe a pointer to an instantiated
     /// class factory that contains the driver.
     /// @sa FNCBI_EntryPoint
-    class SDriverInfo {
+    struct SDriverInfo {
         string         name;        //!< Driver name
         CVersionInfo   version;     //!< Driver version
         // It's the plugin manager's (and not SDriverInfo) responsibility to
@@ -265,7 +268,7 @@ public:
     void RegisterWithEntryPoint(FNCBI_EntryPoint plugin_entry_point);
 
     // ctors
-    CPluginManager(void);
+    CPluginManager(void) {}
     virtual ~CPluginManager();
 
 protected:
@@ -279,6 +282,70 @@ private:
     set<TClassFactory*> m_Factories;
 };
 
+
+
+template <class TClass> CPluginManager<TClass>::TClassFactory* 
+CPluginManager<TClass>::GetFactory(const string&       driver,
+                                   const CVersionInfo& version)
+{
+    CFastMutexGuard guard(m_Mutex);
+
+    set<TClassFactory*>::const_iterator it = m_Factories.begin();
+    set<TClassFactory*>::const_iterator it_end = m_Factories.end();
+
+    set<TClassFactory*>::const_iterator it1 = FindVersion(it, it_end);
+    if (it1 != it_end) {
+        return *it1;
+    }
+}
+
+template <class TClass>
+void CPluginManager<TClass>::RegisterFactory(TClassFactory& factory)
+{
+    CFastMutexGuard guard(m_Mutex);
+
+    m_Factories->insert(&factory);
+}
+
+template <class TClass>
+bool CPluginManager<TClass>::UnregisterFactory(TClassFactory& factory)
+{
+    CFastMutexGuard guard(m_Mutex);
+
+    set<TClassFactory*> it = m_Factories.find(&factory);
+    if (it != m_Factories.end()) {
+        TClassFactory* f = *it;
+        m_Factories.erase(it);
+        delete f;
+    }
+}
+
+
+template <class TClass>
+void CPluginManager<TClass>::RegisterWithEntryPoint(FNCBI_EntryPoint plugin_entry_point)
+{
+    TDriverInfoList drv_list;
+    plugin_entry_point(&drv_list, eGetFactoryInfo);
+
+    if (!drv_list.empty()) {
+        plugin_entry_point(&drv_list, eInstantiateFactory);
+
+        NON_CONST_ITERATE(TDriverInfoList, it, drv_list) {
+            if (it->factory) {
+                RegisterFactory(*(it->factory));
+            }
+        }
+    }
+}
+
+template <class TClass>
+CPluginManager<TClass>::~CPluginManager()
+{
+    NON_CONST_ITERATE(set<TClassFactory*>, it, m_Factories) {
+        TClassFactory* f = *it;
+        delete f;
+    }
+}
 
 
 //!!!  The above API is by-and-large worked through, all the rest of
@@ -435,6 +502,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/10/30 20:03:49  kuznets
+ * Work in progress. Added implementations of CPluginManager<> methods.
+ *
  * Revision 1.4  2003/10/29 23:35:46  vakatov
  * Just starting with CDllResolver...
  *
