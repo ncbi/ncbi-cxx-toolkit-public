@@ -122,7 +122,7 @@ enum EGetIdType {
 /// @return A requested seq-id.  This function will throw an exception of type
 ///  CSeqIdFromHandleException if the request cannot be satisfied.
 NCBI_XOBJUTIL_EXPORT
-const CSeq_id& GetId(const CBioseq_Handle& handle,
+CSeq_id_Handle GetId(const CBioseq_Handle& handle,
                      EGetIdType type = eGetId_Default);
 
 /// Return a selected ID type for a given bioseq handle.  This function
@@ -149,11 +149,11 @@ const CSeq_id& GetId(const CBioseq_Handle& handle,
 /// @return A requested seq-id.  This function will throw an exception of type
 ///  CSeqIdFromHandleException if the request cannot be satisfied.
 NCBI_XOBJUTIL_EXPORT
-const CSeq_id& GetId(const CSeq_id& id, CScope& scope,
+CSeq_id_Handle GetId(const CSeq_id& id, CScope& scope,
                      EGetIdType type = eGetId_Default);
 
 NCBI_XOBJUTIL_EXPORT
-const CSeq_id& GetId(const CSeq_id_Handle& id, CScope& scope,
+CSeq_id_Handle GetId(const CSeq_id_Handle& id, CScope& scope,
                      EGetIdType type = eGetId_Default);
 
 /* @} */
@@ -691,6 +691,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.60  2005/02/17 15:58:41  grichenk
+* Changes sequence::GetId() to return CSeq_id_Handle
+*
 * Revision 1.59  2005/01/13 15:24:15  dicuccio
 * Added optional flags to GetBestXxxForXxx() functions to control the types of
 * checks performed

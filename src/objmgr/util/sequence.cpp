@@ -201,18 +201,18 @@ int ScoreSeqIdHandle(const CSeq_id_Handle& idh)
     return CSeq_id::Score(id_non_const);
 }
 
-const CSeq_id& GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
+CSeq_id_Handle GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
 {
     switch (type) {
     case eGetId_ForceGi:
         if (id.IsGi()) {
-            return id;
+            return CSeq_id_Handle::GetHandle(id);
         }
         {{
             CScope::TIds ids = scope.GetIds(id);
             ITERATE (CScope::TIds, iter, ids) {
                 if (iter->IsGi()) {
-                    return *iter->GetSeqId();
+                    return *iter;
                 }
             }
         }}
@@ -220,9 +220,10 @@ const CSeq_id& GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
 
     case eGetId_ForceAcc:
         {{
-            const CSeq_id& best = GetId(id, scope, eGetId_Best);
-            if (best.GetTextseq_Id() != NULL  &&
-                best.GetTextseq_Id()->IsSetAccession()) {
+            CSeq_id_Handle best = GetId(id, scope, eGetId_Best);
+            if (best  &&
+                best.GetSeqId()->GetTextseq_Id() != NULL  &&
+                best.GetSeqId()->GetTextseq_Id()->IsSetAccession()) {
                 return best;
             }
         }}
@@ -233,14 +234,14 @@ const CSeq_id& GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
             CScope::TIds ids = scope.GetIds(id);
             if (ids.size() != 0) {
                 CSeq_id_Handle idh = FindBestChoice(ids, ScoreSeqIdHandle);
-                return *idh.GetSeqId();
+                return idh;
             } else {
-                return id;
+                return CSeq_id_Handle::GetHandle(id);
             }
         }}
 
     default:
-        return id;
+        return CSeq_id_Handle::GetHandle(id);
     }
 
     NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
@@ -248,14 +249,14 @@ const CSeq_id& GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
 }
 
 
-const CSeq_id& GetId(const CSeq_id_Handle& idh, CScope& scope,
+CSeq_id_Handle GetId(const CSeq_id_Handle& idh, CScope& scope,
                      EGetIdType type)
 {
     return GetId(*idh.GetSeqId(), scope, type);
 }
 
 
-const CSeq_id& GetId(const CBioseq_Handle& handle,
+CSeq_id_Handle GetId(const CBioseq_Handle& handle,
                      EGetIdType type)
 {
     _ASSERT(handle);
@@ -292,7 +293,8 @@ string GetAccessionForGi
 
     try {
         CSeq_id gi_id(CSeq_id::e_Gi, gi);
-        return GetId(gi_id, scope, eGetId_ForceAcc).GetSeqIdString(with_version);
+        return GetId(gi_id, scope, eGetId_ForceAcc).GetSeqId()->
+            GetSeqIdString(with_version);
     } catch (CException& e) {
         ERR_POST(Warning << e.what());
     }
@@ -2613,6 +2615,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.118  2005/02/17 15:58:42  grichenk
+* Changes sequence::GetId() to return CSeq_id_Handle
+*
 * Revision 1.117  2005/02/07 14:15:53  dicuccio
 * Bug fix: trap exceptions from CFeat_CI in x_GetBestOverlappingFeat(); return
 * NULL CRef<> in such cases

@@ -2045,8 +2045,9 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out,
                && (m_AlignOption&eShowBl2seqLink)) {
                 const CBioseq_Handle& query_handle=m_AV->GetBioseqHandle(0);
                 const CBioseq_Handle& subject_handle=m_AV->GetBioseqHandle(1);
-                const CSeq_id& query_seqid = GetId(query_handle, eGetId_Best);
-                const CSeq_id& subject_seqid = GetId(subject_handle, eGetId_Best);
+                CSeq_id_Handle query_seqid = GetId(query_handle, eGetId_Best);
+                CSeq_id_Handle subject_seqid =
+                    GetId(subject_handle, eGetId_Best);
                 int query_gi = FindGi(query_handle.GetBioseqCore()->GetId());   
                 int subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
                 
@@ -2055,10 +2056,10 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out,
                 sprintf(buffer, kBl2seqUrl.c_str(), m_Rid.c_str(), 
                         query_gi > 0 ? 
                         NStr::IntToString(query_gi).c_str():query_seqid.\
-                        AsFastaString().c_str(),
+                        GetSeqId()->AsFastaString().c_str(),
                         subject_gi > 0 ? 
                         NStr::IntToString(subject_gi).c_str():subject_seqid.\
-                        AsFastaString().c_str()); 
+                        GetSeqId()->AsFastaString().c_str()); 
                 out << buffer << endl;
             }
             out << endl;
@@ -2336,6 +2337,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.58  2005/02/17 15:58:42  grichenk
+*Changes sequence::GetId() to return CSeq_id_Handle
+*
 *Revision 1.57  2005/02/14 19:04:50  jianye
 *changed constructor and other clean up
 *

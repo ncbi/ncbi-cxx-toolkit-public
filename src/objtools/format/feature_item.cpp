@@ -1000,12 +1000,12 @@ void CFeatureItem::x_AddCdregionQuals
         const CProt_ref* pref = 0;
         // protein qualifiers
         if (m_Feat->IsSetProduct()) {
-            const CSeq_id* prot_id = 0;
+            CConstRef<CSeq_id> prot_id;
             // protein id
             try {
-                prot_id = &GetId(m_Feat->GetProduct(), &scope);
+                prot_id.Reset(&GetId(m_Feat->GetProduct(), &scope));
             } catch (CException&) {
-                prot_id = 0;
+                prot_id.Reset();
             }
 
             CBioseq_Handle prot;
@@ -1024,7 +1024,7 @@ void CFeatureItem::x_AddCdregionQuals
             
             if (prot) {
                 // get the "best" id for the protein
-                prot_id = &GetId(prot, eGetId_Best);
+                prot_id = GetId(prot, eGetId_Best).GetSeqId();
                 // Add protein quals (comment, note, names ...) 
                 pref = x_AddProteinQuals(prot);
             } else {
@@ -2715,15 +2715,15 @@ void CFeatureItem::x_AddFTableRnaQuals(const CSeq_feat& feat, CBioseqContext& ct
         CBioseq_Handle prod = 
             ctx.GetScope().GetBioseqHandle(m_Feat->GetProduct());
         if ( prod ) {
-            const CSeq_id& id = GetId(prod, eGetId_Best);
+            CConstRef<CSeq_id> id = GetId(prod, eGetId_Best).GetSeqId();
             string id_str;
-            if ( id.IsGenbank()  ||  id.IsEmbl()  ||  id.IsDdbj()  ||
-                 id.IsTpg()  ||  id.IsTpd()  ||  id.IsTpe()  ||
-                 id.IsOther() ||
-                 (id.IsLocal()  &&  !ctx.Config().SuppressLocalId()) ) {
-                id_str = id.GetSeqIdString(true);
-            } else if ( id.IsGeneral() ) {
-                id_str = id.AsFastaString();
+            if ( id->IsGenbank()  ||  id->IsEmbl()  ||  id->IsDdbj()  ||
+                 id->IsTpg()  ||  id->IsTpd()  ||  id->IsTpe()  ||
+                 id->IsOther() ||
+                 (id->IsLocal()  &&  !ctx.Config().SuppressLocalId()) ) {
+                id_str = id->GetSeqIdString(true);
+            } else if ( id->IsGeneral() ) {
+                id_str = id->AsFastaString();
             }
             x_AddFTableQual("transcript_id", id_str);
         }
@@ -2769,21 +2769,21 @@ void CFeatureItem::x_AddFTableCdregionQuals(const CSeq_feat& feat, CBioseqContex
         }
         x_AddFTableQual("transl_except", "(pos:" + pos + ",aa:" + aa + ")");
     }
-    const CSeq_id* id = 0;
+    CConstRef<CSeq_id> id;
     string id_str;
     if ( prod ) {
-        id = &GetId(prod, eGetId_Best);
+        id = GetId(prod, eGetId_Best).GetSeqId();
     } else if ( feat.CanGetProduct() ) {
         try { 
-            id = &GetId(feat.GetProduct(), &ctx.GetScope());
+            id.Reset(&GetId(feat.GetProduct(), &ctx.GetScope()));
             if ( id->IsGi() ) {
                 // get "normal" id 
             }
         } catch (CObjmgrUtilException&) {
-            id = 0;
+            id.Reset();
         }
     }
-    if ( id != 0 ) {
+    if ( id ) {
         if ( id->IsGenbank()  ||  id->IsEmbl()  ||  id->IsDdbj()  ||
              id->IsTpg()  ||  id->IsTpd()  ||  id->IsTpe()  ||
              id->IsOther() ||
@@ -3540,6 +3540,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2005/02/17 15:58:42  grichenk
+* Changes sequence::GetId() to return CSeq_id_Handle
+*
 * Revision 1.43  2005/02/09 14:57:06  shomrat
 * Added subsource qualifiers for Barcode of Life project
 *

@@ -155,7 +155,7 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
             continue;
         }
         if (other_id->IsGi()) {
-            other_id.Reset(&GetId(*other_id, ctx.GetScope(), eGetId_Best));
+            other_id = GetId(*other_id, ctx.GetScope(), eGetId_Best).GetSeqId();
             if (other_id->IsGi()) {
                 continue;
             }
@@ -227,6 +227,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/02/17 15:58:42  grichenk
+* Changes sequence::GetId() to return CSeq_id_Handle
+*
 * Revision 1.7  2004/10/18 18:47:11  shomrat
 * Use sequence::GetId
 *

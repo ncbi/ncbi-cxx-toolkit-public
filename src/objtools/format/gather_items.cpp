@@ -189,8 +189,8 @@ bool CFlatGatherer::x_DisplayBioseq
 {
     const CFlatFileConfig& cfg = Config();
 
-    const CSeq_id& id = GetId(seq, eGetId_Best);
-    if ( id.IsLocal()  &&  cfg.SuppressLocalId() ) {
+    CSeq_id_Handle id = GetId(seq, eGetId_Best);
+    if ( id.GetSeqId()->IsLocal()  &&  cfg.SuppressLocalId() ) {
         return false;
     }
 
@@ -1603,6 +1603,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2005/02/17 15:58:42  grichenk
+* Changes sequence::GetId() to return CSeq_id_Handle
+*
 * Revision 1.40  2005/02/09 14:56:10  shomrat
 * initial support for HTML output
 *

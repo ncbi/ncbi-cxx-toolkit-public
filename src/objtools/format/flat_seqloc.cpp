@@ -429,7 +429,7 @@ void CFlatSeqLoc::x_AddID
 
     CConstRef<CSeq_id> idp;
     try {
-        idp.Reset(&GetId(id, ctx.GetScope(), eGetId_ForceAcc));
+        idp = GetId(id, ctx.GetScope(), eGetId_ForceAcc).GetSeqId();
     } catch (CException&) {
         idp.Reset(NULL);
     }
@@ -448,6 +448,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2005/02/17 15:58:42  grichenk
+* Changes sequence::GetId() to return CSeq_id_Handle
+*
 * Revision 1.16  2004/11/30 17:39:13  shomrat
 * Handle whole locations of length 1
 *

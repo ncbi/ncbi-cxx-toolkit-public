@@ -212,7 +212,8 @@ void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
 void CBioseqContext::x_SetId(void)
 {
     m_PrimaryId.Reset(new CSeq_id);
-    m_PrimaryId->Assign(sequence::GetId(m_Handle, sequence::eGetId_Best));
+    m_PrimaryId->Assign(*sequence::GetId(
+        m_Handle, sequence::eGetId_Best).GetSeqId());
 
     m_Accession.erase();
     m_PrimaryId->GetLabel(&m_Accession, CSeq_id::eContent);
@@ -607,6 +608,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2005/02/17 15:58:42  grichenk
+* Changes sequence::GetId() to return CSeq_id_Handle
+*
 * Revision 1.32  2005/02/01 21:55:11  grichenk
 * Added direction flag for mapping between top level sequence
 * and segments.

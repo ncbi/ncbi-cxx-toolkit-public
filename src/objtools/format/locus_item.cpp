@@ -179,7 +179,7 @@ void CLocusItem::x_SetName(CBioseqContext& ctx)
             }
         }
 
-        const CSeq_id& id = GetId(ctx.GetHandle(), eGetId_Best);
+        CSeq_id_Handle id = GetId(ctx.GetHandle(), eGetId_Best);
 
         /*CSeq_id::E_Choice choice = id->Which();
         switch (choice) {
@@ -211,7 +211,7 @@ void CLocusItem::x_SetName(CBioseqContext& ctx)
         return;
         }*/
 
-        const CTextseq_id* tsip = id.GetTextseq_Id();
+        const CTextseq_id* tsip = id.GetSeqId()->GetTextseq_Id();
         if (tsip != NULL) {
             if (s_IsGenomeView(ctx)) {
                 if (tsip->IsSetAccession()) {
@@ -228,7 +228,7 @@ void CLocusItem::x_SetName(CBioseqContext& ctx)
         }
 
         if (x_NameHasBadChars(m_Name)  ||  NStr::IsBlank(m_Name)) {
-            m_Name = id.GetSeqIdString();
+            m_Name = id.GetSeqId()->GetSeqIdString();
         }
     } catch (CException&) {
     }
@@ -605,6 +605,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2005/02/17 15:58:42  grichenk
+* Changes sequence::GetId() to return CSeq_id_Handle
+*
 * Revision 1.15  2005/02/09 14:47:53  shomrat
 * Fixed locus name
 *
