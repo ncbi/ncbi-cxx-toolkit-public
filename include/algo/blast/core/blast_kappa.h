@@ -39,9 +39,6 @@
 extern "C" {
 #endif
 
-#define Xchar   21    /*character for low-complexity columns*/
-#define StarChar   25    /*character for stop codons*/
-
 Int2
 Kappa_RedoAlignmentCore(BLAST_SequenceBlk * query_blk,
                   BlastQueryInfo* query_info,
@@ -62,6 +59,9 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * query_blk,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/05/19 17:03:20  madden
+ * Remove (to blast_kappa.c) #defines for Xchar and StarChar
+ *
  * Revision 1.2  2004/05/19 14:52:01  camacho
  * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
  * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
