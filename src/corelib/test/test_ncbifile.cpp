@@ -242,6 +242,7 @@ static void s_TEST_CheckPath(void)
     assert( d.NormalizePath(".\\dir\\.")        == ".\\dir\\" );
     assert( d.NormalizePath(".\\.\\.\\.")       == ".\\" );
     assert( d.NormalizePath("..\\..\\..\\..")   == "..\\..\\..\\" );
+    assert( d.NormalizePath("dir\\\\dir\\\\")   == "dir\\dir\\" );
     assert( d.NormalizePath("\\\\machine\\dir") == "\\\\machine\\dir");
     assert( d.NormalizePath("dir/file")         == "dir\\file" );
 #elif defined(NCBI_OS_UNIX )
@@ -254,9 +255,11 @@ static void s_TEST_CheckPath(void)
     assert( d.NormalizePath("./dir/.")          == "./dir/" );
     assert( d.NormalizePath("./././.")          == "./" );
     assert( d.NormalizePath("../../../..")      == "../../../" );
+    assert( d.NormalizePath("dir//dir//")       == "dir/dir/" );
+    assert( d.NormalizePath("///dir//")         == "/dir/" );
     assert( d.NormalizePath("dir\\file")        == "dir\\file" );
 #elif defined(NCBI_OS_MAC)
-    // Nothing to test
+    // NOT implemented!
 #endif
 }
 
@@ -632,6 +635,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/09/16 18:55:16  ivanov
+ * Added more test for NormalizePath()
+ *
  * Revision 1.24  2003/09/16 16:28:08  ivanov
  * Added tests for SplitPath(). Minor cosmetics.
  *
