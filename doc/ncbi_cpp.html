@@ -28,7 +28,45 @@
 
 <a name=ref_FileExt>
     <h2> C++ file extensions </h2>
-    <i>*.cpp, *.hpp</i>
+    <i>*.cpp,  *.hpp,  *.inl</i>
+
+    <br><br>An "inline implementaion file" with extension <i>*.inl</i>
+    can be used in order to avoid the clogging of a class interface
+    (in header <i>*.hpp</i>) by numerous(and sometimes bulky) inline function
+    definitions.  Thus, the <i>*.hpp</i> file will be easier to read.
+    The appropriate <i>*.inl</i> file should be included in the
+    very end of <i>*.hpp</i>, like:
+
+<br><br>"somefile.hpp":
+    <pre>
+#ifndef SOMEFILE__HPP
+#define SOMEFILE__HPP
+class CMyClass {
+    void m_Func1(int i=1);  // a regular function defined in "somefile.cpp"
+    void m_Func2(void) { m_Func1(2); }  // okay to embed a *small* inline code
+    void m_Func3(void);  // an inline function defined in "somefile.inl"
+};
+#include <somefile.inl>
+#endif  /* SOMEFILE__HPP */
+    </pre>
+    
+"somefile.inl":
+    <pre>
+inline void CMyClass::m_Func3(void) {
+    ..... // some code here
+    m_Func1(3);
+    ..... // some code there
+}
+    </pre>
+    
+"somefile.cpp":
+    <pre>
+void CMyClass::m_Func1(int i)
+{
+    ..... // some code here
+}
+    </pre>
+    
 
 <a name=ref_Indent>
     <h2> Code indentation and Bracing </h2>
