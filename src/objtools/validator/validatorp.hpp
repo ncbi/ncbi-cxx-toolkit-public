@@ -678,6 +678,7 @@ private:
     bool IsOtherDNA(const CBioseq& seq) const;
     bool IsSynthetic(const CBioseq& seq) const;
     bool x_IsActiveFin(const CBioseq& seq) const;
+    bool x_IsMicroRNA(const CBioseq& seq) const;
 
     const CBioseq* GetNucGivenProt(const CBioseq& prot);
 
@@ -881,6 +882,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2003/09/22 20:23:33  shomrat
+* Added x_IsMicroRNA
+*
 * Revision 1.38  2003/09/03 18:25:09  shomrat
 * added SEQ_DESCR_RefGeneTrackingWithoutStatus
 *
