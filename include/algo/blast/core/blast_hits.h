@@ -193,7 +193,31 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
            const BlastHitSavingOptions* hit_options, 
            const BlastScoringOptions* score_options, 
            BlastQueryInfo* query_info, BlastScoreBlk* sbp);
+/** Calculate number of identities in an HSP.
+ * @param query The query sequence [in]
+ * @param subject The uncompressed subject sequence [in]
+ * @param hsp All information about the HSP [in]
+ * @param is_gapped Is this a gapped search? [in]
+ * @param num_ident_ptr Number of identities [out]
+ * @param align_length_ptr The alignment length, including gaps [out]
+ */
+Int2
+BlastHSPGetNumIdentical(Uint1* query, Uint1* subject, 
+   BlastHSP* hsp, Boolean is_gapped, Int4* num_ident_ptr, 
+   Int4* align_length_ptr);
 
+/** Calculate number of identities in an HSP for an out-of-frame alignment.
+ * @param query The query sequence [in]
+ * @param subject The uncompressed subject sequence [in]
+ * @param hsp All information about the HSP [in]
+ * @param program BLAST program (blastx or tblastn) [in]
+ * @param num_ident_ptr Number of identities [out]
+ * @param align_length_ptr The alignment length, including gaps [out]
+ */
+Int2
+BlastOOFGetNumIdentical(Uint1* query, Uint1* subject, 
+   BlastHSP* hsp, Uint1 program, 
+   Int4* num_ident_ptr, Int4* align_length_ptr);
 
 /** Cleans out the NULLed out HSP's from the HSP array,
  *	moving the BLAST_HSPPtr's up to fill in the gaps.
