@@ -40,12 +40,12 @@
 BEGIN_NCBI_SCOPE
 
 
-enum {
+enum EIO_Result {
     eIO_NotImplemented = -1,
     eIO_Success = 0,
     eIO_Error,
     eIO_Eof,
-} EIO_Result;
+};
 
 
 /// A very basic data-read interface.
@@ -108,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/09/24 15:56:24  kuznets
+ * Minor syntax error fixed in EIO_Result declaration
+ *
  * Revision 1.3  2003/09/24 15:45:36  lavr
  * Changed to use eIO_Result in return codes; pointers to store I/O counts
  *
