@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/04/06 16:10:50  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.27  2000/03/14 14:43:30  vasilche
 * Fixed error reporting.
 *
@@ -232,7 +237,7 @@ private:
 
 public:
     // low level methods
-    CStreamBuffer& GetInput(void)
+    CIStreamBuffer& GetInput(void)
         {
             return m_Input;
         }
@@ -256,7 +261,7 @@ private:
     char SkipWhiteSpaceAndGetChar(void);
     void SkipComments(void);
 
-    CStreamBuffer m_Input;
+    CIStreamBuffer m_Input;
 };
 
 //#include <objistrb.inl>

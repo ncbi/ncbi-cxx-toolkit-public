@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/04/06 16:10:51  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.32  2000/03/29 15:55:21  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -416,13 +421,17 @@ protected:
 	virtual void End(const ByteBlock& block);
 
     // low level writers
-    virtual void WritePointer(COObjectInfo& info, TTypeInfo typeInfo);
+    virtual void WritePointer(TConstObjectPtr object,
+                              CWriteObjectInfo& info,
+                              TTypeInfo declaredTypeInfo);
     virtual void WriteMemberPrefix(void);
     virtual void WriteMemberSuffix(const CMemberId& id);
     virtual void WriteNullPointer(void) = 0;
     virtual void WriteObjectReference(TIndex index) = 0;
-    virtual void WriteThis(TConstObjectPtr object, TTypeInfo typeInfo);
-    virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo) = 0;
+    virtual void WriteThis(TConstObjectPtr object,
+                           CWriteObjectInfo& info);
+    virtual void WriteOther(TConstObjectPtr object,
+                            CWriteObjectInfo& info) = 0;
 
     virtual void WriteBool(bool data) = 0;
     virtual void WriteChar(char data) = 0;
@@ -440,13 +449,19 @@ protected:
     virtual void WriteString(const string& str) = 0;
 
     COObjectList m_Objects;
-    void RegisterObject(CORootObjectInfo& info)
-        { m_Objects.RegisterObject(info); }
-
+#ifdef NCBISER_ALLOW_CYCLES
+    void WriteObject(TConstObjectPtr object, CWriteObjectInfo& info)
+        {
+            m_Objects.ObjectWritten(info);
+            _TRACE("CObjectOStream::RegisterObject(x, "<<info.GetTypeInfo()->GetName()<<") = "<<info.GetIndex());
+            info.GetTypeInfo()->WriteData(*this, object);
+        }
+#else
     void WriteData(TConstObjectPtr object, TTypeInfo typeInfo)
         {
             typeInfo->WriteData(*this, object);
         }
+#endif
 };
 
 //#include <serial/objostr.inl>

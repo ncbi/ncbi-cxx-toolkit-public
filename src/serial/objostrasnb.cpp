@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/04/06 16:11:00  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.30  2000/03/29 15:55:29  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -642,11 +647,11 @@ void CObjectOStreamAsnBinary::WriteNullPointer(void)
 }
 
 void CObjectOStreamAsnBinary::WriteOther(TConstObjectPtr object,
-                                         TTypeInfo typeInfo)
+                                         CWriteObjectInfo& info)
 {
-    WriteClassTag(typeInfo);
+    WriteClassTag(info.GetTypeInfo());
     WriteIndefiniteLength();
-    WriteExternalObject(object, typeInfo);
+    WriteObject(object, info);
     WriteEndOfContent();
 }
 

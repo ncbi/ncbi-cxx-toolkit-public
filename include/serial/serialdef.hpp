@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/04/06 16:10:52  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.5  2000/04/03 18:47:10  vasilche
 * Added main include file for generated headers.
 * serialimpl.hpp is included in generated sources with GetTypeInfo methods
@@ -91,6 +96,8 @@ struct StrCmp
             return strcmp(arg1, arg2) < 0;
         }
 };
+
+#define NCBISER_ALLOW_CYCLES 1
 
 #include <serial/serialdef.inl>
 

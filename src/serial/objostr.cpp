@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/04/06 16:11:00  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.33  2000/03/29 15:55:29  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -164,39 +169,30 @@
 # include <asn.h>
 #endif
 
-#define ALLOW_CYCLES 1
-
 BEGIN_NCBI_SCOPE
 
 CObjectOStream::~CObjectOStream(void)
 {
+    _TRACE("~CObjectOStream: "<<m_Objects.GetObjectCount()<<" objects written");
 }
 
 void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
 {
     _TRACE("CObjectOStream::Write(" << NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ')');
-#if ALLOW_CYCLES
-    m_Objects.Add(object, typeInfo);
-    COObjectInfo info(m_Objects, object, typeInfo);
-    if ( info.IsMember() ) {
-        if ( !info.GetRootObjectInfo().IsWritten() ) {
-            THROW1_TRACE(runtime_error,
-                         "trying to write member of non written object");
-        }
+#if NCBISER_ALLOW_CYCLES
+    CWriteObjectInfo& info = m_Objects.RegisterObject(object, typeInfo);
+    if ( info.IsWritten() ) {
+        THROW1_TRACE(runtime_error,
+                     "trying to write already written object");
     }
-    else {
-        if ( info.GetRootObjectInfo().IsWritten() ) {
-            THROW1_TRACE(runtime_error,
-                         "trying to write already written object");
-        }
-        m_Objects.RegisterObject(info.GetRootObjectInfo());
-        _TRACE("CTypeInfo::Write: " << NStr::PtrToString(object)
-               << " @" << info.GetRootObjectInfo().GetIndex());
-    }
-#endif
+    WriteTypeName(typeInfo->GetName());
+    WriteObject(object, info);
+    m_Objects.CheckAllWritten();
+#else
     WriteTypeName(typeInfo->GetName());
     WriteData(object, typeInfo);
+#endif
 }
 
 void CObjectOStream::Write(TConstObjectPtr object, const CTypeRef& type)
@@ -210,26 +206,17 @@ void CObjectOStream::WriteExternalObject(TConstObjectPtr object,
     _TRACE("CObjectOStream::RegisterAndWrite(" <<
            NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ')');
-#if ALLOW_CYCLES
-    m_Objects.Add(object, typeInfo);
-    if ( object != 0 ) {
-        COObjectInfo info(m_Objects, object, typeInfo);
-        if ( info.IsMember() ) {
-            THROW1_TRACE(runtime_error,
-                         "trying to register member");
-        }
-        else {
-            if ( info.GetRootObjectInfo().IsWritten() ) {
-                THROW1_TRACE(runtime_error,
-                             "trying to write already written object");
-            }
-            m_Objects.RegisterObject(info.GetRootObjectInfo());
-            _TRACE("CTypeInfo::Write: " << NStr::PtrToString(object)
-                   << " @" << info.GetRootObjectInfo().GetIndex());
-        }
+#if NCBISER_ALLOW_CYCLES
+    _ASSERT(object != 0);
+    CWriteObjectInfo& info = m_Objects.RegisterObject(object, typeInfo);
+    if ( info.IsWritten() ) {
+        THROW1_TRACE(runtime_error,
+                     "trying to write already written object");
     }
-#endif
+    WriteObject(object, info);
+#else
     WriteData(object, typeInfo);
+#endif
 }
 
 void CObjectOStream::WriteTypeName(const string& )
@@ -256,12 +243,11 @@ void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)
         WriteNullPointer();
         return;
     }
-#if ALLOW_CYCLES
-    m_Objects.Add(object, typeInfo);
-    COObjectInfo info(m_Objects, object, typeInfo);
-    WritePointer(info, typeInfo);
-    _ASSERT(!info.IsMember());
+#if NCBISER_ALLOW_CYCLES
+    CWriteObjectInfo& info = m_Objects.RegisterObject(object, typeInfo);
+    WritePointer(object, info, typeInfo);
 #else
+    ...;
     TTypeInfo realTypeInfo = typeInfo->GetRealTypeInfo(object);
     if ( typeInfo == realTypeInfo ) {
         _TRACE("WritePointer: " <<
@@ -277,38 +263,29 @@ void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)
 #endif
 }
 
-void CObjectOStream::WritePointer(COObjectInfo& info, TTypeInfo typeInfo)
+void CObjectOStream::WritePointer(TConstObjectPtr object,
+                                  CWriteObjectInfo& info,
+                                  TTypeInfo declaredTypeInfo)
 {
-    if ( info.IsMember() ) {
-        CMemberId memberId = info.GetMemberId();
-        info.ToContainerObject();
-        WriteMemberPrefix();
-        WritePointer(info, 0);
-        WriteMemberSuffix(memberId);
+    if ( info.IsWritten() ) {
+        // put reference on it
+        _TRACE("WritePointer: " << NStr::PtrToString(object) <<
+               ": @" << info.GetIndex());
+        WriteObjectReference(info.GetIndex());
     }
     else {
-        const CORootObjectInfo& root = info.GetRootObjectInfo();
-        if ( root.IsWritten() ) {
-            // put reference on it
+        // new object
+        TTypeInfo realTypeInfo = info.GetTypeInfo();
+        if ( declaredTypeInfo == realTypeInfo ) {
             _TRACE("WritePointer: " <<
-                   NStr::PtrToString(info.GetRootObject()) <<
-                   ": @" << root.GetIndex());
-            WriteObjectReference(root.GetIndex());
+                   NStr::PtrToString(object) << ": new");
+            WriteThis(object, info);
         }
         else {
-            // new object
-            TTypeInfo realTypeInfo = root.GetTypeInfo();
-            if ( typeInfo == realTypeInfo ) {
-                _TRACE("WritePointer: " <<
-                       NStr::PtrToString(info.GetRootObject()) << ": new");
-                WriteThis(info.GetRootObject(), realTypeInfo);
-            }
-            else {
-                _TRACE("WritePointer: " <<
-                       NStr::PtrToString(info.GetRootObject())
-                       << ": new " << realTypeInfo->GetName());
-                WriteOther(info.GetRootObject(), realTypeInfo);
-            }
+            _TRACE("WritePointer: " <<
+                   NStr::PtrToString(object)
+                   << ": new " << realTypeInfo->GetName());
+            WriteOther(object, info);
         }
     }
 }
@@ -366,10 +343,9 @@ void CObjectOStream::WriteMemberSuffix(const CMemberId& )
 {
 }
 
-void CObjectOStream::WriteThis(TConstObjectPtr object,
-                               TTypeInfo typeInfo)
+void CObjectOStream::WriteThis(TConstObjectPtr object, CWriteObjectInfo& info)
 {
-    WriteExternalObject(object, typeInfo);
+    WriteObject(object, info);
 }
 
 void CObjectOStream::StartMember(Member& m,

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2000/04/06 16:10:59  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.44  2000/03/29 15:55:27  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -191,6 +196,7 @@
 * ===========================================================================
 */
 
+#include <exception>
 #include <corelib/ncbistd.hpp>
 #include <serial/objistr.hpp>
 #include <serial/typeref.hpp>
@@ -207,8 +213,6 @@
 # include <asn.h>
 #endif
 
-#define ALLOW_CYCLES 1
-
 BEGIN_NCBI_SCOPE
 
 CObjectIStream::CObjectIStream(void)
@@ -218,6 +222,7 @@ CObjectIStream::CObjectIStream(void)
 
 CObjectIStream::~CObjectIStream(void)
 {
+    _TRACE("~CObjectIStream: "<<m_Objects.size()<<" objects read");
 }
 
 unsigned CObjectIStream::SetFailFlags(unsigned flags)
@@ -295,13 +300,8 @@ void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
             THROW1_TRACE(runtime_error,
                          "incompatible type " + name + "<>" +
                          typeInfo->GetName());
-#if ALLOW_CYCLES
-        TIndex index = RegisterObject(object, typeInfo);
-        if ( index ) {
-            _TRACE("CObjectIStream::ReadData(" <<
-                   NStr::PtrToString(object) << ", "
-                   << typeInfo->GetName() << ") @" << index);
-        }
+#if NCBISER_ALLOW_CYCLES
+        RegisterObject(object, typeInfo);
 #endif
         ReadData(object, typeInfo);
         m.End();
@@ -321,12 +321,8 @@ void CObjectIStream::ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo)
 {
     _TRACE("CObjectIStream::Read(" << NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ")");
-#if ALLOW_CYCLES
-    TIndex index = RegisterObject(object, typeInfo);
-    if ( index ) {
-        _TRACE("CObjectIStream::ReadData(" << NStr::PtrToString(object) << ", "
-               << typeInfo->GetName() << ") @" << index);
-    }
+#if NCBISER_ALLOW_CYCLES
+    RegisterObject(object, typeInfo);
 #endif
     ReadData(object, typeInfo);
 }
@@ -334,8 +330,13 @@ void CObjectIStream::ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo)
 CObjectInfo CObjectIStream::ReadObject(void)
 {
     try {
-        CObjectInfo object(MapType(ReadTypeName()));
-        ReadExternalObject(object.GetObjectPtr(), object.GetTypeInfo());
+        TTypeInfo typeInfo = MapType(ReadTypeName());
+        StackElement m(*this, typeInfo->GetName());
+        CObjectInfo object(typeInfo);
+#if NCBISER_ALLOW_CYCLES
+        RegisterObject(object.GetObjectPtr(), object.GetTypeInfo());
+#endif
+        ReadData(object.GetObjectPtr(), object.GetTypeInfo());
         return object;
     }
     catch (...) {
@@ -413,7 +414,10 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
             {
                 _TRACE("CObjectIStream::ReadPointer: new");
                 TObjectPtr object = declaredType->Create();
-                ReadExternalObject(object, declaredType);
+#if NCBISER_ALLOW_CYCLES
+                RegisterObject(object, declaredType);
+#endif
+                ReadData(object, declaredType);
                 ReadThisPointerEnd();
                 return object;
             }
@@ -425,7 +429,10 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
                 _TRACE("CObjectIStream::ReadPointer: new " << className);
                 TTypeInfo typeInfo = MapType(className);
                 TObjectPtr object = typeInfo->Create();
-                ReadExternalObject(object, typeInfo);
+#if NCBISER_ALLOW_CYCLES
+                RegisterObject(object, declaredType);
+#endif
+                ReadData(object, declaredType);
                 ReadOtherPointerEnd();
                 m.End();
                 info = CObjectInfo(object, typeInfo);
@@ -484,10 +491,10 @@ CObjectInfo CObjectIStream::ReadObjectInfo(void)
             _TRACE("CObjectIStream::ReadPointer: new " << className);
             TTypeInfo typeInfo = MapType(className);
             TObjectPtr object = typeInfo->Create();
-#if ALLOW_CYCLES
+#if NCBISER_ALLOW_CYCLES
             RegisterObject(object, typeInfo);
 #endif
-            Read(object, typeInfo);
+            ReadData(object, typeInfo);
             ReadOtherPointerEnd();
             m.End();
             return CObjectInfo(object, typeInfo);
@@ -557,6 +564,82 @@ void CObjectIStream::SkipExternalObject(TTypeInfo typeInfo)
 {
     _TRACE("CObjectIStream::SkipExternalObject(" << typeInfo->GetName() << ")");
     SkipData(typeInfo);
+}
+
+void CObjectIStream::SkipPointer(TTypeInfo declaredType)
+{
+    try {
+        _TRACE("CObjectIStream::SkipPointer("<<declaredType->GetName()<<")");
+        switch ( ReadPointerType() ) {
+        case eNullPointer:
+            _TRACE("CObjectIStream::SkipPointer: null");
+            return;
+        case eObjectPointer:
+            {
+                _TRACE("CObjectIStream::SkipPointer: @...");
+                TIndex index = ReadObjectPointer();
+                _TRACE("CObjectIStream::SkipPointer: @" << index);
+                GetRegisteredObject(index);
+                break;
+            }
+        case eThisPointer:
+            {
+                _TRACE("CObjectIStream::ReadPointer: new");
+                SkipData(declaredType);
+                ReadThisPointerEnd();
+                break;
+            }
+        case eOtherPointer:
+            {
+                _TRACE("CObjectIStream::ReadPointer: new...");
+                string className = ReadOtherPointer();
+                StackElement m(*this, className);
+                _TRACE("CObjectIStream::ReadPointer: new " << className);
+                TTypeInfo typeInfo = MapType(className);
+                SkipData(typeInfo);
+                ReadOtherPointerEnd();
+                m.End();
+                break;
+            }
+        default:
+            SetFailFlags(eFormatError);
+            THROW1_TRACE(runtime_error, "illegal pointer type");
+        }
+    }
+    catch (...) {
+        SetFailFlags(eFail);
+        throw;
+    }
+}
+
+void CObjectIStream::SkipObjectInfo(void)
+{
+    _TRACE("CObjectIStream::ReadObjectInfo()");
+    switch ( ReadPointerType() ) {
+    case eObjectPointer:
+        {
+            TIndex index = ReadObjectPointer();
+            _TRACE("CObjectIStream::ReadPointer: @" << index);
+            GetRegisteredObject(index);
+            return;
+        }
+    case eOtherPointer:
+        {
+            string className = ReadOtherPointer();
+            StackElement m(*this, className);
+            _TRACE("CObjectIStream::ReadPointer: new " << className);
+            TTypeInfo typeInfo = MapType(className);
+            SkipData(typeInfo);
+            ReadOtherPointerEnd();
+            m.End();
+            return;
+        }
+    default:
+        break;  // error
+    }
+
+    SetFailFlags(eFormatError);
+    THROW1_TRACE(runtime_error, "illegal pointer type");
 }
 
 void CObjectIStream::SkipValue(void)
@@ -642,17 +725,14 @@ bool CObjectIStream::StackElement::CanClose(void) const
         // fail flag already set
         return false;
     }
+    else if ( uncaught_exception() || !Ended() ) {
+        // exception thrown without setting fail flag
+        GetStream().SetFailFlags(eFail);
+        return false;
+    }
     else {
-        // error flag was not set
-        if ( Ended() ) {
-            // ok
-            return true;
-        }
-        else {
-            // exception thrown without setting fail flag
-            GetStream().SetFailFlags(eFail);
-            return false;
-        }
+        // ok
+        return true;
     }
 }
 
@@ -957,21 +1037,18 @@ void CObjectIStream::SkipStringStore(void)
     SkipString();
 }
 
-CObjectIStream::TIndex CObjectIStream::RegisterObject(TObjectPtr object,
-                                                      TTypeInfo typeInfo)
+void CObjectIStream::RegisterObject(TObjectPtr object, TTypeInfo typeInfo)
 {
-#if ALLOW_CYCLES
-    TIndex index = m_Objects.size();
+#if NCBISER_ALLOW_CYCLES
+    _TRACE("CObjectIStream::RegisterObject(x, "<<
+           typeInfo->GetName()<<") = "<<m_Objects.size());
     m_Objects.push_back(CObjectInfo(object, typeInfo));
-    return index;
-#else
-    return TIndex(-1);
 #endif
 }
 
 const CObjectInfo& CObjectIStream::GetRegisteredObject(TIndex index) const
 {
-#if ALLOW_CYCLES
+#if NCBISER_ALLOW_CYCLES
     if ( index >= m_Objects.size() ) {
         const_cast<CObjectIStream*>(this)->SetFailFlags(eFormatError);
         THROW1_TRACE(runtime_error, "invalid object index");

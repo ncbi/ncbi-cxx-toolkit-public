@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/04/06 16:10:51  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.17  2000/02/17 20:02:28  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -154,7 +159,8 @@ protected:
     virtual void WriteMemberSuffix(const CMemberId& id);
     virtual void WriteNullPointer(void);
     virtual void WriteObjectReference(TIndex index);
-    virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo);
+    virtual void WriteOther(TConstObjectPtr object,
+                            CWriteObjectInfo& info);
 
     virtual void VBegin(Block& block);
     virtual void VEnd(const Block& block);

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/04/06 16:10:58  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.9  2000/04/03 18:47:26  vasilche
 * Added main include file for generated headers.
 * serialimpl.hpp is included in generated sources with GetTypeInfo methods
@@ -83,6 +88,7 @@
 #include <serial/objistr.hpp>
 #include <serial/memberid.hpp>
 #include <serial/member.hpp>
+#include <serial/iterator.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -193,6 +199,87 @@ void CChoiceTypeInfoBase::SkipData(CObjectIStream& in) const
     TMemberIndex index = m.GetIndex();
     GetVariantTypeInfo(index)->SkipData(in);
     m.End();
+}
+
+bool CChoiceTypeInfoBase::MayContainType(TTypeInfo typeInfo) const
+{
+    return GetMembers().MayContainType(typeInfo);
+}
+
+bool CChoiceTypeInfoBase::HaveChildren(TConstObjectPtr object) const
+{
+    return GetIndex(object) >= 0;
+}
+
+void CChoiceTypeInfoBase::BeginTypes(CChildrenTypesIterator& cc) const
+{
+    GetMembers().BeginTypes(cc);
+}
+
+void CChoiceTypeInfoBase::Begin(CConstChildrenIterator& cc) const
+{
+    cc.GetIndex().m_Index = 0;
+}
+
+void CChoiceTypeInfoBase::Begin(CChildrenIterator& cc) const
+{
+    cc.GetIndex().m_Index = 0;
+}
+
+bool CChoiceTypeInfoBase::ValidTypes(const CChildrenTypesIterator& cc) const
+{
+    return GetMembers().ValidTypes(cc);
+}
+
+bool CChoiceTypeInfoBase::Valid(const CConstChildrenIterator& cc) const
+{
+    return cc.GetIndex().m_Index == 0 && GetIndex(cc.GetParentPtr()) >= 0;
+}
+
+bool CChoiceTypeInfoBase::Valid(const CChildrenIterator& cc) const
+{
+    return cc.GetIndex().m_Index == 0 && GetIndex(cc.GetParentPtr()) >= 0;
+}
+
+TTypeInfo CChoiceTypeInfoBase::GetChildType(const CChildrenTypesIterator& cc) const
+{
+    return GetMembers().GetChildType(cc);
+}
+
+void CChoiceTypeInfoBase::GetChild(const CConstChildrenIterator& cc,
+                                CConstObjectInfo& child) const
+{
+    TMemberIndex index = GetIndex(cc.GetParentPtr());
+    _ASSERT(index >= 0 && index < GetVariantsCount());
+    child.Set(GetData(cc.GetParentPtr(), index), GetVariantTypeInfo(index));
+}
+
+void CChoiceTypeInfoBase::GetChild(const CChildrenIterator& cc,
+                                CObjectInfo& child) const
+{
+    TMemberIndex index = GetIndex(cc.GetParentPtr());
+    _ASSERT(index >= 0 && index < GetVariantsCount());
+    child.Set(GetData(cc.GetParentPtr(), index), GetVariantTypeInfo(index));
+}
+
+void CChoiceTypeInfoBase::NextType(CChildrenTypesIterator& cc) const
+{
+    GetMembers().NextType(cc);
+}
+
+void CChoiceTypeInfoBase::Next(CConstChildrenIterator& cc) const
+{
+    ++cc.GetIndex().m_Index;
+}
+
+void CChoiceTypeInfoBase::Next(CChildrenIterator& cc) const
+{
+    ++cc.GetIndex().m_Index;
+}
+
+void CChoiceTypeInfoBase::Erase(CChildrenIterator& cc) const
+{
+    SetIndex(cc.GetParentPtr(), -1);
 }
 
 CGeneratedChoiceInfo::CGeneratedChoiceInfo(const char* name,

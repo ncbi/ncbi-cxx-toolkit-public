@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/04/06 16:10:51  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.2  1999/06/07 20:42:58  vasilche
 * Fixed compilation under MS VS
 *
@@ -43,10 +48,15 @@
 */
 
 inline
-COObjectInfo::COObjectInfo(const COObjectList& l,
-                           TConstObjectPtr object, TTypeInfo typeInfo)
+size_t COObjectList::GetObjectCount(void) const
 {
-    l.SetObject(*this, object, typeInfo);
+    return m_NextObjectIndex;
+}
+
+inline
+void COObjectList::ObjectWritten(CWriteObjectInfo& info)
+{
+    info.m_Index = m_NextObjectIndex++;
 }
 
 #endif /* def OBJLIST__HPP  &&  ndef OBJLIST__INL */

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/04/06 16:10:59  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.14  2000/03/29 15:55:28  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -108,142 +113,51 @@ COObjectList::~COObjectList(void)
 {
 }
 
-bool COObjectList::Add(TConstObjectPtr object, TTypeInfo typeInfo)
+CWriteObjectInfo& COObjectList::RegisterObject(TConstObjectPtr object,
+                                               TTypeInfo typeInfo)
 {
-    _TRACE("COObjectList::Add(" << NStr::PtrToString(object) << ", " <<
+    _TRACE("COObjectList::RegisterObject("<<NStr::PtrToString(object)<<", "<<
            typeInfo->GetName() << ") size: " << typeInfo->GetSize() <<
            ", end: " << NStr::PtrToString(typeInfo->EndOf(object)));
 
     typeInfo = typeInfo->GetRealTypeInfo(object);
 
-    // note that TObject have reverse sort order
     // just in case typedef in header file will be redefined:
-    typedef map<TConstObjectPtr, CORootObjectInfo, greater<TConstObjectPtr> > TObject;
+    typedef map<TConstObjectPtr, CWriteObjectInfo> TObject;
 
-    TConstObjectPtr endOfObject = typeInfo->EndOf(object);
+    pair<TObject::iterator, bool> ins =
+        m_Objects.insert(TObject::value_type(object,
+                                             CWriteObjectInfo(typeInfo)));
 
-    TObjects::iterator before = m_Objects.lower_bound(object);
-    // before->first <= object, (before-1)->first > object
-    if ( before == m_Objects.end() ) {
-        // there is not objects before then new one
-        if ( m_Objects.empty() ) {
-            // first object - just insert it
-            m_Objects[object] = CORootObjectInfo(typeInfo);
-            return true;
-        }
+    if ( !ins.second ) {
+        // not inserted -> already have the same object pointer
+        if ( ins.first->second.GetTypeInfo() != typeInfo )
+            THROW1_TRACE(runtime_error, "object type was changed");
+        return ins.first->second;
     }
-    else {
-        TTypeInfo beforeTypeInfo = before->second.GetTypeInfo();
-        TConstObjectPtr beforeObject = before->first;
-        TConstObjectPtr beforeEndOfObject = beforeTypeInfo->EndOf(beforeObject);
-        if ( object < beforeEndOfObject ) {
-            // object and beforeObject may overlap
-            if ( object > beforeObject || endOfObject < beforeEndOfObject ) {
-                // object must be inside beforeObject
-                if ( !CheckMember(beforeObject, beforeTypeInfo,
-                                  object, typeInfo) ) {
-                    THROW1_TRACE(runtime_error, "overlapping objects");
-                }
-                // in this case object completely inside beforeObject so
-                // we'll not check anymore
-                return false;
-            }
-            if ( endOfObject == beforeEndOfObject ) {
-                // special case - object and beforeObject use the same memory
-                // trivial check if types are the same
-                if ( typeInfo == beforeTypeInfo ) {
-                    // it's ok this object is already in map
-                    return false;
-                }
-                // check who is owner
-                if ( CheckMember(beforeObject, beforeTypeInfo,
-                                 object, typeInfo) ) {
-                    // good beforeObject is owner of object
-                    return false;
-                }
-                if ( !CheckMember(object, typeInfo,
-                                  beforeObject, beforeTypeInfo) ) {
-                    THROW1_TRACE(runtime_error, "overlapping objects");
-                }
-                // ok object is owner of beforeObject
-                if ( before->second.IsWritten() ) {
-                    THROW1_TRACE(runtime_error, "member already written");
-                }
-                // lets replace it
-                before->second = CORootObjectInfo(typeInfo);
-                return true;
-            }
-            // here object == beforeObject && endOfObject > beforeEndOfObject
-            // so beforeObject must be inside object
-            // increase before to include it in following check
-            ++before;
-        }
-    }
-    // our object pointer value is smallest -> check for overlapping with first
-    TObjects::iterator after = m_Objects.upper_bound(endOfObject);
-    // after->first < endOfObject, (after-1) >= endOfObject
-    for ( TObjects::iterator i = after; i != before; ++i ) {
-        if ( !CheckMember(object, typeInfo, i->first, i->second.m_TypeInfo) ) {
+
+    // check for overlapping with previous object
+    TObject::iterator check = ins.first;
+    if ( check != m_Objects.begin() ) {
+        --check;
+        if ( check->second.GetTypeInfo()->EndOf(check->first) > object )
             THROW1_TRACE(runtime_error, "overlapping objects");
-        }
-        if ( i->second.IsWritten() ) {
-            THROW1_TRACE(runtime_error, "member already written");
-        }
     }
-    // ok all objects from after to before are inside object
-    // so replace them by object
-    m_Objects.erase(after, before);
-    m_Objects[object] = CORootObjectInfo(typeInfo);
-    return true;
-}
 
-bool COObjectList::CheckMember(TConstObjectPtr owner, TTypeInfo ownerTypeInfo,
-                               TConstObjectPtr member, TTypeInfo memberTypeInfo)
-{
-    return owner == member && ownerTypeInfo->IsType(memberTypeInfo);
+    // check for overlapping with next object
+    check = ins.first;
+    if ( ++check != m_Objects.end() ) {
+        if ( typeInfo->EndOf(object) > check->first )
+            THROW1_TRACE(runtime_error, "overlapping objects");
+    }
+
+    return ins.first->second;
 }
 
 void COObjectList::CheckAllWritten(void) const
 {
-    for ( TObjects::const_iterator i = m_Objects.begin();
-          i != m_Objects.end();
-          ++i ) {
-        if ( !i->second.IsWritten() ) {
-            ERR_POST("object not written: " << NStr::PtrToString(i->first) <<
-                     '{' << i->second.GetTypeInfo()->GetName() << '}');
-            _TRACE("object not written: " << NStr::PtrToString(i->first) <<
-                   '{' << i->second.GetTypeInfo()->GetName() << '}');
-            THROW1_TRACE(runtime_error, "object not written");
-        }
-    }
-}
-
-void COObjectList::SetObject(COObjectInfo& info,
-                             TConstObjectPtr member,
-                             TTypeInfo memberTypeInfo) const
-{
-    // note that TObject have reverse sort order
-    // just in case typedef in header file will be redefined:
-    typedef map<TConstObjectPtr, CORootObjectInfo, greater<TConstObjectPtr> > TObject;
-
-    TObjects::const_iterator root = m_Objects.lower_bound(member);
-    // root->first <= object, (root-1)->first > object
-    if ( root == m_Objects.end() ) {
-        THROW1_TRACE(runtime_error, "object is not collected");
-    }
-
-    info.m_RootObject = &*root;
-    TConstObjectPtr owner = info.GetRootObject();
-    TTypeInfo ownerTypeInfo = info.GetRootObjectInfo().GetTypeInfo();
-
-    if ( owner != member || !ownerTypeInfo->IsType(memberTypeInfo) ) {
-        THROW1_TRACE(runtime_error, "object is not collected");
-    }
-}
-
-void COObjectList::RegisterObject(const CORootObjectInfo& info)
-{
-    const_cast<CORootObjectInfo&>(info).m_Index = m_NextObjectIndex++;
+    if ( m_NextObjectIndex != m_Objects.size() )
+        THROW1_TRACE(runtime_error, "not all objects written");
 }
 
 END_NCBI_SCOPE

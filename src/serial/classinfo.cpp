@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2000/04/06 16:10:59  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.37  2000/04/03 18:47:26  vasilche
 * Added main include file for generated headers.
 * serialimpl.hpp is included in generated sources with GetTypeInfo methods
@@ -227,9 +232,9 @@ bool IsMemberDefault(TConstObjectPtr object,
         return !info->GetSetFlag(object);
     }
     else if ( info->Optional() ) {
+        TConstObjectPtr def = info->GetDefault();
         TTypeInfo typeInfo = info->GetTypeInfo();
         TConstObjectPtr member = info->GetMember(object);
-        TConstObjectPtr def = info->GetDefault();
         if ( !def ) {
             return typeInfo->IsDefault(member);
         }
@@ -250,15 +255,23 @@ void AssignMemberDefault(CObjectIStream& in, TObjectPtr object,
                       "member "+members.GetMemberId(index).ToString()+
                       " expected");
     }
+    bool haveSetFlag = info->HaveSetFlag();
+    if ( haveSetFlag && !info->GetSetFlag(object) )
+        return; // member not set
+
     TObjectPtr member = info->GetMember(object);
     // assign member dafault
+    TTypeInfo memberType = info->GetTypeInfo();
     TConstObjectPtr def = info->GetDefault();
-    if ( def == 0 )
-        info->GetTypeInfo()->SetDefault(member);
-    else
-        info->GetTypeInfo()->Assign(member, def);
+    if ( def == 0 ) {
+        if ( !memberType->IsDefault(member) )
+            memberType->SetDefault(member);
+    }
+    else {
+        memberType->Assign(member, def);
+    }
     // update 'set' flag
-    if ( info->HaveSetFlag() )
+    if ( haveSetFlag )
         info->GetSetFlag(object) = false;
 }
 
@@ -267,15 +280,24 @@ void AssignMemberDefault(TObjectPtr object,
                          const CMembersInfo& members, size_t index)
 {
     const CMemberInfo* info = members.GetMemberInfo(index);
+    // check 'set' flag
+    bool haveSetFlag = info->HaveSetFlag();
+    if ( haveSetFlag && !info->GetSetFlag(object) )
+        return; // member not set
+
     TObjectPtr member = info->GetMember(object);
     // assign member dafault
+    TTypeInfo memberType = info->GetTypeInfo();
     TConstObjectPtr def = info->GetDefault();
-    if ( def == 0 )
-        info->GetTypeInfo()->SetDefault(member);
-    else
-        info->GetTypeInfo()->Assign(member, info->GetDefault());
+    if ( def == 0 ) {
+        if ( !memberType->IsDefault(member) )
+            memberType->SetDefault(member);
+    }
+    else {
+        memberType->Assign(member, def);
+    }
     // update 'set' flag
-    if ( info->HaveSetFlag() )
+    if ( haveSetFlag )
         info->GetSetFlag(object) = false;
 }
 

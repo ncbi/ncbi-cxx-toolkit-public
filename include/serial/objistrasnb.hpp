@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/04/06 16:10:51  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.18  2000/03/14 14:43:30  vasilche
 * Fixed error reporting.
 *
@@ -178,7 +183,7 @@ private:
 
     bool SkipRealValue(void);
 
-    CStreamBuffer m_Input;
+    CIStreamBuffer m_Input;
     // states:
     // before StartTag (Peek*Tag/ExpectSysTag) tag:
     //     m_CurrentTagLength == 0

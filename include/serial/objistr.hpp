@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/04/06 16:10:50  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.35  2000/03/14 14:43:29  vasilche
 * Fixed error reporting.
 *
@@ -331,6 +336,9 @@ public:
         eThisPointer,
         eOtherPointer
     };
+
+    void SkipPointer(TTypeInfo declaredType);
+    void SkipObjectInfo(void);
 
     virtual void ReadNull(void) = 0;
 
@@ -759,9 +767,7 @@ protected:
     virtual void SkipCString(void);
 
     const CObjectInfo& GetRegisteredObject(TIndex index) const;
-    TIndex RegisterObject(TObjectPtr object, TTypeInfo typeInfo);
-    TIndex RegisterInvalidObject(void)
-        { return RegisterObject(0, 0); }
+    void RegisterObject(TObjectPtr object, TTypeInfo typeInfo);
 
     void ReadData(TObjectPtr object, TTypeInfo typeInfo)
         {

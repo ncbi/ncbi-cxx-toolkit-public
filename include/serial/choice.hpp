@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/04/06 16:10:50  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.8  2000/04/03 18:47:09  vasilche
 * Added main include file for generated headers.
 * serialimpl.hpp is included in generated sources with GetTypeInfo methods
@@ -107,6 +112,24 @@ public:
         {
             return m_Members;
         }
+
+    virtual bool MayContainType(TTypeInfo type) const;
+    virtual bool HaveChildren(TConstObjectPtr object) const;
+    virtual void BeginTypes(CChildrenTypesIterator& cc) const;
+    virtual void Begin(CConstChildrenIterator& cc) const;
+    virtual void Begin(CChildrenIterator& cc) const;
+    virtual bool ValidTypes(const CChildrenTypesIterator& cc) const;
+    virtual bool Valid(const CConstChildrenIterator& cc) const;
+    virtual bool Valid(const CChildrenIterator& cc) const;
+    virtual TTypeInfo GetChildType(const CChildrenTypesIterator& cc) const;
+    virtual void GetChild(const CConstChildrenIterator& cc,
+                          CConstObjectInfo& child) const;
+    virtual void GetChild(const CChildrenIterator& cc,
+                          CObjectInfo& child) const;
+    virtual void NextType(CChildrenTypesIterator& cc) const;
+    virtual void Next(CConstChildrenIterator& cc) const;
+    virtual void Next(CChildrenIterator& cc) const;
+    virtual void Erase(CChildrenIterator& cc) const;
 
 protected:
     virtual TMemberIndex GetIndex(TConstObjectPtr object) const = 0;

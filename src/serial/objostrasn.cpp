@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/04/06 16:11:00  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.33  2000/02/17 20:02:45  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -178,7 +183,7 @@
 BEGIN_NCBI_SCOPE
 
 CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out)
-    : m_Output(out), m_Ident(0)
+    : m_Output(out)
 {
 }
 
@@ -188,9 +193,9 @@ CObjectOStreamAsn::~CObjectOStreamAsn(void)
 
 void CObjectOStreamAsn::WriteTypeName(const string& name)
 {
-    if ( m_Ident == 0 ) {
+    if ( m_Output.GetIndentLevel() == 0 ) {
         WriteId(name);
-        m_Output << " ::= ";
+        m_Output.PutString(" ::= ");
     }
 }
 
@@ -205,55 +210,45 @@ bool CObjectOStreamAsn::WriteEnum(const CEnumeratedTypeValues& values,
     return false;
 }
 
-inline
-void CObjectOStreamAsn::WriteEscapedChar(char c)
-{
-    if ( c == '"' ) {
-        m_Output << "\"\"";
-    }
-    else if ( c >= 0 && c < ' ' ) {
-        THROW1_TRACE(runtime_error,
-                     "bad char in string: " + NStr::IntToString(c));
-    }
-    else {
-        m_Output << c;
-    }
-}
-
 void CObjectOStreamAsn::WriteBool(bool data)
 {
-    m_Output << (data? "TRUE": "FALSE");
+    if ( data )
+        m_Output.PutString("TRUE");
+    else
+        m_Output.PutString("FALSE");
 }
 
 void CObjectOStreamAsn::WriteChar(char data)
 {
-    m_Output << '\'' << data << '\'';
+    m_Output.PutChar('\'');
+    m_Output.PutChar(data);
+    m_Output.PutChar('\'');
 }
 
 void CObjectOStreamAsn::WriteInt(int data)
 {
-    m_Output << data;
+    m_Output.PutInt(data);
 }
 
 void CObjectOStreamAsn::WriteUInt(unsigned data)
 {
-    m_Output << data;
+    m_Output.PutUInt(data);
 }
 
 void CObjectOStreamAsn::WriteLong(long data)
 {
-    m_Output << data;
+    m_Output.PutLong(data);
 }
 
 void CObjectOStreamAsn::WriteULong(unsigned long data)
 {
-    m_Output << data;
+    m_Output.PutULong(data);
 }
 
 void CObjectOStreamAsn::WriteDouble(double data)
 {
 	if ( data == 0.0 ) {
-        m_Output << "{ 0, 10, 0 }";
+        m_Output.PutString("{ 0, 10, 0 }");
         return;
 	}
 
@@ -290,28 +285,35 @@ void CObjectOStreamAsn::WriteDouble(double data)
     
     if (minus)
         im = -im;
-	m_Output << "{ " << im << ", 10, " << ic << " }";
+	m_Output.PutString("{ ");
+    m_Output.PutLong(im);
+    m_Output.PutString(", 10, ");
+    m_Output.PutInt(ic);
+    m_Output.PutString(" }");
 }
 
 void CObjectOStreamAsn::WriteNull(void)
 {
-    m_Output << "NULL";
+    m_Output.PutString("NULL");
+}
+
+void CObjectOStreamAsn::WriteString(const char* ptr, size_t length)
+{
+    m_Output.PutChar('"');
+    while ( length > 0 ) {
+        char c = *ptr++;
+        --length;
+        m_Output.WrapAt(78, true);
+        m_Output.PutChar(c);
+        if ( c == '"' )
+            m_Output.PutChar('"');
+    }
+    m_Output.PutChar('"');
 }
 
 void CObjectOStreamAsn::WriteString(const string& str)
 {
-    m_Output << '\"';
-    size_t col = 20;
-    for ( string::const_iterator i = str.begin(); i != str.end(); ++i ) {
-        char c = *i;
-        if ( col >= 72 && c == ' ' || col >= 78 ) {
-            m_Output << '\n';
-            col = 0;
-        }
-        WriteEscapedChar(c);
-        ++col;
-    }
-    m_Output << '\"';
+    WriteString(str.data(), str.size());
 }
 
 void CObjectOStreamAsn::WriteCString(const char* str)
@@ -320,11 +322,7 @@ void CObjectOStreamAsn::WriteCString(const char* str)
         WriteNull();
     }
     else {
-	    m_Output << '\"';
-		while ( *str ) {
-			WriteEscapedChar(*str++);
-		}
-		m_Output << '\"';
+        WriteString(str, strlen(str));
     }
 }
 
@@ -332,16 +330,19 @@ void CObjectOStreamAsn::WriteId(const string& str)
 {
 	if ( str.find(' ') != NPOS || str.find('<') != NPOS ||
          str.find(':') != NPOS ) {
-		m_Output << '[' << str << ']';
+		m_Output.PutChar('[');
+        m_Output.PutString(str);
+        m_Output.PutChar(']');
 	}
 	else {
-		m_Output << str;
+		m_Output.PutString(str);
 	}
 }
 
 void CObjectOStreamAsn::WriteMemberSuffix(const CMemberId& id)
 {
-    m_Output << '.' << id.GetName();
+    m_Output.PutChar('.');
+    m_Output.PutString(id.GetName());
 }
 
 void CObjectOStreamAsn::WriteNullPointer(void)
@@ -351,48 +352,44 @@ void CObjectOStreamAsn::WriteNullPointer(void)
 
 void CObjectOStreamAsn::WriteObjectReference(TIndex index)
 {
-    m_Output << '@' << index;
+    m_Output.PutChar('@');
+    m_Output.PutUInt(index);
 }
 
-void CObjectOStreamAsn::WriteOther(TConstObjectPtr object, TTypeInfo typeInfo)
+void CObjectOStreamAsn::WriteOther(TConstObjectPtr object,
+                                   CWriteObjectInfo& info)
 {
-    m_Output << ": ";
-    WriteId(typeInfo->GetName());
-    m_Output << ' ';
-    WriteExternalObject(object, typeInfo);
-}
-
-void CObjectOStreamAsn::WriteNewLine(void)
-{
-    m_Output << '\n';
-    for ( int i = 0; i < m_Ident; ++i )
-        m_Output << "  ";
+    m_Output.PutString(": ");
+    WriteId(info.GetTypeInfo()->GetName());
+    m_Output.PutChar(' ');
+    WriteObject(object, info);
 }
 
 void CObjectOStreamAsn::VBegin(Block& )
 {
-    m_Output << '{';
-    ++m_Ident;
+    m_Output.PutChar('{');
+    m_Output.IncIndentLevel();
 }
 
 void CObjectOStreamAsn::VNext(const Block& block)
 {
     if ( !block.First() ) {
-        m_Output << ',';
+        m_Output.PutChar(',');
     }
-    WriteNewLine();
+    m_Output.PutEol();
 }
 
 void CObjectOStreamAsn::VEnd(const Block& )
 {
-    --m_Ident;
-    WriteNewLine();
-    m_Output << '}';
+    m_Output.DecIndentLevel();
+    m_Output.PutEol();
+    m_Output.PutChar('}');
 }
 
 void CObjectOStreamAsn::StartMember(Member& , const CMemberId& id)
 {
-    m_Output << id.GetName() << ' ';
+    m_Output.PutString(id.GetName());
+    m_Output.PutChar(' ');
 }
 
 void CObjectOStreamAsn::EndMember(const Member& )
@@ -401,7 +398,7 @@ void CObjectOStreamAsn::EndMember(const Member& )
 
 void CObjectOStreamAsn::Begin(const ByteBlock& )
 {
-	m_Output << '\'';
+	m_Output.PutChar('\'');
 }
 
 static const char* const HEX = "0123456789ABCDEF";
@@ -409,21 +406,18 @@ static const char* const HEX = "0123456789ABCDEF";
 void CObjectOStreamAsn::WriteBytes(const ByteBlock& ,
                                    const char* bytes, size_t length)
 {
-    size_t col = 20;
 	while ( length-- > 0 ) {
 		char c = *bytes++;
-        if ( col >= 76 ) {
-            m_Output << '\n';
-            col = 0;
-        }
-		m_Output << HEX[(c >> 4) & 0xf] << HEX[c & 0xf];
-        col += 2;
+        m_Output.WrapAt(78, false);
+		m_Output.PutChar(HEX[(c >> 4) & 0xf]);
+        m_Output.PutChar(HEX[c & 0xf]);
 	}
 }
 
 void CObjectOStreamAsn::End(const ByteBlock& )
 {
-	m_Output << "\'H";
+    m_Output.WrapAt(78, false);
+	m_Output.PutString("\'H");
 }
 
 #if HAVE_NCBI_C
@@ -435,7 +429,7 @@ unsigned CObjectOStreamAsn::GetAsnFlags(void)
 void CObjectOStreamAsn::AsnOpen(AsnIo& asn)
 {
     asn.m_Count = 0;
-    size_t indent = asn->indent_level = m_Ident;
+    size_t indent = asn->indent_level = m_Output.GetIndentLevel();
     size_t max_indent = asn->max_indent;
     if ( indent >= max_indent ) {
         Boolean* tmp = asn->first;
@@ -475,8 +469,7 @@ void CObjectOStreamAsn::AsnWrite(AsnIo& asn, const char* data, size_t length)
         }
         asn.m_Count = 1;
     }
-    if ( !m_Output.write(data, length) )
-        THROW1_TRACE(runtime_error, "write fault");
+    m_Output.PutString(data, length);
 }
 #endif
 

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/04/06 16:11:01  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.8  2000/03/29 15:55:29  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -74,18 +79,21 @@
 
 #include <corelib/ncbistre.hpp>
 #include <serial/strbuffer.hpp>
+#include <limits.h>
+#include <ctype.h>
 
 BEGIN_NCBI_SCOPE
 
 static const size_t KInitialBufferSize = 8192;
 
 static inline
-size_t BiggerBufferSize(size_t size)
+size_t BiggerBufferSize(size_t size) THROWS_NONE
 {
     return size * 2;
 }
 
-CStreamBuffer::CStreamBuffer(CNcbiIstream& in)
+CIStreamBuffer::CIStreamBuffer(CNcbiIstream& in)
+    THROWS((bad_alloc))
     : m_Input(in), m_BufferOffset(0),
       m_BufferSize(KInitialBufferSize), m_Buffer(new char[KInitialBufferSize]),
       m_CurrentPos(m_Buffer), m_DataEndPos(m_Buffer),
@@ -93,13 +101,13 @@ CStreamBuffer::CStreamBuffer(CNcbiIstream& in)
 {
 }
 
-CStreamBuffer::~CStreamBuffer(void)
+CIStreamBuffer::~CIStreamBuffer(void)
 {
     delete[] m_Buffer;
 }
 
 // this method is highly optimized
-char CStreamBuffer::SkipSpaces(void)
+char CIStreamBuffer::SkipSpaces(void)
     THROWS((CSerialIOException))
 {
     // cache pointers
@@ -141,8 +149,8 @@ char CStreamBuffer::SkipSpaces(void)
     }
 }
 
-char* CStreamBuffer::FillBuffer(char* pos)
-    THROWS((CSerialIOException))
+char* CIStreamBuffer::FillBuffer(char* pos)
+    THROWS((CSerialIOException, bad_alloc))
 {
     _ASSERT(pos >= m_DataEndPos);
     // remove unused portion of buffer at the beginning
@@ -195,7 +203,7 @@ char* CStreamBuffer::FillBuffer(char* pos)
     return pos;
 }
 
-void CStreamBuffer::GetChars(char* buffer, size_t count)
+void CIStreamBuffer::GetChars(char* buffer, size_t count)
     THROWS((CSerialIOException))
 {
     // cache pos
@@ -218,7 +226,7 @@ void CStreamBuffer::GetChars(char* buffer, size_t count)
     }
 }
 
-void CStreamBuffer::GetChars(size_t count)
+void CIStreamBuffer::GetChars(size_t count)
     THROWS((CSerialIOException))
 {
     // cache pos
@@ -238,7 +246,7 @@ void CStreamBuffer::GetChars(size_t count)
     }
 }
 
-void CStreamBuffer::SkipEndOfLine(char lastChar)
+void CIStreamBuffer::SkipEndOfLine(char lastChar)
     THROWS((CSerialIOException))
 {
     _ASSERT(lastChar == '\n' || lastChar == '\r');
@@ -257,7 +265,7 @@ void CStreamBuffer::SkipEndOfLine(char lastChar)
         SkipChar();
 }
 
-size_t CStreamBuffer::ReadLine(char* buff, size_t size)
+size_t CIStreamBuffer::ReadLine(char* buff, size_t size)
     THROWS((CSerialIOException))
 {
     size_t count = 0;
@@ -284,6 +292,192 @@ size_t CStreamBuffer::ReadLine(char* buff, size_t size)
     catch ( CSerialEofException& /*ignored*/ ) {
         return count;
     }
+}
+
+COStreamBuffer::COStreamBuffer(CNcbiOstream& out)
+    THROWS((bad_alloc))
+    : m_Output(out), m_IndentLevel(0),
+      m_Buffer(new char[KInitialBufferSize]),
+      m_CurrentPos(m_Buffer),
+      m_BufferEnd(m_Buffer + KInitialBufferSize),
+      m_Line(1),
+      m_LineLength(0)
+{
+}
+
+COStreamBuffer::~COStreamBuffer(void)
+    THROWS((CSerialIOException))
+{
+    FlushBuffer();
+    delete[] m_Buffer;
+}
+
+void COStreamBuffer::FlushBuffer(void)
+    THROWS((CSerialIOException))
+{
+    size_t count = m_CurrentPos - m_Buffer;
+    if ( count != 0 ) {
+        m_Output.write(m_Buffer, count);
+        m_CurrentPos = m_Buffer;
+        if ( !m_Output )
+            THROW1_TRACE(CSerialIOException, "write fault");
+    }
+}
+
+char* COStreamBuffer::DoReserve(size_t count)
+    THROWS((CSerialIOException, bad_alloc))
+{
+    FlushBuffer();
+    _ASSERT(m_CurrentPos == m_Buffer);
+    size_t bufferSize = m_BufferEnd - m_Buffer;
+    if ( bufferSize < count ) {
+        // realloc too small buffer
+        delete[] m_Buffer;
+        do {
+            bufferSize = BiggerBufferSize(bufferSize);
+        } while ( bufferSize < count );
+        m_CurrentPos = m_Buffer = new char[bufferSize];
+        m_BufferEnd = m_Buffer + bufferSize;
+    }
+    return m_Buffer;
+}
+
+void COStreamBuffer::PutInt(int v)
+    THROWS((CSerialIOException, bad_alloc))
+{
+    const size_t BSIZE = (sizeof(int)*CHAR_BIT) / 3 + 2;
+    char b[BSIZE];
+    char* pos = b + BSIZE;
+    if ( v == 0 ) {
+        *--pos = '0';
+    }
+    else {
+        bool sign = v < 0;
+        if ( sign )
+            v = -v;
+        
+        do {
+            *--pos = '0' + (v % 10);
+            v /= 10;
+        } while ( v );
+        
+        if ( sign )
+            *--pos = '-';
+    }
+    PutString(pos, b + BSIZE - pos);
+}
+
+void COStreamBuffer::PutUInt(unsigned v)
+    THROWS((CSerialIOException, bad_alloc))
+{
+    const size_t BSIZE = (sizeof(unsigned)*CHAR_BIT) / 3 + 2;
+    char b[BSIZE];
+    char* pos = b + BSIZE;
+    if ( v == 0 ) {
+        *--pos = '0';
+    }
+    else {
+        do {
+            *--pos = '0' + (v % 10);
+            v /= 10;
+        } while ( v );
+    }
+    PutString(pos, b + BSIZE - pos);
+}
+
+// code reduction if long and int have the same size
+void COStreamBuffer::PutLong(long v)
+    THROWS((CSerialIOException, bad_alloc))
+{
+#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
+    PutInt(int(v));
+#else
+    const size_t BSIZE = (sizeof(v)*CHAR_BIT) / 3 + 2;
+    char b[BSIZE];
+    char* pos = b + BSIZE;
+    if ( v == 0 ) {
+        *--pos = '0';
+    }
+    else {
+        bool sign = v < 0;
+        if ( sign )
+            v = -v;
+        
+        do {
+            *--pos = '0' + (v % 10);
+            v /= 10;
+        } while ( v );
+        
+        if ( sign )
+            *--pos = '-';
+    }
+    PutString(pos, b + BSIZE - pos);
+#endif
+}
+
+void COStreamBuffer::PutULong(unsigned long v)
+    THROWS((CSerialIOException, bad_alloc))
+{
+#if ULONG_MAX == UINT_MAX
+    PutUInt(unsigned(v));
+#else
+    const size_t BSIZE = (sizeof(v)*CHAR_BIT) / 3 + 2;
+    char b[BSIZE];
+    char* pos = b + BSIZE;
+    if ( v == 0 ) {
+        *--pos = '0';
+    }
+    else {
+        bool sign = v < 0;
+        if ( sign )
+            v = -v;
+        
+        do {
+            *--pos = '0' + (v % 10);
+            v /= 10;
+        } while ( v );
+        
+        if ( sign )
+            *--pos = '-';
+    }
+    PutString(pos, b + BSIZE - pos);
+#endif
+}
+
+void COStreamBuffer::PutEolAtWordEnd(size_t lineLength)
+    THROWS((CSerialIOException, bad_alloc))
+{
+    Reserve(1);
+    size_t linePos = m_LineLength;
+    char* pos = m_CurrentPos;
+    bool goodPlace = false;
+    while ( pos > m_Buffer && linePos > 0 ) {
+        --pos;
+        --linePos;
+        if ( linePos <= lineLength && (isspace(*pos) || *pos == '\'') ) {
+            goodPlace = true;
+            break;
+        }
+        else if ( *pos == '"' || *pos == '\n' ) {
+            // no suitable space found
+            break;
+        }
+    }
+    if ( !goodPlace ) {
+        // no suitable space found
+        if ( linePos < lineLength ) {
+            pos += lineLength - linePos;
+            linePos = lineLength;
+        }
+    }
+    // split there
+    // insert '\n'
+    size_t count = m_CurrentPos - pos;
+    memmove(pos + 1, pos, count);
+    m_LineLength = count;
+    ++m_CurrentPos;
+    *pos = '\n';
+    ++m_Line;
 }
 
 END_NCBI_SCOPE

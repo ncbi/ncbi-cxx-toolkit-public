@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/04/06 16:10:51  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.19  2000/01/10 20:12:37  vasilche
 * Fixed duplicate argument names.
 * Fixed conflict between template and variable name.
@@ -108,6 +113,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objostr.hpp>
+#include <serial/strbuffer.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -143,11 +149,11 @@ protected:
     virtual void WriteMemberSuffix(const CMemberId& id);
     virtual void WriteNullPointer(void);
     virtual void WriteObjectReference(TIndex index);
-    virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo);
+    virtual void WriteOther(TConstObjectPtr object,
+                            CWriteObjectInfo& info);
     void WriteId(const string& str);
 
     void WriteNull(void);
-    void WriteEscapedChar(char c);
 
     virtual void VBegin(Block& block);
     virtual void VNext(const Block& block);
@@ -159,12 +165,10 @@ protected:
                             const char* bytes, size_t length);
 	virtual void End(const ByteBlock& block);
 
-    void WriteNewLine(void);
-
 private:
-    CNcbiOstream& m_Output;
+    void WriteString(const char* str, size_t length);
 
-    int m_Ident;
+    COStreamBuffer m_Output;
 };
 
 //#include <serial/objostrasn.inl>

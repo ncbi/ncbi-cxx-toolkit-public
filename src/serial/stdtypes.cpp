@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/04/06 16:11:01  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.15  2000/03/14 14:42:32  vasilche
 * Fixed error reporting.
 *
@@ -220,9 +225,7 @@ bool CStdTypeInfo<string>::Equals(TConstObjectPtr object1,
 
 void CStdTypeInfo<string>::SetDefault(TObjectPtr object) const
 {
-    string& s = Get(object);
-    if ( !s.empty() )
-        s.erase();
+    Get(object).erase();
 }
 
 void CStdTypeInfo<string>::Assign(TObjectPtr dst,

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/04/06 16:10:51  vasilche
+* Fixed bug with iterators in choices.
+* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
+* Added output buffering to text ASN.1 data.
+*
 * Revision 1.8  2000/03/29 15:55:21  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -82,11 +87,11 @@ class CMemberId;
 class CMemberInfo;
 class COObjectList;
 
-class CORootObjectInfo {
+class CWriteObjectInfo {
 public:
     typedef int TIndex;
 
-    CORootObjectInfo(TTypeInfo typeInfo = 0)
+    CWriteObjectInfo(TTypeInfo typeInfo = 0)
         : m_TypeInfo(typeInfo), m_Index(-1)
         {
         }
@@ -106,42 +111,6 @@ private:
     TIndex m_Index;
 };
 
-class COObjectInfo
-{
-public:
-    typedef unsigned TIndex;
-
-    COObjectInfo(void)
-        : m_RootObject(0)
-        { }
-    COObjectInfo(const COObjectList& list,
-                 TConstObjectPtr object, TTypeInfo typeInfo);
-
-    TConstObjectPtr GetRootObject(void) const
-        { return m_RootObject->first; }
-    const CORootObjectInfo& GetRootObjectInfo(void) const
-        { return m_RootObject->second; }
-
-    bool IsMember(void) const
-        {
-            return false;
-        }
-
-    int GetMemberId(void) const
-        {
-            return -1;
-        }
-
-    void ToContainerObject(void)
-        {
-        }
-
-private:
-    friend class COObjectList;
-
-    const pair<const TConstObjectPtr, CORootObjectInfo>* m_RootObject;
-};
-
 class COObjectList
 {
 public:
@@ -150,37 +119,24 @@ public:
     COObjectList(void);
     ~COObjectList(void);
 
-    // add object to object list
-    // return true if object is new and should add all its members
-    // return false if object was already added
-    // may throw an exception if there is error in objects placements
-    bool Add(TConstObjectPtr object, TTypeInfo typeInfo);
+    // check that all objects marked as written
+    void CheckAllWritten(void) const;
 
-    void SetObject(COObjectInfo& info,
-                   TConstObjectPtr object, TTypeInfo typeInfo) const;
+    size_t GetObjectCount(void) const;
 
 protected:
     friend class CObjectOStream;
 
-    void RegisterObject(const CORootObjectInfo& info);
+    // add object to object list
+    // may throw an exception if there is error in objects placements
+    CWriteObjectInfo& RegisterObject(TConstObjectPtr object,
+                                     TTypeInfo typeInfo);
 
-    COObjectInfo GetObjectInfo(TConstObjectPtr object,
-                               TTypeInfo typeInfo) const;
-
-
-    // checks whether member:memberTypeInfo is member (direct or indirect) of
-    // object:typeInfo
-    // throws exception if not
-    static bool CheckMember(TConstObjectPtr object, TTypeInfo typeInfo,
-                            TConstObjectPtr member, TTypeInfo memberTypeInfo);
-
-    // check that all objects marked as written
-    void CheckAllWritten(void) const;
+    void ObjectWritten(CWriteObjectInfo& info);
 
 private:
     // we need reverse order map due to faster algorithm of lookup
-    typedef map<TConstObjectPtr, CORootObjectInfo,
-        greater<TConstObjectPtr> > TObjects;
+    typedef map<TConstObjectPtr, CWriteObjectInfo> TObjects;
 
     TObjects m_Objects;
     TIndex m_NextObjectIndex;
