@@ -585,9 +585,6 @@ template class CAlignShadow<Uint4>;
 template class CAlignShadow<string>;
 template class CAlignShadow<CConstRef<CSeq_id> >;
 
-template CNcbiOstream& operator<< <CConstRef<CSeq_id> >
-    (CNcbiOstream& os, const CAlignShadow<CConstRef<CSeq_id> >& align_shadow);
-
 template CNcbiOstream& operator<< <Uint4>
     (CNcbiOstream& os, const CAlignShadow<Uint4>& align_shadow);
 
@@ -600,6 +597,10 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.2  2004/12/21 21:27:42  ucko
+ * Don't explicitly instantiate << for CConstRef<CSeq_id>, for which it
+ * has instead been specialized.
+ *
  * Revision 1.1  2004/12/21 20:07:47  kapustin
  * Initial revision
  *
