@@ -48,6 +48,7 @@ static int s_NumericBytesPerPrec[] =
  22, 22, 23, 23, 24, 24, 24, 25, 25, 26, 26, 26};
 
 
+NCBI_DBAPIDRIVER_EXPORT
 unsigned char*  longlong_to_numeric (Int8 l_num, unsigned int prec, unsigned char* cs_num)
 {
     bool needs_del= false;
@@ -82,6 +83,8 @@ unsigned char*  longlong_to_numeric (Int8 l_num, unsigned int prec, unsigned cha
 
 }
 
+
+NCBI_DBAPIDRIVER_EXPORT
 Int8 numeric_to_longlong(unsigned int precision, unsigned char* cs_num)
 
 {
@@ -106,6 +109,7 @@ Int8 numeric_to_longlong(unsigned int precision, unsigned char* cs_num)
 }
 
 
+NCBI_DBAPIDRIVER_EXPORT
 void swap_numeric_endian(unsigned int precision, unsigned char* num)
 {
     if(precision == 0) return;
@@ -129,6 +133,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/03/15 20:44:52  gorelenk
+ * Added NCBI_DBAPIDRIVER_EXPORT prefix for functions definitions.
+ *
  * Revision 1.8  2003/03/20 20:08:06  soussov
  * fixed typo in longlong_to_numeric
  *
