@@ -1,4 +1,4 @@
-/* $Id: ncbiconf.mac,v 1.12 2003/04/02 20:12:37 rsmith Exp $
+/* $Id: ncbiconf.mac,v 1.13 2003/04/14 20:27:09 lebedev Exp $
  * By Jonathan Kans, NCBI (kans@ncbi.nlm.nih.gov)
  *
  * NOTE:  Unlike its UNIX counterpart, this configuration header
@@ -65,3 +65,5 @@
 #define HAVE_STRSTREA_H  1
 #define HAVE_STRSTREAM   1
 #define HAVE_UNISTD_H    1
+#define HAVE_IOS_XALLOC  1
+#undef AUTOMATIC_STREAMBUF_DESTRUCTION
