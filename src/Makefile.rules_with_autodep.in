@@ -23,4 +23,14 @@ DEPFLAGS_ALL = $(DEPFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 %.d: $(srcdir)/%.c
 	$(CC)  $(DEPFLAGS_ALL) $< | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@ 
 
+
+ifeq ($(MAKECMDGOALS),clean)
+DONT_INCLUDE = 1
+endif
+ifeq ($(MAKECMDGOALS),purge)
+DONT_INCLUDE = 1
+endif
+
+ifndef DONT_INCLUDE
 include $(SOURCES:=.d)
+endif
