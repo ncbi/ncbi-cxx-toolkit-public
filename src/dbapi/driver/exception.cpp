@@ -334,7 +334,7 @@ string CDB_MultiEx::WhatThis(void) const
     str += OriginatedFrom();
     str += "]   Contains a backtrace of ";
     str += NStr::UIntToString( NofExceptions() );
-    str += " exceptions  ---";
+    str += " exception" + (NofExceptions() == 1 ? "" : "s") + "  ---";
     return str;
 }
 
@@ -622,6 +622,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/10/22 20:16:42  lavr
+ * Do not print "1 exceptions"
+ *
  * Revision 1.12  2004/05/17 21:11:38  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
