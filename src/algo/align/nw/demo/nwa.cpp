@@ -42,8 +42,8 @@ void CAppNWA::Init()
 
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
-                              "Global alignment algorithms demo application.\n"
-                              "Build 1.00.09 - 01/24/03");
+                              "Global alignment application.\n"
+                              "Build 1.00.10 - 01/28/03");
 
     argdescr->AddDefaultKey
         ("matrix", "matrix", "scoring matrix",
@@ -235,7 +235,7 @@ void CAppNWA::x_RunOnPair() const
     }
 
     if(output_asn) {
-        pofsAsn.reset(open_ofstream (args["asn"].AsString()).release());
+        pofsAsn.reset(open_ofstream (args["oasn"].AsString()).release());
     }
 
     if(output_fasta) {
@@ -245,37 +245,42 @@ void CAppNWA::x_RunOnPair() const
                              .release());
     }
 
+    aligner->SetSeqIds(seqname1, seqname2);
+
     int score = aligner->Run();
     cerr << "Score = " << score << endl;
 
-
     const size_t line_width = 50;
     if(pofs1.get()) {
-        *pofs1 << aligner->Format(line_width, CNWAligner::eFormatType1);
+        *pofs1 << aligner->FormatAsText(
+                                line_width, CNWAligner::eFormatType1);
     }
 
     if(pofs2.get()) {
-        *pofs2 << aligner->Format(line_width, CNWAligner::eFormatType2);
+        *pofs2 << aligner->FormatAsText(
+                                line_width, CNWAligner::eFormatType2);
     }
 
     if(pofsAsn.get()) {
-        *pofsAsn << aligner->Format(line_width, CNWAligner::eFormatAsn);
+        *pofsAsn << aligner->FormatAsText(
+                                line_width, CNWAligner::eFormatAsn);
     }
 
     if(pofsFastA_seq1.get()) {
         *pofsFastA_seq1 << '>' << seqname1 << endl;
-        *pofsFastA_seq1 << aligner->Format(line_width,
-                                           CNWAligner::eFormatFastA, 1);
+        *pofsFastA_seq1 << aligner->FormatAsText(
+                                line_width, CNWAligner::eFormatFastA, 1);
     }
 
     if(pofsFastA_seq2.get()) {
         *pofsFastA_seq2 << '>' << seqname2 << endl;
-        *pofsFastA_seq2 << aligner->Format(line_width, 
-                                           CNWAligner::eFormatFastA, 2);
+        *pofsFastA_seq2 << aligner->FormatAsText(
+                                line_width, CNWAligner::eFormatFastA, 2);
     }
     
     if(!output_type1 && !output_type2 && !output_asn && !output_fasta) {
-        cout << aligner->Format(line_width, CNWAligner::eFormatType2);
+        cout << aligner->FormatAsText(
+                                line_width, CNWAligner::eFormatType2);
     }
 }
 
@@ -325,6 +330,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/01/28 12:46:27  kapustin
+ * Format() --> FormatAsText(). Fix the flag spelling forcing ASN output ("oasn").
+ *
  * Revision 1.8  2003/01/24 19:43:03  ucko
  * Change auto_ptr assignment to use release and reset rather than =,
  * which not all compilers support.
