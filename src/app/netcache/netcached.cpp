@@ -36,8 +36,14 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/plugin_manager.hpp>
+#include <corelib/ncbi_system.hpp>
+
+#include <util/thread_nonstop.hpp>
+#include <util/bitset/ncbi_bitset.hpp>
+#include <corelib/ncbimtx.hpp>
 
 #include <util/cache/icache.hpp>
+#include <util/cache/icache_clean_thread.hpp>
 #include <bdb/bdb_blobcache.hpp>
 
 #include <connect/threaded_server.hpp>
@@ -47,6 +53,9 @@ USING_NCBI_SCOPE;
 
 const unsigned int kNetCacheBufSize = 2048;
 const unsigned int kObjectTimeout = 60 * 60; ///< Default timeout in seconds
+
+DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex);
+
 
 /// Netcache threaded server
 ///
@@ -63,6 +72,8 @@ public:
           m_Shutdown(false)
     {
         m_Buf = new char[kNetCacheBufSize+1];
+        m_MaxThreads = 25;
+        m_InitThreads = 10;
     }
 
     ~CNetCacheServer()
@@ -122,21 +133,73 @@ private:
                   const string& prefix, const string& msg);
 
     /// Generate unique system-wide request id
-    void GenerateRequestId(const Request& req, string* id_str);
+    void GenerateRequestId(const Request& req, 
+                           string*        id_str,
+                           unsigned int*  transaction_id);
+
+    void WaitForId(unsigned int id);
 
 private:
-    unsigned   m_MaxId;
-    ICache*    m_Cache;
-    char*      m_Buf;       /// Temp buffer
-    size_t     m_BufLength; ///< Actual buffer length (in bytes)
-    bool       m_Shutdown;  ///< Shutdown request
+    unsigned        m_MaxId;
+    bm::bvector<>   m_UsedIds;   ///< Set of ids in use
+    ICache*         m_Cache;
+    char*           m_Buf;       ///< Temp buffer
+    size_t          m_BufLength; ///< Actual buffer length (in bytes)
+    bool            m_Shutdown;  ///< Shutdown request
 };
 
+/// @internal
+class CIdBusyGuard
+{
+public:
+    CIdBusyGuard(bm::bvector<>* id_set, unsigned int id)
+        : m_IdSet(id_set), m_Id(id)
+    {
+        if (id) {
+            CFastMutexGuard guard(x_NetCacheMutex);
+            id_set->set(id);
+        }
+    }
+
+    ~CIdBusyGuard()
+    {
+        Release();
+    }
+
+    void Release()
+    {
+        if (m_Id) {
+            CFastMutexGuard guard(x_NetCacheMutex);
+            m_IdSet->set(m_Id, false);
+            m_Id = 0;
+        }
+
+    }
+
+private:
+    bm::bvector<>*   m_IdSet;
+    unsigned int     m_Id;
+};
+
+/// @internal
+static
+bool s_WaitForReadSocket(CSocket& sock)
+{
+    STimeout to = {10, 0};
+    EIO_Status io_st = sock.Wait(eIO_Read, &to);
+    switch (io_st) {
+    case eIO_Success:
+        return true;
+    default:
+        return false;
+    }
+    return false;
+}        
 
 
 void CNetCacheServer::Process(SOCK sock)
 {
-    LOG_POST("Connection...");
+//LOG_POST("Connection...");
 
     try {
         CSocket socket;
@@ -144,8 +207,15 @@ void CNetCacheServer::Process(SOCK sock)
 
         string auth, request;
 
+        s_WaitForReadSocket(socket);
+
         if (ReadStr(socket, &auth)) {
+//LOG_POST(Info << "Client=" << auth);
+            
+            s_WaitForReadSocket(socket);
+
             if (ReadStr(socket, &request)) {                
+//LOG_POST(Info << "Request=" << request);
                 Request req;
                 ParseRequest(request, &req);
 
@@ -197,6 +267,7 @@ void CNetCacheServer::Process(SOCK sock)
     {
         ERR_POST(ex.what());
     }
+//LOG_POST("Connection closed.");
 }
 
 
@@ -235,12 +306,16 @@ format_err:
         WriteMsg(sock, "ERR:", "BLOB expired.");
         return;
     }
-//cerr << "Retrieving:'" << req_id << "'" << endl;
 
+    WaitForId(blob_id.id);
+
+//LOG_POST(Info << "GET request key=" << req_id);
     auto_ptr<IReader> rdr(m_Cache->GetReadStream(req_id, 0, kEmptyStr));
     if (!rdr.get()) {
 blob_not_found:
         WriteMsg(sock, "ERR:", "BLOB not found.");
+//LOG_POST(Info << "GET failed. BLOB not found." << req_id);
+
         return;
     }
 
@@ -279,14 +354,24 @@ blob_not_found:
 void CNetCacheServer::ProcessPut(CSocket& sock, const Request& req)
 {
     string rid;
-    GenerateRequestId(req, &rid);
-    WriteMsg(sock, "ID:", rid);
+    unsigned int transaction_id;
+    GenerateRequestId(req, &rid, &transaction_id);
 
+    CIdBusyGuard guard(&m_UsedIds, transaction_id);
+
+    WriteMsg(sock, "ID:", rid);
+//LOG_POST(Info << "PUT request. Generated key=" << rid);
     auto_ptr<IWriter> 
         iwrt(m_Cache->GetWriteStream(rid, 0, kEmptyStr));
 
+    // Reconfigure socket for no-timeout operation
+    STimeout to;
+    to.sec = to.usec = 0;
+    sock.SetTimeout(eIO_Read, &to);
+
     while (ReadBuffer(sock)) {
         if (m_BufLength) {
+
             size_t bytes_written;
             ERW_Result res = 
                 iwrt->Write(m_Buf, m_BufLength, &bytes_written);
@@ -300,14 +385,6 @@ void CNetCacheServer::ProcessPut(CSocket& sock, const Request& req)
     iwrt->Flush();
     iwrt.reset(0);
 
-/*
-        auto_ptr<IReader> rdr;
-        IReader* r = m_Cache->GetReadStream(rid, 0, "");
-        rdr.reset(r);
-        if (rdr.get() == 0) {
-            cerr << "Cannot retrieve BLOB" << endl;
-        }
-*/
 }
 
 bool CNetCacheServer::ParseBlobId(const string& rid, BlobId* req_id)
@@ -359,6 +436,22 @@ bool CNetCacheServer::ParseBlobId(const string& rid, BlobId* req_id)
     req_id->timeout = atoi(ch);
 
     return true;
+}
+
+void CNetCacheServer::WaitForId(unsigned int id)
+{
+    // Spins in the loop while requested id is in the transaction list
+    // (PUT request is still working)
+    //
+    while (true) {
+        {{
+        CFastMutexGuard guard(x_NetCacheMutex);
+        if (!m_UsedIds[id]) {
+            return;
+        }
+        }}
+        SleepMilliSec(10);
+    }
 }
 
 
@@ -422,6 +515,11 @@ void CNetCacheServer::ParseRequest(const string& reqstr, Request* req)
 
 bool CNetCacheServer::ReadBuffer(CSocket& sock)
 {
+    if (!s_WaitForReadSocket(sock)) {
+        m_BufLength = 0;
+        return true;
+    }
+
     _ASSERT(m_Buf);
     EIO_Status io_st = sock.Read(m_Buf, kNetCacheBufSize, &m_BufLength);
     switch (io_st) 
@@ -474,9 +572,10 @@ out_of_loop:
 
 }
 
-DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex);
 
-void CNetCacheServer::GenerateRequestId(const Request& req, string* id_str)
+void CNetCacheServer::GenerateRequestId(const Request& req, 
+                                        string*        id_str,
+                                        unsigned int*  transaction_id)
 {
     long id;
     string tmp;
@@ -485,6 +584,7 @@ void CNetCacheServer::GenerateRequestId(const Request& req, string* id_str)
     CFastMutexGuard guard(x_NetCacheMutex);
     id = ++m_MaxId;
     }}
+    *transaction_id = id;
 
     *id_str = "NCID_01"; // NetCacheId prefix plus id version
 
@@ -520,11 +620,14 @@ class CNetCacheDApp : public CNcbiApplication
 public:
     void Init(void);
     int Run(void);
+private:
+    CRef<CCacheCleanerThread>  m_PurgeThread;
 };
 
 void CNetCacheDApp::Init(void)
 {
-    SetDiagPostLevel(eDiag_Warning);
+//    SetDiagPostLevel(eDiag_Warning);
+    SetDiagPostLevel(eDiag_Info);
 
     // Setup command line arguments and parameters
         
@@ -540,6 +643,7 @@ void CNetCacheDApp::Init(void)
 
 int CNetCacheDApp::Run(void)
 {
+    CBDB_Cache* bdb_cache = 0;
     try {
         const CNcbiRegistry& reg = GetConfig();
 
@@ -564,9 +668,14 @@ int CNetCacheDApp::Run(void)
                    CVersionInfo(TCachePM::TInterfaceVersion::eMajor,
                                 TCachePM::TInterfaceVersion::eMinor,
                                 TCachePM::TInterfaceVersion::ePatchLevel), 
-                   bdb_tree);
+                                bdb_tree);
 
+            bdb_cache = dynamic_cast<CBDB_Cache*>(ic);
             cache.reset(ic);
+
+            if (bdb_cache) {
+                bdb_cache->CleanLog();
+            }
 
         } else {
             LOG_POST("Configuration error. Cannot init storage.");
@@ -579,30 +688,25 @@ int CNetCacheDApp::Run(void)
             ERR_POST("Configuration error. Cache not open.");
             return 1;
         }
-/*
-        const char* key = "NCID_01_1_DIDIMO_1096464360";
-        {{
-        const char* buf = "ASDFQWERTRY";
-        auto_ptr<IWriter> wrt(cache->GetWriteStream(key, 0, ""));
-        wrt->Write(buf, 5);
-        wrt->Flush();
-        }}
-        auto_ptr<IReader> rdr;
-        IReader* r = cache->GetReadStream(key, 0, "");
-        rdr.reset(r);
-        if (rdr.get() == 0) {
-            cerr << "Cannot retrieve BLOB" << endl;
-        }
-*/
-
-        
 
         int port = 
             reg.GetInt("server", "port", 9000, CNcbiRegistry::eReturn);
 
+        m_PurgeThread.Reset(new CCacheCleanerThread(cache.get(), 30, 5));
+        LOG_POST(Info << "Running server on port " << port);
+        m_PurgeThread->Run();
+
         CNetCacheServer thr_srv(port, cache.get());
         thr_srv.Run();
 
+        LOG_POST(Info << "Stopping cache maintanace thread...");
+        if (bdb_cache) {
+            bdb_cache->SetBatchSleep(0);
+            bdb_cache->StopPurge();
+        }
+        m_PurgeThread->RequestStop();
+        m_PurgeThread->Join();
+        LOG_POST(Info << "Stopped.");
 
     }
     catch (CBDB_ErrnoException& ex)
@@ -628,6 +732,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/10/15 14:34:46  kuznets
+ * Fine tuning of networking, cleaning thread interruption, etc
+ *
  * Revision 1.4  2004/10/04 12:33:24  kuznets
  * Complete implementation of GET/PUT
  *
