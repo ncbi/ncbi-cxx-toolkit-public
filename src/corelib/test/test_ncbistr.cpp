@@ -246,7 +246,7 @@ int CTestApplication::Run(void)
         
         try {
             Int8 value = NStr::StringToInt8(str);
-            NcbiCout << "Int8 value: " << value << ", toString: '"
+            NcbiCout << "Int8 value: " << (int)value << ", toString: '"
                      << NStr::Int8ToString(value) << "'" << NcbiEndl;
         }
         catch (CException& e) {
@@ -255,7 +255,7 @@ int CTestApplication::Run(void)
 
         try {
             Uint8 value = NStr::StringToUInt8(str);
-            NcbiCout << "Uint8 value: " << value << ", toString: '"
+            NcbiCout << "Uint8 value: " << (unsigned)value << ", toString: '"
                      << NStr::UInt8ToString(value) << "'" << NcbiEndl;
         }
         catch (CException& e) {
@@ -509,6 +509,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2003/01/13 14:48:08  kuznets
+ * minor fix
+ *
  * Revision 6.10  2003/01/10 22:17:39  kuznets
  * Implemented test for NStr::String2Int8
  *
