@@ -50,8 +50,14 @@
  *      CReadLockGuard   -- acquire R-lock, then guarantee for its release
  *      CWriteLockGuard  -- acquire W-lock, then guarantee for its release
  *
+ *   SEMAPHORE:
+ *      CSemaphore       -- application-wide semaphore
+ *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2001/12/10 18:07:53  vakatov
+ * Added class "CSemaphore" -- application-wide semaphore
+ *
  * Revision 1.6  2001/05/17 14:54:33  lavr
  * Typos corrected
  *
@@ -583,6 +589,43 @@ private:
     CWriteLockGuard& operator= (const CWriteLockGuard&);
 };
 
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  SEMAPHORE
+//
+//    CSemaphore::   application-wide semaphore
+//
+
+class CSemaphore
+{
+public:
+    // 'ctors
+    CSemaphore(unsigned int init_count, unsigned int max_count);
+    // Report error if the semaphore is locked
+    ~CSemaphore(void);
+
+    // If the semaphore's count is zero then wait until it's not zero.
+    // Decrement the counter (by one).
+    void Wait(void);
+
+    // If the semaphore's count is zero then return FALSE;
+    // else, decrement the counter (by one) and return TRUE.
+    bool TryWait(void);
+
+    // Increment the counter (by "count").
+    // Do nothing and throw an exception if counter would exceed "max_count".
+    void Post(unsigned int count = 1);
+
+private:
+    struct SSemaphore* m_Sem;  // system-specific semaphore data
+
+    // Disallow assignment and copy constructor
+    CSemaphore(const CSemaphore&);
+    CSemaphore& operator= (const CSemaphore&);
+};
 
 
 

@@ -40,6 +40,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2001/12/10 18:07:55  vakatov
+ * Added class "CSemaphore" -- application-wide semaphore
+ *
  * Revision 1.10  2001/05/17 15:05:00  lavr
  * Typos corrected
  *
@@ -77,7 +80,9 @@
 
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/ncbi_limits.h>
 #include <algorithm>
+#include <memory>
 #include <assert.h>
 
 
@@ -338,7 +343,7 @@ CExitThreadException::~CExitThreadException(void)
 
     if ( !tmp_in_wrapper ) {
         // Something is wrong - terminate the thread
-        assert(((void)("CThread::Exit() -- can not exit thread"), 0));
+        assert(((void)("CThread::Exit() -- cannot exit thread"), 0));
 #if defined(NCBI_WIN32_THREADS)
         ExitThread(0);
 #elif defined(NCBI_POSIX_THREADS)
@@ -473,7 +478,7 @@ bool CThread::Run(void)
     // Check
     s_Verify(!m_IsRun,
              "CThread::Run() -- called for already started thread");
- 
+
 #if defined(NCBI_WIN32_THREADS)
     // We need this parameter in WinNT - can not use NULL instead!
     DWORD  thread_id;
@@ -1038,7 +1043,7 @@ void CRWLock::Unlock(void)
              "CRWLock::Unlock() -- RWLock is locked by another thread");
 
     if (m_Count == -1) {
-        // unlock the last W-lock
+        // Unlock the last W-lock
 #if defined(NCBI_WIN32_THREADS)
         LONG prev_sema;
         s_Verify(ReleaseSemaphore(m_RW->m_Rsema, 1, &prev_sema),
@@ -1062,11 +1067,11 @@ void CRWLock::Unlock(void)
         m_Owner = kThreadID_None;
     }
     else if (m_Count < -1) {
-        // unlock W-lock (not the last one)
+        // Unlock W-lock (not the last one)
         m_Count++;
     }
     else if (m_Count == 1) {
-        // unlock the last R-lock
+        // Unlock the last R-lock
 #if defined(NCBI_WIN32_THREADS)
         LONG prev_sema;
         s_Verify(ReleaseSemaphore(m_RW->m_Wsema, 1, &prev_sema),
@@ -1075,7 +1080,7 @@ void CRWLock::Unlock(void)
                  "CRWLock::Unlock() -- invalid W-semaphore state");
 #elif defined(NCBI_POSIX_THREADS)
         s_Verify(pthread_cond_signal(&m_RW->m_Wcond) == 0,
-                 "CRWLock::Unlock() -- error signalling unlock");
+                 "CRWLock::Unlock() -- error signaling unlock");
 #endif
 
         m_Count = 0;
@@ -1086,21 +1091,227 @@ void CRWLock::Unlock(void)
 #endif
     }
     else {
-        // unlock R-lock (not the last one)
+        // Unlock R-lock (not the last one)
         m_Count--;
-        // reset the owner, it may become incorrect after unlock
+        // Reset the owner, it may become incorrect after unlock
         if (m_Owner == self_id) {
             m_Owner = kThreadID_None;
         }
 
 #if defined(_DEBUG)
         // Check if the unlocking thread is in the owners list
-        list<CThread::TID>::iterator found = 
+        list<CThread::TID>::iterator found =
             find(m_Readers.begin(), m_Readers.end(), self_id);
         assert(found != m_Readers.end());
         m_Readers.erase(found);
 #endif
     }
+}
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  SEMAPHORE
+//
+
+
+// Platform-specific representation (or emulation) of semaphore
+struct SSemaphore
+{
+#if defined(NCBI_POSIX_THREADS)
+    unsigned int     max_count;
+    unsigned int     count; 
+    unsigned int     wait_count;  // # of threads currently waiting on the sema
+    pthread_mutex_t  mutex;
+    pthread_cond_t   cond;
+
+#elif defined(NCBI_WIN32_THREADS)
+    HANDLE           sem;
+
+#else
+    unsigned int     max_count;
+    unsigned int     count;
+#endif
+};
+
+
+CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
+{
+    s_Verify(max_count != 0,
+             "CSemaphore::CSemaphore() -- max_count passed zero");
+    s_Verify(init_count <= max_count,
+             "CSemaphore::CSemaphore() -- init_count greater than max_count");
+
+    m_Sem = new SSemaphore;
+    auto_ptr<SSemaphore> auto_sem(m_Sem);
+
+#if defined(NCBI_POSIX_THREADS)
+    m_Sem->max_count = max_count;
+    m_Sem->count     = init_count;
+    m_Sem->wait_count = 0;
+
+    s_Verify(pthread_mutex_init(&m_Sem->mutex, 0) == 0,
+             "CSemaphore::CSemaphore() -- pthread_mutex_init() failed");
+    s_Verify(pthread_cond_init(&m_Sem->cond, 0) == 0,
+             "CSemaphore::CSemaphore() -- pthread_cond_init() failed");
+
+#elif defined(NCBI_WIN32_THREADS)
+    m_Sem->sem = CreateSemaphore(NULL, init_count, max_count, NULL);
+    s_Verify(m_Sem->sem != NULL,
+             "CSemaphore::CSemaphore() -- CreateSemaphore() failed");
+
+#else
+    m_Sem->max_count = max_count;
+    m_Sem->count     = init_count;
+#endif
+
+    auto_sem.release();
+}
+
+
+CSemaphore::~CSemaphore(void)
+{
+#if defined(NCBI_POSIX_THREADS)
+    assert(m_Sem->wait_count == 0);
+    verify(pthread_mutex_destroy(&m_Sem->mutex) == 0);
+    verify(pthread_cond_destroy (&m_Sem->cond)  == 0);
+
+#elif defined(NCBI_WIN32_THREADS)
+    verify( CloseHandle(m_Sem->sem) );
+#endif
+
+    delete m_Sem;
+}
+
+
+void CSemaphore::Wait(void)
+{
+#if defined(NCBI_POSIX_THREADS)
+    s_Verify(pthread_mutex_lock(&m_Sem->mutex) == 0,
+             "CSemaphore::Wait() -- pthread_mutex_lock() failed");
+
+    if (m_Sem->count != 0) {
+        m_Sem->count--;
+    }
+    else {
+        m_Sem->wait_count++;
+        do {
+            if (pthread_cond_wait(&m_Sem->cond, &m_Sem->mutex) != 0) {
+                s_Verify(pthread_mutex_unlock(&m_Sem->mutex) == 0,
+                         "CSemaphore::Wait() -- pthread_cond_wait() and "
+                         "pthread_mutex_unlock() failed");
+                s_Verify(0,"CSemaphore::Wait() -- pthread_cond_wait() failed");
+            }
+        } while (m_Sem->count == 0);
+        m_Sem->wait_count--;
+        m_Sem->count--;
+    }
+
+    s_Verify(pthread_mutex_unlock(&m_Sem->mutex) == 0,
+             "CSemaphore::Wait() -- pthread_mutex_unlock() failed");
+
+#elif defined(NCBI_WIN32_THREADS)
+    s_Verify(WaitForSingleObject(m_Sem->sem, INFINITE) == WAIT_OBJECT_0,
+             "CSemaphore::Wait() -- WaitForSingleObject() failed");
+
+#else
+    s_Verify(m_Sem->count != 0,
+             "CSemaphore::Wait() -- wait with zero count in 1-thread mode(?)");
+    m_Sem->count--;
+#endif
+}
+
+
+bool CSemaphore::TryWait(void)
+{
+#if defined(NCBI_POSIX_THREADS)
+    s_Verify(pthread_mutex_lock(&m_Sem->mutex) == 0,
+             "CSemaphore::TryWait() -- pthread_mutex_lock() failed");
+
+    bool retval;
+    if (m_Sem->count != 0) {
+        m_Sem->count--;
+        retval = true;
+    }
+    else {
+        retval = false;
+    }
+
+    s_Verify(pthread_mutex_unlock(&m_Sem->mutex) == 0,
+             "CSemaphore::TryWait() -- pthread_mutex_unlock() failed");
+
+    return retval;
+
+#elif defined(NCBI_WIN32_THREADS)
+    DWORD res = WaitForSingleObject(m_Sem->sem, 0);
+    s_Verify(res == WAIT_OBJECT_0  ||  res == WAIT_TIMEOUT,
+             "CSemaphore::TryWait() -- WaitForSingleObject() failed");
+    return (res == WAIT_OBJECT_0);
+
+#else
+    if (m_Sem->count == 0)
+        return false;
+    m_Sem->count--;
+    return true;
+#endif
+}
+
+
+void CSemaphore::Post(unsigned int count)
+{
+    if (count == 0)
+        return;
+
+#if defined (NCBI_POSIX_THREADS)
+    s_Verify(pthread_mutex_lock(&m_Sem->mutex) == 0,
+             "CSemaphore::Post() -- pthread_mutex_lock() failed");
+    s_Verify(m_Sem->count <= kMax_UInt - count,
+             "CSemaphore::Post() -- would result in counter > MAX_UINT");
+    s_Verify(m_Sem->count + count <= m_Sem->max_count,
+             "CSemaphore::Post() -- attempt to exceed max_count");
+
+    // Signal some (or all) of the threads waiting on this semaphore
+    int err_code = 0;
+    if (m_Sem->count + count >= m_Sem->wait_count) {
+        err_code = pthread_cond_broadcast(&m_Sem->cond);
+    } else {
+        // Do not use broadcast here to avoid waking up more threads
+        // than really needed...
+        for (unsigned int n_sig = 0;  n_sig < count;  n_sig++) {
+            err_code = pthread_cond_signal(&m_Sem->cond);
+            if (err_code != 0) {
+                err_code = pthread_cond_broadcast(&m_Sem->cond);
+                break;
+            }
+        }
+    }
+
+    // Success
+    if (err_code == 0) {
+        m_Sem->count += count;
+        s_Verify(pthread_mutex_unlock(&m_Sem->mutex) == 0,
+                 "CSemaphore::Post() -- pthread_mutex_unlock() failed");
+        return;
+    }
+
+    // Error
+    s_Verify(pthread_mutex_unlock(&m_Sem->mutex) == 0,
+             "CSemaphore::Post() -- pthread_cond_signal/broadcast() and "
+             "pthread_mutex_unlock() failed");
+    s_Verify(0,
+             "CSemaphore::Post() -- pthread_cond_signal/broadcast() "
+             "failed");
+
+#elif defined(NCBI_WIN32_THREADS)
+    s_Verify(ReleaseSemaphore(m_Sem->sem, count, NULL),
+             "CSemaphore::Post() -- ReleaseSemaphore() failed");
+
+#else
+    s_Verify(m_Sem->count + count <= m_Sem->max_count,
+             "CSemaphore::Post() -- attempt to exceed max_count");
+    m_Sem->count += count;
+#endif
 }
 
 
