@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2001/05/23 21:53:19  lavr
+ * Do not close dispatcher in Open; leave it as it is
+ *
  * Revision 6.20  2001/05/17 15:03:07  lavr
  * Typos corrected
  *
@@ -615,7 +618,6 @@ static EIO_Status s_VT_Open
         return eIO_Success;
     }
 
-    s_CloseDispatcher(uuu);
     return eIO_Unknown;
 }
 
