@@ -123,8 +123,8 @@ USING_NCBI_SCOPE;
 
 int main()
 {
-    
-    try { // to be sure that we are catching all driver related exceptions 
+
+    try { // to be sure that we are catching all driver related exceptions
 
         // We need to create a driver context first
         // In real program we have to replace CXXXContext with something real
@@ -133,12 +133,12 @@ int main()
         // connecting to server "MyServer"
         // with user name "my_user_name" and password "my_password"
         CDB_Connection* con = my_context.Connect("MyServer", "my_user_name",
-                                                 "my_password", 0); 
+                                                 "my_password", 0);
 
         // Preparing a SQL query
         CDB_LangCmd* lcmd =
             con->LangCmd("select name, crdate from sysdatabases");
-    
+
         // Sending this query to a server
         lcmd->Send();
 
@@ -172,7 +172,7 @@ int main()
         delete lcmd; // delete the command
         delete con;  // delete the connection
     }
-    catch (CDB_Exception&amp; e) { // printing the error messages 
+    catch (CDB_Exception&amp; e) { // printing the error messages
         CDB_UserHandler_Stream myExHandler(&amp;cerr);
 
         myExHandler.HandleIt(&amp;e);
@@ -386,7 +386,7 @@ int main()
     CMyHandlerForConnectionBoundErrors conn_handler;
     CMyHandlerForOtherErrors           other_handler;
     ...
-    try { // to be sure that we are catching all driver related exceptions 
+    try { // to be sure that we are catching all driver related exceptions
 
         // We need to create a driver context first
         // In real program we have to replace CXXXContext with something real
@@ -433,7 +433,7 @@ create a connection pool) or to invoke a connection by name from this pool.
     CDB_Connection* con[4];
     int i;
     for (i = 4;  i--; ) {
-        con[i]= my_context.Connect((i%2 == 0) ? "MyServer1" : "MyServer2", 
+        con[i]= my_context.Connect((i%2 == 0) ? "MyServer1" : "MyServer2",
                                    "my_user_name", "my_password", 0, true,
                                    "ConnectionPoolA");
         CDB_LangCmd* lcmd= con[i]->LangCmd("use DatabaseA");
@@ -648,7 +648,7 @@ while (cmd-&gt;HasMoreResults()) {
        continue; // a NULL res doesn't mean that there is no more results
 
    switch(res-&gt;ResultType()) {
-      case eDB_RowResult: // row result 
+      case eDB_RowResult: // row result
           while(res-&gt;Fetch()) {
              ...
           }

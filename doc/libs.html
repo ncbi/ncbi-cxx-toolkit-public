@@ -27,9 +27,9 @@
       </i></td>
       <td align="Center"><b><a href="lxr/source/include/corelib">corelib</a>
       </b></td>
-      <td>Provide a portable low-level API and a lot of useful classes, functions 
+      <td>Provide a portable low-level API and a lot of useful classes, functions
  and macro.  <br>
-      <b>HINT:</b> It must be linked to every executable which uses the NCBI 
+      <b>HINT:</b> It must be linked to every executable which uses the NCBI
  C++ toolkit! </td>
     </tr>
     <tr>
@@ -40,9 +40,9 @@
       </b></center>
       </td>
       <td>Connection library. Includes platform-independent socket interface,
- SOCK, connection object, CONN, and specialized connector constructors, socket, 
+ SOCK, connection object, CONN, and specialized connector constructors, socket,
  file, HTTP and service, to be used as engines for connections. Also, provides
- access to load-balancing daemon and NCBI named service dispatching facilities. 
+ access to load-balancing daemon and NCBI named service dispatching facilities.
        </td>
     </tr>
     <tr>
@@ -52,7 +52,7 @@
       <center><b><a href="lxr/source/include/util">util</a>
       </b></center>
       </td>
-      <td>Collection of useful classes which can be used in more then one 
+      <td>Collection of useful classes which can be used in more then one
 application.</td>
     </tr>
     <tr>
@@ -71,11 +71,11 @@ application.</td>
       </b></td>
       <td>A Fast-CGI version of <i><a href="#ref_TableXCGI">xcgi</a>
       </i>.  <br>
-      <b>HINT:</b> Requires the target executable to be linked with a 3rd-party 
+      <b>HINT:</b> Requires the target executable to be linked with a 3rd-party
  FastCGI library, as in: <a href="new_proj.html#ref_MakeProjApp">LIBS</a>
   = <b><a href="config.html#ref_TableLocalization1">$(FASTCGI_LIBS)</a>
       </b>.  <br>
-      <b>HINT:</b> On non-FastCGI capable platforms (or if run as a plain 
+      <b>HINT:</b> On non-FastCGI capable platforms (or if run as a plain
  CGI on a a FastCGI capable platform), it works just as a plain CGI. </td>
     </tr>
     <tr>
@@ -85,7 +85,7 @@ application.</td>
       </b></td>
       <td><a href="libs/newhtml.html">Compose and printout a HTML page</a>
    -- using a static HTML template with embedded dynamic fragments. Provide
- a rich set of classes to help build the dynamic fragments of regular HTML 
+ a rich set of classes to help build the dynamic fragments of regular HTML
  tags (and text) arranged into a tree-like structure. </td>
     </tr>
     <tr>
@@ -93,16 +93,16 @@ application.</td>
       </i></td>
       <td align="Center"><b><a href="lxr/source/include/serial">serial</a>
       </b></td>
-      <td>Generic library to provide data serialization in different formats. 
+      <td>Generic library to provide data serialization in different formats.
  See also <a href="tools/datatool/datatool.html">datatool</a>
   . </td>
     </tr>
     <tr>
-      <td><i><a href="#ref_TableDBAPI_DRIVER">dbapi_driver</a>
+      <td><i><a href="#ref_TableDBAPI">dbapi</a>
       </i></td>
       <td align="Center"><b><a href="lxr/source/include/dbapi/driver">dbapi</a>
       </b></td>
-      <td><a href="libs/dbapi_driver.html">Driver API</a>
+      <td><a href="libs/dbapi.html">Driver and User API</a>
    for the NCBI database connectivity project. </td>
     </tr>
     <tr>
@@ -149,7 +149,7 @@ access to biological sequence data<br>
       <td align="Center"><b>CErrnoException</b><br>
       <b>CParseException</b><br>
       <b>STD_CATCH()</b></td>
-      <td><a href="libs/err_msg.html#ref_Exception">Auxiliary C++ exceptions, 
+      <td><a href="libs/err_msg.html#ref_Exception">Auxiliary C++ exceptions,
  related macros</a>
       </td>
     </tr>
@@ -159,7 +159,7 @@ access to biological sequence data<br>
       <td align="Center"><b>CNcbiDiag</b><br>
       <b>SetDiagStream</b><br>
       <b>ERR_POST()</b></td>
-      <td><a href="libs/err_msg.html#ref_Message">Standard NCBI C++ message 
+      <td><a href="libs/err_msg.html#ref_Message">Standard NCBI C++ message
 posting</a>
       </td>
     </tr>
@@ -167,8 +167,8 @@ posting</a>
       <td><i><a href="lxr/source/include/corelib/ncbireg.hpp">ncbireg</a>
       </i></td>
       <td align="Center"><b>CNcbiRegistry</b></td>
-      <td>To handle application configuration parameters arranged in the 
-     <b>[section],  name=<i>value</i></b> fashion; store them in the configuration 
+      <td>To handle application configuration parameters arranged in the
+     <b>[section],  name=<i>value</i></b> fashion; store them in the configuration
 files <i>a  la</i> MS-Windows <b>*.INI</b></td>
     </tr>
     <tr>
@@ -258,7 +258,7 @@ C++ i/o streams</td>
       <td>
       <center><b>CIntervalTree</b></center>
       </td>
-      <td>Map for storing data using CRange as key with another algorithm 
+      <td>Map for storing data using CRange as key with another algorithm
 of retrieval.</td>
     </tr>
     <tr>
@@ -354,12 +354,12 @@ of retrieval.</td>
     </tr>
   </tbody>
 </table>
-<!-- ------------------------------------------------------- --><a name="ref_TableDBAPI_DRIVER"></a>
+<!-- ------------------------------------------------------- --><a name="ref_TableDBAPI"></a>
 </p>
 <p>
 <table border="1" cellspacing="0">
   <caption>Library <b><i><a href="#ref_TableLibs">dbapi_driver</a>
-  </i></b> (part of the DB API project ) </caption><tbody>
+  </i></b> (part of the <a href="libs/dbapi.html">DB API</a> project ) </caption><tbody>
     <tr>
       <th><i><a href="#ref_ModuleNote">Module</a>
       </i></th>
@@ -394,7 +394,7 @@ of retrieval.</td>
       <a href="lxr/ident?i=CDB_SendDataCmd&amp;d=C">CDB_SendDataCmd</a>
       <br>
       </td>
-      <td><a href="libs/dbapi_driver.html">Context, connection, command and
+      <td><a href="libs/dbapi_driver.html#ref_Topics">Context, connection, command and
  result classes</a>
       </td>
     </tr>
@@ -465,7 +465,7 @@ of retrieval.</td>
       <a href="lxr/ident?i=CDB_UserHandler_Stream&amp;d=C">CDB_UserHandler_Stream</a>
       <br>
       </td>
-      <td><a href="libs/dbapi_driver.html#ref_Errors">Exceptions and error 
+      <td><a href="libs/dbapi_driver.html#ref_Errors">Exceptions and error
 handling</a>
       </td>
     </tr>
