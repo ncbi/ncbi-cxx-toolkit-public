@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/04/04 22:28:09  vakatov
+* NStr::  added conversions for "long"
+*
 * Revision 1.25  2000/02/01 16:48:09  vakatov
 * CNcbiEmptyString::  more dancing around the Sun "feature" (see also R1.24)
 *
@@ -172,6 +175,26 @@ unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */ )
     return value;
 }
 
+long NStr::StringToLong(const string& str, int base /* = 10 */ )
+{
+    errno = 0;
+    char* endptr = 0;
+    long value = ::strtol(str.c_str(), &endptr, base);
+    if (errno  ||  !endptr  ||  endptr == str.c_str())
+        throw runtime_error("NStr::StringToLong():  cannot convert");
+    return value;
+}
+
+unsigned long NStr::StringToULong(const string& str, int base /* = 10 */ )
+{
+    errno = 0;
+    char* endptr = 0;
+    unsigned long value = ::strtoul(str.c_str(), &endptr, base);
+    if (errno  ||  !endptr  ||  endptr == str.c_str())
+        throw runtime_error("NStr::StringToULong():  cannot convert");
+    return value;
+}
+
 double NStr::StringToDouble(const string& str)
 {
     errno = 0;
@@ -182,24 +205,17 @@ double NStr::StringToDouble(const string& str)
     return value;
 }
 
-string NStr::IntToString(int value)
+string NStr::IntToString(long value, bool sign /* = false */ )
 {
     char buffer[64];
-    ::sprintf(buffer, "%d", value);
+    ::sprintf(buffer, sign ? "%+ld": "%ld", value);
     return buffer;
 }
 
-string NStr::IntToString(int value, bool sign)
+string NStr::UIntToString(unsigned long value)
 {
     char buffer[64];
-    ::sprintf(buffer, sign ? "%+d": "%d", value);
-    return buffer;
-}
-
-string NStr::UIntToString(unsigned int value)
-{
-    char buffer[64];
-    ::sprintf(buffer, "%u", value);
+    ::sprintf(buffer, "%lu", value);
     return buffer;
 }
 

@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2000/04/04 22:28:06  vakatov
+* NStr::  added conversions for "long"
+*
 * Revision 1.36  2000/02/17 20:00:24  vasilche
 * Added EResetVariant enum for serialization package.
 *
@@ -164,14 +167,14 @@ private:
 
 // tools
 struct NStr {
-
     // conversion functions
     static int StringToInt(const string& str, int base = 10);
     static unsigned int StringToUInt(const string& str, int base = 10);
+    static long StringToLong(const string& str, int base = 10);
+    static unsigned long StringToULong(const string& str, int base = 10);
     static double StringToDouble(const string& str);
-    static string IntToString(int value);
-    static string IntToString(int value, bool sign);
-    static string UIntToString(unsigned int value);
+    static string IntToString(long value, bool sign=false);
+    static string UIntToString(unsigned long value);
     static string DoubleToString(double value);
     static string BoolToString(bool value);
     static bool   StringToBool(const string& str);
