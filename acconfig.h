@@ -89,6 +89,9 @@
 /* SYBASE libraries are available */
 #undef HAVE_LIBSYBASE
 
+/* FreeTDS libraries are available */
+#undef HAVE_LIBFTDS
+
 /* KSTAT library is available */
 #undef HAVE_LIBKSTAT
 
@@ -118,6 +121,9 @@
 
 /* NCBI PubMed libraries are available */
 #undef HAVE_LIBPUBMED
+
+/* ORBacus CORBA package is available */
+#undef HAVE_ORBACUS
 
 /* New C++ streams do not have ios_base:: */
 #undef HAVE_NO_IOS_BASE
