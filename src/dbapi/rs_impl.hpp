@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.5  2002/07/08 16:08:19  kholodov
+* Modified: moved initialization code to Init() method
+*
 * Revision 1.4  2002/06/11 16:22:53  kholodov
 * Fixed the incorrect declaration of GetMetaData() method
 *
@@ -72,6 +75,7 @@ public:
 
     virtual ~CResultSet();
   
+    void Init();
     virtual EDB_ResType GetResultType();
 
     virtual bool Next();

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.11  2002/07/08 16:08:19  kholodov
+* Modified: moved initialization code to Init() method
+*
 * Revision 1.10  2002/07/02 13:46:05  kholodov
 * Fixed: Incorrect exception class used CDB_Exception
 *
@@ -89,16 +92,24 @@ CResultSet::CResultSet(CConnection* conn, CDB_Result *rs)
       m_rs(rs), m_istr(0), m_ostr(0), m_column(-1)
 {
     if( m_rs == 0 ) {
-        SetValid(false);
+        _TRACE("CResultSet::ctor(): zero CDB_Result* argument");
+        _ASSERT(0);
     }
     else {
-        // Reserve storage for column data
-        EDB_Type type;
-        for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
-            type = m_rs->ItemDataType(i);
-            m_data.Add(CVariant(type));
-        }
+        Init();
     }
+}
+
+
+void CResultSet::Init() 
+{
+    // Reserve storage for column data
+    EDB_Type type;
+    for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
+        type = m_rs->ItemDataType(i);
+        m_data.Add(CVariant(type));
+    }
+
 }
 
 CResultSet::~CResultSet()
@@ -118,13 +129,11 @@ const IResultSetMetaData* CResultSet::GetMetaData()
 
 EDB_ResType CResultSet::GetResultType() 
 {
-    CheckValid();
     return m_rs->ResultType();
 }
 
 bool CResultSet::Next() 
 {
-    CheckValid();
 
     bool more = false;
     EDB_Type type = eDB_UnsupportedType;
@@ -219,7 +228,7 @@ ostream& CResultSet::GetBlobOStream(size_t blob_size,
     }
 
     m_ostr = new CBlobOStream(m_conn->CloneCDB_Conn(),
-                              m_rs->GetImageOrTextDescriptor(),
+                              desc,
                               blob_size,
                               buf_size);
     return *m_ostr;
