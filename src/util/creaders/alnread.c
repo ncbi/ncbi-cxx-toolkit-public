@@ -1997,6 +1997,35 @@ static EBool s_IsConsensusLine (char * str)
 }
 
 
+/* This function identifies lines that begin with a NEXUS keyword and end
+ * with a semicolon - they will not contain sequence data.  The function
+ * returns eTrue if the line contains only a NEXUS comment, eFalse otherwise.
+ */
+static EBool s_SkippableNexusComment (char *str)
+{
+    char * last_semicolon;
+
+    if (str == NULL) {
+        return eFalse;
+    }
+    last_semicolon = strrchr (str, ';');
+    if (last_semicolon == NULL
+        ||  strspn (last_semicolon + 1, " \t\r") != strlen (last_semicolon + 1)
+        ||  strchr (str, ';') != last_semicolon) {
+        return eFalse;
+    }
+    if (s_StringNICmp (str, "format ", 7) == 0
+        ||  s_StringNICmp (str, "dimensions ", 11) == 0
+        ||  s_StringNICmp (str, "dimensions ", 11) == 0
+        ||  s_StringNICmp (str, "options ", 8) == 0
+        ||  s_StringNICmp (str, "begin data", 10) == 0) {
+        return eTrue;
+    } else {
+        return eFalse;
+    }
+}
+
+
 /* This function determines whether the contents of str are "skippable"
  * in that they do not contain sequence data and therefore should not be
  * considered part of any block patterns or sequence data.
@@ -2005,10 +2034,7 @@ static EBool s_SkippableString (char * str)
 {
     if (str == NULL
         ||  s_StringNICmp (str, "matrix", 6) == 0
-        ||  s_StringNICmp (str, "begin data;", 11) == 0
-        ||  s_StringNICmp (str, "format ;", 8) == 0
-        ||  s_StringNICmp (str, "format datatype", 15) == 0
-        ||  s_StringNICmp (str, "dimensions ntax", 15) == 0
+        ||  s_SkippableNexusComment (str)
         ||  s_IsTwoNumbersSeparatedBySpace (str)
         ||  s_IsConsensusLine (str)
         ||  str [0] == ';') {
@@ -4962,6 +4988,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/05 16:29:32  bollin
+ * smarter function for skipping NEXUS comment lines
+ *
  * Revision 1.2  2004/02/04 19:49:11  bollin
  * fixed infinite loop condition in s_AugmentOffsetList, properly skip over first non-space column when looking for interleaved block patterns in s_ReadAlignFileRaw
  *
