@@ -179,8 +179,17 @@ void CLocusItem::x_SetName(CBioseqContext& ctx)
     } else {
         CConstRef<CSeq_id> id = FindBestChoice(seq->GetId(), CSeq_id::Score);
         const CTextseq_id* tsid = id->GetTextseq_Id();
-        if ( tsid  &&  tsid->CanGetName() ) {
-            m_Name = tsid->GetName();
+
+        if (tsid) {
+            if (s_IsGenomeView(ctx)) {
+                if (tsid->CanGetAccession()) {
+                    m_Name = tsid->GetAccession();
+                }
+            } else {
+                if (tsid->CanGetName()) {
+                    m_Name = tsid->GetName();
+                }
+            }
         }
         if (m_Name.empty()  ||  x_NameHasBadChars(m_Name)) {
             m_Name = id->GetSeqIdString();
@@ -557,6 +566,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/08/26 17:04:53  shomrat
+* use accession for genome view
+*
 * Revision 1.10  2004/08/19 16:35:03  shomrat
 * Fixed locus name
 *
