@@ -19,11 +19,12 @@ COMMON_AddRunpath()
     export LD_LIBRARY_PATH
 
     case "`uname`" in
-        IRIX*) _RLD_ROOT="/usr"
+     IRIX*)
+        _RLD_ROOT="/usr"
         export _RLD_ROOT
         ;;
-
-        Darwin*) DYLD_LIBRARY_PATH="$LD_LIBRARY_PATH"
+     Darwin*)
+        DYLD_LIBRARY_PATH="$LD_LIBRARY_PATH"
         export DYLD_LIBRARY_PATH
         ;;
     esac    
