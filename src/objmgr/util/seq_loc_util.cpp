@@ -377,23 +377,27 @@ ENa_strand GetStrand(const CSeq_loc& loc, CScope* scope)
 }
 
 
-TSeqPos GetStart(const CSeq_loc& loc, CScope* scope)
+TSeqPos GetStart(const CSeq_loc& loc, CScope* scope, ESeqLocExtremes ext)
 {
     // Throw CObjmgrUtilException if loc does not represent one CBioseq
     GetId(loc, scope);
 
-    CSeq_loc::TRange rg = loc.GetTotalRange();
-    return rg.GetFrom();
+    return loc.GetStart(ext);
 }
 
 
-TSeqPos GetStop(const CSeq_loc& loc, CScope* scope)
+TSeqPos GetStop(const CSeq_loc& loc, CScope* scope, ESeqLocExtremes ext)
 {
     // Throw CObjmgrUtilException if loc does not represent one CBioseq
     GetId(loc, scope);
 
-    CSeq_loc::TRange rg = loc.GetTotalRange();
-    return rg.GetTo();
+    if (loc.IsWhole()  &&  scope != NULL) {
+        CBioseq_Handle seq = GetBioseqFromSeqLoc(loc, *scope);
+        if (seq) {
+            return seq.GetInst_Length();
+        }
+    }
+    return loc.GetStop(ext);
 }
 
 
@@ -2282,10 +2286,10 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
     case eOverlap_Simple:
         {
             if (circular_len != kInvalidSeqPos) {
-                Int8 from1 = loc1.GetStart();
-                Int8 from2 = loc2.GetStart();
-                Int8 to1 = loc1.GetEnd();
-                Int8 to2 = loc2.GetEnd();
+                Int8 from1 = loc1.GetStart(eExtreme_Positional);
+                Int8 from2 = loc2.GetStart(eExtreme_Positional);
+                Int8 to1 = loc1.GetStop(eExtreme_Positional);
+                Int8 to2 = loc2.GetStop(eExtreme_Positional);
                 if (from1 > to1) {
                     if (from2 > to2) {
                         // Both locations are circular and must intersect at 0
@@ -2339,10 +2343,10 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
     case eOverlap_Contained:
         {
             if (circular_len != kInvalidSeqPos) {
-                Int8 from1 = loc1.GetStart();
-                Int8 from2 = loc2.GetStart();
-                Int8 to1 = loc1.GetEnd();
-                Int8 to2 = loc2.GetEnd();
+                Int8 from1 = loc1.GetStart(eExtreme_Positional);
+                Int8 from2 = loc2.GetStart(eExtreme_Positional);
+                Int8 to1 = loc1.GetStop(eExtreme_Positional);
+                Int8 to2 = loc2.GetStop(eExtreme_Positional);
                 if (from1 > to1) {
                     if (from2 > to2) {
                         return (from1 <= from2  &&  to1 >= to2) ?
@@ -2371,10 +2375,10 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
     case eOverlap_Contains:
         {
             if (circular_len != kInvalidSeqPos) {
-                Int8 from1 = loc1.GetStart();
-                Int8 from2 = loc2.GetStart();
-                Int8 to1 = loc1.GetEnd();
-                Int8 to2 = loc2.GetEnd();
+                Int8 from1 = loc1.GetStart(eExtreme_Positional);
+                Int8 from2 = loc2.GetStart(eExtreme_Positional);
+                Int8 to1 = loc1.GetStop(eExtreme_Positional);
+                Int8 to2 = loc2.GetStop(eExtreme_Positional);
                 if (from1 > to1) {
                     if (from2 > to2) {
                         return (from2 <= from1  &&  to2 >= to1) ?
@@ -2610,6 +2614,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.17  2005/02/18 15:03:07  shomrat
+* Changes to GetStop/GetStart; CSeq_loc::GetEnd changed to CSeq_loc::GetStop
+*
 * Revision 1.16  2005/02/02 19:49:55  grichenk
 * Fixed more warnings
 *
