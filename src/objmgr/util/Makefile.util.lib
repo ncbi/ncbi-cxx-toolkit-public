@@ -5,5 +5,5 @@
 
 ASN_DEP = seq
 
-SRC = weight sequence feature seqtitle obj_sniff
+SRC = weight sequence feature seqtitle obj_sniff seq_loc_util
 LIB = xobjutil
