@@ -86,8 +86,6 @@
 // Definitions for NCBI_SEQ.DLL
 //
 #ifdef NCBI_SEQ_EXPORTS
-#  define NCBI_FEATDEF_EXPORTS
-#  define NCBI_GBSEQ_EXPORTS
 #  define NCBI_ID1_EXPORTS
 #  define NCBI_OBJPRT_EXPORTS
 #  define NCBI_SEQALIGN_EXPORTS
@@ -111,6 +109,8 @@
 #  define NCBI_ACCESS_EXPORTS
 #  define NCBI_DOCSUM_EXPORTS
 #  define NCBI_ENTREZ2_EXPORTS
+#  define NCBI_FEATDEF_EXPORTS
+#  define NCBI_GBSEQ_EXPORTS
 #  define NCBI_MIM_EXPORTS
 #  define NCBI_TINYSEQ_EXPORTS
 #endif
@@ -575,6 +575,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2002/12/31 15:08:23  dicuccio
+ * Moved featdef and gbseq into ncbi_misc.dll
+ *
  * Revision 1.2  2002/12/26 12:51:41  dicuccio
  * Fixed some minor niggling errors with export specifiers in the wrong places.
  *
