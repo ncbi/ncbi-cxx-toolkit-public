@@ -379,16 +379,18 @@ public:
     void Chunks  (CAlnMap::TGetChunkFlags flags = CAlnMap::fAlnSegsOnly);
 
     /// Fasta style Ids
-    const string& GetId  (CAlnMap::TNumrow row) const;
-    void          PrintId(CAlnMap::TNumrow row) const;
+    const string& GetId   (CAlnMap::TNumrow row) const;
+    void          PrintId (CAlnMap::TNumrow row) const;
+    void          PrintRow(CAlnMap::TNumrow row) const;
 
 private:
     const CAlnMap&         m_AlnMap;
-    const CAlnMap::TNumrow m_NumRows;
     mutable vector<string> m_Ids;
 
 protected:
     size_t                 m_IdFieldLen;
+    size_t                 m_RowFieldLen;
+    const CAlnMap::TNumrow m_NumRows;
     CNcbiOstream*          m_Out;
 };
 
@@ -712,6 +714,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2005/03/15 19:18:11  todorov
+* + CAlnMapPrinter::PrintRow
+*
 * Revision 1.41  2005/03/15 17:44:24  todorov
 * Added a printer class
 *
