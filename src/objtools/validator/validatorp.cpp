@@ -892,6 +892,7 @@ void CValidError_imp::ValidatePubArticle
                 }
                 
                 if ( !no_pages ) {
+                    sev = eDiag_Warning;
                     string pages = imp.GetPages();
                     size_t pos = pages.find('-');
                     if ( pos != string::npos ) {
@@ -2348,6 +2349,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2003/05/05 15:35:02  shomrat
+* eErr_GENERIC_BadPageNumbering dropped to eDiag_warning
+*
 * Revision 1.31  2003/04/29 14:57:09  shomrat
 * Added SeqAlign and SeqEntry error posting methods
 *
