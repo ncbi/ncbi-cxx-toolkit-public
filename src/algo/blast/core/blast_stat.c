@@ -1751,15 +1751,13 @@ BlastKarlinLHtoK(Blast_ScoreFreq* sfp, double lambda, double H)
     expMinusLambda      = exp((double) -lambda);
 
     if (low == -1 && high == 1) {
-        K = (sfp->sprob[low] - sfp->sprob[high]) *
-            (sfp->sprob[low] - sfp->sprob[high]) / sfp->sprob[low];
+        K = (sfp->sprob[low*divisor] - sfp->sprob[high*divisor]) *
+            (sfp->sprob[low*divisor] - sfp->sprob[high*divisor]) / sfp->sprob[low*divisor];
         return(K);
     }
 
     if (low == -1 || high == 1) {
-        if (high == 1)
-            ;
-        else {
+        if (high != 1) {
             score_avg = sfp->score_avg / divisor;
             firstTermClosedForm
                 = (score_avg * score_avg) / firstTermClosedForm;
@@ -3643,6 +3641,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.113  2005/01/31 16:59:19  dondosha
+ * Bug fix in BlastKarlinLHtoK when penalty == -reward
+ *
  * Revision 1.112  2005/01/28 13:50:43  madden
  * Fix typos in doxygen comments
  *
