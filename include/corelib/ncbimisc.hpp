@@ -429,36 +429,54 @@ ssize_t CRawPointer::Sub(const void* first, const void* second)
 }
 
 
-/// Helper template to implement safe bool operator in classes
-/// To implement it you need to add a line:
-///    DECLARE_OPERATOR_BOOL(Class, Condition);
-/// to your class declaration in public section.
-/// First argument is class name, second argument is bool expression
-/// to be returned from safe bool operator.
+/////////////////////////////////////////////////////////////////////////////
+/// Support for safe bool operators
+/////////////////////////////////////////////////////////////////////////////
+
+
+/// Macro to hide all oprators with bool argument which may be used
+/// unintentially when second argument is of class having operator bool().
+/// All methods are simply declared private without body definition.
+#define HIDE_SAFE_BOOL_OPERATORS()                      \
+    private:                                            \
+    void operator<(bool) const;                         \
+    void operator>(bool) const;                         \
+    void operator<=(bool) const;                        \
+    void operator>=(bool) const;                        \
+    void operator==(bool) const;                        \
+    void operator!=(bool) const;                        \
+    void operator+(bool) const;                         \
+    void operator-(bool) const;                         \
+    public:
+
+
+/// Low level macro for declaring bool operator.
+#define DECLARE_SAFE_BOOL_METHOD(Expr)                  \
+    operator bool(void) const {                         \
+        return (Expr);                                  \
+    }
+
+
+/// Declaration of safe bool operator from boolean expression.
 /// Actual operator declaration will be:
-///    operator const CBoolFor<Class>*(void) const;
-/// This kind of declaration allows to use it in boolean context,
-/// but will prevent comparison of incomparable objects via bool conversion.
-/// Returned pointer value will have the same value as 'this', so even if
-/// the class doesn't have operator==() objects will compare equal only if
-/// they are both 'null' or if your are comparing object to itself.
-template<class C>
-class CBoolFor
-{
-protected:
-    static void dummy(void);
-    
-private: // all methods are private and hidden
-    CBoolFor(void);
-    CBoolFor(const CBoolFor<C>&);
-    CBoolFor<C>& operator=(const CBoolFor<C>&);
-    ~CBoolFor(void);
-};
+///    operator bool(void) const;
+#define DECLARE_OPERATOR_BOOL(Expr)             \
+    HIDE_SAFE_BOOL_OPERATORS()                  \
+    DECLARE_SAFE_BOOL_METHOD(Expr)
 
 
-#define DECLARE_OPERATOR_BOOL(Class, Expr) \
-    operator const CBoolFor<Class>*() const { \
-    return (Expr)? reinterpret_cast<const CBoolFor<Class>*>(this): 0; }
+/// Declaration of safe bool operator from pointer expression.
+/// Actual operator declaration will be:
+///    operator bool(void) const;
+#define DECLARE_OPERATOR_BOOL_PTR(Ptr)          \
+    DECLARE_OPERATOR_BOOL((Ptr) != 0)
+
+
+/// Declaration of safe bool operator from CRef<>/CConstRef<> expression.
+/// Actual operator declaration will be:
+///    operator bool(void) const;
+#define DECLARE_OPERATOR_BOOL_REF(Ref)          \
+    DECLARE_OPERATOR_BOOL((Ref).NotNull())
 
 
 END_NCBI_SCOPE
@@ -470,8 +488,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.77  2005/01/24 17:03:58  vasilche
+ * New boolean operators support.
+ *
  * Revision 1.76  2005/01/13 16:42:26  lebedev
- * CBoolFor template: dummy method added to avoid warnings on Mac OS X
+ * CSafeBool template: dummy method added to avoid warnings on Mac OS X
  *
  * Revision 1.75  2005/01/12 15:21:43  vasilche
  * Added helper template and macro for easy implementation of boolean operator via pointer.
