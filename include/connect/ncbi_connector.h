@@ -37,6 +37,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/01/03 22:29:22  lavr
+ * Changed IOStatus -> Status
+ *
  * Revision 6.3  2000/12/29 17:45:07  lavr
  * Heavily modified to have a stack of connectors
  * VTable format changed; all virtual function now accept CONNECTOR as a
@@ -139,13 +142,13 @@ typedef EIO_Status (*FConnectorRead)
  );
 
 /* Obtain last I/O completion code from the transport level (connector).
- * NOTE 1: FConnectorIOStatus is guaranteed to be called after FConnectorOpen,
+ * NOTE 1: FConnectorStatus is guaranteed to be called after FConnectorOpen,
  *         and only if FConnectorOpen returned "eIO_Success".
  * NOTE 2: "direction" is guaranteed to be either "eIO_Read" or "eIO_Write".
  * NOTE 3: Should return "eIO_Success" in case of inexistent (incomplete)
  *         low level transport, if any.
  */
-typedef EIO_Status (*FConnectorIOStatus)
+typedef EIO_Status (*FConnectorStatus)
 (CONNECTOR connector,
  EIO_Event direction
  );
@@ -172,7 +175,7 @@ typedef struct {
     FConnectorWrite     write;       CONNECTOR c_write;
     FConnectorFlush     flush;       CONNECTOR c_flush;
     FConnectorRead      read;        CONNECTOR c_read;
-    FConnectorIOStatus  iostatus;    CONNECTOR c_iostatus;
+    FConnectorStatus    status;      CONNECTOR c_status;
     FConnectorClose     close;       CONNECTOR c_close;
     CONNECTOR           list;
 } SMetaConnector;

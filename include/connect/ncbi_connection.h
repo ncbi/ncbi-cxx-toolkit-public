@@ -46,6 +46,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/01/03 22:29:22  lavr
+ * Changed IOStatus -> Status
+ *
  * Revision 6.3  2000/12/29 17:43:42  lavr
  * Pretty printed;
  * Reconnect renamed to ReInit with ability to close current connector
@@ -178,7 +181,7 @@ extern EIO_Status CONN_Read
  * code of the last CONN-call, but rather a status from the low-level
  * connector layer.
  */
-extern EIO_Status CONN_IOStatus
+extern EIO_Status CONN_Status
 (CONN           conn,   /* [in]  connection handle       */
  EIO_Event      dir     /* [in] = {eIO_Read | eIO_Write} */
  );
