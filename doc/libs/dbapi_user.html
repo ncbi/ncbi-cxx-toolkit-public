@@ -173,8 +173,8 @@ while( stmt->HasMoreResults() ) {
 This method should be called until it returns false, which means that no
 more results is available. It returns as soon as a result is ready. The
 type of the result can be obtained by calling the <tt><a href="../docxx/IResultSet.html">IResultSet</a>::GetResultType()</tt>
-method. Supported result types are <tt>eRowResult, eParamResult, eComputeResult,
-eStatusResult, eCursorResult</tt>. The method <tt><a href="../docxx/IStatement.html">IStatement</a>::GetRowCount()</tt>
+method. Supported result types are <tt>eDB_RowResult, eDB_ParamResult, eDB_ComputeResult,
+eDB_StatusResult, eDB_CursorResult</tt>. The method <tt><a href="../docxx/IStatement.html">IStatement</a>::GetRowCount()</tt>
 returns the number of updated or deleted rows.
 <p>The <tt><a href="../docxx/IStatement.html">IStatement</a>::ExecuteUpdate()</tt>
 method is used for SQL statements that do not return rows:
