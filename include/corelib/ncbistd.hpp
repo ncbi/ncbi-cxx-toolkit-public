@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2000/11/07 04:07:19  vakatov
+* kEmptyCStr, kEmptyStr (equiv. to NcbiEmptyCStr,NcbiEmptyString)
+*
 * Revision 1.42  2000/10/05 20:01:10  vakatov
 * auto_ptr -- no "const" in constructor and assignment
 *
@@ -167,9 +170,12 @@
 BEGIN_NCBI_SCOPE
 
 
-const char NcbiEmptyCStr[] = "";
+// Empty "C" string (points to a '\0')
+extern const char *const kEmptyCStr;
+#define NcbiEmptyCStr NCBI_NS_NCBI::kEmptyCStr
 
 
+// Empty "C++" string
 class CNcbiEmptyString {
 public:
     const string& Get(void) {
@@ -177,13 +183,14 @@ public:
     }
 private:
     static const string& FirstGet(void);
-    static const string *m_Str;
+    static const string* m_Str;
 };
-#define NcbiEmptyString CNcbiEmptyString().Get()
+#define NcbiEmptyString NCBI_NS_NCBI::CNcbiEmptyString().Get()
+#define kEmptyStr       NcbiEmptyString
 
 
 
-// tools
+// String-processing utilities
 struct NStr {
     // conversion functions (throw an exception on the conversion error)
     static int StringToInt(const string& str, int base = 10);
