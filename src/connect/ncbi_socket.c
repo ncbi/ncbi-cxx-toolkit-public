@@ -907,7 +907,7 @@ static EIO_Status s_Connect(SOCK            sock,
                     sprintf(str, "[SOCK::s_Connect]  Failed pending connect"
                             " to %.64s:%d (%.32s)", host ? host : "???",
                             (int) ntohs(x_port), IO_StatusStr(status));
-                    CORE_LOG(eLOG_Error, str);
+                    CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error, str);
                 }
                 SOCK_CLOSE(x_sock);
                 return status;
@@ -1996,6 +1996,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.62  2002/09/04 15:11:00  lavr
+ * Print ERRNO with failed connection attempt
+ *
  * Revision 6.61  2002/08/28 15:59:24  lavr
  * Removed few redundant checks in s_SelectStallsafe()
  *
