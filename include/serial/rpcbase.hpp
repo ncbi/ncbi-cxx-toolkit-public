@@ -249,6 +249,8 @@ template <class TRequest, class TReply>
 inline
 void CRPCClient<TRequest, TReply>::x_SetStream(CNcbiIostream* stream)
 {
+    m_In .reset();
+    m_Out.reset();
     m_Stream.reset(stream);
     m_In .reset(CObjectIStream::Open(m_Format, *stream));
     m_Out.reset(CObjectOStream::Open(m_Format, *stream));
@@ -275,6 +277,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/09/10 16:10:23  vasilche
+* Delete object streams before iostream to avoid access to freed objects.
+*
 * Revision 1.8  2004/06/23 01:10:25  ucko
 * More tweaking: cast away const before deleting cloned timeout structures.
 *
