@@ -6,5 +6,4 @@ SRC = conv_image
 
 LIB  = ximage xncbi
 
-LIBS = $(IMAGE_LIBS)
-
+LIBS = $(IMAGE_LIBS) $(ORIG_LIBS)
