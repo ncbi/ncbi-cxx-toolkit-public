@@ -18,6 +18,7 @@
 #  define NCBI_OS      "MAC OSX"
 #  define HOST         "PowerPC-Apple-MacOSX"
 #  define HOST_OS      "MacOSX"
+#  define _MT           1
    /* fix for /usr/include/ctype.h */
 #  define _USE_CTYPE_INLINE_ 1
 #else
@@ -67,3 +68,4 @@
 #define HAVE_UNISTD_H    1
 #define HAVE_IOS_XALLOC  1
 #define HAVE_DLFCN_H     1
+#define HAVE_SCHED_YIELD 1
