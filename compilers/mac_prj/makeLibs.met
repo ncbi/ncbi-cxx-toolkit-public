@@ -28,9 +28,9 @@ property pShouldBuild : true
 
 -- Whether to create projects in the specified category.
 property pCreateCoreLibs : true
+property pCreateSocketLibs : true (* whether to create/compile socket libs *)
 property pCreateObjectLibs : true (* whether to create/compile object libraries *)
 property pCreateObjToolsLibs : true
-property pCreateSocketLibs : true (* whether to create/compile socket libs *)
 property pCreateGuiLibs : true
 property pCreatePluginLibs : true
 
@@ -163,7 +163,7 @@ end AddGuiProject
 on AddPlugin(projName, features, section, staticLibs)
 	if features does not contain "plugin" then set features to features & {"plugin"}
 	set projData to GuiProjectData(projName, features, section)
-	AddProject(DataPlusLibs(projData, staticLibs, {"gui_core"}))
+	AddProject(DataPlusLibs(projData, staticLibs, {"gui_core", "fltk"}))
 end AddPlugin
 
 on DataPlusSources(dataRec, newSrcs)
@@ -354,7 +354,7 @@ on SetProjectData()
 		-- FLTK library.
 		set saveCppExt to pCPlusPlusExt
 		set pCPlusPlusExt to ".cxx"
-		AddProject(ProjectData("fltk", {"fltklib"}, {mkFileDataExceptFiles(gFLTKRootFolder & "src", Â
+		AddProject(ProjectData("fltk", {"fltklib", "DLL"}, {mkFileDataExceptFiles(gFLTKRootFolder & "src", Â
 			{"cmap.cxx", "dump_compose.c", "fl_color_mac.cxx", "fl_color_win32.cxx", Â
 				"fl_dnd_mac.cxx", "fl_dnd_win32.cxx", "fl_dnd_x.cxx", "fl_draw_image_mac.cxx", Â
 				"fl_draw_image_win32.cxx", "fl_font_mac.cxx", "fl_font_win32.cxx", "fl_font_x.cxx", Â
@@ -384,7 +384,7 @@ on SetProjectData()
 			mkFileDataListFiles(gSourceDir & "gui:plugin", {"plugin__", "plugin___"}), Â
 			GuiFileData("gui:core")}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl"}, gui_core_files)
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & {"gui_dlg_entry_form", "gui_utils", "gui_opengl", "ximage", "submit", "w_toplevel", "fltk"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & {"gui_dlg_entry_form", "gui_utils", "gui_opengl", "ximage", "submit", "w_toplevel"}, {"fltk"}))
 		
 		-- PLUGINS --
 		
@@ -1073,9 +1073,13 @@ on CleanupFiles(thePath)
 	end repeat
 	-- delete the stationery folders.
 	try
-		tell application "Finder" to delete folder (gProjectsDir & pStationeryName)
-		tell application "Finder" to delete folder (gProjectsDir & pPluginStationeryName)
-		tell application "Finder" to delete folder (gProjectsDir & pDylibStationeryName)
+		tell application "Finder" to delete folder (thePath & pStationeryName)
+	end try
+	try
+		tell application "Finder" to delete folder (thePath & pPluginStationeryName)
+	end try
+	try
+		tell application "Finder" to delete folder (thePath & pDylibStationeryName)
 	end try
 end CleanupFiles
 
