@@ -159,6 +159,18 @@ CBioseq_CI::CBioseq_CI(const CSeq_entry_Handle& entry,
 }
 
 
+CBioseq_CI::CBioseq_CI(const CBioseq_set_Handle& bioseq_set,
+                       CSeq_inst::EMol filter,
+                       EBioseqLevelFlag level)
+    : m_Scope(&bioseq_set.GetScope()),
+      m_Filter(filter),
+      m_Level(level),
+      m_InParts(0)
+{
+    x_Initialize(bioseq_set.GetParentEntry());
+}
+
+
 CBioseq_CI::CBioseq_CI(CScope& scope, const CSeq_entry& entry,
                        CSeq_inst::EMol filter,
                        EBioseqLevelFlag level)
@@ -200,6 +212,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/01/18 14:58:58  grichenk
+* Added constructor accepting CBioseq_set_Handle
+*
 * Revision 1.4  2005/01/10 19:06:27  grichenk
 * Redesigned CBioseq_CI not to collect all bioseqs in constructor.
 *

@@ -85,6 +85,10 @@ public:
                CSeq_inst::EMol filter = CSeq_inst::eMol_not_set,
                EBioseqLevelFlag level = eLevel_All);
 
+    CBioseq_CI(const CBioseq_set_Handle& bioseq_set,
+               CSeq_inst::EMol filter = CSeq_inst::eMol_not_set,
+               EBioseqLevelFlag level = eLevel_All);
+
     /// Create an iterator that enumerates bioseqs
     /// from the entry taken from the given scope. Use optional
     /// filter to iterate over selected bioseq types only.
@@ -163,6 +167,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/01/18 14:58:58  grichenk
+* Added constructor accepting CBioseq_set_Handle
+*
 * Revision 1.18  2005/01/10 19:06:27  grichenk
 * Redesigned CBioseq_CI not to collect all bioseqs in constructor.
 *
