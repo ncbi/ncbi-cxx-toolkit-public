@@ -470,11 +470,12 @@ void CSeqVector::x_GetCacheForInterval(TSeqPos& start, TSeqPos stop, string& buf
     if (m_CachedPos < vstart) {
         cache_start = vstart - m_CachedPos;
         cache_stop += cache_start;
-        // Re-adjust cache stop
-        if (cache_stop - cache_start > vstop - vstart) {
-            cache_stop = cache_start + vstop - vstart;
-        }
     }
+    // Re-adjust cache stop
+    if (cache_stop - cache_start > vstop - vstart) {
+        cache_stop = cache_start + vstop - vstart;
+    }
+
     buffer += m_CachedData.substr(cache_start, cache_stop - cache_start);
     start += cache_stop - cache_start;
 }
@@ -532,6 +533,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/09/16 13:52:49  dicuccio
+* Fixed bug in calculating total range of cached interval to retrieve -
+* must clamp the cached range to the desired range.
+*
 * Revision 1.30  2002/09/12 19:59:25  grichenk
 * Fixed bugs in calculating cached intervals
 *
