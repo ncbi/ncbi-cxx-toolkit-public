@@ -45,6 +45,9 @@ BEGIN_objects_SCOPE
 // CSeqportUtil is a wrapper for a hidden object of class
 // CSeqportUtil_implementation.
 
+class CSeqportUtil_implementation;
+
+
 class CSeqportUtil
 {
 public:
@@ -110,13 +113,12 @@ public:
     // out_seq returns the ambiguous bases. Note, there are
     // only ambiguous bases for iupacna->ncib2na and
     // ncib4na->ncbi2na coversions.
-    static TSeqPos GetAmbigs
-    (const CSeq_data&      in_seq,
-     CSeq_data*            out_seq,
-     vector<TSeqPos>*      out_indices,
-     CSeq_data::E_Choice   to_code = CSeq_data::e_Ncbi2na,
-     TSeqPos               uBeginIdx = 0,
-     TSeqPos               uLength   = 0);
+    static TSeqPos GetAmbigs(const CSeq_data&    in_seq,
+                             CSeq_data*          out_seq,
+                             vector<TSeqPos>*    out_indices,
+                             CSeq_data::E_Choice to_code = CSeq_data::e_Ncbi2na,
+                             TSeqPos             uBeginIdx = 0,
+                             TSeqPos             uLength   = 0);
 
     // Get a copy of CSeq_data. No conversion is done. uBeginIdx of the
     // biological sequence in in_seq will be in position
@@ -300,7 +302,27 @@ public:
     static TIndex GetMapToIndex(ESeq_code_type from_type,
                                 ESeq_code_type to_type,
                                 TIndex         from_idx);
+
+private:
+    
+    // we maintain a singleton internally
+    // these variables and functions control access to the singleton
+
+    static auto_ptr<CSeqportUtil_implementation> sm_Implementation;
+
+    static void                         x_InitImplementation(void);
+    static CSeqportUtil_implementation& x_GetImplementation (void);
 };
+
+
+inline
+CSeqportUtil_implementation& CSeqportUtil::x_GetImplementation(void)
+{
+    if ( !sm_Implementation.get() ) {
+        x_InitImplementation();
+    }
+    return *sm_Implementation;
+}
 
 
 END_objects_SCOPE
@@ -311,6 +333,10 @@ END_NCBI_SCOPE
  /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2002/09/13 18:35:33  dicuccio
+ * Fixed problem with static object initialization and type information.
+ * First pass at reformatting code.
+ *
  * Revision 1.5  2002/05/14 15:12:06  clausen
  * Added IsCodeAvailable, GetCodeIndexFromTo, GetName, GetIndexComplement, GetMapToIndex
  *
