@@ -300,50 +300,61 @@ bool CSeqDBRawFile::x_ReadFileRegion(char * region, Uint4 start, Uint4 end)
     return retval;
 }
 
-bool CSeqDBExtFile::x_NeedFile(void)
+CSeqDBExtFile::CSeqDBExtFile(CSeqDBMemPool & mempool,
+                             const string  & dbfilename,
+                             char            prot_nucl,
+                             bool            use_mmap)
+    : m_FileName(dbfilename),
+      m_File    (mempool, use_mmap)
 {
-    if (m_File.Valid())
-        return true;
-        
-    // If "Unknown", try each type.
-    char save_pnu = m_ProtNucl;
-        
-    if (save_pnu == kSeqTypeUnkn) {
-        x_SetFileType(kSeqTypeProt);
+    if ((prot_nucl != kSeqTypeProt) && (prot_nucl != kSeqTypeNucl)) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Error: Invalid sequence type requested.");
     }
-        
-    if ((m_ProtNucl == kSeqTypeProt) && m_File.Open(m_FileName)) {
-        return true;
+    
+    x_SetFileType(prot_nucl);
+    
+    if (! m_File.Open(m_FileName)) {
+        NCBI_THROW(CSeqDBException,
+                   eFileErr,
+                   "Error: File could not be found.");
     }
-        
-    if (save_pnu == kSeqTypeUnkn) {
-        x_SetFileType(kSeqTypeNucl);
-    }
-        
-    if ((m_ProtNucl == kSeqTypeNucl) && m_File.Open(m_FileName)) {
-        return true;
-    }
-        
-    // Not found; reset to original type.
-    x_SetFileType(save_pnu);
-        
-    return false;
 }
 
-bool CSeqDBIdxFile::x_NeedIndexFile(void)
+CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBMemPool & mempool,
+                             const string  & dbname,
+                             char            prot_nucl,
+                             bool            use_mmap)
+    : CSeqDBExtFile(mempool, dbname + ".-in", prot_nucl, use_mmap),
+      m_NumSeqs       (0),
+      m_TotLen        (0),
+      m_MaxLen        (0),
+      m_HdrHandle     (0),
+      m_SeqHandle     (0),
+      m_AmbCharHandle (0)
 {
-    if (m_Valid) {
-        return true;
+    // Input validation
+    
+    _ASSERT(! dbname.empty());
+    
+    if ((prot_nucl != kSeqTypeProt) && (prot_nucl != kSeqTypeNucl)) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Error: Invalid sequence type requested.");
     }
-        
-    if (! x_NeedFile()) {
-        return false;
-    }
-        
-    Uint4 f_format_version; // L3064
-    Uint4 f_db_seqtype;     // L3077
-        
+    
+    Uint4 f_format_version = 0; // L3064
+    Uint4 f_db_seqtype = 0;     // L3077
+    
     x_ReadSwapped(& f_format_version);
+    
+    if (f_format_version != 4) {
+        NCBI_THROW(CSeqDBException,
+                   eFileErr,
+                   "Error: Not a valid version 4 database.");
+    }
+    
     x_ReadSwapped(& f_db_seqtype);
     x_ReadSwapped(& m_Title);
     x_ReadSwapped(& m_Date);
@@ -365,23 +376,18 @@ bool CSeqDBIdxFile::x_NeedIndexFile(void)
     m_HdrHandle     = x_GetRegion(off1, off2);
     m_SeqHandle     = x_GetRegion(off2, off3);
     m_AmbCharHandle = x_GetRegion(off3, offend);
-        
+    
     x_SetFileOffset(offend);
-        
-    // Check validity
-        
-    if (f_format_version != 4)
-        return false;
-        
+    
     char db_seqtype = ((f_db_seqtype == 1)
                        ? kSeqTypeProt
                        : kSeqTypeNucl);
-        
+    
     if (db_seqtype != x_GetSeqType()) {
-        return false;
+        NCBI_THROW(CSeqDBException,
+                   eFileErr,
+                   "Error: requested sequence type does not match DB.");
     }
-        
-    return (m_Valid = true);
 }
 
 END_NCBI_SCOPE

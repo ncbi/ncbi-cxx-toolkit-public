@@ -158,12 +158,7 @@ public:
     CSeqDBExtFile(CSeqDBMemPool & mempool,
                   const string  & dbfilename,
                   char            prot_nucl,
-                  bool            use_mmap)
-        : m_FileName(dbfilename),
-          m_File    (mempool, use_mmap)
-    {
-        x_SetFileType(prot_nucl);
-    }
+                  bool            use_mmap);
     
     virtual ~CSeqDBExtFile()
     {
@@ -195,8 +190,6 @@ protected:
     {
         m_File.ReadSwapped(x);
     }
-    
-    bool x_NeedFile(void);
     
     char x_GetSeqType(void)
     {
@@ -242,17 +235,7 @@ public:
     CSeqDBIdxFile(CSeqDBMemPool & mempool,
                   const string  & dbname,
                   char            prot_nucl,
-                  bool            use_mmap)
-        : CSeqDBExtFile(mempool, dbname + ".-in", prot_nucl, use_mmap),
-          m_Valid         (false),
-          m_NumSeqs       (0),
-          m_TotLen        (0),
-          m_MaxLen        (0),
-          m_HdrHandle     (0),
-          m_SeqHandle     (0),
-          m_AmbCharHandle (0)
-    {
-    }
+                  bool            use_mmap);
     
     virtual ~CSeqDBIdxFile()
     {
@@ -268,52 +251,30 @@ public:
 
     string GetTitle(void)
     {
-        if (! x_NeedIndexFile()) {
-            NCBI_THROW(CSeqDBException, eFileErr, "Could not open [index] file.");
-        }
-        
         return m_Title;
     }
     
     string GetDate(void)
     {
-        if (! x_NeedIndexFile()) {
-            NCBI_THROW(CSeqDBException, eFileErr, "Could not open [index] file.");
-        }
-        
         return m_Date;
     }
     
     Uint4 GetNumSeqs(void)
     {
-        if (! x_NeedIndexFile()) {
-            NCBI_THROW(CSeqDBException, eFileErr, "Could not open [index] file.");
-        }
-        
         return m_NumSeqs;
     }
     
     Uint8 GetTotalLength(void)
     {
-        if (! x_NeedIndexFile()) {
-            NCBI_THROW(CSeqDBException, eFileErr, "Could not open [index] file.");
-        }
-        
         return m_TotLen;
     }
     
     Uint4 GetMaxLength(void)
     {
-        if (! x_NeedIndexFile()) {
-            NCBI_THROW(CSeqDBException, eFileErr, "Could not open [index] file.");
-        }
-        
         return m_MaxLen;
     }
     
 private:
-    bool x_NeedIndexFile(void);
-    
     Uint4 x_GetSeqOffset(int oid)
     {
 	return SeqDB_GetStdOrd( (const Uint4 *)(m_SeqHandle + (oid * 4)) );
@@ -328,8 +289,6 @@ private:
     {
         return SeqDB_GetStdOrd( (const Uint4 *)(m_HdrHandle + (oid * 4)) );
     }
-    
-    bool m_Valid;
     
     // Swapped data from .[pn]in file
     
@@ -349,10 +308,6 @@ private:
 
 bool inline CSeqDBIdxFile::GetSeqStartEnd(Uint4 oid, Uint4 & start, Uint4 & end)
 {
-    if (! x_NeedIndexFile()) {
-        NCBI_THROW(CSeqDBException, eFileErr, "Could not open [index] file.");
-    }
-        
     start = x_GetSeqOffset(oid);
         
     if (kSeqTypeProt == x_GetSeqType()) {
@@ -366,10 +321,6 @@ bool inline CSeqDBIdxFile::GetSeqStartEnd(Uint4 oid, Uint4 & start, Uint4 & end)
     
 bool inline CSeqDBIdxFile::GetHdrStartEnd(Uint4 oid, Uint4 & start, Uint4 & end)
 {
-    if (! x_NeedIndexFile()) {
-        NCBI_THROW(CSeqDBException, eFileErr, "Could not open [index] file.");
-    }
-        
     start = x_GetHdrOffset(oid);
     end   = x_GetHdrOffset(oid + 1);
         
@@ -378,7 +329,7 @@ bool inline CSeqDBIdxFile::GetHdrStartEnd(Uint4 oid, Uint4 & start, Uint4 & end)
     
 bool inline CSeqDBIdxFile::GetAmbStartEnd(Uint4 oid, Uint4 & start, Uint4 & end)
 {
-    if (x_NeedIndexFile() && kSeqTypeNucl == x_GetSeqType()) {
+    if (kSeqTypeNucl == x_GetSeqType()) {
         start = x_GetAmbCharOffset(oid);
         end   = x_GetSeqOffset(oid + 1);
         
@@ -395,7 +346,6 @@ char inline CSeqDBIdxFile::GetSeqType(void)
     char ch = x_GetSeqType();
         
     if (kSeqTypeUnkn == ch) {
-        x_NeedIndexFile();
         ch = x_GetSeqType();
     }
         
@@ -409,8 +359,7 @@ public:
                   const string  & dbname,
                   char            prot_nucl,
                   bool            use_mmap)
-        : CSeqDBExtFile(mempool, dbname + ".-sq", prot_nucl, use_mmap),
-          m_Valid      (false)
+        : CSeqDBExtFile(mempool, dbname + ".-sq", prot_nucl, use_mmap)
     {
     }
     
@@ -420,41 +369,14 @@ public:
     
     void ReadBytes(char * x, Uint4 start, Uint4 end)
     {
-        if (! x_NeedSeqFile()) {
-            NCBI_THROW(CSeqDBException, eFileErr, "Could not open [sequence data] file.");
-        }
-        
         x_ReadBytes(x, start, end);
     }
     
     const char * GetRegion(Uint4 start, Uint4 end)
     {
-        if (! x_NeedSeqFile()) {
-            NCBI_THROW(CSeqDBException, eFileErr, "Could not open [sequence data] file.");
-        }
-        
         return x_GetRegion(start, end);
     }
-    
-private:
-    bool x_NeedSeqFile(void);
-    
-    bool m_Valid;
 };
-
-
-bool inline CSeqDBSeqFile::x_NeedSeqFile(void)
-{
-    if (m_Valid) {
-        return true;
-    }
-        
-    if (! x_NeedFile()) {
-        return false;
-    }
-        
-    return (m_Valid = true);
-}
 
 
 class CSeqDBHdrFile : public CSeqDBExtFile {
@@ -463,8 +385,7 @@ public:
                   const string  & dbname,
                   char            prot_nucl,
                   bool            use_mmap)
-        : CSeqDBExtFile(mempool, dbname + ".-hr", prot_nucl, use_mmap),
-          m_Valid      (false)
+        : CSeqDBExtFile(mempool, dbname + ".-hr", prot_nucl, use_mmap)
     {
     }
     
@@ -474,41 +395,14 @@ public:
     
     void ReadBytes(char * x, Uint4 start, Uint4 end)
     {
-        if (! x_NeedHdrFile()) {
-            NCBI_THROW(CSeqDBException, eFileErr, "Could not open [header data] file.");
-        }
-        
         x_ReadBytes(x, start, end);
     }
     
     const char * GetRegion(Uint4 start, Uint4 end)
     {
-        if (! x_NeedHdrFile()) {
-            NCBI_THROW(CSeqDBException, eFileErr, "Could not open [header data] file.");
-        }
-        
         return x_GetRegion(start, end);
     }
-    
-private:
-    bool x_NeedHdrFile(void);
-    
-    bool m_Valid;
 };
-
-
-bool inline CSeqDBHdrFile::x_NeedHdrFile(void)
-{
-    if (m_Valid) {
-        return true;
-    }
-        
-    if (! x_NeedFile()) {
-        return false;
-    }
-        
-    return (m_Valid = true);
-}
 
 
 END_NCBI_SCOPE
