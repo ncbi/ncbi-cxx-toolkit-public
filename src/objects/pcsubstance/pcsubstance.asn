@@ -1,4 +1,4 @@
--- $Id: pcsubstance.asn,v 1.1 2004/06/17 17:43:23 bolton Exp $
+-- $Id: pcsubstance.asn,v 1.2 2004/06/23 11:14:37 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -52,11 +52,11 @@ PC-Substance ::= SEQUENCE {
     synonyms       SEQUENCE OF VisibleString  OPTIONAL, -- Substance Names provided by Depositor
     comment        SEQUENCE OF VisibleString  OPTIONAL, -- Comments and Description provided by Depositor
     xref           SEQUENCE OF PC-XRefData    OPTIONAL, -- X-Ref/LinkOut Data provided by Depositor
-    mmdb           PC-MMDBSource              OPTIONAL, -- MMDB Substance Source X-link Information
 
     -- Structure Description
     original       PC-Compound,                         -- Original Deposited Structure Information
-    standardized   SEQUENCE OF PC-Compound    OPTIONAL  -- Standardized versions of the Original Structure
+    standardized   SEQUENCE OF PC-Compound    OPTIONAL, -- Standardized versions of the Original Structure
+    components     INTEGER                              -- Count of Compound Components 
 }
 
 
@@ -76,7 +76,8 @@ PC-ID ::= SEQUENCE {
 -- Describes Substance Source, if from another database
 PC-Source ::= CHOICE {
     individual     Pub,                                 -- Individual Submission
-    db             PC-DBTracking                        -- External DB Submission
+    db             PC-DBTracking,                       -- External DB Submission
+    mmdb           PC-MMDBSource                        -- MMDB Submission
 }
 
 
@@ -133,19 +134,23 @@ PC-Compound ::= SEQUENCE {
     stereo         SEQUENCE OF PC-StereoCenter   OPTIONAL, -- StereoCenter Descriptions
     coords         SEQUENCE OF PC-Coordinates    OPTIONAL, -- 2D/3D Coordinate Sets of Compound
     charge         INTEGER                       OPTIONAL, -- Provided Total Formal Charge  (Signed Integer)
-    props          SEQUENCE OF PC-InfoData       OPTIONAL, -- Associated Compound Data/Properties
+    props          SEQUENCE OF PC-InfoData       OPTIONAL, -- Derived (computed) Properties
+    stereogroups   SEQUENCE OF PC-StereoGroup    OPTIONAL, -- Relative stereochemistry groups
+    count          PC-Count                                 -- Counts of various properties
+}
 
-    -- List of atom identifiers which are in a common relative stereochemistry group.
-    -- All atoms in this group possess either the descriptor defined in their stereo
-    -- center attributes, or are simultaneously inverted. If an atom is not a
-    -- member of a stereo group and has a stereo descriptor, its stereochemistry is
-    -- absolute. An atom can only be member of a single stereo group, and all atoms
-    -- in a stereo group must have a stereo descriptor. Atoms of unknown
-    -- stereochemistry, whose stereochemistry is not linked to that of other
-    -- centers, are marked as such in the stereo center descriptor and not put into
-    -- a single-atom group.
-    -- Stereogroups only apply to stereocenters that can have parity.
-    stereogroups   SEQUENCE OF PC-StereoGroup    OPTIONAL  -- Relative stereochemistry groups
+
+-- Counts of various properties of a Compound
+PC-Count ::= SEQUENCE {
+    heavy-atom               INTEGER,  -- Total count of non-Hydrogen (Heavy) Atoms
+
+    -- StereoChemistry Counts
+    atom-chiral              INTEGER,  -- Total count of (SP3) Chiral Atoms
+    atom-chiral-def          INTEGER,  -- Total count of Defined (SP3) Chiral Atoms
+    atom-chiral-undef        INTEGER,  -- Total count of Undefined (SP3) Chiral Atoms
+    bond-chiral              INTEGER,  -- Total count of (SP2) Chiral Bonds
+    bond-chiral-def          INTEGER,  -- Total count of (SP2) Defined Chiral Bonds
+    bond-chiral-undef        INTEGER   -- Total count of (SP2) Undefined Chiral Bonds
 }
 
 
@@ -222,7 +227,17 @@ PC-TransformType ::= INTEGER {
 }
 
 
--- A Stereogroup used for relative stereochemistry
+-- List of atom identifiers which are in a common relative stereochemistry group.
+-- All atoms in this group possess either the descriptor defined in their stereo
+-- center attributes, or are simultaneously inverted. If an atom is not a
+-- member of a stereo group and has a stereo descriptor, its stereochemistry is
+-- absolute. An atom can only be member of a single stereo group, and all atoms
+-- in a stereo group must have a stereo descriptor. Atoms of unknown
+-- stereochemistry, whose stereochemistry is not linked to that of other
+-- centers, are marked as such in the stereo center descriptor and not put into
+-- a single-atom group.
+-- Stereogroups only apply to stereocenters that can have parity.
+-- Stereogroups are used for relative stereochemistry
 PC-StereoGroup ::= SEQUENCE OF INTEGER                  -- Atom Identifiers of atoms in this group
                                                         --   Note: Atom ID's must be greater than "0"
 
@@ -363,7 +378,7 @@ PC-Atoms ::= SEQUENCE {
     isotope        SEQUENCE OF PC-AtomInt        OPTIONAL, -- Isotopic Information
     charge         SEQUENCE OF PC-AtomInt        OPTIONAL, -- Formal Charges
     radical        SEQUENCE OF PC-AtomRadical    OPTIONAL, -- Radical Information
-    source         SEQUENCE OF PC-AtomSource     OPTIONAL, -- E.g. identity of "R" groups
+    source         SEQUENCE OF PC-AtomSource     OPTIONAL, -- E.g. identity of MMDB "R" groups
     comment        SEQUENCE OF PC-AtomString     OPTIONAL  -- Atom Comments
 }
 
@@ -646,9 +661,8 @@ END
 
 -- ===========================================================================
 -- $Log: pcsubstance.asn,v $
--- Revision 1.1  2004/06/17 17:43:23  bolton
--- Moved PubChem ASN.1 specification objects "pcsubstance" and "pcassay" to
--- the primary object location from the internal PubChem location.
+-- Revision 1.2  2004/06/23 11:14:37  bolton
+-- Minor reorganization and addition of PC-Count block.
 --
 -- Revision 1.23  2004/06/10 13:23:19  bolton
 -- Changes made to in documentation and enumerations to detail that "0" is an
@@ -692,4 +706,5 @@ END
 -- structural information.
 --
 -- ===========================================================================
+
 
