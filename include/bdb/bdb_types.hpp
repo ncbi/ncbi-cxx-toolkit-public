@@ -184,16 +184,17 @@ public:
         { BDB_THROW(eType, "Bad conversion"); }
     virtual void SetDouble(double)
         { BDB_THROW(eType, "Bad conversion"); }
+
+    virtual string GetString() const = 0;
 };
 
 
 
 /// Interface definition class for field construction.
 /// Used for interfaces' "access rights management".
-/// Some interfaces are declared non-public here (IFieldConvert).
 
-class CBDB_FieldInterfaces : public    IBDB_Field,
-                             protected IBDB_FieldConvert
+class CBDB_FieldInterfaces : public  IBDB_Field,
+                             public  IBDB_FieldConvert
 {
     friend class CBDB_FileCursor;
 };
@@ -529,6 +530,12 @@ public:
         return v;
     }
 
+    virtual string GetString() const
+    {
+        Int4  v = Get();
+        return NStr::IntToString(v);
+    }
+
     operator Int4() const 
     { 
         return Get(); 
@@ -591,6 +598,12 @@ public:
             ::memcpy(&v, GetBuffer(), sizeof(Int4));
         }
         return v;
+    }
+
+    virtual string GetString() const
+    {
+        Int4  v = Get();
+        return NStr::IntToString(v);
     }
 
     operator Int2() const 
@@ -658,6 +671,12 @@ public:
         return v;
     }
 
+    virtual string GetString() const
+    {
+        Uint4  v = Get();
+        return NStr::UIntToString(v);
+    }
+
     operator Uint4() const
     { 
         return Get(); 
@@ -721,6 +740,12 @@ public:
             ::memcpy(&v, GetBuffer(), sizeof(float));
         }
         return v;
+    }
+
+    virtual string GetString() const
+    {
+        double v = Get();
+        return NStr::DoubleToString(v, 5);
     }
 
     operator float() const 
@@ -787,6 +812,12 @@ public:
         return v;
     }
 
+    virtual string GetString() const
+    {
+        double v = Get();
+        return NStr::DoubleToString(v, 5);
+    }
+
     operator double() const 
     { 
         return Get(); 
@@ -850,6 +881,13 @@ public:
     };
     void Set(const char* str, EOverflowAction if_overflow = eThrowOnOverflow);
     string Get() const { return string((const char*)GetBuffer()); }
+
+    virtual string GetString() const
+    {
+        return Get();
+    }
+
+
 
     bool IsEmpty() const;
     bool IsBlank() const;
@@ -1579,6 +1617,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/10/27 14:19:12  kuznets
+ * + methods to convert BDB types to string
+ *
  * Revision 1.23  2003/10/16 19:25:25  kuznets
  * Added field comparison limit to the fields manager
  *
