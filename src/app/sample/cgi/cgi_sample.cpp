@@ -104,8 +104,17 @@ int CSampleCgiApplication::ProcessRequest(CCgiContext& ctx)
      // passed throught the CGI call
 
      if (args["message"]) {
-        const string& m = args["message"].AsString();
-        // do something with the message
+        const string& m = args["message"].AsString(); // first message
+
+        // get the whole list of "message" arguments
+
+        const CArgValue::TStringArray& values = 
+            args["message"].GetStringList();
+
+        ITERATE(CArgValue::TStringArray, it, values) {
+            // do something with the message
+        } 
+
      } else {
          // no message
      }
@@ -182,6 +191,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/12/02 14:25:26  kuznets
+ * Show how to use multiple key arguments (list of values)
+ *
  * Revision 1.8  2004/12/01 14:10:37  kuznets
  * Example corrected to show how to use app arguments for CGI parameters
  *
