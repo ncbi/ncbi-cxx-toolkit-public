@@ -310,7 +310,8 @@ int NStr::StringToNumeric(const string& str)
             s_DiffPtr(endptr, str.c_str()));                          \
     }
 
-int NStr::StringToInt(const string& str, int base  /* = 10 */,
+int NStr::StringToInt(const string&  str,
+                      int            base          /* = 10 */,
                       ECheckEndPtr   check_endptr  /* = eCheck_Need */,
                       EConvErrAction on_error      /* = eConvErr_Throw */)
 {
@@ -332,7 +333,8 @@ int NStr::StringToInt(const string& str, int base  /* = 10 */,
 
 
 unsigned int
-NStr::StringToUInt(const string& str, int base  /* =10 */,
+NStr::StringToUInt(const string&  str, 
+                   int            base          /* = 10 */,
                    ECheckEndPtr   check_endptr  /* = eCheck_Need */,
                    EConvErrAction on_error      /* = eConvErr_Throw */)
 {
@@ -352,75 +354,90 @@ NStr::StringToUInt(const string& str, int base  /* =10 */,
 }
 
 /// @internal
-static
-unsigned int DataSizeConvertQual(const char* qual, 
-                                 unsigned int value,
-                                 NStr::ECheckEndPtr check_endptr,
+static Uint8 DataSizeConvertQual(const char*          qual, 
+                                 unsigned int         value,
+                                 NStr::ECheckEndPtr   check_endptr,
                                  NStr::EConvErrAction on_error)
 {
-    if (!qual || !*qual)
+    if (!qual  ||  !*qual) {
         return value;
+    }
+    Uint8 v = value;
     if (toupper(*qual) == 'K') {
         ++qual;
-        value *= 1024;
-    } else 
-    if (toupper(*qual) == 'M') {
+        if ( (kMax_UI8 / 1024) < v ) {
+            goto throw_err;
+        }
+        v *= 1024;
+    } else if (toupper(*qual) == 'M') {
         ++qual;
-        value *= 1024 * 1024;
-    } else
-    if (toupper(*qual) == 'G') {
+        if ( (kMax_UI8 / 1024 / 1024) < v ) {
+            goto throw_err;
+        }
+        v *= 1024 * 1024;
+    } else if (toupper(*qual) == 'G') {
         ++qual;
-        value *= 1024 * 1024 * 1024;
+        if ( (kMax_UI8 / 1024 / 1024 / 1024) < v ) {
+            goto throw_err;
+        }
+        v *= 1024 * 1024 * 1024;
     } else {
-        if (check_endptr == NStr::eCheck_Need && 
+        if (check_endptr == NStr::eCheck_Need  && 
             on_error == NStr::eConvErr_Throw) {
 throw_err:
             NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted unsigned int. ", 0);
+                        "String cannot be converted to data size value", 0);
 
         } else {
-            return value;
+            return v;
         }
     }
-    
-    if (*qual && toupper(*qual) == 'B')
+    if (*qual  &&  toupper(*qual) == 'B') {
         ++qual;
-
-    if (check_endptr == NStr::eCheck_Need && 
-        on_error == NStr::eConvErr_Throw  &&
-        *qual != 0) {
-            goto throw_err;
     }
-    return value;
+    if (check_endptr == NStr::eCheck_Need  && 
+        on_error == NStr::eConvErr_Throw   &&
+        *qual != 0) {
+        goto throw_err;
+    }
+    return v;
 }
 
 
 unsigned int
-NStr::StringToUInt_DataSize(const string& str, int base  /* =10 */,
+NStr::StringToUInt_DataSize(const string&  str, 
+                            int            base          /* = 10 */,
                             ECheckEndPtr   check_endptr  /* = eCheck_Need */,
                             EConvErrAction on_error      /* = eConvErr_Throw */)
 {
     errno = 0;
     char* endptr = 0;
     unsigned long value = strtoul(str.c_str(), &endptr, base);
-    if (errno || value > kMax_UInt) {
+    if (errno  ||  value > kMax_UInt) {
+error:
         if (on_error == eConvErr_Throw) {
             NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted unsigned int",
+                        "String cannot be converted to unsigned int",
                         s_DiffPtr(endptr, str.c_str()));
         }
         return 0;
     }
-    if (endptr && *endptr != '\0') { // some trailer (KB, MB) ?
-        value = DataSizeConvertQual(endptr, value, check_endptr, on_error);
+    // Some trailer (KB, MB) ?
+    if (endptr  &&  *endptr != '\0') { 
+        Uint8 v = DataSizeConvertQual(endptr, value, check_endptr, on_error);
+        if ( v > kMax_UInt ) {
+            goto error;
+        }
+        return (unsigned int) v;
     }
     return (unsigned int) value;
 }
 
 
-long NStr::StringToLong(const string& str, int base  /* = 10 */,
-                       ECheckEndPtr   check_endptr   /* = eCheck_Need */,
-                       EConvErrAction on_error       /* = eConvErr_Throw */)
+long NStr::StringToLong(const string&  str, 
+                        int            base           /* = 10 */,
+                        ECheckEndPtr   check_endptr   /* = eCheck_Need */,
+                        EConvErrAction on_error       /* = eConvErr_Throw */)
 {
     errno = 0;
     char* endptr = 0;
@@ -439,7 +456,8 @@ long NStr::StringToLong(const string& str, int base  /* = 10 */,
 
 
 unsigned
-long NStr::StringToULong(const string& str, int base  /*=10 */,
+long NStr::StringToULong(const string&  str, 
+                         int            base          /* = 10 */,
                          ECheckEndPtr   check_endptr  /* = eCheck_Need */,
                          EConvErrAction on_error      /* = eConvErr_Throw */)
 {
@@ -460,7 +478,7 @@ long NStr::StringToULong(const string& str, int base  /*=10 */,
 
 
 double
-NStr::StringToDouble(const string& str,
+NStr::StringToDouble(const string&  str,
                      ECheckEndPtr   check_endptr  /* = eCheck_Need */,
                      EConvErrAction on_error      /* = eConvErr_Throw */)
 {
@@ -601,7 +619,6 @@ Uint8 NStr::StringToUInt8(const string& str, int base /* = 10  */)
 
     if (*pc == '+')
         ++pc;
-
  
     Uint8 n = 0;
     Uint8 limdiv = kMax_UI8 / base;
@@ -1634,6 +1651,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.123  2004/10/13 13:08:57  ivanov
+ * NStr::DataSizeConvertQual() -- changed return type to Uint8.
+ * NStr::StringToUInt_DataSize() -- added check on overflow.
+ *
  * Revision 1.122  2004/10/05 16:35:51  shomrat
  * in place TruncateSpaces changed to TruncateSpacesInPlace
  *
