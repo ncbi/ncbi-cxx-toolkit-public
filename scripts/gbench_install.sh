@@ -16,7 +16,18 @@ export DYLD_BIND_AT_LAUNCH
 . ${script_dir}/common.sh
 
 
-PLUGINS='algo_align algo_basic ncbi_init algo_validator doc_basic doc_table view_align view_graphic view_table view_text view_validator algo_external algo_linkout'
+algos='align basic external gnomon linkout validator'
+docs='basic table'
+views='align graphic table taxplot text validator'
+PLUGINS="ncbi_init"
+for t in algo doc view; do
+   eval l=\$${t}s
+   # echo $t: $l >&2
+   for x in $l; do
+      PLUGINS="$PLUGINS ${t}_$x"
+   done
+done
+
 BINS='gbench-bin gbench_plugin_scan'
 LIBS='gui_core gui_utils xgbplugin'
 OPT_LIBS='bdb lds lds_admin xobjread ncbi_xloader_lds'
