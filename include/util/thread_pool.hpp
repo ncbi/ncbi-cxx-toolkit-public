@@ -77,10 +77,10 @@ public:
 
     void         Put(const TRequest& data); // Throws exception if full
     void         WaitForRoom(unsigned int timeout_sec  = kMax_UInt,
-                             unsigned int timeout_nsec = kMax_UInt) const;
+                             unsigned int timeout_nsec = 0) const;
     // Blocks politely if empty
     TRequest     Get(unsigned int timeout_sec  = kMax_UInt,
-                     unsigned int timeout_nsec = kMax_UInt);
+                     unsigned int timeout_nsec = 0);
     unsigned int GetSize(void) const;
     unsigned int GetMaxSize(void) const { return m_MaxSize; }
     bool         IsEmpty(void) const    { return GetSize() == 0; }
@@ -145,7 +145,9 @@ public:
 
     void Spawn(unsigned int num_threads);
     void AcceptRequest(const TRequest& req);
-    void WaitForRoom(void)  { m_Queue.WaitForRoom(); }
+    void WaitForRoom(unsigned int timeout_sec  = kMax_UInt,
+                     unsigned int timeout_nsec = 0) 
+        { m_Queue.WaitForRoom(timeout_sec, timeout_nsec); }
     bool IsFull(void) const { return m_Queue.IsFull(); }
 
 protected:
@@ -380,6 +382,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/07/15 18:51:21  ucko
+* Make CBlockingQueue's default timeout arguments saner, and let
+* CPoolOfThreads::WaitForRoom take an optional timeout too.
+*
 * Revision 1.12  2004/06/02 17:49:08  ucko
 * CPoolOfThreads: change type of m_Delta and m_ThreadCount to
 * CAtomicCounter to reduce need for m_Mutex; warn if any threads are
