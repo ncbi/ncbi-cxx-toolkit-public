@@ -1,6 +1,6 @@
 # $Id$
 
-SUB_PROJ = python
+EXPENDABLE_SUB_PROJ = python
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
