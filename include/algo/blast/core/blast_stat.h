@@ -180,8 +180,8 @@ Int2 BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp);
 Int2 BLAST_ScoreSetAmbigRes (BlastScoreBlk* sbp, char ambiguous_res);
 
 
-/** Calculate the Karlin parameters.  This function should be called once
- *  for each context, or frame translated.
+/** Calculate the ungapped Karlin parameters. This function should be called 
+ * once for each context, or frame translated.
  * @param sbp the object to be modified [in|out]
  * @param string the query sequence [in]
  * @param length length of above sequence [in]
@@ -210,7 +210,7 @@ Blast_KarlinBlk* Blast_KarlinBlkCreate (void);
 */
 Blast_KarlinBlk* Blast_KarlinBlkDestruct(Blast_KarlinBlk* kbp);
 
-/** Fills in lambda, H, and K values, as calcualted by Stephen Altschul 
+/** Fills in lambda, H, and K values, as calculated by Stephen Altschul 
  *  in Methods in Enzy. (vol 266, page 474).
  * @param kbp object to be filled in [in|out]
  * @param gap_open cost of gap existence [in]
@@ -499,7 +499,8 @@ Blast_GetStdAlphabet(Uint1 alphabet_code, Uint1* residues,
                      Uint4 residue_size);
 
 /** Computes the parameters lambda, H K for use in calculating the
- *   statistical significance of high-scoring segments or subalignments. 
+ * statistical significance of high-scoring segments or subalignments (see
+ * comment on blast_stat.c for more details).
  * @param kbp object containing Lambda, H, and K as well as scoring information [in|out]
  * @param sfp array of probabilities for all scores [in]
  * @return zero on success, 1 on error.

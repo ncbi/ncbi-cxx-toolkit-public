@@ -2154,7 +2154,7 @@ ErrExit:
 }
 
 /*
-  Calculate the Karlin parameters.  This function should be called once
+  Calculate the ungapped Karlin parameters. This function should be called once
   for each context, or frame translated.
   
   The rfp and stdrfp are calculated for each context, this should be
@@ -3598,6 +3598,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.88  2004/07/16 14:00:20  camacho
+ * documentation fixes
+ *
  * Revision 1.87  2004/07/15 14:50:34  madden
  * Doxygen fix
  *
