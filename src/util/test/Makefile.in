@@ -7,7 +7,7 @@ LIB_PROJ = pbacktest
 
 APP_PROJ = test_utf8 test_rangemap test_resize_iter test_fstream_pushback \
            test_logrotate test_regexp test_compress test_checksum \
-	   test_staticmap test_strsearch test_table
+           test_staticmap test_strsearch test_table test_tar
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
