@@ -102,12 +102,74 @@ void CTestNetScheduleStress::Init(void)
 }
 
 
+void TestRunTimeout(const string&  host, 
+                    unsigned short port, 
+                    const string&  queue)
+{
+    NcbiCout << "Run timeout test..." << NcbiEndl;
+
+    CNetScheduleClient cl(host, port, "client_test", queue);
+    cl.SetRequestRateControl(false);
+
+    const string input = "Hello " + queue;
+    vector<string> jobs;
+    vector<string> jobs_run;
+    string job_key;
+
+    unsigned jcount = 100;
+
+    NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
+
+    for (unsigned i = 0; i < jcount; ++i) {
+        job_key = cl.SubmitJob(input);
+        jobs.push_back(job_key);
+    }
+
+    NcbiCout << "Take jobs..." << NcbiEndl;
+    string input_str;
+    for (unsigned i = 0; i < jcount; ++i) {
+        bool job_exists = cl.GetJob(&job_key, &input_str);
+        if (!job_exists)
+            break;
+        cl.SetRunTimeout(job_key, 10);
+        jobs_run.push_back(job_key);
+    }
+
+    NcbiCout << NcbiEndl << "Waiting..." << NcbiEndl;
+    SleepMilliSec(40 * 1000);
+    NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
+
+    
+    NcbiCout << "Check status " << jobs_run.size() << " jobs." << NcbiEndl;
+    string output;
+    NON_CONST_ITERATE(vector<string>, it, jobs_run) {
+        const string& jk = *it;
+        int ret_code;
+        CNetScheduleClient::EJobStatus
+            status = cl.GetStatus(jk, &ret_code, &output);
+        switch (status) {
+        case CNetScheduleClient::ePending:
+            break; // job is back to pending, good
+        default:
+            NcbiCout << jk << " unexpected status:" << status << NcbiEndl;
+        }
+    } 
+
+
+    NcbiCout <<  NcbiEndl << "Test end." << NcbiEndl;
+}
+
+
 int CTestNetScheduleStress::Run(void)
 {
     CArgs args = GetArgs();
     const string&  host  = args["hostname"].AsString();
     unsigned short port = args["port"].AsInteger();
     const string&  queue_name = args["queue"].AsString();  
+
+
+    TestRunTimeout(host, port, queue_name);
+
 
     unsigned jcount = 10000;
     if (args["jcount"]) {
@@ -163,10 +225,14 @@ int CTestNetScheduleStress::Run(void)
     CStopWatch sw(true);
 
     string output;
+    unsigned i = 0;
     NON_CONST_ITERATE(vector<string>, it, jobs) {
         const string& jk = *it;
         int ret_code;
         status = cl.GetStatus(jk, &ret_code, &output);
+        if (i++ % 1000 == 0) {
+            NcbiCout << "." << flush;
+        }
     }
 
     double elapsed = sw.Elapsed();
@@ -299,6 +365,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/10 14:20:28  kuznets
+ * test for run timeout expiration
+ *
  * Revision 1.4  2005/03/04 13:26:33  kuznets
  * Disabled request rate control for stress test
  *
