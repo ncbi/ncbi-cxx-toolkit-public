@@ -1075,8 +1075,14 @@ bool CSeq_loc::IsPartialLeft (void) const
         case e_Int :
             return GetInt ().IsPartialLeft ();
 
+        case e_Packed_int :
+            return GetMix ().IsPartialLeft ();
+
         case e_Pnt :
             return GetPnt ().IsPartialLeft ();
+
+        case e_Packed_pnt :
+            return GetPacked_pnt ().IsPartialLeft ();
 
         case e_Mix :
             return GetMix ().IsPartialLeft ();
@@ -1099,8 +1105,14 @@ bool CSeq_loc::IsPartialRight (void) const
         case e_Int :
             return GetInt ().IsPartialRight ();
 
+        case e_Packed_int :
+            return GetPacked_int ().IsPartialRight ();
+
         case e_Pnt :
             return GetPnt ().IsPartialRight ();
+
+        case e_Packed_pnt :
+            return GetPacked_pnt ().IsPartialRight ();
 
         case e_Mix :
             return GetMix ().IsPartialRight ();
@@ -1124,8 +1136,16 @@ void CSeq_loc::SetPartialLeft (bool val)
             SetInt().SetPartialLeft(val);
             break;
 
+        case e_Packed_int :
+            SetPacked_int().SetPartialLeft(val);
+            break;
+
         case e_Pnt:
             SetPnt().SetPartialLeft(val);
+            break;
+
+        case e_Packed_pnt:
+            SetPacked_pnt().SetPartialLeft(val);
             break;
 
         case e_Mix :
@@ -1149,8 +1169,16 @@ void CSeq_loc::SetPartialRight(bool val)
             SetInt().SetPartialRight(val);
             break;
 
+        case e_Packed_int :
+            SetPacked_int().SetPartialRight(val);
+            break;
+
         case e_Pnt:
             SetPnt().SetPartialRight(val);
+            break;
+
+        case e_Packed_pnt:
+            SetPacked_pnt().SetPartialRight(val);
             break;
 
         case e_Mix:
@@ -1612,6 +1640,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.46  2004/10/22 15:12:28  kans
+ * implemented functions for getting and setting partial flags for packed int and packed point
+ *
  * Revision 6.45  2004/10/20 18:11:40  grichenk
  * Added CSeq_loc::ChangeToMix, ChangeToPackedInt and CSeq_loc_CI::IsSetStrand.
  *

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2004/10/22 15:12:28  kans
+ * implemented functions for getting and setting partial flags for packed int and packed point
+ *
  * Revision 6.6  2004/09/01 15:33:44  grichenk
  * Check strand in GetStart and GetEnd. Circular length argument
  * made optional.
@@ -62,6 +65,7 @@
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Packed_seqpnt.hpp>
 //#include <objects/seqloc/Seq_id.hpp>
+#include <objects/general/Int_fuzz.hpp>
 
 // generated classes
 
@@ -72,6 +76,88 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // destructor
 CPacked_seqpnt::~CPacked_seqpnt(void)
 {
+}
+
+
+bool CPacked_seqpnt::x_IsMinusStrand(void) const
+{
+    ENa_strand strand = eNa_strand_unknown;
+    if ( IsSetStrand() ) {
+        strand = GetStrand();
+    }
+    return (strand == eNa_strand_minus)  ||  (strand == eNa_strand_both_rev);
+}
+
+
+bool CPacked_seqpnt::IsPartialLeft (void) const
+{
+    if (x_IsMinusStrand()) {
+        if (IsSetFuzz ()) {
+            const CInt_fuzz & ifp = GetFuzz ();
+            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_gt) {
+                return true;
+            }
+        }
+    } else {
+        if (IsSetFuzz ()) {
+            const CInt_fuzz & ifp = GetFuzz ();
+            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_lt) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool CPacked_seqpnt::IsPartialRight (void) const
+{
+    if (x_IsMinusStrand()) {
+        if (IsSetFuzz ()) {
+            const CInt_fuzz & ifp = GetFuzz ();
+            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_lt) {
+                return true;
+            }
+        }
+    } else {
+        if (IsSetFuzz ()) {
+            const CInt_fuzz & ifp = GetFuzz ();
+            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_gt) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+// set / remove e_Lim fuzz on left (5') or right (3') end
+void CPacked_seqpnt::SetPartialLeft (bool val)
+{
+    if (val == IsPartialLeft()) {
+        return;
+    }
+
+    if (val) {
+        SetFuzz().SetLim(x_IsMinusStrand() ? CInt_fuzz::eLim_gt : CInt_fuzz::eLim_lt);
+    } else {
+        ResetFuzz();
+    }
+    _ASSERT(val == IsPartialLeft());
+}
+
+
+void CPacked_seqpnt::SetPartialRight(bool val)
+{
+    if (val == IsPartialRight()) {
+        return;
+    }
+
+    if ( val ) {
+        SetFuzz().SetLim(x_IsMinusStrand() ? CInt_fuzz::eLim_lt : CInt_fuzz::eLim_gt);
+    } else {
+        ResetFuzz();
+    }
+    _ASSERT(val == IsPartialRight());
 }
 
 

@@ -74,6 +74,37 @@ TSeqPos CPacked_seqint::GetLength(void) const
 }
 
 
+bool CPacked_seqint::IsPartialLeft (void) const
+
+{
+    return Get ().front ()->IsPartialLeft ();
+}
+
+bool CPacked_seqint::IsPartialRight (void) const
+
+{
+    return Get ().back ()->IsPartialRight ();
+}
+
+
+void CPacked_seqint::SetPartialLeft (bool val)
+{
+    if ( !Set().empty() ) {
+        Set().front()->SetPartialLeft(val);
+    }
+    _ASSERT(val == IsPartialLeft());
+}
+
+
+void CPacked_seqint::SetPartialRight(bool val)
+{
+    if ( !Set().empty() ) {
+        Set().back()->SetPartialRight(val);
+    }
+    _ASSERT(val == IsPartialRight());
+}
+
+
 bool CPacked_seqint::IsReverseStrand(void) const
 {
     bool rev = Get().front()->IsSetStrand()
@@ -153,6 +184,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.8  2004/10/22 15:12:28  kans
+ * implemented functions for getting and setting partial flags for packed int and packed point
+ *
  * Revision 6.7  2004/09/01 15:33:44  grichenk
  * Check strand in GetStart and GetEnd. Circular length argument
  * made optional.
