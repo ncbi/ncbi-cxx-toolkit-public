@@ -91,7 +91,8 @@ void CProjectItemsTree::SetFrom(const CProjectItemsTree& projects)
 void CProjectItemsTree::CreateFrom(const string& root_src,
                                    const TFiles& makein, 
                                    const TFiles& makelib, 
-                                   const TFiles& makeapp , 
+                                   const TFiles& makeapp, 
+                                   const TFiles& makemsvc, 
                                    CProjectItemsTree* tree)
 {
     tree->m_Projects.clear();
@@ -165,9 +166,16 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                 else if (info.m_Type == SMakeProjectT::SMakeInInfo::eAsn) {
 
                     SAsnProjectT::DoCreate(source_base_dir, 
-                                       proj_name, 
-                                       applib_mfilepath, 
-                                       makeapp, makelib, tree);
+                                           proj_name, 
+                                           applib_mfilepath, 
+                                           makeapp, makelib, tree);
+                }
+                else if (info.m_Type == SMakeProjectT::SMakeInInfo::eMsvc) {
+
+                    SMsvcProjectT::DoCreate(source_base_dir,
+                                            proj_name,
+                                            applib_mfilepath,
+                                            makemsvc, tree);
                 }
             }
         }
@@ -472,6 +480,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/10 19:50:05  gorelenk
+ * Changed CProjectItemsTree::CreateFrom .
+ *
  * Revision 1.1  2004/03/02 16:23:57  gorelenk
  * Initial revision.
  *
