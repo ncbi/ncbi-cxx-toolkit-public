@@ -1,0 +1,10 @@
+mkdir test
+mkdir test/include
+mkdir test/src
+rm test/include/* test/src/*
+datatool -m cn3d.asn -oR test -oA
+asntool -m cn3d.asn -w 100 -o cn3d.h
+asntool -B objcn3d -m cn3d.asn -G -w 100 -K cn3d.h
+mv cn3d.h test/include
+mv objcn3d.c test/src
+mv objcn3d.h test/include
