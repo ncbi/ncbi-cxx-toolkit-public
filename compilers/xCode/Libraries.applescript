@@ -285,7 +285,7 @@ property ncbi_xobjsimple : {name:"ncbi_xobjsimple", libs:{xobjsimple}, dep:"ncbi
 
 -- GUI
 property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_opengl, gui_print, gui_math}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_image ncbi_general", req:true}
-property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncbi_core ncbi_seq ncbi_seqext", req:true}
+property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:true}
 property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core", req:true}
 property gui_widgets : {name:"gui_widgets", libs:{w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config, w_controls}, dep:"gui_utils ncbi_image ncbi_core", req:true}
 property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_basic, gui_dlg_featedit, gui_dlg_edit, gui_dlg_feat_search, gui_dlg_seq_goto}, dep:"gui_config gui_utils gui_widgets ncbi_core ncbi_seq ncbi_seqext", req:true} -- gui_dlg_registry
@@ -404,6 +404,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/03/30 14:05:36  lebedev
+ * gui_config += ncbi_general
+ *
  * Revision 1.49  2005/03/29 15:13:40  rsmith
  * Changes in config libraries.
  *
