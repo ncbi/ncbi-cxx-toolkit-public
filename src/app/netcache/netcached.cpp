@@ -134,7 +134,7 @@ private:
 ///
 struct NetCache_RequestStat
 {
-    time_t       conn_time;    ///< request incoming time in seconds
+    CTime        conn_time;    ///< request incoming time in seconds
     unsigned     req_code;     ///< 'P' put, 'G' get
     size_t       blob_size;    ///< BLOB size
     double       elapsed;      ///< total time in seconds to process request
@@ -175,12 +175,11 @@ public:
     void Put(const string& auth, const NetCache_RequestStat& stat)
     {
         string msg, tmp;
-        CTime tm(stat.conn_time);
         msg += auth;
         msg += ';';
         msg += stat.peer_address;
         msg += ';';
-        msg += tm.AsString();
+        msg += stat.conn_time.AsString();
         msg += ';';
         msg += (char)stat.req_code;
         msg += ';';
@@ -359,7 +358,7 @@ private:
     bm::bvector<>      m_UsedIds;
     ICache*            m_Cache;
     /// Flags that server received a shutdown request
-    bool               m_Shutdown; 
+    volatile bool      m_Shutdown; 
     /// Time to wait for the client (seconds)
     unsigned           m_InactivityTimeout;
     /// Log writer
@@ -370,6 +369,8 @@ private:
     
     /// Accept timeout for threaded server
     STimeout                    m_ThrdSrvAcceptTimeout;
+    /// Quick local timer
+    CFastLocalTime              m_LocalTimer;
 };
 
 /// @internal
@@ -428,7 +429,7 @@ void CNetCacheServer::Process(SOCK sock)
         socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
 
         if (is_log) {
-            stat.conn_time = CTime(CTime::eCurrent).GetTimeT();
+            stat.conn_time = m_LocalTimer.GetLocalTime();
             stat.blob_size = 0;
             stat.comm_elapsed = 0;
             stat.peer_address = socket.GetPeerAddress();
@@ -1247,6 +1248,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/03/17 21:34:24  kuznets
+ * Use CFastLocalTime
+ *
  * Revision 1.43  2005/02/17 16:15:27  kuznets
  * Added ProcessOverflow with ERR_POST
  *
