@@ -52,6 +52,12 @@
 #endif
 
 
+/** @addtogroup Environment
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -146,9 +152,15 @@ private:
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/03/31 16:06:06  siyan
+ * Added doxygen support
+ *
  * Revision 1.9  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
