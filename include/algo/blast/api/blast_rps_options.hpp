@@ -77,6 +77,31 @@ public:
     /// @param x XDropoff [in]
     void SetXDropoff(double x) { m_Opts->SetXDropoff(x); }
 
+    /******************* Query setup options ************************/
+    /// Is SEG filtering enabled?
+    bool GetSegFiltering() const { return m_Opts->GetSegFiltering(); }
+    /// Enable SEG filtering.
+    /// @param val enable SEG filtering [in]
+    void SetSegFiltering(bool val) { m_Opts->SetSegFiltering(val); }
+
+    /// Get window parameter for seg
+    int GetSegFilteringWindow() const { return m_Opts->GetSegFilteringWindow(); }
+    /// Set window parameter for seg.  Acceptable value are > 0. 
+    /// @param window seg filtering parameter window [in]
+    void SetSegFilteringWindow(int window) { m_Opts->SetSegFilteringWindow(window); }
+
+    /// Get locut parameter for seg
+    double GetSegFilteringLocut() const { return m_Opts->GetSegFilteringLocut(); }
+    /// Set locut parameter for seg.  Acceptable values are greater than 0.
+    /// @param locut seg filtering parameter locut [in]
+    void SetSegFilteringLocut(double locut) { m_Opts->SetSegFilteringLocut(locut); }
+
+    /// Get hicut parameter for seg
+    double GetSegFilteringHicut() const { return m_Opts->GetSegFilteringHicut(); }
+    /// Set hicut parameter for seg.  Acceptable values are greater than Locut 
+    /// @param hicut seg filtering parameter hicut [in]
+    void SetSegFilteringHicut(double hicut) { m_Opts->SetSegFilteringHicut(hicut); }
+
     /******************* Gapped extension options *******************/
     /// Returns GapXDropoffFinal
     double GetGapXDropoffFinal() const { 
@@ -143,6 +168,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/02/24 13:46:20  madden
+ * Add setters and getters for filtering options
+ *
  * Revision 1.7  2004/12/28 13:36:17  madden
  * [GS]etWordSize is now an int rather than a short
  *

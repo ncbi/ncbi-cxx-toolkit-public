@@ -102,6 +102,42 @@ public:
         m_Opts->SetStrandOption(strand);
     }
 
+    /// Is dust filtering enabled?
+    bool GetDustFiltering() const { return m_Opts->GetDustFiltering(); }
+    /// Enable dust filtering.
+    /// @param val enable dust filtering [in]
+    void SetDustFiltering(bool val) { m_Opts->SetDustFiltering(val); }
+
+    /// Get level parameter for dust
+    int GetDustFilteringLevel() const { return m_Opts->GetDustFilteringLevel(); }
+    /// Set level parameter for dust.  Acceptable values: 2 < level < 64
+    /// @param level dust filtering parameter level [in]
+    void SetDustFilteringLevel(int level) { m_Opts->SetDustFilteringLevel(level); }
+
+    /// Get window parameter for dust
+    int GetDustFilteringWindow() const { return m_Opts->GetDustFilteringWindow(); }
+    /// Set window parameter for dust.  Acceptable values: 8 < windowsize < 64
+    /// @param window dust filtering parameter window [in]
+    void SetDustFilteringWindow(int window) { m_Opts->SetDustFilteringWindow(window); }
+
+    /// Get linker parameter for dust
+    int GetDustFilteringLinker() const { return m_Opts->GetDustFilteringLinker(); }
+    /// Set linker parameter for dust.  Acceptable values: 1 < linker < 32
+    /// @param linker dust filtering parameter linker [in]
+    void SetDustFilteringLinker(int linker) { m_Opts->SetDustFilteringLinker(linker); }
+
+    /// Is repeat filtering enabled?
+    bool GetRepeatFiltering() const { return m_Opts->GetRepeatFiltering(); }
+    /// Enable repeat filtering.
+    /// @param val enable repeat filtering [in]
+    void SetRepeatFiltering(bool val) { m_Opts->SetRepeatFiltering(val); }
+
+    /// Get the repeat filtering database
+    const char* GetRepeatFilteringDB() const { return m_Opts->GetRepeatFilteringDB(); }
+    /// Enable repeat filtering.
+    /// @param db repeat filtering database [in]
+    void SetRepeatFilteringDB(const char* db) { m_Opts->SetRepeatFilteringDB(db); }
+
     /******************* Initial word options ***********************/
     /// Returns WindowSize
     int GetWindowSize() const { return m_Opts->GetWindowSize(); }
@@ -284,6 +320,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/02/24 13:46:20  madden
+ * Add setters and getters for filtering options
+ *
  * Revision 1.21  2005/01/10 13:30:47  madden
  * Changes associated with removal of options for ScanStep, ContainerType, and ExtensionMethod as well as call to CalculateBestStride
  *

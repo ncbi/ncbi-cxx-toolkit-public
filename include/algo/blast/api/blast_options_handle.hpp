@@ -138,6 +138,11 @@ public:
     /// @param f FilterString [in]
     void SetFilterString(const char* f) { m_Opts->SetFilterString(f); }
 
+    /// Returns whether masking should only be done for lookup table creation.
+    bool GetMaskAtHash() const { return m_Opts->GetMaskAtHash(); }
+    /// Sets MaskAtHash
+    /// @param m whether masking should only be done for lookup table [in]
+    void SetMaskAtHash(bool m = true) { m_Opts->SetMaskAtHash(m); }
     /******************* Gapped extension options *******************/
     /// Returns GapXDropoff
     double GetGapXDropoff() const { return m_Opts->GetGapXDropoff(); }
@@ -241,6 +246,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/02/24 13:46:20  madden
+ * Add setters and getters for filtering options
+ *
  * Revision 1.17  2005/01/11 17:49:37  dondosha
  * Removed total HSP limit option
  *

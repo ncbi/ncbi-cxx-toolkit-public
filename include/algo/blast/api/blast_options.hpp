@@ -85,6 +85,17 @@ enum EBlastOptIdx {
     eBlastOpt_MBMaxPositions,
     eBlastOpt_UsePssm,
     eBlastOpt_FilterString,
+    eBlastOpt_MaskAtHash,
+    eBlastOpt_DustFiltering,
+    eBlastOpt_DustFilteringLevel,
+    eBlastOpt_DustFilteringWindow,
+    eBlastOpt_DustFilteringLinker,
+    eBlastOpt_SegFiltering,
+    eBlastOpt_SegFilteringWindow,
+    eBlastOpt_SegFilteringLocut,
+    eBlastOpt_SegFilteringHicut,
+    eBlastOpt_RepeatFiltering,
+    eBlastOpt_RepeatFilteringDB,
     eBlastOpt_StrandOption,
     eBlastOpt_QueryGeneticCode,
     eBlastOpt_WindowSize,
@@ -180,6 +191,39 @@ public:
     /******************* Query setup options ************************/
     const char* GetFilterString() const;
     void SetFilterString(const char* f);
+
+    bool GetMaskAtHash() const;
+    void SetMaskAtHash(bool val = true);
+
+    bool GetDustFiltering() const;
+    void SetDustFiltering(bool val = true);
+
+    int GetDustFilteringLevel() const;
+    void SetDustFilteringLevel(int m);
+
+    int GetDustFilteringWindow() const;
+    void SetDustFilteringWindow(int m);
+
+    int GetDustFilteringLinker() const;
+    void SetDustFilteringLinker(int m);
+
+    bool GetSegFiltering() const;
+    void SetSegFiltering(bool val = true);
+
+    int GetSegFilteringWindow() const;
+    void SetSegFilteringWindow(int m);
+
+    double GetSegFilteringLocut() const;
+    void SetSegFilteringLocut(double m);
+
+    double GetSegFilteringHicut() const;
+    void SetSegFilteringHicut(double m);
+
+    bool GetRepeatFiltering() const;
+    void SetRepeatFiltering(bool val = true);
+
+    const char* GetRepeatFilteringDB() const;
+    void SetRepeatFilteringDB(const char* db);
 
     objects::ENa_strand GetStrandOption() const;
     void SetStrandOption(objects::ENa_strand s);
@@ -832,6 +876,193 @@ public:
         }
         if (m_Remote) {
             m_Remote->SetValue(eBlastOpt_FilterString, f);
+        }
+    }
+
+    bool GetMaskAtHash() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetMaskAtHash() not available.");
+        }
+        return m_Local->GetMaskAtHash();
+    }
+    void SetMaskAtHash(bool val = true)
+    {
+        if (m_Local) {
+            m_Local->SetMaskAtHash(val);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_MaskAtHash, val);
+        }
+    }
+
+    bool GetDustFiltering() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetDustFiltering() not available.");
+        }
+        return m_Local->GetDustFiltering();
+    }
+    void SetDustFiltering(bool val = true)
+    {
+        if (m_Local) {
+            m_Local->SetDustFiltering(val);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_DustFiltering, val);
+        }
+    }
+
+    int GetDustFilteringLevel() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetDustFilteringLevel() not available.");
+        }
+        return m_Local->GetDustFilteringLevel();
+    }
+    void SetDustFilteringLevel(int m)
+    {
+        if (m_Local) {
+            m_Local->SetDustFilteringLevel(m);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_DustFilteringLevel, m);
+        }
+    }
+
+    int GetDustFilteringWindow() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetDustFilteringWindow() not available.");
+        }
+        return m_Local->GetDustFilteringWindow();
+    }
+    void SetDustFilteringWindow(int m)
+    {
+        if (m_Local) {
+            m_Local->SetDustFilteringWindow(m);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_DustFilteringWindow, m);
+        }
+    }
+
+    int GetDustFilteringLinker() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetDustFilteringLinker() not available.");
+        }
+        return m_Local->GetDustFilteringLinker();
+    }
+    void SetDustFilteringLinker(int m)
+    {
+        if (m_Local) {
+            m_Local->SetDustFilteringLinker(m);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_DustFilteringLinker, m);
+        }
+    }
+
+    bool GetSegFiltering() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetSegFiltering() not available.");
+        }
+        return m_Local->GetSegFiltering();
+    }
+    void SetSegFiltering(bool val = true)
+    {
+        if (m_Local) {
+            m_Local->SetSegFiltering(val);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_SegFiltering, val);
+        }
+    }
+
+    int GetSegFilteringWindow() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetSegFilteringWindow() not available.");
+        }
+        return m_Local->GetSegFilteringWindow();
+    }
+    void SetSegFilteringWindow(int m)
+    {
+        if (m_Local) {
+            m_Local->SetSegFilteringWindow(m);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_SegFilteringWindow, m);
+        }
+    }
+
+    double GetSegFilteringLocut() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetSegFilteringLocut() not available.");
+        }
+        return m_Local->GetSegFilteringLocut();
+    }
+    void SetSegFilteringLocut(double m)
+    {
+        if (m_Local) {
+            m_Local->SetSegFilteringLocut(m);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_SegFilteringLocut, m);
+        }
+    }
+
+    double GetSegFilteringHicut() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetSegFilteringHicut() not available.");
+        }
+        return m_Local->GetSegFilteringHicut();
+    }
+    void SetSegFilteringHicut(double m)
+    {
+        if (m_Local) {
+            m_Local->SetSegFilteringHicut(m);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_SegFilteringHicut, m);
+        }
+    }
+
+    bool GetRepeatFiltering() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetRepeatFiltering() not available.");
+        }
+        return m_Local->GetRepeatFiltering();
+    }
+    void SetRepeatFiltering(bool val = true)
+    {
+        if (m_Local) {
+            m_Local->SetRepeatFiltering(val);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_RepeatFiltering, val);
+        }
+    }
+
+    const char* GetRepeatFilteringDB() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetRepeatFilteringDB() not available.");
+        }
+        return m_Local->GetRepeatFilteringDB();
+    }
+    void SetRepeatFilteringDB(const char* db)
+    {
+        if (m_Local) {
+            m_Local->SetRepeatFilteringDB(db);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_RepeatFilteringDB, db);
         }
     }
 
@@ -1851,17 +2082,250 @@ CBlastOptionsLocal::SetFilterString(const char* f)
         return;
 
     sfree(m_QueryOpts->filter_string);
-#if 0
-    if (!StringICmp(f, "T")) {
-        if (m_Program == eBlastn)
-            m_QueryOpts->filter_string = strdup("D");
-        else
-            m_QueryOpts->filter_string = strdup("S");
-    } else {
-        m_QueryOpts->filter_string = strdup(f);
-    }
-#endif
     m_QueryOpts->filter_string = strdup(f);
+
+    m_QueryOpts->filtering_options = 
+            FilterOptionsFree(m_QueryOpts->filtering_options);
+
+    BlastFilteringOptionsFromString(GetProgramType(), f, 
+       &(m_QueryOpts->filtering_options), NULL);
+          
+}
+
+inline bool
+CBlastOptionsLocal::GetMaskAtHash() const
+{
+    if (m_QueryOpts->filtering_options->mask_at_hash)
+       return true;
+    else
+       return false;
+}
+
+
+inline void
+CBlastOptionsLocal::SetMaskAtHash(bool val)
+{
+
+   m_QueryOpts->filtering_options->mask_at_hash = val;
+
+   return;
+}
+
+inline bool
+CBlastOptionsLocal::GetDustFiltering() const
+{
+    if (m_QueryOpts->filtering_options->dustOptions)
+       return true;
+    else
+       return false;
+}
+
+
+inline void
+CBlastOptionsLocal::SetDustFiltering(bool val)
+{
+
+   if (m_QueryOpts->filtering_options->dustOptions)  // free previous structure so we provide defaults.
+        m_QueryOpts->filtering_options->dustOptions = 
+             DustOptionsFree(m_QueryOpts->filtering_options->dustOptions);
+     
+   if (val == false)  // filtering should be turned off
+       return;
+
+   DustSetUpOptionsNew(&(m_QueryOpts->filtering_options->dustOptions));
+
+   return;
+}
+
+inline int
+CBlastOptionsLocal::GetDustFilteringLevel() const
+{
+    if (m_QueryOpts->filtering_options->dustOptions == NULL)
+       DustSetUpOptionsNew(&(m_QueryOpts->filtering_options->dustOptions));
+
+    return m_QueryOpts->filtering_options->dustOptions->level;
+}
+
+inline void
+CBlastOptionsLocal::SetDustFilteringLevel(int level)
+{
+    if (m_QueryOpts->filtering_options->dustOptions == NULL)
+       DustSetUpOptionsNew(&(m_QueryOpts->filtering_options->dustOptions)); 
+      
+    m_QueryOpts->filtering_options->dustOptions->level = level;
+
+    return;
+}
+
+inline int
+CBlastOptionsLocal::GetDustFilteringWindow() const
+{
+    if (m_QueryOpts->filtering_options->dustOptions == NULL)
+       DustSetUpOptionsNew(&(m_QueryOpts->filtering_options->dustOptions));
+
+    return m_QueryOpts->filtering_options->dustOptions->window;
+}
+
+inline void
+CBlastOptionsLocal::SetDustFilteringWindow(int window)
+{
+    if (m_QueryOpts->filtering_options->dustOptions == NULL)
+       DustSetUpOptionsNew(&(m_QueryOpts->filtering_options->dustOptions)); 
+      
+    m_QueryOpts->filtering_options->dustOptions->window = window;
+
+    return;
+}
+
+inline int
+CBlastOptionsLocal::GetDustFilteringLinker() const
+{
+    if (m_QueryOpts->filtering_options->dustOptions == NULL)
+       DustSetUpOptionsNew(&(m_QueryOpts->filtering_options->dustOptions));
+
+    return m_QueryOpts->filtering_options->dustOptions->linker;
+}
+
+inline void
+CBlastOptionsLocal::SetDustFilteringLinker(int linker)
+{
+    if (m_QueryOpts->filtering_options->dustOptions == NULL)
+       DustSetUpOptionsNew(&(m_QueryOpts->filtering_options->dustOptions)); 
+      
+    m_QueryOpts->filtering_options->dustOptions->linker = linker;
+
+    return;
+}
+
+inline bool
+CBlastOptionsLocal::GetSegFiltering() const
+{
+    if (m_QueryOpts->filtering_options->segOptions)
+      return true;
+    else
+      return false;
+}
+
+inline void
+CBlastOptionsLocal::SetSegFiltering(bool val)
+{
+
+   if (m_QueryOpts->filtering_options->segOptions)  // free previous structure so we provide defaults.
+        m_QueryOpts->filtering_options->segOptions = 
+             SegOptionsFree(m_QueryOpts->filtering_options->segOptions);
+     
+   if (val == false)  // filtering should be turned off
+       return;
+
+   SegSetUpOptionsNew(&(m_QueryOpts->filtering_options->segOptions));
+
+   return;
+}
+
+inline int
+CBlastOptionsLocal::GetSegFilteringWindow() const
+{
+    if (m_QueryOpts->filtering_options->segOptions == NULL)
+       SegSetUpOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
+      
+    return m_QueryOpts->filtering_options->segOptions->window;
+}
+
+inline void
+CBlastOptionsLocal::SetSegFilteringWindow(int window)
+{
+    if (m_QueryOpts->filtering_options->segOptions == NULL)
+       SegSetUpOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
+      
+    m_QueryOpts->filtering_options->segOptions->window = window;
+
+    return;
+}
+
+inline double
+CBlastOptionsLocal::GetSegFilteringLocut() const
+{
+    if (m_QueryOpts->filtering_options->segOptions == NULL)
+       SegSetUpOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
+      
+    return m_QueryOpts->filtering_options->segOptions->locut;
+}
+
+inline void
+CBlastOptionsLocal::SetSegFilteringLocut(double locut)
+{
+    if (m_QueryOpts->filtering_options->segOptions == NULL)
+       SegSetUpOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
+      
+    m_QueryOpts->filtering_options->segOptions->locut = locut;
+
+    return;
+}
+
+inline double
+CBlastOptionsLocal::GetSegFilteringHicut() const
+{
+    if (m_QueryOpts->filtering_options->segOptions == NULL)
+       SegSetUpOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
+      
+    return m_QueryOpts->filtering_options->segOptions->hicut;
+}
+
+inline void
+CBlastOptionsLocal::SetSegFilteringHicut(double hicut)
+{
+    if (m_QueryOpts->filtering_options->segOptions == NULL)
+       SegSetUpOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
+      
+    m_QueryOpts->filtering_options->segOptions->hicut = hicut;
+
+    return;
+}
+
+inline bool
+CBlastOptionsLocal::GetRepeatFiltering() const
+{
+    if (m_QueryOpts->filtering_options->repeatFilterOptions)
+      return true;
+    else
+      return false;
+}
+
+inline void
+CBlastOptionsLocal::SetRepeatFiltering(bool val)
+{
+
+   if (m_QueryOpts->filtering_options->repeatFilterOptions)  // free previous structure so we provide defaults.
+        m_QueryOpts->filtering_options->repeatFilterOptions = 
+             RepeatOptionsFree(m_QueryOpts->filtering_options->repeatFilterOptions);
+     
+   if (val == false)  // filtering should be turned off
+       return;
+
+   RepeatSetUpOptionsNew(&(m_QueryOpts->filtering_options->repeatFilterOptions));
+
+   return;
+}
+
+inline const char*
+CBlastOptionsLocal::GetRepeatFilteringDB() const
+{
+    if (m_QueryOpts->filtering_options->repeatFilterOptions == NULL)
+      RepeatSetUpOptionsNew(&(m_QueryOpts->filtering_options->repeatFilterOptions));
+
+    return m_QueryOpts->filtering_options->repeatFilterOptions->database;
+}
+
+inline void
+CBlastOptionsLocal::SetRepeatFilteringDB(const char* db)
+{
+
+   if (!db)
+      return;
+
+   RepeatOptionsResetDB(&(m_QueryOpts->filtering_options->repeatFilterOptions), db);
+
+   return;
 }
 
 inline objects::ENa_strand
@@ -2345,6 +2809,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.84  2005/02/24 13:46:20  madden
+* Add setters and getters for filtering options
+*
 * Revision 1.83  2005/01/11 17:49:37  dondosha
 * Removed total HSP limit option
 *
