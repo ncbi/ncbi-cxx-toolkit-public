@@ -35,8 +35,12 @@
 #include <corelib/metareg.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
-#include <corelib/ncbidll.hpp>
 #include <corelib/ncbiapp.hpp>
+
+#if defined(NCBI_OS_MSWIN)
+#  include <corelib/ncbi_os_mswin.hpp>
+#  include <corelib/ncbidll.hpp>
+#endif
 
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
@@ -871,6 +875,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2003/09/22 13:43:41  ivanov
+ * Include <corelib/ncbidll.hpp> only on MSWin. + include <corelib/ncbi_os_mswin.hpp>
+ *
  * Revision 1.69  2003/09/17 21:03:58  ivanov
  * FindProgramExecutablePath:  try more accurate method of detection on MS Windows
  *
