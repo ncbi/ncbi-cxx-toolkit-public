@@ -71,21 +71,6 @@ CMappingRange::CMappingRange(CSeq_id_Handle     src_id,
 }
 
 
-inline
-bool CMappingRange::GoodSrcId(const CSeq_id& id) const
-{
-    return m_Src_id_Handle == id;
-}
-
-
-inline
-CSeq_id& CMappingRange::GetDstId(void)
-{
-    return *m_Dst_id;
-}
-
-
-inline
 bool CMappingRange::CanMap(TSeqPos from,
                            TSeqPos to,
                            bool is_set_strand,
@@ -99,7 +84,6 @@ bool CMappingRange::CanMap(TSeqPos from,
 }
 
 
-inline
 TSeqPos CMappingRange::Map_Pos(TSeqPos pos) const
 {
     _ASSERT(pos >= m_Src_from  &&  pos <= m_Src_to);
@@ -112,7 +96,6 @@ TSeqPos CMappingRange::Map_Pos(TSeqPos pos) const
 }
 
 
-inline
 CMappingRange::TRange CMappingRange::Map_Range(TSeqPos from, TSeqPos to) const
 {
     if (!m_Reverse) {
@@ -124,7 +107,6 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos from, TSeqPos to) const
 }
 
 
-inline
 bool CMappingRange::Map_Strand(bool is_set_strand,
                                ENa_strand src,
                                ENa_strand* dst) const
@@ -191,7 +173,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
 
 
 CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
-                                 int               to_row,
+                                 size_t            to_row,
                                  CScope*           scope)
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
@@ -527,7 +509,7 @@ void CSeq_loc_Mapper::x_NextMappingRange(const CSeq_id& src_id,
 
 void CSeq_loc_Mapper::x_CreateSelfMapping(void)
 {
-    for (int str_idx = 0; str_idx < m_DstRanges.size(); str_idx++) {
+    for (size_t str_idx = 0; str_idx < m_DstRanges.size(); str_idx++) {
         NON_CONST_ITERATE(TDstIdMap, id_it, m_DstRanges[str_idx]) {
             id_it->second.sort();
             TSeqPos dst_start = kInvalidSeqPos;
@@ -652,8 +634,8 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
         {
             const TDendiag& diags = map_align.GetSegs().GetDendiag();
             ITERATE(TDendiag, diag_it, diags) {
-                int to_row = -1;
-                for (int i = 0; i < (*diag_it)->GetIds().size(); ++i) {
+                size_t to_row = size_t(-1);
+                for (size_t i = 0; i < (*diag_it)->GetIds().size(); ++i) {
                     // find the first row with required ID
                     // ??? check if there are multiple rows with the same ID?
                     if ( (*diag_it)->GetIds()[i]->Equals(to_id) ) {
@@ -661,7 +643,7 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
                         break;
                     }
                 }
-                if (to_row < 0) {
+                if (to_row == size_t(-1)) {
                     NCBI_THROW(CLocMapperException, eBadAlignment,
                                "Target ID not found in the alignment");
                 }
@@ -672,14 +654,14 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
     case CSeq_align::C_Segs::e_Denseg:
         {
             const CDense_seg& dseg = map_align.GetSegs().GetDenseg();
-            int to_row = -1;
-            for (int i = 0; i < dseg.GetIds().size(); ++i) {
+            size_t to_row = size_t(-1);
+            for (size_t i = 0; i < dseg.GetIds().size(); ++i) {
                 if (dseg.GetIds()[i]->Equals(to_id)) {
                     to_row = i;
                     break;
                 }
             }
-            if (to_row < 0) {
+            if (to_row == size_t(-1)) {
                 NCBI_THROW(CLocMapperException, eBadAlignment,
                            "Target ID not found in the alignment");
             }
@@ -690,14 +672,14 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
         {
             const TStd& std_segs = map_align.GetSegs().GetStd();
             ITERATE(TStd, std_seg, std_segs) {
-                int to_row = -1;
-                for (int i = 0; i < (*std_seg)->GetIds().size(); ++i) {
+                size_t to_row = size_t(-1);
+                for (size_t i = 0; i < (*std_seg)->GetIds().size(); ++i) {
                     if ((*std_seg)->GetIds()[i]->Equals(to_id)) {
                         to_row = i;
                         break;
                     }
                 }
-                if (to_row < 0) {
+                if (to_row == size_t(-1)) {
                     NCBI_THROW(CLocMapperException, eBadAlignment,
                                "Target ID not found in the alignment");
                 }
@@ -708,14 +690,14 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
     case CSeq_align::C_Segs::e_Packed:
         {
             const CPacked_seg& pseg = map_align.GetSegs().GetPacked();
-            int to_row = -1;
-            for (int i = 0; i < pseg.GetIds().size(); ++i) {
+            size_t to_row = size_t(-1);
+            for (size_t i = 0; i < pseg.GetIds().size(); ++i) {
                 if (pseg.GetIds()[i]->Equals(to_id)) {
                     to_row = i;
                     break;
                 }
             }
-            if (to_row < 0) {
+            if (to_row == size_t(-1)) {
                 NCBI_THROW(CLocMapperException, eBadAlignment,
                            "Target ID not found in the alignment");
             }
@@ -738,7 +720,7 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
 
 
 void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
-                                   int               to_row)
+                                   size_t            to_row)
 {
     switch ( map_align.GetSegs().Which() ) {
     case CSeq_align::C_Segs::e_Dendiag:
@@ -785,26 +767,26 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
 }
 
 
-void CSeq_loc_Mapper::x_InitAlign(const CDense_diag& diag, int to_row)
+void CSeq_loc_Mapper::x_InitAlign(const CDense_diag& diag, size_t to_row)
 {
     if (diag.GetStarts()[to_row] < 0) {
         // Destination ID is not present in this dense-diag
         return;
     }
-    int dim = diag.GetDim();
+    size_t dim = diag.GetDim();
     _ASSERT(to_row < dim);
-    if (dim != (int)diag.GetIds().size()) {
+    if (dim != diag.GetIds().size()) {
         ERR_POST(Warning << "Invalid 'ids' size in dendiag");
-        dim = min(dim, (int)diag.GetIds().size());
+        dim = min(dim, diag.GetIds().size());
     }
-    if (dim != (int)diag.GetStarts().size()) {
+    if (dim != diag.GetStarts().size()) {
         ERR_POST(Warning << "Invalid 'starts' size in dendiag");
-        dim = min(dim, (int)diag.GetStarts().size());
+        dim = min(dim, diag.GetStarts().size());
     }
     bool have_strands = diag.IsSetStrands();
-    if (have_strands && dim != (int)diag.GetStrands().size()) {
+    if (have_strands && dim != diag.GetStrands().size()) {
         ERR_POST(Warning << "Invalid 'strands' size in dendiag");
-        dim = min(dim, (int)diag.GetStrands().size());
+        dim = min(dim, diag.GetStrands().size());
     }
 
     ENa_strand dst_strand = have_strands ?
@@ -814,7 +796,7 @@ void CSeq_loc_Mapper::x_InitAlign(const CDense_diag& diag, int to_row)
         m_Dst_width = x_CheckSeqWidth(dst_id, m_Dst_width);
     }
 
-    for (int row = 0; row < dim; ++row) {
+    for (size_t row = 0; row < dim; ++row) {
         if (row == to_row) {
             continue;
         }
@@ -842,29 +824,29 @@ void CSeq_loc_Mapper::x_InitAlign(const CDense_diag& diag, int to_row)
 }
 
 
-void CSeq_loc_Mapper::x_InitAlign(const CDense_seg& denseg, int to_row)
+void CSeq_loc_Mapper::x_InitAlign(const CDense_seg& denseg, size_t to_row)
 {
-    int dim    = denseg.GetDim();
+    size_t dim = denseg.GetDim();
     _ASSERT(to_row < dim);
 
-    int numseg = denseg.GetNumseg();
+    size_t numseg = denseg.GetNumseg();
     // claimed dimension may not be accurate :-/
-    if (numseg != (int)denseg.GetLens().size()) {
+    if (numseg != denseg.GetLens().size()) {
         ERR_POST(Warning << "Invalid 'lens' size in denseg");
-        numseg = min(numseg, (int)denseg.GetLens().size());
+        numseg = min(numseg, denseg.GetLens().size());
     }
-    if (dim != (int)denseg.GetIds().size()) {
+    if (dim != denseg.GetIds().size()) {
         ERR_POST(Warning << "Invalid 'ids' size in denseg");
-        dim = min(dim, (int)denseg.GetIds().size());
+        dim = min(dim, denseg.GetIds().size());
     }
-    if (dim*numseg != (int)denseg.GetStarts().size()) {
+    if (dim*numseg != denseg.GetStarts().size()) {
         ERR_POST(Warning << "Invalid 'starts' size in denseg");
-        dim = min(dim*numseg, (int)denseg.GetStarts().size()) / numseg;
+        dim = min(dim*numseg, denseg.GetStarts().size()) / numseg;
     }
     bool have_strands = denseg.IsSetStrands();
-    if (have_strands && dim*numseg != (int)denseg.GetStrands().size()) {
+    if (have_strands && dim*numseg != denseg.GetStrands().size()) {
         ERR_POST(Warning << "Invalid 'strands' size in denseg");
-        dim = min(dim*numseg, (int)denseg.GetStrands().size()) / numseg;
+        dim = min(dim*numseg, denseg.GetStrands().size()) / numseg;
     }
 
     const CSeq_id& dst_id = *denseg.GetIds()[to_row];
@@ -877,7 +859,7 @@ void CSeq_loc_Mapper::x_InitAlign(const CDense_seg& denseg, int to_row)
             m_Dst_width = x_CheckSeqWidth(dst_id, m_Dst_width);
         }
     }
-    for (int row = 0; row < dim; ++row) {
+    for (size_t row = 0; row < dim; ++row) {
         if (row == to_row) {
             continue;
         }
@@ -893,7 +875,7 @@ void CSeq_loc_Mapper::x_InitAlign(const CDense_seg& denseg, int to_row)
         int dst_width_rel = (src_width == m_Dst_width) ? 1 : m_Dst_width;
         int src_width_rel = (src_width == m_Dst_width) ? 1 : src_width;
 
-        for (int seg = 0; seg < numseg; ++seg) {
+        for (size_t seg = 0; seg < numseg; ++seg) {
             int i_src_start = denseg.GetStarts()[seg*dim + row];
             int i_dst_start = denseg.GetStarts()[seg*dim + to_row];
             if (i_src_start < 0  ||  i_dst_start < 0) {
@@ -920,7 +902,7 @@ void CSeq_loc_Mapper::x_InitAlign(const CDense_seg& denseg, int to_row)
 }
 
 
-void CSeq_loc_Mapper::x_InitAlign(const CStd_seg& sseg, int to_row)
+void CSeq_loc_Mapper::x_InitAlign(const CStd_seg& sseg, size_t to_row)
 {
     size_t dim = sseg.GetDim();
     if (dim != sseg.GetLoc().size()) {
@@ -935,7 +917,7 @@ void CSeq_loc_Mapper::x_InitAlign(const CStd_seg& sseg, int to_row)
 
     const CSeq_loc& dst_loc = *sseg.GetLoc()[to_row];
 
-    for (int row = 0; row < dim; ++row ) {
+    for (size_t row = 0; row < dim; ++row ) {
         if (row == to_row) {
             continue;
         }
@@ -949,34 +931,34 @@ void CSeq_loc_Mapper::x_InitAlign(const CStd_seg& sseg, int to_row)
 }
 
 
-void CSeq_loc_Mapper::x_InitAlign(const CPacked_seg& pseg, int to_row)
+void CSeq_loc_Mapper::x_InitAlign(const CPacked_seg& pseg, size_t to_row)
 {
-    int dim    = pseg.GetDim();
-    int numseg = pseg.GetNumseg();
+    size_t dim    = pseg.GetDim();
+    size_t numseg = pseg.GetNumseg();
     // claimed dimension may not be accurate :-/
-    if (numseg != (int)pseg.GetLens().size()) {
+    if (numseg != pseg.GetLens().size()) {
         ERR_POST(Warning << "Invalid 'lens' size in packed-seg");
-        numseg = min(numseg, (int)pseg.GetLens().size());
+        numseg = min(numseg, pseg.GetLens().size());
     }
-    if (dim != (int)pseg.GetIds().size()) {
+    if (dim != pseg.GetIds().size()) {
         ERR_POST(Warning << "Invalid 'ids' size in packed-seg");
-        dim = min(dim, (int)pseg.GetIds().size());
+        dim = min(dim, pseg.GetIds().size());
     }
-    if (dim*numseg != (int)pseg.GetStarts().size()) {
+    if (dim*numseg != pseg.GetStarts().size()) {
         ERR_POST(Warning << "Invalid 'starts' size in packed-seg");
-        dim = min(dim*numseg, (int)pseg.GetStarts().size()) / numseg;
+        dim = min(dim*numseg, pseg.GetStarts().size()) / numseg;
     }
     bool have_strands = pseg.IsSetStrands();
-    if (have_strands && dim*numseg != (int)pseg.GetStrands().size()) {
+    if (have_strands && dim*numseg != pseg.GetStrands().size()) {
         ERR_POST(Warning << "Invalid 'strands' size in packed-seg");
-        dim = min(dim*numseg, (int)pseg.GetStrands().size()) / numseg;
+        dim = min(dim*numseg, pseg.GetStrands().size()) / numseg;
     }
 
     const CSeq_id& dst_id = *pseg.GetIds()[to_row];
     if (!m_Dst_width) {
         m_Dst_width = x_CheckSeqWidth(dst_id, m_Dst_width);
     }
-    for (int row = 0; row < dim; ++row) {
+    for (size_t row = 0; row < dim; ++row) {
         if (row == to_row) {
             continue;
         }
@@ -987,7 +969,7 @@ void CSeq_loc_Mapper::x_InitAlign(const CPacked_seg& pseg, int to_row)
         int dst_width_rel = (src_width == m_Dst_width) ? 1 : m_Dst_width;
         int src_width_rel = (src_width == m_Dst_width) ? 1 : src_width;
 
-        for (int seg = 0; seg < numseg; ++seg) {
+        for (size_t seg = 0; seg < numseg; ++seg) {
             if (!pseg.GetPresent()[row]  ||  !pseg.GetPresent()[to_row]) {
                 continue;
             }
@@ -1012,7 +994,8 @@ void CSeq_loc_Mapper::x_InitAlign(const CPacked_seg& pseg, int to_row)
 }
 
 
-void CSeq_loc_Mapper::x_Initialize(const CSeqMap& seq_map, const CSeq_id* top_id)
+void CSeq_loc_Mapper::x_Initialize(const CSeqMap& seq_map,
+                                   const CSeq_id* top_id)
 {
     CSeqMap::const_iterator seg_it =
         seq_map.begin_resolved(m_Scope.GetPointerOrNull(), size_t(-1),
@@ -1545,32 +1528,6 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
 }
 
 
-/*
-CRef<CSeq_align> CSeq_loc_Mapper::x_MapDendiag(const TDendiag& dendiag)
-{
-    return 0;
-}
-
-
-CRef<CSeq_align> CSeq_loc_Mapper::x_MapDenseg(const CDense_seg& denseg)
-{
-    return 0;
-}
-
-
-CRef<CSeq_align> CSeq_loc_Mapper::x_MapStd(const TStd& std)
-{
-    return 0;
-}
-
-
-CRef<CSeq_align> CSeq_loc_Mapper::x_MapPacked(const CPacked_seg& packed)
-{
-    return 0;
-}
-*/
-
-
 CRef<CSeq_align> CSeq_loc_Mapper::x_MapSeq_align(const CSeq_align& src_align)
 {
     CSeq_align_Mapper aln_mapper(src_align);
@@ -1580,38 +1537,6 @@ CRef<CSeq_align> CSeq_loc_Mapper::x_MapSeq_align(const CSeq_align& src_align)
         }
     }
     return aln_mapper.GetDstAlign();
-/*
-    switch ( src_align.GetSegs().Which() ) {
-    case CSeq_align::C_Segs::e_Dendiag:
-        return x_MapDendiag(src_align.GetSegs().GetDendiag());
-        break;
-    case CSeq_align::C_Segs::e_Denseg:
-        return x_MapDenseg(src_align.GetSegs().GetDenseg());
-        break;
-    case CSeq_align::C_Segs::e_Std:
-        return x_MapStd(src_align.GetSegs().GetStd());
-        break;
-    case CSeq_align::C_Segs::e_Packed:
-        return x_MapPacked(src_align.GetSegs().GetPacked());
-        break;
-    case CSeq_align::C_Segs::e_Disc:
-        {
-            CRef<CSeq_align> dst_align(new CSeq_align);
-            CSeq_align_set::Tdata& disc = dst_align->SetSegs().SetDisc().Set();
-            ITERATE (CSeq_align_set::Tdata, aln,
-                src_align.GetSegs().GetDisc().Get()) {
-                disc.push_back(x_MapSeq_align(**aln));
-            }
-            return dst_align;
-            break;
-        }
-    default:
-        NCBI_THROW(CLocMapperException, eBadAlignment,
-                   "Unsupported alignment type");
-        break;
-    }
-    return 0;
-*/
 }
 
 
@@ -1621,6 +1546,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/03/30 17:00:00  grichenk
+* Fixed warnings, moved inline functions to hpp.
+*
 * Revision 1.8  2004/03/30 15:42:34  grichenk
 * Moved alignment mapper to separate file, added alignment mapping
 * to CSeq_loc_Mapper.

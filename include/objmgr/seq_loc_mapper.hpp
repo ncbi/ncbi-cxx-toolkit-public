@@ -121,7 +121,7 @@ public:
                     const CSeq_id&    to_id,
                     CScope*           scope = 0);
     CSeq_loc_Mapper(const CSeq_align& map_align,
-                    int               to_row,
+                    size_t            to_row,
                     CScope*           scope = 0);
 
     // Mapping from segments to the segmented sequence (same as
@@ -223,17 +223,17 @@ private:
     void x_Initialize(const CSeq_align& map_align,
                       const CSeq_id&    to_id);
     void x_Initialize(const CSeq_align& map_align,
-                      int               to_row);
+                      size_t            to_row);
     void x_Initialize(const CSeqMap& seq_map,
                       const CSeq_id* top_id = 0);
     void x_Initialize(const CSeqMap& seq_map,
                       size_t         depth,
                       const CSeq_id* top_id = 0);
 
-    void x_InitAlign(const CDense_diag& diag, int to_row);
-    void x_InitAlign(const CDense_seg& denseg, int to_row);
-    void x_InitAlign(const CStd_seg& sseg, int to_row);
-    void x_InitAlign(const CPacked_seg& pseg, int to_row);
+    void x_InitAlign(const CDense_diag& diag, size_t to_row);
+    void x_InitAlign(const CDense_seg& denseg, size_t to_row);
+    void x_InitAlign(const CStd_seg& sseg, size_t to_row);
+    void x_InitAlign(const CPacked_seg& pseg, size_t to_row);
 
     // Create target-to-target mapping to avoid truncation of ranges
     // already on the target sequence(s).
@@ -258,26 +258,18 @@ private:
 
     // Access mapped ranges, check vector size
     TMappedRanges& x_GetMappedRanges(const CSeq_id_Handle& id,
-                                     int strand_idx) const;
+                                     int                   strand_idx) const;
 
     CRef<CSeq_loc> x_RangeToSeq_loc(const CSeq_id_Handle& idh,
-                                    TSeqPos from,
-                                    TSeqPos to,
-                                    int strand_idx);
+                                    TSeqPos               from,
+                                    TSeqPos               to,
+                                    int                   strand_idx);
 
     // Check location type, optimize if possible (empty mix to NULL,
     // mix with a single element to this element etc.).
     void x_OptimizeSeq_loc(CRef<CSeq_loc>& loc);
 
     CRef<CSeq_loc> x_GetMappedSeq_loc(void);
-
-/*
-    // Alignment mappings
-    CRef<CSeq_align> x_MapDendiag(const TDendiag& dendiag);
-    CRef<CSeq_align> x_MapDenseg(const CDense_seg& denseg);
-    CRef<CSeq_align> x_MapStd(const TStd& std);
-    CRef<CSeq_align> x_MapPacked(const CPacked_seg& packed);
-*/
 
     CRef<CScope>    m_Scope;
     // CSeq_loc_Conversion_Set m_Cvt;
@@ -292,6 +284,20 @@ private:
     CRef<CSeq_loc>  m_Dst_loc;
     TDstStrandMap   m_DstRanges;
 };
+
+
+inline
+bool CMappingRange::GoodSrcId(const CSeq_id& id) const
+{
+    return m_Src_id_Handle == id;
+}
+
+
+inline
+CSeq_id& CMappingRange::GetDstId(void)
+{
+    return *m_Dst_id;
+}
 
 
 inline
@@ -331,6 +337,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/03/30 17:00:00  grichenk
+* Fixed warnings, moved inline functions to hpp.
+*
 * Revision 1.5  2004/03/30 15:42:33  grichenk
 * Moved alignment mapper to separate file, added alignment mapping
 * to CSeq_loc_Mapper.
