@@ -125,7 +125,8 @@ private:
     // data
     mutable CRef<CFlatItemOStream>  m_ItemOS;
     mutable CRef<CFFContext>      m_Context;
-    mutable vector< CRef<CCommentItem> > m_Comments; // in case of GSDB comment
+    typedef vector< CRef<CCommentItem> > TCommentVec;
+    mutable TCommentVec m_Comments;
 };
 
 
@@ -137,6 +138,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/03/26 17:21:57  shomrat
+* + typedef TCommentVec
+*
 * Revision 1.7  2004/03/25 20:31:28  shomrat
 * Use handles
 *
