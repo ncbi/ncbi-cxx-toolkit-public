@@ -228,7 +228,8 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
     const bool record_coords  = scrn_width && scrn_lefts && scrn_rights;
 
     // allocate space for the row
-    buffer.reserve(aln_len * width + 1);
+    char* c_buff = new char[aln_len * width + 1];
+    char* c_buff_ptr = c_buff;
     string buff;
     
     // in order to make sure m_Seq{Left,Right}Segs[row] are initialized
@@ -263,7 +264,8 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
 
                 // add regular sequence to buffer
                 GetSeqString(buff, row, start, stop);
-                buffer += buff;
+                memcpy(c_buff_ptr, buff.c_str(), seg_len);
+                c_buff_ptr += seg_len;
                 
                 // take care of coords if necessary
                 if (record_coords) {
@@ -337,7 +339,8 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
                 
                 memset(ch_buff, fill_ch, seg_len);
                 ch_buff[seg_len] = 0;
-                buffer += ch_buff;
+                memcpy(c_buff_ptr, ch_buff, seg_len);
+                c_buff_ptr += seg_len;
                 delete[] ch_buff;
             }
             aln_pos += len;
@@ -364,6 +367,9 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
             }
         }
     }
+    c_buff[aln_len * width] = '\0';
+    buffer = c_buff;
+    delete c_buff;
     return buffer;
 }
 
@@ -748,6 +754,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2003/09/17 14:46:39  todorov
+* Performance optimization: Use char * instead of string
+*
 * Revision 1.45  2003/09/12 16:16:50  todorov
 * TSeqPos->TSignedSeqPos bug fix
 *
