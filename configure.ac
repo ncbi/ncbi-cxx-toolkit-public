@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.78 2002/05/28 21:39:04 kimelman Exp $
+#  $Id: configure.ac,v 1.79 2002/05/30 05:33:52 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -576,7 +576,7 @@ case "$host_os:$compiler" in
    case "$host_os" in osf*) LDFLAGS="-Wl,-S $LDFLAGS" ;; esac
    ;;
 
-  darwin*:GCC)
+ darwin*:GCC)
    # XXX -- there's a distinction between shared libraries (dylibs) and
    # loadable objects (bundles).
    # See <http://fink.sourceforge.net/doc/porting/shared.php>.
@@ -757,8 +757,9 @@ case "$compiler:$compiler_version" in
     # Need to specify runpath for compiler-provided libraries
     libstdcxx=`$CXX $LDFLAGS -print-file-name=libstdc++.a`
     case "$host_os" in
-       osf*) LDFLAGS="-Wl,-rpath,`dirname $libstdcxx` $LDFLAGS" ;;
-       *)    LDFLAGS="-Wl,-R`dirname $libstdcxx` $LDFLAGS" ;;
+       osf*)     LDFLAGS="-Wl,-rpath,`dirname $libstdcxx` $LDFLAGS" ;;
+       darwin*)  ;;
+       *)        LDFLAGS="-Wl,-R`dirname $libstdcxx` $LDFLAGS" ;;
     esac
     ;;
 esac
@@ -1666,7 +1667,7 @@ if test "$with_sybase" != "no" ; then
 
    # test it
    CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
-   LIBS="$SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $orig_LIBS $DL_LIBS"
+   LIBS="$SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
    AC_TRY_LINK(
       [#include <ctpublic.h>],
       [CS_RETCODE i = ct_init(0,0);  i = cs_ctx_global(0,0); ],
@@ -1715,7 +1716,7 @@ SYBASE_LIBPATH=
 if test -n "$SYBASE_DBLIBS" ; then
    AC_MSG_CHECKING(if SYBASE includes DBLib)
    CPPFLAGS="$SYBASE_INCLUDE $prig_CPPFLAGS"
-   LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $orig_LIBS"   
+   LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $DL_LIBS $orig_LIBS"   
    AC_TRY_LINK(
       [
        #include <sybfront.h>
@@ -1955,7 +1956,7 @@ else
    if test "$with_sssutils" != "no" ; then
       CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
       LIBSSSUTILS="-lsssutils"
-      LIBS="$NCBI_SSS_LIBPATH $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
+      LIBS="$NCBI_SSS_LIBPATH $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
       AC_TRY_LINK(
          [#include <hashtab.hpp>],
          [ (new C_HashTab(123))->Clear(); ],
@@ -1979,7 +1980,7 @@ else
    if test "$with_sssdb" != "no" ; then
       CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
       LIBSSSDB="-lsssdb"
-      LIBS="$NCBI_SSS_LIBPATH $LIBSSSDB $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
+      LIBS="$NCBI_SSS_LIBPATH $LIBSSSDB $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
       AC_TRY_LINK(
          [#include <cslink.hpp>],
          [ (new CSLink)->connect2server("srv", "user", "pwd", "db"); ],
@@ -2036,7 +2037,7 @@ else
 #     Cannot check it -- because GEO headers include C++ Toolkit headers!
 #
 #     CPPFLAGS="$NCBI_GEO_INCLUDE $NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
-#     LIBS="$NCBI_GEO_LIBPATH $LIBGEODB $NCBI_SSS_LIBPATH $LIBSSSDB $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
+#     LIBS="$NCBI_GEO_LIBPATH $LIBGEODB $NCBI_SSS_LIBPATH $LIBSSSDB $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
 #     AC_TRY_LINK(
 #        [#include <geo_api.hpp>],
 #        [ (void) GEO_API::Submitter::contributors(); ],
