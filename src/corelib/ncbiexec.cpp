@@ -80,8 +80,9 @@ static int s_SpawnUnix(const ESpawnFunc func, const CExec::EMode mode,
     if (mode == CExec::eOverlay) {
         switch (func) {
         case eV:
-        case eVP:
             return execv(cmdname, const_cast<char**>(argv));
+        case eVP:
+            return execvp(cmdname, const_cast<char**>(argv));
         case eVE:
         case eVPE:
             return execve(cmdname, const_cast<char**>(argv), 
@@ -332,6 +333,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/08/12 16:57:55  ivanov
+ * s_SpawnUnix(): use execv() instead execvp() for the eV-mode
+ *
  * Revision 1.12  2003/04/23 21:02:48  ivanov
  * Removed redundant NCBI_OS_MAC preprocessor directives
  *
