@@ -132,6 +132,9 @@
 /* Define to 1 if the SP SGML library is available. */
 #undef HAVE_LIBSP
 
+/* Define to 1 if libsqlite is available. */
+#undef HAVE_LIBSQLITE
+
 /* Define to 1 if the NCBI SSS DB library is available. */
 #undef HAVE_LIBSSSDB
 
