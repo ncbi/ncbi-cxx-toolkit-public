@@ -1,5 +1,5 @@
 [-]
-_export =
+_export = NCBI_PCASSAY_EXPORT
 
 [PC-AssayDataSession]
 data._type = vector
