@@ -32,7 +32,6 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <objmgr/util/sequence.hpp>
 #include <algo/blast/api/seqdb_src.hpp>
 #include <algo/blast/core/blast_util.h>
 #include <objtools/readers/seqdb/seqdb.hpp>
@@ -465,6 +464,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2004/06/02 15:57:57  bealer
+ * - Isolate object manager dependant code.
+ *
  * Revision 1.11  2004/05/24 17:26:08  camacho
  * Fix PC warning
  *

@@ -33,7 +33,6 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <objmgr/util/sequence.hpp>
 #include <algo/blast/api/multiseq_src.hpp>
 #include <algo/blast/core/blast_def.h>
 #include "blast_setup.hpp"
@@ -72,14 +71,9 @@ CMultiSeqInfo::~CMultiSeqInfo()
     m_ivSeqBlkVec.clear();
 }
 
-void* CMultiSeqInfo::GetSeqId(int index)
-{
-    CSeq_id* seqid = 
-        const_cast<CSeq_id*>(&sequence::GetId(*m_vSeqVector[index].seqloc,
-                                              m_vSeqVector[index].scope));
-
-    return (void*) seqid;
-}
+// Moved to blast_objmgr_tools.cpp
+//
+// void* CMultiSeqInfo::GetSeqId(int index);
 
 void* CMultiSeqInfo::GetSeqLoc(int index)
 {
@@ -462,6 +456,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2004/06/02 15:57:57  bealer
+ * - Isolate object manager dependant code.
+ *
  * Revision 1.16  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *
