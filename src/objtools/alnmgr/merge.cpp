@@ -34,6 +34,7 @@
 #include <objects/alnmgr/alnmix.hpp>
 #include <serial/iterator.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 
 #ifdef HAVE_NCBI_C
 #include <ctools/asn_converter.hpp>
@@ -99,45 +100,18 @@ void CAlnMix::x_Merge()
 {
     m_DS = null;
 
-    if (m_Alns.size() == 0) {
-        /* nothing to merge, throw exception here */
-    }
+    CSeq_align aln;
 
-    // check if only one dense seg, then no need to merge
-    if (m_Alns.size() == 1) {
-        for (CTypeConstIterator<CDense_seg> i = ConstBegin(*(m_Alns.front()));
-             i;  ++i) {
-            if ( !m_DS ) {
-                const CDense_seg& ds = *i;
-                m_DS = &(const_cast<CDense_seg&>(ds)); // the first ds
-            } else {
-                // more than one ds, will have to merge
-                m_DS = null;
-                break;
-            }
-        }
-        if (m_DS) {
-            // the one and only ds has been found, no need to merge
-            return;
-        }
+    list< CRef< CSeq_align > >& sa_lst = aln.SetSegs().SetDisc().Set();
+    iterate (TConstDSs, ds_it, m_InputDSs) {
+        CRef<CSeq_align> sa = new CSeq_align();
+        sa->SetSegs().SetDenseg(**ds_it);
+        sa_lst.push_back(sa);
     }
 
 #ifdef HAVE_NCBI_C
     DECLARE_ASN_CONVERTER(CSeq_align, SeqAlign, converter);
-
-    // convert the c++ aln list to c aln lst
-    SeqAlignPtr sap = 0, sap_curr = 0, sap_tmp = 0;
-    iterate (TConstAlns, sa_it, m_Alns) {
-        sap_tmp = converter.ToC(**sa_it);
-        if (sap_tmp) {
-            if (sap_curr) {
-                sap_curr->next = sap_tmp;
-                sap_curr = sap_curr->next;
-            } else {
-                sap_curr = sap = sap_tmp;
-            }
-        }
-    }
+    SeqAlignPtr sap = converter.ToC(aln);
 
     // merge
     x_MergeInit();
@@ -179,6 +153,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2002/10/24 21:42:07  todorov
+* adding Dense-segs instead of Seq-aligns
+*
 * Revision 1.5  2002/10/22 21:06:18  ucko
 * Conditionalize the code that needs the C Toolkit on HAVE_NCBI_C.
 *
