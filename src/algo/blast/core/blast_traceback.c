@@ -623,6 +623,14 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
       query_info->context_offsets = offsets; 
    }
 
+   /* The HSPs in the HSP lists are sorted by e-value coming into the 
+    * traceback stage. However they should be sorted by score here. If sum 
+    * statistics was applied, the order of HSPs may be wrong. Check whether
+    * HSPs in the HSP array come in decreasing order of scores, and sort the
+    * HSP array if they do not.
+    */
+   Blast_HSPListSortByScore(hsp_list);
+
    for (index=0; index < hsp_list->hspcnt; index++) {
       hsp = hsp_array[index];
       if (program_number == eBlastTypeBlastx || 
@@ -797,8 +805,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
    }
 
    /* It's time to sort HSPs by e-value/score. */
-   qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
-	 Blast_HSPEvalueCompareCallback);
+   Blast_HSPListSortByEvalue(hsp_list);
     
     /* Now try to detect simular alignments */
 
@@ -812,8 +819,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
                       score_options->gapped_calculation);
        Blast_HSPListReapByEvalue(hsp_list, hit_options);
        /* Sort HSPs again by e-value/score. */
-       qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
-	 Blast_HSPEvalueCompareCallback);
+       Blast_HSPListSortByEvalue(hsp_list);
     }
     
     /* Free the local query_info structure, if necessary (RPS tblastn only) */
@@ -936,9 +942,6 @@ Int2 BLAST_ComputeTraceback(EBlastProgramType program_number, BlastHSPStream* hs
          
       while (BlastHSPStreamRead(hsp_stream, &hsp_list) 
              != kBlastHSPStream_Eof) {
-
-	 /* Make sure the HSPs in this HSP list are sorted. */
-	 Blast_HSPListCheckIfSorted(hsp_list);
 
          /* Perform traceback here, if necessary. */
          if (perform_traceback) {
@@ -1095,9 +1098,6 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
           != kBlastHSPStream_Eof) {
       if (!hsp_list)
          continue;
-
-      /* Make sure the HSPs in this HSP list are sorted. */
-      Blast_HSPListCheckIfSorted(hsp_list);
 
       /* If traceback should be skipped, just save the HSP list into the results
          structure. */
