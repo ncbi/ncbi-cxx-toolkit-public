@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/02/06 17:48:43  kholodov
+* Added correct virtual destructor for GCC 3.0.3
+*
 * Revision 1.1  2002/01/30 14:51:20  kholodov
 * User DBAPI implementation, first commit
 *
@@ -41,6 +44,11 @@
 
 CArrayOutOfBoundsException::CArrayOutOfBoundsException(const string& msg)
  : m_msg(msg) 
+{
+
+}
+
+CArrayOutOfBoundsException::~CArrayOutOfBoundsException() throw()
 {
 
 }
