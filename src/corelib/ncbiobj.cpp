@@ -495,8 +495,8 @@ END_NCBI_SCOPE
 
 struct SAllocHeader
 {
-    size_t magic;
-    size_t seq_number;
+    unsigned magic;
+    unsigned seq_number;
     size_t size;
     void*  ptr;
 };
@@ -506,12 +506,12 @@ struct SAllocFooter
 {
     void*  ptr;
     size_t size;
-    size_t seq_number;
-    size_t magic;
+    unsigned seq_number;
+    unsigned magic;
 };
 
-static const size_t kAllocSizeBefore = 24;
-static const size_t kAllocSizeAfter = 24;
+static const size_t kAllocSizeBefore = sizeof(SAllocHeader)+8;
+static const size_t kAllocSizeAfter = sizeof(SAllocFooter)+8;
 
 static const char kAllocFillBefore1 = 0xaa;
 static const char kAllocFillBefore2 = 0xbb;
@@ -519,8 +519,8 @@ static const char kAllocFillInside = 0xcc;
 static const char kAllocFillAfter = 0xdd;
 static const char kAllocFillFree = 0xee;
 
-static const size_t kAllocMagicHeader = 0x89abcdef;
-static const size_t kAllocMagicFooter = 0xfedcba98;
+static const unsigned kAllocMagicHeader = 0x89abcdef;
+static const unsigned kAllocMagicFooter = 0xfedcba98;
 
 static std::bad_alloc bad_alloc_instance;
 
@@ -528,7 +528,7 @@ DEFINE_STATIC_FAST_MUTEX(s_alloc_mutex);
 static NCBI_NS_NCBI::CAtomicCounter seq_number;
 static const size_t kLogSize = 64*1024;
 struct SAllocLog {
-    size_t seq_number;
+    unsigned seq_number;
     enum EType {
         eEmpty = 0,
         eInit,
@@ -565,7 +565,7 @@ static inline size_t get_guard_before_size()
 
 static inline size_t get_extra_size(size_t size)
 {
-    return (-size)&3;
+    return (-size)&7;
 }
 
 
@@ -599,7 +599,7 @@ static inline size_t get_total_size(size_t size)
 }
 
 
-static inline SAllocLog& start_log(size_t number, SAllocLog::EType type)
+static inline SAllocLog& start_log(unsigned number, SAllocLog::EType type)
 {
     SAllocLog& slot = alloc_log[number % kLogSize];
     slot.type = SAllocLog::eInit;
@@ -626,7 +626,7 @@ void memchk(const void* ptr, char byte, size_t size)
 static inline
 void* alloc_mem(size_t size, bool array) throw()
 {
-    size_t number = seq_number.Add(1);
+    unsigned number = seq_number.Add(1);
     SAllocLog& log = start_log(number, array? SAllocLog::eNewArr: SAllocLog::eNew);
     log.size = size;
 
@@ -663,7 +663,7 @@ void* alloc_mem(size_t size, bool array) throw()
 static inline
 void free_mem(void* ptr, bool array)
 {
-    size_t number = seq_number.Add(1);
+    unsigned number = seq_number.Add(1);
     SAllocLog& log = start_log(number, array? SAllocLog::eDeleteArr: SAllocLog::eDelete);
     if ( ptr ) {
         log.ptr = ptr;
@@ -756,6 +756,9 @@ void  operator delete[](void* ptr, const std::nothrow_t&) throw()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/02/19 16:44:19  vasilche
+ * Modified debug new/delete code for 64 bit builds.
+ *
  * Revision 1.42  2004/02/17 21:08:19  vasilche
  * Added code to debug memory allocation problems (currently commented out).
  *
