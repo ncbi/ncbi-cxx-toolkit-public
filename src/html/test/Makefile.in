@@ -1,11 +1,9 @@
-#################################
 # $Id$
-#################################
 
 # Meta-makefile ("XHTML" tests)
 #################################
 
-APP_PROJ = htmltest test_html test_jsmenu
+APP_PROJ = test_html test_jsmenu
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
