@@ -156,9 +156,6 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 }
 
 
-#if 1/*defined(NCBI_COMPILER_GCC)      || \
-       defined(NCBI_COMPILER_WORKSHOP) || \
-       defined(NCBI_COMPILER_MIPSPRO)*/
 streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
     static const STimeout s_ZeroTmo = {0, 0};
@@ -208,13 +205,12 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             setg(m_ReadBuf, m_ReadBuf + x_read, m_ReadBuf + xx_read);
         } else {
             size_t xx_read = x_read > m_BufSize ? m_BufSize : x_read;
-            memcpy(m_ReadBuf, buf+x_read-xx_read, xx_read*sizeof(CT_CHAR_TYPE));
+            memcpy(m_ReadBuf,buf+x_read-xx_read,xx_read*sizeof(CT_CHAR_TYPE));
             setg(m_ReadBuf, m_ReadBuf + xx_read, m_ReadBuf + xx_read);
         }
     }
     return (streamsize)(n_read + x_read);
 }
-#endif
 
 
 streamsize CConn_Streambuf::showmanyc(void)
@@ -273,8 +269,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2003/04/11 17:57:11  lavr
+ * Define xsgetn() unconditionally
+ *
  * Revision 6.25  2003/03/30 07:00:09  lavr
- * MIPS-specific workaround for lame-designed stream read ops
+ * MIPS-specific workaround for lamely-designed stream read ops
  *
  * Revision 6.24  2003/03/28 03:58:08  lavr
  * CConn_Streambuf::xsgetn(): tiny formal fix in backup condition

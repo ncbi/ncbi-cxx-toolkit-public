@@ -55,11 +55,7 @@ public:
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
     virtual CT_INT_TYPE underflow(void);
-#if 1/* defined(NCBI_COMPILER_GCC)      || \
-        defined(NCBI_COMPILER_WORKSHOP) || \
-        defined(NCBI_COMPILER_MIPSPRO) */
     virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n);
-#endif
     virtual streamsize  showmanyc(void);
 
     virtual int         sync(void);
@@ -88,8 +84,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2003/04/11 17:57:11  lavr
+ * Define xsgetn() unconditionally
+ *
  * Revision 6.15  2003/03/30 07:00:09  lavr
- * MIPS-specific workaround for lame-designed stream read ops
+ * MIPS-specific workaround for lamely-designed stream read ops
  *
  * Revision 6.14  2003/03/28 03:30:36  lavr
  * Define CConn_Streambuf::xsgetn() unconditionally of compiler
