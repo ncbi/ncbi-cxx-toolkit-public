@@ -35,6 +35,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/12/28 21:04:14  vasilche
+* Removed three more implicit virtual destructors.
+*
 * Revision 1.18  1999/12/28 18:55:25  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -321,6 +324,7 @@ class CErrnoException : public runtime_error {
 public:
     // Report description of "errno" along with "what"
     CErrnoException(const string& what) throw();
+    ~CErrnoException(void);
     int GetErrno(void) const THROWS_NONE { return m_Errno; }
 };
 
@@ -330,6 +334,7 @@ class CParseException : public runtime_error {
 public:
     // Report "pos" along with "what"
     CParseException(const string& what, SIZE_TYPE pos) throw();
+    ~CParseException(void);
     SIZE_TYPE GetPos(void) const THROWS_NONE { return m_Pos; }
 };
 

@@ -59,108 +59,24 @@ TTypeInfoGetter GetStdTypeInfoGetter(const T* )
     return &CStdTypeInfo<T>::GetTypeInfo;
 }
 
+// some compilers cannot resolve overloading by
+// (char* const*) and (const char* const*) in template
+// so we'll add explicit implemetations:
+
+TTypeInfo GetStdTypeInfo_char_ptr(void);
+TTypeInfo GetStdTypeInfo_const_char_ptr(void);
+
 inline
 TTypeInfoGetter GetStdTypeInfoGetter(char* const* )
 {
-    return &CStdTypeInfo<char*>::GetTypeInfo;
+    return &GetStdTypeInfo_char_ptr;
 }
 
 inline
 TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 {
-    return &CStdTypeInfo<const char*>::GetTypeInfo;
+    return &GetStdTypeInfo_const_char_ptr;
 }
-#if 0
-inline
-TTypeInfoGetter GetTypeInfoGetter(const bool* object)
-{
-    return GetStdTypeInfoGetter(object);
-}
-
-inline
-TTypeInfoGetter GetTypeInfoGetter(const char* object)
-{
-    return GetStdTypeInfoGetter(object);
-}
-
-inline
-TTypeInfoGetter GetTypeInfoGetter(const unsigned char* object)
-{
-    return GetStdTypeInfoGetter(object);
-}
-
-inline
-TTypeInfoGetter GetTypeInfoGetter(const signed char* object)
-{
-    return GetStdTypeInfoGetter(object);
-}
-
-inline
-TTypeInfoGetter GetTypeInfoGetter(const short* object)
-{
-    return GetStdTypeInfoGetter(object);
-}
-
-inline
-TTypeInfoGetter GetTypeInfoGetter(const unsigned short* object)
-{
-    return GetStdTypeInfoGetter(object);
-}
-
-inline
-TTypeInfoGetter GetTypeInfoGetter(const int* object)
-{
-    return GetStdTypeInfoGetter(object);
-}
-
-inline
-TTypeInfoGetter GetTypeInfoGetter(const unsigned int* object)
-{
-    return GetStdTypeInfoGetter(object);
-}
-
-inline
-TTypeInfoGetter GetTypeInfoGetter(const long* object)
-{
-    return GetStdTypeInfoGetter(object);
-}
-
-inline
-TTypeInfoGetter GetTypeInfoGetter(const unsigned long* object)
-{
-    return GetStdTypeInfoGetter(object);
-}
-
-inline
-TTypeInfoGetter GetTypeInfoGetter(const float* object)
-{
-    return GetStdTypeInfoGetter(object);
-}
-
-inline
-TTypeInfoGetter GetTypeInfoGetter(const double* object)
-{
-    return GetStdTypeInfoGetter(object);
-}
-
-inline
-TTypeInfoGetter GetTypeInfoGetter(const string* object)
-{
-    return GetStdTypeInfoGetter(object);
-}
-
-inline
-TTypeInfoGetter GetTypeInfoGetter(char* const* object)
-{
-    return GetStdTypeInfoGetter(object);
-}
-
-inline
-TTypeInfoGetter GetTypeInfoGetter(const char* const* object)
-{
-    return GetStdTypeInfoGetter(object);
-}
-#endif
 
 #define SERIAL_TYPE(Name) NCBI_NAME2(SERIAL_TYPE_,Name)
 #define SERIAL_REF(Name) NCBI_NAME2(SERIAL_REF_,Name)

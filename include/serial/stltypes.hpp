@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/12/28 21:04:22  vasilche
+* Removed three more implicit virtual destructors.
+*
 * Revision 1.26  1999/12/28 18:55:40  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -555,6 +558,7 @@ public:
                          const CTypeRef& keyType, const CTypeRef& valueType)
         : CParent(templ, keyType, valueType)
         { }
+    ~CStlClassInfoMapImpl(void);
 
 protected:
     void CollectKeyValuePair(COObjectList& objectList,

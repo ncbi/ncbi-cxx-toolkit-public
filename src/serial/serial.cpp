@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/12/28 21:04:25  vasilche
+* Removed three more implicit virtual destructors.
+*
 * Revision 1.5  1999/12/17 19:05:04  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -50,12 +53,23 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/serial.hpp>
+#include <serial/serialimpl.hpp>
 #include <serial/ptrinfo.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <serial/classinfo.hpp>
 
 BEGIN_NCBI_SCOPE
+
+TTypeInfo GetStdTypeInfo_char_ptr(void)
+{
+    return CStdTypeInfo<char*>::GetTypeInfo();
+}
+
+TTypeInfo GetStdTypeInfo_const_char_ptr(void)
+{
+    return CStdTypeInfo<const char*>::GetTypeInfo();
+}
 
 class CGet2TypeInfoSource : public CTypeInfoSource
 {

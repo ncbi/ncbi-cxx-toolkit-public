@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/12/28 21:04:18  vasilche
+* Removed three more implicit virtual destructors.
+*
 * Revision 1.12  1999/11/18 20:12:43  vakatov
 * DoDbgPrint() -- prototyped in both _DEBUG and NDEBUG
 *
@@ -130,6 +133,10 @@ CErrnoException::CErrnoException(const string& what)
         m_Errno = errno;
 }
 
+CErrnoException::~CErrnoException(void)
+{
+}
+
 
 /////////////////////////////////
 //  CParseException
@@ -146,6 +153,10 @@ static string s_ComposeParse(const string& what, SIZE_TYPE pos)
 CParseException::CParseException(const string& what, SIZE_TYPE pos)
     throw() : runtime_error(s_ComposeParse(what,pos)) {
         m_Pos = pos;
+}
+
+CParseException::~CParseException(void)
+{
 }
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/12/28 21:04:27  vasilche
+* Removed three more implicit virtual destructors.
+*
 * Revision 1.13  1999/12/17 19:05:05  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -132,6 +135,10 @@ void CStlTwoArgsTemplate::SetKeyId(const CMemberId& id)
 void CStlTwoArgsTemplate::SetValueId(const CMemberId& id)
 {
     m_ValueId = id;
+}
+
+CStlClassInfoMapImpl::~CStlClassInfoMapImpl(void)
+{
 }
 
 bool CStlClassInfoMapImpl::EqualsKeyValuePair(TConstObjectPtr key1,
