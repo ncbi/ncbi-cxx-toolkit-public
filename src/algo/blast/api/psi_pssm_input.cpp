@@ -128,7 +128,7 @@ CPsiBlastInputData::CPsiBlastInputData(const unsigned char* query,
     m_MatrixName = string(matrix_name ? matrix_name : "");
     m_DiagnosticsRequest = const_cast<PSIDiagnosticsRequest*>(diags);
 
-    const unsigned int kNumHits = m_SeqAlignSet->Get().size();
+    const size_t kNumHits = m_SeqAlignSet->Get().size();
     m_ProcessHit.reserve(kNumHits);
     m_ProcessHit.assign(kNumHits, Uint1(0));
 }
@@ -521,6 +521,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2005/01/26 14:04:05  camacho
+ * Fix compiler warning
+ *
  * Revision 1.11  2004/12/28 16:47:43  camacho
  * 1. Use typedefs to AutoPtr consistently
  * 2. Remove exception specification from blast::SetupQueries
