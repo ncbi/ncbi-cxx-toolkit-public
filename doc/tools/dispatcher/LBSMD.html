@@ -24,6 +24,7 @@ inside NCBI users at:
 
 <p><hr><p>
 
+
 <a name="ref_Overview"></a><h2>Overview</h2>
 
 In general, <tt>LBSMD</tt> should be run at NCBI site on every host that carries either public
@@ -57,8 +58,8 @@ Further in this document the latter kind of feedback is called a
 <i>penalty</i>.
 
 <p>
-The principle of load-balancing is simple: each server, implementing
-the required service, is assigned a (calculated) rate. The higher the rate
+The principle of load-balancing is simple: each server implementing
+a service is assigned a (calculated) rate. The higher the rate
 the better the chance for that the server to be chosen. Note that load-balancing
 is thus almost never deterministic (see however, discussion of negative
 <a href="#ref_Bonus">local bonus coefficient</a>).
@@ -72,8 +73,8 @@ CPUs and processes, etc. The rate calculation fomulas can be found in
 <a href="../../lxr/source/src/connect/ncbi_lbsm.c"><b><i>connect/ncbi_lbsm.c</i></b></a>,
 which is a part of <a href="../../libs/conn.html#ref_ServiceAPI">service mapping API</a>, not <tt>LBSMD</tt>.
 
-
 <p><hr><p>
+
 
 <a name="ref_Details"></a><h2><tt>LBSMD</tt> in Details</h2>
 
@@ -147,14 +148,17 @@ where:
   <li><font color="#CC33CC"><tt>STANDALONE</tt></font> for standalone servers listening on dedicated ports;
   <li><font color="#CC33CC"><tt>HTTP_GET</tt></font> for servers, which are the CGI programs accepting only <i>GET</i> request method;
   <li><font color="#CC33CC"><tt>HTTP_POST</tt></font> for servers, which are the CGI programs accepting only <i>POST</i> request method;
-  <li><font color="#CC33CC"><tt>HTTP_POST</tt></font> for servers, which are the CGI programs accepting both of either <i>GET</i> or <i>POST</i> request methods.<br>
+  <li><font color="#CC33CC"><tt>HTTP_POST</tt></font> for servers, which are the CGI programs accepting both of either <i>GET</i> or <i>POST</i> request methods;
+  <li><font color="#CC33CC"><tt>DNS</tt></font> for introduction of a name (fake service), which can be later used in
+  load-balancing domain name resolution.<br>
   <u>Note</u>: <tt>FIREWALL</tt> server specification may not be used in configuration file.
   </ul>
 <li>Both <font color="#009900"><tt>host</tt></font> and <font color="#009900"><tt>port</tt></font> parameters are optional. Defaults are local host and
 port 80 except for <tt>STANDALONE</tt> servers, which do <i>not</i> have a default port value.</br>
-<a name="ref_Static"></a>If <tt>host</tt> <b><u>is specified</u></b> (either <tt>localhost</tt> or local host name/IP)
-then the described server is not a subject for variable load-balancing, but is a so-called <i>static</i>
-server. Such a server always has a constant rate, independent on the host load.
+<a name="ref_Static"></a>If <tt>host</tt> <b><u>is specified</u></b> (by either of the following:
+keyword <tt>localhost</tt>, localhost IP address <tt>127.0.0.1</tt>, real host name or IP address)
+then the described server is not a subject for variable load-balancing, but is a so-called
+<i>static</i> server. Such a server always has a constant rate, independent of any host load.
 <li><font color="#009900"><tt>arguments</tt></font> are required for <tt>HTTP*</tt> servers, and must specify
 local part of URL of the CGI program and optionally parameters, like:
 <ol>
@@ -186,7 +190,7 @@ recognized:
   default is 1000. Any negative value makes the server unreachable, and a value of&nbsp;0 uses the default.
   The maximal allowed base rate is 100000.
   </ul>
-  <li><a name="ref_Local"></a>locality marker:
+  <li><a name="ref_Local"></a>locality markers:
   <ul type=bullet>
      <li><font color="#CC33CC"><tt>L={yes|no}</tt></font> sets (if <tt>yes</tt>) the server to be <i>local only</i>.
      Default is <tt>no</tt>.
@@ -196,6 +200,14 @@ recognized:
      occurs using non-local network (certainly indirectly, via exchange with <a href="DISPD.html"><tt>dispd.cgi</tt></a>)
      then <i>local only</i> servers are not seen.
   </ul>
+  <ul type=bullet>
+     <li><font color="#CC33CC"><tt>P={yes|no}</tt></font> sets (if <tt>yes</tt>) the server to be <i>private</i>.
+     Default is <tt>no</tt>.
+     Private servers are not seen by the outside users (exactly like <a href="#ref_Local"><i>local</i></a> servers),
+     but in addition these servers are not seen from the NCBI Intranet if requested from a host, which is different
+     from one where the private server runs.
+  </ul>
+  <u>Note</u>: Both <tt>L</tt> and <tt>P</tt> markers can be applied to a particular service definition.
   <li><a name="ref_Stateful"></a>stateful server:
   <ul type=bullet>
      <li><font color="#CC33CC"><tt>S={yes|no}</tt></font> sets (if <tt>yes</tt>) that the server can only accept dedicated connections,
@@ -215,11 +227,11 @@ recognized:
      <tt>value</tt> specifies a multiplier, which applies to the server rate when the server is locally run.
      When zero (default), the slight default rate increase takes effect for locally run servers. When <tt>value</tt> is negative, the
      locally run server overrides those even having higher rates and preceding the local one, but only if the local server has
-     a rate, which is not in the percentile (expressed by the absolute <tt>value</tt>) of average rest rate of all other servers,
+     a rate, which is not in the percentile (expressed by the absolute <tt>value</tt>) of average remaining rate of all other servers,
      implementing the service.<br>
      For example, a server on a <u>local</u> host <tt>Z</tt> configured with <tt>B=-5</tt> (and currently having rate of 100)
      will be chosen by the <u>local</u> load-balancer even if there were servers on hosts <tt>X</tt> and <tt>Y</tt> having rates
-     1000 and 2000, because 100 is more than 5% of (1000 + 2000)/2 = 1500, which is 75.</br>
+     1000 and 2000, respectively, because 100 is more than 5% of (1000 + 2000)/2 = 1500, which is 75.</br>
      <u>Note</u> again that for this coefficient to play, <i>both</i> server <i>and</i> mapping must be on the same host.
   </ul>
 </ul>
@@ -227,9 +239,9 @@ recognized:
 </ol>
 
 <p>
-The main loop of the daemon comprises of periodic checks of configuration file and reloads of the configuration if
+The main loop of the daemon comprises periodic checks of configuration file and reloads of the configuration if
 necessary, checks and processings of incoming messages from load-balancing daemons running on
-other hosts, generating and brodacasting messages to the other hosts about the load of the system and
+other hosts, generation and brodacast of the messages to other hosts about the load of the system and
 configured services. Also, the daemon periodically checks whether the configured servers are alive, trying
 to connect to them, and then to immediately disconnect, without sending/receiving any data. This way the daemon
 is only able to check if the network port is working. Further server accessibility information could
@@ -255,7 +267,7 @@ Signal <tt>USR1</tt> can be used to toggle verbosity level between less verbose 
 more verbose (when every warning generated is stored) modes.
 
 <p>
-Logfile size can be controlled by a <tt>-s</tt> switch. By default <tt>-s&nbsp;0</tt> is the
+Logfile size can be controlled by <tt>-s</tt> switch. By default <tt>-s&nbsp;0</tt> is the
 active flag, which means to create (if necessary) and to append messages to the logfile with
 no limitation on the file size whatsoever. <tt>-s&nbsp;-1</tt> instructs indefinite appending
 to the logfile, which has however to exist. Otherwise, log messages are not stored.
@@ -266,9 +278,8 @@ and sometimes the logfile can grow slightly bigger. The daemon keeps track of lo
 the final logging message either when switching from one file to another in case of the file has been
 moved or removed or when the file size has reached its limit.
 
-<p>
-<hr>
-<p>
+<p><hr><p>
+
 
 <a name="ref_Example"></a><h2>Example of Configuration File</h2>
 
@@ -313,12 +324,13 @@ by clicking <a href="http://pluto.nlm.nih.gov/Service/lbsmd.cgi?cfg">here</a>.
 
 <p><hr><p>
 
+
 <a name="ref_Client"></a><h2>Load-Balancing Service Mapping Client (<tt>LBSMC</tt>)</h2>
 
 This is a special <a href="../../lxr/source/src/connect/daemons/lbsmc.c">program</a>, which repeatedly
 dumps onto the screen a table representing current contents of shared memory segment, where the daemon
 collects all information about hosts and services. The client's output can be controlled by a number
-of switches, full list of which may be obtained via switch <tt>-h</tt> alone, or NCBI Intranet users can click
+of switches, full list of which can be obtained via switch <tt>-h</tt> alone, or NCBI Intranet users can click
 <a href="http://pluto.nlm.nih.gov/Service/lbsmc.cgi?-h">here</a>. For example, to print only
 the hosts currently running the daemon one can use the following command:
 <pre>
@@ -343,7 +355,31 @@ For NCBI Intranet users <i>only</i> the following live lists are available for b
 <li><a href="http://pluto.nlm.nih.gov/Service/lbsmc.cgi?-h_none_-w_-d">Currently dead servers</a>.
 </ul>
 
+<p>Some explanation to the client's output. The output usually contains 2 parts:
+first comes the host table, followed by the service table. If <tt>-f</tt> switch
+was specified, then the host table is prepended by raw heap printout, which shows
+the data exactly in the order they appear in the shared memory. The output goes
+in either long or short format depending on whether <tt>-w</tt> was specified
+on the command line (the switch requests the long (wide) output). Wide output occupies
+about 130 columns, while the short (normal) output takes 80 - the standard
+terminal size. In cases when the service name is more than the allowed number
+of characters to display, the trailing character will be shown as '>'.
+When there is more information to display about host/service, a '+' characters
+is set beside the host/service name (this additional information can be requested
+by switch <tt>-i</tt>). When both '+' and '>' are to be shown,
+they are replaced with '*'. In the wide output format, '#' shown in the
+service line tells that there is no host information available for
+the service (like for static servers). '!' character in the service
+line denotes that the service was configured/stored with an error
+(this character actually should never appear in the listings, and
+should be reported whenever encountered). Wide output for hosts contain
+the time of bootup and startup. If the startup time is preceded by a tilde '~',
+then the host was gone for a while and then came back, while the client
+was running. A plus char '+' in the times is to show that the date belongs
+to the past year(s).
+
 <p><hr><p>
+
 
 <a name="ref_Penalizer"></a><h2>Server Penalizer</h2>
 
