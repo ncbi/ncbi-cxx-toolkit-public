@@ -45,13 +45,16 @@
  *      bigger with time.
  */
 
-#define NCBI_OBJMGR_VERSION 20040607
+#define NCBI_OBJMGR_VERSION 20040816
 
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/08/16 18:55:37  vasilche
+ * CSeqref is replaced by CBlob_id. New CTSE_Lock and CTSE_LoadLock classes.
+ *
  * Revision 1.1  2004/06/07 20:53:14  vakatov
  * Initial revision
  *
