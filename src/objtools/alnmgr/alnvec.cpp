@@ -142,7 +142,7 @@ string CAlnVec::GetAlnSeqString(TNumrow row, const TSignedRange& aln_rng) const
     
     // get the chunks which are aligned to seq on anchor
     CRef<CAlnMap::CAlnChunkVec> chunk_vec = 
-        GetAlnChunks(row, aln_rng, fSkipInserts & fSkipUnalignedGaps);
+        GetAlnChunks(row, aln_rng, fSkipInserts | fSkipUnalignedGaps);
     
     // for each chunk
     for (int i=0; i<chunk_vec->size(); i++) {
@@ -433,6 +433,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/01/08 16:50:56  todorov
+* Fixed TGetChunkFlags in GetAlnSeqString
+*
 * Revision 1.12  2002/11/04 21:29:08  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
