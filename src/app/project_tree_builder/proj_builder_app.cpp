@@ -37,6 +37,7 @@
 #include <app/project_tree_builder/msvc_configure.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
 #include <app/project_tree_builder/msvc_configure_prj_generator.hpp>
+#include <app/project_tree_builder/proj_projects.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -134,10 +135,9 @@ int CProjBulderApp::Run(void)
 
     // Build projects tree
     CProjectItemsTree projects_tree(GetProjectTreeInfo().m_Src);
-    CProjectTreeBuilder::BuildProjectTree(GetProjectTreeInfo().m_SubTree, 
+    CProjectTreeBuilder::BuildProjectTree(GetProjectTreeInfo().m_IProjectFilter.get(), 
                                           GetProjectTreeInfo().m_Src, 
                                           &projects_tree);
-
     // MSVC specific part:
     
     // Exclude some projects from build:
@@ -373,14 +373,6 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
         root = CDirEntry::AddTrailingPathSeparator(root);
         m_ProjectTreeInfo->m_Root = root;
 
-        // Subtree to build
-        string subtree = args["subtree"].AsString();
-        m_ProjectTreeInfo->m_SubTree  = 
-            CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, subtree);
-        m_ProjectTreeInfo->m_SubTree = 
-            CDirEntry::AddTrailingPathSeparator(m_ProjectTreeInfo->m_SubTree);
-
-
         /// <include> branch of tree
         string include = GetConfig().GetString("ProjectTree", "include", "");
         m_ProjectTreeInfo->m_Include = 
@@ -397,6 +389,27 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
                                       src);
         m_ProjectTreeInfo->m_Src =
             CDirEntry::AddTrailingPathSeparator(m_ProjectTreeInfo->m_Src);
+
+        // Subtree to build - projects filter
+        string subtree = args["subtree"].AsString();
+        subtree = 
+            CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, subtree);
+        string ext;
+        CDirEntry::SplitPath(subtree, NULL, NULL, &ext);
+        if (NStr::CompareNocase(ext, ".lst") == 0) {
+            //If this is *.lst file
+            m_ProjectTreeInfo->m_IProjectFilter = 
+                auto_ptr<IProjectFilter>(new CProjectsLstFileFilter
+                                                 (m_ProjectTreeInfo->m_Src,
+                                                  subtree));
+        } else {
+            //Simple subtree
+            subtree = CDirEntry::AddTrailingPathSeparator(subtree);
+            m_ProjectTreeInfo->m_IProjectFilter = 
+                auto_ptr<IProjectFilter>(new CProjectOneNodeFilter
+                                                 (m_ProjectTreeInfo->m_Src,
+                                                  subtree));
+        }
 
 
 
@@ -486,6 +499,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/02/26 21:31:51  gorelenk
+ * Re-designed CProjBulderApp::GetProjectTreeInfo - use creation of
+ * IProjectFilter-derived classes instead of string.
+ * Changed signature of call BuildProjectTree inside CProjBulderApp::Run.
+ *
  * Revision 1.23  2004/02/25 19:44:04  gorelenk
  * Added creation of BuildAll utility project to CProjBulderApp::Run.
  *
