@@ -34,6 +34,22 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 {
     CMsvcPrjProjectContext project_context(prj);
     CVisualStudioProject xmlprj;
+
+    // Chacking configuration availability:
+    list<SConfigInfo> project_configs;
+    ITERATE(list<SConfigInfo>, p , m_Configs) {
+        const SConfigInfo& cfg_info = *p;
+        // Check config availability
+        if ( !project_context.IsConfigEnabled(cfg_info) ) {
+            LOG_POST(Info << "Configuration "
+                          << cfg_info.m_Name
+                          << " disabled in project "
+                          << project_context.ProjectId());
+        } else {
+            project_configs.push_back(cfg_info);
+        }
+
+    }
     
     {{
         // Attributes:
@@ -50,18 +66,10 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
          xmlprj.SetPlatforms().SetPlatform().push_back(platform);
     }}
 
-    ITERATE(list<SConfigInfo>, p , m_Configs) {
+    ITERATE(list<SConfigInfo>, p , project_configs) {
 
         const SConfigInfo& cfg_info = *p;
-        // Check config availability
-        if ( !project_context.IsConfigEnabled(cfg_info) ) {
-            LOG_POST(Info << "Configuration "
-                          << cfg_info.m_Name
-                          << " disabled in project "
-                          << project_context.ProjectId());
-            continue;
-        }
-
+ 
         // Contexts:
         
         CMsvcPrjGeneralContext general_context(cfg_info, project_context);
@@ -476,7 +484,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
             ITERATE(list<SCustomBuildInfo>, p, info_list) { 
                 const SCustomBuildInfo& build_info = *p;
                 AddCustomBuildFileToFilter(filter, 
-                                           m_Configs, 
+                                           project_configs, 
                                            project_context.ProjectDir(),
                                            build_info);
             }
@@ -501,7 +509,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
                                               src, 
                                               &build_info);
                 AddCustomBuildFileToFilter(filter, 
-                                           m_Configs, 
+                                           project_configs, 
                                            project_context.ProjectDir(), 
                                            build_info);
             }
@@ -605,6 +613,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/03/18 22:44:26  gorelenk
+ * Changed implementation of CMsvcProjectGenerator::Generate - implemented
+ * custom builds only in available configurations.
+ *
  * Revision 1.28  2004/03/16 21:26:26  gorelenk
  * Added generation dependencies from $(InputDir)$(InputName).def
  * to s_CreateDatatoolCustomBuildInfo.
