@@ -109,6 +109,16 @@ ICache* CDBAPI_BlobCacheCF::CreateInstance(
     if (!params)
         return drv.release();
 
+    const string& tree_id = params->GetId();
+    if (NStr::CompareNocase(tree_id, kDBAPI_BlobCacheDriverName) != 0) {
+        LOG_POST(Warning 
+          << "ICache class factory: Top level Id does not match driver name." 
+          << " Id = " << tree_id << " driver=" << kDBAPI_BlobCacheDriverName 
+          << " parameters ignored." );
+
+        return drv.release();
+    }
+
     // cache configuration
 
     const string& conn_str =
@@ -171,6 +181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/07/27 13:55:09  kuznets
+ * Improved parameters recognition in CF
+ *
  * Revision 1.2  2004/07/26 19:18:12  kuznets
  * Class factory: supported no-params instantiation
  *

@@ -1382,36 +1382,48 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         return 0;
     }
 
-    if (params) {
+    if (!params)
+        return drv.release();
 
-        // cache configuration
+    const string& tree_id = params->GetId();
+    if (NStr::CompareNocase(tree_id, kBDBCacheDriverName) != 0) {
+        LOG_POST(Warning 
+            << "ICache class factory: Top level Id does not match driver name." 
+            << " Id = " << tree_id << " driver=" << kBDBCacheDriverName 
+            << " parameters ignored." );
 
-        const string& path = 
-            GetParam(params, kCFParam_path, true, kEmptyStr);
-        const string& name = 
-            GetParam(params, kCFParam_name, false, "lcache");
-        const string& locking = 
-            GetParam(params, kCFParam_lock, false, kCFParam_lock_default);
-
-        CBDB_Cache::ELockMode lock = CBDB_Cache::eNoLock;
-        if (NStr::CompareNocase(locking, kCFParam_lock_pid_lock) == 0) {
-            lock = CBDB_Cache::ePidLock;
-        }
-
-        const string& mem_size_str =
-            GetParam(params, kCFParam_mem_size, false, kEmptyStr);
-        unsigned mem_size = NStr::StringToUInt(mem_size_str);
-
-        const string& read_only =
-            GetParam(params, kCFParam_read_only, false, kEmptyStr);
-        bool ro = NStr::StringToBool(read_only);
-        if (ro) {
-            drv->OpenReadOnly(path.c_str(), name.c_str(), mem_size);
-        } else {
-            drv->Open(path.c_str(), name.c_str(), lock, mem_size);
-        }
-
+        return drv.release();
     }
+
+
+    // cache configuration
+
+    const string& path = 
+        GetParam(params, kCFParam_path, true, kEmptyStr);
+    const string& name = 
+        GetParam(params, kCFParam_name, false, "lcache");
+    const string& locking = 
+        GetParam(params, kCFParam_lock, false, kCFParam_lock_default);
+
+    CBDB_Cache::ELockMode lock = CBDB_Cache::eNoLock;
+    if (NStr::CompareNocase(locking, kCFParam_lock_pid_lock) == 0) {
+        lock = CBDB_Cache::ePidLock;
+    }
+
+    const string& mem_size_str =
+        GetParam(params, kCFParam_mem_size, false, kEmptyStr);
+    unsigned mem_size = NStr::StringToUInt(mem_size_str);
+
+    const string& read_only =
+        GetParam(params, kCFParam_read_only, false, kEmptyStr);
+    bool ro = NStr::StringToBool(read_only);
+    if (ro) {
+        drv->OpenReadOnly(path.c_str(), name.c_str(), mem_size);
+    } else {
+        drv->Open(path.c_str(), name.c_str(), lock, mem_size);
+    }
+
+    
     return drv.release();
 
 }
@@ -1442,6 +1454,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2004/07/27 13:54:55  kuznets
+ * Improved parameters recognition in CF
+ *
  * Revision 1.61  2004/07/26 19:20:21  kuznets
  * + support of class factory parameters
  *
