@@ -53,6 +53,8 @@ public:
     virtual CNcbiIstream& GetIStream(const string& data_id,
                                      size_t* blob_size = 0);
     virtual CNcbiOstream& CreateOStream(string& data_id);
+
+    virtual void RemoveData(const string& data_id);
     virtual void Reset();
 
 private:
@@ -87,6 +89,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/03/29 14:10:16  didenko
+ * + removing a date from the storage
+ *
  * Revision 1.5  2005/03/28 14:38:04  didenko
  * Cosmetics
  *

@@ -71,7 +71,6 @@ CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
     if (!reader.get()) {
         NCBI_THROW(CNetCacheNSStorageException,
                    eBlobNotFound, "Requested blob is not found.");
-        //return *(CNcbiIstream*)NULL;
     }
 
     m_IStream.reset(new CRStream(reader.release(), 0,0, 
@@ -100,11 +99,16 @@ CNcbiOstream& CNetCacheNSStorage::CreateOStream(string& key)
     if (!writer.get()) {
         NCBI_THROW(CNetScheduleStorageException,
                    eWriter, "Writer couldn't be created.");
-        //return *(CNcbiOstream*)NULL;
     }
     m_OStream.reset( new CWStream(writer.release(), 0,0, 
                                   CRWStreambuf::fOwnWriter));
     return *m_OStream;
+}
+
+void CNetCacheNSStorage::RemoveData(const string& data_id)
+{
+    if (!data_id.empty() && m_NCClient.get()) 
+        m_NCClient->Remove(data_id);
 }
 
 void CNetCacheNSStorage::Reset()
@@ -118,6 +122,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/29 14:10:54  didenko
+ * + removing a date from the storage
+ *
  * Revision 1.3  2005/03/28 14:40:39  didenko
  * Cosmetics
  *

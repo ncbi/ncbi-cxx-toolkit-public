@@ -179,6 +179,13 @@ public:
     ///
     void CancelJob(const string& job_key);
 
+    /// Remove a data blob from the storage
+    ///
+    /// @param data_key
+    ///     Blob key
+    ///
+    void RemoveDataBlob(const string& data_key);
+
     CNetScheduleClient&  GetNSClient() { return m_NSClient; }
     INetScheduleStorage& GetStorage()  { return m_NSStorage; }
 
@@ -204,8 +211,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/29 14:10:16  didenko
+ * + removing a date from the storage
+ *
  * Revision 1.2  2005/03/28 19:29:37  didenko
- * Got rid of a wornning on GCC
+ * Got rid of a warnning on GCC
  *
  * Revision 1.1  2005/03/25 16:23:43  didenko
  * Initail version

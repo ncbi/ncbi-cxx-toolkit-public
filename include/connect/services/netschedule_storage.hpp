@@ -58,7 +58,10 @@ public:
     virtual CNcbiIstream& GetIStream(const string& data_id, 
                                      size_t* blob_size = 0) = 0;
     virtual CNcbiOstream& CreateOStream(string& data_id) = 0;
+
+    virtual void RemoveData(const string& data_id) = 0;
     virtual void Reset() = 0;
+
 
 };
 
@@ -120,13 +123,15 @@ public:
         if (blob_size) *blob_size = 0;
         NCBI_THROW(CNetScheduleStorageException,
                    eReader, "Empty Storage reader.");
-   }
+    }
     CNcbiOstream& CreateOStream(string&)
     {
         NCBI_THROW(CNetScheduleStorageException,
                    eWriter, "Empty Storage writer.");
     }
-    void Reset() {};
+
+    virtual void RemoveData(const string& data_id) {}
+    virtual void Reset() {};
 };
 
 
@@ -137,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/03/29 14:10:16  didenko
+ * + removing a date from the storage
+ *
  * Revision 1.5  2005/03/28 16:49:00  didenko
  * Added virtual desturctors to all new interfaces to prevent memory leaks
  *
