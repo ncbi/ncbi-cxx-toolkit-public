@@ -648,18 +648,15 @@ void CNWAligner::SetScoreMatrix(const SNCBIPackedScoreMatrix* psm)
     }
     else { // assume IUPACna
         m_abc = g_nwaligner_nucleotides;
-	memset(&m_ScoreMatrix.s, m_Wms, sizeof m_ScoreMatrix.s);
-	// set diag to Wm except ambiguity symbols
-        unsigned char c1, c2;
-	const size_t kNuclSize = strlen(g_nwaligner_nucleotides);
-	for(size_t i = 0; i < kNuclSize; ++i) {
-	    c1 = g_nwaligner_nucleotides[i];
-	    for(size_t j = 0; j < i; ++j) {
-	        c2 = g_nwaligner_nucleotides[j];
-		m_ScoreMatrix.s[c1][c2] = m_ScoreMatrix.s[c2][c1] = m_Wms;
-	    }
-	    m_ScoreMatrix.s[c1][c1] = i < 4? m_Wm: m_Wms;
-	}
+        const size_t dim = strlen(m_abc);
+        TNCBIScore iupacna[dim][dim];
+        memset(iupacna, m_Wms, sizeof(TNCBIScore)*dim*dim);
+        iupacna[0][0] = iupacna[1][1] = iupacna[2][2] = iupacna[3][3] = m_Wm;
+        SNCBIPackedScoreMatrix iupacna_psm;
+        iupacna_psm.symbols = g_nwaligner_nucleotides;
+        iupacna_psm.scores = (TNCBIScore*)iupacna;
+        iupacna_psm.defscore = m_Wms;
+	NCBISM_Unpack(&iupacna_psm, &m_ScoreMatrix);        
     }
 }
 
@@ -1110,6 +1107,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2004/08/30 16:29:30  kapustin
+ * Use the NCBI packed score matrix to initialize the unpacked matrix for nucleotides
+ *
  * Revision 1.54  2004/08/19 20:33:45  papadopo
  * mark lower-case and raw numerical characters as valid sequence data
  *
