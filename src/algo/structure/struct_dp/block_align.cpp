@@ -71,7 +71,7 @@ public:
     typedef vector < ResidueRow > Grid;
     Grid grid;
     Matrix(unsigned int nBlocks, unsigned int nResidues) : grid(nBlocks + 1)
-        { for (unsigned int i=0; i<nBlocks; i++) grid[i].resize(nResidues + 1); }
+        { for (unsigned int i=0; i<nBlocks; ++i) grid[i].resize(nResidues + 1); }
     ResidueRow& operator [] (unsigned int block) { return grid[block]; }
     const ResidueRow& operator [] (unsigned int block) const { return grid[block]; }
 };
@@ -87,7 +87,7 @@ int ValidateFrozenBlockPositions(const DP_BlockInfo *blocks,
         prevFrozenBlock = NONE,
         maxGapsLength = 0;
 
-    for (block=0; block<blocks->nBlocks; block++) {
+    for (block=0; block<blocks->nBlocks; ++block) {
 
         /* keep track of max gap space between frozen blocks */
         if (block > 0)
@@ -156,7 +156,7 @@ int CalculateGlobalMatrix(Matrix& matrix,
 
     // find possible block positions, based purely on block lengths
     vector < unsigned int > firstPos(blocks->nBlocks), lastPos(blocks->nBlocks);
-    for (block=0; block<=lastBlock; block++) {
+    for (block=0; block<=lastBlock; ++block) {
         if (block == 0) {
             firstPos[0] = queryFrom;
             lastPos[lastBlock] = queryTo - blocks->blockSizes[lastBlock] + 1;
@@ -168,7 +168,7 @@ int CalculateGlobalMatrix(Matrix& matrix,
     }
 
     // further restrict the search if blocks are frozen
-    for (block=0; block<=lastBlock; block++) {
+    for (block=0; block<=lastBlock; ++block) {
         if (blocks->freezeBlocks[block] != DP_UNFROZEN_BLOCK) {
             if (blocks->freezeBlocks[block] < firstPos[block] ||
                 blocks->freezeBlocks[block] > lastPos[block])
@@ -182,16 +182,16 @@ int CalculateGlobalMatrix(Matrix& matrix,
     }
 
     // fill in first row with scores of first block at all possible positions
-    for (residue=firstPos[0]; residue<=lastPos[0]; residue++)
+    for (residue=firstPos[0]; residue<=lastPos[0]; ++residue)
         matrix[0][residue - queryFrom].score = BlockScore(0, residue);
 
     // for each successive block, find the best allowed pairing of the block with the previous block
     bool blockScoreCalculated;
-    for (block=1; block<=lastBlock; block++) {
-        for (residue=firstPos[block]; residue<=lastPos[block]; residue++) {
+    for (block=1; block<=lastBlock; ++block) {
+        for (residue=firstPos[block]; residue<=lastPos[block]; ++residue) {
             blockScoreCalculated = false;
 
-            for (prevResidue=firstPos[block - 1]; prevResidue<=lastPos[block - 1]; prevResidue++) {
+            for (prevResidue=firstPos[block - 1]; prevResidue<=lastPos[block - 1]; ++prevResidue) {
 
                 // current block must come after the previous block
                 if (residue < prevResidue + blocks->blockSizes[block - 1])
@@ -239,7 +239,7 @@ int CalculateGlobalMatrixGeneric(Matrix& matrix,
 
     // find possible block positions, based purely on block lengths
     vector < unsigned int > firstPos(blocks->nBlocks), lastPos(blocks->nBlocks);
-    for (block=0; block<=lastBlock; block++) {
+    for (block=0; block<=lastBlock; ++block) {
         if (block == 0) {
             firstPos[0] = queryFrom;
             lastPos[lastBlock] = queryTo - blocks->blockSizes[lastBlock] + 1;
@@ -251,7 +251,7 @@ int CalculateGlobalMatrixGeneric(Matrix& matrix,
     }
 
     // further restrict the search if blocks are frozen
-    for (block=0; block<=lastBlock; block++) {
+    for (block=0; block<=lastBlock; ++block) {
         if (blocks->freezeBlocks[block] != DP_UNFROZEN_BLOCK) {
             if (blocks->freezeBlocks[block] < firstPos[block] ||
                 blocks->freezeBlocks[block] > lastPos[block])
@@ -265,16 +265,16 @@ int CalculateGlobalMatrixGeneric(Matrix& matrix,
     }
 
     // fill in first row with scores of first block at all possible positions
-    for (residue=firstPos[0]; residue<=lastPos[0]; residue++)
+    for (residue=firstPos[0]; residue<=lastPos[0]; ++residue)
         matrix[0][residue - queryFrom].score = BlockScore(0, residue);
 
     // for each successive block, find the best allowed pairing of the block with the previous block
     bool blockScoreCalculated;
-    for (block=1; block<=lastBlock; block++) {
-        for (residue=firstPos[block]; residue<=lastPos[block]; residue++) {
+    for (block=1; block<=lastBlock; ++block) {
+        for (residue=firstPos[block]; residue<=lastPos[block]; ++residue) {
             blockScoreCalculated = false;
 
-            for (prevResidue=firstPos[block - 1]; prevResidue<=lastPos[block - 1]; prevResidue++) {
+            for (prevResidue=firstPos[block - 1]; prevResidue<=lastPos[block - 1]; ++prevResidue) {
 
                 // current block must come after the previous block
                 if (residue < prevResidue + blocks->blockSizes[block - 1])
@@ -326,7 +326,7 @@ int CalculateLocalMatrix(Matrix& matrix,
 
     // find last possible block positions, based purely on block lengths
     vector < unsigned int > lastPos(blocks->nBlocks);
-    for (block=0; block<=lastBlock; block++) {
+    for (block=0; block<=lastBlock; ++block) {
         if (blocks->blockSizes[block] > queryTo - queryFrom + 1) {
             ERROR_MESSAGE("Block " << (block+1) << " too large for this query range");
             return STRUCT_DP_PARAMETER_ERROR;
@@ -335,20 +335,20 @@ int CalculateLocalMatrix(Matrix& matrix,
     }
 
     // first row: positive scores of first block at all possible positions
-    for (residue=queryFrom; residue<=lastPos[0]; residue++) {
+    for (residue=queryFrom; residue<=lastPos[0]; ++residue) {
         score = BlockScore(0, residue);
         matrix[0][residue - queryFrom].score = (score > 0) ? score : 0;
     }
 
     // first column: positive scores of all blocks at first positions
-    for (block=1; block<=lastBlock; block++) {
+    for (block=1; block<=lastBlock; ++block) {
         score = BlockScore(block, queryFrom);
         matrix[block][0].score = (score > 0) ? score : 0;
     }
 
     // for each successive block, find the best positive scoring with a previous block, if any
-    for (block=1; block<=lastBlock; block++) {
-        for (residue=queryFrom+1; residue<=lastPos[block]; residue++) {
+    for (block=1; block<=lastBlock; ++block) {
+        for (residue=queryFrom+1; residue<=lastPos[block]; ++residue) {
 
             // get score at this position
             score = BlockScore(block, residue);
@@ -357,7 +357,7 @@ int CalculateLocalMatrix(Matrix& matrix,
 
             // find max score of any allowed previous block
             bestPrevScore = DP_NEGATIVE_INFINITY;
-            for (prevResidue=queryFrom; prevResidue<=lastPos[block - 1]; prevResidue++) {
+            for (prevResidue=queryFrom; prevResidue<=lastPos[block - 1]; ++prevResidue) {
 
                 // current block must come after the previous block
                 if (residue < prevResidue + blocks->blockSizes[block - 1])
@@ -400,7 +400,7 @@ int CalculateLocalMatrixGeneric(Matrix& matrix,
 
     // find last possible block positions, based purely on block lengths
     vector < unsigned int > lastPos(blocks->nBlocks);
-    for (block=0; block<=lastBlock; block++) {
+    for (block=0; block<=lastBlock; ++block) {
         if (blocks->blockSizes[block] > queryTo - queryFrom + 1) {
             ERROR_MESSAGE("Block " << (block+1) << " too large for this query range");
             return STRUCT_DP_PARAMETER_ERROR;
@@ -409,20 +409,20 @@ int CalculateLocalMatrixGeneric(Matrix& matrix,
     }
 
     // first row: positive scores of first block at all possible positions
-    for (residue=queryFrom; residue<=lastPos[0]; residue++) {
+    for (residue=queryFrom; residue<=lastPos[0]; ++residue) {
         score = BlockScore(0, residue);
         matrix[0][residue - queryFrom].score = (score > 0) ? score : 0;
     }
 
     // first column: positive scores of all blocks at first positions
-    for (block=1; block<=lastBlock; block++) {
+    for (block=1; block<=lastBlock; ++block) {
         score = BlockScore(block, queryFrom);
         matrix[block][0].score = (score > 0) ? score : 0;
     }
 
     // for each successive block, find the best positive scoring with a previous block, if any
-    for (block=1; block<=lastBlock; block++) {
-        for (residue=queryFrom+1; residue<=lastPos[block]; residue++) {
+    for (block=1; block<=lastBlock; ++block) {
+        for (residue=queryFrom+1; residue<=lastPos[block]; ++residue) {
 
             // get score at this position
             score = BlockScore(block, residue);
@@ -431,7 +431,7 @@ int CalculateLocalMatrixGeneric(Matrix& matrix,
 
             // find max score of any allowed previous block
             bestPrevScore = DP_NEGATIVE_INFINITY;
-            for (prevResidue=queryFrom; prevResidue<=lastPos[block - 1]; prevResidue++) {
+            for (prevResidue=queryFrom; prevResidue<=lastPos[block - 1]; ++prevResidue) {
 
                 // current block must come after the previous block
                 if (residue < prevResidue + blocks->blockSizes[block - 1])
@@ -478,7 +478,7 @@ int TracebackAlignment(const Matrix& matrix, unsigned int lastBlock, unsigned in
     do {
         blockPositions.push_back(pos);  // list is backwards after this...
         pos = matrix[block][pos - queryFrom].tracebackResidue;
-        block--;
+        --block;
     } while (pos != NO_TRACEBACK);
     unsigned int firstBlock = block + 1; // last block traced to == first block of the alignment
 
@@ -487,7 +487,7 @@ int TracebackAlignment(const Matrix& matrix, unsigned int lastBlock, unsigned in
     alignment->firstBlock = firstBlock;
     alignment->nBlocks = blockPositions.size();
     alignment->blockPositions = new unsigned int[blockPositions.size()];
-    for (block=0; block<blockPositions.size(); block++)
+    for (block=0; block<blockPositions.size(); ++block)
         alignment->blockPositions[block] = blockPositions[lastBlock - firstBlock - block];
 
     return STRUCT_DP_FOUND_ALIGNMENT;
@@ -506,7 +506,7 @@ int TracebackGlobalAlignment(const Matrix& matrix,
     // find max score (e.g., best-scoring position of last block)
     int score = DP_NEGATIVE_INFINITY;
     unsigned int residue, lastBlockPos = 0;
-    for (residue=queryFrom; residue<=queryTo; residue++) {
+    for (residue=queryFrom; residue<=queryTo; ++residue) {
         if (matrix[blocks->nBlocks - 1][residue - queryFrom].score > score) {
             score = matrix[blocks->nBlocks - 1][residue - queryFrom].score;
             lastBlockPos = residue;
@@ -536,8 +536,8 @@ int TracebackLocalAlignment(const Matrix& matrix,
     // find max score (e.g., best-scoring position of any block)
     int score = DP_NEGATIVE_INFINITY;
     unsigned int block, residue, lastBlock = 0, lastBlockPos = 0;
-    for (block=0; block<blocks->nBlocks; block++) {
-        for (residue=queryFrom; residue<=queryTo; residue++) {
+    for (block=0; block<blocks->nBlocks; ++block) {
+        for (residue=queryFrom; residue<=queryTo; ++residue) {
             if (matrix[block][residue - queryFrom].score > score) {
                 score = matrix[block][residue - queryFrom].score;
                 lastBlock = block;
@@ -573,7 +573,7 @@ int TracebackMultipleLocalAlignments(const Matrix& matrix,
 
     unsigned int block, residue;
     vector < vector < bool > > usedCells(blocks->nBlocks);
-    for (block=0; block<blocks->nBlocks; block++)
+    for (block=0; block<blocks->nBlocks; ++block)
         usedCells[block].resize(queryTo - queryFrom + 1, false);
 
     // find N max scores
@@ -583,8 +583,8 @@ int TracebackMultipleLocalAlignments(const Matrix& matrix,
         // find next best scoring cell that's not part of an alignment already reported
         int score = DP_NEGATIVE_INFINITY;
         unsigned int lastBlock = 0, lastBlockPos = 0;
-        for (block=0; block<blocks->nBlocks; block++) {
-            for (residue=queryFrom; residue<=queryTo; residue++) {
+        for (block=0; block<blocks->nBlocks; ++block) {
+            for (residue=queryFrom; residue<=queryTo; ++residue) {
                 if (!usedCells[block][residue - queryFrom] &&
                     matrix[block][residue - queryFrom].score > score)
                 {
@@ -610,7 +610,7 @@ int TracebackMultipleLocalAlignments(const Matrix& matrix,
                 usedCells[block][residue - queryFrom] = true;
             }
             residue = matrix[block][residue - queryFrom].tracebackResidue;
-            block--;
+            --block;
         } while (residue != NO_TRACEBACK);
         if (repeated)
             continue;
@@ -631,16 +631,16 @@ int TracebackMultipleLocalAlignments(const Matrix& matrix,
     (*alignments)->nAlignments = 0;
     (*alignments)->alignments = new DP_AlignmentResult[tracebacks.size()];
     unsigned int a;
-    for (a=0; a<tracebacks.size(); a++)
+    for (a=0; a<tracebacks.size(); ++a)
         (*alignments)->alignments[a].blockPositions = NULL;
 
     // fill in results from tracebacks
     list < Traceback >::const_iterator t, te = tracebacks.end();
-    for (t=tracebacks.begin(), a=0; t!=te; t++, a++) {
+    for (t=tracebacks.begin(), a=0; t!=te; ++t, ++a) {
         if (TracebackAlignment(matrix, t->block, t->residue, queryFrom, &((*alignments)->alignments[a]))
                 == STRUCT_DP_FOUND_ALIGNMENT)
         {
-            (*alignments)->nAlignments++;
+            ++((*alignments)->nAlignments);
 //            if (a == 0)
 //                INFO_MESSAGE("Score of best local alignment: " << (*alignments)->alignments[a].score);
 //            else
@@ -671,7 +671,7 @@ int DP_GlobalBlockAlign(
     }
 
     unsigned int i, sumBlockLen = 0;
-    for (i=0; i<blocks->nBlocks; i++)
+    for (i=0; i<blocks->nBlocks; ++i)
         sumBlockLen += blocks->blockSizes[i];
     if (sumBlockLen > queryTo - queryFrom + 1) {
         ERROR_MESSAGE("DP_GlobalBlockAlign() - sum of block lengths longer than query region");
@@ -708,7 +708,7 @@ int DP_GlobalBlockAlignGeneric(
     }
 
     unsigned int i, sumBlockLen = 0;
-    for (i=0; i<blocks->nBlocks; i++)
+    for (i=0; i<blocks->nBlocks; ++i)
         sumBlockLen += blocks->blockSizes[i];
     if (sumBlockLen > queryTo - queryFrom + 1) {
         ERROR_MESSAGE("DP_GlobalBlockAlignGeneric() - sum of block lengths longer than query region");
@@ -741,7 +741,7 @@ int DP_LocalBlockAlign(
         ERROR_MESSAGE("DP_LocalBlockAlign() - invalid parameters");
         return STRUCT_DP_PARAMETER_ERROR;
     }
-    for (unsigned int block=0; block<blocks->nBlocks; block++) {
+    for (unsigned int block=0; block<blocks->nBlocks; ++block) {
         if (blocks->freezeBlocks[block] != DP_UNFROZEN_BLOCK) {
             WARNING_MESSAGE("DP_LocalBlockAlign() - frozen block specifications are ignored...");
             break;
@@ -768,7 +768,7 @@ int DP_LocalBlockAlignGeneric(
         ERROR_MESSAGE("DP_LocalBlockAlignGeneric() - invalid parameters");
         return STRUCT_DP_PARAMETER_ERROR;
     }
-    for (unsigned int block=0; block<blocks->nBlocks; block++) {
+    for (unsigned int block=0; block<blocks->nBlocks; ++block) {
         if (blocks->freezeBlocks[block] != DP_UNFROZEN_BLOCK) {
             WARNING_MESSAGE("DP_LocalBlockAlignGeneric() - frozen block specifications are ignored...");
             break;
@@ -795,7 +795,7 @@ int DP_MultipleLocalBlockAlign(
         ERROR_MESSAGE("DP_MultipleLocalBlockAlign() - invalid parameters");
         return STRUCT_DP_PARAMETER_ERROR;
     }
-    for (unsigned int block=0; block<blocks->nBlocks; block++) {
+    for (unsigned int block=0; block<blocks->nBlocks; ++block) {
         if (blocks->freezeBlocks[block] != DP_UNFROZEN_BLOCK) {
             WARNING_MESSAGE("DP_MultipleLocalBlockAlign() - frozen block specifications are ignored...");
             break;
@@ -822,7 +822,7 @@ int DP_MultipleLocalBlockAlignGeneric(
         ERROR_MESSAGE("DP_MultipleLocalBlockAlignGeneric() - invalid parameters");
         return STRUCT_DP_PARAMETER_ERROR;
     }
-    for (unsigned int block=0; block<blocks->nBlocks; block++) {
+    for (unsigned int block=0; block<blocks->nBlocks; ++block) {
         if (blocks->freezeBlocks[block] != DP_UNFROZEN_BLOCK) {
             WARNING_MESSAGE("DP_MultipleLocalBlockAlignGeneric() - frozen block specifications are ignored...");
             break;
@@ -848,7 +848,7 @@ DP_BlockInfo * DP_CreateBlockInfo(unsigned int nBlocks)
     blocks->blockSizes = new unsigned int[nBlocks];
     blocks->maxLoops = new unsigned int[nBlocks - 1];
     blocks->freezeBlocks = new unsigned int[nBlocks];
-    for (unsigned int i=0; i<nBlocks; i++)
+    for (unsigned int i=0; i<nBlocks; ++i)
         blocks->freezeBlocks[i] = DP_UNFROZEN_BLOCK;
     return blocks;
 }
@@ -875,7 +875,7 @@ void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment)
 void DP_DestroyMultipleAlignmentResults(DP_MultipleAlignmentResults *alignments)
 {
     if (!alignments) return;
-    for (unsigned int i=0; i<alignments->nAlignments; i++)
+    for (unsigned int i=0; i<alignments->nAlignments; ++i)
         if (alignments->alignments[i].blockPositions)
             delete[] alignments->alignments[i].blockPositions;
     delete[] alignments->alignments;
@@ -888,7 +888,7 @@ unsigned int DP_CalculateMaxLoopLength(
 {
     vector < unsigned int > loopLengths(nLoops);
     unsigned int index, max;
-    for (index=0; index<nLoops; index++)
+    for (index=0; index<nLoops; ++index)
         loopLengths[index] = loops[index];
 
     stable_sort(loopLengths.begin(), loopLengths.end());
@@ -909,6 +909,9 @@ unsigned int DP_CalculateMaxLoopLength(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/03/15 18:54:57  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.18  2004/02/19 02:21:19  thiessen
 * fix struct_dp paths
 *

@@ -146,11 +146,11 @@ static bool VerifyAlignmentData(const AlignmentSet *alignmentSet, const Alignmen
     char masterChar, slaveChar;
     const MasterSlaveAlignment *alignment;
 
-    for (int i=0; i<alignmentSet->alignments.size(); i++) {
+    for (int i=0; i<alignmentSet->alignments.size(); ++i) {
         masterLoc = slaveLoc = -1;
         alignment = alignmentSet->alignments[i];
 
-        for (alnLoc=0; alnLoc<display->GetWidth(); alnLoc++) {
+        for (alnLoc=0; alnLoc<display->GetWidth(); ++alnLoc) {
 
             // get and check characters
             masterChar = display->GetCharAt(alnLoc, 0);
@@ -166,7 +166,7 @@ static bool VerifyAlignmentData(const AlignmentSet *alignmentSet, const Alignmen
 
             // advance seqLocs, check sequence string length and composition
             if (!IsGap(masterChar)) {
-                masterLoc++;
+                ++masterLoc;
                 if (i == 0) {   // only need to check master once
                     if (masterLoc >= alignment->master->sequenceString.size()) {
                         ERR_POST(Error << "master sequence too long at alnLoc " << alnLoc
@@ -180,7 +180,7 @@ static bool VerifyAlignmentData(const AlignmentSet *alignmentSet, const Alignmen
                 }
             }
             if (!IsGap(slaveChar)) {
-                slaveLoc++;
+                ++slaveLoc;
                 if (slaveLoc >= alignment->slave->sequenceString.size()) {
                     ERR_POST(Error << "slave sequence too long at alnLoc " << alnLoc
                         << " row " << (i+1) << "slaveLoc" << slaveLoc);
@@ -394,6 +394,9 @@ int CAV_DisplayMultiple(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/03/15 18:51:27  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.2  2003/06/02 16:06:41  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

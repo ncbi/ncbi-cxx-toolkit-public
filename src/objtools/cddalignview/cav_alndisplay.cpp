@@ -63,7 +63,7 @@ static const string
 static string StrToLower(const string& str)
 {
     string newStr(str);
-    for (int i=0; i<newStr.size(); i++) newStr[i] = tolower(newStr[i]);
+    for (int i=0; i<newStr.size(); ++i) newStr[i] = tolower(newStr[i]);
     return newStr;
 }
 
@@ -90,12 +90,12 @@ AlignmentDisplay::AlignmentDisplay(const SequenceSet *sequenceSet, const Alignme
     indexAlnLocToSeqLocRows.push_back(
         new IndexAlnLocToSeqLocRow(sequenceSet->master, sequenceSet->master->sequenceString.size()));
     int l;
-    for (l=0; l<sequenceSet->master->sequenceString.size(); l++)
+    for (l=0; l<sequenceSet->master->sequenceString.size(); ++l)
         indexAlnLocToSeqLocRows[0]->SetSeqLocAt(l, l);
 
     // loop through alignments - one new row for each alignment
     AlignmentSet::AlignmentList::const_iterator a, ae = alignmentSet->alignments.end();
-    for (a=alignmentSet->alignments.begin(); a!=ae; a++) {
+    for (a=alignmentSet->alignments.begin(); a!=ae; ++a) {
 
         // add index row for each slave that contains only Sequence* for now
         indexAlnLocToSeqLocRows.push_back(new IndexAlnLocToSeqLocRow((*a)->slave));
@@ -110,7 +110,7 @@ AlignmentDisplay::AlignmentDisplay(const SequenceSet *sequenceSet, const Alignme
         //      coordinates of the aligned slave residues on either side
         int prevAlignedSlaveSeqLoc = -1, prevAlignedSlaveAlnLoc = -1;
         IntervalList intervalList;
-        for (int alnLoc=0; alnLoc<=GetWidth(); alnLoc++) {
+        for (int alnLoc=0; alnLoc<=GetWidth(); ++alnLoc) {
 
             int masterSeqLoc = -1, alignedSlaveSeqLoc = -1;
 
@@ -149,7 +149,7 @@ AlignmentDisplay::AlignmentDisplay(const SequenceSet *sequenceSet, const Alignme
         // there isn't enough space, then add gaps to all prior alignments.
         IntervalList::iterator i, ie = intervalList.end();
         int alnLocOffset = 0;   // to track # inserted columns
-        for (i=intervalList.begin(); i!=ie; i++) {
+        for (i=intervalList.begin(); i!=ie; ++i) {
 
             // compensate for inserted columns in display
             i->alnLocBefore += alnLocOffset;
@@ -179,7 +179,7 @@ AlignmentDisplay::AlignmentDisplay(const SequenceSet *sequenceSet, const Alignme
             }
 
             // fill in unaligned regions with lowercase, right-justifying only for left tail
-            for (l=0; l<unalignedLength; l++) {
+            for (l=0; l<unalignedLength; ++l) {
                 textRows.back()->SetCharAt(
                     i->alnLocBefore + 1 + ((i->seqLocFrom == 0) ? l + extraSpace : l),
                     tolower((*a)->slave->sequenceString[i->seqLocFrom + l]));
@@ -203,12 +203,12 @@ AlignmentDisplay::AlignmentDisplay(const SequenceSet *sequenceSet, const Alignme
     // find first and last aligned master residues (in alignment coords)
     firstAlnLoc = GetWidth();
     lastAlnLoc = -1;
-    for (l=0; l<GetWidth(); l++)
+    for (l=0; l<GetWidth(); ++l)
         if (IsAligned(textRows[0]->GetCharAt(l))) {
             firstAlnLoc = l;
             break;
         }
-    for (l=GetWidth()-1; l>=0; l--)
+    for (l=GetWidth()-1; l>=0; --l)
         if (IsAligned(textRows[0]->GetCharAt(l))) {
             lastAlnLoc = l;
             break;
@@ -222,8 +222,8 @@ AlignmentDisplay::AlignmentDisplay(const SequenceSet *sequenceSet, const Alignme
 AlignmentDisplay::~AlignmentDisplay()
 {
     int i;
-    for (i=0; i<indexAlnLocToSeqLocRows.size(); i++) delete indexAlnLocToSeqLocRows[i];
-    for (i=0; i<textRows.size(); i++) delete textRows[i];
+    for (i=0; i<indexAlnLocToSeqLocRows.size(); ++i) delete indexAlnLocToSeqLocRows[i];
+    for (i=0; i<textRows.size(); ++i) delete textRows[i];
 }
 
 // shift unaligned residues as far as possible to the left
@@ -231,18 +231,18 @@ void AlignmentDisplay::ShiftUnalignedLeft(void)
 {
     int gapLoc, resLoc;
 
-    for (int row=0; row<GetNRows(); row++) {
+    for (int row=0; row<GetNRows(); ++row) {
 
         gapLoc = 0;
         while (gapLoc < GetWidth()) {
 
             // find a gap
-            while (gapLoc < GetWidth() && !IsGap(textRows[row]->GetCharAt(gapLoc))) gapLoc++;
+            while (gapLoc < GetWidth() && !IsGap(textRows[row]->GetCharAt(gapLoc))) ++gapLoc;
             if (gapLoc == GetWidth()) break;
 
             // find the next unaligned residue
             resLoc = gapLoc + 1;
-            while (resLoc < GetWidth() && IsGap(textRows[row]->GetCharAt(resLoc))) resLoc++;
+            while (resLoc < GetWidth() && IsGap(textRows[row]->GetCharAt(resLoc))) ++resLoc;
             if (resLoc == GetWidth()) break;
             if (!IsUnaligned(textRows[row]->GetCharAt(resLoc))) {
                 gapLoc = resLoc + 1;
@@ -271,14 +271,14 @@ void AlignmentDisplay::Squeeze(void)
     int alnLoc, lastAlignedLoc;
     for (lastAlignedLoc=GetWidth()-2;
          lastAlignedLoc>=0 && !IsAligned(textRows[0]->GetCharAt(lastAlignedLoc));
-         lastAlignedLoc--) ;
+         --lastAlignedLoc) ;
     ERR_POST(Info << "checking for squeeze up to " << (lastAlignedLoc+1));
 
-    for (alnLoc=0; alnLoc<=lastAlignedLoc+1; alnLoc++) {
+    for (alnLoc=0; alnLoc<=lastAlignedLoc+1; ++alnLoc) {
 
         // check to see whether each row is squeezable at this location
         int row, nGaps, minNGaps = GetWidth();
-        for (row=0; row<GetNRows(); row++) {
+        for (row=0; row<GetNRows(); ++row) {
             if (!textRows[row]->IsSqueezable(alnLoc, &nGaps, &(squeezeLocs[row]), minNGaps))
                 break;
             if (nGaps < minNGaps) minNGaps = nGaps;
@@ -287,14 +287,14 @@ void AlignmentDisplay::Squeeze(void)
         // if all rows are squeezable, then do the squeeze
         if (row == GetNRows()) {
             ERR_POST(Info << "squeezing " << minNGaps << " gaps at loc " << alnLoc);
-            for (row=0; row<GetNRows(); row++)
+            for (row=0; row<GetNRows(); ++row)
                 textRows[row]->DeleteGaps(minNGaps, squeezeLocs[row]);
             lastAlignedLoc -= minNGaps; // account for shift of lastAlignedLoc
         }
 
         // after checking very first column, skip to first aligned loc to save time
         if (alnLoc == 0)
-            while (alnLoc<=lastAlignedLoc && !IsAligned(textRows[0]->GetCharAt(alnLoc))) alnLoc++;
+            while (alnLoc<=lastAlignedLoc && !IsAligned(textRows[0]->GetCharAt(alnLoc))) ++alnLoc;
     }
 }
 
@@ -307,17 +307,17 @@ void AlignmentDisplay::SplitUnaligned(void)
     int firstAligned, prevAligned, nextAligned, firstUnaligned, lastUnaligned;
     int nGaps, nShift, shiftRes, shiftGap, i;
 
-    for (int row=0; row<GetNRows(); row++) {
+    for (int row=0; row<GetNRows(); ++row) {
 
         // find first aligned loc; count gaps up to there
         nGaps = 0;
-        for (i=0; i<GetWidth()-2 && !IsAligned(textRows[row]->GetCharAt(i)); i++)
-             if (IsGap(textRows[row]->GetCharAt(i))) nGaps++;
+        for (i=0; i<GetWidth()-2 && !IsAligned(textRows[row]->GetCharAt(i)); ++i)
+             if (IsGap(textRows[row]->GetCharAt(i))) ++nGaps;
         firstAligned = i;
 
         // right-shift left tails
         if (nGaps > 0) {
-            for (i=0; i<firstAligned-nGaps; i++) {
+            for (i=0; i<firstAligned-nGaps; ++i) {
                 textRows[row]->SetCharAt(firstAligned-1-i, textRows[row]->GetCharAt(firstAligned-1-nGaps-i));
                 textRows[row]->SetCharAt(firstAligned-1-nGaps-i, '-');
             }
@@ -329,7 +329,7 @@ void AlignmentDisplay::SplitUnaligned(void)
             // find aligned res immediately followed by unaligned
             if (!(IsAligned(textRows[row]->GetCharAt(prevAligned)) &&
                   IsUnaligned(textRows[row]->GetCharAt(prevAligned + 1)))) {
-                prevAligned++;
+                ++prevAligned;
                 continue;
             }
             firstUnaligned = prevAligned + 1;
@@ -338,13 +338,13 @@ void AlignmentDisplay::SplitUnaligned(void)
             for (lastUnaligned = firstUnaligned;
                  lastUnaligned < GetWidth()-1 &&
                     IsUnaligned(textRows[row]->GetCharAt(lastUnaligned + 1));
-                 lastUnaligned++) ;
+                 ++lastUnaligned) ;
 
             // find next aligned after this
             for (nextAligned = lastUnaligned + 1;
                  nextAligned < GetWidth() &&
                     !IsAligned(textRows[row]->GetCharAt(nextAligned));
-                 nextAligned++) ;
+                 ++nextAligned) ;
             if (nextAligned == GetWidth()) break;
 
             // shift over the right half of the unaligned stretch
@@ -353,7 +353,7 @@ void AlignmentDisplay::SplitUnaligned(void)
             if (nGaps > 0 && nShift > 0) {
                 shiftRes = lastUnaligned;
                 shiftGap = nextAligned - 1;
-                for (i=0; i<nShift; i++) {
+                for (i=0; i<nShift; ++i) {
                     textRows[row]->SetCharAt(shiftGap - i, textRows[row]->GetCharAt(shiftRes - i));
                     textRows[row]->SetCharAt(shiftRes - i, '-');
                 }
@@ -366,9 +366,9 @@ void AlignmentDisplay::SplitUnaligned(void)
 void AlignmentDisplay::InsertGaps(int nGaps, int beforePos)
 {
     int i;
-    for (i=0; i<indexAlnLocToSeqLocRows.size(); i++)
+    for (i=0; i<indexAlnLocToSeqLocRows.size(); ++i)
         indexAlnLocToSeqLocRows[i]->InsertGaps(nGaps, beforePos);
-    for (i=0; i<textRows.size(); i++)
+    for (i=0; i<textRows.size(); ++i)
         textRows[i]->InsertGaps(nGaps, beforePos);
 }
 
@@ -476,9 +476,9 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
     int i, featIndex, masterIndex;
     if (nFeatures > 0) {
         annotLocsByIndex.resize(nFeatures);
-        for (featIndex=0; featIndex<nFeatures; featIndex++) {
+        for (featIndex=0; featIndex<nFeatures; ++featIndex) {
             annotLocsByIndex[featIndex].resize(indexAlnLocToSeqLocRows[0]->sequence->Length(), false);
-            for (i=0; i<alnFeatures[featIndex].nLocations; i++) {
+            for (i=0; i<alnFeatures[featIndex].nLocations; ++i) {
                 masterIndex = alnFeatures[featIndex].locations[i];
                 if (masterIndex >= 0 && masterIndex < indexAlnLocToSeqLocRows[0]->sequence->Length())
                     annotLocsByIndex[featIndex][masterIndex] = true;
@@ -490,8 +490,8 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
     deque < CRef < CondensedColumn > > condensedColumns;
     int alnLoc, alnRow, row;
     bool isAlnRow;
-    for (alnLoc=firstCol; alnLoc<=lastCol; alnLoc++) {
-        for (alnRow=0; alnRow<GetNRows(); alnRow++)
+    for (alnLoc=firstCol; alnLoc<=lastCol; ++alnLoc) {
+        for (alnRow=0; alnRow<GetNRows(); ++alnRow)
             if (!IsAligned(textRows[alnRow]->GetCharAt(alnLoc))) break;
         bool alignedColumn = (alnRow == GetNRows());
         if (alignedColumn) {
@@ -506,7 +506,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
                     new CondensedColumnUnaligned(nDisplayRows, GetColumnColor(alnLoc, conservationThreshhold)));
             }
         }
-        for (row=0; row<nDisplayRows; row++) {
+        for (row=0; row<nDisplayRows; ++row) {
             if (options & CAV_ANNOT_BOTTOM) {
                 alnRow = row;
                 featIndex = row - GetNRows();
@@ -531,7 +531,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
     // set up the titles and uids, figure out how much space any seqLoc string will take
     vector < string > titles(nDisplayRows), uids(doHTML ? GetNRows() : 0);
     int maxTitleLength = 0, maxSeqLocStrLength = 0, leftMargin, decimalLength;
-    for (row=0; row<nDisplayRows; row++) {
+    for (row=0; row<nDisplayRows; ++row) {
         if (options & CAV_ANNOT_BOTTOM) {
             alnRow = row;
             featIndex = row - GetNRows();
@@ -576,9 +576,9 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
     // need to keep track of first, last seqLocs for each row in each paragraph;
     // find seqLoc of first residue >= firstCol
     vector < int > lastShownSeqLocs(GetNRows());
-    for (alnRow=0; alnRow<GetNRows(); alnRow++) {
+    for (alnRow=0; alnRow<GetNRows(); ++alnRow) {
         lastShownSeqLocs[alnRow] = -1;
-        for (alnLoc=0; alnLoc<firstCol; alnLoc++)
+        for (alnLoc=0; alnLoc<firstCol; ++alnLoc)
             if (!IsGap(textRows[alnRow]->GetCharAt(alnLoc))) lastShownSeqLocs[alnRow]++;
     }
 
@@ -593,7 +593,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
     ERR_POST(Info << "paragraph width: " << nColumns);
     for (paragraphStart=0;
          paragraphStart<condensedColumns.size();
-         paragraphStart+=nCondensedColumns, nParags++) {
+         paragraphStart+=nCondensedColumns, ++nParags) {
 
         // figure out how many condensed columns will fit in this paragraph
         int displayWidth = condensedColumns[paragraphStart]->GetDisplayWidth();
@@ -602,7 +602,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
             int columnWidth = condensedColumns[paragraphStart+nCondensedColumns]->GetDisplayWidth();
             if (displayWidth + columnWidth <= nColumns) {
                 displayWidth += columnWidth;
-                nCondensedColumns++;
+                ++nCondensedColumns;
             } else
                 break;
         }
@@ -614,7 +614,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
             if (paragraphStart > 0) os << '\n';
 
         // output each alignment row
-        for (row=0; row<nDisplayRows; row++) {
+        for (row=0; row<nDisplayRows; ++row) {
             if (options & CAV_ANNOT_BOTTOM) {
                 alnRow = row;
                 featIndex = row - GetNRows();
@@ -643,7 +643,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
             if (isAlnRow) {
                 // count displayed residues
                 int nDisplayedResidues = 0;
-                for (i=0; i<nCondensedColumns; i++)
+                for (i=0; i<nCondensedColumns; ++i)
                     nDisplayedResidues += condensedColumns[paragraphStart+i]->GetNResidues(row);
 
                 // left start pos (output 1-numbered for humans...)
@@ -656,7 +656,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
                 // dump sequence, applying color changes only when necessary
                 if (doHTML) {
                     string prevColor;
-                    for (i=0; i<nCondensedColumns; i++) {
+                    for (i=0; i<nCondensedColumns; ++i) {
                         string color = condensedColumns[paragraphStart+i]->GetColor();
                         if (color != prevColor) {
                             os << "</font><font color=" << color << '>';
@@ -666,7 +666,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
                     }
                     os << "</font>";
                 } else {
-                    for (i=0; i<nCondensedColumns; i++) {
+                    for (i=0; i<nCondensedColumns; ++i) {
                         condensedColumns[paragraphStart+i]->DumpRow(os, row);
                     }
                 }
@@ -690,7 +690,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
                 os << RIGHT_JUSTIFY << setw(maxSeqLocStrLength) << ' ' << ' ';
 
                 // do characters
-                for (i=0; i<nCondensedColumns; i++)
+                for (i=0; i<nCondensedColumns; ++i)
                     condensedColumns[paragraphStart+i]->DumpRow(os, row);
 
                 os << (doHTML ? "</font>\n" : "\n");
@@ -706,7 +706,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
     // add feature legend
     if (nFeatures > 0) {
         os << (doHTML ? "<BR>\n" : "\n");
-        for (featIndex=0; featIndex<nFeatures; featIndex++)
+        for (featIndex=0; featIndex<nFeatures; ++featIndex)
             if (alnFeatures[featIndex].description)
                 os << alnFeatures[featIndex].shortName << ": " << alnFeatures[featIndex].description
                    << (doHTML ? "<BR>\n" : "\n");
@@ -716,7 +716,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
 
     // additional sanity check on seqloc markers
     if (firstCol == 0 && lastCol == GetWidth()-1) {
-        for (alnRow=0; alnRow<GetNRows(); alnRow++) {
+        for (alnRow=0; alnRow<GetNRows(); ++alnRow) {
             if (lastShownSeqLocs[alnRow] !=
                     indexAlnLocToSeqLocRows[alnRow]->sequence->sequenceString.size()-1) {
                 ERR_POST(Error << "full display - seqloc markers don't add up");
@@ -750,7 +750,7 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
     vector < string > titles(nDisplayRows), uids(doHTML ? GetNRows() : 0);
     int row, featIndex, alnRow, maxTitleLength = 0, maxSeqLocStrLength = 0, leftMargin, decimalLength;
     bool isAlnRow;
-    for (row=0; row<nDisplayRows; row++) {
+    for (row=0; row<nDisplayRows; ++row) {
         if (options & CAV_ANNOT_BOTTOM) {
             alnRow = row;
             featIndex = row - GetNRows();
@@ -796,9 +796,9 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
     // find seqLoc of first residue >= firstCol
     vector < int > lastShownSeqLocs(GetNRows());
     int alnLoc;
-    for (alnRow=0; alnRow<GetNRows(); alnRow++) {
+    for (alnRow=0; alnRow<GetNRows(); ++alnRow) {
         lastShownSeqLocs[alnRow] = -1;
-        for (alnLoc=0; alnLoc<firstCol; alnLoc++)
+        for (alnLoc=0; alnLoc<firstCol; ++alnLoc)
             if (!IsGap(textRows[alnRow]->GetCharAt(alnLoc))) lastShownSeqLocs[alnRow]++;
     }
 
@@ -812,9 +812,9 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
     int i, masterIndex;
     if (nFeatures > 0) {
         annotLocsByIndex.resize(nFeatures);
-        for (featIndex=0; featIndex<nFeatures; featIndex++) {
+        for (featIndex=0; featIndex<nFeatures; ++featIndex) {
             annotLocsByIndex[featIndex].resize(indexAlnLocToSeqLocRows[0]->sequence->Length(), false);
-            for (i=0; i<alnFeatures[featIndex].nLocations; i++) {
+            for (i=0; i<alnFeatures[featIndex].nLocations; ++i) {
                 masterIndex = alnFeatures[featIndex].locations[i];
                 if (masterIndex >= 0 && masterIndex < indexAlnLocToSeqLocRows[0]->sequence->Length())
                     annotLocsByIndex[featIndex][masterIndex] = true;
@@ -825,7 +825,7 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
     // split alignment up into "paragraphs", each with nColumns
     if (doHTML) os << "<TABLE>\n";
     int paragraphStart, nParags = 0;
-    for (paragraphStart=0; (firstCol+paragraphStart)<=lastCol; paragraphStart+=nColumns, nParags++) {
+    for (paragraphStart=0; (firstCol+paragraphStart)<=lastCol; paragraphStart+=nColumns, ++nParags) {
 
         // start table row
         if (doHTML)
@@ -836,21 +836,21 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
         // do ruler
         int nMarkers = 0, width;
         if (doHTML) os << "<font color=" << rulerColor << '>';
-        for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
+        for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; ++i) {
             if ((paragraphStart+i+1)%10 == 0) {
                 if (nMarkers == 0)
                     width = leftMargin + i + 1;
                 else
                     width = 10;
                 os << RIGHT_JUSTIFY << setw(width) << (paragraphStart+i+1);
-                nMarkers++;
+                ++nMarkers;
             }
         }
         if (doHTML) os << "</font>";
         os << '\n';
         if (doHTML) os << "<font color=" << rulerColor << '>';
-        for (i=0; i<leftMargin; i++) os << ' ';
-        for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
+        for (i=0; i<leftMargin; ++i) os << ' ';
+        for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; ++i) {
             if ((paragraphStart+i+1)%10 == 0)
                 os << '|';
             else if ((paragraphStart+i+1)%5 == 0)
@@ -864,13 +864,13 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
         // get column colors
         vector < string > columnColors;
         if (doHTML)
-            for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++)
+            for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; ++i)
                 columnColors.resize(columnColors.size()+1,
                     GetColumnColor(firstCol+paragraphStart+i, conservationThreshhold));
 
         // output each alignment row
         int nDisplayedResidues;
-        for (row=0; row<nDisplayRows; row++) {
+        for (row=0; row<nDisplayRows; ++row) {
             if (options & CAV_ANNOT_BOTTOM) {
                 alnRow = row;
                 featIndex = row - GetNRows();
@@ -884,10 +884,10 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
             nDisplayedResidues = 0;
             string rowChars;
             if (isAlnRow) {
-                for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
+                for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; ++i) {
                     char ch = textRows[alnRow]->GetCharAt(firstCol+paragraphStart+i);
                     rowChars += ch;
-                    if (!IsGap(ch)) nDisplayedResidues++;
+                    if (!IsGap(ch)) ++nDisplayedResidues;
                 }
             }
 
@@ -918,7 +918,7 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
                 // dump sequence, applying color changes only when necessary
                 if (doHTML) {
                     string prevColor;
-                    for (i=0; i<rowChars.size(); i++) {
+                    for (i=0; i<rowChars.size(); ++i) {
                         if (columnColors[i] != prevColor) {
                             os << "</font><font color=" << columnColors[i] << '>';
                             prevColor = columnColors[i];
@@ -948,7 +948,7 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
                 os << RIGHT_JUSTIFY << setw(maxSeqLocStrLength) << ' ' << ' ';
 
                 // do characters, but only allow annot where master residue is aligned to something
-                for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
+                for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; ++i) {
                     if (IsAligned(textRows[0]->GetCharAt(firstCol+paragraphStart+i))) {
                         masterIndex = indexAlnLocToSeqLocRows[0]->GetSeqLocAt(firstCol+paragraphStart+i);
                         os << ((masterIndex >= 0 && annotLocsByIndex[featIndex][masterIndex])
@@ -970,7 +970,7 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
     // add feature legend
     if (nFeatures > 0) {
         os << (doHTML ? "<BR>\n" : "\n");
-        for (featIndex=0; featIndex<nFeatures; featIndex++)
+        for (featIndex=0; featIndex<nFeatures; ++featIndex)
             if (alnFeatures[featIndex].description)
                 os << alnFeatures[featIndex].shortName << ": " << alnFeatures[featIndex].description
                    << (doHTML ? "<BR>\n" : "\n");
@@ -980,7 +980,7 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
 
     // additional sanity check on seqloc markers
     if (firstCol == 0 && lastCol == GetWidth()-1) {
-        for (alnRow=0; alnRow<GetNRows(); alnRow++) {
+        for (alnRow=0; alnRow<GetNRows(); ++alnRow) {
             if (lastShownSeqLocs[alnRow] !=
                     indexAlnLocToSeqLocRows[alnRow]->sequence->sequenceString.size()-1) {
                 ERR_POST(Error << "full display - seqloc markers don't add up");
@@ -1003,7 +1003,7 @@ int AlignmentDisplay::DumpFASTA(int firstCol, int lastCol, int nColumns,
     }
 
     // output each alignment row
-    for (int row=0; row<GetNRows(); row++) {
+    for (int row=0; row<GetNRows(); ++row) {
 
         // create title line
         os << '>';
@@ -1036,8 +1036,8 @@ int AlignmentDisplay::DumpFASTA(int firstCol, int lastCol, int nColumns,
 
         // split alignment up into "paragraphs", each with nColumns
         int paragraphStart, nParags = 0, i;
-        for (paragraphStart=0; (firstCol+paragraphStart)<=lastCol; paragraphStart+=nColumns, nParags++) {
-            for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
+        for (paragraphStart=0; (firstCol+paragraphStart)<=lastCol; paragraphStart+=nColumns, ++nParags) {
+            for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; ++i) {
                 char ch = textRows[row]->GetCharAt(firstCol+paragraphStart+i);
                 if (!doLowercase) ch = toupper(ch);
                 os << ch;
@@ -1080,13 +1080,13 @@ const string& AlignmentDisplay::GetColumnColor(int alnLoc, double conservationTh
 
     // if this column isn't completely aligned, use plain color
     int row;
-    for (row=0; row<GetNRows(); row++)
+    for (row=0; row<GetNRows(); ++row)
         if (!IsAligned(textRows[row]->GetCharAt(alnLoc))) return plainColor;
 
     // create profile (residue frequencies) for this column
     Char2Double profile;
     Char2Double::iterator p, pe;
-    for (row=0; row<GetNRows(); row++) {
+    for (row=0; row<GetNRows(); ++row) {
         char ch = toupper(textRows[row]->GetCharAt(alnLoc));
         switch (ch) {
             case 'A': case 'R': case 'N': case 'D': case 'C':
@@ -1114,7 +1114,7 @@ const string& AlignmentDisplay::GetColumnColor(int alnLoc, double conservationTh
     // ... or calculate information content for this column (calculated in bits -> logs of base 2)
     double information = 0.0;
     pe = profile.end();
-    for (p=profile.begin(); p!=pe; p++) {
+    for (p=profile.begin(); p!=pe; ++p) {
         static const double ln2 = log(2.0), threshhold = 0.0001;
         double expFreq = StandardProbabilities[p->first];
         if (expFreq > threshhold) {
@@ -1152,7 +1152,7 @@ void TextRow::DeleteGaps(int nGaps, int startPos)
     }
 
     // check to make sure they're all gaps
-    for (int i=0; i<nGaps; i++) {
+    for (int i=0; i<nGaps; ++i) {
         if (!IsGap(chars[startPos + i])) {
             ERR_POST(Error << "TextRow::DeleteGaps() - trying to delete non-gap");
             return;
@@ -1172,12 +1172,12 @@ bool TextRow::IsSqueezable(int alnLoc, int *nGaps, int *startPos, int maxGaps) c
     }
 
     // skip unaligned residues
-    while (alnLoc < chars.size() && IsUnaligned(chars[alnLoc])) alnLoc++;
+    while (alnLoc < chars.size() && IsUnaligned(chars[alnLoc])) ++alnLoc;
     if (alnLoc == chars.size() || IsAligned(chars[alnLoc])) return false;
 
     // count gaps
     *startPos = alnLoc;
-    for (*nGaps=1, alnLoc++; alnLoc < chars.size() && IsGap(chars[alnLoc]); (*nGaps)++, alnLoc++)
+    for (*nGaps=1, ++alnLoc; alnLoc < chars.size() && IsGap(chars[alnLoc]); (*nGaps)++, ++alnLoc)
         if (*nGaps == maxGaps) break;
     return true;
 }
@@ -1199,7 +1199,7 @@ void IndexAlnLocToSeqLocRow::InsertGaps(int nGaps, int beforePos)
     }
 
     IntVec::iterator s = seqLocs.begin();
-    for (int i=0; i<beforePos; i++) s++;
+    for (int i=0; i<beforePos; ++i) ++s;
     seqLocs.insert(s, nGaps, -1);
 }
 
@@ -1207,7 +1207,7 @@ void IndexAlnLocToSeqLocRow::ReIndex(const TextRow& textRow)
 {
     seqLocs.resize(textRow.Length());
     int seqLoc = 0;
-    for (int i=0; i<textRow.Length(); i++) {
+    for (int i=0; i<textRow.Length(); ++i) {
         if (IsGap(textRow.GetCharAt(i)))
             seqLocs[i] = -1;
         else
@@ -1223,6 +1223,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/03/15 18:51:27  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.3  2003/11/15 13:16:04  thiessen
 * fix uid link urls
 *

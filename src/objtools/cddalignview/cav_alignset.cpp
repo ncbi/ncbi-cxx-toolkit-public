@@ -95,7 +95,7 @@ AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnno
 
     // first, make a list of alignments
     SeqAnnotList::const_iterator n, ne = seqAnnots.end();
-    for (n=seqAnnots.begin(); n!=ne; n++) {
+    for (n=seqAnnots.begin(); n!=ne; ++n) {
 
         if (!n->GetObject().GetData().IsAlign()) {
             ERR_POST(Error << "AlignmentSet::AlignmentSet() - confused by alignment data format");
@@ -104,7 +104,7 @@ AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnno
 
         CSeq_annot::C_Data::TAlign::const_iterator
             a, ae = n->GetObject().GetData().GetAlign().end();
-        for (a=n->GetObject().GetData().GetAlign().begin(); a!=ae; a++) {
+        for (a=n->GetObject().GetData().GetAlign().begin(); a!=ae; ++a) {
 
             // verify this is a type of alignment we can deal with
             if (!(a->GetObject().GetType() != CSeq_align::eType_partial ||
@@ -128,14 +128,14 @@ AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnno
     // and is the master
     else {
         SeqAlignList::const_iterator a, ae = seqaligns.end();
-        for (a=seqaligns.begin(); a!=ae; a++) {
+        for (a=seqaligns.begin(); a!=ae; ++a) {
             const SeqIdList& sids = (*a)->GetSegs().IsDendiag() ?
                 (*a)->GetSegs().GetDendiag().front()->GetIds() :
                 (*a)->GetSegs().GetDenseg().GetIds();
             if (!master) {
                 SequenceSet::SequenceList::const_iterator
                     s, se = sequenceSet->sequences.end();
-                for (s=sequenceSet->sequences.begin(); s!=se; s++) {
+                for (s=sequenceSet->sequences.begin(); s!=se; ++s) {
                     if (IsAMatch(*s, sids.front().GetObject())) {
                         master = *s;
                         break;
@@ -161,7 +161,7 @@ AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnno
     // sure that that Sequence object only appears once in the alignment
     SeqAlignList::const_iterator s, se = seqaligns.end();
     int i = 1;
-    for (s=seqaligns.begin(); s!=se; s++, i++) {
+    for (s=seqaligns.begin(); s!=se; ++s, ++i) {
         const MasterSlaveAlignment *alignment =
             new MasterSlaveAlignment(sequenceSet, master, **s);
         if (!alignment || alignment->Status() != CAV_SUCCESS) {
@@ -178,7 +178,7 @@ AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnno
 
 AlignmentSet::~AlignmentSet(void)
 {
-    for (int i=0; i<alignments.size(); i++) delete alignments[i];
+    for (int i=0; i<alignments.size(); ++i) delete alignments[i];
 }
 
 
@@ -203,7 +203,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(
         seqAlign.GetSegs().GetDenseg().GetIds();
 
     bool masterFirst = true;
-    for (; s!=se; s++) {
+    for (; s!=se; ++s) {
 
         if (*s == master) continue;
 
@@ -233,7 +233,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(
     if (seqAlign.GetSegs().IsDendiag()) {
 
         CSeq_align::C_Segs::TDendiag::const_iterator d , de = seqAlign.GetSegs().GetDendiag().end();
-        for (d=seqAlign.GetSegs().GetDendiag().begin(); d!=de; d++) {
+        for (d=seqAlign.GetSegs().GetDendiag().begin(); d!=de; ++d) {
             const CDense_diag& block = d->GetObject();
 
             if (!block.IsSetDim() || block.GetDim() != 2 ||
@@ -257,7 +257,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(
             }
 
             // finally, actually unpack the data into the alignment vector
-            for (i=0; i<block.GetLen(); i++) {
+            for (i=0; i<block.GetLen(); ++i) {
                 if (masterFirst) {
                     masterRes = block.GetStarts().front() + i;
                     slaveRes = block.GetStarts().back() + i;
@@ -304,7 +304,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(
         // finally, actually unpack the data into the alignment vector
         CDense_seg::TStarts::const_iterator starts = block.GetStarts().begin();
         CDense_seg::TLens::const_iterator lens, le = block.GetLens().end();
-        for (lens=block.GetLens().begin(); lens!=le; lens++) {
+        for (lens=block.GetLens().begin(); lens!=le; ++lens) {
             if (masterFirst) {
                 masterRes = *(starts++);
                 slaveRes = *(starts++);
@@ -319,7 +319,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(
                         "seqloc in denseg block > length of sequence!");
                     return;
                 }
-                for (i=0; i<*lens; i++)
+                for (i=0; i<*lens; ++i)
                     masterToSlave[masterRes + i] = slaveRes + i;
             }
         }
@@ -334,6 +334,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/03/15 18:51:27  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.2  2003/06/02 16:06:41  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

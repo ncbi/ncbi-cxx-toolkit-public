@@ -68,7 +68,7 @@ USING_SCOPE(objects);
 void SequenceSet::UnpackSeqSet(const CBioseq_set& bss)
 {
     CBioseq_set::TSeq_set::const_iterator q, qe = bss.GetSeq_set().end();
-    for (q=bss.GetSeq_set().begin(); q!=qe; q++) {
+    for (q=bss.GetSeq_set().begin(); q!=qe; ++q) {
         if (q->GetObject().IsSeq()) {
 
             // only store amino acid or nucleotide sequences
@@ -116,7 +116,7 @@ SequenceSet::SequenceSet(const SeqEntryList& seqEntries) :
     master(NULL), status(CAV_SUCCESS)
 {
     SeqEntryList::const_iterator s, se = seqEntries.end();
-    for (s=seqEntries.begin(); s!=se; s++)
+    for (s=seqEntries.begin(); s!=se; ++s)
         UnpackSeqEntry(s->GetObject());
     ERR_POST(Info << "number of sequences: " << sequences.size());
 }
@@ -124,7 +124,7 @@ SequenceSet::SequenceSet(const SeqEntryList& seqEntries) :
 SequenceSet::~SequenceSet(void)
 {
     SequenceList::iterator s, se = sequences.end();
-    for (s=sequences.begin(); s!=se; s++) delete *s;
+    for (s=sequences.begin(); s!=se; ++s) delete *s;
 }
 
 
@@ -142,13 +142,13 @@ static void StringFrom4na(const vector< char >& vec, string *str, bool isDNA)
 
     // first, extract 4-bit values
     int i;
-    for (i=0; i<vec.size(); i++) {
+    for (i=0; i<vec.size(); ++i) {
         str->at(2*i) = FIRSTOF2(vec[i]);
         if (SECONDOF2(vec[i]) > 0) str->at(2*i + 1) = SECONDOF2(vec[i]);
     }
 
     // then convert 4-bit values to ascii characters
-    for (i=0; i<str->size(); i++) {
+    for (i=0; i<str->size(); ++i) {
         switch (str->at(i)) {
             case 1: str->at(i) = 'A'; break;
             case 2: str->at(i) = 'C'; break;
@@ -171,7 +171,7 @@ static void StringFrom2na(const vector< char >& vec, string *str, bool isDNA)
 
     // first, extract 4-bit values
     int i;
-    for (i=0; i<vec.size(); i++) {
+    for (i=0; i<vec.size(); ++i) {
         str->at(4*i) = FIRSTOF4(vec[i]);
         str->at(4*i + 1) = SECONDOF4(vec[i]);
         str->at(4*i + 2) = THIRDOF4(vec[i]);
@@ -179,7 +179,7 @@ static void StringFrom2na(const vector< char >& vec, string *str, bool isDNA)
     }
 
     // then convert 4-bit values to ascii characters
-    for (i=0; i<str->size(); i++) {
+    for (i=0; i<str->size(); ++i) {
         switch (str->at(i)) {
             case 0: str->at(i) = 'A'; break;
             case 1: str->at(i) = 'C'; break;
@@ -194,7 +194,7 @@ static void StringFromStdaa(const vector < char >& vec, std::string *str)
     static const char *stdaaMap = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
 
     str->resize(vec.size());
-    for (int i=0; i<vec.size(); i++)
+    for (int i=0; i<vec.size(); ++i)
         str->at(i) = stdaaMap[vec[i]];
 }
 
@@ -203,7 +203,7 @@ Sequence::Sequence(const CBioseq& bioseq) :
 {
     // get Seq-id info
     CBioseq::TId::const_iterator s, se = bioseq.GetId().end();
-    for (s=bioseq.GetId().begin(); s!=se; s++) {
+    for (s=bioseq.GetId().begin(); s!=se; ++s) {
         if (s->GetObject().IsGi()) {
             gi = s->GetObject().GetGi();
         } else if (s->GetObject().IsPdb()) {
@@ -226,7 +226,7 @@ Sequence::Sequence(const CBioseq& bioseq) :
     // try to get description from title or compound
     if (bioseq.IsSetDescr()) {
         CSeq_descr::Tdata::const_iterator d, de = bioseq.GetDescr().Get().end();
-        for (d=bioseq.GetDescr().Get().begin(); d!=de; d++) {
+        for (d=bioseq.GetDescr().Get().begin(); d!=de; ++d) {
             if (d->GetObject().IsTitle()) {
                 description = d->GetObject().GetTitle();
                 break;
@@ -240,10 +240,10 @@ Sequence::Sequence(const CBioseq& bioseq) :
     // get link to MMDB id - mainly for CDD's where Biostrucs have to be loaded separately
     if (bioseq.IsSetAnnot()) {
         CBioseq::TAnnot::const_iterator a, ae = bioseq.GetAnnot().end();
-        for (a=bioseq.GetAnnot().begin(); a!=ae; a++) {
+        for (a=bioseq.GetAnnot().begin(); a!=ae; ++a) {
             if (a->GetObject().GetData().IsIds()) {
                 CSeq_annot::C_Data::TIds::const_iterator i, ie = a->GetObject().GetData().GetIds().end();
-                for (i=a->GetObject().GetData().GetIds().begin(); i!=ie; i++) {
+                for (i=a->GetObject().GetData().GetIds().begin(); i!=ie; ++i) {
                     if (i->GetObject().IsGeneral() &&
                         i->GetObject().GetGeneral().GetDb() == "mmdb" &&
                         i->GetObject().GetGeneral().GetTag().IsId()) {
@@ -342,6 +342,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/03/15 18:51:27  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.2  2003/06/02 16:06:41  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
