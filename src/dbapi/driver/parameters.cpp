@@ -69,6 +69,19 @@ bool CDB_Params::BindParam(unsigned int param_no, const string& param_name,
         }
     }
 
+    if(param_no >= m_NofParams) { // we need more memory
+        SParam* t= new SParam[param_no + 1];
+        unsigned int i;
+        if(m_Params) {
+            for(i= 0; i < m_NofParams; i++) {
+                t[i]= m_Params[i];
+            }
+            delete m_Params;
+        }
+        for(i= m_NofParams; i <= param_no; m_Params[i++].status = 0);
+        m_NofParams= param_no + 1;
+    }
+
     if (param_no < m_NofParams) {
         // we do have a param number
         if ((m_Params[param_no].status & fSet) != 0) {
@@ -111,6 +124,19 @@ bool CDB_Params::SetParam(unsigned int param_no, const string& param_name,
                  param_no < m_NofParams  &&  m_Params[param_no].status != 0;
                  ++param_no);
         }
+    }
+
+    if(param_no >= m_NofParams) { // we need more memory
+        SParam* t= new SParam[param_no + 1];
+        unsigned int i;
+        if(m_Params) {
+            for(i= 0; i < m_NofParams; i++) {
+                t[i]= m_Params[i];
+            }
+            delete m_Params;
+        }
+        for(i= m_NofParams; i <= param_no; m_Params[i++].status = 0);
+        m_NofParams= param_no + 1;
     }
     
     if (param_no < m_NofParams) {
@@ -194,6 +220,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/11/26 17:49:03  soussov
+ * reallocation if more than declared parameters added
+ *
  * Revision 1.8  2002/05/16 21:33:00  soussov
  * Replaces the temp fix in SetParam with the permanent one
  *
