@@ -466,14 +466,6 @@
 
 /* ========================================================================= */
 
-/** @defgroup GBENCH GENOME BENCH
- *  Genome Bench members
- */
-
-
-
-/* ========================================================================= */
-
 
 /** @defgroup CTOOLS
  *  Ctool members
@@ -527,9 +519,25 @@
  *  The GUI framework provides GUI support for toolkit functions.
  */
 
+/** @defgroup GUI_MATH GUI Math Classes and Modules
+ *  @ingroup GUI
+ * Math routines to support computer graphics
+ */
+
 /** @defgroup GUI_UTILS GUI Utility Classes and Modules
  *  @ingroup GUI
  * Utility and support routines for the GUI framework
+ */
+
+/** @defgroup GUI_GRAPH GUI Graph Rendering Classes and Modules
+ *  @ingroup GUI
+ * Routines to support rendering of various types of graphs
+ */
+
+/** @defgroup GUI_OBJUTILS GUI Object Utility Classes and Modules
+ *  @ingroup GUI
+ * Utility and support routines for the GUI framework.  These routines make
+ * use of the object manager and associated tools.
  */
 
 /** @defgroup GUI_CONFIG GUI Configuration Classes and Modules
