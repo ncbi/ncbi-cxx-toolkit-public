@@ -14,6 +14,9 @@
  *
  * RCS Modification History:
  * $Log$
+ * Revision 1.2  2001/07/07 01:39:30  juran
+ * Minor edits.
+ *
  * Revision 1.1  2001/04/03 20:35:27  juran
  * Phil Churchill's MIT-derived OT sockets library.  No changes prior to initial check-in.
  *
@@ -49,9 +52,11 @@
  *		inet_addr
  */
  
-#include <Stdio.h>
-#include <String.h>
-#include <Types.h>
+#include <stdio.h>
+#include <stdlib.h>				// malloc
+#include <string.h>
+
+#include <MacTypes.h>
 #include <Resources.h>
 #include <Errors.h>
 #include <OSUtils.h>
@@ -70,7 +75,6 @@
 
 #include <netdb.h>
 #include <neterrno.h>
-#include <stdlib.h>				// malloc
 #include "SocketsInternal.h"
 #include "a_inet.h"
 
