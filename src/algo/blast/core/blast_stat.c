@@ -3151,34 +3151,45 @@ f(double	x, void*	vp)
 
 double
 BLAST_SmallGapSumE(
-    const Blast_KarlinBlk * kbp,     /* statistical parameters */
-    Int4 gap,                   /* maximum size of gaps between alignments */
+    Int4 starting_points,      /* the number of starting points
+                                 * permitted between adjacent
+                                 * alignments;
+                                 * max_overlap + max_gap + 1 */
     Int2 num,                   /* the number of distinct alignments in this
                                  * collection */
-    double score_prime,         /* the sum of the scores of these alignments
-                                 * each weighted by an appropriate value of
-                                 * Lambda */
+    double xsum,                /* the sum of the scores of these
+                                 * alignments, each weighted normalized
+                                 * using an appropriate value of
+                                 * Lambda and logK */
     Int4 query_length,          /* the effective len of the query seq */
     Int4 subject_length,        /* the effective len of the database seq */
+    Int8 searchsp_eff,          /* the effective size of the search space */
     double weight_divisor)      /* a divisor used to weight the e-value
                                  * when multiple collections of alignments
                                  * are being considered by the calling
                                  * routine */
 {
-    double search_space;        /* The effective size of the search space */
-    double sum_p;               /* The p-value of this set of alignments */
+
     double sum_e;               /* The e-value of this set of alignments */
 
-    search_space = (double)subject_length*(double)query_length;
+    if(num == 1) {
+        sum_e = searchsp_eff * exp(-xsum);
+    } else {
+        double pair_search_space;  /* The effective size of the search
+                                 * space, for this query-subject pair */
+        double sum_p;           /* The p-value of this set of alignments */
+      
+        pair_search_space = (double)subject_length * (double)query_length;
 
-    score_prime -= kbp->logK +
-        log(search_space) + (num-1)*(kbp->logK + 2*log((double)gap));
-    score_prime -= BLAST_LnFactorial((double) num);
+        xsum -=
+            log(pair_search_space) + 2 * (num-1)*log((double)starting_points);
 
-    sum_p = BlastSumP(num, score_prime);
+        xsum -= BLAST_LnFactorial((double) num);
 
-    sum_e = BlastKarlinPtoE(sum_p);
-
+        sum_p = BlastSumP(num, xsum);
+        sum_e = BlastKarlinPtoE(sum_p) *
+            ((double) searchsp_eff / (double) pair_search_space);
+    }
     if( weight_divisor == 0.0 || (sum_e /= weight_divisor) > INT4_MAX ) {
         sum_e = INT4_MAX;
     }
@@ -3194,42 +3205,50 @@ BLAST_SmallGapSumE(
  * for linking HSPs representing exons in the DNA sequence that are
  * separated by introns.
  * @param kbp Statistical parameters [in]
- * @param p_gap Maximum size of gaps between alignments, in one sequence [in]
- * @param n_gap Maximum size of gaps between alignments, in the other 
- *              sequence [in]
+ * @param query_start_points  the number of starting points in
+ *                            the query sequence permitted
+ *                            between adjacent alignments [in]
+ * @param subject_start_points the number of starting points in
+ *                             the subject sequence permitted
+ *                             between adjacent alignments [in]
  * @param num The number of distinct alignments in this collection [in]
- * @param score_prime The sum of the scores of these alignments each weighted 
- *                    by an appropriate value of Lambda [in]
+ * @param xsum The sum of the scores of these alignments, each normalized
+ *                     using an appropriate value of Lambda and logK [in]
  * @param query_length The effective len of the query seq [in]
  * @param subject_length The effective len of the database seq [in]
+ * @param searchsp_eff effective size of the search space [in]
  * @param weight_divisor A divisor used to weight the e-value when multiple 
  *                       collections of alignments are being considered by 
  *                       the calling routine [in]
  * @return Resulting e-value of a combined set.
  */
 double
-BLAST_UnevenGapSumE(const Blast_KarlinBlk * kbp,
-                    Int4 p_gap, Int4 n_gap,                
-                    Int2 num, double score_prime,        
-                    Int4 query_length, Int4 subject_length,        
+BLAST_UnevenGapSumE(Int4 query_start_points, Int4 subject_start_points,
+                    Int2 num, double xsum,
+                    Int4 query_length, Int4 subject_length,
+                    Int8 searchsp_eff,
                     double weight_divisor)
 {
-    double search_space;   /* The effective size of the search space */
-    double sum_p;          /* The p-value of this set of alignments */
     double sum_e;          /* The e-value of this set of alignments */
 
-    search_space = (double)subject_length*(double)query_length;
+    if(num == 1) {
+        sum_e = searchsp_eff * exp(-xsum);
+    } else {
+        double sum_p;          /* The p-value of this set of alignments */
 
-    score_prime -=
-        kbp->logK + log(search_space) +
-        (num-1)*(kbp->logK + log((double)p_gap) + log((double)n_gap));
+        double pair_search_space;  /* The effective size of the search
+                                 * space, for this query-subject pair */
+        pair_search_space = (double)subject_length*(double)query_length;
 
-    score_prime -= BLAST_LnFactorial((double) num);
+        xsum -= log(pair_search_space) +
+            (num-1)*(log((double) query_start_points) +
+                     log((double) subject_start_points));
+        xsum -= BLAST_LnFactorial((double) num);
 
-    sum_p = BlastSumP(num, score_prime);
-
-    sum_e = BlastKarlinPtoE(sum_p);
-
+        sum_p = BlastSumP(num, xsum);
+        sum_e = BlastKarlinPtoE(sum_p) *
+            ((double) searchsp_eff / (double) pair_search_space);
+    }
     if( weight_divisor == 0.0 || (sum_e /= weight_divisor) > INT4_MAX ) {
         sum_e = INT4_MAX;
     }
@@ -3245,14 +3264,15 @@ BLAST_UnevenGapSumE(const Blast_KarlinBlk * kbp,
 
 double
 BLAST_LargeGapSumE(
-    const Blast_KarlinBlk * kbp,      /* statistical parameters */
     Int2 num,                   /* the number of distinct alignments in this
                                  * collection */
-    double      score_prime,    /* the sum of the scores of these alignments
-                                 * each weighted by an appropriate value of
-                                 * Lambda */
+    double      xsum,           /* the sum of the scores of these
+                                 * alignments each, normalized using an
+                                 * appropriate value of Lambda and
+                                 * logK */
     Int4 query_length,          /* the effective len of the query seq */
     Int4 subject_length,        /* the effective len of the database seq */
+    Int8 searchsp_eff,          /* the effective size of the search space */
     double weight_divisor)      /* a divisor used to weight the e-value
                                  * when multiple collections of alignments
                                  * are being considered by the calling
@@ -3268,13 +3288,17 @@ BLAST_LargeGapSumE(
     lcl_query_length = (double) query_length;
     lcl_subject_length = (double) subject_length;
 
-    score_prime -= num*(kbp->logK + log(lcl_subject_length*lcl_query_length))
+    if( num == 1 ) {
+      sum_e = searchsp_eff * exp(-xsum);
+    } else {
+      xsum -= num*log(lcl_subject_length*lcl_query_length)
         - BLAST_LnFactorial((double) num);
-
-    sum_p = BlastSumP(num, score_prime);
-
-    sum_e = BlastKarlinPtoE(sum_p);
-
+      
+      sum_p = BlastSumP(num, xsum);
+      
+      sum_e = BlastKarlinPtoE(sum_p) *
+          ((double) searchsp_eff / (lcl_query_length * lcl_subject_length));
+    }
     if( weight_divisor == 0.0 || (sum_e /= weight_divisor) > INT4_MAX ) {
         sum_e = INT4_MAX;
     }
@@ -3593,6 +3617,21 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.92  2004/09/28 16:23:15  papadopo
+ * From Michael Gertz:
+ * 1. Pass the effective size of the search space into
+ * 	BLAST_SmallGapSumE, BLAST_LargeGapSumE and BLAST_UnevenGapSumE.
+ * 	The routines use this value in a simplified formula to compute the
+ * 	e-value of singleton sets.
+ * 2. Caused all routines for calculating the significance of multiple
+ * 	distinct alignments (BLAST_SmallGapSumE, BLAST_LargeGapSumE and
+ * 	BLAST_UnevenGapSumE) to use
+ *
+ *        sum_{i in linked_set} (\lambda_i s_i - \ln K_i)
+ *
+ * 	as the weighted sum score, where (\lambda_i, K_i) are taken from
+ * 	the appropriate query context.
+ *
  * Revision 1.91  2004/08/13 17:44:27  dondosha
  * Doxygenized comments for BLAST_UnevenGapSumE
  *
