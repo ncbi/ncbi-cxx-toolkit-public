@@ -1,4 +1,4 @@
-# $Id: ignore.lst,v 1.3 2002/06/25 19:56:26 lavr Exp $
+# $Id: ignore.lst,v 1.4 2002/06/26 15:51:31 lavr Exp $
 #
 # List of pairs "test/signature" that will not be checked
 #
@@ -23,5 +23,8 @@ corelib/test/test_ncbipipe  ICC_500-Release--i686-pc-linux-gnu
 connect/test/test_ncbi_http_connector  GCC_295-Release--alphaev67-dec-osf5.1
 connect/test/test_ncbi_conn_stream     GCC_295-Release--alphaev67-dec-osf5.1
 connect/test/test_conn_stream_pushback GCC_295-Release--alphaev67-dec-osf5.1
+connect/test/test_ncbi_http_connector  Compaq_650-Debug--alphaev67-dec-osf5.1
+connect/test/test_ncbi_conn_stream     Compaq_650-Debug--alphaev67-dec-osf5.1
+connect/test/test_conn_stream_pushback Compaq_650-Debug--alphaev67-dec-osf5.1
 
 ; Other
