@@ -918,7 +918,7 @@ extern CONNECTOR HTTP_CreateConnector
 
     net_info = info ? ConnNetInfo_Clone(info) : ConnNetInfo_Create(0);
     if (user_header)
-        ConnNetInfo_SetUserHeader(net_info, user_header);
+        ConnNetInfo_OverrideUserHeader(net_info, user_header);
     connector = HTTP_CreateConnectorEx(net_info, flags, 0, 0, 0, 0);
     ConnNetInfo_Destroy(net_info);
     return connector;
@@ -976,6 +976,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.64  2005/02/28 17:59:07  lavr
+ * HTTP_CreateConnector() to "override" addtl. user header instead of "set"
+ *
  * Revision 6.63  2004/02/12 16:50:02  lavr
  * Heed warning about uninited variable use
  *
