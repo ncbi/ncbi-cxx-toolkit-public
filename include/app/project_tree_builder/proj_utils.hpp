@@ -65,6 +65,9 @@ struct SProjectTreeInfo
 
     /// <compilers> branch of tree
     string m_Compilers;
+
+    /// <projects> branch of tree (scripts\projects)
+    string m_Projects;
 };
 
 // Get parent directory
@@ -75,6 +78,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/18 23:33:35  gorelenk
+ * Added m_Projects member to struct SProjectTreeInfo.
+ *
  * Revision 1.8  2004/02/11 15:39:53  gorelenk
  * Added support for multiple implicit excludes from source tree.
  *
