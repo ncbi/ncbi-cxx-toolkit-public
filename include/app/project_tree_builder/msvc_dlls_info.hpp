@@ -31,6 +31,8 @@
  */
 
 #include <corelib/ncbireg.hpp>
+#include <list>
+#include <set>
 
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
@@ -38,7 +40,7 @@ BEGIN_NCBI_SCOPE
 class CMsvcDllsInfo
 {
 public:
-    CMsvcDllsInfo(const string& file_path);
+    CMsvcDllsInfo(const CNcbiRegistry& registry);
     ~CMsvcDllsInfo(void);
     
     void GetDllsList(list<string>* dlls_ids) const;
@@ -46,7 +48,6 @@ public:
     struct SDllInfo
     {
         list<string> m_Hosting;
-        list<string> m_ExportDefines;
         list<string> m_Depends;
 
         bool IsEmpty(void) const;
@@ -55,9 +56,15 @@ public:
 
     void GelDllInfo(const string& dll_id, SDllInfo* dll_info) const;
 
-
+    
+    bool IsDllHosted (const string& lib_id) const;
+    
+    string GetDllHost(const string& lib_id) const;
+    
+    void GetLibPrefixes(const string& lib_id, list<string>* prefixes) const;
+    
 private:
-    CNcbiRegistry m_Registry;
+    const CNcbiRegistry& m_Registry;
 
     //no value-type semantics
     CMsvcDllsInfo(void);
@@ -72,6 +79,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/03/08 23:27:40  gorelenk
+ * Added declarations of member-functions  IsDllHosted,
+ * GetDllHost, GetLibPrefixes to class CMsvcDllsInfo.
+ *
  * Revision 1.2  2004/03/03 22:17:33  gorelenk
  * Added declaration of class CMsvcDllsInfo.
  *
