@@ -511,7 +511,7 @@ void CreateDllsList(const CProjectItemsTree& tree_src,
     ITERATE(CProjectItemsTree::TProjects, p, tree_src.m_Projects) {
 
         const CProjKey&  proj_id = p->first;
-        const CProjItem& project = p->second;
+//        const CProjItem& project = p->second;
 
         bool dll_hosted = (proj_id.Type() == CProjKey::eLib)  &&
                            GetApp().GetDllsInfo().IsDllHosted(proj_id.Id());
@@ -565,6 +565,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/12/20 21:07:33  gouriano
+ * Eliminate compiler warnings
+ *
  * Revision 1.26  2004/12/20 15:22:09  gouriano
  * Changed diagnostic output
  *

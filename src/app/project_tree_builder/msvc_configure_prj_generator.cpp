@@ -51,8 +51,8 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
  m_TreeRoot      (tree_root),
  m_SubtreeToBuild(subtree_to_build),
  m_SolutionToBuild(solution_to_build),
- m_SrcFileName   ("configure"),
  m_ProjectItemExt("._"),
+ m_SrcFileName   ("configure"),
  m_FilesSubdir   ("UtilityProjectsFiles")
 {
     m_CustomBuildCommand = "@echo on\n";
@@ -223,6 +223,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/12/20 21:07:33  gouriano
+ * Eliminate compiler warnings
+ *
  * Revision 1.15  2004/12/20 15:31:46  gouriano
  * changed generated batch file to open error log asynchronously
  *

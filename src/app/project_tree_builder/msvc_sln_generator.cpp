@@ -320,7 +320,7 @@ CMsvcSolutionGenerator::WriteBuildAllProject(const TUtilityProject& project,
     ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
     
     ITERATE(TProjects, p, m_Projects) {
-        const CProjKey&    id    = p->first;
+//        const CProjKey&    id    = p->first;
         const CPrjContext& prj_i = p->second;
 
         ofs << '\t' << '\t' 
@@ -344,7 +344,7 @@ CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream&     ofs,
 
         CMsvcPrjProjectContext context(project.m_Project);
         
-        bool config_enabled = context.IsConfigEnabled(cfg_info, 0);
+//        bool config_enabled = context.IsConfigEnabled(cfg_info, 0);
 
         const string& config = cfg_info.m_Name;
         
@@ -403,6 +403,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/12/20 21:07:33  gouriano
+ * Eliminate compiler warnings
+ *
  * Revision 1.22  2004/12/20 15:25:18  gouriano
  * Changed diagnostic output
  *

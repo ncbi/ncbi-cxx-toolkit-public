@@ -627,10 +627,10 @@ CDllProjectFilesInserter::CDllProjectFilesInserter
                                  const string&            project_dir)
     :m_Vcproj        (vcproj),
      m_DllProjectKey (dll_project_key),
-     m_ProjectDir    (project_dir),
      m_SrcInserter   (dll_project_key.Id(), 
                       configs, 
                       project_dir),
+     m_ProjectDir    (project_dir),
      m_PrivateFilters(project_dir)
 {
     // Private filters initilization
@@ -1053,6 +1053,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/12/20 21:07:33  gouriano
+ * Eliminate compiler warnings
+ *
  * Revision 1.34  2004/12/06 18:12:20  gouriano
  * Improved diagnostics
  *

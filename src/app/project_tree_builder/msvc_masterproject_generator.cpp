@@ -158,7 +158,7 @@ CMsvcMasterProjectGenerator::AddProjectToFilter(CRef<CFilter>&   filter,
 
     if (p != m_Tree.m_Projects.end()) {
         // Add project to this filter (folder)
-        const CProjItem& project = p->second;
+//        const CProjItem& project = p->second;
         CreateProjectFileItem(project_id);
 
         SCustomBuildInfo build_info;
@@ -210,6 +210,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/12/20 21:07:33  gouriano
+ * Eliminate compiler warnings
+ *
  * Revision 1.17  2004/12/20 15:22:51  gouriano
  * Changed diagnostic output
  *

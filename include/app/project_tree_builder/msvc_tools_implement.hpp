@@ -107,6 +107,8 @@ static string s_GetDefaultPreprocessorDefinitions
     case CMsvcPrjGeneralContext::eDll:
         defines += "WIN32;_WINDOWS;_USRDLL;";
         break;
+    default:
+        break;
     }
     return defines;
 }
@@ -136,8 +138,8 @@ public:
          m_RuntimeLibraryOption        (runtimeLibraryOption),
          m_MsvcMetaMakefile            (meta_makefile),
          m_Config                      (config),
-         m_TargetType                  (target_type),
-         m_Defines                     (defines)
+         m_Defines                     (defines),
+         m_TargetType                  (target_type)
     {
     }
 
@@ -253,9 +255,9 @@ public:
 	    :m_AdditionalOptions    (additional_options),
          m_AdditionalLibraryDirectories(additional_library_directories),
 		 m_ProjectId            (project_id),
+         m_Config               (config),
          m_MsvcProjectMakefile  (project_makefile),
-         m_MsvcMetaMakefile     (meta_makefile),
-         m_Config               (config)
+         m_MsvcMetaMakefile     (meta_makefile)
     {
     }
     virtual string Name(void) const
@@ -410,9 +412,9 @@ public:
                         const IMsvcMetaMakefile& meta_makefile,
                         const SConfigInfo&       config)
         :m_ProjectId            (project_id),
+         m_Config               (config),
          m_MsvcProjectMakefile  (project_makefile),
-         m_MsvcMetaMakefile     (meta_makefile),
-         m_Config               (config)
+         m_MsvcMetaMakefile     (meta_makefile)
     {
     }
     virtual string Name(void) const
@@ -744,6 +746,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/12/20 21:07:48  gouriano
+ * Eliminate compiler warnings
+ *
  * Revision 1.20  2004/11/30 18:20:04  gouriano
  * Use ProgramDatabaseFile name from the configuration file, if specified
  *

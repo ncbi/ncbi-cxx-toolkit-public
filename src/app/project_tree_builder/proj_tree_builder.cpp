@@ -1445,7 +1445,7 @@ void CProjectTreeBuilder::AddDatatoolSourcesDepends(CProjectItemsTree* tree)
         s_CollectDatatoolIds(*tree, &datatool_ids);
 
         NON_CONST_ITERATE(CProjectItemsTree::TProjects, p, tree->m_Projects) {
-            const CProjKey&  project_id = p->first;
+//            const CProjKey&  project_id = p->first;
             CProjItem& project          = p->second;
             ITERATE(list<CDataToolGeneratedSrc>, n, project.m_DatatoolSources) {
                 const CDataToolGeneratedSrc& src = *n;
@@ -1498,6 +1498,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/12/20 21:07:33  gouriano
+ * Eliminate compiler warnings
+ *
  * Revision 1.22  2004/12/20 16:51:09  gouriano
  * Fixed processing of macros
  *
