@@ -59,6 +59,13 @@ public:
 
     virtual string ReadFileHeader(void);
 
+    enum EEncoding {
+        eEncoding_Unknown,
+        eEncoding_UTF8,
+        eEncoding_ISO8859_1
+    };
+    EEncoding GetEncoding(void) const;
+
     void SetEnforcedStdXml(bool set = true);
     bool GetEnforcedStdXml(void)     {return m_EnforcedStdXml;}
 
@@ -218,6 +225,7 @@ private:
     bool m_StdXml;
     bool m_EnforcedStdXml;
     string m_LastPrimitive;
+    EEncoding m_Encoding;
 };
 
 
@@ -234,6 +242,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/06/30 15:40:18  gouriano
+* added encoding (utf-8 or iso-8859-1)
+*
 * Revision 1.26  2003/06/24 20:54:13  gouriano
 * corrected code generation and serialization of non-empty unnamed containers (XML)
 *

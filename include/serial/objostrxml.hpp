@@ -54,13 +54,15 @@ public:
 
     virtual string GetPosition(void) const;
 
+    enum EEncoding {
+        eEncoding_Unknown,
+        eEncoding_UTF8,
+        eEncoding_ISO8859_1
+    };
+    void SetEncoding(EEncoding enc);
+    EEncoding GetEncoding(void) const;
+
     virtual void WriteFileHeader(TTypeInfo type);
-    virtual void WriteEnum(const CEnumeratedTypeValues& values,
-                           TEnumValueType value);
-    virtual void CopyEnum(const CEnumeratedTypeValues& values,
-                          CObjectIStream& in);
-    void WriteEnum(const CEnumeratedTypeValues& values,
-                   TEnumValueType value, const string& valueName);
 
     // DTD file name and prefix. The final module name is built as
     // DTDFilePrefix + DTDFileName.
@@ -127,6 +129,13 @@ protected:
 
     void WriteNull(void);
     void WriteEscapedChar(char c);
+
+    virtual void WriteEnum(const CEnumeratedTypeValues& values,
+                           TEnumValueType value);
+    virtual void CopyEnum(const CEnumeratedTypeValues& values,
+                          CObjectIStream& in);
+    void WriteEnum(const CEnumeratedTypeValues& values,
+                   TEnumValueType value, const string& valueName);
 
 #ifdef VIRTUAL_MID_LEVEL_IO
     virtual void WriteNamedType(TTypeInfo namedTypeInfo,
@@ -251,6 +260,7 @@ private:
     bool m_StdXml;
     bool m_EnforcedStdXml;
     ERealValueFormat m_RealFmt;
+    EEncoding m_Encoding;
 };
 
 
@@ -267,6 +277,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/06/30 15:40:18  gouriano
+* added encoding (utf-8 or iso-8859-1)
+*
 * Revision 1.31  2003/05/22 20:08:42  gouriano
 * added UTF8 strings
 *

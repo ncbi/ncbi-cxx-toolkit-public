@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/06/30 15:39:48  gouriano
+* added encoding (utf-8 or iso-8859-1)
+*
 * Revision 1.42  2003/06/24 20:57:36  gouriano
 * corrected code generation and serialization of non-empty unnamed containers (XML)
 *
@@ -212,7 +215,8 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamXml()
 
 CObjectIStreamXml::CObjectIStreamXml(void)
     : m_TagState(eTagOutside), m_Attlist(false),
-      m_StdXml(false), m_EnforcedStdXml(false)
+      m_StdXml(false), m_EnforcedStdXml(false),
+      m_Encoding( eEncoding_Unknown )
 {
 }
 
@@ -223,6 +227,11 @@ CObjectIStreamXml::~CObjectIStreamXml(void)
 ESerialDataFormat CObjectIStreamXml::GetDataFormat(void) const
 {
     return eSerial_Xml;
+}
+
+CObjectIStreamXml::EEncoding CObjectIStreamXml::GetEncoding(void) const
+{
+    return m_Encoding;
 }
 
 string CObjectIStreamXml::GetPosition(void) const
@@ -510,6 +519,29 @@ void CObjectIStreamXml::SkipQDecl(void)
 {
     _ASSERT(InsideOpeningTag());
     m_Input.SkipChar();
+
+    CLightString tagName;
+    tagName = ReadName( SkipWS());
+//    _ASSERT(tagName == "xml");
+    for (;;) {
+        char ch = SkipWS();
+        if (ch == '?') {
+            break;
+        }
+        tagName = ReadName(ch);
+        string value;
+        ReadAttributeValue(value);
+        if (tagName == "encoding") {
+            if (value == "UTF-8") {
+                m_Encoding = eEncoding_UTF8;
+            } else if (value == "ISO-8859-1") {
+                m_Encoding = eEncoding_ISO8859_1;
+            } else {
+                ThrowError(fFormatError, "unknown encoding: " + value);
+            }
+            break;
+        }
+    }
     for ( ;; ) {
         m_Input.FindChar('?');
         if ( m_Input.PeekChar(1) == '>' ) {
@@ -638,6 +670,16 @@ int CObjectIStreamXml::ReadEscapedChar(char endingChar)
     else if ( c == endingChar ) {
         return -1;
     }
+    if ((c & 0x80) != 0) {
+        if (m_Encoding == eEncoding_UTF8 || m_Encoding == eEncoding_Unknown) {
+            Uint1 ch = c;
+            Uint1 chRes = (ch & 0x1F);
+            m_Input.SkipChar();
+            ch = m_Input.PeekChar();
+            chRes = (chRes << 6) | (ch & 0x3F);
+            c = chRes;
+        }
+    }
     m_Input.SkipChar();
     return c & 0xFF;
 }
@@ -741,11 +783,24 @@ void CObjectIStreamXml::ReadNull(void)
         ThrowError(fFormatError, "empty tag expected");
 }
 
-void CObjectIStreamXml::ReadString(string& str, EStringType /*type*/)
+void CObjectIStreamXml::ReadString(string& str, EStringType type)
 {
     str.erase();
-    if ( !EndOpeningTagSelfClosed() )
+    if ( !EndOpeningTagSelfClosed() ) {
+        EEncoding enc = m_Encoding;
+        if (type == eStringTypeUTF8) {
+            if (m_Encoding == eEncoding_UTF8 || m_Encoding == eEncoding_Unknown) {
+                m_Encoding = eEncoding_ISO8859_1;
+            } else {
+                string tmp;
+                ReadTagData(tmp);
+                (static_cast<CStringUTF8&>(str)) = tmp;
+                return;
+            }
+        }
         ReadTagData(str);
+        m_Encoding = enc;
+    }
 }
 
 char* CObjectIStreamXml::ReadCString(void)
@@ -1749,11 +1804,16 @@ void CObjectIStreamXml::SkipFNumber(void)
     ReadDouble();
 }
 
-void CObjectIStreamXml::SkipString(EStringType /*type*/)
+void CObjectIStreamXml::SkipString(EStringType type)
 {
     BeginData();
+    EEncoding enc = m_Encoding;
+    if (type == eStringTypeUTF8) {
+        m_Encoding = eEncoding_ISO8859_1;
+    }
     while ( ReadEscapedChar(m_Attlist ? '\"' : '<') >= 0 )
         continue;
+    m_Encoding = enc;
 }
 
 void CObjectIStreamXml::SkipNull(void)

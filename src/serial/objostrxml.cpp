@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2003/06/30 15:39:48  gouriano
+* added encoding (utf-8 or iso-8859-1)
+*
 * Revision 1.56  2003/06/24 20:57:36  gouriano
 * corrected code generation and serialization of non-empty unnamed containers (XML)
 *
@@ -273,10 +276,10 @@ string CObjectOStreamXml::sm_DefaultDTDFilePrefix = "";
 CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
     : CObjectOStream(out, deleteOut),
       m_LastTagAction(eTagClose), m_EndTag(true),
-      m_UseDefaultDTDFilePrefix(true),
-      m_UsePublicId(true),
-      m_Attlist(false), m_StdXml(false), m_EnforcedStdXml(false),
-      m_RealFmt(eRealScientificFormat)
+      m_UseDefaultDTDFilePrefix( true),
+      m_UsePublicId( true),
+      m_Attlist( false), m_StdXml( false), m_EnforcedStdXml( false),
+      m_RealFmt( eRealScientificFormat ), m_Encoding( eEncoding_Unknown )
 {
     m_Output.SetBackLimit(1);
 }
@@ -288,6 +291,16 @@ CObjectOStreamXml::~CObjectOStreamXml(void)
 ESerialDataFormat CObjectOStreamXml::GetDataFormat(void) const
 {
     return eSerial_Xml;
+}
+
+void CObjectOStreamXml::SetEncoding(EEncoding enc)
+{
+    m_Encoding = enc;
+}
+
+CObjectOStreamXml::EEncoding CObjectOStreamXml::GetEncoding(void) const
+{
+    return m_Encoding;
 }
 
 CObjectOStreamXml::ERealValueFormat
@@ -349,8 +362,20 @@ string CObjectOStreamXml::GetModuleName(TTypeInfo type)
 
 void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
 {
-    m_Output.PutString("<?xml version=\"1.0\"?>");
+    m_Output.PutString("<?xml version=\"1.0");
+    switch (m_Encoding) {
+    default:
+        break;
+    case eEncoding_UTF8:
+        m_Output.PutString("\" encoding=\"UTF-8");
+        break;
+    case eEncoding_ISO8859_1:
+        m_Output.PutString("\" encoding=\"ISO-8859-1");   
+        break;
+    }
+    m_Output.PutString("\"?>");
     m_Output.PutEol();
+
     m_Output.PutString("<!DOCTYPE ");
     m_Output.PutString(type->GetName());
     
@@ -371,6 +396,7 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
     m_Output.PutString(GetDTDFilePrefix() + GetModuleName(type));
     m_Output.PutString(".dtd\">");
     m_Output.PutEol();
+
     m_LastTagAction = eTagClose;
 }
 
@@ -463,6 +489,14 @@ void CObjectOStreamXml::WriteEscapedChar(char c)
             ostrstream os;
             os << "&#x" << hex << (unsigned int)c << ';' << '\0';
             m_Output.PutString(os.str());
+        } else if ((unsigned int)c >= 0x80) {
+            if (m_Encoding == eEncoding_UTF8 || m_Encoding == eEncoding_Unknown) {
+                Uint1 ch = c;
+                m_Output.PutChar((ch >> 6) | 0xC0);
+                m_Output.PutChar((ch & 0x3F) | 0x80);
+            } else {
+                m_Output.PutChar(c);
+            }
         } else {
             m_Output.PutChar(c);
         }
@@ -564,11 +598,22 @@ void CObjectOStreamXml::WriteCString(const char* str)
     }
 }
 
-void CObjectOStreamXml::WriteString(const string& str, EStringType /*type*/)
+void CObjectOStreamXml::WriteString(const string& str, EStringType type)
 {
+    EEncoding enc = m_Encoding;
+    if (type == eStringTypeUTF8) {
+        if (m_Encoding == eEncoding_UTF8 || m_Encoding == eEncoding_Unknown) {
+            m_Encoding = eEncoding_ISO8859_1;
+        } else {
+            string tmp = (static_cast<const CStringUTF8&>(str)).AsAscii();
+            WriteString( tmp, eStringTypeVisible);
+            return;
+        }
+    }
     for ( string::const_iterator i = str.begin(); i != str.end(); ++i ) {
         WriteEscapedChar(*i);
     }
+    m_Encoding = enc;
 }
 
 void CObjectOStreamXml::WriteStringStore(const string& str)
