@@ -70,10 +70,10 @@ public:
                            const string& file_name,
                            CFormatGuess::EFormat format);
 
-    // Return max record id in "object" table. 0 if no record found.
+    // Return max record id in "object" and "annotation" tables. 
+    // Both tables share the same objects sequence numbering.
+    // Function returns 0 if no record were found.
     int FindMaxObjRecId();
-    // Return max record id in "annotation" table. 0 if no record found.
-    int FindMaxAnnRecId();
 
 protected:
 
@@ -109,8 +109,8 @@ private:
     SLDS_TablesCollection&  m_db;
     const map<string, int>& m_ObjTypeMap;
 
-    int                     m_MaxObjRecId;  // Max. id in "object" table
-    int                     m_MaxAnnRecId;  // Max. id in "annotation" table
+    // Max. id in "object" and "annotation" table
+    int                     m_MaxObjRecId;
     CObjectManager*         m_TSE_Manager;  // OM for top level seq entry
     CScope*                 m_Scope;        // OM Scope
 };
@@ -123,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/07/09 19:30:18  kuznets
+ * Implemented collection of sequence ids from alignments.
+ *
  * Revision 1.7  2003/06/16 16:24:16  kuznets
  * Fixed #include paths (lds <-> lds_admin separation)
  *

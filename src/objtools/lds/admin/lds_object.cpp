@@ -59,7 +59,6 @@ CLDS_Object::CLDS_Object(SLDS_TablesCollection& db,
 : m_db(db),
   m_ObjTypeMap(obj_map),
   m_MaxObjRecId(0),
-  m_MaxAnnRecId(0),
   m_TSE_Manager(0),
   m_Scope(0)
 {}
@@ -134,6 +133,24 @@ void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids,
 
     }}
 
+    //
+    // Delete "seq_id_list"
+    //
+    {{
+
+    ITERATE(CLDS_Set, it, *objects_deleted) {
+        int id = *it;
+        m_db.seq_id_list.object_id = id;
+        m_db.seq_id_list.Delete();
+    }
+
+    ITERATE(CLDS_Set, it, *annotations_deleted) {
+        int id = *it;
+        m_db.seq_id_list.object_id = id;
+        m_db.seq_id_list.Delete();
+    }
+
+    }}
 }
 
 
@@ -169,7 +186,6 @@ void CLDS_Object::UpdateFileObjects(int file_id,
                                     CFormatGuess::EFormat format)
 {
     FindMaxObjRecId();
-    FindMaxAnnRecId();
 
     if (format == CFormatGuess::eBinaryASN ||
         format == CFormatGuess::eTextASN ||
@@ -316,6 +332,9 @@ int CLDS_Object::SaveObject(int file_id,
 
     string id_str;
     string molecule_title;
+
+    ++m_MaxObjRecId;
+
     bool is_object = IsObject(*obj_info, &id_str, &molecule_title);
     if (is_object) {
         string all_seq_id; // Space separated list of seq_ids
@@ -332,8 +351,6 @@ int CLDS_Object::SaveObject(int file_id,
         }
 
         m_db.object_db.primary_seqid = NStr::ToUpper(id_str);
-
-        ++m_MaxObjRecId;
 
         obj_info->ext_id = m_MaxObjRecId; // Keep external id for the next scan
 
@@ -358,9 +375,7 @@ int CLDS_Object::SaveObject(int file_id,
         BDB_CHECK(err, "LDS::Object");
 
     } else {
-        
-        ++m_MaxAnnRecId;
-        
+                
         // Set of seq ids referenced in the annotation
         //
         set<string> ref_seq_ids;
@@ -374,7 +389,7 @@ int CLDS_Object::SaveObject(int file_id,
             if (adata.Which() == CSeq_annot_Base::C_Data::e_Align) {
                 const CSeq_annot_Base::C_Data::TAlign& al_list =
                                             adata.GetAlign();
-                ITERATE(CSeq_annot_Base::C_Data::TAlign, it, al_list){
+                ITERATE (CSeq_annot_Base::C_Data::TAlign, it, al_list){
                     if (!(*it)->CanGetSegs())
                         continue;
 
@@ -385,7 +400,7 @@ int CLDS_Object::SaveObject(int file_id,
                         {
                         const CSeq_align_Base::C_Segs::TStd& std_list =
                                                     segs.GetStd();
-                        ITERATE(CSeq_align_Base::C_Segs::TStd, it2, std_list) {
+                        ITERATE (CSeq_align_Base::C_Segs::TStd, it2, std_list) {
                             const CRef<CStd_seg>& seg = *it2;
                             const CStd_seg::TIds& ids = seg->GetIds();
 
@@ -403,7 +418,7 @@ int CLDS_Object::SaveObject(int file_id,
                                                         segs.GetDenseg();
                         const CDense_seg::TIds& ids = denseg.GetIds();
 
-                        ITERATE(CDense_seg::TIds, it3, ids) {
+                        ITERATE (CDense_seg::TIds, it3, ids) {
                             ref_seq_ids.insert((*it3)->AsFastaString());
                         } // ITERATE
                         
@@ -418,10 +433,19 @@ int CLDS_Object::SaveObject(int file_id,
             }
         }
 
+        // Save all seq ids referred by the alignment
+        //
+        ITERATE (set<string>, it, ref_seq_ids) {
+            m_db.seq_id_list.object_id = m_MaxObjRecId;
+            m_db.seq_id_list.seq_id = it->c_str();
+
+            EBDB_ErrCode err = m_db.seq_id_list.Insert();
+            BDB_CHECK(err, "LDS::seq_id_list");
+        }
         
-        obj_info->ext_id = m_MaxAnnRecId; // Keep external id for the next scan
+        obj_info->ext_id = m_MaxObjRecId; // Keep external id for the next scan
                 
-        m_db.annot_db.annot_id = m_MaxAnnRecId;
+        m_db.annot_db.annot_id = m_MaxObjRecId;
         m_db.annot_db.file_id = file_id;
         m_db.annot_db.annot_type = type_id;
         m_db.annot_db.file_offset = obj_info->offset;
@@ -432,7 +456,7 @@ int CLDS_Object::SaveObject(int file_id,
         BDB_CHECK(err, "LDS::Annotation");
 
         m_db.annot2obj_db.object_id = parent_id;
-        m_db.annot2obj_db.annot_id = m_MaxAnnRecId;
+        m_db.annot2obj_db.annot_id = m_MaxObjRecId;
 
         err = m_db.annot2obj_db.Insert();
         BDB_CHECK(err, "LDS::Annot2Obj");
@@ -513,17 +537,14 @@ int CLDS_Object::FindMaxObjRecId()
     }
 
     LDS_GETMAXID(m_MaxObjRecId, m_db.object_db, object_id);
-    return m_MaxObjRecId;
-}
 
+    int ann_rec_id = 0;
+    LDS_GETMAXID(ann_rec_id, m_db.annot_db, annot_id);
 
-int CLDS_Object::FindMaxAnnRecId()
-{
-    if (m_MaxAnnRecId) {
-        return m_MaxAnnRecId;
+    if (ann_rec_id > m_MaxObjRecId) {
+        m_MaxObjRecId = ann_rec_id;
     }
 
-    LDS_GETMAXID(m_MaxAnnRecId, m_db.object_db, object_id);
     return m_MaxObjRecId;
 }
 
@@ -534,6 +555,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/07/09 19:30:51  kuznets
+ * Implemented collection of sequence ids from alignments.
+ *
  * Revision 1.11  2003/07/03 19:23:37  kuznets
  * Added recognition of denseg alignments.
  *
