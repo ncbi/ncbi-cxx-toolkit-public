@@ -224,6 +224,7 @@ case "$host:$compiler" in
    STRIP=":"
    CONF_obj_ext=".obj"
    CONF_lib_ext=".lib"
+   CONF_dll_ext=".dll"
    CONF_lib_l_ext=".lib"
    CONF_lib_pre=" "
    CONF_lib_l_pre=" "
@@ -257,30 +258,29 @@ case "$compiler" in
    ;;
 esac
 
-if test "$with_dll" != "no" ; then
-  CFLAGS="$CFLAGS $CFLAGS_DLL"
-  CXXFLAGS="$CXXFLAGS $CXXFLAGS_DLL"
-fi
-
+LIB_OR_DLL="lib"
 if test "$with_dll" = "yes" ; then
-   lib_dll="dll"
-   CONF_lib_ext="${CONF_dll_ext:=.so}"
-
    case "$host:$compiler" in
     *-linux*:GCC | mips-sgi-irix6\.*:GCC | *:WorkShop5 | *:MIPSpro73 )
+      LIB_OR_DLL="dll"
+      FORCE_STATIC_LIB=
       ;;
     * )
       AC_MSG_WARN(["DLLs may not be buildable by $CXX $compiler_ver on $host"])
+      AC_MSG_WARN(["All DLLs will be built as static libraries!"])
+      FORCE_STATIC_LIB="LIB_OR_DLL = lib"
       ;;
    esac
+elif test "$with_dll" = "no" ; then
+   FORCE_STATIC_LIB="LIB_OR_DLL = lib"
 fi
 
 case "$compiler" in
  GCC | MIPSpro73 )
-   LINKDLL="$CXX -shared -o"
+   LINK_DLL="$CXX -shared -o"
    ;;
  WorkShop5 )
-   LINKDLL="$CXX $WS64_CFLAGS -G -h \$@ -o"
+   LINK_DLL="$CXX $WS64_CFLAGS -G -h \$@ -o"
    ;;
  * )
    if test "$with_dll" = "yes"  &&  test -z "$LINKDLL" ; then
@@ -443,6 +443,7 @@ if test "$CONF_obj_ext"   = " " ;  then obj_ext="" ; else obj_ext="${CONF_obj_ex
 if test "$CONF_lib_pre"   = " " ;  then lib_pre="" ; else lib_pre="${CONF_lib_pre:=lib}" ; fi
 if test "$CONF_lib_l_pre" = " " ;  then lib_l_pre="" ; else lib_l_pre="${CONF_lib_l_pre:=-l}" ; fi
 if test "$CONF_lib_ext"   = " " ;  then lib_ext="" ; else lib_ext="${CONF_lib_ext:=.a}" ; fi
+if test "$CONF_dll_ext"   = " " ;  then dll_ext="" ; else dll_ext="${CONF_dll_ext:=.so}" ; fi
 if test "$CONF_lib_l_ext" = " " ;  then lib_l_ext="" ; else lib_l_ext="${CONF_lib_l_ext}" ; fi
 if test "$CONF_exe_ext"   = " " ;  then exe_ext="" ; else exe_ext="${CONF_exe_ext}" ; fi
 if test "$CONF_f_compile" = " " ;  then f_compile="" ; else f_compile="${CONF_f_compile:=-c }" ; fi
@@ -450,7 +451,6 @@ if test "$CONF_f_outobj"  = " " ;  then f_outobj="" ; else f_outobj="${CONF_f_ou
 if test "$CONF_f_outlib"  = " " ;  then f_outlib="" ; else f_outlib="${CONF_f_outlib}" ; fi
 if test "$CONF_f_libpath" = " " ;  then f_libpath="" ; else f_libpath="${CONF_f_libpath:=-L}" ; fi
 if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_outexe:=-o }" ; fi
-lib_dll="${lib_dll:=lib}"
 
 
 #### For some compilers(e.g. SunPro 5.0), there is no sense to compare the
@@ -1000,7 +1000,6 @@ AC_SUBST(CC)
 AC_SUBST(CPP)
 AC_SUBST(CXX)
 AC_SUBST(AR)
-AC_SUBST(LINKDLL)
 AC_SUBST(RANLIB)
 AC_SUBST(STRIP)
 
@@ -1010,6 +1009,12 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(DEPFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(LIBS)
+
+AC_SUBST(LIB_OR_DLL)
+AC_SUBST(FORCE_STATIC_LIB)
+AC_SUBST(LINK_DLL)
+AC_SUBST(CFLAGS_DLL)
+AC_SUBST(CXXFLAGS_DLL)
 
 AC_SUBST(internal)
 AC_SUBST(serial)
@@ -1021,8 +1026,8 @@ AC_SUBST(obj_ext)
 AC_SUBST(lib_pre)
 AC_SUBST(lib_l_pre)
 AC_SUBST(lib_ext)
+AC_SUBST(dll_ext)
 AC_SUBST(lib_l_ext)
-AC_SUBST(lib_dll)
 AC_SUBST(exe_ext)
 AC_SUBST(f_compile)
 AC_SUBST(f_outobj)

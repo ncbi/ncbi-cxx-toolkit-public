@@ -41,10 +41,11 @@ STD_INCLUDE = -I$(incdir) -I$(includedir) -I$(includedir)/internal
 
 ### Auxiliary commands, filters
 
-RM      = rm -f
-RMDIR   = rm -rf
-COPY    = cp -p
-BINCOPY = @BINCOPY@
+RM       = rm -f
+RMDIR    = rm -rf
+COPY     = cp -p
+BINCOPY  = @BINCOPY@
+BINTOUCH = touch
 
 CC_FILTER  = @CC_FILTER@
 CXX_FILTER = @CXX_FILTER@
@@ -58,7 +59,6 @@ CONF_CXX    = @CXX@
 CONF_CPP    = @CPP@
 CONF_CXXCPP = @CXXCPP@
 CONF_AR     = @AR@
-CONF_LINKDLL= @LINKDLL@
 CONF_RANLIB = @RANLIB@
 CONF_LINK   = @CXX@
 CONF_STRIP  = @STRIP@
@@ -80,7 +80,6 @@ ORIG_CXX    = $(CONF_CXX)
 ORIG_CPP    = $(CONF_CPP)
 ORIG_CXXCPP = $(CONF_CXXCPP)
 ORIG_AR     = $(CONF_AR)
-ORIG_LINKDLL= $(CONF_LINKDLL)
 ORIG_RANLIB = $(CONF_RANLIB)
 ORIG_LINK   = $(CONF_LINK)
 ORIG_STRIP  = $(CONF_STRIP)
@@ -102,7 +101,6 @@ CXX    = $(CONF_CXX)
 CPP    = $(CONF_CPP)
 CXXCPP = $(CONF_CXXCPP)
 AR     = $(CONF_AR)
-LINKDLL= $(CONF_LINKDLL)
 RANLIB = $(CONF_RANLIB)
 LINK   = $(CONF_LINK)
 STRIP  = $(CONF_STRIP)
@@ -114,6 +112,14 @@ DEPFLAGS = $(CONF_DEPFLAGS)
 LDFLAGS  = $(CONF_LDFLAGS)
 LIBS     = $(CONF_LIBS)
 PRE_LIBS =
+
+
+### DLL specifics
+LIB_OR_DLL = @LIB_OR_DLL@
+
+LINK_DLL     = @LINK_DLL@
+CFLAGS_DLL   = @CFLAGS_DLL@
+CXXFLAGS_DLL = @CXXFLAGS_DLL@
 
 
 ### Do not use any default suffix rules

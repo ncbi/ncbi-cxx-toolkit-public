@@ -9,4 +9,5 @@
 builddir = @builddir@
 include $(builddir)/Makefile.mk
 include $(srcdir)/Makefile.$(TMPL).lib
-include $(builddir)/Makefile.@lib_dll@
+@FORCE_STATIC_LIB@
+include $(builddir)/Makefile.$(LIB_OR_DLL)

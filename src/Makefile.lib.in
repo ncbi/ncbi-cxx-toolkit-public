@@ -19,11 +19,7 @@
 # include @builddir@/Makefile.lib
 #################################
 
-
-### Add prefixes and extentions
-XLIBOBJ = $(LIBOBJ:=@obj_ext@)
-XLOBJ   = $(LOBJ:=@obj_ext@)
-XLIB    = $(LIB:%=@lib_pre@%@lib_ext@)
+default_rule: all
 
 
 ### C/C++ source file compilation (and maybe auto-dependencies) build rules
@@ -36,15 +32,23 @@ include $(builddir)/Makefile.$(Rules)
 
 ### The library build rule
 
+XLIBOBJ = $(LIBOBJ:=@obj_ext@)
+XLOBJ   = $(LOBJ:=@obj_ext@)
+XLIB    = $(LIB:%=@lib_pre@%@lib_ext@)
+XLIBDEP = $(libdir)/.$(LIB).dep
+
 $(XLIB): $(XLIBOBJ)
 	$(AR) @f_outlib@$(XLIB) $(XLIBOBJ) $(XLOBJ)
 	@$(RANLIB) $(XLIB)
 	$(BINCOPY) $(XLIB) $(libdir)
 
+$(XLIBDEP): $(libdir)/$(XLIB)
+	$(BINTOUCH) -r $(libdir)/$(XLIB) $(XLIBDEP)
+
 
 ### Standard targets
 
-all: $(XLIB)
+all: $(XLIB) $(XLIBDEP)
 
 clean:
 	-$(RMDIR) SunWS_cache
@@ -56,4 +60,4 @@ clean:
 	-$(RM) *~
 
 purge: clean
-	-cd $(libdir)  &&  $(RM) $(XLIB)
+	-$(RM) $(libdir)/$(XLIB) $(XLIBDEP)

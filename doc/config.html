@@ -301,23 +301,21 @@ flags <b>-D_DEBUG</b> and <b>-DNDEBUG</b>, and compiler/linker flags
 On the capable platforms, you can build libraries as <i>shared (dynamic)</i>.
 <ul>
   <li> <i><b>--with-dll</b></i> --
-       compile position-independent code (PIC),
-       build <i>dynamic</i> libraries
+       build libraries as <i>dynamic</i>; <br>
+		 however, if the library project makefile specifies
+		 <a href="new_proj.html#ref_MakeProjLib"><i>LIB_OR_DLL = lib</i></a>,
+       then build the library as <i>static</i>		  
   <li> <i><b>--without-dll</b></i> --
-       do not compile PIC,
-       build <i>static</i> libraries
+       always build <i>static</i> libraries, <br>
+		 even if the library project makefile specifies
+		 <a href="new_proj.html#ref_MakeProjLib"><i>LIB_OR_DLL = dll</i></a>
   <li> default:
-       compile position-independent code (PIC),
-       but build <i>static</i> libraries
+       build libraries as <i>static</i>; <br>
+		 however, if the library project makefile specifies
+		  <a href="new_proj.html#ref_MakeProjLib"><i>LIB_OR_DLL = dll</i></a>,
+       then build the library as <i>dynamic</i>
 </ul>
-HINT:  To build both <i>dynamic</i> and <i>static</i> libraries without
-recompiling all sources:
-<ol>
-  <li> configure the toolkit without any of "<i><b>--.....-dll</b></i>" flags
-  <li> build the toolkit
-  <li> re-configure the toolkit with "<i><b>--with-dll</b></i>"
-  <li> build the toolkit again
-</ol>
+
 We've succeeded in building NCBI C++ libs as DLLs on at least
 the following platforms:
 <ul>
@@ -342,6 +340,10 @@ the following platforms:
       <li> IRIX64 6.5 --- <i>SGI-Mips</i>
     </ul>
 </ul>
+
+On any other platform, the <i><b>--without-dll</b></i> scenario will be
+enforced unconditionally (even if you explicitely specified
+<i><b>--with-dll</b></i>).
 
 
 <p>

@@ -44,10 +44,11 @@ builddir = $builddir
 # builddir = $(NCBI)/c++/Release/build
 
 
-###  DEFAULT COMPILATION FLAGS -- DON'T EDIT OR MOVE THESE 4 LINES !!!  ###
+###  DEFAULT COMPILATION FLAGS -- DON'T EDIT OR MOVE THESE 5 LINES !!!  ###
 include $(builddir)/Makefile.mk
 srcdir = .
 BINCOPY = @:
+BINTOUCH = @:
 LOCAL_CPPFLAGS = -I.
 
 
@@ -61,6 +62,8 @@ LIBOBJ = $proj_name
 # CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 # CFLAGS   = $(ORIG_CFLAGS)
 # CXXFLAGS = $(ORIG_CXXFLAGS)
+#
+# LIB_OR_DLL = dll
 #                                                                         ###
 #############################################################################
 

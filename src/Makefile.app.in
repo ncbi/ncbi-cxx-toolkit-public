@@ -11,12 +11,13 @@
 # APP = my_app
 # OBJ = my_main my_obj1 my_obj2
 # LIB = foo bar
-# DLL = foo1 bar1
 # .....
 # CXXFLAGS = -g $(ORIG_CXXFLAGS) -D_DEBUG -DXYZ_MY_APP
 # .....
 # include @builddir@/Makefile.app
 #################################
+
+default_rule: all
 
 
 ### C/C++ source file compilation (and maybe auto-dependencies) build rules
@@ -27,22 +28,12 @@ SOURCES      = $(OBJ)
 include $(builddir)/Makefile.$(Rules)
 
 
-### Library dependencies
-
-%.lib_dep: $(libdir)/@lib_pre@%@lib_ext@
-	@touch $@
-%.dll_dep: $(libdir)/@lib_pre@%@dll_ext@
-	@touch $@
-
-
 ### Standard application build rules
 
 XAPP = $(APP)@exe_ext@
 XOBJ = $(OBJ:=@obj_ext@)
-XLIB = @f_libpath@$(libdir) \
-   $(LIB:%=@lib_l_pre@%@lib_l_ext@) \
-   $(DLL:%=@lib_l_pre@%@dll_l_ext@)
-XLIBDEP = $(LIB:=.lib_dep) $(DLL:=.dll_dep)
+XLIB = @f_libpath@$(libdir) $(LIB:%=@lib_l_pre@%@lib_l_ext@)
+XLIBDEP = $(LIB:%=$(libdir)/.%.dep)
 
 $(XAPP): $(XOBJ) $(XLIBDEP)
 	$(LINK) $(LDFLAGS) $(XOBJ) $(PRE_LIBS) $(XLIB) $(LIBS) @f_outexe@$(XAPP)
@@ -61,8 +52,6 @@ clean:
 	-$(RM) *@obj_ext@
 	-$(RM) $(XAPP)
 	-$(RM) *~
-	-$(RM) *.lib_dep
-	-$(RM) *.dll_dep
 	-$(RM) *.d
 	-$(RM) core
 

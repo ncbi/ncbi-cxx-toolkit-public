@@ -28,6 +28,8 @@
 # include @builddir@/Makefile.dll
 #################################
 
+default_rule: all
+
 
 ### C/C++ source file compilation (and maybe auto-dependencies) build rules
 
@@ -39,31 +41,26 @@ SOURCES      = $(LIBOBJ)
 include $(builddir)/Makefile.$(Rules)
 
 
-### Library dependencies
-
-%.lib_dep: $(libdir)/@lib_pre@%@lib_ext@
-	@touch $@
-%.dll_dep: $(libdir)/@lib_pre@%@dll_ext@
-	@touch $@
-
-
 ### The library build rule
+
 XLIBOBJ     = $(LIBOBJ:=@obj_ext@)
 XLOBJ       = $(LOBJ:=@obj_ext@)
-XLIB        = $(LIB:%=@lib_pre@%@lib_ext@)
-XDLL_LIB    = @f_libpath@$(libdir) \
-   $(DLL_LIB:%=@lib_l_pre@%@lib_l_ext@) \
-   $(DLL_DLL:%=@lib_l_pre@%@dll_l_ext@)
-XDLL_LIBDEP = $(DLL_LIB:=.lib_dep) $(DLL_DLL:=.dll_dep)
+XLIB        = $(LIB:%=@lib_pre@%@dll_ext@)
+XLIBDEP     = $(libdir)/.$(LIB).dep
+XDLL_LIB    = @f_libpath@$(libdir) $(DLL_LIB:%=@lib_l_pre@%@lib_l_ext@)
+XDLL_LIBDEP = $(DLL_LIB:%=$(libdir)/.%.dep)
 
 $(XLIB): $(XLIBOBJ) $(XDLL_LIBDEP)
-	$(LINKDLL) $(XLIB) $(XLIBOBJ) $(XLOBJ) $(DLL_LIB) $(LIBS)
+	$(LINK_DLL) $(XLIB) $(XLIBOBJ) $(XLOBJ) $(DLL_LIB) $(LIBS)
 	$(BINCOPY) $(XLIB) $(libdir)
+
+$(XLIBDEP): $(libdir)/$(XLIB)
+	$(BINTOUCH) -r $(libdir)/$(XLIB) $(XLIBDEP)
 
 
 ### Standard targets
 
-all: $(XLIB)
+all: $(XLIB) $(XLIBDEP)
 
 clean:
 	-$(RMDIR) SunWS_cache
@@ -71,10 +68,8 @@ clean:
 	-$(RM) .make.state
 	-$(RM) $(XLIBOBJ)
 	-$(RM) $(XLIB)
-	-$(RM) *.lib_dep
-	-$(RM) *.dll_dep
 	-$(RM) *.d
 	-$(RM) *~
 
 purge: clean
-	-cd $(libdir)  &&  $(RM) $(XLIB)
+	-$(RM) $(libdir)/$(XLIB) $(XLIBDEP)

@@ -592,8 +592,14 @@ This <i>customized makefile</i> should be referenced as <i><b>xmylib</b></i> in 
 implicitely included.
 
 <p>
-NOTE: this file is used to build both <i>static</i>
-and <a href="config.html#ref_DLL"><i>dynamic</i></a> library.
+This <i>customized makefile</i> can be used to build both <i>static</i>
+and <a href="config.html#ref_DLL"><i>dynamic(DLL)</i></a> version of
+the library. <br>
+To encourage its build as a <i>DLL</i> on the capable
+platforms, you can explicitely specify:
+<pre>LIB_OR_DLL = dll</pre>
+Conversely, if you want the library be always built as <i>static</i>, specify:
+<pre>LIB_OR_DLL = lib</pre>
 
 
 <p>

@@ -1151,6 +1151,7 @@ case "$host:$compiler" in
    STRIP=":"
    CONF_obj_ext=".obj"
    CONF_lib_ext=".lib"
+   CONF_dll_ext=".dll"
    CONF_lib_l_ext=".lib"
    CONF_lib_pre=" "
    CONF_lib_l_pre=" "
@@ -1184,30 +1185,29 @@ case "$compiler" in
    ;;
 esac
 
-if test "$with_dll" != "no" ; then
-  CFLAGS="$CFLAGS $CFLAGS_DLL"
-  CXXFLAGS="$CXXFLAGS $CXXFLAGS_DLL"
-fi
-
+LIB_OR_DLL="lib"
 if test "$with_dll" = "yes" ; then
-   lib_dll="dll"
-   CONF_lib_ext="${CONF_dll_ext:=.so}"
-
    case "$host:$compiler" in
     *-linux*:GCC | mips-sgi-irix6\.*:GCC | *:WorkShop5 | *:MIPSpro73 )
+      LIB_OR_DLL="dll"
+      FORCE_STATIC_LIB=
       ;;
     * )
       echo "configure: warning: "DLLs may not be buildable by $CXX $compiler_ver on $host"" 1>&2
+      echo "configure: warning: "All DLLs will be built as static libraries!"" 1>&2
+      FORCE_STATIC_LIB="LIB_OR_DLL = lib"
       ;;
    esac
+elif test "$with_dll" = "no" ; then
+   FORCE_STATIC_LIB="LIB_OR_DLL = lib"
 fi
 
 case "$compiler" in
  GCC | MIPSpro73 )
-   LINKDLL="$CXX -shared -o"
+   LINK_DLL="$CXX -shared -o"
    ;;
  WorkShop5 )
-   LINKDLL="$CXX $WS64_CFLAGS -G -h \$@ -o"
+   LINK_DLL="$CXX $WS64_CFLAGS -G -h \$@ -o"
    ;;
  * )
    if test "$with_dll" = "yes"  &&  test -z "$LINKDLL" ; then
@@ -1463,6 +1463,7 @@ if test "$CONF_obj_ext"   = " " ;  then obj_ext="" ; else obj_ext="${CONF_obj_ex
 if test "$CONF_lib_pre"   = " " ;  then lib_pre="" ; else lib_pre="${CONF_lib_pre:=lib}" ; fi
 if test "$CONF_lib_l_pre" = " " ;  then lib_l_pre="" ; else lib_l_pre="${CONF_lib_l_pre:=-l}" ; fi
 if test "$CONF_lib_ext"   = " " ;  then lib_ext="" ; else lib_ext="${CONF_lib_ext:=.a}" ; fi
+if test "$CONF_dll_ext"   = " " ;  then dll_ext="" ; else dll_ext="${CONF_dll_ext:=.so}" ; fi
 if test "$CONF_lib_l_ext" = " " ;  then lib_l_ext="" ; else lib_l_ext="${CONF_lib_l_ext}" ; fi
 if test "$CONF_exe_ext"   = " " ;  then exe_ext="" ; else exe_ext="${CONF_exe_ext}" ; fi
 if test "$CONF_f_compile" = " " ;  then f_compile="" ; else f_compile="${CONF_f_compile:=-c }" ; fi
@@ -1470,7 +1471,6 @@ if test "$CONF_f_outobj"  = " " ;  then f_outobj="" ; else f_outobj="${CONF_f_ou
 if test "$CONF_f_outlib"  = " " ;  then f_outlib="" ; else f_outlib="${CONF_f_outlib}" ; fi
 if test "$CONF_f_libpath" = " " ;  then f_libpath="" ; else f_libpath="${CONF_f_libpath:=-L}" ; fi
 if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_outexe:=-o }" ; fi
-lib_dll="${lib_dll:=lib}"
 
 
 #### For some compilers(e.g. SunPro 5.0), there is no sense to compare the
@@ -3478,6 +3478,11 @@ fi
 
 
 
+
+
+
+
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -3643,8 +3648,12 @@ s%@top_srcdir@%$top_srcdir%g
 s%@srcdir@%$srcdir%g
 s%@builddir@%$builddir%g
 s%@CPP@%$CPP%g
-s%@LINKDLL@%$LINKDLL%g
 s%@DEPFLAGS@%$DEPFLAGS%g
+s%@LIB_OR_DLL@%$LIB_OR_DLL%g
+s%@FORCE_STATIC_LIB@%$FORCE_STATIC_LIB%g
+s%@LINK_DLL@%$LINK_DLL%g
+s%@CFLAGS_DLL@%$CFLAGS_DLL%g
+s%@CXXFLAGS_DLL@%$CXXFLAGS_DLL%g
 s%@internal@%$internal%g
 s%@serial@%$serial%g
 s%@objects@%$objects%g
@@ -3654,8 +3663,8 @@ s%@obj_ext@%$obj_ext%g
 s%@lib_pre@%$lib_pre%g
 s%@lib_l_pre@%$lib_l_pre%g
 s%@lib_ext@%$lib_ext%g
+s%@dll_ext@%$dll_ext%g
 s%@lib_l_ext@%$lib_l_ext%g
-s%@lib_dll@%$lib_dll%g
 s%@exe_ext@%$exe_ext%g
 s%@f_compile@%$f_compile%g
 s%@f_outobj@%$f_outobj%g

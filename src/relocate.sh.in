@@ -41,7 +41,8 @@ Makefile.mk Makefile.meta Makefile.lib.tmpl Makefile.app.tmpl"
 for f in $files ; do
    fff="$script_dir/$f"
    sed 's%^\(builddir *= *\).*%\1'$script_dir'%; s%^\(exec_prefix *= *\).*%\1'$bld_tree'%; s%^\(top_srcdir *= *\).*%\1'$src_tree'%' "$fff" |
-   sed 's%/netopt/ncbi_tools_cc\.[^/ ]*%/netopt/ncbi_tools_cc%g; s%/netopt/ncbi_tools\.[^/ ]*%/netopt/ncbi_tools%g' > "$fff.tmp"
+   sed 's%/netopt/ncbi_tools_cc\.[^/ ]*%/netopt/ncbi_tools_cc%g; s%/netopt/ncbi_tools\.[^/ ]*%/netopt/ncbi_tools%g' |
+   sed 's/^ *BINCOPY *=.*/BINCOPY = @:/; s/^ *BINTOUCH *=.*/BINTOUCH = @:/' > "$fff.tmp"
    if test $? -ne 0 ; then
       echo "[$script_name]  Error in processing file \"$f\"!" 
       exit 2
