@@ -140,6 +140,7 @@ public:
     // type of bioseq?
     bool IsGED            (void) const { return m_IsGED;  }  // Genbank, EMBL or DDBJ
     bool IsEMBL           (void) const { return m_IsEMBL; }  // EMBL
+    bool IsDDBJ           (void) const { return m_IsDDBJ; }  // DDBJ
     bool IsPDB            (void) const { return m_IsPDB;  }  // PDB
     bool IsSP             (void) const { return m_IsSP;   }  // SwissProt
     bool IsTPA            (void) const { return m_IsTPA;  }  // Third-Party Annotation
@@ -212,6 +213,7 @@ private:
     bool m_IsInNucProt;    // Nuc-Prot Set
     bool m_IsGED;          // Genbank, Embl or Ddbj
     bool m_IsEMBL;         // EMBL
+    bool m_IsDDBJ;         // DDBJ
     bool m_IsPDB;          // PDB
     bool m_IsSP;           // SwissProt
     bool m_IsTPA;          // Third Party Annotation
@@ -516,6 +518,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2004/10/22 15:41:15  shomrat
+* + IsDDBJ
+*
 * Revision 1.20  2004/10/18 18:42:22  shomrat
 * Indicate if scanned from journal
 *

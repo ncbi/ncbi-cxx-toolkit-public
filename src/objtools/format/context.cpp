@@ -82,6 +82,7 @@ CBioseqContext::CBioseqContext
     m_IsInNucProt(false),
     m_IsGED(false),
     m_IsEMBL(false),
+    m_IsDDBJ(false),
     m_IsPDB(false),
     m_IsSP(false),
     m_IsTPA(false),
@@ -231,9 +232,13 @@ void CBioseqContext::x_SetId(void)
         // Genbank, Embl or Ddbj
         case CSeq_id::e_Embl:
             m_IsEMBL = true;
-            // intentional fall through
-        case CSeq_id::e_Genbank:
+            m_IsGED = true;
+            break;
         case CSeq_id::e_Ddbj:
+            m_IsDDBJ = true;
+            m_IsGED = true;
+            break;
+        case CSeq_id::e_Genbank:
             m_IsGED = true;
             m_IsGbGenomeProject = m_IsGbGenomeProject  ||
                 ((acc_type & CSeq_id::eAcc_gb_genome) != 0);
@@ -589,6 +594,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2004/10/22 15:41:34  shomrat
+* + IsDDBJ
+*
 * Revision 1.25  2004/10/18 18:42:52  shomrat
 * Indicate if scanned from journal
 *
