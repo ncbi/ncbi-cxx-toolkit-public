@@ -439,9 +439,9 @@ done  # x_conf in configurations
 
 # Write result of the tests execution
 echo
-echo "Succeded : \$count_ok"
-echo "Failed   : \$count_err"
-echo "Absent   : \$count_absent"
+echo "Succeeded : \$count_ok"
+echo "Failed    : \$count_err"
+echo "Absent    : \$count_absent"
 echo
 
 if test \$count_err -eq 0; then
