@@ -231,7 +231,7 @@ private:
                   const CSeq_id_Handle& id,
                   const CHandleRange& hr,
                   CSeq_loc_Conversion* cvt);
-    bool x_Search(const CTSE_Info& tse_info,
+    void x_Search(const CTSE_Info& tse_info,
                   const SIdAnnotObjs* objs,
                   CReadLockGuard& guard,
                   const CAnnotName& name,
@@ -252,12 +252,6 @@ private:
     bool x_MatchRange(const CHandleRange& hr,
                       const CRange<TSeqPos>& range,
                       const SAnnotObject_Index& index) const;
-
-    bool x_HaveSubtype(const CTSE_Info& tse,
-                       const SIdAnnotObjs& objs,
-                       CSeqFeatData::ESubtype subtype) const;
-    bool x_HaveSNPSubtype(const CTSE_Info& tse,
-                       const SIdAnnotObjs& objs) const;
 
     // Set of all the annotations found
     TAnnotSet                    m_AnnotSet;
@@ -497,6 +491,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2003/10/09 20:20:59  vasilche
+* Added possibility to include and exclude Seq-annot names to annot iterator.
+* Fixed adaptive search. It looked only on selected set of annot names before.
+*
 * Revision 1.54  2003/10/07 13:43:22  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

@@ -401,8 +401,8 @@ void CTSE_Info::x_InitIndexTables(void)
     if (!s_TablesInitialized) {
         s_AnnotTypeIndexRange.resize(kAnnotTypeMax + 1);
         s_AnnotTypeIndexRange[CSeq_annot::C_Data::e_not_set].first = 0;
-        s_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Align] = TIndexRange(0, 1);
-        s_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Graph] = TIndexRange(1, 2);
+        s_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Align] = TIndexRange(0,1);
+        s_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Graph] = TIndexRange(1,2);
         s_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Ftable].first = 2;
 
         vector< vector<size_t> > type_subtypes(kFeatTypeMax+1);
@@ -436,6 +436,17 @@ void CTSE_Info::x_InitIndexTables(void)
         s_AnnotTypeIndexRange[CSeq_annot::C_Data::e_not_set].second = cur_idx;
         
         s_TablesInitialized = true;
+    }
+}
+
+
+size_t CTSE_Info::x_GetSubtypeIndex(CSeqFeatData::ESubtype subtype)
+{
+    if ( size_t(subtype) < s_FeatSubtypeIndex.size() ) {
+        return s_FeatSubtypeIndex[subtype];
+    }
+    else {
+        return 0;
     }
 }
 
@@ -522,6 +533,17 @@ CTSE_Info::x_GetAnnotObjs(const CAnnotName& name) const
 }
 
 
+const CTSE_Info::TAnnotObjs*
+CTSE_Info::x_GetUnnamedAnnotObjs(void) const
+{
+    TNamedAnnotObjs::const_iterator iter = m_NamedAnnotObjs.begin();
+    if ( iter == m_NamedAnnotObjs.end() || iter->first.IsNamed() ) {
+        return 0;
+    }
+    return &iter->second;
+}
+
+
 SIdAnnotObjs& CTSE_Info::x_SetIdObjects(TAnnotObjs& objs,
                                         const CSeq_id_Handle& id)
 {
@@ -559,6 +581,17 @@ const SIdAnnotObjs* CTSE_Info::x_GetIdObjects(const CAnnotName& name,
                                               const CSeq_id_Handle& idh) const
 {
     const TAnnotObjs* objs = x_GetAnnotObjs(name);
+    if ( !objs ) {
+        return 0;
+    }
+    return x_GetIdObjects(*objs, idh);
+}
+
+
+const SIdAnnotObjs*
+CTSE_Info::x_GetUnnamedIdObjects(const CSeq_id_Handle& idh) const
+{
+    const TAnnotObjs* objs = x_GetUnnamedAnnotObjs();
     if ( !objs ) {
         return 0;
     }
@@ -805,6 +838,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/10/09 20:20:58  vasilche
+* Added possibility to include and exclude Seq-annot names to annot iterator.
+* Fixed adaptive search. It looked only on selected set of annot names before.
+*
 * Revision 1.32  2003/10/07 13:43:23  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

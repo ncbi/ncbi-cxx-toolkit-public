@@ -57,7 +57,6 @@ SAnnotSelector::SAnnotSelector(TAnnotChoice annot,
       m_LimitObjectType(eLimit_None),
       m_IdResolving(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
-      m_AllNamedAnnots(false),
       m_NoMapping(false),
       m_AdaptiveDepth(false)
 {
@@ -78,7 +77,6 @@ SAnnotSelector::SAnnotSelector(TFeatChoice feat)
       m_LimitObjectType(eLimit_None),
       m_IdResolving(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
-      m_AllNamedAnnots(false),
       m_NoMapping(false),
       m_AdaptiveDepth(false)
 {
@@ -99,7 +97,6 @@ SAnnotSelector::SAnnotSelector(TAnnotChoice annot,
       m_LimitObjectType(eLimit_None),
       m_IdResolving(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
-      m_AllNamedAnnots(false),
       m_NoMapping(false),
       m_AdaptiveDepth(false)
 {
@@ -121,7 +118,6 @@ SAnnotSelector::SAnnotSelector(TFeatChoice feat,
       m_LimitObjectType(eLimit_None),
       m_IdResolving(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
-      m_AllNamedAnnots(false),
       m_NoMapping(false),
       m_AdaptiveDepth(false)
 {
@@ -160,25 +156,55 @@ SAnnotSelector& SAnnotSelector::SetLimitSeqAnnot(const CSeq_annot* annot)
 }
 
 
-bool SAnnotSelector::HasAnnotName(const CAnnotName& name) const
+bool SAnnotSelector::x_Has(const TAnnotsNames& names, const CAnnotName& name)
 {
-    return find(m_AnnotsNames.begin(), m_AnnotsNames.end(), name) !=
-        m_AnnotsNames.end();
+    return find(names.begin(), names.end(), name) != names.end();
 }
 
 
-SAnnotSelector& SAnnotSelector::AddAllNamedAnnots(void)
+void SAnnotSelector::x_Add(TAnnotsNames& names, const CAnnotName& name)
 {
-    m_AllNamedAnnots = true;
+    if ( !x_Has(names, name) ) {
+        names.push_back(name);
+    }
+}
+
+
+void SAnnotSelector::x_Del(TAnnotsNames& names, const CAnnotName& name)
+{
+    NON_CONST_ITERATE( TAnnotsNames, it, names ) {
+        if ( *it == name ) {
+            names.erase(it);
+            return;
+        }
+    }
+}
+
+
+bool SAnnotSelector::IncludedAnnotName(const CAnnotName& name) const
+{
+    return x_Has(m_IncludeAnnotsNames, name);
+}
+
+
+bool SAnnotSelector::ExcludedAnnotName(const CAnnotName& name) const
+{
+    return x_Has(m_ExcludeAnnotsNames, name);
+}
+
+
+SAnnotSelector& SAnnotSelector::ResetAnnotsNames(void)
+{
+    m_IncludeAnnotsNames.clear();
+    m_ExcludeAnnotsNames.clear();
     return *this;
 }
 
 
 SAnnotSelector& SAnnotSelector::AddNamedAnnots(const CAnnotName& name)
 {
-    if ( !HasAnnotName(name) ) {
-        m_AnnotsNames.push_back(name);
-    }
+    x_Add(m_IncludeAnnotsNames, name);
+    x_Del(m_ExcludeAnnotsNames, name);
     return *this;
 }
 
@@ -195,21 +221,40 @@ SAnnotSelector& SAnnotSelector::AddUnnamedAnnots(void)
 }
 
 
-SAnnotSelector& SAnnotSelector::ResetAnnotsNames(void)
+SAnnotSelector& SAnnotSelector::ExcludeNamedAnnots(const CAnnotName& name)
 {
-    m_AnnotsNames.clear();
-    m_AllNamedAnnots = false;
+    x_Add(m_ExcludeAnnotsNames, name);
+    x_Del(m_IncludeAnnotsNames, name);
+    return *this;
+}
+
+
+SAnnotSelector& SAnnotSelector::ExcludeNamedAnnots(const char* name)
+{
+    return ExcludeNamedAnnots(CAnnotName(name));
+}
+
+
+SAnnotSelector& SAnnotSelector::ExcludeUnnamedAnnots(void)
+{
+    return ExcludeNamedAnnots(CAnnotName());
+}
+
+
+SAnnotSelector& SAnnotSelector::SetAllNamedAnnots(void)
+{
+    ResetAnnotsNames();
+    ExcludeUnnamedAnnots();
     return *this;
 }
 
 
 SAnnotSelector& SAnnotSelector::SetDataSource(const string& source)
 {
-    CAnnotName name;
-    if ( !source.empty() ) {
-        name.SetNamed(source);
+    if ( source.empty() ) {
+        AddUnnamedAnnots();
     }
-    return AddNamedAnnots(name);
+    return AddNamedAnnots(source);
 }
 
 
@@ -232,6 +277,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/10/09 20:20:58  vasilche
+* Added possibility to include and exclude Seq-annot names to annot iterator.
+* Fixed adaptive search. It looked only on selected set of annot names before.
+*
 * Revision 1.1  2003/10/07 13:43:23  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

@@ -838,11 +838,11 @@ int CDemoApp::Run(void)
             .SetMaxSize(max_feat)
             .SetResolveDepth(depth)
             .SetAdaptiveDepth(adaptive);
+        if ( include_allnamed ) {
+            base_sel.SetAllNamedAnnots();
+        }
         if ( include_unnamed ) {
             base_sel.AddUnnamedAnnots();
-        }
-        if ( include_allnamed ) {
-            base_sel.AddAllNamedAnnots();
         }
         ITERATE ( set<string>, it, include_named ) {
             base_sel.AddNamedAnnots(*it);
@@ -1023,6 +1023,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/10/09 20:20:58  vasilche
+* Added possibility to include and exclude Seq-annot names to annot iterator.
+* Fixed adaptive search. It looked only on selected set of annot names before.
+*
 * Revision 1.41  2003/10/08 17:55:32  vasilche
 * Print sequence gi when -id option is used.
 *

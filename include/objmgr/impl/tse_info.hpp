@@ -178,6 +178,7 @@ private:
 
     static void x_InitIndexTables(void);
 
+    static size_t x_GetSubtypeIndex(CSeqFeatData::ESubtype subtype);
     static TIndexRange x_GetIndexRange(const SAnnotTypeSelector& sel);
     static TIndexRange x_GetIndexRange(const SAnnotTypeSelector& sel,
                                        const SIdAnnotObjs& objs);
@@ -187,11 +188,13 @@ private:
     // index access methods
     TAnnotObjs& x_SetAnnotObjs(const CAnnotName& name);
     const TAnnotObjs* x_GetAnnotObjs(const CAnnotName& name) const;
+    const TAnnotObjs* x_GetUnnamedAnnotObjs(void) const;
     void x_RemoveAnnotObjs(const CAnnotName& name);
     const SIdAnnotObjs* x_GetIdObjects(const TAnnotObjs& objs,
                                        const CSeq_id_Handle& idh) const;
     const SIdAnnotObjs* x_GetIdObjects(const CAnnotName& name,
                                        const CSeq_id_Handle& id) const;
+    const SIdAnnotObjs* x_GetUnnamedIdObjects(const CSeq_id_Handle& id) const;
     SIdAnnotObjs& x_SetIdObjects(TAnnotObjs& objs,
                                  const CSeq_id_Handle& id);
     SIdAnnotObjs& x_SetIdObjects(const CAnnotName& name,
@@ -373,6 +376,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/10/09 20:20:59  vasilche
+* Added possibility to include and exclude Seq-annot names to annot iterator.
+* Fixed adaptive search. It looked only on selected set of annot names before.
+*
 * Revision 1.40  2003/10/07 13:43:22  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

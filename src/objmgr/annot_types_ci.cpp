@@ -860,6 +860,13 @@ bool CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
 }
 
 
+static CSeqFeatData::ESubtype s_DefaultAdaptiveTriggers[] = {
+    CSeqFeatData::eSubtype_gene,
+    CSeqFeatData::eSubtype_cdregion,
+    CSeqFeatData::eSubtype_mRNA
+};
+
+
 bool CAnnotTypes_CI::x_Search(const TTSE_LockSet& tse_set,
                               const CSeq_id_Handle& id,
                               const CHandleRange& hr,
@@ -870,34 +877,71 @@ bool CAnnotTypes_CI::x_Search(const TTSE_LockSet& tse_set,
         const CTSE_Info& tse = **tse_it;
 
         CTSE_Info::TAnnotReadLockGuard guard(tse.m_AnnotObjsLock);
-        if ( !m_AllNamedAnnots && IsSetAnnotsNames() ) {
-            // only selected annots
-            ITERATE ( TAnnotsNames, iter, m_AnnotsNames ) {
-                const SIdAnnotObjs* objs = tse.x_GetIdObjects(*iter, id);
-                if ( !objs ) {
-                    continue;
+
+        if ( m_AdaptiveDepth && tse.ContainsSeqid(id) ) {
+            const SIdAnnotObjs* objs = tse.x_GetUnnamedIdObjects(id);
+            if ( objs ) {
+                vector<char> indexes;
+                if ( m_AdaptiveTriggers.empty() ) {
+                    const size_t count =
+                        sizeof(s_DefaultAdaptiveTriggers)/
+                        sizeof(s_DefaultAdaptiveTriggers[0]);
+                    for ( int i = count - 1; i >= 0; --i ) {
+                        CSeqFeatData::ESubtype subtype =
+                            s_DefaultAdaptiveTriggers[i];
+                        size_t index = CTSE_Info::x_GetSubtypeIndex(subtype);
+                        if ( index ) {
+                            indexes.resize(max(indexes.size(), index));
+                            indexes[index] = 1;
+                        }
+                    }
                 }
-                found = x_Search(tse, objs, guard, *iter,
-                                 id, hr, cvt) || found;
+                else {
+                    ITERATE ( TAdaptiveTriggers, it, m_AdaptiveTriggers ) {
+                        pair<size_t, size_t> idxs =
+                            CTSE_Info::x_GetIndexRange(*it);
+                        indexes.resize(max(indexes.size(), idxs.second));
+                        for ( size_t i = idxs.first; i < idxs.second; ++i ) {
+                            indexes[i] = 1;
+                        }
+                    }
+                }
+                for ( size_t index = 0; index < indexes.size(); ++index ) {
+                    if ( !indexes[index] ) {
+                        continue;
+                    }
+                    if ( index >= objs->m_AnnotSet.size() ) {
+                        break;
+                    }
+                    if ( !objs->m_AnnotSet[index].empty() ) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if ( !m_IncludeAnnotsNames.empty() ) {
+            // only 'included' annots
+            ITERATE ( TAnnotsNames, iter, m_IncludeAnnotsNames ) {
+                _ASSERT(!ExcludedAnnotName(*iter)); // consistency check
+                const SIdAnnotObjs* objs = tse.x_GetIdObjects(*iter, id);
+                if ( objs ) {
+                    x_Search(tse, objs, guard, *iter, id, hr, cvt);
+                }
             }
         }
         else {
-            // all annots, maybe without unnamed
-            CTSE_Info::TNamedAnnotObjs::const_iterator iter =
-                tse.m_NamedAnnotObjs.begin();
-            if ( m_AllNamedAnnots && iter != tse.m_NamedAnnotObjs.end() &&
-                 !iter->first.IsNamed() && !HasAnnotName(iter->first) ) {
-                // skip unnamed annots
-                ++iter;
-            }
-            for ( ; iter != tse.m_NamedAnnotObjs.end(); ++iter ) {
-                const SIdAnnotObjs* objs =
-                    tse.x_GetIdObjects(iter->second, id);
-                if ( !objs ) {
+            // all annots, skipping 'excluded'
+            ITERATE (CTSE_Info::TNamedAnnotObjs, iter, tse.m_NamedAnnotObjs) {
+                if ( ExcludedAnnotName(iter->first) ) {
                     continue;
                 }
-                found = x_Search(tse, objs, guard, iter->first,
-                                 id, hr, cvt) || found;
+                const SIdAnnotObjs* objs =
+                    tse.x_GetIdObjects(iter->second, id);
+                if ( objs ) {
+                    x_Search(tse, objs, guard, iter->first, id, hr, cvt);
+                }
             }
         }
     }
@@ -905,25 +949,7 @@ bool CAnnotTypes_CI::x_Search(const TTSE_LockSet& tse_set,
 }
 
 
-inline
-bool CAnnotTypes_CI::x_HaveSubtype(const CTSE_Info& tse,
-                                   const SIdAnnotObjs& objs,
-                                   CSeqFeatData::ESubtype subtype) const
-{
-    return size_t(subtype) < objs.m_AnnotSet.size() &&
-        !objs.m_AnnotSet[subtype].empty();
-}
-
-
-inline
-bool CAnnotTypes_CI::x_HaveSNPSubtype(const CTSE_Info& tse,
-                                      const SIdAnnotObjs& objs) const
-{
-    return !objs.m_SNPSet.empty();
-}
-
-
-bool CAnnotTypes_CI::x_Search(const CTSE_Info& tse,
+void CAnnotTypes_CI::x_Search(const CTSE_Info& tse,
                               const SIdAnnotObjs* objs,
                               CReadLockGuard& guard,
                               const CAnnotName& annot_name,
@@ -932,36 +958,6 @@ bool CAnnotTypes_CI::x_Search(const CTSE_Info& tse,
                               CSeq_loc_Conversion* cvt)
 {
     _ASSERT(objs);
-
-    bool found = false;
-    if ( m_AdaptiveDepth && tse.ContainsSeqid(id) ) {
-        if ( m_AdaptiveTriggers.empty() ) {
-            if ( x_HaveSubtype(tse, *objs, CSeqFeatData::eSubtype_gene) ||
-                 x_HaveSubtype(tse, *objs, CSeqFeatData::eSubtype_cdregion) ||
-                 x_HaveSubtype(tse, *objs, CSeqFeatData::eSubtype_mRNA) ) {
-                found = true;
-            }
-        }
-        else {
-            ITERATE ( TAdaptiveTriggers, it, m_AdaptiveTriggers ) {
-                pair<size_t, size_t> idxs = CTSE_Info::x_GetIndexRange(*it,
-                                                                       *objs);
-                for ( size_t i = idxs.first; i < idxs.second; ++i ) {
-                    if ( x_HaveSubtype(tse, *objs,
-                                       CSeqFeatData::ESubtype(i)) ) {
-                        found = true;
-                        break;
-                    }
-                    if ( i == CSeqFeatData::eSubtype_variation ) {
-                        if ( x_HaveSNPSubtype(tse, *objs) ) {
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     CHandleRange::TRange range = hr.GetOverlappingRange();
 
@@ -1039,7 +1035,7 @@ bool CAnnotTypes_CI::x_Search(const CTSE_Info& tse,
 
             // Limit number of annotations to m_MaxSize
             if ( m_AnnotSet.size() >= m_MaxSize )
-                return found;
+                return;
         }
     }
 
@@ -1065,13 +1061,11 @@ bool CAnnotTypes_CI::x_Search(const CTSE_Info& tse,
                     annot_ref.SetSNP_Point(snp, cvt);
                     m_AnnotSet.push_back(annot_ref);
                     if ( m_AnnotSet.size() >= m_MaxSize )
-                        return found;
+                        return;
                 } while ( ++snp_it != snp_annot.end() );
             }
         }
     }
-
-    return found;
 }
 
 
@@ -1242,6 +1236,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.94  2003/10/09 20:20:58  vasilche
+* Added possibility to include and exclude Seq-annot names to annot iterator.
+* Fixed adaptive search. It looked only on selected set of annot names before.
+*
 * Revision 1.93  2003/10/07 13:43:23  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

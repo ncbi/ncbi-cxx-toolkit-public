@@ -331,7 +331,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         }
 
     typedef vector<SAnnotTypeSelector> TAdaptiveTriggers;
-    SAnnotSelector& SetAdaptiveDepth(bool value)
+    SAnnotSelector& SetAdaptiveDepth(bool value = true)
         {
             m_AdaptiveDepth = value;
             return *this;
@@ -386,29 +386,49 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         }
 
     typedef vector<CAnnotName> TAnnotsNames;
+    /// Select annotations from all Seq-annots
     SAnnotSelector& ResetAnnotsNames(void);
+    /// Add unnamed annots to set of annots names to look for
     SAnnotSelector& AddUnnamedAnnots(void);
-    SAnnotSelector& AddAllNamedAnnots(void);
+    /// Add named annot to set of annots names to look for
     SAnnotSelector& AddNamedAnnots(const CAnnotName& name);
     SAnnotSelector& AddNamedAnnots(const char* name);
-    bool IsSetAnnotsNames(void) const
-        {
-            return !m_AnnotsNames.empty();
-        }
-    bool HasAnnotName(const CAnnotName& name) const;
-
-    // compatibility
-    // sets annot name to search, if name == "" search unnamed annots
+    /// Add unnamed annots to set of annots names to exclude
+    SAnnotSelector& ExcludeUnnamedAnnots(void);
+    /// Add named annot to set of annots names to exclude
+    SAnnotSelector& ExcludeNamedAnnots(const CAnnotName& name);
+    SAnnotSelector& ExcludeNamedAnnots(const char* name);
+    /// Look for all named Seq-annots
+    SAnnotSelector& SetAllNamedAnnots(void);
+    // Compatibility:
+    /// Look for named annot.
+    /// If name is empty ("") look for unnamed annots too.
     SAnnotSelector& SetDataSource(const string& name);
 
+    // Access methods for iterator
+    bool IsSetAnnotsNames(void) const
+        {
+            return
+                !m_IncludeAnnotsNames.empty() ||
+                !m_ExcludeAnnotsNames.empty();
+        }
+    bool IncludedAnnotName(const CAnnotName& name) const;
+    bool ExcludedAnnotName(const CAnnotName& name) const;
+
+
     // No locations mapping flag. Set to true by CAnnot_CI.
-    SAnnotSelector& SetNoMapping(bool value)
+    SAnnotSelector& SetNoMapping(bool value = true)
         {
             m_NoMapping = value;
             return *this;
         }
 
 protected:
+
+    static bool x_Has(const TAnnotsNames& names, const CAnnotName& name);
+    static void x_Add(TAnnotsNames& names, const CAnnotName& name);
+    static void x_Del(TAnnotsNames& names, const CAnnotName& name);
+
     int                   m_FeatProduct;  // "true" for searching products
     int                   m_ResolveDepth;
     EOverlapType          m_OverlapType;
@@ -420,8 +440,8 @@ protected:
     EIdResolving          m_IdResolving;
     CConstRef<CObject>    m_LimitObject;
     size_t                m_MaxSize; //
-    TAnnotsNames          m_AnnotsNames;
-    bool                  m_AllNamedAnnots;
+    TAnnotsNames          m_IncludeAnnotsNames;
+    TAnnotsNames          m_ExcludeAnnotsNames;
     bool                  m_NoMapping;
     bool                  m_AdaptiveDepth;
     TAdaptiveTriggers     m_AdaptiveTriggers;
@@ -434,6 +454,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/10/09 20:20:59  vasilche
+* Added possibility to include and exclude Seq-annot names to annot iterator.
+* Fixed adaptive search. It looked only on selected set of annot names before.
+*
 * Revision 1.20  2003/10/07 13:43:22  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.
