@@ -174,7 +174,7 @@ void CRPCClient<TRequest, TReply>::Ask(const TRequest& request, TReply& reply)
             *m_Out << request;
             *m_In >> reply;
             break;
-        } catch (CSerialException& e) {
+        } catch (CSerialException&) {
             if ( !x_ShouldRetry(tries) ) {
                 throw;
             }
@@ -232,6 +232,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/12/16 20:55:32  dicuccio
+* Fixed compiler warning on MSVC - unreferenced exception variable removed
+*
 * Revision 1.3  2003/12/12 21:31:43  ucko
 * Support (configurably) retrying requests that run into I/O errors.
 * Partially doxygenize.
