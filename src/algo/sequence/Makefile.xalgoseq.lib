@@ -1,0 +1,7 @@
+# $Id$
+
+SRC = cpg
+LIB = xalgoseq
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
