@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/05/13 18:31:07  gouriano
+* Corrected GetRealTypeInfo
+*
 * Revision 1.6  2004/03/25 15:57:08  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *
@@ -158,7 +161,8 @@ const CObject* CAliasTypeInfo::GetCObjectPtr(TConstObjectPtr objectPtr) const
 
 TTypeInfo CAliasTypeInfo::GetRealTypeInfo(TConstObjectPtr object) const
 {
-    return GetPointedType()->GetRealTypeInfo(object);
+    return CParent::GetRealTypeInfo(object);
+//    return GetPointedType()->GetRealTypeInfo(object);
 }
 
 
@@ -170,6 +174,8 @@ bool CAliasTypeInfo::IsParentClassOf(const CClassTypeInfo* classInfo) const
 
 void CAliasTypeInfo::SetDataOffset(TPointerOffsetType offset)
 {
+// it seems a lot of code here won't work correctly if the offset is not zero
+    _ASSERT(offset == 0);
     m_DataOffset = offset;
 }
 
