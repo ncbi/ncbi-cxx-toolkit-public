@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/01/29 17:52:42  sandomir
+* FilterList changed
+*
 * Revision 1.16  1999/01/27 16:46:22  sandomir
 * minor change: PFindByName added
 *
@@ -247,7 +250,7 @@ protected:
 //
 
 class CNcbiDatabaseFilter;
-typedef map< string, CNcbiDatabaseFilter* > TFilterList;
+typedef list<CNcbiDatabaseFilter*> TFilterList;
 
 class CNcbiQueryResult;
 
