@@ -264,6 +264,7 @@ void
 BlastSaveInitHsp(BlastInitHitList* ungapped_hsps, Int4 q_start, Int4 s_start, 
                  Int4 q_off, Int4 s_off, Int4 len, Int4 score);
 
+
 #ifdef __cplusplus
 }
 #endif
