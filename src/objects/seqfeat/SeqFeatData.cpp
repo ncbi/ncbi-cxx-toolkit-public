@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/03/22 16:13:42  ucko
+ * CSeqFeatData::GetKey: return "Prot" rather than "Protein" in default
+ * vocabulary.  (Keep "Protein" for Genbank).
+ *
  * Revision 6.2  2002/03/06 21:59:48  ucko
  * CSeqFeatData::GetKey: return (misc_)RNA rather than extended name for
  * RNA of type "other."
@@ -77,6 +81,8 @@ string CSeqFeatData::GetKey(EVocabulary vocab) const
         case e_Org:
         case e_Biosrc:
             return "source";
+        case e_Prot:
+            return "Protein";
         case e_Site: // Is this correct, or are these encoded as Imp?
             switch (GetSite()) {
             case CSeqFeatData::eSite_binding:
@@ -99,7 +105,6 @@ string CSeqFeatData::GetKey(EVocabulary vocab) const
         case e_Het:
             return "misc_binding"; // ?
         case e_Cdregion:
-        case e_Prot:
         case e_Rna:
         case e_Imp:
             break;
@@ -112,7 +117,7 @@ string CSeqFeatData::GetKey(EVocabulary vocab) const
     case e_Gene:            return "Gene";
     case e_Org:             return "Org";
     case e_Cdregion:        return "CDS";
-    case e_Prot:            return "Protein";
+    case e_Prot:            return "Prot";
     case e_Rna:
         switch (GetRna().GetType()) {
         case CRNA_ref::eType_premsg:  return "precursor_RNA";
