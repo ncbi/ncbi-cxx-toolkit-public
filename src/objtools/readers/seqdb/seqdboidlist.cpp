@@ -35,6 +35,7 @@
 #include <corelib/ncbistr.hpp>
 #include "seqdboidlist.hpp"
 #include "seqdbfile.hpp"
+#include "seqdbgilistset.hpp"
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
@@ -97,7 +98,7 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet & volset,
 {
     _ASSERT((volset.HasFilter() && (! volset.HasSimpleMask())) || gi_list.NotEmpty());
     
-    // First, get the memory space and clear it.
+    // First, get the memory space for the OID bitmap and clear it.
     
     // Pad memory space to word boundary, add 8 bytes for "insurance".  Some
     // of the algorithms here need to do bit shifting and OR half of a source
@@ -112,6 +113,8 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet & volset,
     m_BitEnd = m_Bits + byte_length;
     m_BitOwner = true;
     m_NumOIDs = num_oids;
+    
+    CSeqDBGiListSet gi_list_set(m_Atlas, volset, gi_list, locked);
     
     try {
         memset((void*) m_Bits, 0, byte_length);
@@ -128,12 +131,12 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet & volset,
             ITERATE(CSeqDBVolSet::TFilters, it, volset.GetFilterSet(i)) {
                 const CSeqDBVolEntry * v1 = volset.GetVolEntry(i);
                 CRef<CSeqDBVolFilter> v2(*it);
-                x_ApplyFilter(v2, v1, locked);
+                x_ApplyFilter(v2, v1, gi_list_set, locked);
             }
         }
         
         if (gi_list.NotEmpty()) {
-            x_ApplyUserGiList(volset, *gi_list, locked);
+            x_ApplyUserGiList(*gi_list, locked);
         }
     }
     catch(...) {
@@ -150,6 +153,7 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet & volset,
 
 void CSeqDBOIDList::x_ApplyFilter(CRef<CSeqDBVolFilter>   filter,
                                   const CSeqDBVolEntry  * vol,
+                                  CSeqDBGiListSet       & gis,
                                   CSeqDBLockHold        & locked)
 {
     // Volume-relative OIDs
@@ -187,10 +191,14 @@ void CSeqDBOIDList::x_ApplyFilter(CRef<CSeqDBVolFilter>   filter,
     if (! filter->GetOIDMask().empty()) {
         x_OrMaskBits(filter->GetOIDMask(), vol_start, start_g, end_g, locked);
     } else if (! filter->GetGIList().empty()) {
-        x_OrGiFileBits(filter->GetGIList(),
-                       vol->Vol(),
-                       vol->OIDStart(),
-                       vol->OIDEnd(),
+        CRef<CSeqDBGiList> gilist =
+            gis.GetNodeGiList(filter->GetGIList(),
+                              vol->Vol(),
+                              vol->OIDStart(),
+                              vol->OIDEnd(),
+                              locked);
+        
+        x_OrGiFileBits(*gilist,
                        start_g,
                        end_g,
                        locked);
@@ -199,33 +207,12 @@ void CSeqDBOIDList::x_ApplyFilter(CRef<CSeqDBVolFilter>   filter,
     }
 }
 
-/// Defines a pair of integers and a sort order.
-///
-/// This struct stores a pair of integers, the volume index and the
-/// oid count.  The ordering is by the oid count, descending.
 
-struct SSeqDB_IndexCountPair {
-public:
-    /// Index of the volume in the volume set.
-    int m_Index;
-    
-    /// Number of OIDs associated with this volume.
-    int m_Count;
-    
-    /// Less than operator, where elements with larger allows sorting.
-    /// Elements are sorted by number of OIDs in descending order.
-    /// @param rhs
-    ///   The right hand side of the less than.
-    bool operator < (const SSeqDB_IndexCountPair & rhs) const
-    {
-        return m_Count > rhs.m_Count;
-    }
-};
-
-void CSeqDBOIDList::x_ApplyUserGiList(const CSeqDBVolSet & volset,
-                                      CSeqDBGiList       & gis,
-                                      CSeqDBLockHold     & locked)
+void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis,
+                                      CSeqDBLockHold & locked)
 {
+    m_Atlas.Lock(locked);
+    
     int gis_size = gis.Size();
     
     if (0 == gis_size) {
@@ -234,47 +221,12 @@ void CSeqDBOIDList::x_ApplyUserGiList(const CSeqDBVolSet & volset,
         return;
     }
     
-    typedef SSeqDB_IndexCountPair TIndexCount;
-    vector<TIndexCount> OidsPerVolume;
-    
-    // Build a list of volumes sorted by OID count.
-    
-    for(int i = 0; i < volset.GetNumVols(); i++) {
-        const CSeqDBVolEntry * vol = volset.GetVolEntry(i);
-        
-        TIndexCount vol_oids;
-        vol_oids.m_Index = i;
-        vol_oids.m_Count = vol->OIDEnd() - vol->OIDStart();
-        
-        OidsPerVolume.push_back(vol_oids);
-    }
-    
-    // The largest volumes should be used first, to minimize the
-    // number of failed GI->OID conversion attempts.  Searching input
-    // GIs against larger volumes first should eliminate most of the
-    // GIs by the time smaller volumes are searched, thus reducing the
-    // total number of lookups.
-    
-    std::sort(OidsPerVolume.begin(), OidsPerVolume.end());
-    
-    for(int i = 0; i < (int)OidsPerVolume.size(); i++) {
-        int vol_idx = OidsPerVolume[i].m_Index;
-        
-        const CSeqDBVolEntry * vol = volset.GetVolEntry(vol_idx);
-        int vol_start = vol->OIDStart();
-        
-        // Note: The implied ISAM lookups will sort by GI.
-        
-        vol->Vol()->GisToOids(vol_start, gis, locked);
-    }
-    
-    // Sort resulting array by OID.  This is not for performance
-    // reasons, but rather is necessary due to the way in which the
-    // AND operation is accomplished.
+    // Sort resulting array by OID.  This is necessary due to the way
+    // in which the AND operation is accomplished.
     
     gis.InsureOrder(CSeqDBGiList::eOid);
     
-    // Clear any OID bits between the valid OIDs.
+    // Clear any OID bits between the included OIDs.
     
     if (gis[gis_size-1].oid == -1) {
         x_ClearBitRange(0, m_NumOIDs);
@@ -307,53 +259,6 @@ void CSeqDBOIDList::x_ApplyUserGiList(const CSeqDBVolSet & volset,
         }
     }
 }
-
-
-// This does not implement OID ranges yet.  To do so, it will be
-// necessary to modify the loops below, which are complex enough that
-// this should be done carefully.
-//
-// For each loop:
-//
-// 1. Modify starting condition (i.e. adjust "bitmapped" part) to skip
-//    to first "input" character / word.
-//
-// 2. Blank out or ignore the portion of that data that are before the
-//    input range.
-//
-// 3. If the entire OID range is encompassed in that element, blank
-//    out the end of it too; OR the piece of data into the array as
-//    shown below - and we're done.
-//
-// 4. Otherwise, OR it in, then iterate over the "middle" sections as
-//    normal.
-//
-// 5. When the end of the data area is reached, do the same partial
-//    element blanking as above, with the last element.
-
-// A. Possibly rewrite this in a more readable way.
-
-// a1. Iterate bitwise over the input array, setting particular bits
-//     in the output array.
-//
-// a2. If data is aligned, skip to the fast mechanism?
-//
-// B. Another rewrite:
-//
-// 1. Write a generic function for ORring a range of bits from one
-//    array to another.
-//
-// 2. That function would use two or three cases as shown below, to
-//    accomplish the task for varying degrees of alignment.
-// 
-// 3. Possibly:
-//
-//    1. One case for bit arrays both aligned on 32 bit boundaries.
-//    2. Another case for bit arrays aligned on 8 bit boundaries.
-//    3. Another case for bit arrays not aligned.
-//    4. Another case for bit arrays with "partial" start/end.
-//
-//   .. Later cases would probably devolve to earlier ones internally?
 
 void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
                                  int              vol_start,
@@ -538,150 +443,37 @@ void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
     m_Atlas.RetRegion(lease);
 }
 
-// This reads through the list of gis and turns on the corresponding
-// oids.
 
-// This is inefficient (and incorrect) for a number of reasons:
+// NOTE: Converting the set of GIs to OIDS is unacceptably slow.  This
+// is partially due to the various performance inadequacies of the
+// isam code, and partially due to the inefficiency of using it in
+// this way.  It should be set up to accept a list of GIs, in sorted
+// order.  It would search down to find the block containing the first
+// object, and scan that block to find the object, but it would
+// continue to scan that block for any other gis in the range.  It
+// would report that it had translated N gis and produced M oids.  It
+// might continue the loop internally.
 
-// 1. All processing for the GI list is done for each volume.  Three
-// volumes, three times the cost.  There should be an object that
-// manages these translations.  It would be like vol-set but for gis,
-// oids, and gi lists.
-
-// 2. Converting the set of GIs to OIDS is unacceptably slow, even if
-// it were only done once.  This is partially due to the various
-// performance inadequacies of the isam code, and partially due to the
-// inefficiency of using it in this way.  It should be set up to
-// accept a list of GIs, in sorted order.  It would search down to
-// find the block containing the first object, and scan that block to
-// find the object, but it would continue to scan that block for any
-// other gis in the range.  It would report that it had translated N
-// gis and produced M oids.  It might continue the loop internally.
-
-// 3. The volume distribution code is not done.  So attaching a gilist
-// to the "top" of SeqDB is impossible at this point.
-
-// 4. To do #3, this code should be factored out into several discrete
-// smaller functions.  One of them would read and swap the GI list.
-// The next would convert this list into OIDs for a given volume.
-// Then there needs to be the "gilist manager" code that can insure
-// that the previously mentioned computation is only done once for a
-// given gilist+oidlist.
-
-// 5. ON THE OTHER HAND: How long does the translation of a gilist to
-// an OIDLIST take?  It seems like nothing is gained above the volume
-// level, except the swapping of GIs.  So, the gilist -> vector<int>
-// can be done in one fell swoop.  After that, the gilist must be
-// searched seperately against each volume, because doing a single
-// translation would have to do that internally anyway.
-
-
-void CSeqDBOIDList::x_OrGiFileBits(const string    & gilist_fname,
-                                   const CSeqDBVol * volp,
-                                   int               vol_start,
-                                   int               vol_end,
+void CSeqDBOIDList::x_OrGiFileBits(CSeqDBGiList    & gilist,
                                    int               oid_start,
                                    int               oid_end,
                                    CSeqDBLockHold  & locked)
 {
-    _ASSERT(volp);
-    
     m_Atlas.Lock(locked);
     
-    // Open file and get pointers
+    int num_gis = gilist.Size();
+    int prev_oid = -1;
     
-    CSeqDBRawFile gilist(m_Atlas);
-    CSeqDBMemLease lease(m_Atlas);
-    
-    Uint4 num_gis(0);
-    TIndx file_length(0);
-    bool  is_binary(false);
-    
-    try {
-        // Take exception to empty file
+    for(int i = 0; i < num_gis; i++) {
+        int oid = gilist[i].oid;
         
-        gilist.Open(gilist_fname, locked);
-        file_length = (TIndx) gilist.GetFileLength();
-        
-        if (! file_length) {
-            NCBI_THROW(CSeqDBException,
-                       eFileErr,
-                       "Empty file specified for GI list.");
-        }
-        
-        // File may either be text (starting with a digit) or a
-        // correctly formatted binary number array.  Determine which
-        // type it is and verify correctness of the metadata.
-        
-        char first_char(0);
-        gilist.ReadBytes(lease, & first_char, 0, 1);
-        
-        if (isdigit(first_char)) {
-            is_binary = false;
-        } else if ((((first_char) & 0xFF) == 0xFF) && (file_length >= 8)) {
-            is_binary = true;
-            Uint4 marker(0);
-            
-            gilist.ReadSwapped(lease, 0, & marker, locked);
-            gilist.ReadSwapped(lease, 4, & num_gis, locked);
-            
-            if (marker != Uint4(-1)) {
-                NCBI_THROW(CSeqDBException,
-                           eFileErr,
-                           "Unrecognized magic number in GI list file.");
+        if (oid != prev_oid) {
+            if ((oid >= oid_start) && (oid < oid_end)) {
+                x_SetBit(oid);
             }
-            
-            if (int(num_gis) != int((file_length - 8) / 4)) {
-                NCBI_THROW(CSeqDBException,
-                           eFileErr,
-                           "GI list file size does not match internal count.");
-            }
-        } else {
-            NCBI_THROW(CSeqDBException,
-                       eFileErr,
-                       "File specified for GI list has invalid data.");
-        }
-        
-        // Now we have either a text or binary GI file -- read in the gis.
-        
-        vector<int> gis;
-        
-        if (is_binary) {
-            gis.reserve(num_gis);
-            x_ReadBinaryGiList(gilist, lease, num_gis, gis, locked);
-        } else {
-            // Assume average gi is at least 6 digits plus newline.
-            gis.reserve(file_length / 7);
-            x_ReadTextGiList(gilist, lease, gis, locked);
-        }
-        
-        // Iterate over the gis from the file, look up the
-        // corresponding oid, and turn on that mask bit.
-        
-        int vol_size = vol_end - vol_start;
-        
-        ITERATE(vector<int>, gi_iter, gis) {
-            int vol_oid(0);
-            
-            volp->GiToOid(*gi_iter, vol_oid, locked);
-            
-            if (vol_oid != -1) {
-                if (vol_oid < vol_size) {
-                    int oid = vol_oid + vol_start;
-                    
-                    if ((oid >= oid_start) && (oid < oid_end)) {
-                        x_SetBit(oid);
-                    }
-                }
-            }
+            prev_oid = oid;
         }
     }
-    catch(...) {
-        m_Atlas.RetRegion(lease);
-        throw;
-    }
-    
-    m_Atlas.RetRegion(lease);
 }
 
 void CSeqDBOIDList::x_SetBitRange(int oid_start,

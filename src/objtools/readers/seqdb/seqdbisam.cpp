@@ -1505,12 +1505,14 @@ CSeqDBIsam::TryToSimplifyAccession(const string & acc,
 }
 
 void CSeqDBIsam::GisToOids(int              vol_start,
+                           int              vol_end,
                            CSeqDBGiList   & gis,
                            CSeqDBLockHold & locked)
 {
     gis.InsureOrder(CSeqDBGiList::eGi);
     
     int gis_size = (int) gis.Size();
+    int vol_size = vol_end - vol_start;
     
     for(int i = 0; i < gis_size; i++) {
         CSeqDBGiList::SGiOid gi_oid = gis[i];
@@ -1523,7 +1525,10 @@ void CSeqDBIsam::GisToOids(int              vol_start,
             
             if (GiToOid(gi_oid.gi, oid, locked)) {
                 _ASSERT(oid != -1);
-                gis.SetTranslation(i, oid + vol_start);
+                
+                if (oid < vol_size) {
+                    gis.SetTranslation(i, oid + vol_start);
+                }
             } else {
                 _ASSERT(oid == -1);
             }

@@ -171,11 +171,14 @@ public:
     ///
     /// @param vol_start
     ///   The starting OID of this volume.
+    /// @param vol_end
+    ///   The fist OID past the end of this volume.
     /// @param gis
     ///   The set of GI-OID pairs.
     /// @param locked
     ///   The lock holder object for this thread
     void GisToOids(int              vol_start,
+                   int              vol_end,
                    CSeqDBGiList   & gis,
                    CSeqDBLockHold & locked);
     

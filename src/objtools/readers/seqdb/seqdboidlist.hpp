@@ -41,6 +41,7 @@
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include "seqdbfile.hpp"
 #include "seqdbvolset.hpp"
+#include "seqdbgilistset.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -237,28 +238,19 @@ private:
     
     /// Add bits corresponding to a GI list.
     /// 
-    /// This method reads a file containing a list of GIs.  The GIs
-    /// which are found in this volume are converted to OIDs, and the
-    /// corresponding bits are turned on.
+    /// This method applies a list of GIs to the OID bitmap as a
+    /// filter over a volume.  The bit corresponding to each OID is
+    /// turned on if that OID is in the range of the volume.
     /// 
-    /// @param gilist_fname
-    ///   The name of the gi list file to use.
-    /// @param volp
-    ///   The volume this list is to be applied to.
-    /// @param vol_start
-    ///   The volume's starting oid.
-    /// @param vol_end
-    ///   The OID after the end of the volume's OID range.
+    /// @param gilist
+    ///   The list of GIs to apply as a filter.
     /// @param oid_start
     ///   The OID range's starting oid.
     /// @param oid_end
     ///   The OID after the end of the OID range.
     /// @param locked
     ///   The lock holder object for this thread.
-    void x_OrGiFileBits(const string    & gilist_fname,
-                        const CSeqDBVol * volp,
-                        int               vol_start,
-                        int               vol_end,
+    void x_OrGiFileBits(CSeqDBGiList    & gilist,
                         int               oid_start,
                         int               oid_end,
                         CSeqDBLockHold  & locked);
@@ -344,6 +336,7 @@ private:
     ///   The lock holder object for this thread.
     void x_ApplyFilter(CRef<CSeqDBVolFilter>   filter,
                        const CSeqDBVolEntry  * vol,
+                       CSeqDBGiListSet       & gis,
                        CSeqDBLockHold        & locked);
     
     /// Apply a user GI list to a volume
@@ -354,15 +347,12 @@ private:
     /// an AND operation between the user filter and the (already
     /// applied) alias file filters.
     ///
-    /// @param filter
-    ///   The object specifying the filtering options.
-    /// @param vol
-    ///   The volume entry describing the volume to work with.
+    /// @param gis
+    ///   The user gi list to apply to the volumes.
     /// @param locked
     ///   The lock holder object for this thread.
-    void x_ApplyUserGiList(const CSeqDBVolSet & volumes,
-                           CSeqDBGiList       & gis,
-                           CSeqDBLockHold     & locked);
+    void x_ApplyUserGiList(CSeqDBGiList   & gis,
+                           CSeqDBLockHold & locked);
     
     /// The memory management layer object.
     CSeqDBAtlas    & m_Atlas;

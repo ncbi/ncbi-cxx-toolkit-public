@@ -1692,6 +1692,7 @@ bool CSeqDBVol::GiToOid(int gi, int & oid, CSeqDBLockHold & locked) const
 }
 
 void CSeqDBVol::GisToOids(int              vol_start,
+                          int              vol_end,
                           CSeqDBGiList   & gis,
                           CSeqDBLockHold & locked) const
 {
@@ -1699,7 +1700,7 @@ void CSeqDBVol::GisToOids(int              vol_start,
         return;
     }
     
-    m_IsamGi->GisToOids(vol_start, gis, locked);
+    m_IsamGi->GisToOids(vol_start, vol_end, gis, locked);
 }
 
 bool CSeqDBVol::GetGi(int oid, int & gi, CSeqDBLockHold & locked) const

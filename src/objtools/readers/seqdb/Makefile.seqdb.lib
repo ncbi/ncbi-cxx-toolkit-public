@@ -12,7 +12,8 @@ seqdbvol \
 seqdbvolset \
 seqdboidlist \
 seqdbisam \
-seqdbtax
+seqdbtax \
+seqdbgilistset
 
 LIB = seqdb
 
