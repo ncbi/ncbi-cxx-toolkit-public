@@ -29,6 +29,7 @@
 
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbi_os_unix.hpp>
+#include <stdio.h>
 #include <test/test_assert.h>  /* This header must go last */
 
 
@@ -58,6 +59,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/10/01 12:04:29  ucko
+ * +<stdio.h> for remove()
+ *
  * Revision 1.1  2003/09/30 20:54:45  lavr
  * Initial revision
  *
