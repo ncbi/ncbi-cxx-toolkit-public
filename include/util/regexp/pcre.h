@@ -78,31 +78,29 @@ extern void  (*pcre_free)(void *);
 
 /* Functions */
 
-NCBI_XUTIL_EXPORT
 extern pcre *pcre_compile(const char *, int, const char **, int *,
                           const unsigned char *);
-NCBI_XUTIL_EXPORT
 extern int  pcre_copy_substring(const char *, int *, int, int, char *, int);
-NCBI_XUTIL_EXPORT
+
 extern int  pcre_exec(const pcre *, const pcre_extra *, const char *,
                       int, int, int, int *, int);
-NCBI_XUTIL_EXPORT
+
 extern void pcre_free_substring(const char *);
-NCBI_XUTIL_EXPORT
+
 extern void pcre_free_substring_list(const char **);
-NCBI_XUTIL_EXPORT
+
 extern int  pcre_get_substring(const char *, int *, int, int, const char **);
-NCBI_XUTIL_EXPORT
+
 extern int  pcre_get_substring_list(const char *, int *, int, const char ***);
-NCBI_XUTIL_EXPORT
+
 extern int  pcre_info(const pcre *, int *, int *);
-NCBI_XUTIL_EXPORT
+
 extern int  pcre_fullinfo(const pcre *, const pcre_extra *, int, void *);
-NCBI_XUTIL_EXPORT
+
 extern const unsigned char *pcre_maketables(void);
-NCBI_XUTIL_EXPORT
+
 extern pcre_extra *pcre_study(const pcre *, int, const char **);
-NCBI_XUTIL_EXPORT
+
 extern const char *pcre_version(void);
 
 
