@@ -1712,8 +1712,8 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         lock = CBDB_Cache::ePidLock;
     }
 
-    unsigned mem_size = (unsigned)
-        GetParamInt(params, kCFParam_mem_size, false, 0);
+    unsigned mem_size = 
+        GetParamDataSize(params, kCFParam_mem_size, false, 0);
 
     if (!page_size.empty()) {
         if (NStr::CompareNocase(page_size, "small") == 0) {
@@ -1786,6 +1786,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.77  2004/09/23 14:20:44  kuznets
+ * Used GetParamDataSize to get RAM cache size
+ *
  * Revision 1.76  2004/09/21 14:27:55  kuznets
  * BDB cache class factory reimplemented using common ICache CF
  *
