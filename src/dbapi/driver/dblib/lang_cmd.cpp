@@ -29,8 +29,13 @@
  *
  */
 
-#include <dbapi/driver/dblib/interfaces.hpp>
-#include <dbapi/driver/dblib/interfaces_p.hpp>
+#ifndef USE_MS_DBLIB
+#  include <dbapi/driver/dblib/interfaces.hpp>
+#  include <dbapi/driver/dblib/interfaces_p.hpp>
+#else
+#  include <dbapi/driver/msdblib/interfaces.hpp>
+#  include <dbapi/driver/msdblib/interfaces_p.hpp>
+#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -187,7 +192,7 @@ CDB_Result* CDBL_LangCmd::Result()
             if (DBCMDROW(m_Cmd) == SUCCEED) { // we could get rows in result
 
 // This optimization is currently unavailable for MS dblib...
-#ifndef NCBI_OS_MSWIN /*Text,Image*/
+#ifndef MS_DBLIB_IN_USE /*Text,Image*/
                 if (dbnumcols(m_Cmd) == 1) {
                     int ct = dbcoltype(m_Cmd, 1);
                     if ((ct == SYBTEXT) || (ct == SYBIMAGE)) {
@@ -435,6 +440,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/07/02 16:05:49  soussov
+ * splitting Sybase dblib and MS dblib
+ *
  * Revision 1.9  2002/01/11 20:11:43  vakatov
  * Fixed CVS logs from prev. revision that messed up the compilation
  *

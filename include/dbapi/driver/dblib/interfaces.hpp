@@ -28,7 +28,7 @@
  *
  * Author:  Vladimir Soussov
  *
- * File Description:  Driver for DBLib server
+ * File Description:  Driver for Sybase DBLib server
  *
  */
 
@@ -38,27 +38,9 @@
 #include <dbapi/driver/util/pointer_pot.hpp>
 
 
-#ifdef NCBI_OS_MSWIN
-
-#include <windows.h>
-#define DBNTWIN32 /* must be defined before sqlfront.h */
-#include <sqlfront.h> /* must be after windows.h */
-#include <sqldb.h>
-
-#define DBVERSION_UNKNOWN DBUNKNOWN
-#define DBVERSION_46 DBVER42
-#define DBVERSION_100 DBVER60
-#define DBCOLINFO    DBCOL
-// Other constants and types remapped in interfaces_p.hpp
-
-#else
-
 #include <sybfront.h>
 #include <sybdb.h>
 #include <syberror.h>
-
-#endif
-
 
 BEGIN_NCBI_SCOPE
 
@@ -638,10 +620,8 @@ public:
     virtual int DescriptorType() const;
     virtual ~CDBL_ITDescriptor();
 
-#ifndef NCBI_OS_MSWIN
 private:
     bool x_MakeObjName(DBCOLINFO* col_info);
-#endif
 
 protected:
     CDBL_ITDescriptor(DBPROCESS* m_link, int col_num);
@@ -666,6 +646,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2002/07/02 16:03:28  soussov
+ * splitting Sybase dblib and MS dblib
+ *
  * Revision 1.12  2002/06/21 14:33:19  soussov
  * defines version for microsoft
  *

@@ -29,8 +29,13 @@
  *
  */
 
-#include <dbapi/driver/dblib/interfaces.hpp>
-#include <dbapi/driver/dblib/interfaces_p.hpp>
+#ifndef USE_MS_DBLIB
+#  include <dbapi/driver/dblib/interfaces.hpp>
+#  include <dbapi/driver/dblib/interfaces_p.hpp>
+#else
+#  include <dbapi/driver/msdblib/interfaces.hpp>
+#  include <dbapi/driver/msdblib/interfaces_p.hpp>
+#endif
 #include <dbapi/driver/util/numeric_convert.hpp>
 
 
@@ -303,7 +308,7 @@ static EDB_Type s_GetDataType(DBPROCESS* cmd, int n)
     default:           return eDB_UnsupportedType;
     }
 
-#ifdef NCBI_OS_MSWIN
+#ifdef MS_DBLIB_IN_USE
     DBCOL dbcol; dbcol.SizeOfStruct = sizeof(DBCOL);
     RETCODE res = dbcolinfo(cmd, CI_REGULAR, n, 0, &dbcol );
     return dbcol.Scale == 0 && dbcol.Precision < 20 ? eDB_BigInt : eDB_Numeric;
@@ -1370,7 +1375,7 @@ CDBL_CursorResult::~CDBL_CursorResult()
 
 CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
 {
-#ifdef NCBI_OS_MSWIN /*Text,Image*/
+#ifdef MS_DBLIB_IN_USE /*Text,Image*/
     const char* pColName = dbcolname(dblink,col_num);
     if(pColName == NULL) {
         throw CDB_ClientEx(eDB_Error, 280000,
@@ -1439,14 +1444,18 @@ CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, const CDB_ITDescriptor& 
 
 int CDBL_ITDescriptor::DescriptorType() const
 {
+#ifndef MS_DBLIB_IN_USE
     return CDBL_ITDESCRIPTOR_TYPE_MAGNUM;
+#else
+	return CMSDBL_ITDESCRIPTOR_TYPE_MAGNUM;
+#endif
 }
 
 CDBL_ITDescriptor::~CDBL_ITDescriptor()
 {
 }
 
-#ifndef NCBI_OS_MSWIN
+#ifndef MS_DBLIB_IN_USE
 bool CDBL_ITDescriptor::x_MakeObjName(DBCOLINFO* col_info)
 {
     if (!col_info || !col_info->coltxobjname)
@@ -1472,6 +1481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2002/07/02 16:05:50  soussov
+ * splitting Sybase dblib and MS dblib
+ *
  * Revision 1.13  2002/05/29 22:04:58  soussov
  * Makes BlobResult read ahead
  *

@@ -30,8 +30,13 @@
  */
 
 #include <corelib/ncbimtx.hpp>
-#include <dbapi/driver/dblib/interfaces.hpp>
-#include <dbapi/driver/dblib/interfaces_p.hpp>
+#ifndef USE_MS_DBLIB
+#  include <dbapi/driver/dblib/interfaces.hpp>
+#  include <dbapi/driver/dblib/interfaces_p.hpp>
+#else
+#  include <dbapi/driver/msdblib/interfaces.hpp>
+#  include <dbapi/driver/msdblib/interfaces_p.hpp>
+#endif
 #include <dbapi/driver/util/numeric_convert.hpp>
 
 
@@ -46,7 +51,7 @@ BEGIN_NCBI_SCOPE
 
 extern "C" {
 
-#ifdef NCBI_OS_MSWIN
+#ifdef MS_DBLIB_IN_USE
     static int s_DBLIB_err_callback(
         DBPROCESS* dblink,   int   severity,
         int        dberr,    int   oserr,
@@ -70,7 +75,7 @@ extern "C" {
         return 0;
     }
 #else
-    static int s_DBLIB_err_callback(DBPROCESS* dblink,   int   severity,
+    static int CS_PUBLIC s_DBLIB_err_callback(DBPROCESS* dblink,   int   severity,
                                     int        dberr,    int   oserr,
                                     char*      dberrstr, char* oserrstr)
     {
@@ -79,7 +84,7 @@ extern "C" {
 	     oserrstr? oserrstr : "");
     }
 
-    static int s_DBLIB_msg_callback(DBPROCESS* dblink,   DBINT msgno,
+    static int CS_PUBLIC s_DBLIB_msg_callback(DBPROCESS* dblink,   DBINT msgno,
                                     int        msgstate, int   severity,
                                     char*      msgtxt,   char* srvname,
                                     char*      procname, int   line)
@@ -109,7 +114,7 @@ CDBLibContext::CDBLibContext(DBINT version) :
                            "concurrently");
     }
 
-#ifdef NCBI_OS_MSWIN
+#ifdef MS_DBLIB_IN_USE
     if (dbinit() == NULL || version == 31415)
 #else
     if (dbinit() != SUCCEED || dbsetversion(version) != SUCCEED)
@@ -143,7 +148,7 @@ bool CDBLibContext::SetMaxTextImageSize(size_t nof_bytes)
 {
     char s[64];
     sprintf(s, "%lu", (unsigned long) nof_bytes);
-#ifdef NCBI_OS_MSWIN
+#ifdef MS_DBLIB_IN_USE
     return dbsetopt(0, DBTEXTLIMIT, s) == SUCCEED;
 #else
     return dbsetopt(0, DBTEXTLIMIT, s, -1) == SUCCEED;
@@ -204,7 +209,7 @@ CDB_Connection* CDBLibContext::Connect(const string&   srv_name,
                            "Cannot connect to server");
     }
 
-#ifdef NCBI_OS_MSWIN
+#ifdef MS_DBLIB_IN_USE
     dbsetopt(dbcon, DBTEXTLIMIT, "0" ); // No limit
     dbsetopt(dbcon, DBTEXTSIZE , "2147483647" ); // 0x7FFFFFFF
 #endif
@@ -272,7 +277,7 @@ CDBLibContext::~CDBLibContext()
         delete t_con;
     }
 
-#ifdef NCBI_OS_MSWIN
+#ifdef MS_DBLIB_IN_USE
     dbfreelogin(m_Login);
 #else
     dbloginfree(m_Login);
@@ -425,7 +430,7 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
     if (mode & fBcpIn)
         BCP_SETL(m_Login, TRUE);
 
-#ifndef NCBI_OS_MSWIN
+#ifndef MS_DBLIB_IN_USE
     if (mode & fPasswordEncrypted)
         DBSETLENCRYPT(m_Login, TRUE);
 #endif
@@ -443,7 +448,7 @@ I_DriverContext* DBLIB_CreateContext(map<string,string>* attr = 0)
 {
     DBINT version= DBVERSION_46;
 
-#ifndef NCBI_OS_MSWIN
+#ifndef MS_DBLIB_IN_USE
     if(attr) {
 	string vers= (*attr)["version"];
 	if(vers.find("46") != string::npos)
@@ -476,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2002/07/02 16:05:49  soussov
+ * splitting Sybase dblib and MS dblib
+ *
  * Revision 1.15  2002/06/19 15:02:03  soussov
  * changes default version from unknown to 46
  *

@@ -29,8 +29,13 @@
  *
  */
 
-#include <dbapi/driver/dblib/interfaces.hpp>
-#include <dbapi/driver/dblib/interfaces_p.hpp>
+#ifndef USE_MS_DBLIB
+#  include <dbapi/driver/dblib/interfaces.hpp>
+#  include <dbapi/driver/dblib/interfaces_p.hpp>
+#else
+#  include <dbapi/driver/msdblib/interfaces.hpp>
+#  include <dbapi/driver/msdblib/interfaces_p.hpp>
+#endif
 #include <dbapi/driver/util/numeric_convert.hpp>
 #include <string.h>
 
@@ -453,6 +458,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/07/02 16:05:49  soussov
+ * splitting Sybase dblib and MS dblib
+ *
  * Revision 1.7  2002/03/04 19:07:21  soussov
  * fixed bug in m_WasSent flag setting
  *

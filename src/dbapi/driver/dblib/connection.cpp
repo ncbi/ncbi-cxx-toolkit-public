@@ -29,8 +29,13 @@
  *
  */
 
-#include <dbapi/driver/dblib/interfaces.hpp>
-#include <dbapi/driver/dblib/interfaces_p.hpp>
+#ifndef USE_MS_DBLIB
+#  include <dbapi/driver/dblib/interfaces.hpp>
+#  include <dbapi/driver/dblib/interfaces_p.hpp>
+#else
+#  include <dbapi/driver/msdblib/interfaces.hpp>
+#  include <dbapi/driver/msdblib/interfaces_p.hpp>
+#endif
 #include <string.h>
 
 
@@ -106,7 +111,13 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     I_ITDescriptor* p_desc= 0;
 
     // check what type of descriptor we've got
-    if(descr_in.DescriptorType() != CDBL_ITDESCRIPTOR_TYPE_MAGNUM) {
+    if(descr_in.DescriptorType() != 
+#ifndef MS_DBLIB_IN_USE
+		CDBL_ITDESCRIPTOR_TYPE_MAGNUM
+#else
+		CMSDBL_ITDESCRIPTOR_TYPE_MAGNUM
+#endif
+		) {
 	// this is not a native descriptor
 	p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
 	if(p_desc == 0) return false;
@@ -262,7 +273,13 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
     I_ITDescriptor* p_desc= 0;
 
     // check what type of descriptor we've got
-    if(descr_in.DescriptorType() != CDBL_ITDESCRIPTOR_TYPE_MAGNUM) {
+    if(descr_in.DescriptorType() !=
+#ifndef MS_DBLIB_IN_USE
+		CDBL_ITDESCRIPTOR_TYPE_MAGNUM
+#else
+		CMSDBL_ITDESCRIPTOR_TYPE_MAGNUM
+#endif
+		){
 	// this is not a native descriptor
 	p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
 	if(p_desc == 0) return false;
@@ -448,6 +465,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/07/02 16:05:49  soussov
+ * splitting Sybase dblib and MS dblib
+ *
  * Revision 1.5  2002/03/26 15:37:52  soussov
  * new image/text operations added
  *
