@@ -450,25 +450,26 @@ int test1(int argc, char ** argv)
             (s == "-bs10")) {
             // These require: -lncbitool -lz -lncbiobj -lncbi
             
-            const char * dbname1 = "nr";
+            //const char * dbname1 = "nr";
             
             bool is_prot = true;
             Uint4 gi = 8;
             
             if (s == "-bs10") {
                 is_prot = true;
-                dbname1 = "nr";
-                gi = 129291;
+                //dbname1 = "nr";
+                //gi = 129291;
+                gi = 2501325;
             }
             
             ostringstream oss_fn;
-            oss_fn << "." << dbname1 << "." << gi;
+            oss_fn << "." << dbname << "." << gi;
             
             vector<char> seqdb_data, readdb_data;
             string seqdb_bs, readdb_bs;
             
             {
-                CSeqDB db(dbname1, is_prot ? 'p' : 'n');
+                CSeqDB db(dbname, is_prot ? 'p' : 'n');
                 
                 Uint4 oid(0);
                 
@@ -506,7 +507,7 @@ int test1(int argc, char ** argv)
                 }
             }
             {
-                ReadDBFILEPtr rdfp = readdb_new_ex2((char*) dbname1,
+                ReadDBFILEPtr rdfp = readdb_new_ex2((char*) dbname.c_str(),
                                                     is_prot ? 1 : 0,
                                                     READDB_NEW_DO_TAXDB,
                                                     NULL,
