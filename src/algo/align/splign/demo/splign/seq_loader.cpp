@@ -278,7 +278,7 @@ CSeqLoaderPairwise::CSeqLoaderPairwise(const string& query_filename,
     CRef<CSeq_entry> se = ReadFasta(istream, fReadFasta_OneSeq);
     scope_query->AddTopLevelSeqEntry(*se);
     const CSeq_entry::TSeq& bioseq = se->GetSeq();    
-    const CSeq_entry::TSeq::TId& seqid (bioseq.GetId());
+    const CSeq_entry::TSeq::TId& seqid = bioseq.GetId();
     m_QueryId = seqid.front()->GetSeqIdString(true);    
     m_se_query = se;
 
@@ -299,7 +299,7 @@ CSeqLoaderPairwise::CSeqLoaderPairwise(const string& query_filename,
     CRef<CSeq_entry> se = ReadFasta(istream, fReadFasta_OneSeq);
     scope_subj->AddTopLevelSeqEntry(*se);
     const CSeq_entry::TSeq& bioseq = se->GetSeq();    
-    const CSeq_entry::TSeq::TId& seqid (bioseq.GetId());
+    const CSeq_entry::TSeq::TId& seqid = bioseq.GetId();
     m_SubjId = seqid.front()->GetSeqIdString(true);    
     m_se_subj = se;
 
@@ -366,6 +366,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/05/10 21:50:03  kapustin
+ * Fixed some MSVC6.0 incompatibility issues
+ *
  * Revision 1.15  2004/05/10 16:39:56  kapustin
  * Add a pairwise mode sequence loader
  *
