@@ -1,4 +1,4 @@
---$Revision: 6.1 $
+--$Revision: 6.2 $
 --**********************************************************************
 --
 --  NCBI Taxonomy Server
@@ -31,7 +31,9 @@ Taxon1-req ::= CHOICE {
 	getbyid		INTEGER,  	-- get Org-ref by TaxonID
 	lookup		Org-ref,  	-- lookup by data
 	getorgmod	Taxon1-info,  	-- lookup for OrgMod
-	fini    	NULL }    	-- close the server
+	fini    	NULL,    	-- close the server
+	id4gi		INTEGER}  	-- get Org-ref by TaxonID
+
 
 Taxon1-resp ::= CHOICE {
 	error		Taxon1-error,	-- sent on any error
@@ -50,7 +52,8 @@ Taxon1-resp ::= CHOICE {
 	getbyid 	Taxon1-data,
 	lookup  	Taxon1-data,
 	getorgmod	SET OF Taxon1-info,  
-	fini    	NULL }
+	fini    	NULL,
+	id4gi           INTEGER}
 
 Taxon1-info ::= SEQUENCE {
 	ival1	INTEGER,
