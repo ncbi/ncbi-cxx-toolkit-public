@@ -148,7 +148,7 @@
 
 
 /**
- *  @defgroup CGI 
+ *  @defgroup CGI
  *  CGI Members
  */
 
@@ -228,7 +228,7 @@
 /* ========================================================================= */
 
 
-/** @defgroup CTOOLS 
+/** @defgroup CTOOLS
  *  Ctool members
  */
 
@@ -248,7 +248,7 @@
 /* ========================================================================= */
 
 
-/** @defgroup DBAPI 
+/** @defgroup DBAPI
  *  Database API members
  */
 
@@ -288,7 +288,7 @@
 /* ========================================================================= */
 
 
-/** @defgroup GUI 
+/** @defgroup GUI
  *  HTML members
  */
 
@@ -299,6 +299,35 @@
 /** @defgroup HTML
  *  GUI members
  */
+
+/** @defgroup CreationFactory Creation Factory
+ *  @ingroup HTML
+ */
+
+/** @defgroup DiagHandler Diagnostic Handler
+ *  @ingroup HTML
+ */
+
+/** @defgroup HTMLHelper HTML Helper and Utility Functions
+ *  @ingroup HTML
+ */
+
+/** @defgroup HTMLcomp	HTML Page Components
+ *  @ingroup HTML
+ */
+
+/** @defgroup HTMLStream HTML Stream
+ *  @ingroup HTML
+ */
+
+/** @defgroup PagerClass Pager Classes
+ *  @ingroup HTML
+ */
+
+/** @defgroup TagMapper Tag Mapper Classes
+ *  @ingroup HTML
+ */
+
 
 
 /* ========================================================================= */
@@ -320,7 +349,7 @@
 /* ========================================================================= */
 
 
-/** @defgroup SERIAL 
+/** @defgroup SERIAL
  *  Serial members
  */
 
@@ -372,7 +401,7 @@
 /* ========================================================================= */
 
 
-/** @defgroup UTIL 
+/** @defgroup UTIL
  *  Util members
  */
 
