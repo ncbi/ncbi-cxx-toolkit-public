@@ -112,6 +112,8 @@ const char* CNullPointerError::what() const
 
 
 CFastMutex CObject::sm_ObjectMutex;
+bool CObject::sm_DumpOn = true;
+
 #if USE_HEAPOBJ_LIST
 static CSafeStaticPtr< list<const void*> > s_heap_obj;
 #endif
@@ -365,6 +367,25 @@ void CObject::DoDeleteThisObject(void)
                  "DoDeleteThisObject of corrupted CObject");
 }
 
+void CObject::SetDebugDumpFlag( bool on)
+{
+    sm_DumpOn = on;
+}
+
+void CObject::DebugDump(const CObject& obj,
+    CDebugDumpContext& ddc, unsigned int depth)
+{
+    if (sm_DumpOn) {
+        obj.DebugDump(ddc, depth);
+    }
+}
+                        
+void CObject::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
+{
+    ddc.SetFrame("CObject");
+    ddc.Log("OnHeap", CanBeDeleted());
+}
+
 
 END_NCBI_SCOPE
 
@@ -372,6 +393,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2002/05/14 14:44:24  gouriano
+ * added DebugDump function to CObject
+ *
  * Revision 1.21  2002/05/10 20:53:12  gouriano
  * more stack/heap tests
  *
