@@ -120,6 +120,7 @@ CValidError_imp::CValidError_imp
       m_OvlPepErr((options & CValidError::eVal_ovl_pep_err) != 0),
       m_RequireTaxonID((options & CValidError::eVal_need_taxid) != 0),
       m_RequireISOJTA((options & CValidError::eVal_need_isojta) != 0),
+      m_PerfBottlenecks((options & CValidError::eVal_perf_bottlenecks) != 0),
       m_NoPubs(false),
       m_NoBioSource(false),
       m_IsGPS(false),
@@ -1260,6 +1261,13 @@ void CValidError_imp::ReportProtWithoutFullRef(void)
 
 bool CValidError_imp::IsFarLocation(const CSeq_loc& loc) const 
 {
+    // DEBUG {
+    // For testing only!!!
+    if( AvoidPerfBottlenecks() ) {
+        return false;
+    } 
+    // } DEBUG
+
     // !!! requires a binary search implementation
     for ( CSeq_loc_CI citer(loc); citer; ++citer ) {
         bool found = false;
@@ -1695,6 +1703,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/02/03 20:20:19  shomrat
+* If performance flag set skip check for far location (testing)
+*
 * Revision 1.11  2003/02/03 17:09:05  shomrat
 * Changed return value for GetCDSGivenProduct
 *
