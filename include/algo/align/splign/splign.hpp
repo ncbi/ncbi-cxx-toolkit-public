@@ -57,7 +57,43 @@ public:
 class NCBI_XALGOALIGN_EXPORT CSplign: public CObject
 {
 public:
+    // a segment can represent an exon or an unaligning piece of mRna (a gap)
+    struct SSegment {
+        bool   m_exon; // false if gap
+        double m_idty;
+        size_t m_len;
+        size_t m_box [4];
+        string m_annot;   // short description like AG<exon>GT
+        string m_details; // transcript for exons, '-' for gaps
 
+        void ImproveFromLeft( const char* seq1, const char* seq2 );
+        void ImproveFromRight( const char* seq1, const char* seq2 );
+        void RestoreIdentity(void);
+        const char* GetDonor(void) const;    // raw pointers to parts of annot
+        const char* GetAcceptor(void) const; // or zero if less than 2 chars
+    };
+    typedef vector<SSegment> TSegments;
+
+    // aligned compartment representation 
+    struct SAlignedCompartment {
+
+        SAlignedCompartment(void): m_id(0), m_error(true) {}
+        SAlignedCompartment(size_t id, bool err, const char* msg):
+            m_id(id), m_error(err), m_msg(msg) {}
+    
+        size_t           m_id;
+        TSegments        m_segments;
+        size_t           m_mrnasize;
+        bool             m_QueryStrand, m_SubjStrand;
+        size_t           m_qmin, m_smin, m_smax;
+        bool             m_error;
+        string           m_msg;
+    };
+    typedef vector<CHit> THits;
+    typedef vector<SAlignedCompartment> TResults;
+
+
+public:
     CSplign(void);
 
     // setters and getters
@@ -93,41 +129,9 @@ public:
         m_model_id = model_id - 1;
     }
 
-    void Run(vector<CHit>* hits);
-
-    // a segment can represent an exon or an unaligning piece of mRna (a gap)
-    struct SSegment {
-        bool   m_exon; // false if gap
-        double m_idty;
-        size_t m_len;
-        size_t m_box [4];
-        string m_annot;   // short description like AG<exon>GT
-        string m_details; // transcript for exons, '-' for gaps
-
-        void ImproveFromLeft( const char* seq1, const char* seq2 );
-        void ImproveFromRight( const char* seq1, const char* seq2 );
-        void RestoreIdentity(void);
-        const char* GetDonor(void) const;    // raw pointers to parts of annot
-        const char* GetAcceptor(void) const; // or zero if less than 2 chars
-    };
-
-    // aligned compartment representation 
-    struct SAlignedCompartment {
-
-        SAlignedCompartment(void): m_id(0), m_error(true) {}
-        SAlignedCompartment(size_t id, bool err, const char* msg):
-            m_id(id), m_error(err), m_msg(msg) {}
-    
-        size_t           m_id;
-        vector<SSegment> m_segments;
-        size_t           m_mrnasize;
-        bool             m_QueryStrand, m_SubjStrand;
-        size_t           m_qmin, m_smin, m_smax;
-        bool             m_error;
-        string           m_msg;
-    };
+    void Run(THits* hits);
   
-    const vector<SAlignedCompartment>& GetResult(void) const {
+    const TResults& GetResult(void) const {
         return m_result;
     }
 
@@ -174,18 +178,18 @@ protected:
     size_t       m_max_genomic_ext;
 
     // output per compartment
-    vector<SSegment> m_segments;
+    TSegments    m_segments;
   
     // all compartments
     size_t       m_model_id;
-    vector<SAlignedCompartment> m_result;
+    TResults     m_result;
 
-    SAlignedCompartment x_RunOnCompartment( vector<CHit>* hits,
+    SAlignedCompartment x_RunOnCompartment( THits* hits,
                                             size_t range_left,
                                             size_t range_right );
     void   x_Run(const char* seq1, const char* seq2);
     size_t x_TestPolyA(void);
-    void   x_SetPattern(vector<CHit>* hits);
+    void   x_SetPattern(THits* hits);
 };
 
 END_NCBI_SCOPE
@@ -194,6 +198,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/05/03 15:22:18  johnson
+ * added typedefs for public stl types
+ *
  * Revision 1.8  2004/04/30 15:00:32  kapustin
  * Support ASN formatting
  *

@@ -153,7 +153,7 @@ double CSplign::GetCompartmentPenalty( void ) const
     return m_compartment_penalty;
 }
 
-void CSplign::x_SetPattern(vector<CHit>* hits)
+void CSplign::x_SetPattern(THits* hits)
 {  
     sort(hits->begin(), hits->end(), CHit::PPrecedeQ);
     vector<size_t> pattern0;
@@ -297,7 +297,7 @@ void CSplign::x_SetPattern(vector<CHit>* hits)
 }
 
 
-void CSplign::Run( vector<CHit>* phits )
+void CSplign::Run( THits* phits )
 {
     if(!phits) {
         NCBI_THROW( CAlgoAlignException,
@@ -305,7 +305,7 @@ void CSplign::Run( vector<CHit>* phits )
                     "Unexpected NULL pointers" );
     }
 
-    vector<CHit>& hits = *phits;
+    THits& hits = *phits;
   
     if(m_sa.IsNull()) {
         NCBI_THROW( CAlgoAlignException,
@@ -340,7 +340,7 @@ void CSplign::Run( vector<CHit>* phits )
     // iterate through compartments
     CCompartmentAccessor comps (hits.begin(), hits.end(),
                                 comp_penalty_bps, min_coverage);
-    vector<CHit> comp_hits;
+    THits comp_hits;
 
     size_t smin = 0, smax = kMax_UInt;
     bool same_strand = false;
@@ -426,7 +426,7 @@ size_t CSplign::x_TestPolyA(void)
 }
 
 
-CSplign::SAlignedCompartment CSplign::x_RunOnCompartment( vector<CHit>* hits,
+CSplign::SAlignedCompartment CSplign::x_RunOnCompartment( THits* hits,
                                                           size_t range_left,
                                                           size_t range_right )
 {
@@ -1144,6 +1144,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/03 15:22:18  johnson
+ * added typedefs for public stl types
+ *
  * Revision 1.7  2004/04/30 15:00:47  kapustin
  * Support ASN formatting
  *
