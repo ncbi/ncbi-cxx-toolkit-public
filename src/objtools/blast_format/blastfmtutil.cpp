@@ -275,15 +275,17 @@ void CBlastFormatUtil::PrintKAParameters(float lambda, float k, float h,
     out << endl;
 }
 
-void CBlastFormatUtil::AcknowledgeBlastQuery(CBioseq& cbs, 
+void CBlastFormatUtil::AcknowledgeBlastQuery(const CBioseq& cbs, 
                                              size_t line_len,
                                              CNcbiOstream& out,
                                              bool believe_query,
-                                             bool html) 
+                                             bool html, bool tabular) 
 {
-    
+
     if (html) {
         out << "<b>Query=</b> ";
+    } else if (tabular) {
+        out << "# Query: ";
     } else {
         out << "Query= ";
     }
@@ -320,13 +322,19 @@ void CBlastFormatUtil::AcknowledgeBlastQuery(CBioseq& cbs,
             }
         }
     }
-    WrapOutputLine(all_id_str, line_len, out);
-    out << endl;
-    if(cbs.IsSetInst() && cbs.GetInst().CanGetLength()){
-        out << "          (";
-        out << cbs.GetInst().GetLength() ;
-        out << " letters)" << endl;
-    }   
+    // For tabular output, there is no limit on the line length.
+    // There is also no extra line with the sequence length.
+    if (tabular) {
+        out << all_id_str;
+    } else {
+        WrapOutputLine(all_id_str, line_len, out);
+        out << endl;
+        if(cbs.IsSetInst() && cbs.GetInst().CanGetLength()){
+            out << "          (";
+            out << cbs.GetInst().GetLength() ;
+            out << " letters)" << endl;
+        }
+    }
 }
 
 CRef<CBlast_def_line_set> 
@@ -477,17 +485,64 @@ void CBlastFormatUtil::PruneSeqalign(CSeq_align_set& source_aln,
         if(num_align >= number) {
             break;
         }
-        subid = &((*iter)->GetSeq_id(1));
-        if(is_first_aln || (!is_first_aln && !subid->Match(*previous_id))){
-            
-            num_align++;
+        if ((*iter)->GetSegs().IsDisc()) {
+            ++num_align;
+        } else {
+            subid = &((*iter)->GetSeq_id(1));
+            if(is_first_aln || (!is_first_aln && !subid->Match(*previous_id))){
+                ++num_align;
+            }
+            is_first_aln = false;
+            previous_id = subid;
         }
         new_aln.Set().push_back(*iter);
-        is_first_aln = false;
-        previous_id = subid;
-        
     }
 }
 
+void 
+CBlastFormatUtil::GetAlignLengths(CAlnVec& salv, int& align_length, 
+                                  int& num_gaps, int& num_gap_opens)
+{
+    num_gaps = num_gap_opens = align_length = 0;
+
+    for (int row = 0; row < salv.GetNumRows(); row++) {
+        CRef<CAlnMap::CAlnChunkVec> chunk_vec
+            = salv.GetAlnChunks(row, salv.GetSeqAlnRange(0));
+        for (int i=0; i<chunk_vec->size(); i++) {
+            CConstRef<CAlnMap::CAlnChunk> chunk = (*chunk_vec)[i];
+            int chunk_length = chunk->GetAlnRange().GetLength();
+            // Gaps are counted on all rows: gap can only be in one of the rows
+            // for any given segment.
+            if (chunk->IsGap()) {
+                ++num_gap_opens;
+                num_gaps += chunk_length;
+            }
+            // To calculate alignment length, only one row is needed.
+            if (row == 0)
+                align_length += chunk_length;
+        }
+    }
+}
+
+void 
+CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(CSeq_align_set& target,
+                                                 const CSeq_align_set& source)
+{
+    for(CSeq_align_set::Tdata::const_iterator iter = source.Get().begin();
+        iter != source.Get().end(); iter++) {
+        if((*iter)->IsSetSegs()){
+            const CSeq_align::TSegs& seg = (*iter)->GetSegs();
+            if(seg.IsDisc()){
+                const CSeq_align_set& set = seg.GetDisc();
+                for(CSeq_align_set::Tdata::const_iterator iter2 =
+                        set.Get().begin(); iter2 != set.Get().end(); iter2 ++) {
+                    target.Set().push_back(*iter2);
+                }
+            } else {
+                target.Set().push_back(*iter);
+            }
+        }
+    }
+}
 
 END_NCBI_SCOPE

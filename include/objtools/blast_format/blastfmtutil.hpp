@@ -41,6 +41,7 @@
 #include <objects/seq/Bioseq.hpp>
 #include  <objmgr/bioseq_handle.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objtools/alnmgr/alnvec.hpp>
 
 /**setting up scope*/
 BEGIN_NCBI_SCOPE
@@ -170,15 +171,16 @@ public:
                                   bool gapped, float c = 0.0);
     
     ///Print out blast query info
-    ///@param cbs: bioseq of interest
-    ///@param line_len: length of each line desired
-    ///@param out: stream to ouput
-    ///@param believe_query: use user id or not
-    ///@param html: in html format or not
+    /// @param cbs bioseq of interest
+    /// @param line_len length of each line desired
+    /// @param out stream to ouput
+    /// @param believe_query use user id or not
+    /// @param html in html format or not
+    /// @param tabular Is this done for tabular formatting? 
     ///
-    static void AcknowledgeBlastQuery(CBioseq& cbs, size_t line_len,
+    static void AcknowledgeBlastQuery(const CBioseq& cbs, size_t line_len,
                                       CNcbiOstream& out, bool believe_query,
-                                      bool html);
+                                      bool html, bool tabular=false);
     
     ///Get blast defline
     ///@param handle: bioseq handle to extract blast defline from
@@ -229,8 +231,24 @@ public:
     static void PruneSeqalign(CSeq_align_set& source_aln, 
                               CSeq_align_set& new_aln,
                               unsigned int number);
-    
-    
+
+    /// Count alignment length, number of gap openings and total number of gaps
+    /// in a single alignment.
+    /// @param salv Object representing one alignment (HSP) [in]
+    /// @param align_length Total length of this alignment [out]
+    /// @param num_gaps Total number of insertions and deletions in this 
+    ///                 alignment [out]
+    /// @param num_gap_opens Number of gap segments in the alignment [out]
+    static void GetAlignLengths(CAlnVec& salv, int& align_length, 
+                                int& num_gaps, int& num_gap_opens);
+
+    /// If a Seq-align-set contains Seq-aligns with discontinuous type segments, 
+    /// extract the underlying Seq-aligns and put them all in a flat 
+    /// Seq-align-set.
+    /// @param source Original Seq-align-set
+    /// @param target Resulting Seq-align-set
+    static void ExtractSeqalignSetFromDiscSegs(CSeq_align_set& target,
+                                               const CSeq_align_set& source);
 };
 
 END_NCBI_SCOPE
@@ -238,6 +256,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.11  2005/03/14 20:09:41  dondosha
+Added 2 static methods, needed for tabular output; added boolean argument to AcknowledgeBlastQuery for tabular version
+
 Revision 1.10  2005/03/02 18:21:17  jianye
 some style fix
 
