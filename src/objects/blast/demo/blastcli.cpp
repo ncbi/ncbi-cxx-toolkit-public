@@ -32,6 +32,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
@@ -387,7 +388,7 @@ queue_search_and_poll_for_results()
 
 	bool ready = false;
 	while(!ready) {
-		sleep(30);
+		SleepSec(30);
 		ready = !search_pending(get_search_results(request_id, false));
 	}
 
