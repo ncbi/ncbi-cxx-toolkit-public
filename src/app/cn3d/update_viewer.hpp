@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
 * Revision 1.21  2002/10/27 22:23:51  thiessen
 * save structure alignments from vastalign.cgi imports
 *
@@ -153,6 +156,10 @@ public:
     // run BLAST on given pairwise alignment - if BLAST is successful, then alignment will be
     // replaced with the result, otherwise the alignment is left unchanged
     void BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFromMultiple);
+
+    // find alignment of nearest BLAST-2-sequences neighbor in the multiple, and use this as
+    // a guide alignment to align this update with the multiple's master
+    void BlastNeighbor(BlockMultipleAlignment *update);
 
     // save pending structures
     void SavePendingStructures(void);

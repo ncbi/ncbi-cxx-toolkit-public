@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
 * Revision 1.33  2002/10/08 12:35:42  thiessen
 * use delete[] for arrays
 *
@@ -379,8 +382,8 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
     // aligned region set upon demotion
     if (terminalCutoff >= 0) {
         if (qrySeq->sac.mn[0] == -1) {
-            if (pairwise->alignFrom >= 0) {
-                qrySeq->sac.mn[0] = pairwise->alignFrom - terminalCutoff;
+            if (pairwise->alignSlaveFrom >= 0) {
+                qrySeq->sac.mn[0] = pairwise->alignSlaveFrom - terminalCutoff;
             } else if (pairwiseABlocks->size() > 0) {
                 const Block::Range *nextQryBlock = pairwiseABlocks->front()->GetRangeOfRow(1);
                 qrySeq->sac.mn[0] = nextQryBlock->from - 1 - terminalCutoff;
@@ -389,8 +392,8 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
             TESTMSG("new N-terminal block constrained to query loc >= " << qrySeq->sac.mn[0] + 1);
         }
         if (qrySeq->sac.mx[multipleABlocks->size() - 1] == -1) {
-            if (pairwise->alignTo >= 0) {
-                qrySeq->sac.mx[multipleABlocks->size() - 1] = pairwise->alignTo + terminalCutoff;
+            if (pairwise->alignSlaveTo >= 0) {
+                qrySeq->sac.mx[multipleABlocks->size() - 1] = pairwise->alignSlaveTo + terminalCutoff;
             } else if (pairwiseABlocks->size() > 0) {
                 const Block::Range *prevQryBlock = pairwiseABlocks->back()->GetRangeOfRow(1);
                 qrySeq->sac.mx[multipleABlocks->size() - 1] = prevQryBlock->to + 1 + terminalCutoff;
@@ -1236,7 +1239,7 @@ cleanup:
     return retval;
 }
 
-bool Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
+int Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
     GeometryViolationsForRow *violations)
 {
     Fld_Mtf *fldMtf = NULL;
@@ -1254,7 +1257,7 @@ bool Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
     // look for too-short regions between aligned blocks
     auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> aBlocks(multiple->GetUngappedAlignedBlocks());
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = aBlocks->end(), n;
-    int row, nViolations = 0;
+    int nViolations = 0;
     const Block::Range *thisRange, *nextRange, *thisMaster, *nextMaster;
     for (b=aBlocks->begin(); b!=be; b++) {
         n = b;
@@ -1263,7 +1266,7 @@ bool Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
         thisMaster = (*b)->GetRangeOfRow(0);
         nextMaster = (*n)->GetRangeOfRow(0);
 
-        for (row=1; row<multiple->NRows(); row++) {
+        for (int row=1; row<multiple->NRows(); row++) {
             thisRange = (*b)->GetRangeOfRow(row);
             nextRange = (*n)->GetRangeOfRow(row);
 
@@ -1275,8 +1278,8 @@ bool Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
         }
     }
 
-    TESTMSG("Found " << nViolations << " geometry violations");
-    return true;
+//    TESTMSG("Found " << nViolations << " geometry violations");
+    return nViolations;
 }
 
 int Threader::EstimateNRandomStarts(const BlockMultipleAlignment *coreAlignment,

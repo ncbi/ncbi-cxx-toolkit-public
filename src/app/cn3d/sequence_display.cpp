@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
 * Revision 1.60  2002/10/13 22:58:08  thiessen
 * add redo ability to editor
 *
@@ -747,6 +750,13 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                 return false;
             }
 
+            // BLAST neighbor single
+            if (updateWindow->DoBlastNeighborSingle()) {
+                updateWindow->updateViewer->BlastNeighbor(alignment);
+                if (!controlDown) updateWindow->BlastNeighborSingleOff();
+                return false;
+            }
+
             // Block align single
             if (updateWindow->DoBlockAlignSingle()) {
                 updateWindow->updateViewer->alignmentManager->BlockAlignUpdate(alignment);
@@ -758,15 +768,15 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
             if (updateWindow->DoSetRegion()) {
                 // dialog uses 1-based sequence locations
                 RegionDialog dialog(updateWindow,
-                    alignment->GetSequenceOfRow(1), alignment->alignFrom + 1, alignment->alignTo + 1);
+                    alignment->GetSequenceOfRow(1), alignment->alignSlaveFrom + 1, alignment->alignSlaveTo + 1);
                 if (dialog.ShowModal() == wxOK) {
                     int from, to;
                     if (!dialog.GetValues(&from, &to)) {
                         ERR_POST(Error << "RegionDialog returned OK, but values invalid");
                     } else {
-                        TESTMSG("set region: " << from << " to " << to);
-                        alignment->alignFrom = from - 1;
-                        alignment->alignTo = to - 1;
+                        TESTMSG("set region (slave): " << from << " to " << to);
+                        alignment->alignSlaveFrom = from - 1;
+                        alignment->alignSlaveTo = to - 1;
                     }
                     if (!controlDown) updateWindow->SetRegionOff();
                 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
 * Revision 1.32  2003/01/22 14:47:30  thiessen
 * cache PSSM in BlockMultipleAlignment
 *
@@ -398,8 +401,9 @@ public:
         }
     }
 
-    // kludge for now for storing allowed alignment region (on slave), e.g. when demoted from multiple
-    int alignFrom, alignTo;
+    // kludge for now for storing allowed alignment regions, e.g. when demoted from multiple.
+    // (only two ranges for now, since this is used only with pairwise alignments)
+    int alignMasterFrom, alignMasterTo, alignSlaveFrom, alignSlaveTo;
 };
 
 

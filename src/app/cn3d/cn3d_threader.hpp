@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
 * Revision 1.15  2002/07/12 13:24:10  thiessen
 * fixes for PSSM creation to agree with cddumper/RPSBLAST
 *
@@ -138,9 +141,9 @@ public:
     bool CalculateScores(const BlockMultipleAlignment *multiple, double weightPSSM);
 
     // geometry violations - for each row of an alignment, get a list of seqIndex
-    // (from, to) pairs for offending regions
+    // (from, to) pairs for offending regions; return total number of violations
     typedef std::vector < std::list < std::pair < int, int > > > GeometryViolationsForRow;
-    bool GetGeometryViolations(const BlockMultipleAlignment *multiple,
+    int GetGeometryViolations(const BlockMultipleAlignment *multiple,
         GeometryViolationsForRow *violations);
 
     // estimate the number of random starts needed to thread an alignment based on

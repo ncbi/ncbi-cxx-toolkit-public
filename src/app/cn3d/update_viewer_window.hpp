@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
 * Revision 1.31  2002/09/19 12:51:08  thiessen
 * fix block aligner / update bug; add distance select for other molecules only
 *
@@ -166,6 +169,7 @@ private:
         MID_THREAD_ALL,
         MID_BLAST_ONE,
         MID_BLAST_PSSM_ONE,
+        MID_BLAST_NEIGHBOR,
         MID_BLOCKALIGN_ONE,
         MID_BLOCKALIGN_ALL,
         MID_SET_REGION,
@@ -200,6 +204,11 @@ private:
         menuBar->Check(MID_BLAST_PSSM_ONE, false);
         SetCursor(wxNullCursor);
     }
+    void BlastNeighborSingleOff(void)
+    {
+        menuBar->Check(MID_BLAST_NEIGHBOR, false);
+        SetCursor(wxNullCursor);
+    }
     void BlockAlignSingleOff(void)
     {
         menuBar->Check(MID_BLOCKALIGN_ONE, false);
@@ -232,6 +241,7 @@ public:
     bool DoThreadSingle(void) const { return menuBar->IsChecked(MID_THREAD_ONE); }
     bool DoBlastSingle(void) const { return menuBar->IsChecked(MID_BLAST_ONE); }
     bool DoBlastPSSMSingle(void) const { return menuBar->IsChecked(MID_BLAST_PSSM_ONE); }
+    bool DoBlastNeighborSingle(void) const { return menuBar->IsChecked(MID_BLAST_NEIGHBOR); }
     bool DoBlockAlignSingle(void) const { return menuBar->IsChecked(MID_BLOCKALIGN_ONE); }
     bool DoSetRegion(void) const { return menuBar->IsChecked(MID_SET_REGION); }
     bool DoMergeSingle(void) const { return menuBar->IsChecked(MID_MERGE_ONE); }
@@ -242,6 +252,7 @@ public:
         if (id != MID_THREAD_ONE && DoThreadSingle()) ThreadSingleOff();
         if (id != MID_BLAST_ONE && DoBlastSingle()) BlastSingleOff();
         if (id != MID_BLAST_PSSM_ONE && DoBlastPSSMSingle()) BlastPSSMSingleOff();
+        if (id != MID_BLAST_NEIGHBOR && DoBlastNeighborSingle()) BlastNeighborSingleOff();
         if (id != MID_BLOCKALIGN_ONE && DoBlockAlignSingle()) BlockAlignSingleOff();
         if (id != MID_SET_REGION && DoSetRegion()) SetRegionOff();
         if (id != MID_MERGE_ONE && DoMergeSingle()) MergeSingleOff();

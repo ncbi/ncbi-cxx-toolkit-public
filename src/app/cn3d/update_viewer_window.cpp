@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
 * Revision 1.53  2002/12/19 14:15:37  thiessen
 * mac fixes to menus, add icon
 *
@@ -225,7 +228,7 @@ BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_MERGE_ONE, MID_MERGE_ALL,        UpdateViewerWindow::OnMerge)
     EVT_MENU_RANGE(MID_DELETE_ONE, MID_DELETE_ALL,      UpdateViewerWindow::OnDelete)
     EVT_MENU_RANGE(MID_IMPORT_SEQUENCES, MID_IMPORT_STRUCTURE,  UpdateViewerWindow::OnImport)
-    EVT_MENU_RANGE(MID_BLAST_ONE, MID_BLAST_PSSM_ONE,   UpdateViewerWindow::OnRunBlast)
+    EVT_MENU_RANGE(MID_BLAST_ONE, MID_BLAST_NEIGHBOR,   UpdateViewerWindow::OnRunBlast)
     EVT_MENU      (MID_SET_REGION,                      UpdateViewerWindow::OnSetRegion)
     EVT_MENU_RANGE(MID_BLOCKALIGN_ONE, MID_BLOCKALIGN_ALL,  UpdateViewerWindow::OnBlockAlign)
 END_EVENT_TABLE()
@@ -255,6 +258,7 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     menu->AppendSeparator();
     menu->Append(MID_BLAST_ONE, "&BLAST Single", "", true);
     menu->Append(MID_BLAST_PSSM_ONE, "BLAST/&PSSM Single", "", true);
+    menu->Append(MID_BLAST_NEIGHBOR, "BLAST &Neighbor", "", true);
     menu->AppendSeparator();
     menu->Append(MID_BLOCKALIGN_ONE, "B&lock Align Single", "", true);
     menu->Append(MID_BLOCKALIGN_ALL, "Bloc&k Align All");
@@ -441,6 +445,13 @@ void UpdateViewerWindow::OnRunBlast(wxCommandEvent& event)
                 SetCursor(*wxCROSS_CURSOR);
             else
                 BlastPSSMSingleOff();
+            break;
+        case MID_BLAST_NEIGHBOR:
+            CancelAllSpecialModesExcept(MID_BLAST_NEIGHBOR);
+            if (DoBlastNeighborSingle())
+                SetCursor(*wxCROSS_CURSOR);
+            else
+                BlastNeighborSingleOff();
             break;
     }
 }

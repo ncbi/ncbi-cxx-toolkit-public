@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
 * Revision 1.26  2003/01/22 14:47:30  thiessen
 * cache PSSM in BlockMultipleAlignment
 *
@@ -213,35 +216,21 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
         return;
     }
 
-    // get master sequence
-    const Sequence *masterSeq = NULL;
-    if (multiple)
-        masterSeq = multiple->GetMaster();
-    else if (toRealign.size() > 0)
-        masterSeq = toRealign.front()->GetMaster();
-    if (!masterSeq) {
-        ERR_POST(Error << "can't get master sequence");
-        return;
-    }
-
-    // get C Bioseq for master
-    Bioseq *masterBioseq = masterSeq->parentSet->GetOrCreateBioseq(masterSeq);
-
-    // create Seq-loc interval for master
+    // create Seq-loc intervals
     SeqLocPtr masterSeqLoc = (SeqLocPtr) MemNew(sizeof(SeqLoc));
     masterSeqLoc->choice = SEQLOC_INT;
     SeqIntPtr masterSeqInt = SeqIntNew();
     masterSeqLoc->data.ptrvalue = masterSeqInt;
-    masterSeqInt->id = masterBioseq->id;
-    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> uaBlocks;
-    if (multiple)
-        uaBlocks.reset(multiple->GetUngappedAlignedBlocks());
-    if (multiple && uaBlocks->size() > 0) {
-        masterSeqInt->from = uaBlocks->front()->GetRangeOfRow(0)->from;
-        masterSeqInt->to = uaBlocks->back()->GetRangeOfRow(0)->to;
-    } else {
-        masterSeqInt->from = 0;
-        masterSeqInt->to = masterSeq->Length() - 1;
+    if (multiple) {
+        auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
+            uaBlocks(multiple->GetUngappedAlignedBlocks());
+        if (uaBlocks->size() > 0) {
+            masterSeqInt->from = uaBlocks->front()->GetRangeOfRow(0)->from;
+            masterSeqInt->to = uaBlocks->back()->GetRangeOfRow(0)->to;
+        } else {
+            masterSeqInt->from = 0;
+            masterSeqInt->to = multiple->GetMaster()->Length() - 1;
+        }
     }
     SeqLocPtr slaveSeqLoc = (SeqLocPtr) MemNew(sizeof(SeqLoc));
     slaveSeqLoc->choice = SEQLOC_INT;
@@ -258,6 +247,25 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
         if (multiple && (*s)->GetMaster() != multiple->GetMaster())
             ERR_POST(Error << "master sequence mismatch");
 
+        // get C Bioseq for master
+        const Sequence *masterSeq = multiple ? multiple->GetMaster() : (*s)->GetMaster();
+        Bioseq *masterBioseq = masterSeq->parentSet->GetOrCreateBioseq(masterSeq);
+        masterSeqInt->id = masterBioseq->id;
+
+        // override master alignment interval if specified
+        if (!multiple) {
+            if ((*s)->alignMasterFrom >= 0 && (*s)->alignMasterFrom < masterSeq->Length() &&
+                (*s)->alignMasterTo >= 0 && (*s)->alignMasterTo < masterSeq->Length() &&
+                (*s)->alignMasterFrom <= (*s)->alignMasterTo)
+            {
+                masterSeqInt->from = (*s)->alignMasterFrom;
+                masterSeqInt->to = (*s)->alignMasterTo;
+            } else {
+                masterSeqInt->from = 0;
+                masterSeqInt->to = masterSeq->Length() - 1;
+            }
+        }
+
         // get C Bioseq for slave of each incoming (pairwise) alignment
         const Sequence *slaveSeq = (*s)->GetSequenceOfRow(1);
         Bioseq *slaveBioseq = slaveSeq->parentSet->GetOrCreateBioseq(slaveSeq);
@@ -265,11 +273,11 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
         // setup Seq-loc interval for slave
         slaveSeqInt->id = slaveBioseq->id;
         slaveSeqInt->from =
-            ((*s)->alignFrom >= 0 && (*s)->alignFrom < slaveSeq->Length()) ?
-                (*s)->alignFrom : 0;
+            ((*s)->alignSlaveFrom >= 0 && (*s)->alignSlaveFrom < slaveSeq->Length()) ?
+                (*s)->alignSlaveFrom : 0;
         slaveSeqInt->to =
-            ((*s)->alignTo >= 0 && (*s)->alignTo < slaveSeq->Length()) ?
-                (*s)->alignTo : slaveSeq->Length() - 1;
+            ((*s)->alignSlaveTo >= 0 && (*s)->alignSlaveTo < slaveSeq->Length()) ?
+                (*s)->alignSlaveTo : slaveSeq->Length() - 1;
         TESTMSG("for BLAST: master range " <<
                 (masterSeqInt->from + 1) << " to " << (masterSeqInt->to + 1) << ", slave range " <<
                 (slaveSeqInt->from + 1) << " to " << (slaveSeqInt->to + 1));
@@ -299,6 +307,8 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
         (*seqs)[1] = slaveSeq;
         BlockMultipleAlignment *newAlignment =
             new BlockMultipleAlignment(seqs, slaveSeq->parentSet->alignmentManager);
+        newAlignment->SetRowDouble(0, kMax_Double);
+        newAlignment->SetRowDouble(1, kMax_Double);
 
         // process the result
         if (!salp) {
@@ -373,14 +383,18 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
             // get scores
             if (sa.IsSetScore()) {
                 wxString scores;
-                scores.Printf("BLAST result for %s:", slaveSeq->identifier->ToString().c_str());
+                scores.Printf("BLAST result for %s vs. %s:",
+                    masterSeq->identifier->ToString().c_str(),
+                    slaveSeq->identifier->ToString().c_str());
 
                 CSeq_align::TScore::const_iterator sc, sce = sa.GetScore().end();
                 for (sc=sa.GetScore().begin(); sc!=sce; sc++) {
                     if ((*sc)->IsSetId() && (*sc)->GetId().IsStr()) {
 
-                        // E-value (put in status line)
+                        // E-value (put in status line and double values)
                         if ((*sc)->GetValue().IsReal() && (*sc)->GetId().GetStr() == "e_value") {
+                            newAlignment->SetRowDouble(0, (*sc)->GetValue().GetReal());
+                            newAlignment->SetRowDouble(1, (*sc)->GetValue().GetReal());
                             wxString status;
                             status.Printf("E-value %g", (*sc)->GetValue().GetReal());
                             newAlignment->SetRowStatusLine(0, status.c_str());

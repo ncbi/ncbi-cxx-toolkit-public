@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
 * Revision 1.22  2003/01/22 14:47:30  thiessen
 * cache PSSM in BlockMultipleAlignment
 *
@@ -433,11 +436,11 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             convertedQuery[i] = ResToInt(query->sequenceString[i]);
         query_id = query->parentSet->GetOrCreateBioseq(query)->id;
         startQueryPosition =
-            ((*s)->alignFrom >= 0 && (*s)->alignFrom < query->Length()) ?
-                (*s)->alignFrom : 0;
+            ((*s)->alignSlaveFrom >= 0 && (*s)->alignSlaveFrom < query->Length()) ?
+                (*s)->alignSlaveFrom : 0;
         endQueryPosition =
-            ((*s)->alignTo >= 0 && (*s)->alignTo < query->Length()) ?
-                ((*s)->alignTo + 1) : query->Length();
+            ((*s)->alignSlaveTo >= 0 && (*s)->alignSlaveTo < query->Length()) ?
+                ((*s)->alignSlaveTo + 1) : query->Length();
 
         // set frozen blocks
         for (i=0; i<numBlocks-1; i++)

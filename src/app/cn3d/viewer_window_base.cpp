@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
 * Revision 1.42  2002/12/19 14:15:37  thiessen
 * mac fixes to menus, add icon
 *
@@ -448,12 +451,14 @@ void ViewerWindowBase::OnShowGeomVltns(wxCommandEvent& event)
     const ViewerBase::AlignmentList& alignments = viewer->GetCurrentAlignments();
     if (alignments.size() == 0) return;
 
-    Threader::GeometryViolationsForRow violations;
+    int nViolations = 0;
     ViewerBase::AlignmentList::const_iterator a, ae = alignments.end();
     for (a=alignments.begin(); a!=ae; a++) {
-        viewer->alignmentManager->threader->GetGeometryViolations(*a, &violations);
+        Threader::GeometryViolationsForRow violations;
+        nViolations += viewer->alignmentManager->threader->GetGeometryViolations(*a, &violations);
         (*a)->ShowGeometryViolations(violations);
     }
+    TESTMSG("Found " << nViolations << " geometry violations");
     GlobalMessenger()->PostRedrawSequenceViewer(viewer);
 }
 

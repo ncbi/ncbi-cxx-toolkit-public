@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
 * Revision 1.43  2003/01/22 14:47:30  thiessen
 * cache PSSM in BlockMultipleAlignment
 *
@@ -198,10 +201,10 @@ BEGIN_SCOPE(Cn3D)
 
 BlockMultipleAlignment::BlockMultipleAlignment(SequenceList *sequenceList, AlignmentManager *alnMgr) :
     sequences(sequenceList), conservationColorer(NULL), alignmentManager(alnMgr),
-    alignFrom(-1), alignTo(-1), pssm(NULL)
+    alignMasterFrom(-1), alignMasterTo(-1), alignSlaveFrom(-1), alignSlaveTo(-1), pssm(NULL)
 {
     InitCache();
-    rowDoubles.resize(sequenceList->size());
+    rowDoubles.resize(sequenceList->size(), 0.0);
     rowStrings.resize(sequenceList->size());
 
     // create conservation colorer
@@ -243,9 +246,11 @@ BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
     copy->rowStrings = rowStrings;
     copy->geometryViolations = geometryViolations;
     copy->updateOrigin = updateOrigin;
-    copy->alignFrom = alignFrom;
-    copy->alignTo = alignTo;
-	return copy;
+    copy->alignMasterFrom = alignMasterFrom;
+    copy->alignMasterTo = alignMasterTo;
+    copy->alignSlaveFrom = alignSlaveFrom;
+    copy->alignSlaveTo = alignSlaveTo;
+    return copy;
 }
 
 static Int4 Round(double d)
@@ -1446,10 +1451,10 @@ bool BlockMultipleAlignment::ExtractRows(
 
             // add aligned region info (for threader to use later on)
             if (uaBlocks->size() > 0) {
-                newAlignment->alignFrom = uaBlocks->front()->GetRangeOfRow(slavesToRemove[i])->from;
-                newAlignment->alignTo = uaBlocks->back()->GetRangeOfRow(slavesToRemove[i])->to;
+                newAlignment->alignSlaveFrom = uaBlocks->front()->GetRangeOfRow(slavesToRemove[i])->from;
+                newAlignment->alignSlaveTo = uaBlocks->back()->GetRangeOfRow(slavesToRemove[i])->to;
                 TESTMSG((*newSeqs)[1]->identifier->ToString() << " aligned from "
-                    << newAlignment->alignFrom << " to " << newAlignment->alignTo);
+                    << newAlignment->alignSlaveFrom << " to " << newAlignment->alignSlaveTo);
             }
 
             pairwiseAlignments->push_back(newAlignment);

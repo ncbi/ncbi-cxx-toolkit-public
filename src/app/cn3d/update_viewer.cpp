@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
 * Revision 1.54  2002/11/19 21:19:44  thiessen
 * more const changes for objects; fix user vs default style bug
 *
@@ -310,6 +313,7 @@ void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
 
     // populate successive lines of the display with each alignment, with blank lines inbetween
     AlignmentList::const_iterator a, ae = newAlignments.end();
+    int nViolations = 0;
     for (a=newAlignments.begin(); a!=ae; a++) {
         if ((*a)->NRows() != 2) {
             ERR_POST(Error << "UpdateViewer::AddAlignments() - got alignment with "
@@ -329,10 +333,11 @@ void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
         // always show geometry violations in updates
         if ((*a)->GetMaster()->molecule && !(*a)->GetMaster()->molecule->parentSet->isAlphaOnly) {
             Threader::GeometryViolationsForRow violations;
-            alignmentManager->threader->GetGeometryViolations(*a, &violations);
+            nViolations += alignmentManager->threader->GetGeometryViolations(*a, &violations);
             (*a)->ShowGeometryViolations(violations);
         }
     }
+    TESTMSG("Found " << nViolations << " geometry violations in Import alignments");
 
     if (alignments.size() > 0)
         display->SetStartingColumn(alignments.front()->GetFirstAlignedBlockPosition() - 5);
@@ -1080,7 +1085,187 @@ void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFr
     GetCurrentAlignments().clear();
     GetCurrentDisplay()->Empty();
     AddAlignments(copy);
-    (*viewerWindow)->ScrollToColumn(GetCurrentDisplay()->GetStartingColumn());
+//    (*viewerWindow)->ScrollToColumn(GetCurrentDisplay()->GetStartingColumn());
+}
+
+static void MapSlaveToMaster(const BlockMultipleAlignment *alignment,
+    int slaveRow, std::vector < int > *slave2master)
+{
+    slave2master->clear();
+    slave2master->resize(alignment->GetSequenceOfRow(slaveRow)->Length(), -1);
+    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> uaBlocks(alignment->GetUngappedAlignedBlocks());
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = uaBlocks->end();
+    for (b=uaBlocks->begin(); b!=be; b++) {
+        const Block::Range
+            *masterRange = (*b)->GetRangeOfRow(0),
+            *slaveRange = (*b)->GetRangeOfRow(slaveRow);
+        for (int i=0; i<(*b)->width; i++)
+            (*slave2master)[slaveRange->from + i] = masterRange->from + i;
+    }
+}
+
+static BlockMultipleAlignment * GetAlignmentByBestNeighbor(
+    const BlockMultipleAlignment *multiple,
+    const BLASTer::AlignmentList rowAlignments)
+{
+    if (rowAlignments.size() != multiple->NRows()) {
+        ERR_POST(Error << "GetAlignmentByBestNeighbor: wrong # alignments");
+        return NULL;
+    }
+
+    // find best-scoring aligment above some threshold
+    const BlockMultipleAlignment *bestMatchFromMultiple = NULL;
+    int b, bestRow = -1;
+    BLASTer::AlignmentList::const_iterator p, pe = rowAlignments.end();
+    for (b=0, p=rowAlignments.begin(); p!=pe; b++, p++) {
+        if (!bestMatchFromMultiple || (*p)->GetRowDouble(0) < bestMatchFromMultiple->GetRowDouble(0)) {
+            bestMatchFromMultiple = *p;
+            bestRow = b;
+        }
+    }
+    if (!bestMatchFromMultiple || bestMatchFromMultiple->GetRowDouble(0) > 0.000001) {
+        ERR_POST(Warning << "GetAlignmentByBestNeighbor: no significant hit found");
+        return NULL;
+    }
+    TESTMSG("Closest neighbor from multiple: sequence "
+        << bestMatchFromMultiple->GetMaster()->identifier->ToString()
+        << ", E-value: " << bestMatchFromMultiple->GetRowDouble(0));
+    GlobalMessenger()->RemoveAllHighlights(true);
+    GlobalMessenger()->AddHighlights(
+        bestMatchFromMultiple->GetMaster(), 0, bestMatchFromMultiple->GetMaster()->Length()-1);
+
+    // if the best match is the multiple's master, then just use that alignment
+    if (bestRow == 0) return bestMatchFromMultiple->Clone();
+
+    // otherwise, use best match as a guide alignment to align the slave with the multiple's master
+    std::vector < int > import2slave, slave2master;
+    MapSlaveToMaster(bestMatchFromMultiple, 1, &import2slave);
+    MapSlaveToMaster(multiple, bestRow, &slave2master);
+
+    const Sequence *importSeq = bestMatchFromMultiple->GetSequenceOfRow(1);
+    BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
+    (*seqs)[0] = multiple->GetSequenceOfRow(0);
+    (*seqs)[1] = importSeq;
+    BlockMultipleAlignment *newAlignment =
+        new BlockMultipleAlignment(seqs, importSeq->parentSet->alignmentManager);
+
+    // create maximally sized blocks
+    int masterStart, importStart, importLoc, slaveLoc, masterLoc, len;
+    for (importStart=-1, importLoc=0; importLoc<=importSeq->Length(); importLoc++) {
+
+        // map import -> slave -> master
+        slaveLoc = (importLoc<importSeq->Length()) ? import2slave[importLoc] : -1;
+        masterLoc = (slaveLoc >= 0) ? slave2master[slaveLoc] : -1;
+
+        // if we're currently inside a block..
+        if (importStart >= 0) {
+
+            // add another residue to a continuously aligned block
+            if (masterLoc >= 0 && masterLoc-masterStart == importLoc-importStart) {
+                len++;
+            }
+
+            // terminate block
+            else {
+                UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(newAlignment);
+                newBlock->SetRangeOfRow(0, masterStart, masterStart + len - 1);
+                newBlock->SetRangeOfRow(1, importStart, importStart + len - 1);
+                newBlock->width = len;
+                newAlignment->AddAlignedBlockAtEnd(newBlock);
+                importStart = -1;
+            }
+        }
+
+        // search for start of block
+        if (importStart < 0) {
+            if (masterLoc >= 0) {
+                masterStart = masterLoc;
+                importStart = importLoc;
+                len = 1;
+            }
+        }
+    }
+
+    // finalize and and add new alignment to list
+    if (!newAlignment->AddUnalignedBlocks() || !newAlignment->UpdateBlockMapAndColors(false)) {
+        ERR_POST(Error << "error finalizing alignment");
+        delete newAlignment;
+        return NULL;
+    }
+
+    return newAlignment;
+}
+
+void UpdateViewer::BlastNeighbor(BlockMultipleAlignment *update)
+{
+    const BlockMultipleAlignment *multiple = alignmentManager->GetCurrentMultipleAlignment();
+    if (!multiple) {
+        ERR_POST(Error << "Can't do BLAST Neighbor when no multiple alignment is present");
+        return;
+    }
+    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> uaBlocks(multiple->GetUngappedAlignedBlocks());
+    if (uaBlocks->size() == 0) {
+        ERR_POST(Error << "Can't do BLAST Neighbor with null multiple alignment");
+        return;
+    }
+    const Sequence *updateSeq = update->GetSequenceOfRow(1);
+
+    // find alignment, to replace it with BLAST result
+    AlignmentList::iterator a, ae = GetCurrentAlignments().end();
+    for (a=GetCurrentAlignments().begin(); a!=ae; a++)
+        if (*a == update) break;
+    if (a == GetCurrentAlignments().end()) return;
+
+    // set up BLAST-2-sequences between update slave and each sequence from the multiple
+    BLASTer::AlignmentList toRealign;
+    for (int row=0; row<multiple->NRows(); row++) {
+        BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
+        (*seqs)[0] = multiple->GetSequenceOfRow(row);
+        (*seqs)[1] = updateSeq;
+        BlockMultipleAlignment *newAlignment =
+            new BlockMultipleAlignment(seqs, updateSeq->parentSet->alignmentManager);
+        if (newAlignment->AddUnalignedBlocks() && newAlignment->UpdateBlockMapAndColors(false))
+        {
+            newAlignment->alignMasterFrom = uaBlocks->front()->GetRangeOfRow(row)->from;
+            newAlignment->alignMasterTo = uaBlocks->back()->GetRangeOfRow(row)->to;
+            newAlignment->alignSlaveFrom = update->alignSlaveFrom;
+            newAlignment->alignSlaveTo = update->alignSlaveTo;
+            toRealign.push_back(newAlignment);
+        } else {
+            ERR_POST(Error << "error finalizing alignment");
+            delete newAlignment;
+        }
+    }
+
+    // actually do BLAST alignments
+    BLASTer::AlignmentList newAlignments;
+    SetDiagPostLevel(eDiag_Error); // ignore all but Errors while reading data
+    alignmentManager->blaster->
+        CreateNewPairwiseAlignmentsByBlast(NULL, toRealign, &newAlignments, false);
+    SetDiagPostLevel(eDiag_Info);
+    DELETE_ALL_AND_CLEAR(toRealign, BLASTer::AlignmentList);
+    if (newAlignments.size() != multiple->NRows()) {
+        ERR_POST(Error << "UpdateViewer::BlastUpdate() - CreateNewPairwiseAlignmentsByBlast() failed");
+        return;
+    }
+
+    // replace alignment with result
+    BlockMultipleAlignment *alignmentByNeighbor = GetAlignmentByBestNeighbor(multiple, newAlignments);
+    DELETE_ALL_AND_CLEAR(newAlignments, BLASTer::AlignmentList);
+    if (!alignmentByNeighbor) {
+        ERR_POST(Warning << "alignment unchanged");
+        return;
+    }
+    TESTMSG("BLAST Neighbor succeeded - replacing alignment");
+    delete update;
+    *a = alignmentByNeighbor;
+
+    // recreate alignment display with new alignment
+    AlignmentList copy = GetCurrentAlignments();
+    GetCurrentAlignments().clear();
+    GetCurrentDisplay()->Empty();
+    AddAlignments(copy);
+//    (*viewerWindow)->ScrollToColumn(GetCurrentDisplay()->GetStartingColumn());
 }
 
 // comparison function: if CompareRows(a, b) == true, then row a moves up
