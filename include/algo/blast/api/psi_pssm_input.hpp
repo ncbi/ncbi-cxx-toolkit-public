@@ -134,9 +134,8 @@ private:
     /// @param denseg source alignment segment (HSP) [in]
     /// @param msa_index index of the sequence aligned with the query in the
     ///        desc_matrix field of the m_AlignmentData data member [in]
-    /// @param e_value E-value for the HSP corresponding to denseg [in]
     void x_ProcessDenseg(const objects::CDense_seg& denseg, 
-                         unsigned int msa_index, double e_value);
+                         unsigned int msa_index);
 
     friend class ::CPssmEngineTest;     // unit test class
 };
@@ -150,6 +149,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/08/04 21:13:11  camacho
+ * Removed unneeded e_value parameter
+ *
  * Revision 1.4  2004/08/04 20:52:37  camacho
  * Documentation changes
  *
