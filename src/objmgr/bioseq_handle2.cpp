@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/03/21 22:22:46  ucko
+* Adjust today's fixes for new objmgr API
+*
 * Revision 1.6  2002/03/21 20:37:16  ucko
 * Pull in full bioseq when counting HTG pieces [also in objmgr]
 *
@@ -201,7 +204,7 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
                 }
             }
         } else {
-            for (CSeqdesc_CI it(handle, CSeqdesc::e_Title);  it;  ++it) {
+            for (CSeqdesc_CI it(*this, CSeqdesc::e_Title);  it;  ++it) {
                 title = it->GetTitle();
                 BREAK(it);
             }
@@ -308,7 +311,7 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
         }
         if (core->GetInst().GetRepr() == CSeq_inst::eRepr_delta) {
             // We need the full bioseq here...
-            const CBioseq& seq = GetBioseq(handle);
+            const CBioseq& seq = GetBioseq();
             unsigned int pieces = 0;
             iterate (CDelta_ext::Tdata, it,
                      seq.GetInst().GetExt().GetDelta().Get()) {
