@@ -17,5 +17,8 @@ SRC = omssacl
 LIB = xomssa omssa xser xregexp $(PCRE_LIB) xutil xncbi
 
 CXXFLAGS = $(FAST_CXXFLAGS)
-LINK_WRAPPER = $(top_srcdir)/scripts/favor-static
+
+# static link
+# LINK_WRAPPER = $(top_srcdir)/scripts/favor-static
+
 LDFLAGS  = $(FAST_LDFLAGS)
