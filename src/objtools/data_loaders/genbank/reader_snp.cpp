@@ -60,6 +60,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
+#include <serial/iterator.hpp>
 
 #include <util/reader_writer.hpp>
 
@@ -73,19 +74,60 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+/////////////////////////////////////////////////////////////////////////////
+// utility function
+
+static int s_GetEnvInt(const char* env, int def_val)
+{
+    const char* val = ::getenv(env);
+    if ( val ) {
+        try {
+            return NStr::StringToInt(val);
+        }
+        catch (...) {
+        }
+    }
+    return def_val;
+}
+
+
+static bool s_SNP_stat = s_GetEnvInt("GENBANK_SNP_TABLE_STAT", 0) > 0;
+
+
+/////////////////////////////////////////////////////////////////////////////
+// hook classes
+
+namespace {
+
+class CSeq_annot_hook : public CReadObjectHook
+{
+public:
+    void ReadObject(CObjectIStream& in,
+                    const CObjectInfo& object)
+        {
+            m_Seq_annot = CType<CSeq_annot>::Get(object);
+            DefaultRead(in, object);
+            m_Seq_annot = null;
+        }
+    
+    CRef<CSeq_annot>    m_Seq_annot;
+};
+
+
 class CSNP_Ftable_hook : public CReadChoiceVariantHook
 {
 public:
-    CSNP_Ftable_hook(CSeq_annot_SNP_Info& annot_snp_info)
-        : m_Seq_annot_SNP_Info(annot_snp_info)
+    CSNP_Ftable_hook(void)
+        : m_Seq_annot_hook(new CSeq_annot_hook)
         {
         }
 
     void ReadChoiceVariant(CObjectIStream& in,
                            const CObjectInfoCV& variant);
 
-private:
-    CSeq_annot_SNP_Info&   m_Seq_annot_SNP_Info;
+    typedef CSeq_annot_SNP_Info_Reader::TSNP_InfoMap TSNP_InfoMap;
+    TSNP_InfoMap                    m_SNP_InfoMap;
+    CRef<CSeq_annot_hook>           m_Seq_annot_hook;
 };
 
 
@@ -110,30 +152,22 @@ private:
 void CSNP_Ftable_hook::ReadChoiceVariant(CObjectIStream& in,
                                          const CObjectInfoCV& variant)
 {
+    _ASSERT(m_Seq_annot_hook->m_Seq_annot);
     CObjectInfo data_info = variant.GetChoiceObject();
     CObjectInfo ftable_info = *variant;
     CSeq_annot::TData& data = *CType<CSeq_annot::TData>::Get(data_info);
-    _ASSERT(ftable_info.GetObjectPtr() == static_cast<TConstObjectPtr>(&data.GetFtable()));
-    CSNP_Seq_feat_hook hook(m_Seq_annot_SNP_Info, data.SetFtable());
-    ftable_info.ReadContainer(in, hook);
-}
 
-
-static int s_GetEnvInt(const char* env, int def_val)
-{
-    const char* val = ::getenv(env);
-    if ( val ) {
-        try {
-            return NStr::StringToInt(val);
-        }
-        catch (...) {
-        }
+    CRef<CSeq_annot_SNP_Info> snp_info
+        (new CSeq_annot_SNP_Info(*m_Seq_annot_hook->m_Seq_annot));
+    {{
+        CSNP_Seq_feat_hook hook(*snp_info, data.SetFtable());
+        ftable_info.ReadContainer(in, hook);
+    }}
+    snp_info->x_FinishParsing();
+    if ( !snp_info->empty() ) {
+        m_SNP_InfoMap[m_Seq_annot_hook->m_Seq_annot] = snp_info;
     }
-    return def_val;
 }
-
-
-static bool s_SNP_stat = s_GetEnvInt("GENBANK_SNP_TABLE_STAT", 0) > 0;
 
 
 CSNP_Seq_feat_hook::CSNP_Seq_feat_hook(CSeq_annot_SNP_Info& annot_snp_info,
@@ -153,7 +187,8 @@ CSNP_Seq_feat_hook::~CSNP_Seq_feat_hook(void)
     if ( s_SNP_stat ) {
         size_t total =
             accumulate(m_Count, m_Count+SSNP_Info::eSNP_Type_last, 0);
-        NcbiCout << "CSeq_annot_SNP_Info statistic:\n";
+        NcbiCout << "CSeq_annot_SNP_Info statistic (gi = " <<
+            m_Seq_annot_SNP_Info.GetGi() << "):\n";
         for ( size_t i = 0; i < SSNP_Info::eSNP_Type_last; ++i ) {
             NcbiCout <<
                 setw(40) << SSNP_Info::s_SNP_Type_Label[i] << ": " <<
@@ -207,6 +242,67 @@ void CSNP_Seq_feat_hook::ReadContainerElement(CObjectIStream& in,
     }
 }
 
+
+} // anonymous namespace
+
+
+void CSeq_annot_SNP_Info_Reader::Parse(CObjectIStream& in,
+                                       const CObjectInfo& object,
+                                       TSNP_InfoMap& snps)
+{
+    CReader::SetSNPReadHooks(in);
+    
+    if ( CId1ReaderBase::TrySNPTable() ) { // set SNP hook
+        CRef<CSNP_Ftable_hook> hook(new CSNP_Ftable_hook);
+
+        CObjectTypeInfo seq_annot_type = CType<CSeq_annot>();
+        seq_annot_type.SetLocalReadHook(in, hook->m_Seq_annot_hook);
+
+        CObjectTypeInfo seq_annot_data_type = CType<CSeq_annot::TData>();
+        CObjectTypeInfoVI ftable = seq_annot_data_type.FindVariant("ftable");
+        ftable.SetLocalReadHook(in, hook);
+
+        in.Read(object);
+
+        snps.swap(hook->m_SNP_InfoMap);
+    }
+    else {
+        in.Read(object);
+    }
+}
+
+
+CRef<CSeq_annot_SNP_Info>
+CSeq_annot_SNP_Info_Reader::ParseAnnot(CObjectIStream& in)
+{
+    CRef<CSeq_annot_SNP_Info> ret;
+
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    TSNP_InfoMap snps;
+    Parse(in, Begin(*annot), snps);
+    if ( !snps.empty() ) {
+        _ASSERT(snps.size() == 1);
+        _ASSERT(snps.begin()->first == annot);
+        ret = snps.begin()->second;
+    }
+    else {
+        ret = new CSeq_annot_SNP_Info(*annot);
+    }
+
+    return ret;
+}
+
+
+void CSeq_annot_SNP_Info_Reader::Parse(CObjectIStream& in,
+                                       CSeq_entry& tse,
+                                       TSNP_InfoMap& snps)
+{
+    Parse(in, Begin(tse), snps);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// reading and storing in binary format
 
 static void write_unsigned(CNcbiOstream& stream, unsigned n)
 {
@@ -288,35 +384,147 @@ void CIndexedStrings::LoadFrom(CNcbiIstream& stream,
 }
 
 
-void CSeq_annot_SNP_Info_Reader::Parse(CObjectIStream& in,
-                                       CSeq_annot_SNP_Info& snp_info)
+namespace {
+
+class CSeq_annot_WriteHook : public CWriteObjectHook
 {
-    snp_info.m_Seq_annot.Reset(new CSeq_annot); // Seq-annot object
+public:
+    typedef CSeq_annot_SNP_Info_Reader::TAnnotToIndex TIndex;
 
-    CId1ReaderBase::SetSNPReadHooks(in);
+    void WriteObject(CObjectOStream& stream,
+                     const CConstObjectInfo& object)
+        {
+            const CSeq_annot* ptr = CType<CSeq_annot>::Get(object);
+            m_Index.insert(TIndex::value_type(ConstRef(ptr), m_Index.size()));
+            DefaultWrite(stream, object);
+        }
+            
+    TIndex m_Index;
+};
 
-    if ( CId1ReaderBase::TrySNPTable() ) { // set SNP hook
-        CObjectTypeInfo type = CType<CSeq_annot::TData>();
-        CObjectTypeInfoVI ftable = type.FindVariant("ftable");
-        ftable.SetLocalReadHook(in, new CSNP_Ftable_hook(snp_info));
-    }
-    
-    in >> *snp_info.m_Seq_annot;
 
-    // we don't need index maps anymore
-    snp_info.m_Comments.ClearIndices();
-    snp_info.m_Alleles.ClearIndices();
+class CSeq_annot_ReadHook : public CReadObjectHook
+{
+public:
+    typedef CSeq_annot_SNP_Info_Reader::TIndexToAnnot TIndex;
 
-    sort(snp_info.m_SNP_Set.begin(), snp_info.m_SNP_Set.end());
-    
-    snp_info.x_SetDirtyAnnotIndex();
+    void ReadObject(CObjectIStream& stream,
+                    const CObjectInfo& object)
+        {
+            const CSeq_annot* ptr = CType<CSeq_annot>::Get(object);
+            m_Index.push_back(ConstRef(ptr));
+            DefaultRead(stream, object);
+        }
+            
+    TIndex m_Index;
+};
+
 }
 
 
-static const unsigned MAGIC = 0x12340002;
+static const unsigned MAGIC = 0x12340003;
+
+
+void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
+                                       const CConstObjectInfo& object,
+                                       const TSNP_InfoMap& snps)
+{
+    write_unsigned(stream, MAGIC);
+
+    CRef<CSeq_annot_WriteHook> hook(new CSeq_annot_WriteHook);
+    {{
+        CObjectOStreamAsnBinary obj_stream(stream);
+        CObjectTypeInfo type = CType<CSeq_annot>();
+        type.SetLocalWriteHook(obj_stream, hook);
+        obj_stream.Write(object);
+    }}
+
+    write_unsigned(stream, snps.size());
+    ITERATE ( TSNP_InfoMap, it, snps ) {
+        TAnnotToIndex::const_iterator iter = hook->m_Index.find(it->first);
+        if ( iter == hook->m_Index.end() ) {
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Orfan CSeq_annot_SNP_Info");
+        }
+        write_unsigned(stream, iter->second);
+        x_Write(stream, *it->second);
+    }
+}
+
+
+void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
+                                      const CObjectInfo& object,
+                                      TSNP_InfoMap& snps)
+{
+    unsigned magic = read_unsigned(stream);
+    if ( !stream || magic != MAGIC ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "Incompatible version of SNP table");
+    }
+
+    CRef<CSeq_annot_ReadHook> hook(new CSeq_annot_ReadHook);
+    {{
+        CObjectIStreamAsnBinary obj_stream(stream);
+        CObjectTypeInfo type = CType<CSeq_annot>();
+        type.SetLocalReadHook(obj_stream, hook);
+        //CReader::SetSNPReadHooks(obj_stream);
+        obj_stream.Read(object);
+    }}
+
+    unsigned count = read_unsigned(stream);
+    for ( unsigned i = 0; i < count; ++i ) {
+        unsigned index = read_unsigned(stream);
+        if ( index >= hook->m_Index.size() ) {
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Orfan CSeq_annot_SNP_Info");
+        }
+        TAnnotRef annot = hook->m_Index[index];
+        _ASSERT(annot);
+        TAnnotSNPRef& snp_info = snps[annot];
+        if ( snp_info ) {
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Duplicate CSeq_annot_SNP_Info");
+        }
+        snp_info = new CSeq_annot_SNP_Info;
+        x_Read(stream, *snp_info);
+        snp_info->m_Seq_annot = annot;
+    }
+}
+
 
 void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
                                        const CSeq_annot_SNP_Info& snp_info)
+{
+    x_Write(stream, snp_info);
+
+    // complex SNPs
+    CObjectOStreamAsnBinary obj_stream(stream);
+    obj_stream << *snp_info.m_Seq_annot;
+}
+
+
+void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
+                                      CSeq_annot_SNP_Info& snp_info)
+{
+    x_Read(stream, snp_info);
+
+    // complex SNPs
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    {{
+        CObjectIStreamAsnBinary obj_stream(stream);
+        CReader::SetSNPReadHooks(obj_stream);
+        obj_stream >> *annot;
+    }}
+    if ( !stream ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "Bad format of SNP table");
+    }
+    snp_info.m_Seq_annot = annot;
+}
+
+
+void CSeq_annot_SNP_Info_Reader::x_Write(CNcbiOstream& stream,
+                                         const CSeq_annot_SNP_Info& snp_info)
 {
     // header
     write_unsigned(stream, MAGIC);
@@ -331,15 +539,11 @@ void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
     write_size(stream, count);
     stream.write(reinterpret_cast<const char*>(&snp_info.m_SNP_Set[0]),
                  count*sizeof(SSNP_Info));
-
-    // complex SNPs
-    CObjectOStreamAsnBinary obj_stream(stream);
-    obj_stream << *snp_info.m_Seq_annot;
 }
 
 
-void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
-                                      CSeq_annot_SNP_Info& snp_info)
+void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
+                                        CSeq_annot_SNP_Info& snp_info)
 {
     snp_info.Reset();
 
@@ -386,19 +590,6 @@ void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
             }
         }
     }
-
-    // complex SNPs
-    CObjectIStreamAsnBinary obj_stream(stream);
-    if ( !snp_info.m_Seq_annot ) {
-        snp_info.m_Seq_annot.Reset(new CSeq_annot);
-    }
-    obj_stream >> *snp_info.m_Seq_annot;
-
-    if ( !stream ) {
-        snp_info.m_Seq_annot.Reset();
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "Bad format of SNP table");
-    }
 }
 
 
@@ -407,6 +598,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.14  2004/08/12 14:19:53  vasilche
+ * Allow SNP Seq-entry in addition to SNP Seq-annot.
+ *
  * Revision 1.13  2004/08/04 14:55:18  vasilche
  * Changed TSE locking scheme.
  * TSE cache is maintained by CDataSource.

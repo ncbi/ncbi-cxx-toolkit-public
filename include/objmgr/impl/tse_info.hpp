@@ -144,6 +144,10 @@ public:
     void SetName(const CAnnotName& name);
     void SetSeq_entry(CSeq_entry& entry);
 
+    typedef CConstRef<CSeq_annot> TSNP_InfoKey;
+    typedef map<TSNP_InfoKey, CRef<CSeq_annot_SNP_Info> > TSNP_InfoMap;
+    void SetSeq_entry(CSeq_entry& entry, const TSNP_InfoMap& snps);
+
     size_t GetUsedMemory(void) const;
     void SetUsedMemory(size_t size);
 
@@ -224,6 +228,8 @@ private:
                                  const CSeq_id_Handle& id);
     SIdAnnotObjs& x_SetIdObjects(const CAnnotName& name,
                                  const CSeq_id_Handle& idh);
+
+    CRef<CSeq_annot_SNP_Info> x_GetSNP_Info(const TSNP_InfoKey& annot);
 
     void x_MapSNP_Table(const CAnnotName& name,
                         const CSeq_id_Handle& key,
@@ -318,6 +324,9 @@ private:
     TBioseqs               m_Bioseqs;
     // Split chunks
     TChunks                m_Chunks;
+
+    // SNP info set: temporarily used in SetSeq_entry()
+    TSNP_InfoMap           m_SNP_InfoMap;
 
     // Annot objects maps: ID to annot-selector-map
     TNamedAnnotObjs        m_NamedAnnotObjs;

@@ -36,6 +36,9 @@
 #include <serial/objhook.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
 
+#include <map>
+#include <vector>
+
 BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
@@ -51,8 +54,20 @@ class NCBI_XREADER_EXPORT CSeq_annot_SNP_Info_Reader
 {
 public:
     // parse ASN converting SNP features to packed table.
+    typedef CConstRef<CSeq_annot> TAnnotRef;
+    typedef CRef<CSeq_annot_SNP_Info> TAnnotSNPRef;
+    typedef map<TAnnotRef, TAnnotSNPRef> TSNP_InfoMap;
+    typedef Uint4 TAnnotIndex;
+    typedef map<TAnnotRef, TAnnotIndex> TAnnotToIndex;
+    typedef vector<TAnnotRef> TIndexToAnnot;
+
+    static TAnnotSNPRef ParseAnnot(CObjectIStream& in);
     static void Parse(CObjectIStream& in,
-                      CSeq_annot_SNP_Info& snp_info);
+                      CSeq_entry& tse,
+                      TSNP_InfoMap& snps);
+    static void Parse(CObjectIStream& in,
+                      const CObjectInfo& object,
+                      TSNP_InfoMap& snps);
 
     // store table in platform specific format
     static void Write(CNcbiOstream& stream,
@@ -60,6 +75,24 @@ public:
     // load table in platform specific format
     static void Read(CNcbiIstream& stream,
                      CSeq_annot_SNP_Info& snp_info);
+
+    // store tables in platform specific format
+    static void Write(CNcbiOstream& stream,
+                      const CConstObjectInfo& root,
+                      const TSNP_InfoMap& snps);
+
+    // load tables in platform specific format
+    static void Read(CNcbiIstream& stream,
+                     const CObjectInfo& root,
+                     TSNP_InfoMap& snps);
+
+
+    // store table only in platform specific format
+    static void x_Write(CNcbiOstream& stream,
+                        const CSeq_annot_SNP_Info& snp_info);
+    // load table only in platform specific format
+    static void x_Read(CNcbiIstream& stream,
+                       CSeq_annot_SNP_Info& snp_info);
 };
 
 END_SCOPE(objects)
@@ -67,6 +100,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.3  2004/08/12 14:19:30  vasilche
+* Allow SNP Seq-entry in addition to SNP Seq-annot.
+*
 * Revision 1.2  2004/01/13 16:55:53  vasilche
 * CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
 * Headers moved from include/objmgr to include/objtools/data_loaders/genbank.

@@ -148,6 +148,14 @@ void CSeq_annot_Info::x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds)
 
 void CSeq_annot_Info::x_TSEAttachContents(CTSE_Info& tse)
 {
+    CRef<CSeq_annot_SNP_Info> snp_info = tse.x_GetSNP_Info(m_Object);
+    if ( snp_info ) {
+        _ASSERT(!m_SNP_Info);
+        m_SNP_Info = snp_info;
+        snp_info->x_ParentAttach(*this);
+        _ASSERT(&snp_info->GetParentSeq_annot_Info() == this);
+        x_AttachObject(*snp_info);
+    }
     TParent::x_TSEAttachContents(tse);
     if ( m_SNP_Info ) {
         m_SNP_Info->x_TSEAttach(tse);
@@ -475,6 +483,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/08/12 14:18:27  vasilche
+ * Allow SNP Seq-entry in addition to SNP Seq-annot.
+ *
  * Revision 1.19  2004/08/04 14:53:26  vasilche
  * Revamped object manager:
  * 1. Changed TSE locking scheme

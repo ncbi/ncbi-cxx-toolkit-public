@@ -188,6 +188,29 @@ void CTSE_Info::SetSeq_entry(CSeq_entry& entry)
 }
 
 
+void CTSE_Info::SetSeq_entry(CSeq_entry& entry, const TSNP_InfoMap& snps)
+{
+    m_SNP_InfoMap = snps;
+    SetSeq_entry(entry);
+    if ( !m_SNP_InfoMap.empty() ) {
+        NCBI_THROW(CObjMgrException, eAddDataError,
+                   "Unknown SNP annots");
+    }
+}
+
+
+CRef<CSeq_annot_SNP_Info> CTSE_Info::x_GetSNP_Info(const TSNP_InfoKey& annot)
+{
+    CRef<CSeq_annot_SNP_Info> ret;
+    TSNP_InfoMap::iterator iter = m_SNP_InfoMap.find(annot);
+    if ( iter != m_SNP_InfoMap.end() ) {
+        ret = iter->second;
+        m_SNP_InfoMap.erase(iter);
+    }
+    return ret;
+}
+
+
 bool CTSE_Info::HasAnnot(const CAnnotName& name) const
 {
     _ASSERT(!x_DirtyAnnotIndex());
