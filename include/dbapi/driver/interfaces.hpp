@@ -400,7 +400,6 @@ public:
     // Return FALSE on error.
     virtual bool SetLoginTimeout (unsigned int nof_secs = 0) = 0;
     virtual bool SetTimeout      (unsigned int nof_secs = 0) = 0;
-    virtual void SetPacketSize   (unsigned int packet_size)= 0;
 
     // Set maximal size for Text and Image objects. Text and Image objects
     // exceeding this size will be truncated.
@@ -572,8 +571,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.18  2003/04/01 20:10:43  soussov
- * SetPacketSize(unsigned int packet_size) method added
+ * Revision 1.19  2003/04/01 20:25:16  vakatov
+ * Temporarily rollback to R1.16 -- until more backward-incompatible
+ * changes (in CException) are ready to commit (to avoid breaking the
+ * compatibility twice).
  *
  * Revision 1.17  2003/02/12 22:08:32  coremake
  * Added export specifier NCBI_DBAPIDRIVER_EXPORT to the I_RPCCmd class declaration
