@@ -45,6 +45,7 @@
 #include <bdb/bdb_map.hpp>
 #include <bdb/bdb_blobcache.hpp>
 #include <bdb/bdb_filedump.hpp>
+#include <bdb/bdb_trans.hpp>
 
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -153,6 +154,90 @@ void ValidateRecord(const TestDBF2& dbf2, unsigned i)
 }
 
 
+struct TestDBF3 : public CBDB_File
+{
+    CBDB_FieldInt4        ikey;
+    CBDB_FieldInt4        idata;
+
+    TestDBF3()
+    {
+        BindKey("ikey",   &ikey);
+        BindData("idata", &idata);
+    }
+};
+
+
+//////////////////////////////////////////////////////////////////
+//
+// 
+// BDB transaction test
+//
+//
+
+static
+void s_TEST_BDB_Transaction(void)
+{
+    CBDB_Env env;
+    env.OpenWithTrans(".");
+    
+    TestDBF3  dbf3;
+    
+    dbf3.SetEnv(env);
+    
+    dbf3.Open("trans_test.db", CBDB_File::eCreate);
+
+    CBDB_Transaction trans(env);
+
+//    dbf3.Reopen(CBDB_File::eReadWrite);
+
+    dbf3.SetTransaction(&trans);
+
+    dbf3.ikey = 10;
+    dbf3.idata = 11;
+    dbf3.Insert();
+
+    dbf3.ikey = 12;
+    dbf3.idata = 13;
+    dbf3.Insert();
+
+    trans.Commit();
+
+    dbf3.ikey = 10;
+    EBDB_ErrCode ret = dbf3.Fetch();
+    assert (ret == eBDB_Ok);
+    
+    int idata = dbf3.idata;
+    assert(idata == 11);
+
+    dbf3.ikey = 10;
+    dbf3.idata = 20;
+    dbf3.UpdateInsert();
+
+    ret = dbf3.Fetch();
+    assert (ret == eBDB_Ok);
+
+    idata = dbf3.idata;
+    assert(idata == 20);
+
+    dbf3.ikey = 12;
+    ret = dbf3.Fetch();
+    assert (ret == eBDB_Ok);
+
+    idata = dbf3.idata;
+    assert(idata == 13);
+
+    trans.Abort();
+
+    dbf3.SetTransaction(0);
+    dbf3.ikey = 10;
+    ret = dbf3.Fetch();
+    assert (ret == eBDB_Ok);
+    
+    idata = dbf3.idata;
+    assert(idata == 11);
+
+}
+
 
 //////////////////////////////////////////////////////////////////
 //
@@ -173,7 +258,7 @@ static void s_TEST_BDB_Types(void)
 //////////////////////////////////////////////////////////////////
 //
 // 
-// DBD Id table fill test
+// BDB Id table fill test
 //
 //
 
@@ -1258,13 +1343,15 @@ int CBDB_Test::Run(void)
 
         s_TEST_BDB_Duplicates();
 
+        s_TEST_BDB_Transaction();
+
         s_TEST_db_map();
 
         s_TEST_db_multimap();
 
         s_TEST_ICache();
 
-        s_TEST_IntCache();        
+        s_TEST_IntCache(); 
 
     }
     catch (CBDB_ErrnoException& ex)
@@ -1298,6 +1385,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/12/12 14:09:53  kuznets
+ * + s_TEST_BDB_Transaction()
+ *
  * Revision 1.29  2003/11/26 13:09:44  kuznets
  * Re-enables icache test
  *
