@@ -117,6 +117,8 @@ public:
      const CSeq_submit& ss,
      unsigned int       options = 0);
 
+    size_t size(void) const { return m_ErrItems.size(); }
+
     // destructor
     ~CValidError(void);
 
@@ -170,6 +172,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/02/07 21:00:27  shomrat
+* Added size()
+*
 * Revision 1.3  2003/02/03 20:16:55  shomrat
 * Added option to supress suspected performance bottlenecks (for testing)
 *
