@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.103 2002/06/30 16:47:33 vakatov Exp $
+#  $Id: configure.ac,v 1.104 2002/07/01 21:24:02 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1509,7 +1509,7 @@ NCBI_CHECK_LIBS(DL, dl, dlopen)
 
 if test "$with_sybase" != "no" ; then
    net_sybase_root="/netopt/Sybase/clients"
-   local_sybase_root="/export/home/Sybase/clients"
+   local_sybase_root="/export/home/sybase/clients"
    default_local_sybase="$local_sybase_root/current"
    sybase_lib=lib$bit64_sfx
    : ${with_sybase_local:="no"}
