@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/11/02 16:48:24  thiessen
+* working editor undo; dynamic slave transforms
+*
 * Revision 1.26  2000/10/04 17:40:47  thiessen
 * rearrange STL #includes
 *
@@ -161,6 +164,9 @@ public:
     AlignmentSet *alignmentSet;
     AlignmentManager *alignmentManager;
 
+    // flag to tell whether data has been changed (e.g. by editing alignment)
+    bool dataChanged;
+
     // messenger - is owned by wxApp
     Messenger *messenger;
 
@@ -175,6 +181,8 @@ public:
     Vector rotationCenter; // center of rotation (relative to Master's coordinates)
 
     // public methods
+
+    void ReplaceAlignmentSet(AlignmentSet *newAlignmentSet);
 
     // set screen and rotation center of model (coordinate relative to Master);
     // if NULL, will calculate average geometric center
@@ -191,9 +199,14 @@ public:
 
     // for assigning display lists and frames
     unsigned int lastDisplayList;
+
     typedef LIST_TYPE < unsigned int > DisplayLists;
     typedef std::vector < DisplayLists > FrameMap;
     FrameMap frameMap;
+
+    // to map display list -> slave transform
+    typedef std::map < unsigned int, const Matrix * const * > TransformMap;
+    TransformMap transformMap;
 
     // for ensuring unique structure<->structure alignments for repeated structures
     std::map < int, bool > usedFeatures;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/11/02 16:48:22  thiessen
+* working editor undo; dynamic slave transforms
+*
 * Revision 1.21  2000/10/04 17:40:46  thiessen
 * rearrange STL #includes
 *
@@ -237,15 +240,13 @@ private:
 
     // stuff for storing transparent spheres (done during Construct())
     unsigned int currentDisplayList;
-    Matrix currentSlaveTransform;
     typedef struct {
         Vector site, color; 
         unsigned int name;
         double radius, alpha;
     } SphereInfo;
     typedef std::list < SphereInfo > SphereList;
-    typedef std::pair < SphereList, Matrix > SphereListAndTransform;
-    typedef std::map < unsigned int, SphereListAndTransform > SphereMap;
+    typedef std::map < unsigned int, SphereList > SphereMap;
     SphereMap transparentSphereMap;
     void AddTransparentSphere(const Vector& color, unsigned int name,
         const Vector& site, double radius, double alpha);

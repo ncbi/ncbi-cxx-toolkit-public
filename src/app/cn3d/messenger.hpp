@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/11/02 16:48:22  thiessen
+* working editor undo; dynamic slave transforms
+*
 * Revision 1.7  2000/10/19 12:40:21  thiessen
 * avoid multiple sequence redraws with scroll set
 *
@@ -92,6 +95,10 @@ public:
     // should be called only by Cn3DApp at idle time; processes any redraws
     // that have been posted by prior event(s)
     void ProcessRedraws(void);
+
+    // called if the application is about to exit - tell sequence window(s) to save
+    void SequenceWindowsSave(void);
+
 
     // these next few are related to highlighting:
 

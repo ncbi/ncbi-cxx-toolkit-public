@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/11/02 16:48:23  thiessen
+* working editor undo; dynamic slave transforms
+*
 * Revision 1.10  2000/10/12 02:14:32  thiessen
 * working block boundary editing
 *
@@ -70,12 +73,7 @@
 
 #include <list>
 
-#include <corelib/ncbistl.hpp>
-
 #include "cn3d/alignment_manager.hpp"
-
-
-class ViewableAlignment; // base class for alignments to attach to SequenceViewerWidget
 
 
 BEGIN_SCOPE(Cn3D)
@@ -84,13 +82,14 @@ class Sequence;
 class Messenger;
 class SequenceDisplay;
 class DisplayRowFromString;
+class AlignmentManager;
 
 class SequenceViewer
 {
     friend class SequenceViewerWindow;
 
 public:
-    SequenceViewer(Messenger *messenger);
+    SequenceViewer(AlignmentManager *alnMgr, Messenger *messenger);
     ~SequenceViewer(void);
 
     // to create displays from unaligned sequence(s), or multiple alignment
@@ -106,22 +105,51 @@ public:
     // redraw all molecules associated with the SequenceDisplay
     void RedrawAlignedMolecules(void) const;
 
+    // to push/pop alignment+display data for undo during editing
+    void PushAlignment(void);
+    void PopAlignment(void);
+
+    // save this (edited) alignment
+    void SaveDialog(void);
+    void SaveAlignment(void);
+
+    // revert back to original (w/o save)
+    void RevertAlignment(void);
+
+    // to update/remove the GUI window
     void Refresh(void);
-    void ClearGUI(void);
     void DestroyGUI(void);
 
 private:
 
     bool isEditableAlignment;
-    void NewAlignment(SequenceDisplay *display);
+    void NewDisplay(SequenceDisplay *display);
 
-    DisplayRowFromString *blockBoundaryRow;
-
+    AlignmentManager *alignmentManager;
     Messenger *messenger;
     SequenceViewerWindow *viewerWindow;
-    SequenceDisplay *display;
+
+    typedef std::list < BlockMultipleAlignment * > AlignmentStack;
+    AlignmentStack alignmentStack;
+    BlockMultipleAlignment * GetAlignment(void) const { return alignmentStack.back(); }
+
+    typedef std::list < SequenceDisplay * > DisplayStack;
+    DisplayStack displayStack;
+    SequenceDisplay * GetDisplay(void) const { return displayStack.back(); }
+
+    void InitStacks(BlockMultipleAlignment *alignment, SequenceDisplay *display);
+    void ClearStacks(void);
+
+    DisplayRowFromString * FindBlockBoundaryRow(void);
 
 public:
+
+    const BlockMultipleAlignment * GetCurrentAlignment(void) const
+    {
+        const BlockMultipleAlignment *alignment = NULL;
+        if (alignmentStack.size() > 0) alignment = alignmentStack.back();
+        return alignment;
+    }
 
     bool IsEditableAlignment(void) const { return isEditableAlignment; }
     void SetUnalignedJustification(BlockMultipleAlignment::eUnalignedJustification justification);

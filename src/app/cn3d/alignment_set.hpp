@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/11/02 16:48:22  thiessen
+* working editor undo; dynamic slave transforms
+*
 * Revision 1.5  2000/10/04 17:40:44  thiessen
 * rearrange STL #includes
 *
@@ -69,11 +72,15 @@ typedef list< ncbi::CRef< ncbi::objects::CSeq_annot > > SeqAnnotList;
 
 class MasterSlaveAlignment;
 class Sequence;
+class BlockMultipleAlignment;
 
 class AlignmentSet : public StructureBase
 {
 public:
     AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots);
+
+    // constructs a new AlignmentSet from a multiple alignment
+    AlignmentSet(StructureBase *parent, const BlockMultipleAlignment *multiple);
 
     typedef std::list < const MasterSlaveAlignment * > AlignmentList;
     AlignmentList alignments;

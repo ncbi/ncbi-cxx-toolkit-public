@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/11/02 16:48:23  thiessen
+* working editor undo; dynamic slave transforms
+*
 * Revision 1.12  2000/10/16 20:02:17  thiessen
 * working block creation
 *
@@ -187,7 +190,7 @@ public:
     // to provide a ViewableAlignment to show. It is passed as a pointer, but
     // is not "owned" by the SequenceViewerWidget, and will not be deconstructed
     // even if the SequenceViewerWidget is destroyed. Returns false on error.
-    bool AttachAlignment(ViewableAlignment *newAlignment);
+    bool AttachAlignment(ViewableAlignment *newAlignment, int initX = 0, int initY = 0);
 
     // sets mouse mode. If eSelect, dragging the mouse with the left button
     // down will cause a rubberband to be drawn around a block of characters,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/11/02 16:48:22  thiessen
+* working editor undo; dynamic slave transforms
+*
 * Revision 1.17  2000/10/17 14:34:18  thiessen
 * added row shift - editor basically complete
 *
@@ -168,6 +171,9 @@ public:
     // return alignment position of left side first aligned block (-1 if no aligned blocks)
     int GetFirstAlignedBlockPosition(void) const;
 
+    // makes a new copy of itself
+    BlockMultipleAlignment * Clone(void) const;
+
 
     ///// editing functions /////
 
@@ -187,7 +193,7 @@ public:
 
     // creates a block, if given region of an unaligned block in which no gaps
     // are present. Returns true if a block is created.
-    bool CreateBlock(int fromAlignmentIndex, int toAlignmentIndex);
+    bool CreateBlock(int fromAlignmentIndex, int toAlignmentIndex, eUnalignedJustification justification);
 
     // deletes the block containing this index; returns true if deletion occurred.
     bool DeleteBlock(int alignmentIndex);
@@ -221,8 +227,6 @@ private:
     void InsertBlockAfter(const Block *insertAt, Block *newBlock);
     void RemoveBlock(Block *block);
     
-    eUnalignedJustification currentJustification;
-
     // for cacheing of residue->block lookups
     int prevRow;
     const Block *prevBlock;
@@ -237,19 +241,17 @@ public:
     int NRows(void) const { return sequences->size(); }
     int AlignmentWidth(void) const { return totalWidth; }
 
-    void SetUnalignedJustification(eUnalignedJustification j) { currentJustification = j; }
-
     // character query interface - "column" must be in alignment range
     // 0 ... totalWidth-1
-    bool GetCharacterTraitsAt(int alignmentColumn, int row,
+    bool GetCharacterTraitsAt(int alignmentColumn, int row, eUnalignedJustification justification,
         char *character, Vector *color, bool *isHighlighted) const;
 
     // get sequence and index (if any) at given position, and whether that residue is aligned
-    bool GetSequenceAndIndexAt(int alignmentColumn, int row,
+    bool GetSequenceAndIndexAt(int alignmentColumn, int row, eUnalignedJustification justification,
         const Sequence **sequence, int *index, bool *isAligned) const;
 
     // called when user selects some part of a row
-    void SelectedRange(int row, int from, int to) const;
+    void SelectedRange(int row, int from, int to, eUnalignedJustification justification) const;
 
 };
 
@@ -270,6 +272,9 @@ public:
         BlockMultipleAlignment::eUnalignedJustification justification) const = 0;
 
     typedef std::vector < const Sequence * > SequenceList;
+
+    // makes a new copy of itself
+    virtual Block * Clone(void) const = 0;
 
 protected:
     typedef std::vector < Range > RangeList;
@@ -308,6 +313,8 @@ public:
         { return (GetRangeOfRow(row)->from + blockColumn); }
 
     char GetCharacterAt(int blockColumn, int row) const;
+
+    Block * Clone(void) const;
 };
 
 // an unaligned block; max width of block must be >=1, but range over any given
@@ -322,6 +329,8 @@ public:
 
     int GetIndexAt(int blockColumn, int row,
         BlockMultipleAlignment::eUnalignedJustification justification) const;
+
+    Block * Clone(void) const;
 };
 
 
@@ -341,27 +350,27 @@ public:
     BlockMultipleAlignment *
 		CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments);
 
+    // change the underlying pairwise alignments to match the given multiple
+    void SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple);
+
 private:
     const SequenceSet *sequenceSet;
     AlignmentSet *alignmentSet;
 
-    // viewer for the current alignment
+    // viewer for the current alignment - will own the current alignment (if any)
     SequenceViewer *sequenceViewer;
     
-    // for now, will own the current multiple alignment
-    BlockMultipleAlignment *currentMultipleAlignment;
-
     Messenger *messenger;
 
 public:
-    //const BlockMultipleAlignment * GetCurrentMultipleAlignment(void) const
-    //    { return currentMultipleAlignment; }
+    const BlockMultipleAlignment * GetCurrentMultipleAlignment(void) const;
 
     // find out if a residue is aligned - only works for non-repeated sequences!
     bool IsAligned(const Sequence *sequence, int seqIndex) const
     { 
-        if (currentMultipleAlignment)
-            return currentMultipleAlignment->IsAligned(sequence, seqIndex);
+        const BlockMultipleAlignment *currentAlignment = GetCurrentMultipleAlignment();
+        if (currentAlignment)
+            return currentAlignment->IsAligned(sequence, seqIndex);
         else
             return false;
     }
@@ -370,8 +379,11 @@ public:
     // (e.g., for coloring by sequence conservation)
     const Vector * GetAlignmentColor(const Sequence *sequence, int seqIndex) const
     {
-        if (!currentMultipleAlignment) return NULL;
-        return currentMultipleAlignment->GetAlignmentColor(sequence, seqIndex);
+        const BlockMultipleAlignment *currentAlignment = GetCurrentMultipleAlignment();
+        if (currentAlignment)
+            return currentAlignment->GetAlignmentColor(sequence, seqIndex);
+        else
+            return NULL;
     }
 
 };
