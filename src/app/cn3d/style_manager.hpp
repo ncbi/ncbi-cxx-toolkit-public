@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/03/29 15:49:32  thiessen
+* use disulfide color only for virtual disulfides
+*
 * Revision 1.22  2001/03/29 15:32:21  thiessen
 * change disulfide, connection colors to not-yellow
 *
@@ -185,7 +188,7 @@ public:
 
     bool virtualDisulfidesOn, hydrogensOn;
 
-    Vector disulfideColor, backgroundColor;
+    Vector virtualDisulfideColor, backgroundColor;
 
     double ballRadius, stickRadius, tubeRadius, tubeWormRadius,
         helixRadius, strandWidth, strandThickness;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/03/29 15:49:21  thiessen
+* use disulfide color only for virtual disulfides
+*
 * Revision 1.30  2001/03/29 15:32:42  thiessen
 * change disulfide, connection colors to not-yellow
 *
@@ -169,7 +172,7 @@ void StyleSettings::SetToSecondaryStructure(void)
     connections.userColor.Set(0.9,0.9,1);
 
     virtualDisulfidesOn = true;
-    disulfideColor.Set(0.93,0.55,0.05);
+    virtualDisulfideColor.Set(0.93,0.55,0.05);
 
     helixObjects.isOn = strandObjects.isOn = true;
     helixObjects.style = strandObjects.style = eWithArrows;
@@ -217,7 +220,7 @@ void StyleSettings::SetToWireframe(void)
     connections.userColor.Set(0.9,0.9,1);
 
     virtualDisulfidesOn = false;
-    disulfideColor.Set(0.93,0.55,0.05);
+    virtualDisulfideColor.Set(0.93,0.55,0.05);
 
     helixObjects.isOn = strandObjects.isOn = false;
     helixObjects.style = strandObjects.style = eWithArrows;
@@ -266,7 +269,7 @@ void StyleSettings::SetToAlignment(StyleSettings::eColorScheme protBBType)
     connections.userColor.Set(0.9,0.9,1);
 
     virtualDisulfidesOn = true;
-    disulfideColor.Set(0.93,0.55,0.05);
+    virtualDisulfideColor.Set(0.93,0.55,0.05);
 
     helixObjects.isOn = strandObjects.isOn = false;
     helixObjects.style = strandObjects.style = eWithArrows;
@@ -638,8 +641,8 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         if (bond->order == Bond::eVirtualDisulfide && !globalStyle.virtualDisulfidesOn)
             BOND_NOT_DISPLAYED;
 
-        if (bond->order == Bond::eRealDisulfide || bond->order == Bond::eVirtualDisulfide) {
-            bondStyle->end1.color = bondStyle->end2.color = globalStyle.disulfideColor;
+        if (bond->order == Bond::eVirtualDisulfide) {
+            bondStyle->end1.color = bondStyle->end2.color = globalStyle.virtualDisulfideColor;
         } else {
             bondStyle->end1.color = atomStyle1.color;
             bondStyle->end2.color = atomStyle2.color;
