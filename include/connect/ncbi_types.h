@@ -68,6 +68,14 @@ typedef struct {
     unsigned int usec; /* microseconds (always truncated by mod. 1,000,000) */
 } STimeout;
 
+#ifdef __cplusplus
+const STimeout *const kDefaultTimeout  = (const STimeout*)(-1);
+const STimeout *const kInfiniteTimeout = (const STimeout*)( 0);
+#else
+#  define             kDefaultTimeout   ((const STimeout*)(-1))
+#  define             kInfiniteTimeout  ((const STimeout*)( 0))
+#endif /*__cplusplus*/
+
 
 /* Aux. enum to set/unset/default various features
  */
@@ -95,6 +103,9 @@ typedef unsigned int TNCBI_Time;
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2003/08/25 14:36:26  lavr
+ * +kDefaultTimeout, +kInfiniteTimeout
+ *
  * Revision 6.3  2003/04/09 19:05:58  siyan
  * Added doxygen support
  *
