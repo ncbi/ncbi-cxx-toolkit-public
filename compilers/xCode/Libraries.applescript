@@ -68,7 +68,7 @@ property dbapi : {name:"dbapi", path:"dbapi"}
 property dbapi_cache : {name:"dbapi_cache", path:"dbapi:cache"}
 property dbapi_driver : {name:"dbapi_driver", path:"dbapi:driver"}
 property xhtml : {name:"xhtml", path:"html"}
-property xconnect : {name:"xconnect", path:"connect", exc:{"ncbi_lbsm_ipc.c", "ncbi_lbsm.c", "ncbi_lbsmd.c", "threaded_server.cpp", "netcache_client_lb.cpp"}}
+property xconnect : {name:"xconnect", path:"connect", exc:{"ncbi_lbsm_ipc.c", "ncbi_lbsm.c", "ncbi_lbsmd.c", "threaded_server.cpp"}}
 --property cserial : {name:"cserial", path:"serial", inc:{"asntypes.cpp", "serialasn.cpp"}}
 property xser : {name:"xser", path:"serial", exc:{"asntypes.cpp", "object.cpp", "objstrb.cpp", "rtti.cpp", "serialasn.cpp"}}
 property xutil : {name:"xutil", path:"util"}
@@ -404,6 +404,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/03/22 12:42:29  lebedev
+ * xconnect updated
+ *
  * Revision 1.46  2005/03/21 12:28:31  lebedev
  * Cache libraries enabled
  *
