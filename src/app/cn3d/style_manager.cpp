@@ -1552,7 +1552,8 @@ bool StyleManager::LoadFromASNUserAnnotations(const ncbi::objects::CCn3d_user_an
 
         // fill out annotation parameters
         userAnnot->name = (*a)->GetName();
-        userAnnot->description = (*a)->GetDescription();
+        if ((*a)->IsSetDescription())
+            userAnnot->description = (*a)->GetDescription();
         userAnnot->styleID = (*a)->GetStyle_id().Get();
         DisplayAnnotation(userAnnot, (*a)->GetIs_on());
 
@@ -1594,6 +1595,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2003/07/22 18:54:42  thiessen
+* fix object access bug
+*
 * Revision 1.75  2003/06/21 08:18:58  thiessen
 * show all atoms with coordinates, even if not in all coord sets
 *
