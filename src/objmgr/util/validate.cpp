@@ -30,11 +30,13 @@
  *
  */
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbistd.hpp>
 
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
 #include <serial/iterator.hpp>
 #include <serial/enumvalues.hpp>
+#include <serial/serialimpl.hpp>
 
 #include <objects/objmgr/scope.hpp>
 #include <objects/objmgr/seq_vector.hpp>
@@ -80,6 +82,7 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
@@ -99,6 +102,7 @@
 
 #include <algorithm>
 #include <list>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -591,8 +595,7 @@ private:
                           const list< CRef< CDbtag > >& dbxref2) const;
     void ReportCdTransErrors(const CSeq_feat& feat,
         bool show_stop, bool got_stop, bool no_end, int ragged);
-    int CheckForRaggedEnd(const CSeq_feat& feat, const CSeq_loc& loc,
-        const CCdregion& cdregion);
+    int CheckForRaggedEnd(const CSeq_loc& loc, const CCdregion& cdregion);
     void CheckForCodeBreakNotOnCodon(const CSeq_feat& feat,const CSeq_loc& loc,
                                      const CCdregion& cdregion);
     bool IsDeltaOrFarSeg(const CSeq_loc& loc);
@@ -2511,7 +2514,6 @@ static const CBioseq* s_GetBioSeq (const CSeq_loc& loc, CScope* scope)
 
 void CValidError_impl::ValidateGenProdSet(const CBioseq_set& seqset)
 {
-    CBioseq_Handle      bioseq_handle;
     bool                id_no_good = false;
     CSeq_id::E_Choice   id_type;
     
@@ -2523,10 +2525,9 @@ void CValidError_impl::ValidateGenProdSet(const CBioseq_set& seqset)
     }
     
     const CBioseq& seq = (**se_list_it).GetSeq();
-    // Get the handle of the Bioseq
-    bioseq_handle = m_Scope->GetBioseqHandle(seq);
-    
-    CFeat_CI feat_it(bioseq_handle, 0, 0, CSeqFeatData::e_Rna);
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+
+    CFeat_CI feat_it(bsh, 0, 0, CSeqFeatData::e_Rna);
     for (; feat_it; ++feat_it) {
         if ((*feat_it).GetData().GetRna().GetType() ==
             CRNA_ref::eType_mRNA) {
@@ -2657,19 +2658,35 @@ void CValidError_impl::ValidateSeqFeatContext(const CBioseq& ) //seq)
 }
 
 
+static bool s_SerialNumberInComment(const string& comment)
+{
+    size_t pos = comment.find('[', 0);
+    while ( pos != string::npos ) {
+        ++pos;
+        if ( isdigit(comment[pos]) ) {
+            while ( isdigit(comment[pos]) ) {
+                ++pos;
+            }
+            if ( comment[pos] == ']' ) {
+                return true;
+            }
+        }
+
+        pos = comment.find('[', pos);
+    }
+    return false;
+}
+
+
 void CValidError_impl::ValidateSeqFeat(const CSeq_feat& feat)
 {
-    const CBioseq* seq = 0;
     CBioseq_Handle bsh;
-
     bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
-    seq = &(bsh.GetBioseq());
-    ValidateSeqLoc(feat.GetLocation(), *seq, "Location"); 
+    ValidateSeqLoc(feat.GetLocation(), bsh.GetBioseq(), "Location");
     
     if ( feat.IsSetProduct() ) {
         bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
-        seq = &(bsh.GetBioseq());
-        ValidateSeqLoc(feat.GetProduct(), *seq, "Product");
+        ValidateSeqLoc(feat.GetProduct(), bsh.GetBioseq(), "Product");
     }
 
     ValidateFeatPartialness(feat);
@@ -2717,6 +2734,15 @@ void CValidError_impl::ValidateSeqFeat(const CSeq_feat& feat)
 
     if ( feat.GetData ().Which () != CSeqFeatData::e_Gene ) {
         // !!!
+    }
+
+    if ( feat.IsSetComment() ) {
+        if ( s_SerialNumberInComment(feat.GetComment()) ) {
+            ValidErr(eDiag_Info, eErr_SEQ_FEAT_SerialInComment,
+              "Feature comment may refer to reference by serial number - "
+              "attach reference specific comments to the reference "
+              "REMARK instead.", feat);
+        }
     }
 }
 
@@ -3593,6 +3619,7 @@ void CValidError_impl::ValidateMultiIntervalGene(const CBioseq& seq)
     // Loop through features on gene
     for (CFeat_CI fit(*m_Scope.GetPointer(), loc, CSeqFeatData::e_Gene);
         fit; ++fit) {
+            // !!!
     }
 }
 
@@ -3839,6 +3866,7 @@ public:
 
 void CValidError_impl::ValidateCollidingGeneNames(const CBioseq& ) //seq)
 {
+    // !!!
     /*
     // Loop through features and insert into multimap sorted by
     // feature label--case insensitive
@@ -5109,16 +5137,20 @@ void CValidError_impl::CheckForBadGeneOverlap(const CSeq_feat& feat)
 }
 
 
+static bool s_IsResidue(char res) 
+{
+    return res < 250;
+}
+
+
 void CValidError_impl::SpliceCheckEx(const CSeq_feat& feat, bool check_all)
 {
-    // !!!
-
-    // suppress if NCBISubValidate
+    // !!! suppress if NCBISubValidate
     //if (GetAppProperty ("NcbiSubutilValidation") != NULL)
     //    return;
 
     // specific biological exceptions suppress check
-    if ( feat.GetExcept() ) {
+    if ( feat.GetExcept() && feat.IsSetExcept_text() ) {
         const string& except_text = feat.GetExcept_text();
         if ( SearchNoCase(except_text, "ribosomal slippage") != string::npos        ||
              SearchNoCase(except_text, "ribosome slippage") != string::npos         ||
@@ -5129,35 +5161,113 @@ void CValidError_impl::SpliceCheckEx(const CSeq_feat& feat, bool check_all)
         }
     }
 
-    const CSeq_loc& head = feat.GetLocation();
+    size_t num_of_parts = 0;
+    ENa_strand  strand = eNa_strand_unknown;
 
-    int total = 0;
-    /*
-    slp = NULL;
-    
-    while ((slp = SeqLocFindPart (head, slp, EQUIV_IS_ONE)) != NULL) {
-        total++;
-        if (slp->choice == SEQLOC_EQUIV)
-            return;                   // bail on this one
-        if (total == 1)
-            strand = SeqLocStrand (slp);
-        else {
-            if (strand != SeqLocStrand (slp)) // bail on mixed strand
-                return;
+    // !!! The C version treated seq_loc equiv as one whereas the iterator
+    // treats it as many. 
+    const CSeq_loc& location = feat.GetLocation ();
+
+    for (CSeq_loc_CI citer(location); citer; ++citer) {
+        ++num_of_parts;
+        if ( num_of_parts == 1 ) {  // first part
+            strand = citer.GetStrand();
+        } else {
+            if ( strand != citer.GetStrand() ) {
+                return;         //bail on mixed strand
+            }
         }
     }
-    */
 
-    if ( !check_all  &&  total < 2 ) {
+    if ( num_of_parts == 0 ) {
         return;
     }
-    if ( total < 1 ) {
+    if ( !check_all  &&  num_of_parts == 1 ) {
         return;
     }
+    
+    bool partial_first = location.IsPartialLeft();
+    bool partial_last = location.IsPartialRight();
 
-    // genomic product set or NT_ contig always relaxes to SEV_WARNING
+    size_t counter = 0;
+    const CSeq_id* last_id = 0;
 
-    // !!!
+    CBioseq_Handle bsh;
+    for (CSeq_loc_CI citer(location); citer; ++citer) {
+        ++counter;
+
+        const CSeq_id& seq_id = citer.GetSeq_id();
+        
+        size_t         seq_len = 0;
+        if ( last_id == 0 || !last_id->Match(seq_id) ) {
+            bsh = m_Scope->GetBioseqHandle(seq_id);
+            seq_len = bsh.GetSeqVector().size();
+            last_id = &seq_id;
+        }
+
+        TSeqPos acceptor = citer.GetRange().GetFrom();
+        TSeqPos donor = citer.GetRange().GetTo();
+        TSeqPos start = acceptor;
+        TSeqPos stop = donor;
+
+        if ( citer.GetStrand() == eNa_strand_minus ) {
+            swap(acceptor, donor);
+            // CSeqVector uses start and stop based on the strand.
+        }
+
+
+        // set severity level
+        // genomic product set or NT_ contig always relaxes to SEV_WARNING
+        EDiagSev sev = eDiag_Warning;
+        if ( m_SpliceErr && !(m_IsGPS || m_IsRefSeq) && !check_all ) {
+            sev = eDiag_Error;
+        }
+
+        // get the label. if m_SuppressContext flag in true, get the worst label.
+        const CBioseq& bsq = bsh.GetBioseq();
+        string label;
+        bsq.GetLabel(&label, CBioseq::eContent, m_SuppressContext);
+        
+        CSeqVector seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        // check donor on all but last exon and on sequence
+        if ( ((check_all && !partial_last)  ||  counter < num_of_parts)  &&
+             (stop < seq_len - 2) ) {
+            CSeqVector::TResidue res1 = seq_vec[stop + 1];    
+            CSeqVector::TResidue res2 = seq_vec[stop + 2];
+
+            if ( s_IsResidue(res1)  &&  s_IsResidue(res2) ) {
+                if ( (res1 != 'G')  || (res2 != 'T' ) ) {
+                    string msg;
+                    if ( (res1 == 'G')  && (res2 != 'C' ) ) { // GC minor splice site
+                        sev = eDiag_Warning;
+                        msg = "Rare splice donor consensus (GC) found instead of "
+                              "(GT) after exon ending at position " +
+                              NStr::IntToString(donor + 1) + " of " + label;
+                    } else {
+                        msg = "Splice donor consensus (GT) not found after exon"
+                            " ending at position " + 
+                            NStr::IntToString(donor + 1) + " of " + label;
+                    }
+                    ValidErr(sev, eErr_SEQ_FEAT_NotSpliceConsensus, msg, feat);
+                }
+            }
+        }
+
+        if ( ((check_all && !partial_first)  ||  counter != 1)  &&
+             (start > 1) ) {
+            CSeqVector::TResidue res1 = seq_vec[start - 2];    
+            CSeqVector::TResidue res2 = seq_vec[start - 1];
+
+            if ( s_IsResidue(res1)  &&  s_IsResidue(res2) ) {
+                if ( (res1 != 'A')  ||  (res2 != 'G') ) {
+                    ValidErr(sev, eErr_SEQ_FEAT_NotSpliceConsensus,
+                        "Splice acceptor consensus (AG) not found before "
+                        "exon starting at position " + 
+                        NStr::IntToString(acceptor + 1) + " of " + label, feat);
+                }
+            }
+        }
+    } // end of for loop
 }
 
 
@@ -5222,11 +5332,10 @@ void CValidError_impl::ReportCdTransErrors
 
 
 int CValidError_impl::CheckForRaggedEnd
-(const CSeq_feat& feat,
- const CSeq_loc& loc,
+(const CSeq_loc& loc,
  const CCdregion& cdregion)
 {
-    TSeqPos len = GetLength(loc, m_Scope);
+    size_t len = GetLength(loc, m_Scope);
     if ( cdregion.GetFrame() > CCdregion::eFrame_one ) {
         len -= cdregion.GetFrame() - 1;
     }
@@ -5319,7 +5428,7 @@ static string s_MapToNTCoords
 
 
 inline
-static s_Residue(char res)
+static char s_Residue(char res)
 {
     return res == 255 ? '?' : res;
 }
@@ -5388,7 +5497,7 @@ void CValidError_impl::CdTransCheck(const CSeq_feat& feat)
         no_end = true;
     } else {    
         // complete stop, so check for ragged end
-        ragged = CheckForRaggedEnd(feat, location, cdregion);
+        ragged = CheckForRaggedEnd(location, cdregion);
     }
     
     // check for code break not on a codon
@@ -6407,6 +6516,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.33  2002/12/11 21:34:29  shomrat
+* Add SpliceCheck (SpliceCheckEx)
+*
 * Revision 1.32  2002/12/11 18:55:33  shomrat
 * Bug fixes for CdTransCheck and CheckForCodeBreakNotOnCodon
 *
