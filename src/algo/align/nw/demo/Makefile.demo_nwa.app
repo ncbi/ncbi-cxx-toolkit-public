@@ -9,7 +9,7 @@
 APP = demo_nwa
 SRC = nwa starter
 
-LIB = xalgoalign $(OBJMGR_LIBS)
+LIB = xalgoalign tables $(OBJMGR_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

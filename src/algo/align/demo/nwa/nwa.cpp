@@ -58,8 +58,8 @@ void CAppNWA::Init()
                       "mRna vs. Dna alignment "
                       "(consider also specifying -esf zzxx)" );
 
-    argdescr->AddOptionalKey("guides", "guides",
-                             "Use HSPs to guide mRna2Dna alignment",
+    argdescr->AddOptionalKey("pattern", "pattern",
+                             "Use HSPs to guide spliced alignment",
                              CArgDescriptions::eInteger);
     argdescr->AddKey
         ("seq1", "seq1",
@@ -155,7 +155,7 @@ void CAppNWA::Init()
     argdescr->SetConstraint("esf", paa_esf);
 
     CArgAllow* paa0 = new CArgAllow_Integers(5,1000);
-    argdescr->SetConstraint("guides", paa0);
+    argdescr->SetConstraint("pattern", paa0);
 
     SetupArgDescriptions(argdescr.release());
 }
@@ -191,7 +191,7 @@ void CAppNWA::x_RunOnPair() const
     const bool bMM = args["mm"];
     const bool bMT = args["mt"];
     const bool bMrna2Dna = args["mrna2dna"];
-    const bool bGuides = args["guides"];
+    const bool bGuides = args["pattern"];
 
     bool   output_type1  ( args["o1"] );
     bool   output_type2  ( args["o2"] );
@@ -259,19 +259,18 @@ void CAppNWA::x_RunOnPair() const
                    "Cannot read file" + args["seq2"].AsString());
     }
 
-    // determine seq type
-    CNWAligner::EScoringMatrixType smt;
-    if (args["matrix"].AsString() == "blosum62")
-        smt = CNWAligner::eSMT_Blosum62;
-    else
-        smt = CNWAligner::eSMT_Nucl;
+    // determine sequence/score matrix type
+    const SNCBIPackedScoreMatrix* psm = 
+      (args["matrix"].AsString() == "blosum62")?
+      &NCBISM_Blosum62:
+      0;
 
     auto_ptr<CNWAligner> aligner (
         bMrna2Dna? 
         new SPLALIGNER (&v1[0], v1.size(), &v2[0], v2.size()):
         (bMM?
-         new CMMAligner (&v1[0], v1.size(), &v2[0], v2.size(), smt):
-         new CNWAligner (&v1[0], v1.size(), &v2[0], v2.size(), smt))
+         new CMMAligner (&v1[0], v1.size(), &v2[0], v2.size(), psm):
+         new CNWAligner (&v1[0], v1.size(), &v2[0], v2.size(), psm))
         );
 
     aligner->SetWm  (args["Wm"]. AsInteger());
@@ -291,7 +290,7 @@ void CAppNWA::x_RunOnPair() const
         aligner_mrna2dna->SetIntronMinSize(args["IntronMinSize"]. AsInteger());
 
         if(bGuides) {
-            aligner_mrna2dna->MakeGuides(args["guides"].AsInteger());
+            aligner_mrna2dna->MakePattern(args["pattern"].AsInteger());
         }
     }
 
@@ -419,6 +418,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/09/30 19:50:28  kapustin
+ * Adjust for standard score matrix interface
+ *
  * Revision 1.23  2003/09/10 19:11:50  kapustin
  * Add eNotSupported exception for multithreading availability checking
  *
