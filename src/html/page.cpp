@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/04/28 16:52:45  vasilche
+* Restored optimized code for reading from file.
+*
 * Revision 1.13  1999/04/27 16:48:44  vakatov
 * Rollback of the buggy "optimization" in CHTMLPage::CreateTemplate()
 *
@@ -152,15 +155,16 @@ void CHTMLPage::CreateSubNodes(void)
 
 CNCBINode* CHTMLPage::CreateTemplate(void) 
 {
-    string input;  
-    char ch;
+    string        str;
+    char          buf[1024];
+    CNcbiIfstream ifstr(m_TemplateFile.c_str());
 
-    CNcbiIfstream inFile(m_TemplateFile.c_str());
-
-    while( inFile.get(ch))
-        input += ch;
+    while ( ifstr ) {
+        ifstr.read(buf, sizeof(buf));
+        str.append(buf, ifstr.gcount());
+    }
     
-    return new CHTMLText(input);
+    return new CHTMLText(str);
 }
 
 CNCBINode* CHTMLPage::CreateTitle(void) 
