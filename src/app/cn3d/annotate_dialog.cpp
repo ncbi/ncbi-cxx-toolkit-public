@@ -172,15 +172,15 @@ void AnnotateDialog::OnButton(wxCommandEvent& event)
             break;
         }
         case ID_B_MOVE_UP: case ID_B_MOVE_DOWN: {
-            DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(displayed, ID_L_DISPLAYED, wxListBox)
-            if (displayed->GetSelection() >= 0) {
-                StyleManager::UserAnnotation *annotation = ANNOT_FROM_CLIENT_DATA(displayed);
+            DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(available, ID_L_AVAILABLE, wxListBox)
+            if (available->GetSelection() >= 0) {
+                StyleManager::UserAnnotation *annotation = ANNOT_FROM_CLIENT_DATA(available);
                 if (annotation && styleManager->
-                        ReprioritizeDisplayOrder(annotation, (event.GetId() == ID_B_MOVE_UP)))
+                        MoveUserAnnotation(annotation, (event.GetId() == ID_B_MOVE_UP)))
                     ResetListBoxes();
                 else
                     ERRORMSG("AnnotateDialog::OnButton() - error reprioritizing annotation #"
-                        << displayed->GetSelection());
+                        << available->GetSelection());
             }
             break;
         }
@@ -190,7 +190,7 @@ void AnnotateDialog::OnButton(wxCommandEvent& event)
             if (listBox->GetSelection() >= 0) {
                 StyleManager::UserAnnotation *annotation = ANNOT_FROM_CLIENT_DATA(listBox);
                 if (annotation && styleManager->
-                        DisplayAnnotation(annotation, (event.GetId() == ID_B_TURN_ON)))
+                        DisplayUserAnnotation(annotation, (event.GetId() == ID_B_TURN_ON)))
                     ResetListBoxes();
                 else
                     ERRORMSG("AnnotateDialog::OnButton() - error toggling annotation #"
@@ -254,8 +254,8 @@ void AnnotateDialog::SetButtonStates(void)
     bool displayedSelected = (displayed->GetSelection() >= 0);
     bTurnOn->Enable(availableSelected && !displayedSelected);
     bTurnOff->Enable(displayedSelected);
-    bMoveUp->Enable(displayedSelected && displayed->GetSelection() > 0);
-    bMoveDown->Enable(displayedSelected && displayed->GetSelection() < displayed->GetCount() - 1);
+    bMoveUp->Enable(availableSelected && available->GetSelection() > 0);
+    bMoveDown->Enable(availableSelected && available->GetSelection() < available->GetCount() - 1);
 
     bNew->Enable(HighlightsPresent());
     bEdit->Enable(availableSelected);
@@ -278,34 +278,38 @@ void AnnotateDialog::ResetListBoxes(void)
 {
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(available, ID_L_AVAILABLE, wxListBox)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(displayed, ID_L_DISPLAYED, wxListBox)
-    StyleManager::AnnotationPtrList annotations;
-    styleManager->GetUserAnnotations(&annotations);
+    StyleManager::UserAnnotationList& annotations = styleManager->GetUserAnnotations();
+    StyleManager::UserAnnotationList::iterator l, le = annotations.end();
 
     // determine what should be selected initially
     void *selection = NULL;
     if (available->GetSelection() >= 0)
         selection = available->GetClientData(available->GetSelection());
-    else if (styleManager->GetUserAnnotationsDisplayed().size() > 0)
-        selection = styleManager->GetUserAnnotationsDisplayed()[0];
-    else if (annotations.size() > 0)
-        selection = annotations[0];
-
-    // recreate available list
-    available->Clear();
-    int i;
-    for (i=0; i<annotations.size(); ++i) {
-        available->Append(annotations[i]->name.c_str(), annotations[i]);
-        if (selection == annotations[i])
-            available->SetSelection(i, true);
+    else if (annotations.size() > 0) {
+        for (l=annotations.begin(); l!=le; ++l) {
+            if ((*l)->isDisplayed) {
+                selection = l->GetPointer();
+                break;
+            }
+        }
+        if (l == le)
+            selection = annotations.front().GetPointer();
     }
 
-    // recreate displayed list
+    // recreate lists
+    available->Clear();
     displayed->Clear();
-    for (i=0; i<styleManager->GetUserAnnotationsDisplayed().size(); ++i) {
-        displayed->Append(styleManager->GetUserAnnotationsDisplayed()[i]->name.c_str(),
-            styleManager->GetUserAnnotationsDisplayed()[i]);
-        if (selection == styleManager->GetUserAnnotationsDisplayed()[i])
-            displayed->SetSelection(i, true);
+    int i, id = 0;
+    for (i=0, l=annotations.begin(); l!=le; ++i, ++l) {
+        available->Append((*l)->name.c_str(), l->GetPointer());
+        if (selection == l->GetPointer())
+            available->SetSelection(i, true);
+        if ((*l)->isDisplayed) {
+            displayed->Append((*l)->name.c_str(), l->GetPointer());
+            if (selection == l->GetPointer())
+                displayed->SetSelection(id, true);
+            ++id;
+        }
     }
 }
 
@@ -318,7 +322,7 @@ void AnnotateDialog::NewAnnotation(void)
     newAnnotation->residues = highlightedResidues;   // copy list of stuff highlighted at dialog creation
     StyleSettings *style;
     if (!styleManager->AddUserStyle(&(newAnnotation->styleID), &style) || !style ||
-        !styleManager->DisplayAnnotation(newAnnotation, true)) { // turn on new annotation
+        !styleManager->DisplayUserAnnotation(newAnnotation, true)) { // turn on new annotation
         ERRORMSG("AnnotateDialog::NewAnnotation() - error setting up new annotation");
         return;
     }
@@ -541,12 +545,12 @@ wxSizer *SetupAnnotationControlDialog( wxPanel *parent, bool call_fit, bool set_
     item7->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxButton *item10 = new wxButton( parent, ID_B_MOVE_UP, "Move Up", wxDefaultPosition, wxDefaultSize, 0 );
-    item10->SetToolTip( "Move display annotation up in priority" );
+    item10->SetToolTip( "Move annotation up in priority" );
     item10->Enable( FALSE );
     item7->Add( item10, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxButton *item11 = new wxButton( parent, ID_B_MOVE_DOWN, "Move Down", wxDefaultPosition, wxDefaultSize, 0 );
-    item11->SetToolTip( "Move display annotation down in priority" );
+    item11->SetToolTip( "Move annotation down in priority" );
     item11->Enable( FALSE );
     item7->Add( item11, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
@@ -700,6 +704,9 @@ wxSizer *SetupAnnotationEditorDialog( wxPanel *parent, bool call_fit, bool set_s
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/06/02 21:33:13  thiessen
+* reorganize user annotation storage so that reordering is saved
+*
 * Revision 1.15  2004/05/21 21:41:38  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -35,6 +35,7 @@
 #define CN3D_STYLE_MANAGER__HPP
 
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbiobj.hpp>
 
 #include <objects/cn3d/Cn3d_style_dictionary.hpp>
 #include <objects/cn3d/Cn3d_style_settings.hpp>
@@ -296,59 +297,6 @@ public:
     // remove a style; returns false if a user style of the given ID is not found
     bool RemoveUserStyle(int id);
 
-    // load/save asn user annotations
-    bool SaveToASNUserAnnotations(ncbi::objects::CCn3d_user_annotations *annotations) const;
-    bool LoadFromASNUserAnnotations(const ncbi::objects::CCn3d_user_annotations& annotations);
-
-    // various typedefs
-    typedef std::map < const MoleculeIdentifier * , std::vector < bool > > ResidueMap;
-    typedef struct {
-        std::string name, description;
-        int styleID;
-        ResidueMap residues;
-    } UserAnnotation;
-    typedef std::vector < UserAnnotation * > AnnotationPtrList;
-
-    // add a new (empty) annotation; returns a pointer to the new UserAnnotation structure,
-    // or NULL on error; does *not* display the new annotation by default
-    UserAnnotation * AddUserAnnotation(void);
-
-    // remove an annotation; returns false if the given annotation isn't found
-    bool RemoveUserAnnotation(UserAnnotation *annotation);
-
-    // sets the displayed status of the given annotation; returns false if annotation not found
-    bool DisplayAnnotation(UserAnnotation *annotation, bool display);
-
-    // moves the priority of annotation up (moveUp==true) or down (moveUp==false);
-    // returns false if annotation not found
-    bool ReprioritizeDisplayOrder(UserAnnotation *annotation, bool moveUp);
-
-private:
-    const StructureSet *structureSet;
-    StyleSettings globalStyle;
-
-    // a set of user styles, each with its own unique integer id
-    typedef std::map < int , StyleSettings > StyleMap;
-    StyleMap userStyles;
-
-    // storage for user annotations
-    typedef std::list < UserAnnotation > AnnotationList;
-    AnnotationList userAnnotations;
-
-    // the priority-ordered list of annotations that are currently displayed;
-    // lowest-indexed annotation has highest priority (to reflect GUI list where the
-    // annotation on top of the stack has priority)
-    AnnotationPtrList userAnnotationsDisplayed;
-
-    // map from molecule -> user annotation(s); for fast lookup of which annotations cover
-    // a particular molecule
-    typedef std::map < const MoleculeIdentifier * , AnnotationPtrList > AnnotationMap;
-    AnnotationMap userAnnotationMap;
-
-    bool GetObjectStyle(const StructureObject *object, const Object3D& object3D,
-        const StyleSettings::GeneralStyle& generalStyle, ObjectStyle *objectStyle) const;
-
-public:
     // StyleSettings accessors
     const StyleSettings& GetGlobalStyle(void) const { return globalStyle; }
     const StyleSettings& GetStyleForResidue(const StructureObject *object,
@@ -365,17 +313,61 @@ public:
         return ((style != userStyles.end()) ? &(style->second) : NULL);
     }
 
-    // annotation list accessors
-    void GetUserAnnotations(AnnotationPtrList *annotationList);
-    const AnnotationPtrList& GetUserAnnotationsDisplayed(void) const
-        { return userAnnotationsDisplayed; }
-
     // predefined styles
     void SetGlobalColorScheme(StyleSettings::ePredefinedColorScheme scheme);
     void SetGlobalRenderingStyle(StyleSettings::ePredefinedRenderingStyle style);
 
     // set global style
     bool SetGlobalStyle(const ncbi::objects::CCn3d_style_settings& styleASN);
+
+    // load/save asn user annotations
+    bool SaveToASNUserAnnotations(ncbi::objects::CCn3d_user_annotations *annotations) const;
+    bool LoadFromASNUserAnnotations(const ncbi::objects::CCn3d_user_annotations& annotations);
+
+    // typedefs for UserAnnotation
+    typedef std::map < const MoleculeIdentifier * , std::vector < bool > > ResidueMap;
+    typedef class UserAnnotation : public ncbi::CObject {
+    public:
+        std::string name, description;
+        int styleID;
+        ResidueMap residues;
+        bool isDisplayed;
+    };
+    typedef std::list < ncbi::CRef < UserAnnotation > > UserAnnotationList;
+
+    // add a new (empty) annotation; returns a pointer to the new UserAnnotation structure
+    UserAnnotation * AddUserAnnotation(void);
+
+    // remove an annotation; returns false if the given annotation isn't found
+    bool RemoveUserAnnotation(UserAnnotation *annotation);
+
+    // sets the displayed status of the given annotation; returns false if annotation not found.
+    // Should use this rather than setting UserAnnotation.isDisplayed directly.
+    bool DisplayUserAnnotation(UserAnnotation *annotation, bool display);
+
+    // moves the priority of annotation up (moveUp==true) or down (moveUp==false);
+    // returns false if annotation not found
+    bool MoveUserAnnotation(UserAnnotation *annotation, bool moveUp);
+
+    // annotation list accessors
+    UserAnnotationList& GetUserAnnotations(void) { return userAnnotations; }
+    const UserAnnotationList& GetUserAnnotations(void) const { return userAnnotations; }
+
+private:
+    const StructureSet *structureSet;
+    StyleSettings globalStyle;
+
+    // a set of user styles, each with its own unique integer id
+    typedef std::map < int , StyleSettings > StyleMap;
+    StyleMap userStyles;
+
+    // the priority-ordered list of annotations, including which are currently displayed;
+    // lowest-indexed annotation has highest priority (to reflect GUI list where the
+    // annotation on top of the stack has priority)
+    UserAnnotationList userAnnotations;
+
+    bool GetObjectStyle(const StructureObject *object, const Object3D& object3D,
+        const StyleSettings::GeneralStyle& generalStyle, ObjectStyle *objectStyle) const;
 };
 
 // the following are convenience containers to tell the Draw functions how
@@ -434,6 +426,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2004/06/02 21:33:13  thiessen
+* reorganize user annotation storage so that reordering is saved
+*
 * Revision 1.41  2004/02/19 17:05:20  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

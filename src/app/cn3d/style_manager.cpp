@@ -1236,13 +1236,15 @@ const StyleSettings& StyleManager::GetStyleForResidue(const StructureObject *obj
     // that also covers this residue
     const StyleSettings *style = &globalStyle;
 
-    for (int d=0; d<userAnnotationsDisplayed.size(); ++d) {
+    UserAnnotationList::const_iterator d, de = userAnnotations.end();
+    for (d=userAnnotations.begin(); d!=de; ++d) {
+        if (!(*d)->isDisplayed)
+            continue;
         // check to see if the annotation covers this residue
-        ResidueMap::const_iterator
-            residues = userAnnotationsDisplayed[d]->residues.find(molecule->identifier);
-        if (residues != userAnnotationsDisplayed[d]->residues.end() &&
+        ResidueMap::const_iterator residues = (*d)->residues.find(molecule->identifier);
+        if (residues != (*d)->residues.end() &&
             residues->second[residueID - 1] == true) {
-            style = &(userStyles.find(userAnnotationsDisplayed[d]->styleID)->second);
+            style = &(userStyles.find((*d)->styleID)->second);
             break;
         }
     }
@@ -1317,14 +1319,6 @@ bool StyleManager::EditUserAnnotations(wxWindow *parent)
     return false;
 }
 
-void StyleManager::GetUserAnnotations(AnnotationPtrList *annotationList)
-{
-    annotationList->resize(userAnnotations.size());
-    AnnotationList::iterator a = userAnnotations.begin();
-    for (int i=0; i<userAnnotations.size(); ++i)
-        (*annotationList)[i] = &(*(a++));
-}
-
 bool StyleManager::AddUserStyle(int *id, StyleSettings **newStyle)
 {
     // create a style with the lowest integer id (above zero) available
@@ -1352,29 +1346,25 @@ bool StyleManager::RemoveUserStyle(int id)
 StyleManager::UserAnnotation * StyleManager::AddUserAnnotation(void)
 {
     userAnnotations.resize(userAnnotations.size() + 1);
+    userAnnotations.back().Reset(new UserAnnotation());
+    userAnnotations.back()->styleID = -1;
+    userAnnotations.back()->isDisplayed = false;
     structureSet->SetDataChanged(StructureSet::eStyleData);
-    return &(userAnnotations.back());
+    return userAnnotations.back().GetPointer();
 }
 
 bool StyleManager::RemoveUserAnnotation(UserAnnotation *annotation)
 {
-    // remove annotation from displayed list
-    AnnotationPtrList::iterator d, de = userAnnotationsDisplayed.end();
-    for (d=userAnnotationsDisplayed.begin(); d!=de; ++d) {
-        if (annotation == *d) {
-            userAnnotationsDisplayed.erase(d);
-            GlobalMessenger()->PostRedrawAllStructures();
-            GlobalMessenger()->PostRedrawAllSequenceViewers();
-            break;
-        }
-    }
-
     // remove annotation from available list
-    AnnotationList::iterator u, ue = userAnnotations.end();
+    UserAnnotationList::iterator u, ue = userAnnotations.end();
     int removedStyleID = -1;
     for (u=userAnnotations.begin(); u!=ue; ++u) {
-        if (annotation == &(*u)) {
-            removedStyleID = u->styleID;
+        if (annotation == u->GetPointer()) {
+            if (annotation->isDisplayed) {
+                GlobalMessenger()->PostRedrawAllStructures();
+                GlobalMessenger()->PostRedrawAllSequenceViewers();
+            }
+            removedStyleID = (*u)->styleID;
             userAnnotations.erase(u);
             break;
         }
@@ -1383,36 +1373,31 @@ bool StyleManager::RemoveUserAnnotation(UserAnnotation *annotation)
 
     // also remove the style if it's not used by any other annotation
     for (u=userAnnotations.begin(); u!=ue; ++u)
-        if (u->styleID == removedStyleID) break;
-    if (u == ue) RemoveUserStyle(removedStyleID);
+        if ((*u)->styleID == removedStyleID)
+            break;
+    if (u == ue)
+        RemoveUserStyle(removedStyleID);
 
     structureSet->SetDataChanged(StructureSet::eStyleData);
     return true;
 }
 
-bool StyleManager::DisplayAnnotation(UserAnnotation *annotation, bool display)
+bool StyleManager::DisplayUserAnnotation(UserAnnotation *annotation, bool display)
 {
     // first check to make sure this annotation is known
-    AnnotationList::const_iterator a, ae = userAnnotations.end();
+    UserAnnotationList::const_iterator a, ae = userAnnotations.end();
     for (a=userAnnotations.begin(); a!=ae; ++a)
-        if (annotation == &(*a)) break;
-    if (a == ae) return false;
+        if (annotation == a->GetPointer())
+            break;
+    if (a == ae)
+        return false;
 
-    // then look for it in the list of displayed annotations
-    AnnotationPtrList::iterator d, de = userAnnotationsDisplayed.end();
-    for (d=userAnnotationsDisplayed.begin(); d!=de; ++d)
-        if (annotation == *d) break;
+    // if display flag is changed
+    if (annotation->isDisplayed != display) {
+        // set flag
+        annotation->isDisplayed = display;
 
-    // finally, add or remove it from the displayed annotations
-    bool changed = false;
-    if (display && d == de) {
-        userAnnotationsDisplayed.insert(userAnnotationsDisplayed.begin(), annotation);
-        changed = true;
-    } else if (!display && d != de) {
-        userAnnotationsDisplayed.erase(d);
-        changed = true;
-    }
-    if (changed) {  // need to redraw if displayed annotations list has changed
+        // need to redraw with new flags
         GlobalMessenger()->PostRedrawAllStructures();
         GlobalMessenger()->PostRedrawAllSequenceViewers();
         structureSet->SetDataChanged(StructureSet::eStyleData);
@@ -1421,28 +1406,38 @@ bool StyleManager::DisplayAnnotation(UserAnnotation *annotation, bool display)
     return true;
 }
 
-bool StyleManager::ReprioritizeDisplayOrder(UserAnnotation *annotation, bool moveUp)
+bool StyleManager::MoveUserAnnotation(UserAnnotation *annotation, bool moveUp)
 {
-    // look for the annotation in the list of displayed annotations
-	int d;
-    for (d=0; d<userAnnotationsDisplayed.size(); ++d)
-        if (annotation == userAnnotationsDisplayed[d]) break;
-    if (d == userAnnotationsDisplayed.size()) return false;
+    // look for the annotation in the list of annotations
+    UserAnnotationList::iterator d, de = userAnnotations.end();
+    for (d=userAnnotations.begin(); d!=de; ++d)
+        if (annotation == d->GetPointer())
+            break;
+    if (d == userAnnotations.end())
+        return false;
 
-    bool changed = false;
-    if (moveUp && d > 0) {
-        userAnnotationsDisplayed[d] = userAnnotationsDisplayed[d - 1];
-        userAnnotationsDisplayed[d - 1] = annotation;
-        changed = true;
-    } else if (!moveUp && d < userAnnotationsDisplayed.size() - 1) {
-        userAnnotationsDisplayed[d] = userAnnotationsDisplayed[d + 1];
-        userAnnotationsDisplayed[d + 1] = annotation;
-        changed = true;
+    UserAnnotationList::iterator swap;
+    bool doSwap = false;
+    if (moveUp && d != userAnnotations.begin()) {
+        swap = d;
+        --swap;     // swap with previous
+        doSwap = true;
+    } else if (!moveUp) {
+        swap = d;
+        ++swap;     // swap with next
+        if (swap != userAnnotations.end())
+            doSwap = true;
     }
-    if (changed) {  // need to redraw if displayed annotations list has changed
-        GlobalMessenger()->PostRedrawAllStructures();
-        GlobalMessenger()->PostRedrawAllSequenceViewers();
+    if (doSwap) {
+        CRef < UserAnnotation > tmp(*d);
+        *d = *swap;
+        *swap = tmp;
         structureSet->SetDataChanged(StructureSet::eStyleData);
+        // need to redraw if displayed annotation order list has changed
+        if (annotation->isDisplayed) {
+            GlobalMessenger()->PostRedrawAllStructures();
+            GlobalMessenger()->PostRedrawAllSequenceViewers();
+        }
     }
 
     return true;
@@ -1520,23 +1515,18 @@ bool StyleManager::SaveToASNUserAnnotations(ncbi::objects::CCn3d_user_annotation
     annotations->ResetAnnotations();
     if (userAnnotations.size() == 0) return true;
 
-    AnnotationList::const_iterator a, ae = userAnnotations.end();
-    AnnotationPtrList::const_iterator d, de = userAnnotationsDisplayed.end();
+    UserAnnotationList::const_iterator a, ae = userAnnotations.end();
     for (a=userAnnotations.begin(); a!=ae; ++a) {
 
         // fill out individual annotations
         CRef < CCn3d_user_annotation > annotation(new CCn3d_user_annotation());
-        annotation->SetName(a->name);
-        annotation->SetDescription(a->description);
-        annotation->SetStyle_id().Set(a->styleID);
-
-        // is this annotation on? check displayed annotations list
-        for (d=userAnnotationsDisplayed.begin(); d!=de; ++d)
-            if (*d == &(*a)) break;
-        annotation->SetIs_on(d != de);
+        annotation->SetName((*a)->name);
+        annotation->SetDescription((*a)->description);
+        annotation->SetStyle_id().Set((*a)->styleID);
+        annotation->SetIs_on((*a)->isDisplayed);
 
         // fill out residues list
-        if (!CreateObjectLocation(&(annotation->SetResidues()), a->residues)) {
+        if (!CreateObjectLocation(&(annotation->SetResidues()), (*a)->residues)) {
             ERRORMSG("StyleManager::CreateASNUserAnnotations() - error creating object location");
             return false;
         }
@@ -1615,7 +1605,7 @@ bool StyleManager::LoadFromASNUserAnnotations(const ncbi::objects::CCn3d_user_an
         if ((*a)->IsSetDescription())
             userAnnot->description = (*a)->GetDescription();
         userAnnot->styleID = (*a)->GetStyle_id().Get();
-        DisplayAnnotation(userAnnot, (*a)->GetIs_on());
+        userAnnot->isDisplayed = (*a)->GetIs_on();
 
         // extract object locations
         if (!ExtractObjectLocation(&(userAnnot->residues), (*a)->GetResidues()))
@@ -1655,6 +1645,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2004/06/02 21:33:13  thiessen
+* reorganize user annotation storage so that reordering is saved
+*
 * Revision 1.84  2004/05/28 19:10:28  thiessen
 * fix typos
 *
