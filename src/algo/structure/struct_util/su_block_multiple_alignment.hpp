@@ -43,6 +43,14 @@
 #include <vector>
 #include <map>
 
+// C-toolkit stuff for PSSM calculation
+#include <objalign.h>
+#include <blast.h>
+#include <blastkar.h>
+#include <cddutil.h>
+#include <thrdatd.h>
+#include <thrddecl.h>
+
 
 BEGIN_SCOPE(struct_util)
 
@@ -61,10 +69,6 @@ public:
     typedef std::vector < const Sequence * > SequenceList;
     BlockMultipleAlignment(const SequenceList& sequenceList);   // first sequence is master
     ~BlockMultipleAlignment(void);
-
-    // create a C-object SeqAlign from this alignment (actually a linked list of pairwise
-    // SeqAlign's; should be freed with SeqAlignSetFree())
-//    SeqAlignPtr CreateCSeqAlign(void) const;
 
     // add a new aligned block - will be "owned" and deallocated by BlockMultipleAlignment
     bool AddAlignedBlockAtEnd(UngappedAlignedBlock *newBlock);
@@ -126,8 +130,8 @@ public:
     void GetModifiableUngappedAlignedBlocks(ModifiableUngappedAlignedBlockList *blocks);
 
     // PSSM for this alignment (cached)
-//    const BLAST_Matrix * GetPSSM(void) const;
-//    void RemovePSSM(void) const;
+    const BLAST_Matrix * GetPSSM(void) const;
+    void RemovePSSM(void) const;
 
     // NULL if block before is aligned; if NULL passed, retrieves last block (if unaligned; else NULL)
     const UnalignedBlock * GetUnalignedBlockBefore(const UngappedAlignedBlock *aBlock) const;
@@ -250,8 +254,21 @@ private:
     mutable std::vector < double > m_rowDoubles;
     mutable std::vector < std::string > m_rowStrings;
 
+    // holds C Bioseqs associated with Sequences
+    typedef std::map < const Sequence *, Bioseq * > BioseqMap;
+    mutable BioseqMap m_bioseqs;
+
+    // create C-object Bioseq, stored above; freed upon destruction of this objects
+    BioseqPtr GetOrCreateBioseq(const Sequence *sequence) const;
+    void CreateAllBioseqs() const;
+
+    // create a C-object SeqAlign from this alignment (actually a linked list of pairwise
+    // SeqAlign's; should be freed with SeqAlignSetFree())
+    SeqAlignPtr CreateCSeqAlign(void) const;
+
     // associated PSSM
-//    mutable BLAST_Matrix *m_pssm;
+    mutable BLAST_Matrix *m_pssm;
+    Seq_Mtf * CreateSeqMtf(double weightPSSM, BLAST_KarlinBlkPtr karlinBlock) const;
 };
 
 
@@ -364,6 +381,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/05/27 21:34:08  thiessen
+* add PSSM calculation (requires C-toolkit)
+*
 * Revision 1.5  2004/05/26 14:49:59  thiessen
 * UNDEFINED -> eUndefined
 *

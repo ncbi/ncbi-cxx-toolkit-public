@@ -61,6 +61,7 @@ public:
 
     // Seq-id stuff
 	const ncbi::objects::CSeq_id& GetPreferredIdentifier(void) const;
+    const ncbi::objects::CBioseq::TId& GetAllIdentifiers(void) const { return m_bioseqASN->GetId(); }
 	bool MatchesSeqId(const ncbi::objects::CSeq_id& seqID) const;
     std::string IdentifierString(void) const;
 };
@@ -82,6 +83,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/27 21:34:08  thiessen
+* add PSSM calculation (requires C-toolkit)
+*
 * Revision 1.3  2004/05/25 16:12:30  thiessen
 * fix GCC warnings
 *

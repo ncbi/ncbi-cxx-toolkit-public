@@ -227,10 +227,31 @@ bool AlignmentUtility::DoIBM(void)
     return true;
 }
 
+// implemented in su_block_multiple_alignment.cpp
+extern int LookupBLASTResidueNumberFromCharacter(unsigned char r);
+
+// global stuff for DP block aligner score callback
+DP_BlockInfo *g_dpBlocks = NULL;
+const BLAST_Matrix *g_dpPSSM = NULL;
+const Sequence *g_dpQuery = NULL;
+
+// sum of scores for residue vs. PSSM
 extern "C" {
 int ScoreByPSSM(unsigned int block, unsigned int queryPos)
 {
-    return 1;
+    if (!g_dpBlocks || !g_dpPSSM || !g_dpQuery || block >= g_dpBlocks->nBlocks ||
+        queryPos > g_dpQuery->Length() - g_dpBlocks->blockSizes[block])
+    {
+        ERROR_MESSAGE("ScoreByPSSM() - bad parameters");
+        return DP_NEGATIVE_INFINITY;
+    }
+
+    int masterPos = g_dpBlocks->blockPositions[block], score = 0;
+    for (unsigned i=0; i<g_dpBlocks->blockSizes[block]; ++i)
+        score += g_dpPSSM->matrix[masterPos + i]
+            [LookupBLASTResidueNumberFromCharacter(g_dpQuery->m_sequenceString[queryPos + i])];
+
+    return score;
 }
 }
 
@@ -306,6 +327,9 @@ bool AlignmentUtility::DoLeaveOneOut(
         }
 
         // set up PSSM
+        g_dpPSSM = m_currentMultiple->GetPSSM();
+        g_dpBlocks = dpBlocks;
+        g_dpQuery = toRealign.front()->GetSequenceOfRow(1);
 
         // call the block aligner
         if (DP_GlobalBlockAlign(dpBlocks, ScoreByPSSM,
@@ -362,6 +386,10 @@ bool AlignmentUtility::DoLeaveOneOut(
     DP_DestroyBlockInfo(dpBlocks);
     DP_DestroyAlignmentResult(dpResult);
 
+    g_dpPSSM = NULL;
+    g_dpBlocks = NULL;
+    g_dpQuery = NULL;
+
     return status;
 }
 
@@ -396,6 +424,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/05/27 21:34:08  thiessen
+* add PSSM calculation (requires C-toolkit)
+*
 * Revision 1.6  2004/05/26 14:49:59  thiessen
 * UNDEFINED -> eUndefined
 *

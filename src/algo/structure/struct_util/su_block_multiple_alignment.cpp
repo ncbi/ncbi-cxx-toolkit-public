@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <util/tables/raw_scoremat.h>
 
 #include <objects/seqalign/Dense_diag.hpp>
 
@@ -41,16 +42,23 @@
 #include "su_sequence_set.hpp"
 #include "su_private.hpp"
 
+// borrow Cn3D's asn conversion functions
+#include "../src/app/cn3d/asn_converter.hpp"
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(struct_util)
 
+const int SCALING_FACTOR = 1000000;
+const string ThreaderResidues = "ARNDCQEGHILKMFPSTWYV";
+const string BLASTResidues = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
+
 BlockMultipleAlignment::BlockMultipleAlignment(const SequenceList& sequenceList)
 {
     m_sequences = sequenceList;
-//    m_pssm = NULL;
+    m_pssm = NULL;
 
     InitCache();
     m_rowDoubles.resize(m_sequences.size(), 0.0);
@@ -66,12 +74,14 @@ void BlockMultipleAlignment::InitCache(void)
 
 BlockMultipleAlignment::~BlockMultipleAlignment(void)
 {
-//    RemovePSSM();
+    RemovePSSM();
+    BioseqMap::iterator i, ie = m_bioseqs.end();
+    for (i=m_bioseqs.begin(); i!=ie; ++i)
+        BioseqFree(i->second);
 }
 
 BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
 {
-    // must actually copy the list
     BlockMultipleAlignment *copy = new BlockMultipleAlignment(m_sequences);
     BlockList::const_iterator b, be = m_blocks.end();
     for (b=m_blocks.begin(); b!=be; ++b)
@@ -82,7 +92,212 @@ BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
     return copy;
 }
 
-/*
+static inline char ScreenResidueCharacter(char original)
+{
+    char ch = toupper(original);
+    switch (ch) {
+        case 'A': case 'R': case 'N': case 'D': case 'C':
+        case 'Q': case 'E': case 'G': case 'H': case 'I':
+        case 'L': case 'K': case 'M': case 'F': case 'P':
+        case 'S': case 'T': case 'W': case 'Y': case 'V':
+        case 'B': case 'Z':
+            break;
+        default:
+            ch = 'X'; // make all but natural aa's just 'X'
+    }
+    return ch;
+}
+
+static int GetBLOSUM62Score(char a, char b)
+{
+    static SNCBIFullScoreMatrix Blosum62Matrix;
+    static bool unpacked = false;
+
+    if (!unpacked) {
+        NCBISM_Unpack(&NCBISM_Blosum62, &Blosum62Matrix);
+        unpacked = true;
+    }
+
+    return Blosum62Matrix.s[ScreenResidueCharacter(a)][ScreenResidueCharacter(b)];
+}
+
+static inline void AddCSeqId(SeqIdPtr *sid, const ncbi::objects::CSeq_id& cppid)
+{
+    string err;
+    ValNode *vn = (SeqIdPtr) Cn3D::ConvertAsnFromCPPToC(cppid, (AsnReadFunc) SeqIdAsnRead, &err);
+    if (!vn || err.size() > 0) {
+        ERROR_MESSAGE("AddCSeqId() - ConvertAsnFromCPPToC() failed");
+        return;
+    }
+    ValNodeLink(sid, vn);
+}
+
+static inline void AddCSeqIdAll(SeqIdPtr *id, const Sequence& sequence)
+{
+    CBioseq::TId::const_iterator i, ie = sequence.GetAllIdentifiers().end();
+    for (i=sequence.GetAllIdentifiers().begin(); i!=ie; ++i)
+        AddCSeqId(id, **i);
+}
+
+// creates a SeqAlign from a BlockMultipleAlignment
+SeqAlignPtr BlockMultipleAlignment::CreateCSeqAlign(void) const
+{
+    // one SeqAlign (chained into a linked list) for each slave row
+    SeqAlignPtr prevSap = NULL, firstSap = NULL;
+    for (unsigned int row=1; row<NRows(); ++row) {
+
+        SeqAlignPtr sap = SeqAlignNew();
+        if (prevSap) prevSap->next = sap;
+        prevSap = sap;
+        if (!firstSap) firstSap = sap;
+
+        sap->type = SAT_PARTIAL;
+        sap->dim = 2;
+        sap->segtype = SAS_DENDIAG;
+
+        DenseDiagPtr prevDd = NULL;
+        UngappedAlignedBlockList m_blocks;
+        GetUngappedAlignedBlocks(&m_blocks);
+        UngappedAlignedBlockList::const_iterator b, be = m_blocks.end();
+
+        for (b=m_blocks.begin(); b!=be; ++b) {
+            DenseDiagPtr dd = DenseDiagNew();
+            if (prevDd) prevDd->next = dd;
+            prevDd = dd;
+            if (b == m_blocks.begin()) sap->segs = dd;
+
+            dd->dim = 2;
+            AddCSeqId(&(dd->id), GetSequenceOfRow(0)->GetPreferredIdentifier());
+            AddCSeqId(&(dd->id), GetSequenceOfRow(row)->GetPreferredIdentifier());
+
+            dd->len = (*b)->m_width;
+
+            dd->starts = (Int4Ptr) MemNew(2 * sizeof(Int4));
+            const Block::Range *range = (*b)->GetRangeOfRow(0);
+            dd->starts[0] = range->from;
+            range = (*b)->GetRangeOfRow(row);
+            dd->starts[1] = range->from;
+        }
+    }
+
+    return firstSap;
+}
+
+BioseqPtr BlockMultipleAlignment::GetOrCreateBioseq(const Sequence *sequence) const
+{
+    if (!sequence || !sequence->m_isProtein) {
+        ERROR_MESSAGE("GetOrCreateBioseq() - got non-protein or NULL Sequence");
+        return NULL;
+    }
+
+    // if already done
+    BioseqMap::const_iterator b = m_bioseqs.find(sequence);
+    if (b != m_bioseqs.end())
+        return b->second;
+
+    // create new Bioseq and fill it in from Sequence data
+    BioseqPtr bioseq = BioseqNew();
+    bioseq->mol = Seq_mol_aa;
+    bioseq->seq_data_type = Seq_code_ncbieaa;
+    bioseq->repr = Seq_repr_raw;
+    bioseq->length = sequence->Length();
+    bioseq->seq_data = BSNew(bioseq->length);
+    BSWrite(bioseq->seq_data, const_cast<char*>(sequence->m_sequenceString.c_str()), bioseq->length);
+
+    // create Seq-id
+    AddCSeqIdAll(&(bioseq->id), *sequence);
+
+    // store Bioseq
+    m_bioseqs[sequence] = bioseq;
+
+    return bioseq;
+}
+
+void BlockMultipleAlignment::CreateAllBioseqs() const
+{
+    for (unsigned int row=0; row<NRows(); ++row)
+        GetOrCreateBioseq(GetSequenceOfRow(row));
+}
+
+Seq_Mtf * BlockMultipleAlignment::CreateSeqMtf(double weightPSSM, BLAST_KarlinBlkPtr karlinBlock) const
+{
+    // special case for "PSSM" of single-row "alignment" - just use BLOSUM62 score
+    if (NRows() == 1) {
+        Seq_Mtf *seqMtf = NewSeqMtf(GetMaster()->Length(), ThreaderResidues.size());
+        for (unsigned int res=0; res<GetMaster()->Length(); ++res)
+            for (unsigned int aa=0; aa<ThreaderResidues.size(); ++aa)
+                seqMtf->ww[res][aa] = ThrdRound(weightPSSM * SCALING_FACTOR *
+                    GetBLOSUM62Score(GetMaster()->m_sequenceString[res], ThreaderResidues[aa]));
+        WARNING_MESSAGE("Created Seq_Mtf (PSSM) from BLOSUM62 scores");
+        return seqMtf;
+    }
+
+    // convert all sequences to Bioseqs
+    CreateAllBioseqs();
+
+    // create SeqAlign from this BlockMultipleAlignment
+    SeqAlignPtr seqAlign = CreateCSeqAlign();
+
+    // "spread" unaligned residues between aligned blocks, for PSSM construction
+    CddDegapSeqAlign(seqAlign);
+
+    Seq_Mtf *seqMtf = NULL;
+    for (int i=11; i>=1; --i) {
+        // first try auto-determined pseudocount (-1); if fails, find higest <= 10 that works
+        int pseudocount = (i == 11) ? -1 : i;
+        seqMtf = CddDenDiagCposComp2KBP(
+            GetOrCreateBioseq(GetMaster()),
+            pseudocount,
+            seqAlign,
+            NULL,
+            NULL,
+            weightPSSM,
+            SCALING_FACTOR,
+            NULL,
+            karlinBlock
+        );
+        if (seqMtf)
+            break;
+        else
+            WARNING_MESSAGE("Cannot use " << ((pseudocount == -1) ? "(empirical) " : "")
+                << "pseudocount of " << pseudocount);
+    }
+
+    if (seqMtf)
+        TRACE_MESSAGE("created Seq_Mtf (PSSM)");
+    else
+        ERROR_MESSAGE("Cannot find any pseudocount that yields an acceptable PSSM!");
+
+    SeqAlignSetFree(seqAlign);
+    return seqMtf;
+}
+
+// gives BLAST residue number for a character (or # for 'X' if char not found)
+int LookupBLASTResidueNumberFromCharacter(unsigned char r)
+{
+    typedef map < unsigned char, int > Char2Int;
+    static Char2Int charMap;
+
+    if (charMap.size() == 0) {
+        for (unsigned int i=0; i<BLASTResidues.size(); ++i)
+            charMap[BLASTResidues[i]] = i;
+    }
+
+    Char2Int::const_iterator n = charMap.find(toupper(r));
+    if (n != charMap.end())
+        return n->second;
+    else
+        return charMap.find('X')->second;
+}
+
+// gives BLAST residue number for a threader residue number (or # for 'X' if char == -1)
+static int LookupBLASTResidueNumberFromThreaderResidueNumber(unsigned char r)
+{
+    r = toupper(r);
+    return LookupBLASTResidueNumberFromCharacter(
+            (r < ThreaderResidues.size()) ? ThreaderResidues[r] : 'X');
+}
+
 static Int4 Round(double d)
 {
     if (d >= 0.0)
@@ -93,115 +308,55 @@ static Int4 Round(double d)
 
 const BLAST_Matrix * BlockMultipleAlignment::GetPSSM(void) const
 {
-    if (pssm) return pssm;
+    if (m_pssm) return m_pssm;
 
     // for now, use threader's SeqMtf
     BLAST_KarlinBlkPtr karlinBlock = BlastKarlinBlkCreate();
-    Seq_Mtf *seqMtf = Threader::CreateSeqMtf(this, 1.0, karlinBlock);
+    Seq_Mtf *seqMtf = CreateSeqMtf(1.0, karlinBlock);
 
-    pssm = (BLAST_Matrix *) MemNew(sizeof(BLAST_Matrix));
-    pssm->is_prot = TRUE;
-    pssm->name = StringSave("BLOSUM62");
-    pssm->karlinK = karlinBlock->K;
-    pssm->rows = seqMtf->n + 1;
-    pssm->columns = 26;
+    m_pssm = (BLAST_Matrix *) MemNew(sizeof(BLAST_Matrix));
+    m_pssm->is_prot = TRUE;
+    m_pssm->name = StringSave("BLOSUM62");
+    m_pssm->karlinK = karlinBlock->K;
+    m_pssm->rows = seqMtf->n + 1;
+    m_pssm->columns = 26;
 
-#ifdef PRINT_PSSM
-    FILE *f = fopen("blast_matrix.txt", "w");
-#endif
-
-    unsigned int i, j;
-    pssm->matrix = (Int4 **) MemNew(pssm->rows * sizeof(Int4 *));
-    for (i=0; i<pssm->rows; ++i) {
-        pssm->matrix[i] = (Int4 *) MemNew(pssm->columns * sizeof(Int4));
-#ifdef PRINT_PSSM
-        fprintf(f, "matrix %i : ", i);
-#endif
+    int i, j;
+    m_pssm->matrix = (Int4 **) MemNew(m_pssm->rows * sizeof(Int4 *));
+    for (i=0; i<m_pssm->rows; ++i) {
+        m_pssm->matrix[i] = (Int4 *) MemNew(m_pssm->columns * sizeof(Int4));
 
         // set scores from threader matrix
         if (i < seqMtf->n) {
             // initialize all rows with custom score, or BLAST_SCORE_MIN; to match what Aron's function creates
-            for (j=0; j<pssm->columns; ++j)
-                pssm->matrix[i][j] = (j == 21 ? -1 : (j == 25 ? -4 : BLAST_SCORE_MIN));
+            for (j=0; j<m_pssm->columns; ++j)
+                m_pssm->matrix[i][j] = (j == 21 ? -1 : (j == 25 ? -4 : BLAST_SCORE_MIN));
 
             for (j=0; j<seqMtf->AlphabetSize; ++j) {
-                pssm->matrix[i][LookupBLASTResidueNumberFromThreaderResidueNumber(j)] =
-                    Round(((double) seqMtf->ww[i][j]) / Threader::SCALING_FACTOR);
+                m_pssm->matrix[i][LookupBLASTResidueNumberFromThreaderResidueNumber(j)] =
+                    Round(((double) seqMtf->ww[i][j]) / SCALING_FACTOR);
             }
         } else {
             // initialize last row with BLAST_SCORE_MIN
-            for (j=0; j<pssm->columns; ++j)
-                pssm->matrix[i][j] = BLAST_SCORE_MIN;
-        }
-#ifdef PRINT_PSSM
-        for (j=0; j<pssm->columns; ++j)
-            fprintf(f, "%i ", pssm->matrix[i][j]);
-        fprintf(f, "\n");
-#endif
-    }
-
-#ifdef PRINT_PSSM
-    // for diffing with scoremat stored in ascii CD
-    fprintf(f, "{\n");
-    for (i=0; i<seqMtf->n; ++i) {
-        for (j=0; j<pssm->columns; ++j) {
-            fprintf(f, "      %i,\n", pssm->matrix[i][j]);
+            for (j=0; j<m_pssm->columns; ++j)
+                m_pssm->matrix[i][j] = BLAST_SCORE_MIN;
         }
     }
-    fprintf(f, "}\n");
-    // for diffing with .mtx file
-    for (i=0; i<seqMtf->n; ++i) {
-        for (j=0; j<pssm->columns; ++j) {
-            fprintf(f, "%i  ", pssm->matrix[i][j]);
-        }
-        fprintf(f, "\n");
-    }
-#endif
 
-#ifdef _DEBUG
-    pssm->posFreqs = (Nlm_FloatHi **) MemNew(pssm->rows * sizeof(Nlm_FloatHi *));
-    for (i=0; i<pssm->rows; ++i) {
-        pssm->posFreqs[i] = (Nlm_FloatHi *) MemNew(pssm->columns * sizeof(Nlm_FloatHi));
-#ifdef PRINT_PSSM
-        fprintf(f, "freqs %i : ", i);
-#endif
-        if (i < seqMtf->n) {
-            for (j=0; j<seqMtf->AlphabetSize; ++j) {
-                pssm->posFreqs[i][LookupBLASTResidueNumberFromThreaderResidueNumber(j)] =
-                    seqMtf->freqs[i][j] / Threader::SCALING_FACTOR;
-            }
-        }
-#ifdef PRINT_PSSM
-        for (j=0; j<pssm->columns; ++j)
-            fprintf(f, "%g ", pssm->posFreqs[i][j]);
-        fprintf(f, "\n");
-#endif
-    }
-
-    // we're not actually using the frequency table; just printing it out for debugging/testing
-    for (i=0; i<pssm->rows; ++i) MemFree(pssm->posFreqs[i]);
-    MemFree(pssm->posFreqs);
-#endif // _DEBUG
-
-    pssm->posFreqs = NULL;
-
-#ifdef PRINT_PSSM
-    fclose(f);
-#endif
+    m_pssm->posFreqs = NULL;
 
     FreeSeqMtf(seqMtf);
     BlastKarlinBlkDestruct(karlinBlock);
-    return pssm;
+    return m_pssm;
 }
 
 void BlockMultipleAlignment::RemovePSSM(void) const
 {
-    if (pssm) {
-        BLAST_MatrixDestruct(pssm);
-        pssm = NULL;
+    if (m_pssm) {
+        BLAST_MatrixDestruct(m_pssm);
+        m_pssm = NULL;
     }
 }
-*/
 
 bool BlockMultipleAlignment::CheckAlignedBlock(const Block *block) const
 {
@@ -339,7 +494,7 @@ bool BlockMultipleAlignment::UpdateBlockMap(bool clearRowInfo)
     }
 
     // if alignment changes, any pssm/scores/status become invalid
-//    RemovePSSM();
+    RemovePSSM();
     if (clearRowInfo) ClearRowInfo();
 
     return true;
@@ -1410,51 +1565,6 @@ unsigned int BlockMultipleAlignment::GetAlignmentIndex(unsigned int row, unsigne
     return eUndefined;
 }
 
-/*
-// creates a SeqAlign from a BlockMultipleAlignment
-SeqAlignPtr BlockMultipleAlignment::CreateCSeqAlign(void) const
-{
-    // one SeqAlign (chained into a linked list) for each slave row
-    SeqAlignPtr prevSap = NULL, firstSap = NULL;
-    for (unsigned int row=1; row<NRows(); ++row) {
-
-        SeqAlignPtr sap = SeqAlignNew();
-        if (prevSap) prevSap->next = sap;
-        prevSap = sap;
-		if (!firstSap) firstSap = sap;
-
-        sap->type = SAT_PARTIAL;
-        sap->dim = 2;
-        sap->segtype = SAS_DENDIAG;
-
-        DenseDiagPtr prevDd = NULL;
-        UngappedAlignedBlockList m_blocks;
-        GetUngappedAlignedBlocks(&m_blocks);
-        UngappedAlignedBlockList::const_iterator b, be = m_blocks.end();
-
-        for (b=m_blocks.begin(); b!=be; ++b) {
-            DenseDiagPtr dd = DenseDiagNew();
-            if (prevDd) prevDd->next = dd;
-            prevDd = dd;
-            if (b == m_blocks.begin()) sap->segs = dd;
-
-            dd->dim = 2;
-            GetSequenceOfRow(0)->AddCSeqId(&(dd->id), false);      // master
-            GetSequenceOfRow(row)->AddCSeqId(&(dd->id), false);    // slave
-            dd->len = (*b)->m_width;
-
-            dd->starts = (Int4Ptr) MemNew(2 * sizeof(Int4));
-            const Block::Range *range = (*b)->GetRangeOfRow(0);
-            dd->starts[0] = range->from;
-            range = (*b)->GetRangeOfRow(row);
-            dd->starts[1] = range->from;
-        }
-    }
-
-	return firstSap;
-}
-*/
-
 
 bool Block::ReorderRows(const std::vector < unsigned int >& newOrder)
 {
@@ -1578,6 +1688,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/05/27 21:34:08  thiessen
+* add PSSM calculation (requires C-toolkit)
+*
 * Revision 1.6  2004/05/26 14:49:59  thiessen
 * UNDEFINED -> eUndefined
 *
