@@ -33,11 +33,10 @@
 #ifndef ALGO_SEQUENCE___NUC_PROP__HPP
 #define ALGO_SEQUENCE___NUC_PROP__HPP
 
-#include <gui/core/algo.hpp>
 #include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 /// this class defines functions for calculating various
 /// properties of nucleotide sequences
@@ -65,7 +64,7 @@ private:
     static char Nybble2Nuc(int n);
 };
 
-END_SCOPE(objects);
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif  // ALGO_SEQUENCE___NUC_PROP__HPP
@@ -74,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/07/01 19:00:44  ucko
+ * Drop gratuitous GUI header inclusion; minor formal cleanups
+ *
  * Revision 1.2  2003/07/01 17:31:25  dicuccio
  * Added Win32 export specifiers
  *

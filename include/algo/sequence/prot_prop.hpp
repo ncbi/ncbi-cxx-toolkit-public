@@ -33,12 +33,11 @@
 #ifndef ALGO_SEQUENCE___PROT_PROP__HPP
 #define ALGO_SEQUENCE___PROT_PROP__HPP
 
-#include <gui/core/algo.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <math.h>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 /// This class defines functions for calculating
 /// properties of amino acid sequences.
@@ -59,10 +58,10 @@ public:
                                    double pH);
 
 private:
-    static inline double exp10(double x) {return pow(10, x);}
+    static double exp10(double x) { return pow(10, x); }
 };
 
-END_SCOPE(objects);
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif  // ALGO_SEQUENCE___PROT_PROP__HPP
@@ -71,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/07/01 19:00:44  ucko
+ * Drop gratuitous GUI header inclusion; minor formal cleanups
+ *
  * Revision 1.2  2003/07/01 17:31:25  dicuccio
  * Added Win32 export specifiers
  *
