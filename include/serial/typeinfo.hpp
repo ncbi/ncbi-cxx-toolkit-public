@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/03/14 14:43:30  vasilche
+* Fixed error reporting.
+*
 * Revision 1.22  2000/03/07 14:05:33  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -157,7 +160,7 @@ public:
     virtual ~CTypeInfo(void);
 
     // name of this type
-    string GetName(void) const
+    const string& GetName(void) const
         { return m_Name; }
 
     // size of data object in memory (like sizeof in C)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/03/14 14:43:30  vasilche
+* Fixed error reporting.
+*
 * Revision 1.26  2000/03/07 14:05:30  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -160,7 +163,7 @@ public:
 
     CObjectIStreamAsn(CNcbiIstream& in);
 
-    virtual unsigned SetFailFlags(unsigned flags);
+    virtual string GetPosition(void) const;
 
     virtual string ReadTypeName(void);
     virtual pair<long, bool> ReadEnum(const CEnumeratedTypeValues& values);

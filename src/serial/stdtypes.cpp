@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/03/14 14:42:32  vasilche
+* Fixed error reporting.
+*
 * Revision 1.14  2000/03/07 14:06:24  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -217,7 +220,9 @@ bool CStdTypeInfo<string>::Equals(TConstObjectPtr object1,
 
 void CStdTypeInfo<string>::SetDefault(TObjectPtr object) const
 {
-    Get(object).erase();
+    string& s = Get(object);
+    if ( !s.empty() )
+        s.erase();
 }
 
 void CStdTypeInfo<string>::Assign(TObjectPtr dst,

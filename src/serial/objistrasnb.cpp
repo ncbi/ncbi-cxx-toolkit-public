@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/03/14 14:42:31  vasilche
+* Fixed error reporting.
+*
 * Revision 1.28  2000/03/10 17:59:20  vasilche
 * Fixed error reporting.
 * Added EOF bug workaround on MIPSpro compiler (not finished).
@@ -198,6 +201,11 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in)
 
 CObjectIStreamAsnBinary::~CObjectIStreamAsnBinary(void)
 {
+}
+
+string CObjectIStreamAsnBinary::GetPosition(void) const
+{
+    return "byte "+NStr::UIntToString(m_Input.GetStreamOffset());
 }
 
 #define CATCH_READ_ERROR \

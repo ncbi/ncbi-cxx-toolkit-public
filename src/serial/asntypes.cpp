@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/03/14 14:42:29  vasilche
+* Fixed error reporting.
+*
 * Revision 1.34  2000/03/07 14:06:20  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -661,8 +664,10 @@ void COldAsnTypeInfo::WriteData(CObjectOStream& out,
 
 void COldAsnTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
-    if ( (Get(object) = m_ReadProc(CObjectIStream::AsnIo(in, GetName()), 0)) == 0 )
+    CObjectIStream::AsnIo io(in, GetName());
+    if ( (Get(object) = m_ReadProc(io, 0)) == 0 )
         THROW1_TRACE(runtime_error, "read fault");
+    io.End();
 }
 
 void COldAsnTypeInfo::SkipData(CObjectIStream& in) const

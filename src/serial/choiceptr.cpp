@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/03/14 14:42:29  vasilche
+* Fixed error reporting.
+*
 * Revision 1.12  2000/03/07 14:06:21  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -218,6 +221,7 @@ void CChoicePointerTypeInfo::ReadData(CObjectIStream& in,
     TObjectPtr data = dataType->Create();
     SetObjectPointer(object, data);
     in.ReadExternalObject(data, dataType);
+    m.End();
 }
 
 void CChoicePointerTypeInfo::SkipData(CObjectIStream& in) const
@@ -227,6 +231,7 @@ void CChoicePointerTypeInfo::SkipData(CObjectIStream& in) const
     if ( !dataType )
         dataType = CNullTypeInfo::GetTypeInfo();
     in.SkipExternalObject(dataType);
+    m.End();
 }
 
 CNullTypeInfo::CNullTypeInfo(void)

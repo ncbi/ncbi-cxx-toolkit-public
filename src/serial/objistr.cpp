@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2000/03/14 14:42:30  vasilche
+* Fixed error reporting.
+*
 * Revision 1.42  2000/03/10 17:59:20  vasilche
 * Fixed error reporting.
 * Added EOF bug workaround on MIPSpro compiler (not finished).
@@ -211,13 +214,20 @@ CObjectIStream::~CObjectIStream(void)
 {
 }
 
-#define DISPLAY_ERROR 0x10000000
-
 unsigned CObjectIStream::SetFailFlags(unsigned flags)
 {
     unsigned old = m_Fail;
-    m_Fail |= flags | DISPLAY_ERROR;
+    m_Fail |= flags;
+    if ( !old && flags ) {
+        // first fail
+        ERR_POST("CObjectIStream: error at "<<GetPosition()<<": "<<MemberStack());
+    }
     return old;
+}
+
+string CObjectIStream::GetPosition(void) const
+{
+    return NcbiEmptyString;
 }
 
 void CObjectIStream::ThrowError1(EFailFlags fail, const char* message)
@@ -288,6 +298,7 @@ void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
         }
 #endif
         ReadData(object, typeInfo);
+        m.End();
     }
     catch (...) {
         SetFailFlags(eFail);
@@ -364,8 +375,7 @@ TTypeInfo CObjectIStream::MapType(const string& name)
 TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
 {
     try {
-        _TRACE("CObjectIStream::ReadPointer(" <<
-               declaredType->GetName() << ")");
+        _TRACE("CObjectIStream::ReadPointer("<<declaredType->GetName()<<")");
         CObjectInfo info;
         switch ( ReadPointerType() ) {
         case eNullPointer:
@@ -411,6 +421,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
                 TObjectPtr object = typeInfo->Create();
                 ReadExternalObject(object, typeInfo);
                 ReadOtherPointerEnd();
+                m.End();
                 info = CObjectInfo(object, typeInfo);
                 break;
             }
@@ -464,7 +475,7 @@ CObjectInfo CObjectIStream::ReadObjectInfo(void)
         }
     case eOtherPointer:
         {
-            const string& className = ReadOtherPointer();
+            string className = ReadOtherPointer();
             StackElement m(*this, className);
             _TRACE("CObjectIStream::ReadPointer: new " << className);
             TTypeInfo typeInfo = MapType(className);
@@ -474,6 +485,7 @@ CObjectInfo CObjectIStream::ReadObjectInfo(void)
 #endif
             Read(object, typeInfo);
             ReadOtherPointerEnd();
+            m.End();
             return CObjectInfo(object, typeInfo);
         }
     default:
@@ -524,6 +536,7 @@ void CObjectIStream::Skip(TTypeInfo typeInfo)
                          "incompatible type " + name + "<>" +
                          typeInfo->GetName());
         SkipData(typeInfo);
+        m.End();
     }
     catch (...) {
         SetFailFlags(eFail);
@@ -577,15 +590,11 @@ void CObjectIStream::VEnd(const Block& )
 
 string CObjectIStream::MemberStack(void) const
 {
-    if ( (GetFailFlags() & DISPLAY_ERROR) == 0 ) {
-        // already shown
-        return NcbiEmptyString;
-    }
     string stack;
-    bool wasMember = false;
+    //    bool wasMember = false;
     for ( const StackElement* m = m_CurrentElement; m; m = m->GetPrevous() ) {
         string s = m->ToString();
-        if ( s.empty() ) {
+/*        if ( s.empty() ) {
             if ( !wasMember ) {
                 s = "E";
                 wasMember = false;
@@ -598,25 +607,49 @@ string CObjectIStream::MemberStack(void) const
         else {
             wasMember = true;
         }
+*/
         if ( stack.empty() )
             stack = s;
         else
             stack = s + '.' + stack;
     }
-    const_cast<CObjectIStream*>(this)->m_Fail &= ~DISPLAY_ERROR;
-    return "Error in CObjectIStream: " + stack;
+    return stack;
 }
 
 string CObjectIStream::StackElement::ToString(void) const
 {
-    if ( m_CString )
-        return m_CString;
-    else if ( m_String )
-        return *m_String;
-    else if ( m_Id )
-        return m_Id->ToString();
-    else
+    switch ( m_NameType ) {
+    case eNameEmpty:
         return NcbiEmptyString;
+    case eNameCharPtr:
+        return m_NameCharPtr;
+    case eNameString:
+        return *m_NameString;
+    case eNameId:
+        return m_NameId->ToString();
+    default:
+        return "?";
+    }
+}
+
+bool CObjectIStream::StackElement::CanClose(void) const
+{
+    if ( GetStream().fail() ) {
+        // fail flag already set
+        return false;
+    }
+    else {
+        // error flag was not set
+        if ( Ended() ) {
+            // ok
+            return true;
+        }
+        else {
+            // exception thrown without setting fail flag
+            GetStream().SetFailFlags(eFail);
+            return false;
+        }
+    }
 }
 
 CObjectIStream::Member::Member(CObjectIStream& in, const CMembers& members)
@@ -639,14 +672,8 @@ CObjectIStream::Member::Member(CObjectIStream& in, const CMemberId& member)
 
 CObjectIStream::Member::~Member(void)
 {
-    if ( GetStream().fail() ) {
-        string ms = GetStream().MemberStack();
-        if ( !ms.empty() )
-            ERR_POST(ms);
-        return;
-    }
-    
-    GetStream().EndMember(*this);
+    if ( CanClose() )
+        GetStream().EndMember(*this);
 }
 
 void CObjectIStream::EndMember(const Member& )
@@ -654,14 +681,14 @@ void CObjectIStream::EndMember(const Member& )
 }
 
 CObjectIStream::Block::Block(CObjectIStream& in)
-    : StackElement(in), m_Fixed(false), m_RandomOrder(false),
+    : StackElement(in, "E"), m_Fixed(false), m_RandomOrder(false),
       m_Finished(false), m_Size(0), m_NextIndex(0)
 {
     in.VBegin(*this);
 }
 
 CObjectIStream::Block::Block(EFixed , CObjectIStream& in)
-    : StackElement(in), m_Fixed(true), m_RandomOrder(false),
+    : StackElement(in, "E"), m_Fixed(true), m_RandomOrder(false),
       m_Finished(false), m_Size(0), m_NextIndex(0)
 {
     in.FBegin(*this);
@@ -669,14 +696,14 @@ CObjectIStream::Block::Block(EFixed , CObjectIStream& in)
 }
 
 CObjectIStream::Block::Block(CObjectIStream& in, bool randomOrder)
-    : StackElement(in), m_Fixed(false), m_RandomOrder(randomOrder),
+    : StackElement(in, "E"), m_Fixed(false), m_RandomOrder(randomOrder),
       m_Finished(false), m_Size(0), m_NextIndex(0)
 {
     in.VBegin(*this);
 }
 
 CObjectIStream::Block::Block(EFixed , CObjectIStream& in, bool randomOrder)
-    : StackElement(in), m_Fixed(true), m_RandomOrder(randomOrder),
+    : StackElement(in, "E"), m_Fixed(true), m_RandomOrder(randomOrder),
       m_Finished(false), m_Size(0), m_NextIndex(0)
 {
     in.FBegin(*this);
@@ -685,6 +712,7 @@ CObjectIStream::Block::Block(EFixed , CObjectIStream& in, bool randomOrder)
 
 bool CObjectIStream::Block::Next(void)
 {
+    _ASSERT(!Ended());
 #if 0
     if ( Fixed() ) {
         if ( GetNextIndex() >= GetSize() ) {
@@ -704,6 +732,7 @@ bool CObjectIStream::Block::Next(void)
 #if 0
             m_Finished = true;
 #endif
+            End();
             return false;
         }
     }
@@ -713,51 +742,44 @@ bool CObjectIStream::Block::Next(void)
 
 CObjectIStream::Block::~Block(void)
 {
-    if ( GetStream().fail() ) {
-        string ms = GetStream().MemberStack();
-        if ( !ms.empty() )
-            ERR_POST(ms);
-        return;
-    }
+    if ( CanClose() ) {
 #if 0
-    if ( Fixed() ) {
-        if ( GetNextIndex() != GetSize() ) {
-            GetStream().SetFailFlags(eFormatError);
-            THROW1_TRACE(runtime_error, "not all elements read");
+        if ( Fixed() ) {
+            if ( GetNextIndex() != GetSize() ) {
+                GetStream().SetFailFlags(eFormatError);
+                THROW1_TRACE(runtime_error, "not all elements read");
+            }
+            GetStream().FEnd(*this);
         }
-        GetStream().FEnd(*this);
-    }
-    else
+        else
 #endif
-    {
+        {
 #if 0
-        if ( !Finished() ) {
-            GetStream().SetFailFlags(eFormatError);
-            THROW1_TRACE(runtime_error, "not all elements read");
-        }
+            if ( !Finished() ) {
+                GetStream().SetFailFlags(eFormatError);
+                THROW1_TRACE(runtime_error, "not all elements read");
+            }
 #endif
-        GetStream().VEnd(*this);
+            GetStream().VEnd(*this);
+        }
     }
 }
 
 CObjectIStream::ByteBlock::ByteBlock(CObjectIStream& in)
-    : m_In(in), m_KnownLength(false), m_EndOfBlock(false), m_Length(0)
+    : StackElement(in, "B"),
+      m_KnownLength(false), m_Length(0)
 {
     in.Begin(*this);
+    if ( KnownLength() && m_Length == 0 )
+        End();
 }
 
 CObjectIStream::ByteBlock::~ByteBlock(void)
 {
-    if ( m_In.fail() ) {
-        string ms = m_In.MemberStack();
-        if ( !ms.empty() )
-            ERR_POST(ms);
-        return;
+    if ( CanClose() ) {
+        _ASSERT(!KnownLength() || m_Length == 0);
+        GetStream().End(*this);
     }
-
-    if ( KnownLength()? m_Length != 0: !m_EndOfBlock )
-        THROW1_TRACE(runtime_error, "not all bytes read");
-    m_In.End(*this);
 }
 
 size_t CObjectIStream::ByteBlock::Read(void* dst, size_t needLength,
@@ -769,17 +791,22 @@ size_t CObjectIStream::ByteBlock::Read(void* dst, size_t needLength,
     else
         length = needLength;
     
-    if ( m_EndOfBlock || length == 0 ) {
+    if ( Ended() || length == 0 ) {
         if ( forceLength && needLength != 0 )
-            THROW1_TRACE(runtime_error, "read fault");
+            GetStream().ThrowError(eReadError, "read fault");
         return 0;
     }
-    
-    length = m_In.ReadBytes(*this, static_cast<char*>(dst), length);
-    m_Length -= length;
-    m_EndOfBlock = length == 0;
+
+    length = GetStream().ReadBytes(*this, static_cast<char*>(dst), length);
+    if ( length != 0 ) {
+        if ( (m_Length -= length) == 0 )
+            End();
+    }
+    else {
+        End();
+    }
     if ( forceLength && needLength != length )
-        THROW1_TRACE(runtime_error, "read fault");
+        GetStream().ThrowError(eReadError, "read fault");
     return length;
 }
 
@@ -967,7 +994,8 @@ extern "C" {
 }
 
 CObjectIStream::AsnIo::AsnIo(CObjectIStream& in, const string& rootTypeName)
-    : m_In(in), m_RootTypeName(rootTypeName), m_Count(0)
+    : StackElement(in, "ASN"),
+      m_RootTypeName(rootTypeName), m_Count(0)
 {
     m_AsnIo = AsnIoNew(in.GetAsnFlags() | ASNIO_IN, 0, this, ReadAsn, 0);
     in.AsnOpen(*this);
@@ -975,8 +1003,10 @@ CObjectIStream::AsnIo::AsnIo(CObjectIStream& in, const string& rootTypeName)
 
 CObjectIStream::AsnIo::~AsnIo(void)
 {
-    AsnIoClose(*this);
-    m_In.AsnClose(*this);
+    if ( CanClose() ) {
+        AsnIoClose(*this);
+        GetStream().AsnClose(*this);
+    }
 }
 
 unsigned CObjectIStream::GetAsnFlags(void)

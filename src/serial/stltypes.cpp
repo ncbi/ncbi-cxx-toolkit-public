@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/03/14 14:42:32  vasilche
+* Fixed error reporting.
+*
 * Revision 1.18  2000/03/07 14:06:24  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -219,6 +222,7 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
     {
         CObjectIStream::Member m(in, GetKeyId());
         GetKeyTypeInfo()->ReadData(in, key);
+        m.End();
     }
     if ( !block.Next() ) {
         THROW1_TRACE(runtime_error, "map value expected");
@@ -226,6 +230,7 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
     {
         CObjectIStream::Member m(in, GetValueId());
         GetValueTypeInfo()->ReadData(in, value);
+        m.End();
     }
     if ( block.Next() ) {
         THROW1_TRACE(runtime_error, "too many elements in map pair");
@@ -241,6 +246,7 @@ void CStlClassInfoMapImpl::SkipKeyValuePair(CObjectIStream& in) const
     {
         CObjectIStream::Member m(in, GetKeyId());
         GetKeyTypeInfo()->SkipData(in);
+        m.End();
     }
     if ( !block.Next() ) {
         THROW1_TRACE(runtime_error, "map value expected");
@@ -248,6 +254,7 @@ void CStlClassInfoMapImpl::SkipKeyValuePair(CObjectIStream& in) const
     {
         CObjectIStream::Member m(in, GetValueId());
         GetValueTypeInfo()->SkipData(in);
+        m.End();
     }
     if ( block.Next() ) {
         THROW1_TRACE(runtime_error, "too many elements in map pair");

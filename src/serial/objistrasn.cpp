@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2000/03/14 14:42:31  vasilche
+* Fixed error reporting.
+*
 * Revision 1.38  2000/03/07 14:06:22  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -213,11 +216,9 @@ CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in)
 {
 }
 
-unsigned CObjectIStreamAsn::SetFailFlags(unsigned flags)
+string CObjectIStreamAsn::GetPosition(void) const
 {
-    if ( flags & ~eEOF )
-        ERR_POST("ASN.1 error at " << m_Input.GetLine());
-    return CObjectIStream::SetFailFlags(flags);
+    return "line "+NStr::UIntToString(m_Input.GetLine());
 }
 
 inline

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/03/14 14:43:29  vasilche
+* Fixed error reporting.
+*
 * Revision 1.34  2000/03/07 14:05:30  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -351,13 +354,14 @@ public:
         {
             return m_Fail;
         }
-    virtual unsigned SetFailFlags(unsigned flags);
+    unsigned SetFailFlags(unsigned flags);
     unsigned ClearFailFlags(unsigned flags)
         {
             unsigned old = m_Fail;
             m_Fail &= ~flags;
             return old;
         }
+    virtual string GetPosition(void) const;
 
     void ThrowError1(EFailFlags fail, const char* message);
     void ThrowError1(EFailFlags fail, const string& message);
@@ -421,23 +425,46 @@ public:
 
     class StackElement
     {
+        enum ENameType {
+            eNameEmpty,
+            eNameCharPtr,
+            eNameString,
+            eNameId
+        };
     public:
+        void SetName(const char* str)
+            {
+                m_NameType = eNameCharPtr;
+                m_NameCharPtr = str;
+            }
+        void SetName(const string& str)
+            {
+                m_NameType = eNameString;
+                m_NameString = &str;
+            }
+        void SetName(const CMemberId& id)
+            {
+                m_NameType = eNameId;
+                m_NameId = &id;
+            }
+
+
         StackElement(CObjectIStream& s)
-            : m_Stream(s), m_Previous(s.m_CurrentElement),
-              m_CString(0), m_String(0), m_Id(0)
+            : m_Stream(s), m_Previous(s.m_CurrentElement), m_Ended(false),
+              m_NameType(eNameEmpty)
             {
                 s.m_CurrentElement = this;
             }
         StackElement(CObjectIStream& s, const string& str)
-            : m_Stream(s), m_Previous(s.m_CurrentElement),
-              m_CString(0), m_String(&str), m_Id(0)
+            : m_Stream(s), m_Previous(s.m_CurrentElement), m_Ended(false)
             {
+                SetName(str);
                 s.m_CurrentElement = this;
             }
         StackElement(CObjectIStream& s, const char* str)
-            : m_Stream(s), m_Previous(s.m_CurrentElement),
-              m_CString(str), m_String(0), m_Id(0)
+            : m_Stream(s), m_Previous(s.m_CurrentElement), m_Ended(false)
             {
+                SetName(str);
                 s.m_CurrentElement = this;
             }
         ~StackElement(void)
@@ -457,15 +484,30 @@ public:
 
         string ToString(void) const;
 
+        bool Ended(void) const
+            {
+                return m_Ended;
+            }
+        void End(void)
+            {
+                _ASSERT(!Ended());
+                m_Ended = true;
+            }
+        bool CanClose(void) const;
+
     private:
         CObjectIStream& m_Stream;
         friend class CObjectIStream;
         const StackElement* m_Previous;
 
     protected:
-        const char* m_CString;
-        const string* m_String;
-        const CMemberId* m_Id;
+        union {
+            const char* m_NameCharPtr;
+            const string* m_NameString;
+            const CMemberId* m_NameId;
+        };
+        bool m_Ended;
+        char m_NameType;
 
     private:
         // to prevent allocation in heap
@@ -559,7 +601,7 @@ public:
         size_t m_Size;
         size_t m_NextIndex;
     };
-	class ByteBlock
+	class ByteBlock : public StackElement
     {
 	public:
 		ByteBlock(CObjectIStream& in);
@@ -578,9 +620,7 @@ public:
 		size_t Read(void* dst, size_t length, bool forceLength = false);
 
 	private:
-		CObjectIStream& m_In;
 		bool m_KnownLength;
-        bool m_EndOfBlock;
 		size_t m_Length;
 
 		friend class CObjectIStream;
@@ -588,7 +628,7 @@ public:
 
 #if HAVE_NCBI_C
     // ASN.1 interface
-    class AsnIo
+    class AsnIo : public StackElement
     {
     public:
         AsnIo(CObjectIStream& in, const string& rootTypeName);
@@ -607,10 +647,9 @@ public:
             }
         size_t Read(char* data, size_t length)
             {
-                return m_In.AsnRead(*this, data, length);
+                return GetStream().AsnRead(*this, data, length);
             }
     private:
-        CObjectIStream& m_In;
         string m_RootTypeName;
         asnio* m_AsnIo;
 
@@ -645,7 +684,7 @@ protected:
                          TMemberIndex index, const CMemberId& id)
         {
             member.m_Index = index;
-            member.m_Id = &id;
+            member.SetName(id);
         }
 
     // block interface

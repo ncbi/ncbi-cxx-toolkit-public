@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/03/14 14:42:30  vasilche
+* Fixed error reporting.
+*
 * Revision 1.33  2000/03/10 15:00:35  vasilche
 * Fixed OPTIONAL members reading.
 *
@@ -516,6 +519,7 @@ void CClassInfoTmpl::SkipData(CObjectIStream& in) const
             }
             read[index] = true;
             SkipMember(in, m_Members, index);
+            m.End();
         }
         // skip all absent members
         for ( size_t i = 0, end = m_Members.GetSize(); i < end; ++i ) {
@@ -538,6 +542,7 @@ void CClassInfoTmpl::SkipData(CObjectIStream& in) const
                 CheckMemberOptional(in, m_Members, i);
             }
             SkipMember(in, m_Members, index);
+            m.End();
         }
         // init all absent members
         for ( size_t i = lastMember.GetIndex() + 1, end = m_Members.GetSize();
@@ -569,6 +574,7 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
             }
             read[index] = true;
             ReadMember(in, object, m_Members, index);
+            m.End();
         }
         // init all absent members
         for ( size_t i = 0, end = m_Members.GetSize(); i < end; ++i ) {
@@ -592,6 +598,7 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
                 AssignMemberDefault(in, object, m_Members, currentMember++);
             }
             ReadMember(in, object, m_Members, currentMember++);
+            m.End();
         }
         // init all absent members
         size_t memberCount = m_Members.GetSize();
