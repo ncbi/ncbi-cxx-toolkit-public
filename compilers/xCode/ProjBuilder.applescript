@@ -348,6 +348,8 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		set linkerFlags to x_CreateLinkerFlags(tool_info) -- additional liker flags (like -lxncbi)
 		
 		set symRoot to TheOUTPath & "/bin"
+		if toolName is "gbench_plugin_scan" then set symRoot to TheOUTPath & "/bin/Genome Workbench.app/Contents/MacOS"
+		
 		set buildSettings to {|PRODUCT_NAME|:fullToolName, |OTHER_LDFLAGS|:linkerFlags, |SYMROOT|:symRoot}
 		set toolTarget to {isa:"PBXNativeTarget", |buildPhases|:{buildPhaseName}, |buildSettings|:buildSettings, |name|:fullToolName, |productReference|:"", |productType|:"com.apple.product-type.tool", dependencies:{}}
 		
@@ -542,7 +544,7 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		set theScript to ""
 		set theScript to theScript & "echo Running GBench Plugin Scan" & ret
 		set theScript to theScript & "if test ! -e " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/plugins/plugin-cache ; then" & ret
-		set theScript to theScript & TheOUTPath & "/bin/gbench_plugin_scan " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/plugins" & ret
+		set theScript to theScript & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/gbench_plugin_scan " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/plugins" & ret
 		set theScript to theScript & "fi" & ret
 		
 		set theScript to theScript & "echo Copying GBench resources" & ret
@@ -584,6 +586,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/11/24 16:30:09  lebedev
+ * gbench_plugin_scan moved inside Genome Workbench package
+ *
  * Revision 1.18  2004/11/12 16:51:34  lebedev
  * New location of resources for GBench
  *
