@@ -30,4 +30,6 @@ if [ $exit_code != 0 ]; then
   fi
 fi
 
+rm ./.ncbi_test_con_pipename >/dev/null 2>&1
+
 exit $exit_code

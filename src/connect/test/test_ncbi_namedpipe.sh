@@ -12,4 +12,7 @@ test_ncbi_namedpipe client  ||  exit_code=1
 
 kill $server_pid  ||  exit_code=2
 ( kill -9 $server_pid ) >/dev/null 2>&1
+
+rm ./.ncbi_test_pipename >/dev/null 2>&1
+
 exit $exit_code
