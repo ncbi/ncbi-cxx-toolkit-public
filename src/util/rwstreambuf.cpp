@@ -143,24 +143,23 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
         }
 
         // store char
-        return CT_EQ_INT_TYPE(c, CT_EOF)
-            ? CT_NOT_EOF(CT_EOF) : sputc(CT_TO_CHAR_TYPE(c));
-    }
-
-    if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
+        if ( !CT_EQ_INT_TYPE(c, CT_EOF) )
+            return sputc(CT_TO_CHAR_TYPE(c));
+    } else if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
         // send char
         size_t n_written;
         CT_CHAR_TYPE b = CT_TO_CHAR_TYPE(c);
         m_Writer->Write(&b, sizeof(b), &n_written);
         return n_written == sizeof(b) ? c : CT_EOF;
-    } else {
-        switch ( m_Writer->Flush() ) {
-        case eRW_Error:
-        case eRW_Eof:
-            return CT_EOF;
-        default:
-            break;
-        }
+    }
+
+    assert(CT_EQ_INT_TYPE(c, CT_EOF));
+    switch ( m_Writer->Flush() ) {
+    case eRW_Error:
+    case eRW_Eof:
+        return CT_EOF;
+    default:
+        break;
     }
 
     return CT_NOT_EOF(CT_EOF);
@@ -283,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2005/02/03 19:37:58  lavr
+ * Fix flush() problem in overflow()
+ *
  * Revision 1.9  2004/05/17 21:06:02  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

@@ -109,11 +109,9 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         }
 
         // store char
-        return CT_EQ_INT_TYPE(c, CT_EOF)
-            ? CT_NOT_EOF(CT_EOF) : sputc(CT_TO_CHAR_TYPE(c));
-    }
-
-    if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
+        if ( !CT_EQ_INT_TYPE(c, CT_EOF) )
+            return sputc(CT_TO_CHAR_TYPE(c));
+    } else if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
         // send char
         size_t n_written;
         CT_CHAR_TYPE b = CT_TO_CHAR_TYPE(c);
@@ -121,10 +119,10 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
                                 &n_written, eIO_WritePlain),
                      "overflow(): CONN_Write(1) failed");
         return n_written == sizeof(b) ? c : CT_EOF;
-    } else if (CONN_Flush(m_Conn) != eIO_Success)
-        return CT_EOF;
+    }
 
-    return CT_NOT_EOF(CT_EOF);
+    assert(CT_EQ_INT_TYPE(c, CT_EOF));
+    return CONN_Flush(m_Conn) == eIO_Success ? CT_NOT_EOF(CT_EOF) : CT_EOF;
 }
 
 
@@ -301,6 +299,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.51  2005/02/03 19:37:56  lavr
+ * Fix flush() problem in overflow()
+ *
  * Revision 6.50  2004/10/27 15:51:21  lavr
  * Use safer C style casting for CT_OFF_TYPE
  *
