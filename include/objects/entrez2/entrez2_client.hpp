@@ -87,7 +87,7 @@ public:
 
     /// Given some uids, a database, and an entrez query string,
     /// determine which of these uids match the query string
-    void FilterIds(const vector<int> query_uids, const string& db,
+    void FilterIds(const vector<int>& query_uids, const string& db,
                    const string& query_string,
                    vector<int>& result_uids);
 
@@ -124,6 +124,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/01/20 05:36:56  jcherry
+* Added missing '&' on argument to FilterIds (pass by reference)
+*
 * Revision 1.4  2003/10/16 20:10:24  jcherry
 * Added some simplified interfaces for querying
 *

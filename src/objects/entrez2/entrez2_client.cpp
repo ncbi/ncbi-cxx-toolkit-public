@@ -150,7 +150,7 @@ void CEntrez2Client::Query(const string& query, const string& db,
 
 /// Given some uids, a database, and an entrez query string,
 /// determine which of these uids match the query string
-void CEntrez2Client::FilterIds(const vector<int> query_uids, const string& db,
+void CEntrez2Client::FilterIds(const vector<int>& query_uids, const string& db,
                                const string& query_string,
                                vector<int>& result_uids)
 {
@@ -179,6 +179,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/01/20 05:36:56  jcherry
+* Added missing '&' on argument to FilterIds (pass by reference)
+*
 * Revision 1.6  2003/10/21 13:48:49  grichenk
 * Redesigned type aliases in serialization library.
 * Fixed the code (removed CRef-s, added explicit
