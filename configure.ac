@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.334 2004/11/29 15:50:20 ucko Exp $
+#  $Id: configure.ac,v 1.335 2004/12/21 20:32:39 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -663,6 +663,7 @@ case "$host_os:$compiler" in
    ;;
 
  linux*:ICC )
+   LDFLAGS="-Wl,-E $LDFLAGS"
    # "incomplete type is not allowed" should be an error, not a warning!
    CFLAGS="-we70 $CFLAGS"
    CXXFLAGS="-we70 $CXXFLAGS"
@@ -675,7 +676,8 @@ case "$host_os:$compiler" in
    CPPFLAGS="-D_GNU_SOURCE $CPPFLAGS"
    ;;
 
- osf*:GCC )
+ freebsd*:GCC )
+   LDFLAGS="-Wl,-E $LDFLAGS"
    ;;
 
  irix*:GCC )
@@ -2816,7 +2818,7 @@ ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PAT
                [Your Berkeley DB version is too old to use.  (Needed 4.1.)])
             with_bdb=no
             ;;
-         4.1.* | 4.2.* ) ;;
+         4.1.* | 4.2.* | 4.3.* ) ;;
          * )
             AC_MSG_WARN(
                [Untested Berkeley DB version; may prove incompatible.])
