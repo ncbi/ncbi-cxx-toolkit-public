@@ -32,11 +32,11 @@ int CTestSerial::Run(void)
                     Read(&env, GetSequenceTypeRef(&env).Get());
             }
             {
-                CObjectOStreamAsnBinary(ofstream("webenv.bino")).
+                CObjectOStreamAsnBinary(ofstream("webenv.bino", ios::out | ios::binary)).
                     Write(&env, GetSequenceTypeRef(&env).Get());
             }
             {
-                CObjectIStreamAsnBinary(ifstream("webenv.bin")).
+                CObjectIStreamAsnBinary(ifstream("webenv.bin", ios::in | ios::binary)).
                     Read(&env, GetSequenceTypeRef(&env).Get());
             }
             {

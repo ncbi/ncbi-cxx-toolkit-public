@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/07/07 18:18:32  vasilche
+* Fixed some bugs found by MS VC++
+*
 * Revision 1.14  1999/06/30 18:54:54  vasilche
 * Fixed some errors under MSVS
 *
@@ -221,13 +224,13 @@ CTypeRef GetTypeRef(const char* const* object)
 }
 /*
 inline
-CTypeRef GetTypeRef(unsigned char* const* object)
+CTypeRef GetTypeRef(signed char* const* object)
 {
     return GetStdTypeRef(object);
 }
 
 inline
-CTypeRef GetTypeRef(signed char* const* object)
+CTypeRef GetTypeRef(unsigned char* const* object)
 {
     return GetStdTypeRef(object);
 }

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/07/07 18:18:32  vasilche
+* Fixed some bugs found by MS VC++
+*
 * Revision 1.10  1999/07/01 17:55:17  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -192,6 +195,36 @@ private:
 
     TAliases m_Aliases;
     TAliasesByName m_AliasesByName;
+};
+
+template<class CLASS>
+class CStructInfo : public CClassInfoTmpl
+{
+public:
+    enum ERandomOrder {
+        eRandomOrder
+    };
+
+    CStructInfo(void)
+        : CClassInfoTmpl(typeid(CLASS), sizeof(CLASS), &sx_Create)
+        {
+        }
+    CStructInfo(ERandomOrder)
+        : CClassInfoTmpl(typeid(CLASS), sizeof(CLASS), &sx_Create, true)
+        {
+        }
+    
+	virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const
+        {
+            return this;
+        }
+
+protected:
+
+    static TObjectPtr sx_Create(void)
+        {
+            return calloc(sizeof(CLASS), 1);
+        }
 };
 
 template<class CLASS, class PCLASS = CLASS>

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/07/07 18:18:32  vasilche
+* Fixed some bugs found by MS VC++
+*
 * Revision 1.4  1999/07/02 21:31:51  vasilche
 * Implemented reading from ASN.1 binary format.
 *
@@ -95,13 +98,13 @@ void CSequenceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
     GetDataTypeInfo()->Assign(dstObj, srcObj);
 }
 
-void CSequenceTypeInfo::CollectExternalObjects(COObjectList& list,
+void CSequenceTypeInfo::CollectExternalObjects(COObjectList& l,
                                                TConstObjectPtr object) const
 {
     TConstObjectPtr obj = Get(object);
     if ( obj == 0 )
         THROW1_TRACE(runtime_error, "null sequence pointer"); 
-    GetDataTypeInfo()->CollectObjects(list, obj);
+    GetDataTypeInfo()->CollectObjects(l, obj);
 }
 
 void CSequenceTypeInfo::WriteData(CObjectOStream& out,
@@ -166,13 +169,14 @@ void CSequenceOfTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
         dst = Get(dst) = GetDataTypeInfo()->Create();
         GetDataTypeInfo()->Assign(dst, src);
     }
+	Get(dst) = 0;
 }
 
-void CSequenceOfTypeInfo::CollectExternalObjects(COObjectList& list,
+void CSequenceOfTypeInfo::CollectExternalObjects(COObjectList& l,
                                                  TConstObjectPtr object) const
 {
     while ( (object = Get(object)) != 0 ) {
-        GetDataTypeInfo()->CollectObjects(list, object);
+        GetDataTypeInfo()->CollectObjects(l, object);
     }
 }
 
@@ -257,14 +261,14 @@ void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
     GetChoiceTypeInfo()->Assign(dstObj, srcObj);
 }
 
-void CChoiceTypeInfo::CollectExternalObjects(COObjectList& list,
+void CChoiceTypeInfo::CollectExternalObjects(COObjectList& l,
                                              TConstObjectPtr object) const
 {
     TConstObjectPtr obj = Get(object);
     if ( obj == 0 )
         THROW1_TRACE(runtime_error, "null valnode pointer");
 
-    GetChoiceTypeInfo()->CollectObjects(list, obj);
+    GetChoiceTypeInfo()->CollectObjects(l, obj);
 }
 
 void CChoiceTypeInfo::WriteData(CObjectOStream& out,
@@ -347,7 +351,7 @@ void CChoiceValNodeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
     }
 }
 
-void CChoiceValNodeInfo::CollectExternalObjects(COObjectList& list,
+void CChoiceValNodeInfo::CollectExternalObjects(COObjectList& l,
                                                  TConstObjectPtr object) const
 {
     const valnode* node = static_cast<const valnode*>(object);
@@ -357,7 +361,7 @@ void CChoiceValNodeInfo::CollectExternalObjects(COObjectList& list,
                      "illegal choice value: " +
                      NStr::IntToString(node->choice));
     }
-    GetVariantTypeInfo(index)->CollectExternalObjects(list, &node->data);
+    GetVariantTypeInfo(index)->CollectExternalObjects(l, &node->data);
 }
 
 void CChoiceValNodeInfo::WriteData(CObjectOStream& out,

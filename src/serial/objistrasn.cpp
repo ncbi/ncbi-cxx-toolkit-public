@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/07 18:18:32  vasilche
+* Fixed some bugs found by MS VC++
+*
 * Revision 1.9  1999/07/02 21:31:55  vasilche
 * Implemented reading from ASN.1 binary format.
 *
@@ -102,13 +105,23 @@ bool IsAlphaNum(char c)
 }
 
 CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in)
-    : m_Input(in), m_GetChar(-1), m_UngetChar(-1)
+    : m_Input(in)
+#if !USE_UNGET
+	, m_GetChar(-1), m_UngetChar(-1)
+#endif
 {
 }
 
 inline
 char CObjectIStreamAsn::GetChar(void)
 {
+#if USE_UNGET
+	char c;
+	if ( !m_Input.get(c) )
+		THROW1_TRACE(runtime_error, "unexpected EOF");
+	_TRACE("GetChar(): '" << c << "'");
+	return c;
+#else
 	int unget = m_UngetChar;
 	if ( unget >= 0 ) {
 	    m_UngetChar = -1;
@@ -125,11 +138,15 @@ char CObjectIStreamAsn::GetChar(void)
         _TRACE("GetChar(): '" << c << "'");
 		return c;
 	}
+#endif
 }
 
 inline
 char CObjectIStreamAsn::GetChar0(void)
 {
+#if USE_UNGET
+	return GetChar();
+#else
 	int unget = m_UngetChar;
 	if ( unget >= 0 ) {
         _TRACE("GetChar0(): '" << char(unget) << "'");
@@ -140,17 +157,24 @@ char CObjectIStreamAsn::GetChar0(void)
 	else {
 		throw runtime_error("bad GetChar0 call");
 	}
+#endif
 }
 
 inline
 void CObjectIStreamAsn::UngetChar(void)
 {
+#if USE_UNGET
+	_TRACE("UngetChar...");
+	if ( !m_Input.unget() )
+		THROW1_TRACE(runtime_error, "cannot unget");
+#else
     if ( m_UngetChar >= 0 || m_GetChar < 0 ) {
         throw runtime_error("cannot unget");
     }
     _TRACE("UngetChar(): '" << char(m_GetChar) << "'");
 	m_UngetChar = m_GetChar;
 	m_GetChar = -1;
+#endif
 }
 
 inline

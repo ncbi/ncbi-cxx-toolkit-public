@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/07/07 18:18:32  vasilche
+* Fixed some bugs found by MS VC++
+*
 * Revision 1.2  1999/07/01 17:55:29  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -67,7 +70,7 @@ CMemberId CMembers::GetCompleteMemberId(TIndex index) const
         return id;
     // regenerate tag
     TTag tag = 0;
-    while ( --index >= 0 ) {
+    while ( index-- > 0 ) {
         TTag baseTag = GetMemberId(index).GetTag();
         if ( baseTag >= 0 ) {
             tag += baseTag;

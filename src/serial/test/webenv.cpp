@@ -13,7 +13,7 @@ TTypeInfo GetTypeInfo_struct_Web_Env(void)
     static CClassInfoTmpl* info = 0;
     typedef struct_Web_Env CClass;
     if ( info == 0 ) {
-        info = new CClassInfo<CClass>();
+        info = new CStructInfo<CClass>();
         info->ADD_ASN_MEMBER(arguments, SetOf)->SetOptional();
         info->ADD_ASN_MEMBER(db_Env, SetOf)->SetOptional();
         info->ADD_ASN_MEMBER(queries, SequenceOf)->SetOptional();
@@ -26,7 +26,7 @@ TTypeInfo GetTypeInfo_struct_Argument(void)
     static CClassInfoTmpl* info = 0;
     typedef struct_Argument CClass;
     if ( info == 0 ) {
-        info = new CClassInfo<CClass>();
+        info = new CStructInfo<CClass>();
         info->ADD_CLASS_MEMBER(name);
         info->ADD_CLASS_MEMBER(value);
     }
@@ -38,7 +38,7 @@ TTypeInfo GetTypeInfo_struct_Db_Env(void)
     static CClassInfoTmpl* info = 0;
     typedef struct_Db_Env CClass;
     if ( info == 0 ) {
-        info = new CClassInfo<CClass>();
+        info = new CStructInfo<CClass>();
         info->ADD_CLASS_MEMBER(name);
         info->ADD_ASN_MEMBER(arguments, SetOf)->SetOptional();
         info->ADD_ASN_MEMBER(filters, SetOf)->SetOptional();
@@ -63,7 +63,7 @@ TTypeInfo GetTypeInfo_struct_Query_History(void)
     static CClassInfoTmpl* info = 0;
     typedef struct_Query_History CClass;
     if ( info == 0 ) {
-        info = new CClassInfo<CClass>();
+        info = new CStructInfo<CClass>();
         info->ADD_CLASS_MEMBER(seqNumber);
         info->ADD_CHOICE_MEMBER(time, Time);
         info->ADD_CHOICE_MEMBER(command, QueryCommand);
@@ -76,7 +76,7 @@ TTypeInfo GetTypeInfo_struct_Filter_Value(void)
     static CClassInfoTmpl* info = 0;
     typedef struct_Filter_Value CClass;
     if ( info == 0 ) {
-        info = new CClassInfo<CClass>();
+        info = new CStructInfo<CClass>();
         info->ADD_CLASS_MEMBER(name);
         info->ADD_CLASS_MEMBER(value);
     }
@@ -88,7 +88,7 @@ TTypeInfo GetTypeInfo_struct_Item_Set(void)
     static CClassInfoTmpl* info = 0;
     typedef struct_Item_Set CClass;
     if ( info == 0 ) {
-        info = new CClassInfo<CClass>();
+        info = new CStructInfo<CClass>();
         //info->ADD_CLASS_MEMBER(items);
         info->ADD_CLASS_MEMBER(count);
     }
@@ -112,7 +112,7 @@ TTypeInfo GetTypeInfo_struct_Query_Search(void)
     static CClassInfoTmpl* info = 0;
     typedef struct_Query_Search CClass;
     if ( info == 0 ) {
-        info = new CClassInfo<CClass>();
+        info = new CStructInfo<CClass>();
         info->ADD_CLASS_MEMBER(db);
         info->ADD_CLASS_MEMBER(term);
         info->ADD_CLASS_MEMBER(field);
@@ -127,7 +127,7 @@ TTypeInfo GetTypeInfo_struct_Query_Select(void)
     static CClassInfoTmpl* info = 0;
     typedef struct_Query_Select CClass;
     if ( info == 0 ) {
-        info = new CClassInfo<CClass>();
+        info = new CStructInfo<CClass>();
         info->ADD_CLASS_MEMBER(db);
         info->ADD_ASN_MEMBER(items, Sequence);
     }
@@ -150,7 +150,7 @@ TTypeInfo GetTypeInfo_struct_Query_Related(void)
     static CClassInfoTmpl* info = 0;
     typedef struct_Query_Related CClass;
     if ( info == 0 ) {
-        info = new CClassInfo<CClass>();
+        info = new CStructInfo<CClass>();
         info->ADD_CHOICE_MEMBER(base, QueryCommand);
         info->ADD_CLASS_MEMBER(relation);
         info->ADD_CLASS_MEMBER(db);
@@ -164,7 +164,7 @@ TTypeInfo GetTypeInfo_struct_Full_Time(void)
     static CClassInfoTmpl* info = 0;
     typedef struct_Full_Time CClass;
     if ( info == 0 ) {
-        info = new CClassInfo<CClass>();
+        info = new CStructInfo<CClass>();
         info->ADD_CLASS_MEMBER(year);
         info->ADD_CLASS_MEMBER(month);
         info->ADD_CLASS_MEMBER(day);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/07/07 18:18:32  vasilche
+* Fixed some bugs found by MS VC++
+*
 * Revision 1.10  1999/07/01 17:55:23  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -90,7 +93,7 @@ struct CTypeInfoOrder
         { return i != 0; }
 
     bool operator()(const type_info* i1, const type_info* i2) const
-        { return i1->before(*i2); }
+		{ return ToBool(i1->before(*i2)); }
 };
 
 class CTypeInfo

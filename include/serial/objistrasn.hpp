@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/07 18:18:32  vasilche
+* Fixed some bugs found by MS VC++
+*
 * Revision 1.6  1999/07/02 21:31:44  vasilche
 * Implemented reading from ASN.1 binary format.
 *
@@ -70,6 +73,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <serial/objistr.hpp>
+
+#define USE_UNGET 0
 
 BEGIN_NCBI_SCOPE
 
@@ -134,8 +139,10 @@ private:
     char SkipWhiteSpace(void);
 
     CNcbiIstream& m_Input;
+#if !USE_UNGET
 	int m_GetChar;
 	int m_UngetChar;
+#endif
 };
 
 //#include <objistrb.inl>

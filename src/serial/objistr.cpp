@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/07/07 18:18:32  vasilche
+* Fixed some bugs found by MS VC++
+*
 * Revision 1.11  1999/07/02 21:31:54  vasilche
 * Implemented reading from ASN.1 binary format.
 *
@@ -182,18 +185,12 @@ CObjectIStream::Block::~Block(void)
 {
     if ( Fixed() ) {
         if ( GetNextIndex() != GetSize() ) {
-            _TRACE("not all elements read");
-            ERR_POST("not all elements read");
-            return;
             THROW1_TRACE(runtime_error, "not all elements read");
         }
         m_In.FEnd(*this);
     }
     else {
         if ( !Finished() ) {
-            _TRACE("not all elements read");
-            ERR_POST("not all elements read");
-            return;
             THROW1_TRACE(runtime_error, "not all elements read");
         }
         m_In.VEnd(*this);

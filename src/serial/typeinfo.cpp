@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/07 18:18:32  vasilche
+* Fixed some bugs found by MS VC++
+*
 * Revision 1.9  1999/07/01 17:55:36  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -91,8 +94,13 @@ CTypeInfo::TTypesById& CTypeInfo::TypesById(void)
     return *types;
 }
 
+CTypeInfo::CTypeInfo(void)
+    : m_Id(typeid(void)), m_Default(0)
+{
+}
+
 CTypeInfo::CTypeInfo(const type_info& id)
-    : m_Id(id), m_Name(id.name())
+    : m_Id(id), m_Name(id.name()), m_Default(0)
 {
     if ( !TypesById().insert(TTypesById::value_type(&id, this)).second ) {
         THROW1_TRACE(runtime_error, "duplicated types: " + GetName());
@@ -100,11 +108,6 @@ CTypeInfo::CTypeInfo(const type_info& id)
     if ( !TypesByName().insert(TTypesByName::value_type(GetName(), this)).second ) {
         THROW1_TRACE(runtime_error, "duplicated types: " + GetName());
     }
-}
-
-CTypeInfo::CTypeInfo(void)
-    : m_Id(typeid(void))
-{
 }
 
 CTypeInfo::~CTypeInfo(void)
