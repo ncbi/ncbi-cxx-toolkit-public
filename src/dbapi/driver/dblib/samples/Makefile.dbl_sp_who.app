@@ -10,4 +10,4 @@ CPPFLAGS = $(SYBASE_INCLUDE) $(ORIG_CPPFLAGS)
 
 REQUIRES = Sybase DBLib
 
-CHECK_CMD = ../../../run_sybase_app.sh dbl_sp_who
+CHECK_CMD = ../../../../run_sybase_app.sh dbl_sp_who
