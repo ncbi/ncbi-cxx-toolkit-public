@@ -574,46 +574,47 @@ BlastScoreBlkNew(Uint1 alphabet, Int4 number_of_contexts)
 
 	sbp = (BlastScoreBlk*) calloc(1, sizeof(BlastScoreBlk));
 
-	if (sbp != NULL)
-	{
-		sbp->alphabet_code = alphabet;
-		if (alphabet != BLASTNA_SEQ_CODE)
-			sbp->alphabet_size = BLASTAA_SIZE;
-		else
-			sbp->alphabet_size = BLASTNA_SIZE;
+	if ( !sbp ) {
+        return NULL;
+    }
 
-/* set the alphabet type (protein or not). */
-		switch (alphabet) {
-			case BLASTAA_SEQ_CODE:
-				sbp->protein_alphabet = TRUE;
-				break;
-			case BLASTNA_SEQ_CODE:
-				sbp->protein_alphabet = FALSE;
-				break;
-			default:
-				break;
-		}
+    sbp->alphabet_code = alphabet;
+    if (alphabet != BLASTNA_SEQ_CODE) {
+        sbp->alphabet_size = BLASTAA_SIZE;
+    } else {
+        sbp->alphabet_size = BLASTNA_SIZE;
+    }
 
-		sbp->matrix_struct = BlastMatrixAllocate(sbp->alphabet_size);
-		if (sbp->matrix_struct == NULL)
-		{
-			sbp = BlastScoreBlkFree(sbp);
-			return sbp;
-		}
-		sbp->matrix = sbp->matrix_struct->matrix;
-        sbp->scale_factor = 1.0;
-		sbp->number_of_contexts = number_of_contexts;
-		sbp->sfp = (Blast_ScoreFreq**) 
-         calloc(sbp->number_of_contexts, sizeof(Blast_ScoreFreq*));
-		sbp->kbp_std = (Blast_KarlinBlk**)
-         calloc(sbp->number_of_contexts, sizeof(Blast_KarlinBlk*));
-		sbp->kbp_gap_std = (Blast_KarlinBlk**)
-         calloc(sbp->number_of_contexts, sizeof(Blast_KarlinBlk*));
-		sbp->kbp_psi = (Blast_KarlinBlk**)
-         calloc(sbp->number_of_contexts, sizeof(Blast_KarlinBlk*));
-		sbp->kbp_gap_psi = (Blast_KarlinBlk**)
-         calloc(sbp->number_of_contexts, sizeof(Blast_KarlinBlk*));
-	}
+    /* set the alphabet type (protein or not). */
+    switch (alphabet) {
+    case BLASTAA_SEQ_CODE:
+        sbp->protein_alphabet = TRUE;
+        break;
+    case BLASTNA_SEQ_CODE:
+        sbp->protein_alphabet = FALSE;
+        break;
+    default:
+        break;
+    }
+
+    sbp->matrix_struct = BlastMatrixAllocate(sbp->alphabet_size);
+    if (sbp->matrix_struct == NULL) {
+        sbp = BlastScoreBlkFree(sbp);
+        return sbp;
+    }
+    sbp->matrix = sbp->matrix_struct->matrix;
+    sbp->scale_factor = 1.0;
+    sbp->number_of_contexts = number_of_contexts;
+    sbp->sfp = (Blast_ScoreFreq**) 
+     calloc(sbp->number_of_contexts, sizeof(Blast_ScoreFreq*));
+    sbp->kbp_std = (Blast_KarlinBlk**)
+     calloc(sbp->number_of_contexts, sizeof(Blast_KarlinBlk*));
+    sbp->kbp_gap_std = (Blast_KarlinBlk**)
+     calloc(sbp->number_of_contexts, sizeof(Blast_KarlinBlk*));
+    sbp->kbp_psi = (Blast_KarlinBlk**)
+     calloc(sbp->number_of_contexts, sizeof(Blast_KarlinBlk*));
+    sbp->kbp_gap_psi = (Blast_KarlinBlk**)
+     calloc(sbp->number_of_contexts, sizeof(Blast_KarlinBlk*));
 
 	return sbp;
 }
@@ -634,7 +635,7 @@ Blast_ScoreFreqDestruct(Blast_ScoreFreq* sfp)
 	Deallocates the Karlin Block.
 */
 Blast_KarlinBlk*
-Blast_KarlinBlkDestruct(Blast_KarlinBlk* kbp)
+Blast_KarlinBlkFree(Blast_KarlinBlk* kbp)
 
 {
 	sfree(kbp);
@@ -671,16 +672,16 @@ BlastScoreBlkFree(BlastScoreBlk* sbp)
         if (sbp->sfp)
             sbp->sfp[index] = Blast_ScoreFreqDestruct(sbp->sfp[index]);
         if (sbp->kbp_std)
-            sbp->kbp_std[index] = Blast_KarlinBlkDestruct(sbp->kbp_std[index]);
+            sbp->kbp_std[index] = Blast_KarlinBlkFree(sbp->kbp_std[index]);
         if (sbp->kbp_gap_std)
-            sbp->kbp_gap_std[index] = Blast_KarlinBlkDestruct(sbp->kbp_gap_std[index]);
+            sbp->kbp_gap_std[index] = Blast_KarlinBlkFree(sbp->kbp_gap_std[index]);
         if (sbp->kbp_psi)
-            sbp->kbp_psi[index] = Blast_KarlinBlkDestruct(sbp->kbp_psi[index]);
+            sbp->kbp_psi[index] = Blast_KarlinBlkFree(sbp->kbp_psi[index]);
         if (sbp->kbp_gap_psi)
-            sbp->kbp_gap_psi[index] = Blast_KarlinBlkDestruct(sbp->kbp_gap_psi[index]);
+            sbp->kbp_gap_psi[index] = Blast_KarlinBlkFree(sbp->kbp_gap_psi[index]);
     }
     if (sbp->kbp_ideal)
-        sbp->kbp_ideal = Blast_KarlinBlkDestruct(sbp->kbp_ideal);
+        sbp->kbp_ideal = Blast_KarlinBlkFree(sbp->kbp_ideal);
     sfree(sbp->sfp);
     sfree(sbp->kbp_std);
     sfree(sbp->kbp_psi);
@@ -2172,7 +2173,7 @@ BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int4 cont
 	Blast_ResFreqString(sbp, rfp, query, query_length);
 	sbp->sfp[context_number] = Blast_ScoreFreqNew(sbp->loscore, sbp->hiscore);
 	BlastScoreFreqCalc(sbp, sbp->sfp[context_number], rfp, stdrfp);
-	sbp->kbp_std[context_number] = Blast_KarlinBlkCreate();
+	sbp->kbp_std[context_number] = Blast_KarlinBlkNew();
 	retval = Blast_KarlinBlkCalc(sbp->kbp_std[context_number], sbp->sfp[context_number]);
 	if (retval)
 	{
@@ -2180,7 +2181,7 @@ BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int4 cont
 		stdrfp = Blast_ResFreqDestruct(stdrfp);
 		return retval;
 	}
-	sbp->kbp_psi[context_number] = Blast_KarlinBlkCreate();
+	sbp->kbp_psi[context_number] = Blast_KarlinBlkNew();
 	retval = Blast_KarlinBlkCalc(sbp->kbp_psi[context_number], sbp->sfp[context_number]);
 	rfp = Blast_ResFreqDestruct(rfp);
 	stdrfp = Blast_ResFreqDestruct(stdrfp);
@@ -2188,31 +2189,29 @@ BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int4 cont
 	return retval;
 }
 
-/*
-	Calculates the standard Karlin parameters.  This is used
-	if the query is translated and the calculated (real) Karlin
-	parameters are bad, as they're calculated for non-coding regions.
-*/
-
-Blast_KarlinBlk*
-Blast_KarlinBlkIdealCalc(const BlastScoreBlk* sbp)
+Int2
+Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp)
 
 {
-	Blast_KarlinBlk* kbp_ideal;
-	Blast_ResFreq* stdrfp;
-	Blast_ScoreFreq* sfp;
+	Blast_ResFreq* stdrfp = NULL;
+	Blast_ScoreFreq* sfp = NULL;
+    Int2 status = 0;
+
+    if ( !sbp ) {
+        return (status = 1);
+    }
 
 	stdrfp = Blast_ResFreqNew(sbp);
 	Blast_ResFreqStdComp(sbp, stdrfp);
 	sfp = Blast_ScoreFreqNew(sbp->loscore, sbp->hiscore);
 	BlastScoreFreqCalc(sbp, sfp, stdrfp, stdrfp);
-	kbp_ideal = Blast_KarlinBlkCreate();
-	Blast_KarlinBlkCalc(kbp_ideal, sfp);
-	stdrfp = Blast_ResFreqDestruct(stdrfp);
+	sbp->kbp_ideal = Blast_KarlinBlkNew();
+	Blast_KarlinBlkCalc(sbp->kbp_ideal, sfp);
 
+	stdrfp = Blast_ResFreqDestruct(stdrfp);
 	sfp = Blast_ScoreFreqDestruct(sfp);
 
-	return kbp_ideal;
+    return status;
 }
 
 Int2
@@ -2222,7 +2221,10 @@ Blast_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, Int4 context
 	Blast_KarlinBlk* kbp_ideal,* kbp;
 	Int4 index;
 
-	kbp_ideal = Blast_KarlinBlkIdealCalc(sbp);
+    ASSERT(sbp);
+    ASSERT(sbp->kbp_ideal); /* this field is allocated unconditionally */
+
+	kbp_ideal = sbp->kbp_ideal;
 /* Replace the calculated values with ideal ones for blastx, tblastx. */
 	for (index=context_start; index<=context_end; index++)
 	{
@@ -2237,7 +2239,6 @@ Blast_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, Int4 context
 			kbp->H = kbp_ideal->H;
 		}
 	}
-	kbp_ideal = Blast_KarlinBlkDestruct(kbp_ideal);
 
 	return 0;
 }
@@ -2247,7 +2248,7 @@ Blast_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, Int4 context
 */
 
 Blast_KarlinBlk*
-Blast_KarlinBlkCreate(void)
+Blast_KarlinBlkNew(void)
 
 {
 	Blast_KarlinBlk* kbp;
@@ -3621,6 +3622,12 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.100  2004/11/23 21:47:56  camacho
+ * Changed signature of Blast_KarlinBlkIdealCalc so that it is used only
+ * to initialize kbp_ideal field of BlastScoreBlk.
+ * Rename Blast_KarlinBlk* allocation/deallocation structures
+ * to follow standard naming conventions.
+ *
  * Revision 1.99  2004/11/15 16:34:45  dondosha
  * Changed constants names in accordance with C++ toolkit guidelines
  *
@@ -3794,7 +3801,7 @@ BLAST_ComputeLengthAdjustment(double K,
  *    is doing and what each variable represents
  *
  * Revision 1.57  2004/04/19 12:58:18  madden
- * Changed BLAST_KarlinBlk to Blast_KarlinBlk to avoid conflict with blastkar.h structure, renamed some functions to start with Blast_Karlin, made Blast_KarlinBlkDestruct public
+ * Changed BLAST_KarlinBlk to Blast_KarlinBlk to avoid conflict with blastkar.h structure, renamed some functions to start with Blast_Karlin, made Blast_KarlinBlkFree public
  *
  * Revision 1.56  2004/04/12 18:57:31  madden
  * Rename BLAST_ResFreq to Blast_ResFreq, make Blast_ResFreqNew, Blast_ResFreqDestruct, and Blast_ResFreqStdComp non-static

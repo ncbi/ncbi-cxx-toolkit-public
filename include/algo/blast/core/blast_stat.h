@@ -202,13 +202,13 @@ Int2 BLAST_ScoreBlkMatFill (BlastScoreBlk* sbp, char* matrix);
 /** Callocs a Blast_KarlinBlk
  * @return pointer to the Blast_KarlinBlk
 */
-Blast_KarlinBlk* Blast_KarlinBlkCreate (void);
+Blast_KarlinBlk* Blast_KarlinBlkNew (void);
 
 /** Deallocates the KarlinBlk
  * @param kbp KarlinBlk to be deallocated [in]
  * @return NULL
 */
-Blast_KarlinBlk* Blast_KarlinBlkDestruct(Blast_KarlinBlk* kbp);
+Blast_KarlinBlk* Blast_KarlinBlkFree(Blast_KarlinBlk* kbp);
 
 /** Fills in lambda, H, and K values, as calculated by Stephen Altschul 
  *  in Methods in Enzy. (vol 266, page 474).
@@ -225,12 +225,15 @@ Int2 Blast_KarlinBlkGappedCalc (Blast_KarlinBlk* kbp, Int4 gap_open,
         Blast_Message** error_return);
 
 
-/** Calculates the standard Karlin parameters.  This is used
- *       if the query is translated and the calculated (real) Karlin
- *       parameters are bad, as they're calculated for non-coding regions.
- * @param sbp ScoreBlk used to calculate "ideal" values. [in]
+/** Calculates the Karlin-Altschul parameters assuming standard residue
+ * compositions for the query and subject sequences. It populates the kbp_ideal
+ * field of its sbp argument. This is used if the query is translated and the
+ * calculated (real) Karlin parameters are bad, as they're calculated for 
+ * non-coding regions.
+ * @param sbp ScoreBlk used to calculate "ideal" values. [in|out]
+ * @return 0 on success, 1 on failure
 */
-Blast_KarlinBlk* Blast_KarlinBlkIdealCalc(const BlastScoreBlk* sbp);
+Int2 Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp);
 
 
 /** Fills KarlinBlk pointers in BlastScoreBlk with "ideal" values if the 

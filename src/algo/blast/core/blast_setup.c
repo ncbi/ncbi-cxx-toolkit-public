@@ -66,7 +66,7 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
                 Blast_KarlinBlk *kbp_gap = NULL;
                 Blast_KarlinBlk *kbp = NULL;
  
-                sbp->kbp_gap_std[index] = Blast_KarlinBlkCreate();
+                sbp->kbp_gap_std[index] = Blast_KarlinBlkNew();
                 kbp_gap = sbp->kbp_gap_std[index];
                 kbp     = sbp->kbp_std[index];
 
@@ -82,7 +82,7 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
         for (index = query_info->first_context;
              index <= query_info->last_context; index++) {
             Int2 retval = 0;
-            sbp->kbp_gap_std[index] = Blast_KarlinBlkCreate();
+            sbp->kbp_gap_std[index] = Blast_KarlinBlkNew();
             retval = Blast_KarlinBlkGappedCalc(sbp->kbp_gap_std[index],
                                                scoring_options->gap_open,
                                                scoring_options->gap_extend,
@@ -97,7 +97,7 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
 
             /* For right now, copy the contents from kbp_gap_std to 
              * kbp_gap_psi (as in old code - BLASTSetUpSearchInternalByLoc) */
-            sbp->kbp_gap_psi[index] = Blast_KarlinBlkCreate();
+            sbp->kbp_gap_psi[index] = Blast_KarlinBlkNew();
             
             sbp->kbp_gap_psi[index]->Lambda = sbp->kbp_gap_std[index]->Lambda;
             sbp->kbp_gap_psi[index]->K      = sbp->kbp_gap_std[index]->K;
@@ -123,7 +123,7 @@ s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
    sbp->name = strdup(options->matrix);
    if ((status = BLAST_ScoreBlkMatFill(sbp, options->matrix_path)) != 0)
       return status;
-   kbp = sbp->kbp_gap_std[0] = Blast_KarlinBlkCreate();
+   kbp = sbp->kbp_gap_std[0] = Blast_KarlinBlkNew();
    sbp->kbp_std = sbp->kbp_gap_std;
 
    if (0 == strcmp("BLOSUM62", options->matrix)) {
@@ -351,41 +351,54 @@ BlastScoreBlkMatrixInit(EBlastProgramType program_number,
                   const BlastScoringOptions* scoring_options,
                   BlastScoreBlk* sbp)
 {
-   if (!sbp || !scoring_options)
-      return 1;
+    Int2 status = 0;
 
-   if (program_number == eBlastTypeBlastn) {
+    if ( !sbp || !scoring_options ) {
+        return 1;
+    }
 
-      BLAST_ScoreSetAmbigRes(sbp, 'N');
-      sbp->penalty = scoring_options->penalty;
-      sbp->reward = scoring_options->reward;
-      if (scoring_options->matrix_path &&
-          *scoring_options->matrix_path != NULLB &&
-          scoring_options->matrix && *scoring_options->matrix != NULLB) {
+    if (program_number == eBlastTypeBlastn) {
 
-          sbp->read_in_matrix = TRUE;
-          sbp->name = strdup(scoring_options->matrix);
+        BLAST_ScoreSetAmbigRes(sbp, 'N');
+        sbp->penalty = scoring_options->penalty;
+        sbp->reward = scoring_options->reward;
+        if (scoring_options->matrix_path &&
+            *scoring_options->matrix_path != NULLB &&
+            scoring_options->matrix && *scoring_options->matrix != NULLB) {
+ 
+            sbp->read_in_matrix = TRUE;
+            sbp->name = strdup(scoring_options->matrix);
+ 
+        } else {
+            char buffer[50];
+            sbp->read_in_matrix = FALSE;
+            sprintf(buffer, "blastn matrix:%ld %ld",
+                    (long) sbp->reward, (long) sbp->penalty);
+            sbp->name = strdup(buffer);
+        }
+ 
+     } else {
+        char* p = NULL;
 
-       } else {
-          char buffer[50];
-          sbp->read_in_matrix = FALSE;
-          sprintf(buffer, "blastn matrix:%ld %ld",
-                  (long) sbp->reward, (long) sbp->penalty);
-          sbp->name = strdup(buffer);
-       }
+        sbp->read_in_matrix = TRUE;
+        BLAST_ScoreSetAmbigRes(sbp, 'X');
+        sbp->name = strdup(scoring_options->matrix);
+        /* protein matrices are in all caps by convention */
+        for (p = sbp->name; *p != NULLB; p++) {
+            *p = toupper(*p);
+        }
+    }
+    status = BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix_path);
+    if (status) {
+        return status;
+    }
 
-    } else {
-       char* p = NULL;
+    status = Blast_KarlinBlkIdealCalc(sbp);
+    if (status) {
+        return status;
+    }
 
-       sbp->read_in_matrix = TRUE;
-       BLAST_ScoreSetAmbigRes(sbp, 'X');
-       sbp->name = strdup(scoring_options->matrix);
-       /* protein matrices are in all caps by convention */
-       for (p = sbp->name; *p != NULLB; p++)
-          *p = toupper(*p);
-   }
-
-   return BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix_path);
+    return status;
 }
 
 
@@ -419,8 +432,10 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
     sbp->scale_factor = scale_factor;
 
     status = BlastScoreBlkMatrixInit(program_number, scoring_options, sbp);
-    if (status != 0)
-       return status;
+    if (status) {
+        *blast_message = Blast_Perror(status);
+        return status;
+    }
 
     /* Fills in block for gapped blast. */
     if (phi_align) {
