@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2002/11/10 01:26:16  thiessen
+* tweak loading of style annotation residue ranges
+*
 * Revision 1.67  2002/08/15 22:13:18  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -1715,10 +1718,11 @@ static bool ExtractObjectLocation(
             // set residue ranges
             int i;
             std::vector < bool >& residueFlags = (*residueMap)[identifier];
-            residueFlags.resize(identifier->nResidues);
+            if (residueFlags.size() == 0)
+                residueFlags.resize(identifier->nResidues, false);
+
             if ((*m)->IsSetResidues()) {
                 // parse individual ranges
-                for (i=0; i<residueFlags.size(); i++) residueFlags[i] = false;
                 CCn3d_molecule_location::TResidues::const_iterator r, re = (*m)->GetResidues().end();
                 for (r=(*m)->GetResidues().begin(); r!=re; r++) {
                     for (i=(*r)->GetFrom().Get(); i<=(*r)->GetTo().Get(); i++) {
