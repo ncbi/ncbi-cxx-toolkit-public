@@ -63,6 +63,7 @@ private:
 class CDBAPIUnitTest : public CPPUNIT_NS::TestFixture
 {
   CPPUNIT_TEST_SUITE( CDBAPIUnitTest );
+  CPPUNIT_TEST( Test_Variant );
   CPPUNIT_TEST( TestGetRowCount );
   CPPUNIT_TEST_SUITE_END();
 
@@ -78,11 +79,32 @@ public:
 public:
     // Test IStatement interface.
 
+    // Testing Approach for value wrappers
+    void Test_Variant(void);
+
+    // Testing Approach for Members
     // Test particular methods.
     void TestGetRowCount();
     void CheckGetRowCount(int row_count, ETransBehavior tb = eNoTrans);
 
+    void Test_Bind(void);
+    void Test_Execute(void);
+    void Test_Procedure(void);
+
+    void Test_Exception(void);
+    void Test_Exception_Safety(void);
+
     // Test scenarios.
+    void Create_Destroy(void);
+    void Repeated_Usage(void);
+    void Single_Value_Writing(void);
+    void Bulk_Writing(void);
+    void Single_Value_Reading(void);
+    void Bulk_Reading(void);
+    void Multiple_Resultset(void);
+    void Query_Cancelation(void);
+    void Error_Conditions(void);
+    void Transactional_Behavior(void);
 
 private:
     void SetDatabaseParameters(void);
@@ -118,6 +140,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/02/16 20:01:20  ssikorsk
+ * Added CVariant test
+ *
  * Revision 1.4  2005/02/15 17:32:29  ssikorsk
  * Added  TDS "version" parameter with database connection
  *

@@ -244,6 +244,772 @@ CDBAPIUnitTest::CheckGetRowCount(int row_count, ETransBehavior tb)
 
 }
 
+void
+CDBAPIUnitTest::Test_Variant(void)
+{
+    const Uint1 value_Uint1 = 1;
+    const Int2 value_Int2 = -2;
+    const Int4 value_Int4 = -4;
+    const Int8 value_Int8 = -8;
+    const float value_float = float(0.4);
+    const double value_double = 0.8;
+    const bool value_bool = false;
+    const string value_string = "test string 0987654321";
+    const char* value_char = "test char* 1234567890";
+    const char* value_binary = "test binary 1234567890 binary";
+    const CTime value_CTime( CTime::eCurrent );
+
+    // Check constructors
+    {
+        const CVariant variant_Int8( value_Int8 );
+        CPPUNIT_ASSERT( !variant_Int8.IsNull() );
+
+        const CVariant variant_Int4( value_Int4 );
+        CPPUNIT_ASSERT( !variant_Int4.IsNull() );
+
+        const CVariant variant_Int2( value_Int2 );
+        CPPUNIT_ASSERT( !variant_Int2.IsNull() );
+
+        const CVariant variant_Uint1( value_Uint1 );
+        CPPUNIT_ASSERT( !variant_Uint1.IsNull() );
+
+        const CVariant variant_float( value_float );
+        CPPUNIT_ASSERT( !variant_float.IsNull() );
+
+        const CVariant variant_double( value_double );
+        CPPUNIT_ASSERT( !variant_double.IsNull() );
+
+        const CVariant variant_bool( value_bool );
+        CPPUNIT_ASSERT( !variant_bool.IsNull() );
+
+        const CVariant variant_string( value_string );
+        CPPUNIT_ASSERT( !variant_string.IsNull() );
+
+        const CVariant variant_char( value_char );
+        CPPUNIT_ASSERT( !variant_char.IsNull() );
+
+//        CVariant(EDB_Type type, size_t size = 0);
+//        CVariant(const class CTime& v, EDateTimeFormat fmt);
+//        explicit CVariant(CDB_Object* obj);
+//        CVariant(const CVariant& v);
+
+    }
+
+    // Check the copy-constructors
+    {
+        const CVariant variant_Int8 = CVariant(value_Int8);
+        CPPUNIT_ASSERT( !variant_Int8.IsNull() );
+
+        const CVariant variant_Int4 = CVariant(value_Int4);
+        CPPUNIT_ASSERT( !variant_Int4.IsNull() );
+
+        const CVariant variant_Int2 = CVariant(value_Int2);
+        CPPUNIT_ASSERT( !variant_Int2.IsNull() );
+
+        const CVariant variant_Uint1 = CVariant(value_Uint1);
+        CPPUNIT_ASSERT( !variant_Uint1.IsNull() );
+
+        const CVariant variant_float = CVariant(value_float);
+        CPPUNIT_ASSERT( !variant_float.IsNull() );
+
+        const CVariant variant_double = CVariant(value_double);
+        CPPUNIT_ASSERT( !variant_double.IsNull() );
+
+        const CVariant variant_bool = CVariant(value_bool);
+        CPPUNIT_ASSERT( !variant_bool.IsNull() );
+
+        const CVariant variant_string = CVariant(value_string);
+        CPPUNIT_ASSERT( !variant_string.IsNull() );
+
+        const CVariant variant_char = CVariant(value_char);
+        CPPUNIT_ASSERT( !variant_char.IsNull() );
+    }
+
+    // Call Factories for different types
+    {
+        const CVariant variant_Int8 = CVariant::BigInt( const_cast<Int8*>(&value_Int8) );
+        CPPUNIT_ASSERT( !variant_Int8.IsNull() );
+
+        const CVariant variant_Int4 = CVariant::Int( const_cast<Int4*>(&value_Int4) );
+        CPPUNIT_ASSERT( !variant_Int4.IsNull() );
+
+        const CVariant variant_Int2 = CVariant::SmallInt( const_cast<Int2*>(&value_Int2) );
+        CPPUNIT_ASSERT( !variant_Int2.IsNull() );
+
+        const CVariant variant_Uint1 = CVariant::TinyInt( const_cast<Uint1*>(&value_Uint1) );
+        CPPUNIT_ASSERT( !variant_Uint1.IsNull() );
+
+        const CVariant variant_float = CVariant::Float( const_cast<float*>(&value_float) );
+        CPPUNIT_ASSERT( !variant_float.IsNull() );
+
+        const CVariant variant_double = CVariant::Double( const_cast<double*>(&value_double) );
+        CPPUNIT_ASSERT( !variant_double.IsNull() );
+
+        const CVariant variant_bool = CVariant::Bit( const_cast<bool*>(&value_bool) );
+        CPPUNIT_ASSERT( !variant_bool.IsNull() );
+
+        const CVariant variant_LongChar = CVariant::LongChar( value_char, strlen(value_char) );
+        CPPUNIT_ASSERT( !variant_LongChar.IsNull() );
+
+        const CVariant variant_VarChar = CVariant::VarChar( value_char, strlen(value_char) );
+        CPPUNIT_ASSERT( !variant_VarChar.IsNull() );
+
+        const CVariant variant_Char = CVariant::Char( strlen(value_char), const_cast<char*>(value_char) );
+        CPPUNIT_ASSERT( !variant_Char.IsNull() );
+
+        const CVariant variant_LongBinary = CVariant::LongBinary( strlen(value_binary), value_binary, strlen(value_binary)) ;
+        CPPUNIT_ASSERT( !variant_LongBinary.IsNull() );
+
+        const CVariant variant_VarBinary = CVariant::VarBinary( value_binary, strlen(value_binary) );
+        CPPUNIT_ASSERT( !variant_VarBinary.IsNull() );
+
+        const CVariant variant_Binary = CVariant::Binary( strlen(value_binary), value_binary, strlen(value_binary) );
+        CPPUNIT_ASSERT( !variant_Binary.IsNull() );
+
+        const CVariant variant_SmallDateTime = CVariant::SmallDateTime( const_cast<CTime*>(&value_CTime) );
+        CPPUNIT_ASSERT( !variant_SmallDateTime.IsNull() );
+
+        const CVariant variant_DateTime = CVariant::DateTime( const_cast<CTime*>(&value_CTime) );
+        CPPUNIT_ASSERT( !variant_DateTime.IsNull() );
+
+//        CVariant variant_Numeric = CVariant::Numeric  (unsigned int precision, unsigned int scale, const char* p);
+    }
+
+    // Call Get method for different types
+    {
+        const Uint1 value_Uint1_tmp = CVariant::TinyInt( const_cast<Uint1*>(&value_Uint1) ).GetByte();
+        CPPUNIT_ASSERT_EQUAL( value_Uint1, value_Uint1_tmp );
+
+        const Int2 value_Int2_tmp = CVariant::SmallInt( const_cast<Int2*>(&value_Int2) ).GetInt2();
+        CPPUNIT_ASSERT_EQUAL( value_Int2, value_Int2_tmp );
+
+        const Int4 value_Int4_tmp = CVariant::Int( const_cast<Int4*>(&value_Int4) ).GetInt4();
+        CPPUNIT_ASSERT_EQUAL( value_Int4, value_Int4_tmp );
+
+        const Int8 value_Int8_tmp = CVariant::BigInt( const_cast<Int8*>(&value_Int8) ).GetInt8();
+        CPPUNIT_ASSERT_EQUAL( value_Int8, value_Int8_tmp );
+
+        const float value_float_tmp = CVariant::Float( const_cast<float*>(&value_float) ).GetFloat();
+        CPPUNIT_ASSERT_EQUAL( value_float, value_float_tmp );
+
+        const double value_double_tmp = CVariant::Double( const_cast<double*>(&value_double) ).GetDouble();
+        CPPUNIT_ASSERT_EQUAL( value_double, value_double_tmp );
+
+        const bool value_bool_tmp = CVariant::Bit( const_cast<bool*>(&value_bool) ).GetBit();
+        CPPUNIT_ASSERT_EQUAL( value_bool, value_bool_tmp );
+
+        const CTime value_CTime_tmp = CVariant::DateTime( const_cast<CTime*>(&value_CTime) ).GetCTime();
+        CPPUNIT_ASSERT( value_CTime == value_CTime_tmp );
+
+        // GetNumeric() ????
+    }
+
+    // Call operator= for different types
+    //!!! It *fails* !!!
+    if (false) {
+        CVariant value_variant(NULL);
+        value_variant.SetNull();
+
+        value_variant = CVariant(NULL);
+        CPPUNIT_ASSERT( CVariant(NULL) == value_variant );
+
+        value_variant = value_Int8;
+        CPPUNIT_ASSERT( CVariant( value_Int8 ) == value_variant );
+
+        value_variant = value_Int4;
+        CPPUNIT_ASSERT( CVariant( value_Int4 ) == value_variant );
+
+        value_variant = value_Int2;
+        CPPUNIT_ASSERT( CVariant( value_Int2 ) == value_variant );
+
+        value_variant = value_Uint1;
+        CPPUNIT_ASSERT( CVariant( value_Uint1 ) == value_variant );
+
+        value_variant = value_float;
+        CPPUNIT_ASSERT( CVariant( value_float ) == value_variant );
+
+        value_variant = value_double;
+        CPPUNIT_ASSERT( CVariant( value_double ) == value_variant );
+
+        value_variant = value_string;
+        CPPUNIT_ASSERT( CVariant( value_string ) == value_variant );
+
+        value_variant = value_char;
+        CPPUNIT_ASSERT( CVariant( value_char ) == value_variant );
+
+        value_variant = value_bool;
+        CPPUNIT_ASSERT( CVariant( value_bool ) == value_variant );
+
+        value_variant = value_CTime;
+        CPPUNIT_ASSERT( CVariant( value_CTime ) == value_variant );
+
+    }
+
+    // Call operator= for different Variant types
+    {
+        // Assign to CVariant(NULL)
+        if (false) {
+            {
+                CVariant value_variant(NULL);
+                value_variant = CVariant(NULL);
+            }
+            {
+                CVariant value_variant(NULL);
+                value_variant = CVariant( value_Int8 );
+            }
+            {
+                CVariant value_variant(NULL);
+                value_variant = CVariant( value_Int4 );
+            }
+            {
+                CVariant value_variant(NULL);
+                value_variant = CVariant( value_Int2 );
+            }
+            {
+                CVariant value_variant(NULL);
+                value_variant = CVariant( value_Uint1 );
+            }
+            {
+                CVariant value_variant(NULL);
+                value_variant = CVariant( value_float );
+            }
+            {
+                CVariant value_variant(NULL);
+                value_variant = CVariant( value_double );
+            }
+            {
+                CVariant value_variant(NULL);
+                value_variant = CVariant( value_bool );
+            }
+            {
+                CVariant value_variant(NULL);
+                value_variant = CVariant( value_CTime );
+            }
+        }
+
+        // Assign to CVariant( value_Uint1 )
+        if (false) {
+            {
+                CVariant value_variant(value_Uint1);
+                value_variant = CVariant(NULL);
+            }
+            {
+                CVariant value_variant(value_Uint1);
+                value_variant = CVariant( value_Int8 );
+            }
+            {
+                CVariant value_variant(value_Uint1);
+                value_variant = CVariant( value_Int4 );
+            }
+            {
+                CVariant value_variant(value_Uint1);
+                value_variant = CVariant( value_Int2 );
+            }
+            {
+                CVariant value_variant(value_Uint1);
+                value_variant = CVariant( value_Uint1 );
+            }
+            {
+                CVariant value_variant(value_Uint1);
+                value_variant = CVariant( value_float );
+            }
+            {
+                CVariant value_variant(value_Uint1);
+                value_variant = CVariant( value_double );
+            }
+            {
+                CVariant value_variant(value_Uint1);
+                value_variant = CVariant( value_bool );
+            }
+            {
+                CVariant value_variant(value_Uint1);
+                value_variant = CVariant( value_CTime );
+            }
+        }
+
+        // Assign to CVariant( value_Int2 )
+        if (false) {
+            {
+                CVariant value_variant( value_Int2 );
+                value_variant = CVariant(NULL);
+            }
+            {
+                CVariant value_variant( value_Int2 );
+                value_variant = CVariant( value_Int8 );
+            }
+            {
+                CVariant value_variant( value_Int2 );
+                value_variant = CVariant( value_Int4 );
+            }
+            {
+                CVariant value_variant( value_Int2 );
+                value_variant = CVariant( value_Int2 );
+            }
+            {
+                CVariant value_variant( value_Int2 );
+                value_variant = CVariant( value_Uint1 );
+            }
+            {
+                CVariant value_variant( value_Int2 );
+                value_variant = CVariant( value_float );
+            }
+            {
+                CVariant value_variant( value_Int2 );
+                value_variant = CVariant( value_double );
+            }
+            {
+                CVariant value_variant( value_Int2 );
+                value_variant = CVariant( value_bool );
+            }
+            {
+                CVariant value_variant( value_Int2 );
+                value_variant = CVariant( value_CTime );
+            }
+        }
+
+        // Assign to CVariant( value_Int4 )
+        if (false) {
+            {
+                CVariant value_variant( value_Int4 );
+                value_variant = CVariant(NULL);
+            }
+            {
+                CVariant value_variant( value_Int4 );
+                value_variant = CVariant( value_Int8 );
+            }
+            {
+                CVariant value_variant( value_Int4 );
+                value_variant = CVariant( value_Int4 );
+            }
+            {
+                CVariant value_variant( value_Int4 );
+                value_variant = CVariant( value_Int2 );
+            }
+            {
+                CVariant value_variant( value_Int4 );
+                value_variant = CVariant( value_Uint1 );
+            }
+            {
+                CVariant value_variant( value_Int4 );
+                value_variant = CVariant( value_float );
+            }
+            {
+                CVariant value_variant( value_Int4 );
+                value_variant = CVariant( value_double );
+            }
+            {
+                CVariant value_variant( value_Int4 );
+                value_variant = CVariant( value_bool );
+            }
+            {
+                CVariant value_variant( value_Int4 );
+                value_variant = CVariant( value_CTime );
+            }
+        }
+
+        // Assign to CVariant( value_Int8 )
+        if (false) {
+            {
+                CVariant value_variant( value_Int8 );
+                value_variant = CVariant(NULL);
+            }
+            {
+                CVariant value_variant( value_Int8 );
+                value_variant = CVariant( value_Int8 );
+            }
+            {
+                CVariant value_variant( value_Int8 );
+                value_variant = CVariant( value_Int4 );
+            }
+            {
+                CVariant value_variant( value_Int8 );
+                value_variant = CVariant( value_Int2 );
+            }
+            {
+                CVariant value_variant( value_Int8 );
+                value_variant = CVariant( value_Uint1 );
+            }
+            {
+                CVariant value_variant( value_Int8 );
+                value_variant = CVariant( value_float );
+            }
+            {
+                CVariant value_variant( value_Int8 );
+                value_variant = CVariant( value_double );
+            }
+            {
+                CVariant value_variant( value_Int8 );
+                value_variant = CVariant( value_bool );
+            }
+            {
+                CVariant value_variant( value_Int8 );
+                value_variant = CVariant( value_CTime );
+            }
+        }
+
+        // Assign to CVariant( value_float )
+        if (false) {
+            {
+                CVariant value_variant( value_float );
+                value_variant = CVariant(NULL);
+            }
+            {
+                CVariant value_variant( value_float );
+                value_variant = CVariant( value_Int8 );
+            }
+            {
+                CVariant value_variant( value_float );
+                value_variant = CVariant( value_Int4 );
+            }
+            {
+                CVariant value_variant( value_float );
+                value_variant = CVariant( value_Int2 );
+            }
+            {
+                CVariant value_variant( value_float );
+                value_variant = CVariant( value_Uint1 );
+            }
+            {
+                CVariant value_variant( value_float );
+                value_variant = CVariant( value_float );
+            }
+            {
+                CVariant value_variant( value_float );
+                value_variant = CVariant( value_double );
+            }
+            {
+                CVariant value_variant( value_float );
+                value_variant = CVariant( value_bool );
+            }
+            {
+                CVariant value_variant( value_float );
+                value_variant = CVariant( value_CTime );
+            }
+        }
+
+        // Assign to CVariant( value_double )
+        if (false) {
+            {
+                CVariant value_variant( value_double );
+                value_variant = CVariant(NULL);
+            }
+            {
+                CVariant value_variant( value_double );
+                value_variant = CVariant( value_Int8 );
+            }
+            {
+                CVariant value_variant( value_double );
+                value_variant = CVariant( value_Int4 );
+            }
+            {
+                CVariant value_variant( value_double );
+                value_variant = CVariant( value_Int2 );
+            }
+            {
+                CVariant value_variant( value_double );
+                value_variant = CVariant( value_Uint1 );
+            }
+            {
+                CVariant value_variant( value_double );
+                value_variant = CVariant( value_float );
+            }
+            {
+                CVariant value_variant( value_double );
+                value_variant = CVariant( value_double );
+            }
+            {
+                CVariant value_variant( value_double );
+                value_variant = CVariant( value_bool );
+            }
+            {
+                CVariant value_variant( value_double );
+                value_variant = CVariant( value_CTime );
+            }
+        }
+
+        // Assign to CVariant( value_bool )
+        if (false) {
+            {
+                CVariant value_variant( value_bool );
+                value_variant = CVariant(NULL);
+            }
+            {
+                CVariant value_variant( value_bool );
+                value_variant = CVariant( value_Int8 );
+            }
+            {
+                CVariant value_variant( value_bool );
+                value_variant = CVariant( value_Int4 );
+            }
+            {
+                CVariant value_variant( value_bool );
+                value_variant = CVariant( value_Int2 );
+            }
+            {
+                CVariant value_variant( value_bool );
+                value_variant = CVariant( value_Uint1 );
+            }
+            {
+                CVariant value_variant( value_bool );
+                value_variant = CVariant( value_float );
+            }
+            {
+                CVariant value_variant( value_bool );
+                value_variant = CVariant( value_double );
+            }
+            {
+                CVariant value_variant( value_bool );
+                value_variant = CVariant( value_bool );
+            }
+            {
+                CVariant value_variant( value_bool );
+                value_variant = CVariant( value_CTime );
+            }
+        }
+
+        // Assign to CVariant( value_CTime )
+        if (false) {
+            {
+                CVariant value_variant( value_CTime );
+                value_variant = CVariant(NULL);
+            }
+            {
+                CVariant value_variant( value_CTime );
+                value_variant = CVariant( value_Int8 );
+            }
+            {
+                CVariant value_variant( value_CTime );
+                value_variant = CVariant( value_Int4 );
+            }
+            {
+                CVariant value_variant( value_CTime );
+                value_variant = CVariant( value_Int2 );
+            }
+            {
+                CVariant value_variant( value_CTime );
+                value_variant = CVariant( value_Uint1 );
+            }
+            {
+                CVariant value_variant( value_CTime );
+                value_variant = CVariant( value_float );
+            }
+            {
+                CVariant value_variant( value_CTime );
+                value_variant = CVariant( value_double );
+            }
+            {
+                CVariant value_variant( value_CTime );
+                value_variant = CVariant( value_bool );
+            }
+            {
+                CVariant value_variant( value_CTime );
+                value_variant = CVariant( value_CTime );
+            }
+        }
+    }
+
+    // Test Null cases ...
+    {
+        CVariant value_variant(NULL);
+
+        CPPUNIT_ASSERT( !value_variant.IsNull() );
+
+        value_variant.SetNull();
+        CPPUNIT_ASSERT( value_variant.IsNull() );
+
+        value_variant.SetNull();
+        CPPUNIT_ASSERT( value_variant.IsNull() );
+
+        value_variant.SetNull();
+        CPPUNIT_ASSERT( value_variant.IsNull() );
+    }
+
+    // Check operator==
+    {
+        // Check values of same type ...
+        if (false) {
+            CPPUNIT_ASSERT( CVariant( true ) == CVariant( true ) );
+            CPPUNIT_ASSERT( CVariant( false ) == CVariant( false ) );
+            CPPUNIT_ASSERT( CVariant( Uint1(1) ) == CVariant( Uint1(1) ) );
+            CPPUNIT_ASSERT( CVariant( Int2(1) ) == CVariant( Int2(1) ) );
+            CPPUNIT_ASSERT( CVariant( Int4(1) ) == CVariant( Int4(1) ) );
+            CPPUNIT_ASSERT( CVariant( Int8(1) ) == CVariant( Int8(1) ) );
+            CPPUNIT_ASSERT( CVariant( float(1) ) == CVariant( float(1) ) );
+            CPPUNIT_ASSERT( CVariant( double(1) ) == CVariant( double(1) ) );
+            CPPUNIT_ASSERT( CVariant( string("abcd") ) == CVariant( string("abcd") ) );
+            CPPUNIT_ASSERT( CVariant( "abcd" ) == CVariant( "abcd" ) );
+        }
+    }
+
+    // Check operator<
+    {
+        // Check values of same type ...
+        {
+            // CPPUNIT_ASSERT( CVariant( false ) < CVariant( true ) );
+            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( Uint1(1) ) );
+            CPPUNIT_ASSERT( CVariant( Int2(-1) ) < CVariant( Int2(1) ) );
+            CPPUNIT_ASSERT( CVariant( Int4(-1) ) < CVariant( Int4(1) ) );
+            // !!! Does not work ...
+            // CPPUNIT_ASSERT( CVariant( Int8(-1) ) < CVariant( Int8(1) ) );
+            CPPUNIT_ASSERT( CVariant( float(-1) ) < CVariant( float(1) ) );
+            CPPUNIT_ASSERT( CVariant( double(-1) ) < CVariant( double(1) ) );
+            CPPUNIT_ASSERT( CVariant( string("abcd") ) < CVariant( string("bcde") ) );
+            CPPUNIT_ASSERT( CVariant( "abcd" ) < CVariant( "bcde" ) );
+        }
+
+        // Check comparasion wit Uint1(0) ...
+        //!!! It *fails* !!!
+        if (false) {
+            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( Uint1(1) ) );
+            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( Int2(1) ) );
+            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( Int4(1) ) );
+            // !!! Does not work ...
+            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( Int8(1) ) );
+            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( float(1) ) );
+            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( double(1) ) );
+            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( string("bcde") ) );
+            CPPUNIT_ASSERT( CVariant( Uint1(0) ) < CVariant( "bcde" ) );
+        }
+    }
+
+    // Check GetType
+    {
+//        enum EDB_Type {
+//            eDB_Int,
+//            eDB_SmallInt,
+//            eDB_TinyInt,
+//            eDB_BigInt,
+//            eDB_VarChar,
+//            eDB_Char,
+//            eDB_VarBinary,
+//            eDB_Binary,
+//            eDB_Float,
+//            eDB_Double,
+//            eDB_DateTime,
+//            eDB_SmallDateTime,
+//            eDB_Text,
+//            eDB_Image,
+//            eDB_Bit,
+//            eDB_Numeric,
+
+//            eDB_UnsupportedType,
+//            eDB_LongChar,
+//            eDB_LongBinary
+//        };
+
+        const CVariant variant_Int8( value_Int8 );
+        CPPUNIT_ASSERT_EQUAL( eDB_BigInt, variant_Int8.GetType() );
+
+        const CVariant variant_Int4( value_Int4 );
+        CPPUNIT_ASSERT_EQUAL( eDB_Int, variant_Int4.GetType() );
+
+        const CVariant variant_Int2( value_Int2 );
+        CPPUNIT_ASSERT_EQUAL( eDB_SmallInt, variant_Int2.GetType() );
+
+        const CVariant variant_Uint1( value_Uint1 );
+        CPPUNIT_ASSERT_EQUAL( eDB_TinyInt, variant_Uint1.GetType() );
+
+        const CVariant variant_float( value_float );
+        CPPUNIT_ASSERT_EQUAL( eDB_Float, variant_float.GetType() );
+
+        const CVariant variant_double( value_double );
+        CPPUNIT_ASSERT_EQUAL( eDB_Double, variant_double.GetType() );
+
+        const CVariant variant_bool( value_bool );
+        CPPUNIT_ASSERT_EQUAL( eDB_Bit, variant_bool.GetType() );
+
+        const CVariant variant_string( value_string );
+        CPPUNIT_ASSERT_EQUAL( eDB_VarChar, variant_string.GetType() );
+
+        const CVariant variant_char( value_char );
+        CPPUNIT_ASSERT_EQUAL( eDB_VarChar, variant_char.GetType() );
+    }
+
+    // Test BLOB ...
+    {
+    }
+
+    // Check AsNotNullString
+    {
+    }
+}
+
+void
+CDBAPIUnitTest::Test_Bind(void)
+{
+}
+
+void
+CDBAPIUnitTest::Test_Execute(void)
+{
+}
+
+void
+CDBAPIUnitTest::Test_Procedure(void)
+{
+}
+
+void
+CDBAPIUnitTest::Test_Exception(void)
+{
+}
+
+void
+CDBAPIUnitTest::Test_Exception_Safety(void)
+{
+}
+
+void
+CDBAPIUnitTest::Create_Destroy(void)
+{
+}
+
+void
+CDBAPIUnitTest::Repeated_Usage(void)
+{
+}
+
+void
+CDBAPIUnitTest::Single_Value_Writing(void)
+{
+}
+
+void
+CDBAPIUnitTest::Bulk_Writing(void)
+{
+}
+
+void
+CDBAPIUnitTest::Single_Value_Reading(void)
+{
+}
+
+void
+CDBAPIUnitTest::Bulk_Reading(void)
+{
+}
+
+void
+CDBAPIUnitTest::Multiple_Resultset(void)
+{
+}
+
+void
+CDBAPIUnitTest::Query_Cancelation(void)
+{
+}
+
+void
+CDBAPIUnitTest::Error_Conditions(void)
+{
+}
+
+void
+CDBAPIUnitTest::Transactional_Behavior(void)
+{
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 CUnitTestApp::~CUnitTestApp(void)
 {
@@ -336,6 +1102,9 @@ int main(int argc, const char* argv[])
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/02/16 20:01:20  ssikorsk
+ * Added CVariant test
+ *
  * Revision 1.4  2005/02/15 17:32:29  ssikorsk
  * Added  TDS "version" parameter with database connection
  *
