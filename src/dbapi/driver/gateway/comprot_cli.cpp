@@ -111,7 +111,7 @@ bool comprot_bool( const char *procName, int object )
   pGate->send_data();
 
   int nOk;
-  if (pGate->get_input_arg("Ok", &nOk) != IGate::eGood) {
+  if (pGate->get_input_arg("result", &nOk) != IGate::eGood) {
     comprot_errmsg();
     return false;
   }

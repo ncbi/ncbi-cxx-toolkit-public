@@ -60,7 +60,7 @@ template<class T> bool comprot_bool1( const char *procName, int object, T* param
   pGate->send_data();
 
   int nOk;
-  if (pGate->get_input_arg("Ok", &nOk) != IGate::eGood) {
+  if (pGate->get_input_arg("result", &nOk) != IGate::eGood) {
     comprot_errmsg();
     return false;
   }
