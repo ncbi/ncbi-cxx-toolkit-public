@@ -107,6 +107,7 @@ void CAlnMix::x_Reset()
     m_ExtraRows.clear();
     ITERATE (TSeqs, seq_i, m_Seqs) {
         (*seq_i)->m_Starts.clear();
+        (*seq_i)->m_ExtraRow = 0;
     }
 }
 
@@ -359,9 +360,7 @@ void CAlnMix::x_Merge()
     // Find the refseq (if such exists)
     {{
         m_SingleRefseq = false;
-        if (m_InputDSs.size() > 1) {
-            m_IndependentDSs = true;
-        }
+        m_IndependentDSs = m_InputDSs.size() > 1;
 
         int ds_cnt;
         NON_CONST_ITERATE (TSeqs, it, m_Seqs){
@@ -454,7 +453,7 @@ void CAlnMix::x_Merge()
             match->m_Start1 = start1;
             match->m_AlnSeq2 = seq2;
             match->m_Start2 = start2;
-
+            
             // this match is used erase from seq1 list
             if ( !first_refseq ) {
                 seq1->m_MatchList.erase(match_list_iter1);
@@ -632,13 +631,14 @@ void CAlnMix::x_Merge()
                  
             // try to resolve the second row
             if (seq2) {
+                // save the orig seq2, since we may be modifying match below
+                CAlnMixSeq * orig_seq2 = seq2;
                 while (!x_SecondRowFits(match)) {
                     if (!seq2->m_ExtraRow) {
                         // create an extra row
                         CRef<CAlnMixSeq> row (new CAlnMixSeq);
                         row->m_BioseqHandle = seq2->m_BioseqHandle;
                         row->m_Factor = seq2->m_Factor;
-                        row->m_PositiveStrand = seq2->m_PositiveStrand;
                         row->m_SeqIndex = seq2->m_SeqIndex;
                         m_ExtraRows.push_back(row);
                         seq2->m_ExtraRow = row;
@@ -692,6 +692,9 @@ void CAlnMix::x_Merge()
                         start_i++;
                     }
                 }
+                // done with this match -- restore the original seq2; 
+                // (to be reused in case of multiple mixes)
+                match->m_AlnSeq2 = orig_seq2;
             }
         }
         
@@ -1351,6 +1354,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2003/04/14 18:03:19  todorov
+* reuse of matches bug fix
+*
 * Revision 1.41  2003/04/01 20:25:31  todorov
 * fixed iterator-- behaviour at the begin()
 *
