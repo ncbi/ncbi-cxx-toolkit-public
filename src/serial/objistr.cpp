@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  1999/10/18 20:21:41  vasilche
+* Enum values now have long type.
+* Fixed template generation for enums.
+*
 * Revision 1.31  1999/10/04 16:22:16  vasilche
 * Fixed bug with old ASN.1 structures.
 *
@@ -248,9 +252,9 @@ string CObjectIStream::ReadEnumName(void)
     return NcbiEmptyString;
 }
 
-int CObjectIStream::ReadEnumValue(void)
+long CObjectIStream::ReadEnumValue(void)
 {
-    int value;
+    long value;
     ReadStd(value);
     return value;
 }

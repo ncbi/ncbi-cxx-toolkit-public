@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/10/18 20:21:41  vasilche
+* Enum values now have long type.
+* Fixed template generation for enums.
+*
 * Revision 1.19  1999/10/08 21:00:43  vasilche
 * Implemented automatic generation of unnamed ASN.1 types.
 *
@@ -742,10 +746,10 @@ CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
     return eThisPointer;
 }
 
-int CObjectIStreamAsnBinary::ReadEnumValue(void)
+long CObjectIStreamAsnBinary::ReadEnumValue(void)
 {
     ExpectSysTag(eEnumerated);
-    int data;
+    long data;
     ReadStdSigned(*this, data);
     return data;
 }

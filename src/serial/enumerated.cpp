@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/10/18 20:21:40  vasilche
+* Enum values now have long type.
+* Fixed template generation for enums.
+*
 * Revision 1.1  1999/09/24 18:20:07  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -43,12 +47,16 @@
 
 BEGIN_NCBI_SCOPE
 
-CEnumeratedTypeInfo::CEnumeratedTypeInfo(const string& name, bool isInteger)
-    : CParent(name), m_Integer(isInteger)
+CEnumeratedTypeValues::CEnumeratedTypeValues(const string& name, bool isInteger)
+    : m_Name(name), m_Integer(isInteger)
 {
 }
 
-int CEnumeratedTypeInfo::FindValue(const string& name) const
+CEnumeratedTypeValues::~CEnumeratedTypeValues(void)
+{
+}
+
+long CEnumeratedTypeValues::FindValue(const string& name) const
 {
     TNameToValue::const_iterator i = m_NameToValue.find(name);
     if ( i == m_NameToValue.end() )
@@ -57,16 +65,23 @@ int CEnumeratedTypeInfo::FindValue(const string& name) const
     return i->second;
 }
 
-const string& CEnumeratedTypeInfo::FindName(TValue value) const
+const string& CEnumeratedTypeValues::FindName(long value,
+                                              bool allowBadValue) const
 {
     TValueToName::const_iterator i = m_ValueToName.find(value);
-    if ( i == m_ValueToName.end() )
-        THROW1_TRACE(runtime_error,
-                     "invalid value of enumerated type");
+    if ( i == m_ValueToName.end() ) {
+        if ( allowBadValue ) {
+            return NcbiEmptyString;
+        }
+        else {
+            THROW1_TRACE(runtime_error,
+                         "invalid value of enumerated type");
+        }
+    }
     return i->second;
 }
 
-void CEnumeratedTypeInfo::AddValue(const string& name, TValue value)
+void CEnumeratedTypeValues::AddValue(const string& name, long value)
 {
     if ( name.empty() )
         THROW1_TRACE(runtime_error, "empty enum value name");
@@ -84,33 +99,47 @@ void CEnumeratedTypeInfo::AddValue(const string& name, TValue value)
     }
 }
 
-void CEnumeratedTypeInfo::ReadData(CObjectIStream& in,
-                                   TObjectPtr object) const
+pair<long, bool> CEnumeratedTypeValues::ReadEnum(CObjectIStream& in) const
 {
     string name = in.ReadEnumName();
-    if ( name.empty() ) {
-        if ( m_Integer ) {
-            in.ReadStd(Get(object));
-        }
-        else {
-            FindName(Get(object) = in.ReadEnumValue());
-        }
+    if ( !name.empty() ) {
+        // enum element by name
+        return make_pair(FindValue(name), true);
     }
-    else {
-        Get(object) = FindValue(name);
+    else if ( !IsInteger() ) {
+        // enum element by value
+        long value = in.ReadEnumValue();
+        FindName(value, false);
+        return make_pair(value, true);
     }
+    // plain integer
+    return make_pair(0, false);
 }
 
-void CEnumeratedTypeInfo::WriteData(CObjectOStream& out,
-                                    TConstObjectPtr object) const
+bool CEnumeratedTypeValues::WriteEnum(CObjectOStream& out, long value) const
 {
-    const string& name = FindName(Get(object));
-    if ( !out.WriteEnumName(name) ) {
-        if ( m_Integer )
-            out.WriteStd(Get(object));
-        else
-            out.WriteEnumValue(Get(object));
+    const string& name = FindName(value, IsInteger());
+    if ( name.empty() ) {
+        // non enum value and (isInteger == true)
+        return false;
     }
+    if ( !out.WriteEnumName(name) )
+        out.WriteEnumValue(value);
+    return true;
+}
+
+TTypeInfo CreateEnumeratedTypeInfoForSize(size_t size, long /* dummy */,
+                                          const CEnumeratedTypeValues* enumInfo)
+{
+    if ( size == sizeof(int) )
+        return new CEnumeratedTypeInfoTmpl<int>(enumInfo);
+    if ( size == sizeof(short) )
+        return new CEnumeratedTypeInfoTmpl<short>(enumInfo);
+    if ( size == sizeof(char) )
+        return new CEnumeratedTypeInfoTmpl<char>(enumInfo);
+    if ( size == sizeof(long) )
+        return new CEnumeratedTypeInfoTmpl<long>(enumInfo);
+    THROW1_TRACE(runtime_error, "Illegal enum size: " + NStr::UIntToString(size));
 }
 
 END_NCBI_SCOPE
