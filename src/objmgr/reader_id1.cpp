@@ -71,10 +71,10 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId)
     server_output.Flush();
   }
 
-  CObjectIStream& server_input = *CObjectIStream::Open(eSerial_AsnBinary, *server, false);
+  auto_ptr<CObjectIStream> server_input(CObjectIStream::Open(eSerial_AsnBinary, *server, false));
   CID1server_back id1_reply;
 
-  server_input >> id1_reply;
+  *server_input >> id1_reply;
   gi = id1_reply.GetGotgi();
 
   if(gi == 0)
@@ -87,7 +87,7 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId)
     server_output << id1_request1;
     server_output.Flush();
   }
-  server_input >> id1_reply;
+  *server_input >> id1_reply;
 
   for(CTypeConstIterator<CSeq_hist_rec> it = ConstBegin(id1_reply); it;  ++it)
   {
@@ -221,12 +221,12 @@ streambuf *CId1Seqref::BlobStreamBuf(int, int, const CBlobClass &)
 
 CSeq_entry *CId1Blob::Seq_entry()
 {
-  CObjectIStream *m_ObjStream = CObjectIStream::Open(eSerial_AsnBinary, m_IStream, false);
+  auto_ptr<CObjectIStream> objStream(CObjectIStream::Open(eSerial_AsnBinary, m_IStream, false));
   CID1server_back id1_reply;
   bool clenup=false;
   try
     {
-      *m_ObjStream >> id1_reply;
+      *objStream >> id1_reply;
       static_cast<CId1StreamBuf *>(m_IStream.rdbuf())->Close();
     }
   catch ( exception e)
@@ -302,6 +302,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.13  2002/03/26 23:31:08  gouriano
+* memory leaks and garbage collector fix
+*
 * Revision 1.12  2002/03/26 18:48:58  butanaev
 * Fixed bug not deleting streambuf.
 *

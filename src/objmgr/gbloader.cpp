@@ -162,7 +162,6 @@ CGBDataLoader::DropTSE(const CSeq_entry *sep)
   _VERIFY(tse);
   x_DropTSEinfo(tse);
   if(m_SlowTraverseMode>0) m_Pool.GetMutex(tse).Unlock();
-  m_TseCount --;
   m_LookupMutex.Unlock();
   return true;
 }
@@ -269,6 +268,13 @@ CGBDataLoader::x_UpdateDropList(STSEinfo *tse)
       _VERIFY(m_UseListHead==0);
       m_UseListHead = m_UseListTail = tse; 
     }
+  {{ 
+    int c = 0;
+    STSEinfo *tse =  m_UseListHead, *t1=0;
+    while(tse) { c++; t1=tse; tse=tse->next; }
+    _VERIFY(t1== m_UseListTail);
+    _VERIFY(c ==  m_TseCount);
+  }}
 }
 
 void
@@ -289,10 +295,18 @@ CGBDataLoader::x_DropTSEinfo(STSEinfo *tse)
       m_Bs2Sr.erase(bsit);
     }
   if(m_UseListHead==tse) m_UseListHead=tse->next;
-  if(m_UseListTail==tse) m_UseListHead=tse->prev;
+  if(m_UseListTail==tse) m_UseListTail=tse->prev;
   if(tse->next) tse->next->prev=tse->prev;
   if(tse->prev) tse->prev->next=tse->next;
   delete tse;
+  m_TseCount --;
+  {{ 
+    int c = 0;
+    STSEinfo *tse =  m_UseListHead, *t1=0;
+    while(tse) { c++; t1=tse; tse=tse->next; }
+    _VERIFY(t1== m_UseListTail);
+    _VERIFY(c ==  m_TseCount);
+  }}
 }
 
 void
@@ -300,6 +314,14 @@ CGBDataLoader::x_GC(void)
 {
   // LOG_POST( "X_GC " << m_TseCount << "," << m_TseGC_Threshhold << "," << m_InvokeGC);
   // dirty read - but that ok for garbage collector
+  {{ 
+    CMutexGuard x(m_LookupMutex);
+    int c = 0;
+    STSEinfo *tse =  m_UseListHead, *t1=0;
+    while(tse) { c++; t1=tse; tse=tse->next; }
+    _VERIFY(t1== m_UseListTail);
+    _VERIFY(c ==  m_TseCount);
+  }}
   if(m_TseCount<m_TseGC_Threshhold) return;
   if(!m_InvokeGC) return ;
   LOG_POST( "X_GC " << m_TseCount);
@@ -653,6 +675,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/03/26 23:31:08  gouriano
+* memory leaks and garbage collector fix
+*
 * Revision 1.14  2002/03/26 15:39:24  kimelman
 * GC fixes
 *
