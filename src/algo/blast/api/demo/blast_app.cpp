@@ -302,12 +302,12 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptions& opt,
     // The next 3 apply to nucleotide searches only
     string program = args["program"].AsString();
     if (program == "blastn") {
-        opt.SetVariableWordsize(args["varword"].AsBoolean());
+        opt.SetVariableWordSize(args["varword"].AsBoolean());
         switch(args["scantype"].AsInteger()) {
         case 1:
             opt.SetSeedExtensionMethod(eRightAndLeft);
             opt.SetScanStep(CalculateBestStride(opt.GetWordSize(),
-                                                opt.GetVariableWordsize(), 
+                                                opt.GetVariableWordSize(), 
                                                 opt.GetLookupTableType()));
             break;
         default:
@@ -383,7 +383,7 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptions& opt,
   
     if ((program == "tblastn" || program == "tblastx") &&
         args["dbgencode"].AsInteger() != BLAST_GENETIC_CODE) {
-        opt.SetDbGeneticCodeAndStr(args["dbgencode"].AsInteger());
+        opt.SetDbGeneticCode(args["dbgencode"].AsInteger());
     }
 
     if (args["maxintron"].AsInteger()) {
