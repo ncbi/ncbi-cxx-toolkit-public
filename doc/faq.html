@@ -34,6 +34,9 @@ symbols, unfound libraries, etc., and nothing seems to help out much</a></li>
 
 <li><a href="#ref_WhichIncludeFile">Which include file should be used in *.cpp files, <i>class</i>.hpp or <i>class_</i>.hpp?</a></li>
 
+<li><a href="#ref_DBX_Sources">Debugger (DBX) warns it
+<i>`cannot find file "/home/coremake/c++/foobar.cpp"'</i>, then it does not show source code</a></li>
+
 <li><a href="#ref_AddingASN">How to add new ASN.1 module from the C Toolkit to the C++ Toolkit?</a></li>
 
 </ol>
@@ -148,6 +151,29 @@ See <a href = "programming_manual/usrtypeinfo.html"><b>User-defined Type Informa
 
 <hr>
 <h4><a NAME="ref_WhichIncludeFile"></a>Which include file should be used in *.cpp files, <i>class</i>.hpp or <i>class_</i>.hpp?</h4>Include the <i>class</i>.hpp (file without underscore). Never instantiate or use a class of the form C*_Base directly. Instead use the C* form which inherits from the C*_Base class (e.g., don't use CSeq_id_Base directly -- use CSeq_id instead).
+
+
+
+
+
+<hr><!-- **************************************************************** -->
+<h4>
+<a NAME="ref_DBX_Sources">Debugger (DBX) warns it
+<i>`cannot find file "/home/coremake/c++/foobar.cpp"'</i>, then it does not show source code</a></i></h4>
+
+This happens when you link to the public C++ Toolkit libraries
+(from <i>"$NCBI/c++/*/lib/"</i>),
+which are built on other hosts and thus hard-coded with the
+source paths on these other hosts. All you have to do is to
+point DBX to the public sources (at <i>"$NCBI/c++"</i>) by
+just adding to your DBX resource file (<i>~/.dbxrc</i>) the following line:
+<br>
+<pre>
+  pathmap /home/coremake/c++ /netopt/ncbi_tools/c++
+</pre>
+
+
+
 <hr><!-- **************************************************************** -->
 <h4>
 <a NAME="ref_AddingASN">How to add new ASN.1 module from the C Toolkit to the C++ Toolkit?</a></i></h4>
