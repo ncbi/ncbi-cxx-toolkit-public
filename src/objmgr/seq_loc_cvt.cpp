@@ -209,7 +209,6 @@ void CSeq_loc_Conversion::SetDstLoc(CRef<CSeq_loc>* dst)
 {
     CSeq_loc* loc = 0;
     if ( !(*dst) ) {
-        _ASSERT(IsSpecialLoc());
         switch ( m_LastType ) {
         case eMappedObjType_Seq_interval:
             dst->Reset(loc = new CSeq_loc);
@@ -218,6 +217,9 @@ void CSeq_loc_Conversion::SetDstLoc(CRef<CSeq_loc>* dst)
         case eMappedObjType_Seq_point:
             dst->Reset(loc = new CSeq_loc);
             loc->SetPnt(*GetDstPoint());
+            break;
+        default:
+            _ASSERT(0);
             break;
         }
     }
@@ -418,6 +420,9 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
         ref.SetMappedSeq_align_Mapper(mapped_align.GetPointerOrNull());
         return;
     }
+    default:
+        _ASSERT(0);
+        break;
     }
     SetMappedLocation(ref, loctype);
 }
@@ -1031,6 +1036,9 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
         ref.SetMappedSeq_align_Mapper(mapped_align.GetPointerOrNull());
         break;
     }
+    default:
+        _ASSERT(0);
+        break;
     }
     ref.SetProduct(loctype == CSeq_loc_Conversion::eProduct);
     ref.SetPartial(m_Partial);
@@ -1322,6 +1330,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/02/02 14:44:54  vasilche
+* Removed several compilation warnings.
+*
 * Revision 1.15  2004/01/30 15:25:45  grichenk
 * Fixed alignments mapping and sorting
 *
