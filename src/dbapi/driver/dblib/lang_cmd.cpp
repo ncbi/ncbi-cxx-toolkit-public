@@ -28,6 +28,7 @@
  * File Description:  DBLib language command
  *
  */
+#include <ncbi_pch.hpp>
 
 #ifndef USE_MS_DBLIB
 #  include <dbapi/driver/dblib/interfaces.hpp>
@@ -464,6 +465,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/05/18 18:30:36  gorelenk
+ * PCH <ncbi_pch.hpp> moved to correct place .
+ *
  * Revision 1.13  2003/06/05 16:01:13  soussov
  * adds code for DumpResults and for the dumped results processing
  *

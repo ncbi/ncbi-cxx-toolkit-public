@@ -28,6 +28,7 @@
  * File Description:  DBLib RPC command
  *
  */
+#include <ncbi_pch.hpp>
 
 #ifndef USE_MS_DBLIB
 #  include <dbapi/driver/dblib/interfaces.hpp>
@@ -36,7 +37,6 @@
 #  include <dbapi/driver/msdblib/interfaces.hpp>
 #  include <dbapi/driver/msdblib/interfaces_p.hpp>
 #endif
-#include <ncbi_pch.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
 
@@ -420,6 +420,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/05/18 18:30:37  gorelenk
+ * PCH <ncbi_pch.hpp> moved to correct place .
+ *
  * Revision 1.12  2004/05/17 21:12:41  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
