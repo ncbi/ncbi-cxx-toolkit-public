@@ -416,9 +416,21 @@ bool CAppNWA::x_ReadFastaFile (const string& filename, string* seqname,
 
 END_NCBI_SCOPE
 
+
+USING_NCBI_SCOPE;
+
+int main(int argc, const char* argv[]) 
+{
+    return CAppNWA().AppMain(argc, argv, 0, eDS_Default, 0);
+}
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/09/10 13:39:58  kapustin
+ * Move code from starter.cpp to nwa.cpp. Remove starter.cpp
+ *
  * Revision 1.27  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *

@@ -7,7 +7,7 @@
 #################################
 
 APP = demo_nwa
-SRC = nwa starter
+SRC = nwa
 
 LIB = xalgoalign tables $(OBJMGR_LIBS:dbapi_driver=dbapi_driver-static)
 
