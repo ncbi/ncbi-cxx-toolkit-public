@@ -737,13 +737,12 @@ Int2 LookupTableOptionsNew(EBlastProgramType program, LookupTableOptions* *optio
  * @param word_size Number of matched residues in an initial word [in]
  * @param variable_wordsize Are only full bytes of a compressed sequence 
  *        checked to find initial words? [in]
- * @param use_pssm Use PSSM rather than (protein) query to build lookup table.
  */
 NCBI_XBLAST_EXPORT
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    EBlastProgramType program, Boolean is_megablast, Int4 threshold,
-   Int4 word_size, Boolean variable_wordsize, Boolean use_pssm);
+   Int4 word_size, Boolean variable_wordsize);
 
 
 /** Deallocates memory for LookupTableOptions*.

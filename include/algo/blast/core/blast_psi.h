@@ -45,7 +45,8 @@ extern "C" {
  * sequence alignment data structure
  */
 typedef struct PSIMsaCell {
-    Uint1   letter;             /**< Preferred letter at this position */
+    Uint1   letter;             /**< Preferred letter at this position, in
+                                  ncbistdaa encoding */
     Boolean is_aligned;         /**< Is this letter part of the alignment? */
 } PSIMsaCell;
 
