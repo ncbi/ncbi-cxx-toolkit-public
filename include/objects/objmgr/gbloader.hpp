@@ -54,7 +54,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 #if !defined(NDEBUG) && defined(DEBUG_SYNC)
-#  if defined(_REENTRANT)
+#  if defined(NCBI_THREADS)
 #    define GBLOG_POST(x) LOG_POST(setw(3) << CThread::GetSelf() << ":: " << x)
 #  else
 #    define GBLOG_POST(x) LOG_POST("0:: " << x)
@@ -108,7 +108,7 @@ private:
 
 class NCBI_XOBJMGR_EXPORT CMutexPool
 {
-#if defined(_REENTRANT)
+#if defined(NCBI_THREADS)
   int         m_size;
   CMutex     *m_Locks;
   int        *spread;
@@ -116,7 +116,7 @@ class NCBI_XOBJMGR_EXPORT CMutexPool
   static CMutex sm_Lock;
 #endif
 public:
-#if defined(_REENTRANT)
+#if defined(NCBI_THREADS)
   CMutexPool();
   ~CMutexPool(void);
   void SetSize(int size);
@@ -233,6 +233,10 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.29  2003/03/03 20:34:51  vasilche
+ * Added NCBI_THREADS macro - it's opposite to NCBI_NO_THREADS.
+ * Avoid using _REENTRANT macro - use NCBI_THREADS instead.
+ *
  * Revision 1.28  2003/03/01 22:26:07  kimelman
  * performance fixes
  *

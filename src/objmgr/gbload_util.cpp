@@ -108,7 +108,7 @@ CTimer::NeedCalibration()
 // MutexPool
 //
 
-#if defined(_REENTRANT)
+#if defined(NCBI_THREADS)
 CMutexPool::CMutexPool()
 {
   m_size =0;
@@ -162,7 +162,7 @@ CGBLGuard::~CGBLGuard()
   Switch(m_orig);
 }
 
-#if defined(_REENTRANT)
+#if defined(NCBI_THREADS)
 void CGBLGuard::Select(int s)
 {
   if(m_current==eMain) m_select=s;
@@ -269,13 +269,17 @@ void CGBLGuard::Switch(EState newstate)
     }
   runtime_error("CGBLGuard::Switch - state desynchronized");
 }
-#endif // if(_REENTRANT)	
+#endif // if(NCBI_THREADS)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/03/03 20:34:51  vasilche
+* Added NCBI_THREADS macro - it's opposite to NCBI_NO_THREADS.
+* Avoid using _REENTRANT macro - use NCBI_THREADS instead.
+*
 * Revision 1.12  2003/03/01 22:26:56  kimelman
 * performance fixes
 *

@@ -44,6 +44,7 @@
 
 // threads configuration
 #undef NCBI_NO_THREADS
+#undef NCBI_THREADS
 #undef NCBI_POSIX_THREADS
 #undef NCBI_WIN32_THREADS
 
@@ -57,6 +58,10 @@
 #  endif
 #else
 #  define NCBI_NO_THREADS
+#endif
+
+#if !defined(NCBI_NO_THREADS)
+#  define NCBI_THREADS
 #endif
 
 
@@ -141,6 +146,10 @@ typedef BIG_TYPE Ncbi_BigScalar;
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/03/03 20:34:50  vasilche
+ * Added NCBI_THREADS macro - it's opposite to NCBI_NO_THREADS.
+ * Avoid using _REENTRANT macro - use NCBI_THREADS instead.
+ *
  * Revision 1.10  2002/09/20 14:13:51  vasilche
  * Fixed inconsistency of NCBI_*_THREADS macros
  *

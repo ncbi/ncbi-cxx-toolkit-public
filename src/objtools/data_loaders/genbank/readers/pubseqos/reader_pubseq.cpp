@@ -82,7 +82,7 @@ int CPubseqSeqref::Compare(const CSeqref &seqRef,EMatchLevel ml) const
 }
 
 
-#if !defined(HAVE_SYBASE_REENTRANT) && defined(_REENTRANT)
+#if !defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
 // we have non MT-safe library used in MT application
 DEFINE_STATIC_MUTEX(s_readers_mutex);
 static int    s_pubseq_readers=0;
@@ -94,7 +94,7 @@ CPubseqReader::CPubseqReader(unsigned noConn,const string& server,const string& 
 #if !defined(HAVE_SYBASE_REENTRANT)
   noConn=1;
 #endif
-#if defined(_REENTRANT) && !defined(HAVE_SYBASE_REENTRANT)
+#if defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT)
   {{
     CMutexGuard g(s_readers_mutex);
     if(s_pubseq_readers>0)
@@ -113,7 +113,7 @@ CPubseqReader::~CPubseqReader()
   for(unsigned i = 0; i < m_Pool.size(); ++i)
     delete m_Pool[i];
 
-#if !defined(HAVE_SYBASE_REENTRANT) && defined(_REENTRANT)
+#if !defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
   {{
     CMutexGuard g(s_readers_mutex);
     s_pubseq_readers--;
@@ -148,7 +148,7 @@ CDB_Connection *CPubseqReader::NewConn()
     if(! createContextFunc)
       {
         LOG_POST(errmsg);
-#if defined(HAVE_SYBASE_REENTRANT) && defined(_REENTRANT)
+#if defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
         throw runtime_error("No ctlib available");
 #else
         createContextFunc = drvMgr.GetDriver("dblib",&errmsg);
@@ -434,6 +434,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.21  2003/03/03 20:34:51  vasilche
+* Added NCBI_THREADS macro - it's opposite to NCBI_NO_THREADS.
+* Avoid using _REENTRANT macro - use NCBI_THREADS instead.
+*
 * Revision 1.20  2003/03/01 22:26:56  kimelman
 * performance fixes
 *

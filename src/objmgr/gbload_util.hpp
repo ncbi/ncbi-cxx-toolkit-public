@@ -75,7 +75,7 @@ public:
   
 private:
   
-#if defined (_REENTRANT)
+#if defined (NCBI_THREADS)
   void MLock();
   void MUnlock();
   void PLock();
@@ -102,6 +102,10 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.4  2003/03/03 20:34:51  vasilche
+ * Added NCBI_THREADS macro - it's opposite to NCBI_NO_THREADS.
+ * Avoid using _REENTRANT macro - use NCBI_THREADS instead.
+ *
  * Revision 1.3  2003/03/01 22:26:56  kimelman
  * performance fixes
  *

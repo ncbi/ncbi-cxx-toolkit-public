@@ -445,7 +445,7 @@ CGBDataLoader::GC(void)
             m_InvokeGC=false;
         }
         g.Lock();
-#if defined(_REENTRANT)
+#if defined(NCBI_THREADS)
         int i=0;
         for(cur_tse = m_UseListHead;cur_tse && i<skip; ++i) cur_tse = cur_tse->next ;
 #endif
@@ -839,6 +839,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2003/03/03 20:34:51  vasilche
+* Added NCBI_THREADS macro - it's opposite to NCBI_NO_THREADS.
+* Avoid using _REENTRANT macro - use NCBI_THREADS instead.
+*
 * Revision 1.51  2003/03/01 23:07:42  kimelman
 * bugfix: MTsafe
 *

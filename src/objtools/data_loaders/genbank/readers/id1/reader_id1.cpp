@@ -286,7 +286,7 @@ int CId1Seqref::Compare(const CSeqref &seqRef,EMatchLevel ml) const
 
 CId1Reader::CId1Reader(unsigned noConn)
 {
-#if !defined(_REENTRANT)
+#if !defined(NCBI_THREADS)
   noConn=1;
 #endif
   for(unsigned i = 0; i < noConn; ++i)
@@ -338,6 +338,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.28  2003/03/03 20:34:51  vasilche
+* Added NCBI_THREADS macro - it's opposite to NCBI_NO_THREADS.
+* Avoid using _REENTRANT macro - use NCBI_THREADS instead.
+*
 * Revision 1.27  2003/03/01 22:26:56  kimelman
 * performance fixes
 *
