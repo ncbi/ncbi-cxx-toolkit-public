@@ -19,7 +19,7 @@ in something like:
 
 <li><a href="#ref_CannotFindSer">The linker complains about undefined symbols Nlm_MemGet, AsnIoNew, Nlm_MemFree, Nlm_MemCopy, and AsnIoClose in libxser.a"</a></li>
 
-<li><a href="#ref_CannotFindObjectSymbol">The linker complains about undefined symbols of the following form:ncbi::objects::*::*</a></li>
+<li><a href="#ref_CannotFindObjectSymbol">How does one find the libraries to link when the linker complains of undefined symbols</a></li>
 
 <li>
 <a href="#ref_HowMakeDep">MAKE complains it does not know "<i>how to make
@@ -60,13 +60,29 @@ LIBS = \
 </pre>
 If you are using the make file created by new_project.sh, then just uncomment the applicable lines.<br><br>
 
-<hr><h4><a NAME="ref_CannotFindObjectSymbol"></a>The linker complains about undefined symbols of the following form: ncbi::objects::*::*</h4>
+<hr><h4><a NAME="ref_CannotFindObjectSymbol"></a>How does one find the libraries to link when the linker complains of undefined symbols</h4>
 For example, the linker may complain about the symbol <i>ncbi::objects::CSeq_id::GetTypeInfo(void)</i> being undefined. 
 The cause of this problem is that the applicable objects library has not been linked into the application. You 
 determine the applicable objects library as follows: <br><br>1) Look for the *.hpp file that declares the applicable class
 (e.g., for CSeq_id this will be include/objects/seqloc/Seq_id.hpp). This can be done by going to the source browser and doing
 an identifier search on the class name (e.g., CSeq_id) and looking in the <b>Defined as a class</b> section for the path name. <br><br>2) Note the name of the sub directory in which the *.hpp file is located (in this case the sub directory is seqloc). <br><br>3) The name of the library to link is determined from the sub directory name. In the make file add the library name to the LIB macro (e.g., LIB = <b>seqloc</b> xncbi) or add -l<b>subdir</b> (e.g.,
--lseqloc) to the command line of the compile command. <br><br>Note: The C++ toolkit libraries have dependencies on each other. For example, symbols defined in seqfeat (libseqfeat.a) are referenced in library mmdb1 (libmmdb1.a). In this case you most link seqfeat after mmdb1.
+-lseqloc) to the command line of the compile command. 
+<br><br>The above describes how to find the libraries for classes in sub directories of the object directory. A similar techniques works for other classes also. However, in a some cases, the library name is a variant on the sub directory name. These variants are summarized below.
+<table>
+<tr><th align=left>Directory<th align=left>Library
+<tr><td>corelib/test<td>test_mt
+<tr><td>corelib<td>xncbi
+<tr><td>ctools/asn<td>xasn
+<tr><td>cgi<td>xcgi or xfcgi
+<tr><td>connect<td>xconnect
+<tr><td>connect/test<td>xconntest
+<tr><td>ctools<td>xctools
+<tr><td>html<td>xhtml
+<tr><td>objects/objmgr<td>xobjmgr
+<tr><td>serial<td>xser
+<tr><td>util<td>xutil
+</table>
+<br><br>Note: The C++ toolkit libraries have dependencies on each other. For example, symbols defined in seqfeat (libseqfeat.a) are referenced in library mmdb1 (libmmdb1.a). In this case you most link seqfeat after mmdb1.
  
 <hr>
 <h4>
@@ -98,7 +114,7 @@ BEGIN_*_INFO(...)
   ...
 }
 </pre>
-See <b>User-defined Type Information</b> in the <i>Programming Manual</i> for more information.
+See <a href = "programming_manual/usrtypeinfo.html"><b>User-defined Type Information</b> in the <i>Programming Manual</i></a> for more information.
 
 <hr>
 <h4><a NAME="ref_WhichIncludeFile"></a>Which include file should be used in *.cpp files, <i>class</i>.hpp or <i>class_</i>.hpp?</h4>Include the <i>class</i>.hpp (file without underscore). Never instantiate or use a class of the form C*_Base directly. Instead use the C* form which inherits from the C*_Base class (e.g., don't use CSeq_id_Base directly--use CSeq_id instead).
