@@ -55,6 +55,8 @@ class CSocket;
 /// After any Put, Get transactions connection socket
 /// is closed (part of NetCache protocol implemenation)
 ///
+/// @sa NetCache_ConfigureWithLB
+///
 class NCBI_XCONNECT_EXPORT CNetCacheClient
 {
 public:
@@ -87,12 +89,24 @@ public:
 
     /// Set communication timeout (ReadWrite)
     void SetCommunicationTimeout(const STimeout& to);
+    STimeout& SetCommunicationTimeout() { return m_Timeout; }
+
+    /// Set socket (connected to the server)
+    ///
+    /// @param sock
+    ///    Connected socket to the server. 
+    ///    Communication timeouts of the socket won't be changed
+    /// @param own
+    ///    Socket ownership
+    ///
+    void SetSocket(CSocket* sock, EOwnership own = eTakeOwnership);
 
 
     /// Put BLOB to server
     ///
     /// @param time_to_live
-    ///    Timeout value in seconds. 0 - server side default assumed.
+    ///    BLOB time to live value in seconds. 
+    ///    0 - server side default assumed.
     /// 
     /// Please note that time_to_live is controlled by the server-side
     /// parameter so if you set time_to_live higher than server-side value,
@@ -149,14 +163,19 @@ public:
                         size_t*        n_read = 0,
                         size_t*        blob_size = 0);
 
-    /// Shutdown the server daemon.
-    void ShutdownServer();
 
     /// Connects to server to make sure it is running.
     bool IsAlive();
 
     /// Return version string
     string ServerVersion();
+
+protected:
+    /// Shutdown the server daemon.
+    ///
+    /// @note
+    ///  Protected to avoid a temptation to call it from time to time. :)
+    void ShutdownServer();
 
 protected:
     bool ReadStr(CSocket& sock, string* str);
@@ -173,6 +192,9 @@ protected:
     /// tries to connect to the server specified in the BLOB key
     /// (all infomation is encoded in there)
     void CheckConnect(const string& key);
+
+    /// Extract host/port info from connected socket
+    void x_RestoreHostPort();
 private:
     CNetCacheClient(const CNetCacheClient&);
     CNetCacheClient& operator=(const CNetCacheClient&);
@@ -185,6 +207,22 @@ private:
     string         m_ClientName;
     STimeout       m_Timeout;
 };
+
+
+/// Configure NetCache client using NCBI load balancer
+///
+/// Functions retrieves current status of netcache servers, then connects
+/// netcache client to the most available netcache machine.
+///
+/// @note Please note that it should be done only when we place a new
+/// BLOB to the netcache storage. When retriving you should directly connect
+/// to the service without any load balancing 
+/// (service infomation encoded in the BLOB key)
+
+extern NCBI_XCONNECT_EXPORT
+void NetCache_ConfigureWithLB(CNetCacheClient* nc_client, 
+                              const string&    service_name);
+
 
 
 /// NetCache internal exception
@@ -249,6 +287,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/12/20 13:13:14  kuznets
+ * +NetCache_ConfigureWithLB
+ *
  * Revision 1.15  2004/12/16 17:32:45  kuznets
  * + methods to change comm.timeouts
  *
