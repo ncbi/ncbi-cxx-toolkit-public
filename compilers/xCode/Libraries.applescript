@@ -168,7 +168,7 @@ property xobjwrite : {name:"xobjwrite", path:"objtools:writers"}
 
 
 (* GUI Libraries *)
-property gui__core : {name:"gui__core", path:"gui:core", exc:{"GBProject.cpp", "GBWorkspace.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "FolderInfo.cpp", "ProjectFolder.cpp", "WorkspaceFolder.cpp", "ProjectDescr.cpp"}}
+property gui__core : {name:"gui__core", path:"gui:core", exc:{"GBProjectHandle.cpp", "GBProject.cpp", "GBWorkspace.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "FolderInfo.cpp", "ProjectFolder.cpp", "WorkspaceFolder.cpp", "ProjectDescr.cpp"}}
 property gui__utils : {name:"gui__utils", path:"gui:utils"}
 property gui_objutils : {name:"gui_objutils", path:"gui:objutils"}
 property gui_project : {name:"gui_project", path:"gui:core", inc:{"gui_project__.cpp", "gui_project___.cpp"}, asn1:true}
@@ -241,7 +241,7 @@ property demo_seqgraphic : {name:"demo_seqgraphic", path:"gui:widgets:seq_graphi
 
 property demo_hitmatrix : {name:"demo_hitmatrix", path:"gui:widgets:hit_matrix:demo", dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_xloader_genbank gui_core gui_utils gui_dialogs gui_widgets gui_widgets_aln gui_config" & gui2link}
 
-property gbench : {name:"gbench", path:"gui:gbench", exc:{"windows_registry.cpp"}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_config" & gui2link, gbench:true}
+property gbench : {name:"gbench", path:"gui:gbench", exc:{"windows_registry.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_config" & gui2link, gbench:true}
 property gbench_plugin_scan : {name:"gbench_plugin_scan", path:"gui:gbench:gbench_plugin_scan", dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils" & FLTK_LIBS & Z_LIBS & IMG_LIBS}
 
 
@@ -279,7 +279,7 @@ property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_open
 property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncbi_core ncbi_seq ncbi_seqext"}
 property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core"}
 property gui_widgets : {name:"gui_widgets", libs:{w_toplevel, w_workspace, w_fltk, w_gl, w_flu, w_fltable}, dep:"gui_utils ncbi_image ncbi_core"}
-property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg, gui_dlg_entry_form, gui_dlg_multi_col, gui_dlg_registry, gui_dlg_progress, gui_dlg_config}, dep:"gui_config gui_utils gui_widgets ncbi_core ncbi_seq ncbi_seqext"}
+property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg, gui_dlg_entry_form, gui_dlg_multi_col, gui_dlg_progress, gui_dlg_config}, dep:"gui_config gui_utils gui_widgets ncbi_core ncbi_seq ncbi_seqext"} -- gui_dlg_registry
 property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext"}
 property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_utils gui_graph gui_widgets"}
 property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_widgets"}
@@ -293,7 +293,7 @@ property algo_gnomon : {name:"algo_gnomon", libs:{gui_algo_gnomon}, dep:"gui_cor
 property algo_init : {name:"algo_init", libs:{gui_ncbi_init}, dep:"gui_core gui_utils ncbi_bdb ncbi_core ncbi_lds ncbi_seq ncbi_seqext ncbi_xloader_genbank ncbi_xloader_lds ncbi_xreader ncbi_xreader_id1 ncbi_xreader_pubseqos" & gui2link, bundle:true}
 property algo_linkout : {name:"algo_linkout", libs:{gui_algo_linkout}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext" & gui2link, bundle:true}
 property algo_phylo : {name:"algo_phylo", libs:{gui_algo_phylo}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_seqext" & gui2link, bundle:true}
-property algo_validator : {name:"algo_validator", libs:{gui_algo_validator}, dep:"gui_core ncbi_core ncbi_seq ncbi_validator" & gui2link, bundle:true}
+property algo_validator : {name:"algo_validator", libs:{gui_algo_validator}, dep:"gui_core ncbi_core ncbi_seq ncbi_seqext ncbi_validator" & gui2link, bundle:true}
 property dload_basic : {name:"dload_basic", libs:{gui_doc_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets ncbi_algo ncbi_bdb ncbi_core ncbi_lds ncbi_misc ncbi_seq ncbi_seqext ncbi_xloader_genbank" & gui2link, bundle:true}
 property dload_table : {name:"dload_table", libs:{gui_doc_table}, dep:"gui_core gui_dialogs gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_sqlite ncbi_xloader_table" & gui2link, bundle:true}
 property view_align : {name:"view_align", libs:{gui_view_align}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_widgets gui_widgets_aln" & gui2link, bundle:true}
@@ -333,6 +333,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/07/22 16:04:33  lebedev
+ * added dependency on ncbi_seqext for validator
+ *
  * Revision 1.10  2004/07/19 16:02:43  lebedev
  * dbapi_cache added
  *
