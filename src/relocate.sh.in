@@ -91,8 +91,8 @@ gbench_move=$gbench_dir/bin/move-gbench.sh
 
 if [ -x $gbench_move ]; then
    echo GBench relocation started...
-   echo $gbench_move $gbench_dir
-   $gbench_move $gbench_dir
+   echo $gbench_move --extra-sed "$extra_sed" $gbench_dir
+   $gbench_move --extra-sed "$extra_sed" $gbench_dir
 fi
 
 echo "Done."
