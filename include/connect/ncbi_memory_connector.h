@@ -36,6 +36,7 @@
  *
  */
 
+#include <connect/ncbi_buffer.h>
 #include <connect/ncbi_connector.h>
 
 
@@ -57,6 +58,9 @@ extern "C" {
 extern NCBI_XCONNECT_EXPORT CONNECTOR MEMORY_CreateConnector(MT_LOCK lock);
 
 
+extern NCBI_XCONNECT_EXPORT CONNECTOR MEMORY_CreateConnectorEx(BUF     buf,
+                                                               MT_LOCK lock);
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
@@ -68,6 +72,9 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR MEMORY_CreateConnector(MT_LOCK lock);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2004/10/27 18:44:14  lavr
+ * +MEMORY_CreateConnectorEx()
+ *
  * Revision 6.4  2003/04/09 19:05:45  siyan
  * Added doxygen support
  *
