@@ -95,8 +95,16 @@ public:
     Uint4 GetNumSeqs(const CSeqDBVolSet & volset) const;
     
     // Compute sequence count by recursive appending of subnodes
+    // values; this version disables alias file overrides.
+    Uint4 GetNumOIDs(const CSeqDBVolSet & volset) const;
+    
+    // Compute total length by recursive appending of subnodes
     // values until value specification or volume is reached.
     Uint8 GetTotalLength(const CSeqDBVolSet & volset) const;
+    
+    // Compute total length by recursive appending of subnodes
+    // values; this version disables alias file overrides.
+    Uint8 GetVolumeLength(const CSeqDBVolSet & volset) const;
     
     // Get the membership bit if there is one.
     Uint4 GetMembBit(const CSeqDBVolSet & volset) const;
@@ -182,10 +190,22 @@ public:
         return m_Node.GetNumSeqs(volset);
     }
     
+    // Add our volumes and our subnode's seq counts.
+    Uint4 GetNumOIDs(const CSeqDBVolSet & volset) const
+    {
+        return m_Node.GetNumOIDs(volset);
+    }
+    
     // Add our volumes and our subnode's base lengths.
     Uint8 GetTotalLength(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetTotalLength(volset);
+    }
+    
+    // Add our volumes and our subnode's base lengths.
+    Uint8 GetVolumeLength(const CSeqDBVolSet & volset) const
+    {
+        return m_Node.GetVolumeLength(volset);
     }
     
     // Get the membership bit if there is one.

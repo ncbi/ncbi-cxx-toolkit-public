@@ -462,7 +462,7 @@ public:
     
     virtual void Accumulate(const CSeqDBVol & vol)
     {
-        m_Value += vol.GetNumSeqs();
+        m_Value += vol.GetNumOIDs();
     }
     
     virtual void AddString(const string & value)
@@ -470,13 +470,25 @@ public:
         m_Value += NStr::StringToUInt(value);
     }
     
-    Uint4 GetNumSeqs(void) const
+    Uint4 GetNum(void) const
     {
         return m_Value;
     }
     
 private:
     Uint4 m_Value;
+};
+
+
+class CSeqDB_NOIDsWalker : public CSeqDB_NSeqsWalker {
+public:
+    virtual const char * GetFileKey(void) const
+    {
+        // Override to disable the key.  (The embedded spaces would
+        // break the parse, so the following non-key is safe.)
+        
+        return " no key ";
+    }
 };
 
 
@@ -494,7 +506,7 @@ public:
     
     virtual void Accumulate(const CSeqDBVol & vol)
     {
-        m_Value += vol.GetTotalLength();
+        m_Value += vol.GetVolumeLength();
     }
     
     virtual void AddString(const string & value)
@@ -502,13 +514,25 @@ public:
         m_Value += NStr::StringToUInt8(value);
     }
     
-    Uint8 GetTotalLength(void) const
+    Uint8 GetLength(void) const
     {
         return m_Value;
     }
     
 private:
     Uint8 m_Value;
+};
+
+
+class CSeqDB_VolumeLengthWalker : public CSeqDB_TotalLengthWalker {
+public:
+    virtual const char * GetFileKey(void) const
+    {
+        // Override to disable the key.  (The embedded spaces would
+        // break the parse, so the following non-key is safe.)
+        
+        return " no key ";
+    }
 };
 
 
@@ -574,8 +598,9 @@ CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker,
 
 void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
 {
-    TVarList::iterator oid_iter = m_Values.find(string("OIDLIST"));
-    TVarList::iterator db_iter  = m_Values.find(string("DBLIST"));
+    TVarList::iterator gilist_iter = m_Values.find(string("GILIST"));
+    TVarList::iterator oid_iter    = m_Values.find(string("OIDLIST"));
+    TVarList::iterator db_iter     = m_Values.find(string("DBLIST"));
     
     if ((oid_iter != m_Values.end()) &&
         (db_iter  != m_Values.end())) {
@@ -583,7 +608,13 @@ void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
         string vol_path (SeqDB_CombinePath(m_DBPath, (*db_iter).second));
         string mask_path(SeqDB_CombinePath(m_DBPath, (*oid_iter).second));
         
-        volset.AddMaskedVolume(vol_path, mask_path);
+        if (gilist_iter != m_Values.end()) {
+            string gilist_path(SeqDB_CombinePath(m_DBPath, (*oid_iter).second));
+            
+            volset.AddMaskedVolume(vol_path, mask_path, gilist_path);
+        } else {
+            volset.AddMaskedVolume(vol_path, mask_path);
+        }
         
         return;
     }
@@ -617,7 +648,15 @@ Uint4 CSeqDBAliasNode::GetNumSeqs(const CSeqDBVolSet & vols) const
     CSeqDB_NSeqsWalker walk;
     WalkNodes(& walk, vols);
     
-    return walk.GetNumSeqs();
+    return walk.GetNum();
+}
+
+Uint4 CSeqDBAliasNode::GetNumOIDs(const CSeqDBVolSet & vols) const
+{
+    CSeqDB_NOIDsWalker walk;
+    WalkNodes(& walk, vols);
+    
+    return walk.GetNum();
 }
 
 Uint8 CSeqDBAliasNode::GetTotalLength(const CSeqDBVolSet & volset) const
@@ -625,7 +664,15 @@ Uint8 CSeqDBAliasNode::GetTotalLength(const CSeqDBVolSet & volset) const
     CSeqDB_TotalLengthWalker walk;
     WalkNodes(& walk, volset);
     
-    return walk.GetTotalLength();
+    return walk.GetLength();
+}
+
+Uint8 CSeqDBAliasNode::GetVolumeLength(const CSeqDBVolSet & volset) const
+{
+    CSeqDB_VolumeLengthWalker walk;
+    WalkNodes(& walk, volset);
+    
+    return walk.GetLength();
 }
 
 Uint4 CSeqDBAliasNode::GetMembBit(const CSeqDBVolSet & volset) const
