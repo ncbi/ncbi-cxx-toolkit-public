@@ -132,7 +132,7 @@ int COMSSA::Run()
     CArgs args = GetArgs();
     _TRACE("omssa: initializing score");
     CSearch Search(false);
-    int retval = Search.InitBlast(args["d"].AsString().c_str(), true);
+    int retval = Search.InitBlast(args["d"].AsString().c_str(), false);
     if(retval) {
 	ERR_POST(Fatal << "ommsatest: unable to initialize blastdb, error " <<
 	    retval);
@@ -244,6 +244,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.5  2003/11/13 19:07:38  lewisg
+  bugs: iterate completely over nr, don't initialize blastdb by iteration
+
   Revision 1.4  2003/11/10 22:24:12  lewisg
   allow hitlist size to vary
 
