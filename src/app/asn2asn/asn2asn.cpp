@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/12/24 00:14:16  vakatov
+* Minor fix due to the changed NCBIARGS API
+*
 * Revision 1.34  2000/12/12 14:28:31  vasilche
 * Changed the way arguments are processed.
 *
@@ -321,7 +324,7 @@ void CAsn2Asn::Init(void)
     d->AddOptionalKey("l", "logFile",
                       "log errors to <logFile>",
                       CArgDescriptions::eOutputFile);
-    d->AddOptionalKey("c", "count",
+    d->AddDefaultKey("c", "count",
                       "perform command <count> times",
                       CArgDescriptions::eInteger, "1");
     
