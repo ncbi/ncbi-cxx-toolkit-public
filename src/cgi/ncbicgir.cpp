@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/07/18 20:18:36  lebedev
+* NCBI_OS_MAC: STDOUT_FILENO define added
+*
 * Revision 1.16  2002/07/11 14:22:59  gouriano
 * exceptions replaced by CNcbiException-type ones
 *
@@ -92,6 +95,11 @@
 
 #include <cgi/ncbicgir.hpp>
 #include <time.h>
+
+// Mac OS has unistd.h, but STDOUT_FILENO is not defined
+#ifdef NCBI_OS_MAC 
+#  define STDOUT_FILENO 1
+#endif
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>
