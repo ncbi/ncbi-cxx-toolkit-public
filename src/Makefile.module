@@ -20,7 +20,7 @@ purge_sources:
 	-rm $(FILES) *_Base.cpp $(INCLUDEDIR)/*_Base.hpp
 
 .NO_PARALLEL:
-$(FILES): $(ASNFILE) $(IMPFILES:%=$(top_srcdir)/src/%)
+$(FILES): $(ASNFILE) $(IMPFILES:%=$(top_srcdir)/src/%) $(DATATOOL)
 	$(DATATOOL) -m $(ASNFILE) $(IMPFILES:%=-M %) -oA -of $@ -or $(MODULE_PATH) -oR $(top_srcdir) -od $(MODULE).def
 
 makefiles: Makefile.in Makefile.$(MODULE).lib
@@ -43,6 +43,8 @@ Makefile.$(MODULE).lib: $(MODULEFILE)
 	) > $@
 
 $(MODULEFILE):
+
+$(MODULE).def:
 
 directories:
 	mkdir -p $(top_srcdir)/src/$(MODULE_PATH)
