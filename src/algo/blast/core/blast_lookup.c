@@ -33,16 +33,14 @@
 
 static char const rcsid[] = "$Id$";
 
-static NCBI_INLINE Int4 ComputeWordScore(Int4 ** matrix,
-				    Int4 wordsize,
-				    const Uint1* w1,
-				    const Uint1* w2,
-				    Boolean *exact);
+static void AddWordHits( LookupTable *lookup,
+			 Int4** matrix,
+			 Uint1* word,
+			 Int4 offset);
 
-static NCBI_INLINE Int4 ComputePSSMWordScore(Int4 ** matrix,
-				    Int4 wordsize,
-				    Int4 offset, 
-				    const Uint1* w1); 
+static void AddPSSMWordHits( LookupTable *lookup,
+			 Int4** matrix,
+			 Int4 offset);
 
 static NCBI_INLINE void  _ComputeIndex(Int4 wordsize,
 				  Int4 charsize,
@@ -458,10 +456,6 @@ Int4 MakeAllWordSequence(LookupTable* lookup)
 
 Int4 AddNeighboringWords(LookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk* query, Int4 offset)
 {
-  Uint1* s = lookup->neighbors;
-  Uint1* s_end=s + lookup->neighbors_length - lookup->wordsize;
-  Boolean exact=FALSE;
-  Int4 score;
   Uint1* w = NULL;
 
 
@@ -475,97 +469,178 @@ Int4 AddNeighboringWords(LookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk*
       return 0;
     }
   
-  while (s < s_end)
-    {
-      if (lookup->use_pssm)
-           score = ComputePSSMWordScore(matrix,lookup->wordsize,offset,s);
-      else
-           score = ComputeWordScore(matrix,lookup->wordsize,w,s,&exact);
-      
-      /*
-       * If the score is higher than the threshold or this is an exact
-       * match, add the word to the LUT.
-       */
-      
-      if (exact)
-	{
-        lookup->exact_matches++;
-        /*printf("exact match at offset %d\n",offset);*/
-        }
-        
-      if ((score >= lookup->threshold) && (!exact))
-	{
-        lookup->neighbor_matches++;
-        /*printf("neighbor match at offset %d\n",offset);*/
-        }
-        
-      if ( (score >= lookup->threshold) || exact )
-        BlastAaLookupAddWordHit(lookup,s,offset);
-      s ++;
-    }
+  if (lookup->use_pssm)
+      AddPSSMWordHits(lookup, matrix, offset);
+  else
+      AddWordHits(lookup, matrix, w, offset);
   return 0;
 }
 
-/**
- *  Compute the score of a pair of words using a subtitution matrix.
- *
- * @param matrix the substitution matrix [in]
- * @param wordsize the word size [in]
- * @param w1 the first word [in]
- * @param w2 the second word [in]
- * @param exact a pointer to a boolean which specifies whether or not this was an exact match or not.
- * @return The score of the pair of words.
- */
-static NCBI_INLINE Int4 ComputeWordScore(Int4 ** matrix,
-				    Int4 wordsize,
-				    const Uint1* w1, /* the first word */
-				    const Uint1* w2, /* the second word */
-				    Boolean *exact)
+static void AddWordHits(LookupTable* lookup, Int4** matrix, 
+			Uint1* word, Int4 offset)
 {
-Int4 i;
-Int4 score=0;
+  Uint1* s = lookup->neighbors;
+  Uint1* s_end=s + lookup->neighbors_length - lookup->wordsize;
+  Uint1* w = word;
+  Uint1 different;
+  Int4 score;
+  Int4 threshold = lookup->threshold;
+  Int4 i;
+  Int4* p0;
+  Int4* p1;
+  Int4* p2;
 
-*exact=TRUE;
+  /* For each group of 'wordsize' bytes starting at 'w', 
+   * add the group to the lookup table at each offset 's' if
+   * either
+   *    - w matches s, or 
+   *    - the score derived from aligning w and s is high enough
+   */
 
-for(i=0;i<wordsize;i++)
-  {
-    score += matrix[ w1[i] ][ w2[i] ];
-    if ( w1[i] != w2[i] )
-      *exact=FALSE;
-  }
- 
-return score;
+  switch (lookup->wordsize)
+    {
+      case 1:
+	p0 = matrix[w[0]];
+
+        while (s < s_end)
+          {
+            if ( (s[0] == w[0]) || (p0[s[0]] >= threshold) )
+                BlastAaLookupAddWordHit(lookup,s,offset);
+            s++;
+  	  }
+
+        break;
+
+      case 2:
+	p0 = matrix[w[0]];
+	p1 = matrix[w[1]];
+
+        while (s < s_end)
+          {
+            score = p0[s[0]] + p1[s[1]];
+	    different = (w[0] ^ s[0]) | (w[1] ^ s[1]);
+  
+            if ( !different || (score >= threshold) )
+                BlastAaLookupAddWordHit(lookup,s,offset);
+            s++;
+	  }
+
+        break;
+
+      case 3:
+	p0 = matrix[w[0]];
+	p1 = matrix[w[1]];
+	p2 = matrix[w[2]];
+
+        while (s < s_end)
+          {
+            score = p0[s[0]] + p1[s[1]] + p2[s[2]];
+	    different = (w[0] ^ s[0]) | (w[1] ^ s[1]) | (w[2] ^ s[2]);
+  
+            if ( !different || (score >= threshold) )
+                BlastAaLookupAddWordHit(lookup,s,offset);
+            s++;
+  	  }
+
+        break;
+
+      default:
+        while (s < s_end)
+          {
+            score = 0;
+            different = 0;
+            for (i = 0; i < lookup->wordsize; i++)
+              {
+                score += matrix[w[i]][s[i]];
+                different |= w[i] ^ s[i];
+              }
+  
+            if ( !different || (score >= threshold) )
+                BlastAaLookupAddWordHit(lookup,s,offset);
+            s++;
+  	  }
+
+        break;
+    }
 }
 
 
-/**
- *  Compute the score of a pair of words using a Position-Specific-Scoring-Matrix (PSSM)
- *  Used for PSI-BLAST as well as building RPS-BLAST databases.
- *
- * @param matrix the substitution matrix [in]
- * @param wordsize the word size [in]
- * @param offset of query (PSSM) word [in]
- * @param w1 the first word (to check for exact matches) [in]
- * @param w2 the second word [in]
- * @param exact a pointer to a boolean which specifies whether or not this was an exact match or not.
- * @return The score of the pair of words.
- */
-static NCBI_INLINE Int4 ComputePSSMWordScore(Int4 ** matrix,
-				    Int4 wordsize,
-				    Int4 offset, /* offset of query (PSSM) word. */
-				    const Uint1* w2 /* the second word */)
+static void AddPSSMWordHits(LookupTable* lookup, Int4** matrix, Int4 offset)
 {
-Int4 i;
-Int4 score=0;
+  Uint1* s = lookup->neighbors;
+  Uint1* s_end=s + lookup->neighbors_length - lookup->wordsize;
+  Int4 score;
+  Int4 threshold = lookup->threshold;
+  Int4 i;
+  Int4* p0;
+  Int4* p1;
+  Int4* p2;
 
+  /* Equivalent to AddWordHits(), except that the word score
+   * is derived from a Position-Specific Scoring Matrix (PSSM) 
+   */
 
-for(i=0;i<wordsize;i++)
-  {
-    score += matrix[offset+i][ w2[i] ];
-  }
- 
-return score;
+  switch (lookup->wordsize)
+    {
+      case 1:
+	p0 = matrix[offset];
+
+        while (s < s_end)
+          {
+            if (p0[s[0]] >= threshold)
+                BlastAaLookupAddWordHit(lookup,s,offset);
+            s++;
+  	  }
+
+        break;
+
+      case 2:
+	p0 = matrix[offset];
+	p1 = matrix[offset+1];
+
+        while (s < s_end)
+          {
+            score = p0[s[0]] + p1[s[1]];
+  
+            if (score >= threshold)
+                BlastAaLookupAddWordHit(lookup,s,offset);
+            s++;
+  	  }
+
+        break;
+
+      case 3:
+	p0 = matrix[offset];
+	p1 = matrix[offset + 1];
+	p2 = matrix[offset + 2];
+
+        while (s < s_end)
+          {
+            score = p0[s[0]] + p1[s[1]] + p2[s[2]];
+  
+            if (score >= threshold)
+                BlastAaLookupAddWordHit(lookup,s,offset);
+            s++;
+  	  }
+
+        break;
+
+      default:
+        while (s < s_end)
+          {
+            score = 0;
+            for(i=0;i<lookup->wordsize;i++)
+                score += matrix[offset + i][s[i]];
+  
+            if (score >= threshold)
+                BlastAaLookupAddWordHit(lookup,s,offset);
+            s++;
+  	  }
+
+        break;
+    }
 }
+
 
 /******************************************************
  *
