@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.156 2002/12/18 17:17:04 ucko Exp $
+#  $Id: configure.ac,v 1.157 2002/12/20 20:18:53 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -681,8 +681,6 @@ fi
 
 #### Set compiler prefix for non-native compilers
 case "$host_os:$compiler" in
-   linux*:GCC )
-      ;;
    *:GCC | *:KCC | *:ICC )
       compiler_pfx="${compiler}-" ;;
 esac

@@ -3542,8 +3542,6 @@ fi
 
 #### Set compiler prefix for non-native compilers
 case "$host_os:$compiler" in
-   linux*:GCC )
-      ;;
    *:GCC | *:KCC | *:ICC )
       compiler_pfx="${compiler}-" ;;
 esac
