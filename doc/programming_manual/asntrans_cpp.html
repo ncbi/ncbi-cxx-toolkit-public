@@ -19,34 +19,36 @@
 
 <font color = "blue">
 BEGIN_NCBI_SCOPE
+
+using namespace objects;
 <font color = "black">
 int CTestAsn::Run() {
 
 <font color = "red">    // initialize the binary input stream <font color = "black">
 
-    auto_ptr&lt;CNcbiIstream&gt; inStream =
-        new CNcbiIfstream("1001.val", IOS_BASE::in | IOS_BASE::binary);
+    auto_ptr&lt;CNcbiIstream&gt; inStream;
+    inStream.reset(new CNcbiIfstream("1001.val", IOS_BASE::in | IOS_BASE::binary));
 
     if ( !*inStream )
       ERR_POST(Fatal << "Cannot open input file");
 
 <font color = "red">    // initialize the text output stream <font color = "black">
 
-    auto_ptr&lt;CNcbiOstream&gt; outStream =
-        new CNcbiOfstream("1001.txt");
+    auto_ptr&lt;CNcbiOstream&gt; outStream;
+    outStream.reset(new CNcbiOfstream("1001.txt"));
 
     if ( !*outStream )
       ERR_POST(Fatal << "Cannot open output file");
 
 <font color = "red">    // Associate ASN.1 binary serialization methods with the input <font color = "black">
 
-    auto_ptr&lt;CObjectIStream&gt; inObject=
-        new CObjectIStreamAsnBinary(*inStream);
+    auto_ptr&lt;CObjectIStream&gt; inObject;
+    inObject.reset(new CObjectIStreamAsnBinary(*inStream));
 
 <font color = "red">    // Associate ASN.1 text serialization methods with the output <font color = "black">
 
-    auto_ptr&lt;CObjectOStream&gt; outObject =
-        new CObjectOStreamAsn(*outStream);
+    auto_ptr&lt;CObjectOStream&gt; outObject;
+    outObject.reset(new CObjectOStreamAsn(*outStream));
 
 <font color = "red">    // Read, then write the CBiostruc data <font color = "black">
 

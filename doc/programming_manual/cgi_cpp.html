@@ -5,10 +5,10 @@
   </head>
 
   <body BGCOLOR="#FFFFFF">
-  <pre><font color = "red">// File name: cgi.cpp
+  <pre><font color = "red">// File name: justcgi.cpp
 // Description: Demonstrate the basic CGI classes and functions
 <font color = "green">
-#include <a href="cgi_hpp.html">"cgi.hpp"</a>
+#include <a href="cgi_hpp.html">"justcgi.hpp"</a>
 #include &lt;cgi/cgictx.hpp>
 #include &lt;corelib/ncbistd.hpp>
 #include &lt;corelib/ncbireg.hpp>
@@ -19,11 +19,11 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////
 // Implement the application's LoadResource() and ProcessRequest() methods
 </font>
-CNcbiResource* CHelloApp::LoadResource(void)
+CNcbiResource* CCgiApp::LoadResource(void)
 { 
-    auto_ptr&lt;CHelloResource> resource(new CHelloResource(GetConfig()));  
-    resource->AddCommand(new CHelloBasicCommand(*resource));
-    resource->AddCommand(new CHelloReplyCommand(*resource));
+    auto_ptr&lt;CCgiResource> resource(new CCgiResource(GetConfig()));  
+    resource->AddCommand(new CCgiBasicCommand(*resource));
+    resource->AddCommand(new CCgiReplyCommand(*resource));
     return resource.release();
 }
 
@@ -31,7 +31,7 @@ CNcbiResource* CHelloApp::LoadResource(void)
 void ShowCommands (const TCmdList& cmds, CCgiContext& ctx);
 void ShowEntries (const TCgiEntries& entries);
 
-int CHelloApp::ProcessRequest(CCgiContext& ctx)
+int CCgiApp::ProcessRequest(CCgiContext& ctx)
 {
     ShowCommands (GetResource().GetCmdList(), ctx);
     ShowEntries (const_cast&lt;TCgiEntries&>(ctx.GetRequest().GetEntries()));
@@ -42,33 +42,33 @@ int CHelloApp::ProcessRequest(CCgiContext& ctx)
 /////////////////////////////////////////////////////////////
 // Define the resource's default command if none match query
 </font>
-CNcbiCommand* CHelloResource::GetDefaultCommand(void) const
+CNcbiCommand* CCgiResource::GetDefaultCommand(void) const
 {
-    cerr << "    executing CHelloResource::GetDefaultCommand()" << endl;
-    return new CHelloBasicCommand(const_cast&lt;CHelloResource&>(*this));
+    cerr << "    executing CCgiResource::GetDefaultCommand()" << endl;
+    return new CCgiBasicCommand(const_cast&lt;CCgiResource&>(*this));
 }
 
 <font color="red">
 ///////////////////////////////////////////////////////////////
 // Define the Execute() and Clone() methods for the commands </font>
 
-void CHelloCommand::Execute(CCgiContext& ctx)
+void CCgiCommand::Execute(CCgiContext& ctx)
 {
-    cerr << "    executing CHelloCommand::Execute " << endl;
+    cerr << "    executing CCgiCommand::Execute " << endl;
     const CNcbiRegistry& reg = ctx.GetConfig();
     ctx.GetResponse().WriteHeader();
 }
 
-CNcbiCommand* CHelloBasicCommand::Clone(void) const
+CNcbiCommand* CCgiBasicCommand::Clone(void) const
 {
-    cerr << "    executing CHelloBasicCommand::Clone()" << endl;
-    return new CHelloBasicCommand(GetHelloResource());
+    cerr << "    executing CCgiBasicCommand::Clone()" << endl;
+    return new CCgiBasicCommand(GetCgiResource());
 }
 
-CNcbiCommand* CHelloReplyCommand::Clone(void) const
+CNcbiCommand* CCgiReplyCommand::Clone(void) const
 {
-    cerr << "    executing CHelloReplyCommand::Clone" << endl;
-    return new CHelloReplyCommand(GetHelloResource());
+    cerr << "    executing CCgiReplyCommand::Clone" << endl;
+    return new CCgiReplyCommand(GetCgiResource());
 }
 
 <font color = "red">// Show what commands have been installed </font>
@@ -100,12 +100,12 @@ END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 </font>
-static CHelloApp theHelloApp;
+static CCgiApp theCgiApp;
 
 int main(int argc, const char* argv[])
 {
     SetDiagStream(&cerr);
-    return theHelloApp.AppMain(argc, argv);
+    return theCgiApp.AppMain(argc, argv);
 }
 
 </pre>

@@ -28,7 +28,8 @@ public:
 <font color = "black">
 int CTestApp::Run()
 {
-<a name="orig">    auto_ptr&lt;int&gt; orig_ap = new int(5);
+<a name="orig">    auto_ptr&lt;int&gt; orig_ap;
+    orig_ap.reset(new int(5));
     {
         auto_ptr&lt;int&gt; copy_ap = orig_ap;
         
@@ -49,14 +50,15 @@ int CTestApp::Run()
         CRef&lt; CObjectFor&lt;int&gt; &gt; copy = orig;
     
         if ( !orig ) {
-            cout << "orig no longer exists - copy = " << *copy << endl;
+            cout << "orig no longer exists - copy = " << (int&) *copy << endl;
         } else {
-            cout  << "orig = " << *orig << ", copy = " << *copy << endl;
+            cout  << "orig = " << (int&) *orig << ", copy = " << (int&) *copy << endl;
         }
     }
     if ( orig ) {
-        cout << "orig = " << *orig << endl;
+        cout << "orig = " << (int&) *orig << endl;
     }
+    return 0;
 }
 
 
