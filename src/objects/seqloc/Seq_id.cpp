@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2001/08/31 16:02:10  clausen
+ * Added new constructors for Fasta and added new id types, tpd, tpe, tpg
+ *
  * Revision 6.13  2001/07/16 16:22:48  grichenk
  * Added CSerialUserOp class to create Assign() and Equals() methods for
  * user-defind classes.
@@ -97,20 +100,24 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/objmgr/objmgr_base.hpp>
 
+#include <string>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
 
 // constructor
 CSeq_id::CSeq_id(void)
 {
+    return;
 }
 
 // destructor
 CSeq_id::~CSeq_id(void)
 {
+    return;
 }
 
 
@@ -123,6 +130,20 @@ const CTextseq_id* CSeq_id::GetTextseq_Id(void) const
         return &GetEmbl();
     case e_Ddbj:
         return &GetDdbj();
+    case e_Pir:
+        return &GetPir();
+    case e_Swissprot:
+        return &GetSwissprot();
+    case e_Other:
+        return &GetOther();
+    case e_Prf:
+        return &GetPrf();
+    case e_Tpg:
+        return &GetTpg();
+    case e_Tpe:
+        return &GetTpe();
+    case e_Tpd:
+        return &GetTpd();
     default:
         return 0;
     }
@@ -132,7 +153,7 @@ const CTextseq_id* CSeq_id::GetTextseq_Id(void) const
 // Compare() - are SeqIds equivalent?
 CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
 {
-    if ( Which() != sid2.Which() ) { // only one case where this will work
+    if ( Which() != sid2.Which() ) { // Only one case where this will work
         const CTextseq_id *tsip1 = GetTextseq_Id();
         if ( !tsip1 )
             return e_DIFF;
@@ -147,68 +168,99 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
             return e_NO;
     }
 
-    switch ( Which() ) { // now we only need to know one
+    switch ( Which() ) { // Now we only need to know one
     case e_Local:
-        return GetLocal().Match(sid2.GetLocal())? e_YES: e_NO;
+        return GetLocal().Match(sid2.GetLocal()) ? e_YES : e_NO;
     case e_Gibbsq:
-        return GetGibbsq() == sid2.GetGibbsq()? e_YES: e_NO;
+        return GetGibbsq() == sid2.GetGibbsq() ? e_YES : e_NO;
     case e_Gibbmt:
-        return GetGibbmt() == sid2.GetGibbmt()? e_YES: e_NO;
+        return GetGibbmt() == sid2.GetGibbmt() ? e_YES : e_NO;
     case e_Giim:
-        return GetGiim().GetId() == sid2.GetGiim().GetId()? e_YES: e_NO;
+        return GetGiim().GetId() == sid2.GetGiim().GetId() ? e_YES : e_NO;
     case e_Pir:
-        return GetPir().Match(sid2.GetPir())? e_YES: e_NO;
+        return GetPir().Match(sid2.GetPir()) ? e_YES : e_NO;
     case e_Swissprot:
-        return GetSwissprot().Match(sid2.GetSwissprot())? e_YES: e_NO;
+        return GetSwissprot().Match(sid2.GetSwissprot()) ? e_YES : e_NO;
     case e_Patent:
-        return GetPatent().Match(sid2.GetPatent())? e_YES: e_NO;
+        return GetPatent().Match(sid2.GetPatent()) ? e_YES : e_NO;
     case e_Other:
-        return GetOther().Match(sid2.GetOther())? e_YES: e_NO;
+        return GetOther().Match(sid2.GetOther()) ? e_YES : e_NO;
     case e_General:
-        return GetGeneral().Match(sid2.GetGeneral())? e_YES: e_NO;
+        return GetGeneral().Match(sid2.GetGeneral()) ? e_YES : e_NO;
     case e_Gi:
-        return GetGi() == sid2.GetGi()? e_YES: e_NO;
+        return GetGi() == sid2.GetGi() ? e_YES : e_NO;
     case e_Prf:
-        return GetPrf().Match(sid2.GetPrf())? e_YES: e_NO;
+        return GetPrf().Match(sid2.GetPrf()) ? e_YES : e_NO;
     case e_Pdb:
-        return GetPdb().Match(sid2.GetPdb())? e_YES: e_NO;
+        return GetPdb().Match(sid2.GetPdb()) ? e_YES : e_NO;
     case e_Genbank:
-        return GetGenbank().Match(sid2.GetGenbank())? e_YES: e_NO;
+        return GetGenbank().Match(sid2.GetGenbank()) ? e_YES : e_NO;
     case e_Embl:
-        return GetEmbl().Match(sid2.GetEmbl())? e_YES: e_NO;
+        return GetEmbl().Match(sid2.GetEmbl()) ? e_YES : e_NO;
     case e_Ddbj:
-        return GetDdbj().Match(sid2.GetDdbj())? e_YES: e_NO;
+        return GetDdbj().Match(sid2.GetDdbj()) ? e_YES : e_NO;
+    case e_Tpg:
+        return GetTpg().Match(sid2.GetTpg()) ? e_YES : e_NO;
+    case e_Tpe:
+        return GetTpe().Match(sid2.GetTpe()) ? e_YES : e_NO;
+    case e_Tpd:
+        return GetTpd().Match(sid2.GetTpd()) ? e_YES : e_NO;
     default:
         return e_error;
     }
 }
 
 
-static const char* const s_TextId[16] = {     /* FASTA_LONG formats */
-    "???" ,         /* not-set = ??? */
-    "lcl",          /* local = lcl|integer or string */
-    "bbs",          /* gibbsq = bbs|integer */
-    "bbm",          /* gibbmt = bbm|integer */
-    "gim",          /* giim = gim|integer */
-    "gb",           /* genbank = gb|accession|locus */
-    "emb",          /* embl = emb|accession|locus */
-    "pir",          /* pir = pir|accession|name */
-    "sp",           /* swissprot = sp|accession|name */
-    "pat",          /* patent = pat|country|patent number (string)|seq number (integer) */
-    "ref",          /* other = ref|accession|name|release - changed from oth to ref */
-    "gnl",          /* general = gnl|database(string)|id (string or number) */
-    "gi",           /* gi = gi|integer */
-    "dbj",          /* ddbj = dbj|accession|locus */
-    "prf",          /* prf = prf|accession|name */
-    "pdb"           /* pdb = pdb|entry name (string)|chain id (char) */
+static const char* const s_TextId[20] = {   // FASTA_LONG formats
+    "???" , // not-set = ??? 
+    "lcl",  // local = lcl|integer or string 
+    "bbs",  // gibbsq = bbs|integer 
+    "bbm",  // gibbmt = bbm|integer 
+    "gim",  // giim = gim|integer 
+    "gb", // genbank = gb|accession|locus
+    "emb",  // embl = emb|accession|locus 
+    "pir",  // pir = pir|accession|name
+    "sp", // swissprot = sp|accession|name 
+    "pat",  // patent = pat|country|patent number (string)|seq number (integer)
+    "ref",  // other = ref|accession|name|release - changed from oth to ref
+    "gnl",  // general = gnl|database(string)|id (string or number)
+    "gi", // gi = gi|integer
+    "dbj",  // ddbj = dbj|accession|locus
+    "prf",  // prf = prf|accession|name
+    "pdb",  // pdb = pdb|entry name (string)|chain id (char)
+    "tpg",  // tpg = tpg|accession|name
+    "tpe",  // tpe = tpe|accession|name
+    "tpd",  // tpd = tpd|accession|name
+    ""  // Placeholder for end of list
 };
+
+CSeq_id::E_Choice CSeq_id::WhichInverseSeqId(const char* SeqIdCode)
+{
+    int retval = 0;
+    int dex;
+
+    // Last item in list has null byte for first character, so
+    // *s_TextId[dex] will be zero at end.
+    for (dex = 0;  *s_TextId[dex];  dex++) {
+        if ( PNocase().Equals(s_TextId[dex],SeqIdCode) ) {
+            break;
+        }
+    }
+    if ( !*s_TextId[dex] ) {
+        retval = 0;
+    } else {
+        retval = dex;
+    }
+
+    return static_cast<CSeq_id_Base::E_Choice> (retval);
+}
 
 
 void CSeq_id::WriteAsFasta(ostream& out)
     const
 {
     E_Choice the_type = Which();
-    if (the_type > e_Pdb)  // new SeqId type
+    if (the_type > e_Tpd)  // New SeqId type
         the_type = e_not_set;
 
     out << s_TextId[the_type] << '|';
@@ -249,7 +301,7 @@ void CSeq_id::WriteAsFasta(ostream& out)
     case e_General:
         {
             const CDbtag& dbt = GetGeneral();
-            out << Upcase(dbt.GetDb()) << '|';
+            out << (dbt.GetDb()) << '|';  // no Upcase per Ostell - Karl 7/2001
             dbt.GetTag().AsString(out);
         }
         break;
@@ -265,18 +317,378 @@ void CSeq_id::WriteAsFasta(ostream& out)
     case e_Pdb:
         GetPdb().AsFastaString(out);
         break;
+    case e_Tpg:
+        GetTpg().AsFastaString(out);
+        break;
+    case e_Tpe:
+        GetTpe().AsFastaString(out);
+        break;
+    case e_Tpd:
+        GetTpd().AsFastaString(out);
+        break;
     default:
         out << "[UnknownSeqIdType]";
         break;
-
     }
 }
 
 
-void CSeq_id::SetObjectManager(const CRef<CAbstractObjectManager>& objMgr)
+//SeqIdFastAConstructors
+CSeq_id::CSeq_id( const string& the_id )
+{
+    // Create an istrstream on string the_id
+    std::istrstream  myin(the_id.c_str() );
+
+    string the_type_in, acc_in, name_in, version_in, release_in;
+
+    // Read the part of the_id up to the vertical bar ( "|" )
+    // If no vertical bar, creates CSeq_id  with type not-set
+    if ( !getline(myin, the_type_in, '|') )
+        return;
+
+    // Remove spaces from front and back of the_type_in
+    string the_type_use = NStr::TruncateSpaces(the_type_in, NStr::eTrunc_Both);
+   
+    // Determine the type from the string
+    CSeq_id_Base::E_Choice the_type = WhichInverseSeqId(the_type_use.c_str());
+   
+    // Construct according to type
+    if ( the_type == CSeq_id::e_Local ) {
+        getline( myin, acc_in ); // take rest
+        x_Init( the_type, acc_in );
+        return;
+    }
+
+    if ( !getline( myin, acc_in,'|' ) )
+        return;
+
+    if ( the_type == CSeq_id::e_General  ||  the_type == CSeq_id::e_Pdb ) {
+        //Take the rest of the line
+        getline( myin, name_in ); 
+        x_Init( the_type, acc_in, name_in );
+        return;
+    }
+
+    if ( getline(myin, name_in, '|') ) {
+        if ( getline(myin, version_in, '|') ) {
+            getline(myin, release_in, '|');
+        }
+    }
+  
+    string version = NStr::TruncateSpaces( version_in, NStr::eTrunc_Both );
+    int ver = 0;
+
+    if ( ! version.empty() ) {
+        if ( (ver = NStr::StringToNumeric(version) ) < 0) {
+            THROW1_TRACE(invalid_argument, 
+                         "Unexpected non-numeric version: " +
+                         version +
+                         "\nthe_id: " + the_id);
+        }
+    }
+    x_Init(the_type, acc_in, name_in, ver, release_in);
+}
+
+
+// acc_in is just first string, as in text seqid, for
+// wierd cases (patents, pdb) not really an acc
+CSeq_id::CSeq_id
+(CSeq_id_Base::E_Choice the_type,
+ const string&          acc_in,
+ const string&          name_in,
+ const string&          version_in,
+ const string&          release_in )
+{
+    string version = NStr::TruncateSpaces(version_in, NStr::eTrunc_Both);
+    int ver = 0;
+
+    if ( !version.empty() ) {
+        if ( (ver = NStr::StringToNumeric(version)) < 0 ) {
+            THROW1_TRACE(invalid_argument, 
+                         "Unexpected non-numeric version. "
+                         "\nthe_type = " + string(s_TextId[the_type]) + 
+                         "\nacc_in = " + acc_in +
+                         "\nname_in = " + name_in +
+                         "\version_in = " + version_in +
+                         "\nrelease_in = " + release_in);  
+        }
+    }
+
+    x_Init(the_type, acc_in, name_in, ver, release_in);
+}
+
+
+static void s_InitThrow
+(const string& message,
+ const string& type,
+ const string& acc,
+ const string& name,
+ const string& version,
+ const string& release)
+{
+    THROW1_TRACE(invalid_argument,
+                 "CSeq_id:: " + message +
+                 "\ntype      = " + type + 
+                 "\naccession = " + acc +
+                 "\nname      = " + name +
+                 "\nversion   = " + version +
+                 "\nrelease   = " + release);
+}
+
+
+CSeq_id::CSeq_id
+(const string& the_type_in,
+ const string& acc_in,
+ const string& name_in,
+ const string& version_in,
+ const string& release_in)
+{
+    string the_type_use = NStr::TruncateSpaces(the_type_in, NStr::eTrunc_Both);
+    string version      = NStr::TruncateSpaces(version_in,  NStr::eTrunc_Both);
+    int ver = 0;
+
+    CSeq_id_Base::E_Choice the_type = WhichInverseSeqId(the_type_use.c_str());
+
+    if ( !version.empty() ) {
+        if ( (ver = NStr::StringToNumeric(version)) < 0) {
+            s_InitThrow("Unexpected non-numeric version.",
+                        the_type_in, acc_in, name_in, version_in, release_in);
+        }
+    }
+
+    x_Init(the_type, acc_in, name_in, ver, release_in);
+}
+
+
+CSeq_id::CSeq_id
+(const string& the_type_in,
+ const string& acc_in,
+ const string& name_in,
+ int           version,
+ const string& release_in )
+{
+    string the_type_use = NStr::TruncateSpaces(the_type_in, NStr::eTrunc_Both);
+    CSeq_id_Base::E_Choice the_type = WhichInverseSeqId (the_type_use.c_str());
+
+    x_Init(the_type, acc_in, name_in, version, release_in);
+}
+
+
+CSeq_id::CSeq_id
+( CSeq_id_Base::E_Choice the_type,
+  const string&          acc_in,
+  const string&          name_in,
+  int                    version,
+  const string&          release_in)
+{
+    x_Init(the_type, acc_in, name_in, version, release_in);
+}
+
+
+// Karl Sirotkin 7/2001
+
+void
+CSeq_id::x_Init
+( CSeq_id_Base::E_Choice the_type,
+  const string&          acc_in,
+  const string&          name_in,
+  int                    version ,
+  const string&          release_in)
+{
+    int the_id;
+    string acc     = NStr::TruncateSpaces(acc_in,     NStr::eTrunc_Both);
+    string name    = NStr::TruncateSpaces(name_in,    NStr::eTrunc_Both);
+    string release = NStr::TruncateSpaces(release_in, NStr::eTrunc_Both);
+
+    switch (the_type) {
+    case CSeq_id::e_not_set: // Will cause unspecified SeqId to be returned.
+        break;
+    case CSeq_id::e_Local:
+        {
+            CSeq_id::TLocal & loc = SetLocal();
+            string::const_iterator it = acc.begin();
+  
+            if ( (the_id = NStr::StringToNumeric(acc)) >= 0 && *it != '0' ) {
+                loc.SetId(the_id);
+            } else { // to cover case where embedded vertical bar in 
+                // string, could add code here, to concat a
+                // '|' and name string, if not null/empty
+                loc.SetStr(acc);
+            }
+            break;
+        }
+    case CSeq_id::e_Gibbsq:
+        if ( (the_id = NStr::StringToNumeric (acc)) >= 0 ) {
+            SetGibbsq(the_id);
+        } else {
+             s_InitThrow("Unexpected non-numeric accession.",
+                         string(s_TextId[the_type]), acc_in, name_in,
+                         NStr::IntToString(version), release_in);
+        }
+        break;
+    case CSeq_id::e_Gibbmt:
+        if ( (the_id =NStr::StringToNumeric (acc)) >= 0 ) {
+            SetGibbmt(the_id);
+        } else {
+             s_InitThrow("Unexpected non-numeric accession.",
+                         string(s_TextId[the_type]), acc_in, name_in,
+                         NStr::IntToString(version), release_in);
+        }
+        break;
+    case CSeq_id::e_Giim:
+        { 
+            CGiimport_id &  giim = SetGiim();
+            if ( (the_id =NStr::StringToNumeric (acc)) >= 0 ) {
+                giim.SetId(the_id);
+            } else {
+                s_InitThrow("Unexpected non-numeric accession.",
+                            string(s_TextId[the_type]), acc_in, name_in,
+                            NStr::IntToString(version), release_in);
+            }
+            break;
+        }
+    case CSeq_id::e_Genbank:
+        {
+            CRef<CTextseq_id> text
+                = new CTextseq_id(acc, name, version, release);
+            SetGenbank(text );
+            break;
+        }
+    case CSeq_id::e_Embl:
+        {
+            CRef<CTextseq_id> text
+               = new CTextseq_id(acc, name, version, release);
+            SetEmbl(text);
+            break;
+        }
+    case CSeq_id::e_Pir:
+        {
+            CRef<CTextseq_id> text
+                = new CTextseq_id(acc, name, version, release, false);
+            SetPir(text);
+            break;
+        }
+    case CSeq_id::e_Swissprot:
+        {
+            CRef<CTextseq_id> text
+                = new CTextseq_id(acc, name, version, release, false);
+            SetSwissprot(text);
+            break;
+        }
+    case CSeq_id::e_Tpg:
+        {
+            CRef<CTextseq_id> text
+                = new CTextseq_id(acc, name, version, release);
+            SetTpg(text);
+            break;
+        }
+    case CSeq_id::e_Tpe:
+        {
+            CRef<CTextseq_id> text
+                = new CTextseq_id(acc, name, version, release);
+            SetTpe(text);
+            break;
+        }
+    case CSeq_id::e_Tpd:
+        {
+            CRef<CTextseq_id> text
+                = new CTextseq_id(acc, name, version, release);
+            SetTpd(text);
+            break;
+        }
+    case CSeq_id::e_Patent:
+        {
+            CPatent_seq_id&  pat    = SetPatent();
+            CId_pat&         id_pat = pat.SetCit();
+            CId_pat::C_Id&   id_pat_id = id_pat.SetId();
+            id_pat.SetCountry(acc);
+
+            const char app_str[] = "App=";
+            if (name.compare(app_str, 0, sizeof(app_str)-1) == 0) {
+                id_pat_id.SetApp_number(name.substr(4));
+            } else {
+                id_pat_id.SetNumber(name);
+            }
+            pat.SetSeqid(version);
+            break;
+        }
+    case CSeq_id::e_Other: // RefSeq, allow dot version
+        {
+            CRef<CTextseq_id> text
+                = new CTextseq_id(acc,name,version,release);
+            SetOther(text);
+            break;
+        }
+    case CSeq_id::e_General:
+        {
+            CDbtag& dbt = SetGeneral();
+            dbt.SetDb(acc);
+            CObject_id& oid = dbt.SetTag();
+            the_id = NStr::StringToNumeric(acc);
+            if (the_id >= 0  &&  name[0] != '0') {
+                oid.SetId(the_id);
+            }else{
+                oid.SetStr(name);
+            }
+            break;
+        }
+    case CSeq_id::e_Gi:
+        the_id = NStr::StringToNumeric(acc);
+        if (the_id >= 0 ) {
+            SetGi(the_id);
+        } else {
+             s_InitThrow("Unexpected non-numeric accession.",
+                         string(s_TextId[the_type]), acc_in, name_in,
+                         NStr::IntToString(version), release_in);
+        }
+        break;
+    case CSeq_id::e_Ddbj:
+        {
+            CRef<CTextseq_id> text
+                = new CTextseq_id(acc,name,version,release);
+            SetDdbj(text);
+            break;
+        }
+    case CSeq_id::e_Prf:
+        {
+            CRef<CTextseq_id> text
+                = new CTextseq_id(acc,name,version,release,false);
+            SetPrf(text);
+            break;
+        }
+    case CSeq_id::e_Pdb:
+        {
+            CPDB_seq_id& pdb     = SetPdb();
+            CPDB_mol_id& pdb_mol = pdb.SetMol();
+            pdb_mol.Set(acc);
+
+            if (name.size() == 1) {
+                pdb.SetChain(static_cast<unsigned char> (name.c_str()[0]));
+            } else if ( name.compare("VB") == 0) {
+                pdb.SetChain('|');
+            } else if (name.size() == 2  && 
+                       name.c_str()[0] ==  name.c_str()[1]) {
+                pdb.SetChain( Locase(static_cast<unsigned char>
+                                     (name.c_str()[0])) );
+            } else {
+                s_InitThrow("Unexpected PDB chain id.",
+                            string(s_TextId[the_type]), acc_in, name_in,
+                            NStr::IntToString(version), release_in);
+            }
+            break;
+        }
+    default:
+        THROW1_TRACE(invalid_argument, "Specified Seq-id type not supported.");
+        break;
+    }
+}
+
+
+void CSeq_id::SetObjectManager(CAbstractObjectManager* objMgr)
 {
     if ( m_ObjectManager )
         THROW1_TRACE(runtime_error, "CSeq_id::SetObjectManager: already set");
+
     if ( !objMgr )
         THROW1_TRACE(runtime_error, "CSeq_id::SetObjectManager: null pointer");
 
@@ -284,19 +696,20 @@ void CSeq_id::SetObjectManager(const CRef<CAbstractObjectManager>& objMgr)
 }
 
 
-void CSeq_id::ResetObjectManager(const CRef<CAbstractObjectManager>& objMgr)
+void CSeq_id::ResetObjectManager(CAbstractObjectManager* objMgr)
 {
-    if ( m_ObjectManager.GetPointer() != objMgr.GetPointer() )
+    if (m_ObjectManager != objMgr) {
         ERR_POST("CSeq_id::ResetObjectManager: not owner");
+    }
     m_ObjectManager.Reset();
 }
 
 
-CConstRef<CBioseq> CSeq_id::Resolve(void) const
+const CBioseq* CSeq_id::Resolve(void) const
 {
-    if ( !m_ObjectManager )
+    if ( !m_ObjectManager ) {
         THROW1_TRACE(runtime_error, "CSeq_id::Resolve: null pointer");
-
+    }
     return m_ObjectManager->GetBioseq(*this);
 }
 
@@ -307,6 +720,7 @@ void CSeq_id::Assign(const CSerialUserOp& source)
     m_ObjectManager = src.m_ObjectManager;
 }
 
+
 bool CSeq_id::Equals(const CSerialUserOp& object) const
 {
     const CSeq_id& obj = dynamic_cast<const CSeq_id&>(object);
@@ -315,6 +729,4 @@ bool CSeq_id::Equals(const CSerialUserOp& object) const
 
 
 END_objects_SCOPE // namespace ncbi::objects::
-
 END_NCBI_SCOPE
-
