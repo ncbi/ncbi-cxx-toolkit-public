@@ -415,15 +415,14 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
       if (kIsOutOfFrame) {
          Blast_SetUpSubjectTranslation(subject_blk, gen_code_string,
                                        NULL, NULL, &partial_translation);
-         subject = subject_blk->oof_sequence + CODON_LENGTH;
-         /* Mixed-frame sequence spans all 6 frames, i.e. both strands
-            of the nucleotide sequence. However its start will also be 
-            shifted by 3.*/
-         subject_length = 2*subject_blk->length - 1;
+         /* Length of a mixed-frame sequence, corresponding to each single 
+            strand of the nucleotide sequence, is equal to nucleotide 
+            length. */
+         subject_length = subject_blk->length;
       } else if (program_number == eBlastTypeRpsTblastn) {
-	 translation_buffer = subject_blk->sequence - 1;
-	 frame_offsets_a = frame_offsets =
-             ContextOffsetsToOffsetArray(query_info_in);
+          translation_buffer = subject_blk->sequence - 1;
+          frame_offsets_a = frame_offsets =
+              ContextOffsetsToOffsetArray(query_info_in);
       } else {
          Blast_SetUpSubjectTranslation(subject_blk, gen_code_string,
             &translation_buffer, &frame_offsets, &partial_translation);
@@ -491,20 +490,20 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
       
       subject_length_orig = subject_blk->length;
       /* For RPS tblastn the "subject" length should be the original 
-	 nucleotide query length, which can be calculated from the 
-	 context offsets in query_info_in. */
+         nucleotide query length, which can be calculated from the 
+         context offsets in query_info_in. */
       if (program_number == eBlastTypeRpsTblastn) {
-	 if (hsp->subject.frame > 0) {
-	    subject_length_orig = 
-	       query_info_in->contexts[NUM_FRAMES/2].query_offset - 1;
-	 } else {
-            Int4 frame_set_end =
-                query_info_in->contexts[NUM_FRAMES-1].query_offset +
-                query_info_in->contexts[NUM_FRAMES-1].query_length;
-            
-            subject_length_orig = frame_set_end -
-                query_info_in->contexts[NUM_FRAMES/2].query_offset;
-	 }
+          if (hsp->subject.frame > 0) {
+              subject_length_orig = 
+                  query_info_in->contexts[NUM_FRAMES/2].query_offset - 1;
+          } else {
+              Int4 frame_set_end =
+                  query_info_in->contexts[NUM_FRAMES-1].query_offset +
+                  query_info_in->contexts[NUM_FRAMES-1].query_length;
+              
+              subject_length_orig = frame_set_end -
+                  query_info_in->contexts[NUM_FRAMES/2].query_offset;
+          }
       }
 
       /* preliminary RPS blast alignments have not had
@@ -530,10 +529,18 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                subject = translation_buffer + frame_offsets[context] + 1;
                subject_length = 
                   frame_offsets[context+1] - frame_offsets[context] - 1;
-            } else if (partial_translation) {
-               Blast_HSPGetPartialSubjectTranslation(subject_blk, hsp, 
-                  kIsOutOfFrame, gen_code_string, &translation_buffer, &subject,
-                  &subject_length, &start_shift);
+            } else { 
+                if (partial_translation) {
+                    Blast_HSPGetPartialSubjectTranslation(subject_blk, hsp, 
+                        kIsOutOfFrame, gen_code_string, &translation_buffer, 
+                        &subject, &subject_length, &start_shift);
+                } else {
+                    /* Out-of-frame with full translation; point subject to the
+                       start of the right strand in the mixed-frame sequence. */
+                    subject = subject_blk->oof_sequence + CODON_LENGTH;
+                    if (hsp->subject.frame < 0)
+                        subject += subject_length + 1;
+                }
             }
          }
 
@@ -612,8 +619,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                                                   query, adjusted_subject, 
                                                   score_options, hit_options);
             if (keep) {
-               Blast_HSPAdjustSubjectOffset(hsp, subject_blk, kIsOutOfFrame, 
-                                            start_shift);
+               Blast_HSPAdjustSubjectOffset(hsp, start_shift);
                BlastIntervalTreeAddHSP(hsp, tree, query_info);
             }
             else {
