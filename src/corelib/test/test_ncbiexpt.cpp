@@ -194,11 +194,9 @@ public:
     CErrnoTemplException(const char* file,int line,
         const CException* prev_exception,
         EErrCode err_code, const string& message) throw()
-/*
           : TBase(file, line, prev_exception,
-            reinterpret_cast<TBase::EErrCode>(CException::eInvalid),
+            (typename TBase::EErrCode)(CException::eInvalid),
             message)
-*/
     {
         m_Errno = errno;
         x_Init(file,line,message + ": " + ::strerror(m_Errno),prev_exception);
@@ -654,8 +652,9 @@ int CExceptApplication::Run(void)
 
     try {
         t1();
-//    } catch (CErrnoTemplException<CCoreException>& e) {
-//        NCBI_REPORT_EXCEPTION("caught as CErrnoTemplException<CCoreException>", e);
+    } catch (CErrnoTemplException<CCoreException>& e) {
+        NCBI_REPORT_EXCEPTION("caught as CErrnoTemplException<CCoreException>", e);
+        _ASSERT(e.GetErrCode() == CErrnoTemplException<CCoreException>::eErrnoTempl2);
     } catch (CCoreException& e) {
         NCBI_REPORT_EXCEPTION("caught as CCoreException", e);
         const CErrnoTemplException<CCoreException>* pe = UppermostCast< CErrnoTemplException<CCoreException> > (e);
@@ -666,8 +665,9 @@ int CExceptApplication::Run(void)
 
     try {
         m1();
-//    } catch (CErrnoTemplException<CCoreException>& e) {
-//        NCBI_REPORT_EXCEPTION("caught as CErrnoTemplException<CCoreException>", e);
+    } catch (CErrnoTemplException<CCoreException>& e) {
+        NCBI_REPORT_EXCEPTION("caught as CErrnoTemplException<CCoreException>", e);
+        _ASSERT((int)e.GetErrCode() == (int)CException::eInvalid);
     } catch (CCoreException e) {
         NCBI_REPORT_EXCEPTION("caught as CCoreException", e);
         _ASSERT((int)e.GetErrCode() == (int)CException::eInvalid);
@@ -696,6 +696,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.9  2003/01/31 14:51:00  gouriano
+ * corrected template-based exception definition
+ *
  * Revision 6.8  2002/08/20 19:09:07  gouriano
  * more tests
  *
