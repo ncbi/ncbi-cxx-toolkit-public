@@ -373,11 +373,7 @@ void Messenger::RestoreCachedHighlights(void)
 {
     highlights = highlightCache;
     PostRedrawAllSequenceViewers();
-    if (structureWindow) {
-        MoleculeHighlightMap::const_iterator h, he = highlights.end();
-        for (h=highlights.begin(); h!=he; ++h)
-            RedrawMoleculesWithIdentifier(h->first, structureWindow->glCanvas->structureSet);
-    }
+    PostRedrawAllStructures();
 }
 
 void Messenger::SetHighlights(const MoleculeHighlightMap& newHighlights)
@@ -565,6 +561,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2004/09/27 22:06:22  thiessen
+* fix restore cache highlights bug
+*
 * Revision 1.43  2004/09/27 21:40:46  thiessen
 * add highlight cache
 *
