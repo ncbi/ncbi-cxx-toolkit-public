@@ -39,6 +39,11 @@
 
 BEGIN_NCBI_SCOPE
 
+CMMAligner::CMMAligner():
+    m_mt(false),
+    m_maxthreads(1)
+{
+}
 
 
 CMMAligner::CMMAligner( const char* seq1, size_t len1,
@@ -46,7 +51,8 @@ CMMAligner::CMMAligner( const char* seq1, size_t len1,
                         EScoringMatrixType matrix_type )
     throw(CAlgoAlignException):
     CNWAligner(seq1, len1, seq2, len2, matrix_type),
-    m_mt(false), m_maxthreads(1)
+    m_mt(false),
+    m_maxthreads(1)
 {
 }
 
@@ -72,7 +78,7 @@ CNWAligner::TScore CMMAligner::x_Run()
     
     m_score = kMin_Int;
     m_TransList.clear();
-    m_TransList.push_back(eNone);
+    m_TransList.push_back(eTS_None);
 
     SCoordRect m (0, 0, m_SeqLen1 - 1, m_SeqLen2 - 1);
     x_DoSubmatrix(m, m_TransList.end(), false, false); // top-level call
@@ -207,10 +213,10 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     bool bTop  = I == submatr.i1;
     if(bLeft && !bTop) {
         int jump = I - submatr.i1;
-        subpath_left.insert(subpath_left.begin(), jump, eDelete);
+        subpath_left.insert(subpath_left.begin(), jump, eTS_Delete);
     }
     if(!bLeft && bTop) {
-        subpath_left.insert(subpath_left.begin(), nc0, eInsert);
+        subpath_left.insert(subpath_left.begin(), nc0, eTS_Insert);
     }
     if(bLeft || bTop) {
         bNoLT = true;
@@ -229,11 +235,11 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     bool bBottom  = I == submatr.i2 - 1;
     if(bRight && !bBottom) {
         int jump = submatr.i2 - I - 1;
-        subpath_right.insert(subpath_right.end(), jump, eDelete);
+        subpath_right.insert(subpath_right.end(), jump, eTS_Delete);
     }
     if(!bRight && bBottom) {
         int jump = dimJ - nc1;
-        subpath_right.insert(subpath_right.end(), jump, eInsert);
+        subpath_right.insert(subpath_right.end(), jump, eTS_Insert);
     }
     if(bRight || bBottom) {
         bNoRB = true;
@@ -241,8 +247,8 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
 
     // find out if we have special left-top and/or right-bottom
     // on the new sub-matrices
-    bool rb = subpath_left.front() == eDelete;
-    bool lt = subpath_right.back() == eDelete;
+    bool rb = subpath_left.front() == eTS_Delete;
+    bool lt = subpath_right.back() == eTS_Delete;
 
     // coalesce the pieces together and insert into the master list
     subpath_left.splice( subpath_left.end(), subpath_right );
@@ -381,22 +387,22 @@ size_t CMMAligner::x_ExtendSubpath (
         while(true) {
             unsigned char Key = *trace_it;
             if (Key & kMaskD) {
-                subpath.push_back(eMatch);
+                subpath.push_back(eTS_Match);
                 ++step_counter;
                 break;
             }
             else if (Key & kMaskE) {
-                subpath.push_back(eInsert);
+                subpath.push_back(eTS_Insert);
                 ++step_counter;
                 ++trace_it;
                 while(Key & kMaskEc) {
                     Key = *trace_it++;
-                    subpath.push_back(eInsert);
+                    subpath.push_back(eTS_Insert);
                     ++step_counter;
                 }
             }
             else if ((Key & kMaskE) == 0) {
-                subpath.push_back(eDelete);
+                subpath.push_back(eTS_Delete);
                 break;
             }
             else {
@@ -412,22 +418,22 @@ size_t CMMAligner::x_ExtendSubpath (
         while(true) {
             unsigned char Key = *trace_it;
             if (Key & kMaskD) {
-                subpath.push_front(eMatch);
+                subpath.push_front(eTS_Match);
                 ++step_counter;
                 break;
             }
             else if (Key & kMaskE) {
-                subpath.push_front(eInsert);
+                subpath.push_front(eTS_Insert);
                 ++step_counter;
                 --trace_it;
                 while(Key & kMaskEc) {
                     Key = *trace_it--;
-                    subpath.push_front(eInsert);
+                    subpath.push_front(eTS_Insert);
                     ++step_counter;
                 }
             }
             else if ((Key & kMaskE) == 0) {
-                subpath.push_front(eDelete);
+                subpath.push_front(eTS_Delete);
                 break;
             }
             else {
@@ -914,21 +920,21 @@ CNWAligner::TScore CMMAligner::x_RunTerm(const SCoordRect& rect,
     while (k != 0) {
         unsigned char Key = backtrace[k];
         if (Key & kMaskD) {
-            subpath.push_front(eMatch);
+            subpath.push_front(eTS_Match);
             k -= N2 + 1;
         }
         else if (Key & kMaskE) {
-            subpath.push_front(eInsert); --k;
+            subpath.push_front(eTS_Insert); --k;
             while(k > 0 && (Key & kMaskEc)) {
-                subpath.push_front(eInsert);
+                subpath.push_front(eTS_Insert);
                 Key = backtrace[k--];
             }
         }
         else {
-            subpath.push_front(eDelete);
+            subpath.push_front(eTS_Delete);
             k -= N2;
             while(k > 0 && (Key & kMaskFc)) {
-                subpath.push_front(eDelete);
+                subpath.push_front(eTS_Delete);
                 Key = backtrace[k];
                 k -= N2;
             }
@@ -955,6 +961,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/09/02 22:36:57  kapustin
+ * Adjust for transcript symbol name changes
+ *
  * Revision 1.13  2003/06/17 17:20:44  kapustin
  * CNWAlignerException -> CAlgoAlignException
  *
@@ -962,7 +971,8 @@ END_NCBI_SCOPE
  * Fixed after algo/ rearragnement
  *
  * Revision 1.11  2003/06/03 18:19:06  rsmith
- * Move static mutex initialization to file from function scope, because of MW compiler choking (wrongly) over complex initialization.
+ * Move static mutex initialization to file from function scope,
+ * because of MW compiler choking (wrongly) over complex initialization.
  *
  * Revision 1.10  2003/06/02 14:04:49  kapustin
  * Progress indication-related updates
@@ -974,7 +984,8 @@ END_NCBI_SCOPE
  * Run() -> x_Run()
  *
  * Revision 1.7  2003/03/18 15:15:51  kapustin
- * Implement virtual memory checking function. Allow separate free end gap specification
+ * Implement virtual memory checking function. Allow separate free
+ * end gap specification
  *
  * Revision 1.6  2003/03/17 15:30:57  kapustin
  * Support end-space free alignments
@@ -986,7 +997,7 @@ END_NCBI_SCOPE
  * Move m_score to the base class
  *
  * Revision 1.3  2003/01/22 13:40:09  kapustin
- * Implement multithread algorithm
+ * Implement multithreaded algorithm
  *
  * ===========================================================================
  */
