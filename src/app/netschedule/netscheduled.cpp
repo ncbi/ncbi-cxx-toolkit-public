@@ -191,6 +191,7 @@ public:
     void ProcessReturn(CSocket& sock, SThreadData& tdata);
     void ProcessJobRunTimeout(CSocket& sock, SThreadData& tdata);
     void ProcessDropJob(CSocket& sock, SThreadData& tdata);
+    void ProcessStatistics(CSocket& sock, SThreadData& tdata);
 protected:
     virtual void ProcessOverflow(SOCK sock) 
     { 
@@ -244,6 +245,8 @@ private:
     STimeout           m_ThrdSrvAcceptTimeout;
 
     CQueueDataBase*    m_QueueDB;
+
+    CTime              m_StartTime;
 };
 
 /// @internal
@@ -276,7 +279,8 @@ CNetScheduleServer::CNetScheduleServer(unsigned int    port,
                                        bool            /*is_log*/)
 : CThreadedServer(port),
     m_Shutdown(false),
-    m_InactivityTimeout(network_timeout)
+    m_InactivityTimeout(network_timeout),
+    m_StartTime(CTime::eCurrent)
 {
     m_QueueDB = qdb;
     char hostname[256];
@@ -392,7 +396,7 @@ void CNetScheduleServer::Process(SOCK sock)
                 break;
             case eLogging:
             case eStatistics:
-                WriteMsg(socket, "ERR:", "Not implemented.");
+                ProcessStatistics(socket, *tdata);
                 break;
             case eError:
                 WriteMsg(socket, "ERR:", tdata->req.err_msg.c_str());
@@ -649,6 +653,34 @@ void CNetScheduleServer::ProcessDropQueue(CSocket& sock, SThreadData& tdata)
     WriteMsg(sock, "OK:", kEmptyStr.c_str());
 }
 
+
+void CNetScheduleServer::ProcessStatistics(CSocket& sock, SThreadData& tdata)
+{
+    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
+
+    sock.DisableOSSendDelay(false);
+
+    WriteMsg(sock, "OK:", NETSCHEDULED_VERSION);
+    string started = "Started: " + m_StartTime.AsString();
+    WriteMsg(sock, "OK:", started.c_str());
+
+    for (int i = CNetScheduleClient::ePending; 
+         i < CNetScheduleClient::eLastStatus; ++i) {
+             CNetScheduleClient::EJobStatus st = 
+                                (CNetScheduleClient::EJobStatus) i;
+             unsigned count = queue.CountStatus(st);
+             string st_name = CNetScheduleClient::StatusToString(st);
+             st_name += ": ";
+             st_name += NStr::UIntToString(count);
+             WriteMsg(sock, "OK:", st_name.c_str());
+    } // for
+
+    unsigned db_recs = queue.CountRecs();
+    string recs = "Records:";
+    recs += NStr::UIntToString(db_recs);
+    WriteMsg(sock, "OK:", recs.c_str());
+    WriteMsg(sock, "OK:", "END");
+}
 
 void CNetScheduleServer::x_WriteBuf(CSocket& sock,
                                     char*    buf,
@@ -942,6 +974,11 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
 
     if (strncmp(s, "QUIT", 4) == 0) {
         req->req_type = eQuitSession;
+        return;
+    }
+
+    if (strncmp(s, "STAT", 4) == 0) {
+        req->req_type = eStatistics;
         return;
     }
 
@@ -1327,6 +1364,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/03/21 13:08:24  kuznets
+ * + STAT command support
+ *
  * Revision 1.16  2005/03/17 20:37:07  kuznets
  * Implemented FPUT
  *
