@@ -76,7 +76,6 @@ class /* NCBI_XOBJREAD_EXPORT */ CFeature_table_reader_imp
 {
 public:
     enum EQual {
-        eQual_bad,
         eQual_allele,
         eQual_anticodon,
         eQual_bond_type,
@@ -136,7 +135,6 @@ public:
     };
 
     enum EOrgRef {
-        eOrgRef_bad,
         eOrgRef_organism,
         eOrgRef_mitochondrion,
         eOrgRef_div,
@@ -145,80 +143,11 @@ public:
         eOrgRef_mgcode
     };
 
-    enum ESubSrc {
-        eSubSrc_bad,
-        eSubSrc_cell_line,
-        eSubSrc_cell_type,
-        eSubSrc_chromosome,
-        eSubSrc_clone,
-        eSubSrc_clone_lib,
-        eSubSrc_country,
-        eSubSrc_dev_stage,
-        eSubSrc_endogenous_virus_name,
-        eSubSrc_environmental_sample,
-        eSubSrc_frequency,
-        eSubSrc_genotype,
-        eSubSrc_germline,
-        eSubSrc_haplotype,
-        eSubSrc_insertion_seq_name,
-        eSubSrc_isolation_source,
-        eSubSrc_lab_host,
-        eSubSrc_map,
-        eSubSrc_plasmid_name,
-        eSubSrc_plastid_name,
-        eSubSrc_pop_variant,
-        eSubSrc_rearranged,
-        eSubSrc_segment,
-        eSubSrc_sex,
-        eSubSrc_subclone,
-        eSubSrc_tissue_lib,
-        eSubSrc_tissue_type,
-        eSubSrc_transgenic,
-        eSubSrc_transposon_name
-    };
-
-    enum EOrgMod {
-        eOrgMod_bad,
-        eOrgMod_acronym,
-        eOrgMod_anamorph,
-        eOrgMod_authority,
-        eOrgMod_biotype,
-        eOrgMod_biovar,
-        eOrgMod_breed,
-        eOrgMod_chemovar,
-        eOrgMod_common,
-        eOrgMod_cultivar,
-        eOrgMod_dosage,
-        eOrgMod_ecotype,
-        eOrgMod_forma_specialis,
-        eOrgMod_forma,
-        eOrgMod_gb_acronym,
-        eOrgMod_gb_anamorph,
-        eOrgMod_gb_synonym,
-        eOrgMod_group,
-        eOrgMod_isolate,
-        eOrgMod_nat_host,
-        eOrgMod_pathovar,
-        eOrgMod_serogroup,
-        eOrgMod_serotype,
-        eOrgMod_serovar,
-        eOrgMod_specimen_voucher,
-        eOrgMod_strain,
-        eOrgMod_sub_species,
-        eOrgMod_subgroup,
-        eOrgMod_substrain,
-        eOrgMod_subtype,
-        eOrgMod_synonym,
-        eOrgMod_teleomorph,
-        eOrgMod_type,
-        eOrgMod_variety
-    };
-
     typedef map< string, CSeqFeatData::ESubtype > TFeatReaderMap;
     typedef map< string, EQual > TQualReaderMap;
     typedef map< string, EOrgRef > TOrgRefReaderMap;
-    typedef map< string, ESubSrc > TSubSrcReaderMap;
-    typedef map< string, EOrgMod > TOrgModReaderMap;
+    typedef map< string, CSubSource::ESubtype > TSubSrcReaderMap;
+    typedef map< string, COrgMod::ESubtype > TOrgModReaderMap;
     typedef map< string, CSeqFeatData::EBond > TBondReaderMap;
     typedef map< string, CSeqFeatData::ESite > TSiteReaderMap;
 
@@ -259,9 +188,9 @@ private:
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
                                    EOrgRef rtype, const string& val);
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
-                                   ESubSrc stype, const string& val);
+                                   CSubSource::ESubtype stype, const string& val);
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
-                                   EOrgMod mtype, const string& val);
+                                   COrgMod::ESubtype mtype, const string& val);
 
     TFeatReaderMap   m_FeatKeys;
     TQualReaderMap   m_QualKeys;
@@ -434,8 +363,7 @@ static QualInit qual_key_to_subtype [] = {
     { "transl_table",         CFeature_table_reader_imp::eQual_transl_table         },
     { "translation",          CFeature_table_reader_imp::eQual_translation          },
     { "transposon",           CFeature_table_reader_imp::eQual_transposon           },
-    { "usedin",               CFeature_table_reader_imp::eQual_usedin               },
-    { "",                     CFeature_table_reader_imp::eQual_bad                  }
+    { "usedin",               CFeature_table_reader_imp::eQual_usedin               }
 };
 
 typedef struct orgrefinit {
@@ -449,87 +377,84 @@ static OrgRefInit orgref_key_to_subtype [] = {
     { "lineage",        CFeature_table_reader_imp::eOrgRef_lineage       },
     { "mgcode",         CFeature_table_reader_imp::eOrgRef_mgcode        },
     { "mitochondrion",  CFeature_table_reader_imp::eOrgRef_mitochondrion },
-    { "organism",       CFeature_table_reader_imp::eOrgRef_organism      },
-    { "",               CFeature_table_reader_imp::eOrgRef_bad           }
+    { "organism",       CFeature_table_reader_imp::eOrgRef_organism      }
 };
 
 typedef struct subsrcinit {
-    const char *                       key;
-    CFeature_table_reader_imp::ESubSrc subtype;
+    const char *         key;
+    CSubSource::ESubtype subtype;
 } SubSrcInit;
 
 static SubSrcInit subsrc_key_to_subtype [] = {
-    { "cell_line",            CFeature_table_reader_imp::eSubSrc_cell_line             },
-    { "cell_type",            CFeature_table_reader_imp::eSubSrc_cell_type             },
-    { "chromosome",           CFeature_table_reader_imp::eSubSrc_chromosome            },
-    { "clone",                CFeature_table_reader_imp::eSubSrc_clone                 },
-    { "clone_lib",            CFeature_table_reader_imp::eSubSrc_clone_lib             },
-    { "country",              CFeature_table_reader_imp::eSubSrc_country               },
-    { "dev_stage",            CFeature_table_reader_imp::eSubSrc_dev_stage             },
-    { "endogenous_virus",     CFeature_table_reader_imp::eSubSrc_endogenous_virus_name },
-    { "environmental_sample", CFeature_table_reader_imp::eSubSrc_environmental_sample  },
-    { "frequency",            CFeature_table_reader_imp::eSubSrc_frequency             },
-    { "genotype",             CFeature_table_reader_imp::eSubSrc_genotype              },
-    { "germline",             CFeature_table_reader_imp::eSubSrc_germline              },
-    { "haplotype",            CFeature_table_reader_imp::eSubSrc_haplotype             },
-    { "insertion_seq",        CFeature_table_reader_imp::eSubSrc_insertion_seq_name    },
-    { "isolation_source",     CFeature_table_reader_imp::eSubSrc_isolation_source      },
-    { "lab_host",             CFeature_table_reader_imp::eSubSrc_lab_host              },
-    { "map",                  CFeature_table_reader_imp::eSubSrc_map                   },
-    { "plasmid",              CFeature_table_reader_imp::eSubSrc_plasmid_name          },
-    { "plastid",              CFeature_table_reader_imp::eSubSrc_plastid_name          },
-    { "pop_variant",          CFeature_table_reader_imp::eSubSrc_pop_variant           },
-    { "rearranged",           CFeature_table_reader_imp::eSubSrc_rearranged            },
-    { "segment",              CFeature_table_reader_imp::eSubSrc_segment               },
-    { "sex",                  CFeature_table_reader_imp::eSubSrc_sex                   },
-    { "subclone",             CFeature_table_reader_imp::eSubSrc_subclone              },
-    { "tissue_lib ",          CFeature_table_reader_imp::eSubSrc_tissue_lib            },
-    { "tissue_type",          CFeature_table_reader_imp::eSubSrc_tissue_type           },
-    { "transgenic",           CFeature_table_reader_imp::eSubSrc_transgenic            },
-    { "transposon",           CFeature_table_reader_imp::eSubSrc_transposon_name       },
-    { "",                     CFeature_table_reader_imp::eSubSrc_bad                   }
+    { "cell_line",            CSubSource::eSubtype_cell_line             },
+    { "cell_type",            CSubSource::eSubtype_cell_type             },
+    { "chromosome",           CSubSource::eSubtype_chromosome            },
+    { "clone",                CSubSource::eSubtype_clone                 },
+    { "clone_lib",            CSubSource::eSubtype_clone_lib             },
+    { "country",              CSubSource::eSubtype_country               },
+    { "dev_stage",            CSubSource::eSubtype_dev_stage             },
+    { "endogenous_virus",     CSubSource::eSubtype_endogenous_virus_name },
+    { "environmental_sample", CSubSource::eSubtype_environmental_sample  },
+    { "frequency",            CSubSource::eSubtype_frequency             },
+    { "genotype",             CSubSource::eSubtype_genotype              },
+    { "germline",             CSubSource::eSubtype_germline              },
+    { "haplotype",            CSubSource::eSubtype_haplotype             },
+    { "insertion_seq",        CSubSource::eSubtype_insertion_seq_name    },
+    { "isolation_source",     CSubSource::eSubtype_isolation_source      },
+    { "lab_host",             CSubSource::eSubtype_lab_host              },
+    { "map",                  CSubSource::eSubtype_map                   },
+    { "plasmid",              CSubSource::eSubtype_plasmid_name          },
+    { "plastid",              CSubSource::eSubtype_plastid_name          },
+    { "pop_variant",          CSubSource::eSubtype_pop_variant           },
+    { "rearranged",           CSubSource::eSubtype_rearranged            },
+    { "segment",              CSubSource::eSubtype_segment               },
+    { "sex",                  CSubSource::eSubtype_sex                   },
+    { "subclone",             CSubSource::eSubtype_subclone              },
+    { "tissue_lib ",          CSubSource::eSubtype_tissue_lib            },
+    { "tissue_type",          CSubSource::eSubtype_tissue_type           },
+    { "transgenic",           CSubSource::eSubtype_transgenic            },
+    { "transposon",           CSubSource::eSubtype_transposon_name       }
 };
 
 typedef struct orgmodinit {
-    const char *                       key;
-    CFeature_table_reader_imp::EOrgMod subtype;
+    const char *      key;
+    COrgMod::ESubtype subtype;
 } OrgModInit;
 
 static OrgModInit orgmod_key_to_subtype [] = {
-    { "acronym",          CFeature_table_reader_imp::eOrgMod_acronym          },
-    { "anamorph",         CFeature_table_reader_imp::eOrgMod_anamorph         },
-    { "authority",        CFeature_table_reader_imp::eOrgMod_authority        },
-    { "biotype",          CFeature_table_reader_imp::eOrgMod_biotype          },
-    { "biovar",           CFeature_table_reader_imp::eOrgMod_biovar           },
-    { "breed",            CFeature_table_reader_imp::eOrgMod_breed            },
-    { "chemovar",         CFeature_table_reader_imp::eOrgMod_chemovar         },
-    { "common",           CFeature_table_reader_imp::eOrgMod_common           },
-    { "cultivar",         CFeature_table_reader_imp::eOrgMod_cultivar         },
-    { "dosage",           CFeature_table_reader_imp::eOrgMod_dosage           },
-    { "ecotype",          CFeature_table_reader_imp::eOrgMod_ecotype          },
-    { "forma_specialis",  CFeature_table_reader_imp::eOrgMod_forma_specialis  },
-    { "forma",            CFeature_table_reader_imp::eOrgMod_forma            },
-    { "gb_acronym",       CFeature_table_reader_imp::eOrgMod_gb_acronym       },
-    { "gb_anamorph",      CFeature_table_reader_imp::eOrgMod_gb_anamorph      },
-    { "gb_synonym",       CFeature_table_reader_imp::eOrgMod_gb_synonym       },
-    { "group",            CFeature_table_reader_imp::eOrgMod_group            },
-    { "isolate",          CFeature_table_reader_imp::eOrgMod_isolate          },
-    { "nat_host",         CFeature_table_reader_imp::eOrgMod_nat_host         },
-    { "pathovar",         CFeature_table_reader_imp::eOrgMod_pathovar         },
-    { "serogroup",        CFeature_table_reader_imp::eOrgMod_serogroup        },
-    { "serotype",         CFeature_table_reader_imp::eOrgMod_serotype         },
-    { "serovar",          CFeature_table_reader_imp::eOrgMod_serovar          },
-    { "specimen_voucher", CFeature_table_reader_imp::eOrgMod_specimen_voucher },
-    { "strain",           CFeature_table_reader_imp::eOrgMod_strain           },
-    { "sub_species",      CFeature_table_reader_imp::eOrgMod_sub_species      },
-    { "subgroup",         CFeature_table_reader_imp::eOrgMod_subgroup         },
-    { "substrain",        CFeature_table_reader_imp::eOrgMod_substrain        },
-    { "subtype",          CFeature_table_reader_imp::eOrgMod_subtype          },
-    { "synonym",          CFeature_table_reader_imp::eOrgMod_synonym          },
-    { "teleomorph",       CFeature_table_reader_imp::eOrgMod_teleomorph       },
-    { "type",             CFeature_table_reader_imp::eOrgMod_type             },
-    { "variety",          CFeature_table_reader_imp::eOrgMod_variety          },
-    { "",                 CFeature_table_reader_imp::eOrgMod_bad              }
+    { "acronym",          COrgMod::eSubtype_acronym          },
+    { "anamorph",         COrgMod::eSubtype_anamorph         },
+    { "authority",        COrgMod::eSubtype_authority        },
+    { "biotype",          COrgMod::eSubtype_biotype          },
+    { "biovar",           COrgMod::eSubtype_biovar           },
+    { "breed",            COrgMod::eSubtype_breed            },
+    { "chemovar",         COrgMod::eSubtype_chemovar         },
+    { "common",           COrgMod::eSubtype_common           },
+    { "cultivar",         COrgMod::eSubtype_cultivar         },
+    { "dosage",           COrgMod::eSubtype_dosage           },
+    { "ecotype",          COrgMod::eSubtype_ecotype          },
+    { "forma_specialis",  COrgMod::eSubtype_forma_specialis  },
+    { "forma",            COrgMod::eSubtype_forma            },
+    { "gb_acronym",       COrgMod::eSubtype_gb_acronym       },
+    { "gb_anamorph",      COrgMod::eSubtype_gb_anamorph      },
+    { "gb_synonym",       COrgMod::eSubtype_gb_synonym       },
+    { "group",            COrgMod::eSubtype_group            },
+    { "isolate",          COrgMod::eSubtype_isolate          },
+    { "nat_host",         COrgMod::eSubtype_nat_host         },
+    { "pathovar",         COrgMod::eSubtype_pathovar         },
+    { "serogroup",        COrgMod::eSubtype_serogroup        },
+    { "serotype",         COrgMod::eSubtype_serotype         },
+    { "serovar",          COrgMod::eSubtype_serovar          },
+    { "specimen_voucher", COrgMod::eSubtype_specimen_voucher },
+    { "strain",           COrgMod::eSubtype_strain           },
+    { "sub_species",      COrgMod::eSubtype_sub_species      },
+    { "subgroup",         COrgMod::eSubtype_subgroup         },
+    { "substrain",        COrgMod::eSubtype_substrain        },
+    { "subtype",          COrgMod::eSubtype_subtype          },
+    { "synonym",          COrgMod::eSubtype_synonym          },
+    { "teleomorph",       COrgMod::eSubtype_teleomorph       },
+    { "type",             COrgMod::eSubtype_type             },
+    { "variety",          COrgMod::eSubtype_variety          }
 };
 
 typedef struct bondinit {
@@ -967,22 +892,32 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
 
 
 bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
-                                                        ESubSrc stype, const string& val)
+                                                        CSubSource::ESubtype stype, const string& val)
 
 {
     CBioSource& bsp = sfdata.SetBiosrc ();
-
-    return false;
+    CBioSource::TSubtype& slist = bsp.SetSubtype ();
+    CRef<CSubSource> ssp (new CSubSource);
+    ssp->SetSubtype (stype);
+    ssp->SetName (val);
+    slist.push_back (ssp);
+    return true;
 }
 
 
 bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
-                                                        EOrgMod mtype, const string& val)
+                                                        COrgMod::ESubtype  mtype, const string& val)
 
 {
     CBioSource& bsp = sfdata.SetBiosrc ();
-
-    return false;
+    CBioSource::TOrg& orp = bsp.SetOrg ();
+    COrg_ref::TOrgname& onp = orp.SetOrgname ();
+    COrgName::TMod& mlist = onp.SetMod ();
+    CRef<COrgMod> omp (new COrgMod);
+    omp->SetSubtype (mtype);
+    omp->SetSubname (val);
+    mlist.push_back (omp);
+    return true;
 }
 
 
@@ -996,177 +931,174 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
     if (typ == CSeqFeatData::e_Biosrc) {
 
         if (m_OrgRefKeys.find (qual) != m_OrgRefKeys.end ()) {
+
             EOrgRef rtype = m_OrgRefKeys [qual];
-            if (rtype != eOrgRef_bad) {
-                if (x_AddQualifierToBioSrc (sfdata, rtype, val)) return true;
-            }
+            if (x_AddQualifierToBioSrc (sfdata, rtype, val)) return true;
+
         } else if (m_SubSrcKeys.find (qual) != m_SubSrcKeys.end ()) {
-            ESubSrc stype = m_SubSrcKeys [qual];
-            if (stype != eSubSrc_bad) {
-                if (x_AddQualifierToBioSrc (sfdata, stype, val)) return true;
-            }
+
+            CSubSource::ESubtype stype = m_SubSrcKeys [qual];
+            if (x_AddQualifierToBioSrc (sfdata, stype, val)) return true;
+
         } else if (m_OrgModKeys.find (qual) != m_OrgModKeys.end ()) {
-            EOrgMod mtype = m_OrgModKeys [qual];
-            if (mtype != eOrgMod_bad) {
-                if (x_AddQualifierToBioSrc (sfdata, mtype, val)) return true;
-            }
+
+            COrgMod::ESubtype  mtype = m_OrgModKeys [qual];
+            if (x_AddQualifierToBioSrc (sfdata, mtype, val)) return true;
         }
 
     } else if (m_QualKeys.find (qual) != m_QualKeys.end ()) {
 
         EQual qtype = m_QualKeys [qual];
-        if (qtype != eQual_bad) {
-            switch (typ) {
-                case CSeqFeatData::e_Gene:
-                    if (x_AddQualifierToGene (sfdata, qtype, val)) return true;
-                    break;
-                case CSeqFeatData::e_Cdregion:
-                    if (x_AddQualifierToCdregion (sfp, sfdata, qtype, val)) return true;
-                    break;
-                case CSeqFeatData::e_Rna:
-                    if (x_AddQualifierToRna (sfdata, qtype, val)) return true;
-                    break;
-               case CSeqFeatData::e_Imp:
-                    if (x_AddQualifierToImp (sfp, sfdata, qtype, qual, val)) return true;
-                    break;
-                case CSeqFeatData::e_Region:
-                    if (qtype == eQual_region_name) {
-                        sfdata.SetRegion (val);
-                        return true;
-                    }
-                    break;
-                case CSeqFeatData::e_Bond:
-                    if (qtype == eQual_bond_type) {
-                        if (m_BondKeys.find (val) != m_BondKeys.end ()) {
-                            CSeqFeatData::EBond btyp = m_BondKeys [val];
-                            sfdata.SetBond (btyp);
-                            return true;
-                        }
-                    }
-                    break;
-                case CSeqFeatData::e_Site:
-                    if (qtype == eQual_site_type) {
-                        if (m_SiteKeys.find (val) != m_SiteKeys.end ()) {
-                            CSeqFeatData::ESite styp = m_SiteKeys [val];
-                            sfdata.SetSite (styp);
-                            return true;
-                        }
-                    }
-                    break;
-                default:
-                    break;
-            }
-            switch (qtype) {
-                case eQual_pseudo:
-                    sfp->SetPseudo (true);
-                    return true;
-                case eQual_partial:
-                    sfp->SetPartial (true);
-                    return true;
-                case eQual_exception:
-                    sfp->SetExcept (true);
-                    sfp->SetExcept_text (val);
-                    return true;
-                case eQual_evidence:
-                    if (val == "experimental") {
-                        sfp->SetExp_ev (CSeq_feat::eExp_ev_experimental);
-                    } else if (val == "not_experimental" || val == "non_experimental" ||
-                               val == "not-experimental" || val == "non-experimental") {
-                        sfp->SetExp_ev (CSeq_feat::eExp_ev_not_experimental);
-                    }
-                    return true;
-                case eQual_note:
-                    {
-                        if (sfp->CanGetComment ()) {
-                            const CSeq_feat::TComment& comment = sfp->GetComment ();
-                            CSeq_feat::TComment revised = comment + "; " + val;
-                            sfp->SetComment (revised);
-                        } else {
-                            sfp->SetComment (val);
-                        }
-                        return true;
-                    }
-                case eQual_allele:
-                case eQual_bound_moiety:
-                case eQual_clone:
-                case eQual_cons_splice:
-                case eQual_direction:
-                case eQual_EC_number:
-                case eQual_frequency:
-                case eQual_function:
-                case eQual_insertion_seq:
-                case eQual_label:
-                case eQual_map:
-                case eQual_number:
-                case eQual_organism:
-                case eQual_PCR_conditions:
-                case eQual_phenotype:
-                case eQual_product:
-                case eQual_protein_id:
-                case eQual_replace:
-                case eQual_rpt_family:
-                case eQual_rpt_type:
-                case eQual_rpt_unit:
-                case eQual_standard_name:
-                case eQual_transcript_id:
-                case eQual_transposon:
-                case eQual_usedin:
-                    {
-                        CSeq_feat::TQual& qlist = sfp->SetQual ();
-                        CRef<CGb_qual> gbq (new CGb_qual);
-                        gbq->SetQual (qual);
-                        gbq->SetVal (val);
-                        qlist.push_back (gbq);
-                        return true;
-                    }
-                case eQual_gene:
-                    {
-                        CGene_ref& grp = sfp->SetGeneXref ();
-                        if (val == "-") {
-                            grp.SetLocus ("");
-                        } else {
-                            grp.SetLocus (val);
-                        }
-                        return true;
-                    }
-                case eQual_gene_desc:
-                    {
-                        CGene_ref& grp = sfp->SetGeneXref ();
-                        grp.SetDesc (val);
-                        return true;
-                    }
-                case eQual_gene_syn:
-                    {
-                        CGene_ref& grp = sfp->SetGeneXref ();
-                        CGene_ref::TSyn& syn = grp.SetSyn ();
-                        syn.push_back (val);
-                        return true;
-                    }
-                case eQual_locus_tag:
-                    {
-                        CGene_ref& grp = sfp->SetGeneXref ();
-                        grp.SetLocus_tag (val);
-                        return true;
-                    }
-                case eQual_db_xref:
-                    {
-                        string db, tag;
-                        if (NStr::SplitInTwo (val, ":", db, tag)) {
-                            CSeq_feat::TDbxref& dblist = sfp->SetDbxref ();
-                            CRef<CDbtag> dbt (new CDbtag);
-                            dbt->SetDb (db);
-                            CRef<CObject_id> oid (new CObject_id);
-                            oid->SetStr (tag);
-                            dbt->SetTag (*oid);
-                            dblist.push_back (dbt);
-                            return true;
-                        }
-                        return true;
-                    }
-                default:
-                    break;
-            }
-        }
+		switch (typ) {
+			case CSeqFeatData::e_Gene:
+				if (x_AddQualifierToGene (sfdata, qtype, val)) return true;
+				break;
+			case CSeqFeatData::e_Cdregion:
+				if (x_AddQualifierToCdregion (sfp, sfdata, qtype, val)) return true;
+				break;
+			case CSeqFeatData::e_Rna:
+				if (x_AddQualifierToRna (sfdata, qtype, val)) return true;
+				break;
+		   case CSeqFeatData::e_Imp:
+				if (x_AddQualifierToImp (sfp, sfdata, qtype, qual, val)) return true;
+				break;
+			case CSeqFeatData::e_Region:
+				if (qtype == eQual_region_name) {
+					sfdata.SetRegion (val);
+					return true;
+				}
+				break;
+			case CSeqFeatData::e_Bond:
+				if (qtype == eQual_bond_type) {
+					if (m_BondKeys.find (val) != m_BondKeys.end ()) {
+						CSeqFeatData::EBond btyp = m_BondKeys [val];
+						sfdata.SetBond (btyp);
+						return true;
+					}
+				}
+				break;
+			case CSeqFeatData::e_Site:
+				if (qtype == eQual_site_type) {
+					if (m_SiteKeys.find (val) != m_SiteKeys.end ()) {
+						CSeqFeatData::ESite styp = m_SiteKeys [val];
+						sfdata.SetSite (styp);
+						return true;
+					}
+				}
+				break;
+			default:
+				break;
+		}
+		switch (qtype) {
+			case eQual_pseudo:
+				sfp->SetPseudo (true);
+				return true;
+			case eQual_partial:
+				sfp->SetPartial (true);
+				return true;
+			case eQual_exception:
+				sfp->SetExcept (true);
+				sfp->SetExcept_text (val);
+				return true;
+			case eQual_evidence:
+				if (val == "experimental") {
+					sfp->SetExp_ev (CSeq_feat::eExp_ev_experimental);
+				} else if (val == "not_experimental" || val == "non_experimental" ||
+						   val == "not-experimental" || val == "non-experimental") {
+					sfp->SetExp_ev (CSeq_feat::eExp_ev_not_experimental);
+				}
+				return true;
+			case eQual_note:
+				{
+					if (sfp->CanGetComment ()) {
+						const CSeq_feat::TComment& comment = sfp->GetComment ();
+						CSeq_feat::TComment revised = comment + "; " + val;
+						sfp->SetComment (revised);
+					} else {
+						sfp->SetComment (val);
+					}
+					return true;
+				}
+			case eQual_allele:
+			case eQual_bound_moiety:
+			case eQual_clone:
+			case eQual_cons_splice:
+			case eQual_direction:
+			case eQual_EC_number:
+			case eQual_frequency:
+			case eQual_function:
+			case eQual_insertion_seq:
+			case eQual_label:
+			case eQual_map:
+			case eQual_number:
+			case eQual_organism:
+			case eQual_PCR_conditions:
+			case eQual_phenotype:
+			case eQual_product:
+			case eQual_protein_id:
+			case eQual_replace:
+			case eQual_rpt_family:
+			case eQual_rpt_type:
+			case eQual_rpt_unit:
+			case eQual_standard_name:
+			case eQual_transcript_id:
+			case eQual_transposon:
+			case eQual_usedin:
+				{
+					CSeq_feat::TQual& qlist = sfp->SetQual ();
+					CRef<CGb_qual> gbq (new CGb_qual);
+					gbq->SetQual (qual);
+					gbq->SetVal (val);
+					qlist.push_back (gbq);
+					return true;
+				}
+			case eQual_gene:
+				{
+					CGene_ref& grp = sfp->SetGeneXref ();
+					if (val == "-") {
+						grp.SetLocus ("");
+					} else {
+						grp.SetLocus (val);
+					}
+					return true;
+				}
+			case eQual_gene_desc:
+				{
+					CGene_ref& grp = sfp->SetGeneXref ();
+					grp.SetDesc (val);
+					return true;
+				}
+			case eQual_gene_syn:
+				{
+					CGene_ref& grp = sfp->SetGeneXref ();
+					CGene_ref::TSyn& syn = grp.SetSyn ();
+					syn.push_back (val);
+					return true;
+				}
+			case eQual_locus_tag:
+				{
+					CGene_ref& grp = sfp->SetGeneXref ();
+					grp.SetLocus_tag (val);
+					return true;
+				}
+			case eQual_db_xref:
+				{
+					string db, tag;
+					if (NStr::SplitInTwo (val, ":", db, tag)) {
+						CSeq_feat::TDbxref& dblist = sfp->SetDbxref ();
+						CRef<CDbtag> dbt (new CDbtag);
+						dbt->SetDb (db);
+						CRef<CObject_id> oid (new CObject_id);
+						oid->SetStr (tag);
+						dbt->SetTag (*oid);
+						dblist.push_back (dbt);
+						return true;
+					}
+					return true;
+				}
+			default:
+				break;
+		}
     }
     return false;
 }
