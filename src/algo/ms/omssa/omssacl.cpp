@@ -141,7 +141,7 @@ int COMSSA::Run()
 {    
     CArgs args = GetArgs();
     _TRACE("omssa: initializing score");
-    CSearch Search(false);
+    CSearch Search;
     int retval = Search.InitBlast(args["d"].AsString().c_str(), false);
     if(retval) {
 	ERR_POST(Fatal << "ommsatest: unable to initialize blastdb, error " <<
@@ -176,7 +176,7 @@ int COMSSA::Run()
 
     CMSResponse Response;
     CMSRequest Request;
-
+    Request.SetSearchtype(eMSSearchType_monoisotopic);
     Request.SetPeptol(args["p"].AsDouble());
     Request.SetMsmstol(args["t"].AsDouble());
     Request.SetCutlo(args["cl"].AsDouble());
@@ -189,7 +189,7 @@ int COMSSA::Run()
     Request.SetEnzyme(eMSEnzymes_trypsin);
     Request.SetMissedcleave(args["l"].AsInteger());
     Request.SetSpectra(*Spectrumset);
-    Request.SetFixed().push_back(eMSMod_moxy);
+    Request.SetFixed().push_back(eMSMod_mcarbamidomethyl);
     Request.SetVariable().push_back(eMSMod_moxy);
     Request.SetDb(args["d"].AsString());
     Request.SetCull(args["c"].AsInteger());
@@ -258,6 +258,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.9  2004/03/01 18:24:08  lewisg
+  better mod handling
+
   Revision 1.8  2003/12/04 23:39:09  lewisg
   no-overlap hits and various bugfixes
 

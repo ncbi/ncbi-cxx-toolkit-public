@@ -36,6 +36,7 @@
 #include <fstream>
 
 #include <msms.hpp>
+#include <Mod.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -137,23 +138,40 @@ bool CTrypsin::CalcAndCut(const char *SeqStart,
 			  int& NumMod,
 			  int MaxNumMod,
 			  int *EndMasses,
+			  CMSMod &VariableMods,
 			  //			 vector <EMSMod>& VariableMods,
 			  //			 vector <EMSMod>& FixedMods,
 			  const int *IntCalcMass  // array of int AA masses
 			  )
 {
     char SeqChar;
+    // iterator thru mods
+    CMSRequest::TVariable::iterator iMods;
+    // iterate thru mods characters
+    int iChar;
+
     // iterate through sequence
     // note that this loop doesn't check at the end of the sequence
     for(;*PepStart < SeqEnd; (*PepStart)++) {
 	SeqChar = **PepStart;
 
-	// check for mods, methionine for now
-	if((SeqChar == 'M' || SeqChar == '\x0c') && NumMod < MaxNumMod) {
-	    NumMod++;
-	    Masses[NumCleave][NumMod-1] = Masses[NumCleave][NumMod-2] +
-		16*MSSCALE;
+	// check for mods that are type AA only
+	for(iMods = VariableMods.GetAAMods(eModAA).begin();
+	    iMods !=  VariableMods.GetAAMods(eModAA).end(); iMods++) {
+	    for(iChar = 0; iChar < NumModChars[*iMods]; iChar++) {
+		if (SeqChar == ModChar[iChar][*iMods] && NumMod < MaxNumMod) {
+		    NumMod++;
+		    Masses[NumCleave][NumMod-1] = 
+			Masses[NumCleave][NumMod-2] +
+			ModMass[*iMods];
+		}
+	    }
 	}
+	//	if((SeqChar == 'M' || SeqChar == '\x0c') && NumMod < MaxNumMod) {
+	//	    NumMod++;
+	//	    Masses[NumCleave][NumMod-1] = Masses[NumCleave][NumMod-2] +
+	//		16*MSSCALE;
+	//	}
 
 	CalcMass(SeqChar, Masses, NumCleave, NumMod, IntCalcMass);
 
@@ -214,17 +232,22 @@ void CFormicAcid::Cleave(char *Seq, int SeqLen, TCleave& Positions)
 //  Holds AA indexed mass array
 //
 
-CMassArray::CMassArray(bool Average)
+void CMassArray::Init(const CMSRequest::TSearchtype &SearchType)
+{
+    x_Init(SearchType);
+}
+
+void CMassArray::x_Init(const CMSRequest::TSearchtype &SearchType)
 {
     int i;
-    if(Average) {
+    if(SearchType == eMSSearchType_average) {
 	for(i = 0; i < kNumUniqueAA; i++ ) {
 	    CalcMass[i] = AverageMass[i];
 	    IntCalcMass[i] = static_cast <int> 
 		(AverageMass[i]*MSSCALE);
 	}
     }
-    else {
+    else if(SearchType == eMSSearchType_monoisotopic) {
 	for(i = 0; i < kNumUniqueAA; i++ ) {
 	    CalcMass[i] = MonoMass[i];
 	    IntCalcMass[i] = static_cast <int>
@@ -233,8 +256,27 @@ CMassArray::CMassArray(bool Average)
     }
 }
 
+// set up the mass array with fixed mods
+void CMassArray::Init(const CMSRequest::TFixed &Mods, 
+		      const CMSRequest::TSearchtype &SearchType)
+{
+    x_Init(SearchType);
+    CMSRequest::TFixed::const_iterator i;  // iterate thru fixed mods
+    int j; // the number of characters affected by the fixed mod
+    for(i = Mods.begin(); i != Mods.end(); i++) {
+	for(j = 0; j < NumModChars[*i]; j++) {
+	    CalcMass[ModChar[j][*i]] +=  ModMass[*i]/(double)MSSCALE;
+	    IntCalcMass[ModChar[j][*i]] += ModMass[*i];
+	}
+    }
+}
+
+
 /*
   $Log$
+  Revision 1.3  2004/03/01 18:24:07  lewisg
+  better mod handling
+
   Revision 1.2  2003/10/21 21:12:16  lewisg
   reorder headers
 

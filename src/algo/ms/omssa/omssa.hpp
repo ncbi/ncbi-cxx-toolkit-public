@@ -65,8 +65,8 @@ typedef multimap <double, CMSHit *> TScoreList;
 
 class NCBI_XOMSSA_EXPORT CSearch {
 public:
-    CSearch(bool average); // is the search monoisotopic or average mass?
-    ~CSearch();
+    CSearch(void);
+    ~CSearch(void);
 
     // init blast databases.  stream thru db if InitDB true
     int InitBlast(const char *blastdb, bool InitDb);
@@ -105,9 +105,9 @@ public:
     double CalcPoissonMean(int Start, int Stop, int Mass, CMSPeak *Peaks,
 			   int Charge, double Threshold);
     double CalcPvalue(double Mean, int Hits, int n);
-double CalcPvalueTopHit(double Mean, int Hits, int n, double Normal, double TopHitProb);
-double CalcNormalTopHit(double Mean, double TopHitProb);
-double CalcPoissonTopHit(double Mean, int i, double TopHitProb);
+    double CalcPvalueTopHit(double Mean, int Hits, int n, double Normal, double TopHitProb);
+    double CalcNormalTopHit(double Mean, double TopHitProb);
+    double CalcPoissonTopHit(double Mean, int i, double TopHitProb);
 
     // take hitlist for a peak and insert it into the response
     void SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
@@ -121,7 +121,7 @@ private:
     ReadDBFILEPtr rdfp; 
     //    CMSHistSet HistSet;  // score arrays
     CMassArray MassArray;  // amino acid mass arrays
-    const double *AAMass;
+    CMSMod VariableMods;  // categorized variable mods
     int numseq; // number of sequences in blastdb
 };
 
@@ -176,6 +176,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.6  2004/03/01 18:24:08  lewisg
+  better mod handling
+
   Revision 1.5  2003/12/22 21:58:00  lewisg
   top hit code and variable mod fixes
 

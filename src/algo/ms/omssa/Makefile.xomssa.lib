@@ -6,7 +6,7 @@
 
 CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir) $(NCBI_C_INCLUDE)
 
-SRC = SpectrumSet msladder msms mspeak nrutil omssa
+SRC = SpectrumSet msladder msms mspeak nrutil omssa Mod
 
 LIB = xomssa
 

@@ -45,6 +45,8 @@
 #include <set>
 #include <deque>
 #include <map>
+#include <objects/omssa/MSRequest.hpp>
+#include <Mod.hpp>
 
 // #include <corelib/ncbistd.hpp>
 
@@ -52,10 +54,11 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(omssa)
 
-// ncbistdaa amino acid codes
 const int kNumUniqueAA = 26;
 // U is selenocystine
-//static const char UniqueAA[kNumUniqueAA+1] = "ACDEFGHIKLMNPQRSTUVWY";
+// this is NCBIstdAA.  Doesn't seem to be a central location to get this.
+// all blast protein databases are encoded with this.
+// U is selenocystine
 const char * const UniqueAA = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
 //                                            01234567890123456789012345
 
@@ -78,7 +81,7 @@ const double AAAbundance[] = {1.0, 0.0758, 1.0, 0.0167, 0.0528, 0.0635, 0.0408, 
 // masses taken from Papayannopoulos, IA, Mass Spectrometry Reviews, 1995, 14, 49-73.
 // monoisotopic mass
 // C = 103.00919
-const double MonoMass[] = {0.0, 71.03711, 115.02694, 160.02, 115.02694, 129.04259, 147.06841, 57.02147, 137.05891, 113.08406, 128.09496, 113.08406, 131.04049, 114.04293, 97.05276, 128.05858, 156.10111, 87.03203, 101.04768, 99.06841, 186.07931, 0.0, 163.06333, 128.05858, 149.903 , 0.0, 0.0 };
+const double MonoMass[] = {0.0, 71.03711, 115.02694, 103.00919, 115.02694, 129.04259, 147.06841, 57.02147, 137.05891, 113.08406, 128.09496, 113.08406, 131.04049, 114.04293, 97.05276, 128.05858, 156.10111, 87.03203, 101.04768, 99.06841, 186.07931, 0.0, 163.06333, 128.05858, 149.903 , 0.0, 0.0 };
 // average mass
 const double AverageMass[] = {0.0, 71.08, 0.0, 103.15, 115.09, 129.12, 147.18, 57.05, 137.14, 113.16, 128.17, 113.16, 131.20, 114.10, 97.12, 128.13, 156.19, 87.08, 101.11, 99.13, 186.21, 0.0, 163.18, 128.13, 150.034, 0.0, 0.0 };
 
@@ -98,10 +101,20 @@ const int kIonDirection[] = { 1, 1, 1, -1, -1, -1 };
 
 class NCBI_XOMSSA_EXPORT CMassArray {
 public:
-    CMassArray(bool Average = false);
+    CMassArray(void) {};
+
     const double* GetMass(void);
     const int* GetIntMass(void);
+
+    // initialize mass arrays
+    void Init(const CMSRequest::TSearchtype &SearchType);
+    // initialize mass arrays with fixed mods
+    void Init(const CMSRequest::TFixed &Mods, 
+	      const CMSRequest::TSearchtype &SearchType);
 private:
+    // inits mass arrays
+    void x_Init(const CMSRequest::TSearchtype &SearchType);
+    // masses as doubles
     double CalcMass[kNumUniqueAA];
     // mass in scaled integer Daltons
     int IntCalcMass[kNumUniqueAA];
@@ -178,7 +191,7 @@ public:
 			    int& NumMod,   // num Mods
 			    int MaxNumMod, // max num mods 
 			    int *EndMasses,
-			    //			 vector <EMSMod>& VariableMods,
+			    CMSMod &VariableMods,
 			    //			 vector <EMSMod>& FixedMods,
 			    const int *IntCalcMass  // array of int AA masses
 			    ) { return false; }
@@ -295,6 +308,7 @@ public:
 			    int& NumMod,
 			    int MaxNumMod,
 			    int *EndMasses,
+			    CMSMod &VariableMods,
 			    //			 vector <EMSMod>& VariableMods,
 			    //			 vector <EMSMod>& FixedMods,
 			    const int *IntCalcMass  // array of int AA masses
@@ -327,6 +341,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.4  2004/03/01 18:24:07  lewisg
+  better mod handling
+
   Revision 1.3  2003/10/24 21:28:41  lewisg
   add omssa, xomssa, omssacl to win32 build, including dll
 

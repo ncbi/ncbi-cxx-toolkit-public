@@ -62,9 +62,8 @@ USING_SCOPE(omssa);
 //
 
 
-CSearch::CSearch(bool average): rdfp(0), MassArray(average)
+CSearch::CSearch(void): rdfp(0)
 {
-    AAMass = MassArray.GetMass(); 
 }
 
 int CSearch::InitBlast(const char *blastdb, bool InitDb)
@@ -234,6 +233,8 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
     int iSearch, hits;
     unsigned char *Sequence;  // start position
     int endposition, position;
+    MassArray.Init(MyRequest.GetFixed(), MyRequest.GetSearchtype());
+    VariableMods.Init(MyRequest.GetVariable());
     const int *IntMassArray = MassArray.GetIntMass();
     const char *PepStart[MAXMISSEDCLEAVE];
     const char *PepEnd[MAXMISSEDCLEAVE];
@@ -326,6 +327,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 				   NumMod[Missed - 1],
 				   MAXMOD,
 				   EndMasses,
+				   VariableMods,
 				   IntMassArray);
 			
 	    // update the longer peptides to add the new peptide (Missed-1) on the end
@@ -842,6 +844,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.13  2004/03/01 18:24:08  lewisg
+better mod handling
+
 Revision 1.12  2003/12/22 21:58:00  lewisg
 top hit code and variable mod fixes
 
