@@ -504,6 +504,11 @@ public:
     void EndDelayBuffer(CDelayBuffer& buffer,
                         const CItemInfo* itemInfo, TObjectPtr objectPtr);
 
+    void SetDiscardCurrObject(bool discard=true)
+        {m_DiscardCurrObject = discard;}
+    bool GetDiscardCurrObject(void) const
+        {return m_DiscardCurrObject;}
+
 protected:
     friend class CObjectStreamCopier;
 
@@ -542,6 +547,7 @@ private:
 
     TFailFlags m_Fail;
     TFlags m_Flags;
+    bool m_DiscardCurrObject;
 
 public:
     // hook support
@@ -575,6 +581,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2003/08/26 19:24:48  gouriano
+* added possibility to discard a member of an STL container
+* (from a read hook)
+*
 * Revision 1.86  2003/08/19 18:32:37  vasilche
 * Optimized reading and writing strings.
 * Avoid string reallocation when checking char values.

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/08/26 19:25:58  gouriano
+* added possibility to discard a member of an STL container
+* (from a read hook)
+*
 * Revision 1.39  2003/08/25 15:59:09  gouriano
 * added possibility to use namespaces in XML i/o streams
 *
@@ -226,14 +230,13 @@ typedef CTypeInfoFunctions TFunc;
 
 CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(),
+      m_InfoItem(0),
       m_IsCObject(false),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
       m_SkipHookData(&CVoidTypeFunctions::Skip, &TFunc::SkipWithHook),
-      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
-      m_InfoItem(0)
-
+      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook)
 {
     return;
 }
@@ -241,13 +244,13 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size)
 
 CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(name),
+      m_InfoItem(0),
       m_IsCObject(false),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
       m_SkipHookData(&CVoidTypeFunctions::Skip, &TFunc::SkipWithHook),
-      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
-      m_InfoItem(0)
+      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook)
 {
     return;
 }
@@ -255,13 +258,13 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name)
 
 CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(name),
+      m_InfoItem(0),
       m_IsCObject(false),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
       m_SkipHookData(&CVoidTypeFunctions::Skip, &TFunc::SkipWithHook),
-      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
-      m_InfoItem(0)
+      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook)
 {
     return;
 }

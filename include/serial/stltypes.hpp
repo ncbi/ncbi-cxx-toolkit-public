@@ -43,6 +43,7 @@
 #include <serial/serialutil.hpp>
 #include <serial/stltypesimpl.hpp>
 #include <serial/ptrinfo.hpp>
+#include <serial/objistr.hpp>
 
 
 /** @addtogroup TypeInfoCPP
@@ -243,6 +244,10 @@ public:
 #endif
             container.push_back(TElementType());
             containerType->GetElementType()->ReadData(in, &container.back());
+            if (in.GetDiscardCurrObject()) {
+                container.pop_back();
+                in.SetDiscardCurrObject(false);
+            }
         }
 
     static void SetMemFunctions(CStlOneArgTemplate* info)
@@ -702,6 +707,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2003/08/26 19:24:47  gouriano
+* added possibility to discard a member of an STL container
+* (from a read hook)
+*
 * Revision 1.65  2003/08/14 20:03:57  vasilche
 * Avoid memory reallocation when reading over preallocated object.
 * Simplified CContainerTypeInfo iterators interface.

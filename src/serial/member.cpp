@@ -626,9 +626,9 @@ void CMemberInfoFunctions::ReadWithSetFlagMember(CObjectIStream& in,
 {
     _ASSERT(!memberInfo->CanBeDelayed());
     _ASSERT(memberInfo->HaveSetFlag());
+    memberInfo->UpdateSetFlagYes(classPtr);
     in.ReadObject(memberInfo->GetItemPtr(classPtr),
                   memberInfo->GetTypeInfo());
-    memberInfo->UpdateSetFlagYes(classPtr);
 }
 
 void CMemberInfoFunctions::ReadLongMember(CObjectIStream& in,
@@ -638,19 +638,18 @@ void CMemberInfoFunctions::ReadLongMember(CObjectIStream& in,
     if ( memberInfo->CanBeDelayed() ) {
         CDelayBuffer& buffer = memberInfo->GetDelayBuffer(classPtr);
         if ( !buffer ) {
+            memberInfo->UpdateSetFlagYes(classPtr);
             in.StartDelayBuffer();
             memberInfo->GetTypeInfo()->SkipData(in);
             in.EndDelayBuffer(buffer, memberInfo, classPtr);
-            // update 'set' flag
-            memberInfo->UpdateSetFlagYes(classPtr);
             return;
         }
         buffer.Update();
     }
     
+    memberInfo->UpdateSetFlagYes(classPtr);
     in.ReadObject(memberInfo->GetItemPtr(classPtr),
                   memberInfo->GetTypeInfo());
-    memberInfo->UpdateSetFlagYes(classPtr);
 }
 
 void CMemberInfoFunctions::ReadMissingSimpleMember(CObjectIStream& in,
@@ -853,6 +852,9 @@ void CMemberInfoFunctions::ReadHookedMember(CObjectIStream& stream,
         TMemberIndex index = memberInfo->GetIndex();
         CObjectInfo::CMemberIterator member(object, index);
         _ASSERT(member.Valid());
+        if (memberInfo->HaveSetFlag()) {
+            memberInfo->UpdateSetFlagYes(classPtr);
+        }
         hook->ReadClassMember(stream, member);
     }
     else
@@ -1019,6 +1021,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.32  2003/08/26 19:25:58  gouriano
+* added possibility to discard a member of an STL container
+* (from a read hook)
+*
 * Revision 1.31  2003/08/14 20:03:58  vasilche
 * Avoid memory reallocation when reading over preallocated object.
 * Simplified CContainerTypeInfo iterators interface.

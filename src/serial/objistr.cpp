@@ -155,7 +155,7 @@ CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
 }
 
 CObjectIStream::CObjectIStream(void)
-    : m_Fail(fNotOpen), m_Flags(fFlagNone)
+    : m_Fail(fNotOpen), m_Flags(fFlagNone), m_DiscardCurrObject(false)
 {
 }
 
@@ -1201,6 +1201,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.112  2003/08/26 19:25:58  gouriano
+* added possibility to discard a member of an STL container
+* (from a read hook)
+*
 * Revision 1.111  2003/08/25 15:59:09  gouriano
 * added possibility to use namespaces in XML i/o streams
 *
