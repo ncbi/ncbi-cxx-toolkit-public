@@ -243,6 +243,15 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
             continue;
         }
 
+        // Do not generate dependencies if internal lib
+        // is present in form of 3-rd party lib
+        if (id.Type() == CProjKey::eLib                  &&
+            GetApp().GetSite().IsLibWithChoice(id.Id())  &&
+            GetApp().GetSite().GetChoiceForLib(id.Id()) == CMsvcSite::e3PartyLib) {
+            continue;
+        }
+
+
         TProjects::const_iterator n = m_Projects.find(id);
         if (n != m_Projects.end()) {
 
@@ -393,6 +402,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/04/19 15:42:56  gorelenk
+ * Changed implementation of CMsvcSolutionGenerator::WriteProjectAndSection :
+ * added test for lib choice.
+ *
  * Revision 1.15  2004/02/25 19:45:00  gorelenk
  * +BuildAll utility project.
  *
