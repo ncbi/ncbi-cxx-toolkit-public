@@ -53,7 +53,9 @@ extern "C" {
 #define NCBI4NA_ENCODING 2
 #define NCBI2NA_ENCODING 3
 #define ERROR_ENCODING 255
-
+#ifndef IS_residue
+#define IS_residue(x) (x <= 250)
+#endif
 #if 0
 /** Retrieve a sequence from the BLAST database
  * @param db BLAST database [in]
