@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/09/08 16:29:13  vasilche
+* Added time in verbose output.
+*
 * Revision 1.9  2004/08/31 14:43:21  vasilche
 * Added options -no_seq_map, -no_named, -verbose -adaptive.
 *
@@ -305,7 +308,8 @@ bool CTestOM::Thread_Run(int idx)
             SleepSec(pause);
         }
         if ( m_verbose ) {
-            NcbiCout << abs(i-from) << ": " << sih.AsString() << NcbiFlush;
+            NcbiCout << CTime(CTime::eCurrent).AsString() << " " <<
+                abs(i-from) << ": " << sih.AsString() << NcbiFlush;
         }
         try {
             // load sequence
