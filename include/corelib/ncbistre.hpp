@@ -34,6 +34,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/11/03 20:48:18  vakatov
+* + <iostream>
+* + SEEKOFF
+*
 * Revision 1.4  1998/10/30 20:08:33  vakatov
 * Fixes to (first-time) compile and test-run on MSVS++
 *
@@ -57,12 +61,15 @@
 
 
 #if defined(HAVE_IOSTREAM)  &&  defined(NCBI_USE_NEW_IOSTREAM)
+#  include <iostream>
 #  include <fstream>
 #  include <strstream>
 #  define IO_PREFIX  std
-#  define IOS_BASE std::ios_base
+#  define IOS_BASE   std::ios_base
+#  define SEEKOFF    pubseekoff
 
 #elif defined(HAVE_IOSTREAM_H)
+#  include <iostream.h>
 #  include <fstream.h>
 #  if defined(HAVE_STRSTREA_H)
 #    include <strstrea.h>
@@ -70,7 +77,8 @@
 #    include <strstream.h>
 #  endif
 #  define IO_PREFIX
-#  define IOS_BASE ::ios
+#  define IOS_BASE   ::ios
+#  define SEEKOFF    seekoff
 
 #else
 #  error "Cannot find neither <iostream> nor <iostream.h>!"
