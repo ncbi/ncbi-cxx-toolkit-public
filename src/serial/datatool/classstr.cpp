@@ -456,12 +456,15 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 code.Methods(inl) <<
                     "    "DELAY_PREFIX<<i->cName<<".Update();\n";
             }
+// disabled for now
+#if 0
             if (i->defaultValue.empty() && !i->attlist) {
                 code.Methods(inl) <<
                     "    if (!Is" << set_name << i->cName <<"()) {\n"
                     "        ThrowUnassigned(\"" << i->mName << "\");\n"
                     "    }\n";
             }
+#endif
             code.Methods(inl) <<
                 "    return "<<i->valueName<<";\n"
                 "}\n"
@@ -753,15 +756,22 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         "    bool VerifyAssigned(size_t index) const;\n"
         "    void SetAssigned(size_t index);\n"
         "\n";
+// disabled for now
+#if 0
     methods
-// 04apr03: disabled for now
-//        <<"void "<<methodPrefix<<"ThrowUnassigned(const char* name) const\n"
-        <<"void "<<methodPrefix<<"ThrowUnassigned(const char*) const\n"
+        <<"void "<<methodPrefix<<"ThrowUnassigned(const char* name) const\n"
         <<"{\n"
-//        << "    NCBI_THROW(ncbi::CUnassignedMember,eFail,"
-//        << "std::string(\"Uninitialized member: \")+name);\n"
+        << "    NCBI_THROW(ncbi::CUnassignedMember,eFail,"
+        << "std::string(\"Uninitialized member: \")+\""<<methodPrefix<<"\"+name);\n"
         <<"}\n"
         "\n";
+#else
+    methods
+        <<"void "<<methodPrefix<<"ThrowUnassigned(const char*) const\n"
+        <<"{\n"
+        <<"}\n"
+        "\n";
+#endif
     methods
         <<"bool "<<methodPrefix<<"VerifyAssigned(size_t index) const\n"
         <<"{\n";
@@ -1206,6 +1216,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2003/04/04 17:21:09  gouriano
+* disable data verification, one more step
+*
 * Revision 1.50  2003/04/04 15:22:29  gouriano
 * disable throwing CUnassignedMember exception
 *
