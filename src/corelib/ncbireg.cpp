@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/11/18 20:14:15  vakatov
+* Get rid of some CodeWarrior(MAC) C++ compilation warnings
+*
 * Revision 1.9  1999/09/02 21:52:14  vakatov
 * CNcbiRegistry::Read() -- fixed to accept if underscore is the 1st
 * symbol in the section/entry name;
@@ -165,7 +168,7 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
     for (line = 1;  s_NcbiGetline(is, str);  line++) {
         SIZE_TYPE len = str.length();
         SIZE_TYPE beg;
-        for (beg = 0;  beg < len  &&  isspace(str[beg]);  beg++);
+        for (beg = 0;  beg < len  &&  isspace(str[beg]);  beg++) continue;
         if (beg == len)
             continue;
 
@@ -187,7 +190,7 @@ Invalid registry section(']' is missing): `" + str + "'", line);
 Unnamed registry section: `" + str + "'", line);
             }
             
-            for (end = beg;  s_IsNameSectionSymbol(str[end]);  end++);
+            for (end = beg;  s_IsNameSectionSymbol(str[end]);  end++) continue;
             section = str.substr(beg, end - beg);
 
             // an extra validity check
@@ -207,7 +210,7 @@ Invalid registry section name: `" + str + "'", line);
 Invalid registry entry format: '" + str + "'", line);
             // name
             SIZE_TYPE mid;
-            for (mid = beg;  s_IsNameSectionSymbol(str[mid]);  mid++);
+            for (mid = beg;  s_IsNameSectionSymbol(str[mid]);  mid++) continue;
             string name = str.substr(beg, mid);
 
             // '=' and surrounding spaces
@@ -216,7 +219,7 @@ Invalid registry entry format: '" + str + "'", line);
             if (str[mid] != '=')
                  throw CParseException("\
 Invalid registry entry name: '" + str + "'", line);
-            for (mid++;  mid < len  &&  isspace(str[mid]);  mid++);
+            for (mid++;  mid < len  &&  isspace(str[mid]);  mid++) continue;
             _ASSERT( mid <= len );
 
             // ? empty value
@@ -241,7 +244,7 @@ Invalid registry entry name: '" + str + "'", line);
                     break;
                 SIZE_TYPE end;
                 for (end = str.length() - 1;  end > beg  &&  isspace(str[end]);
-                     end--);
+                     end--) continue;
                 if (end < beg  ||  isspace(str[end]) )
                     break;
 
@@ -500,7 +503,7 @@ void CNcbiRegistry::x_SetValue(TRegEntry& entry, const string& value,
     SIZE_TYPE beg;
     for (beg = 0;
          beg < value.length()  &&  isspace(value[beg])  &&  value[beg] != '\n';
-         beg++);
+         beg++) continue;
 
     if (beg == value.length()) {
         to->erase();
@@ -510,7 +513,7 @@ void CNcbiRegistry::x_SetValue(TRegEntry& entry, const string& value,
     SIZE_TYPE end;
     for (end = value.length() - 1;
          isspace(value[end])  &&  value[end] != '\n';
-         end--);
+         end--) continue;
 
     _ASSERT(beg <= end);
     *to = value.substr(beg, end - beg + 1);
