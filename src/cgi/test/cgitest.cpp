@@ -168,14 +168,14 @@ static void PrintEntries(TCgiEntries& entries)
 {
     for (TCgiEntries::iterator iter = entries.begin();
          iter != entries.end();  ++iter) {
-        NcbiCout << "  (\"" << iter->first.c_str() << "\", \""
-                  << iter->second.c_str() << "\")" << NcbiEndl;
+        NcbiCout << "  (\"" << iter->first << "\", \""
+                 << iter->second << "\")" << NcbiEndl;
     }
 }
 
 static bool TestEntries(TCgiEntries& entries, const string& str)
 {
-    NcbiCout << "\n Entries: `" << str.c_str() << "'\n";
+    NcbiCout << "\n Entries: `" << str << "'\n";
     SIZE_TYPE err_pos = CCgiRequest::ParseEntries(str, entries);
     PrintEntries(entries);
 
@@ -190,14 +190,14 @@ static void PrintIndexes(TCgiIndexes& indexes)
 {
     for (TCgiIndexes::iterator iter = indexes.begin();
          iter != indexes.end();  ++iter) {
-        NcbiCout << "  \"" << iter->c_str() << "\"    ";
+        NcbiCout << "  \"" << *iter << "\"    ";
     }
     NcbiCout << NcbiEndl;
 }
 
 static bool TestIndexes(TCgiIndexes& indexes, const string& str)
 {
-    NcbiCout << "\n Indexes: `" << str.c_str() << "'\n";
+    NcbiCout << "\n Indexes: `" << str << "'\n";
     SIZE_TYPE err_pos = CCgiRequest::ParseIndexes(str, indexes);
     PrintIndexes(indexes);
 
@@ -267,22 +267,22 @@ static void TestCgi_Request_Full(CNcbiIstream*         istr,
     STD_CATCH ("TestCgi_Request_Full");
 
     NcbiCout << "GetRandomProperty(\"USER_AGENT\"): "
-             << CCR.GetRandomProperty("USER_AGENT").c_str() << NcbiEndl;
+             << CCR.GetRandomProperty("USER_AGENT") << NcbiEndl;
     NcbiCout << "GetRandomProperty(\"MY_RANDOM_PROP\"): "
-             << CCR.GetRandomProperty("MY_RANDOM_PROP").c_str() << NcbiEndl;
+             << CCR.GetRandomProperty("MY_RANDOM_PROP") << NcbiEndl;
 
     NcbiCout << "GetRandomProperty(\"HTTP_MY_RANDOM_PROP\"): "
-             << CCR.GetRandomProperty("HTTP_MY_RANDOM_PROP").c_str()
+             << CCR.GetRandomProperty("HTTP_MY_RANDOM_PROP")
              << NcbiEndl;
     NcbiCout << "GetRandomProperty(\"HTTP_MY_RANDOM_PROP\", false): "
-             << CCR.GetRandomProperty("HTTP_MY_RANDOM_PROP", false).c_str()
+             << CCR.GetRandomProperty("HTTP_MY_RANDOM_PROP", false)
              << NcbiEndl;
 
     NcbiCout << "\nCCgiRequest::  All properties:\n";
     for (size_t prop = 0;  prop < (size_t)eCgi_NProperties;  prop++) {
         NcbiCout << NcbiSetw(24)
-            << CCgiRequest::GetPropertyName((ECgiProp)prop).c_str() << " = \""
-            << CCR.GetProperty((ECgiProp)prop).c_str() << "\"\n";
+            << CCgiRequest::GetPropertyName((ECgiProp)prop) << " = \""
+            << CCR.GetProperty((ECgiProp)prop) << "\"\n";
     }
 
     CCgiCookies cookies;
@@ -308,9 +308,9 @@ static void TestCgi_Request_Full(CNcbiIstream*         istr,
         if ( !CCR.GetEntry("get_query1").empty() ) {
             NcbiCout << "GetEntry() check." << NcbiEndl;
 
-            assert(CCR.GetEntry("get_query1").compare("gq1") == 0);
+            assert(CCR.GetEntry("get_query1") == "gq1");
             bool is_found = false;
-            assert(CCR.GetEntry("get_query1", &is_found).compare("gq1") == 0);
+            assert(CCR.GetEntry("get_query1", &is_found) == "gq1");
             assert(is_found);
 
             assert(CCR.GetEntry("get_query2", 0).empty());
@@ -576,6 +576,10 @@ int main(int argc, const char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.14  2002/07/10 18:41:53  ucko
+ * Drop unnecessary uses of c_str().
+ * Adapt slightly for CCgiEntry.
+ *
  * Revision 1.13  2002/04/16 18:47:10  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.
