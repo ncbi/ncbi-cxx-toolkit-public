@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.173 2003/03/12 22:06:13 ucko Exp $
+#  $Id: configure.ac,v 1.174 2003/03/25 15:55:46 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -643,6 +643,7 @@ case "$host_os:$compiler" in
         LDFLAGS="-Wl,-S $LDFLAGS"
         # The linker sometimes needs a LOT of memory.
         LINK="ulimit -d \`ulimit -H -d\` && $LINK"
+	LINK_DLL="ulimit -d \`ulimit -H -d\` && $LINK_DLL"
         ;;
    esac
    ;;
