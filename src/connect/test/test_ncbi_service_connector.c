@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/04/24 21:42:43  lavr
+ * Burshed code to use CORE_LOG facility only.
+ *
  * Revision 6.8  2001/01/25 17:13:22  lavr
  * Added: close/free everything on program exit: useful to check memory leaks
  *
@@ -61,6 +64,7 @@
 #  undef NDEBUG
 #endif 
 
+#include "../ncbi_priv.h"
 #include <connect/ncbi_util.h>
 #include <connect/ncbi_service_connector.h>
 #include <assert.h>
@@ -70,61 +74,59 @@
 
 int main(int argc, const char* argv[])
 {
-    const char* service = "io_bounce";
-    const char buffer[] = "UUUUUZZZZZZUUUUUUZUZUZZUZUZUZUZUZ\n";
+    static char obuf[128] = "UUUUUZZZZZZUUUUUUZUZUZZUZUZUZUZUZ\n";
+    const char* service = argc > 1 ? argv[1] : "bounce";
+    const char* host = argc > 2 ? argv[2] : "ray";
     CONNECTOR connector;
     SConnNetInfo *info;
     STimeout  timeout;
-    char buf[1024];
+    char ibuf[1024];
     CONN conn;
     size_t n;
 
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
     info = ConnNetInfo_Create(service);
-    strcpy(info->host, "ray");
-    info->debug_printout = eDebugPrintout_Some;
-    info->stateless = 1;
-    info->firewall = 1;
-
+    strcpy(info->host, host);
+    if (argc > 3) {
+        strncpy(obuf, argv[3], sizeof(obuf) - 2);
+        obuf[sizeof(obuf) - 2] = 0;
+        obuf[n = strlen(obuf)] = '\n';
+        obuf[++n]              = 0;
+    }
+    
     connector = SERVICE_CreateConnectorEx(service, fSERV_Any, info);
     ConnNetInfo_Destroy(info);
-
-    if (!connector) {
-        printf("Failed to create service connector\n");
-        exit(-1);
-    }
-
-    if (CONN_Create(connector, &conn) != eIO_Success) {
-        printf("Connection creation failed\n");
-        exit(-1);
-    }
-
+    
+    if (!connector)
+        CORE_LOG(eLOG_Fatal, "Failed to create service connector");
+    
+    if (CONN_Create(connector, &conn) != eIO_Success)
+        CORE_LOG(eLOG_Fatal, "Failed to create connection");
+    
     timeout.sec  = 5;
     timeout.usec = 123456;
 
     CONN_SetTimeout(conn, eIO_ReadWrite, &timeout);
     
-    if (CONN_Write(conn, buffer, sizeof(buffer) - 1, &n) != eIO_Success ||
-        n != sizeof(buffer) - 1) {
-        printf("Error writing to connection\n");
+    if (CONN_Write(conn, obuf, strlen(obuf), &n) != eIO_Success ||
+        n != strlen(obuf)) {
         CONN_Close(conn);
-        exit (-1);
+        CORE_LOG(eLOG_Fatal, "Error writing to connection");
     }
     
     if (CONN_Wait(conn, eIO_Read, 0) != eIO_Success) {
-        printf("Error waiting for reading\n");
         CONN_Close(conn);
-        exit(-1);
+        CORE_LOG(eLOG_Fatal, "Error waiting for reading");
     }
 
-    if (CONN_Read(conn, buf, sizeof(buf), &n, eIO_Plain) != eIO_Success) {
-        printf("Error reading from connection\n");
+    if (CONN_Read(conn, ibuf, sizeof(ibuf), &n, eIO_Plain) != eIO_Success) {
         CONN_Close(conn);
-        exit(-1);
+        CORE_LOG(eLOG_Fatal, "Error reading from connection");
     }
-
-    printf("%d bytes read from service:\n%.*s\n", (int)n, (int)n, buf);
+    
+    CORE_LOGF(eLOG_Note,
+              ("%d bytes read from service:\n%.*s", (int)n, (int)n, ibuf));
     CONN_Close(conn);
 
     return 0/*okay*/;
