@@ -38,6 +38,12 @@
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup Tree
+ *
+ * @{
+ */
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 ///    Bi-directionaly linked N way tree.
@@ -497,6 +503,14 @@ void TreeTraceToRoot(const TTreeNode& tree_node, TTraceContainer& trace)
 }
 
 
+/// Check if two nodes have the same common root
+/// @param tree_node_a
+///     Node A
+/// @param tree_node_b
+///     Node B
+/// @return 
+///     Nearest common root or NULL if there is no common parent
+///
 template<class TTreeNode>
 const TTreeNode* TreeFindCommonParent(const TTreeNode& tree_node_a,
                                       const TTreeNode& tree_node_b)
@@ -539,6 +553,60 @@ const TTreeNode* TreeFindCommonParent(const TTreeNode& tree_node_a,
 
     return node_candidate;
 }
+
+/// Tree print functor used as a tree traversal payload
+/// @internal
+template<class TTreeNode, class TConverter>
+class CTreePrintFunc
+{
+public:
+    CTreePrintFunc(CNcbiOstream& os, TConverter& conv)
+    : m_OStream(os),
+      m_Conv(conv),
+      m_Level(0)
+    {}
+
+    ETreeTraverseCode 
+    operator()(const TTreeNode& tr, int delta) 
+    {
+        m_Level += delta;
+        if (delta >= 0) { 
+            PrintLevelMargin();
+            const string& node_str = m_Conv(tr.GetValue());
+
+            m_OStream << node_str << endl;
+        }
+
+        return eTreeTraverse;
+    }
+
+    void PrintLevelMargin()
+    {
+        for (int i = 0; i < m_Level; ++i) {
+            m_OStream << "  ";
+        }
+    }
+    
+private:
+    CNcbiOstream&  m_OStream;
+    TConverter&    m_Conv;
+    int            m_Level;
+};
+
+
+template<class TTreeNode, class TConverter>
+void TreePrint(CNcbiOstream&     os, 
+               const TTreeNode&  tree_node, 
+               TConverter        conv)
+{
+    // fake const_cast, nothing to worry 
+    //   (should go away when we have const traverse)
+    TTreeNode* non_c_tr = const_cast<TTreeNode*>(&tree_node);
+    CTreePrintFunc<TTreeNode, TConverter> func(os, conv);
+    TreeDepthFirstTraverse(*non_c_tr, func);
+}
+
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -778,6 +846,7 @@ void CTreePairNode<TId, TValue>::FindNodes(const list<TId>&         node_path,
     res->push_back((TPairTreeType*)tr);
 }
 
+/* @} */
 
 END_NCBI_SCOPE
 
@@ -785,6 +854,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/04/08 18:34:19  kuznets
+ * attached code to a doxygen group
+ * +TreePrinting template (for debug purposes)
+ *
  * Revision 1.26  2004/04/08 12:22:56  kuznets
  * Fixed compilation warnings
  *
