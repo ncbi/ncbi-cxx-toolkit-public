@@ -1,0 +1,133 @@
+<!--#set var="TITLE" value="NCBI C++ CGI library" -->
+<!--#set var="DOCROOT" value="../.." -->
+<!--#include virtual="../../ssi/header.shtml" -->
+
+
+<div align="Center">
+<H1>Educational exercises</H1>
+</div>
+
+
+
+<h3>Tasks.</h3>
+
+<p>
+We have compiled here a list of teaching examples to help you start working
+with the C++ <var>Object Manager</var>. Completing them, getting your comments
+and investigating the problems encountered would let us give warnings
+of issues to deal with in the nearest future, better understand
+what modifications should be made to this software system,
+</p>
+<p>
+The main idea here is to build one task on the top of another, in growing
+level of complexity:
+<ol>
+  <li>given accession, get sequence, print sequence title descriptor,</li>
+  <li>print sequence length and SegMap structure</li>
+  <li>print count of CdRegion features and their locations on the sequence</li>
+  <li>calculate percent GC of whole sequence</li>
+  <li>calculate percent GC of regions within CdRegion features</li>
+  <li>calculate percent GC of regions outside any CdRegion feature</li>
+  <li>make into a cgi</li>
+  <li>make into a fcgi</li>
+</ol>
+</p>
+
+
+
+
+
+
+<h3>Test biosequences.</h3>
+<p>
+Below is the list of example sequences to use with the C++ toolkit
+training course.
+<br>
+It starts with one Teaching Example that has one genomic nucleic acid
+sequence and one protein with a cds.
+<br>
+Following that is the list of Test Examples. Once the code is functioning
+on the Teaching Example, we suggest running it through these. They
+include a bunch of different conditions: short sequence with one cd,
+longer with 6 cds, a protein record (this is an error, and code should recover),
+segmented sequence, 8 megabase genomic contig, a popset member, and a draft
+sequence with no cds.
+</p>
+
+
+<h4>Teaching example</h4>
+<pre>
+AJ438945     gi|19584253|emb|AJ438945.1|HSA438945 (genomic, 1 CDS) Homo
+sapiens SLC16A1 gene for monocarboxylate transporter isoform 1, exons 2-5
+</pre>
+<div>
+Here:
+</div>
+<table border=1 cellpadding=5>
+<tr>
+  <th>Accession</th><th>Version</th><th>Gi</th><th>Definition</th>
+</tr>
+<tr>
+  <td>AJ438945</td><td>AJ438945.1</td><td>19584253</td><td>Homo sapiens SLC16A1 gene...</td>
+</tr>
+<table>
+<br>&nbsp;
+
+
+<h4>Test examples</h4>
+
+<pre>
+J01066       gi|156787|gb|J01066.1|DROADH (mRNA, 1 protein) D.melanogaster
+alcohol dehydrogenase gene, complete cds
+</pre>
+
+<pre>
+U01317       gi|455025|gb|U01317.1|HUMHBB (genomic, 6 proteins) Human beta
+globin region on chromosome 11
+</pre>
+
+<pre>
+Q08345       gi|729008|sp|Q08345|DDR1_HUMAN (protein) Epithelial discoidin
+domain receptor 1 precursor
+</pre>
+
+<pre>
+AH01100      gi|19550966|gb|AH011004.1|SEG_Y043402S[19550966] (segmented)
+Mus musculus light ear protein (le) gene, complete cds
+</pre>
+
+<pre>
+NT_017168    gi|18565551|ref|NT_017168.8|Hs7_17324 (8 megabase delta) Homo
+sapiens chromosome 7 working draft sequence segment
+</pre>
+
+<pre>
+AF022257     gi|2415435|gb|AF022257.1|AF022257 (popset member) HIV-1
+patient ACH0039, clone 3918C6 from The Netherlands, envelope glycoprotein V3 region
+(env) gene, partial cd
+</pre>
+
+<pre>
+AC116052     gi|19697559|gb|AC116052.1| (draft, no CDS) Mus musculus
+chromosome UNK clone RP23-291E18, *** SEQUENCING IN PROGRESS ***, 13 unordered
+pieces
+</pre>
+
+<div>
+All in one table:
+</div>
+<table border=1 cellpadding=5>
+<tr>
+  <th>Accession</th><th>Version</th><th>Gi</th><th>Definition</th>
+</tr>
+<tr><td>J01066</td>   <td>J01066.1</td>  <td>156787</td>   <td>D.melanogaster alcohol dehydrogenase gene, complete cds</td></tr>
+<tr><td>U01317</td>   <td>U01317.1</td>  <td>455025</td>   <td>Human beta globin region on chromosome 11.</td></tr>
+<tr><td>Q08345</td>   <td>Q08345</td>    <td>729008</td>   <td>Epithelial discoidin domain receptor 1 precursor...</td></tr>
+<tr><td>AH01100</td>  <td>AH011004.1</td><td>19550966</td> <td>Mus musculus light ear protein (le) gene, complete cds</td></tr>
+<tr><td>NT_017168</td><td>18565551</td>  <td>18565551</td> <td>Homo sapiens chromosome 7 working draft sequence segment</td></tr>
+<tr><td>AF022257</td> <td>AF022257.1</td><td>2415435</td>  <td>HIV-1 patient ACH0039, clone 3918C6 from The Netherlands...</td></tr>
+<tr><td>AC116052</td> <td>AC116052.1</td><td>19697559</td> <td>Mus musculus chromosome UNK clone</td></tr>
+<table>
+
+
+<!--#include virtual="../../ssi/footer.shtml" -->
