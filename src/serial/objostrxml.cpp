@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/06/16 19:24:22  vasilche
+* Updated MSVC project.
+* Fixed error on MSVC with static const class member.
+*
 * Revision 1.4  2000/06/16 16:31:22  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -371,7 +375,7 @@ void CObjectOStreamXml::WriteArrayContents(CObjectArrayWriter& writer,
         return;
 
     if ( elementType->GetName().empty() ) {
-        CObjectStackArrayElement element(*this, elementType);
+        CObjectStackArrayElement element(*this, elementType != 0);
         element.Begin();
         
         do {

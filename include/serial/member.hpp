@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/06/16 19:24:22  vasilche
+* Updated MSVC project.
+* Fixed error on MSVC with static const class member.
+*
 * Revision 1.10  2000/06/16 16:31:05  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -88,12 +92,15 @@ class CDelayBuffer;
 
 class CMemberInfo {
 public:
-    static const size_t eNoOffset = size_t(-1);
+	typedef size_t TOffset;
+    enum {
+		eNoOffset = -1
+	};
 
-    CMemberInfo(size_t offset, const CTypeRef& type)
+    CMemberInfo(TOffset offset, const CTypeRef& type)
         : m_Optional(false), m_Pointer(false), m_ObjectPointer(false),
           m_Offset(offset), m_Type(type),
-          m_SetFlagOffset(eNoOffset), m_DelayOffset(eNoOffset),
+          m_SetFlagOffset(TOffset(eNoOffset)), m_DelayOffset(TOffset(eNoOffset)),
           m_Default(0)
         {
         }
@@ -139,7 +146,7 @@ public:
             return this;
         }
 
-    size_t GetOffset(void) const
+    TOffset GetOffset(void) const
         {
             return m_Offset;
         }
@@ -158,7 +165,7 @@ public:
         {
             return m_SetFlagOffset != eNoOffset;
         }
-    size_t GetSetFlagOffset(void) const
+    TOffset GetSetFlagOffset(void) const
         {
             return m_SetFlagOffset;
         }
@@ -216,7 +223,7 @@ public:
         {
             return Add(object, -GetOffset());
         }
-    size_t GetEndOffset(void) const
+    TOffset GetEndOffset(void) const
         {
             return GetOffset() + GetSize();
         }
@@ -229,13 +236,13 @@ private:
     // is pointer to CObject descendant
     bool m_ObjectPointer;
     // offset of member inside object
-    size_t m_Offset;
+    TOffset m_Offset;
     // type of member
     CTypeRef m_Type;
     // offset of 'SET' flag inside object
-    size_t m_SetFlagOffset;
+    TOffset m_SetFlagOffset;
     // offset of delay buffer inside object
-    size_t m_DelayOffset;
+    TOffset m_DelayOffset;
     // default value
     TConstObjectPtr m_Default;
 };
