@@ -42,6 +42,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/01/08 22:37:36  lavr
+ * Added GNU attribute to g_CORE_sprintf for compiler to trace
+ * format specifier/parameter correspondence
+ *
  * Revision 6.2  2000/06/23 19:34:44  vakatov
  * Added means to log binary data
  *
@@ -99,7 +103,11 @@ extern LOG g_CORE_Log;
     } \
 } while (0)
 
-extern const char* g_CORE_Sprintf(const char* fmt, ...);
+extern const char* g_CORE_Sprintf(const char* fmt, ...)
+#ifdef __GNUC__
+         __attribute__((format(printf, 1, 2)))
+#endif
+;
 
 #define CORE_LOGF(level, fmt_args)  do { \
     if ( g_CORE_Log ) { \
