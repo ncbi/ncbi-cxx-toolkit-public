@@ -38,8 +38,14 @@
 
 BEGIN_NCBI_SCOPE
 
-// Template algorithm function to iterate the BDB File.
-// Func() is called for every dbf record.
+/** @addtogroup BDB_Util
+ *
+ * @{
+ */
+
+
+/// Template algorithm function to iterate the BDB File.
+/// Func() is called for every dbf record.
 template<class FL, class Func> 
 void BDB_iterate_file(FL& dbf, Func& func)
 {
@@ -51,10 +57,35 @@ void BDB_iterate_file(FL& dbf, Func& func)
     }
 }
 
+
+class CBoyerMooreMatcher;
+
+
+/// Find index of field containing the specified value
+/// Search condition is specified by CBoyerMooreMatcher
+///
+/// @param dbf
+///    Database to search in. Should be positioned on some
+///    record by Fetch or another method
+/// @param matcher
+///    Search condition substring matcher
+/// @return 
+///    0 if value not found
+CBDB_File::TUnifiedFieldIndex NCBI_BDB_EXPORT 
+BDB_find_field(const CBDB_File& dbf, 
+               const CBoyerMooreMatcher& matcher);
+
+
+/* @} */
+
+
 END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/03/08 13:33:19  kuznets
+ * + BDB_find_field
+ *
  * Revision 1.2  2003/06/10 20:07:27  kuznets
  * Fixed header files not to repeat information from the README file
  *
