@@ -48,7 +48,7 @@ void CFlatTableFormatter::BeginSequence(CFlatContext& context)
 void CFlatTableFormatter::FormatHead(const CFlatHead& head)
 {
     list<string> l;
-    l.push_back(">Features " + head.GetLocus());
+    l.push_back(">Features " + m_Context->GetAccession());
     m_Stream->AddParagraph(l, &head, &m_Context->GetPrimaryID());
 }
 
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/11/04 19:45:42  jcherry
+* Write an accession in header, not a name
+*
 * Revision 1.3  2003/06/02 16:06:42  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
