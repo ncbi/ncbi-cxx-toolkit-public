@@ -140,7 +140,7 @@ public:
     virtual void SetTimeStampPolicy(TTimeStampFlags policy, int timeout);
 
     virtual TTimeStampFlags GetTimeStampPolicy() const;
-    virtual int GetTimeout();
+    virtual int GetTimeout() const;
     virtual void SetVersionRetention(EKeepVersions policy);
     virtual EKeepVersions GetVersionRetention() const;
     virtual void Store(const string&  key,
@@ -277,6 +277,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/07/13 14:54:06  kuznets
+ * GetTimeout() made const
+ *
  * Revision 1.19  2004/06/14 16:10:36  kuznets
  * Added read-only mode
  *

@@ -109,7 +109,7 @@ public:
     /// @return
     ///    Expiration timeout in seconds
     /// @sa GetExpirationPolicy(), SetExpirationPolicy()
-    virtual int GetTimeout() = 0;
+    virtual int GetTimeout() const = 0;
 
 
     /// If to keep already cached versions of the BLOB when storing
@@ -282,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/07/13 14:53:48  kuznets
+ * GetTimeout() made const
+ *
  * Revision 1.4  2004/04/19 18:05:40  kuznets
  * Clarification in the comments department
  *

@@ -594,7 +594,7 @@ CBDB_Cache::TTimeStampFlags CBDB_Cache::GetTimeStampPolicy() const
     return m_TimeStampFlag;
 }
 
-int CBDB_Cache::GetTimeout()
+int CBDB_Cache::GetTimeout() const
 {
     return m_Timeout;
 }
@@ -1327,6 +1327,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2004/07/13 14:54:24  kuznets
+ * GetTimeout() made const
+ *
  * Revision 1.58  2004/06/21 15:10:32  kuznets
  * Added support of db environment recovery procedure
  *
