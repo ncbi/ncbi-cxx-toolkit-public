@@ -47,7 +47,7 @@ Contents: C++ driver for running BLAST
 #include <objmgr/util/sequence.hpp>
 
 #include <algo/blast/api/blast_option.hpp>
-#include <algo/blast/api/bl2seq.hpp>
+#include <algo/blast/api/db_blast.hpp>
 #include <blast_setup.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <blast_input.hpp>
@@ -82,20 +82,13 @@ private:
     void InitScope(void);
     void InitOptions(void);
     void SetOptions(const CArgs& args);
+    void ProcessCommandLineArgs(CBlastOptions& opt, BlastSeqSrc* bssp);
     int BlastSearch(void);
     void RegisterBlastDbLoader(char* dbname, bool is_na);
-
+    void FormatResults(CDbBlast& blaster, TSeqAlignVector& seqalignv);
     CRef<CObjectManager> m_ObjMgr;
     CRef<CScope>         m_Scope;
     CBlastOptions*       m_pOptions;
-    BlastSeqSrc *        m_bssp;
-    CBlastFormatOptions* m_format_options;
-    TSeqLocVector        m_query;
-    CBlastQueryInfo      m_clsQueryInfo;
-    BlastScoreBlk*       m_sbp;
-    BlastMask*           m_filter_loc;/* Masking/filtering locations */
-    BlastReturnStat*     m_return_stats;
-    TSeqAlignVector     m_seqalign;
 };
 
 void CBlastApplication::Init(void)
@@ -117,6 +110,8 @@ void CBlastApplication::Init(void)
     arg_desc->AddDefaultKey("strand", "strand", 
         "Query strands to search: 1 forward, 2 reverse, 0,3 both",
         CArgDescriptions::eInteger, "0");
+    arg_desc->SetConstraint("strand", new CArgAllow_Integers(0,3));
+
     arg_desc->AddDefaultKey("filter", "filter", "Filtering option",
                             CArgDescriptions::eString, "T");
     arg_desc->AddDefaultKey("lcase", "lcase", "Should lower case be masked?",
@@ -135,17 +130,24 @@ void CBlastApplication::Init(void)
     arg_desc->AddDefaultKey("templen", "templen", 
         "Discontiguous word template length",
         CArgDescriptions::eInteger, "0");
+    arg_desc->SetConstraint("templen", 
+                            &(*new CArgAllow_Strings, "0", "16", "18", "21"));
+
     arg_desc->AddDefaultKey("templtype", "templtype", 
         "Discontiguous word template type",
         CArgDescriptions::eInteger, "0");
+    arg_desc->SetConstraint("templtype", new CArgAllow_Integers(0,2));
+
     arg_desc->AddDefaultKey("thresh", "threshold", 
         "Score threshold for neighboring words",
         CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("window","window", "Window size for two-hit extension",
                             CArgDescriptions::eInteger, "0");
-    arg_desc->AddDefaultKey("ag", "ag", 
-        "Should AG method be used for scanning the database?",
-        CArgDescriptions::eBoolean, "T");
+    arg_desc->AddDefaultKey("scantype", "scantype", 
+        "Method for scanning the database: 0 traditional, 1 AG",
+        CArgDescriptions::eInteger, "1");
+    arg_desc->SetConstraint("scantype", new CArgAllow_Integers(0,1));
+
     arg_desc->AddDefaultKey("varword", "varword", 
         "Should variable word size be used?",
         CArgDescriptions::eBoolean, "F");
@@ -158,8 +160,8 @@ void CBlastApplication::Init(void)
         "Perform only an ungapped alignment search?",
         CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("greedy", "greedy", 
-        "Use greedy algorithm for gapped extensions?",
-        CArgDescriptions::eBoolean, "F");
+        "Use greedy algorithm for gapped extensions: 0 no, 1 one-step, 2 two-step, 3 two-step with ungapped",
+        CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("gopen", "gapopen", "Penalty for opening a gap",
                             CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("gext", "gapext", "Penalty for extending a gap",
@@ -179,6 +181,9 @@ void CBlastApplication::Init(void)
     arg_desc->AddDefaultKey("perc", "percident", 
         "Percentage of identities cutoff for saving hits",
         CArgDescriptions::eDouble, "0");
+    arg_desc->AddDefaultKey("hitlist", "hitlist_size",
+        "How many best matching sequences to find?",
+        CArgDescriptions::eInteger, "500");
     arg_desc->AddDefaultKey("descr", "descriptions",
         "How many matching sequence descriptions to show?",
         CArgDescriptions::eInteger, "500");
@@ -218,6 +223,10 @@ void CBlastApplication::Init(void)
                             "Pattern for PHI-BLAST",
                              CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("pssm", "pssm", 
+        "File name for uploading a PSSM for PSI BLAST seach",
+        CArgDescriptions::eInputFile);
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -244,170 +253,160 @@ CBlastApplication::RegisterBlastDbLoader(char *dbname, bool db_is_na)
                   CObjectManager::eDefault);
 }
 
-void CBlastApplication::SetOptions(const CArgs& args)
+void
+CBlastApplication::ProcessCommandLineArgs(CBlastOptions& opt, 
+                                              BlastSeqSrc* bssp)
 {
-    EProgram program = m_pOptions->GetProgram();
+    CArgs args = GetArgs();
 
-    bool ag_blast = TRUE, variable_wordsize = FALSE;
-    int lut;
-    bool mb_lookup = FALSE;
-    bool greedy_extension = FALSE;
-    Int8 totlen = 0;
-    int numseqs = 0;
-    bool db_is_na, translated_db;
-    bool use_pssm = FALSE;
-    
-    db_is_na = (program == eBlastn || 
-                program == eTblastn || 
-                program == eTblastx);
-
-    translated_db = (program == eTblastn ||
-                     program == eTblastx);
-
-    /* The following options are for blastn only */
-    if (program == eBlastn) {
-        if (args["templen"].AsInteger() == 0) {
-            ag_blast = args["ag"].AsBoolean();
-            lut = args["lookup"].AsInteger();
-            if (lut == 1) mb_lookup = TRUE;
-            /* Variable word size can only be used for word sizes divisible 
-               by 4 */
-            if (args["word"].AsInteger() % COMPRESSION_RATIO == 0)
-                variable_wordsize = args["varword"].AsBoolean();
-        } else {
-            /* Discontiguous words */
-            ag_blast = FALSE;
-            mb_lookup = TRUE;
-            variable_wordsize = FALSE;
+    if (args["strand"].AsInteger()) {
+        switch (args["strand"].AsInteger()) {
+        case 1: opt.SetStrandOption(eNa_strand_plus); break;
+        case 2: opt.SetStrandOption(eNa_strand_minus); break;
+        case 3: opt.SetStrandOption(eNa_strand_both); break;
+        default: abort();
         }
-        greedy_extension = args["greedy"].AsBoolean();
     }
 
-    BLAST_FillLookupTableOptions(m_pOptions->GetLookupTableOpts(), program, mb_lookup,
-        args["thresh"].AsInteger(), args["word"].AsInteger(), 
-        ag_blast, variable_wordsize, use_pssm);
-    /* Fill the rest of the lookup table options */
-    m_pOptions->SetMBTemplateLength(args["templen"].AsInteger());
-    m_pOptions->SetMBTemplateType(args["templtype"].AsInteger());
+    opt.SetFilterString(args["filter"].AsString().c_str());
+    // FIXME: Handle lcase masking
 
-    if (args["stride"])
-        m_pOptions->SetScanStep(args["stride"].AsInteger());
-    
-    BLAST_FillQuerySetUpOptions(m_pOptions->GetQueryOpts(), program, 
-        args["filter"].AsString().c_str(), args["strand"].AsInteger());
+    if (args["lookup"].AsInteger()) {
+        opt.SetLookupTableType(args["lookup"].AsInteger());
+    }
+    if (args["matrix"]) {
+        opt.SetMatrixName(args["matrix"].AsString().c_str());
+    }
+    if (args["mismatch"].AsInteger()) {
+        opt.SetMismatchPenalty(args["mismatch"].AsInteger());
+    }
+    if (args["match"].AsInteger()) {
+        opt.SetMatchReward(args["match"].AsInteger());
+    }
+    if (args["word"].AsInteger()) {
+        opt.SetWordSize(args["word"].AsInteger());
+    }
+    if (args["templen"].AsInteger()) {
+        opt.SetMBTemplateLength(args["templen"].AsInteger());
+    }
+    if (args["templtype"].AsInteger()) {
+        opt.SetMBTemplateType(args["templtype"].AsInteger());
+    }
+    if (args["thresh"].AsInteger()) {
+        opt.SetWordThreshold(args["thresh"].AsInteger());
+    }
+    if (args["window"].AsInteger()) {
+        opt.SetWindowSize(args["window"].AsInteger());
+    }
 
-    if (args["gencode"].AsInteger() &&
-       (program == eBlastx || 
-        program == eTblastx))
-      m_pOptions->SetQueryGeneticCode(args["gencode"].AsInteger());
-   
-    BLAST_FillInitialWordOptions(m_pOptions->GetInitWordOpts(), program, 
-        greedy_extension, args["window"].AsInteger(), variable_wordsize, 
-        ag_blast, mb_lookup, args["xungap"].AsDouble());
+    // The next 3 apply to nucleotide searches only
+    string program = args["program"].AsString();
+    if (program == "blastn") {
+        opt.SetVariableWordsize(args["varword"].AsBoolean());
+        switch(args["scantype"].AsInteger()) {
+        case 1:
+            opt.SetSeedExtensionMethod(eRightAndLeft);
+            opt.SetScanStep(CalculateBestStride(opt.GetWordSize(),
+                                                opt.GetVariableWordsize(), 
+                                                opt.GetLookupTableType()));
+            break;
+        default:
+            opt.SetSeedExtensionMethod(eRight);
+            break;
+        }
+        if (args["stride"].AsInteger()) {
+            opt.SetScanStep(args["stride"].AsInteger());
+        }
+    }
 
-    BLAST_FillExtensionOptions(m_pOptions->GetExtensionOpts(), program, greedy_extension, 
-        args["xgap"].AsDouble(), args["xfinal"].AsDouble());
+    if (args["xungap"].AsDouble()) {
+        opt.SetXDropoff(args["xungap"].AsDouble());
+    }
 
-    BLAST_FillScoringOptions(m_pOptions->GetScoringOpts(), program, greedy_extension, 
-        args["mismatch"].AsInteger(), args["match"].AsInteger(),
-        args["matrix"].AsString().c_str(), args["gopen"].AsInteger(),
-        args["gext"].AsInteger());
+    if (args["ungapped"].AsBoolean()) {
+        opt.SetGappedMode(false);
+    }
 
-    m_pOptions->SetMatrixPath((FindMatrixPath(m_pOptions->GetMatrixName(), 
-                                 (program != eBlastn))).c_str());
+    if (args["gopen"].AsInteger()) {
+        opt.SetGapOpeningCost(args["gopen"].AsInteger());
+    }
+    if (args["gext"].AsInteger()) {
+        opt.SetGapExtensionCost(args["gext"].AsInteger());
+    }
 
-    m_pOptions->SetFrameShiftPenalty(args["frameshift"].AsInteger());
+    switch (args["greedy"].AsInteger()) {
+    case 1: /* Immediate greedy gapped extension with traceback */
+        opt.SetGapExtnAlgorithm(EXTEND_GREEDY);
+        opt.SetUngappedExtension(false);
+        break;
+    case 2: /* Two-step greedy extension, no ungapped extension */
+        opt.SetGapExtnAlgorithm(EXTEND_GREEDY_NO_TRACEBACK);
+        opt.SetUngappedExtension(false);
+        break;
+    case 3: /* Two-step greedy extension after ungapped extension*/
+        opt.SetGapExtnAlgorithm(EXTEND_GREEDY_NO_TRACEBACK);
+        break;
+    default: break;
+    }
 
-    BLAST_FillHitSavingOptions(m_pOptions->GetHitSavingOpts(), !args["ungapped"].AsBoolean(), 
-        args["evalue"].AsDouble(), 
-        MAX(args["descr"].AsInteger(), 
-            args["align"].AsInteger()));
- 
-    m_pOptions->SetPercentIdentity(args["perc"].AsDouble());
-    m_pOptions->SetLongestIntronLength(args["maxintron"].AsInteger());
-   
-    totlen =  BLASTSeqSrcGetTotLen(m_bssp);
-    numseqs = BLASTSeqSrcGetNumSeqs(m_bssp);
 
-    BLAST_FillEffectiveLengthsOptions(m_pOptions->GetEffLenOpts(), numseqs, totlen, 
-                                      (Int8)args["searchsp"].AsDouble());
-    
-    int gen_code;
+    if (args["xgap"].AsDouble()) {
+        opt.SetGapXDropoff(args["xgap"].AsDouble());
+    }
+    if (args["xfinal"].AsDouble()) {
+        opt.SetGapXDropoffFinal(args["xfinal"].AsDouble());
+    }
 
-    if (translated_db &&
-        ((gen_code = args["dbgencode"].AsInteger()) != BLAST_GENETIC_CODE))
-    {
-        m_pOptions->SetDbGeneticCodeAndStr(gen_code);
+    if (args["evalue"].AsDouble()) {
+        opt.SetEvalueThreshold(args["evalue"].AsDouble());
+    }
+
+    if (args["searchsp"].AsDouble()) {
+        opt.SetEffectiveSearchSpace((Int8) args["searchsp"].AsDouble());
+    } else if (bssp) {
+        opt.SetDbLength(BLASTSeqSrcGetTotLen(bssp));
+        opt.SetDbSeqNum(BLASTSeqSrcGetNumSeqs(bssp));
+    }
+
+    if (args["hitlist"].AsInteger()) {
+        opt.SetHitlistSize(args["hitlist"].AsInteger());
+    }
+
+    if (args["perc"].AsDouble()) {
+        opt.SetPercentIdentity(args["perc"].AsDouble());
+    }
+
+    if (args["gencode"].AsInteger()) {
+        opt.SetQueryGeneticCode(args["gencode"].AsInteger());
+    }
+  
+    if ((program == "tblastn" || program == "tblastx") &&
+        args["dbgencode"].AsInteger() != BLAST_GENETIC_CODE) {
+        opt.SetDbGeneticCodeAndStr(args["dbgencode"].AsInteger());
+    }
+
+    if (args["maxintron"].AsInteger()) {
+        opt.SetLongestIntronLength(args["maxintron"].AsInteger());
+    }
+    if (args["frameshift"].AsInteger()) {
+        opt.SetFrameShiftPenalty(args["frameshift"].AsInteger());
     }
 
     if (args["pattern"]) {
-        m_pOptions->SetPHIPattern(args["pattern"].AsString().c_str(),
-                                 (program == eBlastn));
-    }
-}
-
-int CBlastApplication::BlastSearch()
-{
-    EProgram program = m_pOptions->GetProgram();
-    QuerySetUpOptions* query_options = m_pOptions->GetQueryOpts();
-    BLAST_SequenceBlk* query_blk = NULL;
-    ListNode* lookup_segments = NULL;
-    BlastResults* results = NULL;
-    Blast_Message* blast_message = NULL;
-    LookupTableWrap* lookup_wrap;
-    int status;
-
-    bool translated_query = (program == eBlastx || 
-                             program == eTblastx);
-
-    SetupQueryInfo(m_query, *m_pOptions, &m_clsQueryInfo);
-    SetupQueries(m_query, *m_pOptions, m_clsQueryInfo, &query_blk);
-    m_sbp = 0;
-    status = 
-        BLAST_MainSetUp(program, query_options,
-            m_pOptions->GetScoringOpts(), m_pOptions->GetLookupTableOpts(), 
-            m_pOptions->GetHitSavingOpts(), query_blk, m_clsQueryInfo, 
-            &lookup_segments, &m_filter_loc, &m_sbp, &blast_message);
-
-    if (translated_query) {
-        /* Filter locations were returned in protein coordinates; 
-           convert them back to nucleotide here */
-        BlastMaskProteinToDNA(&m_filter_loc, m_query);
-    }
-        
-    if (status) {
-        ERR_POST(Error << "Setup returned status " << status << ".");
-        return status;
+        opt.SetPHIPattern(args["pattern"].AsString().c_str(),
+                                 (program == "blastn"));
     }
 
-    BLAST_ResultsInit(m_clsQueryInfo->num_queries, &results);
-    LookupTableWrapInit(query_blk, m_pOptions->GetLookupTableOpts(), 
-                        lookup_segments, m_sbp, &lookup_wrap);
-    
-    m_return_stats = (BlastReturnStat*) calloc(1, sizeof(BlastReturnStat));
+    if (args["pssm"]) {
+#if 0
+        FILE* pssmfp = fopen(args["pssm"].AsInputFile(), "r");
+        // Read the pssm string and fill the posMatrix
+        bool use_pssm = TRUE;
+        fclose(pssmfp);
+#endif
+    }
 
-    BLAST_DatabaseSearchEngine(program, query_blk, m_clsQueryInfo, 
-         m_bssp, m_sbp, m_pOptions->GetScoringOpts(), lookup_wrap, 
-         m_pOptions->GetInitWordOpts(), m_pOptions->GetExtensionOpts(), 
-         m_pOptions->GetHitSavingOpts(), 
-         m_pOptions->GetEffLenOpts(), NULL, m_pOptions->GetDbOpts(), results, 
-         m_return_stats);
-
-    lookup_wrap = LookupTableWrapFree(lookup_wrap);
-    query_blk = BlastSequenceBlkFree(query_blk);
-
-    /* The following works because the ListNodes' data point to simple
-       double-integer structures */
-    lookup_segments = ListNodeFreeData(lookup_segments);
-
-    // Convert results to the SeqAlign form 
-    m_seqalign = BLAST_Results2CSeqAlign(results, program, m_query,
-                     m_bssp, 0, m_pOptions->GetScoringOpts(), m_sbp,
-                     m_pOptions->GetGappedMode());
-
-    results = BLAST_ResultsFree(results);
-
-    return status;
+    return;
 }
 
 static CDisplaySeqalign::TranslatedFrames 
@@ -427,7 +426,7 @@ Context2TranslatedFrame(int context)
 #define NUM_FRAMES 6
 
 static TSeqLocInfoVector
-BlastMask2CSeqLoc(BlastMask* mask, TSeqLocVector &slp,
+BlastMask2CSeqLoc(const BlastMask* mask, const TSeqLocVector& slp,
     EProgram program)
 {
     TSeqLocInfoVector retval;
@@ -477,11 +476,67 @@ slp[index].seqloc, slp[index].scope))));
     return retval;
 }
 
+void CBlastApplication::FormatResults(CDbBlast& blaster, 
+                                      TSeqAlignVector& seqalignv)
+{
+    CArgs args = GetArgs();
+    EProgram program = blaster.SetOptions().GetProgram();
+    char* dbname = const_cast<char*>(args["db"].AsString().c_str());
+    bool db_is_na = (program == eBlastn || program == eTblastn || 
+                     program == eTblastx);
+
+    CBlastFormatOptions* format_options = 
+        new CBlastFormatOptions(program, args["out"].AsOutputFile());
+
+    format_options->SetAlignments(args["align"].AsInteger());
+    format_options->SetDescriptions(args["descr"].AsInteger());
+    format_options->SetAlignView(args["format"].AsInteger());
+    format_options->SetHtml(args["html"].AsBoolean());
+
+#ifdef C_FORMATTING
+    if (dbname) {
+        BLAST_PrintOutputHeader(format_options, args["greedy"].AsBoolean(), 
+                                dbname, db_is_na);
+    }
+#endif
+
+    if (args["asnout"]) {
+        auto_ptr<CObjectOStream> asnout(
+            CObjectOStream::Open(args["asnout"].AsString(), eSerial_AsnText));
+        int query_index;
+        for (query_index = 0; query_index < seqalignv.size(); ++query_index)
+        {
+            if (!seqalignv[index]->IsSet())
+                continue;
+            *asnout << *seqalignv[query_index];
+        }
+    }
+
+    RegisterBlastDbLoader(dbname, db_is_na);
+    /* Format the results */
+    TSeqLocInfoVector maskv =
+        BlastMask2CSeqLoc(blaster.GetFilteredQueryRegions(), 
+                          blaster.GetQueries(), program);
+
+    if (BLAST_FormatResults(seqalignv, 
+            program, blaster.GetQueries(), maskv, 
+            format_options, m_pOptions->GetOutOfFrameMode())) {
+        NCBI_THROW(CBlastException, eInternal, 
+                   "Error in formatting results");
+    }
+
+#ifdef C_FORMATTING
+    PrintOutputFooter(program, format_options, score_options, 
+        m_sbp, lookup_options, word_options, ext_options, hit_options, 
+        blaster.GetQueryInfo(), dbname, blaster.GetReturnStats());
+#endif
+
+}
+
 int CBlastApplication::Run(void)
 {
     Uint1 program_number;
-    bool db_is_na;
-    int status;
+    int status = 0;
     BlastSeqSrcNewInfo bssn_info;
     ReaddbNewArgs readdb_args;
 
@@ -489,36 +544,7 @@ int CBlastApplication::Run(void)
     const CArgs& args = GetArgs();
     
     BlastProgram2Number(args["program"].AsString().c_str(), &program_number);
-    EProgram e_program = static_cast<EProgram>(program_number);
-
-    db_is_na = (e_program == eBlastn || 
-                e_program == eTblastn || 
-                e_program == eTblastx);
-
-    readdb_args.dbname = const_cast<char*>(args["db"].AsString().c_str());
-    readdb_args.is_protein = !db_is_na;
-    
-    bssn_info.constructor = &ReaddbSeqSrcNew;
-    bssn_info.ctor_argument = (void*) &readdb_args;
-    m_bssp = BlastSeqSrcNew(&bssn_info);
-
-    m_pOptions = new CBlastOptions(e_program);
-    SetOptions(args);
-    
-    m_format_options = 
-        new CBlastFormatOptions(e_program, args["out"].AsOutputFile());
-
-    m_format_options->SetAlignments(args["align"].AsInteger());
-    m_format_options->SetDescriptions(args["descr"].AsInteger());
-    m_format_options->SetAlignView(args["format"].AsInteger());
-    m_format_options->SetHtml(args["html"].AsBoolean());
-
-#ifdef C_FORMATTING
-    if (readdb_args.dbname) {
-        BLAST_PrintOutputHeader(format_options, args["greedy"].AsBoolean(), 
-                                readdb_args.dbname, db_is_na);
-    }
-#endif
+    EProgram program = static_cast<EProgram>(program_number);
 
     ENa_strand strand = (ENa_strand) args["strand"].AsInteger();
     Int4 from = args["qstart"].AsInteger();
@@ -528,47 +554,29 @@ int CBlastApplication::Run(void)
 
     int id_counter = 0;
     // Read the query(ies) from input file; perform the setup
-    m_query = BLASTGetSeqLocFromStream(args["query"].AsInputFile(),
+    TSeqLocVector query_loc = 
+        BLASTGetSeqLocFromStream(args["query"].AsInputFile(),
                   m_Scope, strand, from, to, &id_counter, 
                   args["lcase"].AsBoolean());
 
-    status = BlastSearch();
+    readdb_args.dbname = strdup(args["db"].AsString().c_str());
+    readdb_args.is_protein = (program == eBlastp || program == eBlastx);
+    bssn_info.constructor = &ReaddbSeqSrcNew;
+    bssn_info.ctor_argument = (void*) &readdb_args;
+    BlastSeqSrc* seq_src = BlastSeqSrcNew(&bssn_info);
 
-    if (args["asnout"]) {
-        auto_ptr<CObjectOStream> asnout(
-            CObjectOStream::Open(args["asnout"].AsString(), eSerial_AsnText));
-        int query_index;
-        for (query_index = 0; query_index < m_seqalign.size(); ++query_index)
-            *asnout << *m_seqalign[query_index];
-    }
+    CDbBlast blaster(query_loc, seq_src, program);
+    ProcessCommandLineArgs(blaster.SetOptions(), seq_src);
 
-    RegisterBlastDbLoader(readdb_args.dbname, !readdb_args.is_protein);
-    /* Format the results */
-    TSeqLocInfoVector maskv =
-        BlastMask2CSeqLoc(m_filter_loc, m_query, e_program);
+    TSeqAlignVector seqalignv = blaster.Run();
 
-    status = BLAST_FormatResults(m_seqalign, 
-                 e_program, m_query, maskv, 
-                 m_format_options, 
-                 m_pOptions->GetOutOfFrameMode());
-    
-#ifdef C_FORMATTING
-    PrintOutputFooter(program_number, format_options, score_options, 
-        m_sbp, lookup_options, word_options, ext_options, hit_options, 
-        m_clsQueryInfo, bssp, return_stats);
-#endif
+    FormatResults(blaster, seqalignv);
 
     return status;
 }
 
 void CBlastApplication::Exit(void)
 {
-    m_filter_loc = BlastMaskFree(m_filter_loc);
-    m_clsQueryInfo = BlastQueryInfoFree(m_clsQueryInfo);
-    m_sbp = BlastScoreBlkFree(m_sbp);
-
-    sfree(m_return_stats);
-
     SetDiagStream(0);
 }
 
