@@ -1,4 +1,4 @@
---$Revision: 6.1 $
+--$Revision: 6.2 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -421,7 +421,7 @@ BioSource ::= SEQUENCE {
                                        -- nucleomorph (15)
                                        -- apicoplast (16)
                                        -- leucoplast (17)
-                                       -- protoplast (18)
+                                       -- proplastid (18)
     origin INTEGER {
       unknown (0) ,
       natural (1) ,                    -- normal biological entity
