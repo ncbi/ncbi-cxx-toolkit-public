@@ -140,11 +140,11 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr)
 
     if ( num_sources > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleBioSources,
-            "Multiple BioSource blocks", *last_source);
+            "Undesired multiple source descriptors (reporting last one)", *last_source);
     }
     if ( num_titles > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleTitles,
-            "Multiple Title blocks", *last_title);
+            "Multiple Title blocks (reporting last one)", *last_title);
     }
 }
 
@@ -158,6 +158,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/06/16 21:17:44  shomrat
+* Changed error messages
+*
 * Revision 1.5  2003/03/31 14:40:19  shomrat
 * $id: -> $id$
 *
