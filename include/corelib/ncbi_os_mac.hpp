@@ -42,6 +42,8 @@
 #  error "ncbi_os_mac.hpp must be used on MAC platforms only"
 #endif
 
+#include <MacTypes.h>
+
 // If this variable gets set to true, then we should throw rather than exit() or abort().
 extern bool g_Mac_SpecialEnvironment;
 // Enable the coding style used by the special environment in question.
@@ -72,6 +74,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/12/03 22:59:04  juran
+ * Don't forget MacTypes.h.
+ *
  * Revision 1.2  2001/12/03 22:00:34  juran
  * Add g_Mac_SpecialEnvironment global.
  * Include prerequisite corelib headers.
