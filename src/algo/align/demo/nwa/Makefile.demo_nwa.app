@@ -9,15 +9,6 @@
 APP = demo_nwa
 SRC = nwa starter
 
-
-#LIB = xalgo xobjutil xobjmgr id1 seqset $(SEQ_LIBS) \
-	  seq seqres seqblock seqfeat \
-	  pub medline biblio \
-      general dbapi_driver xser xutil xconnect xncbi
-
-#LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
-
-
 LIB = xalgo xobjmgr id1 seqset seqloc $(SEQ_LIBS) pub medline biblio \
       general xser xconnect xutil xncbi
 
