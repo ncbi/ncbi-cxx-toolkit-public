@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/05/09 17:15:07  thiessen
+* add automatic block removal upon demotion
+*
 * Revision 1.12  2001/05/08 21:15:44  thiessen
 * add PSSM weight dialog for sorting
 *
@@ -102,6 +105,7 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_REALIGN_ROW, MID_REALIGN_ROWS,   SequenceViewerWindow::OnRealign)
     EVT_MENU_RANGE(MID_SORT_IDENT, MID_SORT_THREADER,   SequenceViewerWindow::OnSort)
     EVT_MENU      (MID_SCORE_THREADER,                  SequenceViewerWindow::OnScoreThreader)
+    EVT_MENU      (MID_REALIGN_BLOCK,                   SequenceViewerWindow::OnRealignBlock)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer) :
@@ -125,6 +129,8 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     updateMenu->AppendSeparator();
     updateMenu->Append(MID_REALIGN_ROW, "Realign &Individual Rows", "", true);
     updateMenu->Append(MID_REALIGN_ROWS, "Realign Rows from &List");
+    updateMenu->AppendSeparator();
+    updateMenu->Append(MID_REALIGN_BLOCK, "Mark &Block", "", true);
     menuBar->Append(updateMenu, "&Update");
 
     EnableDerivedEditorMenuItems(false);
@@ -161,12 +167,14 @@ void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
         menuBar->Enable(MID_MOVE_ROW, enabled);             // can only move row when editor is on
         menuBar->Enable(MID_REALIGN_ROW, enabled);          // can only realign rows when editor is on
         menuBar->Enable(MID_REALIGN_ROWS, enabled);         // can only realign rows when editor is on
+        menuBar->Enable(MID_REALIGN_BLOCK, enabled);
     }
 }
 
 void SequenceViewerWindow::OnDeleteRow(wxCommandEvent& event)
 {
     if (DoRealignRow()) RealignRowOff();
+    if (DoRealignBlock()) RealignBlockOff();
     CancelBaseSpecialModes();
     if (DoDeleteRow())
         SetCursor(*wxCROSS_CURSOR);
@@ -287,6 +295,7 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     // setup one-at-a-time row realignment
     if (event.GetId() == MID_REALIGN_ROW) {
         if (DoDeleteRow()) DeleteRowOff();
+        if (DoRealignBlock()) RealignBlockOff();
         CancelBaseSpecialModes();
         if (DoRealignRow())
             SetCursor(*wxCROSS_CURSOR);
@@ -365,6 +374,17 @@ void SequenceViewerWindow::OnScoreThreader(wxCommandEvent& event)
             sequenceViewer->GetCurrentDisplay()->CalculateRowScoresWithThreader(weightPSSM);
         SetCursor(wxNullCursor);
     }
+}
+
+void SequenceViewerWindow::OnRealignBlock(wxCommandEvent& event)
+{
+    if (DoDeleteRow()) DeleteRowOff();
+    if (DoRealignRow()) RealignRowOff();
+    CancelBaseSpecialModes();
+    if (DoRealignBlock())
+        SetCursor(*wxCROSS_CURSOR);
+    else
+        RealignBlockOff();
 }
 
 END_SCOPE(Cn3D)

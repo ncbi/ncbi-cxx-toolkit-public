@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/05/09 17:15:06  thiessen
+* add automatic block removal upon demotion
+*
 * Revision 1.16  2001/05/02 13:46:27  thiessen
 * major revision of stuff relating to saving of updates; allow stored null-alignments
 *
@@ -319,18 +322,24 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
     *drawBackground = false;
     if (!(*isHighlighted)) {
 
-        // check for unmergeable alignment
-        const BlockMultipleAlignment *referenceAlignment = alignmentManager->GetCurrentMultipleAlignment();
-        if (row == 0 && seqIndex >= 0 && !isAligned && referenceAlignment != this &&
-            referenceAlignment->GetMaster() == sequence && referenceAlignment->IsAligned(row, seqIndex)) {
+        // check for block flagged for realignment
+        if (realignBlocks.find(blockMap[alignmentColumn].block) != realignBlocks.end()) {
             *drawBackground = true;
-            *cellBackgroundColor = GlobalColors()->Get(Colors::eUnalignedInUpdate);
+            *cellBackgroundColor = GlobalColors()->Get(Colors::eRealignBlock);
         }
 
         // check for geometry violations
         if (geometryViolations.size() > 0 && seqIndex >= 0 && geometryViolations[row][seqIndex]) {
             *drawBackground = true;
             *cellBackgroundColor = GlobalColors()->Get(Colors::eGeometryViolation);
+        }
+
+        // check for unmergeable alignment
+        const BlockMultipleAlignment *referenceAlignment = alignmentManager->GetCurrentMultipleAlignment();
+        if (row == 0 && seqIndex >= 0 && !isAligned && referenceAlignment != this &&
+            referenceAlignment->GetMaster() == sequence && referenceAlignment->IsAligned(row, seqIndex)) {
+            *drawBackground = true;
+            *cellBackgroundColor = GlobalColors()->Get(Colors::eUnalignedInUpdate);
         }
     }
 
@@ -1143,7 +1152,9 @@ bool BlockMultipleAlignment::ExtractRows(
         BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(newSeqs, alignmentManager);
         for (b=blocks.begin(); b!=be; b++) {
             UngappedAlignedBlock *ABlock = dynamic_cast<UngappedAlignedBlock*>(*b);
-            if (ABlock) {
+
+            // only copy blocks that aren't flagged to be realigned
+            if (ABlock && realignBlocks.find(ABlock) == realignBlocks.end()) {
                 UngappedAlignedBlock *newABlock = new UngappedAlignedBlock(newAlignment);
                 const Block::Range *range = ABlock->GetRangeOfRow(0);
                 newABlock->SetRangeOfRow(0, range->from, range->to);
@@ -1352,6 +1363,16 @@ CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment 
     }
 
     return seqAlign;
+}
+
+bool BlockMultipleAlignment::SetRealignBlock(int column)
+{
+    if (column >= 0 && column < blockMap.size() && blockMap[column].block->IsAligned()) {
+        TESTMSG("marked block for realignment");
+        realignBlocks[blockMap[column].block] = true;
+        return true;
+    }
+    return false;
 }
 
 

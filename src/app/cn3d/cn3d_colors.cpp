@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/05/09 17:15:06  thiessen
+* add automatic block removal upon demotion
+*
 * Revision 1.5  2001/04/05 22:55:35  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -70,6 +73,7 @@ Colors::Colors(void)
     colors[eHighlight].Set(1, 1, 0);
     colors[eUnalignedInUpdate].Set(1, .8, .8);
     colors[eGeometryViolation].Set(.6, 1, .6);
+    colors[eRealignBlock].Set(.8, .8, .8);
 
     colors[eHelix].Set(.1, .9, .1);
     colors[eStrand].Set(.9, .7, .2);

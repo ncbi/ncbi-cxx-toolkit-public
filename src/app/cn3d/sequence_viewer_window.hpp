@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/05/09 17:14:52  thiessen
+* add automatic block removal upon demotion
+*
 * Revision 1.7  2001/04/05 22:54:51  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -94,7 +97,8 @@ private:
         // update menu
         MID_SHOW_UPDATES,
         MID_REALIGN_ROW,
-        MID_REALIGN_ROWS
+        MID_REALIGN_ROWS,
+        MID_REALIGN_BLOCK
     };
 
     void OnShowHideRows(wxCommandEvent& event);
@@ -104,6 +108,7 @@ private:
     void OnRealign(wxCommandEvent& event);
     void OnSort(wxCommandEvent& event);
     void OnScoreThreader(wxCommandEvent& event);
+    void OnRealignBlock(wxCommandEvent& event);
 
     // called before an operation (e.g., alignment editor enable) that requires
     // all rows of an alignment to be visible; 'false' return should abort that operation
@@ -123,6 +128,11 @@ private:
         menuBar->Check(MID_REALIGN_ROW, false);
         SetCursor(wxNullCursor);
     }
+    void RealignBlockOff(void)
+    {
+        menuBar->Check(MID_REALIGN_BLOCK, false);
+        SetCursor(wxNullCursor);
+    }
 
     DECLARE_EVENT_TABLE()
 
@@ -136,11 +146,13 @@ public:
 
     bool DoDeleteRow(void) const { return menuBar->IsChecked(MID_DELETE_ROW); }
     bool DoRealignRow(void) const { return menuBar->IsChecked(MID_REALIGN_ROW); }
+    bool DoRealignBlock(void) const { return menuBar->IsChecked(MID_REALIGN_BLOCK); }
 
     void CancelDerivedSpecialModes(void)
     {
         if (DoDeleteRow()) DeleteRowOff();
         if (DoRealignRow()) RealignRowOff();
+        if (DoRealignBlock()) RealignBlockOff();
     }
 };
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/05/09 17:15:06  thiessen
+* add automatic block removal upon demotion
+*
 * Revision 1.15  2001/05/02 16:35:15  thiessen
 * launch entrez web page on sequence identifier
 *
@@ -450,56 +453,65 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
 
         // operations specific to the sequence window
         SequenceViewerWindow *sequenceWindow = dynamic_cast<SequenceViewerWindow*>(*viewerWindow);
-        if (sequenceWindow && row >= 0 &&
-            (sequenceWindow->DoRealignRow() || sequenceWindow->DoDeleteRow())) {
+        if (sequenceWindow && row >= 0) {
 
-            DisplayRowFromAlignment *selectedRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
-            if (!selectedRow || selectedRow->row == 0 || !selectedRow->alignment) {
-                ERR_POST(Warning << "Can't delete/realign that row...");
+            if (sequenceWindow->DoRealignBlock()) {
+                if (alignment->SetRealignBlock(column)) {
+                    sequenceWindow->RealignBlockOff();
+                    GlobalMessenger()->PostRedrawSequenceViewer(sequenceWindow->sequenceViewer);
+                }
                 return false;
             }
 
-            if (sequenceWindow->DoRealignRow()) {
-                std::vector < int > selectedSlaves(1);
-                selectedSlaves[0] = selectedRow->row;
-                sequenceWindow->sequenceViewer->alignmentManager->
-                    RealignSlaveSequences(alignment, selectedSlaves);
-                return false;
-            }
-
-            if (sequenceWindow->DoDeleteRow()) {
-                if (alignment->NRows() <= 2) {
-                    ERR_POST(Warning << "Can't delete that row...");
+            if (sequenceWindow->DoRealignRow() || sequenceWindow->DoDeleteRow()) {
+                DisplayRowFromAlignment *selectedRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
+                if (!selectedRow || selectedRow->row == 0 || !selectedRow->alignment) {
+                    ERR_POST(Warning << "Can't delete/realign that row...");
                     return false;
                 }
 
-                // redraw molecule associated with removed row
-                const Molecule *molecule = alignment->GetSequenceOfRow(selectedRow->row)->molecule;
-
-                // delete row based on alignment row # (not display row #); redraw molecule
-                if (alignment->DeleteRow(selectedRow->row)) {
-
-                    // delete this row from the display, and update higher row #'s
-                    RowVector::iterator r, re = rows.end(), toDelete;
-                    for (r=rows.begin(); r!=re; r++) {
-                        DisplayRowFromAlignment
-                            *currentARow = dynamic_cast<DisplayRowFromAlignment*>(*r);
-                        if (!currentARow)
-                            continue;
-                        else if (currentARow->row > selectedRow->row)
-                            (currentARow->row)--;
-                        else if (currentARow == selectedRow)
-                            toDelete = r;
-                    }
-                    delete *toDelete;
-                    rows.erase(toDelete);
-
-                    sequenceWindow->DeleteRowOff();
-                    UpdateAfterEdit(alignment);
-                    if (molecule && sequenceWindow->AlwaysSyncStructures())
-                        GlobalMessenger()->PostRedrawMolecule(molecule);
+                if (sequenceWindow->DoRealignRow()) {
+                    std::vector < int > selectedSlaves(1);
+                    selectedSlaves[0] = selectedRow->row;
+                    sequenceWindow->sequenceViewer->alignmentManager->
+                        RealignSlaveSequences(alignment, selectedSlaves);
+                    return false;
                 }
-                return false;
+
+                if (sequenceWindow->DoDeleteRow()) {
+                    if (alignment->NRows() <= 2) {
+                        ERR_POST(Warning << "Can't delete that row...");
+                        return false;
+                    }
+
+                    // redraw molecule associated with removed row
+                    const Molecule *molecule = alignment->GetSequenceOfRow(selectedRow->row)->molecule;
+
+                    // delete row based on alignment row # (not display row #); redraw molecule
+                    if (alignment->DeleteRow(selectedRow->row)) {
+
+                        // delete this row from the display, and update higher row #'s
+                        RowVector::iterator r, re = rows.end(), toDelete;
+                        for (r=rows.begin(); r!=re; r++) {
+                            DisplayRowFromAlignment
+                                *currentARow = dynamic_cast<DisplayRowFromAlignment*>(*r);
+                            if (!currentARow)
+                                continue;
+                            else if (currentARow->row > selectedRow->row)
+                                (currentARow->row)--;
+                            else if (currentARow == selectedRow)
+                                toDelete = r;
+                        }
+                        delete *toDelete;
+                        rows.erase(toDelete);
+
+                        sequenceWindow->DeleteRowOff();
+                        UpdateAfterEdit(alignment);
+                        if (molecule && sequenceWindow->AlwaysSyncStructures())
+                            GlobalMessenger()->PostRedrawMolecule(molecule);
+                    }
+                    return false;
+                }
             }
         }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/05/09 17:14:52  thiessen
+* add automatic block removal upon demotion
+*
 * Revision 1.4  2001/04/05 22:54:50  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -69,6 +72,7 @@ public:
         eHighlight = 0,
         eUnalignedInUpdate,
         eGeometryViolation,
+        eRealignBlock,
 
         // secondary structures
         eHelix,

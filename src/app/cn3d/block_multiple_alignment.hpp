@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/05/09 17:14:51  thiessen
+* add automatic block removal upon demotion
+*
 * Revision 1.12  2001/05/02 13:46:15  thiessen
 * major revision of stuff relating to saving of updates; allow stored null-alignments
 *
@@ -79,6 +82,7 @@
 
 #include <list>
 #include <vector>
+#include <map>
 
 #include "cn3d/vector_math.hpp"
 
@@ -219,6 +223,10 @@ public:
     // delete a row; returns true if successful
     bool DeleteRow(int row);
 
+    // flag an aligned block for realignment - block will be removed upon ExtractRows; returns true if
+    // column is in fact an aligned block
+    bool SetRealignBlock(int column);
+
     // this function does two things: it extracts from a multiple alignment all slave rows marked for
     // removal (removeSlaves[i] == true); and for each slave removed, creates a new BlockMultipleAlignment
     // that contains the alignment of just that slave with the master, as it was in the original multiple
@@ -251,6 +259,10 @@ private:
     } BlockInfo;
     typedef std::vector < BlockInfo > BlockMap;
     BlockMap blockMap;
+
+    // to flag blocks for realignment
+    typedef std::map < const Block * , bool > RealignBlockMap;
+    RealignBlockMap realignBlocks;
 
     bool CheckAlignedBlock(const Block *newBlock) const;
     UnalignedBlock * CreateNewUnalignedBlockBetween(const Block *left, const Block *right);
