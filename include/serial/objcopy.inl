@@ -139,12 +139,21 @@ void CObjectStreamCopier::CopyChoice(const CChoiceTypeInfo* choiceType)
     Out().CopyChoice(choiceType, *this);
 }
 
+inline
+void CObjectStreamCopier::CopyAlias(const CAliasTypeInfo* aliasType)
+{
+    Out().CopyAlias(aliasType, *this);
+}
+
 #endif /* def OBJCOPY__HPP  &&  ndef OBJCOPY__INL */
 
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/10/21 21:08:45  grichenk
+* Fixed aliases-related bug in XML stream
+*
 * Revision 1.9  2003/08/13 15:47:02  gouriano
 * implemented serialization of AnyContent objects
 *

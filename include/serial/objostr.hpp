@@ -69,6 +69,7 @@ class CContainerTypeInfo;
 class CClassTypeInfo;
 class CChoiceTypeInfo;
 class CObjectStreamCopier;
+class CAliasTypeInfo;
 
 class CWriteObjectInfo;
 class CWriteObjectList;
@@ -384,6 +385,10 @@ public:
     // choice
     MLIOVIR void WriteChoice(const CChoiceTypeInfo* choiceType,
                              TConstObjectPtr choicePtr);
+    // alias
+    MLIOVIR void WriteAlias(const CAliasTypeInfo* aliasType,
+                            TConstObjectPtr aliasPtr);
+
     // COPY
     // named type (alias)
     MLIOVIR void CopyNamedType(TTypeInfo namedTypeInfo,
@@ -399,6 +404,9 @@ public:
                                      CObjectStreamCopier& copier);
     // choice
     MLIOVIR void CopyChoice(const CChoiceTypeInfo* choiceType,
+                            CObjectStreamCopier& copier);
+    // alias
+    MLIOVIR void CopyAlias(const CAliasTypeInfo* AliasType,
                             CObjectStreamCopier& copier);
 
     // low level I/O
@@ -505,6 +513,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2003/10/21 21:08:46  grichenk
+* Fixed aliases-related bug in XML stream
+*
 * Revision 1.78  2003/08/19 18:32:38  vasilche
 * Optimized reading and writing strings.
 * Avoid string reallocation when checking char values.

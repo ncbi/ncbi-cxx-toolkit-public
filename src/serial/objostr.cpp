@@ -49,6 +49,7 @@
 #include <serial/delaybuf.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/choice.hpp>
+#include <serial/aliasinfo.hpp>
 #include <serial/continfo.hpp>
 #include <serial/member.hpp>
 #include <serial/variant.hpp>
@@ -822,6 +823,20 @@ void CObjectOStream::CopyChoice(const CChoiceTypeInfo* choiceType,
     END_OBJECT_2FRAMES_OF(copier);
 }
 
+void CObjectOStream::WriteAlias(const CAliasTypeInfo* aliasType,
+                                TConstObjectPtr aliasPtr)
+{
+    WriteNamedType(aliasType, aliasType->GetRefTypeInfo(),
+        aliasType->GetDataPtr(aliasPtr));
+}
+
+void CObjectOStream::CopyAlias(const CAliasTypeInfo* aliasType,
+                                CObjectStreamCopier& copier)
+{
+    CopyNamedType(aliasType, aliasType->GetRefTypeInfo(),
+        copier);
+}
+
 void CObjectOStream::BeginBytes(const ByteBlock& )
 {
 }
@@ -883,6 +898,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2003/10/21 21:08:46  grichenk
+* Fixed aliases-related bug in XML stream
+*
 * Revision 1.86  2003/07/29 18:47:48  vasilche
 * Fixed thread safeness of object stream hooks.
 *

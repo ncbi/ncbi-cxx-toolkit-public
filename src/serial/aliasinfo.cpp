@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/10/21 21:08:46  grichenk
+* Fixed aliases-related bug in XML stream
+*
 * Revision 1.1  2003/10/21 13:45:23  grichenk
 * Initial revision
 *
@@ -40,6 +43,8 @@
 #include <serial/aliasinfo.hpp>
 #include <serial/serialbase.hpp>
 #include <serial/serialutil.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -176,14 +181,19 @@ TConstObjectPtr CAliasTypeInfo::GetDataPtr(TConstObjectPtr objectPtr) const
 }
 
 
+TTypeInfo CAliasTypeInfo::GetRefTypeInfo(void) const
+{
+    return m_DataTypeRef.Get();
+}
+
+
 void CAliasTypeInfoFunctions::ReadAliasDefault(CObjectIStream& in,
                                                TTypeInfo objectType,
                                                TObjectPtr objectPtr)
 {
     const CAliasTypeInfo* aliasType =
         CTypeConverter<CAliasTypeInfo>::SafeCast(objectType);
-    objectPtr = aliasType->GetDataPtr(objectPtr);
-    aliasType->m_DataTypeRef.Get()->DefaultReadData(in, objectPtr);
+    in.ReadAlias(aliasType, objectPtr);
 }
 
 void CAliasTypeInfoFunctions::WriteAliasDefault(CObjectOStream& out,
@@ -192,8 +202,7 @@ void CAliasTypeInfoFunctions::WriteAliasDefault(CObjectOStream& out,
 {
     const CAliasTypeInfo* aliasType =
         CTypeConverter<CAliasTypeInfo>::SafeCast(objectType);
-    objectPtr = aliasType->GetDataPtr(objectPtr);
-    aliasType->m_DataTypeRef.Get()->DefaultWriteData(out, objectPtr);
+    out.WriteAlias(aliasType, objectPtr);
 }
 
 void CAliasTypeInfoFunctions::CopyAliasDefault(CObjectStreamCopier& copier,
@@ -209,7 +218,7 @@ void CAliasTypeInfoFunctions::SkipAliasDefault(CObjectIStream& in,
 {
     const CAliasTypeInfo* aliasType =
         CTypeConverter<CAliasTypeInfo>::SafeCast(objectType);
-    aliasType->m_DataTypeRef.Get()->DefaultSkipData(in);
+    in.SkipAlias(aliasType);
 }
 
 

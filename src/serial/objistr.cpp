@@ -46,6 +46,7 @@
 #include <serial/variant.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/choice.hpp>
+#include <serial/aliasinfo.hpp>
 #include <serial/continfo.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
@@ -970,6 +971,18 @@ void CObjectIStream::SkipChoice(const CChoiceTypeInfo* choiceType)
     END_OBJECT_FRAME();
 }
 
+void CObjectIStream::ReadAlias(const CAliasTypeInfo* aliasType,
+                               TObjectPtr aliasPtr)
+{
+    ReadNamedType(aliasType, aliasType->GetRefTypeInfo(),
+        aliasType->GetDataPtr(aliasPtr));
+}
+
+void CObjectIStream::SkipAlias(const CAliasTypeInfo* aliasType)
+{
+    SkipNamedType(aliasType, aliasType->GetRefTypeInfo());
+}
+
 ///////////////////////////////////////////////////////////////////////
 //
 // CObjectIStream::ByteBlock
@@ -1281,6 +1294,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.116  2003/10/21 21:08:46  grichenk
+* Fixed aliases-related bug in XML stream
+*
 * Revision 1.115  2003/09/30 16:10:37  vasilche
 * Added one more variant of object streams creation.
 *

@@ -52,6 +52,7 @@ BEGIN_NCBI_SCOPE
 class CContainerTypeInfo;
 class CClassTypeInfo;
 class CChoiceTypeInfo;
+class CAliasTypeInfo;
 class CMemberInfo;
 
 class CCopyObjectHook;
@@ -103,6 +104,7 @@ public:
     void CopyClassSequential(const CClassTypeInfo* classType);
 
     void CopyChoice(const CChoiceTypeInfo* choiceType);
+    void CopyAlias(const CAliasTypeInfo* aliasType);
 
     typedef CObjectIStream::TFailFlags TFailFlags;
     void ThrowError1(const char* file, int line,
@@ -138,6 +140,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/10/21 21:08:45  grichenk
+* Fixed aliases-related bug in XML stream
+*
 * Revision 1.12  2003/08/13 15:47:02  gouriano
 * implemented serialization of AnyContent objects
 *

@@ -70,6 +70,7 @@ class CClassTypeInfo;
 class CChoiceTypeInfo;
 class CContainerTypeInfo;
 class CObjectStreamCopier;
+class CAliasTypeInfo;
 
 class CReadObjectHook;
 class CReadClassMemberHook;
@@ -465,6 +466,11 @@ public:
                             TObjectPtr choicePtr);
     MLIOVIR void SkipChoice(const CChoiceTypeInfo* choiceType);
 
+    // alias
+    MLIOVIR void ReadAlias(const CAliasTypeInfo* aliasType,
+                           TObjectPtr aliasPtr);
+    MLIOVIR void SkipAlias(const CAliasTypeInfo* aliasType);
+
     // low level I/O
     // named type (alias)
     virtual void BeginNamedType(TTypeInfo namedTypeInfo);
@@ -635,6 +641,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2003/10/21 21:08:45  grichenk
+* Fixed aliases-related bug in XML stream
+*
 * Revision 1.92  2003/09/30 16:10:34  vasilche
 * Added one more variant of object streams creation.
 *

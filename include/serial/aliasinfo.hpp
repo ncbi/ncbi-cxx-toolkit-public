@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/10/21 21:08:45  grichenk
+* Fixed aliases-related bug in XML stream
+*
 * Revision 1.1  2003/10/21 13:45:22  grichenk
 * Initial revision
 *
@@ -77,6 +80,8 @@ public:
     void SetDataOffset(TPointerOffsetType offset);
     TObjectPtr GetDataPtr(TObjectPtr objectPtr) const;
     TConstObjectPtr GetDataPtr(TConstObjectPtr objectPtr) const;
+
+    TTypeInfo GetRefTypeInfo(void) const;
 
 protected:
     CTypeRef m_DataTypeRef;
