@@ -67,9 +67,7 @@ AC_ARG_WITH(mt,
 AC_ARG_WITH(exe,
    [ --without-exe           do not build executables])
 AC_ARG_WITH(runpath,
-   [ --without-runpath       do not provide runpath to the built DLLs])
-AC_ARG_WITH(runpath,
-   [ --with-runpath=         to use the built DLLs from a non-default location])
+   [ --with-runpath=         hard-code the runtime path to DLLs])
 
 ## Scripts, make features, and directory naming
 AC_ARG_WITH(extra-action,
@@ -420,11 +418,8 @@ esac
 
 # Provide runpath to the C++ Toolkit DLLs
 rundir="\$(libdir)"
-if test "$with_dll" = "no" ; then
-   if test -z "$with_runpath"  ||  test "$with_runpath" = "yes" ; then
-      with_runpath="no"
-   fi
-elif test -z "$with_dll"  &&  test -z "$with_runpath" ; then
+
+if test -z "$with_runpath"  &&  test "$with_dll" != "yes" ; then
    with_runpath="no"
 fi
 
