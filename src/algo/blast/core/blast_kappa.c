@@ -2315,8 +2315,6 @@ NewAlignmentUsingXdrop(
    * (usually the same as (queryEnd - queryStart) and (matchEnd -
    * matchStart)) */
   Int4 queryExtent, matchExtent;
-  Int4 * reverseAlignScript;      /* alignment script returned by the
-                                     x-drop algorithm */
   Kappa_DistinctAlignment * obj;  /* the new object */
 
   Kappa_SWFindFinalEndsUsingXdrop(query,   queryStart, queryEnd,
