@@ -113,7 +113,7 @@ static CSafeStaticPtr< list<const void*> > s_heap_obj;
 #if USE_COMPLEX_MASK
 static inline CAtomicCounter* GetSecondCounter(CObject* ptr)
 {
-  return reinterpret_cast<CAtomicCounter*>(ptr+1);
+  return reinterpret_cast<CAtomicCounter*> (ptr + 1);
 }
 #endif
 
@@ -123,7 +123,8 @@ static inline CAtomicCounter* GetSecondCounter(CObject* ptr)
 #define SINGLE_ALLOC_POOL_SIZE (1024*1024)
 
 DEFINE_STATIC_FAST_MUTEX(sx_SingleAllocMutex);
-static char* single_alloc_pool = 0;
+
+static char*  single_alloc_pool = 0;
 static size_t single_alloc_pool_size = 0;
 
 void* single_alloc(size_t size)
@@ -136,7 +137,7 @@ void* single_alloc(size_t size)
     char* pool;
     if ( size > pool_size ) {
         pool_size = SINGLE_ALLOC_THRESHOLD;
-        pool = (char*)malloc(pool_size);
+        pool = (char*) malloc(pool_size);
         if ( !pool ) {
             sx_SingleAllocMutex.Unlock();
             throw bad_alloc();
@@ -148,7 +149,7 @@ void* single_alloc(size_t size)
     else {
         pool = single_alloc_pool;
     }
-    single_alloc_pool = pool + size;
+    single_alloc_pool      = pool      + size;
     single_alloc_pool_size = pool_size - size;
     sx_SingleAllocMutex.Unlock();
     return pool;
@@ -159,7 +160,7 @@ void* single_alloc(size_t size)
 void* CObject::operator new(size_t size)
 {
     _ASSERT(size >= sizeof(CObject));
-    size = max(size, sizeof(CObject)+sizeof(TCounter));
+    size = max(size, sizeof(CObject) + sizeof(TCounter));
 
 #ifdef USE_SINGLE_ALLOC
     void* ptr = single_alloc(size);
@@ -254,6 +255,7 @@ void CObject::InitCounter(void)
 {
     // This code can't use Get(), which may block waiting for an
     // update that will never happen.
+    // ATTENTION:  this code can cause UMR (Uninit Mem Read) -- it's okay here!
     if ( m_Counter.m_Value != eCounterNew ) {
         // takes care of statically allocated case
         m_Counter.Set(eCounterNotInHeap);
@@ -497,15 +499,15 @@ struct SAllocHeader
 {
     unsigned magic;
     unsigned seq_number;
-    size_t size;
-    void*  ptr;
+    size_t   size;
+    void*    ptr;
 };
 
 
 struct SAllocFooter
 {
-    void*  ptr;
-    size_t size;
+    void*    ptr;
+    size_t   size;
     unsigned seq_number;
     unsigned magic;
 };
@@ -526,7 +528,7 @@ static std::bad_alloc bad_alloc_instance;
 
 DEFINE_STATIC_FAST_MUTEX(s_alloc_mutex);
 static NCBI_NS_NCBI::CAtomicCounter seq_number;
-static const size_t kLogSize = 64*1024;
+static const size_t kLogSize = 64 * 1024;
 struct SAllocLog {
     unsigned seq_number;
     enum EType {
@@ -537,47 +539,47 @@ struct SAllocLog {
         eDelete,
         eDeleteArr
     };
-    char type;
-    char completed;
+    char   type;
+    char   completed;
     size_t size;
-    void* ptr;
+    void*  ptr;
 };
 static SAllocLog alloc_log[kLogSize];
 
 
 static inline SAllocHeader* get_header(void* ptr)
 {
-    return (SAllocHeader*)((char*)ptr-kAllocSizeBefore);
+    return (SAllocHeader*) ((char*) ptr-kAllocSizeBefore);
 }
 
 
 static inline void* get_guard_before(SAllocHeader* header)
 {
-    return (char*)header+sizeof(SAllocHeader);
+    return (char*) header + sizeof(SAllocHeader);
 }
 
 
 static inline size_t get_guard_before_size()
 {
-    return kAllocSizeBefore-sizeof(SAllocHeader);
+    return kAllocSizeBefore - sizeof(SAllocHeader);
 }
 
 
 static inline size_t get_extra_size(size_t size)
 {
-    return (-size)&7;
+    return (-size) & 7;
 }
 
 
 static inline size_t get_guard_after_size(size_t size)
 {
-    return kAllocSizeAfter-sizeof(SAllocFooter)+get_extra_size(size);
+    return kAllocSizeAfter - sizeof(SAllocFooter) + get_extra_size(size);
 }
 
 
 static inline void* get_ptr(SAllocHeader* header)
 {
-    return (char*)header+kAllocSizeBefore;
+    return (char*) header + kAllocSizeBefore;
 }
 
 
@@ -664,7 +666,8 @@ static inline
 void free_mem(void* ptr, bool array)
 {
     unsigned number = seq_number.Add(1);
-    SAllocLog& log = start_log(number, array? SAllocLog::eDeleteArr: SAllocLog::eDelete);
+    SAllocLog& log =
+        start_log(number, array ? SAllocLog::eDeleteArr: SAllocLog::eDelete);
     if ( ptr ) {
         log.ptr = ptr;
         
@@ -676,10 +679,10 @@ void free_mem(void* ptr, bool array)
         }
         size_t size = log.size = header->size;
         SAllocFooter* footer = get_footer(header, size);
-        if ( footer->magic != kAllocMagicFooter ||
+        if ( footer->magic      != kAllocMagicFooter ||
              footer->seq_number != header->seq_number ||
-             footer->ptr != get_ptr(header) ||
-             footer->size != size ) {
+             footer->ptr        != get_ptr(header) ||
+             footer->size       != size ) {
             abort();
         }
         
@@ -703,7 +706,8 @@ void free_mem(void* ptr, bool array)
 void* operator new(size_t size) throw(std::bad_alloc)
 {
     void* ret = alloc_mem(size, false);
-    if ( !ret ) throw bad_alloc_instance;
+    if ( !ret )
+        throw bad_alloc_instance;
     return ret;
 }
 
@@ -717,7 +721,8 @@ void* operator new(size_t size, const std::nothrow_t&) throw()
 void* operator new[](size_t size) throw(std::bad_alloc)
 {
     void* ret = alloc_mem(size, true);
-    if ( !ret ) throw bad_alloc_instance;
+    if ( !ret )
+        throw bad_alloc_instance;
     return ret;
 }
 
@@ -753,9 +758,14 @@ void  operator delete[](void* ptr, const std::nothrow_t&) throw()
 
 #endif
 
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2004/04/05 15:58:43  vakatov
+ * CObject::InitCounter() -- ATTENTION:  this code can cause UMR -- it's okay
+ *
  * Revision 1.43  2004/02/19 16:44:19  vasilche
  * Modified debug new/delete code for 64 bit builds.
  *
