@@ -1,0 +1,6 @@
+# $Id$
+
+ASN_DEP = seq blastdb
+
+LIB = xblastformat
+SRC = blastfmtutil showdefline
