@@ -34,6 +34,7 @@
 #include <connect/services/grid_worker.hpp>
 #include <util/thread_pool.hpp>
 
+#include <signal.h>
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
@@ -257,7 +258,7 @@ void CGridWorkerNode::Start()
 
     string    job_key;
     string    input;
-    bool      job_exists;
+    bool      job_exists = false;
 
     while (1) {
         if (GetShutdownLevel() != CNetScheduleClient::eNoShutdown)
@@ -340,6 +341,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/28 14:40:17  didenko
+ * Cosmetics
+ *
  * Revision 1.4  2005/03/23 21:26:06  didenko
  * Class Hierarchy restructure
  *

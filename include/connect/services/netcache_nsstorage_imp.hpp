@@ -47,8 +47,8 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT CNetCacheNSStorage : public INetScheduleStorage
 {
 public:
-    CNetCacheNSStorage(auto_ptr<CNetCacheClient> nc_client);
-    virtual ~CNetCacheNSStorage() {}
+    CNetCacheNSStorage(CNetCacheClient* nc_client);
+    virtual ~CNetCacheNSStorage(); 
 
     virtual CNcbiIstream& GetIStream(const string& data_id,
                                      size_t* blob_size = 0);
@@ -87,6 +87,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/28 14:38:04  didenko
+ * Cosmetics
+ *
  * Revision 1.4  2005/03/23 13:10:32  kuznets
  * documented and doxygenized
  *

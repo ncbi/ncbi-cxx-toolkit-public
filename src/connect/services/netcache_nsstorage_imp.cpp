@@ -37,11 +37,15 @@
 BEGIN_NCBI_SCOPE
 
 
-CNetCacheNSStorage::CNetCacheNSStorage(auto_ptr<CNetCacheClient> nc_client)
+CNetCacheNSStorage::CNetCacheNSStorage(CNetCacheClient* nc_client)
 : m_NCClient(nc_client)
 {
 }
 
+
+CNetCacheNSStorage::~CNetCacheNSStorage() 
+{
+}
 
 CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
                                              size_t* blob_size)
@@ -114,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/28 14:40:39  didenko
+ * Cosmetics
+ *
  * Revision 1.2  2005/03/22 20:45:13  didenko
  * Got ride from warning on ICC
  *

@@ -120,7 +120,7 @@ CNetScheduleStorageFactory_NetCache::CreateInstance(void)
                    "Couldn't create NetCache client."
                    "Check registry.");
 
-    return new CNetCacheNSStorage(nc_client);
+    return new CNetCacheNSStorage(nc_client.release());
 }
 
 
@@ -185,6 +185,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/28 14:38:04  didenko
+ * Cosmetics
+ *
  * Revision 1.1  2005/03/25 16:23:43  didenko
  * Initail version
  *
