@@ -711,7 +711,7 @@ BlastnExtendInitialHit(BLAST_SequenceBlk* query,
    if (window_size == 0 ||
        (diag_array_elem->diag_level == 1)) {
       /* Single hit version or previous hit was already a second hit */
-      new_hit = (step > min_step);
+      new_hit = (step > (Int4)min_step);
    } else {
       /* Previous hit was the first hit */
       new_hit = (step > window_size);
