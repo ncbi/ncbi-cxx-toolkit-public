@@ -845,8 +845,7 @@ x_MakeScore(const string& ident_string, double d = 0.0, int i = 0)
 
 /// C++ version of GetScoreSetFromBlastHsp (tools/blastutl.c)
 static void
-x_BuildScoreList(const BlastHSP* hsp, const BlastScoringOptions* score_options, 
-                 CSeq_align::TScore& scores, EProgram program)
+x_BuildScoreList(const BlastHSP* hsp, CSeq_align::TScore& scores)
 {
     string score_type;
 
@@ -895,7 +894,7 @@ x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp,
 {
     // Add the scores for this HSP
     CSeq_align::TScore& score_list = seqalign->SetScore();
-    x_BuildScoreList(hsp, score_options, score_list, program);
+    x_BuildScoreList(hsp, score_list);
 }
 
 
@@ -937,7 +936,7 @@ x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id,
     }
 
     CSeq_align::TScore& score_list = retval->SetScores();
-    x_BuildScoreList(hsp, score_options, score_list, program);
+    x_BuildScoreList(hsp, score_list);
 
     return retval;
 }
@@ -1009,7 +1008,7 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id,
     retval->SetLoc().push_back(subject_loc);
 
     CSeq_align::TScore& score_list = retval->SetScores();
-    x_BuildScoreList(hsp, score_options, score_list, program);
+    x_BuildScoreList(hsp, score_list);
 
     return retval;
 }
@@ -1123,6 +1122,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2004/06/07 19:21:17  dondosha
+* Removed arguments from x_BuildScoreList that are no longer used
+*
 * Revision 1.44  2004/06/07 18:26:29  dondosha
 * Bit scores are now filled in HSP lists, so BlastScoreBlk is no longer needed when results are converted to seqalign
 *
