@@ -371,6 +371,11 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableStringConverter s);
 NCBI_XNCBI_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableCharPtrConverter s);
 
+#ifdef NCBI_OS_MSWIN
+NCBI_XNCBI_EXPORT
+CNcbiOstream& operator<<(CNcbiOstream& out, __int64 val);
+#endif
+
 
 END_NCBI_SCOPE
 
@@ -389,6 +394,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2003/08/19 15:41:30  dicuccio
+ * Added conditionally compiled prototype for operator<<(ostream&, __int64)
+ *
  * Revision 1.32  2003/04/01 19:18:29  siyan
  * Added doxygen support
  *
