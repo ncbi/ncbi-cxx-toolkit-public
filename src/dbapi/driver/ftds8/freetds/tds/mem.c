@@ -285,6 +285,7 @@ void tds_free_all_results(TDSSOCKET *tds)
 	tds->param_info = NULL;
 	tds_free_compute_results(tds->comp_info);
 	tds->comp_info = NULL;
+    tds->has_status= 0;
 }
 void tds_free_column(TDSCOLINFO *column)
 {
