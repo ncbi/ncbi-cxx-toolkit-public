@@ -40,6 +40,7 @@
 #include <objmgr/impl/mutex_pool.hpp>
 
 #include <set>
+#include <utility>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -51,6 +52,7 @@ class CScope;
 class CBioseq_Info;
 class CTSE_Info;
 class CSynonymsSet;
+struct SSeq_id_ScopeInfo;
 
 struct NCBI_XOBJMGR_EXPORT CDataSource_ScopeInfo : public CObject
 {
@@ -69,7 +71,7 @@ struct NCBI_XOBJMGR_EXPORT CDataSource_ScopeInfo : public CObject
     CDataLoader* GetDataLoader(void);
 
 protected:
-    friend class CScope;
+    friend class CScope_Impl;
 
     CFastMutex& GetMutex(void);
 
@@ -89,25 +91,29 @@ private:
 class NCBI_XOBJMGR_EXPORT CBioseq_ScopeInfo : public CObject
 {
 public:
-    CBioseq_ScopeInfo(CScope* scope); // no sequence
-    CBioseq_ScopeInfo(CScope* scope, const CConstRef<CBioseq_Info>& bioseq);
+    typedef pair<const CSeq_id_Handle, SSeq_id_ScopeInfo> TScopeInfo;
+
+    CBioseq_ScopeInfo(TScopeInfo* scope_info); // no sequence
+    CBioseq_ScopeInfo(TScopeInfo* scope_info,
+                      const CConstRef<CBioseq_Info>& bioseq);
 
     ~CBioseq_ScopeInfo(void);
 
     CScope& GetScope(void) const;
 
     bool HasBioseq(void) const;
+    const CSeq_id_Handle& GetSeq_id_Handle(void) const;
     const CBioseq_Info& GetBioseq_Info(void) const;
 
     const CTSE_Info& GetTSE_Info(void) const;
     CDataSource& GetDataSource(void) const;
 
 private:
-    friend class CScope;
+    friend class CScope_Impl;
     friend class CSeq_id_ScopeInfo;
 
-    // owner scope
-    CScope*                  m_Scope;
+    // owner scope's info
+    TScopeInfo*              m_ScopeInfo;
 
     // bioseq object if any
     // if none -> no bioseq for this Seq_id, but there might be annotations
@@ -127,18 +133,24 @@ private:
 
 struct NCBI_XOBJMGR_EXPORT SSeq_id_ScopeInfo
 {
-    SSeq_id_ScopeInfo(void);
+    SSeq_id_ScopeInfo(CScope* scope);
     ~SSeq_id_ScopeInfo(void);
 
     typedef CConstRef<CTSE_Info>                     TTSE_Lock;
     typedef set<TTSE_Lock>                           TTSE_LockSet;
     typedef CObjectFor<TTSE_LockSet>                 TAnnotRefSet;
+    typedef CInitMutex<TAnnotRefSet>                 TAnnotRefInfo;
+    typedef map<string, TAnnotRefInfo>               TNamedAnnotRefInfo;
+
+    // owner scope
+    CScope*                       m_Scope;
 
     // caches and locks other (not main) TSEs with annotations on this Seq-id
     CInitMutex<CBioseq_ScopeInfo> m_Bioseq_Info;
 
     // caches and locks other (not main) TSEs with annotations on this Seq-id
-    CInitMutex<TAnnotRefSet>      m_AnnotRef_Info;
+    TAnnotRefInfo                 m_AllAnnotRef_Info;
+    TNamedAnnotRefInfo            m_NamedAnnotRef_Info;
 };
 
 
@@ -212,13 +224,6 @@ CFastMutex& CDataSource_ScopeInfo::GetMutex(void)
 
 
 inline
-CScope& CBioseq_ScopeInfo::GetScope(void) const
-{
-    return *m_Scope;
-}
-
-
-inline
 bool CBioseq_ScopeInfo::HasBioseq(void) const
 {
     return m_Bioseq_Info;
@@ -232,6 +237,12 @@ const CBioseq_Info& CBioseq_ScopeInfo::GetBioseq_Info(void) const
 }
 
 
+inline
+const CSeq_id_Handle& CBioseq_ScopeInfo::GetSeq_id_Handle(void) const
+{
+    return m_ScopeInfo->first;
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -239,6 +250,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/09/30 16:22:01  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.4  2003/06/19 19:48:16  vasilche
 * Removed unnecessary copy constructor of SSeq_id_ScopeInfo.
 *

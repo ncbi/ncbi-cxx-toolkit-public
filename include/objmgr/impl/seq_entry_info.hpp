@@ -35,6 +35,7 @@
 
 
 #include <corelib/ncbiobj.hpp>
+#include <vector>
 #include <list>
 
 BEGIN_NCBI_SCOPE
@@ -44,7 +45,9 @@ BEGIN_SCOPE(objects)
 // forward declaration
 class CSeq_entry;
 class CBioseq;
+class CBioseq_set;
 class CSeq_annot;
+
 class CDataSource;
 class CTSE_Info;
 class CSeq_entry_Info;
@@ -66,6 +69,7 @@ public:
     CSeq_entry_Info(CSeq_entry& entry, CSeq_entry_Info& parent);
     virtual ~CSeq_entry_Info(void);
 
+    bool HaveDataSource(void) const;
     CDataSource& GetDataSource(void) const;
 
     const CSeq_entry& GetTSE(void) const;
@@ -83,15 +87,59 @@ public:
     const CBioseq_Info& GetBioseq_Info(void) const;
     CBioseq_Info& GetBioseq_Info(void);
 
+    typedef vector< CRef<CSeq_entry_Info> > TEntries;
+    typedef vector< CRef<CSeq_annot_Info> > TAnnots;
+
+    // attaching/detaching to CDataSource (it's in CTSE_Info)
+    void x_DSAttach(void);
+    void x_DSDetach(void);
+
+    // attaching/detaching to CTSE_Info
+    void x_TSEAttach(CTSE_Info* tse_info);
+    void x_TSEDetach(CTSE_Info* tse_info);
+
+    void x_TSEAttach(void);
+    void x_TSEDetach(void);
+    
+    void UpdateAnnotIndex(void) const;
+
+    void x_AddAnnot(CSeq_annot& annot);
+    void x_RemoveAnnot(CSeq_annot_Info& annot_info);
+
+    void x_AddEntry(CSeq_entry& entry);
+    void x_RemoveEntry(CSeq_entry_Info& entry_info);
+
 protected:
     friend class CDataSource;
-    friend class CBioseq_Info;
-    friend class CSeq_annot_Info;
-    friend struct SAnnotILevel;
-    friend class CSeq_annot_CI;
     friend class CAnnotTypes_CI;
+    friend class CSeq_annot_CI;
+    friend class CTSE_Info;
+    friend class CSeq_annot_Info;
+    friend class CBioseq_Info;
+    
+    CSeq_entry_Info(void);
 
-    CSeq_entry_Info(CSeq_entry& entry);
+    void x_DSAttachThis(void);
+    void x_DSDetachThis(void);
+    void x_DSAttachContents(void);
+    void x_DSDetachContents(void);
+
+    void x_SetSeq_entry(CSeq_entry& entry);
+
+    void x_TSEDetachThis(void);
+    void x_TSEDetachContents(void);
+    void x_TSEAttachBioseq_set(CBioseq_set& seq_set);
+
+    void x_TSEAttachBioseq_set_Id(const CBioseq_set& seq_set);
+    void x_TSEDetachBioseq_set_Id(void);
+
+    typedef list<CRef<CSeq_annot> > TSeq_annots;
+    void x_TSEAttachSeq_annots(TSeq_annots& annots);
+
+    void x_UpdateAnnotIndex(void);
+    void x_UpdateAnnotIndexContents(void);
+
+    void x_SetDirtyAnnotIndex(void);
 
     // Seq-entry pointer
     CRef<CSeq_entry>      m_Seq_entry;
@@ -102,12 +150,16 @@ protected:
     // top level Seq-entry info
     CTSE_Info*            m_TSE_Info;
 
-    typedef list< CRef<CSeq_entry_Info> > TChildren;
-    typedef list< CRef<CSeq_annot_Info> > TAnnots;
-    
-    TChildren             m_Children;
+    // children Seq-entry objects if Which() == e_Set
+    TEntries              m_Entries;
+    // children Bioseq object if Which() == e_Seq
     CRef<CBioseq_Info>    m_Bioseq;
+    // Seq-annot objects
     TAnnots               m_Annots;
+
+    int                   m_Bioseq_set_Id;
+
+    bool                  m_DirtyAnnotIndex;
 
     // Hide copy methods
     CSeq_entry_Info(const CSeq_entry_Info&);
@@ -179,12 +231,32 @@ CBioseq_Info& CSeq_entry_Info::GetBioseq_Info(void)
 }
 
 
+inline
+void CSeq_entry_Info::x_DSDetach(void)
+{
+    x_DSDetachContents();
+    x_DSDetachThis();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/09/30 16:22:01  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.4  2003/08/04 17:02:59  grichenk
 * Added constructors to iterate all annotations from a
 * seq-entry or seq-annot.

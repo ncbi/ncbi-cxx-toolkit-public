@@ -38,6 +38,18 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.17  2003/08/04 17:04:27  grichenk
 * Added default data-source priority assignment.
 * Added support for iterating all annotations from a
@@ -116,7 +128,7 @@ class CSeq_entry;
 class CBioseq;
 class CSeq_id;
 class CScope;
-class CSeq_id_Mapper;
+class CScope_Impl;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -131,6 +143,7 @@ public:
 
 public:
     typedef CRef<CDataSource> TDataSourceLock;
+    typedef CPriorityNode::TPriority TPriority;
 
 // configuration functions
 // this data is always available to scopes -
@@ -142,24 +155,27 @@ public:
         eDefault,
         eNonDefault
     };
+    enum EPriority {
+        kPriority_NotSet = -1
+    };
 
     // Register existing data loader.
     // NOTE:  data loader must be created in the heap (ie using operator new).
     void RegisterDataLoader(CDataLoader& loader,
                             EIsDefault   is_default = eNonDefault,
-                            CPriorityNode::TPriority priority = kPriority_NotSet);
+                            TPriority priority = kPriority_NotSet);
 
     // Register data loader factory.
     // NOTE:  client has no control on when data loader is created or deleted.
     void RegisterDataLoader(CDataLoaderFactory& factory,
                             EIsDefault          is_default = eNonDefault,
-                            CPriorityNode::TPriority priority = kPriority_NotSet);
+                            TPriority priority = kPriority_NotSet);
     // RegisterDataLoader(*new CSimpleDataLoaderFactory<TDataLoader>(name), ...
 
     void RegisterDataLoader(TFACTORY_AUTOCREATE factory,
                             const string& loader_name,
                             EIsDefault   is_default = eNonDefault,
-                            CPriorityNode::TPriority priority = kPriority_NotSet);
+                            TPriority priority = kPriority_NotSet);
 
 
     // Revoke previously registered data loader.
@@ -178,8 +194,8 @@ public:
 protected:
 
 // functions for scopes
-    void RegisterScope(CScope& scope);
-    void RevokeScope  (CScope& scope);
+    void RegisterScope(CScope_Impl& scope);
+    void RevokeScope  (CScope_Impl& scope);
 
     typedef set<TDataSourceLock> TDataSourcesLock;
 
@@ -204,24 +220,24 @@ private:
     
 private:
 
-    typedef set< TDataSourceLock >             TSetDefaultSource;
-    typedef map< string, CDataLoader* >        TMapNameToLoader;
-    typedef map< const CObject* , TDataSourceLock >  TMapToSource;
-    typedef set< CScope* >                     TSetScope;
+    typedef set< TDataSourceLock >                  TSetDefaultSource;
+    typedef map< string, CDataLoader* >             TMapNameToLoader;
+    typedef map< const CObject* , TDataSourceLock > TMapToSource;
+    typedef set< CScope_Impl* >                     TSetScope;
 
-    TSetDefaultSource  m_setDefaultSource;
-    TMapNameToLoader   m_mapNameToLoader;
-    TMapToSource       m_mapToSource;
-    TSetScope          m_setScope;
+    TSetDefaultSource   m_setDefaultSource;
+    TMapNameToLoader    m_mapNameToLoader;
+    TMapToSource        m_mapToSource;
+    TSetScope           m_setScope;
     
     typedef CMutex      TRWLock;
     typedef CMutexGuard TReadLockGuard;
     typedef CMutexGuard TWriteLockGuard;
 
-    mutable TRWLock    m_OM_Lock;
-    mutable TRWLock    m_OM_ScopeLock;
+    mutable TRWLock     m_OM_Lock;
+    mutable TRWLock     m_OM_ScopeLock;
 
-    friend class CScope;
+    friend class CScope_Impl;
     friend class CDataSource; // To get id-mapper
 };
 

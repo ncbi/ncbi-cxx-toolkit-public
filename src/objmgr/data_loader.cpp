@@ -33,7 +33,9 @@
 
 #include <objmgr/data_loader.hpp>
 #include <objmgr/seq_id_mapper.hpp>
+#include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objects/seq/Seq_annot.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -87,19 +89,30 @@ string CDataLoader::GetName(void) const
 }
 
 
-bool CDataLoader::IsLive(const CTSE_Info& tse)
+void CDataLoader::DropTSE(const CTSE_Info& /*tse_info*/)
 {
-    return !tse.m_Dead;
-}
-
-
-bool CDataLoader::DropTSE(const CTSE_Info& /*tse_info*/)
-{
-    return true;
 }
 
 
 void CDataLoader::GC(void)
+{
+}
+
+
+void CDataLoader::GetAllAnnotRecords(const CSeq_id_Handle& idh)
+{
+    GetRecords(idh, eAll);
+}
+
+
+void CDataLoader::GetNamedAnnotRecords(const CSeq_id_Handle& idh,
+                                       const string& /*source_name*/)
+{
+    GetAllAnnotRecords(idh);
+}
+
+
+void CDataLoader::GetChunk(CTSE_Chunk_Info& /*chunk_info*/)
 {
 }
 
@@ -123,6 +136,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/09/30 16:22:02  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.10  2003/06/02 16:06:37  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

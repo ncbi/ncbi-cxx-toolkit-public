@@ -31,6 +31,7 @@
 #include <serial/objostrasn.hpp>
 #include <objmgr/reader_pubseq.hpp>
 #include <objmgr/impl/seqref_pubseq.hpp>
+#include <objmgr/impl/tse_info.hpp>
 
 #include <connect/ncbi_util.h>
 #include <connect/ncbi_core_cxx.hpp>
@@ -49,37 +50,18 @@ int main()
         seqId.SetGi(156895+k-1);
 
         vector< CRef<CSeqref> > sr;
-        reader.RetrieveSeqrefs(sr, seqId);
+        reader.RetrieveSeqrefs(sr, seqId, 0);
         ITERATE ( vector< CRef<CSeqref> >, i, sr ) {
-            const CPubseqSeqref& seqRef =
-                dynamic_cast<const CPubseqSeqref&>(**i);
+            const CSeqref& seqRef = **i;
 
-            cout << "gi: " << seqId.GetGi() << " SatKey=" << seqRef.SatKey() << " Flags=" << seqRef.GetFlags() << endl;
+            cout << "gi: " << seqId.GetGi() << " SatKey=" << seqRef.GetSatKey() << " Flags=" << seqRef.GetFlags() << endl;
       
-            CPubseqSeqref::TBlobClass cl = 0;
-            int count = 0;
-            for ( CRef<CBlobSource> bs(seqRef.GetBlobSource(0, 0, cl));
-                  bs->HaveMoreBlobs(); ++count) {
-                CRef<CBlob> blob(bs->RetrieveBlob());
-                cout <<
-                    "Class=" << blob->GetClass() <<
-                    " Descr=" << blob->GetDescr() << endl;
-                blob->ReadSeq_entry();
-                CRef<CSeq_entry> se(blob->GetSeq_entry());
-                if (!se) {
-                    cout << "blob is not available\n";
-                    continue;
-                }
-                if(0){
-                    ofstream ofs("/dev/null");
-                    //ostream &o = ofs;
-                    ostream &o = cout;
-                    CObjectOStreamAsn oos(o);
-                    oos << *se;
-                    o << endl;
-                }
+            CRef<CTSE_Info> info = reader.GetBlob(seqRef, 0);
+            if (!info) {
+                cout << "blob is not available\n";
+                continue;
             }
-            cout << "gi: " << seqId.GetGi() << " " << count << " blobs" << endl;
+            cout <<"gi: " << seqId.GetGi() << " " << 1 << " blobs" << endl;
         }
     }
     return 0;
@@ -87,6 +69,18 @@ int main()
 
 /*
 * $Log$
+* Revision 1.9  2003/09/30 16:22:06  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.8  2003/08/14 20:05:20  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.

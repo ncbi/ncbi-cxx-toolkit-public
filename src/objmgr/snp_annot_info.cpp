@@ -224,7 +224,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         }
         id = &point.GetId();
         strand = point.GetStrand();
-        m_EndPosition = point.GetPoint();
+        m_ToPosition = point.GetPoint();
         m_PositionDelta = 0;
         break;
     }
@@ -237,8 +237,8 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         }
         id = &interval.GetId();
         strand = interval.GetStrand();
-        m_EndPosition = interval.GetTo();
-        int delta = m_EndPosition - interval.GetFrom();
+        m_ToPosition = interval.GetTo();
+        int delta = m_ToPosition - interval.GetFrom();
         if ( delta <= 0 || delta > kMax_I1 ) {
             return eSNP_Complex_LocationIsNotPoint;
         }
@@ -370,7 +370,7 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
 {
     x_UpdateSeq_featData(feat, annot_info);
     { // location
-        TSeqPos end_position = m_EndPosition;
+        TSeqPos to_position = m_ToPosition;
         Int1 position_delta = m_PositionDelta;
         int gi = annot_info.GetGi();
         ENa_strand strand = MinusStrand()? eNa_strand_minus: eNa_strand_plus;
@@ -382,7 +382,7 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
             }
             CSeq_point& point = *seq_point;
             feat.SetLocation().SetPnt(point);
-            point.SetPoint(end_position);
+            point.SetPoint(to_position);
             point.SetStrand(strand);
             point.SetId().SetGi(gi);
         }
@@ -394,8 +394,8 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
             }
             CSeq_interval& interval = *seq_interval;
             feat.SetLocation().SetInt(interval);
-            interval.SetFrom(end_position-position_delta);
-            interval.SetTo(end_position);
+            interval.SetFrom(to_position-position_delta);
+            interval.SetTo(to_position);
             interval.SetStrand(strand);
             interval.SetId().SetGi(gi);
         }
@@ -408,22 +408,22 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
 {
     x_UpdateSeq_featData(feat, annot_info);
     { // location
-        TSeqPos end_position = m_EndPosition;
+        TSeqPos to_position = m_ToPosition;
         Int1 position_delta = m_PositionDelta;
         int gi = annot_info.GetGi();
         ENa_strand strand = MinusStrand()? eNa_strand_minus: eNa_strand_plus;
         if ( position_delta == 0 ) {
             // point
             CSeq_point& point = feat.SetLocation().SetPnt();
-            point.SetPoint(end_position);
+            point.SetPoint(to_position);
             point.SetStrand(strand);
             point.SetId().SetGi(gi);
         }
         else {
             // interval
             CSeq_interval& interval = feat.SetLocation().SetInt();
-            interval.SetFrom(end_position-position_delta);
-            interval.SetTo(end_position);
+            interval.SetFrom(to_position-position_delta);
+            interval.SetTo(to_position);
             interval.SetStrand(strand);
             interval.SetId().SetGi(gi);
         }
@@ -467,6 +467,18 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.5  2003/09/30 16:22:04  vasilche
+ * Updated internal object manager classes to be able to load ID2 data.
+ * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+ * Scope caches results of requests for data to data loaders.
+ * Optimized CSeq_id_Handle for gis.
+ * Optimized bioseq lookup in scope.
+ * Reduced object allocations in annotation iterators.
+ * CScope is allowed to be destroyed before other objects using this scope are
+ * deleted (feature iterators, bioseq handles etc).
+ * Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+ * Added 'adaptive' option to objmgr_demo application.
+ *
  * Revision 1.4  2003/08/27 14:29:53  vasilche
  * Reduce object allocations in feature iterator.
  *

@@ -96,6 +96,7 @@ public:
     typedef list<CSeq_id_Handle> TSeq_id_MatchList;
 
     // Get the list of matching seq-id.
+    virtual bool HaveMatch(const CSeq_id_Handle& id) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
                            TSeq_id_MatchList& id_list) const = 0;
     virtual void FindMatchStr(string sid,
@@ -143,6 +144,7 @@ public:
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
     virtual void x_Unindex(CSeq_id_Info* info);
 
+    virtual bool HaveMatch(const CSeq_id_Handle& id) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
                            TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
@@ -172,6 +174,7 @@ public:
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
     virtual void x_Unindex(CSeq_id_Info* info);
 
+    virtual bool HaveMatch(const CSeq_id_Handle& id) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
                            TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
@@ -380,6 +383,7 @@ public:
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
     virtual void x_Unindex(CSeq_id_Info* info);
 
+    virtual bool HaveMatch(const CSeq_id_Handle& id) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
                            TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
@@ -412,6 +416,7 @@ public:
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
     virtual void x_Unindex(CSeq_id_Info* info);
 
+    virtual bool HaveMatch(const CSeq_id_Handle& id) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
                            TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
@@ -450,6 +455,7 @@ public:
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
     virtual void x_Unindex(CSeq_id_Info* info);
 
+    virtual bool HaveMatch(const CSeq_id_Handle& ) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
                            TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
@@ -482,6 +488,7 @@ public:
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
     virtual void x_Unindex(CSeq_id_Info* info);
 
+    virtual bool HaveMatch(const CSeq_id_Handle& ) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
                            TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
@@ -552,6 +559,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/09/30 16:22:01  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.1  2003/06/10 19:06:35  vasilche
 * Simplified CSeq_id_Mapper and CSeq_id_Handle.
 *

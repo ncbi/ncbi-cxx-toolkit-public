@@ -38,9 +38,13 @@
 #include <objmgr/seq_map.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/tse_chunk_info.hpp>
+#include <objmgr/impl/data_source.hpp>
+#include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/synonyms.hpp>
 #include <objmgr/impl/seq_loc_cvt.hpp>
+#include <objmgr/impl/snp_annot_info.hpp>
 #include <objmgr/objmgr_exception.hpp>
 
 #include <objects/seq/Bioseq.hpp>
@@ -149,28 +153,27 @@ void CAnnotObject_Ref::SetSNP_Point(const SSNP_Info& snp,
                                     CSeq_loc_Conversion* cvt)
 {
     _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
-    ENa_strand snp_strand =
+    TSeqPos src_from = snp.GetFrom(), src_to = snp.GetTo();
+    ENa_strand src_strand =
         snp.MinusStrand()? eNa_strand_minus: eNa_strand_plus;
     if ( !cvt ) {
-        m_TotalRange.SetFrom(snp.GetPosition()).SetTo(snp.GetEndPosition());
+        m_TotalRange.SetFrom(src_from).SetTo(src_to);
         m_Partial = false;
         m_MappedLocation.Reset();
         m_MappedIndex = 0;
         m_MappedType = CSeq_loc::e_Pnt;
-        m_MappedStrand = snp_strand;
+        m_MappedStrand = src_strand;
         return;
     }
 
-    TSeqPos src_from = snp.GetPosition();
-    TSeqPos src_to = snp.GetEndPosition();
     cvt->Reset();
     if ( src_from == src_to ) {
         // point
-        _VERIFY(cvt->ConvertPoint(src_from, snp_strand));
+        _VERIFY(cvt->ConvertPoint(src_from, src_strand));
     }
     else {
         // interval
-        _VERIFY(cvt->ConvertInterval(src_from, src_to, snp_strand));
+        _VERIFY(cvt->ConvertInterval(src_from, src_to, src_strand));
     }
     cvt->SetMappedLocation(*this, 0);
 }
@@ -180,16 +183,8 @@ void CAnnotObject_Ref::UpdateMappedLocation(CRef<CSeq_loc>& loc) const
 {
     _ASSERT(MappedNeedsUpdate());
 
-    CRef<CSeq_id> id(const_cast<CSeq_id*>(&m_MappedLocation->GetWhole()));
+    CRef<CSeq_id> id(const_cast<CSeq_id*>(&m_MappedLocation->GetEmpty()));
     if ( !loc || !loc->ReferencedOnlyOnce() ) {
-        /*
-        NcbiCout << "New mapped location, was: " << loc.GetPointerOrNull() << NcbiEndl;
-        if ( loc ) {
-            NcbiCout << "Old location (" << ((CAtomicCounter&)(*loc)).Get() << "): ";
-            CObjectOStreamAsn out(NcbiCout);
-            out << *loc;
-        }
-        */
         loc.Reset(new CSeq_loc);
     }
     if ( m_MappedType == CSeq_loc::e_Pnt ) {
@@ -220,16 +215,8 @@ void CAnnotObject_Ref::UpdateMappedLocation(CRef<CSeq_loc>& loc,
 {
     _ASSERT(MappedNeedsUpdate());
 
-    CRef<CSeq_id> id(const_cast<CSeq_id*>(&m_MappedLocation->GetWhole()));
+    CRef<CSeq_id> id(const_cast<CSeq_id*>(&m_MappedLocation->GetEmpty()));
     if ( !loc || !loc->ReferencedOnlyOnce() ) {
-        /*
-        NcbiCout << "New mapped location, was: " << loc.GetPointerOrNull() << NcbiEndl;
-        if ( loc ) {
-            NcbiCout << "Old location (" << ((CAtomicCounter&)(*loc)).Get() << "): ";
-            CObjectOStreamAsn out(NcbiCout);
-            out << *loc;
-        }
-        */
         loc.Reset(new CSeq_loc);
     }
     else {
@@ -445,7 +432,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
                                const CSeq_loc& loc,
                                const SAnnotSelector& params)
     : SAnnotSelector(params),
-      m_Scope(&scope)
+      m_Scope(scope)
 {
     CHandleRangeMap master_loc;
     master_loc.AddLocation(loc);
@@ -457,7 +444,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
                                TSeqPos start, TSeqPos stop,
                                const SAnnotSelector& params)
     : SAnnotSelector(params),
-      m_Scope(&bioseq.GetScope())
+      m_Scope(bioseq.GetScope())
 {
     x_Initialize(bioseq, start, stop);
 }
@@ -466,11 +453,11 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
 CAnnotTypes_CI::CAnnotTypes_CI(const CSeq_annot_Handle& annot,
                                const SAnnotSelector& params)
     : SAnnotSelector(params),
-      m_Scope(annot.m_Scope)
+      m_Scope(annot.GetScope())
 {
     SetResolveNone(); // nothing to resolve
     SetLimitSeqAnnot(&annot.GetSeq_annot());
-    x_Initialize(*annot.m_Seq_annot);
+    x_Initialize();
 }
 
 
@@ -478,14 +465,12 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
                                const CSeq_entry& entry,
                                const SAnnotSelector& params)
     : SAnnotSelector(params),
-      m_Scope(&scope)
+      m_Scope(scope)
 {
     SetResolveNone(); // nothing to resolve
     SetSortOrder(eSortOrder_None);
     SetLimitSeqEntry(&entry);
-    CConstRef<CSeq_entry_Info> entry_info(
-        m_Scope->x_GetSeq_entry_Info(entry));
-    x_Initialize(*entry_info);
+    x_Initialize();
 }
 
 
@@ -499,7 +484,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve_method)
                      .SetLimitSeqEntry(entry)),
-      m_Scope(&scope)
+      m_Scope(scope)
 {
     CHandleRangeMap master_loc;
     master_loc.AddLocation(loc);
@@ -517,7 +502,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve_method)
                      .SetLimitSeqEntry(entry)),
-      m_Scope(&bioseq.GetScope())
+      m_Scope(bioseq.GetScope())
 {
     x_Initialize(bioseq, start, stop);
 }
@@ -527,16 +512,12 @@ void CAnnotTypes_CI::x_Initialize(const CBioseq_Handle& bioseq,
                                   TSeqPos start, TSeqPos stop)
 {
     if ( start == 0 && stop == 0 ) {
-        CBioseq_Handle::TBioseqCore core = bioseq.GetBioseqCore();
-        if ( !core->GetInst().IsSetLength() ) {
-            stop = kInvalidSeqPos-1;
-        }
-        else {
-            stop = core->GetInst().GetLength()-1;
-        }
+        stop = bioseq.GetBioseqLength()-1;
     }
     CHandleRangeMap master_loc;
-    master_loc.AddRange(*bioseq.GetSeqId(), start, stop);
+    master_loc.AddRange(bioseq.GetSeq_id_Handle(),
+                        CHandleRange::TRange(start, stop),
+                        eNa_strand_unknown);
     x_Initialize(master_loc);
 }
 
@@ -566,7 +547,6 @@ CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
         // Copy TSE list, set TSE locks
         m_TSE_LockSet = it.m_TSE_LockSet;
         static_cast<SAnnotSelector&>(*this) = it;
-        m_Scope = it.m_Scope;
         m_AnnotSet = it.m_AnnotSet;
         size_t index = it.m_CurAnnot - it.m_AnnotSet.begin();
         m_CurAnnot = m_AnnotSet.begin()+index;
@@ -577,79 +557,58 @@ CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
 void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
 {
     try {
-        if ( !m_LimitObject )
+        if ( !m_LimitObject ) {
             m_LimitObjectType = eLimit_None;
+        }
+        if ( m_LimitObjectType != eLimit_None ) {
+            x_GetTSE_Info();
+        }
 
-        if ( !(x_Search(master_loc, 0)  &&  m_AdaptiveDepth) ) {
-            if ( m_ResolveMethod != eResolve_None && m_ResolveDepth > 0 ) {
-                ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
-                    //### Check for eLoadedOnly
-                    CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first);
-                    if ( !bh ) {
-                        if (m_IdResolving == eFailUnresolved) {
-                            // resolve by Seq-id only
-                            NCBI_THROW(CAnnotException, eFindFailed,
-                                       "Cannot resolve master id");
-                        }
-                        continue; // Do not crash - just skip unresolvable IDs
+        bool found = x_Search(master_loc, 0);
+        bool deeper = !(found && m_AdaptiveDepth) &&
+            m_ResolveMethod != eResolve_None && m_ResolveDepth > 0;
+        if ( deeper ) {
+            ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
+                //### Check for eLoadedOnly
+                CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first);
+                if ( !bh ) {
+                    if (m_IdResolving == eFailUnresolved) {
+                        // resolve by Seq-id only
+                        NCBI_THROW(CAnnotException, eFindFailed,
+                                   "Cannot resolve master id");
                     }
+                    continue; // Do not crash - just skip unresolvable IDs
+                }
 
-                    CHandleRange::TRange idrange =
-                        idit->second.GetOverlappingRange();
-                    const CSeqMap& seqMap = bh.GetSeqMap();
-                    CSeqMap_CI smit(seqMap.FindResolved(idrange.GetFrom(),
-                                                        m_Scope,
-                                                        m_ResolveDepth-1,
-                                                        CSeqMap::fFindRef));
-                    while ( smit && smit.GetPosition() < idrange.GetToOpen() ) {
-                        _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
-                        if ( m_ResolveMethod == eResolve_TSE &&
-                             !m_Scope->GetBioseqHandleFromTSE(smit.GetRefSeqid(),
-                                                              bh) ) {
-                            smit.Next(false);
-                            continue;
-                        }
-                        smit.Next(!(x_SearchMapped(smit, idit->first, idit->second)
-                            &&  m_AdaptiveDepth));
+                CRef<CSeq_loc> master_loc_empty(new CSeq_loc);
+                master_loc_empty->SetEmpty(
+                    const_cast<CSeq_id&>(*idit->first.GetSeqId()));
+                
+                CHandleRange::TRange idrange =
+                    idit->second.GetOverlappingRange();
+                const CSeqMap& seqMap = bh.GetSeqMap();
+                CSeqMap_CI smit(seqMap.FindResolved(idrange.GetFrom(),
+                                                    m_Scope,
+                                                    m_ResolveDepth-1,
+                                                    CSeqMap::fFindRef));
+                while ( smit && smit.GetPosition() < idrange.GetToOpen() ) {
+                    _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
+                    if ( m_ResolveMethod == eResolve_TSE &&
+                         !m_Scope->GetBioseqHandleFromTSE(smit.GetRefSeqid(),
+                                                          bh) ) {
+                        smit.Next(false);
+                        continue;
                     }
+                    found = x_SearchMapped(smit, idit->first,
+                                           *master_loc_empty,
+                                           idit->second);
+                    deeper = !(found && m_AdaptiveDepth);
+                    smit.Next(deeper);
                 }
             }
         }
-        switch ( m_SortOrder ) {
-        case eSortOrder_Normal:
-            if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
-                sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                     CAnnotObject_Ref_Less<CFeat_Less>());
-            }
-            else {
-                sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                     CAnnotObject_Ref_Less<CAnnotObject_Less>());
-            }
-            break;
-        case eSortOrder_Reverse:
-            if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
-                sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                     CAnnotObject_Ref_Reverse_Less<CFeat_Less>());
-            }
-            else {
-                sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                     CAnnotObject_Ref_Reverse_Less<CAnnotObject_Less>());
-            }
-            break;
-        }
+        x_Sort();
         Rewind();
-        /*
-        size_t mapped = 0, optimized = 0;
-        ITERATE ( TAnnotSet, it, m_AnnotSet ) {
-            const CSeq_loc* loc = it->GetMappedLocation();
-            if ( !loc ) continue;
-            ++mapped;
-            if ( it->MappedNeedsUpdate() ) {
-                ++optimized;
-            }
-        }
-        NcbiCout << "Total: " << m_AnnotSet.size() << " mapped: " << mapped << " optimized: " << optimized << "\n";
-        */
     }
     catch (...) {
         x_Clear();
@@ -658,42 +617,49 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
 }
 
 
-void CAnnotTypes_CI::x_Initialize(const CObject& limit_info)
+void CAnnotTypes_CI::x_Initialize(void)
 {
     try {
         // Limit must be set, resolving is obsolete
         _ASSERT(m_LimitObjectType != eLimit_None);
         _ASSERT(m_LimitObject);
         _ASSERT(m_ResolveMethod == eResolve_None);
+        x_GetTSE_Info();
 
-        x_Search(limit_info);
-        switch ( m_SortOrder ) {
-        case eSortOrder_Normal:
-            if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
-                sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                     CAnnotObject_Ref_Less<CFeat_Less>());
-            }
-            else {
-                sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                     CAnnotObject_Ref_Less<CAnnotObject_Less>());
-            }
-            break;
-        case eSortOrder_Reverse:
-            if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
-                sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                     CAnnotObject_Ref_Reverse_Less<CFeat_Less>());
-            }
-            else {
-                sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                     CAnnotObject_Ref_Reverse_Less<CAnnotObject_Less>());
-            }
-            break;
-        }
+        x_SearchAll();
+        x_Sort();
         Rewind();
     }
     catch (...) {
         x_Clear();
         throw;
+    }
+}
+
+
+void CAnnotTypes_CI::x_Sort(void)
+{
+    switch ( m_SortOrder ) {
+    case eSortOrder_Normal:
+        if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
+            sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                 CAnnotObject_Ref_Less<CFeat_Less>());
+        }
+        else {
+            sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                 CAnnotObject_Ref_Less<CAnnotObject_Less>());
+        }
+        break;
+    case eSortOrder_Reverse:
+        if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
+            sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                 CAnnotObject_Ref_Reverse_Less<CFeat_Less>());
+        }
+        else {
+            sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                 CAnnotObject_Ref_Reverse_Less<CAnnotObject_Less>());
+        }
+        break;
     }
 }
 
@@ -703,12 +669,29 @@ bool
 CAnnotTypes_CI::x_MatchLimitObject(const CAnnotObject_Info& annot_info) const
 {
     if ( m_LimitObjectType == eLimit_Entry ) {
-        return &annot_info.GetSeq_entry() == m_LimitObject.GetPointerOrNull();
+        const CSeq_entry_Info* entry = &annot_info.GetSeq_entry_Info();
+        _ASSERT(m_LimitObjectInfo);
+        while ( entry ) {
+            if ( entry == &*m_LimitObjectInfo ) {
+                return true;
+            }
+            entry = entry->GetParentSeq_entry_Info();
+        }
+        return false;
     }
     else if ( m_LimitObjectType == eLimit_Annot ) {
-        return &annot_info.GetSeq_annot() == m_LimitObject.GetPointerOrNull();
+        return &annot_info.GetSeq_annot_Info() == &*m_LimitObjectInfo;
     }
     return true;
+}
+
+
+inline
+bool
+CAnnotTypes_CI::x_MatchDataSource(const CTSE_Info& tse_info) const
+{
+    _ASSERT(IsSetDataSources());
+    return HasDataSource(tse_info.GetDataSourceName());
 }
 
 
@@ -785,81 +768,133 @@ bool CAnnotTypes_CI::x_MatchRange(const CHandleRange& hr,
 }
 
 
+void CAnnotTypes_CI::x_GetTSE_Info(void)
+{
+    // only one TSE is needed
+    _ASSERT(m_TSE_LockSet.empty());
+    _ASSERT(m_LimitObjectType != eLimit_None);
+    _ASSERT(m_LimitObject);
+    
+    TTSE_Lock tse_info;
+    switch ( m_LimitObjectType ) {
+    case eLimit_TSE:
+    {
+        CConstRef<CTSE_Info> info =
+            m_Scope->GetTSE_Info(static_cast<const CSeq_entry&>
+                                 (*m_LimitObject));
+        if ( !info ) {
+            NCBI_THROW(CAnnotException, eLimitError,
+                       "CAnnotTypes_CI::x_GetTSE_Info: "
+                       "unknown top level Seq-entry");
+        }
+        tse_info = info;
+        m_LimitObjectInfo.Reset(info.GetPointer());
+        break;
+    }
+    case eLimit_Entry:
+    {
+        CConstRef<CSeq_entry_Info> info =
+            m_Scope->GetSeq_entry_Info(static_cast<const CSeq_entry&>
+                                       (*m_LimitObject));
+        if ( !info ) {
+            NCBI_THROW(CAnnotException, eLimitError,
+                       "CAnnotTypes_CI::x_GetTSE_Info: "
+                       "unknown Seq-entry");
+        }
+        tse_info.Reset(&info->GetTSE_Info());
+        m_LimitObjectInfo.Reset(info.GetPointer());
+        break;
+    }
+    case eLimit_Annot:
+    {
+        CConstRef<CSeq_annot_Info> info =
+            m_Scope->GetSeq_annot_Info(static_cast<const CSeq_annot&>
+                                       (*m_LimitObject));
+        if ( !info ) {
+            NCBI_THROW(CAnnotException, eLimitError,
+                       "CAnnotTypes_CI::x_GetTSE_Info: "
+                       "unknown Seq-annot");
+        }
+        tse_info.Reset(&info->GetTSE_Info());
+        m_LimitObjectInfo.Reset(info.GetPointer());
+        break;
+    }
+    }
+    _ASSERT(m_LimitObjectInfo);
+    _ASSERT(tse_info);
+    if ( !IsSetDataSources() || x_MatchDataSource(*tse_info) ) {
+        tse_info->GetDataSource().UpdateAnnotIndex(*tse_info);
+        m_TSE_LockSet.insert(tse_info);
+    }
+}
+
+
 bool CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
+                              const CBioseq_Handle& bh,
                               const CHandleRange& hr,
                               CSeq_loc_Conversion* cvt)
 {
     if ( cvt )
         cvt->SetSrcId(id);
 
-    CHandleRange::TRange range = hr.GetOverlappingRange();
-
-    CConstRef<CScope::TAnnotRefSet> annot_ref_set;
-    const TTSE_LockSet* entries;
-    switch ( m_LimitObjectType ) {
-    case eLimit_TSE:
-    {
-        if ( m_TSE_LockSet.empty() ) {
-            const CSeq_entry* tse = 
-                static_cast<const CSeq_entry*>(m_LimitObject.GetPointer());
-            TTSE_Lock tse_info(m_Scope->GetTSEInfo(tse));
-            if ( tse_info ) {
-                m_TSE_LockSet.insert(tse_info);
+    bool found = false;
+    if ( m_LimitObjectType == eLimit_None ) {
+        if ( IsSetDataSources() ) {
+            ITERATE ( SSources, it, *m_Sources ) {
+                // specific data source
+                CConstRef<CScope_Impl::TAnnotRefSet> tse_set;
+                if ( bh ) {
+                    tse_set = m_Scope->GetTSESetWithNamedAnnots(bh, *this,
+                                                                *it);
+                }
+                else {
+                    tse_set = m_Scope->GetTSESetWithNamedAnnots(id, *this,
+                                                                *it);
+                }
+                if ( tse_set ) {
+                    found = x_Search(*tse_set, id, hr, cvt) || found;
+                }
             }
         }
-        entries = &m_TSE_LockSet;
-        break;
+        else {
+            // any data source
+            CConstRef<CScope_Impl::TAnnotRefSet> tse_set;
+            if ( bh ) {
+                tse_set = m_Scope->GetTSESetWithAllAnnots(bh, *this);
+            }
+            else {
+                tse_set = m_Scope->GetTSESetWithAllAnnots(id, *this);
+            }
+            if ( tse_set ) {
+                found = x_Search(*tse_set, id, hr, cvt) || found;
+            }
+        }
     }
-    case eLimit_Entry:
-    case eLimit_Annot:
-    default:
-        annot_ref_set = m_Scope->GetTSESetWithAnnots(id);
-        entries = &annot_ref_set->GetData();
-        break;
+    else {
+        found = x_Search(m_TSE_LockSet, id, hr, cvt) || found;
     }
+    return found;
+}
+
+
+bool CAnnotTypes_CI::x_Search(const TTSE_LockSet& tse_set,
+                              const CSeq_id_Handle& id,
+                              const CHandleRange& hr,
+                              CSeq_loc_Conversion* cvt)
+{
+    CHandleRange::TRange range = hr.GetOverlappingRange();
 
     bool found = false;
-    ITERATE ( TTSE_LockSet, tse_it, *entries ) {
+    ITERATE ( TTSE_LockSet, tse_it, tse_set ) {
         const CTSE_Info& tse_info = **tse_it;
+        // for checking ContainsSeqid() for each tse only once:
+        bool checked_id = false;
 
-        CTSE_Info::TAnnotObjsLock::TReadLockGuard
-            guard(tse_info.m_AnnotObjsLock);
+        CTSE_Info::TAnnotReadLockGuard guard(tse_info.m_AnnotObjsLock);
 
         const CTSE_Info::SIdAnnotObjs* objs = tse_info.x_GetIdObjects(id);
         if ( !objs ) {
             continue;
-        }
-
-        if ( x_NeedSNPs() ) {
-            ITERATE ( CTSE_Info::TSNPSet, snp_annot_it, objs->m_SNPSet ) {
-                const CSeq_annot_SNP_Info& snp_annot = **snp_annot_it;
-                if (!found) {
-                    found = true;
-                }
-                CSeq_annot_SNP_Info::const_iterator snp_it =
-                    snp_annot.LowerBound(range);
-                if ( snp_it != snp_annot.end() ) {
-                    m_TSE_LockSet.insert(*tse_it);
-                    TSeqPos index = snp_it - snp_annot.begin();
-                    do {
-                        const SSNP_Info& snp = *snp_it;
-                        if ( snp.NoMore(range) ) {
-                            break;
-                        }
-                        if ( snp.NotThis(range) ) {
-                            continue;
-                        }
-                        TSeqPos snp_pos = snp.GetPosition();
-                        if ( snp_pos >= range.GetToOpen() ) {
-                            break;
-                        }
-                        CAnnotObject_Ref annot_ref(snp_annot, index);
-                        annot_ref.SetSNP_Point(snp, cvt);
-                        m_AnnotSet.push_back(annot_ref);
-                        ++index;
-                    } while ( ++snp_it != snp_annot.end() );
-                }
-            }
         }
 
         pair<size_t, size_t> idxs =
@@ -871,12 +906,19 @@ bool CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
             m_TSE_LockSet.insert(*tse_it);
         }
         for ( size_t index = idxs.first; index < idxs.second; ++index ) {
+            size_t start_size = m_AnnotSet.size(); // for rollback
+
             const CTSE_Info::TRangeMap& rmap = objs->m_AnnotSet[index];
+            if ( rmap.empty() ) {
+                continue;
+            }
 
             // Found at least one annotation in the sequence TSE regardless of
             // its range.
-            if (!found ) {
-                found = !rmap.empty()  &&  tse_info.ContainsSeqid(id);
+            if ( !found && !checked_id ) {
+                // check ContainsSeqid() for each tse only once:
+                found = tse_info.ContainsSeqid(id);
+                checked_id = true;
             }
 
             for ( CTSE_Info::TRangeMap::const_iterator aoit(rmap.begin(range));
@@ -884,16 +926,49 @@ bool CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
                 const CAnnotObject_Info& annot_info =
                     *aoit->second.m_AnnotObject_Info;
 
+                _ASSERT(x_MatchType(annot_info));
+
+                if ( annot_info.IsChunkStub() ) {
+                    const CTSE_Chunk_Info& chunk = annot_info.GetChunk_Info();
+                    if ( chunk.NotLoaded() ) {
+                        // New annot objects are to be loaded,
+                        // so we'll need to restart scan of current range.
+
+                        // Forget already found object
+                        // as they will be found again:
+                        m_AnnotSet.resize(start_size);
+
+                        // Release lock for tse update:
+                        guard.Release();
+                        
+                        // Load the stub:
+                        const_cast<CTSE_Chunk_Info&>(chunk).Load();
+
+                        // Acquire the lock again:
+                        guard.Guard(tse_info.m_AnnotObjsLock);
+
+                        // Reget range map pointer as it may change:
+                        objs = tse_info.x_GetIdObjects(id);
+                        _ASSERT(objs);
+
+                        // Restart this index again:
+                        --index;
+                        break;
+                    }
+                    else {
+                        // Skip chunk stub
+                        continue;
+                    }
+                }
+
                 if ( !x_MatchLimitObject(annot_info) ) {
                     continue;
                 }
-
+                
                 if ( !x_MatchRange(hr, aoit->first, aoit->second) ) {
                     continue;
                 }
                 
-                _ASSERT(x_MatchType(annot_info));
-
                 CAnnotObject_Ref annot_ref(annot_info);
                 if ( cvt ) {
                     cvt->Convert(annot_ref, m_FeatProduct);
@@ -908,6 +983,34 @@ bool CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
                     return found;
             }
         }
+
+        if ( x_NeedSNPs() ) {
+            ITERATE ( CTSE_Info::TSNPSet, snp_annot_it, objs->m_SNPSet ) {
+                const CSeq_annot_SNP_Info& snp_annot = **snp_annot_it;
+                CSeq_annot_SNP_Info::const_iterator snp_it =
+                    snp_annot.FirstIn(range);
+                if ( snp_it != snp_annot.end() ) {
+                    m_TSE_LockSet.insert(*tse_it);
+                    TSeqPos index = snp_it - snp_annot.begin() - 1;
+                    do {
+                        ++index;
+                        const SSNP_Info& snp = *snp_it;
+                        if ( snp.NoMore(range) ) {
+                            break;
+                        }
+                        if ( snp.NotThis(range) ) {
+                            continue;
+                        }
+
+                        found = true;
+
+                        CAnnotObject_Ref annot_ref(snp_annot, index);
+                        annot_ref.SetSNP_Point(snp, cvt);
+                        m_AnnotSet.push_back(annot_ref);
+                    } while ( ++snp_it != snp_annot.end() );
+                }
+            }
+        }
     }
     return found;
 }
@@ -916,131 +1019,112 @@ bool CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
 bool CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
                               CSeq_loc_Conversion* cvt)
 {
-    switch ( m_LimitObjectType ) {
-    case eLimit_TSE:
-    case eLimit_Entry:
-    {
-        // Limit update to one seq-entry
-        // Eugene: I had to split expression to avoid segfault on ICC-Linux
-        const CObject* obj = &*m_LimitObject;
-        const CSeq_entry& entry = dynamic_cast<const CSeq_entry&>(*obj);
-        m_Scope->UpdateAnnotIndex(loc, *this, entry);
-        break;
-    }
-    case eLimit_Annot:
-        // Do not update datasources: if we have seq-annot,
-        // it's already loaded and indexed (?)
-    {
-        // Limit update to one seq-entry
-        // Eugene: I had to split expression to avoid segfault on ICC-Linux
-        const CObject* obj = &*m_LimitObject;
-        const CSeq_annot& annot = dynamic_cast<const CSeq_annot&>(*obj);
-        m_Scope->UpdateAnnotIndex(annot);
-        break;
-    }
-    default:
-        // eLimit_None
-        m_Scope->UpdateAnnotIndex(loc, *this);
-        break;
-    }
-
     bool found = false;
-
     ITERATE ( CHandleRangeMap, idit, loc ) {
         if ( idit->second.Empty() ) {
             continue;
         }
 
+        bool have_main = false;
         CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(idit->first);
-        if ( !syns  &&  m_IdResolving == eFailUnresolved ) {
-            NCBI_THROW(CAnnotException, eFindFailed,
-                       "Cannot find id synonyms");
-        }
-        if ( !syns  ||  syns->find(idit->first) == syns->end() ) {
-            found = x_Search(idit->first, idit->second, cvt)  ||  found;
-        }
-        if ( syns ) {
-            ITERATE ( CSynonymsSet, synit, *syns ) {
-                found = x_Search(*synit, idit->second, cvt)  ||  found;
+        if ( !syns ) {
+            if ( m_IdResolving == eFailUnresolved ) {
+                NCBI_THROW(CAnnotException, eFindFailed,
+                           "Cannot find id synonyms");
             }
+        }
+        else {
+            ITERATE ( CSynonymsSet, synit, *syns ) {
+                CSeq_id_Handle idh = CSynonymsSet::GetSeq_id_Handle(synit);
+                if ( !have_main ) {
+                    have_main = idit->first == idh;
+                }
+                found = x_Search(idh, CSynonymsSet::GetBioseqHandle(synit),
+                                 idit->second, cvt)  ||  found;
+            }
+        }
+        if ( !have_main ) {
+            found = x_Search(idit->first, CBioseq_Handle(),
+                             idit->second, cvt)  ||  found;
         }
     }
     return found;
 }
 
 
-void CAnnotTypes_CI::x_Search(const CObject& limit_info)
+void CAnnotTypes_CI::x_SearchAll(void)
 {
+    _ASSERT(m_LimitObjectType != eLimit_None);
+    _ASSERT(m_LimitObject);
+    _ASSERT(m_LimitObjectInfo);
+    if ( m_TSE_LockSet.empty() ) {
+        // data source name not matched
+        return;
+    }
     switch ( m_LimitObjectType ) {
     case eLimit_TSE:
-    {
-    }
+        x_SearchAll(dynamic_cast<const CTSE_Info&>(*m_LimitObjectInfo));
+        break;
     case eLimit_Entry:
-    {
-        // Limit update to one seq-entry
-        const CObject* obj = &limit_info;
-        const CSeq_entry_Info& entry =
-            dynamic_cast<const CSeq_entry_Info&>(*obj);
-//### Right now there's no way to update annotations
-//### without having a particular ceq-id. The resulting
-//### set of annotations may be incomplete.
-        CHandleRangeMap hrm;
-        m_Scope->UpdateAnnotIndex(hrm, *this, entry.GetSeq_entry());
-        // Collect all annotations from the entry
-        ITERATE(CSeq_entry_Info::TAnnots, ait, entry.m_Annots) {
-            ITERATE(CSeq_annot_Info::TObjectInfos, aoit, (*ait)->m_ObjectInfos) {
-                if ( !x_MatchType(*aoit) ) {
-                    continue;
-                }
-                CAnnotObject_Ref annot_ref(*aoit);
-                /// annot_ref.m_TotalRange;
-                m_AnnotSet.push_back(annot_ref);
-                // Limit number of annotations to m_MaxSize
-                if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
-                    return;
-            }
-        }
-        // Collect annotations from all children
-        ITERATE(CSeq_entry_Info::TChildren, cit, entry.m_Children) {
-            x_Search(**cit);
-            if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
-                return;
-        }
+        x_SearchAll(dynamic_cast<const CSeq_entry_Info&>(*m_LimitObjectInfo));
         break;
-    }
     case eLimit_Annot:
-        // Do not update datasources: if we have seq-annot,
-        // it's already loaded and indexed (?)
-    {
-        // Limit update to one seq-entry
-        const CObject* obj = &*m_LimitObject;
-        const CSeq_annot& annot = dynamic_cast<const CSeq_annot&>(*obj);
-        m_Scope->UpdateAnnotIndex(annot);
-        const CSeq_annot_Info& info =
-            dynamic_cast<const CSeq_annot_Info&>(limit_info);
-        ITERATE(CSeq_annot_Info::TObjectInfos, aoit, info.m_ObjectInfos) {
-            if ( !x_MatchType(*aoit) ) {
-                continue;
-            }
-            CAnnotObject_Ref annot_ref(*aoit);
-            /// annot_ref.m_TotalRange;
-            m_AnnotSet.push_back(annot_ref);
-            // Limit number of annotations to m_MaxSize
-            if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
-                return;
-        }
+        x_SearchAll(dynamic_cast<const CSeq_annot_Info&>(*m_LimitObjectInfo));
         break;
     }
-    default:
-        // eLimit_None
-        NCBI_THROW(CAnnotException, eLimitError,
-                   "Search must be limited to an object");
+}
+
+
+void CAnnotTypes_CI::x_SearchAll(const CSeq_entry_Info& entry_info)
+{
+    // Collect all annotations from the entry
+    ITERATE( CSeq_entry_Info::TAnnots, ait, entry_info.m_Annots ) {
+        x_SearchAll(**ait);
+        if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
+            return;
+    }
+    // Collect annotations from all children
+    ITERATE( CSeq_entry_Info::TEntries, cit, entry_info.m_Entries ) {
+        x_SearchAll(**cit);
+        if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
+            return;
+    }
+}
+
+
+void CAnnotTypes_CI::x_SearchAll(const CSeq_annot_Info& annot_info)
+{
+    // Collect all annotations from the annot
+    ITERATE( CSeq_annot_Info::TObjectInfos, aoit, annot_info.m_ObjectInfos ) {
+        if ( !x_MatchType(*aoit) ) {
+            continue;
+        }
+        CAnnotObject_Ref annot_ref(*aoit);
+        // annot_ref.m_TotalRange;
+        m_AnnotSet.push_back(annot_ref);
+        // Limit number of annotations to m_MaxSize
+        if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
+            return;
+    }
+
+    if ( x_NeedSNPs() && annot_info.x_HaveSNP_annot_Info() ) {
+        const CSeq_annot_SNP_Info& snp_annot =
+            annot_info.x_GetSNP_annot_Info();
+        TSeqPos index = 0;
+        ITERATE ( CSeq_annot_SNP_Info, snp_it, snp_annot ) {
+            const SSNP_Info& snp = *snp_it;
+            CAnnotObject_Ref annot_ref(snp_annot, index);
+            annot_ref.SetSNP_Point(snp, 0);
+            m_AnnotSet.push_back(annot_ref);
+            ++index;
+        }
     }
 }
 
 
 bool CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
                                     const CSeq_id_Handle& master_id,
+                                    CSeq_loc& master_loc_empty,
                                     const CHandleRange& master_hr)
 {
     CHandleRange::TOpenRange master_seg_range(seg.GetPosition(),
@@ -1083,7 +1167,7 @@ bool CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
         return x_Search(ref_loc, 0);
     }
     else {
-        CSeq_loc_Conversion cvt(master_id.GetSeqId(),
+        CSeq_loc_Conversion cvt(master_id, master_loc_empty,
                                 seg, ref_id, m_Scope);
         return x_Search(ref_loc, &cvt);
     }
@@ -1096,6 +1180,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.92  2003/09/30 16:22:02  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.91  2003/09/16 14:21:47  grichenk
 * Added feature indexing and searching by subtype.
 *

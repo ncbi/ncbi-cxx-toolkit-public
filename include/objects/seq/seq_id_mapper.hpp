@@ -75,8 +75,9 @@ public:
     // Get seq-id handle. Create new handle if not found and
     // do_not_create is false. Get only the exactly equal seq-id handle.
     CSeq_id_Handle GetHandle(const CSeq_id& id, bool do_not_create = false);
-    
+
     // Get the list of matching handles, do not create new handles
+    bool HaveMatchingHandles(const CSeq_id_Handle& id);
     void GetMatchingHandles(const CSeq_id_Handle& id,
                             TSeq_id_HandleSet& h_set);
     // Get the list of string-matching handles, do not create new handles
@@ -84,7 +85,7 @@ public:
                                TSeq_id_HandleSet& h_set);
     
     // Get seq-id for the given handle
-    static const CSeq_id& GetSeq_id(const CSeq_id_Handle& handle);
+    static CConstRef<CSeq_id> GetSeq_id(const CSeq_id_Handle& handle);
     
 private:
     CSeq_id_Mapper(void);
@@ -116,6 +117,8 @@ private:
 
     TTrees          m_Trees;
     mutable CMutex  m_IdMapMutex;
+    
+    CSeq_id_Info*   m_GiInfo;
 
     static CSafeStaticRef<CSeq_id_Mapper> s_Seq_id_Mapper;
 };
@@ -129,7 +132,7 @@ private:
 
 
 inline
-const CSeq_id& CSeq_id_Mapper::GetSeq_id(const CSeq_id_Handle& h)
+CConstRef<CSeq_id> CSeq_id_Mapper::GetSeq_id(const CSeq_id_Handle& h)
 {
     return h.GetSeqId();
 }
@@ -141,6 +144,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.18  2003/06/10 19:06:34  vasilche
 * Simplified CSeq_id_Mapper and CSeq_id_Handle.
 *

@@ -59,9 +59,10 @@ class CSeq_id_Which_Tree;
 class NCBI_XOBJMGR_EXPORT CSeq_id_Info
 {
 public:
-    const CSeq_id& GetSeq_id(void) const
+    CConstRef<CSeq_id> GetGiSeqId(int gi) const;
+    CConstRef<CSeq_id> GetSeqId(void) const
         {
-            return *m_Seq_id;
+            return m_Seq_id;
         }
 
 protected:
@@ -85,14 +86,17 @@ class NCBI_XOBJMGR_EXPORT CSeq_id_Handle
 {
 public:
     // 'ctors
-    CSeq_id_Handle(CSeq_id_Info* info = 0);
+    CSeq_id_Handle(CSeq_id_Info* info = 0, int gi = 0);
     CSeq_id_Handle(const CSeq_id_Handle& handle);
     ~CSeq_id_Handle(void);
+
+    static CSeq_id_Handle GetHandle(const CSeq_id& id);
 
     const CSeq_id_Handle& operator= (const CSeq_id_Handle& handle);
     bool operator== (const CSeq_id_Handle& handle) const;
     bool operator!= (const CSeq_id_Handle& handle) const;
     bool operator<  (const CSeq_id_Handle& handle) const;
+    bool operator== (const CSeq_id& id) const;
 
     // Check if the handle is a valid or an empty one
     operator bool(void) const;
@@ -106,12 +110,10 @@ public:
 
     string AsString() const;
 
-    const CSeq_id& GetSeqId(void) const;
-    const CSeq_id* GetSeqIdOrNull(void) const;
-    const CSeq_id* x_GetSeqId(void) const;
+    CConstRef<CSeq_id> GetSeqId(void) const;
+    CConstRef<CSeq_id> GetSeqIdOrNull(void) const;
 
 private:
-
     void x_AddReference(void);
     void x_AddReferenceIfSet(void);
     void x_RemoveLastReference(void);
@@ -126,6 +128,7 @@ private:
 
     // Seq-id info
     CSeq_id_Info* m_Info;
+    int           m_Gi;
 
     friend class CSeq_id_Mapper;
     friend class CSeq_id_Which_Tree;
@@ -214,8 +217,8 @@ void CSeq_id_Handle::x_RemoveReferenceIfSet(void)
 
 
 inline
-CSeq_id_Handle::CSeq_id_Handle(CSeq_id_Info* info)
-    : m_Info(info)
+CSeq_id_Handle::CSeq_id_Handle(CSeq_id_Info* info, int gi)
+    : m_Info(info), m_Gi(gi)
 {
     x_AddReferenceIfSet();
 }
@@ -223,7 +226,7 @@ CSeq_id_Handle::CSeq_id_Handle(CSeq_id_Info* info)
 
 inline
 CSeq_id_Handle::CSeq_id_Handle(const CSeq_id_Handle& h)
-    : m_Info(h.m_Info)
+    : m_Info(h.m_Info), m_Gi(h.m_Gi)
 {
     x_AddReferenceIfSet();
 }
@@ -244,6 +247,7 @@ const CSeq_id_Handle& CSeq_id_Handle::operator=(const CSeq_id_Handle& h)
         m_Info = h.m_Info;
         x_AddReferenceIfSet();
     }
+    m_Gi = h.m_Gi;
     return *this;
 }
 
@@ -255,49 +259,29 @@ void CSeq_id_Handle::Reset(void)
         x_RemoveReference();
         m_Info = 0;
     }
+    m_Gi = 0;
 }
 
 
 inline
 bool CSeq_id_Handle::operator==(const CSeq_id_Handle& handle) const
 {
-    return m_Info == handle.m_Info;
+    return m_Gi == handle.m_Gi && m_Info == handle.m_Info;
 }
 
 
 inline
 bool CSeq_id_Handle::operator!=(const CSeq_id_Handle& handle) const
 {
-    return m_Info != handle.m_Info;
+    return m_Gi != handle.m_Gi || m_Info != handle.m_Info;
 }
 
 
 inline
 bool CSeq_id_Handle::operator<(const CSeq_id_Handle& handle) const
 {
-    return m_Info < handle.m_Info;
-}
-
-
-inline
-const CSeq_id& CSeq_id_Handle::GetSeqId(void) const
-{
-    _ASSERT(m_Info);
-    return *m_Info->m_Seq_id;
-}
-
-
-inline
-const CSeq_id* CSeq_id_Handle::GetSeqIdOrNull(void) const
-{
-    return !m_Info? 0: m_Info->m_Seq_id.GetPointer();
-}
-
-
-inline
-const CSeq_id* CSeq_id_Handle::x_GetSeqId(void) const
-{
-    return GetSeqIdOrNull();
+    return m_Gi < handle.m_Gi ||
+        m_Gi == handle.m_Gi && m_Info < handle.m_Info;
 }
 
 
@@ -308,6 +292,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.16  2003/07/17 20:07:55  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.

@@ -34,13 +34,19 @@
 */
 
 
-#include <objmgr/scope.hpp>
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <objmgr/scope.hpp>
 
+#include <objects/seq/Seq_inst.hpp>
+
+#include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+class CScope;
+class CBioseq_Handle;
+class CSeq_entry;
 
 
 class CBioseq_CI : public CBioseq_CI_Base
@@ -51,10 +57,12 @@ public:
     // Iterate over bioseqs from the entry taken from the scope. Use optional
     // filter to iterate over selected bioseq types only.
     CBioseq_CI(CScope& scope, const CSeq_entry& entry,
-        CSeq_inst::EMol filter = CSeq_inst::eMol_not_set,
-        EBioseqLevelFlag level = eLevel_All);
+               CSeq_inst::EMol filter = CSeq_inst::eMol_not_set,
+               EBioseqLevelFlag level = eLevel_All);
     CBioseq_CI(const CBioseq_CI& bioseq_ci);
     ~CBioseq_CI(void);
+
+    CScope& GetScope(void) const;
 
     CBioseq_CI& operator= (const CBioseq_CI& bioseq_ci);
     CBioseq_CI& operator++ (void);
@@ -64,82 +72,38 @@ public:
     const CBioseq_Handle* operator-> (void) const;
 
 private:
-    typedef CScope::TBioseq_HandleSet         TBioseq_HandleSet;
+    typedef CScope_Impl::TBioseq_HandleSet    TBioseq_HandleSet;
     typedef TBioseq_HandleSet::const_iterator THandleIterator;
 
-    CScope*           m_Scope;
-    TBioseq_HandleSet m_Handles;
-    THandleIterator   m_Current;
+    CHeapScope           m_Scope;
+    TBioseq_HandleSet    m_Handles;
+    THandleIterator      m_Current;
 };
 
 
 inline
-CBioseq_CI::CBioseq_CI(void)
-    : m_Scope(0)
-{
-    m_Current = m_Handles.end();
-}
-
-inline
-CBioseq_CI::CBioseq_CI(CScope& scope,
-                       const CSeq_entry& entry,
-                       CSeq_inst::EMol filter,
-                       EBioseqLevelFlag level)
-    : m_Scope(&scope)
-{
-    m_Scope->x_PopulateBioseq_HandleSet(entry, m_Handles, filter, level);
-    m_Current = m_Handles.begin();
-}
-
-inline
-CBioseq_CI::CBioseq_CI(const CBioseq_CI& bioseq_ci)
-{
-    *this = bioseq_ci;
-}
-
-inline
-CBioseq_CI::~CBioseq_CI(void)
-{
-}
-
-inline
-CBioseq_CI& CBioseq_CI::operator= (const CBioseq_CI& bioseq_ci)
-{
-    if (this != &bioseq_ci) {
-        m_Scope = bioseq_ci.m_Scope;
-        m_Handles = bioseq_ci.m_Handles;
-        if (bioseq_ci) {
-            THandleIterator it = bioseq_ci.m_Handles.begin();
-            m_Current = m_Handles.begin();
-            for ( ; it != bioseq_ci.m_Current; ++it, ++m_Current) {}
-        }
-        else {
-            m_Current = m_Handles.end();
-        }
-    }
-    return *this;
-}
-
-inline
 CBioseq_CI& CBioseq_CI::operator++ (void)
 {
-    if ( m_Scope  &&  m_Current != m_Handles.end() ) {
+    if ( m_Current != m_Handles.end() ) {
         m_Current++;
     }
     return *this;
 }
 
+
 inline
 CBioseq_CI::operator bool (void) const
 {
-    return m_Scope  &&  m_Current != m_Handles.end();
+    return m_Current != m_Handles.end();
 }
+
 
 inline
 const CBioseq_Handle& CBioseq_CI::operator* (void) const
 {
     return *m_Current;
 }
+
 
 inline
 const CBioseq_Handle* CBioseq_CI::operator-> (void) const
@@ -148,6 +112,12 @@ const CBioseq_Handle* CBioseq_CI::operator-> (void) const
 }
 
 
+inline
+CScope& CBioseq_CI::GetScope(void) const
+{
+    return m_Scope;
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -155,6 +125,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.11  2003/09/16 14:38:13  dicuccio
 * Removed export specifier - the entire class is inlined, and the export
 * specifier confuses MSVC in such cases.  Added #include for scope.hpp, which

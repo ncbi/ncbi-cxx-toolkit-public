@@ -1,8 +1,6 @@
-#ifndef SEQREF_ID1__HPP_INCLUDED
-#define SEQREF_ID1__HPP_INCLUDED
-
 /*  $Id$
 * ===========================================================================
+*
 *                            PUBLIC DOMAIN NOTICE
 *               National Center for Biotechnology Information
 *
@@ -22,38 +20,76 @@
 *  purpose.
 *
 *  Please cite the author in any work or product based on this material.
+*
 * ===========================================================================
 *
-*  Author:  Anton Butanaev, Eugene Vasilchenko
+* Author: Aleksey Grichenko, Eugene Vasilchenko
 *
-*  File Description: support classes for data reader from ID1
+* File Description:
+*   Bioseq iterator
 *
 */
 
-#include <corelib/ncbiobj.hpp>
-#include <objmgr/reader.hpp>
-
-#include <objects/id1/ID1server_back.hpp>
-#include <objects/id1/ID1server_request.hpp>
-#include <objects/id1/ID1server_maxcomplex.hpp>
-#include <objects/seq/Seq_hist_rec.hpp>
-#include <objects/general/Dbtag.hpp>
-#include <objects/general/Object_id.hpp>
-
-#include <connect/ncbi_conn_stream.hpp>
+#include <objmgr/bioseq_ci.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CId1Reader;
+
+CBioseq_CI::CBioseq_CI(void)
+{
+    m_Current = m_Handles.end();
+}
+
+
+CBioseq_CI::CBioseq_CI(const CBioseq_CI& bioseq_ci)
+{
+    *this = bioseq_ci;
+}
+
+
+CBioseq_CI::~CBioseq_CI(void)
+{
+}
+
+
+CBioseq_CI::CBioseq_CI(CScope& scope,
+                       const CSeq_entry& entry,
+                       CSeq_inst::EMol filter,
+                       EBioseqLevelFlag level)
+    : m_Scope(&scope)
+{
+    m_Scope->x_PopulateBioseq_HandleSet(entry, m_Handles, filter, level);
+    m_Current = m_Handles.begin();
+}
+
+
+CBioseq_CI& CBioseq_CI::operator= (const CBioseq_CI& bioseq_ci)
+{
+    if (this != &bioseq_ci) {
+        m_Scope = bioseq_ci.m_Scope;
+        m_Handles = bioseq_ci.m_Handles;
+        if ( bioseq_ci ) {
+            m_Current = m_Handles.begin() +
+                (bioseq_ci.m_Current - bioseq_ci.m_Handles.begin());
+        }
+        else {
+            m_Current = m_Handles.end();
+        }
+    }
+    return *this;
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
 /*
+* ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.8  2003/09/30 16:22:01  vasilche
+* Revision 1.1  2003/09/30 16:22:02  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
 * Scope caches results of requests for data to data loaders.
@@ -65,36 +101,5 @@ END_NCBI_SCOPE
 * Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
 * Added 'adaptive' option to objmgr_demo application.
 *
-* Revision 1.7  2003/08/27 14:24:43  vasilche
-* Simplified CCmpTSE class.
-*
-* Revision 1.6  2003/08/14 20:05:18  vasilche
-* Simple SNP features are stored as table internally.
-* They are recreated when needed using CFeat_CI.
-*
-* Revision 1.5  2003/07/24 19:28:08  vasilche
-* Implemented SNP split for ID1 loader.
-*
-* Revision 1.4  2003/06/02 16:01:37  dicuccio
-* Rearranged include/objects/ subtree.  This includes the following shifts:
-*     - include/objects/alnmgr --> include/objtools/alnmgr
-*     - include/objects/cddalignview --> include/objtools/cddalignview
-*     - include/objects/flat --> include/objtools/flat
-*     - include/objects/objmgr/ --> include/objmgr/
-*     - include/objects/util/ --> include/objmgr/util/
-*     - include/objects/validator --> include/objtools/validator
-*
-* Revision 1.3  2003/05/29 17:57:32  lavr
-* Remove unnecessary headers
-*
-* Revision 1.2  2003/04/15 15:30:14  vasilche
-* Added include <memory> when needed.
-* Removed buggy buffer in printing methods.
-* Removed unnecessary include of stream_util.hpp.
-*
-* Revision 1.1  2003/04/15 14:24:08  vasilche
-* Changed CReader interface to not to use fake streams.
-*
+* ===========================================================================
 */
-
-#endif // SEQREF_ID1__HPP_INCLUDED

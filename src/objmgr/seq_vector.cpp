@@ -41,6 +41,7 @@
 #include <objmgr/objmgr_exception.hpp>
 #include <algorithm>
 #include <map>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -53,8 +54,7 @@ BEGIN_SCOPE(objects)
 
 
 CSeqVector::CSeqVector(void)
-    : m_Scope(0),
-      m_Size(0)
+    : m_Size(0)
 {
     m_Iterator.x_SetVector(*this);
 }
@@ -158,16 +158,16 @@ const char* CSeqVector::sx_GetConvertTable(TCoding src,
 {
     CFastMutexGuard guard(s_ConvertTableMutex2);
     typedef pair<pair<TCoding, TCoding>, bool> TKey;
-    typedef map<TKey, char*> TTables;
+    typedef map<TKey, vector<char> > TTables;
     static TTables tables;
 
     TKey key(pair<TCoding, TCoding>(src, dst), reverse);
     TTables::iterator it = tables.find(key);
     if ( it != tables.end() ) {
         // already created
-        return it->second;
+        return it->second.empty()? 0: &it->second[0];
     }
-    it = tables.insert(TTables::value_type(key, 0)).first;
+    it = tables.insert(TTables::value_type(key, vector<char>())).first;
     if ( !CSeqportUtil::IsCodeAvailable(src) ||
          !CSeqportUtil::IsCodeAvailable(dst) ) {
         // invalid types
@@ -177,8 +177,7 @@ const char* CSeqVector::sx_GetConvertTable(TCoding src,
     const size_t COUNT = kMax_UChar+1;
     const unsigned kInvalidCode = kMax_UChar;
 
-    pair<unsigned, unsigned> srcIndex =
-        CSeqportUtil::GetCodeIndexFromTo(src);
+    pair<unsigned, unsigned> srcIndex = CSeqportUtil::GetCodeIndexFromTo(src);
     if ( srcIndex.second >= COUNT ) {
         // too large range
         return 0;
@@ -216,8 +215,7 @@ const char* CSeqVector::sx_GetConvertTable(TCoding src,
         return 0;
     }
 
-    char* table = it->second = new char[COUNT];
-    fill(table, table+COUNT, kInvalidCode);
+    it->second.resize(COUNT, char(kInvalidCode));
     for ( unsigned i = srcIndex.first; i <= srcIndex.second; ++i ) {
         try {
             unsigned code = i;
@@ -228,12 +226,12 @@ const char* CSeqVector::sx_GetConvertTable(TCoding src,
                 code = CSeqportUtil::GetMapToIndex(src, dst, code);
             }
             code = min(kInvalidCode, code);
-            table[i] = char(code);
+            it->second[i] = char(code);
         }
         catch ( runtime_error& /*noConversion or noComplement*/ ) {
         }
     }
-    return table;
+    return &it->second[0];
 }
 
 
@@ -280,6 +278,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2003/09/30 16:22:04  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.62  2003/09/05 17:29:40  grichenk
 * Structurized Object Manager exceptions
 *

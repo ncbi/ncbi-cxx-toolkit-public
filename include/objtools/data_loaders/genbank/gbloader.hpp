@@ -52,6 +52,7 @@
 #   include <sys/types.h>
 #endif
 
+#include <objects/seq/Seq_annot.hpp>
 #include <objmgr/data_loader.hpp>
 #include <objmgr/reader.hpp>
 
@@ -140,24 +141,6 @@ public:
 };
 
 
-class NCBI_XOBJMGR_EXPORT CTSEUpload : public CObject
-{
-public:
-    enum EChoice {
-        eNone,
-        eDone,
-        ePartial
-    };
-    CTSEUpload();
-    ~CTSEUpload();
-    EChoice                       m_mode;
-    CRef<CSeq_entry>              m_tse;
-
-private:
-    CTSEUpload(const CTSEUpload&);
-    const CTSEUpload& operator=(const CTSEUpload&);
-};
-
 class NCBI_XOBJMGR_EXPORT CGBDataLoader : public CDataLoader
 {
 public:
@@ -173,9 +156,13 @@ public:
                   int gc_threshold=100);
     virtual ~CGBDataLoader(void);
   
-    virtual bool DropTSE(const CTSE_Info& tse_info);
-    virtual bool GetRecords(const CHandleRangeMap& hrmap,
+    virtual void DropTSE(const CTSE_Info& tse_info);
+    virtual void GetRecords(const CSeq_id_Handle& idh,
                             const EChoice choice);
+    virtual void GetChunk(CTSE_Chunk_Info& chunk_info);
+    virtual void GetAllAnnotRecords(const CSeq_id_Handle& idh);
+    virtual void GetNamedAnnotRecords(const CSeq_id_Handle& idh,
+                                      const string& source_name);
   
     virtual CConstRef<CTSE_Info> ResolveConflict(const CSeq_id_Handle& handle,
                                                  const TTSE_LockSet& tse_set);
@@ -189,16 +176,23 @@ private:
         typedef set<CSeq_id_Handle>  TSeqids;
         enum { eDead, eConfidential, eLast };
   
-        CRef<STSEinfo>    next;
-        CRef<STSEinfo>    prev;
+        STSEinfo*         next;
+        STSEinfo*         prev;
         bitset<eLast>     mode;
-        CRef<CSeqref>     key;
+        CRef<CSeqref>     seqref;
+        CSeqref::TKeyByTSE key;
         int               locked;
         CTSE_Info        *tseinfop;
   
         TSeqids           m_SeqIds;
-        CTSEUpload        m_upload;
-  
+
+        enum ELoadState {
+            eLoadStateNone,
+            eLoadStateDone,
+            eLoadStatePartial
+        };
+        ELoadState        m_LoadState;
+
         STSEinfo();
         STSEinfo(const STSEinfo&);
         ~STSEinfo();
@@ -213,19 +207,8 @@ private:
         SSeqrefs(const SSeqrefs&);
         ~SSeqrefs();
     };
-    class CCmpTSE
-    {
-    public:
-        bool operator()(const CRef<CSeqref>& sr1,
-                        const CRef<CSeqref>& sr2) const
-            {
-                return sr1->LessByTSE(*sr2);
-            }
-    };
 
-    typedef int                              TMask;
-  
-    typedef map<CRef<CSeqref>, CRef<STSEinfo>, CCmpTSE> TSr2TSEinfo;
+    typedef map<CSeqref::TKeyByTSE, CRef<STSEinfo> >    TSr2TSEinfo;
     typedef map<CSeq_id_Handle, CRef<SSeqrefs> >        TSeqId2Seqrefs;
   
     CRef<CReader>   m_Driver;
@@ -237,36 +220,41 @@ private:
   
     SLeveledMutex   m_Locks;
   
-    CRef<STSEinfo>  m_UseListHead;
-    CRef<STSEinfo>  m_UseListTail;
+    STSEinfo*       m_UseListHead;
+    STSEinfo*       m_UseListTail;
     unsigned        m_TseCount;
     unsigned        m_TseGC_Threshhold;
     bool            m_InvokeGC;
-    void            x_UpdateDropList(CRef<STSEinfo> p);
-    void            x_DropTSEinfo(CRef<STSEinfo> tse);
-    void            x_ExcludeFromDropList(CRef<STSEinfo> p);
-    void            x_AppendToDropList(CRef<STSEinfo> p);
+    void            x_DropTSEinfo(STSEinfo* tse);
+    void            x_UpdateDropList(STSEinfo* p);
+    void            x_ExcludeFromDropList(STSEinfo* p);
+    void            x_AppendToDropList(STSEinfo* p);
   
     //
     // private code
     //
+
+    typedef int TMask;
   
-    TMask           x_Request2SeqrefMask(const EChoice choice);
-    TMask           x_Request2BlobMask(const EChoice choice);
+    TMask x_Request2SeqrefMask(const EChoice choice);
+    //TMask x_Request2BlobMask(const EChoice choice);
+    TMask x_Request2SeqrefMask(const CSeq_annot::C_Data::E_Choice choice);
   
-  
-    bool            x_GetRecords(const CSeq_id_Handle& key,
-                                 const CHandleRange &hrange,
-                                 EChoice choice);
+    void            x_GetRecords(const char* type_name,
+                                 const CSeq_id_Handle& idh,
+                                 TMask sr_mask);
+    void            x_GetRecords(const CSeq_id_Handle& key,
+                                 TMask sr_mask);
     CRef<SSeqrefs>  x_ResolveHandle(const CSeq_id_Handle& h);
-    bool            x_NeedMoreData(CTSEUpload *tse_up,
-                                   const CSeqref& srp,
-                                   int from,int to,
-                                   TMask blob_mask);
-    bool            x_GetData(CRef<STSEinfo> tse,const CSeqref& srp,
-                              int from,int to, TMask blob_mask,
+    bool            x_NeedMoreData(const STSEinfo& tse);
+    void            x_GetData(CRef<STSEinfo> tse,
                               CReader::TConn conn);
-    void            x_Check(CConstRef<STSEinfo> me = CRef<STSEinfo>());
+    void            x_GetChunk(CRef<STSEinfo> tse,
+                               CReader::TConn conn,
+                               CTSE_Chunk_Info& chunk_info);
+    void            x_GetChunk(CRef<STSEinfo> tse,
+                               CTSE_Chunk_Info& chunk_info);
+    void            x_Check(const STSEinfo* me = 0);
 
     CRef<STSEinfo> GetTSEinfo(const CTSE_Info& tse_info);
 };
@@ -279,6 +267,18 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.40  2003/09/30 16:21:59  vasilche
+ * Updated internal object manager classes to be able to load ID2 data.
+ * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+ * Scope caches results of requests for data to data loaders.
+ * Optimized CSeq_id_Handle for gis.
+ * Optimized bioseq lookup in scope.
+ * Reduced object allocations in annotation iterators.
+ * CScope is allowed to be destroyed before other objects using this scope are
+ * deleted (feature iterators, bioseq handles etc).
+ * Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+ * Added 'adaptive' option to objmgr_demo application.
+ *
  * Revision 1.39  2003/08/27 14:24:43  vasilche
  * Simplified CCmpTSE class.
  *

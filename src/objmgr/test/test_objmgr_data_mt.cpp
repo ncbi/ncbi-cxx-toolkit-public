@@ -30,6 +30,18 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/09/30 16:22:05  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.10  2003/06/02 16:06:39  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
@@ -101,7 +113,7 @@
 BEGIN_NCBI_SCOPE
 using namespace objects;
 
-static CFastMutex    s_GlobalLock;
+DEFINE_STATIC_FAST_MUTEX(s_GlobalLock);
 
 // GIs to process
 #if 0
@@ -128,19 +140,33 @@ protected:
     virtual bool TestApp_Init(void);
     virtual bool TestApp_Exit(void);
 
+    typedef map<int, int> TValueMap;
+
     CRef<CScope> m_Scope;
     CRef<CObjectManager> m_ObjMgr;
 
-    map<int, int> m_mapGiToDesc;
-    map<int, int> m_mapGiToFeat0;
-    map<int, int> m_mapGiToFeat1;
+    TValueMap m_mapGiToDesc, m_mapGiToFeat0, m_mapGiToFeat1;
+
+    void SetValue(TValueMap& vm, int gi, int value);
 
     int m_gi_from;
     int m_gi_to;
+
+    bool failed;
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+
+void CTestOM::SetValue(TValueMap& vm, int gi, int value)
+{
+    CFastMutexGuard guard(s_GlobalLock);
+    pair<TValueMap::iterator, bool> ins =
+        vm.insert(TValueMap::value_type(gi, value));
+    _ASSERT(ins.first->second == value);
+}
+
 
 bool CTestOM::Thread_Run(int idx)
 {
@@ -169,10 +195,11 @@ bool CTestOM::Thread_Run(int idx)
             CBioseq_Handle handle = scope.GetBioseqHandle(sid);
             if (!handle) {
                 LOG_POST("T" << idx << ": gi = " << i << ": INVALID HANDLE");
+                SetValue(m_mapGiToDesc, i, -1);
                 continue;
             }
 
-            int count = 0, count_prev;
+            int count = 0;
 
 // enumerate descriptions
             // Seqdesc iterator
@@ -180,15 +207,7 @@ bool CTestOM::Thread_Run(int idx)
                 count++;
             }
 // verify result
-            {
-                CFastMutexGuard guard(s_GlobalLock);
-                if (m_mapGiToDesc.find(i) != m_mapGiToDesc.end()) {
-                    count_prev = m_mapGiToDesc[i];
-                    _ASSERT( m_mapGiToDesc[i] == count);
-                } else {
-                    m_mapGiToDesc[i] = count;
-                }
-            }
+            SetValue(m_mapGiToDesc, i, count);
 
 // enumerate features
             CSeq_loc loc;
@@ -203,15 +222,7 @@ bool CTestOM::Thread_Run(int idx)
                     count++;
                 }
 // verify result
-                {
-                    CFastMutexGuard guard(s_GlobalLock);
-                    if (m_mapGiToFeat0.find(i) != m_mapGiToFeat0.end()) {
-                        count_prev = m_mapGiToFeat0[i];
-                        _ASSERT( m_mapGiToFeat0[i] == count);
-                    } else {
-                        m_mapGiToFeat0[i] = count;
-                    }
-                }
+                SetValue(m_mapGiToFeat0, i, count);
             }
             else {
                 for (CFeat_CI feat_it(handle, 0, 0, CSeqFeatData::e_not_set);
@@ -219,15 +230,7 @@ bool CTestOM::Thread_Run(int idx)
                     count++;
                 }
 // verify result
-                {
-                    CFastMutexGuard guard(s_GlobalLock);
-                    if (m_mapGiToFeat1.find(i) != m_mapGiToFeat1.end()) {
-                        count_prev = m_mapGiToFeat1[i];
-                        _ASSERT( m_mapGiToFeat1[i] == count);
-                    } else {
-                        m_mapGiToFeat1[i] = count;
-                    }
-                }
+                SetValue(m_mapGiToFeat1, i, count);
             }
         } catch (exception& e) {
             LOG_POST("T" << idx << ": gi = " << i 
@@ -235,6 +238,9 @@ bool CTestOM::Thread_Run(int idx)
             ok = false;
         }
         scope.ResetHistory();
+    }
+    if ( !ok ) {
+        failed = true;
     }
     return ok;
 }
@@ -254,6 +260,7 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
 
 bool CTestOM::TestApp_Init(void)
 {
+    failed = false;
     CORE_SetLOCK(MT_LOCK_cxx2c());
     CORE_SetLOG(LOG_cxx2c());
 
@@ -279,7 +286,12 @@ bool CTestOM::TestApp_Init(void)
 
 bool CTestOM::TestApp_Exit(void)
 {
-    NcbiCout << " Passed" << NcbiEndl << NcbiEndl;
+    if ( failed ) {
+        NcbiCout << " Failed" << NcbiEndl << NcbiEndl;
+    }
+    else {
+        NcbiCout << " Passed" << NcbiEndl << NcbiEndl;
+    }
 
 /*
     map<int, int>::iterator it;

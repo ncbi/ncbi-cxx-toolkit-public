@@ -48,6 +48,7 @@ class CObjectIStream;
 
 BEGIN_SCOPE(objects)
 
+class CSeq_entry;
 class CSeq_feat;
 class CSeq_annot;
 class CSeq_annot_SNP_Info;
@@ -59,8 +60,8 @@ struct NCBI_XOBJMGR_EXPORT SSNP_Info
 public:
     typedef CRange<TSeqPos> TRange;
 
-    TSeqPos GetPosition(void) const;
-    TSeqPos GetEndPosition(void) const;
+    TSeqPos GetFrom(void) const;
+    TSeqPos GetTo(void) const;
     bool MinusStrand(void) const;
 
     bool operator<(const SSNP_Info& snp) const;
@@ -96,7 +97,9 @@ public:
     ESNP_Type ParseSeq_feat(const CSeq_feat& feat,
                             CSeq_annot_SNP_Info& annot_info);
     // restore Seq-feat object from parsed info.
-    CRef<CSeq_feat> CreateSeq_feat(const CSeq_annot_SNP_Info& annot_info) const;
+    CRef<CSeq_feat>
+    CreateSeq_feat(const CSeq_annot_SNP_Info& annot_info) const;
+
     void UpdateSeq_feat(CRef<CSeq_feat>& seq_feat,
                         const CSeq_annot_SNP_Info& annot_info) const;
     void UpdateSeq_feat(CRef<CSeq_feat>& seq_feat,
@@ -115,10 +118,16 @@ public:
                           const CSeq_annot_SNP_Info& annot_info) const;
 
     enum {
+        kMax_PositionDelta = kMax_I1
+    };
+    enum {
+        kMax_CommentIndex = kMax_I1
+    };
+    enum {
         kMax_AllelesCount = 4
     };
 
-    TSeqPos     m_EndPosition;
+    TSeqPos     m_ToPosition;
     int         m_SNP_Id;
     bool        m_MinusStrand;
     Int1        m_PositionDelta;
@@ -167,7 +176,8 @@ public:
     CSeq_annot_SNP_Info(void);
     ~CSeq_annot_SNP_Info(void);
 
-    CRef<CSeq_entry> Read(CObjectIStream& in);
+    void Read(CObjectIStream& in);
+    CRef<CSeq_entry> GetEntry(void);
 
     typedef vector<SSNP_Info> TSNP_Set;
     typedef TSNP_Set::const_iterator const_iterator;
@@ -176,7 +186,8 @@ public:
     bool empty(void) const;
     const_iterator begin(void) const;
     const_iterator end(void) const;
-    const_iterator LowerBound(const TRange& range) const;
+
+    const_iterator FirstIn(const TRange& range) const;
 
     int GetGi(void) const;
 
@@ -213,16 +224,16 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 
 inline
-TSeqPos SSNP_Info::GetPosition(void) const
+TSeqPos SSNP_Info::GetFrom(void) const
 {
-    return m_EndPosition - m_PositionDelta;
+    return m_ToPosition - m_PositionDelta;
 }
 
 
 inline
-TSeqPos SSNP_Info::GetEndPosition(void) const
+TSeqPos SSNP_Info::GetTo(void) const
 {
-    return m_EndPosition;
+    return m_ToPosition;
 }
 
 
@@ -236,29 +247,29 @@ bool SSNP_Info::MinusStrand(void) const
 inline
 bool SSNP_Info::operator<(const SSNP_Info& snp) const
 {
-    return m_EndPosition < snp.m_EndPosition;
+    return m_ToPosition < snp.m_ToPosition;
 }
 
 
 inline
-bool SSNP_Info::operator<(TSeqPos end_position) const
+bool SSNP_Info::operator<(TSeqPos to_position) const
 {
-    return m_EndPosition < end_position;
+    return m_ToPosition < to_position;
 }
 
 
 inline
 bool SSNP_Info::NoMore(const TRange& range) const
 {
-    return GetEndPosition() >=
-        min(kInvalidSeqPos-kMax_I1, range.GetToOpen()) + kMax_I1;
+    return GetTo() >= min(kInvalidSeqPos-kMax_PositionDelta,
+                          range.GetToOpen()) + kMax_PositionDelta;
 }
 
 
 inline
 bool SSNP_Info::NotThis(const TRange& range) const
 {
-    return GetPosition() >= range.GetToOpen();
+    return GetFrom() >= range.GetToOpen();
 }
 
 
@@ -291,7 +302,7 @@ CSeq_annot_SNP_Info::end(void) const
 
 inline
 CSeq_annot_SNP_Info::const_iterator
-CSeq_annot_SNP_Info::LowerBound(const CRange<TSeqPos>& range) const
+CSeq_annot_SNP_Info::FirstIn(const CRange<TSeqPos>& range) const
 {
     return lower_bound(m_SNP_Set.begin(), m_SNP_Set.end(), range.GetFrom());
 }
@@ -328,7 +339,7 @@ const CSeq_annot& CSeq_annot_SNP_Info::GetSeq_annot(void) const
 inline
 Int1 CSeq_annot_SNP_Info::x_GetCommentIndex(const string& comment)
 {
-    return m_Comments.GetIndex(comment, kMax_I1);
+    return m_Comments.GetIndex(comment, SSNP_Info::kMax_CommentIndex);
 }
 
 
@@ -367,6 +378,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/09/30 16:22:01  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.5  2003/08/27 14:28:51  vasilche
 * Reduce amount of object allocations in feature iteration.
 *

@@ -50,8 +50,8 @@ BEGIN_SCOPE(objects)
 ////////////////////////////////////////////////////////////////////
 //  CSeqMap
 
-CSeqMap_Delta_seqs::CSeqMap_Delta_seqs(TObject& obj, CDataSource* source)
-    : CSeqMap(source),
+CSeqMap_Delta_seqs::CSeqMap_Delta_seqs(TObject& obj)
+    : CSeqMap(),
       m_Object(&obj),
       m_List(&obj.Set())
 {
@@ -163,9 +163,8 @@ void CSeqMap_Delta_seqs::x_SetSubSeqMap(size_t index,
 }
 
 
-CSeqMap_Seq_locs::CSeqMap_Seq_locs(CSeg_ext& obj, TList& seq,
-                                   CDataSource* source)
-    : CSeqMap(source),
+CSeqMap_Seq_locs::CSeqMap_Seq_locs(CSeg_ext& obj, TList& seq)
+    : CSeqMap(),
       m_Object(&obj),
       m_List(&seq)
 {
@@ -177,9 +176,8 @@ CSeqMap_Seq_locs::CSeqMap_Seq_locs(CSeg_ext& obj, TList& seq,
 }
 
 
-CSeqMap_Seq_locs::CSeqMap_Seq_locs(CSeq_loc_mix& obj, TList& seq,
-                                   CDataSource* source)
-    : CSeqMap(source),
+CSeqMap_Seq_locs::CSeqMap_Seq_locs(CSeq_loc_mix& obj, TList& seq)
+    : CSeqMap(),
       m_Object(&obj),
       m_List(&seq)
 {
@@ -191,9 +189,8 @@ CSeqMap_Seq_locs::CSeqMap_Seq_locs(CSeq_loc_mix& obj, TList& seq,
 }
 
 
-CSeqMap_Seq_locs::CSeqMap_Seq_locs(CSeq_loc_equiv& obj, TList& seq,
-                                   CDataSource* source)
-    : CSeqMap(source),
+CSeqMap_Seq_locs::CSeqMap_Seq_locs(CSeq_loc_equiv& obj, TList& seq)
+    : CSeqMap(),
       m_Object(&obj),
       m_List(&seq)
 {
@@ -221,8 +218,8 @@ void CSeqMap_Seq_locs::x_IndexAll(void)
 }
 
 
-CSeqMap_Seq_intervals::CSeqMap_Seq_intervals(TObject& obj, CDataSource* source)
-    : CSeqMap(source),
+CSeqMap_Seq_intervals::CSeqMap_Seq_intervals(TObject& obj)
+    : CSeqMap(),
       m_Object(&obj),
       m_List(&obj.Set())
 {
@@ -264,8 +261,8 @@ void CSeqMap_Seq_intervals::x_IndexAll(void)
 }
 
 
-CSeqMap_SeqPoss::CSeqMap_SeqPoss(TObject& obj, CDataSource* source)
-    : CSeqMap(source),
+CSeqMap_SeqPoss::CSeqMap_SeqPoss(TObject& obj)
+    : CSeqMap(),
       m_Object(&obj),
       m_List(&obj.SetPoints())
 {
@@ -322,6 +319,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/09/30 16:22:04  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.8  2003/09/05 17:29:40  grichenk
 * Structurized Object Manager exceptions
 *

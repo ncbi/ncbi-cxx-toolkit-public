@@ -62,18 +62,10 @@ CBioseq_Handle::CBioseq_Handle(void)
 }
 
 
-CBioseq_Handle::CBioseq_Handle(CScope* scope, const CSeqMatch_Info& match)
-    : m_Seq_id(match.GetIdHandle()),
-      m_Bioseq_Info(new CBioseq_ScopeInfo(scope, match.GetBioseq_Info()))
-{
-}
-
-
-CBioseq_Handle::CBioseq_Handle(CScope* scope,
-                               const CSeq_id_Handle& id,
-                               const CConstRef<CBioseq_Info>& bioseq)
+CBioseq_Handle::CBioseq_Handle(const CSeq_id_Handle& id,
+                               CBioseq_ScopeInfo* bioseq_info)
     : m_Seq_id(id),
-      m_Bioseq_Info(new CBioseq_ScopeInfo(scope, bioseq))
+      m_Bioseq_Info(bioseq_info)
 {
 }
 
@@ -121,19 +113,19 @@ CBioseq_Handle::TBioseqCore CBioseq_Handle::GetBioseqCore(void) const
 
 TSeqPos CBioseq_Handle::GetBioseqLength(void) const
 {
-    return GetBioseqCore()->GetInst().GetLength();
+    return x_GetBioseq_Info().GetBioseqLength();
 }
 
 
 CSeq_inst::TMol CBioseq_Handle::GetBioseqMolType(void) const
 {
-    return GetBioseqCore()->GetInst().GetMol();
+    return x_GetBioseq_Info().GetBioseqMolType();
 }
 
 
 const CSeqMap& CBioseq_Handle::GetSeqMap(void) const
 {
-    return x_GetDataSource().GetSeqMap(x_GetBioseq_Info());
+    return x_GetBioseq_Info().GetSeqMap();
 }
 
 
@@ -181,8 +173,7 @@ bool CBioseq_Handle::IsSynonym(const CSeq_id& id) const
     if ( !(*this) )
         return false;
     CConstRef<CSynonymsSet> syns = x_GetSynonyms();
-    CSeq_id_Handle h = CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(id);
-    return syns->find(h) != syns->end();
+    return syns->ContainsSynonym(CSeq_id_Handle::GetHandle(id));
 }
 
 
@@ -271,17 +262,31 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
 }
 
 
+const CTSE_Info& CBioseq_Handle::x_GetTSE_Info(void) const
+{
+    _ASSERT(*this);
+    return x_GetBioseq_Info().GetTSE_Info();
+}
+
+
+CSeq_entry& CBioseq_Handle::x_GetTSE_NC(void)
+{
+    _ASSERT(*this);
+    return const_cast<CSeq_entry&>(x_GetBioseq_Info().GetSeq_entry());
+}
+
+
 void CBioseq_Handle::AddAnnot(CSeq_annot& annot)
 {
     _ASSERT(bool(m_Bioseq_Info));
-    x_GetDataSource().AttachAnnot(const_cast<CSeq_entry&>(m_Bioseq_Info->GetBioseq_Info().GetSeq_entry()), annot);
+    x_GetDataSource().AttachAnnot(x_GetTSE_NC(), annot);
 }
 
 
 void CBioseq_Handle::RemoveAnnot(CSeq_annot& annot)
 {
     _ASSERT(bool(m_Bioseq_Info));
-    x_GetDataSource().RemoveAnnot(const_cast<CSeq_entry&>(m_Bioseq_Info->GetBioseq_Info().GetSeq_entry()), annot);
+    x_GetDataSource().RemoveAnnot(x_GetTSE_NC(), annot);
 }
 
 
@@ -289,8 +294,7 @@ void CBioseq_Handle::ReplaceAnnot(CSeq_annot& old_annot,
                                   CSeq_annot& new_annot)
 {
     _ASSERT(bool(m_Bioseq_Info));
-    x_GetDataSource().ReplaceAnnot(const_cast<CSeq_entry&>(m_Bioseq_Info->GetBioseq_Info().GetSeq_entry()),
-                                   old_annot, new_annot);
+    x_GetDataSource().ReplaceAnnot(x_GetTSE_NC(), old_annot, new_annot);
 }
 
 
@@ -352,6 +356,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/09/30 16:22:02  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.45  2003/09/05 17:29:40  grichenk
 * Structurized Object Manager exceptions
 *

@@ -34,8 +34,13 @@
  */
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
+
 #include <objmgr/seq_id_handle.hpp>
-#include <set>
+
+#include <objects/seq/Seq_inst.hpp>
+
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -47,6 +52,16 @@ class CSeq_id_Handle;
 class CSeqMap;
 class CTSE_Info;
 class CDataSource;
+class CSeq_inst;
+class CSeq_id;
+class CPacked_seqint;
+class CSeq_loc;
+class CSeq_loc_mix;
+class CSeq_loc_equiv;
+class CSeg_ext;
+class CDelta_ext;
+class CDelta_seq;
+class CScope_Impl;
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -60,7 +75,7 @@ class CDataSource;
 class NCBI_XOBJMGR_EXPORT CBioseq_Info : public CObject
 {
 public:
-    typedef set<CSeq_id_Handle> TSynonyms;
+    typedef vector<CSeq_id_Handle> TSynonyms;
 
     // 'ctors
     CBioseq_Info(CBioseq& seq, CSeq_entry_Info& entry_info);
@@ -81,23 +96,61 @@ public:
     const CBioseq& GetBioseq(void) const;
     CBioseq& GetBioseq(void);
 
+    // Get some values from core:
+    TSeqPos GetBioseqLength(void) const;
+    CSeq_inst::TMol GetBioseqMolType(void) const;
+    const CSeqMap& GetSeqMap(void) const;
+
+    string IdsString(void) const;
+
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
+
+    void x_AttachMap(CSeqMap& seq_map);
+
+    void x_DSAttach(void);
+    void x_DSDetach(void);
+
+protected:
+    friend class CDataSource;
+    friend class CScope_Impl;
+    friend class CSeq_entry_Info;
+
+    void x_DSAttachThis(void);
+    void x_DSDetachThis(void);
+
+    void x_TSEAttach(void);
+    void x_TSEDetach(void);
 
 private:
     CBioseq_Info(const CBioseq_Info&);
     CBioseq_Info& operator=(const CBioseq_Info&);
 
-    friend class CDataSource;
-    friend class CScope;
+    void x_InitBioseqInfo(void);
 
-    // Parent seq-entry for the bioseq
-    CSeq_entry_Info*         m_Seq_entry_Info;
+    TSeqPos x_CalcBioseqLength(void) const;
+    TSeqPos x_CalcBioseqLength(const CSeq_inst& inst) const;
+    TSeqPos x_CalcBioseqLength(const CSeq_id& whole) const;
+    TSeqPos x_CalcBioseqLength(const CPacked_seqint& ints) const;
+    TSeqPos x_CalcBioseqLength(const CSeq_loc& seq_loc) const;
+    TSeqPos x_CalcBioseqLength(const CSeq_loc_mix& seq_mix) const;
+    TSeqPos x_CalcBioseqLength(const CSeq_loc_equiv& seq_equiv) const;
+    TSeqPos x_CalcBioseqLength(const CSeg_ext& seg_ext) const;
+    TSeqPos x_CalcBioseqLength(const CDelta_ext& delta) const;
+    TSeqPos x_CalcBioseqLength(const CDelta_seq& delta_seq) const;
 
     // Bioseq object
     CRef<CBioseq>            m_Bioseq;
+    // bioseq parameters
+    mutable TSeqPos          m_BioseqLength; // cached sequence length
+    CSeq_inst::TMol          m_BioseqMolType;
+
+    // Parent seq-entry for the bioseq
+    CSeq_entry_Info*         m_Seq_entry_Info;
+    CTSE_Info*               m_TSE_Info;
 
     // SeqMap object
-    CConstRef<CSeqMap>       m_SeqMap;
+    mutable CConstRef<CSeqMap>  m_SeqMap;
+    mutable CFastMutex          m_SeqMap_Mtx;
 
     // Set of bioseq synonyms
     TSynonyms                m_Synonyms;
@@ -127,6 +180,20 @@ CSeq_entry_Info& CBioseq_Info::GetSeq_entry_Info(void)
 
 
 inline
+const CTSE_Info& CBioseq_Info::GetTSE_Info(void) const
+{
+    return *m_TSE_Info;
+}
+
+
+inline
+CTSE_Info& CBioseq_Info::GetTSE_Info(void)
+{
+    return *m_TSE_Info;
+}
+
+
+inline
 const CBioseq& CBioseq_Info::GetBioseq(void) const
 {
     return *m_Bioseq;
@@ -140,12 +207,56 @@ CBioseq& CBioseq_Info::GetBioseq(void)
 }
 
 
+inline
+TSeqPos CBioseq_Info::GetBioseqLength(void) const
+{
+    TSeqPos length = m_BioseqLength;
+    if ( length == kInvalidSeqPos ) {
+        length = m_BioseqLength = x_CalcBioseqLength();
+    }
+    return length;
+}
+
+
+inline
+CSeq_inst::TMol CBioseq_Info::GetBioseqMolType(void) const
+{
+    return m_BioseqMolType;
+}
+
+
+inline
+void CBioseq_Info::x_DSAttach(void)
+{
+    x_DSAttachThis();
+}
+
+
+inline
+void CBioseq_Info::x_DSDetach(void)
+{
+    x_DSDetachThis();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2003/09/30 16:22:00  vasilche
+ * Updated internal object manager classes to be able to load ID2 data.
+ * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+ * Scope caches results of requests for data to data loaders.
+ * Optimized CSeq_id_Handle for gis.
+ * Optimized bioseq lookup in scope.
+ * Reduced object allocations in annotation iterators.
+ * CScope is allowed to be destroyed before other objects using this scope are
+ * deleted (feature iterators, bioseq handles etc).
+ * Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+ * Added 'adaptive' option to objmgr_demo application.
+ *
  * Revision 1.13  2003/06/02 16:01:37  dicuccio
  * Rearranged include/objects/ subtree.  This includes the following shifts:
  *     - include/objects/alnmgr --> include/objtools/alnmgr

@@ -40,7 +40,6 @@
 #include <objmgr/seq_id_handle.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/annot_object.hpp>
-#include <objmgr/impl/snp_annot_info.hpp>
 
 #include <vector>
 
@@ -51,6 +50,7 @@ class CDataSource;
 class CSeq_annot;
 class CSeq_entry;
 class CTSE_Info;
+class CTSE_Chunk_Info;
 class CSeq_entry_Info;
 class CAnnotObject_Info;
 struct SAnnotObject_Key;
@@ -60,6 +60,7 @@ class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CObject
 {
 public:
     CSeq_annot_Info(CSeq_annot& annot, CSeq_entry_Info& entry);
+    CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot);
     ~CSeq_annot_Info(void);
 
     CDataSource& GetDataSource(void) const;
@@ -82,9 +83,31 @@ public:
     const CAnnotObject_Info& GetAnnotObject_Info(size_t index) const;
     size_t GetAnnotObjectIndex(const CAnnotObject_Info& info) const;
 
+    void x_DSAttach(void);
+    void x_DSDetach(void);
+
+    void UpdateAnnotIndex(void) const;
+
+    void x_UpdateAnnotIndex(void);
+
+    void x_SetSNP_annot_Info(CSeq_annot_SNP_Info& snp_info);
+    bool x_HaveSNP_annot_Info(void) const;
+    const CSeq_annot_SNP_Info& x_GetSNP_annot_Info(void) const;
+
 private:
     friend class CDataSource;
+    friend class CTSE_Info;
+    friend class CTSE_Chunk_Info;
+    friend class CSeq_entry_Info;
     friend class CAnnotTypes_CI;
+
+    void x_DSAttachThis(void);
+    void x_DSDetachThis(void);
+
+    void x_Seq_entryAttach(CSeq_entry_Info& entry);
+    void x_TSEDetach(void);
+
+    void x_UpdateAnnotIndexThis(void);
 
     void x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs);
     void x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs);
@@ -95,15 +118,23 @@ private:
     CSeq_annot_Info(const CSeq_annot_Info&);
     CSeq_annot_Info& operator=(const CSeq_annot_Info&);
 
+    // Seq-annot object
     CRef<CSeq_annot>       m_Seq_annot;
+
+    // Parent Seq-entry object info
     CSeq_entry_Info*       m_Seq_entry_Info;
 
+    // top level Seq-entry info
+    CTSE_Info*               m_TSE_Info;
+
+    // Annotations indexes
     TObjectKeys            m_ObjectKeys;
     TObjectInfos           m_ObjectInfos;
 
+    // SNP annotation table
     CRef<CSeq_annot_SNP_Info>   m_SNP_Info;
 
-    bool m_Indexed;
+    bool m_DirtyAnnotIndex;
 };
 
 
@@ -143,10 +174,52 @@ CSeq_entry_Info& CSeq_annot_Info::GetSeq_entry_Info(void)
 
 
 inline
+const CTSE_Info& CSeq_annot_Info::GetTSE_Info(void) const
+{
+    return *m_TSE_Info;
+}
+
+
+inline
+CTSE_Info& CSeq_annot_Info::GetTSE_Info(void)
+{
+    return *m_TSE_Info;
+}
+
+
+inline
+void CSeq_annot_Info::x_DSAttach(void)
+{
+    x_DSAttachThis();
+}
+
+
+inline
+void CSeq_annot_Info::x_DSDetach(void)
+{
+    x_DSDetachThis();
+}
+
+
+inline
 const CAnnotObject_Info& CSeq_annot_Info::GetAnnotObject_Info(size_t index) const
 {
     _ASSERT(index < m_ObjectInfos.size());
     return m_ObjectInfos[index];
+}
+
+
+inline
+bool CSeq_annot_Info::x_HaveSNP_annot_Info(void) const
+{
+    return m_SNP_Info;
+}
+
+
+inline
+const CSeq_annot_SNP_Info& CSeq_annot_Info::x_GetSNP_annot_Info(void) const
+{
+    return *m_SNP_Info;
 }
 
 
@@ -156,6 +229,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/09/30 16:22:01  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.6  2003/08/27 14:49:19  vasilche
 * Added necessary include.
 *

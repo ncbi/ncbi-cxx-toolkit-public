@@ -57,11 +57,16 @@ class CSeq_entry_Info;
 class CSeq_annot;
 class CSeq_annot_Info;
 class CTSE_Info;
+class CTSE_Chunk_Info;
 
 // General Seq-annot object
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Info
 {
 public:
+    typedef CSeq_annot::C_Data::E_Choice TAnnotType;
+    typedef CSeqFeatData::E_Choice       TFeatType;
+    typedef CSeqFeatData::ESubtype       TFeatSubtype;
+
     CAnnotObject_Info(void);
     CAnnotObject_Info(CSeq_feat& feat,
                       CSeq_annot_Info& annot);
@@ -69,14 +74,14 @@ public:
                       CSeq_annot_Info& annot);
     CAnnotObject_Info(CSeq_graph& graph,
                       CSeq_annot_Info& annot);
+    CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
+                      TAnnotType annot_type,
+                      TFeatType feat_type,
+                      TFeatSubtype feat_subtype);
     ~CAnnotObject_Info(void);
 
     CAnnotObject_Info(const CAnnotObject_Info&);
     const CAnnotObject_Info& operator=(const CAnnotObject_Info&);
-
-    typedef CSeq_annot::C_Data::E_Choice TAnnotType;
-    typedef CSeqFeatData::E_Choice       TFeatType;
-    typedef CSeqFeatData::ESubtype       TFeatSubtype;
 
     // Get Seq-annot, containing the element
     const CSeq_annot& GetSeq_annot(void) const;
@@ -117,6 +122,10 @@ public:
 
     void GetMaps(vector<CHandleRangeMap>& hrmaps) const;
 
+    // split support
+    bool IsChunkStub(void) const;
+    const CTSE_Chunk_Info& GetChunk_Info(void) const;
+
 private:
     // Constructors used by CAnnotTypes_CI only to create fake annotations
     // for sequence segments. The annot object points to the seq-annot
@@ -129,6 +138,7 @@ private:
     Uint1                        m_AnnotType;      // annot object type
     Uint1                        m_FeatType;       // feature type or e_not_set
     Uint1                        m_FeatSubtype;    // feature subtype
+    bool                         m_ChunkStub;      // reference to split chunk
 };
 
 
@@ -164,6 +174,13 @@ inline
 CAnnotObject_Info::TFeatSubtype CAnnotObject_Info::GetFeatSubtype(void) const
 {
     return TFeatSubtype(m_FeatSubtype);
+}
+
+
+inline
+bool CAnnotObject_Info::IsChunkStub(void) const
+{
+    return m_ChunkStub;
 }
 
 
@@ -205,7 +222,7 @@ bool CAnnotObject_Info::IsGraph(void) const
 inline
 const CSeq_feat* CAnnotObject_Info::GetFeatFast(void) const
 {
-    _ASSERT(IsFeat());
+    _ASSERT(IsFeat() && !IsChunkStub());
     return static_cast<const CSeq_feat*>(m_Object.GetPointerOrNull());
 }
 
@@ -213,7 +230,7 @@ const CSeq_feat* CAnnotObject_Info::GetFeatFast(void) const
 inline
 const CSeq_graph* CAnnotObject_Info::GetGraphFast(void) const
 {
-    _ASSERT(IsGraph());
+    _ASSERT(IsGraph() && !IsChunkStub());
     return static_cast<const CSeq_graph*>(m_Object.GetPointerOrNull());
 }
 
@@ -221,7 +238,7 @@ const CSeq_graph* CAnnotObject_Info::GetGraphFast(void) const
 inline
 const CSeq_align* CAnnotObject_Info::GetAlignFast(void) const
 {
-    _ASSERT(IsAlign());
+    _ASSERT(IsAlign() && !IsChunkStub());
     return static_cast<const CSeq_align*>(m_Object.GetPointerOrNull());
 }
 
@@ -246,6 +263,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/09/30 16:22:00  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.11  2003/08/27 14:28:51  vasilche
 * Reduce amount of object allocations in feature iteration.
 *

@@ -46,21 +46,38 @@ public:
     CId1Reader(TConn noConn = 5);
     ~CId1Reader();
 
-    virtual bool RetrieveSeqrefs(TSeqrefs& sr,
+    virtual void RetrieveSeqrefs(TSeqrefs& sr,
                                  const CSeq_id& seqId,
-                                 TConn conn = 0);
+                                 TConn conn);
+
+    CRef<CTSE_Info> GetMainBlob(const CSeqref& seqref, TConn conn);
+    CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CSeqref& seqref, TConn conn);
 
     virtual TConn GetParallelLevel(void) const;
-    virtual void SetParallelLevel(TConn);
-    virtual void Reconnect(TConn);
-    CConn_ServiceStream* GetService(unsigned conn);
+    virtual void SetParallelLevel(TConn noConn);
+    virtual void Reconnect(TConn conn);
 
 protected:
-    CConn_ServiceStream *NewID1Service();
+    CConn_ServiceStream* x_GetConnection(TConn conn);
+    CConn_ServiceStream* x_NewConnection(void);
 
 private:
-    friend class CId1Seqref;
-    bool x_RetrieveSeqrefs(TSeqrefs& sr, const CSeq_id &seqId, TConn conn);
+
+    void x_RetrieveSeqrefs(TSeqrefs& sr,
+                           const CSeq_id &seqId,
+                           CConn_ServiceStream* stream);
+    void x_RetrieveSeqrefs(TSeqrefs& sr,
+                           int gi,
+                           CConn_ServiceStream* stream);
+    int x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
+                              CConn_ServiceStream* stream);
+
+    void x_SendRequest(const CSeqref& seqref,
+                       CConn_ServiceStream* stream,
+                       bool is_snp);
+    CRef<CTSE_Info> x_ReceiveMainBlob(CConn_ServiceStream* stream);
+    CRef<CSeq_annot_SNP_Info> x_ReceiveSNPAnnot(CConn_ServiceStream* stream);
+
     vector<CConn_ServiceStream *> m_Pool;
 };
 
@@ -71,6 +88,18 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.17  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.16  2003/06/02 16:01:36  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

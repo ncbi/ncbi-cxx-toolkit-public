@@ -10,11 +10,11 @@ SRC = snp_annot_info annot_types_ci seq_loc_cvt \
       tse_info seq_entry_info bioseq_info seq_annot_info seqmatch_info \
       data_source bioseq_handle scope scope_info mutex_pool priority \
       seq_map seq_map_ext seq_map_ci \
-      align_ci data_loader handle_range \
+      align_ci data_loader handle_range objmgr_exception \
       handle_range_map object_manager reader reader_id1 reader_pubseq \
       seq_vector seq_vector_ci seqdesc_ci seq_id_handle seq_id_mapper \
       seq_id_tree gbload_util gbloader reader_zlib \
-      seq_annot_ci reader_snp
+      seq_annot_ci reader_snp tse_chunk_info seq_annot_handle bioseq_ci
 
 LIB    = xobjmgr
 

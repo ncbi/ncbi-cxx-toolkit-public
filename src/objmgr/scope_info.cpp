@@ -54,6 +54,37 @@ CSynonymsSet::~CSynonymsSet(void)
 }
 
 
+CSeq_id_Handle CSynonymsSet::GetSeq_id_Handle(const const_iterator& iter)
+{
+    return (*iter)->first;
+}
+
+
+CBioseq_Handle CSynonymsSet::GetBioseqHandle(const const_iterator& iter)
+{
+    return CBioseq_Handle((*iter)->first,
+                          (*iter)->second.m_Bioseq_Info.GetPointer());
+}
+
+
+bool CSynonymsSet::ContainsSynonym(const CSeq_id_Handle& id) const
+{
+   ITERATE ( TIdSet, iter, m_IdSet ) {
+        if ( (*iter)->first == id ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void CSynonymsSet::AddSynonym(const value_type& syn)
+{
+    _ASSERT(!ContainsSynonym(syn->first));
+    m_IdSet.push_back(syn);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CDataSource_ScopeInfo
 /////////////////////////////////////////////////////////////////////////////
@@ -104,15 +135,15 @@ CBioseq_ScopeInfo::~CBioseq_ScopeInfo(void)
 }
 
 
-CBioseq_ScopeInfo::CBioseq_ScopeInfo(CScope* scope)
-    : m_Scope(scope)
+CBioseq_ScopeInfo::CBioseq_ScopeInfo(TScopeInfo* scope_info)
+    : m_ScopeInfo(scope_info)
 {
 }
 
 
-CBioseq_ScopeInfo::CBioseq_ScopeInfo(CScope* scope,
+CBioseq_ScopeInfo::CBioseq_ScopeInfo(TScopeInfo* scope_info,
                                      const CConstRef<CBioseq_Info>& bioseq)
-    : m_Scope(scope),
+    : m_ScopeInfo(scope_info),
       m_Bioseq_Info(bioseq),
       m_TSE_Lock(&bioseq->GetTSE_Info())
 {
@@ -131,35 +162,18 @@ CDataSource& CBioseq_ScopeInfo::GetDataSource(void) const
 }
 
 
+CScope& CBioseq_ScopeInfo::GetScope(void) const
+{
+    return *m_ScopeInfo->second.m_Scope;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
-// CSeq_id_ScopeInfo
+// SSeq_id_ScopeInfo
 /////////////////////////////////////////////////////////////////////////////
 
-/*
-CSeq_id_ScopeInfo::CSeq_id_ScopeInfo(void)
-{
-}
-
-
-CSeq_id_ScopeInfo::CSeq_id_ScopeInfo(const CBioseq_Handle& bh)
-    : m_Bioseq_Handle(bh)
-{
-}
-
-
-CSeq_id_ScopeInfo::~CSeq_id_ScopeInfo(void)
-{
-}
-
-
-CSeq_id_ScopeInfo::ClearCacheOnNewData(void)
-{
-    m_Synonyms.Reset();
-    m_AnnotCache.Reset();
-}
-*/
-
-SSeq_id_ScopeInfo::SSeq_id_ScopeInfo(void)
+SSeq_id_ScopeInfo::SSeq_id_ScopeInfo(CScope* scope)
+    : m_Scope(scope)
 {
 }
 
@@ -173,6 +187,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/09/30 16:22:03  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.4  2003/06/19 19:48:16  vasilche
 * Removed unnecessary copy constructor of SSeq_id_ScopeInfo.
 *

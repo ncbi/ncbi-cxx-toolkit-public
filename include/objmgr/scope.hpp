@@ -70,12 +70,15 @@ class CSeq_loc;
 class CBioseq;
 
 // objmgr
+class CScope;
+class CHeapScope;
 class CObjectManager;
-class CDataLoader;
 class CDataSource;
 class CTSE_Info;
+class CSeq_entry_Info;
+class CSeq_annot_Info;
+class CBioseq_Info;
 class CSeq_id_Handle;
-class CSeq_id_Mapper;
 class CSeqMap;
 class CSeqMatch_Info;
 class CSynonymsSet;
@@ -97,12 +100,13 @@ public:
 };
 
 
-class NCBI_XOBJMGR_EXPORT CScope : public CObject
+/////////////////////////////////////////////////////////////////////////////
+// CScope_Impl
+/////////////////////////////////////////////////////////////////////////////
+
+class NCBI_XOBJMGR_EXPORT CScope_Impl : public CObject
 {
 public:
-    CScope(CObjectManager& objmgr);
-    virtual ~CScope(void);
-
     typedef CConstRef<CTSE_Info>                     TTSE_Lock;
     typedef set<TTSE_Lock>                           TTSE_LockSet;
 
@@ -112,50 +116,47 @@ public:
     typedef CRef<CBioseq_ScopeInfo>                  TBioseqMapValue;
     typedef map<const CBioseq*, TBioseqMapValue>     TBioseqMap;
     typedef SSeq_id_ScopeInfo::TAnnotRefSet          TAnnotRefSet;
+    typedef CPriorityNode::TPriority                 TPriority;
+
+    enum EPriority {
+        kPriority_NotSet = -1
+    };
 
     // Add default data loaders from object manager
-    void AddDefaults(CPriorityNode::TPriority priority = kPriority_NotSet);
+    void AddDefaults(TPriority priority = kPriority_NotSet);
     // Add data loader by name.
     // The loader (or its factory) must be known to Object Manager.
     void AddDataLoader(const string& loader_name,
-                       CPriorityNode::TPriority priority = kPriority_NotSet);
+                       TPriority priority = kPriority_NotSet);
     // Add seq_entry, default priority is higher than for defaults or loaders
     void AddTopLevelSeqEntry(CSeq_entry& top_entry,
-                             CPriorityNode::TPriority priority =
-                             kPriority_NotSet);
+                             TPriority priority = kPriority_NotSet);
 
     // Add the scope's datasources as a single group with the given priority
-    void AddScope(CScope& scope,
-                  CPriorityNode::TPriority priority = kPriority_NotSet);
+    void AddScope(CScope_Impl& scope,
+                  TPriority priority = kPriority_NotSet);
 
     // Add bioseq, return bioseq handle. Try to use unresolved seq-id
     // from the bioseq, fail if all ids are already resolved to
     // other sequences.
     CBioseq_Handle AddBioseq(CBioseq& bioseq,
-                             CPriorityNode::TPriority priority =
-                             kPriority_NotSet);
+                             TPriority priority = kPriority_NotSet);
 
     // Add annotations to a seq-entry (seq or set)
-    bool AttachAnnot(CSeq_entry& entry, CSeq_annot& annot);
-    bool RemoveAnnot(CSeq_entry& entry, CSeq_annot& annot);
-    bool ReplaceAnnot(CSeq_entry& entry,
+    void AttachAnnot(CSeq_entry& entry, CSeq_annot& annot);
+    void RemoveAnnot(CSeq_entry& entry, CSeq_annot& annot);
+    void ReplaceAnnot(CSeq_entry& entry,
                       CSeq_annot& old_annot, CSeq_annot& new_annot);
 
     // Add new sub-entry to the existing tree if it is in this scope
-    bool AttachEntry(CSeq_entry& parent, CSeq_entry& entry);
+    void AttachEntry(CSeq_entry& parent, CSeq_entry& entry);
     // Add sequence map for a bioseq if it is in this scope
-    bool AttachMap(CSeq_entry& bioseq, CSeqMap& seqmap);
-/*
-    // Add seq-data to a bioseq if it is in this scope
-    bool AttachSeqData(CSeq_entry& bioseq, CSeq_data& seq,
-                       size_t index,
-                       TSeqPos start, TSeqPos length);
-*/
+    void AttachMap(CSeq_entry& bioseq, CSeqMap& seqmap);
 
     // Get bioseq handle by seq-id
     // Declared "virtual" to avoid circular dependencies with seqloc
-    virtual CBioseq_Handle  GetBioseqHandle(const CSeq_id& id);
-    CBioseq_Handle  GetBioseqHandle(const CSeq_id_Handle& id);
+    CBioseq_Handle GetBioseqHandle(const CSeq_id& id);
+    CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id);
 
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id& id,
                                           const CBioseq_Handle& bh);
@@ -163,16 +164,16 @@ public:
                                           const CBioseq_Handle& bh);
 
     // Get bioseq handle by seqloc
-    CBioseq_Handle  GetBioseqHandle(const CSeq_loc& loc);
+    CBioseq_Handle GetBioseqHandle(const CSeq_loc& loc);
 
     // Get bioseq handle by bioseq
-    CBioseq_Handle  GetBioseqHandle(const CBioseq& seq);
+    CBioseq_Handle GetBioseqHandle(const CBioseq& seq);
 
 
     // Find set of CSeq_id by a string identifier
     // The latter could be name, accession, something else
     // which could be found in CSeq_id
-    void FindSeqid(set< CRef<const CSeq_id> >& setId,
+    void FindSeqid(set< CConstRef<CSeq_id> >& setId,
                    const string& searchBy);
 
     void ResetHistory(void);
@@ -183,19 +184,31 @@ public:
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id);
     CConstRef<CSynonymsSet> GetSynonyms(const CBioseq_Handle& bh);
 
-    static CSeq_id_Mapper& GetIdMapper(void);
-    static CSeq_id_Handle GetIdHandle(const CSeq_id& id);
-
 private:
-    typedef map<CSeqMatch_Info, CDataSource_ScopeInfo*>   TSeqMatchSet;
+    // constructor/destructor visible from CScope
+    CScope_Impl(CObjectManager& objmgr);
+    virtual ~CScope_Impl(void);
 
-    void UpdateAnnotIndex(const CHandleRangeMap& loc,
-                          const SAnnotSelector& sel);
-    void UpdateAnnotIndex(const CHandleRangeMap& loc,
-                          const SAnnotSelector& sel,
-                          const CSeq_entry& limit_entry);
+    // to prevent copying
+    CScope_Impl(const CScope_Impl&);
+    CScope_Impl& operator=(const CScope_Impl&);
+
     void UpdateAnnotIndex(const CSeq_annot& limit_annot);
-    CConstRef<TAnnotRefSet> GetTSESetWithAnnots(const CSeq_id_Handle& idh);
+
+    CConstRef<TAnnotRefSet>
+    GetTSESetWithAllAnnots(const CSeq_id_Handle& idh,
+                           const SAnnotTypeSelector& annot_type);
+    CConstRef<TAnnotRefSet>
+    GetTSESetWithNamedAnnots(const CSeq_id_Handle& idh,
+                             const SAnnotTypeSelector& annot_type,
+                             const string& name);
+    CConstRef<TAnnotRefSet>
+    GetTSESetWithAllAnnots(const CBioseq_Handle& bh,
+                           const SAnnotTypeSelector& annot_type);
+    CConstRef<TAnnotRefSet>
+    GetTSESetWithNamedAnnots(const CBioseq_Handle& bh,
+                             const SAnnotTypeSelector& annot_type,
+                             const string& name);
 
     void x_AttachToOM(CObjectManager& objmgr);
     void x_DetachFromOM(void);
@@ -206,17 +219,17 @@ private:
     void x_ClearAnnotCache(void);
 
     // Find the best possible resolution for the Seq-id
-    CRef<CBioseq_ScopeInfo> x_ResolveSeq_id(const CSeq_id_Handle& id);
+    void x_ResolveSeq_id(TSeq_idMapValue& id);
     // Iterate over priorities, find all possible data sources
-    void x_FindBioseqInfo(const CPriorityTree& tree,
-                          const CSeq_id_Handle& idh,
-                          TSeqMatchSet& sm_set);
-    void x_FindBioseqInfo(const CPriorityNode& node,
-                          const CSeq_id_Handle& idh,
-                          TSeqMatchSet& sm_set);
-    void x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
-                          const CSeq_id_Handle& idh,
-                          TSeqMatchSet& sm_set);
+    CDataSource_ScopeInfo* x_FindBioseqInfo(const CPriorityTree& tree,
+                                            const CSeq_id_Handle& idh,
+                                            CSeqMatch_Info& match_info);
+    CDataSource_ScopeInfo* x_FindBioseqInfo(const CPriorityNode& node,
+                                            const CSeq_id_Handle& idh,
+                                            CSeqMatch_Info& match_info);
+    CDataSource_ScopeInfo* x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
+                                            const CSeq_id_Handle& idh,
+                                            CSeqMatch_Info& match_info);
 
     CBioseq_Handle x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                             const CTSE_Info& tse);
@@ -228,8 +241,18 @@ private:
     // if necessary.
     const CSeq_entry& x_GetTSEFromInfo(const TTSE_Lock& tse);
 
+    TTSE_Lock GetTSE_Info(const CSeq_entry& tse);
+    TTSE_Lock GetTSE_Info_WithSeq_entry(const CSeq_entry& entry);
+    TTSE_Lock GetTSE_Info_WithSeq_annot(const CSeq_annot& annot);
+    CConstRef<CSeq_entry_Info> GetSeq_entry_Info(const CSeq_entry& entry);
+    CConstRef<CSeq_annot_Info> GetSeq_annot_Info(const CSeq_annot& annot);
     // Get Seq-entry info for the seq-entry
+    CConstRef<CTSE_Info> x_GetTSE_Info(const CSeq_entry& tse);
+    CRef<CTSE_Info> x_GetTSE_Info(CSeq_entry& tse);
     CConstRef<CSeq_entry_Info> x_GetSeq_entry_Info(const CSeq_entry& entry);
+    CRef<CSeq_entry_Info> x_GetSeq_entry_Info(CSeq_entry& entry);
+    CConstRef<CSeq_annot_Info> x_GetSeq_annot_Info(const CSeq_annot& annot);
+    CRef<CSeq_annot_Info> x_GetSeq_annot_Info(CSeq_annot& annot);
 
     // Get bioseq handles for sequences from the given TSE using the filter
     typedef vector<CBioseq_Handle> TBioseq_HandleSet;
@@ -257,6 +280,8 @@ private:
     CRef<CBioseq_ScopeInfo> x_FindBioseq_Info(const CSeq_id_Handle& id);
 
 
+    CScope*         m_HeapScope;
+
     CObjectManager* m_pObjMgr;
     CPriorityTree   m_setDataSrc; // Data sources ordered by priority
 
@@ -273,6 +298,10 @@ private:
     TBioseqMap      m_BioseqMap;
     mutable TRWLock m_BioseqMapLock;
 
+    CFastMutex      m_NamedAnnotRef_Lock;
+
+    friend class CScope;
+    friend class CHeapScope;
     friend class CObjectManager;
     friend class CSeqVector;
     friend class CDataSource;
@@ -281,20 +310,281 @@ private:
     friend class CBioseq_Handle;
     friend class CTSE_CI;
     friend class CSeq_annot_CI;
+    friend class CSeqMap_CI;
 };
 
 
-inline
-CSeq_id_Mapper& CScope::GetIdMapper(void)
+/////////////////////////////////////////////////////////////////////////////
+// CScope
+/////////////////////////////////////////////////////////////////////////////
+
+class NCBI_XOBJMGR_EXPORT CScope : public CObject
 {
-    return CSeq_id_Mapper::GetSeq_id_Mapper();
+public:
+    CScope(CObjectManager& objmgr);
+    virtual ~CScope(void);
+
+    // CBioseq_Handle methods:
+    // Get bioseq handle by seq-id
+    CBioseq_Handle GetBioseqHandle(const CSeq_id& id);
+    CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id);
+    CBioseq_Handle GetBioseqHandle(const CSeq_loc& loc);
+
+    // Get bioseq handle by bioseq
+    CBioseq_Handle GetBioseqHandle(const CBioseq& seq);
+
+    // Get bioseq handle for sequence withing one TSE
+    CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id& id,
+                                          const CBioseq_Handle& bh);
+    CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
+                                          const CBioseq_Handle& bh);
+
+
+    // CScope contents modification methods
+    typedef CPriorityNode::TPriority TPriority;
+    enum EPriority {
+        kPriority_NotSet = -1
+    };
+
+    // Add default data loaders from object manager
+    void AddDefaults(TPriority priority = kPriority_NotSet);
+    // Add data loader by name.
+    // The loader (or its factory) must be known to Object Manager.
+    void AddDataLoader(const string& loader_name,
+                       TPriority priority = kPriority_NotSet);
+    // Add seq_entry, default priority is higher than for defaults or loaders
+    void AddTopLevelSeqEntry(CSeq_entry& top_entry,
+                             TPriority priority = kPriority_NotSet);
+    // Add the scope's datasources as a single group with the given priority
+    void AddScope(CScope& scope,
+                  TPriority priority = kPriority_NotSet);
+
+    // Add bioseq, return bioseq handle. Try to use unresolved seq-id
+    // from the bioseq, fail if all ids are already resolved to
+    // other sequences.
+    CBioseq_Handle AddBioseq(CBioseq& bioseq,
+                             TPriority priority = kPriority_NotSet);
+
+    // Add annotations to a seq-entry (seq or set)
+    void AttachAnnot(CSeq_entry& entry, CSeq_annot& annot);
+    void RemoveAnnot(CSeq_entry& entry, CSeq_annot& annot);
+    void ReplaceAnnot(CSeq_entry& entry,
+                      CSeq_annot& old_annot, CSeq_annot& new_annot);
+    // Add new sub-entry to the existing tree if it is in this scope
+    void AttachEntry(CSeq_entry& parent, CSeq_entry& entry);
+    // Add sequence map for a bioseq if it is in this scope
+    void AttachMap(CSeq_entry& bioseq, CSeqMap& seqmap);
+
+    void ResetHistory(void);
+
+    CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id& id);
+    CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id);
+    CConstRef<CSynonymsSet> GetSynonyms(const CBioseq_Handle& bh);
+
+private:
+    // to prevent copying
+    CScope(const CScope&);
+    CScope& operator=(const CScope&);
+
+    friend class CSeqMap_CI;
+    friend class CSeq_annot_CI;
+    friend class CAnnotTypes_CI;
+    friend class CBioseq_CI;
+    friend class CHeapScope;
+
+    CRef<CScope_Impl> m_Impl;
+    CRef<CScope>      m_HeapScope;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CHeapScope
+//    Holds reference on heap scope object
+//    used internally in interface classes (iterators, handles etc)
+/////////////////////////////////////////////////////////////////////////////
+
+class CHeapScope
+{
+public:
+    CHeapScope(void)
+        {
+        }
+    CHeapScope(CScope& scope)
+        : m_Scope(scope.m_Impl->m_HeapScope)
+        {
+            _ASSERT(m_Scope);
+        }
+    CHeapScope(CScope* scope)
+        : m_Scope(scope->m_Impl->m_HeapScope)
+        {
+            _ASSERT(m_Scope);
+        }
+
+    
+    operator bool(void) const
+        {
+            return m_Scope;
+        }
+    bool operator!(void) const
+        {
+            return !m_Scope;
+        }
+
+    operator CScope&(void) const
+        {
+            return *m_Scope;
+        }
+    operator CScope*(void) const
+        {
+            return m_Scope.GetPointer();
+        }
+    operator CScope_Impl*(void) const
+        {
+            return m_Scope->m_Impl.GetPointer();
+        }
+
+    CScope& operator*(void) const
+        {
+            return *m_Scope;
+        }
+    CScope_Impl* operator->(void) const
+        {
+            return m_Scope->m_Impl.GetPointer();
+        }
+
+private:
+    mutable CRef<CScope> m_Scope;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CScope_Impl inline methods
+/////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+// CScope inline methods
+/////////////////////////////////////////////////////////////////////////////
+
+
+inline
+CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
+{
+    return m_Impl->GetBioseqHandle(id);
 }
 
 
 inline
-CSeq_id_Handle CScope::GetIdHandle(const CSeq_id& id)
+CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id)
 {
-    return GetIdMapper().GetHandle(id);
+    return m_Impl->GetBioseqHandle(id);
+}
+
+
+inline
+CBioseq_Handle CScope::GetBioseqHandle(const CSeq_loc& loc)
+{
+    return m_Impl->GetBioseqHandle(loc);
+}
+
+
+inline
+CBioseq_Handle CScope::GetBioseqHandle(const CBioseq& seq)
+{
+    return m_Impl->GetBioseqHandle(seq);
+}
+
+
+inline
+CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
+                                              const CBioseq_Handle& bh)
+{
+    return m_Impl->GetBioseqHandleFromTSE(id, bh);
+}
+
+
+inline
+CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
+                                              const CBioseq_Handle& bh)
+{
+    return m_Impl->GetBioseqHandleFromTSE(id, bh);
+}
+
+
+inline
+void CScope::AddDefaults(TPriority priority)
+{
+    m_Impl->AddDefaults(priority);
+}
+
+
+inline
+void CScope::AddDataLoader(const string& loader_name, TPriority priority)
+{
+    m_Impl->AddDataLoader(loader_name, priority);
+}
+
+
+inline
+void CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry, TPriority priority)
+{
+    m_Impl->AddTopLevelSeqEntry(top_entry, priority);
+}
+
+
+inline
+void CScope::AddScope(CScope& scope, TPriority priority)
+{
+    m_Impl->AddScope(*scope.m_Impl, priority);
+}
+
+
+inline
+CBioseq_Handle CScope::AddBioseq(CBioseq& bioseq, TPriority priority)
+{
+    return m_Impl->AddBioseq(bioseq, priority);
+}
+
+
+inline
+void CScope::AttachAnnot(CSeq_entry& entry, CSeq_annot& annot)
+{
+    m_Impl->AttachAnnot(entry, annot);
+}
+
+
+inline
+void CScope::RemoveAnnot(CSeq_entry& entry, CSeq_annot& annot)
+{
+    m_Impl->RemoveAnnot(entry, annot);
+}
+
+
+inline
+void CScope::ReplaceAnnot(CSeq_entry& entry,
+                          CSeq_annot& old_annot, CSeq_annot& new_annot)
+{
+    m_Impl->ReplaceAnnot(entry, old_annot, new_annot);
+}
+
+
+inline
+void CScope::AttachEntry(CSeq_entry& parent, CSeq_entry& entry)
+{
+    m_Impl->AttachEntry(parent, entry);
+}
+
+
+inline
+void CScope::AttachMap(CSeq_entry& bioseq, CSeqMap& seqmap)
+{
+    m_Impl->AttachMap(bioseq, seqmap);
+}
+
+
+inline
+void CScope::ResetHistory(void)
+{
+    m_Impl->ResetHistory();
 }
 
 
@@ -304,6 +594,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.60  2003/09/05 20:50:24  grichenk
 * +AddBioseq(CBioseq&)
 *

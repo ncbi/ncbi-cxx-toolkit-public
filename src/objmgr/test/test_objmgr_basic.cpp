@@ -31,6 +31,18 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/09/30 16:22:05  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.17  2003/06/19 18:23:46  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
@@ -120,9 +132,13 @@ using namespace objects;
 class CTestDataLoader : public CDataLoader
 {
 public:
-    CTestDataLoader(const string& loader_name) : CDataLoader( loader_name) {}
-    virtual bool GetRecords(const CHandleRangeMap& /*hrmap*/,
-                            const EChoice /*choice*/) { return false; }
+    CTestDataLoader(const string& loader_name) : CDataLoader( loader_name)
+        {
+        }
+    virtual void GetRecords(const CSeq_id_Handle& /*id*/,
+                            const EChoice /*choice*/)
+        {
+        }
 };
 
 //===========================================================================
@@ -149,6 +165,8 @@ CRef<CSeq_entry> CTestApplication::CreateTestEntry(void)
 int CTestApplication::Run()
 //---------------------------------------------------------------------------
 {
+    int error = 0;
+
     string name1("DL_1"), name2("DL_2");
 
 NcbiCout << "1.1.1 Creating CScope ==============================" << NcbiEndl;
@@ -207,36 +225,50 @@ NcbiCout << "1.1.3 Handling Data loader==========================" << NcbiEndl;
             CScope* pScope1 = new CScope(*pOm);
             pScope1->AddDefaults(); // nothing added
             // must throw an exception: dataloader1 not found
+            NcbiCout << "Expecting exception:" << NcbiEndl;
             try {
                 pScope1->AddDataLoader( name1);
+                NcbiCout << "ERROR: AddDataLoader has succeeded" << NcbiEndl;
+                error = 1;
             }
             catch (exception& e) {
-                NcbiCout << e.what() << NcbiEndl;
+                NcbiCout << "Expected exception: " << e.what() << NcbiEndl;
             }
             pOm->RegisterDataLoader( *pLoader1, CObjectManager::eNonDefault);
             pScope1->AddDefaults(); // nothing added
             pScope1->AddDataLoader( name1); // ok
             // must fail - dataloader1 is in use
+            NcbiCout << "Expecting error:" << NcbiEndl;
             if (pOm->RevokeDataLoader( name1))
             {
                 NcbiCout << "ERROR: RevokeDataLoader has succeeded" << NcbiEndl;
+                error = 1;
             }
             delete pScope1; // loader1 alive
             // delete dataloader1
             pOm->RevokeDataLoader( name1); // ok
             // must throw an exception - dataloader1 not registered
+            NcbiCout << "Expecting exception:" << NcbiEndl;
             try {
                 pOm->RevokeDataLoader( name1);
+                NcbiCout << "ERROR: RevokeDataLoader has succeeded" << NcbiEndl;
+                error = 1;
             }
             catch (exception& e) {
-                NcbiCout << e.what() << NcbiEndl;
+                NcbiCout << "Expected exception: " << e.what() << NcbiEndl;
             }
         }
     }
 }
+if ( error ) {
 NcbiCout << "==================================================" << NcbiEndl;
-NcbiCout << "Test completed" << NcbiEndl;
-    return 0;
+NcbiCout << "ERROR: Some tests failed." << NcbiEndl;
+}
+else {
+NcbiCout << "==================================================" << NcbiEndl;
+NcbiCout << "Test completed successfully" << NcbiEndl;
+}
+    return error;
 }
 
 END_NCBI_SCOPE

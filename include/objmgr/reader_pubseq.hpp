@@ -36,6 +36,8 @@
 BEGIN_NCBI_SCOPE
 
 class CDB_Connection;
+class CDB_RPCCmd;
+class CDB_Result;
 class I_DriverContext;
 
 BEGIN_SCOPE(objects)
@@ -55,9 +57,13 @@ public:
 
     ~CPubseqReader();
 
-    virtual bool RetrieveSeqrefs(TSeqrefs& sr,
+    virtual void RetrieveSeqrefs(TSeqrefs& sr,
                                  const CSeq_id& seqId,
-                                 TConn conn = 0);
+                                 TConn conn);
+    virtual CRef<CTSE_Info> GetMainBlob(const CSeqref& seqref,
+                                        TConn conn);
+    virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CSeqref& seqref,
+                                                  TConn conn);
 
     virtual TConn GetParallelLevel(void) const;
     virtual void SetParallelLevel(TConn);
@@ -65,10 +71,26 @@ public:
     virtual void Reconnect(TConn);
 
 private:
-    bool x_RetrieveSeqrefs(TSeqrefs& sr, const CSeq_id& seqId, TConn conn);
+    CDB_Connection* x_GetConnection(TConn conn);
+    CDB_Connection* x_NewConnection(void);
 
-    CDB_Connection *NewConn();
-  
+    void x_RetrieveSeqrefs(TSeqrefs& sr,
+                           const CSeq_id& seqId,
+                           CDB_Connection* conn);
+    void x_RetrieveSeqrefs(TSeqrefs& srs,
+                           int gi,
+                           CDB_Connection* conn);
+    int x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
+                              CDB_Connection* conn);
+
+    CDB_RPCCmd* x_SendRequest(const CSeqref& seqref,
+                              CDB_Connection* conn,
+                              bool is_snp);
+    CDB_Result* x_ReceiveData(CDB_RPCCmd& cmd);
+
+    CRef<CTSE_Info> x_ReceiveMainBlob(CDB_Result& result);
+    CRef<CSeq_annot_SNP_Info> x_ReceiveSNPAnnot(CDB_Result& result);
+    
     string                    m_Server;
     string                    m_User;
     string                    m_Password;
@@ -84,6 +106,18 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.16  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.15  2003/06/02 16:01:36  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

@@ -48,6 +48,8 @@ class CSeq_entry;
 class CDataSource;
 class CHandleRangeMap;
 class CTSE_Info;
+class CTSE_Chunk_Info;
+struct SAnnotTypeSelector;
 
 
 ////////////////////////////////////////////////////////////////////
@@ -74,7 +76,6 @@ public:
         eFeatures,    // SeqFeatures
         eGraph,       // SeqGraph 
         eAlign,       // SeqAlign 
-        eExternal,    // external features
         eAll          // whatever fits location
     };
     
@@ -88,11 +89,20 @@ public:
 
     // Request from a datasource using handles and ranges instead of seq-loc
     // The TSEs loaded in this call will be added to the tse_set.
-    virtual bool GetRecords(const CHandleRangeMap& hrmap,
+    virtual void GetRecords(const CSeq_id_Handle& idh,
                             const EChoice choice) = 0;
+    // Request from a datasource using handles and ranges instead of seq-loc
+    // The TSEs loaded in this call will be added to the tse_set.
+    virtual void GetAllAnnotRecords(const CSeq_id_Handle& idh);
+    // Request from a datasource using handles and ranges instead of seq-loc
+    // The TSEs loaded in this call will be added to the tse_set.
+    virtual void GetNamedAnnotRecords(const CSeq_id_Handle& idh,
+                                      const string& source_name);
+
+    virtual void GetChunk(CTSE_Chunk_Info& chunk_info);
     
     // 
-    virtual bool DropTSE(const CTSE_Info& tse_info);
+    virtual void DropTSE(const CTSE_Info& tse_info);
     
     // Specify datasource to send loaded data to.
     void SetTargetDataSource(CDataSource& data_source);
@@ -105,8 +115,6 @@ public:
     //  and mark the others one as dead.
     virtual CConstRef<CTSE_Info> ResolveConflict(const CSeq_id_Handle&,
                                                  const TTSE_LockSet&);
-    virtual bool IsLive(const CTSE_Info& tse);
-
     virtual void GC(void);
     virtual void DebugDump(CDebugDumpContext, unsigned int) const;
 
@@ -114,8 +122,6 @@ protected:
     void SetName(const string& loader_name);
     CDataSource* GetDataSource(void);
     
-    const CSeq_id* x_GetSeq_id(const CSeq_id_Handle& handle) const;
-
 private:
     CDataLoader(const CDataLoader&);
     CDataLoader& operator=(const CDataLoader&);
@@ -127,13 +133,6 @@ private:
 };
 
 
-inline
-const CSeq_id* CDataLoader::x_GetSeq_id(const CSeq_id_Handle& handle) const
-{
-    return handle.x_GetSeqId();
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -142,6 +141,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.22  2003/07/17 20:07:55  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.

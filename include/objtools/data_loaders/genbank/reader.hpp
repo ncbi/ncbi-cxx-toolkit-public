@@ -41,81 +41,9 @@ class CObjectIStream;
 BEGIN_SCOPE(objects)
 
 class CSeq_id;
-class CSeq_entry;
+class CTSE_Info;
 class CSeq_annot_SNP_Info;
-
-class NCBI_XOBJMGR_EXPORT CBlob : public CObject
-{
-public:
-    typedef TSeqPos TPos;
-    typedef int TBlobClass;
-    typedef unsigned TConn;
-
-    CBlob(bool is_snp = false);
-    virtual ~CBlob(void);
-
-    virtual void ReadSeq_entry(void) = 0;
-
-    bool IsSnp(void) const
-        {
-            return m_IsSnp;
-        }
-
-    CSeq_entry* GetSeq_entry(void)
-        {
-            return m_Seq_entry.GetPointer();
-        }
-    CSeq_annot_SNP_Info* GetSNP_annot_Info(void)
-        {
-            return m_SNP_annot_Info.GetPointerOrNull();
-        }
-
-    const string& GetDescr(void) const
-        {
-            return m_Descr;
-        }
-    int GetClass(void) const
-        {
-            return m_Class;
-        }
-
-protected:
-    void SetDescr(const string& s)
-        {
-            m_Descr = s;
-        }
-
-    void SetClass(int cls)
-        {
-            m_Class = cls;
-        }
-
-protected:
-    int              m_Class;
-    string           m_Descr;
-
-    bool             m_IsSnp;
-    CRef<CSeq_entry> m_Seq_entry;
-    CRef<CSeq_annot_SNP_Info> m_SNP_annot_Info;
-
-private:
-    CBlob(const CBlob&);
-    CBlob&operator=(const CBlob&);
-};
-
-class NCBI_XOBJMGR_EXPORT CBlobSource : public CObject
-{
-public:
-    typedef TSeqPos TPos;
-    typedef int TBlobClass;
-    typedef unsigned TConn;
-
-    CBlobSource(void);
-    virtual ~CBlobSource(void);
-
-    virtual bool HaveMoreBlobs(void) = 0;
-    virtual CBlob* RetrieveBlob(void) = 0;
-};
+class CTSE_Chunk_Info;
 
 class NCBI_XOBJMGR_EXPORT CSeqref : public CObject
 {
@@ -125,15 +53,13 @@ public:
     virtual ~CSeqref(void);
     
     typedef TSeqPos TPos;
-    typedef int TBlobClass;
     typedef unsigned TConn;
 
-    virtual CBlobSource* GetBlobSource(TPos start, TPos stop,
-                                       TBlobClass blobClass,
-                                       TConn conn = 0) const = 0;
+    typedef pair<int, int> TKeyByTSE;
 
     const string print(void)    const;
     const string printTSE(void) const;
+    static const string printTSE(const TKeyByTSE& key);
 
     enum FFlags {
         fHasCore     = 1 << 0,
@@ -152,9 +78,23 @@ public:
     };
     typedef int TFlags;
 
-    int Gi()     const { return m_Gi; }
-    int Sat()    const { return m_Sat; }
-    int SatKey() const { return m_SatKey; }
+    int GetGi() const
+        {
+            return m_Gi;
+        }
+    int GetSat() const
+        {
+            return m_Sat;
+        }
+    int GetSatKey() const
+        {
+            return m_SatKey;
+        }
+
+    TKeyByTSE GetKeyByTSE(void) const
+        {
+            return TKeyByTSE(m_Sat, m_SatKey);
+        }
 
     bool SameTSE(const CSeqref& seqRef) const
         {
@@ -180,8 +120,14 @@ public:
                  m_SatKey == seqRef.m_SatKey && m_Gi < seqRef.m_Gi);
         }
 
-    TFlags  GetFlags() const { return m_Flags; }
-    void SetFlags(TFlags flags)       { m_Flags = flags; }
+    TFlags  GetFlags() const
+        {
+            return m_Flags;
+        }
+    void SetFlags(TFlags flags)
+        {
+            m_Flags = flags;
+        }
 
 protected:
     TFlags  m_Flags;
@@ -191,6 +137,7 @@ protected:
     int m_SatKey;
 };
 
+
 class NCBI_XOBJMGR_EXPORT CReader : public CObject
 {
 public:
@@ -198,14 +145,30 @@ public:
     virtual ~CReader(void);
 
     typedef TSeqPos TPos;
-    typedef int TBlobClass;
     typedef unsigned TConn;
 
     typedef vector< CRef<CSeqref> > TSeqrefs;
 
-    virtual bool RetrieveSeqrefs(TSeqrefs& sr,
+    virtual void RetrieveSeqrefs(TSeqrefs& sr,
                                  const CSeq_id& seqId,
-                                 TConn conn = 0) = 0;
+                                 TConn conn) = 0;
+
+    virtual CRef<CTSE_Info> GetBlob(const CSeqref& seqref,
+                                    TConn conn,
+                                    CTSE_Chunk_Info* chunk_info = 0);
+
+    // for SNP split
+    virtual CRef<CTSE_Info> MakeSNPBlob(const CSeqref& seqref);
+
+    virtual void GetSNPChunk(const CSeqref& seqref,
+                             CTSE_Chunk_Info& chunk_info,
+                             TConn conn);
+
+    virtual CRef<CTSE_Info> GetMainBlob(const CSeqref& seqref,
+                                        TConn conn) = 0;
+    virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CSeqref& seqref,
+                                                  TConn conn) = 0;
+
 
     // return the level of reasonable parallelism
     // 1 - non MTsafe; 0 - no synchronization required,
@@ -220,8 +183,13 @@ public:
     virtual int GetConst(const string& const_name) const;
 
     enum {
-        kSat_SNP = 15
+        kSNP_Sat = 15,
+        kSNP_EntryId = 0,
+        kSNP_ChunkId = 0
     };
+
+    static bool IsSNPSeqref(const CSeqref& seqref);
+    static void AddSNPSeqref(TSeqrefs& srs, int gi, CSeqref::TFlags flags = 0);
 
     static bool s_GetEnvFlag(const char* env, bool def_val);
 
@@ -233,11 +201,24 @@ public:
     static void SetSeqEntryReadHooks(CObjectIStream& in);
 };
 
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.28  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.27  2003/08/27 14:24:43  vasilche
 * Simplified CCmpTSE class.
 *

@@ -51,21 +51,28 @@ struct NCBI_XOBJMGR_EXPORT SAnnotTypeSelector
 {
     typedef CSeq_annot::C_Data::E_Choice TAnnotChoice;
     typedef CSeqFeatData::E_Choice       TFeatChoice;
+    typedef CSeqFeatData::ESubtype       TFeatSubtype;
 
-    SAnnotTypeSelector(TAnnotChoice annot = CSeq_annot::C_Data::e_not_set,
-                       TFeatChoice  feat  = CSeqFeatData::e_not_set,
-                       int feat_product = false)
+    SAnnotTypeSelector(TAnnotChoice annot = CSeq_annot::C_Data::e_not_set)
         : m_AnnotChoice(annot),
-          m_FeatChoice(feat),
-          m_FeatProduct(feat_product)
+          m_FeatChoice(CSeqFeatData::e_not_set),
+          m_FeatSubtype(CSeqFeatData::eSubtype_any)
     {
     }
 
-    SAnnotTypeSelector(TFeatChoice  feat,
-                   int feat_product = false)
+    SAnnotTypeSelector(TFeatChoice  feat)
         : m_AnnotChoice(CSeq_annot::C_Data::e_Ftable),
           m_FeatChoice(feat),
-          m_FeatProduct(feat_product)
+          m_FeatSubtype(CSeqFeatData::eSubtype_any)
+    {
+    }
+
+    SAnnotTypeSelector(TFeatSubtype feat_subtype)
+        : m_AnnotChoice(CSeq_annot::C_Data::e_Ftable),
+          m_FeatChoice(feat_subtype != CSeqFeatData::eSubtype_any?
+                       CSeqFeatData::GetTypeFromSubtype(feat_subtype):
+                       CSeqFeatData::e_not_set),
+          m_FeatSubtype(feat_subtype)
     {
     }
    
@@ -79,30 +86,28 @@ struct NCBI_XOBJMGR_EXPORT SAnnotTypeSelector
             return m_FeatChoice;
         }
 
-    int GetFeatProduct(void) const
+    TFeatSubtype GetFeatSubtype(void) const
         {
-            return m_FeatProduct;
+            return m_FeatSubtype;
         }
 
     bool operator<(const SAnnotTypeSelector& s) const
         {
-            return m_AnnotChoice < s.m_AnnotChoice ||
-                m_AnnotChoice == s.m_AnnotChoice &&
-                (m_FeatChoice < s.m_FeatChoice ||
-                 m_FeatChoice == s.m_FeatChoice &&
-                 (m_FeatProduct < s.m_FeatProduct));
+            if ( m_AnnotChoice != s.m_AnnotChoice )
+                return m_AnnotChoice < s.m_AnnotChoice;
+            if ( m_FeatChoice != s.m_FeatChoice )
+                return m_FeatChoice < s.m_FeatChoice;
+            return m_FeatSubtype < s.m_FeatSubtype;
         }
 
     TAnnotChoice          m_AnnotChoice;  // Annotation type
-    TFeatChoice           m_FeatChoice;   // Seq-feat subtype
-    int                   m_FeatProduct;  // "true" for searching products
+    TFeatChoice           m_FeatChoice;   // Seq-feat type
+    TFeatSubtype          m_FeatSubtype;  // Seq-feat subtype
 };
 
 // Structure to select type of Seq-annot
 struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
 {
-    typedef CSeqFeatData::ESubtype       TFeatSubtype;
-
     // Flag to indicate location overlapping method
     enum EOverlapType {
         eOverlap_Intervals,  // default - overlapping of individual intervals
@@ -146,9 +151,9 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector(TAnnotChoice annot = CSeq_annot::C_Data::e_not_set,
                    TFeatChoice  feat  = CSeqFeatData::e_not_set,
                    int feat_product = false)
-        : SAnnotTypeSelector(annot, feat, feat_product),
+        : SAnnotTypeSelector(annot),
+          m_FeatProduct(feat_product),
           m_ResolveDepth(kMax_Int),
-          m_FeatSubtype(CSeqFeatData::eSubtype_any),
           m_OverlapType(eOverlap_Intervals),
           m_ResolveMethod(eResolve_TSE),
           m_SegmentSelect(eSegmentSelect_All),
@@ -160,13 +165,16 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
           m_NoMapping(false),
           m_AdaptiveDepth(false)
     {
+        if ( feat != CSeqFeatData::e_not_set ) {
+            SetFeatChoice(feat);
+        }
     }
 
     SAnnotSelector(TFeatChoice  feat,
                    int feat_product = false)
-        : SAnnotTypeSelector(CSeq_annot::C_Data::e_Ftable, feat, feat_product),
+        : SAnnotTypeSelector(feat),
+          m_FeatProduct(feat_product),
           m_ResolveDepth(kMax_Int),
-          m_FeatSubtype(CSeqFeatData::eSubtype_any),
           m_OverlapType(eOverlap_Intervals),
           m_ResolveMethod(eResolve_TSE),
           m_SegmentSelect(eSegmentSelect_All),
@@ -190,6 +198,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             }
             return *this;
         }
+
     SAnnotSelector& SetFeatChoice(TFeatChoice choice)
         {
             m_FeatChoice = choice;
@@ -208,13 +217,16 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
                 m_FeatChoice =
                     CSeqFeatData::GetTypeFromSubtype(m_FeatSubtype);
             }
+            else {
+                m_FeatChoice = CSeqFeatData::e_not_set;
+            }
             return *this;
         }
-    TFeatSubtype GetFeatSubtype(void) const
-        {
-            return m_FeatSubtype;
-        }
 
+    int GetFeatProduct(void) const
+        {
+            return m_FeatProduct;
+        }
     SAnnotSelector& SetByProduct(bool byProduct = true)
         {
             m_FeatProduct = byProduct;
@@ -326,6 +338,16 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         ~SSources(void);
         
         typedef set<string> TSources;
+        typedef TSources::const_iterator const_iterator;
+
+        const_iterator begin(void) const
+            {
+                return m_Sources.begin();
+            }
+        const_iterator end(void) const
+            {
+                return m_Sources.end();
+            }
 
         TSources m_Sources;
 
@@ -354,8 +376,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         }
 
 protected:
+    int                   m_FeatProduct;  // "true" for searching products
     int                   m_ResolveDepth;
-    TFeatSubtype          m_FeatSubtype;  // Seq-feat subtype
     EOverlapType          m_OverlapType;
     EResolveMethod        m_ResolveMethod;
     ESegmentSelect        m_SegmentSelect;
@@ -377,6 +399,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.17  2003/09/16 14:21:46  grichenk
 * Added feature indexing and searching by subtype.
 *

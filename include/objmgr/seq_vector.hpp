@@ -34,6 +34,7 @@
 */
 
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/scope.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_vector_ci.hpp>
 #include <objects/seq/Seq_data.hpp>
@@ -127,10 +128,11 @@ private:
     CSeqVector_CI& x_GetIterator(TSeqPos pos) const;
     CSeqVector_CI* x_CreateIterator(TSeqPos pos) const;
 
-    static const char* sx_GetConvertTable(TCoding src, TCoding dst, bool reverse);
+    static const char* sx_GetConvertTable(TCoding src, TCoding dst,
+                                          bool reverse);
 
     CConstRef<CSeqMap>    m_SeqMap;
-    CScope*               m_Scope;
+    CHeapScope            m_Scope;
     TCoding               m_Coding;
     ENa_strand            m_Strand;
     TSeqPos               m_Size;
@@ -242,6 +244,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.43  2003/08/29 13:34:47  vasilche
 * Rewrote CSeqVector/CSeqVector_CI code to allow better inlining.
 * CSeqVector::operator[] made significantly faster.

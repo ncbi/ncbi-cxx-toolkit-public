@@ -136,6 +136,7 @@ void CDemoApp::Init(void)
     arg_desc->AddDefaultKey("depth", "depth",
                             "Max depth of segments to iterate",
                             CArgDescriptions::eInteger, "100");
+    arg_desc->AddFlag("adaptive", "Use adaptive depth of segments");
     arg_desc->AddFlag("nosnp", "exclude snp features");
     arg_desc->AddDefaultKey("feat_type", "FeatType",
                             "Type of features to select",
@@ -668,6 +669,7 @@ int CDemoApp::Run(void)
         order = SAnnotSelector::eSortOrder_None;
     int max_feat = args["max_feat"].AsInteger();
     int depth = args["depth"].AsInteger();
+    bool adaptive = args["adaptive"];
     int feat_type = args["feat_type"].AsInteger();
     int feat_subtype = args["feat_subtype"].AsInteger();
     bool nosnp = args["nosnp"];
@@ -705,9 +707,10 @@ int CDemoApp::Run(void)
     if ( gi < 0 ) {
         CConstRef<CSynonymsSet> syns = scope.GetSynonyms(handle);
         ITERATE ( CSynonymsSet, it, *syns ) {
-            const CSeq_id& seq_id = it->GetSeqId();
-            if ( seq_id.Which() == CSeq_id::e_Gi ) {
-                gi = seq_id.GetGi();
+            CConstRef<CSeq_id> seq_id =
+                CSynonymsSet::GetSeq_id_Handle(it).GetSeqId();
+            if ( seq_id->Which() == CSeq_id::e_Gi ) {
+                gi = seq_id->GetGi();
                 break;
             }
         }
@@ -800,7 +803,8 @@ int CDemoApp::Run(void)
             .SetResolveMethod(resolve)
             .SetSortOrder(order)
             .SetMaxSize(max_feat)
-            .SetResolveDepth(depth);
+            .SetResolveDepth(depth)
+            .SetAdaptiveDepth(adaptive);
         if ( nosnp ) {
             base_sel.SetDataSource("");
         }
@@ -977,6 +981,18 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/09/30 16:22:05  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.37  2003/08/27 14:22:01  vasilche
 * Added options get_mapped_location, get_mapped_feature and get_original_feature
 * to test feature iterator speed.

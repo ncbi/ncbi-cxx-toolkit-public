@@ -33,6 +33,7 @@
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/seq_entry_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/impl/tse_chunk_info.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -122,7 +123,8 @@ CAnnotObject_Info::CAnnotObject_Info(void)
       m_Object(0),
       m_AnnotType(CSeq_annot::C_Data::e_not_set),
       m_FeatType(CSeqFeatData::e_not_set),
-      m_FeatSubtype(CSeqFeatData::eSubtype_bad)
+      m_FeatSubtype(CSeqFeatData::eSubtype_bad),
+      m_ChunkStub(false)
 {
 }
 
@@ -132,7 +134,8 @@ CAnnotObject_Info::CAnnotObject_Info(const CAnnotObject_Info& info)
       m_Object(info.m_Object),
       m_AnnotType(info.m_AnnotType),
       m_FeatType(info.m_FeatType),
-      m_FeatSubtype(info.m_FeatSubtype)
+      m_FeatSubtype(info.m_FeatSubtype),
+      m_ChunkStub(info.m_ChunkStub)
 {
 }
 
@@ -145,6 +148,7 @@ CAnnotObject_Info::operator=(const CAnnotObject_Info& info)
     m_AnnotType = info.m_AnnotType;
     m_FeatType = info.m_FeatType;
     m_FeatSubtype = info.m_FeatSubtype;
+    m_ChunkStub = info.m_ChunkStub;
     return *this;
 }
 
@@ -155,7 +159,8 @@ CAnnotObject_Info::CAnnotObject_Info(CSeq_feat& feat,
       m_Object(&feat),
       m_AnnotType(CSeq_annot::C_Data::e_Ftable),
       m_FeatType(feat.GetData().Which()),
-      m_FeatSubtype(feat.GetData().GetSubtype())
+      m_FeatSubtype(feat.GetData().GetSubtype()),
+      m_ChunkStub(false)
 {
 }
 
@@ -166,7 +171,8 @@ CAnnotObject_Info::CAnnotObject_Info(CSeq_align& align,
       m_Object(&align),
       m_AnnotType(CSeq_annot::C_Data::e_Align),
       m_FeatType(CSeqFeatData::e_not_set),
-      m_FeatSubtype(CSeqFeatData::eSubtype_bad)
+      m_FeatSubtype(CSeqFeatData::eSubtype_bad),
+      m_ChunkStub(false)
 {
 }
 
@@ -177,7 +183,22 @@ CAnnotObject_Info::CAnnotObject_Info(CSeq_graph& graph,
       m_Object(&graph),
       m_AnnotType(CSeq_annot::C_Data::e_Graph),
       m_FeatType(CSeqFeatData::e_not_set),
-      m_FeatSubtype(CSeqFeatData::eSubtype_bad)
+      m_FeatSubtype(CSeqFeatData::eSubtype_bad),
+      m_ChunkStub(false)
+{
+}
+
+
+CAnnotObject_Info::CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
+                                     TAnnotType annot_type,
+                                     TFeatType feat_type,
+                                     TFeatSubtype feat_subtype)
+    : m_Seq_annot_Info(0),
+      m_Object(&chunk_info),
+      m_AnnotType(annot_type),
+      m_FeatType(feat_type),
+      m_FeatSubtype(feat_subtype),
+      m_ChunkStub(true)
 {
 }
 
@@ -482,12 +503,33 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
 }
 
 
+const CTSE_Chunk_Info& CAnnotObject_Info::GetChunk_Info(void) const
+{
+    _ASSERT(IsChunkStub());
+    const CObject* obj = &*m_Object;
+    const CTSE_Chunk_Info& info = dynamic_cast<const CTSE_Chunk_Info&>(*obj);
+    return info;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/09/30 16:22:02  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.26  2003/08/27 21:24:51  vasilche
 * Reordered member initializers.
 *

@@ -66,7 +66,8 @@ class CSeq_loc_Conversion
 public:
     typedef CRange<TSeqPos> TRange;
 
-    CSeq_loc_Conversion(const CSeq_id& master_id,
+    CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
+                        CSeq_loc& master_loc_empty,
                         const CSeqMap_CI& seg,
                         const CSeq_id_Handle& src_id,
                         CScope* scope);
@@ -83,7 +84,8 @@ public:
     bool ConvertPoint(TSeqPos src_pos, ENa_strand src_strand);
     bool ConvertPoint(const CSeq_point& src);
 
-    bool ConvertInterval(TSeqPos src_from, TSeqPos src_to, ENa_strand src_strand);
+    bool ConvertInterval(TSeqPos src_from, TSeqPos src_to,
+                         ENa_strand src_strand);
     bool ConvertInterval(const CSeq_interval& src);
 
     bool Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
@@ -98,15 +100,9 @@ public:
             return m_Partial;
         }
 
-    const CSeq_id& GetDstId(void) const
-        {
-            return m_Dst_id;
-        }
-    CSeq_loc* GetDstLocWhole(void);
-
     void SetSrcId(const CSeq_id_Handle& src)
         {
-            m_Src_id = src;
+            m_Src_id_Handle = src;
         }
     void SetConversion(const CSeqMap_CI& seg);
 
@@ -130,9 +126,19 @@ private:
 
     bool IsSpecialLoc(void) const;
 
+    CSeq_loc& GetDstLocEmpty(void)
+        {
+            return *m_Dst_loc_Empty;
+        }
+    CSeq_id& GetDstId(void)
+        {
+            return *m_Dst_id;
+        }
+
     // Translation parameters:
     //   Source id and bounds:
-    CSeq_id_Handle m_Src_id;
+    CSeq_id_Handle m_Src_id_Handle;
+    TSeqPos        m_Src_length;
     TSeqPos        m_Src_from;
     TSeqPos        m_Src_to;
 
@@ -141,7 +147,8 @@ private:
     bool           m_Reverse;
 
     //   Destination id:
-    const CSeq_id& m_Dst_id;
+    CRef<CSeq_id>  m_Dst_id;
+    CRef<CSeq_loc> m_Dst_loc_Empty;
 
     // Results:
     //   Cumulative results on destination:
@@ -154,10 +161,7 @@ private:
     ENa_strand     m_LastStrand;
 
     // Scope for id resolution:
-    CScope*        m_Scope;
-
-    // Temporaries for conversion results:
-    CRef<CSeq_loc> m_DstLocWhole;
+    CHeapScope     m_Scope;
 };
 
 
@@ -198,7 +202,7 @@ TSeqPos CSeq_loc_Conversion::ConvertPos(TSeqPos src_pos)
 inline
 bool CSeq_loc_Conversion::GoodSrcId(const CSeq_id& id)
 {
-    bool good = m_Scope->GetIdHandle(id) == m_Src_id;
+    bool good = (m_Src_id_Handle == id);
     if ( !good ) {
         m_Partial = true;
     }
@@ -238,6 +242,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/09/30 16:22:01  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.3  2003/08/27 14:28:51  vasilche
 * Reduce amount of object allocations in feature iteration.
 *

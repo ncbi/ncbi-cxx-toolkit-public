@@ -48,7 +48,6 @@ BEGIN_SCOPE(objects)
 class CPriority_I;
 class CTSE_Info;
 class CDataSource;
-class CDataLoader;
 struct CDataSource_ScopeInfo;
 
 class CPriorityTree;
@@ -98,9 +97,6 @@ private:
     CRef<CPriorityTree> m_SubTree;
     CRef<TLeaf>         m_Leaf;
 };
-
-
-const CPriorityNode::TPriority kPriority_NotSet = -1;
 
 
 class NCBI_XOBJMGR_EXPORT CPriorityTree : public CObject
@@ -267,6 +263,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/09/30 16:22:01  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.11  2003/08/04 17:04:29  grichenk
 * Added default data-source priority assignment.
 * Added support for iterating all annotations from a

@@ -103,12 +103,16 @@ bool CTSE_LockingSet::insert(CTSE_Info* tse)
 }
 
 
-void CTSE_LockingSet::erase(CTSE_Info* tse)
+bool CTSE_LockingSet::erase(CTSE_Info* tse)
 {
     CFastMutexGuard guard(sm_Mutex);
-    if ( m_TSE_set.erase(tse) && x_Locked() ) {
-        tse->RemoveReference();
+    if ( m_TSE_set.erase(tse) ) {
+        if ( x_Locked() ) {
+            tse->RemoveReference();
+        }
+        return true;
     }
+    return false;
 }
 
 
@@ -140,7 +144,7 @@ CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
     : m_Loader(&loader),
       m_pTopEntry(0),
       m_ObjMgr(&objmgr),
-      m_DirtyAnnotIndexCount(0),
+      m_TSE_annot_is_dirty(false),
       m_DefaultPriority(99)
 {
     m_Loader->SetTargetDataSource(*this);
@@ -151,7 +155,7 @@ CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
     : m_Loader(0),
       m_pTopEntry(&entry),
       m_ObjMgr(&objmgr),
-      m_DirtyAnnotIndexCount(0),
+      m_TSE_annot_is_dirty(false),
       m_DefaultPriority(9)
 {
     AddTSE(entry, false);
@@ -161,16 +165,41 @@ CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
 CDataSource::~CDataSource(void)
 {
     DropAllTSEs();
-    delete m_Loader;
+    m_Loader.Reset();
 }
 
 
 void CDataSource::DropAllTSEs(void)
 {
-    // Find and drop each TSE
-    while ( !m_TSE_InfoMap.empty() ) {
-        _VERIFY(DropTSE(m_TSE_InfoMap.begin()->second->GetTSE()));
+    // Lock indexes
+    TMainWriteLockGuard guard(m_DSMainLock);    
+
+    ITERATE ( TTSE_InfoMap, it, m_TSE_InfoMap ) {
+        if ( it->second->Locked() ) {
+            ERR_POST("CDataSource::DropAllTSEs: tse is locked");
+            NCBI_THROW(CObjMgrException, eOtherError,
+                       "CDataSource::DropAllTSEs: tse is locked");
+        }
     }
+
+    if ( m_Loader ) {
+        ITERATE ( TTSE_InfoMap, it, m_TSE_InfoMap ) {
+            m_Loader->DropTSE(*it->second);
+        }
+    }
+
+    m_Bioseq_InfoMap.clear();
+    m_Seq_annot_InfoMap.clear();
+    m_Seq_entry_InfoMap.clear();
+    m_TSE_InfoMap.clear();
+    m_pTopEntry.Reset();
+    m_TSE_seq.clear();
+
+    {{
+        TAnnotWriteLockGuard guard2(m_DSAnnotLock);
+        m_TSE_annot.clear();
+        m_TSE_annot_is_dirty = false;
+    }}
 }
 
 
@@ -179,7 +208,7 @@ TTSE_Lock CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle) const
     TTSE_LockSet all_tse;
     size_t all_count = 0;
     {{
-        TReadLockGuard ds_guard(m_DataSource_Mtx);
+        TMainReadLockGuard guard(m_DSMainLock);
         TTSEMap::const_iterator tse_set = m_TSE_seq.find(handle);
         if ( tse_set == m_TSE_seq.end() ) {
             return TTSE_Lock();
@@ -215,8 +244,7 @@ TTSE_Lock CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle) const
     }
     else if ( live_count == 0 ) {
         if ( m_Loader ) {
-            CConstRef<CTSE_Info> best
-                (m_Loader->ResolveConflict(handle, all_tse));
+            TTSE_Lock best(GetDataLoader()->ResolveConflict(handle, all_tse));
             if ( best ) {
                 return best;
             }
@@ -228,8 +256,7 @@ TTSE_Lock CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle) const
     if ( m_Loader ) {
         // Multiple live TSEs - try to resolve the conflict (the status of some
         // TSEs may change)
-        CConstRef<CTSE_Info> best
-            (m_Loader->ResolveConflict(handle, live_tse));
+        TTSE_Lock best(GetDataLoader()->ResolveConflict(handle, live_tse));
         if ( best ) {
             return best;
         }
@@ -241,7 +268,7 @@ TTSE_Lock CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle) const
 
 TTSE_Lock CDataSource::GetBlobById(const CSeq_id_Handle& idh)
 {
-    TReadLockGuard guard(m_DataSource_Mtx);
+    TMainReadLockGuard guard(m_DSMainLock);
     TTSEMap::iterator tse_set = m_TSE_seq.find(idh);
     if (tse_set == m_TSE_seq.end()) {
         // Request TSE-info from loader if any
@@ -285,7 +312,7 @@ void CDataSource::FilterSeqid(TSeq_id_HandleSet& setResult,
                               const TSeq_id_HandleSet& setSource) const
 {
     _ASSERT(&setResult != &setSource);
-    TReadLockGuard guard(m_DataSource_Mtx);
+    TMainReadLockGuard guard(m_DSMainLock);
     ITERATE ( TSeq_id_HandleSet, it, setSource ) {
         // if it is in my map
         if ( m_TSE_seq.find(*it) != m_TSE_seq.end() ) {
@@ -306,10 +333,7 @@ const CBioseq& CDataSource::GetBioseq(const CBioseq_Info& info)
     if ( m_Loader ) {
         // Send request to the loader
         /*
-        CHandleRangeMap hrm;
-        hrm.AddRange(handle.GetSeq_id_Handle(),
-                     CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
-        m_Loader->GetRecords(hrm, CDataLoader::eBioseq);
+        m_Loader->GetRecords(idh, CDataLoader::eBioseq);
         */
     }
     return info.GetBioseq();
@@ -337,61 +361,24 @@ CDataSource::TBioseqCore CDataSource::GetBioseqCore(const CBioseq_Info& info)
 
 const CSeqMap& CDataSource::GetSeqMap(const CBioseq_Info& info)
 {
-    // the handle must be resolved to this data source
-    _ASSERT(&info.GetDataSource() == this);
-    return x_GetSeqMap(info);
-}
-
-
-const CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Info& info)
-{
-    if ( !info.m_SeqMap ) {
-        // No need to lock anything as TSE should be locked by the handle
-        //### Lock seq-maps to prevent duplicate seq-map creation
-        //CMutexGuard guard(m_DataSource_Mtx);    
-        if ( !info.m_SeqMap ) {
-            // Call loader first
-            if ( m_Loader ) {
-                // Send request to the loader
-                ITERATE ( CBioseq::TId, it, info.GetBioseq().GetId() ) {
-                    CHandleRangeMap hrm;
-                    hrm.AddRange(GetSeq_id_Mapper().GetHandle(**it),
-                                 CHandleRange::TRange::GetWhole(),
-                                 eNa_strand_unknown);
-                    m_Loader->GetRecords(hrm, CDataLoader::eBioseq);
-                    break;
-                }
-            }
-            if ( !info.m_SeqMap ) {
-                NCBI_THROW(CObjMgrException, eOtherError,
-                             "Sequence doesn't have CSeqMap object");
-            }
-            _ASSERT(info.m_SeqMap);
-        }
-    }
-    return *info.m_SeqMap;
+    return info.GetSeqMap();
 }
 
 
 CRef<CTSE_Info> CDataSource::AddTSE(CSeq_entry& tse, bool dead,
                                     const CObject* blob_id)
 {
-    TWriteLockGuard guard(m_DataSource_Mtx);
+    CRef<CTSE_Info> info(new CTSE_Info(tse, dead, blob_id));
+    AddTSE(info);
+    return info;
+}
 
-    CRef<CSeq_entry_Info> entry_info = x_FindSeq_entry_Info(tse);
-    if ( entry_info ) {
-        NCBI_THROW(CObjMgrException, eAddDataError,
-                   "TSE already added");
-    }
 
-    if ( tse.GetParentEntry() ) {
-        NCBI_THROW(CObjMgrException, eAddDataError,
-                   "TSE is child of another entry");
-    }
+void CDataSource::AddTSE(CRef<CTSE_Info> info)
+{
+    TMainWriteLockGuard guard(m_DSMainLock);
+    info->x_DSAttach(this);
 
-    tse.Parentize();
-
-    return x_AttachTSE(tse, dead, blob_id);
 }
 
 
@@ -406,48 +393,119 @@ bool CDataSource::DropTSE(CSeq_entry& tse)
     CRef<CSeq_entry> ref(&tse);
 
     // Lock indexes
-    TWriteLockGuard guard(m_DataSource_Mtx);    
+    TMainWriteLockGuard guard(m_DSMainLock);
 
-    CRef<CTSE_Info> tse_info_lock = x_FindTSE_Info(tse);
-    if ( !tse_info_lock ) {
+    CRef<CTSE_Info> info_lock = x_FindTSE_Info(tse);
+    if ( !info_lock ) {
         _TRACE("DropTSE: DS="<<this<<" TSE="<<&tse<<" - not mine");
         return false;
     }
 
-    CTSE_Info* tse_info = &*tse_info_lock;
-    _ASSERT(tse_info->Locked());
-    tse_info_lock.Reset();
-    if ( tse_info->Locked() ) {
-        _TRACE("DropTSE: DS="<<this<<" TSE="<<&tse<<" - locked");
+    CTSE_Info* info = &*info_lock;
+    _ASSERT(info->Locked());
+    info_lock.Reset();
+    if ( info->Locked() ) {
+        _TRACE("DropTSE: DS="<<this<<" TSE_Info="<<&info<<" - locked");
         return false; // Not really dropped, although found
     }
-
-    x_DetachTSE(*tse_info);
+    info_lock.Reset(info);
+    x_DropTSE(*info);
     return true;
 }
 
 
-CRef<CTSE_Info> CDataSource::x_AttachTSE(CSeq_entry& tse, bool dead,
-                                         const CObject* blob_id)
+bool CDataSource::DropTSE(CTSE_Info& info)
 {
-    CRef<CTSE_Info> tse_info = x_CreateTSE_Info(tse, dead, blob_id);
+    TMainWriteLockGuard guard(m_DSMainLock);
 
-    x_AttachSeq_entry_Contents(*tse_info);
-
-    return tse_info;
+    if ( info.Locked() ) {
+        _TRACE("DropTSE: DS="<<this<<" TSE_Info="<<&info<<" - locked");
+        return false; // Not really dropped, although found
+    }
+    CRef<CTSE_Info> info_lock(&info);
+    x_DropTSE(info);
+    return true;
 }
 
 
-void CDataSource::x_DetachTSE(CTSE_Info& tse_info)
+void CDataSource::x_DropTSE(CTSE_Info& info)
 {
     if ( m_Loader ) {
-        m_Loader->DropTSE(tse_info);
+        m_Loader->DropTSE(info);
     }
+    info.x_DSDetach(this);
+}
 
-    x_DetachSeq_entry_Contents(tse_info);
-    x_DetachSeq_annots(tse_info);
 
-    x_DeleteTSE_Info(tse_info);
+template<class Map, class Object, class Info>
+inline
+void x_MapObject(Map& info_map, Object& object, const Info& info)
+{
+    typedef typename Map::value_type value_type;
+    if ( !info_map.insert(value_type(&object, info)).second ) {
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CDataSource::x_Map(): object already mapped");
+    }
+}
+
+
+template<class Map, class Object, class Info>
+inline
+void x_UnmapObject(Map& info_map, Object& object, const Info& _DEBUG_ARG(info))
+{
+    typename Map::iterator iter = info_map.lower_bound(&object);
+    if ( iter != info_map.end() && iter->first == &object ) {
+        _ASSERT(iter->second == info);
+        info_map.erase(iter);
+    }
+}
+
+
+void CDataSource::x_MapTSE(CTSE_Info& info)
+{
+    x_MapObject(m_TSE_InfoMap, info.GetTSE(), Ref(&info));
+}
+
+
+void CDataSource::x_UnmapTSE(CTSE_Info& info)
+{
+    x_UnmapObject(m_TSE_InfoMap, info.GetTSE(), Ref(&info));
+}
+
+
+void CDataSource::x_MapSeq_entry(CSeq_entry_Info& info)
+{
+    x_MapObject(m_Seq_entry_InfoMap, info.GetSeq_entry(), &info);
+}
+
+
+void CDataSource::x_UnmapSeq_entry(CSeq_entry_Info& info)
+{
+    x_UnmapObject(m_Seq_entry_InfoMap, info.GetSeq_entry(), &info);
+}
+
+
+void CDataSource::x_MapSeq_annot(CSeq_annot_Info& info)
+{
+    x_MapObject(m_Seq_annot_InfoMap, info.GetSeq_annot(), &info);
+}
+
+
+void CDataSource::x_UnmapSeq_annot(CSeq_annot_Info& info)
+{
+    x_UnmapObject(m_Seq_annot_InfoMap, info.GetSeq_annot(), &info);
+}
+
+
+void CDataSource::x_MapBioseq(CBioseq_Info& info)
+{
+    x_MapObject(m_Bioseq_InfoMap, info.GetBioseq(), &info);
+}
+
+
+void CDataSource::x_UnmapBioseq(CBioseq_Info& info)
+{
+    x_UnmapObject(m_Bioseq_InfoMap, info.GetBioseq(), &info);
 }
 
 
@@ -456,26 +514,23 @@ void CDataSource::x_DetachTSE(CTSE_Info& tse_info)
 // CDataSource must be guarded by mutex
 /////////////////////////////////////////////////////////////////////////////
 
-CConstRef<CTSE_Info>
-CDataSource::GetTSEInfo(const CSeq_entry& tse)
+CRef<CTSE_Info> CDataSource::FindTSEInfo(CSeq_entry& tse)
 {
-    TReadLockGuard guard(m_DataSource_Mtx);
+    TMainReadLockGuard guard(m_DSMainLock);
     return x_FindTSE_Info(tse);
 }
 
 
-CConstRef<CSeq_entry_Info>
-CDataSource::GetSeq_entry_Info(const CSeq_entry& entry)
+CRef<CSeq_entry_Info> CDataSource::FindSeq_entry_Info(CSeq_entry& entry)
 {
-    TReadLockGuard guard(m_DataSource_Mtx);
+    TMainReadLockGuard guard(m_DSMainLock);
     return x_FindSeq_entry_Info(entry);
 }
 
 
-CConstRef<CSeq_annot_Info>
-CDataSource::GetSeq_annot_Info(const CSeq_annot& annot)
+CRef<CSeq_annot_Info> CDataSource::FindSeq_annot_Info(CSeq_annot& annot)
 {
-    TReadLockGuard guard(m_DataSource_Mtx);
+    TMainReadLockGuard guard(m_DSMainLock);
     return x_FindSeq_annot_Info(annot);
 }
 
@@ -524,394 +579,186 @@ CRef<CBioseq_Info> CDataSource::x_FindBioseq_Info(const CBioseq& obj)
 }
 
 
-CRef<CTSE_Info> CDataSource::x_CreateTSE_Info(CSeq_entry& entry,
-                                              bool dead,
-                                              const CObject* blob_id)
-{
-    CRef<CTSE_Info> info(new CTSE_Info(this, entry, dead, blob_id));
-    _TRACE("x_CreateTSE_Info: DS="<<this<<" TSE="<<&info->GetTSE()<<" TSE_Info="<<&*info);
-    _VERIFY(m_TSE_InfoMap.insert
-            (TTSE_InfoMap::value_type(&entry, info)).second);
-    _VERIFY(m_Seq_entry_InfoMap.insert
-            (TSeq_entry_InfoMap::value_type(&entry,
-                                            &*info)).second);
-    return info;
-}
-
-
-CRef<CSeq_entry_Info> CDataSource::x_CreateSeq_entry_Info(CSeq_entry& entry,
-                                                          CSeq_entry_Info& par)
-{
-    CRef<CSeq_entry_Info> info(new CSeq_entry_Info(entry, par));
-    _VERIFY(m_Seq_entry_InfoMap.insert
-            (TSeq_entry_InfoMap::value_type(&entry, &*info)).second);
-    return info;
-}
-
-
-CRef<CSeq_annot_Info> CDataSource::x_CreateSeq_annot_Info(CSeq_annot& annot,
-                                                          CSeq_entry_Info& par)
-{
-    CRef<CSeq_annot_Info> info(new CSeq_annot_Info(annot, par));
-    _VERIFY(m_Seq_annot_InfoMap.insert
-            (TSeq_annot_InfoMap::value_type(&annot, &*info)).second);
-    _ASSERT(!info->m_Indexed);
-    ++m_DirtyAnnotIndexCount;
-    return info;
-}
-
-
-CRef<CBioseq_Info> CDataSource::x_CreateBioseq_Info(CBioseq& seq,
-                                                    CSeq_entry_Info& par)
-{
-    CRef<CBioseq_Info> info(new CBioseq_Info(seq, par));
-    _VERIFY(m_Bioseq_InfoMap.insert
-            (TBioseq_InfoMap::value_type(&seq, &*info)).second);
-    return info;
-}
-
-
-void CDataSource::x_DeleteTSE_Info(CTSE_Info& info)
-{
-    _TRACE("x_DeleteTSE_Info: DS="<<this<<" TSE="<<&info.GetTSE()<<" TSE_Info="<<&info);
-    _VERIFY(m_Seq_entry_InfoMap.erase(&info.GetSeq_entry()));
-    _VERIFY(m_TSE_InfoMap.erase(&info.GetSeq_entry()));
-}
-
-
-void CDataSource::x_DeleteSeq_entry_Info(CSeq_entry_Info& info)
-{
-    _VERIFY(m_Seq_entry_InfoMap.erase(&info.GetSeq_entry()));
-}
-
-
-void CDataSource::x_DeleteSeq_annot_Info(CSeq_annot_Info& info)
-{
-    _ASSERT(!info.m_Indexed);
-    --m_DirtyAnnotIndexCount;
-    _VERIFY(m_Seq_annot_InfoMap.erase(&info.GetSeq_annot()));
-}
-
-
-void CDataSource::x_DeleteBioseq_Info(CBioseq_Info& info)
-{
-    _VERIFY(m_Bioseq_InfoMap.erase(&info.GetBioseq()));
-}
-
-
-void CDataSource::x_RegisterAnnotObject(const CObject* /*object*/,
-                                        CAnnotObject_Info* /*info*/)
-{
-    //_VERIFY(m_AnnotObject_InfoMap.
-    //        insert(TAnnotObject_InfoMap::value_type(object, info)).second);
-}
-
-
-void CDataSource::x_UnregisterAnnotObject(const CObject* /*object*/)
-{
-    //_VERIFY(m_AnnotObject_InfoMap.erase(object));
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 
 
-bool CDataSource::AttachEntry(CSeq_entry& parent, CSeq_entry& entry)
+void CDataSource::AttachEntry(CSeq_entry& parent_entry, CSeq_entry& entry)
 {
-    TWriteLockGuard guard(m_DataSource_Mtx);
+    TMainWriteLockGuard guard(m_DSMainLock);
 
-    CRef<CSeq_entry_Info> parent_info = x_FindSeq_entry_Info(parent);
+    CRef<CSeq_entry_Info> parent_info = x_FindSeq_entry_Info(parent_entry);
     if ( !parent_info ) {
-        return false;
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CDataSource::AttachEntry: parent is not mine");
     }
-    if ( parent.IsSeq() ) {
-        return false;
+
+    x_AddEntry(*parent_info, entry);
+}
+
+
+void CDataSource::AttachEntry(CSeq_entry_Info& parent_info, CSeq_entry& entry)
+{
+    TMainWriteLockGuard guard(m_DSMainLock);
+    x_AddEntry(parent_info, entry);
+}
+
+
+void CDataSource::x_AddEntry(CSeq_entry_Info& parent_info, CSeq_entry& entry)
+{
+    if ( parent_info.GetTSE().IsSeq() ) {
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CDataSource::AttachEntry: parent is not set");
     }
 
     CRef<CSeq_entry_Info> entry_info = x_FindSeq_entry_Info(entry);
     if ( entry_info ) {
-        return false;
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CDataSource::AttachEntry: entry is already attached");
     }
     if ( entry.GetParentEntry() ) {
-        return false;
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CDataSource::AttachEntry: entry is already attached");
     }
 
-    // insert it to parent entry
-    parent_info->GetSeq_entry().SetSet().SetSeq_set()
-        .push_back(CRef<CSeq_entry>(&entry));
-    // parentize
-    parent_info->GetSeq_entry().Parentize();
-
-    entry_info = x_CreateSeq_entry_Info(entry, *parent_info);
-    x_AttachSeq_entry_Contents(*entry_info);
-    return true;
+    parent_info.x_AddEntry(entry);
 }
 
 
-void CDataSource::x_AttachSeq_entry_Contents(CSeq_entry_Info& entry_info)
+void CDataSource::AttachMap(CSeq_entry& seq, CSeqMap& seqmap)
 {
-    switch ( entry_info.GetSeq_entry().Which() ) {
-    case CSeq_entry::e_Seq:
-        x_AttachBioseq(entry_info.GetSeq_entry().SetSeq(), entry_info);
-        break;
-    case CSeq_entry::e_Set:
-        x_AttachBioseqSet(entry_info.GetSeq_entry().SetSet(), entry_info);
-        break;
-    }
-}
-
-
-void CDataSource::x_DetachSeq_entry_Contents(CSeq_entry_Info& entry)
-{
-    NON_CONST_ITERATE( CSeq_entry_Info::TChildren, it, entry.m_Children ) {
-        if ( *it ) {
-            x_DetachSeq_entry_Contents(**it);
-            x_DeleteSeq_entry_Info(**it);
-            it->Reset();
-        }
-    }
-    entry.m_Children.clear();
-
-    NON_CONST_ITERATE( CSeq_entry_Info::TAnnots, it, entry.m_Annots ) {
-        if ( *it ) {
-            x_DetachSeq_annot(**it);
-            x_DeleteSeq_annot_Info(**it);
-            it->Reset();
-        }
-    }
-    entry.m_Annots.clear();
-
-    if ( entry.m_Bioseq ) {
-        x_DetachBioseq(*entry.m_Bioseq);
-        x_DeleteBioseq_Info(*entry.m_Bioseq);
-        entry.m_Bioseq.Reset();
-    }
-}
-
-
-void CDataSource::x_AttachBioseqSet(CBioseq_set& seq_set,
-                                    CSeq_entry_Info& parent_info)
-{
-    NON_CONST_ITERATE ( CBioseq_set::TSeq_set, it, seq_set.SetSeq_set() ) {
-        CRef<CSeq_entry_Info> info = x_CreateSeq_entry_Info(**it, parent_info);
-        x_AttachSeq_entry_Contents(*info);
-    }
+    TMainWriteLockGuard guard(m_DSMainLock);
     
-    if ( seq_set.IsSetAnnot() ) {
-        x_AttachSeq_annots(seq_set.SetAnnot(), parent_info);
-    }
-}
-
-
-void CDataSource::x_AttachBioseq(CBioseq& seq, CSeq_entry_Info& parent_info)
-{
-    CRef<CBioseq_Info> seq_info = x_CreateBioseq_Info(seq, parent_info);
-
-    x_IndexBioseq(*seq_info);
-
-    if ( seq.IsSetAnnot() ) {
-        x_AttachSeq_annots(seq.SetAnnot(), parent_info);
-    }
-}
-
-
-void CDataSource::x_IndexBioseq(CBioseq_Info& seq_info)
-{
-    CRef<CTSE_Info> tse_info(&seq_info.GetTSE_Info());
-    ITERATE ( CBioseq::TId, id, seq_info.GetBioseq().GetId() ) {
-        // Find the bioseq index
-        CSeq_id_Handle key = GetSeq_id_Mapper().GetHandle(**id);
-        m_TSE_seq[key].insert(&*tse_info);
-        CTSE_Info::TBioseqs::iterator found = tse_info->m_Bioseqs.find(key);
-        if ( found != tse_info->m_Bioseqs.end() ) {
-            // No duplicate bioseqs in the same TSE
-            string sid1, sid2, si;
-            {{
-                CNcbiOstrstream os;
-                ITERATE ( CBioseq::TId, it,
-                          found->second->GetBioseq().GetId() ) {
-                    os << (*it)->DumpAsFasta() << " | ";
-                }
-                sid1 = CNcbiOstrstreamToString(os);
-            }}
-            {{
-                CNcbiOstrstream os;
-                ITERATE (CBioseq::TId, it, seq_info.GetBioseq().GetId()) {
-                    os << (*it)->DumpAsFasta() << " | ";
-                }
-                sid2 = CNcbiOstrstreamToString(os);
-            }}
-            {{
-                CNcbiOstrstream os;
-                os << (*id)->DumpAsFasta();
-                si = CNcbiOstrstreamToString(os);
-            }}
-            NCBI_THROW(CObjMgrException, eAddDataError,
-                       " duplicate Bioseq id '" + si + "' present in" +
-                       "\n  seq1: " + sid1 +
-                       "\n  seq2: " + sid2);
-        }
-        else {
-            // Add new seq-id synonym
-            seq_info.m_Synonyms.insert(key);
-        }
-    }
-
-    ITERATE ( CBioseq_Info::TSynonyms, syn, seq_info.m_Synonyms ) {
-        tse_info->m_Bioseqs[*syn] = &seq_info;
-    }
-
-    x_CreateSeqMap(seq_info);
-}
-
-
-void CDataSource::x_DetachBioseq(CBioseq_Info& seq_info)
-{
-    CRef<CTSE_Info> tse_info(&seq_info.GetTSE_Info());
-    ITERATE ( CBioseq_Info::TSynonyms, syn, seq_info.m_Synonyms ) {
-        _ASSERT(tse_info->m_Bioseqs[*syn] == &seq_info);
-        _VERIFY(tse_info->m_Bioseqs.erase(*syn));
-        m_TSE_seq[*syn].erase(&*tse_info);
-    }
-}
-
-
-void CDataSource::x_AttachSeq_annots(TAnnots& annot,
-                                     CSeq_entry_Info& parent_info)
-{
-    NON_CONST_ITERATE( TAnnots, it, annot ) {
-        x_CreateSeq_annot_Info(**it, parent_info);
-    }
-}
-
-
-bool CDataSource::AttachMap(CSeq_entry& seq, CSeqMap& seqmap)
-{
-    TWriteLockGuard guard(m_DataSource_Mtx);
-    //### Lock the entry to prevent destruction or modification
-    //### May need to lock the TSE instead.
-    if ( !seq.IsSeq() ) {
-        return false;
-    }
-    CRef<CBioseq_Info> seq_info = x_FindBioseq_Info(seq.GetSeq());
+    CRef<CSeq_entry_Info> seq_info = x_FindSeq_entry_Info(seq);
     if ( !seq_info ) {
-        return false;
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CDataSource::AttachEntry: parent is not mine");
     }
-    // Lock the TSE
-    seq_info->m_SeqMap.Reset(&seqmap);
-    return true;
+
+    x_AttachMap(*seq_info, seqmap);
 }
 
 
-bool CDataSource::AttachAnnot(CSeq_entry& entry,
+void CDataSource::AttachMap(CSeq_entry_Info& seq_info, CSeqMap& seqmap)
+{
+    TMainWriteLockGuard guard(m_DSMainLock);
+    x_AttachMap(seq_info, seqmap);
+}
+
+
+void CDataSource::x_AttachMap(CSeq_entry_Info& seq_info, CSeqMap& seqmap)
+{
+    if ( !seq_info.GetSeq_entry().IsSeq() ) {
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CDataSource::AttachMap: entry is not seq");
+    }
+    CRef<CBioseq_Info> info = seq_info.m_Bioseq;
+    _ASSERT(info == x_FindBioseq_Info(seq_info.GetSeq_entry().GetSeq()));
+    info->x_AttachMap(seqmap);
+}
+
+
+void CDataSource::AttachAnnot(CSeq_entry& entry,
                               CSeq_annot& annot)
 {
-    TWriteLockGuard guard(m_DataSource_Mtx);
-    //### Lock the entry to prevent destruction or modification
-    //### May need to lock the TSE instead. In this case also lock
-    //### the entries list for a while.
+    TMainWriteLockGuard guard(m_DSMainLock);
     CRef<CSeq_entry_Info> entry_info = x_FindSeq_entry_Info(entry);
     if ( !entry_info ) {
-        return false;
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CDataSource::AttachAnnot: entry not attached");
     }
+    x_AddAnnot(*entry_info, annot);
+}
 
+void CDataSource::AttachAnnot(CSeq_entry_Info& entry_info,
+                              CSeq_annot& annot)
+{
+    TMainWriteLockGuard guard(m_DSMainLock);
+    x_AddAnnot(entry_info, annot);
+}
+
+void CDataSource::x_AddAnnot(CSeq_entry_Info& entry_info,
+                             CSeq_annot& annot)
+{
     CRef<CSeq_annot_Info> annot_info = x_FindSeq_annot_Info(annot);
     if ( annot_info ) {
-        return false;
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CDataSource::AttachAnnot: annot already attached");
     }
     
-    switch ( entry.Which() ) {
-    case CSeq_entry::e_Set:
-        entry.SetSet().SetAnnot().push_back(CRef<CSeq_annot>(&annot));
-        break;
-    case CSeq_entry::e_Seq:
-        entry.SetSeq().SetAnnot().push_back(CRef<CSeq_annot>(&annot));
-        break;
-    default:
-        return false;
-    }
-
-    x_CreateSeq_annot_Info(annot, *entry_info);
-
-    return true;
+    entry_info.x_AddAnnot(annot);
 }
 
 
-void CDataSource::x_DetachSeq_annots(CTSE_Info& tse_info)
+void CDataSource::RemoveAnnot(CSeq_entry& entry, CSeq_annot& annot)
 {
-    ITERATE ( CTSE_Info::TAnnotObjs, it, tse_info.m_AnnotObjs ) {
-        x_DropTSE_ref(it->first, &tse_info);
+    TMainWriteLockGuard guard(m_DSMainLock);
+    CRef<CSeq_entry_Info> entry_info = x_FindSeq_entry_Info(entry);
+    if ( !entry_info ) {
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CDataSource::RemoveAnnot: entry not attached");
     }
-    tse_info.m_AnnotObjs.clear();
+    x_RemoveAnnot(*entry_info, annot);
 }
 
 
-void CDataSource::x_IndexAllAnnots(CSeq_entry_Info& entry_info)
+void CDataSource::RemoveAnnot(CSeq_entry_Info& entry_info, CSeq_annot& annot)
 {
-    NON_CONST_ITERATE ( CSeq_entry_Info::TAnnots, it, entry_info.m_Annots ) {
-        x_IndexSeq_annot(**it);
-    }
-    NON_CONST_ITERATE(CSeq_entry_Info::TChildren, it, entry_info.m_Children) {
-        x_IndexAllAnnots(**it);
-    }
+    TMainWriteLockGuard guard(m_DSMainLock);
+    x_RemoveAnnot(entry_info, annot);
 }
 
 
-bool CDataSource::x_RemoveSeq_annot(TAnnots& annot_set,
-                                    CSeq_annot& annot)
-{
-    annot_set.remove(CRef<CSeq_annot>(&annot));
-    return annot_set.empty();
-}
-
-
-bool CDataSource::RemoveAnnot(CSeq_entry& entry, CSeq_annot& annot)
+void CDataSource::x_RemoveAnnot(CSeq_entry_Info& entry_info, CSeq_annot& annot)
 {
     if ( m_Loader ) {
         NCBI_THROW(CObjMgrException, eModifyDataError,
-            "Can not modify a loaded entry");
-    }
-    CRef<CSeq_entry_Info> entry_info = x_FindSeq_entry_Info(entry);
-    if ( !entry_info ) {
-        return false;
+                   "Can not modify a loaded entry");
     }
 
     CRef<CSeq_annot_Info> annot_info = x_FindSeq_annot_Info(annot);
     if ( !annot_info ) {
-        return false;
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CDataSource::RemoveAnnot: annot not attached");
     }
 
-    x_UnindexSeq_annot(*annot_info);
-
-    x_DeleteSeq_annot_Info(*annot_info);
-    entry_info->m_Annots.remove(annot_info);
-
-    switch ( entry.Which() ) {
-    case CSeq_entry::e_Set:
-        if ( x_RemoveSeq_annot(entry.SetSet().SetAnnot(), annot) ) {
-            entry.SetSet().ResetAnnot();
-        }
-        break;
-    case CSeq_entry::e_Seq:
-        if ( x_RemoveSeq_annot(entry.SetSeq().SetAnnot(), annot) ) {
-            entry.SetSeq().ResetAnnot();
-        }
-        break;
-    default:
-        _ASSERT(0);
-        break;
+    if ( &annot_info->GetSeq_entry_Info() != &entry_info ) {
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CDataSource::RemoveAnnot: wrong entry");
     }
-    return true;
+
+    entry_info.x_RemoveAnnot(*annot_info);
 }
 
 
-bool CDataSource::ReplaceAnnot(CSeq_entry& entry,
+void CDataSource::ReplaceAnnot(CSeq_entry& entry,
                                CSeq_annot& old_annot,
                                CSeq_annot& new_annot)
 {
-    if ( !RemoveAnnot(entry, old_annot) )
-        return false;
-    return AttachAnnot(entry, new_annot);
+    TMainWriteLockGuard guard(m_DSMainLock);
+    CRef<CSeq_entry_Info> entry_info = x_FindSeq_entry_Info(entry);
+    if ( !entry_info ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CDataSource::RemoveAnnot: entry not attached");
+    }
+    x_ReplaceAnnot(*entry_info, old_annot, new_annot);
+}
+
+
+void CDataSource::ReplaceAnnot(CSeq_entry_Info& entry_info,
+                               CSeq_annot& old_annot,
+                               CSeq_annot& new_annot)
+{
+    TMainWriteLockGuard guard(m_DSMainLock);
+    x_ReplaceAnnot(entry_info, old_annot, new_annot);
+}
+
+
+void CDataSource::x_ReplaceAnnot(CSeq_entry_Info& entry_info,
+                                 CSeq_annot& old_annot,
+                                 CSeq_annot& new_annot)
+{
+    x_RemoveAnnot(entry_info, old_annot);
+    x_AddAnnot(entry_info, new_annot);
 }
 
 
@@ -942,113 +789,78 @@ void PrintSeqMap(const string& /*id*/, const CSeqMap& /*smap*/)
 }
 
 
-void CDataSource::x_CreateSeqMap(CBioseq_Info& seq_info)
+void CDataSource::x_SetDirtyAnnotIndex(void)
 {
-    seq_info.m_SeqMap = 
-        CSeqMap::CreateSeqMapForBioseq(seq_info.GetBioseq(), this);
+    TAnnotWriteLockGuard guard(m_DSAnnotLock);
+    m_TSE_annot_is_dirty = true;
 }
 
 
-
-void CDataSource::x_GetAnnotData(const CHandleRangeMap& loc,
-                                 const SAnnotSelector& sel)
+void CDataSource::UpdateAnnotIndex(const CSeq_entry_Info& entry_info)
 {
-    if ( m_Loader ) {
-        // Send request to the loader
-        switch ( sel.GetAnnotChoice() ) {
-        case CSeq_annot::C_Data::e_Ftable:
-        {
-            bool need_snp = true;
-            switch ( sel.GetAnnotChoice() ) {
-            case CSeq_annot::C_Data::e_not_set:
-                need_snp = true;
-                break;
-            case CSeq_annot::C_Data::e_Ftable:
-                switch ( sel.GetFeatSubtype() ) {
-                case CSeqFeatData::eSubtype_variation:
-                    need_snp = true;
-                    break;
-                case CSeqFeatData::eSubtype_any:
-                    switch ( sel.GetFeatChoice() ) {
-                    case CSeqFeatData::e_not_set:
-                    case CSeqFeatData::e_Imp:
-                        need_snp = true;
-                        break;
-                    default:
-                        need_snp = false;
-                        break;
-                    }
-                    break;
-                default:
-                    need_snp = false;
-                    break;
-                }
-                break;
-            default:
-                need_snp = false;
-                break;
-            }
-
-            if ( !sel.IsSetDataSources() ) {
-                m_Loader->GetRecords(loc, CDataLoader::eFeatures);
-                if ( need_snp ) {
-                    m_Loader->GetRecords(loc, CDataLoader::eExternal);
-                }
-            }
-            else {
-                if ( sel.HasDataSource("") ) {
-                    m_Loader->GetRecords(loc, CDataLoader::eFeatures);
-                }
-                if ( need_snp && sel.HasDataSource("SNP") ) {
-                    m_Loader->GetRecords(loc, CDataLoader::eExternal);
-                }
-            }
-            break;
-        }
-        case CSeq_annot::C_Data::e_Align:
-            //### Need special flag for alignments
-            m_Loader->GetRecords(loc, CDataLoader::eAlign);
-            break;
-        case CSeq_annot::C_Data::e_Graph:
-            m_Loader->GetRecords(loc, CDataLoader::eGraph);
-            break;
-        }
-    }
-}
-
-
-void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& loc,
-                                   const SAnnotSelector& sel)
-{
-    x_GetAnnotData(loc, sel);
-    if ( m_DirtyAnnotIndexCount ) {
-        TWriteLockGuard ds_guard(m_DataSource_Mtx);
-        // Index all annotations if not indexed yet
-        if ( m_DirtyAnnotIndexCount ) {
-            NON_CONST_ITERATE ( TTSE_InfoMap, it, m_TSE_InfoMap ) {
-                //### Lock TSE so that another thread can not index it too
-                x_IndexAllAnnots(*it->second);
-            }
-        }
-        _ASSERT(!m_DirtyAnnotIndexCount);
-    }
-}
-
-
-void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& loc,
-                                   const SAnnotSelector& sel,
-                                   const CSeq_entry_Info& entry_info)
-{
-    x_GetAnnotData(loc, sel);
-    TWriteLockGuard ds_guard(m_DataSource_Mtx);
-    x_IndexAllAnnots(const_cast<CSeq_entry_Info&>(entry_info));
+    TMainWriteLockGuard guard(m_DSMainLock);
+    entry_info.UpdateAnnotIndex();
 }
 
 
 void CDataSource::UpdateAnnotIndex(const CSeq_annot_Info& annot_info)
 {
-    TWriteLockGuard ds_guard(m_DataSource_Mtx);
-    x_IndexSeq_annot(const_cast<CSeq_annot_Info&>(annot_info));
+    TMainWriteLockGuard guard(m_DSMainLock);
+    annot_info.UpdateAnnotIndex();
+}
+
+
+void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
+                                      const SAnnotTypeSelector& sel,
+                                      TTSE_LockSet& with_ref,
+                                      const string* source_name)
+{
+    // load all relevant TSEs
+    if ( source_name ) {
+        if ( m_Loader ) {
+            m_Loader->GetNamedAnnotRecords(idh, *source_name);
+        }
+    }
+    else {
+        if ( m_Loader ) {
+            m_Loader->GetAllAnnotRecords(idh);
+        }
+    }
+
+    if ( m_TSE_annot_is_dirty ) {
+        // update annot index
+        TMainReadLockGuard guard(m_DSMainLock);
+        //TAnnotWriteLockGuard guard2(m_DSAnnotLock);
+        
+        // Index all annotations if not indexed yet
+        bool dirty = false;
+        NON_CONST_ITERATE ( TTSE_InfoMap, it, m_TSE_InfoMap ) {
+            if ( source_name &&
+                 it->second->GetDataSourceName() != *source_name ) {
+                dirty = true;
+            }
+            else {
+                it->second->UpdateAnnotIndex();
+            }
+        }
+        m_TSE_annot_is_dirty = dirty;
+    }
+
+    // collect all relevant TSEs
+    TTSEMap::const_iterator rtse_it = m_TSE_annot.find(idh);
+    if ( rtse_it != m_TSE_annot.end() ) {
+        ITERATE(CTSE_LockingSet::TTSESet, tse, rtse_it->second) {
+            if ( source_name && (*tse)->GetDataSourceName() != *source_name ) {
+                // wrong data source name
+                continue;
+            }
+            if ( (*tse)->ContainsSeqid(idh) ) {
+                // skip TSE containing sequence
+                continue;
+            }
+            with_ref.insert(TTSE_Lock(*tse));
+        }
+    }
 }
 
 
@@ -1060,15 +872,18 @@ void CDataSource::GetSynonyms(const CSeq_id_Handle& main_idh,
     TTSE_Lock tse_info(x_FindBestTSE(main_idh));
     if ( !tse_info ) {
         // Try to find the best matching id (not exactly equal)
-        TSeq_id_HandleSet hset;
-        GetSeq_id_Mapper().GetMatchingHandles(idh, hset);
-        ITERATE(TSeq_id_HandleSet, hit, hset) {
-            if ( bool(tse_info)  &&  idh.IsBetter(*hit) )
-                continue;
-            TTSE_Lock tmp_tse(x_FindBestTSE(*hit));
-            if ( tmp_tse ) {
-                tse_info = tmp_tse;
-                idh = *hit;
+        CSeq_id_Mapper& mapper = CSeq_id_Mapper::GetSeq_id_Mapper();
+        if ( mapper.HaveMatchingHandles(idh) ) {
+            TSeq_id_HandleSet hset;
+            mapper.GetMatchingHandles(idh, hset);
+            ITERATE(TSeq_id_HandleSet, hit, hset) {
+                if ( bool(tse_info)  &&  idh.IsBetter(*hit) )
+                    continue;
+                TTSE_Lock tmp_tse(x_FindBestTSE(*hit));
+                if ( tmp_tse ) {
+                    tse_info = tmp_tse;
+                    idh = *hit;
+                }
             }
         }
     }
@@ -1095,99 +910,87 @@ void CDataSource::GetSynonyms(const CSeq_id_Handle& main_idh,
 }
 
 
-void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
-                                      TTSE_LockSet& with_ref)
+void CDataSource::x_IndexTSE(TTSEMap& tse_map,
+                             const CSeq_id_Handle& id,
+                             CTSE_Info* tse_info)
 {
-    TReadLockGuard guard(m_DataSource_Mtx);    
-
-    TTSEMap::const_iterator rtse_it = m_TSE_ref.find(idh);
-    if (rtse_it != m_TSE_ref.end()  &&  !rtse_it->second.empty()) {
-        ITERATE(CTSE_LockingSet::TTSESet, tse, rtse_it->second) {
-            if ( (*tse)->m_Bioseqs.find(idh) == (*tse)->m_Bioseqs.end() ) {
-                _ASSERT((*tse)->m_Bioseqs.find(idh)==(*tse)->m_Bioseqs.end());
-                with_ref.insert(TTSE_Lock(*tse)); // with reference only
-            }
-        }
+    TTSEMap::iterator it = tse_map.lower_bound(id);
+    if ( it == tse_map.end() || it->first != id ) {
+        it = tse_map.insert(it, TTSEMap::value_type(id, CTSE_LockingSet()));
     }
-}
-
-
-void CDataSource::x_IndexSeq_annot(CSeq_annot_Info& annot_info)
-{
-    if ( annot_info.m_Indexed ) {
-        return;
-    }
-
-    _ASSERT(m_DirtyAnnotIndexCount > 0);
-
-    CSeq_annot::C_Data& data = annot_info.GetSeq_annot().SetData();
-    switch ( data.Which() ) {
-    case CSeq_annot::C_Data::e_Ftable:
-        annot_info.x_MapAnnotObjects(data.SetFtable());
-        break;
-    case CSeq_annot::C_Data::e_Align:
-        annot_info.x_MapAnnotObjects(data.SetAlign());
-        break;
-    case CSeq_annot::C_Data::e_Graph:
-        annot_info.x_MapAnnotObjects(data.SetGraph());
-        break;
-    }
-
-    annot_info.m_Indexed = true;
-    --m_DirtyAnnotIndexCount;
-    _ASSERT(m_DirtyAnnotIndexCount >= 0);
-}
-
-
-void CDataSource::x_UnindexSeq_annot(CSeq_annot_Info& annot_info)
-{
-    TWriteLockGuard ds_guard(m_DataSource_Mtx);
-    if ( !annot_info.m_Indexed ) {
-        return;
-    }
-
-    annot_info.x_UnmapAnnotObjects();
-
-    annot_info.m_Indexed = false;
-    ++m_DirtyAnnotIndexCount;
-}
-
-
-void CDataSource::x_DetachSeq_annot(CSeq_annot_Info& annot_info)
-{
-    TWriteLockGuard ds_guard(m_DataSource_Mtx);
-    if ( !annot_info.m_Indexed ) {
-        return;
-    }
-
-    annot_info.x_DropAnnotObjects();
-
-    annot_info.m_Indexed = false;
-    ++m_DirtyAnnotIndexCount;
-}
-
-
-void CDataSource::x_AddTSE_ref(const CSeq_id_Handle& idh, CTSE_Info* tse_info)
-{
-    _TRACE("x_AddTSE_ref("<<idh.AsString()<<","<<&tse_info->GetTSE()<<")");
-    TTSEMap::iterator it = m_TSE_ref.lower_bound(idh);
-    if ( it == m_TSE_ref.end() || it->first != idh ) {
-        it = m_TSE_ref.insert(it, TTSEMap::value_type(idh,
-                                                      CTSE_LockingSet()));
-    }
-    _ASSERT(it != m_TSE_ref.end() && it->first == idh);
+    _ASSERT(it != tse_map.end() && it->first == id);
     _VERIFY(it->second.insert(tse_info));
 }
 
 
-void CDataSource::x_DropTSE_ref(const CSeq_id_Handle& idh, CTSE_Info* tse_info)
+void CDataSource::x_UnindexTSE(TTSEMap& tse_map,
+                               const CSeq_id_Handle& id,
+                               CTSE_Info* tse_info)
 {
-    _TRACE("x_DropTSE_ref("<<idh.AsString()<<","<<&tse_info->GetTSE()<<")");
-    TTSEMap::iterator it = m_TSE_ref.find(idh);
-    _ASSERT(it != m_TSE_ref.end() && it->first == idh);
+    TTSEMap::iterator it = tse_map.find(id);
+    _ASSERT(it != tse_map.end() && it->first == id);
     it->second.erase(tse_info);
     if ( it->second.empty() ) {
-        m_TSE_ref.erase(it);
+        tse_map.erase(it);
+    }
+}
+
+
+void CDataSource::x_IndexSeqTSE(const CSeq_id_Handle& id,
+                                CTSE_Info* tse_info)
+{
+    // no need to lock as it's locked by callers
+    _TRACE("x_IndexSeqTSE("<<id.AsString()<<","<<&tse_info->GetTSE()<<")");
+    x_IndexTSE(m_TSE_seq, id, tse_info);
+}
+
+
+void CDataSource::x_UnindexSeqTSE(const CSeq_id_Handle& id,
+                                  CTSE_Info* tse_info)
+{
+    // no need to lock as it's locked by callers
+    _TRACE("x_UnindexSeqTSE("<<id.AsString()<<","<<&tse_info->GetTSE()<<")");
+    x_UnindexTSE(m_TSE_seq, id, tse_info);
+}
+
+
+void CDataSource::x_IndexAnnotTSE(const CSeq_id_Handle& id,
+                                  CTSE_Info* tse_info)
+{
+    TAnnotWriteLockGuard guard(m_DSAnnotLock);
+    _TRACE("x_IndexAnnotTSE("<<id.AsString()<<","<<&tse_info->GetTSE()<<")");
+    x_IndexTSE(m_TSE_annot, id, tse_info);
+}
+
+
+void CDataSource::x_UnindexAnnotTSE(const CSeq_id_Handle& id,
+                                    CTSE_Info* tse_info)
+{
+    TAnnotWriteLockGuard guard(m_DSAnnotLock);
+    _TRACE("x_UnindexAnnotTSE("<<id.AsString()<<","<<&tse_info->GetTSE()<<")");
+    x_UnindexTSE(m_TSE_annot, id, tse_info);
+}
+
+
+void CDataSource::x_IndexAnnotTSEs(CTSE_Info* tse_info)
+{
+    TAnnotWriteLockGuard guard(m_DSAnnotLock);
+    _TRACE("x_IndexAnnotTSEs("<<&tse_info->GetTSE()<<")");
+    ITERATE ( CTSE_Info::TAnnotObjs, it, tse_info->m_AnnotObjs ) {
+        x_IndexTSE(m_TSE_annot, it->first, tse_info);
+    }
+    if ( tse_info->m_DirtyAnnotIndex ) {
+        m_TSE_annot_is_dirty = true;
+    }
+}
+
+
+void CDataSource::x_UnindexAnnotTSEs(CTSE_Info* tse_info)
+{
+    TAnnotWriteLockGuard guard(m_DSAnnotLock);
+    _TRACE("x_UnindexAnnotTSEs("<<&tse_info->GetTSE()<<")");
+    ITERATE ( CTSE_Info::TAnnotObjs, it, tse_info->m_AnnotObjs ) {
+        x_UnindexTSE(m_TSE_annot, it->first, tse_info);
     }
 }
 
@@ -1195,7 +998,7 @@ void CDataSource::x_DropTSE_ref(const CSeq_id_Handle& idh, CTSE_Info* tse_info)
 void CDataSource::x_CleanupUnusedEntries(void)
 {
     // Lock indexes
-    TWriteLockGuard guard(m_DataSource_Mtx);    
+    TMainWriteLockGuard guard(m_DSMainLock);    
 
     bool broken = true;
     while ( broken ) {
@@ -1203,7 +1006,7 @@ void CDataSource::x_CleanupUnusedEntries(void)
         NON_CONST_ITERATE( TTSE_InfoMap, it, m_TSE_InfoMap ) {
             if ( !it->second->Locked() ) {
                 //### Lock the entry and check again
-                x_DetachTSE(*it->second);
+                x_DropTSE(*it->second);
                 broken = true;
                 break;
             }
@@ -1225,29 +1028,29 @@ CSeqMatch_Info CDataSource::BestResolve(CSeq_id_Handle idh)
     //### Lock all TSEs found, unlock all filtered out in the end.
     CTSE_LockingSetLock lock;
     {{
-        TWriteLockGuard guard(m_DataSource_Mtx);
+        TMainWriteLockGuard guard(m_DSMainLock);
         lock.Lock(m_TSE_seq[idh]);
     }}
     if ( m_Loader ) {
         // Send request to the loader
-        CHandleRangeMap hrm;
-        hrm.AddRange(idh,
-                     CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
-        m_Loader->GetRecords(hrm, CDataLoader::eBioseqCore);
+        m_Loader->GetRecords(idh, CDataLoader::eBioseqCore);
     }
     CSeqMatch_Info match;
     TTSE_Lock tse(x_FindBestTSE(idh));
     if ( !tse ) {
         // Try to find the best matching id (not exactly equal)
-        TSeq_id_HandleSet hset;
-        GetSeq_id_Mapper().GetMatchingHandles(idh, hset);
-        ITERATE(TSeq_id_HandleSet, hit, hset) {
-            if ( bool(tse)  &&  idh.IsBetter(*hit) )
-                continue;
-            TTSE_Lock tmp_tse(x_FindBestTSE(*hit));
-            if ( tmp_tse ) {
-                tse = tmp_tse;
-                idh = *hit;
+        CSeq_id_Mapper& mapper = CSeq_id_Mapper::GetSeq_id_Mapper();
+        if ( mapper.HaveMatchingHandles(idh) ) {
+            TSeq_id_HandleSet hset;
+            mapper.GetMatchingHandles(idh, hset);
+            ITERATE(TSeq_id_HandleSet, hit, hset) {
+                if ( bool(tse)  &&  idh.IsBetter(*hit) )
+                    continue;
+                TTSE_Lock tmp_tse(x_FindBestTSE(*hit));
+                if ( tmp_tse ) {
+                    tse = tmp_tse;
+                    idh = *hit;
+                }
             }
         }
     }
@@ -1299,27 +1102,6 @@ string CDataSource::GetName(void) const
         return kEmptyStr;
 }
 
-#if 0
-bool CDataSource::IsSynonym(const CSeq_id_Handle& h1,
-                            const CSeq_id_Handle& h2) const
-{
-    //CSeq_id_Handle h1 = GetSeq_id_Mapper().GetHandle(id1);
-    //CSeq_id_Handle h2 = GetSeq_id_Mapper().GetHandle(id2);
-
-    TReadLockGuards guard(m_DataSource_Mtx);    
-    TTSEMap::const_iterator tse_set = m_TSE_seq.find(h1);
-    if (tse_set == m_TSE_seq.end())
-        return false; // Could not find id1 in the datasource
-    NON_CONST_ITERATE (TTSESet, tse_it,
-                       const_cast<TTSESet&>(tse_set->second) ) {
-        const CBioseq_Info& bioseq =
-            *const_cast<CTSE_Info::TBioseqs&>((*tse_it)->m_Bioseqs)[h1];
-        if (bioseq.m_Synonyms.find(h2) != bioseq.m_Synonyms.end())
-            return true;
-    }
-    return false;
-}
-#endif
 
 TTSE_Lock CDataSource::GetTSEHandles(const CSeq_entry& entry,
                                      TBioseq_InfoSet& bioseqs,
@@ -1329,7 +1111,7 @@ TTSE_Lock CDataSource::GetTSEHandles(const CSeq_entry& entry,
     // Find TSE_Info
     CRef<CTSE_Info> tse_info;
     {{
-        TReadLockGuard  guard(m_DataSource_Mtx);
+        TMainReadLockGuard  guard(m_DSMainLock);
         tse_info = x_FindTSE_Info(entry);
     }}
     if ( tse_info ) {
@@ -1353,7 +1135,7 @@ void CDataSource::x_CollectBioseqs(CSeq_entry_Info& info,
         }
         return;
     }
-    NON_CONST_ITERATE(CSeq_entry_Info::TChildren, it, info.m_Children) {
+    NON_CONST_ITERATE( CSeq_entry_Info::TEntries, it, info.m_Entries ) {
         const CSeq_entry& entry = (*it)->GetSeq_entry();
         CBioseq_CI_Base::EBioseqLevelFlag local_level = level;
         if (entry.IsSet()  &&
@@ -1380,69 +1162,6 @@ void CDataSource::x_CollectBioseqs(CSeq_entry_Info& info,
 void CDataSource::DebugDump(CDebugDumpContext /*ddc*/,
                             unsigned int /*depth*/) const
 {
-/*
-    ddc.SetFrame("CDataSource");
-    CObject::DebugDump( ddc, depth);
-
-    ddc.Log("m_Loader", m_Loader,0);
-    ddc.Log("m_pTopEntry", m_pTopEntry.GetPointer(),0);
-    ddc.Log("m_ObjMgr", m_ObjMgr,0);
-
-    if (depth == 0) {
-        DebugDumpValue(ddc, "m_Entries.size()", m_Entries.size());
-        DebugDumpValue(ddc, "m_TSE_seq.size()", m_TSE_seq.size());
-        DebugDumpValue(ddc, "m_TSE_ref.size()", m_TSE_ref.size());
-        DebugDumpValue(ddc, "m_SeqMaps.size()", m_SeqMaps.size());
-    } else {
-        DebugDumpValue(ddc, "m_Entries.type",
-            "map<CRef<CSeq_entry>,CRef<CTSE_Info>>");
-        DebugDumpPairsCRef(ddc, "m_Entries",
-            m_Entries.begin(), m_Entries.end(), depth);
-
-        { //---  m_TSE_seq
-            unsigned int depth2 = depth-1;
-            DebugDumpValue(ddc, "m_TSE_seq.type",
-                "map<CSeq_id_Handle,set<CRef<CTSE_Info>>>");
-            CDebugDumpContext ddc2(ddc,"m_TSE_seq");
-            TTSEMap::const_iterator it;
-            for ( it = m_TSE_seq.begin(); it != m_TSE_seq.end(); ++it) {
-                string member_name = "m_TSE_seq[ " +
-                    (it->first).AsString() +" ]";
-                if (depth2 == 0) {
-                    member_name += ".size()";
-                    DebugDumpValue(ddc2, member_name, (it->second).size());
-                } else {
-                    DebugDumpRangeCRef(ddc2, member_name,
-                        (it->second).begin(), (it->second).end(), depth2);
-            }
-        }
-    }
-
-        { //---  m_TSE_ref
-            unsigned int depth2 = depth-1;
-            DebugDumpValue(ddc, "m_TSE_ref.type",
-                "map<CSeq_id_Handle,set<CRef<CTSE_Info>>>");
-            CDebugDumpContext ddc2(ddc,"m_TSE_ref");
-            TTSEMap::const_iterator it;
-            for ( it = m_TSE_ref.begin(); it != m_TSE_ref.end(); ++it) {
-                string member_name = "m_TSE_ref[ " +
-                    (it->first).AsString() +" ]";
-                if (depth2 == 0) {
-                    member_name += ".size()";
-                    DebugDumpValue(ddc2, member_name, (it->second).size());
-                } else {
-                    DebugDumpRangeCRef(ddc2, member_name,
-                        (it->second).begin(), (it->second).end(), depth2);
-                }
-            }
-        }
-
-        DebugDumpValue(ddc, "m_SeqMaps.type",
-            "map<const CBioseq*,CRef<CSeqMap>>");
-        DebugDumpPairsCRefCRef(ddc, "m_SeqMaps",
-            m_SeqMaps.begin(), m_SeqMaps.end(), depth);
-    }
-*/
 }
 
 
@@ -1452,6 +1171,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.120  2003/09/30 16:22:02  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.119  2003/09/05 17:29:40  grichenk
 * Structurized Object Manager exceptions
 *

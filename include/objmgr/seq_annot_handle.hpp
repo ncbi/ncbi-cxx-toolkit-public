@@ -1,5 +1,5 @@
-#ifndef OBJMGR_EXCEPTION__HPP
-#define OBJMGR_EXCEPTION__HPP
+#ifndef SEQ_ANNOT_HANDLE__HPP
+#define SEQ_ANNOT_HANDLE__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -26,96 +26,101 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko
+* Author: Aleksey Grichenko, Eugene Vasilchenko
 *
 * File Description:
-*   Object manager exceptions
+*    Handle to Seq-annot object
 *
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbiobj.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CScope;
+class CSeq_annot;
+class CSeq_annot_Info;
+class CSeq_annot_CI;
+class CAnnotTypes_CI;
+class CAnnot_CI;
 
-// root class for all object manager exceptions
-class NCBI_XOBJMGR_EXPORT CObjMgrException : public CException
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_annot_Handle
+/////////////////////////////////////////////////////////////////////////////
+
+class NCBI_XOBJMGR_EXPORT CSeq_annot_Handle
 {
 public:
-    enum EErrCode {
-        eNotImplemented,
-        eRegisterError,   // error while registering a data source/loader
-        eFindConflict,
-        eFindFailed,
-        eAddDataError,
-        eModifyDataError,
-        eIdMapperError,
-        eOtherError
-    };
-    virtual const char* GetErrCodeString(void) const;
-    NCBI_EXCEPTION_DEFAULT(CObjMgrException,CException);
+    CSeq_annot_Handle(void);
+    CSeq_annot_Handle(CScope& scope, const CSeq_annot_Info& annot);
+    CSeq_annot_Handle(const CSeq_annot_Handle& sah);
+    ~CSeq_annot_Handle(void);
+
+    CSeq_annot_Handle& operator=(const CSeq_annot_Handle& sah);
+
+    CScope& GetScope(void) const;
+
+    const CSeq_annot& GetSeq_annot(void) const;
+    operator bool(void) const;
+    bool operator!(void) const;
+
+    bool operator==(const CSeq_annot_Handle& annot) const;
+    bool operator!=(const CSeq_annot_Handle& annot) const;
+    bool operator<(const CSeq_annot_Handle& annot) const;
+
+private:
+    void x_Set(CScope& scope, const CSeq_annot_Info& annot);
+    void x_Reset(void);
+
+    mutable CRef<CScope>       m_Scope;
+    CConstRef<CSeq_annot_Info> m_Seq_annot;
+
+    friend class CSeq_annot_CI;
+    friend class CAnnotTypes_CI;
+    friend class CAnnot_CI;
 };
 
 
-class NCBI_XOBJMGR_EXPORT CSeqMapException : public CObjMgrException
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_annot_Handle inline methods
+/////////////////////////////////////////////////////////////////////////////
+
+
+inline
+CSeq_annot_Handle::operator bool(void) const
 {
-public:
-    enum EErrCode {
-        eUnimplemented,
-        eIteratorTooBig,
-        eSegmentTypeError,
-        eDataError,
-        eOutOfRange,
-        eInvalidIndex,
-        eNullPointer,
-        eFail
-    };
-    virtual const char* GetErrCodeString(void) const;
-    NCBI_EXCEPTION_DEFAULT(CSeqMapException, CObjMgrException);
-};
+    return m_Seq_annot;
+}
 
 
-class NCBI_XOBJMGR_EXPORT CSeqVectorException : public CObjMgrException
+inline
+bool CSeq_annot_Handle::operator!(void) const
 {
-public:
-    enum EErrCode {
-        eCodingError,
-        eDataError,
-        eOutOfRange
-    };
-    virtual const char* GetErrCodeString(void) const;
-    NCBI_EXCEPTION_DEFAULT(CSeqVectorException, CObjMgrException);
-};
+    return !m_Seq_annot;
+}
 
 
-class NCBI_XOBJMGR_EXPORT CAnnotException : public CObjMgrException
+inline
+bool CSeq_annot_Handle::operator==(const CSeq_annot_Handle& annot) const
 {
-public:
-    enum EErrCode {
-        eBadLocation,
-        eFindFailed,
-        eLimitError
-    };
-    virtual const char* GetErrCodeString(void) const;
-    NCBI_EXCEPTION_DEFAULT(CAnnotException, CObjMgrException);
-};
+    return m_Seq_annot == annot.m_Seq_annot;
+}
 
 
-class NCBI_XOBJMGR_EXPORT CLoaderException : public CObjMgrException
+inline
+bool CSeq_annot_Handle::operator!=(const CSeq_annot_Handle& annot) const
 {
-public:
-    enum EErrCode {
-        eNoData,
-        ePrivateData,
-        eConnectionFailed,
-        eCompressionError,
-        eLoaderFailed
-    };
-    virtual const char* GetErrCodeString(void) const;
-    NCBI_EXCEPTION_DEFAULT(CLoaderException, CObjMgrException);
-};
+    return m_Seq_annot != annot.m_Seq_annot;
+}
+
+
+inline
+bool CSeq_annot_Handle::operator<(const CSeq_annot_Handle& annot) const
+{
+    return m_Seq_annot < annot.m_Seq_annot;
+}
 
 
 END_SCOPE(objects)
@@ -124,7 +129,7 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2003/09/30 16:21:59  vasilche
+* Revision 1.1  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
 * Scope caches results of requests for data to data loaders.
@@ -136,11 +141,7 @@ END_NCBI_SCOPE
 * Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
 * Added 'adaptive' option to objmgr_demo application.
 *
-* Revision 1.1  2003/09/05 17:28:32  grichenk
-* Initial revision
-*
-*
 * ===========================================================================
 */
 
-#endif  // OBJMGR_EXCEPTION__HPP
+#endif//SEQ_ANNOT_HANDLE__HPP

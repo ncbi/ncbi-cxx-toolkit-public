@@ -28,9 +28,11 @@
 */
 
 #include <objmgr/reader_pubseq.hpp>
+#include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/seqref_pubseq.hpp>
 #include <objmgr/impl/reader_zlib.hpp>
 #include <objmgr/impl/reader_snp.hpp>
+#include <objmgr/impl/tse_info.hpp>
 
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
@@ -49,19 +51,6 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
-
-CDB_Connection* CPubseqSeqref::x_GetConn(TConn conn) const
-{
-    return m_Reader.GetConnection(conn);
-}
-
-
-void CPubseqSeqref::x_Reconnect(TConn conn) const
-{
-    m_Reader.Reconnect(conn);
-}
-
 
 #if !defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
 // we have non MT-safe library used in MT application
@@ -85,13 +74,18 @@ CPubseqReader::CPubseqReader(TConn noConn,
                      "Attempt to open multiple pubseq_readers without MT-safe DB library");
     }
 #endif
-    SetParallelLevel(noConn);
-    // LOG_POST("opened " << m_Pool.size() << " new connections");
+    try {
+        SetParallelLevel(noConn);
+    }
+    catch ( ... ) {
+        SetParallelLevel(0);
+        throw;
+    }
 }
+
 
 CPubseqReader::~CPubseqReader()
 {
-    // LOG_POST("closed " << m_Pool.size() << " connections");
     SetParallelLevel(0);
 
 #if !defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
@@ -99,24 +93,50 @@ CPubseqReader::~CPubseqReader()
 #endif
 }
 
+
 CReader::TConn CPubseqReader::GetParallelLevel(void) const
 {
     return m_Pool.size();
 }
 
+
 void CPubseqReader::SetParallelLevel(TConn size)
 {
     size_t oldSize = m_Pool.size();
-    for(size_t i = size; i < oldSize; ++i)
+    for(size_t i = size; i < oldSize; ++i) {
         delete m_Pool[i];
+        m_Pool[i] = 0;
+    }
 
     m_Pool.resize(size);
 
-    for(size_t i = oldSize; i < size; ++i)
-        m_Pool[i] = NewConn();
+    for(size_t i = oldSize; i < min(1u, size); ++i) {
+        m_Pool[i] = x_NewConnection();
+    }
 }
 
-CDB_Connection *CPubseqReader::NewConn()
+
+CDB_Connection* CPubseqReader::x_GetConnection(TConn conn)
+{
+    conn = conn % m_Pool.size();
+    CDB_Connection* ret = m_Pool[conn];
+    if ( !ret ) {
+        ret = m_Pool[conn] = x_NewConnection();
+    }
+    return ret;
+}
+
+
+void CPubseqReader::Reconnect(TConn conn)
+{
+    LOG_POST("Reconnect");
+    conn = conn % m_Pool.size();
+    delete m_Pool[conn];
+    m_Pool[conn] = 0;
+}
+
+
+CDB_Connection *CPubseqReader::x_NewConnection(void)
 {
     if ( m_Context.get() == NULL ) {
         C_DriverMgr drvMgr;
@@ -154,83 +174,37 @@ CDB_Connection *CPubseqReader::NewConn()
 }
 
 
-CDB_Connection* CPubseqReader::GetConnection(TConn conn)
-{
-    return m_Pool[conn % m_Pool.size()];
-}
-
-
-void CPubseqReader::Reconnect(TConn conn)
-{
-    LOG_POST("Reconnect");
-    conn = conn % m_Pool.size();
-    delete m_Pool[conn];
-    m_Pool[conn] = NewConn();
-}
-
-
-bool CPubseqReader::RetrieveSeqrefs(TSeqrefs& sr,
+void CPubseqReader::RetrieveSeqrefs(TSeqrefs& sr,
                                     const CSeq_id& seqId,
                                     TConn conn)
 {
-    return x_RetrieveSeqrefs(sr, seqId, conn);
+    x_RetrieveSeqrefs(sr, seqId, x_GetConnection(conn));
 }
 
 
-bool CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs,
+void CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs,
                                       const CSeq_id& seqId,
-                                      TConn con)
+                                      CDB_Connection* conn)
 {
-    int gi = 0;
-
+    int gi;
     if ( seqId.IsGi() ) {
         gi = seqId.GetGi();
     }
     else {
-
-        // note: this was
-        //CDB_VarChar asnIn(static_cast<string>(CNcbiOstrstreamToString(oss)));
-        // but MSVC doesn't like this.  This is the only version that
-        // will compile:
-        CDB_VarChar asnIn;
-        {{
-            CNcbiOstrstream oss;
-            {{
-                CObjectOStreamAsn ooss(oss);
-                ooss << seqId;
-            }}
-            asnIn = CNcbiOstrstreamToString(oss);
-        }}
-            
-        auto_ptr<CDB_RPCCmd> cmd(m_Pool[con]->RPC("id_gi_by_seqid_asn", 1));
-        cmd->SetParam("@asnin", &asnIn);
-        cmd->Send();
-        
-        while(cmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> result(cmd->Result());
-            if (result.get() == 0  ||  result->ResultType() != eDB_RowResult)
-                continue;
-            
-            while(result->Fetch()) {
-                for(unsigned pos = 0; pos < result->NofItems(); ++pos) {
-                    const string& name = result->ItemName(pos);
-                    if (name == "gi") {
-                        CDB_Int giFound;
-                        result->GetItem(&giFound);
-                        gi = giFound.Value();
-                    }
-                    else {
-                        result->SkipItem();
-                    }
-                }
-            }
-        }
+        gi = x_ResolveSeq_id_to_gi(seqId, conn);
     }
-    
-    if (gi == 0)
-        return true; // no data?
 
-    auto_ptr<CDB_RPCCmd> cmd(m_Pool[con]->RPC("id_gi_class", 1));
+    if ( gi ) {
+        x_RetrieveSeqrefs(srs, gi, conn);
+    }
+}
+
+
+void CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs,
+                                      int gi,
+                                      CDB_Connection* conn)
+{
+    auto_ptr<CDB_RPCCmd> cmd(conn->RPC("id_gi_class", 1));
     {{
         CDB_Int giIn(gi);
         cmd->SetParam("@gi", &giIn);
@@ -265,194 +239,183 @@ bool CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs,
                 }
             }
 
-            _ASSERT(sat.Value() != kSat_SNP);
-            CRef<CSeqref> sr;
-            sr.Reset(new CPubseqSeqref(*this,
-                                       gi,
-                                       sat.Value(),
-                                       satKey.Value()));
-            srs.push_back(sr);
+            _ASSERT(sat.Value() != kSNP_Sat);
+            srs.push_back(Ref(new CSeqref(gi, sat.Value(), satKey.Value())));
             if ( TrySNPSplit() ) {
-                CSeqref::TFlags flags;
                 if ( extFeat.IsNULL() ) {
-                    flags = CSeqref::fHasExternal | CSeqref::fPossible;
+                    AddSNPSeqref(srs, gi, CSeqref::fPossible);
                 }
                 else if ( extFeat.Value() != 0 ) {
-                    flags = CSeqref::fHasExternal;
-                }
-                else {
-                    flags = 0;
-                }
-                if ( flags ) {
-                    sr.Reset(new CPubseqSeqref(*this, gi, kSat_SNP, gi));
-                    sr->SetFlags(flags);
-                    srs.push_back(sr);
+                    AddSNPSeqref(srs, gi);
                 }
             }
         }
     }
-  
-    return true;
 }
 
 
-CPubseqSeqref::CPubseqSeqref(CPubseqReader& reader,
-                             int gi, int sat, int satkey)
-    : CSeqref(gi, sat, satkey), m_Reader(reader)
+int CPubseqReader::x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
+                                         CDB_Connection* conn)
 {
+    // note: this was
+    //CDB_VarChar asnIn(static_cast<string>(CNcbiOstrstreamToString(oss)));
+    // but MSVC doesn't like this.  This is the only version that
+    // will compile:
+    CDB_VarChar asnIn;
+    {{
+        CNcbiOstrstream oss;
+        {{
+            CObjectOStreamAsn ooss(oss);
+            ooss << seqId;
+        }}
+        asnIn = CNcbiOstrstreamToString(oss);
+    }}
+            
+    auto_ptr<CDB_RPCCmd> cmd(conn->RPC("id_gi_by_seqid_asn", 1));
+    cmd->SetParam("@asnin", &asnIn);
+    cmd->Send();
+
+    while(cmd->HasMoreResults()) {
+        auto_ptr<CDB_Result> result(cmd->Result());
+        if (result.get() == 0  ||  result->ResultType() != eDB_RowResult)
+            continue;
+            
+        while(result->Fetch()) {
+            for(unsigned pos = 0; pos < result->NofItems(); ++pos) {
+                const string& name = result->ItemName(pos);
+                if (name == "gi") {
+                    CDB_Int giFound;
+                    result->GetItem(&giFound);
+                    return giFound.Value();
+                }
+                else {
+                    result->SkipItem();
+                }
+            }
+        }
+    }
+    return 0;
 }
 
 
-CPubseqSeqref::~CPubseqSeqref(void)
+CRef<CTSE_Info> CPubseqReader::GetMainBlob(const CSeqref& seqref, TConn connid)
 {
+    CDB_Connection* conn = x_GetConnection(connid);
+    auto_ptr<CDB_RPCCmd> cmd(x_SendRequest(seqref, conn, false));
+    auto_ptr<CDB_Result> result(x_ReceiveData(*cmd));
+    return x_ReceiveMainBlob(*result);
 }
 
 
-CBlobSource* CPubseqSeqref::GetBlobSource(TPos , TPos ,
-                                          TBlobClass ,
-                                          TConn conn) const
+CRef<CSeq_annot_SNP_Info> CPubseqReader::GetSNPAnnot(const CSeqref& seqref,
+                                                     TConn connid)
 {
-    return new CPubseqBlobSource(*this, conn);
+    CDB_Connection* conn = x_GetConnection(connid);
+    auto_ptr<CDB_RPCCmd> cmd(x_SendRequest(seqref, conn, true));
+    auto_ptr<CDB_Result> result(x_ReceiveData(*cmd));
+    return x_ReceiveSNPAnnot(*result);
 }
 
 
-CPubseqBlobSource::CPubseqBlobSource(const CPubseqSeqref& seqId, TConn conn)
-    : m_Seqref(seqId), m_Conn(conn),
-      m_Cmd(seqId.x_GetConn(conn)->RPC("id_get_asn", 4))
+CDB_RPCCmd* CPubseqReader::x_SendRequest(const CSeqref& seqref,
+                                         CDB_Connection* conn,
+                                         bool is_snp)
 {
-    CDB_Int giIn(seqId.Gi());
-    CDB_SmallInt satIn(seqId.Sat());
-    CDB_Int satKeyIn(seqId.SatKey());
-    bool is_external = seqId.Sat() == CReader::kSat_SNP;
-    bool load_external = is_external || !CReader::TrySNPSplit();
+    auto_ptr<CDB_RPCCmd> cmd(conn->RPC("id_get_asn", 4));
+    CDB_Int giIn(seqref.GetGi());
+    CDB_SmallInt satIn(seqref.GetSat());
+    CDB_Int satKeyIn(seqref.GetSatKey());
+    bool is_external = is_snp;
+    bool load_external = is_external || !TrySNPSplit();
     CDB_Int ext_feat(load_external);
 
-    m_Cmd->SetParam("@gi", &giIn);
-    m_Cmd->SetParam("@sat_key", &satKeyIn);
-    m_Cmd->SetParam("@sat", &satIn);
-    m_Cmd->SetParam("@ext_feat", &ext_feat);
-    m_Cmd->Send();
+    cmd->SetParam("@gi", &giIn);
+    cmd->SetParam("@sat_key", &satKeyIn);
+    cmd->SetParam("@sat", &satIn);
+    cmd->SetParam("@ext_feat", &ext_feat);
+    cmd->Send();
+    return cmd.release();
 }
 
 
-CPubseqBlobSource::~CPubseqBlobSource(void)
-{
-}
-
-
-void CPubseqBlobSource::x_Reconnect(void) const
-{
-    m_Seqref.x_Reconnect(m_Conn);
-}
-
-
-bool CPubseqBlobSource::HaveMoreBlobs(void)
-{
-    if ( !m_Blob ) {
-        x_GetNextBlob();
-    }
-    return m_Blob;
-}
-
-
-CBlob* CPubseqBlobSource::RetrieveBlob(void)
-{
-    return m_Blob.Release();
-}
-
-
-void CPubseqBlobSource::x_GetNextBlob(void)
+CDB_Result* CPubseqReader::x_ReceiveData(CDB_RPCCmd& cmd)
 {
     // new row
     CDB_VarChar descrOut("-");
     CDB_Int classOut(0);
     CDB_Int confidential(0),withdrawn(0);
     
-    while(m_Cmd->HasMoreResults()) {
+    while( cmd.HasMoreResults() ) {
         _TRACE("next result");
-        if ( m_Cmd->HasFailed() && confidential.Value()>0 ||
+        if ( cmd.HasFailed() && confidential.Value()>0 ||
              withdrawn.Value()>0 ) {
-            LOG_POST("GI(" << m_Seqref.Gi() <<") is private");
-            return;
+            break;
         }
-            
-        m_Result.reset(m_Cmd->Result());
-        if (m_Result.get() == 0 || m_Result->ResultType() != eDB_RowResult)
+        
+        auto_ptr<CDB_Result> result(cmd.Result());
+        if ( !result.get() || result->ResultType() != eDB_RowResult ) {
             continue;
-            
-        while(m_Result->Fetch()) {
-            _TRACE("next fetch: " << m_Result->NofItems() << " items");
-            for ( unsigned pos = 0; pos < m_Result->NofItems(); ++pos ) {
-                const string& name = m_Result->ItemName(pos);
+        }
+        
+        while ( result->Fetch() ) {
+            _TRACE("next fetch: " << result->NofItems() << " items");
+            for ( unsigned pos = 0; pos < result->NofItems(); ++pos ) {
+                const string& name = result->ItemName(pos);
                 _TRACE("next item: " << name);
-                if(name == "asn1") {
-                    bool is_snp = m_Seqref.Sat() == CReader::kSat_SNP;
-                    m_Blob.Reset(new CPubseqBlob(*this,
-                                                 classOut.Value(),
-                                                 descrOut.Value(),
-                                                 is_snp));
-                    return;
+                if ( name == "asn1" ) {
+                    return result.release();
                 }
-                else if(name == "confidential") {
-                    m_Result->GetItem(&confidential);
+                else if ( name == "confidential" ) {
+                    result->GetItem(&confidential);
                 }
-                else if(name == "override") {
-                    m_Result->GetItem(&withdrawn);
+                else if ( name == "override" ) {
+                    result->GetItem(&withdrawn);
                 }
                 else {
-                    m_Result->SkipItem();
+                    result->SkipItem();
                 }
             }
         }
     }
-    if(confidential.Value()>0 || withdrawn.Value()>0) {
-        LOG_POST("GI(" << m_Seqref.Gi() <<") is private");
-        return;
+    if ( confidential.Value()>0 || withdrawn.Value()>0 ) {
+        NCBI_THROW(CLoaderException, ePrivateData, "gi is private");
     }
+    NCBI_THROW(CLoaderException, eNoData, "no data");
 }
 
 
-CPubseqBlob::CPubseqBlob(CPubseqBlobSource& source,
-                         int cls, const string& descr,
-                         bool is_snp)
-    : CBlob(is_snp), m_Source(source)
+CRef<CTSE_Info> CPubseqReader::x_ReceiveMainBlob(CDB_Result& result)
 {
-    SetClass(cls);
-    SetDescr(descr);
+    CResultBtSrc src(&result);
+
+    auto_ptr<CObjectIStream> in
+        (CObjectIStream::Create(eSerial_AsnBinary, src));
+        
+    CReader::SetSeqEntryReadHooks(*in);
+
+    CRef<CSeq_entry> seq_entry(new CSeq_entry);
+
+    *in >> *seq_entry;
+
+    return Ref(new CTSE_Info(*seq_entry));
 }
 
 
-CPubseqBlob::~CPubseqBlob(void)
+CRef<CSeq_annot_SNP_Info> CPubseqReader::x_ReceiveSNPAnnot(CDB_Result& result)
 {
-}
-
-
-void CPubseqBlob::ReadSeq_entry(void)
-{
-    if ( IsSnp() ) {
-        CResultBtSrcRdr src(m_Source.m_Result.get());
+    CRef<CSeq_annot_SNP_Info> snp_annot_info(new CSeq_annot_SNP_Info);
+    
+    {{
+        CResultBtSrcRdr src(&result);
         CResultZBtSrc src2(&src);
         
-        auto_ptr<CObjectIStream> in;
-        in.reset(CObjectIStream::Create(eSerial_AsnBinary, src2));
-
-        m_SNP_annot_Info.Reset(new CSeq_annot_SNP_Info);
-        m_Seq_entry = m_SNP_annot_Info->Read(*in);
-        if ( m_SNP_annot_Info->empty() ) {
-            m_SNP_annot_Info.Reset();
-        }
-     }
-    else {
-        CResultBtSrc src(m_Source.m_Result.get());
-        auto_ptr<CObjectIStream> in;
-        in.reset(CObjectIStream::Create(eSerial_AsnBinary, src));
+        auto_ptr<CObjectIStream> in
+            (CObjectIStream::Create(eSerial_AsnBinary, src2));
         
-        CReader::SetSeqEntryReadHooks(*in);
-
-        m_Seq_entry.Reset(new CSeq_entry);
-        
-        *in >> *m_Seq_entry;
-    }
+        snp_annot_info->Read(*in);
+    }}
+    
+    return snp_annot_info;
 }
 
 
@@ -502,6 +465,18 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.36  2003/09/30 16:22:02  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.35  2003/08/27 14:25:22  vasilche
 * Simplified CCmpTSE class.
 *

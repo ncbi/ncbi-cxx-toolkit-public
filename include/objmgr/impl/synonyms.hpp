@@ -35,9 +35,15 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/seq_id_handle.hpp>
+#include <vector>
+#include <utility>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+class CBioseq_ScopeInfo;
+class CBioseq_Handle;
+struct SSeq_id_ScopeInfo;
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -49,25 +55,22 @@ BEGIN_SCOPE(objects)
 class NCBI_XOBJMGR_EXPORT CSynonymsSet : public CObject
 {
 public:
-    typedef set<CSeq_id_Handle>    TIdSet;
-    typedef TIdSet::iterator       iterator;
-    typedef TIdSet::const_iterator const_iterator;
+    typedef pair<const CSeq_id_Handle, SSeq_id_ScopeInfo>* value_type;
+    typedef vector<value_type>                             TIdSet;
+    typedef TIdSet::const_iterator                         const_iterator;
 
     CSynonymsSet(void);
     ~CSynonymsSet(void);
 
-    iterator begin(void);
     const_iterator begin(void) const;
-    iterator end(void);
     const_iterator end(void) const;
-    iterator find(const CSeq_id_Handle& id);
-    const_iterator find(const CSeq_id_Handle& id) const;
     bool empty(void) const;
-    //size_t size(void) const;
 
-    void AddSynonym(const CSeq_id_Handle& id);
-    void RemoveSynonym(const CSeq_id_Handle& id);
-    bool ContainsSynonym(const CSeq_id_Handle& id);
+    static CSeq_id_Handle GetSeq_id_Handle(const const_iterator& iter);
+    static CBioseq_Handle GetBioseqHandle(const const_iterator& iter);
+
+    void AddSynonym(const value_type& syn);
+    bool ContainsSynonym(const CSeq_id_Handle& id) const;
 
 private:
     // Prohibit copy functions
@@ -83,11 +86,6 @@ private:
 //
 /////////////////////////////////////////////////////////////////////
 
-inline
-CSynonymsSet::iterator CSynonymsSet::begin(void)
-{
-    return m_IdSet.begin();
-}
 
 inline
 CSynonymsSet::const_iterator CSynonymsSet::begin(void) const
@@ -95,11 +93,6 @@ CSynonymsSet::const_iterator CSynonymsSet::begin(void) const
     return m_IdSet.begin();
 }
 
-inline
-CSynonymsSet::iterator CSynonymsSet::end(void)
-{
-    return m_IdSet.end();
-}
 
 inline
 CSynonymsSet::const_iterator CSynonymsSet::end(void) const
@@ -107,25 +100,6 @@ CSynonymsSet::const_iterator CSynonymsSet::end(void) const
     return m_IdSet.end();
 }
 
-inline
-CSynonymsSet::iterator CSynonymsSet::find(const CSeq_id_Handle& id)
-{
-    return m_IdSet.find(id);
-}
-
-inline
-CSynonymsSet::const_iterator CSynonymsSet::find(const CSeq_id_Handle& id) const
-{
-    return m_IdSet.find(id);
-}
-
-/*
-inline
-size_t CSynonymsSet::size(void) const
-{
-    return m_IdSet.size();
-}
-*/
 
 inline
 bool CSynonymsSet::empty(void) const
@@ -133,23 +107,6 @@ bool CSynonymsSet::empty(void) const
     return m_IdSet.empty();
 }
 
-inline
-void CSynonymsSet::AddSynonym(const CSeq_id_Handle& id)
-{
-    m_IdSet.insert(id);
-}
-
-inline
-void CSynonymsSet::RemoveSynonym(const CSeq_id_Handle& id)
-{
-    m_IdSet.erase(id);
-}
-
-inline
-bool CSynonymsSet::ContainsSynonym(const CSeq_id_Handle& id)
-{
-    return find(id) != end();
-}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -157,6 +114,18 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2003/09/30 16:22:01  vasilche
+ * Updated internal object manager classes to be able to load ID2 data.
+ * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+ * Scope caches results of requests for data to data loaders.
+ * Optimized CSeq_id_Handle for gis.
+ * Optimized bioseq lookup in scope.
+ * Reduced object allocations in annotation iterators.
+ * CScope is allowed to be destroyed before other objects using this scope are
+ * deleted (feature iterators, bioseq handles etc).
+ * Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+ * Added 'adaptive' option to objmgr_demo application.
+ *
  * Revision 1.4  2003/06/02 16:01:37  dicuccio
  * Rearranged include/objects/ subtree.  This includes the following shifts:
  *     - include/objects/alnmgr --> include/objtools/alnmgr

@@ -40,6 +40,7 @@
 #include <util/rangemap.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <objmgr/impl/annot_object_index.hpp>
 
 #include <map>
 #include <vector>
@@ -47,9 +48,19 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CScope_Impl;
 class CBioseq_Info;
 class CSeq_entry_Info;
+class CSeq_annot_Info;
+class CSeq_annot_SNP_Info;
+class CTSE_Chunk_Info;
+class CID2S_Split_Info;
+
+class CDataSource;
 class CHandleRange;
+class CAnnotObject_Info;
+class CAnnotTypes_CI;
+class CSeq_entry;
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -59,44 +70,14 @@ class CHandleRange;
 //
 
 
-// forward declaration
-class CSeq_entry;
-class CBioseq;
-class CDataSource;
-class CAnnotObject_Info;
-class CSeq_annot_Info;
-class CSeq_annot_SNP_Info;
-class CAnnotTypes_CI;
-
-struct NCBI_XOBJMGR_EXPORT SAnnotObject_Key
-{
-    CAnnotObject_Info*      m_AnnotObject_Info;
-    CSeq_id_Handle          m_Handle;
-    CRange<TSeqPos>         m_Range;
-};
-
-struct NCBI_XOBJMGR_EXPORT SAnnotObject_Index
-{
-    SAnnotObject_Index(void);
-    ~SAnnotObject_Index(void);
-    SAnnotObject_Index(const SAnnotObject_Index&);
-    SAnnotObject_Index& operator=(const SAnnotObject_Index&);
-
-    CAnnotObject_Info*                  m_AnnotObject_Info;
-    int                                 m_AnnotLocationIndex;
-    CRef< CObjectFor<CHandleRange> >    m_HandleRange;
-};
-
 class NCBI_XOBJMGR_EXPORT CTSE_Info : public CSeq_entry_Info
 {
 public:
     // 'ctors
-    CTSE_Info(CDataSource* data_source,
-              CSeq_entry& tse,
-              bool dead,
-              const CObject* blob_id);
+    CTSE_Info(CSeq_entry& tse, bool dead = false, const CObject* blob_id = 0);
     virtual ~CTSE_Info(void);
 
+    bool HaveDataSource(void) const;
     CDataSource& GetDataSource(void) const;
 
     const CSeq_entry& GetTSE(void) const;
@@ -106,12 +87,18 @@ public:
     CTSE_Info& GetTSE_Info(void);
 
     bool IsDead(void) const;
+    void SetDead(bool dead);
     bool Locked(void) const;
 
     const CConstRef<CObject>& GetBlobId(void) const;
+    void SetBlobId(const CObject* blob_id);
+
+    const string& GetDataSourceName(void) const;
+    void SetDataSourceName(const string& name);
 
     // indexes types
-    typedef map<CSeq_id_Handle, CRef<CBioseq_Info> >         TBioseqs;
+    typedef map<int, CSeq_entry_Info*>                       TBioseq_sets;
+    typedef map<CSeq_id_Handle, CBioseq_Info*>               TBioseqs;
 
     typedef CRange<TSeqPos>                                  TRange;
     typedef CRangeMultimap<SAnnotObject_Index,
@@ -132,21 +119,48 @@ public:
 
     typedef map<CSeq_id_Handle, SIdAnnotObjs>                TAnnotObjs;
 
-    bool ContainsSeqid(CSeq_id_Handle id) const;
+    typedef int                                              TChunkId;
+    typedef map<TChunkId, CRef<CTSE_Chunk_Info> >            TChunks;
 
-    void AddSNP_annot_Info(CSeq_annot_SNP_Info& snp_info);
+    bool ContainsSeqid(const CSeq_id_Handle& id) const;
+    CConstRef<CBioseq_Info> FindBioseq(const CSeq_id_Handle& key) const;
+
+    void UpdateAnnotIndex(void) const;
+    void UpdateAnnotIndex(const CSeq_entry_Info& entry_info) const;
+    void UpdateAnnotIndex(const CSeq_annot_Info& annot_info) const;
+    void UpdateAnnotIndex(void);
+    void UpdateAnnotIndex(CSeq_entry_Info& entry_info);
+    void UpdateAnnotIndex(CSeq_annot_Info& annot_info);
+
+    void SetSplitInfo(const CID2S_Split_Info& info);
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
+
+    void x_DSAttach(CDataSource* data_source);
+    void x_DSDetach(CDataSource* data_source);
+    void x_DSAttach(void);
+    void x_DSDetach(void);
 
     typedef pair<size_t, size_t> TIndexRange;
 
 private:
     friend class CTSE_Guard;
     friend class CDataSource;
-    friend class CScope;
+    friend class CScope_Impl;
     friend class CDataLoader;
     friend class CAnnotTypes_CI;
+    friend class CSeq_entry_Info;
     friend class CSeq_annot_Info;
+    friend class CBioseq_Info;
+    friend class CTSE_Chunk_Info;
+
+    CSeq_entry_Info& GetBioseq_set(int id);
+    CBioseq_Info& GetBioseq(int gi);
+
+    void x_SetBioseqId(const CSeq_id_Handle& key, CBioseq_Info* info);
+    void x_ResetBioseqId(const CSeq_id_Handle& key, CBioseq_Info* info);
+    void x_SetBioseq_setId(int key, CSeq_entry_Info* info);
+    void x_ResetBioseq_setId(int key, CSeq_entry_Info* info);
 
     static void x_InitIndexTables(void);
 
@@ -171,46 +185,63 @@ private:
                                    int feat_type,
                                    int feat_subtype) const;
 
+    void x_MapSNP_Table(const CSeq_id_Handle& key,
+                        const CRef<CSeq_annot_SNP_Info>& snp_info);
+    void x_UnmapSNP_Table(const CSeq_id_Handle& key,
+                          const CRef<CSeq_annot_SNP_Info>& snp_info);
+
     void x_MapAnnotObject(TRangeMap& rangeMap,
                           const SAnnotObject_Key& key,
                           const SAnnotObject_Index& annotRef);
-    bool x_DropAnnotObject(TRangeMap& rangeMap,
-                           const SAnnotObject_Key& key);
+    bool x_UnmapAnnotObject(TRangeMap& rangeMap,
+                            const SAnnotObject_Key& key);
     void x_MapAnnotObject(SIdAnnotObjs& objs,
                           const SAnnotObject_Key& key,
                           const SAnnotObject_Index& annotRef);
-    bool x_DropAnnotObject(SIdAnnotObjs& objs,
-                           const SAnnotObject_Key& key);
+    bool x_UnmapAnnotObject(SIdAnnotObjs& objs,
+                            const SAnnotObject_Key& key);
     void x_MapAnnotObject(const SAnnotObject_Key& key,
                           const SAnnotObject_Index& annotRef);
-    void x_DropAnnotObject(const SAnnotObject_Key& key);
+    void x_UnmapAnnotObject(const SAnnotObject_Key& key);
+
+    void x_DSAttachThis(void);
+    void x_DSDetachThis(void);
+
+    void x_IndexSeqTSE(const CSeq_id_Handle& id);
+    void x_UnindexSeqTSE(const CSeq_id_Handle& id);
+    void x_IndexAnnotTSE(const CSeq_id_Handle& id);
+    void x_UnindexAnnotTSE(const CSeq_id_Handle& id);
 
     // Parent data-source
-    CDataSource* m_DataSource;
+    CDataSource*           m_DataSource;
 
     // Dead seq-entry flag
-    bool m_Dead;
+    bool                   m_Dead;
 
-    typedef CFastMutex      TBioseqsLock;
-    typedef CRWLock         TAnnotObjsLock;
+    // May be used by data loaders to store blob-id
+    typedef CConstRef<CObject> TBlob_ID;
+    TBlob_ID               m_Blob_ID;
+
+    string                 m_DataSourceName; // SNP etc.
+
+    typedef CRWLock        TAnnotObjsLock;
+    typedef TAnnotObjsLock::TReadLockGuard  TAnnotReadLockGuard;
+    typedef TAnnotObjsLock::TWriteLockGuard TAnnotWriteLockGuard;
 
     // ID to bioseq-info
+    TBioseq_sets           m_Bioseq_sets;
     TBioseqs               m_Bioseqs;
-    mutable TBioseqsLock   m_BioseqsLock;
 
     // ID to annot-selector-map
     TAnnotObjs             m_AnnotObjs;
     mutable TAnnotObjsLock m_AnnotObjsLock;
 
-    // May be used by data loaders to store blob-id
-    typedef CConstRef<CObject> TBlob_ID;
-    TBlob_ID   m_Blob_ID;
+    TChunks                m_Chunks;
 
     // Hide copy methods
     CTSE_Info(const CTSE_Info&);
     CTSE_Info& operator= (const CTSE_Info&);
 
-    bool m_DirtyAnnotIndex;
 };
 
 
@@ -221,6 +252,13 @@ typedef CConstRef<CTSE_Info> TTSE_Lock;
 //  Inline methods
 //
 /////////////////////////////////////////////////////////////////////
+
+inline
+bool CTSE_Info::HaveDataSource(void) const
+{
+    return m_DataSource != 0;
+}
+
 
 inline
 CDataSource& CTSE_Info::GetDataSource(void) const
@@ -265,6 +303,13 @@ bool CTSE_Info::IsDead(void) const
 
 
 inline
+void CTSE_Info::SetDead(bool dead)
+{
+    m_Dead = dead;
+}
+
+
+inline
 bool CTSE_Info::Locked(void) const
 {
     return !ReferencedOnlyOnce();
@@ -277,11 +322,11 @@ const CConstRef<CObject>& CTSE_Info::GetBlobId(void) const
     return m_Blob_ID;
 }
 
+
 inline
-bool CTSE_Info::ContainsSeqid(CSeq_id_Handle id) const
+const string& CTSE_Info::GetDataSourceName(void) const
 {
-    CFastMutexGuard guard(m_BioseqsLock);
-    return m_Bioseqs.find(id) != m_Bioseqs.end();
+    return m_DataSourceName;
 }
 
 
@@ -319,6 +364,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/09/30 16:22:01  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.38  2003/09/16 14:21:46  grichenk
 * Added feature indexing and searching by subtype.
 *

@@ -94,19 +94,30 @@ int CTestApp::Run(void)
 
     // 1.2.3. Scope is an object on the stack
     for (idx = 0; idx <= 0; idx++) {
+        CScope Scope1(*m_ObjMgr);
+        CScope Scope2(*m_ObjMgr);
         CScope Scope(*m_ObjMgr);
         // populate
+#if 1
+        CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
+        Scope1.AddTopLevelSeqEntry(*entry1);
+        CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
+        Scope2.AddTopLevelSeqEntry(*entry2);
+        Scope.AddScope(Scope1);
+        Scope.AddScope(Scope2);
+#else
         CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
         Scope.AddTopLevelSeqEntry(*entry1);
         CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
         Scope.AddTopLevelSeqEntry(*entry2);
+#endif
         // retrieve data
         CTestHelper::TestDataRetrieval( Scope, 0, 0);
 
         /*
         // Find seq_id
         {
-            set< CRef<const CSeq_id> > setId;
+            set< CConstRef<const CSeq_id> > setId;
             Scope.FindSeqid(setId, "seq11.3");
         }
         */
@@ -236,6 +247,18 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/09/30 16:22:05  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.32  2003/08/29 13:34:48  vasilche
 * Rewrote CSeqVector/CSeqVector_CI code to allow better inlining.
 * CSeqVector::operator[] made significantly faster.

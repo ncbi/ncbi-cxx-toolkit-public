@@ -50,7 +50,7 @@ public:
     typedef list< CRef<CDelta_seq> > TList;
     typedef TList::iterator TList_I;
 
-    CSeqMap_Delta_seqs(TObject& obj, CDataSource* source = 0);
+    CSeqMap_Delta_seqs(TObject& obj);
     CSeqMap_Delta_seqs(TObject& obj, CSeqMap_Delta_seqs* parent, size_t index);
 
     ~CSeqMap_Delta_seqs(void);
@@ -96,9 +96,9 @@ public:
     typedef list< CRef<CSeq_loc> > TList;
     typedef TList::iterator TList_I;
 
-    CSeqMap_Seq_locs(CSeg_ext& obj, TList& seq, CDataSource* source = 0);
-    CSeqMap_Seq_locs(CSeq_loc_mix& obj, TList& seq, CDataSource* source = 0);
-    CSeqMap_Seq_locs(CSeq_loc_equiv& obj, TList& seq, CDataSource* source = 0);
+    CSeqMap_Seq_locs(CSeg_ext& obj, TList& seq);
+    CSeqMap_Seq_locs(CSeq_loc_mix& obj, TList& seq);
+    CSeqMap_Seq_locs(CSeq_loc_equiv& obj, TList& seq);
 
     ~CSeqMap_Seq_locs(void);
 
@@ -136,7 +136,7 @@ public:
     typedef list< CRef<CSeq_interval> > TList;
     typedef TList::iterator TList_I;
 
-    CSeqMap_Seq_intervals(TObject& obj, CDataSource* source = 0);
+    CSeqMap_Seq_intervals(TObject& obj);
     CSeqMap_Seq_intervals(TObject& obj, CSeqMap* parent, size_t index);
 
     ~CSeqMap_Seq_intervals(void);
@@ -175,7 +175,7 @@ public:
     typedef list< TSeqPos > TList;
     typedef TList::iterator TList_I;
 
-    CSeqMap_SeqPoss(TObject& obj, CDataSource* source = 0);
+    CSeqMap_SeqPoss(TObject& obj);
     CSeqMap_SeqPoss(TObject& obj, CSeqMap* parent, size_t index);
 
     ~CSeqMap_SeqPoss(void);
@@ -204,6 +204,10 @@ protected:
         }
     
 private:
+    // Prohibit copy operator and constructor
+    CSeqMap_SeqPoss(const CSeqMap_SeqPoss&);
+    CSeqMap_SeqPoss& operator= (const CSeqMap_SeqPoss&);
+    
     CRef<TObject> m_Object;
     TList*        m_List;
 };
@@ -214,6 +218,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.5  2003/06/02 16:01:36  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

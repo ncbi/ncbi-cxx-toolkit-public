@@ -83,7 +83,7 @@ public:
     typedef TTSESet::const_iterator const_iterator;
 
     bool insert(CTSE_Info* tse);
-    void erase(CTSE_Info* tse);
+    bool erase(CTSE_Info* tse);
 
     const_iterator begin(void) const
         {
@@ -192,41 +192,34 @@ public:
     CRef<CTSE_Info> AddTSE(CSeq_entry& se,
                            bool dead = false,
                            const CObject* blob_id = 0);
+    void AddTSE(CRef<CTSE_Info> tse);
 
     /// Add new sub-entry to "parent".
     /// Return FALSE and do nothing if "parent" is not a node in an
     /// existing TSE tree of this data-source.
-    bool AttachEntry(CSeq_entry& parent, CSeq_entry& entry);
-    bool RemoveEntry(CSeq_entry& entry);
+    void AttachEntry(CSeq_entry& parent, CSeq_entry& entry);
+    void AttachEntry(CSeq_entry_Info& parent, CSeq_entry& entry);
+    void RemoveEntry(CSeq_entry& entry);
+    void RemoveEntry(CSeq_entry_Info& entry);
 
     /// Add sequence map for the given Bioseq.
     /// Return FALSE and do nothing if "bioseq" is not a node in an
     /// existing TSE tree of this data-source, or if "bioseq" is not a Bioseq.
-    bool AttachMap(CSeq_entry& bioseq, CSeqMap& seqmap);
-
-/*
-    /// Add seq-data to a Bioseq.
-    /// Return FALSE and do nothing if "bioseq" is not a node in an
-    /// existing TSE tree of this data-source, or if "bioseq" is not a Bioseq.
-    /// If "start" is 0, "length" is equal to the sequence length (from
-    /// the bioseq's seq-inst), and the segment is of type "literal", the data
-    /// is added as a regular seq-data. Otherwise the bioseq is treated as a
-    /// segmented sequence and the segment is added as a delta-ext segment.
-    /// "seq_seg" must be allocated on the heap, since it will be referenced
-    /// by the bioseq (except the case of a non-segmented bioseq, when only
-    /// seq-data part of the seq_seg will be locked).
-    bool AttachSeqData(CSeq_entry& bioseq, CDelta_ext& seq_seg,
-                       size_t index,
-                       TSeqPos start, TSeqPos length);
-*/
+    void AttachMap(CSeq_entry& bioseq, CSeqMap& seqmap);
+    void AttachMap(CSeq_entry_Info& bioseq, CSeqMap& seqmap);
 
     /// Add annotations to a Seq-entry.
     /// Return FALSE and do nothing if "parent" is not a node in an
     /// existing TSE tree of this data-source.
-    bool AttachAnnot(CSeq_entry& entry, CSeq_annot& annot);
+    void AttachAnnot(CSeq_entry& entry, CSeq_annot& annot);
+    void AttachAnnot(CSeq_entry_Info& entry, CSeq_annot& annot);
     // Remove/replace seq-annot from the given entry
-    bool RemoveAnnot(CSeq_entry& entry, CSeq_annot& annot);
-    bool ReplaceAnnot(CSeq_entry& entry,
+    void RemoveAnnot(CSeq_entry& entry, CSeq_annot& annot);
+    void RemoveAnnot(CSeq_entry_Info& entry, CSeq_annot& annot);
+    void ReplaceAnnot(CSeq_entry& entry,
+                      CSeq_annot& old_annot,
+                      CSeq_annot& new_annot);
+    void ReplaceAnnot(CSeq_entry_Info& entry,
                       CSeq_annot& old_annot,
                       CSeq_annot& new_annot);
 
@@ -247,11 +240,10 @@ public:
     // Remove TSE from the datasource, update indexes
     void DropAllTSEs(void);
     bool DropTSE(CSeq_entry& tse);
+    bool DropTSE(CTSE_Info& info);
 
     // Contains (or can load) any entries?
     bool IsEmpty(void) const;
-
-    CSeq_id_Mapper& GetSeq_id_Mapper(void) const;
 
     /// Get the complete Bioseq (as loaded by now)
     const CBioseq& GetBioseq(const CBioseq_Info& info);
@@ -268,7 +260,7 @@ public:
     /// Get sequence map
     const CSeqMap& GetSeqMap(const CBioseq_Info& info);
 
-    CDataLoader* GetDataLoader(void);
+    CDataLoader* GetDataLoader(void) const;
     CSeq_entry* GetTopEntry(void);
 
     // Internal typedefs
@@ -282,17 +274,16 @@ public:
     typedef map<const CSeq_annot*, CSeq_annot_Info*> TSeq_annot_InfoMap;
     typedef map<const CBioseq*, CBioseq_Info*>       TBioseq_InfoMap;
     typedef map<const CObject*, CAnnotObject_Info* > TAnnotObject_InfoMap;
+    typedef CPriorityNode::TPriority                 TPriority;
 
-    void UpdateAnnotIndex(const CHandleRangeMap& loc,
-                          const SAnnotSelector& sel);
-    void UpdateAnnotIndex(const CHandleRangeMap& loc,
-                          const SAnnotSelector& sel,
-                          const CSeq_entry_Info& entry_info);
+    void UpdateAnnotIndex(const CSeq_entry_Info& entry_info);
     void UpdateAnnotIndex(const CSeq_annot_Info& annot_info);
     void GetSynonyms(const CSeq_id_Handle& id,
                      set<CSeq_id_Handle>& syns);
     void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
-                             TTSE_LockSet& with_ref);
+                             const SAnnotTypeSelector& sel,
+                             TTSE_LockSet& with_ref,
+                             const string* source_name);
 
     // Fill the set with bioseq handles for all sequences from a given TSE.
     // Return empty tse lock if the entry was not found or is not a TSE.
@@ -313,101 +304,89 @@ public:
                                   CSeqMatch_Info& info2);
     bool IsLive(const CTSE_Info& tse);
 
-    // bool IsSynonym(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2) const;
+    //bool IsSynonym(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2) const;
 
     string GetName(void) const;
 
-    CPriorityNode::TPriority GetDefaultPriority(void) const;
-    void SetDefaultPriority(CPriorityNode::TPriority priority);
+    TPriority GetDefaultPriority(void) const;
+    void SetDefaultPriority(TPriority priority);
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
-    CConstRef<CTSE_Info> GetTSEInfo(const CSeq_entry& entry);
-    CConstRef<CSeq_entry_Info> GetSeq_entry_Info(const CSeq_entry& entry);
-    CConstRef<CSeq_annot_Info> GetSeq_annot_Info(const CSeq_annot& annot);
+    CRef<CTSE_Info> FindTSEInfo(CSeq_entry& entry);
+    CRef<CSeq_entry_Info> FindSeq_entry_Info(CSeq_entry& entry);
+    CRef<CSeq_annot_Info> FindSeq_annot_Info(CSeq_annot& annot);
 
 private:
     friend class CAnnotTypes_CI; // using mutex etc.
     friend class CBioseq_Handle; // using mutex
     friend class CGBDataLoader;  //
-    friend class CSeq_annot_Info;
     friend class CTSE_Info;
+    friend class CSeq_entry_Info;
+    friend class CSeq_annot_Info;
+    friend class CBioseq_Info;
 
     // attach, detach, index & unindex methods
     // TSE
-    CRef<CTSE_Info> x_AttachTSE(CSeq_entry& tse,
-                                bool dead,
-                                const CObject* blob_id);
-    void x_DetachTSE(CTSE_Info& tse_info);
+    void x_DropTSE(CTSE_Info& info);
+    void x_AttachTSE(CTSE_Info& info);
+    void x_DetachTSE(CTSE_Info& info);
+    void x_MapTSE(CTSE_Info& info);
+    void x_UnmapTSE(CTSE_Info& info);
     // Seq-entry
-    void x_AttachSeq_entry_Contents(CSeq_entry_Info& entry_info);
-    void x_DetachSeq_entry_Contents(CSeq_entry_Info& entry_info);
-    // Bioseq-set
-    void x_AttachBioseqSet(CBioseq_set& seq_set,
-                           CSeq_entry_Info& entry_info);
-    // Bioseq
-    void x_AttachBioseq(CBioseq& seq,
-                        CSeq_entry_Info& entry_info);
-    void x_IndexBioseq(CBioseq_Info& seq_info);
-    void x_DetachBioseq(CBioseq_Info& seq_info);
+    void x_AttachSeq_entry(CSeq_entry_Info& info);
+    void x_DetachSeq_entry(CSeq_entry_Info& info);
+    void x_MapSeq_entry(CSeq_entry_Info& info);
+    void x_UnmapSeq_entry(CSeq_entry_Info& info);
+    void x_AttachSeq_entry_Contents(CSeq_entry_Info& info);
+    void x_DetachSeq_entry_Contents(CSeq_entry_Info& info);
+    // SET OF Seq-entry
+    typedef vector< CRef< CSeq_entry_Info > > TEntries;
+    void x_AttachSeq_entries(TEntries& entries);
+    void x_DetachSeq_entries(TEntries& entries);
     // SET OF Seq-annot
-    typedef list< CRef< CSeq_annot > > TAnnots;
-    void x_AttachSeq_annots(TAnnots& annots, CSeq_entry_Info& entry_info);
+    typedef vector< CRef< CSeq_annot_Info > > TAnnots;
+    void x_AttachSeq_annots(TAnnots& annots);
+    void x_DetachSeq_annots(TAnnots& annots);
+    typedef list< CRef< CSeq_annot > > TSeq_annots;
+    bool x_RemoveSeq_annot(TSeq_annots& annot_set, CSeq_annot& annot);
     // Seq-annot
-    void x_IndexSeq_annot(CSeq_annot_Info& annot_info);
-    void x_DetachSeq_annots(CTSE_Info& tse_info);
-    void x_DetachSeq_annot(CSeq_annot_Info& annot_info);
-    void x_UnindexSeq_annot(CSeq_annot_Info& annot_info);
-
-    // create, delete & lookup Xxx_Info objects
-    // TSE
-    CRef<CTSE_Info> x_CreateTSE_Info(CSeq_entry& tse,
-                                     bool dead,
-                                     const CObject* blob_id);
-    CRef<CTSE_Info> x_FindTSE_Info(const CSeq_entry& tse);
-    void x_DeleteTSE_Info(CTSE_Info& tse_info);
-    // Seq-entry
-    CRef<CSeq_entry_Info> x_CreateSeq_entry_Info(CSeq_entry& entry,
-                                                 CSeq_entry_Info& par);
-    CRef<CSeq_entry_Info> x_FindSeq_entry_Info(const CSeq_entry& entry);
-    void x_DeleteSeq_entry_Info(CSeq_entry_Info& entry_info);
+    void x_AttachSeq_annot(CSeq_annot_Info& info);
+    void x_DetachSeq_annot(CSeq_annot_Info& info);
+    void x_MapSeq_annot(CSeq_annot_Info& info);
+    void x_UnmapSeq_annot(CSeq_annot_Info& info);
     // Bioseq
-    CRef<CBioseq_Info> x_CreateBioseq_Info(CBioseq& seq,
-                                           CSeq_entry_Info& parent);
+    void x_AttachBioseq(CBioseq_Info& info);
+    void x_DetachBioseq(CBioseq_Info& info);
+    void x_MapBioseq(CBioseq_Info& info);
+    void x_UnmapBioseq(CBioseq_Info& info);
+    // Indexes
+    void x_IndexTSE(CTSE_Info& info);
+    void x_UnindexTSE(CTSE_Info& info);
+    void x_DropIndexTSE(CTSE_Info& info);
+    void x_IndexSeq_annot(CSeq_annot_Info& info);
+    void x_UnindexSeq_annot(CSeq_annot_Info& info);
+    void x_DropIndexSeq_annot(CSeq_annot_Info& info);
+
+
+    void x_AddEntry(CSeq_entry_Info& parent, CSeq_entry& entry);
+    void x_RemoveEntry(CSeq_entry_Info& entry);
+    void x_AttachMap(CSeq_entry_Info& bioseq, CSeqMap& seqmap);
+    void x_AddAnnot(CSeq_entry_Info& entry, CSeq_annot& annot);
+    void x_RemoveAnnot(CSeq_entry_Info& entry, CSeq_annot& annot);
+    void x_ReplaceAnnot(CSeq_entry_Info& entry,
+                        CSeq_annot& old_annot,
+                        CSeq_annot& new_annot);
+
+    // lookup Xxx_Info objects
+    // TSE
+    CRef<CTSE_Info> x_FindTSE_Info(const CSeq_entry& tse);
+    // Seq-entry
+    CRef<CSeq_entry_Info> x_FindSeq_entry_Info(const CSeq_entry& entry);
+    // Bioseq
     CRef<CBioseq_Info> x_FindBioseq_Info(const CBioseq& seq);
-    void x_DeleteBioseq_Info(CBioseq_Info& seq_info);
     // Seq-annot
-    CRef<CSeq_annot_Info> x_CreateSeq_annot_Info(CSeq_annot& annot,
-                                                 CSeq_entry_Info& parent);
     CRef<CSeq_annot_Info> x_FindSeq_annot_Info(const CSeq_annot& annot);
-    void x_DeleteSeq_annot_Info(CSeq_annot_Info& annot_info);
-
-#if 0
-    // index and unindex of annot objects
-    bool x_MakeGenericSelector(SAnnotTypeSelector& annotSelector) const;
-
-    // Process a single data element
-    void x_MapAnnotObject(CTSE_Info::TRangeMap& mapByRange,
-                          const CTSE_Info::TRange& range,
-                          const SAnnotObject_Index& annotRef);
-    void x_MapAnnotObject(CRef<CAnnotObject_Info>& annot_info,
-                          const CHandleRangeMap& hrm,
-                          const SAnnotTypeSelector& annotSelector);
-    bool x_DropAnnotObject(CTSE_Info::TRangeMap& mapByRange,
-                           const CTSE_Info::TRange& range,
-                           CRef<CAnnotObject_Info>& annotObj);
-    void x_DropAnnotObject(CRef<CAnnotObject_Info>& annotObj,
-                           const CHandleRangeMap& hrm,
-                           const SAnnotTypeSelector& annotSelector);
-    void x_DropAnnotObject(CRef<CAnnotObject_Info>& annotObj);
-    void x_DropAnnotObject(const CObject* annotPtr);
-    void x_MapAnnotObject(CSeq_feat& feat, CSeq_annot_Info& annot);
-    void x_MapAnnotObject(CSeq_align& align, CSeq_annot_Info& annot);
-    void x_MapAnnotObject(CSeq_graph& graph, CSeq_annot_Info& annot);
-    //
-    void x_MapAnnotObject(CAnnotObject_Info* annot_info_ptr);
-    void x_DropAnnotObject(const CObject* annotObj, CSeq_annot_Info& annot);
-#endif
 
     // Find the seq-entry with best bioseq for the seq-id handle.
     // The best bioseq is the bioseq from the live TSE or from the
@@ -415,21 +394,19 @@ private:
     // If no matches were found, return 0.
     TTSE_Lock x_FindBestTSE(const CSeq_id_Handle& handle) const;
 
-    // Create CSeqMap for a bioseq
-    void x_CreateSeqMap(CBioseq_Info& seq_info);
-    // Non-const version of GetSeqMap()
-    const CSeqMap& x_GetSeqMap(const CBioseq_Info& info);
-
-    void x_GetAnnotData(const CHandleRangeMap& loc,
-                        const SAnnotSelector& sel);
     void x_IndexAllAnnots(CSeq_entry_Info& entry_info);
+    void x_SetDirtyAnnotIndex(void);
 
-    bool x_RemoveSeq_annot(TAnnots& annot_set, CSeq_annot& annot);
-
-    void x_AddTSE_ref(const CSeq_id_Handle& idh, CTSE_Info* tse_info);
-    void x_DropTSE_ref(const CSeq_id_Handle& idh, CTSE_Info* tse_info);
-    void x_RegisterAnnotObject(const CObject* object, CAnnotObject_Info* info);
-    void x_UnregisterAnnotObject(const CObject* object);
+    void x_IndexTSE(TTSEMap& tse_map,
+                    const CSeq_id_Handle& id, CTSE_Info* tse_info);
+    void x_UnindexTSE(TTSEMap& tse_map,
+                      const CSeq_id_Handle& id, CTSE_Info* tse_info);
+    void x_IndexSeqTSE(const CSeq_id_Handle& idh, CTSE_Info* tse_info);
+    void x_UnindexSeqTSE(const CSeq_id_Handle& idh, CTSE_Info* tse_info);
+    void x_IndexAnnotTSE(const CSeq_id_Handle& idh, CTSE_Info* tse_info);
+    void x_UnindexAnnotTSE(const CSeq_id_Handle& idh, CTSE_Info* tse_info);
+    void x_IndexAnnotTSEs(CTSE_Info* tse_info);
+    void x_UnindexAnnotTSEs(CTSE_Info* tse_info);
 
     // Global cleanup -- search for unlocked TSEs and drop them.
     void x_CleanupUnusedEntries(void);
@@ -443,36 +420,43 @@ private:
                           CBioseq_CI_Base::EBioseqLevelFlag level);
 
 #if 0
-    typedef CRWLock TRWLock;
-    typedef TRWLock::TReadLockGuard TReadLockGuard;
-    typedef TRWLock::TWriteLockGuard TWriteLockGuard;
+    typedef CRWLock TMainLock;
 #else
-    typedef CMutex TRWLock;
-    typedef CMutexGuard TReadLockGuard;
-    typedef CMutexGuard TWriteLockGuard;
+    typedef CMutex TMainLock;
 #endif
+#if 0
+    typedef CRWLock TAnnotLock;
+#else
+    typedef CFastMutex TAnnotLock;
+#endif
+    typedef TMainLock::TReadLockGuard   TMainReadLockGuard;
+    typedef TMainLock::TWriteLockGuard  TMainWriteLockGuard;
+    typedef TAnnotLock::TReadLockGuard  TAnnotReadLockGuard;
+    typedef TAnnotLock::TWriteLockGuard TAnnotWriteLockGuard;
 
-    // Used to lock: m_Entries, m_TSE_seq, m_TSE_ref
-    mutable TRWLock m_DataSource_Mtx;
+    // Used to lock: m_*_InfoMap, m_TSE_seq
+    // Is locked before locks in CTSE_Info
+    mutable TMainLock     m_DSMainLock;
+    // Used to lock: m_TSE_annot, m_TSE_annot_is_dirty
+    // Is locked after locks in CTSE_Info
+    mutable TAnnotLock    m_DSAnnotLock;
 
-    CDataLoader          *m_Loader;
+    CRef<CDataLoader>     m_Loader;
     CRef<CSeq_entry>      m_pTopEntry;
     CObjectManager*       m_ObjMgr;
 
-    TTSE_InfoMap          m_TSE_InfoMap; // set of all TSEs to keep them locked
+    TTSE_InfoMap          m_TSE_InfoMap;       // All known TSEs, (locked once)
     TSeq_entry_InfoMap    m_Seq_entry_InfoMap; // All known Seq-entries
-    TSeq_annot_InfoMap    m_Seq_annot_InfoMap; // all known Seq-annots
-    TBioseq_InfoMap       m_Bioseq_InfoMap;    // all known Bioseqs
-    TAnnotObject_InfoMap  m_AnnotObject_InfoMap; // all known annotations
+    TSeq_annot_InfoMap    m_Seq_annot_InfoMap; // All known Seq-annots
+    TBioseq_InfoMap       m_Bioseq_InfoMap;    // All known Bioseqs
 
-    TTSEMap               m_TSE_seq;   // id -> TSEs with bioseq
-    TTSEMap               m_TSE_ref;   // id -> TSEs with references to id
-
+    TTSEMap               m_TSE_seq;           // id -> TSEs with bioseq
+    TTSEMap               m_TSE_annot;         // id -> TSEs with annots
     // > 0 if annotations need to be indexed.
-    int                   m_DirtyAnnotIndexCount;
+    bool                  m_TSE_annot_is_dirty;
 
     // Default priority for the datasource
-    CPriorityNode::TPriority m_DefaultPriority;
+    TPriority             m_DefaultPriority;
 
     // hide copy constructor
     CDataSource(const CDataSource&);
@@ -480,9 +464,9 @@ private:
 };
 
 inline
-CDataLoader* CDataSource::GetDataLoader(void)
+CDataLoader* CDataSource::GetDataLoader(void) const
 {
-    return m_Loader;
+    return const_cast<CDataLoader*>(m_Loader.GetPointerOrNull());
 }
 
 inline
@@ -498,15 +482,9 @@ bool CDataSource::IsEmpty(void) const
 }
 
 inline
-CSeq_id_Mapper& CDataSource::GetSeq_id_Mapper(void) const
-{
-    return CSeq_id_Mapper::GetSeq_id_Mapper();
-}
-
-inline
 bool CDataSource::IsLive(const CTSE_Info& tse)
 {
-    return m_Loader ? m_Loader->IsLive(tse) : true;
+    return !tse.IsDead();
 }
 
 inline
@@ -528,6 +506,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2003/09/30 16:22:01  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.65  2003/09/03 20:00:00  grichenk
 * Added sequence filtering by level (mains/parts/all)
 *

@@ -36,43 +36,18 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/scope.hpp>
-#include <objmgr/impl/seq_annot_info.hpp>
-#include <objmgr/impl/seq_entry_info.hpp>
+#include <objmgr/seq_annot_handle.hpp>
 
+#include <objmgr/impl/seq_entry_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
-class NCBI_XOBJMGR_EXPORT CSeq_annot_Handle
-{
-public:
-    CSeq_annot_Handle(void);
-    ~CSeq_annot_Handle(void);
-
-    const CSeq_annot& GetSeq_annot(void) const;
-    operator bool(void) const;
-
-    bool operator==(const CSeq_annot_Handle& annot) const;
-    bool operator!=(const CSeq_annot_Handle& annot) const;
-    bool operator<(const CSeq_annot_Handle& annot) const;
-
-private:
-    void x_Set(CScope& scope, const CSeq_annot_Info& annot);
-    void x_Reset(void);
-
-    CRef<CScope>               m_Scope;
-    CConstRef<CSeq_annot_Info> m_Seq_annot;
-
-    friend class CSeq_annot_CI;
-    friend class CAnnotTypes_CI;
-    friend class CAnnot_CI;
-};
-
+class CSeq_annot_Handle;
 
 struct SAnnotILevel {
-    typedef CSeq_entry_Info::TChildren TEntries;
-    typedef TEntries::const_iterator   TEntry_I;
+    typedef CSeq_entry_Info::TEntries TEntries;
+    typedef TEntries::const_iterator  TEntry_I;
 
     CConstRef<CSeq_entry_Info> m_Seq_entry;
     TEntry_I                   m_Child;
@@ -124,67 +99,6 @@ private:
 //
 /////////////////////////////////////////////////////////////////////
 
-
-inline
-CSeq_annot_Handle::CSeq_annot_Handle(void)
-    : m_Scope(0),
-      m_Seq_annot(0)
-{
-    return;
-}
-
-inline
-CSeq_annot_Handle::~CSeq_annot_Handle(void)
-{
-    return;
-}
-
-inline
-CSeq_annot_Handle::operator bool(void) const
-{
-    return bool(m_Scope)  &&  bool(m_Seq_annot);
-}
-
-inline
-void CSeq_annot_Handle::x_Set(CScope& scope, const CSeq_annot_Info& annot)
-{
-    m_Scope = &scope;
-    m_Seq_annot = &annot;
-}
-
-inline
-void CSeq_annot_Handle::x_Reset(void)
-{
-    m_Scope.Reset();
-    m_Seq_annot.Reset();
-}
-
-inline
-const CSeq_annot& CSeq_annot_Handle::GetSeq_annot(void) const
-{
-    return m_Seq_annot->GetSeq_annot();
-}
-
-inline
-bool CSeq_annot_Handle::operator==(const CSeq_annot_Handle& annot) const
-{
-    return m_Seq_annot == annot.m_Seq_annot  &&
-        m_Scope == annot.m_Scope;
-}
-
-inline
-bool CSeq_annot_Handle::operator!=(const CSeq_annot_Handle& annot) const
-{
-    return m_Seq_annot != annot.m_Seq_annot  ||
-        m_Scope != annot.m_Scope;
-}
-
-inline
-bool CSeq_annot_Handle::operator<(const CSeq_annot_Handle& annot) const
-{
-    return m_Scope < annot.m_Scope ? true :
-        m_Seq_annot < annot.m_Seq_annot;
-}
 
 inline
 CSeq_annot_CI::CSeq_annot_CI(void)
@@ -249,6 +163,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.4  2003/08/22 14:59:25  grichenk
 * + operators ==, !=, <
 *

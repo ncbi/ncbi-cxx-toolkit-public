@@ -54,16 +54,19 @@ BEGIN_SCOPE(objects)
 // CSeq_loc_Conversion
 /////////////////////////////////////////////////////////////////////////////
 
-CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id& master_id,
+CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
+                                         CSeq_loc& master_loc_empty,
                                          const CSeqMap_CI& seg,
                                          const CSeq_id_Handle& src_id,
                                          CScope* scope)
-    : m_Src_id(src_id),
+    : m_Src_id_Handle(src_id),
+      m_Src_length(kInvalidSeqPos),
       m_Src_from(0),
       m_Src_to(0),
       m_Shift(0),
       m_Reverse(false),
-      m_Dst_id(master_id),
+      m_Dst_id(&master_loc_empty.SetEmpty()),
+      m_Dst_loc_Empty(&master_loc_empty),
       m_Partial(false),
       m_LastType(CSeq_loc::e_not_set),
       m_LastStrand(eNa_strand_unknown),
@@ -176,7 +179,7 @@ CRef<CSeq_interval> CSeq_loc_Conversion::GetDstInterval(void)
     CheckDstInterval();
     CRef<CSeq_interval> ret(new CSeq_interval);
     CSeq_interval& interval = *ret;
-    interval.SetId(const_cast<CSeq_id&>(m_Dst_id));
+    interval.SetId(GetDstId());
     interval.SetFrom(m_LastRange.GetFrom());
     interval.SetTo(m_LastRange.GetTo());
     if ( m_LastStrand != eNa_strand_unknown ) {
@@ -192,7 +195,7 @@ CRef<CSeq_point> CSeq_loc_Conversion::GetDstPoint(void)
     _ASSERT(m_LastRange.GetLength() == 1);
     CRef<CSeq_point> ret(new CSeq_point);
     CSeq_point& point = *ret;
-    point.SetId(const_cast<CSeq_id&>(m_Dst_id));
+    point.SetId(GetDstId());
     point.SetPoint(m_LastRange.GetFrom());
     if ( m_LastStrand != eNa_strand_unknown ) {
         point.SetStrand(m_LastStrand);
@@ -204,16 +207,17 @@ CRef<CSeq_point> CSeq_loc_Conversion::GetDstPoint(void)
 void CSeq_loc_Conversion::SetDstLoc(CRef<CSeq_loc>& dst)
 {
     if ( !dst ) {
-        dst.Reset(new CSeq_loc);
         switch ( m_LastType ) {
         case CSeq_loc::e_Int:
+            dst.Reset(new CSeq_loc);
             dst->SetInt(*GetDstInterval());
             break;
         case CSeq_loc::e_Pnt:
+            dst.Reset(new CSeq_loc);
             dst->SetPnt(*GetDstPoint());
             break;
         default:
-            dst->SetEmpty(const_cast<CSeq_id&>(m_Dst_id));
+            dst = m_Dst_loc_Empty;
             break;
         }
     }
@@ -286,7 +290,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
                 if ( !dst_pnts ) {
                     dst.Reset(new CSeq_loc);
                     CPacked_seqpnt& pnts = dst->SetPacked_pnt();
-                    pnts.SetId().Assign(m_Dst_id);
+                    pnts.SetId(GetDstId());
                     dst_pnts = &pnts.SetPoints();
                     if ( src_pack_pnts.IsSetStrand() ) {
                         pnts.SetStrand(ConvertStrand(src_pack_pnts.GetStrand()));
@@ -394,7 +398,7 @@ void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref, int index)
     if ( IsSpecialLoc() ) {
         _ASSERT(!ref.m_MappedLocation);
         // special interval or point
-        ref.m_MappedLocation.Reset(GetDstLocWhole());
+        ref.m_MappedLocation = m_Dst_loc_Empty;
         ref.m_MappedStrand = m_LastStrand;
         m_LastType = CSeq_loc::e_not_set;
     }
@@ -404,22 +408,24 @@ void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref, int index)
 }
 
 
-CSeq_loc* CSeq_loc_Conversion::GetDstLocWhole(void)
-{
-    if ( !m_DstLocWhole ) {
-        m_DstLocWhole.Reset(new CSeq_loc);
-        m_DstLocWhole->SetWhole(const_cast<CSeq_id&>(m_Dst_id));
-    }
-    return m_DstLocWhole.GetPointer();
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/09/30 16:22:03  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.4  2003/09/05 17:29:40  grichenk
 * Structurized Object Manager exceptions
 *

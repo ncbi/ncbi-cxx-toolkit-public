@@ -68,6 +68,7 @@ class NCBI_XOBJMGR_EXPORT CBioseq_Handle
 public:
     // Destructor
     CBioseq_Handle(void);
+    CBioseq_Handle(const CSeq_id_Handle& id, CBioseq_ScopeInfo* bioseq_info);
     ~CBioseq_Handle(void);
 
     // Bioseq core -- using partially populated CBioseq
@@ -99,24 +100,24 @@ public:
     // priority if the required class is not found):
     // level   class
     // 0       not-set (0) ,
-    // 3       nuc-prot (1) ,              -- nuc acid and coded proteins
-    // 2       segset (2) ,                -- segmented sequence + parts
-    // 2       conset (3) ,                -- constructed sequence + parts
-    // 1       parts (4) ,                 -- parts for 2 or 3
-    // 1       gibb (5) ,                  -- geninfo backbone
-    // 1       gi (6) ,                    -- geninfo
-    // 5       genbank (7) ,               -- converted genbank
-    // 3       pir (8) ,                   -- converted pir
-    // 4       pub-set (9) ,               -- all the seqs from a single publication
-    // 4       equiv (10) ,                -- a set of equivalent maps or seqs
-    // 3       swissprot (11) ,            -- converted SWISSPROT
-    // 3       pdb-entry (12) ,            -- a complete PDB entry
-    // 4       mut-set (13) ,              -- set of mutations
-    // 4       pop-set (14) ,              -- population study
-    // 4       phy-set (15) ,              -- phylogenetic study
-    // 4       eco-set (16) ,              -- ecological sample study
-    // 4       gen-prod-set (17) ,         -- genomic products, chrom+mRNa+protein
-    // 4       wgs-set (18) ,              -- whole genome shotgun project
+    // 3       nuc-prot (1) ,       -- nuc acid and coded proteins
+    // 2       segset (2) ,         -- segmented sequence + parts
+    // 2       conset (3) ,         -- constructed sequence + parts
+    // 1       parts (4) ,          -- parts for 2 or 3
+    // 1       gibb (5) ,           -- geninfo backbone
+    // 1       gi (6) ,             -- geninfo
+    // 5       genbank (7) ,        -- converted genbank
+    // 3       pir (8) ,            -- converted pir
+    // 4       pub-set (9) ,        -- all the seqs from a single publication
+    // 4       equiv (10) ,         -- a set of equivalent maps or seqs
+    // 3       swissprot (11) ,     -- converted SWISSPROT
+    // 3       pdb-entry (12) ,     -- a complete PDB entry
+    // 4       mut-set (13) ,       -- set of mutations
+    // 4       pop-set (14) ,       -- population study
+    // 4       phy-set (15) ,       -- phylogenetic study
+    // 4       eco-set (16) ,       -- ecological sample study
+    // 4       gen-prod-set (17) ,  -- genomic products, chrom+mRNa+protein
+    // 4       wgs-set (18) ,       -- whole genome shotgun project
     // 0       other (255)
     const CSeq_entry& GetComplexityLevel(CBioseq_set::EClass cls) const;
 
@@ -178,17 +179,16 @@ public:
     void ReplaceAnnot(CSeq_annot& old_annot, CSeq_annot& new_annot);
 
 private:
-    CBioseq_Handle(CScope* scope, const CSeqMatch_Info& match);
-    CBioseq_Handle(CScope* scope,
-                   const CSeq_id_Handle& id,
-                   const CConstRef<CBioseq_Info>& bioseq);
-
     // Get data source
     CDataSource& x_GetDataSource(void) const;
 
+    const CBioseq_ScopeInfo& x_GetBioseq_ScopeInfo(void) const;
     const CBioseq_Info& x_GetBioseq_Info(void) const;
 
     CConstRef<CSynonymsSet> x_GetSynonyms(void) const;
+
+    const CTSE_Info& x_GetTSE_Info(void) const;
+    CSeq_entry& x_GetTSE_NC(void);
 
     CSeq_id_Handle           m_Seq_id;
     CRef<CBioseq_ScopeInfo>  m_Bioseq_Info;
@@ -196,7 +196,7 @@ private:
     friend class CSeqVector;
     friend class CHandleRangeMap;
     friend class CDataSource;
-    friend class CScope;
+    friend class CScope_Impl;
     friend class CAnnotTypes_CI;
 };
 
@@ -225,9 +225,24 @@ bool CBioseq_Handle::operator!(void) const
 
 
 inline
+const CBioseq_ScopeInfo& CBioseq_Handle::x_GetBioseq_ScopeInfo(void) const
+{
+    return *m_Bioseq_Info;
+}
+
+
+inline
 const CBioseq_Info& CBioseq_Handle::x_GetBioseq_Info(void) const
 {
     return m_Bioseq_Info->GetBioseq_Info();
+}
+
+
+inline
+CScope& CBioseq_Handle::GetScope(void) const 
+{
+    _ASSERT(m_Bioseq_Info);
+    return m_Bioseq_Info->GetScope();
 }
 
 
@@ -265,20 +280,24 @@ bool CBioseq_Handle::operator< (const CBioseq_Handle& h) const
 }
 
 
-inline
-CScope& CBioseq_Handle::GetScope(void) const 
-{
-    _ASSERT(m_Bioseq_Info);
-    return m_Bioseq_Info->GetScope();
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.43  2003/09/05 17:29:39  grichenk
 * Structurized Object Manager exceptions
 *

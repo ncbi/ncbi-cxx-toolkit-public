@@ -205,14 +205,14 @@ void CObjectManager::RegisterTopLevelSeqEntry(CSeq_entry& top_entry)
 /////////////////////////////////////////////////////////////////////////////
 // functions for scopes
 
-void CObjectManager::RegisterScope(CScope& scope)
+void CObjectManager::RegisterScope(CScope_Impl& scope)
 {
     TWriteLockGuard guard(m_OM_ScopeLock);
     _VERIFY(m_setScope.insert(&scope).second);
 }
 
 
-void CObjectManager::RevokeScope(CScope& scope)
+void CObjectManager::RevokeScope(CScope_Impl& scope)
 {
     TWriteLockGuard guard(m_OM_ScopeLock);
     _VERIFY(m_setScope.erase(&scope));
@@ -435,6 +435,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/09/30 16:22:02  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.28  2003/09/05 17:29:40  grichenk
 * Structurized Object Manager exceptions
 *

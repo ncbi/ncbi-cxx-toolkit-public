@@ -36,12 +36,17 @@
 */
 
 #include <objmgr/seq_map.hpp>
+#include <objmgr/scope.hpp>
 #include <objmgr/seq_id_handle.hpp>
+#include <objmgr/impl/tse_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CScope;
 class CSeqMap;
+class CTSE_Info;
+class CSeq_entry;
 
 class NCBI_XOBJMGR_EXPORT CSeqMap_CI_SegmentInfo
 {
@@ -86,19 +91,17 @@ private:
 };
 
 
-class CSeq_entry;
-
-
 struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
 {
     enum EFlags {
         fFindData     = (1<<0),
         fFindGap      = (1<<1),
-        fFindRef      = (1<<2),
-        // Skip intermediate refs, show only those that can not be resolved
-        fFindTSERef   = (1<<7),
+        fFindLeafRef  = (1<<2),
+        fFindInnerRef = (1<<3),
+        fFindRef      = (fFindLeafRef | fFindInnerRef),
         fFindAny      = fFindData | fFindGap | fFindRef,
-        fDefaultFlags = fFindData | fFindGap
+        fFindAnyLeaf  = fFindData | fFindGap | fFindLeafRef,
+        fDefaultFlags = fFindAnyLeaf
     };
     typedef int TFlags;
 
@@ -106,7 +109,9 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
         : m_Position(0), m_Length(kInvalidSeqPos),
           m_MaxResolveCount(0),
           m_TSE(0),
-          m_Flags(fDefaultFlags) {}
+          m_Flags(fDefaultFlags)
+        {
+        }
 
     SSeqMapSelector& SetPosition(TSeqPos pos)
         {
@@ -127,7 +132,7 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
             return *this;
         }
 
-    SSeqMapSelector& SetTSE(const CSeq_entry* tse)
+    SSeqMapSelector& SetLimitTSE(const CSeq_entry* tse)
         {
             m_TSE = tse;
             return *this;
@@ -137,6 +142,22 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
         {
             m_Flags = flags;
             return *this;
+        }
+
+    bool CanResolve(void) const
+        {
+            return m_MaxResolveCount > 0;
+        }
+
+    void PushResolve(void)
+        {
+            _ASSERT(CanResolve());
+            --m_MaxResolveCount;
+        }
+    void PopResolve(void)
+        {
+            ++m_MaxResolveCount;
+            _ASSERT(CanResolve());
         }
 
 private:
@@ -237,7 +258,8 @@ private:
 
     // Check if the current reference can be resolved in the TSE
     // set by selector
-    bool x_CanResolveRef(const CSeqMap::CSegment& seg) const;
+    bool x_RefTSEMatch(const CSeqMap::CSegment& seg) const;
+    bool x_CanResolve(const CSeqMap::CSegment& seg) const;
 
     // valid iterator
     const CSeqMap& x_GetSeqMap(void) const;
@@ -250,11 +272,13 @@ private:
     bool x_Found(void) const;
 
     bool x_Push(TSeqPos offset, bool resolveExternal);
+    bool x_Push(TSeqPos offset);
     void x_Push(const CConstRef<CSeqMap>& seqMap,
                 TSeqPos from, TSeqPos length, bool minusStrand, TSeqPos pos);
     bool x_Pop(void);
 
     bool x_Next(bool resolveExternal);
+    bool x_Next(void);
     bool x_Prev(void);
 
     bool x_TopNext(void);
@@ -266,11 +290,14 @@ private:
     typedef vector<TSegmentInfo> TStack;
 
     // position stack
-    TStack         m_Stack;
+    TStack               m_Stack;
     // scope for length resolution
-    CScope*        m_Scope;
+    CHeapScope           m_Scope;
     // iterator parameters
-    SSeqMapSelector m_Selector;
+    SSeqMapSelector      m_Selector;
+
+    // cached limiting TSE_Info object
+    CConstRef<CTSE_Info> m_TSE_Info;
 };
 
 
@@ -282,6 +309,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.9  2003/08/27 21:24:16  vasilche
 * Added CSeqMap_CI::IsInvalid() method.
 *

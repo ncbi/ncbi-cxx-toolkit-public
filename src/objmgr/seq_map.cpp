@@ -35,7 +35,6 @@
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_map_ext.hpp>
 #include <objmgr/seq_id_mapper.hpp>
-#include <objmgr/impl/data_source.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 
@@ -80,9 +79,8 @@ CSeqMap::CSegment::CSegment(ESegmentType seg_type,
 //  CSeqMap
 
 
-CSeqMap::CSeqMap(CDataSource* source)
+CSeqMap::CSeqMap(void)
     : m_Resolved(0),
-      m_Source(source),
       m_Mol(CSeq_inst::eMol_not_set),
       m_SeqLength(kInvalidSeqPos)
 {
@@ -91,16 +89,14 @@ CSeqMap::CSeqMap(CDataSource* source)
 
 CSeqMap::CSeqMap(CSeqMap* parent, size_t /*index*/)
     : m_Resolved(0),
-      m_Source(parent->m_Source),
       m_Mol(CSeq_inst::eMol_not_set),
       m_SeqLength(kInvalidSeqPos)
 {
 }
 
 
-CSeqMap::CSeqMap(CSeq_loc& ref, CDataSource* source)
+CSeqMap::CSeqMap(CSeq_loc& ref)
     : m_Resolved(0),
-      m_Source(source),
       m_Mol(CSeq_inst::eMol_not_set),
       m_SeqLength(kInvalidSeqPos)
 {
@@ -110,9 +106,8 @@ CSeqMap::CSeqMap(CSeq_loc& ref, CDataSource* source)
 }
 
 
-CSeqMap::CSeqMap(CSeq_data& data, TSeqPos length, CDataSource* source)
+CSeqMap::CSeqMap(CSeq_data& data, TSeqPos length)
     : m_Resolved(0),
-      m_Source(source),
       m_Mol(CSeq_inst::eMol_not_set),
       m_SeqLength(kInvalidSeqPos)
 {
@@ -122,9 +117,8 @@ CSeqMap::CSeqMap(CSeq_data& data, TSeqPos length, CDataSource* source)
 }
 
 
-CSeqMap::CSeqMap(TSeqPos length, CDataSource* source)
+CSeqMap::CSeqMap(TSeqPos length)
     : m_Resolved(0),
-      m_Source(source),
       m_Mol(CSeq_inst::eMol_not_set),
       m_SeqLength(length)
 {
@@ -182,13 +176,7 @@ TSeqPos CSeqMap::x_ResolveSegmentLength(size_t index, CScope* scope) const
             length = x_GetSubSeqMap(seg, scope)->GetLength(scope);
         }
         else if ( seg.m_SegType == eSeqRef ) {
-            CBioseq_Handle bh = x_GetBioseqHandle(seg, scope);
-            CBioseq_Handle::TBioseqCore seq = bh.GetBioseqCore();
-            if ( !seq->GetInst().IsSetLength() ) {
-                NCBI_THROW(CSeqMapException, eDataError,
-                           "Length of sequence is not set");
-            }
-            length = seq->GetInst().GetLength();
+            length = x_GetBioseqHandle(seg, scope).GetBioseqLength();
         }
         _ASSERT(length != kInvalidSeqPos);
         seg.m_Length = length;
@@ -257,30 +245,11 @@ size_t CSeqMap::x_FindSegment(TSeqPos pos, CScope* scope) const
 void CSeqMap::x_LoadObject(const CSegment& seg) const
 {
     _ASSERT(seg.m_Position != kInvalidSeqPos);
-    _ASSERT(m_Source);
     if ( !seg.m_RefObject ) {
         NCBI_THROW(CSeqMapException, eFail, "Cannot load part of seqmap");
     }
 }
 
-/*
-const CObject* CSeqMap::x_GetObject(const CSegment& seg) const
-{
-    if ( !seg.m_RefObject ) {
-        x_LoadObject(seg);
-    }
-    return seg.m_RefObject.GetPointer();
-}
-
-
-CObject* CSeqMap::x_GetObject(CSegment& seg)
-{
-    if ( !seg.m_Object ) {
-        x_LoadObject(seg);
-    }
-    return seg.m_Object.GetPointer();
-}
-*/
 
 CConstRef<CSeqMap> CSeqMap::x_GetSubSeqMap(const CSegment& seg, CScope* scope,
                                            bool resolveExternal) const
@@ -301,14 +270,6 @@ CConstRef<CSeqMap> CSeqMap::x_GetSubSeqMap(const CSegment& seg, CScope* scope,
     return ret;
 }
 
-/*
-CSeqMap* CSeqMap::x_GetSubSeqMap(CSegment& seg)
-{
-    if ( seg.m_SegType != eSeqSubMap )
-        return 0;
-    return static_cast<CSeqMap*>(x_GetObject(seg));
-}
-*/
 
 void CSeqMap::x_SetSubSeqMap(size_t /*index*/, CSeqMap_Delta_seqs* /*subMap*/)
 {
@@ -562,29 +523,26 @@ void CSeqMap::DebugDump(CDebugDumpContext /*ddc*/,
 }
 
 
-CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(CBioseq& seq,
-                                                  CDataSource* source)
+CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(CBioseq& seq)
 {
     CConstRef<CSeqMap> ret;
     CSeq_inst& inst = seq.SetInst();
     if ( inst.IsSetSeq_data() ) {
         ret.Reset(new CSeqMap(inst.SetSeq_data(),
-                              inst.GetLength(),
-                              source));
+                              inst.GetLength()));
     }
     else if ( inst.IsSetExt() ) {
         CSeq_ext& ext = inst.SetExt();
         switch (ext.Which()) {
         case CSeq_ext::e_Seg:
             ret.Reset(new CSeqMap_Seq_locs(ext.SetSeg(),
-                                           ext.SetSeg().Set(),
-                                           source));
+                                           ext.SetSeg().Set()));
             break;
         case CSeq_ext::e_Ref:
-            ret.Reset(new CSeqMap(ext.SetRef(), source));
+            ret.Reset(new CSeqMap(ext.SetRef()));
             break;
         case CSeq_ext::e_Delta:
-            ret.Reset(new CSeqMap_Delta_seqs(ext.SetDelta(), source));
+            ret.Reset(new CSeqMap_Delta_seqs(ext.SetDelta()));
             break;
         case CSeq_ext::e_Map:
             //### Not implemented
@@ -851,6 +809,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2003/09/30 16:22:04  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.47  2003/09/05 17:29:40  grichenk
 * Structurized Object Manager exceptions
 *

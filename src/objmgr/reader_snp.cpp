@@ -153,12 +153,9 @@ Int1 CSeq_annot_SNP_Info::x_GetAlleleIndex(const string& allele)
 }
 
 
-CRef<CSeq_entry> CSeq_annot_SNP_Info::Read(CObjectIStream& in)
+void CSeq_annot_SNP_Info::Read(CObjectIStream& in)
 {
-    CRef<CSeq_entry> entry(new CSeq_entry); // return value
-    entry->SetSet().SetSeq_set(); // it's not optional
     m_Seq_annot.Reset(new CSeq_annot); // Seq-annot object
-    entry->SetSet().SetAnnot().push_back(m_Seq_annot); // store it in Seq-entry
 
     CReader::SetSNPReadHooks(in);
 
@@ -175,7 +172,14 @@ CRef<CSeq_entry> CSeq_annot_SNP_Info::Read(CObjectIStream& in)
     m_Alleles.ClearIndices();
 
     sort(m_SNP_Set.begin(), m_SNP_Set.end());
+}
+
     
+CRef<CSeq_entry> CSeq_annot_SNP_Info::GetEntry(void)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry); // return value
+    entry->SetSet().SetSeq_set(); // it's not optional
+    entry->SetSet().SetAnnot().push_back(m_Seq_annot); // store it in Seq-entry
     return entry;
 }
 
@@ -258,6 +262,18 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.4  2003/09/30 16:22:03  vasilche
+ * Updated internal object manager classes to be able to load ID2 data.
+ * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+ * Scope caches results of requests for data to data loaders.
+ * Optimized CSeq_id_Handle for gis.
+ * Optimized bioseq lookup in scope.
+ * Reduced object allocations in annotation iterators.
+ * CScope is allowed to be destroyed before other objects using this scope are
+ * deleted (feature iterators, bioseq handles etc).
+ * Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+ * Added 'adaptive' option to objmgr_demo application.
+ *
  * Revision 1.3  2003/08/19 18:35:21  vasilche
  * CPackString classes were moved to SERIAL library.
  *

@@ -47,6 +47,7 @@ struct seqid_string_less
     }
 };
 
+
 ////////////////////////////////////////////////////////////////////
 //
 //  CSeq_id_***_Tree::
@@ -61,6 +62,12 @@ CSeq_id_Which_Tree::CSeq_id_Which_Tree(void)
 
 CSeq_id_Which_Tree::~CSeq_id_Which_Tree(void)
 {
+}
+
+
+bool CSeq_id_Which_Tree::HaveMatch(const CSeq_id_Handle& ) const
+{
+    return true; // Assume have matches by default
 }
 
 
@@ -168,9 +175,16 @@ CSeq_id_Handle CSeq_id_not_set_Tree::FindOrCreate(const CSeq_id& id)
 
 void CSeq_id_not_set_Tree::x_Unindex(CSeq_id_Info* info)
 {
-    x_Check(info->GetSeq_id());
+    x_Check(*info->GetSeqId());
     _ASSERT(info && info == m_Info);
     m_Info = 0;
+}
+
+
+bool CSeq_id_not_set_Tree::HaveMatch(const CSeq_id_Handle& ) const
+{
+    // Only one instance of each id
+    return false;
 }
 
 
@@ -245,10 +259,17 @@ CSeq_id_Handle CSeq_id_int_Tree::FindOrCreate(const CSeq_id& id)
 
 void CSeq_id_int_Tree::x_Unindex(CSeq_id_Info* info)
 {
-    _ASSERT(x_Check(info->GetSeq_id()));
-    int value = x_Get(info->GetSeq_id());
+    _ASSERT(x_Check(*info->GetSeqId()));
+    int value = x_Get(*info->GetSeqId());
 
     _VERIFY(m_IntMap.erase(value));
+}
+
+
+bool CSeq_id_int_Tree::HaveMatch(const CSeq_id_Handle& ) const
+{
+    // Only one instance of each int id
+    return false;
 }
 
 
@@ -360,7 +381,7 @@ CSeq_id_Textseq_Tree::x_FindVersionEqual(const TVersions& ver_list,
                                          const CTextseq_id& tid) const
 {
     ITERATE(TVersions, vit, ver_list) {
-        const CTextseq_id& tid_it = x_Get((*vit)->GetSeq_id());
+        const CTextseq_id& tid_it = x_Get(*(*vit)->GetSeqId());
         if (tid.IsSetVersion()  &&  tid_it.IsSetVersion()) {
             // Compare versions
             if (tid.GetVersion() == tid_it.GetVersion()) {
@@ -427,14 +448,14 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
         if ( tid.IsSetAccession() ) {
             TVersions& ver = m_ByAccession[tid.GetAccession()];
             ITERATE(TVersions, vit, ver) {
-                _ASSERT(!x_Get((*vit)->GetSeq_id()).Equals(tid));
+                _ASSERT(!x_Get(*(*vit)->GetSeqId()).Equals(tid));
             }
             ver.push_back(info);
         }
         if ( tid.IsSetName() ) {
             TVersions& ver = m_ByName[tid.GetName()];
             ITERATE(TVersions, vit, ver) {
-                _ASSERT(!x_Get((*vit)->GetSeq_id()).Equals(tid));
+                _ASSERT(!x_Get(*(*vit)->GetSeqId()).Equals(tid));
             }
             ver.push_back(info);
         }
@@ -445,8 +466,8 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
 
 void CSeq_id_Textseq_Tree::x_Unindex(CSeq_id_Info* info)
 {
-    x_Check(info->GetSeq_id());
-    const CTextseq_id& tid = x_Get(info->GetSeq_id());
+    x_Check(*info->GetSeqId());
+    const CTextseq_id& tid = x_Get(*info->GetSeqId());
     if ( tid.IsSetAccession() ) {
         TStringMap::iterator it =
             m_ByAccession.find(tid.GetAccession());
@@ -490,7 +511,7 @@ void CSeq_id_Textseq_Tree::x_FindVersionMatch(const TVersions& ver_list,
     ITERATE(TVersions, vit, ver_list) {
         int ver_it = 0;
         string rel_it = "";
-        const CTextseq_id& vit_ref = x_Get((*vit)->GetSeq_id());
+        const CTextseq_id& vit_ref = x_Get(*(*vit)->GetSeqId());
         if ( vit_ref.IsSetVersion() )
             ver_it = vit_ref.GetVersion();
         if ( vit_ref.IsSetRelease() )
@@ -509,7 +530,7 @@ void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id_Handle& id,
                                      TSeq_id_MatchList& id_list) const
 {
     //_ASSERT(id && id == FindInfo(id.GetSeqId()));
-    const CTextseq_id& tid = x_Get(id.GetSeqId());
+    const CTextseq_id& tid = x_Get(*id.GetSeqId());
     if ( tid.IsSetAccession() ) {
         TReadLockGuard guard(m_TreeLock);
         TStringMap::const_iterator it = m_ByAccession.find(tid.GetAccession());
@@ -549,12 +570,12 @@ void CSeq_id_Textseq_Tree::FindMatchStr(string sid,
 bool CSeq_id_Textseq_Tree::IsBetterVersion(const CSeq_id_Handle& h1,
                                            const CSeq_id_Handle& h2) const
 {
-    const CSeq_id& id1 = h1.GetSeqId();
-    x_Check(id1);
-    const CSeq_id& id2 = h2.GetSeqId();
-    x_Check(id2);
-    const CTextseq_id& tid1 = x_Get(id1);
-    const CTextseq_id& tid2 = x_Get(id2);
+    CConstRef<CSeq_id> id1 = h1.GetSeqId();
+    x_Check(*id1);
+    CConstRef<CSeq_id> id2 = h2.GetSeqId();
+    x_Check(*id2);
+    const CTextseq_id& tid1 = x_Get(*id1);
+    const CTextseq_id& tid2 = x_Get(*id2);
     // Compare versions. If only one of the two ids has version,
     // consider it is better.
     if ( tid1.IsSetVersion() ) {
@@ -797,15 +818,22 @@ CSeq_id_Handle CSeq_id_Local_Tree::FindOrCreate(const CSeq_id& id)
 
 void CSeq_id_Local_Tree::x_Unindex(CSeq_id_Info* info)
 {
-    const CSeq_id& id = info->GetSeq_id();
-    _ASSERT(id.IsLocal());
-    const CObject_id& oid = id.GetLocal();
+    CConstRef<CSeq_id> id = info->GetSeqId();
+    _ASSERT(id->IsLocal());
+    const CObject_id& oid = id->GetLocal();
     if ( oid.IsStr() ) {
         _VERIFY(m_ByStr.erase(oid.GetStr()));
     }
     else if ( oid.IsId() ) {
         _VERIFY(m_ById.erase(oid.GetId()));
     }
+}
+
+
+bool CSeq_id_Local_Tree::HaveMatch(const CSeq_id_Handle& ) const
+{
+    // Only one entry can match each id
+    return false;
 }
 
 
@@ -926,9 +954,9 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
 
 void CSeq_id_General_Tree::x_Unindex(CSeq_id_Info* info)
 {
-    const CSeq_id& id = info->GetSeq_id();
-    _ASSERT( id.IsGeneral() );
-    const CDbtag& dbid = id.GetGeneral();
+    CConstRef<CSeq_id> id = info->GetSeqId();
+    _ASSERT( id->IsGeneral() );
+    const CDbtag& dbid = id->GetGeneral();
     TDbMap::iterator db_it = m_DbMap.find(dbid.GetDb());
     _ASSERT(db_it != m_DbMap.end());
     STagMap& tm = db_it->second;
@@ -941,6 +969,13 @@ void CSeq_id_General_Tree::x_Unindex(CSeq_id_Info* info)
     }
     if (tm.m_ByStr.empty()  &&  tm.m_ById.empty())
         m_DbMap.erase(db_it);
+}
+
+
+bool CSeq_id_General_Tree::HaveMatch(const CSeq_id_Handle& ) const
+{
+    //_ASSERT(id && id == FindInfo(id.GetSeqId()));
+    return false;
 }
 
 
@@ -1012,7 +1047,8 @@ CSeq_id_Info* CSeq_id_Giim_Tree::x_FindInfo(const CGiimport_id& gid) const
     if (id_it == m_IdMap.end())
         return 0;
     ITERATE (TGiimList, dbr_it, id_it->second) {
-        const CGiimport_id& gid2 = (*dbr_it)->GetSeq_id().GetGiim();
+        CConstRef<CSeq_id> id = (*dbr_it)->GetSeqId();
+        const CGiimport_id& gid2 = id->GetGiim();
         // Both Db and Release must be equal
         if ( !gid.Equals(gid2) ) {
             return *dbr_it;
@@ -1048,9 +1084,9 @@ CSeq_id_Handle CSeq_id_Giim_Tree::FindOrCreate(const CSeq_id& id)
 
 void CSeq_id_Giim_Tree::x_Unindex(CSeq_id_Info* info)
 {
-    const CSeq_id& id = info->GetSeq_id();
-    _ASSERT( id.IsGiim() );
-    const CGiimport_id& gid = id.GetGiim();
+    CConstRef<CSeq_id> id = info->GetSeqId();
+    _ASSERT( id->IsGiim() );
+    const CGiimport_id& gid = id->GetGiim();
     TIdMap::iterator id_it = m_IdMap.find(gid.GetId());
     _ASSERT(id_it != m_IdMap.end());
     TGiimList& giims = id_it->second;
@@ -1062,6 +1098,13 @@ void CSeq_id_Giim_Tree::x_Unindex(CSeq_id_Info* info)
     }
     if ( giims.empty() )
         m_IdMap.erase(id_it);
+}
+
+
+bool CSeq_id_Giim_Tree::HaveMatch(const CSeq_id_Handle& ) const
+{
+    //_ASSERT(id && id == FindInfo(id.GetSeqId()));
+    return false;
 }
 
 
@@ -1191,9 +1234,9 @@ CSeq_id_Handle CSeq_id_Patent_Tree::FindOrCreate(const CSeq_id& id)
 
 void CSeq_id_Patent_Tree::x_Unindex(CSeq_id_Info* info)
 {
-    const CSeq_id& id = info->GetSeq_id();
-    _ASSERT( id.IsPatent() );
-    const CPatent_seq_id& pid = id.GetPatent();
+    CConstRef<CSeq_id> id = info->GetSeqId();
+    _ASSERT( id->IsPatent() );
+    const CPatent_seq_id& pid = id->GetPatent();
     TByCountry::iterator country_it =
         m_CountryMap.find(pid.GetCit().GetCountry());
     _ASSERT(country_it != m_CountryMap.end());
@@ -1225,6 +1268,13 @@ void CSeq_id_Patent_Tree::x_Unindex(CSeq_id_Info* info)
     if (country_it->second.m_ByNumber.empty()  &&
         country_it->second.m_ByApp_number.empty())
         m_CountryMap.erase(country_it);
+}
+
+
+bool CSeq_id_Patent_Tree::HaveMatch(const CSeq_id_Handle& ) const
+{
+    //_ASSERT(id && id == FindInfo(id.GetSeqId()));
+    return false;
 }
 
 
@@ -1300,7 +1350,8 @@ CSeq_id_Info* CSeq_id_PDB_Tree::x_FindInfo(const CPDB_seq_id& pid) const
     if (mol_it == m_MolMap.end())
         return 0;
     ITERATE(TSubMolList, it, mol_it->second) {
-        if (pid.Equals((*it)->GetSeq_id().GetPdb())) {
+        CConstRef<CSeq_id> id = (*it)->GetSeqId();
+        if (pid.Equals(id->GetPdb())) {
             return *it;
         }
     }
@@ -1328,8 +1379,8 @@ CSeq_id_Handle CSeq_id_PDB_Tree::FindOrCreate(const CSeq_id& id)
         info = CreateInfo(id);
         TSubMolList& sub = m_MolMap[x_IdToStrKey(id.GetPdb())];
         ITERATE(TSubMolList, sub_it, sub) {
-            _ASSERT(!info->GetSeq_id().GetPdb()
-                    .Equals((*sub_it)->GetSeq_id().GetPdb()));
+            _ASSERT(!info->GetSeqId()->GetPdb()
+                    .Equals((*sub_it)->GetSeqId()->GetPdb()));
         }
         sub.push_back(info);
     }
@@ -1339,14 +1390,15 @@ CSeq_id_Handle CSeq_id_PDB_Tree::FindOrCreate(const CSeq_id& id)
 
 void CSeq_id_PDB_Tree::x_Unindex(CSeq_id_Info* info)
 {
-    const CSeq_id& id = info->GetSeq_id();
-    _ASSERT( id.IsPdb() );
-    const CPDB_seq_id& pid = id.GetPdb();
+    CConstRef<CSeq_id> id = info->GetSeqId();
+    _ASSERT( id->IsPdb() );
+    const CPDB_seq_id& pid = id->GetPdb();
     TMolMap::iterator mol_it = m_MolMap.find(x_IdToStrKey(pid));
     _ASSERT(mol_it != m_MolMap.end());
     NON_CONST_ITERATE(TSubMolList, it, mol_it->second) {
         if (*it == info) {
-            _ASSERT(pid.Equals((*it)->GetSeq_id().GetPdb()));
+            CConstRef<CSeq_id> id2 = (*it)->GetSeqId();
+            _ASSERT(pid.Equals(id2->GetPdb()));
             mol_it->second.erase(it);
             break;
         }
@@ -1360,13 +1412,15 @@ void CSeq_id_PDB_Tree::FindMatch(const CSeq_id_Handle& id,
                                  TSeq_id_MatchList& id_list) const
 {
     //_ASSERT(id && id == FindInfo(id.GetSeqId()));
-    const CPDB_seq_id& pid = id.GetSeqId().GetPdb();
+    CConstRef<CSeq_id> seq_id = id.GetSeqId();
+    const CPDB_seq_id& pid = seq_id->GetPdb();
     TReadLockGuard guard(m_TreeLock);
     TMolMap::const_iterator mol_it = m_MolMap.find(x_IdToStrKey(pid));
     if (mol_it == m_MolMap.end())
         return;
     ITERATE(TSubMolList, it, mol_it->second) {
-        const CPDB_seq_id& pid2 = (*it)->GetSeq_id().GetPdb();
+        CConstRef<CSeq_id> seq_id2 = (*it)->GetSeqId();
+        const CPDB_seq_id& pid2 = seq_id2->GetPdb();
         // Ignore date if not set in id
         if ( pid.IsSetRel() ) {
             if ( !pid2.IsSetRel()  ||
@@ -1399,6 +1453,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/09/30 16:22:03  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.3  2003/09/05 17:29:40  grichenk
 * Structurized Object Manager exceptions
 *

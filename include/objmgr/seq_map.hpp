@@ -73,7 +73,6 @@ typedef TSeqPos TSeqLength;
 
 
 class CScope;
-class CDataSource;
 class CBioseq_Handle;
 class CSegmentPtr;
 class CSeqMap_CI;
@@ -91,14 +90,6 @@ public:
         eSeqRef,              // reference to Bioseq
         eSeqEnd
     };
-    /*
-    enum EObjectType {
-        eNull,
-        eSeq_id,
-        eSeq_data,
-        eSeqMap
-    };
-    */
 
     typedef CSeq_inst::TMol TMol;
 
@@ -166,9 +157,12 @@ public:
     enum EFlags {
         fFindData     = (1<<0),
         fFindGap      = (1<<1),
-        fFindRef      = (1<<2),
-        fFindFirst    = (1<<3),
-        fDefaultFlags = fFindData | fFindGap
+        fFindLeafRef  = (1<<2),
+        fFindInnerRef = (1<<3),
+        fFindRef      = (fFindLeafRef | fFindInnerRef),
+        fFindAny      = fFindData | fFindGap | fFindRef,
+        fFindAnyLeaf  = fFindData | fFindGap | fFindLeafRef,
+        fDefaultFlags = fFindAnyLeaf
     };
     typedef int TFlags;
 
@@ -221,14 +215,9 @@ public:
                          TSeqPos length,
                          ENa_strand strand = eNa_strand_plus) const;
 
-    // deprecated interface
-    //size_t size(void) const;
-    //CSeqMap_CI operator[] (size_t seg_idx) const;
-    
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
-    static CConstRef<CSeqMap> CreateSeqMapForBioseq(CBioseq& seq,
-                                                    CDataSource* source = 0);
+    static CConstRef<CSeqMap> CreateSeqMapForBioseq(CBioseq& seq);
     static CConstRef<CSeqMap> CreateSeqMapForSeq_loc(const CSeq_loc& loc,
                                                      CScope* scope);
     static CConstRef<CSeqMap> CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
@@ -239,10 +228,10 @@ public:
 protected:
     // 'ctors
     CSeqMap(CSeqMap* parent, size_t index);
-    CSeqMap(CDataSource* source = 0);
-    CSeqMap(CSeq_data& data, TSeqPos len, CDataSource* source = 0);
-    CSeqMap(CSeq_loc& ref, CDataSource* source = 0);
-    CSeqMap(TSeqPos len, CDataSource* source = 0); // gap
+    CSeqMap(void);
+    CSeqMap(CSeq_data& data, TSeqPos len);
+    CSeqMap(CSeq_loc& ref);
+    CSeqMap(TSeqPos len); // gap
 
     void x_AddEnd(void);
     CSegment& x_AddSegment(ESegmentType type, TSeqPos len);
@@ -269,25 +258,10 @@ protected:
 private:
     void ResolveAll(void) const;
     
-    //void x_SetParent(CSeqMap* parent, size_t index);
-
 private:
     // Prohibit copy operator and constructor
-#ifdef NCBI_OS_MSWIN
-    CSeqMap(const CSeqMap&)
-        {
-            NCBI_THROW(CSeqMapException, eUnimplemented,
-                       "copy constructor not implemented");
-        }
-    CSeqMap& operator= (const CSeqMap&)
-        {
-            NCBI_THROW(CSeqMapException, eUnimplemented,
-                       "operator=() not implemented");
-        }
-#else
     CSeqMap(const CSeqMap&);
     CSeqMap& operator= (const CSeqMap&);
-#endif
     
 protected:    
     // interface for iterators
@@ -305,7 +279,6 @@ protected:
 
     CConstRef<CSeqMap> x_GetSubSeqMap(const CSegment& seg, CScope* scope,
                                       bool resolveExternal = false) const;
-    //CSeqMap* x_GetSubSeqMap(CSegment& seg);
     virtual const CSeq_data& x_GetSeq_data(const CSegment& seg) const;
     virtual const CSeq_id& x_GetRefSeqid(const CSegment& seg) const;
     virtual TSeqPos x_GetRefPosition(const CSegment& seg) const;
@@ -317,15 +290,7 @@ protected:
     virtual void x_SetSeq_data(size_t index, CSeq_data& data);
     virtual void x_SetSubSeqMap(size_t index, CSeqMap_Delta_seqs* subMap);
 
-    //void x_Lock(void) const;
-    //void x_Unlock(void) const;
-    
     typedef vector<CSegment> TSegments;
-    
-    // parent CSeqMap
-    //const CSeqMap*   m_ParentSeqMap;
-    // index of first segment in parent sequence
-    //size_t           m_ParentIndex;
     
     // segments in this seqmap
     vector<CSegment> m_Segments;
@@ -334,21 +299,17 @@ protected:
     mutable size_t   m_Resolved;
     
     CRef<CObject>    m_Delta;
-    CDataSource*     m_Source;
 
     // Molecule type from seq-inst
     TMol    m_Mol;
     // Sequence length
     mutable TSeqPos m_SeqLength;
 
-    //mutable CAtomicCounter m_LockCounter; // usage lock counter
-
     // MT-protection
     mutable CFastMutex   m_SeqMap_Mtx;
     
     friend class CSeqMap_CI;
     friend class CSeqMap_CI_SegmentInfo;
-    friend class CDataSource;
 };
 
 
@@ -363,6 +324,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.41  2003/09/05 17:29:39  grichenk
 * Structurized Object Manager exceptions
 *

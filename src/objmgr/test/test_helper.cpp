@@ -233,7 +233,8 @@ CSeq_entry& CDataGenerator::CreateTestEntry1(int index)
                 CCdregion& cdreg = fdata.SetCdregion();
                 cdreg.SetFrame(CCdregion::eFrame_one);
                 // genetic code used
-                list< CRef< CGenetic_code::C_E > >& gcode = cdreg.SetCode().Set();
+                list< CRef< CGenetic_code::C_E > >& gcode =
+                    cdreg.SetCode().Set();
                 CRef< CGenetic_code::C_E > ce(new CGenetic_code::C_E);
                 ce->SetId(123); // TSE=1; seq=2; feat=3
                 gcode.push_back(ce);
@@ -306,7 +307,8 @@ CSeq_entry& CDataGenerator::CreateTestEntry1(int index)
     }}
 
     if ( sm_DumpEntries ) {
-        NcbiCout << "-------------------- TestEntry1 --------------------\n";
+        NcbiCout << "-------------------- "
+            "TestEntry1 --------------------" << NcbiEndl;
         auto_ptr<CObjectOStream>
             out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
         *out << *entry;
@@ -393,7 +395,8 @@ CSeq_entry& CDataGenerator::CreateTestEntry1a(int index)
     }}
 
     if ( sm_DumpEntries ) {
-        NcbiCout << "-------------------- TestEntry1a --------------------\n";
+        NcbiCout << "-------------------- "
+            "TestEntry1a --------------------" << NcbiEndl;
         auto_ptr<CObjectOStream>
             out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
         *out << *entry;
@@ -651,7 +654,8 @@ CSeq_entry& CDataGenerator::CreateTestEntry2(int index)
     set_annot_list.push_back(annot);
 
     if ( sm_DumpEntries ) {
-        NcbiCout << "-------------------- TestEntry2 --------------------\n";
+        NcbiCout << "-------------------- "
+            "TestEntry2 --------------------" << NcbiEndl;
         auto_ptr<CObjectOStream>
             out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
         *out << *entry;
@@ -690,7 +694,8 @@ CSeq_entry& CDataGenerator::CreateConstructedEntry(int idx, int index)
     CRef<CSeq_entry> constr_entry(new CSeq_entry);
     constr_entry->SetSeq(*constr_seq);
     if ( sm_DumpEntries ) {
-        NcbiCout << "-------------------- ConstructedEntry --------------------\n";
+        NcbiCout << "-------------------- "
+            "ConstructedEntry --------------------" << NcbiEndl;
         auto_ptr<CObjectOStream>
             out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
         *out << *constr_entry;
@@ -792,7 +797,8 @@ CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
         ftable.push_back(feat);
     }}
     if ( sm_DumpEntries ) {
-        NcbiCout << "-------------------- Annotation1 --------------------\n";
+        NcbiCout << "-------------------- "
+            "Annotation1 --------------------" << NcbiEndl;
         auto_ptr<CObjectOStream>
             out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
         *out << *annot;
@@ -845,7 +851,8 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
                                 int seq_feat_ra_cnt, // resolve-all method
                                 int seq_feat_cnt, int seq_featrg_cnt,
                                 int seq_align_cnt, int seq_alignrg_cnt,
-                                size_t feat_annots_cnt, size_t featrg_annots_cnt,
+                                size_t feat_annots_cnt,
+                                size_t featrg_annots_cnt,
                                 size_t align_annots_cnt,
                                 size_t alignrg_annots_cnt,
                                 bool tse_feat_test,
@@ -882,7 +889,10 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             len += seg.GetLength();
             break;
         case CSeqMap::eSeqRef:
-            _TRACE('@'<<len<<": seqRef("<<seg.GetLength()<<", id="<<seg.GetRefSeqid().AsString()<<", pos="<<seg.GetRefPosition()<<", minus="<<seg.GetRefMinusStrand()<<")");
+            _TRACE('@'<<len<<": seqRef("<<seg.GetLength()<<
+                   ", id="<<seg.GetRefSeqid().AsString()<<
+                   ", pos="<<seg.GetRefPosition()<<
+                   ", minus="<<seg.GetRefMinusStrand()<<")");
             len += seg.GetLength();
             break;
         case CSeqMap::eSeqGap:
@@ -928,7 +938,10 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             len += seg.GetLength();
             break;
         case CSeqMap::eSeqRef:
-            _TRACE('@'<<len<<": seqRef("<<seg.GetLength()<<", id="<<seg.GetRefSeqid().AsString()<<", pos="<<seg.GetRefPosition()<<", minus="<<seg.GetRefMinusStrand()<<")");
+            _TRACE('@'<<len<<": seqRef("<<seg.GetLength()<<
+                   ", id="<<seg.GetRefSeqid().AsString()<<
+                   ", pos="<<seg.GetRefPosition()<<
+                   ", minus="<<seg.GetRefMinusStrand()<<")");
             len += seg.GetLength();
             break;
         case CSeqMap::eSeqGap:
@@ -960,9 +973,9 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     // Iterate seq-map except the last element
     len = 0;
     CSeqMap::const_iterator seg(seq_map, &scope, SSeqMapSelector()
-        .SetTSE(&handle.GetTopLevelSeqEntry())
+        .SetLimitTSE(&handle.GetTopLevelSeqEntry())
         .SetResolveCount(kInvalidSeqPos)
-        .SetFlags(SSeqMapSelector::fFindAny | SSeqMapSelector::fFindTSERef));
+        .SetFlags(SSeqMapSelector::fFindAny));
     vector<CSeqMap::const_iterator> itrs;
     for ( ; seg != seq_map->end(&scope); ++seg ) {
         _ASSERT(seg);
@@ -973,7 +986,10 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             len += seg.GetLength();
             break;
         case CSeqMap::eSeqRef:
-            _TRACE('@'<<len<<": seqRef("<<seg.GetLength()<<", id="<<seg.GetRefSeqid().AsString()<<", pos="<<seg.GetRefPosition()<<", minus="<<seg.GetRefMinusStrand()<<")");
+            _TRACE('@'<<len<<": seqRef("<<seg.GetLength()<<
+                   ", id="<<seg.GetRefSeqid().AsString()<<
+                   ", pos="<<seg.GetRefPosition()<<
+                   ", minus="<<seg.GetRefMinusStrand()<<")");
             len += seg.GetLength();
             break;
         case CSeqMap::eSeqGap:
@@ -1001,7 +1017,8 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     CHECK_WRAP();
     CConstRef<CSeqMap> seq_map(&handle.GetSeqMap());
     TSeqPos len = 0;
-    _TRACE("ProcessBioseq("<<id.AsFastaString()<<") seq_len="<<seq_len<<") resolved:");
+    _TRACE("ProcessBioseq("<<id.AsFastaString()<<
+           ") seq_len="<<seq_len<<") resolved:");
     // Iterate seq-map except the last element
     len = 0;
     CSeqMap::const_iterator seg = seq_map->begin_resolved(&scope);
@@ -1015,7 +1032,10 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             len += seg.GetLength();
             break;
         case CSeqMap::eSeqRef:
-            _TRACE('@'<<len<<": seqRef("<<seg.GetLength()<<", id="<<seg.GetRefSeqid().AsString()<<", pos="<<seg.GetRefPosition()<<", minus="<<seg.GetRefMinusStrand()<<")");
+            _TRACE('@'<<len<<": seqRef("<<seg.GetLength()<<
+                   ", id="<<seg.GetRefSeqid().AsString()<<
+                   ", pos="<<seg.GetRefPosition()<<
+                   ", minus="<<seg.GetRefMinusStrand()<<")");
             _ASSERT("Unexpected REF segment" && 0);
             //len += seg.GetLength();
             break;
@@ -1124,7 +1144,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     if ( !tse_feat_test ) {
         if ( sm_DumpFeatures ) {
             NcbiCout << "-------------------- CFeat_CI resolve-all over "<<
-                id.AsFastaString()<<" --------------------\n";
+                id.AsFastaString()<<" --------------------" << NcbiEndl;
         }
         for ( CFeat_CI feat_it(scope, loc, SAnnotSelector().SetResolveAll());
               feat_it;  ++feat_it) {
@@ -1148,7 +1168,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     set<const CSeq_annot*> annot_set;
     if ( sm_DumpFeatures ) {
         NcbiCout << "-------------------- CFeat_CI over "<<
-            id.AsFastaString()<<" --------------------\n";
+            id.AsFastaString()<<" --------------------" << NcbiEndl;
     }
     if ( !tse_feat_test ) {
         for ( CFeat_CI feat_it(scope, loc); feat_it;  ++feat_it) {
@@ -1163,7 +1183,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
         if ( sm_DumpFeatures ) {
             NcbiCout << "-------------------- "
-                "product CFeat_CI --------------------\n";
+                "product CFeat_CI --------------------" << NcbiEndl;
         }
         // Get products
         for ( CFeat_CI feat_it(scope, loc, SAnnotSelector().SetByProduct());
@@ -1180,7 +1200,8 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
     else {
         if ( sm_DumpFeatures ) {
-            NcbiCout << "-------------------- LimitTSE --------------------\n";
+            NcbiCout << "-------------------- "
+                "LimitTSE --------------------" << NcbiEndl;
         }
         for ( CFeat_CI feat_it(handle, 0, 0,
                                SAnnotSelector()
@@ -1197,7 +1218,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
         if ( sm_DumpFeatures ) {
             NcbiCout << "-------------------- "
-                "product CFeat_CI --------------------\n";
+                "product CFeat_CI --------------------" << NcbiEndl;
         }
         // Get products
         for ( CFeat_CI feat_it(handle, 0, 0,
@@ -1217,7 +1238,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
     if ( sm_DumpFeatures ) {
         NcbiCout << "-------------------- "
-            "end CFeat_CI --------------------\n";
+            "end CFeat_CI --------------------" << NcbiEndl;
     }
     _ASSERT(count == seq_feat_cnt);
     _ASSERT(annot_set.size() == feat_annots_cnt);
@@ -1362,6 +1383,18 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2003/09/30 16:22:05  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.43  2003/09/05 18:45:10  grichenk
 * Fixed exceptions
 *

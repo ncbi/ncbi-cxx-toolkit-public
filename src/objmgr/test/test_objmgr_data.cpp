@@ -30,6 +30,18 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/09/30 16:22:05  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.8  2003/06/02 16:06:39  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
@@ -301,6 +313,14 @@ bool CTestOM::Thread_Run(int idx)
         }
         scope.ResetHistory();
     }
+
+    if ( ok ) {
+        NcbiCout << " Passed" << NcbiEndl << NcbiEndl;
+    }
+    else {
+        NcbiCout << " Failed" << NcbiEndl << NcbiEndl;
+    }
+
     return ok;
 }
 
@@ -349,8 +369,6 @@ bool CTestOM::TestApp_Init(void)
 
 bool CTestOM::TestApp_Exit(void)
 {
-    NcbiCout << " Passed" << NcbiEndl << NcbiEndl;
-
 /*
     map<int, int>::iterator it;
     for (it = m_mapGiToDesc.begin(); it != m_mapGiToDesc.end(); ++it) {

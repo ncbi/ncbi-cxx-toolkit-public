@@ -31,6 +31,9 @@
 
 #include <serial/pack_string.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
+#include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/tse_chunk_info.hpp>
+#include <objmgr/impl/seq_annot_info.hpp>
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -38,8 +41,13 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/id2/ID2_Seq_loc.hpp>
+#include <objects/id2/ID2S_Split_Info.hpp>
 
+#include <serial/serial.hpp>
 #include <serial/objistr.hpp>
+#include <serial/objistrasn.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/objectiter.hpp>
 
@@ -50,27 +58,6 @@ static const char* const STRING_PACK_ENV = "GENBANK_SNP_PACK_STRINGS";
 static const char* const SNP_SPLIT_ENV = "GENBANK_SNP_SPLIT";
 static const char* const SNP_TABLE_ENV = "GENBANK_SNP_TABLE";
 static const char* const ENV_YES = "YES";
-
-CBlob::CBlob(bool is_snp)
-    : m_Class(0), m_IsSnp(is_snp)
-{
-}
-
-
-CBlob::~CBlob(void)
-{
-}
-
-
-CBlobSource::CBlobSource(void)
-{
-}
-
-
-CBlobSource::~CBlobSource(void)
-{
-}
-
 
 CSeqref::CSeqref(void)
     : m_Flags(fHasAllLocal)
@@ -93,7 +80,7 @@ CSeqref::~CSeqref(void)
 const string CSeqref::print(void) const
 {
     CNcbiOstrstream ostr;
-    ostr << "SeqRef(" << Sat() << "," << SatKey () << "," << Gi() << ")";
+    ostr << "SeqRef("<<GetSat()<<','<<GetSatKey()<<','<<GetGi()<<')';
     return CNcbiOstrstreamToString(ostr);
 }
 
@@ -101,7 +88,15 @@ const string CSeqref::print(void) const
 const string CSeqref::printTSE(void) const
 {
     CNcbiOstrstream ostr;
-    ostr << "TSE(" << Sat() << "," << SatKey () << ")";
+    ostr << "TSE(" << GetSat() << ',' << GetSatKey() << ')';
+    return CNcbiOstrstreamToString(ostr);
+}
+
+
+const string CSeqref::printTSE(const TKeyByTSE& key)
+{
+    CNcbiOstrstream ostr;
+    ostr << "TSE(" << key.first << ',' << key.second << ')';
     return CNcbiOstrstreamToString(ostr);
 }
 
@@ -206,12 +201,126 @@ void CReader::SetSeqEntryReadHooks(CObjectIStream& in)
 }
 
 
+bool CReader::IsSNPSeqref(const CSeqref& seqref)
+{
+    return seqref.GetSat() == kSNP_Sat;
+}
+
+
+void CReader::AddSNPSeqref(TSeqrefs& srs, int gi, CSeqref::TFlags flags)
+{
+    flags |= CSeqref::fHasExternal;
+    CRef<CSeqref> sr(new CSeqref(gi, kSNP_Sat, gi));
+    sr->SetFlags(flags);
+    srs.push_back(sr);
+}
+
+
+CRef<CTSE_Info> CReader::GetBlob(const CSeqref& seqref,
+                                 TConn conn,
+                                 CTSE_Chunk_Info* chunk_info)
+{
+    CRef<CTSE_Info> ret;
+    if ( chunk_info ) {
+        GetSNPChunk(seqref, *chunk_info, conn);
+    }
+    else {
+        bool is_snp = IsSNPSeqref(seqref);
+        if ( is_snp ) {
+            ret = MakeSNPBlob(seqref);
+        }
+        else {
+            ret = GetMainBlob(seqref, conn);
+        }
+    }
+    return ret;
+}
+
+
+CRef<CTSE_Info> CReader::MakeSNPBlob(const CSeqref& seqref)
+{
+    _ASSERT(IsSNPSeqref(seqref));
+    CRef<CSeq_entry> seq_entry(new CSeq_entry);
+    {{
+        // make Seq-entry
+        CNcbiStrstream str;
+        str <<
+            "Seq-entry ::= set {\n"
+            "  id id " << kSNP_EntryId << ",\n"
+            "  seq-set {\n" // it's not optional
+            "  }\n"
+            "}\n";
+        CObjectIStreamAsn in(str);
+        in >> *seq_entry;
+    }}
+    // create CTSE_Info
+    CRef<CTSE_Info> ret(new CTSE_Info(*seq_entry));
+    ret->SetDataSourceName("SNP");
+
+    // make ID2S-Split-Info
+    CRef<CID2S_Split_Info> split_info(new CID2S_Split_Info);
+    {{
+        CNcbiStrstream str;
+        str <<
+            "ID2S-Split-Info ::= {\n"
+            "  chunks {\n"
+            "    {\n"
+            "      id "<<kSNP_ChunkId<<",\n"
+            "      content {\n"
+            "        seq-annot {\n"
+            "          feat {\n"
+            "            {\n"
+            "              type "<<CSeqFeatData::e_Imp<<",\n"
+            "              subtypes {\n"
+            "                "<<CSeqFeatData::eSubtype_variation<<"\n"
+            "              }\n"
+            "            }\n"
+            "          },\n"
+            "          seq-loc whole "<<seqref.GetGi()<<"\n"
+            "        }\n"
+            "      }\n"
+            "    }\n"
+            "  }\n"
+            "}\n";
+        CObjectIStreamAsn in(str);
+        in >> *split_info;
+    }}
+    // add split info
+    ret->SetSplitInfo(*split_info);
+    return ret;
+}
+
+
+void CReader::GetSNPChunk(const CSeqref& seqref,
+                          CTSE_Chunk_Info& chunk_info,
+                          TConn conn)
+{
+    _ASSERT(IsSNPSeqref(seqref));
+    _ASSERT(chunk_info.GetChunkId() == kSNP_ChunkId);
+    CRef<CSeq_annot_SNP_Info> snp_annot = GetSNPAnnot(seqref, conn);
+    CRef<CSeq_annot_Info> annot_info(new CSeq_annot_Info(*snp_annot));
+    chunk_info.LoadAnnotBioseq_set(kSNP_EntryId, *annot_info);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 
 /*
  * $Log$
+ * Revision 1.22  2003/09/30 16:22:02  vasilche
+ * Updated internal object manager classes to be able to load ID2 data.
+ * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+ * Scope caches results of requests for data to data loaders.
+ * Optimized CSeq_id_Handle for gis.
+ * Optimized bioseq lookup in scope.
+ * Reduced object allocations in annotation iterators.
+ * CScope is allowed to be destroyed before other objects using this scope are
+ * deleted (feature iterators, bioseq handles etc).
+ * Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+ * Added 'adaptive' option to objmgr_demo application.
+ *
  * Revision 1.21  2003/08/27 14:25:22  vasilche
  * Simplified CCmpTSE class.
  *

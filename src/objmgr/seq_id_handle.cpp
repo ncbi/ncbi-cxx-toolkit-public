@@ -30,6 +30,9 @@
 *
 */
 
+#include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
+#include <corelib/ncbiatomic.hpp>
 #include <objmgr/seq_id_handle.hpp>
 #include <objmgr/seq_id_mapper.hpp>
 #include <serial/typeinfo.hpp>
@@ -38,10 +41,76 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_id_Info
+//
+
+#ifdef NCBI_SLOW_ATOMIC_SWAP
+DEFINE_STATIC_FAST_MUTEX(sx_GetSeqIdMutex);
+#endif
+
+
+CConstRef<CSeq_id> CSeq_id_Info::GetGiSeqId(int gi) const
+{
+    CConstRef<CSeq_id> ret;
+#if defined NCBI_SLOW_ATOMIC_SWAP
+    CFastMutexGuard guard(sx_GetSeqIdMutex);
+    ret = m_Seq_id;
+    const_cast<CSeq_id_Info*>(this)->m_Seq_id.Reset();
+    if ( !ret || !ret->ReferencedOnlyOnce() ) {
+        ret.Reset(new CSeq_id);
+    }
+    const_cast<CSeq_id_Info*>(this)->m_Seq_id = ret;
+#else
+    const_cast<CSeq_id_Info*>(this)->m_Seq_id.AtomicReleaseTo(ret);
+    if ( !ret || !ret->ReferencedOnlyOnce() ) {
+        ret.Reset(new CSeq_id);
+    }
+    const_cast<CSeq_id_Info*>(this)->m_Seq_id.AtomicResetFrom(ret);
+#endif
+    const_cast<CSeq_id&>(*ret).SetGi(gi);
+    return ret;
+}
+
+
 ////////////////////////////////////////////////////////////////////
 //
 //  CSeq_id_Handle::
 //
+
+
+CConstRef<CSeq_id> CSeq_id_Handle::GetSeqId(void) const
+{
+    _ASSERT(m_Info);
+    CConstRef<CSeq_id> ret;
+    if ( m_Gi ) {
+        ret = m_Info->GetGiSeqId(m_Gi);
+    }
+    else {
+        ret = m_Info->GetSeqId();
+    }
+    return ret;
+}
+
+
+CConstRef<CSeq_id> CSeq_id_Handle::GetSeqIdOrNull(void) const
+{
+    CConstRef<CSeq_id> ret;
+    if ( m_Gi ) {
+        _ASSERT(m_Info);
+        ret = m_Info->GetGiSeqId(m_Gi);
+    }
+    else if ( m_Info ) {
+        ret = m_Info->GetSeqId();
+    }
+    return ret;
+}
+
+
+CSeq_id_Handle CSeq_id_Handle::GetHandle(const CSeq_id& id)
+{
+    return CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(id);
+}
 
 
 void CSeq_id_Handle::x_RemoveLastReference(void)
@@ -58,7 +127,7 @@ bool CSeq_id_Handle::x_Match(const CSeq_id_Handle& handle) const
     }
     if ( !handle )
         return false;
-    return GetSeqId().Match(handle.GetSeqId());
+    return GetSeqId()->Match(*handle.GetSeqId());
 }
 
 
@@ -68,11 +137,23 @@ bool CSeq_id_Handle::IsBetter(const CSeq_id_Handle& h) const
 }
 
 
+bool CSeq_id_Handle::operator==(const CSeq_id& id) const
+{
+    if ( m_Gi ) {
+        return id.Which() == CSeq_id::e_Gi && id.GetGi() == m_Gi;
+    }
+    return *this == CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(id);
+}
+
+
 string CSeq_id_Handle::AsString() const
 {
     CNcbiOstrstream os;
-    if ( *this ) {
-        GetSeqId().WriteAsFasta(os);
+    if ( m_Gi != 0 ) {
+        os << "gi|" << m_Gi;
+    }
+    else if ( m_Info ) {
+        m_Info->GetSeqId()->WriteAsFasta(os);
     }
     else {
         os << "unknown";
@@ -86,6 +167,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/09/30 16:22:03  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.13  2003/06/10 19:06:35  vasilche
 * Simplified CSeq_id_Mapper and CSeq_id_Handle.
 *

@@ -50,7 +50,9 @@ CSeq_id_Mapper& CSeq_id_Mapper::GetSeq_id_Mapper(void)
 }
 
 CSeq_id_Mapper::CSeq_id_Mapper(void)
+    : m_GiInfo(new CSeq_id_Info(CConstRef<CSeq_id>()))
 {
+    m_GiInfo->m_Counter.Add(1);
     CSeq_id_Which_Tree::Initialize(m_Trees);
 }
 
@@ -59,6 +61,12 @@ CSeq_id_Mapper::~CSeq_id_Mapper(void)
 {
     ITERATE ( TTrees, it, m_Trees ) {
         _ASSERT((*it)->Empty());
+    }
+    if ( m_GiInfo ) {
+        _ASSERT(m_GiInfo->m_Counter.Get() == 1);
+        m_GiInfo->m_Counter.Add(-1);
+        delete m_GiInfo;
+        m_GiInfo = 0;
     }
 }
 
@@ -75,7 +83,7 @@ CSeq_id_Which_Tree& CSeq_id_Mapper::x_GetTree(const CSeq_id& id)
 inline
 CSeq_id_Which_Tree& CSeq_id_Mapper::x_GetTree(const CSeq_id_Handle& idh)
 {
-    return x_GetTree(idh.GetSeqId());
+    return x_GetTree(*idh.GetSeqId());
 }
 
 
@@ -92,16 +100,24 @@ inline
 const CSeq_id_Which_Tree&
 CSeq_id_Mapper::x_GetTree(const CSeq_id_Handle& idh) const
 {
-    return x_GetTree(idh.GetSeqId());
+    return x_GetTree(*idh.GetSeqId());
 }
 
 
 CSeq_id_Handle CSeq_id_Mapper::GetHandle(const CSeq_id& id,
                                          bool do_not_create)
 {
-    if (id.Which() == CSeq_id::e_not_set) {
+    CSeq_id::E_Choice type = id.Which();
+    if ( type == CSeq_id::e_Gi ) {
+        int gi = id.GetGi();
+        if ( gi != 0 ) {
+            return CSeq_id_Handle(m_GiInfo, gi);
+        }
+    }
+    else if ( type == CSeq_id::e_not_set ) {
         LOG_POST(Warning <<
             "CSeq_id_Mapper::GetHandle() -- uninitialized seq-id");
+        return CSeq_id_Handle();
     }
 
     CSeq_id_Which_Tree& tree = x_GetTree(id);
@@ -109,12 +125,34 @@ CSeq_id_Handle CSeq_id_Mapper::GetHandle(const CSeq_id& id,
 }
 
 
+bool CSeq_id_Mapper::HaveMatchingHandles(const CSeq_id_Handle& idh)
+{
+    if ( idh.m_Gi != 0 ) {
+        _ASSERT(idh.m_Info == m_GiInfo);
+        return false;
+    }
+    else if ( !idh ) {
+        LOG_POST(Warning <<
+            "CSeq_id_Mapper::GetMatchingHandles() -- uninitialized seq-id");
+        return false;
+    }
+
+    return x_GetTree(idh).HaveMatch(idh);
+}
+
+
 void CSeq_id_Mapper::GetMatchingHandles(const CSeq_id_Handle& idh,
                                         TSeq_id_HandleSet& h_set)
 {
-    if ( !idh ) {
+    if ( idh.m_Gi != 0 ) {
+        _ASSERT(idh.m_Info == m_GiInfo);
+        h_set.insert(idh);
+        return;
+    }
+    else if ( !idh ) {
         LOG_POST(Warning <<
             "CSeq_id_Mapper::GetMatchingHandles() -- uninitialized seq-id");
+        return;
     }
 
     CSeq_id_Which_Tree::TSeq_id_MatchList match_list;
@@ -174,6 +212,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/09/30 16:22:03  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.38  2003/09/05 17:29:40  grichenk
 * Structurized Object Manager exceptions
 *

@@ -67,13 +67,17 @@ bool CSeqMap_CI_SegmentInfo::x_Move(bool minusStrand, CScope* scope)
 
 
 
-
 ////////////////////////////////////////////////////////////////////
 // CSeqMap_CI
 
+inline
+bool CSeqMap_CI::x_Push(TSeqPos pos)
+{
+    return x_Push(pos, m_Selector.CanResolve());
+}
+
 
 CSeqMap_CI::CSeqMap_CI(void)
-    : m_Scope(0)
 {
     m_Selector.SetPosition(kInvalidSeqPos)
         .SetResolveCount(0)
@@ -104,7 +108,7 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
     }
     x_Push(seqMap, 0, seqMap->GetLength(scope), false, pos);
     while ( !x_Found() ) {
-        if ( !x_Push(pos - GetPosition(), m_Selector.m_MaxResolveCount > 0) ) {
+        if ( !x_Push(pos - GetPosition()) ) {
             x_SettleNext();
             break;
         }
@@ -137,7 +141,7 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
     }
     x_Push(seqMap, 0, seqMap->GetLength(scope), IsReverse(strand), pos);
     while ( !x_Found() ) {
-        if ( !x_Push(pos - GetPosition(), m_Selector.m_MaxResolveCount > 0) ) {
+        if ( !x_Push(pos - GetPosition()) ) {
             x_SettleNext();
             break;
         }
@@ -158,7 +162,7 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
            m_Selector.m_Length,
            IsReverse(strand), 0);
     while ( !x_Found() ) {
-        if ( !x_Push(pos - GetPosition(), m_Selector.m_MaxResolveCount > 0) ) {
+        if ( !x_Push(pos - GetPosition()) ) {
             x_SettleNext();
             break;
         }
@@ -181,7 +185,7 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
            m_Selector.m_Length,
            false, 0);
     while ( !x_Found() ) {
-        if ( !x_Push(pos - GetPosition(), m_Selector.m_MaxResolveCount > 0) ) {
+        if ( !x_Push(pos - GetPosition()) ) {
             x_SettleNext();
             break;
         }
@@ -225,7 +229,6 @@ CSeq_id_Handle CSeqMap_CI::GetRefSeqid(void) const
         NCBI_THROW(CSeqMapException, eOutOfRange,
                    "Iterator out of range");
     }
-    _ASSERT(x_GetSeqMap().m_Source);
     return CSeq_id_Mapper::GetSeq_id_Mapper().
         GetHandle(x_GetSeqMap().x_GetRefSeqid(x_GetSegment()));
 }
@@ -272,15 +275,26 @@ TSeqPos CSeqMap_CI::x_GetTopOffset(void) const
 }
 
 
-bool CSeqMap_CI::x_CanResolveRef(const CSeqMap::CSegment& seg) const
+bool CSeqMap_CI::x_RefTSEMatch(const CSeqMap::CSegment& seg) const
 {
     _ASSERT(m_Selector.m_TSE);
     _ASSERT(CSeqMap::ESegmentType(seg.m_SegType) == CSeqMap::eSeqRef);
     CSeq_id_Handle id = CSeq_id_Mapper::GetSeq_id_Mapper().
         GetHandle(x_GetSeqMap().x_GetRefSeqid(seg));
-    CConstRef<CTSE_Info> tse_info =
-        x_GetSeqMap().m_Source->GetTSEInfo(*m_Selector.m_TSE);
-    return bool(tse_info)  &&  tse_info->ContainsSeqid(id);
+    CConstRef<CTSE_Info> tse_info = m_TSE_Info;
+    if ( !tse_info ) {
+        tse_info = m_Scope->GetTSEInfo(m_Selector.m_TSE);
+        _ASSERT(tse_info);
+    }
+    return m_Scope->x_GetBioseqHandleFromTSE(id, *tse_info);
+}
+
+
+inline
+bool CSeqMap_CI::x_CanResolve(const CSeqMap::CSegment& seg) const
+{
+    return m_Selector.CanResolve() &&
+        (!m_Selector.m_TSE || x_RefTSEMatch(seg));
 }
 
 
@@ -294,15 +308,14 @@ bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
         return false;
     }
     // Check TSE limit
-    if ( m_Selector.m_TSE
-        &&  !x_CanResolveRef(seg)
-        &&  m_Selector.m_MaxResolveCount > 0 ) {
+    if ( m_Selector.m_TSE  &&  !x_RefTSEMatch(seg) ) {
         return false;
     }
     x_Push(info.m_SeqMap->x_GetSubSeqMap(seg, GetScope(), resolveExternal),
            GetRefPosition(), GetLength(), GetRefMinusStrand(), pos);
-    if ( type == CSeqMap::eSeqRef )
-        --m_Selector.m_MaxResolveCount;
+    if ( type == CSeqMap::eSeqRef ) {
+        m_Selector.PushResolve();
+    }
     return true;
 }
 
@@ -345,7 +358,7 @@ bool CSeqMap_CI::x_Pop(void)
     m_Selector.m_Position -= x_GetTopOffset();
     m_Stack.pop_back();
     if ( x_GetSegment().m_SegType == CSeqMap::eSeqRef ) {
-        ++m_Selector.m_MaxResolveCount;
+        m_Selector.PopResolve();
     }
     m_Selector.m_Length = x_GetSegmentInfo().x_CalcLength();
     return true;
@@ -382,6 +395,13 @@ bool CSeqMap_CI::x_TopPrev(void)
 }
 
 
+inline
+bool CSeqMap_CI::x_Next(void)
+{
+    return x_Next(m_Selector.CanResolve());
+}
+
+
 bool CSeqMap_CI::x_Next(bool resolveExternal)
 {
     if ( x_Push(0, resolveExternal) ) {
@@ -399,8 +419,7 @@ bool CSeqMap_CI::x_Prev(void)
 {
     if ( !x_TopPrev() )
         return x_Pop();
-    while ( x_Push(m_Selector.m_Length-1,
-        m_Selector.m_MaxResolveCount > 0) ) {
+    while ( x_Push(m_Selector.m_Length-1) ) {
     }
     return true;
 }
@@ -410,16 +429,25 @@ bool CSeqMap_CI::x_Found(void) const
 {
     switch ( x_GetSegment().m_SegType ) {
     case CSeqMap::eSeqRef:
-        if (GetFlags() & SSeqMapSelector::fFindTSERef)
-        {
-            const TSegmentInfo& info = x_GetSegmentInfo();
-            const CSeqMap::CSegment& seg = info.x_GetSegment();
-            return m_Selector.m_MaxResolveCount <= 0
-                ||  (m_Selector.m_TSE  &&  !x_CanResolveRef(seg));
+        if ( (GetFlags() & SSeqMapSelector::fFindLeafRef) != 0 ) {
+            if ( (GetFlags() & SSeqMapSelector::fFindInnerRef) != 0 ) {
+                // both
+                return true;
+            }
+            else {
+                // leaf only
+                return !x_CanResolve(x_GetSegment());
+            }
         }
         else {
-            return (GetFlags() & SSeqMapSelector::fFindRef) != 0
-                || m_Selector.m_MaxResolveCount <= 0;
+            if ( (GetFlags() & SSeqMapSelector::fFindInnerRef) != 0 ) {
+                // inner only
+                return x_CanResolve(x_GetSegment());
+            }
+            else {
+                // none
+                return false;
+            }
         }
     case CSeqMap::eSeqData:
         return (GetFlags() & SSeqMapSelector::fFindData) != 0;
@@ -436,7 +464,7 @@ bool CSeqMap_CI::x_Found(void) const
 bool CSeqMap_CI::x_SettleNext(void)
 {
     while ( !x_Found() ) {
-        if ( !x_Next(m_Selector.m_MaxResolveCount > 0) )
+        if ( !x_Next() )
             return false;
     }
     return true;
@@ -455,9 +483,8 @@ bool CSeqMap_CI::x_SettlePrev(void)
 
 bool CSeqMap_CI::Next(bool resolveCurrentExternal)
 {
-    return x_Next(resolveCurrentExternal
-        && m_Selector.m_MaxResolveCount > 0)
-        && x_SettleNext();
+    return x_Next(resolveCurrentExternal && m_Selector.CanResolve()) &&
+        x_SettleNext();
 }
 
 
@@ -480,6 +507,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/09/30 16:22:04  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.18  2003/09/05 17:29:40  grichenk
 * Structurized Object Manager exceptions
 *

@@ -33,11 +33,14 @@
 *
 */
 
-#include <objects/seqloc/Na_strand.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
+#include <corelib/ncbiobj.hpp>
+#include <objmgr/scope.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/annot_object.hpp>
-#include <corelib/ncbiobj.hpp>
+
+#include <objects/seqloc/Na_strand.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+
 #include <set>
 #include <vector>
 
@@ -45,6 +48,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CScope;
+class CScope_Impl;
 class CTSE_Info;
 class CSeq_loc;
 class CSeqMap_CI;
@@ -206,22 +210,33 @@ private:
     void x_Initialize(const CBioseq_Handle& bioseq,
                       TSeqPos start, TSeqPos stop);
     void x_Initialize(const CHandleRangeMap& master_loc);
-    void x_Initialize(const CObject& limit_info);
+    void x_Initialize(void);
+    void x_GetTSE_Info(void);
     bool x_SearchMapped(const CSeqMap_CI& seg,
                         const CSeq_id_Handle& master_id,
+                        CSeq_loc& master_loc_empty,
                         const CHandleRange& master_hr);
     bool x_Search(const CHandleRangeMap& loc,
                   CSeq_loc_Conversion* cvt);
     bool x_Search(const CSeq_id_Handle& id,
+                  const CBioseq_Handle& bh,
                   const CHandleRange& hr,
                   CSeq_loc_Conversion* cvt);
-    void x_Search(const CObject& limit_info);
+    bool x_Search(const TTSE_LockSet& tse_set,
+                  const CSeq_id_Handle& id,
+                  const CHandleRange& hr,
+                  CSeq_loc_Conversion* cvt);
+    void x_SearchAll(void);
+    void x_SearchAll(const CSeq_entry_Info& entry_info);
+    void x_SearchAll(const CSeq_annot_Info& annot_info);
+    void x_Sort(void);
     
     // Release all locked resources TSE etc
     void x_ReleaseAll(void);
 
     bool x_NeedSNPs(void) const;
     bool x_MatchLimitObject(const CAnnotObject_Info& annot_info) const;
+    bool x_MatchDataSource(const CTSE_Info& tse_info) const;
     bool x_MatchType(const CAnnotObject_Info& annot_info) const;
     bool x_MatchRange(const CHandleRange& hr,
                       const CRange<TSeqPos>& range,
@@ -231,9 +246,11 @@ private:
     TAnnotSet                    m_AnnotSet;
     // Current annotation
     TAnnotSet::const_iterator    m_CurAnnot;
+    // info of limit object
+    CConstRef<CObject>           m_LimitObjectInfo;
     // TSE set to keep all the TSEs locked
     TTSE_LockSet                 m_TSE_LockSet;
-    mutable CRef<CScope>         m_Scope;
+    CHeapScope                   m_Scope;
 };
 
 
@@ -453,7 +470,7 @@ size_t CAnnotTypes_CI::GetSize(void) const
 inline
 CScope& CAnnotTypes_CI::GetScope(void) const
 {
-    return *m_Scope;
+    return m_Scope;
 }
 
 
@@ -463,6 +480,18 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
 * Revision 1.52  2003/09/12 15:50:09  grichenk
 * Updated adaptive-depth triggering
 *
