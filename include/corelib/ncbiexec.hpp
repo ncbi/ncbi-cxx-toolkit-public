@@ -46,11 +46,6 @@ BEGIN_NCBI_SCOPE
 class CExec
 {
 public:
-    // The exception specific for this class:
-    class CException : public runtime_error {
-    public:
-        CException(const string& message) : runtime_error(message) {}
-    };
 
     // Exec mode
     enum EMode {
@@ -136,6 +131,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/07/11 14:17:54  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.3  2002/06/10 18:55:27  ivanov
  * Added comment note about arguments with spaces inside
  *

@@ -285,8 +285,9 @@ int CId1FetchApp::Run(void)
         if (args["qf"])     id_count++;
 
         if (id_count != 1) {
-            throw CArgException("You must supply exactly one argument"
-                                " indicating what to look up.");
+            NCBI_THROW(CArgException,eNoArg,
+                "You must supply exactly one argument"
+                " indicating what to look up.");
         }
         if ((args["query"]  ||  args["qf"]  ||  fmt == "docsum")
             &&  !args["db"]) {
@@ -908,6 +909,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/07/11 14:23:48  gouriano
+* exceptions replaced by CNcbiException-type ones
+*
 * Revision 1.35  2002/06/28 17:25:53  grichenk
 * +Error message if a GI was not found
 *

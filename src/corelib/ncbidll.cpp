@@ -78,8 +78,8 @@ CDll::~CDll()
     if ( m_AutoUnload ) {
         try {
             Unload();
-        } catch(CException& _DEBUG_ARG(e)) {
-            _TRACE(string("CDll::~CDll()  ") + e.what());
+        } catch(CNcbiException& e) {
+            REPORT_NCBI_EXCEPTION("CDll destructor",e);
         }
     }
     delete m_Handle;
@@ -139,7 +139,7 @@ void CDll::Load(void)
 #  endif
 #endif
     if ( !handle ) {
-        x_ThrowException("Load error");
+        x_ThrowException("CDll::Load");
     }
     m_Handle = new SDllHandle;
     m_Handle->handle = handle;
@@ -163,7 +163,7 @@ void CDll::Unload(void)
 #  endif
 #endif
     if ( !unloaded ) {
-        x_ThrowException("Unload error");
+        x_ThrowException("CDll::Unload");
     }
 
     delete m_Handle;
@@ -175,7 +175,9 @@ void* CDll::x_GetEntryPoint(const string& name, size_t pointer_size)
 {
     // Check pointer size
     if (pointer_size != sizeof(void*)) {
-        throw CException("CDll: GetEntryPoint():  incorrect entry ptr size");
+        NCBI_THROW(CExceptCorelib,eDll,
+            "Dll entry point's address size does not match"
+            " the size of provided memory buffer");
     }
     // If DLL is not yet loaded
     if ( !m_Handle ) {
@@ -223,8 +225,7 @@ void CDll::x_ThrowException(const string& what)
 #  endif
 #endif
 
-    // Throw exception
-    throw CException("CDll: " + what + ":  " + errmsg);
+    NCBI_THROW(CExceptCorelib,eDll,what + ": " + errmsg);
 }
 
 
@@ -234,6 +235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/07/11 14:18:26  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.7  2002/07/01 16:44:14  ivanov
  * Added Darwin specific: use leading underscores in entry names
  *

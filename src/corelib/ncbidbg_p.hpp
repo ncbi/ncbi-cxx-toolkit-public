@@ -54,7 +54,8 @@ BEGIN_NCBI_SCOPE
         EValidateAction action = xncbi_GetValidateAction(); \
         if (action == eValidate_Throw) { \
             if ( !(expression) ) { \
-                throw runtime_error( message ); \
+                throw CExceptCorelib(__FILE__,__LINE__,0,\
+                    CExceptCorelib::eCore,message ); \
             } \
         } \
         else { \
@@ -71,7 +72,8 @@ BEGIN_NCBI_SCOPE
 #  define xncbi_Validate(expression, message) \
     do { \
         if ( !(expression) ) { \
-            throw runtime_error( message ); \
+            throw CExceptCorelib(__FILE__,__LINE__,0, \
+                CExceptCorelib::eCore,message ); \
         } \
     } while (0)
 
@@ -84,6 +86,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/07/11 14:18:26  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.7  2002/04/11 21:08:01  ivanov
  * CVS log moved to end of the file
  *

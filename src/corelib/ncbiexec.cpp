@@ -46,18 +46,6 @@
 BEGIN_NCBI_SCOPE
 
 
-// Throw exception with diagnostic message
-static void s_ThrowException(const string& what)
-{
-    const char* errmsg = strerror(errno);
-    if ( !errmsg ) {
-        errmsg = "unknown reason";
-    }
-    // Throw exception
-    throw CExec::CException("CExec: " + what + ": " + errmsg);
-}
-
-
 #if defined(NCBI_OS_MSWIN)
 // Convert CExec class mode to the real mode
 static int s_GetRealMode(const CExec::EMode mode)
@@ -153,13 +141,6 @@ static int s_SpawnUnix(const ESpawnFunc func, const CExec::EMode mode,
 #endif
 
 
-// Check status of exec call
-#define CHECK_EXEC_STATUS(procname) \
-    if (status == -1 ) { \
-        s_ThrowException((string)procname + "() error"); \
-    } \
-    return status
-
 
 int CExec::System(const char *cmdline)
 { 
@@ -172,7 +153,8 @@ int CExec::System(const char *cmdline)
     ?
 #endif
     if (status == -1 ) {
-        s_ThrowException("System() error");
+        NCBI_THROW(CErrnoException,eErrno,
+            "CExec::System: call to system failed");
     }
 #if defined(NCBI_OS_UNIX)
     return cmdline ? WEXITSTATUS(status) : status;
@@ -193,7 +175,10 @@ int CExec::SpawnL(const EMode mode, const char *cmdname, const char *argv, ...)
 #elif defined(NCBI_OS_MAC)
     ?
 #endif
-    CHECK_EXEC_STATUS("SpawnL");
+    if (status == -1 ) {
+        NCBI_THROW(CErrnoException,eErrno, "CExec::SpawnL");
+    }
+    return status;
 }
 
 
@@ -212,7 +197,10 @@ int CExec::SpawnLE(const EMode mode, const char *cmdname,  const char *argv, ...
 #elif defined(NCBI_OS_MAC)
     ?
 #endif
-    CHECK_EXEC_STATUS("SpawnLE");
+    if (status == -1 ) {
+        NCBI_THROW(CErrnoException,eErrno, "CExec::SpawnLE");
+    }
+    return status;
 }
 
 
@@ -228,7 +216,10 @@ int CExec::SpawnLP(const EMode mode, const char *cmdname,
 #elif defined(NCBI_OS_MAC)
     ?
 #endif
-    CHECK_EXEC_STATUS("SpawnLP");
+    if (status == -1 ) {
+        NCBI_THROW(CErrnoException,eErrno, "CExec::SpawnLP");
+    }
+    return status;
 }
 
 
@@ -248,7 +239,10 @@ int CExec::SpawnLPE(const EMode mode, const char *cmdname,
 #elif defined(NCBI_OS_MAC)
     ?
 #endif
-    CHECK_EXEC_STATUS("SpawnLPE");
+    if (status == -1 ) {
+        NCBI_THROW(CErrnoException,eErrno, "CExec::SpawnLPE");
+    }
+    return status;
 }
 
 
@@ -265,7 +259,10 @@ int CExec::SpawnV(const EMode mode, const char *cmdname,
 #elif defined(NCBI_OS_MAC)
     ?
 #endif
-    CHECK_EXEC_STATUS("SpawnV");
+    if (status == -1 ) {
+        NCBI_THROW(CErrnoException,eErrno, "CExec::SpawnV");
+    }
+    return status;
 }
 
 
@@ -282,7 +279,10 @@ int CExec::SpawnVE(const EMode mode, const char *cmdname,
 #elif defined(NCBI_OS_MAC)
     ?
 #endif
-    CHECK_EXEC_STATUS("SpawnVE");
+    if (status == -1 ) {
+        NCBI_THROW(CErrnoException,eErrno, "CExec::SpawnVE");
+    }
+    return status;
 }
 
 
@@ -299,7 +299,10 @@ int CExec::SpawnVP(const EMode mode, const char *cmdname,
 #elif defined(NCBI_OS_MAC)
     ?
 #endif
-    CHECK_EXEC_STATUS("SpawnVP");
+    if (status == -1 ) {
+        NCBI_THROW(CErrnoException,eErrno, "CExec::SpawnVP");
+    }
+    return status;
 }
 
 
@@ -316,7 +319,10 @@ int CExec::SpawnVPE(const EMode mode, const char *cmdname,
 #elif defined(NCBI_OS_MAC)
     ?
 #endif
-    CHECK_EXEC_STATUS("SpawnVPE");
+    if (status == -1 ) {
+        NCBI_THROW(CErrnoException,eErrno, "CExec::SpawnVPE");
+    }
+    return status;
 }
 
 
@@ -343,6 +349,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/07/11 14:18:26  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.5  2002/06/30 03:22:14  vakatov
  * s_GetRealMode() -- formal code rearrangement to avoid a warning
  *

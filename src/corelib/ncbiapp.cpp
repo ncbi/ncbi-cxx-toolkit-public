@@ -55,7 +55,6 @@ static void s_DiagToStdlog_Cleanup(void* data)
     delete os_log;
 }
 
-
 ///////////////////////////////////////////////////////
 // CNcbiApplication
 //
@@ -73,8 +72,8 @@ CNcbiApplication::CNcbiApplication(void)
 {
     // Register the app. instance
     if ( m_Instance ) {
-        THROW1_TRACE(logic_error, "\
-CNcbiApplication::CNcbiApplication() -- cannot create second instance");
+        NCBI_THROW(CExceptApp,eSecond,
+            "Second instance of CNcbiApplication is prohibited");
     }
     m_Instance = this;
 
@@ -276,11 +275,16 @@ int CNcbiApplication::AppMain
     // Setup for diagnostics
     try {
         if ( !is_diag_setup  &&  !SetupDiag(diag) ) {
-            ERR_POST("CNcbiApplication::SetupDiag() returned FALSE");
+            ERR_POST(
+                "Application diagnostic stream's setup failed");
         }
+    } catch (CNcbiException& e) {
+        NCBI_RETHROW(e,CExceptApp, eSetupDiag,
+            "Application diagnostic stream's setup failed");
     } catch (exception& e) {
-        ERR_POST("CNcbiApplication::SetupDiag() failed: " << e.what());
-        throw runtime_error("CNcbiApplication::SetupDiag() failed");
+        NCBI_THROW(CExceptApp, eSetupDiag,
+            string("Application diagnostic stream's setup failed") +
+            string(": ") + e.what());
     }
 
     // Load registry from the config file
@@ -289,9 +293,13 @@ int CNcbiApplication::AppMain
             string x_conf(conf);
             LoadConfig(*m_Config, &x_conf);
         }
+    } catch (CNcbiException& e) {
+        NCBI_RETHROW(e,CExceptApp, eLoadConfig,
+            "Registry data cannot be loaded");
     } catch (exception& e) {
-        ERR_POST("CNcbiApplication::LoadConfig() failed: " << e.what());
-        throw runtime_error("CNcbiApplication::LoadConfig() failed");
+        NCBI_THROW(CExceptApp, eLoadConfig,
+            string("Registry data cannot be loaded") +
+            string(": ") + e.what());
     }
 
     // Setup some debugging features
@@ -324,11 +332,16 @@ int CNcbiApplication::AppMain
             LOG_POST(m_ArgDesc->PrintUsage(str));
             exit_code = 0;
         }
-        catch (CArgException&) {
-            throw;
+        catch (CArgException& e) {
+            NCBI_RETHROW_SAME(e,"Application's initialization failed");
+        }
+        catch (CNcbiException& e) {
+            REPORT_NCBI_EXCEPTION(
+                "Application's initialization failed",e);
         }
         catch (exception& e) {
-            ERR_POST("CNcbiApplication::Init() failed: " << e.what());
+            ERR_POST("Application's initialization failed"
+                << ": " << e.what());
             exit_code = -2;
         }
 
@@ -337,11 +350,16 @@ int CNcbiApplication::AppMain
             try {
                 exit_code = Run();
             }
-            catch (CArgException&) {
-                throw;
+            catch (CArgException& e) {
+                NCBI_RETHROW_SAME(e,"Application's execution failed");
+            }
+            catch (CNcbiException& e) {
+                REPORT_NCBI_EXCEPTION(
+                    "Application's execution failed",e);
             }
             catch (exception& e) {
-                ERR_POST("CNcbiApplication::Run() failed: " << e.what());
+                ERR_POST("Application's execution failed"
+                    << ": " << e.what());
                 exit_code = -3;
             }
         }
@@ -350,11 +368,16 @@ int CNcbiApplication::AppMain
         try {
             Exit();
         }
-        catch (CArgException&) {
-            throw;
+        catch (CArgException& e) {
+            NCBI_RETHROW_SAME(e,"Application's cleanup failed");
+        }
+        catch (CNcbiException& e) {
+            REPORT_NCBI_EXCEPTION(
+                "Application's cleanup failed",e);
         }
         catch (exception& e) {
-            ERR_POST("CNcbiApplication::Exit() failed: " << e.what());
+            ERR_POST("Application's cleanup failed"
+                << ": " << e.what());
         }
     }
     catch (CArgException& e) {
@@ -364,7 +387,7 @@ int CNcbiApplication::AppMain
         if ( m_ArgDesc.get() ) {
             LOG_POST(m_ArgDesc->PrintUsage(str) << string(72, '='));
         }
-        LOG_POST(" ERROR:  " << e.what());
+        REPORT_NCBI_EXCEPTION("",e);
         exit_code = -1;
     }
 
@@ -528,8 +551,8 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
         // do load
         x_conf = NStr::TruncateSpaces(x_conf);
         if ( !s_LoadConfig(reg, x_conf) ) {
-            THROW1_TRACE(runtime_error, "\
-CNcbiApplication::LoadConfig() -- cannot open registry file: " + x_conf);
+            NCBI_THROW(CExceptApp,eNoRegistry,
+                "Registry file cannot be opened");
         }
         return true;
     }
@@ -559,8 +582,9 @@ CNcbiApplication::LoadConfig() -- cannot open registry file: " + x_conf);
     }
 
     ERR_POST(Warning <<
-             "CNcbiApplication::LoadConfig() -- cannot find registry "
-             "file for application: " << m_Arguments->GetProgramBasename());
+             "Registry file of application \""
+             << m_Arguments->GetProgramBasename()
+             << "\" is not found");
 
     return false;
 }
@@ -572,6 +596,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2002/07/11 14:18:25  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.41  2002/07/10 16:20:13  ivanov
  * Changes related with renaming SetDiagFixedStrPostLevel()->SetDiagFixedPostLevel()
  *

@@ -258,6 +258,7 @@ int CExceptApplication::Run(void)
     catch (exception& /*e*/) {
         _ASSERT(0);
     }
+    cout << "Test completed" << endl;
     return 0;
 }
 END_NCBI_SCOPE
@@ -278,6 +279,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2002/07/11 14:18:29  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 6.3  2002/06/27 18:56:16  gouriano
  * added "title" parameter to report functions
  *

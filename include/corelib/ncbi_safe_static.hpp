@@ -141,9 +141,15 @@ public:
                 m_Ptr = object;
                 CSafeStaticGuard::Register(this);
             }
+            catch (CNcbiException& e) {
+                Init_Unlock(mutex_locked);
+                NCBI_RETHROW_SAME(e,
+                    "CSafeStaticPtr::Set: Register() failed");
+            }
             catch (...) {
                 Init_Unlock(mutex_locked);
-                throw;
+                NCBI_THROW(CExceptCorelib,eCore,
+                    "CSafeStaticPtr::Set: Register() failed");
             }
         }
         Init_Unlock(mutex_locked);
@@ -159,9 +165,15 @@ private:
                 m_Ptr = new T;
                 CSafeStaticGuard::Register(this);
             }
+            catch (CNcbiException& e) {
+                Init_Unlock(mutex_locked);
+                NCBI_RETHROW_SAME(e,
+                    "CSafeStaticPtr::Init: Register() failed");
+            }
             catch (...) {
                 Init_Unlock(mutex_locked);
-                throw;
+                NCBI_THROW(CExceptCorelib,eCore,
+                    "CSafeStaticPtr::Init: Register() failed");
             }
         }
         Init_Unlock(mutex_locked);
@@ -221,9 +233,15 @@ public:
                 m_Ptr = new CRef<T> (object);
                 CSafeStaticGuard::Register(this);
             }
+            catch (CNcbiException& e) {
+                Init_Unlock(mutex_locked);
+                NCBI_RETHROW_SAME(e,
+                    "CSafeStaticRef::Set: Register() failed");
+            }
             catch (...) {
                 Init_Unlock(mutex_locked);
-                throw;
+                NCBI_THROW(CExceptCorelib,eCore,
+                    "CSafeStaticRef::Set: Register() failed");
             }
         }
         Init_Unlock(mutex_locked);
@@ -239,9 +257,15 @@ private:
                 m_Ptr = new CRef<T> (new T);
                 CSafeStaticGuard::Register(this);
             }
+            catch (CNcbiException& e) {
+                Init_Unlock(mutex_locked);
+                NCBI_RETHROW_SAME(e,
+                    "CSafeStaticRef::Init: Register() failed");
+            }
             catch (...) {
                 Init_Unlock(mutex_locked);
-                throw;
+                NCBI_THROW(CExceptCorelib,eCore,
+                    "CSafeStaticRef::Init: Register() failed");
             }
         }
         Init_Unlock(mutex_locked);
@@ -315,6 +339,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/07/11 14:17:53  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.7  2002/04/11 20:39:15  ivanov
  * CVS log moved to end of the file
  *

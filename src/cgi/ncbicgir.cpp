@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/07/11 14:22:59  gouriano
+* exceptions replaced by CNcbiException-type ones
+*
 * Revision 1.15  2002/04/15 01:18:42  lavr
 * Check if status is less than 100
 *
@@ -167,8 +170,8 @@ void CCgiResponse::SetHeaderValue(const string& name, const tm& date)
 
     char buff[64];
     if ( !::strftime(buff, sizeof(buff), "%a %b %d %H:%M:%S %Y", &date) ) {
-        THROW1_TRACE(CErrnoException,
-                     "CCgiResponse::SetHeaderValue() -- strftime() failed");
+        NCBI_THROW(CErrnoException,eErrno,
+                   "CCgiResponse::SetHeaderValue() -- strftime() failed");
     }
     SetHeaderValue(name, buff);
 }

@@ -146,14 +146,14 @@ void CNcbiArguments::Reset(int argc, const char* const* argv,
 {
     // check args
     if (argc < 0) {
-        THROW1_TRACE(runtime_error,
-                     "CNcbiArguments(): negative # of cmd.-line arguments");
+        NCBI_THROW(CExceptArguments,eNegativeArgc,
+            "Negative number of command-line arguments");
     }
 
     if ((argc == 0) != (argv == 0)) {
         if (argv == 0) {
-            THROW1_TRACE(runtime_error,
-                         "CNcbiArguments(): non-zero \"argc\", zero \"argv\"");
+            NCBI_THROW(CExceptArguments,eNoArgs,
+                "Command-line arguments are absent");
         }
         ERR_POST(Info <<
                  "CNcbiArguments(): zero \"argc\", non-zero \"argv\"");
@@ -225,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/07/11 14:18:26  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.4  2002/04/11 21:08:02  ivanov
  * CVS log moved to end of the file
  *

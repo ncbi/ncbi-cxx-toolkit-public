@@ -730,8 +730,8 @@ void CMutex::Unlock(void)
     // No unlocks by threads other than owner.
     // This includes no unlocks of unlocked mutex.
     if (m_Owner != CThread::GetSelf()) {
-        throw runtime_error
-            ("CMutex::Unlock() -- mutex is locked by another thread");
+        NCBI_THROW(CExceptMutex,eOwner,
+            "Mutex is owned by another thread");
     }
 
     // No real unlocks if counter > 1, just decrease it
@@ -751,6 +751,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/07/11 14:17:55  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.8  2002/04/11 20:39:19  ivanov
  * CVS log moved to end of the file
  *

@@ -1232,7 +1232,8 @@ CMemoryFile::CMemoryFile(const string& file_name)
     x_Map(file_name);
 
     if (GetSize() < 0) {
-        throw runtime_error("CMemoryFile() -- failed to map file to memory");
+        NCBI_THROW(CExceptFile,eMemoryMap,
+            "File memory mapping cannot be created");
     }
 }
 
@@ -1341,6 +1342,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2002/07/11 14:18:27  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.24  2002/06/07 16:11:37  ivanov
  * Chenget GetTime() -- using CTime instead time_t, modification time by default
  *

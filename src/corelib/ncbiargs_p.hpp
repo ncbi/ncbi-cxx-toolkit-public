@@ -43,22 +43,6 @@
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-//  Exception throw macro
-//
-//    ARG_THROW("What", "Value")
-//
-
-#define ARG_THROW1(what)        THROW1_TRACE(CArgException, what)
-#define ARG_THROW2(what, attr)  THROW_TRACE(CArgException, (what, attr))
-#define ARG_THROW3(name, what, attr)  \
-  THROW_TRACE(CArgException, (name,what, attr))
-#define ARG_THROW(what, attr)  ARG_THROW3(GetName(), what, attr)
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
 //  CArg_***::   classes representing various types of argument value
 //
 //    CArg_NoValue     : CArgValue
@@ -420,6 +404,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/07/11 14:18:26  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.3  2002/04/11 21:08:01  ivanov
  * CVS log moved to end of the file
  *

@@ -102,9 +102,9 @@ extern void DoDbgPrint(const char* file, int line,
 bool CNcbiException::sm_BkgrEnabled=true;
 
 
-CNcbiException::CNcbiException(const char* file, int line, EErrCode err_code,
-                               const string& message,
-                               const CNcbiException* prev_exception) throw()
+CNcbiException::CNcbiException(const char* file, int line,
+    const CNcbiException* prev_exception,
+    EErrCode err_code, const string& message) throw()
     :   m_File(file),
         m_Line(line),
         m_ErrCode(err_code),
@@ -391,13 +391,57 @@ void CExceptionReporterStream::Report(const char* file, int line,
 /////////////////////////////////////////////////////////////////////////////
 //  CErrnoException
 
-CErrnoException::CErrnoException(const string& what) THROWS_NONE
-: runtime_error(what + ": " + ::strerror(errno)), m_Errno(errno)
+CErrnoException::CErrnoException(const char* file,int line,
+    const CNcbiException* prev_exception,
+    EErrCode err_code, const string& message) throw()
+    : CNcbiException(file, line, prev_exception,
+        (CNcbiException::EErrCode) CNcbiException::eInvalid,
+        message + ": " + ::strerror(errno)),
+    m_Errno(errno)
+{
+    x_InitErrCode((CNcbiException::EErrCode) err_code);
+}
+
+CErrnoException::CErrnoException(const CErrnoException& other) throw()
+    : CNcbiException(other)
+{
+    x_AssignErrCode(other);
+    m_Errno = other.m_Errno;
+}
+
+CErrnoException::~CErrnoException(void) throw()
 {
 }
 
-CErrnoException::~CErrnoException(void) THROWS_NONE
+void CErrnoException::ReportExtra(ostream& out) const
 {
+    CNcbiException::ReportExtra(out);
+    out << "m_Errno = " << m_Errno;
+}
+
+const char* CErrnoException::GetType(void) const
+{
+    return "CErrnoException";
+}
+
+CErrnoException::EErrCode CErrnoException::GetErrCode(void) const
+{
+    return typeid(*this) == typeid(CErrnoException) ?
+        (CErrnoException::EErrCode) x_GetErrCode() :
+        (CErrnoException::EErrCode) CNcbiException::eInvalid;
+}
+
+const char* CErrnoException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eErrno: return "eErrno";
+    default:     return CNcbiException::GetErrCodeString();
+    }
+}
+
+const CNcbiException* CErrnoException::x_Clone(void) const
+{
+    return new CErrnoException(*this);
 }
 
 
@@ -414,15 +458,63 @@ static string s_ComposeParse(const string& what, string::size_type pos)
 }
 
 
-CParseException::CParseException(const string& what, string::size_type pos)
-    THROWS_NONE
-: runtime_error(s_ComposeParse(what,pos)), m_Pos(pos)
+CParseException::CParseException(const char* file,int line,
+    const CNcbiException* prev_exception,
+    EErrCode err_code,const string& message,
+    string::size_type pos) throw()
+    : CNcbiException(file, line,prev_exception,
+        (CNcbiException::EErrCode) CNcbiException::eInvalid,
+        s_ComposeParse(message,pos)),
+    m_Pos(pos)
+{
+    x_InitErrCode((CNcbiException::EErrCode) err_code);
+}
+
+CParseException::CParseException(const CParseException& other) throw()
+    : CNcbiException(other)
+{
+    x_AssignErrCode(other);
+    m_Pos = other.m_Pos;
+}
+
+CParseException::~CParseException(void) throw()
 {
 }
 
-CParseException::~CParseException(void) THROWS_NONE
+void CParseException::ReportExtra(ostream& out) const
 {
+    CNcbiException::ReportExtra(out);
+    out << "m_Pos = " << m_Pos;
 }
+
+const char* CParseException::GetType(void) const
+{
+    return "CParseException";
+}
+
+CParseException::EErrCode CParseException::GetErrCode(void) const
+{
+    return typeid(*this) == typeid(CParseException) ?
+        (CParseException::EErrCode) x_GetErrCode() :
+        (CParseException::EErrCode) CNcbiException::eInvalid;
+}
+
+const char* CParseException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eSection: return "eSection";
+    case eEntry:   return "eEntry";
+    case eValue:   return "eValue";
+    case eErr:     return "eErr";
+    default:     return CNcbiException::GetErrCodeString();
+    }
+}
+
+const CNcbiException* CParseException::x_Clone(void) const
+{
+    return new CParseException(*this);
+}
+
 
 END_NCBI_SCOPE
 
@@ -430,6 +522,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2002/07/11 14:18:26  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.22  2002/06/27 18:56:16  gouriano
  * added "title" parameter to report functions
  *

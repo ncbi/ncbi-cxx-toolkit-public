@@ -48,10 +48,10 @@ CInternalMutex::CInternalMutex(void)
     // Create platform-dependent mutex handle
 #if defined(NCBI_WIN32_THREADS)
     xncbi_Validate((m_Handle = CreateMutex(NULL, FALSE, NULL)) != NULL,
-                   "CInternalMutex::CInternalMutex() -- error creating mutex");
+                   "Mutex creation failed");
 #elif defined(NCBI_POSIX_THREADS)
     xncbi_Validate(pthread_mutex_init(&m_Handle, 0) == 0,
-                   "CInternalMutex::CInternalMutex() -- error creating mutex");
+                   "Mutex creation failed");
 #endif
     m_Initialized = true;
     return;
@@ -77,6 +77,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/07/11 14:18:27  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.3  2002/04/11 21:08:02  ivanov
  * CVS log moved to end of the file
  *

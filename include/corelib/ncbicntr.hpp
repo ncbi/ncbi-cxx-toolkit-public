@@ -36,7 +36,6 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbimtx.hpp>
 
 #if defined(HAVE_SCHED_YIELD) && !defined(NCBI_NO_THREADS)
@@ -295,6 +294,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2002/07/11 14:17:53  gouriano
+* exceptions replaced by CNcbiException-type ones
+*
 * Revision 1.5  2002/05/31 17:48:56  grichenk
 * +CMutableAtomicCounter
 *

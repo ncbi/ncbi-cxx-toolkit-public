@@ -77,8 +77,7 @@ template<class X>
 inline X* NotNull(X* object)
 {
     if ( !object ) {
-        _TRACE("NotNull failed: throwing bad_alloc");
-        throw bad_alloc();
+        NCBI_THROW(CExceptCorelib,eNullPtr,kEmptyStr);
     }
     return object;
 }
@@ -197,6 +196,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2002/07/11 14:17:56  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.20  2002/04/11 20:39:20  ivanov
  * CVS log moved to end of the file
  *

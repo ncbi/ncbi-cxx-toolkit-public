@@ -278,8 +278,8 @@ void CCgiCookies::Add(const string& str)
         Add(str.substr(pos_beg, pos_mid-pos_beg),
             str.substr(pos_mid+1, pos_end-pos_mid));
     }
-
-    throw CParseException("Invalid cookie string: `" + str + "'", pos);
+    NCBI_THROW2(CParseException,eErr,
+               "Invalid cookie string: `" + str + "'", pos);
 }
 
 
@@ -507,7 +507,18 @@ static SIZE_TYPE s_URL_Decode(string& str)
 void s_AddEntry(TCgiEntries& entries, const string& name,
                 const string& value, const string& filename = kEmptyStr)
 {
-    entries.insert(TCgiEntries::value_type(name, CCgiEntry(value, filename)));
+    entries.insert(TCgiEntriesEx::value_type(name,
+                                             CCgiEntry(value, filename)));
+}
+
+
+// Populate entries_ex from entries
+void s_CopyEntries(TCgiEntriesEx& entries_ex, const TCgiEntries& entries)
+{
+    // entries_ex.erase();
+    iterate (TCgiEntries, it, entries) {
+        s_AddEntry(entries_ex, it->first, it->second);
+    }
 }
 
 
@@ -569,13 +580,15 @@ static void s_ParseQuery(const string& str,
             s_ParseIsIndex(str, 0, &entries) :
             s_ParseIsIndex(str, &indexes, 0);
         if (err_pos != 0)
-            throw CParseException("Init CCgiRequest::ParseISINDEX(\"" +
-                                  str + "\"", err_pos);
+            NCBI_THROW2(CParseException,eErr,
+                       "Init CCgiRequest::ParseISINDEX(\"" +
+                       str + "\"", err_pos);
     } else {  // regular(FORM) entries
         SIZE_TYPE err_pos = CCgiRequest::ParseEntries(str, entries);
         if (err_pos != 0)
-            throw CParseException("Init CCgiRequest::ParseFORM(\"" +
-                                  str + "\")", err_pos);
+            NCBI_THROW2(CParseException,eErr,
+                       "Init CCgiRequest::ParseFORM(\"" +
+                       str + "\")", err_pos);
     }
 }
 
@@ -615,9 +628,10 @@ static void s_ParseMultipartEntries(const string& boundary,
             return;
         }
         if (last_line) {
-            throw CParseException("CCgiRequest::ParseMultipartQuery(\"" +
-                                  boundary + "\"): unexpected eof: " +
-                                  str.substr(pos), 0);
+            NCBI_THROW2(CParseException,eErr,
+                        "CCgiRequest::ParseMultipartQuery(\"" +
+                        boundary + "\"): unexpected eof: " +
+                        str.substr(pos), 0);
         }
         if (eol == pos + boundary.size()  &&
             NStr::Compare(str, pos, boundary.size(), boundary) == 0) {
@@ -641,7 +655,7 @@ static void s_ParseMultipartEntries(const string& boundary,
                 SIZE_TYPE nameStart = pos + s_NameStart.size();
                 SIZE_TYPE nameEnd   = str.find('\"', nameStart);
                 if (nameEnd == NPOS) {
-                    throw CParseException("\
+                    NCBI_THROW2(CParseException,eErr,"\
 CCgiRequest::ParseMultipartQuery(\"" + boundary + "\"): bad name header " +
                                           str.substr(pos), 0);
                 }
@@ -687,8 +701,9 @@ static void s_ParsePostQuery(const string& content_type, const string& str,
             err_pos = CCgiRequest::ParseEntries(str, entries);
         }
         if ( err_pos != 0 ) {
-            throw CParseException("Init CCgiRequest::ParseFORM(\"" +
-                                  str + "\")", err_pos);
+            NCBI_THROW2(CParseException,eErr,
+                        "Init CCgiRequest::ParseFORM(\"" +
+                        str + "\")", err_pos);
         }
         return;
     }
@@ -697,8 +712,9 @@ static void s_ParsePostQuery(const string& content_type, const string& str,
         string start = "boundary=";
         SIZE_TYPE pos = content_type.find(start);
         if ( pos == NPOS )
-            throw CParseException("CCgiRequest::ParsePostQuery(\"" +
-                                  content_type + "\"): no boundary field", 0);
+            NCBI_THROW2(CParseException,eErr,
+                        "CCgiRequest::ParsePostQuery(\"" +
+                        content_type + "\"): no boundary field", 0);
         s_ParseMultipartEntries("--" + content_type.substr(pos + start.size()),
                                 str, entries);
         return;
@@ -917,6 +933,18 @@ const string& CCgiRequest::GetRandomProperty(const string& key, bool http)
 const CCgiEntry& CCgiRequest::GetEntry(const string& name, bool* is_found)
     const
 {
+    TCgiEntriesCI it = GetEntries().find(name);
+    bool x_found = (it != GetEntries().end());
+    if ( is_found ) {
+        *is_found = x_found;
+    }
+    return x_found ? it->second : kEmptyStr;
+}
+
+
+const CCgiEntry& CCgiRequest::GetEntryEx(const string& name, bool* is_found)
+    const
+{
     static const CCgiEntry kEmptyEntry(kEmptyStr);
     TCgiEntriesCI it = GetEntries().find(name);
     bool x_found = (it != GetEntries().end());
@@ -1024,8 +1052,8 @@ extern string URL_DecodeString(const string& str)
     string    x_str = str;
     SIZE_TYPE err_pos = s_URL_Decode(x_str);
     if (err_pos != 0)
-        throw CParseException("URL_DecodeString(<badly_formatted_str>)",
-                              err_pos);
+        NCBI_THROW2(CParseException,eErr,
+                    "URL_DecodeString(<badly_formatted_str>)",err_pos);
     return x_str;
 }
 
@@ -1107,6 +1135,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.57  2002/07/11 14:22:59  gouriano
+* exceptions replaced by CNcbiException-type ones
+*
 * Revision 1.56  2002/07/10 18:40:21  ucko
 * Made CCgiEntry-based functions the only version; kept "Ex" names as
 * temporary synonyms, to go away in a few days.

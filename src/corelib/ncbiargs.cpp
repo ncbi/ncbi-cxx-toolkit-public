@@ -63,35 +63,12 @@ static const string s_ExtraName("....");
 
 
 /////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-//  CArgException::
-//
 
-CArgException::CArgException(const string& what)
-    THROWS_NONE
-: runtime_error(what)
+string s_ArgExptMsg(const string& name, const string& what, const string& attr)
 {
-    return;
+    return string("Argument \"") + (name.empty() ? s_ExtraName : name) +
+        "\". " + what + ":  `" + attr + "'";
 }
-
-
-CArgException::CArgException(const string& what, const string& attr)
-    THROWS_NONE
-: runtime_error(what + ":  `" + attr + "'")
-{
-    return;
-}
-
-
-CArgException::CArgException
-(const string& name, const string& what, const string& attr)
-    THROWS_NONE
-: runtime_error("Argument \"" + (name.empty() ? s_ExtraName : name) + "\". " +
-                what + ":  `" + attr + "'")
-{
-    return;
-}
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -118,7 +95,8 @@ CArgValue::CArgValue(const string& name)
     : m_Name(name)
 {
     if ( !CArgDescriptions::VerifyName(m_Name, true) ) {
-        ARG_THROW2("CArgValue::  Invalid argument name", m_Name);
+        NCBI_THROW(CArgException,eInvalidArg,
+            "Invalid argument name: " + m_Name);
     }
 }
 
@@ -159,7 +137,8 @@ bool CArg_NoValue::HasValue(void) const
 
 
 #define THROW_CArg_NoValue \
-   ARG_THROW("Attempt to use unassigned optional argument", "NULL")
+    NCBI_THROW(CArgException,eNoValue, s_ArgExptMsg(GetName(), \
+        "Optional argument must have a default value", "NULL"));
 
 const string& CArg_NoValue::AsString    (void) const { THROW_CArg_NoValue; }
 int           CArg_NoValue::AsInteger   (void) const { THROW_CArg_NoValue; }
@@ -195,17 +174,28 @@ const string& CArg_String::AsString(void) const
 
 
 int CArg_String::AsInteger(void) const
-{ ARG_THROW("Attempt to cast to a wrong (Integer) type", AsString()); }
+{ NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
+    "Attempt to cast to a wrong (Integer) type", AsString()));}
+
 double CArg_String::AsDouble(void) const
-{ ARG_THROW("Attempt to cast to a wrong (Double) type", AsString()); }
+{ NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
+    "Attempt to cast to a wrong (Double) type", AsString()));}
+
 bool CArg_String::AsBoolean(void) const
-{ ARG_THROW("Attempt to cast to a wrong (Boolean) type", AsString()); }
+{ NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
+    "Attempt to cast to a wrong (Boolean) type", AsString()));}
+
 CNcbiIstream& CArg_String::AsInputFile(void) const
-{ ARG_THROW("Attempt to cast to a wrong (InputFile) type", AsString()); }
+{ NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
+    "Attempt to cast to a wrong (InputFile) type", AsString()));}
+
 CNcbiOstream& CArg_String::AsOutputFile(void) const
-{ ARG_THROW("Attempt to cast to a wrong (OutputFile) type", AsString()); }
+{ NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
+    "Attempt to cast to a wrong (OutputFile) type", AsString()));}
+
 void CArg_String::CloseFile(void) const
-{ ARG_THROW("Attempt to close an argument of non-file type", AsString()); }
+{ NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
+    "Attempt to close an argument of non-file type", AsString()));}
 
 
 
@@ -217,10 +207,11 @@ inline CArg_Integer::CArg_Integer(const string& name, const string& value)
 {
     try {
         m_Integer = NStr::StringToInt(value);
-    } catch (exception& _DEBUG_ARG(e)) {
-        _TRACE(e.what());
-        ARG_THROW("Integer value expected", value);
+    } catch (CNcbiException& e) {
+        NCBI_RETHROW(e,CArgException,eConvert, s_ArgExptMsg(GetName(),
+            "Argument cannot be converted",value));
     }
+
 }
 
 
@@ -239,9 +230,9 @@ inline CArg_Double::CArg_Double(const string& name, const string& value)
 {
     try {
         m_Double = NStr::StringToDouble(value);
-    } catch (exception& _DEBUG_ARG(e)) {
-        _TRACE(e.what());
-        ARG_THROW("Floating point value expected", value);
+    } catch (CNcbiException& e) {
+        NCBI_RETHROW(e,CArgException,eConvert,
+            s_ArgExptMsg(GetName(),"Argument cannot be converted",value));
     }
 }
 
@@ -268,9 +259,9 @@ inline CArg_Boolean::CArg_Boolean(const string& name, const string& value)
 {
     try {
         m_Boolean = NStr::StringToBool(value);
-    } catch (exception& _DEBUG_ARG(e)) {
-        _TRACE(e.what());
-        ARG_THROW("Boolean value expected", value);
+    } catch (CNcbiException& e) {
+        NCBI_RETHROW(e,CArgException,eConvert, s_ArgExptMsg(GetName(),
+            "Argument cannot be converted",value));
     }
 }
 
@@ -305,7 +296,8 @@ void CArg_InputFile::x_Open(void) const
     }
 
     if ( !m_InputFile ) {
-        ARG_THROW("CArg_InputFile::  cannot open for reading", AsString());
+        NCBI_THROW(CArgException,eNoFile, s_ArgExptMsg(GetName(),
+            "File is not accessible",AsString()));
     }
 }
 
@@ -340,10 +332,13 @@ CNcbiIstream& CArg_InputFile::AsInputFile(void) const
 void CArg_InputFile::CloseFile(void) const
 {
     if ( !m_InputFile ) {
-        ERR_POST(Warning <<
+        ERR_POST(Warning << s_ArgExptMsg( GetName(),
+            "CArg_InputFile::CloseFile: File was not opened", AsString()));
+/*
                  CArgException(GetName(),
                                "CArg_InputFile::CloseFile -- file not opened",
                                AsString()).what());
+*/
         return;
     }
 
@@ -378,7 +373,8 @@ void CArg_OutputFile::x_Open(void) const
     }
 
     if ( !m_OutputFile ) {
-        ARG_THROW("CArg_OutputFile::  cannot open for writing", AsString());
+        NCBI_THROW(CArgException,eNoFile, s_ArgExptMsg(GetName(),
+            "File is not accessible",AsString()));
     }
 }
 
@@ -413,10 +409,8 @@ CNcbiOstream& CArg_OutputFile::AsOutputFile(void) const
 void CArg_OutputFile::CloseFile(void) const
 {
     if ( !m_OutputFile ) {
-        ERR_POST(Warning <<
-                 CArgException(GetName(),
-                               "CArg_OutputFile::CloseFile -- file not opened",
-                               AsString()).what());
+        ERR_POST(Warning << s_ArgExptMsg( GetName(),
+            "CArg_InputFile::CloseFile: File was not opened", AsString()));
         return;
     }
 
@@ -450,7 +444,8 @@ CArgDesc::CArgDesc(const string& name, const string& comment)
     : m_Name(name), m_Comment(comment)
 {
     if ( !CArgDescriptions::VerifyName(m_Name) ) {
-        ARG_THROW2("Invalid argument name", m_Name);
+        NCBI_THROW(CArgException,eInvalidArg,
+            "Invalid argument name: " + m_Name);
     }
 }
 
@@ -469,8 +464,9 @@ void CArgDesc::VerifyDefault(void) const
 
 void CArgDesc::SetConstraint(CArgAllow* constraint)
 {
-    ARG_THROW("Attempt to set constraint for a no-value argument",
-              constraint ? constraint->GetUsage() : kEmptyStr);
+    NCBI_THROW(CArgException, eConstraint, s_ArgExptMsg(GetName(),
+        "No-value arguments may not be constrained",
+        constraint ? constraint->GetUsage() : kEmptyStr));
 }
 
 
@@ -521,16 +517,18 @@ CArgDescMandatory::CArgDescMandatory(const string&            name,
             return;
     case CArgDescriptions::k_EType_Size:
         _TROUBLE;
-        ARG_THROW("Invalid argument type", "k_EType_Size");
+        NCBI_THROW(CArgException, eArgType, s_ArgExptMsg(GetName(),
+            "Invalid argument type", "k_EType_Size"));
     default:
         if (flags == 0)
             return;
     }
 
-    ARG_THROW("Argument type/flags mismatch",
-              "(type=" + CArgDescriptions::GetTypeName(type) +
-              ", flags=" + NStr::UIntToString(flags) + ")");
-
+    NCBI_THROW(CArgException, eArgType, s_ArgExptMsg(GetName(),
+        "Argument type/flags mismatch",
+        "(type=" + CArgDescriptions::GetTypeName(type) +
+        ", flags=" + NStr::UIntToString(flags) + ")"));
+        
 }
 
 
@@ -592,7 +590,8 @@ CArgValue* CArgDescMandatory::ProcessArgument(const string& value) const
     }
     case CArgDescriptions::k_EType_Size: {
         _TROUBLE;
-        ARG_THROW("Unknown argument type", NStr::IntToString((int) GetType()));
+        NCBI_THROW(CArgException, eArgType, s_ArgExptMsg(GetName(),
+            "Unknown argument type", NStr::IntToString((int)GetType())));
     }
     } /* switch GetType() */
 
@@ -607,8 +606,8 @@ CArgValue* CArgDescMandatory::ProcessArgument(const string& value) const
             err = true;
         }
         if ( err ) {
-            ARG_THROW("Illegal value, expected " + m_Constraint->GetUsage(),
-                      value);
+            NCBI_THROW(CArgException, eConstraint, s_ArgExptMsg(GetName(),
+                "Illegal value, expected " + m_Constraint->GetUsage(),value));
         }
     }
 
@@ -618,7 +617,8 @@ CArgValue* CArgDescMandatory::ProcessArgument(const string& value) const
 
 CArgValue* CArgDescMandatory::ProcessDefault(void) const
 {
-    ARG_THROW("Required argument missing", GetUsageCommentAttr());
+    NCBI_THROW(CArgException, eNoArg, s_ArgExptMsg(GetName(),
+        "Required argument missing", GetUsageCommentAttr()));
 }
 
 
@@ -714,7 +714,8 @@ CArgDescSynopsis::CArgDescSynopsis(const string& synopsis)
     for (string::const_iterator it = m_Synopsis.begin();
          it != m_Synopsis.end();  ++it) {
         if (*it != '_'  &&  !isalnum(*it)) {
-            ARG_THROW2("Argument synopsis must be alphanumeric", m_Synopsis);
+            NCBI_THROW(CArgException,eSynopsis,
+                "Argument synopsis must be alphanumeric: "+ m_Synopsis);
         }
     }
 }
@@ -1053,20 +1054,25 @@ const CArgValue& CArgs::operator[] (const string& name) const
                 idx = kMax_UInt;
             }
             if (idx == kMax_UInt) {
-                ARG_THROW2("CArgs:: argument of invalid name requested", name);
+                NCBI_THROW(CArgException,eInvalidArg,
+                    "Argument of invalid name requested: "+ name);
+
             }
             if (m_nExtra == 0) {
-                ARG_THROW2("CArgs::  no \"extra\" (unnamed positional) args "
-                           "provided, cannot get", s_ComposeNameExtra(idx));
+                NCBI_THROW(CArgException,eInvalidArg,
+                    "No \"extra\" (unnamed positional) arguments "
+                    "provided, cannot Get: "+ s_ComposeNameExtra(idx));
             }
             if (idx == 0  ||  idx >= m_nExtra) {
-                ARG_THROW2("CArgs::  \"extra\" (unnamed positional) arg is "
-                           "out-of-range (#1..#" + NStr::UIntToString(m_nExtra)
-                           + ")", s_ComposeNameExtra(idx));
+                NCBI_THROW(CArgException,eInvalidArg,
+                    "\"Extra\" (unnamed positional) arg is "
+                    "out-of-range (#1..#" + NStr::UIntToString(m_nExtra)
+                    + "): "+ s_ComposeNameExtra(idx));
             }
         }
         // Diagnostics for all other argument classes
-        ARG_THROW2("CArgs::  undescribed argument requested", name);
+        NCBI_THROW(CArgException,eInvalidArg,
+            "Undescribed argument requested: "+ name);
     }
 
     // Found arg with name "name"
@@ -1113,8 +1119,8 @@ void CArgs::Add(CArgValue* arg)
     // check-up
     _ASSERT(CArgDescriptions::VerifyName(arg->GetName(), true));
     if ( Exist(arg->GetName()) ) {
-        ARG_THROW2("CArgs::Add()  argument with this name already defined",
-                   arg->GetName());
+        NCBI_THROW(CArgException,eSynopsis,
+            "Argument with this name is defined already: " + arg->GetName());
     }
 
     // add
@@ -1165,7 +1171,9 @@ const string& CArgDescriptions::GetTypeName(EType type)
     };
 
     if (type == k_EType_Size) {
-        _TROUBLE;  ARG_THROW2("Invalid argument type", "k_EType_Size");
+        _TROUBLE;
+        NCBI_THROW(CArgException, eArgType,
+            "Invalid argument type: k_EType_Size");
     }
     return s_TypeName[(int) type];
 }
@@ -1282,10 +1290,12 @@ void CArgDescriptions::AddExtra
  TFlags        flags)
 {
     if (!n_mandatory  &&  !n_optional) {
-        ARG_THROW2("AddExtra(0,0, ...)", "Zero # of extra arguments (?!)");
+        NCBI_THROW(CArgException,eSynopsis,
+            "Number of extra arguments cannot be zero");
     }
     if (n_mandatory > 4096) {
-        ARG_THROW2("AddExtra(N, ...)", "Too many mandatory extra arguments");
+        NCBI_THROW(CArgException,eSynopsis,
+            "Number of mandatory extra arguments is too big");
     }
 
     m_nExtra    = n_mandatory;
@@ -1307,7 +1317,8 @@ void CArgDescriptions::SetConstraint(const string& name, CArgAllow* constraint)
 
     TArgsI it = x_Find(name);
     if (it == m_Args.end()) {
-        ARG_THROW2("Attempt to set constraint for undescribed argument", name);
+        NCBI_THROW(CArgException, eConstraint, 
+            "Attempt to set constraint for undescribed argument: "+ name);
     }
     (*it)->SetConstraint(constraint);
 }
@@ -1324,7 +1335,8 @@ void CArgDescriptions::Delete(const string& name)
     {{ // ...from the list of all args
         TArgsI it = x_Find(name);
         if (it == m_Args.end()) {
-            ARG_THROW2("Cannot delete non-existing arg. description", name);
+            NCBI_THROW(CArgException,eSynopsis,
+                "Argument description is not found");
         }
         m_Args.erase(it);
 
@@ -1390,15 +1402,14 @@ void CArgDescriptions::x_PreCheck(void) const
             CArgDesc& arg = **arg_it;
 
             if (dynamic_cast<const CArgDesc_PosOpt*> (&arg)) {
-                ARG_THROW2("Cannot have both optional named and required "
-                           "unnamed positional args simultaneously. Name of "
-                           "the offending argument", arg.GetName());
+                NCBI_THROW(CArgException, eSynopsis,
+                    "Having both optional named and required unnamed "
+                    "positional arguments is prohibited");
             }
         }
     }
 
     // Check for the validity of default values
-    string arg_msg;
     for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it) {
         CArgDesc& arg = **it;
 
@@ -1409,10 +1420,13 @@ void CArgDescriptions::x_PreCheck(void) const
         try {
             arg.VerifyDefault();
             continue;
+        } catch (CNcbiException& e) {
+            NCBI_RETHROW(e,CArgException,eConstraint,
+                "Invalid default argument value");
         } catch (exception& e) {
-            arg_msg = e.what();
+            NCBI_THROW(CArgException, eConstraint,
+                string("Invalid default value: ") + e.what());
         }
-        ARG_THROW1("(Invalid default value) " + arg_msg);
     }
 }
 
@@ -1421,7 +1435,7 @@ void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
 {
     _ASSERT(m_AutoHelp);
     if (arg.compare('-' + s_AutoHelp) == 0) {
-        throw CArgHelpException();
+        NCBI_THROW(CArgHelpException,eHelp,kEmptyStr);
     }
 }
 
@@ -1470,9 +1484,10 @@ bool CArgDescriptions::x_CreateArg
         // Check for too many positional arguments
         if (kMax_UInt - m_nExtraOpt > m_nExtra + m_PosArgs.size()  &&
             *n_plain > m_PosArgs.size() + m_nExtra + m_nExtraOpt) {
-            ARG_THROW2("Too many positional arguments (" +
-                       NStr::UIntToString(*n_plain) +
-                       "), the offending value", arg1);
+            NCBI_THROW(CArgException,eSynopsis,
+                "Too many positional arguments (" +
+                NStr::UIntToString(*n_plain) +
+                "), the offending value: "+ arg1);
         }
     }
 
@@ -1480,10 +1495,12 @@ bool CArgDescriptions::x_CreateArg
     TArgsCI it = x_Find(name);
     if (it == m_Args.end()) {
         if ( name.empty() ) {
-            ARG_THROW2("Unexpected extra argument, at position #",
-                      NStr::UIntToString(*n_plain));
+            NCBI_THROW(CArgException,eInvalidArg,
+                "Unexpected extra argument, at position # " +
+                NStr::UIntToString(*n_plain));
         } else {
-            ARG_THROW2("Unknown argument, with name", name);
+            NCBI_THROW(CArgException,eInvalidArg,
+                "Unknown argument: "+ name);
         }
     }
     _ASSERT(*it);
@@ -1495,7 +1512,8 @@ bool CArgDescriptions::x_CreateArg
     if ( s_IsKey(arg) ) {
         // <key> <value> arg  -- advance from the arg.name to the arg.value
         if ( !have_arg2 ) {
-            ARG_THROW3(arg1, "Value is missing", kEmptyStr);
+            NCBI_THROW(CArgException,eNoValue,s_ArgExptMsg(arg1,
+                "Value is missing", kEmptyStr));
         }
         value = &arg2;
         arg2_used = true;
@@ -1518,9 +1536,10 @@ void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
 {
     // Check if all mandatory unnamed positional arguments are provided
     if (m_PosArgs.size() < n_plain  &&  n_plain < m_PosArgs.size() + m_nExtra){
-        ARG_THROW1("Too few (" + NStr::UIntToString(n_plain) +
-                   "unnamed positional arguments. Must define at least " +
-                   NStr::UIntToString(m_nExtra));
+        NCBI_THROW(CArgException,eNoArg,
+            "Too few (" + NStr::UIntToString(n_plain) +
+            "unnamed positional arguments. Must define at least " +
+            NStr::UIntToString(m_nExtra));
     }
 
     // Compose an ordered list of args
@@ -1602,7 +1621,8 @@ void CArgDescriptions::x_AddDesc(CArgDesc& arg)
     const string& name = arg.GetName();
 
     if ( Exist(name) ) {
-        ARG_THROW2("Argument with this name already exists, cannot add", name);
+        NCBI_THROW(CArgException,eSynopsis,
+            "Argument with this name is defined already: " + name);
     }
 
     if (s_IsKey(arg)  ||  s_IsFlag(arg)) {
@@ -2185,6 +2205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2002/07/11 14:18:25  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.36  2002/06/13 20:41:57  ucko
  * Improve usage formatting for long choice lists.
  *

@@ -130,8 +130,9 @@ static void s_RunTest0(const CArgs& args, ostream& os)
         bool is_thrown = false;
         try {
             (void) args["ko"].AsString();
-        } catch (CArgException&) {
+        } catch (CArgException& e) {
             is_thrown = true;
+            REPORT_NCBI_EXCEPTION("CArgException is thrown:",e);
         }
         assert(is_thrown);
     }
@@ -507,6 +508,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.19  2002/07/11 14:18:29  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 6.18  2002/04/16 18:49:07  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.

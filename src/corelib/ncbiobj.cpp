@@ -83,28 +83,6 @@
 BEGIN_NCBI_SCOPE
 
 
-/////////////////////////////////////////////////////////////////////////////
-//  CNullPointerError::
-//
-
-
-CNullPointerError::CNullPointerError(void)
-    THROWS_NONE
-{
-}
-
-CNullPointerError::~CNullPointerError(void)
-    THROWS_NONE
-{
-}
-
-const char* CNullPointerError::what() const
-    THROWS_NONE
-{
-    return "null pointer error";
-}
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 //  CObject::
@@ -257,18 +235,16 @@ CObject::~CObject(void)
     else if ( ObjectStateValid(count) ) {
         _ASSERT(ObjectStateReferenced(count));
         // referenced object
-        THROW1_TRACE(runtime_error,
-                     "deletion of referenced CObject");
+        NCBI_THROW(CExceptObject,eRefDelete,
+            "Referenced CObject may not be deleted");
     }
     else if ( count == eCounterDeleted ) {
         // deleted object
-        THROW1_TRACE(runtime_error,
-                     "double deletion of CObject");
+        NCBI_THROW(CExceptObject,eDeleted,"CObject is already deleted");
     }
     else {
         // bad object
-        THROW1_TRACE(runtime_error,
-                     "deletion of corrupted CObject");
+        NCBI_THROW(CExceptObject,eCorrupted,"CObject is corrupted");
     }
     // mark object as deleted
     m_Counter.Set(eCounterDeleted);
@@ -279,13 +255,16 @@ void CObject::AddReferenceOverflow(TCount count) const
 {
     if ( ObjectStateValid(count) ) {
         // counter overflow
-        THROW1_TRACE(runtime_error,
-                     "AddReference: CObject reference counter overflow");
+        NCBI_THROW(CExceptObject,eRefOverflow,
+            "CObject's reference counter overflow");
+    }
+    else if ( count == eCounterDeleted ) {
+        // deleted object
+        NCBI_THROW(CExceptObject,eDeleted,"CObject is already deleted");
     }
     else {
         // bad object
-        THROW1_TRACE(runtime_error,
-                     "AddReference of invalid CObject");
+        NCBI_THROW(CExceptObject,eCorrupted,"CObject is corrupted");
     }
 }
 
@@ -303,8 +282,8 @@ void CObject::RemoveLastReference(void) const
     else {
         _ASSERT(!ObjectStateValid(count + eCounterStep));
         // bad object
-        THROW1_TRACE(runtime_error,
-                     "RemoveReference of unreferenced CObject");
+        NCBI_THROW(CExceptObject, eNoRef,
+            "Unreferenced CObject may not be released");
     }
 }
 
@@ -319,11 +298,10 @@ void CObject::ReleaseReference(void) const
 
     // error
     if ( !ObjectStateValid(count) ) {
-        THROW1_TRACE(runtime_error,
-                     "ReleaseReference of corrupted CObject");
+        NCBI_THROW(CExceptObject,eCorrupted,"CObject is corrupted");
     } else {
-        THROW1_TRACE(runtime_error,
-                     "ReleaseReference of unreferenced CObject");
+        NCBI_THROW(CExceptObject, eNoRef,
+            "Unreferenced CObject may not be released");
     }
 }
 
@@ -343,11 +321,10 @@ void CObject::DoNotDeleteThisObject(void)
     
 
     if ( is_valid ) {
-        THROW1_TRACE(runtime_error,
-                     "DoNotDeleteThisObject of referenced CObject");
+        NCBI_THROW(CExceptObject,eRefUnref,
+            "Referenced CObject cannot be made unreferenced one");
     } else {
-        THROW1_TRACE(runtime_error,
-                     "DoNotDeleteThisObject of corrupted CObject");
+        NCBI_THROW(CExceptObject,eCorrupted,"CObject is corrupted");
     }
 }
 
@@ -364,9 +341,7 @@ void CObject::DoDeleteThisObject(void)
             return;
         }
     }}
-
-    THROW1_TRACE(runtime_error,
-                 "DoDeleteThisObject of corrupted CObject");
+    NCBI_THROW(CExceptObject,eCorrupted,"CObject is corrupted");
 }
                         
 void CObject::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
@@ -384,6 +359,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2002/07/11 14:18:27  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.28  2002/05/29 21:17:57  gouriano
  * minor change in debug dump
  *

@@ -34,10 +34,10 @@
  */
 
 #include <corelib/ncbitype.h>
+#include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbidbg.hpp>
-#include <corelib/ncbiexpt.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -296,6 +296,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2002/07/11 14:17:55  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.56  2002/05/03 21:27:59  ucko
  * Introduce T(Signed)SeqPos.
  *

@@ -251,11 +251,11 @@ STD_CATCH(message) \
 
 #define NCBI_THROW(exception_class, err_code, message) \
     throw exception_class(__FILE__, __LINE__, \
-        exception_class::err_code, (message))
+        0,exception_class::err_code, (message))
 
 #define NCBI_RETHROW(prev_exception, exception_class, err_code, message) \
     throw exception_class(__FILE__, __LINE__, \
-        exception_class::err_code, (message), &(prev_exception))
+        &(prev_exception), exception_class::err_code, (message))
 
 #define NCBI_RETHROW_SAME(prev_exception, message) \
     do { prev_exception.AddBacklog(__FILE__, __LINE__, message); \
@@ -282,9 +282,9 @@ public:
     };
 
     // When throwing an exception initially, "prev_exception" must be 0
-    CNcbiException(const char* file, int line, EErrCode err_code,
-                   const string& message,
-                   const CNcbiException* prev_exception = 0) throw();
+    CNcbiException(const char* file, int line,
+                   const CNcbiException* prev_exception,
+                   EErrCode err_code,const string& message) throw();
 
     // Copy constructor
     CNcbiException(const CNcbiException& other) throw();
@@ -391,11 +391,12 @@ const TTo* UppermostCast(const TFrom& from)
 // does not have any additional (non-standard) data members
 #define NCBI_EXCEPTION_DEFAULT(exception_class, base_class) \
 public: \
-    exception_class(const char* file,int line,EErrCode err_code,\
-        const string& message, const base_class* prev_exception=0) throw() \
-        : base_class(file, line, \
+    exception_class(const char* file,int line, \
+        const CNcbiException* prev_exception, \
+        EErrCode err_code,const string& message) throw() \
+        : base_class(file, line, prev_exception, \
             (base_class::EErrCode) CNcbiException::eInvalid, \
-            message, prev_exception) \
+            (message)) \
     { \
         x_InitErrCode((CNcbiException::EErrCode) err_code); \
     } \
@@ -420,6 +421,8 @@ protected: \
 private: \
     /* for the sake of semicolon at the end of macro...*/ \
     static void xx_unused_##exception_class(void)
+
+
 
 
 
@@ -476,33 +479,119 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
+// CExceptCorelib - corelib exceptions
+
+
+class CExceptCorelib : public CNcbiException
+{
+public:
+    enum EErrCode {
+        eCore,
+        eNullPtr,
+        eDll
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eCore:    return "eCore";
+        case eNullPtr: return "eNullPtr";
+        case eDll:     return "eDll";
+        default:    return CNcbiException::GetErrCodeString();
+        }
+    }
+    NCBI_EXCEPTION_DEFAULT(CExceptCorelib,CNcbiException);
+};
+
+/////////////////////////////////////////////////////////////////////////////
 // Auxiliary exception classes:
 //   CErrnoException
 //   CParseException
 //
 
-class CErrnoException : public runtime_error
+
+class CErrnoException : public CNcbiException
 {
 public:
+
+    enum EErrCode {
+        eErrno
+    };
+
     // Report description of "errno" along with "what"
-    CErrnoException(const string& what) THROWS_NONE;
-    ~CErrnoException(void) THROWS_NONE;
-    int GetErrno(void) const THROWS_NONE { return m_Errno; }
+    CErrnoException(const char* file,int line,
+        const CNcbiException* prev_exception,
+        EErrCode err_code, const string& message) throw();
+    CErrnoException(const CErrnoException& other) throw();
+    virtual ~CErrnoException(void) throw();
+
+    // Reporting
+    virtual void ReportExtra(ostream& out) const;
+
+    // Attributes
+    virtual const char* GetType(void) const;
+    virtual const char* GetErrCodeString(void) const;
+    EErrCode GetErrCode(void) const;
+
+    // Extra
+    int GetErrno(void) const throw() { return m_Errno; }
+
+protected:
+    virtual const CNcbiException* x_Clone(void) const;
+
 private:
     int m_Errno;
 };
 
 
-class CParseException : public runtime_error
+
+class CParseException : public CNcbiException
 {
 public:
+
+    enum EErrCode {
+        eSection,
+        eEntry,
+        eValue,
+        eErr
+    };
+
     // Report "pos" along with "what"
-    CParseException(const string& what, string::size_type pos) THROWS_NONE;
-    ~CParseException(void) THROWS_NONE;
-    string::size_type GetPos(void) const THROWS_NONE { return m_Pos; }
+    CParseException(const char* file,int line,
+        const CNcbiException* prev_exception,
+        EErrCode err_code,const string& message,
+        string::size_type pos) throw();
+    CParseException(const CParseException& other) throw();
+    virtual ~CParseException(void) throw();
+
+    // Reporting
+    virtual void ReportExtra(ostream& out) const;
+
+    // Attributes
+    virtual const char* GetType(void) const;
+    virtual const char* GetErrCodeString(void) const;
+    EErrCode GetErrCode(void) const;
+
+    // Extra
+    string::size_type GetPos(void) const throw() { return m_Pos; }
+
+protected:
+    virtual const CNcbiException* x_Clone(void) const;
+
 private:
     string::size_type m_Pos;
 };
+
+
+// To throw exceptions with one more parameter (e.g. CParseException)
+
+#define NCBI_THROW2(exception_class, err_code, message, extra) \
+    throw exception_class(__FILE__, __LINE__, \
+        0,exception_class::err_code, (message), (extra))
+
+#define NCBI_RETHROW2(prev_exception,exception_class,err_code,message,extra) \
+    throw exception_class(__FILE__, __LINE__, \
+        &(prev_exception), exception_class::err_code, (message), (extra))
+
 
 
 END_NCBI_SCOPE
@@ -511,6 +600,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2002/07/11 14:17:54  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.30  2002/06/27 18:55:32  gouriano
  * added "title" parameter to report functions
  *

@@ -33,7 +33,6 @@
  *
  */
 
-#include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbistr.hpp>
@@ -133,6 +132,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2002/07/11 14:17:53  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.4  2001/12/18 21:40:01  juran
  * Copy Pascal-string-related functions from Josh's pstring.c.  (Public domain)
  * Move PStr from ncbifile.cpp, rename to PString.

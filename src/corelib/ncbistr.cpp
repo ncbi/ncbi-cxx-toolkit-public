@@ -229,7 +229,8 @@ int NStr::StringToNumeric(const string& str)
 
 # define CHECK_ENDPTR() \
     if (check_endptr == eCheck_Need  &&  *endptr != '\0') { \
-        THROW1_TRACE(runtime_error, "no symbols should be after number"); \
+        NCBI_THROW(CExceptString,eBadArgs, \
+            "No symbols should be after number"); \
     }
 
 
@@ -241,7 +242,7 @@ int NStr::StringToInt(const string& str, int base /* = 10 */,
     long value = strtol(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str()  ||
         value < kMin_Int || value > kMax_Int)
-        throw runtime_error("NStr::StringToInt():  cannot convert");
+        NCBI_THROW(CExceptString,eConvert,"String cannot be converted");
     CHECK_ENDPTR();
     return (int) value;
 }
@@ -255,7 +256,7 @@ unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */,
     unsigned long value = strtoul(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str()  ||
         value > kMax_UInt)
-        throw runtime_error("NStr::StringToUInt():  cannot convert");
+        NCBI_THROW(CExceptString,eConvert,"String cannot be converted");
     CHECK_ENDPTR();
     return (unsigned int) value;
 }
@@ -268,7 +269,7 @@ long NStr::StringToLong(const string& str, int base /* = 10 */,
     char* endptr = 0;
     long value = strtol(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str())
-        throw runtime_error("NStr::StringToLong():  cannot convert");
+        NCBI_THROW(CExceptString,eConvert,"String cannot be converted");
     CHECK_ENDPTR();
     return value;
 }
@@ -281,7 +282,7 @@ unsigned long NStr::StringToULong(const string& str, int base /* = 10 */,
     char* endptr = 0;
     unsigned long value = strtoul(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str())
-        throw runtime_error("NStr::StringToULong():  cannot convert");
+        NCBI_THROW(CExceptString,eConvert,"String cannot be converted");
     CHECK_ENDPTR();
     return value;
 }
@@ -294,7 +295,7 @@ double NStr::StringToDouble(const string& str,
     char* endptr = 0;
     double value = strtod(str.c_str(), &endptr);
     if (errno  ||  !endptr  ||  endptr == str.c_str())
-        throw runtime_error("NStr::StringToDouble():  cannot convert");
+        NCBI_THROW(CExceptString,eConvert,"String cannot be converted");
     if ( *endptr == '.' )
         endptr++;
     CHECK_ENDPTR();
@@ -355,7 +356,7 @@ bool NStr::StringToBool(const string& str)
          AStrEquiv(str, s_kFString, PNocase()))
         return false;
 
-    throw runtime_error("NStr::StringToBool(): cannot convert");
+    NCBI_THROW(CExceptString,eConvert,"String cannot be converted");
 }
 
 
@@ -382,9 +383,10 @@ string& NStr::Replace(const string& src,
                       const string& search, const string& replace,
                       string& dst, SIZE_TYPE start_pos, size_t max_replace)
 {
+ // source and destination should not be the same
     if (&src == &dst) {
-        throw runtime_error
-            ("NStr::Replace():  source and destination are the same string");
+        NCBI_THROW(CExceptString,eBadArgs,
+            "String method called with inappropriate arguments");
     }
 
     dst = src;
@@ -475,6 +477,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2002/07/11 14:18:28  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.48  2002/05/02 15:25:37  ivanov
  * Added new parameter to String-to-X functions for skipping the check
  * the end of string on zero

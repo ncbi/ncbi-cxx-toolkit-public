@@ -566,15 +566,21 @@ static void TestException_Aux(void)
 {
     try {
         assert( !strtod("1e-999999", 0) );
-        throw CErrnoException("Failed strtod(\"1e-999999\", 0)");
+        NCBI_THROW(CErrnoException,eErrno,"Failed strtod(\"1e-999999\", 0)");
     }
     catch (CErrnoException& e) {
-        NcbiCerr << "TEST CErrnoException ---> " << e.what() << NcbiEndl;
+        REPORT_NCBI_EXCEPTION("TEST CErrnoException ---> ",e);
     }
     try {
-        THROW_TRACE(CParseException, ("Failed parsing(at pos. 123)", 123));
+        NCBI_THROW2(CParseException,eErr,"Failed parsing (at pos. 123)",123);
     }
-    STD_CATCH ("TEST CParseException ---> ");
+    catch (CNcbiException& e) {
+        REPORT_NCBI_EXCEPTION("TEST CParseException ---> ",e);
+    }
+    catch (...) {
+        // should never be here
+        assert(0);
+    }
 }
 
 
@@ -582,11 +588,10 @@ static void TestException_AuxTrace(void)
 {
     try {
         assert( !strtod("1e-999999", 0) );
-        THROW1_TRACE(CErrnoException, "Failed strtod('1e-999999', 0)");
+        NCBI_THROW(CErrnoException,eErrno,"Failed strtod('1e-999999', 0)");
     }
     catch (CErrnoException& e) {
-        NcbiCerr << "THROW1_TRACE CErrnoException ---> " << e.what()
-                 << NcbiEndl;
+        REPORT_NCBI_EXCEPTION("throw CErrnoException ---> ",e);
     }
 
     try {
@@ -614,9 +619,11 @@ static void TestException_AuxTrace(void)
     STD_CATCH ("THROW_TRACE  runtime_error ---> ");
 
     try {
-        THROW_TRACE(CParseException, ("Failed parsing(at pos. 123)", 123));
+        NCBI_THROW2(CParseException,eErr,"Failed parsing (at pos. 123)", 123);
     }
-    STD_CATCH ("THROW_TRACE CParseException ---> ");
+    catch (CNcbiException& e) {
+        REPORT_NCBI_EXCEPTION("throw CParseException ---> ",e);
+    }
 }
 
 
@@ -729,6 +736,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.81  2002/07/11 14:18:28  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.80  2002/04/16 18:49:06  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.

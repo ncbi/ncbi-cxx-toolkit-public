@@ -375,8 +375,8 @@ bool CTestRegApp::Thread_Run(int idx)
         OUTS( idx, __LINE__, "\n", 0);
         OUTS( idx, __LINE__,  "============ End thread =============" , 0);
         OUTS( idx, __LINE__, "\n", 0);
-    } catch (exception& e) {
-        ERR_POST(Fatal << e.what());
+    } catch (CNcbiException& e) {
+        ERR_POST(Fatal << e);
     }
 
     return true;
@@ -420,6 +420,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2002/07/11 14:18:29  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 6.2  2002/05/14 20:08:20  ucko
  * Make last argument to OUTS const; we don't modify it, and without
  * const we may get compiler warnings when passing string literals.

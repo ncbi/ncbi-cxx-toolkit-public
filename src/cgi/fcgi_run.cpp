@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.15  2002/07/11 14:22:59  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.14  2001/11/19 15:20:17  ucko
  * Switch CGI stuff to new diagnostics interface.
  *
@@ -105,8 +108,8 @@ static time_t s_GetModTime(const char* filename)
     struct stat st;
     if (stat(filename, &st) != 0) {
         ERR_POST("s_GetModTime(): " << strerror(errno));
-        THROW1_TRACE(CErrnoException,
-                     "Cannot get modification time of the CGI executable");
+        NCBI_THROW(CErrnoException,eErrno,
+                   "Cannot get modification time of the CGI executable");
     }
     return st.st_mtime;
 }

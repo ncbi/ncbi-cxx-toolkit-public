@@ -97,8 +97,8 @@ static void s_TestMisc(void)
         t5 = "3/16/2001 02:13:34";
         cout << "[" << t5.AsString() << "]" << endl;
         assert(t5.AsString() == "03/16/2001 02:13:34");
-    } catch (exception& e) {
-        cout << e.what() << endl;
+    } catch (CNcbiException& e) {
+        REPORT_NCBI_EXCEPTION("",e);
     }
     cout << endl;
 
@@ -586,8 +586,8 @@ int main()
         s_TestFormats();
         s_TestGMT();
         s_TestGMTSpeed();
-    } catch (exception& e) {
-        ERR_POST(Fatal << e.what());
+    } catch (CNcbiException& e) {
+        ERR_POST(Fatal << e);
     }
     // Success
     return 0;
@@ -597,6 +597,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.12  2002/07/11 14:18:29  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 6.11  2002/04/16 18:49:09  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.

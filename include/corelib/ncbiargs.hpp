@@ -99,22 +99,53 @@ class CArgAllow;
 // Exception the CArg* code can throw
 //
 
-class CArgException : public runtime_error
+class CArgException : public CExceptCorelib
 {
 public:
-    CArgException(const string& what) THROWS_NONE;
-    CArgException(const string& what, const string& attr) THROWS_NONE;
-    CArgException(const string& name, const string& what, const string& attr)
-        THROWS_NONE;
+    enum EErrCode {
+        eInvalidArg,
+        eNoValue,
+        eWrongCast,
+        eConvert,
+        eNoFile,
+        eConstraint,
+        eArgType,
+        eNoArg,
+        eSynopsis
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eInvalidArg: return "eInvalidArg";
+        case eNoValue:    return "eNoValue";
+        case eWrongCast:  return "eWrongCast";
+        case eConvert:    return "eConvert";
+        case eNoFile:     return "eNoFile";
+        case eConstraint: return "eConstraint";
+        case eArgType:    return "eArgType";
+        case eNoArg:      return "eNoArg";
+        case eSynopsis:   return "eSynopsis";
+        default:    return CNcbiException::GetErrCodeString();
+        }
+    }
+    NCBI_EXCEPTION_DEFAULT(CArgException,CExceptCorelib);
 };
-
 
 class CArgHelpException : public CArgException
 {
 public:
-    CArgHelpException(void) THROWS_NONE : CArgException(kEmptyStr) {}
+    enum EErrCode {
+        eHelp
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eHelp: return "eHelp";
+        default:    return CNcbiException::GetErrCodeString();
+        }
+    }
+    NCBI_EXCEPTION_DEFAULT(CArgHelpException,CArgException);
 };
-
 
 
 //
@@ -598,6 +629,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2002/07/11 14:17:53  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.22  2002/04/24 04:02:43  vakatov
  * Do not use #NO_INCLASS_TMPL anymore -- apparently all modern
  * compilers seem to be supporting in-class template methods.

@@ -73,14 +73,10 @@ struct SDllHandle;
 
 class CDll
 {
-public:
-    // All methods of this class (but destructor) throw exception on error!
-    // The exception specific for this class:
-    class CException : public runtime_error {
-    public:
-        CException(const string& message) : runtime_error(message) {}
-    };
+    // All methods of this class (but destructor)
+    // throw exception CExceptCorelib::eDll on error
 
+public:
     // When to load DLL
     enum ELoad {
         eLoadNow,   // immediately in the constructor
@@ -147,7 +143,7 @@ private:
     // Return the entry point's address on success, NULL on error.
     void* x_GetEntryPoint(const string& name, size_t pointer_size);
 
-    // Throw exception ('CException' with system-specific error message)
+    // Throw exception with system-specific error message
     void  x_ThrowException(const string& what);
 
     // Initialize object (called from constructors)
@@ -169,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/07/11 14:17:54  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.4  2002/04/11 20:39:17  ivanov
  * CVS log moved to end of the file
  *

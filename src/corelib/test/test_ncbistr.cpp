@@ -170,35 +170,46 @@ int CTestApplication::Run(void)
             NcbiCout << "int value: " << value << ", toString: '"
                      << NStr::IntToString(value) << "'" << NcbiEndl;
         }
-        STD_CATCH("TestStrings");
+        catch (CNcbiException& e) {
+            REPORT_NCBI_EXCEPTION("TestStrings",e);
+        }
+//        STD_CATCH("TestStrings");
 
         try {
             unsigned int value = NStr::StringToUInt(str);
             NcbiCout << "unsigned int value: " << value << ", toString: '"
                      << NStr::UIntToString(value) << "'" << NcbiEndl;
         }
-        STD_CATCH("TestStrings");
+        catch (CNcbiException& e) {
+            REPORT_NCBI_EXCEPTION("TestStrings",e);
+        }
 
         try {
             long value = NStr::StringToLong(str);
             NcbiCout << "long value: " << value << ", toString: '"
                      << NStr::IntToString(value) << "'" << NcbiEndl;
         }
-        STD_CATCH("TestStrings");
+        catch (CNcbiException& e) {
+            REPORT_NCBI_EXCEPTION("TestStrings",e);
+        }
 
         try {
             unsigned long value = NStr::StringToULong(str);
             NcbiCout << "unsigned long value: " << value << ", toString: '"
                      << NStr::UIntToString(value) << "'" << NcbiEndl;
         }
-        STD_CATCH("TestStrings");
+        catch (CNcbiException& e) {
+            REPORT_NCBI_EXCEPTION("TestStrings",e);
+        }
 
         try {
             double value = NStr::StringToDouble(str);
             NcbiCout << "double value: " << value << ", toString: '"
                      << NStr::DoubleToString(value) << "'" << NcbiEndl;
         }
-        STD_CATCH("TestStrings");
+        catch (CNcbiException& e) {
+            REPORT_NCBI_EXCEPTION("TestStrings",e);
+        }
     }
 
     NcbiCout << NcbiEndl << "NStr::Replace() tests...";
@@ -446,6 +457,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/07/11 14:18:29  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 6.4  2002/04/16 18:49:08  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.

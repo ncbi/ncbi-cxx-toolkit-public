@@ -57,13 +57,6 @@
 BEGIN_NCBI_SCOPE
 
 
-// Throw exception with diagnostic message
-static void s_ThrowException(const string& what)
-{
-    // Throw exception
-    throw CPipe::CException("CPipe: " + what);
-}
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -180,19 +173,22 @@ void CPipe::Open(const char *cmdname, const vector<string> args,
         m_StdIn  = s_BindHandle(fileno(stdin), true,
                                 mode_stdin == eBinary, &fd_stdin_save);
         if ( m_StdIn == -1 )
-            s_ThrowException("Bind stdin failed");
+            NCBI_THROW(CExceptPipe,eBind,
+                "Pipe binding to standard I/O file handle failed");
     }
     if ( mode_stdout != eDoNotUse ) {
         m_StdOut = s_BindHandle(fileno(stdout), false,
                                 mode_stdout == eBinary, &fd_stdout_save);
         if ( m_StdOut == -1 )
-           s_ThrowException("Bind stdout failed");
+            NCBI_THROW(CExceptPipe,eBind,
+                "Pipe binding to standard I/O file handle failed");
     }
     if ( mode_stderr != eDoNotUse ) {
         m_StdErr = s_BindHandle(fileno(stderr), false,
                                 mode_stderr == eBinary, &fd_stderr_save);
         if ( m_StdErr == -1 )
-            s_ThrowException("Bind stderr failed");
+            NCBI_THROW(CExceptPipe,eBind,
+                "Pipe binding to standard I/O file handle failed");
     }
 
     // Spawn the child process
@@ -207,23 +203,25 @@ void CPipe::Open(const char *cmdname, const vector<string> args,
          i++;
     }
     x_args[cnt+1] = 0;
-    m_Pid = CExec::SpawnVP(CExec::eNoWait, cmdname, x_args);
-    if ( m_Pid == -1 ) {
-        s_ThrowException("Error execution a child process");
+    try {
+        m_Pid = CExec::SpawnVP(CExec::eNoWait, cmdname, x_args);
+    } catch (CNcbiException& e) {
+        m_Pid = -1;
+        NCBI_RETHROW_SAME(e,"Pipe has failed to spawn the child process");
     }
 
     // Restore the standard IO file handlers to their original state
     if ( mode_stdin != eDoNotUse ) {
         if ( !s_RestoreHandle(fileno(stdin ), fd_stdin_save) )
-            s_ThrowException("Restore stdin failed");
+            NCBI_THROW(CExceptPipe,eUnbind,"Pipe unbinding failed");
     }
     if ( mode_stdout != eDoNotUse ) {
         if ( !s_RestoreHandle(fileno(stdout), fd_stdout_save) )
-            s_ThrowException("Restore stdout failed");
+            NCBI_THROW(CExceptPipe,eUnbind,"Pipe unbinding failed");
     }
     if ( mode_stderr != eDoNotUse ) {
         if ( !s_RestoreHandle(fileno(stderr), fd_stderr_save) )
-            s_ThrowException("Restore stderr failed");
+            NCBI_THROW(CExceptPipe,eUnbind,"Pipe unbinding failed");
     }
 }
 
@@ -252,7 +250,7 @@ size_t CPipe::Read(void *buffer, const size_t count, const EChildIOHandle from_h
 {
     int fd = (from_handle == eStdOut) ? m_StdOut : m_StdErr;
     if ( m_Pid == -1  ||  fd == -1 ) {
-        s_ThrowException("Reading from unopened pipe");
+        NCBI_THROW(CExceptPipe,eNoInit, "Pipe is not initialized properly");
     } 
     return read(fd, buffer, count);
 }
@@ -261,7 +259,7 @@ size_t CPipe::Read(void *buffer, const size_t count, const EChildIOHandle from_h
 size_t CPipe::Write(const void *buffer, const size_t count) const
 {
     if ( m_Pid == -1  ||  m_StdIn == -1 ) {
-        s_ThrowException("Writing to unopened pipe");
+        NCBI_THROW(CExceptPipe,eNoInit, "Pipe is not initialized properly");
     }
     return write(m_StdIn, buffer, count);
 }
@@ -424,6 +422,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/07/11 14:18:27  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.6  2002/07/02 16:22:25  ivanov
  * Added closing file descriptors of the local end of the pipe in Close()
  *

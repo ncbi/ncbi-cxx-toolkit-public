@@ -245,13 +245,13 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
             beg++;
             SIZE_TYPE end = str.find_first_of(']');
             if (end == NPOS)
-                throw CParseException("\
-Invalid registry section(']' is missing): `" + str + "'", line);
+                NCBI_THROW2(CParseException,eSection,
+"Invalid registry section(']' is missing): `" + str + "'", line);
             while ( isspace(str[beg]) )
                 beg++;
             if (str[beg] == ']') {
-                throw CParseException("\
-Unnamed registry section: `" + str + "'", line);
+                NCBI_THROW2(CParseException,eSection,
+"Unnamed registry section: `" + str + "'", line);
             }
 
             for (end = beg;  s_IsNameSectionSymbol(str[end]);  end++)
@@ -263,8 +263,8 @@ Unnamed registry section: `" + str + "'", line);
                 end++;
             _ASSERT( end <= str.find_first_of(']', 0) );
             if (str[end] != ']')
-                throw CParseException("\
-Invalid registry section name: `" + str + "'", line);
+                NCBI_THROW2(CParseException,eSection,
+"Invalid registry section name: `" + str + "'", line);
             // add section comment
             if ( !comment.empty() ) {
                 _ASSERT( s_IsNameSection(section) );
@@ -280,8 +280,8 @@ Invalid registry section name: `" + str + "'", line);
         default:  { // regular entry
             if (!s_IsNameSectionSymbol(str[beg])  ||
                 str.find_first_of('=') == NPOS)
-                throw CParseException("\
-Invalid registry entry format: '" + str + "'", line);
+                NCBI_THROW2(CParseException,eEntry,
+"Invalid registry entry format: '" + str + "'", line);
             // name
             SIZE_TYPE mid;
             for (mid = beg;  s_IsNameSectionSymbol(str[mid]);  mid++)
@@ -292,8 +292,8 @@ Invalid registry entry format: '" + str + "'", line);
             while ( isspace(str[mid]) )
                 mid++;
             if (str[mid] != '=')
-                throw CParseException("\
-Invalid registry entry name: '" + str + "'", line);
+                NCBI_THROW2(CParseException,eEntry,
+"Invalid registry entry name: '" + str + "'", line);
             for (mid++;  mid < len  &&  isspace(str[mid]);  mid++)
                 continue;
             _ASSERT( mid <= len );
@@ -331,8 +331,8 @@ Invalid registry entry name: '" + str + "'", line);
                 for (SIZE_TYPE i = beg;  i <= end;  i++) {
                     if (str[i] == '"') {
                         if (i != end) {
-                            throw CParseException("\
-Single(unescaped) '\"' in the middle of registry value: '" + str + "'", line);
+                            NCBI_THROW2(CParseException,eValue,
+"Single(unescaped) '\"' in the middle of registry value: '" + str + "'", line);
                         }
                         break;
                     }
@@ -357,8 +357,8 @@ Single(unescaped) '\"' in the middle of registry value: '" + str + "'", line);
                         value += '"';
                         i++;
                     } else {
-                        throw CParseException("\
-Badly placed '\\' in the registry value: '" + str + "'", line);
+                        NCBI_THROW2(CParseException,eValue,
+"Badly placed '\\' in the registry value: '" + str + "'", line);
                     }
                 }
             } while (read_next_line  &&  s_NcbiGetline(is, str));
@@ -370,8 +370,8 @@ Badly placed '\\' in the registry value: '" + str + "'", line);
     }
 
     if ( !is.eof() ) {
-        throw CParseException("\
-Error in reading the registry: '" + str + "'", line);
+        NCBI_THROW2(CParseException,eErr,
+"Error in reading the registry: '" + str + "'", line);
     }
 
     if ( non_modifying ) {
@@ -785,6 +785,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2002/07/11 14:18:27  gouriano
+ * exceptions replaced by CNcbiException-type ones
+ *
  * Revision 1.22  2002/04/11 21:08:03  ivanov
  * CVS log moved to end of the file
  *
