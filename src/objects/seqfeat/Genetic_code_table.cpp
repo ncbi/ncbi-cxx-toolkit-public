@@ -503,7 +503,7 @@ const char * CGen_code_table_imp::sm_GenCodeTblMemStr [] =
     "name \"SGC5\" , id 6 ,\n",
     "ncbieaa  \"FFLLSSSSYYQQCC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG\",\n",
     "sncbieaa \"-----------------------------------M----------------------------\" } ,\n",
-    "{ name \"Echinoderm Mitochondrial\" , name \"SGC8\" , id 9 ,\n",
+    "{ name \"Echinoderm Mitochondrial; Flatworm Mitochondrial\" , name \"SGC8\" , id 9 ,\n",
     "ncbieaa  \"FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNNKSSSSVVVVAAAADDEEGGGG\",\n",
     "sncbieaa \"-----------------------------------M---------------M------------\" } ,\n",
     "{ name \"Euplotid Nuclear\" , name \"SGC9\" , id 10 ,\n",
@@ -518,7 +518,7 @@ const char * CGen_code_table_imp::sm_GenCodeTblMemStr [] =
     "{ name \"Ascidian Mitochondrial\" , id 13 ,\n",
     "ncbieaa  \"FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIMMTTTTNNKKSSGGVVVVAAAADDEEGGGG\",\n",
     "sncbieaa \"-----------------------------------M----------------------------\" } ,\n",
-    "{ name \"Flatworm Mitochondrial\" , id 14 ,\n",
+    "{ name \"Alternative Flatworm Mitochondrial\" , id 14 ,\n",
     "ncbieaa  \"FFLLSSSSYYY*CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNNKSSSSVVVVAAAADDEEGGGG\",\n",
     "sncbieaa \"-----------------------------------M----------------------------\" } ,\n",
     "{ name \"Blepharisma Macronuclear\" , id 15 ,\n",
@@ -548,6 +548,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.6  2002/09/19 18:07:05  kans
+* code 9 is echinoderm and flatworm mito, code 14 is alternative flatworm mito
+*
 * Revision 6.5  2002/09/13 18:33:57  kans
 * sm_GenCodeTblMemStr returned to an array of strings for consistency with sm_StrAsnData in sequence.cpp
 *
