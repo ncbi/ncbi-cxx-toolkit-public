@@ -34,6 +34,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/09/03 21:29:56  vakatov
+* Fixes for AutoPtr::  specify template parameter for the base "auto_ptr"
+* + #include <memory>
+*
 * Revision 1.3  1999/07/08 19:07:54  vakatov
 * Fixed "p_equal_to" and "pair_equal_to" to pass MIPSpro 7.3 (-n32) compil
 *
@@ -84,13 +88,12 @@
 * Added storable Web environment.
 * Added qutility.hpp.
 * Removed some unneeded try/catch blocks by using auto_ptr.
-*
-*
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
 #include <map>
+#include <memory>
 #include <list>
 #include <vector>
 #include <functional>
@@ -214,17 +217,17 @@ class AutoPtr : public auto_ptr<X>
 {
 public:
     explicit AutoPtr(void)
-        : auto_ptr(0)
+        : auto_ptr<X>(0)
         {
         }
 
     explicit AutoPtr(X* p)
-        : auto_ptr(NotNull(p))
+        : auto_ptr<X>(NotNull(p))
         {
         }
 
     AutoPtr(AutoPtr& a)
-        : auto_ptr(a)
+        : auto_ptr<X>(a)
         {
         }
 
@@ -249,7 +252,7 @@ public:
             if ( get() != p )
                 {
                     reset();
-                    auto_ptr::reset(p);
+                    auto_ptr<X>::reset(p);
                 }
         }
 };
