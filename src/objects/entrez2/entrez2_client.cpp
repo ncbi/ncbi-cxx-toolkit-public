@@ -136,6 +136,10 @@ void CEntrez2Client::Query(const string& query, const string& db,
     CRef<CEntrez2_boolean_reply> reply = AskEval_boolean(req);
     
     // now extract the UIDs
+    if (!reply->GetUids().CanGetUids ()) {
+        // this happens when no matches were found
+        return;
+    }
     for (CEntrez2_id_list::TConstUidIterator it
              = reply->GetUids().GetConstUidIterator();  
          !it.AtEnd();  ++it) {
@@ -175,6 +179,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/10/17 16:44:01  jcherry
+* Fixed behavior when Query finds nothing
+*
 * Revision 1.4  2003/10/16 20:10:23  jcherry
 * Added some simplified interfaces for querying
 *
