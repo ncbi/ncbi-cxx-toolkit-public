@@ -447,6 +447,10 @@ bool CBDB_BLOB_Cache::Read(const string& key,
             return false;
         }
         overflow_file->read((char*)buf, buf_size);
+        if (!*overflow_file) {
+            return false;
+        }
+        x_UpdateAccessTime(key, version);
     }
 
 
@@ -839,6 +843,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/10/20 20:41:37  kuznets
+ * Fixed bug in BlobCache::Read
+ *
  * Revision 1.18  2003/10/20 20:35:33  kuznets
  * Blob cache Purge improved.
  *
