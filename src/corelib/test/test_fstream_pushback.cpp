@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_All);
 
-    fstream fs(filename,
+    CNcbiFstream fs(filename,
                IOS_BASE::in    | IOS_BASE::out   |
                IOS_BASE::trunc | IOS_BASE::binary);
 
@@ -62,6 +62,9 @@ int main(int argc, char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2003/11/21 16:55:32  vasilche
+ * Use correct CNcbiFstream instead of fstream.
+ *
  * Revision 1.6  2002/04/16 18:52:15  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.
