@@ -43,21 +43,6 @@
 <a name="seqid"></a>
 <h4>How to construct Seq_id by accession?</h4>
 <p>
-The current toolkit lacks a function that creates a proper Seq_Id from
-an accession.
-<br>
-The accession number is actually formalized so it is possible, looking
-at an accession to determine the database this accession refers to.
-There is a
-<a href="http://intranet.ncbi.nlm.nih.gov/ieb/DIRSUB/acc_num.html">page</a>,
-which describes the relationship, but even better, there is a function in
-C toolkit which does it:
-<pre>
-    NLM_EXTERN Uint4 LIBCALL WHICH_db_accession (CharPtr s)  // sequtil.c
-</pre>
-This function is called from SeqIdFromAccession (sequtil.c).
-</p>
-<p>
 Currently, one has to specify an exact version number, otherwise
 GetBioseqHandle fails. A user might not know a version number for an accession
 s/he wants to retrieve, so, if version is not provided, the last version of the
