@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2001/08/03 13:41:33  thiessen
+* add registry and style favorites
+*
 * Revision 1.59  2001/07/23 20:09:23  thiessen
 * add regex pattern search
 *
@@ -277,8 +280,10 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
+
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 #include <objects/cdd/Cdd.hpp>
+#include <objects/cn3d/Cn3d_style_settings_set.hpp>
 
 #include "cn3d/asn_reader.hpp"
 #include "cn3d/cn3d_main_wxwin.hpp"
@@ -293,6 +298,8 @@
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/multitext_dialog.hpp"
 #include "cn3d/cdd_annot_dialog.hpp"
+
+#include <wx/file.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -326,6 +333,17 @@ const std::string& GetDataDir(void) { return dataDir; }
 static wxFrame *topWindow = NULL;
 wxFrame * GlobalTopWindow(void) { return topWindow; }
 
+// global program registry
+static CNcbiRegistry registry;
+CNcbiRegistry * GlobalRegistry(void) { return &registry; }
+static std::string registryFile;
+static bool registryChanged = false;
+
+// stuff for style favorites
+static const std::string REG_FAVORITES_NAME = "Favorites";
+static CCn3d_style_settings_set favoriteStyles;
+static bool favoriteStylesChanged = false;
+
 
 // Set the NCBI diagnostic streams to go to this method, which then pastes them
 // into a wxWindow. This log window can be closed anytime, but will be hidden,
@@ -341,7 +359,8 @@ class MsgFrame : public wxFrame
 public:
     MsgFrame(const wxString& title,
         const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize) :
-        wxFrame(topWindow, wxID_HIGHEST + 5, title, pos, size, wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT) { }
+        wxFrame(topWindow, wxID_HIGHEST + 5, title, pos, size,
+            wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT) { }
     ~MsgFrame(void) { logFrame = NULL; logText = NULL; }
     wxTextCtrl *logText;
 private:
@@ -395,6 +414,67 @@ void RaiseLogWindow(void)
 }
 
 
+static wxString GetFavoritesFile(bool forRead)
+{
+    // try to get value from registry
+    wxString file = GlobalRegistry()->Get(REG_CONFIG_SECTION, REG_FAVORITES_NAME).c_str();
+
+    // if not set, ask user for a folder, then set in registry
+    if (file.size() == 0) {
+        file = wxFileSelector("Select a file for favorites:",
+            dataDir.c_str(), "Favorites", "", "*.*",
+            forRead ? wxOPEN : wxSAVE | wxOVERWRITE_PROMPT);
+
+        if (file.size() > 0) {
+            if (!GlobalRegistry()->Set(REG_CONFIG_SECTION, REG_FAVORITES_NAME, file.c_str(),
+                    CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate))
+                ERR_POST(Error << "Error setting favorites file in registry");
+            registryChanged = true;
+        }
+    }
+
+    return file;
+}
+
+static bool LoadFavorites(void)
+{
+    std::string favoritesFile = GlobalRegistry()->Get(REG_CONFIG_SECTION, REG_FAVORITES_NAME);
+    if (favoritesFile.size() > 0) {
+        favoriteStyles.Reset();
+        if (wxFile::Exists(favoritesFile.c_str())) {
+            TESTMSG("loading favorites from " << favoritesFile);
+            std::string err;
+            if (ReadASNFromFile(favoritesFile.c_str(), favoriteStyles, false, err)) {
+                favoriteStylesChanged = false;
+                return true;
+            }
+        } else {
+            ERR_POST(Warning << "Favorites file does not exist: " << favoritesFile);
+            GlobalRegistry()->Set(REG_CONFIG_SECTION, REG_FAVORITES_NAME, "", CNcbiRegistry::ePersistent);
+            registryChanged = true;
+        }
+    }
+    return false;
+}
+
+static void SaveFavorites(void)
+{
+    if (favoriteStylesChanged) {
+        int choice = wxMessageBox("Do you want to save changes to your current Favorites file?",
+            "Save favorites?", wxYES_NO);
+        if (choice == wxYES) {
+            wxString favoritesFile = GetFavoritesFile(false);
+            if (favoritesFile.size() > 0) {
+                std::string err;
+                if (!WriteASNToFile(favoritesFile.c_str(), favoriteStyles, false, err))
+                    ERR_POST(Error << "Error saving Favorites to " << favoritesFile << '\n' << err);
+                favoriteStylesChanged = false;
+            }
+        }
+    }
+}
+
+
 BEGIN_EVENT_TABLE(Cn3DApp, wxApp)
     EVT_IDLE(Cn3DApp::OnIdle)
 END_EVENT_TABLE()
@@ -411,9 +491,8 @@ bool Cn3DApp::OnInit(void)
     SetDiagHandler(DisplayDiagnostic, NULL, NULL);
     SetDiagPostLevel(eDiag_Info); // report all messages
 
-    // create the main frame window
-    structureWindow = new Cn3DMainFrame("Cn3D++", wxPoint(0,0), wxSize(500,500));
-    SetTopWindow(structureWindow);
+    TESTMSG("Welcome to Cn3D++! (built " << __DATE__ << ')');
+    RaiseLogWindow();
 
     // set up working directories
     workingDir = userDir = wxGetCwd().c_str();
@@ -434,9 +513,24 @@ bool Cn3DApp::OnInit(void)
     TESTMSG("program dir: " << programDir.c_str());
     TESTMSG("data dir: " << dataDir.c_str());
 
+    // load program registry
+    registryFile = dataDir + "cn3d.ini";
+    auto_ptr<CNcbiIfstream> iniIn(new CNcbiIfstream(registryFile.c_str(), IOS_BASE::in));
+    if (*iniIn) {
+        TESTMSG("loading program registry " << registryFile);
+        GlobalRegistry()->Read(*iniIn);
+    }
+
+    // favorite styles
+    LoadFavorites();
+
     // read dictionary
     wxString dictFile = wxString(dataDir.c_str()) + "bstdt.val";
     LoadStandardDictionary(dictFile.c_str());
+
+    // create the main frame window
+    structureWindow = new Cn3DMainFrame("Cn3D++", wxPoint(0,0), wxSize(500,500));
+    SetTopWindow(structureWindow);
 
     // get file name from command line, if present
     if (argc > 2)
@@ -451,7 +545,21 @@ bool Cn3DApp::OnInit(void)
 
 int Cn3DApp::OnExit(void)
 {
+    SetDiagHandler(NULL, NULL, NULL);
+    SetDiagStream(&cout);
+
+    // save registry
+    if (registryChanged) {
+        auto_ptr<CNcbiOfstream> iniOut(new CNcbiOfstream(registryFile.c_str(), IOS_BASE::out));
+        if (*iniOut) {
+            TESTMSG("saving program registry " << registryFile);
+            GlobalRegistry()->Write(*iniOut);
+        }
+    }
+
+    // remove dictionary
     DeleteStandardDictionary();
+
 	return 0;
 }
 
@@ -478,10 +586,25 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU_RANGE(MID_SHOW_HIDE,  MID_SHOW_SELECTED,       Cn3DMainFrame::OnShowHide)
     EVT_MENU      (MID_REFIT_ALL,                           Cn3DMainFrame::OnAlignStructures)
     EVT_MENU_RANGE(MID_EDIT_STYLE, MID_ANNOTATE,            Cn3DMainFrame::OnSetStyle)
+    EVT_MENU_RANGE(MID_ADD_FAVORITE, MID_FAVORITES_FILE,  Cn3DMainFrame::OnEditFavorite)
+    EVT_MENU_RANGE(MID_FAVORITES_BEGIN, MID_FAVORITES_END,  Cn3DMainFrame::OnSelectFavorite)
     EVT_MENU_RANGE(MID_QLOW,       MID_QHIGH,               Cn3DMainFrame::OnSetQuality)
     EVT_MENU_RANGE(MID_SHOW_LOG,   MID_SHOW_SEQ_V,          Cn3DMainFrame::OnShowWindow)
     EVT_MENU_RANGE(MID_EDIT_CDD_DESCR, MID_ANNOT_CDD,       Cn3DMainFrame::OnCDD)
 END_EVENT_TABLE()
+
+static void SetupFavoritesMenu(wxMenu *favoritesMenu)
+{
+    int i;
+    for (i=Cn3DMainFrame::MID_FAVORITES_BEGIN; i<=Cn3DMainFrame::MID_FAVORITES_END; i++) {
+        wxMenuItem *item = favoritesMenu->FindItem(i);
+        if (item) favoritesMenu->Delete(item);
+    }
+
+    CCn3d_style_settings_set::Tdata::const_iterator f, fe = favoriteStyles.Get().end();
+    for (f=favoriteStyles.Get().begin(), i=0; f!=fe; f++, i++)
+        favoritesMenu->Append(Cn3DMainFrame::MID_FAVORITES_BEGIN + i, (*f)->GetName().c_str());
+}
 
 Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wxSize& size) :
     wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE | wxTHICK_FRAME),
@@ -489,9 +612,6 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
 {
     topWindow = this;
     SetSizeHints(150, 150); // min size
-
-    TESTMSG("Welcome to Cn3D++! (built " << __DATE__ << ')');
-    RaiseLogWindow();
 
     // File menu
     menuBar = new wxMenuBar;
@@ -530,7 +650,15 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     // Style menu
     menu = new wxMenu;
     menu->Append(MID_EDIT_STYLE, "Edit &Global Style");
+    favoritesMenu = new wxMenu;
+    favoritesMenu->Append(Cn3DMainFrame::MID_ADD_FAVORITE, "&Add/Replace");
+    favoritesMenu->Append(Cn3DMainFrame::MID_REMOVE_FAVORITE, "&Remove");
+    favoritesMenu->Append(Cn3DMainFrame::MID_FAVORITES_FILE, "&Change File");
+    favoritesMenu->AppendSeparator();
+    SetupFavoritesMenu(favoritesMenu);
+    menu->Append(MID_FAVORITES, "&Favorites", favoritesMenu);
     wxMenu *subMenu = new wxMenu;
+    subMenu = new wxMenu;
     subMenu->Append(MID_WORM, "&Worms");
     subMenu->Append(MID_TUBE, "&Tubes");
     subMenu->Append(MID_WIRE, "Wir&e");
@@ -607,6 +735,94 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
     }
 }
 
+void Cn3DMainFrame::OnEditFavorite(wxCommandEvent& event)
+{
+    if (!glCanvas->structureSet) return;
+
+    if (event.GetId() == MID_ADD_FAVORITE) {
+        // get name from user
+        wxString name = wxGetTextFromUser("Enter a name for this style:", "Input name", "", this);
+        if (name.size() == 0) return;
+
+        // replace style of same name
+        CCn3d_style_settings *settings;
+        CCn3d_style_settings_set::Tdata::iterator f, fe = favoriteStyles.Set().end();
+        for (f=favoriteStyles.Set().begin(); f!=fe; f++) {
+            if (Stricmp((*f)->GetName().c_str(), name.c_str()) == 0) {
+                settings = f->GetPointer();
+                break;
+            }
+        }
+        // else add style to list
+        if (f == favoriteStyles.Set().end()) {
+            if (favoriteStyles.Set().size() >= MID_FAVORITES_END - MID_FAVORITES_BEGIN + 1) {
+                ERR_POST(Error << "Already have max # Favorites");
+                return;
+            } else {
+                CRef < CCn3d_style_settings > ref(settings = new CCn3d_style_settings());
+                favoriteStyles.Set().push_back(ref);
+            }
+        }
+
+        // put in data from global style
+        if (!glCanvas->structureSet->styleManager->GetGlobalStyle().SaveSettingsToASN(settings))
+            ERR_POST(Error << "Error converting global style to asn");
+        settings->SetName(name.c_str());
+        favoriteStylesChanged = true;
+    }
+
+    else if (event.GetId() == MID_REMOVE_FAVORITE) {
+        wxString *choices = new wxString[favoriteStyles.Set().size()];
+        CCn3d_style_settings_set::Tdata::iterator f, fe = favoriteStyles.Set().end();
+        int i = 0;
+        for (f=favoriteStyles.Set().begin(); f!=fe; f++)
+            choices[i++] = (*f)->GetName().c_str();
+        int picked = wxGetSingleChoiceIndex("Choose a style to remove from the Favorites list:",
+            "Select for removal", favoriteStyles.Set().size(), choices, this);
+        if (picked < 0 || picked >= favoriteStyles.Set().size()) return;
+        for (f=favoriteStyles.Set().begin(), i=0; f!=fe; f++, i++) {
+            if (i == picked) {
+                favoriteStyles.Set().erase(f);
+                favoriteStylesChanged = true;
+                break;
+            }
+        }
+    }
+
+    else if (event.GetId() == MID_FAVORITES_FILE) {
+        SaveFavorites();
+        favoriteStyles.Reset();
+        GlobalRegistry()->Set(REG_CONFIG_SECTION, REG_FAVORITES_NAME, "", CNcbiRegistry::ePersistent);
+        registryChanged = true;
+        wxString newFavorites = GetFavoritesFile(true);
+        if (newFavorites.size() > 0 && wxFile::Exists(newFavorites.c_str())) {
+            if (!LoadFavorites())
+                ERR_POST(Error << "Error loading Favorites from " << newFavorites.c_str());
+        }
+    }
+
+    // update menu
+    SetupFavoritesMenu(favoritesMenu);
+}
+
+void Cn3DMainFrame::OnSelectFavorite(wxCommandEvent& event)
+{
+    if (!glCanvas->structureSet) return;
+
+    if (event.GetId() >= MID_FAVORITES_BEGIN && event.GetId() <= MID_FAVORITES_END) {
+        int index = event.GetId() - MID_FAVORITES_BEGIN;
+        CCn3d_style_settings_set::Tdata::const_iterator f, fe = favoriteStyles.Get().end();
+        int i = 0;
+        for (f=favoriteStyles.Get().begin(); f!=fe; f++, i++) {
+            if (i == index) {
+                TESTMSG("using favorite: " << (*f)->GetName());
+                glCanvas->structureSet->styleManager->SetGlobalStyle(**f);
+                break;
+            }
+        }
+    }
+}
+
 void Cn3DMainFrame::OnShowWindow(wxCommandEvent& event)
 {
     switch (event.GetId()) {
@@ -629,6 +845,7 @@ void Cn3DMainFrame::OnExit(wxCommandEvent& event)
     GlobalMessenger()->RemoveStructureWindow(this); // don't bother with any redraws since we're exiting
     GlobalMessenger()->SequenceWindowsSave();       // save any edited alignment and updates first
     SaveDialog(false);                              // give structure window a chance to save data
+    SaveFavorites();
     Destroy();
 }
 

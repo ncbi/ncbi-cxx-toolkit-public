@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/08/03 13:41:24  thiessen
+* add registry and style favorites
+*
 * Revision 1.30  2001/07/04 19:38:55  thiessen
 * finish user annotation system
 *
@@ -404,6 +407,9 @@ public:
     // predefined styles
     void SetGlobalColorScheme(StyleSettings::ePredefinedColorScheme scheme);
     void SetGlobalRenderingStyle(StyleSettings::ePredefinedRenderingStyle style);
+
+    // set global style
+    bool SetGlobalStyle(const ncbi::objects::CCn3d_style_settings& styleASN);
 };
 
 // the following are convenience containers to tell the Draw functions how

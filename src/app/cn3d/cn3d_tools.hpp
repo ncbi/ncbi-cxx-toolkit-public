@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/08/03 13:41:24  thiessen
+* add registry and style favorites
+*
 * Revision 1.3  2001/07/19 19:12:46  thiessen
 * working CDD alignment annotator ; misc tweaks
 *
@@ -47,6 +50,8 @@
 
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbidiag.hpp>
+#include <corelib/ncbireg.hpp>
+
 #include <objects/seqloc/Seq_id.hpp>
 
 #include <string>
@@ -67,6 +72,10 @@ extern void RaiseLogWindow(void);
 
 // launch web browser on given URL (implemented in sequence_set.cpp)
 extern void LaunchWebPage(const char *url);
+
+// global program registry (cn3d.ini) (implemented in cn3d_main_wxwin.cpp)
+ncbi::CNcbiRegistry * GlobalRegistry(void);
+static const std::string REG_CONFIG_SECTION = "Cn3D-4-Config";
 
 // top-level window (the main structure window) (implemented in cn3d_main_wxwin.cpp)
 extern wxFrame * GlobalTopWindow(void);

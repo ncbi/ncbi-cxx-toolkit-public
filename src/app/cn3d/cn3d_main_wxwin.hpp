@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/08/03 13:41:24  thiessen
+* add registry and style favorites
+*
 * Revision 1.31  2001/07/12 17:34:22  thiessen
 * change domain mapping ; add preliminary cdd annotation GUI
 *
@@ -217,7 +220,6 @@ public:
     void LoadFile(const char *filename);
     bool SaveDialog(bool canCancel);
 
-    // menu-associated methods
     enum {
         // File menu
             MID_OPEN,
@@ -249,6 +251,10 @@ public:
                 MID_ALIGNED,
                 MID_INFO,
             MID_ANNOTATE,
+            MID_FAVORITES, // favorites submenu
+                MID_ADD_FAVORITE,
+                MID_REMOVE_FAVORITE,
+                MID_FAVORITES_FILE,
         // Quality menu
             MID_QLOW,
             MID_QMED,
@@ -257,27 +263,30 @@ public:
             MID_SHOW_LOG,
             MID_SHOW_SEQ_V,
         // CDD menu
-           MID_EDIT_CDD_DESCR,
-           MID_EDIT_CDD_NOTES,
-           MID_ANNOT_CDD
+            MID_EDIT_CDD_DESCR,
+            MID_EDIT_CDD_NOTES,
+            MID_ANNOT_CDD,
+
+        // not actually a menu item, but used to enumerate style favorites list
+            MID_FAVORITES_BEGIN = 100,
+            MID_FAVORITES_END   = 149
     };
 
     void OnExit(wxCommandEvent& event);
     void OnCloseWindow(wxCloseEvent& event);
-
     void OnShowWindow(wxCommandEvent& event);
 
+    // menu-associated methods
     void OnOpen(wxCommandEvent& event);
     void OnSave(wxCommandEvent& event);
     void OnLimit(wxCommandEvent& event);
-
     void OnAlignStructures(wxCommandEvent& event);
-
     void OnAdjustView(wxCommandEvent& event);
     void OnShowHide(wxCommandEvent& event);
     void OnSetStyle(wxCommandEvent& event);
+    void OnEditFavorite(wxCommandEvent& event);
+    void OnSelectFavorite(wxCommandEvent& event);
     void OnSetQuality(wxCommandEvent& event);
-
     void OnCDD(wxCommandEvent& event);
 
 private:
@@ -286,6 +295,7 @@ private:
     int structureLimit;
 
     wxMenuBar *menuBar;
+    wxMenu *favoritesMenu;
 
     DECLARE_EVENT_TABLE()
 };

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2001/08/03 13:41:33  thiessen
+* add registry and style favorites
+*
 * Revision 1.46  2001/07/12 17:35:15  thiessen
 * change domain mapping ; add preliminary cdd annotation GUI
 *
@@ -1433,6 +1436,18 @@ void StyleManager::SetGlobalRenderingStyle(StyleSettings::ePredefinedRenderingSt
 {
     globalStyle.SetRenderingStyle(style);
     structureSet->StyleDataChanged();
+}
+
+bool StyleManager::SetGlobalStyle(const ncbi::objects::CCn3d_style_settings& styleASN)
+{
+    bool okay = globalStyle.LoadSettingsFromASN(styleASN);
+    if (okay) {
+        CheckGlobalStyleSettings();
+        structureSet->StyleDataChanged();
+        GlobalMessenger()->PostRedrawAllStructures();
+        GlobalMessenger()->PostRedrawAllSequenceViewers();
+    }
+    return okay;
 }
 
 END_SCOPE(Cn3D)
