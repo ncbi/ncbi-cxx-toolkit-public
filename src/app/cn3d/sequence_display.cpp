@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/08/24 14:32:51  thiessen
+* add row # to status line
+*
 * Revision 1.29  2001/08/08 02:25:27  thiessen
 * add <memory>
 *
@@ -437,7 +440,10 @@ void SequenceDisplay::MouseOver(int column, int row) const
                     dynamic_cast<const DisplayRowFromAlignment *>(displayRow);
                 if (alnRow) {
                     int blockNum = alnRow->alignment->GetAlignedBlockNumber(column);
-                    if (blockNum > 0) status.Printf("Block #%i", blockNum);
+                    if (blockNum > 0)
+                        status.Printf("Block %i, Row %i", blockNum, alnRow->row + 1);
+                    else
+                        status.Printf("Row %i", alnRow->row + 1);
                     if (alnRow->alignment->GetRowStatusLine(alnRow->row).size() > 0) {
                         if (blockNum > 0) status += " ; ";
                         status += alnRow->alignment->GetRowStatusLine(alnRow->row).c_str();
