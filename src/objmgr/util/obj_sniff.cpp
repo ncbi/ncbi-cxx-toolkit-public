@@ -216,6 +216,11 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
         CObjectInfo object_info(it->type_info.GetTypeInfo());
 
         try {
+
+            LOG_POST(Info 
+                     << "Trying ASN.1 binary top level object:" 
+                     << it->type_info.GetTypeInfo()->GetName() );
+
             m_StreamOffset = input.GetStreamOffset();
 
             input.Read(object_info);
@@ -231,6 +236,7 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
         }
         catch (CException& ) {
             Reset();
+            input.SetStreamOffset(m_StreamOffset);
             ++it; // trying the next type.
         }
     }
@@ -244,6 +250,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2004/01/05 15:01:37  kuznets
+* Sniffer::Probe() : restoring source stream offset after a failure.
+*
 * Revision 1.14  2003/10/07 20:43:12  kuznets
 * Added Reset() call when parsing fails.
 *
