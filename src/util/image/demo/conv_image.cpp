@@ -75,7 +75,7 @@ void CConvImageApp::Init(void)
                              CArgDescriptions::eString);
     arg_desc->SetConstraint("fmt",
                             &(*new CArgAllow_Strings(),
-                              "jpeg", "tiff", "png", "bmp", "sgi"));
+                              "jpeg", "tiff", "png", "bmp", "sgi", "raw"));
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -115,6 +115,8 @@ int CConvImageApp::Run(void)
             fmt = CImageIO::eTiff;
         } else if (str == "bmp") {
             fmt = CImageIO::eBmp;
+        } else if (str == "raw") {
+            fmt = CImageIO::eRaw;
         } else if (str == "sgi") {
             fmt = CImageIO::eSgi;
         }
@@ -156,6 +158,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/12/16 16:16:43  dicuccio
+ * Added more options - raw files
+ *
  * Revision 1.1  2003/06/03 15:17:14  dicuccio
  * Initial revision of image library
  *

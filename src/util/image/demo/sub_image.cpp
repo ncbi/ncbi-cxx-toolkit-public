@@ -112,7 +112,7 @@ int CImageTestApp::Run(void)
 
     if (args["out"]) {
         CImageIO::WriteImage(*image, args["out"].AsString(),
-                             CImageIO::eJpeg);
+                             CImageIO::ePng);
         double write_time = sw.Elapsed();
         LOG_POST(Info << "wrote image in " << write_time - read_time
                  << " seconds");
@@ -149,6 +149,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/12/16 16:16:43  dicuccio
+ * Added more options - raw files
+ *
  * Revision 1.2  2003/11/03 15:19:57  dicuccio
  * Added optional compression parameter
  *
