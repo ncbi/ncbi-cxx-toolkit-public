@@ -39,8 +39,10 @@
 #include <memory>
 
 #include <serial/datatool/fileutil.hpp>
-#include <serial/datatool/parser.hpp>
 #include <serial/datatool/lexer.hpp>
+#include <serial/datatool/dtdlexer.hpp>
+#include <serial/datatool/parser.hpp>
+#include <serial/datatool/dtdparser.hpp>
 #include <serial/datatool/moduleset.hpp>
 #include <serial/datatool/module.hpp>
 #include <serial/datatool/type.hpp>
@@ -403,10 +405,26 @@ void CDataTool::LoadDefinitions(CFileSet& fileSet,
         const string& name = *fi;
         if ( !name.empty() ) {
             SourceFile fName(name, modulesPath);
-            ASNLexer lexer(fName);
-            lexer.AllowIDsEndingWithMinus(GetArgs()["lax_syntax"]);
-            ASNParser parser(lexer);
-            fileSet.AddFile(parser.Modules(name));
+            switch (fName.GetType()) {
+            default:
+                // throw exception here
+                break;
+            case SourceFile::eASN:
+                {
+                    ASNLexer lexer(fName);
+                    lexer.AllowIDsEndingWithMinus(GetArgs()["lax_syntax"]);
+                    ASNParser parser(lexer);
+                    fileSet.AddFile(parser.Modules(name));
+                }
+                break;
+            case SourceFile::eDTD:
+                {
+                    DTDLexer lexer(fName);
+                    DTDParser parser(lexer);
+                    fileSet.AddFile(parser.Modules(name));
+                }
+                break;
+            }
         }
     }
 }
@@ -423,6 +441,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2002/10/15 13:57:09  gouriano
+* recognize DTD files and handle them using DTD lexer/parser
+*
 * Revision 1.54  2002/09/26 16:57:31  vasilche
 * Added flag for compatibility with asntool
 *
