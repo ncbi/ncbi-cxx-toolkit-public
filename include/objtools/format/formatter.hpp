@@ -36,14 +36,13 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
-#include <objtools/format/flat_file_generator.hpp>
-
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
 class IFlatItem;
+class IFlatTextOStream;
 class CLocusItem;
 class CDeflineItem;
 class CAccessionItem;
@@ -113,6 +112,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/12 20:24:22  shomrat
+* removed unnecessary include
+*
 * Revision 1.3  2004/02/11 22:46:45  shomrat
 * using types in flag file
 *
