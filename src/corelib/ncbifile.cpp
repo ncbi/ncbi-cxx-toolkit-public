@@ -895,8 +895,13 @@ string CFile::GetTmpName(void)
 
 string CFile::GetTmpNameExt(const string& dir, const string& prefix)
 {
-#if defined(NCBI_OS_MAC)
-    return kEmptyStr;
+#if defined(NCBI_COMPILER_MW_MSL)
+    string filenamstr = AddTrailingPathSeparator(dir) + prefix + "XXXXXXXX";
+    // we need our filename in memory that mktemp can write into.
+    auto_ptr<char> filename(strdup(filenamstr.c_str()));
+    mktemp(filename.get());
+    string res(filename.get());
+    return res;
 #else
     char* filename = tempnam(dir.c_str(), prefix.c_str());
     if ( !filename ) {
@@ -1556,6 +1561,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2003/06/18 18:57:43  rsmith
+ * alternate implementation of GetTmpNameExt replacing tempnam with mktemp for library missing tempnam
+ *
  * Revision 1.48  2003/05/29 17:21:04  gouriano
  * added CreatePath() which creates directories recursively
  *
