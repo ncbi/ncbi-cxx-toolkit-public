@@ -465,6 +465,21 @@
  *  Object Manager members
  */
 
+/** @defgroup ObjectManagerCore Object Manager Core Classes 
+ *  @ingroup OBJECTMANAGER
+ */
+
+/** @defgroup ObjectManagerHandles Handles
+ *  @ingroup OBJECTMANAGER
+ */
+
+/** @defgroup ObjectManagerSequenceRep Sequence Representations 
+ *  @ingroup OBJECTMANAGER
+ */
+
+/** @defgroup ObjectManagerIterators Iterators 
+ *  @ingroup OBJECTMANAGER
+ */
 
 /* ========================================================================= */
 
