@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.27 2002/01/17 17:14:23 ucko Exp $
+#  $Id: configure.ac,v 1.28 2002/01/30 06:34:59 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -432,6 +432,10 @@ case "$host_os:$compiler" in
  solaris2\.6:GCC )
    echo "GCC compiler is not supported for:  $host"
    compiler=
+   ;;
+
+ solaris*:GCC )
+   STRIP=":"
    ;;
 
  linux* | osf*:GCC )
