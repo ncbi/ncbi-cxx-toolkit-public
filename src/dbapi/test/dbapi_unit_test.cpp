@@ -288,14 +288,158 @@ CDBAPIUnitTest::Test_Variant(void)
         const CVariant variant_char( value_char );
         CPPUNIT_ASSERT( !variant_char.IsNull() );
 
-//        CVariant(EDB_Type type, size_t size = 0);
-//        CVariant(const class CTime& v, EDateTimeFormat fmt);
+        const CVariant variant_CTimeShort( value_CTime, eShort );
+        CPPUNIT_ASSERT( !variant_CTimeShort.IsNull() );
+
+        const CVariant variant_CTimeLong( value_CTime, eLong );
+        CPPUNIT_ASSERT( !variant_CTimeLong.IsNull() );
+
 //        explicit CVariant(CDB_Object* obj);
-//        CVariant(const CVariant& v);
 
     }
 
-    // Check the copy-constructors
+    // Check the CVariant(EDB_Type type, size_t size = 0) constructor
+    {
+//        enum EDB_Type {
+//            eDB_Int,
+//            eDB_SmallInt,
+//            eDB_TinyInt,
+//            eDB_BigInt,
+//            eDB_VarChar,
+//            eDB_Char,
+//            eDB_VarBinary,
+//            eDB_Binary,
+//            eDB_Float,
+//            eDB_Double,
+//            eDB_DateTime,
+//            eDB_SmallDateTime,
+//            eDB_Text,
+//            eDB_Image,
+//            eDB_Bit,
+//            eDB_Numeric,
+
+//            eDB_UnsupportedType,
+//            eDB_LongChar,
+//            eDB_LongBinary
+//        };
+
+        {
+            CVariant value_variant( eDB_Int );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_Int, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_SmallInt );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_SmallInt, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_TinyInt );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_TinyInt, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_BigInt );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_BigInt, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_VarChar );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_VarChar, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_Char );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_Char, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_VarBinary );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_VarBinary, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_Binary );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_Binary, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_Float );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_Float, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_Double );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_Double, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_DateTime );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_DateTime, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_SmallDateTime );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_SmallDateTime, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_Text );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_Text, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_Image );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_Image, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_Bit );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_Bit, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_Numeric );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_Numeric, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_LongChar );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_LongChar, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        {
+            CVariant value_variant( eDB_LongBinary );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_LongBinary, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+        if (false) {
+            CVariant value_variant( eDB_UnsupportedType );
+
+            CPPUNIT_ASSERT_EQUAL( eDB_UnsupportedType, value_variant.GetType() );
+            CPPUNIT_ASSERT( value_variant.IsNull() );
+        }
+    }
+
+    // Check the copy-constructor CVariant(const CVariant& v)
     {
         const CVariant variant_Int8 = CVariant(value_Int8);
         CPPUNIT_ASSERT( !variant_Int8.IsNull() );
@@ -323,6 +467,12 @@ CDBAPIUnitTest::Test_Variant(void)
 
         const CVariant variant_char = CVariant(value_char);
         CPPUNIT_ASSERT( !variant_char.IsNull() );
+
+        const CVariant variant_CTimeShort = CVariant( value_CTime, eShort );
+        CPPUNIT_ASSERT( !variant_CTimeShort.IsNull() );
+
+        const CVariant variant_CTimeLong = CVariant( value_CTime, eLong );
+        CPPUNIT_ASSERT( !variant_CTimeLong.IsNull() );
     }
 
     // Call Factories for different types
@@ -442,6 +592,65 @@ CDBAPIUnitTest::Test_Variant(void)
 
         value_variant = value_CTime;
         CPPUNIT_ASSERT( CVariant( value_CTime ) == value_variant );
+
+    }
+
+    // Check assigning of values of same type ...
+    {
+        CVariant variant_Int8( value_Int8 );
+        CPPUNIT_ASSERT( !variant_Int8.IsNull() );
+        variant_Int8 = CVariant( value_Int8 );
+        variant_Int8 = value_Int8;
+
+        CVariant variant_Int4( value_Int4 );
+        CPPUNIT_ASSERT( !variant_Int4.IsNull() );
+        variant_Int4 = CVariant( value_Int4 );
+        variant_Int4 = value_Int4;
+
+        CVariant variant_Int2( value_Int2 );
+        CPPUNIT_ASSERT( !variant_Int2.IsNull() );
+        variant_Int2 = CVariant( value_Int2 );
+        variant_Int2 = value_Int2;
+
+        CVariant variant_Uint1( value_Uint1 );
+        CPPUNIT_ASSERT( !variant_Uint1.IsNull() );
+        variant_Uint1 = CVariant( value_Uint1 );
+        variant_Uint1 = value_Uint1;
+
+        CVariant variant_float( value_float );
+        CPPUNIT_ASSERT( !variant_float.IsNull() );
+        variant_float = CVariant( value_float );
+        variant_float = value_float;
+
+        CVariant variant_double( value_double );
+        CPPUNIT_ASSERT( !variant_double.IsNull() );
+        variant_double = CVariant( value_double );
+        variant_double = value_double;
+
+        CVariant variant_bool( value_bool );
+        CPPUNIT_ASSERT( !variant_bool.IsNull() );
+        variant_bool = CVariant( value_bool );
+        variant_bool = value_bool;
+
+        CVariant variant_string( value_string );
+        CPPUNIT_ASSERT( !variant_string.IsNull() );
+        variant_string = CVariant( value_string );
+        variant_string = value_string;
+
+        CVariant variant_char( value_char );
+        CPPUNIT_ASSERT( !variant_char.IsNull() );
+        variant_char = CVariant( value_char );
+        variant_char = value_char;
+
+        CVariant variant_CTimeShort( value_CTime, eShort );
+        CPPUNIT_ASSERT( !variant_CTimeShort.IsNull() );
+        variant_CTimeShort = CVariant( value_CTime, eShort );
+
+        CVariant variant_CTimeLong( value_CTime, eLong );
+        CPPUNIT_ASSERT( !variant_CTimeLong.IsNull() );
+        variant_CTimeLong = CVariant( value_CTime, eLong );
+
+//        explicit CVariant(CDB_Object* obj);
 
     }
 
@@ -838,6 +1047,8 @@ CDBAPIUnitTest::Test_Variant(void)
             CPPUNIT_ASSERT( CVariant( double(1) ) == CVariant( double(1) ) );
             CPPUNIT_ASSERT( CVariant( string("abcd") ) == CVariant( string("abcd") ) );
             CPPUNIT_ASSERT( CVariant( "abcd" ) == CVariant( "abcd" ) );
+            CPPUNIT_ASSERT( CVariant( value_CTime, eShort ) == CVariant( value_CTime, eShort ) );
+            CPPUNIT_ASSERT( CVariant( value_CTime, eLong ) == CVariant( value_CTime, eLong ) );
         }
     }
 
@@ -855,6 +1066,10 @@ CDBAPIUnitTest::Test_Variant(void)
             CPPUNIT_ASSERT( CVariant( double(-1) ) < CVariant( double(1) ) );
             CPPUNIT_ASSERT( CVariant( string("abcd") ) < CVariant( string("bcde") ) );
             CPPUNIT_ASSERT( CVariant( "abcd" ) < CVariant( "bcde" ) );
+            CTime new_time = value_CTime;
+            new_time += 1;
+            CPPUNIT_ASSERT( CVariant( value_CTime, eShort ) < CVariant( new_time, eShort ) );
+            CPPUNIT_ASSERT( CVariant( value_CTime, eLong ) < CVariant( new_time, eLong ) );
         }
 
         // Check comparasion wit Uint1(0) ...
@@ -874,29 +1089,6 @@ CDBAPIUnitTest::Test_Variant(void)
 
     // Check GetType
     {
-//        enum EDB_Type {
-//            eDB_Int,
-//            eDB_SmallInt,
-//            eDB_TinyInt,
-//            eDB_BigInt,
-//            eDB_VarChar,
-//            eDB_Char,
-//            eDB_VarBinary,
-//            eDB_Binary,
-//            eDB_Float,
-//            eDB_Double,
-//            eDB_DateTime,
-//            eDB_SmallDateTime,
-//            eDB_Text,
-//            eDB_Image,
-//            eDB_Bit,
-//            eDB_Numeric,
-
-//            eDB_UnsupportedType,
-//            eDB_LongChar,
-//            eDB_LongBinary
-//        };
-
         const CVariant variant_Int8( value_Int8 );
         CPPUNIT_ASSERT_EQUAL( eDB_BigInt, variant_Int8.GetType() );
 
@@ -930,6 +1122,10 @@ CDBAPIUnitTest::Test_Variant(void)
     }
 
     // Check AsNotNullString
+    {
+    }
+
+    // Assignment of bound values ...
     {
     }
 }
@@ -1102,6 +1298,9 @@ int main(int argc, const char* argv[])
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2005/02/16 21:46:40  ssikorsk
+ * Improved CVariant test
+ *
  * Revision 1.5  2005/02/16 20:01:20  ssikorsk
  * Added CVariant test
  *

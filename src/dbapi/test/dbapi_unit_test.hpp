@@ -62,17 +62,17 @@ private:
 
 class CDBAPIUnitTest : public CPPUNIT_NS::TestFixture
 {
-  CPPUNIT_TEST_SUITE( CDBAPIUnitTest );
-  CPPUNIT_TEST( Test_Variant );
-  CPPUNIT_TEST( TestGetRowCount );
-  CPPUNIT_TEST_SUITE_END();
+    CPPUNIT_TEST_SUITE( CDBAPIUnitTest );
+    CPPUNIT_TEST( Test_Variant );
+    CPPUNIT_TEST( TestGetRowCount );
+    CPPUNIT_TEST_SUITE_END();
 
 public:
     CDBAPIUnitTest();
 
 public:
-  void setUp();
-  void tearDown();
+    void setUp();
+    void tearDown();
 
 public:
 
@@ -140,6 +140,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2005/02/16 21:46:40  ssikorsk
+ * Improved CVariant test
+ *
  * Revision 1.5  2005/02/16 20:01:20  ssikorsk
  * Added CVariant test
  *
