@@ -54,6 +54,7 @@ protected:
     void RunSearchEngine();
     void x_ResetQueryDs();
 private:
+    BlastScoringParameters* m_ipScoringParams;
     BlastExtensionParameters* m_ipExtParams;
     BlastHitSavingParameters* m_ipHitParams;
     BlastEffectiveLengthsParameters* m_ipEffLenParams;
@@ -72,6 +73,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/05/07 15:40:19  papadopo
+* add BlastScoringParameters private member
+*
 * Revision 1.4  2004/03/16 23:30:25  dondosha
 * Changed mi_ to m_i in member field names
 *
