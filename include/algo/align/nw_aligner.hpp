@@ -128,6 +128,18 @@ public:
 
     void SetSeqIds(const string& id1, const string& id2);
 
+    // progress reporting
+    struct SProgressInfo
+    {
+        SProgressInfo(): m_iter_done(0), m_iter_total(0), m_data(0) {}
+        size_t m_iter_done;
+        size_t m_iter_total;
+        void*  m_data;
+    };
+
+    typedef bool (*ProgressCallback_t) (const SProgressInfo*);
+    void SetProgressCallback ( ProgressCallback_t prg_callback, void* data );
+
     // Getters
     static TScore GetDefaultWm  () { return  1; }
     static TScore GetDefaultWms () { return -3; }
@@ -155,6 +167,11 @@ protected:
     TScore                m_Matrix [256][256];
     void x_LoadScoringMatrix();
 
+    // progress callback (true return value indicates exit request)
+    ProgressCallback_t    m_prg_callback;
+    // progress status
+    SProgressInfo         m_prg_info;
+
     // Source sequences
     string                m_Seq1Id;
     const char*           m_Seq1;
@@ -181,6 +198,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/02/04 23:04:38  kapustin
+ * Add progress callback support
+ *
  * Revision 1.7  2003/01/30 20:32:51  kapustin
  * Add EstiamteRunningTime()
  *

@@ -80,9 +80,9 @@ static const char matrix_blosum62[kBlosumSize][kBlosumSize] = {
 };
 
 
-CNWAligner::CNWAligner(const char* seq1, size_t len1,
-                       const char* seq2, size_t len2,
-                       EScoringMatrixType matrix_type)
+CNWAligner::CNWAligner( const char* seq1, size_t len1,
+                        const char* seq2, size_t len2,
+                        EScoringMatrixType matrix_type )
     throw(CNWAlignerException)
     : m_Wm(GetDefaultWm()),
       m_Wms(GetDefaultWms()),
@@ -91,7 +91,8 @@ CNWAligner::CNWAligner(const char* seq1, size_t len1,
       m_Seq1(seq1), m_SeqLen1(len1),
       m_Seq2(seq2), m_SeqLen2(len2),
       m_MatrixType(matrix_type),
-      m_score(kInfMinus)
+      m_score(kInfMinus),
+      m_prg_callback(0)
 {
     if(!seq1 || !seq2)
         NCBI_THROW(
@@ -157,8 +158,8 @@ const unsigned char kMaskD   = 0x0008;
 
 int CNWAligner::Run()
 {
-    const int N1 = m_SeqLen1 + 1;
-    const int N2 = m_SeqLen2 + 1;
+    const size_t N1 = m_SeqLen1 + 1;
+    const size_t N2 = m_SeqLen2 + 1;
 
     TScore* rowV    = new TScore [N2];
     TScore* rowF    = new TScore [N2];
@@ -171,15 +172,30 @@ int CNWAligner::Run()
     const char* seq1 = m_Seq1 - 1;
     const char* seq2 = m_Seq2 - 1;
 
-    // first row
-    rowV[0] = m_Wg;
-    int k;
-    for (k = 1; k < N2; k++) {
-        rowV[k] = pV[k] + m_Ws;
-        rowF[k] = kInfMinus;
-        backtrace_matrix[k] = kMaskE | kMaskEc;
+    bool bNowExit = false;
+
+    if(m_prg_callback) {
+        m_prg_info.m_iter_total = N1*N2;
+        m_prg_info.m_iter_done = 0;
+        bNowExit = m_prg_callback(&m_prg_info);
     }
-    rowV[0] = 0;
+
+    // first row
+    size_t k;
+    if(!bNowExit) {
+        rowV[0] = m_Wg;
+        for (k = 1; k < N2; k++) {
+            rowV[k] = pV[k] + m_Ws;
+            rowF[k] = kInfMinus;
+            backtrace_matrix[k] = kMaskE | kMaskEc;
+        }
+        rowV[0] = 0;
+    }
+
+    if(m_prg_callback) {
+        m_prg_info.m_iter_done = k;
+        bNowExit = m_prg_callback(&m_prg_info);
+    }
 
     // recurrences
     TScore V  = 0;
@@ -187,8 +203,8 @@ int CNWAligner::Run()
     TScore E, G, n0;
     unsigned char tracer;
 
-    int i, j;
-    for(i = 1;  i < N1;  ++i) {
+    size_t i, j;
+    for(i = 1;  i < N1 && !bNowExit;  ++i) {
         
         V = V0 += m_Ws;
         E = kInfMinus;
@@ -241,9 +257,16 @@ int CNWAligner::Run()
         }
 
         pV[j] = V;
+
+        if(m_prg_callback) {
+            m_prg_info.m_iter_done = k;
+            bNowExit = m_prg_callback(&m_prg_info);
+        }
     }
     
-    x_DoBackTrace(backtrace_matrix);
+    if(!bNowExit) {
+        x_DoBackTrace(backtrace_matrix);
+    }
 
     delete[] backtrace_matrix;
     delete[] rowV;
@@ -692,6 +715,14 @@ unsigned CNWAligner::EstimateRunningTime(unsigned test_duration_sec)
 }
 
 
+void CNWAligner::SetProgressCallback ( ProgressCallback_t prg_callback,
+                                       void* data )
+{
+    m_prg_callback = prg_callback;
+    m_prg_info.m_data = data;
+}
+
+
 // Load pairwise scoring matrix
 void CNWAligner::x_LoadScoringMatrix()
 {
@@ -772,6 +803,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/02/04 23:04:50  kapustin
+ * Add progress callback support
+ *
  * Revision 1.11  2003/01/31 02:55:48  lavr
  * User proper argument for ::time()
  *
