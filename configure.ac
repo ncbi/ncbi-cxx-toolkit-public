@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.337 2004/12/23 16:58:58 vakatov Exp $
+#  $Id: configure.ac,v 1.338 2005/01/07 17:03:19 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3563,6 +3563,11 @@ test -d SunWS_cache  &&  rm -r SunWS_cache
 NCBI_CHECK_THIRD_PARTY_LIB(expat,
  AC_LANG_PROGRAM([#include <expat.h>],
     [XML_Parser parser = XML_ParserCreate("utf-8");]))
+if test -f "${EXPAT_PATH}/lib${bit64_sfx}/libexpat-static.a"; then
+   EXPAT_STATIC_LIBS="-L${EXPAT_PATH}/lib${bit64_sfx} -lexpat-static"
+else
+   EXPAT_STATIC_LIBS=${EXPAT_LIBS}
+fi
 : ${SABLOT_PATH=$NCBI/Sablot}
 vpath="$SABLOT_PATH/${compiler_vpfx}build"
 test -d "$vpath"  &&  SABLOT_PATH=$vpath
@@ -3571,6 +3576,11 @@ NCBI_CHECK_THIRD_PARTY_LIB(sablot,
     [SDOM_Document* D; int x = SablotParse(NULL, "file:/dev/null", D);]),
  $EXPAT_LIBS)
 test -d SunWS_cache  &&  rm -r SunWS_cache
+if test -f "${SABLOT_PATH}/lib${bit64_sfx}/libsablot-static.a"; then
+   SABLOT_STATIC_LIBS="-L${SABLOT_PATH}/lib${bit64_sfx} -lsablot-static $EXPAT_STATIC_LIBS"
+else
+   SABLOT_STATIC_LIBS=${SABLOT_LIBS}
+fi
 
 : ${LIBXML_PATH=$NCBI/libxml}
 vpath="$LIBXML_PATH/${compiler_vpfx}${release_debug}${mt_sfx}"
@@ -4211,6 +4221,8 @@ AC_SUBST(ORBACUS_INCLUDE)
 AC_SUBST(ORBACUS_LIBPATH)
 AC_SUBST(LIBOB)
 AC_SUBST(LIBIMR)
+AC_SUBST(EXPAT_STATIC_LIBS)
+AC_SUBST(SABLOT_STATIC_LIBS)
 
 AC_SUBST(NCBI_C_ncbi)
 
