@@ -1,10 +1,4 @@
-#################################
-# $Id$
-# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
-#################################
-
-# Build test CoreLib application "test_overwrite"
-#################################
+$Id$
 
 APP = test_overwrite
 SRC = overwrite
