@@ -25,9 +25,6 @@ property pCreateSocketLibs : true (* whether to create/compile socket libs *)
 -- Whether to compile everything.
 property pShouldBuild : true
 
--- Putting a project tree inside a tool tree is evil.
-property CPPROOT : "cxx:" (* head of C++ toolkit tree within CodeWarrior folder *)
-
 property pDirsToCreate : {{relPath:"compilers:mac_prj", name:"lib"}}
 
 property pDebugPrefix : "debug.pfx"
@@ -407,7 +404,6 @@ on SetGlobals()
 		
 	end tell
 end SetGlobals
-
 
 on HeaderExists(header, headerDir)
 	tell application "Finder"
@@ -943,11 +939,7 @@ end BuildAllProjects
 
 on SignalCompletion()
 	
-	try
-		say "Make complete."
-	on error
-		beep
-	end try
+	beep
 	
 end SignalCompletion
 
