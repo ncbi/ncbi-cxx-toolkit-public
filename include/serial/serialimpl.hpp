@@ -344,6 +344,8 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 		NCBI_NAME2(Class,_Base)::GetTypeInfo, \
         NCBI_NS_NCBI::CClassTypeInfo, \
         NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateClassInfo(Name))
+#define BEGIN_BASE_CLASS_INFO(Class) \
+	BEGIN_NAMED_BASE_CLASS_INFO(#Class, Class)
 
 #define END_CLASS_INFO END_TYPE_INFO
 
