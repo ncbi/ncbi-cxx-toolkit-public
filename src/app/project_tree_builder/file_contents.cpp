@@ -158,7 +158,7 @@ static bool s_SplitKV(const string& line, string* key, string* value)
     if ( !NStr::SplitInTwo(line, "=", *key, *value) )
 	    return false;
 
-    *key = NStr::TruncateSpaces(*key); // only for key - preserve sp for vals
+    NStr::TruncateSpaces(*key); // only for key - preserve sp for vals
     if ( s_WillContinue(*value) ) 
 	    s_StripContinueStr(value);		
 
@@ -243,6 +243,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/10/05 16:15:26  shomrat
+ * Use in place NStr::TruncateSpaces
+ *
  * Revision 1.12  2004/07/20 13:38:40  gouriano
  * Added conditional macro definition
  *

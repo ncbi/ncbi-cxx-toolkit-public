@@ -97,7 +97,7 @@ int CTestID1ClientApp::Run(void)
     while ( !in.eof() ) {
         *m_Out << "-- " << flush;
         NcbiGetlineEOL(in, command);
-        command = NStr::TruncateSpaces(command);
+        NStr::TruncateSpaces(command);
         if (command == "exit"  ||  command == "quit") {
             break;
         }
@@ -188,6 +188,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/10/05 16:16:49  shomrat
+* Use in place NStr::TruncateSpaces
+*
 * Revision 1.7  2004/07/01 15:47:09  ucko
 * Report exceptions thrown by RunCommand, rather than letting them kill
 * the program.

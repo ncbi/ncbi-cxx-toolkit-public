@@ -1250,13 +1250,16 @@ bool s_ParseErrCodeInfoStr(string&          str,
         tokens.pop_front();
 
         // Error code
-        string token = NStr::TruncateSpaces(tokens.front());
+        string token = tokens.front();
         tokens.pop_front();
+        NStr::TruncateSpaces(token);
         x_code = NStr::StringToInt(token);
 
         // Severity
-        if (!tokens.empty()) { 
-            token = NStr::TruncateSpaces(tokens.front());
+        if (!tokens.empty()) {
+
+            token = tokens.front();
+            NStr::TruncateSpaces(token);
             EDiagSev sev;
             if (CNcbiDiag::StrToSeverityLevel(token.c_str(), sev)) {
                 x_severity = sev;
@@ -1367,6 +1370,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.83  2004/10/05 16:13:57  shomrat
+ * Use in place NStr::TruncateSpaces
+ *
  * Revision 1.82  2004/09/22 13:32:17  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
