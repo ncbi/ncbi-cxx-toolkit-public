@@ -53,6 +53,7 @@
  *
  *  SOCK_Create (see also LSOCK_Accept)
  *  SOCK_Reconnect
+ *  SOCK_Shutdown
  *  SOCK_Close
  *  SOCK_Wait
  *  SOCK_SetTimeout
@@ -60,7 +61,7 @@
  *  SOCK_GetWriteTimeout
  *  SOCK_Read (including "peek" and "persistent read")
  *  SOCK_PushBack
- *  SOCK_Eof
+ *  SOCK_Status
  *  SOCK_Write
  *  SOCK_GetAddress
  *
@@ -77,6 +78,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/11/15 18:51:05  vakatov
+ * Add SOCK_Shutdown() and SOCK_Status().  Remove SOCK_Eof().
+ *
  * Revision 6.5  2000/06/23 19:34:41  vakatov
  * Added means to log binary data
  *
@@ -275,7 +279,17 @@ extern EIO_Status SOCK_Reconnect
  );
 
 
-/* [CLIENT-side]  Close the connection, destroy relevant internal data.
+/* Shutdown the connection in only one direction (specified by "direction").
+ * Later attempts to I/O (or to wait) in the shutdowned direction will
+ * do nothing, and immediately return with "eIO_Closed" status.
+ */
+extern EIO_Status SOCK_Shutdown
+(SOCK      sock,
+ EIO_Event how   /* [in] one of:  eIO_Read, eIO_Write, eIO_ReadWrite */
+ );
+
+
+/* Close the connection, destroy relevant internal data.
  * The "sock" handle goes invalid after this function call, regardless
  * of whether the call was successful or not.
  * NOTE: if eIO_Close timeout was specified then it blocks until
@@ -320,8 +334,8 @@ extern const STimeout* SOCK_GetTimeout
  * In "*n_read", return the number of succesfully read bytes.
  * If there is no data available to read (also, if eIO_Persist and cannot
  * read exactly "size" bytes) and the timeout(see SOCK_SetTimeout) is expired
- * then return eSOCK_ETimeout.
- * NOTE: Theoretically, eSOCK_Closed may indicate an empty message
+ * then return eIO_Timeout.
+ * NOTE: Theoretically, eIO_Closed may indicate an empty message
  *       rather than a real closure of the connection...
  */
 extern EIO_Status SOCK_Read
@@ -344,20 +358,29 @@ extern EIO_Status SOCK_PushBack
  );
 
 
-/* Return a non-zero value if EOF was hit (detected) during the last
- * call to SOCK_Read("sock", ...).
- * NOTE:  the input operations do not return SOCK_eClosed unless there
- *        is no more data to read/peek;  thus, in the case of Peek, this is
- *        the only "non-destructive" way to check whether we already hit
- *        the EOF or there is still more data to come.
+/* Return (for the specified "direction"):
+ *   eIO_Closed     -- if the connection was shutdown by SOCK_Shutdown(), or
+ *                     (for "eIO_Read" only) if EOF was detected
+ *   eIO_Unknown    -- if an error was detected during the last I/O
+ *   eIO_InvalidArg -- if "direction" is not one of:  eIO_Read, eIO_Write
+ *   eIO_Success    -- otherwise (incl. eIO_Timeout on last I/O)
+ *
+ * NOTE:  The SOCK_Read() and SOCK_Wait(eIO_Read) will not return any error
+ *        as long as there is any unread (buffered) data left.
+ *        Thus, when you are "peeking" data instead of actually reading it,
+ *        then this is the only "non-destructive" way to check whether EOF
+ *        or an error has occured on read.
  */
-extern int SOCK_Eof(SOCK sock);
+extern EIO_Status SOCK_Status
+(SOCK      sock,
+ EIO_Event direction  /* [in] one of:  eIO_Read, eIO_Write */
+ );
 
 
 /* Write "size" bytes from the mem.buffer "buf" to "sock".
  * In "*n_written", return the number of successfully written bytes.
  * If cannot write all data and the timeout(see SOCK_SetTimeout()) is expired
- * then return eSOCK_ETimeout.
+ * then return eIO_Timeout.
  */
 extern EIO_Status SOCK_Write
 (SOCK        sock,
