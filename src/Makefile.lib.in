@@ -39,7 +39,7 @@ XLIBDEP = .$(LIB).dep
 
 $(XLIB): $(XLIBOBJ)
 	-$(RM) $(XLIB)
-	$(AR) @f_outlib@$(XLIB) `lorder $(XLIBOBJ) $(XLOBJ) | tsort`
+	$(AR) @f_outlib@$(XLIB) `@LORDER@ $(XLIBOBJ) $(XLOBJ) | @TSORT@`
 	@$(RANLIB) $(XLIB)
 	$(TOUCH) -r $(XLIB) $(XLIBDEP)
 	$(BINCOPY) $(XLIB) $(libdir)

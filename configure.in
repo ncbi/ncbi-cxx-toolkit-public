@@ -727,7 +727,13 @@ fi
 AC_PROG_RANLIB
 AC_CHECK_PROG(AR, ar, ar cr, ErrorCannotFind_AR)
 AC_CHECK_PROG(STRIP, strip, strip, :)
-
+AC_CHECK_PROG(LORDER, lorder, lorder, echo)
+AC_CHECK_PROG(TSORT, tsort, tsort, cat)
+if test "$LORDER" = echo -o "$TSORT" = cat; then
+   # We need a matched pair...either lorder:tsort or echo:cat.
+   LORDER=echo
+   TSORT=cat
+fi
 
 #### Check if "${exec_prefix}" is defined;  provide a default one
 if test -z "${exec_prefix}"  ||  test "${exec_prefix}" = "NONE" ; then
