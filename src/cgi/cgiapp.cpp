@@ -321,7 +321,7 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
             os << descr->PrintUsage(ustr) << HTTP_EOL HTTP_EOL;
         }
     }
-    
+
 
     // Check for problems in sending the response
     if ( !os.good() ) {
@@ -332,29 +332,31 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
     return 0;
 }
 
+
 const CArgs& CCgiApplication::GetArgs(void) const
 {
-    CArgs& args = const_cast<CArgs&>(CParent::GetArgs());
-    
-    if (m_ArgContextSync) {
-        return args;
-    }
-    
-    const CCgiContext& ctx = GetContext();  
-    const CCgiRequest& req  = ctx.GetRequest();
-    const TCgiEntries& cgi_entries = req.GetEntries(); 
+    // Are there no argument descriptions or no CGI context (yet?)
+    if (!GetArgDescriptions()  ||  !m_Context.get())
+        return CParent::GetArgs();
 
-    const CArgDescriptions* arg_desc = GetArgDescriptions();
+    // Is everything already in-sync
+    if ( m_ArgContextSync )
+        return *m_CgiArgs;
 
-    if (!arg_desc) {
-        return args;
-    }
+    // Create CGI version of args, if necessary
+    if ( !m_CgiArgs.get() )
+        m_CgiArgs.reset(new CArgs());
 
-    arg_desc->ConvertKeys(&args, cgi_entries, true /*update=yes*/);
+    // Copy cmd-line arg values to CGI args
+    *m_CgiArgs = CParent::GetArgs();
+
+    // Add CGI parameters to the CGI version of args
+    GetArgDescriptions()->ConvertKeys(m_CgiArgs.get(),
+                                      GetContext().GetRequest().GetEntries(),
+                                      true /*update=yes*/);
 
     m_ArgContextSync = true;
-
-    return args;
+    return *m_CgiArgs;
 }
 
 
@@ -805,6 +807,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.60  2005/03/10 18:04:23  vakatov
+* GetArgs() -- fixes, mostly to avoid unintended caching of arg values in FCGI
+*
 * Revision 1.59  2004/12/27 20:31:38  vakatov
 * + CCgiApplication::OnEvent() -- to allow one catch and handle a variety of
 *   states and events happening in the CGI and Fast-CGI applications
