@@ -282,7 +282,7 @@ bool CRemoteBlast::CheckDone(void)
 
 CRemoteBlast::TGSRR * CRemoteBlast::x_GetGSRR(void)
 {
-    TGSRR * rv(0);
+    TGSRR* rv = NULL;
     
     if (SubmitSync() &&
         m_Reply.NotEmpty() &&
@@ -768,6 +768,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/05/05 17:39:46  dicuccio
+* Fixed syntax error on MSVC6
+*
 * Revision 1.9  2004/05/05 15:35:30  bealer
 * - Features:
 *   - Add PSSM queries (for PSI-Blast) and seq-loc-list.
