@@ -10056,7 +10056,7 @@ local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_service_lbsmd"
 
 # The IPC stuff doesn't build on Cygwin or Darwin.
 case "$host_os" in
-  cygwin32 | darwin ) with_local_lbsm="no" ;;
+  cygwin32 | darwin* ) with_local_lbsm="no" ;;
 esac
 
 for fff in $local_lbsm ; do
@@ -10080,11 +10080,10 @@ fi
 
 
 ## daemons under 'connect' don't build on Darwin (MacOS X)
-if test "x$host_os" = "xdarwin"; then
-   daemons=
-else
-   daemons=daemons
-fi
+case "$host_os" in
+  darwin* ) daemons= ;;
+  *)        daemons=daemons ;;
+esac
 
 
 ## `serial' projects
