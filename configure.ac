@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.187 2003/05/05 20:45:28 ucko Exp $
+#  $Id: configure.ac,v 1.188 2003/05/19 18:41:30 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -597,7 +597,7 @@ case "$host_os:$compiler" in
    LDFLAGS="-xildoff $LDFLAGS"
    AR=${AR:="$CXX $MT_FLAG -xar -o"}
    STRIP="@:"
-   if test "$with_debug" = "no" ; then
+   if test "$with_debug" = "no" -a "$with_profiling" != "yes" ; then
       LDFLAGS="-s $LDFLAGS"
    fi
    RANLIB=":"

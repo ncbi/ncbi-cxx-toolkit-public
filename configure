@@ -3510,7 +3510,7 @@ case "$host_os:$compiler" in
    LDFLAGS="-xildoff $LDFLAGS"
    AR=${AR:="$CXX $MT_FLAG -xar -o"}
    STRIP="@:"
-   if test "$with_debug" = "no" ; then
+   if test "$with_debug" = "no" -a "$with_profiling" != "yes" ; then
       LDFLAGS="-s $LDFLAGS"
    fi
    RANLIB=":"
