@@ -38,7 +38,7 @@
  * ---------------------------------------------------------------------------
  */
 
-#include <connect/ncbi_socket.h>
+#include <connect/ncbi_socket_unix.h>
 #include <corelib/ncbitype.h>
 #include <corelib/ncbimisc.hpp>
 #include <string>
@@ -95,6 +95,11 @@ public:
     // NOTE 2:  timeout from the argument becomes new eIO_Open timeout.
     CSocket(const string&   host,
             unsigned short  port,      // always in host byte order
+            const STimeout* timeout = kInfiniteTimeout,
+            ESwitch         log     = eDefault);
+    // Variant of the above, which takes host as a binary value in network b.o.
+    CSocket(unsigned int    host,      // network byte order
+            unsigned short  port,      // host byte order
             const STimeout* timeout = kInfiniteTimeout,
             ESwitch         log     = eDefault);
 
@@ -173,12 +178,13 @@ public:
     ESwitch SetInterruptOnSignal(ESwitch interrupt = eOn);
     // NOTE:  use CSocketAPI::SetReuseAddress() to set the default value
     void    SetReuseAddress(ESwitch reuse = eOff);
-    //
+    // NOTE:  see comments for SOCK_DisableOSSendDelay() in ncbi_socket.h
     void    DisableOSSendDelay(bool on_off = true);
 
     bool IsClientSide(void) const;
     bool IsServerSide(void) const;
     bool IsDatagram  (void) const;
+    bool IsUNIX      (void) const;
 
     // Close the current underlying "SOCK" (if any, and if owned),
     // and from now on use "sock" as the underlying "SOCK" instead.
@@ -188,21 +194,20 @@ public:
 protected:
     SOCK       m_Socket;
     EOwnership m_IsOwned;
+    // Timeouts
+    STimeout*  o_timeout;  // eIO_Open
+    STimeout*  r_timeout;  // eIO_Read
+    STimeout*  w_timeout;  // eIO_Write
+    STimeout*  c_timeout;  // eIO_Close
+    STimeout  oo_timeout;  // storage for o_timeout
+    STimeout  rr_timeout;  // storage for r_timeout
+    STimeout  ww_timeout;  // storage for w_timeout
+    STimeout  cc_timeout;  // storage for c_timeout
 
 private:
     // disable copy constructor and assignment
     CSocket(const CSocket&);
     CSocket& operator= (const CSocket&);
-
-    // Timeouts
-    STimeout* o_timeout;  // eIO_Open
-    STimeout* r_timeout;  // eIO_Read
-    STimeout* w_timeout;  // eIO_Write
-    STimeout* c_timeout;  // eIO_Close
-    STimeout oo_timeout;  // storage for o_timeout
-    STimeout rr_timeout;  // storage for r_timeout
-    STimeout ww_timeout;  // storage for w_timeout
-    STimeout cc_timeout;  // storage for c_timeout
 };
 
 
@@ -307,10 +312,11 @@ public:
     LSOCK              GetLSOCK   (void) const;
     virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const;
 
-private:
+protected:
     LSOCK      m_Socket;
     EOwnership m_IsOwned;
 
+private:
     // disable copy constructor and assignment
     CListeningSocket(const CListeningSocket&);
     CListeningSocket& operator= (const CListeningSocket&);
@@ -483,6 +489,11 @@ inline bool CSocket::IsDatagram(void) const
 }
 
 
+inline bool CSocket::IsUNIX(void) const
+{
+    return m_Socket && SOCK_IsUNIX(m_Socket) ? true : false;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDatagramSocket::
@@ -626,6 +637,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.39  2004/10/26 14:45:53  lavr
+ * <ncbi_socket.hpp> -> <ncbi_socket_unix.hpp>
+ *
  * Revision 6.38  2004/10/19 18:13:06  lavr
  * +CSocket::DisableOSSendDelay()
  *
