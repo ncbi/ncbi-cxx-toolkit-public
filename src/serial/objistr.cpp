@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.101  2003/02/10 20:09:43  vasilche
+* Restored _TRACE in CObjectIStream.
+*
 * Revision 1.100  2003/01/28 15:26:14  vasilche
 * Added low level CObjectIStream::EndDelayBuffer(void);
 *
@@ -427,9 +430,6 @@
 // In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
 # include <float.h>
 #endif
-
-#undef _TRACE
-#define _TRACE(arg) ((void)0)
 
 BEGIN_NCBI_SCOPE
 
