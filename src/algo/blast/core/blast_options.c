@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.38  2003/07/23 17:31:10  camacho
+ * BlastDatabaseParameters struct is deprecated
+ *
  * Revision 1.37  2003/07/23 16:42:01  dondosha
  * Formatting options moved from blast_options.c to blast_format.c
  *
@@ -1058,8 +1061,7 @@ Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr PNTR db_options)
 BlastDatabaseOptionsPtr 
 BlastDatabaseOptionsFree(BlastDatabaseOptionsPtr db_options)
 {
-   MemFree(db_options->database);
-   MemFree(db_options->entrez_query);
+   MemFree(db_options->gen_code_string);
    
    return (BlastDatabaseOptionsPtr) MemFree(db_options);
 }

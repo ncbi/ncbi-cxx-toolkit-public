@@ -831,7 +831,7 @@ BlastOOFGetNumIdentical(Uint1Ptr query_seq, Uint1Ptr subject_seq,
  * @param sbp Statistical parameters [in]
  * @param score_options Scoring parameters [in]
  * @param hit_params Hit saving parameters [in]
- * @param db_params Parameters containing database genetic code string [in]
+ * @param db_options Options containing database genetic code string [in]
  */
 static Int2
 BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list, 
@@ -840,7 +840,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
    BlastGapAlignStructPtr gap_align, BLAST_ScoreBlkPtr sbp, 
    BlastScoringOptionsPtr score_options,
    BlastHitSavingParametersPtr hit_params,
-   BlastDatabaseParametersPtr db_params)
+   const BlastDatabaseOptionsPtr db_options)
 {
    Int4 index, index1, index2;
    Boolean hsp_start_is_contained, hsp_end_is_contained, do_not_do;
@@ -876,16 +876,16 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
    hsp_array = hsp_list->hsp_array;
    
    if (translate_subject) {
-      if (!db_params)
+      if (!db_options)
          return -1;
       nucl_sequence = subject_blk->sequence_start;
       if (is_ooframe) {
          BLAST_GetAllTranslations(nucl_sequence, NCBI4NA_ENCODING,
-            subject_blk->length, db_params->gen_code_string,
+            subject_blk->length, db_options->gen_code_string,
             &translation_buffer, &frame_offsets, &subject_blk->oof_sequence);
       } else {
          BLAST_GetAllTranslations(nucl_sequence, NCBI4NA_ENCODING,
-            subject_blk->length, db_params->gen_code_string, 
+            subject_blk->length, db_options->gen_code_string, 
             &translation_buffer, &frame_offsets, NULL);
       }
    }
@@ -1208,7 +1208,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results,
         BlastScoringOptionsPtr score_options,
         BlastExtensionParametersPtr ext_params,
         BlastHitSavingParametersPtr hit_params,
-        BlastDatabaseParametersPtr db_params)
+        const BlastDatabaseOptionsPtr db_options)
 {
    Int2 status = 0;
    Int4 query_index, subject_index;
@@ -1253,7 +1253,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results,
 
             BlastHSPListGetTraceback(program_number, hsp_list, query, 
                seq_arg.seq, query_info, gap_align, sbp, score_options, 
-               hit_params, db_params);
+               hit_params, db_options);
          }
       }
    }
@@ -1274,7 +1274,7 @@ Int2 BLAST_TwoSequencesTraceback(Uint1 program_number,
         BlastScoringOptionsPtr score_options,
         BlastExtensionParametersPtr ext_params,
         BlastHitSavingParametersPtr hit_params,
-        BlastDatabaseParametersPtr db_params)
+        const BlastDatabaseOptionsPtr db_options)
 {
    Int2 status = 0;
    Int4 query_index;
@@ -1320,7 +1320,7 @@ Int2 BLAST_TwoSequencesTraceback(Uint1 program_number,
 
       if (!hsp_list->traceback_done) {
          BlastHSPListGetTraceback(program_number, hsp_list, query, subject, 
-            query_info, gap_align, sbp, score_options, hit_params, db_params);
+            query_info, gap_align, sbp, score_options, hit_params, db_options);
 
       }
    }

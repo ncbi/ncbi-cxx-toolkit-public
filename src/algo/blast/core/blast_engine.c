@@ -125,7 +125,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlkPtr query,
    BlastExtensionParametersPtr ext_params, 
    BlastHitSavingParametersPtr hit_params, 
    const PSIBlastOptionsPtr psi_options, 
-   const BlastDatabaseParametersPtr db_params,
+   const BlastDatabaseOptionsPtr db_options,
    BlastReturnStatPtr return_stats,
    BlastCoreAuxStructPtr aux_struct,
    BlastHSPListPtr PNTR hsp_list_out)
@@ -155,11 +155,11 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlkPtr query,
       last_context = 5;
       if (score_options->is_ooframe) {
          BLAST_GetAllTranslations(orig_sequence, NCBI2NA_ENCODING,
-            orig_length, db_params->gen_code_string, &translation_buffer,
+            orig_length, db_options->gen_code_string, &translation_buffer,
             &frame_offsets, &subject->oof_sequence);
       } else {
          BLAST_GetAllTranslations(orig_sequence, NCBI2NA_ENCODING,
-            orig_length, db_params->gen_code_string, &translation_buffer,
+            orig_length, db_options->gen_code_string, &translation_buffer,
             &frame_offsets, NULL);
       }
    } else if (program_number == blast_type_blastn) {
@@ -660,7 +660,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    const BlastHitSavingOptionsPtr hit_options,
    const BlastEffectiveLengthsOptionsPtr eff_len_options,
    const PSIBlastOptionsPtr psi_options, 
-   const BlastDatabaseParametersPtr db_params,
+   const BlastDatabaseOptionsPtr db_options,
    BlastResultsPtr results, BlastReturnStatPtr return_stats)
 {
    Uint4 max_subject_length = 0; /* Longest subject sequence */
@@ -715,7 +715,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
  
       BLAST_SearchEngineCore(program_number, query, query_info,
          seq_arg.seq, lookup_wrap, gap_align, score_options, word_params, 
-         ext_params, hit_params, psi_options, db_params,
+         ext_params, hit_params, psi_options, db_options,
          return_stats, aux_struct, &hsp_list);
  
       if (hsp_list && hsp_list->hspcnt > 0) {
@@ -742,7 +742,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
       status = 
          BLAST_ComputeTraceback(program_number, results, query, query_info,
             aux_struct->bssp, gap_align, score_options, ext_params, hit_params,
-            db_params);
+            db_options);
    }
 
    /* Do not destruct score block here */
@@ -768,7 +768,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
    const BlastHitSavingOptionsPtr hit_options, 
    const BlastEffectiveLengthsOptionsPtr eff_len_options,
    const PSIBlastOptionsPtr psi_options, 
-   const BlastDatabaseParametersPtr db_params,
+   const BlastDatabaseOptionsPtr db_options,
    BlastResultsPtr results, BlastReturnStatPtr return_stats)
 {
    BlastCoreAuxStructPtr aux_struct = NULL;
@@ -794,7 +794,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
 
    BLAST_SearchEngineCore(program_number, query, query_info, subject, 
       lookup_wrap, gap_align, score_options, word_params, ext_params, 
-      hit_params, psi_options, db_params, return_stats, aux_struct, 
+      hit_params, psi_options, db_options, return_stats, aux_struct, 
       &hsp_list);
 
    if (hsp_list && hsp_list->hspcnt > 0) {
@@ -811,7 +811,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
       status = 
          BLAST_TwoSequencesTraceback(program_number, results, query, 
             query_info, subject, gap_align, score_options, ext_params, 
-            hit_params, db_params);
+            hit_params, db_options);
    }
 
    /* Do not destruct score block here */

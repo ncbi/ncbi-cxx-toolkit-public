@@ -64,7 +64,7 @@ extern "C" {
  * @param hit_options Options for saving the HSPs [in]
  * @param eff_len_options Options for setting effective lengths [in]
  * @param psi_options Options specific to PSI-BLAST [in]
- * @param db_params Parameters for handling BLAST database [in]
+ * @param db_options Options for handling BLAST database [in]
  * @param results Structure holding all saved results [in] [out]
  * @param return_stats Return statistics containing numbers of hits on 
  *                     different stages of the search [out]
@@ -80,7 +80,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    const BlastHitSavingOptionsPtr hit_options,
    const BlastEffectiveLengthsOptionsPtr eff_len_options,
    const PSIBlastOptionsPtr psi_options, 
-   const BlastDatabaseParametersPtr db_params,
+   const BlastDatabaseOptionsPtr db_options,
    BlastResultsPtr results, BlastReturnStatPtr return_stats);
 
 /** The high level function performing BLAST comparison of two sequences,
@@ -97,7 +97,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
  * @param hit_options Options for saving the HSPs [in]
  * @param eff_len_options Options for setting effective lengths [in]
  * @param psi_options Options specific to PSI-BLAST [in]
- * @param db_params Parameters for handling BLAST database [in]
+ * @param db_options Options for handling BLAST database [in]
  * @param results Structure holding all saved results [in] [out]
  * @param return_stats Return statistics containing numbers of hits on 
  *                     different stages of the search [out]
@@ -113,7 +113,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
    const BlastHitSavingOptionsPtr hit_options, 
    const BlastEffectiveLengthsOptionsPtr eff_len_options,
    const PSIBlastOptionsPtr psi_options, 
-   const BlastDatabaseParametersPtr db_params,
+   const BlastDatabaseOptionsPtr db_options,
    BlastResultsPtr results, BlastReturnStatPtr return_stats);
 
 /** Create the lookup table for all query words.
