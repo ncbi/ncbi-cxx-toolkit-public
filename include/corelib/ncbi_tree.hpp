@@ -253,6 +253,7 @@ public:
     typedef TId                                  TIdType;
     typedef TValue                               TValueType;
     typedef CTreeNode<CTreePair<TId, TValue> >   TParent;
+    typedef typename TParent::TValueType         TTreeValueType;
     typedef CTreePair<TId, TValue>               TTreePair;
     typedef CTreePairNode<TId, TValue>           TPairTreeType;
     typedef list<TPairTreeType*>                 TPairTreeNodeList;
@@ -272,6 +273,14 @@ public:
     ///
     /// @return pointer to new subtree
     CTreePairNode<TId, TValue>* AddNode(const TId& id, const TValue& value);
+
+    /// Return TParent::TValueType 
+    /// (tree node value in terms of the upper level tree)
+    const TTreeValueType& GetTreeValue() const { return this->m_Value; }
+
+    /// Return TParent::TValueType 
+    /// (tree node value in terms of the upper level tree)
+    TTreeValueType& GetTreeValue() { return this->m_Value; }
 
     /// Return node's value
     const TValueType& GetValue() const { return this->m_Value.value; }
@@ -306,6 +315,14 @@ public:
     /// @param res
     ///    list of discovered found nodes (const pointers)
     void FindNodes(const list<TId>& node_path, TConstPairTreeNodeList* res) const;
+
+    /// Non recursive linear scan of all subnodes, with id comparison
+    ///
+    /// @return SubNode pointer or NULL
+    ///
+    /// If return value is not NULL Id and value can be received by
+    /// FindSubNode(...)->GetId(), FindSubNode(...)->GetValue()
+    const TPairTreeType* FindSubNode(const TId& id) const;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -793,6 +810,23 @@ void CTreePairNode<TId, TValue>::FindNodes(const list<TId>&         node_path,
     res->push_back((TPairTreeType*)tr);
 }
 
+template<class TId, class TValue>
+const CTreePairNode<TId, TValue>*
+CTreePairNode<TId, TValue>::FindSubNode(const TId& id) const
+{
+    TNodeList_CI it = SubNodeBegin();
+    TNodeList_CI it_end = SubNodeEnd();
+
+    for(; it != it_end; ++it) {
+        const TTreeValueType& v = (*it)->GetValue();
+        if (v.id == id) {
+            const TParent* pt = *it;
+            return (CTreePairNode<TId, TValue>*)(pt);
+        }
+    }
+    return 0;
+}
+
 /* @} */
 
 END_NCBI_SCOPE
@@ -801,6 +835,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/07/22 16:30:38  kuznets
+ * +CTreePairNode::FindSubNode
+ *
  * Revision 1.34  2004/06/15 13:01:14  ckenny
  * added breadth-first traversal algo
  *
