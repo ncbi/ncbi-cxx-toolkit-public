@@ -140,6 +140,7 @@
       <File RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_configure.hpp"></File>
       <File RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_configure_prj_generator.hpp"></File>
       <File RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_dlls_info.hpp"></File>
+      <File RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_dlls_info_utils.hpp"></File>
       <File RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_makefile.hpp"></File>
       <File RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_masterproject_generator.hpp"></File>
       <File RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_prj_defines.hpp"></File>
