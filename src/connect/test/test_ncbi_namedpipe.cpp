@@ -61,8 +61,21 @@ const size_t kBlobSize    = kNumSubBlobs * kSubBlobSize;
 static EIO_Status s_ReadPipe(CNamedPipe& pipe, void* buf, size_t size,
                              size_t* n_read) 
 {
-    EIO_Status status = pipe.Read(buf, size, n_read);
-    LOG_POST("Read from pipe "+ NStr::UIntToString(*n_read) + " bytes");
+    size_t     n_read_total = 0;
+    size_t     x_read       = 0;
+    EIO_Status status;
+    
+    do {
+        status = pipe.Read((char*)buf + n_read_total,
+                           size - n_read_total, &x_read);
+        LOG_POST("Read from pipe "+ NStr::UIntToString(x_read) + " bytes");
+        n_read_total += x_read;
+    } while (status == eIO_Success  &&  n_read_total < size);
+    
+    if (status == eIO_Timeout) {
+    	status = eIO_Success;
+    }
+    *n_read = n_read_total;
     return status;
 }
 
@@ -71,8 +84,21 @@ static EIO_Status s_ReadPipe(CNamedPipe& pipe, void* buf, size_t size,
 static EIO_Status s_WritePipe(CNamedPipe& pipe, const void* buf, size_t size,
                               size_t* n_written) 
 {
-    EIO_Status status = pipe.Write(buf, size, n_written);
-    LOG_POST("Write to pipe "+ NStr::UIntToString(*n_written) + " bytes");
+    size_t     n_written_total = 0;
+    size_t     x_written       = 0;
+    EIO_Status status;
+    
+    do {
+        status = pipe.Write((char*)buf + n_written_total,
+                           size - n_written_total, &x_written);
+        LOG_POST("Write to pipe "+ NStr::UIntToString(x_written) + " bytes");
+        n_written_total += x_written;
+    } while (status == eIO_Success  &&  n_written_total < size);
+    
+    if (status == eIO_Timeout) {
+    	status = eIO_Success;
+    }
+    *n_written = n_written_total;
     return status;
 }
 
@@ -296,6 +322,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/09/04 19:13:43  ivanov
+ * Added loop for read/write operations
+ *
  * Revision 1.4  2003/09/02 19:54:25  ivanov
  * Changed name of the test pipe. Remove test pipe if it is already exists.
  * Increased default timeout to 2 sec.
