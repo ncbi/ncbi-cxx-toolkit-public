@@ -102,18 +102,13 @@ static Int4 SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme)
 }
 
 /** Retrieves the name of the BLAST database.
- * FIXME: RIGHT NOW THERE IS NO GETTER in CSeqDB for database name
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static char* SeqDbGetName(void* /*seqdb_handle*/, void*)
+static char* SeqDbGetName(void* seqdb_handle, void*)
 {
-#if 0 // FIXME: GetName method not implemented in CSeqDb!!!
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
-    return strdup((*seqdb)->GetName().c_str());
-#else
-    return NULL;
-#endif
+    return strdup((*seqdb)->GetDBNameList().c_str());
 }
 
 /** Retrieves the definition (title) of the BLAST database.
@@ -496,6 +491,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2004/09/23 15:46:48  dondosha
+ * Use GetDBNameList method of CSeqDb class to get database name
+ *
  * Revision 1.18  2004/07/19 14:58:47  dondosha
  * Renamed multiseq_src to seqsrc_multiseq, seqdb_src to seqsrc_seqdb
  *
