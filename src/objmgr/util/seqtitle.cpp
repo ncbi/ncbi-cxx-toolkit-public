@@ -618,11 +618,14 @@ static string s_TitleFromChromosome(const CBioSource& source,
 
 static CConstRef<CSeq_feat> s_FindLongestFeature(const CSeq_loc& location,
                                                  CScope& scope,
-                                                 CSeqFeatData::E_Choice type)
+                                                 CSeqFeatData::E_Choice type,
+                                                 CFeat_CI::EFeat_Location lt
+                                                   = CFeat_CI::e_Location)
 {
     CConstRef<CSeq_feat> result;
     TSeqPos best_length = 0;
-    CFeat_CI it(scope, location, type);
+    CFeat_CI it(scope, location, type, CAnnot_CI::eOverlap_Intervals,
+                CFeat_CI::eResolve_TSE, lt);
     for (;  it;  ++it) {
         if (it->GetLocation().IsWhole()) {
             // kludge; length only works on a Seq-loc of type "whole"
@@ -661,8 +664,8 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
 
     {{
         CConstRef<CSeq_feat> cds_feat
-            = s_FindLongestFeature(everywhere, scope,
-                                   CSeqFeatData::e_Cdregion);
+            = s_FindLongestFeature(everywhere, scope, CSeqFeatData::e_Cdregion,
+                                   CFeat_CI::e_Product);
         if (cds_feat) {
             cds_loc = &cds_feat->GetLocation();
         }
@@ -813,6 +816,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2002/12/20 21:47:07  ucko
+* Add an argument of type CFeat_CI::EFeat_Location to
+* s_FindLongestFeature, and use it for coding regions in s_TitleFromProtein.
+*
 * Revision 1.11  2002/12/02 16:22:14  ucko
 * s_TitleFromProtein: fall back to "unnamed protein product" if nothing
 * better is present.
