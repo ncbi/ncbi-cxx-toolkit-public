@@ -3226,7 +3226,7 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
         size_t i;
         char   w[1024];
         size_t x_size = BUF_Size(sock->r_buf);
-        char*  x_buf = size - x_read < sizeof(w) ? w : buf + x_read;
+        char*  x_buf  = size - x_read < sizeof(w) ? w : buf + x_read;
         if (x_size == 0 || x_size > sizeof(w))
             x_size = sizeof(w);
         status = SOCK_Read(sock, x_buf, x_size, &x_size, eIO_ReadPlain);
@@ -3256,6 +3256,7 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
         if (i < x_size) {
             if (SOCK_PushBack(sock, x_buf + i, size - i) != eIO_Success)
                 status = eIO_Unknown;
+            break;
         }
         if (status != eIO_Success)
             break;
@@ -4347,6 +4348,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.162  2004/11/15 16:11:32  lavr
+ * Yet again half-fix in SOCK_ReadLine()
+ *
  * Revision 6.161  2004/11/15 15:39:35  lavr
  * Fix SOCK_ReadLine()
  *
