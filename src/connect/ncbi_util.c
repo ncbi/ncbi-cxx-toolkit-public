@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2002/02/05 22:02:17  lavr
+ * Minor tweak
+ *
  * Revision 6.17  2002/01/28 20:22:39  lavr
  * Get rid of GCC warning about "'%D' yields only 2 last digits of year"
  *
@@ -219,7 +222,7 @@ extern char* LOG_ComposeMessage
 
     /* Pre-calculate total message length */
     if ((format_flags & fLOG_DateTime) != 0) {
-        static const char time_fmt[] = "%D %T ";
+        static const char timefmt[] = "%D %T ";
         struct tm* tm;
 #ifdef NCBI_CXX_TOOLKIT
         time_t t = time(0);
@@ -235,7 +238,7 @@ extern char* LOG_ComposeMessage
         GetDayTime(&temp);
         tm = &temp;
 #endif/*NCBI_CXX_TOOLKIT*/
-        datetime_len = strftime(datetime, sizeof(datetime), time_fmt, tm);
+        datetime_len = strftime(datetime, sizeof(datetime), timefmt, tm);
     }
     if ((format_flags & fLOG_Level) != 0  &&
         (call_data->level != eLOG_Note ||

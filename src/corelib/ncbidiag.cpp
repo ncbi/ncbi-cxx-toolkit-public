@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2002/02/05 22:01:36  lavr
+* Minor tweak
+*
 * Revision 1.42  2002/01/12 22:16:47  lavr
 * Eliminated GCC warning: "'%D' yields only 2 digits of year"
 *
@@ -363,7 +366,7 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
 {
     // Date & time
     if (IsSetDiagPostFlag(eDPF_DateTime, m_Flags)) {
-        const char timefmt[] = "%D %T ";
+        static const char timefmt[] = "%D %T ";
         time_t t = time(0);
         char datetime[32];
         struct tm* tm;
