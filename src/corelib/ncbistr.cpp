@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2001/05/30 15:56:25  vakatov
+* NStr::CompareNocase, NStr::CompareCase -- get rid of the possible
+* compilation warning (ICC compiler:  "return statement missing").
+*
 * Revision 1.43  2001/05/17 15:04:59  lavr
 * Typos corrected
 *
@@ -332,6 +336,11 @@ int NStr::CompareCase(const char* s1, const char* s2)
             return diff; // return difference
         ++s1;  ++s2; // otherwise go to next chars
     }
+
+    // must never get to this point
+    _TROUBLE;
+    // fake "return" to avoid compiler warning
+    return 0;
 }
 
 int NStr::CompareNocase(const char* s1, const char* s2)
@@ -346,6 +355,11 @@ int NStr::CompareNocase(const char* s1, const char* s2)
             return diff; // return difference
         ++s1;  ++s2; // otherwise go to next chars
     }
+
+    // must never get to this point
+    _TROUBLE;
+    // fake "return" to avoid compiler warning
+    return 0;
 }
 
 char* NStr::ToLower(char* str) {
