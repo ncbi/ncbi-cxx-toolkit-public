@@ -42,27 +42,48 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+/** @addtogroup ObjectManagerIterators
+ *
+ * @{
+ */
+
+
 class CBioseq_Handle;
 
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeq_descr_CI --
+///
+///  Enumerate CSeq_descr objects from a Bioseq or Seq-entry handle
+///
 
 class NCBI_XOBJMGR_EXPORT CSeq_descr_CI
 {
 public:
+    /// Create an empty iterator
     CSeq_descr_CI(void);
-    // Start searching from a bioseq, limit number of seq-entries
-    // to "search_depth" (0 = unlimited).
+
+    /// Create an iterator that enumerates CSeq_descr objects 
+    /// from a bioseq with limit number of seq-entries
+    /// to "search_depth" (0 = unlimited).
     explicit CSeq_descr_CI(const CBioseq_Handle& handle,
                   size_t search_depth = 0);
-    // Start searching from a seq-entry, limit number of seq-entries
-    // to "search_depth" (0 = unlimited).
+
+    /// Create an iterator that enumerates CSeq_descr objects 
+    /// from a seq-entry, limit number of seq-entries
+    /// to "search_depth" (0 = unlimited).
     explicit CSeq_descr_CI(const CSeq_entry_Handle& entry,
                   size_t search_depth = 0);
+
     CSeq_descr_CI(const CSeq_descr_CI& iter);
     ~CSeq_descr_CI(void);
 
     CSeq_descr_CI& operator= (const CSeq_descr_CI& iter);
 
+    /// Move to the next object in iterated sequence
     CSeq_descr_CI& operator++ (void);
+
+    /// Check if iterator points to an object
     operator bool (void) const;
 
     const CSeq_descr& operator*  (void) const;
@@ -80,12 +101,18 @@ private:
 };
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/10/01 15:22:28  kononenk
+* Added doxygen formatting
+*
 * Revision 1.11  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
