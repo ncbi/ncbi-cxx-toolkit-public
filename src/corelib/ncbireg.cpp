@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/01/30 22:13:28  vakatov
+* Write() -- use "s_Endl" instead of "NcbiEndl"
+*
 * Revision 1.12  2001/01/30 00:41:58  vakatov
 * Read/Write -- serialize '\r' as "\\r"
 *
@@ -68,7 +71,6 @@
 */
 
 #include <corelib/ncbireg.hpp>
-
 
 // Platform-specific EndOfLine
 #if   defined(NCBI_OS_MAC)
@@ -307,7 +309,7 @@ const
     for (TRegistry::const_iterator section = m_Registry.begin();
          section != m_Registry.end();  section++) {
         // write section header
-        os << '[' << section->first << ']' << NcbiEndl;
+        os << '[' << section->first << ']' << s_Endl;
         if ( !os )
             return false;
         // write section entries
