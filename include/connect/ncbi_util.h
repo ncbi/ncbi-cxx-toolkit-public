@@ -40,6 +40,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/01/12 23:50:37  lavr
+ * "a+" -> "a" as a mode in fopen() for a logfile
+ *
  * Revision 6.5  2000/06/23 19:34:41  vakatov
  * Added means to log binary data
  *
@@ -108,7 +111,7 @@ extern void CORE_SetLOGFILE
  );
 
 
-/* CORE_SetLOGFILE(fopen(filename, "a+"), TRUE)
+/* CORE_SetLOGFILE(fopen(filename, "a"), TRUE)
  * Return zero on error, non-zero on success
  */
 extern int/*bool*/ CORE_SetLOGFILE_NAME

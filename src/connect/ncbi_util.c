@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/01/12 23:50:38  lavr
+ * "a+" -> "a" as a mode in fopen() for a logfile
+ *
  * Revision 6.6  2000/08/28 20:05:51  vakatov
  * CORE_SetLOGFILE() -- typo fixed
  *
@@ -125,7 +128,7 @@ extern void CORE_SetLOGFILE
 
 extern int/*bool*/ CORE_SetLOGFILE_NAME(const char* filename)
 {
-    FILE* fp = fopen(filename, "a+");
+    FILE* fp = fopen(filename, "a");
     if ( !fp ) {
         CORE_LOG_SYS_ERRNO(eLOG_Error, filename);
         return 0/*false*/;
