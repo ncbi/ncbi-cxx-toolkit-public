@@ -257,8 +257,10 @@ bool CDataTool::ProcessModules(void)
         ax.CloseFile();
     }
     
-    LoadDefinitions(generator.GetImportModules(),
-                    modulesPath, args["M"].AsString(),srctype);
+    if (srctype != SourceFile::eDTD) {
+        LoadDefinitions(generator.GetImportModules(),
+                        modulesPath, args["M"].AsString(),srctype);
+    }
 
     if ( !generator.Check() ) {
         if ( !args["i"] ) { // ignored
@@ -407,6 +409,15 @@ bool CDataTool::ProcessData(void)
             }
             CObjectStreamCopier copier(*in, *out);
             copier.Copy(typeInfo, CObjectStreamCopier::eNoFileHeader);
+            // In case the input stream has more than one object of this type,
+            // keep converting them
+            for (bool go=true; go; ) {
+                try {
+                    copier.Copy(typeInfo);
+                } catch (CEofException&) {
+                    go = false;
+                }
+            }
         }
         else {
             // skip
@@ -588,6 +599,10 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.75  2004/12/06 18:26:52  gouriano
+* Ignore -M parameter when parsing DTD
+* Process multiple records of the same type when converting data
+*
 * Revision 1.74  2004/07/29 15:52:55  gouriano
 * changed px_ns argument name to xmlns
 *
