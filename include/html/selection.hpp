@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/05/12 21:11:44  vakatov
+* Minor fixes to copile by the Mac CodeWarrior C++ compiler
+*
 * Revision 1.2  1999/03/26 22:00:00  sandomir
 * checked option in Radio button fixed; minor fixes in Selection
 *
@@ -53,14 +56,14 @@ class CCgiRequest;
 class CSelection : public CNCBINode, public CIDs
 {
 public:
+    static string sm_DefaultCheckboxName;
+    static string sm_DefaultSaveName;
+
     CSelection( const CCgiRequest& request,
                const string& checkboxName = sm_DefaultCheckboxName,
                const string& saveName = sm_DefaultSaveName);
 
     virtual void CreateSubNodes(void);
-
-    static string sm_DefaultCheckboxName;
-    static string sm_DefaultSaveName;
 
 private:
     const string m_SaveName;

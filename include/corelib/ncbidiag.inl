@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/05/12 21:11:42  vakatov
+* Minor fixes to copile by the Mac CodeWarrior C++ compiler
+*
 * Revision 1.10  1999/05/04 00:03:07  vakatov
 * Removed the redundant severity arg from macro ERR_POST()
 *
@@ -310,7 +313,7 @@ inline void CDiagBuffer::Flush(void) {
 
 inline void CDiagBuffer::Reset(const CNcbiDiag& diag) {
     if (&diag == m_Diag  &&
-        m_Stream.rdbuf()->SEEKOFF(0, IOS_BASE::beg, IOS_BASE::out))
+        m_Stream.rdbuf()->SEEKOFF(0, IOS_BASE::beg, IOS_BASE::out) != 0)
         ::abort();
 }
 
