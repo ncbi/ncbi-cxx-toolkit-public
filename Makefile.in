@@ -23,6 +23,7 @@ check:
 	cd $(builddir) && $(MAKE) $(MFLAGS) check_r RUN_CHECK=Y
 
 install:
+	-$(RMDIR) $(pincludedir)
 	$(INSTALL) -d $(bindir) $(libdir) $(pincludedir)
 	$(INSTALL) $(lbindir)/* $(bindir)
 	$(INSTALL) -m 644 $(llibdir)/* $(libdir)
