@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/04/15 19:56:23  vasilche
+* More warnings fixed
+*
 * Revision 1.26  1999/04/15 19:48:22  vasilche
 * Fixed several warnings detected by GCC
 *
@@ -385,7 +388,7 @@ CNCBINode* CPagerBox::CloneSelf(void) const
 }
 
 CSmallPagerBox::CSmallPagerBox()
-    : m_NumResults(0), m_Width(460), m_PageList(0)
+    : m_Width(460), m_PageList(0), m_NumResults(0)
 {
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  1999/04/15 19:56:24  vasilche
+* More warnings fixed
+*
 * Revision 1.34  1999/04/15 19:48:23  vasilche
 * Fixed several warnings detected by GCC
 *
@@ -471,7 +474,7 @@ CNcbiOstream& CHTMLComment::PrintEnd(CNcbiOstream& out)
 // TABLE element
 
 CHTML_table::CHTML_table(void)
-    : m_CurrentRow(0), m_CurrentCol(-1)
+    : m_CurrentRow(0), m_CurrentCol(TIndex(-1))
 {
 }
 
