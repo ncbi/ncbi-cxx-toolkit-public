@@ -590,7 +590,7 @@ LookupTableOptionsPtr
 LookupTableOptionsFree(LookupTableOptionsPtr options);
 
 /** Validate LookupTableOptions.
- * @param program BLAST program [in]
+ * @param program_number BLAST program [in]
  * @param options The options that have are being returned [in]
  * @param blast_msg The options that have are being returned [out]
 */
@@ -641,7 +641,7 @@ BlastHitSavingParametersFree(BlastHitSavingParametersPtr parameters);
  * Calculates the (raw) score cutoff given an expect value and puts
  * it in the "cutoff_score" field of the returned BlastHitSavingParametersPtr
  *
- * @param program Number of the BLAST program [in]
+ * @param program_number Number of the BLAST program [in]
  * @param options The given hit saving options [in]
  * @param handle_results Callback function for printing results on the fly [in]
  * @param sbp Scoring block, needed for calculating score cutoff from 

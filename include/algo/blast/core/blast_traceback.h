@@ -46,6 +46,7 @@ extern "C" {
 
 /** Given the preliminary alignment results from a database search, redo 
  * the gapped alignment with traceback, if it has not yet been done.
+ * @param program_number Type of the BLAST program [in]
  * @param results Results of this BLAST search [in] [out]
  * @param query The query sequence [in]
  * @param query_info Information about the query [in]
@@ -65,6 +66,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results,
 /** Given the preliminary alignment results from a two sequences search
  * (possibly with multiple query sequences), redo the gapped alignment
  * with traceback, if it has not yet been done.
+ * @param program_number Type of the BLAST program [in]
  * @param results Results of this BLAST search [in] [out]
  * @param query The query sequence [in]
  * @param query_info Information about the query [in]

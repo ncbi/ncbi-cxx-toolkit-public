@@ -394,18 +394,19 @@ static Int2 BLAST_CalcEffLengths (Uint1 program_number,
  * @param word_options options for initial word finding. [in]
  * @param ext_options options for gapped extension. [in]
  * @param hit_options options for saving hits. [in]
+ * @param db_options Database options (containing database genetic code)[in]
  * @param query The query sequence block [in]
  * @param lookup_segments Start/stop locations for non-masked query 
  *                        segments [in]
  * @param query_info The query information block [in]
  * @param sbp Contains scoring information. [in]
  * @param max_subject_length Length of the longest subject sequence [in]
- * @param lookup_wrap Lookup table [out]
- * @param ewp Word extension information and allocated memory [out]
  * @param gap_align Gapped alignment information and allocated memory [out]
  * @param word_params Parameters for initial word processing [out]
  * @param ext_params Parameters for gapped extension [out]
  * @param hit_params Parameters for saving hits [out]
+ * @param aux_struct_ptr Placeholder joining various auxiliary memory 
+ *                       structures [out]
  */
 static Int2 
 BLAST_SetUpAuxStructures(Uint1 program_number,
