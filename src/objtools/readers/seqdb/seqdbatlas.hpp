@@ -740,10 +740,12 @@ private:
 class CSeqDBAtlas {
     /// Default slice sizes and limits used by the atlas.
     enum {
-        eTriggerGC        = 1024 * 1024 * 128,
-        eDefaultBound     = 1024 * 1024 * 512,
-        eDefaultSliceSize = 1024 * 1024 * 128,
-        eDefaultOverhang  = 1024 * 1024 * 4
+        eTriggerGC         = 1024 * 1024 * 128,
+        eDefaultBound      = 1024 * 1024 * 512,
+        eDefaultSliceSize  = 1024 * 1024 * 128,
+        eDefaultOverhang   = 1024 * 1024 * 4,
+        eMaxOpenRegions    = 500,
+        eOpenRegionsWindow = 128
     };
     
 public:
@@ -1322,6 +1324,10 @@ private:
     
     /// Atlas will try to map this amount of memory at once.
     Uint8 m_SliceSize;
+    
+    /// Atlas will try to garbage collect if more than this many
+    /// regions are opened.
+    Uint4 m_OpenRegionsTrigger;
     
     /// Callback to flush memory leases before a garbage collector.
     CSeqDBFlushCB * m_FlushCB;

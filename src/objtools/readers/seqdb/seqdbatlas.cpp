@@ -80,12 +80,13 @@ TOut SeqDB_CheckLength(TIn value)
 }
 
 CSeqDBAtlas::CSeqDBAtlas(bool use_mmap, CSeqDBFlushCB * cb)
-    : m_UseMmap    (use_mmap),
-      m_CurAlloc   (0),
-      m_LastFID    (0),
-      m_MemoryBound(eDefaultBound),
-      m_SliceSize  (eDefaultSliceSize),
-      m_FlushCB    (cb)
+    : m_UseMmap           (use_mmap),
+      m_CurAlloc          (0),
+      m_LastFID           (0),
+      m_MemoryBound       (eDefaultBound),
+      m_SliceSize         (eDefaultSliceSize),
+      m_OpenRegionsTrigger(eOpenRegionsWindow),
+      m_FlushCB           (cb)
 {
     for(Uint4 i = 0; i < eNumRecent; i++) {
         m_Recent[i] = 0;
@@ -503,13 +504,45 @@ const char * CSeqDBAtlas::x_FindRegion(Uint4         fid,
 
 void CSeqDBAtlas::PossiblyGarbageCollect(Uint8 space_needed)
 {
-    // Use Int8 to avoid "unsigned rollover."
-    
-    Int8 capacity_left = m_MemoryBound;
-    capacity_left -= m_CurAlloc;
-    
-    if (Int8(space_needed) > capacity_left) {
-        x_GarbageCollect(m_MemoryBound - space_needed);
+    if (m_Regions.size() >= m_OpenRegionsTrigger) {
+        // If we are collecting because of the number of open regions,
+        // we use zero as the size.  This kind of flush is probably
+        // due to extensive alias node forests, and it is better to
+        // clear cut than try to take only old-growth.  Alias files
+        // are only read once, so caching would only help if there is
+        // overlap between subtrees.
+        
+        // The mechanism uses three numbers.  MAX is a constant
+        // expressing the most regions you ever want to have open.
+        // WINDOW is a constant expressing the number of regions you
+        // want to be able to open without a garbage collection being
+        // triggered.  TRIGGER is the number of regions creations that
+        // will trigger the next full garbage collection.
+        
+        // 1. In the constructor, TRIGGER is set to WINDOW.
+        //
+        // 2. If the number of regions exceeds TRIGGER, a full
+        //    collection is done.
+        //
+        // 3. After each full collection, TRIGGER is set to the lesser
+        //    of the number of surviving regions plus WINDOW, or MAX.
+        
+        x_GarbageCollect(0);
+        
+        m_OpenRegionsTrigger = m_Regions.size() + eOpenRegionsWindow;
+        
+        if (m_OpenRegionsTrigger > eMaxOpenRegions) {
+            m_OpenRegionsTrigger = eMaxOpenRegions;
+        }
+    } else {
+        // Use Int8 to avoid "unsigned rollover."
+        
+        Int8 capacity_left = m_MemoryBound;
+        capacity_left -= m_CurAlloc;
+        
+        if (Int8(space_needed) > capacity_left) {
+            x_GarbageCollect(m_MemoryBound - space_needed);
+        }
     }
 }
 
