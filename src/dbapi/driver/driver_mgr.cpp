@@ -34,25 +34,67 @@
 
 BEGIN_NCBI_SCOPE
 
-
-C_DriverMgr::C_DriverMgr(unsigned int nof_drivers)
-    : m_NofDrvs(0),
-      m_NofRoom(nof_drivers ? nof_drivers : 16),
-      m_Drivers(new SDrivers[m_NofRoom])
-      
+class C_xDriverMgr : public I_DriverMgr
 {
-    return;
+public:
+    C_xDriverMgr(unsigned int nof_drivers= 16) {
+	m_NofRoom= nof_drivers? nof_drivers : 16;
+	m_Drivers= new SDrivers[m_NofRoom];
+	m_NofDrvs= 0;
+    }
+
+    FDBAPI_CreateContext GetDriver(const string& driver_name, 
+				   string* err_msg= 0);
+
+    virtual void RegisterDriver(const string&        driver_name,
+                                FDBAPI_CreateContext driver_ctx_func);
+
+    virtual ~C_xDriverMgr() {
+	delete [] m_Drivers;
+    }
+
+protected:
+    bool LoadDriverDll(const string& driver_name, string* err_msg);
+
+private:
+    typedef void            (*FDriverRegister) (I_DriverMgr& mgr);
+    typedef FDriverRegister (*FDllEntryPoint)  (void);
+
+    struct SDrivers {
+	string               drv_name;
+	FDBAPI_CreateContext drv_func;
+    } *m_Drivers;
+
+    unsigned int m_NofDrvs;
+    unsigned int m_NofRoom;
+    CFastMutex m_Mutex1;
+    CFastMutex m_Mutex2;
+};
+
+void C_xDriverMgr::RegisterDriver(const string&        driver_name,
+                                 FDBAPI_CreateContext driver_ctx_func)
+{
+    if(m_NofDrvs < m_NofRoom) {
+        CFastMutexGuard mg(m_Mutex2);
+        for(unsigned int i= m_NofDrvs; i--; ) {
+            if(m_Drivers[i].drv_name == driver_name) {
+                m_Drivers[i].drv_func= driver_ctx_func;
+                return;
+            }
+        }
+        m_Drivers[m_NofDrvs++].drv_func= driver_ctx_func;
+        m_Drivers[m_NofDrvs-1].drv_name= driver_name;
+    }
+    else {
+        throw CDB_ClientEx(eDB_Error, 101, "C_xDriverMgr::RegisterDriver",
+                           "No space left for driver registration");
+    }
+	
 }
 
 
-C_DriverMgr::~C_DriverMgr()
-{
-    delete [] m_Drivers;
-}
-
-
-FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name,
-                                            string*       err_msg)
+FDBAPI_CreateContext C_xDriverMgr::GetDriver(const string& driver_name,
+					    string* err_msg)
 {
     CFastMutexGuard mg(m_Mutex1);
     unsigned int i;
@@ -78,29 +120,7 @@ FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name,
 }
 
 
-void C_DriverMgr::RegisterDriver(const string&        driver_name,
-                                 FDBAPI_CreateContext driver_ctx_func)
-{
-    if(m_NofDrvs < m_NofRoom) {
-        CFastMutexGuard mg(m_Mutex2);
-        for(unsigned int i= m_NofDrvs; i--; ) {
-            if(m_Drivers[i].drv_name == driver_name) {
-                m_Drivers[i].drv_func= driver_ctx_func;
-                return;
-            }
-        }
-        m_Drivers[m_NofDrvs++].drv_func= driver_ctx_func;
-        m_Drivers[m_NofDrvs-1].drv_name= driver_name;
-    }
-    else {
-        throw CDB_ClientEx(eDB_Error, 101, "C_DriverMgr::RegisterDriver",
-                           "No space left for driver registration");
-    }
-	
-}
-
-
-bool C_DriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
+bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
 {
     try {
         CDll drv_dll("dbapi_driver_" + driver_name);
@@ -115,11 +135,47 @@ bool C_DriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
         return true;
     }
     catch (exception& e) {
-        if(err_msg) *err_msg= e.what();
+	if(err_msg) *err_msg= e.what();
         return false;
     }
 }
 
+
+static C_xDriverMgr* xDrvMgr= 0;
+static int xCount= 0;
+static CFastMutex xMutex;
+
+C_DriverMgr::C_DriverMgr(unsigned int nof_drivers)
+{
+    CFastMutexGuard mg(xMutex); // lock the mutex
+    if(!xDrvMgr) { // There is no driver manager yet
+	xDrvMgr= new C_xDriverMgr(nof_drivers);
+    }
+    ++xCount;
+}
+    
+C_DriverMgr::~C_DriverMgr()
+{
+    CFastMutexGuard mg(xMutex); // lock the mutex
+    if(--xCount <= 0) { // this is a last one
+	delete xDrvMgr;
+	xDrvMgr= 0;
+	xCount= 0;
+    }
+}
+
+
+FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name,
+					    string* err_msg)
+{
+    return xDrvMgr->GetDriver(driver_name, err_msg);
+}
+
+void C_DriverMgr::RegisterDriver(const string&        driver_name,
+				 FDBAPI_CreateContext driver_ctx_func)
+{
+    xDrvMgr->RegisterDriver(driver_name, driver_ctx_func);
+}
 
 END_NCBI_SCOPE
 
@@ -128,6 +184,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/04/12 18:48:30  soussov
+ * makes driver_mgr working properly in mt environment
+ *
  * Revision 1.9  2002/04/09 22:18:15  vakatov
  * Moved code from the header
  *

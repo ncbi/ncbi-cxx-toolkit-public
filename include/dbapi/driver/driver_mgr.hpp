@@ -42,7 +42,6 @@ class C_DriverMgr : public I_DriverMgr
 {
 public:
     C_DriverMgr(unsigned int nof_drivers = 16);
-    virtual ~C_DriverMgr();
 
     FDBAPI_CreateContext GetDriver(const string& driver_name, 
                                    string*       err_msg = 0);
@@ -50,23 +49,7 @@ public:
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
 
-protected:
-    bool LoadDriverDll(const string& driver_name, string* err_msg);
-
-private:
-    typedef void            (*FDriverRegister) (I_DriverMgr& mgr);
-    typedef FDriverRegister (*FDllEntryPoint)  (void);
-
-    struct SDrivers {
-        string               drv_name;
-        FDBAPI_CreateContext drv_func;
-    };
-
-    unsigned int m_NofDrvs;
-    unsigned int m_NofRoom;
-    SDrivers*    m_Drivers;
-    CFastMutex   m_Mutex1;
-    CFastMutex   m_Mutex2;
+    virtual ~C_DriverMgr();
 };
 
 
@@ -77,6 +60,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/04/12 18:44:34  soussov
+ * makes driver_mgr working properly in mt environment
+ *
  * Revision 1.7  2002/04/09 22:18:13  vakatov
  * Moved code from the header
  *
