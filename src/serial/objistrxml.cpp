@@ -955,7 +955,7 @@ TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
                     SkipWSAndComments();
                     if ( value != m_Input.GetInt4() )
                         ThrowError(fFormatError,
-                                   "incompatible name and value of enum");
+                                   "incompatible name and value of named integer");
                 }
             }
         }
@@ -2090,6 +2090,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2004/07/22 17:48:32  gouriano
+* Corrected diagnostic message in ReadEnum
+*
 * Revision 1.65  2004/06/30 13:51:17  gouriano
 * Corrected reading of object namespace name
 *
