@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.62 2002/04/24 18:43:25 ucko Exp $
+#  $Id: configure.ac,v 1.63 2002/04/25 21:36:36 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -491,7 +491,7 @@ case "$host_os:$compiler" in
 
  solaris*:WorkShop* )
    with_bincopy=${with_bincopy:="no"}
-   CXXFLAGS="+w +w2 $CXXFLAGS"
+   CXXFLAGS="+w $CXXFLAGS"
    DEPFLAGS="-xM1"
    LDFLAGS="-xildoff $LDFLAGS"
    AR=${AR:="$CXX $MT_FLAG -xar -o"}
