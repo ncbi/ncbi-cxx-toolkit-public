@@ -565,59 +565,61 @@ BlastnWordUngappedExtend(BLAST_SequenceBlk* query,
    Int4 q_off, Int4 s_off, Int4 cutoff, Int4 X, 
    BlastUngappedData** ungapped_data)
 {
-	Uint1* q;
-	Int4 sum, score;
-	Uint1 ch;
-	Uint1* subject0,* sf,* q_beg,* q_end,* s_end,* s,* start;
-	Int2 remainder, base;
-	Int4 q_avail, s_avail;
-
+   Uint1* q;
+   Int4 sum, score;
+   Uint1 ch;
+   Uint1* subject0,* sf,* q_beg,* q_end,* s_end,* s,* start;
+   Int2 remainder, base;
+   Int4 q_avail, s_avail;
+   
    base = 3 - (s_off % 4);
-
-	subject0 = subject->sequence;
+   
+   subject0 = subject->sequence;
    q_avail = query->length - q_off;
    s_avail = subject->length - s_off;
 
-	q = q_beg = q_end = query->sequence + q_off;
-	s = s_end = subject0 + s_off/COMPRESSION_RATIO;
-	if (q_off < s_off) {
+   q = q_beg = q_end = query->sequence + q_off;
+   s = s_end = subject0 + s_off/COMPRESSION_RATIO;
+   if (q_off < s_off) {
       start = subject0 + (s_off-q_off)/COMPRESSION_RATIO;
       remainder = 3 - ((s_off-q_off)%COMPRESSION_RATIO);
-	} else {
+   } else {
       start = subject0;
       remainder = 3;
-	}
-
-	/* Find where positive scoring starts & ends within the word hit */
-	score = 0;
+   }
+   
+   /* Find where positive scoring starts & ends within the word hit */
+   score = 0;
    sum = 0;
 
-	/* extend to the left */
-	do {
+   /* extend to the left */
+   while ((s > start) || (s == start && base < remainder)) {
       if (base == 3) {
          s--;
          base = 0;
-      } else
-         base++;
+      } else {
+         ++base;
+      }
       ch = *s;
       if ((sum += matrix[*--q][READDB_UNPACK_BASE_N(ch, base)]) > 0) {
          q_beg = q;
          score += sum;
          sum = 0;
-      } else if (sum < X)
+      } else if (sum < X) {
          break;
-	} while ((s > start) || (s == start && base < remainder));
+      }
+   }
    
    if (score >= cutoff && !ungapped_data) 
       return FALSE;
    
-	if (ungapped_data) {
+   if (ungapped_data) {
       *ungapped_data = (BlastUngappedData*) 
          malloc(sizeof(BlastUngappedData));
-	   (*ungapped_data)->q_start = q_beg - query->sequence;
-	   (*ungapped_data)->s_start = 
-	      s_off - (q_off - (*ungapped_data)->q_start);
-	}
+      (*ungapped_data)->q_start = q_beg - query->sequence;
+      (*ungapped_data)->s_start = 
+         s_off - (q_off - (*ungapped_data)->q_start);
+   }
 
    if (q_avail < s_avail) {
       sf = subject0 + (s_off + q_avail)/COMPRESSION_RATIO;
@@ -626,13 +628,14 @@ BlastnWordUngappedExtend(BLAST_SequenceBlk* query,
       sf = subject0 + (subject->length)/COMPRESSION_RATIO;
       remainder = 3 - ((subject->length)%COMPRESSION_RATIO);
    }
-	/* extend to the right */
-	q = q_end;
-	s = s_end;
-	sum = 0;
+	
+   /* extend to the right */
+   q = q_end;
+   s = s_end;
+   sum = 0;
    base = 3 - (s_off % COMPRESSION_RATIO);
-
-	while (s < sf || (s == sf && base > remainder)) {
+   
+   while (s < sf || (s == sf && base > remainder)) {
       ch = *s;
       if ((sum += matrix[*q++][READDB_UNPACK_BASE_N(ch, base)]) > 0) {
          q_end = q;
@@ -645,14 +648,14 @@ BlastnWordUngappedExtend(BLAST_SequenceBlk* query,
          s++;
       } else
          base--;
-	}
+   }
    
-	if (ungapped_data) {
-	   (*ungapped_data)->length = q_end - q_beg;
-	   (*ungapped_data)->score = score;
+   if (ungapped_data) {
+      (*ungapped_data)->length = q_end - q_beg;
+      (*ungapped_data)->score = score;
       (*ungapped_data)->frame = 0;
-	}
-
+   }
+   
    return (score < cutoff);
 }
 
