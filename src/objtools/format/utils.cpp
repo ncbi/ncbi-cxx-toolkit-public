@@ -143,7 +143,7 @@ void JoinNoRedund(string& str1, const string& str2, const string& delim)
     }
     
     size_t pos = NPOS;
-    for ( pos = NStr::FindNoCase(str1, str2);
+    for ( pos = NStr::Find(str1, str2);
           pos != NPOS  &&  !s_IsWholeWord(str1, pos, str2);
           pos += str2.length());
 
@@ -515,6 +515,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/03/08 20:55:32  shomrat
+* Use case sensetive search when looking for redundent content
+*
 * Revision 1.2  2004/02/11 16:57:34  shomrat
 * added JoinNoRedund functions
 *
