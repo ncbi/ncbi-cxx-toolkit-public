@@ -428,7 +428,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    BLAST_KarlinBlk** kbp;
    Boolean phi_align = (hit_options->phi_align);
    Boolean greedy_traceback;
-   Boolean partial_translation;
+   Boolean partial_translation = FALSE;
    Int4 start_shift = 0, translation_length;
 
    if (hsp_list->hspcnt == 0) {
@@ -437,10 +437,16 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
 
    hsp_array = hsp_list->hsp_array;
    
-   partial_translation = (subject_blk->length > MAX_FULL_TRANSLATION);
    if (translate_subject) {
       if (!db_options)
          return -1;
+      partial_translation = (subject_blk->length > MAX_FULL_TRANSLATION);
+      
+      /* If mixed-frame sequence is already available, then no need to translate
+         again */
+      if (is_ooframe && subject_blk->oof_sequence)
+         partial_translation = FALSE;
+
       nucl_sequence = subject_blk->sequence_start;
       if (!partial_translation) {
          if (is_ooframe) {
