@@ -725,7 +725,6 @@ BLAST_GetTranslationTable(Uint1Ptr genetic_code, Boolean reverse_complement)
 {
 	Int2 index1, index2, index3, bp1, bp2, bp3;
 	Int2 codon;
-  	SeqMapTablePtr smtp;
 	Uint1Ptr translation;
    /* The next array translate between the ncbi2na rep's and 
       the rep's used by the genetic_code tables.  The rep used by the 
