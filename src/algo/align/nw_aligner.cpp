@@ -297,9 +297,7 @@ string CNWAligner::Format(size_t line_width) const
         ss << endl << marker_line << endl;
     }
 
-    string str(ss.str(), ss.pcount());
-    ss.freeze(false);
-    return str;
+    return CNcbiOstrstreamToString(ss);
 }
 
 
@@ -457,6 +455,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/12/31 13:53:13  kapustin
+ * CNWAligner::Format() -- use CNcbiOstrstreamToString
+ *
  * Revision 1.2  2002/12/12 17:59:28  kapustin
  * Enable spliced alignments
  *
