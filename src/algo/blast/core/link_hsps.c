@@ -1465,35 +1465,45 @@ BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list,
    BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params,
    Boolean gapped_calculation)
 {
-	if (hsp_list && hsp_list->hspcnt > 0)
-	{
-	   Int4 index;
-	   /* Remove any information on number of linked HSPs from previous
-	      linking. */
-	   for (index = 0; index < hsp_list->hspcnt; ++index)
-	      hsp_list->hsp_array[index]->num = 0;
+    Int4 index;
 
-      /* Link up the HSP's for this hsp_list. */
-      if (link_hsp_params->longest_intron <= 0)
-      {
-         Blast_EvenGapLinkHSPs(program_number, hsp_list, query_info, 
-			       subject_length, sbp, link_hsp_params, 
-			       gapped_calculation);
-         /* The HSP's may be in a different order than they were before, 
-            but hsp contains the first one. */
-      } else {
-         /* Calculate individual HSP e-values first - they'll be needed to
-            compare with sum e-values. Use decay rate to compensate for 
-            multiple tests. */
-         Blast_HSPListGetEvalues(query_info, hsp_list, 
-            gapped_calculation, sbp, link_hsp_params->gap_decay_rate);
-         
-         Blast_UnevenGapLinkHSPs(program_number, hsp_list, query_info, 
-                                 subject_length, sbp, link_hsp_params,
-                                 gapped_calculation);
-      }
-	}
+    if (!hsp_list || hsp_list->hspcnt == 0)
+        return 0;
 
-	return 0;
+    /* Remove any information on number of linked HSPs from previous
+       linking. */
+    for (index = 0; index < hsp_list->hspcnt; ++index)
+        hsp_list->hsp_array[index]->num = 0;
+    
+    /* Link up the HSP's for this hsp_list. */
+    if (link_hsp_params->longest_intron <= 0) {
+        Blast_EvenGapLinkHSPs(program_number, hsp_list, query_info, 
+                              subject_length, sbp, link_hsp_params, 
+                              gapped_calculation);
+        /* The HSP's may be in a different order than they were before, 
+           but hsp contains the first one. */
+    } else {
+        /* Calculate individual HSP e-values first - they'll be needed to
+           compare with sum e-values. Use decay rate to compensate for 
+           multiple tests. */
+        Blast_HSPListGetEvalues(query_info, hsp_list, 
+           gapped_calculation, sbp, link_hsp_params->gap_decay_rate);
+        
+        Blast_UnevenGapLinkHSPs(program_number, hsp_list, query_info, 
+                                subject_length, sbp, link_hsp_params,
+                                gapped_calculation);
+    }
+
+    /* Sort the HSP array by score */
+    Blast_HSPListSortByScore(hsp_list);
+
+    /* Find and fill the best e-value */
+    hsp_list->best_evalue = hsp_list->hsp_array[0]->evalue;
+    for (index = 1; index < hsp_list->hspcnt; ++index) {
+        if (hsp_list->hsp_array[index]->evalue < hsp_list->best_evalue)
+            hsp_list->best_evalue = hsp_list->hsp_array[index]->evalue;
+    }
+
+    return 0;
 }
 
