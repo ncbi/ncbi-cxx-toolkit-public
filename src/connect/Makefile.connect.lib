@@ -1,6 +1,6 @@
 # $Id$
 
-LIBOBJ_C = ncbi_buffer ncbi_priv ncbi_core ncbi_util ncbi_socket_ \
+LIBOBJ_C = ncbi_buffer ncbi_priv ncbi_core ncbi_util_ ncbi_socket_ \
       ncbi_connutil ncbi_connection ncbi_connector \
       ncbi_socket_connector ncbi_file_connector ncbi_http_connector \
       ncbi_heapmgr ncbi_server_info ncbi_service \
