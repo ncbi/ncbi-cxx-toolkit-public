@@ -209,7 +209,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    if (translated_subject) {
       /** DATABASE GENETIC CODE OPTION IS NOT PASSED HERE!!!
           THIS MUST BE CORRECTED IN THE FUTURE */
-      CharPtr genetic_code;
+      CharPtr genetic_code=NULL;
       ValNodePtr vnp;
       GeneticCodePtr gcp;
       /* Preallocate buffer for the translated sequences */
