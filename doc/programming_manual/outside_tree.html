@@ -5,7 +5,7 @@
 <h1>Working in a separate directory</h1>
 
 <ul>
-  <li> <a href="#overview"> Overview </a> 
+  <li> <a href="#overview"> Overview </a>
   <li> <a href="#makefiles"> The Project's Makefile </a>
   <li> <a href="#testing"> Testing your setup </a>
 </ul>
@@ -36,7 +36,7 @@ Created a model makefile "/home/zimmerma/NewProj/Makefile.NewProj_app". </font>
 
 The syntax of the script command is:
 <center> <xmp>
-new_project.sh  project_name  <app | lib>  [builddir] 
+new_project.sh  project_name  <app | lib>  [builddir]
 </xmp></center>
 where:
 <dl>
@@ -49,8 +49,8 @@ Several build environments have been pre-configured and are available for develo
 platforms using different compilers, in either <i> debug</i> or <i> release </i> mode. These
 environments include custom-made configuration files, makefile templates, and links to the
 appropriate pre-built C++ Toolkit libraries. To see a list of the available environments for
-the platform you are working on, use: <i>ls -d $NCBI/c++/*/build</i>. For example, on <i>Solaris</i>, 
-the following <i>build</i> directories are currently available: 
+the platform you are working on, use: <i>ls -d $NCBI/c++/*/build</i>. For example, on <i>Solaris</i>,
+the following <i>build</i> directories are currently available:
 <center><p>
 <table border=1 width="600" cellspacing=1>
   <caption></caption>
@@ -80,9 +80,9 @@ The file you just created with the above script will be called <i>Makefile.NewPr
 addition to other things, you will see definitions for:
 
 <dl>
-  <dt> - <i> $(builddir) </i> - a path to the build directory specified in the last argument to the above script 
+  <dt> - <i> $(builddir) </i> - a path to the build directory specified in the last argument to the above script
   <dt> - <i> $(srcdir) </i> - the path to your current working directory (".")
-  <dt> - <i> $(APP) </i> - the application name 
+  <dt> - <i> $(APP) </i> - the application name
   <dt> - <i> $(OBJ) </i> - the names of the object modules to build and link to the application
   <dt> - <i> $(LIB)</i> - specific libraries to link to in the NCBI C++ Toolkit
   <dt> - <i> $(LIBS) </i> - all other libraries to link to (outside the C++ Toolkit)
@@ -106,7 +106,7 @@ single source file named <i>NewProj.cpp</i>. Additional source names can be adde
 For a very simple application, this makefile is ready to be run. Try it out now, by creating
 the file <i>NewProj.cpp</i>:
 
-<font color = "#008080"> 
+<font color = "#008080">
 <pre>
 // File name: NewProj.cpp
 
@@ -118,7 +118,7 @@ int main() {
     cout << "Hello again, world" << endl;
 }
 </pre>
-<font color = black> 
+<font color = black>
 
 and running: <i> make -f Makefile.NewProj_app</i>. <p>
 
@@ -133,7 +133,7 @@ Most real applications will at a minimum, require that you <i>#include</i>
 <i>ncbistd.hpp</i></a> in your header file. In addition to defining some basic NCBI C++ Toolkit
 objects and templates, this header file in turn includes other header files that define the C
 Toolkit data types, NCBI namespaces, debugging macros, and exception classes. A  set of <a
-href="http://www.ncbi.nlm.nih.gov/IEB/CPP_DOC/new_mod.html"> template </a> files are also provided for
+href="../new_mod.html"> template </a> files are also provided for
 your use in developing new applications. <p>
 
 <a href="../index.html"> <i> up </i> </a>
