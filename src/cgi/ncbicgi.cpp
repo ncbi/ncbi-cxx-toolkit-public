@@ -1048,6 +1048,12 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
             continue;
         }
 
+        // kludge for the sake of some older browsers, which fail to decode
+        // "&amp;" within hrefs.
+        if ( !NStr::CompareNocase(str, beg, 4, "amp;") ) {
+            beg += 4;
+        }
+
         // parse and URL-decode name
         SIZE_TYPE mid = str.find_first_of("=&", beg);
         if (mid == beg  ||
@@ -1221,6 +1227,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.75  2003/11/24 18:14:58  ucko
+* CCgiRequest::ParseEntries: Swallow "amp;" (case-insensitive) after &
+* for the sake of some older browsers that misparse HREF attributes.
+*
 * Revision 1.74  2003/10/15 17:06:02  ucko
 * CCgiRequest::x_Init: truncate str properly in the case of unexpected EOF.
 *
