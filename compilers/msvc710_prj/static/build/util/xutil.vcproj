@@ -135,6 +135,7 @@
       <File RelativePath="..\..\..\include\util\reader_writer.hpp"></File>
       <File RelativePath="..\..\..\include\util\regexp.hpp"></File>
       <File RelativePath="..\..\..\include\util\resize_iter.hpp"></File>
+      <File RelativePath="..\..\..\include\util\resource_pool.hpp"></File>
       <File RelativePath="..\..\..\include\util\rwstream.hpp"></File>
       <File RelativePath="..\..\..\include\util\rwstreambuf.hpp"></File>
       <File RelativePath="..\..\..\include\util\smalldns.hpp"></File>
