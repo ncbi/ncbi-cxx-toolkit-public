@@ -153,6 +153,10 @@ public:
 
     virtual void Remove(const string& key);
 
+    virtual void Remove(const string&    key,
+                        int              version,
+                        const string&    subkey);
+
     virtual time_t GetAccessTime(const string&  key,
                                  int            version,
                                  const string&  subkey);
@@ -231,6 +235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/07/19 16:11:51  kuznets
+ * + Remove for key,version,subkey
+ *
  * Revision 1.1  2004/07/19 14:57:58  kuznets
  * Initial revision
  *

@@ -67,6 +67,7 @@ static void s_MakeOverflowFileName(string& buf,
 }
 
 
+/// @internal
 struct SCacheDescr
 {
     string    key;
@@ -87,7 +88,7 @@ struct SCacheDescr
     SCacheDescr() {}
 };
 
-
+/// @internal
 class CBDB_CacheIReader : public IReader
 {
 public:
@@ -976,6 +977,51 @@ void CBDB_Cache::Remove(const string& key)
 
 }
 
+void CBDB_Cache::Remove(const string&    key,
+                        int              version,
+                        const string&    subkey)
+{
+    if (IsReadOnly()) {
+        return;
+    }
+    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+
+    // Search the records to delete
+
+    vector<SCacheDescr>  cache_elements;
+
+    {{
+
+    CBDB_FileCursor cur(*m_CacheAttrDB);
+    cur.SetCondition(CBDB_FileCursor::eEQ);
+
+    cur.From << key << version << subkey;
+    while (cur.Fetch() == eBDB_Ok) {
+        int overflow = m_CacheAttrDB->overflow;
+
+        cache_elements.push_back(SCacheDescr(key, version, subkey, overflow));
+    }
+
+    }}
+
+
+
+    CBDB_Transaction trans(*m_Env);
+    m_CacheDB->SetTransaction(&trans);
+    m_CacheAttrDB->SetTransaction(&trans);
+
+    ITERATE(vector<SCacheDescr>, it, cache_elements) {
+        x_DropBlob(it->key.c_str(), 
+                   it->version, 
+                   it->subkey.c_str(), 
+                   it->overflow);
+    }
+
+	trans.Commit();
+    m_CacheAttrDB->GetEnv()->TransactionCheckpoint();
+}
+
+
 
 time_t CBDB_Cache::GetAccessTime(const string&  key,
                                  int            version,
@@ -1327,6 +1373,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2004/07/19 16:11:25  kuznets
+ * + Remove for key,version,subkey
+ *
  * Revision 1.59  2004/07/13 14:54:24  kuznets
  * GetTimeout() made const
  *

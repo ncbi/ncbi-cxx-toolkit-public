@@ -223,6 +223,18 @@ public:
     /// @param key BLOB identification key
     virtual void Remove(const string& key) = 0;
 
+    /// Remove specific cache entry
+    ///
+    /// @param key 
+    ///    BLOB identification key
+    /// @param subkey
+    ///    BLOB identification subkey
+    /// @param version 
+    ///    BLOB version
+    virtual void Remove(const string&    key,
+                        int              version,
+                        const string&    subkey) = 0;
+
     /// Return last access time for the specified cache entry
     ///
     /// Class implementation may want to implement access time based
@@ -282,6 +294,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/07/19 16:10:47  kuznets
+ * + Remove for key,version,subkey
+ *
  * Revision 1.5  2004/07/13 14:53:48  kuznets
  * GetTimeout() made const
  *

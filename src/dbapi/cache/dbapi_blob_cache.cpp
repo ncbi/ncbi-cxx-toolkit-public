@@ -808,6 +808,30 @@ void CDBAPI_Cache::Remove(const string& key)
     tg.Commit();
 }
 
+void CDBAPI_Cache::Remove(const string&    key,
+                          int              version,
+                          const string&    subkey)
+{
+    CFastMutexGuard guard(x_DBAPI_BLOB_CacheMutex);
+
+    string del_blob_sql = 
+        "DELETE FROM dbo.cache_data WHERE ";
+    s_MakeKeyCondition(key, version, subkey, &del_blob_sql);
+    IStatement* stmt = m_Conn->GetStatement();
+    CDBAPI_TransGuard tg(stmt);
+
+    stmt->ExecuteUpdate(del_blob_sql);
+
+    del_blob_sql = 
+        "DELETE FROM dbo.cache_attr WHERE ";
+    s_MakeKeyCondition(key, version, subkey, &del_blob_sql);
+
+    stmt->ExecuteUpdate(del_blob_sql);
+
+    tg.Commit();
+}
+
+
 time_t CDBAPI_Cache::GetAccessTime(const string&  key,
                                    int            version,
                                    const string&  subkey)
@@ -1103,6 +1127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/07/19 16:12:15  kuznets
+ * + Remove for key,version,subkey
+ *
  * Revision 1.1  2004/07/19 14:58:43  kuznets
  * Initial revision
  *

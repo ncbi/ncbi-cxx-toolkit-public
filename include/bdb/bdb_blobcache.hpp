@@ -169,6 +169,10 @@ public:
 
     virtual void Remove(const string& key);
 
+    virtual void Remove(const string&    key,
+                        int              version,
+                        const string&    subkey);
+
     virtual time_t GetAccessTime(const string&  key,
                                  int            version,
                                  const string&  subkey);
@@ -277,6 +281,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/07/19 16:11:10  kuznets
+ * + Remove for key,version,subkey
+ *
  * Revision 1.20  2004/07/13 14:54:06  kuznets
  * GetTimeout() made const
  *
