@@ -96,34 +96,6 @@ void CMsvcConfigure::InitializeFrom(const CMsvcSite& site)
 }
 
 
-static bool s_LibOk(const SLibInfo& lib_info)
-{
-    if ( lib_info.IsEmpty() )
-        return false;
-    if ( !lib_info.m_IncludeDir.empty() &&
-         !CDirEntry(lib_info.m_IncludeDir).Exists() ) {
-        LOG_POST(Warning << "No LIB INCLUDE dir : " + lib_info.m_IncludeDir);
-        return false;
-    }
-    if ( !lib_info.m_LibPath.empty() &&
-         !CDirEntry(lib_info.m_LibPath).Exists() ) {
-        LOG_POST(Warning << "No LIBPATH : " + lib_info.m_LibPath);
-        return false;
-    }
-    ITERATE(list<string>, p, lib_info.m_Libs) {
-        const string& lib = *p;
-        string lib_path_abs = CDirEntry::ConcatPath(lib_info.m_LibPath, lib);
-        if ( !lib_path_abs.empty() &&
-             !CDirEntry(lib_path_abs).Exists() ) {
-            LOG_POST(Warning << "No LIB : " + lib_path_abs);
-            return false;
-        }
-    }
-
-    return true;
-}
-
-
 bool CMsvcConfigure::ProcessDefine(const string& define, 
                                    const CMsvcSite& site, 
                                    const list<SConfigInfo>& configs) const
@@ -140,7 +112,7 @@ bool CMsvcConfigure::ProcessDefine(const string& define,
             const SConfigInfo& config = *n;
             SLibInfo lib_info;
             site.GetLibInfo(component, config, &lib_info);
-            if ( !s_LibOk(lib_info) )
+            if ( !IsLibOk(lib_info) )
                 return false;
         }
     }
@@ -211,6 +183,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/04/19 15:41:50  gorelenk
+ * Static helper function s_LibOk changed to function IsLibOk.
+ *
  * Revision 1.4  2004/02/24 20:51:59  gorelenk
  * Changed implementation of function s_LibOk
  * and member-function ProcessDefine of class CMsvcConfigure.
