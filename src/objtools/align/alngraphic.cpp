@@ -384,7 +384,7 @@ void CAlnGraphic::AlnGraphicDisplay(CNcbiOstream& out){
             if(!handle){
                 NCBI_THROW(CException, eUnknown, "Master sequence is not found!");
             }
-            master_len = handle.GetBioseqCore()->GetInst().GetLength();
+            master_len = handle.GetBioseqLength();
             x_DisplayMaster(master_len, &(*center), &(*tbl_box), tbl_box_tc);
         }
         if(!is_first_aln && !subid->Match(*previous_id)) {
@@ -670,6 +670,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.4  2004/07/22 15:25:11  jianye
+*use handle.GetBioseqLength
+*
 *Revision 1.3  2004/07/12 15:18:52  jianye
 *no show if the gap or seq is less than 1 pixel
 *
