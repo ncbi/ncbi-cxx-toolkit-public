@@ -54,6 +54,7 @@ public:
         eMemoryLimit,
         eNotSupported,
         eInvalidCharacter,
+        eSeqSrc,
         eMaxErrCode
     };
     virtual const char* GetErrCodeString(void) const {
@@ -73,8 +74,12 @@ public:
             err_code_string = "Memory limit exceeded"; 
             break;
         case eInvalidCharacter:
-            err_code_string = "Sequence contains one or more invalid characters"; 
+            err_code_string = "Sequence contains one or more invalid ";
+            err_code_string += "characters"; 
             break;
+        case eSeqSrc:
+            err_code_string = "Initialization error in BlastSeqSrc ";
+            err_code_string += "implementation";
         case eNotSupported:
             err_code_string = "This operation is not supported"; 
             break;
@@ -99,6 +104,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2004/11/17 20:13:13  camacho
+ * Add error code for BlastSeqSrc
+ *
  * Revision 1.11  2004/10/26 15:29:21  dondosha
  * Append error message to error code string, to report a more informative error
  *
