@@ -37,6 +37,247 @@
 BEGIN_NCBI_SCOPE
 
 
+/////////////////////////////////////////////////////////////////////////////
+//  CSocket::
+//
+
+CSocket::CSocket(void) :
+    m_Socket(0), m_IsOwned(eTakeOwnership)
+{
+}
+
+
+CSocket::CSocket(const string&   host,
+                 unsigned short  port,
+                 const STimeout* timeout) :
+    m_IsOwned(eTakeOwnership)
+{
+    if (SOCK_Create(host.c_str(), port, timeout, &m_Socket) != eIO_Success)
+        m_Socket = 0;
+}
+
+
+CSocket::~CSocket(void)
+{
+    if (m_Socket && m_IsOwned != eNoOwnership)
+        SOCK_Close(m_Socket);
+}
+
+
+void CSocket::Reset(SOCK sock, EOwnership if_to_own)
+{
+    if ( m_Socket )
+        Close();
+    m_Socket = sock;
+    m_IsOwned = if_to_own;
+}
+
+
+EIO_Status CSocket::Connect(const string&   host,
+                            unsigned short  port,
+                            const STimeout* timeout)
+{
+    if ( m_Socket )
+        return eIO_Unknown;
+    EIO_Status status = SOCK_Create(host.c_str(), port, timeout, &m_Socket);
+    if (status != eIO_Success)
+        m_Socket = 0;
+    return status;
+}
+
+
+EIO_Status CSocket::Reconnect(const STimeout* timeout)
+{
+    return m_Socket ? SOCK_Reconnect(m_Socket, 0, 0, timeout) : eIO_Closed;
+}
+
+
+EIO_Status CSocket::Shutdown(EIO_Event how)
+{
+    return m_Socket ? SOCK_Shutdown(m_Socket, how) : eIO_Closed;
+}
+
+
+EIO_Status CSocket::Close(void)
+{
+    if ( !m_Socket )
+        return eIO_Closed;
+    EIO_Status status = m_IsOwned != eNoOwnership
+        ? SOCK_Close(m_Socket) : eIO_Success;
+    m_Socket = 0;
+    return status;
+}
+
+
+EIO_Status CSocket::Wait(EIO_Event event, const STimeout* timeout)
+{
+    return m_Socket ? SOCK_Wait(m_Socket, event, timeout) : eIO_Closed; 
+}
+
+
+EIO_Status CSocket::Read(void*          buf,
+                         size_t         size,
+                         size_t*        n_read,
+                         EIO_ReadMethod how)
+{
+    if ( m_Socket )
+        return SOCK_Read(m_Socket, buf, size, n_read, how);
+    if ( n_read )
+        *n_read = 0;
+    return eIO_Closed;
+}
+
+
+EIO_Status CSocket::PushBack(const void* buf, size_t size)
+{
+    return m_Socket ? SOCK_PushBack(m_Socket, buf, size) : eIO_Closed;
+}
+
+
+EIO_Status CSocket::Write(const void*     buf,
+                          size_t          size,
+                          size_t*         n_written,
+                          EIO_WriteMethod how)
+{
+    if ( m_Socket )
+        return SOCK_Write(m_Socket, buf, size, n_written, how);
+    if ( n_written )
+        *n_written = 0;
+    return eIO_Closed;
+}
+
+
+void CSocket::GetPeerAddress(unsigned int* host, unsigned short* port,
+                             ENH_ByteOrder byte_order) const
+{
+    if ( !m_Socket ) {
+        if ( host )
+            *host = 0;
+        if ( port )
+            *port = 0;
+    } else
+        SOCK_GetPeerAddress(m_Socket, host, port, byte_order);
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CListeningSocket::
+//
+
+CListeningSocket::CListeningSocket(void) :
+    m_Socket(0)
+{
+}
+
+
+CListeningSocket::CListeningSocket(unsigned short port, unsigned short backlog)
+{
+    if (LSOCK_Create(port, backlog, &m_Socket) != eIO_Success)
+        m_Socket = 0;
+}
+
+
+CListeningSocket::~CListeningSocket(void)
+{
+    if ( m_Socket )
+        LSOCK_Close(m_Socket);
+}
+
+
+EIO_Status CListeningSocket::Listen(unsigned short port,
+                                    unsigned short backlog)
+{
+    if ( m_Socket )
+        return eIO_Unknown;
+    EIO_Status status = LSOCK_Create(port, backlog, &m_Socket);
+    if (status != eIO_Success)
+        m_Socket = 0;
+    return status;
+}
+
+
+EIO_Status CListeningSocket::Accept(CSocket*&       sock,
+                                    const STimeout* timeout) const
+{
+    if ( !m_Socket )
+        return eIO_Unknown;
+    SOCK x_sock;
+    EIO_Status status = LSOCK_Accept(m_Socket, timeout, &x_sock);
+    if (status != eIO_Success)
+        sock = 0;
+    else if (!(sock = new CSocket)) {
+        SOCK_Close(x_sock);
+        status = eIO_Unknown;
+    } else
+        sock->Reset(x_sock, eTakeOwnership);
+    return status;
+}
+
+
+EIO_Status CListeningSocket::Accept(CSocket&        sock,
+                                    const STimeout* timeout) const
+{
+    if ( !m_Socket )
+        return eIO_Unknown;
+    SOCK x_sock;
+    EIO_Status status = LSOCK_Accept(m_Socket, timeout, &x_sock);
+    if (status == eIO_Success)
+        sock.Reset(x_sock, eTakeOwnership);
+    return status;
+}
+
+
+EIO_Status CListeningSocket::Close(void)
+{
+    if ( !m_Socket )
+        return eIO_Closed;
+    EIO_Status status = LSOCK_Close(m_Socket);
+    m_Socket = 0;
+    return status;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CSocketAPI::
+//
+
+string CSocketAPI::gethostname(void)
+{
+    char hostname[128];
+    if (SOCK_gethostname(hostname, sizeof(hostname)) == 0)
+        return string(hostname);
+    return kEmptyStr;
+}
+
+
+string CSocketAPI::ntoa(unsigned int host)
+{
+    char ipaddr[64];
+    if (SOCK_ntoa(host, ipaddr, sizeof(ipaddr)) == 0)
+        return string(ipaddr);
+    return kEmptyStr;
+}
+
+
+string CSocketAPI::gethostbyaddr(unsigned int host)
+{
+    char hostname[128];
+
+    if (SOCK_gethostbyaddr(host, hostname, sizeof(hostname)) != 0)
+        return string(hostname);
+    return kEmptyStr;
+}    
+
+
+unsigned int CSocketAPI::gethostbyname(const string& hostname)
+{
+    const char* host = hostname.c_str();
+    return SOCK_gethostbyname(*host ? host : 0);
+}
+
+
 EIO_Status CSocketAPI::Poll(vector<SPoll>&  sockets,
                             const STimeout* timeout,
                             size_t*         n_ready)
@@ -79,6 +320,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/08/13 19:29:02  lavr
+ * Move most methods out-of-line to this file
+ *
  * Revision 6.1  2002/08/12 15:15:36  lavr
  * Initial revision
  *
