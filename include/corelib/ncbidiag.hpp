@@ -33,6 +33,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/01/20 16:52:29  vakatov
+* SDiagMessage::Write() to replace SDiagMessage::Compose()
+* + operator<<(CNcbiOstream& os, const SDiagMessage& mess)
+* + IsSetDiagHandler(), IsDiagStream()
+*
 * Revision 1.16  1999/12/29 22:30:22  vakatov
 * Use "exit()" rather than "abort()" in non-#_DEBUG mode
 *
@@ -234,20 +239,15 @@ extern void SetDiagPostPrefix(const char* prefix);
 
 // Do not post messages which severity is less than "min_sev"
 // Return previous post-level
-extern EDiagSev SetDiagPostLevel(EDiagSev post_sev=eDiag_Error);
+extern EDiagSev SetDiagPostLevel(EDiagSev post_sev = eDiag_Error);
 
 // Abrupt the application if severity is >= "max_sev"
 // Return previous die-level
-extern EDiagSev SetDiagDieLevel(EDiagSev die_sev=eDiag_Fatal);
-
-// Write the error diagnostics to output stream "os"
-// (this uses the SetDiagHandler() functionality)
-// If "quick_flush" is "true" then do stream "flush()" after every message
-extern void SetDiagStream(CNcbiOstream* os, bool quick_flush=true);
+extern EDiagSev SetDiagDieLevel(EDiagSev die_sev = eDiag_Fatal);
 
 // Set new message handler("func"), data("data") and destructor("cleanup").
-// "func(..., data)" is to be called when any instance of "CNcbiDiagBuffer"
-// has a new error message completed and ready to post.
+// The "func(..., data)" to be called when any instance of "CNcbiDiagBuffer"
+// has a new diagnostic message completed and ready to post.
 // "cleanup(data)" will be called whenever this hook gets replaced and
 // on the program termination.
 // NOTE:  "func()", "cleanup()" and "g_SetDiagHandler()" calls are
@@ -266,11 +266,17 @@ struct SDiagMessage {
     unsigned int m_Flags;   // bitwise OR of "EDiagPostFlag"
     const char*  m_Prefix;
 
-    // allocate("new") and compose a message string in the "standard" format:
-    //    "<file>", line <line>: <severity>: [<prefix>] <message>
-    // NOTE:  it is user's responsibility to "delete" the returned string
-    char* Compose(void) const;
+    // Compose a message string in the standard format(see also "flags"):
+    //    "<file>", line <line>: <severity>: [<prefix>] <message> EOL
+    // and put it to string "str", or write to an output stream "os".
+    void          Write(string& str) const;
+    CNcbiOstream& Write(CNcbiOstream& os) const;
 };
+
+inline CNcbiOstream& operator<<(CNcbiOstream& os, const SDiagMessage& mess) {
+    return mess.Write(os);
+}
+
 
 typedef void (*FDiagHandler)(const SDiagMessage& mess);
 
@@ -279,6 +285,23 @@ typedef void (*FDiagCleanup)(void* data);
 extern void SetDiagHandler(FDiagHandler func,
                            void*        data,
                            FDiagCleanup cleanup);
+
+// Return TRUE if any diag. handler is set
+extern bool IsSetDiagHandler(void);
+
+
+// Write the error diagnostics to output stream "os"
+// (this uses the SetDiagHandler() functionality)
+extern void SetDiagStream
+(CNcbiOstream* os,
+ bool          quick_flush  = true,  // do stream flush after every message
+ FDiagCleanup  cleanup      = 0,     // call "cleanup(cleanup_data)" if diag.
+ void*         cleanup_data = 0      // stream is changed (see SetDiagHandler)
+ );
+
+// Return TRUE if "os" is the current diag. stream
+extern bool IsDiagStream(const CNcbiOstream* os);
+
 
 
 ///////////////////////////////////////////////////////

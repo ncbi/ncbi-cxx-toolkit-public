@@ -33,6 +33,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/01/20 16:52:30  vakatov
+* SDiagMessage::Write() to replace SDiagMessage::Compose()
+* + operator<<(CNcbiOstream& os, const SDiagMessage& mess)
+* + IsSetDiagHandler(), IsDiagStream()
+*
 * Revision 1.15  1999/12/29 22:30:22  vakatov
 * Use "exit()" rather than "abort()" in non-#_DEBUG mode
 *
@@ -112,13 +117,15 @@ class CDiagBuffer {
     friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
     friend void SetDiagHandler(FDiagHandler func, void* data,
                                FDiagCleanup cleanup);
+    friend bool IsDiagStream(const CNcbiOstream* os);
+    friend bool IsSetDiagHandler(void);
 private:
 #else
 public:
 #endif
 
     const CNcbiDiag* m_Diag;    // present user
-    CNcbiOstrstream  m_Stream;  // storage for the diagnostic message
+    CNcbiOstream*    m_Stream;  // storage for the diagnostic message
 
     CDiagBuffer(void);
 
@@ -136,7 +143,7 @@ private:
     // formatted output
     template<class X> void Put(const CNcbiDiag& diag, const X& x) {
         if ( SetDiag(diag) )
-            m_Stream << x;
+            (*m_Stream) << x;
     }
 #endif  /* !NO_INCLASS_TMPL */
 
@@ -208,7 +215,7 @@ template<class X>
 inline
 void Put(CNcbiDiag& diag, CDiagBuffer& dbuff, const X& x) {
     if ( dbuff.SetDiag(diag) )
-        dbuff.m_Stream << x;
+        (*dbuff.m_Stream) << x;
 }
 
 template<class X>
@@ -275,15 +282,11 @@ CNcbiDiag& Trace(CNcbiDiag& diag)  {
 
 ///////////////////////////////////////////////////////
 //  CDiagBuffer::
-inline
-CDiagBuffer::CDiagBuffer(void) {
-    m_Diag = 0;
-}
 
 inline
 void CDiagBuffer::Reset(const CNcbiDiag& diag) {
     if (&diag == m_Diag)
-        m_Stream.rdbuf()->SEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
+        m_Stream->rdbuf()->SEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
 }
 
 inline
