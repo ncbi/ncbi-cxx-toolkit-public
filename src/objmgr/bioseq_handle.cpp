@@ -718,10 +718,16 @@ CRef<CSeq_loc> CBioseq_Handle::GetRangeSeq_loc(TSeqPos start,
         NCBI_THROW(CObjMgrException, eOtherError,
             "CRangeSeq_loc -- can not get seq-id to create seq-loc");
     }
-    id->Assign(*orig_id);
-    CRef<CSeq_interval> interval(new CSeq_interval(*id, start, stop, strand));
     CRef<CSeq_loc> res(new CSeq_loc);
-    res->SetInt(*interval);
+    id->Assign(*orig_id);
+    if (start == 0  &&  stop == 0) {
+        res->SetWhole(*id);
+    }
+    else {
+        CRef<CSeq_interval> interval(new CSeq_interval
+                                     (*id, start, stop, strand));
+        res->SetInt(*interval);
+    }
     return res;
 }
 
@@ -742,6 +748,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2005/01/13 21:43:18  grichenk
+* GetRangeSeq_loc returns whole seq-loc if both start and stop are 0.
+*
 * Revision 1.80  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *
