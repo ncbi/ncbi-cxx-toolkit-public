@@ -42,6 +42,7 @@
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
+#include <objects/seqloc/Textseq_id.hpp>
 
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -50,10 +51,279 @@
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/items/feature_item.hpp>
 #include <objtools/format/context.hpp>
+#include "utils.hpp"
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+USING_SCOPE(sequence);
+
+
+const CGb_qual* s_GetQual(const CSeq_feat& feat, const string& qual)
+{
+    ITERATE(CSeq_feat::TQual, it, feat.GetQual()) {
+        if ( (*it)->CanGetQual()  &&
+             NStr::CompareNocase((*it)->GetQual(), qual) == 0  &&
+             (*it)->CanGetVal()  &&  !(*it)->GetVal().empty() ) {
+            return *it;
+        }
+    }
+    return 0;
+}
+
+
+static bool s_CheckQuals_cdregion(const CSeq_feat& feat, CFFContext& ctx)
+{
+    if ( !ctx.CheckCDSProductId() ) {
+        return true;
+    }
+
+    // non-pseudo CDS must have /product
+    bool pseudo = feat.CanGetPseudo()  &&  feat.GetPseudo();
+    if ( !pseudo ) {
+        const CGene_ref* grp = feat.GetGeneXref();
+        if ( grp == 0 ) {
+            CConstRef<CSeq_feat> gene = 
+                GetOverlappingGene(feat.GetLocation(), ctx.GetScope());
+            if ( gene ) {
+                pseudo = gene->CanGetPseudo()  &&  gene->GetPseudo();
+                if ( !pseudo ) {
+                    grp = &(gene->GetData().GetGene());
+                }
+            }
+        }
+        if ( !pseudo  &&  grp != 0 ) {
+            pseudo = grp->GetPseudo();
+        }
+    }
+
+    bool just_stop = false;
+    if ( feat.CanGetLocation() ) {
+        const CSeq_loc& loc = feat.GetLocation();
+        if ( loc.IsPartialLeft()  &&  !loc.IsPartialRight() ) {
+            if ( GetLength(loc, &ctx.GetScope()) <= 5 ) {
+                just_stop = true;
+            }
+        }
+    }
+
+    if ( pseudo ||  just_stop ) {
+        return true;
+    } 
+
+    // make sure the product has a valid accession
+    if ( feat.CanGetProduct() ) {
+        const CSeq_id* id = 0;
+        try {
+            id = &(GetId(feat.GetProduct(), &ctx.GetScope()));
+        } catch ( CException& ) {}
+        if ( id != 0 ) {
+            if ( (id->IsGi()  &&  id->GetGi() > 0) ||  id->IsLocal() ) {
+                // !!! make sure the product has a valid accession
+                return true;
+            } else if ( id->IsGenbank()  ||  id->IsEmbl()    ||  id->IsDdbj()  ||
+                        id->IsOther()    ||  id->IsPatent()  ||  
+                        id->IsTpg()      ||  id->IsTpe()     ||  id->IsTpd() ) {
+                const CTextseq_id* tsip = id->GetTextseq_Id();
+                if ( tsip != 0  &&  tsip->CanGetAccession()  &&
+                     ValidateAccession(tsip->GetAccession()) ) {
+                    return true;
+                }
+            }
+        }
+    } else {  // no product
+        if ( feat.CanGetExcept()  &&  feat.GetExcept()  &&
+             feat.CanGetExcept_text() ) {
+            if ( NStr::Find(feat.GetExcept_text(),
+                    "rearrangement required for product") != NPOS ) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+
+// conflict and old_sequence require a publication printable on the segment
+static bool s_HasPub(const CSeq_feat& feat, CFFContext& ctx)
+{
+    if ( !feat.CanGetCit() ) {
+        return false;
+    }
+
+    ITERATE(CBioseqContext::TReferences, it, ctx.GetReferences()) {
+        if ( (*it)->Matches(feat.GetCit()) ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+static bool s_CheckQuals_conflict(const CSeq_feat& feat, CFFContext& ctx)
+{
+    if ( !feat.CanGetCit() ) {
+        // RefSeq allows conflict with accession in comment instead of sfp->cit
+        if ( ctx.IsRefSeq()  &&
+             feat.CanGetComment()  &&  !feat.GetComment().empty() ) {
+            return true;
+        }
+    } else {
+        return s_HasPub(feat, ctx);
+    }
+
+    return false;
+}
+
+
+static bool s_CheckQuals_old_seq(const CSeq_feat& feat, CFFContext& ctx)
+{    
+    return s_HasPub(feat, ctx);
+}
+
+
+static bool s_CheckQuals_gene(const CSeq_feat& feat, CFFContext& ctx)
+{
+    // gene requires /gene or /locus_tag, but desc or syn can be mapped to /gene
+    const CSeqFeatData::TGene& gene = feat.GetData().GetGene();
+    if ( (gene.CanGetLocus()      &&  !gene.GetLocus().empty())      ||
+         (gene.CanGetLocus_tag()  &&  !gene.GetLocus_tag().empty())  ||
+         (gene.CanGetDesc()       &&  !gene.GetDesc().empty())       ||
+         (!gene.GetSyn().empty()  &&  !gene.GetSyn().front().empty()) ) {
+        return true;
+    }
+
+    return false;
+}
+
+
+static bool s_CheckQuals_bind(const CSeq_feat& feat, CFFContext& ctx)
+{
+    // protein_bind or misc_binding require eFQ_bound_moiety
+    return s_GetQual(feat, "bound_moiety") != 0;
+}
+
+
+static bool s_CheckQuals_mod_base(const CSeq_feat& feat, CFFContext& ctx)
+{
+    // modified_base requires eFQ_mod_base
+    return s_GetQual(feat, "mod_base") != 0;
+}
+
+
+static bool s_CheckMandatoryQuals(const CSeq_feat& feat, CFFContext& ctx)
+{
+    switch ( feat.GetData().GetSubtype() ) {
+    case CSeqFeatData::eSubtype_cdregion:
+        {
+            return s_CheckQuals_cdregion(feat, ctx);
+        }
+    case CSeqFeatData::eSubtype_conflict:
+        {
+            return s_CheckQuals_conflict(feat, ctx);
+        }
+    case CSeqFeatData::eSubtype_old_sequence:
+        {
+            return s_CheckQuals_old_seq(feat, ctx);
+        }
+    case CSeqFeatData::eSubtype_gene:
+        {
+            return s_CheckQuals_gene(feat, ctx);
+        }
+    case CSeqFeatData::eSubtype_protein_bind:
+    case CSeqFeatData::eSubtype_misc_binding:
+        {
+            return s_CheckQuals_bind(feat, ctx);
+        }
+    case CSeqFeatData::eSubtype_modified_base:
+        {
+            return s_CheckQuals_mod_base(feat, ctx);
+        }
+    default:
+        break;
+    }
+
+    return true;
+}
+
+
+static bool s_SkipFeature(const CSeq_feat& feat, CFFContext& ctx)
+{
+    CSeqFeatData::E_Choice type    = feat.GetData().Which();
+    CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();        
+   
+    if ( subtype == CSeqFeatData::eSubtype_pub              ||
+         subtype == CSeqFeatData::eSubtype_non_std_residue  ||
+         subtype == CSeqFeatData::eSubtype_biosrc           ||
+         subtype == CSeqFeatData::eSubtype_rsite            ||
+         subtype == CSeqFeatData::eSubtype_seq ) {
+        return true;
+    }
+    
+    // check feature customization flags
+    if ( ctx.ValidateFeats()  &&
+        (subtype == CSeqFeatData::eSubtype_bad  ||
+         subtype == CSeqFeatData::eSubtype_virion) ) {
+        return true;
+    }
+    
+    if ( ctx.IsNa()  &&  subtype == CSeqFeatData::eSubtype_het ) {
+        return true;
+    }
+    
+    if ( ctx.HideImpFeat()  &&  type == CSeqFeatData::e_Imp ) {
+        return true;
+    }
+    
+    if ( ctx.HideSnpFeat()  &&  subtype == CSeqFeatData::eSubtype_variation ) {
+        return true;
+    }
+
+    if ( ctx.HideExonFeat()  &&  subtype == CSeqFeatData::eSubtype_exon ) {
+        return true;
+    }
+
+    if ( ctx.HideIntronFeat()  &&  subtype == CSeqFeatData::eSubtype_intron ) {
+        return true;
+    }
+
+    if ( ctx.HideRemImpFeat()  &&  subtype == CSeqFeatData::eSubtype_imp ) {
+        if ( subtype == CSeqFeatData::eSubtype_variation  ||
+             subtype == CSeqFeatData::eSubtype_exon       ||
+             subtype == CSeqFeatData::eSubtype_intron     ||
+             subtype == CSeqFeatData::eSubtype_misc_feature ) {
+            return true;
+        }
+    }
+
+    // skip genes in DDBJ format
+    if ( ctx.IsFormatDDBJ()  &&  type == CSeqFeatData::e_Gene ) {
+        return true;
+    }
+
+    // To Do:
+    // !!! supress full length comment features
+    // if RELEASE mode, make sure we have all info to create mandatory quals.
+    if ( ctx.NeedRequiredQuals() ) {
+        return !s_CheckMandatoryQuals(feat, ctx);
+    }
+
+    return false;
+}
+
+
+void CFeatureItem::x_GatherInfo(CFFContext& ctx)
+{
+    if ( s_SkipFeature(GetFeat(), ctx) ) {
+        x_SetSkip();
+        return;
+    }
+    m_Type = m_Feat->GetData().GetSubtype();
+    x_AddQuals(ctx);
+}
+
 
 
 CRef<CFlatFeature> CFeatureItemBase::Format(void) const
@@ -64,18 +334,18 @@ CRef<CFlatFeature> CFeatureItemBase::Format(void) const
     }
 
     m_FF.Reset(new CFlatFeature(GetKey(),
-                                *new CFlatSeqLoc(*m_Loc, *m_Context), *m_Feat));
-    x_AddQuals();
+                                *new CFlatSeqLoc(*m_Loc, GetContext()), *m_Feat));
+    //x_AddQuals();
     x_FormatQuals();
     return m_FF;
 }
 
 
-void CFeatureItem::x_AddQuals(void) const
+void CFeatureItem::x_AddQuals(CFFContext& ctx) const
 {
-    CScope&             scope = m_Context->GetHandle().GetScope();
+    CScope&             scope = ctx.GetScope();
     const CSeqFeatData& data  = m_Feat->GetData();
-    m_Type = data.GetSubtype();
+
     // add various generic qualifiers...
     if (m_Feat->IsSetComment()) {
         x_AddQual(eFQ_seqfeat_note, new CFlatStringQVal(m_Feat->GetComment()));
@@ -85,7 +355,7 @@ void CFeatureItem::x_AddQuals(void) const
             x_AddQual(eFQ_coded_by, new CFlatSeqLocQVal(m_Feat->GetLocation()));
         } else {
             CBioseq_Handle prod = scope.GetBioseqHandle(m_Feat->GetProduct());
-            if ( !m_Context->IsProt() ) {
+            if ( !ctx.IsProt() ) {
                 EFeatureQualifier slot
                     = ((prod.GetBioseqCore()->GetInst().GetMol()
                         == CSeq_inst::eMol_aa)
@@ -201,13 +471,15 @@ void CFeatureItem::x_AddQuals(const CGene_ref& gene) const
 
 void CFeatureItem::x_AddQuals(const CCdregion& cds) const
 {
+    CFFContext& ctx = GetContext();
+
     if (m_IsProduct) {
         return; // We don't need directions when we have the sequence!
     } else if ( !m_Feat->IsSetProduct() ) {
         // warn?
         return;
     }
-    CScope& scope = m_Context->GetHandle().GetScope();
+    CScope& scope = ctx.GetHandle().GetScope();
     CConstRef<CSeq_feat> prod
         = sequence::GetBestOverlappingFeat(m_Feat->GetProduct(),
                                            CSeqFeatData::e_Prot,
@@ -227,7 +499,7 @@ void CFeatureItem::x_AddQuals(const CCdregion& cds) const
             id = 1;
         }
         if ( id != 1  ||
-             m_Context->GetFormat() == CFlatFileGenerator::eFormat_GBSeq) {
+             ctx.GetFormat() == CFlatFileGenerator::eFormat_GBSeq) {
             x_AddQual(eFQ_transl_table, new CFlatIntQVal(id));
         }
         
@@ -488,13 +760,27 @@ void CFeatureItem::x_FormatQuals(void) const
 }
 
 
-void CSourceFeatureItem::x_AddQuals(void) const
+void CFeatureItem::x_FormatQual
+(EFeatureQualifier slot,
+ const string& name,
+ IFlatQVal::TFlags flags) const
+{
+    typedef TQuals::const_iterator TQCI;
+    pair<TQCI, TQCI> range
+        = const_cast<const TQuals&>(m_Quals).equal_range(slot);
+    for (TQCI it = range.first;  it != range.second;  ++it) {
+        it->second->Format(m_FF->SetQuals(), name, GetContext(), flags);
+    }
+}
+
+
+void CSourceFeatureItem::x_AddQuals(CFFContext& ctx) const
 {
     const CSeqFeatData& data = m_Feat->GetData();
     _ASSERT(data.IsOrg()  ||  data.IsBiosrc());
     // add various generic qualifiers...
     x_AddQual(eSQ_mol_type,
-              new CFlatMolTypeQVal(m_Context->GetBiomol(), m_Context->GetMol()));
+              new CFlatMolTypeQVal(ctx.GetBiomol(), ctx.GetMol()));
     if (m_Feat->IsSetComment()) {
         x_AddQual(eSQ_seqfeat_note, new CFlatStringQVal(m_Feat->GetComment()));
     }
@@ -507,88 +793,88 @@ void CSourceFeatureItem::x_AddQuals(void) const
     if (m_Feat->IsSetDbxref()) {
         x_AddQual(eSQ_org_xref, new CFlatXrefQVal(m_Feat->GetDbxref()));
     }
-    switch (data.Which()) {
-    case CSeqFeatData::e_Org:     x_AddQuals(data.GetOrg());     break;
-    case CSeqFeatData::e_Biosrc:  x_AddQuals(data.GetBiosrc());  break;
-    default: break; // can't happen, but some compilers warn anyway
-    }
+    // add qualifiers from biosource fields
+    x_AddQuals(data.GetBiosrc(), ctx);
 }
 
 
 static ESourceQualifier s_OrgModToSlot(const COrgMod& om)
 {
-    switch (om.GetSubtype()) {
-#define DO_ORGMOD(x) case COrgMod::eSubtype_##x:  return eSQ_##x;
-        DO_ORGMOD(strain);
-        DO_ORGMOD(substrain);
-        DO_ORGMOD(type);
-        DO_ORGMOD(subtype);
-        DO_ORGMOD(variety);
-        DO_ORGMOD(serotype);
-        DO_ORGMOD(serogroup);
-        DO_ORGMOD(serovar);
-        DO_ORGMOD(cultivar);
-        DO_ORGMOD(pathovar);
-        DO_ORGMOD(chemovar);
-        DO_ORGMOD(biovar);
-        DO_ORGMOD(biotype);
-        DO_ORGMOD(group);
-        DO_ORGMOD(subgroup);
-        DO_ORGMOD(isolate);
-        DO_ORGMOD(common);
-        DO_ORGMOD(acronym);
-        DO_ORGMOD(dosage);
+    switch ( om.GetSubtype() ) {
+#define CASE_ORGMOD(x) case COrgMod::eSubtype_##x:  return eSQ_##x;
+        CASE_ORGMOD(strain);
+        CASE_ORGMOD(substrain);
+        CASE_ORGMOD(type);
+        CASE_ORGMOD(subtype);
+        CASE_ORGMOD(variety);
+        CASE_ORGMOD(serotype);
+        CASE_ORGMOD(serogroup);
+        CASE_ORGMOD(serovar);
+        CASE_ORGMOD(cultivar);
+        CASE_ORGMOD(pathovar);
+        CASE_ORGMOD(chemovar);
+        CASE_ORGMOD(biovar);
+        CASE_ORGMOD(biotype);
+        CASE_ORGMOD(group);
+        CASE_ORGMOD(subgroup);
+        CASE_ORGMOD(isolate);
+        CASE_ORGMOD(common);
+        CASE_ORGMOD(acronym);
+        CASE_ORGMOD(dosage);
     case COrgMod::eSubtype_nat_host:  return eSQ_spec_or_nat_host;
-        DO_ORGMOD(sub_species);
-        DO_ORGMOD(specimen_voucher);
-        DO_ORGMOD(authority);
-        DO_ORGMOD(forma);
-        DO_ORGMOD(forma_specialis);
-        DO_ORGMOD(ecotype);
-        DO_ORGMOD(synonym);
-        DO_ORGMOD(anamorph);
-        DO_ORGMOD(teleomorph);
-        DO_ORGMOD(breed);
-        DO_ORGMOD(gb_acronym);
-        DO_ORGMOD(gb_anamorph);
-        DO_ORGMOD(gb_synonym);
-        DO_ORGMOD(old_lineage);
-        DO_ORGMOD(old_name);
-#undef DO_ORGMOD
+        CASE_ORGMOD(sub_species);
+        CASE_ORGMOD(specimen_voucher);
+        CASE_ORGMOD(authority);
+        CASE_ORGMOD(forma);
+        CASE_ORGMOD(forma_specialis);
+        CASE_ORGMOD(ecotype);
+        CASE_ORGMOD(synonym);
+        CASE_ORGMOD(anamorph);
+        CASE_ORGMOD(teleomorph);
+        CASE_ORGMOD(breed);
+        CASE_ORGMOD(gb_acronym);
+        CASE_ORGMOD(gb_anamorph);
+        CASE_ORGMOD(gb_synonym);
+        CASE_ORGMOD(old_lineage);
+        CASE_ORGMOD(old_name);
+#undef CASE_ORGMOD
     case COrgMod::eSubtype_other:  return eSQ_orgmod_note;
     default:                       return eSQ_none;
     }
 }
 
 
-void CSourceFeatureItem::x_AddQuals(const COrg_ref& org) const
+void CSourceFeatureItem::x_AddQuals(const COrg_ref& org, CFFContext& ctx) const
 {
-    {{
-        string name;
-        if (org.IsSetTaxname()) {
-            name = org.GetTaxname();
-        }
-        if (name.empty()  &&  org.IsSetOrgname()) {
-            org.GetOrgname().GetFlatName(name);
-        }
-        if (org.IsSetCommon()) {
-            if (name.empty()) {
-                name = org.GetCommon();
-            }
-            x_AddQual(eSQ_common_name, new CFlatStringQVal(org.GetCommon()));
-        }
-        if ( !name.empty() ) {
-            x_AddQual(eSQ_organism, new CFlatStringQVal(name));
-        }
-    }}
-    if (org.IsSetDb()) {
-        x_AddQual(eSQ_db_xref, new CFlatXrefQVal(org.GetDb()));
+    string taxname, common;
+    if ( org.IsSetTaxname() ) {
+        taxname = org.GetTaxname();
     }
-    for (CTypeConstIterator<COrgMod> it(org);  it;  ++it) {
-        ESourceQualifier slot = s_OrgModToSlot(*it);
-        if (slot != eSQ_none) {
-            x_AddQual(slot, new CFlatOrgModQVal(*it));
+    if ( taxname.empty()  &&  ctx.NeedOrganismQual() ) {
+        taxname = "unknown";
+        if ( org.IsSetCommon() ) {
+            common = org.GetCommon();
         }
+    }
+    if ( !taxname.empty() ) {
+        x_AddQual(eSQ_organism, new CFlatStringQVal(taxname));
+    }
+    if ( !common.empty() ) {
+        x_AddQual(eSQ_common_name, new CFlatStringQVal(common));
+    }
+    if ( org.CanGetOrgname() ) {
+        ITERATE (COrgName::TMod, it, org.GetOrgname().GetMod()) {
+            ESourceQualifier slot = s_OrgModToSlot(**it);
+            if (slot != eSQ_none) {
+                x_AddQual(slot, new CFlatOrgModQVal(**it));
+            }
+        }
+    }
+    if ( !WasDesc() ) {
+        x_AddQual(eSQ_unstructured, new CFlatStringListQVal(org.GetMod()));
+    }
+    if ( org.IsSetDb() ) {
+        x_AddQual(eSQ_db_xref, new CFlatXrefQVal(org.GetDb()));
     }
 }
 
@@ -632,25 +918,57 @@ static ESourceQualifier s_SubSourceToSlot(const CSubSource& ss)
 }
 
 
-void CSourceFeatureItem::x_AddQuals(const CBioSource& src) const
+void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CFFContext& ctx) const
 {
-    x_AddQual(eSQ_organelle, new CFlatOrganelleQVal(src.GetGenome()));
-    x_AddQuals(src.GetOrg());
+    // add qualifiers from Org_ref field
+    if ( src.CanGetOrg() ) {
+        x_AddQuals(src.GetOrg(), ctx);
+    }
+    x_AddQual(eSQ_focus, new CFlatBoolQVal(src.IsSetIs_focus()));
+
+    
+    bool insertion_seq_name = false,
+         plasmid_name = false,
+         transposon_name = false;
     ITERATE (CBioSource::TSubtype, it, src.GetSubtype()) {
         ESourceQualifier slot = s_SubSourceToSlot(**it);
+        if ( slot == eSQ_insertion_seq_name ) {
+            insertion_seq_name = true;
+        } else if ( slot == eSQ_plasmid_name ) {
+            plasmid_name = true;
+        } else if ( slot == eSQ_transposon_name ) {
+            transposon_name = true;
+        }
         if (slot != eSQ_none) {
             x_AddQual(slot, new CFlatSubSourceQVal(**it));
         }
     }
-    x_AddQual(eSQ_focus, new CFlatBoolQVal(src.IsSetIs_focus()));
+
+    // some qualifiers are flags in genome and names in subsource,
+    // print once with name
+    CBioSource::TGenome genome = src.GetGenome();
+    CRef<CFlatOrganelleQVal> organelle(new CFlatOrganelleQVal(genome));
+    if ( (insertion_seq_name  &&  genome == CBioSource::eGenome_insertion_seq)  ||
+         (plasmid_name  &&  genome == CBioSource::eGenome_plasmid)  ||
+         (transposon_name  &&  genome == CBioSource::eGenome_transposon) ) {
+        organelle.Reset();
+    }
+    if ( organelle ) {
+        x_AddQual(eSQ_organelle, organelle);
+    }
+
+    if ( !WasDesc()  &&  m_Feat->CanGetComment() ) {
+        x_AddQual(eSQ_seqfeat_note, new CFlatStringQVal(m_Feat->GetComment()));
+    }
 }
 
 
 void CSourceFeatureItem::x_FormatQuals(void) const
 {
     m_FF->SetQuals().reserve(m_Quals.size());
+    CFlatFeature::TQuals& qvec = m_FF->SetQuals();
 
-#define DO_QUAL(x) x_FormatQual(eSQ_##x, #x)
+#define DO_QUAL(x) x_FormatQual(eSQ_##x, #x, qvec)
     DO_QUAL(organism);
 
     DO_QUAL(organelle);
@@ -658,19 +976,19 @@ void CSourceFeatureItem::x_FormatQuals(void) const
     DO_QUAL(mol_type);
 
     DO_QUAL(strain);
-    x_FormatQual(eSQ_substrain, "sub_strain");
+    x_FormatQual(eSQ_substrain, "sub_strain", qvec);
     DO_QUAL(variety);
     DO_QUAL(serotype);
     DO_QUAL(serovar);
     DO_QUAL(cultivar);
     DO_QUAL(isolate);
     DO_QUAL(isolation_source);
-    x_FormatQual(eSQ_spec_or_nat_host, "specific_host");
+    x_FormatQual(eSQ_spec_or_nat_host, "specific_host", qvec);
     DO_QUAL(sub_species);
     DO_QUAL(specimen_voucher);
 
     DO_QUAL(db_xref);
-    x_FormatQual(eSQ_org_xref, "db_xref");
+    x_FormatQual(eSQ_org_xref, "db_xref", qvec);
 
     DO_QUAL(chromosome);
 
@@ -678,7 +996,7 @@ void CSourceFeatureItem::x_FormatQuals(void) const
 
     DO_QUAL(map);
     DO_QUAL(clone);
-    x_FormatQual(eSQ_subclone, "sub_clone");
+    x_FormatQual(eSQ_subclone, "sub_clone", qvec);
     DO_QUAL(haplotype);
     DO_QUAL(sex);
     DO_QUAL(cell_line);
@@ -697,114 +1015,178 @@ void CSourceFeatureItem::x_FormatQuals(void) const
     DO_QUAL(pop_variant);
     DO_QUAL(tissue_lib);
 
-    x_FormatQual(eSQ_plasmid_name,       "plasmid");
-    x_FormatQual(eSQ_transposon_name,    "transposon");
-    x_FormatQual(eSQ_insertion_seq_name, "insertion_seq");
+    x_FormatQual(eSQ_plasmid_name,       "plasmid", qvec);
+    x_FormatQual(eSQ_transposon_name,    "transposon", qvec);
+    x_FormatQual(eSQ_insertion_seq_name, "insertion_seq", qvec);
 
     DO_QUAL(country);
 
     DO_QUAL(focus);
 
-#define DO_NOTE(x) x_FormatNoteQual(eSQ_##x, #x)
-    if (m_WasDesc) {
-        x_FormatNoteQual(eSQ_seqfeat_note, "note");
-        DO_NOTE(orgmod_note);
-        DO_NOTE(subsource_note);
-    } else {
-        DO_NOTE(unstructured);
+    if ( !GetContext().SrcQualsToNote() ) {
+        // some note qualifiers appear as regular quals in GBench or Dump mode
+        x_FormatGBNoteQuals();
     }
-
-    DO_NOTE(type);
-    DO_NOTE(subtype);
-    DO_NOTE(serogroup);
-    DO_NOTE(pathovar);
-    DO_NOTE(chemovar);
-    DO_NOTE(biovar);
-    DO_NOTE(biotype);
-    DO_NOTE(group);
-    DO_NOTE(subgroup);
-    DO_NOTE(common);
-    DO_NOTE(acronym);
-    DO_NOTE(dosage);
-
-    DO_NOTE(authority);
-    DO_NOTE(forma);
-    DO_NOTE(forma_specialis);
-    DO_NOTE(ecotype);
-    DO_NOTE(synonym);
-    DO_NOTE(anamorph);
-    DO_NOTE(teleomorph);
-    DO_NOTE(breed);
-
-    DO_NOTE(genotype);
-    x_FormatNoteQual(eSQ_plastid_name, "plastid");
-
-    x_FormatNoteQual(eSQ_endogenous_virus_name, "endogenous_virus");
-
-    if ( !m_WasDesc ) {
-        DO_NOTE(seqfeat_note);
-        DO_NOTE(orgmod_note);
-        DO_NOTE(subsource_note);
-    }
-
-    x_FormatNoteQual(eSQ_common_name, "common");
-
-    x_FormatNoteQual(eSQ_zero_orgmod, "?");
-    x_FormatNoteQual(eSQ_one_orgmod,  "?");
-    x_FormatNoteQual(eSQ_zero_subsrc, "?");
-#undef DO_NOTE
 
     DO_QUAL(sequenced_mol);
     DO_QUAL(label);
     DO_QUAL(usedin);
     DO_QUAL(citation);
 #undef DO_QUAL
+
+    // Format the rest of the note quals (ones that weren't formatted above)
+    // as a single note qualifier
+    x_FormatNoteQuals();
 }
 
 
-CSourceFeatureItem::CSourceFeatureItem(const CBioSource& src,
-                                               CFFContext& ctx)
-    : CFeatureItemBase(*new CSeq_feat, ctx, ctx.GetLocation()),
-      m_WasDesc(true)
+void CSourceFeatureItem::x_FormatGBNoteQuals(void) const
 {
-    CSeq_feat& feat = const_cast<CSeq_feat&>(*m_Feat);
-    feat.SetData().SetBiosrc(const_cast<CBioSource&>(src));
-    feat.SetLocation().Assign(*m_Loc);
+    _ASSERT(!GetContext().SrcQualsToNote());
+    CFlatFeature::TQuals& qvec = m_FF->SetQuals();
+
+#define DO_QUAL(x) x_FormatQual(eSQ_##x, #x, qvec)
+    DO_QUAL(type);
+    DO_QUAL(subtype);
+    DO_QUAL(serogroup);
+    DO_QUAL(pathovar);
+    DO_QUAL(chemovar);
+    DO_QUAL(biovar);
+    DO_QUAL(biotype);
+    DO_QUAL(group);
+    DO_QUAL(subgroup);
+    DO_QUAL(common);
+    DO_QUAL(acronym);
+    DO_QUAL(dosage);
+    
+    DO_QUAL(authority);
+    DO_QUAL(forma);
+    DO_QUAL(forma_specialis);
+    DO_QUAL(ecotype);
+    DO_QUAL(synonym);
+    DO_QUAL(anamorph);
+    DO_QUAL(teleomorph);
+    DO_QUAL(breed);
+    
+    DO_QUAL(genotype);
+    x_FormatQual(eSQ_plastid_name, "plastid", qvec);
+    
+    x_FormatQual(eSQ_endogenous_virus_name, "endogenous_virus", qvec);
+
+    x_FormatQual(eSQ_zero_orgmod, "?", qvec);
+    x_FormatQual(eSQ_one_orgmod,  "?", qvec);
+    x_FormatQual(eSQ_zero_subsrc, "?", qvec);
+#undef DO_QUAL
 }
 
 
-CSourceFeatureItem::CSourceFeatureItem(const COrg_ref& org,
-                                               CFFContext& ctx)
-    : CFeatureItemBase(*new CSeq_feat, ctx, ctx.GetLocation()),
-      m_WasDesc(true)
+void CSourceFeatureItem::x_FormatNoteQuals() const
 {
-    CSeq_feat& feat = const_cast<CSeq_feat&>(*m_Feat);
-    feat.SetData().SetOrg(const_cast<COrg_ref&>(org));
-    feat.SetLocation().Assign(*m_Loc);
-}
+    CFlatFeature::TQuals qvec;
 
+#define DO_NOTE(x) x_FormatNoteQual(eSQ_##x, #x, qvec)
+    if (m_WasDesc) {
+        x_FormatNoteQual(eSQ_seqfeat_note, "note", qvec);
+        DO_NOTE(orgmod_note);
+        DO_NOTE(subsource_note);
+    } else {
+        DO_NOTE(unstructured);
+    }
 
-void CFeatureItem::x_FormatQual(EFeatureQualifier slot, const string& name,
-                                    IFlatQVal::TFlags flags) const
-{
-    typedef TQuals::const_iterator TQCI;
-    pair<TQCI, TQCI> range
-        = const_cast<const TQuals&>(m_Quals).equal_range(slot);
-    for (TQCI it = range.first;  it != range.second;  ++it) {
-        it->second->Format(m_FF->SetQuals(), name, *m_Context, flags);
+    if ( GetContext().SrcQualsToNote() ) {
+        DO_NOTE(type);
+        DO_NOTE(subtype);
+        DO_NOTE(serogroup);
+        DO_NOTE(pathovar);
+        DO_NOTE(chemovar);
+        DO_NOTE(biovar);
+        DO_NOTE(biotype);
+        DO_NOTE(group);
+        DO_NOTE(subgroup);
+        DO_NOTE(common);
+        DO_NOTE(acronym);
+        DO_NOTE(dosage);
+        
+        DO_NOTE(authority);
+        DO_NOTE(forma);
+        DO_NOTE(forma_specialis);
+        DO_NOTE(ecotype);
+        DO_NOTE(synonym);
+        DO_NOTE(anamorph);
+        DO_NOTE(teleomorph);
+        DO_NOTE(breed);
+        
+        DO_NOTE(genotype);
+        x_FormatNoteQual(eSQ_plastid_name, "plastid", qvec);
+        
+        x_FormatNoteQual(eSQ_endogenous_virus_name, "endogenous_virus", qvec);
+    }
+
+    x_FormatNoteQual(eSQ_common_name, "common", qvec);
+
+    if ( GetContext().SrcQualsToNote() ) {
+        x_FormatNoteQual(eSQ_zero_orgmod, "?", qvec);
+        x_FormatNoteQual(eSQ_one_orgmod,  "?", qvec);
+        x_FormatNoteQual(eSQ_zero_subsrc, "?", qvec);
+    }
+#undef DO_NOTE
+
+    string notestr, delim;
+
+    if ( GetSource().CanGetGenome()  &&  
+        GetSource().GetGenome() == CBioSource::eGenome_extrachrom ) {
+        notestr += "extrachromosomal";
+        delim = "\n";
+    }
+
+    CFlatFeature::TQuals::const_iterator last = qvec.end();
+    CFlatFeature::TQuals::const_iterator end = last--;
+    for ( CFlatFeature::TQuals::const_iterator it = qvec.begin(); it != end; ++it ) {
+        JoinNoRedund(notestr, (*it)->GetValue(), delim);
+        delim = (*it)->GetSuffix();
+    }
+
+    if ( !notestr.empty() ) {
+        CRef<CFlatQual> note(new CFlatQual("note", notestr));
+        m_FF->SetQuals().push_back(note);
     }
 }
 
 
-void CSourceFeatureItem::x_FormatQual(ESourceQualifier slot,
-                                          const string& name,
-                                          IFlatQVal::TFlags flags) const
+CSourceFeatureItem::CSourceFeatureItem
+(const CBioSource& src,
+ TRange range,
+ CFFContext& ctx)
+    : CFeatureItemBase(*new CSeq_feat, ctx),
+      m_WasDesc(true)
+{
+    CSeq_feat& feat = const_cast<CSeq_feat&>(*m_Feat);
+    feat.SetData().SetBiosrc(const_cast<CBioSource&>(src));
+    if ( range.IsWhole() ) {
+        feat.SetLocation().SetWhole(*ctx.GetPrimaryId());
+    } else {
+        CSeq_interval& ival = feat.SetLocation().SetInt();
+        ival.SetFrom(range.GetFrom());
+        ival.SetTo(range.GetTo());
+        ival.SetId(*ctx.GetPrimaryId());
+    }
+
+    x_GatherInfo(ctx);
+}
+
+
+void CSourceFeatureItem::x_FormatQual
+(ESourceQualifier slot,
+ const string& name,
+ CFlatFeature::TQuals& qvec,
+ IFlatQVal::TFlags flags) const
 {
     typedef TQuals::const_iterator TQCI;
+
     pair<TQCI, TQCI> range
         = const_cast<const TQuals&>(m_Quals).equal_range(slot);
     for (TQCI it = range.first;  it != range.second;  ++it) {
-        it->second->Format(m_FF->SetQuals(), name, *m_Context,
+        it->second->Format(qvec, name, GetContext(),
                            flags | IFlatQVal::fIsSource);
     }
 }
@@ -817,6 +1199,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/11 16:56:42  shomrat
+* changes in qualifiers gathering and formatting
+*
 * Revision 1.3  2004/01/14 16:12:20  shomrat
 * uncommenetd code
 *
