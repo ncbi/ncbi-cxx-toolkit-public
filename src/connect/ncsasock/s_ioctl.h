@@ -4,6 +4,13 @@
  * specifies the terms and conditions for redistribution.
  *
  *	@(#)ioctl.h	7.12 (Berkeley) 5/18/90
+*
+*
+* RCS Modification History:
+* $Log$
+* Revision 1.2  1995/05/17 17:57:20  epstein
+* add RCS log revision history
+*
  */
 
 /*

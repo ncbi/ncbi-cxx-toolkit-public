@@ -18,6 +18,13 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
  *	@(#)tcp.h	7.7 (Berkeley) 6/28/90
+*
+*
+* RCS Modification History:
+* $Log$
+* Revision 1.2  1995/05/17 17:57:00  epstein
+* add RCS log revision history
+*
  */
 
 typedef	u_long	tcp_seq;

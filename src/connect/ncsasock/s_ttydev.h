@@ -4,6 +4,13 @@
  * specifies the terms and conditions for redistribution.
  *
  *	@(#)ttydev.h	7.6 (Berkeley) 11/20/89
+*
+*
+* RCS Modification History:
+* $Log$
+* Revision 1.2  1995/05/17 17:57:40  epstein
+* add RCS log revision history
+*
  */
 
 /*

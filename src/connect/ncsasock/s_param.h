@@ -1,3 +1,13 @@
+/*
+*
+*
+* RCS Modification History:
+* $Log$
+* Revision 1.2  1995/05/17 17:57:23  epstein
+* add RCS log revision history
+*
+*/
+
 #include <s_types.h>
 
 // #define is68k          // MPW C defines MC68000, mc68000, m68k, and

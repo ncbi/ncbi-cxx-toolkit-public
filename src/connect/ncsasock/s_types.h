@@ -4,6 +4,13 @@
  * specifies the terms and conditions for redistribution.
  *
  *	@(#)types.h	7.11 (Berkeley) 6/25/90
+*
+*
+* RCS Modification History:
+* $Log$
+* Revision 1.3  1995/05/17 17:57:43  epstein
+* add RCS log revision history
+*
  */
 
 #ifndef _TYPES_

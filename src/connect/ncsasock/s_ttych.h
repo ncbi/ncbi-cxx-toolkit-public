@@ -4,6 +4,13 @@
  * specifies the terms and conditions for redistribution.
  *
  *	@(#)ttychars.h	7.3 (Berkeley) 10/18/88
+*
+*
+* RCS Modification History:
+* $Log$
+* Revision 1.2  1995/05/17 17:57:37  epstein
+* add RCS log revision history
+*
  */
 
 /*

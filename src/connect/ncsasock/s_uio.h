@@ -18,6 +18,13 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
  *	@(#)uio.h	7.5 (Berkeley) 6/28/90
+*
+*
+* RCS Modification History:
+* $Log$
+* Revision 1.2  1995/05/17 17:57:46  epstein
+* add RCS log revision history
+*
  */
 
 #ifndef _UIO_

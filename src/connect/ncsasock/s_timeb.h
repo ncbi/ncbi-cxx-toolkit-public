@@ -4,6 +4,13 @@
  * specifies the terms and conditions for redistribution.
  *
  *	@(#)timeb.h	7.1 (Berkeley) 6/4/86
+*
+*
+* RCS Modification History:
+* $Log$
+* Revision 1.2  1995/05/17 17:57:33  epstein
+* add RCS log revision history
+*
  */
 
 /*

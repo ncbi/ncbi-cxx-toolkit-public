@@ -17,6 +17,13 @@
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
  *	@(#)netdb.h	5.11 (Berkeley) 5/21/90
+*
+*
+* RCS Modification History:
+* $Log$
+* Revision 1.2  1995/05/17 17:56:51  epstein
+* add RCS log revision history
+*
  */
 
 #define	_PATH_HEQUIV	"/etc/hosts.equiv"

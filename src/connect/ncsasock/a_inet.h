@@ -17,6 +17,13 @@
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
  *	@(#)inet.h	5.4 (Berkeley) 6/1/90
+*
+*
+* RCS Modification History:
+* $Log$
+* Revision 1.2  1995/05/17 17:56:29  epstein
+* add RCS log revision history
+*
  */
 
 /* External definitions for functions in inet(3) */

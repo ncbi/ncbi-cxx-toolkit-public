@@ -10,6 +10,13 @@
  *      152 Computing Applications Building
  *      605 E. Springfield Ave.
  *      Champaign, IL  61820
+*
+*
+* RCS Modification History:
+* $Log$
+* Revision 1.3  1995/05/17 17:56:47  epstein
+* add RCS log revision history
+*
  */
 
 /*

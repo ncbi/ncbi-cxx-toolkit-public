@@ -18,6 +18,13 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
  *	@(#)errno.h	7.10 (Berkeley) 6/28/90
+*
+*
+* RCS Modification History:
+* $Log$
+* Revision 1.3  1995/05/17 17:56:54  epstein
+* add RCS log revision history
+*
  */
 
 #ifndef KERNEL

@@ -4,6 +4,13 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
+*
+*
+* RCS Modification History:
+* $Log$
+* Revision 1.2  1995/05/17 17:58:13  epstein
+* add RCS log revision history
+*
  */
 
 #ifndef _sys_syslog_h

@@ -17,6 +17,13 @@
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
  *	@(#)tftp.h	5.3 (Berkeley) 6/1/90
+*
+*
+* RCS Modification History:
+* $Log$
+* Revision 1.2  1995/05/17 17:56:35  epstein
+* add RCS log revision history
+*
  */
 
 /*

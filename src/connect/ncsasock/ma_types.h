@@ -18,6 +18,13 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
  *	@(#)machtypes.h	7.4 (Berkeley) 6/25/90
+*
+*
+* RCS Modification History:
+* $Log$
+* Revision 1.2  1995/05/17 17:56:41  epstein
+* add RCS log revision history
+*
  */
 
 #ifndef	_MACHTYPES_H_

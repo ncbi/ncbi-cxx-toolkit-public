@@ -18,6 +18,13 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
  *	@(#)fcntl.h	5.5 (Berkeley) 5/29/90
+*
+*
+* RCS Modification History:
+* $Log$
+* Revision 1.3  1995/05/17 17:57:13  epstein
+* add RCS log revision history
+*
  */
 
 #ifndef F_DUPFD
