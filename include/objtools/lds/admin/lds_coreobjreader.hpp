@@ -98,6 +98,8 @@ public:
 
     TObjectVector& GetObjectsVector() { return m_Objects; }
 
+    void ClearObjectsVector() { m_Objects.clear(); }
+
 protected:
 
     struct SObjectParseDescr
@@ -141,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/10/09 16:43:05  kuznets
+ * +ClearObjectsVector()
+ *
  * Revision 1.6  2003/10/07 20:44:44  kuznets
  * + Reset() method
  *
