@@ -5,6 +5,8 @@
 # CTOOLS project cluster
 #################################
 
+REQUIRES = ctools C-Toolkit
+
 LIB_PROJ = ctools
 
 SUB_PROJ = asn test

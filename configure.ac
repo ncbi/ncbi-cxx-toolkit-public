@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.278 2004/03/12 19:13:11 ucko Exp $
+#  $Id: configure.ac,v 1.279 2004/03/22 19:28:26 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3476,9 +3476,6 @@ fi
 
 if test "$with_ctools" = "no" ; then
    WithoutProjects="$WithoutProjects ctools"
-else
-   ctools="ctools"
-   OPT_GROUPS="$OPT_GROUPS ctools"
 fi
 
 
@@ -3753,7 +3750,6 @@ AC_SUBST(serial)
 AC_SUBST(bdb)
 AC_SUBST(dbapi)
 AC_SUBST(objects)
-AC_SUBST(ctools)
 AC_SUBST(gui)
 AC_SUBST(algo)
 AC_SUBST(app)
