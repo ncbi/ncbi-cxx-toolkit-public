@@ -61,6 +61,8 @@
 
 #include <objects/taxon1/taxon1.hpp>
 
+#include <test/test_assert.h>
+
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -133,7 +135,7 @@ int CTestApplication::Run(void)
 				                         CTaxon1,
 				                         ITaxon1Node,
 				                         ITreeIterator>
-		  conv_func;
+		conv_func;
 		conv_func(btrc, tax, tax_id);
 
 		cout << MSerial_AsnText << btrc;
@@ -155,11 +157,14 @@ int CTestApplication::Run(void)
 
 
 
-
+/// Imitation of simple phylogenetic tree
 struct PhyNode
 {
-    int     distance;
-    string  label;
+    PhyNode() {}
+    PhyNode(int d, const string& l) : distance(d), label(l){}
+
+    int       distance;
+    string    label;
 };
 
 typedef 
@@ -190,13 +195,101 @@ private:
 
 
 
+
+
+
+
+struct PhyNodeId
+{
+    PhyNodeId() 
+    {}
+
+    PhyNodeId(unsigned x_id, int d, const string& l) 
+        : id(x_id), distance(d), label(l)
+    {}
+
+    unsigned GetId() const { return id; }
+
+    unsigned  id;
+    int       distance;
+    string    label;
+};
+
+
+typedef CTreeNode<PhyNodeId> CPhyTreeNode;
+
+
+class IdNodeConvert
+{
+public:
+    IdNodeConvert(CBioTreeDynamic& dynamic_tree)
+    : m_DynamicTree(&dynamic_tree)
+    {}
+
+    void operator()(CBioTreeDynamic::TBioTreeNode& dnode, 
+                    const CPhyTreeNode&  src_node)
+    {
+        const PhyNodeId& nv = src_node.GetValue();
+        NStr::IntToString(m_TmpStr, nv.distance);
+        m_DynamicTree->AddFeature(&dnode, "distance", m_TmpStr);
+        m_DynamicTree->AddFeature(&dnode, "label", nv.label);
+    }
+
+private:
+    CBioTreeDynamic*   m_DynamicTree;
+    string             m_TmpStr;
+};
+
+
+void TestTreeConvert()
+{
+    // ---------------------------------
+    // Filling the tree
+
+    CPhyTreeNode* n0 = new CPhyTreeNode;
+    {
+    PhyNodeId& nv = n0->GetValue();
+    nv.id = 0;
+    nv.distance = 0;
+    nv.label = "root";
+    }
+
+    n0->AddNode(PhyNodeId(10, 1, "node1"));
+    CPhyTreeNode* n2 = n0->AddNode(PhyNodeId(11, 1, "node2"));
+
+    n2->AddNode(PhyNodeId(20, 3, "node20"));
+
+
+    // -----------------------------------
+    // Convert to dynamic
+
+    CBioTreeDynamic dtr;
+
+    CBioTreeFeatureDictionary& dict = dtr.GetFeatureDict();
+    dict.Register("distance");
+    label_id = dict.Register("label");
+
+    IdNodeConvert func(dtr);
+    TreeConvert2Dynamic(dtr, n0, func);
+
+    // ----------------------------------------------------------    
+    // Print the tree to check if everything is correct...
+
+    TreePrint(cout, *(dtr.GetTreeNode()), s_Node2String);
+	cout << endl << endl;
+
+    delete n0;
+}
+
+
+
 int main(int argc, char** argv)
 {
+    TestTreeConvert();
+
     CPhyTree tr;
 
     // ----------------------------------------------------------
-
-   
 
     CPhyTree::TBioTreeNode* n0 =  new CPhyTree::TBioTreeNode;
     CPhyTree::TBioTreeNode::TValueType& nv = n0->GetValue();
@@ -294,6 +387,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/11/10 19:26:50  kuznets
+ * New test
+ *
  * Revision 1.3  2004/08/18 12:15:22  kuznets
  * Test for node feature access
  *
