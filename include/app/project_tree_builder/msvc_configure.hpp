@@ -44,7 +44,7 @@ public:
     CMsvcConfigure(void);
     ~CMsvcConfigure(void);
     
-    void operator()   (const CMsvcSite&         site, 
+    void operator()   (CMsvcSite&         site, 
                        const list<SConfigInfo>& configs,
                        const string&            root_dir);
 
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/07/20 13:39:29  gouriano
+ * Added conditional macro definition
+ *
  * Revision 1.4  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

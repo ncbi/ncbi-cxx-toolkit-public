@@ -113,7 +113,7 @@ static void s_CreateThirdPartyLibsInstallMakefile
 }
 
 
-void CMsvcConfigure::operator() (const CMsvcSite&         site, 
+void CMsvcConfigure::operator() (CMsvcSite&         site, 
                                  const list<SConfigInfo>& configs,
                                  const string&            root_dir)
 {
@@ -131,6 +131,7 @@ void CMsvcConfigure::operator() (const CMsvcSite&         site,
             m_ConfigSite[define] = '0';
         }
     }
+    site.ProcessMacros(configs);
 
     // Write ncbi_conf_msvc_site.h:
     string ncbi_conf_msvc_site_path = 
@@ -277,6 +278,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/07/20 13:38:40  gouriano
+ * Added conditional macro definition
+ *
  * Revision 1.13  2004/06/15 15:04:41  gorelenk
  * Changed CMsvcConfigure::operator() to be correctly compiled on GCC295 and
  * GCC333 .

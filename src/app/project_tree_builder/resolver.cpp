@@ -136,6 +136,10 @@ void CSymResolver::LoadFrom(const string& file_path,
     CSimpleMakeFileContents::LoadFrom(file_path, &resolver->m_Data);
 }
 
+void CSymResolver::AddDefinition(const string& key, const string& value)
+{
+    m_Data.AddDefinition(key, value);
+}
 
 bool CSymResolver::IsEmpty(void) const
 {
@@ -187,6 +191,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/07/20 13:38:40  gouriano
+ * Added conditional macro definition
+ *
  * Revision 1.8  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *

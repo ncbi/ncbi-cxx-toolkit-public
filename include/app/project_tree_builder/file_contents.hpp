@@ -67,6 +67,7 @@ public:
     TContents m_Contents;
 
     static void LoadFrom(const string& file_path, CSimpleMakeFileContents* fc);
+    void AddDefinition( const string& key, const string& value);
 
     /// Debug dump
     void Dump(CNcbiOfstream& ostr) const;
@@ -107,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/07/20 13:39:29  gouriano
+ * Added conditional macro definition
+ *
  * Revision 1.6  2004/06/10 15:12:54  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

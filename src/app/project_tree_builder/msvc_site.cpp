@@ -337,12 +337,51 @@ bool IsLibOk(const SLibInfo& lib_info)
     return true;
 }
 
+void CMsvcSite::ProcessMacros(const list<SConfigInfo>& configs)
+{
+    string macros_str = m_Registry.GetString("Configure", "Macros", "");
+    list<string> macros;
+    NStr::Split(macros_str, LIST_SEPARATOR, macros);
+
+    ITERATE(list<string>, m, macros) {
+        const string& macro = *m;
+        if (!IsDescribed(macro)) {
+            // add empty value
+            LOG_POST(Info << "Macro " << macro << " is not defined in site");
+        }
+        list<string> components;
+        GetComponents(macro, &components);
+        bool res = true;
+        ITERATE(list<string>, p, components) {
+            const string& component = *p;
+            ITERATE(list<SConfigInfo>, n, configs) {
+                const SConfigInfo& config = *n;
+                SLibInfo lib_info;
+                GetLibInfo(component, config, &lib_info);
+                if ( !IsLibOk(lib_info) ) {
+                    LOG_POST(Info << "Macro " << macro << " cannot be resolved for "
+                        << component << " (" << config.m_Name << ")");
+                    res = false;
+                    break;
+                }
+            }
+        }
+        if (!res) {
+            continue;
+        }
+        string value =  m_Registry.GetString(macro, "Value", "");
+        m_Macros.AddDefinition(macro,value);
+    }
+}
 
 
 END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/07/20 13:38:40  gouriano
+ * Added conditional macro definition
+ *
  * Revision 1.16  2004/06/01 16:03:54  gorelenk
  * Implemented CMsvcSite::GetLibChoiceForLib and SLibChoice::SLibChoice .
  *

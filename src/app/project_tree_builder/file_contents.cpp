@@ -83,7 +83,7 @@ void CSimpleMakeFileContents::SetFrom(const CSimpleMakeFileContents& contents)
 }
 
 
-void CSimpleMakeFileContents::LoadFrom(const string&            file_path,
+void CSimpleMakeFileContents::LoadFrom(const string&  file_path,
                                        CSimpleMakeFileContents* fc)
 {
     CSimpleMakeFileContents::SParser parser(fc);
@@ -100,6 +100,15 @@ void CSimpleMakeFileContents::LoadFrom(const string&            file_path,
 	    parser.AcceptLine(strline);
 
     parser.EndParse();
+}
+
+void CSimpleMakeFileContents::AddDefinition(const string& key,
+                                            const string& value)
+{
+    SKeyValue kv;
+    kv.m_Key = key;
+    kv.m_Value = value;
+    AddReadyKV(kv);
 }
 
 
@@ -234,6 +243,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/07/20 13:38:40  gouriano
+ * Added conditional macro definition
+ *
  * Revision 1.11  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *

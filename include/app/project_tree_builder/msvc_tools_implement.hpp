@@ -537,7 +537,9 @@ public:
 #endif
         }
 #if 1
-        command_line  = "@echo " + cmd + "\n" + cmd;
+        if (!cmd.empty()) {
+            command_line  = "@echo " + cmd + "\n" + cmd;
+        }
 #endif
         return command_line;
     }
@@ -709,6 +711,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/07/20 13:39:29  gouriano
+ * Added conditional macro definition
+ *
  * Revision 1.16  2004/07/16 16:32:34  gouriano
  * change pre-build rule for projects with ASN dependencies
  *

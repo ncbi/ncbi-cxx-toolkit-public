@@ -148,8 +148,10 @@ const CMsvcMetaMakefile::SPchInfo& CMsvcMetaMakefile::GetPchInfo(void) const
             continue;
 
         string val = m_MakeFile.GetString("UsePch", key, "");
-        if ( !val.empty() )
-            m_PchInfo->m_PchUsageMap[key] = val;
+        if ( !val.empty() ) {
+            string tmp = CDirEntry::ConvertToOSPath(key);
+            m_PchInfo->m_PchUsageMap[tmp] = val;
+        }
     }
 
     string do_not_use_pch_str = 
@@ -562,6 +564,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/07/20 13:38:40  gouriano
+ * Added conditional macro definition
+ *
  * Revision 1.15  2004/06/10 15:16:46  gorelenk
  * Changed macrodefines to be comply with GCC 3.4.0 .
  *

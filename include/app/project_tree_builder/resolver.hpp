@@ -57,6 +57,7 @@ public:
     CSymResolver& operator+= (const CSymResolver& src);
 
     static void LoadFrom(const string& file_path, CSymResolver* resolver);
+    void AddDefinition( const string& key, const string& value);
 
     bool IsEmpty(void) const;
 
@@ -82,6 +83,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/07/20 13:39:29  gouriano
+ * Added conditional macro definition
+ *
  * Revision 1.5  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

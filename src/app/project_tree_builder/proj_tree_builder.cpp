@@ -963,6 +963,7 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
     list<string> metadata_files;
     GetApp().GetMetaDataFiles(&metadata_files);
     CSymResolver resolver;
+    resolver += GetApp().GetSite().GetMacros();
     ITERATE(list<string>, p, metadata_files) {
 	    resolver += CSymResolver(CDirEntry::ConcatPath(root_src_path, *p));
 	}
@@ -1334,6 +1335,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/07/20 13:38:40  gouriano
+ * Added conditional macro definition
+ *
  * Revision 1.13  2004/06/16 16:29:11  gorelenk
  * Changed directories traversing proc.
  *

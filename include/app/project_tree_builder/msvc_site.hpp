@@ -31,6 +31,7 @@
 #include <corelib/ncbireg.hpp>
 #include <set>
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
+#include <app/project_tree_builder/resolver.hpp>
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
 
@@ -144,6 +145,11 @@ public:
     string GetThirdPartyLibsBinPathSuffix(void) const;
     string GetThirdPartyLibsBinSubDir    (void) const;
     
+    void ProcessMacros (const list<SConfigInfo>& configs);
+    const CSymResolver& GetMacros(void) const
+    {
+        return m_Macros;
+    }
 
 private:
     const CNcbiRegistry& m_Registry;
@@ -151,6 +157,8 @@ private:
     set<string> m_NotProvidedThing;
 
     list<SLibChoice> m_LibChoices;
+
+    CSymResolver m_Macros;
 
     /// Prohibited to:
     CMsvcSite(void);
@@ -163,6 +171,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/07/20 13:39:29  gouriano
+ * Added conditional macro definition
+ *
  * Revision 1.16  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

@@ -280,7 +280,7 @@ int CProjBulderApp::Run(void)
 
     // Configure 
     CMsvcConfigure configure;
-    configure(GetSite(), 
+    configure(const_cast<CMsvcSite&>(GetSite()), 
               GetRegSettings().m_ConfigInfo, 
               GetProjectTreeInfo().m_Root);
 
@@ -822,6 +822,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2004/07/20 13:38:40  gouriano
+ * Added conditional macro definition
+ *
  * Revision 1.44  2004/07/16 16:33:08  gouriano
  * change pre-build rule for projects with ASN dependencies
  *
