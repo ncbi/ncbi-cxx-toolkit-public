@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.21  2003/02/06 19:59:22  kholodov
+* Fixed: CResultSet::GetColumnNo() never returned 1
+*
 * Revision 1.20  2002/11/25 15:15:50  kholodov
 * Removed: dynamic array module (array.hpp, array.cpp), using
 * STL vector instead to keep bound column data.
@@ -283,7 +286,7 @@ int CResultSet::GetColumnNo()
 {
     int col = m_rs->CurrentItemNo();
 
-    return col > 0 ? col + 1 : -1;
+    return col >= 0 ? col + 1 : -1;
 }
 
 unsigned int CResultSet::GetTotalColumns()
