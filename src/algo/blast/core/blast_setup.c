@@ -59,26 +59,35 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
         return 1;
 
     if (program == blast_type_blastn) {
-        char buffer[50];
 
-        if (scoring_options->matrix_path &&
-            *scoring_options->matrix_path != NULLB)
-            sbp->read_in_matrix = TRUE;
-        else
-            sbp->read_in_matrix = FALSE;
         BLAST_ScoreSetAmbigRes(sbp, 'N');
         sbp->penalty = scoring_options->penalty;
         sbp->reward = scoring_options->reward;
-        sprintf(buffer, "blastn matrix:%ld %ld",
-                (long) sbp->reward, (long) sbp->penalty);
-        sbp->name = strdup(buffer);
-        status = BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix);
+        if (scoring_options->matrix_path &&
+            *scoring_options->matrix_path != NULLB &&
+            scoring_options->matrix && *scoring_options->matrix != NULLB) {
+
+            sbp->read_in_matrix = TRUE;
+            sbp->name = strdup(scoring_options->matrix);
+
+        } else {
+            char buffer[50];
+            sbp->read_in_matrix = FALSE;
+            sprintf(buffer, "blastn matrix:%ld %ld",
+                    (long) sbp->reward, (long) sbp->penalty);
+            sbp->name = strdup(buffer);
+        }
+        status = BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix_path);
+
     } else {
         Int2 tmp_index;         /* loop variable. */
+        char* p = NULL;
 
         sbp->read_in_matrix = TRUE;
         BLAST_ScoreSetAmbigRes(sbp, 'X');
-        sbp->name = strdup(scoring_options->matrix);
+        sbp->name = p = strdup(scoring_options->matrix);
+        /* protein matrices are in all caps by convention */
+        while (*p != NULLB) *p++ = toupper(*p);
         status = BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix_path);
         if (status)
             return status;

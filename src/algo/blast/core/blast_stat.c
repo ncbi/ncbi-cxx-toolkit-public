@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.29  2003/08/25 16:23:33  camacho
+ * +Loading protein scoring matrices from utils/tables
+ *
  * Revision 1.28  2003/08/11 15:01:59  dondosha
  * Added algo/blast/core to all #included headers
  *
@@ -141,6 +144,7 @@ Detailed Contents:
  * */
 #include <algo/blast/core/blastkar.h>
 #include <algo/blast/core/blast_util.h>
+#include <util/tables/raw_scoremat.h>
 
 /* OSF1 apparently doesn't like this. */
 #if defined(HUGE_VAL) && !defined(OS_UNIX_OSF1)
@@ -1215,31 +1219,94 @@ gaps), then use other scores. */
 }
 
 Int2
+BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp)
+{
+    ASSERT(sbp);
+    Int2 status = 0;
+    SNCBIPackedScoreMatrix* psm;
+    Int4** matrix = sbp->matrix;
+    int i, j;   /* loop indices */
+
+    if (strcasecmp(sbp->name, "BLOSUM62") == 0) {
+        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum62;
+    } else if (strcasecmp(sbp->name, "BLOSUM45") == 0) {
+        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum45;
+    } else if (strcasecmp(sbp->name, "BLOSUM80") == 0) {
+        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum80;
+    } else if (strcasecmp(sbp->name, "PAM30") == 0) {
+        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Pam30;
+    } else if (strcasecmp(sbp->name, "PAM70") == 0) {
+        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Pam70;
+    } else {
+        return -1;
+    }
+
+    /* Initialize with BLAST_SCORE_MIN */
+    for (i = 0; i < sbp->alphabet_size; i++) {
+        for (j = 0; j < sbp->alphabet_size; j++) {
+            matrix[i][j] = BLAST_SCORE_MIN;
+        }
+    }
+
+    for (i = 0; i < sbp->alphabet_size; i++) {
+        for (j = 0; j < sbp->alphabet_size; j++) {
+            if (i == 24 || i == GAP_CHAR ||
+                j == 24 || j == GAP_CHAR) {  /* skip selenocysteine and gap */
+                continue;
+            }
+            matrix[i][j] = NCBISM_GetScore((const SNCBIPackedScoreMatrix*) psm,
+                                           i, j);
+        }
+    }
+
+    return status;
+}
+
+Int2
 BLAST_ScoreBlkMatFill(BlastScoreBlk* sbp, char* matrix_path)
 {
     Int2 status = 0;
-    FILE *fp = NULL;
     
     if (sbp->read_in_matrix) {
-        ASSERT(matrix_path != NULL);
+        
+        if (matrix_path && *matrix_path != NULLB) {
 
-        if((fp=fopen(matrix_path, "r")) == NULL)
-           return -1;
+            FILE *fp = NULL;
+            char* full_matrix_path = NULL;
+            int path_len = strlen(matrix_path);
+            int buflen = path_len + strlen(sbp->name);
 
-        if((status=BlastScoreBlkMatRead(sbp, fp)) != 0) {
-           fclose(fp);
-           return status;
+            full_matrix_path = (char*) malloc((buflen + 1) * sizeof(char));
+            if (!full_matrix_path) {
+                return -1;
+            }
+            strncpy(full_matrix_path, matrix_path, buflen);
+            strncat(full_matrix_path, sbp->name, buflen - path_len);
+
+            if ( (fp=fopen(full_matrix_path, "r")) == NULL) {
+               return -1;
+            }
+
+            if ( (status=BlastScoreBlkMatRead(sbp, fp)) != 0) {
+               fclose(fp);
+               return status;
+            }
+            fclose(fp);
+
+        } else {
+            if ( (status = BlastScoreBlkMatrixLoad(sbp)) !=0) {
+                return status;
+            }
         }
-        fclose(fp);
     } else {
        /* Nucleotide BLAST only! */
-       if((status=BlastScoreBlkMatCreate(sbp)) != 0)
+       if ( (status=BlastScoreBlkMatCreate(sbp)) != 0)
           return status;
     }
     
-    if((status=BlastScoreBlkMaxScoreSet(sbp)) != 0)
+    if ( (status=BlastScoreBlkMaxScoreSet(sbp)) != 0)
        return status;
-    
+
     return status;
 }
 
