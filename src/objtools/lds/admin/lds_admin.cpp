@@ -65,15 +65,16 @@ CLDS_Management::OpenCreateDB(const string& dir_name,
                               const string& db_name,
                               bool*         is_created)
 {
-    CLDS_Database* db = new CLDS_Database(dir_name + "\\"+ db_name);
+    CLDS_Database* db = new CLDS_Database(dir_name, db_name);
     try {
         db->Open();
         *is_created = false;
     } 
-    catch (CBDB_ErrnoException& )
+    catch (CBDB_ErrnoException& ex)
     {
         // Failed to open: file does not exists.
         // Force the construction
+        LOG_POST("Warning: trying to open LDS database:" << ex.what());
 
         CLDS_Management admin(*db);
         admin.Create();
@@ -89,6 +90,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/08/11 20:01:48  kuznets
+ * Reflecting lds.hpp header change
+ *
  * Revision 1.4  2003/08/06 20:13:05  kuznets
  * Fixed LDS database creation bug CLDS_Management::OpenCreateDB always reported TRUE
  * in is_created parameter
