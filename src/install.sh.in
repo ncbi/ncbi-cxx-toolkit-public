@@ -31,6 +31,7 @@ old_srcdir='@top_srcdir@'
 build_dir=`(cd "${script_dir}/.." ; pwd)`
 install_dir="$1"
 
+relocate_flags=""
 
 #####  USAGE
 
@@ -80,7 +81,7 @@ for x_arg in "$@" ; do
     --without-bin )  with_bin="no" ;;
     --move        )  with_move="yes" ;;
     --srcdir=*    )  new_srcdir=`echo "$x_arg" | sed 's%--srcdir=%%'` ;;
-    --drop-suffix )  extra_sed='s%/c[+][+][^/ '\''"]*%/c++%g' ;;
+    --drop-suffix )  relocate_flags="$relocate_flags $x_arg" ;;
     * )  Usage "Unknown argument \"$x_arg\""
   esac
 done
@@ -183,10 +184,7 @@ status/config.cache status/config.status"
 # Copy files to the install build dir...
 install_builddir="$install_dir/build"
 
-#    ...as is
-files="\
-Makefile.app Makefile.lib Makefile.is_dll_support Makefile.dll Makefile.both \
-Makefile.rules Makefile.rules_with_autodep"
+files="Makefile.* install.sh relocate.sh"
 
 mkdir "$install_builddir"  ||  Usage "Failed to create dir:  $install_builddir"
 for f in $files ; do
@@ -194,27 +192,10 @@ for f in $files ; do
      Usage "Failed to copy makefile to:  $install_builddir/$f"
 done
 
-#    ...with $(builddir) adjustment
-files="\
-Makefile.mk Makefile.meta Makefile.lib.tmpl Makefile.app.tmpl install.sh"
+#    ...and adjust some for the new $(builddir)
 
-for f in $files ; do
-   sed '
-      s%^\(builddir *= *\).*%\1'$install_builddir'%;
-      s%^\(build_root *= *\).*%\1'$install_dir'%;
-      s%^\(top_srcdir *= *\).*%\1'$new_srcdir'%;
-      s%^\(status_dir *= *\).*%\1'$install_dir/status'%;
-      s%/netopt/ncbi_tools\.[^/ ]*%/netopt/ncbi_tools%g;
-      s%^ *BINCOPY *=.*%BINCOPY = @:%;
-      s%^ *BINTOUCH *=.*%BINTOUCH = @:%;
-      s%^\(old_srcdir='\''\).*\('\''\) *$%\1'$new_srcdir'\2%
-      '"$extra_sed"'
-   ' "$script_dir/$f" > "$install_builddir/$f"
-
-   test $? -eq 0  || Usage "Failed to copy (w/adjustment) $install_builddir/$f"
-done
-
-chmod a+x $install_builddir/*.sh
+chmod a+x $install_builddir/relocate.sh
+(cd $new_srcdir && $install_builddir/relocate.sh $relocate_flags)
 
 
 #####  MOVE mode (remove the original build dir)
