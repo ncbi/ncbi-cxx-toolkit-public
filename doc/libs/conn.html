@@ -555,14 +555,15 @@ Service connector uses all fields of this structure, except
 flag in the server type bitmask, if it was not set there already
 (convenient to modify the dispatching using environment and/or registry,
 if the flag is not set; yet allows to hardcode the flag at compile-time
-by setting it in constructor's <tt>type</tt> argument explicitly).
+by setting it in constructor's <tt>type</tt> argument explicitly);
 <li><tt>lb_disable</tt> set to "true" means to always use remote dispatcher (via network connection) even if locally running load-balancing daemon is avaliable
 (by default, local load-balancing deamon consulted first to resolve
-the name of the service).
+the name of the service);
 <li><tt>firewall</tt> set to "true" disables the direct connection to
 the service. Instead, either a connection to a proxy firewall daemon (running
 at the NCBI site) is used to pass the data in stream mode, or data get relayed
-via dispatcher if stateless server is used (firewalling this doesn't involve dispatching, which is always done via HTTP directly).
+via dispatcher if stateless server is used (firewalling this doesn't involve dispatching, which is always done via HTTP
+directly);
 <li><tt>http_user_header</tt> completely ignored.
 </ul>
 
