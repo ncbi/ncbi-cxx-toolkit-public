@@ -35,13 +35,16 @@
 #include <stdlib.h>
 
 
+#ifndef HAVE_STRDUP
 extern char* strdup(const char* str)
 {
     size_t size = strlen(str) + 1;
     return (char*) memcpy(malloc(size), str, size);
 }
+#endif
 
 
+#ifndef HAVE_STRCASECMP
 /* We assume that we're using ASCII-based charsets */
 extern int strcasecmp(const char* s1, const char* s2)
 {
@@ -85,6 +88,7 @@ extern int strncasecmp(const char* s1, const char* s2, size_t n)
 
     return c1 - c2;
 }
+#endif
 
 
 extern char* strupr(char* s)
@@ -121,6 +125,12 @@ extern char* strncpy0(char* s1, const char* s2, size_t n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2002/10/28 18:52:07  lavr
+ * Conditionalize definitions of strdup() and str[n]casecmp()
+ *
+ * Revision 6.12  2002/10/28 18:50:40  lavr
+ * Conditionalize definition of strdup() and str[n]casecmp()
+ *
  * Revision 6.11  2002/10/28 15:41:56  lavr
  * Use "ncbi_ansi_ext.h" privately
  *
