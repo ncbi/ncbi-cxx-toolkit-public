@@ -925,6 +925,8 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
       H = H->next;
    }
    
+   sfree(lh_helper);
+
    return 0;
 }
 
