@@ -70,32 +70,48 @@ AC_PROG_CXX
 changequote(, )dnl
 compiler=
 compiler_ver=
+ncbi_compiler="UNKNOWN"
+ncbi_compiler_ver="0.0"
 if test "$GCC" = "yes" ; then
    compiler_ver="`$CXX --version 2>&1`"
    case "$compiler_ver" in
-     2\.95* )  compiler="GCC" ;;
+     2\.95* )
+       compiler="GCC"
+       ncbi_compiler="GCC"
+       ncbi_compiler_ver="2.95" ;;
    esac
 else
    case "$host" in
     sparc-sun-solaris2\.[67]  |  i*86-pc-solaris2\.[67] )
       compiler_ver="`$CXX -V 2>&1`"
       case "$compiler_ver" in
-        *WorkShop*Compilers*5\.*)  compiler="WorkShop5" ;;
+        *WorkShop*Compilers*5\.*)
+          compiler="WorkShop5"
+          ncbi_compiler="WORKSHOP"
+          ncbi_compiler_ver="5.0" ;;
       esac ;;
 
     mips-sgi-irix6\.* )
       compiler_ver="`$CXX -version 2>&1`"
       case "$compiler_ver" in
-        MIPSpro*Compilers:*Version*7\.3* )  compiler="MIPSpro73" ;;
+        MIPSpro*Compilers:*Version*7\.3* )
+          compiler="MIPSpro73"
+          ncbi_compiler="MIPSPRO"
+          ncbi_compiler_ver="7.3" ;;
       esac ;;
 
     i*86*-pc-cygwin32 )
       case "$CXX" in
-        *cl\.exe* | cl)  compiler="MSVC" ;; 
+        *cl\.exe* | cl)
+          compiler="MSVC" 
+          ncbi_compiler="MSVC"
+          ncbi_compiler_ver="6.0" ;;
       esac ;;
    esac
 fi
 changequote([, ])dnl
+AC_DEFINE_UNQUOTED(NCBI_COMPILER_$ncbi_compiler, 1)
+AC_DEFINE_UNQUOTED(NCBI_COMPILER_VERSION, $ncbi_compiler_ver)
 
 
 #### Additional check for pre-defined compilers
@@ -106,7 +122,7 @@ case "$compiler" in
        echo "Compiler \"${compiler}\" requires a special tuning, so you"
        echo "better use a special shell script located in \"compilers/*.sh\"!"
        echo
-       echo "Do you still want to proceed? [n/y]"
+       echo "Do you still want to proceed (at your own risk)? [n/y]"
        read answer
        case "$answer" in
          y )  AC_MSG_WARN([Proceeding at your own risk...]) ;;
@@ -181,7 +197,7 @@ case "$host:$compiler" in
    ;;
 
  *:MIPSpro73 )
-   COMMON_FLAGS="-fullwarn -signed -brief_diagnostics -use_readonly_const -G0 -rdata_shared -n32"
+   COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared -n32"
    CFLAGS="$COMMON_FLAGS -ansi"
    CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424"
    CPPFLAGS="-D__LONGLONG $CPPFLAGS"
