@@ -50,6 +50,7 @@
 #include <objtools/readers/fasta.hpp>
 
 #include <algo/blast/api/bl2seq.hpp>
+#include <algo/blast/api/blast_input.hpp>
 
 #ifdef WRITE_SEQALIGNS
 #include <ctools/asn_converter.hpp>
@@ -257,38 +258,6 @@ CBlast2seqApplication::GetOutputFilePtr(void)
 }
 
 /*****************************************************************************/
-// Should go into something like blast_input.cpp
-vector< CConstRef<CSeq_loc> >
-BLASTGetSeqLocFromStream(CNcbiIstream& in, CRef<CScope>& scope, 
-                         vector< CRef<CSeq_loc> >* lcase_mask_vector = NULL)
-{
-    _ASSERT(scope);
-    vector< CConstRef<CSeq_loc> > retval;
-    int ctr = 0;
-    CRef<CSeq_entry> seq_entry;
-
-    if ( !(seq_entry = ReadFasta(in, fReadFasta_AllSeqIds, &ctr, 
-                                 lcase_mask_vector)))
-        throw runtime_error("Could not retrieve seq entry");
-
-    for (CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry)); itr; ++itr) {
-
-        CSeq_loc* sl = new CSeq_loc();
-        sl->SetWhole(*(const_cast<CSeq_id*>(&*itr->GetId().front())));
-        CConstRef<CSeq_loc> seqlocref(sl);
-        retval.push_back(seqlocref);
-
-        // Check if this seqentry has been added to the scope already
-        CBioseq_Handle bh = scope->GetBioseqHandle(*seqlocref);
-        if (!bh)
-            scope->AddTopLevelSeqEntry(*seq_entry);
-    }
-
-    return retval;
-}
-
-
-/*****************************************************************************/
 
 int CBlast2seqApplication::Run(void)
 {
@@ -299,13 +268,17 @@ int CBlast2seqApplication::Run(void)
         SetDiagTrace(eDT_Enable);
 
     CNcbiOstream& out = args["out"].AsOutputFile();
+    int counter = 0;
+    BlastMask* lcase_mask;
 
     // Retrieve input sequences
     vector< CConstRef<CSeq_loc> > query_loc =
-        BLASTGetSeqLocFromStream(args["query"].AsInputFile(), m_Scope);
+        BLASTGetSeqLocFromStream(args["query"].AsInputFile(), m_Scope,
+          eNa_strand_unknown, 0, 0, &counter, &lcase_mask);
 
     vector< CConstRef<CSeq_loc> > subject_loc =
-        BLASTGetSeqLocFromStream(args["subject"].AsInputFile(), m_Scope);
+        BLASTGetSeqLocFromStream(args["subject"].AsInputFile(), m_Scope,
+          eNa_strand_unknown, 0, 0, &counter, &lcase_mask);
 
     // Get program name
     CBlastOption::EProgram prog =
@@ -391,6 +364,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/08/11 15:26:30  dondosha
+ * BLASTGetSeqLocFromStream function moved to blast_input.cpp
+ *
  * Revision 1.8  2003/08/08 20:46:08  camacho
  * Fix to use new ReadFasta arguments
  *
