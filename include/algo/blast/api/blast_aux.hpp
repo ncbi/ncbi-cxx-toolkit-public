@@ -189,7 +189,7 @@ struct CDeleter<BlastHSPResults>
 BEGIN_SCOPE(blast)
 
 /** Converts a CSeq_loc into a BlastMaskLoc structure used in NewBlast
- * @param sl CSeq_loc to convert [in]
+ * @param slp CSeq_loc to convert [in]
  * @param index Number of frame/query number? this CSeq_loc applies to [in]
  * @return Linked list of BlastMaskLoc structures
  */
@@ -278,6 +278,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2004/03/16 14:48:01  dondosha
+* Typo fix in doxygen comment
+*
 * Revision 1.29  2004/03/12 16:33:22  camacho
 * Rename BLAST_ExtendWord functions to avoid collisions with C toolkit libraries
 *
