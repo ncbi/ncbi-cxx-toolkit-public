@@ -1,19 +1,13 @@
 <package>
-	<job id="test-wsh-js">
-		<script language="JScript">
-		// Utility functions
-		function execute(oShell, command)
-		{
-			var oExec = oShell.Exec("cmd /c " + command);
-			while(!oExec.StdOut.AtEndOfStream)
-				WScript.StdOut.WriteLine(oExec.StdOut.ReadLine());
-			return oExec.ExitCode;
-		}
+	<job id="new-project-wsh-js">
+	
+		<script language="JScript" src="project_utilits.js">
 		</script>
+
 		<script language="JScript">
 		// Framework
 		
-		// Task object constructor
+		// Verify command line arguments
 		function VerifyArguments(oArgs)
 		{
 			if (oArgs.Length < 3) {
@@ -31,6 +25,7 @@
 			
 			return true;
 		}
+		// Verify task object
 		function VerifyTask(oTask)
 		{
 			//Project name
@@ -71,6 +66,7 @@
 				WScript.Quit(1);	
 			}
 		}
+		// Create usage string
 		function Usage()
 		{
 			var usage_str;
@@ -78,6 +74,7 @@
 			usage_str += "cscript new_project.wsf <project-name> <project-template> <path-to-pre-built-toolkit> [-dll]";
 			return usage_str;
 		}
+		// Task object constructor
 		function Task()
 		{
 			var oArgs = WScript.Arguments;
@@ -94,6 +91,7 @@
 				this.DllBuild    = WScript.Arguments.Item(3).toLowerCase() == "-dll";
 			}
 		}
+		// Diagnostic dump of task object
 		function DumpTask(oTask)
 		{
 			WScript.Echo(oTask.ProjectName        );
@@ -102,95 +100,7 @@
 			WScript.Echo(oTask.DllBuild.toString());
 		}
 		
-		// Tree object constructor
-		function Tree(oShell, oTask)
-		{
-			this.TreeRoot              = oShell.CurrentDirectory;
-			this.CompilersBranch       = this.TreeRoot + "\\compilers\\msvc710_prj";
-			this.CompilersBranchStatic = this.CompilersBranch + "\\static";
-			this.BinPathStatic         = this.CompilersBranchStatic + "\\bin";
-			this.CompilersBranchDll    = this.CompilersBranch + "\\dll";
-			
-			this.IncludeRootBranch     = this.TreeRoot + "\\include";
-			this.IncludeConfig         = this.IncludeRootBranch + "\\corelib\\config";
-			this.IncludeProjectBranch  = this.IncludeRootBranch + "\\" + oTask.ProjectName;
-
-			this.SrcRootBranch         = this.TreeRoot + "\\src";
-			this.SrcProjectBranch      = this.SrcRootBranch + "\\" + oTask.ProjectName;
-		}
-		function DumpTree(oTree)
-		{
-			WScript.Echo(oTree.TreeRoot              );
-			WScript.Echo(oTree.CompilersBranch       );
-			WScript.Echo(oTree.CompilersBranchStatic );
-			WScript.Echo(oTree.BinPathStatic         );
-			WScript.Echo(oTree.CompilersBranchDll    );
-
-			WScript.Echo(oTree.IncludeRootBranch     );
-			WScript.Echo(oTree.IncludeProjectBranch  );
-
-			WScript.Echo(oTree.SrcRootBranch         );
-			WScript.Echo(oTree.SrcProjectBranch      );
-		}
-		function GetConfigs(oTask)
-		{
-			if (oTask.DllBuild) {
-				var configs = new Array ("DebugDLL", 
-				                         "ReleaseDLL");
-				return configs;
-			} else {
-				var configs = new Array ("Debug", 
-										 "DebugMT", 
-				                         "DebugDLL", 
-				                         "Release", 
-				                         "ReleaseMT", 
-				                         "ReleaseDLL");
-				return configs;
-			}
-		}
-		
-		// Recursive path creator
-		function CreateFolderIfAbsent(oFso, path)
-		{
-			if ( !oFso.FolderExists(path) ) {
-				WScript.Echo("Creating folder: " + path);
-				CreateFolderIfAbsent(oFso, oFso.GetParentFolderName(path));
-				oFso.CreateFolder(path);
-			}
-		}
-		// Create local build tree
-		function CreateTreeStructure(oTree, oTask)
-		{
-			var oFso = new ActiveXObject("Scripting.FileSystemObject");
-			// do not create tree root - it is cwd :-))
-			CreateFolderIfAbsent(oFso, oTree.CompilersBranch       );
-			CreateFolderIfAbsent(oFso, oTree.CompilersBranchStatic );
-			
-			var configs = GetConfigs(oTask);
-			for(var config_i = 0; config_i < configs.length; config_i++) {
-				var conf = configs[config_i];
-				var target_path = oTree.BinPathStatic + "\\" + conf;
-				CreateFolderIfAbsent(oFso, target_path);
-			}
-			
-			CreateFolderIfAbsent(oFso, oTree.CompilersBranchDll    );
-
-			CreateFolderIfAbsent(oFso, oTree.IncludeRootBranch     );
-			CreateFolderIfAbsent(oFso, oTree.IncludeConfig         );
-			CreateFolderIfAbsent(oFso, oTree.IncludeProjectBranch  );
-
-			CreateFolderIfAbsent(oFso, oTree.SrcRootBranch         );
-			CreateFolderIfAbsent(oFso, oTree.SrcProjectBranch      );
-		}
-		
-		//
-		function RemoveTempFolder(oShell, oFso, oTree)
-		{
-			var temp_dir = oTree.TreeRoot + "\\temp";
-			if ( oFso.FolderExists(temp_dir) ) {
-				execute(oShell, "rmdir /S /Q " + temp_dir);
-			}
-		}
+		// Fill local tree
 		function FillTree(oShell, oTree)
 		{
 			var temp_dir = oTree.TreeRoot + "\\temp";
@@ -230,6 +140,7 @@
 			execute(oShell, "copy /Y temp\\*.* " + oTree.IncludeConfig);
 			RemoveTempFolder(oShell, oFso, oTree);
 		}
+		// Copy project template from CVS
 		function CopyProjectTemplate(oShell, oTree, oTask)
 		{
 			var temp_dir = oTree.TreeRoot + "\\temp";
@@ -240,16 +151,7 @@
 			execute(oShell, "copy /Y temp\\*.* " + oTree.SrcProjectBranch);
 			RemoveTempFolder(oShell, oFso, oTree);
 		}
-		function CopyPtb(oShell, oTree, oTask)
-		{
-			var configs = GetConfigs(oTask);
-			for(var config_i = 0; config_i < configs.length; config_i++) {
-				var conf = configs[config_i];
-				var target_path = oTree.BinPathStatic + "\\" + conf;
-				execute(oShell, "copy /Y " + oTask.ToolkitPath + "\\bin\\project_tree_builder.exe " + target_path);
-			}
-			
-		}
+		// Change Makefile.in and Makefile.*.app
 		function AdjustProject(oShell, oTree, oTask)
 		{
 			var oFso = new ActiveXObject("Scripting.FileSystemObject");
@@ -307,13 +209,8 @@
 			new_makefile.Close();
 			oFso.DeleteFile(makefile_app, true);
 		}
-		function EscapeBackSlashes(str)
-		{
-			// need to re-define the string
-			// looks like JScript bug
-			var str_to_escape = str;
-			return str_to_escape.replace(/\\/g, "\\\\");
-		}
+		// Local site should contain C++ Toolkit information as a third-party library
+		// this one is for dll build
 		function AdjustLocalSiteDll(oShell, oTree, oTask)
 		{
 			var oFso = new ActiveXObject("Scripting.FileSystemObject");
@@ -346,6 +243,7 @@
 
 			file.Close();		
 		}
+		// for static build
 		function AdjustLocalSiteStatic(oShell, oTree, oTask)
 		{
 			var oFso = new ActiveXObject("Scripting.FileSystemObject");
@@ -397,6 +295,7 @@
 
 			file.Close();		
 		}
+		// Add C++ Toolkit to local site
 		function AdjustLocalSite(oShell, oTree, oTask)
 		{
 			if ( oTask.DllBuild ) {
@@ -405,6 +304,7 @@
 				AdjustLocalSiteStatic(oShell, oTree, oTask);
 			}
 		}
+		// Run project tree builder
 		function RunPtb(oShell, oTree, oTask)
 		{
 			var conf = GetConfigs(oTask)[0];
@@ -425,6 +325,7 @@
 			WScript.Echo(ptb_command_line);
 			execute(oShell, ptb_command_line);
 		}
+		// Open generated solution in  MSVC IDE
 		function LoadSolution(oShell, oTree, oTask)
 		{
 			var sln_path = " ";
