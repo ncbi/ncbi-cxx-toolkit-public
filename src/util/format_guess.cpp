@@ -46,6 +46,11 @@ static bool isProtein_Alphabet(char ch)
     return ::strchr("ACDEFGHIKLMNPQRSTVWYBZ", ch) != 0;
 }
 
+// Check if character belongs to the CR/LF group of symbols
+static inline bool isLineEnd(char ch)
+{
+    return ch == 0x0D || ch == 0x0A || ch == '\n';
+}
 
 CFormatGuess::ESequenceType 
 CFormatGuess::SequenceType(const char* str, unsigned length)
@@ -129,7 +134,7 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
 
     unsigned int i = 0;
     if (buf[0] == '>') { // FASTA ?
-        for (; buf[i] != '\n' && i < count; ++i) {
+        for (; (!isLineEnd(buf[i])) && i < count; ++i) {
             // skip the first line (presumed this is free-text information)
             unsigned char ch = buf[i];
             if (isalnum(ch) || isspace(ch)) {
@@ -155,7 +160,7 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
         if (isProtein_Alphabet(upch)) {
             ++amino_acid_content;
         }
-        if (ch == '\n') {
+        if (isLineEnd(ch)) {
             ++alpha_content;
             --seq_length;
         }
@@ -178,7 +183,7 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
         char line[1024] = {0,};
         char* ptr = line;
         for (unsigned i = 0; i < count; ++i) {
-            if (buf[i] == '\n') {
+            if (isLineEnd(buf[i])) {
                 break;
             }
             *ptr = buf[i];
@@ -208,6 +213,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/07/08 20:30:50  kuznets
+ * Fixed bug with different "\n" coding in DOS-Windows and Unix.
+ *
  * Revision 1.5  2003/07/07 19:54:06  kuznets
  * Improved format recognition of short fasta files
  *
