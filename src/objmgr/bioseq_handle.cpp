@@ -112,14 +112,6 @@ CSeqVector CBioseq_Handle::GetSeqVector(EVectorStrand strand) const
 		      eNa_strand_minus: eNa_strand_plus);
 }
 
-#if 0
-CSeqVector CBioseq_Handle::GetSeqVector(bool use_iupac_coding,
-                                        bool plus_strand) const
-{
-    return GetSeqVector(use_iupac_coding ? eCoding_Iupac : eCoding_Ncbi,
-                        plus_strand ? eNa_strand_plus : eNa_strand_minus);
-}
-#endif
 
 bool CBioseq_Handle::x_IsSynonym(const CSeq_id& id) const
 {
@@ -238,6 +230,55 @@ void CBioseq_Handle::ReplaceAnnot(const CSeq_annot& old_annot,
 }
 
 
+static int s_Complexity[] = {
+    0, // not-set (0)
+    3, // nuc-prot (1)
+    2, // segset (2)
+    2, // conset (3)
+    1, // parts (4)
+    1, // gibb (5)
+    1, // gi (6)
+    5, // genbank (7)
+    3, // pir (8)
+    4, // pub-set (9)
+    4, // equiv (10)
+    3, // swissprot (11)
+    3, // pdb-entry (12)
+    4, // mut-set (13)
+    4, // pop-set (14)
+    4, // phy-set (15)
+    4, // eco-set (16)
+    4, // gen-prod-set (17)
+    4, // wgs-set (18)
+    0, // other (255 - processed separately)
+};
+
+
+const CSeq_entry& CBioseq_Handle::GetComplexityLevel(CBioseq_set::EClass cls) const
+{
+    if (cls == CBioseq_set::eClass_other) {
+        cls = CBioseq_set::EClass(sizeof(s_Complexity) - 1); // adjust 255 to the correct value
+    }
+    TBioseqCore bs = GetBioseqCore();
+    CSeq_entry* last = bs->GetParentEntry();
+    _ASSERT(last  &&  last->IsSeq());
+    CSeq_entry* e = last->GetParentEntry();
+    while ( e ) {
+        // Found good level
+        if (last->IsSet()
+            &&  s_Complexity[last->GetSet().GetClass()] == s_Complexity[cls])
+            break;
+        // Gone too high
+        if (e->IsSet()
+            &&  s_Complexity[e->GetSet().GetClass()] > s_Complexity[cls])
+            break;
+        // Go up one level
+        last = e;
+        e = e->GetParentEntry();
+    }
+    return *last;
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -245,6 +286,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/03/27 19:39:36  grichenk
+* +CBioseq_Handle::GetComplexityLevel()
+*
 * Revision 1.34  2003/03/18 14:52:59  grichenk
 * Removed obsolete methods, replaced seq-id with seq-id handle
 * where possible. Added argument to limit annotations update to

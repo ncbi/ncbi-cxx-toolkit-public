@@ -38,6 +38,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 #include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -83,6 +84,31 @@ public:
 
     // Get top level seq-entry for a bioseq
     virtual const CSeq_entry& GetTopLevelSeqEntry(void) const;
+
+    // Go up to a certain complexity level (or the nearest level of the same
+    // priority if the required class is not found):
+    // level   class
+    // 0       not-set (0) ,
+    // 3       nuc-prot (1) ,              -- nuc acid and coded proteins
+    // 2       segset (2) ,                -- segmented sequence + parts
+    // 2       conset (3) ,                -- constructed sequence + parts
+    // 1       parts (4) ,                 -- parts for 2 or 3
+    // 1       gibb (5) ,                  -- geninfo backbone
+    // 1       gi (6) ,                    -- geninfo
+    // 5       genbank (7) ,               -- converted genbank
+    // 3       pir (8) ,                   -- converted pir
+    // 4       pub-set (9) ,               -- all the seqs from a single publication
+    // 4       equiv (10) ,                -- a set of equivalent maps or seqs
+    // 3       swissprot (11) ,            -- converted SWISSPROT
+    // 3       pdb-entry (12) ,            -- a complete PDB entry
+    // 4       mut-set (13) ,              -- set of mutations
+    // 4       pop-set (14) ,              -- population study
+    // 4       phy-set (15) ,              -- phylogenetic study
+    // 4       eco-set (16) ,              -- ecological sample study
+    // 4       gen-prod-set (17) ,         -- genomic products, chrom+mRNa+protein
+    // 4       wgs-set (18) ,              -- whole genome shotgun project
+    // 0       other (255)
+    const CSeq_entry& GetComplexityLevel(CBioseq_set::EClass cls) const;
 
     // Get bioseq core structure
     // Declared "virtual" to avoid circular dependencies with seqloc
@@ -262,6 +288,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/03/27 19:39:34  grichenk
+* +CBioseq_Handle::GetComplexityLevel()
+*
 * Revision 1.35  2003/03/21 19:22:48  grichenk
 * Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
 *
