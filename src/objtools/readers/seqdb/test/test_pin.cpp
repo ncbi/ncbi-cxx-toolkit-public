@@ -69,6 +69,87 @@ int main(int argc, char ** argv)
         string s = args.front();
         args.pop_front();
         
+        if (s == "-getambig") {
+            CSeqDB nt(dbpath, "nt", 'n', true);
+            
+            Uint4 oid = 0;
+            
+            for(int i = 0; i<100; i++) {
+                const char * buf(0);
+                
+                if (! nt.CheckOrFindOID(oid))
+                    break;
+                
+                cout << "-----------------" << endl;
+                
+                {
+                    int length = nt.GetSequence(oid, & buf);
+                    
+                    cout << "NT OID = " << oid << ", length is " << length << endl;
+                    
+                    int y = (length > 16) ? 16 : length;
+                    
+                    for(int x = 0; x < y; x++) {
+                        if ((x & 3) == 0)
+                            cout << " ";
+                        
+                        if (unsigned(buf[x]) < 0x10)
+                            cout << "0";
+                        
+                        cout << hex << (unsigned(buf[x]) & 0xFF) << " ";
+                    }
+                    
+                    nt.RetSequence(& buf);
+                    
+                    cout << dec << "\n";
+                }
+                
+                {
+                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclNcbi4NA);
+                
+                    int y = (length > 16) ? 16 : length;
+                
+                    for(int x = 0; x < y; x++) {
+                        if ((x & 3) == 0)
+                            cout << " ";
+                    
+                        if (unsigned(buf[x]) < 0x10)
+                            cout << "0";
+                    
+                        cout << hex << (unsigned(buf[x]) & 0xFF) << " ";
+                    }
+                    
+                    nt.RetSequence(& buf);
+                    
+                    cout << dec << "\n";
+                }
+                
+                {
+                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclBlastNA);
+                
+                    int y = (length > 16) ? 16 : length;
+                
+                    for(int x = 0; x < y; x++) {
+                        if ((x & 3) == 0)
+                            cout << " ";
+                    
+                        if (unsigned(buf[x]) < 0x10)
+                            cout << "0";
+                    
+                        cout << hex << (unsigned(buf[x]) & 0xFF) << " ";
+                    }
+                    
+                    nt.RetSequence(& buf);
+                    
+                    cout << dec << "\n\n";
+                }
+                
+                oid++;
+            }
+            
+            return 0;
+        } else desc += " [-getambig]";
+        
         if (s == "-iter2") {
             {
                 CSeqDB phil(dbpath, "swissprot pataa", 'p', true);
