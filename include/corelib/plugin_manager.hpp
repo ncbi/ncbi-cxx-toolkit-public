@@ -651,21 +651,8 @@ void CPluginManager<TClass>::Resolve(const string&       /*driver*/,
             // TODO:
             // check if entry point provides the required interface-driver-version
             // and do not register otherwise...
-            if (entry.entry_point) {
-                FNCBI_EntryPoint ep;
-                // What happens in the next couple of lines is basically:
-                //  ep = (FNCBI_EntryPoint)entry.entry_point;
-                // Some compilers(Workshop) rightfully consider 
-                // (function*)() -> (void*) casts illegal.
-                // But we know this unix style hack works on all our platforms.
-                // (so this trick is well justified).
-                union {
-                    void*              void_ptr;
-                    FNCBI_EntryPoint   func_ptr;
-                } utmp;
-                utmp.void_ptr = entry.entry_point;
-                ep = utmp.func_ptr;
-                
+            if (entry.entry_point.func) {
+                FNCBI_EntryPoint ep = (FNCBI_EntryPoint)entry.entry_point.func;
                 RegisterWithEntryPoint(ep);
                 m_RegisteredEntries.push_back(entry);
             }
@@ -714,6 +701,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/11/19 15:46:04  kuznets
+ * Removed clumsy function pointer conversion from plugin manager.
+ * (it is now covered by CDll)
+ *
  * Revision 1.15  2003/11/19 13:48:20  kuznets
  * Helper classes migrated into a plugin_manager_impl.hpp
  *
