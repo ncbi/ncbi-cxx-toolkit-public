@@ -107,6 +107,7 @@ property general : {name:"general", path:"objects:general", inc:{"general__.cpp"
 property id1 : {name:"id1", path:"objects:id1", inc:{"id1__.cpp", "id1___.cpp"}, asn1:true}
 property id1cli : {name:"id1cli", path:"objects:id1", inc:{"id1_client.cpp", "id1_client_.cpp"}, asn1:true}
 property id2 : {name:"id2", path:"objects:id2", inc:{"id2__.cpp", "id2___.cpp"}, asn1:true}
+property id2cli : {name:"id2cli", path:"objects:id2", inc:{"id2_client.cpp", "id2_client_.cpp"}, asn1:true}
 property medlars : {name:"medlars", path:"objects:medlars", inc:{"medlars__.cpp", "medlars___.cpp"}, asn1:true}
 property medline : {name:"medline", path:"objects:medline", inc:{"medline__.cpp", "medline___.cpp"}, asn1:true}
 property mim : {name:"mim", path:"objects:mim", inc:{"mim__.cpp", "mim___.cpp"}, asn1:true}
@@ -150,25 +151,27 @@ property lds_admin : {name:"lds_admin", path:"objtools:lds:admin"}
 property xvalidate : {name:"xvalidate", path:"objtools:validator"}
 property xobjmanip : {name:"xobjmanip", path:"objtools:manip"}
 property xobjread : {name:"xobjread", path:"objtools:readers"}
+property xobjedit : {name:"xobjedit", path:"objtools:edit"}
 property seqdb : {name:"seqdb", path:"objtools:readers:seqdb"}
 property xformat : {name:"xformat", path:"objtools:format"}
 (* loaders and readers *)
 property xloader_lds : {name:"xloader_lds", path:"objtools:data_loaders:lds"}
 property xloader_table : {name:"xloader_table", path:"objtools:data_loaders:table"}
 property xloader_trace : {name:"xloader_trace", path:"objtools:data_loaders:trace"}
-property xloader_genbank : {name:"xloader_genbank", path:"objtools:data_loaders:genbank", inc:{"gbloader.cpp", "gbload_util.cpp"}}
+property xloader_genbank : {name:"xloader_genbank", path:"objtools:data_loaders:genbank", inc:{"gbloader.cpp", "gbload_util.cpp", "blob_id.cpp"}}
 --property ncbi_xloader_blastdb : {name:"ncbi_xloader_blastdb", path:"objtools:data_loaders:blastdb"} -- readdb.h is missing?
 property xloader_cdd : {name:"xloader_cdd", path:"objtools:data_loaders:cdd"}
 
-property xreader : {name:"xreader", path:"objtools:data_loaders:genbank", inc:{"reader.cpp", "reader_snp.cpp", "seqref.cpp", "split_parser.cpp"}}
+property xreader : {name:"xreader", path:"objtools:data_loaders:genbank", inc:{"reader.cpp", "reader_snp.cpp", "seqref.cpp", "split_parser.cpp", "request_result.cpp"}}
 property xreader_id1 : {name:"xreader_id1", path:"objtools:data_loaders:genbank:readers:id1", inc:{"reader_id1.cpp"}}
 property xreader_id1c : {name:"xreader_id1c", path:"objtools:data_loaders:genbank:readers:id1", inc:{"reader_id1_cache.cpp"}}
+property xreader_id2 : {name:"xreader_id1", path:"objtools:data_loaders:genbank:readers:id2", inc:{"reader_id2.cpp"}}
 property xreader_pubseqos : {name:"xreader_pubseqos", path:"objtools:data_loaders:genbank:readers:pubseqos"}
 property xobjwrite : {name:"xobjwrite", path:"objtools:writers"}
 
 
 (* GUI Libraries *)
-property gui__core : {name:"gui__core", path:"gui:core", exc:{"GBProjectHandle.cpp", "GBProject.cpp", "GBWorkspace.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "FolderInfo.cpp", "ProjectFolder.cpp", "WorkspaceFolder.cpp", "ProjectDescr.cpp"}}
+property gui__core : {name:"gui__core", path:"gui:core", exc:{"GBProjectHandle.cpp", "GBProject.cpp", "GBWorkspace.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "FolderInfo.cpp", "ProjectFolder.cpp", "WorkspaceFolder.cpp", "ProjectDescr.cpp", "AbstractProjectItem.cpp"}}
 property gui__utils : {name:"gui__utils", path:"gui:utils"}
 property gui_objutils : {name:"gui_objutils", path:"gui:objutils"}
 property gui_project : {name:"gui_project", path:"gui:core", inc:{"gui_project__.cpp", "gui_project___.cpp"}, asn1:true}
@@ -260,18 +263,19 @@ property ncbi_image : {name:"ncbi_image", libs:{ximage}, dep:"ncbi_core"}
 property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgoseq, blast, xblast, xalgognomon, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc"}
 property ncbi_misc : {name:"ncbi_misc", libs:{access, biotree, docsum, entrez2, entrez2cli, entrezgene, featdef, gbseq, mim, objprt, tinyseq, proj, omssa, pcassay, pcsubstance}}
 property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacli, pub, pubmed}, dep:"ncbi_core ncbi_general"}
-property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, id1, id1cli, id2, xnetblast, xnetblastcli, blastdb, taxon1, seqsplit, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub"}
+property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, taxon1, seqsplit, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub"}
 property ncbi_mmdb : {name:"ncbi_mmdb", libs:{cdd, cn3d, ncbimime, mmdb1, mmdb2, mmdb3}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq"}
-property ncbi_seqext : {name:"ncbi_seqext", libs:{xflat, xalnmgr, xobjmgr, xobjread, xobjwrite, xobjutil, xobjmanip, xformat, seqdb}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver"}
+property ncbi_seqext : {name:"ncbi_seqext", libs:{xflat, xalnmgr, xobjmgr, xobjread, xobjwrite, xobjutil, xobjmanip, xformat, seqdb, id1, id1cli, id2, id2cli, id2_split, xobjedit}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver"}
 property ncbi_sqlite : {name:"ncbi_sqlite", libs:{xsqlite}, dep:"ncbi_core"}
 property ncbi_validator : {name:"ncbi_validator", libs:{xvalidate}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext"}
 property ncbi_web : {name:"ncbi_web", libs:{xhtml, xcgi}, dep:"ncbi_core"}
 property ncbi_lds : {name:"ncbi_lds", libs:{lds, lds_admin}, dep:"ncbi_core ncbi_bdb ncbi_general ncbi_seq ncbi_seqext"}
 property ncbi_xreader : {name:"ncbi_xreader", libs:{xreader}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext"}
 property ncbi_xreader_id1 : {name:"ncbi_xreader_id1", libs:{xreader_id1, xreader_id1c}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader"}
+property ncbi_xreader_id2 : {name:"ncbi_xreader_id2", libs:{xreader_id2}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader"}
 property ncbi_xreader_pubseqos : {name:"ncbi_xreader_pubseqos", libs:{xreader_pubseqos}, dep:"ncbi_core ncbi_dbapi ncbi_dbapi_driver ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader"}
-property ncbi_xloader_cdd : {name:"ncbi_xloader_cdd", libs:{xloader_cdd}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader ncbi_xreader_id1 ncbi_xreader_pubseqos ncbi_general"}
-property ncbi_xloader_genbank : {name:"ncbi_xloader_genbank", libs:{xloader_genbank}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader ncbi_xreader_id1 ncbi_xreader_pubseqos"}
+property ncbi_xloader_cdd : {name:"ncbi_xloader_cdd", libs:{xloader_cdd}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos ncbi_general"}
+property ncbi_xloader_genbank : {name:"ncbi_xloader_genbank", libs:{xloader_genbank}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos"}
 property ncbi_xloader_lds : {name:"ncbi_xloader_lds", libs:{xloader_lds}, dep:"ncbi_bdb ncbi_core ncbi_general ncbi_lds ncbi_pub ncbi_seq ncbi_seqext"}
 property ncbi_xloader_table : {name:"ncbi_xloader_table", libs:{xloader_table}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_sqlite"}
 property ncbi_xloader_trace : {name:"ncbi_xloader_trace", libs:{xloader_trace}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext"}
@@ -292,7 +296,7 @@ property algo_basic : {name:"algo_basic", libs:{gui_algo_basic}, dep:"gui_core g
 property algo_cn3d : {name:"algo_cn3d", libs:{gui_algo_cn3d}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_mmdb" & gui2link, bundle:true}
 property algo_external : {name:"algo_external", libs:{gui_algo_external, gui_algo_external_out}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_web" & gui2link, bundle:true}
 property algo_gnomon : {name:"algo_gnomon", libs:{gui_algo_gnomon}, dep:"gui_core gui_dialogs gui_utils ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext" & gui2link, bundle:true}
-property algo_init : {name:"algo_init", libs:{gui_ncbi_init}, dep:"gui_core gui_utils ncbi_bdb ncbi_core ncbi_lds ncbi_seq ncbi_seqext ncbi_xloader_genbank ncbi_xloader_lds ncbi_xreader ncbi_xreader_id1 ncbi_xreader_pubseqos" & gui2link, bundle:true}
+property algo_init : {name:"algo_init", libs:{gui_ncbi_init}, dep:"gui_core gui_utils ncbi_bdb ncbi_core ncbi_lds ncbi_seq ncbi_seqext ncbi_xloader_genbank ncbi_xloader_lds ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos" & gui2link, bundle:true}
 property algo_linkout : {name:"algo_linkout", libs:{gui_algo_linkout}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext" & gui2link, bundle:true}
 property algo_phylo : {name:"algo_phylo", libs:{gui_algo_phylo}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_misc ncbi_seqext" & gui2link, bundle:true}
 property algo_validator : {name:"algo_validator", libs:{gui_algo_validator}, dep:"gui_core ncbi_core ncbi_seq ncbi_seqext ncbi_validator" & gui2link, bundle:true}
@@ -308,7 +312,7 @@ property view_validator : {name:"view_validator", libs:{gui_view_validator}, dep
 
 
 -- All Libraries to build
-property allLibs : {ncbi_core, ncbi_bdb, ncbi_dbapi_driver, ncbi_dbapi, ncbi_general, ncbi_image, ncbi_algo, ncbi_misc, ncbi_pub, ncbi_seq, ncbi_mmdb, ncbi_seqext, ncbi_sqlite, ncbi_validator, ncbi_web, ncbi_lds, ncbi_xreader, ncbi_xreader_id1, ncbi_xreader_pubseqos, ncbi_xloader_cdd, ncbi_xloader_genbank, ncbi_xloader_lds, ncbi_xloader_table, ncbi_xloader_trace, gui_utils, gui_config, gui_graph, gui_widgets, gui_dialogs, gui_core, gui_widgets_misc, gui_widgets_seq, gui_widgets_aln, algo_align, algo_basic, algo_cn3d, algo_external, algo_gnomon, algo_init, algo_linkout, algo_phylo, algo_validator, dload_basic, dload_table, view_align, view_graphic, view_phylotree, view_table, view_taxplot, view_text, view_validator}
+property allLibs : {ncbi_core, ncbi_bdb, ncbi_dbapi_driver, ncbi_dbapi, ncbi_general, ncbi_image, ncbi_algo, ncbi_misc, ncbi_pub, ncbi_seq, ncbi_mmdb, ncbi_seqext, ncbi_sqlite, ncbi_validator, ncbi_web, ncbi_lds, ncbi_xreader, ncbi_xreader_id1, ncbi_xreader_id2, ncbi_xreader_pubseqos, ncbi_xloader_cdd, ncbi_xloader_genbank, ncbi_xloader_lds, ncbi_xloader_table, ncbi_xloader_trace, gui_utils, gui_config, gui_graph, gui_widgets, gui_dialogs, gui_core, gui_widgets_misc, gui_widgets_seq, gui_widgets_aln, algo_align, algo_basic, algo_cn3d, algo_external, algo_gnomon, algo_init, algo_linkout, algo_phylo, algo_validator, dload_basic, dload_table, view_align, view_graphic, view_phylotree, view_table, view_taxplot, view_text, view_validator}
 
 --property allLibs : {ncbi_dbapi_driver}
 -- Tools packs
@@ -335,6 +339,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/08/04 18:49:28  lebedev
+ * ID2 libs added
+ *
  * Revision 1.14  2004/08/02 17:42:30  lebedev
  * Added ncbi_misc to algo_phylo for biotree stuff
  *
