@@ -110,7 +110,11 @@ static Int4 SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme)
 static char* SeqDbGetName(void* seqdb_handle, void*)
 {
     CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
-    return strdup(seqdb->GetTitle().c_str());
+#if 0 // FIXME: GetName method not implemented in CSeqDb!!!
+    return strdup(seqdb->GetName().c_str());
+#else
+    return NULL;
+#endif
 }
 
 /** Retrieves the definition (title) of the BLAST database.
@@ -466,6 +470,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/05/17 15:43:21  dondosha
+ * Return NULL from SeqDbGetName until CSeqDB gets a GetName method
+ *
  * Revision 1.5  2004/04/28 19:38:20  dondosha
  * Added implementation of BLASTSeqSrcRetSequence function
  *
