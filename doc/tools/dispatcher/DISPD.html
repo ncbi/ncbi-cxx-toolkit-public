@@ -17,7 +17,7 @@ inside NCBI users at:
     <li> <a href="#ref_Overview">Overview</a>
     <li> <a href="#ref_Protocol">Protocol Description</a>
     <li> <a href="#ref_Communication">Communication schemes</a>
-    <li> <a href="#ref_NCBID">Service Launcher (<tt>NCBID.CGI</tt>)</a>
+    <li> <a href="#ref_NCBID">Server Launcher (<tt>NCBID.CGI</tt>)</a>
 </ul>
 </ol>
 
@@ -62,9 +62,9 @@ parameter.
 In case of a <i>connection</i> request, the request body can contain
 data to be passed to the first found server, connection to which is
 automatically initiated by <tt>DISPD.GCI</tt> after <i>dispatching</i>. On a contrary,
-in case of a <i>dispatching</i>-only request the body is completely ignored
-(connection dropped) after the header has been read that may confuse
-an unprepared client.
+in case of a <i>dispatching</i>-only request the body is completely ignored, that is
+the connection is dropped after the header has been read and then the reply gets
+generated without consuming the body data and that may confuse an unprepared client.
 
 <p>
 Mapping of service name into server address is done via <a href="LBSMD.html">LBSM Daemon
@@ -111,9 +111,8 @@ can narrow the server search; for example, by choosing
   <br>where <tt><i>&lt;client-mode></i></tt> can be one of the following:
   <ul type="square">
     <li><a name="ref_Stateless"></a><tt><font color="#CC33CC">STATELESS_ONLY</font></tt></li> -
-    specifies that the client is not capable of
-    doing full-duplex data exchange with the server (e.g. in a dedicated
-    connection).
+    specifies that the client is not capable of doing full-duplex data exchange
+    with the server in a session mode (e.g. in a dedicated connection).
     <li><tt><font color="#CC33CC">STATEFUL_CAPABLE</font></tt></li> -
     should be used by the clients, which are
     capable of holding an open connection to a server. This keyword
@@ -138,8 +137,8 @@ can narrow the server search; for example, by choosing
     should <i>not</i> be used by a side application.<br>
     <li><tt><font color="#CC33CC">STATEFUL_INCLUSIVE</font></tt></li> -
     informs <tt>DISPD.CGI</tt> that current request is a <i>connection</i> request,
-    and as soon as it is going over HTTP, it is treated as stateless, thus the
-    dispatching would otherwise supply stateless servers only. This keyword modifies the
+    and because it is going over HTTP, it is treated as stateless, thus the
+    dispatching would supply stateless servers only. This keyword modifies the
     default behavior, and dispatching information sent back along with
     server reply (resulting from data exchange) should include stateful
     servers as well, so allowing the client to go to a dedicated connection later.<br>
@@ -163,9 +162,9 @@ can narrow the server search; for example, by choosing
   <tt><font color="#009900">Client-Host: <i>&lt;host></i></font></tt>
   <br>This tag is used by <tt>DISPD.CGI</tt> internally to identify the <i>&lt;host></i>,
   where the request comes from, in case of relaying involved. Although <tt>DISPD.CGI</tt>
-  should disregard this tag if the request originates from outside NCBI, and
-  thus is not fooled by the address spoofing, inhouse applications should <i>not</i> use this
-  tag when connecting to <tt>DISPD.CGI</tt>, because the tag <i>is</i> considered within the NCBI Intranet.
+  effectively disregards this tag if the request originates from outside NCBI, and
+  thus it cannot be easily fooled by the address spoofing, inhouse applications <i>should not</i> use this
+  tag when connecting to <tt>DISPD.CGI</tt> because the tag <i>is trusted and considered</i> within the NCBI Intranet.
 
   <p>
   <li>
@@ -180,20 +179,20 @@ can narrow the server search; for example, by choosing
   <tt><font color="#009900">Server-Info-<i>n</i>: <i>&lt;server-info></i></font></tt>
   <br>the tag(s) (enumerated increasingly by suffix <i>n</i>, starting from&nbsp;1) give a list of servers,
   where the requested service is available. The list can have up to&nbsp;5 entries. However,
-  there only one entry generated, if the service was requested in <a href="#ref_Communication">firewall mode</a>
+  there is only one entry generated when the service was requested either in <a href="#ref_Communication">firewall mode</a>
   or by a Web-browser. For non-local client the returned server descriptors can include <tt>FIREWALL</tt>
   server specifications. Despite preserving information about host, port, type and other (but not all)
   parameters of the original servers, <tt>FIREWALL</tt> descriptors are not specifications of real servers,
   but they are created on-the-fly by <tt>DISPD.CGI</tt> to indicate that the connection point of the server
   cannot be otherwise reached without the use of <a href="#ref_Communication">either firewalling
-  or relaying</a>).
+  or relaying</a>.
 
   <p>
   <a name="ref_ConnectionInfo"></a><tt><font color="#009900">Connection-Info: <i>&lt;host>&nbsp;&lt;port>&nbsp;&lt;ticket></i></font></tt>
   <br>the tag gets generated in a response to a stateful-capable client and includes host (in a dotted notation) and port number
   (decimal value) of the connection point where the server is listening on (if either the server has specifically started or the
   <a href="fwdaemon.html">firewall daemon</a> has created that connection point due to the client request).
-  The ticket value (hexadecimal) represents the 4-byte ticket, which must be passed to the server as binary
+  The ticket value (hexadecimal) represents the 4-byte ticket that must be passed to the server as binary
   data in the very beginning of the stream. If instead of host, port and ticket
   information there is a keyword <tt><font color="#CC33CC">TRY_STATELESS</font></tt>, then for some reason
   (see <tt>Dispatcher-Failures:</tt> tag below) the request failed, but may succeed if the client would
@@ -209,7 +208,7 @@ can narrow the server search; for example, by choosing
   <tt><font color="#009900">Dispatcher-Failures: <i>&lt;failures></i></font></tt>
   <br>the tag value lists all transient failures, which dispatcher might have expirienced while
   processing request. Fatal error may or may not appear as the last failure in the list,
-  but should be mentioned in <tt>Request-Failed:</tt> tag if caused by mapping failure.
+  but is always mentioned in <tt>Request-Failed:</tt> tag if caused by a mapping failure.
 
 </ul>
 
@@ -219,23 +218,23 @@ can narrow the server search; for example, by choosing
 <a name="ref_Communication"></a><h2>Communication Schemes</h2>
 
 After making <i>dispatching</i> request and using the dispatching information returned,
-often the client can connect to the server on its own. Sometimes however, the client has
+the client can usually connect to the server on its own. Sometimes however, the client has
 to connect to <tt>DISPD.CGI</tt> again in order to proceed with communication with the server.
 For <tt>DISPD.CGI</tt> this would then be a <i>connection</i> request, which can
 go one of either 2 similar ways:  <i>relaying</i> and <i>firewalling</i>.
 
 <ul type="circle">
   <li>In <i>relay</i> mode <tt>DISPD.CGI</tt> passes data from the client to
-  the server and back, playing role of a middleman. Data <i>relaying</i> occurs when, for instance,
-  a Web-browser client wants to communicate with a service governed by <tt>DISPD.CGI</tt>.
+  the server and back, playing the role of a middleman. Data <i>relaying</i> occurs when, for instance,
+  a Web-browser client wants to communicate with a service governed by <tt>DISPD.CGI</tt> itself.
   <li>In <i>firewall</i> mode <tt>DISPD.CGI</tt> only sends out the information
   about where the client has to connect to in order to communicate with the server.
   This connection point and verifiable ticket are specified in <a href="#ref_ConnectionInfo"><tt>Connection-Info:</tt></a>
   tag in the reply header.<br>
   <u>Note</u>: <i>Firewalling</i> is actually pertaining only to stateful-capable clients and servers.
 </ul>
-<i>Firewall</i> mode is selected by presence of <tt>FIREWALL</tt> in
-<tt>Accepted-Server-Types:</tt> tag set by the clients sitting behind a firewall,
+<i>Firewall</i> mode is selected by the presence of keyword <tt>FIREWALL</tt> in
+<tt>Accepted-Server-Types:</tt> tag set by the client sitting behind a firewall,
 and not being able to connect to an arbitrary port.
 
 <p>
@@ -257,7 +256,7 @@ depending on "stateness" of the client:
   <i>connection</i> request), and use <tt>DISPD.CGI</tt> as a relay.
   <br>
   <u>Note</u>:
-  Even if the server is standalone (but having <i>no</i> <a href="LBSMD.html#ref_Stateful"><tt>S=yes</tt></a>
+  Even if the server is standalone (but <i>lacking</i> <a href="LBSMD.html#ref_Stateful"><tt>S=yes</tt></a>
   in configuration file of <tt>LBSMD</tt>), then <tt>DISPD.CGI</tt> initiates a microsession
   to the server and wraps its output into HTTP/1.0-compliant reply.
   Data from both <tt>HTTP</tt> and <tt>NCBID</tt> servers are simply relayed one-to-one.
@@ -265,8 +264,8 @@ depending on "stateness" of the client:
 
   <li><b>Stateful-capable</b> client
   <ul type="square">
-  <li>Client is <u>not</u> using <u>firewall</u> mode then
-      the client has to connect directly to the server, using dispatcher
+  <li>Client <u>not</u> using <u>firewall</u> mode
+      has to connect directly to the server, using dispatcher
       information obtained earlier (e.g. with the use of <tt>INFORMATION_ONLY</tt>
       in <tt>Dispatch-Mode:</tt> tag).
   <li>If <u>firewall</u> mode selected then the client has to expect <a href="#ref_ConnectionInfo"><tt>Connection-Info:</tt></a>
@@ -278,7 +277,7 @@ depending on "stateness" of the client:
       ones, or that firewall daemon is not available on the host, where the client's request was received.
   </ul>
 </ul>
-<u>Note</u>: Depicted scenarios show that no prior dispatching information is required for the stateless client
+<u>Note</u>: Outlined scenarios show that no prior dispatching information is required for a stateless client
 to have in order to make a <i>connection</i> request, as <tt>DISPD.CGI</tt> can
 always be used as a data relay (this way Web-browsers can access NCBI services).
 But for stateful-capable client to establish a dedicated connection that
@@ -286,9 +285,8 @@ additional step of obtaining dispatching information must precede the actual <i>
 
 <p>
 In order to support requests from Web-browsers, which are unaware of HTTP
-extensions comprising dispatching protocol, <tt>DISPD.CGI</tt> considers incoming request,
-which does not contain input dispatching tags, as a <i>connection</i>
-request from a stateless-only client.
+extensions comprising dispatching protocol, <tt>DISPD.CGI</tt> considers incoming request that
+does not contain input dispatching tags, as a <i>connection</i> request from a stateless-only client.
 
 <p>
 <tt>DISPD.CGI</tt> uses simple heuristics in analyzing HTTP header to determine whether the <i>connection</i>
@@ -304,31 +302,31 @@ doing both <i>relaying</i> and <i>firewalling</i>.
 
 <p><hr><p>
 
-<a name="ref_NCBID"></a><h2>Service Launcher (<tt>NCBID.CGI</tt>)</h2>
+<a name="ref_NCBID"></a><h2>Server Launcher (<tt>NCBID.CGI</tt>)</h2>
 
 There are servers of type <a href="LBSMD.html#ref_ServerType"><tt>NCBID</tt></a>, which
-are really programs that read requests from <tt>stdin</tt> and write replies into
+are really programs that read requests from <tt>stdin</tt> and write responses into
 <tt>stdout</tt> without having sort of a common protocol. Thus, HTTP/1.0 was
-chosen as a framed protocol wrapping both requests and replies, and <tt>NCBID.CGI</tt>
+chosen as a framed protocol for wrapping both requests and replies, and <tt>NCBID.CGI</tt>
 utility CGI program was created to pass the request from HTTP body to the
 server and to put reply from the server into HTTP body and send back to the client.
 Also, <tt>NCBID.CGI</tt> is to provide a dedicated connection between the
-server and the client, if the client supports stateful way of communication.
+server and the client, if the client supports the stateful way of communication.
 Formely <tt>NCBID.CGI</tt> was implemented as a
 separate CGI program, but recently it was integrated into and became a part of
 <tt>DISPD.CGI</tt> (now <tt>NCBID.CGI</tt> is a symbolic link to <tt>DISPD.CGI</tt>).
 
 <p>
 <tt>NCBID.CGI</tt> determines the requested service from the query string the
-same way as <tt>DISPD.CGI</tt> does so, i.e. by looking into the
-value of CGI parameter <tt>service</tt>. Executable file, which has to be run, is then determined by searching
+same way <tt>DISPD.CGI</tt> does so, i.e. by looking into the
+value of CGI parameter <tt>service</tt>. Executable file that has to be run is then obtained by searching
 configuration file (shared with <tt>LBSMD</tt>, default name is <tt>servrc.cfg</tt>):
 the path to the executable along with optional command-line parameters is specified after the bar character
-(<tt>|</tt>) in the line containing the <a href="LBSMD.html#ref_Service">service description</a>.
+(<tt>|</tt>) in the line containing the <a href="LBSMD.html#ref_Service">service definition</a>.
 
 <p>
 <tt>NCBID.CGI</tt> can work in either of&nbsp;2 connection modes, stateless and stateful,
-which is determined from reading the following HTTP header tag:
+as determined by reading the following HTTP header tag:
 
 <ul>
 <tt><font color="#009900">Connection-Mode: <i>&lt;mode></i></font></tt>
@@ -345,7 +343,7 @@ When <tt>DISPD.CGI</tt> relays data to <tt>NCBID.CGI</tt> this tag is set in
 accordance with current client mode.
 
 <p>
-<tt>STATELESS</tt> mode is almost identical to call to a conventional CGI program,
+<tt>STATELESS</tt> mode is almost identical to a call of a conventional CGI program,
 except that in HTTP header there could be tags pertaining to dispatching protocol,
 and resulting from data relaying (if any) by <tt>DISPD.CGI</tt>.
 
@@ -364,9 +362,9 @@ the server by creating a dedicated TCP connection.<br>
 For the sake of backward compatibility, <tt>NCBID.CGI</tt> creates the following
 environment variables (in addition to CGI/1.0 environment variables created by the HTTP daemon
 when calling <tt>NCBID.CGI</tt>) before starting the service executables: <tt>NI_CLIENT_IPADDR</tt> and
-<tt>NI_CLIENT_PLATFORM</tt>. The former contains IP address of the remote host (could
+<tt>NI_CLIENT_PLATFORM</tt>. The former contains an IP address of the remote host (could
 be IP address of the firewall daemon if <tt>NCBID.CGI</tt> was started as a
-result of <i>firewalling</i>). The latter environment variable contains client
+result of <i>firewalling</i>). The latter environment variable contains the client
 platform extracted from the HTTP tag <tt>"Client-Platform:"</tt> if any provided
 by the client.
 
