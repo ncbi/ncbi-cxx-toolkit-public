@@ -138,7 +138,7 @@ protected:
 class NCBI_XUTIL_EXPORT CObjectStoreProtectedBase
 {
 protected:
-    DECLARE_CLASS_STATIC_FAST_MUTEX(m_Lock);
+    static CFastMutex& GetMutex(void); 
 };
 
 /// System wide dumping ground for objects
@@ -161,7 +161,7 @@ public:
     static 
     void Clear() 
     {
-        CFastMutexGuard guard(m_Lock);
+        CFastMutexGuard guard( GetMutex() );
         GetObjStore().Clear();
     }
 
@@ -171,7 +171,7 @@ public:
     static 
     TObject* GetObject(const TKey& key)
     {
-        CFastMutexGuard guard(m_Lock);
+        CFastMutexGuard guard( GetMutex() );
         return GetObjStore().GetObject(key);
     }
 
@@ -180,7 +180,7 @@ public:
     static
     bool PutObject(const TKey& key, TObject* obj)
     {
-        CFastMutexGuard guard(m_Lock);
+        CFastMutexGuard guard( GetMutex() );
         return GetObjStore().PutObject(key, obj);
     }
 
@@ -188,7 +188,7 @@ public:
     static
     void ReleaseObject(const TKey& key)
     {
-        CFastMutexGuard guard(m_Lock);
+        CFastMutexGuard guard( GetMutex() );
         GetObjStore().ReleaseObject(key);
     }
 
@@ -196,7 +196,7 @@ public:
     static
     bool HasObject(const TKey& key)
     {
-        CFastMutexGuard guard(m_Lock);
+        CFastMutexGuard guard( GetMutex() );
         return GetObjStore().HasObject(key);
     }
 
@@ -204,7 +204,7 @@ public:
     static
     bool  HasObject(const CObject* obj)
     {
-        CFastMutexGuard guard(m_Lock);
+        CFastMutexGuard guard( GetMutex() );
         return GetObjStore().HasObject(obj);
     }
 
@@ -224,6 +224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/03/07 14:39:31  ssikorsk
+ * Replaced static member m_Lock with a static function GetMutex
+ *
  * Revision 1.5  2004/12/23 18:08:25  vasilche
  * Fixed use of static variables in template class.
  *

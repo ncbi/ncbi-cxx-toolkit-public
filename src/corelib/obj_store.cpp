@@ -35,7 +35,14 @@
 BEGIN_NCBI_SCOPE
 
 
-DEFINE_CLASS_STATIC_FAST_MUTEX(CObjectStoreProtectedBase::m_Lock);
+CFastMutex&
+CObjectStoreProtectedBase::GetMutex(void)
+{
+    static CFastMutex lock;
+
+    return lock;
+}
+
 
 END_NCBI_SCOPE
 
@@ -44,6 +51,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/03/07 14:39:31  ssikorsk
+* Replaced static member m_Lock with a static function GetMutex
+*
 * Revision 1.2  2004/12/21 21:40:17  grichenk
 * Moved obj_store and plugin_manager_store to corelib
 *
