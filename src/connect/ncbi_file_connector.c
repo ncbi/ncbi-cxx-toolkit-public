@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Vladimir Alekseyev, Denis Vakatov
+ * Author:  Vladimir Alekseyev, Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
  *   Implement CONNECTOR for a FILE stream
@@ -33,12 +33,14 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/12/29 17:55:53  lavr
+ * Adapted for use of new connector structure.
+ *
  * Revision 6.1  2000/04/12 15:18:13  vakatov
  * Initial revision
  *
  * ==========================================================================
  */
-
 
 #include <connect/ncbi_file_connector.h>
 #include <stdio.h>
@@ -61,57 +63,59 @@ typedef struct {
 } SFileConnector;
 
 
-
 /***********************************************************************
  *  INTERNAL -- "s_VT_*" functions for the "virt. table" of connector methods
  ***********************************************************************/
 
-
 #ifdef __cplusplus
 extern "C" {
-    static const char* s_VT_GetType(void* connector);
-    static EIO_Status s_VT_Connect(void*           connector,
-                                   const STimeout* timeout);
-    static EIO_Status s_VT_Wait(void*           connector,
-                                EIO_Event       event,
-                                const STimeout* timeout);
+#endif /* __cplusplus */
+    static const char* s_VT_GetType(CONNECTOR       connector);
+    static EIO_Status  s_VT_Open   (CONNECTOR       connector,
+                                    const STimeout* timeout);
+    static EIO_Status  s_VT_Wait   (CONNECTOR       connector,
+                                    EIO_Event       event,
+                                    const STimeout* timeout);
+    static EIO_Status  s_VT_Write  (CONNECTOR       connector,
+                                    const void*     buf,
+                                    size_t          size,
+                                    size_t*         n_written,
+                                    const STimeout* timeout);
+    static EIO_Status  s_VT_Flush  (CONNECTOR       connector,
+                                    const STimeout* timeout);
+    static EIO_Status  s_VT_Read   (CONNECTOR       connector,
+                                    void*           buf,
+                                    size_t          size,
+                                    size_t*         n_read,
+                                    const STimeout* timeout);
+    static EIO_Status  s_VT_Close  (CONNECTOR       connector,
+                                    const STimeout* timeout);
+    static void        s_Setup     (SMetaConnector* meta,
+                                    CONNECTOR       connector);
+    static void        s_Destroy   (CONNECTOR       connector);
 #  ifdef IMPLEMENTED__CONN_WaitAsync
     static EIO_Status s_VT_WaitAsync(void*                   connector,
                                      FConnectorAsyncHandler  func,
                                      SConnectorAsyncHandler* data);
 #  endif
-    static EIO_Status s_VT_Write(void*           connector,
-                                 const void*     buf,
-                                 size_t          size,
-                                 size_t*         n_written,
-                                 const STimeout* timeout);
-    static EIO_Status s_VT_Flush(void*           connector,
-                                 const STimeout* timeout);
-    static EIO_Status s_VT_Read(void*           connector,
-                                void*           buf,
-                                size_t          size,
-                                size_t*         n_read,
-                                const STimeout* timeout);
-    static EIO_Status s_VT_Close(CONNECTOR       connector,
-                                 const STimeout* timeout);
+#ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
 
 
-
 static const char* s_VT_GetType
-(void* connector)
+(CONNECTOR connector)
 {
     return "FILE";
 }
 
 
-static EIO_Status s_VT_Connect
-(void*           connector,
+static EIO_Status s_VT_Open
+(CONNECTOR       connector,
  const STimeout* timeout)
 {
-    SFileConnector* xxx = (SFileConnector*) connector;
-    const char*     mode;
+    SFileConnector* xxx = (SFileConnector*) connector->handle;
+    const char*     mode = 0;
 
     /* if connected already, and trying to reconnect */
     if (xxx->finp  &&  xxx->fout)
@@ -148,13 +152,13 @@ static EIO_Status s_VT_Connect
 
 
 static EIO_Status s_VT_Write
-(void*           connector,
+(CONNECTOR       connector,
  const void*     buf,
  size_t          size,
  size_t*         n_written,
  const STimeout* timeout)
 {
-    SFileConnector* xxx = (SFileConnector*) connector;
+    SFileConnector* xxx = (SFileConnector*) connector->handle;
 
     if ( !size ) {
         *n_written = 0;
@@ -171,13 +175,13 @@ static EIO_Status s_VT_Write
 
 
 static EIO_Status s_VT_Read
-(void*           connector,
+(CONNECTOR       connector,
  void*           buf,
  size_t          size,
  size_t*         n_read,
  const STimeout* timeout)
 {
-    SFileConnector* xxx = (SFileConnector*) connector;
+    SFileConnector* xxx = (SFileConnector*) connector->handle;
 
     if ( !size ) {
         *n_read = 0;
@@ -194,7 +198,7 @@ static EIO_Status s_VT_Read
 
 
 static EIO_Status s_VT_Wait
-(void*           connector,
+(CONNECTOR       connector,
  EIO_Event       event,
  const STimeout* timeout)
 {
@@ -203,10 +207,10 @@ static EIO_Status s_VT_Wait
 
 
 static EIO_Status s_VT_Flush
-(void*           connector,
+(CONNECTOR       connector,
  const STimeout* timeout)
 {
-    SFileConnector* xxx = (SFileConnector*) connector;
+    SFileConnector* xxx = (SFileConnector*) connector->handle;
 
     if (fflush(xxx->fout) != 0)
         return eIO_Unknown;
@@ -222,22 +226,46 @@ static EIO_Status s_VT_Close
     SFileConnector* xxx = (SFileConnector*) connector->handle;
 
     fclose(xxx->finp);
+    xxx->finp = 0;
     fclose(xxx->fout);
+    xxx->fout = 0;
+    return eIO_Success;
+}
 
+
+static void s_Setup
+(SMetaConnector* meta,
+ CONNECTOR       connector)
+{
+    /* initialize virtual table */
+    CONN_SET_METHOD(meta, get_type,   s_VT_GetType,   connector);
+    CONN_SET_METHOD(meta, open,       s_VT_Open,      connector);
+    CONN_SET_METHOD(meta, wait,       s_VT_Wait,      connector);
+    CONN_SET_METHOD(meta, write,      s_VT_Write,     connector);
+    CONN_SET_METHOD(meta, flush,      s_VT_Flush,     connector);
+    CONN_SET_METHOD(meta, read,       s_VT_Read,      connector);
+    CONN_SET_METHOD(meta, close,      s_VT_Close,     connector);
+#ifdef IMPLEMENTED__CONN_WaitAsync
+    CONN_SET_METHOD(meta, wait_async, s_VT_WaitAsync, connector);
+#endif
+}
+
+
+static void s_Destroy
+(CONNECTOR connector)
+{
+    SFileConnector* xxx = (SFileConnector*) connector->handle;
+    
     free(xxx->inp_file_name);
     free(xxx->out_file_name);
     free(xxx);
     free(connector);
-
-    return eIO_Success;
 }
-
 
 
 /***********************************************************************
  *  EXTERNAL -- the connector's "constructors"
  ***********************************************************************/
-
 
 extern CONNECTOR FILE_CreateConnector
 (const char* inp_file_name,
@@ -262,22 +290,17 @@ extern CONNECTOR FILE_CreateConnectorEx
         strcpy((char*) malloc(strlen(inp_file_name) + 1), inp_file_name);
     xxx->out_file_name =
         strcpy((char*) malloc(strlen(out_file_name) + 1), out_file_name);
-    xxx->finp = xxx->fout = 0;
+    xxx->finp = 0;
+    xxx->fout = 0;
 
     memcpy(&xxx->attr, attr, sizeof(SFileConnAttr));
 
-    /* initialize handle */
-    ccc->handle = xxx;
+    /* initialize connector data */
+    ccc->handle  = xxx;
+    ccc->next    = 0;
+    ccc->meta    = 0;
+    ccc->setup   = s_Setup;
+    ccc->destroy = s_Destroy;
 
-    /* initialize virtual table */ 
-    ccc->vtable.get_type   = s_VT_GetType;
-    ccc->vtable.connect    = s_VT_Connect;
-    ccc->vtable.wait       = s_VT_Wait;
-    ccc->vtable.write      = s_VT_Write;
-    ccc->vtable.flush      = s_VT_Flush;
-    ccc->vtable.read       = s_VT_Read;
-    ccc->vtable.close      = s_VT_Close;
-
-    /* done */
     return ccc;
 }
