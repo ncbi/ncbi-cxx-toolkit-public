@@ -87,10 +87,29 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
     (*qinfo)->first_context = 0;
     (*qinfo)->last_context = (*qinfo)->num_queries * nframes - 1;
 
-    bool is_na = (prog == eBlastn) ? true : false;
-    bool translate = ((prog == eBlastx) || (prog == eTblastx)) ? true : false;
+    // Allocate the various arrays of the query info structure
+    int* context_offsets = NULL;
+    if ( !(context_offsets = (int*)
+           malloc(sizeof(int) * ((*qinfo)->last_context + 2)))) {
+        NCBI_THROW(CBlastException, eOutOfMemory, "Context offsets array");
+    }
+    if ( !((*qinfo)->eff_searchsp_array = 
+           (Int8*) calloc((*qinfo)->last_context + 1, sizeof(Int8)))) {
+        NCBI_THROW(CBlastException, eOutOfMemory, "Search space array");
+    }
+    if ( !((*qinfo)->length_adjustments = 
+           (int*) calloc((*qinfo)->last_context + 1, sizeof(int)))) {
+        NCBI_THROW(CBlastException, eOutOfMemory, "Length adjustments array");
+    }
 
-    // Adjust first/last context depending on (first?) query strand
+    (*qinfo)->context_offsets = context_offsets;
+    context_offsets[0] = 0;
+
+    bool is_na = (prog == eBlastn) ? true : false;
+    bool translate = 
+        ((prog == eBlastx) || (prog == eTblastx)) ? true : false;
+
+    // Adjust first context depending on the first query strand
     // Unless the strand option is set to single strand, the actual
     // CSeq_locs dictate which strand to examine during the search.
     ENa_strand strand_opt = options.GetStrandOption();
@@ -111,35 +130,11 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
             } else {
                 (*qinfo)->first_context = 1;
             }
-        } else if (strand == eNa_strand_plus) {
-            if (translate) {
-                (*qinfo)->last_context -= 3;
-            } else {
-                (*qinfo)->last_context -= 1;
-            }
         }
     }
 
-    // Allocate the various arrays of the query info structure
-    int* context_offsets = NULL;
-    if ( !(context_offsets = (int*)
-           malloc(sizeof(int) * ((*qinfo)->last_context + 2)))) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "Context offsets array");
-    }
-    if ( !((*qinfo)->eff_searchsp_array = 
-           (Int8*) calloc((*qinfo)->last_context + 1, sizeof(Int8)))) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "Search space array");
-    }
-    if ( !((*qinfo)->length_adjustments = 
-           (int*) calloc((*qinfo)->last_context + 1, sizeof(int)))) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "Length adjustments array");
-    }
-
-    (*qinfo)->context_offsets = context_offsets;
-    context_offsets[0] = 0;
-
-    // Set up the context offsets into the sequence that will be added to the
-    // sequence block structure.
+    // Set up the context offsets into the sequence that will be added
+    // to the sequence block structure.
     unsigned int ctx_index = 0;      // index into context_offsets array
     ITERATE(TSeqLocVector, itr, queries) {
         TSeqPos length = sequence::GetLength(*itr->seqloc, itr->scope);
@@ -723,6 +718,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2003/10/03 16:12:18  dondosha
+* Fix in previous change for plus strand search
+*
 * Revision 1.33  2003/10/02 22:10:46  dondosha
 * Corrections for one-strand translated searches
 *
