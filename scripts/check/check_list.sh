@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # $Id$
 # Author:  Vladimir Ivanov, NCBI 
@@ -17,7 +17,9 @@
 #    date_time    - get check list on specified date/time
 #                   (default is current).
 #                   Note that some tests can be already deleted in the CVS. 
-#    cvs_tree     - --development or --production.
+#    cvs_tree     - --development or --production or --local.
+#                   --local means that C++ tree is already here in
+#                     the directory with name './cxx'.
 #
 #    If any parameter is skipped that will be used default value for it.
 #
@@ -36,11 +38,15 @@ conf_name="TEST_CONF"
 
 # Get C++ tree from CVS for Unix platform
 rm -rf "$src_dir" > /dev/null
-flags="--without-gui --without-cvs --unix"
-if [ -n "$date_time" ]; then
-  $cvs_core "$src_dir" $flags "$date_time" $cvs_tree ||  exit 1
+if [ "$cvs_tree" == "--local" ]; then
+  cp -r ./cxx "$src_dir" ||  exit 1
 else
-  $cvs_core "$src_dir" $flags $cvs_tree ||  exit 1
+  flags="--without-gui --without-cvs --unix"
+  if [ -n "$date_time" ]; then
+    $cvs_core "$src_dir" $flags "$date_time" $cvs_tree ||  exit 1
+  else
+    $cvs_core "$src_dir" $flags $cvs_tree ||  exit 1
+  fi
 fi
 
 # Make any configururation
