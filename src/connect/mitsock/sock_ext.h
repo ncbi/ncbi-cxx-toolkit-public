@@ -45,6 +45,12 @@ extern "C" {
 #define write MIT_write
 #define close MIT_close
 
+/* forward declarations */
+struct sockaddr;
+struct timeval;
+struct iovec;
+struct in_addr;
+
 /* External Sockets API calls */
 int socket(int family, int type, int protocol);
 int bind(int sockFD, const struct sockaddr *myAddr, int addrLength);
