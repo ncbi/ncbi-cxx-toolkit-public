@@ -1,2 +1,4 @@
+ASN_DEP = xnetblast
+
 LIB = xnetblastcli
 SRC = blastclient blastclient_
