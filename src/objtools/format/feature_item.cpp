@@ -1724,9 +1724,10 @@ void CFeatureItem::x_AddProtQuals
              processed == CProt_ref::eProcessed_signal_peptide  ||
              processed == CProt_ref::eProcessed_transit_peptide ) {
             CSeqVector pep(m_Feat->GetLocation(), ctx.GetScope());
+            pep.SetCoding(CSeq_data::e_Ncbieaa);
             string peptide;
             pep.GetSeqData(pep.begin(), pep.end(), peptide);
-            if ( !peptide.empty() ) {
+            if (!NStr::IsBlank(peptide)) {
                 x_AddQual(eFQ_peptide, new CFlatStringQVal(peptide));
             }
         }
@@ -3498,6 +3499,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2005/01/13 16:31:59  shomrat
+* Show /peptide in Ncbieaa coding
+*
 * Revision 1.40  2005/01/12 17:24:26  vasilche
 * Avoid performance warning on MSVC.
 *
