@@ -215,7 +215,7 @@ Solution 2: Create a traitsy solution.  The Set(...) methods will use
    cases.
 */
 
-extern bool ncbi::trace_blast_api;
+extern bool trace_blast_api;
 
 #define WRITE_API_IDENT(NAME)                                \
     if (trace_blast_api) {                                   \
@@ -251,7 +251,7 @@ public:                                        \
         SetValue(opts, V);              \
     }
 
-#define OPT_HANDLER_END() };
+#define OPT_HANDLER_END() }
 
 // Helper and Shortcut Handler Sets
 
@@ -262,7 +262,7 @@ OPT_HANDLER_SUPPORT(CTBlastnOptionsHandle);         \
 OPT_HANDLER_SUPPORT(CTBlastxOptionsHandle);         \
 OPT_HANDLER_SUPPORT(CBlastProteinOptionsHandle);    \
 OPT_HANDLER_SUPPORT(CBlastNucleotideOptionsHandle); \
-OPT_HANDLER_END();
+OPT_HANDLER_END()
 
 #define OPT_HANDLER_EXPR_ALL(NAME, EXPR)            \
 OPT_HANDLER_START(NAME, EXPR);                      \
@@ -271,12 +271,12 @@ OPT_HANDLER_SUPPORT(CTBlastnOptionsHandle);         \
 OPT_HANDLER_SUPPORT(CTBlastxOptionsHandle);         \
 OPT_HANDLER_SUPPORT(CBlastProteinOptionsHandle);    \
 OPT_HANDLER_SUPPORT(CBlastNucleotideOptionsHandle); \
-OPT_HANDLER_END();
+OPT_HANDLER_END()
 
 #define OPT_HANDLER_SUPPORT_NUCL(NAME)              \
 OPT_HANDLER_START(NAME, V);                         \
 OPT_HANDLER_SUPPORT(CBlastNucleotideOptionsHandle); \
-OPT_HANDLER_END();
+OPT_HANDLER_END()
 
 // Translated Query (blastx, tblastx)
 
@@ -284,7 +284,7 @@ OPT_HANDLER_END();
 OPT_HANDLER_START(NAME, V);                 \
 OPT_HANDLER_SUPPORT(CBlastxOptionsHandle);  \
 OPT_HANDLER_SUPPORT(CTBlastxOptionsHandle); \
-OPT_HANDLER_END();
+OPT_HANDLER_END()
 
 // Translated DB (tblastx, tblastn)
 
@@ -292,7 +292,7 @@ OPT_HANDLER_END();
 OPT_HANDLER_START(NAME, V);                 \
 OPT_HANDLER_SUPPORT(CTBlastnOptionsHandle); \
 OPT_HANDLER_SUPPORT(CTBlastxOptionsHandle); \
-OPT_HANDLER_END();
+OPT_HANDLER_END()
 
 // CRemoteBlast option .. i.e. a program option rather than an
 // algorithmic option.  Because it is sent to CRemoteBlast, it does
@@ -302,7 +302,7 @@ OPT_HANDLER_END();
 #define OPT_HANDLER_RB_EXPR(NAME,EXPR) \
 OPT_HANDLER_START(NAME, EXPR);         \
 OPT_HANDLER_SUPPORT(CRemoteBlast);     \
-OPT_HANDLER_END();
+OPT_HANDLER_END()
 
 
 // CBlastOptions based handlers
@@ -552,6 +552,9 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/03/16 19:41:56  vasilche
+ * Namespace qualifier is invalid in extern declaration. Removed extra semicolons
+ *
  * Revision 1.2  2004/02/18 18:29:59  bealer
  * - Fix entrez query and add support (to Apply) for Remote Blast program
  *   options.
