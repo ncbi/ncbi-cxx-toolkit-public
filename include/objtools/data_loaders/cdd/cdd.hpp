@@ -53,7 +53,7 @@ class NCBI_XLOADER_CDD_EXPORT CCddDataLoader : public CDataLoader
 public:
     CCddDataLoader(void);
 
-    void GetRecords(const CSeq_id_Handle& idh, const EChoice choice);
+    void GetRecords(const CSeq_id_Handle& idh, EChoice choice);
 
 private:
 
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/28 13:14:38  dicuccio
+ * Dropped const from EChoice to match base class API
+ *
  * Revision 1.1  2003/10/20 17:48:05  dicuccio
  * Initial revision
  *
