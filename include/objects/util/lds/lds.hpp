@@ -35,6 +35,8 @@
 #include <objects/util/lds/lds_expt.hpp>
 #include <objects/util/lds/lds_files.hpp>
 
+#include <map>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -45,6 +47,10 @@ BEGIN_SCOPE(objects)
 
 class CLDS_Database
 {
+public:
+    // Object type string to database id map
+    typedef map<string, int> TObjTypeMap;
+
 public:
 
     CLDS_Database(string db_name)
@@ -61,13 +67,18 @@ public:
     // Syncronize LDS database content with directory. 
     // Function will do format guessing, files parsing, etc
     void SyncWithDir(const string& dir_name);
-
+private:
+    // Loads types map from m_ObjectTypeDB to memory.
+    void x_LoadTypeMap();
 private:
     CLDS_Database(const CLDS_Database&);
     CLDS_Database& operator=(const CLDS_Database&);
 private:
-    string       m_LDS_DbName;
-    SLS_FileDB   m_FileDB;
+    string                 m_LDS_DbName;
+
+    SLDS_TablesCollection  m_db;
+
+    TObjTypeMap            m_ObjTypeMap;
 };
 
 
@@ -77,6 +88,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/05/23 20:33:33  kuznets
+ * Bulk changes in lds library, code reorganizations, implemented top level
+ * objects read, metainformation persistance implemented for top level objects...
+ *
  * Revision 1.2  2003/05/22 18:57:17  kuznets
  * Work in progress
  *

@@ -77,6 +77,7 @@ struct SLDS_ObjectDB : public CBDB_File
     CBDB_FieldInt4    object_id;
 
     CBDB_FieldInt4    file_id; 
+    CBDB_FieldString  primary_seqid;
     CBDB_FieldInt4    seqlist_id; 
     CBDB_FieldInt4    object_type;
     CBDB_FieldInt4    file_offset;
@@ -194,6 +195,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2003/05/23 20:33:33  kuznets
+* Bulk changes in lds library, code reorganizations, implemented top level
+* objects read, metainformation persistance implemented for top level objects...
+*
 * Revision 1.3  2003/05/23 18:21:21  kuznets
 * +SLDS_TablesCollection
 *

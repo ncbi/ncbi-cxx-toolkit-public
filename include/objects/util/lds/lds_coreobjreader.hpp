@@ -87,6 +87,10 @@ public:
 
     typedef vector<SObjectDetails>    TObjectVector;
 
+    // Find object information based on the stream offset.
+    // Return NULL if not found.
+    const SObjectDetails* FindObjectInfo(size_t stream_offset);
+
 protected:
 
     struct SObjectParseDescr
@@ -130,6 +134,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/05/23 20:33:33  kuznets
+ * Bulk changes in lds library, code reorganizations, implemented top level
+ * objects read, metainformation persistance implemented for top level objects...
+ *
  * Revision 1.1  2003/05/22 18:57:17  kuznets
  * Work in progress
  *

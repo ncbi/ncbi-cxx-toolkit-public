@@ -32,6 +32,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <util/format_guess.hpp>
 
 #include <objects/util/lds/lds_db.hpp>
 #include <objects/util/lds/lds_set.hpp>
@@ -49,14 +50,23 @@ BEGIN_SCOPE(objects)
 class CLDS_Object
 {
 public:
-    CLDS_Object(SLDS_ObjectDB& object_db)
-    : m_ObjectDB(object_db),
+    CLDS_Object(SLDS_TablesCollection& db, const map<string, int>& obj_map)    
+    : m_db(db),
+      m_ObjTypeMap(obj_map),
       m_MaxRecId(0)
     {}
 
-    // Delete all objects living in the specified file.
+    // Delete all objects living in the specified set of files.
     // All deleted ids are added to deleted set.
-    void Delete(int file_id, CLDS_Set* deleted);
+    void DeleteCascadeFiles(const CLDS_Set& file_ids, 
+                            CLDS_Set* objects_deleted);
+
+    // Reload all objects in given set of files
+    void UpdateCascadeFiles(const CLDS_Set& file_ids);
+
+    void UpdateFileObjects(int file_id,
+                           const string& file_name,
+                           CFormatGuess::EFormat format);
 
     // Return max record id. 0 if no record found.
     int FindMaxRecId();
@@ -66,8 +76,10 @@ private:
     CLDS_Object& operator=(const CLDS_Object&);
 
 private:
-    SLDS_ObjectDB&  m_ObjectDB;
-    int           m_MaxRecId;
+    SLDS_TablesCollection&  m_db;
+    const map<string, int>& m_ObjTypeMap;
+
+    int                     m_MaxRecId;
 };
 
 
@@ -78,6 +90,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/05/23 20:33:33  kuznets
+ * Bulk changes in lds library, code reorganizations, implemented top level
+ * objects read, metainformation persistance implemented for top level objects...
+ *
  * Revision 1.1  2003/05/22 21:01:02  kuznets
  * Initial revision
  *

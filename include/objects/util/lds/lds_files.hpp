@@ -27,7 +27,7 @@
  *
  * Author: Anatoliy Kuznetsov
  *
- * File Description: 
+ * File Description: Different operations on LDS File table
  *
  */
 
@@ -44,13 +44,13 @@ BEGIN_SCOPE(objects)
 
 //////////////////////////////////////////////////////////////////
 //
-// SLS_FileDB related methods.
+// SLDS_FileDB related methods.
 //
 
 class CLDS_File
 {
 public:
-    CLDS_File(SLS_FileDB& file_db)
+    CLDS_File(SLDS_FileDB& file_db)
     : m_FileDB(file_db),
       m_MaxRecId(0)
     {}
@@ -81,8 +81,8 @@ private:
     CLDS_File& operator=(const CLDS_File&);
 
 private:
-    SLS_FileDB&  m_FileDB;
-    int          m_MaxRecId;
+    SLDS_FileDB&  m_FileDB;
+    int           m_MaxRecId;
 };
 
 
@@ -92,6 +92,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/05/23 20:33:33  kuznets
+ * Bulk changes in lds library, code reorganizations, implemented top level
+ * objects read, metainformation persistance implemented for top level objects...
+ *
  * Revision 1.2  2003/05/22 18:57:17  kuznets
  * Work in progress
  *

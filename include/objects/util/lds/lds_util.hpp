@@ -46,12 +46,22 @@ BEGIN_SCOPE(objects)
         } \
     }
 
+// Return TRUE if id belongs to the set
+inline bool LDS_SetTest(const CLDS_Set& s, int id)
+{
+    return s.find(id) != s.end();
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/05/23 20:33:33  kuznets
+ * Bulk changes in lds library, code reorganizations, implemented top level
+ * objects read, metainformation persistance implemented for top level objects...
+ *
  * Revision 1.1  2003/05/22 20:53:12  kuznets
  * Initial revision.
  *
