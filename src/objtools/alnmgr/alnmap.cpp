@@ -216,26 +216,29 @@ CAlnMap::TNumseg
 CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos) const
 {
     TSignedSeqPos start = -1, sseq_pos = seq_pos;
-    TNumseg       btm, top, mid, cur;
+    TNumseg       btm, top, mid, cur, last;
     TNumrow       dim;
-    btm = 0; cur = top = m_DS->GetNumseg() - 1;
+    btm = 0; cur = top = last = m_DS->GetNumseg() - 1;
     dim = m_DS->GetDim();
 
     if (sseq_pos < GetSeqStart(row)  ||  sseq_pos > GetSeqStop(row)) {
         return -1; // out of range
     }
 
+    bool plus = IsPositiveStrand(row);
+
     while (btm <= top) {
         cur = mid = (top + btm) / 2;
 
         while (cur <= top
-               &&  (start = m_DS->GetStarts()[cur * dim + row]) < 0) {
+               &&  (start = m_DS->GetStarts()[(plus ? cur : last - cur) 
+                                             * dim + row]) < 0) {
             ++cur;
         }
         if (cur <= top && start >= 0) {
             if (sseq_pos >= start &&
-                seq_pos < start + m_DS->GetLens()[cur]) {
-                return cur; // found
+                seq_pos < start + m_DS->GetLens()[plus ? cur : last - cur]) {
+                return (plus ? cur : last - cur); // found
             }
             if (sseq_pos > start) {
                 btm = cur + 1; 
@@ -247,13 +250,14 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos) const
 
         cur = mid-1;
         while (cur >= btm &&
-               (start = m_DS->GetStarts()[cur * dim + row]) < 0) {
+               (start = m_DS->GetStarts()[(plus ? cur : last - cur)
+                                         * dim + row]) < 0) {
             --cur;
         }
         if (cur >= btm && start >= 0) {
             if (sseq_pos >= start
-                &&  seq_pos < start + m_DS->GetLens()[cur]) {
-                return cur; // found
+                &&  seq_pos < start + m_DS->GetLens()[plus ? cur : last - cur]) {
+                return (plus ? cur : last - cur); // found
             }
             if (sseq_pos > start) {
                 btm = mid + 1;
@@ -680,6 +684,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2003/01/03 17:00:41  todorov
+* Fixed negative strand handling in GetRawSeg
+*
 * Revision 1.20  2002/12/20 21:25:14  todorov
 * ... and another small fix
 *
