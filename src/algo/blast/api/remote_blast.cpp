@@ -37,6 +37,7 @@
 
 #include <objects/blast/blastclient.hpp>
 #include <objects/blast/blast__.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <objects/scoremat/scoremat__.hpp>
 
 #if defined(NCBI_OS_UNIX)
@@ -186,7 +187,6 @@ CRemoteBlast::x_SendRequest(CRef<CBlast4_request_body> body)
     CRef<CBlast4_reply> reply(new CBlast4_reply);
     
     try {
-        //throw some_kind_of_nothing();
         CBlast4Client().Ask(*request, *reply);
     }
     catch(const CEofException&) {
@@ -915,6 +915,147 @@ const int CRemoteBlast::x_DefaultTimeout(void)
     return int(3600*3.5);
 }
 
+CRef<CBlast4_request> CRemoteBlast::
+x_BuildGetSeqRequest(vector< CRef<CSeq_id> > & seqids,   // in
+                     const string            & database, // in
+                     char                      seqtype,  // 'p' or 'n'
+                     string                  & errors)   // out
+{
+    // This will be returned in an Empty() state if an error occurs.
+    CRef<CBlast4_request> request;
+    
+    EBlast4_residue_type rtype(eBlast4_residue_type_unknown);
+    
+    switch(seqtype) {
+    case 'p':
+        rtype = eBlast4_residue_type_protein;
+        break;
+        
+    case 'n':
+        rtype = eBlast4_residue_type_nucleotide;
+        break;
+        
+    default:
+        errors = "Error: invalid residue type specified.";
+        return request;
+    }
+    
+    if (database.empty()) {
+        errors = "Error: database name may not be blank.";
+        return request;
+    }
+    
+    if (seqids.empty()) {
+        errors = "Error: no sequences requested.";
+        return request;
+    }
+    
+    // Build ASN.1 request objects and link them together.
+    
+    request.Reset(new CBlast4_request);
+    
+    CRef<CBlast4_request_body> body(new CBlast4_request_body);
+    CRef<CBlast4_database>     db  (new CBlast4_database);
+    
+    request->SetBody(*body);
+    body->SetGet_sequences().SetDatabase(*db);
+    
+    // Fill in db values
+    
+    db->SetName(database);
+    db->SetType(rtype);
+    
+    // Link in the list of requests.
+    
+    list< CRef< CSeq_id > > & seqid_list =
+        body->SetGet_sequences().SetSeq_ids();
+    
+    ITERATE(vector< CRef<CSeq_id> >, iter, seqids) {
+        seqid_list.push_back(*iter);
+    }
+    
+    return request;
+}
+
+void
+CRemoteBlast::x_GetSeqsFromReply(CRef<CBlast4_reply>       reply,
+                                 vector< CRef<CBioseq> > & bioseqs,  // out
+                                 string                  & errors,   // out
+                                 string                  & warnings) // out
+{
+    // Read the data from the reply into the output arguments.
+    
+    bioseqs.clear();
+    
+    static const string no_msg("<no message>");
+    
+    if (reply->CanGetErrors() && (! reply->GetErrors().empty())) {
+        ITERATE(list< CRef< CBlast4_error > >, iter, reply->GetErrors()) {
+            
+            // Determine the message source and destination.
+            
+            const string & message((*iter)->CanGetMessage()
+                                   ? (*iter)->GetMessage()
+                                   : no_msg);
+            
+            string & dest
+                (((*iter)->GetCode() & eBlast4_error_flags_warning)
+                 ? warnings
+                 : errors);
+            
+            // Attach the message (and possibly delimiter) to dest.
+            
+            if (! dest.empty()) {
+                dest += "\n";
+            }
+            
+            dest += message;
+        }
+    }
+    
+    if (reply->CanGetBody() && reply->GetBody().IsGet_sequences()) {
+        list< CRef<CBioseq> > & bslist =
+            reply->SetBody().SetGet_sequences().Set();
+        
+        bioseqs.reserve(bslist.size());
+        
+        ITERATE(list< CRef<CBioseq> >, iter, bslist) {
+            bioseqs.push_back(*iter);
+        }
+    }
+}
+
+void
+CRemoteBlast::GetSequences(vector< CRef<CSeq_id> > & seqids,   // in
+                           const string            & database, // in
+                           char                      seqtype,  // 'p' or 'n'
+                           vector< CRef<CBioseq> > & bioseqs,  // out
+                           string                  & errors,   // out
+                           string                  & warnings) // out
+{
+    // Build the request
+    
+    CRef<CBlast4_request> request =
+        x_BuildGetSeqRequest(seqids, database, seqtype, errors);
+    
+    if (request.Empty()) {
+        return;
+    }
+    
+    CRef<CBlast4_reply> reply(new CBlast4_reply);
+    
+    try {
+        // Send request.
+        CBlast4Client().Ask(*request, *reply);
+    }
+    catch(const CEofException &) {
+        NCBI_THROW(CBlastException, eInternal,
+                   "No response from server, cannot complete request.");
+    }
+    
+    x_GetSeqsFromReply(reply, bioseqs, errors, warnings);
+}
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -925,6 +1066,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/09/13 20:12:23  bealer
+* - Add GetSequences() API.
+*
 * Revision 1.19  2004/08/03 21:01:29  bealer
 * - Move one line functions around.
 *

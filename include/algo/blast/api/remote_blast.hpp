@@ -232,6 +232,36 @@ public:
     /// useful to the end-user.
     void SetVerbose(EDebugMode verb = eDebug);
     
+    /// Get a set of Bioseqs given an input set of Seq-ids.
+    ///
+    /// This retrieves the Bioseqs corresponding to the given Seq-ids
+    /// from the blast4 server.  Normally this will be much faster
+    /// than consulting ID1 seperately for each sequence.  Sometimes
+    /// there are multiple sequences for a given Seq-id.  In such
+    /// cases, there are always 'non-ambiguous' ids available.  This
+    /// interface does not currently address this issue, and will
+    /// simply return the Bioseqs corresponding to one of the
+    /// sequences.  Errors will be returned if the operation cannot be
+    /// completed (or started).  In the case of a sequence that cannot
+    /// be found, the error will indicate the index of (and Seq-id of)
+    /// the missing sequence; processing will continue, and the
+    /// sequences that can be found will be returned along with the
+    /// error.
+    /// 
+    /// @param seqids   A vector of Seq-ids for which Bioseqs are requested.
+    /// @param database A list of databases from which to get the sequences.
+    /// @param seqtype  The residue type, 'p' from protein, 'n' for nucleotide.
+    /// @param bioseqs  The vector used to return the requested Bioseqs.
+    /// @param errors   A null-seperated list of errors.
+    /// @param warnings A null-seperated list of warnings.
+    static void
+    GetSequences(vector< CRef<CSeq_id> > & seqids,    // in
+                 const string            & database,  // in
+                 char                      seqtype,   // 'p' or 'n'
+                 vector< CRef<CBioseq> > & bioseqs,   // out
+                 string                  & errors,    // out
+                 string                  & warnings); // out
+        
 private:
     /// An alias for the most commonly used part of the Blast4 search results.
     typedef CBlast4_get_search_results_reply TGSRR;
@@ -333,6 +363,17 @@ private:
     /// Poll until results are found, error occurs, or timeout expires.
     void x_PollUntilDone(EImmediacy poll_immed, int seconds);
     
+    static CRef<CBlast4_request>
+    x_BuildGetSeqRequest(vector< CRef<CSeq_id> > & seqids,   // in
+                         const string            & database, // in
+                         char                      seqtype,  // 'p' or 'n'
+                         string                  & errors);  // out
+    
+    static void
+    x_GetSeqsFromReply(CRef<CBlast4_reply>       reply,
+                       vector< CRef<CBioseq> > & bioseqs,   // out
+                       string                  & errors,    // out
+                       string                  & warnings); // out
     
     // Data
     
@@ -378,6 +419,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/09/13 20:12:10  bealer
+ * - Add GetSequences() API.
+ *
  * Revision 1.12  2004/08/03 21:01:49  bealer
  * - Move one line functions around.
  *
