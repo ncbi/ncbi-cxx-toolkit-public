@@ -56,47 +56,50 @@ struct SNode	{
     bool operator<(const SNode& rhs) const { return x < rhs.x; }
 };
 
-//
-// general single-linkage clustering (SLC) algorithm 
-//
 
-struct SNodePair
-{
-    SNodePair(int i, int j): n1(i), n2(j) {}
-    int n1, n2;
-};
-
+//
+// generic single-linkage clustering (SLC) algorithm 
+// 
 
 template<class T, class PClustCrit, class CClustID_Set, class CClustID_Get>
 void DoSingleLinkageClustering (
    vector<T>& vt,          // vector of objects to be clustered
-   const PClustCrit& pr2,        // clustering criterion (two-argument predicate)
+   const PClustCrit& pr2,  // clustering criterion (two-argument predicate)
    const CClustID_Set& CID_Set,  // function that assigns ClustID to objects
-   const CClustID_Get& CID_Get   // function that retrieves ClustID from objects
+   const CClustID_Get& CID_Get  // function that retrieves ClustID from objects
 )
 
 {
-    vector<SNodePair> vnodes;    // auxiliary vector
-    size_t nSize = vt.size(), j = 0, i;
+    size_t dim = vt.size();
+    vector<bool> pairs (dim*dim, false);
 
-    for( j = 0; j < nSize; ++j ) {
+    for( size_t i = 0; i < dim; ++i ) {
 
-        CID_Set( vt[j], j );
-        for( i = 0; i < j; ++i ) {
-
-            if( pr2(vt[i], vt[j] ) )
-                vnodes.push_back( SNodePair( i, j ) );
-         }
+        CID_Set( vt[i], i );
+        for( size_t j = 0; j < i; ++j ) {
+            
+            if( pr2(vt[i], vt[j] ) ) {
+                pairs[i*dim + j] = true;
+            }
+        }
     }
- 
-    vector<SNodePair>::const_iterator kk, kend;
-    for( kk = vnodes.begin(), kend = vnodes.end(); kk != kend; ++kk ) {
-
-        int n1 = CID_Get( vt[kk->n1] ), n2 = CID_Get( vt[kk->n2] );
-        if( n1 != n2 ) {
-            NON_CONST_ITERATE (typename vector<T>, jj, vt) {
-                if( CID_Get( *jj ) == n1 )
-                    CID_Set( *jj, n2 );
+    
+    for( size_t i = 0; i < dim; ++i ) {
+        
+        for( size_t j = 0; j < i; ++j ) {
+            
+            if(pairs[i*dim+j] == false) {
+                continue;
+            }
+            int id_i = CID_Get( vt[i] ), id_j = CID_Get( vt[j] );
+            if( id_i != id_j ) {
+                typename vector<T>::iterator jj, jend;
+                for( jj = vt.begin(), jend = vt.end(); jj != jend; ++jj ) {
+                    
+                    if( CID_Get( *jj ) == id_j ) {
+                        CID_Set( *jj, id_i );
+                    }
+                }
             }
         }
     }
@@ -956,6 +959,11 @@ int CHitParser::Run(EMode erm)
                             m_Out.erase(ii);
                         }
                         break;
+                default:
+
+                    NCBI_THROW( CAlgoAlignException,
+                                eInternal,
+                                "Unexpected strand combination." );
                 }
             }
         }
@@ -1168,10 +1176,13 @@ void CHitParser::x_FilterByMaxDist()
 
 void CHitParser::x_IdentifyMaxDistGroups()
 {
-    DoSingleLinkageClustering ( m_Out,
-        CMaxDistClustPred(m_MaxHitDistQ, m_MaxHitDistS),
-        CMaxDistClIdSet(),
-        CMaxDistClIdGet() );
+    if(m_MaxHitDistQ < kMax_Int || m_MaxHitDistS < kMax_Int) {
+
+        DoSingleLinkageClustering ( m_Out,
+                                    CMaxDistClustPred(m_MaxHitDistQ,
+                                                      m_MaxHitDistS),
+                                    CMaxDistClIdSet(), CMaxDistClIdGet() );
+    }
 }
 
 
@@ -1337,6 +1348,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/06/08 20:48:42  kapustin
+* Fix SLC memory issue
+*
 * Revision 1.7  2004/05/24 16:13:57  gorelenk
 * Added PCH ncbi_pch.hpp
 *
