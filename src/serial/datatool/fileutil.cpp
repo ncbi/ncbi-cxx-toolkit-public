@@ -224,6 +224,16 @@ bool IsLocalPath(const string& path)
     return true;
 }
 
+string MakeAbsolutePath(const string& path)
+{
+    if (!path.empty() && !CDirEntry::IsAbsolutePath(path)) {
+        string res = Path(CDir::GetCwd(),path);
+        res = CDirEntry::NormalizePath(res);
+        return res;
+    }
+    return path;
+}
+
 string Path(const string& dir, const string& file)
 {
     if ( dir.empty() )
@@ -287,6 +297,11 @@ string GetStdPath(const string& path)
     // Replace each native separator character with the 'standard' one.
     SIZE_TYPE ibeg = NStr::StartsWith(path, "http://", NStr::eNocase) ? 7 : 0;
     for (SIZE_TYPE i=ibeg ; i < stdpath.size(); i++) {
+#ifdef NCBI_OS_MSWIN
+        if ( i==1 && IsDiskSeparator(stdpath[i]) ) {
+            continue;
+        }
+#endif
         if ( IsDirSeparator(stdpath[i]) )
             stdpath[i] = '/';
     }
@@ -549,6 +564,9 @@ END_NCBI_SCOPE
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/12/06 18:14:39  gouriano
+* Added MakeAbsolutePath method
+*
 * Revision 1.28  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *

@@ -123,6 +123,8 @@ private:
     auto_ptr<CNcbiOfstream> m_Ostream;
 };
 
+string MakeAbsolutePath(const string& path);
+
 // return combined dir and name, inserting if needed '/'
 string Path(const string& dir, const string& name);
 
@@ -147,6 +149,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/12/06 18:14:07  gouriano
+* Added MakeAbsolutePath method
+*
 * Revision 1.14  2002/10/15 13:52:09  gouriano
 * added "GetType" method - module file type by extension
 *
