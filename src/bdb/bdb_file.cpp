@@ -48,17 +48,17 @@ const int  CBDB_RawFile::kOpenFileMask      = 0664;
 class CDB_guard
 {
 public:
-	CDB_guard(DB** db) : m_DB(db) {}
-	~CDB_guard()
-	{ 
-		if (m_DB  &&  *m_DB) {
+    CDB_guard(DB** db) : m_DB(db) {}
+    ~CDB_guard()
+    { 
+        if (m_DB  &&  *m_DB) {
             (*m_DB)->close(*m_DB, 0);
             *m_DB = 0;
         }
-	}
-	void release() { m_DB = 0; }
+    }
+    void release() { m_DB = 0; }
 private:
-	DB** m_DB;
+    DB** m_DB;
 };
 
 
@@ -214,7 +214,7 @@ void CBDB_RawFile::Remove(const char* filename, const char* database)
     // temporary DB is used here, because BDB remove call invalidates the
     // DB argument redardless of the result.
     DB* db = 0;
-	CDB_guard guard(&db);
+    CDB_guard guard(&db);
     int ret = db_create(&db, m_Env ? m_Env->GetEnv() : 0, 0);
     BDB_CHECK(ret, 0);
 
@@ -278,7 +278,7 @@ void CBDB_RawFile::x_CreateDB()
     _ASSERT(m_DB == 0);
     _ASSERT(!m_DB_Attached);
 
-	CDB_guard guard(&m_DB);
+    CDB_guard guard(&m_DB);
 
     int ret = db_create(&m_DB, m_Env ? m_Env->GetEnv() : 0, 0);
     BDB_CHECK(ret, 0);
@@ -361,34 +361,34 @@ void CBDB_RawFile::x_Open(const char* filename,
                 BDB_CHECK(ret, filename);
             }
         } else {
-			// file opened succesfully, check if it needs
-			// a byte swapping (different byteorder)
+            // file opened succesfully, check if it needs
+            // a byte swapping (different byteorder)
 
-		    int isswapped;
-		    ret = m_DB->get_byteswapped(m_DB, &isswapped);
-			BDB_CHECK(ret, filename);
+            int isswapped;
+            ret = m_DB->get_byteswapped(m_DB, &isswapped);
+            BDB_CHECK(ret, filename);
 
-		    m_ByteSwapped = (isswapped!=0);
-			if (m_ByteSwapped) {
-				// re-open the file
+            m_ByteSwapped = (isswapped!=0);
+            if (m_ByteSwapped) {
+                // re-open the file
                 m_DB->close(m_DB, 0);
                 m_DB = 0;
 
-				x_SetByteSwapped(m_ByteSwapped);
-		        x_CreateDB();
+                x_SetByteSwapped(m_ByteSwapped);
+                x_CreateDB();
 
-				ret = m_DB->open(m_DB,
-								 txn,
-								 filename,
-								 database, // database name
-								 DB_BTREE,
-								 open_flags,
-								 kOpenFileMask);
-				BDB_CHECK(ret, filename);
+                ret = m_DB->open(m_DB,
+                                 txn,
+                                 filename,
+                                 database, // database name
+                                 DB_BTREE,
+                                 open_flags,
+                                 kOpenFileMask);
+                BDB_CHECK(ret, filename);
 
-			}
+            }
 
-		}
+        }
     } // else open_mode == Create
 
     m_OpenMode = open_mode;
@@ -471,7 +471,7 @@ DBC* CBDB_RawFile::CreateCursor(CBDB_Transaction* trans) const
 
 void CBDB_RawFile::x_SetByteSwapped(bool bswp)
 {
-	m_ByteSwapped = bswp;
+    m_ByteSwapped = bswp;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -487,18 +487,18 @@ CBDB_File::CBDB_File(EDuplicateKeys dup_keys)
       m_BufsCreated(false),
       m_DataBufDisabled(false),
       m_LegacyString(false),
-	  m_OwnFields(false)
+      m_OwnFields(false)
 {
 }
 
 void CBDB_File::SetFieldOwnership(bool own_fields) 
 { 
-	m_OwnFields = own_fields; 
-	
-	m_KeyBuf->SetFieldOwnership(own_fields);
-	if (m_DataBuf.get() != 0) {
-		m_DataBuf->SetFieldOwnership(own_fields);
-	}
+    m_OwnFields = own_fields; 
+    
+    m_KeyBuf->SetFieldOwnership(own_fields);
+    if (m_DataBuf.get() != 0) {
+        m_DataBuf->SetFieldOwnership(own_fields);
+    }
 }
 
 void CBDB_File::BindKey(const char* field_name,
@@ -531,7 +531,7 @@ void CBDB_File::BindData(const char* field_name,
         m_DataBuf = dbuf;
         m_DataBuf->SetNullable();
         m_DataBuf->SetLegacyStringsCheck(m_LegacyString);
-		m_DataBuf->SetFieldOwnership(m_OwnFields);
+        m_DataBuf->SetFieldOwnership(m_OwnFields);
     }
 
     m_DataBuf->Bind(data_field);
@@ -592,7 +592,7 @@ void CBDB_File::SetLegacyStringsCheck(bool value)
 
 void CBDB_File::x_SetByteSwapped(bool bswp)
 {
-	CBDB_RawFile::x_SetByteSwapped(bswp);
+    CBDB_RawFile::x_SetByteSwapped(bswp);
     m_KeyBuf->SetByteSwapped(bswp);
     if (m_DataBuf.get()) {
         m_DataBuf->SetByteSwapped(bswp);
@@ -820,15 +820,15 @@ EBDB_ErrCode CBDB_File::DeleteCursor(DBC* dbc, EIgnoreError on_error)
 void CBDB_File::x_CheckConstructBuffers()
 {
     if (!m_BufsAttached  &&  !m_BufsCreated) {
-		if (m_KeyBuf->FieldCount() == 0) {
-			BDB_THROW(eInvalidValue, "Empty BDB key (no fields defined).");
-		}
-		
+        if (m_KeyBuf->FieldCount() == 0) {
+            BDB_THROW(eInvalidValue, "Empty BDB key (no fields defined).");
+        }
+        
         m_KeyBuf->Construct();
         if ( m_DataBuf.get() ) {
-			m_DataBuf->Construct();
+            m_DataBuf->Construct();
             m_DataBuf->SetAllNull();
-		}
+        }
         m_BufsCreated = 1;
     }
 }
@@ -937,6 +937,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/06/21 15:09:51  kuznets
+ * Fixed formatting
+ *
  * Revision 1.39  2004/06/17 16:27:02  kuznets
  * + field ownership flag to file
  *
