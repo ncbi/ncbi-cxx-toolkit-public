@@ -116,16 +116,16 @@ int CSearch::CreateLadders(unsigned char *Sequence, int iSearch, int position,
 			 position, endposition, Masses[iMissed], 
 			     MassArray, AA, ModMask, Site, DeltaMass,
 			     NumMod)) return 1;
-    B2Ladder.CreateLadder(ForwardIon, 2, (char *)Sequence, iSearch,
+    if(!B2Ladder.CreateLadder(ForwardIon, 2, (char *)Sequence, iSearch,
 			  position, endposition, 
 			  Masses[iMissed], 
 			  MassArray, AA, ModMask, Site, DeltaMass,
-			  NumMod);
-    Y2Ladder.CreateLadder(BackwardIon, 2, (char *)Sequence, iSearch,
+			  NumMod)) return 1;
+    if(!Y2Ladder.CreateLadder(BackwardIon, 2, (char *)Sequence, iSearch,
 			  position, endposition,
 			  Masses[iMissed], 
 			  MassArray, AA, ModMask, Site, DeltaMass,
-			  NumMod);
+			  NumMod)) return 1;
     
     return 0;
 }
@@ -177,7 +177,7 @@ bool CSearch::CompareLaddersTop(CLadder& BLadder,
 #ifdef CHECKGI
 bool CheckGi(int gi)
 {
-    if(gi == 41393573 || gi == 45645212 || gi == 3978464 || gi == 18203659 || gi ==  29387351){
+    if(gi == 6325234){
 	ERR_POST(Info << "test seq");
 	return true;
     }
@@ -1170,6 +1170,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.28  2004/11/15 15:32:40  lewisg
+memory overwrite fixes
+
 Revision 1.27  2004/09/29 19:43:09  lewisg
 allow setting of ions
 

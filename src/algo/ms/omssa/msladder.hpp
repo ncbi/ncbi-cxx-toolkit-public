@@ -72,8 +72,8 @@ public:
 
     // vector operations on the ladder
     int& operator [] (int n);
-    unsigned size(void);
-    void push_back(int val);
+    int size(void);
+//    void push_back(int val);
     void clear(void);
 
     // make a ladder
@@ -114,7 +114,7 @@ private:
     int LadderIndex; // current end of the ladder
     AutoPtr <int, ArrayDeleter<int> > Ladder;
     AutoPtr <THit, ArrayDeleter<THit> > Hit;
-    unsigned LadderSize;  // size of allocated buffer
+    int LadderSize;  // size of allocated buffer
     int Start, Stop;  // inclusive start and stop position in sequence
     int Index;  // gi or position in blastdb
     int Type;  // ion type
@@ -130,16 +130,18 @@ inline int& CLadder::operator [] (int n)
     return *(Ladder.get() + n); 
 }
 
-inline unsigned CLadder::size(void) 
+inline int CLadder::size(void) 
 { 
     return LadderIndex; 
 }
 
+#if 0
 inline void CLadder::push_back(int val) 
 { 
     *(Ladder.get() + LadderIndex) = val; 
     LadderIndex++;
 }
+#endif
 
 inline void CLadder::clear(void) 
 { 
@@ -185,7 +187,7 @@ inline int CLadder::GetCharge(void)
 inline int CLadder::HitCount(void)
 {
     int i, retval(0);
-    for(i = 0; i < LadderIndex; i++)
+    for(i = 0; i < LadderIndex && i < LadderSize; i++)
 	retval += *(Hit.get() + i);
     return retval;
 }
@@ -194,7 +196,7 @@ inline int CLadder::HitCount(void)
 inline void CLadder::ClearHits(void)
 {
     int i;
-    for(i = 0; i < LadderIndex; i++)
+    for(i = 0; i < LadderIndex && i < LadderSize; i++)
 	*(Hit.get() + i) = 0;
 }
 
@@ -214,6 +216,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.9  2004/11/15 15:32:40  lewisg
+  memory overwrite fixes
+
   Revision 1.8  2004/05/27 20:52:15  lewisg
   better exception checking, use of AutoPtr, command line parsing
 

@@ -70,9 +70,12 @@ CLadder::CLadder(int SizeIn): LadderIndex(0),
 
 
 // copy constructor
-CLadder::CLadder(const CLadder& Old)
+CLadder::CLadder(const CLadder& Old) : LadderIndex(0), 
+			Ladder(new int[Old.LadderSize]),
+			Hit(new int[Old.LadderSize]),
+			LadderSize(Old.LadderSize)
 {
-    CLadder();
+//    CLadder();
     Start = Old.Start;
     Stop = Old.Stop;
     Index = Old.Index;
@@ -81,7 +84,7 @@ CLadder::CLadder(const CLadder& Old)
 
     LadderIndex = Old.LadderIndex;
   
-    unsigned i;
+    int i;
     for(i = 0; i < size(); i++) {
 	(*this)[i] = *(Old.Ladder.get() + i);
 	GetHit()[i] = *(Old.Hit.get() + i);
@@ -127,6 +130,7 @@ bool CLadder::CreateLadder(int IonType, int ChargeIn, char *Sequence,
     else ModIndex = NumMod - 1;
 
     LadderIndex = stop - start;
+    if(LadderIndex > LadderSize) return false;
     for(i = 0; i < LadderIndex; i++) {
 	GetHit()[i] = 0;
 	if(kIonDirection[IonType] == 1) {
@@ -164,9 +168,9 @@ void CLadder::Or(CLadder& LadderIn)
 	    GetHit()[i] = GetHit()[i] + LadderIn.GetHit()[i];
 	}
     }
-    else if( size() != static_cast <unsigned> (Stop - Start)) return;  // unusable chars
+    else if( size() != static_cast <int> (Stop - Start)) return;  // unusable chars
     else {  // different direction
-	for(i = 0; i < LadderIndex; i++) {
+	for(i = 0; i < LadderIndex && i < LadderSize; i++) {
 	    GetHit()[i] = GetHit()[i] + LadderIn.GetHit()[LadderIndex - i - 1];
 	}
     }
@@ -198,10 +202,11 @@ bool CLadder::ContainsFast(int MassIndex, int Tolerance)
 	    r = x - 1;
 	else return true;
     } 
-    
+#if 0    
     if (x < LadderIndex - 1 && x >= 0 &&
 	(*this)[x+1] < MassIndex + Tolerance && (*this)[x+1] > 
 	MassIndex - Tolerance) 
 	return true;
+#endif
     return false;
 }
