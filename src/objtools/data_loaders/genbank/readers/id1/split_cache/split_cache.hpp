@@ -56,6 +56,7 @@ class CObjectManager;
 class CSeq_id;
 class CScope;
 class CBioseq_Handle;
+class CSeq_entry_Handle;
 class CDataLoader;
 class CCachedId1Reader;
 class CGBDataLoader;
@@ -112,7 +113,7 @@ public:
 
     void ProcessSeqId(const CSeq_id& seq_id);
     void ProcessGi(int gi);
-    void ProcessBlob(const CSeqref& seqref);
+    void ProcessBlob(const CSeq_entry_Handle& tse);
 
     CNcbiOstream& Info(void) const;
 
@@ -141,7 +142,7 @@ public:
     }
 
 protected:
-    CConstRef<CSeqref> GetSeqref(CBioseq_Handle bh);
+    CConstRef<CSeqref> GetSeqref(CSeq_entry_Handle tse);
 
     typedef set< pair<int, int> > TProcessedBlobs;
     typedef set<CSeq_id_Handle> TProcessedIds;
@@ -175,6 +176,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/06/15 14:07:39  vasilche
+* Added possibility to split sequences.
+*
 * Revision 1.10  2004/04/28 16:29:15  vasilche
 * Store split results into new ICache.
 *

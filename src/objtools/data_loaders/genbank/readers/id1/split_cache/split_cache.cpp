@@ -203,6 +203,8 @@ void CSplitCacheApp::Init(void)
                       "process all entries in cache");
     arg_desc->AddFlag("recurse",
                       "process all entries referenced by specified ones");
+    arg_desc->AddFlag("verbose",
+                      "issue additional trace messages");
 
     // cache parameters
     arg_desc->AddDefaultKey("cache_dir", "CacheDir",
@@ -219,6 +221,12 @@ void CSplitCacheApp::Init(void)
 
     arg_desc->AddFlag("compress",
                       "try to compress split data");
+    arg_desc->AddFlag("keep_descriptions",
+                      "do not strip descriptions");
+    arg_desc->AddFlag("keep_sequence",
+                      "do not strip sequence data");
+    arg_desc->AddFlag("keep_annotations",
+                      "do not strip annotations");
 
     arg_desc->AddFlag("resplit",
                       "resplit already splitted data");
@@ -430,11 +438,15 @@ void CSplitCacheApp::Process(void)
 {
     const CArgs& args = GetArgs();
 
+    m_SplitterParams.m_Verbose = args["verbose"];
     m_DumpAsnText = args["dump"];
     m_DumpAsnBinary = args["bdump"];
     if ( args["compress"] ) {
         m_SplitterParams.m_Compression = m_SplitterParams.eCompression_nlm_zip;
     }
+    m_SplitterParams.m_DisableSplitDescriptions = args["keep_descriptions"];
+    m_SplitterParams.m_DisableSplitSequence = args["keep_sequence"];
+    m_SplitterParams.m_DisableSplitAnnotations = args["keep_annotations"];
     m_Resplit = args["resplit"];
     m_Recurse = args["recurse"];
     m_SplitterParams.SetChunkSize(args["chunk_size"].AsInteger()*1024);
@@ -487,7 +499,21 @@ void CSplitCacheApp::ProcessSeqId(const CSeq_id& id)
     LINE("Processing: " << id.AsFastaString());
     {{
         CLevelGuard level(m_RecursionLevel);
+        CBioseq_Handle bh;
+        {{
+            WAIT_LINE << "Loading Bioseq...";
+            bh = m_Scope->GetBioseqHandle(id);
+        }}
+        if ( bh ) {
+            /*
+              WAIT_LINE << "Loading Sequence...";
+              string sequence;
+              bh.GetSeqVector().GetSeqData(sequence);
+            */
+            ProcessBlob(bh.GetTopLevelEntry());
+        }
         
+        /*
         CId1Reader::TSeqrefs srs;
         m_Reader->ResolveSeq_id(srs, id, 0);
         if ( srs.empty() ) {
@@ -495,12 +521,13 @@ void CSplitCacheApp::ProcessSeqId(const CSeq_id& id)
             return;
         }
         ITERATE ( CId1Reader::TSeqrefs, it, srs ) {
-            ProcessBlob(**it);
+            ProcessBlob(id, **it);
         }
+        */
 
         if ( m_Recurse ) {
             LINE("Processing referenced sequences:");
-            CBioseq_Handle bh = m_Scope->GetBioseqHandle(idh);
+            CLevelGuard level(m_RecursionLevel);
             if ( bh ) {
                 CSeqMap_CI it = bh.GetSeqMap()
                     .begin_resolved(&*m_Scope, 0, CSeqMap::fFindRef);
@@ -561,7 +588,7 @@ void StoreToCache(CSplitCacheApp* app, const C& obj, EDataType data_type,
                   const CSeqref& seqref, const string& suffix = kEmptyStr)
 {
     string key = app->GetReader().GetBlobKey(seqref);
-    WAIT_LINE4(app) << "Storing to cache " << key << " ...";
+    WAIT_LINE4(app) << "Storing to cache " << key << "." << suffix << " ...";
     CNcbiOstrstream stream;
     {{
         CSplitDataMaker data(app->GetParams(), data_type);
@@ -579,21 +606,23 @@ void StoreToCache(CSplitCacheApp* app, const C& obj, EDataType data_type,
 }
 
 
-void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
+void CSplitCacheApp::ProcessBlob(const CSeq_entry_Handle& tse)
 {
+    CConstRef<CSeqref> seqref = GetSeqref(tse);
     {
-        pair<int, int> key = seqref.GetKeyByTSE();
-        pair<TProcessedBlobs::iterator, bool> ins = m_ProcessedBlobs.insert(key);
+        pair<int, int> key = seqref->GetKeyByTSE();
+        pair<TProcessedBlobs::iterator, bool> ins =
+            m_ProcessedBlobs.insert(key);
         if ( !ins.second ) {
             // already processed
             return;
         }
     }
 
-    LINE("Processing blob "<< seqref.printTSE());
+    LINE("Processing blob "<< seqref->printTSE());
     CLevelGuard level(m_RecursionLevel);
 
-    int version = m_Reader->GetVersion(seqref, 0);
+    int version = m_Reader->GetVersion(*seqref, 0);
     if ( version > 1 ) {
         CTime time(time_t(version*60));
         LINE("Blob version: " << version << " - " << time.AsString());
@@ -602,7 +631,7 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
         LINE("Blob version: " << version);
     }
 
-    string blob_key = m_Reader->GetBlobKey(seqref);
+    string blob_key = m_Reader->GetBlobKey(*seqref);
     if ( m_Cache->GetSize(blob_key, version, "Skeleton") ) {
         if ( m_Resplit ) {
             WAIT_LINE << "Removing old split data...";
@@ -614,26 +643,15 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
         }
     }
 
-    if ( m_Reader->IsSNPSeqref(seqref) ) {
+    if ( m_Reader->IsSNPSeqref(*seqref) ) {
         LINE("Skipping SNP blob: not implemented");
         return;
     }
 
-    CBioseq_Handle bh;
-    {{
-        WAIT_LINE << "Loading...";
-        bh = m_Scope->GetBioseqHandle
-            (CSeq_id_Handle::GetGiHandle(seqref.GetGi()));
-    }}
-    if ( !bh ) {
-        LINE("Skipping: no bioseq???");
-        return;
-    }
-
     CConstRef<CSeq_entry> seq_entry;
-    if ( !m_Reader->IsSNPSeqref(seqref) ) {
+    if ( !m_Reader->IsSNPSeqref(*seqref) ) {
         // get non-SNP blob
-        seq_entry = bh.GetTopLevelEntry().GetCompleteSeq_entry();
+        seq_entry = tse.GetCompleteSeq_entry();
     }
     else {
         LINE("Skipping SNP blob: not implemented");
@@ -662,7 +680,7 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
     }
 
     size_t blob_size =
-        m_Cache->GetSize(m_Reader->GetBlobKey(seqref), version,
+        m_Cache->GetSize(m_Reader->GetBlobKey(*seqref), version,
                          m_Reader->GetSeqEntrySubkey());
     if ( blob_size == 0 ) {
         LINE("Skipping: blob is not in cache");
@@ -706,23 +724,25 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
         }
     }}
     {{ // storing split data into cache
-        StoreToCache(this, blob.GetMainBlob(), eDataType_MainBlob, seqref,
+        StoreToCache(this, blob.GetMainBlob(), eDataType_MainBlob, *seqref,
                      m_Reader->GetSkeletonSubkey());
-        StoreToCache(this, blob.GetSplitInfo(), eDataType_SplitInfo, seqref,
+        StoreToCache(this, blob.GetSplitInfo(), eDataType_SplitInfo, *seqref,
                      m_Reader->GetSplitInfoSubkey());
         ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
-            StoreToCache(this, *it->second, eDataType_Chunk, seqref,
+            StoreToCache(this, *it->second, eDataType_Chunk, *seqref,
                          m_Reader->GetChunkSubkey(it->first));
         }
     }}
 }
 
 
-CConstRef<CSeqref> CSplitCacheApp::GetSeqref(CBioseq_Handle bh)
+CConstRef<CSeqref> CSplitCacheApp::GetSeqref(const CSeq_entry_Handle tse)
 {
-    CSeq_entry_Handle tse = bh.GetTopLevelEntry();
-    CConstRef<CObject> id = tse.GetBlobId();
-    return ConstRef(dynamic_cast<const CSeqref*>(id.GetPointer()));
+    CConstRef<CSeqref> seqref(&m_Loader->GetSeqref(tse.x_GetInfo().GetTSE_Info()));
+    //CConstRef<CObject> id = tse.GetBlobId();
+    //CConstRef<CSeqref> seqref(dynamic_cast<const CSeqref*>(id.GetPointer()));
+    _ASSERT(seqref);
+    return seqref;
 }
 
 
@@ -741,6 +761,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/06/15 14:07:39  vasilche
+* Added possibility to split sequences.
+*
 * Revision 1.19  2004/05/21 21:42:52  gorelenk
 * Added PCH ncbi_pch.hpp
 *
