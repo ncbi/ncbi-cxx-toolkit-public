@@ -17,10 +17,10 @@ static void s_CollectRelPathes(const string&       path_from,
                                list<string>*       rel_pathes);
 
 static 
-void CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
-                                   const CMsvcPrjProjectContext& context,
-                                   const CDataToolGeneratedSrc&  src,                                   
-                                   SCustomBuildInfo*             build_info);
+void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
+                                     const CMsvcPrjProjectContext& context,
+                                     const CDataToolGeneratedSrc&  src,                                   
+                                     SCustomBuildInfo*             build_info);
 
 //-----------------------------------------------------------------------------
 CMsvcProjectGenerator::CMsvcProjectGenerator(const list<SConfigInfo>& configs)
@@ -476,7 +476,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
                 const CDataToolGeneratedSrc& src = *p;
                 SCustomBuildInfo build_info;
-                CreateDatatoolCustomBuildInfo(prj, 
+                s_CreateDatatoolCustomBuildInfo(prj, 
                                               project_context, 
                                               src, 
                                               &build_info);
@@ -507,10 +507,10 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 }
 
 static 
-void CreateDatatoolCustomBuildInfo(const CProjItem&             prj,
-                                   const CMsvcPrjProjectContext& context,
-                                   const CDataToolGeneratedSrc& src,                                   
-                                   SCustomBuildInfo*            build_info)
+void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
+                                     const CMsvcPrjProjectContext& context,
+                                     const CDataToolGeneratedSrc&  src,                                   
+                                     SCustomBuildInfo*             build_info)
 {
     build_info->Clear();
 
@@ -555,6 +555,21 @@ void CreateDatatoolCustomBuildInfo(const CProjItem&             prj,
     CDirEntry::SplitPath(prj.m_Name, NULL, &data_tool_src_base);
     string outputs = "$(InputDir)" + data_tool_src_base + "__.cpp;";
     outputs += "$(InputDir)" + data_tool_src_base + "___.cpp;";
+    ITERATE(list<string>, p, src.m_GeneratedCppLocal) {
+        const string& src_cpp = *p;
+        outputs += "$(InputDir)" + src_cpp + ".cpp;";
+        outputs += "$(InputDir)" + src_cpp + "_.cpp;";
+    }
+    ITERATE(list<string>, p, src.m_GeneratedHpp) {
+        const string& src_hpp = *p;
+        string src_hpp_abs = CDirEntry::ConcatPath(context.IncludeDirsRoot(), 
+                                                   src_hpp);
+        string src_hpp_rel = 
+            CDirEntry::CreateRelativePath(prj.m_SourcesBaseDir, src_hpp_abs);
+
+        outputs += "$(InputDir)" + src_hpp_rel + ".hpp;";
+        outputs += "$(InputDir)" + src_hpp_rel + "_.hpp;";
+    }
     build_info->m_Outputs = outputs;
 
     //Additional Dependencies
@@ -745,6 +760,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/02/13 23:11:10  gorelenk
+ * Changed implementation of function s_CreateDatatoolCustomBuildInfo - added
+ * list of output files to generated SCustomBuildInfo.
+ *
  * Revision 1.16  2004/02/13 20:31:20  gorelenk
  * Changed source relative path for datatool input files.
  *
