@@ -36,7 +36,7 @@
 #include <objtools/data_loaders/genbank/blob_id.hpp>
 #include <vector>
 
-#define GENBANK_USE_SNP_SATELLITE_15 1
+//#define GENBANK_USE_SNP_SATELLITE_15 1
 
 BEGIN_NCBI_SCOPE
 
