@@ -1114,6 +1114,8 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
             sbp->posMatrix = RPSCalculatePSSM(psi_options->scalingFactor,
                         query->length, query->sequence, one_db_seq.length,
                         orig_pssm + db_seq_start[0]);
+            if (sbp->posMatrix == NULL)
+               return -1;
 
             sbp->kbp_gap[0]->K = RPS_K_MULT * karlin_k[hsp_list->oid];
             sbp->kbp_gap[0]->logK = log(RPS_K_MULT * karlin_k[hsp_list->oid]);
