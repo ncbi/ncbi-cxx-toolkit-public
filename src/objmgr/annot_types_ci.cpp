@@ -887,7 +887,9 @@ bool CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
                     continue;
                 }
                 
-                _ASSERT(x_MatchType(annot_info));
+                if ( !x_MatchType(annot_info) ) {
+                    continue;
+                }
 
                 CAnnotObject_Ref annot_ref(annot_info);
                 if ( cvt ) {
@@ -1091,6 +1093,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2003/09/12 17:43:15  dicuccio
+* Replace _ASSERT() with handled check in x_Search() (again...)
+*
 * Revision 1.89  2003/09/12 16:57:52  dicuccio
 * Revert previous change
 *
