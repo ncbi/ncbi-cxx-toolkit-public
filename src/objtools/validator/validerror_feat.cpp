@@ -996,13 +996,13 @@ void CValidError_feat::ValidateRnaProductType
 }
 
 
-int s_NcbieaaValues[] = { 65, 66, 67, 68, 69, 70, 71, 72, 73, 75, 
-                          76, 77, 78, 80, 81, 82, 83, 84, 85, 86, 
-                          87, 88, 89, 90 };
+int s_LegalNcbieaaValues[] = { 42, 65, 66, 67, 68, 69, 70, 71, 72, 73,
+                               75, 76, 77, 78, 80, 81, 82, 83, 84, 85,
+                               86, 87, 88, 89, 90 };
 
 void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat)
 {
-    // Make sure AA coding is ncbieaa. (temporary implementation)
+    // Make sure AA coding is ncbieaa.
     if ( trna.GetAa().Which() != CTrna_ext::C_Aa::e_Ncbieaa ) {
         PostErr (eDiag_Error, eErr_SEQ_FEAT_TrnaCodonWrong,
             "tRNA AA coding does not match ncbieaa", feat);
@@ -1013,8 +1013,8 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
 
     // make sure the amino acid is valid
     bool found = false;
-    for ( int i = 0; i < 24; ++i ) {
-        if ( aa == s_NcbieaaValues[i] ) {
+    for ( int i = 0; i < 25; ++i ) {
+        if ( aa == s_LegalNcbieaaValues[i] ) {
             found = true;
             break;
         }
@@ -1025,7 +1025,7 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
         return;
     }
 
-    // Retrive the Genetic code id for the tRna
+    // Retrive the Genetic code id for the tRNA
     int gcode = 0;
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
     if ( !bsh ) {
@@ -2492,6 +2492,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2003/10/21 13:21:52  shomrat
+* added * Terminator codon
+*
 * Revision 1.40  2003/10/20 16:13:28  shomrat
 * count gene and gene xrefs
 *
