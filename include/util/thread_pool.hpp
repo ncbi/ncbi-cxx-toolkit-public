@@ -43,6 +43,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/24 20:17:49  ucko
+* Introduce new exception class for full queues
+* Allow waiting for a full queue to have room again
+*
 * Revision 1.2  2002/01/07 20:15:06  ucko
 * Fully initialize thread-pool state.
 *
@@ -74,18 +78,26 @@ template <typename TRequest>
 class CBlockingQueue
 {
 public:
+    class CException : public runtime_error
+    {
+    public:
+        CException(const string& s) : runtime_error(s) {}
+    };
+
     CBlockingQueue(unsigned int max_size = kMax_UInt)
-        : m_MaxSize(max_size), m_Sem(0,1) {}
+        : m_MaxSize(max_size), m_GetSem(0,1), m_PutSem(1,1) {}
 
     void     Put(const TRequest& data); // Throws exception if full
+    void     WaitForRoom(void);
     TRequest Get(void);                 // Blocks politely if queue is empty
     bool     IsEmpty(void);
 
 private:
     volatile queue<TRequest> m_Queue;
     unsigned int             m_MaxSize;
-    CSemaphore               m_Sem;   // Raised iff the queue contains data
-    CMutex                   m_Mutex; // Guards access to everything else
+    CSemaphore               m_GetSem; // Raised iff the queue contains data
+    CSemaphore               m_PutSem; // Raised iff the queue has room
+    CMutex                   m_Mutex;  // Guards access to queue
 };
 
 
@@ -136,6 +148,7 @@ public:
 
     void Spawn(unsigned int num_threads);
     void AcceptRequest(const TRequest& req);
+    void WaitForRoom(void) { m_Queue.WaitForRoom(); }
 
 protected:
     virtual TThread* NewThread(void) = 0;
@@ -224,18 +237,28 @@ void CBlockingQueue<TRequest>::Put(const TRequest& data)
     // Having the mutex, we can safely drop "volatile"
     queue<TRequest>& q = const_cast<queue<TRequest>&>(m_Queue);
     if (q.size() == m_MaxSize) {
-        throw runtime_error("Attempt to insert into a full queue");
+        m_PutSem.TryWait();
+        throw CException("Attempt to insert into a full queue");
     } else if (q.empty()) {
-        m_Sem.Post();
+        m_GetSem.Post();
     }
     q.push(data);
 }
 
 
 template <typename TRequest>
+void CBlockingQueue<TRequest>::WaitForRoom(void)
+{
+    // Make sure there's room, but don't actually consume anything
+    m_PutSem.Wait();
+    m_PutSem.Post();
+}
+
+
+template <typename TRequest>
 TRequest CBlockingQueue<TRequest>::Get(void)
 {
-    m_Sem.Wait();
+    m_GetSem.Wait();
 
     CMutexGuard guard(m_Mutex);
     // Having the mutex, we can safely drop "volatile"
@@ -243,7 +266,10 @@ TRequest CBlockingQueue<TRequest>::Get(void)
     TRequest result = q.front();
     q.pop();
     if ( ! q.empty() ) {
-        m_Sem.Post();
+        m_GetSem.Post();
+    }
+    if (q.size() == m_MaxSize - 1) {
+        m_PutSem.Post();
     }
     return result;
 }
