@@ -1,0 +1,2 @@
+This is to make sure CVS would "get" this dir despite it is empty!
+(CVS does not checkout empy dirs if e.g.   cvs get -D '<some_date>'.)
