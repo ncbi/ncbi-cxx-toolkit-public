@@ -78,6 +78,7 @@ private:
     void PrintMods(void);
     void PrintEnzymes(void);
     void InsertMods(TStringList& List, CMSSearchSettings::TVariable& Mods);
+    void InsertTax(TStringList& List, CMSSearchSettings:: TTaxids& TaxIds);
 };
 
 COMSSA::COMSSA()
@@ -101,6 +102,26 @@ void COMSSA::InsertMods(TStringList& List, CMSSearchSettings::TVariable& Mods)
 	    continue;
 	}
 	Mods.push_back(ModNum);
+    }
+}
+
+
+///
+/// Insert taxids
+///
+void COMSSA::InsertTax(TStringList& List, CMSSearchSettings::TTaxids& TaxIds)
+{
+    TStringList::iterator iList(List.begin());
+    int TaxNum;
+
+    for(;iList != List.end(); iList++) {
+	try {
+	    TaxNum = NStr::StringToInt(*iList);
+	} catch (CStringException &e) {
+	    ERR_POST(Info << "omssacl: unrecognized taxid number");
+	    continue;
+	}
+	TaxIds.push_back(TaxNum);
     }
 }
 
@@ -176,8 +197,8 @@ void COMSSA::Init()
     //			   "number of sequences to search (0 = all)",
     //			   CArgDescriptions::eInteger, "0");
     argDesc->AddDefaultKey("x", "taxid", 
-			   "taxid to search (0 = all)",
-			   CArgDescriptions::eInteger, "0");
+			   "comma delimited list of taxids to search (0 = all)",
+			   CArgDescriptions::eString, "0");
     argDesc->AddDefaultKey("w1", "window1", 
 			   "single charge window in Da",
 			   CArgDescriptions::eInteger, "20");
@@ -211,6 +232,9 @@ void COMSSA::Init()
 			   CArgDescriptions::eString,
 			   "");
     argDesc->AddFlag("ml", "print a list of modifications and their corresponding id number");
+    argDesc->AddDefaultKey("mm", "maxmod", 
+			   "the maximum number of mass ladders to generate per database peptide",
+			   CArgDescriptions::eInteger, NStr::IntToString(MAXMOD2));
     argDesc->AddDefaultKey("e", "enzyme", 
 			   "id number of enzyme to use",
 			   CArgDescriptions::eInteger, 
@@ -334,8 +358,13 @@ int COMSSA::Run()
 	Request.SetSettings().SetTophitnum(args["ht"].AsInteger());
 	Request.SetSettings().SetMinhit(args["hm"].AsInteger());
 	Request.SetSettings().SetMinspectra(args["hs"].AsInteger());
-	if(args["x"].AsInteger() != 0) 
-	    Request.SetSettings().SetTaxids().push_back(args["x"].AsInteger());
+	Request.SetSettings().SetMaxmods(args["mm"].AsInteger());
+
+	if(args["x"].AsString() != "0") {
+	    TStringList List;
+	    NStr::Split(args["x"].AsString(), ",", List);
+	    InsertTax(List, Request.SetSettings().SetTaxids());
+	}
 
 
 	// validate the input
@@ -457,6 +486,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.16  2004/07/06 22:38:05  lewisg
+  tax list input and user settable modmax
+
   Revision 1.15  2004/06/23 22:34:36  lewisg
   add multiple enzymes
 

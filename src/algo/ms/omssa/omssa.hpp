@@ -158,7 +158,9 @@ public:
 			       int EndMasses[],
 			       int NumMod[],
 			       int DeltaMass[][MAXMOD],
-			       unsigned NumMassAndMask[]);
+			       unsigned NumMassAndMask[],
+			       int MaxModPerPep // max number of mods per peptide
+			       );
 
 private:
     ReadDBFILEPtr rdfp; 
@@ -239,6 +241,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.13  2004/07/06 22:38:05  lewisg
+  tax list input and user settable modmax
+
   Revision 1.12  2004/06/21 21:19:27  lewisg
   new mods (including n term) and sample perl parser
 

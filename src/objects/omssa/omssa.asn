@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.10 2004/06/23 22:34:36 lewisg Exp $
+-- $Id: omssa.asn,v 1.11 2004/07/06 22:38:29 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -15,15 +15,23 @@ OMMSA DEFINITIONS ::=
 BEGIN
 
 
+-- Generic holder for experimental info
+
+NameValue ::= SEQUENCE {
+	name VisibleString,
+        value VisibleString
+        }
+
 -- Holds a single spectrum
 
 MSSpectrum ::= SEQUENCE {
+	number INTEGER, -- unique number of spectrum
 	charge SEQUENCE OF INTEGER,  -- may be more than one if unknown
 	precursormz INTEGER,  -- scaled Da
 	mz SEQUENCE OF INTEGER,  -- scaled Da
 	abundance SEQUENCE OF INTEGER,  -- scaled
-	ids SEQUENCE OF VisibleString OPTIONAL, -- unique name of spectrum
-	number INTEGER -- unique number of spectrum
+	ids SEQUENCE OF VisibleString OPTIONAL,  -- ids/filenames
+        namevalue SEQUENCE OF NameValue OPTIONAL -- extra info: retention times, etc.
 	}
 
 
@@ -115,6 +123,8 @@ MSSearchSettings ::= SEQUENCE {
         minhit INTEGER DEFAULT 2, -- minimum number of m/z values for a valid hit
         minspectra INTEGER DEFAULT 4, -- minimum number of m/z for a valid spectra
         scale INTEGER DEFAULT 100,  -- scale for m/z float to integer
+        maxmods INTEGER DEFAULT 64,  -- maximum number of mass ladders per
+                                     -- database peptide
 	taxids SEQUENCE OF INTEGER OPTIONAL,  -- taxa to limit search
 	chargehandling MSChargeHandle OPTIONAL  -- how to deal with charges
 }
@@ -188,10 +198,11 @@ MSHitError ::= INTEGER {
 -- contains a set of hits to a single spectrum
 
 MSHitSet ::= SEQUENCE {
-    number INTEGER, -- unique number of spectrum
-    error MSHitError OPTIONAL,
-    hits SEQUENCE OF MSHits OPTIONAL,
-    ids SEQUENCE OF VisibleString OPTIONAL -- filenames or other ids of spectra searched
+        number INTEGER, -- unique number of spectrum
+        error MSHitError OPTIONAL,
+        hits SEQUENCE OF MSHits OPTIONAL,
+        ids SEQUENCE OF VisibleString OPTIONAL,  -- filenames or other ids of spectra searched
+        namevalue SEQUENCE OF NameValue OPTIONAL -- extra info: retention times, etc.
 	}
 
 
@@ -212,7 +223,8 @@ MSResponse ::= SEQUENCE {
         scale INTEGER DEFAULT 100,  -- scale to change m/z float to integer
 	rid VisibleString OPTIONAL,  -- request id
 	error MSResponseError OPTIONAL,
-        version VisibleString OPTIONAL  -- version of OMSSA
+        version VisibleString OPTIONAL,  -- version of OMSSA
+	email VisibleString OPTIONAL  -- email address for notification
 	}	
 	
 END

@@ -311,7 +311,8 @@ void CSearch::CreateModCombinations(int Missed,
 				    int EndMasses[],
 				    int NumMod[],
 				    int DeltaMass[][MAXMOD],
-				    unsigned NumMassAndMask[])
+				    unsigned NumMassAndMask[],
+				    int MaxModPerPep)
 {
     // need to iterate thru combinations that have iMod.
     // i.e. iMod = 3 and NumMod=5
@@ -346,7 +347,7 @@ void CSearch::CreateModCombinations(int Missed,
 	iModCount++;
 		
 	// go thru number of mods allowed
-	for(iMod = 0; iMod < NumMod[iMissed] && iModCount < MAXMOD2; iMod++) {
+	for(iMod = 0; iMod < NumMod[iMissed] && iModCount < MaxModPerPep; iMod++) {
 		    
 	    // initialize ModIndex that points to mod sites
 	    InitModIndex(ModIndex, iMod);
@@ -364,7 +365,7 @@ void CSearch::CreateModCombinations(int Missed,
 		// keep track of the  number of ladders
 		iModCount++;
 
-	    } while(iModCount < MAXMOD2 &&
+	    } while(iModCount < MaxModPerPep &&
 		    CalcModIndex(ModIndex, iMod, NumMod[iMissed]));
 	} // iMod
 
@@ -394,6 +395,10 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 	char *blastdefline;
 	SeqId *sip;
 #endif
+
+	// set maximum number of ladders to calculate per peptide
+	int MaxModPerPep = MyRequest.GetSettings().GetMaxmods();
+	if(MaxModPerPep > MAXMOD2) MaxModPerPep = MAXMOD2;
 
 	CLadder BLadder[MAXMOD2], YLadder[MAXMOD2], B2Ladder[MAXMOD2],
 	    Y2Ladder[MAXMOD2];
@@ -541,7 +546,8 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 				 DeltaMass, Masses, EndMasses);
 	
 		CreateModCombinations(Missed, PepStart, MassAndMask, Masses,
-				      EndMasses, NumMod, DeltaMass, NumMassAndMask);
+				      EndMasses, NumMod, DeltaMass, NumMassAndMask,
+				      MaxModPerPep);
 
 
 		int OldMass;  // keeps the old peptide mass for comparison
@@ -555,7 +561,8 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 		    endposition = PepEnd[iMissed] - (const char *)Sequence;
 		
 		    // init bool for "Has ladder been calculated?"
-		    for(iMod = 0; iMod < MAXMOD2; iMod++) LadderCalc[iMod] = false;
+		    for(iMod = 0; iMod < MaxModPerPep; iMod++) 
+		      LadderCalc[iMod] = false;
 		
 		    OldMass = 0;
 		    NoMassMatch = true;
@@ -1063,6 +1070,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.24  2004/07/06 22:38:05  lewisg
+tax list input and user settable modmax
+
 Revision 1.23  2004/06/23 22:34:36  lewisg
 add multiple enzymes
 
