@@ -20,6 +20,38 @@ USING_NCBI_SCOPE;
 
 class ASNModule;
 
+struct CTypeStrings {
+    enum ETypeType {
+        eStdType,
+        eClassType,
+        eComplexType
+    };
+    CTypeStrings(const string& c)
+        : type(eStdType), cType(c)
+        {}
+    CTypeStrings(ETypeType t, const string& c)
+        : type(t), cType(c)
+        {}
+    CTypeStrings(const string& c, const string& m)
+        : type(eComplexType), cType(c), macro(m)
+        {}
+    ETypeType type;
+    string cType;
+    string macro;
+
+    bool IsSimple(void) const
+        { return type == eStdType; }
+
+    CTypeStrings ToSimple(void) const;
+        
+    string GetRef(void) const;
+
+    void AddMember(CNcbiOstream& header, CNcbiOstream& code,
+                   const string& member) const;
+    void AddMember(CNcbiOstream& header, CNcbiOstream& code,
+                   const string& name, const string& member) const;
+};
+
 class ASNType {
 public:
     typedef void* TObjectPtr;
@@ -50,19 +82,10 @@ public:
                               const string& name,
                               const CNcbiRegistry& def,
                               const string& section) const;
-/*
-    struct CTypeStrings {
-        CTypeStrings(const string& type)
-            : cType(type)
-            {}
-        string cType;
-        string macroTYPE;
-        string macroREF;
-    };
-*/        
-    virtual pair<string, string> GetCType(const CNcbiRegistry& def,
-                                          const string& section,
-                                          const string& key) const;
+
+    virtual CTypeStrings GetCType(const CNcbiRegistry& def,
+                                  const string& section,
+                                  const string& key) const;
     virtual string GetDefaultCType(void) const;
     virtual bool SimpleType(void) const;
 
@@ -216,9 +239,9 @@ public:
     const CTypeInfo* GetTypeInfo(void);
 
     virtual void CollectUserTypes(set<string>& types) const;
-    pair<string, string> GetCType(const CNcbiRegistry& def,
-                                  const string& section,
-                                  const string& key) const;
+    CTypeStrings GetCType(const CNcbiRegistry& def,
+                          const string& section,
+                          const string& key) const;
 
     string userTypeName;
 
@@ -249,9 +272,9 @@ public:
 
     CTypeInfo* CreateTypeInfo(void);
     
-    pair<string, string> GetCType(const CNcbiRegistry& def,
-                                  const string& section,
-                                  const string& key) const;
+    CTypeStrings GetCType(const CNcbiRegistry& def,
+                          const string& section,
+                          const string& key) const;
 };
 
 class ASNSequenceOfType : public ASNOfType {
@@ -260,9 +283,9 @@ public:
 
     CTypeInfo* CreateTypeInfo(void);
 
-    pair<string, string> GetCType(const CNcbiRegistry& def,
-                                  const string& section,
-                                  const string& key) const;
+    CTypeStrings GetCType(const CNcbiRegistry& def,
+                          const string& section,
+                          const string& key) const;
 };
 
 class ASNMember {

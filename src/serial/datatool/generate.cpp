@@ -58,6 +58,17 @@ void GenerateCode(const CModuleSet& types, const string& fileName)
         def.Read(*in);
     }
 
+    string headersPath = def.Get("-", "headers_path");
+    if ( !headersPath.empty() )
+        headersPath += '/';
+    string sourcesPath = def.Get("-", "sources_path");
+    if ( !sourcesPath.empty() )
+        sourcesPath += '/';
+    string includeAdd = def.Get("-", "include_add");
+    if ( !includeAdd.empty() )
+        includeAdd += '/';
+    string ns = def.Get("-", "namespace");
+
     typedef list<const ASNType*> TClasses;
     typedef map<string, TClasses> TOutputFiles;
     TOutputFiles outputFiles;
@@ -81,10 +92,9 @@ void GenerateCode(const CModuleSet& types, const string& fileName)
     for ( TOutputFiles::const_iterator filei = outputFiles.begin();
           filei != outputFiles.end();
           ++filei ) {
-        string headerName = filei->first + "_Base.hpp";
-        ofstream header(headerName.c_str());
-        string codeName = filei->first + "_Base.cpp";
-        ofstream code(codeName.c_str());
+        string outFileName = filei->first;
+        ofstream header((headersPath + outFileName + "_Base.hpp").c_str());
+        ofstream code((sourcesPath + outFileName + "_Base.cpp").c_str());
 
         header <<
             "// This is generated file, don't modify" << endl <<
@@ -108,27 +118,39 @@ void GenerateCode(const CModuleSet& types, const string& fileName)
                   typei != filei->second.end();
                   ++typei ) {
                 (*typei)->CollectUserTypes(usedTypes);
+                string inc = def.Get((*typei)->name, "_include");
+                if ( !inc.empty() )
+                    includes.insert(inc);
             }
 
             // collect include file names
             for ( set<string>::const_iterator usedi = usedTypes.begin();
                   usedi != usedTypes.end();
                   ++usedi ) {
-                includes.insert(FileName(def, *usedi));
+                includes.insert('<' + includeAdd +
+                                FileName(def, *usedi) + ".hpp>");
             }
-            includes.erase(filei->first);
         }
 
+        string mainInclude = '<' + includeAdd + outFileName + ".hpp>";
         code << endl << "// generated includes" << endl <<
-            "#include <" << headerName << ">" << endl;
-            
+            "#include " << mainInclude << endl;
+        includes.erase(mainInclude);
+
         header << endl << "// generated includes" << endl;
         for ( set<string>::const_iterator includei = includes.begin();
               includei != includes.end();
               ++includei ) {
-            header << "#include <" << *includei << ".hpp>" << endl;
+            header <<
+                "#include " << *includei << endl;
         }
 
+        if ( !ns.empty() ) {
+            header << endl <<
+                "namespace " << ns << " {" << endl;
+            code << endl <<
+                "namespace " << ns << " {" << endl;
+        }
         header << endl << "// forward declarations" << endl;
         for ( typei = filei->second.begin();
               typei != filei->second.end();
@@ -150,20 +172,24 @@ void GenerateCode(const CModuleSet& types, const string& fileName)
 
             header <<
                 "class " << className << "_Base ";
-            const string& baseType = def.Get((*typei)->name, "_parent");
+            string baseType = def.Get((*typei)->name, "_parent");
+            string baseClass = def.Get((*typei)->name, "_parent_class");
             if ( !baseType.empty() ) {
                 header << " : public " << ClassName(def, baseType);
+            }
+            else if ( !baseClass.empty() ) {
+                header << " : public " << baseClass;
             }
             header << endl <<
                 '{' << endl <<
                 "public:" << endl <<
-                "    static const CTypeInfo* GetTypeInfo(void);" << endl <<
+                "    static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void);" << endl <<
                 "private:" << endl <<
                 "    friend class " << className << ';' << endl << endl;
 
             code <<
-                "BEGIN_CLASS_INFO2(\"" << (*typei)->name << "\", " <<
-                className << ')' << endl <<
+                "BEGIN_CLASS_INFO3(\"" << (*typei)->name << "\", " <<
+                className << "_Base" << ", " << className << ')' << endl <<
                 '{' << endl;
             if ( !baseType.empty() ) {
                 code <<
@@ -180,6 +206,12 @@ void GenerateCode(const CModuleSet& types, const string& fileName)
                 "END_CLASS_INFO" << endl << endl;
         }
 
+        if ( !ns.empty() ) {
+            header << endl <<
+                "};" << endl;
+            code << endl <<
+                "};" << endl;
+        }
         header << endl <<
             "#endif // " << filei->first << "_Base_HPP" << endl;
     }
