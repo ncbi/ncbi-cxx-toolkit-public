@@ -253,7 +253,7 @@ static Int2 SWAlignGetNumIdentical(SWResults *SWAlign, Uint1* query_seq)
    Int4 align_length; /*aligned length, calculated but discarded. */
 
    Blast_HSPGetNumIdentities(query_seq, SWAlign->seq, 
-      SWAlign->hsp, TRUE, &num_ident, &align_length);
+      SWAlign->hsp, &num_ident, &align_length);
    
    SWAlign->hsp->num_ident = num_ident;
    return 0;
