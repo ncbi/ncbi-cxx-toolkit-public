@@ -70,7 +70,7 @@ function print_if_interesting()
       m ~ /^".*\/include\/CC\/Cstd\/\.\/list", line (541|543|544): .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/ostream", line 331: Warning: The else-branch should return a value/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/sstream", line (165|207): .*::rdbuf hides/ ||
-      m ~ /^".*\/include\/CC\/Cstd\/\.\/string", line (1622|1640): .*non-const reference/ ||
+      m ~ /^".*\/include\/CC\/Cstd\/\.\/string", line (1622|1627|1640|1645): .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/vector", line (147|156|161|268|273|310|318|399|463|472|483|513|1146): .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/vector.cc", line 113: .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/std\/errno\.h", line 20: .*extra text on this line/ ||
