@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/01/03 22:32:43  lavr
+ * Redundant calls to 'adjust_info' removed
+ *
  * Revision 6.5  2000/12/29 17:57:16  lavr
  * Adapted for use of new connector structure;
  * parse header callback added; some internal functions renamed.
@@ -205,7 +208,6 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu)
 
 static EIO_Status s_Connect(SHttpConnector* uuu)
 {
-    int/*bool*/ loop = 0;
     unsigned i = 0, m;
 
     assert(!uuu->sock);
@@ -213,18 +215,10 @@ static EIO_Status s_Connect(SHttpConnector* uuu)
         return eIO_Closed;
 
     while (1) {
-        /* adjust info before connect attempt */
-        if (uuu->adjust_info) {
-            if (!(*uuu->adjust_info)(uuu->info, uuu->adjust_data, i) && loop)
-                break;
-        } else if (loop)
-            break;
-
         if (uuu->info->debug_printout && i)
             ConnNetInfo_Print(uuu->info, stderr);
         
         m = uuu->info->max_try;
-        loop = 1;
 
         /* the re-try loop... */
         for (i = 0; i < m && !uuu->sock; i++) {
@@ -238,7 +232,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu)
             
             uuu->conn_count++;
             if (uuu->conn_count/(i + 1) > 3)
-                m = m*2/3;
+                m = (m*2)/3;
             else if (uuu->conn_count/(i + 1) > 2)
                 m /= 2;
             else
@@ -246,6 +240,11 @@ static EIO_Status s_Connect(SHttpConnector* uuu)
         }
         if (uuu->sock)
             return eIO_Success;
+
+        /* adjust info before another connect attempt */
+        if (!uuu->adjust_info ||
+            !(*uuu->adjust_info)(uuu->info, uuu->adjust_data, i))
+            break;
     }
 
     return eIO_Closed;
