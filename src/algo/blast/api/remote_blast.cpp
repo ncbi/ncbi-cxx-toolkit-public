@@ -52,7 +52,13 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
+
 // Static functions
+
+
+/// Dump an ASN.1 (datatool type) object to an ostream as text ASN.1.
+/// @param os Output stream.
+/// @param t ASN.1 object.
 template <class T>
 void
 s_Output(CNcbiOstream & os, CRef<T> t)
@@ -62,8 +68,14 @@ s_Output(CNcbiOstream & os, CRef<T> t)
     os.flush();
 }
 
+
+/// Error value type used by Blast4 ASN.1 objects.
 typedef list< CRef<CBlast4_error> > TErrorList;
 
+
+/// Determine whether the search is still running.
+/// @param reply Reply from get-search-results request.
+/// @return True if search needs more time, false if done or failed.
 static bool
 s_SearchPending(CRef<CBlast4_reply> reply)
 {
@@ -78,6 +90,7 @@ s_SearchPending(CRef<CBlast4_reply> reply)
     }
     return false;
 }
+
 
 void CRemoteBlast::x_SearchErrors(CRef<CBlast4_reply> reply)
 {
@@ -797,6 +810,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/06/08 19:50:18  bealer
+* - Add doxygen comments.
+*
 * Revision 1.13  2004/05/21 21:41:02  gorelenk
 * Added PCH ncbi_pch.hpp
 *
