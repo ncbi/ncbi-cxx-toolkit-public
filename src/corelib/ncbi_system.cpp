@@ -33,8 +33,11 @@
 *      
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/07/23 16:09:26  ivanov
+* Added possibility using user defined dump print handler (fix comment)
+*
 * Revision 1.7  2001/07/23 15:23:58  ivanov
-* Fixed bug in Get/Set times in DB-format (1 day difference)
+* Added possibility using user defined dump print handler
 *
 * Revision 1.6  2001/07/05 22:09:07  vakatov
 * s_ExitHandler() -- do not printout the final statistics if the process
