@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/12/23 18:41:19  dicuccio
+* Added previously unimplemented class ctors / dtors (classes declared but not
+* defined)
+*
 * Revision 1.6  2001/04/17 03:58:39  vakatov
 * CSerialNotImplemented:: -- constructor and destructor added
 *
@@ -66,6 +70,26 @@ CSerialException::CSerialException(const string& msg) THROWS_NONE
 }
 
 CSerialException::~CSerialException(void) THROWS_NONE
+{
+}
+
+
+CSerialOverflowException::CSerialOverflowException(const string& msg) THROWS_NONE
+    : CSerialException(msg)
+{
+}
+
+CSerialOverflowException::~CSerialOverflowException(void) THROWS_NONE
+{
+}
+
+
+CSerialFormatException::CSerialFormatException(const string& msg) THROWS_NONE
+    : CSerialException(msg)
+{
+}
+
+CSerialFormatException::~CSerialFormatException(void) THROWS_NONE
 {
 }
 
