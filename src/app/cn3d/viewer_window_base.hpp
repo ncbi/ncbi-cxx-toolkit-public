@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/04/12 18:35:01  thiessen
+* fix merge GUI bug/typo
+*
 * Revision 1.9  2001/04/05 22:54:52  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -216,7 +219,7 @@ public:
         Destroy();
     }
 
-    bool EditorIsOn(void) const { return menuBar->IsChecked(MID_UNDO); }
+    bool EditorIsOn(void) const { return menuBar->IsChecked(MID_ENABLE_EDIT); }
     void EnableUndo(bool enabled) { menuBar->Enable(MID_UNDO, enabled); }
 
     bool DoSplitBlock(void) const { return menuBar->IsChecked(MID_SPLIT_BLOCK); }
