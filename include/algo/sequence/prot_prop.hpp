@@ -58,7 +58,7 @@ public:
                                    double pH);
 
 private:
-    static double exp10(double x) { return pow(10, x); }
+    static double exp10(double x) { return pow(double(10), x); }
 };
 
 END_SCOPE(objects)
@@ -70,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/12/11 17:30:44  ivanov
+ * Explicit Using pow(double,double) to avoid compilation problems on MSVC7
+ *
  * Revision 1.4  2003/08/04 15:43:20  dicuccio
  * Modified export specifiers to be more flexible
  *
