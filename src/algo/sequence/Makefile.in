@@ -5,6 +5,8 @@
 
 LIB_PROJ = xalgoseq
 
+SUB_PROJ = demo
+
 REQUIRES = objects
 
 srcdir = @srcdir@
