@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="third_party_dll_install"
+	ProjectGUID="{9E4B5381-9B6C-4867-BF8A-F1AAA1FD580F}"
+	Keyword="MakeFileProj">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="DebugDLL|Win32"
+			OutputDirectory="DebugDLL"
+			IntermediateDirectory="DebugDLL"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f $(InputDir)\third_party_dll_install.mak all IntDir=$(IntDir)"
+				ReBuildCommandLine="nmake -f $(InputDir)\third_party_dll_install.mak all IntDir=$(IntDir)"
+				CleanCommandLine="nmake -f $(InputDir)\third_party_dll_install.mak clean IntDir=$(IntDir)"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseDLL|Win32"
+			OutputDirectory="ReleaseDLL"
+			IntermediateDirectory="ReleaseDLL"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f $(InputDir)\third_party_dll_install.mak all IntDir=$(IntDir)"
+				ReBuildCommandLine="nmake -f $(InputDir)\third_party_dll_install.mak all IntDir=$(IntDir)"
+				CleanCommandLine="nmake -f $(InputDir)\third_party_dll_install.mak clean IntDir=$(IntDir)"
+				Output="dlls-install.exe"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<File
+			RelativePath=".\third_party_dll_install.mak">
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>
