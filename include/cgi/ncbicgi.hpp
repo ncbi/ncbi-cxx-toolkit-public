@@ -395,7 +395,7 @@ public:
             // conservative; some may be irrelevant in many cases
             return (GetValue() == e2.GetValue() 
                     &&  GetFilename() == e2.GetFilename()
-                    &&  GetPosition() == e2.GetPosition()
+                    // &&  GetPosition() == e2.GetPosition()
                     &&  GetContentType() == e2.GetContentType());
         }
     
@@ -807,6 +807,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.70  2005/03/21 15:30:08  ucko
+* Treat CCgiEntries as identical even if their positions are different,
+* so that doubled parameters with equal values don't cause problems.
+*
 * Revision 1.69  2005/02/25 17:28:51  didenko
 * + CCgiRequest::GetClientTrackingEnv
 *
