@@ -232,12 +232,8 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
     char* c_buff_ptr = c_buff;
     string buff;
     
-    // in order to make sure m_Seq{Left,Right}Segs[row] are initialized
-    GetSeqStart(row);
-    GetSeqStop(row);
-
-    const TNumseg& left_seg = m_SeqLeftSegs[row];
-    const TNumseg& right_seg = m_SeqRightSegs[row];
+    const TNumseg& left_seg = x_GetSeqLeftSeg(row);
+    const TNumseg& right_seg = x_GetSeqRightSeg(row);
 
     // loop through all segments
     for (seg = 0, pos = row, aln_pos = 0, anchor_pos = m_Anchor;
@@ -754,6 +750,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2003/09/22 19:03:30  todorov
+* Use the new x_GetSeq{Left,Right}Seg methods
+*
 * Revision 1.47  2003/09/17 15:48:06  jianye
 * Added missing [] when de-allocating c_buff
 *
