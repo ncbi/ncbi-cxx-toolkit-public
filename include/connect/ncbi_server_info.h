@@ -39,6 +39,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2001/09/25 14:47:49  lavr
+ * TSERV_Flags reverted to 'int'
+ *
  * Revision 6.27  2001/09/24 20:22:31  lavr
  * TSERV_Flags changed from 'int' to 'unsigned int'
  *
@@ -156,7 +159,7 @@ typedef enum {
     fSERV_Regular = 0x0,
     fSERV_Blast   = 0x1
 } ESERV_Flags;
-typedef unsigned int TSERV_Flags;
+typedef int TSERV_Flags;
 
 #define SERV_DEFAULT_FLAG           fSERV_Regular
 #define SERV_MIME_TYPE_UNDEFINED    ((EMIME_Type)(-1))
