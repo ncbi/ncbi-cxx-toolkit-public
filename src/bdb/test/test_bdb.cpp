@@ -43,6 +43,7 @@
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_map.hpp>
+#include <bdb/bdb_blobcache.hpp>
 
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -1093,6 +1094,42 @@ static void s_TEST_db_multimap(void)
 }
 
 
+static void s_TEST_IntCache(void)
+{
+    cout << "======== int cache test." << endl;
+
+    CBDB_BLOB_Cache bcache;
+    bcache.Open(".");
+
+    IIntCache* icache = bcache.GetIntCache();
+
+    assert(icache);
+
+    icache->SetExpirationTime(10);
+
+    vector<int> data;
+    data.push_back(10);
+    data.push_back(20);
+    data.push_back(30);
+    data.push_back(40);
+
+    icache->Store(1, 1, data);
+
+    vector<int> data2;
+
+    icache->Read(1, 1, data2);
+
+    int sz = data2.size();
+
+    assert(data2.size() == 4);
+
+    assert(data2[0] == data[0]);
+    assert(data2[1] == data[1]);
+    assert(data2[2] == data[2]);
+    assert(data2[3] == data[3]);
+
+}
+
 
 ////////////////////////////////
 // Test application
@@ -1143,7 +1180,8 @@ int CBDB_Test::Run(void)
         s_TEST_db_map();
 
         s_TEST_db_multimap();
-        
+
+        s_TEST_IntCache();        
 
     }
     catch (CBDB_ErrnoException& ex)
@@ -1177,6 +1215,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/10/20 19:59:03  kuznets
+ * + Unit test for Int cache
+ *
  * Revision 1.21  2003/10/15 18:14:33  kuznets
  * Changed test to work with alternative page size and larger cache.
  *
