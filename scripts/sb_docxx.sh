@@ -8,18 +8,21 @@
 
 exec 2>&1
 
-PATH=/usr/bin:$HOME/bin:/usr/ccs/bin
 CVSROOT=/am/src/NCBI/vault.ncbi
 NCBI=/netopt/ncbi_tools
-export CVSROOT PATH NCBI
+PATH=/usr/bin:$HOME/bin:/usr/ccs/bin:$NCBI/doc++/bin
+export CVSROOT NCBI PATH
 
 SRC=/export/home/coremake/doc++
 DST=/web/private/htdocs/intranet/ieb/CPP/doc++
 
+cd `dirname $0`  ||  exit 1
+BIN=`pwd`
+
 cd $SRC || exit 1
 rm -rf doc sources sources.in sources.out
-time ./sb_docxx.pl
-cp -rp doc/* /web/private/htdocs/intranet/ieb/CPP/doc++/
+time $BIN/sb_docxx.pl
+cp -rp doc/* $DST
 rm -rf sources
 
 exit 0
