@@ -520,25 +520,26 @@ void CSeq_id_Textseq_Tree::x_FindVersionMatch(const TVersions& ver_list,
                                               TSeq_id_MatchList& id_list) const
 {
     int ver = 0;
-    string rel = "";
+    string rel;
     if ( tid.IsSetVersion() )
         ver = tid.GetVersion();
     if ( tid.IsSetRelease() )
         rel = tid.GetRelease();
     ITERATE(TVersions, vit, ver_list) {
         int ver_it = 0;
-        string rel_it = "";
+        string rel_it;
         const CTextseq_id& vit_ref = x_Get(*(*vit)->GetSeqId());
         if ( vit_ref.IsSetVersion() )
             ver_it = vit_ref.GetVersion();
         if ( vit_ref.IsSetRelease() )
             rel_it = vit_ref.GetRelease();
-        if (ver == ver_it || ver == 0) {
-            id_list.push_back(*vit);
+        if (ver != 0 && ver != ver_it) {
+            continue;
         }
-        else if (rel == rel_it || rel.empty()) {
-            id_list.push_back(*vit);
+        if (!rel.empty() && rel != rel_it) {
+            continue;
         }
+        id_list.push_back(*vit);
     }
 }
 
@@ -1470,6 +1471,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/02/09 14:41:50  vasilche
+* Fixed processing of version & release in Textseq-id.
+*
 * Revision 1.5  2004/01/07 20:42:02  grichenk
 * Fixed matching of accession to accession.version
 *
