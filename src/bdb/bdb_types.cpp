@@ -926,6 +926,9 @@ CBDB_FieldFactory::EType CBDB_FieldFactory::GetType(const string& type) const
 	if (NStr::CompareNocase(type, "int2")==0) {
 		return eInt2;
 	} else 
+	if (NStr::CompareNocase(type, "uint1")==0) {
+		return eUint1;
+	} else 
 	if (NStr::CompareNocase(type, "float")==0) {
 		return eFloat;
 	} else 
@@ -959,6 +962,8 @@ CBDB_Field* CBDB_FieldFactory::Create(EType etype) const
 		return new CBDB_FieldInt4();
 	case eInt2:
 		return new CBDB_FieldInt2();
+	case eUint1:
+		return new CBDB_FieldUInt1();
 	case eFloat:
 		return 	new CBDB_FieldFloat();
 	case eDouble:
@@ -992,6 +997,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/06/28 12:14:53  kuznets
+ * Added uint1 to the types class factory
+ *
  * Revision 1.28  2004/06/24 20:52:25  rotmistr
  * Added Int8 and UInt1 field types.
  *

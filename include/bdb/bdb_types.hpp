@@ -558,6 +558,9 @@ public:
     Int8 Get() const
     {
         Int8  v;
+
+		_ASSERT(!IsNull());
+		
         if (IsByteSwapped()) {
             v = CByteSwap::GetInt8((unsigned char*)GetBuffer());
         } else {
@@ -856,7 +859,7 @@ public:
 
     virtual void ToString(string& s) const 
     { 
-	s = GetString();
+		s = GetString();
     }
 };
 
@@ -1466,6 +1469,7 @@ public:
 		eInt4,
 		eUint4,
 		eInt2,
+		eUint1,
 		eFloat,
 		eDouble,
 		eUChar,
@@ -2012,6 +2016,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/06/28 12:15:08  kuznets
+ * Added uint1 to the types class factory
+ *
  * Revision 1.41  2004/06/24 20:52:24  rotmistr
  * Added Int8 and UInt1 field types.
  *
