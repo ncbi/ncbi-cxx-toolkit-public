@@ -3351,7 +3351,7 @@ if test "$with_hostspec" = "yes" ; then
 fi
 
 #### Overall configuration mode summary
-signature="${compiler}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}--${host}"
+signature="${compiler}${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}--${host}-`(hostname || uname -n) 2>/dev/null | sed 1q`"
 
 #### Check if there is "${build_root}" dir
 test -d "${build_root}"  ||  mkdir -p "${build_root}"

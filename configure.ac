@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.37 2002/03/11 19:47:24 ucko Exp $
+#  $Id: configure.ac,v 1.38 2002/03/13 03:52:38 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -913,7 +913,7 @@ fi
 
 
 #### Overall configuration mode summary
-signature="${compiler}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}--${host}"
+signature="${compiler}${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}--${host}-`(hostname || uname -n) 2>/dev/null | sed 1q`"
 
 
 #### Check if there is "${build_root}" dir
