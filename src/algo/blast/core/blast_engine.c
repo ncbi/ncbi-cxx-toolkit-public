@@ -222,9 +222,9 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
          frame_max = 0;
       }
 
+      orig_length = subject->length;
+      orig_sequence = subject->sequence;
       if (translated_subject) {
-         orig_length = subject->length;
-         orig_sequence = subject->sequence;
          subject->sequence = translation_buffer;
       }
 
@@ -339,15 +339,18 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
 
       num_good_hsps += full_hsp_list->hspcnt;
 
+      if (rdfp) {
+         /* Restore the original contents of the subject block */
+         subject->length = orig_length;
+         subject->sequence = orig_sequence;
+      }
+
       /* Save the HSPs into a hit list */
       BLAST_SaveHitlist(program_number, query, subject, results, 
          full_hsp_list, hit_params, query_info, gap_align->sbp, 
          score_options, rdfp, NULL);
 
       if (rdfp) {
-         /* Restore the original contents of the subject block */
-         subject->length = orig_length;
-         subject->sequence = orig_sequence;
          BlastSequenceBlkClean(subject);
       }
    }
@@ -603,18 +606,18 @@ BLAST_SetUpAuxStructures(const Uint1 program,
    return status;
 }
 
-Int2 BLAST_SearchEngine(const Uint1 blast_program, BLAST_SequenceBlkPtr query, 
-        BlastQueryInfoPtr query_info,
-        ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject, 
-        BLAST_ScoreBlkPtr sbp, BlastScoringOptionsPtr score_options, 
-        LookupTableOptionsPtr lookup_options, ValNodePtr lookup_segments,
-        BlastInitialWordOptionsPtr word_options, 
-        BlastExtensionOptionsPtr ext_options, 
-        BlastEffectiveLengthsOptionsPtr eff_len_options,
-        BlastHitSavingOptionsPtr hit_options, 
-        BlastInitialWordParametersPtr PNTR word_params_ptr, 
-        BlastExtensionParametersPtr PNTR ext_params_ptr, 
-        BlastResultsPtr PNTR results, BlastReturnStatPtr return_stats)
+Int2 
+BLAST_SearchEngine(const Uint1 blast_program, BLAST_SequenceBlkPtr query, 
+   BlastQueryInfoPtr query_info, ReadDBFILEPtr rdfp, 
+   BLAST_SequenceBlkPtr subject, BLAST_ScoreBlkPtr sbp, 
+   BlastScoringOptionsPtr score_options, LookupTableOptionsPtr lookup_options,
+   ValNodePtr lookup_segments, BlastInitialWordOptionsPtr word_options, 
+   BlastExtensionOptionsPtr ext_options, 
+   BlastEffectiveLengthsOptionsPtr eff_len_options,
+   BlastHitSavingOptionsPtr hit_options, 
+   BlastInitialWordParametersPtr PNTR word_params_ptr, 
+   BlastExtensionParametersPtr PNTR ext_params_ptr, 
+   BlastResultsPtr PNTR results, BlastReturnStatPtr return_stats)
 {
    BlastExtensionParametersPtr ext_params = NULL;
    BlastInitialWordParametersPtr word_params = NULL;
