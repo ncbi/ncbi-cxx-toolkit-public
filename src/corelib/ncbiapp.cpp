@@ -200,7 +200,7 @@ int CNcbiApplication::AppMain
     }
 #endif
 
-    // Check command line for presence special arguments "-logfile", "-conffile"
+    // Check command line for presence special arguments "-logfile","-conffile"
     bool is_diag_setup = false;
     if (argc > 1  &&  argv) {
         const char** v = new const char*[argc];
@@ -218,13 +218,15 @@ int CNcbiApplication::AppMain
                 const char* log = argv[i];
                 auto_ptr<CNcbiOfstream> os(new CNcbiOfstream(log));
                 if ( !os->good() ) {
-                    _TRACE("CNcbiApplication() -- cannot open log file: " << log);
+                    _TRACE("CNcbiApplication() -- cannot open log file: " <<
+                           log);
                     continue;
                 }
                 _TRACE("CNcbiApplication() -- opened log file: " << log);
                 // (re)direct the global diagnostics to the log.file
                 CNcbiOfstream* os_log = os.release();
-                SetDiagStream(os_log, true, s_DiagToStdlog_Cleanup, (void*) os_log);
+                SetDiagStream(os_log, true, s_DiagToStdlog_Cleanup,
+                              (void*) os_log);
                 diag = eDS_ToStdlog;
                 is_diag_setup = true;
 
@@ -316,6 +318,20 @@ int CNcbiApplication::AppMain
             SetDiagFixedPostLevel(sev);
         }
     }
+    string msg_file = m_Config->Get("DEBUG", DIAG_MESSAGE_FILE);
+    if ( !msg_file.empty() ) {
+        CDiagErrCodeInfo* info = new CDiagErrCodeInfo();
+        if ( !info  ||  !info->Read(msg_file) ) {
+            if ( info ) {
+                delete info;
+            }
+            ERR_POST(Warning << "Applications message file \""
+                     << msg_file
+                     << "\" is not found");
+        } else {
+            SetDiagErrCodeInfo(info);
+        }
+    }
 
     // Call:  Init() + Run() + Exit()
     int exit_code = 1;
@@ -324,7 +340,7 @@ int CNcbiApplication::AppMain
         // Init application
         try {
             Init();
-// If the app still has no arg description - provide default one
+            // If the app still has no arg description - provide default one
             if (!m_ArgDesc.get()) {
                 auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
                 arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -609,6 +625,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2002/08/01 19:02:17  ivanov
+ * Added autoload of the verbose message file specified in the
+ * applications configuration file.
+ *
  * Revision 1.45  2002/07/31 18:33:44  gouriano
  * added default argument description,
  * added info about logfile and conffile optional arguments
