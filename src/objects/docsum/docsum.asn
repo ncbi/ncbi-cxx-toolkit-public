@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.11 2001/02/01 17:53:01 sherry Exp $
+-- $Id: docsum.asn,v 1.12 2001/03/22 14:04:54 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.12  2001/03/22 14:04:54  sherry
+-- strain added to NSE-Assay
+--
 -- Revision 1.11  2001/02/01 17:53:01  sherry
 -- added MapLinkArchive to Table Source for sequence-mapset
 --
@@ -138,6 +141,7 @@ NSE-Assay ::= SEQUENCE {
 	samplesize INTEGER OPTIONAL,					-- number of chromosomes examined during ascertainment
 	organism VisibleString OPTIONAL,				-- Scientific Name
 	population VisibleString OPTIONAL,				-- Population surveyed for variation
+	strains SEQUENCE OF VisibleString OPTIONAL,			-- Strains used in survey for variation
 	citation SEQUENCE OF VisibleString OPTIONAL,
 	linkout-url VisibleString OPTIONAL,
 	comment SEQUENCE OF VisibleString OPTIONAL
@@ -301,8 +305,8 @@ NSE-rsContigHit ::= SEQUENCE {
 
 
 NSE-rsMaploc ::= SEQUENCE {		-- Position of a single hit of a variation on a contig
-	asn-from INTEGER OPTIONAL,		-- beginning of variation as feature on contig			SNPContigLoc.asn_from
-	asn-to INTEGER OPTIONAL,		-- end of variation as feature on contig			SNPContigLoc.asn_to
+	asn-from INTEGER,		-- beginning of variation as feature on contig			SNPContigLoc.asn_from
+	asn-to INTEGER,		-- end of variation as feature on contig			SNPContigLoc.asn_to
 	loc-type ENUMERATED {			-- defines the seq-loc symbol if asn_from != asn_to		SNPContigLoc.loc_type
 		range (1),			-- asn-from < asn-to  write as "asn-from..asn-to"		
 		exact (2),			-- asn-from = asn-to write as "asn-from"
@@ -315,7 +319,7 @@ NSE-rsMaploc ::= SEQUENCE {		-- Position of a single hit of a variation on a con
 		reverse (2) } OPTIONAL,		-- if SNPContigLoc.orientation = 1
 	physmap-str  VisibleString OPTIONAL,	-- chromosome position of var as seq-loc in # of bases 		SNPContigLoc.phys_pos
 	physmap-int INTEGER OPTIONAL,		-- chromosome position as integer for sorting			SNPContigLoc.phys_pos_from
-	fxn-set SET OF NSE-FxnSet		-- functional relationship of SNP (and possibly alleles) to genes at contig location
+	fxn-set SET OF NSE-FxnSet OPTIONAL	-- functional relationship of SNP (and possibly alleles) to genes at contig location
 }
 
 NSE-FxnSet ::= SEQUENCE {
