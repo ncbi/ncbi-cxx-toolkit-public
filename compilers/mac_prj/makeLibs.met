@@ -1,3 +1,4 @@
+
 -- C++ libs --
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
@@ -160,7 +161,6 @@ end AddGuiProject
 
 on AddPlugin(projName, features, section, staticLibs)
 	if features does not contain "plugin" then set features to features & {"plugin"}
-	if features does not contain "libdl" then set features to features & {"libdl"}
 	set projData to GuiProjectData(projName, features, section)
 	AddProject(DataPlusLibs(projData, staticLibs, {"gui_core"}))
 end AddPlugin
