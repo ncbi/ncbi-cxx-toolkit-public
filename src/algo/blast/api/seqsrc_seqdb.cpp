@@ -66,8 +66,8 @@ static ListNode* SeqDbGetError(void* seqdb_handle, void* args);
  */
 static Int4 SeqDbGetMaxLength(void* seqdb_handle, void*)
 {
-    CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
-    return seqdb->GetMaxLength();
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
+    return (*seqdb)->GetMaxLength();
 }
 
 /** Retrieves the number of sequences in the BlastSeqSrc.
@@ -76,8 +76,8 @@ static Int4 SeqDbGetMaxLength(void* seqdb_handle, void*)
  */
 static Int4 SeqDbGetNumSeqs(void* seqdb_handle, void*)
 {
-    CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
-    return seqdb->GetNumSeqs();
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
+    return (*seqdb)->GetNumSeqs();
 }
 
 /** Retrieves the total length of all sequences in the BlastSeqSrc.
@@ -86,8 +86,8 @@ static Int4 SeqDbGetNumSeqs(void* seqdb_handle, void*)
  */
 static Int8 SeqDbGetTotLen(void* seqdb_handle, void*)
 {
-    CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
-    return seqdb->GetTotalLength();
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
+    return (*seqdb)->GetTotalLength();
 }
 
 /** Retrieves the average length of sequences in the BlastSeqSrc.
@@ -110,8 +110,8 @@ static Int4 SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme)
 static char* SeqDbGetName(void* /*seqdb_handle*/, void*)
 {
 #if 0 // FIXME: GetName method not implemented in CSeqDb!!!
-    CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
-    return strdup(seqdb->GetName().c_str());
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
+    return strdup((*seqdb)->GetName().c_str());
 #else
     return NULL;
 #endif
@@ -123,8 +123,8 @@ static char* SeqDbGetName(void* /*seqdb_handle*/, void*)
  */
 static char* SeqDbGetDefinition(void* seqdb_handle, void*)
 {
-    CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
-    return strdup(seqdb->GetTitle().c_str());
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
+    return strdup((*seqdb)->GetTitle().c_str());
 }
 
 /** Retrieves the date of the BLAST database.
@@ -133,8 +133,8 @@ static char* SeqDbGetDefinition(void* seqdb_handle, void*)
  */
 static char* SeqDbGetDate(void* seqdb_handle, void*)
 {
-    CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
-    return strdup(seqdb->GetDate().c_str());
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
+    return strdup((*seqdb)->GetDate().c_str());
 }
 
 /** Retrieves the date of the BLAST database.
@@ -143,9 +143,9 @@ static char* SeqDbGetDate(void* seqdb_handle, void*)
  */
 static Boolean SeqDbGetIsProt(void* seqdb_handle, void*)
 {
-    CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
 
-    return (seqdb->GetSeqType() == 'p');
+    return ((*seqdb)->GetSeqType() == 'p');
 }
 
 /** Retrieves the sequence meeting the criteria defined by its second argument.
@@ -155,7 +155,7 @@ static Boolean SeqDbGetIsProt(void* seqdb_handle, void*)
  */
 static Int2 SeqDbGetSequence(void* seqdb_handle, void* args)
 {
-    CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
     GetSeqArg* seqdb_args = (GetSeqArg*) args;
     Int4 oid = -1, len = 0;
     Boolean has_sentinel_byte;
@@ -177,9 +177,9 @@ static Int2 SeqDbGetSequence(void* seqdb_handle, void* args)
 
     const char *buf;
     if (!buffer_allocated) {
-        len = seqdb->GetSequence(oid, &buf);
+        len = (*seqdb)->GetSequence(oid, &buf);
     } else {
-        len = seqdb->GetAmbigSeq(oid, &buf, has_sentinel_byte);
+        len = (*seqdb)->GetAmbigSeq(oid, &buf, has_sentinel_byte);
     }
 
     if (len <= 0)
@@ -208,14 +208,14 @@ static Int2 SeqDbGetSequence(void* seqdb_handle, void* args)
  */
 static Int2 SeqDbRetSequence(void* seqdb_handle, void* args)
 {
-    CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
     GetSeqArg* seqdb_args = (GetSeqArg*) args;
 
     if (!seqdb || !seqdb_args)
         return BLAST_SEQSRC_ERROR;
 
     if (seqdb_args->seq->sequence_start_allocated) {
-        seqdb->RetSequence((const char**)&seqdb_args->seq->sequence_start);
+        (*seqdb)->RetSequence((const char**)&seqdb_args->seq->sequence_start);
         seqdb_args->seq->sequence_start_allocated = FALSE;
         seqdb_args->seq->sequence_start = NULL;
     }
@@ -232,7 +232,7 @@ static Int2 SeqDbRetSequence(void* seqdb_handle, void* args)
  */
 static ListNode* SeqDbGetSeqId(void* seqdb_handle, void* args)
 {
-    CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
     Uint4* oid = (Uint4*) args;
     ListNode* seqid_wrap;
 
@@ -240,7 +240,7 @@ static ListNode* SeqDbGetSeqId(void* seqdb_handle, void* args)
         return NULL;
 
     list< CRef<CSeq_id> > seqid_list;
-    seqid_list = seqdb->GetSeqIDs(*oid);
+    seqid_list = (*seqdb)->GetSeqIDs(*oid);
 
     CRef<CSeq_id>* seqid_ref = new CRef<CSeq_id>(seqid_list.front());
     seqid_wrap = ListNodeAddPointer(NULL, BLAST_SEQSRC_CPP_SEQID_REF, 
@@ -289,13 +289,13 @@ static ListNode* SeqDbGetSeqLoc(void*, void*)
  */
 static Int4 SeqDbGetSeqLen(void* seqdb_handle, void* args)
 {
-    CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
     Int4* oid = (Int4*) args;
 
     if (!seqdb || !oid)
        return BLAST_SEQSRC_ERROR;
 
-    return seqdb->GetSeqLength(*oid);
+    return (*seqdb)->GetSeqLength(*oid);
 }
 
 /* There are no error messages saved in the SeqdbFILE structure, so the 
@@ -309,7 +309,7 @@ static ListNode* SeqDbGetError(void*, void*)
 
 static Int2 SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
 {
-    CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
 
     if (!seqdb || !itr)
         return BLAST_SEQSRC_ERROR;
@@ -319,7 +319,7 @@ static Int2 SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
         return BLAST_SEQSRC_EOF;
     } else if (itr->next_oid == 0) {
         itr->current_pos = 0;
-        if (!seqdb->CheckOrFindOID(itr->current_pos))
+        if (!(*seqdb)->CheckOrFindOID(itr->current_pos))
             return BLAST_SEQSRC_EOF;
     } else {
         itr->current_pos = itr->next_oid;
@@ -327,7 +327,7 @@ static Int2 SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
 
     // Find the new next oid.
     itr->next_oid = itr->current_pos + 1;
-    if (!seqdb->CheckOrFindOID(itr->next_oid))
+    if (!(*seqdb)->CheckOrFindOID(itr->next_oid))
         itr->next_oid = UINT4_MAX;
     itr->itr_type = eOidRange;
     itr->oid_range[0] = itr->current_pos;
@@ -391,13 +391,17 @@ BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* retval, void* args)
 
     string db_name(rargs->dbname);
     char db_type = static_cast<char>((rargs->is_protein ? 'p' : 'n'));
-    CSeqDB* seqdb(new CSeqDB(db_name, db_type, (Uint4)rargs->first_db_seq, 
-                             (Uint4)rargs->final_db_seq, true));
+
+    CSeqDB* seqdb = new CSeqDB(db_name, db_type, (Uint4)rargs->first_db_seq, 
+                               (Uint4)rargs->final_db_seq, true);
+
+    CRef<CSeqDB>* seqdb_ref = new CRef<CSeqDB>(seqdb);
 
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seqdb */
     SetDeleteFnPtr(retval, &SeqDbSrcFree);
-    SetDataStructure(retval, (void*) seqdb);
+    SetCopyFnPtr(retval, &SeqDbSrcCopy);
+    SetDataStructure(retval, (void*) seqdb_ref);
     SetGetNumSeqs(retval, &SeqDbGetNumSeqs);
     SetGetMaxSeqLen(retval, &SeqDbGetMaxLength);
     SetGetAvgSeqLen(retval, &SeqDbGetAvgLength);
@@ -424,10 +428,22 @@ BlastSeqSrc* SeqDbSrcFree(BlastSeqSrc* seq_src)
 {
     if (!seq_src) 
         return NULL;
-    CSeqDB* seqdb = static_cast<CSeqDB*>(GetDataStructure(seq_src));
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*)(GetDataStructure(seq_src));
     delete seqdb;
     sfree(seq_src);
     return NULL;
+}
+
+BlastSeqSrc* SeqDbSrcCopy(BlastSeqSrc* seq_src)
+{
+    if (!seq_src) 
+        return NULL;
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*)(GetDataStructure(seq_src));
+    CRef<CSeqDB>* new_seqdb = new CRef<CSeqDB>(*seqdb);
+
+    SetDataStructure(seq_src, (void*) new_seqdb);
+    
+    return seq_src;
 }
 
 }
@@ -441,7 +457,7 @@ SeqDbSrcInit(const char* dbname, Boolean is_prot, Int4 first_seq,
     SSeqDbSrcNewArgs* seqdb_args = 
         (SSeqDbSrcNewArgs*) calloc(1, sizeof(SSeqDbSrcNewArgs));;
     seqdb_args->dbname = strdup(dbname);
-	seqdb_args->is_protein = is_prot ? true : false;
+    seqdb_args->is_protein = is_prot ? true : false;
     seqdb_args->first_db_seq = first_seq;
     seqdb_args->final_db_seq = last_seq; 
     bssn_info.constructor = &SeqDbSrcNew;
@@ -464,6 +480,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2004/06/15 16:24:01  dondosha
+ * Use CRef to handle pointers to CSeqDb instance properly; added SeqDbSrcCopy function
+ *
  * Revision 1.12  2004/06/02 15:57:57  bealer
  * - Isolate object manager dependant code.
  *
