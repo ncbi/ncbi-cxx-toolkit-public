@@ -386,7 +386,7 @@ streamsize CStreamUtils::Readsome(istream&      is,
 #ifdef NCBI_NO_READSOME
 #undef NCBI_NO_READSOME
     // Special case: GCC had no readsome() prior to ver 3.0;
-    // read() will set "eof" flag if gcount() < buf_size
+    // read() will set "eof" (and "fail") flag if gcount() < buf_size
 #ifdef NCBI_COMPILER_MIPSPRO
     CMIPSPRO_ReadsomeTolerantStreambuf* sb =
         dynamic_cast<CMIPSPRO_ReadsomeTolerantStreambuf*> (is.rdbuf());
@@ -426,6 +426,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.25  2003/05/21 19:34:34  lavr
+ * Note that insufficient ios::read() also sets failbit (as per the standard)
+ *
  * Revision 1.24  2003/05/20 16:44:59  lavr
  * CStreamUtils::Readsome() not to clear() in a bad() stream
  *
