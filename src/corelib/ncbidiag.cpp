@@ -995,13 +995,21 @@ extern void Abort(void)
     else if (value  &&  (*value == 'N'  ||  *value == 'n' || *value == '0')) {
         ::abort();
     }
-    else {
-#if defined(_DEBUG)
-        ::abort();
-#else
-        ::exit(255);
+    else
+#define NCBI_TOTALVIEW_ABORT_WORKAROUND 1
+#if defined(NCBI_TOTALVIEW_ABORT_WORKAROUND)
+        // The condition in the following if statement is always 'true'.
+        // It's a workaround for TotalView 6.5 (beta) to properly display
+        // stacktrace at this point.
+        if ( !(value && *value == 'Y') )
 #endif
-    }
+            {
+#if defined(_DEBUG)
+                ::abort();
+#else
+                ::exit(255);
+#endif
+            }
 }
 
 
@@ -1177,6 +1185,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.81  2004/06/30 17:17:58  vasilche
+ * Workaround for TotalView 6.5 (beta).
+ *
  * Revision 1.80  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *
