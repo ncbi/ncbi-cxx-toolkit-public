@@ -367,7 +367,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             }
             PushDiagPostPrefix(env.Get(m_DiagPrefixEnv).c_str());
 
-            CCgiObuffer       obuf(pfout, 512);
+            CCgiObuffer       obuf(pfout);
             CNcbiOstream      ostr(&obuf);
             CCgiIbuffer       ibuf(pfin);
             CNcbiIstream      istr(&ibuf);
@@ -424,7 +424,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
             // Call the exception handler and set the CGI exit code
             {{
-                CCgiObuffer  obuf(pfout, 512);
+                CCgiObuffer  obuf(pfout);
                 CNcbiOstream ostr(&obuf);
                 int exit_code = OnException(e, ostr);
                 FCGX_SetExitStatus(exit_code, pfout);
@@ -514,6 +514,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.34  2003/10/07 14:40:59  lavr
+ * Do not use bufsize parameter in CCgiOBuffers
+ *
  * Revision 1.33  2003/05/22 19:12:59  vakatov
  * Conditional call to FCGX_Init() and FCGX_OpenSocket() -- these are missing
  * in the earlier versions of Fast-CGI API (such as 2.1).
