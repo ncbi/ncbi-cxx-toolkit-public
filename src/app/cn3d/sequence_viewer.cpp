@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/09/12 01:47:38  thiessen
+* fix minor but obscure bug
+*
 * Revision 1.8  2000/09/11 22:57:33  thiessen
 * working highlighting
 *
@@ -296,6 +299,10 @@ SequenceViewer::~SequenceViewer(void)
 void SequenceViewer::ClearGUI(void)
 {
     if (viewerWindow) viewerWindow->NewAlignment(NULL);
+    if (display) {
+        delete display;
+        display = NULL;
+    }
 }
 
 void SequenceViewer::DestroyGUI(void)
@@ -316,10 +323,12 @@ void SequenceViewer::Refresh(void)
 
 void SequenceViewer::NewAlignment(const SequenceDisplay *display)
 {
-    if (!viewerWindow) viewerWindow = new SequenceViewerWindow(this);
-    viewerWindow->NewAlignment(display);
-    viewerWindow->ScrollToColumn(display->GetStartingColumn());
-    messenger->PostRedrawSequenceViewers();
+    if (display) {
+        if (!viewerWindow) viewerWindow = new SequenceViewerWindow(this);
+        viewerWindow->NewAlignment(display);
+        viewerWindow->ScrollToColumn(display->GetStartingColumn());
+        messenger->PostRedrawSequenceViewers();
+    }
 }
 
 void SequenceViewer::DisplayAlignment(const BlockMultipleAlignment *multiple)
@@ -329,7 +338,6 @@ void SequenceViewer::DisplayAlignment(const BlockMultipleAlignment *multiple)
     
     for (int row=0; row<multiple->NRows(); row++)
         display->AddRowFromAlignment(row, multiple);
-
 
     // set starting scroll to a few residues left of the first aligned block
     display->SetStartingColumn(multiple->GetFirstAlignedBlockPosition() - 5);
@@ -459,6 +467,9 @@ void SequenceDisplay::MouseDown(int column, int row, unsigned int controls) cons
     TESTMSG("got MouseDown");
     (const_cast<SequenceDisplay*>(this))->
         controlDown = ((controls & ViewableAlignment::eControlDown) > 0);
+
+    if (!controlDown && column == -1)
+        messenger->RemoveAllHighlights(true);
 }
 
 void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop, 

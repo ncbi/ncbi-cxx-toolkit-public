@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/09/12 01:47:38  thiessen
+* fix minor but obscure bug
+*
 * Revision 1.8  2000/09/11 22:57:31  thiessen
 * working highlighting
 *
@@ -94,8 +97,8 @@ AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *
 
 AlignmentManager::~AlignmentManager(void)
 {
-    if (currentMultipleAlignment) delete currentMultipleAlignment;
     messenger->ClearSequenceViewers();
+    if (currentMultipleAlignment) delete currentMultipleAlignment;
 }
 
 static bool AlignedToAllSlaves(int masterResidue,

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/09/12 01:46:07  thiessen
+* fix minor but obscure bug
+*
 * Revision 1.6  2000/09/11 14:06:02  thiessen
 * working alignment coloring
 *
@@ -104,6 +107,7 @@ class Cn3DApp: public wxApp
 {
 public:
     bool OnInit(void);
+    int OnExit(void);
 
     // used for processing display updates when system is idle
     void OnIdle(wxIdleEvent& event);

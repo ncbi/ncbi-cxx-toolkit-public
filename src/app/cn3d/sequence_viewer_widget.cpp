@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/09/12 01:47:39  thiessen
+* fix minor but obscure bug
+*
 * Revision 1.6  2000/09/11 22:57:33  thiessen
 * working highlighting
 *
@@ -116,7 +119,7 @@ bool SequenceViewerWidget::AttachAlignment(const ViewableAlignment *newAlignment
 
     } else {
         // remove scrollbars
-        SetScrollbars(0, 0, 0, 0);
+        //SetScrollbars(1, 1, 1, 1, 0, 0, true);   can't do this without crash on win98... ?
     }
 
     return true;
@@ -232,6 +235,7 @@ void SequenceViewerWidget::DrawCell(wxDC& dc, int x, int y, int vsX, int vsY, bo
 	char character;
     wxColor color;
     bool isHighlighted, drawChar;
+
     drawChar = alignment->GetCharacterTraitsAt(x, y, &character, &color, &isHighlighted);
 
     // adjust x,y into visible area coordinates
@@ -409,7 +413,12 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
     static int prevMOX = -1, prevMOY = -1;
     static bool dragging = false;
 
-    if (!alignment) return;
+    if (!alignment) {
+        prevAlignment = NULL;
+        prevMOX = prevMOY = -1;
+        dragging = false;
+        return;
+    }
     if (alignment != prevAlignment) {
         prevMOX = prevMOY = -1;
         prevAlignment = alignment;

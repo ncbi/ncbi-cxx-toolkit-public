@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/09/12 01:47:38  thiessen
+* fix minor but obscure bug
+*
 * Revision 1.7  2000/09/11 14:06:28  thiessen
 * working alignment coloring
 *
@@ -220,6 +223,12 @@ bool Cn3DApp::OnInit(void)
     return true;
 }
 
+int Cn3DApp::OnExit(void)
+{
+    // delete messenger;  // causes crash on win98 for some reason...
+	return 0;
+}
+
 void Cn3DApp::OnIdle(wxIdleEvent& event)
 {
     messenger->ProcessRedraws();
@@ -354,6 +363,7 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
                 break;
             default: ;
         }
+        glCanvas->structureSet->styleManager->CheckStyleSettings(glCanvas->structureSet);
         messenger->PostRedrawAllStructures();
         messenger->PostRedrawSequenceViewers();
     }
@@ -365,6 +375,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
 
     // clear old data
     if (glCanvas->structureSet) {
+        messenger->RemoveAllHighlights(false);
         delete glCanvas->structureSet;
         glCanvas->structureSet = NULL;
         glCanvas->renderer.AttachStructureSet(NULL);
