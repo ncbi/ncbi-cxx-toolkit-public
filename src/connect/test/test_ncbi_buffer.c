@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2003/01/08 02:01:27  lavr
+ * BUF_Destroy() made not returning a value
+ *
  * Revision 6.8  2002/03/22 19:46:30  lavr
  * Test_assert.h made last among the include files
  *
@@ -97,7 +100,8 @@ extern int main(void)
     assert(BUF_Write(&buf, (const char*) "23", 3));
     assert(BUF_Read(buf, charbuf, sizeof(charbuf)) == 9);
     assert(strcmp(charbuf, (const char*) "aaBB0123") == 0);
-    buf = BUF_Destroy(buf);
+    BUF_Destroy(buf);
+    buf = 0;
   }}
 
   /* usage */
