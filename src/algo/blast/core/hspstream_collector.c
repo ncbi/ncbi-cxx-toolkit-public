@@ -50,6 +50,7 @@ BlastHSPListCollectorFree(BlastHSPStream* hsp_stream)
 {
    BlastHSPListCollectorData* stream_data = 
       (BlastHSPListCollectorData*) GetData(hsp_stream);
+   stream_data->x_lock = MT_LOCK_Delete(stream_data->x_lock);
    Blast_HSPResultsFree(stream_data->results);
    sfree(stream_data);
    sfree(hsp_stream);
