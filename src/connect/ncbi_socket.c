@@ -629,11 +629,12 @@ static void s_DoLog
             *tail = 0;
         }
         sprintf(head, "%s%s at offset %lu%s%s", s_ID(sock, _id),
-                event == eIO_Read ? (sock->type != eSOCK_Datagram  &&  !size
-                                     ? (data ? "EOF hit"
-                                        : SOCK_STRERROR(SOCK_ERRNO))
-                                     : "Read")
-                : "Written",
+                event == eIO_Read
+                ? (sock->type != eSOCK_Datagram  &&  !size
+                   ? (data ? "EOF hit" : SOCK_STRERROR(SOCK_ERRNO))
+                   : "Read")
+                : (sock->type != eSOCK_Datagram  &&  !size
+                   ? SOCK_STRERROR(SOCK_ERRNO) : "Written"),
                 (unsigned long) (event == eIO_Read
                                  ? sock->n_read : sock->n_written),
                 sin ? (event == eIO_Read ? " from " : " to ") : "", tail);
@@ -1310,9 +1311,9 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
 
     /* set the socket back to blocking mode */
     if ( !s_SetNonblock(lsock->sock, 0/*false*/) ) {
-        CORE_LOGF(eLOG_Error, ("LSOCK#%u[%u]: [LSOCK::Close] "
-                               " Cannot set socket back to blocking mode",
-                               lsock->id, (unsigned int) lsock->sock));
+        CORE_LOGF(eLOG_Warning, ("LSOCK#%u[%u]: [LSOCK::Close] "
+                                 " Cannot set socket back to blocking mode",
+                                 lsock->id, (unsigned int) lsock->sock));
     }
 
     /* statistics & logging */
@@ -1385,7 +1386,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
     SSOCK_Poll     poll;
 
     *x_errno = 0;
-    assert(sock->pending);
+    assert( sock->pending );
     if (sock->w_status == eIO_Closed)
         return eIO_Closed;
     if ( !writeable ) {
@@ -1408,7 +1409,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
         if ( !*x_errno )
             *x_errno = SOCK_ERRNO;
         if (*x_errno == SOCK_ECONNREFUSED)
-            sock->w_status = status = eIO_Closed;
+            sock->r_status = sock->w_status = status = eIO_Closed;
         else if (status == eIO_Success)
             status = eIO_Unknown;
     }
@@ -1613,8 +1614,11 @@ static int s_Recv(SOCK        sock,
             }
             if (x_read <= 0) {
                 /* catch EOF/failure */
-                sock->eof      = 1/*true*/;
-                sock->r_status = x_read == 0 ? eIO_Success : eIO_Closed;
+                sock->eof = 1/*true*/;
+                if (x_read == 0)
+                    sock->r_status = eIO_Success;
+                else
+                    sock->r_status = sock->w_status = eIO_Closed;
                 break;
             }
         } else {
@@ -1700,7 +1704,7 @@ static EIO_Status s_SelectStallsafe(size_t                n,
             if (polls[i].event == eIO_Read  &&  polls[i].revent == eIO_Write) {
                 assert(n != 1);
                 assert(polls[i].sock->pending  ||  polls[i].sock->w_len);
-                status = s_WritePending(polls[i].sock, tv, 1);
+                status = s_WritePending(polls[i].sock, tv, 1/*writeable*/);
                 if (status != eIO_Success  &&  status != eIO_Timeout) {
                     polls[i].revent = eIO_Close;
                     break;
@@ -1848,8 +1852,13 @@ static EIO_Status s_Send(SOCK        sock,
                 CORE_LOGF_ERRNO_EX(eLOG_Trace, x_errno, SOCK_STRERROR(x_errno),
                                    ("%s[SOCK::s_Send] "
                                     " Failed send()", s_ID(sock, _id)));
-            } else
-                sock->w_status = eIO_Closed;
+                break;
+            }
+            sock->r_status = sock->w_status = eIO_Closed;
+            if ( sock->eof )
+                sock->eof = 0;
+            if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn))
+                s_DoLog(sock, eIO_Write, 0, 0, 0);
             break;
         }
 
@@ -1977,7 +1986,7 @@ static EIO_Status s_Read(SOCK        sock,
     }
 
     status = s_WritePending(sock, sock->r_timeout, 0);
-    if (sock->pending)
+    if ( sock->pending )
         return status;
 
     for (;;) { /* retry if either blocked or interrupted (optional) */
@@ -1997,9 +2006,9 @@ static EIO_Status s_Read(SOCK        sock,
         if (sock->r_status == eIO_Closed  ||  sock->eof) {
             if ( !sock->eof ) {
                 char _id[32];
-                CORE_LOGF(eLOG_Warning, ("%s[SOCK::s_Read]  Socket has been "
-                                         "shut down for reading",
-                                         s_ID(sock, _id)));
+                CORE_LOGF(eLOG_Trace, ("%s[SOCK::s_Read]  Socket has been "
+                                       "shut down for reading",
+                                       s_ID(sock, _id)));
             }
             return eIO_Closed;
         }
@@ -2061,18 +2070,14 @@ static EIO_Status s_Write(SOCK        sock,
     if (sock->w_status == eIO_Closed) {
         if (size != 0) {
             char _id[32];
-            CORE_LOGF(eLOG_Warning, ("%s[SOCK::s_Write]  Socket has been shut "
-                                     "down for writing", s_ID(sock, _id)));
+            CORE_LOGF(eLOG_Trace, ("%s[SOCK::s_Write]  Socket has been shut "
+                                   "down for writing", s_ID(sock, _id)));
         }
         return eIO_Closed;
     }
 
     if ((status = s_WritePending(sock, sock->w_timeout, 0)) != eIO_Success) {
-        if (status != eIO_Timeout) {
-            sock->w_status = status;
-            if (status == eIO_Closed)
-                return status;
-        } else if (size == 0)
+        if (status == eIO_Timeout  ||  status == eIO_Closed)
             return status;
         return size ? status : eIO_Success;
     }
@@ -2179,11 +2184,12 @@ static EIO_Status s_Shutdown(SOCK                  sock,
 }
 
 
-/* Shutdown and close the socket
+/* Close the socket
  */
 static EIO_Status s_Close(SOCK sock)
 {
-    char _id[32];
+    EIO_Status status;
+    char      _id[32];
 
     /* reset the auxiliary data buffers */
     s_WipeRBuf(sock);
@@ -2224,11 +2230,11 @@ static EIO_Status s_Close(SOCK sock)
                                    "back to blocking mode", s_ID(sock, _id)));
         }
     } else {
-        EIO_Status status = s_WritePending(sock, sock->c_timeout, 0);
+        status = s_WritePending(sock,sock->c_timeout,0);
         if (status != eIO_Success) {
-            CORE_LOGF(eLOG_Error, ("%s[SOCK::s_Close]  Leaving with some "
-                                   "output data pending (%s)",
-                                   s_ID(sock, _id), IO_StatusStr(status)));
+            CORE_LOGF(eLOG_Warning, ("%s[SOCK::s_Close]  Leaving with some "
+                                     "output data pending (%s)",
+                                     s_ID(sock, _id), IO_StatusStr(status)));
         }
     }
     sock->w_len = 0;
@@ -2241,6 +2247,7 @@ static EIO_Status s_Close(SOCK sock)
     if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
         s_DoLog(sock, eIO_Close, 0, 0, 0);
 
+    status = eIO_Success;
     if ( sock->type != eSOCK_ServerSideKeep ) {
         for (;;) { /* close persistently - retry if interrupted by a signal */
             if (SOCK_CLOSE(sock->sock) == 0)
@@ -2252,17 +2259,15 @@ static EIO_Status s_Close(SOCK sock)
                 CORE_LOGF_ERRNO_EX(eLOG_Warning,x_errno,SOCK_STRERROR(x_errno),
                                    ("%s[SOCK::s_Close]  Failed close()",
                                     s_ID(sock, _id)));
-                sock->sock = SOCK_INVALID;
-                return
-                    (SOCK_ERRNO == SOCK_ECONNRESET || SOCK_ERRNO == SOCK_EPIPE)
-                    ? eIO_Closed : eIO_Unknown;
+                status = eIO_Unknown;
+                break;
             }
         }
     }
 
-    /* success */
+    /* return */
     sock->sock = SOCK_INVALID;
-    return eIO_Success;
+    return status;
 }
 
 
@@ -3707,6 +3712,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.112  2003/05/21 17:53:40  lavr
+ * Add logs for broken connections; update both R and W status on them
+ *
  * Revision 6.111  2003/05/21 04:00:12  lavr
  * Latch connection refusals in SOCK state properly
  *
