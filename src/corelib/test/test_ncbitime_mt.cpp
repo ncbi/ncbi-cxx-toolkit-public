@@ -40,7 +40,7 @@ USING_NCBI_SCOPE;
 
 static CFastMutex s_OutMutex;
 
-static void OUTS(int idx, long line, string value, char* check) 
+static void OUTS(int idx, long line, string value, const char* check) 
 {
     CFastMutexGuard LOCK(s_OutMutex);
     cout << idx << " (" << line << ") - " << value << endl;
@@ -420,6 +420,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2002/05/14 20:08:20  ucko
+ * Make last argument to OUTS const; we don't modify it, and without
+ * const we may get compiler warnings when passing string literals.
+ *
  * Revision 6.1  2002/05/13 13:58:45  ivanov
  * Initial revision
  *
