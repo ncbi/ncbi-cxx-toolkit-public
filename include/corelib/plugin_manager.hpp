@@ -376,7 +376,7 @@ public:
                  (TIfVer::eMajor, TIfVer::eMinor, TIfVer::ePatchLevel));
 
     /// Disable/enable DLL resolution (search for class factories in DLLs)
-    void FreezeResolution(bool value = true) { m_BlockResolution = vlaue; }
+    void FreezeResolution(bool value = true) { m_BlockResolution = value; }
 
     
     /// Disable/enable DLL resolution (search for class factories in DLLs)
@@ -640,6 +640,7 @@ bool CPluginManager<TClass, TIfVer>::UnregisterFactory(TClassFactory& factory)
         delete *it;
         m_Factories.erase(it);
     }
+    return true; //?
 }
 
 
@@ -780,6 +781,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/04/26 14:46:36  ucko
+ * Fix a typo in FreezeResolution, and make sure to give
+ * UnregisterFactory a return value per its prototype.
+ *
  * Revision 1.21  2004/03/19 19:16:20  kuznets
  * Added group of functions to better control DLL resolution (FreezeResolution)
  *
