@@ -85,6 +85,9 @@ BEGIN_SCOPE(Cn3D)
 #define ERRORMSG(stream) ERR_POST(Error << stream)
 #define FATALMSG(stream) ERR_POST(Fatal << stream)
 
+// turn on/off dialog box for errors (on by default)
+void SetDialogSevereErrors(bool status);
+
 // strings for various directories - dirs will include trailing path separator character
 extern const std::string& GetWorkingDir(void);  // current working directory
 extern const std::string& GetUserDir(void);     // directory of latest user-selected file
@@ -216,6 +219,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/03/10 23:15:51  thiessen
+* add ability to turn off/on error dialogs; group block aligner errors in message log
+*
 * Revision 1.32  2004/02/19 17:04:52  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

@@ -243,6 +243,8 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     // set up PSSM
     dpPSSM = multiple->GetPSSM();
 
+    bool errorsEncountered = false;
+
     AlignmentList::const_iterator s, se = toRealign.end();
     for (s=toRealign.begin(); s!=se; s++) {
         if (multiple && (*s)->GetMaster() != multiple->GetMaster())
@@ -266,6 +268,8 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             FreezeBlocks(multiple, *s, dpBlocks);
         }
 
+        SetDialogSevereErrors(false);
+
         // actually do the block alignment
         DP_AlignmentResult *dpResult = NULL;
         int dpStatus;
@@ -275,6 +279,8 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
         else
             dpStatus = DP_LocalBlockAlign(dpBlocks, dpScoreFunction,
                 startQueryPosition, endQueryPosition, &dpResult);
+
+        SetDialogSevereErrors(true);
 
         // create new alignment from DP result
         BlockMultipleAlignment *dpAlignment = NULL;
@@ -304,22 +310,29 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
 
         // no alignment or block aligner failed - add old alignment to list so it doesn't get lost
         else {
-            string error;
-            if (dpStatus == STRUCT_DP_NO_ALIGNMENT)
+            string status;
+            if (dpStatus == STRUCT_DP_NO_ALIGNMENT) {
                 WARNINGMSG("block aligner found no significant alignment - current alignment unchanged");
-            else
-                ERRORMSG("block aligner encountered a problem - current alignment unchanged");
+                status = "alignment unchanged";
+            } else {
+                WARNINGMSG("block aligner encountered a problem - current alignment unchanged");
+                errorsEncountered = true;
+                status = "block aligner error!";
+            }
             BlockMultipleAlignment *newAlignment = (*s)->Clone();
             newAlignment->SetRowDouble(0, -1.0);
             newAlignment->SetRowDouble(1, -1.0);
-            newAlignment->SetRowStatusLine(0, error);
-            newAlignment->SetRowStatusLine(1, error);
+            newAlignment->SetRowStatusLine(0, status);
+            newAlignment->SetRowStatusLine(1, status);
             newAlignments->push_back(newAlignment);
         }
 
         // cleanup
         DP_DestroyAlignmentResult(dpResult);
     }
+
+    if (errorsEncountered)
+        ERRORMSG("Block aligner encountered problem(s) - see message log for details");
 
     // cleanup
     DP_DestroyBlockInfo(dpBlocks);
@@ -488,6 +501,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/03/10 23:15:51  thiessen
+* add ability to turn off/on error dialogs; group block aligner errors in message log
+*
 * Revision 1.30  2004/02/19 17:04:48  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

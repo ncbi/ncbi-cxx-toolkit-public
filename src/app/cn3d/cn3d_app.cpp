@@ -159,13 +159,19 @@ void MsgFrame::OnCloseWindow(wxCloseEvent& event)
     }
 }
 
+static bool dialogSevereErrors = true;
+void SetDialogSevereErrors(bool status)
+{
+    dialogSevereErrors = status;
+}
+
 void DisplayDiagnostic(const SDiagMessage& diagMsg)
 {
     string errMsg;
     diagMsg.Write(errMsg);
 
     // severe errors get a special error dialog
-    if (diagMsg.m_Severity >= eDiag_Error && diagMsg.m_Severity != eDiag_Trace) {
+    if (diagMsg.m_Severity >= eDiag_Error && diagMsg.m_Severity != eDiag_Trace && dialogSevereErrors) {
         wxMessageDialog dlg(NULL, errMsg.c_str(), "Severe Error!", wxOK | wxCENTRE | wxICON_EXCLAMATION);
         dlg.ShowModal();
     }
@@ -626,6 +632,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/03/10 23:15:51  thiessen
+* add ability to turn off/on error dialogs; group block aligner errors in message log
+*
 * Revision 1.16  2004/02/19 17:04:47  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *
