@@ -492,7 +492,7 @@ bool CSeqMap_CI::x_Found(void) const
     case CSeqMap::eSeqSubMap:
         return false; // always skip submaps
     default:
-        return true;
+        return false;
     }
 }
 
@@ -543,6 +543,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/06/08 13:33:28  grichenk
+* Fixed segment type checking in CSeqMap_CI
+*
 * Revision 1.23  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *
