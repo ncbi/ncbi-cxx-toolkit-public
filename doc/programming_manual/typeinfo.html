@@ -1,444 +1,551 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
 <html>
-  <head>
+<head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
-    <title>Runtime Object Type Information</title>
-  </head>
-  <body bgcolor = white>
-    <h1> Runtime Object Type Information </h1>
+   <meta name="GENERATOR" content="Mozilla/4.75 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <title>Runtime Object Type Information</title>
+</head>
+<body bgcolor="#FFFFFF">
 
-    <ul>
-    <li><a href="#introduction"> Introduction</a> 
-    <li><a href="#motivation"> Motivation</a> 
-    <li><a href="#cobjinfo"> Object information classes: <i>CObjectTypeInfo, CConstObjectInfo</i> and <i>CObjectInfo</i></a> 
-    <li><a href="#usage"> Usage of object type information</a>
-    </ul>
+<h1>
+Runtime Object Type Information</h1>
 
-<a name ="introduction"> <h3>Introduction</h3>
-Information about data types is necessary in several contexts, including:
+<ul>
+<li>
+<a href="#introduction">Introduction</a></li>
+
+<li>
+<a href="#motivation">Motivation</a></li>
+
+<li>
+<a href="#cobjinfo">Object information classes: <i>CObjectTypeInfo, CConstObjectInfo</i>
+and <i>CObjectInfo</i></a></li>
+
+<li>
+<a href="#usage">Usage of object type information</a></li>
+</ul>
+<a NAME="introduction"></a>
+<h3>
+Introduction</h3>
+Run-time information about data types is necessary in several contexts,
+including:
 <ol>
+<li>
+When reading, writing, and processing serialized data, where runtime information
+about a type's internal structure is needed</li>
 
- <li> When reading, writing, and processing serialized data, where information about a
- type's internal structure is needed;<p>
+<li>
+When reading from an arbitrary data source, where data members' external
+aliases must be used to locate the corresponding class data members (e.g.
+<i>MyXxx</i>
+may be aliased as <i>my-xxx</i> in the input data file)</li>
 
- <li> When reading from an arbitrary data file, where data members' 
- external aliases must be used to locate the corresponding class data members
- (e.g. <i>MyXxx</i> may be aliased as <i>my-xxx</i> in the file); <p>
+<li>
+When using a generalized <i><a href="iterators.html">C++ type iterator</a></i>
+to traverse the data members of an object</li>
 
- <li> When using a generalized <a href="iterators.html"><i> C++ type iterator</i></a> to traverse the data
- members of a structured object.  
+<li>
+When accessing the object type information <i>per se </i>(without regard
+to any particular object instance), e.g. to dump it to a file as ASN.1
+or DTD <i>specifications</i> (not <i>data</i>)</li>
 </ol>
+In the cases <b>1</b>,<b>2</b>,<b>3</b> above, it is necessary to have
+the object itself <b>and</b> its runtime type information, because in these
+contexts the object is usually passed inside the generic functions as a
+pointer to its most base parent type <a href="http://www.ncbi.nlm.nih.gov/IEB/CPP_DOC/docxx/CObject.html">CObject</a>,
+and then the actual object's data members just could not be figured out
+and accessed without having the runtime information on the object's type
+(which describes the object's overall structure and location and names
+of its data members).
+<br>In case <b>4</b> above, the type information is used independent of
+any actual object instances.
+<p>The NCBI C++ Toolkit uses two classes to support these requirements:
+<ul><a NAME="ctypeinfo"></a>
+<li>
+<b><i>Type</i> information classes</b> (base class <i><a href="../docxx/CTypeInfo.html">CTypeInfo</a></i>)
+are intended for internal usage only, and they encode information about
+a type, devoid of any instances of that type. This information includes
+the class layout, inheritance relations, external alias, and various other
+attributes such as size, which are independent of specific <i>instances</i>.
+Each data member of a class also has its own type information. Thus, in
+addition to providing information relevant to the member's occurence in
+the class (e.g. the member name and offset), the type information for a
+<i>class</i>
+must also provide access to the type information for each of its
+<i>members</i>.</li>
 
-In some cases, the type information might be useful independent of any actual data instances. For
-example, a C++ <a href="choice.html"><i>choice</i></a> object may have several choice
-variants, but only one of these is actually selected (and therefore, instantiated) at any given
-moment. Nevertheless, access to the complete set of choice variant <i>types</i> may be useful. In
-other cases, an object may be cast as its more abstract parent type, and passed to a generic
-function that must now access (and possibly modify) type-specific data members. In this context, it
-is necessary to have access to both the object itself as well as to its type information. <p>
-
-The NCBI C++ Toolkit uses two classes to support these requirements:
-<ul><a name="ctypeinfo">
-<li><strong><i>Type</i> information classes</strong> (base class <a
-href="../docxx/CTypeInfo.html"><i>CTypeInfo</i> </a>) are intended for internal usage only,
-and encode information about a type, devoid of any instances of that type. 
-
-A <i>class</i> object's type information includes the class layout, inheritance relations, external
-alias, and various other attributes such as size, which are independent of specific instances. Each
-data member of a class also has its own type information. Thus, in addition to providing information
-relevant to the member's occurence in the class (e.g. the member name and offset), the type
-information for a <i>class</i> must also provide access to the type information for each of its
-<i>members</i>.<p>
-
-Limited type information is also available for types other than classes, such as
-primitive data types, enumerations, containers, and pointers. For example, the type
-information for a primitive type specifies that it is an <i>int, float,</i> or <i>char</i>, etc.,
-and whether or not that element is signed. Enumerations are a special kind of primitive type,
-whose type information specifies its enumeration values and named elements. Type information
-for containers can specify both the type of container and the type of elements which it holds.<p>
-
-<li><a href="#cobjinfo"> <I>Object</i> information classes</a> (base class <a
-href="../docxx/CObjectTypeInfo.html"><i>CObjectTypeInfo</i></a>) include a pointer to the
-type information as well as a pointer to the object <i>instance</i> itself, and provide a
-safe interface to that object. In situations where type information is used independent of
-any concrete object, the <i>object</i> information class simply serves as a wrapper to a <i>type</i>
-information object. Where access to an object instance <i>is</i> required, the object pointer
-provides direct access to the correctly type-cast instance, and the interface provides methods to
-access and/or modify the object itself or  members of that object.
+<br>Limited type information is also available for types other than classes,
+such as primitive data types, enumerations, containers, and pointers. For
+example, the type information for a primitive type specifies that it is
+an <i>int, float,</i> or <i>char</i>, etc., and whether or not that element
+is signed. Enumerations are a special kind of primitive type, whose type
+information specifies its enumeration values and named elements. Type information
+for containers specifies both the type of container and the type of elements
+that it holds.
+<p><a NAME="ref_ObjectInfo"></a>
+<li>
+<a href="#cobjinfo"><i>Object</i> information classes</a> (base class <i><a href="../docxx/CObjectTypeInfo.html">CObjectTypeInfo</a></i>)
+include a pointer to the type information as well as a pointer to the object
+<i>instance</i>,
+and provide a safe interface to that object. In situations where type information
+is used independent of any concrete object, the <i>object</i> information
+class simply serves as a wrapper to a <i>type</i> information object. Where
+access to an object instance <i>is</i> required, the object pointer provides
+direct access to the correctly type-cast instance, and the interface provides
+methods to access and/or modify the object itself or members of that object.</li>
 </ul>
-
-The C++ Toolkit stores the type information outside any instances of that type, in a statically
-created <i>CTypeInfo</i> object.  For <i>class</i> objects, this <i>CTypeInfo</i> object can be
-accessed by all instances of the class via a static <a
-href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=GetTypeInfo">
-<i>GetTypeInfo()</i></a> class method. Similarly, for primitive types and other constructs that
-have no way of associating methods with them <i>per se</i>, a static globally defined 
-<i>GetTypeInfoXxx()</i> function is used to access a static <i>CTypeInfo</i> object.
-(The <i>Xxx</i> suffix is used here to indicate that a globally unique name is generated for the function). <p>
-
-All of the automatically generated classes and constructs defined in the C++ Toolkit's
-<i>objects</i> directory already have static <i>GetTypeInfo()</i> functions implemented for them. In
-order to make type information about <i>user-defined</i> classes and elements also accessible, you
-will need to implement static <i>GetTypeInfo()</i> functions for these constructs. A number of
-pre-processor macros are available to support this activity, and are described  in the
-section on <a href="usrtypeinfo.html"> <i>User-defined Type Information</i></a>. 
-
-
-<p>
-
-Type information is often needed when the object itself has been passed anonymously, or as a pointer
-to its parent class. In this case, it is not possible to invoke the <i>GetTypeInfo()</i> method
-directly, as the object's exact type is unknown. Using a <i>&lt;static_cast&gt;</i> operator to
-enable the member function is also unsafe, as it may open the door to incorrectly associating an
-object's pointer with the wrong type information.  For these reasons, the <i>CTypeInfo</i> class is
-intended for internal usage only, and it is the <a href="#cobjinfo"> <i>CObjectTypeInfo</i></a> classes
-that provide a more safe and friendly user interface to type information.<p>
-
-
-<a name="motivation"> <h3> Motivation </h3>
-
-We use a simple example to help motivate the use of this <i>type</i> and <i>object</i> information
-model. Let us suppose that we would like to have a generic function <i>LoadObject()</i>, which can
-populate an object using data read from a flat file. For example, we might like to have:
-
-<center><pre>bool LoadObject (Object& myObj, istream& is); </pre></center>
-
-where <i>myObj</i> is an instance of some subclass of <i>Object</i>. Assuming that the text in the
-file is of the form:
-<pre>MemberName value
-MemberName value
-MemberName value
-:
-</pre>
-we would like to find the corresponding data member in <i>myObj</i> for each <i>MemberName</i>, and set
-that data member's value accordingly. Unfortunately, <i>myObj</i> cannot directly supply any useful
-type information, as the member names we seek are for a specific subclass of <i>Object</i>. Now suppose
-that we have an appropriate type information object available for <i>myObj</i>, and consider how
-this might be used:
-<a name = "example">
-<font color="#000080"><pre>
-bool LoadObject (TypeInfo& info, Object& myObj, istream& is)
+The C++ Toolkit stores the type information outside any instances of that
+type, in a statically created <i>CTypeInfo</i> object. For <i>class</i>
+objects, this <i>CTypeInfo</i> object can be accessed by all <i>instances</i>
+of the class via a static <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=GetTypeInfo">GetTypeInfo()</a></i>
+class method. Similarly, for primitive types and other constructs that
+have no way of associating methods with them <i>per se</i>, a static globally
+defined <i>GetTypeInfoXxx()</i> function is used to access a static <i>CTypeInfo</i>
+object. (The <i>Xxx</i> suffix is used here to indicate that a globally
+unique name is generated for the function).
+<p>All of the automatically generated classes and constructs defined in
+the C++ Toolkit's
+<b><i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/">objects/</a></i></b>directory
+already have static <i>GetTypeInfo()</i> functions implemented for them.
+In order to make type information about
+<i>user-defined</i> classes and
+elements also accessible, you will need to implement static <i>GetTypeInfo()</i>
+functions for these constructs. A number of pre-processor macros are available
+to support this activity, and are described in the section on <i><a href="usrtypeinfo.html">User-defined
+Type Information</a></i>.
+<p>Type information is often needed when the object itself has been passed
+anonymously, or as a pointer to its parent class. In this case, it is not
+possible to invoke the <i>GetTypeInfo()</i> method directly, as the object's
+exact type is unknown. Using a <i>&lt;static_cast></i> operator to enable
+the member function is also unsafe, as it may open the door to incorrectly
+associating an object's pointer with the wrong type information. For these
+reasons, the <i>CTypeInfo</i> class is intended for internal usage only,
+and it is the <i><a href="#cobjinfo">CObjectTypeInfo</a></i> classes that
+provide a more safe and friendly user interface to type information.
+<p><a NAME="motivation"></a>
+<h3>
+Motivation</h3>
+We use a simple example to help motivate the use of this <i>type</i> and
+<i>object</i>
+information model. Let us suppose that we would like to have a generic
+function <i>LoadObject()</i>, which can populate an object using data read
+from a flat file. For example, we might like to have:
+<center><pre>bool LoadObject(Object&amp; myObj, istream&amp; is);</pre></center>
+where <i>myObj</i> is an instance of some subclass of <i>Object</i>. Assuming
+that the text in the file is of the form:
+<pre>MemberName1 value1
+MemberName5 value5
+MemberName2 value2
+:</pre>
+we would like to find the corresponding data member in <i>myObj</i> for
+each <i>MemberName</i>, and set that data member's value accordingly. Unfortunately,
+<i>myObj</i>
+cannot directly supply any useful type information, as the member names
+we seek are for a specific subclass of <i>Object</i>. Now suppose that
+we have an appropriate type information object available for
+<i>myObj</i>,
+and consider how this might be used:<a NAME="example"></a>
+<pre><font color="#000080">bool LoadObject(TypeInfo&amp; info, Object&amp; myObj, istream&amp; is)
 {
-    string myName, myValue;
+&nbsp;&nbsp;&nbsp; string myName, myValue;
 
-    while (!is.eof()) {
-        is >> myName >> myValue;
-        void *member = FindMember(info, myObj, myName);
-	assignValue(member, myValue);
-    }
-}</pre></font>
-
-Here, we assume that our type information object, <i>info</i>, stores information about the memory
-offset of each data member in <i>myObj</i>, and that such information can be retrieved using some
-sort of identifying member name such as <i>myName</i>. This is not too difficult to imagine, and
-indeed, this is exactly the type of information and facility provided by the C++ Toolkit's type
-information classes. The <i>FindMember()</i> function just needs to return a <i>void</i> pointer to
-the appropriate location in memory.  The <i>assignValue()</i> function presents a much greater
-challenge however, as its two sole arguments are a <i>void</i> pointer and a <i>string</i>. This
-would be fine if the data member was indeed a <i>void</i> pointer, and a <i>string</i> value
-was acceptable. In general this is not the case, and stronger methods are clearly needed.<p>
-
-In particular, for each data member encountered, we need to retrieve the type of that member as well
-as its location in memory, so as to process <i>myValue</i> appropriately before assigning it. In
-addition, we need safer mechanisms for making such "untyped" assignments. Ideally, we would like a
-<i>FindMember()</i> function that returns a correctly cast pointer to that data member, along with
-its associated type information. This is what the <i>object</i> information classes provide - a
-pointer to the object instance as well as a pointer to its static <i>type</i> information. The
-interface to the <i>object</i> information class also provides a number of methods such as
-<i>GetClassMember(), GetTypeFamily(), SetPrimitiveValue()</i>, etc., to support the type of activity
-described above.
- 
-<a name="cobjinfo"> <h3> Object Information Classes</h3>
-<ul><li> <a href= "#objtype"> <i>CObjectTypeInfo</i></a>
-    <ul><li> <a href= "#constobj"> <i>CConstObjectInfo</i></a>
-        <ul><li> <a href= "#objinfo"> <i>CObjectInfo</i></a>
-</ul></ul></ul>
-
-<a name="objtype"><h4><a href= "../docxx/CObjectTypeInfo.html"> <i>CObjectTypeInfo</i></a></h4>
-The base class for all <i>object</i> information classes is the <a href=
-"../docxx/CObjectTypeInfo.html"> <i>CObjectTypeInfo</i></a> class. This base class is intended for
-usage where there is <i>no</i> concrete object being referenced, and all that is required is access to the
-type information. A <i>CObjectTypeInfo</i> contains a pointer to a <i>CTypeInfo</i> object, and functions
-as a wrapper class.<p>
-
-The constructor for <i>CObjectTypeInfo</i> takes a pointer to a <i>const CTypeInfo</i> object as its
-single argument. This is precisely what is returned by all of the static <i>GetTypeInfo()</i>
-functions. Thus, to create a <i>CObjectTypeInfo</i> for the <i>CBioseq</i> class - without reference
-to any particular instance of <i>CBioseq</i> - one might use:<p>
-
-<center><i>  CObjectTypeInfo objInfo(CBioseq::GetTypeInfo())</i> </center><p>
-
-One of the most important methods provided by the <i>CObjectTypeInfo</i> class interface is
-<i>GetTypeFamily()</i>, which returns an enumerated value indicating the type family for the object
-of interest. Five type families are defined by the <i>ETypeFamily</i> enumeration:
-
-<font color = "#008080"><pre>
-        ETypeFamily GetTypeFamily(void) const;
-
-	enum ETypeFamily {
-	    eTypeFamilyPrimitive,
-	    eTypeFamilyClass,
-	    eTypeFamilyChoice,
-	    eTypeFamilyContainer,
-	    eTypeFamilyPointer
-	};
-</pre></font>
-
-
-Different queries become appropriate depending on the <i>ETypeFamily</i> of the object. For example,
-if the object is a container, one might need to determine the type of container (e.g. <i>list,
-map</i> etc.),  and the type of element. Similarly, if an object is a primitive type (e.g. <i>int,
-float, string, </i> etc.), an appropriate query becomes what the value type is, and in the case of
-integer-valued types, whether or not it is </i>signed</i>. Finally, in the case of more complex 
-objects such as class and choice objects, access to the type information for the individual data
-members and choice variants is needed.  
-The following  methods are included in the <i>CObjectTypeInfo</i> interface for these purposes:
+&nbsp;&nbsp;&nbsp; while ( !is.eof() ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; is >> myName >> myValue;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void* member = FindMember(info, myObj, myName);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AssignValue(member, myValue);
+&nbsp;&nbsp;&nbsp; }
+}</font></pre>
+Here, we assume that our type information object, <i>info</i>, stores information
+about the memory offset of each data member in <i>myObj</i>, and that such
+information can be retrieved using some sort of identifying member name
+such as <i>myName</i>. This is not too difficult to imagine, and indeed,
+this is exactly the type of information and facility provided by the C++
+Toolkit's type information classes. The <i>FindMember()</i> function just
+needs to return a <i>void</i> pointer to the appropriate location in memory.
+The A<i>ssignValue()</i> function presents a much greater challenge however,
+as its two sole arguments are a <i>void</i> pointer and a <i>string</i>.
+This would be fine if the data member was indeed a <i>void</i> pointer,
+and a <i>string</i> value was acceptable. In general this is not the case,
+and stronger methods are clearly needed.
+<p>In particular, for each data member encountered, we need to retrieve
+the type of that member as well as its location in memory, so as to process
+<i>myValue</i>
+appropriately before assigning it. In addition, we need safer mechanisms
+for making such "untyped" assignments. Ideally, we would like a
+<i>FindMember()</i>
+function that returns a correctly cast pointer to that data member, along
+with its associated type information. This is what the <a href="#ref_ObjectInfo"><i>object</i>
+information classes</a> provide - a pointer to the object <i>instance</i>
+as well as a pointer to its static <i>type</i> information. The interface
+to the <a href="#ref_ObjectInfo"><i>object</i> information class</a> also
+provides a number of methods such as
+<i>GetClassMember(), GetTypeFamily(),
+SetPrimitiveValue()</i>, etc., to support the type of activity described
+above.
+<p><a NAME="cobjinfo"></a>
+<h3>
+Object Information Classes</h3>
 
 <ul>
-<li><i>GetTypeFamily() == eTypeFamilyPrimitive</i>:<ul>
-<li><i> EPrimitiveValueType GetPrimitiveValueType(void) const;</i>
-<li><i> bool IsPrimitiveValueSigned(void) const;</i></ul><p>
-<a name="cmemit">
-<li><i>GetTypeFamily() == eTypeFamilyClass</i>:<ul>
-<li><i> CMemberIterator BeginMembers(void) const;</i>
-<li><i> CMemberIterator FindMember(const string& memberName) const;</i>
-<li><i> CMemberIterator FindMemberByTag(int memberTag) const;</i></ul><p>
-<a name="cvarit">
-<li><i>GetTypeFamily() == eTypeFamilyChoice</i>:<ul>
-<li><i> CVariantIterator BeginVariants(void) const;</i>
-<li><i> CVariantIterator FindVariant(const string& memberName) const;</i>
-<li><i> CVariantIterator FindVariantByTag(int memberTag) const;</i></ul><p>
-
-<li><i>GetTypeFamily() == eTypeFamilyContainer</i>:<ul>
-<li><i> EContainerType GetContainerType(void) const;</i>
-<li><i> CObjectTypeInfo GetElementType(void) const;</i></ul><p>
-
-<li> <i>GetTypeFamily() == eTypeFamilyPointer</i>:<ul>
-<li><i> CObjectTypeInfo GetPointedType(void) const;</i>
-</ul></ul>
-
-<p>
-The two additional enumerations referred to here, <a href=
-"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=EContainerType"><i>EContainerType</i></a> 
-and <a href = 
-"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=EPrimitiveValueType"><i>EPrimitiveValueType</i></a>,
-are defined, along with <i>ETypeFamily</i>, in <i>include/serial/serialdef.hpp</i>.<p>
-
-Different iterator classes are used for iterating over class data members versus
-choice variant types. Thus, if the object of interest is a C++ <i>class</i> object, access
-to the type information for its members can be gained using a
-<i>CObjectTypeInfo::CMemberIterator</i>. The <i>BeginMembers()</i> method returns 
-a <i>CMemberIterator</i> pointing to the first data member in the class; the 
-<i>FindMember*()</i> methods return a <i>CMemberIterator</i> pointing to a data member
-whose name or tag matches the input argument. The <i>CMemberIterator</i> class is a 
-forward iterator whose operators are defined as follows: 
+<li>
+<i><a href="#objtype">CObjectTypeInfo</a></i></li>
 
 <ul>
-<li> the <i>++</i> operator increments the iterator
-<li> the <i>()</i> operator tests that the iterator has not exceeded the legitimate range
-<li> the <i>*</i> dereferencing operator returns a <i>CObjectTypeInfo</i> object for the current data member
-</ul>
+<li>
+<i><a href="#constobj">CConstObjectInfo</a></i></li>
 
-Similarly, the <i>BeginVariants()</i> and <i>FindVariant()</i> methods allow 
-iteration over the choice variant data types for a choice class, and the dereferencing  
-operation yields a <i>CObjectTypeInfo</i> object for the current choice variant.
-
-<a name= "constobj"> 
-<h4><a href="../docxx/CConstObjectInfo.html"><i>CConstObjectInfo</i></a></h4>
-The <i>CConstObjectInfo</i> class is derived from <i>CObjectTypeInfo</i>, and is intended for usage
-with <i>const</i> instances of the object of interest. In addition to all of the methods inherited from
-the parent class (with respect to pure type information), the interface to this class also provides
-access to runtime <i>instance</i> information. Because the object is assumed <i>const</i> however, the
-interface does not permit any modifications to the object in its methods. The constructor for
-<i>CConstObjectInfo</i> takes two arguments:<p>
-
-<center><i>    CConstObjectInfo(const void* instancePtr, const CTypeInfo* typeinfoPtr);</i></center><p>
-
-Alternatively, the constructor can be invoked with a single STL <i>pair</i> containing these
-two objects.<p>
-
-Each <i>CConstObjectInfo</i> contains a pointer to the object's type information as well as
-a pointer to an instance of the object. The existence or validity of this instance
-can be checked using any of the following <i>CConstObjectInfo</i> methods and operators:
 <ul>
-<li><i> bool Valid(void) const;</i>
-<li><i> operator bool(void) const;</i>
-<li><i> bool operator!(void) const;</i>
+<li>
+<i><a href="#objinfo">CObjectInfo</a></i></li>
 </ul>
-The instance pointed to can be accessed via <i>CConstObjectInfo::GetObjectPtr()</i>, and the 
-pointer can be reset to a null pointer using <i>CConstObjectInfo::ResetObjectPtr()</i>. The 
-value type returned by <i>GetObjectPtr</i> is a <i>void</i> pointer however, and is therefore
-of limited utility. <p>
+</ul>
+</ul>
+<a NAME="objtype"></a>
+<h4>
+<i><a href="../docxx/CObjectTypeInfo.html">CObjectTypeInfo</a></i></h4>
+This is the base class for all <i>object</i> information classes. It is
+intended for usage where there is <i>no</i> concrete object being referenced,
+and all that is required is access to the type information. A <i>CObjectTypeInfo</i>
+contains a pointer to a low-level <i>CTypeInfo</i> object, and functions
+as a user-friendly wrapper class.
+<p>The constructor for <i>CObjectTypeInfo</i> takes a pointer to a <i>const
+CTypeInfo</i> object as its single argument. This is precisely what is
+returned by all of the static <i>GetTypeInfo()</i> functions. Thus, to
+create a <i>CObjectTypeInfo</i> for the <i>CBioseq</i> class - without
+reference to any particular instance of <i>CBioseq</i> - one might use:
+<center>
+<p><i>CObjectTypeInfo objInfo( CBioseq::GetTypeInfo() );</i></center>
 
-For <i>primitive</i> type objects, the <i>CConstObjectInfo</i> interface provides access to the currently
-assigned value using <i>GetPrimitiveValueXxx()</i>. Here, <i>Xxx</i> may be <i>Bool, Char, Long,
-ULong, Double, String, ValueString,</i> or <i>OctetString</i>. In general, to get a primitve value, one first 
-applies a <i>switch</i> statement to the value returned by <i>GetPrimitiveValueType()</i>, and then
-calls the appropriate <i>GetPrimitiveValueXxx()</i> method depending on the branch followed, e.g.:
+<p>One of the most important methods provided by the <i>CObjectTypeInfo</i>
+class interface is
+<i>GetTypeFamily()</i>, which returns an enumerated
+value indicating the <i>type family</i> for the object of interest. Five
+type families are defined by the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ETypeFamily">ETypeFamily</a></i>
+enumeration:
+<pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ETypeFamily GetTypeFamily(void) const;
 
-<font color="#000080"><pre>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; enum ETypeFamily {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eTypeFamilyPrimitive,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eTypeFamilyClass,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eTypeFamilyChoice,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eTypeFamilyContainer,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eTypeFamilyPointer
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };</font></pre>
+Different queries become appropriate depending on the <i>ETypeFamily</i>
+of the object. For example, if the object is a container, one might need
+to determine the type of container (e.g. whether it is <i>list, map</i>
+etc.), and the type of element. Similarly, if an object is a primitive
+type (e.g. <i>int, float, string, </i>etc.), an appropriate query becomes
+what the value type is, and in the case of integer-valued types, whether
+or not it is signed. Finally, in the case of more complex objects such
+as class and choice objects, access to the type information for the individual
+data members and choice variants is needed. The following methods are included
+in the <i>CObjectTypeInfo</i> interface for these purposes:
+<ul>
+<li>
+<i>GetTypeFamily() == eTypeFamilyPrimitive</i>:</li>
 
-        switch (obj.GetPrimitiveValueType()) {
+<ul>
+<li>
+<i>EPrimitiveValueType GetPrimitiveValueType(void) const;</i></li>
 
-	case ePrimitiveValueBool:
-            obj.GetPrimitiveValueBool();
-	    break;
+<li>
+<i>bool IsPrimitiveValueSigned(void) const;</i><a NAME="cmemit"></a></li>
 
-        case ePrimitiveValueInteger:
-            if (obj.IsPrimitiveValueSigned()) 
-	       obj.GetPrimitiveValueLong();
-	    else
-               obj.GetPrimitiveValueULong();
-	    break;
+<br>&nbsp;</ul>
 
-	//... etc.
-        }
-</pre></font>
+<li>
+<i>GetTypeFamily() == eTypeFamilyClass</i>:</li>
 
-Member iterator methods are also defined in the <i>CConstObjectInfo</i> class, with a similar
-interface to that found in the <i>CObjectTypeInfo</i> class. In this case however, the dereferencing
-operators return a <i>CConstObjectInfo</i> object - <i>not</i> a <i>CObjectTypeInfo</i> object -
-for the current member. For C++ <i>class</i> objects, these member functions are:
+<ul>
+<li>
+<i>CMemberIterator BeginMembers(void) const;</i></li>
 
-    <ul><li><i> CMemberIterator BeginMembers(void) const;</i>
-	<li><i> CMemberIterator FindClassMember(const string& memberName) const;</i>
-	<li><i> CMemberIterator FindClassMemberByTag(int memberTag) const;</i></ul>
+<li>
+<i>CMemberIterator FindMember(const string&amp; memberName) const;</i></li>
 
-For C++ <i>choice</i> objects, only one variant is ever selected, and only that choice variant is
-instantiated. As it does not make sense to define a <i>CConstObjectInfo iterator</i> for
-uninstantiated variants, the method <i>GetCurrentChoiceVariant()</i> is provided instead.  The
-dereferencing operator (*) can be applied to the object returned by this method to obtain a
-<i>CConstObjectInfo</i> for the variant. Of course, type information for unselected variants can
-still be accessed using the <i>CObjectTypeInfo</i> methods.<p>
+<li>
+<i>CMemberIterator FindMemberByTag(int memberTag) const;</i><a NAME="cvarit"></a></li>
 
-The <i>CConstObjectInfo</i> class also defines an <i>element</i> iterator for container type
-objects. <i>CConstObjectInfo::CElementIterator</i> is a forward iterator whose interface includes increment and
-testing operators. Dereferencing is implemented by the iterator's <i>GetElement()</i> method, which
-returns a <i>CConstObjectInfo*></i> for the current element.<p>
+<br>&nbsp;</ul>
 
-Finally, for <i>pointer</i> type objects, the type returned by the method <i>GetPointedObject()</i>
-is also a <i>CConstObjectInfo</i> for the object - not a <i>CObjectTypeInfo</i> object.<p>
+<li>
+<i>GetTypeFamily() == eTypeFamilyChoice</i>:</li>
 
-<p>
-<a name= "objinfo"> 
-<h4><a href="../docxx/CObjectInfo.html"><i>CObjectInfo</i></a></h4>
-The <i>CObjectInfo</i> class is in turn derived from <i>CConstObjectInfo</i>, and is intended for usage
-with <i>mutable</i> instances of the object of interest. In addition to all of the methods inherited from
-the parent class, the interface to this class also provides methods that allow modification of the
-object itself or its data members.<p>
+<ul>
+<li>
+<i>CVariantIterator BeginVariants(void) const;</i></li>
 
-For <i>primitive</i> type objects, a set of <i>SetPrimitiveValueXxx()</i> methods are available,
-complimentary to the <i>GetPrimitiveValueXxx()</i> methods described above.  Methods that return
-member iterator objects are again reimplemented, and the de-referencing operators now return a
-<i>CObjectInfo</i> object for that data member. As the <i>CObjectInfo</i> now points to a
-<i>mutable</i> object, these iterators can be used to set values for the data member. Similarly, 
-<i>*GetCurrentChoiceVariant()</i> now returns a <i>CObjectInfo</i>. as does 
-<i>CObjectInfo::CElementIterator::GetElement()</i>. 
+<li>
+<i>CVariantIterator FindVariant(const string&amp; memberName) const;</i></li>
 
-<a name = "usage"> <h3>Usage of object type information </h3>
-We can now reconsider how the <a href="#example"> <i>LoadObject()</i></a> function might be
-implemented using the <i>CObjectInfo</i> class:
+<li>
+<i>CVariantIterator FindVariantByTag(int memberTag) const;</i></li>
 
-<font color="#000080"><pre>
-bool LoadObject (CObjectInfo& info, CNcbiIStream& is)
+<br>&nbsp;</ul>
+
+<li>
+<i>GetTypeFamily() == eTypeFamilyContainer</i>:</li>
+
+<ul>
+<li>
+<i>EContainerType GetContainerType(void) const;</i></li>
+
+<li>
+<i>CObjectTypeInfo GetElementType(void) const;</i></li>
+
+<br>&nbsp;</ul>
+
+<li>
+<i>GetTypeFamily() == eTypeFamilyPointer</i>:</li>
+
+<ul>
+<li>
+<i>CObjectTypeInfo GetPointedType(void) const;</i></li>
+</ul>
+</ul>
+The two additional enumerations referred to here, <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=EContainerType">EContainerType</a></i>
+and <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=EPrimitiveValueType">EPrimitiveValueType</a></i>,
+are defined, along with <i>ETypeFamily</i>, in <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/serialdef.hpp">include/serial/serialdef.hpp</a></i>.
+<p>Different iterator classes are used for iterating over class data members
+versus choice variant types. Thus, if the object of interest is a C++ <i>class</i>
+object, then access to the type information for its members can be gained
+using a
+<i>CObjectTypeInfo::CMemberIterator</i>. The <i>BeginMembers()</i>
+method returns a <i>CMemberIterator</i> pointing to the first data member
+in the class; the <i>FindMember*()</i> methods return a <i>CMemberIterator</i>
+pointing to a data member whose name or tag matches the input argument.
+The <i>CMemberIterator</i> class is a forward iterator whose operators
+are defined as follows:
+<ul>
+<li>
+the <i>++</i> operator increments the iterator (makes it point to the next
+class member)</li>
+
+<li>
+the <i>()</i> operator tests that the iterator has not exceeded the legitimate
+range</li>
+
+<li>
+the <i>*</i> dereferencing operator returns a <i>CObjectTypeInfo</i> for
+the data member the iterator currently points to</li>
+</ul>
+Similarly, the <i>BeginVariants()</i> and <i>FindVariant()</i> methods
+allow iteration over the choice variant data types for a choice class,
+and the dereferencing operation yields a <i>CObjectTypeInfo</i> object
+for the choice variant currently pointed to by the iterator.
+<p><a NAME="constobj"></a>
+<h4>
+<i><a href="../docxx/CConstObjectInfo.html">CConstObjectInfo</a></i></h4>
+The <i>CConstObjectInfo</i> (derived from <i><a href="#objtype">CObjectTypeInfo</a></i>)
+adds an interface to access the particular <i>instance</i> of an object
+(in addition to the interface inherited from <i><a href="#objtype">CObjectTypeInfo</a></i>
+that allows to access object's <i>type</i> information). It is intended
+for usage with <i>const</i> instances of the object of interest, and therefore
+the interface does not permit any modifications to the object. The constructor
+for
+<i>CConstObjectInfo</i> takes two arguments:
+<center>
+<p><i>CConstObjectInfo(const void* instancePtr, const CTypeInfo* typeinfoPtr);</i></center>
+
+<p>(Alternatively, the constructor can be invoked with a single STL <i>pair</i>
+containing these two objects.)
+<p>Each <i>CConstObjectInfo</i> contains a pointer to the object's type
+information as well as a pointer to an instance of the object. The existence
+or validity of this instance can be checked using any of the following
+<i>CConstObjectInfo</i>
+methods and operators:
+<ul>
+<li>
+<i>bool Valid(void) const;</i></li>
+
+<li>
+<i>operator bool(void) const;</i></li>
+
+<li>
+<i>bool operator!(void) const;</i></li>
+</ul>
+For <i>primitive</i> type objects, the <i>CConstObjectInfo</i> interface
+provides access to the currently assigned value using <i>GetPrimitiveValueXxx()</i>.
+Here, <i>Xxx</i> may be <i>Bool, Char, Long, ULong, Double, String, ValueString,</i>
+or <i>OctetString</i>. In general, to get a primitive value, one first
+applies a <i>switch</i> statement to the value returned by <i>GetPrimitiveValueType()</i>,
+and then calls the appropriate <i>GetPrimitiveValueXxx()</i> method depending
+on the branch followed, e.g.:
+<pre><font color="#000080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; switch ( obj.GetPrimitiveValueType() ) {
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case ePrimitiveValueBool:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bool b = obj.GetPrimitiveValueBool();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case ePrimitiveValueInteger:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if ( obj.IsPrimitiveValueSigned() ) {&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; long l = obj.GetPrimitiveValueLong();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } else {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; unsigned long ul = obj.GetPrimitiveValueULong();</font></pre>
+
+<pre><font color="#000080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //... etc.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></pre>
+Member iterator methods are also defined in the <i>CConstObjectInfo</i>
+class, with a similar interface to that found in the <i>CObjectTypeInfo</i>
+class. In this case however, the dereferencing operators return a <i>CConstObjectInfo</i>
+object - <i>not</i> a <i>CObjectTypeInfo</i> object - for the current member.
+For C++ <i>class</i> objects, these member functions are:
+<ul>
+<li>
+<i>CMemberIterator BeginMembers(void) const;</i></li>
+
+<li>
+<i>CMemberIterator FindClassMember(const string&amp; memberName) const;</i></li>
+
+<li>
+<i>CMemberIterator FindClassMemberByTag(int memberTag) const;</i></li>
+</ul>
+For C++ <i>choice</i> objects, only one variant is ever selected, and only
+that choice variant is instantiated. As it does not make sense to define
+a <i>CConstObjectInfo iterator</i> for uninstantiated variants, the method
+<i>GetCurrentChoiceVariant()</i>
+is provided instead. The dereferencing operator (*) can be applied to the
+object returned by this method to obtain a
+<i>CConstObjectInfo</i> for
+the variant. Of course, type information for unselected variants can still
+be accessed using the <i>CObjectTypeInfo</i> methods.
+<p>The <i>CConstObjectInfo</i> class also defines an <i>element</i> iterator
+for container type objects. <i>CConstObjectInfo::CElementIterator</i> is
+a forward iterator whose interface includes increment and testing operators.
+Dereferencing is implemented by the iterator's <i>GetElement()</i> method,
+which returns a <i>CConstObjectInfo</i> for the element currently pointed
+to by the iterator.
+<p>Finally, for <i>pointer</i> type objects, the type returned by the method
+<i>GetPointedObject()</i>
+is also a <i>CConstObjectInfo</i> for the object - not just a <i>CObjectTypeInfo</i>.
+<p><a NAME="objinfo"></a>
+<h4>
+<i><a href="../docxx/CObjectInfo.html">CObjectInfo</a></i></h4>
+The <i>CObjectInfo</i> class is in turn derived from <i>CConstObjectInfo</i>,
+and is intended for usage with <i>mutable</i> instances of the object of
+interest. In addition to all of the methods inherited from the parent class,
+the interface to this class also provides methods that allow modification
+of the object itself or its data members.
+<p>For <i>primitive</i> type objects, a set of <i>SetPrimitiveValueXxx()</i>
+methods are available, complimentary to the <i>GetPrimitiveValueXxx()</i>
+methods described above. Methods that return member iterator objects are
+again reimplemented, and the de-referencing operators now return a
+<i>CObjectInfo</i>
+object for that data member. As the <i>CObjectInfo</i> now points to a
+<i>mutable</i>
+object, these iterators can be used to set values for the data member.
+Similarly, <i>GetCurrentChoiceVariant()</i> now returns a <i>CObjectInfo,</i>
+as does <i>CObjectInfo::CElementIterator::GetElement()</i>.
+<p><a NAME="usage"></a>
+<h3>
+Usage of object type information</h3>
+We can now reconsider how our <i><a href="#example">LoadObject()</a></i>
+function might be implemented using the <i>CObjectInfo</i> class:
+<pre><font color="#000080">bool LoadObject(CObjectInfo&amp; info, CNcbiIStream&amp; is)
 {
-     string alias, myValue;
+&nbsp;&nbsp;&nbsp;&nbsp; string alias, myValue;
 
-     while (!is.eof()) {
+&nbsp;&nbsp;&nbsp;&nbsp; while ( !is.eof() ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; is >> alias >> myValue;
 
-         is >> alias >> myValue;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CObjectInfo dataMember(*info.FindClassMember(alias));
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (!dataMember) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ERR_POST(ERROR, "Couldn't find member named:" &lt;&lt; alias);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
 
-         CObjectInfo dataMember(*info.FindClassMember(alias));
-
-         if (!dataMember) {
-            ERR_POST(ERROR, "Couldn't find member named:" << alias);
-         }
-
-	 SetValue (dataMember, myValue);
-     }	 
-}
-</pre></font>
-The <i>CObjectInfo</i> object (<i>info</i>) contains pointers to the <i>CObject</i> itself as well as to its 
-associated <i>CTypeInfo</i> object. For each member alias read from the file, we apply <i>FindClassMember(alias)</i>,
-and dereference the returned iterator to retrieve a <i>CObjectInfo</i> object for that member. We then use the
-operator <i>()</i> to verify that the member was located, and if so, use the member's <i>CObjectInfo</i> 
-to set a value in the function <i>SetValue()</i>: 
-
-<font color="#000080"><pre>
-void SetValue(const CObjectInfo& obj, const string value)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SetValue(dataMember, myValue);
+&nbsp;&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp;&nbsp;
+}</font></pre>
+Here, <i>"info"</i> contains pointers to the <i>CObject</i> itself as well
+as to its associated <i>CTypeInfo</i> object. For each member alias read
+from the file, we apply <i>FindClassMember(alias)</i>, and dereference
+the returned iterator to retrieve a <i>CObjectInfo</i> object for that
+member. We then use the operator <i>()</i> to verify that the member was
+located, and if so, use the member's <i>CObjectInfo</i> to set a value
+in the function <i>SetValue()</i>:
+<pre><font color="#000080">void SetValue(const CObjectInfo&amp; obj, const string value)
 {
-    if (obj.GetTypeFamily() == eTypeFamilyPrimitive) {
+&nbsp;&nbsp;&nbsp; if (obj.GetTypeFamily() == eTypeFamilyPrimitive) {
 
-        switch (obj.GetPrimitiveValueType()) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; switch ( obj.GetPrimitiveValueType() ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case ePrimitiveValueBool:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; obj.SetPrimitiveValueBool (atoi (value.c_str()));
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
 
-	case ePrimitiveValueBool:
-            obj.SetPrimitiveValueBool (atoi (value.c_str()));
-	    break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case ePrimitiveValueChar:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; obj.SetPrimitiveValueChar (value.c_str()[0]);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
 
-        case ePrimitiveValueChar:
-            obj.SetPrimitiveValueChar (value.c_str()[0]);
-	    break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //... etc
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
 
-	//... etc
-	}
+&nbsp;&nbsp;&nbsp; } else {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ERR_POST(ERROR, "Attempt to assign non-primitive from string:" &lt;&lt; value);
+&nbsp;&nbsp;&nbsp; }
+}</font></pre>
+In this example, <i>SetValue()</i> can only assign primitive types. More
+generally however, the <i>CObjectInfo</i> class allows the assignment of
+more complex types that are simply not implemented here. Note also that
+the arguments to <i>SetValue()</i> are <i>const</i>, even though the function
+<i>does</i>
+modify the value of the data instance pointed to. In particular, the type
+<i>const
+CObjectInfo</i> should not be confused with the type
+<i>CConstObjectInfo</i>.
+The former specifies that object information construct is non-mutable,
+although the <i>instance</i> it points to can be modified. The latter specifies
+that the <i>instance</i> itself is non-mutable.
+<p>In addition to user-specific applications of the type demonstrated in
+this example, the generic implementations of the <i><a href="iterators.html">C++
+type iterators</a></i> and the <i><a href="objstream.html">CObject[IO]Stream
+</a></i>class
+methods provide excellent examples of how runtime object type information
+can be deployed.
+<p>As a final example of how type information might be used, we consider
+an application whose simple task is to translate a data file on an input
+stream to a different format on an output stream. One important use of
+the object classes defined in <i>include/objects</i> is the hooks and parsing
+mechanisms available to applications utilizing <a href="objstream.html"><i>CObject[IO]Stream</i>s</a>.
+The stream objects specialize in different formats (such as XML or ASN.1),
+and must work in concert with these type-specific object classes to interpret
+or generate serialized data. In some cases however, the dynamic memory
+allocation required for large objects may be substantial, and it is preferable
+to avoid actually instantiating a whole object all at once.
+<p>Instead, it is possible to use the <i><a href="../docxx/CObjectStreamCopier.html">CObjectStreamCopier</a></i>
+class, described in <i><a href="objstream.html">CObject[IO]Streams</a></i>.
+Briefly, this class holds two <i>CObject[IO]Stream</i> data members pointing
+to the input and output streams, and a set of <i>Copy</i> methods which
+take a
+<i>CTypeInfo</i> argument. Using this class, it is easy to translate
+files between different formats; for example:
+<pre>&nbsp;auto_ptr&lt;CObjectIStream>&nbsp; in(CObjectIStream::Open("mydata.xml", eSerial_Xml));
+&nbsp;auto_ptr&lt;CObjectOStream> out(CObjectOStream::Open("mydata.asn", eSerial_AsnBinary));
+&nbsp;CObjectStreamCopier copier(*in, *out);
+&nbsp;copier.Copy (CBioseq_set::GetTypeInfo());</pre>
+copies a <i>CBioseq_set</i> encoded in XML to a new file, reformatted in
+ASN.1 binary format.
+<br>&nbsp;
+<br>&nbsp;
+<p><a href="cref.html"><i>previous</i>&nbsp;</a>&nbsp;&nbsp; <i><a href="../index.html">up&nbsp;</a></i>
 
-    else {
-        ERR_POST(ERROR, "Attempt to assign non-primitive from string:" << value);
-}
-</pre></font>
-In this example, <i>SetValue()</i> can only assign primitive types. More generally however, 
-the <i>CObjectInfo</i> class allows the assignment of more complex types that are simply 
-not implemented here. Note also that the arguments to <i>SetValue()</i> are <i>const</i>, even
-though the function <i>does</i> modify the value of the data instance pointed to. In particular, the
-type <i>const CObjectInfo</i> should not be confused with the type <i>CConstObjectInfo</i>. The
-former specifies that object information construct is non-mutable, although the instance it 
-points to can be modified. The latter specifies that the instance itself is non-mutable. <p>
+<i><a href="iterators.html">next</a></i>
+<hr>
+<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
+<tr>
+<td>
+<address>
+<a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
+</td>
 
-In addition to user-specific applications of the type demonstrated in this example, the generic
-implementations of the <a href="iterators.html"> <i>C++ type iterators</i></a> and the <a
-href="objstream.html"><i>CObject[IO]Stream </i></a> class methods provide excellent examples of how
-runtime object type information can be deployed. <p>
+<td><!-- <td align=center><i>$Revision$</i></td> --></td>
 
-As a final example of how type information might be used, we consider an application whose simple task 
-is to translate a data file on an input stream to a different format on an output stream. One important 
-use of the object classes defined in <i>include/objects</i> is the hooks and parsing mechanisms they make 
-available to applications utilizing <a href="objstream.html"><i>CObject[IO]Stream</i>s</a>. 
-The stream objects specialize in different formats (such as XML or ASN.1), and must work in concert
-with these type-specific object classes to interpret or generate serialized data.  In some cases
-however, the dynamic memory allocation required for large objects may be substantial, and it is
-preferable to avoid actually instantiating a concrete object.<p>
+<td ALIGN=RIGHT><i>$Date$</i></td>
+</tr>
+</table>
 
-Instead, it is possible to use the <a href="../docxx/CObjectStreamCopier.html">
-<i>CObjectStreamCopier</i></a> class, described in <a href="objstream.html"> 
-<i>CObject[IO]Streams</i></a>.  Briefly, this class holds two <i>CObject[IO]Stream</i> data members
-pointing to the input and output streams, and a set of <i>Copy</i> methods which take a
-<i>CTypeInfo</i> argument. Using this class, it is easy to translate files between 
-different formats; for example:
-<pre>
-    auto_ptr<CObjectIStream>  in(CObjectIStream::Open("mydata.xml", eSerial_Xml));
-    auto_ptr<CObjectOStream> out(CObjectOStream::Open("mydata.asn", eSerial_AsnBinary));
-    CObjectStreamCopier copier(*in, *out);
-    copier.Copy (CBioseq_set::GetTypeInfo());
-</pre>
-copies a <i>CBioseq_set</i> encoded in XML to a new file, reformatted in ASN.1 binary
-format.<p>
-
-
-<p>
-
-   </body>
-<a href="cref.html"> <i> previous</i> </a>
-&nbsp;&nbsp;&nbsp;
-<a href="../index.html"> <i> up </i> </a>
-&nbsp;&nbsp;&nbsp;
-<a href="iterators.html"> <i> next</i> </a>
+</body>
 </html>
-
-	 <hr>
-	 <table border=0 width="100%" cellspacing=0>
-		<tr>
-		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
-		  <!-- <td align=center><i>$Revision$</i></td> -->
-		  <td align=right><i>$Date$</i></td>
-	 </table>
