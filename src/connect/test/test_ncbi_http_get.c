@@ -135,8 +135,11 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2003/09/30 20:59:39  lavr
+ * Fix typo in previous log message
+ *
  * Revision 6.11  2003/09/30 20:57:15  lavr
- * Allow to zet zero timeout via environment
+ * Allow to set zero timeout via environment
  *
  * Revision 6.10  2003/05/20 23:52:01  lavr
  * Explicit cast "time_t"->"unsigned" to avoid GCC warning
