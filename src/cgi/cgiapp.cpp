@@ -179,18 +179,20 @@ CCgiContext* CCgiApplication::CreateContext
  int               ifd,
  int               ofd)
 {
-    int errBufSize =
+    int errbuf_size =
         GetConfig().GetInt("CGI", "RequestErrBufSize", 256, 
                             CNcbiRegistry::eReturn);
     
     return new CCgiContext(*this, args, env, inp, out, ifd, ofd,
-                           (errBufSize >= 0) ? (unsigned)errBufSize : 256);
+                           (errbuf_size >= 0) ? (size_t) errbuf_size : 256);
 }
+
 
 void CCgiApplication::SetCafService(CCookieAffinity* caf)
 {
     m_caf.reset(caf);
 }
+
 
 // Flexible diagnostics support
 //
@@ -689,6 +691,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2003/04/16 21:48:19  vakatov
+* Slightly improved logging format, and some minor coding style fixes.
+*
 * Revision 1.45  2003/03/24 16:15:59  ucko
 * Initialize m_Iteration to 0.
 *

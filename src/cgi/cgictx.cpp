@@ -100,7 +100,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
                          CNcbiOstream*           out,
                          int                     ifd,
                          int                     ofd,
-                         unsigned int            errBufSize)
+                         size_t                  errbuf_size)
     : m_App(app),
       m_Request(0),
       m_Response(out, ofd)
@@ -108,7 +108,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
     try {
         m_Request.reset(new CCgiRequest(args ? args : &app.GetArguments(),
                                         env  ? env  : &app.GetEnvironment(),
-                                        inp, 0, ifd, errBufSize));
+                                        inp, 0, ifd, errbuf_size));
     }
     catch (exception& _DEBUG_ARG(e)) {
         _TRACE("CCgiContext::CCgiContext: " << e.what());
@@ -118,7 +118,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
         CNcbiIstrstream dummy(buf, 0);
         m_Request.reset(new CCgiRequest
                         (args, env, &dummy, CCgiRequest::fIgnoreQueryString, 
-                         errBufSize));
+                         errbuf_size));
     }
 }
 
@@ -284,6 +284,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.34  2003/04/16 21:48:19  vakatov
+* Slightly improved logging format, and some minor coding style fixes.
+*
 * Revision 1.33  2003/04/04 15:23:57  lavr
 * Slightly brushed; lines wrapped at 79th col
 *

@@ -138,7 +138,7 @@ public:
                 CNcbiOstream*           out  = 0 /* see ::CCgiResponse(out) */,
                 int                     ifd  = -1,
                 int                     ofd  = -1,
-                unsigned int            errBufSize = 256 /* see ::CCgiRequest*/
+                size_t                  errbuf_size = 256 /* see CCgiRequest */
                 );
     virtual ~CCgiContext(void);
 
@@ -329,6 +329,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.27  2003/04/16 21:48:17  vakatov
+* Slightly improved logging format, and some minor coding style fixes.
+*
 * Revision 1.26  2003/04/10 19:01:41  siyan
 * Added doxygen support
 *

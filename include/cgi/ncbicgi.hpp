@@ -476,7 +476,7 @@ public:
                 CNcbiIstream* istr  = 0 /*NcbiCin*/,
                 TFlags        flags = 0,
                 int           ifd   = -1,
-                unsigned int  errBufSize = 256);
+                size_t        errbuf_size = 256);
     // args := CNcbiArguments(argc,argv), env := CNcbiEnvironment(envp)
     CCgiRequest(int                argc,
                 const char* const* argv,
@@ -484,7 +484,7 @@ public:
                 CNcbiIstream*      istr  = 0,
                 TFlags             flags = 0,
                 int                ifd   = -1,
-                unsigned int       errBufSize = 256);
+                size_t             errbuf_size = 256);
 
     // Destructor
     ~CCgiRequest(void);
@@ -581,7 +581,7 @@ private:
     // when initialization code hits unexpected EOF it will try to 
     // add diagnostics and print out accumulated request buffer 
     // 0 in this variable means no buffer diagnostics
-    unsigned int  m_errBufSize;
+    size_t        m_ErrBufSize;
 
     // the real constructor code
     void x_Init(const CNcbiArguments*   args,
@@ -741,6 +741,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.61  2003/04/16 21:48:17  vakatov
+* Slightly improved logging format, and some minor coding style fixes.
+*
 * Revision 1.60  2003/04/10 19:01:42  siyan
 * Added doxygen support
 *

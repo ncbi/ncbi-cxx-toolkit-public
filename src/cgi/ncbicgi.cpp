@@ -772,9 +772,9 @@ CCgiRequest::CCgiRequest
  CNcbiIstream*           istr,
  TFlags                  flags,
  int                     ifd,
- unsigned int            errBufSize)
+ size_t                  errbuf_size)
     : m_Env(0),
-      m_errBufSize(errBufSize)
+      m_ErrBufSize(errbuf_size)
 {
     x_Init(args, env, istr, flags, ifd);
 }
@@ -787,9 +787,9 @@ CCgiRequest::CCgiRequest
  CNcbiIstream*      istr,
  TFlags             flags,
  int                ifd,
- unsigned int       errBufSize)
+ size_t             errbuf_size)
     : m_Env(0),
-      m_errBufSize(errBufSize)
+      m_ErrBufSize(errbuf_size)
 {
     CNcbiArguments args(argc, argv);
 
@@ -891,16 +891,16 @@ CCgiRequest::x_Init() -- error in reading POST content: read fault");
 "CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF";
                             string pos_str("(pos=");
                             pos_str.append(NStr::UIntToString(pos));
-                            pos_str.append(";rlen=");
-                            pos_str.append(NStr::UIntToString(rlen));
-                            pos_str.append(")");
+                            pos_str.append("; content_length=");
+                            pos_str.append(NStr::UIntToString(len));
+                            pos_str.append("):\n");
 
-                            if ( m_errBufSize && pos ) {
-                                unsigned min_pos =
-                                    (m_errBufSize < pos) ? m_errBufSize : pos;
+                            if (m_ErrBufSize  &&  pos) {
+                                size_t min_pos =
+                                    (m_ErrBufSize < pos) ? m_ErrBufSize : pos;
                                 pos_str.append(str.c_str(), min_pos);
-                                if (m_errBufSize < pos) {
-                                    pos_str.append("[truncated...]");
+                                if (m_ErrBufSize < pos) {
+                                    pos_str.append("\n[truncated...]");
                                 }
                             }
                             err.append(pos_str);
@@ -1179,6 +1179,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.69  2003/04/16 21:48:19  vakatov
+* Slightly improved logging format, and some minor coding style fixes.
+*
 * Revision 1.68  2003/03/12 16:10:23  kuznets
 * iterate -> ITERATE
 *
