@@ -1143,18 +1143,14 @@ static const string s_ValidExceptionText[] = {
 
 static const string s_ValidRefSeqExceptionText[] = {
     "RNA editing",
-    "alternate processing",
     "alternative processing",
     "alternative start codon",
     "artificial frameshift",
     "modified codon recognition",
-    "non-consensus splice site",
     "nonconsensus splice site",
     "rearrangement required for product",
     "reasons given in citation",
     "ribosomal slippage",
-    "ribosome slippage",
-    "trans splicing",
     "trans-splicing",
     "unclassified transcription discrepancy",
     "unclassified translation discrepancy"
@@ -3002,6 +2998,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2004/05/26 14:57:54  shomrat
+* removed non-preferred variants ribosome slippage, trans splicing, alternate processing, and non-consensus splice site
+*
 * Revision 1.25  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *

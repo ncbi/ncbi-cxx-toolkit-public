@@ -378,9 +378,7 @@ bool CValidError_feat::SuppressCheck(const string& except_text)
 {
     static string exceptions[] = {
         "ribosomal slippage",
-        "ribosome slippage",
         "artificial frameshift",
-        "non-consensus splice site",
         "nonconsensus splice site"
     };
 
@@ -1861,8 +1859,7 @@ void CValidError_feat::ValidateBadMRNAOverlap(const CSeq_feat& feat)
 
         if ( feat.CanGetExcept_text() ) {
             const CSeq_feat::TExcept_text& text = feat.GetExcept_text();
-            if ( NStr::FindNoCase(text, "ribosomal slippage") != NPOS  ||
-                 NStr::FindNoCase(text, "ribosome slippage") != NPOS ) {
+            if ( NStr::FindNoCase(text, "ribosomal slippage") != NPOS ) {
                 supress = true;
             }
         }
@@ -1933,15 +1930,13 @@ static const string s_LegalExceptionStrings[] = {
   "RNA editing",
   "reasons given in citation",
   "ribosomal slippage",
-  "ribosome slippage",
-  "trans splicing",
   "trans-splicing",
   "alternative processing",
-  "alternate processing",
   "artificial frameshift",
-  "non-consensus splice site",
   "nonconsensus splice site",
-  "rearrangement required for product"
+  "rearrangement required for product",
+  "modified codon recognition",
+  "alternative start codon"
 };
 
 
@@ -2048,7 +2043,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
          feat.CanGetExcept_text() ) {
         for ( size_t i = 0; i < except_num; ++i ) {
             if ( NStr::FindNoCase(feat.GetExcept_text(), 
-                s_BypassCdsTransCheck[i]) != string::npos ) {
+                s_BypassCdsTransCheck[i]) != NPOS ) {
                 return; 
             }
         }
@@ -2673,6 +2668,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2004/05/26 14:53:30  shomrat
+* removed non-preferred variants ribosome slippage, trans splicing, alternate processing, and non-consensus splice site
+*
 * Revision 1.55  2004/05/21 21:42:56  gorelenk
 * Added PCH ncbi_pch.hpp
 *

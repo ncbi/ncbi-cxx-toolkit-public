@@ -987,18 +987,15 @@ bool CValidError_bioseq::NotPeptideException
 (const CFeat_CI& curr,
  const CFeat_CI& prev)
 {
-    static string  alternative = "alternative processing",
-                   alternate   = "alternate processing";
-    
-    if ( curr->GetExcept() ) {
-        if ( NStr::FindNoCase(curr->GetExcept_text(), alternative) != string::npos ||
-             NStr::FindNoCase(curr->GetExcept_text(), alternate) != string::npos) {
+    if ( curr->IsSetExcept()  &&  curr->GetExcept()  &&
+         curr->IsSetExcept_text() ) {
+        if ( NStr::FindNoCase(curr->GetExcept_text(), "alternative processing") != NPOS ) {
             return false;
         }
     }
-    if ( prev->GetExcept() ) {
-        if ( NStr::FindNoCase(prev->GetExcept_text(), alternative) != string::npos ||
-             NStr::FindNoCase(prev->GetExcept_text(), alternate) != string::npos ) {
+    if ( prev->IsSetExcept()  &&  prev->GetExcept()  &&
+         prev->IsSetExcept_text() ) {
+        if ( NStr::FindNoCase(prev->GetExcept_text(), "alternative processing") != NPOS ) {
             return false;
         }
     }
@@ -2080,7 +2077,7 @@ static CBioseq_Handle s_GetParent(const CBioseq_Handle& part)
 void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
 {
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-    EDiagSev sev = eDiag_Warning;
+    
     bool full_length_prot_ref = false;
 
     bool is_mrna = IsMrna(bsh);
@@ -2149,10 +2146,10 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                     if ( feat.IsSetExcept_text() ) {
                         const string& text = feat.GetExcept_text();
                         slippage_except = 
-                            (NStr::FindNoCase(text, "ribosomal slippage") != NPOS)  ||
-                            (NStr::FindNoCase(text, "ribosome slippage") != NPOS);
+                            NStr::FindNoCase(text, "ribosomal slippage") != NPOS;
                     }
-                    if ( !excpet  || !slippage_except ) {
+                    if ( !excpet  ||  !slippage_except ) {
+                        EDiagSev sev = m_Imp.IsRefSeq() ? eDiag_Warning : eDiag_Error;
                         PostErr(sev, eErr_SEQ_FEAT_InvalidForType,
                             "Multi-interval CDS feature is invalid on an mRNA "
                             "(cDNA) Bioseq.",
@@ -2210,7 +2207,8 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
         if ( seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg ) {
             if ( LocOnSeg(seq, fi->GetOriginalFeature().GetLocation()) ) {
                 if ( !IsDeltaOrFarSeg(fi->GetLocation(), m_Scope) ) {
-                    sev = m_Imp.IsNC() ? eDiag_Warning : eDiag_Error;
+                   
+ EDiagSev sev = m_Imp.IsNC() ? eDiag_Warning : eDiag_Error;
                     PostErr(sev, eErr_SEQ_FEAT_LocOnSegmentedBioseq,
                         "Feature location on segmented bioseq, not on parts",
                         feat);
@@ -3663,6 +3661,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.79  2004/05/26 14:53:30  shomrat
+* removed non-preferred variants ribosome slippage, trans splicing, alternate processing, and non-consensus splice site
+*
 * Revision 1.78  2004/05/26 14:06:37  shomrat
 * SEQ_INST_BadSeqIdFormat allow 2 letters + underscore + 9 digits
 *
