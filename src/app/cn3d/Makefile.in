@@ -19,6 +19,6 @@ macapp: cn3d
 		Cn3D.app/Contents/Resources/Cn3D.rsrc
 	cp $(top_srcdir)/../wxWindows/src/mac/wxmac.icns \
 		Cn3D.app/Contents/Resources/wxmac.icns
-	cp $(CN3D_HOME)/Cn3D_commands.htb Cn3D.app/Contents/Resources
+	cp $(CN3D_HOME)/cn3d_commands.htb Cn3D.app/Contents/Resources
 	cp -r $(CN3D_HOME)/data Cn3D.app/Contents/Resources
 
