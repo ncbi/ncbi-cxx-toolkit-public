@@ -147,6 +147,9 @@ BlastSeqSrc* MultiSeqSrcFree(BlastSeqSrc* seq_src);
 /** Initialize the sequence source structure.
  * @param seq_vector Vector of sequence locations [in]
  * @param program Type of BLAST to be performed [in]
+ * @bug There is no guarantee that error_msg->code maps to a 
+ * CBlastException error code, this could be meaningless
+ * @sa FIXME usage of calloc
  */
 BlastSeqSrc* 
 MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program);
@@ -159,6 +162,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/23 14:14:12  camacho
+ * Moved comment from source file to header
+ *
  * Revision 1.4  2004/03/19 18:56:48  camacho
  * Change class & structure names to follow C++ toolkit conventions
  *
