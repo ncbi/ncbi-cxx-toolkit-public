@@ -1,3 +1,11 @@
+--$Revision: 1.2 $
+--****************************************************************
+--
+--  NCBI MIME type (chemical/ncbi-asn1-ascii and chemical/ncbi-asn1-binary)
+--  by Jonathan Epstein, February 1996
+--
+--****************************************************************
+
 NCBI-Mime DEFINITIONS ::=
 BEGIN
 
@@ -35,6 +43,6 @@ Entrez-general ::= SEQUENCE {
 		genome	Seq-entry ,
 		structure Biostruc ,
 		strucAnnot Biostruc-annot-set } ,
-	style Entrez-style }
-
+	style Entrez-style ,
+	location VisibleString OPTIONAL }
 END
