@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2001/07/10 21:50:45  thiessen
+* fix ambient/specular coloring
+*
 * Revision 1.40  2001/07/10 21:27:52  thiessen
 * add some specular reflection
 *
@@ -298,7 +301,6 @@ void OpenGLRenderer::Init(void) const
     // set these material colors
     glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, Color_Off);
     glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, Shininess);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, Color_Specular);
 
     // turn on culling to speed rendering
     glEnable(GL_CULL_FACE);
@@ -696,8 +698,10 @@ void OpenGLRenderer::SetColor(int type, double red, double green, double blue, d
         if (type != pt) {
             if (type == GL_DIFFUSE) {
                 glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, Color_MostlyOff);
+                glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, Color_Specular);
             } else if (type == GL_AMBIENT) {
                 glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, Color_Off);
+                glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, Color_Off); // no specular for ambient coloring
             } else {
                 ERR_POST(Error << "don't know how to handle material type " << type);
             }
@@ -705,11 +709,10 @@ void OpenGLRenderer::SetColor(int type, double red, double green, double blue, d
         }
         GLfloat rgba[4] = { red, green, blue, alpha };
         glMaterialfv(GL_FRONT_AND_BACK, type, rgba);
-        if (type == GL_AMBIENT) {
-            /* this is necessary so that fonts are rendered in correct
-                color in SGI's OpenGL implementation, and maybe others */
-            glColor4fv(rgba);
-        }
+        // this is necessary so that fonts are rendered in correct
+        // color in SGI's OpenGL implementation, and maybe others
+        if (type == GL_AMBIENT) glColor4fv(rgba);
+
         pr = red;
         pg = green;
         pb = blue;
