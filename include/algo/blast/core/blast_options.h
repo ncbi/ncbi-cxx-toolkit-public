@@ -337,6 +337,15 @@ typedef struct BlastDatabaseOptions {
    Int4 final_db_seq; /**< The last OID to search */
 } BlastDatabaseOptions, *BlastDatabaseOptionsPtr;
 
+/** Options used to create the ReadDBFILE structure 
+ *  Include database name and various information for restricting the database
+ *  to a subset.
+ */
+typedef struct BlastDatabaseParameters {
+   BlastDatabaseOptionsPtr options; /**< Options related to BLAST database */
+   CharPtr gen_code_string;  /**< Genetic code string, tblast[nx] only */
+} BlastDatabaseParameters, *BlastDatabaseParametersPtr;
+
 /** Options for formatting BLAST results 
  */
 typedef struct BlastFormattingOptions {
@@ -688,6 +697,16 @@ Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr PNTR db_options);
 /** Deallocate database options */
 BlastDatabaseOptionsPtr 
 BlastDatabaseOptionsFree(BlastDatabaseOptionsPtr db_options);
+
+/** Initialize database parameters,including calculation of the 
+ * database genetic code string.
+ * @param program Type of BLAST program [in]
+ * @param db_options Database options [in]
+ * @param db_params Returned parameters structure [out]
+ */
+Int2 BlastDatabaseParametersNew(Uint1 program, 
+        const BlastDatabaseOptionsPtr db_options,
+        BlastDatabaseParametersPtr PNTR db_params);
 
 /** Initialize all the BLAST search options structures with the default
  * values.
