@@ -36,7 +36,10 @@
 #include <corelib/ncbienv.hpp>
 
 #include <ctools/asn_converter.hpp>
+#include <objects/seqalign/Score.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Std_seg.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <serial/serial.hpp>
 
@@ -67,12 +70,12 @@ void CTestAsnConverterApp::Init()
         ("type", "AsnType", "ASN.1 type of test object",
          CArgDescriptions::eString, "Seq-entry");
     arg_desc->SetConstraint
-        ("type", &(* new CArgAllow_Strings, "Seq-entry", "Seq-align"));
+        ("type", &(*new CArgAllow_Strings, "Seq-entry", "Seq-align", "Score"));
 
     arg_desc->AddDefaultKey
         ("in", "InputFile",
          "name of file to read from (standard input by default)",
-         CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
+         CArgDescriptions::eString, "-");
     arg_desc->AddDefaultKey("infmt", "InputFormat", "format of input file",
                             CArgDescriptions::eString, "asn");
     arg_desc->SetConstraint
@@ -99,9 +102,12 @@ static ESerialDataFormat s_GetFormat(const string& name)
 int CTestAsnConverterApp::Run()
 {
     CArgs args = GetArgs();
-    auto_ptr<CObjectIStream> in
-        (CObjectIStream::Open(s_GetFormat(args["infmt"].AsString()),
-                              args["in"].AsInputFile()));
+    auto_ptr<CObjectIStream> in;
+    if (args["type"].AsString() != "Score") {
+        in.reset(CObjectIStream::Open
+                 (s_GetFormat(args["infmt"].AsString()),
+                  args["in"].AsString(), eSerial_StdWhenDash));
+    }
 
     if (args["type"].AsString() == "Seq-entry") {
         DECLARE_ASN_CONVERTER(CSeq_entry, SeqEntry, convertor);
@@ -121,6 +127,35 @@ int CTestAsnConverterApp::Run()
         c1 = convertor.ToC(cpp1);
         convertor.FromC(c1, &cpp2);
         c2 = convertor.ToC(cpp2);
+        _ASSERT(AsnIoMemComp(c1, c2, (AsnWriteFunc)SeqAlignAsnWrite) == TRUE);
+        _ASSERT(cpp1.Equals(cpp2));
+    } else if (args["type"].AsString() == "Score") {
+        // special case: treat "in" as a score...
+        DECLARE_ASN_CONVERTER(CSeq_align, SeqAlign, convertor);
+        CSeq_align  cpp1, cpp2;
+        SeqAlignPtr c1,   c2;
+        cpp1.SetType(CSeq_align::eType_global);
+        {{
+            double d = NStr::StringToDouble(args["in"].AsString());
+            clog << setprecision(DBL_DIG) << d << endl;
+            CRef<CScore> score(new CScore);
+            score->SetValue().SetReal(d);
+            cpp1.SetScore().push_back(score);
+        }}
+        {{
+            CRef<CStd_seg> dummy_seg(new CStd_seg);
+            CRef<CSeq_loc> dummy_loc(new CSeq_loc);
+            dummy_loc->SetNull();
+            dummy_seg->SetLoc().push_back(dummy_loc);
+            cpp1.SetSegs().SetStd().push_back(dummy_seg);
+        }}
+        c1 = convertor.ToC(cpp1);
+        convertor.FromC(c1, &cpp2);
+        c2 = convertor.ToC(cpp2);
+        clog << cpp1.GetScore().front()->GetValue().GetReal() << ' '
+             << c1->score->value.realvalue << ' '
+             << cpp2.GetScore().front()->GetValue().GetReal() << ' '
+             << c2->score->value.realvalue << endl;
         _ASSERT(AsnIoMemComp(c1, c2, (AsnWriteFunc)SeqAlignAsnWrite) == TRUE);
         _ASSERT(cpp1.Equals(cpp2));
     } else {
@@ -144,6 +179,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/12/23 19:37:30  ucko
+* Add a Score test that treats IN as the real number to try converting.
+*
 * Revision 1.1  2002/08/08 18:18:46  ucko
 * Add test for <ctools/asn_converter.hpp>
 *
