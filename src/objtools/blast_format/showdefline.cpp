@@ -90,34 +90,6 @@ static const string kRepeatHeader = "Sequences used in model and found again:";
 static const string kNewSeqHeader = "Sequences not found previously or not pr\
 eviously below threshold:";
 
-/* url */
-static const string kEntrezUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entre\
-z/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s\" %s>";
-
-static const string kTraceUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/Traces\
-/trace.cgi?cmd=retrieve&dopt=fasta&val=%s\">";
-
-static const string kUnigeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entr\
-ez/query.fcgi?db=unigene&cmd=search&term=%d[Nucleotide+UID]\"><img border=0 h\
-eight=16 width=16 src=\"/blast/images/U.gif\" alt=\"UniGene info\"></a>";
-
-static const string kStructureUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/St\
-ructure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&blast_CD_RID=%s\
-&blast_view=%s&hsp=0&taxname=%s&client=blast\"><img border=0 height=16 width=\
-16 src=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Re\
-lated structures\"></a>";
-
-static const string kStructure_Overview = "<a href=\"http://www.ncbi.nlm.nih.\
-gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&blast_CD_\
-RID=%s&blast_view=%s&hsp=0&taxname=%s&client=blast\">Related Structures</a>";
-
-static const string kGeoUrl =  "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
-query.fcgi?db=geo&term=%d[gi]\"><img border=0 height=16 width=16 src=\"/blast\
-/images/E.gif\" alt=\"Geo\"></a>";
-
-static const string kGeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
-query.fcgi?db=gene&cmd=search&term=%d[%s]\"><img border=0 height=16 width=16 \
-src=\"/blast/images/G.gif\" alt=\"Gene info\"></a>";
 
 //psiblast related
 static const string kPsiblastNewSeqGif = "<IMG SRC=\"/blast/images/new.gif\" \
@@ -829,6 +801,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.6  2005/02/09 17:34:37  jianye
+*move common url to blastfmtutil.hpp
+*
 *Revision 1.5  2005/02/02 16:33:18  jianye
 *int to size_t to get rid of compiler warning
 *
