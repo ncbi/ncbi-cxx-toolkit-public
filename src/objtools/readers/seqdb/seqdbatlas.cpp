@@ -760,7 +760,6 @@ void CRegionMap::Show()
 CRegionMap::CRegionMap(const string * fname, Uint4 fid, TIndx begin, TIndx end)
     : m_Data     (0),
       m_MemFile  (0),
-      m_ManualMap(false),
       m_Fname    (fname),
       m_Begin    (begin),
       m_End      (end),
@@ -778,13 +777,6 @@ CRegionMap::~CRegionMap()
         m_MemFile = 0;
         m_Data    = 0;
     }
-    if (m_ManualMap) {
-#if defined(NCBI_OS_UNIX)
-        munmap(const_cast<char*>(m_Data), (size_t)(m_End - m_Begin));
-        m_Data = 0;
-#endif
-        _ASSERT(m_Data == 0);
-    }
     if (m_Data) {
         delete[] ((char*) m_Data);
         m_Data = 0;
@@ -797,57 +789,28 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
     
     CFile file(*m_Fname);
     
-    TIndx flength = SeqDB_CheckLength<Uint8,TIndx>(file.GetLength());
+    TIndx flength = (TIndx) file.GetLength();
     
-    if (file.Exists() &&
-        (m_Begin == 0)          &&
-        (m_End   == flength)) {
+    if (file.Exists()) {
+        m_MemFile = new CMemoryFileMap(*m_Fname);
         
-        m_MemFile    = new CMemoryFile(*m_Fname);
-        m_Data       = (const char*) m_MemFile->GetPtr();
-        m_ManualMap  = false;
-        
-        rv = true;
-    }
-    
-    if (! rv) {
-        x_Roundup(m_Begin, m_End, m_Penalty, flength, true, atlas);
-        
-        atlas->PossiblyGarbageCollect(m_End - m_Begin);
-        
-#if defined(NCBI_OS_UNIX)
-        // Use default attributes (we were going to anyway)
-        int map_protect = PROT_READ;
-        int file_access = O_RDONLY;
-        int map_share   = MAP_PRIVATE;
-        
-        // Open file
-        int fd = open(m_Fname->c_str(), file_access);
-        if (fd < 0) {
+        if (! m_MemFile)
             return false;
+        
+        if ((m_Begin != 0) || (m_End != flength)) {
+            x_Roundup(m_Begin, m_End, m_Penalty, flength, true, atlas);
+            atlas->PossiblyGarbageCollect(m_End - m_Begin);
         }
         
-        // Map file to memory
-        m_Data = (const char*) mmap(0, (size_t) (m_End - m_Begin), map_protect, map_share, fd, (size_t) m_Begin);
-        close(fd);
+        m_Data = (const char*) m_MemFile->Map(m_Begin, m_End - m_Begin);
         
-        if (m_Data == (const char*)MAP_FAILED) {
-            m_Data = 0;
-        } else {
-            m_ManualMap = true;
+        if (m_Data) {
             rv = true;
+        } else {
+            delete m_MemFile;
+            m_MemFile = 0;
         }
-#endif
     }
-    
-    // This does more harm than good, for reasons unknown.
-    
-// #if defined(NCBI_OS_UNIX)
-//     if (rv && eSeqMadvise) {
-//         cerr << "MADVISE: data " << (Uint4*)(m_Data) << " length " << (m_End - m_Begin) << " sequential." << endl;
-//         madvise((void*) m_Data, m_End - m_Begin, MADV_SEQUENTIAL);
-//     }
-// #endif
     
     return rv;
 }

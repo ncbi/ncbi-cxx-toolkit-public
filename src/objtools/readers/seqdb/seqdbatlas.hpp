@@ -220,9 +220,8 @@ public:
     inline bool operator < (const CRegionMap & other) const;
         
 private:
-    const char    * m_Data;
-    CMemoryFile   * m_MemFile;
-    bool            m_ManualMap;
+    const char     * m_Data;
+    CMemoryFileMap * m_MemFile;
         
     const string * m_Fname;
     TIndx          m_Begin;
