@@ -989,6 +989,13 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
     return 0;
 }
 
+/** Sets maximum and minimum scores on the BlastScoreBlk for a 
+ * given matrix
+ * @param sbp the BlastScoreBlk on which loscore and hiscore 
+ *   will be set [in|out]
+ * @return zero on success
+ */
+
 static Int2
 BlastScoreBlkMaxScoreSet(BlastScoreBlk* sbp)
 {
@@ -1266,8 +1273,12 @@ static BLAST_LetterProb	nt_prob[] = {
 		{ 'T', 25.00 }
 	};
 
-/*
-	Normalize the frequencies to "norm".
+/** Normalizes all the residue frequencies and then normalizes them to "norm".
+ * If "norm" is one, then they will all sum to one.
+ * @param sbp needed for alphabet information [in]
+ * @param rfp array of residue frequencies to be normalized [in|out]
+ * @param norm value to normalize to [in]
+ * @return zero on success, 1 otherwise
 */
 static Int2
 Blast_ResFreqNormalize(const BlastScoreBlk* sbp, Blast_ResFreq* rfp, double norm)
@@ -1358,13 +1369,17 @@ Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
 /** 
 Intermediate structure to store the composition of a sequence
 */
-
 typedef struct Blast_ResComp {
     Uint1	alphabet_code; /**< indicates alphabet. */
     Int4*	comp; 	/**< store composition of a string. */
     Int4*   comp0;	/**< Same array as above, starts at zero. */
 } Blast_ResComp;
 
+/** Deallocates Blast_ResComp structure and 
+ * associated arrays.
+ * @param rcp the object to be freed [in|out]
+ * @return NULL
+ */
 static Blast_ResComp*
 BlastResCompDestruct(Blast_ResComp* rcp)
 {
@@ -1378,12 +1393,13 @@ BlastResCompDestruct(Blast_ResComp* rcp)
 	return NULL;
 }
 
-/* 
-	Allocated the Blast_ResComp* for a given alphabet.  Only the
-	alphabets ncbistdaa and ncbi4na should be used by BLAST.
+/** Allocated the Blast_ResComp* for a given alphabet.  Only the
+ *  alphabets ncbistdaa and ncbi4na should be used by BLAST.
+ * @param sbp contains alphabet code and size.
+ * @return pointer to Blast_ResComp, corectly initialized.
 */
 static Blast_ResComp*
-BlastResCompNew(BlastScoreBlk* sbp)
+BlastResCompNew(const BlastScoreBlk* sbp)
 {
 	Blast_ResComp*	rcp;
 
@@ -1407,11 +1423,15 @@ array is allocated.  */
 	return rcp;
 }
 
-/*
-	Store the composition of a (query) string.  
+/** Store the composition of a (query) string.  
+ * @param sbp needed for alphabet information [in]
+ * @param rcp object to be filled in [in|out]
+ * @param str sequence to have composition calculated for [in]
+ * @param length length of sequence [in]
+ * @return zero on success, 1 otherwise.
 */
 static Int2
-BlastResCompStr(BlastScoreBlk* sbp, Blast_ResComp* rcp, char* str, Int4 length)
+BlastResCompStr(const BlastScoreBlk* sbp, Blast_ResComp* rcp, char* str, Int4 length)
 {
 	char*	lp,* lpmax;
 	Int2 index;
@@ -1445,6 +1465,11 @@ BlastResCompStr(BlastScoreBlk* sbp, Blast_ResComp* rcp, char* str, Int4 length)
 	return 0;
 }
 
+/** Sets prob elements of Blast_ResFreq to zero
+ * @param sbp needed for alphabet information [in]
+ * @param rfp contains elements to be zeroed [in|out]
+ * @return zero on success.
+ */
 static Int2
 Blast_ResFreqClr(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
 {
@@ -1457,12 +1482,17 @@ Blast_ResFreqClr(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
         return 0;
 }
 
-/*
-	Calculate the residue frequencies associated with the provided ResComp
+/** Calculate the residue frequencies associated with the provided ResComp
+ *  This function takes into account the composition of a given sequence
+ *  (expressed through rcp) rather than just doing it for a standard distribution.
+ * @parm sbp contains alphabet information [in]
+ * @param rfp object to be filled in [in|out]
+ * @param rcp object with composition information [in]
+ * @return zero on success, 1 on failure
 */
 static Int2
-Blast_ResFreqResComp(BlastScoreBlk* sbp, Blast_ResFreq* rfp, 
-                     Blast_ResComp* rcp)
+Blast_ResFreqResComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp, 
+                     const Blast_ResComp* rcp)
 {
 	Int2	alphabet_max, index;
 	double	sum = 0.;
@@ -1488,8 +1518,14 @@ Blast_ResFreqResComp(BlastScoreBlk* sbp, Blast_ResFreq* rfp,
 	return 0;
 }
 
+/** Fills in residue frequences for a given sequence.
+ * @param sbp needed for alphabet information [in]
+ * @param rfp object to be populated [in|out]
+ * @param string sequence for calculation [in]
+ * @param length length of above sequence [in]
+ */
 static Int2
-Blast_ResFreqString(BlastScoreBlk* sbp, Blast_ResFreq* rfp, char* string, Int4 length)
+Blast_ResFreqString(const BlastScoreBlk* sbp, Blast_ResFreq* rfp, char* string, Int4 length)
 {
 	Blast_ResComp* rcp;
 	
@@ -1503,6 +1539,12 @@ Blast_ResFreqString(BlastScoreBlk* sbp, Blast_ResFreq* rfp, char* string, Int4 l
 
 	return 0;
 }
+
+/** Check that the lo and hi score are within the allowed ranges
+ * @param lo the lowest permitted value [in]
+ * @param hi the highest permitted value [in]
+ * @return zero on success, 1 otherwise
+ */
 
 static Int2
 BlastScoreChk(Int4 lo, Int4 hi)
@@ -2351,18 +2393,24 @@ BlastLoadMatrixValues (void)
 	return retval;
 }
 
-/*
-Int2
-BlastKarlinGetMatrixValuesEx2(char* matrix, Int4* open, Int4* extension, Int4* decline_align, double* lambda, double* K, double* H)
-	
-Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
-the given matrix.  Also obtains arrays of Lambda, K, and H.  Any of these fields that
-are not required should be set to NULL.  The Int2 return value is the length of the
-arrays.
+/** Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
+ * the given matrix.  Also obtains arrays of Lambda, K, and H.  Any of these fields that
+ * are not required should be set to NULL.  The Int2 return value is the length of the arrays.
+ * @param matrix name of the matrix [in]
+ * @param open gap existence parameter [in|out]
+ * @param extension cost to extend a gap by one letter [in|out]
+ * @param decline_align cost to decline to extend an alignment [in|out]
+ * @param lambda Karlin-Altschul parameter [in|out]
+ * @param K Karlin-Altschul parameter [in|out]
+ * @param H Karlin-Altschul parameter [in|out]
+ * @param alpha Karlin-Altschul parameter [in|out]
+ * @param beta Karlin-Altschul parameter [in|out]
+ * @param pref_flags describes preferred values [in|out]
+ * @return maximum number of values (length of arrays).
 */
 
 static Int2
-BlastKarlinGetMatrixValuesEx2(char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, double** alpha, double** beta, Int4** pref_flags)
+Blast_GetMatrixValues(const char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, double** alpha, double** beta, Int4** pref_flags)
 
 {
 	array_of_8 *values = NULL;
@@ -2447,7 +2495,7 @@ BlastKarlinGetMatrixValuesEx2(char* matrix, Int4** open, Int4** extension, Int4*
 
 /*Extract the alpha and beta settings for this matrixName, and these
   gap open and gap extension costs*/
-void BLAST_GetAlphaBeta(char* matrixName, double *alpha,
+void BLAST_GetAlphaBeta(const char* matrixName, double *alpha,
 double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend)
 {
    Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
@@ -2455,7 +2503,7 @@ double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend)
    Int2 num_values;
    Int4 i; /*loop index*/
 
-   num_values = BlastKarlinGetMatrixValuesEx2(matrixName, &gapOpen_arr, 
+   num_values = Blast_GetMatrixValues(matrixName, &gapOpen_arr, 
      &gapExtend_arr, NULL, NULL, NULL, NULL,  &alpha_arr, &beta_arr, 
      &pref_flags);
 
@@ -2492,21 +2540,25 @@ double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend)
    sfree(beta_arr);
 }
 
+/** Fills in error_return with strings describing the allowed values.
+ * @param matrix_name name of the matrix [in]
+ * @param error_return object to be filled in [in|out]
+ * @return zero on success.
+ */
 static Int2
 BlastKarlinReportAllowedValues(const char *matrix_name, 
    Blast_Message** error_return)
 {
 	array_of_8 *values = NULL;
 	Boolean found_matrix=FALSE;
-	char buffer[256];
-	Int4 index, max_number_values=0;
-	MatrixInfo* matrix_info;
+	Int4 max_number_values=0;
 	ListNode* vnp,* head;
+	MatrixInfo* matrix_info;
 
 	vnp = head = BlastLoadMatrixValues();
 	while (vnp)
 	{
-		matrix_info = vnp->ptr;
+	        matrix_info = vnp->ptr;
 		if (strcasecmp(matrix_info->name, matrix_name) == 0)
 		{
 			values = matrix_info->values;
@@ -2519,6 +2571,8 @@ BlastKarlinReportAllowedValues(const char *matrix_name,
 
 	if (found_matrix)
 	{
+                Int4 index;
+	        char buffer[256];
 		for (index=0; index<max_number_values; index++)
 		{
 			if (BLAST_Nint(values[index][2]) == INT2_MAX)
@@ -2541,7 +2595,7 @@ BlastKarlinReportAllowedValues(const char *matrix_name,
 	if kbp is NULL, then a validation is perfomed.
 */
 Int2
-Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name, Blast_Message** error_return)
+Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, const char* matrix_name, Blast_Message** error_return)
 
 {
 	char buffer[256];
@@ -2592,12 +2646,12 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
 			2 if matrix found, but open, extend etc. values not supported.
 */
 Int2
-Blast_KarlinkGapBlkFill(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name)
+Blast_KarlinkGapBlkFill(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, const char* matrix_name)
 {
-	Boolean found_matrix=FALSE, found_values=FALSE;
+	Boolean found_matrix=FALSE;
 	array_of_8 *values;
 	Int2 status=0;
-	Int4 index, max_number_values=0;
+	Int4 max_number_values=0;
 	MatrixInfo* matrix_info;
 	ListNode* vnp,* head;
 	
@@ -2623,6 +2677,8 @@ Blast_KarlinkGapBlkFill(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, In
 
 	if (found_matrix)
 	{
+                Boolean found_values=FALSE;
+	        Int4 index;
 		for (index=0; index<max_number_values; index++)
 		{
 			if (BLAST_Nint(values[index][0]) == gap_open &&
@@ -2876,8 +2932,9 @@ BLAST_KarlinStoE_simple(Int4 S,
 	return (double) searchsp * exp((double)(-Lambda * S) + kbp->logK);
 }
 
-/*
-BlastKarlinPtoE -- convert a P-value to an Expect value
+/** BlastKarlinPtoE -- convert a P-value to an Expect value
+ * @param the P-value to be converted [in]
+ * @return the corresponding expect value.
 */
 static double
 BlastKarlinPtoE(double p)
@@ -3101,7 +3158,7 @@ f(double	x, void*	vp)
 
 double
 BLAST_SmallGapSumE(
-    Blast_KarlinBlk * kbp,     /* statistical parameters */
+    const Blast_KarlinBlk * kbp,     /* statistical parameters */
     Int4 gap,                   /* maximum size of gaps between alignments */
     Int2 num,                   /* the number of distinct alignments in this
                                  * collection */
@@ -3145,10 +3202,9 @@ BLAST_SmallGapSumE(
     for linking HSPs representing exons in the DNA sequence that are
     separated by introns.
 */
-
 double
 BLAST_UnevenGapSumE(
-    Blast_KarlinBlk * kbp,      /* statistical parameters */
+    const Blast_KarlinBlk * kbp,      /* statistical parameters */
     Int4 p_gap,                 /* maximum size of gaps between alignments,
                                  * in one sequence */
     Int4 n_gap,                 /* maximum size of gaps between alignments,
@@ -3174,13 +3230,14 @@ BLAST_UnevenGapSumE(
     score_prime -=
         kbp->logK + log(search_space) +
         (num-1)*(kbp->logK + log((double)p_gap) + log((double)n_gap));
+
     score_prime -= BLAST_LnFactorial((double) num);
 
     sum_p = BlastSumP(num, score_prime);
 
     sum_e = BlastKarlinPtoE(sum_p);
 
-    if( weight_divisor == 0 || (sum_e /= weight_divisor) > INT4_MAX ) {
+    if( weight_divisor == 0.0 || (sum_e /= weight_divisor) > INT4_MAX ) {
         sum_e = INT4_MAX;
     }
 
@@ -3195,7 +3252,7 @@ BLAST_UnevenGapSumE(
 
 double
 BLAST_LargeGapSumE(
-    Blast_KarlinBlk * kbp,      /* statistical parameters */
+    const Blast_KarlinBlk * kbp,      /* statistical parameters */
     Int2 num,                   /* the number of distinct alignments in this
                                  * collection */
     double      score_prime,    /* the sum of the scores of these alignments
@@ -3232,14 +3289,7 @@ BLAST_LargeGapSumE(
     return sum_e;
 }
 
-/**  Given a sequence of 'length' amino acid residues, compute the
- *   probability of each residue and put that in the array resProb
- *
- * @param sequence the sequence to be computed upon [in]
- * @param length the length of the sequence [in]
- * @param resProb the object to be filled in [in|out]
- */
-
+/* Please see comment in blast_stat.h */
 void 
 Blast_FillResidueProbability(const Uint1* sequence, Int4 length, double * resProb)
 {
@@ -3269,7 +3319,7 @@ Blast_FillResidueProbability(const Uint1* sequence, Int4 length, double * resPro
 /*------------------- RPS BLAST functions --------------------*/
 
 static double
-RPSfindUngappedLambda(Char *matrixName)
+RPSfindUngappedLambda(const char *matrixName)
 {
     if (0 == strcmp(matrixName, "BLOSUM62"))
         return 0.3176;
@@ -3550,6 +3600,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.83  2004/06/16 19:34:26  madden
+ * Doxygen fixes, made some params const
+ *
  * Revision 1.82  2004/06/10 13:21:24  madden
  * Rename RPSFillResidueProbability to Blast_FillResidueProbability, made public.
  * Removed usage of BLAST_SCORE_1MIN/MAX, simply use BLAST_SCORE_MIN/MAX instead
