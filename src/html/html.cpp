@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1998/12/23 21:51:44  vasilche
+* Added missing constructors to checkbox.
+*
 * Revision 1.12  1998/12/23 21:21:03  vasilche
 * Added more HTML tags (almost all).
 * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
@@ -662,17 +665,28 @@ CHTML_input::CHTML_input(const string& type, const string& name)
 
 // checkbox tag 
 
-CHTML_checkbox::CHTML_checkbox(const string& name, const string& value, bool checked, const string& description)
+CHTML_checkbox::CHTML_checkbox(const string& name)
+    : CParent("CHECKBOX", name)
+{
+}
+
+CHTML_checkbox::CHTML_checkbox(const string& name, const string& value)
     : CParent("CHECKBOX", name)
 {
     SetOptionalAttribute(KHTMLAttributeName_value, value);
-    SetOptionalAttribute(KHTMLAttributeName_checked, checked);
-    AppendHTMLText(description);  // adds the description at the end
 }
 
 CHTML_checkbox::CHTML_checkbox(const string& name, bool checked, const string& description)
     : CParent("CHECKBOX", name)
 {
+    SetOptionalAttribute(KHTMLAttributeName_checked, checked);
+    AppendHTMLText(description);  // adds the description at the end
+}
+
+CHTML_checkbox::CHTML_checkbox(const string& name, const string& value, bool checked, const string& description)
+    : CParent("CHECKBOX", name)
+{
+    SetOptionalAttribute(KHTMLAttributeName_value, value);
     SetOptionalAttribute(KHTMLAttributeName_checked, checked);
     AppendHTMLText(description);  // adds the description at the end
 }
