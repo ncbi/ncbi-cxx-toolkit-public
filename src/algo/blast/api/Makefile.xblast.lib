@@ -17,7 +17,7 @@ SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
 LIB = xblast
 
-CFLAGS   = $(FAST_CFLAGS) -fno-strict-aliasing
+CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
