@@ -286,8 +286,8 @@ const TPairTree* PairTreeTraceNode(const TPairTree& tr, const TPathList& node_pa
         const typename TPairTree::TIdType& search_id = *sit;
         bool sub_level_found = false;
         
-        typename TPairTree::TNodeList_CI it = tr.SubNodeBegin();
-        typename TPairTree::TNodeList_CI it_end = tr.SubNodeEnd();
+        typename TPairTree::TNodeList_CI it = ptr->SubNodeBegin();
+        typename TPairTree::TNodeList_CI it_end = ptr->SubNodeEnd();
 
         for (;it != it_end; ++it) {
             const typename TPairTree::TParent* node = *it;
@@ -622,6 +622,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/01/14 15:25:38  kuznets
+ * Fixed bug in PairTreeTraceNode algorithm
+ *
  * Revision 1.15  2004/01/14 14:18:21  kuznets
  * +TreeDepthFirstTraverse algorithm
  *
