@@ -761,14 +761,26 @@ void CAlnMix::x_Merge()
                                 seq->m_Starts
                                     [tmp_start_i->first + len1 * seq->m_Width]
                                     = seg;
-                                seg->m_StartIts[seq] = ++tmp_start_i;
+                                if (tmp_start_i != seq->m_Starts.end()) {
+                                    seg->m_StartIts[seq] = ++tmp_start_i;
+                                } else {
+                                    NCBI_THROW(CAlnException, eMergeFailure,
+                                               "CAlnMix::x_Merge(): "
+                                               "Internal error: tmp_start_i == seq->m_Starts.end()");
+                                }
                             } else {
                                 seq->m_Starts
                                     [tmp_start_i->first + len2 * seq->m_Width]
                                     = prev_seg;
                                 seq->m_Starts[tmp_start_i->first] = seg;
                                 seg->m_StartIts[seq] = tmp_start_i;
-                                prev_seg->m_StartIts[seq] = ++tmp_start_i;
+                                if (tmp_start_i != seq->m_Starts.end()) {
+                                    prev_seg->m_StartIts[seq] = ++tmp_start_i;
+                                } else {
+                                    NCBI_THROW(CAlnException, eMergeFailure,
+                                               "CAlnMix::x_Merge(): "
+                                               "Internal error: tmp_start_i == seq->m_Starts.end()");
+                                }
                             }
                         }
                         
@@ -813,14 +825,26 @@ void CAlnMix::x_Merge()
                                 seq->m_Starts[tmp_start_i->first +
                                              curr_len * seq->m_Width]
                                     = seg;
-                                seg->m_StartIts[seq] = ++tmp_start_i;
+                                if (tmp_start_i != seq->m_Starts.end()) {
+                                    seg->m_StartIts[seq] = ++tmp_start_i;
+                                } else {
+                                    NCBI_THROW(CAlnException, eMergeFailure,
+                                               "CAlnMix::x_Merge(): "
+                                               "Internal error: tmp_start_i == seq->m_Starts.end()");
+                                }
                             } else{
                                 seq->m_Starts[tmp_start_i->first +
                                              len1 * seq->m_Width]
                                     = prev_seg;
                                 seq->m_Starts[tmp_start_i->first] = seg;
                                 seg->m_StartIts[seq] = tmp_start_i;
-                                prev_seg->m_StartIts[seq] = ++tmp_start_i;
+                                if (tmp_start_i != seq->m_Starts.end()) {
+                                    prev_seg->m_StartIts[seq] = ++tmp_start_i;
+                                } else {
+                                    NCBI_THROW(CAlnException, eMergeFailure,
+                                               "CAlnMix::x_Merge(): "
+                                               "Internal error: tmp_start_i == seq->m_Starts.end()");
+                                }
                             }
                         }
 
@@ -1148,10 +1172,14 @@ CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
                     if (delta1 != delta2) {
                         if (m_MergeFlags & fTruncateOverlaps) {
                             delta = (delta1 < delta2 ? delta1 : delta2);
-                            if (match->m_StrandsDiffer) {
-                                start1 += (len - delta) * width1;
+                            if (delta > 0) {
+                                if (match->m_StrandsDiffer) {
+                                    start1 += (len - delta) * width1;
+                                }
+                                len = delta;
+                            } else {
+                                return eIgnoreMatch;
                             }
-                            len = delta;
                         } else {
                             return eInconsistentOverlap;
                         }
@@ -1980,6 +2008,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.96  2004/06/14 21:01:59  todorov
+* 1) added iterators bounds checks; 2) delta check
+*
 * Revision 1.95  2004/05/25 19:16:33  todorov
 * initialize second_row_fits
 *
