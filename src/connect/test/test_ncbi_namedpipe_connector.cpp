@@ -34,7 +34,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
-
+#include <corelib/ncbifile.hpp>
 #include <connect/ncbi_namedpipe.hpp>
 #include <connect/ncbi_namedpipe_connector.h>
 #include "../ncbi_priv.h"
@@ -260,6 +260,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/09/02 21:01:49  ivanov
+ * + #include <corelib/ncbifile.hpp>
+ *
  * Revision 1.5  2003/09/02 19:54:25  ivanov
  * Changed name of the test pipe. Remove test pipe if it is already exists.
  * Increased default timeout to 2 sec.
