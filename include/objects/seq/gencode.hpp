@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2003/04/16 11:37:26  dicuccio
+ * Added delayed instantiation of internal implementation class
+ *
  * Revision 1.5  2002/12/26 12:42:59  dicuccio
  * Added Win32 export specifiers
  *
@@ -55,6 +58,7 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <vector>
 #include <utility>
+#include <memory>
 
 
 BEGIN_NCBI_SCOPE
@@ -63,6 +67,7 @@ BEGIN_objects_SCOPE
 
 class CSeq_data;
 class CGenetic_code;
+class CGencode_implementation;
 
 
 // Public front-end for hidden singleton object of class
@@ -99,7 +104,22 @@ public:
      
      // Converts an index to a codon triplet
      static const string& Idx2Codon(unsigned int idx);
+
+private:
+     // our static singleton
+     static auto_ptr<CGencode_implementation> sm_Implementation;
+     static CGencode_implementation& x_GetImplementation();
+     static void x_InitImplementation();
 };
+
+
+inline CGencode_implementation& CGencode::x_GetImplementation(void)
+{
+    if ( !sm_Implementation.get() ) {
+        x_InitImplementation();
+    }
+    return *sm_Implementation;
+}
 
 
 END_objects_SCOPE
