@@ -490,10 +490,7 @@ void CNetCacheServer::Process(SOCK sock)
         // request still will end up with an error on the client side
         // (considered a client's fault (DDOS attempt))
         to.sec = to.usec = 0;
-        char buf[1024];
-        socket.SetTimeout(eIO_Read, &to);
-        size_t n_read;
-        socket.Read(buf, sizeof(buf), &n_read);
+        socket.Read(NULL, 1024);
 
         //
         // Logging.
@@ -1226,6 +1223,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/02/09 19:34:08  kuznets
+ * Trail buffer read using socket.Read(NULL, ...)
+ *
  * Revision 1.39  2005/02/09 13:36:14  kuznets
  * Limit log size to 100M, rotate log every time its turned ON
  *
