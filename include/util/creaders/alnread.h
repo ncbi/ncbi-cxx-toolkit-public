@@ -56,8 +56,13 @@ extern "C" {
 #define EXPORT
 #endif
 
+#if defined (WIN32)
+#    define ALIGNMENT_CALLBACK __stdcall
+#else
+#    define ALIGNMENT_CALLBACK
+#endif
 
-typedef char * (FAR PASCAL *FReadLineFunction) (void * userdata);
+typedef char * (ALIGNMENT_CALLBACK *FReadLineFunction) (void * userdata);
 
 typedef enum {
     eAlnErr_Unknown = -1,
@@ -78,7 +83,7 @@ typedef struct SErrorInfo {
     struct SErrorInfo * next;
 } SErrorInfo, * TErrorInfoPtr;
 
-typedef void (FAR PASCAL *FReportErrorFunction) (
+typedef void (ALIGNMENT_CALLBACK *FReportErrorFunction) (
   TErrorInfoPtr err_ptr, /* error to report */
   void *        userdata /* data supplied by calling program to library */
 );
@@ -135,6 +140,9 @@ extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFile (
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/02/05 15:43:32  bollin
+ * fixed portability issue for windows function pointers
+ *
  * Revision 1.1  2004/02/03 16:46:55  ucko
  * Add Colleen Bollin's Toolkit-independent alignment reader.
  *
