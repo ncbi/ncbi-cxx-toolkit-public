@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/06/06 19:36:02  clausen
+* Added GetTitle()
+*
 * Revision 1.19  2002/05/31 17:52:58  grichenk
 * Optimized for better performance (CTSE_Info uses atomic counter,
 * delayed annotations indexing, no location convertions in
@@ -110,6 +113,7 @@ class CDataSource;
 class CSeqMap;
 class CTSE_Info;
 class CSeqVector;
+class CScope;
 
 
 // Bioseq handle -- must be a copy-safe const type.
@@ -182,18 +186,8 @@ public:
                                        ESequenceViewMode mode,
                                        bool use_iupac_coding = false,
                                        bool plus_strand = true) const;
-
-    // Get sequence's title (used in various flat-file formats.)
-    // This function is here rather than in CBioseq because it may need
-    // to inspect other sequences.  The reconstruct flag indicates that it
-    // should ignore any existing title Seqdesc.
-    enum EGetTitleFlags {
-        fGetTitle_Reconstruct = 0x1, // ignore existing title Seqdesc.
-        fGetTitle_Accession   = 0x2, // prepend (accession)
-        fGetTitle_Organism    = 0x4  // append [organism]
-    };
-    typedef int TGetTitleFlags;
-    virtual string GetTitle(TGetTitleFlags flags = 0) const;
+   
+    CScope& GetScope(void) const;
 
 private:
     CBioseq_Handle(CSeq_id_Handle value);
@@ -309,6 +303,12 @@ CDataSource& CBioseq_Handle::x_GetDataSource(void) const
             "Can not resolve data source for bioseq handle.");
     }
     return *m_DataSource;
+}
+
+inline
+CScope& CBioseq_Handle::GetScope(void) const 
+{
+    return *m_Scope;
 }
 
 END_SCOPE(objects)
