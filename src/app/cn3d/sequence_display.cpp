@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2002/08/15 12:57:07  thiessen
+* fix highlight redraw bug
+*
 * Revision 1.54  2002/08/13 20:46:37  thiessen
 * add global block aligner
 *
@@ -1251,9 +1254,9 @@ bool SequenceDisplay::ProximitySort(int displayRow)
         ERR_POST(Error << "SequenceDisplay::ProximitySort() - internal inconsistency");
 
     // finally, highlight the key row and scroll approximately there
-    GlobalMessenger()->RemoveAllHighlights(false);
+    GlobalMessenger()->RemoveAllHighlights(true);
     GlobalMessenger()->AddHighlights(seq1, 0, seq1->Length() - 1);
-    (*viewerWindow)->ScrollToRow(M - 3);
+    (*viewerWindow)->ScrollToRow((M - 3) > 0 ? (M - 3) : 0);
     (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
     return true;
 }
