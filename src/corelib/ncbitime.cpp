@@ -1927,8 +1927,10 @@ CTime CFastLocalTime::GetLocalTime(void)
     // Otherwise do this at each hours/timezone change.
     if ( !m_LastTuneTime  ||
          ((timer / 3600 != m_LastTuneTime / 3600)  &&
-          (timer % 3600 >  (time_t)m_SecAfterHour))  || 
-         (TimeZone() != m_Timezone  ||  Daylight() != m_Daylight)
+          (timer % 3600 >  (time_t)m_SecAfterHour))
+#if !defined(TIMEZONE_IS_UNDEFINED)
+         ||  (TimeZone() != m_Timezone  ||  Daylight() != m_Daylight)
+#endif
     ) {
         x_Tuneup(timer);
         return m_LocalTime;
@@ -2050,6 +2052,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2005/02/10 22:11:08  ucko
+ * CFastLocalTime::GetLocalTime: don't try to use TimeZone and Daylight
+ * when TIMEZONE_IS_UNDEFINED is defined.
+ *
  * Revision 1.59  2005/02/10 14:20:32  ivanov
  * Added quick and dirty getter of local time -- CFastLocalTime.
  * Also added global functions GetFastLocalTime() and TuneupFastLocalTime().
