@@ -91,8 +91,7 @@ static void Client(int num)
     assert(pipe.SetTimeout(eIO_Read,  &timeout) == eIO_Success);
     assert(pipe.SetTimeout(eIO_Write, &timeout) == eIO_Success);
 
-    assert(pipe.Open(kPipeName, CNamedPipe::kDefaultTimeout, kSubBlobSize)
-           == eIO_Success);
+    assert(pipe.Open(kPipeName, kDefaultTimeout, kSubBlobSize) == eIO_Success);
 
     char buf[kSubBlobSize];
     size_t n_read    = 0;
@@ -291,6 +290,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/08/25 16:40:45  lavr
+ * Get rid of CNamedPipe:: prefix in kDefaultTimeout
+ *
  * Revision 1.2  2003/08/20 14:24:06  ivanov
  * Replaced _TRACE with LOG_POST
  *
