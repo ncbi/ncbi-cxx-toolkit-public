@@ -499,13 +499,15 @@ from the configuration process:
 
 Here is an example of a <i>customized makefile</i> to build
 library <i><b>libxmylib.a</b></i> from two source files,
-<i><b>xmy_src1.cpp</b></i> and <i><b>xmy_src2.c</b></i>.
+<i><b>xmy_src1.cpp</b></i> and <i><b>xmy_src2.c</b></i>;
+it also compiles a "standalone" source file <i><b>some_src1.cpp</b></i>.
 To make the example even more realistic, we assume that the said
 source files include headers from the NCBI C Toolkit.<pre>
 File Makefile.xmylib.lib:
 
 LIB      = xmylib
-OBJ      = xmy_src1 xmy_src2
+LIBOBJ   = xmy_src1 xmy_src2
+LOBJ     = some_src1
 CFLAGS   = $(ORIG_CFLAGS)   -abc -DFOOBAR_NOT_CPLUSPLUS
 CXXFLAGS = $(ORIG_CXXFLAGS) -xyz
 CPPFLAGS = $(ORIG_CPPFLAGS) -UFOO -DP1_PROJECT -I$(NCBI_C_INCLUDE)</pre>
@@ -521,7 +523,10 @@ CPPFLAGS = $(ORIG_CPPFLAGS) -UFOO -DP1_PROJECT -I$(NCBI_C_INCLUDE)</pre>
        plus some additional flags specified by user)
   <li> Using <b>AR</b> and <b>RANLIB</b>, compose
        library <i><b>libxmylib.a</b></i> from the resultant object files
-  <li> Copy the library to top-level <b><i>lib/</i></b> directory of
+  <li> Compile <i><b>some_src1.cpp</b></i> using C++ compiler <b>CXX</b> with
+       flags <b>CXXFLAGS CPPFLAGS</b>
+  <li> Copy <i><b>libxmylib.a</b></i> and <i><b>some_src1.o</b></i> to
+       top-level <b><i>lib/</i></b> directory of
        the <i>build tree</i> (for later use by other projects)
 </ul>
 
