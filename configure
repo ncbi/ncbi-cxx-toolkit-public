@@ -918,6 +918,12 @@ Optional Packages:
  --with-orbacus=DIR      use ORBacus installation in DIR
  --with-odbc=DIR         use ODBC installation in DIR
  --without-odbc          do not use ODBC
+ --with-sqlite=DIR       use SQLite installation in DIR
+ --without-sqlite,       do not use SQLite
+ --with-expat=DIR        use Expat installation in DIR
+ --without-expat,        do not use Expat
+ --with-sablot=DIR       use Sablotron installation in DIR
+ --without-sablot,       do not use Sablotron
  --with-gif=DIR          use lib(un)gif installation in DIR
  --without-gif           do not use lib(un)gif
  --with-jpeg=DIR         use libjpeg installation in DIR
@@ -1787,6 +1793,42 @@ if test "${with_odbc2+set}" = set; then
 
 fi;
 
+# Check whether --with-sqlite or --without-sqlite was given.
+if test "${with_sqlite+set}" = set; then
+  withval="$with_sqlite"
+
+fi;
+
+# Check whether --with-sqlite2 or --without-sqlite2 was given.
+if test "${with_sqlite2+set}" = set; then
+  withval="$with_sqlite2"
+
+fi;
+
+# Check whether --with-expat or --without-expat was given.
+if test "${with_expat+set}" = set; then
+  withval="$with_expat"
+
+fi;
+
+# Check whether --with-expat2 or --without-expat2 was given.
+if test "${with_expat2+set}" = set; then
+  withval="$with_expat2"
+
+fi;
+
+# Check whether --with-sablot or --without-sablot was given.
+if test "${with_sablot+set}" = set; then
+  withval="$with_sablot"
+
+fi;
+
+# Check whether --with-sablot2 or --without-sablot2 was given.
+if test "${with_sablot2+set}" = set; then
+  withval="$with_sablot2"
+
+fi;
+
 # Check whether --with-gif or --without-gif was given.
 if test "${with_gif+set}" = set; then
   withval="$with_gif"
@@ -1918,8 +1960,8 @@ debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe strip version lfs \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-sybase-new ftds mysql orbacus fltk opengl mesa glut bdb odbc \
-gif jpeg tiff png xpm \
+sybase-new ftds mysql orbacus fltk opengl mesa glut bdb odbc sqlite \
+expat sablot gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -1956,6 +1998,7 @@ echo "$as_me: error: \"  $x_arg:  requires value;  use --help to show usage\"" >
       | [A-Z]*=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
+      | --with-sqlite=* | --with-expat=* | --with-sablot=* \
       | --with-bdb=* | --with-odbc=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* \
@@ -4396,7 +4439,7 @@ else
    STRIP=@:
 fi
 case "$host_os" in
-   irix* | aix5.[2-9]* )
+   irix* | aix5.2-9* )
      # lorder and tsort exist but don't work.
      LORDER=echo
      TSORT=cat

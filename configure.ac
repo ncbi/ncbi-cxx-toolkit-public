@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.271 2004/02/10 20:22:52 ucko Exp $
+#  $Id: configure.ac,v 1.272 2004/02/11 15:18:13 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -200,6 +200,18 @@ AC_ARG_WITH(odbc,
    [ --with-odbc=DIR         use ODBC installation in DIR])
 AC_ARG_WITH(odbc2,
    [ --without-odbc          do not use ODBC])
+AC_ARG_WITH(sqlite,
+   [ --with-sqlite=DIR       use SQLite installation in DIR])
+AC_ARG_WITH(sqlite2,
+   [ --without-sqlite,       do not use SQLite])
+AC_ARG_WITH(expat,
+   [ --with-expat=DIR        use Expat installation in DIR])
+AC_ARG_WITH(expat2,
+   [ --without-expat,        do not use Expat])
+AC_ARG_WITH(sablot,
+   [ --with-sablot=DIR       use Sablotron installation in DIR])
+AC_ARG_WITH(sablot2,
+   [ --without-sablot,       do not use Sablotron])
 AC_ARG_WITH(gif,
    [ --with-gif=DIR          use lib(un)gif installation in DIR])
 AC_ARG_WITH(gif2,
@@ -252,8 +264,8 @@ debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe strip version lfs \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-sybase-new ftds mysql orbacus fltk opengl mesa glut bdb odbc \
-gif jpeg tiff png xpm \
+sybase-new ftds mysql orbacus fltk opengl mesa glut bdb odbc sqlite \
+expat sablot gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
 changequote(, )dnl
@@ -290,6 +302,7 @@ for x_arg in "$@" ; do
       | [[A-Z]*=*] \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
+      | --with-sqlite=* | --with-expat=* | --with-sablot=* \
       | --with-bdb=* | --with-odbc=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* \
