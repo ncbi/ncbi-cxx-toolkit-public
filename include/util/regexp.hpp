@@ -1,5 +1,5 @@
-#ifndef REGEXP__HPP
-#define REGEXP__HPP
+#ifndef UTIL___REGEXP__HPP
+#define UTIL___REGEXP__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,165 +26,563 @@
  *
  * ===========================================================================
  *
- * Authors:  Clifford Clausen...
+ * Authors:  Clifford Clausen
  *
  */
 
 /// @file regexp.hpp
-/// C++ wrapper for the PCRE library
+/// C++ wrappers for the Perl-compatible regular expression (PCRE) library.
 ///
-/// Class definition for class CRegexp which is a wrapper class for the
-/// Perl-compatible regular expression (PCRE) library written in C.
+/// CRegexp     -  wrapper class for the PCRE library.
+/// CRegexpUtil -  utility functions.
+///
+/// For more details see PCRE documentation: http://www.pcre.org/pcre.txt
 
 #include <corelib/ncbistd.hpp>
 #include <util/regexp/pcre.h>
 
+
+/** @addtogroup Regexp
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
-/// Specifies the maximum number of sub-patterns that can be found
+
+/// Specifies the maximum number of subpatterns that can be found.
 const size_t kRegexpMaxSubPatterns = 100;
 
-/// This class is a C++ wrapper for the Perl-compatible regular expression
-/// library written in C. Internally, it holds a compiled regular expression
-/// used for matching with char* strings passed as an argument to the
-/// GetMatch member function. The regular expression is passed as a char*
-/// argument to the constructor or to the Set member function.
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CRegexp --
+///
+/// Define a wrapper class for the Perl-compatible regular expression (PCRE)
+/// library.
+///
+/// Internally, this class holds a compiled regular expression used for
+/// matching with strings passed as an argument to the GetMatch()
+/// member function. The regular expression is passed as a argument
+/// to the constructor or to the Set() member function.
+///
+/// Throw exception on error.
+
 class NCBI_XUTIL_EXPORT CRegexp
 {
 public:
-
     /// Type definitions used for code clarity.
-    typedef int TCompile;
-    typedef int TMatch;
+    typedef int TCompile;     ///< Compilation options.
+    typedef int TMatch;       ///< Match options.
 
-    /// Flags for constructor and Set
-
-    /// PCRE compiler flags usde in the constructor and in Set. If
-    /// eCompile_ignore_case is set, matches are case insensitive. If
-    /// eCompile_newline is set then ^ matches the start of a line and
-    /// $ matches the end of a line. If not set, ^ matches only the start of
-    /// the entire string and $ matches only the end of the entire string.
+    /// Flags for compile regular expressions.
+    ///
+    /// PCRE compiler flags used in the constructor and in Set().
+    /// If eCompile_ignore_case is set, matches are case insensitive.
+    /// If eCompile_dotall is set, a dot metacharater in the pattern matches all
+    /// characters, including newlines. Without it, newlines are excluded.
+    /// If eCompile_newline is set then ^ matches the start of a line and
+    /// $ matches the end of a line. If not set, ^ matches only the start
+    /// of the entire string and $ matches only the end of the entire string.
+    /// If eCompile_ungreedy inverts the "greediness" of the quantifiers so that
+    /// they are not greedy by default, but become greedy if followed by "?".
+    /// It is not compatible with Perl. 
+    ///
+    /// The settings can be changed from within the pattern by a sequence of Perl
+    /// option letters enclosed between "(?" and ")". The option letters are 
+    ///   i  for PCRE_CASELESS
+    ///   m  for PCRE_MULTILINE
+    ///   s  for PCRE_DOTALL
+    ///   x  for PCRE_EXTENDED
+    ///   U  for PCRE_UNGREEDY
     enum ECompile {
         eCompile_default     = 0,
         eCompile_ignore_case = PCRE_CASELESS,
+        eCompile_dotall      = PCRE_DOTALL,
         eCompile_newline     = PCRE_MULTILINE,
-        eCompile_both        = PCRE_MULTILINE | PCRE_CASELESS
+        eCompile_ungreedy    = PCRE_UNGREEDY
     };
 
-    /// Constructor.
-
-    /// Sets and compiles the PCRE pattern specified by pat
-    /// according to compile options. See ECompile above. Also
-    /// allocates memory for compiled PCRE.
-    CRegexp(const string &pat,  // Perl regular expression
-            TCompile flags = 0);     // Flags
-
-    /// Destructor.
-
-    /// Deallocates compiled Perl-compatible regular expression.
-    virtual ~CRegexp();
-
-    /// Sets and compiles PCRE
-
-    /// Sets and compiles the PCRE pattern specified by pat
-    /// according to compile options. See ECompile above. Also
-    /// deallocates/allocates memory for compiled PCRE.
-    void Set(const string &pat, // Perl regular expression
-             TCompile flags = 0);    // Options
-
-    /// GetMatch flags
-
+    /// Flags for match string against a pre-compiled pattern.
+    ///
     /// Setting eMatch_not_begin causes ^ not to match before the
     /// first character of a line. Without setting eCompile_newline,
-    /// ^ won't match anything if eMatch_not_begin is set. Setting
-    /// eMatch_not_end causes $ not to match immediately before a new
+    /// ^ won't match anything if eMatch_not_begin is set.
+    /// Setting eMatch_not_end causes $ not to match immediately before a new
     /// line. Without setting eCompile_newline, $ won't match anything
     /// if eMatch_not_end is set.
     enum EMatch {
         eMatch_default   = 0,
-        eMatch_not_begin = PCRE_NOTBOL,           // ^ won't match string begin
-        eMatch_not_end   = PCRE_NOTEOL,           // $ won't match string end
+        eMatch_not_begin = PCRE_NOTBOL,      ///< ^ won't match string begin.
+        eMatch_not_end   = PCRE_NOTEOL,      ///< $ won't match string end.
         eMatch_not_both  = PCRE_NOTBOL | PCRE_NOTEOL
     };
 
-    /// Get matching pattern and sub-patterns.
+    /// Constructor.
+    ///
+    /// Set and compile the PCRE pattern specified by argument according
+    /// to compile options. Also allocate memory for compiled PCRE.
+    /// @param pattern
+    ///   Perl regular expression to compile.
+    /// @param flags
+    ///   Regular expression compilation flags.
+    /// @sa
+    ///   ECompile
+    CRegexp(const string& pattern, TCompile flags = 0);
 
-    /// Returns a string corresponding to the match to pattern or sub-pattern.
-    /// Use idx = 0 for complete pattern. Use idx > 0 for sub-patterns.
-    /// Returns empty string when no match found or if noreturn is true.
-    /// Set noreturn to true when GetSub or GetResults will be used
-    /// to retrieve pattern and sub-patterns. Calling GetMatch causes
+    /// Destructor.
+    ///
+    /// Deallocate compiled Perl-compatible regular expression.
+    virtual ~CRegexp();
+
+    /// Set and compile PCRE.
+    ///
+    /// Set and compile the PCRE pattern specified by argument according
+    /// to compile options. Also deallocate/allocate memory for compiled PCRE.
+    /// @param pattern
+    ///   Perl regular expression to compile.
+    /// @param flags
+    ///   Regular expression compilation flags.
+    /// @sa
+    ///   ECompile
+    void Set(const string& pattern, TCompile flags = 0);
+
+    /// Get matching pattern and subpatterns.
+    ///
+    /// Return a string corresponding to the match to pattern or subpattern.
+    /// Set noreturn to true when GetSub() or GetResults() will be used
+    /// to retrieve pattern and subpatterns. Calling GetMatch() causes
     /// the entire search to be performed again. If you want to retrieve
-    /// a different pattern/sub-pattern from an already performed search,
+    /// a different pattern/subpattern from an already performed search,
     /// it is more efficient to use GetSub or GetResults.
-    string GetMatch (const char *str,             // String to search
-                     TSeqPos offset = 0,          // Starting offset in str
-                     size_t idx = 0,              // (sub) match to return
-                     TMatch flags = 0,            // Options
-                     bool noreturn = false);      // Returns kEmptyStr if true
+    /// @param str
+    ///   String to search.
+    /// @param offset
+    ///   Starting offset in str.
+    /// @param idx
+    ///   (Sub) match to return.
+    ///   Use idx = 0 for complete pattern. Use idx > 0 for subpatterns.
+    /// @param flags
+    ///   Flags to match.
+    /// @param noreturn
+    ///   Return empty string if noreturn is true.
+    /// @return
+    ///   Return (sub) match with number idx or empty string when no match
+    ///   found or if noreturn is true.
+    /// @sa
+    ///   EMatch, GetSub(), GetResult()
+    string GetMatch(
+        const string& str,
+        TSeqPos       offset   = 0,
+        size_t        idx      = 0,
+        TMatch        flags    = 0,
+        bool          noreturn = false
+    );
 
-    /// Get pattern/sub-pattern from previous GetMatch
+    /// Get pattern/subpattern from previous GetMatch().
+    ///
+    /// Should only be called after GetMatch() has been called with the
+    /// same string. GetMatch() internally stores locations on string where
+    /// pattern and subpatterns were found. 
+    /// @param str
+    ///   String to search.
+    /// @param idx
+    ///   (Sub) match to return.
+    /// @return
+    ///   Return the substring at location of pattern match (idx 0) or
+    ///   subpattern match (idx > 0). Return empty string when no match.
+    /// @sa
+    ///   GetMatch(), GetResult()
+    string GetSub(const string& str, size_t idx = 0) const;
 
-    /// Should only be called after GetMatch has been called with the
-    /// same str. GetMatch internally stores locations on str where
-    /// pattern and sub patterns were found. This function will return
-    /// the substring at location of pattern match (idx 0) or sub pattern
-    /// match (idx > 0). Returns empty string when no match.
-    string GetSub (const char *str,               // String to search
-                   size_t idx = 0) const;         // (sub) match to return
-
-    /// Get number of patterns + sub-patterns.
-
-    /// Returns the number of patterns + sub-patterns found as a result
-    /// of the most recent GetMatch call.
+    /// Get number of patterns + subpatterns.
+    ///
+    /// @return
+    ///   Return the number of patterns + subpatterns found as a result
+    ///   of the most recent GetMatch() call.
+    /// @sa
+    ///   GetMatch()
     int NumFound() const;
 
-    /// Get location of pattern/sub-pattern.
-
-    /// Returns array where index 0 is location of first character in
-    /// pattern/sub pattern and index 1 is 1 beyond last character in
-    /// pattern/sub pattern. Throws if called with idx >= NumFound().
-    /// Use idx == 0 for pattern, idx > 0 for sub patterns.
+    /// Get location of pattern/subpattern.
+    ///
+    /// @param idx
+    ///   Index of pattern/subpattern to obtaining.
+    ///   Use idx = 0 for pattern, idx > 0 for sub patterns.
+    /// @return
+    ///   Return array where index 0 is location of first character in
+    ///   pattern/sub pattern and index 1 is 1 beyond last character in
+    ///   pattern/sub pattern.
+    ///   Throws if called with idx >= NumFound().
+    /// @sa
+    ///   GetMatch(), NumFound()
     const int* GetResults(size_t idx) const;
 
 private:
-    // Disable copy constructor and assignment operator
+    // Disable copy constructor and assignment operator.
     CRegexp(const CRegexp &);
     void operator= (const CRegexp &);
 
-    /// Pointer to compiled PCRE
-    pcre  *m_PReg;                                  // Compiled pattern
+    /// Pointer to compiled PCRE pattern.
+    pcre*  m_PReg;
 
-    /// Array of locations of patterns/sub-patterns resulting from
-    /// the last call to GetMatch. Also contains 1/3 extra space used
+    /// Array of locations of patterns/subpatterns resulting from
+    /// the last call to GetMatch(). Also contains 1/3 extra space used
     /// internally by the PCRE C library.
-    int m_Results[(kRegexpMaxSubPatterns +1) * 3];  // Results of Match
+    int m_Results[(kRegexpMaxSubPatterns +1) * 3];
 
-    /// Holds the total number of pattern + sub-patterns resulting
-    /// from the last call to GetMatch.
-    int m_NumFound;                                 // #(sub) patterns
+    /// The total number of pattern + subpatterns resulting from
+    /// the last call to GetMatch.
+    int m_NumFound;
 };
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CRegexpUtil --
+///
+/// Throw exception on error.
+
+class NCBI_XUTIL_EXPORT CRegexpUtil
+{
+public:
+    /// Constructor.
+    ///
+    /// Set string for processing.
+    /// @param str
+    ///   String to process.
+    /// @sa
+    ///   Exists(), Extract(), Replace(), ReplaceRange()
+    CRegexpUtil(const string& str = kEmptyStr);
+
+    /// Reset the content of the string to process.
+    ///
+    /// @param str
+    ///   String to process.
+    /// @sa
+    ///   operator =
+    void Reset(const string& str);
+
+    /// Reset the content of the string to process.
+    ///
+    /// The same as Reset().
+    /// @param str
+    ///   String to process.
+    /// @sa
+    ///   Reset()
+    void operator= (const string& str);
+
+    /// Get result string.
+    ///
+    /// @sa
+    ///   operator string
+    string GetResult(void);
+
+    /// Get result string.
+    ///
+    /// The same as GetResult().
+    /// @sa
+    ///   GetResult()
+    operator string(void);
+ 
+    /// Check existence substring which match a specified pattern.
+    ///
+    /// @param pattern
+    ///   Perl regular expression to search.
+    /// @param compile_flags
+    ///   Regular expression compilation flags.
+    /// @param match_flags
+    ///   Flags to match.
+    /// @return
+    ///   Return TRUE if  a string corresponding to the match to pattern or subpattern
+    ///   Return array where index 0 is location of first character in
+    ///   pattern/subpattern and index 1 is 1 beyond last character in
+    ///   pattern/subpattern.
+    ///   Throws if called with idx >= NumFound().
+    /// @sa
+    ///   CRegexp, CRegexp::GetMatch()
+    bool Exists(
+        const string&      pattern,
+        CRegexp::TCompile  compile_flags = CRegexp::eCompile_default,
+        CRegexp::TMatch    match_flags   = CRegexp::eMatch_default
+    );
+
+    /// Get matching pattern/subpattern from string.
+    ///
+    /// @param pattern
+    ///   Perl regular expression to search.
+    /// @param compile_flags
+    ///   Regular expression compilation flags.
+    /// @param match_flags
+    ///   Flags to match.
+    /// @param pattern_idx
+    ///   Index of pattern/subpattern to extract.
+    ///   Use pattern_idx = 0 for pattern, pattern_idx > 0 for sub patterns.
+    /// @return
+    ///   Return the substring at location of pattern/subpatter match with index
+    ///   pattern_idx. Return empty string when no match.    
+    /// @sa
+    ///   CRegexp, CRegexp::GetMatch()
+    string Extract(
+        const string&      pattern,
+        CRegexp::TCompile  compile_flags = CRegexp::eCompile_default,
+        CRegexp::TMatch    match_flags   = CRegexp::eMatch_default,
+        size_t             pattern_idx   = 0
+    );
+
+    /// Replace occurrences of a substring within a string by pattern.
+    ///
+    /// @param search
+    ///   Reqular expression to match a substring value that is replaced.
+    /// @param replace
+    ///   Replace "search" substring with this value. The matched subpatterns
+    ///   (if any) can be found and inserted into replace string using
+    ///   variables $1, $2, $3, and so forth. The variable can be enclosed
+    ///   in the curly brackets {}, that will be deleted on substitution.
+    /// @param compile_flags
+    ///   Regular expression compilation flags.
+    /// @param match_flags
+    ///   Flags to match.
+    /// @param max_replace
+    ///   Replace no more than "max_replace" occurrences of substring "search".
+    ///   If "max_replace" is zero (default), then replace all occurrences with
+    ///   "replace".
+    /// @return
+    ///   Return the count of replacements.
+    /// @sa
+    ///   CRegexp, ReplaceRange()
+    size_t Replace(
+        const string&      search,
+        const string&      replace,
+        CRegexp::TCompile  compile_flags = CRegexp::eCompile_default,
+        CRegexp::TMatch    match_flags   = CRegexp::eMatch_default,
+        size_t             max_replace   = 0
+    );
+
+
+    //
+    // Range functions.
+    //
+
+
+    /// Range processing type.
+    /// Defines which part of the specified range should be processed.
+    enum ERange {
+        eInside,    ///< Process substrings inside range.
+        eOutside    ///< Process substrings outside range.
+    };
+
+    /// Set new range for range-dependent functions.
+    ///
+    /// The mached string will be splitted up by "delimeter".
+    /// And then in range-dependent functions every part (substring) is checked
+    /// to fall into the range, specified by start and end adresses.
+    ///
+    /// The addresses works similare the Unix utility SED, except that regular
+    /// expressions is Perl-compatible:
+    ///    - empty address in the range correspond to any substring.
+    ///    - command with one address correspond to any substring that matches
+    ///      the address.
+    ///    - command with two addresses correspond to inclusive range from the
+    ///      start address to through the next pattern space that maches the
+    ///      end address.
+    ///
+    /// Specified range have effect only for range-dependent functions.
+    /// Otherwise range is ignored.
+    /// @param addr_start
+    ///   Regular expression which assign a starting address of range.
+    /// @param addr_end
+    ///   Regular expression which assign an ending address of range.
+    ///   Should be empty if the start address is empty.
+    /// @param delimiter
+    ///   Split a source string by "delimiter.
+     /// @sa
+    ///   ClearRange, ReplaceRange()
+    void SetRange(
+        const string&  addr_start = kEmptyStr,
+        const string&  addr_end   = kEmptyStr,
+        const string&  delimiter  = "\n"
+    );
+
+    /// Clear range for range-dependent functions.
+    ///
+    /// Have the same effect as SetRange() without parameters.
+    /// @sa
+    ///   SetRange()
+    void ClearRange(void);
+
+    /// Replace all occurrences of a substring within a string by pattern.
+    ///
+    /// Use range specified by SetRange() method. Work like SED command s/.
+    /// @param search
+    ///   Reqular expression to match a substring value that is replaced.
+    /// @param replace
+    ///   Replace "search" substring with this value. The matched subpatterns
+    ///   (if any) can be found and inserted into replace string using
+    ///   variables $1, $2, $3, and so forth. The variable can be enclosed
+    ///   in the curly brackets {}, that will be deleted on substitution.
+    /// @param compile_flags
+    ///   Regular expression compilation flags.
+    /// @param match_flags
+    ///   Flags to match.
+    /// @param process_within
+    ///   Define which part of the range should be processed.
+    /// @param max_replace
+    ///   Replace no more than "max_replace" occurrences of substring "search"
+    ///   in the every substring. If "max_replace" is zero (default),
+    ///   then replace all occurrences with "replace".
+    /// @return
+    ///   Return the count of replacements.
+    /// @sa
+    ///   ERange, SetRange(), ClearRange()
+    size_t ReplaceRange(
+        const string&       search,
+        const string&       replace,
+        CRegexp::TCompile   compile_flags  = CRegexp::eCompile_default,
+        CRegexp::TMatch     match_flags    = CRegexp::eMatch_default,
+        CRegexpUtil::ERange process_within = eInside,
+        size_t              max_replace    = 0
+    );
+
+private:
+    /// Divide source string to substrings by delimiter.
+    /// If delimiter is empty string that use early defined delimiter.
+    void x_Divide(const string& delimiter = kEmptyStr);
+
+    /// Join substrings back to entire string.
+    void x_Join(void);
+
+private:
+    string       m_Content;       ///< Content string.
+    list<string> m_ContentList;   ///< Content list.
+    bool         m_IsDivided;     ///< TRUE if m_ContentList is newer than
+                                  ///< m_Content, and FALSE otherwise.
+    string       m_RangeStart;    ///< Regexp to determine start of range.
+    string       m_RangeEnd;      ///< Regexp to determine end of range.
+    string       m_Delimiter;     ///< Delimiter used to split string.
+};
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Inline
+//
+
+//
+// CRegexp
+//
+
+inline
+int CRegexp::NumFound() const
+{
+    return m_NumFound;
+}
+
+
+inline
+const int* CRegexp::GetResults(size_t idx) const
+{
+    if ((int)idx >= m_NumFound) {
+        throw runtime_error("idx >= NumFound()");
+    }
+    return m_Results + 2 * idx;
+}
+
+//
+// CRegexpUtil
+//
+
+inline
+string CRegexpUtil::GetResult(void)
+{
+    if ( m_IsDivided ) {
+        x_Join();
+    }
+    return m_Content;
+}
+
+inline
+void CRegexpUtil::Reset(const string& str)
+{
+    m_Content   = str;
+    m_IsDivided = false;
+    m_ContentList.clear();
+}
+
+inline
+CRegexpUtil::operator string(void)
+{
+    return GetResult();
+}
+
+inline
+void CRegexpUtil::operator= (const string& str)
+{
+    Reset(str);
+}
+
+inline
+void CRegexpUtil::ClearRange(void)
+{
+    SetRange();
+}
+
+inline
+bool CRegexpUtil::Exists(
+    const string&     pattern,
+    CRegexp::TCompile compile_flags,
+    CRegexp::TMatch   match_flags)
+{
+    // Fill shure that string is not divided
+    x_Join();
+    // Check the pattern existence
+    CRegexp re(pattern, compile_flags);
+    re.GetMatch(m_Content.c_str(), 0, match_flags, 0, true);
+    return re.NumFound() > 0;
+}
+
+inline
+string CRegexpUtil::Extract(
+    const string&     pattern,
+    CRegexp::TCompile compile_flags,
+    CRegexp::TMatch   match_flags,
+    size_t            pattern_idx)
+{
+    // Fill shure that string is not divided
+    x_Join();
+    // Get the pattern/subpattern
+    CRegexp re(pattern, compile_flags);
+    return re.GetMatch(m_Content.c_str(), 0, pattern_idx, match_flags);
+}
 
 
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2003/07/16 19:15:05  clausen
-* Added TCompile and TMatch and fixed comments
-*
-* Revision 1.3  2003/07/07 13:50:59  kuznets
-* Added DLL export/import instruction
-*
-* Revision 1.2  2003/06/20 18:32:42  clausen
-* Changed to native interface for regexp
-*
-* Revision 1.1  2003/06/03 14:47:46  clausen
-* Initial version
-*
-*
-* ===========================================================================
-*/
 
-#endif  /* REGEXP__HPP */
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.5  2003/11/06 16:12:10  ivanov
+ * Added CRegexpUtil class.
+ * Added some new CRegExp::ECompile flags.
+ * Added more comments; Some formal code rearrangement.
+ *
+ * Revision 1.4  2003/07/16 19:15:05  clausen
+ * Added TCompile and TMatch and fixed comments
+ *
+ * Revision 1.3  2003/07/07 13:50:59  kuznets
+ * Added DLL export/import instruction
+ *
+ * Revision 1.2  2003/06/20 18:32:42  clausen
+ * Changed to native interface for regexp
+ *
+ * Revision 1.1  2003/06/03 14:47:46  clausen
+ * Initial version
+ *
+ * ===========================================================================
+ */
+
+#endif  /* UTIL___REGEXP__HPP */
