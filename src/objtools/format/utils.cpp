@@ -121,6 +121,55 @@ void StripSpaces(string& str)
 }
 
 
+static bool s_IsWholeWord(const string& str, size_t pos, const string& word)
+{
+    // NB: To preserve the behavior of the C toolkit we only test on the left.
+    // This was an old bug in the C toolkit that was never fixed and by now
+    // has become the expected behavior.
+    return (pos > 0) ?
+        isspace(str[pos - 1])  ||  ispunct(str[pos - 1]) : true;
+}
+
+
+void JoinNoRedund(string& str1, const string& str2, const string& delim)
+{
+    if ( str2.empty() ) {
+        return;
+    }
+
+    if ( str1.empty() ) {
+        str1 = str2;
+        return;
+    }
+    
+    size_t pos = NPOS;
+    for ( pos = NStr::FindNoCase(str1, str2);
+          pos != NPOS  &&  !s_IsWholeWord(str1, pos, str2);
+          pos += str2.length());
+
+    if ( pos == NPOS  ||  !s_IsWholeWord(str1, pos, str2) ) {
+        str1 += delim;
+        str1 += str2;
+    }
+}
+
+
+string JoinNoRedund(const list<string>& l, const string& delim)
+{
+    if ( l.empty() ) {
+        return kEmptyStr;
+    }
+
+    string result = l.front();
+    list<string>::const_iterator it = l.begin();
+    while ( ++it != l.end() ) {
+        JoinNoRedund(result, *it, delim);
+    }
+
+    return result;
+}
+
+
 // Validate the correct format of an accession string.
 bool ValidateAccession(const string& acc)
 {
@@ -309,6 +358,9 @@ void GetDeltaSeqSummary
                 }
             }}
             break;
+
+        default:
+            break;
         }
     }
     summary = temp;
@@ -463,6 +515,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/02/11 16:57:34  shomrat
+* added JoinNoRedund functions
+*
 * Revision 1.1  2003/12/17 20:25:01  shomrat
 * Initial Revision (adapted from flat lib)
 *

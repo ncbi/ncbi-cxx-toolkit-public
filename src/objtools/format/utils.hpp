@@ -49,6 +49,8 @@ enum ETildeStyle {
 };
 string ExpandTildes(const string& s, ETildeStyle style);
 
+void JoinNoRedund(string& str1, const string& str2, const string& delim);
+string JoinNoRedund(const list<string>& l, const string& delim);
 
 // Strips all spaces in string in following manner. If the function
 // meet several spaces (spaces and tabs) in succession it replaces them
@@ -104,6 +106,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/02/11 16:57:17  shomrat
+* added JoinNoRedund functions
+*
 * Revision 1.1  2003/12/17 20:25:10  shomrat
 * Initial Revision (adapted from flat lib)
 *
