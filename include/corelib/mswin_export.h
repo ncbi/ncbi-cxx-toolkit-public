@@ -558,6 +558,7 @@
 #  define NCBI_SEQSET_EXPORT
 #  define NCBI_SEQUENCE_EXPORT
 #  define NCBI_SEQ_EXPORT
+#  define NCBI_SUBMIT_EXPORT
 #  define NCBI_TINYSEQ_EXPORT
 #  define NCBI_XALNMGR_EXPORT
 #  define NCBI_XCONNECT_EXPORT
@@ -575,6 +576,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2002/12/31 16:15:46  dicuccio
+ * Added missing NCBI_SUBMIT_EXPORT to empty define list
+ *
  * Revision 1.3  2002/12/31 15:08:23  dicuccio
  * Moved featdef and gbseq into ncbi_misc.dll
  *
