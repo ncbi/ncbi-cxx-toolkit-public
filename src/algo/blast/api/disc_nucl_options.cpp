@@ -61,7 +61,8 @@ CDiscNucleotideOptionsHandle::SetMBLookupTableDefaults()
     SetTemplateType(0);
     SetTemplateLength(21);
     SetWordSize(BLAST_WORDSIZE_NUCL);
-    SetScanStep(4);
+    SetFullByteScan(true);
+    SetVariableWordSize(BLAST_VARWORD_NUCL);
 }
 
 void 
@@ -69,9 +70,6 @@ CDiscNucleotideOptionsHandle::SetMBInitialWordOptionsDefaults()
 {
     SetXDropoff(BLAST_UNGAPPED_X_DROPOFF_NUCL);
     SetWindowSize(BLAST_WINDOW_SIZE_DISC);
-    SetSeedContainerType(eDiagArray);
-    SetVariableWordSize(BLAST_VARWORD_NUCL);
-    SetSeedExtensionMethod(eUpdateDiag);
     SetUngappedExtension();
 }
 
@@ -108,6 +106,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/01/10 13:37:53  madden
+ * Removed call to SetSeedExtensionMethod as it no longer exists
+ *
  * Revision 1.10  2004/08/03 20:21:09  dondosha
  * Set seed extension method to eUpdateDiag rather than eRight
  *
