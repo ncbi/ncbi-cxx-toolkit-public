@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/03/11 21:10:13  grichenk
+* +CDataLoader::ResolveConflict()
+*
 * Revision 1.21  2002/03/07 21:25:33  grichenk
 * +GetSeq_annot() in annotation iterators
 *
@@ -171,7 +174,7 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle) const
         return 0;
     // The map should not contain empty entries
     _ASSERT(tse_set->second.size() > 0);
-    CRef<CTSE_Info> live = 0;
+    TTSESet live;
     if ( tse_set->second.size() == 1) {
         // There is only one TSE, no matter live or dead
         return *tse_set->second.begin();
@@ -180,16 +183,25 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle) const
         // Find live TSEs
         if ( !(*tse)->m_Dead ) {
             // Make sure there is only one live TSE
-            if ( live ) {
-                throw runtime_error(
-                    "Seq-id conflict: multiple live entries found");
-            }
-            live = *tse;
+            live.insert(*tse);
         }
     }
-    //### Try to resolve the conflict with the help of loader
+    if (live.size() == 1) {
+        // There is only one live TSE -- ok to use it
+        return *live.begin();
+    }
+    else if ((live.size() == 0)  &&  m_Loader.GetPointer()) {
+        // No live TSEs -- try to select the best dead TSE
+        CTSE_Info* best = m_Loader->ResolveConflict(handle, tse_set->second);
+        if ( best ) {
+            return *tse_set->second.find(best);
+        }
+        throw runtime_error(
+            "Multiple seq-id matches found -- can not resolve to a TSE");
+    }
+    // Multiple live TSEs -- not allowed
     throw runtime_error(
-        "Multiple seq-id matches found -- can not resolve to a TSE");
+        "Seq-id conflict: multiple live entries found");
 }
 
 

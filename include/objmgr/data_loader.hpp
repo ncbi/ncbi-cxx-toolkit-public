@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/03/11 21:10:11  grichenk
+* +CDataLoader::ResolveConflict()
+*
 * Revision 1.2  2002/02/21 19:27:00  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -47,7 +50,8 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <objects/objmgr1/data_loader_factory.hpp>
-
+#include <objects/objmgr1/seq_id_handle.hpp>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -58,6 +62,7 @@ class CSeq_loc;
 class CSeq_entry;
 class CDataSource;
 class CHandleRangeMap;
+class CTSE_Info;
 
 
 ////////////////////////////////////////////////////////////////////
@@ -100,6 +105,12 @@ public:
     void SetTargetDataSource(CDataSource& data_source);
 
     string GetName(void) const;
+
+    // Resolve TSE conflict -- select the best TSE from the set of
+    // dead (?) TSEs.
+    typedef set< CRef<CTSE_Info> > TTSESet;
+    virtual CTSE_Info* ResolveConflict(CSeq_id_Handle handle,
+        const TTSESet& tse_set) { return 0; } //### = 0;
 
 protected:
     void SetName(const string& loader_name);
