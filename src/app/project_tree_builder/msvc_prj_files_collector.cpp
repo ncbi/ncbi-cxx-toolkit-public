@@ -40,6 +40,14 @@ static void s_CollectRelPathes(const string&        path_from,
                                const list<string>&  abs_dirs,
                                list<string>*        rel_pathes);
 
+// sort files by base file name, ignoring path and extension
+bool s_FileName_less(const string& x, const string& y)
+{
+    string base_x, base_y;
+    CDirEntry::SplitPath(x, NULL, &base_x);
+    CDirEntry::SplitPath(y, NULL, &base_y);
+    return NStr::CompareNocase(base_x, base_y) < 0;
+}
 
 //-----------------------------------------------------------------------------
 
@@ -239,6 +247,7 @@ CMsvcPrjFilesCollector::CollectSources(void)
             LOG_POST(Warning <<"Can not resolve/find source file : " + abs_path);
         }
     }
+    m_SourceFiles.sort(s_FileName_less);
 }
 
 
@@ -249,6 +258,7 @@ CMsvcPrjFilesCollector::CollectHeaders(void)
     m_HeaderFiles.clear();
     s_CollectRelPathes(m_Context->ProjectDir(), m_Context->IncludeDirsAbs(),
                        &m_HeaderFiles);
+    m_HeaderFiles.sort(s_FileName_less);
 }
 
 
@@ -260,6 +270,7 @@ CMsvcPrjFilesCollector::CollectInlines(void)
     m_InlineFiles.clear();
     s_CollectRelPathes(m_Context->ProjectDir(), m_Context->InlineDirsAbs(),
                        &m_InlineFiles);
+    m_InlineFiles.sort(s_FileName_less);
 }
 
 
@@ -283,30 +294,30 @@ CMsvcPrjFilesCollector::CollectResources(void)
 
     ITERATE(list<string>, p, sources) {
 
-        const string& abs_path = *p; // whith ext.
+        const string& abs_path = *p; // with ext.
         m_ResourceFiles.push_back(
             CDirEntry::CreateRelativePath(m_Context->ProjectDir(), 
                                           abs_path));
     }
-    if ( !m_ResourceFiles.empty() )
-        return;
-
-    // if there are no makefile resources - 'll use defaults
-    string default_rc;
-    if (m_Project->m_ProjType == CProjKey::eApp) {
-        default_rc = GetApp().GetSite().GetAppDefaultResource();
+    if ( m_ResourceFiles.empty() ) {
+        // if there is no makefile resources - use defaults
+        string default_rc;
+        if (m_Project->m_ProjType == CProjKey::eApp) {
+            default_rc = GetApp().GetSite().GetAppDefaultResource();
+        }
+        if ( !default_rc.empty() ) {
+            string abs_path = GetApp().GetProjectTreeInfo().m_Compilers;
+            abs_path = 
+                CDirEntry::ConcatPath(abs_path, 
+                                    GetApp().GetRegSettings().m_CompilersSubdir);
+            abs_path = CDirEntry::ConcatPath(abs_path, default_rc);
+            abs_path = CDirEntry::NormalizePath(abs_path);
+            m_ResourceFiles.push_back(
+                CDirEntry::CreateRelativePath(m_Context->ProjectDir(), 
+                                            abs_path));
+        }
     }
-    if ( !default_rc.empty() ) {
-        string abs_path = GetApp().GetProjectTreeInfo().m_Compilers;
-        abs_path = 
-            CDirEntry::ConcatPath(abs_path, 
-                                  GetApp().GetRegSettings().m_CompilersSubdir);
-        abs_path = CDirEntry::ConcatPath(abs_path, default_rc);
-        abs_path = CDirEntry::NormalizePath(abs_path);
-        m_ResourceFiles.push_back(
-            CDirEntry::CreateRelativePath(m_Context->ProjectDir(), 
-                                          abs_path));
-    }
+    m_ResourceFiles.sort(s_FileName_less);
 }
 
 
@@ -364,6 +375,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/10/21 14:48:06  gouriano
+ * Sort project files alphabetically
+ *
  * Revision 1.8  2004/10/12 16:18:26  ivanov
  * Added configurable file support
  *
