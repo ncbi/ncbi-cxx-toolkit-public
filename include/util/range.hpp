@@ -337,6 +337,12 @@ public:
         }
 };
 
+///
+/// typedefs for sequence ranges
+///
+
+typedef CRange<TSeqPos>       TSeqRange;
+typedef CRange<TSignedSeqPos> TSignedSeqRange;
 
 /* @} */
 
@@ -348,6 +354,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/10/27 16:57:59  dicuccio
+* Added typedefs for T{Signed}SeqRange
+*
 * Revision 1.14  2003/04/17 17:50:24  siyan
 * Added doxygen support
 *
