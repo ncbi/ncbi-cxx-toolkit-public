@@ -14,7 +14,6 @@
   <li>The <a href="#tag"> <i>CHTMLTagNode</i> </a> class
   <li>The <a href="#htmnode"> <i>CHTMLNode</i> </a> class
   <li>Using the HTML classes with a <a href="#cgiapp"> <i>CCgiApplication</i></a> object
-  <!--li> <a href="#compons"> Other HTML Components </a-->
   <li><a href="#appendix"> Appendix</a>
   <ul>
     <li>The <a href="#tmode"> <i>CNCBINode::TMode</i></a> class
@@ -141,7 +140,7 @@ A slice of the NCBI C++ Toolkit class hierarchy rooted at the
 </ul>
 Many of these subclasses make little sense out of context, as they are designed for use as 
 subcomponents of, for example, a <i>CHTMLPage</i>. Exceptions to this are the text nodes,
-which are described below.
+described next.
 <p>
 
 <a name="text"> <h3>HTML Text nodes:
@@ -149,10 +148,13 @@ which are described below.
 <a href="../docxx/CHTMLPlainText.html">
 <i>CHTMLPlainText</i> </a></h3>
 
-The <i>CHTMLText</i> class uses the <i>m_Name</i> data member inherited from <i>CNCBINode</i>
+The <i>CHTMLText</i> class uses the <i>m_Name</i> data member (inherited from <i>CNCBINode</i>)
 to store a text string of arbitrary length.  No new data members are introduced, but two new
-member functions are defined. <i>SetText()</i> resets <i>m_Name</i> to a new string, and
-<i>GetText()</i> returns the value currently stored in <i>m_Name</i>.  With the exception of
+member functions are defined. 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetText">
+<i>SetText()</i></a> resets <i>m_Name</i> to a new string, and
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=GetText">
+<i>GetText()</i></a> returns the value currently stored in <i>m_Name</i>.  With the exception of
 specially <i>tagged</i> sections (described below), all text occurring in a <i>CHTMLText</i>
 node is sent directly to the output without further encoding. <p>
 
@@ -519,24 +521,36 @@ int main()
 }
 </pre></font>
 
-<a name="htmnode"> <h3> The
-<a href="../docxx/CHTMLNode.html"><i>CHTMLNode</i></a> class </h3>
-<i>CHTMLNode</i> is the base class for all elements requiring HTML tags (e.g., &lt;ul>, 
-&lt;br>, &lt;img>, &lt;table>, etc.). A uniform system of class names is applied; each class
-is named <i>CHTML_tag</i>,  where <i>tag</i> - the HTML tag in lowercase - is always preceded by an
-underscore.  The NCBI C++ Toolkit hierarchy
-defines 35 subclasses of <a href="#CHTMLNode"><i>CHTMLNode</i></a> - all of which are defined in the 
-<a href="#quickRef"> Quick Reference Guide</a> at the end of this section. The constructors for "empty" 
-elements, such as <i>CHTML_br</i>, which have no assigned values, are simply invoked as: <i>CHTML_br()</i>. 
-The Quick Reference Guide provides brief explanations of each class, along with descriptions of
-the class constructors. <p>
+<a name="htmnode"> <h3> The <a href="../docxx/CHTMLNode.html"><i>CHTMLNode</i></a> class </h3>
+<i>CHTMLNode</i> is derived directly from the <i>CNCBINode</i> class, and provides the base class
+for all elements requiring HTML tags (e.g., &lt;ul>, &lt;br>, &lt;img>, &lt;table>, etc.). The class
+interface includes several constructors, all of which expect the first argument to specify the HTML
+tagname for the node. This argument is used by the constructor to set the <i>m_Name</i> data
+member. The optional second argument may be either a text string, which will be appended to the node
+using <i>AppendPlainText()</i>, or a <i>CNCBINode</i>, which will be appended using
+<i>AppendChild()</i>.<p>
+
+A uniform system of class names is applied; each subclass derived from the <i>CHTMLNode</i> base
+class is named <i>CHTML_[tag]</i>, where <i>[tag]</i> is the HTML tag in lowercase, and is always
+preceded by an underscore.  The NCBI C++ Toolkit hierarchy defines roughly 40 subclasses of <a
+href="#CHTMLNode"><i>CHTMLNode</i></a> - all of which are defined in the <a href="#quickRef"> Quick
+Reference Guide</a> at the end of this section. The constructors for "empty" elements, such as <a
+href="#CHTML_br"><i>CHTML_br</i></a>, which have no assigned values, are simply invoked as:
+<i>CHTML_br()</i>.  The Quick Reference Guide provides brief explanations of each class, along with
+descriptions of the class constructors. <p>
 
 In addition to the subclasses explicitly defined in the hierarchy, a large number of lightweight 
 subclasses of <i>CHTMLNode</i> are defined by the preprocessor macro <a href=
 "http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=DECLARE_HTML_ELEMENT">
 <i>DECLARE_HTML_ELEMENT</i></a><i>(Tag, Parent)</i> defined in <i>html.hpp</i>. All of these
 elements have the same interface as other <i>CHTMLNode</i> classes however, and the
-distinction is invisible to the user.
+distinction is invisible to the user.<p>
+
+A rich interface of settable attributes is defined in the base class, and is applicable to all
+of the derived subclasses, including those implmented by the preprocessor macros. Settable attributes
+include: <i>class, style, id, width, height, size, alignment, color, title, accesskey,</i> and <i>name</i>.
+All of the <i>SetXxx()</i> functions which set these attributes return a <i>this</i> pointer, cast as 
+<i>CHTMLNode*</i>.<p>
 
 <a name="cgiapp"> <h3>Using the HTML classes with a <i>CCgiApplication</i> object</h3> 
 
@@ -672,12 +686,16 @@ NCBI <a href="#tagmap"> Page</a> classes. <p>
         		<ul>
 	    		<li><a href="#CHTML_a">		<i>CHTML_a</i></a>
 	    		<li><a href="#CHTML_basefont">	<i>CHTML_basefont</i></a>
+	    		<!--li><a href="#CHTML_button">	<i>CHTML_button</i></a-->
 	    		<li><a href="#CHTML_dl">	<i>CHTML_dl</i></a>
+ 	    		<li><a href="#CHTML_fieldset">	<i>CHTML_fieldset</i></a>
  	    		<li><a href="#CHTML_font">	<i>CHTML_font</i></a>
 	    			<ul>
 	      			<li><a href="#CHTML_color"><i>CHTML_color</i></a>
 	    			</ul>
 	    		<li><a href="#CHTML_form">	<i>CHTML_form</i></a>
+	    		<li><a href="#CHTML_label">	<i>CHTML_label</i></a>
+	    		<li><a href="#CHTML_legend">	<i>CHTML_legend</i></a>
 	    		<li><a href="#CHTML_option">	<i>CHTML_option</i></a>
 	    		<li><a href="#CHTML_select">	<i>CHTML_select</i></a>
 	  		<li><a href="#CHTML_table">	<i>CHTML_table</i></a>
@@ -689,6 +707,7 @@ NCBI <a href="#tagmap"> Page</a> classes. <p>
 	  			</ul>
 	  		<li><a href="#CHTML_tc">	<i>CHTML_tc</i></a>
  	  		<li><a href="#CHTML_textarea">	<i>CHTML_textarea</i></a>
+	    		<li><a href="#CHTML_tr">	<i>CHTML_tr</i></a>
 	    		<li><a href="#CHTMLListElement"> <i>CHTMLListElement</i></a>
 	     			<ul>
 	       			<li><a href="#CHTML_dir">  <i>CHTML_dir</i></a>
@@ -801,6 +820,20 @@ The constructor takes a single <i>bool</i> argument; if no arguments are provide
 <i>AppendTerm()</i></a>.
 <p>
 
+<dt><a name="CHTML_fieldset"> 
+<a href="../docxx/CHTML_fieldset.html">
+<i>CHTML_fieldset</i></a>
+<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
+defined in <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CHTML_fieldset">
+
+<i>html.hpp</i></a> - an element that groups related form controls (such as checkboxes, radio
+buttons, etc.)  together to define a <i>form control group</i>.  The constructors take at most 1
+argument, which may be either a <i>string</i> or a <a href="#CHTML_legend"> <i>CHTML_legend</i></a>
+node. If the argument is a <i>string</i>, then it is used to create a <i>CHTML_legend</i> node for
+the <i>fieldset</i>. The individual form controls to be included in the group are specified using the 
+<i>AppendChild()</i> method.
+<p>
+
 <dt><a name="CHTML_file"> <a href="../docxx/CHTML_file.html">
 <i>CHTML_file</i></a>
 <dd>Derived from <a href="#CHTML_input"><i>CHTML_input</i></a>, 
@@ -886,6 +919,28 @@ defined in <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?
 name. The constructor for each of the subclasses has a static member <i>sm_InputType</i> which
 is passed as the first argument to the <i>CParent</i>'s (<i>CHTML_input</i>) constructor.
 <p>
+
+<dt><a name="CHTML_label"> 
+<a href="../docxx/CHTML_label.html">
+<i>CHTML_label</i></a>
+<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
+defined in <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CHTML_label">
+<i>html.hpp</i></a> - associates a label with a form control. 
+
+The constructors take a <i>string</i> argument which specifies the text for the label,
+and optionally, a second <i>string</i> argument specifying the <i>FOR</i> attribute.
+The <i>FOR</i> attribute explicitly identifies the form control to associate with this label.<p>
+
+
+<dt><a name="CHTML_legend"> 
+<a href="../docxx/CHTML_legend.html">
+<i>CHTML_legend</i></a>
+<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>, 
+defined in <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CHTML_legend">
+<i>html.hpp</i></a> - 
+defines a caption for a <a href="#CHTML_fieldset"><i>CHTML_fieldset</i></a> element. 
+The constructors take a single argument which may be either a <i>string</i> or
+a <i>CHTMLNode</i>. <p>
 
 <dt><a name="CHTML_menu"> <a href="../docxx/CHTML_menu.html">
 <i>CHTML_menu</i></a>
@@ -986,7 +1041,7 @@ href="#CHTML_tc">CHTML_tc</a>(tag, contents))</i>, where <i>tag</i> is type <i>c
 defined in <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CHTML_tc">
 <i>html.hpp</i></a> - an HTML table cell element. All of the constructors expect the first
 argument to be a <i>char* tagname</i>. The second argument, if present, may be text
-(<i>char*</i> or <i>string</i> or a pointer to a <i>CNCBINode</i>. 
+(<i>char*</i> or <i>string</i>) or a pointer to a <i>CNCBINode</i>. 
 <p>
 
 <dt><a name="CHTML_text"> <a href="../docxx/CHTML_text.html">
@@ -1011,6 +1066,14 @@ a <a href="#CHTML_form"><i>CHTML_form</i></a>; the HTML component for a textarea
 a form. The constructor takes up to four arguments: 
 name (<i>string</i>), cols (<i>int</i>), rows (<i>int</i>), and value (<i>string</i>).
 Only the last argument is optional.
+<p>
+
+<dt><a name="CHTML_tr"> <a href="../docxx/CHTML_tr.html">
+<i>CHTML_tr</i></a>
+<dd>Derived from <a href="#CHTMLElement"><i>CHTMLElement</i></a>,
+defined in <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CHTML_tr">
+<i>html.hpp</i></a> - an HTML table row element. The constructors take a single argument,
+which may be either a <i>string</i> or a pointer to a <i>CNCBINode</i>.
 <p>
 
 <dt><a name="CHTML_ul"> <a href="../docxx/CHTML_ul.html">
@@ -1081,10 +1144,11 @@ along with a Boolean indicating whther or not the list is compact. <p>
 <dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>,
 defined in <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CHTMLNode">
 <i>html.hpp</i></a> - the base class for <a href="#CHTMLComment"><i>CHTMLComment</i></a> and <a
-href="#CHTMLOpenElement"><i>CHTMLOpenElement</i></a>. Attributes include color, background
-color, height, width, alignment, size, name, and class. All of the constructors require a
-<i>tagname</i> argument, which may be either type <i>char*</i> or <i>string</i>. The optional
-second argument may be type <i>char*</i>, <i>string</i>, or <i>CNCBINode</i>. <p>
+href="#CHTMLOpenElement"><i>CHTMLOpenElement</i></a>. Attributes include 
+<i>style, id, title, accesskey, color, bgcolor, height, width, align, valign, size, name,</i> and <i>class</i>. 
+All of the constructors require a <i>tagname</i> argument, which may be either type <i>char*</i> or
+<i>string</i>. The optional second argument may be type <i>char*</i>, <i>string</i>, or
+<i>CNCBINode</i>. <p>
 
 
 <dt><a name="CHTMLOpenElement"> <a href="../docxx/CHTMLOpenElement.html">
