@@ -62,6 +62,10 @@ extern "C" {
  *  @sa ReaddbBlastSeqSrcInit (C toolkit)
  *  @sa SeqDbBlastSeqSrcInit (C++ toolkit)
  *  @sa MultiSeqBlastSeqSrcInit (C/C++ toolkit)
+ *  Please note that for consistency, C++ implementations should not throw 
+ *  exceptions but rather use the error reporting mechanism which allows all
+ *  implementations to uniformly retrieve initialization errors via
+ *  BlastSeqSrcGetInitError.
  *
  *  For ease of maintenance, please follow the following conventions:
  *  - Client implementations' initialization function should be called 
