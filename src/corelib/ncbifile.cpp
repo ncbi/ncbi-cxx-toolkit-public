@@ -431,6 +431,21 @@ string CDirEntry::ConvertToOSPath(const string& path)
     while ( xpath.find(sep2) != NPOS ) {
         xpath = NStr::Replace(xpath, sep2, sep);
     }
+    // replace smth like "../xxx/../yyy/zzz" with "../yyy/zzz"
+    {
+        sep1 = DIR_SEPARATOR; sep1 += DIR_PARENT; sep1 += DIR_SEPARATOR;
+        for (bool erased=true; erased;) {
+            erased=false;
+            size_t found = xpath.find(sep1);
+            if (found != 0 && found != string::npos) {
+                size_t start = xpath.rfind(DIR_SEPARATOR,found-1);
+                if (start != string::npos) {
+                    xpath.erase(start,found+sep1.length()-1-start);
+                    erased=true;
+                }
+            }
+        }
+    }
 #endif
     // Remove leading ":" in the relative path on non-MAC platforms 
     if ( xpath[0] == DIR_SEPARATOR ) {
@@ -1387,6 +1402,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2002/10/01 14:18:45  gouriano
+ * "optimize" result of ConvertToOSPath
+ *
  * Revision 1.32  2002/09/19 20:05:42  vasilche
  * Safe initialization of static mutexes
  *
