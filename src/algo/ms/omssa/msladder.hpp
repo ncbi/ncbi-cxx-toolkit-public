@@ -143,7 +143,8 @@ bool CLadder::CalcDelta(int &delta, const int *IntMassArray, char *AAMap, char *
     if(!delta) return false; // unusable char (-BXZ*)
 
 
-    if(NumMod > 0 && ModIndex >= 0 && ModIndex < NumMod && Site[ModIndex] == &(Sequence[Offset + Direction*i])) {
+    if(NumMod > 0 && ModIndex >= 0 && ModIndex < NumMod &&
+        Site[ModIndex] == &(Sequence[Offset + Direction*i])) {
         if (MaskSet(ModMask, ModIndex)) delta += DeltaMass[ModIndex];
         ModIndex += Direction;
     }
@@ -241,6 +242,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.11  2005/01/11 21:08:43  lewisg
+  average mass search
+
   Revision 1.10  2004/11/17 23:42:11  lewisg
   add cterm pep mods, fix prob for tophitnum
 

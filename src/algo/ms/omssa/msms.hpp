@@ -80,11 +80,11 @@ const double kWater = 18.015;
 const double AAAbundance[] = {1.0, 0.0758, 1.0, 0.0167, 0.0528, 0.0635, 0.0408, 0.0683, 0.0224, 0.058, 0.0593, 0.0943, 0.0237, 0.0447, 0.0491, 0.0399, 0.0514, 0.0715, 0.0569, 0.0656, 0.0124, 1.0, 0.0318, 1.0, 1.0, 1.0, 0.0}; 
 
 // masses taken from Papayannopoulos, IA, Mass Spectrometry Reviews, 1995, 14, 49-73.
+// selenocysteine calculated by using cysteine mass and adding difference between Se and S from webelements.  
 // monoisotopic mass
-// C = 103.00919
-const double MonoMass[] = {0.0, 71.03711, 115.02694, 103.00919, 115.02694, 129.04259, 147.06841, 57.02147, 137.05891, 113.08406, 128.09496, 113.08406, 131.04049, 114.04293, 97.05276, 128.05858, 156.10111, 87.03203, 101.04768, 99.06841, 186.07931, 0.0, 163.06333, 128.05858, 149.903 , 0.0, 0.0 };
+const double MonoMass[] = {0.0, 71.03711, 0.0, 103.00919, 115.02694, 129.04259, 147.06841, 57.02147, 137.05891, 113.08406, 128.09496, 113.08406, 131.04049, 114.04293, 97.05276, 128.05858, 156.10111, 87.03203, 101.04768, 99.06841, 186.07931, 0.0, 163.06333, 0.0, 149.903 , 0.0, 0.0 };
 // average mass
-const double AverageMass[] = {0.0, 71.08, 0.0, 103.15, 115.09, 129.12, 147.18, 57.05, 137.14, 113.16, 128.17, 113.16, 131.20, 114.10, 97.12, 128.13, 156.19, 87.08, 101.11, 99.13, 186.21, 0.0, 163.18, 128.13, 150.034, 0.0, 0.0 };
+const double AverageMass[] = {0.0, 71.08, 0.0, 103.15, 115.09, 129.12, 147.18, 57.05, 137.14, 113.16, 128.17, 113.16, 131.20, 114.10, 97.12, 128.13, 156.19, 87.08, 101.11, 99.13, 186.21, 0.0, 163.18, 0.0, 150.044, 0.0, 0.0 };
 
 const int AAIntervals[] = { 57, 71, 87, 97, 99, 101, 103, 113, 114, 115, 128, 129, 131, 137, 147, 150, 156, 163, 186 };
 
@@ -195,6 +195,7 @@ public:
 			    const char **Site,
 			    int *DeltaMass,
 			    const int *IntCalcMass,  // array of int AA masses
+                const int *PrecursorIntCalcMass, // precursor masses
                 int *ModEnum,     // the mod type at each site
                 int *IsFixed
 		    );
@@ -506,6 +507,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.17  2005/01/11 21:08:43  lewisg
+  average mass search
+
   Revision 1.16  2004/12/06 22:57:34  lewisg
   add new file formats
 

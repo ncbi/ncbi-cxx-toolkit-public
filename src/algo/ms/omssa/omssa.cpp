@@ -458,8 +458,11 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 	int endposition, position;
 	FixedMods.Init(MyRequest.GetSettings().GetFixed());
 	MassArray.Init(FixedMods, MyRequest.GetSettings().GetProductsearchtype());
+	PrecursorMassArray.Init(FixedMods, 
+                            MyRequest.GetSettings().GetPrecursorsearchtype());
 	VariableMods.Init(MyRequest.GetSettings().GetVariable());
 	const int *IntMassArray = MassArray.GetIntMass();
+	const int *PrecursorIntMassArray = PrecursorMassArray.GetIntMass();
 	const char *PepStart[MAXMISSEDCLEAVE];
 	const char *PepEnd[MAXMISSEDCLEAVE];
 
@@ -609,6 +612,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 				       Site[Missed - 1],
 				       DeltaMass[Missed - 1],
 				       IntMassArray,
+                       PrecursorIntMassArray,
                        ModEnum[Missed - 1],
                        IsFixed[Missed - 1]);
 			
@@ -900,6 +904,9 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
     unsigned char *Sequence;
     char accession[kAccLen]; // temp holder for accession
     int iSearch; // counter for the length of hit list
+
+    // set the search library version
+    MyResponse.SetDbversion(numseq);
 	
     for(iPeakSet = PeakSet.GetPeaks().begin();
 	iPeakSet != PeakSet.GetPeaks().end();
@@ -1234,6 +1241,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.35  2005/01/11 21:08:43  lewisg
+average mass search
+
 Revision 1.34  2004/12/20 20:24:16  lewisg
 fix uncalc ladder bug, cleanup
 

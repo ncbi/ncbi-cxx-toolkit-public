@@ -83,7 +83,7 @@ private:
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(0, 9, 7));
+    SetVersion(CVersionInfo(0, 9, 8));
 }
 
 
@@ -180,9 +180,9 @@ void COMSSA::Init()
 			   CArgDescriptions::eDouble, "0.8");
     argDesc->AddDefaultKey("te", "protol", "precursor ion  mass tolerance in Da",
 			   CArgDescriptions::eDouble, "2.0");
-    argDesc->AddDefaultKey("tom", "premass", "product ion search type (0 = mono, 1 = avg)",
+    argDesc->AddDefaultKey("tom", "promass", "product ion search type (0 = mono, 1 = avg)",
                 CArgDescriptions::eInteger, "0");
-    argDesc->AddDefaultKey("tem", "promass", "precursor ion search type (0 = mono, 1 = avg)",
+    argDesc->AddDefaultKey("tem", "premass", "precursor ion search type (0 = mono, 1 = avg)",
                 CArgDescriptions::eInteger, "0");
 
     argDesc->AddDefaultKey("i", "ions", 
@@ -516,6 +516,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.25  2005/01/11 21:08:43  lewisg
+  average mass search
+
   Revision 1.24  2004/12/06 22:57:34  lewisg
   add new file formats
 

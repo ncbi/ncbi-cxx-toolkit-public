@@ -114,6 +114,7 @@ bool CCleave::CalcAndCut(const char *SeqStart,
 			  const char **Site,
 			  int *DeltaMass,
 			  const int *IntCalcMass,  // array of int AA masses
+              const int *PrecursorIntCalcMass, // precursor masses
               int *ModEnum,       // the mod type at each site
               int *IsFixed
 			  )
@@ -121,8 +122,9 @@ bool CCleave::CalcAndCut(const char *SeqStart,
     char SeqChar(**PepStart);
 
     // n terminus protein
-    if(*PepStart == SeqStart) CheckMods(eModN, eModNAA, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
-    				 DeltaMass, *PepStart, ModEnum, IsFixed);
+    if(*PepStart == SeqStart) CheckMods(eModN, eModNAA, VariableMods, FixedMods,
+                                        NumMod, SeqChar, MaxNumMod, Site,
+                                        DeltaMass, *PepStart, ModEnum, IsFixed);
 
     // n terminus peptide
     CheckMods(eModNP, eModNPAA, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
@@ -141,7 +143,7 @@ bool CCleave::CalcAndCut(const char *SeqStart,
 //    		    DeltaMass, *PepStart, ModEnum, IsFixed, true);
     
     
-    	CalcMass(SeqChar, Masses, IntCalcMass);
+    	CalcMass(SeqChar, Masses, PrecursorIntCalcMass);
     
     	// check for cleavage point
     	if(CheckCleave(SeqChar, *PepStart)) { 
@@ -155,7 +157,7 @@ bool CCleave::CalcAndCut(const char *SeqStart,
 
     // todo: deal with mods on the end
 
-    CalcMass(**PepStart, Masses, IntCalcMass);
+    CalcMass(**PepStart, Masses, PrecursorIntCalcMass);
 
     // check c term peptide mods
     CheckMods(eModCP, eModCPAA, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
@@ -507,6 +509,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.15  2005/01/11 21:08:43  lewisg
+  average mass search
+
   Revision 1.14  2004/11/22 23:10:36  lewisg
   add evalue cutoff, fix fixed mods
 

@@ -195,6 +195,7 @@ private:
     ReadDBFILEPtr rdfp; 
     //    CMSHistSet HistSet;  // score arrays
     CMassArray MassArray;  // amino acid mass arrays
+    CMassArray PrecursorMassArray;  // precursor mass arrays
     CMSMod VariableMods;  // categorized variable mods
     CMSMod FixedMods;  // categorized fixed mods
     int numseq; // number of sequences in blastdb
@@ -290,6 +291,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.19  2005/01/11 21:08:43  lewisg
+  average mass search
+
   Revision 1.18  2004/11/30 23:39:57  lewisg
   fix interval query
 
