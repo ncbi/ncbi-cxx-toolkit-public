@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2001/05/17 18:32:47  thiessen
+* fix sequence/molecule/master match bug
+*
 * Revision 1.59  2001/05/14 16:04:32  thiessen
 * fix minor row reordering bug
 *
@@ -291,17 +294,21 @@ void StructureSet::MatchSequencesToMolecules(void)
 
 		SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
         ObjectList::iterator o, oe = objects.end();
-        int nMolecules, nSequenceMatches;
+        int nBiopolymers, nSequenceMatches;
 
         for (o=objects.begin(); o!=oe; o++) {
-            nMolecules = nSequenceMatches = 0;
-            ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
-            for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
-                if (!m->second->IsProtein() && !m->second->IsNucleotide()) continue;
-                nMolecules++;
+            nSequenceMatches = nBiopolymers = 0;
 
-                for (s=sequenceSet->sequences.begin(); s!=se; s++) {
-                    if ((*s)->molecule != NULL) continue; // skip already-matched sequences
+            // count biopolymers
+            ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
+            for (m=(*o)->graph->molecules.begin(); m!=me; m++)
+                if (m->second->IsProtein() || m->second->IsNucleotide()) nBiopolymers++;
+
+            for (s=sequenceSet->sequences.begin(); s!=se; s++) {
+                if ((*s)->molecule != NULL) continue; // skip already-matched sequences
+
+                for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
+                    if (!m->second->IsProtein() && !m->second->IsNucleotide()) continue;
 
                     if (SAME_SEQUENCE(m->second, *s)) {
 
@@ -324,23 +331,23 @@ void StructureSet::MatchSequencesToMolecules(void)
                                 (const_cast<Sequence*>(*s))->pdbChain = m->second->pdbChain;
                             }
 
-                            // if this is the master structure of a mutiple-structure alignment,
-                            // then we know that this molecule's sequence must also be the
-                            // master sequence for all sequence alignments
-                            if (objects.size() > 1 && (*o)->IsMaster())
+                            // if this is the master structure, then assume that the first sequence
+                            // found for this structure is master sequence for all sequence alignments
+                            if (objects.size() > 1 && (*o)->IsMaster() && !sequenceSet->master)
                                 (const_cast<SequenceSet*>(sequenceSet))->master = *s;
-                            break;
+
+                            break; // can only match one molecule per sequence, of course...
                         }
                     }
                 }
 
                 // allow only one Sequence per StructureObject if there are multiple objects
-                if (nSequenceMatches == 1 && objects.size() > 1) break;
+                if (objects.size() > 1 && nSequenceMatches == 1) break;
             }
 
-            // sanity check
-            if (mimeData && objects.size() == 1) {
-                if (nSequenceMatches != nMolecules) { // must match all biopolymer molecules
+            // sanity check - must match all biopolymer molecules if single molecule (& no alignments)
+            if (mimeData && !mimeData->IsStrucseqs() && objects.size() == 1) {
+                if (nSequenceMatches != nBiopolymers) {
                     ERR_POST(Error << "MatchSequencesToMolecules() - couldn't find sequence for "
                         "all biopolymers in " << (*o)->pdbID);
                     return;
@@ -349,7 +356,7 @@ void StructureSet::MatchSequencesToMolecules(void)
                 if (nSequenceMatches != 1) { // must match at exactly one biopolymer per object
                     ERR_POST(Error << "MatchSequencesToMolecules() - currently require exactly one "
                         "sequence per StructureObject (confused by " << (*o)->pdbID
-                        << ", biopolymers: " << nMolecules << ", matches: " << nSequenceMatches << ' ');
+                        << ", biopolymers: " << nBiopolymers << ", matches: " << nSequenceMatches << ' ');
                     return;
                 }
             }
