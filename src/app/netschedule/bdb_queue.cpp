@@ -166,7 +166,7 @@ void CQueueCollection::AddQueue(const string& name, SLockedQueue* queue)
 
 CQueueDataBase::CQueueDataBase()
 : m_Env(0),
-  m_MaxId(0),
+//  m_MaxId(0),
   m_StopPurge(false),
   m_PurgeLastId(0),
   m_PurgeSkipCnt(0),
@@ -174,7 +174,9 @@ CQueueDataBase::CQueueDataBase()
   m_FreeStatusMemCnt(0),
   m_LastR2P(time(0)),
   m_UdpPort(0)
-{}
+{
+    m_IdCounter.Set(0);
+}
 
 CQueueDataBase::~CQueueDataBase()
 {
@@ -301,8 +303,9 @@ void CQueueDataBase::MountQueue(const string& queue_name,
         unsigned job_id = queue.db.id;
         int status = queue.db.status;
 
-        if (job_id > m_MaxId) {
-            m_MaxId = job_id;
+
+        if (job_id > (unsigned)m_IdCounter.Get()) {
+            m_IdCounter.Set(job_id);
         }
         queue.status_tracker.SetExactStatusNoLock(job_id, 
                       (CNetScheduleClient::EJobStatus) status, 
@@ -361,17 +364,10 @@ unsigned int CQueueDataBase::GetNextId()
 {
     unsigned int id;
 
-    {{
-    CFastMutexGuard guard(m_IdLock);
-
-    if (m_MaxId >= kMax_I4) {
-        m_MaxId = 0;
+    if (m_IdCounter.Get() >= kMax_I4) {
+        m_IdCounter.Set(0);
     }
-    if (++m_MaxId == 0) {
-        ++m_MaxId;
-    }
-    id = m_MaxId;
-    }}
+    id = (unsigned) m_IdCounter.Add(1); 
 
     if ((id % 1000) == 0) {
         m_Env->TransactionCheckpoint();
@@ -407,11 +403,7 @@ void CQueueDataBase::CheckExecutionTimeout()
 
 void CQueueDataBase::Purge()
 {
-    unsigned curr_id;
-    {{
-        CFastMutexGuard guard(m_IdLock);
-        curr_id = m_MaxId;
-    }}
+    unsigned curr_id = m_IdCounter.Get();
 
     // Re-submit returned jobs 
     {{
@@ -1583,6 +1575,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/03/29 16:48:28  kuznets
+ * Use atomic counter for job id assignment
+ *
  * Revision 1.21  2005/03/22 19:02:54  kuznets
  * Reflecting chnages in connect layout
  *

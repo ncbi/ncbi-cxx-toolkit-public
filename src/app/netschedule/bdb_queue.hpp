@@ -42,6 +42,7 @@
 
 
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbicntr.hpp>
 
 #include <connect/services/netschedule_client.hpp>
 
@@ -414,8 +415,10 @@ private:
 
     CQueueCollection                m_QueueCollection;
 
-    unsigned int                    m_MaxId;   ///< job id counter
-    CFastMutex                      m_IdLock;
+    CAtomicCounter                  m_IdCounter;
+
+//    unsigned int                    m_MaxId;   ///< job id counter
+//    CFastMutex                      m_IdLock;
 
     bm::bvector<>                   m_UsedIds; /// id access locker
     CRef<CJobQueueCleanerThread>    m_PurgeThread;
@@ -440,6 +443,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/03/29 16:48:28  kuznets
+ * Use atomic counter for job id assignment
+ *
  * Revision 1.16  2005/03/22 19:02:54  kuznets
  * Reflecting chnages in connect layout
  *
