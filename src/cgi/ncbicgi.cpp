@@ -507,18 +507,7 @@ static SIZE_TYPE s_URL_Decode(string& str)
 void s_AddEntry(TCgiEntries& entries, const string& name,
                 const string& value, const string& filename = kEmptyStr)
 {
-    entries.insert(TCgiEntriesEx::value_type(name,
-                                             CCgiEntry(value, filename)));
-}
-
-
-// Populate entries_ex from entries
-void s_CopyEntries(TCgiEntriesEx& entries_ex, const TCgiEntries& entries)
-{
-    // entries_ex.erase();
-    iterate (TCgiEntries, it, entries) {
-        s_AddEntry(entries_ex, it->first, it->second);
-    }
+    entries.insert(TCgiEntries::value_type(name, CCgiEntry(value, filename)));
 }
 
 
@@ -1123,6 +1112,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.59  2002/07/17 17:02:26  ucko
+* Reinstate more lost changes from R1.56.
+*
 * Revision 1.58  2002/07/11 17:39:56  gouriano
 * corrected wrong merge of v1.56 and v1.57
 *
