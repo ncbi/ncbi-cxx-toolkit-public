@@ -246,14 +246,12 @@ _PSISequenceWeightsFree(PsiSequenceWeights* seq_weights)
 
 /* Purges any aligned segments which are identical to the query sequence */
 static void
-_PSIPurgeIdenticalAlignments(PsiAlignmentData* alignment);
+_PSIPurgeSelfHits(PsiAlignmentData* alignment);
 
 /* Keeps only one copy of any aligned sequences which are >PSI_NEAR_IDENTICAL%
  * identical to one another */
 static void
 _PSIPurgeNearIdenticalAlignments(PsiAlignmentData* alignment);
-static void
-_PSIUpdatePositionCounts(PsiAlignmentData* alignment);
 
 /* FIXME: needs more descriptive name */
 static void
@@ -271,7 +269,7 @@ PSIPurgeBiasedSegments(PsiAlignmentData* alignment)
         return PSIERR_BADPARAM;
     }
 
-    _PSIPurgeIdenticalAlignments(alignment);
+    _PSIPurgeSelfHits(alignment);
     _PSIPurgeNearIdenticalAlignments(alignment);
     _PSIUpdatePositionCounts(alignment);
 
@@ -279,16 +277,15 @@ PSIPurgeBiasedSegments(PsiAlignmentData* alignment)
 }
 
 /** Remove those sequences which are identical to the query sequence 
- * FIXME: Rename to _PSIPurgeSelfHits() ?
  */
 static void
-_PSIPurgeIdenticalAlignments(PsiAlignmentData* alignment)
+_PSIPurgeSelfHits(PsiAlignmentData* alignment)
 {
     Uint4 s = 0;        /* index on sequences */
 
     ASSERT(alignment);
 
-    for (s = 0; s < alignment->dimensions->num_seqs + 1; s++) {
+    for (s = kQueryIndex + 1; s < alignment->dimensions->num_seqs + 1; s++) {
         _PSIPurgeSimilarAlignments(alignment, kQueryIndex, s, PSI_IDENTICAL);
     }
 }
@@ -302,8 +299,11 @@ _PSIPurgeNearIdenticalAlignments(PsiAlignmentData* alignment)
     ASSERT(alignment);
 
     for (i = 1; i < alignment->dimensions->num_seqs + 1; i++) { 
-        for (j = 1; (i + j) < alignment->dimensions->num_seqs + 1; j++) {
-            _PSIPurgeSimilarAlignments(alignment, i, (i + j), 
+        for (j = 1; (i + j) <  alignment->dimensions->num_seqs + 1; j++) {
+            /* N.B.: The order of comparison of sequence pairs is deliberate,
+             * tests on real data indicated that this approach allowed more
+             * sequences to be purged */
+            _PSIPurgeSimilarAlignments(alignment, j, (i + j),
                                        PSI_NEAR_IDENTICAL);
         }
     }
@@ -315,7 +315,7 @@ _PSIPurgeNearIdenticalAlignments(PsiAlignmentData* alignment)
  * Should be called after multiple alignment data has been purged from biased
  * sequences.
  */
-static void
+void
 _PSIUpdatePositionCounts(PsiAlignmentData* alignment)
 {
     Uint4 s = 0;        /* index on aligned sequences */
@@ -353,6 +353,7 @@ _PSIPurgeSimilarAlignments(PsiAlignmentData* alignment,
                            Uint4 seq_index2,
                            double max_percent_identity)
 {
+    const Uint1 X = AMINOACID_TO_NCBISTDAA['X'];
     Uint4 i = 0;
 
     /* Nothing to do if sequences are the same or not selected for further
@@ -368,26 +369,44 @@ _PSIPurgeSimilarAlignments(PsiAlignmentData* alignment,
         const PsiDesc* seq1 = alignment->desc_matrix[seq_index1];
         const PsiDesc* seq2 = alignment->desc_matrix[seq_index2];
 
-
         /* starting index of the aligned region */
         Uint4 align_start = i;    
         /* length of the aligned region */
         Uint4 align_length = 0;   
         /* # of identical residues in aligned region */
         Uint4 nidentical = 0;     
+        /* # of X residues in either sequence */
+        Uint4 nXresidues = 0;
 
-        /* both positions in the sequences must be used */
-        if ( !(seq1[i].used && seq2[i].used) ) {
+        /* Indicates if the position in seq_index1 currently being examined is
+         * used. In the special case for seq_index1 == kQueryIndex, this
+         * variable is set to FALSE to force the other sequence's position to
+         * be used to proceed with processing. */
+        Boolean pos1_used = (seq_index1 == kQueryIndex ? FALSE : seq1[i].used);
+        /* Indicates if the position in seq_index2 currently being examined is
+         * used. */
+        Boolean pos2_used = seq2[i].used;
+
+        if ( !(pos1_used || pos2_used) ) {
             continue;
         }
 
-        /* examine the aligned region (FIXME: should we care about Xs?) */
+        /* Examine the aligned region */
         while ( (i < alignment->dimensions->query_sz) && 
-                (seq1[i].used && seq2[i].used)) {
-            if (seq1[i].letter == seq2[i].letter)
-                nidentical++;
-            align_length++;
+                (pos1_used || pos2_used)) {
+
+            if (seq1[i].letter == X || seq2[i].letter == X) {
+                nXresidues++;
+            } else {
+                if (seq1[i].letter == seq2[i].letter) {
+                    nidentical++;
+                }
+                align_length++;
+            }
             i++;
+
+            pos1_used = (seq_index1 == kQueryIndex ? FALSE : seq1[i].used);
+            pos2_used = seq2[i].used;
         }
         ASSERT(align_length != 0);
 
@@ -397,9 +416,10 @@ _PSIPurgeSimilarAlignments(PsiAlignmentData* alignment,
             double percent_identity = (double) nidentical / align_length;
 
             if (percent_identity >= max_percent_identity) {
+                const unsigned int align_stop = 
+                    align_start + align_length + nXresidues;
                 int rv = _PSIPurgeAlignedRegion(alignment, seq_index2, 
-                                                align_start, 
-                                                align_start+align_length);
+                                                align_start, align_stop);
                 ASSERT(rv == PSI_SUCCESS);
             }
         }
@@ -489,7 +509,7 @@ _PSIGetRightExtents(const PsiAlignmentData* alignment, Uint4 seq_index)
     const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
     PsiDesc* sequence_position = NULL;
     Uint4 last = 0;      /* index for the last position */
-    Int4 curr = 0;      /* index for the current position */
+    Int4 curr = 0;       /* index for the current position */
 
     ASSERT(alignment);
     ASSERT(seq_index < alignment->dimensions->num_seqs + 1);
@@ -601,23 +621,12 @@ _PSIGetAlignedSequencesForPosition(
     Uint4* aligned_sequences);
 
 static void
-_PSICalculatePositionWeightsAndIntervalSigmas(
+_PSICalculateNormalizedSequenceWeights(
     const PsiAlignmentData* alignment,     /* [in] */
     const PsiAlignedBlock* aligned_blocks, /* [in] */
     Uint4 position,                        /* [in] */
     const Uint4* aligned_seqs,             /* [in] */
     Uint4 num_aligned_seqs,                /* [in] */
-    PsiSequenceWeights* seq_weights,       /* [out] */
-    double* sigma,                         /* [out] */
-    double* interval_sigma);               /* [out] */
-
-static void
-_PSICalculateNormalizedSequenceWeights(
-    const PsiAlignedBlock* aligned_blocks, /* [in] */
-    Uint4 position,                        /* [in] */
-    const Uint4* aligned_seqs,             /* [in] */
-    Uint4 num_aligned_seqs,                /* [in] */
-    double sigma,                          /* [in] */
     PsiSequenceWeights* seq_weights);      /* [out] */
 
 static void
@@ -628,10 +637,14 @@ _PSICalculateMatchWeights(
     Uint4 num_aligned_seqs,             /* [in] */
     PsiSequenceWeights* seq_weights);   /* [out] */
 
+static void
+_PSISpreadGapWeights(const PsiAlignmentData* alignment,
+                     PsiSequenceWeights* seq_weights);
+
 static int
 _PSICheckSequenceWeights(
     const PsiAlignmentData* alignment,         /* [in] */
-    PsiSequenceWeights* seq_weights);          /* [in] */
+    const PsiSequenceWeights* seq_weights);    /* [in] */
 
 /****************************************************************************/
 /******* Calculate sequence weights stage of PSSM creation ******************/
@@ -643,17 +656,17 @@ PSIComputeSequenceWeights(const PsiAlignmentData* alignment,        /* [in] */
                           const PsiAlignedBlock* aligned_blocks,    /* [in] */
                           PsiSequenceWeights* seq_weights)          /* [out] */
 {
-    Uint4* aligned_seqs = NULL;     /* list of indices of sequences
-                                              which participate in an
-                                              aligned position */
-    Uint4 pos = 0;                  /* position index */
-    int retval = PSI_SUCCESS;       /* return value */
+    Uint4* aligned_seqs = NULL;     /**< list of indices of sequences
+                                       which participate in an
+                                       aligned position */
+    Uint4 pos = 0;                  /**< position index */
+    int retval = PSI_SUCCESS;       /**< return value */
 
     ASSERT(alignment);
     ASSERT(aligned_blocks);
     ASSERT(seq_weights);
 
-    aligned_seqs = (Uint4*) calloc(alignment->dimensions->num_seqs + 1,
+    aligned_seqs = (Uint4*) malloc((alignment->dimensions->num_seqs + 1) *
                                           sizeof(Uint4));
     if ( !aligned_seqs ) {
         return PSIERR_OUTOFMEM;
@@ -662,12 +675,6 @@ PSIComputeSequenceWeights(const PsiAlignmentData* alignment,        /* [in] */
     for (pos = 0; pos < alignment->dimensions->query_sz; pos++) {
 
         Uint4 num_aligned_seqs = 0;
-        double sigma = 0.0; /**< number of different characters
-                                  occurring in matches within a multiple
-                                  alignment block, excluding identical
-                                  columns */
-        double interval_sigma = 0.0; /**< same as sigma but includes identical
-                                  columns */
 
         /* ignore positions of no interest */
         if (aligned_blocks->size[pos] == 0 || alignment->match_seqs[pos] <= 1) {
@@ -683,24 +690,14 @@ PSIComputeSequenceWeights(const PsiAlignmentData* alignment,        /* [in] */
             continue;
         }
 
-        /* Skipping optimization about redundant sets */
-
-        /* if (newSequenceSet) in posit.c */
         memset((void*)seq_weights->norm_seq_weights, 0, 
                sizeof(double)*(alignment->dimensions->num_seqs+1));
         memset((void*)seq_weights->row_sigma, 0,
                sizeof(double)*(alignment->dimensions->num_seqs+1));
-        _PSICalculatePositionWeightsAndIntervalSigmas(alignment, 
+
+        _PSICalculateNormalizedSequenceWeights(alignment,
                                      aligned_blocks, pos, aligned_seqs, 
-                                     num_aligned_seqs, seq_weights, 
-                                     &sigma, &interval_sigma);
-
-        seq_weights->sigma[pos] = interval_sigma;
-
-        /* Populates norm_seq_weights */
-        _PSICalculateNormalizedSequenceWeights(aligned_blocks, pos, 
-                                 aligned_seqs, num_aligned_seqs, sigma,
-                                 seq_weights);
+                                     num_aligned_seqs, seq_weights);
 
 
         /* Uses seq_weights->norm_seq_weights to populate match_weights */
@@ -712,49 +709,58 @@ PSIComputeSequenceWeights(const PsiAlignmentData* alignment,        /* [in] */
 
     /* Check that the sequence weights add up to 1 in each column */
     retval = _PSICheckSequenceWeights(alignment, seq_weights);
+    if (retval != PSI_SUCCESS) {
+        return retval;
+    }
+
+#ifndef PSI_IGNORE_GAPS_IN_COLUMNS
+    _PSISpreadGapWeights(alignment, seq_weights);
+    retval = _PSICheckSequenceWeights(alignment, seq_weights);
+#endif
 
     /* Return seq_weights->match_weigths, should free others? FIXME: need to
      * keep sequence weights for diagnostics for structure group */
     return retval;
 }
 
-/* Calculates the position based weights using a modified version of the
- * Henikoff's algorithm presented in "Position-based sequence weights".
- * More documentation pending */
-/* FIXME: rename to calculate rowsigma, sigma, and interval sigma? 
-   calculateRowSigmaAnd Sigmas for Position?
-   calculateSigmas for Position?
-   */
+/** Calculates the position based weights using a modified version of the
+ * Henikoff's algorithm presented in "Position-based sequence weights". 
+ * Skipped optimization about identical previous sets.
+ */
 static void
-_PSICalculatePositionWeightsAndIntervalSigmas(
+_PSICalculateNormalizedSequenceWeights(
     const PsiAlignmentData* alignment,     /* [in] */
     const PsiAlignedBlock* aligned_blocks, /* [in] */
     Uint4 position,                        /* [in] */
     const Uint4* aligned_seqs,             /* [in] */
     Uint4 num_aligned_seqs,                /* [in] */
-    PsiSequenceWeights* seq_weights,       /* [out] row_sigma */
-    double* sigma,                         /* [out] */
-    double* interval_sigma)                /* [out] */
+    PsiSequenceWeights* seq_weights)       /* [out] norm_seq_weights, sigma */
 {
+    /** Index into aligned block for requested position */
+    Uint4 i = 0;         
 
-    Uint4 i = 0;         /**< index into aligned block for requested
-                                   position */
+    /** This flag will be true if more than one different type of residue is
+     * found in a column in the extent of the alignment that corresponds to 
+     * the position being examined. (replaces Sigma in old code) */
+    Boolean distinct_residues_found = FALSE;
 
+    /** Number of different characters occurring in matches within a 
+     * multi-alignment block including identical columns (replaces
+     * intervalSigma in old code) */
+    Uint4 sigma = 0;
+
+    /** Index into array of aligned sequences */
+    Uint4 asi = 0;      
+
+    ASSERT(alignment);
+    ASSERT(aligned_blocks);
     ASSERT(seq_weights);
-    ASSERT(sigma);
-    ASSERT(interval_sigma);
-
-    *sigma = 0.0;
-    *interval_sigma = 0.0;
-
+    ASSERT(aligned_seqs);
 
     for (i = (Uint4) aligned_blocks->pos_extnt[position].left; 
          i <= (Uint4) aligned_blocks->pos_extnt[position].right; i++) {
 
-        /** index into array of aligned sequences */
-        Uint4 asi = 0;   
-
-        /** keeps track of how many occurrences of each residue are found in a
+        /** Keeps track of how many occurrences of each residue are found in a
          * column of the alignment extent corresponding to a query position */
         Uint4 residue_counts_for_column[BLASTAA_SIZE];
 
@@ -778,19 +784,18 @@ _PSICalculatePositionWeightsAndIntervalSigmas(
             residue_counts_for_column[residue]++;
         }
 
-        (*interval_sigma) += num_distinct_residues_for_column;
+        sigma += num_distinct_residues_for_column;
         if (num_distinct_residues_for_column > 1) {
             /* num_distinct_residues_for_column == 1 means that all residues in
              * that column of the alignment extent are the same residue */
-            (*sigma) += num_distinct_residues_for_column;
+            distinct_residues_found = TRUE;
         }
 
         /* Calculate row_sigma, an intermediate value to calculate the
          * normalized sequence weights */
         for (asi = 0; asi < num_aligned_seqs; asi++) {
             const Uint4 seq_idx = aligned_seqs[asi];
-            const Uint1 residue =
-                alignment->desc_matrix[seq_idx][i].letter;
+            const Uint1 residue = alignment->desc_matrix[seq_idx][i].letter;
 
             /* This is a modified version of the Henikoff's idea in
              * "Position-based sequence weights" paper. The modification
@@ -802,22 +807,12 @@ _PSICalculatePositionWeightsAndIntervalSigmas(
         }
     }
 
-    return;
-}
+    /* Save sigma for this position (FIXME: should sigma be a Uint4 too?,
+     * change description also: number of distinct residues in all columns
+     * in the extent of the alignment corresponding to a position) */
+    seq_weights->sigma[position] = sigma;
 
-/** Calculates the normalized sequence weights for the requested position */
-static void
-_PSICalculateNormalizedSequenceWeights(
-    const PsiAlignedBlock* aligned_blocks, /* [in] */
-    Uint4 position,                        /* [in] */
-    const Uint4* aligned_seqs,             /* [in] */
-    Uint4 num_aligned_seqs,                /* [in] */
-    double sigma,                          /* [in] */
-    PsiSequenceWeights* seq_weights)       /* [out] norm_seq_weights */
-{
-    Uint4 asi = 0;   /**< index into array of aligned sequences */
-
-    if (sigma > 0) {
+    if (distinct_residues_found) {
         double weight_sum = 0.0;
 
         for (asi = 0; asi < num_aligned_seqs; asi++) {
@@ -829,12 +824,16 @@ _PSICalculateNormalizedSequenceWeights(
             weight_sum += seq_weights->norm_seq_weights[seq_idx];
         }
 
+        /* Normalize */
         for (asi = 0; asi < num_aligned_seqs; asi++) {
             const Uint4 seq_idx = aligned_seqs[asi];
             seq_weights->norm_seq_weights[seq_idx] /= weight_sum;
         }
 
     } else {
+        /* All residues in the extent of this position's alignment are the same
+         * residue, therefore we distribute the sequence weight equally among
+         * all participating sequences */
         for (asi = 0; asi < num_aligned_seqs; asi++) {
             const Uint4 seq_idx = aligned_seqs[asi];
             seq_weights->norm_seq_weights[seq_idx] = 
@@ -842,6 +841,7 @@ _PSICalculateNormalizedSequenceWeights(
         }
     }
 
+    return;
 }
 
 static void
@@ -855,17 +855,20 @@ _PSICalculateMatchWeights(
     const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
     Uint4 asi = 0;   /**< index into array of aligned sequences */
 
+    ASSERT(alignment);
+    ASSERT(aligned_seqs);
+    ASSERT(seq_weights);
+
     for (asi = 0; asi < num_aligned_seqs; asi++) {
         const Uint4 seq_idx = aligned_seqs[asi];
-        const Uint1 residue =
-            alignment->desc_matrix[seq_idx][position].letter;
+        const Uint1 residue = alignment->desc_matrix[seq_idx][position].letter;
 
         seq_weights->match_weights[position][residue] += 
             seq_weights->norm_seq_weights[seq_idx];
 
         /* FIXME: this field is populated but never used, should be moved to
          * diagnostics structure */
-        if (residue == GAP) {
+        if (residue != GAP) {
             seq_weights->gapless_column_weights[position] +=
              seq_weights->norm_seq_weights[seq_idx];
         }
@@ -916,34 +919,25 @@ _PSIGetAlignedSequencesForPosition(const PsiAlignmentData* alignment,
 }
 
 /* The second parameter is not really const, it's updated! */
-static int
-_PSICheckSequenceWeights(const PsiAlignmentData* alignment,
-                         PsiSequenceWeights* seq_weights)
+static void
+_PSISpreadGapWeights(const PsiAlignmentData* alignment,
+                     PsiSequenceWeights* seq_weights)
 {
     const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
     const Uint1 X = AMINOACID_TO_NCBISTDAA['X'];
-    Uint4 pos = 0;   /* residue position (ie: column number) */
-    Uint4 res = 0;   /* residue */
-    Boolean check_performed = FALSE;    /* were there any sequences checked? */
+    Uint4 pos = 0;   /**< residue position (ie: column number) */
+    Uint4 res = 0;   /**< residue */
 
     ASSERT(alignment);
     ASSERT(seq_weights);
 
     for (pos = 0; pos < alignment->dimensions->query_sz; pos++) {
 
-        double running_total = 0.0;
-
-        if (alignment->match_seqs[pos] <= 1 ||
+        if (alignment->match_seqs[pos] <= 1 &&
             alignment->desc_matrix[kQueryIndex][pos].letter == X) {
             continue;
         }
 
-        for (res = 0; res < BLASTAA_SIZE; res++) {
-            running_total += seq_weights->match_weights[pos][res];
-        }
-        ASSERT(running_total > 0.99 && running_total < 1.01);
-
-#ifndef PSI_IGNORE_GAPS_IN_COLUMNS
         /* Disperse method of spreading the gap weights */
         for (res = 0; res < BLASTAA_SIZE; res++) {
             if (seq_weights->std_prob[res] > kEpsilon) {
@@ -952,11 +946,36 @@ _PSICheckSequenceWeights(const PsiAlignmentData* alignment,
                      seq_weights->std_prob[res]);
             }
         }
-#endif
         seq_weights->match_weights[pos][GAP] = 0.0;
-        running_total = 0.0;
-        for (res = 0; res < BLASTAA_SIZE; res++) {
-            running_total += seq_weights->match_weights[pos][res];
+
+    }
+}
+
+/* Verifies that each column of the match_weights field in the seq_weights
+ * structure adds up to 1. */
+static int
+_PSICheckSequenceWeights(const PsiAlignmentData* alignment,
+                         const PsiSequenceWeights* seq_weights)
+{
+    const Uint1 X = AMINOACID_TO_NCBISTDAA['X'];
+    Uint4 pos = 0;   /**< residue position (ie: column number) */
+    Boolean check_performed = FALSE;  /**< were there any sequences checked? */
+
+    ASSERT(alignment);
+    ASSERT(seq_weights);
+
+    for (pos = 0; pos < alignment->dimensions->query_sz; pos++) {
+
+        double running_total = 0.0;
+        Uint4 residue = 0;
+
+        if (alignment->match_seqs[pos] <= 1 &&
+            alignment->desc_matrix[kQueryIndex][pos].letter == X) {
+            continue;
+        }
+
+        for (residue = 0; residue < BLASTAA_SIZE; residue++) {
+            running_total += seq_weights->match_weights[pos][residue];
         }
 
         if (running_total < 0.99 || running_total > 1.01) {
@@ -986,8 +1005,8 @@ PSIComputeResidueFrequencies(const PsiAlignmentData* alignment,     /* [in] */
                              PsiMatrix* score_matrix)               /* [out] */
 {
     const Uint1 X = AMINOACID_TO_NCBISTDAA['X'];
-    Uint4 i = 0;             /* loop index into query positions */
     SFreqRatios* freq_ratios;       /* matrix-specific frequency ratios */
+    Uint4 i = 0;                    /* loop index into query positions */
 
     if ( !alignment || !seq_weights || !sbp || 
          !aligned_blocks || !opts || !score_matrix ) {
@@ -1556,6 +1575,15 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/07/02 18:00:25  camacho
+ * 1. Document rationale for order in which sequences are compared in
+ *    _PSIPurgeNearIdenticalAlignments.
+ * 2. Fix in _PSIPurgeSimilarAlignments to take into account the X residues
+ * 3. Refactorings in sequence weight calculation functions:
+ *    - Simplification of _PSICheckSequenceWeights
+ *    - Addition of _PSISpreadGapWeights
+ *    - Reorganization of _PSICalculateNormalizedSequenceWeights
+ *
  * Revision 1.14  2004/06/25 20:31:11  camacho
  * Remove C++ comments
  *
