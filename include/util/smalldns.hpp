@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 ///
 /// Resolve host name to ip address and back using preset ini-file.
 
-class CSmallDNS
+class NCBI_XUTIL_EXPORT CSmallDNS
 {
 public:
     /// Creates small DNS service from the registry-like file
@@ -95,6 +95,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/12/20 23:01:36  vakatov
+ * + NCBI_XUTIL_EXPORT
+ *
  * Revision 1.4  2003/10/20 21:14:58  ivanov
  * Formal code rearrangement. Added standart footer.
  *
