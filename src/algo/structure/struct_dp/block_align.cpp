@@ -265,7 +265,7 @@ int CalculateLocalMatrix(Matrix& matrix,
 
             // find max score of any allowed previous block
             bestPrevScore = DP_NEGATIVE_INFINITY;
-            for (prevResidue=queryFrom+1; prevResidue<=lastPos[block - 1]; prevResidue++) {
+            for (prevResidue=queryFrom; prevResidue<=lastPos[block - 1]; prevResidue++) {
 
                 // current block must come after the previous block
                 if (residue < prevResidue + blocks->blockSizes[block - 1])
@@ -499,6 +499,9 @@ unsigned int DP_CalculateMaxLoopLength(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/08/23 22:10:05  thiessen
+* fix local alignment block edge bug
+*
 * Revision 1.11  2003/08/22 14:28:49  thiessen
 * add standard loop calculating function
 *
