@@ -214,7 +214,7 @@ public:
     ///     The offset of the first byte after the object.
     TIndx ReadSwapped(CSeqDBMemLease & lease,
                       TIndx            offset,
-                      Uint8          * z,
+                      Uint8          * value,
                       CSeqDBLockHold & locked) const;
 
     /// Read a string object from the file
@@ -328,6 +328,12 @@ protected:
     ///
     /// @param start
     ///   The beginning offset of the region.
+    /// @param end
+    ///     The offset for the first byte after the area to read.
+    /// @param keep
+    ///     True if an extra hold should be acquired on the data.
+    /// @param locked
+    ///     The lock holder object for this thread.
     const char * x_GetRegion(Uint4            start,
                              Uint4            end,
                              bool             keep,

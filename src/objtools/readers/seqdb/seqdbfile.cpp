@@ -69,38 +69,38 @@ BEGIN_NCBI_SCOPE
 
 typedef CSeqDBAtlas::TIndx TIndx;
 
-TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease, TIndx offset, Uint4 * buf, CSeqDBLockHold & locked) const
+TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease, TIndx offset, Uint4 * value, CSeqDBLockHold & locked) const
 {
     m_Atlas.Lock(locked);
     
-    if (! lease.Contains(offset, offset + sizeof(*buf))) {
-        m_Atlas.GetRegion(lease, m_FileName, offset, offset + sizeof(*buf));
+    if (! lease.Contains(offset, offset + sizeof(*value))) {
+        m_Atlas.GetRegion(lease, m_FileName, offset, offset + sizeof(*value));
     }
     
-    *buf = SeqDB_GetStdOrd((Uint4 *) lease.GetPtr(offset));
+    *value = SeqDB_GetStdOrd((Uint4 *) lease.GetPtr(offset));
     
-    return offset + sizeof(*buf);
+    return offset + sizeof(*value);
 }
 
 TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
                                  TIndx            offset,
-                                 Uint8          * buf,
+                                 Uint8          * value,
                                  CSeqDBLockHold & locked) const
 {
     m_Atlas.Lock(locked);
     
-    if (! lease.Contains(offset, offset + sizeof(*buf))) {
-        m_Atlas.GetRegion(lease, m_FileName, offset, offset + sizeof(*buf));
+    if (! lease.Contains(offset, offset + sizeof(*value))) {
+        m_Atlas.GetRegion(lease, m_FileName, offset, offset + sizeof(*value));
     }
     
-    *buf = SeqDB_GetBroken((Int8 *) lease.GetPtr(offset));
+    *value = SeqDB_GetBroken((Int8 *) lease.GetPtr(offset));
     
-    return offset + sizeof(*buf);
+    return offset + sizeof(*value);
 }
 
 TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
                                  TIndx            offset,
-                                 string         * v,
+                                 string         * value,
                                  CSeqDBLockHold & locked) const
 {
     Uint4 len = 0;
@@ -119,7 +119,7 @@ TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
         m_Atlas.GetRegion(lease, m_FileName, offset, offset + sizeof(len));
     }
     
-    v->assign(lease.GetPtr(offset), (int) len);
+    value->assign(lease.GetPtr(offset), (int) len);
     
     return offset + len;
 }
