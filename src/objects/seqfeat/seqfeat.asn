@@ -1,4 +1,4 @@
---$Revision: 6.5 $
+--$Revision: 6.6 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -139,7 +139,7 @@ Cdregion ::= SEQUENCE {
 
                     -- each code is 64 cells long, in the order where
                     -- T=0,C=1,A=2,G=3, TTT=0, TTC=1, TCA=4, etc
-                    -- NOTE: this order does NOT corresspond to a Seq-data
+                    -- NOTE: this order does NOT correspond to a Seq-data
                     -- encoding.  It is "natural" to codon usage instead.
                     -- the value in each cell is the AA coded for
                     -- start= AA coded only if first in peptide
