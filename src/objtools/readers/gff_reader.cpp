@@ -57,7 +57,6 @@
 #include <objtools/readers/cigar.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/readfeat.hpp>
-#include <objmgr/util/sequence.hpp>
 
 #include <algorithm>
 #include <ctype.h>
@@ -245,9 +244,13 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
                         feat.GetGeneXref()->GetLabel(&gene_id);
                         _ASSERT( !gene_id.empty() );
                         TSeqRange range = feat.GetLocation().GetTotalRange();
-                        ENa_strand strand = sequence::GetStrand(feat.GetLocation());
-                        const CSeq_id& id =
-                            sequence::GetId(feat.GetLocation(), NULL);
+
+                        ENa_strand strand = feat.GetLocation().GetStrand();
+                        const CSeq_id* id = feat.GetLocation().GetId();
+                        if ( !id ) {
+                            LOG_POST(Error << "No consistent ID found; gene feature skipped");
+                            continue;
+                        }
 
                         TGeneMap::iterator iter = genes.find(gene_id);
                         if (iter == genes.end()) {
@@ -257,12 +260,8 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
 
                             gene->SetLocation().SetInt().SetFrom(range.GetFrom());
                             gene->SetLocation().SetInt().SetTo  (range.GetTo());
-                            gene->SetLocation().SetId(id);
-                            if (strand == eNa_strand_minus) {
-                                gene->SetLocation().SetInt().SetStrand(strand);
-                            } else {
-                                gene->SetLocation().SetInt().SetStrand(eNa_strand_plus);
-                            }
+                            gene->SetLocation().SetId(*id);
+                            gene->SetLocation().SetInt().SetStrand(strand);
                             genes[gene_id] = gene;
                         } else {
                             /// we agglomerate the old location
@@ -1116,6 +1115,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/03/15 15:05:00  dicuccio
+* Removed use of sequence:: namespace to avoid dependency on xobjutil
+*
 * Revision 1.13  2005/03/02 15:01:34  dicuccio
 * - Implemented fCreateGeneFeats
 * - Only promote products if fSetProducts was provided
