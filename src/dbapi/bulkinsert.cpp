@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.4  2004/03/08 22:15:19  kholodov
+* Added: 3 new Get...() methods internally
+*
 * Revision 1.3  2002/10/03 18:49:59  kholodov
 * Added: additional TRACE diagnostics about object deletion
 * Fixed: setting parameters in IStatement object is fully supported
@@ -82,8 +85,8 @@ void CBulkInsert::Close()
             delete m_conn;
             m_conn = 0;
         }
-        Notify(CDbapiClosedEvent(this));
     }
+    Notify(CDbapiClosedEvent(this));
 }
  
 void CBulkInsert::Bind(unsigned int col, CVariant* v)

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.11  2004/03/08 22:15:19  kholodov
+* Added: 3 new Get...() methods internally
+*
 * Revision 1.10  2002/10/21 20:38:08  kholodov
 * Added: GetParentConn() method to get the parent connection from IStatement,
 * ICallableStatement and ICursor objects.
@@ -185,8 +188,8 @@ void CCursor::Close()
             delete m_conn;
             m_conn = 0;
         }
-        Notify(CDbapiClosedEvent(this));
     }
+    Notify(CDbapiClosedEvent(this));
   
 }
 

@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.14  2004/03/08 22:15:19  kholodov
+* Added: 3 new Get...() methods internally
+*
 * Revision 1.13  2003/11/18 16:59:45  kholodov
 * Added: CloneConnection() method
 *
@@ -109,6 +112,21 @@ public:
 
     virtual IConnection* CloneConnection();
 
+    // New part begin
+
+    virtual IStatement* GetStatement();
+    virtual ICallableStatement* GetCallableStatement(const string& proc,
+                                                     int nofArgs = 0);
+    virtual ICursor* GetCursor(const string& name,
+                               const string& sql,
+                               int nofArgs,
+                               int batchSize);
+
+    virtual IBulkInsert* GetBulkInsert(const string& table_name,
+                                       unsigned int nof_cols);
+
+    // New part end
+
     virtual IStatement* CreateStatement();
     virtual ICallableStatement* PrepareCall(const string& proc,
                                             int nofArgs = 0);
@@ -173,6 +191,13 @@ private:
     unsigned int m_modeMask;
     bool m_forceSingle;
     class CToMultiExHandler *m_multiExH;
+
+    // New part begin
+    class CStatement *m_stmt;
+    class CCallableStatement *m_cstmt;
+    class CCursor *m_cursor;
+    class CBulkInsert *m_bulkInsert;
+    // New part end
 
 };
 

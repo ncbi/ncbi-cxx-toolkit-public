@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.23  2004/03/08 22:15:19  kholodov
+* Added: 3 new Get...() methods internally
+*
 * Revision 1.22  2004/02/27 14:37:33  kholodov
 * Modified: set collection replaced by list for listeners
 *
@@ -124,7 +127,8 @@ BEGIN_NCBI_SCOPE
 // Implementation
 CConnection::CConnection(CDataSource* ds)
     : m_ds(ds), m_connection(0), m_connCounter(1), m_connUsed(false),
-      m_modeMask(0), m_forceSingle(false), m_multiExH(0)
+      m_modeMask(0), m_forceSingle(false), m_multiExH(0),
+      m_stmt(0), m_cstmt(0), m_cursor(0), m_bulkInsert(0)
 {
     _TRACE("Default connection " << (void *)this << " created...");
     SetIdent("CConnection");
@@ -277,9 +281,72 @@ IConnection* CConnection::CloneConnection()
     return conn;
 }
 
+// New part
+IStatement* CConnection::GetStatement()
+{
+    if( m_connUsed ) 
+        throw CDbapiException("CConnection::GetStatement(): Connection taken, cannot use this method");
+
+    if( m_stmt == 0 ) {
+        m_stmt = new CStatement(this);
+        AddListener(m_stmt);
+        m_stmt->AddListener(this);
+    }
+    return m_stmt;
+}
+
+ICallableStatement*
+CConnection::GetCallableStatement(const string& proc,
+                                  int nofArgs)
+{
+    if( m_connUsed ) 
+        throw CDbapiException("CConnection::GetCallableStatement(): Connection taken, cannot use this method");
+
+    if( m_cstmt == 0 ) {
+        m_cstmt = new CCallableStatement(proc, nofArgs, this);
+        AddListener(m_cstmt);
+        m_cstmt->AddListener(this);
+    }
+    return m_cstmt;
+}
+
+ICursor* CConnection::GetCursor(const string& name,
+                                const string& sql,
+                                int nofArgs,
+                                int batchSize)
+{
+    if( m_connUsed ) 
+        throw CDbapiException("CConnection::GetCursor(): Connection taken, cannot use this method");
+
+    if( m_cursor == 0 ) {
+        m_cursor = new CCursor(name, sql, nofArgs, batchSize, this);
+        AddListener(m_cursor);
+        m_cursor->AddListener(this);
+    }
+    return m_cursor;
+}
+
+IBulkInsert* CConnection::GetBulkInsert(const string& table_name,
+                                        unsigned int nof_cols)
+{
+    if( m_connUsed ) 
+        throw CDbapiException("CConnection::GetBulkInsert(): Connection taken, cannot use this method");
+
+    if( m_bulkInsert == 0 ) {
+        m_bulkInsert = new CBulkInsert(table_name, nof_cols, this);
+        AddListener(m_bulkInsert);
+        m_bulkInsert->AddListener(this);
+    }
+    return m_bulkInsert;
+}
+// New part end
+
+
 IStatement* CConnection::CreateStatement()
 {
-
+    if( m_stmt != 0 || m_cstmt != 0 || m_cursor != 0 || m_bulkInsert != 0 ) 
+        throw CDbapiException("CConnection::CreateStatement(): Get...() methods used");
+    
     CStatement *stmt = new CStatement(GetAuxConn());
     AddListener(stmt);
     stmt->AddListener(this);
@@ -290,6 +357,9 @@ ICallableStatement*
 CConnection::PrepareCall(const string& proc,
                          int nofArgs)
 {
+    if( m_stmt != 0 || m_cstmt != 0 || m_cursor != 0 || m_bulkInsert != 0 ) 
+        throw CDbapiException("CConnection::CreateCallableStatement(): Get...() methods used");
+    
     CCallableStatement *cstmt = new CCallableStatement(proc, nofArgs, GetAuxConn());
     AddListener(cstmt);
     cstmt->AddListener(this);
@@ -301,6 +371,9 @@ ICursor* CConnection::CreateCursor(const string& name,
                                    int nofArgs,
                                    int batchSize)
 {
+    if( m_stmt != 0 || m_cstmt != 0 || m_cursor != 0 || m_bulkInsert != 0 ) 
+        throw CDbapiException("CConnection::CreateCursor(): Get...() methods used");
+    
     CCursor *cur = new CCursor(name, sql, nofArgs, batchSize, GetAuxConn());
     AddListener(cur);
     cur->AddListener(this);
@@ -310,6 +383,9 @@ ICursor* CConnection::CreateCursor(const string& name,
 IBulkInsert* CConnection::CreateBulkInsert(const string& table_name,
                                            unsigned int nof_cols)
 {
+    if( m_stmt != 0 || m_cstmt != 0 || m_cursor != 0 || m_bulkInsert != 0 ) 
+        throw CDbapiException("CConnection::CreateBulkInsert(): Get...() methods used");
+    
     CBulkInsert *bcp = new CBulkInsert(table_name, nof_cols, GetAuxConn());
     AddListener(bcp);
     bcp->AddListener(this);
@@ -329,6 +405,35 @@ void CConnection::Action(const CDbapiEvent& e)
         }
         else
             m_connUsed = false;
+
+        CStatement *stmt;
+        CCallableStatement *cstmt;
+        CCursor *cursor;
+        CBulkInsert *bulkInsert;
+        if( (stmt = dynamic_cast<CStatement*>(e.GetSource())) != 0 ) {
+            if( stmt == m_stmt ) {
+                _TRACE("CConnection: Clearing cached statement " << (void*)m_stmt); 
+                m_stmt = 0;
+            }
+        }
+        else if( (cstmt = dynamic_cast<CCallableStatement*>(e.GetSource())) != 0 ) {
+            if( cstmt == m_cstmt ) {
+                _TRACE("CConnection: Clearing cached callable statement " << (void*)m_cstmt); 
+                m_cstmt = 0;
+            }
+        }
+        else if( (cursor = dynamic_cast<CCursor*>(e.GetSource())) != 0 ) {
+            if( cursor == m_cursor ) {
+                _TRACE("CConnection: Clearing cached cursor " << (void*)m_cursor); 
+                m_cursor = 0;
+            }
+        }
+        else if( (bulkInsert = dynamic_cast<CBulkInsert*>(e.GetSource())) != 0 ) {
+            if( bulkInsert == m_bulkInsert ) {
+                _TRACE("CConnection: Clearing cached bulkinsert " << (void*)m_bulkInsert); 
+                m_bulkInsert = 0;
+            }
+        }
     }
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
         RemoveListener(e.GetSource());
