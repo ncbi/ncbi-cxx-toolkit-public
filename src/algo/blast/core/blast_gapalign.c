@@ -532,26 +532,16 @@ BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options,
    Boolean is_na = (program == blast_type_blastn ||
                     program == blast_type_blastx ||
                     program == blast_type_tblastx);
-   BlastGapAlignStructPtr gap_align = 
-      (BlastGapAlignStructPtr) calloc(1, sizeof(BlastGapAlignStruct));
+   BlastGapAlignStructPtr gap_align;
+
+   if (!gap_align_ptr || !sbp || !score_options || !ext_params)
+      return -1;
+
+   gap_align = (BlastGapAlignStructPtr) calloc(1, sizeof(BlastGapAlignStruct));
 
    *gap_align_ptr = gap_align;
 
-   if (sbp) {
-      gap_align->sbp = sbp;
-   } else {
-      if (is_na)
-         gap_align->sbp = 
-            BLAST_ScoreBlkNew(BLASTNA_SEQ_CODE, total_num_contexts);
-      else
-         gap_align->sbp = 
-            BLAST_ScoreBlkNew(BLASTAA_SEQ_CODE, total_num_contexts);
-
-      /* Fills in block for gapped blast. */
-      if ((status = BlastScoreBlkGappedFill(gap_align->sbp, score_options, 
-                       program)))
-         return status;
-   }
+   gap_align->sbp = sbp;
 
    gap_align->gap_x_dropoff = ext_params->gap_x_dropoff;
 
