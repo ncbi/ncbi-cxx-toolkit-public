@@ -44,6 +44,36 @@ extern "C" {
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_gapalign.h>
 
+/** Compute gapped alignment with traceback for all HSPs from a single
+ * query/subject sequence pair. 
+ * Final e-values are calculated here, except when sum statistics is used,
+ * in which case this is done in file link_hsps.c:
+ * @sa { BLAST_LinkHsps }
+ * @param program_number Type of BLAST program [in]
+ * @param hsp_list List of HSPs [in]
+ * @param query_blk The query sequence [in]
+ * @param subject_blk The subject sequence [in]
+ * @param query_info Query information, needed to get pointer to the
+ *        start of this query within the concatenated sequence [in]
+ * @param gap_align Auxiliary structure used for gapped alignment [in]
+ * @param sbp Statistical parameters [in]
+ * @param score_options Scoring parameters [in]
+ * @param ext_options Gapped extension options [in]
+ * @param hit_params Hit saving parameters [in]
+ * @param gen_code_string specifies genetic code [in]
+ * @param psi_options Options specific to PSI BLAST [in]
+ */
+Int2
+Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
+   BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk,
+   BlastQueryInfo* query_info,
+   BlastGapAlignStruct* gap_align, BlastScoreBlk* sbp,
+   const BlastScoringOptions* score_options,
+   const BlastExtensionOptions* ext_options,
+   const BlastHitSavingParameters* hit_params,
+   const Uint1* gen_code_string, 
+   const PSIBlastOptions* psi_options);
+
 /** Given the preliminary alignment results from a database search, redo 
  * the gapped alignment with traceback, if it has not yet been done.
  * @param program_number Type of the BLAST program [in]
