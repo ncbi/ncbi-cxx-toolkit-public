@@ -35,6 +35,7 @@
 #include "handle_range_map.hpp"
 #include "data_source.hpp"
 #include <objects/objmgr1/reader_id1.hpp>
+#include <objects/objmgr1/reader_pubseq.hpp>
 #include <objects/objmgr1/gbloader.hpp>
 #include <bitset>
 #include <set>
@@ -97,10 +98,28 @@ struct CGBDataLoader::SSeqrefs
 // 
 
 CGBDataLoader::CGBDataLoader(const string& loader_name,CReader *driver,int gc_threshold)
-  : CDataLoader(loader_name)
+  : CDataLoader(loader_name), m_Driver(driver)
 {
   GBLOG_POST( "CGBDataLoader");
-  m_Driver=(driver?driver:new CId1Reader);
+  
+  if(!m_Driver)
+    {
+      try
+        {
+          m_Driver= new CPubseqReader;
+        }
+      catch(exception& e)
+        {
+          GBLOG_POST("CPubseqReader is not available ::" << e.what());
+          m_Driver=0;
+        }
+      catch(...)
+        {
+          m_Driver=0;
+        }
+    }
+  if(!m_Driver) m_Driver=new CId1Reader;
+  
   m_UseListHead = m_UseListTail = 0;
   
   int i = m_Driver->GetParalellLevel();
@@ -520,18 +539,36 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
             }
           _VERIFY(use_local_lock);
           _VERIFY(!use_global_lock);
-          new_tse = new_tse ||
-            x_GetData(tse,
-                      *srp,
-                      lrange->first.GetFrom(),
-                      lrange->first.GetTo(),
-                      blob_mask
-                      );
+          
+          for(int try_cnt=2;try_cnt-->0;)
+            {
+              try
+                {
+                  new_tse = new_tse ||
+                    x_GetData(tse,
+                              *srp,
+                              lrange->first.GetFrom(),
+                              lrange->first.GetTo(),
+                              blob_mask
+                              );
+                  break;
+                }
+              catch(const CIOException &e)
+                {
+                  LOG_POST("ID conneciton failed: Reconnecting....");
+                }
+              catch (exception& e)
+                {
+                  ERR_POST(e.what());
+                }
+            }
         }
       if(new_tse)
        {
          x_Check(0);
-         m_Tse2TseInfo[tse->m_upload.m_tse]=tse;
+         _VERIFY(tse->m_upload.m_tse);
+         _ASSERT(m_Tse2TseInfo.find(tse->m_upload.m_tse) == m_Tse2TseInfo.end());
+         m_Tse2TseInfo[tse->m_upload.m_tse]=tse; // insert
          x_Check(tse);
          new_tse=false;
        }
@@ -569,26 +606,48 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
     }
   // update required
   m_SlowTraverseMode++;
-  m_LookupMutex.Unlock();
   if(!local_lock) m_Pool.Lock(sr);
+  m_LookupMutex.Unlock();
 
   //GBLOG_POST( "ResolveHandle-before(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) );
   
-  bool calibrating = m_Timer.NeedCalibration();
-  if(calibrating) m_Timer.Start();
   
   SSeqrefs::TSeqrefs *osr=sr->m_Sr;
   sr->m_Sr=0;
-  for(CIStream srs(m_Driver->SeqrefStreamBuf(*x_GetSeqId(h),m_Pool.Select(sr)));! srs.Eof();)
+  int try_cnt=2;
+  while(try_cnt-->0)
     {
-      CSeqref *seqRef = m_Driver->RetrieveSeqref(srs);
-      if(!sr->m_Sr) sr->m_Sr = new SSeqrefs::TSeqrefs();
-      sr->m_Sr->push_back(seqRef);
+      bool calibrating = m_Timer.NeedCalibration();
+      try
+        {
+          if(calibrating) m_Timer.Start();
+          for(CIStream srs(m_Driver->SeqrefStreamBuf(*x_GetSeqId(h),m_Pool.Select(sr)));! srs.Eof();)
+            {
+              CSeqref *seqRef = m_Driver->RetrieveSeqref(srs);
+              if(!sr->m_Sr) sr->m_Sr = new SSeqrefs::TSeqrefs();
+              sr->m_Sr->push_back(seqRef);
+            }
+          if(calibrating) m_Timer.Stop();
+          break;
+        }
+      catch(const CIOException &e)
+        {
+          LOG_POST("ID conneciton failed: Reconnecting....");
+        }
+      catch (exception& e)
+        {
+          ERR_POST(e.what());
+        }
+      if(calibrating) m_Timer.Stop();
     }
-  if(calibrating) m_Timer.Stop();
   sr->m_Timer.Reset(m_Timer);
-  
+  if(try_cnt<0)
+    {
+      sr->m_Sr=osr;
+      osr=0;
+    }
   m_Pool.Unlock(sr);
+
   m_LookupMutex.Lock("ResolveHandle");
   m_SlowTraverseMode--;
   local_lock=m_SlowTraverseMode>0;
@@ -663,11 +722,11 @@ CGBDataLoader::x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_ma
   CTSEUpload *tse_up = &tse->m_upload;
   if(!x_NeedMoreData(tse_up,srp,from,to,blob_mask))
     return false;
-  m_InvokeGC=true;
   bool new_tse = false;
   char s[100];
   GBLOG_POST( "GetBlob(" << srp->printTSE(s,sizeof(s)) << "," << tse_up << ") " <<
-    from << ":"<< to << ":=" << tse_up->m_mode);
+              from << ":"<< to << ":=" << tse_up->m_mode);
+  
   _VERIFY(tse_up->m_mode != CTSEUpload::eDone);
   if (tse_up->m_mode == CTSEUpload::eNone)
     {
@@ -676,7 +735,7 @@ CGBDataLoader::x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_ma
       cl.Value() = blob_mask;
       for(CIStream bs(srp->BlobStreamBuf(from, to, cl,m_Pool.Select(tse))); ! bs.Eof();count++ )
         {
-          CBlob *blob = srp->RetrieveBlob(bs);
+          auto_ptr<CBlob> blob(srp->RetrieveBlob(bs));
           //GBLOG_POST( "GetBlob(" << srp << ") " << from << ":"<< to << "  class("<<blob->Class()<<")");
           if (blob->Class()==0)
             {
@@ -703,13 +762,12 @@ CGBDataLoader::x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_ma
               // split code : upload tree
               _VERIFY(0);
             }
-          delete blob;
         }
       if(count==0)
         {
           tse_up->m_mode = CTSEUpload::eDone;
           // TODO log message
-          GBLOG_POST("ERROR: can not retrive blob : " << s);
+          LOG_POST("ERROR: can not retrive blob : " << s);
         }
       
       //GBLOG_POST( "GetData-after:: " << from << to <<  endl;
@@ -727,6 +785,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/04/10 22:47:56  kimelman
+* added pubseq_reader as default one
+*
 * Revision 1.25  2002/04/09 19:04:23  kimelman
 * make gcc happy
 *

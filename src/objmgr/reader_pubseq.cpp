@@ -59,7 +59,30 @@ char* CPubseqSeqref::printTSE(char *s,int size) const
   return s;
 }
 
-CPubseqReader::CPubseqReader(unsigned noConn)
+int CPubseqSeqref::Compare(const CSeqref &seqRef,EMatchLevel ml) const
+{
+  const CPubseqSeqref *p = dynamic_cast<const CPubseqSeqref*>(& seqRef);
+  if(p==0) throw runtime_error("Attempt to compare seqrefs from different sources");
+  if(ml==eContext) return 0;
+
+  //cout << "Compare" ; print(); cout << " vs "; p->print(); cout << endl;
+    
+  if(Sat() < p->Sat())  return -1;
+  if(Sat() > p->Sat())  return 1;
+  // Sat() == p->Sat()
+  if(SatKey() < p->SatKey())  return -1;
+  if(SatKey() > p->SatKey())  return 1;
+  // blob == p->blob
+  //cout << "Same TSE" << endl;
+  if(ml==eTSE) return 0;
+  if(Gi() < p->Gi())  return -1;
+  if(Gi() > p->Gi())  return 1;
+  //cout << "Same GI" << endl;
+  return 0;
+}
+
+CPubseqReader::CPubseqReader(unsigned noConn,const string& server,const string& user,const string& pswd)
+  : m_Server(server) , m_User(user), m_Password(pswd)
 {
   for(unsigned i = 0; i < noConn; ++i)
     m_Pool.push_back(NewConn());
@@ -93,7 +116,7 @@ CDB_Connection *CPubseqReader::NewConn()
 #ifdef CPUBSEQREADER_NO_DB
   throw runtime_error("No suitable DB API found");
 #else
-  return m_Context.Connect("PUBSEQ_OS", "anyone", "allowed", 0);
+  return m_Context.Connect(m_Server,m_User,m_Password, 0);
 #endif
 }
 
@@ -167,6 +190,7 @@ streambuf *CPubseqReader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned con)
     CDB_Int giOut;
     CDB_Int satOut;
     CDB_Int satKeyOut;
+    bool  done=false;
 
     while(cmd->HasMoreResults())
     {
@@ -188,15 +212,17 @@ streambuf *CPubseqReader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned con)
           else
             result->SkipItem();
         }
+        if(giOut.Value() == gi && !done)
+          {
+            CPubseqSeqref pubseqRef;
+            pubseqRef.m_Gi.Value() = giOut.Value();
+            pubseqRef.m_Sat.Value() = satOut.Value();
+            pubseqRef.m_SatKey.Value() = satKeyOut.Value();
+            pubseqRef.m_Flag.Value() = 0;
+            *ss << pubseqRef;
+            done=true;
+          }
       }
-
-      CPubseqSeqref pubseqRef;
-      pubseqRef.m_Gi.Value() = giOut.Value();
-      pubseqRef.m_Sat.Value() = satOut.Value();
-      pubseqRef.m_SatKey.Value() = satKeyOut.Value();
-      pubseqRef.m_Flag.Value() = 0;
-      *ss << pubseqRef;
-
     }
   }
 
@@ -341,6 +367,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.3  2002/04/10 22:47:56  kimelman
+* added pubseq_reader as default one
+*
 * Revision 1.2  2002/04/09 16:10:57  ucko
 * Split CStrStreamBuf out into a common location.
 *

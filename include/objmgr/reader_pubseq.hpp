@@ -70,7 +70,7 @@ public:
   virtual CSeqref *Dup() const { return new CPubseqSeqref(*this); }
   virtual char *print(char*,int) const;
   virtual char *printTSE(char*,int) const;
-  virtual int Compare(const CSeqref &seqRef,EMatchLevel ml=eSeq) const { return 0; }
+  virtual int Compare(const CSeqref &seqRef,EMatchLevel ml=eSeq) const;
 
 private:
   friend class CPubseqReader;
@@ -89,7 +89,7 @@ private:
 class CPubseqReader : public CReader
 {
 public:
-  CPubseqReader(unsigned = 2);
+  CPubseqReader(unsigned = 2,const string& server = "PUBSEQ_OS",const string& user="anyone",const string& pswd = "allowed");
   ~CPubseqReader();
   virtual streambuf *SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn = 0);
   virtual CSeqref *RetrieveSeqref(istream &is);
@@ -102,10 +102,13 @@ private:
   friend class CPubseqSeqref;
   streambuf *x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn);
   CDB_Connection *NewConn();
-  DBContext m_Context;
+  
+  string                   m_Server;
+  string                   m_User;
+  string                   m_Password;
+  DBContext                m_Context;
   vector<CDB_Connection *> m_Pool;
 };
-
 
 
 class CPubseqBlob : public CBlob
@@ -134,6 +137,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.4  2002/04/10 22:47:54  kimelman
+* added pubseq_reader as default one
+*
 * Revision 1.3  2002/04/09 18:48:14  kimelman
 * portability bugfixes: to compile on IRIX, sparc gcc
 *

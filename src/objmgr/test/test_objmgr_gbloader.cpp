@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/04/10 22:47:58  kimelman
+* added pubseq_reader as default one
+*
 * Revision 1.15  2002/04/09 19:05:02  kimelman
 * make gcc happy
 *
@@ -120,8 +123,7 @@ int CTestApplication::Run()
 
     // CRef< CGBDataLoader> pLoader = new CGBDataLoader;
     // pOm->RegisterDataLoader(*pLoader, CObjectManager::eDefault);
-    pOm->RegisterDataLoader(*new CGBDataLoader("ID", new CId1Reader, 2),
-                            CObjectManager::eDefault);
+    pOm->RegisterDataLoader(*new CGBDataLoader("ID", 0, 2),CObjectManager::eDefault);
 
     for (int i = 1;  i < 500;  i++) {
         CScope scope(*pOm);
@@ -141,6 +143,7 @@ int CTestApplication::Run()
             ;
           }
           CSeqVector v = h.GetSeqVector();
+          v.SetIupacCoding();
           LOG_POST("Vector size = " << v.size());
           string vs = "";
           for (unsigned cc = 0; cc < v.size(); cc++)
