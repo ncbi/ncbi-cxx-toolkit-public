@@ -36,6 +36,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/06/04 17:00:18  lavr
+ * Include files adjusted
+ *
  * Revision 6.2  2000/12/29 17:48:34  lavr
  * Accepted server types included in SERVICE_CreateConnectorEx arguments.
  *
@@ -46,7 +49,6 @@
  */
 
 #include <connect/ncbi_connector.h>
-#include <connect/ncbi_connutil.h>
 #include <connect/ncbi_server_info.h>
 
 #ifdef __cplusplus

@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2001/06/04 17:00:10  lavr
+ * Include files adjusted
+ *
  * Revision 6.15  2001/04/26 14:18:20  lavr
  * SERV_MapperName moved to a private header
  *
@@ -81,7 +84,6 @@
  * ==========================================================================
  */
 
-#include <connect/ncbi_connutil.h>
 #include <connect/ncbi_server_info.h>
 #include <stddef.h>
 
