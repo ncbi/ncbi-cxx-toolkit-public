@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2002/01/28 20:21:46  lavr
+ * Do not store "" as a user_header
+ *
  * Revision 6.25  2001/12/30 19:40:32  lavr
  * +ConnNetInfo_ParseURL()
  * Added recordkeeping of service name for which the info was created
@@ -430,7 +433,8 @@ extern void ConnNetInfo_SetUserHeader(SConnNetInfo* info,
 {
     if (info->http_user_header)
         free((void*) info->http_user_header);
-    info->http_user_header = user_header ? strdup(user_header) : 0;
+    info->http_user_header =
+        user_header && *user_header ? strdup(user_header) : 0;
 }
 
 
@@ -445,7 +449,7 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
                                      ? strlen(info->service) + 1 : 0));
     *x_info = *info;
     if (info->timeout  &&  info->timeout != CONN_DEFAULT_TIMEOUT) {
-        x_info->tmo = *info->timeout;
+        x_info->tmo     = *info->timeout;
         x_info->timeout = &x_info->tmo;
     }
     if (info->service) {
@@ -631,12 +635,12 @@ extern SOCK URL_Connect
         SOCK_Write(sock, (const void*) X_REQ_E, strlen(X_REQ_E), 0)
         != eIO_Success  ||
 
-        /*  <user_header> */
+        /* <user_header> */
         (user_header  &&
          SOCK_Write(sock, (const void*) user_header, strlen(user_header), 0)
          != eIO_Success)  ||
 
-        /*  Content-Length: <content_length>\r\n\r\n */
+        /* Content-Length: <content_length>\r\n\r\n */
         (req_method != eReqMethod_Get  &&
          (sprintf(buffer, "Content-Length: %lu\r\n",
                   (unsigned long) content_length) <= 0  ||
