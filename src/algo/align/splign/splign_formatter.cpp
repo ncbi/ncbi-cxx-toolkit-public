@@ -187,6 +187,7 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
     list<CRef<CSeq_align> >& sas_data = sas.Set();
     
     for(size_t i = 0; i < num_exons; ++i) {
+
       CRef<CSeq_align> sa (new CSeq_align);
       sa->Reset();
       sa->SetDim(2);
@@ -203,15 +204,19 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
 
       CRef<CSeq_align::C_Segs> segs (new CSeq_align::C_Segs);
       CDense_seg& ds = segs->SetDenseg();
-      ds.SetNumseg(0);
-      ds.SetDim(2);
 
+      const size_t* box = &(*(boxes.begin() + i*4));
+      const size_t query_start = box[0];
+      ENa_strand query_strand = eNa_strand_plus;
+      const size_t subj_start = box[2];
+      ENa_strand subj_strand = box[2] <= box[3]? eNa_strand_plus:
+          eNa_strand_minus;
+      ds.FromTranscript(query_start, query_strand, subj_start, subj_strand,
+                        transcripts[i]);
       vector< CRef< CSeq_id > > &ids = ds.SetIds();
       ids.push_back(id1);
       ids.push_back(id2);
 
-      const size_t* box = &(*(boxes.begin() + i*4));
-      x_Exon2DS(box, transcripts[i], &ds);
       sa->SetSegs(*segs);
       sas_data.push_back(sa);
     }
@@ -222,118 +227,6 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
 }
 
 
-void CSplignFormatter::x_Exon2DS(const size_t* box, const string& trans,
-                                 CDense_seg* pds ) const
-{
-    bool strand = box[2] <= box[3];
-
-    CDense_seg& ds = *pds;
-    vector< TSignedSeqPos > &starts  = ds.SetStarts();
-    vector< TSeqPos >       &lens    = ds.SetLens();
-    vector< ENa_strand >    &strands = ds.SetStrands();
-    
-    // iterate through the transcript
-    size_t seg_count = 0;
-
-    size_t start1 = 0, pos1 = 0; // relative to exon start in mrna
-    size_t start2 = 0, pos2 = 0; // and genomic
-    size_t seg_len = 0;
-	
-    string::const_iterator ib = trans.begin(), ie = trans.end(), ii = ib;
-    unsigned char seg_type;
-    char c = *ii++;
-    if(c == 'M' || c == 'R') {
-      seg_type = 0; // matches and mismatches
-      ++pos1;
-      ++pos2;
-    }
-    else if (c == 'I') {
-      seg_type = 1;  // inserts
-      ++pos2;
-    }
-    else {
-      seg_type = 2;  // dels
-      ++pos1;
-    }
-    
-    while(ii < ie) {
-      c = *ii;
-      if(isalpha(c)) {
-	if(seg_type == 0 && (c == 'M' || c == 'R')) {
-	  ++pos1;
-	  ++pos2;
-	  ++ii;
-	}
-	else {
-	  // close current seg
-	  starts.push_back((seg_type == 1)? -1: TSignedSeqPos(box[0]+start1));
-	  starts.push_back((seg_type == 2)? -1:
-                           TSignedSeqPos(box[2]+(strand?start2:(1-pos2))));
-	  strands.push_back(eNa_strand_plus);
-	  strands.push_back(strand? eNa_strand_plus: eNa_strand_minus);
-	  switch(seg_type) {
-	  case 0: seg_len = pos1 - start1; break;
-	  case 1: seg_len = pos2 - start2; break;
-	  case 2: seg_len = pos1 - start1; break;
-	  }
-	  lens.push_back(seg_len);
-	  ++seg_count;
-	  
-	  // start a new seg
-	  start1 = pos1;
-	  start2 = pos2;
-
-	  if(c == 'M' || c == 'R') {
-	    seg_type = 0; // matches and mismatches
-	    ++pos1;
-	    ++pos2;
-	  }
-	  else if (c == 'I') {
-	    seg_type = 1;  // inserts
-	    ++pos2;
-	  }
-	  else {
-	    seg_type = 2;  // dels
-	    ++pos1;
-	  }
-
-	  ++ii;
-	}
-      }
-      else {
-	size_t len = 0;
-	while(ii < ie && ('0' <= *ii && *ii <= '9')) {
-	  len = 10*len + *ii - '0';
-	  ++ii;
-	}
-	--len;
-	switch(seg_type) {
-	case 0: pos1 += len; pos2 += len; break;
-	case 1: pos2 += len; break;
-	case 2: pos1 += len; break;
-	}
-      }
-    }
-    
-    starts.push_back( (seg_type == 1)? -1: TSignedSeqPos(box[0] + start1) );
-    starts.push_back( (seg_type == 2)? -1:
-		      TSignedSeqPos(box[2] + (strand? start2: (1 - pos2))) );
-    strands.push_back(eNa_strand_plus);
-    strands.push_back(strand? eNa_strand_plus: eNa_strand_minus);	
-    switch(seg_type) {
-    case 0: seg_len = pos1 - start1; break;
-    case 1: seg_len = pos2 - start2; break;
-    case 2: seg_len = pos1 - start1; break;
-    }
-    lens.push_back(seg_len);
-    ++seg_count;
-
-    ds.SetNumseg(seg_count);
-}
-
-
-
-
 END_NCBI_SCOPE
 
 
@@ -341,6 +234,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/11/04 17:55:46  kapustin
+ * Use CDense_seg::FromTrancsript() to format dense-segs
+ *
  * Revision 1.9  2004/08/12 20:07:26  kapustin
  * Fix score type in x_Compartment2SeqAlign
  *
