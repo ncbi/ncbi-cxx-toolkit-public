@@ -34,6 +34,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/12/15 21:27:11  vasilche
+* Moved some typedefs/enums to serial/serialbase.hpp.
+* Removed explicit keyword from AutoPtr costructor.
+*
 * Revision 1.13  2000/12/12 14:20:14  vasilche
 * Added operator bool to CArgValue.
 * Added standard typedef element_type to CRef<> and CConstRef<>.
@@ -289,7 +293,7 @@ class AutoPtr
 public:
     typedef X element_type;
 
-    explicit AutoPtr(X* p = 0)
+    AutoPtr(X* p = 0)
         : m_Ptr(p)
         {
         }
