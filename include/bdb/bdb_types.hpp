@@ -92,6 +92,10 @@ int BDB_DoubleCompare(DB*, const DBT* val1, const DBT* val2);
 int BDB_StringCompare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
+/// non-segmented length prefixed string keys
+int BDB_LStringCompare(DB*, const DBT* val1, const DBT* val2);
+
+/// Simple and fast comparison function for tables with 
 /// non-segmented "case insensitive C string" keys
 int BDB_StringCaseCompare(DB*, const DBT* val1, const DBT* val2);
 
@@ -180,6 +184,8 @@ public:
     virtual void SetUint(unsigned)  // ???
         { BDB_THROW(eType, "Bad conversion"); }
     virtual void SetString(const char*)
+        { BDB_THROW(eType, "Bad conversion"); }
+    virtual void SetStdString(const string&)
         { BDB_THROW(eType, "Bad conversion"); }
     virtual void SetFloat(float)
         { BDB_THROW(eType, "Bad conversion"); }
@@ -307,13 +313,14 @@ private:
     CBDB_Field& operator= (const CBDB_Field& data);
     CBDB_Field(const CBDB_Field& data);
 
-private:
+protected:
     CBDB_BufferManager*  m_BufferManager;
     struct {
         unsigned VariableLength : 1;
         unsigned Attached       : 1;
         unsigned Nullable       : 1;
     } m_Flags;
+private:
     void*      m_Buffer;       // Pointer to the field data (in buf. mgr.)
     size_t     m_BufferSize;   // Field data buffer capacity
     unsigned   m_BufferIdx;    // Fields' position in the managing buffer
@@ -415,6 +422,10 @@ public:
         long v = ::atol(val);
         Set((T) v);
     }
+    virtual void SetStdString(const string& str) 
+    {
+        SetString(str.c_str());
+    }
 
     virtual int Compare(const void* p1, 
                         const void* p2,
@@ -481,6 +492,11 @@ public:
         double v = ::atof(val);
         Set((T) v);
     }
+    virtual void SetStdString(const string& str)
+    {
+        SetString(str.c_str());
+    }
+
     virtual void SetFloat (float  val) { Set((T) val); }
     virtual void SetDouble(double val) { Set((T) val); }
 
@@ -849,13 +865,29 @@ public:
 
 };
 
-
-
 ///
 ///  String field type
 ///
 
-class NCBI_BDB_EXPORT CBDB_FieldString : public CBDB_Field
+class NCBI_BDB_EXPORT CBDB_FieldStringBase : public CBDB_Field
+{
+public:
+    // if mute == true function do not report overflow condition, but just
+    // truncates the string value
+    enum EOverflowAction {
+        eThrowOnOverflow,
+        eTruncateOnOverflow
+    };
+    
+protected:
+    CBDB_FieldStringBase() : CBDB_Field(eVariableLength) {}
+};
+
+///
+///  String field type designed to work with C-strings (ASCIIZ)
+///
+
+class NCBI_BDB_EXPORT CBDB_FieldString : public CBDB_FieldStringBase
 {
 public:
     CBDB_FieldString();
@@ -874,12 +906,6 @@ public:
     const CBDB_FieldString& operator= (const char*             str);
     const CBDB_FieldString& operator= (const string&           str);
 
-    // if mute == true function do not report overflow condition, but just
-    // truncates the string value
-    enum EOverflowAction {
-        eThrowOnOverflow,
-        eTruncateOnOverflow
-    };
     void Set(const char* str, EOverflowAction if_overflow = eThrowOnOverflow);
     string Get() const { return string((const char*)GetBuffer()); }
 
@@ -887,8 +913,6 @@ public:
     {
         return Get();
     }
-
-
 
     bool IsEmpty() const;
     bool IsBlank() const;
@@ -903,6 +927,10 @@ public:
     virtual void        SetMaxVal();
 
     virtual void SetString(const char*);
+    virtual void SetStdString(const string& str)
+    {
+        SetString(str.c_str());
+    }
 
     virtual BDB_CompareFunction GetCompareFunction(bool) const
     {
@@ -963,6 +991,59 @@ public:
 };
 
 
+///
+///  Length prefised string field type
+///
+
+class NCBI_BDB_EXPORT CBDB_FieldLString : public CBDB_FieldStringBase
+{
+public:
+    CBDB_FieldLString();
+
+    // Class factory for string fields.
+    // Default (zero) value of 'buf_size' uses GetBufferSize().
+    virtual CBDB_Field* Construct(size_t buf_size) const;
+
+    operator const char* () const;
+    const CBDB_FieldLString& operator= (const CBDB_FieldLString& str);
+    const CBDB_FieldLString& operator= (const char*             str);
+    const CBDB_FieldLString& operator= (const string&           str);
+
+    void Set(const char* str, EOverflowAction if_overflow = eThrowOnOverflow);
+    string Get() const;
+
+    virtual string GetString() const
+    {
+        return Get();
+    }
+
+    bool IsEmpty() const;
+    bool IsBlank() const;
+
+
+    // IField
+    virtual int         Compare(const void* p1, 
+                                const void* p2, 
+                                bool /* byte_swapped */) const;
+    virtual size_t      GetDataLength(const void* buf) const;
+    virtual void        SetMinVal();
+    virtual void        SetMaxVal();
+
+    virtual void SetString(const char*);
+    virtual void SetStdString(const string& str);
+
+    virtual BDB_CompareFunction GetCompareFunction(bool) const
+    {
+        return BDB_LStringCompare;
+    } 
+protected:
+    const unsigned char* GetLString(const unsigned char* str, 
+                                    bool                 check_legacy, 
+                                    int*                 str_len) const;
+};
+
+
+
 
 /// BDB Data Field Buffer manager class. 
 /// For internal use in BDB library.
@@ -988,6 +1069,14 @@ public:
     /// Get number of fields in comparison.
     /// 0 - means no forced limit
     unsigned int GetFieldCompareLimit() const;
+
+    /// Return TRUE if buffer l-strings should check about legacy
+    /// c-str compatibility
+    bool IsLegacyStrings() const { return m_LegacyString; }
+
+    /// Get DBT.size of the parent file (key or data area)
+    /// (Set by CBDB_File after read)
+    size_t GetDBT_Size() const { return m_DBT_Size; }
 
     ~CBDB_BufferManager();
 
@@ -1068,6 +1157,11 @@ protected:
     /// Return buffer compare function
     BDB_CompareFunction GetCompareFunction() const;
 
+    /// Set C-str detection
+    void SetLegacyStringsCheck(bool value) { m_LegacyString = value; }
+
+    void SetDBT_Size(size_t size) { m_DBT_Size = size; }
+
 private:
     CBDB_BufferManager(const CBDB_BufferManager&);
     CBDB_BufferManager& operator= (const CBDB_BufferManager&);
@@ -1079,6 +1173,7 @@ private:
     char*                   m_Buffer;
     size_t                  m_BufferSize;
     size_t                  m_PackedSize;
+    size_t                  m_DBT_Size;
     bool                    m_Packable;
     /// TRUE if buffer is in a non-native arch.
     bool                    m_ByteSwapped; 
@@ -1090,6 +1185,9 @@ private:
 
     /// Number of fields in key comparison
     unsigned int            m_CompareLimit;
+
+    /// Flag to check for legacy string compatibility
+    bool                    m_LegacyString;
 
 private:
     friend class CBDB_Field;
@@ -1288,7 +1386,7 @@ inline bool CBDB_Field::IsByteSwapped() const
 //
 
 inline CBDB_FieldString::CBDB_FieldString()
-    : CBDB_Field(eVariableLength)
+    : CBDB_FieldStringBase()
 {
     SetBufferSize(256);
 }
@@ -1378,6 +1476,8 @@ inline void CBDB_FieldString::SetMaxVal()
     //        (because of possible 'signed char' comparison in strcmp()).
     ::memset(buf, 0x7F, GetBufferSize()); // 0xFF for international
     ((char*) buf)[GetBufferSize() - 1] = '\0';
+
+    SetNotNull();
 }
 
 
@@ -1620,6 +1720,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/12/22 18:52:43  kuznets
+ * Implemeneted length prefixed string field (CBDB_FieldLString)
+ *
  * Revision 1.27  2003/12/10 19:13:37  kuznets
  * Added support of berkeley db transactions
  *

@@ -36,6 +36,58 @@
 BEGIN_NCBI_SCOPE
 
 
+static
+const unsigned char* s_GetLString(const unsigned char* str, 
+                                  bool  check_legacy, 
+                                  int*  str_len)
+{
+    _ASSERT(str);
+    _ASSERT(str_len);
+
+    // string length reconstruction
+    *str_len = (str[0])       | 
+               (str[1] << 8)  |
+               (str[2] << 16) |
+               (str[3] << 24);
+    
+    if (check_legacy) {
+        if (*str_len < 0) { // true L-string
+            *str_len = -(*str_len);
+            str += 4;
+        } else {
+            *str_len = ::strlen((const char*)str);
+        }
+    } else {  // no legacy strings
+        if (*str_len < 0) { // true L-string
+            *str_len = -(*str_len);
+            str += 4;
+        } else {
+            _ASSERT(0); // positive length !
+        }
+    }
+
+    return str;
+
+}
+
+static 
+const unsigned char* s_GetLString(const DBT* val, 
+                                  bool  check_legacy, 
+                                  int*  str_len)
+{
+    const unsigned char* str = (const unsigned char*)val->data;
+
+    if (val->size <= 4) {  // looks like legacy C-string
+        _ASSERT(check_legacy);
+        *str_len = ::strlen((const char*)str);
+        return str;
+    }
+
+    return s_GetLString(str, check_legacy, str_len);
+}
+
+
+
 extern "C"
 {
 
@@ -93,6 +145,33 @@ int BDB_StringCompare(DB*, const DBT* val1, const DBT* val2)
 {
     return ::strcmp((const char*)val1->data, (const char*)val2->data);
 }
+
+
+
+int BDB_LStringCompare(DB* db, const DBT* val1, const DBT* val2)
+{
+    const CBDB_BufferManager* fbuf1 =
+          static_cast<CBDB_BufferManager*> (db->app_private);
+
+    bool check_legacy = fbuf1->IsLegacyStrings();
+    
+    const unsigned char* str1;
+    const unsigned char* str2;
+    int str_len1; 
+    int str_len2;
+
+    str1 = s_GetLString(val1, check_legacy, &str_len1); 
+    str2 = s_GetLString(val2, check_legacy, &str_len2); 
+
+    int cmp_len = min(str_len1, str_len2);
+    int r = ::memcmp(str1, str2, cmp_len);
+    if (r == 0) {
+        return (str_len1 < str_len2) ? -1
+                                     : ((str_len2 < str_len1) ? 1 : 0);
+    }
+    return r;
+}
+
 
 int BDB_StringCaseCompare(DB*, const DBT* val1, const DBT* val2)
 {
@@ -218,11 +297,13 @@ CBDB_BufferManager::CBDB_BufferManager()
   : m_Buffer(0),
     m_BufferSize(0),
     m_PackedSize(0),
+    m_DBT_Size(0),
     m_Packable(false),
     m_ByteSwapped(false),
     m_Nullable(false),
     m_NullSetSize(0),
-    m_CompareLimit(0)
+    m_CompareLimit(0),
+    m_LegacyString(false)
 {
 }
 
@@ -465,6 +546,286 @@ void CBDB_BufferManager::DuplicateStructureFrom(const CBDB_BufferManager& buf_mg
         Bind(dst_fld.get());
         dst_fld.release();
     }
+    m_LegacyString = buf_mgr.IsLegacyStrings();
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CBDB_FieldLString::
+//
+
+CBDB_FieldLString::CBDB_FieldLString() 
+ : CBDB_FieldStringBase()
+{
+    SetBufferSize(256 + 4);
+}
+
+CBDB_Field* CBDB_FieldLString::Construct(size_t buf_size) const
+{
+    CBDB_FieldLString* fld = new CBDB_FieldLString();
+    fld->SetBufferSize(buf_size ? buf_size : GetBufferSize());
+    return fld;
+}
+
+
+const unsigned char* 
+CBDB_FieldLString::GetLString(const unsigned char* str,
+                              bool                 check_legacy,
+                              int*                 str_len) const
+{
+    size_t DBT_size = m_BufferManager->GetDBT_Size();
+    _ASSERT(DBT_size);
+
+    if (DBT_size <= 4) {  // looks like legacy C-string
+        _ASSERT(check_legacy);
+        *str_len = (int)::strlen((const char*)str);
+    } else {
+        str = s_GetLString(str, check_legacy, str_len);
+    }
+    return str;
+}
+
+
+CBDB_FieldLString::operator const char* () const
+{
+    const unsigned char* str = (const unsigned char*)GetBuffer();
+    bool check_legacy = m_BufferManager->IsLegacyStrings();
+
+    int str_len;
+    size_t DBT_size = m_BufferManager->GetDBT_Size();
+
+    if (DBT_size <= 4) {  // looks like legacy C-string
+        _ASSERT(check_legacy);
+        str_len = ::strlen((const char*)str);
+    } else {
+        str = GetLString(str, check_legacy, &str_len);
+    }
+    return (const char*) str;
+}
+
+
+const CBDB_FieldLString& 
+CBDB_FieldLString::operator=(const CBDB_FieldLString& str)
+{
+    void* buf = GetBuffer();
+    if (this == &str)
+        return *this;
+
+    size_t len = str.GetDataLength(buf);
+    if ( len > (GetBufferSize() - 4) ) {
+        // TODO: allow partial string assignment?
+        BDB_THROW(eOverflow, "String field overflow.");
+    }
+    Unpack();
+    ::memcpy(buf, str.GetBuffer(), len);
+
+    if ( str.IsNull() ) {
+        SetNull();
+    } else {
+        SetNotNull();
+    }
+
+    return *this;
+}
+
+
+void CBDB_FieldLString::Set(const char* str, EOverflowAction if_overflow)
+{
+    if ( !str )
+        str = kEmptyCStr;
+
+    int new_len = ::strlen(str) + 1;
+
+    // check overflow
+    if ( new_len > (GetBufferSize() - 4) ) {
+        if (if_overflow == eTruncateOnOverflow) {
+            new_len = GetBufferSize();
+        } else {
+            string message("String field overflow."); 
+            // TODO: add info what caused overflow, what length expected
+            BDB_THROW(eOverflow, message);
+        }
+    }
+    Unpack();
+    unsigned char* str_buf = (unsigned char*) GetBuffer();
+
+    int s_len = -new_len;  // always store it negative
+    str_buf[0] = (unsigned char) (s_len);
+    str_buf[1] = (unsigned char) (s_len >> 8);
+    str_buf[2] = (unsigned char) (s_len >> 16);
+    str_buf[3] = (unsigned char) (s_len >> 24);
+
+    str_buf += 4;
+
+    ::memcpy(str_buf, str, new_len);
+
+    SetNotNull();
+}
+
+void CBDB_FieldLString::SetString(const char* str)
+{
+    operator=(str);
+}
+
+
+int CBDB_FieldLString::Compare(const void* p1, 
+                               const void* p2, 
+                               bool /*byte_swapped*/) const
+{
+    _ASSERT(p1 && p2);
+
+    bool check_legacy = m_BufferManager->IsLegacyStrings();
+    
+    const unsigned char* str1;
+    const unsigned char* str2;
+    int str_len1; 
+    int str_len2;
+
+    str1 = GetLString((const unsigned char*)p1, check_legacy, &str_len1);
+    str2 = GetLString((const unsigned char*)p2, check_legacy, &str_len2); 
+
+    int cmp_len = min(str_len1, str_len2);
+    int r = ::memcmp(str1, str2, cmp_len);
+    if (r == 0) {
+        return (str_len1 < str_len2) ? -1
+                                     : ((str_len2 < str_len1) ? 1 : 0);
+    }
+    return r;
+}
+
+
+void CBDB_FieldLString::SetMinVal()
+{
+    Set("", eTruncateOnOverflow);
+}
+
+
+void CBDB_FieldLString::SetMaxVal()
+{
+    void* buf = Unpack();
+    int buf_size = GetBufferSize();
+
+    ::memset(buf, 0x7F, buf_size); // 0xFF for international
+    ((char*) buf)[buf_size - 1] = '\0';
+
+    int s_len = -(buf_size - 4);  // always store it negative
+    unsigned char* str_buf = (unsigned char*) buf;
+
+    str_buf[0] = (unsigned char) (s_len);
+    str_buf[1] = (unsigned char) (s_len >> 8);
+    str_buf[2] = (unsigned char) (s_len >> 16);
+    str_buf[3] = (unsigned char) (s_len >> 24);
+
+    SetNotNull();
+}
+
+
+bool CBDB_FieldLString::IsEmpty() const
+{
+    const unsigned char* str = (const unsigned char*) GetBuffer();
+    bool check_legacy = m_BufferManager->IsLegacyStrings();
+    int str_len;
+
+    str = GetLString(str, check_legacy, &str_len);
+
+    return (str_len == 0);
+}
+
+bool CBDB_FieldLString::IsBlank() const
+{
+    const unsigned char* str = (const unsigned char*) GetBuffer();
+    bool check_legacy = m_BufferManager->IsLegacyStrings();
+    int str_len;
+
+    str = GetLString(str, check_legacy, &str_len);
+
+    for (unsigned i = 0; i < str_len; ++i) {
+        if (!isspace(str[i]))
+            return false;
+    }
+
+    return true;
+}
+
+
+size_t CBDB_FieldLString::GetDataLength(const void* buf) const
+{
+    const unsigned char* str = (const unsigned char*) buf;
+    bool check_legacy = m_BufferManager->IsLegacyStrings();
+    int str_len;
+
+    str = GetLString(str, check_legacy, &str_len);
+    if (str != (const unsigned char*) buf)
+        str_len += 4;
+    return str_len + 1;
+}
+
+const CBDB_FieldLString& CBDB_FieldLString::operator= (const char* str)
+{ 
+    Set(str, eThrowOnOverflow); 
+    return *this;
+}
+
+const CBDB_FieldLString& CBDB_FieldLString::operator= (const string& str)
+{
+    SetStdString(str);
+    return *this;
+}
+
+
+string CBDB_FieldLString::Get() const
+{
+    const unsigned char* buf = (const unsigned char*) GetBuffer();
+    bool check_legacy = m_BufferManager->IsLegacyStrings();
+    
+    const unsigned char* str;
+    int str_len; 
+
+    str = GetLString(buf, check_legacy, &str_len);
+    if (str_len == 0) {
+        return kEmptyStr;
+    } 
+    string ret((const char*) str, str_len);
+    return ret;
+}
+
+
+void CBDB_FieldLString::SetStdString(const string& str)
+{
+    int str_len = (int) str.length();
+    if (str_len == 0) {
+        Set("", eThrowOnOverflow);
+        return;
+    }
+
+    // check overflow
+    if (str_len > (GetBufferSize() - 4 - 1)) {
+        string message("String field overflow."); 
+        // TODO: add info what caused overflow, what length expected
+        BDB_THROW(eOverflow, message);
+    }
+
+    const char* str_data = str.data();
+
+    void* buf = Unpack();
+
+    unsigned char* str_buf = (unsigned char*) GetBuffer();
+
+    int s_len = -str_len;  // always store it negative
+    str_buf[0] = (unsigned char) (s_len);
+    str_buf[1] = (unsigned char) (s_len >> 8);
+    str_buf[2] = (unsigned char) (s_len >> 16);
+    str_buf[3] = (unsigned char) (s_len >> 24);
+
+    str_buf += 4;
+
+    ::memcpy(str_buf, str_data, str_len);
+
+    str_buf[str_len] = 0;
+
+    SetNotNull();
+
 }
 
 
@@ -474,6 +835,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/12/22 18:54:14  kuznets
+ * Implemeneted length prefixed string field (CBDB_FieldLString)
+ *
  * Revision 1.15  2003/11/06 14:06:02  kuznets
  * Removing auto_ptr from CBDB_BufferManager
  *
