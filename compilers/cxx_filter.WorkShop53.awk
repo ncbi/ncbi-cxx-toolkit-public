@@ -65,7 +65,7 @@ function print_if_interesting()
       m ~ /Warning: Could not find source for ncbi::CTreeIteratorTmpl<ncbi::C(Const)?TreeLevelIterator>::/ ||
       m ~ /Warning: Could not find source for ncbi::CTypes?IteratorBase<ncbi::CTreeIterator(Tmpl<ncbi::C(Const)?TreeLevelIterator>)?>::/ ||
       m ~ /Where: While instantiating "(__rw)?std::.*(<.*>)?::__((de)?allocate_.*|unLink)\(\)"/ ||
-      m ~ /^".*\/include\/CC\/Cstd\/\.\/algorithm.cc", line 427: .*non-const reference/ ||
+      m ~ /^".*\/include\/CC\/Cstd\/\.\/algorithm.cc", line (427|2124): .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/deque", line (639|671|679): .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/fstream", line (277|321|364): .*::rdbuf hides/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/list", line (541|542|543|544): .*non-const reference/ ||
