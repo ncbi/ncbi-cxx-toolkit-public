@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/06/06 15:50:01  grichenk
+* Fixed auto-wrapping of long lines
+*
 * Revision 1.26  2001/05/17 15:07:15  lavr
 * Typos corrected
 *
@@ -827,6 +830,12 @@ void COStreamBuffer::PutEolAtWordEnd(size_t lineLength)
             break;
         }
     }
+
+    // Prevent insertion of more than one '\n'
+    if (pos > m_Buffer  &&  *(pos-1) == '\n') {
+        goodPlace = false;
+    }
+
     if ( !goodPlace ) {
         // no suitable space found
         if ( linePos < lineLength ) {
