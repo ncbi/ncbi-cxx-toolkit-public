@@ -88,6 +88,9 @@ static void *no_unused_sybdb_h_warn[]={rcsid_sybdb_h, no_unused_sybdb_h_warn};
 #define BCPLAST 3
 #define BCPBATCH 4
 
+#define BCPLABELED 5
+#define BCPHINTS 6
+
 typedef int	 RETCODE;
 
 typedef void	 DBCURSOR;
@@ -231,6 +234,9 @@ typedef struct {
 #endif
    DBTYPEINFO      typeinfo;
    unsigned char   avail_flag;
+#ifdef NCBI_FTDS
+    char*          bcp_hint;
+#endif
 } DBPROCESS;
 
 typedef struct dbdaterec
@@ -563,38 +569,84 @@ DBBOOL dbtabbrowse(DBPROCESS *dbprocess, int tabnum);
 int dbtabcount(DBPROCESS *dbprocess);
 char *dbtabname(DBPROCESS *dbprocess, int tabnum);
 char *dbtabsoruce(DBPROCESS *dbprocess, int colnum, int *tabnum);
+
+#define SYBEMEM         20010   /* Unable to allocate sufficient memory. */
 #define SYBESMSG        20018   
 #define SYBERPND        20019  
 #define SYBETIME        20003   /* SQL Server connection timed out. */
+#define SYBEABNC        20032   /* Attempt to bind to a non-existent column. */
+#define SYBENSIP        20045   /* Negative starting index passed to dbstrcpy().
+ */
+#define SYBECOFL        20049   /* Data-conversion resulted in overflow. */
+#define SYBECSYN        20050   /* Attempt to convert data stopped by syntax err
+or in source field. */
+#define SYBERDCN        20053   /* Requested data-conversion does not exist. */
 #define SYBECLOS        20056   /* Error in closing network connection. */
 
-#define BCPETTS          80001
-#define BCPEBDIO         80002
-#define BCPEBCVH         80003
-#define BCPEBIVI         80004
-#define BCPEBCBC         80005
-#define BCPEBCFO         80006
-#define BCPEBCPB         80007
-#define BCPEBCPN         80008
-#define BCPEBCPI         80009
-#define BCPEBCITBNM      80010
-#define BCPEBCITBLEN     80011
-#define BCPEBCBNPR       80012
-#define BCPEBCBPREF      80013
-#define BCPEVDPT         80014
-#define BCPEBCPCTYP      80015
-#define BCPEBCHLEN       80016
-#define BCPEBCPREF       80017
-#define BCPEBCVLEN       80018
-#define BCPEBCUO         80019
-#define BCPEBUOF         80020
-#define BCPEBUDF         80021
-#define BCPEBIHC         80022
-#define BCPEBCUC         80023
-#define BCPEBUCF         80024
-#define BCPEIFNB         80025
-#define BCPEBCRE         80026
-#define BCPEBCNN         80027
+#define SYBETTS          20066
+#define SYBEBDIO         20063
+#define SYBEBCVH         20083
+#define SYBEBIVI         20080
+#define SYBEBCBC         20081
+#define SYBEBCFO         20082
+#define SYBEBCPB         20078
+#define SYBEBCPN         20077
+#define SYBEBCPI         20076
+#define SYBEBCITBNM      20238
+#define SYBEBCITBLEN     20239
+#define SYBEBCBNPR       20230
+#define SYBEBCBPREF      20236
+#define SYBEVDPT         20079
+#define SYBEUNOP         20115  /* Unknown option passed to dbsetopt(). */
+#define SYBESPID         20154  /* Called dbspid() with a NULL dbproc. */
+#define SYBEBNUM         20214  /* Bad numbytes parameter passed to dbstrcpy(). 
+*/
+#define SYBEBCPCTYP      20233
+#define SYBEBCHLEN       20235
+#define SYBEBCPREF       20237
+#define SYBEBCVLEN       20234
+#define SYBEBCUO         20084
+#define SYBEBUOE         20097  /* FIXME: I made up this number (not the name). 
+jkl */
+#define SYBEBUOF         20098
+#define SYBEBUDF         20102
+#define SYBEBIHC         20103
+#define SYBEBCUC         20085
+#define SYBEBUCE         20096  /* FIXME: I made up this number (not the name). 
+jkl */
+#define SYBEBUCF         20099
+#define SYBEIFNB         20065
+#define SYBEBCRE         20070
+#define SYBEBCNN         20073
+#define SYBEBBCI         20068
+
+#define BCPETTS          SYBETTS
+#define BCPEBDIO         SYBEBDIO
+#define BCPEBCVH         SYBEBCVH
+#define BCPEBIVI         SYBEBIVI
+#define BCPEBCBC         SYBEBCBC
+#define BCPEBCFO         SYBEBCFO
+#define BCPEBCPB         SYBEBCPB
+#define BCPEBCPN         SYBEBCPN
+#define BCPEBCPI         SYBEBCPI
+#define BCPEBCITBNM      SYBEBCITBNM
+#define BCPEBCITBLEN     SYBEBCITBLEN
+#define BCPEBCBNPR       SYBEBCBNPR
+#define BCPEBCBPREF      SYBEBCBPREF
+#define BCPEVDPT         SYBEVDPT
+#define BCPEBCPCTYP      SYBEBCPCTYP
+#define BCPEBCHLEN       SYBEBCHLEN
+#define BCPEBCPREF       SYBEBCPREF
+#define BCPEBCVLEN       SYBEBCVLEN
+#define BCPEBCUO         SYBEBCUO
+#define BCPEBUOF         SYBEBUOF
+#define BCPEBUDF         SYBEBUDF
+#define BCPEBIHC         SYBEBIHC
+#define BCPEBCUC         SYBEBCUC
+#define BCPEBUCF         SYBEBUCF
+#define BCPEIFNB         SYBEIFNB
+#define BCPEBCRE         SYBEBCRE
+#define BCPEBCNN         SYBEBCNN
 int DBTDS(DBPROCESS *dbprocess);
 DBINT dbtextsize(DBPROCESS *dbprocess);
 int dbtsnewlen(DBPROCESS *dbprocess);

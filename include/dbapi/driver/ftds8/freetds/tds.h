@@ -551,6 +551,13 @@ typedef struct tds_msg_info {
       TDS_CHAR *sql_state;
 } TDSMSGINFO;
 
+#ifdef NCBI_FTDS
+typedef struct tds_blob_info {
+        TDS_CHAR *textvalue;
+        TDS_CHAR textptr[16];
+        TDS_CHAR timestamp[8];
+} TDSBLOBINFO;
+#endif
 /*
 ** This is the current environment as reported by the server
 */

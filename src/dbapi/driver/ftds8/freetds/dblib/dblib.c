@@ -722,6 +722,10 @@ int i;
 		}
 		free(dbproc->host_columns);
 	}
+#ifdef NCBI_FTDS
+   if(dbproc->bcp_hint)
+       free(dbproc->bcp_hint);
+#endif
 
    	dbfreebuf(dbproc);
         dblib_del_connection(g_dblib_ctx, dbproc->tds_socket);
@@ -1177,7 +1181,7 @@ DBNUMERIC   *num;
 	tdsdump_log(TDS_DBG_INFO1, "%L inside dbconvert() calling tds_convert\n");
 
 	len = tds_convert (g_dblib_ctx->tds_ctx, srctype, (TDS_CHAR *)src, srclen, 
-                       desttype, destlen, &dres);
+                       desttype, &dres);
 				   
 	if( len == TDS_FAIL )
 		return 0;
@@ -1468,7 +1472,9 @@ TDSSOCKET * tds;
 		default:
 			return colinfo->column_type;
 	}
+#ifndef NCBI_FTDS
 	return 0; /* something went wrong */
+#endif
 }
 
 int dbcolutype(DBPROCESS *dbproc,int column)
@@ -1968,7 +1974,7 @@ int dbalttype(DBPROCESS *dbproc, int computeid, int column)
 BYTE *dbadata(DBPROCESS *dbproc, int computeid, int column)
 {
 	tdsdump_log (TDS_DBG_FUNC, "%L UNIMPLEMENTED dbadata()\n");
-	return "";
+	return (BYTE*)"";
 }
 int dbaltop(DBPROCESS *dbproc, int computeid, int column)
 {

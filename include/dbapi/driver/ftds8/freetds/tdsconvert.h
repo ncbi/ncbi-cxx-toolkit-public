@@ -25,60 +25,81 @@ static char  rcsid_tdsconvert_h [ ] =
 static void *no_unused_tdsconvert_h_warn[]={rcsid_tdsconvert_h, 
                                          no_unused_tdsconvert_h_warn};
 
-typedef union conv_result {
-    TDS_TINYINT     ti;
-    TDS_SMALLINT    si;
-    TDS_INT         i;
-    TDS_FLOAT       f;
-    TDS_REAL        r;
-    TDS_CHAR        *c;
-    TDS_MONEY       m;
-    TDS_MONEY4      m4;
-    TDS_DATETIME    dt;
-    TDS_DATETIME4   dt4;
-    TDS_NUMERIC     n;
-    TDS_VARBINARY   vb;
-    TDS_CHAR        *ib;
-    TDS_UNIQUE      u;
-} CONV_RESULT;
-
-struct tds_tm;
 
 
-TDS_INT _convert_money(int srctype,unsigned char *src,
-                            int desttype,unsigned char *dest,TDS_INT destlen);
-TDS_INT _convert_bit(int srctype,unsigned char *src,
-	int desttype,unsigned char *dest,TDS_INT destlen);
-TDS_INT _convert_int1(int srctype,unsigned char *src,
-	int desttype,unsigned char *dest,TDS_INT destlen);
-TDS_INT _convert_int2(int srctype,unsigned char *src,
-	int desttype,unsigned char *dest,TDS_INT destlen);
-TDS_INT _convert_int4(int srctype,unsigned char *src,
-	int desttype,unsigned char *dest,TDS_INT destlen);
-TDS_INT _convert_flt8(int srctype,unsigned char *src,int desttype,unsigned char *dest,TDS_INT destlen);
-TDS_INT _convert_datetime(int srctype,unsigned char *src,int desttype,unsigned char *dest,TDS_INT destlen);
-int _get_conversion_type(int srctype, int colsize);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef union conv_result
+{
+	TDS_TINYINT ti;
+	TDS_SMALLINT si;
+	TDS_INT i;
+	TDS_INT8 bi;
+	TDS_FLOAT f;
+	TDS_REAL r;
+	TDS_CHAR *c;
+	TDS_MONEY m;
+	TDS_MONEY4 m4;
+	TDS_DATETIME dt;
+	TDS_DATETIME4 dt4;
+	TDS_NUMERIC n;
+	TDS_CHAR *ib;
+	TDS_UNIQUE u;
+}
+CONV_RESULT;
+
+/*
+ * Failure return codes for tds_convert()
+ */
+#define TDS_CONVERT_FAIL	-1	/* unspecified failure */
+#define TDS_CONVERT_NOAVAIL	-2	/* conversion does not exist */
+#define TDS_CONVERT_SYNTAX	-3	/* syntax error in source field */
+#define TDS_CONVERT_NOMEM	-4	/* insufficient memory */
+#define TDS_CONVERT_OVERFLOW	-5	/* result too large */
+
+struct tds_time
+{
+	int tm_year;
+	int tm_mon;
+	int tm_mday;
+	int tm_hour;
+	int tm_min;
+	int tm_sec;
+	int tm_ms;
+};
+
+struct tds_tm
+{
+	struct tm tm;
+	int milliseconds;
+};
 
 unsigned char tds_willconvert(int srctype, int desttype);
 
 TDS_INT tds_get_null_type(int srctype);
 int tds_get_conversion_type(int srctype, int colsize);
-TDS_INT tds_convert(TDSCONTEXT *context, int srctype, TDS_CHAR *src, 
-		TDS_UINT srclen, int desttype, TDS_UINT destlen, CONV_RESULT *cr);
+TDS_INT tds_convert(TDSCONTEXT * context, int srctype, const TDS_CHAR * src, TDS_UINT srclen, int desttype, CONV_RESULT * cr);
 
-struct  tds_time {
-int tm_year;
-int tm_mon;
-int tm_mday;
-int tm_hour;
-int tm_min;
-int tm_sec;
-int tm_ms;
-};
+size_t tds_strftime(char *buf, size_t maxsize, const char *format, const TDSDATEREC * timeptr);
 
-struct tds_tm {
-	struct tm tm;
-	int milliseconds;
-};
+#ifdef __cplusplus
+#if 0
+{
+#endif
+}
 #endif
 
+#endif /* _tdsconvert_h_ */
