@@ -48,7 +48,7 @@ script_args="$*"
 summary_res="check.sh.log"
 error_res="check.sh.out"
 
-sendmail="sendmail -OIgnoreDots"
+sendmail="/usr/lib/sendmail -OIgnoreDots"
 
 
 ####  ERROR REPORT
