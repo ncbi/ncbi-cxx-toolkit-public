@@ -99,6 +99,7 @@ CBl2Seq::~CBl2Seq()
 { 
     x_ResetQueryDs();
     x_ResetSubjectDs();
+    delete m_pOptions;
 }
 
 /// Resets query data structures
@@ -107,8 +108,8 @@ CBl2Seq::x_ResetQueryDs()
 {
     mi_bQuerySetUpDone = false;
     // should be changed if derived classes are created
-    mi_clsQueries.CBLAST_SequenceBlk::~CBLAST_SequenceBlk();
-    mi_clsQueryInfo.CBlastQueryInfo::~CBlastQueryInfo();
+    mi_clsQueries.Reset(NULL);
+    mi_clsQueryInfo.Reset(NULL);
     mi_pScoreBlock = BlastScoreBlkFree(mi_pScoreBlock);
     mi_pLookupTable = BlastLookupTableDestruct(mi_pLookupTable);
     mi_pLookupSegments = ListNodeFreeData(mi_pLookupSegments);
@@ -140,7 +141,12 @@ CRef<CSeq_align_set>
 CBl2Seq::Run()
 {
     TSeqAlignVector seqalignv = MultiQRun();
-    return seqalignv[0];
+
+    if (seqalignv.size()) {
+        return seqalignv[0];
+    } else {
+        return NULL;
+    }
 }
 
 TSeqAlignVector
@@ -446,6 +452,7 @@ CBl2Seq::x_SetupQueries()
     // Convert the BlastMask* into a CSeq_loc
     // TODO: Implement this! 
     //mi_vFilteredRegions = BLASTBlastMask2SeqLoc(filter_mask);
+    BlastMaskFree(filter_mask); // FIXME, return seqlocs for formatter
 }
 
 void
@@ -612,11 +619,11 @@ CBl2Seq::x_Results2SeqAlign()
     }
 
     // Clean up structures
-    mi_clsInitWordParams.CBlastInitialWordParameters::~CBlastInitialWordParameters();
-    mi_clsHitSavingParams.CBlastHitSavingParameters::~CBlastHitSavingParameters();
-    mi_clsExtnWord.CBLAST_ExtendWord::~CBLAST_ExtendWord();
-    mi_clsExtnParams.CBlastExtensionParameters::~CBlastExtensionParameters();
-    mi_clsGapAlign.CBlastGapAlignStruct::~CBlastGapAlignStruct();
+    mi_clsInitWordParams.Reset(NULL);
+    mi_clsHitSavingParams.Reset(NULL);
+    mi_clsExtnWord.Reset(NULL);
+    mi_clsExtnParams.Reset(NULL);
+    mi_clsGapAlign.Reset(NULL);
 
     return retval;
 }
@@ -628,6 +635,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.26  2003/08/28 17:37:06  camacho
+ * Fix memory leaks, properly reset structure wrappers
+ *
  * Revision 1.25  2003/08/28 15:48:23  madden
  * Make buf one longer for sentinel byte
  *
