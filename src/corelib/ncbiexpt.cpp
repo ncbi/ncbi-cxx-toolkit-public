@@ -180,13 +180,13 @@ string CException::ReportAll(TDiagPostFlags flags) const
         pile.push(pex);
     }
     ostrstream os;
-    os << "NCBI C++ Exception: " << endl;
+    os << "NCBI C++ Exception:" << '\n';
     for (; !pile.empty(); pile.pop()) {
         //indentation
         os << "    ";
-        os << pile.top()->ReportThis(flags) << endl;
+        os << pile.top()->ReportThis(flags) << '\n';
     }
-    os << '\0';
+    os << ends;
     if (sm_BkgrEnabled && !m_InReporter) {
         m_InReporter = true;
         CExceptionReporter::ReportDefault(0,0,"(background reporting)",
@@ -249,13 +249,13 @@ void CException::x_ReportToDebugger(void) const
 {
 #ifdef NCBI_OS_MSWIN
     ostrstream os;
-    os << "NCBI C++ Exception: " << endl;
+    os << "NCBI C++ Exception:" << '\n';
     os <<
         GetFile() << "(" << GetLine() << ") : " <<
         GetType() << "::" << GetErrCodeString() << " : \"" <<
         GetMsg() << "\" ";
     ReportExtra(os);
-    os << endl << '\0';
+    os << '\n' << ends;
     OutputDebugString(((string)CNcbiOstrstreamToString(os)).c_str());
 #endif
     DoThrowTraceAbort();
@@ -389,7 +389,7 @@ void CExceptionReporterStream::Report(const char* file, int line,
         eDiag_Error, title.c_str(), title.size(),
         file, line, flags);
     diagmsg.Write(m_Out);
-    m_Out << "NCBI C++ Exception: " << endl;
+    m_Out << "NCBI C++ Exception:" << endl;
     // invert the order
     stack<const CException*> pile;
     const CException* pex;
@@ -420,6 +420,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2003/06/02 15:25:14  lavr
+ * Replace some endl's with '\n's; and all '\0's with ends's
+ *
  * Revision 1.32  2003/04/29 19:47:10  ucko
  * KLUDGE: avoid inlining CStrErrAdapt::strerror with GCC 2.95 on OSF/1,
  * due to a weird, apparently platform-specific, bug.
