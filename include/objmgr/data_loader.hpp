@@ -167,12 +167,22 @@ private:
 
 
 ////////////////////////////////////////////////////////////////////
-///
-///  CDataLoader --
-///
-///  Load data from different sources
-///
+//
+//  CDataLoader --
+//
+//  Load data from different sources
+//
 
+// There are three types of blobs (top-level Seq-entries) related to
+// any Seq-id:
+//   1. main (eBioseq/eBioseqCore/eSequence):
+//      Seq-entry containing Bioseq with Seq-id.
+//   2. external (eExtAnnot):
+//      Seq-entry doesn't contain Bioseq but contains annotations on Seq-id,
+//      provided this data source contain some blob with Bioseq.
+//   3. orphan (eOrphanAnnot):
+//      Seq-entry contains only annotations and this data source doesn't
+//      contain Bioseq with specified Seq-id at all.
 
 class NCBI_XOBJMGR_EXPORT CDataLoader : public CObject
 {
@@ -297,6 +307,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2004/10/26 15:47:43  vasilche
+* Added short description of various types of annotation blobs.
+*
 * Revision 1.36  2004/10/25 16:53:25  vasilche
 * Removed obsolete comments and methods.
 * Added support for orphan annotations.
