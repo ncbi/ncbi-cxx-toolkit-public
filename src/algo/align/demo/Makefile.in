@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile("ALGO demo" project)
+#################################
+
+SUB_PROJ = nwa
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

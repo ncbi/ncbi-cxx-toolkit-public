@@ -1,0 +1,7 @@
+# $Id$
+
+SRC = nw_aligner
+LIB = xalgo
+
+CXXFLAGS = $(ORIG_CXXFLAGS) $(FAST_CXXFLAGS)
+LDFLAGS  = $(ORIG_LDFLAGS) $(FAST_LDFLAGS)
