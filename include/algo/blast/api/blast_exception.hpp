@@ -57,22 +57,34 @@ public:
         eMaxErrCode
     };
     virtual const char* GetErrCodeString(void) const {
+        string err_code_string;
+
         switch ( GetErrCode() ) {
         case eInternal:
-            return "Internal error";
+            err_code_string = "Internal error"; 
+            break;
         case eBadParameter:
-            return "One or more parameters passed are invalid";
+            err_code_string = "One or more parameters passed are invalid"; 
+            break;
         case eOutOfMemory:
-            return "Out of memory";
+            err_code_string = "Out of memory"; 
+            break;
         case eMemoryLimit:
-            return "Memory limit exceeded";
+            err_code_string = "Memory limit exceeded"; 
+            break;
         case eInvalidCharacter:
-            return "Sequence contains one or more invalid characters";
+            err_code_string = "Sequence contains one or more invalid characters"; 
+            break;
         case eNotSupported:
-            return "This operation is not supported";
+            err_code_string = "This operation is not supported"; 
+            break;
         default:
-            return CException::GetErrCodeString();
+            break;
+
+            
         }
+        err_code_string += ": " + string(CException::GetMsg());
+        return err_code_string.c_str();
     }
 
     NCBI_EXCEPTION_DEFAULT(CBlastException,CException);
@@ -87,6 +99,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/10/26 15:29:21  dondosha
+ * Append error message to error code string, to report a more informative error
+ *
  * Revision 1.10  2004/08/02 13:26:15  camacho
  * Minor
  *
