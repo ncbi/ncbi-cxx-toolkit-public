@@ -1583,7 +1583,10 @@ TSeqPos LocationOffset(const CSeq_loc& outer, const CSeq_loc& inner,
                        EOffsetType how, CScope* scope)
 {
     SRelLoc rl(outer, inner, scope);
-    bool    want_reverse = false;
+    if (rl.m_Ranges.empty()) {
+        return (TSeqPos)-1;
+    }
+    bool want_reverse = false;
     {{
         bool outer_is_reverse = IsReverse(GetStrand(outer, scope));
         switch (how) {
@@ -2410,7 +2413,7 @@ SRelLoc::SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope,
             CRef<TRange> intersection(new TRange);
             intersection->SetFrom(max(prange.GetFrom(), crange.GetFrom()));
             intersection->SetTo  (min(prange.GetTo(),   crange.GetTo()));
-            if (intersection->GetFrom() >= intersection->GetTo()) {
+            if (intersection->GetFrom() <= intersection->GetTo()) {
                 if ( !SameOrientation(cstrand, pit.GetStrand()) ) {
                     ERR_POST(Warning
                              << "SRelLoc::SRelLoc:"
@@ -2810,6 +2813,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.33  2003/01/22 21:02:23  ucko
+* Fix stupid logic error in SRelLoc's constructor; change LocationOffset
+* to return -1 rather than crashing if the locations don't intersect.
+*
 * Revision 1.32  2003/01/22 20:15:02  vasilche
 * Removed compiler warning.
 *
