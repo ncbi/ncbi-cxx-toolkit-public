@@ -378,7 +378,7 @@ private:
 
 
 template <class TClass>
-CPluginManager<TClass>::TClassFactory* 
+typename CPluginManager<TClass>::TClassFactory* 
 CPluginManager<TClass>::GetFactory(const string&       driver,
                                    const CVersionInfo& version)
 {
@@ -404,12 +404,12 @@ CPluginManager<TClass>::GetFactory(const string&       driver,
     NCBI_THROW(CPluginManagerException, eResolveFailure, 
                "Cannot resolve class factory");
 
-    return 0;
+//    return 0;
 }
 
 
 template <class TClass>
-CPluginManager<TClass>::TClassFactory* 
+typename CPluginManager<TClass>::TClassFactory* 
 CPluginManager<TClass>::FindClassFactory(const string&  driver,
                                          const CVersionInfo& version)
 {
@@ -418,7 +418,7 @@ CPluginManager<TClass>::FindClassFactory(const string&  driver,
     int best_minor = -1;
     int best_patch_level = -1;
 
-    NON_CONST_ITERATE(set<TClassFactory*>, it, m_Factories) {
+    NON_CONST_ITERATE(typename set<TClassFactory*>, it, m_Factories) {
         TClassFactory* cf = *it;
 
         typename IClassFactory<TClass>::TDriverList drv_list;
@@ -518,8 +518,8 @@ void CPluginManager<TClass>::AddDllSearchPath(const string& path)
 
 
 template <class TClass>
-void CPluginManager<TClass>::Resolve(const string&       driver,
-                                     const CVersionInfo& version)
+void CPluginManager<TClass>::Resolve(const string&       /*driver*/,
+                                     const CVersionInfo& /*version*/)
 {
     vector<CDllResolver*> resolvers;
 
@@ -539,7 +539,20 @@ void CPluginManager<TClass>::Resolve(const string&       driver,
             // check if entry point provides the required interface-driver-version
             // and do not register otherwise...
             if (entry.entry_point) {
-                FNCBI_EntryPoint ep = (FNCBI_EntryPoint) entry.entry_point;
+                FNCBI_EntryPoint ep;
+                // What happens in the next couple of lines is basically:
+                //  ep = (FNCBI_EntryPoint)entry.entry_point;
+                // Some compilers(Workshop) rightfully consider 
+                // (function*)() -> (void*) casts illegal.
+                // But we know this unix style hack works on all our platforms.
+                // (so this trick is well justified).
+                union {
+                    void*              void_ptr;
+                    FNCBI_EntryPoint   func_ptr;
+                } utmp;
+                utmp.void_ptr = entry.entry_point;
+                ep = utmp.func_ptr;
+                
                 RegisterWithEntryPoint(ep);
                 m_RegisteredEntries.push_back(entry);
             }
@@ -858,6 +871,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/11/18 17:09:25  kuznets
+ * Fixing compilation warnings
+ *
  * Revision 1.13  2003/11/18 15:26:29  kuznets
  * Numerous fixes here and there as a result of testing and debugging.
  *
