@@ -363,12 +363,21 @@ void CObject::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 }
 
 
+void CObject::ThrowNullPointerException(void)
+{
+    NCBI_THROW(CCoreException, eNullPtr, "Attempt to access NULL pointer.");
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2002/11/27 12:53:45  dicuccio
+ * Added CObject::ThrowNullPointerException() to get around some inlining issues.
+ *
  * Revision 1.33  2002/09/20 13:52:46  vasilche
  * Renamed sm_Mutex -> sm_AtomicCounterMutex
  *
