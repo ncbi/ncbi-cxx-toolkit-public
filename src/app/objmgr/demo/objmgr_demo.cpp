@@ -83,7 +83,7 @@ public:
     virtual int  Run (void);
 
     CRef<CGBDataLoader> gb_loader;
-    auto_ptr<CBDB_BLOB_Cache> bdb_cache;
+//    auto_ptr<CBDB_BLOB_Cache> bdb_cache;
     auto_ptr<CBDB_Cache> blob_cache;
     auto_ptr<CBDB_Cache> id_cache;
 };
@@ -172,12 +172,14 @@ void CDemoApp::Init(void)
 
     arg_desc->AddFlag("cache",
                       "use BDB cache");
+/*	
     arg_desc->AddDefaultKey("cache_mode", "CacheMode",
                             "Cache classes to use",
                             CArgDescriptions::eString, "new");
     arg_desc->SetConstraint("cache_mode",
                             &(*new CArgAllow_Strings,
                               "old", "newid", "new"));
+*/	
     arg_desc->AddDefaultKey("id_cache_days", "id_cache_days",
                             "number of days to keep gi->sat/satkey cache",
                             CArgDescriptions::eInteger, "1");
@@ -311,7 +313,10 @@ int CDemoApp::Run(void)
 
                 // setup blob cache
                 CCachedId1Reader* rdr;
-                string cache_mode = args["cache_mode"].AsString();
+//                string cache_mode = args["cache_mode"].AsString();
+				// unconditionally force "new" cache mode (TODO: clean up)
+				string cache_mode = "new";  
+				
                 if ( cache_mode == "new" ) {
                     blob_cache.reset(new CBDB_Cache());
 
@@ -326,6 +331,8 @@ int CDemoApp::Run(void)
                     rdr = new CCachedId1Reader(5, blob_cache.get());
                 }
                 else {
+					_ASSERT(0);
+/*					
                     bdb_cache.reset(new CBDB_BLOB_Cache());
 
                     bdb_cache->Open(cache_path.c_str());
@@ -343,6 +350,7 @@ int CDemoApp::Run(void)
                     }
 
                     rdr = new CCachedId1Reader(5, bdb_cache.get());
+*/					
                 }
                 id1_reader.reset(rdr);
 
@@ -360,10 +368,13 @@ int CDemoApp::Run(void)
                     rdr->SetIdCache(id_cache.get());
                 }
                 else {
+					_ASSERT(0);
+/*					
                     bdb_cache->GetIntCache()->
                         SetExpirationTime(id_days*24*60*60);
 
                     rdr->SetIdCache(bdb_cache->GetIntCache());
+*/					
                 }
                 LOG_POST(Info << "ID1 cache enabled in " << cache_path);
             }
@@ -765,6 +776,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2004/04/27 19:00:08  kuznets
+* Commented out old cache modes
+*
 * Revision 1.64  2004/04/09 20:37:48  vasilche
 * Added optional test to get mapped location and object for graphs.
 *
