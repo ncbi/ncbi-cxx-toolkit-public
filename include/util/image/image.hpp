@@ -98,6 +98,10 @@ public:
     size_t GetWidth(void) const    { return m_Width; }
     size_t GetHeight(void) const   { return m_Height; }
 
+    // access the aspect ratio for the image
+    // This is just width / height
+    float  GetAspectRatio(void) const;
+
     // access the depth (= number of channels) for this image.
     // This will be either 3 or 4 (3 = 3 components per pixel, or 24-bit; 4 = 4
     // components per pixel, or 32-bit)
@@ -189,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/09 19:17:32  dicuccio
+ * Added GetAspectRatio()
+ *
  * Revision 1.2  2003/06/03 20:04:24  dicuccio
  * Added export specifiers
  *
