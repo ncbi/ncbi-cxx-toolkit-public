@@ -38,6 +38,9 @@
 
 #include "nw_aligner_threads.hpp"
 
+#include <algorithm>
+
+
 BEGIN_NCBI_SCOPE
 
 // IUPACna alphabet (default)
@@ -1103,6 +1106,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2004/06/29 21:08:17  kapustin
+ * +#include <algorithm>
+ *
  * Revision 1.50  2004/06/29 20:51:21  kapustin
  * Support simultaneous segment computing
  *
