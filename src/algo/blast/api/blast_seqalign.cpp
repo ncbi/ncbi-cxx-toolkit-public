@@ -845,12 +845,10 @@ x_MakeScore(const string& ident_string, double d = 0.0, int i = 0)
 
 /// C++ version of GetScoreSetFromBlastHsp (tools/blastutl.c)
 static void
-x_BuildScoreList(const BlastHSP* hsp, const BlastScoreBlk* sbp, const
-        BlastScoringOptions* score_options, CSeq_align::TScore& scores,
-        EProgram program)
+x_BuildScoreList(const BlastHSP* hsp, const BlastScoringOptions* score_options, 
+                 CSeq_align::TScore& scores, EProgram program)
 {
     string score_type;
-    Blast_KarlinBlk* kbp = NULL;
 
     if (!hsp)
         return;
@@ -871,14 +869,9 @@ x_BuildScoreList(const BlastHSP* hsp, const BlastScoreBlk* sbp, const
 
     // Calculate the bit score from the raw score
     score_type = "bit_score";
-    if (program == eBlastn || !score_options->gapped_calculation)
-        kbp = sbp->kbp[hsp->context];
-    else
-        kbp = sbp->kbp_gap[hsp->context];
 
-    double bit_score = ((hsp->score*kbp->Lambda) - kbp->logK)/NCBIMATH_LN2;
-    if (bit_score >= 0.0)
-        scores.push_back(x_MakeScore(score_type, bit_score));
+    if (hsp->bit_score >= 0.0)
+        scores.push_back(x_MakeScore(score_type, hsp->bit_score));
 
     // Set the identity score
     score_type = "num_ident";
@@ -897,18 +890,18 @@ x_BuildScoreList(const BlastHSP* hsp, const BlastScoreBlk* sbp, const
 
 static void
 x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp, 
-        const BlastScoreBlk* sbp, EProgram program,
-        const BlastScoringOptions* score_options)
+                      EProgram program,
+                      const BlastScoringOptions* score_options)
 {
     // Add the scores for this HSP
     CSeq_align::TScore& score_list = seqalign->SetScore();
-    x_BuildScoreList(hsp, sbp, score_options, score_list, program);
+    x_BuildScoreList(hsp, score_options, score_list, program);
 }
 
 
 CRef<CDense_diag>
 x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id, 
-    const CSeq_id *subject_id, const BlastScoreBlk* sbp,
+    const CSeq_id *subject_id,
     const BlastScoringOptions* score_options, EProgram program, 
     Int4 query_length, Int4 subject_length)
 {
@@ -944,14 +937,14 @@ x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id,
     }
 
     CSeq_align::TScore& score_list = retval->SetScores();
-    x_BuildScoreList(hsp, sbp, score_options, score_list, program);
+    x_BuildScoreList(hsp, score_options, score_list, program);
 
     return retval;
 }
 
 CRef<CStd_seg>
 x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id, 
-    const CSeq_id *subject_id, const BlastScoreBlk* sbp,
+    const CSeq_id *subject_id,
     const BlastScoringOptions* score_options, EProgram program, 
     Int4 query_length, Int4 subject_length)
 {
@@ -1016,7 +1009,7 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id,
     retval->SetLoc().push_back(subject_loc);
 
     CSeq_align::TScore& score_list = retval->SetScores();
-    x_BuildScoreList(hsp, sbp, score_options, score_list, program);
+    x_BuildScoreList(hsp, score_options, score_list, program);
 
     return retval;
 }
@@ -1025,7 +1018,7 @@ CRef<CSeq_align>
 BLASTUngappedHspListToSeqAlign(EProgram program, 
     BlastHSPList* hsp_list, const CSeq_id *query_id, 
     const CSeq_id *subject_id, Int4 query_length, Int4 subject_length,
-    const BlastScoringOptions* score_options, const BlastScoreBlk* sbp)
+    const BlastScoringOptions* score_options)
 {
     CRef<CSeq_align> retval(new CSeq_align()); 
     BlastHSP** hsp_array;
@@ -1044,14 +1037,14 @@ BLASTUngappedHspListToSeqAlign(EProgram program,
         for (index=0; index<hsp_list->hspcnt; index++) { 
             BlastHSP* hsp = hsp_array[index];
             retval->SetSegs().SetDendiag().push_back(
-                x_UngappedHSPToDenseDiag(hsp, query_id, subject_id, sbp, 
+                x_UngappedHSPToDenseDiag(hsp, query_id, subject_id, 
                     score_options, program, query_length, subject_length));
         }
     } else { // Translated search
         for (index=0; index<hsp_list->hspcnt; index++) { 
             BlastHSP* hsp = hsp_array[index];
             retval->SetSegs().SetStd().push_back(
-                x_UngappedHSPToStdSeg(hsp, query_id, subject_id, sbp, 
+                x_UngappedHSPToStdSeg(hsp, query_id, subject_id, 
                     score_options, program, query_length, subject_length));
         }
     }
@@ -1066,7 +1059,7 @@ CRef<CSeq_align>
 BLASTHspListToSeqAlign(EProgram program, 
     BlastHSPList* hsp_list, const CSeq_id *query_id, 
     const CSeq_id *subject_id,
-    const BlastScoringOptions* score_options, const BlastScoreBlk* sbp)
+    const BlastScoringOptions* score_options)
 {
     CRef<CSeq_align> retval(new CSeq_align()); 
     retval->SetType(CSeq_align::eType_disc);
@@ -1091,7 +1084,7 @@ BLASTHspListToSeqAlign(EProgram program,
                     query_id, subject_id);
         }
         
-        x_AddScoresToSeqAlign(seqalign, hsp, sbp, program, 
+        x_AddScoresToSeqAlign(seqalign, hsp, program, 
                               score_options);
         retval->SetSegs().SetDisc().Set().push_back(seqalign);
     }
@@ -1130,6 +1123,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2004/06/07 18:26:29  dondosha
+* Bit scores are now filled in HSP lists, so BlastScoreBlk is no longer needed when results are converted to seqalign
+*
 * Revision 1.43  2004/06/02 15:57:06  bealer
 * - Isolate object manager dependent code.
 *

@@ -317,8 +317,7 @@ CDbBlast::x_Results2SeqAlign()
     retval = BLAST_Results2CSeqAlign(m_ipResults, 
                  m_OptsHandle->GetOptions().GetProgram(),
                  m_tQueries, m_pSeqSrc, 
-                 m_OptsHandle->GetOptions().GetScoringOpts(), 
-                 m_ipScoreBlock);
+                 m_OptsHandle->GetOptions().GetScoringOpts());
 
     return retval;
 }
@@ -330,6 +329,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2004/06/07 18:26:29  dondosha
+ * Bit scores are now filled in HSP lists, so BlastScoreBlk is no longer needed when results are converted to seqalign
+ *
  * Revision 1.29  2004/06/02 15:57:06  bealer
  * - Isolate object manager dependent code.
  *

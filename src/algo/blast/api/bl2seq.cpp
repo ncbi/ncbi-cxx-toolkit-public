@@ -279,8 +279,7 @@ CBl2Seq::x_Results2SeqAlign()
             BLAST_OneSubjectResults2CSeqAlign(mi_pResults,
                  m_OptsHandle->GetOptions().GetProgram(),
                  m_tQueries, mi_pSeqSrc, index,
-                 m_OptsHandle->GetOptions().GetScoringOpts(), 
-                 mi_pScoreBlock);
+                 m_OptsHandle->GetOptions().GetScoringOpts());
 
         /* Merge the new vector with the current. Assume that both vectors
            contain CSeq_align_sets for all queries, i.e. have the same 
@@ -320,6 +319,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.54  2004/06/07 18:26:29  dondosha
+ * Bit scores are now filled in HSP lists, so BlastScoreBlk is no longer needed when results are converted to seqalign
+ *
  * Revision 1.53  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *

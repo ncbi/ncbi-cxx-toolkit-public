@@ -62,7 +62,6 @@ BEGIN_SCOPE(blast)
  * @param query All query sequences [in]
  * @param seq_src handle to BLAST Sequence Source ADT [in]
  * @param score_options contains scoring options [in]
- * @param sbp scoring and statistical information [in]
  * @return Vector of seqalign sets (one set per query sequence).
  */
 TSeqAlignVector
@@ -70,8 +69,7 @@ BLAST_Results2CSeqAlign(const BlastHSPResults* results,
                           EProgram prog,
                           TSeqLocVector &query, 
                           const BlastSeqSrc* seq_src, 
-                          const BlastScoringOptions* score_options, 
-                          const BlastScoreBlk* sbp);
+                          const BlastScoringOptions* score_options);
 
 /** Extracts from the BlastHSPResults structure results for only one subject 
  * sequence, identified by its index, and converts them into a vector of 
@@ -84,7 +82,6 @@ BLAST_Results2CSeqAlign(const BlastHSPResults* results,
  * @param seq_src handle to BLAST Sequence Source ADT [in]
  * @param index Index of the desired subject in the sequence source [in]
  * @param score_options contains scoring options [in]
- * @param sbp scoring and statistical information [in]
  * @return Vector of seqalign sets (one set per query sequence).
  */
 TSeqAlignVector
@@ -92,8 +89,7 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                           EProgram prog,
                           TSeqLocVector &query, 
                           const BlastSeqSrc* seq_src, Int4 index,
-                          const BlastScoringOptions* score_options, 
-                          const BlastScoreBlk* sbp);
+                          const BlastScoringOptions* score_options);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -104,6 +100,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2004/06/07 18:26:29  dondosha
+* Bit scores are now filled in HSP lists, so BlastScoreBlk is no longer needed when results are converted to seqalign
+*
 * Revision 1.20  2004/03/19 19:22:55  camacho
 * Move to doxygen group AlgoBlast, add missing CVS logs at EOF
 *
