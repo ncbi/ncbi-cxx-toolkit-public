@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/06/04 19:36:33  ucko
+* More fixes for empty ranges; CSeq_loc::GetTotalRange() now works again.
+*
 * Revision 1.6  2002/05/24 14:56:14  grichenk
 * Fixed Empty() for unsigned intervals
 *
@@ -224,11 +227,11 @@ public:
     // empty range
     static position_type GetEmptyFrom(void)
         {
-            return GetPositionMin();
+            return GetPositionMax();
         }
     static position_type GetEmptyTo(void)
         {
-            return GetPositionMax();
+            return GetPositionMax() - 1;
         }
     static position_type GetEmptyLength(void)
         {
@@ -256,7 +259,7 @@ public:
         }
     TThisType& CombineTo(position_type to)
         {
-            if ( to > GetTo() )
+            if ( to > GetTo()  ||  IsEmptyTo() )
                 SetTo(to);
             return *this;
         }
