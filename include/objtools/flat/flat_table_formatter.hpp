@@ -48,6 +48,8 @@ public:
         { }
 
 protected: // mostly no-ops
+    EDatabase GetDatabase(void) const { return eDB_NCBI; }
+
     void BeginSequence   (CFlatContext& ctx);
     void FormatHead      (const CFlatHead& head);
     void FormatKeywords  (const CFlatKeywords& keys)   { }
@@ -77,6 +79,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/10/09 15:53:58  ucko
+* Remember to define GetDatabase (-> NCBI)
+*
 * Revision 1.3  2003/06/02 16:01:39  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr
