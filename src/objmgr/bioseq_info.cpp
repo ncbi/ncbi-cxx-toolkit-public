@@ -60,6 +60,7 @@
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/general/Int_fuzz.hpp>
+#include <algorithm>
 
 
 BEGIN_NCBI_SCOPE
@@ -769,6 +770,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/05/11 18:05:03  grichenk
+* include algorithm
+*
 * Revision 1.20  2004/05/11 17:45:51  grichenk
 * Implemented HasId(), AddId() and RemoveId()
 *
