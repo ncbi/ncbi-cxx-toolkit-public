@@ -45,10 +45,10 @@ BEGIN_SCOPE(objects)
 class CSeq_loc;
 
 
-class CFtbaleFormatter : public CFlatItemFormatter
+class CFtableFormatter : public CFlatItemFormatter
 {
 public:
-    CFtbaleFormatter(void);
+    CFtableFormatter(void);
 
     void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os);
     void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os);
@@ -70,6 +70,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/07 14:51:46  shomrat
+* Fixed typo
+*
 * Revision 1.1  2004/04/07 14:25:28  shomrat
 * Initial Revision
 *

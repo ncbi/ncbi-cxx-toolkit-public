@@ -72,7 +72,7 @@ CFlatItemFormatter* CFlatItemFormatter::New(TFormat format)
         return new CGFFFormatter;
 
     case eFormat_FTable:
-        return new CFtbaleFormatter;
+        return new CFtableFormatter;
 
     case eFormat_DDBJ:
     case eFormat_GBSeq:
@@ -229,6 +229,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/04/07 14:51:24  shomrat
+* Fixed typo
+*
 * Revision 1.5  2004/04/07 14:28:19  shomrat
 * Added FTable format
 *

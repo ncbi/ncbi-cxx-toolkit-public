@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CFtbaleFormatter::CFtbaleFormatter(void) 
+CFtableFormatter::CFtableFormatter(void) 
 {
 }
 
@@ -52,7 +52,7 @@ CFtbaleFormatter::CFtbaleFormatter(void)
 //
 // REFERENCE
 
-void CFtbaleFormatter::FormatReference
+void CFtableFormatter::FormatReference
 (const CReferenceItem& ref,
  IFlatTextOStream& text_os)
 {
@@ -65,7 +65,7 @@ void CFtbaleFormatter::FormatReference
 
 // Fetures Header
 
-void CFtbaleFormatter::FormatFeatHeader
+void CFtableFormatter::FormatFeatHeader
 (const CFeatHeaderItem& fh,
  IFlatTextOStream& text_os)
 {
@@ -83,7 +83,7 @@ void CFtbaleFormatter::FormatFeatHeader
 
 // Source and "regular" features
 
-void CFtbaleFormatter::FormatFeature
+void CFtableFormatter::FormatFeature
 (const CFeatureItemBase& f,
  IFlatTextOStream& text_os)
 {
@@ -104,7 +104,7 @@ bool s_IsBetween(const CSeq_loc& loc)
 }
 
 
-void CFtbaleFormatter::x_FormatLocation
+void CFtableFormatter::x_FormatLocation
 (const CSeq_loc& loc,
  const string& key,
  CFFContext& ctx,
@@ -156,7 +156,7 @@ void CFtbaleFormatter::x_FormatLocation
 }
 
 
-void CFtbaleFormatter::x_FormatQuals
+void CFtableFormatter::x_FormatQuals
 (const CFlatFeature::TQuals& quals,
  CFFContext& ctx,
  list<string>& l)

@@ -46,12 +46,12 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CFtbaleGatherer::CFtbaleGatherer(void)
+CFtableGatherer::CFtableGatherer(void)
 {
 }
 
 
-void CFtbaleGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
+void CFtableGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
 {
     CFFContext& ctx = Context();
 
@@ -78,6 +78,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/07 14:51:24  shomrat
+* Fixed typo
+*
 * Revision 1.1  2004/04/07 14:26:40  shomrat
 * Initial Revision
 *

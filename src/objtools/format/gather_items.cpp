@@ -108,7 +108,7 @@ CFlatGatherer* CFlatGatherer::New(TFormat format)
         return new CGFFGatherer;
     
     case eFormat_FTable:
-        return new CFtbaleGatherer;
+        return new CFtableGatherer;
 
     case eFormat_DDBJ:
     case eFormat_GBSeq:
@@ -1205,6 +1205,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/04/07 14:51:24  shomrat
+* Fixed typo
+*
 * Revision 1.15  2004/04/07 14:27:47  shomrat
 * FTable format always on master bioseq
 *

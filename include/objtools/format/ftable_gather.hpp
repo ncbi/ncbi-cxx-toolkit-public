@@ -39,10 +39,10 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CFtbaleGatherer : public CFlatGatherer
+class CFtableGatherer : public CFlatGatherer
 {
 public:
-    CFtbaleGatherer(void);
+    CFtableGatherer(void);
 
     virtual void x_DoSingleSection(const CBioseq_Handle& seq) const;
 };
@@ -56,6 +56,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/07 14:51:46  shomrat
+* Fixed typo
+*
 * Revision 1.1  2004/04/07 14:25:46  shomrat
 * Initial Revision
 *
