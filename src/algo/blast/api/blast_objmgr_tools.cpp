@@ -162,7 +162,7 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
         if (translate) {
             for (unsigned int i = 0; i < nframes; i++) {
                 unsigned int prot_length = 
-                    (length - i % CODON_LENGTH) / CODON_LENGTH;
+                    (length == 0 ? 0 : (length - i % CODON_LENGTH) / CODON_LENGTH);
                 max_length = MAX(max_length, prot_length);
 
                 switch (strand) {
@@ -976,6 +976,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2004/11/29 18:47:22  madden
+* Fix for SetupQueryInfo for zero-length translated nucl. sequence
+*
 * Revision 1.23  2004/10/19 16:09:39  dondosha
 * Sort HSPs by e-value before converting results to Seq-align, since they are sorted by score coming in.
 *
