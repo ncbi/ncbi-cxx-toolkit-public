@@ -152,7 +152,9 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
         }
     }
     if (s == se) {
-        ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - couldn't find matching sequences");
+        ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - couldn't find matching sequences; "
+            << "both " << frontSeqId.AsFastaString() << " and "
+            << backSeqId.AsFastaString() << " must be in the sequence list for this file!");
         return;
     } else {
         slave = *s;
@@ -267,6 +269,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/04/14 20:25:27  thiessen
+* diagnose sequence not present in sequences list
+*
 * Revision 1.26  2003/04/08 21:54:52  thiessen
 * fix for non-optional Dense-diag dim
 *
