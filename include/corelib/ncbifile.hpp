@@ -33,6 +33,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/11/01 20:06:49  juran
+ * Replace directory streams with Contents() method.
+ * Implement and test Mac OS platform.
+ *
  * Revision 1.1  2001/09/19 13:04:18  ivanov
  * Initial revision
  *
@@ -67,10 +71,18 @@ BEGIN_NCBI_SCOPE
 class CDirEntry
 {
 public:
+	CDirEntry();
+#ifdef NCBI_OS_MAC
+    CDirEntry(const FSSpec& fss);
+#endif
     CDirEntry(const string& path);
     void Reset(const string& path);
     virtual ~CDirEntry(void);
-
+    
+	bool operator==(const CDirEntry& other) const;
+#ifdef NCBI_OS_MAC
+	const FSSpec& FSS() const;
+#endif
     // Get entry path
     string GetPath(void) const;
 
@@ -186,8 +198,12 @@ protected:
                         TMode* other_mode) const;
 
 private:
+#ifdef NCBI_OS_MAC
+    FSSpec m_FSS;
+#else
     // Full entry path
     string m_Path;
+#endif
 
     // Global and local current default mode (NOTE: no "fDefault" here!)
     enum EWho {
@@ -274,67 +290,20 @@ class CDir : public CDirEntry
 {
     typedef CDirEntry CParent;
 public:
+    CDir();
+#ifdef NCBI_OS_MAC
+    CDir(const FSSpec& fss);
+#endif
     CDir(const string& dirname);
     virtual ~CDir(void);
 
     // Check if directory "dirname" exists
     virtual bool Exists(void) const;
+    
+    vector<CDirEntry> Contents() const;
 
     // Create the directory using "dirname" passed in the constructor.
     bool Create(void) const;
-
-    // Iterator (return dir entry name)
-    // NOTE: Do not use (or even have) more than one iterator at the same
-    //       time for the same CDir instance!
-
-    class iterator;
-    class const_iterator {
-    public:
-        const_iterator(const string& path = kEmptyStr);
-        const_iterator(const iterator& iter);
-        virtual ~const_iterator(void);
-        const string operator *(void) const;
-        const string* operator ->(void) const;
-        const_iterator& operator ++(void);
-        const_iterator& operator =(const const_iterator& iter);
-        bool operator ==(const const_iterator& iter) const;
-        bool operator !=(const const_iterator& iter) const;
-
-    protected:
-
-        // Class for store directory handler. It automaticaly close directory
-        // at object deleting.
-        class CDirStream : public CObject
-        {
-        public:
-            CDirStream(void);
-            ~CDirStream(void);
-#if defined NCBI_OS_MSWIN
-            long handler;
-#elif defined NCBI_OS_UNIX
-            void *handler;
-#elif defined NCBI_OS_MAC
-            ?
-#endif
-        };
-
-        CRef<CDirStream> m_Dir;  // Dir handler
-        string m_Entry;          // Last file name
-    };
-
-    class iterator : public const_iterator {
-    public:
-        iterator(const string& path = kEmptyStr);
-        string* operator ->(void) const;
-    };
-
-    static const_iterator begin(const string& dirname);
-
-    const_iterator begin(void) const;
-    const_iterator end(void) const;
-
-    iterator begin(void);
-    iterator end(void);
 
     // Directory remove mode
     enum EDirRemoveMode {
@@ -350,10 +319,6 @@ public:
     bool Remove(EDirRemoveMode mode) const;
 };
 
-typedef CDir::iterator TDir_I;
-typedef CDir::const_iterator TDir_CI;
-
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -364,6 +329,7 @@ typedef CDir::const_iterator TDir_CI;
 
 // CDirEntry
 
+#ifndef NCBI_OS_MAC
 inline
 void CDirEntry::Reset(const string& path)
 {
@@ -375,6 +341,7 @@ string CDirEntry::GetPath(void) const
 {
     return m_Path;
 }
+#endif
 
 inline
 string CDirEntry::GetDir(void) const
@@ -439,66 +406,6 @@ inline
 bool CDir::Exists(void) const
 {
     return GetType() == eDir;
-}
-
-inline
-const string CDir::const_iterator::operator *(void) const
-{
-    return m_Entry;
-}
-
-inline
-const string* CDir::const_iterator::operator ->(void) const
-{
-    return &m_Entry;
-}
-
-inline
-bool CDir::const_iterator::operator ==(const const_iterator& iter) const
-{
-    return m_Dir == iter.m_Dir  &&  m_Entry == iter.m_Entry;
-}
-
-inline
-bool CDir::const_iterator::operator !=(const const_iterator& iter) const
-{
-    return m_Dir != iter.m_Dir  ||  m_Entry != iter.m_Entry;
-}
-
-inline
-string* CDir::iterator::operator ->(void) const
-{
-    return (string*)&m_Entry;
-}
-
-inline
-TDir_CI CDir::begin(const string& dirname)
-{
-    return const_iterator(dirname);
-}
-
-inline
-TDir_CI CDir::begin(void) const
-{
-    return const_iterator(GetPath());
-}
-
-inline
-TDir_CI CDir::end(void) const
-{
-    return const_iterator();
-}
-
-inline
-TDir_I CDir::begin(void)
-{
-    return iterator(GetPath());
-}
-
-inline
-TDir_I CDir::end(void)
-{
-    return iterator();
 }
 
 
