@@ -321,7 +321,6 @@ public:
     };
 
     /// Biotree node (forms the tree hierarchy)
-    typedef CBioNode TBioTreeNode;
     typedef CBioNode            TBioTreeNode;
     typedef TBioNode            TBioNodeType;
 
@@ -586,6 +585,9 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/08/18 17:48:25  ucko
+ * Remove duplicate typedef for CBioTree<>::TBioTreeNode.
+ *
  * Revision 1.16  2004/08/18 12:48:09  kuznets
  * compilation fix (GCC)
  *
