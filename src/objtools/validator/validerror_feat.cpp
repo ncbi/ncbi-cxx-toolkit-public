@@ -329,10 +329,7 @@ bool CValidError_feat::SuppressCheck(const string& except_text)
 }
 
 
-bool CValidError_feat::IsResidue(unsigned char res) 
-{
-    return (res < 250);
-}
+
 
 
 unsigned char CValidError_feat::Residue(unsigned char res)
@@ -2173,6 +2170,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2003/03/28 16:26:47  shomrat
+* Removed IsResidue (moved to utilities)
+*
 * Revision 1.21  2003/03/21 21:15:27  shomrat
 * Implemented ValidateSeqFeatProduct
 *
