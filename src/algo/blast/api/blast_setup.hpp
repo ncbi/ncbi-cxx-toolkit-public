@@ -64,16 +64,14 @@ SetupSubjects(const TSeqLocVector& subjects,
  * @param sl seqloc of the sequence to obtain [in]
  * @param encoding encoding for the sequence retrieved [in]
  * @param scope Scope from which the sequences are retrieved [in]
- * @param len Length of the the buffer returned in bytes [out]
  * @param strand strand to retrieve [in]
  * @param add_nucl_sentinel true to guard nucleotide sequence with sentinel 
  * bytes (ignored for protein sequences, which always have sentinels) [in]
  * @return pair containing the buffer and its length. 
  */
-//pair<Uint1*, TSeqPos>
-Uint1*
+pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos>
 GetSequence(const objects::CSeq_loc& sl, Uint1 encoding, 
-            objects::CScope* scope, TSeqPos* len,
+            objects::CScope* scope,
             objects::ENa_strand strand = objects::eNa_strand_plus, 
             bool add_nucl_sentinel = true);
 
@@ -119,6 +117,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/10/29 04:45:58  camacho
+* Use fixed AutoPtr for GetSequence return value
+*
 * Revision 1.15  2003/09/12 17:52:42  camacho
 * Stop using pair<> as return value from GetSequence
 *

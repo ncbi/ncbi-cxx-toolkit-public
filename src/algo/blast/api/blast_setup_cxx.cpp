@@ -305,8 +305,6 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
     ITERATE(TSeqLocVector, itr, queries) {
 
-        Uint1* seqbuf = NULL, *seqbuf_rev = NULL;
-        TSeqPos seqbuflen = 0;
         ENa_strand strand;
 
         if ((is_na || translate) &&
@@ -327,19 +325,18 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
             // Get both strands of the original nucleotide sequence with
             // sentinels
-            //pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
-            seqbuf =
-                GetSequence(*itr->seqloc, encoding, itr->scope, &seqbuflen,
-                            strand, true);
+            pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
+                GetSequence(*itr->seqloc, encoding, itr->scope, strand, true));
             
 
             AutoPtr<Uint1, ArrayDeleter<Uint1> > gc = 
                 FindGeneticCode(options.GetQueryGeneticCode());
             int na_length = sequence::GetLength(*itr->seqloc, itr->scope);
+            Uint1* seqbuf_rev = NULL;  // negative strand
             if (strand == eNa_strand_both)
-               seqbuf_rev = seqbuf + na_length + 1;
+               seqbuf_rev = seqbuf.first.get() + na_length + 1;
             else if (strand == eNa_strand_minus)
-               seqbuf_rev = seqbuf + 1;
+               seqbuf_rev = seqbuf.first.get() + 1;
 
             // Populate the sequence buffer
             for (unsigned int i = 0; i < nframes; i++) {
@@ -349,34 +346,28 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
                 int offset = qinfo->context_offsets[ctx_index + i];
                 short frame = BLAST_ContextToFrame(prog, i);
-                BLAST_GetTranslation(seqbuf + 1, seqbuf_rev,
+                BLAST_GetTranslation(seqbuf.first.get() + 1, seqbuf_rev,
                    na_length, frame, &buf[offset], gc.get());
             }
-            sfree(seqbuf);
             // Translate the lower case mask coordinates;
             BlastMaskDNAToProtein(&mask, *itr->seqloc, itr->scope);
 
         } else if (is_na) {
 
-            //pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
-            seqbuf =
-                GetSequence(*itr->seqloc, encoding, itr->scope, &seqbuflen,
-                            strand, true);
-            int index = (strand == eNa_strand_minus) ? 
+            pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
+                GetSequence(*itr->seqloc, encoding, itr->scope, strand, true));
+            int idx = (strand == eNa_strand_minus) ? 
                 ctx_index + 1 : ctx_index;
-            int offset = qinfo->context_offsets[index];
-            memcpy(&buf[offset], seqbuf, seqbuflen);
-            sfree(seqbuf);
+            int offset = qinfo->context_offsets[idx];
+            memcpy(&buf[offset], seqbuf.first.get(), seqbuf.second);
 
         } else {
 
-            //pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
-            seqbuf =
-                GetSequence(*itr->seqloc, encoding, itr->scope, &seqbuflen,
-                            eNa_strand_unknown, true);
+            pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
+                GetSequence(*itr->seqloc, encoding, itr->scope,
+                            eNa_strand_unknown, true));
             int offset = qinfo->context_offsets[ctx_index];
-            memcpy(&buf[offset], seqbuf, seqbuflen);
-            sfree(seqbuf);
+            memcpy(&buf[offset], seqbuf.first.get(), seqbuf.second);
 
         }
 
@@ -437,12 +428,10 @@ SetupSubjects(const TSeqLocVector& subjects,
 
     ITERATE(TSeqLocVector, itr, subjects) {
         BLAST_SequenceBlk* subj = NULL;
-        Uint1* seqbuf = NULL;
-        TSeqPos seqbuflen = 0;
 
-        seqbuf =
-            GetSequence(*itr->seqloc, encoding, itr->scope, &seqbuflen, 
-                        eNa_strand_plus, use_sentinels);
+        pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
+            GetSequence(*itr->seqloc, encoding, itr->scope,
+                        eNa_strand_plus, use_sentinels));
 
         if (BlastSeqBlkNew(&subj) < 0) {
             NCBI_THROW(CBlastException, eOutOfMemory, "Subject sequence block");
@@ -454,14 +443,21 @@ SetupSubjects(const TSeqLocVector& subjects,
         ++index;
 
         if (subj_is_na) {
-            BlastSeqBlkSetSequence(subj, seqbuf, seqbuflen);
+            BlastSeqBlkSetSequence(subj, seqbuf.first.release(), seqbuf.second);
 
-            // Get the compressed sequence
-            seqbuf = GetSequence(*itr->seqloc, NCBI2NA_ENCODING, itr->scope,
-                                 &seqbuflen, eNa_strand_plus, false);
-            BlastSeqBlkSetCompressedSequence(subj, seqbuf);
+            try {
+                // Get the compressed sequence
+                pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> comp_seqbuf(
+                    GetSequence(*itr->seqloc, NCBI2NA_ENCODING, itr->scope,
+                                 eNa_strand_plus, false));
+                BlastSeqBlkSetCompressedSequence(subj, 
+                                                 comp_seqbuf.first.release());
+            } catch (const CSeqVectorException&) {
+                NCBI_THROW(CBlastException, eBadParameter, 
+                           "Gaps found in subject sequence");
+            }
         } else {
-            BlastSeqBlkSetSequence(subj, seqbuf, seqbuflen);
+            BlastSeqBlkSetSequence(subj, seqbuf.first.release(), seqbuf.second);
         }
 
         dblength += subj->length;
@@ -554,9 +550,8 @@ void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
     buffer[ci] |= vec.size()%COMPRESSION_RATIO;
 }
 
-//pair<Uint1*, TSeqPos>
-Uint1*
-GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope, TSeqPos* len,
+pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos>
+GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
             ENa_strand strand, bool add_nucl_sentinel)
 {
     Uint1* buf,* buf_var;       // buffers to write sequence
@@ -646,11 +641,7 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope, TSeqPos* len,
         NCBI_THROW(CBlastException, eBadParameter, "Invalid encoding");
     }
 
-    if (len) {
-        *len = buflen;
-    }
-
-    return buf;
+    return make_pair(AutoPtr<Uint1, CDeleter<Uint1> >(buf), buflen);
 }
 
 #if 0
@@ -843,6 +834,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2003/10/29 04:46:16  camacho
+* Use fixed AutoPtr for GetSequence return value
+*
 * Revision 1.43  2003/10/27 21:27:36  camacho
 * Remove extra argument to GetSequenceView, minor refactorings
 *
