@@ -118,7 +118,7 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
 
     bool is_na = (prog == eBlastn) ? true : false;
     bool translate = 
-        ((prog == eBlastx) || (prog == eTblastx)) ? true : false;
+        ((prog == eBlastx) || (prog == eTblastx) || (prog == eRPSTblastn));
 
     // Adjust first context depending on the first query strand
     // Unless the strand option is set to single strand, the actual
@@ -297,16 +297,14 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
     }
 
     bool is_na = (prog == eBlastn) ? true : false;
-    bool translate = ((prog == eBlastx) || (prog == eTblastx)) ? true : false;
+    bool translate = 
+       ((prog == eBlastx) || (prog == eTblastx) || (prog == eRPSTblastn));
 
     unsigned int ctx_index = 0;      // index into context_offsets array
     unsigned int nframes = GetNumberOfFrames(prog);
 
     BlastMaskLoc* mask = NULL;
-    if (translate)
-       mask = BlastMaskLocNew(6*(qinfo->last_context+1));
-    else
-       mask = BlastMaskLocNew(qinfo->last_context+1);
+    mask = BlastMaskLocNew(qinfo->last_context+1);
 
     // Unless the strand option is set to single strand, the actual
     // CSeq_locs dictacte which strand to examine during the search
@@ -356,9 +354,8 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
             if (strand == eNa_strand_both)
                seqbuf_rev = seqbuf.first.get() + na_length + 1;
             else if (strand == eNa_strand_minus)
-               seqbuf_rev = seqbuf.first.get() + 1;
+               seqbuf_rev = seqbuf.first.get();
 
-            EBlastProgramType program_type = options.GetProgramType();
             // Populate the sequence buffer
             for (unsigned int i = 0; i < nframes; i++) {
                 if (BLAST_GetQueryLength(qinfo, i) <= 0) {
@@ -366,12 +363,13 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
                 }
 
                 int offset = qinfo->context_offsets[ctx_index + i];
-                short frame = BLAST_ContextToFrame(program_type, i);
+                short frame = BLAST_ContextToFrame(eBlastTypeBlastx, i);
                 BLAST_GetTranslation(seqbuf.first.get() + 1, seqbuf_rev,
                    na_length, frame, &buf[offset], gc.get());
             }
             // Translate the lower case mask coordinates;
-            BlastMaskLocDNAToProtein(bsl_tmp, mask, index, *itr->seqloc, itr->scope);
+            BlastMaskLocDNAToProtein(bsl_tmp, mask, index, *itr->seqloc, 
+				     itr->scope);
 
         } else if (is_na) {
 
@@ -380,7 +378,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
                    strand == eNa_strand_minus);
             try {
                 seqbuf = GetSequence(*itr->seqloc, encoding, itr->scope, strand,
-                                     eSentinels);
+				     eSentinels);
             } catch (const CSeqVectorException&) {
                 sfree(buf);
                 NCBI_THROW(CBlastException, eBadParameter, 
@@ -959,6 +957,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/09/21 13:50:19  dondosha
+* Translate query in 6 frames for RPS tblastn
+*
 * Revision 1.19  2004/09/13 15:55:04  madden
 * Remove unused parameter from CSeqLoc2BlastSeqLoc
 *
