@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.10  2002/12/16 18:56:50  kholodov
+* Fixed: memory leak in CStatement object
+*
 * Revision 1.9  2002/12/06 23:00:21  kholodov
 * Memory leak fix rolled back
 *
@@ -100,7 +103,13 @@ IConnection* CStatement::GetParentConn()
 
 void CStatement::SetCDB_Result(CDB_Result *rs) 
 { 
-    delete m_rs;
+    RequestedRsList::iterator i = m_requestedRsList.find(m_rs);
+    if( i == m_requestedRsList.end() ) {
+        _TRACE(GetIdent() << ": deleting unrequested CDB_Result " 
+               << (void*)m_rs);
+        delete m_rs;
+    }
+
     m_rs = rs;
 }
 
@@ -113,7 +122,7 @@ bool CStatement::HasMoreResults()
             SetFailed(true);
             return false;
         }
-        m_rs = GetBaseCmd()->Result(); 
+        SetCDB_Result(GetBaseCmd()->Result()); 
         if( m_rs == 0 )
             m_rowCount = GetBaseCmd()->RowCount();
     }
@@ -214,9 +223,11 @@ void CStatement::Cancel()
 IResultSet* CStatement::GetResultSet()
 {
     if( m_rs != 0 ) {
+        _TRACE(GetIdent() << ": CDB_Result " << (void*)m_rs << " requested");
         CResultSet *ri = new CResultSet(m_conn, m_rs);
         ri->AddListener(this);
         AddListener(ri);
+        m_requestedRsList.insert(m_rs);
         return ri;
     }
     else

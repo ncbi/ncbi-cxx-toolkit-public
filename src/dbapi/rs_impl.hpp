@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.12  2002/12/16 18:56:50  kholodov
+* Fixed: memory leak in CStatement object
+*
 * Revision 1.11  2002/11/25 15:15:50  kholodov
 * Removed: dynamic array module (array.hpp, array.cpp), using
 * STL vector instead to keep bound column data.
@@ -124,6 +127,10 @@ public:
 
     // Interface IEventListener implementation
     virtual void Action(const CDbapiEvent& e);
+
+    CDB_Result* GetCDB_Result() {
+        return m_rs;
+    }
 
 
 protected:

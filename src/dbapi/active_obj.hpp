@@ -35,6 +35,9 @@
 *
 *
 * $Log$
+* Revision 1.6  2002/12/16 18:56:50  kholodov
+* Fixed: memory leak in CStatement object
+*
 * Revision 1.5  2002/09/18 18:47:30  kholodov
 * Modified: CActiveObject inherits directly from IEventListener
 * Added: Additional trace output
@@ -129,10 +132,13 @@ public:
     string GetIdent() const;
 
 protected:
+    typedef set<CActiveObject*> TLList;
+
     void SetIdent(const string& name);
 
+    TLList& GetListenerList();
+
 private:
-    typedef set<CActiveObject*> TLList;
 
     TLList m_listenerList;
     string m_ident;  // Object identificator

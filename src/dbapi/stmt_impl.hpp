@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.8  2002/12/16 18:56:50  kholodov
+* Fixed: memory leak in CStatement object
+*
 * Revision 1.7  2002/12/05 17:37:23  kholodov
 * Fixed: potential memory leak in CStatement::HasMoreResults() method
 * Modified: getter and setter name for the internal CDB_Result pointer.
@@ -141,6 +144,8 @@ private:
     bool m_failed;
     typedef map<string, CVariant*> ParamList;
     ParamList m_params;
+    typedef set<CDB_Result*> RequestedRsList;
+    RequestedRsList m_requestedRsList;
 
 };
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/12/16 18:56:50  kholodov
+* Fixed: memory leak in CStatement object
+*
 * Revision 1.5  2002/10/22 22:14:01  vakatov
 * Get rid of a compilation warning
 *
@@ -100,6 +103,11 @@ void CActiveObject::Notify(const CDbapiEvent& e)
 void CActiveObject::Action(const CDbapiEvent&)
 {
 
+}
+
+CActiveObject::TLList& CActiveObject::GetListenerList()
+{
+    return m_listenerList;
 }
   
 string CActiveObject::GetIdent() const
