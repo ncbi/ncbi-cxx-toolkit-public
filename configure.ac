@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.9 2001/10/10 15:03:04 ucko Exp $
+#  $Id: configure.ac,v 1.10 2001/10/10 22:05:23 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -640,10 +640,10 @@ if test -z "$CONF_f_runpath" ; then
     solaris*:GCC )
       CONF_f_runpath="-Xlinker -R -Xlinker "
       ;;
-    linux*:GCC )
+    linux*:GCC | linux*:ICC )
       CONF_f_runpath="-Xlinker -rpath -Xlinker "
       ;;
-    irix*:* | linux*:KCC | linux:ICC )
+    irix*:* | linux*:KCC )
       CONF_f_runpath="-rpath "
       ;;
     * )

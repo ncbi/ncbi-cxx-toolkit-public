@@ -2851,10 +2851,10 @@ if test -z "$CONF_f_runpath" ; then
     solaris*:GCC )
       CONF_f_runpath="-Xlinker -R -Xlinker "
       ;;
-    linux*:GCC )
+    linux*:GCC | linux*:ICC )
       CONF_f_runpath="-Xlinker -rpath -Xlinker "
       ;;
-    irix*:* | linux*:KCC | linux:ICC )
+    irix*:* | linux*:KCC )
       CONF_f_runpath="-rpath "
       ;;
     * )
