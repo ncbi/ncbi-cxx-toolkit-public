@@ -1627,6 +1627,13 @@ void CFeatureItem::x_AddProtQuals
                     new CFlatStringListQVal(pref.GetActivity()));
             }
         }
+        if (!pref.GetEc().empty()) {
+            ITERATE(CProt_ref::TEc, ec, pref.GetEc()) {
+                if (s_IsLegalECNumber(*ec)) {
+                    x_AddQual(eFQ_prot_EC_number, new CFlatStringQVal(*ec));
+                }
+            }
+        }
         if ( feat.CanGetProduct() ) {
             CBioseq_Handle prot = 
                 ctx.GetScope().GetBioseqHandle(feat.GetProduct());
@@ -3126,6 +3133,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2004/08/19 18:03:31  shomrat
+* Add prot_EC_number qual to Prot features
+*
 * Revision 1.28  2004/08/19 16:38:27  shomrat
 * feature_item.cpp
 *
