@@ -1341,7 +1341,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         CHECK_WRAP();
         CRef<CSeq_entry> tse
             (const_cast<CSeq_entry*>(&handle.GetTopLevelSeqEntry()));
-        tse->Parentize();
+        //tse->Parentize();
         
         CRef<CSeq_entry> entry(const_cast<CSeq_entry*>(
                                    handle.GetBioseq().GetParentEntry()));
@@ -1411,6 +1411,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2004/03/23 15:14:01  vasilche
+* Restored automatic call to Parentize() for Seq-entries in object manager.
+*
 * Revision 1.53  2004/03/18 16:30:24  grichenk
 * Changed type of seq-align containers from list to vector.
 *

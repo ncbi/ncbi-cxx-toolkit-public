@@ -79,6 +79,7 @@ CTSE_Info::CTSE_Info(const CSeq_entry& entry,
       m_Dead(dead),
       m_Blob_ID(blob_id)
 {
+    const_cast<CSeq_entry&>(entry).Parentize();
     x_SetObject(entry);
     x_TSEAttach(*this);
 }
@@ -711,6 +712,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2004/03/23 15:14:00  vasilche
+* Restored automatic call to Parentize() for Seq-entries in object manager.
+*
 * Revision 1.41  2004/03/16 15:47:28  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
