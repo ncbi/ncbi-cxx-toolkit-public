@@ -40,12 +40,7 @@
 ///     http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/
 ///            programming_manual/diag.html
 
-#include <corelib/ncbistl.hpp>
-#include <corelib/ncbidbg.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <string>
-#include <vector>
-#include <istream>
 
 BEGIN_NCBI_SCOPE
 
@@ -337,6 +332,11 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/09/22 16:52:39  ucko
+ * Remove redundant headers, particularly <istream> (which is not
+ * available everywhere); as ncbiutil.hpp includes ncbistd.hpp, it
+ * should suffice by itself.
+ *
  * Revision 1.1  2004/09/22 13:32:17  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
