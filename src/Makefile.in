@@ -13,9 +13,9 @@ include ./Makefile.mk
 
 MANDATORY_PROJ  = corelib util connect cgi html hello
 
-OPTIONAL_PROJ   = @serial@ @dbapi@ @objects@ @ctools@ @app@ \
+OPTIONAL_PROJ   = @serial@ @dbapi@ @objects@ @ctools@ @gui@ @app@ \
    @internal@ @check@
-X_OPTIONAL_PROJ =  serial   dbapi   objects   ctools   app \
+X_OPTIONAL_PROJ =  serial   dbapi   objects   ctools   gui   app \
    internal check
 
 SUB_PROJ = $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
@@ -31,8 +31,19 @@ include ./Makefile.meta
 
 #
 # Prepare for install:   get rid of everything not needed for the install
+# and move aside internal libraries we plan to stop installing altogether
 #
 
+libs_to_drop = $(top_srcdir)/scripts/internal/projects/libs_to_drop
+dlibdir = $(libdir)/.DEATH-ROW
 strip_for_install:
 	test "$(COMPILER)-$(DEBUG_SFX)" = "workshop-Debug" || \
-	    rm -rf $(MANDATORY_PROJ) $(X_OPTIONAL_PROJ) Makefile
+	  rm -rf $(MANDATORY_PROJ) $(X_OPTIONAL_PROJ) Makefile
+	@test -f "$(libs_to_drop)" && \
+	  while read lib; do \
+	    test -f "$(status_dir)/.$$lib.dep" && mkdir -p $(dlibdir) && \
+	      echo mv .../lib/lib$$lib.\* .../lib/.DEATH-ROW && \
+	      mv $(libdir)/lib$$lib.* $(dlibdir); \
+	    test -f "$(status_dir)/.$$lib-static.dep" && \
+	      mv $(libdir)/lib$$lib-static.* $(dlibdir); \
+	  done < "$(libs_to_drop)"
