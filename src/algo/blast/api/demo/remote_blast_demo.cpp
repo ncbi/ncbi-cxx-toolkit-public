@@ -56,12 +56,25 @@ USING_NCBI_SCOPE;
 class CRemote_blastApplication : public CNcbiApplication
 {
 public:
+    /// Initialize object and build command line interface.
     virtual void Init(void);
+    
+    /// Submit user search, retrieve results, and format alignment.
+    ///
+    /// This method calls the functions that provide the bulk of the
+    /// functionality for this program.  The request is (optionally)
+    /// submitted and formatted.  Before submission, the arguments are
+    /// used to configure the query and formatting parameters.  When
+    /// the search is complete, the resulting Seq_align_set is
+    /// retrieved and (optionally) formatted.
+    
     virtual int  Run (void);
     
 private:
+    /// Encapsulation of the command line interface.
     auto_ptr<CArgDescriptions> m_ArgDesc;
     
+    /// Create general program control arguments.
     void x_AddRemoteBlastKeys(void);
 };
 
@@ -244,6 +257,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/06/14 18:04:34  bealer
+ * - Doxydation.
+ *
  * Revision 1.4  2004/06/09 17:43:20  bealer
  * - Add documentation.
  *
