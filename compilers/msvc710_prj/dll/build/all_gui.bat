@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_gui.bat,v 1.3 2004/05/03 15:15:05 ivanov Exp $
+REM $Id: all_gui.bat,v 1.4 2004/05/11 18:21:50 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -26,7 +26,7 @@ REM ===========================================================================
 REM 
 REM Author:  Anton Lavrentiev
 REM
-REM Build NCBI C++ core libraries, tests and samples
+REM Build C++ GUI libraries, tests and samples
 REM
 REM ===========================================================================
 
@@ -55,9 +55,6 @@ GOTO EXIT
 :CONTINUE
 ECHO INFO: Building "dll\gui\%CFG%"
 devenv gui\ncbi_gui_dll.sln /build %CFG% /project "-BUILD-ALL-"
-IF ERRORLEVEL 1 GOTO ABORT
-ECHO INFO: Installing GBENCH "dll\gui\%CFG%"
-devenv gui\ncbi_gui_dll_gbench_install.sln /build %CFG% /project "-BUILD-ALL-"
 IF ERRORLEVEL 1 GOTO ABORT
 
 SHIFT
