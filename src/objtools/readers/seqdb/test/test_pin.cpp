@@ -1852,6 +1852,23 @@ int test1(int argc, char ** argv)
             
         } else desc += " [-dogs]";
         
+        if (s == "-megabarley") {
+            CStopWatch sw(true);
+            
+            double e1 = sw.Elapsed();
+            double e2 = e1;
+            
+            Uint4 i(0);
+            while((e2 - e1) < 10.0) {
+                CSeqDB cob("genomes/barley", 'n');
+                i++;
+                e2 = sw.Elapsed();
+            }
+            
+            cout << "Iterations of barley in " << (e2-e1) << " seconds: " << i << endl;
+            return 0;
+        } else desc += " [-megabarley]";
+        
         if (s == "-one") {
             int xt_iter = 0;
             const int Asize = 100;
