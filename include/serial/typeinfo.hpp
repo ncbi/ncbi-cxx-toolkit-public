@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/07 19:59:38  vasilche
+* offset_t -> size_t
+*
 * Revision 1.3  1999/06/07 19:30:21  vasilche
 * More bug fixes
 *
@@ -83,9 +86,9 @@ public:
 
     virtual size_t GetSize(void) const = 0;
 
-    static TObjectPtr Add(TObjectPtr object, offset_t offset)
+    static TObjectPtr Add(TObjectPtr object, size_t offset)
         { return static_cast<char*>(object) + offset; }
-    static TConstObjectPtr Add(TConstObjectPtr object, offset_t offset)
+    static TConstObjectPtr Add(TConstObjectPtr object, size_t offset)
         { return static_cast<const char*>(object) + offset; }
 
     TObjectPtr EndOf(TObjectPtr object) const

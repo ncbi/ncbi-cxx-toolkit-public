@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/07 19:59:37  vasilche
+* offset_t -> size_t
+*
 * Revision 1.2  1999/06/04 20:51:31  vasilche
 * First compilable version of serialization.
 *
@@ -67,19 +70,19 @@ public:
         { }
 
     // superclass member
-    CMemberInfo(offset_t offset, const CTypeRef& type)
+    CMemberInfo(size_t offset, const CTypeRef& type)
         : m_Offset(offset), m_Type(type)
         { }
     
     // common member
-    CMemberInfo(const string& name, offset_t offset, const CTypeRef& type)
+    CMemberInfo(const string& name, size_t offset, const CTypeRef& type)
         : m_Name(name), m_Offset(offset), m_Type(type)
         { }
 
     const string& GetName(void) const
         { return m_Name; }
 
-    offset_t GetOffset(void) const
+    size_t GetOffset(void) const
         { return m_Offset; }
 
     TTypeInfo GetTypeInfo(void) const
@@ -99,7 +102,7 @@ public:
 
 private:
     string m_Name;
-    offset_t m_Offset;
+    size_t m_Offset;
     CTypeRef m_Type;
 };
 
@@ -112,7 +115,7 @@ public:
 
     CClassInfoTmpl(const type_info& ti, size_t size, void* (*creator)(void));
     CClassInfoTmpl(const type_info& ti, size_t size, void* (*creator)(void),
-                   const CTypeRef& parent, offset_t offset);
+                   const CTypeRef& parent, size_t offset);
 
     virtual size_t GetSize(void) const;
 
@@ -158,8 +161,8 @@ public:
     CClassInfo(const CTypeRef& pTypeRef)
         : CClassInfoTmpl(typeid(CLASS), sizeof(CLASS), &sx_Create,
                          pTypeRef,
-                         offset_t(static_cast<const PCLASS*>
-                                  (static_cast<const CLASS*>(0))))
+                         size_t(static_cast<const PCLASS*>
+                                (static_cast<const CLASS*>(0))))
         {
         }
 

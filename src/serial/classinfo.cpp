@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/07 19:59:40  vasilche
+* offset_t -> size_t
+*
 * Revision 1.3  1999/06/07 19:30:24  vasilche
 * More bug fixes
 *
@@ -58,7 +61,7 @@ CClassInfoTmpl::CClassInfoTmpl(const type_info& ti, size_t size,
 
 CClassInfoTmpl::CClassInfoTmpl(const type_info& ti, size_t size,
                                TObjectPtr (*creator)(void),
-                               const CTypeRef& parent, offset_t offset)
+                               const CTypeRef& parent, size_t offset)
     : CParent(ti), m_Size(size), m_Creator(creator)
 {
     _TRACE(ti.name());
