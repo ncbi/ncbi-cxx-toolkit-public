@@ -656,7 +656,7 @@ extern bool IsDiagStream(const CNcbiOstream* os);
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CDiagHandler --
+/// CDiagFactory --
 ///
 /// Diagnostic handler factory.
 
@@ -864,6 +864,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.60  2003/08/01 14:16:27  siyan
+ * Fixed error in CDiagFactory documentation.
+ *
  * Revision 1.59  2003/07/21 18:42:29  siyan
  * Documentation changes.
  *
