@@ -27,7 +27,7 @@
  *
  */
 
-#include <seqdbimpl.hpp>
+#include "seqdbimpl.hpp"
 
 BEGIN_NCBI_SCOPE
 

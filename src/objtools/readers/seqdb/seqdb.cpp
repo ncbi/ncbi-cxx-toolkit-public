@@ -33,8 +33,8 @@
 /// methods on objects which represent the various database files,
 /// such as the index file, the header file, and the sequence file.
 
-#include <seqdb.hpp>
-#include <seqdbimpl.hpp>
+#include <objtools/readers/seqdb/seqdb.hpp>
+#include "seqdbimpl.hpp"
 
 BEGIN_NCBI_SCOPE
 

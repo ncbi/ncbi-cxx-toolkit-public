@@ -28,8 +28,8 @@
  */
 
 #include <corelib/ncbistr.hpp>
-#include <seqdbalias.hpp>
-#include <seqdbfile.hpp>
+#include "seqdbalias.hpp"
+#include "seqdbfile.hpp"
 
 BEGIN_NCBI_SCOPE
 

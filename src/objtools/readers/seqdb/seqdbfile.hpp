@@ -35,7 +35,7 @@
 /// These objects define access to the various database component
 /// files, such as name.pin, name.phr, name.psq, and so on.
 
-#include <seqdbcommon.hpp>
+#include <objtools/readers/seqdb/seqdbcommon.hpp>
 #include <corelib/ncbi_bswap.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbiobj.hpp>

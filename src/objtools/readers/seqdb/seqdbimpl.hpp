@@ -36,9 +36,8 @@
 /// is seperated from that class so that various implementation
 /// details of CSeqDB are kept from the public interface.
 
-//#include <seqdbfile.hpp>
-#include <seqdbvol.hpp>
-#include <seqdbalias.hpp>
+#include "seqdbvol.hpp"
+#include "seqdbalias.hpp"
 
 BEGIN_NCBI_SCOPE
 

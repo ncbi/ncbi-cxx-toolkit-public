@@ -27,7 +27,7 @@
  *
  */
 
-#include <seqdbcommon.hpp>
+#include <objtools/readers/seqdb/seqdbcommon.hpp>
 
 BEGIN_NCBI_SCOPE
 

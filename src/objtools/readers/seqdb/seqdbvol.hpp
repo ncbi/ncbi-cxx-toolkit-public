@@ -37,8 +37,8 @@
 #include <assert.h>
 #include <iostream>
 
-#include <seqdb.hpp>
-#include <seqdbfile.hpp>
+#include <objtools/readers/seqdb/seqdb.hpp>
+#include "seqdbfile.hpp"
 
 #include <sstream>
 

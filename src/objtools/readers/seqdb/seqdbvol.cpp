@@ -27,7 +27,7 @@
  *
  */
 
-#include <seqdbvol.hpp>
+#include "seqdbvol.hpp"
 
 BEGIN_NCBI_SCOPE
 

@@ -1,8 +1,6 @@
 # $Id$
 
-include $(srcdir)/../core/Makefile.blast.lib
-
-ASN_DEP = seq xnetblast scoremat
+ASN_DEP = seq
 
 SRC = seqdb \
 seqdbalias \

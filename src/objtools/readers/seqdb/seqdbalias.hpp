@@ -37,9 +37,9 @@
 #include <assert.h>
 #include <iostream>
 
-#include <seqdb.hpp>
-#include <seqdbfile.hpp>
-#include <seqdbvol.hpp>
+#include <objtools/readers/seqdb/seqdb.hpp>
+#include "seqdbfile.hpp"
+#include "seqdbvol.hpp"
 
 /*
 typedef struct _readdb_alias_file {
