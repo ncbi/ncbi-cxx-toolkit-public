@@ -345,10 +345,10 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
     const string& text = GetText();
     SIZE_TYPE tagStart = text.find(KTagStart);
     if ( tagStart == NPOS ) {
-        return out << text;
+        return x_PrintBegin(out, mode, text);
     }
 
-    out << text.substr(0, tagStart);
+    x_PrintBegin(out, mode, text.substr(0, tagStart));
     SIZE_TYPE last = tagStart;
     do {
         SIZE_TYPE tagNameStart = tagStart + KTagStart_size;
@@ -360,7 +360,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
         else {
             // tag found
             if ( last != tagStart ) {
-                out << text.substr(last, tagStart - last);
+                x_PrintBegin(out, mode, text.substr(last, tagStart - last));
             }
 
             CNodeRef tag = MapTagAll(text.substr(tagNameStart,
@@ -375,7 +375,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
     } while ( tagStart != NPOS );
 
     if ( last != text.size() ) {
-        out << text.substr(last);
+        x_PrintBegin(out, mode, text.substr(last));
     }
     return out;
 }
@@ -1991,6 +1991,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2002/09/25 01:24:56  dicuccio
+ * Added CHTMLHelper::StripTags() - strips HTML comments and tags from any
+ * string.  Implemented CHTMLText::PrintBegin() for mode = ePlainText
+ *
  * Revision 1.74  2002/02/13 20:16:44  ivanov
  * Added support of dynamic popup menus. Changed EnablePopupMenu().
  *

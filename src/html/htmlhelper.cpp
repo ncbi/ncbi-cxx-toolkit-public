@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/09/25 01:24:56  dicuccio
+* Added CHTMLHelper::StripTags() - strips HTML comments and tags from any
+* string.  Implemented CHTMLText::PrintBegin() for mode = ePlainText
+*
 * Revision 1.7  1999/05/20 16:52:33  pubmed
 * SaveAsText action for query; minor changes in filters,labels, tabletemplate
 *
@@ -175,6 +179,28 @@ string CHTMLHelper::HTMLEncode(const string& input)
         output.append(input, last, input.size() - last);
 
     return output;
+}
+
+string CHTMLHelper::StripTags (const string& input)
+{
+    int pos;
+    string s (input);
+
+    // first, strip comments
+    while ( (pos = s.find("<!--")) != NPOS)
+    {
+        int pos_end = s.find("-->", pos);
+        s.erase(pos, pos_end - pos + 3);
+    }
+
+    // now, strip balanced "<..>"
+    while ( (pos = s.find_first_of("<")) != NPOS)
+    {
+        int pos_end = s.find_first_of(">", pos);
+        s.erase(pos, pos_end - pos + 1);
+    }
+
+    return s;
 }
 
 END_NCBI_SCOPE
