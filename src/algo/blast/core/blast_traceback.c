@@ -378,6 +378,175 @@ static void SavePatternLengthInGapAlignStruct(Int4 length,
 
 #define MAX_FULL_TRANSLATION 2100
 
+/** Translate the subject sequence into 6 frames, and create a mixed-frame 
+ * sequnce if out-of-frame gapping will be used.
+ * @param subject_blk Subject sequence structure [in]
+ * @param gen_code_string Genetic code to use for translation [in]
+ * @param translation_buffer_ptr Pointer to buffer to hold the 
+ *                               translated sequence(s) [out]
+ * @param frame_offsets_ptr Pointer to an array to hold offsets into the
+ *                          translation buffer for each frame. Mixed-frame 
+ *                          sequence is to be returned, if NULL. [in] [out]
+ * @param partial_translation_ptr Should partial translations be performed later
+ *                                for each HSP instead of a full 
+ *                                translation? [out]
+*/
+static Int2
+SetUpSubjectTranslation(BLAST_SequenceBlk* subject_blk, 
+                        Uint1* gen_code_string,
+                        Uint1** translation_buffer_ptr, 
+                        Int4** frame_offsets_ptr,
+                        Boolean* partial_translation_ptr)
+{
+   Boolean partial_translation;
+   Boolean is_ooframe = (frame_offsets_ptr == NULL);
+
+   if (!gen_code_string)
+      return -1;
+
+   if (is_ooframe && subject_blk->oof_sequence) {
+      /* If mixed-frame sequence is already available (two-sequences case),
+         then no need to translate again */
+      *partial_translation_ptr = FALSE;
+      return 0;
+   } 
+
+   *partial_translation_ptr = partial_translation = 
+      (subject_blk->length > MAX_FULL_TRANSLATION);
+      
+   if (!partial_translation) {
+      if (is_ooframe) {
+         BLAST_GetAllTranslations(subject_blk->sequence_start, 
+            NCBI4NA_ENCODING, subject_blk->length, gen_code_string, 
+            NULL, NULL, &subject_blk->oof_sequence);
+      } else {
+         BLAST_GetAllTranslations(subject_blk->sequence_start, 
+            NCBI4NA_ENCODING, subject_blk->length, gen_code_string, 
+            translation_buffer_ptr, frame_offsets_ptr, NULL);
+      }
+   }
+   return 0;
+}
+
+/** Performs the translation and coordinates adjustment, if only part of the 
+ * subject sequence is translated for gapped alignment. 
+ * @param subject_blk Subject sequence structure [in]
+ * @param hsp The HSP information [in]
+ * @param is_ooframe Return a mixed-frame sequence if TRUE [in]
+ * @param gen_code_string Database genetic code [in]
+ * @param translation_buffer_ptr Pointer to buffer holding the translation [out]
+ * @param subject_ptr Pointer to sequence to be passed to the gapped 
+ *                    alignment [out]
+ * @param subject_length_ptr Length of the translated sequence [in]
+ * @param start_shift_ptr How far is the partial sequence shifted w.r.t. the 
+ *                        full sequence. [out]
+*/
+static void 
+GetPartialSubjectTranslation(BLAST_SequenceBlk* subject_blk, BlastHSP* hsp,
+                             Boolean is_ooframe, Uint1* gen_code_string, 
+                             Uint1** translation_buffer_ptr,
+                             Uint1** subject_ptr, Int4* subject_length_ptr,
+                             Int4* start_shift_ptr)
+{
+   Int4 translation_length;
+   Uint1* translation_buffer = *translation_buffer_ptr;
+   Uint1* subject;
+   Int4 start_shift;
+   Int4 nucl_shift;
+
+   sfree(translation_buffer);
+   if (!is_ooframe) {
+      start_shift = 
+         MAX(0, 3*hsp->subject.offset - MAX_FULL_TRANSLATION);
+      translation_length =
+         MIN(3*hsp->subject.end + MAX_FULL_TRANSLATION, 
+             subject_blk->length) - start_shift;
+      if (hsp->subject.frame > 0) {
+         nucl_shift = start_shift;
+      } else {
+         nucl_shift = subject_blk->length - start_shift 
+            - translation_length;
+      }
+      GetPartialTranslation(subject_blk->sequence_start+nucl_shift, 
+                            translation_length, hsp->subject.frame,
+                            gen_code_string, &translation_buffer, 
+                            subject_length_ptr, NULL);
+      /* Below, the start_shift will be used for the protein
+         coordinates, so need to divide it by 3 */
+      start_shift /= CODON_LENGTH;
+   } else {
+      Int4 oof_start, oof_end;
+      if (hsp->subject.frame > 0) {
+         oof_start = 0;
+         oof_end = subject_blk->length;
+      } else {
+         oof_start = subject_blk->length + 1;
+         oof_end = 2*subject_blk->length + 1;
+      }
+      
+      start_shift = 
+         MAX(oof_start, hsp->subject.offset - MAX_FULL_TRANSLATION);
+      translation_length =
+         MIN(hsp->subject.end + MAX_FULL_TRANSLATION, 
+             oof_end) - start_shift;
+      if (hsp->subject.frame > 0) {
+         nucl_shift = start_shift - oof_start;
+      } else {
+         nucl_shift = oof_end - start_shift - translation_length;
+      }
+      GetPartialTranslation(subject_blk->sequence_start+nucl_shift, 
+                            translation_length, hsp->subject.frame, 
+                            gen_code_string, NULL, 
+                            subject_length_ptr, &translation_buffer);
+   }
+   hsp->subject.offset -= start_shift;
+   hsp->subject.gapped_start -= start_shift;
+   *translation_buffer_ptr = translation_buffer;
+   *start_shift_ptr = start_shift;
+
+   if (!is_ooframe) {
+      subject = translation_buffer + 1;
+   } else {
+      subject = translation_buffer + CODON_LENGTH;
+   }
+   *subject_ptr = subject;
+}
+
+/** Modifies the HSP data after the final gapped alignment.
+ * @param hsp Original HSP from the preliminary stage [in] [out]
+ * @param gap_align Structure returned from final gapped alignment [in]
+ * @param query_length Original query sequence length [in]
+ * @param subject_length Original subject sequence length [in]
+ * @param program_number Which BLAST program is this done for? [in]
+ */
+static void 
+FillHSPFromGapAlign(BlastHSP* hsp, BlastGapAlignStruct* gap_align,
+                    Int4 query_length, Int4 subject_length, Uint1 program_number)
+{
+   hsp->subject.offset = gap_align->subject_start;
+   hsp->query.offset = gap_align->query_start;
+   hsp->subject.end = gap_align->subject_stop;
+   hsp->query.end = gap_align->query_stop;
+   
+   hsp->query.length = hsp->query.end - hsp->query.offset;
+   hsp->subject.length = hsp->subject.end - hsp->subject.offset;
+   hsp->score = gap_align->score;
+   
+   hsp->gap_info = gap_align->edit_block;
+   gap_align->edit_block = NULL;
+
+   if (hsp->gap_info) {
+      hsp->gap_info->frame1 = hsp->query.frame;
+      hsp->gap_info->frame2 = hsp->subject.frame;
+      hsp->gap_info->original_length1 = query_length;
+      hsp->gap_info->original_length2 = subject_length;
+      if (program_number == blast_type_blastx)
+         hsp->gap_info->translate1 = TRUE;
+      if (program_number == blast_type_tblastn)
+         hsp->gap_info->translate2 = TRUE;
+   }
+}
+
 /** Compute gapped alignment with traceback for all HSPs from a single
  * query/subject sequence pair. 
  * Final e-values are calculated here, except when sum statistics is used,
@@ -427,13 +596,11 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
        program_number == blast_type_psitblastn);   
    Uint1* translation_buffer = NULL;
    Int4* frame_offsets = NULL;
-   Uint1* nucl_sequence = NULL;
    BLAST_KarlinBlk** kbp;
    Boolean phi_align = (hit_options->phi_align);
    Boolean greedy_traceback;
    Boolean partial_translation = FALSE;
-   Int4 start_shift = 0, translation_length;
-   Uint1* oof_sequence = NULL; /* Needed when partial translations are done */
+   Int4 start_shift = 0;
 
    if (hsp_list->hspcnt == 0) {
       return 0;
@@ -441,35 +608,23 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
 
    hsp_array = hsp_list->hsp_array;
    
+
    if (translate_subject) {
-      if (!db_options)
+      if (!db_options || !db_options->gen_code_string)
          return -1;
-      partial_translation = (subject_blk->length > MAX_FULL_TRANSLATION);
-      
-      if (is_ooframe && subject_blk->oof_sequence) {
-         /* If mixed-frame sequence is already available, then no need 
-            to translate again */
-         partial_translation = FALSE;
+
+      if (is_ooframe) {
+         SetUpSubjectTranslation(subject_blk, db_options->gen_code_string,
+                                 NULL, NULL, &partial_translation);
          subject = subject_blk->oof_sequence + CODON_LENGTH;
          /* Mixed-frame sequence spans all 6 frames, i.e. both strands
             of the nucleotide sequence. However its start will also be 
             shifted by 3.*/
          subject_length = 2*subject_blk->length - 1;
       } else {
-         nucl_sequence = subject_blk->sequence_start;
-         if (!partial_translation) {
-            if (is_ooframe) {
-               BLAST_GetAllTranslations(nucl_sequence, NCBI4NA_ENCODING,
-                  subject_blk->length, db_options->gen_code_string,
-                  &translation_buffer, &frame_offsets, 
-                  &subject_blk->oof_sequence);
-               subject_length = 2*subject_blk->length - 1;
-            } else {
-               BLAST_GetAllTranslations(nucl_sequence, NCBI4NA_ENCODING,
-                  subject_blk->length, db_options->gen_code_string, 
-                  &translation_buffer, &frame_offsets, NULL);
-            }
-         }
+         SetUpSubjectTranslation(subject_blk, db_options->gen_code_string,
+            &translation_buffer, &frame_offsets, &partial_translation);
+         /* subject and subject_length will be set later, for each HSP. */
       }
    } else {
       /* Subject is not translated */
@@ -535,74 +690,16 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
       
       if ((hsp_start_is_contained == FALSE || 
            hsp_end_is_contained == FALSE || hsp->score > hsp1->score)) {
-
-         if (translate_subject && partial_translation) {
-            Int4 nucl_shift;
-            sfree(translation_buffer);
-            if (!is_ooframe) {
-               start_shift = 
-                  MAX(0, 3*hsp->subject.offset - MAX_FULL_TRANSLATION);
-               translation_length =
-                  MIN(3*hsp->subject.end + MAX_FULL_TRANSLATION, 
-                      subject_blk->length) - start_shift;
-               if (hsp->subject.frame > 0) {
-                  nucl_shift = start_shift;
-               } else {
-                  nucl_shift = subject_blk->length - start_shift 
-                     - translation_length;
-               }
-               GetPartialTranslation(nucl_sequence+nucl_shift, 
-                  translation_length, hsp->subject.frame,
-                  db_options->gen_code_string, &translation_buffer, 
-                  &subject_length, NULL);
-               /* Below, the start_shift will be used for the protein
-                  coordinates, so need to divide it by 3 */
-               start_shift /= CODON_LENGTH;
-            } else {
-               Int4 oof_start, oof_end;
-               sfree(oof_sequence);
-               if (hsp->subject.frame > 0) {
-                  oof_start = 0;
-                  oof_end = subject_blk->length;
-               } else {
-                  oof_start = subject_blk->length + 1;
-                  oof_end = 2*subject_blk->length + 1;
-               }
-
-               start_shift = 
-                  MAX(oof_start, hsp->subject.offset - MAX_FULL_TRANSLATION);
-               translation_length =
-                  MIN(hsp->subject.end + MAX_FULL_TRANSLATION, 
-                      oof_end) - start_shift;
-               if (hsp->subject.frame > 0) {
-                  nucl_shift = start_shift - oof_start;
-               } else {
-                  nucl_shift = oof_end - start_shift - translation_length;
-               }
-               GetPartialTranslation(nucl_sequence+nucl_shift, 
-                  translation_length, hsp->subject.frame, 
-                  db_options->gen_code_string, NULL, 
-                  &subject_length, &oof_sequence);
-            }
-
-            hsp->subject.offset -= start_shift;
-            hsp->subject.gapped_start -= start_shift;
-         }
-
          if (translate_subject) {
-            if (!is_ooframe) {
-               if (!partial_translation) {
-                  Int2 context = FrameToContext(hsp->subject.frame);
-                  subject = translation_buffer + frame_offsets[context] + 1;
-                  subject_length = 
-                     frame_offsets[context+1] - frame_offsets[context] - 1;
-               } else {
-                  subject = translation_buffer + 1;
-                  /* Subject length is already assigned in call to 
-                     GetPartialTranslation. */
-               }
+            if (!is_ooframe && !partial_translation) {
+               Int2 context = FrameToContext(hsp->subject.frame);
+               subject = translation_buffer + frame_offsets[context] + 1;
+               subject_length = 
+                  frame_offsets[context+1] - frame_offsets[context] - 1;
             } else if (partial_translation) {
-               subject = oof_sequence + CODON_LENGTH;
+               GetPartialSubjectTranslation(subject_blk, hsp, is_ooframe,
+                  db_options->gen_code_string, &translation_buffer, &subject,
+                  &subject_length, &start_shift);
             }
          }
 
@@ -653,34 +750,15 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
          }
 
          if (gap_align->score >= min_score_to_keep) {
-            hsp->subject.offset = gap_align->subject_start;
-            hsp->query.offset = gap_align->query_start;
-            hsp->subject.end = gap_align->subject_stop;
-            hsp->query.end = gap_align->query_stop;
-            
-            hsp->query.length = hsp->query.end - hsp->query.offset;
-            hsp->subject.length = hsp->subject.end - hsp->subject.offset;
-            hsp->score = gap_align->score;
-            
-            hsp->gap_info = gap_align->edit_block;
-            gap_align->edit_block = NULL;
-
+            FillHSPFromGapAlign(hsp, gap_align, query_length_orig, 
+                                subject_blk->length, program_number);
             if (greedy_traceback) {
+               /* Low level greedy algorithm ignores ambiguities, so the score
+                  needs to be reevaluated. */
                ReevaluateHSPWithAmbiguities(hsp, query, subject, hit_options,
                                             score_options, query_info, sbp);
             }
             
-            if (hsp->gap_info) {
-               hsp->gap_info->frame1 = hsp->query.frame;
-               hsp->gap_info->frame2 = hsp->subject.frame;
-               hsp->gap_info->original_length1 = query_length_orig;
-               hsp->gap_info->original_length2 = subject_blk->length;
-               if (program_number == blast_type_blastx)
-                  hsp->gap_info->translate1 = TRUE;
-               if (program_number == blast_type_tblastn)
-                  hsp->gap_info->translate2 = TRUE;
-            }
-
             keep = TRUE;
             if (is_ooframe) {
                BlastOOFGetNumIdentical(query, subject, hsp, program_number,
@@ -699,6 +777,8 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
                   &align_length);
             }
 
+            /* Adjust subject offsets if shifted (partial) sequence was used 
+               for extension */
             if (start_shift > 0) {
                hsp->subject.offset += start_shift;
                hsp->subject.end += start_shift;
