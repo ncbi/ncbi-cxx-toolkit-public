@@ -69,6 +69,124 @@ int main(int argc, char ** argv)
         string s = args.front();
         args.pop_front();
         
+        if (s == "-iter") {
+            CSeqDB phil(dbpath, "swissprot", 'p', true);
+             
+            {
+                CSeqDBIter skywalk = phil.Begin();
+
+                for(int i = 0; i<10; i++) {
+                    cout << "\n### Seq [" << skywalk.GetOID() << "] length = " << skywalk.GetLength() << "\n" << endl;
+                    ++skywalk;
+                }
+            }
+
+            {
+                for(int i = 0; i<100; i++) {
+                    cout << "\n### Seq [" << i << "] length = " << phil.GetSeqLength(i) << "\n" << endl;
+                    CRef<CBioseq> bioseq = phil.GetBioseq(i);
+
+                    auto_ptr<CObjectOStream> outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+                    *outpstr << *bioseq;
+                }
+            }
+
+            return 0;
+        } else desc += " [-iter]";
+        
+        if (s == "-spcount") {
+            CSeqDB phil(dbpath, "swissprot", 'p', true);
+            
+            double besht = 100.0;
+            double woist = 0.0;
+            double totul = 0.0;
+            
+            for(int i = 0; i<10; i++) {
+                CSeqDBIter skywalk = phil.Begin();
+                
+                double spt1 = dbl_time();
+                Uint8 mylen = 0;
+                
+                while(skywalk) {
+                    int this_oid = 0;
+                    int this_len = 0;
+                    
+                    //mylen += (this_len = phil.GetSeqLength( this_oid = skywalk.GetOID() ));
+                    this_oid = skywalk.GetOID();
+                    ++ skywalk;
+                    mylen ++;
+                    
+                    //cout << this_oid << " is length " << this_len << endl;
+                }
+                
+                double spt2  = dbl_time();
+                double rezzy = spt2 - spt1;
+                
+                cout << "mylen " << mylen
+                     << " spt2 - spt1 = " << rezzy << endl;
+                
+                if (rezzy > woist)
+                    woist = rezzy;
+                if (rezzy < besht)
+                    besht = rezzy;
+                
+                totul += rezzy;
+            }
+            
+            totul -= (besht + woist);
+            
+            cout << "Average = " << (totul/8.0) << endl;
+            
+            return 0;
+        } else desc += " [-spcount]";
+        
+        if (s == "-swiss") {
+            CSeqDB phil(dbpath, "swissprot", 'p', true);
+             
+            {
+                Uint8 tlen = 0;
+                Uint4 numb = 0;
+                
+                CSeqDBIter skywalk = phil.Begin();
+                
+                {
+                    int i = 276;
+                    cout << "this_oid = " << i << " length = " << 0 << endl;
+                    cout << "\n### Seq [" << i << "] length = " << phil.GetSeqLength(i) << "\n" << endl;
+                    CRef<CBioseq> bioseq = phil.GetBioseq(i);
+                    
+                    auto_ptr<CObjectOStream> outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+                    *outpstr << *bioseq;
+                }
+
+                while(skywalk) {
+                    int this_oid = 0;
+                    int this_len = 0;
+                    
+                    numb ++;
+                    tlen += (this_len = phil.GetSeqLength( this_oid = skywalk.GetOID() ));
+                    ++ skywalk;
+                    
+                    cout << this_oid << endl;
+                    
+                    if (numb > 145680) {
+                        int i = this_oid;
+                        cout << "this_oid = " << this_oid << " length = " << this_len << endl;
+                        cout << "\n### Seq [" << i << "] length = " << phil.GetSeqLength(i) << "\n" << endl;
+                        CRef<CBioseq> bioseq = phil.GetBioseq(i);
+
+                        auto_ptr<CObjectOStream> outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+                        *outpstr << *bioseq;
+                    }
+                }
+                
+                cout << "\n### Total swissprot length [" << tlen << "] numb = " << numb << "\n" << endl;
+            }
+             
+            return 0;
+        } else desc += " [-swiss]";
+         
+         
         if (s == "-lib") {
             CSeqDB phil(dbpath, "month", 'n', true);
             phil.GetSeqLength(123);
