@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/11 22:53:41  lewisg
+* added docsum page
+*
 * Revision 1.1  1998/12/11 18:13:51  lewisg
 * frontpage added
 *
@@ -53,27 +56,39 @@ BEGIN_NCBI_SCOPE
 
 class CPmFrontPage: public CHTMLPage {
 public:
-    virtual void InitMembers(int);
+    virtual void InitMembers(int Style = 0);
     virtual CHTMLNode * CreateView(void);
+    virtual void Finish(int Style = 0);
 
     CPmFrontPage();
     static CHTMLBasicPage * New(void) { return new CPmFrontPage;}
 };
 
-#if 0
-CPmDocSumPage: public CPmFrontPage
+
+class CPmDocSumPage: public CHTMLPage
 {
  public:
-    virtual void InitMembers(int);
-    virtual void InitSubPages(int Style);
+    virtual void InitMembers(int Style = 0);
+    virtual void InitSubPages(int Style = 0);
+    virtual void Finish(int Style = 0);
+
+    static const int kNoQUERYBOX = 0x8;
+    virtual CHTMLNode * CreateQueryBox();
+    CHTMLNode * m_QueryBox;
+
+    // only one pager for now until I make copy constructor.
+    static const int kNoPAGER = 0x16;
+    virtual CHTMLNode * CreatePager();
+    CHTMLNode * m_Pager;
+
     virtual CHTMLNode * CreateView(void);
 
     CPmDocSumPage();
     static CHTMLBasicPage * New(void) { return new CPmDocSumPage;}
 
-}
+};
 
-
+#if 0
 CPmReportPage: public CPmDocSumPage
 {
  public:
@@ -84,7 +99,7 @@ CPmReportPage: public CPmDocSumPage
 
     CPmReportPage();
     static CHTMLBasicPage * New(void) { return new CPmReportPage;}
-}
+};
 #endif /* 0 */
 
 END_NCBI_SCOPE

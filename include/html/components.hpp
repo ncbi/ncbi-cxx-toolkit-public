@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/11 22:53:39  lewisg
+* added docsum page
+*
 * Revision 1.5  1998/12/11 18:13:50  lewisg
 * frontpage added
 *
@@ -61,9 +64,9 @@ class CQueryBox: public CHTMLBasicPage
 {
 public:
 
-    virtual void InitMembers(int);
-    virtual void InitSubPages(int);
-    virtual void Finish(int);
+    virtual void InitMembers(int Style = 0);
+    virtual void InitSubPages(int Style = 0);
+    virtual void Finish(int Style = 0);
 
     ////////  members
 
@@ -127,8 +130,8 @@ public:
     CPageList * m_PageList;  // the pager
     int m_NumResults;  // the number of results to display
 
-    virtual void InitMembers(int);
-    virtual void Finish(int);
+    virtual void InitMembers(int Style = 0);
+    virtual void Finish(int Style = 0);
 
     CPagerBox();
 };
@@ -141,8 +144,8 @@ public:
     CPageList * m_PageList;  // the pager
     int m_NumResults;  // the number of results to display
 
-    virtual void InitMembers(int);
-    virtual void Finish(int);
+    virtual void InitMembers(int Style = 0);
+    virtual void Finish(int Style = 0);
 
     CSmallPagerBox();
 };

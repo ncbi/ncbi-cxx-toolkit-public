@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/11 22:52:01  lewisg
+* added docsum page
+*
 * Revision 1.1  1998/12/11 18:12:46  lewisg
 * frontpage added
 *
@@ -46,6 +49,10 @@
 #include <memory>
 BEGIN_NCBI_SCOPE
 
+//
+// basic search page
+//
+
 CPmFrontPage::CPmFrontPage() {}
 
 
@@ -58,48 +65,179 @@ void CPmFrontPage::InitMembers(int style)
 
 CHTMLNode * CPmFrontPage::CreateView(void) 
 {
-    CQueryBox * QueryBox;
+    return new CQueryBox;
+}
+
+
+void CPmFrontPage::Finish(int Style)
+{
     
-    QueryBox = new CQueryBox;
-    QueryBox->Create();
-    return QueryBox;
+    //
+    // demo purposes only
+    //
+    CQueryBox * QueryBox = (CQueryBox *) m_View;
+    QueryBox->InitMembers();
+    QueryBox->m_Width = 400;
+    QueryBox->m_BgColor = "#CCCCCFF";
+    QueryBox->m_DispMax = "dispmax";
+    QueryBox->m_DefaultDispMax = "20";
+    QueryBox->m_DbName = "db";
+    QueryBox->m_TermName = "term";
+    QueryBox->m_URL = "http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query";
+    QueryBox->InitMembers();
+    QueryBox->m_Disp.push_back("10");
+    QueryBox->m_Disp.push_back("20");
+    QueryBox->m_Disp.push_back("50");
+    QueryBox->m_Disp.push_back("100");
+    QueryBox->m_Disp.push_back("200");
+    QueryBox->m_Disp.push_back("1000");
+    QueryBox->m_Disp.push_back("2000");
+    QueryBox->m_Disp.push_back("5000");
+    QueryBox->m_Databases["m"] = "Medline";
+    QueryBox->m_Databases["n"] = "GenBank DNA Sequences";
+    QueryBox->m_Databases["p"] = "GenBank Protein Sequences";
+    QueryBox->m_Databases["t"] = "Biomolecule 3D Structures";
+    QueryBox->m_Databases["c"] = "Complete Genomes";
+    QueryBox->m_HiddenValues["form"] = "4";
+    QueryBox->InitSubPages();
+    QueryBox->Finish();
+    
+    //
+    // end demo
+    //
+    
+    CHTMLPage::Finish(Style);
+}
+
+//
+// Docsum page
+//
+
+CPmDocSumPage::CPmDocSumPage(): m_Pager(0), m_QueryBox(0) {}
+
+
+void CPmDocSumPage::InitMembers(int style)
+{
+    m_PageName = "Search Results";
+    m_TemplateFile = "template.html";
+    
 }
 
 
-#if 0
-
-void CToolOptionPage::InitMembers(int style)
+void CPmDocSumPage::InitSubPages(int style)
 {
-    m_PageName = "Tool Options";
-    m_TemplateFile = "tool.html";
-}
+    CHTMLPage::InitSubPages(style);
 
-
-CHTMLNode * CToolOptionPage::CreateSidebar(void) 
-{
-    return NULL;
-}
-
-
-CHTMLNode * CToolOptionPage::CreateView(void) 
-{
-    CHTMLOptionForm * Options;
     try {
-	Options = new CHTMLOptionForm();
-	Options->m_ParamFile = "tool";
-	Options->m_SectionName = "seg";
-	Options->m_ActionURL = "http://ray/cgi-bin/tools/segify";
-	Options->SetApplication(GetApplication());
-	Options->Create();
-    } 
-    catch(...) {
-	delete Options;
+	if(!(style & kNoQUERYBOX)) {
+	    if (!m_QueryBox) m_QueryBox = CreateQueryBox();
+	    if (!m_QueryBox) m_QueryBox = new CHTMLNode;
+	}
+    	if(!(style & kNoPAGER)) {
+	    if (!m_Pager) m_Pager = CreatePager();
+	    if (!m_Pager) m_Pager = new CHTMLNode;
+	}
+    }
+    catch (...) {
+	delete m_QueryBox;
+	delete m_Pager;
 	throw;
     }
-    return Options;
 }
 
-#endif
+
+CHTMLNode * CPmDocSumPage::CreatePager(void) 
+{
+    return new CPagerBox;
+}
+
+
+CHTMLNode * CPmDocSumPage::CreateQueryBox(void) 
+{
+    return new CQueryBox;
+}
+
+
+CHTMLNode * CPmDocSumPage::CreateView(void) 
+{
+   return NULL;
+}
+
+
+void CPmDocSumPage::Finish(int Style)
+{
+
+    CHTMLPage::Finish(Style);
+
+    //
+    //  demo only
+    //
+    CPagerBox * Pager = (CPagerBox *) m_Pager;
+    Pager->InitMembers();
+    Pager->m_Width = 600;
+    Pager->m_TopButton->m_Name = "Display";
+    Pager->m_TopButton->m_Select = "display";
+    Pager->m_TopButton->m_List["dopt"] = "Top";
+    Pager->m_RightButton->m_Name = "Save";
+    Pager->m_RightButton->m_Select = "save";
+    Pager->m_RightButton->m_List["m_s"] = "Right";
+    Pager->m_LeftButton->m_Name = "Order";
+    Pager->m_LeftButton->m_Select = "order";
+    Pager->m_LeftButton->m_List["m_o"] = "Left";
+    Pager->m_PageList->m_Pages[1] = "http://one";
+    Pager->m_PageList->m_Pages[2] = "http://one";
+    Pager->m_PageList->m_Pages[3] = "http://one";
+    Pager->m_PageList->m_Pages[4] = "http://one";
+    Pager->m_PageList->m_Pages[5] = "http://one";
+    Pager->m_PageList->m_Pages[6] = "http://one";
+    Pager->m_PageList->m_Pages[7] = "http://one";
+    Pager->m_PageList->m_Forward = "http://forward";
+    Pager->m_PageList->m_Backward = "http://backward";
+    Pager->Finish();
+
+    CQueryBox * QueryBox = (CQueryBox *) m_QueryBox;
+    QueryBox->InitMembers(1);
+    QueryBox->m_Width = 600;
+    QueryBox->m_BgColor = "#FFFFFF";
+    QueryBox->m_DispMax = "dispmax";
+    QueryBox->m_DefaultDispMax = "20";
+    QueryBox->m_DbName = "db";
+    QueryBox->m_TermName = "term";
+    QueryBox->m_URL = "http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query";
+    QueryBox->InitMembers();
+    QueryBox->m_Disp.push_back("10");
+    QueryBox->m_Disp.push_back("20");
+    QueryBox->m_Disp.push_back("50");
+    QueryBox->m_Disp.push_back("100");
+    QueryBox->m_Disp.push_back("200");
+    QueryBox->m_Disp.push_back("1000");
+    QueryBox->m_Disp.push_back("2000");
+    QueryBox->m_Disp.push_back("5000");
+    QueryBox->m_Databases["m"] = "Medline";
+    QueryBox->m_Databases["n"] = "GenBank DNA Sequences";
+    QueryBox->m_Databases["p"] = "GenBank Protein Sequences";
+    QueryBox->m_Databases["t"] = "Biomolecule 3D Structures";
+    QueryBox->m_Databases["c"] = "Complete Genomes";
+    QueryBox->m_HiddenValues["form"] = "4";
+    QueryBox->InitSubPages(1);
+    QueryBox->Finish(1);
+
+    //
+    //   end of demo
+    //
+    CHTML_form * Form = new CHTML_form;
+    Form->AppendChild(m_Pager);
+
+    if(!(Style & kNoPAGER) && m_Pager) 
+        Rfind("<@PAGER@>", Form);
+
+    if(!(Style & kNoQUERYBOX) && m_QueryBox) 
+        Rfind("<@QUERYBOX@>", m_QueryBox);
+
+}
+
+
+
 
 
 

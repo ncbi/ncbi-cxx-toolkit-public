@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/12/11 22:53:41  lewisg
+* added docsum page
+*
 * Revision 1.6  1998/12/11 18:13:51  lewisg
 * frontpage added
 *
@@ -98,9 +101,9 @@ public:
 
     ////////// how to make the page
 
-    virtual void InitMembers(int);
-    virtual void InitSubPages(int);
-    virtual void Finish(int);
+    virtual void InitMembers(int Style = 0);
+    virtual void InitSubPages(int Style = 0);
+    virtual void Finish(int Style = 0);
 
     ////////// page parameters
 

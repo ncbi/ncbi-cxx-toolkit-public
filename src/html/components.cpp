@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/11 22:52:01  lewisg
+* added docsum page
+*
 * Revision 1.5  1998/12/11 18:12:45  lewisg
 * frontpage added
 *
@@ -67,27 +70,6 @@ CHTMLNode * CQueryBox::CreateComments(void)
 
 void CQueryBox::InitMembers(int style)
 {  
-    m_Width = 400;
-    m_BgColor = "#CCCCCFF";
-    m_DispMax = "dispmax";
-    m_DefaultDispMax = "20";
-    m_Disp.push_back("10");
-    m_Disp.push_back("20");
-    m_Disp.push_back("50");
-    m_Disp.push_back("100");
-    m_Disp.push_back("200");
-    m_Disp.push_back("1000");
-    m_Disp.push_back("2000");
-    m_Disp.push_back("5000");
-    m_DbName = "db";
-    m_Databases["m"] = "Medline";
-    m_Databases["n"] = "GenBank DNA Sequences";
-    m_Databases["p"] = "GenBank Protein Sequences";
-    m_Databases["t"] = "Biomolecule 3D Structures";
-    m_Databases["c"] = "Complete Genomes";
-    m_HiddenValues["form"] = "4";
-    m_TermName = "term";
-    m_URL = "http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query";
 }
 
 
