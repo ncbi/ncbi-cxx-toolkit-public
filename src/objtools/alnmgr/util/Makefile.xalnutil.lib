@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = xalnutil
+SRC = showalign
