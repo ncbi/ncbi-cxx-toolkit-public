@@ -3466,11 +3466,11 @@ RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length,
 
     finalLambda = correctUngappedLambda/scaledInitialUngappedLambda;
 
-    returnMatrix = (Int4 **)_PSIAllocateMatrix((db_seq_length+1),
+    returnMatrix = (Int4 **)_PSIAllocateMatrix(db_seq_length,
                                                BLASTAA_SIZE,
                                                sizeof(Int4));
 
-    for (index = 0; index < db_seq_length+1; index++) {
+    for (index = 0; index < db_seq_length; index++) {
         for (inner_index = 0; inner_index < BLASTAA_SIZE; inner_index++) {
             if (posMatrix[index][inner_index] <= BLAST_SCORE_MIN || 
                 inner_index == AMINOACID_TO_NCBISTDAA['X']) {
@@ -3618,6 +3618,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.94  2004/10/01 13:58:59  camacho
+ * Remove extra PSSM column for RPS-BLAST
+ *
  * Revision 1.93  2004/09/29 20:39:59  papadopo
  * Retrieve the ungapped lambda from the actual score matrix underlying an RPS search, not just that of BLOSUM62
  *

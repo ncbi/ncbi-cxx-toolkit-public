@@ -1144,7 +1144,7 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
          ext_params->options, hit_params, db_options->gen_code_string);
 
       if (program_number != eBlastTypeRpsTblastn)
-         _PSIDeallocateMatrix((void**)sbp->posMatrix, one_db_seq.length+1);
+         _PSIDeallocateMatrix((void**)sbp->posMatrix, one_db_seq.length);
 
       if (hsp_list->hspcnt == 0) {
          hsp_list = Blast_HSPListFree(hsp_list);
