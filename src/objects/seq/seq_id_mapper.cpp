@@ -75,7 +75,6 @@ CSeq_id_Mapper::~CSeq_id_Mapper(void)
 }
 
 
-inline
 CSeq_id_Which_Tree& CSeq_id_Mapper::x_GetTree(const CSeq_id& id)
 {
     CSeq_id::E_Choice type = id.Which();
@@ -165,6 +164,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2004/06/16 19:58:25  ucko
+* Make x_GetTree(const CSeq_id&) non-inline, since CSeq_id_Info::GetTree
+* in seq_id_handle.cpp now also calls it.
+*
 * Revision 1.47  2004/06/14 13:57:09  grichenk
 * CSeq_id_Info locks CSeq_id_Mapper with a CRef
 *
