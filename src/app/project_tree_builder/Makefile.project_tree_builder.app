@@ -20,6 +20,7 @@ SRC = file_contents \
       proj_item \
       proj_src_resolver \
       proj_utils \
-      resolver
+      resolver \
+      msvc_configure_prj_generator
 
 DATATOOL_SRC = msvc71_project
