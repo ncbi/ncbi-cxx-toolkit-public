@@ -79,7 +79,13 @@ typedef Int8 (*GetInt8FnPtr) (void*, void*);
 /** Function pointer typedef to return a null terminated string containing a
  * sequence identifier. First argument is the BlastSeqSrc structure used, second
  * argument is passed to user-defined implementation. */
-typedef char* (*GetSeqIdFnPtr) (void*, void*);
+typedef char* (*GetSeqIdStrFnPtr) (void*, void*);
+
+/** Function pointer typedef to return a sequence identifier. The returned SeqId
+ * is cast to a void pointer.
+ * First argument is the BlastSeqSrc structure used, second
+ * argument is passed to user-defined implementation. */
+typedef void* (*GetSeqIdFnPtr) (void*, void*);
 
 /** Function pointer typedef to retrieve sequences from data structure embedded
  * in the BlastSeqSrc structure.
@@ -203,6 +209,8 @@ BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* bssp);
     (*GetGetSequence(bssp))(GetDataStructure(bssp), arg)
 #define BLASTSeqSrcGetSeqIdStr(bssp, arg) \
     (*GetGetSeqIdStr(bssp))(GetDataStructure(bssp), arg)
+#define BLASTSeqSrcGetSeqId(bssp, arg) \
+    (*GetGetSeqId(bssp))(GetDataStructure(bssp), arg)
 #define BLASTSeqSrcGetSeqLen(bssp, arg) \
     (*GetGetSeqLen(bssp))(GetDataStructure(bssp), arg)
 #define BLASTSeqSrcGetNextChunk(bssp, iterator) \
@@ -226,7 +234,8 @@ DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*);
-DECLARE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqIdStr, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetSeqIdStrFnPtr, GetSeqIdStr, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqId, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetNextChunkFnPtr, GetNextChunk, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext, BlastSeqSrc*);
