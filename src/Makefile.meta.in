@@ -184,6 +184,7 @@ $(RELEVANT_FILE): $(PROJECTS)
 IRRELEVANT_FILE = $(builddir)/irrelevant.patterns
 $(IRRELEVANT_FILE): $(PROJECTS)
 	@if test -n "$(PROJECTS)" ; then \
+	    echo '# Dummy line to avoid empty file'; \
 	    sed -ne 's@^-@build/@p' $(PROJECTS); \
 	else \
 	    echo '^$$'; \
