@@ -173,7 +173,9 @@ CBlastNucleotideOptionsHandle::SetMBGappedExtensionDefaults()
     SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_NUCL);
     SetGapTrigger(BLAST_GAP_TRIGGER_NUCL);
     SetGapExtnAlgorithm(eGreedyWithTracebackExt);
-    SetGapTracebackAlgorithm(eSkipTbck);
+    /* Traceback will not be performed, but set traceback extension algorithm
+       to greedy, for consistency of default gap penalties. */
+    SetGapTracebackAlgorithm(eGreedyTbck); 
 }
 
 
@@ -254,6 +256,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/12/21 17:18:24  dondosha
+ * eSkipTbck option has been removed
+ *
  * Revision 1.16  2004/08/24 20:53:57  bealer
  * - Set default to megablast (should have no effect).
  *

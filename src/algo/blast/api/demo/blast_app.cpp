@@ -404,7 +404,6 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
     switch (args["greedy"].AsInteger()) {
     case 1: /* Immediate greedy gapped extension with traceback */
         opt.SetGapExtnAlgorithm(eGreedyWithTracebackExt);
-        opt.SetGapTracebackAlgorithm(eSkipTbck);
         opt.SetUngappedExtension(false);
         break;
     case 2: /* Two-step greedy extension, no ungapped extension */

@@ -351,7 +351,6 @@ CBlast2seqApplication::ProcessCommandLineArgs() THROWS((CBlastException))
     switch (args["greedy"].AsInteger()) {
     case 1: /* Immediate greedy gapped extension with traceback */
         opt.SetGapExtnAlgorithm(eGreedyWithTracebackExt);
-        opt.SetGapTracebackAlgorithm(eSkipTbck);
         opt.SetUngappedExtension(false);
         break;
     case 2: /* Two-step greedy extension, no ungapped extension */
@@ -512,6 +511,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2004/12/21 17:18:44  dondosha
+ * eSkipTbck option has been removed
+ *
  * Revision 1.54  2004/11/02 17:53:02  camacho
  * Add SKIP_DOXYGEN_PROCESSING to rcsid string
  *

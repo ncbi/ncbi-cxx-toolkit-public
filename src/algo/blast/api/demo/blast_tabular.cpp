@@ -70,7 +70,8 @@ CBlastTabularFormatThread::CBlastTabularFormatThread(const CDbBlast* blaster,
 
     m_ibPerformTraceback = 
         (blaster->GetOptions().GetGappedMode() && 
-         blaster->GetOptions().GetGapTracebackAlgorithm() != eSkipTbck);
+         blaster->GetOptions().GetGapExtnAlgorithm() != 
+             eGreedyWithTracebackExt);
 
     m_iGenCodeString = 
         FindGeneticCode(blaster->GetOptions().GetQueryGeneticCode());
@@ -273,6 +274,9 @@ void CBlastTabularFormatThread::OnExit(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/12/21 17:18:56  dondosha
+* eSkipTbck option has been removed
+*
 * Revision 1.10  2004/11/02 20:16:20  madden
 * BLAST_OneSubjectUpdateParameters no longer requires BlastExtensionParameters
 *
