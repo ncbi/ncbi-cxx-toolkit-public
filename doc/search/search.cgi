@@ -27,6 +27,7 @@ $fmsearch = "./search.cgi";
 ##$ssifilter = "./perlssi.pl";
 
 ## What directories on your server/hosting account would you like to search
+## If there is more than one directory, seperate them with a comma
 
 @searchdirs = (
                "",
@@ -63,6 +64,10 @@ if ($ENV{'SCRIPT_FILENAME'} =~ m"/private/htdocs") {
 ## How many items to list per page
 $listperpage = "20";
 
+## How many symbols aproximately must be showns from each side from
+## founded keyword in a headline
+$searchgap = 200;
+
 
 ##########################################################################
 # Don't change anything below this line unless you know what you are doing.
@@ -77,14 +82,23 @@ open (RVF, "./main.html");
 read(RVF, $mainlayout, $fsize);
 close(RVF);
 
-##$mainlayout = readpipe("$ssifilter main.html");
-
 $fsize = (-s "./listings.html");
 open (RVF, "./listings.html");
 read(RVF, $listings, $fsize);
 close(RVF);
 
-if ($fields{'keywords'} eq "") {$fields{'keywords'} = "No-Keywords-Specified";}
+
+# Preprocess keywords
+
+$x_keywords = $fields{'keywords'};
+$x_keywords =~ s/^\s+//;
+$x_keywords =~ s/\s+$//;
+
+if ($x_keywords eq "") {
+   $x_keywords = "No-Keywords-Specified";
+} else {
+   $x_keywords = substr(&html_quote($x_keywords), 0, 70);
+}
 
 
 ### GET FILES
@@ -104,7 +118,7 @@ foreach $item (@searchdirs) {
           ### SORT FILES
 
           foreach $ext (@searchext) {
-             if ($ext eq substr($fn, length($fn) - length($ext), length($ext))) {
+             if ($ext eq substr($fn,length($fn)-length($ext),length($ext))) {
                 if ($item eq "") {
                    $sfiles[$fnc] = "$fn";
                 } else {
@@ -115,19 +129,20 @@ foreach $item (@searchdirs) {
           }
        }
     } else {
-       print "Error - $item does not exist.";
+###       print "Error - $item does not exist.";
     }
     
     $itec++;
     $tmpc = push(@allfiles, @sfiles);
 }
 
+
 ### PREPARE KEYWORDS
 
-if ($fields{'keywords'} =~ / /) {
-   @keywords = split (/ /,$fields{'keywords'});
+if ($x_keywords =~ / /) {
+   @keywords = split (/ /,$x_keywords);
 } else {
-   $keywords[0] = $fields{'keywords'};
+   $keywords[0] = $x_keywords;
 }
 
 ### SEARCH FILES
@@ -146,29 +161,50 @@ foreach $item (@allfiles) {
    open(RVF, "$item");
    read(RVF, $rdata, $fsize);
    close(RVF);
-        
+  
+   $rdata = &strip_html($rdata);  
+   $headline = "";
+   $headline_have = 0;
+
    ### GET RELEVANCE
     
    foreach $kw (@keywords) {
 
      $lrelevance = 0;
+
       # Filename matching
       if ($url =~ /$kw/i) { 
-         $lrelevance++;
+         $lrelevance += 10;
       }
 
       # File data matching
+
       if ($rdata =~ /$kw/i) {
          @filelines = split(/\n/,$rdata);
          foreach $oln (@filelines) {
+            if (($oln =~ /$x_keywords/i) and 
+               ($x_keywords =~ " ")) {
+               $lrelevance += 15;
+            }
             if ($oln =~ /$kw/i) { 
                $lrelevance++;
-            }
-            if (($oln =~ /$fields{'keywords'}/i) and 
-                ($fields{'keywords'} =~ " ")) {
-                $lrelevance = $lrelevance + 15;
             }             
          }
+         # Get headline
+         if ($lrelevance != 0) {
+            if ($headline_have != 1) {
+               $hl = &get_headline($rdata,$x_keywords);
+               if ($hl ne "") {
+                  $headline = $hl;
+                  $headline_have = 1;
+               }
+            }
+            if (($headline_have != 1) and !($headline =~ /$kw/i)) {
+               $headline .= " ";
+               $headline .= &get_headline($rdata,$kw);
+            }
+         }
+
        } ### FOUND MATCH
 
        # Keyword not found -- AND search method: relevance -> 0
@@ -176,18 +212,24 @@ foreach $item (@allfiles) {
           $mrelevance = 0;
           goto ("donesearch")[0];
        }
-       $mrelevance = $mrelevance + $lrelevance;
+       $mrelevance += $lrelevance;
 
    } ### KEYWORD LOOP
 
 donesearch:
    if ($mrelevance > $highsr) {$highsr = $mrelevance;}
    if ($mrelevance > 0) {
-      ($ptitle) = &get_page_details($item);
+       $ptitle = &get_page_details($item);
        ###print "FOUND MATCH IN $item - Relevance = $mrelevance -> $ptitle <br><b></b>";
-       $mrelevance = &convertnr($mrelevance);
-       $sresults[$srcntr] = $mrelevance . "\t" . 
-       $item . "\t" . $url . "\t" . $ptitle;
+       $mrelevance = &convert_rel2str($mrelevance);
+       $sresults[$srcntr] = $mrelevance . "\t" . $srcntr;
+       if ($headline ne "") {
+          foreach $kw (@keywords) {
+             $headline = &mark_headline($headline, $kw);
+          }
+          $headline .= "<br>";
+       }
+       $sresults_data[$srcntr] = $item . "\t" . $url . "\t" . $ptitle . "\t" . $headline;
        $srcntr++;
    }
 	
@@ -199,7 +241,7 @@ $tmr = $allresults;
 
 foreach $item (@sresults) {
    $tmr = $tmr - 1;
-   $sresults2[$tmr] = $item;
+   $sresults_inverted[$tmr] = $item;
 }
 
 
@@ -216,12 +258,14 @@ $pitem = "";
 $ippc = 1;
 
 $mainlayout =~ s/!!Matches!!/$allresults/gi;
-$mainlayout =~ s/!!Keywords!!/$fields{'keywords'}/gi;
+$mainlayout =~ s/!!Keywords!!/$x_keywords/gi;
 
-foreach $item (@sresults2) {
+foreach $item (@sresults_inverted) {
    if (($ippc > $fields{'st'}) and ($ippc <= $fields{'nd'})) {
         
-		($relevance, $sp, $url, $ptitle) =split(/\t/,$item);
+		($relevance, $index) = split(/\t/,$item);
+		($sp, $url, $ptitle, $headline) =split(/\t/,$sresults_data[$index]);
+
 		if ($ptitle eq "") {$ptitle = "Untitled";}
    
 		$relevance = int($relevance / $highsr * 100);
@@ -229,6 +273,7 @@ foreach $item (@sresults2) {
 		$wls = $listings;
 		$wls =~ s/!!Index!!/$ippc/gi;
 		$wls =~ s/!!Title!!/$ptitle/gi;
+		$wls =~ s/!!Headline!!/$headline/gi;
 		$wls =~ s/!!Url!!/$url/gi;
 		$wls =~ s/!!Relevance!!/$relevance%/gi;
 		
@@ -296,8 +341,8 @@ print $mainlayout;
 ##########################################################################
 
 sub get_page_details { 
-   local ($filename) = @_;
-   local ($title, $begin_title, $end_title, $fsize, $rdata);
+   my ($filename) = @_;
+   my ($title, $begin_title, $end_title, $fsize, $rdata);
 
    $fsize = (-s "$filename");
    open (RVF, "$filename");
@@ -332,10 +377,93 @@ sub get_page_details {
 
 ##########################################################################
 
-sub convertnr
+sub get_headline
+{
+   my ($data) = @_; shift;
+   my ($word) = @_;
+   my ($hl)   = "";
+   my ($dots) = "...";
+   my ($gap)  = $searchgap;
+   my ($begin, $beg, $ldot, $rdot, $hl, $orig);
+
+   $data =~ s/\n/ /g;
+   $data =~ s/\r/ /g;
+
+   if ($data =~ /$word/gi) { 
+
+      $begin = pos($data);
+      $beg = $begin - length($word);
+
+      # left part
+
+      $ldot = rindex($data, '.', $beg);
+      if ($beg <= $gap) {
+         $ldot = 0;
+      } else {
+         if ($ldot == -1) {
+            $ldot = index($data, ' ', $beg - $gap);
+            if ($ldot == -1) {
+               $ldot = $beg - $gap;
+            }
+          } else {
+            $ldot++;
+            if ($beg - $ldot > $gap) {
+               $ldot = index($data, ' ', $beg - $gap);
+               if ($ldot == -1) {
+                  $ldot = $beg - $gap;
+                }
+            }
+         }
+      }
+      if ($ldot > $beg) { $ldot = $beg };
+
+      # right part
+
+      $rdot = index($data, '.', $begin);
+      if ($rdot == -1) { 
+         $rdot = $begin + $gap;
+         $rdot = rindex($data, ' ', $begin + $gap);
+         if ($rdot == -1) {
+            $rdot = $begin + $gap;
+         }
+      } else {
+         $rdot++;
+         if ($rdot - $begin > $gap) {
+            $rdot = rindex($data, ' ', $begin + $gap);
+            if ($rdot == -1) {
+               $rdot = $begin + $gap;
+             }
+         }
+      };
+     if ($rdot < $begin) { $rdot = $begin };
+
+      # get a sentence
+      $hl = substr($data, $ldot, $rdot-$ldot);
+      $hl =~ s/^\s*(.*)\s*$/$1/;
+      $hl .= $dots;
+   }
+   return $hl;
+}
+
+
+##########################################################################
+
+sub mark_headline
+{
+   my ($data) = @_; shift;
+   my ($word) = @_;
+
+   $data =~ s/($word)/<b>$1<\/b>/gi;
+
+   return $data;
+}
+
+
+##########################################################################
+
+sub convert_rel2str
 {
    my ($cno) = @_;
-    
    if (length($cno) == 1) {$cno = "000000000000" . $cno;}
    if (length($cno) == 2) {$cno = "00000000000" . $cno;}
    if (length($cno) == 3) {$cno = "0000000000" . $cno;}
@@ -348,13 +476,11 @@ sub convertnr
    if (length($cno) == 10){$cno = "000" . $cno;}
    if (length($cno) == 11){$cno = "00" . $cno;}
    if (length($cno) == 12){$cno = "0" . $cno;}	
-    
    return ($cno);
 }
 
 
 ##########################################################################
-
 
 sub get_env
 {
@@ -373,3 +499,35 @@ sub get_env
    }
 }
 
+
+##########################################################################
+
+# Replace real symbols with special HTML symbols
+
+sub html_quote {
+    $_ = shift;
+
+    s/\&/&amp;/g;
+    s/\</&lt;/g;
+    s/\>/&gt;/g;
+
+	return $_;
+}
+
+
+##########################################################################
+
+# Strip HTML tags from a string
+
+sub strip_html
+{
+   my ($data) = @_;
+
+   $data =~ s/<[^\s>][^>]*>//g;
+   $data =~ s/\t/ /g;
+
+   return $data;
+}
+
+
+##########################################################################
