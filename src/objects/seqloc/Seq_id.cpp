@@ -509,7 +509,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'E':                     return eAcc_gb_genome;
             case 'F': case 'Y':           return eAcc_gb_dirsub;
             case 'G': case 'P':           return eAcc_ddbj_genome;
-            case 'H':                     return eAcc_gb_segset;
+            case 'H':                     return eAcc_gb_con;
             case 'J': case 'M':           return eAcc_embl_dirsub;
             case 'K':                     return eAcc_ddbj_htgs;
             case 'L':                     return eAcc_embl_genome;
@@ -546,6 +546,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             switch (pfx[1]) {
             case 'A': case 'B': case 'D': case 'F': return eAcc_gb_est;
             case 'C': case 'E': case 'G':           return eAcc_gb_gss;
+            case 'H':                               return eAcc_gb_con;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -682,10 +683,11 @@ const string CSeq_id::GetSeqIdString(bool with_version) const {
         case e_General:
             {
                 const CDbtag& dbt = GetGeneral();
+                string        s   = dbt.GetDb() + ':';
                 if (dbt.GetTag().Which() == CObject_id::e_Id) {
-                    return NStr::IntToString(dbt.GetTag().GetId());
+                    return s + NStr::IntToString(dbt.GetTag().GetId());
                 } else if (dbt.GetTag().Which()==CObject_id::e_Str) {
-                    return dbt.GetTag().GetStr();
+                    return s + dbt.GetTag().GetStr();
                 }
             }
         case e_Patent:
@@ -1346,6 +1348,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.62  2003/10/24 14:57:03  ucko
+ * IdentifyAccession: CH -> eAcc_gb_con.
+ * GetSeqIdString: include the database name for IDs of type general.
+ *
  * Revision 6.61  2003/08/25 21:15:41  ucko
  * Tweak slightly for efficiency.
  *
