@@ -59,7 +59,7 @@ public:
         m_Format(format)
         { }
 
-    bool Write(const CSeq_entry& entry) const;
+    bool Write(const CSeq_entry& entry);
 
 private:
     CFlatNCBIFormatter m_Formatter;
@@ -67,7 +67,7 @@ private:
 };
 
 
-bool CGenbankWriter::Write(const CSeq_entry& entry) const
+bool CGenbankWriter::Write(const CSeq_entry& entry)
 {
     m_Formatter.Format
         (entry, m_Formatter,
@@ -83,6 +83,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.14  2003/11/05 15:32:29  ucko
+* Make Write non-const per IFlatFormatter::Format.
+*
 * Revision 1.13  2003/07/16 19:01:56  ucko
 * Add IFlatFormatter:: where needed.
 *
