@@ -321,12 +321,27 @@ size_t CBDB_LobFile::LobSize() const
     return m_DBT_Data->size;
 }
 
+void CBDB_LobFile::SetCmp(DB*)
+{
+    BDB_CompareFunction func = BDB_UintCompare;
+    if (IsByteSwapped()) {
+        func = BDB_ByteSwap_UintCompare;
+    }
+
+    _ASSERT(func);
+    int ret = m_DB->set_bt_compare(m_DB, func);
+    BDB_CHECK(ret, 0);
+}
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/09/29 16:44:56  kuznets
+ * Reimplemented SetCmp to fix cross-platform byte swapping bug
+ *
  * Revision 1.11  2003/09/29 16:27:06  kuznets
  * Cleaned up 64-bit compilation warnings
  *
