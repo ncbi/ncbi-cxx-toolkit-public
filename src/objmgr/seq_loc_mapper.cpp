@@ -1790,10 +1790,11 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
                 if ( pntA ) {
                     dst_mix.Set().push_back(pntA);
                 }
-                CRef<CSeq_loc> null_loc(new CSeq_loc);
-                null_loc->SetNull();
-                dst_mix.Set().push_back(null_loc);
                 if ( pntB ) {
+                    // Add null only if B is set.
+                    CRef<CSeq_loc> null_loc(new CSeq_loc);
+                    null_loc->SetNull();
+                    dst_mix.Set().push_back(null_loc);
                     dst_mix.Set().push_back(pntB);
                 }
             }
@@ -2016,6 +2017,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/02/10 22:14:16  grichenk
+* Do not add gap to mix when bond point B is not set.
+*
 * Revision 1.36  2005/02/10 16:21:03  grichenk
 * Fixed mapping of bonds
 *
