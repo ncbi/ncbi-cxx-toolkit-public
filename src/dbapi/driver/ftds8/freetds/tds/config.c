@@ -472,6 +472,11 @@ static void tds_config_login(TDSCONFIGINFO *config, TDSLOGIN *login)
         if (login->block_size) {
 		config->block_size = login->block_size;
 	}
+#ifdef NCBI_FTDS
+	else if(config->major_version >= 7) {
+	        config->block_size= 6*1024;
+	}
+#endif
         if (login->port) {
 #ifdef NCBI_FTDS
 		config->port[0] = login->port;
