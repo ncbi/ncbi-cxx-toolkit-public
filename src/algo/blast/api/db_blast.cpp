@@ -142,6 +142,10 @@ int CDbBlast::SetupSearch()
                                  mi_clsQueries, mi_clsQueryInfo,
                                  &mi_pLookupSegments, &mi_pFilteredRegions,
                                  &mi_pScoreBlock, &blast_message);
+        if (status != 0) {
+            string msg = blast_message ? blast_message->message : "BLAST_MainSetUp failed";
+            NCBI_THROW(CBlastException, eInternal, msg.c_str());
+        }
         
         if (translated_query) {
             /* Filter locations were returned in protein coordinates; 
@@ -149,11 +153,6 @@ int CDbBlast::SetupSearch()
             BlastMaskLocProteinToDNA(&mi_pFilteredRegions, m_tQueries);
         }
 
-        if (status) {
-            ERR_POST(Error << "Setup returned status " << status << ".");
-            return status;
-        }
-        
         BLAST_ResultsInit(mi_clsQueryInfo->num_queries, &mi_pResults);
         LookupTableWrapInit(mi_clsQueries, 
             m_OptsHandle->GetOptions().GetLutOpts(), 
@@ -227,6 +226,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/02/13 20:47:20  madden
+ * Throw exception rather than ERR_POST if setup fails
+ *
  * Revision 1.9  2004/02/13 19:32:55  camacho
  * Removed unnecessary #defines
  *
