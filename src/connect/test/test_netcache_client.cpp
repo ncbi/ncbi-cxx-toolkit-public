@@ -157,7 +157,7 @@ int CTestNetCacheClient::Run(void)
     assert(exists);
 
     unsigned delay = 70;
-    cout << "Sleeping for " << delay << " seconds. Please wait....";
+    cout << "Sleeping for " << delay << " seconds. Please wait...." << flush;
     SleepSec(delay);
     cout  << "ok." << endl;
 
@@ -185,6 +185,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/10/07 19:02:23  kuznets
+ * flush at the end of line
+ *
  * Revision 1.1  2004/10/05 19:05:33  kuznets
  * Initial revision
  *
