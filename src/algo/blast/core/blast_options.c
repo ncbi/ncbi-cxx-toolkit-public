@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.78  2004/02/03 18:33:39  dondosha
+ * Correction to previous change: word size can be 11 if discontiguous words
+ *
  * Revision 1.77  2004/02/03 16:17:33  dondosha
  * Require word size to be >= 12 with megablast lookup table
  *
@@ -1066,7 +1069,8 @@ LookupTableOptionsValidate(Uint1 program_number,
 		return (Int2) code;
 	}
 
-   if (options->lut_type == MB_LOOKUP_TABLE && options->word_size < 12) {
+   if (options->lut_type == MB_LOOKUP_TABLE && options->word_size < 12 && 
+       options->mb_template_length == 0) {
       Blast_MessageWrite(blast_msg, 2, code, subcode, 
                          "Word size must be 12 or greater with megablast"
                          " lookup table");
