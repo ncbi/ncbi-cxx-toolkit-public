@@ -68,6 +68,33 @@ CDataToolGeneratedSrc::~CDataToolGeneratedSrc(void)
 }
 
 
+bool CDataToolGeneratedSrc::operator== (const CDataToolGeneratedSrc& src) const
+{
+
+    return  m_SourceFile        == src.m_SourceFile    &&
+            m_SourceBaseDir     == src.m_SourceBaseDir &&
+            m_ImportModules     == src.m_ImportModules ;
+}
+
+
+bool CDataToolGeneratedSrc::operator<  (const CDataToolGeneratedSrc& src) const
+{
+    if (m_SourceFile < src.m_SourceFile)
+        return true;
+    else if (m_SourceFile > src.m_SourceFile)
+        return false;
+    else {
+        if (m_SourceBaseDir < src.m_SourceBaseDir)
+            return true;
+        else if (m_SourceBaseDir > src.m_SourceBaseDir)
+            return false;
+        else {
+            return m_ImportModules < src.m_ImportModules;
+        }
+    }
+}
+
+
 void CDataToolGeneratedSrc::LoadFrom(const string&          source_file_path,
                                      CDataToolGeneratedSrc* src)
 {
@@ -206,6 +233,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/03/10 16:48:53  gorelenk
+ * Implemented operators == and < of class CDataToolGeneratedSrc.
+ *
  * Revision 1.3  2004/02/20 22:53:58  gorelenk
  * Added analysis of ASN projects depends.
  *
