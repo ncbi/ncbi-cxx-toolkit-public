@@ -1238,6 +1238,7 @@ DECLARE_HTML_ELEMENT( sup,        CHTMLInlineElement);
 DECLARE_HTML_ELEMENT( tt,         CHTMLInlineElement);
 DECLARE_HTML_ELEMENT( u,          CHTMLInlineElement);
 DECLARE_HTML_ELEMENT( blink,      CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( span,       CHTMLInlineElement);
 DECLARE_HTML_ELEMENT( map,        CHTMLElement);
 DECLARE_HTML_ELEMENT( area,       CHTMLElement);
 
@@ -1258,6 +1259,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2002/12/20 19:19:30  ivanov
+ * Added SPAN tag support
+ *
  * Revision 1.60  2002/12/09 22:12:25  ivanov
  * Added support for Sergey Kurdin's popup menu.
  * Added CHTMLNode::AttachPopupMenu().

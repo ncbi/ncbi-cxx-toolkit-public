@@ -2020,6 +2020,7 @@ DEFINE_HTML_ELEMENT(sup);
 DEFINE_HTML_ELEMENT(tt);
 DEFINE_HTML_ELEMENT(u);
 DEFINE_HTML_ELEMENT(blink);
+DEFINE_HTML_ELEMENT(span);
 DEFINE_HTML_ELEMENT(map);
 DEFINE_HTML_ELEMENT(area);
 
@@ -2029,6 +2030,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.78  2002/12/20 19:20:19  ivanov
+ * Added SPAN tag support
+ *
  * Revision 1.77  2002/12/18 19:46:18  ivanov
  * Added line break after elements of the class CHTMLElement in plain text mode
  *
