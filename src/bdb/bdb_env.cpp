@@ -72,6 +72,10 @@ void CBDB_Env::OpenWithLocks(const char* db_home)
     Open(db_home, DB_CREATE|DB_RECOVER|DB_INIT_LOCK|DB_INIT_MPOOL);
 }
 
+void CBDB_Env::JoinEnv(const char* db_home)
+{
+    Open(db_home, DB_JOINENV);
+}
 
 END_NCBI_SCOPE
 
@@ -79,6 +83,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/11/03 13:07:22  kuznets
+ * JoinEnv implemented
+ *
  * Revision 1.3  2003/10/20 15:23:55  kuznets
  * Added cache management for BDB environment
  *
