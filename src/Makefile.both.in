@@ -111,6 +111,5 @@ clean:
 
 purge: clean
 	-$(RM) $(libdir)/$(XLIB) $(libdir)/$(XDLL) $(libdir)/$(XLIBLINK) \
-		$(status_dir)/$(XLIBDEP) $(status_dir)/$(XDLLDEP) \
-		$(status_dir)/$(XLIBDEPLINK)
+		$(status_dir)/$(XLIBDEP) $(status_dir)/$(XDLLDEP)
 	@has_dll_loadable@-$(RM) $(libdir)/$(XDLL_LOADABLE)
