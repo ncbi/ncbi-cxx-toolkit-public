@@ -53,8 +53,6 @@
 BEGIN_NCBI_SCOPE
 
 
-// Default buffer size for CPipe-based iostream.
-const streamsize CPipeIOStream::kDefaultBufferSize = 4096;
 // Sleep time for timeouts
 const unsigned int kSleepTime = 100;
 
@@ -1068,7 +1066,8 @@ CPipe::CPipe(void)
 
 CPipe::CPipe(const string& cmd, const vector<string>& args,
              TCreateFlags create_flags)
-    : m_PipeHandle(0), m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed),
+    : m_PipeHandle(0), m_ReadHandle(eStdOut),
+      m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed),
       m_ReadTimeout(0), m_WriteTimeout(0), m_CloseTimeout(0)
 {
     // Create new OS-specific pipe handle
@@ -1130,11 +1129,13 @@ EIO_Status CPipe::CloseHandle(EChildIOHandle handle)
 
 
 EIO_Status CPipe::Read(void* buf, size_t count, size_t* read,
-                       const EChildIOHandle from_handle)
+                       EChildIOHandle from_handle)
 {
     if ( read ) {
         *read = 0;
     }
+    if (from_handle == eDefault)
+        from_handle = m_ReadHandle;
     if (!buf  ||  from_handle == eStdIn) {
         return eIO_InvalidArg;
     }
@@ -1145,6 +1146,16 @@ EIO_Status CPipe::Read(void* buf, size_t count, size_t* read,
                                            m_ReadTimeout);
     m_ReadStatus = status;
     return status;
+}
+
+
+EIO_Status CPipe::SetReadHandle(EChildIOHandle from_handle)
+{
+    if (from_handle == eStdIn)
+        return eIO_Unknown;
+    if (from_handle != eDefault)
+        m_ReadHandle = from_handle;
+    return eIO_Success;
 }
 
 
@@ -1174,8 +1185,6 @@ EIO_Status CPipe::Status(EIO_Event direction)
     case eIO_Write:
         return m_WriteStatus;
     default:
-        // Should never get here
-        assert(0);
         break;
     }
     return eIO_InvalidArg;
@@ -1224,192 +1233,15 @@ const STimeout* CPipe::GetTimeout(EIO_Event event) const
 }
 
 
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CPipeStreambuf --
-///
-/// The CPipeIOStream stream buffer.
-///
-/// This class is  derived from "std::streambuf" and performs both input and 
-/// output, using the specified pipe.
-
-class CPipeStreambuf : public streambuf
-{
-public:
-    CPipeStreambuf(CPipe& pipe, streamsize buf_size);
-    virtual ~CPipeStreambuf();
-
-    /// Set handle of the child process for reading by default
-    /// (eStdOut / eStdErr)
-    void SetReadHandle(CPipe::EChildIOHandle handle);
-
-protected:
-    virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
-    virtual CT_INT_TYPE underflow(void);
-    virtual int         sync(void);
-
-    /// This method is declared here to be disabled (exception) at run-time
-    virtual streambuf*  setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
-
-private:
-    CPipe*                m_Pipe;       // underlying connection pipe
-    CT_CHAR_TYPE*         m_Buf;        // of size 2 * m_BufSize
-    CT_CHAR_TYPE*         m_WriteBuf;   // m_Buf
-    CT_CHAR_TYPE*         m_ReadBuf;    // m_Buf + m_BufSize
-    streamsize            m_BufSize;    // of m_WriteBuf, m_ReadBuf
-    CPipe::EChildIOHandle m_ReadHandle; // handle for reading by default
-};
-
-
-CPipeStreambuf::CPipeStreambuf(CPipe& pipe, streamsize buf_size)
-    : m_Pipe(&pipe),
-      m_Buf(0),
-      m_BufSize(buf_size ? buf_size : 1),
-      m_ReadHandle(CPipe::eStdOut)
-{
-    auto_ptr<CT_CHAR_TYPE> bp(new CT_CHAR_TYPE[2 * m_BufSize]);
-
-    m_WriteBuf = bp.get();
-    setp(m_WriteBuf, m_WriteBuf + m_BufSize);
-
-    m_ReadBuf = bp.get() + m_BufSize;
-    // We wish to have underflow() called at the first read
-    setg(0, 0, 0);
-    m_Buf = bp.release();
-}
-
-
-CPipeStreambuf::~CPipeStreambuf()
-{
-    sync();
-    delete[] m_Buf;
-}
-
-
-void CPipeStreambuf::SetReadHandle(CPipe::EChildIOHandle handle)
-{
-    m_ReadHandle = handle;
-}
-
-
-CT_INT_TYPE CPipeStreambuf::overflow(CT_INT_TYPE c)
-{
-    size_t n_written;
-
-    if ( pbase() ) {
-        // Send buffer
-        size_t n_write = pptr() - pbase();
-        if ( !n_write ) {
-            return CT_NOT_EOF(CT_EOF);
-        }
-        m_Pipe->Write(m_WriteBuf, n_write * sizeof(CT_CHAR_TYPE), &n_written);
-        _ASSERT(n_written);
-
-        // Update buffer content (get rid of the sent data)
-        if ((n_written /= sizeof(CT_CHAR_TYPE)) != n_write) {
-            memmove(m_WriteBuf, pbase() + n_written,
-                    (n_write - n_written) * sizeof(CT_CHAR_TYPE));
-        }
-        setp(m_WriteBuf + n_write - n_written, m_WriteBuf + m_BufSize);
-
-        // Store char
-        return CT_EQ_INT_TYPE(c, CT_EOF)
-            ? CT_NOT_EOF(CT_EOF) : sputc(CT_TO_CHAR_TYPE(c));
-    }
-
-    if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
-        CT_CHAR_TYPE b = CT_TO_CHAR_TYPE(c);
-        // Send char
-        m_Pipe->Write(&b, sizeof(b), &n_written);
-        _ASSERT(n_written == sizeof(b));
-        return c;
-    }
-    return CT_NOT_EOF(CT_EOF);
-}
-
-
-CT_INT_TYPE CPipeStreambuf::underflow(void)
-{
-    _ASSERT(!gptr() || gptr() >= egptr());
-
-    // Read from the pipe
-    size_t n_read = 0;
-    m_Pipe->Read(m_ReadBuf, m_BufSize * sizeof(CT_CHAR_TYPE),
-                 &n_read, m_ReadHandle);
-    if (n_read == 0) {
-        return CT_EOF;
-    }
-    // Update input buffer with the data we just read
-    setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read / sizeof(CT_CHAR_TYPE));
-
-    return CT_TO_INT_TYPE(*m_ReadBuf);
-}
-
-
-int CPipeStreambuf::sync(void)
-{
-    do {
-        if ( CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF) ) {
-            return -1;
-        }
-    } while (pbase()  &&  pptr() > pbase());
-    return 0;
-}
-
-
-streambuf* CPipeStreambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
-                                  streamsize    /*buf_size*/)
-{
-    NCBI_THROW(CPipeException,eSetBuf,"CPipeStreambuf::setbuf() not allowed");
-    return this; /*NOTREACHED*/
-}
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CPipeIOStream
-//
-
-
-CPipeIOStream::CPipeIOStream(CPipe& pipe, streamsize buf_size)
-    : iostream(0), m_StreamBuf(0)
-{
-    auto_ptr<CPipeStreambuf> sb(new CPipeStreambuf(pipe, buf_size));
-    init(sb.get());
-    m_StreamBuf = sb.release();
-}
-
-
-CPipeIOStream::~CPipeIOStream(void)
-{
-#if !defined(HAVE_IOS_XALLOC) || defined(HAVE_BUGGY_IOS_CALLBACKS)
-    streambuf* sb = rdbuf();
-    delete sb;
-    if (sb != m_StreamBuf)
-#endif
-        delete m_StreamBuf;
-#ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
-    rdbuf(0);
-#endif
-}
-
-
-void CPipeIOStream::SetReadHandle(const CPipe::EChildIOHandle handle) const
-{
-    if ( m_StreamBuf ) {
-        m_StreamBuf->SetReadHandle(handle);
-    }
-}
-
-
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/09/23 21:08:37  lavr
+ * PipeStreambuf and special stream removed: now all in ncbi_conn_stream.cpp
+ *
  * Revision 1.30  2003/09/16 13:42:36  ivanov
  * Added deleting OS-specific pipe handle in the destructor
  *
