@@ -3,6 +3,9 @@
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
 property pRootFolderPath : "" -- full path of the parent of the toolkit directory. Optional
 property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
+property pSaveContinueOnErrors : false
+-- true if we want to save compilation errors in a file and continue.
+-- false if we want to stop on an error.
 
 property pProjectFileExt : ".mcp"
 property pCPlusPlusExt : ".cpp"
@@ -887,7 +890,21 @@ on BuildProject(projName, targetSpecs)
 			if my OkaytoBuild(thisTarget, targetSpecs) then
 				
 				set the current target of project document 1 to target i of project document 1
-				Make Project
+				if pSaveContinueOnErrors then
+					try
+						Make Project
+					on error errmsg number errnum
+						if (errnum = 5) then
+							set errFileName to (gProjectsDir & projName & thisTarget & ".errs")
+							Save Error Window As errFileName
+							close first window
+						else
+							error errmsg number errnum
+						end if
+					end try
+				else -- stop on any error.
+					Make Project
+				end if
 				-- If there were compiler warnings, then a compiler window will be in front.
 				-- For whatever reason, this causes the next "set the current target..." to fail.
 				-- So check for the window and close it.
