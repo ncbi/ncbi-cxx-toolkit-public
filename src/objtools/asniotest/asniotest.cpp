@@ -43,6 +43,8 @@
 
 #include <memory>
 
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqloc/PDB_mol_id.hpp>
@@ -486,6 +488,37 @@ BEGIN_TEST_FUNCTION(FullBlobs)
 END_TEST_FUNCTION
 
 
+// test to make sure that a value of -1 converted to an unsigned int will still read/write
+BEGIN_TEST_FUNCTION(UnsignedInt)
+
+    CRef < CSeq_loc > seqloc(new CSeq_loc());
+    seqloc->SetInt().SetFrom(-1);
+    seqloc->SetInt().SetTo(-1);
+    seqloc->SetInt().SetId().SetGi(0);
+
+    if (!WriteASNToFile(*seqloc, false, &err))
+        ADD_ERR_RETURN("output of seqloc with '-1' failed: " << err);
+
+    CNcbiOstrstream oss;
+    oss << "test_" << filesCreated.size() << ".txt";
+    string filename = CNcbiOstrstreamToString(oss);
+
+    CRef < CSeq_loc > seqloc2(new CSeq_loc());
+    if (!ReadASNFromFile(filename.c_str(), seqloc2.GetPointer(), false, &err))
+        ADD_ERR_RETURN("input of seqloc with '-1' failed: " << err);
+
+    if (!seqloc2->Equals(*seqloc))
+        ADD_ERR("seqloc with '-1' Equals test failed");
+    if (seqloc2->GetInt().GetFrom() != ((unsigned int) 4294967295))
+        ADD_ERR("seqloc value test failed");
+
+    CRef < CSeq_loc > seqloc3(new CSeq_loc());
+    if (!ReadASNFromFile("seqLocTest.txt", seqloc3.GetPointer(), false, &err))
+        ADD_ERR("reading seqLocTest.txt failed: " << err);
+
+END_TEST_FUNCTION
+
+
 // to call test functions, counting errors
 #define RUN_TEST(func) \
     do { \
@@ -517,6 +550,7 @@ int ASNIOTestApp::Run(void)
         RUN_TEST(DefaultField);
         RUN_TEST(ZeroReal);
         RUN_TEST(FullBlobs);
+        RUN_TEST(UnsignedInt);
 
     } catch (exception& e) {
         ERRORMSG("uncaught exception: " << e.what());
@@ -566,6 +600,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/02/12 17:55:12  thiessen
+* add UnsignedInt test
+*
 * Revision 1.10  2004/02/02 22:12:31  ucko
 * Test retrieval and round-trip conversion of a variety of representative blobs.
 *
