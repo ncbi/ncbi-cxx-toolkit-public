@@ -62,6 +62,8 @@ BEGIN_SCOPE(objects)
 
 CMutexPool_Base<CDataSource::TTSESet> CDataSource::sm_TSESet_MP;
 CMutexPool_Base<CDataSource> CDataSource::sm_DataSource_MP;
+CMutex CMutexPool_Base<CDataSource::TTSESet>::sm_Pool[kMutexPoolSize];
+CMutex CMutexPool_Base<CDataSource>::sm_Pool[kMutexPoolSize];
 
 
 CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
@@ -1905,6 +1907,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2002/08/07 18:22:48  ucko
+* Explicitly instantiate CMutexPool_Base<{CDataSource,TTSESet}>::sm_Pool
+*
 * Revision 1.57  2002/07/25 15:01:51  grichenk
 * Replaced non-const GetXXX() with SetXXX()
 *
