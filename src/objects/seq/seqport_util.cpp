@@ -1685,8 +1685,8 @@ CRef<CSeqportUtil_implementation::CFast_2_1> CSeqportUtil_implementation::InitFa
             }
         else
             {
-                fastTable->m_Table[0][ch] = '\xF0';
-                fastTable->m_Table[1][ch] = '\x0F';
+                fastTable->m_Table[0][ch] = 0xF0;
+                fastTable->m_Table[1][ch] = 0x0F;
             }
     }
     return fastTable;
@@ -1771,15 +1771,15 @@ CRef<CSeqportUtil_implementation::SMasksArray> CSeqportUtil_implementation::Init
 
     // Initialize possible masks for converting ambiguous
     // ncbi4na bytes to unambiguous bytes
-    unsigned char mask[16] = {
-        '\x11', '\x12', '\x14', '\x18',
-            '\x21', '\x22', '\x24', '\x28',
-            '\x41', '\x42', '\x44', '\x48',
-            '\x81', '\x82', '\x84', '\x88'
-            };
+    static const unsigned char mask[16] = {
+        0x11, 0x12, 0x14, 0x18,
+        0x21, 0x22, 0x24, 0x28,
+        0x41, 0x42, 0x44, 0x48,
+        0x81, 0x82, 0x84, 0x88
+    };
 
-    unsigned char maskUpper[4] = {'\x10', '\x20', '\x40', '\x80'};
-    unsigned char maskLower[4] = {'\x01', '\x02', '\x04', '\x08'};
+    static const unsigned char maskUpper[4] = { 0x10, 0x20, 0x40, 0x80 };
+    static const unsigned char maskLower[4] = { 0x01, 0x02, 0x04, 0x08 };
 
     // Loop through possible ncbi4na bytes and
     // build masks that convert it to unambiguous na
@@ -6458,9 +6458,7 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
     " } \n",
     " \n",
     " }                                  -- end of maps\n",
-    "}                                        -- end of seq-code-set\n",
-    "\n",
-    "\n",
+    "-- end of seq-code-set -- }", // make sure '}' is last symbol of ASN text
     0  // to indicate that there is no more data
 };
 
@@ -6471,6 +6469,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2003/11/28 19:01:54  vasilche
+ * Avoid calling CStreamUtils::Pushback() when constructing objects from text ASN.
+ * Fixed warnings about conversion char -> unsigned char.
+ *
  * Revision 6.20  2003/11/21 14:45:03  grichenk
  * Replaced runtime_error with CException
  *
