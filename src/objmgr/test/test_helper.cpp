@@ -956,8 +956,10 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     _ASSERT(len == seq_len);
     CHECK_END("get resolved sequence map");
 
+    CSeqVector seq_vect;
+
     CHECK_WRAP();
-    CSeqVector seq_vect = handle.GetSeqVector(CBioseq_Handle::eCoding_NotSet);
+    seq_vect = handle.GetSeqVector(CBioseq_Handle::eCoding_NotSet);
     string sout = "";
     {{
         CSeqVector_CI vit(seq_vect, 0);
@@ -990,7 +992,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     interval.SetTo(seq_str.size()-1);
     CSeq_loc loc;
     loc.SetInt(interval);
-    CSeqVector seq_vect = handle.GetSequenceView(loc, CBioseq_Handle::eViewConstructed);
+    seq_vect = handle.GetSequenceView(loc, CBioseq_Handle::eViewConstructed);
     string sout = "";
     for (TSeqPos i = 0; i < seq_vect.size(); i++) {
         sout += seq_vect[i];
@@ -1001,11 +1003,11 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     if (seq_core->GetInst().IsSetStrand() &&
         seq_core->GetInst().GetStrand() == CSeq_inst::eStrand_ds) {
         CHECK_WRAP();
-        CSeqVector seq_vect_rev = handle.GetSeqVector(CBioseq_Handle::eCoding_NotSet,
-                                                      eNa_strand_minus);
+        seq_vect = handle.GetSeqVector(CBioseq_Handle::eCoding_NotSet,
+                                       eNa_strand_minus);
         string sout_rev = "";
-        for (TSeqPos i = seq_vect_rev.size(); i> 0; i--) {
-            sout_rev += seq_vect_rev[i-1];
+        for (TSeqPos i = seq_vect.size(); i> 0; i--) {
+            sout_rev += seq_vect[i-1];
         }
         _ASSERT(NStr::PrintableString(sout_rev) == seq_str_compl);
         CHECK_END("get reverse seq vector");
@@ -1272,6 +1274,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2003/06/12 18:39:46  vasilche
+* Chech CSeqVector assignment.
+*
 * Revision 1.40  2003/06/02 21:04:25  vasilche
 * Fixed CSeqVector_CI test to not to go beyond begin().
 *
