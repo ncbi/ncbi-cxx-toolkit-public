@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.196 2003/06/10 15:49:14 vakatov Exp $
+#  $Id: configure.ac,v 1.197 2003/06/10 19:49:36 dicuccio Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2406,7 +2406,7 @@ if test "$with_opengl" != "no"; then
          fi
          LDFLAGS="$orig_LDFLAGS $X_LIBS"
          OPENGL_INCLUDE="$X_CFLAGS"
-         OPENGL_LIBS="$X_LIBS -LGLU -lGL $X_ALL_LIBS"
+         OPENGL_LIBS="$X_LIBS -lGLU -lGL $X_ALL_LIBS"
          ;;
    esac
    AC_CACHE_CHECK([for OpenGL], ncbi_cv_lib_opengl,
