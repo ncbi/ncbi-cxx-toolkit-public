@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.6  2003/07/24 22:01:44  camacho
+ * Removed unused variables
+ *
  * Revision 1.5  2003/07/24 21:31:06  dondosha
  * Changed to calls to BlastConstructErrorMessage to API from blast_message.h
  *
@@ -1758,7 +1761,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
     Char    a1chars[BLAST_MAX_ALPHABET], a2chars[BLAST_MAX_ALPHABET];
     long	lineno = 0;
     FloatHi	xscore;
-    register int	index1, index2, total;
+    register int	index1, index2;
     Int2 status;
 #if THREADS_IMPLEMENTED
     static TNlmMutex read_matrix_mutex;
@@ -2949,7 +2952,6 @@ BlastKarlinkGapBlkFill(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, I
 {
 	Boolean found_matrix=FALSE, found_values=FALSE;
 	array_of_8 *values;
-	Char buffer[256];
 	Int2 status=0;
 	Int4 index, max_number_values=0;
 	MatrixInfoPtr matrix_info;
@@ -3047,7 +3049,6 @@ PrintAllowedValuesMessage(const Char *matrix_name, Int4 gap_open, Int4 gap_exten
 	array_of_8 *values;
 	Boolean found_matrix=FALSE;
 	CharPtr buffer, ptr;
-	Int2 status=0;
 	Int4 index, max_number_values=0;
 	MatrixInfoPtr matrix_info;
 	ValNodePtr vnp, head;
@@ -3102,7 +3103,6 @@ BlastKarlinReportAllowedValues(const Char *matrix_name,
 	array_of_8 *values;
 	Boolean found_matrix=FALSE;
 	Char buffer[256];
-	Int2 status=0;
 	Int4 index, max_number_values=0;
 	MatrixInfoPtr matrix_info;
 	ValNodePtr vnp, head;

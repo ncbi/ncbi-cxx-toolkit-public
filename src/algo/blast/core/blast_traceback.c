@@ -865,8 +865,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
        program_number == blast_type_psitblastn);   
    Uint1Ptr translation_buffer;
    Int4Ptr frame_offsets;
-   Uint1Ptr nucl_sequence = NULL, nucl_sequence_rev = NULL;
-   CharPtr genetic_code = NULL;
+   Uint1Ptr nucl_sequence = NULL;
    BLAST_KarlinBlkPtr PNTR kbp;
 
    if (hsp_list->hspcnt == 0) {
