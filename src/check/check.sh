@@ -47,7 +47,7 @@ script_name=`basename $0`
 script_args="$*"
 
 summary_res="check.sh.log"
-error_res="check.sh.out"
+error_res="check.sh.out_err"
 
 if test -x /usr/sbin/sendmail; then
     sendmail="/usr/sbin/sendmail -oi"
