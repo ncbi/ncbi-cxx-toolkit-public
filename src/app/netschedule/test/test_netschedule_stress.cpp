@@ -115,7 +115,7 @@ int CTestNetScheduleStress::Run(void)
     }
     CNetScheduleClient::EJobStatus status;
     CNetScheduleClient cl(host, port, "client_test", queue_name);
-    //cl.SetRequestRateControl(false);
+    cl.SetRequestRateControl(false);
 
     const string input = "Hello " + queue_name;
 
@@ -148,11 +148,17 @@ int CTestNetScheduleStress::Run(void)
     NcbiCout << "Avg time: " << avg << " sec." << NcbiEndl;
     }}
 
+    
+    
+    
+    
+    NcbiCout << NcbiEndl << "Waiting..." << NcbiEndl;
+    SleepMilliSec(40 * 1000);
+    NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
 
     {{
     NcbiCout << NcbiEndl 
              << "GetStatus " << jobs.size() << " jobs..." << NcbiEndl;
-    SleepMilliSec(4000);
 
     CStopWatch sw(true);
 
@@ -173,12 +179,19 @@ int CTestNetScheduleStress::Run(void)
     }
     }}
 
+    
+    
+    
+    
+    NcbiCout << NcbiEndl << "Waiting..." << NcbiEndl;
+    SleepMilliSec(40 * 1000);
+    NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
+    
     vector<string> jobs_returned;
     jobs_returned.reserve(jcount);
 
     {{
     NcbiCout << NcbiEndl << "Take-Return jobs..." << NcbiEndl;
-    SleepMilliSec(4000);
     CStopWatch sw(true);
     string input;
 
@@ -203,6 +216,9 @@ int CTestNetScheduleStress::Run(void)
         NcbiCout << "Avg time: " << avg << " sec." << NcbiEndl;
     }
 
+    
+    
+    
     NcbiCout << NcbiEndl << "Waiting..." << NcbiEndl;
     SleepMilliSec(40 * 1000);
     NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
@@ -214,7 +230,7 @@ int CTestNetScheduleStress::Run(void)
 
     {{
     NcbiCout << NcbiEndl << "Processing..." << NcbiEndl;
-    SleepMilliSec(4000);
+    SleepMilliSec(8000);
     CStopWatch sw(true);
     
     unsigned cnt = 0;
@@ -266,7 +282,6 @@ int CTestNetScheduleStress::Run(void)
         }
     }
 
-
     }}
 
 
@@ -284,6 +299,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/04 13:26:33  kuznets
+ * Disabled request rate control for stress test
+ *
  * Revision 1.3  2005/03/04 12:08:50  kuznets
  * Test for WaitJob
  *
