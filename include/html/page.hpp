@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/04/26 21:59:28  vakatov
+* Cleaned and ported to build with MSVC++ 6.0 compiler
+*
 * Revision 1.16  1999/04/20 13:51:59  vasilche
 * Removed unused parameter name to avoid warning.
 *
@@ -77,15 +80,8 @@
 * Revision 1.4  1998/12/09 17:27:44  sandomir
 * tool should be changed to work with the new CCgiApplication
 *
-* Revision 1.3  1998/12/08 00:34:55  lewisg
-* cleanup
-*
 * Revision 1.2  1998/12/01 19:09:06  lewisg
 * uses CCgiApplication and new page factory
-*
-* Revision 1.1  1998/10/29 16:15:53  lewisg
-* version 2
-*
 * ===========================================================================
 */
 
@@ -97,27 +93,43 @@ BEGIN_NCBI_SCOPE
 
 struct BaseTagMapper;
 
-inline BaseTagMapper* CreateTagMapper(CNCBINode* node);
-inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(void));
-inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(const string& name));
+inline BaseTagMapper* CreateTagMapper(CNCBINode* node) {
+    return new ReadyTagMapper(node);
+}
+
+inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(void)) {
+    return new StaticTagMapper(function);
+}
+
+inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)
+                                      (const string& name)) {
+    return new StaticTagMapperByName(function);
+}
 
 template<class C>
-BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(C* node));
+BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(C* node)) {
+    return new StaticTagMapperByNode<C>(function);
+}
 
 template<class C>
-BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(C* node, const string& name));
+BaseTagMapper* CreateTagMapper(CNCBINode* (*function)
+                               (C* node, const string& name)) {
+    return new StaticTagMapperByNodeAndName<C>(function);
+}
 
 template<class C>
-inline BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)(void))
-{
+inline BaseTagMapper* CreateTagMapper(const C*,
+                                      CNCBINode* (C::*method)(void)) {
     return new TagMapper<C>(method);
 }
 
 template<class C>
-inline BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)(const string& name))
+inline BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)
+                                      (const string& name))
 {
     return new TagMapperByName<C>(method);
 }
+
 
 /////////////////////////////////////////////////////////////
 // CHTMLBasicPage is the virtual base class.  The main functionality is
@@ -125,37 +137,36 @@ inline BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)(const st
 // creation function that orders sub components on the page.  The ability
 // to hold children and print HTML is inherited from CHTMLNode.
 
-class CHTMLBasicPage: public CNCBINode {
-    // parent class
-    typedef CNCBINode CParent;
+class CHTMLBasicPage: public CNCBINode
+{
+    typedef CNCBINode CParent; // parent class
 
 public: 
     CHTMLBasicPage(void);
     CHTMLBasicPage(CCgiApplication* app, int style = 0);
 
-    virtual CCgiApplication * GetApplication(void) const;
-    virtual void SetApplication(CCgiApplication * App);
+    virtual CCgiApplication* GetApplication(void) const;
+    virtual void SetApplication(CCgiApplication* App);
 
     int GetStyle(void) const;
     void SetStyle(int style);
 
     // resolve <@XXX@> tag
     virtual CNCBINode* MapTag(const string& name);
+
     // add tag resolver
     void AddTagMap(const string& name, BaseTagMapper* mapper);
     void AddTagMap(const string& name, CNCBINode* node);
 
-    //    void AddTagMap(const string& name, CNCBINode* (*function)(void));
-    //    void AddTagMap(const string& name, CNCBINode* (*function)(const string& name));
-
 protected:
-    CCgiApplication * m_CgiApplication;  // pointer to runtime information
+    CCgiApplication* m_CgiApplication;  // pointer to runtime information
     int m_Style;
 
+    // tag resolvers (as registered by AddTagMap)
     map<string, BaseTagMapper*> m_TagMap;
 
     // cloning
-    virtual CNCBINode* CloneSelf() const;
+    virtual CNCBINode* CloneSelf(void) const;
 };
 
 
@@ -163,44 +174,50 @@ protected:
 //  this is the basic 3 section NCBI page
 
 
-class CHTMLPage : public CHTMLBasicPage {
+class CHTMLPage : public CHTMLBasicPage
+{
     // parent class
     typedef CHTMLBasicPage CParent;
 
 public:
-    ////////// 'tors
+    // 'tors
+    CHTMLPage(const string& title         = NcbiEmptyString,
+              const string& template_file = NcbiEmptyString);
+    CHTMLPage(CCgiApplication* app,
+              int              style         = 0,  // see "enum flags" beneath
+              const string&    title         = NcbiEmptyString,
+              const string&    template_file = NcbiEmptyString);
+    static CHTMLBasicPage* New(void);
 
-    CHTMLPage(void);
-    CHTMLPage(CCgiApplication* app, int style = 0);
-    static CHTMLBasicPage * New(void);
-
-    ////////// flags
-
+    // style flags
     enum flags {
         kNoTITLE    = 0x1,
         kNoVIEW     = 0x2,
         kNoTEMPLATE = 0x4
     };
 
-    ////////// page parameters
-
-    string m_PageName;
-    string m_TemplateFile;
-
-    ////////// the individual sub pages
-
+    // create the individual sub pages
     virtual void CreateSubNodes(void);
 
+    // create the static part of the page(here - read it from <m_TemplateFile>)
     virtual CNCBINode* CreateTemplate(void);
-    virtual CNCBINode* CreateTitle(void);
-    virtual CNCBINode* CreateView(void);
+
+    // tag substitution callbacks
+    virtual CNCBINode* CreateTitle(void);  // def for tag "@TITLE@" - <m_Title>
+    virtual CNCBINode* CreateView(void);   // def for tag "@VIEW@"  - none
+
+    // to set title or template file outside(after) the constructor
+    void SetTitle       (const string& title);
+    void SetTemplateFile(const string& template_file);
 
 protected:
-    // cloning
-    virtual CNCBINode* CloneSelf() const;
+    virtual CNCBINode* CloneSelf(void) const;
 
 private:
     void Init(void);
+
+    string m_Title;
+    string m_TemplateFile;
 };
 
 #include <html/page.inl>

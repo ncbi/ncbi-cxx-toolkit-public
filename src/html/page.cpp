@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/04/26 21:59:31  vakatov
+* Cleaned and ported to build with MSVC++ 6.0 compiler
+*
 * Revision 1.11  1999/04/19 16:51:36  vasilche
 * Fixed error with member pointers detected by GCC.
 *
@@ -50,21 +53,8 @@
 * Revision 1.6  1998/12/22 16:39:15  vasilche
 * Added ReadyTagMapper to map tags to precreated nodes.
 *
-* Revision 1.5  1998/12/21 22:25:04  vasilche
-* A lot of cleaning.
-*
-* Revision 1.4  1998/12/08 00:33:44  lewisg
-* cleanup
-*
 * Revision 1.3  1998/12/01 19:10:39  lewisg
 * uses CCgiApplication and new page factory
-*
-* Revision 1.2  1998/11/23 23:42:37  lewisg
-* *** empty log message ***
-*
-* Revision 1.1  1998/10/29 16:13:11  lewisg
-* version 2
-*
 * ===========================================================================
 */
 
@@ -73,24 +63,28 @@
 
 BEGIN_NCBI_SCOPE
  
+
+/////////////////////////////////////////////////////////////////////////////
 // CHTMLBasicPage
 
 CHTMLBasicPage::CHTMLBasicPage(void)
-    : m_CgiApplication(0), m_Style(0)
+    : m_CgiApplication(0),
+      m_Style(0)
 {
 }
 
 CHTMLBasicPage::CHTMLBasicPage(CCgiApplication* application, int style)
-    : m_CgiApplication(application), m_Style(style)
+    : m_CgiApplication(application),
+      m_Style(style)
 {
 }
 
-CNCBINode* CHTMLBasicPage::CloneSelf() const
+CNCBINode* CHTMLBasicPage::CloneSelf(void) const
 {
     return new CHTMLBasicPage(*this);
 }
 
-void CHTMLBasicPage::SetApplication(CCgiApplication * App)
+void CHTMLBasicPage::SetApplication(CCgiApplication* App)
 {
     m_CgiApplication = App;
 }
@@ -115,28 +109,32 @@ void CHTMLBasicPage::AddTagMap(const string& name, BaseTagMapper* mapper)
     m_TagMap[name] = mapper;
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
 // CHTMLPage
 
 template struct TagMapper<CHTMLPage>;
 
-CHTMLPage::CHTMLPage(void)
-    : m_PageName("PubMed"), m_TemplateFile("frontpage.html")
+CHTMLPage::CHTMLPage(const string& title, const string& template_file)
+    : m_Title(title),
+      m_TemplateFile(template_file)
 {
     Init();
 }
 
-CHTMLPage::CHTMLPage(CCgiApplication* application, int style)
-    : CParent(application, style)
+CHTMLPage::CHTMLPage(CCgiApplication* application, int style,
+                     const string& title, const string& template_file)
+    : CParent(application, style),
+      m_Title(title),
+      m_TemplateFile(template_file)
 {
     Init();
 }
 
 void CHTMLPage::Init(void)
 {
-    m_PageName = "PubMed";
-    m_TemplateFile = "frontpage.html";
     AddTagMap("TITLE", CreateTagMapper(this, &CHTMLPage::CreateTitle));
-    AddTagMap("VIEW", CreateTagMapper(this, &CHTMLPage::CreateView));
+    AddTagMap("VIEW",  CreateTagMapper(this, &CHTMLPage::CreateView));
 }
 
 CNCBINode* CHTMLPage::CloneSelf(void) const
@@ -151,15 +149,14 @@ void CHTMLPage::CreateSubNodes(void)
 
 CNCBINode* CHTMLPage::CreateTemplate(void) 
 {
-    string input;  
-    char ch;
+    string        str;  
+    char          buf[1024];
+    CNcbiIfstream ifstr(m_TemplateFile.c_str());
 
-    CNcbiIfstream inFile(m_TemplateFile.c_str());
-
-    while( inFile.get(ch))
-        input += ch;
+    while ( ifstr.read(buf, sizeof(buf)) )
+        str.append(buf, ifstr.gcount());
     
-    return new CHTMLText(input);
+    return new CHTMLText(str);
 }
 
 CNCBINode* CHTMLPage::CreateTitle(void) 
@@ -167,14 +164,11 @@ CNCBINode* CHTMLPage::CreateTitle(void)
     if ( GetStyle() & kNoTITLE )
         return 0;
 
-    return new CHTMLText(m_PageName);
+    return new CHTMLText(m_Title);
 }
 
 CNCBINode* CHTMLPage::CreateView(void) 
 {
-    if ( GetStyle() & kNoVIEW)
-        return 0;
-
     return 0;
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/04/26 21:59:31  vakatov
+* Cleaned and ported to build with MSVC++ 6.0 compiler
+*
 * Revision 1.14  1999/04/19 16:51:37  vasilche
 * Fixed error with member pointers detected by GCC.
 *
@@ -91,11 +94,8 @@ BEGIN_NCBI_SCOPE
 //
 
 CPmFrontPage::CPmFrontPage()
+    : CHTMLPage("Pubmed Search", "tabletemplate.html")
 {
-    m_PageName = "Pubmed Search";
-    m_TemplateFile = "tabletemplate.html";
-
-    //    AddTagMap("QUERYBOX", CreateTagMapper(this, &CreateQueryBox));
 }
 
 CNCBINode* CPmFrontPage::CloneSelf(void) const
@@ -125,7 +125,8 @@ CNCBINode* CPmFrontPage::CreateView(void)
     QueryBox->m_Database.Add("t", "Biomolecule 3D Structures");
     QueryBox->m_Database.Add("c", "Complete Genomes");
 
-    CHTML_form* form = new CHTML_form("http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query", QueryBox);
+    CHTML_form* form = new CHTML_form
+        ("http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query", QueryBox);
     form->AddHidden("fomr", 4);
     return form;
 }
@@ -138,11 +139,12 @@ CNCBINode* CPmFrontPage::CreateView(void)
 template struct TagMapper<CPmDocSumPage>;
 
 CPmDocSumPage::CPmDocSumPage()
+    : CHTMLPage("Pubmed Search", "template.html")
 {
-    m_PageName = "Search Results";
-    m_TemplateFile = "template.html";
-    AddTagMap("PAGER", CreateTagMapper(this, &CPmDocSumPage::CreatePager));
-    AddTagMap("QUERYBOX", CreateTagMapper(this, &CPmDocSumPage::CreateQueryBox));
+    AddTagMap("PAGER",
+              CreateTagMapper(this, &CPmDocSumPage::CreatePager));
+    AddTagMap("QUERYBOX",
+              CreateTagMapper(this, &CPmDocSumPage::CreateQueryBox));
 }
 
 CNCBINode* CPmDocSumPage::CloneSelf(void) const
@@ -219,7 +221,8 @@ CNCBINode* CPmDocSumPage::CreateQueryBox(void)
     QueryBox->m_Databases["t"] = "Biomolecule 3D Structures";
     QueryBox->m_Databases["c"] = "Complete Genomes";
 */
-    CHTML_form* form = new CHTML_form("http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query", QueryBox);
+    CHTML_form* form = new CHTML_form
+        ("http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query", QueryBox);
     form->AddHidden("form", 4);
     return form;
 }

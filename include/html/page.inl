@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/04/26 21:59:29  vakatov
+* Cleaned and ported to build with MSVC++ 6.0 compiler
+*
 * Revision 1.7  1999/04/19 20:11:48  vakatov
 * CreateTagMapper() template definitions moved from "page.inl" to
 * "page.hpp" because MSVC++ gets confused(cannot understand what
@@ -66,6 +69,16 @@ inline CHTMLBasicPage* CHTMLPage::New(void)
     return new CHTMLPage;
 }
 
+inline void CHTMLPage::SetTitle(const string& title)
+{
+    m_Title = title;
+}
+
+inline void CHTMLPage::SetTemplateFile(const string& template_file)
+{
+    m_TemplateFile = template_file;
+}
+
 inline CCgiApplication* CHTMLBasicPage::GetApplication(void) const
 {
     return m_CgiApplication;
@@ -74,33 +87,6 @@ inline CCgiApplication* CHTMLBasicPage::GetApplication(void) const
 inline int CHTMLBasicPage::GetStyle(void) const
 {
     return m_Style;
-}
-
-inline BaseTagMapper* CreateTagMapper(CNCBINode* node)
-{
-    return new ReadyTagMapper(node);
-}
-
-inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(void))
-{
-    return new StaticTagMapper(function);
-}
-
-inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(const string& name))
-{
-    return new StaticTagMapperByName(function);
-}
-
-template<class C>
-inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(C* node))
-{
-    return new StaticTagMapperByNode<C>(function);
-}
-
-template<class C>
-inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(C* node, const string& name))
-{
-    return new StaticTagMapperByNodeAndName<C>(function);
 }
 
 inline void CHTMLBasicPage::AddTagMap(const string& name, CNCBINode* node)
