@@ -9,30 +9,31 @@
 <div>
 <ul>
   <li>
-    <a href="#using">Using the NCBI Application Class</a></li>
+    <a href="#using">Basic classes of NCBI C++ toolkit.</a></li>
   <li>
-    <a href="#creating">Creating the Application Class</a></li>
+    <a href="#creating">Creating a simple application.</a>
+	<ul>
+	  <li><a href="#creating_unix">UNIX systems.</a></li>
+	  <li><a href="#creating_ms">MS Windows.</a></li>
+	  <li><a href="#whatis">What is in there.</a></li>
+	</ul>
+  </li>
   <li>
-    <a href="#inside">Inside the Application Class</a></li>
+    <a href="#inside">Inside the NCBI Application class.</a></li>
 </ul>
-
-This page describes what is needed to write the simplest possible
-application using the NCBI C++ Toolkit. The program simply prints a message
-to the screen. Following this exercise however, will introduce you to the
-foundation classes of the library.
 </div>
 
 
 
-<a NAME="using"></a>
-<h3>Using the NCBI Application Class</h3>
+<a name="using"></a>
+<h3>Basic classes of NCBI C++ toolkit.</h3>
 <p>
 Five fundamental classes form the foundation of the C++ Toolkit:
 <ul>
   <li>
     class <a href="#CNcbiApplication">CNcbiApplication</a></li>
   <li>
-    class <a href="#CNcbiArguments">CNcbiArguments</a>&nbsp;
+    class <a href="#CNcbiArguments">CNcbiArguments</a>
 	(see also <a href="argdescr.html">CArgDescriptions, CArgs, ...</a>)</li>
   <li>
     class <a href="#CNcbiEnvironment">CNcbiEnvironment</a></li>
@@ -44,7 +45,7 @@ Five fundamental classes form the foundation of the C++ Toolkit:
 </p>
 
 
-<a NAME="CNcbiApplication"></a>
+<a name="CNcbiApplication"></a>
 <p>
 <i><a href="../docxx/CNcbiApplication.html">CNcbiApplication</a></i>
 is an abstract class used to define the basic functionality and behavior
@@ -80,9 +81,9 @@ and <i>CNcbiDiag</i> data members.
 </p>
 
 
-<a NAME="CNcbiArguments"></a>
+<a name="CNcbiArguments"></a>
 <p>
-The <i><a href="../docxx/CNcbiArguments.html">CNcbiArguments</a></i>
+<i><a href="../docxx/CNcbiArguments.html">CNcbiArguments</a></i>
 class provides a data structure for holding the application's command-line
 arguments, along with methods for accessing and modifying these. Access
 to the argument values is implemented using the built-in <i>[ ]</i> operator.
@@ -141,9 +142,9 @@ Please note:
 </p>
 
 
-<a NAME="CNcbiEnvironment"></a>
+<a name="CNcbiEnvironment"></a>
 <p>
-The <i><a href="../docxx/CNcbiEnvironment.html">CNcbiEnvironment</a></i>
+<i><a href="../docxx/CNcbiEnvironment.html">CNcbiEnvironment</a></i>
 class provides a data structure for storing, accessing, and modifying the
 environment variables accessed by the C library routine <i>getenv()</i>.
 For example, to retrieve the value of environment variable <b>PATH</b>:
@@ -153,9 +154,9 @@ For example, to retrieve the value of environment variable <b>PATH</b>:
 
 
 
-<a NAME="CNcbiRegistry"></a>
+<a name="CNcbiRegistry"></a>
 <p>
-The <i><a href="registry.html">CNcbiRegistry</a></i>
+<i><a href="registry.html">CNcbiRegistry</a></i>
 class is used to load, access, modify and store runtime information read
 from a configuration file. Previously, these files were by convention named
 <i>.*rc</i>
@@ -169,9 +170,9 @@ name such files
 
 
 
-<a NAME="CNcbiDiag"></a>
+<a name="CNcbiDiag"></a>
 <p>
-The <i><a href="diag.html">CNcbiDiag</a></i> class
+<i><a href="diag.html">CNcbiDiag</a></i> class
 implements much of the functionality of the NCBI C Toolkit error processing
 mechanisms. Each instance of <i>CNcbiDiag</i> has a private buffer to handle
 a <i>single</i> message, along with private severity level and post flags
@@ -187,144 +188,157 @@ as well as the discussion in the Reference Manual section on
 </p>
 
 
-<a NAME="creating"></a>
-<h3>Creating a Simple Application Class</h3>
+<a name="creating"></a>
+<h3>Creating a simple application.</h3>
+
+<a name="creating_unix"></a>
+<h4>UNIX systems.</h4>
 <p>
-<b>Step 1.</b> Define a subclass of the <i>CNcbiApplication </i>class.
+Using <tt><a href="outside_tree.html">new_project.sh</a></tt> shell script,
+create a new project <i>sample</i> in the folder <i>sample</i>:
+  <pre>
+  $NCBI/c++/scripts/new_project.sh <i>sample</i> app
+  </pre>
+This will create:
+<ol>
+  <li>the project folder - <i>sample</i>,</li>
+  <li>the source file - <i>sample</i>.cpp,</li>
+  <li>the makefile - Makefile.<i>sample</i>_app.</li>
+</ol>
+Then build the project and run the application:
+  <pre>
+  cd <i>sample</i>
+  make -f Makefile.<i>sample</i>_app
+  ./<i>sample</i>
+  </pre>
 </p>
 
+
+<a name="creating_ms"></a>
+<h4>MS Windows.</h4>
 <p>
-Since <i>CNcbiApplication::Run() </i>is a pure virtual function,
-the class cannot be used directly. Instead, you must first define
-a subclass which inherits from <i>CNcbiApplication</i>, and implement
-<i>Run()</i> in the subclass.
+<ol>
+  <li>In Microsoft Visual Studio create a new project/workspace:
+  choose <tt>Win32 Console Application</tt>, then <tt>Empty project</tt>.
+  </li>
+  <li>
+  Copy the sample
+  <a href="../lxr/source/src/app/sample/basic/basic_sample.cpp">source file</a>
+  into the project directory, rename it, then add to the project.
+  </li>
+  <li>
+  Modify the project settings:
+    <ul>
+	  <li>Enable Run-time type information (in <tt>C/C++ - C++ language</tt>),
+	  </li>
+	  <li>Disable using precompiled headers (in <tt>C/C++ - Precompiled headers</tt>),
+	  </li>
+	  <li>Add additional include directory (in <tt>C/C++ - Preprocessor</tt>).
+	  Here, at NCBI, it could be <tt>\\Dizzy\public\cxx\include</tt>,
+      that is, the "root" of all includes,
+	  </li>
+	  <li>Add additional library path (<tt>Link-Input</tt>).
+      Here, at NCBI it could be <tt>\\Dizzy\public\cxx\Debug</tt>. Please note,
+	  this library path is configuration-dependent, that is it must be
+	  different for each configuration you are going to build the project in,
+	  </li>
+	  <li>Remove all standard libraries in <tt>Link-Input-Object/library modules</tt>,
+	  </li>
+	  <li>Add <tt>xncbi.lib</tt> NCBI library to the project.
+	  </li>
+	</ul>
+  </li>
+  <li>Build the project and run the application.
+  </li>
+</ol>
 </p>
 
+
+<a name="whatis"></a>
+<h4>What is in there.</h4>
 <p>
-Define the subclass in a header file, and in the subclass declaration,
-declare <i>Run()</i> to be a virtual function:
+In the
+<a href="../lxr/source/src/app/sample/basic/basic_sample.cpp">sample application</a>
+above:
+<ol>
+  <li>There is an application class derived from <var>CNcbiApplication</var>, which overrides
+    purely virtual function <var>Run()</var>, and also initialization (<var>Init()</var>)
+    and cleanup (<var>Exit()</var>) functions:
+    <pre>
+    class CSampleApplication : public CNcbiApplication
+    {
+    private:
+        virtual void Init(void);
+        virtual int  Run(void);
+        virtual void Exit(void);
+    };
+	</pre>
+  </li>
+  <li>Program's main function creates an object of the application class and calls
+  its <var>AppMain()</var> function:
+	<pre>
+    int main(int argc, const char* argv[])
+    {
+        CSampleApplication theApp;
+        // Execute main application function
+        theApp.AppMain(argc, argv, 0, eDS_Default, 0);
+    }
+	</pre>
+  </li>
+  <li>Application's initialization function creates
+  <a href="argdescr.html">argument descriptions object</a>,
+  which describes the expected command line arguments and the usage context:
+	<pre>
+    void CSampleApplication::Init(void)
+    {
+        // Create command-line argument descriptions
+        auto_ptr&lt;CArgDescriptions&gt; arg_desc(new CArgDescriptions);
+        // Specify USAGE context
+        arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                                  "CArgDescriptions demo program");
+        ...
+        // Setup arg.descriptions for this application
+        SetupArgDescriptions(arg_desc.release());
+    }
+	</pre>
+  </li>
+  <li>Application's <var>Run()</var> function prints those arguments into
+  the standard output stream, or in a file.</li>
+</ol>
 
-<pre>
-// File name: justApp.hpp
-
-#ifndef JUST_APP__HPP
-#define JUST_APP__HPP
-#include &lt;corelib/ncbiapp.hpp&gt;
-
-BEGIN_NCBI_SCOPE
-
-class CTestApp : public CNcbiApplication
-{
-public:
-    virtual int Run(void);
-};
-
-END_NCBI_SCOPE
-
-#endif /* JUST_APP__HPP */
-</pre>
+More realistic examples of applications, which utilize NCBI C++ toolkit
+can be found <a href="../examples.html">here</a>.
 </p>
 
-<p>
-<b>Step 2.</b> Define <i>main()</i> in the
-<i>*.cpp</i> file where you instantiate your application subclass.
-</p>
-
-<p>
-Inside <i>main()</i>, instantiate your application
-subclass, and call its inherited function,
-<i>AppMain()</i>. This file
-is also a good place to put the implementation of the
-<i>Run()</i> function.
-Enclose the <i>Run() </i>implementation with <i>BEGIN_NCBI_SCOPE
-</i>and
-<i>END_NCBI_SCOPE
-</i>statements,
-and precede <i>main() </i>(as well as any other code using the NCBI C++
-Toolkit) with a <i>USING_NCBI_SCOPE </i>statement:
-
-<pre>
-// file justApp.cpp
-
-#include "justApp.hpp"
-
-BEGIN_NCBI_SCOPE
-
-int CTestApp::Run() {
-    cout &lt;&lt; "Executing CTestApp::Run()!" &lt;&lt; endl;
-    return 0;
-}
-
-END_NCBI_SCOPE
-
-
-USING_NCBI_SCOPE;
-
-int main(int argc, const char* argv[])&nbsp;
-{
-    CTestApp theTestApp;
-    return theTestApp.AppMain(argc, argv);
-}
-</pre>
-</p>
-
-<p>
-<b>Step 3.</b> Assuming you have done all of this
-work in a project directory called "justApp", and have already run the
-<i><a href="outside_tree.html">new_project.sh</a></i>
-script to create the makefile, you are now ready to build your first application
-using:
-<pre>make -f Makefile.justApp_app</pre>
-The <i>SCOPE</i> statements are actually macros defined
-in <i><a href="../lxr/source/include/corelib/ncbistl.hpp">include/corelib/ncbistl.hpp</a></i>:
-<pre>#define BEGIN_NCBI_SCOPE namespace NCBI_NS_NCBI {
-#define END_NCBI_SCOPE }
-#define USING_NCBI_SCOPE using namespace NCBI_NS_NCBI</pre>
-All code occurring between the <i>BEGIN</i> and <i>END</i>
-statements will be added to a namespace called <i>NCBI_NS_NCBI</i>. The
-<i>USING</i>
-macro allows you to access everything currently defined in the namespace
-without requiring the :: scope operator.
-<p>A more elaborate example, <i><a href="applic_cpp.html">applic.cpp</a></i>,
-combines the usage of the <i>CNcbiApplication</i> class with the&nbsp;<i>
-CArgDescriptions</i>, <i>CArgs, </i>and
-<i>CNcbiDiag</i> classes. For a
-more realistic usage of these classes, see also the test program,
-<i><a href="../lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>.
-</p>
 
 
 <a NAME="inside"></a>
-<h3>Inside the NCBI Application Class</h3>
+<h3>Inside the NCBI Application class.</h3>
 <p>
-To review what we've done so far:
-<ol>
-  <li>
-    We defined a subclass of <i>CNcbiApplication </i>with
-    an implementation of <i>Run()</i>.</li>
-  <li>
-    We created an instance of this class in <i>main()</i>.</li>
-  <li>
-    In <i>main()</i>, we invoked the class member function
-    <i>AppMain()</i>,
-    and passed <i>argc, argv[ ]</i> to it.</li>
-</ol>
-Here is a somewhat simplified view of the application
-class's definition:
+Here is a somewhat simplified view of the application's class definition:
 <pre>
 class CNcbiApplication
 {
 public:
-   int AppMain (int argc, const char **argv, const char **envp,
-   EAppDiagStream diag, const char* config, const string&amp; name);
+   int AppMain(int argc, const char **argv, const char **envp,
+               EAppDiagStream diag, const char* config, const string&amp; name);
 
-   virtual void Init();
-   virtual int  Run () = 0;
-   virtual void Exit();
+    virtual void Init(void);     // initialization
+    virtual int  Run(void) = 0;  // main loop
+    virtual void Exit(void);     // cleanup (on the application exit)
 
-   CNcbiArguments&amp;   GetArguments();
-   CNcbiEnvironment&amp; GetEnvironment();
-   CNcbiRegistry&amp;    GetConfig();
+    // Get the application's cached command-line arguments
+    const CNcbiArguments&amp; GetArguments(void) const;
+
+    // Get cmd.-line arguments parsed according to the arg descriptions set by
+    // SetArgDescriptions(). Throw exception if no descriptions have been set.
+    const CArgs&amp; GetArgs(void) const;
+
+    // Get the application's cached environment
+    const CNcbiEnvironment&amp; GetEnvironment(void) const;
+
+    // Get the application's cached configuration parameters
+    const CNcbiRegistry&amp; GetConfig(void) const;
 
 protected:
    virtual bool SetupDiag_AppSpecific(void);
