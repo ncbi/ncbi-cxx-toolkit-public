@@ -1,0 +1,133 @@
+/* $Id$
+* ===========================================================================
+*
+*                            PUBLIC DOMAIN NOTICE
+*               National Center for Biotechnology Information
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's offical duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
+*
+* ===========================================================================*/
+
+/*****************************************************************************
+
+File name: blast_def.h
+
+Author: Ilya Dondoshansky
+
+Contents: Definitions of major structures used throughout BLAST
+
+Detailed Contents: 
+
+******************************************************************************
+ * $Revision$
+ * */
+#ifndef __BLAST_DEF__
+#define __BLAST_DEF__
+
+#include <blastkar.h>
+#include <ncbithr.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define blast_type_blastn 0
+#define blast_type_blastp 1
+#define blast_type_blastx 2
+#define blast_type_tblastn 3
+#define blast_type_tblastx 4
+#define blast_type_psitblastn 5
+#define blast_type_undefined 255
+
+/** Structure to hold a sequence. */
+typedef struct BLAST_SequenceBlk {
+   Uint1Ptr sequence; /**< Sequence used for search (could be translation). */
+   Uint1Ptr sequence_start; /**< Start of sequence, usually one byte before 
+                               sequence as that byte is a NULL sentinel byte.*/
+   Int4     length;         /**< Length of sequence. */
+   Int2	context; /**< Context of the query, needed for multi-query searches */
+   Int2	frame; /**< Frame of the query, needed for translated searches */
+   Int4 oid; /**< The ordinal id of the current sequence */
+   SeqIdPtr seqid; /**< ID of the subject sequence if it does not come from a 
+                      BLAST database - used in BLAST 2 sequences, otherwise 
+                      NULL */
+   Boolean sequence_allocated; /**< TRUE only when this block contains the 
+                                  query sequence, or an uncompressed 
+                                  nucleotide database sequence */
+} BLAST_SequenceBlk, *BLAST_SequenceBlkPtr;
+
+/** The query related information 
+ */
+typedef struct BlastQueryInfo {
+   int first_context; /**< Index of the first element of the context array */
+   int last_context;  /**< Index of the last element of the context array */
+   int num_queries;   /**< Number of query sequences */
+   SeqLocPtr query_slp; /**< Linked list of query SeqLocs */
+   SeqIdPtr PNTR qid_array; /**< Array of query ids */
+   Int4Ptr context_offsets; /**< Offsets of the individual queries in the
+                                     concatenated super-query */
+   Int8Ptr eff_searchsp_array; /**< Array of effective search spaces for
+                                  multiple queries. Dimension = number of 
+                                  query sequences. */
+} BlastQueryInfo, *BlastQueryInfoPtr;
+
+/** Wrapper structure for different types of BLAST lookup tables */
+typedef struct LookupTableWrap {
+   Uint1 lut_type; /**< What kind of a lookup table it is? */
+   VoidPtr lut; /**< Pointer to the actual lookup table structure */
+} LookupTableWrap, PNTR LookupTableWrapPtr;
+
+/** A structure containing two integers, used e.g. for locations for the 
+ * lookup table.
+ */
+typedef struct DoubleInt {
+   Int4 i1;
+   Int4 i2;
+} DoubleInt, PNTR DoubleIntPtr;
+
+typedef struct BlastThrInfo {
+    TNlmMutex db_mutex;  /**< Lock for access to database*/
+    TNlmMutex results_mutex; /**< Lock for storing results */
+    TNlmMutex callback_mutex;/**< Lock for issuing update ticks on the screen*/
+    TNlmMutex ambiguities_mutex;/**< Mutex for recalculation of ambiguities */
+    Int4 db_chunk_last;
+    Int4 number_seqs_done;  /**< Number of sequences already tested*/
+    Int4 db_incr;  /**< Size of a database chunk to get*/
+    Int4 last_db_seq; /**< Last database sequence processed so far */
+    Int4 number_of_pos_hits;/**< How many positive hits were found */
+} BlastThrInfo, PNTR BlastThrInfoPtr;
+
+/** Return statistics from the BLAST search */
+typedef struct BlastReturnStat {
+   Int8 db_hits; /**< Number of successful lookup table hits */
+   Int4 init_extends; /**< Number of initial words found and extended */
+   Int4 good_init_extends; /**< Number of successful initial extensions */
+   Int4 prelim_gap_no_contest; /**< Number of HSPs better than e-value 
+                                  threshold before gapped extension */
+   Int4 prelim_gap_passed; /**< Number of HSPs better than e-value threshold
+                              after preliminary gapped extension */
+   Int4 number_of_seqs_better_E; /**< Number of sequences with best HSP passing
+                                    the e-value threshold */
+} BlastReturnStat, PNTR BlastReturnStatPtr;
+
+#define COMPRESSION_RATIO 4
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !__BLAST_DEF__ */
