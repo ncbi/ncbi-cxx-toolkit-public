@@ -811,6 +811,8 @@ const CBDB_FieldLString& CBDB_FieldLString::operator= (const string& str)
 
 string CBDB_FieldLString::Get() const
 {
+    _ASSERT(!IsNull());
+	
     const unsigned char* buf = (const unsigned char*) GetBuffer();
     bool check_legacy = m_BufferManager->IsLegacyStrings();
     
@@ -967,6 +969,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/06/24 19:25:11  kuznets
+ * Added ASSERT when somebody gets a NULL field
+ *
  * Revision 1.26  2004/06/21 15:06:45  kuznets
  * Added BLOB (eBlob) to the list of types
  *

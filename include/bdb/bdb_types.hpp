@@ -550,6 +550,9 @@ public:
     Int4 Get() const
     {
         Int4  v;
+		
+		_ASSERT(!IsNull());
+		
         if (IsByteSwapped()) {
             v = CByteSwap::GetInt4((unsigned char*)GetBuffer());
         } else {
@@ -626,6 +629,9 @@ public:
     Int2 Get() const
     {
         Int2  v;
+
+		_ASSERT(!IsNull());
+		
         if (IsByteSwapped()) {
             v = CByteSwap::GetInt2((unsigned char*)GetBuffer());
         } else {
@@ -699,7 +705,9 @@ public:
     }
     
     unsigned char Get() const  
-    { 
+    {
+		_ASSERT(!IsNull());
+	 
         return *(const unsigned char*)GetBuffer(); 
     }
 
@@ -761,6 +769,9 @@ public:
     Uint4 Get() const
     {
         Uint4  v;
+
+		_ASSERT(!IsNull());
+		
         if (IsByteSwapped()) {
             v = (Uint4)CByteSwap::GetInt4((unsigned char*)GetBuffer());
         } else {
@@ -838,6 +849,9 @@ public:
     float Get() const
     {
         float  v;
+		
+		_ASSERT(!IsNull());
+		
         if (IsByteSwapped()) {
             v = CByteSwap::GetFloat((unsigned char*)GetBuffer());
         } else {
@@ -914,6 +928,9 @@ public:
     double Get() const
     {
         double  v;
+
+		_ASSERT(!IsNull());
+		
         if (IsByteSwapped()) {
             v = CByteSwap::GetDouble((unsigned char*)GetBuffer());
         } else {
@@ -1876,6 +1893,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/06/24 19:25:32  kuznets
+ * Added ASSERT when somebody gets a NULL field
+ *
  * Revision 1.39  2004/06/21 15:06:18  kuznets
  * Added BLOB (eBlob) to the list of types
  *
