@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/08/21 01:10:13  thiessen
+* add labeling
+*
 * Revision 1.25  2001/08/15 20:52:58  juran
 * Heed warnings.
 *
@@ -212,7 +215,7 @@ public:
     bool GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector * *coords) const;
 
     // secondary structure query methods
-    
+
     bool IsResidueInHelix(int residueID) const
         { return (IsProtein() && residueSecondaryStructures[residueID - 1] == eHelix); }
     bool IsResidueInStrand(int residueID) const
@@ -223,6 +226,9 @@ public:
     // domain query
     int ResidueDomainID(int residueID) const
         { return residueDomains[residueID - 1]; }
+
+    // drawing - include chain termini labels
+    bool DrawAllWithTerminiLabels(const AtomSet *atomSet = NULL) const;
 };
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/08/21 01:10:45  thiessen
+* add labeling
+*
 * Revision 1.29  2001/08/09 19:07:13  thiessen
 * add temperature and hydrophobicity coloring
 *
@@ -136,6 +139,9 @@
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/show_hide_manager.hpp"
+#include "cn3d/cn3d_tools.hpp"
+#include "cn3d/opengl_renderer.hpp"
+#include "cn3d/cn3d_colors.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -363,6 +369,84 @@ bool Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector
         }
 
         coords[i] = &(atomCoord->site);
+    }
+
+    return true;
+}
+
+bool Molecule::DrawAllWithTerminiLabels(const AtomSet *atomSet) const
+{
+    // draw regular objects
+    if (!DrawAll(atomSet)) return false;
+
+    // add termini labels
+    if ((IsProtein() || IsNucleotide()) && NResidues() >= 2 && parentSet->showHideManager->IsVisible(this)) {
+
+        const StyleSettings& settings = parentSet->styleManager->GetGlobalStyle();
+        if ((IsProtein() && settings.proteinLabels.terminiOn) ||
+            (IsNucleotide() && settings.nucleotideLabels.terminiOn)) {
+
+            // try to color labels to contrast with background
+            static const Vector white(1,1,1), black(0,0,0);
+            const Vector& labelColor =
+                Colors::IsLightColor(settings.backgroundColor) ? black : white;
+
+            // do start (N or 5') and end (C or 3') labels
+            for (int startTerminus=1; startTerminus>=0; startTerminus--) {
+
+                // determine color and location - assumes sequential residue id's (from 1)
+                const Vector *alphaPos = NULL, *prevPos = NULL;
+                int res = startTerminus ? 1 : residues.size(),
+                    resEnd = startTerminus ? residues.size() : 1,
+                    resInc = startTerminus ? 1 : -1;
+
+                // find coordinates of two terminal alpha atoms
+                for (; res!=resEnd; res+=resInc) {
+                    const Residue *residue = residues.find(res)->second;
+                    if (residue->alphaID != Residue::NO_ALPHA_ID) {
+                        AtomPntr ap(id, res, residue->alphaID);
+                        const AtomCoord *atom =
+                            atomSet->GetAtom(ap, parentSet->showHideManager->OverlayConfEnsembles());
+                        if (atom) {
+                            if (!alphaPos) {
+                                alphaPos = &(atom->site);
+                            } else if (!prevPos) {
+                                prevPos = &(atom->site);
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!(alphaPos && prevPos)) {
+                    ERR_POST(Warning << "Molecule::DrawAllWithTerminiLabels() - "
+                        << "can't get two terminal alpha coords");
+                    continue;
+                }
+                Vector labelPosition = *alphaPos + 0.5 * (*alphaPos - *prevPos);
+
+                // determine label text
+                CNcbiOstrstream oss;
+                if (IsProtein()) {
+                    if (startTerminus)
+                        oss << "N";
+                    else
+                        oss << "C";
+                } else {
+                    if (startTerminus)
+                        oss << "5'";
+                    else
+                        oss << "3'";
+                }
+                if (identifier->pdbChain != MoleculeIdentifier::VALUE_NOT_SET && identifier->pdbChain != ' ')
+                    oss << " (" << (char) identifier->pdbChain << ')';
+                oss << '\0';
+
+                // draw label
+                std::string labelText = oss.str();
+                delete oss.str();
+                parentSet->renderer->Label(labelText, labelPosition, labelColor);
+            }
+        }
     }
 
     return true;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/08/21 01:10:45  thiessen
+* add labeling
+*
 * Revision 1.28  2001/07/27 13:52:47  thiessen
 * make sure domains are assigned in order of molecule id; tweak pattern dialog
 *
@@ -483,7 +486,7 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
 
             // draw this molecule with all alternative AtomSets (e.g., NMR's or altConfs)
             a->first->SetActiveEnsemble(a->second);
-            continueDraw = m->second->DrawAll(a->first);
+            continueDraw = m->second->DrawAllWithTerminiLabels(a->first);
 
             if (continueDraw) {
                 // find objects for this molecule;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/08/21 01:10:46  thiessen
+* add labeling
+*
 * Revision 1.7  2001/08/09 19:07:14  thiessen
 * add temperature and hydrophobicity coloring
 *
@@ -130,11 +133,25 @@ wxSizer *LayoutNotebook( wxPanel *parent, bool call_fit = TRUE, bool set_sizer =
 #define ID_VSS_USER 10043
 #define ID_HYD_SHOW 10044
 #define ID_BG_USER 10045
-wxSizer *LayoutPage1( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
+wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 #define ID_TEXTCTRL 10046
 #define ID_SPINBUTTON 10047
-wxSizer *LayoutPage2( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
+wxSizer *LayoutDetailsPage( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
+
+#define ID_S_PROT 10048
+#define ID_S_NUC 10049
+#define ID_C_PROT_TYPE 10050
+#define ID_C_NUC_TYPE 10051
+#define ID_C_PROT_NUM 10052
+#define ID_C_NUC_NUM 10053
+#define ID_K_PROT_CONTRAST 10054
+#define ID_K_NUC_CONTRAST 10055
+#define ID_K_PROT_TERM 10056
+#define ID_K_NUC_TERM 10057
+#define ID_LINE 10058
+#define ID_K_ION 10059
+wxSizer *LayoutLabelsPage( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -150,11 +167,14 @@ BEGIN_SCOPE(Cn3D)
 TypeStringAssociator < StyleSettings::eBackboneType > StyleDialog::BackboneTypeStrings;
 TypeStringAssociator < StyleSettings::eDrawingStyle > StyleDialog::DrawingStyleStrings;
 TypeStringAssociator < StyleSettings::eColorScheme > StyleDialog::ColorSchemeStrings;
+TypeStringAssociator < StyleSettings::eLabelType > StyleDialog::LabelTypeStrings;
+TypeStringAssociator < StyleSettings::eNumberType > StyleDialog::NumberTypeStrings;
 
 BEGIN_EVENT_TABLE(StyleDialog, wxDialog)
     EVT_CLOSE       (       StyleDialog::OnCloseWindow)
     EVT_CHOICE      (-1,    StyleDialog::OnChange)
     EVT_CHECKBOX    (-1,    StyleDialog::OnChange)
+    EVT_SPINCTRL    (-1,    StyleDialog::OnChange)
     EVT_BUTTON      (-1,    StyleDialog::OnButton)
     // generated when {Integer,FloatingPoint}SpinCtrl changes
     EVT_COMMAND     (-1, WX_TOOLS_NOTIFY_CHANGED, StyleDialog::OnChange)
@@ -222,6 +242,13 @@ void StyleDialog::SetupStyleStrings(void)
         ColorSchemeStrings.Associate(StyleSettings::eFit, "Fit");
         ColorSchemeStrings.Associate(StyleSettings::eTemperature, "Temperature");
         ColorSchemeStrings.Associate(StyleSettings::eHydrophobicity, "Hydrophobicity");
+
+        LabelTypeStrings.Associate(StyleSettings::eOneLetter, "One Letter");
+        LabelTypeStrings.Associate(StyleSettings::eThreeLetter, "Three Letter");
+
+        NumberTypeStrings.Associate(StyleSettings::eNoNumbers, "None");
+        NumberTypeStrings.Associate(StyleSettings::eSequentialNumbering, "Sequential");
+        NumberTypeStrings.Associate(StyleSettings::ePDBNumbering, "From PDB");
     }
 }
 
@@ -273,6 +300,33 @@ bool StyleDialog::GetGeneralStyle(StyleSettings::GeneralStyle *gStyle,
     );
 }
 
+static bool GetInteger(wxSpinCtrl *spinctrl, int *value)
+{
+    if (!spinctrl) return false;
+    *value = spinctrl->GetValue();
+    return true;
+}
+
+bool StyleDialog::GetLabelStyle(StyleSettings::LabelStyle *lStyle,
+    int spacingID, int typeID, int numberingID, int terminiID, int whiteID)
+{
+    wxSpinCtrl *spinctrl;
+    wxChoice *choice;
+    wxCheckBox *checkbox;
+    return (
+        (spinctrl = wxDynamicCast(FindWindow(spacingID), wxSpinCtrl)) != NULL &&
+        GetInteger(spinctrl, &(lStyle->spacing)) &&
+        (choice = wxDynamicCast(FindWindow(typeID), wxChoice)) != NULL &&
+        LabelTypeStrings.Get(choice->GetStringSelection().c_str(), &(lStyle->type)) &&
+        (choice = wxDynamicCast(FindWindow(numberingID), wxChoice)) != NULL &&
+        NumberTypeStrings.Get(choice->GetStringSelection().c_str(), &(lStyle->numbering)) &&
+        (checkbox = wxDynamicCast(FindWindow(terminiID), wxCheckBox)) != NULL &&
+        GetChecked(checkbox, &(lStyle->terminiOn)) &&
+        (checkbox = wxDynamicCast(FindWindow(whiteID), wxCheckBox)) != NULL &&
+        GetChecked(checkbox, &(lStyle->white))
+    );
+}
+
 bool StyleDialog::GetValues(StyleSettings *settings)
 {
     wxCheckBox *checkbox;
@@ -312,7 +366,13 @@ bool StyleDialog::GetValues(StyleSettings *settings)
         fpTubeWormRadius->GetDouble(&(settings->tubeWormRadius)) &&
         fpHelixRadius->GetDouble(&(settings->helixRadius)) &&
         fpStrandWidth->GetDouble(&(settings->strandWidth)) &&
-        fpStrandThickness->GetDouble(&(settings->strandThickness))
+        fpStrandThickness->GetDouble(&(settings->strandThickness)) &&
+        GetLabelStyle(&(settings->proteinLabels),
+            ID_S_PROT, ID_C_PROT_TYPE, ID_C_PROT_NUM, ID_K_PROT_TERM, ID_K_PROT_CONTRAST) &&
+        GetLabelStyle(&(settings->nucleotideLabels),
+            ID_S_NUC, ID_C_NUC_TYPE, ID_C_NUC_NUM, ID_K_NUC_TERM, ID_K_NUC_CONTRAST) &&
+        (checkbox = wxDynamicCast(FindWindow(ID_K_ION), wxCheckBox)) != NULL &&
+        GetChecked(checkbox, &(settings->ionLabelsOn))
     );
     if (!okay) ERR_POST(Warning << "StyleDialog::GetValues() - control/parameter mismatch");
     return okay;
@@ -387,6 +447,36 @@ bool StyleDialog::SetGeneralStyle(const StyleSettings::GeneralStyle& gStyle,
     );
 }
 
+static bool SetInteger(wxSpinCtrl *spinctrl, int value)
+{
+    if (!spinctrl) return false;
+    spinctrl->SetValue(value);
+    return true;
+}
+
+bool StyleDialog::SetLabelStyle(const StyleSettings::LabelStyle& lStyle,
+    int spacingID, int typeID, int numberingID, int terminiID, int whiteID)
+{
+    std::string name;
+    wxSpinCtrl *spinctrl;
+    wxCheckBox *checkbox;
+    wxChoice *choice;
+    return (
+        (spinctrl = wxDynamicCast(FindWindow(spacingID), wxSpinCtrl)) != NULL &&
+        SetInteger(spinctrl, lStyle.spacing) &&
+        LabelTypeStrings.Get(lStyle.type, &name) &&
+        (choice = wxDynamicCast(FindWindow(typeID), wxChoice)) != NULL &&
+        SetChoiceToString(choice, name) &&
+        NumberTypeStrings.Get(lStyle.numbering, &name) &&
+        (choice = wxDynamicCast(FindWindow(numberingID), wxChoice)) != NULL &&
+        SetChoiceToString(choice, name) &&
+        (checkbox = wxDynamicCast(FindWindow(terminiID), wxCheckBox)) != NULL &&
+        SetChecked(checkbox, lStyle.terminiOn) &&
+        (checkbox = wxDynamicCast(FindWindow(whiteID), wxCheckBox)) != NULL &&
+        SetChecked(checkbox, lStyle.white)
+    );
+}
+
 bool StyleDialog::SetControls(const StyleSettings& settings)
 {
     wxCheckBox *checkbox;
@@ -425,7 +515,13 @@ bool StyleDialog::SetControls(const StyleSettings& settings)
         fpTubeWormRadius->SetDouble(settings.tubeWormRadius) &&
         fpHelixRadius->SetDouble(settings.helixRadius) &&
         fpStrandWidth->SetDouble(settings.strandWidth) &&
-        fpStrandThickness->SetDouble(settings.strandThickness)
+        fpStrandThickness->SetDouble(settings.strandThickness) &&
+        SetLabelStyle(settings.proteinLabels,
+            ID_S_PROT, ID_C_PROT_TYPE, ID_C_PROT_NUM, ID_K_PROT_TERM, ID_K_PROT_CONTRAST) &&
+        SetLabelStyle(settings.nucleotideLabels,
+            ID_S_NUC, ID_C_NUC_TYPE, ID_C_NUC_NUM, ID_K_NUC_TERM, ID_K_NUC_CONTRAST) &&
+        (checkbox = wxDynamicCast(FindWindow(ID_K_ION), wxCheckBox)) != NULL &&
+        SetChecked(checkbox, settings.ionLabelsOn)
     );
     if (!okay) ERR_POST(Warning << "StyleDialog::SetControls() - control/parameter mismatch");
     return okay;
@@ -542,8 +638,8 @@ END_SCOPE(Cn3D)
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-// The next two functions (LayoutNotebook() and LayoutPage1()) are taken *without* modification
-// from wxDesigner C++ code generated from render_settings.wdr. The last function (LayoutPage2())
+// Three of four of these following functions are taken *without* modification
+// from wxDesigner C++ code generated from render_settings.wdr. The function LayoutDetailsPage()
 // is modified from wxDesigner output in order to use custom FloatingPointSpinCtrl's
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -555,37 +651,41 @@ wxSizer *LayoutNotebook( wxPanel *parent, bool call_fit, bool set_sizer )
     wxNotebookSizer *item1 = new wxNotebookSizer( item2 );
 
     wxPanel *item3 = new wxPanel( item2, -1 );
-    LayoutPage1( item3, FALSE );
+    LayoutSettingsPage( item3, FALSE );
     item2->AddPage( item3, "Settings" );
 
     wxPanel *item4 = new wxPanel( item2, -1 );
-    LayoutPage2( item4, FALSE );
-    item2->AddPage( item4, "Details" );
+    LayoutLabelsPage( item4, FALSE );
+    item2->AddPage( item4, "Labels" );
+
+    wxPanel *item5 = new wxPanel( item2, -1 );
+    LayoutDetailsPage( item5, FALSE );
+    item2->AddPage( item5, "Details" );
 
     item0->Add( item1, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxBoxSizer *item5 = new wxBoxSizer( wxHORIZONTAL );
+    wxBoxSizer *item6 = new wxBoxSizer( wxHORIZONTAL );
 
-    wxButton *item6 = new wxButton( parent, ID_DONE, "Done", wxDefaultPosition, wxDefaultSize, 0 );
-    item6->SetDefault();
-    item5->Add( item6, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item7 = new wxButton( parent, ID_DONE, "Done", wxDefaultPosition, wxDefaultSize, 0 );
+    item7->SetDefault();
+    item6->Add( item7, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item7 = new wxButton( parent, ID_CANCEL, "Cancel", wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item7, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item8 = new wxButton( parent, ID_CANCEL, "Cancel", wxDefaultPosition, wxDefaultSize, 0 );
+    item6->Add( item8, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    item5->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item6->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxStaticText *item8 = new wxStaticText( parent, ID_TEXT, "Apply after each change?", wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item8, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxStaticText *item9 = new wxStaticText( parent, ID_TEXT, "Apply after each change?", wxDefaultPosition, wxDefaultSize, 0 );
+    item6->Add( item9, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxCheckBox *item9 = new wxCheckBox( parent, ID_ALWAYS_APPLY, "", wxDefaultPosition, wxDefaultSize, 0 );
-    item9->SetValue( TRUE );
-    item5->Add( item9, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxCheckBox *item10 = new wxCheckBox( parent, ID_ALWAYS_APPLY, "", wxDefaultPosition, wxDefaultSize, 0 );
+    item10->SetValue( TRUE );
+    item6->Add( item10, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item10 = new wxButton( parent, ID_APPLY, "Apply", wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item10, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item11 = new wxButton( parent, ID_APPLY, "Apply", wxDefaultPosition, wxDefaultSize, 0 );
+    item6->Add( item11, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    item0->Add( item5, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item0->Add( item6, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     if (set_sizer)
     {
@@ -601,7 +701,7 @@ wxSizer *LayoutNotebook( wxPanel *parent, bool call_fit, bool set_sizer )
     return item0;
 }
 
-wxSizer *LayoutPage1( wxPanel *parent, bool call_fit, bool set_sizer )
+wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
 {
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
 
@@ -967,9 +1067,133 @@ wxSizer *LayoutPage1( wxPanel *parent, bool call_fit, bool set_sizer )
     return item0;
 }
 
-// this is modified from wxDesigner output in order to use custom FloatingPointSpinCtrl's
+wxSizer *LayoutLabelsPage( wxPanel *parent, bool call_fit, bool set_sizer )
+{
+    wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
 
-wxSizer *LayoutPage2(wxPanel *parent, bool call_fit, bool set_sizer)
+    wxStaticBox *item2 = new wxStaticBox( parent, -1, "Labeling Settings" );
+    wxStaticBoxSizer *item1 = new wxStaticBoxSizer( item2, wxVERTICAL );
+
+    wxBoxSizer *item3 = new wxBoxSizer( wxVERTICAL );
+
+    wxGridSizer *item4 = new wxGridSizer( 3, 5, 0 );
+
+    item4->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxStaticText *item5 = new wxStaticText( parent, ID_TEXT, "Protein backbone:", wxDefaultPosition, wxDefaultSize, 0 );
+    item4->Add( item5, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxStaticText *item6 = new wxStaticText( parent, ID_TEXT, "Nucleotide backbone:", wxDefaultPosition, wxDefaultSize, 0 );
+    item4->Add( item6, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxStaticText *item7 = new wxStaticText( parent, ID_TEXT, "Spacing (0 = none):", wxDefaultPosition, wxDefaultSize, 0 );
+    item4->Add( item7, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxSpinCtrl *item8 = new wxSpinCtrl( parent, ID_S_PROT, "0", wxDefaultPosition, wxDefaultSize, 0, 0, 100, 0 );
+    item4->Add( item8, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxSpinCtrl *item9 = new wxSpinCtrl( parent, ID_S_NUC, "0", wxDefaultPosition, wxDefaultSize, 0, 0, 100, 0 );
+    item4->Add( item9, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxStaticText *item10 = new wxStaticText( parent, ID_TEXT, "Type:", wxDefaultPosition, wxDefaultSize, 0 );
+    item4->Add( item10, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxString strs11[] =
+    {
+        "One Letter",
+        "Three Letter"
+    };
+    wxChoice *item11 = new wxChoice( parent, ID_C_PROT_TYPE, wxDefaultPosition, wxDefaultSize, 2, strs11, 0 );
+    item4->Add( item11, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxString strs12[] =
+    {
+        "One Letter",
+        "Three Letter"
+    };
+    wxChoice *item12 = new wxChoice( parent, ID_C_NUC_TYPE, wxDefaultPosition, wxDefaultSize, 2, strs12, 0 );
+    item4->Add( item12, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxStaticText *item13 = new wxStaticText( parent, ID_TEXT, "Numbering:", wxDefaultPosition, wxDefaultSize, 0 );
+    item4->Add( item13, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxString strs14[] =
+    {
+        "None",
+        "Sequential",
+        "From PDB"
+    };
+    wxChoice *item14 = new wxChoice( parent, ID_C_PROT_NUM, wxDefaultPosition, wxDefaultSize, 3, strs14, 0 );
+    item4->Add( item14, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxString strs15[] =
+    {
+        "None",
+        "Sequential",
+        "From PDB"
+    };
+    wxChoice *item15 = new wxChoice( parent, ID_C_NUC_NUM, wxDefaultPosition, wxDefaultSize, 3, strs15, 0 );
+    item4->Add( item15, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxStaticText *item16 = new wxStaticText( parent, ID_TEXT, "Contrast with background:", wxDefaultPosition, wxDefaultSize, 0 );
+    item4->Add( item16, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxCheckBox *item17 = new wxCheckBox( parent, ID_K_PROT_CONTRAST, "", wxDefaultPosition, wxDefaultSize, 0 );
+    item4->Add( item17, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxCheckBox *item18 = new wxCheckBox( parent, ID_K_NUC_CONTRAST, "", wxDefaultPosition, wxDefaultSize, 0 );
+    item4->Add( item18, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxStaticText *item19 = new wxStaticText( parent, ID_TEXT, "Termini:", wxDefaultPosition, wxDefaultSize, 0 );
+    item4->Add( item19, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxCheckBox *item20 = new wxCheckBox( parent, ID_K_PROT_TERM, "", wxDefaultPosition, wxDefaultSize, 0 );
+    item4->Add( item20, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxCheckBox *item21 = new wxCheckBox( parent, ID_K_NUC_TERM, "", wxDefaultPosition, wxDefaultSize, 0 );
+    item4->Add( item21, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item3->Add( item4, 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5 );
+
+    wxStaticLine *item22 = new wxStaticLine( parent, ID_LINE, wxDefaultPosition, wxSize(20,-1), wxLI_HORIZONTAL );
+    item3->Add( item22, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxBoxSizer *item23 = new wxBoxSizer( wxHORIZONTAL );
+
+    wxStaticText *item24 = new wxStaticText( parent, ID_TEXT, "Metal ion labels:", wxDefaultPosition, wxDefaultSize, 0 );
+    item23->Add( item24, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item23->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxCheckBox *item25 = new wxCheckBox( parent, ID_K_ION, "", wxDefaultPosition, wxDefaultSize, 0 );
+    item23->Add( item25, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item3->Add( item23, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item1->Add( item3, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item0->Add( item1, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    if (set_sizer)
+    {
+        parent->SetAutoLayout( TRUE );
+        parent->SetSizer( item0 );
+        if (call_fit)
+        {
+            item0->Fit( parent );
+            item0->SetSizeHints( parent );
+        }
+    }
+
+    return item0;
+}
+
+
+/////
+// this is modified from wxDesigner output in order to use custom SpinCtrl's
+/////
+
+wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
 {
     wxBoxSizer *item0 = new wxBoxSizer(wxVERTICAL);
     wxStaticBox *item2 = new wxStaticBox(parent, -1, "Rendering Details");

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/08/21 01:10:45  thiessen
+* add labeling
+*
 * Revision 1.24  2001/08/09 19:07:13  thiessen
 * add temperature and hydrophobicity coloring
 *
@@ -123,9 +126,12 @@
 #include "cn3d/style_manager.hpp"
 #include "cn3d/cn3d_colors.hpp"
 #include "cn3d/show_hide_manager.hpp"
+#include "cn3d/cn3d_tools.hpp"
+#include "cn3d/messenger.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -293,7 +299,7 @@ Residue::Residue(StructureBase *parent,
         if (atom.IsSetIupac_code())
             info->code = atom.GetIupac_code().front();
         // get atomic number, assuming it's the integer value of the enumerated type
-	CAtom_Base::EElement atomicNumber = atom.GetElement();
+        CAtom_Base::EElement atomicNumber = atom.GetElement();
         info->atomicNumber = static_cast<int>(atomicNumber);
         // get ionizable status
         if (atom.IsSetIonizable_proton() &&
@@ -335,7 +341,7 @@ Residue::~Residue(void)
     for (a=atomInfos.begin(); a!=ae; a++) delete a->second;
 }
 
-// draw atom spheres here
+// draw atom spheres and residue labels here
 bool Residue::Draw(const AtomSet *atomSet) const
 {
     if (!atomSet) {
@@ -357,9 +363,18 @@ bool Residue::Draw(const AtomSet *atomSet) const
     const StructureObject *object;
     if (!GetParentOfType(&object)) return false;
 
+    // is this residue labeled?
+    const StyleSettings& settings = parentSet->styleManager->GetStyleForResidue(object, molecule->id, id);
+    bool proteinLabel = (IsAminoAcid() && settings.proteinLabels.spacing > 0 &&
+        (id-1)%settings.proteinLabels.spacing == 0);
+    bool nucleotideLabel = (IsNucleotide() && settings.nucleotideLabels.spacing > 0 &&
+        (id-1)%settings.nucleotideLabels.spacing == 0);
+
     bool overlayEnsembles = parentSet->showHideManager->OverlayConfEnsembles();
     AtomStyle atomStyle;
-    const AtomCoord *atom;
+    const AtomCoord *atom, *l1 = NULL, *l2 = NULL, *l3 = NULL;
+    Vector labelColor;
+    bool alphaVisible = false, alphaOnly = false;
 
     // iterate atoms; key is atomID
     AtomInfoMap::const_iterator a, ae = atomInfos.end();
@@ -382,6 +397,123 @@ bool Residue::Draw(const AtomSet *atomSet) const
         // draw the atom
         if (atomStyle.style != StyleManager::eNotDisplayed && atomStyle.radius > 0.0)
             parentSet->renderer->DrawAtom(atom->site, atomStyle);
+
+        // store coords for positioning label, based on backbone coordinates
+        if ((proteinLabel || nucleotideLabel) && a->second->classification != eSideChainAtom) {
+            if (IsAminoAcid()) {
+                if (a->second->name == " CA ") {
+                    l1 = atom;
+                    labelColor = atomStyle.color;
+                    alphaVisible = (atomStyle.style != StyleManager::eNotDisplayed);
+                }
+                else if (a->second->name == " C  ") l2 = atom;
+                else if (a->second->name == " N  ") l3 = atom;
+            } else if (IsNucleotide()) {
+                if (a->second->name == " P  ") {
+                    l1 = atom;
+                    labelColor = atomStyle.color;
+                    alphaVisible = (atomStyle.style != StyleManager::eNotDisplayed);
+                }
+                // labeling by alphas seems to work better for nucleotides
+//                else if (a->second->name == " C4*") l2 = atom;
+//                else if (a->second->name == " C5*") l3 = atom;
+            }
+        }
+    }
+
+    // if not all backbone atoms present (e.g. alpha only), use alpha coords of neighboring residues
+    if (l1 && (!l2 || !l3)) {
+        Molecule::ResidueMap::const_iterator prevRes, nextRes;
+        const AtomCoord *prevAlpha, *nextAlpha;
+        if ((prevRes=molecule->residues.find(id - 1)) != molecule->residues.end() &&
+            prevRes->second->alphaID != NO_ALPHA_ID &&
+            (prevAlpha=atomSet->GetAtom(AtomPntr(molecule->id, id - 1, prevRes->second->alphaID))) != NULL &&
+            (nextRes=molecule->residues.find(id + 1)) != molecule->residues.end() &&
+            nextRes->second->alphaID != NO_ALPHA_ID &&
+            (nextAlpha=atomSet->GetAtom(AtomPntr(molecule->id, id + 1, nextRes->second->alphaID))) != NULL)
+        {
+            l2 = prevAlpha;
+            l3 = nextAlpha;
+            alphaOnly = true;
+        }
+    }
+
+    // draw residue (but not terminus) labels, assuming we have the necessary coordinates and
+    // that alpha atoms are visible
+    if (alphaVisible && (proteinLabel|| nucleotideLabel)) {
+        Vector labelPosition;
+        CNcbiOstrstream oss;
+
+        double contrast = Colors::IsLightColor(settings.backgroundColor) ? 0 : 1;
+
+        // protein label
+        if (IsAminoAcid() && l1 && l2 && l3) {
+            // position
+            if (alphaOnly) {
+                Vector forward = - ((l2->site - l1->site) + (l3->site - l1->site));
+                forward.normalize();
+                labelPosition = l1->site + 1.5 * forward;
+            } else {
+                Vector up = vector_cross(l2->site - l1->site, l3->site - l1->site);
+                up.normalize();
+                Vector forward = (-((l2->site - l1->site) + (l3->site - l1->site)) / 2);
+                forward.normalize();
+                labelPosition = l1->site + 1.5 * forward + 1.5 * up;
+            }
+            // text
+            if (settings.proteinLabels.type == StyleSettings::eOneLetter) {
+                oss << code;
+            } else if (settings.proteinLabels.type == StyleSettings::eThreeLetter) {
+                for (int i=0; i<nameGraph.size() && i<3; i++)
+                    oss << ((i == 0) ? (char) toupper(nameGraph[0]) : (char) tolower(nameGraph[i]));
+            }
+            // add number if necessary
+            if (settings.proteinLabels.numbering == StyleSettings::eSequentialNumbering)
+                oss << ' ' << id;
+            else if (settings.proteinLabels.numbering == StyleSettings::ePDBNumbering)
+                oss << namePDB;
+            // contrasting color? (default to CA's color)
+            if (settings.proteinLabels.white) labelColor.Set(contrast, contrast, contrast);
+        }
+
+        // nucleotide label
+        else if (IsNucleotide() && l2 && l3) {
+            if (alphaOnly) {
+                Vector forward = - ((l2->site - l1->site) + (l3->site - l1->site));
+                forward.normalize();
+                labelPosition = l1->site + 3 * forward;
+            } else {
+                labelPosition = l3->site + 3 * (l3->site - l2->site);
+            }
+            // text
+            if (settings.nucleotideLabels.type == StyleSettings::eOneLetter) {
+                oss << code;
+            } else if (settings.nucleotideLabels.type == StyleSettings::eThreeLetter) {
+                for (int i=0; i<3; i++)
+                    if (nameGraph.size() > i && nameGraph[i] != ' ')
+                        oss << nameGraph[i];
+            }
+            // add number if necessary
+            if (settings.nucleotideLabels.numbering == StyleSettings::eSequentialNumbering)
+                oss << ' ' << id;
+            else if (settings.nucleotideLabels.numbering == StyleSettings::ePDBNumbering)
+                oss << namePDB;
+            // contrasting color? (default to C4*'s color)
+            if (settings.nucleotideLabels.white) labelColor.Set(contrast, contrast, contrast);
+        }
+
+        // draw label
+        if (oss.pcount() > 0) {
+            oss << '\0';
+            std::string labelText = oss.str();
+            delete oss.str();
+
+            // apply highlight color if necessary
+            if (GlobalMessenger()->IsHighlighted(molecule, id))
+                labelColor = GlobalColors()->Get(Colors::eHighlight);
+
+            parentSet->renderer->Label(labelText, labelPosition, labelColor);
+        }
     }
 
     return true;

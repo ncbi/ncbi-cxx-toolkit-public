@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2001/08/21 01:10:46  thiessen
+* add labeling
+*
 * Revision 1.50  2001/08/13 22:30:59  thiessen
 * add structure window mouse drag/zoom; add highlight option to render settings
 *
@@ -189,6 +192,7 @@
 
 #include <objects/cn3d/Cn3d_backbone_style.hpp>
 #include <objects/cn3d/Cn3d_general_style.hpp>
+#include <objects/cn3d/Cn3d_backbone_label_style.hpp>
 #include <objects/cn3d/Cn3d_color.hpp>
 #include <objects/cn3d/Cn3d_style_table_item.hpp>
 #include <objects/cn3d/Cn3d_style_table_id.hpp>
@@ -260,12 +264,26 @@ static bool SaveGeneralStyleToASN(
     return true;
 }
 
+static bool SaveLabelStyleToASN(
+    const StyleSettings::LabelStyle lSettings, CCn3d_backbone_label_style *lASN)
+{
+    lASN->SetSpacing(lSettings.spacing);
+    // these casts rely on correspondence of enumerated values!
+    lASN->SetType((CCn3d_backbone_label_style::EType) lSettings.type);
+    TESTMSG("type " << lSettings.type);
+    lASN->SetNumber((CCn3d_backbone_label_style::ENumber) lSettings.numbering);
+    lASN->SetTermini(lSettings.terminiOn);
+    lASN->SetWhite(lSettings.white);
+    return true;
+}
+
 bool StyleSettings::SaveSettingsToASN(CCn3d_style_settings *styleASN) const
 {
     styleASN->SetVirtual_disulfides_on(virtualDisulfidesOn);
     Vector2ASNColor(virtualDisulfideColor, &(styleASN->SetVirtual_disulfide_color()));
     styleASN->SetHydrogens_on(hydrogensOn);
     Vector2ASNColor(backgroundColor, &(styleASN->SetBackground_color()));
+    styleASN->SetIon_labels(ionLabelsOn);
 
     static const int SCALE = 10000;
     styleASN->SetScale_factor(SCALE);
@@ -287,7 +305,9 @@ bool StyleSettings::SaveSettingsToASN(CCn3d_style_settings *styleASN) const
         SaveGeneralStyleToASN(solvents, &(styleASN->SetSolvents())) &&
         SaveGeneralStyleToASN(connections, &(styleASN->SetConnections())) &&
         SaveGeneralStyleToASN(helixObjects, &(styleASN->SetHelix_objects())) &&
-        SaveGeneralStyleToASN(strandObjects, &(styleASN->SetStrand_objects()))
+        SaveGeneralStyleToASN(strandObjects, &(styleASN->SetStrand_objects())) &&
+        SaveLabelStyleToASN(proteinLabels, &(styleASN->SetProtein_labels())) &&
+        SaveLabelStyleToASN(nucleotideLabels, &(styleASN->SetNucleotide_labels()))
     );
 }
 
@@ -324,6 +344,27 @@ static bool LoadGeneralStyleFromASN(
     return true;
 }
 
+static bool LoadLabelStyleFromASN(
+    const CCn3d_backbone_label_style& lASN, StyleSettings::LabelStyle *lSettings)
+{
+    lSettings->spacing = lASN.GetSpacing();
+    // these casts rely on correspondence of enumerated values!
+    lSettings->type = (StyleSettings::eLabelType) lASN.GetType();
+    lSettings->numbering = (StyleSettings::eNumberType) lASN.GetNumber();
+    lSettings->terminiOn = lASN.GetTermini();
+    lSettings->white = lASN.GetWhite();
+    return true;
+}
+
+static void SetDefaultLabelStyle(StyleSettings::LabelStyle *lStyle)
+{
+    lStyle->spacing = 0;
+    lStyle->type = StyleSettings::eThreeLetter;
+    lStyle->numbering = StyleSettings::eSequentialNumbering;
+    lStyle->terminiOn = false;
+    lStyle->white = true;
+}
+
 bool StyleSettings::LoadSettingsFromASN(const CCn3d_style_settings& styleASN)
 {
     virtualDisulfidesOn = styleASN.GetVirtual_disulfides_on();
@@ -339,6 +380,18 @@ bool StyleSettings::LoadSettingsFromASN(const CCn3d_style_settings& styleASN)
     helixRadius = 1.0 * styleASN.GetHelix_radius() / SCALE;
     strandWidth = 1.0 * styleASN.GetStrand_width() / SCALE;
     strandThickness = 1.0 * styleASN.GetStrand_thickness() / SCALE;
+
+    // label defaults (since they're optional in ASN spec)
+    if (styleASN.IsSetProtein_labels()) {
+        if (!LoadLabelStyleFromASN(styleASN.GetProtein_labels(), &proteinLabels)) return false;
+    } else
+        SetDefaultLabelStyle(&proteinLabels);
+    if (styleASN.IsSetNucleotide_labels()) {
+        if (!LoadLabelStyleFromASN(styleASN.GetNucleotide_labels(), &nucleotideLabels)) return false;
+    } else
+        SetDefaultLabelStyle(&nucleotideLabels);
+    // ion labels on by default
+    ionLabelsOn = (styleASN.IsSetIon_labels()) ? styleASN.GetIon_labels() : true;
 
     return (
         LoadBackboneStyleFromASN(styleASN.GetProtein_backbone(), &proteinBackbone) &&
@@ -540,6 +593,13 @@ void StyleSettings::SetColorScheme(ePredefinedColorScheme scheme)
     proteinBackbone.userColor = nucleotideBackbone.userColor =
     heterogens.userColor = solvents.userColor =
     helixObjects.userColor = strandObjects.userColor = Vector(0.5,0.5,0.5);
+}
+
+void StyleSettings::SetDefaultLabeling(void)
+{
+    SetDefaultLabelStyle(&proteinLabels);
+    SetDefaultLabelStyle(&nucleotideLabels);
+    ionLabelsOn = true;
 }
 
 
@@ -834,7 +894,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             return false;
     }
 
-    // determine transparency
+    // determine transparency and metal ion labeling
     atomStyle->centerLabel.erase();
     if (molecule->IsSolvent())
         atomStyle->style = eTransparentAtom;
@@ -843,7 +903,8 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         atomStyle->style = eTransparentAtom;
         // always big spheres for metals or isolated atoms
         atomStyle->radius = element->vdWRadius * settings.spaceFillProportion;
-        atomStyle->centerLabel = element->symbol;
+        if (settings.ionLabelsOn)
+            atomStyle->centerLabel = element->symbol;
     } else
         atomStyle->style = eSolidAtom;
 

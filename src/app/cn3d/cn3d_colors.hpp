@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/08/21 01:10:13  thiessen
+* add labeling
+*
 * Revision 1.8  2001/08/09 19:07:19  thiessen
 * add temperature and hydrophobicity coloring
 *
@@ -118,6 +121,12 @@ public:
         eNumColorMaps
     };
     Vector Get(eColorMap which, double f) const;
+
+    // light or dark color?
+    static bool IsLightColor(const Vector& color)
+    {
+        return ((color[0] + color[1] + color[2]) > 1.5);
+    }
 
 private:
     // storage for individual colors

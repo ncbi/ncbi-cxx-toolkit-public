@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2001/08/21 01:10:13  thiessen
+* add labeling
+*
 * Revision 1.33  2001/08/10 14:27:23  thiessen
 * fix typo
 *
@@ -220,6 +223,26 @@ public:
         Vector userColor;
     } GeneralStyle;
 
+    enum eLabelType {
+        eOneLetter = 1,
+        eThreeLetter = 2
+    };
+
+    enum eNumberType {
+        eNoNumbers = 0,
+        eSequentialNumbering = 1,   // from 1 by residues present, to match sequence loc
+        ePDBNumbering = 2           // use number assigned by PDB
+    };
+
+    typedef struct {
+        int spacing;
+        eLabelType type;
+        eNumberType numbering;
+        bool
+            terminiOn,              // label chain termini
+            white;                  // use white labels (or if bg is light, use black for contrast)
+    } LabelStyle;
+
     BackboneStyle proteinBackbone, nucleotideBackbone;
 
     GeneralStyle
@@ -229,7 +252,9 @@ public:
         connections,
         helixObjects, strandObjects;
 
-    bool virtualDisulfidesOn, hydrogensOn;
+    LabelStyle proteinLabels, nucleotideLabels;
+
+    bool virtualDisulfidesOn, hydrogensOn, ionLabelsOn;
 
     Vector virtualDisulfideColor, backgroundColor;
 
@@ -265,11 +290,15 @@ public:
     };
     void SetColorScheme(ePredefinedColorScheme scheme);
 
+    // default labeling style
+    void SetDefaultLabeling(void);
+
     // default and copy constructors
     StyleSettings(void)
     {
         SetRenderingStyle(eWormShortcut);
         SetColorScheme(eSecondaryStructureShortcut);
+        SetDefaultLabeling();
     }
     StyleSettings(const StyleSettings& orig) { *this = orig; }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/08/21 01:10:13  thiessen
+* add labeling
+*
 * Revision 1.4  2001/08/06 20:22:48  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -66,7 +69,6 @@
 
 BEGIN_SCOPE(Cn3D)
 
-class StyleSettings;
 class StructureSet;
 class FloatingPointSpinCtrl;
 
@@ -133,6 +135,8 @@ private:
     static TypeStringAssociator < StyleSettings::eBackboneType > BackboneTypeStrings;
     static TypeStringAssociator < StyleSettings::eDrawingStyle > DrawingStyleStrings;
     static TypeStringAssociator < StyleSettings::eColorScheme > ColorSchemeStrings;
+    static TypeStringAssociator < StyleSettings::eLabelType > LabelTypeStrings;
+    static TypeStringAssociator < StyleSettings::eNumberType > NumberTypeStrings;
 
     static void SetupStyleStrings(void);
     bool GetBackboneStyle(StyleSettings::BackboneStyle *bbStyle,
@@ -143,6 +147,10 @@ private:
         int showID, int renderID, int colorID, int userID);
     bool SetGeneralStyle(const StyleSettings::GeneralStyle& gStyle,
         int showID, int renderID, int colorID, int userID);
+    bool GetLabelStyle(StyleSettings::LabelStyle *lStyle,
+        int spacingID, int typeID, int numberingID, int terminiID, int whiteID);
+    bool SetLabelStyle(const StyleSettings::LabelStyle& lStyle,
+        int spacingID, int typeID, int numberingID, int terminiID, int whiteID);
 
     void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);

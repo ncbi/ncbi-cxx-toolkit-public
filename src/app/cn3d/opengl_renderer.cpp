@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2001/08/21 01:10:45  thiessen
+* add labeling
+*
 * Revision 1.46  2001/08/15 20:52:15  juran
 * On the Mac, include OpenGL headers that can actually be located.
 *
@@ -171,7 +174,6 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
@@ -702,8 +704,8 @@ void OpenGLRenderer::SetColor(int type, double red, double green, double blue, d
     }
 
 //#ifdef _DEBUG
-    if (red == 0.0 && green == 0.0 && blue == 0.0)
-        ERR_POST(Warning << "SetColor request color (0,0,0)");
+//    if (red == 0.0 && green == 0.0 && blue == 0.0)
+//        ERR_POST(Warning << "SetColor request color (0,0,0)");
     if (alpha <= 0.0)
         ERR_POST(Warning << "SetColor request alpha <= 0.0");
 //#endif
