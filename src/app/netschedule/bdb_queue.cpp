@@ -483,7 +483,7 @@ void CQueueDataBase::CQueue::GetJob(unsigned int   worker_node,
         db.id = *job_id;
         if (db.Fetch() == eBDB_Ok) {
             int status = db.status;
-            *input = db.input;
+            db.input.ToString(*input);
             unsigned run_counter = db.run_counter;
 
             if (status != (int)CNetScheduleClient::ePending) {
@@ -538,6 +538,28 @@ void CQueueDataBase::CQueue::GetJob(unsigned int   worker_node,
     
 }
 
+bool CQueueDataBase::CQueue::GetOutput(unsigned int job_id,
+                                       int*         ret_code,
+                                       string*      output)
+{
+    _ASSERT(ret_code);
+    _ASSERT(output);
+
+    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
+
+    SQueueDB& db = m_LQueue.db;
+    CFastMutexGuard guard(m_LQueue.lock);
+
+    db.id = job_id;
+    if (db.Fetch() == eBDB_Ok) {
+        *ret_code = db.ret_code;
+        db.output.ToString(*output);
+        return true;
+    }
+
+    return false; // job not found
+
+}
 
 
 END_NCBI_SCOPE
@@ -545,6 +567,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/02/10 19:58:51  kuznets
+ * +GetOutput()
+ *
  * Revision 1.2  2005/02/09 18:55:18  kuznets
  * Implemented correct database shutdown
  *

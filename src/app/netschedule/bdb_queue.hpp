@@ -185,6 +185,11 @@ public:
                     string*        input);
         void ReturnJob(unsigned int job_id);
 
+        // Get info for compeleted job
+        bool GetOutput(unsigned int job_id,
+                       int*         ret_code,
+                       string*      output);
+
     private:
         CQueue(const CQueue&);
         CQueue& operator=(const CQueue&);
@@ -226,6 +231,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/02/10 19:58:45  kuznets
+ * +GetOutput()
+ *
  * Revision 1.2  2005/02/09 18:56:08  kuznets
  * private->public fix
  *
