@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.10 2001/10/10 22:05:23 vakatov Exp $
+#  $Id: configure.ac,v 1.11 2001/10/11 23:14:58 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -403,6 +403,7 @@ if test "$with_mt" = "yes" ; then
    esac
    LIBS="$LIBS $THREAD_LIBS"
    mt_sfx="MT"
+   WithFeatures="$WithFeatures MT"
 else
    THREAD_LIBS=
    mt_sfx=""
@@ -1077,7 +1078,7 @@ fi
 if test "$x_gethostbyname_r" != "no" ; then
    AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYNAME_R, $x_gethostbyname_r)
 fi
-AC_MSG_RESULT("$x_gethostbyname_r")
+AC_MSG_RESULT($x_gethostbyname_r)
 
 
 
@@ -1129,7 +1130,7 @@ fi
 if test "$x_gethostbyaddr_r" != "no" ; then
    AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYADDR_R, $x_gethostbyaddr_r)
 fi
-AC_MSG_RESULT("$x_gethostbyaddr_r")
+AC_MSG_RESULT($x_gethostbyaddr_r)
 
 
 AC_MSG_CHECKING(for localtime_r)
@@ -2319,6 +2320,7 @@ CPPFLAGS="$SAVE_CPPFLAGS"
 LDFLAGS="$SAVE_LDFLAGS"
 LIB_OR_DLL="$SAVE_LIB_OR_DLL"
 with_dll="$SAVE_with_dll"
+WithFeatures="$SAVE_WithFeatures"
 WithPackages="$SAVE_WithPackages"
 WithoutPackages="$SAVE_WithoutPackages"
 WithProjects="$SAVE_WithProjects"
@@ -2347,7 +2349,7 @@ fi
 
 dnl Update list of enabled packages
 rm -f "$status_dir"/*.enabled
-for p in $WithPackages $WithProjects; do
+for p in $WithPackages $WithProjects $WithFeatures ; do
    touch "$status_dir"/$p.enabled
 done
 
@@ -2366,13 +2368,13 @@ fi
 
 dnl print out additional configuration options
 case "$LIB_OR_DLL" in
-both) DLL_USAGE="LIBRARIES:  build as static and dynamic by default" ;;
-dll)  DLL_USAGE="LIBRARIES:  build as dynamic by default" ;;
+both) DLL_USAGE="LIBRARIES:   build both static and dynamic by default" ;;
+dll)  DLL_USAGE="LIBRARIES:   build as dynamic by default" ;;
 lib) 
    if test "$with_dll" = "no" ; then
-      DLL_USAGE="LIBRARIES:  build as static only"
+      DLL_USAGE="LIBRARIES:   build as static only"
    else
-      DLL_USAGE="LIBRARIES:  build as static by default"
+      DLL_USAGE="LIBRARIES:   build as static by default"
    fi
    ;;
 esac
@@ -2383,9 +2385,8 @@ fi
 
 cat << EOCONF
 ===============================================================================
-Overall NCBI C++ Toolkit documentation:     ./doc/index.html 
+NCBI C++ Toolkit documentation:  doc/index.html,  doc/config.html#ref_Running
 For the available configuration flags run:  ./configure --help
-or consult documentation at:                ./doc/config.html#ref_Running
 
 CFLAGS   = $CFLAGS
 CXXFLAGS = $CXXFLAGS
@@ -2393,6 +2394,7 @@ CPPFLAGS = $CPPFLAGS
 LDFLAGS  = $LDFLAGS
 
 $DLL_USAGE
+FEATURES:   $WithFeatures
 PACKAGES:
   enabled:  $WithPackages
   disabled: $WithoutPackages
@@ -2405,7 +2407,6 @@ Configuration  header:  $ncbiconf
 
 To build everything:  cd $builddir && make all_r
 $build_proj
-
 ******* CONFIGURATION SUCCESSFUL *******
 EOCONF
 ], [
@@ -2420,6 +2421,7 @@ SAVE_CPPFLAGS="$CPPFLAGS"
 SAVE_LDFLAGS="$LDFLAGS"
 SAVE_LIB_OR_DLL="$LIB_OR_DLL"
 SAVE_with_dll="$with_dll"
+SAVE_WithFeatures="$WithFeatures"
 SAVE_WithPackages="$WithPackages"
 SAVE_WithoutPackages="$WithoutPackages"
 SAVE_WithProjects="$WithProjects $OPT_GROUPS"
