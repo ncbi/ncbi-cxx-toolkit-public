@@ -145,6 +145,78 @@ static string s_GetGOText(const CUser_field& field, bool is_ftable)
 }
 
 
+static size_t s_ComposeCodonRecognizedStr(const CTrna_ext& trna, string& recognized)
+{
+    recognized.erase();
+
+    if (!trna.IsSetCodon()) {
+        return 0;
+    }
+
+    list<string> codons;
+    
+    ITERATE (CTrna_ext::TCodon, it, trna.GetCodon()) {
+        string codon = CGen_code_table::IndexToCodon(*it);
+        // replace U for T
+        NON_CONST_ITERATE (string, base, codon) {
+            if (*base == 'T') {
+                *base = 'U';
+            }
+        }
+        if (!codon.empty()) {
+            codons.push_back(codon);
+        }
+    }
+    if (codons.empty()) {
+        return 0;
+    }
+
+    codons.sort();
+
+    recognized = NStr::Join(codons, ", ");
+    return codons.size();
+    /*
+  for (i = 0; i < 256; i++) {
+    chrToInt [i] = 0;
+  }
+  for (i = 1; i < 16; i++) {
+    ch = intToChr [i];
+    chrToInt [(int) ch] = i;
+  }
+
+  count = ValNodeLen (head);
+  str1 = (CharPtr) head->data.ptrvalue;
+  vnp = head->next;
+  prev = (Pointer PNTR) &(head->next);
+  while (vnp != NULL) {
+    next = vnp->next;
+    str2 = (CharPtr) vnp->data.ptrvalue;
+    if (str1 != NULL && str2 != NULL &&
+        str1 [0] == str2 [0] && str1 [1] == str2 [1]) {
+      str1 [2] = MakeDegenerateBase (str1 [2], str2 [2], chrToInt, intToChr);
+      *prev = next;
+      vnp->next = NULL;
+      ValNodeFreeData (vnp);
+    } else {
+      str1 = str2;
+      prev = (Pointer PNTR) &(vnp->next);
+    } 
+    vnp = next;
+  }
+
+  for (vnp = head, ptr = buf, i = 0, prefix = NULL; vnp != NULL;
+       vnp = vnp->next, prefix = ", ", i++) {
+    ptr = StringMove (ptr, prefix);
+    ptr = StringMove (ptr, (CharPtr) vnp->data.ptrvalue);
+  }
+
+  ValNodeFreeData (head);
+  
+  return count;
+  */
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CFormatQual - low-level formatted qualifier
 
@@ -167,9 +239,7 @@ CFormatQual::CFormatQual(const string& name, const string& value, TStyle style) 
 }
 
 
-////////////////////////////////////////////////////////////////////////////
-//
-// CFlatStringQVal {
+// === CFlatStringQVal ======================================================
 
 CFlatStringQVal::CFlatStringQVal(const string& value, TStyle style)
     :  IFlatQVal(&kEmptyStr, &kSemicolon),
@@ -196,15 +266,43 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
     x_AddFQ(q, (s_IsNote(flags) ? "note" : name), m_Value, m_Style);
 }
 
-// }
+
+// === CFlatNumberQVal ======================================================
 
 
-////////////////////////////////////////////////////////////////////////////
-//
-// CFlatStringListQVal {
+void CFlatNumberQVal::Format
+(TFlatQuals& quals,
+ const string& name,
+ CBioseqContext& ctx,
+ TFlags flags) const
+{
+    if (ctx.Config().CheckQualSyntax()) {
+        if (IsBlankString(m_Value)) {
+            return;
+        }
+        bool has_space = false;
+        ITERATE (string, it, m_Value) {
+            if (isspace(*it)) {
+                has_space = true;
+            } else if (has_space) {
+                // non-space after space
+                return;
+            }
+        }
+    }
 
-void CFlatStringListQVal::Format(TFlatQuals& q, const string& name,
-                           CBioseqContext& ctx, IFlatQVal::TFlags flags) const
+    CFlatStringQVal::Format(quals, name, ctx, flags);
+}
+
+
+// === CFlatStringListQVal ==================================================
+
+
+void CFlatStringListQVal::Format
+(TFlatQuals& q,
+ const string& name,
+ CBioseqContext& ctx,
+ IFlatQVal::TFlags flags) const
 {
     if ( s_IsNote(flags) ) {
         m_Suffix = &kSemicolon;
@@ -216,8 +314,31 @@ void CFlatStringListQVal::Format(TFlatQuals& q, const string& name,
             m_Style);
 }
 
-// }
 
+// === CFlatGeneSynonymsQVal ================================================
+
+void CFlatGeneSynonymsQVal::Format
+(TFlatQuals& q,
+ const string& name,
+ CBioseqContext& ctx,
+ IFlatQVal::TFlags flags) const
+{
+    size_t num_syns = GetValue().size();
+    if (num_syns > 0) {
+        string syns = (num_syns > 1) ? "synonyms: " : "synonym: ";
+        syns += JoinNoRedund(GetValue(), ", ");
+        x_AddFQ(q, 
+            (s_IsNote(flags) ? "note" : name),
+            syns,
+            m_Style);
+
+        m_Suffix = &kSemicolon;
+    }
+    
+}
+
+
+// === CFlatCodeBreakQVal ===================================================
 
 void CFlatCodeBreakQVal::Format(TFlatQuals& q, const string& name,
                               CBioseqContext& ctx, IFlatQVal::TFlags) const
@@ -353,6 +474,7 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
     if ( subname.empty() ) {
         return;
     }
+    ConvertQuotes(subname);
 
     if ( s_IsNote(flags) ) {
         m_Suffix = (m_Value->GetSubtype() == COrgMod::eSubtype_other ? &kEOL : &kSemicolon);
@@ -445,6 +567,7 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
     if ( s_StringIsJustQuotes(subname) ) {
         subname = kEmptyStr;
     }
+    ConvertQuotes(subname);
 
     if ( s_IsNote(flags) ) {
         bool note = false;
@@ -600,7 +723,7 @@ void CFlatAnticodonQVal::Format
  CBioseqContext& ctx,
  IFlatQVal::TFlags flags) const
 {
-    if ( !m_Anticodon->IsInt()  ||  !m_Aa.empty() ) {
+    if ( !m_Anticodon->IsInt()  ||  m_Aa.empty() ) {
         return;
     }
 
@@ -619,7 +742,19 @@ void CFlatTrnaCodonsQVal::Format
  CBioseqContext& ctx,
  IFlatQVal::TFlags flags) const
 {
-    // !!!
+    if (!m_Value  ||  !m_Value->IsSetCodon()) {
+        return;
+    }
+
+    string recognized;
+    size_t num = s_ComposeCodonRecognizedStr(*m_Value, recognized);
+    if (num > 0) {
+        if (num == 1) {
+            x_AddFQ(q, name, "codon recognized: " + recognized);
+        } else {
+            x_AddFQ(q, name, "codons recognized: " + recognized);
+        }
+    }
 }
 
 
@@ -644,6 +779,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/08/19 16:37:52  shomrat
+* + CFlatNumberQVal and CFlatGeneSynonymsQVal
+*
 * Revision 1.15  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
