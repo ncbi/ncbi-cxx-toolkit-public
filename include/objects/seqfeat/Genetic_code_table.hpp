@@ -175,7 +175,7 @@ private:
     // this class uses a singleton internally to manage the specifics
     // of the genetic code implementation
     // these are the variables / functions that control the singleton
-    static auto_ptr<CGen_code_table_imp> sm_Implementation;
+    static AutoPtr<CGen_code_table_imp> sm_Implementation;
 
     static void                 x_InitImplementation(void);
     static CGen_code_table_imp& x_GetImplementation (void);
@@ -285,6 +285,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/12/28 21:20:15  grichenk
+* auto_ptr replaced with AutoPtr
+*
 * Revision 1.11  2004/12/14 16:41:47  ucko
 * +CGen_code_table::LoadTransTable to support optionally replacing the
 * builtin copy.

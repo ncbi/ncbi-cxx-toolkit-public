@@ -272,7 +272,7 @@ private:
 };
 
 // single instance of implementation class is initialized before Main
-auto_ptr<CGen_code_table_imp> CGen_code_table::sm_Implementation;
+AutoPtr<CGen_code_table_imp> CGen_code_table::sm_Implementation;
 DEFINE_STATIC_FAST_MUTEX(s_ImplementationMutex);
 
 void CGen_code_table::x_InitImplementation()
@@ -725,6 +725,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.20  2004/12/28 21:20:15  grichenk
+* auto_ptr replaced with AutoPtr
+*
 * Revision 6.19  2004/12/14 16:42:04  ucko
 * +CGen_code_table::LoadTransTable to support optionally replacing the
 * builtin copy.
