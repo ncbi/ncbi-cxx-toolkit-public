@@ -449,6 +449,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_FEAT_FeatContentDup",
     "SEQ_FEAT_BadProductSeqId",
     "SEQ_FEAT_RnaProductMismatch",
+    "SEQ_FEAT_DifferntIdTypesInSeqLoc",
 
     "SEQ_ALIGN_SeqIdProblem",
     "SEQ_ALIGN_StrandRev",
@@ -975,6 +976,9 @@ but no accession. This is probably an error in parsing of a submission.",
 //  SEQ_FEAT_RnaProductMismatch
 "The RNA feature product type does not correspond to the RNA feature type. \
  These need to be consistent.",
+//  SEQ_FEAT_DifferntIdTypesInSeqLoc
+"All ids in a single seq-loc which refer to the same bioseq should be of the"
+"same id type",
 
 /* SEQ_ALIGN */
 
@@ -1095,6 +1099,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/04/07 14:55:17  shomrat
+* Added SEQ_FEAT_DifferntIdTypesInSeqLoc
+*
 * Revision 1.18  2003/04/04 18:36:55  shomrat
 * Added Internal_Exception error; Changed limits of min/max severity
 *
