@@ -231,7 +231,7 @@ on SetProjectData()
 		set objMgrLibs to {Â
 			"seq", "seqcode", "cdd", "seqset", Â
 			"pub", "biblio", "pubmed", "medline", Â
-			"general", "submit", "xobjmgr", "id1", "xser", "xobjutil", "xutil", "xconnect", "xncbi", "z", "bz2", "xcompress"}
+			"general", "submit", "xobjmgr", "id1", "id2", "xser", "xobjutil", "xobjread", "xutil", "xconnect", "xncbi", "z", "bz2", "xcompress"}
 		
 		-- datatool
 		set myName to "datatool"
@@ -725,13 +725,44 @@ on SetupTarget(proj, targetIndex)
 end SetupTarget
 
 
+
+on GetTargetFiles(i)
+	tell application "CodeWarrior IDE"
+		-- get the target
+		if (i > (count of targets of project document 1)) then
+			return {}
+		end if
+		-- get references to all the targets files
+		set atarget to get target i of project document 1
+		set trefs to (target files of atarget whose linked is true)
+	end tell
+	set tfiles to {}
+	if ((count of trefs) ­ 0) then
+		repeat with tf in trefs
+			-- get locations of the targets files (as file objects)
+			tell application "CodeWarrior IDE"
+				set f to (location of tf)
+			end tell
+			tell application "Finder"
+				-- convert the file's to strings (colon style paths)
+				try
+					copy f as string to end of tfiles
+				on error errmsg number errnum
+					-- file in target but does not exist.
+					if errnum ­ -2753 then -- variable not defined.
+						error errmsg number errnum
+					end if
+				end try
+			end tell
+		end repeat
+	end if
+	return tfiles
+end GetTargetFiles
+
 on UpdateTarget(proj, targetIndex)
 	tell application "CodeWarrior IDE"
 		
 		set targetName to name of target targetIndex of project document 1
-		if targetName contains "Carbon" then
-			return -- we are not supporting Carbon Libs.
-		end if
 		
 		if targetName contains "Debug" then
 			set targetDebug to true
@@ -780,7 +811,8 @@ on UpdateTarget(proj, targetIndex)
 		
 	end tell
 	
-	-- Add source files
+	-- Update source files
+	set targetFileList to my GetTargetFiles(targetIndex)
 	repeat with group in projFileData
 		set projPath to projPath of group -- projPath is absolute,  not relative.
 		
@@ -790,23 +822,23 @@ on UpdateTarget(proj, targetIndex)
 		
 		repeat with i in fileList
 			if i does not contain "." then set i to i & fileExtension
-			tell application "CodeWarrior IDE"
-				set found to item 1 of (Is In Project {file i})
-			end tell
-			if (found is not 0) then
-				try -- ignore it if the file doesn't exist.
-					
-					-- NOTE: if the following line is within a tell "Codewarrior" block then
-					--  the following Add Files command will fail.
-					
-					copy alias (projPath & i) to end of filesToAdd
-				end try
+			set fileFullPath to projPath & i
+			set found to targetFileList contains fileFullPath
+			if (not found) then
+				--try -- ignore it if the file doesn't exist.
+				
+				-- NOTE: if the following line is within a tell "Codewarrior" block then
+				--  the following Add Files command will fail.
+				
+				copy alias (projPath & i) to end of filesToAdd
+				--end try
 			end if
 		end repeat
 		
 		tell application "CodeWarrior IDE"
 			if ((count of filesToAdd) is not 0) then
 				Add Files filesToAdd
+				set targetFileList to my GetTargetFiles(targetIndex)
 			end if
 			
 			-- Take out source files that do not belong.
@@ -843,6 +875,7 @@ on UpdateTarget(proj, targetIndex)
 		Reset File Paths
 		
 	end tell
+	
 end UpdateTarget
 
 on CreateFolder(folderPath)
