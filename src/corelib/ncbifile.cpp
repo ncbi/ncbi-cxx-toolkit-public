@@ -964,9 +964,11 @@ CDirEntry::EType CDirEntry::GetType(void) const
     long    dirID;
     Boolean isDir;
     err = FSpGetDirectoryID(&FSS(), &dirID, &isDir);
-    if ( err )
+    if ( err ) {
         return eUnknown;
+    }
     return isDir ? eDir : eFile;
+
 #else
     struct stat st;
 #  if defined(NCBI_OS_MSWIN)
@@ -976,42 +978,34 @@ CDirEntry::EType CDirEntry::GetType(void) const
 #  endif
         return eUnknown;
     }
+    unsigned int mode = st.st_mode & S_IFMT;
+    switch (mode) {
+    case S_IFDIR:
+        return eDir;
+    case S_IFCHR:
+        return eCharSpecial;
+#  if defined(NCBI_OS_MSWIN)
+    case _S_IFIFO:
+        return ePipe;
+#  elif defined(NCBI_OS_UNIX)
+    case S_IFIFO:
+        return ePipe;
+    case S_IFLNK:
+        return eLink;
+    case S_IFSOCK:
+        return eSocket;
+    case S_IFBLK:
+        return eBlockSpecial;
+#    if defined(S_IFDOOR) /* only Solaris seems to have this */
+    case S_IFDOOR:
+        return eDoor;
+#    endif
+#  endif
+    }
+    // Check regular file bit last
     if ( (st.st_mode & S_IFREG)  == S_IFREG ) {
         return eFile;
     }
-    if ( (st.st_mode & S_IFDIR)  == S_IFDIR ) {
-        return eDir;
-    }
-    if ( (st.st_mode & S_IFCHR)  == S_IFCHR ) {
-        return eCharSpecial;
-    }
-
-#  if defined(NCBI_OS_MSWIN)
-    if ( (st.st_mode & _S_IFIFO) == _S_IFIFO ) {
-        return ePipe;
-    }
-
-#  elif defined(NCBI_OS_UNIX)
-    if ( (st.st_mode & S_IFIFO)  == S_IFIFO ) {
-        return ePipe;
-    }
-    if ( (st.st_mode & S_IFLNK)  == S_IFLNK ) {
-        return eLink;
-    }
-    if ( (st.st_mode & S_IFSOCK) == S_IFSOCK ) {
-        return eSocket;
-    }
-#    if defined(S_IFDOOR) /* only Solaris seems to have this */
-    if ( (st.st_mode & S_IFDOOR) == S_IFDOOR ) {
-        return eDoor;
-    }
-#    endif
-    if ( (st.st_mode & S_IFBLK)  == S_IFBLK ) {
-        return eBlockSpecial;
-    }
-
-#  endif
-
     return eUnknown;
 #endif
 }
@@ -1969,6 +1963,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2004/04/28 15:56:49  ivanov
+ * CDirEntry::GetType(): fixed bug with incorrect entry type determination
+ * on some platforms
+ *
  * Revision 1.73  2004/04/21 11:24:53  ivanov
  * Define s_StdGetTmpName() for all platforms except NCBI_OS_UNIX
  *
