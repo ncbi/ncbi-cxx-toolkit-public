@@ -35,6 +35,10 @@
 
 #include <serial/objistr.hpp>
 
+#include <objects/seq/Bioseq.hpp>
+
+#include <objmgr/util/obj_sniff.hpp>
+
 #include <objtools/readers/fasta.hpp>
 #include <objtools/lds/lds_reader.hpp>
 #include <objtools/lds/lds_db.hpp>
@@ -44,7 +48,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& db, int object_id)
+CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& db, 
+                             const map<string, int>& type_map,
+                             int object_id)
 {
     db.object_db.object_id = object_id;
     if (db.object_db.Fetch() != eBDB_Ok)
@@ -55,8 +61,19 @@ CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& db, int object_id)
         LDS_THROW(eWrongEntry, "Non top-level SeqEntry.");
     }
 
-    // TODO: check the object type here
+    // Check the object type here
     //
+    int object_type = db.object_db.object_type;
+    string str_type;
+    for (map<string, int>::const_iterator tit = type_map.begin();
+         tit != type_map.end();
+         ++tit) {
+        if (tit->second == object_type) {
+            str_type = tit->first;
+            break;
+        }
+    } // for
+
     int file_id = db.object_db.file_id;
 
     db.file_db.file_id = file_id;
@@ -84,13 +101,26 @@ CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& db, int object_id)
         {
         in.seekg(offset);
         auto_ptr<CObjectIStream> 
-               is(CObjectIStream::Open(
-                  CFormatGuess::eFasta == CFormatGuess::eTextASN ? 
-                                          eSerial_AsnText : eSerial_AsnBinary, 
-                                          in));
-        CRef<CSeq_entry> seq_entry(new CSeq_entry);
-        is->Read(ObjectInfo(*seq_entry));
-        return seq_entry;
+               is(CObjectIStream::Open(FormatGuess2Serial(format), in));
+        if (str_type == "Bioseq") {
+            //
+            // If object is a bare Bioseq: read it and 
+            // construct a Seq_entry on it
+            //
+            CRef<CBioseq> bioseq(new CBioseq());
+            is->Read(ObjectInfo(*bioseq));
+            CRef<CSeq_entry> seq_entry(new CSeq_entry());
+            seq_entry->SetSeq(*bioseq);
+            return seq_entry;
+        } else 
+        if (str_type == "Seq-entry") {
+            CRef<CSeq_entry> seq_entry(new CSeq_entry());
+            is->Read(ObjectInfo(*seq_entry));
+            return seq_entry;
+        } else {
+            LDS_THROW(eInvalidDataType, "Non Seq-entry object type");
+        }
+
         }
         break;
     default:
@@ -105,6 +135,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/09 18:06:33  kuznets
+ * CSeq_entry reader changed to handle top level CBioseqs.
+ *
  * Revision 1.1  2003/06/06 20:02:34  kuznets
  * Initial revision
  *
