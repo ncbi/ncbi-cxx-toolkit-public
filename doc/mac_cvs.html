@@ -1,0 +1,178 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+	<head>
+		<title>Using CVS on Mac OS in NCBI</title>
+	</head>
+	
+	<body>
+		<h1>Using CVS on Mac OS in NCBI</h1>
+		<h2>Setting up your account on the server</h2>
+		<p>Before you can successfully use a CVS client, you must set up your 
+			account on <b>ray</b>, the CVS server.  The statements beginning 
+			with '$' are shell commands that you should enter.  Occurances of 
+			<i>parameter</i> need to be replaced.  The character '#' begins 
+			a comment, which should be omitted.</p>
+		
+		<ol>
+			<li>
+			Log into <b>ray</b>.
+			</li>
+			
+			<li>
+			<code>$ <b>echo</b> <i>hostname</i> <i>username</i> <b> >> 
+				.rhosts</b></code>
+			</li>
+			
+			<li>
+			<code>$ <b>chmod 600 .rhosts</b></code>
+			</li>
+			
+			<li>
+			Edit the file <code><b>.ncbi_hints</b></code>.  On the line 
+				starting with "<code><b>facilities</b></code>", append 
+				"<code><b>ncbi_tools</b></code>".
+			</li>
+			
+			<li>
+			Log into <b>ray</b> again.
+			</li>
+			
+			<!--
+			<li>
+			<code>$ <b>mkdir bin</b></code>
+			</li>
+			
+			<li>
+			<code>$ <b>ln -s $(which cvs) bin</b></code>
+			</li>
+			-->
+			
+		</ol>
+		
+		<h2>Installing and Configuring MacCVS Pro</h2>
+		
+		<ol>
+			<li>
+			Download <a href= 
+				"http://www.maccvs.org/download/MacCVS_Pro_2.5b2.sit">MacCVS 
+				Pro 2.5b2</a> (the latest release version as of 2001-03-14) 
+				from &lt;<a href= 
+				"http://www.maccvs.org/">http://www.maccvs.org/</a>>.  
+				Although it's labeled as a beta, it's been used for years and 
+				the maintainers have not found an update necessary.
+			</li>
+		
+			<li>
+			Put the expanded folder somewhere appropriate, e.g. with other 
+				development tools.  Launch the MacCVS Pro application.  (It's 
+				not necessary to use the debug version.)
+			</li>
+		
+			<li>
+			Create a new session document by choosing [<b>File->New</b>] and 
+				saving the document.
+			</li>
+		
+			<li>
+			Choose [<b>Edit->Session Settings...</b>]:
+			<ul>
+				<li>
+				<i>Checkout and Update Options</i>
+				<ul>
+					<li>
+					<i>Local Tree Directory</i>:  Click <b>Set</b> and choose a 
+						folder in which to check out a CVS working directory.
+					</li>
+					
+					<li>
+					<i>Merge Policy</i>:  Select <b>Auto Merge Text Files and 
+						Update Binary Files</b>.
+					</li>
+					
+				</ul>
+				</li>
+				
+				<li>
+				<i>Remote Host Information</i>
+				<ul>
+					<li>
+					<i>CVS Server Settings</i>
+					<ul>
+						<li>
+						<i>Server Hostname</i>:  <code><b>ray</b></code>
+						</li>
+						
+						<li>
+						<i>CVS Root</i>:  
+							<code><b>/src/NCBI/vault.ncbi</b></code>
+						</li>
+				
+					</ul>
+					</li>
+					
+					<li>
+					<i>Authentication Method</i>:  <b>RSH</b>
+					<ul>
+						<li>
+						<i>CVS User Name</i>:  <code><i>username</i></code>
+						</li>
+						
+					</ul>
+					</li>
+					
+				</ul>
+				</li>
+				
+				<li>
+				<i>Messages and Misc.</i>
+				<ul>
+					<li>
+					<i>Message Output</i>
+					<ul>
+						<li>
+						Checking <b>Automatically clear message window</b> is 
+							recommended, though optional.
+						</li>
+					</ul>
+					</li>
+					
+				</ul>
+								
+				</li>
+				
+				<li>
+				Click <b>OK</b>.
+				</li>
+				
+			</ul>
+			</li>
+			
+			<li>
+			Choose [<b>Action->Check Out Module...</b>].  Enter the module name 
+				and click <b>Check Out</b>.
+			</li>
+			
+			<li>
+			</li>
+			
+		</ol>
+		
+		<!--
+		<h2>Installing and Configuring maccvs (GNU CVS port)</h2>
+		-->
+		
+		<hr>
+		<table border=0 width="100%" cellspacing=0>
+			<tr>
+				<td>
+					<address>
+					<a href="mailto:juran@ncbi.nlm.nih.gov">Joshua Juran</a>
+					</address>
+				</td>
+				<td align=right>
+					<i>$Date$</i>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>
