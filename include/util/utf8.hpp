@@ -1,5 +1,5 @@
-#ifndef UTF8__H
-#define UTF8__H
+#ifndef UTIL_UTF8__H
+#define UTIL_UTF8__H
 
 /*  $Id$
  * ===========================================================================
@@ -31,16 +31,6 @@
  * File Description:
  *    UTF8 conversion functions
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.2  2001/04/18 16:26:04  ivanov
- * Change types TUnicodeChar, TUnicodeString to simple types.
- * TUnicode char to long, TUnicodeString to vector<long>.
- *
- * Revision 1.1  2001/04/06 19:14:36  ivanov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbistd.hpp>
@@ -123,4 +113,19 @@ extern char CodeToChar(const long src, EConversionStatus* status = 0);
 END_SCOPE(utf8)
 END_NCBI_SCOPE
 
-#endif  /* UTF8__H */
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.3  2002/01/18 19:21:52  ivanov
+ * Polish source code
+ *
+ * Revision 1.2  2001/04/18 16:26:04  ivanov
+ * Change types TUnicodeChar, TUnicodeString to simple types.
+ * TUnicode char to long, TUnicodeString to vector<long>.
+ *
+ * Revision 1.1  2001/04/06 19:14:36  ivanov
+ * Initial revision
+ * ===========================================================================
+ */
+
+#endif  /* UTIL_UTF8__H */
