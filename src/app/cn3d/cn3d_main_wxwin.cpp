@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.146  2002/06/21 14:39:44  thiessen
+* update version
+*
 * Revision 1.145  2002/06/05 18:14:49  thiessen
 * more title tweaks
 *
@@ -599,6 +602,7 @@ wxString wxMacFSSpec2MacFilename(const FSSpec *); // in wxwin/src/common/filefn.
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+#define CN3D_VERSION_STRING "4.1"
 
 // `Main program' equivalent, creating GUI framework
 IMPLEMENT_APP(Cn3D::Cn3DApp)
@@ -874,7 +878,8 @@ void Cn3DApp::InitRegistry(void)
 
 bool Cn3DApp::OnInit(void)
 {
-    TESTMSG("Welcome to Cn3D 4.0!\nbuilt " << __DATE__ << " with " << wxVERSION_STRING);
+    TESTMSG("Welcome to Cn3D " << CN3D_VERSION_STRING <<
+        "!\nbuilt " << __DATE__ << " with " << wxVERSION_STRING);
 
     // help system loads from zip file
 #if wxUSE_STREAMS && wxUSE_ZIPSTREAM && wxUSE_ZLIB
@@ -940,7 +945,8 @@ bool Cn3DApp::OnInit(void)
     LoadFavorites();
 
     // create the main frame window - must be first window created by the app
-    structureWindow = new Cn3DMainFrame("Cn3D 4.0", wxPoint(0,0), wxSize(500,500));
+    structureWindow = new Cn3DMainFrame(
+        wxString("Cn3D ") + CN3D_VERSION_STRING, wxPoint(0,0), wxSize(500,500));
     SetTopWindow(structureWindow);
     topWindow = structureWindow;
 
@@ -1382,7 +1388,7 @@ void Cn3DMainFrame::OnExit(wxCommandEvent& event)
 
 void Cn3DMainFrame::SetWindowTitle(void)
 {
-    SetTitle(wxString(GetWorkingTitle().c_str()) + " - Cn3D 4.0");
+    SetTitle(wxString(GetWorkingTitle().c_str()) + " - Cn3D " + CN3D_VERSION_STRING);
 }
 
 void Cn3DMainFrame::OnHelp(wxCommandEvent& event)
@@ -1420,7 +1426,9 @@ void Cn3DMainFrame::OnHelp(wxCommandEvent& event)
 
     else if (event.GetId() == MID_ABOUT) {
         wxString message(
-            "Cn3D version 4.0\n\n"
+            "Cn3D version "
+            CN3D_VERSION_STRING
+            "\n\n"
             "Produced by the National Center for Biotechnology Information\n"
             "     http://www.ncbi.nlm.nih.gov\n\n"
             "Please direct all questions and comments to:\n"
