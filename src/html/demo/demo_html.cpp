@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/11/01 20:37:57  vasilche
+* Disabled sync_with_stdio.
+*
 * Revision 1.10  1999/11/22 19:44:29  vakatov
 * s_Demo() -- made "static"
 *
@@ -113,6 +116,7 @@ static int s_Demo(void)
 
 int main() 
 {
+    IOS_BASE::sync_with_stdio(false);
 	return s_Demo();
 }
 
