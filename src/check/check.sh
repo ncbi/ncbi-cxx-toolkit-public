@@ -170,13 +170,13 @@ n_ok=`grep '^OK  --  '                   "$summary_res" | wc -l | sed 's/ //g'`
 n_err=`grep '^ERR \[[0-9][0-9]*\] --  '  "$summary_res" | wc -l | sed 's/ //g'`
 n_abs=`grep '^ABS --  '                  "$summary_res" | wc -l | sed 's/ //g'`
 
-subject="${signature}   OK:$n_ok ERR:$n_err ABS:$n_abs"
+subject="${signature}  OK:$n_ok ERR:$n_err ABS:$n_abs"
 
 if test -n "$mail_list_full" ; then
    for loc in $mail_list_full ; do
       mailto=`echo "$loc" | sed 's/,/ /g'`
       {
-        echo "Subject:  [C++ CHECK RESULTS]  $subject"
+        echo "Subject: [C++ CHECK] $subject"
         echo
         echo "$subject"; echo
         cat $summary_res
@@ -190,7 +190,7 @@ if test -n "$mail_list"  -a  -s "$error_res" ; then
    for loc in $mail_list ; do
       mailto=`echo "$loc" | sed 's/,/ /g'`
       {
-        echo "Subject:  [C++ CHECK ERRORS]  $subject"
+        echo "Subject: [C++ ERRORS]  $subject"
         echo
         echo "$subject"; echo
         cat $error_res
@@ -202,7 +202,7 @@ fi
 if test -n "$watch_list" ; then
    if test -n "$err_list"  -o  "$debug" = "yes" ; then
       {
-        echo "Subject:  [C++ CHECK WATCH] $signature"
+        echo "Subject: [C++ WATCH] $signature"
         echo
         echo "$err_list"
         echo
