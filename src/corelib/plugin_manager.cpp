@@ -82,7 +82,7 @@ CPluginManager_DllResolver::Resolve(const vector<string>& paths,
 
     // Ignore version to find dlls having no version in their names
     vector<string> masks;
-    string mask = GetDllNameMask(m_InterfaceName, drv, version);
+    string mask = GetDllNameMask(m_InterfaceName, drv, ver);
     masks.push_back(mask);
 
     resolver->FindCandidates(paths, masks, 
@@ -310,6 +310,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/10/13 14:49:24  ivanov
+ * Get rid of compile warning in CPluginManager_DllResolver::Resolve()
+ *
  * Revision 1.14  2004/09/22 13:55:36  kuznets
  * All tree realted stuff moved to ncbi_paramtree.hpp
  *
