@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.242 2003/12/04 13:02:16 ucko Exp $
+#  $Id: configure.ac,v 1.243 2003/12/04 13:03:26 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1277,6 +1277,7 @@ elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
          ll=lib$l.dylib
          LDFLAGS="$LDFLAGS -dylib_file ${pure_runpath}/$ll:\$(libdir)/$ll"
       done
+      ;;
     *:GCC )
       if `$CXX -print-prog-name=ld` --version 2>&1 | grep GNU >/dev/null; then
          runpath="$runpath -Wl,-rpath-link,\$(libdir)"
