@@ -45,6 +45,7 @@ Contents: Functions needed for formatting of BLAST results
 #include <algo/blast/core/blast_seqsrc.h>
 
 USING_NCBI_SCOPE;
+USING_SCOPE(blast);
 
 #define BLAST_NUM_DESCRIPTIONS 500
 #define BLAST_NUM_ALIGNMENTS 250
@@ -57,7 +58,7 @@ class NCBI_XBLAST_EXPORT CBlastFormatOptions : public CObject
 public:
 
     /// Constructor
-    CBlastFormatOptions(CBlastOption::EProgram program, CNcbiOstream &ostr) THROWS((CBlastException));
+    CBlastFormatOptions(EProgram program, CNcbiOstream &ostr) THROWS((CBlastException));
     /// Destructor
     virtual ~CBlastFormatOptions();
 
@@ -66,9 +67,11 @@ public:
     void SetDescriptions(int d);
     int GetAlignments() const;
     void SetAlignments(int a);
+    bool GetHtml() const;
     void SetHtml(bool h);
+    int GetAlignView() const;
     void SetAlignView(int a);
-    CNcbiOstream* GetOstream();
+    CNcbiOstream* GetOstream() const;
 
 protected:
    Uint1 m_align_view;
@@ -108,9 +111,19 @@ inline void CBlastFormatOptions::SetAlignments(int a)
     m_alignments = a;
 }
 
+inline bool CBlastFormatOptions::GetHtml() const
+{
+    return m_html;
+}
+
 inline void CBlastFormatOptions::SetHtml(bool h)
 {
     m_html = h;
+}
+
+inline int CBlastFormatOptions::GetAlignView() const
+{
+    return m_align_view;
 }
 
 inline void CBlastFormatOptions::SetAlignView(int a)
@@ -118,10 +131,16 @@ inline void CBlastFormatOptions::SetAlignView(int a)
     m_align_view = a;
 }
 
-inline CNcbiOstream* CBlastFormatOptions::GetOstream()
+inline CNcbiOstream* CBlastFormatOptions::GetOstream() const
 {
     return m_ostr;
 }
+
+int
+BLAST_FormatResults(TSeqAlignVector &seqalign, 
+    EProgram program, TSeqLocVector &query,
+    BlastMask* filter_loc, const CBlastFormatOptions* format_options, 
+    bool is_ooframe);
 
 #endif /* !__BLAST_FORMAT__ */
 

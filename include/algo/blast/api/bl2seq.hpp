@@ -49,7 +49,7 @@ BEGIN_SCOPE(blast)
 class NCBI_XBLAST_EXPORT CBl2Seq : public CObject
 {
 public:
-    typedef CBlastOption::EProgram          TProgram;
+    typedef EProgram          TProgram;
 
     /// Constructor to compare 2 sequences
     CBl2Seq(SSeqLoc& query, SSeqLoc& subject, TProgram p);
@@ -82,7 +82,10 @@ public:
     void SetOptions(const CBlastOption& opts);
     const CBlastOption& GetOptions() const;
 
+    // Perform BLAST search with one query sequence
     virtual CRef<objects::CSeq_align_set> Run();
+    // Perform BLAST search with multiple query sequences
+    virtual TSeqAlignVector MultiQRun();
 
     /// Retrieves regions filtered on the query/queries
     //const TSeqLocVector& GetFilteredQueryRegions() const;
@@ -92,7 +95,7 @@ protected:
     virtual void SetupSearch();
     virtual void ScanDB();
     virtual void Traceback();
-    virtual CRef<objects::CSeq_align_set> x_Results2SeqAlign();
+    virtual TSeqAlignVector x_Results2SeqAlign();
 
 private:
     // Data members received from client code
@@ -245,6 +248,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/08/19 20:24:17  dondosha
+* Added TSeqAlignVector type as a return type for results-to-seqalign functions and input for formatting
+*
 * Revision 1.13  2003/08/19 13:45:21  dicuccio
 * Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards
 * compliant.  Added 'objects::' where necessary.

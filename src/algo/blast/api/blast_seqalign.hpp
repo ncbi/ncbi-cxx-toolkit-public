@@ -60,17 +60,16 @@ BEGIN_SCOPE(blast)
  * @param score_options contains scoring options [in]
  * @param sbp scoring and statistical information [in]
  * @param is_gapped Was this a gapped search? [in]
- * @return set of CSeq_align objects
+ * @return Vector of seqalign sets (one set per query sequence).
  */
-CRef<objects::CSeq_align_set>
+TSeqAlignVector
 BLAST_Results2CSeqAlign(const BlastResults* results, 
-                        CBlastOption::EProgram prog,
-                        TSeqLocVector &query, 
-                        const BlastSeqSrc* bssp, 
-                        const SSeqLoc* subject,
-                        const BlastScoringOptions* score_options, 
-                        const BlastScoreBlk* sbp, bool is_gapped);
-
+                          EProgram prog,
+                          TSeqLocVector &query, 
+                          const BlastSeqSrc* bssp, 
+                          const SSeqLoc* subject,
+                          const BlastScoringOptions* score_options, 
+                          const BlastScoreBlk* sbp, bool is_gapped);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -79,6 +78,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/08/19 20:24:17  dondosha
+* Added TSeqAlignVector type as a return type for results-to-seqalign functions and input for formatting
+*
 * Revision 1.14  2003/08/19 13:45:21  dicuccio
 * Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards
 * compliant.  Added 'objects::' where necessary.
