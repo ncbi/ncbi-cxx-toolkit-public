@@ -1356,6 +1356,7 @@ void CAlnMix::x_CreateDenseg()
     m_DS->SetNumseg(numsegs);
 
     m_Aln = new CSeq_align();
+    m_Aln->SetType(CSeq_align::eType_not_set);
     m_Aln->SetSegs().SetDenseg(*m_DS);
     m_Aln->SetDim(numrows);
 
@@ -1440,6 +1441,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2003/06/20 03:06:39  todorov
+* Setting the seqalign type
+*
 * Revision 1.56  2003/06/19 18:37:19  todorov
 * typo fixed
 *
