@@ -34,27 +34,26 @@
  *
  */
 
-// prevent WINSOCK.H from being included - we use WINSOCK2.H
-#define _WINSOCKAPI_
-
+#include <dbapi/driver/exception.hpp>
 #include <cli/sssconnection.hpp>
 #include <iostream>
 
-using namespace std;
+//using namespace std;
+
+BEGIN_NCBI_SCOPE
+
 
 extern CSSSConnection* conn;
 void comprot_errmsg();
 
-
 bool comprot_bool( const char *procName, int object );
+CDB_Exception* read_CDB_Exception(IGate *pGate);
 
 template<class T> bool comprot_bool1( const char *procName, int object, T* param )
 {
   IGate* pGate = conn->getProtocol();
   pGate->set_RPC_call(procName);
   pGate->set_output_arg( "object", &object );
-
-  // cerr << "bool1 " << procName << " object=" << object << "\n";
 
   pGate->set_output_arg("param", param);
   pGate->send_data();
@@ -64,8 +63,6 @@ template<class T> bool comprot_bool1( const char *procName, int object, T* param
     comprot_errmsg();
     return false;
   }
-
-  // cerr << "  result=" << nOk << "\n";
 
   return nOk;
 }
@@ -79,8 +76,6 @@ template<class T> int comprot_int1( const char *procName, int object, T* param )
   pGate->set_RPC_call(procName);
   pGate->set_output_arg( "object", &object );
 
-  // cerr << "int1 " << procName << " object=" << object << "\n";
-
   pGate->set_output_arg("param", param);
   pGate->send_data();
 
@@ -89,8 +84,6 @@ template<class T> int comprot_int1( const char *procName, int object, T* param )
     comprot_errmsg();
     return 0;
   }
-
-  // cerr << "  result=" << res << "\n";
 
   return res;
 }
@@ -103,8 +96,6 @@ template<class T1, class T2> int comprot_int2(
   IGate* pGate = conn->getProtocol();
   pGate->set_RPC_call(procName);
 
-  // cerr << "int2 " << procName << " object=" << object << "\n";
-
   pGate->set_output_arg( "object", &object );
   pGate->set_output_arg(name1, param1);
   pGate->set_output_arg(name2, param2);
@@ -115,8 +106,6 @@ template<class T1, class T2> int comprot_int2(
     comprot_errmsg();
     return 0;
   }
-
-  // cerr << "  result=" << res << "\n";
 
   return res;
 }
@@ -130,8 +119,6 @@ template<class T> void comprot_void1( const char *procName, int object, T* param
   pGate->set_RPC_call(procName);
   pGate->set_output_arg( "object", &object );
 
-  // cerr << "void1 " << procName << " object=" << object << "\n";
-
   pGate->set_output_arg( "param", param );
   pGate->send_data();
 }
@@ -144,8 +131,6 @@ template<class T> char* comprot_chars1( const char *procName, int object, T* par
   pGate->set_RPC_call(procName);
   pGate->set_output_arg( "object", &object );
 
-  // cerr << "chars1 " << procName << " object=" << object << "\n";
-
   pGate->set_output_arg("param", param);
   pGate->send_data();
 
@@ -154,10 +139,11 @@ template<class T> char* comprot_chars1( const char *procName, int object, T* par
     return 0;
   }
 
-  // cerr << "  result=" << buf << "\n";
-
   return buf;
 }
+
+END_NCBI_SCOPE
+
 
 #endif  /* RDBLIB__COMPROT_CLI__HPP */
 

@@ -31,12 +31,13 @@
  *
  */
 
-#include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/gateway/comprot_cli.hpp>
+
+BEGIN_NCBI_SCOPE
 
 CSSSConnection* conn=NULL;
 
-USING_NCBI_SCOPE;
+//USING_NCBI_SCOPE;
 
 void comprot_errmsg()
 {
@@ -54,48 +55,10 @@ void comprot_errmsg()
     cerr << "comprot_errmsg - no Error message from server\n";
   }
 
-  int exceptionType;
-  if( pGate->get_input_arg("exception", &exceptionType) == IGate::eGood ) {
-    // Re-throw the exception caught on the server
-    int severity = (int)eDB_Unknown; // EDB_Severity::
-    pGate->get_input_arg("severity", &severity);
-    int code = 0;
-    pGate->get_input_arg("code"    , &code    );
-    const char* from="";
-    pGate->get_input_arg("from"    , &from    );
-    const char* msg="";
-    pGate->get_input_arg("msg"     , &msg     );
-
-    switch( (CDB_Exception::EType)exceptionType ) {
-      case CDB_Exception::eRPC:
-      {
-        const char* proc="";
-        pGate->get_input_arg("proc", &proc);
-        int line = 0;
-        pGate->get_input_arg("line", &line);
-
-        throw CDB_RPCEx( (EDB_Severity)severity,code,from,msg,  proc,line );
-      }
-      case CDB_Exception::eSQL:
-      {
-        const char* state="";
-        pGate->get_input_arg("state", &state);
-        int line = 0;
-        pGate->get_input_arg("line" , &line );
-
-        throw CDB_SQLEx( (EDB_Severity)severity,code,from,msg,  state,line );
-      }
-      case CDB_Exception::eDS      : throw CDB_DSEx      ( (EDB_Severity)severity, code, from, msg );
-      case CDB_Exception::eDeadlock: throw CDB_DeadlockEx( from, msg );
-      case CDB_Exception::eTimeout : throw CDB_TimeoutEx ( code, from, msg );
-      case CDB_Exception::eClient  : throw CDB_ClientEx  ( (EDB_Severity)severity, code, from, msg );
-      default:
-        cerr<< "Unrecognized exception in comprot_errmsg(): \n  type=" << exceptionType;
-        cerr << " code=" << code << " severity=" << severity << "\n";
-        cerr<< "  from=" << from << "\n";
-        cerr<< "  msg=" << msg << "\n";
-        //throw CDB_Exception( (CDB_Exception::EType)exceptionType,  (EDB_Severity)severity,code,from,msg );
-    }
+  CDB_Exception* ex = read_CDB_Exception(pGate);
+  if( ex ) {
+    // Re-throw the exception caught on a server
+    throw ex;
   }
 }
 
@@ -106,17 +69,14 @@ bool comprot_bool( const char *procName, int object )
   pGate->set_RPC_call(procName);
   pGate->set_output_arg( "object", &object );
 
-  // cerr << "bool " << procName << " object=" << object << "\n";
-
   pGate->send_data();
+  pGate->send_done();
 
   int nOk;
   if (pGate->get_input_arg("result", &nOk) != IGate::eGood) {
     comprot_errmsg();
     return false;
   }
-
-  // cerr << "  result=" << nOk << "\n";
 
   return nOk;
 }
@@ -128,17 +88,14 @@ int comprot_int( const char *procName, int object )
   pGate->set_RPC_call(procName);
   pGate->set_output_arg( "object", &object );
 
-  // cerr << "int " << procName << " object=" << object << "\n";
-
   pGate->send_data();
+  pGate->send_done();
 
   int res;
   if (pGate->get_input_arg("result", &res) != IGate::eGood) {
     comprot_errmsg();
     return 0;
   }
-
-  // cerr << "  result=" << res << "\n";
 
   return res;
 }
@@ -150,9 +107,8 @@ void comprot_void( const char *procName, int object )
   pGate->set_RPC_call(procName);
   pGate->set_output_arg( "object", &object );
 
-  // cerr << "void " << procName << " object=" << object << "\n";
-
   pGate->send_data();
+  pGate->send_done();
 }
 
 char* comprot_chars( const char *procName, int object, char* buf, int len )
@@ -161,15 +117,79 @@ char* comprot_chars( const char *procName, int object, char* buf, int len )
   pGate->set_RPC_call(procName);
   pGate->set_output_arg( "object", &object );
 
-  // cerr << "chars1 " << procName << " object=" << object << "\n";
   pGate->send_data();
+  pGate->send_done();
 
   if (pGate->get_input_arg("result", buf, len) != IGate::eGood) {
     comprot_errmsg();
     return 0;
   }
 
-  // cerr << "  result=" << buf << "\n";
-
   return buf;
 }
+
+CDB_Exception* read_CDB_Exception(IGate *pGate)
+{
+  int exceptionType;
+  if( pGate->get_input_arg("exception", &exceptionType) != IGate::eGood )
+    return NULL;
+
+  int severity = (int)eDB_Unknown; // EDB_Severity::
+  pGate->get_input_arg("severity", &severity);
+  int code = 0;
+  pGate->get_input_arg("code"    , &code    );
+  const char* from="";
+  pGate->get_input_arg("from"    , &from    );
+  const char* msg="";
+  pGate->get_input_arg("msg"     , &msg     );
+
+  switch( (CDB_Exception::EType)exceptionType ) {
+    case CDB_Exception::eRPC:
+    {
+      const char* proc="";
+      pGate->get_input_arg("proc", &proc);
+      int line = 0;
+      pGate->get_input_arg("line", &line);
+
+      return new CDB_RPCEx( (EDB_Severity)severity,code,from,msg,  proc,line );
+    }
+    case CDB_Exception::eSQL:
+    {
+      const char* state="";
+      pGate->get_input_arg("state", &state);
+      int line = 0;
+      pGate->get_input_arg("line" , &line );
+
+      return new CDB_SQLEx( (EDB_Severity)severity,code,from,msg,  state,line );
+    }
+    case CDB_Exception::eDS      : return new CDB_DSEx      ( (EDB_Severity)severity, code, from, msg );
+    case CDB_Exception::eDeadlock: return new CDB_DeadlockEx( from, msg );
+    case CDB_Exception::eTimeout : return new CDB_TimeoutEx ( code, from, msg );
+    case CDB_Exception::eClient  : return new CDB_ClientEx  ( (EDB_Severity)severity, code, from, msg );
+    case CDB_Exception::eMulti :
+    {
+      int count = 0;
+      pGate->get_input_arg("count", &count);
+      CDB_MultiEx* multi = new CDB_MultiEx(from); // , count
+      for(int i=0;i<count;i++) {
+        pGate->Fetch(0);
+        CDB_Exception* ex = read_CDB_Exception(pGate);
+        multi->Push(*ex);
+        delete ex;
+      }
+      return multi;
+    }
+    default:
+      cerr<< "Unrecognized exception in comprot_errmsg(): \n  type=" << exceptionType;
+      cerr << " code=" << code << " severity=" << severity << "\n";
+      cerr<< "  from=" << from << "\n";
+      cerr<< "  msg=" << msg << "\n";
+      //throw CDB_Exception( (CDB_Exception::EType)exceptionType,  (EDB_Severity)severity,code,from,msg );
+      return NULL;
+  }
+}
+
+
+END_NCBI_SCOPE
+
+
