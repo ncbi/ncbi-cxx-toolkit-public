@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/01/03 21:29:41  vasilche
+* Fixed wrong typedef.
+*
 * Revision 1.4  2001/01/03 18:58:39  vasilche
 * Some typedefs are missing on MSVC.
 *
@@ -77,6 +80,7 @@ public:
 
     // internal typedefs
     typedef map<range_type, mapped_type> TNCLevelType;
+    typedef typename TNCLevelType::value_type TNCValueType;
     typedef map<position_type, TNCLevelType> TNCSelectType;
     typedef LevelIter TLevelIter;
     typedef typename TNCLevelType::iterator TNCLevelIter;
@@ -85,7 +89,7 @@ public:
     typedef CRangeMapIterator<mapped_type, position_type,
         TLevelIter, TSelectIter, value_type> TThisType;
     typedef CRangeMapIterator<mapped_type, position_type,
-        TNCLevelIter, TNCSelectIter, mapped_type> TNCThisType;
+        TNCLevelIter, TNCSelectIter, TNCValueType> TNCThisType;
 
     // constructors
     // singular
@@ -280,9 +284,9 @@ public:
     
     // iterators
     typedef CRangeMapIterator<mapped_type, position_type,
-        TLevelMapI, TSelectMapI, mapped_type> iterator;
+        TLevelMapI, TSelectMapI, value_type> iterator;
     typedef CRangeMapIterator<mapped_type, position_type,
-        TLevelMapCI, TSelectMapCI, const mapped_type> const_iterator;
+        TLevelMapCI, TSelectMapCI, const value_type> const_iterator;
 
     // constructor
     explicit CRangeMap(void)
