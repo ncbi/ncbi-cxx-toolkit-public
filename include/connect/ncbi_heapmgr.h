@@ -68,7 +68,7 @@ typedef struct {
  * ------------+------------+--------------------------------------------------
  *   non-NULL  |     0      | Deallocate old_base and return 0
  *   non-NULL  |  non-zero  | Reallocate to the requested size, return new base
- *      0      |  non-zero  | Allocate (newly) and return base
+ *      0      |  non-zero  | Allocate (anew) and return base
  *      0      |     0      | Do nothing, return 0
  * ------------+------------+--------------------------------------------------
  * Note that reallocation can request either to expand or to shrink the
@@ -135,14 +135,14 @@ extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_Walk
 /* Trim the heap, making garbage collection first. Returned is
  * the size of the resultant heap, which has its last block trimmed
  * to the size of heap chunk size as specified at the time of the
- * heap creation. No change in size is made if the last block is
+ * heap creation.  No change in size is made if the last block is
  * not free or large enough to allow the trimming. 0 returned on
  * NULL or read-only heaps, or if an error has occurred.
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_Size HEAP_Trim(HEAP heap);
 
 
-/* Make a snapshot of a given heap. Return a read-only heap
+/* Make a snapshot of a given heap.  Return a read-only heap
  * (like one after HEAP_Attach), which must be freed by a call to
  * either HEAP_Detach or HEAP_Destroy when no longer needed.
  * If a non-zero number provided (serial number) it is stored
@@ -167,18 +167,18 @@ extern NCBI_XCONNECT_EXPORT void HEAP_Detach(HEAP heap);
 extern NCBI_XCONNECT_EXPORT void HEAP_Destroy(HEAP heap);
 
 
-/* Get base address of the heap
+/* Get base address of the heap.
  */
 extern NCBI_XCONNECT_EXPORT void* HEAP_Base(const HEAP heap);
 
 
-/* Get the extent of the heap
+/* Get the extent of the heap.
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_Size HEAP_Size(const HEAP heap);
 
 
 /* Get non-zero serial number of the heap.
- * Return 0 if HEAP is passed as 0, or the heap is not a copy but original.
+ * Return 0 if HEAP is passed as 0, or the heap is not a copy but the original.
  */
 extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
 
@@ -194,6 +194,9 @@ extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2004/07/08 14:11:11  lavr
+ * Fix few inline descriptions
+ *
  * Revision 6.19  2003/09/23 21:00:53  lavr
  * +HEAP_AttachEx()
  *
