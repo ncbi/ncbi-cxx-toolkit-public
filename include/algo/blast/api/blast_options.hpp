@@ -90,8 +90,6 @@ enum EBlastOptIdx {
     eBlastOpt_CutoffScore,
     eBlastOpt_PercentIdentity,
     eBlastOpt_SumStatisticsMode,
-    eBlastOpt_SingleHSPEvalueThreshold,
-    eBlastOpt_SingleHSPCutoffScore,
     eBlastOpt_LongestIntronLength,
     eBlastOpt_GappedMode,
     eBlastOpt_NeighboringMode,
@@ -248,12 +246,6 @@ public:
     /// Sum statistics options
     bool GetSumStatisticsMode() const;
     void SetSumStatisticsMode(bool m = true);
-
-    double GetSingleHSPEvalueThreshold() const;
-    void SetSingleHSPEvalueThreshold(double e);
-
-    int GetSingleHSPCutoffScore() const;
-    void SetSingleHSPCutoffScore(int s);
 
     int GetLongestIntronLength() const; // for tblastn w/ linking HSPs
     void SetLongestIntronLength(int l); // for tblastn w/ linking HSPs
@@ -1232,46 +1224,12 @@ public:
         }
     }
 
-    double GetSingleHSPEvalueThreshold() const
-    {
-        if (! m_Local) {
-            x_Throwx("Error: GetSingleHSPEvalueThreshold() not available.");
-        }
-        return m_Local->GetSingleHSPEvalueThreshold();
-    }
-    void SetSingleHSPEvalueThreshold(double e)
-    {
-        if (m_Local) {
-            m_Local->SetSingleHSPEvalueThreshold(e);
-        }
-        if (m_Remote) {
-            m_Remote->SetValue(eBlastOpt_SingleHSPEvalueThreshold, e);
-        }
-    }
-
-    int GetSingleHSPCutoffScore() const
-    {
-        if (! m_Local) {
-            x_Throwx("Error: GetSingleHSPCutoffScore() not available.");
-        }
-        return m_Local->GetSingleHSPCutoffScore();
-    }
-    void SetSingleHSPCutoffScore(int s)
-    {
-        if (m_Local) {
-            m_Local->SetSingleHSPCutoffScore(s);
-        }
-        if (m_Remote) {
-            m_Remote->SetValue(eBlastOpt_SingleHSPCutoffScore, s);
-        }
-    }
-
     int GetLongestIntronLength() const // for tblastn w/ linking HSPs
     {
         if (! m_Local) {
-            x_Throwx("Error: GetSingleHSPCutoffScore() not available.");
+            x_Throwx("Error: GetLongestIntronLength() not available.");
         }
-        return m_Local->GetSingleHSPCutoffScore();
+        return m_Local->GetLongestIntronLength();
     }
     void SetLongestIntronLength(int l) // for tblastn w/ linking HSPs
     {
@@ -2189,30 +2147,6 @@ CBlastOptionsLocal::SetSumStatisticsMode(bool m)
     m_HitSaveOpts->do_sum_stats = m;
 }
 
-inline double
-CBlastOptionsLocal::GetSingleHSPEvalueThreshold() const
-{
-    return m_HitSaveOpts->single_hsp_evalue;
-}
-
-inline void
-CBlastOptionsLocal::SetSingleHSPEvalueThreshold(double e)
-{
-    m_HitSaveOpts->single_hsp_evalue = e;
-}
-
-inline int
-CBlastOptionsLocal::GetSingleHSPCutoffScore() const
-{
-    return m_HitSaveOpts->single_hsp_score;
-}
-
-inline void
-CBlastOptionsLocal::SetSingleHSPCutoffScore(int s)
-{
-    m_HitSaveOpts->single_hsp_score = s;
-}
-
 inline int
 CBlastOptionsLocal::GetLongestIntronLength() const
 {
@@ -2418,6 +2352,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2004/03/09 18:41:06  dondosha
+* Removed single hsp cutoff evalue and score, since these are calculated, and not set by user
+*
 * Revision 1.52  2004/02/27 19:44:38  madden
 * Add  CBlastTraceBackTest (unit test) as friend class
 *
