@@ -29,6 +29,7 @@ egrep -v -e '
 : Warning: Could not find source for std::is[a-z][a-z]*\(int\)
 : Warning: Could not find source for std::toupper\(int\)\.
 : Warning: Could not find source for std::tolower\(int\)\.
+: Warning: Could not find source for std::remove\(const char\*\)\.
 : Warning: String literal converted to char\* in
 :     Where: While specializing "std::basic_.*stream<char, std::char_traits<char>
 :     Where: Specialized in non-template code\.
