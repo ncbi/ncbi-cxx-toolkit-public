@@ -27,6 +27,8 @@
  *
  * File Description:
  *   FTP CONNECTOR
+ *   See also:  RFCs 959 (STD 9), 1634 (FYI 24),
+ *   and IETF 9-2002 "Extensions to FTP".
  *
  *   See <connect/ncbi_connector.h> for the detailed specification of
  *   the connector's methods and structures.
@@ -234,11 +236,25 @@ static EIO_Status s_FTPAbort(SFTPConnector* xxx)
     EIO_Status status = eIO_Success;
     if (xxx->data) {
         int code;
+        size_t n;
+        /* Send TELNET IP (Interrupt Process) command */
+        status = SOCK_Write(xxx->cntl, "\377\364", 2, &n, eIO_WritePersist);
+        if (status != eIO_Success)
+            return status;
+        if (n != 2)
+            return eIO_Unknown;
+        /* Send TELNET DM (Data Mark) command to complete SYNCH, RFC 854 */
+        status = SOCK_Write(xxx->cntl, "\377\362", 2, &n, eIO_WriteOutOfBand);
+        if (status != eIO_Success)
+            return status;
+        if (n != 2)
+            return eIO_Unknown;
         status = s_FTPCommand(xxx, "ABOR", 0);
-        SOCK_Read(xxx->data, 0, 1024*1024/*drain up*/, 0, eIO_ReadPlain);
+        while(SOCK_Read(xxx->data, 0, 1024*1024/*drain up*/, 0, eIO_ReadPlain)
+              == eIO_Success);
         if (status == eIO_Success)
             status = s_FTPReply(xxx, &code, 0, 0);
-        if (status == eIO_Success  &&  code != 226)
+        if (status == eIO_Success  &&  code != 226  &&  code != 426)
             status = eIO_Unknown;
         if (status == eIO_Success)
             status = SOCK_Close(xxx->data);
@@ -657,6 +673,9 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2004/12/27 15:31:27  lavr
+ * Implement telnet SYNCH and FTP ABORT according to the standard
+ *
  * Revision 1.3  2004/12/08 21:03:26  lavr
  * Fixes for default ctor parameters
  *
