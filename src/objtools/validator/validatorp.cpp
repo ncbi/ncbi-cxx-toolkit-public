@@ -1119,11 +1119,11 @@ void CValidError_imp::ValidateDbxref
 
 
 void CValidError_imp::ValidateDbxref
-(TDbtags xref_list,
+(TDbtags& xref_list,
  const CSerialObject& obj,
  bool biosource)
 {
-    ITERATE( list< CRef< CDbtag > >, xref, xref_list) {
+    ITERATE( TDbtags, xref, xref_list) {
         ValidateDbxref(**xref, obj, biosource);
     }
 }
@@ -2318,6 +2318,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2003/07/24 20:16:18  vasilche
+* Fixed typedefs for dbxref: list<CRef<CDbtag>> -> vector<CRef<CDbtag>>
+*
 * Revision 1.38  2003/06/27 18:54:22  shomrat
 * Modified ValidateDbxref to use CDbtag.IsApproved
 *

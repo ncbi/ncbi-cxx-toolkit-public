@@ -565,7 +565,7 @@ void CValidError_feat::ValidateCdregion (
     const CSeq_feat& feat
 ) 
 {
-    ITERATE( list< CRef< CGb_qual > >, qual, feat.GetQual () ) {
+    ITERATE( CSeq_feat::TQual, qual, feat.GetQual () ) {
         if ( (**qual).GetQual() == "codon" ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnImpFeat,
                 "Use the proper genetic code, if available, "
@@ -893,7 +893,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
     }
 
     if ( rna_type == CRNA_ref::eType_tRNA ) {
-        ITERATE ( list< CRef< CGb_qual > >, gbqual, feat.GetQual () ) {
+        ITERATE ( CSeq_feat::TQual, gbqual, feat.GetQual () ) {
             if ( NStr::CompareNocase((**gbqual).GetVal (), "anticodon") == 0 ) {
                 PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                     "Unparsed anticodon qualifier in tRNA", feat);
@@ -2388,6 +2388,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2003/07/24 20:16:18  vasilche
+* Fixed typedefs for dbxref: list<CRef<CDbtag>> -> vector<CRef<CDbtag>>
+*
 * Revision 1.34  2003/07/21 21:19:43  shomrat
 * Make sure we can get before trying to call GetXXX methods
 *

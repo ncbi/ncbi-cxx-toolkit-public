@@ -40,6 +40,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/GIBB_mol.hpp>
 #include <util/strsearch.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Packed_seg.hpp>
@@ -329,7 +330,7 @@ public:
     typedef const CSeq_graph& TGraph;
     typedef const CSeq_align& TAlign;
     typedef const CSeq_entry& TEntry;
-    typedef const list< CRef< CDbtag > >& TDbtags;
+    typedef const CSeq_feat::TDbxref TDbtags;
     typedef map < const CSeq_feat*, const CSeq_annot* >& TFeatAnnotMap;
 
     // Posts errors.
@@ -358,7 +359,7 @@ public:
     void ValidateSeqLocIds(const CSeq_loc& loc, const CSerialObject& obj);
     void ValidateDbxref(const CDbtag& xref, const CSerialObject& obj,
         bool biosource = false);
-    void ValidateDbxref(TDbtags xref_list, const CSerialObject& obj,
+    void ValidateDbxref(TDbtags& xref_list, const CSerialObject& obj,
         bool biosource = false);
         
     // getters
@@ -665,10 +666,10 @@ private:
     bool IsIdIn(const CSeq_id& id, const CBioseq& seq);
     bool SuppressTrailingXMsg(const CBioseq& seq);
     bool GetLocFromSeq(const CBioseq& seq, CSeq_loc* loc);
-    bool IsDifferentDbxrefs(const list< CRef< CDbtag > >& dbxref1,
-        const list< CRef< CDbtag > >& dbxref2);
+    bool IsDifferentDbxrefs(const TDbtags& dbxref1,
+                            const TDbtags& dbxref2);
     bool IsHistAssemblyMissing(const CBioseq& seq);
-    bool IsFlybaseDbxrefs(const list< CRef< CDbtag > >& dbxrefs);
+    bool IsFlybaseDbxrefs(const TDbtags& dbxrefs);
     bool GraphsOnBioseq(const CBioseq& seq) const;
     bool IsOtherDNA(const CBioseq& seq) const;
     bool IsSynthetic(const CBioseq& seq) const;
@@ -875,6 +876,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2003/07/24 20:16:18  vasilche
+* Fixed typedefs for dbxref: list<CRef<CDbtag>> -> vector<CRef<CDbtag>>
+*
 * Revision 1.35  2003/07/21 21:18:19  shomrat
 * Added eErr_SEQ_FEAT_MissingLocation
 *

@@ -680,8 +680,8 @@ void CValidError_bioseq::ValidateHistory(const CBioseq& seq)
 // =============================================================================
 
 
-bool CValidError_bioseq::IsDifferentDbxrefs(const list< CRef< CDbtag > >& list1,
-                        const list< CRef< CDbtag > >& list2)
+bool CValidError_bioseq::IsDifferentDbxrefs(const TDbtags& list1,
+                                            const TDbtags& list2)
 {
     if (list1.empty()  ||  list2.empty()) {
         return false;
@@ -689,8 +689,8 @@ bool CValidError_bioseq::IsDifferentDbxrefs(const list< CRef< CDbtag > >& list1,
         return true;
     }
 
-    list< CRef<CDbtag> >::const_iterator it1 = list1.begin();
-    list< CRef<CDbtag> >::const_iterator it2 = list2.begin();
+    TDbtags::const_iterator it1 = list1.begin();
+    TDbtags::const_iterator it2 = list2.begin();
     for (; it1 != list1.end(); ++it1, ++it2) {
         if ((*it1)->GetDb() != (*it2)->GetDb()) {
             return true;
@@ -2180,9 +2180,9 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
 }
 
 
-bool CValidError_bioseq::IsFlybaseDbxrefs(const list< CRef< CDbtag > >& dbxrefs)
+bool CValidError_bioseq::IsFlybaseDbxrefs(const TDbtags& dbxrefs)
 {
-    ITERATE( list< CRef< CDbtag > >, db, dbxrefs ) {
+    ITERATE( TDbtags, db, dbxrefs ) {
         if ( NStr::CompareNocase((*db)->GetDb(), "FLYBASE") == 0 ) {
             return true;
         }
@@ -3168,6 +3168,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2003/07/24 20:16:18  vasilche
+* Fixed typedefs for dbxref: list<CRef<CDbtag>> -> vector<CRef<CDbtag>>
+*
 * Revision 1.42  2003/07/15 18:26:03  shomrat
 * suppress BadDeltaSeq - HTGS 2 delta seq has no gaps and no graphs - if HTGS_ACTIVEFIN keyword present
 *
