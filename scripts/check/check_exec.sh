@@ -32,7 +32,7 @@ timestamp_file="/tmp/check_exec_timestamp.$$"
 touch timestamp_file
 
 # Reinforce timeout
-ulimit -t $timeout
+ulimit -t `expr $timeout + 5` > /dev/null 2>&1
 
 # Run command
 "$@" &
