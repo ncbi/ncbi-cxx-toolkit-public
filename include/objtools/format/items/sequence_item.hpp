@@ -74,6 +74,35 @@ private:
 };
 
 
+//===========================================================================
+//                              inline methods
+//===========================================================================
+
+inline
+const CSeqVector& CSequenceItem::GetSequence(void) const
+{
+    return m_Sequence;
+}
+
+inline
+TSeqPos CSequenceItem::GetFrom(void) const
+{
+    return m_From + 1;
+}
+
+inline
+TSeqPos CSequenceItem::GetTo(void) const
+{
+    return m_To + 1;
+}
+
+inline
+bool CSequenceItem::IsFirst(void) const
+{
+    return m_First;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -82,6 +111,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/11/24 16:47:33  shomrat
+* Inlined methods
+*
 * Revision 1.3  2004/04/22 15:39:54  shomrat
 * Changes in context
 *
