@@ -1,4 +1,4 @@
---$Revision: 6.3 $
+--$Revision: 6.4 $
 --**********************************************************************
 --
 --  NCBI Taxonomy Server
@@ -83,7 +83,7 @@ Taxon1-error ::= SEQUENCE {
 Taxon1-data ::= SEQUENCE {
 	org Org-ref OPTIONAL,    -- Org-ref with Org-name and db filled in
 	div VisibleString ,  -- GenBank division
-	embl-code VisibleString ,     -- 2 letter EMBL code
+	embl-code VisibleString OPTIONAL,     -- 2 letter EMBL code
 	is-species-level BOOLEAN }   -- species level or below
 
 Taxon2-data ::= SEQUENCE {
