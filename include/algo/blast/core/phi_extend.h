@@ -41,6 +41,7 @@
 extern "C" {
 #endif
 
+/** WordFinder type function for PHI BLAST. */
 Int2 PHIBlastWordFinder(BLAST_SequenceBlk* subject, 
         BLAST_SequenceBlk* query, LookupTableWrap* lookup_wrap,
         Int4** matrix, const BlastInitialWordParameters* word_params,
