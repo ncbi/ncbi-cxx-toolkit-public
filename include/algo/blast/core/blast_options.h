@@ -233,7 +233,11 @@ typedef struct BlastInitialWordOptions {
                          extension */
 } BlastInitialWordOptions;
 
-#define UNGAPPED_CUTOFF_EVALUE 0.05
+#define UNGAPPED_CUTOFF_E_BLASTN 0.05
+#define UNGAPPED_CUTOFF_E_BLASTP 1e-300
+#define UNGAPPED_CUTOFF_E_BLASTX 1.0
+#define UNGAPPED_CUTOFF_E_TBLASTN 1.0
+#define UNGAPPED_CUTOFF_E_TBLASTX 1e-300
 
 /** Parameter block that contains a pointer to BlastInitialWordOptions
  * and parsed values for those options that require it 
@@ -304,11 +308,8 @@ typedef struct BlastHitSavingOptions {
    /********************************************************************/
    /* Merge all these in a structure for clarity? */
    /* applicable to all, except blastn */
-   Boolean do_sum_stats; /**< Should sum statistics be used to combine HSPs? */
-   double single_hsp_evalue; /**< When sum statistics is used, the largest 
-                                 e-value allowed for an individual HSP */
-   Int4 single_hsp_score; /**< The score cut-off for a single HSP when sum
-                             statistics is used */
+   Boolean do_sum_stats; /**< Force sum statistics to be used to combine 
+                            HSPs */
    /* tblastn w/ sum statistics */
    Int4 longest_intron; /**< The longest distance between HSPs allowed for
                            combining via sum statistics with uneven gaps */
@@ -336,6 +337,9 @@ typedef struct BlastHitSavingParameters {
    /**< Callback for formatting results on the fly for each subject sequence */
    Int4 cutoff_score; /**< Raw cutoff score corresponding to the e-value 
                          provided by the user */
+   Boolean do_sum_stats; /**< Is sum statistics used to combine HSPs? */
+   Int4 single_hsp_score; /**< The score cut-off for a single HSP when sum
+                             statistics is used */
    double gap_prob;       /**< Probability of decay for linking HSPs */
    double gap_decay_rate; /**< Decay rate for linking HSPs */
    Int4 gap_size;          /**< Small gap size for linking HSPs */
@@ -370,18 +374,31 @@ typedef struct BlastScoringOptions {
 } BlastScoringOptions;
 
 /** Options for setting up effective lengths and search spaces.  
- * All values will be the real (correct) values unless the user has specified an override.
+ * The values are those the user has specified to override the real sizes.
  */
 typedef struct BlastEffectiveLengthsOptions {
-   Int8 db_length;    /**< Database length used for statistical
+   Int8 db_length;    /**< Database length to be used for statistical
                          calculations */
-   Int4 dbseq_num;    /**< Number of database sequences used for
+   Int4 dbseq_num;    /**< Number of database sequences to be used for
                            statistical calculations */
-   Int8 searchsp_eff; /**< Search space used for statistical
+   Int8 searchsp_eff; /**< Search space to be used for statistical
                            calculations */
    Boolean use_real_db_size; /**< Use real database size instead of virtual
                                 database size for statistical calculations */
 } BlastEffectiveLengthsOptions;
+
+/** Parameters for setting up effective lengths and search spaces.  
+ * The real database size values to be used for statistical calculations, if
+ * there are no overriding values in options.
+ */
+typedef struct BlastEffectiveLengthsParameters {
+   BlastEffectiveLengthsOptions* options; /**< User provided values for these 
+                                             parameters */
+   Int8 real_db_length; /**< Total database length to use in search space
+                           calculations. */
+   Int4 real_num_seqs;  /**< Number of subject sequences to use for search
+                           space calculations */
+} BlastEffectiveLengthsParameters;
 
 /** Options used in protein BLAST only (PSI, PHI, RPS and translated BLAST)
  *  Some of these possibly should be transfered elsewhere  
@@ -502,8 +519,7 @@ BlastInitialWordParametersFree(BlastInitialWordParameters* parameters);
  * @param ext_params Extension parameters (containing gap trigger value) [in]
  * @param sbp Statistical (Karlin-Altschul) information [in]
  * @param query_info Query information [in]
- * @param eff_len_options Effective lengths options [in]
- * @param gapped_calculation Is gapped calculation used for statistics? [in]
+ * @param subject_length Average subject sequence length [in]
  * @param parameters Resulting parameters [out]
 */
 Int2
@@ -512,8 +528,25 @@ BlastInitialWordParametersNew(Uint1 program_number,
    BlastHitSavingParameters* hit_params, 
    BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, 
-   const BlastEffectiveLengthsOptions* eff_len_options, 
-   Boolean gapped_calculation, BlastInitialWordParameters* *parameters);
+   Uint4 subject_length,
+   BlastInitialWordParameters* *parameters);
+
+/** Update cutoff scores in BlastInitialWordParameters structure.
+ * @param program_number Type of BLAST program [in]
+ * @param hit_params The hit saving options (needed to calculate cutoff score 
+ *                    for ungapped extensions) [in]
+ * @param ext_params Extension parameters (containing gap trigger value) [in]
+ * @param sbp Statistical (Karlin-Altschul) information [in]
+ * @param query_info Query information [in]
+ * @param subject_length Average subject sequence length [in]
+ * @param parameters Preallocated parameters [in] [out]
+*/
+Int2
+BlastInitialWordParametersUpdate(Uint1 program_number, 
+   BlastHitSavingParameters* hit_params, 
+   BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
+   BlastQueryInfo* query_info, Uint4 subject_length,
+   BlastInitialWordParameters* parameters);
 
 /** Deallocate memory for BlastExtensionOptions.
  * @param options Structure to free [in]
@@ -619,6 +652,23 @@ BlastEffectiveLengthsOptionsFree(BlastEffectiveLengthsOptions* options);
  */
 Int2 BlastEffectiveLengthsOptionsNew(BlastEffectiveLengthsOptions* *options);
 
+/** Deallocate memory for BlastEffectiveLengthsParameters*. 
+ * @param parameters Structure to free [in]
+ */
+BlastEffectiveLengthsParameters* 
+BlastEffectiveLengthsParametersFree(BlastEffectiveLengthsParameters* parameters);
+
+/** Allocate memory for BlastEffectiveLengthsParameters 
+ * @param options The user provided options [in]
+ * @param db_length The database length [in]
+ * @param num_seqs Number of sequences in database [in]
+ * @param parameters The parameters structure returned [out]
+ */
+Int2 
+BlastEffectiveLengthsParametersNew(const BlastEffectiveLengthsOptions* options, 
+                               Int8 db_length, Int4 num_seqs,
+                               BlastEffectiveLengthsParameters* *parameters);
+
 /** Fill the non-default values in the BlastEffectiveLengthsOptions structure.
  * @param options The options [in] [out]
  * @param dbseq_num Number of sequences in the database (if zero real value will be used) [in]
@@ -722,12 +772,13 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
 BlastHitSavingParameters*
 BlastHitSavingParametersFree(BlastHitSavingParameters* parameters);
 
-/** Allocate memory for BlastInitialWordParameters and set x_dropoff. 
+/** Allocate memory and initialize the BlastHitSavingParameters structure. 
  * Calculates the (raw) score cutoff given an expect value and puts
  * it in the "cutoff_score" field of the returned BlastHitSavingParameters*
  *
  * @param program_number Number of the BLAST program [in]
  * @param options The given hit saving options [in]
+ * @param ext_params Extension parameters containing the gap trigger value [in]
  * @param handle_results Callback function for printing results on the fly [in]
  * @param sbp Scoring block, needed for calculating score cutoff from 
  *            e-value [in]
@@ -737,10 +788,26 @@ BlastHitSavingParametersFree(BlastHitSavingParameters* parameters);
  */
 Int2 BlastHitSavingParametersNew(Uint1 program_number, 
         const BlastHitSavingOptions* options, 
+        const BlastExtensionParameters* ext_params,
         int (*handle_results)(void*, void*, void*, void*, void*, 
                            void*, void*), 
         BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
         BlastHitSavingParameters* *parameters);
+
+/** Updates cutoff scores in hit saving parameters. 
+ * @param program_number Number of the BLAST program [in]
+ * @param ext_params Extension parameters containing the gap trigger 
+ *                   value [in]
+ * @param sbp Scoring block, needed for calculating score cutoff from 
+ *            e-value [in]
+ * @param query_info Query information, needed for calculating score cutoff 
+ *                   from e-value [in]
+ * @param parameters Preallocated parameters [in] [out]
+ */
+Int2 BlastHitSavingParametersUpdate(Uint1 program_number, 
+        const BlastExtensionParameters* ext_params,
+        BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
+        BlastHitSavingParameters* parameters);
 
 /** Initialize default options for PSI BLAST */
 Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options);
@@ -790,6 +857,23 @@ Int2 BLAST_ValidateOptions(Uint1 program_number,
                            const BlastHitSavingOptions* hit_options,
                            Blast_Message* *blast_msg);
 
+/** Calculates cutoff scores and returns them.
+ *	Equations provided by Stephen Altschul.
+ * @param program BLAST program type [in]
+ * @param query_info Query(ies) information [in]
+ * @param sbp Scoring statistical parameters [in]
+ * @param hit_params Hit saving parameters, including all cutoff 
+ *                   scores [in] [out]
+ * @param db_length Total length of database (non-database search if 0) [in]
+ * @param subject_length Length of the subject sequence. [in]
+ * @param psi_options PSI BLAST options, containing scaling factor [in]
+ * 
+*/
+void
+CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info, 
+   BlastScoreBlk* sbp, BlastHitSavingParameters* hit_params, 
+   Int8 db_length, Int4 subject_length, 
+   const PSIBlastOptions* psi_options);
 
 #ifdef __cplusplus
 }
