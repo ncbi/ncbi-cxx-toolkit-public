@@ -90,7 +90,10 @@ int CNetCacheCheck::Run(void)
         unsigned short port = (unsigned short)NStr::StringToInt(port_str);
         cl.reset(new CNetCacheClient(host, port, "netcache_check"));
     } else { // LB service name
-        cl.reset(new CNetCacheClient_LB("netcache_check", service_addr));
+        CNetCacheClient_LB* cl_lb = 
+            new CNetCacheClient_LB("netcache_check", service_addr);
+        cl.reset(cl_lb);
+        cl_lb->EnableServiceBackup(CNetCacheClient_LB::ENoBackup);
     }
 
     // functionality test
@@ -163,6 +166,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/04/04 18:13:41  kuznets
+ * Reflecting changes in client API
+ *
  * Revision 1.3  2005/03/22 18:55:18  kuznets
  * Reflecting changes in connect library layout
  *
