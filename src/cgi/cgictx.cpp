@@ -166,14 +166,23 @@ CCgiServerContext& CCgiContext::x_GetServerContext(void) const
 }
 
 
-const CCgiEntry& CCgiContext::GetRequestValue(const string& name) const
+const CCgiEntry& CCgiContext::GetRequestValue(const string& name,
+                                              bool*         is_found)
+    const
 {
     pair<TCgiEntriesCI, TCgiEntriesCI> range =
         GetRequest().GetEntries().equal_range(name);
 
     if (range.second == range.first) {
+        if ( is_found ) {
+            *is_found = false;
+        }
         static const CCgiEntry kEmptyCgiEntry(kEmptyStr);
         return kEmptyCgiEntry;
+    }
+
+    if ( is_found ) {
+        *is_found = true;
     }
 
     const CCgiEntry& value = range.first->second;
@@ -273,6 +282,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.29  2003/02/21 19:19:07  vakatov
+* CCgiContext::GetRequestValue() -- added optional arg "is_found"
+*
 * Revision 1.28  2003/02/16 05:30:27  vakatov
 * GetRequestValue() to return "const CCgiEntry&" rather than just "CCgiEntry"
 * to avoid some nasty surprises for earlier user code looking as:

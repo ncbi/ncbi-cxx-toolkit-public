@@ -159,7 +159,8 @@ public:
     // return entry from request
     // return empty string if no such entry
     // throw runtime_error if there are several entries with the same name
-    const CCgiEntry& GetRequestValue(const string& name) const;
+    const CCgiEntry& GetRequestValue(const string& name, bool* is_found = 0)
+        const;
 
     void AddRequestValue    (const string& name, const CCgiEntry& value);
     void RemoveRequestValues(const string& name);
@@ -311,6 +312,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.23  2003/02/21 19:19:15  vakatov
+* CCgiContext::GetRequestValue() -- added optional arg "is_found"
+*
 * Revision 1.22  2003/02/16 05:30:18  vakatov
 * GetRequestValue() to return "const CCgiEntry&" rather than just "CCgiEntry"
 * to avoid some nasty surprises for earlier user code looking as:
