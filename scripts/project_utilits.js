@@ -47,6 +47,12 @@ function EscapeBackSlashes(str)
 // tree object constructor
 function Tree(oShell, oTask)
 {
+    var re = / /
+    if (oShell.CurrentDirectory.search(re) != -1) {
+		WScript.Echo("ERROR:  Name of the current directory contains spaces");
+		WScript.Quit(1);
+    }
+
     this.TreeRoot              = oShell.CurrentDirectory;
     this.CompilersBranch       = this.TreeRoot + "\\compilers\\msvc710_prj";
     this.CompilersBranchStatic = this.CompilersBranch + "\\static";
@@ -180,7 +186,7 @@ function RemoveTempFolder(oShell, oFso, oTree)
 {
     var temp_dir = oTree.TreeRoot + "\\temp";
     if ( oFso.FolderExists(temp_dir) ) {
-        execute(oShell, "rmdir /S /Q " + temp_dir);
+        execute(oShell, "rmdir /S /Q \"" + temp_dir + "\"");
     }
 }
 // copy project_tree_builder app to appropriate places of the local tree
@@ -199,7 +205,7 @@ function CopyPtb(oShell, oTree, oTask)
                 continue;
             }
         }
-        execute(oShell, "copy /Y " + source_file + " " + target_path);
+        execute(oShell, "copy /Y \"" + source_file + "\" \"" + target_path + "\"");
     }
 }
 // copy datatool app to appropriate places of the local tree
@@ -224,7 +230,7 @@ function CopyDatatool(oShell, oTree, oTask)
                 continue;
             }
         }
-        execute(oShell, "copy /Y " + source_file + " " + target_path);
+        execute(oShell, "copy /Y \"" + source_file + "\" \"" + target_path + "\"");
     }
 }
 // Collect files names with particular extension
@@ -455,7 +461,7 @@ function CopyDlls(oShell, oTree, oTask)
             var dlls_bin_path  = oTask.ToolkitPath + "\\" + config;
             var local_bin_path = oTree.BinPathDll  + "\\" + config;
 
-            execute(oShell, "copy /Y " + dlls_bin_path + "\\*.dll " + local_bin_path);
+            execute(oShell, "copy /Y \"" + dlls_bin_path + "\\*.dll\" \"" + local_bin_path + "\"");
         }
     } else {
         VerboseEcho("CopyDlls:  skipped (not requested)");
@@ -469,7 +475,7 @@ function CopyRes(oShell, oTree, oTask)
         var res_target_dir = oTree.SrcRootBranch + "\\gui\\res"
             CreateFolderIfAbsent(oFso, res_target_dir);
         execute(oShell, "cvs checkout -d temp " + GetCvsTreeRoot()+"/src/gui/res");
-        execute(oShell, "copy /Y temp\\*.* " + res_target_dir);
+        execute(oShell, "copy /Y temp\\*.* \"" + res_target_dir + "\"");
         RemoveTempFolder(oShell, oFso, oTree);
     } else {
         VerboseEcho("CopyRes:  skipped (not requested)");
@@ -495,7 +501,7 @@ function GetFileFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
     // 2. Last attempt - get it from CVS tree.
     RemoveTempFolder(oShell, oFso, oTree);
     execute(oShell, "cvs checkout -d temp " + GetCvsTreeRoot()+ cvs_rel_path);
-    execute(oShell, "copy /Y temp\\*.* " + target_abs_dir);
+    execute(oShell, "copy /Y temp\\*.* \"" + target_abs_dir + "\"");
     RemoveTempFolder(oShell, oFso, oTree);
 }
 
