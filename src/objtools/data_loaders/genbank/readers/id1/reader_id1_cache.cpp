@@ -280,7 +280,7 @@ bool CCachedId1Reader::x_LoadIdCache(const string& key,
                                      TBlob_idsData& data)
 {
 #ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics());
+    CStopWatch sw(CollectStatistics()>0);
 #endif
 
     size_t size = m_IdCache->GetSize(key, 0, subkey);
@@ -311,7 +311,7 @@ bool CCachedId1Reader::x_LoadIdCache(const string& key,
                                      int& value)
 {
 #ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics());
+    CStopWatch sw(CollectStatistics()>0);
 #endif
 
     size_t size = m_IdCache->GetSize(key, 0, subkey);
@@ -341,7 +341,7 @@ void CCachedId1Reader::x_StoreIdCache(const string& key,
                                       const TBlob_idsData& data)
 {
 #ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics());
+    CStopWatch sw(CollectStatistics()>0);
 #endif
     
     m_IdCache->Store(key, 0, subkey, &data[0], data.size()*sizeof(int));
@@ -359,7 +359,7 @@ void CCachedId1Reader::x_StoreIdCache(const string& key,
                                       const int& value)
 {
 #ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics());
+    CStopWatch sw(CollectStatistics()>0);
 #endif
     
     m_IdCache->Store(key, 0, subkey, &value, sizeof(value));
@@ -601,7 +601,7 @@ void CCachedId1Reader::GetTSEChunk(CTSE_Chunk_Info& chunk_info,
     size_t size;
 
 #ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics());
+    CStopWatch sw(CollectStatistics()>0);
 #endif
 
     CID2_Reply_Data chunk_data;
@@ -641,7 +641,7 @@ bool CCachedId1Reader::LoadSplitBlob(CTSE_Info& tse_info,
     size_t size;
 
 #ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics());
+    CStopWatch sw(CollectStatistics()>0);
 #endif
 
     try {
@@ -721,7 +721,7 @@ bool CCachedId1Reader::LoadWholeBlob(CTSE_Info& tse_info,
     size_t size;
     
 #ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics());
+    CStopWatch sw(CollectStatistics()>0);
 #endif
 
     CID1server_back id1_reply;
@@ -829,7 +829,7 @@ void CCachedId1Reader::StoreBlob(const string& key, TBlobVersion version,
 {
 
 #ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics());
+    CStopWatch sw(CollectStatistics()>0);
 #endif
 
     try {
@@ -899,7 +899,7 @@ void CCachedId1Reader::StoreSNPBlob(const string& key, TBlobVersion version,
 {
 
 #ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics());
+    CStopWatch sw(CollectStatistics()>0);
 #endif
 
     try {
@@ -950,7 +950,7 @@ bool CCachedId1Reader::LoadSNPBlob(CTSE_Info& tse_info,
                                    const string& key, TBlobVersion version)
 {
 #ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics());
+    CStopWatch sw(CollectStatistics()>0);
 #endif
 
     CID1server_back id1_reply;
@@ -1003,7 +1003,7 @@ CCachedId1Reader::LoadSNPTable(const string& key, TBlobVersion version)
 {
     CRef<CSeq_annot_SNP_Info> snp_annot_info;
 #ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics());
+    CStopWatch sw(CollectStatistics()>0);
 #endif
 
     try {
@@ -1047,7 +1047,7 @@ void CCachedId1Reader::StoreSNPTable(const CSeq_annot_SNP_Info& snp_info,
                                      const string& key, TBlobVersion version)
 {
 #ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics());
+    CStopWatch sw(CollectStatistics()>0);
 #endif
 
     try {

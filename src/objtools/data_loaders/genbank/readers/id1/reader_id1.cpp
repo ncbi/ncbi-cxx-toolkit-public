@@ -589,7 +589,7 @@ void CId1Reader::x_ResolveId(CID1server_back& reply,
                              TConn conn)
 {
 #ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics());
+    CStopWatch sw(CollectStatistics()>0);
 #endif
 
     CConn_ServiceStream* stream = x_GetConnection(conn);
@@ -641,7 +641,7 @@ void CId1Reader::GetSeq_entry(CID1server_back& id1_reply,
                               TConn conn)
 {
 #ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics());
+    CStopWatch sw(CollectStatistics()>0);
     try {
 #endif
         CConn_ServiceStream* stream = x_GetConnection(conn);
@@ -805,7 +805,7 @@ CRef<CSeq_annot_SNP_Info> CId1Reader::GetSNPAnnot(const CBlob_id& blob_id,
 {
     CRef<CSeq_annot_SNP_Info> snp_annot_info;
 #ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics());
+    CStopWatch sw(CollectStatistics()>0);
     try {
 #endif
         CConn_ServiceStream* stream = x_GetConnection(conn);
