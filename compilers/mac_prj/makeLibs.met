@@ -1,4 +1,5 @@
 
+
 -- C++ libs --
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
@@ -273,20 +274,21 @@ on SetProjectData()
 		AddSimpleProject("sequtil", {}, "util:sequtil")
 		AddSimpleProject("creaders", {}, "util:creaders")
 		
-		AddSimpleProject("bdb", {"bdb"}, "bdb")
+		AddSimpleProjectExceptFiles("bdb", {"bdb"}, "bdb", {"bdb_query_bison.tab.c", "bdb_query_lexer.cpp"})
 		
 		AddSimpleProject("xalgoalign", {}, "algo:align")
 		AddSimpleProject("xalgoseq", {}, "algo:sequence")
 		AddSimpleProject("xalgognomon", {}, "algo:gnomon")
 		AddSimpleProject("xalgophytree", {}, "algo:phy_tree")
 		AddSimpleProject("fastme", {}, "algo:phy_tree:fastme")
+
 		set xblastfiles to {Â
-			mkFileDataExceptFiles(gSourceDir & "algo:blast:api", {"db_blast.cpp"}), Â
+			mkFileData(gSourceDir & "algo:blast:api"), Â
 			mkFileData(gSourceDir & "algo:blast:core") Â
 				}
 		AddProject(ProjectData("xblast", {}, xblastfiles))
 		AddSimpleProject("blast", {}, "algo:blast:core")
-		
+				
 		AddSimpleProject("xsqlite", {"sqlite"}, "sqlite")
 		
 		set libdbFiles to {Â
@@ -326,7 +328,8 @@ on SetProjectData()
 	
 	if pCreateObjectLibs then
 		AddObject("access")
-		AddObject("biblio")
+		-- AddObject("biblio")
+		AddSimpleProjectListFiles("biblio", {}, "objects:biblio", {"biblio__", "biblio___", "label_util"})
 		AddSimpleProjectListFiles("xnetblast", {}, "objects:blast", {"blast__", "blast___"})
 		AddSimpleProjectListFiles("xnetblastcli", {}, "objects:blast", {"blastclient", "blastclient_"})
 		AddObject("blastdb")
@@ -373,9 +376,11 @@ on SetProjectData()
 		AddObject("submit")
 		AddProject(ObjectData("taxon1", {"cache", "ctreecont", "taxon1", "utils"}))
 		AddObject("tinyseq")
+		
 	end if
 	
 	if pCreateObjToolsLibs then
+		
 		AddSimpleProject("xobjmgr", {}, "objmgr")
 		AddSimpleProject("xobjutil", {}, "objmgr:util")
 		AddSimpleProjectExceptFiles("id2_split", {}, "objmgr:split", {"split_cache.cpp"})
@@ -470,7 +475,7 @@ on SetProjectData()
 		set SomeObjects to {"biblio", "general", "medline", "pub", "entrez2", "entrez2cli"}
 		set MostObjects to SeqObjects & SomeObjects & Â
 			{"dbapi_driver", "id1", "id2", "xobjmgr", "ncbi_xloader_genbank", "xobjutil", "ncbi_xreader_id1"}
-		set ObjTools to {"xconnect", "xncbi", "xser", "xutil", "xobjread", "xalnmgr", "regexp", "tables"}
+		set ObjTools to {"xconnect", "xncbi", "xser", "xutil", "xobjread", "creaders", "xalnmgr", "regexp", "tables"}
 		set LdsLibs to {"bdb", "lds", "lds_admin", "libdb"}
 		set CompressLibs to {"z", "bz2", "xcompress"}
 		set UsualStatics to MostObjects & ObjTools
