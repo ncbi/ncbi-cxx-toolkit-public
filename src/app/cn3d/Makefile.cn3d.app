@@ -22,6 +22,7 @@ OBJ = \
 	messenger \
 	molecule \
 	molecule_identifier \
+	multitext_dialog \
 	object_3d \
 	opengl_renderer \
 	periodic_table \
