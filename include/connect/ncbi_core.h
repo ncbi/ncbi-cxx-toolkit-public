@@ -32,9 +32,6 @@
  *   Types and code shared by all "ncbi_*.[ch]" modules.
  *
  *********************************
- * Timeout:
- *    struct STimeout
- *
  * I/O status and direction:
  *    enum:       EIO_ReadMethod
  *    enum:       EIO_Status,  verbal: IO_StatusStr()
@@ -65,6 +62,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/06/19 19:08:28  lavr
+ * STimeout and ESwitch moved to ncbi_type.h
+ *
  * Revision 6.9  2001/05/17 18:10:22  vakatov
  * Moved the logging macros from <ncbi_core.h> to <ncbi_util.h>.
  * Logging::  always call the logger if severity is eLOG_Fatal.
@@ -98,7 +98,7 @@
  * ===========================================================================
  */
 
-#include <stddef.h>
+#include <connect/ncbi_type.h>
 
 #include <assert.h>
 #if defined(NDEBUG)
@@ -111,24 +111,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-/* Timeout structure
- */
-typedef struct {
-    unsigned int sec;  /* seconds (truncated to the platf.-dep. max. limit) */
-    unsigned int usec; /* microseconds (always truncated by mod. 1,000,000) */
-} STimeout;
-
-
-/* Aux. enum to set/unset/default various features
- */
-typedef enum {
-    eOff = 0,
-    eOn,
-    eDefault
-} ESwitch;
-
 
 
 /******************************************************************************
