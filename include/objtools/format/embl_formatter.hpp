@@ -61,7 +61,6 @@ public:
     virtual void FormatComment(const CCommentItem& keys, IFlatTextOStream& text_os);
     virtual void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os);
     virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os);
-    //virtual void FormatEndSection(const CEndSectionItem& end, IFlatTextOStream& text_os);
     virtual void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os);
     virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os);
     virtual void FormatDate(const CDateItem& date, IFlatTextOStream& text_os);
@@ -89,6 +88,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/02/19 17:57:40  shomrat
+* removed commented code
+*
 * Revision 1.2  2004/01/14 15:51:12  shomrat
 * const removed
 *
