@@ -54,10 +54,34 @@ void CLDS_Management::SyncWithDir(const string& dir_name)
     CLDS_Set annotations_deleted;
 
     CLDS_Object obj(db, m_lds_db.GetObjTypeMap());
-    obj.DeleteCascadeFiles(files_deleted, &objects_deleted, &annotations_deleted);
+    obj.DeleteCascadeFiles(files_deleted, 
+                           &objects_deleted, &annotations_deleted);
     obj.UpdateCascadeFiles(files_updated);
 }
 
+
+CLDS_Database* 
+CLDS_Management::OpenCreateDB(const string& dir_name,
+                              const string& db_name,
+                              bool*         is_created)
+{
+    CLDS_Database* db = new CLDS_Database(dir_name + "\\"+ db_name);
+    try {
+        db->Open();
+        *is_created = false;
+    } 
+    catch (CBDB_ErrnoException& )
+    {
+        // Failed to open: file does not exists.
+        // Force the construction
+
+        CLDS_Management admin(*db);
+        admin.Create();
+        admin.SyncWithDir(dir_name);
+    }
+    *is_created = true;
+    return db;
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -65,6 +89,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/25 18:28:40  kuznets
+ * + CLDS_Management::OpenCreateDB(...)
+ *
  * Revision 1.2  2003/06/16 16:24:43  kuznets
  * Fixed #include paths (lds <-> lds_admin separation)
  *
