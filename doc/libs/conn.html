@@ -923,7 +923,7 @@ static const SSERV_Info* s_GetNextInfo(<a href="../lxr/ident?i=SERV_ITER">SERV_I
     char* env;
 
     for (;;) {
-        while ((info = <a href="../lxr/ident?i=SERV_GetNextInfoEx">SERV_GetNextInfoEx</a>(iter, &env)) != 0) {
+        while ((info = <a href="../lxr/ident?i=SERV_GetNextInfoEx">SERV_GetNextInfoEx</a>(iter, &amp;env)) != 0) {
             const char* c;
             for (c = env; c; c = strchr(c, '\n')) {
                 if (strncmp(c == env ? c : ++c, ENV_DB_KEY, sizeof(ENV_DB_KEY)-1) == 0) {
@@ -942,7 +942,7 @@ static const SSERV_Info* s_GetNextInfo(<a href="../lxr/ident?i=SERV_ITER">SERV_I
                 free(env); /* must be freed explicitly */
         }
         if (reset)
-            break; /* coming to reset 2 times in a row means no server fit */
+            break; /* coming to reset 2 times in a row means no server fits */
         <a href="../lxr/ident?i=SERV_Reset">SERV_Reset</a>(iter);
         reset = 1;
     }
@@ -961,7 +961,7 @@ int main(int argc, char* argv[])
     params.data = db_name;                /* custom data, anything        */
     params.cleanup = s_CleanupData;       /* cleanup routine, may be NULL */
     params.get_net_info = s_GetNextInfo;  /* custom iterator routine      */
-    if (!(c = <a href="../lxr/ident?i=SERVICE_CreateConnectorEx">SERVICE_CreateConnectorEx</a>("my_service", fSERV_Any, NULL, &params))) {
+    if (!(c = <a href="../lxr/ident?i=SERVICE_CreateConnectorEx">SERVICE_CreateConnectorEx</a>("my_service", fSERV_Any, NULL, &amp;params))) {
         fprintf(stderr, "Cannot create connector");
         exit(1);
     }
