@@ -127,7 +127,7 @@ CRPCClient<TRequest, TReply>::~CRPCClient(void)
 {
     Disconnect();
     if ( !x_IsSpecial(m_Timeout) ) {
-        delete m_Timeout;
+        delete const_cast<STimeout*>(m_Timeout);
     }
 }
 
@@ -188,7 +188,7 @@ EIO_Status CRPCClient<TRequest, TReply>::SetTimeout(const STimeout* timeout,
             m_Timeout = new STimeout(*timeout);
         }
         if ( !x_IsSpecial(old_timeout) ) {
-            delete old_timeout;
+            delete const_cast<STimeout*>(old_timeout);
         }
     }}
 
@@ -275,6 +275,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/06/23 01:10:25  ucko
+* More tweaking: cast away const before deleting cloned timeout structures.
+*
 * Revision 1.7  2004/06/22 22:57:35  ucko
 * Fix typo in SetTimeout.
 *
