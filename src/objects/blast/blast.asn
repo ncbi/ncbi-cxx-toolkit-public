@@ -23,20 +23,11 @@
 --
 --  Authors: Tom Madden, Tim Boemker
 --
---  This file specifies version 1.0 of the ASN.1 interface to BLAST.
---
---  Please note that this interface and the BLAST service itself have different
---  version numbers.  Changes to the interface version number indicate changes
---  to the messages exchanged by clients and servers.
---
---  Changes to the minor number indicate backward compatible changes; e.g., a
---  1.0 client can communicate with a 1.1 server.  Changes to the major number
---  indicate changes that are not backward compatible; e.g., a 1.0 client can't
---  communicate with a 2.0 server.
+--  ASN.1 interface to BLAST.
 --
 --  ----------------------------------------------------------------------------
 
-NCBI-Blast DEFINITIONS ::=
+NCBI-Blast4 DEFINITIONS ::=
 BEGIN
 
 IMPORTS
@@ -49,114 +40,115 @@ IMPORTS
 
 --  --------------------------------------------------------------------
 --
---  requests
+--  Requests
 --
 --  --------------------------------------------------------------------
 
-Blast-request ::= SEQUENCE {
-    ident                   VisibleString OPTIONAL,
-    body                    Blast-request-body
+Blast0-request ::= CHOICE {
+    blast4                  Blast4-request
 }
 
-Blast-request-body ::= CHOICE {
-    finish-params           Blast-finish-params-request,
+Blast4-request ::= CHOICE {
+    finish-params           Blast4-finish-params-request,
     get-databases           NULL,
     get-matrices            NULL,
-    get-search-results      Blast-get-search-results-request,
-    get-sequences           Blast-get-sequences-request,
-    queue-search            Blast-queue-search-request
+    get-search-results      Blast4-get-search-results-request,
+    get-sequences           Blast4-get-sequences-request,
+    queue-search            Blast4-queue-search-request
 }
 
-Blast-finish-params-request ::= SEQUENCE {
-    program                 Blast-program,
-    service                 Blast-service,
-    params                  SEQUENCE OF Blast-parameter
+Blast4-finish-params-request ::= SEQUENCE {
+    program                 Blast4-program,
+    service                 Blast4-service,
+    params                  SEQUENCE OF Blast4-parameter
 }
 
-Blast-get-search-results-request ::= SEQUENCE {
+Blast4-get-search-results-request ::= SEQUENCE {
     request-id              VisibleString
 }
 
-Blast-get-sequences-request ::= SEQUENCE {
-    database-name           VisibleString,
-    database-type           Blast-residue-type,
+Blast4-get-sequences-request ::= SEQUENCE {
+    database                Blast4-database,
     seq-ids                 SEQUENCE OF Seq-id
 }
 
-Blast-queue-search-request ::= SEQUENCE {
-    program                 Blast-program,
-    service                 Blast-service,
+Blast4-queue-search-request ::= SEQUENCE {
+    program                 Blast4-program,
+    service                 Blast4-service,
     queries                 Bioseq-set,
-    subject                 Blast-subject,
-    params                  SEQUENCE OF Blast-parameter
+    subject                 Blast4-subject,
+    params                  SEQUENCE OF Blast4-parameter
 }
 
 --  --------------------------------------------------------------------
 --
---  replies
+--  Replies
 --
 --  --------------------------------------------------------------------
 
-Blast-reply ::= SEQUENCE {
-    ident                   VisibleString,
-    errors                  SEQUENCE OF Blast-error OPTIONAL,
-    body                    Blast-reply-body
+Blast0-reply ::= CHOICE {
+    blast4                  Blast4-reply
 }
 
-Blast-reply-body ::= CHOICE {
-    finish-params           Blast-finish-params-reply,
-    get-databases           Blast-get-databases-reply,
-    get-matrices            Blast-get-matrices-reply,
-    get-search-results      Blast-get-search-results-reply,
-    get-sequences           Blast-get-sequences-reply,
-    queue-search            Blast-queue-search-reply
+Blast4-reply ::= SEQUENCE {
+    errors                  SEQUENCE OF Blast4-error OPTIONAL,
+    body                    Blast4-reply-body
 }
 
-Blast-finish-params-reply ::= SEQUENCE {
-    params                  SEQUENCE OF Blast-parameter OPTIONAL
+Blast4-reply-body ::= CHOICE {
+    finish-params           Blast4-finish-params-reply,
+    get-databases           Blast4-get-databases-reply,
+    get-matrices            Blast4-get-matrices-reply,
+    get-search-results      Blast4-get-search-results-reply,
+    get-sequences           Blast4-get-sequences-reply,
+    queue-search            Blast4-queue-search-reply
 }
 
-Blast-get-databases-reply ::= SEQUENCE {
-    databases               SEQUENCE OF Blast-database-info OPTIONAL
+Blast4-finish-params-reply ::= SEQUENCE {
+    params                  SEQUENCE OF Blast4-parameter OPTIONAL
 }
 
-Blast-get-matrices-reply ::= SEQUENCE {
-    matrices                SEQUENCE OF Blast-matrix-id OPTIONAL
+Blast4-get-databases-reply ::= SEQUENCE {
+    databases               SEQUENCE OF Blast4-database-info OPTIONAL
 }
 
-Blast-get-search-results-reply ::= SEQUENCE {
+Blast4-get-matrices-reply ::= SEQUENCE {
+    matrices                SEQUENCE OF Blast4-matrix-id OPTIONAL
+}
+
+Blast4-get-search-results-reply ::= SEQUENCE {
     alignments              Seq-align-set OPTIONAL,
-    phi-alignments          Blast-phi-alignments OPTIONAL,
-    mask                    Blast-mask OPTIONAL,
-    ka-blocks               SEQUENCE OF Blast-KABlk OPTIONAL,
+    phi-alignments          Blast4-phi-alignments OPTIONAL,
+    mask                    Blast4-mask OPTIONAL,
+    ka-blocks               SEQUENCE OF Blast4-ka-block OPTIONAL,
     search-stats            SEQUENCE OF VisibleString OPTIONAL
 }
 
-Blast-get-sequences-reply ::= SEQUENCE {
+Blast4-get-sequences-reply ::= SEQUENCE {
     sequences               SEQUENCE OF Bioseq OPTIONAL
 }
 
-Blast-queue-search-reply ::= SEQUENCE {
+Blast4-queue-search-reply ::= SEQUENCE {
     request-id              VisibleString OPTIONAL
 }
 
-Blast-error ::= SEQUENCE {
+--  --------------------------------------------------------------------
+--
+--  Errors
+--
+--  --------------------------------------------------------------------
+
+Blast4-error ::= SEQUENCE {
     code                    INTEGER,
     message                 VisibleString OPTIONAL
 }
 
---  --------------------------------------------------------------------
---
---  errors
---
---  --------------------------------------------------------------------
-
-Blast-error-flags ::= ENUMERATED {
+Blast4-error-flags ::= ENUMERATED {
     warning                 (1024),
     error                   (2048)
 }
 
-Blast-error-code ::= INTEGER {
+Blast4-error-code ::= INTEGER {
     internal-error          (2048),
     not-implemented         (2049),
     not-allowed             (2050),
@@ -167,25 +159,29 @@ Blast-error-code ::= INTEGER {
 
 --  --------------------------------------------------------------------
 --
---  other types in alphabetical order
+--  Other types in alphabetical order
 --
 --  --------------------------------------------------------------------
 
-Blast-cutoff ::= CHOICE {
+Blast4-cutoff ::= CHOICE {
     e-value                 REAL,
     raw-score               INTEGER
 }
 
-Blast-database-info ::= SEQUENCE {
+Blast4-database ::= SEQUENCE {
     name                    VisibleString,
-    type                    Blast-residue-type,
+    type                    Blast4-residue-type
+}
+
+Blast4-database-info ::= SEQUENCE {
+    database                Blast4-database,
     description             VisibleString,
     last-updated            VisibleString,
     total-length            BigInt,
     num-sequences           INTEGER
 }
 
-Blast-frame-type ::= ENUMERATED {
+Blast4-frame-type ::= ENUMERATED {
     notset                  (0),
     plus1                   (1),
     plus2                   (2),
@@ -195,20 +191,20 @@ Blast-frame-type ::= ENUMERATED {
     minus3                  (6)
 }
 
-Blast-KABlk ::= SEQUENCE {
+Blast4-ka-block ::= SEQUENCE {
     lambda                  REAL,
     k                       REAL,
     h                       REAL,
     gapped                  BOOLEAN
 }
 
-Blast-mask ::= SEQUENCE {
+Blast4-mask ::= SEQUENCE {
     locations               SEQUENCE OF Seq-loc,
-    frame                   Blast-frame-type
+    frame                   Blast4-frame-type
 }
 
-Blast-matrix ::= SEQUENCE {
-    residue-type            Blast-residue-type,
+Blast4-matrix ::= SEQUENCE {
+    residue-type            Blast4-residue-type,
     name                    VisibleString,
     comments                SEQUENCE OF VisibleString OPTIONAL,
     row-length              INTEGER,
@@ -218,17 +214,17 @@ Blast-matrix ::= SEQUENCE {
     pos-freqs               SEQUENCE OF REAL OPTIONAL
 }
 
-Blast-matrix-id ::= SEQUENCE {
-    residue-type            Blast-residue-type,
+Blast4-matrix-id ::= SEQUENCE {
+    residue-type            Blast4-residue-type,
     name                    VisibleString
 }
 
-Blast-parameter ::= SEQUENCE {
+Blast4-parameter ::= SEQUENCE {
     name                    VisibleString,
-    value                   Blast-value
+    value                   Blast4-value
 }
 
-Blast-program ::= ENUMERATED {
+Blast4-program ::= ENUMERATED {
     blastn                  (0),
     blastp                  (1),
     blastx                  (2),
@@ -236,13 +232,13 @@ Blast-program ::= ENUMERATED {
     tblastx                 (4)
 }
 
-Blast-residue-type ::= ENUMERATED {
+Blast4-residue-type ::= ENUMERATED {
     unknown                 (0),
     protein                 (1),
     nucleotide              (2)
 }
 
-Blast-service ::= ENUMERATED {
+Blast4-service ::= ENUMERATED {
     plain                   (0),
     psiblast                (1),
     phiblast                (2),
@@ -251,50 +247,50 @@ Blast-service ::= ENUMERATED {
     vecscreen               (5)
 }
 
-Blast-strand-type ::= ENUMERATED {
+Blast4-strand-type ::= ENUMERATED {
     forward-strand          (1),
     reverse-strand          (2),
     both-strands            (3)
 }
 
-Blast-subject ::= CHOICE {
+Blast4-subject ::= CHOICE {
     database                VisibleString,
     sequences               SEQUENCE OF Bioseq
 }
 
-Blast-phi-alignments ::= SEQUENCE {
+Blast4-phi-alignments ::= SEQUENCE {
     num-alignments          INTEGER,
     seq-locs                SEQUENCE OF Seq-loc
 }
 
-Blast-value ::= CHOICE {
+Blast4-value ::= CHOICE {
 
     -- scalar types
     big-integer             BigInt,
     bioseq                  Bioseq,
     boolean                 BOOLEAN,
-    cutoff                  Blast-cutoff,
+    cutoff                  Blast4-cutoff,
     integer                 INTEGER,
-    matrix                  Blast-matrix,
+    matrix                  Blast4-matrix,
     real                    REAL,
     seq-align               Seq-align,
     seq-id                  Seq-id,
     seq-loc                 Seq-loc,
-    strand-type             Blast-strand-type,
+    strand-type             Blast4-strand-type,
     string                  VisibleString,
 
     -- lists of scalar types
     big-integer-list        SEQUENCE OF BigInt,
     bioseq-list             SEQUENCE OF Bioseq,
     boolean-list            SEQUENCE OF BOOLEAN,
-    cutoff-list             SEQUENCE OF Blast-cutoff,
+    cutoff-list             SEQUENCE OF Blast4-cutoff,
     integer-list            SEQUENCE OF INTEGER,
-    matrix-list             SEQUENCE OF Blast-matrix,
+    matrix-list             SEQUENCE OF Blast4-matrix,
     real-list               SEQUENCE OF REAL,
     seq-align-list          SEQUENCE OF Seq-align,
     seq-id-list             SEQUENCE OF Seq-id,
     seq-loc-list            SEQUENCE OF Seq-loc,
-    strand-type-list        SEQUENCE OF Blast-strand-type,
+    strand-type-list        SEQUENCE OF Blast4-strand-type,
     string-list             SEQUENCE OF VisibleString,
 
     -- imported collection types
