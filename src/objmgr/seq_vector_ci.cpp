@@ -257,6 +257,57 @@ void CSeqVector_CI::SetCoding(TCoding coding)
     }
 }
 
+
+// returns number of gap symbols ahead including current symbol
+// returns 0 if current position is not in gap
+TSeqPos CSeqVector_CI::GetGapSizeForward(void) const
+{
+    if ( !IsInGap() ) {
+        return 0;
+    }
+    return m_Seg.GetEndPosition() - GetPos();
+}
+
+
+// returns number of gap symbols before current symbol
+// returns 0 if current position is not in gap
+TSeqPos CSeqVector_CI::GetGapSizeBackward(void) const
+{
+    if ( !IsInGap() ) {
+        return 0;
+    }
+    return GetPos() - m_Seg.GetPosition();
+}
+
+
+// skip current gap forward
+// returns number of skipped gap symbols
+// does nothing and returns 0 if current position is not in gap
+TSeqPos CSeqVector_CI::SkipGap(void)
+{
+    if ( !IsInGap() ) {
+        return 0;
+    }
+    TSeqPos skip = GetGapSizeForward();
+    SetPos(GetPos()+skip);
+    return skip;
+}
+
+
+// skip current gap backward
+// returns number of skipped gap symbols
+// does nothing and returns 0 if current position is not in gap
+TSeqPos CSeqVector_CI::SkipGapBackward(void)
+{
+    if ( !IsInGap() ) {
+        return 0;
+    }
+    TSeqPos skip = GetGapSizeBackward()+1;
+    SetPos(GetPos()-skip);
+    return skip;
+}
+
+
 CSeqVector_CI& CSeqVector_CI::operator=(const CSeqVector_CI& sv_it)
 {
     if ( this == &sv_it ) {
@@ -715,6 +766,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2004/10/27 16:36:28  vasilche
+* Added methods for working with gaps.
+*
 * Revision 1.36  2004/06/14 18:30:08  grichenk
 * Added ncbi2na randomizer to CSeqVector
 *

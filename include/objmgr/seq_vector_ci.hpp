@@ -98,6 +98,20 @@ public:
 
     // true if current position of CSeqVector_CI is inside of sequence gap
     bool IsInGap(void) const;
+    // returns number of gap symbols ahead including current symbol
+    // returns 0 if current position is not in gap
+    TSeqPos GetGapSizeForward(void) const;
+    // returns number of gap symbols before current symbol
+    // returns 0 if current position is not in gap
+    TSeqPos GetGapSizeBackward(void) const;
+    // skip current gap forward
+    // returns number of skipped gap symbols
+    // does nothing and returns 0 if current position is not in gap
+    TSeqPos SkipGap(void);
+    // skip current gap backward
+    // returns number of skipped gap symbols
+    // does nothing and returns 0 if current position is not in gap
+    TSeqPos SkipGapBackward(void);
 
     CSeqVector_CI& operator+=(TSeqPos value);
     CSeqVector_CI& operator-=(TSeqPos value);
@@ -449,6 +463,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/10/27 16:36:29  vasilche
+* Added methods for working with gaps.
+*
 * Revision 1.22  2004/10/27 14:17:33  vasilche
 * Implemented CSeqVector::IsInGap() and CSeqVector_CI::IsInGap().
 *
