@@ -197,6 +197,7 @@ void CFeature::AddQual(CGBQual::EType type, string value)
 typedef set<CGBSQual> TGBSQuals;
 
 static void s_AddProteinQualifiers(CFeature &feature, const CProt_ref& prot);
+static void s_AddGeneQualifier(CFeature &gbfeat, const CSeq_feat& feat, CScope& scope);
 static TGBSQuals s_SourceQualifiers(const COrg_ref& org);
 static TGBSQuals s_SourceQualifiers(const CBioSource& source);
 
@@ -217,31 +218,6 @@ static string s_Pad(const string& s, SIZE_TYPE width)
     }
 }
 
-/*
-struct s_Pad
-{
-    s_Pad(const char* s, size_t len)
-        : m_String(s), m_Length(strlen(s)), m_Required(len)
-        {
-        }
-    s_Pad(const string& s, size_t len)
-        : m_String(s.data()), m_Length(s.size()), m_Required(len)
-        {
-        }
-    const char* m_String;
-    size_t m_Length;
-    size_t m_Required;
-};
-
-inline
-ostream& operator<<(ostream& out, const s_Pad& s)
-{
-    out.write(s.m_String, s.m_Length);
-    if ( s.m_Length < s.m_Required )
-        out << setw(s.m_Required-s.m_Length) << "";
-    return out;
-}
-*/
 
 bool CGenbankWriter::Write(const CSeq_entry& entry) const
 {
@@ -1937,19 +1913,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
 
         // Standard qualifiers.
         if ((*feat)->GetData().Which() != CSeqFeatData::e_Biosrc) {
-            try {
-                // handle "CAnnot_CI::CAnnot_CI() -- unsupported location type"
-                for (CFeat_CI gene(m_Scope, (*feat)->GetLocation(),
-                                   CSeqFeatData::e_Gene);
-                     gene;  ++gene) {
-                    if (gene->GetData().GetGene().IsSetLocus()) {
-                        gbfeat.AddQual(CGBQual::eType_gene,
-                                       gene->GetData().GetGene().GetLocus());
-                    }
-                }
-            } catch (exception& e) {
-                ERR_POST(Warning << e.what());
-            }
+            s_AddGeneQualifier(gbfeat, **feat, m_Scope);
         }
 
         if ((*feat)->IsSetPartial()  &&  (*feat)->GetPartial()) {
@@ -2068,6 +2032,25 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
     }
 
     return true;
+}
+
+
+static void s_AddGeneQualifier(CFeature& gbfeat, const CSeq_feat& feat, CScope& scope)
+{
+    try {
+        // handle "CAnnot_CI::CAnnot_CI() -- unsupported location type"
+        for (CFeat_CI gene(scope, feat.GetLocation(), CSeqFeatData::e_Gene);
+             gene;  ++gene) {
+            //_TRACE("found gene");
+            if (gene->GetData().GetGene().IsSetLocus()) {
+                //_TRACE("found gene: locus="<<gene->GetData().GetGene().GetLocus());
+                gbfeat.AddQual(CGBQual::eType_gene,
+                               gene->GetData().GetGene().GetLocus());
+            }
+        }
+    } catch (exception& e) {
+        ERR_POST(Warning << e.what());
+    }
 }
 
 
@@ -2329,25 +2312,29 @@ static TGBSQuals s_SourceQualifiers(const CBioSource& source)
 
 bool CGenbankWriter::WriteSequence(const CBioseq_Handle& handle) const
 {
-    CSeqVector vec = handle.GetSeqVector();
-    vec.SetIupacCoding();
+    CSeqVector vec = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     if (m_Format == eFormat_Genbank) {
+        const char* BASES = "ACGT";
         const size_t COUNTS_SIZE = kMax_UChar+1;
         TSeqPos counts[COUNTS_SIZE];
-        fill(counts, counts+COUNTS_SIZE, 0);
-        for (TSeqPos pos = 0, size = vec.size();  pos < size;  ++pos) {
+        for ( const char* b = BASES; *b; ++b ) {
+            counts[*b] = 0;
+        }
+        //fill(counts, counts+COUNTS_SIZE, 0);
+        TSeqPos size = vec.size();
+        for (TSeqPos pos = 0;  pos < size;  ++pos) {
             ++counts[(unsigned char)vec[pos]];
         }
-        TSeqPos other = accumulate(counts, counts+COUNTS_SIZE, 0);
+
         m_Stream << s_Pad("BASE COUNT", sm_KeywordWidth);
-        for ( const char* b = "ACGT"; *b; ++b ) {
+        for ( const char* b = BASES; *b; ++b ) {
             TSeqPos count = counts[*b];
             m_Stream << ' ' << setw(6) << count << ' ' << char(tolower(*b));
-            other -= count;
+            size -= count;
         }
-        if (other) {
-            m_Stream << ' ' << setw(6) << other << " other";
-            if (other > 1) {
+        if ( size > 0 ) {
+            m_Stream << ' ' << setw(6) << size << " other";
+            if (size > 1) {
                 m_Stream << 's';
             }
         }
@@ -2355,36 +2342,24 @@ bool CGenbankWriter::WriteSequence(const CBioseq_Handle& handle) const
     }
     m_Stream << s_Pad("ORIGIN", sm_KeywordWidth) << '\n';
 
-    const size_t BLOCK_SIZE = 10;
-    const size_t BLOCK_COUNT = 6;
-    char buffer[BLOCK_COUNT*(BLOCK_SIZE+1)+32];
-    size_t block_size = 0;
-    size_t block_count = 0;
-    size_t buffer_size = 0;
-    buffer[buffer_size++] = ' ';
-    size_t line_pos = 1;
+    const TSeqPos BLOCK_SIZE = 10;
+    const TSeqPos BLOCK_COUNT = 6;
+    const TSeqPos LINE_SIZE = BLOCK_COUNT*BLOCK_SIZE;
 
-    for (TSeqPos n = 0, size = vec.size();  n < size;  ++n) {
-        buffer[buffer_size++] = tolower(vec[n]);
-        if ( ++block_size == BLOCK_SIZE ) {
-            block_size = 0;
-            if ( ++block_count == BLOCK_COUNT ) {
-                buffer[buffer_size++] = '\n';
-                buffer[buffer_size] = 0;
-                m_Stream << setw(9) << line_pos << buffer;
-                buffer_size = 0;
-                block_count = 0;
-                buffer_size = 0;
-                line_pos = n+2;
-            }
-            buffer[buffer_size++] = ' ';
+    char line[BLOCK_COUNT*(BLOCK_SIZE+1)+2];
+
+    for ( TSeqPos n = 0, seq_end = vec.size(); n < seq_end; ) {
+        m_Stream << setw(9) << (n+1);
+        size_t line_size = 0;
+        for ( TSeqPos line_end = min(n + LINE_SIZE, seq_end); n < line_end; ) {
+            line[line_size++] = ' ';
+            for ( TSeqPos block_end = min(n + BLOCK_SIZE, line_end); n < block_end; ++n )
+                line[line_size++] = tolower(vec[n]);
         }
+        line[line_size++] = '\n';
+        m_Stream.write(line, line_size);
     }
-    if ( block_count+block_size != 0 ) {
-        buffer[buffer_size++] = '\n';
-        buffer[buffer_size] = 0;
-        m_Stream << setw(9) << line_pos << buffer;
-    }
+
     m_Stream.flush();
     return true;
 }
@@ -2402,6 +2377,55 @@ void CGenbankWriter::Wrap(const string& keyword, const string& contents,
     m_Stream << s_Pad(keyword, indent);
     const string newline = '\n'+string(indent, ' ');
 
+    SIZE_TYPE line_start;
+    for ( line_start = 0; line_start < contents.size(); ) {
+        SIZE_TYPE line_limit = min(contents.size(), line_start + data_width);
+        SIZE_TYPE tilde = NPOS, last_space = NPOS, last_comma = NPOS;
+        for ( SIZE_TYPE pos = line_start+1; pos < line_limit; ++pos ) {
+            char c = contents[pos];
+            if ( c == '~' ) {
+                tilde = pos;
+                break;
+            }
+            else if ( c == ' ' ) {
+                last_space = pos;
+            }
+            else if ( c == ',' ) {
+                last_comma = pos;
+            }
+        }
+        SIZE_TYPE next_line, line_end;
+        if ( tilde != NPOS ) {
+            next_line = tilde + 1;
+            line_end = tilde;
+        }
+        else {
+            if ( line_limit == contents.size() )
+                break;
+            if ( last_space != NPOS ) {
+                next_line = last_space + 1;
+                line_end = last_space;
+                while ( line_end > line_start && contents[line_end - 1] == ' ' ) {
+                    --line_end;
+                }
+            }
+            else if ( last_comma != NPOS ) {
+                next_line = line_end = last_comma + 1;
+            }
+            else {
+                next_line = line_end = line_limit - 1;
+            }
+            while ( next_line < contents.size() && contents[next_line] == ' ' ) {
+                ++next_line;
+            }
+        }
+        m_Stream.write(contents.data()+line_start, line_end - line_start)
+            .write(newline.data(), newline.size());
+        line_start = next_line;
+    }
+    m_Stream.write(contents.data()+line_start, contents.size() - line_start).put('\n');
+
+/*
     SIZE_TYPE pos = 0, tilde_pos;
     while ((tilde_pos = contents.find('~', pos)) != NPOS
            ||  contents.size() - pos > data_width) {
@@ -2428,6 +2452,7 @@ void CGenbankWriter::Wrap(const string& keyword, const string& contents,
         }
     }
     m_Stream << contents.substr(pos) << NcbiEndl;
+*/
 }
 
 
@@ -2609,7 +2634,7 @@ void CGenbankWriter::FormatFeatureLocation(const CSeq_loc& location,
         if (pnt.IsSetFuzz()) {
             s_FormatFuzzyPoint(pnt.GetFuzz(), pnt.GetPoint() + 1, dest);
         } else {
-            dest << pnt.GetPoint();
+            dest << (pnt.GetPoint() + 1);
         }
         dest << StrandSuffix(pnt);
         break;
@@ -2627,7 +2652,7 @@ void CGenbankWriter::FormatFeatureLocation(const CSeq_loc& location,
             if (pp.IsSetFuzz()) {
                 s_FormatFuzzyPoint(pp.GetFuzz(), *it + 1, dest);
             } else {
-                dest << *it;
+                dest << (*it + 1);
             }
             first = false;
         }
@@ -2667,7 +2692,7 @@ void CGenbankWriter::FormatFeatureLocation(const CSeq_loc& location,
         if (a.IsSetFuzz()) {
             s_FormatFuzzyPoint(a.GetFuzz(), a.GetPoint() + 1, dest);
         } else {
-            dest << a.GetPoint();
+            dest << (a.GetPoint() + 1);
         }
         dest << StrandSuffix(a);
         if (location.GetBond().IsSetB()) {
@@ -2677,7 +2702,7 @@ void CGenbankWriter::FormatFeatureLocation(const CSeq_loc& location,
             if (b.IsSetFuzz()) {
                 s_FormatFuzzyPoint(b.GetFuzz(), b.GetPoint() + 1, dest);
             } else {
-                dest << b.GetPoint();
+                dest << (b.GetPoint() + 1);
             }
             dest << StrandSuffix(b) << ')'; // closes order(...);
         }
@@ -2824,6 +2849,12 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.30  2003/01/22 20:16:51  vasilche
+* Optimized WriteSequence() method.
+* Optimized Wrap() method.
+* Fixed representation of Seq-point locations (1 based).
+* Extracted addition of "gene" modifier in separate function.
+*
 * Revision 1.29  2003/01/06 20:10:04  ucko
 * Be more conservative when calling GetBioseqHandle.
 * Fix some irregular indentation.
