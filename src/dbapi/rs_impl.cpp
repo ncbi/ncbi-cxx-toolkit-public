@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.12  2002/08/26 15:35:56  kholodov
+* Added possibility to disable transaction log
+* while updating BLOBs
+*
 * Revision 1.11  2002/07/08 16:08:19  kholodov
 * Modified: moved initialization code to Init() method
 *
@@ -206,6 +210,7 @@ istream& CResultSet::GetBlobIStream(size_t buf_size)
 }
 
 ostream& CResultSet::GetBlobOStream(size_t blob_size, 
+                                    EAllowLog log_it,
                                     size_t buf_size)
 {
     // GetConnAux() returns pointer to pooled CDB_Connection.
@@ -230,7 +235,8 @@ ostream& CResultSet::GetBlobOStream(size_t blob_size,
     m_ostr = new CBlobOStream(m_conn->CloneCDB_Conn(),
                               desc,
                               blob_size,
-                              buf_size);
+                              buf_size,
+                              log_it == eEnableLog);
     return *m_ostr;
 }
 

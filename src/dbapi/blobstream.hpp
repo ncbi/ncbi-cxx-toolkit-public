@@ -33,6 +33,10 @@
 * File Description: stream implementation for reading and writing BLOBs
 *
 * $Log$
+* Revision 1.4  2002/08/26 15:35:56  kholodov
+* Added possibility to disable transaction log
+* while updating BLOBs
+*
 * Revision 1.3  2002/07/08 16:04:15  kholodov
 * Reformatted
 *
@@ -67,12 +71,14 @@ public:
     CBlobOStream(CDB_Connection* connAux,
 	       I_ITDescriptor* desc,
            size_t datasize, 
-           streamsize bufsize = 0);
+                 streamsize bufsize,
+           bool log_it);
     
     CBlobOStream(CDB_CursorCmd* curCmd,
 	       unsigned int item_num,
            size_t datasize, 
-           streamsize bufsize = 0);
+           streamsize bufsize,
+           bool log_it);
     
     virtual ~CBlobOStream();
     

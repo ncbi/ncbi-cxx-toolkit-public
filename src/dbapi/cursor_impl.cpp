@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.5  2002/08/26 15:35:56  kholodov
+* Added possibility to disable transaction log
+* while updating BLOBs
+*
 * Revision 1.4  2002/07/08 16:06:37  kholodov
 * Added GetBlobOStream() implementation
 *
@@ -119,6 +123,7 @@ void CCursor::Delete(const string& table)
 
 ostream& CCursor::GetBlobOStream(unsigned int col,
                                  size_t blob_size, 
+                                 EAllowLog log_it,
                                  size_t buf_size)
 {
     // Delete previous ostream
@@ -127,7 +132,8 @@ ostream& CCursor::GetBlobOStream(unsigned int col,
     m_ostr = new CBlobOStream(GetCursorCmd(),
                               col - 1,
                               blob_size,
-                              buf_size);
+                              buf_size,
+                              log_it == eEnableLog);
     return *m_ostr;
 }
 

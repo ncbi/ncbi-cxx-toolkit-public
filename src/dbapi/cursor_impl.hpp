@@ -34,6 +34,10 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/08/26 15:35:56  kholodov
+* Added possibility to disable transaction log
+* while updating BLOBs
+*
 * Revision 1.3  2002/07/08 16:06:37  kholodov
 * Added GetBlobOStream() implementation
 *
@@ -75,6 +79,7 @@ public:
     virtual IResultSet* Open();
     ostream& GetBlobOStream(unsigned int col,
                             size_t blob_size, 
+                            EAllowLog log_it,
                             size_t buf_size);
     virtual void Update(const string& table, const string& updateSql);
     virtual void Delete(const string& table);

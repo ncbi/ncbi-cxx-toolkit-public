@@ -34,6 +34,10 @@
 *
 *
 * $Log$
+* Revision 1.6  2002/08/26 15:35:56  kholodov
+* Added possibility to disable transaction log
+* while updating BLOBs
+*
 * Revision 1.5  2002/07/08 16:08:19  kholodov
 * Modified: moved initialization code to Init() method
 *
@@ -88,6 +92,7 @@ public:
     virtual const IResultSetMetaData* GetMetaData();
     virtual istream& GetBlobIStream(size_t buf_size);
     virtual ostream& GetBlobOStream(size_t blob_size, 
+                                    EAllowLog log_it,
                                     size_t buf_size);
 
     // Interface IEventListener implementation
