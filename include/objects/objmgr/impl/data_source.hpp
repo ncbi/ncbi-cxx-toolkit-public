@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/03/01 19:41:34  gouriano
+* *** empty log message ***
+*
 * Revision 1.10  2002/02/28 20:53:32  grichenk
 * Implemented attaching segmented sequence data. Fixed minor bugs.
 *
@@ -234,7 +237,7 @@ private:
 
     CRef<CDataLoader>    m_Loader;
     CRef<CSeq_entry>     m_pTopEntry;
-    CRef<CObjectManager> m_ObjMgr;
+    CObjectManager* m_ObjMgr;
 
     TEntries             m_Entries;   // All known seq-entries and their TSEs
     TTSEMap              m_TSE_seq;   // id -> TSEs with bioseq
