@@ -3729,7 +3729,7 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
     /* initialize internals */
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
 
-    if ( !hostname ) {
+    if (!hostname || !*hostname) {
         if (SOCK_gethostname(buf, sizeof(buf)) != 0)
             return 0;
         hostname = buf;
@@ -3923,6 +3923,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.133  2003/10/14 14:40:44  lavr
+ * SOCK_gethostbyname(): fix to obtain local host name in case of empty input
+ *
  * Revision 6.132  2003/10/02 16:30:40  lavr
  * s_IsConnected(): Cast buf arg to (void*) in getsockopt()
  *
