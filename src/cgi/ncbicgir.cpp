@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/23 13:57:55  vasilche
+* Default output stream will be NcbiCout.
+*
 * Revision 1.4  1998/12/11 22:00:34  vasilche
 * Added raw CGI response
 *
@@ -74,15 +77,14 @@ inline bool s_ZeroTime(const tm& date)
 
 CCgiResponse::CCgiResponse()
     : m_RawCgi(false)
-    , m_Output(0)
+    , m_Output(&NcbiCout)
 {
 }
 
 CCgiResponse::CCgiResponse(const CCgiResponse& response)
-    : m_Output(0)
 {
     *this = response;
-    m_Output = 0;
+    m_Output = &NcbiCout;
 }
 
 CCgiResponse::~CCgiResponse()
