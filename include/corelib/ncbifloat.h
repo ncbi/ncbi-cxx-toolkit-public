@@ -46,7 +46,7 @@
 #if defined(NCBI_OS_MSWIN)
 #   include <float.h>
 #endif
-#if !defined(NCBI_OS_MSWIN)
+#if !defined(NCBI_OS_MSWIN) && !defined(NCBI_OS_LINUX)
 #   include <ieeefp.h>
 #endif
 
@@ -78,6 +78,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/04 17:58:16  gouriano
+ * Not include ieeefp.h on Linux
+ *
  * Revision 1.6  2004/05/04 17:05:58  gouriano
  * Added definition of finite
  *
