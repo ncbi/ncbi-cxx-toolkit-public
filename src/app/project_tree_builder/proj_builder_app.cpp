@@ -61,7 +61,6 @@ struct PIsExcludedByRequires
     bool operator() (const pair<string, CProjItem>& item) const
     {
         const CProjItem& project = item.second;
-        CMsvcPrjProjectContext prj_context(project);
         if ( CMsvcPrjProjectContext::IsRequiresOk(project) )
             return false;
 
@@ -119,9 +118,9 @@ int CProjBulderApp::Run(void)
 
 
     // Build projects tree
-    CProjectItemsTree projects_tree(GetProjectTreeInfo().m_RootSrc);
+    CProjectItemsTree projects_tree(GetProjectTreeInfo().m_Src);
     CProjectTreeBuilder::BuildProjectTree(GetProjectTreeInfo().m_SubTree, 
-                                          GetProjectTreeInfo().m_RootSrc, 
+                                          GetProjectTreeInfo().m_Src, 
                                           &projects_tree);
 
     // MSVC specific part:
@@ -211,7 +210,7 @@ void CProjBulderApp::DumpFiles(const TFiles& files,
 void CProjBulderApp::GetMetaDataFiles(list<string>* files) const
 {
     files->clear();
-    string files_str = GetConfig().GetString("Common", "MetaData", "");
+    string files_str = GetConfig().GetString("ProjectTree", "MetaData", "");
     NStr::Split(files_str, " \t,", *files);
 }
 
@@ -259,6 +258,23 @@ const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
     
         m_MsvcRegSettings->m_MakefilesExt = 
             GetConfig().GetString("msvc7", "MakefilesExt", "msvc");
+
+        m_MsvcRegSettings->m_MetaMakefile = 
+            GetConfig().GetString("msvc7", "MetaMakefile", "");
+ 
+        // Not provided requests
+        string not_provided_requests_str = 
+            GetConfig().GetString("msvc7", "NotProvidedRequests", "");
+        NStr::Split(not_provided_requests_str, " \t,", 
+                    m_MsvcRegSettings->m_NotProvidedRequests);
+
+        m_MsvcRegSettings->m_ConfigureDefines = 
+            GetConfig().GetString("msvc7", "ConfigureDefines", "");
+
+        string configure_str = 
+            GetConfig().GetString("msvc7", "Configure", "");
+        NStr::Split(configure_str, " \t,", 
+                    m_MsvcRegSettings->m_Configure);
     }
     return *m_MsvcRegSettings;
 }
@@ -276,22 +292,17 @@ const CMsvcSite& CProjBulderApp::GetSite(void)
 const CMsvcMetaMakefile& CProjBulderApp::GetMetaMakefile(void)
 {
     if ( !m_MsvcMetaMakefile.get() ) {
-        //Get metamakefile file name from the registry
-        string meta_makefile_fname = 
-            GetConfig().GetString("Common", 
-                                  "MetaMakefile", "Makefile.mk.in.msvc");
-        
         //Metamakefile must be in RootSrc directory
         m_MsvcMetaMakefile = 
             auto_ptr<CMsvcMetaMakefile>
                 (new CMsvcMetaMakefile
-                        (CDirEntry::ConcatPath(GetProjectTreeInfo().m_RootSrc,
-                                               meta_makefile_fname)));
+                    (CDirEntry::ConcatPath(GetProjectTreeInfo().m_Src,
+                                           GetRegSettings().m_MetaMakefile)));
         
         //Metamakefile must present and must not be empty
         if ( m_MsvcMetaMakefile->IsEmpty() )
             NCBI_THROW(CProjBulderAppException, 
-                       eMetaMakefile, meta_makefile_fname);
+                       eMetaMakefile, GetRegSettings().m_MetaMakefile);
     }
 
     return *m_MsvcMetaMakefile;
@@ -309,32 +320,56 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
         // Root, etc.
         m_ProjectTreeInfo->m_Root = 
             CDirEntry::AddTrailingPathSeparator(args["root"].AsString());
-        m_ProjectTreeInfo->m_RootSrc = 
-            CDirEntry::AddTrailingPathSeparator
-                (CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, "src"));
 
         // Subtree to build
         string subtree = args["subtree"].AsString();
         m_ProjectTreeInfo->m_SubTree  = 
             CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, subtree);
-        CDirEntry::AddTrailingPathSeparator(m_ProjectTreeInfo->m_SubTree);
+        m_ProjectTreeInfo->m_SubTree = 
+            CDirEntry::AddTrailingPathSeparator(m_ProjectTreeInfo->m_SubTree);
 
-        // Not provided requests
-        string not_provided_requests_str = 
-            GetConfig().GetString("ProjectTree", "NotProvidedRequests", "");
-        NStr::Split(not_provided_requests_str, " \t,", 
-                    m_ProjectTreeInfo->m_NotProvidedRequests);
+
+        /// <include> branch of tree
+        string include = GetConfig().GetString("ProjectTree", "include", "");
+        m_ProjectTreeInfo->m_Include = 
+                CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
+                                      include);
+        m_ProjectTreeInfo->m_Include = 
+            CDirEntry::AddTrailingPathSeparator(m_ProjectTreeInfo->m_Include);
         
+
+        /// <src> branch of tree
+        string src = GetConfig().GetString("ProjectTree", "src", "");
+        m_ProjectTreeInfo->m_Src = 
+                CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
+                                      src);
+        m_ProjectTreeInfo->m_Src =
+            CDirEntry::AddTrailingPathSeparator(m_ProjectTreeInfo->m_Src);
+
+
+
+        /// <compilers> branch of tree
+        string compilers = 
+            GetConfig().GetString("ProjectTree", "compilers", "");
+        m_ProjectTreeInfo->m_Compilers = 
+                CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
+                                      compilers);
+        m_ProjectTreeInfo->m_Compilers = 
+            CDirEntry::AddTrailingPathSeparator
+                       (m_ProjectTreeInfo->m_Compilers);
+
+
         // ImplicitExclude - all subdirs will be excluded by default
         string implicit_exclude 
             = GetConfig().GetString("ProjectTree", "ImplicitExclude", "");
         if ( !implicit_exclude.empty() ) {
             m_ProjectTreeInfo->m_ImplicitExclude = 
-                CDirEntry::ConcatPath(m_ProjectTreeInfo->m_RootSrc, 
+                CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Src, 
                                       implicit_exclude);
             
-            CDirEntry::AddTrailingPathSeparator
-                (m_ProjectTreeInfo->m_ImplicitExclude);
+            m_ProjectTreeInfo->m_ImplicitExclude = 
+                CDirEntry::AddTrailingPathSeparator
+                           (m_ProjectTreeInfo->m_ImplicitExclude);
         }
     }
     return *m_ProjectTreeInfo;
@@ -387,6 +422,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/03 17:14:24  gorelenk
+ * Changed implementation of class CProjBulderApp member functions.
+ *
  * Revision 1.9  2004/01/30 20:44:22  gorelenk
  * Initial revision.
  *
