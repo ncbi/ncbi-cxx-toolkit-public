@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/09/27 16:23:19  vasilche
+* Changed implementation of debugging macros (_TRACE, _THROW*, _ASSERT etc),
+* so that they will be much easier for compilers to eat.
+*
 * Revision 1.16  1999/09/23 21:15:48  vasilche
 * Added namespace modifiers.
 *
@@ -90,26 +94,18 @@ BEGIN_NCBI_SCOPE
 
 #if defined(_DEBUG)
 
-#  define _TRACE(message)  do { \
-    NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Trace, \
-                                   NCBI_NS_NCBI::eDPF_All); \
-    _diag_.SetFile(__FILE__).SetLine(__LINE__) << message; \
-} while(0)
+#  define _TRACE(message) \
+    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, \
+        NCBI_NS_NCBI::eDiag_Trace, NCBI_NS_NCBI::eDPF_Trace) << message )
 
-#  define _TROUBLE  do { \
-    NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Fatal, \
-                                   NCBI_NS_NCBI::eDPF_All); \
-    _diag_.SetFile(__FILE__).SetLine(__LINE__) << "Trouble!"; \
-} while(0)
+#  define _TROUBLE \
+    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, \
+        NCBI_NS_NCBI::eDiag_Fatal, NCBI_NS_NCBI::eDPF_Trace) << "Trouble!" )
 
-#  define _ASSERT(expr)  do { \
-    if ( !(expr) ) \
-        { \
-              NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Fatal); \
-              _diag_.SetFile(__FILE__).SetLine(__LINE__) \
-                  << "Assertion failed: (" << #expr << ")"; \
-        } \
-} while(0)
+#  define _ASSERT(expr) \
+    if ( expr ) ; else ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, \
+        NCBI_NS_NCBI::eDiag_Fatal, NCBI_NS_NCBI::eDPF_Trace) \
+            << "Assertion failed: (" #expr ")")
 
 #  define _VERIFY(expr) _ASSERT(expr)
 

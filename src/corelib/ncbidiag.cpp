@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/09/27 16:23:23  vasilche
+* Changed implementation of debugging macros (_TRACE, _THROW*, _ASSERT etc),
+* so that they will be much easier for compilers to eat.
+*
 * Revision 1.10  1999/05/27 16:32:26  vakatov
 * In debug-mode(#_DEBUG), set the default post severity level to
 * "Warning" (yet, it is "Error" in non-debug mode)
@@ -118,6 +122,37 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
     }
 }
 
+bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
+{
+    if (diag.GetSeverity() < sm_PostSeverity)
+        return false;
+    if (m_Diag != &diag) {
+        if ( m_Stream.pcount() )
+            Flush();
+        m_Diag = &diag;
+    }
+    return true;
+}
+
+void CDiagBuffer::Flush(void)
+{
+    if ( !m_Diag )
+        return;
+
+    EDiagSev sev = m_Diag->GetSeverity();
+    if ( m_Stream.pcount() ) {
+        const char* message = m_Stream.str();
+        m_Stream.rdbuf()->freeze(0);
+        SDiagMessage mess(sev, message, m_Stream.pcount(), 0,
+                          m_Diag->GetFile(), m_Diag->GetLine(),
+                          m_Diag->GetPostFlags());
+        DiagHandler(mess);
+        Reset(*m_Diag);
+    }
+
+    if (sev >= sm_DieSeverity  &&  sev != eDiag_Trace)
+        ::abort();
+}
 
 char* SDiagMessage::Compose(void) const
 {
@@ -296,6 +331,37 @@ extern void SetDiagStream(CNcbiOstream* os, bool quick_flush)
     SetDiagHandler(s_ToStream_Handler, data, s_ToStream_Cleanup);
 }
 
+CNcbiDiag::CNcbiDiag(EDiagSev sev, unsigned int post_flags)
+    : m_Severity(sev), m_Line(0),
+      m_Buffer(GetDiagBuffer()), m_PostFlags(post_flags)
+{
+    m_File   = "";
+}
+
+CNcbiDiag::CNcbiDiag(const char* file, size_t line,
+                     EDiagSev sev, unsigned int post_flags)
+    : m_Severity(sev), m_Line(line),
+      m_Buffer(GetDiagBuffer()), m_PostFlags(post_flags)
+{
+    SetFile(file);
+}
+
+CNcbiDiag& CNcbiDiag::SetFile(const char* file)
+{
+    if ( file && *file ) {
+        if ( m_PostFlags & eDPF_CopyFilename ) {
+            m_File = m_FileBuffer;
+            ::strncpy(m_FileBuffer, file, sizeof(m_FileBuffer));
+            m_FileBuffer[sizeof(m_FileBuffer) - 1] = '\0';
+        }
+        else {
+            m_File = file;
+        }
+    } else {
+        m_File = "";
+    }
+    return *this;
+}
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE

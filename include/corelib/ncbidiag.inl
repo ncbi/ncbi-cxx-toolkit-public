@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/09/27 16:23:20  vasilche
+* Changed implementation of debugging macros (_TRACE, _THROW*, _ASSERT etc),
+* so that they will be much easier for compilers to eat.
+*
 * Revision 1.12  1999/05/14 16:23:18  vakatov
 * CDiagBuffer::Reset: easy fix
 *
@@ -127,20 +131,15 @@ private:
 #if !defined(NO_INCLASS_TMPL)
     // formatted output
     template<class X> void Put(const CNcbiDiag& diag, const X& x) {
-        if (diag.GetSeverity() < sm_PostSeverity)
-            return;
-        if (m_Diag != &diag) {
-            if ( m_Stream.pcount() )
-                Flush();
-            m_Diag = &diag;
-        }
-        m_Stream << x;
+        if ( SetDiag(diag) )
+            m_Stream << x;
     }
 #endif  /* !NO_INCLASS_TMPL */
 
     void Flush  (void);
     void Reset  (const CNcbiDiag& diag);  // reset content of the diag. message
     void EndMess(const CNcbiDiag& diag);  // output current diag. message
+    bool SetDiag(const CNcbiDiag& diag);
 
     // flush & detach the current user
     void Detach(const CNcbiDiag* diag);
@@ -174,27 +173,8 @@ private:
 ///////////////////////////////////////////////////////
 //  CNcbiDiag::
 
-inline CNcbiDiag::CNcbiDiag(EDiagSev sev, unsigned int post_flags)
- : m_Buffer(GetDiagBuffer())
-{
-    m_Severity  = sev;
-    m_File[0]   = '\0';
-    m_Line      = 0;
-    m_PostFlags = post_flags;
-}
-
 inline CNcbiDiag::~CNcbiDiag(void) {
     m_Buffer.Detach(this);
-}
-
-inline CNcbiDiag& CNcbiDiag::SetFile(const char* file) {
-    if (file  &&  *file) {
-        ::strncpy(m_File, file, sizeof(m_File));
-        m_File[sizeof(m_File) - 1] = '\0';
-    } else {
-        *m_File = '\0';
-    }
-    return *this;
 }
 
 inline CNcbiDiag& CNcbiDiag::SetLine(size_t line) {
@@ -220,15 +200,10 @@ inline unsigned int CNcbiDiag::GetPostFlags(void) const {
 
 
 #if defined(NO_INCLASS_TMPL)
-template<class X> void Put(CNcbiDiag& diag, CDiagBuffer& dbuff, const X& x) {
-    if (diag.GetSeverity() < dbuff.sm_PostSeverity)
-        return;
-    if (dbuff.m_Diag != &diag) {
-        if ( dbuff.m_Stream.pcount() )
-            dbuff.Flush();
-        dbuff.m_Diag = &diag;
-    }
-    dbuff.m_Stream << x;
+template<class X>
+void Put(CNcbiDiag& diag, CDiagBuffer& dbuff, const X& x) {
+    if ( dbuff.SetDiag(diag) )
+        dbuff.m_Stream << x;
 }
 
 template<class X> CNcbiDiag& operator <<(CNcbiDiag& diag, const X& x) {
@@ -292,25 +267,6 @@ inline CDiagBuffer::CDiagBuffer(void) {
 
 inline CDiagBuffer::~CDiagBuffer(void) {
     if (m_Diag  ||  m_Stream.pcount())
-        ::abort();
-}
-
-inline void CDiagBuffer::Flush(void) {
-    if ( !m_Diag )
-        return;
-
-    EDiagSev sev = m_Diag->GetSeverity();
-    if ( m_Stream.pcount() ) {
-        const char* message = m_Stream.str();
-        m_Stream.rdbuf()->freeze(0);
-        SDiagMessage mess(sev, message, m_Stream.pcount(), 0,
-                          m_Diag->GetFile(), m_Diag->GetLine(),
-                          m_Diag->GetPostFlags());
-        DiagHandler(mess);
-        Reset(*m_Diag);
-    }
-
-    if (sev >= sm_DieSeverity  &&  sev != eDiag_Trace)
         ::abort();
 }
 

@@ -35,6 +35,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/09/27 16:23:20  vasilche
+* Changed implementation of debugging macros (_TRACE, _THROW*, _ASSERT etc),
+* so that they will be much easier for compilers to eat.
+*
 * Revision 1.14  1999/09/23 21:15:48  vasilche
 * Added namespace modifiers.
 *
@@ -126,6 +130,41 @@ extern void SetThrowTraceAbort(bool abort_on_throw_trace);
 // "abort()" the program if set by SetThrowTraceAbort() or $ABORT_ON_THROW
 extern void DoThrowTraceAbort(void);
 
+void DoDbgPrint(const char* file, int line, const char* message);
+void DoDbgPrint(const char* file, int line, const string& message);
+
+inline
+const exception& DbgPrint(const char* file, int line,
+                          const exception& e, const char* )
+{
+    DoDbgPrint(file, line, e.what());
+    return e;
+}
+
+inline
+const char* DbgPrint(const char* file, int line,
+                     const char* e, const char* )
+{
+    DoDbgPrint(file, line, e);
+    return e;
+}
+
+inline
+const string& DbgPrint(const char* file, int line,
+                       const string& e, const char* )
+{
+    DoDbgPrint(file, line, e);
+    return e;
+}
+
+template<typename T>
+const T& DbgPrint(const char* file, int line,
+                  const T& e, const char* e_str)
+{
+    DoDbgPrint(file, line, e_str);
+    return e;
+}
+
 // Example:  RETHROW_TRACE;
 #  define RETHROW_TRACE do { \
     _TRACE("EXCEPTION: re-throw"); \
@@ -133,61 +172,23 @@ extern void DoThrowTraceAbort(void);
     throw; \
 } while(0)
 
-#define THROW_TRACE_TRY_CATCH \
-    try { \
-        throw exception_; \
-    } catch (NCBI_NS_STD::exception& e) { \
-        _TRACE("EXCEPTION: " << e.what()); \
-    } catch (const NCBI_NS_STD::string& s) { \
-        _TRACE("EXCEPTION: " << s); \
-    } catch (const char* s) { \
-        _TRACE("EXCEPTION: " << s); \
-    }
-
 // Example:  THROW0_TRACE("Throw just a string");
 // Example:  THROW0_TRACE(123);
-#  define THROW0_TRACE(exception_value) do { \
-    try { \
-        throw exception_value; \
-    } catch (NCBI_NS_STD::exception& e) { \
-        _TRACE("EXCEPTION: " << e.what()); \
-    } catch (const NCBI_NS_STD::string& s) { \
-        _TRACE("EXCEPTION: " << s); \
-    } catch (const char* s) { \
-        _TRACE("EXCEPTION: " << s); \
-    } \
-    catch (...) { \
-        _TRACE("EXCEPTION: " << #exception_value); \
-    } \
-    NCBI_NS_NCBI::DoThrowTraceAbort(); \
-    throw exception_value; \
-} while(0)
+#  define THROW0_TRACE(exception_value) \
+    throw DbgPrint(__FILE__, __LINE__, \
+        exception_value, #exception_value)
 
 // Example:  THROW1_TRACE(runtime_error, "Something is weird...");
-#  define THROW1_TRACE(exception_class, exception_arg) do { \
-    exception_class exception_ = exception_class(exception_arg); \
-    THROW_TRACE_TRY_CATCH \
-    catch (...) { \
-        _TRACE("EXCEPTION: " \
-               << #exception_class << "(" << #exception_arg << ")"); \
-    } \
-    NCBI_NS_NCBI::DoThrowTraceAbort(); \
-    throw exception_; \
-} while(0)
+#  define THROW1_TRACE(exception_class, exception_arg) \
+    throw DbgPrint(__FILE__, __LINE__, \
+        exception_class(exception_arg), #exception_class "(" #exception_arg ")")
 
 // Example:  THROW_TRACE(bad_alloc, ());
 // Example:  THROW_TRACE(runtime_error, ("Something is weird..."));
 // Example:  THROW_TRACE(CParseException, ("Some parse error", 123));
-#  define THROW_TRACE(exception_class, exception_args) do { \
-    exception_class exception_ = exception_class exception_args; \
-    THROW_TRACE_TRY_CATCH \
-    catch (...) { \
-        _TRACE("EXCEPTION: " \
-               << #exception_class << #exception_args); \
-    } \
-    NCBI_NS_NCBI::DoThrowTraceAbort(); \
-    throw exception_; \
-} while(0)
+#  define THROW_TRACE(exception_class, exception_args) \
+    throw DbgPrint(__FILE__, __LINE__, \
+        exception_class exception_args, #exception_class #exception_args)
 
 #else  /* _DEBUG */
 
@@ -207,10 +208,8 @@ extern void DoThrowTraceAbort(void);
 // Standard handling of "exception"-derived exceptions
 
 #define STD_CATCH(message) \
-catch (NCBI_NS_STD::exception& e) \
-{ \
-      NCBI_NS_NCBI::CNcbiDiag diag; \
-      diag << NCBI_NS_NCBI::Error << "[" << message << "]" \
+catch (NCBI_NS_STD::exception& e) { \
+      NCBI_NS_NCBI::CNcbiDiag() << NCBI_NS_NCBI::Error << "[" << message << "]" \
            << "Exception: " << e.what(); \
 }
 
@@ -219,10 +218,8 @@ catch (NCBI_NS_STD::exception& e) \
 // Standard handling of "exception"-derived and all other exceptions
 #define STD_CATCH_ALL(message) \
 STD_CATCH(message) \
-    catch (...) \
-{ \
-      NCBI_NS_NCBI::CNcbiDiag diag; \
-      diag << NCBI_NS_NCBI::Error << "[" << message << "]" \
+    catch (...) { \
+      NCBI_NS_NCBI::CNcbiDiag() << NCBI_NS_NCBI::Error << "[" << message << "]" \
            << "Unknown exception"; \
 }
 

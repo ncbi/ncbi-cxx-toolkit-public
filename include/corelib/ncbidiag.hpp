@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/09/27 16:23:20  vasilche
+* Changed implementation of debugging macros (_TRACE, _THROW*, _ASSERT etc),
+* so that they will be much easier for compilers to eat.
+*
 * Revision 1.12  1999/05/04 00:03:06  vakatov
 * Removed the redundant severity arg from macro ERR_POST()
 *
@@ -97,10 +101,9 @@ typedef enum {
 } EDiagSev;
 
 // Auxiliary macros for a "standard" error posting
-#define ERR_POST(message)  do { \
-    NCBI_NS_NCBI::CNcbiDiag _diag_; \
-    _diag_.SetFile(__FILE__).SetLine(__LINE__) << message; \
-} while(0)
+#define ERR_POST(message) \
+    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, \
+          NCBI_NS_NCBI::eDiag_Error, NCBI_NS_NCBI::eDPF_Trace) << message )
 
 
 // Which parts of the diagnostic context should be posted, and which are not...
@@ -116,9 +119,12 @@ typedef enum {
     eDPF_Line         = 0x4,  // set by default #if _DEBUG;  else -- not set
     eDPF_Prefix       = 0x8,  // set by default (always)
     eDPF_Severity     = 0x10, // set by default (always)
+    eDPF_CopyFilename = 0x20,
 
     // set all flags
     eDPF_All          = 0x7FFF,
+    // set all flags for using with __FILE__ and __LINE__
+    eDPF_Trace        = 0x1f,
     // ignore all other flags, use global flags
     eDPF_Default      = 0x8000
 } EDiagPostFlag;
@@ -131,6 +137,9 @@ typedef enum {
 class CNcbiDiag {
 public:
     CNcbiDiag(EDiagSev     sev        = eDiag_Error,
+              unsigned int post_flags = eDPF_Default);
+    CNcbiDiag(const char* file, size_t line,
+              EDiagSev     sev        = eDiag_Error,
               unsigned int post_flags = eDPF_Default);
     ~CNcbiDiag(void);
 
@@ -177,7 +186,8 @@ private:
 #endif
 
     EDiagSev     m_Severity;  // severity level of the current message
-    char         m_File[256]; // file name      .....
+    const char*  m_File;      // file name            .....
+    char         m_FileBuffer[256]; // file name buffer  .....
     size_t       m_Line;      // line #         .....
     CDiagBuffer& m_Buffer;    // this thread's error message buffer
     unsigned int m_PostFlags; // bitwise OR of "EDiagPostFlag"

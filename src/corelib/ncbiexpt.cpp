@@ -32,6 +32,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/09/27 16:23:24  vasilche
+* Changed implementation of debugging macros (_TRACE, _THROW*, _ASSERT etc),
+* so that they will be much easier for compilers to eat.
+*
 * Revision 1.9  1999/05/04 00:03:13  vakatov
 * Removed the redundant severity arg from macro ERR_POST()
 *
@@ -93,6 +97,17 @@ extern void DoThrowTraceAbort(void)
         ::abort();
 }
 
+void DoDbgPrint(const char* file, int line, const char* message)
+{
+    CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << message;
+    DoThrowTraceAbort();
+}
+
+void DoDbgPrint(const char* file, int line, const string& message)
+{
+    CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << message;
+    DoThrowTraceAbort();
+}
 
 /////////////////////////////////
 //  CErrnoException
