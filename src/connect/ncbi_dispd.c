@@ -31,18 +31,16 @@
  *
  */
 
+#include "ncbi_ansi_ext.h"
 #include "ncbi_comm.h"
 #include "ncbi_priv.h"
 #include "ncbi_servicep_dispd.h"
-#include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_http_connector.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
-
 
 /* Lower bound of up-to-date/out-of-date ratio */
 #define SERV_DISPD_STALE_RATIO_OK  0.8
@@ -377,6 +375,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.47  2002/10/28 15:46:21  lavr
+ * Use "ncbi_ansi_ext.h" privately
+ *
  * Revision 6.46  2002/10/21 18:32:35  lavr
  * Append service arguments "address" and "platform" in dispatcher requests
  *

@@ -33,11 +33,10 @@
  *
  */
 
-#include <connect/ncbi_ansi_ext.h>
+#include "ncbi_ansi_ext.h"
 #include <connect/ncbi_socket_connector.h>
 #include <connect/ncbi_socket.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define MAX_IP_ADDR_LEN       16 /* sizeof("255.255.255.255") */
 
@@ -376,6 +375,9 @@ extern CONNECTOR SOCK_CreateConnectorOnTopEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2002/10/28 15:46:21  lavr
+ * Use "ncbi_ansi_ext.h" privately
+ *
  * Revision 6.12  2002/10/22 15:11:24  lavr
  * Zero connector's handle to crash if revisited
  *

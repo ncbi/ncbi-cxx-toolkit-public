@@ -30,7 +30,6 @@
  *
  */
 
-
 #include "ncbi_conn_streambuf.hpp"
 #include <connect/ncbi_conn_exception.hpp>
 #include <corelib/ncbistd.hpp>
@@ -268,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2002/10/28 15:46:20  lavr
+ * Use "ncbi_ansi_ext.h" privately
+ *
  * Revision 6.20  2002/08/28 03:40:54  lavr
  * Better buffer filling in xsgetn()
  *

@@ -33,11 +33,10 @@
  *
  */
 
-#include <connect/ncbi_ansi_ext.h>
+#include "ncbi_ansi_ext.h"
 #include <connect/ncbi_file_connector.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 
 /***********************************************************************
@@ -318,6 +317,9 @@ extern CONNECTOR FILE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2002/10/28 15:46:20  lavr
+ * Use "ncbi_ansi_ext.h" privately
+ *
  * Revision 6.9  2002/10/22 15:11:24  lavr
  * Zero connector's handle to crash if revisited
  *

@@ -33,22 +33,13 @@
  *
  */
 
-#include "ncbi_config.h"
-
-/* OS must be specified in the command-line ("-D....") or in the conf. header
- */
-#if !defined(NCBI_OS_UNIX) && !defined(NCBI_OS_MSWIN) && !defined(NCBI_OS_MAC)
-#  error "Unknown OS, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN, NCBI_OS_MAC!"
-#endif
-
+#include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
-#include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_buffer.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <string.h>
 
 
 /***********************************************************************
@@ -882,6 +873,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.35  2002/10/28 15:46:20  lavr
+ * Use "ncbi_ansi_ext.h" privately
+ *
  * Revision 6.34  2002/10/22 15:11:24  lavr
  * Zero connector's handle to crash if revisited
  *

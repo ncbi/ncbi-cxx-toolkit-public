@@ -30,19 +30,14 @@
  *
  */
 
-#include "ncbi_config.h"
+#include "ncbi_ansi_ext.h"
 #include "ncbi_server_infop.h"
-#if !defined(HAVE_STRCASECMP) || !defined(HAVE_STRDUP)
-#  include <connect/ncbi_ansi_ext.h>
-#endif
 #include <connect/ncbi_server_info.h>
 #include <connect/ncbi_socket.h>
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-
 
 #define MAX_IP_ADDR_LEN  16 /* sizeof("255.255.255.255") */
 
@@ -839,6 +834,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.43  2002/10/28 15:46:21  lavr
+ * Use "ncbi_ansi_ext.h" privately
+ *
  * Revision 6.42  2002/10/21 19:19:23  lavr
  * 2(was:3)-digit precision if R is exactly 0.01
  *

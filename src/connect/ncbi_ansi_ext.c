@@ -30,7 +30,7 @@
  *
  */
 
-#include <connect/ncbi_ansi_ext.h>
+#include "ncbi_ansi_ext.h"
 #include <ctype.h>
 #include <stdlib.h>
 
@@ -111,9 +111,19 @@ extern char* strlwr(char* s)
 }
 
 
+extern char* strncpy0(char* s1, const char* s2, size_t n)
+{
+    *s1 = '\0';
+    return strncat(s1, s2, n);
+}
+
+
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2002/10/28 15:41:56  lavr
+ * Use "ncbi_ansi_ext.h" privately
+ *
  * Revision 6.10  2002/09/24 15:05:45  lavr
  * Log moved to end
  *
