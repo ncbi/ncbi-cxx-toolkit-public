@@ -52,21 +52,24 @@ class CAnnotObject_SplitInfo;
 class CLocObjects_SplitInfo;
 class CSeq_annot_SplitInfo;
 class CBioseq_SplitInfo;
+class CSeq_descr_SplitInfo;
 class CSeq_data_SplitInfo;
 class CSeq_inst_SplitInfo;
 
 struct SAnnotPiece;
 struct SIdAnnotPieces;
-struct SAnnotPieces;
+class CAnnotPieces;
 
 struct SChunkInfo
 {
+    typedef map<int, CConstRef<CSeq_descr_SplitInfo> > TChunkSeq_descr;
     typedef vector<CAnnotObject_SplitInfo> TAnnotObjects;
     typedef map<CConstRef<CSeq_annot>, TAnnotObjects> TIdAnnots;
     typedef map<int, TIdAnnots> TChunkAnnots;
     typedef vector<CSeq_data_SplitInfo> TSeq_data;
     typedef map<int, TSeq_data> TChunkSeq_data;
 
+    void Add(const CSeq_descr_SplitInfo& info);
     void Add(const CSeq_annot_SplitInfo& info);
     void Add(TAnnotObjects& objs,
              const CLocObjects_SplitInfo& info);
@@ -77,9 +80,10 @@ struct SChunkInfo
 
     size_t CountAnnotObjects(void) const;
 
-    CSize m_Size;
-    TChunkAnnots m_Annots;
-    TChunkSeq_data m_Seq_data;
+    CSize           m_Size;
+    TChunkSeq_descr m_Seq_descr;
+    TChunkAnnots    m_Annots;
+    TChunkSeq_data  m_Seq_data;
 };
 
 
@@ -89,6 +93,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/06/30 20:56:32  vasilche
+* Added splitting of Seqdesr objects (disabled yet).
+*
 * Revision 1.4  2004/06/15 14:05:49  vasilche
 * Added splitting of sequence.
 *

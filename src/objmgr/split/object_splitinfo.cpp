@@ -41,6 +41,7 @@
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_data.hpp>
+#include <objects/seq/Seq_descr.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
 
@@ -53,12 +54,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-/////////////////////////////////////////////////////////////////////////////
-// CSeq_annot_SplitInfo
-/////////////////////////////////////////////////////////////////////////////
+static CAsnSizer s_Sizer; // for size estimation
 
 
-static CAsnSizer s_Sizer;
+/////////////////////////////////////////////////////////////////////////////
+// CLocObjects_SplitInfo
+/////////////////////////////////////////////////////////////////////////////
 
 
 void CLocObjects_SplitInfo::Add(const CAnnotObject_SplitInfo& obj)
@@ -75,21 +76,32 @@ CNcbiOstream& CLocObjects_SplitInfo::Print(CNcbiOstream& out) const
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_annot_SplitInfo
+/////////////////////////////////////////////////////////////////////////////
+
+
 CSeq_annot_SplitInfo::CSeq_annot_SplitInfo(void)
-    : m_Id(0)
+    : m_Id(0),
+      m_TopPriority(eAnnotPriority_max)
 {
 }
 
 
 CSeq_annot_SplitInfo::CSeq_annot_SplitInfo(const CSeq_annot_SplitInfo& base,
-                                           const CLocObjects_SplitInfo& objs)
-    : m_Id(base.m_Id),
-      m_Src_annot(base.m_Src_annot),
+                                           EAnnotPriority priority)
+    : m_Src_annot(base.m_Src_annot),
+      m_Id(base.m_Id),
       m_Name(base.m_Name),
-      m_LandmarkObjects(objs),
-      m_Size(objs.m_Size),
-      m_Location(objs.m_Location)
+      m_TopPriority(priority),
+      m_Objects(priority+1)
 {
+    _ASSERT(unsigned(priority) < base.m_Objects.size());
+    _ASSERT(base.m_Objects[priority]);
+    const CLocObjects_SplitInfo& objs = *base.m_Objects[priority];
+    m_Objects[priority] = new CLocObjects_SplitInfo(objs);
+    m_Size = objs.m_Size;
+    m_Location = objs.m_Location;
 }
 
 
@@ -108,6 +120,12 @@ CAnnotName CSeq_annot_SplitInfo::GetName(const CSeq_annot& annot)
         ret.SetNamed(name);
     }
     return ret;
+}
+
+
+EAnnotPriority CSeq_annot_SplitInfo::GetPriority(void) const
+{
+    return m_TopPriority;
 }
 
 
@@ -162,36 +180,15 @@ void CSeq_annot_SplitInfo::SetSeq_annot(int id,
 }
 
 
-bool CSeq_annot_SplitInfo::IsLandmark(const CAnnotObject_SplitInfo& obj) const
-{
-    if ( obj.m_ObjectType != CSeq_annot::C_Data::e_Ftable ) {
-        return false;
-    }
-    const CObject& annot = *obj.m_Object;
-    const CSeq_feat& feat = dynamic_cast<const CSeq_feat&>(annot);
-    switch ( feat.GetData().GetSubtype() ) {
-    case CSeqFeatData::eSubtype_gene:
-        return true;
-    default:
-        return false;
-    }
-}
-
-
 void CSeq_annot_SplitInfo::Add(const CAnnotObject_SplitInfo& obj)
 {
-    if ( IsLandmark(obj) ) {
-        m_LandmarkObjects.Add(obj);
+    EAnnotPriority index = obj.GetPriority();
+    m_TopPriority = min(m_TopPriority, index);
+    m_Objects.resize(max(m_Objects.size(), index+1u));
+    if ( !m_Objects[index] ) {
+        m_Objects[index] = new CLocObjects_SplitInfo;
     }
-    else {
-        CSeq_id_Handle idh = obj.m_Location.GetSingleId();
-        if ( idh ) {
-            m_SimpleLocObjects[idh].Add(obj);
-        }
-        else {
-            m_ComplexLocObjects.Add(obj);
-        }
-    }
+    m_Objects[index]->Add(obj);
     m_Location.Add(obj.m_Location);
 }
 
@@ -205,28 +202,23 @@ CNcbiOstream& CSeq_annot_SplitInfo::Print(CNcbiOstream& out) const
     out << "Seq-annot" << name << ":";
 
     size_t lines = 0;
-
-    if ( m_LandmarkObjects.size() ) {
-        out << "\nLandmark: " << m_LandmarkObjects;
+    ITERATE ( TObjects, it, m_Objects ) {
+        if ( !*it ) {
+            continue;
+        }
+        out << "\nObjects" << (it-m_Objects.begin()) << ": " << **it;
         ++lines;
     }
-
-    if ( m_ComplexLocObjects.size() ) {
-        out << "\n Complex: " << m_ComplexLocObjects;
-        ++lines;
-    }
-
-    ITERATE ( TSimpleLocObjects, it, m_SimpleLocObjects ) {
-        out << "\n  Simple: " << it->second;
-        ++lines;
-    }
-
     if ( lines > 1 ) {
         out << "\n   Total: " << m_Size;
     }
     return out << NcbiEndl;
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+// CAnnotObject_SplitInfo
+/////////////////////////////////////////////////////////////////////////////
 
 CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_feat& obj,
                                                double ratio)
@@ -258,6 +250,30 @@ CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_align& obj,
 }
 
 
+EAnnotPriority CAnnotObject_SplitInfo::GetPriority(void) const
+{
+    if ( m_ObjectType != CSeq_annot::C_Data::e_Ftable ) {
+        return eAnnotPriority_regular;
+    }
+    const CObject& annot = *m_Object;
+    const CSeq_feat& feat = dynamic_cast<const CSeq_feat&>(annot);
+    switch ( feat.GetData().GetSubtype() ) {
+    case CSeqFeatData::eSubtype_gene:
+    case CSeqFeatData::eSubtype_cdregion:
+        return eAnnotPriority_landmark;
+    case CSeqFeatData::eSubtype_variation:
+        return eAnnotPriority_lowest;
+    default:
+        return eAnnotPriority_regular;
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CBioseq_SplitInfo
+/////////////////////////////////////////////////////////////////////////////
+
+
 CBioseq_SplitInfo::CBioseq_SplitInfo(void)
     : m_Id(0)
 {
@@ -267,6 +283,41 @@ CBioseq_SplitInfo::CBioseq_SplitInfo(void)
 CBioseq_SplitInfo::~CBioseq_SplitInfo(void)
 {
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_descr_SplitInfo
+/////////////////////////////////////////////////////////////////////////////
+
+
+CSeq_descr_SplitInfo::CSeq_descr_SplitInfo(int gi,
+                                           const CSeq_descr& descr,
+                                           const SSplitterParams& params)
+    : m_Descr(&descr)
+{
+    m_Location.Add(gi, CRange<TSeqPos>::GetWhole());
+    s_Sizer.Set(descr, params);
+    m_Size = CSize(s_Sizer);
+}
+
+
+EAnnotPriority CSeq_descr_SplitInfo::GetPriority(void) const
+{
+    return eAnnotPriority_regular;
+}
+
+
+int CSeq_descr_SplitInfo::GetGi(void) const
+{
+    _ASSERT(m_Location.size() == 1);
+    _ASSERT(m_Location.begin()->first.IsGi());
+    return m_Location.begin()->first.GetGi();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_data_SplitInfo
+/////////////////////////////////////////////////////////////////////////////
 
 
 void CSeq_data_SplitInfo::SetSeq_data(int gi,
@@ -297,6 +348,17 @@ CSeq_data_SplitInfo::TRange CSeq_data_SplitInfo::GetRange(void) const
 }
 
 
+EAnnotPriority CSeq_data_SplitInfo::GetPriority(void) const
+{
+    return eAnnotPriority_low;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_inst_SplitInfo
+/////////////////////////////////////////////////////////////////////////////
+
+
 void CSeq_inst_SplitInfo::Add(const CSeq_data_SplitInfo& data)
 {
     m_Seq_data.push_back(data);
@@ -309,6 +371,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/06/30 20:56:32  vasilche
+* Added splitting of Seqdesr objects (disabled yet).
+*
 * Revision 1.6  2004/06/15 14:05:50  vasilche
 * Added splitting of sequence.
 *

@@ -82,17 +82,13 @@ bool CBlobSplitterImpl::Split(const CSeq_entry& entry)
 {
     Reset();
 
-#if 0
-    size_t before_count = CountAnnotObjects(entry);
-    NcbiCout << "Total: before: " << before_count << NcbiEndl;
-#endif
-
     // copying skeleton while stripping annotations
     CopySkeleton(*m_Skeleton, entry);
 
-    // collect annot pieces stripping landmark annotations to main chunk
+    // collect annot pieces separating annotations with different priorities
     CollectPieces();
-    if ( m_Pieces->empty() ) {
+
+    if ( m_Pieces.size() < eAnnotPriority_skeleton ) {
         return false;
     }
     
@@ -105,37 +101,35 @@ bool CBlobSplitterImpl::Split(const CSeq_entry& entry)
 
     MakeID2SObjects();
 
-#if 0
-    size_t after_count = CountAnnotObjects(*m_Skeleton) +
-        CountAnnotObjects(m_ID2_Chunks);
-    NcbiCout << "Total: in chunks: " << after_count << NcbiEndl;
-    _ASSERT(before_count == after_count);
-#endif
-
     return m_SplitBlob.IsSplit();
 }
 
 
 void CBlobSplitterImpl::CollectPieces(void)
 {
-    // Collect annotation pieces and strip landmark and long annotations
+    // Collect annotation pieces and strip skeleton annotations
     // to main chunk.
-    m_Pieces.reset(new CAnnotPieces);
-    SChunkInfo& main_chunk = m_Chunks[0];
+    m_Pieces.clear();
+
     ITERATE ( TBioseqs, it, m_Bioseqs ) {
-        m_Pieces->Add(it->second, main_chunk);
+        CollectPieces(it->second);
     }
 
     if ( m_Params.m_Verbose ) {
         // display pieces statistics
         CSize single_ref;
-        ITERATE ( CAnnotPieces, it, *m_Pieces ) {
-            if ( it->second.size() <= 1 ) {
-                single_ref += it->second.m_Size;
+        ITERATE ( TPieces, pit, m_Pieces ) {
+            if ( !*pit ) {
+                continue;
             }
-            else {
-                NcbiCout << "@" << it->first.AsString() << ": " <<
-                    it->second.m_Size << '\n';
+            ITERATE ( CAnnotPieces, it, **pit ) {
+                if ( it->second.size() <= 1 ) {
+                    single_ref += it->second.m_Size;
+                }
+                else {
+                    NcbiCout << "@" << it->first.AsString() << ": " <<
+                        it->second.m_Size << '\n';
+                }
             }
         }
         if ( single_ref ) {
@@ -143,23 +137,69 @@ void CBlobSplitterImpl::CollectPieces(void)
         }
         NcbiCout << NcbiEndl;
     }
-#if 0
-    {{
-        _ASSERT(m_Chunks.size() == 1);
-        // count objects
-        size_t count = CountAnnotObjects(*m_Skeleton) + 
-            m_Chunks.begin()->second.CountAnnotObjects() +
-            m_Pieces->CountAnnotObjects();
-        NcbiCout << "Total: in pieces: " << count << NcbiEndl;
-    }}
-#endif
+}
+
+
+void CBlobSplitterImpl::CollectPieces(const CBioseq_SplitInfo& info)
+{
+    if ( info.m_Descr ) {
+        Add(SAnnotPiece(*info.m_Descr));
+    }
+    ITERATE ( CBioseq_SplitInfo::TSeq_annots, it, info.m_Annots ) {
+        CollectPieces(it->second);
+    }
+    if ( info.m_Inst ) {
+        ITERATE( CSeq_inst_SplitInfo::TSeq_data, it, info.m_Inst->m_Seq_data ){
+            Add(SAnnotPiece(*it));
+        }
+    }
+}
+
+
+void CBlobSplitterImpl::CollectPieces(const CSeq_annot_SplitInfo& info)
+{
+    size_t max_size = info.m_Name.IsNamed()? 100: 10;
+    size_t size = 0;
+    ITERATE ( CSeq_annot_SplitInfo::TObjects, i, info.m_Objects ) {
+        if ( *i ) {
+            size += (*i)->size();
+        }
+    }
+    bool add_as_whole = size <= max_size;
+    if ( add_as_whole ) {
+        // add whole Seq-annot as one piece because header overhead is too big
+        Add(SAnnotPiece(info));
+    }
+    else {
+        // add each annotation as separate piece
+        ITERATE ( CSeq_annot_SplitInfo::TObjects, i, info.m_Objects ) {
+            if ( !*i ) {
+                continue;
+            }
+            ITERATE ( CLocObjects_SplitInfo, j, **i ) {
+                Add(SAnnotPiece(info, *j));
+            }
+        }
+    }
+}
+
+
+void CBlobSplitterImpl::Add(const SAnnotPiece& piece)
+{
+    EAnnotPriority priority = piece.m_Priority;
+    m_Pieces.resize(max(m_Pieces.size(), priority+1u));
+    if ( !m_Pieces[priority] ) {
+        m_Pieces[priority] = new CAnnotPieces;
+    }
+    m_Pieces[priority]->Add(piece);
 }
 
 
 SChunkInfo* CBlobSplitterImpl::NextChunk(void)
 {
-    _ASSERT(!m_Chunks.empty());
     int chunk_id = m_Chunks.size();
+    if ( m_Chunks.find(0) == m_Chunks.end() )
+        ++chunk_id;
     return &m_Chunks[chunk_id];
 }
 
@@ -180,27 +220,66 @@ SChunkInfo* CBlobSplitterImpl::NextChunk(SChunkInfo* chunk, const CSize& size)
 
 void CBlobSplitterImpl::SplitPieces(void)
 {
-    SChunkInfo& main_chunk = m_Chunks[0];
+    NON_CONST_ITERATE ( TPieces, prit, m_Pieces ) {
+        if ( !*prit ) {
+            continue;
+        }
+        EAnnotPriority priority = EAnnotPriority(prit-m_Pieces.begin());
+        if ( priority == eAnnotPriority_skeleton ) {
+            AddToSkeleton(**prit);
+        }
+        else {
+            SplitPieces(**prit);
+        }
+        _ASSERT((*prit)->empty());
+        prit->Reset();
+    }
     
+    m_Pieces.clear();
+
+    if ( m_Params.m_Verbose ) {
+        // display collected chunks stats
+        ITERATE ( TChunks, it, m_Chunks ) {
+            NcbiCout << "Chunk: " << it->first << ": " << it->second.m_Size <<
+                NcbiEndl;
+        }
+    }
+}
+
+
+void CBlobSplitterImpl::AddToSkeleton(CAnnotPieces& pieces)
+{
+    SChunkInfo& main_chunk = m_Chunks[0];
+
+    // combine ids with small amount of pieces
+    while ( !pieces.empty() ) {
+        CAnnotPieces::iterator max_iter = pieces.begin();
+        SIdAnnotPieces& objs = max_iter->second;
+        if ( !objs.empty() ) {
+            while ( !objs.empty() ) {
+                SAnnotPiece piece = *objs.begin();
+                main_chunk.Add(piece);
+                pieces.Remove(piece);
+                _ASSERT(objs.empty() || *objs.begin() != piece);
+            }
+        }
+        _ASSERT(max_iter->second.empty());
+        pieces.erase(max_iter);
+    }
+    _ASSERT(pieces.empty());
+}
+
+
+void CBlobSplitterImpl::SplitPieces(CAnnotPieces& pieces)
+{
     SChunkInfo* chunk = 0;
     
     // split ids with large amount of pieces
-    while ( !m_Pieces->empty() ) {
-#if 0
-        {{
-            size_t count = CountAnnotObjects(*m_Skeleton) +
-                m_Pieces->CountAnnotObjects();
-            ITERATE ( TChunks, it, m_Chunks ) {
-                count += it->second.CountAnnotObjects();
-            }
-            NcbiCout << "Total count: " << count << '\n';
-        }}
-#endif
-
+    while ( !pieces.empty() ) {
         // find id with most size of pieces on it
         CSize max_size;
         CAnnotPieces::iterator max_iter;
-        NON_CONST_ITERATE ( CAnnotPieces, it, *m_Pieces ) {
+        NON_CONST_ITERATE ( CAnnotPieces, it, pieces ) {
             if ( it->second.m_Size > max_size ) {
                 max_iter = it;
                 max_size = it->second.m_Size;
@@ -234,99 +313,64 @@ void CBlobSplitterImpl::SplitPieces(void)
 
         {{
             // extract long pieces into main or next chunk
-            vector<SAnnotPiece> pieces;
+            vector<SAnnotPiece> pcs;
             CSize size;
             ITERATE ( SIdAnnotPieces, it, objs ) {
                 const SAnnotPiece& piece = *it;
                 if ( piece.m_IdRange.GetLength() > max_piece_length ) {
-                    pieces.push_back(piece);
+                    pcs.push_back(piece);
                     size += piece.m_Size;
                 }
             }
-            if ( !pieces.empty() ) {
+            if ( !pcs.empty() ) {
                 if ( m_Params.m_Verbose ) {
-                    LOG_POST("  "<<pieces.size()<<" long pieces");
+                    LOG_POST("  "<<pcs.size()<<" long pieces");
                 }
-                SChunkInfo* long_chunk;
-                if ( size.GetZipSize() < m_Params.m_ChunkSize/2 )
-                    long_chunk = &main_chunk;
-                else
-                    long_chunk = 0;
-                ITERATE ( vector<SAnnotPiece>, it, pieces ) {
+                SChunkInfo* long_chunk = 0;
+                ITERATE ( vector<SAnnotPiece>, it, pcs ) {
                     const SAnnotPiece& piece = *it;
-                    if ( long_chunk != &main_chunk )
-                        long_chunk = NextChunk(long_chunk, piece.m_Size);
+                    long_chunk = NextChunk(long_chunk, piece.m_Size);
                     long_chunk->Add(piece);
-                    m_Pieces->Remove(piece);
+                    pieces.Remove(piece);
                 }
             }
         }}
 
         {{
             // extract all other pieces
-            vector<SAnnotPiece> pieces;
+            vector<SAnnotPiece> pcs;
             ITERATE ( SIdAnnotPieces, it, objs ) {
-                pieces.push_back(*it);
+                pcs.push_back(*it);
             }
-            ITERATE ( vector<SAnnotPiece>, it, pieces ) {
+            ITERATE ( vector<SAnnotPiece>, it, pcs ) {
                 const SAnnotPiece piece = *it;
                 chunk = NextChunk(chunk, piece.m_Size);
                 chunk->Add(piece);
-                m_Pieces->Remove(piece);
+                pieces.Remove(piece);
             }
             
             _ASSERT(max_iter->second.empty());
-            m_Pieces->erase(max_iter);
+            pieces.erase(max_iter);
         }}
     }
     
     // combine ids with small amount of pieces
-    while ( !m_Pieces->empty() ) {
-#if 0
-        {{
-            size_t count = CountAnnotObjects(*m_Skeleton) +
-                m_Pieces->CountAnnotObjects();
-            ITERATE ( TChunks, it, m_Chunks ) {
-                count += it->second.CountAnnotObjects();
-            }
-            NcbiCout << "Total count: " << count << '\n';
-        }}
-#endif
-
-        CAnnotPieces::iterator max_iter = m_Pieces->begin();
+    while ( !pieces.empty() ) {
+        CAnnotPieces::iterator max_iter = pieces.begin();
         SIdAnnotPieces& objs = max_iter->second;
         if ( !objs.empty() ) {
             chunk = NextChunk(chunk, objs.m_Size);
             while ( !objs.empty() ) {
                 SAnnotPiece piece = *objs.begin();
                 chunk->Add(piece);
-                m_Pieces->Remove(piece);
+                pieces.Remove(piece);
                 _ASSERT(objs.empty() || *objs.begin() != piece);
             }
         }
         _ASSERT(max_iter->second.empty());
-        m_Pieces->erase(max_iter);
+        pieces.erase(max_iter);
     }
-    _ASSERT(m_Pieces->empty());
-    m_Pieces.reset();
-
-#if 0
-    {{
-        size_t count = CountAnnotObjects(*m_Skeleton);
-        ITERATE ( TChunks, it, m_Chunks ) {
-            count += it->second.CountAnnotObjects();
-        }
-        NcbiCout << "Total count: " << count << '\n';
-    }}
-#endif
-
-    if ( m_Params.m_Verbose ) {
-        // display collected chunks stats
-        ITERATE ( TChunks, it, m_Chunks ) {
-            NcbiCout << "Chunk: " << it->first << ": " << it->second.m_Size <<
-                NcbiEndl;
-        }
-    }
+    _ASSERT(pieces.empty());
 }
 
 
@@ -336,6 +380,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/06/30 20:56:32  vasilche
+* Added splitting of Seqdesr objects (disabled yet).
+*
 * Revision 1.8  2004/06/15 14:05:50  vasilche
 * Added splitting of sequence.
 *

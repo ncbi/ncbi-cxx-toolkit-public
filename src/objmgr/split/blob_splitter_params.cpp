@@ -41,10 +41,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+#define DISABLE_SPLIT_DESCRIPTIONS true
+
+
 SSplitterParams::SSplitterParams(void)
     : m_Compression(eCompression_none),
       m_Verbose(0),
-      m_DisableSplitDescriptions(false),
+      m_DisableSplitDescriptions(DISABLE_SPLIT_DESCRIPTIONS),
       m_DisableSplitSequence(false),
       m_DisableSplitAnnotations(false)
       
@@ -169,6 +172,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/06/30 20:56:32  vasilche
+* Added splitting of Seqdesr objects (disabled yet).
+*
 * Revision 1.9  2004/06/15 14:05:50  vasilche
 * Added splitting of sequence.
 *

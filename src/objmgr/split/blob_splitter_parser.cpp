@@ -95,14 +95,9 @@ static CAsnSizer s_Sizer;
 
 static CSize small_annot;
 
-static size_t landmark_annot_count;
-static size_t complex_annot_count;
-static size_t simple_annot_count;
-
 void CBlobSplitterImpl::CopySkeleton(CSeq_entry& dst, const CSeq_entry& src)
 {
     small_annot.clear();
-    landmark_annot_count = complex_annot_count = simple_annot_count = 0;
 
     if ( src.IsSeq() ) {
         CopySkeleton(dst.SetSeq(), src.GetSeq());
@@ -117,11 +112,6 @@ void CBlobSplitterImpl::CopySkeleton(CSeq_entry& dst, const CSeq_entry& src)
             NcbiCout << "Small Seq-annots: " << small_annot << NcbiEndl;
         }
     }
-#if 0
-    NcbiCout << "Total: after: " <<
-        (landmark_annot_count + complex_annot_count + simple_annot_count) <<
-        NcbiEndl;
-#endif
 
     if ( m_Params.m_Verbose && m_Skeleton == &dst ) {
         // skeleton statistics
@@ -214,10 +204,8 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq& dst, const CBioseq& src)
     }
     
     if ( need_split_descr ) {
-        ITERATE ( CBioseq::TDescr::Tdata, it, src.GetDescr().Get() ) {
-            if ( !CopyDesc(*info, **it) ) {
-                dst.SetDescr().Set().push_back(*it);
-            }
+        if ( !CopyDescr(*info, gi, src.GetDescr()) ) {
+            dst.SetDescr().Set() = src.GetDescr().Get();
         }
     }
     else {
@@ -318,10 +306,8 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq_set& dst, const CBioseq_set& src)
 
 
     if ( need_split_descr ) {
-        ITERATE ( CBioseq_set::TDescr::Tdata, it, src.GetDescr().Get() ) {
-            if ( !CopyDesc(*info, **it) ) {
-                dst.SetDescr().Set().push_back(*it);
-            }
+        if ( !CopyDescr(*info, id, src.GetDescr()) ) {
+            dst.SetDescr().Set() = src.GetDescr().Get();
         }
     }
     else {
@@ -345,10 +331,17 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq_set& dst, const CBioseq_set& src)
 }
 
 
-bool CBlobSplitterImpl::CopyDesc(CBioseq_SplitInfo& /*bioseq_info*/,
-                                 const CSeqdesc& /*desc*/)
+bool CBlobSplitterImpl::CopyDescr(CBioseq_SplitInfo& bioseq_info,
+                                  int gi,
+                                  const CSeq_descr& descr)
 {
-    return false;
+    if ( gi <= 0 || !bioseq_info.m_Bioseq ) {
+        // we will not split descriptors of Bioseq-sets
+        return false;
+    }
+    _ASSERT(!bioseq_info.m_Descr);
+    bioseq_info.m_Descr = new CSeq_descr_SplitInfo(gi, descr, m_Params);
+    return true;
 }
 
 
@@ -364,9 +357,9 @@ bool CBlobSplitterImpl::CopySequence(CBioseq_SplitInfo& bioseq_info,
                                      CSeq_inst& dst,
                                      const CSeq_inst& src)
 {
-    _ASSERT(!bioseq_info.m_Seq_inst);
-    bioseq_info.m_Seq_inst.Reset(new CSeq_inst_SplitInfo);
-    CSeq_inst_SplitInfo& info = *bioseq_info.m_Seq_inst;
+    _ASSERT(!bioseq_info.m_Inst);
+    bioseq_info.m_Inst.Reset(new CSeq_inst_SplitInfo);
+    CSeq_inst_SplitInfo& info = *bioseq_info.m_Inst;
     info.m_Seq_inst.Reset(&src);
 
     dst.SetRepr(src.GetRepr());
@@ -454,14 +447,8 @@ bool CBlobSplitterImpl::CopyAnnot(CBioseq_SplitInfo& bioseq_info,
         return false;
     }
 
-    CSeq_annot_SplitInfo& info = bioseq_info.m_Seq_annots[ConstRef(&annot)];
+    CSeq_annot_SplitInfo& info = bioseq_info.m_Annots[ConstRef(&annot)];
     info.SetSeq_annot(bioseq_info.m_Id, annot, m_Params);
-
-    landmark_annot_count += info.m_LandmarkObjects.size();
-    complex_annot_count += info.m_ComplexLocObjects.size();
-    ITERATE ( TSimpleLocObjects, it, info.m_SimpleLocObjects ) {
-        simple_annot_count += it->second.size();
-    }
 
     if ( info.m_Size.GetAsnSize() > 1024 ) {
         if ( m_Params.m_Verbose ) {
@@ -492,6 +479,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/06/30 20:56:32  vasilche
+* Added splitting of Seqdesr objects (disabled yet).
+*
 * Revision 1.9  2004/06/15 14:05:50  vasilche
 * Added splitting of sequence.
 *

@@ -45,10 +45,11 @@ void SChunkInfo::Add(const CSeq_annot_SplitInfo& info)
 {
     _TRACE("SChunkInfo::Add(const CSeq_annot_SplitInfo&)");
     TAnnotObjects& objs = m_Annots[info.m_Id][info.m_Src_annot];
-    Add(objs, info.m_LandmarkObjects);
-    Add(objs, info.m_ComplexLocObjects);
-    ITERATE ( TSimpleLocObjects, it, info.m_SimpleLocObjects ) {
-        Add(objs, it->second);
+    ITERATE ( CSeq_annot_SplitInfo::TObjects, it, info.m_Objects ) {
+        if ( !*it ) {
+            continue;
+        }
+        Add(objs, **it);
     }
 }
 
@@ -66,17 +67,26 @@ void SChunkInfo::Add(TAnnotObjects& objs, const CLocObjects_SplitInfo& info)
 void SChunkInfo::Add(const SAnnotPiece& piece)
 {
     _TRACE("SChunkInfo::Add(const SAnnotPiece&)");
-    const CSeq_annot_SplitInfo& info = *piece.m_Seq_annot;
-    if ( piece.m_Type == SAnnotPiece::annot_object ) {
+    switch ( piece.m_ObjectType ) {
+    case SAnnotPiece::seq_descr:
+        Add(*piece.m_Seq_descr);
+        break;
+    case SAnnotPiece::annot_object:
+    {{
+        const CSeq_annot_SplitInfo& info = *piece.m_Seq_annot;
         TAnnotObjects& objs = m_Annots[info.m_Id][info.m_Src_annot];
-        objs.push_back(*piece.m_Annot_object);
+        objs.push_back(*piece.m_AnnotObject);
         m_Size += piece.m_Size;
-    }
-    else if ( piece.m_Type == SAnnotPiece::seq_annot ) {
-        Add(info);
-    }
-    else if ( piece.m_Type == SAnnotPiece::seq_data ) {
+        break;
+    }}
+    case SAnnotPiece::seq_annot:
+        Add(*piece.m_Seq_annot);
+        break;
+    case SAnnotPiece::seq_data:
         Add(*piece.m_Seq_data);
+        break;
+    default:
+        _ASSERT(0 && "unknown annot type");
     }
 }
 
@@ -105,6 +115,13 @@ void SChunkInfo::Add(const CSeq_data_SplitInfo& info)
 }
 
 
+void SChunkInfo::Add(const CSeq_descr_SplitInfo& info)
+{
+    m_Seq_descr[info.GetGi()].Reset(&info);
+    m_Size += info.m_Size;
+}
+
+
 size_t SChunkInfo::CountAnnotObjects(void) const
 {
     size_t count = 0;
@@ -123,6 +140,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/06/30 20:56:32  vasilche
+* Added splitting of Seqdesr objects (disabled yet).
+*
 * Revision 1.5  2004/06/15 14:05:50  vasilche
 * Added splitting of sequence.
 *

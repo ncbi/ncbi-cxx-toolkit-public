@@ -57,7 +57,6 @@ class CSeq_entry;
 class CBioseq;
 class CBioseq_set;
 class CSeq_descr;
-class CSeqdesc;
 class CSeq_inst;
 class CSeq_annot;
 class CSeq_feat;
@@ -90,6 +89,7 @@ public:
     typedef map<int, CBioseq_SplitInfo> TBioseqs;
     typedef map<int, SChunkInfo> TChunks;
     typedef map<CID2S_Chunk_Id, CRef<CID2S_Chunk> > TID2Chunks;
+    typedef vector< CRef<CAnnotPieces> > TPieces;
 
     bool Split(const CSeq_entry& entry);
 
@@ -104,13 +104,19 @@ public:
     void CopySkeleton(CBioseq_set& dst, const CBioseq_set& src);
     void CopySkeleton(CBioseq& dst, const CBioseq& src);
 
-    bool CopyDesc(CBioseq_SplitInfo& bioseq_info, const CSeqdesc& desc);
+    bool CopyDescr(CBioseq_SplitInfo& bioseq_info, int gi,
+                   const CSeq_descr& descr);
     bool CopySequence(CBioseq_SplitInfo& bioseq_info, int gi,
                       CSeq_inst& dst, const CSeq_inst& src);
     bool CopyAnnot(CBioseq_SplitInfo& bioseq_info, const CSeq_annot& annot);
 
     void CollectPieces(void);
+    void CollectPieces(const CBioseq_SplitInfo& info);
+    void CollectPieces(const CSeq_annot_SplitInfo& info);
+    void Add(const SAnnotPiece& piece);
     void SplitPieces(void);
+    void AddToSkeleton(CAnnotPieces& pieces);
+    void SplitPieces(CAnnotPieces& pieces);
     void MakeID2SObjects(void);
     void AttachToSkeleton(const SChunkInfo& info);
 
@@ -156,7 +162,7 @@ private:
 
     TBioseqs m_Bioseqs;
 
-    AutoPtr<CAnnotPieces> m_Pieces;
+    TPieces m_Pieces;
 
     TChunks m_Chunks;
 };
@@ -168,6 +174,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/06/30 20:56:32  vasilche
+* Added splitting of Seqdesr objects (disabled yet).
+*
 * Revision 1.7  2004/06/15 14:05:49  vasilche
 * Added splitting of sequence.
 *

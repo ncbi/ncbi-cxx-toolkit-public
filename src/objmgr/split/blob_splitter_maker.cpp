@@ -72,6 +72,7 @@
 #include <objects/seqsplit/ID2_Seq_range.hpp>
 #include <objects/seqsplit/ID2_Interval.hpp>
 #include <objects/seqsplit/ID2_Packed_Seq_ints.hpp>
+#include <objects/seqsplit/ID2S_Seq_descr_Info.hpp>
 
 #include <objmgr/split/blob_splitter.hpp>
 #include <objmgr/split/object_splitinfo.hpp>
@@ -112,7 +113,7 @@ void CBlobSplitterImpl::Reset(void)
     m_Skeleton.Reset(new CSeq_entry);
     m_NextBioseq_set_Id = 1;
     m_Bioseqs.clear();
-    m_Pieces.reset();
+    m_Pieces.clear();
     m_Chunks.clear();
 }
 
@@ -444,9 +445,19 @@ void CBlobSplitterImpl::MakeID2Chunk(int chunk_id, const SChunkInfo& info)
     TChunkData chunk_data;
     TChunkContent chunk_content;
 
+    typedef set<int> TAllDescrs;
+    TAllDescrs all_descrs;
     typedef map<CAnnotName, SAllAnnots> TAllAnnots;
     TAllAnnots all_annots;
     CSeqsRange all_data;
+
+    ITERATE ( SChunkInfo::TChunkSeq_descr, it, info.m_Seq_descr ) {
+        int gi = it->first;
+        CID2S_Chunk_Data::TDescrs& dst =
+            GetChunkData(chunk_data, gi).SetDescrs();
+        dst.push_back(Ref(const_cast<CSeq_descr*>(&*it->second->m_Descr)));
+        all_descrs.insert(gi);
+    }
 
     ITERATE ( SChunkInfo::TChunkAnnots, it, info.m_Annots ) {
         int place_id = it->first;
@@ -558,16 +569,43 @@ void CBlobSplitterImpl::MakeID2Chunk(int chunk_id, const SChunkInfo& info)
         }
     }
 
+    if ( !all_descrs.empty() ) {
+        CRef<CID2S_Chunk_Content> content(new CID2S_Chunk_Content);
+        CID2S_Seq_descr_Info& info = content->SetSeq_descr();
+        info.SetType_mask(-1);
+        int start_gi = -2, end_gi = -2;
+        ITERATE ( TAllDescrs, it, all_descrs ) {
+            if ( *it != end_gi+1 ) {
+                if ( start_gi > 0 ) {
+                    CRef<CID2_Id_Range> range(new CID2_Id_Range);
+                    range->SetStart(start_gi);
+                    int count = end_gi-start_gi+1;
+                    if ( count != 1 ) {
+                        range->SetCount(count);
+                    }
+                    info.SetBioseqs().push_back(range);
+                }
+                start_gi = *it;
+            }
+            end_gi = *it;
+        }
+        if ( start_gi > 0 ) {
+            CRef<CID2_Id_Range> range(new CID2_Id_Range);
+            range->SetStart(start_gi);
+            int count = end_gi-start_gi+1;
+            if ( count != 1 ) {
+                range->SetCount(count);
+            }
+            info.SetBioseqs().push_back(range);
+        }
+        chunk_content.push_back(content);
+    }
+
     if ( !all_data.empty() ) {
         CRef<CID2S_Chunk_Content> content(new CID2S_Chunk_Content);
         MakeLoc(content->SetSeq_data(), all_data);
         chunk_content.push_back(content);
     }
-
-#if 0
-    NcbiCout << "Objects: in SChunkInfo: " << info.CountAnnotObjects() <<
-        " in CID2S_Chunk: " << CountAnnotObjects(*chunk) << '\n';
-#endif
 
     CRef<CID2S_Chunk> chunk(new CID2S_Chunk);
     CID2S_Chunk::TData& dst_chunk_data = chunk->SetData();
@@ -588,6 +626,14 @@ void CBlobSplitterImpl::MakeID2Chunk(int chunk_id, const SChunkInfo& info)
 
 void CBlobSplitterImpl::AttachToSkeleton(const SChunkInfo& info)
 {
+    ITERATE ( SChunkInfo::TChunkSeq_descr, it, info.m_Seq_descr ) {
+        TBioseqs::iterator seq_it = m_Bioseqs.find(it->first);
+        _ASSERT(seq_it != m_Bioseqs.end());
+        _ASSERT(seq_it->second.m_Bioseq);
+        const CSeq_descr_SplitInfo& desc = *it->second;
+        seq_it->second.m_Bioseq->
+            SetDescr(const_cast<CSeq_descr&>(*desc.m_Descr));
+    }
     ITERATE ( SChunkInfo::TChunkAnnots, it, info.m_Annots ) {
         TBioseqs::iterator seq_it = m_Bioseqs.find(it->first);
         _ASSERT(seq_it != m_Bioseqs.end());
@@ -602,6 +648,12 @@ void CBlobSplitterImpl::AttachToSkeleton(const SChunkInfo& info)
                 seq_it->second.m_Bioseq_set->SetAnnot().push_back(annot);
             }
         }
+    }
+    ITERATE ( SChunkInfo::TChunkSeq_data, it, info.m_Seq_data ) {
+        TBioseqs::iterator seq_it = m_Bioseqs.find(it->first);
+        _ASSERT(seq_it != m_Bioseqs.end());
+        _ASSERT(seq_it->second.m_Bioseq);
+        _ASSERT(0 && "not implemented");
     }
 }
 
@@ -681,6 +733,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/06/30 20:56:32  vasilche
+* Added splitting of Seqdesr objects (disabled yet).
+*
 * Revision 1.11  2004/06/15 14:05:50  vasilche
 * Added splitting of sequence.
 *

@@ -41,6 +41,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_data.hpp>
+#include <objects/seq/Seq_descr.hpp>
 
 #include <objmgr/annot_selector.hpp> // for CAnnotName
 #include <objmgr/seq_id_handle.hpp>
@@ -67,12 +68,25 @@ class CSeq_align;
 class CSeq_graph;
 class CSeq_data;
 class CSeq_inst;
+class CSeq_descr;
 class CID2S_Split_Info;
 class CID2S_Chunk_Id;
 class CID2S_Chunk;
 class CBlobSplitter;
 class CBlobSplitterImpl;
 struct SSplitterParams;
+
+
+enum EAnnotPriority
+{
+    eAnnotPriority_skeleton,
+    eAnnotPriority_landmark,
+    eAnnotPriority_regular,
+    eAnnotPriority_low,
+    eAnnotPriority_lowest,
+    eAnnotPriority_max
+};
+
 
 class CAnnotObject_SplitInfo
 {
@@ -85,15 +99,17 @@ public:
     CAnnotObject_SplitInfo(const CSeq_align& obj, double ratio);
     CAnnotObject_SplitInfo(const CSeq_graph& obj, double ratio);
 
-    int m_ObjectType;
+    EAnnotPriority GetPriority(void) const;
+
+    int         m_ObjectType;
     CConstRef<CObject> m_Object;
 
-    CSize m_Size;
-    CSeqsRange m_Location;
+    CSize       m_Size;
+    CSeqsRange  m_Location;
 };
 
 
-class CLocObjects_SplitInfo
+class CLocObjects_SplitInfo : public CObject
 {
 public:
     typedef vector<CAnnotObject_SplitInfo> TObjects;
@@ -125,10 +141,10 @@ public:
             return m_Objects.end();
         }
 
-    TObjects m_Objects;
+    TObjects    m_Objects;
 
-    CSize m_Size;
-    CSeqsRange m_Location;
+    CSize       m_Size;
+    CSeqsRange  m_Location;
 };
 
 
@@ -139,52 +155,78 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CLocObjects_SplitInfo& info)
 }
 
 
-class CSeq_annot_SplitInfo
+class CSeq_annot_SplitInfo : public CObject
 {
 public:
-    typedef map<CSeq_id_Handle, CLocObjects_SplitInfo> TSimpleLocObjects;
+    typedef vector< CRef<CLocObjects_SplitInfo> > TObjects;
 
     CSeq_annot_SplitInfo(void);
     CSeq_annot_SplitInfo(const CSeq_annot_SplitInfo& base,
-                         const CLocObjects_SplitInfo& objs);
+                         EAnnotPriority priority);
     
     void SetSeq_annot(int id, const CSeq_annot& annot,
                       const SSplitterParams& params);
     void Add(const CAnnotObject_SplitInfo& obj);
-
-    bool IsLandmark(const CAnnotObject_SplitInfo& obj) const;
 
     CNcbiOstream& Print(CNcbiOstream& out) const;
 
     static CAnnotName GetName(const CSeq_annot& annot);
     static size_t CountAnnotObjects(const CSeq_annot& annot);
 
-    int m_Id;
+    EAnnotPriority GetPriority(void) const;
+
     CConstRef<CSeq_annot> m_Src_annot;
-    CAnnotName m_Name;
+    int             m_Id;
+    CAnnotName      m_Name;
 
-    TSimpleLocObjects m_SimpleLocObjects;
-    CLocObjects_SplitInfo m_ComplexLocObjects;
-    CLocObjects_SplitInfo m_LandmarkObjects;
+    EAnnotPriority  m_TopPriority;
+    TObjects        m_Objects;
 
-    CSize m_Size;
-    CSeqsRange m_Location;
+    CSize           m_Size;
+    CSeqsRange      m_Location;
 };
 
 
-class CSeq_data_SplitInfo
+inline
+CNcbiOstream& operator<<(CNcbiOstream& out, const CSeq_annot_SplitInfo& info)
+{
+    return info.Print(out);
+}
+
+
+class CSeq_descr_SplitInfo : public CObject
+{
+public:
+    CSeq_descr_SplitInfo(int gi, const CSeq_descr& descr,
+                         const SSplitterParams& params);
+
+    EAnnotPriority GetPriority(void) const;
+
+    int GetGi(void) const;
+
+    CConstRef<CSeq_descr> m_Descr;
+
+    CSize       m_Size;
+    CSeqsRange  m_Location;
+};
+
+
+class CSeq_data_SplitInfo : public CObject
 {
 public:
     typedef CRange<TSeqPos> TRange;
     void SetSeq_data(int gi, const TRange& range,
                      const CSeq_data& data, const SSplitterParams& params);
 
+    EAnnotPriority GetPriority(void) const;
+
     int GetGi(void) const;
     TRange GetRange(void) const;
 
-    CSeqsRange m_Location;
     CConstRef<CSeq_data> m_Data;
-    CSize m_Size;
+
+    CSize       m_Size;
+    CSeqsRange  m_Location;
 };
 
 
@@ -193,21 +235,14 @@ class CSeq_inst_SplitInfo : public CObject
 public:
     typedef vector<CSeq_data_SplitInfo> TSeq_data;
 
+    EAnnotPriority GetPriority(void) const;
+
     void Add(const CSeq_data_SplitInfo& data);
 
     CConstRef<CSeq_inst> m_Seq_inst;
+
     TSeq_data m_Seq_data;
 };
-
-
-typedef CSeq_annot_SplitInfo::TSimpleLocObjects TSimpleLocObjects;
-
-
-inline
-CNcbiOstream& operator<<(CNcbiOstream& out, const CSeq_annot_SplitInfo& info)
-{
-    return info.Print(out);
-}
 
 
 class CBioseq_SplitInfo
@@ -218,11 +253,13 @@ public:
     CBioseq_SplitInfo(void);
     ~CBioseq_SplitInfo(void);
 
-    int m_Id;
     CRef<CBioseq> m_Bioseq;
     CRef<CBioseq_set> m_Bioseq_set;
-    TSeq_annots m_Seq_annots;
-    CRef<CSeq_inst_SplitInfo> m_Seq_inst;
+
+    int                         m_Id;
+    CRef<CSeq_descr_SplitInfo>  m_Descr;
+    TSeq_annots                 m_Annots;
+    CRef<CSeq_inst_SplitInfo>   m_Inst;
 };
 
 
@@ -232,6 +269,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/06/30 20:56:32  vasilche
+* Added splitting of Seqdesr objects (disabled yet).
+*
 * Revision 1.4  2004/06/15 14:05:49  vasilche
 * Added splitting of sequence.
 *

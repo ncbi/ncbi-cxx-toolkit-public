@@ -41,65 +41,72 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 SAnnotPiece::SAnnotPiece(void)
-    : m_Type(empty),
-      m_Annot_object(0),
-      m_Seq_annot(0),
-      m_Seq_data(0)
+    : m_ObjectType(empty),
+      m_AnnotObject(0)
 {
+    m_Object = 0;
 }
 
 
 SAnnotPiece::SAnnotPiece(const SAnnotPiece& piece,
                          const COneSeqRange& range)
-    : m_Size(piece.m_Size),
+    : m_ObjectType(piece.m_ObjectType),
+      m_AnnotObject(piece.m_AnnotObject),
+      m_Priority(piece.m_Priority),
+      m_Size(piece.m_Size),
       m_Location(piece.m_Location),
-      m_IdRange(range.GetTotalRange()),
-      m_Type(piece.m_Type),
-      m_Annot_object(piece.m_Annot_object),
-      m_Seq_annot(piece.m_Seq_annot),
-      m_Seq_data(piece.m_Seq_data)
+      m_IdRange(range.GetTotalRange())
 {
+    m_Object = piece.m_Object;
 }
 
 
-SAnnotPiece::SAnnotPiece(const CAnnotObject_SplitInfo& obj,
-                         const CSeq_annot_SplitInfo& annot)
-    : m_Size(obj.m_Size),
+SAnnotPiece::SAnnotPiece(const CSeq_annot_SplitInfo& annot,
+                         const CAnnotObject_SplitInfo& obj)
+    : m_ObjectType(annot_object),
+      m_AnnotObject(&obj),
+      m_Priority(obj.GetPriority()),
+      m_Size(obj.m_Size),
       m_Location(obj.m_Location),
-      m_IdRange(TRange::GetEmpty()),
-      m_Type(annot_object),
-      m_Annot_object(&obj),
-      m_Seq_annot(&annot),
-      m_Seq_data(0)
+      m_IdRange(TRange::GetEmpty())
 {
+    m_Seq_annot = &annot;
 }
 
 
 SAnnotPiece::SAnnotPiece(const CSeq_annot_SplitInfo& annot)
-    : m_Size(annot.m_ComplexLocObjects.m_Size),
-      m_Location(annot.m_ComplexLocObjects.m_Location),
-      m_IdRange(TRange::GetEmpty()),
-      m_Type(seq_annot),
-      m_Annot_object(0),
-      m_Seq_annot(&annot),
-      m_Seq_data(0)
+    : m_ObjectType(seq_annot),
+      m_AnnotObject(0),
+      m_Priority(annot.GetPriority()),
+      m_Size(annot.m_Size),
+      m_Location(annot.m_Location),
+      m_IdRange(TRange::GetEmpty())
 {
-    ITERATE ( TSimpleLocObjects, it, annot.m_SimpleLocObjects ) {
-        m_Size += it->second.m_Size;
-        m_Location.Add(it->second.m_Location);
-    }
+    m_Seq_annot = &annot;
 }
 
 
 SAnnotPiece::SAnnotPiece(const CSeq_data_SplitInfo& data)
-    : m_Size(data.m_Size),
+    : m_ObjectType(seq_data),
+      m_AnnotObject(0),
+      m_Priority(data.GetPriority()),
+      m_Size(data.m_Size),
       m_Location(data.m_Location),
-      m_IdRange(TRange::GetEmpty()),
-      m_Type(seq_data),
-      m_Annot_object(0),
-      m_Seq_annot(0),
-      m_Seq_data(&data)
+      m_IdRange(TRange::GetEmpty())
 {
+    m_Seq_data = &data;
+}
+
+
+SAnnotPiece::SAnnotPiece(const CSeq_descr_SplitInfo& descr)
+    : m_ObjectType(seq_descr),
+      m_AnnotObject(0),
+      m_Priority(descr.GetPriority()),
+      m_Size(descr.m_Size),
+      m_Location(descr.m_Location),
+      m_IdRange(TRange::GetEmpty())
+{
+    m_Seq_descr = &descr;
 }
 
 
@@ -108,17 +115,14 @@ bool SAnnotPiece::operator<(const SAnnotPiece& piece) const
     if ( m_IdRange != piece.m_IdRange ) {
         return m_IdRange < piece.m_IdRange;
     }
-    if ( m_Type != piece.m_Type ) {
-        return m_Type < piece.m_Type;
+    if ( m_ObjectType != piece.m_ObjectType ) {
+        return m_ObjectType < piece.m_ObjectType;
     }
-    if ( m_Seq_annot != piece.m_Seq_annot ) {
-        return m_Seq_annot < piece.m_Seq_annot;
+    if ( m_Object != piece.m_Object ) {
+        return m_Object < piece.m_Object;
     }
-    if ( m_Annot_object != piece.m_Annot_object ) {
-        return m_Annot_object < piece.m_Annot_object;
-    }
-    if ( m_Seq_data != m_Seq_data ) {
-        return m_Seq_data < piece.m_Seq_data;
+    if ( m_AnnotObject != piece.m_AnnotObject ) {
+        return m_AnnotObject < piece.m_AnnotObject;
     }
     return false;
 }
@@ -128,10 +132,9 @@ bool SAnnotPiece::operator==(const SAnnotPiece& piece) const
 {
     return
         m_IdRange == piece.m_IdRange &&
-        m_Type == piece.m_Type &&
-        m_Seq_annot == piece.m_Seq_annot &&
-        m_Annot_object == piece.m_Annot_object &&
-        m_Seq_data == piece.m_Seq_data;
+        m_ObjectType == piece.m_ObjectType &&
+        m_Object == piece.m_Object &&
+        m_AnnotObject == piece.m_AnnotObject;
 }
 
 
@@ -139,10 +142,9 @@ bool SAnnotPiece::operator!=(const SAnnotPiece& piece) const
 {
     return
         m_IdRange != piece.m_IdRange ||
-        m_Type != piece.m_Type ||
-        m_Seq_annot != piece.m_Seq_annot ||
-        m_Annot_object != piece.m_Annot_object ||
-        m_Seq_data != piece.m_Seq_data;
+        m_ObjectType != piece.m_ObjectType ||
+        m_Object != piece.m_Object ||
+        m_AnnotObject != piece.m_AnnotObject;
 }
 
 
@@ -185,58 +187,6 @@ CAnnotPieces::~CAnnotPieces(void)
 }
 
 
-void CAnnotPieces::Add(const CBioseq_SplitInfo& info,
-                       SChunkInfo& main_chunk)
-{
-    ITERATE ( CBioseq_SplitInfo::TSeq_annots, it, info.m_Seq_annots ) {
-        Add(it->second, main_chunk);
-    }
-    if ( info.m_Seq_inst ) {
-        ITERATE ( CSeq_inst_SplitInfo::TSeq_data, it,
-                  info.m_Seq_inst->m_Seq_data ) {
-            Add(SAnnotPiece(*it));
-        }
-    }
-}
-
-
-void CAnnotPieces::Add(const CSeq_annot_SplitInfo& info,
-                       SChunkInfo& main_chunk)
-{
-    size_t max_size = info.m_Name.IsNamed()? 100: 10;
-    size_t size = info.m_ComplexLocObjects.size();
-    ITERATE ( TSimpleLocObjects, idit, info.m_SimpleLocObjects ) {
-        size += idit->second.size();
-    }
-    if ( size <= max_size ) {
-        if ( !info.m_LandmarkObjects.empty() ) {
-            main_chunk.Add(info);
-        }
-        else {
-            Add(SAnnotPiece(info));
-        }
-    }
-    else {
-        if ( !info.m_LandmarkObjects.empty() ) {
-            main_chunk.Add(CSeq_annot_SplitInfo(info, info.m_LandmarkObjects));
-        }
-        Add(info.m_ComplexLocObjects, info);
-        ITERATE ( TSimpleLocObjects, idit, info.m_SimpleLocObjects ) {
-            Add(idit->second, info);
-        }
-    }
-}
-
-
-void CAnnotPieces::Add(const CLocObjects_SplitInfo& objs,
-                       const CSeq_annot_SplitInfo& annot)
-{
-    ITERATE ( CLocObjects_SplitInfo, it, objs ) {
-        Add(SAnnotPiece(*it, annot));
-    }
-}
-
-
 void CAnnotPieces::Add(const SAnnotPiece& piece)
 {
     ITERATE ( CSeqsRange, it, piece.m_Location ) {
@@ -263,19 +213,16 @@ size_t CAnnotPieces::CountAnnotObjects(void) const
         ITERATE ( SIdAnnotPieces, j, pp ) {
             const SAnnotPiece& p = *j;
             size_t cnt;
-            switch ( p.m_Type ) {
-            case SAnnotPiece::annot_object:
-                cnt = 1;
+            switch ( p.m_ObjectType ) {
+            case SAnnotPiece::empty:
+                cnt = 0;
                 break;
             case SAnnotPiece::seq_annot:
                 cnt = CSeq_annot_SplitInfo::
                     CountAnnotObjects(*p.m_Seq_annot->m_Src_annot);
                 break;
-            case SAnnotPiece::seq_data:
-                cnt = 1;
-                break;
             default:
-                cnt = 0;
+                cnt = 1;
             }
             size_t id_refs = p.m_Location.size();
             ref_count += double(cnt) / id_refs;
@@ -291,6 +238,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/06/30 20:56:32  vasilche
+* Added splitting of Seqdesr objects (disabled yet).
+*
 * Revision 1.5  2004/06/15 14:05:50  vasilche
 * Added splitting of sequence.
 *

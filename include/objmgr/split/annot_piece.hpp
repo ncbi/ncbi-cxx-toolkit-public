@@ -44,6 +44,7 @@
 
 #include <objmgr/split/id_range.hpp>
 #include <objmgr/split/size.hpp>
+#include <objmgr/split/object_splitinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -65,30 +66,40 @@ struct SAnnotPiece
     typedef CSeqsRange::TRange TRange;
 
     SAnnotPiece(void);
-    SAnnotPiece(const SAnnotPiece& piece, const COneSeqRange& range);
-    SAnnotPiece(const CAnnotObject_SplitInfo& obj,
-                const CSeq_annot_SplitInfo& annot);
+    explicit SAnnotPiece(const CSeq_descr_SplitInfo& descr);
     explicit SAnnotPiece(const CSeq_annot_SplitInfo& annot);
+    explicit SAnnotPiece(const CSeq_annot_SplitInfo& annot,
+                         const CAnnotObject_SplitInfo& obj);
     explicit SAnnotPiece(const CSeq_data_SplitInfo& data);
+    SAnnotPiece(const SAnnotPiece& base, const COneSeqRange& range);
 
     // sort by location first, than by Seq-annot ptr, than by object ptr.
     bool operator<(const SAnnotPiece& piece) const;
     bool operator==(const SAnnotPiece& piece) const;
     bool operator!=(const SAnnotPiece& piece) const;
 
-    CSize m_Size;
-    CSeqsRange m_Location;
-    TRange m_IdRange;
-    enum PieceType {
+    enum EPieceType {
         empty,
-        annot_object,
+        seq_descr,
         seq_annot,
+        annot_object,
         seq_data
     };
-    PieceType m_Type;
-    const CAnnotObject_SplitInfo* m_Annot_object;
-    const CSeq_annot_SplitInfo* m_Seq_annot;
-    const CSeq_data_SplitInfo* m_Seq_data;
+
+    EPieceType      m_ObjectType;
+    union {
+        const CObject*              m_Object;
+        const CSeq_descr_SplitInfo* m_Seq_descr;
+        const CSeq_annot_SplitInfo* m_Seq_annot;
+        const CSeq_data_SplitInfo*  m_Seq_data;
+    };
+    const CAnnotObject_SplitInfo*   m_AnnotObject;
+
+    EAnnotPriority  m_Priority;
+
+    CSize           m_Size;
+    CSeqsRange      m_Location;
+    TRange          m_IdRange;
 };
 
 
@@ -145,7 +156,7 @@ struct SIdAnnotPieces
 };
 
 
-class CAnnotPieces
+class CAnnotPieces : public CObject
 {
 public:
     typedef map<CSeq_id_Handle, SIdAnnotPieces> TPiecesById;
@@ -155,8 +166,8 @@ public:
     CAnnotPieces(void);
     ~CAnnotPieces(void);
 
-    void Add(const CBioseq_SplitInfo& bioseq_info, SChunkInfo& main_chunk);
-    void Add(const CSeq_annot_SplitInfo& annot, SChunkInfo& main_chunk);
+    void Add(const CBioseq_SplitInfo& bioseq_info);
+    void Add(const CSeq_annot_SplitInfo& annot);
 
     void Add(const CLocObjects_SplitInfo& objs,
              const CSeq_annot_SplitInfo& annot);
@@ -209,6 +220,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/06/30 20:56:32  vasilche
+* Added splitting of Seqdesr objects (disabled yet).
+*
 * Revision 1.4  2004/06/15 14:05:49  vasilche
 * Added splitting of sequence.
 *
