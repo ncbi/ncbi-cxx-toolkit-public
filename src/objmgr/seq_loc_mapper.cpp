@@ -457,12 +457,26 @@ void CSeq_loc_Mapper::x_PreserveDestinationLocs(void)
 }
 
 
+inline
+ENa_strand s_IndexToStrand(size_t idx)
+{
+    _ASSERT(idx != 0);
+    return ENa_strand(idx - 1);
+}
+
+#define STRAND_TO_INDEX(is_set, strand) \
+    ((is_set) ? size_t((strand) + 1) : 0)
+
+#define INDEX_TO_STRAND(idx) \
+    s_IndexToStrand(idx)
+
+
 CSeq_loc_Mapper::TMappedRanges&
 CSeq_loc_Mapper::x_GetMappedRanges(const CSeq_id_Handle& id,
-                                   int strand_idx) const
+                                   size_t strand_idx) const
 {
     TRangesByStrand& str_vec = m_MappedLocs[id];
-    if ((int)str_vec.size() <= strand_idx) {
+    if (str_vec.size() <= strand_idx) {
         str_vec.resize(strand_idx + 1);
     }
     return str_vec[strand_idx];
@@ -470,11 +484,12 @@ CSeq_loc_Mapper::x_GetMappedRanges(const CSeq_id_Handle& id,
 
 
 void CSeq_loc_Mapper::x_PushMappedRange(const CSeq_id_Handle& id,
-                                        int                   strand_idx,
+                                        size_t                strand_idx,
                                         const TRange&         range,
                                         const TRangeFuzz&     fuzz)
 {
-    bool reverse = (strand_idx > 0) && IsReverse(ENa_strand(strand_idx - 1));
+    bool reverse = (strand_idx > 0) &&
+        IsReverse(INDEX_TO_STRAND(strand_idx));
     switch ( m_MergeFlag ) {
     case eMergeContained:
     case eMergeAll:
@@ -510,7 +525,7 @@ void CSeq_loc_Mapper::x_PushMappedRange(const CSeq_id_Handle& id,
             // New ID
             bool no_merge = it == m_MappedLocs.end()  ||  it->first != id;
             // New strand
-            no_merge |= (int)it->second.size() <= strand_idx
+            no_merge |= it->second.size() <= strand_idx
                 ||  it->second.empty();
             // Ranges are not abutting
             if ( !no_merge ) {
@@ -1404,8 +1419,8 @@ bool CSeq_loc_Mapper::x_MapNextRange(const TRange& src_rg,
     bool is_set_dst_strand = cvt.Map_Strand(is_set_strand,
         src_strand, &dst_strand);
     x_PushMappedRange(cvt.m_Dst_id_Handle,
-        is_set_dst_strand ? int(dst_strand) + 1 : 0,
-        rg, mapped_fuzz);
+                      STRAND_TO_INDEX(is_set_dst_strand, dst_strand),
+                      rg, mapped_fuzz);
     return true;
 }
 
@@ -1522,7 +1537,8 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
             if ( cvt.GoodSrcId(src_loc.GetEmpty()) ) {
                 TRangeFuzz fuzz(kEmptyFuzz, kEmptyFuzz);
                 x_PushMappedRange(
-                    CSeq_id_Handle::GetHandle(src_loc.GetEmpty()), 0,
+                    CSeq_id_Handle::GetHandle(src_loc.GetEmpty()),
+                    STRAND_TO_INDEX(false, eNa_strand_unknown),
                     TRange::GetEmpty(), fuzz);
                 res = true;
                 break;
@@ -1646,7 +1662,7 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
                     x_PushRangesToDstMix();
                     TRange rg(si.GetFrom(), si.GetTo());
                     x_PushMappedRange(CSeq_id_Handle::GetHandle(si.GetId()),
-                        si.IsSetStrand() ? int(si.GetStrand()) + 1 : 0,
+                        STRAND_TO_INDEX(si.IsSetStrand(), si.GetStrand()),
                         rg, fuzz);
                 }
                 else {
@@ -1678,8 +1694,8 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
                     TRange rg(*i, *i);
                     x_PushMappedRange(
                         CSeq_id_Handle::GetHandle(src_pack_pnts.GetId()),
-                        src_pack_pnts.IsSetStrand() ?
-                        int(src_pack_pnts.GetStrand()) + 1 : 0,
+                        STRAND_TO_INDEX(src_pack_pnts.IsSetStrand(),
+                                        src_pack_pnts.GetStrand()),
                         rg, fuzz);
                 }
                 else {
@@ -1810,11 +1826,12 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
 }
 
 
-CRef<CSeq_loc> CSeq_loc_Mapper::x_RangeToSeq_loc(const CSeq_id_Handle& idh,
-                                                 TSeqPos from,
-                                                 TSeqPos to,
-                                                 int strand_idx,
-                                                 TRangeFuzz rg_fuzz)
+CRef<CSeq_loc> CSeq_loc_Mapper::x_RangeToSeq_loc
+(const CSeq_id_Handle& idh,
+ TSeqPos               from,
+ TSeqPos               to,
+ size_t                strand_idx,
+ TRangeFuzz            rg_fuzz)
 {
     if (m_UseWidth  &&  (m_Widths[idh] & fWidthNucToProt)) {
         from = from/3;
@@ -1828,7 +1845,7 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_RangeToSeq_loc(const CSeq_id_Handle& idh,
         loc->SetPnt().SetId().Assign(*idh.GetSeqId());
         loc->SetPnt().SetPoint(from);
         if (strand_idx > 0) {
-            loc->SetPnt().SetStrand(ENa_strand(strand_idx - 1));
+            loc->SetPnt().SetStrand(INDEX_TO_STRAND(strand_idx));
         }
         if ( rg_fuzz.first ) {
             loc->SetPnt().SetFuzz(*rg_fuzz.first);
@@ -1843,7 +1860,7 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_RangeToSeq_loc(const CSeq_id_Handle& idh,
         loc->SetInt().SetFrom(from);
         loc->SetInt().SetTo(to);
         if (strand_idx > 0) {
-            loc->SetInt().SetStrand(ENa_strand(strand_idx - 1));
+            loc->SetInt().SetStrand(INDEX_TO_STRAND(strand_idx));
         }
         if ( rg_fuzz.first ) {
             loc->SetInt().SetFuzz_from(*rg_fuzz.first);
@@ -2017,6 +2034,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/03/01 22:22:10  grichenk
+* Added strand to index conversion macro, changed strand index type to size_t.
+*
 * Revision 1.38  2005/03/01 17:33:36  grichenk
 * Fixed strand indexing.
 *

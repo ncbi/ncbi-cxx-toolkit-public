@@ -370,16 +370,16 @@ private:
 
     // Access mapped ranges, check vector size
     TMappedRanges& x_GetMappedRanges(const CSeq_id_Handle& id,
-                                     int                   strand_idx) const;
+                                     size_t                strand_idx) const;
     void x_PushMappedRange(const CSeq_id_Handle& id,
-                           int                   strand_idx,
+                           size_t                strand_idx,
                            const TRange&         range,
                            const TRangeFuzz&     fuzz);
 
     CRef<CSeq_loc> x_RangeToSeq_loc(const CSeq_id_Handle& idh,
                                     TSeqPos               from,
                                     TSeqPos               to,
-                                    int                   strand_idx,
+                                    size_t                strand_idx,
                                     TRangeFuzz            rg_fuzz);
 
     // Check location type, optimize if possible (empty mix to NULL,
@@ -550,6 +550,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/03/01 22:22:10  grichenk
+* Added strand to index conversion macro, changed strand index type to size_t.
+*
 * Revision 1.24  2005/02/01 21:55:11  grichenk
 * Added direction flag for mapping between top level sequence
 * and segments.
