@@ -1,25 +1,41 @@
-#! /bin/bash
+#!/bin/sh
 
-module="$1"
+module=$1
+shift
 
 if test "$module" = ""; then
     echo "Usage: $0 [module]"
     exit 1
 fi
 
-mkdir "$module" "../../include/objects/$module"
-(
-    echo "MODULE = $module"
-    echo ""
-    echo "include ../Makefile.sources.mk"
-) > "$module/Makefile"
-(
-	echo "MODULE_PROJ = $module"
-	echo "srcdir = @srcdir@"
-	echo "include @builddir@/Makefile.meta"
-) > "$module/Makefile.in"
-(
-	echo "MODULE = $module"
-	grep "_$module" Makefile.modules.dep | sed "s/_$module//"
-	echo "IROOT = objects"
-) > "$module/Makefile.$module.module"
+if test -f "$module.module"; then
+    :
+else
+    echo "File $module.module not found"
+    exit 1
+fi
+
+p="`pwd`"
+mp=
+
+while true; do
+    d=`basename "$p"`
+    p=`dirname "$p"`
+    if test -d "$p/src" && test -d "$p/include" && test -f "$p/configure.in" &&
+        test -f "$p/src/Makefile.module"; then
+        break
+    fi
+    if test -z "$mp"; then
+        mp="$d"
+    else
+        mp="$d/$mp"
+    fi
+    if test "$p" = "/"; then
+        echo "Root directory not found"
+        exit 1
+    fi
+done
+
+DATATOOL=`ls -Ltr $p/*/bin/datatool $p/bin/datatool | tail -f`
+
+make -f "$p/src/Makefile.module" "MODULE=$module" "MODULE_PATH=$mp" "top_srcdir=$p" "DATATOOL=$DATATOOL" "$@"

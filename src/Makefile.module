@@ -1,0 +1,41 @@
+include $(MODULE).module
+
+SRCDIR = $(top_srcdir)/src/$(MODULE_PATH)
+INCLUDEDIR = $(top_srcdir)/include/$(MODULE_PATH)
+
+ASNFILE = $(MODULE_PATH)/$(MODULE).asn
+IMPFILES = $(MODULE_IMPORT:=.asn)
+ALLASNFILES = $(ASNFILE) $(IMPFILES)
+FILES = $(SRCDIR)/$(MODULE).files
+
+all: sources makefiles
+
+sources: $(FILES)
+
+clean_sources:
+	rm $(FILES)
+
+.NO_PARALLEL:
+$(FILES): $(ALLASNFILES:%=$(top_srcdir)/src/%)
+	$(DATATOOL) -m $(ASNFILE) $(IMPFILES:%=-M %) -oA -of $@ -oR $(top_srcdir)
+
+dirs: $(SRCDIR) $(INCLUDEDIR) makefiles
+
+$(SRCDIR) $(INCLUDEDIR):
+	@test -d $@ || mkdir $@
+
+makefiles: $(SRCDIR)/Makefile.in $(SRCDIR)/Makefile.$(MODULE).lib
+
+$(SRCDIR)/Makefile.in: $(MODULE).module
+	@( \
+		echo "LIB_PROJ = $(MODULE)"; \
+		echo "srcdir = @srcdir@"; \
+		echo "include @builddir@/Makefile.meta"; \
+	) > $@
+
+$(SRCDIR)/Makefile.$(MODULE).lib: $(MODULE).module
+	@( \
+		echo 'LIB = $(MODULE)'; \
+		echo 'include $$(srcdir)/$(MODULE).files'; \
+		echo 'LIBOBJ = $$(GENFILES_LOCAL) $$(GENFILES_LOCAL:=_Base)'; \
+	) > $@
