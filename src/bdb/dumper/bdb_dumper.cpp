@@ -157,6 +157,13 @@ void CBDB_ConfigStructureParser::ParseConfigFile(const string& fname)
     CBDB_FieldFactory ffact;
     
     CNcbiIfstream fi(fname.c_str());
+    
+    if (!fi.is_open()) {
+        string msg = "Cannot open config file: ";
+        msg += fname;
+        BDB_THROW(eInvalidValue, msg);
+    }
+    
     for ( ;fi.good(); ++line_idx) {
         getline(fi, line);
 
@@ -202,12 +209,10 @@ public:
     void Init(void);
     int Run(void);
 protected:
-    /// Dump regular BDB file
-    void DumpFile(const CArgs& args, 
-                  CBDB_ConfigStructureParser::TFileStructure& fs);
 
-    void DumpBlob(const CArgs& args, 
-                  CBDB_ConfigStructureParser::TFileStructure& fs);
+    void Dump(const CArgs& args, 
+              CBDB_ConfigStructureParser& parser,
+              bool dump_lob_storage);
 };
 
 void CBDB_FileDumperApp::Init(void)
@@ -226,8 +231,9 @@ void CBDB_FileDumperApp::Init(void)
                             "BDB database name", CArgDescriptions::eString);
 
     arg_desc->AddPositional("confname",
-                            "BDB database structure configuration file", 
-                             CArgDescriptions::eString);
+                            "BDB database structure configuration file.\n"
+                            "(Use 'blob' or 'lob' to dump LOB storage).", 
+                            CArgDescriptions::eString);
     
     arg_desc->AddOptionalKey("k",
                              "dbkey",
@@ -248,49 +254,91 @@ void CBDB_FileDumperApp::Init(void)
     
 }
 
-void 
-CBDB_FileDumperApp::DumpFile(
-        const CArgs& args, 
-        CBDB_ConfigStructureParser::TFileStructure& fs)
+
+
+void CBDB_FileDumperApp::Dump(const CArgs& args, 
+                              CBDB_ConfigStructureParser& parser,
+                              bool dump_lob_storage)
 {
     const string& db_name = args["dbname"].AsString();
     
-    // ----------------------------------------
-    //
-    // Create description based file structure 
-
+    CBDB_ConfigStructureParser::TFileStructure& fs = 
+            parser.SetStructure();
 
     CBDB_FieldFactory ffact;
-    CBDB_File db_file;
-    db_file.SetFieldOwnership(true);
 
-    NON_CONST_ITERATE(CBDB_ConfigStructureParser::TFileStructure, it, fs) {
-        CBDB_FieldFactory::EType ft = ffact.GetType(it->type);
-        if (ft == CBDB_FieldFactory::eString ||
-            ft == CBDB_FieldFactory::eLString) {
-            if (it->length == 0) {
-                it->length = 4096;
+    auto_ptr<CBDB_File> db_file;
+    auto_ptr<CBDB_BLobFile> db_blob_file;
+    
+    CBDB_File* dump_file;
+    
+    if (dump_lob_storage) {
+        // Create and configure the simple LOB dumper
+        // (We dont need config for that)
+        db_blob_file = new CBDB_BLobFile;
+        dump_file = db_blob_file.get();        
+        dump_file->SetFieldOwnership(true);
+        
+        CBDB_Field*  field = ffact.Create(CBDB_FieldFactory::eInt4);
+        dump_file->BindKey("id", field);
+        
+    } else {    
+        
+        // Create config file based dumper
+        
+        dump_lob_storage = parser.IsBlobStorage();
+
+        if (dump_lob_storage) {
+            db_blob_file = new CBDB_BLobFile;
+            dump_file = db_blob_file.get();
+        } else {
+            db_file = new CBDB_File;
+            dump_file = db_file.get();
+        }
+        dump_file->SetFieldOwnership(true);
+
+        // ----------------------------------------
+        //
+        // Create description based file structure 
+
+
+        NON_CONST_ITERATE(CBDB_ConfigStructureParser::TFileStructure, it, fs) {
+            CBDB_FieldFactory::EType ft = ffact.GetType(it->type);
+            if (ft == CBDB_FieldFactory::eString ||
+                ft == CBDB_FieldFactory::eLString) {
+                if (it->length == 0) {
+                    it->length = 4096;
+                }
+            }
+            if (it->is_primary_key) {
+                CBDB_Field*  field = ffact.Create(ft);
+                dump_file->BindKey(it->field_name.c_str(), 
+                                   field, 
+                                   it->length);
+            } else {            
+                 if (parser.IsBlobStorage()) {
+                    // All DATA fields are ignored (we have only one BLOB per record)
+                    // if operator requests anything but one BLOB it is treated as an 
+                    // error (TODO: add a warning here)                 
+                 } else {
+                     CBDB_Field* field = ffact.Create(ft);
+                     dump_file->BindData(it->field_name.c_str(), 
+                                         field, 
+                                         it->length,
+                      it->is_null ? eNullable : eNotNullable);
+                 }
             }
         }
-        CBDB_Field*    field = ffact.Create(ft);
-        if (it->is_primary_key) {
-            db_file.BindKey(it->field_name.c_str(), 
-                               field, 
-                            it->length);
-        } else {
-            db_file.BindData(it->field_name.c_str(), 
-                               field, 
-                            it->length,
-              it->is_null ? eNullable : eNotNullable);
-        }
+    
     }
+    
+
+    dump_file->Open(db_name.c_str(), CBDB_File::eReadOnly);
     
     // ------------------------------------------
     //
     // Dump the content
-
-    db_file.Open(db_name.c_str(), CBDB_File::eReadOnly);
-
+    
     CBDB_FileDumper fdump;
     if (args["nl"]) {
         fdump.SetColumnNames(CBDB_FileDumper::eDropNames);
@@ -300,73 +348,7 @@ CBDB_FileDumperApp::DumpFile(
     if (args["cs"]) {
         fdump.SetColumnSeparator(args["cs"].AsString());
     }
-
-    if (args["k"]) {
-        const string& key_str = args["k"].AsString();
-
-        CBDB_FileCursor cur(db_file);
-        cur.SetCondition(CBDB_FileCursor::eEQ);
-        cur.From << key_str;
-
-        fdump.Dump(NcbiCout, cur);
-
-        return;
-    }
-
-    fdump.Dump(NcbiCout, db_file);
     
-}
-
-void CBDB_FileDumperApp::DumpBlob(
-              const CArgs& args, 
-              CBDB_ConfigStructureParser::TFileStructure& fs)
-{
-    const string& db_name = args["dbname"].AsString();
-    
-    // ----------------------------------------
-    //
-    // Create description based file structure 
-
-    
-    CBDB_FieldFactory ffact;
-    CBDB_BLobFile  db_blob_file;
-    db_blob_file.SetFieldOwnership(true);
-
-    NON_CONST_ITERATE(CBDB_ConfigStructureParser::TFileStructure, it, fs) {
-        CBDB_FieldFactory::EType ft = ffact.GetType(it->type);
-        if (ft == CBDB_FieldFactory::eString ||
-            ft == CBDB_FieldFactory::eLString) {
-            if (it->length == 0) {
-                it->length = 4096;
-            }
-        }
-        if (it->is_primary_key) {
-            CBDB_Field*  field = ffact.Create(ft);
-            db_blob_file.BindKey(it->field_name.c_str(), 
-                                 field, 
-                                 it->length);
-        } else {
-            // All DATA fields are ignored (we have only one BLOB per record)
-            // if operator requests anything but one BLOB it is treated as an 
-            // error (TODO: add a warning here)
-        }
-    }
-    
-    // ------------------------------------------
-    //
-    // Dump the content
-
-    db_blob_file.Open(db_name.c_str(), CBDB_File::eReadOnly);
-
-    CBDB_FileDumper fdump;
-    if (args["nl"]) {
-        fdump.SetColumnNames(CBDB_FileDumper::eDropNames);
-    }
-    fdump.SetValueFormatting(CBDB_FileDumper::eQuoteStrings);
-
-    if (args["cs"]) {
-        fdump.SetColumnSeparator(args["cs"].AsString());
-    }
     
     CBDB_FileDumper::TBlobFormat bformat = 0;    
     if (args["bt"]) {
@@ -381,11 +363,11 @@ void CBDB_FileDumperApp::DumpBlob(
     }
     
     fdump.SetBlobFormat(bformat);
-
+    
     if (args["k"]) {
         const string& key_str = args["k"].AsString();
 
-        CBDB_FileCursor cur(db_blob_file);
+        CBDB_FileCursor cur(*dump_file);
         cur.SetCondition(CBDB_FileCursor::eEQ);
         cur.From << key_str;
 
@@ -394,8 +376,10 @@ void CBDB_FileDumperApp::DumpBlob(
         return;
     }
 
-    fdump.Dump(NcbiCout, db_blob_file);
-}
+    fdump.Dump(NcbiCout, *dump_file);
+    
+}        
+
 
 int CBDB_FileDumperApp::Run(void)
 {
@@ -403,17 +387,18 @@ int CBDB_FileDumperApp::Run(void)
     {
         CArgs args = GetArgs();
         const string& conf_name = args["confname"].AsString();
+
         CBDB_ConfigStructureParser parser;
-        parser.ParseConfigFile(conf_name);
+        bool blob_store = false;
         
-        CBDB_ConfigStructureParser::TFileStructure& fs = 
-                parser.SetStructure();
-        
-        if (parser.IsBlobStorage()) {
-            DumpBlob(args, fs);
+        if (NStr::CompareNocase(conf_name, "lob") == 0 ||
+            NStr::CompareNocase(conf_name, "blob") == 0) {
+            blob_store = true;
         } else {
-            DumpFile(args, fs);
+            parser.ParseConfigFile(conf_name);
         }
+        
+        Dump(args, parser, blob_store);
     }
     catch (CBDB_ErrnoException& ex)
     {
@@ -438,6 +423,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/06/23 18:37:13  kuznets
+ * Code cleanup, added BLOB dumping without config file
+ *
  * Revision 1.4  2004/06/23 14:11:09  kuznets
  * Added more options for BLOB dumping
  *
