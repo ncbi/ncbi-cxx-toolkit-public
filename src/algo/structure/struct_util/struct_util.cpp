@@ -310,7 +310,7 @@ bool AlignmentUtility::DoLeaveOneOut(
                     m_currentMultiple->NRows(), loopLengths, percentile, extension, cutoff);
             }
         }
-        delete loopLengths;
+        delete[] loopLengths;
 
         // if we're not realigning, freeze blocks to original slave position
         if (blocksToRealign.size() == 0)
@@ -429,6 +429,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/05/28 10:22:13  thiessen
+* use delete[] for array
+*
 * Revision 1.8  2004/05/28 09:46:57  thiessen
 * restructure C-toolkit header usage ; move C Bioseq storage into su_sequence_set
 *
