@@ -16,7 +16,7 @@
 #################################
 
 builddir = @builddir@
-
+top_srcdir = @top_srcdir@
 
 ### Make sure we are using a right command shell
 
@@ -24,12 +24,12 @@ builddir = @builddir@
 
 ### Protect against two MAKE processes running in the same dir
 
-RWL = @top_srcdir@/scripts/run_with_lock.sh
+RWL = $(top_srcdir)/scripts/run_with_lock.sh
 
 ### Tests config variables
 
-check_run = @top_srcdir@/scripts/check_run.sh
-check_add = @top_srcdir@/scripts/check_add.sh
+check_run = $(top_srcdir)/scripts/check_run.sh
+check_add = $(top_srcdir)/scripts/check_add.sh
 
 ### One-level build -- [USR_PROJ] makefiles
 
@@ -152,7 +152,6 @@ check_add_r: check_add
 	@$(SUB_BRA) check_add_r $(SUB_KET)
 
 
-top_srcdir = @top_srcdir@
 PROJECTS = @PROJECTS@ # File listing relevant project directories.
 
 # This file contains the actual patterns to grep for, formed by
