@@ -32,7 +32,7 @@ Contents: Code to test block-based alignments for proteins */
 /*
  * $Id$
  *
- * This file is slightly modified from Alejandro's blockalign.c as of 4/30/03
+ * This file is slightly modified from Alejandro's blockalign.c as of 7/22/03
  */
 
 #include <ncbi.h>
@@ -995,8 +995,11 @@ void updateBestPairs(Int4 numBlocks, Int4 queryLength, Int4 *allowedGaps,
 	    secondBlockCandidate = secondBlockCandidate->next) {
 	  /*next test assumes list of firstCandidates is sorted in
           decreasing order of score; if this secondCandidate was already
-          extended back, then that must have yielded a better score*/
-	  if (0 == secondBlockCandidate->extendedBackScore) {
+          extended back, then that must have yielded a better score,
+          except this is not valid if negative scores allowed*/
+	  if ((0 == secondBlockCandidate->extendedBackScore)
+	      || (secondBlockCandidate->extendedBackScore <
+		  (firstBlockCandidate->score + secondBlockCandidate->score)) ){
 	    if (alignBlocksCompatible(firstBlockCandidate, 
                 secondBlockCandidate,blockIndex1, blockIndex2, allowedGaps)) {
 	      newAlignBlocks = alignBlocksNew(numBlocks);
