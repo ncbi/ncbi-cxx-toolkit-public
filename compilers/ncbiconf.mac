@@ -1,4 +1,4 @@
-/* $Id: ncbiconf.mac,v 1.9 2001/08/21 17:10:51 ucko Exp $
+/* $Id: ncbiconf.mac,v 1.10 2003/03/06 19:35:14 rsmith Exp $
  * By Jonathan Kans, NCBI (kans@ncbi.nlm.nih.gov)
  *
  * NOTE:  Unlike its UNIX counterpart, this configuration header
@@ -8,13 +8,25 @@
 
 #define NCBI_CXX_TOOLKIT  1
 
+#ifdef __MWERKS__
+#define NCBI_COMPILER_METROWERKS 1
+#endif
+
+#ifdef __MACH__
+#define NCBI_OS_DARWIN 1
+#define NCBI_OS_UNIX 1
+#define NCBI_OS      "MAC OSX"
+#define HOST         "PowerPC-Apple-MacOSX"
+#define HOST_OS      "MacOSX"
+#else
 #define NCBI_OS_MAC  1
 #define NCBI_OS      "MAC"
-
 #define HOST         "PowerPC-Apple-MacOS"
+#define HOST_OS      "MacOS"
+#endif
+
 #define HOST_CPU     "PowerPC"
 #define HOST_VENDOR  "Apple"
-#define HOST_OS      "MacOS"
 
 #define NCBI_USE_THROW_SPEC 1
 #define STACK_GROWS_DOWN    1
