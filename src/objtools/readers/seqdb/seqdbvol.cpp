@@ -1087,6 +1087,7 @@ char * CSeqDBVol::x_AllocType(Uint4 length, ESeqDBAllocType alloc_type, CSeqDBLo
         retval = new char[length];
         break;
         
+    case eAtlas:
     default:
         retval = m_Atlas.Alloc(length, locked);
     }
@@ -1116,7 +1117,7 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4               oid,
     Int4 base_length = -1;
     
     if (kSeqTypeProt == m_Idx.GetSeqType()) {
-        if (alloc_type == ESeqDBAllocType(0)) {
+        if (alloc_type == eAtlas) {
             base_length = x_GetSequence(oid, (const char**) buffer, true, locked, false);
         } else {
             const char * buf2(0);

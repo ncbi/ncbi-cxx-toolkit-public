@@ -44,6 +44,7 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Import definitions from the objects namespace.
 USING_SCOPE(objects);
 
 /// CSeqDBTaxNames class

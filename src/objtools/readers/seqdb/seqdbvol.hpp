@@ -45,6 +45,7 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Import definitions from the objects namespace.
 USING_SCOPE(objects);
 
 /// CSeqDBVol class
@@ -58,24 +59,117 @@ USING_SCOPE(objects);
 
 class CSeqDBVol {
 public:
+    /// Import TIndx definitions from the atlas class.
     typedef CSeqDBAtlas::TIndx TIndx;
     
+    /// Constructor
+    ///
+    /// All files connected with the database volume will be opened,
+    /// metadata about the volume will be read from the index file,
+    /// and identifier translation indices will be opened.  The name
+    /// of these files is the specified name of the volume plus an
+    /// extension.
+    /// 
+    /// @param atlas
+    ///   The memory management layer object.
+    /// @param name
+    ///   The base name of the volumes files.
+    /// @param prot_nucl
+    ///   The sequence type, kSeqTypeProt, or kSeqTypeNucl.
     CSeqDBVol(CSeqDBAtlas   & atlas,
               const string  & name,
               char            prot_nucl);
     
+    /// Sequence length for protein databases
+    /// 
+    /// This method returns the length of the sequence in bases, and
+    /// should only be called for protein sequences.  It does not
+    /// require synchronization via the atlas object's lock.
+    /// 
+    /// @param oid
+    ///   The OID of the sequence
+    /// @return
+    ///   The length in bases of the sequence.
     Int4 GetSeqLengthProt(Uint4 oid) const;
     
+    /// Approximate sequence length for nucleotide databases
+    /// 
+    /// This method returns the length of the sequence using a fast
+    /// method that may be off by as much as 4 bases.  The method is
+    /// designed to be unbiased, meaning that the total length of
+    /// large numbers of sequences will approximate what the exact
+    /// length would be.  The approximate lengths will change if the
+    /// database is regenerated.  It does not require synchronization.
+    /// 
+    /// @param oid
+    ///   The OID of the sequence
+    /// @return
+    ///   The approximate length in bases of the sequence.
     Int4 GetSeqLengthApprox(Uint4 oid) const;
     
-    // Assumes locked.
-    
+    /// Exact sequence length for nucleotide databases
+    /// 
+    /// This method returns the length of the sequence in bases, and
+    /// should only be called for nucleotide sequences.  It requires
+    /// synchronization via the atlas object's lock, which must be
+    /// done in the calling code.
+    /// 
+    /// @param oid
+    ///   The OID of the sequence
+    /// @return
+    ///   The length in bases of the sequence.
     Int4 GetSeqLengthExact(Uint4 oid) const;
     
+    /// Get sequence header information
+    /// 
+    /// This method returns the set of Blast-def-line objects stored
+    /// for each sequence.  These contain descriptive information
+    /// related to the sequence.
+    /// 
+    /// @param oid
+    ///   The OID of the sequence
+    /// @param locked
+    ///   The lock holder object for this thread
+    /// @return
+    ///   The set of blast-def-lines describing this sequence.
     CRef<CBlast_def_line_set> GetHdr(Uint4 oid, CSeqDBLockHold & locked) const;
     
+    /// Get the sequence type stored in this database
+    /// 
+    /// This method returns the type of sequences stored in this
+    /// database, either kSeqTypeProt for protein, or kSeqTypeNucl for
+    /// nucleotide.
+    /// 
+    /// @return
+    ///   Either kSeqTypeProt for protein, or kSeqTypeNucl for nucleotide.
     char GetSeqType() const;
     
+    /// Get a CBioseq object for this sequence
+    /// 
+    /// This method builds and returns a Bioseq for this sequence.
+    /// The taxonomy information is cached in this volume, so it
+    /// should not be modified directly, or other Bioseqs from this
+    /// SeqDB object may be affected.  If the CBioseq has an OID list,
+    /// and it uses a membership bit, the deflines included in the
+    /// CBioseq will be filtered based on the membership bit.  Zero
+    /// for the membership bit means no filtering.  Filtering can also
+    /// be done by a GI, in which case, only the defline matching that
+    /// GI will be returned.
+    /// 
+    /// @param oid
+    ///   The OID of the sequence
+    /// @param have_oidlist
+    ///   Specify true if the database is filtered by an oidlist.
+    /// @param memb_bit
+    ///   If specified, only deflines matching this bit will be returned.
+    /// @param pref_gi
+    ///   If specified, only deflines containing this GI will be returned.
+    /// @param tax_info
+    ///   The taxonomy database object.
+    /// @param locked
+    ///   The lock holder object for this thread
+    /// @return
+    ///   A CBioseq describing this sequence.
     CRef<CBioseq>
     GetBioseq(Uint4                 oid,
               bool                  have_oidlist,
@@ -84,44 +178,159 @@ public:
               CRef<CSeqDBTaxInfo>   tax_info,
               CSeqDBLockHold      & locked) const;
     
-    // Will get (and release) the lock as needed.
-    
+    /// Get the sequence data
+    /// 
+    /// This method gets the sequence data, returning a pointer and
+    /// the length of the sequence.  The atlas will be locked, but the
+    /// lock may also be returned during this method.  The computation
+    /// of the length of a nucleotide sequence involves a one byte
+    /// read that is likely to cause a page fault.  Releasing the
+    /// atlas lock before this (potential) page fault can help the
+    /// average performance in the multithreaded case.  It is safe to
+    /// release the lock because the sequence data is pinned down by
+    /// the reference count we have acquired to return to the user.
+    /// The returned sequence data is intended for blast searches, and
+    /// will contain random values in any ambiguous regions.
+    /// 
+    /// @param oid
+    ///   The OID of the sequence
+    /// @param buffer
+    ///   The returned sequence data.
+    /// @param locked
+    ///   The lock holder object for this thread
+    /// @return
+    ///   The length of this sequence in bases.
     Int4 GetSequence(Int4 oid, const char ** buffer, CSeqDBLockHold & locked) const
     {
         return x_GetSequence(oid, buffer, true, locked, true);
     }
     
+    /// Get a sequence with ambiguous regions.
+    /// 
+    /// This method gets the sequence data, returning a pointer and
+    /// the length of the sequence.  For nucleotide sequences, the
+    /// data can be returned in one of two encodings.  Specify either
+    /// (kSeqDBNuclNcbiNA8) for NCBI/NA8, or (kSeqDBNuclBlastNA8) for
+    /// Blast/NA8.  The data can also be allocated in one of three
+    /// ways, enumerated in ESeqDBAllocType.  Specify eAtlas to use
+    /// the Atlas code, eMalloc to use the malloc() function, or eNew
+    /// to use the new operator.
+    /// 
+    /// @param oid
+    ///   The OID of the sequence
+    /// @param buffer
+    ///   The returned sequence data.
+    /// @param nucl_code
+    ///   The encoding of the returned sequence data.
+    /// @param alloc_type
+    ///   The allocation routine used.
+    /// @param locked
+    ///   The lock holder object for this thread
+    /// @return
+    ///   The length of this sequence in bases.
     Int4 GetAmbigSeq(Int4              oid,
                      char           ** buffer,
                      Uint4             nucl_code,
                      ESeqDBAllocType   alloc_type,
                      CSeqDBLockHold  & locked) const;
     
+    /// Get the Seq-ids associated with a sequence
+    /// 
+    /// This method returns a list containing all the CSeq_id objects
+    /// associated with a sequence.
+    /// 
+    /// @param oid
+    ///   The OID of the sequence
+    /// @param locked
+    ///   The lock holder object for this thread
+    /// @return
+    ///   The list of Seq-id objects for this sequences.
     list< CRef<CSeq_id> > GetSeqIDs(Uint4 oid, CSeqDBLockHold & locked) const;
     
+    /// Get the volume title
     string GetTitle() const;
     
+    /// Get the formatting date of the volume
     string GetDate() const;
     
+    /// Get the number of OIDs for this volume
     Uint4  GetNumOIDs() const;
     
+    /// Get the total length of this volume (in bases)
     Uint8  GetVolumeLength() const;
     
+    /// Get the length of the largest sequence in this volume
     Uint4  GetMaxLength() const;
     
+    /// Get the volume name
     string GetVolName() const
     {
         return m_VolName;
     }
     
+    /// Return expendable resources held by this volume
+    /// 
+    /// This volume holds resources acquired via the atlas.  This
+    /// method returns all such resources which can be automatically
+    /// reacquired (but not, for example, the index file data).
     void UnLease();
     
+    /// Find the OID given a PIG
+    ///
+    /// A lookup is done for the PIG, and if found, the corresponding
+    /// OID is returned.
+    ///
+    /// @param pig
+    ///   The pig to look up.
+    /// @param oid
+    ///   The returned ordinal ID.
+    /// @param locked
+    ///   The lock holder object for this thread.
+    /// @return
+    ///   True if the PIG was found.
     bool PigToOid(Uint4 pig, Uint4 & oid, CSeqDBLockHold & locked) const;
     
+    /// Find the PIG given an OID
+    /// 
+    /// If this OID is associated with a PIG, the PIG is returned.
+    /// 
+    /// @param oid
+    ///   The oid of the sequence.
+    /// @param pig
+    ///   The returned PIG.
+    /// @param locked
+    ///   The lock holder object for this thread.
+    /// @return
+    ///   True if a PIG was returned.
     bool GetPig(Uint4 oid, Uint4 & pig, CSeqDBLockHold & locked) const;
     
+    /// Find the OID given a GI
+    ///
+    /// A lookup is done for the GI, and if found, the corresponding
+    /// OID is returned.
+    ///
+    /// @param gi
+    ///   The gi to look up.
+    /// @param oid
+    ///   The returned ordinal ID.
+    /// @param locked
+    ///   The lock holder object for this thread.
+    /// @return
+    ///   True if an OID was returned.
     bool GiToOid(Uint4 gi, Uint4 & oid, CSeqDBLockHold & locked) const;
     
+    /// Find the GI given an OID
+    ///
+    /// If this OID is associated with a GI, the GI is returned.
+    ///
+    /// @param oid
+    ///   The oid of the sequence.
+    /// @param gi
+    ///   The returned GI.
+    /// @param locked
+    ///   The lock holder object for this thread.
+    /// @return
+    ///   True if a GI was returned.
     bool GetGi(Uint4 oid, Uint4 & gi, CSeqDBLockHold & locked) const;
     
     void AccessionToOids(const string   & acc,
