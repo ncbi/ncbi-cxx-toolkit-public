@@ -92,7 +92,7 @@ public:
         while (true) {
             {{
             CFastMutexGuard guard(x_NetCacheMutex_ID);
-            if ((*id_set)[id] == false) {
+            if (!(*id_set)[id]) {
                 id_set->set(id);
                 break;
             }
@@ -1202,6 +1202,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/01/24 17:21:40  vasilche
+ * Removed redundant comparison "bool != false".
+ *
  * Revision 1.35  2005/01/05 15:34:51  kuznets
  * Fast shutdown through low small accept timeout, restored signal procesing
  *
