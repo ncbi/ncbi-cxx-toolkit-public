@@ -1,4 +1,4 @@
---$Revision: 1.1 $
+--$Revision: 1.2 $
 --********************************************************************
 --
 --  Direct Submission of Sequence Data
@@ -20,28 +20,24 @@ IMPORTS Cit-sub FROM NCBI-Biblio
         Seq-entry FROM NCBI-Seqset;
 
 Seq-submission ::= SEQUENCE {
+	sub Submission-block ,
+    data Seq-entry }
+
+Feat-submission ::= SEQUENCE {
+	sub Submission-block ,
+    data Seq-annot }
+
+Submission-block ::= SEQUENCE {
     type ENUMERATED {
         not-set (0) ,
-        new-sequence (1) ,
+        new (1) ,
         update-by-author (2) ,
         update-by-other (3) ,
         other (255) } ,
     cit Cit-sub ,                 -- citation for this submission
     contact Contact-info ,        -- who to contact
-    pubs SEQUENCE OF Sub-pub OPTIONAL,  -- citations about this submission
     hold-until-publish BOOLEAN DEFAULT FALSE ,
-    data Seq-entry }
-
-Feat-submission ::= SEQUENCE {
-    type ENUMERATED {
-        not-set (0) ,
-        feature-table (1) ,       -- feature table for one entry
-        feature-set (2) ,         -- features on many entries (eg EPD)
-        other (255) } ,
-    cit Cit-sub ,                 -- citation for this submission
-    contact Contact-info ,        -- who to contact
-    pubs SEQUENCE OF Sub-pub OPTIONAL,  -- citations about this submission
-    data Seq-annot }
+	release-date Date OPTIONAL }
 
 Contact-info ::= SEQUENCE {      -- who to contact to discuss the submission
     name VisibleString ,
@@ -50,14 +46,6 @@ Contact-info ::= SEQUENCE {      -- who to contact to discuss the submission
     fax VisibleString OPTIONAL ,
     email VisibleString OPTIONAL ,
     telex VisibleString OPTIONAL }
-
-Sub-pub ::= SEQUENCE {
-    status ENUMERATED {
-        in-preparation (1) ,
-        submitted (2) ,
-        accepted (3) ,
-        published (4) } ,
-    cit Pub }
 
 END
 
