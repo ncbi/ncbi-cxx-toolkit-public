@@ -694,8 +694,8 @@ BlastHSPGetNumIdentical(Uint1Ptr query, Uint1Ptr subject, BlastHSPPtr hsp,
    Int4 i, num_ident, align_length, q_off, s_off;
    Int2 context;
    Uint1Ptr q, s;
-   GapXEditBlockPtr gap_info;
-   GapXEditScriptPtr esp;
+   GapEditBlockPtr gap_info;
+   GapEditScriptPtr esp;
 
    gap_info = hsp->gap_info;
 
@@ -755,7 +755,7 @@ BlastOOFGetNumIdentical(Uint1Ptr query_seq, Uint1Ptr subject_seq,
    Int4 i, num_ident, align_length, q_off, s_off;
    Int2 context;
    Uint1Ptr q, s;
-   GapXEditScriptPtr esp;
+   GapEditScriptPtr esp;
 
    if (!hsp->gap_info)
       return -1;
@@ -1126,7 +1126,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
             }
          } else {
             /* Score is below threshold */
-            gap_align->edit_block = GapXEditBlockDelete(gap_align->edit_block);
+            gap_align->edit_block = GapEditBlockDelete(gap_align->edit_block);
             hsp_array[index] = BlastHSPFree(hsp);
          }
       } else { 

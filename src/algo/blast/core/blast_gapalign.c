@@ -55,7 +55,7 @@ static Int4 BLAST_AlignPackedNucl(Uint1Ptr B, Uint1Ptr A, Int4 N, Int4 M,
    BlastScoringOptionsPtr score_options, Boolean reverse_sequence);
 static Int2
 BLAST_GapAlignStructFill(BlastGapAlignStructPtr gap_align, Int4 q_start, 
-   Int4 s_start, Int4 q_end, Int4 s_end, Int4 score, GapXEditScriptPtr esp);
+   Int4 s_start, Int4 q_end, Int4 s_end, Int4 score, GapEditScriptPtr esp);
 static Int2 
 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align, BlastInitHSPPtr init_hsp, 
    BlastHSPListPtr hsp_list, BlastHitSavingOptionsPtr hit_options, Int2 frame);
@@ -65,13 +65,13 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
    BlastGapAlignStructPtr gap_align,
    BlastScoringOptionsPtr score_options, BlastInitHSPPtr init_hsp);
 
-typedef struct GapXData {
+typedef struct GapData {
   BlastGapDPPtr CD;
   Int4Ptr PNTR v;
   Int4Ptr sapp;                 /* Current script append ptr */
   Int4  last;
   Int4 h,  g;
-} GapXData;
+} GapData;
 
 /** Append "Delete k" op */
 #define DEL_(k) \
@@ -281,18 +281,18 @@ CheckGappedAlignmentsForOverlap(BlastHSPPtr *hsp_array, Int4 hsp_count, Int2 fra
  * @return The found or created state structure
  */
 #define	CHUNKSIZE	2097152
-static GapXDropStateArrayStructPtr
-GapXDropGetState(GapXDropStateArrayStructPtr PNTR head, Int4 length)
+static GapStateArrayStructPtr
+GapGetState(GapStateArrayStructPtr PNTR head, Int4 length)
 
 {
-   GapXDropStateArrayStructPtr	retval, var, last;
+   GapStateArrayStructPtr	retval, var, last;
    Int4	chunksize = MAX(CHUNKSIZE, length + length/3);
 
    length += length/3;	/* Add on about 30% so the end will get reused. */
    retval = NULL;
    if (*head == NULL) {
-      retval = (GapXDropStateArrayStructPtr) 
-         Nlm_Malloc(sizeof(GapXDropStateArrayStruct));
+      retval = (GapStateArrayStructPtr) 
+         Nlm_Malloc(sizeof(GapStateArrayStruct));
       retval->state_array = Nlm_Malloc(chunksize*sizeof(Uint1));
       retval->length = chunksize;
       retval->used = 0;
@@ -319,7 +319,7 @@ GapXDropGetState(GapXDropStateArrayStructPtr PNTR head, Int4 length)
       
       if (var == NULL)
       {
-         retval = (GapXDropStateArrayStructPtr) Nlm_Malloc(sizeof(GapXDropStateArrayStruct));
+         retval = (GapStateArrayStructPtr) Nlm_Malloc(sizeof(GapStateArrayStruct));
          retval->state_array = Nlm_Malloc(chunksize*sizeof(Uint1));
          retval->length = chunksize;
          retval->used = 0;
@@ -337,7 +337,7 @@ GapXDropGetState(GapXDropStateArrayStructPtr PNTR head, Int4 length)
 
 /** Remove a state from a state structure */
 static Boolean
-GapXDropPurgeState(GapXDropStateArrayStructPtr state_struct)
+GapPurgeState(GapStateArrayStructPtr state_struct)
 {
    while (state_struct)
    {
@@ -484,11 +484,11 @@ MB_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
 BlastGapAlignStructPtr 
 BLAST_GapAlignStructFree(BlastGapAlignStructPtr gap_align)
 {
-   GapXEditBlockDelete(gap_align->edit_block);
+   GapEditBlockDelete(gap_align->edit_block);
    MemFree(gap_align->dyn_prog);
    if (gap_align->greedy_align_mem)
       GreedyAlignMemFree(gap_align->greedy_align_mem);
-   GapXDropStateDestroy(gap_align->state_struct);
+   GapStateFree(gap_align->state_struct);
 
    MemFree(gap_align);
    return NULL;
@@ -519,7 +519,7 @@ BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options,
             BLAST_ScoreBlkNew(BLASTNA_SEQ_CODE, total_num_contexts);
       else
          gap_align->sbp = 
-            BLAST_ScoreBlkNew(Seq_code_ncbistdaa, total_num_contexts);
+            BLAST_ScoreBlkNew(BLASTAA_SEQ_CODE, total_num_contexts);
 
       /* Fills in block for gapped blast. */
       if ((status = BlastScoreBlkGappedFill(gap_align->sbp, score_options, 
@@ -571,7 +571,7 @@ ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N, Int4Ptr S, Int4Ptr pei,
         Boolean reversed, Boolean reverse_sequence)
 	
 { 
-  GapXData data;
+  GapData data;
   Int4 i, j, cb,  j_r, s, k;
   Uint1 st, std, ste;
   Int4 gap_open, gap_extend, decline_penalty;
@@ -583,7 +583,7 @@ ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N, Int4Ptr S, Int4Ptr pei,
   Uint1Ptr state_array;
   Int4Ptr *matrix;
   Int4 X;
-  GapXDropStateArrayStructPtr state_struct;
+  GapStateArrayStructPtr state_struct;
   Int4 next_c;
   Uint1Ptr Bptr;
   Int4 B_increment=1;
@@ -608,7 +608,7 @@ ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N, Int4Ptr S, Int4Ptr pei,
     return 0;
   }
 
-  GapXDropPurgeState(gap_align->state_struct);
+  GapPurgeState(gap_align->state_struct);
 
   j = (N + 2) * sizeof(BlastGapDP);
   if (gap_align->dyn_prog)
@@ -623,9 +623,9 @@ ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N, Int4Ptr S, Int4Ptr pei,
 
   /* Protection against divide by zero. */
   if (gap_extend > 0)
-  	state_struct = GapXDropGetState(&gap_align->state_struct, X/gap_extend+5);
+  	state_struct = GapGetState(&gap_align->state_struct, X/gap_extend+5);
   else
-	state_struct = GapXDropGetState(&gap_align->state_struct, N+3);
+	state_struct = GapGetState(&gap_align->state_struct, N+3);
 
   state_array = state_struct->state_array;
   state[0] = state_array;
@@ -649,9 +649,9 @@ ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N, Int4Ptr S, Int4Ptr pei,
   for(j_r = 1; j_r <= M; j_r++) {
      /* Protection against divide by zero. */
     if (gap_extend > 0)
-    	state_struct = GapXDropGetState(&gap_align->state_struct, j-tt+5+X/gap_extend);
+    	state_struct = GapGetState(&gap_align->state_struct, j-tt+5+X/gap_extend);
     else
-	state_struct = GapXDropGetState(&gap_align->state_struct, N-tt+3);
+	state_struct = GapGetState(&gap_align->state_struct, N-tt+3);
     state_array = state_struct->state_array + state_struct->used + 1;
     state[j_r] = state_array - tt + 1;
     stp = state[j_r];
@@ -976,7 +976,7 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
    BlastGapAlignStructPtr gap_align, BlastScoringOptionsPtr score_options,
    Int4 query_offset, Boolean reversed)
 {
-  GapXData data;
+  GapData data;
   Int4 i, j, cb,  j_r, s, k, sc, s1, s2, s3, st1, e1, e2, e3, shift;
   Int4 c, d, m,t, tt, tt_start, f1, f2;
   Int4 best_score = 0;
@@ -987,7 +987,7 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   Uint1Ptr state_array;
   Int4Ptr *matrix;
   Int4 X;
-  GapXDropStateArrayStructPtr state_struct;
+  GapStateArrayStructPtr state_struct;
   Int4 factor = 1;
   
   matrix = gap_align->sbp->matrix;
@@ -1009,7 +1009,7 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   }
 
   N+=2;
-  GapXDropPurgeState(gap_align->state_struct);
+  GapPurgeState(gap_align->state_struct);
 
   j = (N + 2) * sizeof(BlastGapDP);
   data.CD = (BlastGapDPPtr)MemNew(j);
@@ -1017,7 +1017,7 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   state = MemNew(sizeof(Uint1Ptr)*(M+1));
   data.CD[0].CC = 0;
   c = data.CD[0].DD = -m;
-  state_struct = GapXDropGetState(&gap_align->state_struct, N+3);
+  state_struct = GapGetState(&gap_align->state_struct, N+3);
   state_array = state_struct->state_array;
   state[0] = state_array;
   stp  = state[0];
@@ -1047,7 +1047,7 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   tt = 0;  j = i;
   for(j_r = 1; j_r <= M; j_r++) {
     count += j - tt; 
-    state_struct = GapXDropGetState(&gap_align->state_struct, N-tt+3);
+    state_struct = GapGetState(&gap_align->state_struct, N-tt+3);
     state_array = state_struct->state_array + state_struct->used + 1;
     state[j_r] = state_array - tt + 1;
     stp = state[j_r];
@@ -1544,17 +1544,17 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
 /** Auxiliary function to transform one style of edit script into 
  *  another. 
  */
-static GapXEditScriptPtr
-MBToGapXEditScript (edit_script_t PNTR ed_script)
+static GapEditScriptPtr
+MBToGapEditScript (edit_script_t PNTR ed_script)
 {
-   GapXEditScriptPtr esp_start = NULL, esp, esp_prev = NULL;
+   GapEditScriptPtr esp_start = NULL, esp, esp_prev = NULL;
    Uint4 i;
 
    if (ed_script==NULL || ed_script->num == 0)
       return NULL;
 
    for (i=0; i<ed_script->num; i++) {
-      esp = (GapXEditScriptPtr) MemNew(sizeof(GapXEditScript));
+      esp = (GapEditScriptPtr) MemNew(sizeof(GapEditScript));
       esp->num = EDIT_VAL(ed_script->op[i]);
       esp->op_type = 3 - EDIT_OPC(ed_script->op[i]);
       if (esp->op_type == 3)
@@ -1597,7 +1597,7 @@ static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlkPtr query,
    Int4 q_ext_l, q_ext_r, s_ext_l, s_ext_r;
    edit_script_t *ed_script_fwd=NULL, *ed_script_rev=NULL;
    Uint1 rem;
-   GapXEditScriptPtr esp = NULL;
+   GapEditScriptPtr esp = NULL;
    Boolean do_traceback = 
       (ext_options->algorithm_type != EXTEND_GREEDY_NO_TRACEBACK);
    
@@ -1651,7 +1651,7 @@ static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlkPtr query,
 
    if (do_traceback) {
       edit_script_append(ed_script_rev, ed_script_fwd);
-      esp = MBToGapXEditScript(ed_script_rev);
+      esp = MBToGapEditScript(ed_script_rev);
    }
    
    edit_script_free(ed_script_fwd);
@@ -1675,7 +1675,7 @@ static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlkPtr query,
  */
 static Int2
 BLAST_GapAlignStructFill(BlastGapAlignStructPtr gap_align, Int4 q_start, 
-   Int4 s_start, Int4 q_end, Int4 s_end, Int4 score, GapXEditScriptPtr esp)
+   Int4 s_start, Int4 q_end, Int4 s_end, Int4 score, GapEditScriptPtr esp)
 {
 
    gap_align->query_start = q_start;
@@ -1685,7 +1685,7 @@ BLAST_GapAlignStructFill(BlastGapAlignStructPtr gap_align, Int4 q_start,
    gap_align->score = score;
 
    if (esp) {
-      gap_align->edit_block = GapXEditBlockNew(q_start, s_start);
+      gap_align->edit_block = GapEditBlockNew(q_start, s_start);
       gap_align->edit_block->start1 = q_start;
       gap_align->edit_block->start2 = s_start;
       gap_align->edit_block->length1 = q_end - q_start + 1;
@@ -2558,20 +2558,20 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
  * @param edit_block The constructed edit block [out]
  */
 static Int2 
-BLAST_TracebackToGapXEditBlock(Int4Ptr S, Int4 M, Int4 N, Int4 start1, 
-                               Int4 start2, GapXEditBlockPtr PNTR edit_block)
+BLAST_TracebackToGapEditBlock(Int4Ptr S, Int4 M, Int4 N, Int4 start1, 
+                               Int4 start2, GapEditBlockPtr PNTR edit_block)
 {
 
   Int4 i, j, op, number_of_subs, number_of_decline;
-  GapXEditScriptPtr e_script;
+  GapEditScriptPtr e_script;
 
   if (S == NULL)
      return -1;
 
   i = j = op = number_of_subs = number_of_decline = 0;
 
-  *edit_block = GapXEditBlockNew(start1, start2);
-  (*edit_block)->esp = e_script = GapXEditScriptNew(NULL);
+  *edit_block = GapEditBlockNew(start1, start2);
+  (*edit_block)->esp = e_script = GapEditScriptNew(NULL);
 
   while(i < M || j < N) 
   {
@@ -2580,14 +2580,14 @@ BLAST_TracebackToGapXEditBlock(Int4Ptr S, Int4 M, Int4 N, Int4 start1,
 	{
                e_script->op_type = GAPALIGN_DECLINE;
                e_script->num = number_of_decline;
-               e_script = GapXEditScriptNew(e_script);
+               e_script = GapEditScriptNew(e_script);
 		number_of_decline = 0;
 	}
         if (op != 0 && number_of_subs > 0) 
 	{
                         e_script->op_type = GAPALIGN_SUB;
                         e_script->num = number_of_subs;
-                        e_script = GapXEditScriptNew(e_script);
+                        e_script = GapEditScriptNew(e_script);
                         number_of_subs = 0;
         }      
 	if (op == 0) {
@@ -2604,7 +2604,7 @@ BLAST_TracebackToGapXEditBlock(Int4Ptr S, Int4 M, Int4 N, Int4 start1,
 			e_script->num = op;
 			j += op;
 			if (i < M || j < N)
-                                e_script = GapXEditScriptNew(e_script);
+                                e_script = GapEditScriptNew(e_script);
 		}
 		else
 		{
@@ -2612,7 +2612,7 @@ BLAST_TracebackToGapXEditBlock(Int4Ptr S, Int4 M, Int4 N, Int4 start1,
 			e_script->num = ABS(op);
 			i += ABS(op);
 			if (i < M || j < N)
-                                e_script = GapXEditScriptNew(e_script);
+                                e_script = GapEditScriptNew(e_script);
 		}
     	}
 	S++;
@@ -2630,7 +2630,7 @@ BLAST_TracebackToGapXEditBlock(Int4Ptr S, Int4 M, Int4 N, Int4 start1,
   return 0;
 }
 
-/** Converts a OOF traceback from the gapped alignment to a GapXEditBlock.
+/** Converts a OOF traceback from the gapped alignment to a GapEditBlock.
  * This function is for out-of-frame gapping:
  * index1 is for the protein, index2 is for the nucleotides.
  * 0: deletion of a dna codon, i.e dash aligned with a protein letter.
@@ -2643,14 +2643,14 @@ BLAST_TracebackToGapXEditBlock(Int4Ptr S, Int4 M, Int4 N, Int4 start1,
  */
 
 static Int2
-BLAST_OOFTracebackToGapXEditBlock(Int4Ptr S, Int4 q_length, 
+BLAST_OOFTracebackToGapEditBlock(Int4Ptr S, Int4 q_length, 
    Int4 s_length, Int4 q_start, Int4 s_start, Uint1 program, 
-   GapXEditBlockPtr PNTR edit_block_ptr)
+   GapEditBlockPtr PNTR edit_block_ptr)
 {
     register Int4 current_val, last_val, number, index1, index2;
     Int4 M, N;
-    GapXEditScriptPtr e_script;
-    GapXEditBlockPtr edit_block;
+    GapEditScriptPtr e_script;
+    GapEditBlockPtr edit_block;
     
     if (S == NULL)
         return NULL;
@@ -2659,7 +2659,7 @@ BLAST_OOFTracebackToGapXEditBlock(Int4Ptr S, Int4 q_length,
     index1 = 0;
     index2 = 0;
     
-    *edit_block_ptr = edit_block = GapXEditBlockNew(q_start, s_start);
+    *edit_block_ptr = edit_block = GapEditBlockNew(q_start, s_start);
     edit_block->is_ooframe = TRUE;
     if (program == blast_type_blastx) {
         M = s_length;
@@ -2669,7 +2669,7 @@ BLAST_OOFTracebackToGapXEditBlock(Int4Ptr S, Int4 q_length,
         N = s_length;
     }
 
-    edit_block->esp = e_script = GapXEditScriptNew(NULL);
+    edit_block->esp = e_script = GapEditScriptNew(NULL);
     
     last_val = *S;
     
@@ -2684,7 +2684,7 @@ BLAST_OOFTracebackToGapXEditBlock(Int4Ptr S, Int4 q_length,
         if (current_val != last_val || (current_val%3 != 0 && 
                                         edit_block->esp != e_script)) {
             e_script->num = number;
-            e_script = GapXEditScriptNew(e_script);
+            e_script = GapEditScriptNew(e_script);
             
             /* if(last_val%3 != 0 && current_val%3 == 0) */
             if(last_val%3 != 0 && current_val == 3) 
@@ -2808,13 +2808,13 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, Uint1Ptr query,
     }
 
     if(is_ooframe) {
-        status = BLAST_OOFTracebackToGapXEditBlock(tback, 
+        status = BLAST_OOFTracebackToGapEditBlock(tback, 
            gap_align->query_stop-gap_align->query_start, 
            gap_align->subject_stop-gap_align->subject_start, 
            gap_align->query_start, gap_align->subject_start, 
            program, &gap_align->edit_block);
     } else {
-        status = BLAST_TracebackToGapXEditBlock(tback, 
+        status = BLAST_TracebackToGapEditBlock(tback, 
            gap_align->query_stop-gap_align->query_start, 
            gap_align->subject_stop-gap_align->subject_start, 
            gap_align->query_start, gap_align->subject_start,

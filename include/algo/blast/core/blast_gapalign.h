@@ -41,7 +41,7 @@ Contents: Structures and functions prototypes used for BLAST gapped extension
 #include <blast_def.h>
 #include <blast_options.h>
 #include <blast_extend.h>
-#include <gapxdrop.h>
+#include <gapinfo.h>
 #include <mbalign.h>
 
 #ifdef __cplusplus
@@ -62,6 +62,8 @@ typedef enum {
 #define MIN_NEIGHBOR_PERC_IDENTITY 96
 
 #define MAX_DBSEQ_LEN 5000000
+
+#define BLASTAA_SEQ_CODE 11 /* == Seq_code_ncbistdaa */
 
 /* One sequence segment within an HSP */
 typedef struct BlastSeg {
@@ -115,7 +117,7 @@ typedef struct BlastHSP {
    BlastSeg query;            /**< Query sequence info. */
    BlastSeg subject;          /**< Subject sequence info. */
    Int2     context;          /**< Context number of query */
-   GapXEditBlockPtr gap_info; /**< ALL gapped alignment is here */
+   GapEditBlockPtr gap_info; /**< ALL gapped alignment is here */
    Int4 num_ref;              /**< Number of references in the linked set */
    Int4 linked_to;            /**< Where this HSP is linked to? */
 } BlastHSP, PNTR BlastHSPPtr;
@@ -128,9 +130,9 @@ typedef struct BlastGapDP {
 /** Structure supporting the gapped alignment */
 typedef struct BlastGapAlignStruct {
    Boolean positionBased; /**< Is this PSI-BLAST? */
-   GapXDropStateArrayStructPtr state_struct; /**< Structure to keep extension 
+   GapStateArrayStructPtr state_struct; /**< Structure to keep extension 
                                                 state information */
-   GapXEditBlockPtr edit_block; /**< The traceback (gap) information */
+   GapEditBlockPtr edit_block; /**< The traceback (gap) information */
    BlastGapDPPtr dyn_prog; /**< Preallocated memory for the dynamic 
                               programming extension */
    GreedyAlignMemPtr greedy_align_mem;/**< Preallocated memory for the greedy 

@@ -115,7 +115,7 @@ BlastHSPPtr BlastHSPFree(BlastHSPPtr hsp)
 {
    if (!hsp)
       return NULL;
-   hsp->gap_info = GapXEditBlockDelete(hsp->gap_info);
+   hsp->gap_info = GapEditBlockDelete(hsp->gap_info);
    return (BlastHSPPtr) MemFree(hsp);
 }
 
@@ -212,8 +212,8 @@ BlastHSPGetNumIdentical(Uint1Ptr query, Uint1Ptr subject,
    Int4 i, num_ident, align_length, q_off, s_off;
    Int2 context;
    Uint1Ptr q, s;
-   GapXEditBlockPtr gap_info;
-   GapXEditScriptPtr esp;
+   GapEditBlockPtr gap_info;
+   GapEditScriptPtr esp;
 
    gap_info = hsp->gap_info;
 
@@ -442,7 +442,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
    Int4 index, context, hspcnt, buf_len=0, i;
    Int2 factor = 1;
    Uint1 mask = 0x0f;
-   GapXEditScriptPtr esp, last_esp, prev_esp, first_esp;
+   GapEditScriptPtr esp, last_esp, prev_esp, first_esp;
    Boolean purge, delete_hsp;
    FloatHi searchsp_eff;
    Int4 last_esp_num;
@@ -601,11 +601,11 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
          /* Make corrections in edit block and free any parts that
             are no longer needed */
          if (first_esp != hsp->gap_info->esp) {
-            GapXEditScriptDelete(hsp->gap_info->esp);
+            GapEditScriptDelete(hsp->gap_info->esp);
             hsp->gap_info->esp = first_esp;
          }
          if (last_esp->next != NULL) {
-            GapXEditScriptDelete(last_esp->next);
+            GapEditScriptDelete(last_esp->next);
             last_esp->next = NULL;
          }
          last_esp->num = last_esp_num;
@@ -619,7 +619,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
 
       if (delete_hsp) { /* This HSP is now below the cutoff */
          if (first_esp != NULL && first_esp != hsp->gap_info->esp)
-            GapXEditScriptDelete(first_esp);
+            GapEditScriptDelete(first_esp);
          hsp_array[index] = BlastHSPFree(hsp_array[index]);
          purge = TRUE;
       }
@@ -1061,7 +1061,7 @@ static Boolean
 BLAST_MergeHsps(BlastHSPPtr hsp1, BlastHSPPtr hsp2, Int4 start)
 {
    BLASTHSPSegmentPtr segments1, segments2, new_segment1, new_segment2;
-   GapXEditScriptPtr esp1, esp2, esp;
+   GapEditScriptPtr esp1, esp2, esp;
    Int4 end = start + DBSEQ_CHUNK_OVERLAP - 1;
    Int4 min_diag, max_diag, num1, num2, dist = 0, next_dist = 0;
    Int4 diag1_start, diag1_end, diag2_start, diag2_end;
