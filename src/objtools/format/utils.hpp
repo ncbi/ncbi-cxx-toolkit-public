@@ -1,5 +1,5 @@
-#ifndef OBJTOOLS_FLAT___UTILS_HPP
-#define OBJTOOLS_FLAT___UTILS_HPP
+#ifndef OBJTOOLS_FORMAT___UTILS_HPP
+#define OBJTOOLS_FORMAT___UTILS_HPP
 
 /*  $Id$
 * ===========================================================================
@@ -43,6 +43,7 @@ class CScope;
 class CSeq_feat;
 class CBioseq_Handle;
 
+bool IsBlankString(const string& str);
 
 enum ETildeStyle {
     eTilde_tilde,  // no-op
@@ -51,6 +52,10 @@ enum ETildeStyle {
 };
 string ExpandTildes(const string& s, ETildeStyle style);
 
+// convert " to '
+void ConvertQuotes(string& str);
+string ConvertQuotes(const string& str);
+
 void JoinNoRedund(string& to, const string& prefix, const string& str);
 string JoinNoRedund(const list<string>& l, const string& delim);
 
@@ -58,8 +63,8 @@ string JoinNoRedund(const list<string>& l, const string& delim);
 // meet several spaces (spaces and tabs) in succession it replaces them
 // with one space. Strips all spaces after '(' and before ')'
 void StripSpaces(string& str);
-
 bool RemovePeriodFromEnd(string& str, bool keep_ellipsis = true);
+void AddPeriod(string& str);
 
 bool ValidateAccession(const string& accn);
 void DateToString(const CDate& date, string& str, bool is_cit_sub = false);
@@ -111,6 +116,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/08/19 16:32:36  shomrat
+* + AddPeriod, ConvertQuotes and IsBlankString
+*
 * Revision 1.7  2004/05/07 15:23:11  shomrat
 * + RemovePeriodFromEnd
 *
@@ -137,4 +145,4 @@ END_NCBI_SCOPE
 */
 
 
-#endif  /* OBJTOOLS_FLAT___UTILS_HPP */
+#endif  /* OBJTOOLS_FORMAT___UTILS_HPP */

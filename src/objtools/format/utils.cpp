@@ -49,12 +49,26 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
-
+#include <algorithm>
 #include "utils.hpp"
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+
+bool IsBlankString(const string& str)
+{
+    if (!str.empty()) {
+        ITERATE (string, it, str) {
+            if (!isspace(*it)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
 
 
 string ExpandTildes(const string& s, ETildeStyle style)
@@ -102,22 +116,38 @@ string ExpandTildes(const string& s, ETildeStyle style)
 }
 
 
+void ConvertQuotes(string& str)
+{
+    replace(str.begin(), str.end(), '\"', '\'');
+}
+
+
+string ConvertQuotes(const string& str)
+{
+    string retval = str;
+    ConvertQuotes(retval);
+    return retval;
+}
+
+
 void StripSpaces(string& str)
 {
-    if ( str.empty() ) {
+    if (str.empty()) {
         return;
     }
 
-    string::iterator new_str = str.begin();
-    NON_CONST_ITERATE(string, it, str) {
+    string::iterator end = str.end();
+    string::iterator it = str.begin();
+    string::iterator new_str = it;
+    while (it != end) {
         *new_str++ = *it;
         if ( (*it == ' ')  ||  (*it == '\t')  ||  (*it == '(') ) {
             for (++it; *it == ' ' || *it == '\t'; ++it) continue;
             if (*it == ')' || *it == ',') {
-                new_str--;
+                --new_str;
             }
         } else {
-            it++;
+            ++it;
         }
     }
     str.erase(new_str, str.end());
@@ -137,6 +167,21 @@ bool RemovePeriodFromEnd(string& str, bool keep_ellipsis)
     }
 
     return false;
+}
+
+
+void AddPeriod(string& str)
+{
+    static const string kChars = " \t~.\n";
+
+    size_t pos = 0;
+    for (pos = str.length() - 1; pos >= 0; --pos) {
+        if (kChars.find(str[pos]) == NPOS) {
+            break;
+        }
+    }
+    str.erase(pos + 1);
+    str += '.';
 }
 
 
@@ -324,12 +369,12 @@ void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary)
                     ++temp.num_gaps;
                     text << "* " << from << ' ' << len 
                          << " gap of unknown length~";
-                } else {
+                } else {  // count length
                     size_t tlen = sequence::GetLength(loc, &scope);
                     len += tlen;
                     temp.residues += tlen;
-                    text << "* " << from << " " << len << ": contig of " 
-                        << tlen << " bp in length~";
+                    text << "* " << setw(8) << from << ' ' << setw(8) << len 
+                         << ": contig of " << tlen << " bp in length~";
                 }
             }}  
             break;
@@ -350,8 +395,8 @@ void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary)
                         temp.residues += next_len;
                         ++next;
                     }
-                    text << "* " << from << " " << len << ": contig of " 
-                         << lit_len << " bp in length~";
+                    text << "* " << setw(8) << from << ' ' << setw(8) << len 
+                         << ": contig of " << lit_len << " bp in length~";
                 } else {
                     bool unk = false;
                     ++temp.num_gaps;
@@ -364,7 +409,7 @@ void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary)
                             if ( from > len ) {
                                 text << "*                    gap of unknown length~";
                             } else {
-                                text << "* " << from << " " << len 
+                                text << "* " << setw(8) << from << ' ' << setw(8) << len 
                                      << ": gap of unknown length~";
                             }
                         }
@@ -524,7 +569,7 @@ bool GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me)
 // in Ncbistdaa order
 static const char* kAANames[] = {
     "---", "Ala", "Asx", "Cys", "Asp", "Glu", "Phe", "Gly", "His", "Ile",
-    "Lys", "Leu", "Met", "Asn", "Pro", "Glu", "Arg", "Ser", "Thr", "Val",
+    "Lys", "Leu", "Met", "Asn", "Pro", "Gln", "Arg", "Ser", "Thr", "Val",
     "Trp", "OTHER", "Tyr", "Glx", "Sec", "TERM"
 };
 
@@ -547,6 +592,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/08/19 16:33:02  shomrat
+* + AddPeriod, ConvertQuotes and IsBlankString
+*
 * Revision 1.10  2004/05/26 14:08:14  shomrat
 * ValidateAccession allow 2 letters + underscore + 9 digits
 *
