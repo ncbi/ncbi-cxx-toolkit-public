@@ -98,9 +98,6 @@ public:
 
     CPriority_I& operator++(void);
 
-    typedef vector<CPriorityNode::TPriority> TPriorityVector;
-    void GetPriorityVector(TPriorityVector& v) const;
-
 private:
     CPriority_I(const CPriority_I&);
     CPriority_I& operator= (const CPriority_I&);
@@ -371,18 +368,6 @@ CPriority_I& CPriority_I::operator++(void)
     return *this;
 }
 
-inline
-void CPriority_I::GetPriorityVector(TPriorityVector& v) const
-{
-    _ASSERT(m_Node  &&  (m_Node->IsTree()  ||  m_Node->IsDataSource()));
-    if (m_Map  &&  m_Map_I != m_Map->end()) {
-        v.push_back(m_Map_I->first);
-        if ( m_Sub_I.get() != 0 ) {
-            m_Sub_I->GetPriorityVector(v);
-        }
-    }
-}
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -390,6 +375,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/05/14 18:39:26  grichenk
+* Simplified TSE caching and filtering in CScope, removed
+* some obsolete members and functions.
+*
 * Revision 1.5  2003/05/06 18:54:08  grichenk
 * Moved TSE filtering from CDataSource to CScope, changed
 * some filtering rules (e.g. priority is now more important

@@ -271,7 +271,7 @@ CRef<CBioseq_Info> CDataSource::GetBioseqHandle(CSeqMatch_Info& info)
 {
     CRef<CBioseq_Info> ret;
     // The TSE is locked by the scope, so, it can not be deleted.
-    //### CMutexGuard guard(sm_DataSource_Mtx);
+    CMutexGuard guard(m_DataSource_Mtx);
     CTSE_Info::TBioseqMap::const_iterator found =
         info.GetTSE_Info().m_BioseqMap.find(info.GetIdHandle());
     if ( found != info.GetTSE_Info().m_BioseqMap.end() ) {
@@ -308,7 +308,6 @@ const CBioseq& CDataSource::GetBioseq(const CBioseq_Handle& handle)
                      CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseq);
     }
-    //### CMutexGuard guard(sm_DataSource_Mtx);
     // the handle must be resolved to this data source
     _ASSERT(&handle.x_GetDataSource() == this);
     return handle.m_Bioseq_Info->GetBioseq();
@@ -318,7 +317,6 @@ const CBioseq& CDataSource::GetBioseq(const CBioseq_Handle& handle)
 const CSeq_entry& CDataSource::GetTSE(const CBioseq_Handle& handle)
 {
     // Bioseq and TSE must be loaded if there exists a handle
-    //### CMutexGuard guard(sm_DataSource_Mtx);
     _ASSERT(&handle.x_GetDataSource() == this);
     return handle.m_Bioseq_Info->GetTSE();
 }
@@ -590,8 +588,7 @@ void CDataSource::x_DeleteBioseq_Info(CBioseq_Info& info)
 bool CDataSource::AttachEntry(CSeq_entry& parent, CSeq_entry& entry)
 {
     CMutexGuard guard(m_DataSource_Mtx);
-    //### Lock the entry to prevent destruction or modification ???
-    //### May need to find and lock the TSE_Info for this.
+
     CRef<CSeq_entry_Info> parent_info = x_FindSeq_entry_Info(parent);
     if ( !parent_info ) {
         return false;
@@ -1073,7 +1070,6 @@ void CDataSource::GetSynonyms(const CSeq_id_Handle& main_idh,
 
 
 void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
-                                      TTSE_LockSet& with_seq,
                                       TTSE_LockSet& with_ref)
 {
     CMutexGuard guard(m_DataSource_Mtx);    
@@ -1081,19 +1077,8 @@ void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
     TTSEMap::const_iterator rtse_it = m_TSE_ref.find(idh);
     if (rtse_it != m_TSE_ref.end()  &&  !rtse_it->second.empty()) {
         ITERATE(CTSE_LockingSet::TTSESet, tse, rtse_it->second) {
-            if ( (*tse)->m_BioseqMap.find(idh) ==
-                 (*tse)->m_BioseqMap.end() ) {
-                with_ref.insert(TTSE_Lock(*tse)); // with reference only
-            }
-        }
-    }
-    // Add all TSEs containing the ID, even without annotations.
-    // they will be used for filtering to avoid including dead
-    // TSEs with annotations if a newer TSE has no annotations.
-    TTSEMap::const_iterator stse_it = m_TSE_seq.find(idh);
-    if (stse_it != m_TSE_seq.end()  &&  !stse_it->second.empty()) {
-        ITERATE(CTSE_LockingSet::TTSESet, tse, stse_it->second) {
-            with_seq.insert(TTSE_Lock(*tse)); // with sequence
+            _ASSERT((*tse)->m_BioseqMap.find(idh) == (*tse)->m_BioseqMap.end());
+            with_ref.insert(TTSE_Lock(*tse)); // with reference only
         }
     }
 }
@@ -1148,7 +1133,11 @@ void CDataSource::x_MapAnnotObject(CRef<CAnnotObject_Info>& annot_info,
     CRef<CTSE_Info> tse_info(&annot_info->GetTSE_Info());
     ITERATE ( CHandleRangeMap::TLocMap, mapit, hrm.GetMap() ) {
         annotRef.m_HandleRange = mapit;
-        m_TSE_ref[mapit->first].insert(&*tse_info);
+        if (tse_info->m_BioseqMap.find(mapit->first) ==
+            tse_info->m_BioseqMap.end()) {
+            // skip TSEs with both sequence and its annots
+            m_TSE_ref[mapit->first].insert(&*tse_info);
+        }
 
         CTSE_Info::TAnnotSelectorMap& selMap =
             tse_info->m_AnnotMap[mapit->first];
@@ -1488,6 +1477,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.103  2003/05/14 18:39:28  grichenk
+* Simplified TSE caching and filtering in CScope, removed
+* some obsolete members and functions.
+*
 * Revision 1.102  2003/05/12 19:18:29  vasilche
 * Fixed locking of object manager classes in multi-threaded application.
 *

@@ -287,7 +287,6 @@ public:
     void GetSynonyms(const CSeq_id_Handle& id,
                      set<CSeq_id_Handle>& syns);
     void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
-                             TTSE_LockSet& with_seq,
                              TTSE_LockSet& with_ref);
 
     // Fill the set with bioseq handles for all sequences from a given TSE.
@@ -469,6 +468,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2003/05/14 18:39:26  grichenk
+* Simplified TSE caching and filtering in CScope, removed
+* some obsolete members and functions.
+*
 * Revision 1.53  2003/05/06 18:54:08  grichenk
 * Moved TSE filtering from CDataSource to CScope, changed
 * some filtering rules (e.g. priority is now more important

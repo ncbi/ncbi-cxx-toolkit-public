@@ -120,7 +120,6 @@ public:
     typedef CConstRef<CTSE_Info>                     TTSE_Lock;
     typedef set<TTSE_Lock>                           TTSE_LockSet;
     // History of requests
-    typedef TTSE_LockSet                             TRequestHistory;
     typedef map<CSeq_id_Handle, CBioseq_Handle>      TCache;
     typedef map<CSeq_id_Handle, CRef<CSynonymsSet> > TSynCache;
     typedef CObjectFor<TTSE_LockSet>                 TAnnotRefSet;
@@ -212,8 +211,6 @@ private:
     void x_DetachFromOM(void);
     // clean some cache entries when new data source is added
     void x_ClearCacheOnNewData(void);
-    // Add an entry to the requests history, lock the TSE by default
-    void x_AddToHistory(const CTSE_Info& tse);
     // Add a bioseq/seq-id to the scope's cache. Optional seq-id may be used
     // to cache the bioseq under this id as well as with each synonym.
     void x_AddBioseqToCache(CBioseq_Info& info, const CSeq_id_Handle* id = 0);
@@ -241,8 +238,6 @@ private:
 
     const CSynonymsSet* x_GetSynonyms(const CSeq_id_Handle& id);
 
-    void x_UpdatePriorityMap(void);
-
     // Conflict reporting function
     enum EConflict {
         eConflict_History,
@@ -252,20 +247,14 @@ private:
                          const CSeqMatch_Info& info1,
                          const CSeqMatch_Info& info2) const;
 
-    // Map data source to its priority and cached TSE set
-    struct SDataSource_Info {
-        CPriority_I::TPriorityVector m_Priority;
-        set<const CTSE_Info*>        m_TSE_Set;
-    };
-    typedef map<CDataSource*, SDataSource_Info> TDataSource_Cache;
+    // Map data source to cached TSE set
+    typedef map<CDataSource*, TTSE_LockSet> TDataSource_Cache;
 
     CObjectManager*     m_pObjMgr;
     CPriorityNode       m_setDataSrc;   // Data sources ordered by priority
     TDataSource_Cache   m_DS_Cache;     // Reverse lookup of priorities and TSEs
 
     EFindMode m_FindMode;
-
-    TRequestHistory m_History;
 
     TCache m_Cache;
     TSynCache m_SynCache;
@@ -290,6 +279,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/05/14 18:39:25  grichenk
+* Simplified TSE caching and filtering in CScope, removed
+* some obsolete members and functions.
+*
 * Revision 1.46  2003/05/12 19:18:28  vasilche
 * Fixed locking of object manager classes in multi-threaded application.
 *
