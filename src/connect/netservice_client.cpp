@@ -46,20 +46,6 @@ static
 STimeout s_DefaultCommTimeout = {6, 0};
 
 
-/// @internal
-static
-void s_WaitForServer(CSocket& sock)
-{
-    STimeout to = {2, 0};
-    while (true) {
-        EIO_Status io_st = sock.Wait(eIO_Read, &to);
-        if (io_st == eIO_Timeout)
-            continue;
-        else 
-            break;            
-    }
-}        
-
 
 CNetServiceClient::CNetServiceClient(const string& client_name)
     : m_Sock(0),
@@ -231,6 +217,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/02/11 14:28:27  kuznets
+ * Cleanup.Removed unused static function
+ *
  * Revision 1.2  2005/02/09 18:58:59  kuznets
  * +TrimErr() method
  *
