@@ -25,6 +25,9 @@
  * Author:  Denis Vakatov
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/09/19 17:55:17  ucko
+ * Fix GCC 3 build.
+ *
  * Revision 6.1  2001/01/03 17:40:31  vakatov
  * Initial revision
  *
@@ -92,7 +95,8 @@ static void s_Test(void)
     TEST_TYPE(float,   55.5);
     TEST_TYPE(double,  5.55);
 
-#if (SIZEOF_LONG_LONG > 0)
+#if (SIZEOF_LONG_LONG > 0) \
+    && (!defined(__GLIBCPP__) || defined(_GLIBCPP_USE_LONG_LONG))
     TEST_TYPE(signed   long long,   -555);
     TEST_TYPE(unsigned long long,   555);
 #endif
