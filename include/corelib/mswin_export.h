@@ -196,6 +196,7 @@
 #  define NCBI_GUIWIDGETS_ALNMULTIPLE_EXPORTS
 #  define NCBI_GUIWIDGETS_ALNDOTMATRIX_EXPORTS
 #  define NCBI_GUIWIDGETS_ALNTEXTALN_EXPORTS
+#  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORTS
 #endif
 
 
@@ -959,6 +960,15 @@
 #endif
 
 /*
+ * Export specifier for library gui_widgets_hit_matrix
+ */
+#ifdef NCBI_GUIWIDGETS_HIT_MATRIX_EXPORTS
+#  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORT    __declspec(dllexport)
+#else
+#  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORT    __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library objects_validator
  */
 #ifdef NCBI_VALIDATOR_EXPORTS
@@ -1097,6 +1107,7 @@
 #  define NCBI_GUIWIDGETS_ALNDOTMATRIX_EXPORT
 #  define NCBI_GUIWIDGETS_ALNMULTIPLE_EXPORT
 #  define NCBI_GUIWIDGETS_ALNTEXTALN_EXPORT
+#  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORT
 #  define NCBI_GUIWIDGETS_EXPORT
 #  define NCBI_GUIWIDGETS_FLEK_EXPORT
 #  define NCBI_GUIWIDGETS_FLTABLE_EXPORT
@@ -1170,6 +1181,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.48  2003/11/17 21:38:10  yazhuk
+ * Added export specifiers for Hit Matrix library
+ *
  * Revision 1.47  2003/11/05 18:40:07  dicuccio
  * Added CGI/HTML library export specifiers
  *
