@@ -103,17 +103,20 @@ public:
     int GetAlignView() const;
     void SetAlignView(int a);
     CNcbiOstream* GetOstream() const;
+    const string& GetDbLoaderName() const;
+    void SetDbLoaderName(string dbname);
 
 protected:
-   Uint1 m_align_view;
-   Uint4 m_align_options;
-   Uint4 m_print_options;
-   bool m_believe_query;
-   bool m_html;
-   CNcbiOstream *m_ostr;
-   Int4 m_descriptions;
-   Int4 m_alignments;
-   Boolean m_ungapped; /**< Should this be here????? */
+   Uint1 m_AlignView;
+   Uint4 m_AlignOptions;
+   Uint4 m_PrintOptions;
+   bool m_bBelieveQuery;
+   bool m_bHtml;
+   CNcbiOstream *m_pOstr;
+   Int4 m_NumDescriptions;
+   Int4 m_NumAlignments;
+   Boolean m_bUngapped; /**< Should this be here????? */
+   string m_DbLoaderName;
 
 private:    
     /// Prohibit copy c-tor 
@@ -124,47 +127,57 @@ private:
 
 inline int CBlastFormatOptions::GetDescriptions() const
 {
-    return m_descriptions;
+    return m_NumDescriptions;
 }
 
 inline void CBlastFormatOptions::SetDescriptions(int d)
 {
-    m_descriptions = d;
+    m_NumDescriptions = d;
 }
 
 inline int CBlastFormatOptions::GetAlignments() const
 {
-    return m_alignments;
+    return m_NumAlignments;
 }
 
 inline void CBlastFormatOptions::SetAlignments(int a)
 {
-    m_alignments = a;
+    m_NumAlignments = a;
 }
 
 inline bool CBlastFormatOptions::GetHtml() const
 {
-    return m_html;
+    return m_bHtml;
 }
 
 inline void CBlastFormatOptions::SetHtml(bool h)
 {
-    m_html = h;
+    m_bHtml = h;
 }
 
 inline int CBlastFormatOptions::GetAlignView() const
 {
-    return m_align_view;
+    return m_AlignView;
 }
 
 inline void CBlastFormatOptions::SetAlignView(int a)
 {
-    m_align_view = a;
+    m_AlignView = a;
 }
 
 inline CNcbiOstream* CBlastFormatOptions::GetOstream() const
 {
-    return m_ostr;
+    return m_pOstr;
+}
+
+inline const string& CBlastFormatOptions::GetDbLoaderName() const
+{
+    return m_DbLoaderName;
+}
+
+inline void CBlastFormatOptions::SetDbLoaderName(string dbname)
+{
+    m_DbLoaderName = dbname;
 }
 
 int
