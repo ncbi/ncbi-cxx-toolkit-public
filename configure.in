@@ -540,6 +540,34 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
+AC_MSG_CHECKING(for Linux-like sysinfo with 1 arg)
+AC_TRY_COMPILE(
+   [#include <sys/sysinfo.h>],
+   [ struct sysinfo* info = 0;
+     int retval = sysinfo(info); ],
+   AC_DEFINE_UNQUOTED(HAVE_SYSINFO_1, 1)
+)
+AC_MSG_RESULT()
+
+
+AC_MSG_CHECKING(for getloadavg)
+AC_TRY_COMPILE(
+   [#include <sys/loadavg.h>],
+   [ double loadavg[3];  int i = getloadavg(loadavg, 3); ],
+   AC_DEFINE_UNQUOTED(HAVE_GETLOADAVG, 1)
+)
+AC_MSG_RESULT()
+
+
+AC_MSG_CHECKING(for sysmp)
+AC_TRY_COMPILE(
+   [#include <sys/sysmp.h>],
+   [ struct sysinfo si;  sysmp(MP_SAGET, MPSA_SINFO, &si, sizeof(si)); ],
+   AC_DEFINE_UNQUOTED(HAVE_SYSMP, 1)
+)
+AC_MSG_RESULT()
+
+
 ### Check for typedefs, structures, and compiler features.
 AC_CXX_CONST
 AC_TYPE_SIZE_T
@@ -629,12 +657,48 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
+AC_MSG_CHECKING(for union semun)
+AC_TRY_COMPILE(
+   [#include <sys/sem.h>],
+   [union semun { double a;  void* b; } ],
+   AC_DEFINE_UNQUOTED(HAVE_SEMUN, 1)
+)
+AC_MSG_RESULT()
+
+
+
 ### Check for the availability of other packages
 ### --------------------------------------------
 
-### System and miscellaneous libs
+### Common-use system and miscellaneous libs
 THREAD_LIBS=${THREAD_LIBS:="-lpthread"}
 NETWORK_LIBS=${NETWORK_LIBS:="-lsocket -lnsl"}
+
+## KSTAT system library and kstat_XXX() functions
+KSTAT_LIBS=${KSTAT_LIBS:="-lkstat"}
+AC_MSG_CHECKING(if KSTAT library and functions are available)
+LIBS="$KSTAT_LIBS $orig_LIBS"
+AC_TRY_LINK(
+   [#include <kstat.h>],
+   [kstat_ctl_t* kc = kstat_open(); ],
+   [AC_DEFINE_UNQUOTED(HAVE_LIBKSTAT, 1)],
+   [KSTAT_LIBS=""]
+)
+AC_MSG_RESULT([$KSTAT_LIBS])
+
+
+## RPCSVC system library and rstat() function
+RPCSVC_LIBS=${RPCSVC_LIBS:="-lrpcsvc"}
+AC_MSG_CHECKING(if RPCSVC library and functions are available)
+LIBS="$RPCSVC_LIBS $orig_LIBS"
+AC_TRY_LINK(
+   [#include <rpc/rpc.h>
+    #include <rpcsvc/rstat.h>],
+   [enum clnt_stat eee = rstat((char*) 0, (struct statstime*) 0); ],
+   [AC_DEFINE_UNQUOTED(HAVE_LIBRPCSVC, 1)],
+   [RPCSVC_LIBS=""]
+)
+AC_MSG_RESULT([$RPCSVC_LIBS])
 
 
 ### Save original compilator/linker flags
@@ -918,6 +982,8 @@ AC_SUBST(f_outexe)
 
 AC_SUBST(THREAD_LIBS)
 AC_SUBST(NETWORK_LIBS)
+AC_SUBST(KSTAT_LIBS)
+AC_SUBST(RPCSVC_LIBS)
 AC_SUBST(SYBASE_INCLUDE)
 AC_SUBST(SYBASE_LIBS)
 AC_SUBST(NCBI_C_INCLUDE)
