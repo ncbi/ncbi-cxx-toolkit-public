@@ -32,6 +32,13 @@ egrep -v -e '
 :     Where: While specializing "std::basic_.*stream<char, std::char_traits<char>
 :     Where: Specialized in non-template code\.
 ^[0-9][0-9]* Warning\(s\) detected\.
+^"/netopt/SUNWspro6/SC5\.0/include/CC/\./ios", line 148: Warning:
+^"/netopt/SUNWspro6/SC5\.0/include/CC/\./ostream", line 73:     Where:
+^"/netopt/SUNWspro6/SC5\.0/include/CC/\./ostream", line 347:     Where: Specialized in non-template code\.
+^"/netopt/SUNWspro6/SC5\.0/include/CC/\./ostream", line 350:     Where: Specialized in non-template code\.
+^"/netopt/SUNWspro6/SC5\.0/include/CC/\./strstream", line 147: Warning:
+^"/netopt/SUNWspro6/SC5\.0/include/CC/\./strstream", line 182: Warning:
+^"/netopt/SUNWspro6/SC5\.0/include/CC/\./strstream", line 222: Warning:
 ^: ' |
 
 sed '
