@@ -149,9 +149,51 @@ private:
                         string & dbname_path,
                         char     prot_nucl);
     
-    void x_SetOIDMask(CSeqDBVolSet & volset);
-    void x_SetGiListMask(CSeqDBVolSet & volset);
-    
+    /// Add an OID list filter to a volume
+    /// 
+    /// This method stores the OID mask filename specified in this
+    /// alias file in the volume associated with this alias file.  The
+    /// specified begin and end will also be applied as an OID range
+    /// filter (0 and ULONG_MAX are used to indicate nonexistance of
+    /// an OID range).
+    /// 
+    /// @param volset
+    ///   The set of database volumes.
+    /// @param begin
+    ///   The first OID in the OID range.
+    /// @param end
+    ///   The OID after the last OID in the range.
+    void x_SetOIDMask(CSeqDBVolSet & volset, Uint4 begin, Uint4 end);
+
+    /// Add a GI list filter to a volume
+    /// 
+    /// This method stores the GI list filename specified in this
+    /// alias file in the volume associated with this alias file.  The
+    /// specified begin and end will also be applied as an OID range
+    /// filter (0 and ULONG_MAX are used to indicate nonexistance of
+    /// an OID range).
+    /// 
+    /// @param volset
+    ///   The set of database volumes.
+    /// @param begin
+    ///   The first OID in the OID range.
+    /// @param end
+    ///   The OID after the last OID in the range.
+    void x_SetGiListMask(CSeqDBVolSet & volset, Uint4 begin, Uint4 end);
+
+    /// Add an OID range to a volume
+    /// 
+    /// This method applies the specified begin and end as an OID
+    /// range filter (0 and ULONG_MAX are used to indicate
+    /// nonexistance of an OID range).
+    /// 
+    /// @param volset
+    ///   The set of database volumes.
+    /// @param begin
+    ///   The first OID in the OID range.
+    /// @param end
+    ///   The OID after the last OID in the range.
+    void x_SetOIDRange(CSeqDBVolSet & volset, Uint4 begin, Uint4 end);
     
     // --- Data ---
     

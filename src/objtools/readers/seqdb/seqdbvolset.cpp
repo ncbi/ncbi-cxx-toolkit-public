@@ -91,16 +91,78 @@ void CSeqDBVolSet::x_AddVolume(CSeqDBAtlas  & atlas,
     m_VolList.push_back( new_vol );
 }
 
-void CSeqDBVolEntry::GetFilterFiles(list<string> & mask_files,
-                                    list<string> & gilist_files) const
+CSeqDBVolFilter::CSeqDBVolFilter(const string & oid_fn,
+                                 const string & gi_fn,
+                                 unsigned       start,
+                                 unsigned       end)
+    : m_OIDMask  (oid_fn),
+      m_GIList   (gi_fn),
+      m_BeginOID (start),
+      m_EndOID   (end)
 {
-    ITERATE(set<string>, i, m_MaskFiles) {
-        mask_files.push_back(*i);
+    _ASSERT(oid_fn.empty() || gi_fn.empty());
+    _ASSERT(start < end);
+}
+
+bool CSeqDBVolFilter::operator == (const CSeqDBVolFilter & rhs) const
+{
+    return ((m_OIDMask  == rhs.m_OIDMask ) &&
+            (m_GIList   == rhs.m_GIList  ) &&
+            (m_BeginOID == rhs.m_BeginOID) &&
+            (m_EndOID   == rhs.m_EndOID  ));
+}
+
+bool CSeqDBVolFilter::IsSimple() const
+{
+    return (m_OIDMask.empty() == false     &&
+            m_GIList.empty()  == true      &&
+            m_BeginOID        == 0         &&
+            m_EndOID          == ULONG_MAX);
+}
+
+void CSeqDBVolEntry::AddMask(const string & mask_file, Uint4 begin, Uint4 end)
+{
+    if (! m_AllOIDs) {
+        //m_MaskFiles.insert(mask_file);
+        CRef<CSeqDBVolFilter>
+            new_filter(new CSeqDBVolFilter(mask_file, "", begin, end));
+        
+        x_InsertFilter(new_filter);
     }
-    
-    ITERATE(set<string>, i, m_GiListFiles) {
-        gilist_files.push_back(*i);
+}
+
+void CSeqDBVolEntry::AddGiList(const string & gilist_file, Uint4 begin, Uint4 end)
+{
+    if (! m_AllOIDs) {
+        //m_GiListFiles.insert(gilist_file);
+        CRef<CSeqDBVolFilter>
+            new_filter(new CSeqDBVolFilter("", gilist_file, begin, end));
+            
+        x_InsertFilter(new_filter);
     }
+}
+
+void CSeqDBVolEntry::AddRange(Uint4 begin, Uint4 end)
+{
+    if (! m_AllOIDs) {
+        //m_GiListFiles.insert(gilist_file);
+        CRef<CSeqDBVolFilter>
+            new_filter(new CSeqDBVolFilter("", "", begin, end));
+        
+        x_InsertFilter(new_filter);
+    }
+}
+
+void CSeqDBVolEntry::x_InsertFilter(CRef<CSeqDBVolFilter> newfilt)
+{
+    CSeqDBVolFilter & new_vf = *newfilt;
+        
+    ITERATE(TFilters, iter, m_Filters) {
+        if ((**iter) == new_vf) {
+            return;
+        }
+    }
+    m_Filters.push_back(newfilt);
 }
 
 END_NCBI_SCOPE

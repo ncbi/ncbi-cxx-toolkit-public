@@ -206,12 +206,18 @@ private:
     /// 
     /// @param mask_fname
     ///   The name of the mask file to use.
-    /// @param oid_start
+    /// @param vol_start
     ///   The volume's starting oid.
+    /// @param oid_start
+    ///   The starting oid of the oid range
+    /// @param oid_end
+    ///   The oid after the end of the oid range
     /// @param locked
     ///   The lock holder object for this thread.
     void x_OrMaskBits(const string   & mask_fname,
+                      Uint4            vol_start,
                       Uint4            oid_start,
+                      Uint4            oid_end,
                       CSeqDBLockHold & locked);
     
     /// Add bits corresponding to a GI list.
@@ -224,14 +230,20 @@ private:
     ///   The name of the gi list file to use.
     /// @param volp
     ///   The volume this list is to be applied to.
-    /// @param oid_start
+    /// @param vol_start
     ///   The volume's starting oid.
+    /// @param vol_end
+    ///   The OID after the end of the volume's OID range.
+    /// @param oid_start
+    ///   The OID range's starting oid.
     /// @param oid_end
-    ///   The volume's ending oid.
+    ///   The OID after the end of the OID range.
     /// @param locked
     ///   The lock holder object for this thread.
     void x_OrGiFileBits(const string    & gilist_fname,
                         const CSeqDBVol * volp,
+                        Uint4             vol_start,
+                        Uint4             vol_end,
                         Uint4             oid_start,
                         Uint4             oid_end,
                         CSeqDBLockHold  & locked);
@@ -288,7 +300,24 @@ private:
     ///   The volume's ending oid.
     void x_SetBitRange(Uint4 oid_start, Uint4 oid_end);
     
-    // Data
+    /// Apply a filter to a volume
+    ///
+    /// This method applies the specified filter to a database volume.
+    /// The filter in question may be an OID list, GI list, or OID
+    /// range, or may be a combination of the above, except that OID
+    /// lists and GI lists cannot be applied together.  In practice,
+    /// the OID range is always used, but is specified to span the
+    /// volume when the alias file does not contain a range.
+    ///
+    /// @param filter
+    ///   The object specifying the filtering options.
+    /// @param vol
+    ///   The volume entry describing the volume to work with.
+    /// @param locked
+    ///   The lock holder object for this thread.
+    void x_ApplyFilter(CRef<CSeqDBVolFilter>   filter,
+                       const CSeqDBVolEntry  * vol,
+                       CSeqDBLockHold        & locked);
     
     /// The memory management layer object.
     CSeqDBAtlas    & m_Atlas;

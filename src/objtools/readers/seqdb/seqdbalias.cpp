@@ -615,7 +615,7 @@ CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker,
     }
 }
 
-void CSeqDBAliasNode::x_SetOIDMask(CSeqDBVolSet & volset)
+void CSeqDBAliasNode::x_SetOIDMask(CSeqDBVolSet & volset, Uint4 begin, Uint4 end)
 {
     vector<string> namevec;
     NStr::Tokenize(m_Values["DBLIST"], " ", namevec, NStr::eMergeDelims);
@@ -633,10 +633,10 @@ void CSeqDBAliasNode::x_SetOIDMask(CSeqDBVolSet & volset)
     string vol_path(SeqDB_CombinePath(m_DBPath, namevec[0]));
     string mask_path(SeqDB_CombinePath(m_DBPath, m_Values["OIDLIST"]));
     
-    volset.AddMaskedVolume(vol_path, mask_path);
+    volset.AddMaskedVolume(vol_path, mask_path, begin, end);
 }
 
-void CSeqDBAliasNode::x_SetGiListMask(CSeqDBVolSet & volset)
+void CSeqDBAliasNode::x_SetGiListMask(CSeqDBVolSet & volset, Uint4 begin, Uint4 end)
 {
     string resolved_gilist;
     
@@ -662,12 +662,12 @@ void CSeqDBAliasNode::x_SetGiListMask(CSeqDBVolSet & volset)
     }
     
     ITERATE(TVolNames, vn, m_VolNames) {
-        volset.AddGiListVolume(*vn, resolved_gilist);
+        volset.AddGiListVolume(*vn, resolved_gilist, begin, end);
     }
     
     // This "join" should not be needed - an assignment would be just
     // as good - as long as the multi-gilist exception above is
-    // enforeced.
+    // in force.
     
     NON_CONST_ITERATE(TSubNodeList, an, m_SubNodes) {
         SeqDB_JoinDelim((**an).m_Values["GILIST"],
@@ -680,23 +680,72 @@ void CSeqDBAliasNode::x_SetGiListMask(CSeqDBVolSet & volset)
     }
 }
 
+void CSeqDBAliasNode::x_SetOIDRange(CSeqDBVolSet & volset, Uint4 begin, Uint4 end)
+{
+    vector<string> namevec;
+    NStr::Tokenize(m_Values["DBLIST"], " ", namevec, NStr::eMergeDelims);
+    
+    if (namevec.size() != 1) {
+        string msg =
+            string("Alias file (") + m_DBPath + ") uses oid range (" +
+            NStr::UIntToString(begin + 1) + "," + NStr::UIntToString(end) +
+            ") but has " + NStr::UIntToString(namevec.size())
+            + " volumes (" + m_Values["DBLIST"] + ").";
+        
+        NCBI_THROW(CSeqDBException, eFileErr, msg);
+    }
+    
+    string vol_path(SeqDB_CombinePath(m_DBPath, namevec[0]));
+    
+    volset.AddRangedVolume(vol_path, begin, end);
+}
+
 void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
 {
-    TVarList::iterator gil_iter = m_Values.find(string("GILIST"));
-    TVarList::iterator oid_iter = m_Values.find(string("OIDLIST"));
-    TVarList::iterator db_iter  = m_Values.find(string("DBLIST"));
+    TVarList::iterator gil_iter   = m_Values.find(string("GILIST"));
+    TVarList::iterator oid_iter   = m_Values.find(string("OIDLIST"));
+    TVarList::iterator db_iter    = m_Values.find(string("DBLIST"));
+    TVarList::iterator f_oid_iter = m_Values.find(string("FIRST_OID"));
+    TVarList::iterator l_oid_iter = m_Values.find(string("LAST_OID"));
     
     bool filtered = false;
     
     if (db_iter != m_Values.end()) {
-        if (oid_iter != m_Values.end()) {
-            x_SetOIDMask(volset);
-            filtered = true;
-        }
-        
-        if (gil_iter != m_Values.end()) {
-            x_SetGiListMask(volset);
-            filtered = true;
+        if (oid_iter   != m_Values.end() ||
+            gil_iter   != m_Values.end() ||
+            f_oid_iter != m_Values.end() ||
+            l_oid_iter != m_Values.end()) {
+            
+            Uint4 first_oid = 0;
+            Uint4 last_oid  = ULONG_MAX;
+            
+            if (f_oid_iter != m_Values.end()) {
+                first_oid = NStr::StringToUInt(f_oid_iter->second);
+                
+                // Starts at one, adjust to zero-indexed.
+                if (first_oid)
+                    first_oid--;
+            }
+            
+            if (l_oid_iter != m_Values.end()) {
+                // Zero indexing and post notation adjustments cancel.
+                last_oid = NStr::StringToUInt(l_oid_iter->second);
+            }
+            
+            if (oid_iter != m_Values.end()) {
+                x_SetOIDMask(volset, first_oid, last_oid);
+                filtered = true;
+            }
+            
+            if (gil_iter != m_Values.end()) {
+                x_SetGiListMask(volset, first_oid, last_oid);
+                filtered = true;
+            }
+            
+            if (! filtered) {
+                x_SetOIDRange(volset, first_oid, last_oid);
+                filtered = true;
+            }
         }
     }
     
