@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#if defined(NCBI_OS_UNIX)
-#include <unistd.h>
-#endif
-
 #include <corelib/ncbi_system.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 
@@ -45,6 +41,9 @@
 #include <objects/blast/Blas_get_searc_resul_reque.hpp>
 #include <objects/blast/Blast4_error_code.hpp>
 
+#if defined(NCBI_OS_UNIX)
+#include <unistd.h>
+#endif
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -610,6 +609,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/26 22:24:46  gorelenk
+* Include for <unistd.h> moved to be after
+* #include <corelib/ncbi_system.hpp>.
+*
 * Revision 1.3  2004/02/26 17:07:40  gorelenk
 * Added #if defined(NCBI_OS_UNIX) for #include <unistd.h>.
 *
