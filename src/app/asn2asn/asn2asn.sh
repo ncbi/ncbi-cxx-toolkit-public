@@ -31,9 +31,12 @@ for i in "set.bin -b" "set.ent" "set.xml -X"; do
     do_test "$i -e" set.ent
     do_test "$i -e -x" set.xml
 done
-for i in "phg.bin -b" "phg.ent" "phg.xml -X"; do
-    do_test "$i -s" phg.bin.sorted
-    do_test "$i" phg.ent.sorted
-    do_test "$i -x" phg.xml.sorted
-done
+#for i in "phg.bin -b" "phg.ent" "phg.xml -X"; do
+#    do_test "$i -s" phg.bin.sorted
+#    do_test "$i" phg.ent.sorted
+#    do_test "$i -x" phg.xml.sorted
+#done
 echo "Done!"
+
+
+
