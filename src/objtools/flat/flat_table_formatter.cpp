@@ -88,7 +88,9 @@ void CFlatTableFormatter::FormatFeature(const IFlattishFeature& f)
         // drop redundant quals?
         line = "\t\t\t" + (*it)->GetName();
         if ((*it)->GetStyle() != CFlatQual::eEmpty) {
-            line += '\t' + (*it)->GetValue();
+            string value;
+            NStr::Replace((*it)->GetValue(), " \b", kEmptyStr, value);
+            line += '\t' + value;
         }
     }
     m_Stream->AddParagraph(l, &f, &feat.GetFeat());
@@ -102,6 +104,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/11/04 20:00:28  ucko
+* Edit " \b" sequences (used as hints for wrapping) out from qualifier values
+*
 * Revision 1.4  2003/11/04 19:45:42  jcherry
 * Write an accession in header, not a name
 *

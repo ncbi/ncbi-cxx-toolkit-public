@@ -278,7 +278,8 @@ void CFlatGBSeqFormatter::FormatFeature(const IFlattishFeature& f)
         CRef<CGBQualifier> qual(new CGBQualifier);
         qual->SetName((*it)->GetName());
         if ((*it)->GetStyle() != CFlatQual::eEmpty) {
-            qual->SetValue((*it)->GetValue());
+            NStr::Replace((*it)->GetValue(), " \b", kEmptyStr,
+                          qual->SetValue());
         }
         gbfeat->SetQuals().push_back(qual);
     }
@@ -318,6 +319,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/11/04 20:00:28  ucko
+* Edit " \b" sequences (used as hints for wrapping) out from qualifier values
+*
 * Revision 1.6  2003/10/21 13:48:50  grichenk
 * Redesigned type aliases in serialization library.
 * Fixed the code (removed CRef-s, added explicit

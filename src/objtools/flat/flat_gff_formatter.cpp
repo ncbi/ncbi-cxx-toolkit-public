@@ -132,10 +132,13 @@ void CFlatGFFFormatter::FormatFeature(const IFlattishFeature& f)
             attr_list.push_front("gene_id \"" + gene_id + "\";");
             continue;
         }
-        string value0(NStr::PrintableString((*it)->GetValue())), value;
+        string value;
+        NStr::Replace((*it)->GetValue(), " \b", kEmptyStr, value);
+        string value2(NStr::PrintableString(value));
         // some parsers may be dumb, so avoid spaces and quotes
         // (even though the latter are already backslashed)
-        ITERATE (string, c, value0) {
+        value.erase();
+        ITERATE (string, c, value2) {
             switch (*c) {
             case '\"': value += "x22";   break;
             case ' ':  value += "\\x20"; break;
@@ -392,6 +395,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/11/04 20:00:28  ucko
+* Edit " \b" sequences (used as hints for wrapping) out from qualifier values
+*
 * Revision 1.3  2003/10/18 01:36:34  ucko
 * Tweak to work around MSVC stupidity.
 *
