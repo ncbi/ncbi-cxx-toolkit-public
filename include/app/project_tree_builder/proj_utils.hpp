@@ -70,15 +70,20 @@ struct SProjectTreeInfo
     /// Root of the project tree
     string m_Root;
 
-    /// src child dir of Root.
-    string m_RootSrc;
-
     /// Subtree to buil (default is m_RootSrc).
     string m_SubTree;
 
-    list<string> m_NotProvidedRequests;
+    /// Branch of tree to be implicit exclude from build
+    string m_ImplicitExclude;
 
-    string       m_ImplicitExclude;
+    /// <include> branch of tree
+    string m_Include;
+
+    /// <src> branch of tree
+    string m_Src;
+
+    /// <compilers> branch of tree
+    string m_Compilers;
 };
 
 END_NCBI_SCOPE
@@ -86,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/02/03 17:03:39  gorelenk
+ * Added members to struct SProjectTreeInfo
+ *
  * Revision 1.4  2004/01/28 17:55:07  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,
