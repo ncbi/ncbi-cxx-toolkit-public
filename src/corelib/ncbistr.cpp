@@ -510,6 +510,11 @@ string NStr::PtrToString(const void* value)
 
 const void* NStr::StringToPtr(const string& str)
 {
+    // special case: 'PtrToString() encodes '0' as '(nil)'
+    if (str == "(nil)") {
+        return reinterpret_cast<const void*> (NULL);
+    }
+    // look for an address marker
     if (str.find("0x") != 0) {
         NCBI_THROW2(CStringException,eConvert,"String cannot be converted",0);
     }
@@ -962,6 +967,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.77  2003/02/25 14:43:53  dicuccio
+ * Added handling of special NULL pointer encoding in StringToPtr()
+ *
  * Revision 1.76  2003/02/24 20:25:59  gouriano
  * use template-based errno and parse exceptions
  *
