@@ -33,6 +33,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/01/11 23:51:47  lavr
+ * static_cast instead of linkage specification 'extern "C" {}'.
+ * Reason: MSVC++ doesn't allow C-linkage of the funs compiled in C++ file.
+ *
  * Revision 6.1  2001/01/11 23:08:16  lavr
  * Initial revision
  *
@@ -43,17 +47,6 @@
 #include <string.h>
 
 BEGIN_NCBI_SCOPE
-
-
-extern "C" {
-    static void s_REG_Get(void* user_data,
-                          const char* section, const char* name,
-                          char* value, size_t value_size);
-    static void s_REG_Set(void* user_data,
-                          const char* section, const char* name,
-                          const char* value, EREG_Storage storage);
-    static void s_REG_Cleanup(void* user_data);
-}
 
 
 static void s_REG_Get(void* user_data,
@@ -96,8 +89,9 @@ static void s_REG_Cleanup(void* user_data)
 REG REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership)
 {
     return REG_Create(static_cast<void*>(reg),
-                      s_REG_Get, s_REG_Set,
-                      pass_ownership ? s_REG_Cleanup : 0,
+                      static_cast<FREG_Get>(s_REG_Get),
+					  static_cast<FREG_Set>(s_REG_Set),
+                      pass_ownership ? static_cast<FREG_Cleanup>(s_REG_Cleanup) : 0,
                       0);
 }
 
