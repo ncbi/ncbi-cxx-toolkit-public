@@ -69,7 +69,7 @@ public:
     short GetPseudoCount() const { return m_Opts->GetPseudoCount(); }
     /// Sets PseudoCount
     /// @param p PseudoCount [in]
-    void SetPseudoCount(short p) { m_Opts->SetPseudoCount(ws); }
+    void SetPseudoCount(short p) { m_Opts->SetPseudoCount(p); }
     
 protected:
     /// Sets PSIBlastDefaults
@@ -92,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/06/08 23:11:58  camacho
+ * fix to previous commit
+ *
  * Revision 1.2  2004/06/08 22:41:04  camacho
  * Add missing doxygen comments
  *
