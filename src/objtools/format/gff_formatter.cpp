@@ -315,7 +315,7 @@ string CGFFFormatter::x_GetGeneID
 
     string               main_acc;
     if (ctx.IsPart()) {
-        const CSeq_id& id = *(ctx.Master()->GetBioseq().GetId().front());
+        const CSeq_id& id = *(ctx.Master()->GetHandle().GetSeqId());
         main_acc = ctx.GetPreferredSynonym(id).GetSeqIdString(true);
     } else {
         main_acc = ctx.GetAccession();
@@ -450,6 +450,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/03/25 20:42:41  shomrat
+* Master returns a CBioseq_Handle instead of a CBioseq
+*
 * Revision 1.2  2004/02/11 16:59:11  shomrat
 * removed unused variable
 *
