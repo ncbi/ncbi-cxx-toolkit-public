@@ -194,7 +194,7 @@ private:
   public:
     MyMutex(void) : m_() {};
     ~MyMutex(void) {};
-    void Lock(const string& loc)
+    void Lock(const string& /*loc*/)
       {
         //GBLOG_POST("MyLock  tried  at "  << loc);
         m_.Lock();
@@ -244,6 +244,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.17  2002/04/11 02:09:52  vakatov
+ * Get rid of a warning
+ *
  * Revision 1.16  2002/04/09 19:04:21  kimelman
  * make gcc happy
  *
