@@ -221,7 +221,7 @@ static CRef<CSeq_align> CreateDensegFromDendiag(const CSeq_align& aln);
 template<class container>
 static bool s_GetBlastScore(const container&  scoreList,  int& score, double& bits, double& evalue){
   bool hasScore = false;
-  for(container::const_iterator iter = scoreList.begin(); iter != scoreList.end(); iter ++){
+  ITERATE (typename container, iter, scoreList) {
     const CObject_id& id=(*iter)->GetId();
     if (id.IsStr()) {
       hasScore = true;
