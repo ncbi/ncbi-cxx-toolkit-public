@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2000/11/01 20:36:31  vasilche
+ * Added HTTP_EOL string macro.
+ *
  * Revision 1.3  2000/01/20 17:52:53  vakatov
  * Fixes to follow the "CNcbiApplication" and "CCgiContext" change.
  *
@@ -136,7 +139,10 @@ bool CCgiApplication::RunFastCGI(unsigned def_iter)
             // checking for exit request
             if (ctx->GetRequest().GetEntries().find("exitfastcgi") !=
                 ctx->GetRequest().GetEntries().end()) {
-                ostr << "Content-Type: text/html\r\n\r\nDone";
+                ostr <<
+                    "Content-Type: text/html" HTTP_EOL
+                    HTTP_EOL
+                    "Done";
                 _TRACE("CCgiApplication::RunFastCGI: aborting by request");
                 FCGX_Finish();
                 break;

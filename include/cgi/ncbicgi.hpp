@@ -36,6 +36,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2000/11/01 20:34:04  vasilche
+* Added HTTP_EOL string macro.
+*
 * Revision 1.44  2000/05/01 17:04:31  vasilche
 * MSVC doesn't allow contant initialization in class body.
 *
@@ -168,6 +171,9 @@
 #include <set>
 #include <memory>
 #include <time.h>
+
+#define HTTP_EOL "\r\n"
+
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/11/01 20:36:31  vasilche
+* Added HTTP_EOL string macro.
+*
 * Revision 1.10  1999/11/02 20:35:43  vakatov
 * Redesigned of CCgiCookie and CCgiCookies to make them closer to the
 * cookie standard, smarter, and easier in use
@@ -117,16 +120,14 @@ CCgiResponse& CCgiResponse::operator=(const CCgiResponse& response)
 
 bool CCgiResponse::HaveHeaderValue(const string& name) const
 {
-    TMap& xx_HeaderValues = const_cast<TMap&>(m_HeaderValues); // BW_01
-    return xx_HeaderValues.find(name) != xx_HeaderValues.end();
+    return m_HeaderValues.find(name) != m_HeaderValues.end();
 }
 
 string CCgiResponse::GetHeaderValue(const string &name) const
 {
-    TMap& xx_HeaderValues = const_cast<TMap&>(m_HeaderValues); // BW_01
-    TMap::const_iterator ptr = xx_HeaderValues.find(name);
+    TMap::const_iterator ptr = m_HeaderValues.find(name);
     
-    if ( ptr == xx_HeaderValues.end() )
+    if ( ptr == m_HeaderValues.end() )
         return string();
 
     return ptr->second;
@@ -170,12 +171,12 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& out) const
 {
     if ( IsRawCgi() ) {
         // Write HTTP status line for raw CGI response
-        out << sm_HTTPStatusDefault << NcbiEndl;
+        out << sm_HTTPStatusDefault << HTTP_EOL;
     }
 
     // write default content type (if not set by user)
     if ( !HaveHeaderValue(sm_ContentTypeName) ) {
-        out << sm_ContentTypeName << ": " << sm_ContentTypeDefault << NcbiEndl;
+        out << sm_ContentTypeName << ": " << sm_ContentTypeDefault << HTTP_EOL;
     }
 
     // write cookies
@@ -184,14 +185,13 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& out) const
     }
 
     // Write all header lines in alphabetic order
-    TMap& xx_HeaderValues = const_cast<TMap&>(m_HeaderValues); // BW_01
-    for ( TMap::const_iterator i = xx_HeaderValues.begin();
-          i != xx_HeaderValues.end(); ++i ) {
-        out << i->first << ": " << i->second << NcbiEndl;
+    for ( TMap::const_iterator i = m_HeaderValues.begin();
+          i != m_HeaderValues.end(); ++i ) {
+        out << i->first << ": " << i->second << HTTP_EOL;
     }
 
     // write empty line - end of header
-    return out << NcbiEndl;
+    return out << HTTP_EOL;
 }
 
 END_NCBI_SCOPE

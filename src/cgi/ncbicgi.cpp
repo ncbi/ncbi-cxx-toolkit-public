@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/11/01 20:36:31  vasilche
+* Added HTTP_EOL string macro.
+*
 * Revision 1.43  2000/06/26 16:34:27  vakatov
 * CCgiCookies::Add(const string&) -- maimed to workaround MS IE bug
 * (it sent empty cookies w/o "=" in versions prior to 5.5)
@@ -305,7 +308,7 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os) const
     if ( m_Secure )
         os << "; secure";
 
-    os << NcbiEndl;
+    os << HTTP_EOL;
     return os;
 }
 
@@ -722,7 +725,7 @@ static void s_ParseMultipartEntries(const string& boundary,
 {
     // some constants in string
     const string NameStart("Content-Disposition: form-data; name=\"");
-    const string Eol("\r\n");
+    const string Eol(HTTP_EOL);
 
     SIZE_TYPE pos = 0;
     SIZE_TYPE partStart = 0;
