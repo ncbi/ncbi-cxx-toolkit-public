@@ -60,6 +60,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/01/08 23:46:10  lavr
+ * REQUEST_METHOD -> REQ_METHOD to be consistent with SConnNetInfo
+ *
  * Revision 6.6  2001/01/08 22:47:13  lavr
  * ReqMethod constants changed (to conform to coding standard)
  * ClientMode removed; replaced by 2 booleans: stateless and firewall
@@ -146,8 +149,8 @@ typedef struct {
 #define REG_CONN_ARGS             "ARGS"
 #define DEF_CONN_ARGS             ""
 
-#define REG_CONN_REQUEST_METHOD   "REQUEST_METHOD"
-#define DEF_CONN_REQUEST_METHOD   "POST"
+#define REG_CONN_REQ_METHOD       "REQ_METHOD"
+#define DEF_CONN_REQ_METHOD       "POST"
                                   
 #define REG_CONN_TIMEOUT          "TIMEOUT"
 #define DEF_CONN_TIMEOUT          30.0

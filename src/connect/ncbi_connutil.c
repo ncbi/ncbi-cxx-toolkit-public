@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2001/01/08 23:46:27  lavr
+ * REQUEST_METHOD -> REQ_METHOD to be consistent with SConnNetInfo
+ *
  * Revision 6.11  2001/01/08 22:35:56  lavr
  * Client-Mode removed; replaced by 2 separate boolean fields:
  * stateless and firewall
@@ -177,7 +180,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     REG_VALUE(REG_CONN_ARGS, info->args, DEF_CONN_ARGS);
 
     /* request method */
-    REG_VALUE(REG_CONN_REQUEST_METHOD, str, DEF_CONN_REQUEST_METHOD);
+    REG_VALUE(REG_CONN_REQ_METHOD, str, DEF_CONN_REQ_METHOD);
     if (strcasecmp(str, "ANY") == 0)
         info->req_method = eReqMethod_Any;
     else if (strcasecmp(str, "POST") == 0)
@@ -347,7 +350,7 @@ extern void ConnNetInfo_Print(const SConnNetInfo* info, FILE* fp)
         s_PrintString(fp, "args",            info->args);
         s_PrintString(fp, "req_method",
                       info->req_method == eReqMethod_Any
-                      ? DEF_CONN_REQUEST_METHOD :
+                      ? DEF_CONN_REQ_METHOD :
                       (info->req_method == eReqMethod_Get
                        ? "GET" :
                        (info->req_method == eReqMethod_Post
@@ -413,7 +416,7 @@ extern SOCK URL_Connect
 
     switch (req_method) {
     case eReqMethod_Any:
-        X_REQ_R = DEF_CONN_REQUEST_METHOD " ";
+        X_REQ_R = DEF_CONN_REQ_METHOD " ";
         break;
     case eReqMethod_Post:
         X_REQ_R = "POST ";
