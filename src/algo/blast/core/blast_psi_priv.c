@@ -587,12 +587,11 @@ _PSIValidateNoFlankingGaps(const _PSIMsa* msa)
 /** Validate that there are no unaligned columns or columns which only contain
  * gaps in the multiple sequence alignment.
  * @param msa multiple sequence alignment data structure [in]
- * @param ignore_consensus TRUE if query sequence should be ignored [in]
  * @return PSIERR_UNALIGNEDCOLUMN or PSIERR_COLUMNOFGAPS if validation fails, 
  * else PSI_SUCCESS
  */
 static int
-_PSIValidateAlignedColumns(const _PSIMsa* msa, Boolean ignore_consensus)
+_PSIValidateAlignedColumns(const _PSIMsa* msa) 
 {
     const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
     Uint4 s = 0;            /* index on sequences */
@@ -603,9 +602,8 @@ _PSIValidateAlignedColumns(const _PSIMsa* msa, Boolean ignore_consensus)
 
         Boolean found_aligned_sequence = FALSE;
         Boolean found_non_gap_residue = FALSE;
-        s = ignore_consensus ? 1 : 0;
 
-        for ( ; s < msa->dimensions->num_seqs + 1; s++) {
+        for (s = kQueryIndex + 1; s < msa->dimensions->num_seqs + 1; s++) {
 
             if (msa->cell[s][p].is_aligned) {
                 found_aligned_sequence = TRUE;
@@ -666,7 +664,7 @@ _PSIValidateMSA(const _PSIMsa* msa, Boolean ignore_consensus)
         return retval;
     }
 
-    retval = _PSIValidateAlignedColumns(msa, ignore_consensus);
+    retval = _PSIValidateAlignedColumns(msa);
     if (retval != PSI_SUCCESS) {
         return retval;
     }
@@ -2382,6 +2380,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/11/15 14:21:43  camacho
+ * Correction to _PSIValidateAlignedColumns when the query sequence should be accounted
+ *
  * Revision 1.31  2004/11/02 20:37:30  camacho
  * Doxygen fixes
  *
