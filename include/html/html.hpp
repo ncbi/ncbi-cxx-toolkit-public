@@ -28,8 +28,6 @@
  *
  * Author:  Lewis Geer
  *
- * File Description:  CHTMLNode defines
- *
  */
 
 /// @file html.hpp 
@@ -53,8 +51,7 @@
 BEGIN_NCBI_SCOPE
 
 
-// Macro for declare html elements.
-
+/// Macro for declare html elements.
 #define CHTML_NAME(Tag) NCBI_NAME2(CHTML_, Tag)
 
 
@@ -108,7 +105,7 @@ public: \
 
 
 #define DECLARE_HTML_ELEMENT(Tag, Parent) \
-class CHTML_NAME(Tag) : public Parent \
+class NCBI_XHTML_EXPORT CHTML_NAME(Tag) : public Parent \
 { \
     DECLARE_HTML_ELEMENT_COMMON(Tag, Parent); \
 }
@@ -117,7 +114,7 @@ class CHTML_NAME(Tag) : public Parent \
 // Macro for declare special chars.
 
 #define DECLARE_HTML_SPECIAL_CHAR(Tag, plain) \
-class CHTML_NAME(Tag) : public CHTMLSpecialChar \
+class NCBI_XHTML_EXPORT CHTML_NAME(Tag) : public CHTMLSpecialChar \
 { \
     typedef CHTMLSpecialChar CParent; \
 public: \
@@ -573,7 +570,8 @@ class NCBI_XHTML_EXPORT CHTML_html : public CHTMLElement
     //          value for it, then we can skip call this function.
     //       2) Dynamic menu work only in new browsers. They use one container
     //          for all menus instead of separately container for each menu in 
-    //          nondynamic mode. This parameter have effect only with eSmith menu type.
+    //          nondynamic mode. This parameter have effect only with eSmith
+    //          menu type.
     void EnablePopupMenu(CHTMLPopupMenu::EType type = CHTMLPopupMenu::eSmith,
                          const string& menu_script_url = kEmptyStr,
                          bool use_dynamic_menu = false);
@@ -1353,6 +1351,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2004/02/02 14:08:06  ivanov
+ * Added export specifier to the macro for declare HTML classes
+ *
  * Revision 1.71  2004/01/26 16:26:42  ivanov
  * Added NOWRAP attribute support
  *
