@@ -55,45 +55,65 @@ class NCBI_XBLAST_EXPORT CBl2Seq : public CObject
 {
 public:
 
-    /// Constructor to compare 2 sequences
+    /// Constructor to compare 2 sequences with default options
     CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject, EProgram p);
 
-    /// Constructor to compare query against all subject sequences
+    /// Constructor to compare query against all subject sequences with default options
     CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, EProgram p);
 
-    /// Contructor to allow query concatenation
+    /// Constructor to allow query concatenation with default options
     CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
             EProgram p);
 
+    /// Constructor to compare 2 sequences with specified options
     CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject, 
             CBlastOptionsHandle& opts);
 
-    /// Constructor to compare query against all subject sequences
+    /// Constructor to compare query against all subject sequences with specified options
     CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, 
             CBlastOptionsHandle& opts);
 
-    /// Contructor to allow query concatenation
+    /// Constructor to allow query concatenation with specified options
     CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
             CBlastOptionsHandle& opts);
 
     virtual ~CBl2Seq();
-
+    
+    /// Set the query.
     void SetQuery(const SSeqLoc& query);
+
+    /// Retrieve the query sequence.
     const SSeqLoc& GetQuery() const;
 
+    /// Set a vector of query sequences for a concatenated search.
     void SetQueries(const TSeqLocVector& queries);
+
+    /// Retrieve a vector of query sequences.
     const TSeqLocVector& GetQueries() const;
 
+    /// Set the subject sequence.
     void SetSubject(const SSeqLoc& subject);
+
+    /// Retrieve the subject sequence.
     const SSeqLoc& GetSubject() const;
 
+    /// Set a vector of subject sequences.
     void SetSubjects(const TSeqLocVector& subjects);
+
+    /// Retrieve a vector of subject sequences.
     const TSeqLocVector& GetSubjects() const;
 
+
+    /// Set the options.
     CBlastOptions& SetOptions();
+
+    /// Retrieve the options.
     const CBlastOptions& GetOptions() const;
 
+    /// Set the options handle.
     CBlastOptionsHandle& SetOptionsHandle();
+
+    /// Retrieve the options handle.
     const CBlastOptionsHandle& GetOptionsHandle() const;
 
     /// Perform BLAST search
@@ -120,8 +140,13 @@ public:
     BlastDiagnostics* GetDiagnostics() const;
 
 protected:
+    /// Process the queries, do setup, and build the lookup table.
     virtual void SetupSearch();
+
+    /// Creates a BlastHSPStream and calls the engine.
     virtual void ScanDB();
+
+    /// Return a seqalign list for each query/subject pair, even if it is empty.
     virtual TSeqAlignVector x_Results2SeqAlign();
 
 private:
@@ -130,7 +155,7 @@ private:
     TSeqLocVector        m_tSubjects;        ///< sequence(s) to BLAST against
     CRef<CBlastOptionsHandle>  m_OptsHandle; ///< Blast options
 
-    ///< Common initialization code for all c-tors
+    /// Common initialization code for all c-tors
     void x_InitSeqs(const TSeqLocVector& queries, const TSeqLocVector& subjs);
 
     /// Prohibit copy constructor
@@ -139,21 +164,21 @@ private:
     CBl2Seq& operator=(const CBl2Seq& rhs);
 
     /************ Internal data structures (m_i = internal members)***********/
-    bool                                mi_bQuerySetUpDone;
-    CBLAST_SequenceBlk                  mi_clsQueries;  // one for all queries
-    CBlastQueryInfo                     mi_clsQueryInfo; // one for all queries
+    bool                                mi_bQuerySetUpDone;    ///< internal: query processing already done?
+    CBLAST_SequenceBlk                  mi_clsQueries;         ///< internal: one for all queries
+    CBlastQueryInfo                     mi_clsQueryInfo;       ///< internal: one for all queries
 
-    BlastSeqSrc*                        mi_pSeqSrc; // Subject sequences source
-    BlastScoreBlk*                      mi_pScoreBlock;
-    CLookupTableWrap                    mi_pLookupTable; // one for all queries
-    ListNode*                           mi_pLookupSegments;
+    BlastSeqSrc*                        mi_pSeqSrc;            ///< internal: Subject sequences source
+    BlastScoreBlk*                      mi_pScoreBlock;        ///< internal: score block
+    CLookupTableWrap                    mi_pLookupTable;       ///< internal: one for all queries
+    ListNode*                           mi_pLookupSegments;    ///< internal: regions of queries to scan during lookup table creation
 
-    CBlastInitialWordParameters         mi_clsInitWordParams;
-    CBlastHitSavingParameters           mi_clsHitSavingParams;
-    CBlast_ExtendWord                   mi_clsExtnWord;
-    CBlastExtensionParameters           mi_clsExtnParams;
-    CBlastGapAlignStruct                mi_clsGapAlign;
-    CBlastDatabaseOptions               mi_clsDbOptions;
+    CBlastInitialWordParameters         mi_clsInitWordParams;  ///< internal: raw scores computed from options
+    CBlastHitSavingParameters           mi_clsHitSavingParams; ///< internal: raw scores computed from options
+    CBlast_ExtendWord                   mi_clsExtnWord;        ///< internal: word extension information
+    CBlastExtensionParameters           mi_clsExtnParams;      ///< internal: raw scores computed from options
+    CBlastGapAlignStruct                mi_clsGapAlign;        ///< internal: gapped alignment information
+    CBlastDatabaseOptions               mi_clsDbOptions;       ///< internal: genetic code information
 
     /// Results for all queries and subjects together
     BlastHSPResults*                    mi_pResults;
@@ -269,6 +294,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2004/06/27 18:49:17  coulouri
+* doxygen fixes
+*
 * Revision 1.34  2004/06/14 15:41:44  dondosha
 * "Doxygenized" some comments.
 *
