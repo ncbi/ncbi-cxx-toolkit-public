@@ -3,7 +3,7 @@
 <head>
 <title>Connection library</title>
 </head>
-<body>
+<body bgcolor="white" link="blue" vlink="blue">
 <center><h1>Connection library</h1></center>
 
 <h2>Contents</h2>
@@ -88,7 +88,7 @@ below</a>) to the default value <tt>CONN_DEFAULT_TIMEOUT</tt>.
 After successful creation with <i><b>CONN_Create()</b></i>, the following
 calls from CONN API become available (all declared and documented in
 <a
-href="../lxr/src/include/connect/ncbi_connection.h"><i><b>connect/ncbi_connection.h</b></i></a>). All calls (except
+href="../lxr/source/include/connect/ncbi_connection.h"><i><b>connect/ncbi_connection.h</b></i></a>). All calls (except
 <a href="#CONN_GetTimeout"><i><b>CONN_GetTimeout()</b></i></a> and <a href="#CONN_GetType"><i><b>CONN_GetType()</b></i></a>)
 return I/O completion status of type <a href="../lxr/ident?i=EIO_Status"><i><b>EIO_Status</b></i></a>.
 Normal completion has code <i><b>eIO_Success</b></i>.
@@ -127,7 +127,7 @@ Also, a special value <tt>CONN_DEFAULT_TIMEOUT</tt> may be used for any timeout.
 This value specifies the timeout set by default for current connection type.
 
 <li> <a name="CONN_GetTimeout"><a href="../lxr/ident?i=CONN_GetTimeout"><i><b>CONN_GetTimeout</b></i></a>&nbsp;<tt>(CONN conn, EIO_Event action);</tt></a><br>
-Obtain (via return value of type <b><i>const <a href="../lxr/ident?i=STimeout">STimeout*</a></i></b>)
+Obtain (via return value of type <b><i>const <a href="../lxr/ident?i=STimeout">STimeout</a>*</i></b>)
 timeouts set by <a href="#CONN_SetTimeout"><i><b>CONN_SetTimeout()</b></i></a> routine, or active by default
 (i.e. special value <tt>CONN_DEFAULT_TIMEOUT</tt>).
 <br>
@@ -307,7 +307,7 @@ Constructors defined in:
 The simplest form of this connector's constructor takes 3 parameters:
 <pre>
 extern CONNECTOR <a href="../lxr/ident?i=HTTP_CreateConnector">HTTP_CreateConnector</a>
-(const <a href="../lxr/ident?i=SConnNetInfo">SConnNetInfo*</a> info,
+(const <a href="../lxr/ident?i=SConnNetInfo">SConnNetInfo</a>* info,
  const char*         user_header,
  <a href="../lxr/ident?i=THCC_Flags">THCC_Flags</a>          flags
  );
@@ -404,7 +404,7 @@ global log (<tt>CORE log</tt>) used by the library is set by convenience routine
 <a href="../lxr/ident?i=CORE_SetLOGFILE"><b><i>CORE_SetLOGFILE</i></b></a> etc.
 There is, however, a means for a C++ program, using NCBI C++ Toolkit, to bind <b><i>CNcbiReg</b></i>
 object to C registry <b><i>REG</i></b>, <a href="../programming_manual/diag.html"><b><i>CNcbiDiag</i></b></a> to C log, etc.
-The interface defined in <a href="../lxr/source/include/connect/ncbi_core_cxx.h"><b><i>connect/ncbi_core_cxx.h</i></b></a>,
+The interface defined in <a href="../lxr/source/include/connect/ncbi_core_cxx.hpp"><b><i>connect/ncbi_core_cxx.hpp</i></b></a>,
 an includes the following C++ functions:
 <ul>
 <li> <tt>REG</tt> <a href="../lxr/ident?i=REG_cxx2c"><b><i>REG_cxx2c</i></b></a>&nbsp;<tt>(CNcbiRegistry* reg, bool pass_ownership = false)</tt>
