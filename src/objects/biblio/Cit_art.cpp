@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2004/09/29 13:57:10  shomrat
+ * Fixed call to GetLabelContent
+ *
  * Revision 6.3  2004/05/19 17:18:17  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
@@ -140,7 +143,8 @@ void CCit_art::GetLabel(string* label, bool unique) const
     default:
         break;
     }
-    GetLabelContent(label, unique, authors, imprint, title, book, journal);
+    GetLabelContent(label, unique, authors, imprint, title, book, journal,
+        0, 0, titleunique);
 }   
 
 
