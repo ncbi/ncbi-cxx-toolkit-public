@@ -41,12 +41,6 @@
 #  include <util/stream_utils.hpp>
 #  define CConn_StreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
 #else
-#  if defined(NCBI_COMPILER_WORKSHOP) && defined(_MT)
-#    ifdef HAVE_IOS_XALLOC
-#      undef  HAVE_BUGGY_IOS_CALLBACKS
-#      define HAVE_BUGGY_IOS_CALLBACKS 1
-#    endif
-#  endif
 #  define CConn_StreambufBase CNcbiStreambuf
 #endif/*NCBI_COMPILER_MIPSPRO*/
 
@@ -99,6 +93,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2004/01/20 20:36:24  lavr
+ * Cease defining and using HAVE_BUGGY_IOS_CALLBACKS in this file
+ *
  * Revision 6.30  2004/01/14 20:24:29  lavr
  * CConnStreambuf::seekoff(0, cur, out) added and implemented
  *
