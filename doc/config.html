@@ -350,18 +350,15 @@ sources.
 In order to adjust the MSVC++ project files for your local
 <i><b>C:\foo</b></i> you must do exactly the following:
 <ol>
-  <li> Load workspace <i><b>compilers/msvc_prj/install.dsw</b></i> to the MSVC++
-		Developer Studio. You can do it either from the already
-		running MSVC++ Developer Studio(using menu
-		<i>"File"/"Open Workspace"</i>), or you can just go to the
-		<i><b>compilers/msvc_prj/</b></i> directory and double-click on the
-		<i><b>install.dsw</b></i> file icon in the "Windows NT Explorer".
-  <li> Build (menu <i>"Build"/"Build"</i>) and execute (menu <i>"Build"/"Execute"</i>)
-		the install application.
-  <li> Go to <i>"Tools"/"Options"</i> form, folder <i>"Directories"</i>; choose
-		option <i>"Include files"</i> in the <i>"Show directories for:"</i> option menu,
-		and add "C:\foo\include" to the shown directory list.
-  <li> Quit MSVC++ Developer Studio(using menu <i>"File"/"Exit"</i>).
+  <li> Go to directory <i><b>compilers/</b></i> and run script
+		<i><b>msvc_nt.bat</b></i>
+  <li> Launch MSVC++ Developer Studio, then:
+	 <ul>
+		<li> go to <i>"Tools"/"Options"</i> form
+		<li> goto folder <i>"Directories"</i>
+		<li> choose option <i>"Include files"</i> in the <i>"Show directories for:"</i> option menu
+		<li> add "<i><b>C:\foo\include</b></i>" to the shown directory list
+	 </ul>
 </ol>
 
 Now when the installation is complete you can load workspace
