@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2001/07/03 20:49:44  lavr
+ * RAND_MAX included in the interval search
+ *
  * Revision 6.24  2001/06/25 15:36:38  lavr
  * s_GetNextInfo now takes one additional argument for host environment
  *
@@ -417,7 +420,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, char** env)
     if (point < 0.0 || access*(data->n_node - 1) < p*0.01*(total - access))
         point = (total * rand()) / (double) RAND_MAX;
     for (i = 0; i < data->n_node; i++) {
-        if (point < data->s_node[i].status)
+        if (point <= data->s_node[i].status)
             break;
     }
     assert(i < data->n_node);
