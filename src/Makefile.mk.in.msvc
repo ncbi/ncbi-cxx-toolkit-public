@@ -106,6 +106,7 @@ objtools       = ncbi_pch.hpp
 serial         = ncbi_pch.hpp
 sqlite         = ncbi_pch.hpp
 util           = ncbi_pch.hpp
+internal/structure/CDTree2 = cdtree2_pch.hpp
 
 DoNotUsePch    = test_mt
 PchUsageDefine = NCBI_USE_PCH
