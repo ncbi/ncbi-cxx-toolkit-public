@@ -26,14 +26,17 @@
 *
 * ===========================================================================
 *
-* Author: 
-*	Vsevolod Sandomirskiy
+* Authors:
+*	Vsevolod Sandomirskiy, Aaron Ucko, Denis Vakatov, Anatoliy Kuznetsov
 *
 * File Description:
-*   Basic CGI Application class
+*   Base class for (Fast-)CGI applications
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/02/04 21:27:13  kuznets
+* + Implementation of statistics logging
+*
 * Revision 1.28  2003/01/23 19:58:40  kuznets
 * CGI logging improvements
 *
@@ -126,6 +129,7 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbitime.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <cgi/ncbicgir.hpp>
 #include <cgi/ncbires.hpp>
@@ -134,8 +138,7 @@
 BEGIN_NCBI_SCOPE
 
 class CCgiServerContext;
-class CNCBINode;
-class CTime;
+class CCgiStatistics;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -144,18 +147,19 @@ class CTime;
 
 class CCgiApplication : public CNcbiApplication
 {
+    friend class CCgiStatistics;
     typedef CNcbiApplication CParent;
 
 public:
     CCgiApplication(void);
     ~CCgiApplication(void);
 
-    static CCgiApplication* Instance(void); // Singleton method    
+    static CCgiApplication* Instance(void); // Singleton method
 
     // These methods will throw exception if no server context set
     const CCgiContext& GetContext(void) const  { return x_GetContext(); }
     CCgiContext&       GetContext(void)        { return x_GetContext(); }
-    
+
     // These methods will throw exception if no resource is set
     const CNcbiResource& GetResource(void) const { return x_GetResource(); }
     CNcbiResource&       GetResource(void)       { return x_GetResource(); }
@@ -165,7 +169,7 @@ public:
 
     virtual int Run(void);
     virtual int ProcessRequest(CCgiContext& context) = 0;
-    
+
     virtual CNcbiResource*     LoadResource(void);
     virtual CCgiServerContext* LoadServerContext(CCgiContext& context);
 
@@ -173,7 +177,7 @@ protected:
     // Factory method for the Context object construction
     virtual CCgiContext*   CreateContext(CNcbiArguments*   args = 0,
                                          CNcbiEnvironment* env  = 0,
-                                         CNcbiIstream*     inp  = 0, 
+                                         CNcbiIstream*     inp  = 0,
                                          CNcbiOstream*     out  = 0,
                                          int               ifd  = -1,
                                          int               ofd  = -1);
@@ -194,6 +198,9 @@ protected:
         eLogOnError
     };
     ELogOpt GetLogOpt(void) const;
+
+    // Class factory for statistics class
+    virtual CCgiStatistics* CreateStat();
 
 private:
     // If FastCGI-capable, and run as a Fast-CGI then iterate through
@@ -224,6 +231,53 @@ private:
 
     typedef map<string, CDiagFactory*> TDiagFactoryMap;
     TDiagFactoryMap           m_DiagFactories;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CCgiStatistics::
+//
+//    CGI statistics information
+//
+
+class CCgiStatistics
+{
+    friend CCgiApplication;
+public:
+    virtual ~CCgiStatistics();
+
+protected:
+    CCgiStatistics(CCgiApplication& cgi_app);
+
+    // Reset statistics class. Method called only ones for CGI
+    // applications and every iteration if it is FastCGI.
+    virtual void Reset(const CTime& start_time,
+                       int          result,
+                       const char*  err_msg = 0);
+
+    // Compose message for statistics logging.
+    // This default implementation constructs the message from the fragments
+    // composed with the help of "Compose_Xxx()" methods (see below).
+    // NOTE:  It can return empty string (when time cut-off is engaged).
+    virtual string Compose(void);
+
+    // Log the message
+    virtual void   Submit(const string& message);
+
+protected:
+    virtual string Compose_ProgramName (void);
+    virtual string Compose_Timing      (const CTime& end_time);
+    virtual string Compose_Entries     (void);
+    virtual string Compose_Result      (void);
+    virtual string Compose_ErrMessage  (void);
+
+protected:
+    CCgiApplication& m_CgiApp;     // Reference on the "mother app"
+    string           m_LogDelim;   // Log delimiter
+    CTime            m_StartTime;  // CGI start time
+    int              m_Result;     // Return code
+    string           m_ErrMsg;     // Error message
 };
 
 

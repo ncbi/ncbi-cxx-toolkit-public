@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/02/04 21:27:22  kuznets
+* + Implementation of statistics logging
+*
 * Revision 1.33  2003/01/23 19:59:02  kuznets
 * CGI logging improvements
 *
@@ -144,7 +147,6 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
-#include <corelib/ncbitime.hpp>
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 
@@ -171,10 +173,16 @@ int CCgiApplication::Run(void)
     }
 
     // Run as a plain CGI application
-    ELogOpt logopt = GetLogOpt();
+
     CTime start_time(CTime::eCurrent);
 
+    // Logging for statistics
+    bool is_stat_log =
+        GetConfig().GetBool("CGI", "StatLog", false, CNcbiRegistry::eReturn);
+    auto_ptr<CCgiStatistics> stat(is_stat_log ? CreateStat() : 0);
+
     // Logging
+    ELogOpt logopt = GetLogOpt();
     if (logopt == eLog) {
         x_LogPost("(plain CGI) CCgiApplication::Run ",
                   0, start_time, &GetEnvironment(), fBegin);
@@ -197,10 +205,16 @@ int CCgiApplication::Run(void)
         string msg = "(plain CGI) CCgiApplication::ProcessRequest() failed: ";
         msg += e.what();
 
+        // Logging
         if (logopt != eNoLog) {
             x_LogPost(msg.c_str(), 0, start_time, 0, fBegin|fEnd);
         } else {
             ERR_POST(msg);  // Post error notification even if no logging
+        }
+        if ( is_stat_log ) {
+            stat->Reset(start_time, result, e.what());
+            string msg = stat->Compose();
+            stat->Submit(msg);
         }
 
         CException* ex = dynamic_cast<CException*> (&e);
@@ -214,6 +228,12 @@ int CCgiApplication::Run(void)
     if (logopt == eLog) {
         x_LogPost("(plain CGI) CCgiApplication::Run ",
                   0, start_time, 0, fEnd);
+    }
+
+    if ( is_stat_log ) {
+        stat->Reset(start_time, result);
+        string msg = stat->Compose();
+        stat->Submit(msg);
     }
 
     return result;
@@ -521,6 +541,182 @@ void CCgiApplication::x_LogPost(const char*             msg_header,
     }
 
     ERR_POST( (string) CNcbiOstrstreamToString(msg) );
+}
+
+
+CCgiStatistics* CCgiApplication::CreateStat()
+{
+    return new CCgiStatistics(*this);
+}
+
+
+
+///////////////////////////////////////////////////////
+// CCgiStatistics
+//
+
+
+CCgiStatistics::CCgiStatistics(CCgiApplication& cgi_app)
+    : m_CgiApp(cgi_app), m_LogDelim(";")
+{
+}
+
+
+CCgiStatistics::~CCgiStatistics()
+{
+}
+
+
+void CCgiStatistics::Reset(const CTime& start_time,
+                           int          result,
+                           const char*  err_msg)
+{
+    m_StartTime = start_time;
+    m_Result    = result;
+    m_ErrMsg    = err_msg ? err_msg : "";
+}
+
+
+string CCgiStatistics::Compose(void)
+{
+    const CNcbiRegistry& reg = m_CgiApp.GetConfig();
+    CTime end_time(CTime::eCurrent);
+
+    // Check if it is assigned NOT to log the requests took less than
+    // cut off time threshold
+    int time_cutoff = reg.GetInt("CGI", "TimeStatCutOff", 0,
+                                 CNcbiRegistry::eReturn);
+    if (time_cutoff > 0) {
+        int diff = end_time.DiffSecond(m_StartTime);
+        if (diff < time_cutoff) {
+            return kEmptyStr;  // do nothing if it is a light weight request
+        }
+    }
+
+    string msg, tmp_str;
+
+    tmp_str = Compose_ProgramName();
+    if ( !tmp_str.empty() ) {
+        msg.append(tmp_str);
+        msg.append(m_LogDelim);
+    }
+
+    tmp_str = Compose_Result();
+    if ( !tmp_str.empty() ) {
+        msg.append(tmp_str);
+        msg.append(m_LogDelim);
+    }
+
+    bool is_timing =
+        reg.GetBool("CGI", "TimeStamp", false, CNcbiRegistry::eErrPost);
+    if ( is_timing ) {
+        tmp_str = Compose_Timing(end_time);
+        if ( !tmp_str.empty() ) {
+            msg.append(tmp_str);
+            msg.append(m_LogDelim);
+        }
+    }
+
+    tmp_str = Compose_Entries();
+    if ( !tmp_str.empty() ) {
+        msg.append(tmp_str);
+    }
+
+    tmp_str = Compose_ErrMessage();
+    if ( !tmp_str.empty() ) {
+        msg.append(tmp_str);
+        msg.append(m_LogDelim);
+    }
+
+    return msg;
+}
+
+
+void CCgiStatistics::Submit(const string& message)
+{
+    LOG_POST(message);
+}
+
+
+string CCgiStatistics::Compose_ProgramName(void)
+{
+    return m_CgiApp.GetArguments().GetProgramName();
+}
+
+
+string CCgiStatistics::Compose_Timing(const CTime& end_time)
+{
+    CTime elapsed = end_time - m_StartTime;
+    return m_StartTime.AsString() + m_LogDelim + elapsed.AsString();
+}
+
+
+string CCgiStatistics::Compose_Entries(void)
+{
+    const CCgiContext* ctx = m_CgiApp.m_Context.get();
+    if ( !ctx )
+        return kEmptyStr;
+
+    const CCgiRequest& cgi_req = ctx->GetRequest();
+
+    // LogArgs - list of CGI arguments to log.
+    // Can come as list of arguments (LogArgs = param1;param2;param3),
+    // or be supplemented with aliases (LogArgs = param1=1;param2=2;param3).
+    // When alias is provided we use it for logging purposes (this feature
+    // can be used to save logging space or reduce the net traffic).
+    const CNcbiRegistry& reg = m_CgiApp.GetConfig();
+    string log_args = reg.GetString("CGI", "LogArgs", kEmptyStr,
+                                    CNcbiRegistry::eReturn);
+    if ( log_args.empty() )
+        return kEmptyStr;
+
+    list<string> vars;
+    NStr::Split(log_args, ",; \t", vars);
+
+    string msg;
+    iterate (list<string>, i, vars) {
+        bool is_entry_found;
+        const string& arg = *i;
+
+        size_t pos = arg.find_last_of('=');
+        if (pos == 0) {
+            return "<misconf>" + m_LogDelim;
+        } else if (pos != string::npos) {   // alias assigned
+            string key = arg.substr(0, pos);
+            const CCgiEntry& entry = cgi_req.GetEntry(key, &is_entry_found);
+            if ( is_entry_found ) {
+                string alias = arg.substr(pos+1, arg.length());
+                msg.append(alias);
+                msg.append("='");
+                msg.append(entry.GetValue());
+                msg.append("'");
+                msg.append(m_LogDelim);
+            }
+        } else {
+            const CCgiEntry& entry = cgi_req.GetEntry(arg, &is_entry_found);
+            if ( is_entry_found ) {
+                msg.append(arg);
+                msg.append("='");
+                msg.append(entry.GetValue());
+                msg.append("'");
+                msg.append(m_LogDelim);
+            }
+        }
+    }
+
+    return msg;
+}
+
+
+string CCgiStatistics::Compose_Result(void)
+{
+    return NStr::IntToString(m_Result);
+}
+
+
+string CCgiStatistics::Compose_ErrMessage(void)
+{
+    return m_ErrMsg;
 }
 
 

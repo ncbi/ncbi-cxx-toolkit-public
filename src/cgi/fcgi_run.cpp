@@ -39,7 +39,8 @@ BEGIN_NCBI_SCOPE
 
 bool CCgiApplication::x_RunFastCGI(int* /*result*/, unsigned int /*def_iter*/)
 {
-    _TRACE("CCgiApplication::x_RunFastCGI:  return (FastCGI is not supported)");
+    _TRACE("CCgiApplication::x_RunFastCGI:  "
+           "return (FastCGI is not supported)");
     return false;
 }
 
@@ -137,6 +138,10 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
     // Registry
     const CNcbiRegistry& reg = GetConfig();
+
+    bool is_stat_log =
+        GetConfig().GetBool("CGI", "StatLog", false, CNcbiRegistry::eReturn);
+    auto_ptr<CCgiStatistics> stat(is_stat_log ? CreateStat() : 0);
 
     // Max. number of the Fast-CGI loop iterations
     unsigned int iterations;
@@ -258,10 +263,16 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             string msg = "CCgiApplication::ProcessRequest() failed: ";
             msg += e.what();
 
+            // Logging
             if (logopt != eNoLog) {
                 x_LogPost(msg.c_str(), iteration, start_time, 0, fBegin|fEnd);
             } else {
                 ERR_POST(msg);  // Post error notification even if no logging
+            }
+            if ( is_stat_log ) {
+                stat->Reset(start_time, *result, e.what());
+                string msg = stat->Compose();
+                stat->Submit(msg);
             }
 
             bool is_stop_onfail = reg.GetBool("FastCGI", "StopIfFailed",
@@ -283,8 +294,13 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             x_LogPost("CCgiApplication::x_RunFastCGI ",
                       iteration, start_time, 0, fEnd);
         }
+        if ( is_stat_log ) {
+            stat->Reset(start_time, *result);
+            string msg = stat->Compose();
+            stat->Submit(msg);
+        }
 
-        // check if this CGI executable has been changed
+        // Check if this CGI executable has been changed
         time_t mtimeNew =
             s_GetModTime( GetArguments().GetProgramName().c_str() );
         if (mtimeNew != mtime) {
@@ -293,10 +309,11 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             break;
         }
 
-        // check if the file we're watching (if any) has changed
+        // Check if the file we're watching (if any) has changed
         // (based on contents, not timestamp!)
         if (watcher.get()  &&  watcher->HasChanged()) {
-            _TRACE("CCgiApplication::x_RunFastCGI: the watch file has changed");
+            _TRACE("CCgiApplication::x_RunFastCGI:  "
+                   "the watch file has changed");
             break;
         }
     } // Main Fast-CGI loop
@@ -316,6 +333,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.20  2003/02/04 21:27:22  kuznets
+ * + Implementation of statistics logging
+ *
  * Revision 1.19  2003/01/24 01:07:04  ucko
  * Also rename stub RunFastCGI to x_RunFastCGI, and fix name in messages.
  *
