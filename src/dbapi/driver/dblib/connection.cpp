@@ -262,6 +262,7 @@ CDBL_Connection::~CDBL_Connection()
 {
     Refresh();
     dbclose(m_Link);
+    m_Link = NULL;
 }
 
 
@@ -564,6 +565,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/01/21 13:12:10  dicuccio
+ * Set link to NULL after closing in destructor
+ *
  * Revision 1.10  2004/05/18 18:30:36  gorelenk
  * PCH <ncbi_pch.hpp> moved to correct place .
  *
