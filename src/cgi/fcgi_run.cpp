@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2001/07/16 19:28:56  pubmed
+ * volodyas fix for contex cleanup
+ *
  * Revision 1.8  2001/07/03 18:17:32  ivanov
  * + #include <unistd.h> (need for getpid())
  *
@@ -180,6 +183,9 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
             m_Context->GetResponse().Flush();
             _TRACE("CCgiApplication::Run: done, status: " << *result);
             FCGX_SetExitStatus(*result, pfout);
+            
+            // clear contex data
+            m_Context.reset(NULL);
         }
         catch (exception& e) {
             ERR_POST("CCgiApplication::ProcessRequest() failed: " << e.what());
