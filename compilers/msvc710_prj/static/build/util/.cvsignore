@@ -11,6 +11,6 @@ regexp
 sequtil
 tables
 test
-xregexp.vcproj
+xregexp.lib.vcproj
 
 
