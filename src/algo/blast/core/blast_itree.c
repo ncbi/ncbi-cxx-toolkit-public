@@ -1,0 +1,824 @@
+/* $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's offical duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Jason Papadopoulos
+ *
+ */
+
+/** @file blast_itree.c
+ * Functions that implement an interval tree for fast HSP containment tests
+ */
+
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = 
+    "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
+#include "blast_itree.h"
+
+/** When allocating a node for an interval tree, this
+    specifies which half of the parent node will be described
+    by the new node */
+enum EIntervalDirection {
+    eIntervalTreeLeft,    /**< Node will handle left half of parent node */
+    eIntervalTreeRight,   /**< Node will handle right half of parent node */
+    eIntervalTreeNeither  /**< No parent node is assumed */
+};
+
+/** Allocate a new node for an interval tree
+ *  @param tree The tree to which the new node will eventually 
+ *              be added [in][out]
+ *  @param parent_index Offset of parent node to which this node 
+                        will be attached  (may be 0) [in]
+ *  @param dir Specifies which half of the parent node to describe [in]
+ *  @return "Pointer" to the new node. Because allocations are made in
+ *          batches, this is not a real pointer but the offset into the
+ *          current pool of nodes
+ */
+static Int4
+s_IntervalNodeInit(BlastIntervalTree *tree, 
+                   Int4 parent_index,
+                   enum EIntervalDirection dir)
+{
+    Int4 new_index;
+    SIntervalNode *new_node;
+    SIntervalNode *parent_node;
+
+    if (tree->num_used == tree->num_alloc) {
+        tree->num_alloc = 2 * tree->num_alloc;
+        tree->nodes = (SIntervalNode *)realloc(tree->nodes, tree->num_alloc *
+                                                     sizeof(SIntervalNode));
+    }
+
+    new_index = tree->num_used++;
+    if (dir == eIntervalTreeNeither)
+        return new_index;
+
+    /* fields in the node are only filled in if a parent
+       node is specified */
+
+    parent_node = tree->nodes + parent_index;
+    new_node = tree->nodes + new_index;
+    new_node->leftptr = 0;
+    new_node->midptr = 0;
+    new_node->rightptr = 0;
+    new_node->hsp = NULL;
+    new_node->width = parent_node->width / 2;
+
+    /* the center point of the new node depends on whether
+       it is for the left or right subtree of the parent */
+
+    if (dir == eIntervalTreeLeft)
+        new_node->center = parent_node->center - new_node->width;
+    else
+        new_node->center = parent_node->center + new_node->width;
+
+    return new_index;
+}
+
+/** Allocate a new root node for an interval tree
+ *  @param tree The tree to which the new node will eventually 
+ *              be added [in][out]
+ *  @param region_start The left endpoint of the root node
+ *  @param region_end The right endpoint of the root node
+ *  @return "Pointer" to the new node. Because allocations are made in
+ *          batches, this is not a real pointer but the offset into the
+ *          current pool of nodes
+ */
+static Int4
+s_IntervalRootNodeInit(BlastIntervalTree *tree, 
+                       Int4 region_start, Int4 region_end)
+{
+    Int4 new_index;
+    SIntervalNode *new_node;
+
+    new_index = s_IntervalNodeInit(tree, 0, eIntervalTreeNeither);
+    new_node = tree->nodes + new_index;
+    new_node->leftptr = 0;
+    new_node->midptr = 0;
+    new_node->rightptr = 0;
+    new_node->hsp = NULL;
+    new_node->center = (region_start + region_end) / 2;
+    new_node->width = (region_end - region_start) / 2;
+    return new_index;
+}
+
+/* See blast_itree.h for description */
+BlastIntervalTree* 
+Blast_IntervalTreeInit(Int4 q_start, Int4 q_end,
+                       Int4 s_start, Int4 s_end)
+{
+    Int4 size = 100;
+    BlastIntervalTree *tree;
+
+    tree = (BlastIntervalTree *)malloc(sizeof(BlastIntervalTree));
+    tree->nodes = (SIntervalNode *)malloc(size * sizeof(SIntervalNode));
+    tree->num_alloc = size;
+    tree->num_used = 0;
+    tree->s_min = s_start;
+    tree->s_max = s_end;
+
+    /* The first structure in tree->nodes is the root */
+    s_IntervalRootNodeInit(tree, q_start, q_end);
+    return tree;
+}
+
+/* See blast_itree.h for description */
+BlastIntervalTree* 
+Blast_IntervalTreeFree(BlastIntervalTree *tree)
+{
+    if (tree == NULL)
+        return NULL;
+
+    sfree(tree->nodes);
+    sfree(tree);
+    return NULL;
+}
+
+/* See blast_itree.h for description */
+void
+Blast_IntervalTreeReset(BlastIntervalTree *tree)
+{
+    SIntervalNode *root = tree->nodes;
+
+    tree->num_used = 1;
+    root->leftptr = 0;
+    root->midptr = 0;
+    root->rightptr = 0;
+    root->hsp = NULL;
+}
+
+/** Determine whether an input HSP shares a common start- or
+ *  endpoint with an HSP from an interval tree.
+ *  @param in_hsp The input HSP 
+ *  @param tree_hsp An HSP from the interval tree [in]
+ *  @param which_end Whether to match the left or right HSP endpoint [in]
+ *  @return NULL if there is no common endpoint, otherwise a
+ *          pointer to the HSP that should be kept
+ */
+static const BlastHSP*
+s_HSPsHaveCommonEndpoint(const BlastHSP *in_hsp,
+                         const BlastHSP *tree_hsp,
+                         enum EIntervalDirection which_end)
+{
+    Boolean match;
+
+    /* check if alignments are from different query sequences */
+
+    if (in_hsp->context != tree_hsp->context)
+        return NULL;
+       
+    /* check if alignments are from different strands */
+
+    if (SIGN(in_hsp->query.frame) != SIGN(tree_hsp->query.frame))
+        return NULL;
+       
+    if (SIGN(in_hsp->subject.frame) != SIGN(tree_hsp->subject.frame))
+        return NULL;
+       
+    if (which_end == eIntervalTreeLeft) {
+        match = in_hsp->query.offset == tree_hsp->query.offset &&
+                in_hsp->subject.offset == tree_hsp->subject.offset;
+    }
+    else {
+        match = in_hsp->query.end == tree_hsp->query.end &&
+                in_hsp->subject.end == tree_hsp->subject.end;
+    }
+
+    if (match) {
+
+        /* keep the higher scoring HSP */
+
+        if (in_hsp->score > tree_hsp->score)
+            return in_hsp;
+        if (in_hsp->score < tree_hsp->score)
+            return tree_hsp;
+
+        /* for equal scores, pick the shorter HSP */
+
+        if (in_hsp->query.length > tree_hsp->query.length)
+            return tree_hsp;
+        if (in_hsp->query.length < tree_hsp->query.length)
+            return in_hsp;
+
+        if (in_hsp->subject.length > tree_hsp->subject.length)
+            return tree_hsp;
+        if (in_hsp->subject.length < tree_hsp->subject.length)
+            return in_hsp;
+
+        /* HSPs are identical; favor the one already in the tree */
+
+        return tree_hsp;
+    }
+
+    return NULL;
+}
+
+/** Determine whether a subtree of an interval tree contains an HSP 
+ *  that shares a common endpoint with the input HSP. The subtree
+ *  indexes subject offsets, and represents the midpoint list of 
+ *  a tree node that indexes query offsets
+ *  @param tree Interval tree to search [in]
+ *  @param root_index The offset into the list of tree nodes that
+ *                    represents the root of the subtree [in]
+ *  @param in_hsp The input HSP [in]
+ *  @param which_end Whether to match the left or right HSP endpoint [in]
+ *  @return TRUE if the HSP should not be added to the tree because
+ *          it shares an existing endpoint with a 'better' HSP already
+ *          there, FALSE if the HSP should still be added to the tree
+ */
+static Boolean
+s_MidpointTreeHasHSPEndpoint(BlastIntervalTree *tree, 
+                             Int4 root_index, 
+                             const BlastHSP *in_hsp,
+                             enum EIntervalDirection which_end)
+{
+    SIntervalNode *root_node = tree->nodes + root_index;
+    SIntervalNode *list_node, *next_node;
+    Int4 tmp_index;
+    Int4 target_offset;
+
+    if (which_end == eIntervalTreeLeft)
+        target_offset = in_hsp->subject.offset;
+    else
+        target_offset = in_hsp->subject.end;
+
+    /* Descend the tree */
+
+    while (1) {
+
+        /* First perform matching endpoint tests on all of the HSPs
+           in the midpoint list for the current node. If the input 
+           shares an endpoint with an HSP already in the list, and the
+           HSP in the list is 'better', signal that in_hsp should not
+           be added to the tree later. Otherwise remove matching HSPs 
+           from the list. */
+
+        tmp_index = root_node->midptr;
+        list_node = root_node;
+        next_node = tree->nodes + tmp_index;
+        while (tmp_index != 0) {
+            const BlastHSP *best_hsp = s_HSPsHaveCommonEndpoint(in_hsp, 
+                                               next_node->hsp, which_end);
+
+            tmp_index = next_node->midptr;
+            if (best_hsp == next_node->hsp)
+                return TRUE;
+            else if (best_hsp == in_hsp)
+                list_node->midptr = tmp_index;
+
+            list_node = next_node;
+            next_node = tree->nodes + tmp_index;
+        }
+
+        /* Descend to the left or right subtree, whichever one
+           contains the endpoint from in_hsp */
+
+        tmp_index = 0;
+        if (target_offset < root_node->center)
+            tmp_index = root_node->leftptr;
+        else if (target_offset > root_node->center)
+            tmp_index = root_node->rightptr;
+
+        /* If there is no such subtree, then all of the HSPs that 
+           could possibly have a common endpoint with it have already 
+           been examined */
+
+        if (tmp_index == 0)
+            return FALSE;
+
+        next_node = tree->nodes + tmp_index;
+        if (next_node->hsp != NULL) {
+
+            /* reached a leaf; compare in_hsp with the alignment
+               in the leaf. Whether or not there's a match, traversal
+               is finished */
+
+            const BlastHSP *best_hsp = s_HSPsHaveCommonEndpoint(in_hsp, 
+                                                 next_node->hsp, which_end);
+            if (best_hsp == next_node->hsp) {
+                return TRUE;
+            }
+            else if (best_hsp == in_hsp) {
+                /* leaf gets removed */
+                if (target_offset < root_node->center)
+                    root_node->leftptr = 0;
+                else if (target_offset > root_node->center)
+                    root_node->rightptr = 0;
+                return FALSE;
+            }
+            break;
+        }
+        root_node = next_node;          /* descend to next node */
+    }
+    return FALSE;
+}
+
+/** Determine whether an interval tree contains one or more HSPs that 
+ *  share a common endpoint with the input HSP. Remove from the tree
+ *  all such HSPs that are "worse" than the input (do not delete the HSPs
+ *  themselves)
+ *  @param tree Interval tree to search [in]
+ *  @param root_index The offset into the list of tree nodes that
+ *                    represents the root of the subtree [in]
+ *  @param in_hsp The input HSP [in]
+ *  @param query_info Information on all the queries in a concatenated set [in]
+ *  @param which_end Whether to match the left or right HSP endpoint [in]
+ *  @return TRUE if the HSP should not be added to the tree because
+ *          it shares an existing endpoint with a 'better' HSP already
+ *          there, FALSE if the HSP should still be added to the tree.
+ *          Note it is possible for the input HSP to delete HSPs in the 
+ *          tree but still have this routine return FALSE
+ */
+static Boolean
+s_IntervalTreeHasHSPEndpoint(BlastIntervalTree *tree, 
+                             const BlastHSP *in_hsp,
+                             const BlastQueryInfo *query_info,
+                             enum EIntervalDirection which_end)
+{
+    SIntervalNode *root_node = tree->nodes;
+    SIntervalNode *next_node;
+    Int4 tmp_index;
+    Int4 target_offset;
+    BlastHSP* match_hsp;
+
+    if (which_end == eIntervalTreeLeft)
+        target_offset = query_info->contexts[in_hsp->context].query_offset +
+                                            in_hsp->query.offset;
+    else
+        target_offset = query_info->contexts[in_hsp->context].query_offset +
+                                            in_hsp->query.end;
+
+    /* Descend the tree */
+
+    while (1) {
+
+        /* First perform matching endpoint tests on all of the HSPs
+           in the midpoint tree for the current node */
+
+        tmp_index = root_node->midptr;
+        if (tmp_index != 0) {
+            if (s_MidpointTreeHasHSPEndpoint(tree, tmp_index,
+                                         in_hsp, which_end)) {
+                return TRUE;
+            }
+        }
+
+        /* Descend to the left or right subtree, whichever one
+           contains the endpoint from in_hsp */
+
+        tmp_index = 0;
+        if (target_offset < root_node->center)
+            tmp_index = root_node->leftptr;
+        else if (target_offset > root_node->center)
+            tmp_index = root_node->rightptr;
+
+        /* If there is no such subtree, or the HSP straddles the center
+           of the current node, then all of the HSPs that could possibly
+           have a common endpoint with it have already been examined */
+
+        if (tmp_index == 0)
+            return FALSE;
+
+        next_node = tree->nodes + tmp_index;
+        if (next_node->hsp != NULL) {
+
+            /* reached a leaf; compare in_hsp with the alignment
+               in the leaf. Whether or not there's a match, traversal
+               is finished */
+
+            const BlastHSP* best_hsp = s_HSPsHaveCommonEndpoint(in_hsp, 
+                                              next_node->hsp, which_end);
+            if (best_hsp == next_node->hsp) {
+                return TRUE;
+            }
+            else if (best_hsp == in_hsp) {
+                /* leaf gets removed */
+                if (target_offset < root_node->center)
+                    root_node->leftptr = 0;
+                else if (target_offset > root_node->center)
+                    root_node->rightptr = 0;
+                return FALSE;
+            }
+            break;
+        }
+        root_node = next_node;          /* descend to next node */
+    }
+    return FALSE;
+}
+
+
+/* see blast_itree.h for description */
+void 
+BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
+                        const BlastQueryInfo *query_info)
+{
+    Int4 old_region_start;
+    Int4 old_region_end;
+    Int4 region_start;
+    Int4 region_end;
+    SIntervalNode *nodes;
+    BlastHSP *old_hsp;
+    Int4 root_index;
+    Int4 new_index;
+    Int4 mid_index;
+    Int4 old_index;
+    enum EIntervalDirection which_half;
+    Boolean index_subject_range = FALSE;
+
+    /* Before adding the HSP, determine whether one or more
+       HSPs already in the tree share a common endpoint with
+       in_hsp. Remove from the tree any leaves containing 
+       such an HSP whose score is lower than in_hsp.
+
+       Note that in_hsp might share an endpoint with a
+       higher-scoring HSP already in the tree, in which case
+       in_hsp should not be added. There is thus a possibility
+       that in_hsp will remove an alignment from the tree and
+       then another alignment will remove in_hsp. This is arguably
+       not the right behavior, but since the tree is only for
+       containment tests the worst that can happen is that
+       a rare extra gapped alignment will be computed */
+
+    if (s_IntervalTreeHasHSPEndpoint(tree, hsp, 
+                    query_info, eIntervalTreeLeft)) {
+        return;
+    }
+    if (s_IntervalTreeHasHSPEndpoint(tree, hsp, 
+                    query_info, eIntervalTreeRight)) {
+        return;
+    }
+
+    /* begin by indexing the HSP query offsets */
+
+    region_start = query_info->contexts[hsp->context].query_offset +
+                                        hsp->query.offset;
+    region_end = query_info->contexts[hsp->context].query_offset +
+                                        hsp->query.end;
+    index_subject_range = FALSE;
+
+    /* encapsulate the input HSP in an SIntervalNode */
+    root_index = 0;
+    new_index = s_IntervalNodeInit(tree, 0, eIntervalTreeNeither);
+    nodes = tree->nodes;
+    nodes[new_index].midptr = 0;
+    nodes[new_index].hsp = hsp;
+
+    /* Descend the tree to reach the correct subtree for the new node */
+
+    while (1) {
+
+        if (region_end < nodes[root_index].center) {
+
+            /* new interval belongs in left subtree. If there
+               are no leaves in that subtree, finish up */
+
+            if (nodes[root_index].leftptr == 0) {
+                nodes[root_index].leftptr = new_index;
+                return;
+            }
+
+            /* A node is already in this subtree. If it is not a 
+               leaf node, descend to it and analyze in the next
+               loop iteration. Otherwise, schedule the subtree to
+               be split */
+
+            old_index = nodes[root_index].leftptr;
+            if (nodes[old_index].hsp == NULL) {
+                root_index = old_index;
+                continue;
+            }
+            else {
+                which_half = eIntervalTreeLeft;
+            }
+        } 
+        else if (region_start > nodes[root_index].center) {
+
+            /* new interval belongs in right subtree. If there
+               are no leaves in that subtree, finish up */
+
+            if (nodes[root_index].rightptr == 0) {
+                nodes[root_index].rightptr = new_index;
+                return;
+            }
+
+            /* A node is already in this subtree. If it is not a 
+               leaf node, descend to it and analyze in the next
+               loop iteration. Otherwise, schedule the subtree to
+               be split */
+
+            old_index = nodes[root_index].rightptr;
+            if (nodes[old_index].hsp == NULL) {
+                root_index = old_index;
+                continue;
+            }
+            else {
+                which_half = eIntervalTreeRight;
+            }
+        } 
+        else {
+
+            /* the new interval crosses the center of the node, and
+               so has a "shadow" in both subtrees */
+
+            if (index_subject_range) {
+
+                /* If indexing subject offsets already, prepend the 
+                   new node to the list of "midpoint" nodes and return */
+
+                nodes[new_index].midptr = nodes[root_index].midptr;
+                nodes[root_index].midptr = new_index;
+                return;
+            }
+            else {
+
+                /* Begin another tree at root_index, that indexes
+                   the subject range of the input HSP */
+
+                index_subject_range = TRUE;
+
+                if (nodes[root_index].midptr == 0) {
+                    mid_index = s_IntervalRootNodeInit(tree, tree->s_min,
+                                                       tree->s_max);
+                    nodes = tree->nodes;
+                    nodes[root_index].midptr = mid_index;
+                }
+                root_index = nodes[root_index].midptr;
+
+                /* switch from the query range of the input HSP 
+                   to the subject range */
+
+                region_start = hsp->subject.offset;
+                region_end = hsp->subject.end;
+                continue;
+            }
+        }
+
+        /* There are two leaves in the same subtree. Add another
+           internal node, reattach the old leaf, and loop 
+
+           First allocate the new node. Update the pointer to 
+           the pool of nodes, since it may change */
+
+        mid_index = s_IntervalNodeInit(tree, root_index, which_half);
+        nodes = tree->nodes;
+        old_hsp = nodes[old_index].hsp;
+
+        /* attach the new internal node */
+
+        if (which_half == eIntervalTreeLeft)
+                nodes[root_index].leftptr = mid_index;
+        else
+                nodes[root_index].rightptr = mid_index;
+
+        /* descend to the new internal node, and attach the old
+           leaf to it. The next loop iteration will have to deal
+           with attaching the *new* leaf */
+
+        if (index_subject_range) {
+            old_region_start = old_hsp->subject.offset;
+            old_region_end = old_hsp->subject.end;
+        }
+        else {
+            old_region_start = 
+                       query_info->contexts[old_hsp->context].query_offset +
+                       old_hsp->query.offset;
+            old_region_end = 
+                       query_info->contexts[old_hsp->context].query_offset +
+                       old_hsp->query.end;
+        }
+
+        root_index = mid_index;
+        if (old_region_end < nodes[mid_index].center) {
+
+            /* old leaf belongs in left subtree of new node */
+            nodes[mid_index].leftptr = old_index;
+        }
+        else if (old_region_start > nodes[mid_index].center) {
+
+            /* old leaf belongs in right subtree of new node */
+            nodes[mid_index].rightptr = old_index;
+        }
+        else {
+
+            /* the old leaf straddles both subtrees. If indexing is
+               by subject offset, attach the old leaf to the (empty)
+               midpoint list of the new node. If still indexing query
+               offsets, then a new tree that indexes subject offsets
+               must be allocated from scratch, just to accomodate the
+               old leaf */
+
+            if (index_subject_range) {
+                nodes[mid_index].midptr = old_index;
+            }
+            else {
+                old_region_start = old_hsp->subject.offset; 
+                old_region_end =  old_hsp->subject.end;
+                Int4 mid_index2 = s_IntervalRootNodeInit(tree, tree->s_min,
+                                                         tree->s_max);
+                nodes = tree->nodes;
+                nodes[mid_index].midptr = mid_index2;
+    
+                if (old_region_end < nodes[mid_index2].center)
+                    nodes[mid_index2].leftptr = old_index;
+                else if (old_region_start > nodes[mid_index2].center)
+                    nodes[mid_index2].rightptr = old_index;
+                else
+                    nodes[mid_index2].midptr = old_index;
+            }
+        }
+    }
+}
+
+/** Determine whether an HSP is contained within another HSP.
+ *  @param in_hsp The input HSP 
+ *  @param tree_hsp An HSP from the interval tree [in]
+ *  @param min_diag_separation Number of diagonals separating 
+ *                             nonoverlapping hits (only nonzero 
+ *                             for megablast) [in]
+ *  @return TRUE if the second HSP envelops the first, FALSE otherwise
+ */
+static Boolean
+s_HSPIsContained(const BlastHSP *in_hsp,
+                 const BlastHSP *tree_hsp,
+                 Int4 min_diag_separation)
+{
+    /* check if alignments are from different query sequences */
+
+    if (in_hsp->context != tree_hsp->context)
+        return FALSE;
+       
+    /* check if alignments are from different query strands */
+
+    if (SIGN(in_hsp->query.frame) != SIGN(tree_hsp->query.frame))
+        return FALSE;
+       
+    if (min_diag_separation > 0) {
+
+        if (MB_HSP_CONTAINED(in_hsp->query.offset, 
+                             tree_hsp->query.offset, tree_hsp->query.end,
+                             in_hsp->subject.offset, 
+                             tree_hsp->subject.offset, tree_hsp->subject.end,
+                             min_diag_separation) && 
+            in_hsp->score <= tree_hsp->score &&
+            SIGN(in_hsp->subject.frame) == SIGN(tree_hsp->subject.frame)) {
+            return TRUE;
+        }
+    } 
+    else if (CONTAINED_IN_HSP(tree_hsp->query.offset, tree_hsp->query.end, 
+                              in_hsp->query.offset,
+                              tree_hsp->subject.offset, tree_hsp->subject.end, 
+                              in_hsp->subject.offset)) {
+
+        if (CONTAINED_IN_HSP(tree_hsp->query.offset, tree_hsp->query.end, 
+                             in_hsp->query.end,
+                             tree_hsp->subject.offset, tree_hsp->subject.end, 
+                             in_hsp->subject.end) &&
+            in_hsp->score <= tree_hsp->score &&
+            SIGN(in_hsp->subject.frame) == SIGN(tree_hsp->subject.frame)) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+/** Determine whether a subtree of an interval tree contains an HSP 
+ *  that envelops the input HSP. The subtree indexes subject offsets,
+ *  and represents the midpoint list of a tree node that indexes
+ *  query offsets
+ *  @param tree Interval tree to search [in]
+ *  @param root_index The offset into the list of tree nodes that
+ *                    represents the root of the subtree [in]
+ *  @param in_hsp The input HSP [in]
+ *  @param min_diag_separation Number of diagonals separating 
+ *                             nonoverlapping hits (only nonzero 
+ *                             for contiguous megablast) [in]
+ *  @return TRUE if an HSP in the subtree envelops the input, FALSE otherwise
+ */
+static Boolean
+s_MidpointTreeContainsHSP(const BlastIntervalTree *tree, 
+                          Int4 root_index, 
+                          const BlastHSP *in_hsp,
+                          Int4 min_diag_separation)
+{
+    SIntervalNode *node = tree->nodes + root_index;
+    Int4 region_start = in_hsp->subject.offset;
+    Int4 region_end = in_hsp->subject.end;
+
+    /* Descend the tree */
+
+    while (node->hsp == NULL) {
+
+        /* First perform containment tests on all of the HSPs
+           in the midpoint list for the current node. These
+           HSPs are not indexed in a tree format, so all HSPs
+           in the list must be examined */
+
+        Int4 tmp_index = node->midptr;
+        while (tmp_index != 0) {
+            SIntervalNode *tmp_node = tree->nodes + tmp_index;
+
+            if (s_HSPIsContained(in_hsp, tmp_node->hsp,
+                                 min_diag_separation)) {
+                return TRUE;
+            }
+            tmp_index = tmp_node->midptr;
+        }
+
+        /* Descend to the left subtree if the input HSP lies completely
+           to the left of this node's center, or to the right subtree if
+           it lies completely to the right */
+
+        tmp_index = 0;
+        if (region_end < node->center)
+            tmp_index = node->leftptr;
+        else if (region_start > node->center)
+            tmp_index = node->rightptr;
+
+        /* If there is no such subtree, or the HSP straddles the center
+           of the current node, then all of the HSPs that could possibly
+           contain it have already been examined */
+
+        if (tmp_index == 0)
+            return FALSE;
+
+        node = tree->nodes + tmp_index;
+    }
+
+    /* Reached a leaf of the tree */
+
+    return s_HSPIsContained(in_hsp, node->hsp, min_diag_separation);
+}
+
+/* see blast_itree.h for description */
+Boolean
+BlastIntervalTreeContainsHSP(const BlastIntervalTree *tree, 
+                             const BlastHSP *hsp,
+                             Int4 query_start_offset,
+                             Int4 min_diag_separation)
+{
+    SIntervalNode *node = tree->nodes;
+    Int4 region_start = query_start_offset + hsp->query.offset;
+    Int4 region_end = query_start_offset + hsp->query.end;
+
+    /* Descend the tree */
+
+    while (node->hsp == NULL) {
+
+        /* First perform containment tests on all of the HSPs
+           in the midpoint tree for the current node */
+
+        Int4 tmp_index = node->midptr;
+        if (tmp_index > 0) {
+            if (s_MidpointTreeContainsHSP(tree, tmp_index, hsp,
+                                  min_diag_separation)) {
+                return TRUE;
+            }
+        }
+
+        /* Descend to the left subtree if the input HSP lies completely
+           to the left of this node's center, or to the right subtree if
+           it lies completely to the right */
+
+        tmp_index = 0;
+        if (region_end < node->center)
+            tmp_index = node->leftptr;
+        else if (region_start > node->center)
+            tmp_index = node->rightptr;
+
+        /* If there is no such subtree, or the HSP straddles the center
+           of the current node, then all of the HSPs that could possibly
+           contain it have already been examined */
+
+        if (tmp_index == 0)
+            return FALSE;
+
+        node = tree->nodes + tmp_index;
+    }
+
+    /* Reached a leaf of the tree */
+
+    return s_HSPIsContained(hsp, node->hsp, min_diag_separation);
+}
