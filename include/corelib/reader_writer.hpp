@@ -72,9 +72,14 @@ public:
                             size_t  count,
                             size_t* bytes_read = 0) = 0;
 
-    /// Return the number of bytes ready to be read from input
-    /// device without blocking.  Return 0 if no such number is
-    /// available (in case of an error or EOF).
+    /// Via parameter "count" (which is guaranteed to be supplied non-NULL)
+    /// return the number of bytes that are ready to be read from input
+    /// device without blocking.  Return eRW_Success if the number
+    /// of pending bytes was stored at the location pointed to by "count".
+    /// Return eRW_NotImplemented if the number cannot be determined.
+    /// Otherwise, return other eRW_... condition to reflect the problem.
+    /// Note that if reporting 0 bytes ready, the method can either return
+    /// eRW_Success and zero *count, or return eRW_NotImplemented alone.
     virtual ERW_Result PendingCount(size_t* count) = 0;
 
     virtual ~IReader() {}
@@ -120,6 +125,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/03/23 19:49:46  lavr
+ * Fix IReader::PendingCount() description
+ *
  * Revision 1.9  2003/11/03 20:01:52  lavr
  * Add ERW_Result::eRW_Timeout
  *
