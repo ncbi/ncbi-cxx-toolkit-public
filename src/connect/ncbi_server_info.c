@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2000/12/04 17:34:19  beloslyu
+ * the order of include files is important, especially on other Unixes! Look the man on inet_ntoa
+ *
  * Revision 6.15  2000/10/20 17:13:30  lavr
  * Service descriptor parse bug fixed
  * Unknown type now returns empty text string (instead of abort) in 'SERV_TypeStr'
@@ -89,6 +92,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 
 

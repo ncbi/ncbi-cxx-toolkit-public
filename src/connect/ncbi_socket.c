@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2000/12/04 17:34:19  beloslyu
+ * the order of include files is important, especially on other Unixes! Look the man on inet_ntoa
+ *
  * Revision 6.9  2000/11/22 19:29:16  vakatov
  * SOCK_Create() -- pre-set the sock handle to SOCK_INVALID before connect
  *
@@ -91,12 +94,12 @@
  */
 #if defined(NCBI_OS_UNIX)
 #  include <errno.h>
-#  include <sys/socket.h>
 #  include <sys/time.h>
 #  include <unistd.h>
 #  include <netdb.h>
-#  include <netinet/in.h>
 #  include <fcntl.h>
+#  include <sys/socket.h>
+#  include <netinet/in.h>
 #  include <arpa/inet.h>
 #  include <signal.h>
 
