@@ -221,8 +221,8 @@ void CGridCgiSampleApplication::OnJobDone(CNcbiIstream& is,
     CHTMLText* inp_text = new CHTMLText(
             "<p/>Job is done.<br/>"
             "<p>Result received : <@OUTPUT_DATA@> <br/>"
-            "<INPUT TYPE=\"submit\" NAME=\"Submint new Data\" "
-                                   "VALUE=\"Submint new Data\">");
+            "<INPUT TYPE=\"submit\" NAME=\"Submit new Data\" "
+                                   "VALUE=\"Submit new Data\">");
     ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
     CHTMLPlainText* idoubles = new CHTMLPlainText(VectorToString(m_Doubles));
     ctx.GetHTMLPage().AddTagMap("OUTPUT_DATA",idoubles);
@@ -235,8 +235,8 @@ void CGridCgiSampleApplication::OnJobFailed(const string& msg,
     CHTMLText* inp_text = new CHTMLText(
                      "<p/>Job failed.<br/>"
                      "Error Message : <@MSG@><br/>"
-                     "<INPUT TYPE=\"submit\" NAME=\"Submint new Data\" "
-                                            "VALUE=\"Submint new Data\">");
+                     "<INPUT TYPE=\"submit\" NAME=\"Submit new Data\" "
+                                            "VALUE=\"Submit new Data\">");
     ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
     CHTMLPlainText* err = new CHTMLPlainText(msg);
     ctx.GetHTMLPage().AddTagMap("MSG",err);
@@ -247,8 +247,8 @@ void CGridCgiSampleApplication::OnJobCanceled(CGridCgiContext& ctx)
     // Render a job cancelation page
     CHTMLText* inp_text = new CHTMLText(
                "<p/>Job is canceled.<br/>"
-               "<INPUT TYPE=\"submit\" NAME=\"Submint new Data\" "
-                                      "VALUE=\"Submint new Data\">");
+               "<INPUT TYPE=\"submit\" NAME=\"Submit new Data\" "
+                                      "VALUE=\"Submit new Data\">");
     ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
 }
 
@@ -258,8 +258,8 @@ void CGridCgiSampleApplication::OnStatusCheck(CGridCgiContext& ctx)
     CHTMLText* inp_text = new CHTMLText(
                   "<p/>Job is still runnig.<br/>"
                   "<INPUT TYPE=\"submit\" NAME=\"Check Status\" VALUE=\"Check\">"
-                  "<INPUT TYPE=\"submit\" NAME=\"Stop\" "
-                                         "VALUE=\"Stop job\">");
+                  "<INPUT TYPE=\"submit\" NAME=\"Cancel\" "
+                                         "VALUE=\"Cancel the job\">");
    ctx.GetHTMLPage().AddTagMap("VIEW", inp_text);
 }
 
@@ -268,7 +268,7 @@ bool CGridCgiSampleApplication::JobStopRequested(void) const
     const CArgs& args = GetArgs();
 
     // Check if job cancelation has been requested.
-    if ( args["Stop"] )
+    if ( args["Cancel"] )
         return true;
     return false;
 }
@@ -294,9 +294,9 @@ void CGridCgiSampleApplication::x_SetupArgs()
                              CArgDescriptions::eString,
                              CArgDescriptions::fAllowMultiple);
 
-    arg_desc->AddOptionalKey("Stop",
-                             "Stop",
-                             "Stop job",
+    arg_desc->AddOptionalKey("Cancel",
+                             "Cancel",
+                             "Cancel the job",
                              CArgDescriptions::eString);
     
     // Setup arg.descriptions for this application
@@ -336,6 +336,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/04/04 14:15:15  didenko
+ * Cosmetcis
+ *
  * Revision 1.4  2005/04/01 15:07:31  didenko
  * Divided OnJobSubmit methos onto two PrepareJobData and OnJobSubmitted
  *
