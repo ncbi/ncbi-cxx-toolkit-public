@@ -58,7 +58,8 @@ class NCBI_XHTML_EXPORT CPager : public CNCBINode
 public:
     enum EPagerView {
 	    eImage,
-	    eButtons
+	    eButtons,
+        eTabs
     };
 
     CPager(const CCgiRequest& request,
@@ -100,6 +101,9 @@ public:
         { return m_DisplayPage; }
     int GetDisplayPage(void) const
         { return m_DisplayPage; }
+    // Get total pages in result
+    int GetPages(void)
+        { return ( m_ItemCount - m_PageSize - 1 ) / m_PageSize; }
 
     // Name of hidden value holding selected page size
     static const string KParam_PageSize;
@@ -187,6 +191,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/07/12 21:26:58  golikov
+ * additions for tab view
+ *
  * Revision 1.14  2003/11/05 18:41:06  dicuccio
  * Added export specifiers
  *

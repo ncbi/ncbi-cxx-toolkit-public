@@ -269,8 +269,10 @@ CNCBINode* CPager::GetItemInfo(void) const
                                                  NStr::IntToString(firstItem))
                               );
         }
-        node->AppendChild(new CHTMLPlainText(" of " +
+        if( m_view != eTabs ) {
+            node->AppendChild(new CHTMLPlainText(" of " +
                                              NStr::IntToString(m_ItemCount)));
+        }
     }
     return node;
 }
@@ -284,10 +286,11 @@ CNCBINode* CPager::GetPagerView(const string& imgDir,
         return 0;
     }
     switch (m_view) {
-    case eButtons:
-        return new CPagerViewButtons(*this, js_suffix);
-    default:
-        break;
+        case eButtons:
+        case eTabs:
+            return new CPagerViewButtons(*this, js_suffix);
+        default:
+            break;
     }
     // Default old behavor
     return new CPagerView(*this, imgDir, imgX, imgY);
@@ -474,6 +477,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/07/12 21:26:58  golikov
+ * additions for tab view
+ *
  * Revision 1.40  2004/06/09 15:28:45  yasmax
  * Bug fix: Added synchronization inputpage field and textpage by OnChange event
  *
