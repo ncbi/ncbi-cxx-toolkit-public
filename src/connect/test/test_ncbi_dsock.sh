@@ -10,5 +10,6 @@ trap 'kill $server_pid' 1 2 15
 
 sleep 1
 ./test_ncbi_dsock client $port  ||  exit_code=1
+( kill $server_pid ) >/dev/null 2>&1
 
 exit $exit_code
