@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/01/08 22:42:42  lavr
+ * Further development of the test-suite
+ *
  * Revision 6.3  2001/01/03 22:40:24  lavr
  * Minor adjustment
  *
@@ -46,10 +49,12 @@
 #  undef NDEBUG
 #endif 
 
+#include <connect/ncbi_util.h>
 #include <connect/ncbi_service_connector.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 int main(int argc, const char* argv[])
 {
@@ -60,10 +65,13 @@ int main(int argc, const char* argv[])
     CONN conn;
     size_t n;
 
-    SConnNetInfo *info = ConnNetInfo_Create("stnd1");
+    CORE_SetLOGFILE(stderr, 0/*false*/);
+
+    SConnNetInfo *info = ConnNetInfo_Create("io_bounce");
     strcpy(info->host, "ray");
     info->debug_printout = 1;
-    info->client_mode = eClientModeStatefulCapable;
+    info->stateless = 1;
+    info->firewall = 1;
 
     connector = SERVICE_CreateConnectorEx("io_bounce", fSERV_Any, info);
 
@@ -71,6 +79,8 @@ int main(int argc, const char* argv[])
         printf("Failed to create service connector\n");
         exit(-1);
     }
+
+    /* sleep(7); */
 
     if (CONN_Create(connector, &conn) != eIO_Success) {
         printf("Connection creation failed\n");
