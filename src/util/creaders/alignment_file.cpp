@@ -35,7 +35,7 @@
 BEGIN_NCBI_SCOPE
 
 
-static char *s_ReadLine(void *user_data)
+static char * ALIGNMENT_CALLBACK s_ReadLine(void *user_data)
 {
     CNcbiIstream *is = static_cast<CNcbiIstream *>(user_data);
     if (!*is) {
@@ -47,7 +47,7 @@ static char *s_ReadLine(void *user_data)
 }
 
 
-static void s_ReportError (TErrorInfoPtr err_ptr,
+static void ALIGNMENT_CALLBACK s_ReportError (TErrorInfoPtr err_ptr,
                            void *user_data)
 {
     if (err_ptr->category != eAlnErr_Fatal) {
@@ -149,6 +149,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/11 17:58:12  gorelenk
+ * Added missed modificator ALIGNMENT_CALLBACK to definitions of s_ReadLine
+ * and ALIGNMENT_CALLBACK.
+ *
  * Revision 1.2  2004/02/10 02:58:09  ucko
  * erase() strings rather than clear()ing them for compatibility with G++ 2.95.
  *
