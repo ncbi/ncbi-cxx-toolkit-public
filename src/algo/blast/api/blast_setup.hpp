@@ -49,6 +49,15 @@ END_SCOPE(objects)
 BEGIN_SCOPE(blast)
 class CBlastOptions;
 
+/** Allocates the query information structure and fills the context 
+ * offsets, in case of multiple queries, frames or strands. If query seqids
+ * cannot be resolved, they will be ignored as warnings will be issued in
+ * blast::SetupQueries.
+ * NB: effective length will be assigned inside the engine.
+ * @param queries Vector of query locations [in]
+ * @param options BLAST search options [in]
+ * @param qinfo Allocated query info structure [out]
+ */
 void
 SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options, 
                BlastQueryInfo** qinfo); // out
@@ -66,6 +75,12 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
              const CBlastQueryInfo& qinfo, BLAST_SequenceBlk** seqblk,
              Blast_Message** blast_msg);
 
+/** Sets up internal subject data structure for the BLAST search.
+ * @param subjects Vector of subject locations [in]
+ * @param prog BLAST program [in]
+ * @param seqblk_vec Vector of subject sequence data structures [out]
+ * @param max_subjlen Maximal length of the subject sequences [out]
+ */
 void
 SetupSubjects(const TSeqLocVector& subjects, 
               EProgram program,
@@ -91,7 +106,7 @@ enum ESentinelType {
     eNoSentinels
 };
 
-/** Retrieves a sequence using the object manager
+/** Retrieves a sequence using the object manager.
  * @param sl seqloc of the sequence to obtain [in]
  * @param encoding encoding for the sequence retrieved.
  *        Supported encodings include: NCBI2NA_ENCODING, NCBI4NA_ENCODING,
@@ -205,6 +220,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2005/03/04 16:07:05  camacho
+* doxygen fixes
+*
 * Revision 1.32  2005/03/02 14:25:58  camacho
 * Removed unneeded NCBI_XBLAST_EXPORT
 *

@@ -106,15 +106,6 @@ QueryInfo_SetContext(BlastQueryInfo*   qinfo,
     }
 }
 
-/** Allocates the query information structure and fills the context 
- * offsets, in case of multiple queries, frames or strands. If query seqids
- * cannot be resolved, they will be ignored as warnings will be issued in
- * blast::SetupQueries.
- * NB: effective length will be assigned inside the engine.
- * @param queries Vector of query locations [in]
- * @param options BLAST search options [in]
- * @param qinfo Allocated query info structure [out]
- */
 void
 SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options, 
                BlastQueryInfo** qinfo)
@@ -466,12 +457,6 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
     (*seqblk)->lcase_mask_allocated = TRUE;
 }
 
-/** Sets up internal subject data structure for the BLAST search.
- * @param subjects Vector of subject locations [in]
- * @param prog BLAST program [in]
- * @param seqblk_vec Vector of subject sequence data structures [out]
- * @param max_subjlen Maximal length of the subject sequences [out]
- */
 void
 SetupSubjects(const TSeqLocVector& subjects, 
               EProgram prog,
@@ -959,6 +944,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2005/03/04 16:07:05  camacho
+* doxygen fixes
+*
 * Revision 1.36  2005/03/01 20:52:42  camacho
 * Doxygen fixes
 *
