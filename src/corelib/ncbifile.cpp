@@ -40,18 +40,27 @@
 #include <stdio.h>
 
 #if defined(NCBI_OS_MSWIN )
+#  include <windows.h>
 #  include <io.h>
 #  include <direct.h>
+
 #elif defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #  include <dirent.h>
 #  include <pwd.h>
+#  include <fcntl.h>
+#  include <sys/mman.h>
+#  ifndef MAP_FAILED
+#    define MAP_FAILED ((void *) -1)
+#  endif
+
 #elif defined(NCBI_OS_MAC)
 #  include <corelib/ncbi_os_mac.hpp>
 #  include <Script.h>
 #  include <Gestalt.h>
 #  include <Folders.h>
-#endif
+
+#endif  /* NCBI_OS_MSWIN, NCBI_OS_UNIX, NCBI_OS_MAC */
 
 
 BEGIN_NCBI_SCOPE
@@ -1170,12 +1179,148 @@ bool CDir::Remove(EDirRemoveMode mode) const
 }
 
 
+//////////////////////////////////////////////////////////////////////////////
+// CMemoryFile
+
+
+// Platform-dependent memory file handle definition
+struct SMemoryFileHandle {
+#if defined(NCBI_OS_MSWIN)
+    HANDLE  hMap;
+#else
+    int     hDummy;
+#endif
+};
+
+
+bool CMemoryFile::IsSupported(void)
+{
+#if defined(NCBI_OS_MAC)
+    return false;
+#else
+    return true;
+#endif
+}
+
+
+CMemoryFile::CMemoryFile(const string& file_name)
+    : m_Handle(0), m_Size(-1), m_DataPtr(0)
+{
+    x_Map(file_name);
+
+    if (GetSize() < 0) {
+        throw runtime_error("CMemoryFile() -- failed to map file to memory");
+    }
+}
+
+
+CMemoryFile::~CMemoryFile(void)
+{
+    Unmap();
+}
+
+
+void CMemoryFile::x_Map(const string& file_name)
+{
+    if ( !IsSupported() )
+        return;
+
+    m_Handle = new SMemoryFileHandle();
+
+    for (;;) { // quasi-TRY block
+
+        CFile file(file_name);
+        m_Size = file.GetLength();
+
+        if (m_Size < 0)
+            break;
+
+        // Special case
+        if (m_Size == 0)
+            return;
+	
+#if defined(NCBI_OS_MSWIN)
+        // Name of a file-mapping object cannot contain '\'
+        string x_name = NStr::Replace(file_name, "\\", "/");
+        m_Handle->hMap = OpenFileMapping(FILE_MAP_READ, false, x_name.c_str());
+        if ( !m_Handle->hMap ) { 
+            // If failed to attach to an existing file-mapping object then
+            // create a new one (based on the specified file)
+            HANDLE hFile = CreateFile(x_name.c_str(), GENERIC_READ, 
+                                      FILE_SHARE_READ, NULL, OPEN_EXISTING, 
+                                      FILE_ATTRIBUTE_NORMAL, NULL);
+            if (hFile == INVALID_HANDLE_VALUE)
+                break;
+
+            m_Handle->hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY,
+                                               0, 0, x_name.c_str());
+            CloseHandle(hFile);
+            if ( !m_Handle->hMap )
+                break;
+        }
+        m_DataPtr = MapViewOfFile(m_Handle->hMap, FILE_MAP_READ,
+                                  0, 0, m_Size);
+        if ( !m_DataPtr ) {
+            CloseHandle(m_Handle->hMap);
+            break;
+        }
+
+#elif defined(NCBI_OS_UNIX)
+        int fd = open(file_name.c_str(), O_RDONLY);
+        if (fd < 0)
+            break;
+        m_DataPtr = mmap(0, m_Size, PROT_READ, MAP_SHARED, fd, 0);
+        close(fd);
+        if (m_DataPtr == MAP_FAILED)
+            break;
+#endif
+
+        // Success
+        return;
+    }
+
+    // Error; cleanup
+    delete m_Handle;
+    m_Handle = 0;
+    m_Size = -1;
+}
+
+
+bool CMemoryFile::Unmap(void)
+{
+    // If file is not mapped do nothing
+    if ( !m_Handle )
+        return true;
+
+#if defined(NCBI_OS_MSWIN)
+    bool status = (UnmapViewOfFile(m_DataPtr) != 0);
+    if ( status  &&  m_Handle->hMap )
+        status = (CloseHandle(m_Handle->hMap) != 0);
+
+#elif defined(NCBI_OS_UNIX)
+    bool status = (munmap((char*) m_DataPtr, m_Size) == 0);
+
+#endif
+
+    delete m_Handle;
+
+    // Reinitialize members
+    m_Handle = 0;
+    m_DataPtr = 0;
+    m_Size = -1;
+    return status;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2002/04/01 18:49:54  ivanov
+ * Added class CMemoryFile. Added including <windows.h> under MS Windows
+ *
  * Revision 1.19  2002/03/25 17:08:17  ucko
  * Centralize treatment of Cygwin as Unix rather than Windows in configure.
  *
