@@ -237,7 +237,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                 aln_seq = new CAlnMixSeq();
                 m_SeqIds[seq_id] = aln_seq;
                 aln_seq->m_SeqId = seq_id;
-                aln_seq->m_DS_Count = 0;
+                aln_seq->m_DsCnt = 0;
 
                 // add this sequence
                 m_Seqs.push_back(aln_seq);
@@ -283,23 +283,23 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
         // Create an additional sequence, pointed by m_AntoherRow,
         // if the row index differs.
         if (m_AddFlags & fPreserveRows) {
-            int row_index = aln_seq->m_RowIndex;
+            int row_index = aln_seq->m_RowIdx;
             if (row_index == -1) {
                 // initialization
-                aln_seq->m_RowIndex = row;
+                aln_seq->m_RowIdx = row;
             } else while (row_index != row) {
                 if (aln_seq->m_AnotherRow) {
                     aln_seq   = aln_seq->m_AnotherRow;
-                    row_index = aln_seq->m_RowIndex;
+                    row_index = aln_seq->m_RowIdx;
                 } else {
                     CRef<CAlnMixSeq> another_row (new CAlnMixSeq);
 
                     another_row->m_BioseqHandle = aln_seq->m_BioseqHandle;
                     another_row->m_SeqId        = aln_seq->m_SeqId;
                     another_row->m_Width        = aln_seq->m_Width;
-                    another_row->m_SeqIndex     = aln_seq->m_SeqIndex;
-                    another_row->m_DSIndex      = ds_index;
-                    another_row->m_RowIndex     = row;
+                    another_row->m_SeqIdx       = aln_seq->m_SeqIdx;
+                    another_row->m_DsIdx        = ds_index;
+                    another_row->m_RowIdx       = row;
 
                     m_Seqs.push_back(another_row);
 
@@ -310,7 +310,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
             }
         }
 
-        aln_seq->m_DS_Count++;
+        aln_seq->m_DsCnt++;
         ds_seq.push_back(aln_seq);
     }
 
@@ -360,7 +360,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                         match->m_AlnSeq2 = aln_seq2;
                         match->m_Start2 = start2;
                         match->m_Len = len;
-                        match->m_DSIndex = ds_index;
+                        match->m_DsIdx = ds_index;
 
                         // determine the strand
                         match->m_StrandsDiffer = false;
@@ -496,7 +496,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                     match->m_Start2 = 0;
                     match->m_Len = len;
                     match->m_StrandsDiffer = false;
-                    match->m_DSIndex = m_InputDSs.size();
+                    match->m_DsIdx = m_InputDSs.size();
                     m_Matches.push_back(match);
                 }
             }
@@ -521,7 +521,7 @@ void CAlnMix::x_Merge()
 
         unsigned int ds_cnt;
         NON_CONST_ITERATE (TSeqs, it, m_Seqs){
-            ds_cnt = (*it)->m_DS_Count;
+            ds_cnt = (*it)->m_DsCnt;
             if (ds_cnt > 1) {
                 m_IndependentDSs = false;
             }
@@ -542,7 +542,7 @@ void CAlnMix::x_Merge()
     {{
         int seq_idx=0;
         NON_CONST_ITERATE (TSeqs, seq_i, m_Seqs) {
-            (*seq_i)->m_SeqIndex = seq_idx++;
+            (*seq_i)->m_SeqIdx = seq_idx++;
         }
     }}
 
@@ -689,7 +689,7 @@ void CAlnMix::x_Merge()
             if ( !first_refseq  &&  m_MergeFlags & fQuerySeqMergeOnly) {
                 bool proper_row_found = false;
                 while (true) {
-                    if (seq1->m_DSIndex == match->m_DSIndex) {
+                    if (seq1->m_DsIdx == match->m_DsIdx) {
                         proper_row_found = true;
                         break;
                     } else {
@@ -779,13 +779,13 @@ void CAlnMix::x_Merge()
                 //create the first one
                 seg = new CAlnMixSegment;
                 seg->m_Len = len;
-                seg->m_DSIndex = match->m_DSIndex;
+                seg->m_DsIdx = match->m_DsIdx;
                 starts[start1] = seg;
                 seg->m_StartIts[seq1] = 
                     lo_start_i = hi_start_i = starts.begin();
 
                 if (m_MergeFlags & fQuerySeqMergeOnly) {
-                    seq2->m_DSIndex = match->m_DSIndex;
+                    seq2->m_DsIdx = match->m_DsIdx;
                 }
                 // DONE!
             } else {
@@ -815,7 +815,7 @@ void CAlnMix::x_Merge()
                         // create the second seg
                         seg = new CAlnMixSegment;
                         seg->m_Len = len2;
-                        seg->m_DSIndex = match->m_DSIndex;
+                        seg->m_DsIdx = match->m_DsIdx;
                         starts[start1] = seg;
                         
                         // create rows info
@@ -948,12 +948,12 @@ void CAlnMix::x_Merge()
                         //       x--..
                         // x--------..
                         seg->m_Len = (start_i->first - start) / width1;
-                        seg->m_DSIndex = match->m_DSIndex;
+                        seg->m_DsIdx = match->m_DsIdx;
                     } else {
                         //       x-----)
                         // x---)
                         seg->m_Len = curr_len;
-                        seg->m_DSIndex = match->m_DSIndex;
+                        seg->m_DsIdx = match->m_DsIdx;
                         hi_start_i = start_i;
                         if (hi_start_i != starts.begin()) {
                             hi_start_i--; // DONE!
@@ -994,9 +994,9 @@ void CAlnMix::x_Merge()
                         row->m_SeqId = seq2->m_SeqId;
                         row->m_Width = seq2->m_Width;
                         row->m_Frame = start2 % 3;
-                        row->m_SeqIndex = seq2->m_SeqIndex;
+                        row->m_SeqIdx = seq2->m_SeqIdx;
                         if (m_MergeFlags & fQuerySeqMergeOnly) {
-                            row->m_DSIndex = match->m_DSIndex;
+                            row->m_DsIdx = match->m_DsIdx;
                         }
                         m_ExtraRows.push_back(row);
                         row->m_ExtraRowIdx = seq2->m_ExtraRowIdx + 1;
@@ -1134,9 +1134,9 @@ CAlnMix::x_SetSeqFrame(CAlnMixMatch* match, CAlnMixSeq*& seq)
                 new_seq->m_PositiveStrand = seq->m_PositiveStrand;
                 new_seq->m_Width = seq->m_Width;
                 new_seq->m_Frame = frame;
-                new_seq->m_SeqIndex = seq->m_SeqIndex;
+                new_seq->m_SeqIdx = seq->m_SeqIdx;
                 if (m_MergeFlags & fQuerySeqMergeOnly) {
-                    new_seq->m_DSIndex = match->m_DSIndex;
+                    new_seq->m_DsIdx = match->m_DsIdx;
                 }
                 m_ExtraRows.push_back(new_seq);
                 new_seq->m_ExtraRowIdx = seq->m_ExtraRowIdx + 1;
@@ -1164,14 +1164,14 @@ CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
 
     // subject sequences go on separate rows if requested
     if (m_MergeFlags & fQuerySeqMergeOnly) {
-        if (seq2->m_DSIndex) {
-            if (seq2->m_DSIndex == match->m_DSIndex) {
+        if (seq2->m_DsIdx) {
+            if (seq2->m_DsIdx == match->m_DsIdx) {
                 return eSecondRowFitsOk;
             } else {
                 return eForceSeparateRow;
             }
         } else {
-            seq2->m_DSIndex = match->m_DSIndex;
+            seq2->m_DsIdx = match->m_DsIdx;
             return eSecondRowFitsOk;
         }
     }
@@ -1414,9 +1414,9 @@ void CAlnMix::x_CreateRowsVector()
     NON_CONST_ITERATE (TSeqs, i, m_Seqs) {
         CRef<CAlnMixSeq>& seq = *i;
         m_Rows.push_back(seq);
-        seq->m_RowIndex = count++;
+        seq->m_RowIdx = count++;
         while ((seq = seq->m_ExtraRow) != NULL ) {
-            seq->m_RowIndex = count++;
+            seq->m_RowIdx = count++;
             m_Rows.push_back(seq);
         }
     }
@@ -1443,9 +1443,9 @@ void CAlnMix::x_CreateSegmentsVector()
             string errstr =
                 string("CAlnMix::x_CreateSegmentsVector():") +
                 " Internal error: no starts for row " +
-                NStr::IntToString(row->m_RowIndex) +
+                NStr::IntToString(row->m_RowIdx) +
                 " (seq " +
-                NStr::IntToString(row->m_SeqIndex) + ").";
+                NStr::IntToString(row->m_SeqIdx) + ").";
             NCBI_THROW(CAlnException, eMergeFailure, errstr);
 #endif
         }
@@ -1467,7 +1467,7 @@ void CAlnMix::x_CreateSegmentsVector()
             string errstr =
                 string("CAlnMix::x_CreateSegmentsVector():") +
                 " Internal error: no starts for row " +
-                NStr::IntToString(row->m_RowIndex) + ".";
+                NStr::IntToString(row->m_RowIdx) + ".";
             NCBI_THROW(CAlnException, eMergeFailure, errstr);
 #endif
         }
@@ -1519,16 +1519,16 @@ void CAlnMix::x_CreateSegmentsVector()
             break; // from the main loop
         }
 #if _ALNMGR_TRACE
-        cerr << "refseq is on row " << refseq->m_RowIndex
-             << " seq " << refseq->m_SeqIndex << "\n";
+        cerr << "refseq is on row " << refseq->m_RowIdx
+             << " seq " << refseq->m_SeqIdx << "\n";
 #endif
         // for each refseq segment
         while (refseq->m_StartIt != refseq->m_Starts.end()) {
             stack< CRef<CAlnMixSegment> > seg_stack;
             seg_stack.push(refseq->m_StartIt->second);
 #if _ALNMGR_TRACE
-            cerr << "  [row " << refseq->m_RowIndex
-                 << " seq " << refseq->m_SeqIndex
+            cerr << "  [row " << refseq->m_RowIdx
+                 << " seq " << refseq->m_SeqIdx
                  << " start " << refseq->m_StartIt->first
                  << " was pushed into stack\n";
 #endif
@@ -1552,8 +1552,8 @@ void CAlnMix::x_CreateSegmentsVector()
                             string errstr =
                                 string("CAlnMix::x_CreateSegmentsVector():")
                                 + " Internal error: Integrity broken" +
-                                " row=" + NStr::IntToString(row->m_RowIndex) +
-                                " seq=" + NStr::IntToString(row->m_SeqIndex)
+                                " row=" + NStr::IntToString(row->m_RowIdx) +
+                                " seq=" + NStr::IntToString(row->m_SeqIdx)
                                 + " row->m_StartIt->first="
                                 + NStr::IntToString(row->m_StartIt->first)
                                 + " start_its_i->second->first=" +
@@ -1567,8 +1567,8 @@ void CAlnMix::x_CreateSegmentsVector()
 #endif
                         seg_stack.push(row->m_StartIt->second);
 #if _ALNMGR_TRACE
-                        cerr << "  [row " << row->m_RowIndex
-                             << " seq " << row->m_SeqIndex
+                        cerr << "  [row " << row->m_RowIdx
+                             << " seq " << row->m_SeqIdx
                              << " start " << row->m_StartIt->first
                              << " (left of start " << start_its_i->second->first << ") "
                              << "was pushed into stack\n";
@@ -1603,8 +1603,8 @@ void CAlnMix::x_CreateSegmentsVector()
                             string errstr =
                                 string("CAlnMix::x_CreateSegmentsVector():")
                                 + " Internal error: Integrity broken" +
-                                " row=" + NStr::IntToString(row->m_RowIndex) +
-                                " seq=" + NStr::IntToString(row->m_SeqIndex)
+                                " row=" + NStr::IntToString(row->m_RowIdx) +
+                                " seq=" + NStr::IntToString(row->m_SeqIdx)
                                 + " row->m_StartIt->first="
                                 + NStr::IntToString(row->m_StartIt->first)
                                 + " start_its_i->second->first=" +
@@ -1687,7 +1687,7 @@ void CAlnMix::x_CreateSegmentsVector()
             ITERATE (CAlnMixSegment::TStartIterators, start_its_i,
                      (*seg_i)->m_StartIts) {
                 CAlnMixSeq * row = start_its_i->first;
-                rowidx = row->m_RowIndex;
+                rowidx = row->m_RowIdx;
                 TSignedSeqPos& prev_start = starts[rowidx];
                 TSeqPos& prev_len = lens[rowidx];
                 TSeqPos start = start_its_i->second->first;
@@ -2006,7 +2006,7 @@ void CAlnMix::x_CreateDenseg()
         // starts
         ITERATE (CAlnMixSegment::TStartIterators, start_its_i,
                 (*seg_i)->m_StartIts) {
-            starts[offset + start_its_i->first->m_RowIndex] =
+            starts[offset + start_its_i->first->m_RowIdx] =
                 start_its_i->second->first;
         }
 
@@ -2126,7 +2126,7 @@ void CAlnMix::x_IdentifyAlnMixSeq(CRef<CAlnMixSeq>& aln_seq, const CSeq_id& seq_
         CRef<CSeq_id> seq_id(new CSeq_id);
         seq_id->Assign(*aln_seq->m_BioseqHandle->GetSeqId());
         aln_seq->m_SeqId = seq_id;
-        aln_seq->m_DS_Count = 0;
+        aln_seq->m_DsCnt = 0;
 
         // add this sequence
         m_Seqs.push_back(aln_seq);
@@ -2183,14 +2183,14 @@ void CAlnMix::x_SegmentStartItsConsistencyCheck(const CAlnMixSegment& seg,
                 + " [match_idx=" + NStr::IntToString(m_MatchIdx) + "]"
                 + " The internal consistency check failed for"
                 + " the segment containing ["
-                + " row=" + NStr::IntToString((*st_it_i).first->m_RowIndex)
-                + " seq=" + NStr::IntToString((*st_it_i).first->m_SeqIndex)
+                + " row=" + NStr::IntToString((*st_it_i).first->m_RowIdx)
+                + " seq=" + NStr::IntToString((*st_it_i).first->m_SeqIdx)
                 + " strand=" +
                 ((*st_it_i).first->m_PositiveStrand ? "plus" : "minus")
                 + " start=" + NStr::IntToString((*st_it_i).second->first)
                 + "] aligned to: ["
-                + " row=" + NStr::IntToString(seq.m_RowIndex)
-                + " seq=" + NStr::IntToString(seq.m_SeqIndex)
+                + " row=" + NStr::IntToString(seq.m_RowIdx)
+                + " seq=" + NStr::IntToString(seq.m_SeqIdx)
                 + " strand=" +
                 (seq.m_PositiveStrand ? "plus" : "minus")
                 + " start=" + NStr::IntToString(start)
@@ -2208,6 +2208,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.115  2004/11/02 18:31:01  todorov
+* Changed (mostly shortened) a few internal members' names
+* for convenience and consistency
+*
 * Revision 1.114  2004/11/02 18:04:36  todorov
 * CAlnMixSeq += m_ExtraRowIdx
 * x_CreateSegmentsVector() += conditionally compiled (_ALNMGR_TRACE) sections
@@ -2233,7 +2237,7 @@ END_NCBI_SCOPE
 * + truncate segments of sequences on multiple frames
 *
 * Revision 1.107  2004/09/23 18:55:31  todorov
-* 1) avoid an introduced m_DS_Count mismatch; 2) + reeval x_SecondRowFits for some cases
+* 1) avoid an introduced m_DsCnt mismatch; 2) + reeval x_SecondRowFits for some cases
 *
 * Revision 1.106  2004/09/22 17:00:53  todorov
 * +CAlnMix::fPreserveRows
@@ -2251,7 +2255,7 @@ END_NCBI_SCOPE
 * extended exception msg in case unable to load data for segment
 *
 * Revision 1.101  2004/06/28 20:09:27  todorov
-* Initialize m_DSIndex. Also bug fix when shifting to extra row
+* Initialize m_DsIdx. Also bug fix when shifting to extra row
 *
 * Revision 1.100  2004/06/23 22:22:23  todorov
 * Fixed condition logic

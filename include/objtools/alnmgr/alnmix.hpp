@@ -214,7 +214,7 @@ public:
         
     TSeqPos         m_Len;
     TStartIterators m_StartIts;
-    int             m_DSIndex; // used by the truncate algorithm
+    int             m_DsIdx; // used by the truncate algorithm
 };
 
 
@@ -222,7 +222,7 @@ class CAlnMixSeq : public CObject
 {
 public:
     CAlnMixSeq(void) 
-        : m_DS_Count(0),
+        : m_DsCnt(0),
           m_Score(0),
           m_StrandScore(0),
           m_Width(1),
@@ -231,14 +231,14 @@ public:
           m_ExtraRow(0),
           m_ExtraRowIdx(0),
           m_AnotherRow(0),
-          m_DSIndex(0),
-          m_RowIndex(-1)
+          m_DsIdx(0),
+          m_RowIdx(-1)
     {};
 
     typedef CAlnMixSegment::TStarts TStarts;
     typedef list<CAlnMixMatch *>    TMatchList;
 
-    int                   m_DS_Count;
+    int                   m_DsCnt;
     const CBioseq_Handle* m_BioseqHandle;
     CRef<CSeq_id>         m_SeqId;
     int                   m_Score;
@@ -252,9 +252,9 @@ public:
     CAlnMixSeq *          m_ExtraRow;
     int                   m_ExtraRowIdx;
     CAlnMixSeq *          m_AnotherRow;
-    int                   m_SeqIndex;
-    int                   m_DSIndex;
-    int                   m_RowIndex;
+    int                   m_SeqIdx;
+    int                   m_DsIdx;
+    int                   m_RowIdx;
     TStarts::iterator     m_StartIt;
     TMatchList            m_MatchList;
 
@@ -275,14 +275,14 @@ class CAlnMixMatch : public CObject
 public:
     CAlnMixMatch(void)
         : m_Score(0), m_Start1(0), m_Start2(0),
-          m_Len(0), m_StrandsDiffer(false), m_DSIndex(0)
+          m_Len(0), m_StrandsDiffer(false), m_DsIdx(0)
     {};
         
     int                              m_Score;
     CAlnMixSeq                       * m_AlnSeq1, * m_AlnSeq2;
     TSeqPos                          m_Start1, m_Start2, m_Len;
     bool                             m_StrandsDiffer;
-    int                              m_DSIndex;
+    int                              m_DsIdx;
     CAlnMixSeq::TMatchList::iterator m_MatchIter1, m_MatchIter2;
 };
 
@@ -349,6 +349,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2004/11/02 18:32:15  todorov
+* Changed (mostly shortened) a few internal members' names
+* for convenience and consistency
+*
 * Revision 1.46  2004/11/02 18:02:34  todorov
 * CAlnMixSeq += m_ExtraRowIdx
 *
