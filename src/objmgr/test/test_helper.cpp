@@ -913,6 +913,94 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     CHECK_WRAP();
     CConstRef<CSeqMap> seq_map(&handle.GetSeqMap());
     TSeqPos len = 0;
+    _TRACE("ProcessBioseq("<<id.AsFastaString()<<") - depth-restricted");
+    // Iterate seq-map except the last element
+    len = 0;
+    CSeqMap::const_iterator seg(seq_map, &scope, SSeqMapSelector()
+        .SetResolveCount(2));
+    vector<CSeqMap::const_iterator> itrs;
+    for ( ; seg != seq_map->end(&scope); ++seg ) {
+        _ASSERT(seg);
+        itrs.push_back(seg);
+        switch (seg.GetType()) {
+        case CSeqMap::eSeqData:
+            _TRACE('@'<<len<<": seqData("<<seg.GetLength()<<")");
+            len += seg.GetLength();
+            break;
+        case CSeqMap::eSeqRef:
+            _TRACE('@'<<len<<": seqRef("<<seg.GetLength()<<", id="<<seg.GetRefSeqid().AsString()<<", pos="<<seg.GetRefPosition()<<", minus="<<seg.GetRefMinusStrand()<<")");
+            len += seg.GetLength();
+            break;
+        case CSeqMap::eSeqGap:
+            _TRACE('@'<<len<<": seqGap("<<seg.GetLength()<<")");
+            len += seg.GetLength();
+            break;
+        case CSeqMap::eSeqEnd:
+            _ASSERT("Unexpected END segment" && 0);
+            break;
+        default:
+            _ASSERT("Unexpected segment type" && 0);
+            break;
+        }
+    }
+    _ASSERT(!seg);
+    for ( int i = itrs.size()-1; i >= 0; --i ) {
+        --seg;
+        _ASSERT(seg);
+        _ASSERT(seg == itrs[i]);
+    }
+    --seg;
+    _ASSERT(!seg);
+    CHECK_END("get restricted sequence map");
+
+    CHECK_WRAP();
+    CConstRef<CSeqMap> seq_map(&handle.GetSeqMap());
+    TSeqPos len = 0;
+    _TRACE("ProcessBioseq("<<id.AsFastaString()<<") - TSE-restricted");
+    // Iterate seq-map except the last element
+    len = 0;
+    CSeqMap::const_iterator seg(seq_map, &scope, SSeqMapSelector()
+        .SetTSE(&handle.GetTopLevelSeqEntry())
+        .SetResolveCount(kInvalidSeqPos)
+        .SetFlags(SSeqMapSelector::fFindAny | SSeqMapSelector::fFindTSERef));
+    vector<CSeqMap::const_iterator> itrs;
+    for ( ; seg != seq_map->end(&scope); ++seg ) {
+        _ASSERT(seg);
+        itrs.push_back(seg);
+        switch (seg.GetType()) {
+        case CSeqMap::eSeqData:
+            _TRACE('@'<<len<<": seqData("<<seg.GetLength()<<")");
+            len += seg.GetLength();
+            break;
+        case CSeqMap::eSeqRef:
+            _TRACE('@'<<len<<": seqRef("<<seg.GetLength()<<", id="<<seg.GetRefSeqid().AsString()<<", pos="<<seg.GetRefPosition()<<", minus="<<seg.GetRefMinusStrand()<<")");
+            len += seg.GetLength();
+            break;
+        case CSeqMap::eSeqGap:
+            _TRACE('@'<<len<<": seqGap("<<seg.GetLength()<<")");
+            len += seg.GetLength();
+            break;
+        case CSeqMap::eSeqEnd:
+            _ASSERT("Unexpected END segment" && 0);
+            break;
+        default:
+            _ASSERT("Unexpected segment type" && 0);
+            break;
+        }
+    }
+    _ASSERT(!seg);
+    for ( int i = itrs.size()-1; i >= 0; --i ) {
+        --seg;
+        _ASSERT(seg);
+        _ASSERT(seg == itrs[i]);
+    }
+    --seg;
+    _ASSERT(!seg);
+    CHECK_END("get restricted sequence map");
+
+    CHECK_WRAP();
+    CConstRef<CSeqMap> seq_map(&handle.GetSeqMap());
+    TSeqPos len = 0;
     _TRACE("ProcessBioseq("<<id.AsFastaString()<<") seq_len="<<seq_len<<") resolved:");
     // Iterate seq-map except the last element
     len = 0;
@@ -1274,6 +1362,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2003/07/14 21:13:27  grichenk
+* Added possibility to resolve seq-map iterator withing a single TSE
+* and to skip intermediate references during this resolving.
+*
 * Revision 1.41  2003/06/12 18:39:46  vasilche
 * Chech CSeqVector assignment.
 *

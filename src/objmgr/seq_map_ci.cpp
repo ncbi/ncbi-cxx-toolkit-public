@@ -73,24 +73,38 @@ bool CSeqMap_CI_SegmentInfo::x_Move(bool minusStrand, CScope* scope)
 
 
 CSeqMap_CI::CSeqMap_CI(void)
-    : m_Position(kInvalidSeqPos),
-      m_Scope(0),
-      m_MaxResolveCount(0),
-      m_Flags(fDefaultFlags)
+    : m_Scope(0)
 {
+    m_Selector.SetPosition(kInvalidSeqPos)
+        .SetResolveCount(0)
+        .SetFlags(SSeqMapSelector::fDefaultFlags);
 }
 
-CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap, CScope* scope,
-                       EPosition /*byPos*/, TSeqPos pos,
-                       size_t maxResolveCount, TFlags flags)
-    : m_Position(0),
-      m_Scope(scope),
-      m_MaxResolveCount(maxResolveCount),
-      m_Flags(flags)
+CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
+                       CScope* scope,
+                       TSeqPos pos,
+                       size_t maxResolveCount,
+                       TFlags flags)
+    : m_Scope(scope)
 {
+    m_Selector
+        .SetResolveCount(maxResolveCount)
+        .SetFlags(flags);
+    if (pos >= seqMap->GetLength(scope)) {
+        // Special case - end of seq map
+        m_Selector.SetRange(seqMap->GetLength(scope), 0);
+        TSegmentInfo push;
+        push.m_SeqMap = seqMap;
+        push.m_LevelRangePos = 0;
+        push.m_LevelRangeEnd = GetPosition();
+        push.m_MinusStrand = false;
+        push.m_Index = seqMap->x_GetSegmentsCount();
+        m_Stack.push_back(push);
+        return;
+    }
     x_Push(seqMap, 0, seqMap->GetLength(scope), false, pos);
     while ( !x_Found() ) {
-        if ( !x_Push(pos - m_Position, m_MaxResolveCount > 0) ) {
+        if ( !x_Push(pos - GetPosition(), m_Selector.m_MaxResolveCount > 0) ) {
             x_SettleNext();
             break;
         }
@@ -98,19 +112,33 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap, CScope* scope,
 }
 
 
-CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap, CScope* scope,
-                       EPosition /*byPos*/, TSeqPos pos,
+CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
+                       CScope* scope,
+                       TSeqPos pos,
                        ENa_strand strand,
-                       size_t maxResolveCount, TFlags flags)
-    : m_Position(0),
-      m_Scope(scope),
-      m_MaxResolveCount(maxResolveCount),
-      m_Flags(flags)
+                       size_t maxResolveCount,
+                       TFlags flags)
+    : m_Scope(scope)
 {
+    m_Selector
+        .SetResolveCount(maxResolveCount)
+        .SetFlags(flags);
+    if (pos >= seqMap->GetLength(scope)) {
+        // Special case - end of seq map
+        m_Selector.SetRange(seqMap->GetLength(scope), 0);
+        TSegmentInfo push;
+        push.m_SeqMap = seqMap;
+        push.m_LevelRangePos = 0;
+        push.m_LevelRangeEnd = GetPosition();
+        push.m_MinusStrand = false;
+        push.m_Index = seqMap->x_GetSegmentsCount();
+        m_Stack.push_back(push);
+        return;
+    }
     x_Push(seqMap, 0, seqMap->GetLength(scope),
            strand == eNa_strand_minus, pos);
     while ( !x_Found() ) {
-        if ( !x_Push(pos - m_Position, m_MaxResolveCount > 0) ) {
+        if ( !x_Push(pos - GetPosition(), m_Selector.m_MaxResolveCount > 0) ) {
             x_SettleNext();
             break;
         }
@@ -118,49 +146,47 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap, CScope* scope,
 }
 
 
-CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap, CScope* scope,
-                       EBegin /*toBegin*/,
-                       size_t maxResolveCount, TFlags flags)
-    : m_Position(0),
-      m_Scope(scope),
-      m_MaxResolveCount(maxResolveCount),
-      m_Flags(flags)
+CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
+                       CScope* scope,
+                       SSeqMapSelector& selector,
+                       ENa_strand strand)
+    : m_Scope(scope),
+      m_Selector(selector)
 {
-    x_Push(seqMap, 0, seqMap->GetLength(scope), false, 0);
-    x_SettleNext();
+    TSeqPos pos = GetPosition();
+    x_Push(seqMap,
+           m_Selector.m_Position,
+           m_Selector.m_Length,
+           strand == eNa_strand_minus, 0);
+    while ( !x_Found() ) {
+        if ( !x_Push(pos - GetPosition(), m_Selector.m_MaxResolveCount > 0) ) {
+            x_SettleNext();
+            break;
+        }
+    }
 }
 
 
-CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap, CScope* scope,
-                       EEnd /*toEnd*/,
-                       size_t maxResolveCount, TFlags flags)
-    : m_Position(seqMap->GetLength(scope)),
-      m_Length(0),
-      m_Scope(scope),
-      m_MaxResolveCount(maxResolveCount),
-      m_Flags(flags)
+CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
+                       CScope* scope,
+                       SSeqMapSelector& selector)
+    : m_Scope(scope),
+      m_Selector(selector)
 {
-    TSegmentInfo push;
-    push.m_SeqMap = seqMap;
-    push.m_LevelRangePos = 0;
-    push.m_LevelRangeEnd = m_Position;
-    push.m_MinusStrand = false;
-    push.m_Index = seqMap->x_GetSegmentsCount();
-    m_Stack.push_back(push);
-}
-
-
-CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap, CScope* scope,
-                       TSeqPos from, TSeqPos length, ENa_strand strand,
-                       EBegin /*toBegin*/,
-                       size_t maxResolveCount, TFlags flags)
-    : m_Position(0),
-      m_Scope(scope),
-      m_MaxResolveCount(maxResolveCount),
-      m_Flags(flags)
-{
-    x_Push(seqMap, from, length, strand == eNa_strand_minus, 0);
-    x_SettleNext();
+    TSeqPos pos = GetPosition();
+    if (m_Selector.m_Length == kInvalidSeqPos) {
+        m_Selector.SetRange(pos, seqMap->GetLength(scope));
+    }
+    x_Push(seqMap,
+           m_Selector.m_Position,
+           m_Selector.m_Length,
+           false, 0);
+    while ( !x_Found() ) {
+        if ( !x_Push(pos - GetPosition(), m_Selector.m_MaxResolveCount > 0) ) {
+            x_SettleNext();
+            break;
+        }
+    }
 }
 
 
@@ -247,19 +273,37 @@ TSeqPos CSeqMap_CI::x_GetTopOffset(void) const
 }
 
 
+bool CSeqMap_CI::x_CanResolveRef(const CSeqMap::CSegment& seg) const
+{
+    _ASSERT(m_Selector.m_TSE);
+    _ASSERT(CSeqMap::ESegmentType(seg.m_SegType) == CSeqMap::eSeqRef);
+    CSeq_id_Handle id = GetRefSeqid();
+    CConstRef<CTSE_Info> tse_info =
+        x_GetSeqMap().m_Source->GetTSEInfo(*m_Selector.m_TSE);
+    return bool(tse_info)  &&
+        tse_info->ContainsSeqid(id);
+}
+
+
 bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
 {
     const TSegmentInfo& info = x_GetSegmentInfo();
     const CSeqMap::CSegment& seg = info.x_GetSegment();
     CSeqMap::ESegmentType type = CSeqMap::ESegmentType(seg.m_SegType);
-    if ( !(type == CSeqMap::eSeqSubMap ||
-           type == CSeqMap::eSeqRef && resolveExternal) ) {
+    if ( !(type == CSeqMap::eSeqSubMap  ||
+           type == CSeqMap::eSeqRef  &&  resolveExternal) ) {
+        return false;
+    }
+    // Check TSE limit
+    if ( m_Selector.m_TSE
+        &&  !x_CanResolveRef(seg)
+        &&  m_Selector.m_MaxResolveCount > 0 ) {
         return false;
     }
     x_Push(info.m_SeqMap->x_GetSubSeqMap(seg, GetScope(), resolveExternal),
            GetRefPosition(), GetLength(), GetRefMinusStrand(), pos);
     if ( type == CSeqMap::eSeqRef )
-        --m_MaxResolveCount;
+        --m_Selector.m_MaxResolveCount;
     return true;
 }
 
@@ -287,9 +331,9 @@ void CSeqMap_CI::x_Push(const CConstRef<CSeqMap>& seqMap,
     seqMap->x_GetSegmentLength(push.m_Index, GetScope());
     m_Stack.push_back(push);
     // update position
-    m_Position += x_GetTopOffset();
+    m_Selector.m_Position += x_GetTopOffset();
     // update length
-    m_Length = push.x_CalcLength();
+    m_Selector.m_Length = push.x_CalcLength();
 }
 
 
@@ -299,12 +343,12 @@ bool CSeqMap_CI::x_Pop(void)
         return false;
     }
 
-    m_Position -= x_GetTopOffset();
+    m_Selector.m_Position -= x_GetTopOffset();
     m_Stack.pop_back();
     if ( x_GetSegment().m_SegType == CSeqMap::eSeqRef ) {
-        ++m_MaxResolveCount;
+        ++m_Selector.m_MaxResolveCount;
     }
-    m_Length = x_GetSegmentInfo().x_CalcLength();
+    m_Selector.m_Length = x_GetSegmentInfo().x_CalcLength();
     return true;
 }
 
@@ -312,13 +356,13 @@ bool CSeqMap_CI::x_Pop(void)
 bool CSeqMap_CI::x_TopNext(void)
 {
     TSegmentInfo& top = x_GetSegmentInfo();
-    m_Position += m_Length;
+    m_Selector.m_Position += m_Selector.m_Length;
     if ( !top.x_Move(top.m_MinusStrand, GetScope()) ) {
-        m_Length = 0;
+        m_Selector.m_Length = 0;
         return false;
     }
     else {
-        m_Length = x_GetSegmentInfo().x_CalcLength();
+        m_Selector.m_Length = x_GetSegmentInfo().x_CalcLength();
         return true;
     }
 }
@@ -328,12 +372,12 @@ bool CSeqMap_CI::x_TopPrev(void)
 {
     TSegmentInfo& top = x_GetSegmentInfo();
     if ( !top.x_Move(!top.m_MinusStrand, GetScope()) ) {
-        m_Length = 0;
+        m_Selector.m_Length = 0;
         return false;
     }
     else {
-        m_Length = x_GetSegmentInfo().x_CalcLength();
-        m_Position -= m_Length;
+        m_Selector.m_Length = x_GetSegmentInfo().x_CalcLength();
+        m_Selector.m_Position -= m_Selector.m_Length;
         return true;
     }
 }
@@ -356,7 +400,8 @@ bool CSeqMap_CI::x_Prev(void)
 {
     if ( !x_TopPrev() )
         return x_Pop();
-    while ( x_Push(m_Length-1, m_MaxResolveCount > 0) ) {
+    while ( x_Push(m_Selector.m_Length-1,
+        m_Selector.m_MaxResolveCount > 0) ) {
     }
     return true;
 }
@@ -366,11 +411,21 @@ bool CSeqMap_CI::x_Found(void) const
 {
     switch ( x_GetSegment().m_SegType ) {
     case CSeqMap::eSeqRef:
-        return (m_Flags & fFindRef) != 0 || m_MaxResolveCount <= 0;
+        if (GetFlags() & SSeqMapSelector::fFindTSERef)
+        {
+            const TSegmentInfo& info = x_GetSegmentInfo();
+            const CSeqMap::CSegment& seg = info.x_GetSegment();
+            return m_Selector.m_MaxResolveCount <= 0
+                ||  (m_Selector.m_TSE  &&  !x_CanResolveRef(seg));
+        }
+        else {
+            return (GetFlags() & SSeqMapSelector::fFindRef) != 0
+                || m_Selector.m_MaxResolveCount <= 0;
+        }
     case CSeqMap::eSeqData:
-        return (m_Flags & fFindData) != 0;
+        return (GetFlags() & SSeqMapSelector::fFindData) != 0;
     case CSeqMap::eSeqGap:
-        return (m_Flags & fFindGap) != 0;
+        return (GetFlags() & SSeqMapSelector::fFindGap) != 0;
     case CSeqMap::eSeqSubMap:
         return false; // always skip submaps
     default:
@@ -382,7 +437,7 @@ bool CSeqMap_CI::x_Found(void) const
 bool CSeqMap_CI::x_SettleNext(void)
 {
     while ( !x_Found() ) {
-        if ( !x_Next(m_MaxResolveCount > 0) )
+        if ( !x_Next(m_Selector.m_MaxResolveCount > 0) )
             return false;
     }
     return true;
@@ -401,8 +456,9 @@ bool CSeqMap_CI::x_SettlePrev(void)
 
 bool CSeqMap_CI::Next(bool resolveCurrentExternal)
 {
-    return x_Next(resolveCurrentExternal && m_MaxResolveCount > 0) &&
-        x_SettleNext();
+    return x_Next(resolveCurrentExternal
+        && m_Selector.m_MaxResolveCount > 0)
+        && x_SettleNext();
 }
 
 
@@ -414,7 +470,7 @@ bool CSeqMap_CI::Prev(void)
 
 void CSeqMap_CI::SetFlags(TFlags flags)
 {
-    m_Flags = flags;
+    m_Selector.SetFlags(flags);
 }
 
 
@@ -425,6 +481,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/07/14 21:13:26  grichenk
+* Added possibility to resolve seq-map iterator withing a single TSE
+* and to skip intermediate references during this resolving.
+*
 * Revision 1.14  2003/06/02 16:06:38  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

@@ -388,20 +388,19 @@ bool CSeqMap::x_GetRefMinusStrand(const CSegment& seg) const
 
 CSeqMap::TSegment_CI CSeqMap::Begin(CScope* scope) const
 {
-    return TSegment_CI(CConstRef<CSeqMap>(this), scope, TSegment_CI::eBegin);
+    return TSegment_CI(CConstRef<CSeqMap>(this), scope, 0);
 }
 
 
 CSeqMap::TSegment_CI CSeqMap::End(CScope* scope) const
 {
-    return TSegment_CI(CConstRef<CSeqMap>(this), scope, TSegment_CI::eEnd);
+    return TSegment_CI(CConstRef<CSeqMap>(this), scope, GetLength(scope));
 }
 
 
 CSeqMap::TSegment_CI CSeqMap::FindSegment(TSeqPos pos, CScope* scope) const
 {
-    return TSegment_CI(CConstRef<CSeqMap>(this), scope,
-                       TSegment_CI::ePosition, pos);
+    return TSegment_CI(CConstRef<CSeqMap>(this), scope, pos);
 }
 
 
@@ -458,8 +457,7 @@ CSeqMap::const_iterator CSeqMap::begin_resolved(CScope* scope,
                                                 size_t maxResolveCount,
                                                 TFlags flags) const
 {
-    return TSegment_CI(CConstRef<CSeqMap>(this), scope,
-                       TSegment_CI::eBegin,
+    return TSegment_CI(CConstRef<CSeqMap>(this), scope, 0,
                        maxResolveCount, flags);
 }
 
@@ -469,7 +467,7 @@ CSeqMap::const_iterator CSeqMap::end_resolved(CScope* scope,
                                               TFlags flags) const
 {
     return TSegment_CI(CConstRef<CSeqMap>(this), scope,
-                       TSegment_CI::eEnd,
+                       GetLength(scope),
                        maxResolveCount, flags);
 }
 
@@ -478,8 +476,7 @@ CSeqMap::const_iterator CSeqMap::find_resolved(TSeqPos pos, CScope* scope,
                                                size_t maxResolveCount,
                                                TFlags flags) const
 {
-    return TSegment_CI(CConstRef<CSeqMap>(this), scope,
-                       TSegment_CI::ePosition, pos,
+    return TSegment_CI(CConstRef<CSeqMap>(this), scope, pos,
                        maxResolveCount, flags);
 }
 
@@ -490,7 +487,7 @@ CSeqMap::const_iterator CSeqMap::find_resolved(TSeqPos pos, CScope* scope,
                                                TFlags flags) const
 {
     return TSegment_CI(CConstRef<CSeqMap>(this), scope,
-                       TSegment_CI::ePosition, pos, strand,
+                       pos, strand,
                        maxResolveCount, flags);
 }
 
@@ -507,9 +504,11 @@ CSeqMap::ResolvedRangeIterator(CScope* scope,
         from = GetLength(scope) - from - length;
     }
     return TSegment_CI(CConstRef<CSeqMap>(this), scope,
-                       from, length, strand,
-                       TSegment_CI::eBegin,
-                       maxResolveCount, flags);
+                       SSeqMapSelector()
+                       .SetRange(from, length)
+                       .SetResolveCount(maxResolveCount)
+                       .SetFlags(flags),
+                       strand);
 }
 
 
@@ -522,9 +521,11 @@ CSeqMap::ResolvedRangeIterator(CScope* scope,
                                TFlags flags) const
 {
     return TSegment_CI(CConstRef<CSeqMap>(this), scope,
-                       from, length, strand,
-                       TSegment_CI::eBegin,
-                       maxResolveCount, flags);
+                       SSeqMapSelector()
+                       .SetRange(from, length)
+                       .SetResolveCount(maxResolveCount)
+                       .SetFlags(flags),
+                       strand);
 }
 
 
@@ -837,6 +838,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/07/14 21:13:26  grichenk
+* Added possibility to resolve seq-map iterator withing a single TSE
+* and to skip intermediate references during this resolving.
+*
 * Revision 1.43  2003/06/30 18:39:18  vasilche
 * Fixed access to uninitialized member.
 *

@@ -122,6 +122,7 @@ public:
     static void x_DropRangeMap(TAnnotSelectorMap& selMap,
                                const SAnnotTypeSelector& selector);
 
+    bool ContainsSeqid(CSeq_id_Handle id) const;
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
@@ -224,6 +225,13 @@ const CConstRef<CObject>& CTSE_Info::GetBlobId(void) const
     return m_Blob_ID;
 }
 
+inline
+bool CTSE_Info::ContainsSeqid(CSeq_id_Handle id) const
+{
+    CFastMutexGuard guard(m_BioseqsLock);
+    return m_Bioseqs.find(id) != m_Bioseqs.end();
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -231,6 +239,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/07/14 21:13:24  grichenk
+* Added possibility to resolve seq-map iterator withing a single TSE
+* and to skip intermediate references during this resolving.
+*
 * Revision 1.33  2003/06/24 14:25:18  vasilche
 * Removed obsolete CTSE_Guard class.
 * Used separate mutexes for bioseq and annot maps.

@@ -85,50 +85,102 @@ private:
     friend class CSeqMap_CI;
 };
 
-// iterator through CSeqMap
-class NCBI_XOBJMGR_EXPORT CSeqMap_CI
-{
-public:
-    // selector enums for CSeqMap_CI constructors
-    enum EBegin    { eBegin    };
-    enum EEnd      { eEnd      };
-    enum EIndex    { eIndex    };
-    enum EPosition { ePosition };
 
+class CSeq_entry;
+
+
+struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
+{
     enum EFlags {
-        fFindData = (1<<0),
-        fFindGap  = (1<<1),
-        fFindRef  = (1<<2),
+        fFindData     = (1<<0),
+        fFindGap      = (1<<1),
+        fFindRef      = (1<<2),
+        // Skip intermediate refs, show only those that can not be resolved
+        fFindTSERef   = (1<<7),
+        fFindAny      = fFindData | fFindGap | fFindRef,
         fDefaultFlags = fFindData | fFindGap
     };
     typedef int TFlags;
 
+    SSeqMapSelector()
+        : m_Position(0), m_Length(kInvalidSeqPos),
+          m_MaxResolveCount(0),
+          m_TSE(0),
+          m_Flags(fDefaultFlags) {}
+
+    SSeqMapSelector& SetPosition(TSeqPos pos)
+        {
+            m_Position = pos;
+            return *this;
+        }
+
+    SSeqMapSelector& SetRange(TSeqPos start, TSeqPos length)
+        {
+            m_Position = start;
+            m_Length = length;
+            return *this;
+        }
+
+    SSeqMapSelector& SetResolveCount(size_t res_cnt)
+        {
+            m_MaxResolveCount = res_cnt;
+            return *this;
+        }
+
+    SSeqMapSelector& SetTSE(const CSeq_entry* tse)
+        {
+            m_TSE = tse;
+            return *this;
+        }
+
+    SSeqMapSelector& SetFlags(TFlags flags)
+        {
+            m_Flags = flags;
+            return *this;
+        }
+
+private:
+    friend class CSeqMap_CI;
+
+    // position of segment in whole sequence in residues
+    TSeqPos             m_Position;
+    // length of current segment
+    TSeqPos             m_Length;
+    // maximum resolution level
+    size_t              m_MaxResolveCount;
+    // limit search to single TSE
+    const CSeq_entry*   m_TSE;
+    // return all intermediate resolved sequences
+    TFlags              m_Flags;
+};
+
+
+// iterator through CSeqMap
+class NCBI_XOBJMGR_EXPORT CSeqMap_CI
+{
+public:
+    typedef SSeqMapSelector::TFlags TFlags;
+
     CSeqMap_CI(void);
-    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap, CScope* scope,
-               EIndex byIndex, size_t index,
+    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap,
+               CScope* scope,
+               TSeqPos position,
                size_t maxResolveCount = 0,
-               TFlags flags = fDefaultFlags);
-    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap, CScope* scope,
-               EPosition byPosition, TSeqPos position,
-               size_t maxResolveCount = 0,
-               TFlags flags = fDefaultFlags);
-    CSeqMap_CI(const CConstRef<CSeqMap>& seqMap, CScope* scope,
-               EPosition byPosition, TSeqPos position,
+               TFlags flags = SSeqMapSelector::fDefaultFlags);
+    CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
+               CScope* scope,
+               TSeqPos position,
                ENa_strand strand,
-               size_t maxResolveCount, TFlags flags = fDefaultFlags);
-    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap, CScope* scope,
-               EBegin toBegin,
-               size_t maxResolveCount = 0,
-               TFlags flags = fDefaultFlags);
-    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap, CScope* scope,
-               EEnd toEnd,
-               size_t maxResolveCount = 0,
-               TFlags flags = fDefaultFlags);
-    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap, CScope* scope,
-               TSeqPos start, TSeqPos length, ENa_strand strand,
-               EBegin toBegin,
-               size_t maxResolveCount = 0,
-               TFlags flags = fDefaultFlags);
+               size_t maxResolveCount,
+               TFlags flags = SSeqMapSelector::fDefaultFlags);
+    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap,
+               CScope* scope,
+               SSeqMapSelector& selector);
+    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap,
+               CScope* scope,
+               SSeqMapSelector& selector,
+               ENa_strand strand);
+
     ~CSeqMap_CI(void);
 
     operator bool(void) const;
@@ -182,6 +234,10 @@ private:
     const TSegmentInfo& x_GetSegmentInfo(void) const;
     TSegmentInfo& x_GetSegmentInfo(void);
 
+    // Check if the current reference can be resolved in the TSE
+    // set by selector
+    bool x_CanResolveRef(const CSeqMap::CSegment& seg) const;
+
     // valid iterator
     const CSeqMap& x_GetSeqMap(void) const;
     size_t x_GetIndex(void) const;
@@ -210,16 +266,10 @@ private:
 
     // position stack
     TStack         m_Stack;
-    // position of segment in whole sequence in residues
-    TSeqPos        m_Position;
-    // length of current segment
-    TSeqPos        m_Length;
     // scope for length resolution
     CScope*        m_Scope;
-    // maximum resolution level
-    size_t         m_MaxResolveCount;
-    // return all intermediate resolved sequences
-    TFlags         m_Flags;
+    // iterator parameters
+    SSeqMapSelector m_Selector;
 };
 
 
@@ -231,6 +281,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/07/14 21:13:22  grichenk
+* Added possibility to resolve seq-map iterator withing a single TSE
+* and to skip intermediate references during this resolving.
+*
 * Revision 1.7  2003/06/02 16:01:36  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

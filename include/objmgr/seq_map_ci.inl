@@ -213,21 +213,21 @@ CSeqMap::ESegmentType CSeqMap_CI::GetType(void) const
 inline
 TSeqPos CSeqMap_CI::GetPosition(void) const
 {
-    return m_Position;
+    return m_Selector.m_Position;
 }
 
 
 inline
 TSeqPos CSeqMap_CI::GetLength(void) const
 {
-    return m_Length;
+    return m_Selector.m_Length;
 }
 
 
 inline
 TSeqPos CSeqMap_CI::GetEndPosition(void) const
 {
-    return m_Position + m_Length;
+    return m_Selector.m_Position + m_Selector.m_Length;
 }
 
 
@@ -338,13 +338,17 @@ CSeqMap_CI& CSeqMap_CI::operator--(void)
 inline
 CSeqMap_CI::TFlags CSeqMap_CI::GetFlags(void) const
 {
-    return m_Flags;
+    return m_Selector.m_Flags;
 }
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/14 21:13:22  grichenk
+ * Added possibility to resolve seq-map iterator withing a single TSE
+ * and to skip intermediate references during this resolving.
+ *
  * Revision 1.3  2003/02/05 15:57:29  vasilche
  * Added eSeqEnd segment at the beginning of seq map.
  * Added flags to CSeqMap_CI to stop on data, gap, or references.
