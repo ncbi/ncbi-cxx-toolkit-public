@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/01/04 18:20:52  thiessen
+* deal with accession seq-id
+*
 * Revision 1.12  2000/12/29 19:23:38  thiessen
 * save row order
 *
@@ -74,6 +77,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/seqloc/Textseq_id.hpp>
 
 #include <map>
 
@@ -114,6 +118,11 @@ static bool IsAMatch(const Sequence *seq, const CSeq_id& sid)
             return true;
         return false;
     }
+    if (sid.IsGenbank() && sid.GetGenbank().IsSetAccession()) {
+        if (sid.GetGenbank().GetAccession() == seq->accession)
+            return true;
+        return false;
+    }
     ERR_POST(Error << "IsAMatch - can't match this type of Seq-id");
     return false;
 }
@@ -142,7 +151,8 @@ AlignmentSet::AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots)
         for (a=n->GetObject().GetData().GetAlign().begin(); a!=ae; a++) {
 
             // verify this is a type of alignment we can deal with
-            if (a->GetObject().GetType() != CSeq_align::eType_partial ||
+            if (!(a->GetObject().GetType() != CSeq_align::eType_partial ||
+                  a->GetObject().GetType() != CSeq_align::eType_diags) ||
                 !a->GetObject().IsSetDim() || a->GetObject().GetDim() != 2 ||
                 (!a->GetObject().GetSegs().IsDendiag() && !a->GetObject().GetSegs().IsDenseg())) {
                 ERR_POST(Error << "AlignmentSet::AlignmentSet() - confused by alignment type");

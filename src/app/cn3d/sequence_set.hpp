@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/01/04 18:21:00  thiessen
+* deal with accession seq-id
+*
 * Revision 1.12  2000/12/21 23:42:24  thiessen
 * load structures from cdd's
 *
@@ -115,7 +118,7 @@ public:
 
     static const int NOT_SET;
     int gi, pdbChain, mmdbLink;
-    std::string pdbID, sequenceString;
+    std::string pdbID, sequenceString, accession;
 
     // corresponding protein chain
     const Molecule *molecule;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/01/04 18:20:52  thiessen
+* deal with accession seq-id
+*
 * Revision 1.14  2000/12/29 19:23:39  thiessen
 * save row order
 *
@@ -91,6 +94,7 @@
 #include <objects/seq/IUPACna.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/seqloc/Textseq_id.hpp>
 
 #include <corelib/ncbistre.hpp>
 
@@ -226,6 +230,8 @@ Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) 
                 pdbChain = s->GetObject().GetPdb().GetChain();
         } else if (s->GetObject().IsLocal() && s->GetObject().GetLocal().IsStr()) {
             pdbID = s->GetObject().GetLocal().GetStr();
+        } else if (s->GetObject().IsGenbank() && s->GetObject().GetGenbank().IsSetAccession()) {
+            accession = s->GetObject().GetGenbank().GetAccession();
         }
     }
     if (gi == NOT_SET && pdbID.size() == 0) {
@@ -318,7 +324,12 @@ std::string Sequence::GetTitle(void) const
             oss <<  '_' << (char) molecule->pdbChain;
         }
     } else {
-        oss << "gi " << gi;
+        if (gi != NOT_SET)
+            oss << "gi " << gi;
+        else if (accession.size() > 0)
+            oss << "acc " << accession;
+        else
+            oss << '?';
     }
     oss << '\0';
     return std::string(oss.str());
