@@ -298,6 +298,7 @@ s_LnGamma(double x)
 {
    return s_PolyGamma(x, 0);
 }
+
 static const double kPrecomputedFactorial[] = {
        1., 1., 2., 6., 24., 120., 720., 5040., 40320., 362880., 3628800.,
        39916800., 479001600., 6227020800., 87178291200., 1307674368000.,
@@ -354,12 +355,13 @@ double BLAST_LnGammaInt(Int4 n)
 
 /** Make a parametrized function appear to have only one variable */
 #define F(x)  ((*f)((x), fargs))
+/** Maximum number of diagonals in the Romberg array */
+#define MAX_DIAGS 20
 
 double BLAST_RombergIntegrate(double (*f) (double,void*), void* fargs, double p, double q, double eps, Int4 epsit, Int4 itmin)
 
 {
-   const int kMaxDiags = 20;
-   double   romb[kMaxDiags];   /* present list of Romberg values */
+   double   romb[MAX_DIAGS];   /* present list of Romberg values */
    double   h;   /* mesh-size */
    Int4      i, j, k, npts;
    long   n;   /* 4^(error order in romb[i]) */
@@ -370,7 +372,7 @@ double BLAST_RombergIntegrate(double (*f) (double,void*), void* fargs, double p,
 
    /* itmin = min. no. of iterations to perform */
    itmin = MAX(1, itmin);
-   itmin = MIN(itmin, kMaxDiags-1);
+   itmin = MIN(itmin, MAX_DIAGS-1);
 
    /* epsit = min. no. of consecutive iterations that must satisfy epsilon */
    epsit = MAX(epsit, 1); /* default = 1 */
@@ -387,7 +389,7 @@ double BLAST_RombergIntegrate(double (*f) (double,void*), void* fargs, double p,
    if (ABS(y) == HUGE_VAL)
       return y;
    romb[0] = 0.5 * h * (x + y);   /* trapezoidal rule */
-   for (i = 1; i < kMaxDiags; ++i, npts *= 2, h *= 0.5) {
+   for (i = 1; i < MAX_DIAGS; ++i, npts *= 2, h *= 0.5) {
       sum = 0.;   /* sum of ordinates for 
                      x = p+0.5*h, p+1.5*h, ..., q-0.5*h */
       for (k = 0, x = p+0.5*h; k < npts; k++, x += h) {
@@ -496,6 +498,9 @@ double BLAST_LnFactorial (double x) {
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2005/03/08 18:28:55  papadopo
+ * do not use a const int to declare the dimension of an array
+ *
  * Revision 1.13  2005/03/08 17:42:29  papadopo
  * add doxygen comments, refactor several functions
  *
