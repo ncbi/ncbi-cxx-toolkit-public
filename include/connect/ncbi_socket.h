@@ -428,7 +428,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Reconnect
  * Cannot be applied to datagram sockets (eIO_InvalidArg results).
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Shutdown
-(SOCK      sock,
+(SOCK      sock, /* [in] handle of the socket to shutdown            */
  EIO_Event how   /* [in] one of:  eIO_Read, eIO_Write, eIO_ReadWrite */
  );
 
@@ -442,6 +442,19 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Shutdown
  * NOTE2:  if there is output pending, that output will be flushed.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Close(SOCK sock);
+
+
+/* Close the connection, and conditionally destroy relevant internal data.
+ * NOTE1:  if eIO_Close timeout was specified (or NULL) then it blocks until
+ *         either all unsent data are sent, error flagged, or the timeout
+ *         expires.
+ * NOTE2:  if there is output pending, that output will be flushed.
+ * NOTE3:  SOCK_CloseEx(sock, 1) is equivalent to SOCK_Close(sock);
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseEx
+(SOCK        sock,    /* [in] handle of the socket to close           */
+ int/*bool*/ destroy  /* [in] =1 to destroy handle; =0 to keep handle */
+ );
 
 
 /* Block on the socket until either read/write (dep. on the "event" arg) is
@@ -662,6 +675,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Write
 
 /* If there is outstanding connection or output data pending, cancel it.
  * Mark the socket as if it has been shut down for both reading and writing.
+ * Break actual connection if any was established.
  * Do not attempt to send anything upon SOCK_Close().
  * This call is available for stream sockets only.
  */
@@ -734,8 +748,8 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWrite
  *
  *  Datagram socket is created with special DSOCK_Create[Ex] calls but the
  *  resulting object is a SOCK handle. That is, almost all SOCK routines
- *  may be applied to the handle. The only exception is SOCK_Shutdown().
- *  For datagram sockets there are differences in how I/O behaves:
+ *  may be applied to the handle. There are few exceptions, though.
+ *  In datagram sockets I/O differs from how it is done in stream sockets:
  *
  *  SOCK_Write() writes data into an internal message buffer, appending new
  *  data as they come with each SOCK_Write(). When the message is complete,
@@ -937,6 +951,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.45  2003/11/12 17:43:08  lavr
+ * +SOCK_CloseEx()
+ *
  * Revision 6.44  2003/10/24 16:51:11  lavr
  * GetTimeout(eIO_ReadWrite): return the lesser of eIO_Read and eIO_Write
  *
