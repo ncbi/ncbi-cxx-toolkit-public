@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/05/19 17:27:52  gouriano
+* Reset the contents of container when assigning
+*
 * Revision 1.11  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -236,20 +239,30 @@ void CContainerTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
     if (how == eShallowChildless) {
         return;
     }
-    CConstIterator i;
-    if ( InitIterator(i, src) ) {
+    CIterator idst;
+    CConstIterator isrc;
+    bool old_element = InitIterator(idst,dst);
+    if ( InitIterator(isrc, src) ) {
         do {
             if (GetElementType()->GetTypeFamily() == eTypeFamilyPointer) {
                 const CPointerTypeInfo* pointerType =
                     CTypeConverter<CPointerTypeInfo>::SafeCast(GetElementType());
-                _ASSERT(pointerType->GetObjectPointer(GetElementPtr(i)));
-                if ( !pointerType->GetObjectPointer(GetElementPtr(i)) ) {
+                _ASSERT(pointerType->GetObjectPointer(GetElementPtr(isrc)));
+                if ( !pointerType->GetObjectPointer(GetElementPtr(isrc)) ) {
                     ERR_POST(Warning << " NULL pointer found in container: skipping");
                     continue;
                 }
             }
-            AddElement(dst, GetElementPtr(i), how);
-        } while ( NextElement(i) );
+            if (old_element) {
+                GetElementType()->Assign(GetElementPtr(idst), GetElementPtr(isrc), how);
+                old_element = NextElement(idst);
+            } else {
+                AddElement(dst, GetElementPtr(isrc), how);
+            }
+        } while ( NextElement(isrc) );
+    }
+    if (old_element) {
+        EraseAllElements(idst);
     }
 }
 
