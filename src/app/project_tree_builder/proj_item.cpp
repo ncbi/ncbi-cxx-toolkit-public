@@ -592,7 +592,8 @@ string SAppProjectT::DoCreate(const string& source_base_dir,
     project_makefile.GetExcludedLIB(SConfigInfo(), &excluded_depends);
 
     list<string> adj_depends(depends);
-    copy(added_depends.begin(), added_depends.end(), back_inserter(adj_depends));
+    copy(added_depends.begin(), 
+         added_depends.end(), back_inserter(adj_depends));
     adj_depends.unique();
 
     PLibExclude pred(excluded_depends);
@@ -655,7 +656,8 @@ string SAppProjectT::DoCreate(const string& source_base_dir,
 
             const string& src = *i;
             //Will process .asn or .dtd files
-            string source_file_path = CDirEntry::ConcatPath(source_base_dir, src);
+            string source_file_path = 
+                CDirEntry::ConcatPath(source_base_dir, src);
             source_file_path = CDirEntry::NormalizePath(source_file_path);
             if ( CDirEntry(source_file_path + ".asn").Exists() )
                 source_file_path += ".asn";
@@ -1026,8 +1028,11 @@ CProjectTreeBuilder::BuildProjectTree(const string&       start_node_path,
     list<string> external_depends;
     target_tree.GetExternalDepends(&external_depends);
 
-    // If we have to add more projects to the target tree...
-    if ( !external_depends.empty() ) {
+    // We have to add more projects to the target tree
+    // We'll consider whole tree
+    // If there are some external depends
+    // If we are creating whole tree it's unneccessary - we already got it
+    if ( !external_depends.empty()  &&  start_node_path != root_src_path) {
         // Get whole project tree
         CProjectItemsTree whole_tree;
         BuildOneProjectTree(root_src_path, root_src_path, &whole_tree);
@@ -1234,6 +1239,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/02/13 16:02:24  gorelenk
+ * Modified procedure of depends resolve.
+ *
  * Revision 1.13  2004/02/11 16:46:29  gorelenk
  * Cnanged LOG_POST message.
  *
