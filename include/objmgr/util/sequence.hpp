@@ -48,6 +48,7 @@ class CSeq_point;
 class CPacked_seqpnt;
 class CSeq_interval;
 class CScope;
+class CBioseq_Handle;
 
 BEGIN_SCOPE(sequence)
 
@@ -134,6 +135,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2002/06/10 16:30:22  ucko
+* Add forward declaration of CBioseq_Handle.
+*
 * Revision 1.2  2002/06/07 16:09:42  ucko
 * Move everything into the "sequence" namespace.
 *
