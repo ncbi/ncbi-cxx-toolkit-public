@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.2  2002/01/24 18:36:07  ucko
+* Allow custom queue-overflow handling.
+*
 * Revision 6.1  2001/12/11 19:55:21  ucko
 * Introduce thread-pool-based servers.
 *
@@ -50,20 +53,25 @@ typedef void (*FConnStreamProcessor)(CConn_IOStream& stream);
 typedef void (*FConnectionProcessor)(CONN conn);
 typedef void (*FSockProcessor)(SOCK sock);
 
+// Default overflow behavior is to silently close the socket
+
 void RunThreadedServer(FConnStreamProcessor proc, unsigned int port,
                        unsigned int init_threads = 5,
                        unsigned int max_threads = 10,
-                       unsigned int queue_size = 20, int spawn_threshold = 1);
+                       unsigned int queue_size = 20, int spawn_threshold = 1,
+                       FSockProcessor overflow_proc = 0);
 
 void RunThreadedServer(FConnectionProcessor proc, unsigned int port,
                        unsigned int init_threads = 5,
                        unsigned int max_threads = 10,
-                       unsigned int queue_size = 20, int spawn_threshold = 1);
+                       unsigned int queue_size = 20, int spawn_threshold = 1,
+                       FSockProcessor overflow_proc = 0);
 
 void RunThreadedServer(FSockProcessor proc, unsigned int port,
                        unsigned int init_threads = 5,
                        unsigned int max_threads = 10,
-                       unsigned int queue_size = 20, int spawn_threshold = 1);
+                       unsigned int queue_size = 20, int spawn_threshold = 1,
+                       FSockProcessor overflow_proc = 0);
 
 END_NCBI_SCOPE
 
