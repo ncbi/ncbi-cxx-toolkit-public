@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2004/01/08 18:16:53  gouriano
+* correction when skipping end of line
+*
 * Revision 1.51  2004/01/08 17:40:53  gouriano
 * Added encoding Windows-1252.
 * Corrected reading of containers.
@@ -511,6 +514,7 @@ CLightString CObjectIStreamXml::ReadName(char c)
     // check end of tag name
     m_Input.SkipChars(i);
     if (c == '\n' || c == '\r') {
+        m_Input.SkipChar();
         m_Input.SkipEndOfLine(c);
     }
     m_LastTag = CLightString(ptr+iColon, i-iColon);
