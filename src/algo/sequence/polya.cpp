@@ -57,46 +57,51 @@ TSignedSeqPos FindPolyA(const char* seq, TSignedSeqPos possCleavageSite)
         pos = (seqLen > 250) ? seq+seqLen-250 : seq;
     }
 
-    const char* uStrmMotif = strstr(pos, "AATAAA");
-    if (!uStrmMotif) {
-        uStrmMotif = strstr(pos, "ATTAAA");
-    }
+    const char* uStrmMotif = pos;
+    while (uStrmMotif) {
+        pos = uStrmMotif;
+        uStrmMotif = strstr(pos, "AATAAA");
+        if (!uStrmMotif) {
+            uStrmMotif = strstr(pos, "ATTAAA");
+        }
 
-    if (uStrmMotif) {
-        pos += 6; // skip over upstream motif
-        if (possCleavageSite < 0) {
-            const char* maxCleavage = pos + 30;
-            unsigned int aRun = 0;
-            for (pos += 10;  pos < maxCleavage  &&  aRun < 3;  ++pos) {
-                if (*pos == 'A') {
-                    ++aRun;
-                } else {
-                    aRun = 0;
+        if (uStrmMotif) {
+            uStrmMotif += 6; // skip over upstream motif
+            pos = uStrmMotif;
+            if (possCleavageSite < 0) {
+                const char* maxCleavage = min(pos + 30, seq+seqLen);
+                unsigned int aRun = 0;
+                for (pos += 10;  pos < maxCleavage  &&  aRun < 3;  ++pos) {
+                    if (*pos == 'A') {
+                        ++aRun;
+                    } else {
+                        aRun = 0;
+                    }
                 }
-            }
 
-            if (aRun) {
-                pos -= aRun;
-            }
-            possCleavageSite = pos - seq;
-        } else {
-            pos = seq + possCleavageSite;
-        }
-
-        //now let's look for poly-adenylated tail..
-        unsigned int numA = 0, numOther = 0;
-        while (pos < seq+seqLen) {
-            if (*pos == 'A') {
-                ++numA;
+                if (aRun) {
+                    pos -= aRun;
+                }
+                possCleavageSite = pos - seq;
             } else {
-                ++numOther;
+                pos = seq + possCleavageSite;
             }
-            ++pos;
-        }
 
-        if (numOther + numA > 0  &&
-            ((double) numA / (numA+numOther)) > 0.95) {
-            return possCleavageSite;
+            //now let's look for poly-adenylated tail..
+            unsigned int numA = 0, numOther = 0;
+            while (pos < seq+seqLen) {
+                if (*pos == 'A') {
+                    ++numA;
+                } else {
+                    ++numOther;
+                }
+                ++pos;
+            }
+
+            if (numOther + numA > 0  &&
+                ((double) numA / (numA+numOther)) > 0.95) {
+                return possCleavageSite;
+            }
         }
     }
 
@@ -121,12 +126,13 @@ EPolyTail FindPolyTail(const char* seq, TSignedSeqPos &cleavageSite,
 
         if (possCleavageSite >= 0) {
             cleavageSite = FindPolyA(otherStrand.get(),
-                                     seqLen - possCleavageSite);
+                                     seqLen - possCleavageSite - 1);
         } else {
             cleavageSite = FindPolyA(otherStrand.get());
         }
 
         if (cleavageSite >= 0) {
+            cleavageSite = seqLen - cleavageSite - 1;
             return ePolyTail_T5;
         }
     }
@@ -137,6 +143,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.3  2003/12/31 00:33:22  johnson
+* minor bug fixes
+*
 * Revision 1.2  2003/11/06 22:33:38  johnson
 * typo: include 'string.h', not 'strings.h'
 *
