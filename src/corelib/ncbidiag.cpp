@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/06/09 21:22:21  vakatov
+* IsDiagStream() -- fixed
+*
 * Revision 1.18  2000/04/04 22:31:59  vakatov
 * SetDiagTrace() -- auto-set basing on the application
 * environment and/or registry
@@ -443,8 +446,9 @@ extern bool IsDiagStream(const CNcbiOstream* os)
     bool res;
     //## MUTEX_LOCK(s_Mutex);
     res =
-        (CDiagBuffer::sm_HandlerFunc == s_ToStream_Handler)  &&
-        (CDiagBuffer::sm_HandlerData == (void*) &os);
+        CDiagBuffer::sm_HandlerFunc == s_ToStream_Handler  &&
+        CDiagBuffer::sm_HandlerData  &&
+        ((SToStream_Data*) CDiagBuffer::sm_HandlerData)->os == os;
     //## MUTEX_UNLOCK(s_Mutex);
     return res;
 }
