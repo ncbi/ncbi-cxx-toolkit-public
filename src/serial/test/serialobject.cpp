@@ -1,7 +1,7 @@
 #include "serialobject.hpp"
 #include <serial/serial.hpp>
 #include <serial/classinfo.hpp>
-#id HAVE_NCBI_C
+#if HAVE_NCBI_C
 # include <asn.h>
 #endif
 
