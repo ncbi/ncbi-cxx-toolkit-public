@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/09 17:45:37  sandomir
+* *** empty log message ***
+*
 * Revision 1.7  1998/12/09 16:49:56  sandomir
 * CCgiApplication added
 *
@@ -58,6 +61,7 @@
 
 #include <ncbistd.hpp>
 #include <ncbiapp.hpp>
+#include <cgiapp.hpp>
 
 BEGIN_NCBI_SCOPE
 
