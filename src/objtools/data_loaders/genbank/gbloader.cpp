@@ -834,7 +834,7 @@ CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
     if( !sr->m_Timer.NeedRefresh(m_Timer) )
         return sr;
     g.Local();
-    LOG_POST( "ResolveHandle-before("<< h.AsString()<<") "<<sr->m_Sr.size());
+    //LOG_POST( "ResolveHandle-before("<< h.AsString()<<") "<<sr->m_Sr.size());
   
     SSeqrefs::TSeqrefs osr;
     bool got = false;
@@ -1014,6 +1014,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2003/10/27 19:28:02  vasilche
+* Removed debug message.
+*
 * Revision 1.89  2003/10/27 18:50:49  vasilche
 * Detect 'private' blobs in ID1 reader.
 * Avoid reconnecting after ID1 server replied with error packet.
