@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2002,2003 Anatoliy Kuznetsov.
+// Copyright(c) 2002-2005 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
 Permission is hereby granted, free of charge, to any person 
 obtaining a copy of this software and associated documentation 
@@ -19,6 +19,9 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
 OTHER DEALINGS IN THE SOFTWARE.
+
+For more information please visit:  http://bmagic.sourceforge.net
+
 */
 
 #ifndef BMFUNC__H__INCLUDED__
@@ -38,13 +41,14 @@ namespace bm
 /*! @defgroup gapfunc GAP functions
  *  GAP functions implement different opereations on GAP compressed blocks
  *  and serve as a minimal building blocks.
+ *  @ingroup bmagic
  *
  */
 
 /*! @defgroup bitfunc BIT functions
  *  Bit functions implement different opereations on bit blocks
  *  and serve as a minimal building blocks.
- *
+ *  @ingroup bmagic
  */
 
 
@@ -285,7 +289,7 @@ template<bool T> struct _copyright
 };
 
 template<bool T> const char _copyright<T>::_p[] = 
-    "BitMagic Library. v.3.3.0 (c) 2002-2003 Anatoliy Kuznetsov.";
+    "BitMagic Library. v.3.3.0 (c) 2002-2005 Anatoliy Kuznetsov.";
 
 
 /*! 

@@ -1,6 +1,10 @@
+// Copyright(c) 2002-2005 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
+
+
 // BM library internal header
 //
 // Set all required preprocessor defines
+
 
 
 #ifndef BM_ASSERT

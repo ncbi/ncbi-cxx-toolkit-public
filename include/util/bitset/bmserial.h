@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003 Anatoliy Kuznetsov.
+Copyright(c) 2002-2005 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
 Permission is hereby granted, free of charge, to any person 
 obtaining a copy of this software and associated documentation 
@@ -19,13 +19,17 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
 OTHER DEALINGS IN THE SOFTWARE.
+
+For more information please visit:  http://bmagic.sourceforge.net
+
 */
 
 #ifndef BMSERIAL__H__INCLUDED__
 #define BMSERIAL__H__INCLUDED__
 
 /*! \defgroup bvserial bvector serialization  
- *  bvector serialization 
+ *  bvector serialization
+ *  \ingroup bmagic 
  *
  */
 
@@ -455,11 +459,12 @@ unsigned deserialize(BV& bv, const unsigned char* buf, bm::word_t* temp_block=0)
             {
                 blk = bman.get_allocator().alloc_bit_block();
                 bman.set_block(i, blk);
-                dec.memcpy(blk, sizeof(bm::word_t) * bm::set_block_size);
+                dec.get_32(blk, bm::set_block_size);
+                //dec.memcpy(blk, sizeof(bm::word_t) * bm::set_block_size);
                 continue;                
             }
-
-            dec.memcpy(temp_block, sizeof(bm::word_t) * bm::set_block_size);
+            dec.get_32(temp_block, bm::set_block_size);
+            //dec.memcpy(temp_block, sizeof(bm::word_t) * bm::set_block_size);
             bv.combine_operation_with_block(i, 
                                             temp_block, 
                                             0, BM_OR);
@@ -477,7 +482,8 @@ unsigned deserialize(BV& bv, const unsigned char* buf, bm::word_t* temp_block=0)
             if (level == -1)  // Too big to be GAP: convert to BIT block
             {
                 *gap_temp_block = gap_head;
-                dec.memcpy(gap_temp_block+1, (len-1) * sizeof(gap_word_t));
+                dec.get_16(gap_temp_block+1, len - 1);
+                //dec.memcpy(gap_temp_block+1, (len-1) * sizeof(gap_word_t));
                 gap_temp_block[len] = gap_max_bits - 1;
 
                 if (blk == 0)  // block does not exist yet

@@ -1,5 +1,6 @@
 /*
-Copyright (c) 2002 Anatoliy Kuznetsov.
+Copyright(c) 2002-2005 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
+
 
 Permission is hereby granted, free of charge, to any person 
 obtaining a copy of this software and associated documentation 
@@ -19,6 +20,10 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
 OTHER DEALINGS IN THE SOFTWARE.
+
+
+For more information please visit:   http://bmagic.sourceforge.net
+
 */
 
 #ifndef ENCODING_H__INCLUDED__
@@ -46,7 +51,6 @@ public:
     void put_16(const bm::short_t* s, unsigned count);
     void put_32(bm::word_t  w);
     void put_32(const bm::word_t* w, unsigned count);
-    //void memcpy(const void* mem, unsigned size);
     unsigned size() const;
 
 private:
@@ -68,7 +72,8 @@ public:
     unsigned char get_8();
     bm::short_t get_16();
     bm::word_t get_32();
-    void memcpy(void* mem, unsigned size);
+    void get_32(bm::word_t* w, unsigned count);
+    void get_16(bm::short_t* s, unsigned count);
     unsigned size() const;
 private:
    const unsigned char*   buf_;
@@ -119,7 +124,8 @@ inline void encoder::put_16(bm::short_t s)
 */
 inline void encoder::put_16(const bm::short_t* s, unsigned count)
 {
-    for (unsigned i = 0; i < count; ++i) {
+    for (unsigned i = 0; i < count; ++i) 
+    {
         put_16(s[i]);
     }
 }
@@ -152,24 +158,12 @@ inline void encoder::put_32(bm::word_t w)
 */
 inline void encoder::put_32(const bm::word_t* w, unsigned count)
 {
-    for (unsigned i = 0; i < count; ++i) {
+    for (unsigned i = 0; i < count; ++i) 
+    {
         put_32(w[i]);
     }
 }
 
-/*!
-   \fn encoder::memcpy(const void* mem, unsigned size)
-   \brief Puts block of memory into encoding buffer.
-   \param mem - pointer on memory to encode.
-   \param size - size of the memory block.
-*/
-/*
-inline void encoder::memcpy(const void* mem, unsigned size)
-{
-   ::memcpy(buf_, mem, size);
-   buf_ += size;
-}
-*/
 
 // ---------------------------------------------------------------------
 
@@ -215,18 +209,34 @@ inline bm::word_t decoder::get_32()
     return a;
 }
 
+
 /*!
-   \fn void decoder::memcpy(void* mem, unsigned size) 
-   \brief Reads block of memory from the decoding buffer.
-   \param mem - pointer on memory block to read into.
-   \param size - size of memory block in bytes.
+   \fn void decoder::get_32(bm::word_t* w, unsigned count)
+   \brief Reads block of 32-bit words from the decoding buffer.
+   \param w - pointer on memory block to read into.
+   \param count - size of memory block in words.
 */
-inline void decoder::memcpy(void* mem, unsigned size) 
+inline void decoder::get_32(bm::word_t* w, unsigned count)
 {
-   ::memcpy(mem, buf_, size);
-   buf_ += size;
+    for (unsigned i = 0; i < count; ++i) 
+    {
+        w[i] = get_32();
+    }
 }
 
+/*!
+   \fn void decoder::get_16(bm::short_t* s, unsigned count)
+   \brief Reads block of 32-bit words from the decoding buffer.
+   \param s - pointer on memory block to read into.
+   \param count - size of memory block in words.
+*/
+inline void decoder::get_16(bm::short_t* s, unsigned count)
+{
+    for (unsigned i = 0; i < count; ++i) 
+    {
+        s[i] = get_16();
+    }
+}
 
 /*!
    \fn unsigned decoder::size() const

@@ -1,7 +1,8 @@
 /*
-Copyright (c) 2002-2004 Anatoliy Kuznetsov.
+Copyright(c) 2002-2005 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
-Permission is hereby granted, free of charge, to any person 
+PermiFor more information please visit:  http://bmagic.sourceforge.net
+ssion is hereby granted, free of charge, to any person 
 obtaining a copy of this software and associated documentation 
 files (the "Software"), to deal in the Software without restriction, 
 including without limitation the rights to use, copy, modify, merge, 
@@ -19,6 +20,9 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
 OTHER DEALINGS IN THE SOFTWARE.
+
+For more information please visit:  http://bmagic.sourceforge.net
+
 */
 
 #ifndef BM__H__INCLUDED__
@@ -79,9 +83,15 @@ namespace bm
 typedef bm::miniset<bm::block_allocator, bm::set_total_blocks> mem_save_set;
 
 
+/** @defgroup bmagic BitMagic C++ Library
+ *  For more information please visit:  http://bmagic.sourceforge.net
+ *  
+ */
+
+
 /** @defgroup bvector The Main bvector<> Group
  *  This is the main group. It includes bvector template: front end of the bm library.
- *  
+ *  @ingroup bmagic 
  */
 
 
@@ -1526,6 +1536,18 @@ public:
 
     void stat(unsigned blocks=0) const;
 
+    /*! 
+        \brief Optimization mode
+        Every next level means additional checks (better compression vs time)
+        \sa optimize
+    */
+    enum optmode
+    {
+        opt_free_0    = 1, ///< Free unused 0 blocks
+        opt_free_01   = 2, ///< Free unused 0 and 1 blocks
+        opt_compress  = 3  ///< compress blocks when possible
+    };
+
     /*!
        \brief Optimize memory bitvector's memory allocation.
    
@@ -1533,8 +1555,10 @@ public:
        with a regular structure, frees some memory. This function is recommended
        after a bulk modification of the bitvector using set_bit, clear_bit or
        logical operations.
+       
+       @sa optmode, optimize_gap_size
     */
-    void optimize(bm::word_t* temp_block=0)
+    void optimize(bm::word_t* temp_block=0, optmode opt_mode = opt_compress)
     {
         word_t*** blk_root = blockman_.blocks_root();
 
@@ -1542,7 +1566,9 @@ public:
             temp_block = blockman_.check_allocate_tempblock();
 
         typename 
-          blocks_manager::block_opt_func  opt_func(blockman_, temp_block);
+          blocks_manager::block_opt_func  opt_func(blockman_, 
+                                                   temp_block, 
+                                                   (int)opt_mode);
         for_each_nzblock(blk_root, blockman_.top_block_size(),
                                    bm::set_array_size, opt_func);
     }
@@ -2520,9 +2546,12 @@ public:
         class block_opt_func : public bm_func_base
         {
         public:
-            block_opt_func(blocks_manager& bm, bm::word_t* temp_block) 
+            block_opt_func(blocks_manager& bm, 
+                           bm::word_t*     temp_block,
+                           int             opt_mode) 
                 : bm_func_base(bm),
-                  temp_block_(temp_block)
+                  temp_block_(temp_block),
+                  opt_mode_(opt_mode)
             {
                 BM_ASSERT(temp_block);
             }
@@ -2544,7 +2573,7 @@ public:
                         goto free_block;
                     }
                     else 
-                        if (gap_is_all_one(gap_blk, bm::gap_max_bits))
+                    if (gap_is_all_one(gap_blk, bm::gap_max_bits))
                     {
                         bman.set_block_ptr(idx, FULL_BLOCK_ADDR);
                     free_block:
@@ -2555,6 +2584,33 @@ public:
                 }
                 else // bit block
                 {
+                    if (opt_mode_ < 3) // free_01 optimization
+                    {  
+                        bm::wordop_t* blk1 = (wordop_t*)block;
+                        bm::wordop_t* blk2 = 
+                            (wordop_t*)(block + bm::set_block_size);
+                    
+                        bool b = bit_is_all_zero(blk1, blk2);
+                        if (b)
+                        {
+                            bman.get_allocator().free_bit_block(block);
+                            bman.set_block_ptr(idx, 0);
+                            return;
+                        }
+                        if (opt_mode_ == 2) // check if it is all 1 block
+                        {
+                            b = is_bits_one(blk1, blk2);
+                            if (b) 
+                            {
+                                bman.get_allocator().free_bit_block(block);
+                                bman.set_block_ptr(idx, FULL_BLOCK_ADDR);
+                                return;
+                            }
+                        }
+                    }
+                
+                    // try to compress
+                
                     gap_word_t* tmp_gap_blk = (gap_word_t*)temp_block_;
                     *tmp_gap_blk = bm::gap_max_level << 1;
 
@@ -2598,6 +2654,7 @@ public:
             }
         private:
             bm::word_t*   temp_block_;
+            int           opt_mode_;
         };
 
         /** Bitblock invert functor */
