@@ -45,7 +45,7 @@
   <Files>
     <Filter Name="app" Filter="">
       <Filter Name="project_tree_builder" Filter="">
-        <File RelativePath="project_tree_builder._">
+        <File RelativePath="project_tree_builder.exe._">
           <FileConfiguration Name="Debug|Win32">
             <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
           </FileConfiguration>
@@ -68,7 +68,7 @@
       </Filter>
     </Filter>
     <Filter Name="corelib" Filter="">
-      <File RelativePath="xncbi._">
+      <File RelativePath="xncbi.lib._">
         <FileConfiguration Name="Debug|Win32">
           <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
         </FileConfiguration>
@@ -90,7 +90,7 @@
       </File>
     </Filter>
     <Filter Name="serial" Filter="">
-      <File RelativePath="xser._">
+      <File RelativePath="xser.lib._">
         <FileConfiguration Name="Debug|Win32">
           <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
         </FileConfiguration>
@@ -111,7 +111,7 @@
         </FileConfiguration>
       </File>
       <Filter Name="datatool" Filter="">
-        <File RelativePath="datatool._">
+        <File RelativePath="datatool.exe._">
           <FileConfiguration Name="Debug|Win32">
             <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
           </FileConfiguration>
@@ -134,7 +134,7 @@
       </Filter>
     </Filter>
     <Filter Name="util" Filter="">
-      <File RelativePath="xutil._">
+      <File RelativePath="xutil.lib._">
         <FileConfiguration Name="Debug|Win32">
           <Tool Name="VCCustomBuildTool" AdditionalDependencies="" CommandLine="@echo on&#xa;devenv /build $(ConfigurationName) /project $(InputName) &quot;$(SolutionPath)&quot;&#xa;" Outputs="$(InputPath).aanofile.out" Description="Building project : $(InputName)"></Tool>
         </FileConfiguration>
