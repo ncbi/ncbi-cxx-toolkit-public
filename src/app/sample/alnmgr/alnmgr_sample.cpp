@@ -188,3 +188,16 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CSampleAlnmgrApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.2  2002/08/23 18:57:34  ucko
+* Add CVS log block (accidentally left out at first).
+*
+* Revision 1.1  2002/08/23 14:43:55  ucko
+* Add the new C++ alignment manager to the public tree (thanks, Kamen!)
+*
+* ===========================================================================
+*/
