@@ -57,6 +57,62 @@ void s_ResetLibInstallKey(const string& dir,
 }
 
 
+static void s_CreateThirdPartyLibsInstallMakefile
+                                            (const CMsvcSite&   site, 
+                                             const list<string> libs_to_install,
+                                             const SConfigInfo& config,
+                                             const CBuildType&  build_type)
+{
+    // Create makefile path
+    string makefile_path = GetApp().GetProjectTreeInfo().m_Compilers;
+    makefile_path = 
+        CDirEntry::ConcatPath(makefile_path, 
+                              GetApp().GetRegSettings().m_CompilersSubdir);
+
+    makefile_path = CDirEntry::ConcatPath(makefile_path, build_type.GetTypeStr());
+    makefile_path = CDirEntry::ConcatPath(makefile_path, config.m_Name);
+    makefile_path = CDirEntry::ConcatPath(makefile_path, 
+                                          "Makefile.third_party.mk");
+
+    // Create dir if no such dir...
+    string dir;
+    CDirEntry::SplitPath(makefile_path, &dir);
+    CDir makefile_dir(dir);
+    if ( !makefile_dir.Exists() ) {
+        CDir(dir).CreatePath();
+    }
+
+    CNcbiOfstream ofs(makefile_path.c_str(), 
+                      IOS_BASE::out | IOS_BASE::trunc );
+    if ( !ofs )
+        NCBI_THROW(CProjBulderAppException, eFileCreation, makefile_path);
+
+    
+    ITERATE(list<string>, n, libs_to_install) {
+        const string& lib = *n;
+        SLibInfo lib_info;
+        site.GetLibInfo(lib, config, &lib_info);
+        if ( !lib_info.m_LibPath.empty() ) {
+            string bin_dir = lib_info.m_LibPath;
+            bin_dir = 
+                CDirEntry::ConcatPath(bin_dir, 
+                                      site.GetThirdPartyLibsBinSubDir());
+            bin_dir = CDirEntry::NormalizePath(bin_dir);
+            if ( CDirEntry(bin_dir).Exists() ) {
+                //
+                string key(lib);
+                NStr::ToUpper(key);
+                key += site.GetThirdPartyLibsBinPathSuffix();
+
+                ofs << key << " = " << bin_dir << "\n";
+
+                s_ResetLibInstallKey(dir, lib);
+            }
+        }
+    }
+}
+
+
 void CMsvcConfigure::operator() (const CMsvcSite&         site, 
                                  const list<SConfigInfo>& configs,
                                  const string&            root_dir)
@@ -90,58 +146,25 @@ void CMsvcConfigure::operator() (const CMsvcSite&         site,
     // Write makefile uses to install 3-rd party dlls
     list<string> third_party_to_install;
     site.GetThirdPartyLibsToInstall(&third_party_to_install);
+    // For static buid
+    ITERATE(list<SConfigInfo>, p, configs) {
+        const SConfigInfo& config = *p;
+        s_CreateThirdPartyLibsInstallMakefile(site, 
+                                              third_party_to_install, 
+                                              config, 
+                                              CBuildType::eStatic);
+    }
+    // For dll build
     list<SConfigInfo> dll_configs;
     GetApp().GetDllsInfo().GetBuildConfigs(&dll_configs);
     ITERATE(list<SConfigInfo>, p, dll_configs) {
 
         const SConfigInfo& config = *p;
+        s_CreateThirdPartyLibsInstallMakefile(site, 
+                                              third_party_to_install, 
+                                              config, 
+                                              CBuildType::eDll);
 
-        string makefile_path = GetApp().GetProjectTreeInfo().m_Compilers;
-        makefile_path = 
-            CDirEntry::ConcatPath(makefile_path, 
-                                  GetApp().GetRegSettings().m_CompilersSubdir);
-        makefile_path = CDirEntry::ConcatPath(makefile_path, "dll");
-        makefile_path = CDirEntry::ConcatPath(makefile_path, config.m_Name);
-        makefile_path = CDirEntry::ConcatPath(makefile_path, 
-                                              "Makefile.third_party.mk");
-        // Create dir if no such dir...
-        string dir;
-        CDirEntry::SplitPath(makefile_path, &dir);
-        CDir makefile_dir(dir);
-        if ( !makefile_dir.Exists() ) {
-            CDir(dir).CreatePath();
-        }
-
-        CNcbiOfstream ofs(makefile_path.c_str(), 
-                          IOS_BASE::out | IOS_BASE::trunc );
-        if ( !ofs )
-            NCBI_THROW(CProjBulderAppException, eFileCreation, makefile_path);
-
-        
-        ITERATE(list<string>, n, third_party_to_install) {
-            const string& lib = *n;
-            SLibInfo lib_info;
-            site.GetLibInfo(lib, config, &lib_info);
-            if ( !lib_info.m_LibPath.empty() ) {
-                string bin_dir = lib_info.m_LibPath;
-                bin_dir = 
-                    CDirEntry::ConcatPath(bin_dir, 
-                                          site.GetThirdPartyLibsBinSubDir());
-                bin_dir = CDirEntry::NormalizePath(bin_dir);
-                if ( CDirEntry(bin_dir).Exists() ) {
-                    //
-                    string key(lib);
-                    NStr::ToUpper(key);
-                    key += site.GetThirdPartyLibsBinPathSuffix();
-
-                    ofs << key << " = " << bin_dir << "\n";
-
-                    s_ResetLibInstallKey(dir, lib);
-                }
-            }
-        }
-
-        ofs.close();
     }
 }
 
@@ -254,6 +277,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/06/09 14:14:45  gorelenk
+ * Added static helper function s_CreateThirdPartyLibsInstallMakefile.
+ * Changed implementation of CMsvcConfigure::operator() to use helper above.
+ * Also added generation of installation makefiles for static builds.
+ *
  * Revision 1.11  2004/06/03 14:04:38  gorelenk
  * Changed CMsvcConfigure::operator() :
  * added third party libraries install key support.
