@@ -173,7 +173,6 @@ I_DriverContext::~I_DriverContext()
 //  I_Connection::
 //
 
-
 CDB_LangCmd* I_Connection::Create_LangCmd(I_LangCmd&lang_cmd)
 {
     return new CDB_LangCmd(&lang_cmd);
@@ -206,6 +205,16 @@ I_Connection::~I_Connection()
 }
 
 
+////////////////////////////////////////////////////////////////////////////
+//  I_DriverMgr::
+//
+
+I_DriverMgr::~I_DriverMgr(void)
+{
+    return;
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -213,6 +222,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/01/20 07:21:02  vakatov
+ * I_DriverMgr:: -- added virtual destructor
+ *
  * Revision 1.6  2001/11/06 17:59:53  lavr
  * Formatted uniformly as the rest of the library
  *

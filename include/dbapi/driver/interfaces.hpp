@@ -530,7 +530,8 @@ class I_DriverMgr
 {
 public:
     virtual void RegisterDriver(const string& driver_name,
-				FDBAPI_CreateContext driver_ctx_func)= 0;
+                                FDBAPI_CreateContext driver_ctx_func) = 0;
+    virtual ~I_DriverMgr(void);
 };
 
 
@@ -541,6 +542,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2002/01/20 07:21:00  vakatov
+ * I_DriverMgr:: -- added virtual destructor
+ *
  * Revision 1.11  2002/01/17 22:33:13  soussov
  * adds driver manager
  *
