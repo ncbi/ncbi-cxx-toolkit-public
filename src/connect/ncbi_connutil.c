@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/03/29 16:36:09  vakatov
+ * MIME_ParseContentType() -- a fix
+ *
  * Revision 6.1  2000/03/24 22:53:34  vakatov
  * Initial revision
  *
@@ -719,19 +722,24 @@ extern int/*bool*/ MIME_ParseContentType
 
     strcpy(x_buf, str);
     {{
-        char* ptr;
-        for (ptr = x_buf;  *ptr;  ptr++)
-            *ptr = (char) tolower(*ptr);
+        static const char s_ContentType[] = "content-type:";
+        char* x_ptr;
+
+        for (x_ptr = x_buf;  *x_ptr;  x_ptr++)
+            *x_ptr = (char) tolower(*x_ptr);
+        x_ptr = strstr(x_buf, s_ContentType);
+        x_ptr = x_ptr ? x_ptr + sizeof(s_ContentType) - 1 : x_buf;
+
+        if (sscanf(x_ptr, " x-ncbi-data/x-%s ", x_subtype) != 1) {
+            free(x_buf);
+            return 0/*false*/;
+        }
     }}
-    if (sscanf(x_buf, " content-type: x-ncbi-data/x-%s ", x_subtype) != 1  &&
-        sscanf(x_buf, " x-ncbi-data/x-%s ", x_subtype) != 1) {
-        free(x_buf);
-        return 0/*false*/;
-    }
 
     if ( subtype ) {
         for (i = 0;  i < (int) eMIME_Unknown;  i++) {
-            if (strcmp(x_subtype, s_MIME_SubType[i]) == 0)
+            if (strncmp(x_subtype, s_MIME_SubType[i],
+                        strlen(s_MIME_SubType[i])) == 0)
                 *subtype = (EMIME_SubType) i;
         }
     }
