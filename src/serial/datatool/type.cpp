@@ -576,29 +576,25 @@ void ASNEnumeratedType::GetCType(CTypeStrings& tType, CClassCode& code) const
     }
     {
         CNcbiOstrstream h;
-        h << "    enum " << enumName << " {";
-        for ( TValues::const_iterator i = values.begin();
-              i != values.end(); ++i ) {
-            if ( i != values.begin() )
-                h << ',';
-            h << endl <<
-                "        e" << Identifier(i->id) << " = " << i->value;
-        }
-        h << endl <<
-            "    };" << endl <<
-            "    static const NCBI_NS_NCBI::CEnumeratedTypeValues* GetEnumInfo_"
-          << enumName << "(void);" << endl;
-
         CNcbiOstrstream c;
+        h << "    enum " << enumName << " {";
         c << "BEGIN_ENUM_INFO(" << code.GetType()->ClassName(code) <<
             "_Base::GetEnumInfo_" << enumName << ", " << enumName << ", " <<
             (IsInteger()? "true": "false") << ")" << endl <<
             '{' << endl;
         for ( TValues::const_iterator i = values.begin();
               i != values.end(); ++i ) {
+            if ( i != values.begin() )
+                h << ',';
+            h << endl <<
+                "        e" << Identifier(i->id) << " = " << i->value;
             c << "    ADD_ENUM_VALUE(\"" << i->id << "\", e" <<
                 Identifier(i->id) << ");" << endl;
         }
+        h << endl <<
+            "    };" << endl <<
+            "    static const NCBI_NS_NCBI::CEnumeratedTypeValues* GetEnumInfo_"
+          << enumName << "(void);" << endl;
         c <<
             '}' << endl <<
             "END_ENUM_INFO" << endl;
