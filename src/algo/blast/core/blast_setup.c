@@ -178,9 +178,9 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
       /* Set the ambiguous residue before the ScoreBlk is filled. */
       if (is_na) {
          if (scoring_options->matrix && scoring_options->matrix[0] != NULLB) {
-            sbp->read_in_matrix = FALSE;
-         } else {
             sbp->read_in_matrix = TRUE;
+         } else {
+            sbp->read_in_matrix = FALSE;
          }
          BlastScoreSetAmbigRes(sbp, 'N');
       } else {
