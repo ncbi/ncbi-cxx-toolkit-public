@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/10/17 13:04:30  clausen
+ * Fixed InitFastNcbi2naIupacna to remove hardware dependency
+ *
  * Revision 6.3  2001/09/07 14:16:50  ucko
  * Cleaned up external interface.
  *
@@ -1376,9 +1379,13 @@ CRef<CSeqportUtil_implementation::CFast_table4> CSeqportUtil_implementation::Ini
 
                         // Note high order bit pair corresponds to low order
                         // byte etc., on Unix machines.
-                        fastTable->m_Table[aByte] =
-                            (chi<<24)|(chj<<16)|(chk<<8)|chl;
-                    }
+                        char *pt = 
+                            reinterpret_cast<char*>(&fastTable->m_Table[aByte]);
+                        *(pt++) = chi;
+                        *(pt++) = chj;
+                        *(pt++) = chk;
+                        *(pt) = chl;                       
+                     }
     m_Ncbi2naIupacna->drop_table();
     return fastTable;
 }
