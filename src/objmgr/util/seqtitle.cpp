@@ -684,32 +684,6 @@ static string s_TitleFromChromosome(const CBioSource& source,
 }
 
 
-static CConstRef<CSeq_feat> s_FindLongestFeature(const CSeq_loc& location,
-                                                 CScope& scope,
-                                                 CSeqFeatData::E_Choice type,
-                                                 CFeat_CI::EFeat_Location lt
-                                                   = CFeat_CI::e_Location)
-{
-    CConstRef<CSeq_feat> result;
-    TSeqPos best_length = 0;
-    CFeat_CI it(scope, location, type, SAnnotSelector::eOverlap_Intervals,
-                SAnnotSelector::eResolve_TSE, lt);
-    for (;  it;  ++it) {
-        if (it->GetLocation().IsWhole()) {
-            // kludge; length only works on a Seq-loc of type "whole"
-            // if its Seq-id points to an object manager, which may not
-            // be the case here.
-            result = &it->GetMappedFeature();
-            BREAK(it);
-        } else if (GetLength(it->GetLocation(), &scope) > best_length) {
-            best_length = GetLength(it->GetLocation(), &scope);
-            result = &it->GetMappedFeature();
-        }
-    }
-    return result;
-}
-
-
 static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
                                  string& organism)
 {
@@ -724,24 +698,22 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
 
     {{
         CConstRef<CSeq_feat> prot_feat
-            = s_FindLongestFeature(everywhere, scope, CSeqFeatData::e_Prot);
+            = GetBestOverlappingFeat(everywhere, CSeqFeatData::e_Prot,
+                                     eOverlap_Contained, scope);
         if (prot_feat) {
             prot = &prot_feat->GetData().GetProt();
         }
     }}
 
     {{
-        CConstRef<CSeq_feat> cds_feat
-            = s_FindLongestFeature(everywhere, scope, CSeqFeatData::e_Cdregion,
-                                   CFeat_CI::e_Product);
+        CConstRef<CSeq_feat> cds_feat(GetCDSForProduct(handle));
         if (cds_feat) {
             cds_loc = &cds_feat->GetLocation();
         }
     }}
 
     if (cds_loc) {
-        CConstRef<CSeq_feat> gene_feat
-            = s_FindLongestFeature(*cds_loc, scope, CSeqFeatData::e_Gene);
+        CConstRef<CSeq_feat> gene_feat = GetOverlappingGene(*cds_loc, scope);
         if (gene_feat) {
             gene = &gene_feat->GetData().GetGene();
         }
@@ -868,22 +840,22 @@ static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
         if ( !it->IsSetProduct() ) {
             continue;
         }
-        const CSeq_loc&      product_loc = it->GetProduct();
+        const CSeq_loc& product_loc = it->GetProduct();
 
         if (it->IsSetPartial()) {
             completeness = "partial";
         }
 
         CConstRef<CSeq_feat> prot_feat
-            = s_FindLongestFeature(product_loc, scope, CSeqFeatData::e_Prot);
+            = GetBestOverlappingFeat(product_loc, CSeqFeatData::e_Prot,
+                                     eOverlap_Interval, scope);
         if (product.empty()  &&  prot_feat.NotEmpty()
             &&  prot_feat->GetData().GetProt().IsSetName()) {
             product = *prot_feat->GetData().GetProt().GetName().begin();
         }
         
         CConstRef<CSeq_feat> gene_feat
-            = s_FindLongestFeature(it->GetLocation(), scope,
-                                   CSeqFeatData::e_Gene);
+            = GetOverlappingGene(it->GetLocation(), scope);
         if (locus.empty()  &&  gene_feat.NotEmpty()) {
             if (gene_feat->GetData().GetGene().IsSetLocus()) {
                 locus = gene_feat->GetData().GetGene().GetLocus();
@@ -925,6 +897,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.39  2004/10/01 19:13:53  ucko
+* Drop s_FindLongestFeature in favor of GetBestOverlappingFeat.
+*
 * Revision 1.38  2004/06/30 21:01:40  johnson
 * bugfix in s_TitleFromSegment
 *
