@@ -229,6 +229,7 @@ public:
           m_Frame(-1),
           m_RefBy(0),
           m_ExtraRow(0),
+          m_ExtraRowIdx(0),
           m_AnotherRow(0),
           m_DSIndex(0),
           m_RowIndex(-1)
@@ -249,6 +250,7 @@ public:
     TStarts               m_Starts;
     CAlnMixSeq *          m_RefBy;
     CAlnMixSeq *          m_ExtraRow;
+    int                   m_ExtraRowIdx;
     CAlnMixSeq *          m_AnotherRow;
     int                   m_SeqIndex;
     int                   m_DSIndex;
@@ -347,6 +349,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2004/11/02 18:02:34  todorov
+* CAlnMixSeq += m_ExtraRowIdx
+*
 * Revision 1.45  2004/10/13 17:50:56  todorov
 * rm contitional compilation logic
 *
