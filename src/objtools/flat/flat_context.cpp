@@ -96,7 +96,7 @@ const CSeq_id& CFlatContext::GetPreferredSynonym(const CSeq_id& id) const
     CBioseq_Handle h = m_Handle.GetScope().GetBioseqHandle(id);
     if (h == m_Handle) {
         return *m_PrimaryID;
-    } else if (h  &&  h.GetSeqId()) {
+    } else if (h  &&  h.GetSeqId().NotEmpty()) {
         return *FindBestChoice(h.GetBioseqCore()->GetId(), CSeq_id::Score);
     } else {
         return id;
@@ -124,6 +124,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/11/11 01:31:31  ucko
+* Fix for MSVC now that CBioseq_Handle::GetSeqId returns a CConstRef.
+*
 * Revision 1.5  2003/10/08 21:10:07  ucko
 * For segmented sequences, find and note the "master" sequence rather
 * than just setting a flag.
