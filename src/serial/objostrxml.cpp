@@ -1008,12 +1008,17 @@ void CObjectOStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
     if (classType) {
         CheckStdXml(classType);
     }
+    bool needNs = x_ProcessTypeNamespace(namedTypeInfo);
     OpenTag(namedTypeInfo);
+    if (needNs) {
+        x_WriteClassNamespace(namedTypeInfo);
+    }
 }
 
 void CObjectOStreamXml::EndNamedType(void)
 {
     CloseTag(TopFrame().GetTypeInfo());
+    x_EndTypeNamespace();
 }
 
 #ifdef VIRTUAL_MID_LEVEL_IO
@@ -1333,6 +1338,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2004/10/27 18:59:48  gouriano
+* Corrected writing namespace in case of named type
+*
 * Revision 1.76  2004/07/29 15:53:44  gouriano
 * write XML namespace when the root object is container
 *
