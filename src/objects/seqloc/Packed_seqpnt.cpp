@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/05/03 21:28:17  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 6.1  2002/01/10 19:17:23  clausen
  * Added IsValid
  *
@@ -61,12 +64,12 @@ CPacked_seqpnt::~CPacked_seqpnt(void)
 }
 
 // Checks that all points >=0 and < length of CBioseq. If scope is 0
-// assumes length is the maximum value of a int
+// assumes length is the maximum value of a TSeqPos
 bool CPacked_seqpnt::IsValid(CScope* scope) const
 {
     // Returns kMax_int if scope is 0
-    int length = GetId().GetLength(scope);
-    iterate( list<int>, it, GetPoints() ) {
+    TSeqPos length = GetId().GetLength(scope);
+    iterate( TPoints, it, GetPoints() ) {
         if( *it < 0 || *it >= length ) {
             return false;
         }

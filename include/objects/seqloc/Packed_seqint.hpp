@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2002/05/03 21:28:04  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 1.2  2001/06/25 18:52:01  grichenk
  * Prohibited copy constructor and assignment operator
  *
@@ -68,7 +71,7 @@ public:
     ~CPacked_seqint(void);
 
     // get the length of the pieces
-    int GetLength(void) const;
+    TSeqPos GetLength(void) const;
 private:
     // Prihibit copy constructor & assignment operator
     CPacked_seqint(const CPacked_seqint&);

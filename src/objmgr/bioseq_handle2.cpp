@@ -174,12 +174,12 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
         }
     }
 
-    if (title.empty()  &&  use_biosrc && (source!=NULL)) {
+    if (title.empty()  &&  use_biosrc  &&  source.NotEmpty()) {
         title = s_TitleFromBioSource(*source);
         flags &= ~fGetTitle_Organism;
     }
 
-    if (title.empty()  &&  is_nc && (source!=NULL)) {
+    if (title.empty()  &&  is_nc  &&  source.NotEmpty()) {
         switch (mol_info->GetBiomol()) {
         case CMolInfo::eBiomol_genomic:
         case CMolInfo::eBiomol_other_genetic:
@@ -222,7 +222,7 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
         title = s_TitleFromSegment(*this, *m_Scope);
     }
 
-    if (title.empty()  &&  !htg_tech && (source!=NULL)) {
+    if (title.empty()  &&  !htg_tech  &&  source.NotEmpty()) {
         title = s_TitleFromBioSource(*source);
         if (title.empty()) {
             title = "No definition line found";
@@ -530,7 +530,7 @@ static CConstRef<CSeq_feat> s_FindLongestFeature(const CSeq_loc& location,
                                                  CSeqFeatData::E_Choice type)
 {
     CConstRef<CSeq_feat> result;
-    int best_length = 0;
+    TSeqPos best_length = 0;
     CFeat_CI it(scope, location, type);
     for (;  it;  ++it) {
         if (it->GetLocation().IsWhole()) {
@@ -710,6 +710,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2002/05/03 21:28:09  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.9  2002/04/22 19:16:13  ucko
 * Fixed problem that could occur when no title descriptors were present.
 *

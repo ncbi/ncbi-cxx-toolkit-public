@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2002/05/03 21:28:03  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 1.3  2002/01/10 19:20:45  clausen
  * Added GetIupacaa3, GetCode, and GetIndex
  *
@@ -63,13 +66,13 @@ class CSeqportUtil
 public:
     // Alphabet conversion function. Function returns the
     // number of converted codes.
-    static unsigned int Convert(const CSeq_data&       in_seq,
-                                CSeq_data*             out_seq,
-                                CSeq_data::E_Choice    to_code,
-                                unsigned int           uBeginIdx = 0,
-                                unsigned int           uLength   = 0,
-                                bool                   bAmbig    = false,
-                                CRandom::TValue        seed      = 17734276);
+    static TSeqPos Convert(const CSeq_data&       in_seq,
+                           CSeq_data*             out_seq,
+                           CSeq_data::E_Choice    to_code,
+                           TSeqPos                uBeginIdx = 0,
+                           TSeqPos                uLength   = 0,
+                           bool                   bAmbig    = false,
+                           CRandom::TValue        seed      = 17734276);
 
     // Function to provide maximum in-place packing of na
     // sequences without loss of information. Iupacna
@@ -79,37 +82,37 @@ public:
     // residues packed. If in_seq cannot be packed, the
     // original in_seq is returned unchanged and the return value
     // from Pack is 0
-    static unsigned int Pack(CSeq_data*     in_seq,
-                             unsigned int   uBeginidx = 0,
-                             unsigned int   uLength   = 0);
+    static TSeqPos Pack(CSeq_data*   in_seq,
+                        TSeqPos      uBeginidx = 0,
+                        TSeqPos      uLength   = 0);
 
     // Performs fast validation of CSeq_data. If all data in the
     // sequence represent valid elements of a biological sequence, then
     // FastValidate returns true. Otherwise it returns false
     static bool FastValidate(const CSeq_data&   in_seq,
-                             unsigned int       uBeginIdx = 0,
-                             unsigned int       uLength   = 0);
+                             TSeqPos            uBeginIdx = 0,
+                             TSeqPos            uLength   = 0);
 
     // Performs validation of CSeq_data. Returns a list of indices
     // corresponding to data that does not represent a valid element
     // of a biological sequence.
-    static void Validate(const CSeq_data&       in_seq,
-                         vector<unsigned int>*  badIdx,
-                         unsigned int           uBeginIdx = 0,
-                         unsigned int           uLength   = 0);
+    static void Validate(const CSeq_data&   in_seq,
+                         vector<TSeqPos>*   badIdx,
+                         TSeqPos            uBeginIdx = 0,
+                         TSeqPos            uLength   = 0);
 
     // Get ambiguous bases. out_indices returns
     // the indices relative to in_seq of ambiguous bases.
     // out_seq returns the ambiguous bases. Note, there are
     // only ambiguous bases for iupacna->ncib2na and
     // ncib4na->ncbi2na coversions.
-    static unsigned int GetAmbigs
-    (const CSeq_data&       in_seq,
-     CSeq_data*             out_seq,
-     vector<unsigned int>*  out_indices,
-     CSeq_data::E_Choice    to_code = CSeq_data::e_Ncbi2na,
-     unsigned int           uBeginIdx = 0,
-     unsigned int           uLength   = 0);
+    static TSeqPos GetAmbigs
+    (const CSeq_data&      in_seq,
+     CSeq_data*            out_seq,
+     vector<TSeqPos>*      out_indices,
+     CSeq_data::E_Choice   to_code = CSeq_data::e_Ncbi2na,
+     TSeqPos               uBeginIdx = 0,
+     TSeqPos               uLength   = 0);
 
     // Get a copy of CSeq_data. No conversion is done. uBeginIdx of the
     // biological sequence in in_seq will be in position
@@ -124,48 +127,48 @@ public:
     // unchanged (it will remain odd unless it goes beyond the end
     // of in_seq). If uLength=0, then a copy from uBeginIdx to the end
     // of in_seq is returned.
-    static unsigned int GetCopy(const CSeq_data&       in_seq,
-                                CSeq_data*             out_seq,
-                                unsigned int           uBeginIdx = 0,
-                                unsigned int           uLength   = 0);
+    static TSeqPos GetCopy(const CSeq_data&   in_seq,
+                           CSeq_data*         out_seq,
+                           TSeqPos            uBeginIdx = 0,
+                           TSeqPos            uLength   = 0);
 
     // Method to keep only a contiguous piece of a sequence beginning
     // at uBeginIdx and uLength residues long. Does bit shifting as
     // needed to put uBeginIdx of original sequence at position zero on output.
     // Similar to GetCopy(), but done in place.  Returns length of
     // kept sequence.
-    static unsigned int Keep(CSeq_data*      in_seq,
-                             unsigned int     uBeginIdx = 0,
-                             unsigned int     uLength   = 0);
+    static TSeqPos Keep(CSeq_data*   in_seq,
+                        TSeqPos      uBeginIdx = 0,
+                        TSeqPos      uLength   = 0);
 
     // Append in_seq2 to to end of in_seq1. Both in seqs must be
     // in the same alphabet or this method will throw a runtime_error.
     // The result of the append will be put into out_seq.
     // For packed sequences ncbi2na and ncbi4na, Append will shift and
     // append so as to remove any jaggedness at the append point.
-    static unsigned int Append(CSeq_data*             out_seq,
-                               const CSeq_data&       in_seq1,
-                               unsigned int           uBeginIdx1,
-                               unsigned int           uLength1,
-                               const CSeq_data&       in_seq2,
-                               unsigned int           uBeginIdx2,
-                               unsigned int           uLength2);
+    static TSeqPos Append(CSeq_data*         out_seq,
+                          const CSeq_data&   in_seq1,
+                          TSeqPos            uBeginIdx1,
+                          TSeqPos            uLength1,
+                          const CSeq_data&   in_seq2,
+                          TSeqPos            uBeginIdx2,
+                          TSeqPos            uLength2);
 
     // Create a biological complement of an na sequence.
     // Attempts to complement an aa sequence will throw
     // a runtime_error. Returns length of complemented sequence.
 
     // Complement the input sequence in place
-    static unsigned int Complement(CSeq_data*       in_seq,
-                                   unsigned int     uBeginIdx = 0,
-                                   unsigned int     uLength   = 0);
+    static TSeqPos Complement(CSeq_data*   in_seq,
+                              TSeqPos      uBeginIdx = 0,
+                              TSeqPos      uLength   = 0);
 
     // Complement the input sequence and put the result in
     // the output sequence
-    static unsigned int Complement(const CSeq_data&       in_seq,
-                                   CSeq_data*             out_seq,
-                                   unsigned int           uBeginIdx = 0,
-                                   unsigned int           uLength   = 0);
+    static TSeqPos Complement(const CSeq_data&   in_seq,
+                              CSeq_data*         out_seq,
+                              TSeqPos            uBeginIdx = 0,
+                              TSeqPos            uLength   = 0);
 
     // Create a biological sequence that is the reversse
     // of an input sequence. Attempts to reverse an aa
@@ -173,16 +176,16 @@ public:
     // reversed sequence.
 
     // Reverse a sequence in place
-    static unsigned int Reverse(CSeq_data*       in_seq,
-                                unsigned int     uBeginIdx = 0,
-                                unsigned int     uLength   = 0);
+    static TSeqPos Reverse(CSeq_data*   in_seq,
+                           TSeqPos      uBeginIdx = 0,
+                           TSeqPos      uLength   = 0);
 
     // Reverse an input sequence and put result in output sequence.
     // Reverses packed bytes as necessary.
-    static unsigned int Reverse(const CSeq_data&  in_seq,
-                                CSeq_data*        out_seq,
-                                unsigned int      uBeginIdx = 0,
-                                unsigned int      uLength   = 0);
+    static TSeqPos Reverse(const CSeq_data&   in_seq,
+                           CSeq_data*         out_seq,
+                           TSeqPos            uBeginIdx = 0,
+                           TSeqPos            uLength   = 0);
 
 
     // Create the reverse complement of an input sequence. Attempts
@@ -190,15 +193,15 @@ public:
     // runtime_error.
 
     // Reverse complement a sequence in place
-    static unsigned int ReverseComplement(CSeq_data*       in_seq,
-                                          unsigned int     uBeginIdx = 0,
-                                          unsigned int     uLength   = 0);
+    static TSeqPos ReverseComplement(CSeq_data*   in_seq,
+                                     TSeqPos      uBeginIdx = 0,
+                                     TSeqPos      uLength   = 0);
 
     // Reverse complmenet a sequence and put result in output sequence
-    static unsigned int ReverseComplement(const CSeq_data&   in_seq,
-                                          CSeq_data*         out_seq,
-                                          unsigned int       uBeginIdx = 0,
-                                          unsigned int       uLength   = 0);
+    static TSeqPos ReverseComplement(const CSeq_data&   in_seq,
+                                     CSeq_data*         out_seq,
+                                     TSeqPos            uBeginIdx = 0,
+                                     TSeqPos            uLength   = 0);
                                           
     // Given an Ncbistdaa input code index, returns the 3 letter Iupacaa3 code
     static const string& GetIupacaa3(unsigned int ncbistdaa);

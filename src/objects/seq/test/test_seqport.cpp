@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2002/05/03 21:28:15  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 1.4  2002/01/10 20:34:15  clausen
  * Added tests for GetIupacaa3, GetCode, and GetIndex
  *
@@ -325,7 +328,8 @@ void CSeqportTestApp::ManualTest()
 {
     //Declare local variables
     string strInSeq;
-    unsigned int nTimes=0, uSeqLen=0, uCnt=0, uOverhang=0;
+    SIZE_TYPE nTimes=0;
+    TSeqPos uSeqLen=0, uCnt=0, uOverhang=0;
     int nInSeqType, nOutSeqType;
     CSeq_data::E_Choice to_code;
     bool bAmbig;
@@ -404,12 +408,12 @@ void CSeqportTestApp::ManualTest()
             uOverhang = uSeqLen % str.size();
         }
         in_seq->Reset();
-        int nSize = str.size();
+        SIZE_TYPE nSize = str.size();
         const char* s = str.c_str();
         switch(nInSeqType) {
         case 2:
             in_seq->SetIupacna().Set().resize(uSeqLen);
-            for(unsigned int i=0; i<nTimes; i++){               
+            for(SIZE_TYPE i=0; i<nTimes; i++){               
                 in_seq->SetIupacna().Set().replace
                     (i*nSize,nSize,s);
                 string tst = in_seq->SetIupacna().Set();
@@ -421,7 +425,7 @@ void CSeqportTestApp::ManualTest()
             break;
         case 3:
             in_seq->SetNcbieaa().Set().resize(uSeqLen);
-            for(unsigned int i=0; i<nTimes; i++) {
+            for(SIZE_TYPE i=0; i<nTimes; i++) {
                 in_seq->SetNcbieaa().Set().replace
                     (i*nSize,nSize,s);
             }
@@ -432,7 +436,7 @@ void CSeqportTestApp::ManualTest()
             break;
         case 5:
             in_seq->SetIupacaa().Set().resize(uSeqLen);
-            for(unsigned int i=0; i<nTimes; i++) {
+            for(SIZE_TYPE i=0; i<nTimes; i++) {
                 in_seq->SetIupacaa().Set().replace
                     (i*nSize,nSize,s);
             }            
@@ -472,7 +476,7 @@ void CSeqportTestApp::ManualTest()
             cout << "No input sequence given. Setting to 0." << endl;
             v.push_back(0);
         }
-        unsigned int uInSize;
+        TSeqPos uInSize;
         switch(nInSeqType) {
         case 0:
             if((uSeqLen % 4) != 0) {
@@ -510,21 +514,21 @@ void CSeqportTestApp::ManualTest()
         
         switch(nInSeqType){
         case 0:
-            for(unsigned int i=0; i<nTimes; i++) {
+            for(SIZE_TYPE i=0; i<nTimes; i++) {
                 iterate (vector<char>, j, v) {
                     in_seq->SetNcbi2na().Set().push_back(*j);
                 }
             }
             break;
         case 1:
-            for(unsigned int i=0; i<nTimes; i++) {
+            for(SIZE_TYPE i=0; i<nTimes; i++) {
                 iterate (vector<char>, j, v) {
                     in_seq->SetNcbi4na().Set().push_back(*j);
                 }
             }
             break;
         case 4:
-            for(unsigned int i=0; i<nTimes; i++) {
+            for(SIZE_TYPE i=0; i<nTimes; i++) {
                 iterate (vector<char>, j, v) {
                     in_seq->SetNcbistdaa().Set().push_back(*j);
                 }
@@ -542,8 +546,8 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
                            bool                bAmbig)
 {
     string strInSeq;
-    unsigned int uSeqLen=0;
-    unsigned int uBeginIdx, uLength, uIdx1, uIdx2;
+    TSeqPos uSeqLen=0;
+    TSeqPos uBeginIdx, uLength, uIdx1, uIdx2;
     clock_t s_time, e_time;
     double d_time;
     int nResponse = 1;
@@ -661,12 +665,12 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
     cin >> nResponse;
     if (nResponse) {
         try {
-            vector<unsigned int> out_indices;
+            vector<TSeqPos> out_indices;
             uIdx1 = uBeginIdx;
             uIdx2 = uLength;
             s_time = clock();
         
-            unsigned int uLen = CSeqportUtil::GetAmbigs
+            TSeqPos uLen = CSeqportUtil::GetAmbigs
                 (in_seq,
                  out_seq,
                  &out_indices,
@@ -687,7 +691,7 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
       
             if(out_seq->Which() == CSeq_data::e_Ncbi4na) {
                 if (out_indices.size() <= 24) {
-                    iterate (vector<unsigned int>, i_idx, out_indices) {
+                    iterate (vector<TSeqPos>, i_idx, out_indices) {
                         cout << (*i_idx) << " ";
                     }
                     cout << endl;
@@ -702,7 +706,7 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
             }
             else if(out_seq->Which() == CSeq_data::e_Iupacna) {
                 if(out_indices.size() <= 24) {
-                    iterate (vector<unsigned int>, i_idx, out_indices) {
+                    iterate (vector<TSeqPos>, i_idx, out_indices) {
                         cout << (*i_idx) << " ";
                     }
                     cout << endl;
@@ -881,7 +885,7 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
             uIdx1 = uBeginIdx;
             uIdx2 = uLength; 
             s_time = clock();
-            unsigned int uLen = CSeqportUtil::Convert
+            TSeqPos uLen = CSeqportUtil::Convert
                 (in_seq, out_seq, to_code, uIdx1, uIdx2, bAmbig);
 
             e_time = clock();
@@ -925,13 +929,14 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
             s_time = clock();
             CRef<CSeq_data> in_seq1(new CSeq_data);
             CRef<CSeq_data> in_seq2(new CSeq_data);
-            unsigned int uIdxa=0, uIdxb=0;
+            TSeqPos uIdxa=0, uIdxb=0;
             CSeqportUtil::GetCopy(in_seq, in_seq1, uIdxa, uIdxb);
             CSeqportUtil::GetCopy(in_seq, in_seq2, uIdxa, uIdxb);
-            unsigned int uLen = CSeqportUtil::Append(out_seq.GetPointer(),
-                                          *in_seq1.GetPointer(),
-                                          uBeginIdx, uLength,
-                                          *in_seq2.GetPointer(), uIdx1, uIdx2);
+            TSeqPos uLen = CSeqportUtil::Append(out_seq.GetPointer(),
+                                                *in_seq1.GetPointer(),
+                                                uBeginIdx, uLength,
+                                                *in_seq2.GetPointer(),
+                                                uIdx1, uIdx2);
             e_time = clock();
             d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
         
@@ -964,7 +969,7 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
             uIdx1 = uBeginIdx;
             uIdx2 = uLength;
             s_time = clock();
-            unsigned int uLen
+            TSeqPos uLen
                 = CSeqportUtil::ReverseComplement(out_seq, uIdx1, uIdx2);
             e_time = clock();
             d_time = (double)(e_time - s_time) / (double)CLOCKS_PER_SEC;
@@ -994,7 +999,7 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
             uIdx1 = uBeginIdx;
             uIdx2 = uLength;
             s_time = clock();
-            unsigned int uLen = CSeqportUtil::ReverseComplement
+            TSeqPos uLen = CSeqportUtil::ReverseComplement
                 (in_seq, out_seq, uIdx1, uIdx2);
             e_time = clock();
             d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
@@ -1027,7 +1032,7 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
             uIdx1 = uBeginIdx;
             uIdx2 = uLength;
             s_time = clock();
-            unsigned int uLen = CSeqportUtil::Reverse(out_seq, uIdx1, uIdx2);
+            TSeqPos uLen = CSeqportUtil::Reverse(out_seq, uIdx1, uIdx2);
             e_time = clock();
             d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
         
@@ -1056,7 +1061,7 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
             uIdx1 = uBeginIdx;
             uIdx2 = uLength;
             s_time = clock();
-            unsigned int uLen = CSeqportUtil::Reverse
+            TSeqPos uLen = CSeqportUtil::Reverse
                 (in_seq, out_seq, uIdx1, uIdx2);
             e_time = clock();
             d_time = (double) (e_time - s_time) / (double)CLOCKS_PER_SEC;
@@ -1089,8 +1094,7 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
             uIdx1 = uBeginIdx;
             uIdx2 = uLength;
             s_time = clock();
-            unsigned int uLen = CSeqportUtil::Complement
-                (out_seq, uIdx1, uIdx2);
+            TSeqPos uLen = CSeqportUtil::Complement(out_seq, uIdx1, uIdx2);
             e_time = clock();
             d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
         
@@ -1119,7 +1123,7 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
             uIdx1 = uBeginIdx;
             uIdx2 = uLength;
             s_time = clock();
-            unsigned int uLen = CSeqportUtil::Complement
+            TSeqPos uLen = CSeqportUtil::Complement
                 (in_seq, out_seq, uIdx1, uIdx2);
             e_time = clock();
             d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
@@ -1180,7 +1184,7 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
             uIdx1 = uBeginIdx;
             uIdx2 = uLength;
             s_time = clock();
-            vector<unsigned int> badIdx;
+            vector<TSeqPos> badIdx;
             
             CSeqportUtil::Validate(in_seq, &badIdx, uIdx1, uIdx2);
         
@@ -1196,7 +1200,7 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
             if(badIdx.size() <= 50 && badIdx.size() > 0)
                 {
                     cout << "Bad indices are:" << endl;
-                    vector<unsigned int>::iterator itor;
+                    vector<TSeqPos>::iterator itor;
                     for(itor = badIdx.begin(); itor != badIdx.end(); ++itor)
                         cout << *itor << " ";
                     cout << endl;
@@ -1221,7 +1225,7 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
             uIdx2 = uLength;
             s_time = clock();
       
-            unsigned int uLen = CSeqportUtil::GetCopy
+            TSeqPos uLen = CSeqportUtil::GetCopy
                 (in_seq, out_seq, uIdx1, uIdx2);
       
             e_time = clock();
@@ -1252,7 +1256,7 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
             CSeqportUtil::GetCopy(in_seq, out_seq, uIdx1, uIdx2);
             s_time = clock();
       
-            unsigned int uLen
+            TSeqPos uLen
                 = CSeqportUtil::Keep(out_seq.GetPointer(), uBeginIdx, uLength);
       
             e_time = clock();
@@ -1283,8 +1287,8 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
             CSeqportUtil::GetCopy(in_seq, out_seq, uIdx1, uIdx2);
             s_time = clock();
       
-            unsigned int uLen = CSeqportUtil::Pack(out_seq.GetPointer(),
-                                        uBeginIdx, uLength);
+            TSeqPos uLen = CSeqportUtil::Pack(out_seq.GetPointer(),
+                                              uBeginIdx, uLength);
       
             e_time = clock();
             d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
@@ -1335,7 +1339,7 @@ void CSeqportTestApp::Exit() {
 }
 
 
-void CSeqportTestApp::DisplaySeq(const CSeq_data& seq, unsigned int uSize)
+void CSeqportTestApp::DisplaySeq(const CSeq_data& seq, TSeqPos uSize)
 {
     //Print the sequence
     switch (seq.Which()) {

@@ -132,7 +132,7 @@ CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
   
   m_UseListHead = m_UseListTail = 0;
   
-  int i = m_Driver->GetParalellLevel();
+  size_t i = m_Driver->GetParallelLevel();
   m_Pool.SetSize(i<=0?10:i);
   m_SlowTraverseMode=0;
   
@@ -798,6 +798,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/05/03 21:28:10  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.32  2002/04/30 18:56:54  gouriano
 * added multithreading-related initialization
 *

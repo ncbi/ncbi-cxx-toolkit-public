@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/05/03 21:28:11  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.4  2002/05/02 20:42:38  grichenk
 * throw -> THROW1_TRACE
 *
@@ -90,7 +93,7 @@ public:
     bool operator< (const CTSE_Info& info) const;
     bool operator== (const CTSE_Info& info) const;
     typedef map<CSeq_id_Handle, CRef<CBioseq_Info> >                 TBioseqMap;
-    typedef CRange<int>                                              TRange;
+    typedef CRange<TSeqPos>                                          TRange;
     typedef CRangeMultimap<CRef<CAnnotObject>,TRange::position_type> TRangeMap;
     typedef map<CSeq_id_Handle, TRangeMap>                           TAnnotMap;
 

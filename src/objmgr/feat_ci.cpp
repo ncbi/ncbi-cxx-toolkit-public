@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/05/03 21:28:09  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.6  2002/04/05 21:26:19  grichenk
 * Enabled iteration over annotations defined on segments of a
 * delta-sequence.
@@ -81,7 +84,7 @@ CFeat_CI::CFeat_CI(CScope& scope,
 
 
 CFeat_CI::CFeat_CI(CBioseq_Handle& bioseq,
-                   int start, int stop,
+                   TSeqPos start, TSeqPos stop,
                    SAnnotSelector::TFeatChoice feat_choice,
                    EResolveMethod resolve)
     : CAnnotTypes_CI(bioseq, start, stop,

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/05/03 21:28:01  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.7  2002/03/04 15:08:43  grichenk
 * Improved CTSE_Info locks
 *
@@ -96,7 +99,7 @@ class CTSE_Info;
 class CAnnot_CI
 {
 public:
-    typedef CRange<int>                                              TRange;
+    typedef CRange<TSeqPos>                                          TRange;
     typedef CRangeMultimap<CRef<CAnnotObject>,TRange::position_type> TRangeMap;
     typedef map<CSeq_id_Handle, TRangeMap>                           TAnnotMap;
 

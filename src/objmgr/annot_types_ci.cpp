@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/05/03 21:28:08  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.18  2002/05/02 20:43:15  grichenk
 * Improved strand processing, throw -> THROW1_TRACE
 *
@@ -132,7 +135,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
 
 
 CAnnotTypes_CI::CAnnotTypes_CI(CBioseq_Handle& bioseq,
-                               int start, int stop,
+                               TSeqPos start, TSeqPos stop,
                                SAnnotSelector selector,
                                EResolveMethod resolve)
     : m_Selector(selector),
@@ -258,9 +261,10 @@ void CAnnotTypes_CI::x_Initialize(const CSeq_loc& loc, EResolveMethod resolve)
 
 void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
                                          CSeq_id_Handle ref_idh,
-                                         int rmin, int rmax,
+                                         TSeqPos rmin,
+                                         TSeqPos rmax,
                                          ENa_strand strand,
-                                         int shift,
+                                         TSignedSeqPos shift,
                                          EResolveMethod resolve)
 {
     // Create a new entry in the convertions map
@@ -309,13 +313,13 @@ void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
             }
             // Resolve the reference
             // Adjust the interval
-            int seg_min = seg.GetPosition();
-            int seg_max = seg_min + seg.GetLength();
+            TSeqPos seg_min = seg.GetPosition();
+            TSeqPos seg_max = seg_min + seg.GetLength();
             if (rmin > seg_min)
                 seg_min = rmin;
             if (rmax < seg_max)
                 seg_max = rmax;
-            int rshift = shift + seg.GetPosition() - seg.m_RefPos;
+            TSignedSeqPos rshift = shift + seg.GetPosition() - seg.m_RefPos;
             // Adjust strand
             ENa_strand adj_strand = eNa_strand_unknown;
             if ( seg.m_MinusStrand ) {
@@ -446,8 +450,8 @@ bool CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
                         (loc.SetInt().SetId(),
                          m_Scope->x_GetIdMapper().
                          GetSeq_id((*conv_it)->m_MasterId));
-                    int new_from = loc.GetInt().GetFrom();
-                    int new_to = loc.GetInt().GetTo();
+                    TSeqPos new_from = loc.GetInt().GetFrom();
+                    TSeqPos new_to = loc.GetInt().GetTo();
                     if (new_from < (*conv_it)->m_RefMin) {
                         new_from = (*conv_it)->m_RefMin;
                         partial = true;
@@ -469,7 +473,7 @@ bool CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
                          m_Scope->x_GetIdMapper().
                          GetSeq_id((*conv_it)->m_MasterId));
                     // Convert to the allowed master seq interval
-                    int new_pnt = loc.GetPnt().GetPoint();
+                    TSeqPos new_pnt = loc.GetPnt().GetPoint();
                     if (new_pnt < (*conv_it)->m_RefMin  ||
                         new_pnt > (*conv_it)->m_RefMax) {
                         //### Can this happen if loc is intersecting with the
@@ -491,8 +495,8 @@ bool CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
                         // Convert to the allowed master seq interval
                         SerialAssign<CSeq_id>((*ii)->SetId(),
                             m_Scope->x_GetIdMapper().GetSeq_id((*conv_it)->m_MasterId));
-                        int new_from = (*ii)->GetFrom();
-                        int new_to = (*ii)->GetTo();
+                        TSeqPos new_from = (*ii)->GetFrom();
+                        TSeqPos new_to = (*ii)->GetTo();
                         if (new_from < (*conv_it)->m_RefMin) {
                             new_from = (*conv_it)->m_RefMin;
                             partial = true;
@@ -516,7 +520,7 @@ bool CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
                     loc.SetPacked_pnt().ResetPoints();
                     non_const_iterate ( CPacked_seqpnt::TPoints, pi, pnt_copy ) {
                         // Convert to the allowed master seq interval
-                        int new_pnt = *pi;
+                        TSeqPos new_pnt = *pi;
                         if (new_pnt >= (*conv_it)->m_RefMin  &&
                             new_pnt <= (*conv_it)->m_RefMax) {
                             loc.SetPacked_pnt().SetPoints().push_back
@@ -553,7 +557,7 @@ bool CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
                         // Convert A to the allowed master seq interval
                         SerialAssign<CSeq_id>(loc.SetBond().SetA().SetId(),
                             m_Scope->x_GetIdMapper().GetSeq_id((*conv_it)->m_MasterId));
-                        int newA = loc.GetBond().GetA().GetPoint();
+                        TSeqPos newA = loc.GetBond().GetA().GetPoint();
                         if (newA >= (*conv_it)->m_RefMin  &&
                             newA <= (*conv_it)->m_RefMax) {
                             loc.SetBond().SetA().SetPoint(newA + (*conv_it)->m_RefShift);
@@ -569,7 +573,7 @@ bool CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
                             // Convert A to the allowed master seq interval
                             SerialAssign<CSeq_id>(loc.SetBond().SetB().SetId(),
                                 m_Scope->x_GetIdMapper().GetSeq_id((*conv_it)->m_MasterId));
-                            int newB = loc.GetBond().GetB().GetPoint();
+                            TSeqPos newB = loc.GetBond().GetB().GetPoint();
                             if (newB >= (*conv_it)->m_RefMin  &&
                                 newB <= (*conv_it)->m_RefMax) {
                                 loc.SetBond().SetB().SetPoint(newB + (*conv_it)->m_RefShift);

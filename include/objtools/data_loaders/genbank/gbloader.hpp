@@ -78,7 +78,7 @@ public:
   time_t RetryTime();
   bool   NeedCalibration();
 private:
-  int    m_ReasonableRefreshDelay;
+  time_t m_ReasonableRefreshDelay;
   int    m_RequestsDevider;
   int    m_Requests;
   CMutex m_RequestsLock;
@@ -244,6 +244,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.18  2002/05/03 21:28:01  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 1.17  2002/04/11 02:09:52  vakatov
  * Get rid of a warning
  *

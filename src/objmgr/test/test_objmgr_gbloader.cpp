@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/05/03 21:28:12  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.17  2002/04/16 18:32:37  grichenk
 * +feature iterator tests
 *
@@ -151,7 +154,7 @@ int CTestApplication::Run()
           v.SetIupacCoding();
           LOG_POST("Vector size = " << v.size());
           string vs = "";
-          for (unsigned cc = 0; cc < v.size(); cc++) {
+          for (TSeqPos cc = 0; cc < v.size(); cc++) {
               vs += v[cc];
               if (cc > 40) break;
           }

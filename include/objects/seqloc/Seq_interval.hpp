@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2002/05/03 21:28:04  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 1.3  2002/01/10 18:22:59  clausen
  * Added IsValid
  *
@@ -73,7 +76,7 @@ public:
     ~CSeq_interval(void);
 
     // Get the length of the interval
-    int GetLength(void) const;
+    TSeqPos GetLength(void) const;
     
     // Checks from and to values of the CSeq_interval. Checks from <= to,
     // from >= 0, and to < length of the CBioseq this is an interval for.
@@ -99,7 +102,7 @@ CSeq_interval::CSeq_interval(void)
 
 // length return
 inline
-int CSeq_interval::GetLength(void) const
+TSeqPos CSeq_interval::GetLength(void) const
 {
 	return ((GetTo() - GetFrom()) + 1);
 }

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/05/03 21:28:01  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.13  2002/04/30 14:30:41  grichenk
 * Added eResolve_TSE flag in CAnnot_Types_CI, made it default
 *
@@ -120,7 +123,7 @@ public:
     // Search only in TSE, containing the bioseq, by default get annotations
     // defined on segments in the same TSE (eResolve_TSE method).
     CAnnotTypes_CI(CBioseq_Handle& bioseq,
-                   int start, int stop,
+                   TSeqPos start, TSeqPos stop,
                    SAnnotSelector selector,
                    EResolveMethod resolve);
     CAnnotTypes_CI(const CAnnotTypes_CI& it);
@@ -147,12 +150,11 @@ private:
         auto_ptr<CHandleRangeMap>   m_Location;
         // Shift to the master sequence position:
         //   master_pos = annotation_pos + m_RefShift
-        int                         m_RefShift;
+        TSignedSeqPos               m_RefShift;
         // Min/max position allowed for features (to fit the map segment)
-        // -1 means there is no limit. The positions are in the referenced
-        // sequence coordinates.
-        int                         m_RefMin;
-        int                         m_RefMax;
+        // The positions are in the referenced sequence coordinates.
+        TSeqPos                     m_RefMin;
+        TSeqPos                     m_RefMax;
         ENa_strand                  m_Strand;
         // Convert references to this id
         CSeq_id_Handle              m_MasterId;
@@ -174,9 +176,9 @@ private:
     // over the map.
     void x_ResolveReferences(CSeq_id_Handle master_idh, // master id
                              CSeq_id_Handle ref_idh,    // ref. id
-                             int rmin, int rmax,        // ref. interval
+                             TSeqPos rmin, TSeqPos rmax,// ref. interval
                              ENa_strand strand,         // ref. strand
-                             int shift,                 // shift to master
+                             TSignedSeqPos shift,       // shift to master
                              EResolveMethod resolve);
     // Convert an annotation to the master location coordinates
     CAnnotObject* x_ConvertAnnotToMaster(const CAnnotObject& annot_obj) const;

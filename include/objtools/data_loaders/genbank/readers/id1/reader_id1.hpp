@@ -103,9 +103,9 @@ public:
   virtual streambuf *SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn = 0);
   virtual CSeqref *RetrieveSeqref(istream &is);
 
-  virtual int GetParalellLevel(void) const;
-  virtual void SetParalellLevel(unsigned);
-  virtual void Reconnect(unsigned);
+  virtual size_t GetParallelLevel(void) const;
+  virtual void SetParallelLevel(size_t);
+  virtual void Reconnect(size_t);
 
 protected:
   CConn_ServiceStream *NewID1Service();
@@ -123,6 +123,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.7  2002/05/03 21:28:02  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.6  2002/03/27 20:22:32  butanaev
 * Added connection pool.
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2002/05/03 21:28:09  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.38  2002/05/02 20:42:37  grichenk
 * throw -> THROW1_TRACE
 *
@@ -449,7 +452,7 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
 
 
 bool CDataSource::GetSequence(const CBioseq_Handle& handle,
-                              TSeqPosition point,
+                              TSeqPos point,
                               SSeqData* seq_piece,
                               CScope& scope)
 {
@@ -518,11 +521,11 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
             }
         case CSeqMap::eSeqRef:
             {
-                int shift = seg.m_RefPos - seg.m_Position;
+                TSignedSeqPos shift = seg.m_RefPos - seg.m_Position;
                 if ( scope.x_GetSequence(seg.m_RefSeq,
                     point + shift, seq_piece) ) {
-                    int xL = seg.m_Length;
-                    int delta = seg.m_RefPos -
+                    TSeqPos xL = seg.m_Length;
+                    TSignedSeqPos delta = seg.m_RefPos -
                         seq_piece->dest_start;
                     seq_piece->dest_start = seg.m_Position;
                     if (delta < 0) {
@@ -635,8 +638,8 @@ bool CDataSource::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
 
 bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
                                 CDelta_seq& seq_seg,
-                                TSeqPosition start,
-                                TSeqLength length)
+                                TSeqPos start,
+                                TSeqPos length)
 {
 /*
     The function should be used mostly by data loaders. If a segment of a
@@ -933,7 +936,7 @@ void CDataSource::x_AddToAnnotMap(CSeq_entry& entry)
 void CDataSource::x_CreateSeqMap(const CBioseq& seq)
 {
     CSeqMap* seqmap = new CSeqMap;
-    int pos = 0;
+    TSeqPos pos = 0;
     if ( seq.GetInst().IsSetSeq_data() ) {
         _ASSERT( !seq.GetInst().IsSetExt() );
         x_DataToSeqMap(seq.GetInst().GetSeq_data(), pos,
@@ -1002,7 +1005,7 @@ void CDataSource::x_CreateSeqMap(const CBioseq& seq)
 
 
 void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
-                                int& pos,
+                                TSeqPos& pos,
                                 CSeqMap& seqmap)
 {
     switch ( loc.Which() ) {
@@ -1117,7 +1120,7 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
 
 
 void CDataSource::x_DataToSeqMap(const CSeq_data& data,
-                                 int& pos, int len,
+                                 TSeqPos& pos, TSeqPos len,
                                  CSeqMap& seqmap)
 {
     //### Search for gaps in the data
@@ -1615,7 +1618,7 @@ const CSeqMap& CDataSource::GetResolvedSeqMap(CBioseq_Handle handle)
     // must be deleted by user or user's CRef).
     CRef<CSeqMap> dmap(new CSeqMap());
 
-    int pos = 0; // recalculate positions
+    TSeqPos pos = 0; // recalculate positions
     for (size_t seg = 0; seg < smap.size(); seg++)
     {
         switch (smap[seg].m_SegType) {
@@ -1646,8 +1649,9 @@ const CSeqMap& CDataSource::GetResolvedSeqMap(CBioseq_Handle handle)
 
 
 void CDataSource::x_ResolveMapSegment(CSeq_id_Handle rh,
-                                      int start, int len,
-                                      CSeqMap& dmap, int& dpos, int dstop,
+                                      TSeqPos start, TSeqPos len,
+                                      CSeqMap& dmap, TSeqPos& dpos,
+                                      TSeqPos dstop,
                                       CScope& scope)
 {
     CBioseq_Handle rbsh = scope.GetBioseqHandle(
@@ -1663,8 +1667,8 @@ void CDataSource::x_ResolveMapSegment(CSeq_id_Handle rh,
     // destination sequence
     while (dpos < dstop  &&  len > 0) {
         // Get and adjust the segment start
-        int rstart = rmap[rseg].m_Position;
-        int rlength = rmap[rseg].m_Length;
+        TSeqPos rstart = rmap[rseg].m_Position;
+        TSeqPos rlength = rmap[rseg].m_Length;
         if (rstart < start) {
             rlength -= start - rstart;
             rstart = start;
@@ -1695,7 +1699,8 @@ void CDataSource::x_ResolveMapSegment(CSeq_id_Handle rh,
         case CSeqMap::eSeqRef:
             {
                 // Resolve multi-level references
-                int rshift = rmap[rseg].m_RefPos - rmap[rseg].m_Position;
+                TSignedSeqPos rshift
+                    = rmap[rseg].m_RefPos - rmap[rseg].m_Position;
                 x_ResolveMapSegment(rmap[rseg].m_RefSeq,
                     rstart + rshift, rlength,
                     dmap, dpos, dstop, scope);

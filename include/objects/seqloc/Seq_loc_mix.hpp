@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2002/05/03 21:28:04  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 1.7  2002/04/22 20:09:06  grichenk
  * -GetTotalRange(), GetRangeMap(), ResetRangeMap()
  *
@@ -88,7 +91,7 @@ public:
     ~CSeq_loc_mix(void);
 
     // Length Calculator
-    int GetLength(void) const;
+    TSeqPos GetLength(void) const /* THROWS((CSeq_loc::CException)) */;
     
 private:
     // Prohibit copy constructor & assignment operator

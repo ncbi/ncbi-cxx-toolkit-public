@@ -144,9 +144,9 @@ public:
   // return the level of reasonable parallelism
   // 1 - non MTsafe; 0 - no synchronization required,
   // n - at most n connection is advised/supported
-  virtual int GetParalellLevel(void) const = 0;
-  virtual void SetParalellLevel(unsigned) = 0;
-  virtual void Reconnect(unsigned) = 0;
+  virtual size_t GetParallelLevel(void) const = 0;
+  virtual void SetParallelLevel(size_t) = 0;
+  virtual void Reconnect(size_t) = 0;
 
   // returns the time in secons when already retrived data
   // could become obsolete by fresher version 
@@ -162,6 +162,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.14  2002/05/03 21:28:01  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.13  2002/04/08 18:37:56  ucko
 * Use IOS_BASE instead of ios_base for compatibility with old compilers.
 *

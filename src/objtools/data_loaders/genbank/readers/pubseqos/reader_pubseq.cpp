@@ -94,20 +94,20 @@ CPubseqReader::~CPubseqReader()
     delete m_Pool[i];
 }
 
-int CPubseqReader::GetParalellLevel(void) const
+size_t CPubseqReader::GetParallelLevel(void) const
 {
   return m_Pool.size();
 }
 
-void CPubseqReader::SetParalellLevel(unsigned size)
+void CPubseqReader::SetParallelLevel(size_t size)
 {
-  unsigned poolSize = m_Pool.size();
-  for(unsigned i = size; i < poolSize; ++i)
+  size_t poolSize = m_Pool.size();
+  for(size_t i = size; i < poolSize; ++i)
     delete m_Pool[i];
 
   m_Pool.resize(size);
 
-  for(unsigned i = poolSize; i < size; ++i)
+  for(size_t i = poolSize; i < size; ++i)
     m_Pool[i] = NewConn();
 }
 
@@ -129,7 +129,7 @@ CDB_Connection *CPubseqReader::NewConn()
   return m_Context->Connect(m_Server, m_User, m_Password, 0);
 }
 
-void CPubseqReader::Reconnect(unsigned conn)
+void CPubseqReader::Reconnect(size_t conn)
 {
   conn = conn % m_Pool.size();
   delete m_Pool[conn];
@@ -323,7 +323,7 @@ CT_INT_TYPE CPubseqStreamBuf::underflow()
   }
   else if(m_Status == eBlob)
   {
-    unsigned size = m_Result->ReadItem(m_Buffer, sizeof(m_Buffer));
+    size_t size = m_Result->ReadItem(m_Buffer, sizeof(m_Buffer));
     if(size != 0)
     {
       setg(m_Buffer, m_Buffer, m_Buffer + size);
@@ -376,6 +376,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.10  2002/05/03 21:28:10  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.9  2002/04/25 20:54:07  kimelman
 * noise off
 *

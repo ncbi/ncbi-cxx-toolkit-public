@@ -280,12 +280,25 @@ extern char* strdup(const char* str);
 #endif
 
 
+// Type for sequence locations and lengths.  Use this typedef rather
+// than its expansion, which may change.
+typedef unsigned int TSeqPos;
+
+// Use this type when and only when negative values are a possibility
+// (for differences between positions or error reporting -- though
+// exceptions are generally better for the latter).  Again, the
+// expansion may change.
+typedef int TSignedSeqPos;
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2002/05/03 21:27:59  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 1.55  2002/04/11 20:39:19  ivanov
  * CVS log moved to end of the file
  *

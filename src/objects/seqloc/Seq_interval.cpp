@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/05/03 21:28:18  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 6.1  2002/01/10 19:07:26  clausen
  * Committing add
  *
@@ -64,7 +67,7 @@ CSeq_interval::~CSeq_interval(void)
 bool CSeq_interval::IsValid(CScope* scope) const
 {
     // Check 0 <= from <= to and to < length. If scope is null
-    // GetLength returns kMax_Int.
+    // GetLength returns the maximum possible value.
     if( GetFrom() < 0 || GetFrom() > GetTo() || 
         GetTo() >= GetId().GetLength(scope) ) {
         return false;

@@ -193,7 +193,7 @@ CT_INT_TYPE CId1StreamBuf::underflow()
   if(! m_Server)
     return CT_EOF;
 
-  int n = CIStream::Read(*m_Server, buffer, sizeof(buffer));
+  size_t n = CIStream::Read(*m_Server, buffer, sizeof(buffer));
   setg(buffer, buffer, buffer + n);
   return n == 0 ? CT_EOF : CT_TO_INT_TYPE(buffer[0]);
 }
@@ -307,20 +307,20 @@ CId1Reader::~CId1Reader()
     delete m_Pool[i];
 }
 
-int CId1Reader::GetParalellLevel(void) const
+size_t CId1Reader::GetParallelLevel(void) const
 {
   return m_Pool.size();
 }
 
-void CId1Reader::SetParalellLevel(unsigned size)
+void CId1Reader::SetParallelLevel(size_t size)
 {
-  unsigned poolSize = m_Pool.size();
-  for(unsigned i = size; i < poolSize; ++i)
+  size_t poolSize = m_Pool.size();
+  for(size_t i = size; i < poolSize; ++i)
     delete m_Pool[i];
 
   m_Pool.resize(size);
 
-  for(unsigned i = poolSize; i < size; ++i)
+  for(size_t i = poolSize; i < size; ++i)
     m_Pool[i] = NewID1Service();
 }
 
@@ -332,7 +332,7 @@ CConn_ServiceStream *CId1Reader::NewID1Service()
   return new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout);
 }
 
-void CId1Reader::Reconnect(unsigned conn)
+void CId1Reader::Reconnect(size_t conn)
 {
   conn = conn % m_Pool.size();
   delete m_Pool[conn];
@@ -344,6 +344,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.19  2002/05/03 21:28:10  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.18  2002/04/17 19:52:02  kimelman
 * fix: no gi found
 *

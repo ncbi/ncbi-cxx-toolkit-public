@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2002/05/03 21:28:14  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 6.9  2002/04/25 19:37:03  clausen
  * Fixed bug in MapNcbi2naToNcbi4na that caused corrupiton of out_seq
  *
@@ -94,104 +97,104 @@ public:
     CSeqportUtil_implementation();
     ~CSeqportUtil_implementation();
 
-    unsigned int Convert
-    (const CSeq_data&       in_seq,
-     CSeq_data*             out_seq,
-     CSeq_data::E_Choice    to_code,
-     unsigned int           uBeginIdx,
-     unsigned int           uLength,
-     bool                   bAmbig,
-     CRandom::TValue        seed)
+    TSeqPos Convert
+    (const CSeq_data&      in_seq,
+     CSeq_data*            out_seq,
+     CSeq_data::E_Choice   to_code,
+     TSeqPos               uBeginIdx,
+     TSeqPos               uLength,
+     bool                  bAmbig,
+     CRandom::TValue       seed)
         const;
 
-    unsigned int Pack
-    (CSeq_data*     in_seq,
-     unsigned int   uBeginidx,
-     unsigned int   uLength)
+    TSeqPos Pack
+    (CSeq_data*   in_seq,
+     TSeqPos      uBeginidx,
+     TSeqPos      uLength)
         const;
 
     bool FastValidate
     (const CSeq_data&   in_seq,
-     unsigned int       uBeginIdx,
-     unsigned int       uLength)
+     TSeqPos            uBeginIdx,
+     TSeqPos            uLength)
         const;
 
     void Validate
-    (const CSeq_data&       in_seq,
-     vector<unsigned int>*  badIdx,
-     unsigned int           uBeginIdx,
-     unsigned int           uLength)
+    (const CSeq_data&   in_seq,
+     vector<TSeqPos>*   badIdx,
+     TSeqPos            uBeginIdx,
+     TSeqPos            uLength)
         const;
 
-    unsigned int GetAmbigs
-    (const CSeq_data&       in_seq,
-     CSeq_data*             out_seq,
-     vector<unsigned int>*  out_indices,
-     CSeq_data::E_Choice    to_code,
-     unsigned int           uBeginIdx,
-     unsigned int           uLength)
+    TSeqPos GetAmbigs
+    (const CSeq_data&      in_seq,
+     CSeq_data*            out_seq,
+     vector<TSeqPos>*      out_indices,
+     CSeq_data::E_Choice   to_code,
+     TSeqPos               uBeginIdx,
+     TSeqPos               uLength)
         const;
 
-    unsigned int GetCopy
-    (const CSeq_data&       in_seq,
-     CSeq_data*             out_seq,
-     unsigned int           uBeginIdx,
-     unsigned int           uLength)
-        const;
-
-    unsigned int Keep
-    (CSeq_data*      in_seq,
-     unsigned int     uBeginIdx,
-     unsigned int     uLength)
-        const;
-
-    unsigned int Append
-    (CSeq_data*             out_seq,
-     const CSeq_data&       in_seq1,
-     unsigned int           uBeginIdx1,
-     unsigned int           uLength1,
-     const CSeq_data&       in_seq2,
-     unsigned int           uBeginIdx2,
-     unsigned int           uLength2)
-        const;
-
-    unsigned int Complement
-    (CSeq_data*       in_seq,
-     unsigned int     uBeginIdx,
-     unsigned int     uLength)
-        const;
-
-    unsigned int Complement
-    (const CSeq_data&       in_seq,
-     CSeq_data*             out_seq,
-     unsigned int           uBeginIdx,
-     unsigned int           uLength)
-        const;
-
-    unsigned int Reverse
-    (CSeq_data*       in_seq,
-     unsigned int     uBeginIdx,
-     unsigned int     uLength)
-        const;
-
-    unsigned int Reverse
-    (const CSeq_data&  in_seq,
-     CSeq_data*        out_seq,
-     unsigned int      uBeginIdx,
-     unsigned int      uLength)
-        const;
-
-    unsigned int ReverseComplement
-    (CSeq_data*       in_seq,
-     unsigned int     uBeginIdx,
-     unsigned int     uLength)
-        const;
-
-    unsigned int ReverseComplement
+    TSeqPos GetCopy
     (const CSeq_data&   in_seq,
      CSeq_data*         out_seq,
-     unsigned int       uBeginIdx,
-     unsigned int       uLength)
+     TSeqPos            uBeginIdx,
+     TSeqPos            uLength)
+        const;
+
+    TSeqPos Keep
+    (CSeq_data*   in_seq,
+     TSeqPos      uBeginIdx,
+     TSeqPos      uLength)
+        const;
+
+    TSeqPos Append
+    (CSeq_data*         out_seq,
+     const CSeq_data&   in_seq1,
+     TSeqPos            uBeginIdx1,
+     TSeqPos            uLength1,
+     const CSeq_data&   in_seq2,
+     TSeqPos            uBeginIdx2,
+     TSeqPos            uLength2)
+        const;
+
+    TSeqPos Complement
+    (CSeq_data*   in_seq,
+     TSeqPos      uBeginIdx,
+     TSeqPos      uLength)
+        const;
+
+    TSeqPos Complement
+    (const CSeq_data&   in_seq,
+     CSeq_data*         out_seq,
+     TSeqPos            uBeginIdx,
+     TSeqPos            uLength)
+        const;
+
+    TSeqPos Reverse
+    (CSeq_data*   in_seq,
+     TSeqPos      uBeginIdx,
+     TSeqPos      uLength)
+        const;
+
+    TSeqPos Reverse
+    (const CSeq_data&  in_seq,
+     CSeq_data*        out_seq,
+     TSeqPos           uBeginIdx,
+     TSeqPos           uLength)
+        const;
+
+    TSeqPos ReverseComplement
+    (CSeq_data*   in_seq,
+     TSeqPos      uBeginIdx,
+     TSeqPos      uLength)
+        const;
+
+    TSeqPos ReverseComplement
+    (const CSeq_data&   in_seq,
+     CSeq_data*         out_seq,
+     TSeqPos            uBeginIdx,
+     TSeqPos            uLength)
         const;
         
     const string& GetIupacaa3(unsigned int ncbistdaa);
@@ -200,7 +203,7 @@ public:
                           unsigned int        idx); 
                  
     int GetIndex(CSeq_data::E_Choice code_type,
-                  const string&       code);
+                 const string&       code);
 
 private:
 
@@ -433,186 +436,186 @@ private:
     // the number of converted codes.
 
     // Fuction to convert ncbi2na (1 byte) to iupacna (4 bytes)
-    unsigned int MapNcbi2naToIupacna(const CSeq_data&  in_seq,
-                                     CSeq_data*        out_seq,
-                                     unsigned int      uBeginIdx,
-                                     unsigned int      uLength)
+    TSeqPos MapNcbi2naToIupacna(const CSeq_data&  in_seq,
+                                CSeq_data*        out_seq,
+                                TSeqPos           uBeginIdx,
+                                TSeqPos           uLength)
         const;
 
     // Function to convert ncbi2na (1 byte) to ncbi4na (2 bytes)
-    unsigned int MapNcbi2naToNcbi4na(const CSeq_data&  in_seq,
-                                     CSeq_data*        out_seq,
-                                     unsigned int      uBeginIdx,
-                                     unsigned int      uLength)
+    TSeqPos MapNcbi2naToNcbi4na(const CSeq_data&  in_seq,
+                                CSeq_data*        out_seq,
+                                TSeqPos           uBeginIdx,
+                                TSeqPos           uLength)
         const;
 
     // Function to convert ncbi4na (1 byte) to iupacna (2 bytes)
-    unsigned int MapNcbi4naToIupacna(const CSeq_data& in_seq,
-                                     CSeq_data*       out_seq,
-                                     unsigned int     uBeginIdx,
-                                     unsigned int     uLength)
+    TSeqPos MapNcbi4naToIupacna(const CSeq_data& in_seq,
+                                CSeq_data*       out_seq,
+                                TSeqPos          uBeginIdx,
+                                TSeqPos          uLength)
         const;
 
     // Function to convert iupacna (4 bytes) to ncbi2na (1 byte)
-    unsigned int MapIupacnaToNcbi2na(const CSeq_data& in_seq,
-                                     CSeq_data*       out_seq,
-                                     unsigned int     uBeginIdx,
-                                     unsigned int     uLength,
-                                     bool             bAmbig,
-                                     CRandom::TValue  seed)
+    TSeqPos MapIupacnaToNcbi2na(const CSeq_data& in_seq,
+                                CSeq_data*       out_seq,
+                                TSeqPos          uBeginIdx,
+                                TSeqPos          uLength,
+                                bool             bAmbig,
+                                CRandom::TValue  seed)
         const;
 
     // Function to convert iupacna (2 bytes) to ncbi4na (1 byte)
-    unsigned int MapIupacnaToNcbi4na(const CSeq_data& in_seq,
-                                     CSeq_data*       out_seq,
-                                     unsigned int     uBeginIdx,
-                                     unsigned int     uLength)
+    TSeqPos MapIupacnaToNcbi4na(const CSeq_data& in_seq,
+                                CSeq_data*       out_seq,
+                                TSeqPos          uBeginIdx,
+                                TSeqPos          uLength)
         const;
 
     // Function to convert ncbi4na (2 bytes) to ncbi2na (1 byte)
-    unsigned int MapNcbi4naToNcbi2na(const CSeq_data& in_seq,
-                                     CSeq_data*       out_seq,
-                                     unsigned int     uBeginIdx,
-                                     unsigned int     uLength,
-                                     bool             bAmbig,
-                                     CRandom::TValue  seed)
+    TSeqPos MapNcbi4naToNcbi2na(const CSeq_data& in_seq,
+                                CSeq_data*       out_seq,
+                                TSeqPos          uBeginIdx,
+                                TSeqPos          uLength,
+                                bool             bAmbig,
+                                CRandom::TValue  seed)
         const;
 
     // Function to convert iupacaa (byte) to ncbieaa (byte)
-    unsigned int MapIupacaaToNcbieaa(const CSeq_data& in_seq,
-                                     CSeq_data*       out_seq,
-                                     unsigned int     uBeginIdx,
-                                     unsigned int     uLength) const;
+    TSeqPos MapIupacaaToNcbieaa(const CSeq_data& in_seq,
+                                CSeq_data*       out_seq,
+                                TSeqPos          uBeginIdx,
+                                TSeqPos          uLength) const;
 
     // Function to convert ncbieaa (byte) to iupacaa (byte)
-    unsigned int MapNcbieaaToIupacaa(const CSeq_data& in_seq,
-                                     CSeq_data*       out_seq,
-                                     unsigned int     uBeginIdx,
-                                     unsigned int     uLength)
+    TSeqPos MapNcbieaaToIupacaa(const CSeq_data& in_seq,
+                                CSeq_data*       out_seq,
+                                TSeqPos          uBeginIdx,
+                                TSeqPos          uLength)
         const;
 
     // Function to convert iupacaa (byte) to ncbistdaa (byte)
-    unsigned int MapIupacaaToNcbistdaa(const CSeq_data& in_seq,
-                                       CSeq_data*       out_seq,
-                                       unsigned int     uBeginIdx,
-                                       unsigned int     uLength)
+    TSeqPos MapIupacaaToNcbistdaa(const CSeq_data& in_seq,
+                                  CSeq_data*       out_seq,
+                                  TSeqPos          uBeginIdx,
+                                  TSeqPos          uLength)
         const;
 
     // Function to convert ncbieaa (byte) to ncbistdaa (byte)
-    unsigned int MapNcbieaaToNcbistdaa(const CSeq_data& in_seq,
-                                       CSeq_data*       out_seq,
-                                       unsigned int     uBeginIdx,
-                                       unsigned int     uLength)
+    TSeqPos MapNcbieaaToNcbistdaa(const CSeq_data& in_seq,
+                                  CSeq_data*       out_seq,
+                                  TSeqPos          uBeginIdx,
+                                  TSeqPos          uLength)
         const;
 
     // Function to convert ncbistdaa (byte) to ncbieaa (byte)
-    unsigned int MapNcbistdaaToNcbieaa(const CSeq_data& in_seq,
-                                       CSeq_data*       out_seq,
-                                       unsigned int     uBeginIdx,
-                                       unsigned int     uLength)
+    TSeqPos MapNcbistdaaToNcbieaa(const CSeq_data& in_seq,
+                                  CSeq_data*       out_seq,
+                                  TSeqPos          uBeginIdx,
+                                  TSeqPos          uLength)
         const;
 
     // Function to convert ncbistdaa (byte) to iupacaa (byte)
-    unsigned int MapNcbistdaaToIupacaa(const CSeq_data& in_seq,
-                                       CSeq_data*       out_seq,
-                                       unsigned int     uBeginIdx,
-                                       unsigned int     uLength)
+    TSeqPos MapNcbistdaaToIupacaa(const CSeq_data& in_seq,
+                                  CSeq_data*       out_seq,
+                                  TSeqPos          uBeginIdx,
+                                  TSeqPos          uLength)
         const;
 
     // Fast Validation functions
     bool FastValidateIupacna(const CSeq_data& in_seq,
-                             unsigned int     uBeginIdx,
-                             unsigned int     uLength)
+                             TSeqPos          uBeginIdx,
+                             TSeqPos          uLength)
         const;
 
     bool FastValidateNcbieaa(const CSeq_data& in_seq,
-                             unsigned int     uBeginIdx,
-                             unsigned int     uLength)
+                             TSeqPos          uBeginIdx,
+                             TSeqPos          uLength)
         const;
 
 
     bool FastValidateNcbistdaa(const CSeq_data& in_seq,
-                               unsigned int     uBeginIdx,
-                               unsigned int     uLength)
+                               TSeqPos          uBeginIdx,
+                               TSeqPos          uLength)
         const;
 
 
     bool FastValidateIupacaa(const CSeq_data& in_seq,
-                             unsigned int     uBeginIdx,
-                             unsigned int     uLength)
+                             TSeqPos          uBeginIdx,
+                             TSeqPos          uLength)
         const;
 
     // Full Validation functions
     void ValidateIupacna(const CSeq_data&       in_seq,
-                         vector<unsigned int>*  badIdx,
-                         unsigned int           uBeginIdx,
-                         unsigned int           uLength)
+                         vector<TSeqPos>*       badIdx,
+                         TSeqPos                uBeginIdx,
+                         TSeqPos                uLength)
         const;
 
     void ValidateNcbieaa(const CSeq_data&       in_seq,
-                         vector<unsigned int>*  badIdx,
-                         unsigned int           uBeginIdx,
-                         unsigned int           uLength)
+                         vector<TSeqPos>*       badIdx,
+                         TSeqPos                uBeginIdx,
+                         TSeqPos                uLength)
         const;
 
     void ValidateNcbistdaa(const CSeq_data&       in_seq,
-                           vector<unsigned int>*  badIdx,
-                           unsigned int           uBeginIdx,
-                           unsigned int           uLength)
+                           vector<TSeqPos>*       badIdx,
+                           TSeqPos                uBeginIdx,
+                           TSeqPos                uLength)
         const;
 
     void ValidateIupacaa(const CSeq_data&       in_seq,
-                         vector<unsigned int>*  badIdx,
-                         unsigned int           uBeginIdx,
-                         unsigned int           uLength)
+                         vector<TSeqPos>*       badIdx,
+                         TSeqPos                uBeginIdx,
+                         TSeqPos                uLength)
         const;
 
     // Functions to make copies of the different types of sequences
-    unsigned int GetNcbi2naCopy(const CSeq_data& in_seq,
-                                CSeq_data*       out_seq,
-                                unsigned int     uBeginIdx,
-                                unsigned int     uLength)
+    TSeqPos GetNcbi2naCopy(const CSeq_data& in_seq,
+                           CSeq_data*       out_seq,
+                           TSeqPos          uBeginIdx,
+                           TSeqPos          uLength)
         const;
 
-    unsigned int GetNcbi4naCopy(const CSeq_data& in_seq,
-                                CSeq_data*       out_seq,
-                                unsigned int     uBeginIdx,
-                                unsigned int     uLength)
+    TSeqPos GetNcbi4naCopy(const CSeq_data& in_seq,
+                           CSeq_data*       out_seq,
+                           TSeqPos          uBeginIdx,
+                           TSeqPos          uLength)
         const;
 
-    unsigned int GetIupacnaCopy(const CSeq_data& in_seq,
-                                CSeq_data*       out_seq,
-                                unsigned int     uBeginIdx,
-                                unsigned int     uLength)
+    TSeqPos GetIupacnaCopy(const CSeq_data& in_seq,
+                           CSeq_data*       out_seq,
+                           TSeqPos          uBeginIdx,
+                           TSeqPos          uLength)
         const;
 
-    unsigned int GetNcbieaaCopy(const CSeq_data& in_seq,
-                                CSeq_data*       out_seq,
-                                unsigned int     uBeginIdx,
-                                unsigned int     uLength)
+    TSeqPos GetNcbieaaCopy(const CSeq_data& in_seq,
+                           CSeq_data*       out_seq,
+                           TSeqPos          uBeginIdx,
+                           TSeqPos          uLength)
         const;
 
-    unsigned int GetNcbistdaaCopy(const CSeq_data& in_seq,
-                                  CSeq_data*       out_seq,
-                                  unsigned int     uBeginIdx,
-                                  unsigned int     uLength)
+    TSeqPos GetNcbistdaaCopy(const CSeq_data& in_seq,
+                             CSeq_data*       out_seq,
+                             TSeqPos          uBeginIdx,
+                             TSeqPos          uLength)
         const;
 
-    unsigned int GetIupacaaCopy(const CSeq_data& in_seq,
-                                CSeq_data*       out_seq,
-                                unsigned int     uBeginIdx,
-                                unsigned int     uLength)
+    TSeqPos GetIupacaaCopy(const CSeq_data& in_seq,
+                           CSeq_data*       out_seq,
+                           TSeqPos          uBeginIdx,
+                           TSeqPos          uLength)
         const;
 
     // Function to adjust uBeginIdx to lie on an in_seq byte boundary
     // and uLength to lie on on an out_seq byte boundary. Returns
     // overhang, the number of out seqs beyond byte boundary determined
     // by uBeginIdx + uLength
-    unsigned int Adjust(unsigned int* uBeginIdx,
-                        unsigned int* uLength,
-                        unsigned int  uInSeqBytes,
-                        unsigned int  uInSeqsPerByte,
-                        unsigned int  uOutSeqsPerByte)
+    TSeqPos Adjust(TSeqPos* uBeginIdx,
+                   TSeqPos* uLength,
+                   TSeqPos  uInSeqBytes,
+                   TSeqPos  uInSeqsPerByte,
+                   TSeqPos  uOutSeqsPerByte)
         const;
 
     // GetAmbig methods
@@ -621,11 +624,11 @@ private:
     // the ambiguities that would result from conversion to an ncbi2na sequence
     // On return, out_seq contains the ncbi4na bases that become ambiguous and
     // out_indices contains the indices of the abiguous bases in in_seq
-    unsigned int GetAmbigs_ncbi4na_ncbi2na(const CSeq_data&       in_seq,
-                                           CSeq_data*             out_seq,
-                                           vector<unsigned int>*  out_indices,
-                                           unsigned int           uBeginIdx,
-                                           unsigned int           uLength)
+    TSeqPos GetAmbigs_ncbi4na_ncbi2na(const CSeq_data&  in_seq,
+                                      CSeq_data*        out_seq,
+                                      vector<TSeqPos>*  out_indices,
+                                      TSeqPos           uBeginIdx,
+                                      TSeqPos           uLength)
         const;
 
     // Loops through an iupacna input sequence and determines
@@ -633,211 +636,211 @@ private:
     // On return, out_seq contains the iupacna bases that become ambiguous and
     // out_indices contains the indices of the abiguous bases in in_seq. The
     // return is the number of ambiguities found.
-    unsigned int GetAmbigs_iupacna_ncbi2na(const CSeq_data&       in_seq,
-                                           CSeq_data*             out_seq,
-                                           vector<unsigned int>*  out_indices,
-                                           unsigned int           uBeginIdx,
-                                           unsigned int           uLength)
+    TSeqPos GetAmbigs_iupacna_ncbi2na(const CSeq_data&  in_seq,
+                                      CSeq_data*        out_seq,
+                                      vector<TSeqPos>*  out_indices,
+                                      TSeqPos           uBeginIdx,
+                                      TSeqPos           uLength)
         const;
 
     // Methods to perform Keep on specific seq types. Methods
     // return length of kept sequence.
-    unsigned int KeepNcbi2na(CSeq_data*       in_seq,
-                             unsigned int     uBeginIdx,
-                             unsigned int     uLength)
+    TSeqPos KeepNcbi2na(CSeq_data*  in_seq,
+                        TSeqPos     uBeginIdx,
+                        TSeqPos     uLength)
         const;
 
-    unsigned int KeepNcbi4na(CSeq_data*       in_seq,
-                             unsigned int     uBeginIdx,
-                             unsigned int     uLength)
+    TSeqPos KeepNcbi4na(CSeq_data*  in_seq,
+                        TSeqPos     uBeginIdx,
+                        TSeqPos     uLength)
         const;
 
-    unsigned int KeepIupacna(CSeq_data*       in_seq,
-                             unsigned int     uBeginIdx,
-                             unsigned int     uLength)
+    TSeqPos KeepIupacna(CSeq_data*  in_seq,
+                        TSeqPos     uBeginIdx,
+                        TSeqPos     uLength)
         const;
 
-    unsigned int KeepNcbieaa(CSeq_data*       in_seq,
-                             unsigned int     uBeginIdx,
-                             unsigned int     uLength)
+    TSeqPos KeepNcbieaa(CSeq_data*  in_seq,
+                        TSeqPos     uBeginIdx,
+                        TSeqPos     uLength)
         const;
 
-    unsigned int KeepNcbistdaa(CSeq_data*     in_seq,
-                               unsigned int   uBeginIdx,
-                               unsigned int   uLength)
+    TSeqPos KeepNcbistdaa(CSeq_data*  in_seq,
+                          TSeqPos     uBeginIdx,
+                          TSeqPos     uLength)
         const;
 
-    unsigned int KeepIupacaa(CSeq_data*       in_seq,
-                             unsigned int     uBeginIdx,
-                             unsigned int     uLength)
+    TSeqPos KeepIupacaa(CSeq_data*  in_seq,
+                        TSeqPos     uBeginIdx,
+                        TSeqPos     uLength)
         const;
 
     // Methods to complement na sequences
 
     // In place methods. Return number of complemented residues.
-    unsigned int ComplementIupacna(CSeq_data*    in_seq,
-                                   unsigned int  uBeginIdx,
-                                   unsigned int  uLength)
+    TSeqPos ComplementIupacna(CSeq_data*  in_seq,
+                              TSeqPos     uBeginIdx,
+                              TSeqPos    uLength)
         const;
 
-    unsigned int ComplementNcbi2na(CSeq_data*    in_seq,
-                                   unsigned int  uBeginIdx,
-                                   unsigned int  uLength)
+    TSeqPos ComplementNcbi2na(CSeq_data*  in_seq,
+                              TSeqPos     uBeginIdx,
+                              TSeqPos     uLength)
         const;
 
-    unsigned int ComplementNcbi4na(CSeq_data*    in_seq,
-                                   unsigned int  uBeginIdx,
-                                   unsigned int  uLength)
+    TSeqPos ComplementNcbi4na(CSeq_data*  in_seq,
+                              TSeqPos     uBeginIdx,
+                              TSeqPos     uLength)
         const;
 
 
     // Complement in copy methods
-    unsigned int ComplementIupacna(const CSeq_data&  in_seq,
-                                   CSeq_data*        out_seq,
-                                   unsigned int      uBeginIdx,
-                                   unsigned int      uLength)
+    TSeqPos ComplementIupacna(const CSeq_data&  in_seq,
+                              CSeq_data*        out_seq,
+                              TSeqPos           uBeginIdx,
+                              TSeqPos           uLength)
         const;
 
-    unsigned int ComplementNcbi2na(const CSeq_data&  in_seq,
-                                   CSeq_data*        out_seq,
-                                   unsigned int      uBeginIdx,
-                                   unsigned int      uLength)
+    TSeqPos ComplementNcbi2na(const CSeq_data&  in_seq,
+                              CSeq_data*        out_seq,
+                              TSeqPos           uBeginIdx,
+                              TSeqPos           uLength)
         const;
 
-    unsigned int ComplementNcbi4na(const CSeq_data&  in_seq,
-                                   CSeq_data*        out_seq,
-                                   unsigned int      uBeginIdx,
-                                   unsigned int      uLength)
+    TSeqPos ComplementNcbi4na(const CSeq_data&  in_seq,
+                              CSeq_data*        out_seq,
+                              TSeqPos           uBeginIdx,
+                              TSeqPos           uLength)
         const;
 
 
     // Methods to reverse na sequences
 
     // In place methods
-    unsigned int ReverseIupacna(CSeq_data*    in_seq,
-                                unsigned int  uBeginIdx,
-                                unsigned int  uLength)
+    TSeqPos ReverseIupacna(CSeq_data*  in_seq,
+                           TSeqPos     uBeginIdx,
+                           TSeqPos     uLength)
         const;
 
-    unsigned int ReverseNcbi2na(CSeq_data*    in_seq,
-                                unsigned int  uBeginIdx,
-                                unsigned int  uLength)
+    TSeqPos ReverseNcbi2na(CSeq_data*  in_seq,
+                           TSeqPos     uBeginIdx,
+                           TSeqPos     uLength)
         const;
 
-    unsigned int ReverseNcbi4na(CSeq_data*    in_seq,
-                                unsigned int  uBeginIdx,
-                                unsigned int  uLength)
+    TSeqPos ReverseNcbi4na(CSeq_data*  in_seq,
+                           TSeqPos     uBeginIdx,
+                           TSeqPos     uLength)
         const;
 
     // Reverse in copy methods
-    unsigned int ReverseIupacna(const CSeq_data&  in_seq,
-                                CSeq_data*        out_seq,
-                                unsigned int      uBeginIdx,
-                                unsigned int      uLength)
+    TSeqPos ReverseIupacna(const CSeq_data&  in_seq,
+                           CSeq_data*        out_seq,
+                           TSeqPos           uBeginIdx,
+                           TSeqPos           uLength)
         const;
 
-    unsigned int ReverseNcbi2na(const CSeq_data&  in_seq,
-                                CSeq_data*        out_seq,
-                                unsigned int      uBeginIdx,
-                                unsigned int      uLength)
+    TSeqPos ReverseNcbi2na(const CSeq_data&  in_seq,
+                           CSeq_data*        out_seq,
+                           TSeqPos           uBeginIdx,
+                           TSeqPos           uLength)
         const;
 
-    unsigned int ReverseNcbi4na(const CSeq_data&  in_seq,
-                                CSeq_data*        out_seq,
-                                unsigned int      uBeginIdx,
-                                unsigned int      uLength)
+    TSeqPos ReverseNcbi4na(const CSeq_data&  in_seq,
+                           CSeq_data*        out_seq,
+                           TSeqPos           uBeginIdx,
+                           TSeqPos           uLength)
         const;
 
     // Methods to reverse-complement an na sequences
 
     // In place methods
-    unsigned int ReverseComplementIupacna(CSeq_data*    in_seq,
-                                          unsigned int  uBeginIdx,
-                                          unsigned int  uLength)
+    TSeqPos ReverseComplementIupacna(CSeq_data*  in_seq,
+                                     TSeqPos     uBeginIdx,
+                                     TSeqPos     uLength)
         const;
 
-    unsigned int ReverseComplementNcbi2na(CSeq_data*    in_seq,
-                                          unsigned int  uBeginIdx,
-                                          unsigned int  uLength)
+    TSeqPos ReverseComplementNcbi2na(CSeq_data*  in_seq,
+                                     TSeqPos     uBeginIdx,
+                                     TSeqPos     uLength)
         const;
 
-    unsigned int ReverseComplementNcbi4na(CSeq_data*    in_seq,
-                                          unsigned int  uBeginIdx,
-                                          unsigned int  uLength)
+    TSeqPos ReverseComplementNcbi4na(CSeq_data*  in_seq,
+                                     TSeqPos     uBeginIdx,
+                                     TSeqPos     uLength)
         const;
 
     // Reverse in copy methods
-    unsigned int ReverseComplementIupacna(const CSeq_data& in_seq,
-                                          CSeq_data*       out_seq,
-                                          unsigned int     uBeginIdx,
-                                          unsigned int     uLength)
+    TSeqPos ReverseComplementIupacna(const CSeq_data& in_seq,
+                                     CSeq_data*       out_seq,
+                                     TSeqPos          uBeginIdx,
+                                     TSeqPos          uLength)
         const;
 
-    unsigned int ReverseComplementNcbi2na(const CSeq_data& in_seq,
-                                          CSeq_data*       out_seq,
-                                          unsigned int     uBeginIdx,
-                                          unsigned int     uLength)
+    TSeqPos ReverseComplementNcbi2na(const CSeq_data& in_seq,
+                                     CSeq_data*       out_seq,
+                                     TSeqPos          uBeginIdx,
+                                     TSeqPos          uLength)
         const;
 
-    unsigned int ReverseComplementNcbi4na(const CSeq_data& in_seq,
-                                          CSeq_data*       out_seq,
-                                          unsigned int     uBeginIdx,
-                                          unsigned int     uLength)
+    TSeqPos ReverseComplementNcbi4na(const CSeq_data& in_seq,
+                                     CSeq_data*       out_seq,
+                                     TSeqPos          uBeginIdx,
+                                     TSeqPos          uLength)
         const;
 
     // Append methods
-    unsigned int AppendIupacna(CSeq_data*          out_seq,
-                               const CSeq_data&    in_seq1,
-                               unsigned int        uBeginIdx1,
-                               unsigned int        uLength1,
-                               const CSeq_data&    in_seq2,
-                               unsigned int        uBeginIdx2,
-                               unsigned int        uLength2)
+    TSeqPos AppendIupacna(CSeq_data*        out_seq,
+                          const CSeq_data&  in_seq1,
+                          TSeqPos           uBeginIdx1,
+                          TSeqPos           uLength1,
+                          const CSeq_data&  in_seq2,
+                          TSeqPos           uBeginIdx2,
+                          TSeqPos           uLength2)
         const;
 
-    unsigned int AppendNcbi2na(CSeq_data*          out_seq,
-                               const CSeq_data&    in_seq1,
-                               unsigned int        uBeginIdx1,
-                               unsigned int        uLength1,
-                               const CSeq_data&    in_seq2,
-                               unsigned int        uBeginIdx2,
-                               unsigned int        uLength2)
+    TSeqPos AppendNcbi2na(CSeq_data*          out_seq,
+                          const CSeq_data&  in_seq1,
+                          TSeqPos           uBeginIdx1,
+                          TSeqPos           uLength1,
+                          const CSeq_data&  in_seq2,
+                          TSeqPos           uBeginIdx2,
+                          TSeqPos           uLength2)
         const;
 
-    unsigned int AppendNcbi4na(CSeq_data*          out_seq,
-                               const CSeq_data&    in_seq1,
-                               unsigned int        uBeginIdx1,
-                               unsigned int        uLength1,
-                               const CSeq_data&    in_seq2,
-                               unsigned int        uBeginIdx2,
-                               unsigned int        uLength2)
+    TSeqPos AppendNcbi4na(CSeq_data*          out_seq,
+                          const CSeq_data&  in_seq1,
+                          TSeqPos           uBeginIdx1,
+                          TSeqPos           uLength1,
+                          const CSeq_data&  in_seq2,
+                          TSeqPos           uBeginIdx2,
+                          TSeqPos           uLength2)
         const;
 
-    unsigned int AppendNcbieaa(CSeq_data*          out_seq,
-                               const CSeq_data&    in_seq1,
-                               unsigned int        uBeginIdx1,
-                               unsigned int        uLength1,
-                               const CSeq_data&    in_seq2,
-                               unsigned int        uBeginIdx2,
-                               unsigned int        uLength2)
+    TSeqPos AppendNcbieaa(CSeq_data*          out_seq,
+                          const CSeq_data&  in_seq1,
+                          TSeqPos           uBeginIdx1,
+                          TSeqPos           uLength1,
+                          const CSeq_data&  in_seq2,
+                          TSeqPos           uBeginIdx2,
+                          TSeqPos           uLength2)
         const;
 
-    unsigned int AppendNcbistdaa(CSeq_data*        out_seq,
-                                 const CSeq_data&  in_seq1,
-                                 unsigned int      uBeginIdx1,
-                                 unsigned int      uLength1,
-                                 const CSeq_data&  in_seq2,
-                                 unsigned int      uBeginIdx2,
-                                 unsigned int      uLength2)
+    TSeqPos AppendNcbistdaa(CSeq_data*        out_seq,
+                          const CSeq_data&  in_seq1,
+                          TSeqPos           uBeginIdx1,
+                          TSeqPos           uLength1,
+                          const CSeq_data&  in_seq2,
+                          TSeqPos           uBeginIdx2,
+                          TSeqPos           uLength2)
         const;
 
-    unsigned int AppendIupacaa(CSeq_data*          out_seq,
-                               const CSeq_data&    in_seq1,
-                               unsigned int        uBeginIdx1,
-                               unsigned int        uLength1,
-                               const CSeq_data&    in_seq2,
-                               unsigned int        uBeginIdx2,
-                               unsigned int        uLength2)
+    TSeqPos AppendIupacaa(CSeq_data*          out_seq,
+                          const CSeq_data&  in_seq1,
+                          TSeqPos           uBeginIdx1,
+                          TSeqPos           uLength1,
+                          const CSeq_data&  in_seq2,
+                          TSeqPos           uBeginIdx2,
+                          TSeqPos           uLength2)
         const;
 };
 
@@ -850,24 +853,24 @@ static CSeqportUtil_implementation s_Implementation;
 //
 
 
-unsigned int CSeqportUtil::Convert
-(const CSeq_data&        in_seq,
- CSeq_data*              out_seq,
- CSeq_data::E_Choice     to_code,
- unsigned int            uBeginIdx,
- unsigned int            uLength,
- bool                    bAmbig,
- CRandom::TValue         seed)
+TSeqPos CSeqportUtil::Convert
+(const CSeq_data&     in_seq,
+ CSeq_data*           out_seq,
+ CSeq_data::E_Choice  to_code,
+ TSeqPos              uBeginIdx,
+ TSeqPos              uLength,
+ bool                 bAmbig,
+ CRandom::TValue      seed)
 {
     return s_Implementation.Convert
         (in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig, seed);
 }
 
 
-unsigned int CSeqportUtil::Pack
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil::Pack
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
 {
     return s_Implementation.Pack
         (in_seq, uBeginIdx, uLength);
@@ -875,9 +878,9 @@ unsigned int CSeqportUtil::Pack
 
 
 bool CSeqportUtil::FastValidate
-(const CSeq_data&        in_seq,
- unsigned int            uBeginIdx,
- unsigned int            uLength)
+(const CSeq_data&   in_seq,
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
 {
     return s_Implementation.FastValidate
         (in_seq, uBeginIdx, uLength);
@@ -885,34 +888,34 @@ bool CSeqportUtil::FastValidate
 
 
 void CSeqportUtil::Validate
-(const CSeq_data&        in_seq,
- vector<unsigned int>*   badIdx,
- unsigned int            uBeginIdx,
- unsigned int            uLength)
+(const CSeq_data&   in_seq,
+ vector<TSeqPos>*   badIdx,
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
 {
     s_Implementation.Validate
         (in_seq, badIdx, uBeginIdx, uLength);
 }
 
 
-unsigned int CSeqportUtil::GetAmbigs
-(const CSeq_data&        in_seq,
- CSeq_data*              out_seq,
- vector<unsigned int>*   out_indices,
- CSeq_data::E_Choice     to_code,
- unsigned int            uBeginIdx,
- unsigned int            uLength)
+TSeqPos CSeqportUtil::GetAmbigs
+(const CSeq_data&     in_seq,
+ CSeq_data*           out_seq,
+ vector<TSeqPos>*     out_indices,
+ CSeq_data::E_Choice  to_code,
+ TSeqPos              uBeginIdx,
+ TSeqPos              uLength)
 {
     return s_Implementation.GetAmbigs
         (in_seq, out_seq, out_indices, to_code, uBeginIdx, uLength);
 }
 
 
-unsigned int CSeqportUtil::GetCopy
-(const CSeq_data&        in_seq,
- CSeq_data*              out_seq,
- unsigned int            uBeginIdx,
- unsigned int            uLength)
+TSeqPos CSeqportUtil::GetCopy
+(const CSeq_data&   in_seq,
+ CSeq_data*         out_seq,
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
 {
     return s_Implementation.GetCopy
         (in_seq, out_seq, uBeginIdx, uLength);
@@ -920,24 +923,24 @@ unsigned int CSeqportUtil::GetCopy
 
 
 
-unsigned int CSeqportUtil::Keep
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil::Keep
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
 {
     return s_Implementation.Keep
         (in_seq, uBeginIdx, uLength);
 }
 
 
-unsigned int CSeqportUtil::Append
-(CSeq_data*              out_seq,
- const CSeq_data&        in_seq1,
- unsigned int            uBeginIdx1,
- unsigned int            uLength1,
- const CSeq_data&        in_seq2,
- unsigned int            uBeginIdx2,
- unsigned int            uLength2)
+TSeqPos CSeqportUtil::Append
+(CSeq_data*         out_seq,
+ const CSeq_data&   in_seq1,
+ TSeqPos            uBeginIdx1,
+ TSeqPos            uLength1,
+ const CSeq_data&   in_seq2,
+ TSeqPos            uBeginIdx2,
+ TSeqPos            uLength2)
 {
     return s_Implementation.Append
         (out_seq,
@@ -945,63 +948,63 @@ unsigned int CSeqportUtil::Append
 }
 
 
-unsigned int CSeqportUtil::Complement
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil::Complement
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
 {
     return s_Implementation.Complement
         (in_seq, uBeginIdx, uLength);
 }
 
 
-unsigned int CSeqportUtil::Complement
-(const CSeq_data&        in_seq,
- CSeq_data*              out_seq,
- unsigned int            uBeginIdx,
- unsigned int            uLength)
+TSeqPos CSeqportUtil::Complement
+(const CSeq_data&   in_seq,
+ CSeq_data*         out_seq,
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
 {
     return s_Implementation.Complement
         (in_seq, out_seq, uBeginIdx, uLength);
 }
 
 
-unsigned int CSeqportUtil::Reverse
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil::Reverse
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
 {
     return s_Implementation.Reverse
         (in_seq, uBeginIdx, uLength);
 }
 
 
-unsigned int CSeqportUtil::Reverse
+TSeqPos CSeqportUtil::Reverse
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
 {
     return s_Implementation.Reverse
         (in_seq, out_seq, uBeginIdx, uLength);
 }
 
 
-unsigned int CSeqportUtil::ReverseComplement
-(CSeq_data*    in_seq,
- unsigned int  uBeginIdx,
- unsigned int  uLength)
+TSeqPos CSeqportUtil::ReverseComplement
+(CSeq_data*  in_seq,
+ TSeqPos     uBeginIdx,
+ TSeqPos     uLength)
 {
     return s_Implementation.ReverseComplement
         (in_seq, uBeginIdx, uLength);
 }
 
 
-unsigned int CSeqportUtil::ReverseComplement
+TSeqPos CSeqportUtil::ReverseComplement
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
 {
     return s_Implementation.ReverseComplement
         (in_seq, out_seq, uBeginIdx, uLength);
@@ -1182,7 +1185,7 @@ CSeqportUtil_implementation::InitCodes(ESeq_code_type code_type)
 
     // Get table data
     const list<CRef<CSeq_code_table::C_E> >& table_data = (*i_ct)->GetTable();
-    int size = table_data.size();
+    SIZE_TYPE size = table_data.size();
     int start_at = (*i_ct)->GetStart_at();
     CRef<CCode_table> codeTable(new CCode_table(size, start_at));
 
@@ -1418,7 +1421,7 @@ CRef<CSeqportUtil_implementation::CMap_table> CSeqportUtil_implementation::InitM
     const list<int>& table_data = (*i_mt)->GetTable();
 
     // Create a map table reference
-    int size = table_data.size();
+    SIZE_TYPE size = table_data.size();
     int start_at = (*i_mt)->GetStart_at();
     CRef<CMap_table> mapTable(new CMap_table(size,start_at));
 
@@ -1838,14 +1841,14 @@ CRef<CSeqportUtil_implementation::CAmbig_detect> CSeqportUtil_implementation::In
 // ncbieaa<=>iupacaa; ncbistdaa<=>iupacaa. Convert is
 // really just a dispatch function--it calls the appropriate
 // priviate conversion function.
-unsigned int CSeqportUtil_implementation::Convert
-(const CSeq_data&        in_seq,
- CSeq_data*              out_seq,
- CSeq_data::E_Choice     to_code,
- unsigned int            uBeginIdx,
- unsigned int            uLength,
- bool                    bAmbig,
- CRandom::TValue         seed)
+TSeqPos CSeqportUtil_implementation::Convert
+(const CSeq_data&      in_seq,
+ CSeq_data*            out_seq,
+ CSeq_data::E_Choice   to_code,
+ TSeqPos               uBeginIdx,
+ TSeqPos               uLength,
+ bool                  bAmbig,
+ CRandom::TValue       seed)
     const
 {
     CSeq_data::E_Choice from_code = in_seq.Which();
@@ -1917,16 +1920,16 @@ unsigned int CSeqportUtil_implementation::Convert
 
 
 // Provide maximum packing without loss of information
-unsigned int CSeqportUtil_implementation::Pack
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil_implementation::Pack
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
     const
 {
     CRef<CSeq_data> os(new CSeq_data);
     CSeq_data* pos = os.GetPointer();
 
-    vector<unsigned int> oi;
+    vector<TSeqPos> oi;
 
     switch (in_seq->Which()) {
     case CSeq_data::e_Iupacna:
@@ -1960,9 +1963,9 @@ unsigned int CSeqportUtil_implementation::Pack
 // FastValidate is a dispatch function that calls the appropriate
 // private fast validation function.
 bool CSeqportUtil_implementation::FastValidate
-(const CSeq_data&        in_seq,
- unsigned int            uBeginIdx,
- unsigned int            uLength)
+(const CSeq_data&   in_seq,
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
     const
 {
     switch (in_seq.Which()) {
@@ -1988,10 +1991,10 @@ bool CSeqportUtil_implementation::FastValidate
 // dispatch function that calls the appropriate private
 // validation function.
 void CSeqportUtil_implementation::Validate
-(const CSeq_data&        in_seq,
- vector<unsigned int>*   badIdx,
- unsigned int            uBeginIdx,
- unsigned int            uLength)
+(const CSeq_data&   in_seq,
+ vector<TSeqPos>*   badIdx,
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
     const
 {
     switch (in_seq.Which()) {
@@ -2021,13 +2024,13 @@ void CSeqportUtil_implementation::Validate
 // ambiguous bases in CSeq_data objects. GetAmbigs is a
 // dispatch function that calls the appropriate private get
 // ambigs function.
-unsigned int CSeqportUtil_implementation::GetAmbigs
-(const CSeq_data&        in_seq,
- CSeq_data*              out_seq,
- vector<unsigned int>*   out_indices,
- CSeq_data::E_Choice     to_code,
- unsigned int            uBeginIdx,
- unsigned int            uLength)
+TSeqPos CSeqportUtil_implementation::GetAmbigs
+(const CSeq_data&     in_seq,
+ CSeq_data*           out_seq,
+ vector<TSeqPos>*     out_indices,
+ CSeq_data::E_Choice  to_code,
+ TSeqPos              uBeginIdx,
+ TSeqPos              uLength)
     const
 {
 
@@ -2058,11 +2061,11 @@ unsigned int CSeqportUtil_implementation::GetAmbigs
 // Get a copy of in_seq from uBeginIdx through uBeginIdx + uLength-1
 // and put in out_seq. See comments in alphabet.hpp for more information.
 // GetCopy is a dispatch function.
-unsigned int CSeqportUtil_implementation::GetCopy
-(const CSeq_data&        in_seq,
- CSeq_data*              out_seq,
- unsigned int            uBeginIdx,
- unsigned int            uLength)
+TSeqPos CSeqportUtil_implementation::GetCopy
+(const CSeq_data&   in_seq,
+ CSeq_data*         out_seq,
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
     const
 {
     // Do processing based on in_seq type
@@ -2091,10 +2094,10 @@ unsigned int CSeqportUtil_implementation::GetCopy
 // Method to keep only a contiguous piece of a sequence beginning
 // at uBeginIdx and uLength residues long. Keep is a
 // dispatch function.
-unsigned int CSeqportUtil_implementation::Keep
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil_implementation::Keep
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
     const
 {
     // Do proceessing based upon in_seq type
@@ -2119,14 +2122,14 @@ unsigned int CSeqportUtil_implementation::Keep
 
 // Append in_seq2 to in_seq1 and put result in out_seq. This
 // is a dispatch function.
-unsigned int CSeqportUtil_implementation::Append
-(CSeq_data*              out_seq,
- const CSeq_data&        in_seq1,
- unsigned int            uBeginIdx1,
- unsigned int            uLength1,
- const CSeq_data&        in_seq2,
- unsigned int            uBeginIdx2,
- unsigned int            uLength2)
+TSeqPos CSeqportUtil_implementation::Append
+(CSeq_data*         out_seq,
+ const CSeq_data&   in_seq1,
+ TSeqPos            uBeginIdx1,
+ TSeqPos            uLength1,
+ const CSeq_data&   in_seq2,
+ TSeqPos            uBeginIdx2,
+ TSeqPos            uLength2)
     const
 {
     // Check that in_seqs or of same type
@@ -2168,10 +2171,10 @@ unsigned int CSeqportUtil_implementation::Append
 // dispatch functions.
 
 // Method to complement na sequence in place
-unsigned int CSeqportUtil_implementation::Complement
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil_implementation::Complement
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
     const
 {
     //Check that in_seq is not null
@@ -2195,11 +2198,11 @@ unsigned int CSeqportUtil_implementation::Complement
 
 
 // Method to complement na sequence in a copy out_seq
-unsigned int CSeqportUtil_implementation::Complement
-(const CSeq_data&        in_seq,
- CSeq_data*              out_seq,
- unsigned int            uBeginIdx,
- unsigned int            uLength)
+TSeqPos CSeqportUtil_implementation::Complement
+(const CSeq_data&   in_seq,
+ CSeq_data*         out_seq,
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
     const
 {
     // Determine type of sequeence and which complement method to call
@@ -2221,10 +2224,10 @@ unsigned int CSeqportUtil_implementation::Complement
 // dispatch functions.
 
 // Method to reverse na sequence in place
-unsigned int CSeqportUtil_implementation::Reverse
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil_implementation::Reverse
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
     const
 {
     // Check that in_seq is not null
@@ -2247,11 +2250,11 @@ unsigned int CSeqportUtil_implementation::Reverse
 
 
 // Method to reverse na sequence in a copy out_seq
-unsigned int CSeqportUtil_implementation::Reverse
+TSeqPos CSeqportUtil_implementation::Reverse
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Determine type of sequeence and which reverse method to call
@@ -2273,10 +2276,10 @@ unsigned int CSeqportUtil_implementation::Reverse
 // dispatch functions.
 
 // Method to reverse-complement na sequence in place
-unsigned int CSeqportUtil_implementation::ReverseComplement
-(CSeq_data*    in_seq,
- unsigned int  uBeginIdx,
- unsigned int  uLength)
+TSeqPos CSeqportUtil_implementation::ReverseComplement
+(CSeq_data*  in_seq,
+ TSeqPos     uBeginIdx,
+ TSeqPos     uLength)
     const
 {
     //Check that in_seq is not null
@@ -2300,11 +2303,11 @@ unsigned int CSeqportUtil_implementation::ReverseComplement
 
 
 // Method to reverse-complement na sequence in a copy out_seq
-unsigned int CSeqportUtil_implementation::ReverseComplement
+TSeqPos CSeqportUtil_implementation::ReverseComplement
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Determine type of sequeence and which rev_comp method to call
@@ -2329,16 +2332,16 @@ unsigned int CSeqportUtil_implementation::ReverseComplement
 
 // Convert in_seq from ncbi2na (1 byte) to iupacna (4 bytes)
 // and put result in out_seq
-unsigned int CSeqportUtil_implementation::MapNcbi2naToIupacna
+TSeqPos CSeqportUtil_implementation::MapNcbi2naToIupacna
 (const CSeq_data&   in_seq,
  CSeq_data*         out_seq,
- unsigned int       uBeginIdx,
- unsigned int       uLength)
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
     const
 {
     // Save uBeginIdx and uLength for later use
-    unsigned int uBeginSav = uBeginIdx;
-    unsigned int uLenSav = uLength;
+    TSeqPos uBeginSav = uBeginIdx;
+    TSeqPos uLenSav = uLength;
 
     // Get vector holding the in sequence
     const vector<char>& in_seq_data = in_seq.GetNcbi2na().Get();
@@ -2402,7 +2405,7 @@ unsigned int CSeqportUtil_implementation::MapNcbi2naToIupacna
     uVal =
         m_FastNcbi2naIupacna->m_Table[static_cast<unsigned char>(*i_in_end)];
     pval = reinterpret_cast<char*>(&uVal);
-    unsigned int uOverhang = (uBeginSav + uLenSav) % 4;
+    TSeqPos uOverhang = (uBeginSav + uLenSav) % 4;
     uOverhang = (uOverhang ==0) ? 4 : uOverhang;
     for(pchar = pval; pchar < pval + uOverhang; ++pchar) {
         (*(++i_out)) = *pchar;
@@ -2414,11 +2417,11 @@ unsigned int CSeqportUtil_implementation::MapNcbi2naToIupacna
 
 // Convert in_seq from ncbi2na (1 byte) to ncbi4na (2 bytes)
 // and put result in out_seq
-unsigned int CSeqportUtil_implementation::MapNcbi2naToNcbi4na
+TSeqPos CSeqportUtil_implementation::MapNcbi2naToNcbi4na
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Get vector holding the in sequence
@@ -2430,8 +2433,8 @@ unsigned int CSeqportUtil_implementation::MapNcbi2naToNcbi4na
 
     // Save uBeginIdx and uLength for later use as they
     // are modified below
-    unsigned int uBeginSav = uBeginIdx;
-    unsigned int uLenSav = uLength;
+    TSeqPos uBeginSav = uBeginIdx;
+    TSeqPos uLenSav = uLength;
 
     // Check that uBeginSav is not beyond end of in_seq_data
     if(uBeginSav >= 4*in_seq_data.size())
@@ -2443,14 +2446,14 @@ unsigned int CSeqportUtil_implementation::MapNcbi2naToNcbi4na
 
 
     // Adjust uBeginIdx and uLength, if necessary
-    unsigned int uOverhang =
+    TSeqPos uOverhang =
         Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 4, 2);
 
     // Declare iterator for in_seq
     vector<char>::const_iterator i_in;
 
     // Allocate memory for out_seq_data
-    unsigned int uInBytes = (uLength + uOverhang)/4;
+    TSeqPos uInBytes = (uLength + uOverhang)/4;
     if(((uLength + uOverhang) % 4) != 0) uInBytes++;
     vector<char>::size_type nOutBytes = 2*uInBytes;
     out_seq_data.resize(nOutBytes);
@@ -2471,7 +2474,7 @@ unsigned int CSeqportUtil_implementation::MapNcbi2naToNcbi4na
         (*(++i_out)) = (*(pch++));
         (*(++i_out)) = (*(pch++));
     }
-    unsigned int keepidx = uBeginSav - uBeginIdx;
+    TSeqPos keepidx = uBeginSav - uBeginIdx;
     KeepNcbi4na(out_seq, keepidx, uLenSav);
 
     return uLenSav;
@@ -2480,16 +2483,16 @@ unsigned int CSeqportUtil_implementation::MapNcbi2naToNcbi4na
 
 // Convert in_seq from ncbi4na (1 byte) to iupacna (2 bytes)
 // and put result in out_seq
-unsigned int CSeqportUtil_implementation::MapNcbi4naToIupacna
+TSeqPos CSeqportUtil_implementation::MapNcbi4naToIupacna
 (const CSeq_data& in_seq,
  CSeq_data*       out_seq,
- unsigned int     uBeginIdx,
- unsigned int     uLength)
+ TSeqPos          uBeginIdx,
+ TSeqPos          uLength)
     const
 {
     // Save uBeginIdx and uLength for later use
-    unsigned int uBeginSav = uBeginIdx;
-    unsigned int uLenSav = uLength;
+    TSeqPos uBeginSav = uBeginIdx;
+    TSeqPos uLenSav = uLength;
 
     // Get vector holding the in sequence
     const vector<char>& in_seq_data = in_seq.GetNcbi4na().Get();
@@ -2551,7 +2554,7 @@ unsigned int CSeqportUtil_implementation::MapNcbi4naToIupacna
     uVal =
         m_FastNcbi4naIupacna->m_Table[static_cast<unsigned char>(*i_in_end)];
     pval = reinterpret_cast<char*>(&uVal);
-    unsigned int uOverhang = (uBeginSav + uLenSav) % 2;
+    TSeqPos uOverhang = (uBeginSav + uLenSav) % 2;
     uOverhang = (uOverhang ==0) ? 2 : uOverhang;
     for(pchar = pval; pchar < pval + uOverhang; ++pchar)
         (*(++i_out)) = *pchar;
@@ -2561,11 +2564,11 @@ unsigned int CSeqportUtil_implementation::MapNcbi4naToIupacna
 
 
 // Function to convert iupacna (4 bytes) to ncbi2na (1 byte)
-unsigned int CSeqportUtil_implementation::MapIupacnaToNcbi2na
+TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
 (const CSeq_data& in_seq,
  CSeq_data*       out_seq,
- unsigned int     uBeginIdx,
- unsigned int     uLength,
+ TSeqPos          uBeginIdx,
+ TSeqPos          uLength,
  bool             bAmbig,
  CRandom::TValue  seed)
     const
@@ -2582,13 +2585,13 @@ unsigned int CSeqportUtil_implementation::MapIupacnaToNcbi2na
         return 0;
 
     // Determine return value
-    unsigned int uLenSav = uLength;
+    TSeqPos uLenSav = uLength;
     if((uLenSav == 0) || ((uLenSav + uBeginIdx)) > in_seq_data.size())
         uLenSav = in_seq_data.size() - uBeginIdx;
 
 
     // Adjust uBeginIdx and uLength, if necessary and get uOverhang
-    unsigned int uOverhang =
+    TSeqPos uOverhang =
         Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 1, 4);
 
     // Allocate vector memory for result of conversion
@@ -2638,9 +2641,9 @@ unsigned int CSeqportUtil_implementation::MapIupacnaToNcbi2na
                         [1][static_cast<unsigned char>(*(i_in+3))];
 
 		    // Randomly pick disambiguated Ncbi4na bytes
-                    rv = rg.GetRand() % 16L;
+                    rv = rg.GetRand() % 16;
                     c1 &= m_Masks->m_Table[c1].cMask[rv];
-                    rv = rg.GetRand() % 16L;
+                    rv = rg.GetRand() % 16;
                     c2 &= m_Masks->m_Table[c2].cMask[rv];
 
 		    // Convert from Ncbi4na to Ncbi2na
@@ -2657,7 +2660,7 @@ unsigned int CSeqportUtil_implementation::MapIupacnaToNcbi2na
                 c1 =
                     m_FastIupacnaNcbi4na->m_Table
                     [0][static_cast<unsigned char>(*i_in)];
-                rv = rg.GetRand() % 16L;
+                rv = rg.GetRand() % 16;
                 c1 &= m_Masks->m_Table[c1].cMask[rv];
                 out_seq_data.push_back(m_FastNcbi4naNcbi2na->m_Table[0][c1]);
                 break;
@@ -2667,7 +2670,7 @@ unsigned int CSeqportUtil_implementation::MapIupacnaToNcbi2na
                     [0][static_cast<unsigned char>(*i_in)] |
                     m_FastIupacnaNcbi4na->m_Table
                     [1][static_cast<unsigned char>(*(i_in+1))];
-                rv = rg.GetRand() % 16L;
+                rv = rg.GetRand() % 16;
                 c1 &= m_Masks->m_Table[c1].cMask[rv];
                 out_seq_data.push_back(m_FastNcbi4naNcbi2na->m_Table[0][c1]);
                 break;
@@ -2680,9 +2683,9 @@ unsigned int CSeqportUtil_implementation::MapIupacnaToNcbi2na
                 c2 =
                     m_FastIupacnaNcbi4na->m_Table
                     [0][static_cast<unsigned char>(*(i_in+2))];
-                rv = rg.GetRand() % 16L;
+                rv = rg.GetRand() % 16;
                 c2 &= m_Masks->m_Table[c1].cMask[rv];
-                rv = rg.GetRand() % 16L;
+                rv = rg.GetRand() % 16;
                 c2 &= m_Masks->m_Table[c2].cMask[rv];
                 out_seq_data.push_back(m_FastNcbi4naNcbi2na->m_Table[0][c1] |
                                        m_FastNcbi4naNcbi2na->m_Table[1][c2]);
@@ -2707,7 +2710,7 @@ unsigned int CSeqportUtil_implementation::MapIupacnaToNcbi2na
 
             // Handle overhang
             char ch = '\x00';
-            for(unsigned int i = 0; i < uOverhang; i++)
+            for(TSeqPos i = 0; i < uOverhang; i++)
                 ch |=
                     m_FastIupacnaNcbi2na->m_Table
                     [i][static_cast<unsigned char>(*(i_in+i))];
@@ -2720,11 +2723,11 @@ unsigned int CSeqportUtil_implementation::MapIupacnaToNcbi2na
 
 
 // Function to convert iupacna (2 bytes) to ncbi4na (1 byte)
-unsigned int CSeqportUtil_implementation::MapIupacnaToNcbi4na
+TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi4na
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Get string holding the in_seq
@@ -2739,12 +2742,12 @@ unsigned int CSeqportUtil_implementation::MapIupacnaToNcbi4na
         return 0;
 
     // Determine return value
-    unsigned int uLenSav = uLength;
+    TSeqPos uLenSav = uLength;
     if((uLenSav == 0) || (uLenSav + uBeginIdx) > in_seq_data.size())
         uLenSav = in_seq_data.size() - uBeginIdx;
 
     // Adjust uBeginIdx and uLength and get uOverhang
-    unsigned int uOverhang =
+    TSeqPos uOverhang =
         Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 1, 2);
 
     // Allocate vector memory for result of conversion
@@ -2784,11 +2787,11 @@ unsigned int CSeqportUtil_implementation::MapIupacnaToNcbi4na
 
 
 // Function to convert ncbi4na (2 bytes) to ncbi2na (1 byte)
-unsigned int CSeqportUtil_implementation::MapNcbi4naToNcbi2na
+TSeqPos CSeqportUtil_implementation::MapNcbi4naToNcbi2na
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength,
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength,
  bool              bAmbig,
  CRandom::TValue   seed)
     const
@@ -2801,8 +2804,8 @@ unsigned int CSeqportUtil_implementation::MapNcbi4naToNcbi2na
     vector<char>& out_seq_data = out_seq->SetNcbi2na().Set();
 
     // Save uBeginIdx and uLength as they will be modified below
-    unsigned int uBeginSav = uBeginIdx;
-    unsigned int uLenSav = uLength;
+    TSeqPos uBeginSav = uBeginIdx;
+    TSeqPos uLenSav = uLength;
 
 
     // Check that uBeginSav is not beyond end of in_seq
@@ -2814,7 +2817,7 @@ unsigned int CSeqportUtil_implementation::MapNcbi4naToNcbi2na
         uLenSav = 2*in_seq_data.size() - uBeginSav;
 
     // Adjust uBeginIdx and uLength and get uOverhang
-    unsigned int uOverhang =
+    TSeqPos uOverhang =
         Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 2, 4);
 
     // Allocate vector memory for result of conversion
@@ -2843,9 +2846,9 @@ unsigned int CSeqportUtil_implementation::MapNcbi4naToNcbi2na
                     // Disambiguate
                     unsigned char c1 = static_cast<unsigned char>(*i_in);
                     unsigned char c2 = static_cast<unsigned char>(*(i_in+1));
-                    CRandom::TValue rv = rg.GetRand() % 16L;
+                    CRandom::TValue rv = rg.GetRand() % 16;
                     c1 &= m_Masks->m_Table[c1].cMask[rv];
-                    rv = rg.GetRand() % 16L;
+                    rv = rg.GetRand() % 16;
                     c2 &= m_Masks->m_Table[c2].cMask[rv];
 
                     // Convert
@@ -2861,7 +2864,7 @@ unsigned int CSeqportUtil_implementation::MapNcbi4naToNcbi2na
                 {
                     // Disambiguate
                     unsigned char c1 = static_cast<unsigned char>(*i_in);
-                    CRandom::TValue rv = rg.GetRand() % 16L;
+                    CRandom::TValue rv = rg.GetRand() % 16;
                     c1 &= m_Masks->m_Table[c1].cMask[rv];
 
             // Convert
@@ -2872,7 +2875,7 @@ unsigned int CSeqportUtil_implementation::MapNcbi4naToNcbi2na
                 {
                     // Disambiguate
                     unsigned char c1 = static_cast<unsigned char>(*(++i_in));
-                    CRandom::TValue rv = rg.GetRand() % 16L;
+                    CRandom::TValue rv = rg.GetRand() % 16;
                     c1 &= m_Masks->m_Table[c1].cMask[rv];
 
             // Convert
@@ -2911,7 +2914,7 @@ unsigned int CSeqportUtil_implementation::MapNcbi4naToNcbi2na
                 out_seq_data.push_back(ch);
 
         }
-    unsigned int keepidx = uBeginSav - uBeginIdx;
+    TSeqPos keepidx = uBeginSav - uBeginIdx;
     KeepNcbi2na(out_seq, keepidx, uLenSav);
 
     return uLenSav;
@@ -2919,11 +2922,11 @@ unsigned int CSeqportUtil_implementation::MapNcbi4naToNcbi2na
 
 
 // Function to convert iupacaa (byte) to ncbieaa (byte)
-unsigned int CSeqportUtil_implementation::MapIupacaaToNcbieaa
+TSeqPos CSeqportUtil_implementation::MapIupacaaToNcbieaa
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Get read-only reference to in_seq data
@@ -2961,11 +2964,11 @@ unsigned int CSeqportUtil_implementation::MapIupacaaToNcbieaa
 
 
 // Function to convert ncbieaa (byte) to iupacaa (byte)
-unsigned int CSeqportUtil_implementation::MapNcbieaaToIupacaa
+TSeqPos CSeqportUtil_implementation::MapNcbieaaToIupacaa
 (const CSeq_data&   in_seq,
  CSeq_data*         out_seq,
- unsigned int       uBeginIdx,
- unsigned int       uLength)
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
     const
 {
     // Get read-only reference to in_seq data
@@ -3003,11 +3006,11 @@ unsigned int CSeqportUtil_implementation::MapNcbieaaToIupacaa
 
 
 // Function to convert iupacaa (byte) to ncbistdaa (byte)
-unsigned int CSeqportUtil_implementation::MapIupacaaToNcbistdaa
+TSeqPos CSeqportUtil_implementation::MapIupacaaToNcbistdaa
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Get read-only reference to in_seq data
@@ -3048,11 +3051,11 @@ unsigned int CSeqportUtil_implementation::MapIupacaaToNcbistdaa
 
 
 // Function to convert ncbieaa (byte) to ncbistdaa (byte)
-unsigned int CSeqportUtil_implementation::MapNcbieaaToNcbistdaa
+TSeqPos CSeqportUtil_implementation::MapNcbieaaToNcbistdaa
 (const CSeq_data&   in_seq,
  CSeq_data*         out_seq,
- unsigned int       uBeginIdx,
- unsigned int       uLength)
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
     const
 {
     // Get read-only reference to in_seq data
@@ -3090,11 +3093,11 @@ unsigned int CSeqportUtil_implementation::MapNcbieaaToNcbistdaa
 
 
 // Function to convert ncbistdaa (byte) to ncbieaa (byte)
-unsigned int CSeqportUtil_implementation::MapNcbistdaaToNcbieaa
+TSeqPos CSeqportUtil_implementation::MapNcbistdaaToNcbieaa
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Get read-only reference to in_seq data
@@ -3132,11 +3135,11 @@ unsigned int CSeqportUtil_implementation::MapNcbistdaaToNcbieaa
 
 
 // Function to convert ncbistdaa (byte) to iupacaa (byte)
-unsigned int CSeqportUtil_implementation::MapNcbistdaaToIupacaa
+TSeqPos CSeqportUtil_implementation::MapNcbistdaaToIupacaa
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Get read-only reference to in_seq data
@@ -3176,8 +3179,8 @@ unsigned int CSeqportUtil_implementation::MapNcbistdaaToIupacaa
 // Fast validation of iupacna sequence
 bool CSeqportUtil_implementation::FastValidateIupacna
 (const CSeq_data&  in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Get read-only reference to in_seq data
@@ -3207,8 +3210,8 @@ bool CSeqportUtil_implementation::FastValidateIupacna
 
 bool CSeqportUtil_implementation::FastValidateNcbieaa
 (const CSeq_data&  in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Get read-only reference to in_seq data
@@ -3243,8 +3246,8 @@ bool CSeqportUtil_implementation::FastValidateNcbieaa
 
 bool CSeqportUtil_implementation::FastValidateNcbistdaa
 (const CSeq_data&  in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Get read-only reference to in_seq data
@@ -3275,8 +3278,8 @@ bool CSeqportUtil_implementation::FastValidateNcbistdaa
 
 bool CSeqportUtil_implementation::FastValidateIupacaa
 (const CSeq_data&  in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Get read-only reference to in_seq data
@@ -3305,10 +3308,10 @@ bool CSeqportUtil_implementation::FastValidateIupacaa
 
 
 void CSeqportUtil_implementation::ValidateIupacna
-(const CSeq_data&        in_seq,
- vector<unsigned int>*   badIdx,
- unsigned int            uBeginIdx,
- unsigned int            uLength)
+(const CSeq_data&   in_seq,
+ vector<TSeqPos>*   badIdx,
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
     const
 {
     // Get read-only reference to in_seq data
@@ -3330,7 +3333,7 @@ void CSeqportUtil_implementation::ValidateIupacna
     string::const_iterator e_itor = b_itor + uLength;
 
     // Perform  Validation
-    unsigned int nIdx = uBeginIdx;
+    TSeqPos nIdx = uBeginIdx;
     for(itor = b_itor; itor != e_itor; ++itor)
         if(m_Iupacna->m_Table[static_cast<unsigned char>(*itor)] == char(255))
             badIdx->push_back(nIdx++);
@@ -3343,10 +3346,10 @@ void CSeqportUtil_implementation::ValidateIupacna
 
 
 void CSeqportUtil_implementation::ValidateNcbieaa
-(const CSeq_data&        in_seq,
- vector<unsigned int>*   badIdx,
- unsigned int            uBeginIdx,
- unsigned int            uLength)
+(const CSeq_data&   in_seq,
+ vector<TSeqPos>*   badIdx,
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
     const
 {
     // Get read-only reference to in_seq data
@@ -3368,7 +3371,7 @@ void CSeqportUtil_implementation::ValidateNcbieaa
     string::const_iterator e_itor = b_itor + uLength;
 
     // Perform  Validation
-    unsigned int nIdx = uBeginIdx;
+    TSeqPos nIdx = uBeginIdx;
     for(itor = b_itor; itor != e_itor; ++itor)
         if(m_Ncbieaa->m_Table[static_cast<unsigned char>(*itor)] == char(255))
             badIdx->push_back(nIdx++);
@@ -3381,10 +3384,10 @@ void CSeqportUtil_implementation::ValidateNcbieaa
 
 
 void CSeqportUtil_implementation::ValidateNcbistdaa
-(const CSeq_data&        in_seq,
- vector<unsigned int>*   badIdx,
- unsigned int            uBeginIdx,
- unsigned int            uLength)
+(const CSeq_data&   in_seq,
+ vector<TSeqPos>*   badIdx,
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
     const
 {
     // Get read-only reference to in_seq data
@@ -3406,7 +3409,7 @@ void CSeqportUtil_implementation::ValidateNcbistdaa
     vector<char>::const_iterator e_itor = b_itor + uLength;
 
     // Perform  Validation
-    unsigned int nIdx = uBeginIdx;
+    TSeqPos nIdx = uBeginIdx;
     for(itor=b_itor; itor!=e_itor; ++itor)
         if(m_Ncbistdaa->m_Table[static_cast<unsigned char>(*itor)]==char(255))
             badIdx->push_back(nIdx++);
@@ -3419,10 +3422,10 @@ void CSeqportUtil_implementation::ValidateNcbistdaa
 
 
 void CSeqportUtil_implementation::ValidateIupacaa
-(const CSeq_data&        in_seq,
- vector<unsigned int>*   badIdx,
- unsigned int            uBeginIdx,
- unsigned int            uLength)
+(const CSeq_data&   in_seq,
+ vector<TSeqPos>*   badIdx,
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
     const
 {
     // Get read-only reference to in_seq data
@@ -3444,7 +3447,7 @@ void CSeqportUtil_implementation::ValidateIupacaa
     string::const_iterator e_itor = b_itor + uLength;
 
     // Perform  Validation
-    unsigned int nIdx = uBeginIdx;
+    TSeqPos nIdx = uBeginIdx;
     for(itor=b_itor; itor!=e_itor; ++itor)
         if(m_Iupacaa->m_Table[static_cast<unsigned char>(*itor)] == char(255))
             badIdx->push_back(nIdx++);
@@ -3457,11 +3460,11 @@ void CSeqportUtil_implementation::ValidateIupacaa
 
 
 // Function to make copy of ncbi2na type sequences
-unsigned int CSeqportUtil_implementation::GetNcbi2naCopy
+TSeqPos CSeqportUtil_implementation::GetNcbi2naCopy
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Get reference to out_seq data
@@ -3499,7 +3502,7 @@ unsigned int CSeqportUtil_implementation::GetNcbi2naCopy
         in_seq_data.begin() + uBeginIdx/4;
 
     // Determine number of input bytes to process
-    unsigned int uNumBytes = uLength/4;
+    SIZE_TYPE uNumBytes = uLength/4;
     if((uLength % 4) != 0)
         ++uNumBytes;
 
@@ -3530,11 +3533,11 @@ unsigned int CSeqportUtil_implementation::GetNcbi2naCopy
 
 
 // Function to make copy of ncbi4na type sequences
-unsigned int CSeqportUtil_implementation::GetNcbi4naCopy
+TSeqPos CSeqportUtil_implementation::GetNcbi4naCopy
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Get reference to out_seq data
@@ -3573,7 +3576,7 @@ unsigned int CSeqportUtil_implementation::GetNcbi4naCopy
         in_seq_data.begin() + uBeginIdx/2;
 
     // Determine number of input bytes to process
-    unsigned int uNumBytes = uLength/2;
+    SIZE_TYPE uNumBytes = uLength/2;
     if((uLength % 2) != 0)
         ++uNumBytes;
 
@@ -3604,11 +3607,11 @@ unsigned int CSeqportUtil_implementation::GetNcbi4naCopy
 
 
 // Function to make copy of iupacna type sequences
-unsigned int CSeqportUtil_implementation::GetIupacnaCopy
+TSeqPos CSeqportUtil_implementation::GetIupacnaCopy
 (const CSeq_data& in_seq,
  CSeq_data*       out_seq,
- unsigned int     uBeginIdx,
- unsigned int     uLength)
+ TSeqPos          uBeginIdx,
+ TSeqPos          uLength)
     const
 {
     // Get reference to out_seq data
@@ -3646,11 +3649,11 @@ unsigned int CSeqportUtil_implementation::GetIupacnaCopy
 
 
 // Function to make copy of ncbieaa type sequences
-unsigned int CSeqportUtil_implementation::GetNcbieaaCopy
+TSeqPos CSeqportUtil_implementation::GetNcbieaaCopy
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Get reference to out_seq data
@@ -3688,11 +3691,11 @@ unsigned int CSeqportUtil_implementation::GetNcbieaaCopy
 
 
 // Function to make copy of ncbistdaa type sequences
-unsigned int CSeqportUtil_implementation::GetNcbistdaaCopy
+TSeqPos CSeqportUtil_implementation::GetNcbistdaaCopy
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Get reference to out_seq data
@@ -3730,11 +3733,11 @@ unsigned int CSeqportUtil_implementation::GetNcbistdaaCopy
 
 
 // Function to make copy of iupacaa type sequences
-unsigned int CSeqportUtil_implementation::GetIupacaaCopy
+TSeqPos CSeqportUtil_implementation::GetIupacaaCopy
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     // Get reference to out_seq data
@@ -3774,12 +3777,12 @@ unsigned int CSeqportUtil_implementation::GetIupacaaCopy
 // Function to adjust uBeginIdx to lie on an in_seq byte boundary
 // and uLength to lie on on an out_seq byte boundary. Returns
 // overhang
-unsigned int CSeqportUtil_implementation::Adjust
-(unsigned int*  uBeginIdx,
- unsigned int*  uLength,
- unsigned int   uInSeqBytes,
- unsigned int   uInSeqsPerByte,
- unsigned int   uOutSeqsPerByte)
+TSeqPos CSeqportUtil_implementation::Adjust
+(TSeqPos*  uBeginIdx,
+ TSeqPos*  uLength,
+ TSeqPos   uInSeqBytes,
+ TSeqPos   uInSeqsPerByte,
+ TSeqPos   uOutSeqsPerByte)
     const
 {
     // Adjust uBeginIdx and uLength to acceptable values
@@ -3802,7 +3805,7 @@ unsigned int CSeqportUtil_implementation::Adjust
 
     // Adjust uLength down to multiple of uOutSeqsPerByte
     // and calculate overhang (overhang handled separately at end)
-    unsigned int uOverhang = *uLength % uOutSeqsPerByte;
+    TSeqPos uOverhang = *uLength % uOutSeqsPerByte;
     *uLength = uOutSeqsPerByte * (*uLength / uOutSeqsPerByte);
 
     return uOverhang;
@@ -3814,12 +3817,12 @@ unsigned int CSeqportUtil_implementation::Adjust
 // the ambiguities that would result from conversion to an ncbi2na sequence
 // On return, out_seq contains the ncbi4na bases that become ambiguous and
 // out_indices contains the indices of the abiguous bases in in_seq
-unsigned int CSeqportUtil_implementation::GetAmbigs_ncbi4na_ncbi2na
-(const CSeq_data&        in_seq,
- CSeq_data*              out_seq,
- vector<unsigned int>*   out_indices,
- unsigned int            uBeginIdx,
- unsigned int            uLength)
+TSeqPos CSeqportUtil_implementation::GetAmbigs_ncbi4na_ncbi2na
+(const CSeq_data&   in_seq,
+ CSeq_data*         out_seq,
+ vector<TSeqPos>*   out_indices,
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
     const
 {
     // Get read-only reference to in_seq data
@@ -3837,8 +3840,8 @@ unsigned int CSeqportUtil_implementation::GetAmbigs_ncbi4na_ncbi2na
         uLength = 2*in_seq_data.size() - uBeginIdx;
 
     // Save uBeginIdx and adjust uBeginIdx = 0 mod 2
-    unsigned int uBeginSav = uBeginIdx;
-    unsigned int uLenSav = uLength;
+    TSeqPos uBeginSav = uBeginIdx;
+    TSeqPos uLenSav = uLength;
     uLength += uBeginIdx % 2;
     uBeginIdx = 2*(uBeginIdx/2);
 
@@ -3851,7 +3854,7 @@ unsigned int CSeqportUtil_implementation::GetAmbigs_ncbi4na_ncbi2na
     out_indices->resize(uLength);
 
     // Variable to track number of ambigs
-    unsigned int uNumAmbigs = 0;
+    TSeqPos uNumAmbigs = 0;
 
     // Get iterators to input sequence
     vector<char>::const_iterator i_in;
@@ -3862,10 +3865,10 @@ unsigned int CSeqportUtil_implementation::GetAmbigs_ncbi4na_ncbi2na
 
     // Get iterators to out_seq_data and out_indices
     vector<char>::iterator i_out_seq = out_seq_data.begin();
-    vector<unsigned int>::iterator i_out_idx = out_indices->begin();
+    vector<TSeqPos>::iterator i_out_idx = out_indices->begin();
 
     // Index of current input seq base
-    unsigned int uIdx = uBeginIdx;
+    TSeqPos uIdx = uBeginIdx;
 
     // Loop through input sequence looking for ambiguities
     for(i_in = i_in_begin; i_in != i_in_end; ++i_in) {
@@ -3955,8 +3958,8 @@ unsigned int CSeqportUtil_implementation::GetAmbigs_ncbi4na_ncbi2na
     out_seq_data.resize(uNumAmbigs/2 + uNumAmbigs % 2);
 
     // Check to ensure that ambigs outside of requested range are not included
-    unsigned int uKeepBeg = 0;
-    unsigned int uKeepLen = 0;
+    TSeqPos uKeepBeg = 0;
+    TSeqPos uKeepLen = 0;
     if((*out_indices)[0] < uBeginSav)
         {
             uKeepBeg = 1;
@@ -3981,12 +3984,12 @@ unsigned int CSeqportUtil_implementation::GetAmbigs_ncbi4na_ncbi2na
 // On return, out_seq contains the iupacna bases that become ambiguous and
 // out_indices contains the indices of the abiguous bases in in_seq. The
 // return is the number of ambiguities found.
-unsigned int CSeqportUtil_implementation::GetAmbigs_iupacna_ncbi2na
-(const CSeq_data&        in_seq,
- CSeq_data*              out_seq,
- vector<unsigned int>*   out_indices,
- unsigned int            uBeginIdx,
- unsigned int            uLength)
+TSeqPos CSeqportUtil_implementation::GetAmbigs_iupacna_ncbi2na
+(const CSeq_data&   in_seq,
+ CSeq_data*         out_seq,
+ vector<TSeqPos>*   out_indices,
+ TSeqPos            uBeginIdx,
+ TSeqPos            uLength)
     const
 {
     // Get read-only reference to in_seq data
@@ -4010,7 +4013,7 @@ unsigned int CSeqportUtil_implementation::GetAmbigs_iupacna_ncbi2na
     out_indices->resize(uLength);
 
     // Variable to track number of ambigs
-    unsigned int uNumAmbigs = 0;
+    TSeqPos uNumAmbigs = 0;
 
     // Get iterators to input sequence
     string::const_iterator i_in;
@@ -4019,10 +4022,10 @@ unsigned int CSeqportUtil_implementation::GetAmbigs_iupacna_ncbi2na
 
     // Get iterators to out_seq_data and out_indices
     string::iterator i_out_seq = out_seq_data.begin();
-    vector<unsigned int>::iterator i_out_idx = out_indices->begin();
+    vector<TSeqPos>::iterator i_out_idx = out_indices->begin();
 
     // Index of current input seq base
-    unsigned int uIdx = uBeginIdx;
+    TSeqPos uIdx = uBeginIdx;
 
     // Loop through input sequence looking for ambiguities
     for(i_in = i_in_begin; i_in != i_in_end; ++i_in)
@@ -4049,10 +4052,10 @@ unsigned int CSeqportUtil_implementation::GetAmbigs_iupacna_ncbi2na
 
 // Method to implement Keep for Ncbi2na. Returns length of
 // kept sequence
-unsigned int CSeqportUtil_implementation::KeepNcbi2na
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil_implementation::KeepNcbi2na
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
     const
 {
     // Get a reference to in_seq
@@ -4080,10 +4083,10 @@ unsigned int CSeqportUtil_implementation::KeepNcbi2na
         return uLength;
 
     // Determine index in in_seq_data that holds uBeginIdx residue
-    unsigned int uStart = uBeginIdx/4;
+    TSeqPos uStart = uBeginIdx/4;
 
     // Determine index within start byte
-    unsigned int uStartInByte = 2 * (uBeginIdx % 4);
+    TSeqPos uStartInByte = 2 * (uBeginIdx % 4);
 
     // Calculate masks
     unsigned char rightMask = 0xff << uStartInByte;
@@ -4091,7 +4094,7 @@ unsigned int CSeqportUtil_implementation::KeepNcbi2na
 
     // Determine index in in_seq_data that holds uBeginIdx + uLength
     // residue
-    unsigned int uEnd = (uBeginIdx + uLength - 1)/4;
+    TSeqPos uEnd = (uBeginIdx + uLength - 1)/4;
 
     // Get iterator for writting
     vector<char>::iterator i_write;
@@ -4112,7 +4115,7 @@ unsigned int CSeqportUtil_implementation::KeepNcbi2na
     (*i_write) = (*i_read) << uStartInByte;
 
     // Shrink in_seq to to size needed
-    unsigned int uSize = uLength/4;
+    TSeqPos uSize = uLength/4;
     if((uLength % 4) != 0)
         uSize++;
     in_seq_data.resize(uSize);
@@ -4123,10 +4126,10 @@ unsigned int CSeqportUtil_implementation::KeepNcbi2na
 
 // Method to implement Keep for Ncbi4na. Returns length of
 // kept sequence.
-unsigned int CSeqportUtil_implementation::KeepNcbi4na
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil_implementation::KeepNcbi4na
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
     const
 {
     // Get a reference to in_seq
@@ -4154,7 +4157,7 @@ unsigned int CSeqportUtil_implementation::KeepNcbi4na
         return uLength;
 
     // Determine index in in_seq_data that holds uBeginIdx residue
-    unsigned int uStart = uBeginIdx/2;
+    TSeqPos uStart = uBeginIdx/2;
 
     // Determine index within start byte
     unsigned int uStartInByte = 4 * (uBeginIdx % 2);
@@ -4165,7 +4168,7 @@ unsigned int CSeqportUtil_implementation::KeepNcbi4na
 
     // Determine index in in_seq_data that holds uBeginIdx + uLength
     // residue
-    unsigned int uEnd = (uBeginIdx + uLength - 1)/2;
+    TSeqPos uEnd = (uBeginIdx + uLength - 1)/2;
 
     // Get iterator for writting
     vector<char>::iterator i_write;
@@ -4186,7 +4189,7 @@ unsigned int CSeqportUtil_implementation::KeepNcbi4na
     (*i_write) = (*i_read) << uStartInByte;
 
     // Shrink in_seq to to size needed
-    unsigned int uSize = uLength/2;
+    TSeqPos uSize = uLength/2;
     if((uLength % 2) != 0)
         uSize++;
     in_seq_data.resize(uSize);
@@ -4197,10 +4200,10 @@ unsigned int CSeqportUtil_implementation::KeepNcbi4na
 
 // Method to implement Keep for Iupacna. Return length
 // of kept sequence
-unsigned int CSeqportUtil_implementation::KeepIupacna
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil_implementation::KeepIupacna
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
     const
 {
     // Get a reference to in_seq
@@ -4251,10 +4254,10 @@ unsigned int CSeqportUtil_implementation::KeepIupacna
 
 
 // Method to implement Keep for Ncbieaa
-unsigned int CSeqportUtil_implementation::KeepNcbieaa
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil_implementation::KeepNcbieaa
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
     const
 {
     // Get a reference to in_seq
@@ -4304,10 +4307,10 @@ unsigned int CSeqportUtil_implementation::KeepNcbieaa
 
 
 // Method to implement Keep for Ncbistdaa
-unsigned int CSeqportUtil_implementation::KeepNcbistdaa
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil_implementation::KeepNcbistdaa
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
     const
 {
     // Get a reference to in_seq
@@ -4356,10 +4359,10 @@ unsigned int CSeqportUtil_implementation::KeepNcbistdaa
 
 
 // Method to implement Keep for Iupacaa
-unsigned int CSeqportUtil_implementation::KeepIupacaa
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil_implementation::KeepIupacaa
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
     const
 {
     // Get a reference to in_seq
@@ -4411,14 +4414,14 @@ unsigned int CSeqportUtil_implementation::KeepIupacaa
 // Methods to complement na sequences
 
 // In place methods
-unsigned int CSeqportUtil_implementation::ComplementIupacna
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil_implementation::ComplementIupacna
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
     const
 {
     // Keep just the part of in_seq that will be complemented
-    unsigned int uKept = KeepIupacna(in_seq, uBeginIdx, uLength);
+    TSeqPos uKept = KeepIupacna(in_seq, uBeginIdx, uLength);
 
     // Get in_seq data
     string& in_seq_data = in_seq->SetIupacna().Set();
@@ -4438,14 +4441,14 @@ unsigned int CSeqportUtil_implementation::ComplementIupacna
 }
 
 
-unsigned int CSeqportUtil_implementation::ComplementNcbi2na
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil_implementation::ComplementNcbi2na
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
     const
 {
     // Keep just the part of in_seq that will be complemented
-    unsigned int uKept = KeepNcbi2na(in_seq, uBeginIdx, uLength);
+    TSeqPos uKept = KeepNcbi2na(in_seq, uBeginIdx, uLength);
 
     // Get in_seq data
     vector<char>& in_seq_data = in_seq->SetNcbi2na().Set();
@@ -4465,14 +4468,14 @@ unsigned int CSeqportUtil_implementation::ComplementNcbi2na
 }
 
 
-unsigned int CSeqportUtil_implementation::ComplementNcbi4na
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil_implementation::ComplementNcbi4na
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
     const
 {
     // Keep just the part of in_seq that will be complemented
-    unsigned int uKept = KeepNcbi4na(in_seq, uBeginIdx, uLength);
+    TSeqPos uKept = KeepNcbi4na(in_seq, uBeginIdx, uLength);
 
     // Get in_seq data
     vector<char>& in_seq_data = in_seq->SetNcbi4na().Set();
@@ -4493,43 +4496,43 @@ unsigned int CSeqportUtil_implementation::ComplementNcbi4na
 
 
 // Complement in copy methods
-unsigned int CSeqportUtil_implementation::ComplementIupacna
+TSeqPos CSeqportUtil_implementation::ComplementIupacna
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
-    unsigned int uKept = GetIupacnaCopy(in_seq, out_seq, uBeginIdx, uLength);
-    unsigned int uIdx1 = 0, uIdx2 = 0;
+    TSeqPos uKept = GetIupacnaCopy(in_seq, out_seq, uBeginIdx, uLength);
+    TSeqPos uIdx1 = 0, uIdx2 = 0;
     ComplementIupacna(out_seq, uIdx1, uIdx2);
     return uKept;
 }
 
 
-unsigned int CSeqportUtil_implementation::ComplementNcbi2na
+TSeqPos CSeqportUtil_implementation::ComplementNcbi2na
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
-    unsigned int uKept = GetNcbi2naCopy(in_seq, out_seq, uBeginIdx, uLength);
-    unsigned int uIdx1 = 0, uIdx2 = 0;
+    TSeqPos uKept = GetNcbi2naCopy(in_seq, out_seq, uBeginIdx, uLength);
+    TSeqPos uIdx1 = 0, uIdx2 = 0;
     ComplementNcbi2na(out_seq, uIdx1, uIdx2);
     return uKept;
 }
 
 
-unsigned int CSeqportUtil_implementation::ComplementNcbi4na
+TSeqPos CSeqportUtil_implementation::ComplementNcbi4na
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
-    unsigned int uKept = GetNcbi4naCopy(in_seq, out_seq, uBeginIdx, uLength);
-    unsigned int uIdx1 = 0, uIdx2 = 0;
+    TSeqPos uKept = GetNcbi4naCopy(in_seq, out_seq, uBeginIdx, uLength);
+    TSeqPos uIdx1 = 0, uIdx2 = 0;
     ComplementNcbi4na(out_seq, uIdx1, uIdx2);
     return uKept;
 }
@@ -4538,14 +4541,14 @@ unsigned int CSeqportUtil_implementation::ComplementNcbi4na
 // Methods to reverse na sequences
 
 // In place methods
-unsigned int CSeqportUtil_implementation::ReverseIupacna
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil_implementation::ReverseIupacna
+(CSeq_data*  in_seq,
+ TSeqPos     uBeginIdx,
+ TSeqPos     uLength)
     const
 {
     // Keep just the part of in_seq that will be reversed
-    unsigned int uKept = KeepIupacna(in_seq, uBeginIdx, uLength);
+    TSeqPos uKept = KeepIupacna(in_seq, uBeginIdx, uLength);
 
     // Get in_seq data
     string& in_seq_data = in_seq->SetIupacna().Set();
@@ -4557,10 +4560,10 @@ unsigned int CSeqportUtil_implementation::ReverseIupacna
 }
 
 
-unsigned int CSeqportUtil_implementation::ReverseNcbi2na
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil_implementation::ReverseNcbi2na
+(CSeq_data*  in_seq,
+ TSeqPos     uBeginIdx,
+ TSeqPos     uLength)
     const
 {
     // Get a reference to in_seq data
@@ -4582,8 +4585,8 @@ unsigned int CSeqportUtil_implementation::ReverseNcbi2na
         uLength = 4*in_seq_data.size() - uBeginIdx;
 
     // Determine start and end bytes
-    unsigned int uStart = uBeginIdx/4;
-    unsigned int uEnd = uStart + (uLength - 1 +(uBeginIdx % 4))/4 + 1;
+    TSeqPos uStart = uBeginIdx/4;
+    TSeqPos uEnd = uStart + (uLength - 1 +(uBeginIdx % 4))/4 + 1;
 
     // Declare an iterator and get end of sequence
     vector<char>::iterator i_in;
@@ -4598,15 +4601,15 @@ unsigned int CSeqportUtil_implementation::ReverseNcbi2na
     reverse(i_in_begin, i_in_end);
 
     // Keep just the requested part of the sequence
-    unsigned int uJagged = 3 - ((uBeginIdx + uLength - 1) % 4) + 4*uStart;
+    TSeqPos uJagged = 3 - ((uBeginIdx + uLength - 1) % 4) + 4*uStart;
     return KeepNcbi2na(in_seq, uJagged, uLength);
 }
 
 
-unsigned int CSeqportUtil_implementation::ReverseNcbi4na
-(CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+TSeqPos CSeqportUtil_implementation::ReverseNcbi4na
+(CSeq_data*   in_seq,
+ TSeqPos      uBeginIdx,
+ TSeqPos      uLength)
     const
 {
     // Get a reference to in_seq data
@@ -4628,8 +4631,8 @@ unsigned int CSeqportUtil_implementation::ReverseNcbi4na
         uLength = 2*in_seq_data.size() - uBeginIdx;
 
     // Determine start and end bytes
-    unsigned int uStart = uBeginIdx/2;
-    unsigned int uEnd = uStart + (uLength - 1 +(uBeginIdx % 2))/2 + 1;
+    TSeqPos uStart = uBeginIdx/2;
+    TSeqPos uEnd = uStart + (uLength - 1 +(uBeginIdx % 2))/2 + 1;
 
     // Declare an iterator and get end of sequence
     vector<char>::iterator i_in;
@@ -4644,50 +4647,50 @@ unsigned int CSeqportUtil_implementation::ReverseNcbi4na
     reverse(i_in_begin, i_in_end);
 
     // Keep just the requested part of the sequence
-    unsigned int uJagged = 1 - ((uBeginIdx + uLength - 1) % 2) + 2*uStart;
+    TSeqPos uJagged = 1 - ((uBeginIdx + uLength - 1) % 2) + 2*uStart;
     return KeepNcbi4na(in_seq, uJagged, uLength);
 }
 
 
 // Reverse in copy methods
-unsigned int CSeqportUtil_implementation::ReverseIupacna
+TSeqPos CSeqportUtil_implementation::ReverseIupacna
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     GetIupacnaCopy(in_seq, out_seq, uBeginIdx, uLength);
 
-    unsigned int uIdx1 = 0, uIdx2 = uLength;
+    TSeqPos uIdx1 = 0, uIdx2 = uLength;
     return ReverseIupacna(out_seq, uIdx1, uIdx2);
 }
 
 
-unsigned int CSeqportUtil_implementation::ReverseNcbi2na
+TSeqPos CSeqportUtil_implementation::ReverseNcbi2na
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     GetNcbi2naCopy(in_seq, out_seq, uBeginIdx, uLength);
 
-    unsigned int uIdx1 = 0, uIdx2 = uLength;
+    TSeqPos uIdx1 = 0, uIdx2 = uLength;
     return ReverseNcbi2na(out_seq, uIdx1, uIdx2);
 }
 
 
-unsigned int CSeqportUtil_implementation::ReverseNcbi4na
+TSeqPos CSeqportUtil_implementation::ReverseNcbi4na
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     GetNcbi4naCopy(in_seq, out_seq, uBeginIdx, uLength);
 
-    unsigned int uIdx1 = 0, uIdx2 = uLength;
+    TSeqPos uIdx1 = 0, uIdx2 = uLength;
     return ReverseNcbi4na(out_seq, uIdx1, uIdx2);
 }
 
@@ -4695,97 +4698,97 @@ unsigned int CSeqportUtil_implementation::ReverseNcbi4na
 // Methods to reverse-complement an na sequences
 
 // In place methods
-unsigned int CSeqportUtil_implementation::ReverseComplementIupacna
+TSeqPos CSeqportUtil_implementation::ReverseComplementIupacna
 (CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     ReverseIupacna(in_seq, uBeginIdx, uLength);
 
-    unsigned int uIdx = 0;
+    TSeqPos uIdx = 0;
     return ComplementIupacna(in_seq, uIdx, uLength);
 }
 
 
-unsigned int CSeqportUtil_implementation::ReverseComplementNcbi2na
+TSeqPos CSeqportUtil_implementation::ReverseComplementNcbi2na
 (CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     ReverseNcbi2na(in_seq, uBeginIdx, uLength);
 
-    unsigned int uIdx = 0;
+    TSeqPos uIdx = 0;
     return ComplementNcbi2na(in_seq, uIdx, uLength);
 }
 
 
-unsigned int CSeqportUtil_implementation::ReverseComplementNcbi4na
+TSeqPos CSeqportUtil_implementation::ReverseComplementNcbi4na
 (CSeq_data*        in_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     ReverseNcbi4na(in_seq, uBeginIdx, uLength);
 
-    unsigned int uIdx = 0;
+    TSeqPos uIdx = 0;
     return ComplementNcbi4na(in_seq, uIdx, uLength);
 }
 
 
 // Reverse in copy methods
-unsigned int CSeqportUtil_implementation::ReverseComplementIupacna
+TSeqPos CSeqportUtil_implementation::ReverseComplementIupacna
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     ReverseIupacna(in_seq, out_seq, uBeginIdx, uLength);
 
-    unsigned int uIdx = 0;
+    TSeqPos uIdx = 0;
     return ComplementIupacna(out_seq, uIdx, uLength);
 }
 
 
-unsigned int CSeqportUtil_implementation::ReverseComplementNcbi2na
+TSeqPos CSeqportUtil_implementation::ReverseComplementNcbi2na
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     ReverseNcbi2na(in_seq, out_seq, uBeginIdx, uLength);
 
-    unsigned int uIdx = 0;
+    TSeqPos uIdx = 0;
     return ComplementNcbi2na(out_seq, uIdx, uLength);
 }
 
 
-unsigned int CSeqportUtil_implementation::ReverseComplementNcbi4na
+TSeqPos CSeqportUtil_implementation::ReverseComplementNcbi4na
 (const CSeq_data&  in_seq,
  CSeq_data*        out_seq,
- unsigned int      uBeginIdx,
- unsigned int      uLength)
+ TSeqPos           uBeginIdx,
+ TSeqPos           uLength)
     const
 {
     ReverseNcbi4na(in_seq, out_seq, uBeginIdx, uLength);
 
-    unsigned int uIdx = 0;
+    TSeqPos uIdx = 0;
     return ComplementNcbi4na(out_seq, uIdx, uLength);
 }
 
 
 // Append methods
-unsigned int CSeqportUtil_implementation::AppendIupacna
+TSeqPos CSeqportUtil_implementation::AppendIupacna
 (CSeq_data*        out_seq,
  const CSeq_data&  in_seq1,
- unsigned int      uBeginIdx1,
- unsigned int      uLength1,
+ TSeqPos           uBeginIdx1,
+ TSeqPos           uLength1,
  const CSeq_data&  in_seq2,
- unsigned int      uBeginIdx2,
- unsigned int      uLength2)
+ TSeqPos           uBeginIdx2,
+ TSeqPos           uLength2)
     const
 {
     // Get references to in_seqs
@@ -4815,14 +4818,14 @@ unsigned int CSeqportUtil_implementation::AppendIupacna
 }
 
 
-unsigned int CSeqportUtil_implementation::AppendNcbi2na
+TSeqPos CSeqportUtil_implementation::AppendNcbi2na
 (CSeq_data*        out_seq,
  const CSeq_data&  in_seq1,
- unsigned int      uBeginIdx1,
- unsigned int      uLength1,
+ TSeqPos           uBeginIdx1,
+ TSeqPos           uLength1,
  const CSeq_data&  in_seq2,
- unsigned int      uBeginIdx2,
- unsigned int      uLength2)
+ TSeqPos           uBeginIdx2,
+ TSeqPos           uLength2)
     const
 {
     // Get references to in_seqs
@@ -4855,7 +4858,7 @@ unsigned int CSeqportUtil_implementation::AppendNcbi2na
 
 
     // Resize out_seq_data to hold appended sequence
-    unsigned int uTotalLength = uLength1 + uLength2;
+    TSeqPos uTotalLength = uLength1 + uLength2;
     if((uTotalLength % 4) == 0)
         out_seq_data.resize(uTotalLength/4);
     else
@@ -4902,15 +4905,15 @@ unsigned int CSeqportUtil_implementation::AppendNcbi2na
 
 
     // Determine begin and end points for iterators.
-    unsigned int uStart1 = uBeginIdx1/4;
-    unsigned int uEnd1;
+    TSeqPos uStart1 = uBeginIdx1/4;
+    TSeqPos uEnd1;
     if(((uBeginIdx1 + uLength1) % 4) == 0)
         uEnd1 = (uBeginIdx1 + uLength1)/4;
     else
         uEnd1 = (uBeginIdx1 + uLength1)/4 + 1;
 
-    unsigned int uStart2 = uBeginIdx2/4;
-    unsigned int uEnd2;
+    TSeqPos uStart2 = uBeginIdx2/4;
+    TSeqPos uEnd2;
     if(((uBeginIdx2 + uLength2) % 4) == 0)
         uEnd2 = (uBeginIdx2 + uLength2)/4;
     else
@@ -4932,7 +4935,7 @@ unsigned int CSeqportUtil_implementation::AppendNcbi2na
         (*(++i_out)) = ((*i_in1) << lShift1) | ((*(i_in1+1) & 255) >> rShift1);
 
     // Handle last byte for in_seq1 if necessary
-    unsigned int uEndOutByte;
+    TSeqPos uEndOutByte;
     if((uLength1 % 4) == 0)
         uEndOutByte = uLength1/4 - 1;
     else
@@ -4943,7 +4946,7 @@ unsigned int CSeqportUtil_implementation::AppendNcbi2na
     // Connect in_seq1 and in_seq2
     unsigned char uMask1 = 255 << (8 - 2*(uLength1 % 4));
     unsigned char uMask2 = 255 >> (2*(uBeginIdx2 % 4));
-    unsigned int uSeq2Inc = 1;
+    TSeqPos uSeq2Inc = 1;
 
     switch (uCase) {
     case 0: // 0 < uVacantIdx < uStartIdx
@@ -5019,14 +5022,14 @@ unsigned int CSeqportUtil_implementation::AppendNcbi2na
 }
 
 
-unsigned int CSeqportUtil_implementation::AppendNcbi4na
+TSeqPos CSeqportUtil_implementation::AppendNcbi4na
 (CSeq_data*        out_seq,
  const CSeq_data&  in_seq1,
- unsigned int      uBeginIdx1,
- unsigned int      uLength1,
+ TSeqPos           uBeginIdx1,
+ TSeqPos           uLength1,
  const CSeq_data&  in_seq2,
- unsigned int      uBeginIdx2,
- unsigned int      uLength2)
+ TSeqPos           uBeginIdx2,
+ TSeqPos           uLength2)
     const
 {
     // Get references to in_seqs
@@ -5058,7 +5061,7 @@ unsigned int CSeqportUtil_implementation::AppendNcbi4na
         uLength2 = 2*in_seq2_data.size() - uBeginIdx2;
 
     // Resize out_seq_data to hold appended sequence
-    unsigned int uTotalLength = uLength1 + uLength2;
+    TSeqPos uTotalLength = uLength1 + uLength2;
     if((uTotalLength % 2) == 0)
         out_seq_data.resize(uTotalLength/2);
     else
@@ -5099,15 +5102,15 @@ unsigned int CSeqportUtil_implementation::AppendNcbi4na
 
 
     // Determine begin and end points for iterators.
-    unsigned int uStart1 = uBeginIdx1/2;
-    unsigned int uEnd1;
+    TSeqPos uStart1 = uBeginIdx1/2;
+    TSeqPos uEnd1;
     if(((uBeginIdx1 + uLength1) % 2) == 0)
         uEnd1 = (uBeginIdx1 + uLength1)/2;
     else
         uEnd1 = (uBeginIdx1 + uLength1)/2 + 1;
 
-    unsigned int uStart2 = uBeginIdx2/2;
-    unsigned int uEnd2;
+    TSeqPos uStart2 = uBeginIdx2/2;
+    TSeqPos uEnd2;
     if(((uBeginIdx2 + uLength2) % 2) == 0)
         uEnd2 = (uBeginIdx2 + uLength2)/2;
     else
@@ -5129,7 +5132,7 @@ unsigned int CSeqportUtil_implementation::AppendNcbi4na
         (*(++i_out)) = ((*i_in1) << lShift1) | ((*(i_in1+1) & 255) >> rShift1);
 
     // Handle last byte for in_seq1 if necessary
-    unsigned int uEndOutByte;
+    TSeqPos uEndOutByte;
     if((uLength1 % 2) == 0)
         uEndOutByte = uLength1/2 - 1;
     else
@@ -5140,7 +5143,7 @@ unsigned int CSeqportUtil_implementation::AppendNcbi4na
     // Connect in_seq1 and in_seq2
     unsigned char uMask1 = 255 << (8 - 4*(uLength1 % 2));
     unsigned char uMask2 = 255 >> (4*(uBeginIdx2 % 2));
-    unsigned int uSeq2Inc = 1;
+    TSeqPos uSeq2Inc = 1;
 
     switch (uCase) {
     case 1: // 0 == uVacantIdx < uStartIdx
@@ -5202,14 +5205,14 @@ unsigned int CSeqportUtil_implementation::AppendNcbi4na
 }
 
 
-unsigned int CSeqportUtil_implementation::AppendNcbieaa
+TSeqPos CSeqportUtil_implementation::AppendNcbieaa
 (CSeq_data*        out_seq,
  const CSeq_data&  in_seq1,
- unsigned int      uBeginIdx1,
- unsigned int      uLength1,
+ TSeqPos           uBeginIdx1,
+ TSeqPos           uLength1,
  const CSeq_data&  in_seq2,
- unsigned int      uBeginIdx2,
- unsigned int      uLength2)
+ TSeqPos           uBeginIdx2,
+ TSeqPos           uLength2)
     const
 {
     // Get references to in_seqs
@@ -5241,14 +5244,14 @@ unsigned int CSeqportUtil_implementation::AppendNcbieaa
 }
 
 
-unsigned int CSeqportUtil_implementation::AppendNcbistdaa
+TSeqPos CSeqportUtil_implementation::AppendNcbistdaa
 (CSeq_data*          out_seq,
  const CSeq_data&    in_seq1,
- unsigned int        uBeginIdx1,
- unsigned int        uLength1,
+ TSeqPos             uBeginIdx1,
+ TSeqPos             uLength1,
  const CSeq_data&    in_seq2,
- unsigned int        uBeginIdx2,
- unsigned int        uLength2)
+ TSeqPos             uBeginIdx2,
+ TSeqPos             uLength2)
     const
 {
     // Get references to in_seqs
@@ -5286,14 +5289,14 @@ unsigned int CSeqportUtil_implementation::AppendNcbistdaa
 }
 
 
-unsigned int CSeqportUtil_implementation::AppendIupacaa
+TSeqPos CSeqportUtil_implementation::AppendIupacaa
 (CSeq_data*          out_seq,
  const CSeq_data&    in_seq1,
- unsigned int        uBeginIdx1,
- unsigned int        uLength1,
+ TSeqPos             uBeginIdx1,
+ TSeqPos             uLength1,
  const CSeq_data&    in_seq2,
- unsigned int        uBeginIdx2,
- unsigned int        uLength2)
+ TSeqPos             uBeginIdx2,
+ TSeqPos             uLength2)
     const
 {
     // Get references to in_seqs

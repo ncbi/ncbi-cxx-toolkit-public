@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2002/05/03 21:28:03  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 1.3  2001/11/13 12:12:52  clausen
  * Added Codon2Idx and Idx2Codon. Modified type of code_breaks
  *
@@ -64,7 +67,7 @@ class CGenetic_code;
 class CGencode
 {
 public:
-    typedef vector<pair<unsigned int, char> > TCodeBreaks;
+    typedef vector<pair<TSeqPos, char> > TCodeBreaks;
     
     // Function to translate na to aa. in_seq must
     // be in Iupacna and out_seq will be in Ncbieaa
@@ -79,8 +82,8 @@ public:
      CSeq_data*            out_seq,
      const CGenetic_code&  genetic_code,
      const TCodeBreaks &   code_breaks,
-     unsigned int          uBeginIdx          = 0,
-     unsigned int          uLength            = 0,
+     TSeqPos               uBeginIdx          = 0,
+     TSeqPos               uLength            = 0,
      bool                  bCheck_first       = true,
      bool                  bPartial_start     = false,
      ENa_strand            eStrand            = eNa_strand_plus,

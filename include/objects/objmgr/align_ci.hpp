@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/05/03 21:28:01  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.8  2002/04/30 14:30:41  grichenk
 * Added eResolve_TSE flag in CAnnot_Types_CI, made it default
 *
@@ -80,7 +83,7 @@ public:
               CAnnotTypes_CI::EResolveMethod resolve =
               CAnnotTypes_CI::eResolve_TSE);
     // Search only in TSE, containing the bioseq
-    CAlign_CI(CBioseq_Handle& bioseq, int start, int stop,
+    CAlign_CI(CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
               CAnnotTypes_CI::EResolveMethod resolve =
               CAnnotTypes_CI::eResolve_TSE);
     CAlign_CI(const CAlign_CI& iter);

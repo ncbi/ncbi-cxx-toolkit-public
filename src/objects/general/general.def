@@ -1,0 +1,5 @@
+[Int-fuzz]
+p-m._type       = TSeqPos
+range.max._type = TSeqPos
+range.min_type  = TSeqPos
+alt.E._type     = TSeqPos

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/05/03 21:28:19  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 6.5  2002/04/22 20:09:08  grichenk
  * -GetTotalRange(), GetRangeMap(), ResetRangeMap()
  *
@@ -88,14 +91,12 @@ CSeq_loc_mix::~CSeq_loc_mix(void)
 
 
 // length calculator
-int CSeq_loc_mix::GetLength(void) const
+TSeqPos CSeq_loc_mix::GetLength(void) const // THROWS((CSeq_loc::CException))
 {
-    int length = 0;
+    TSeqPos length = 0;
 
 	iterate( Tdata, i, Get() ) {
-        int ret = (**i).GetLength();
-        if (ret < 0)   /* error return */
-            return ret;
+        TSeqPos ret = (**i).GetLength();
         length += ret;
     }
     return length;

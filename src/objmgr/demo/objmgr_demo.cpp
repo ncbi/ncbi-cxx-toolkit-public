@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/05/03 21:28:11  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.3  2002/05/03 18:37:34  grichenk
 * Added more examples of using CFeat_CI and GetSequenceView()
 *
@@ -156,7 +159,7 @@ int CDemoApp::Run(void)
     NcbiCout << "Sequence: length=" << seq_vect.size();
     NcbiCout << " data=";
     string sout = "";
-    for (size_t i = 0; (i < seq_vect.size()) && (i < 10); i++) {
+    for (TSeqPos i = 0; (i < seq_vect.size()) && (i < 10); i++) {
         // Convert sequence symbols to printable form
         sout += seq_vect[i];
     }
@@ -206,7 +209,7 @@ int CDemoApp::Run(void)
         // Print first 10 characters of each cd-region
         NcbiCout << "cds" << count << " len=" << cds_vect.size() << " data=";
         sout = "";
-        for (size_t i = 0; (i < cds_vect.size()) && (i < 10); i++) {
+        for (TSeqPos i = 0; (i < cds_vect.size()) && (i < 10); i++) {
             // Convert sequence symbols to printable form
             sout += cds_vect[i];
         }

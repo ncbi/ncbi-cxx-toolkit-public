@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/05/03 21:28:09  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.19  2002/04/17 21:09:14  grichenk
 * Fixed annotations loading
 * +IsSynonym()
@@ -241,9 +244,9 @@ private:
 
     // Create CSeqMap for a bioseq
     void x_CreateSeqMap(const CBioseq& seq);
-    void x_LocToSeqMap(const CSeq_loc& loc, int& pos, CSeqMap& seqmap);
+    void x_LocToSeqMap(const CSeq_loc& loc, TSeqPos& pos, CSeqMap& seqmap);
     void x_DataToSeqMap(const CSeq_data& data,
-                        int& pos, int len,
+                        TSeqPos& pos, TSeqPos len,
                         CSeqMap& seqmap);
     // Non-const version of GetSeqMap()
     CSeqMap& x_GetSeqMap(const CBioseq_Handle& handle);
@@ -285,8 +288,8 @@ private:
     // "start" is referenced region position on the "rh" sequence.
     // "dpos" is the starting point on the master sequence.
     void x_ResolveMapSegment(CSeq_id_Handle rh,
-                             int start, int len,
-                             CSeqMap& dmap, int& dpos, int dstop,
+                             TSeqPos start, TSeqPos len,
+                             CSeqMap& dmap, TSeqPos& dpos, TSeqPos dstop,
                              CScope& scope);
 
     static CMutex sm_DataSource_Mutex;

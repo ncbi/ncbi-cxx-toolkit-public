@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/05/03 21:28:10  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.15  2002/05/02 20:42:38  grichenk
 * throw -> THROW1_TRACE
 *
@@ -128,13 +131,13 @@ void CSeqMap::Add(CSegmentInfo& interval)
 }
 
 
-int CSeqMap::x_FindSegment(int pos)
+size_t CSeqMap::x_FindSegment(TSeqPos pos)
 {
     size_t seg_idx = 0;
     // Ignore eSeqEnd
     for ( ; seg_idx+1 < m_Data.size(); seg_idx++) {
         // int cur_pos = m_Data[seg_idx]->m_Position;
-        int next_pos = m_Data[seg_idx+1]->m_Position;
+        TSeqPos next_pos = m_Data[seg_idx+1]->m_Position;
         // The commented part was used to get the first of all matching
         // segments. It looks better to use the last one.
         if (next_pos > pos/*  || (next_pos == pos  &&  cur_pos == pos)*/)
@@ -144,15 +147,15 @@ int CSeqMap::x_FindSegment(int pos)
 }
 
 
-CSeqMap::CSegmentInfo CSeqMap::x_Resolve(int pos, CScope& scope)
+CSeqMap::CSegmentInfo CSeqMap::x_Resolve(TSeqPos pos, CScope& scope)
 {
     CBioseq_Handle::TBioseqCore seq;
-    int seg_idx = x_FindSegment(pos);
+    size_t seg_idx = x_FindSegment(pos);
     CSegmentInfo seg = *(m_Data[seg_idx]);
     if ( seg_idx >=  m_FirstUnresolvedPos) {
         // Resolve map segments
-        int iStillUnresolved = -1;
-        int shift = 0;
+        ssize_t iStillUnresolved = -1;
+        TSeqPos shift = 0;
         for (size_t i = m_FirstUnresolvedPos; i < m_Data.size(); i++) {
             if (m_Data[i]->m_Position+shift > pos  ||
                 m_Data[i]->m_SegType == CSeqMap::eSeqEnd)

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2002/05/03 21:28:18  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 6.9  2002/04/22 20:08:31  grichenk
  * Redesigned GetTotalRange() using CSeq_loc_CI
  *
@@ -102,16 +105,9 @@ CSeq_loc::~CSeq_loc(void)
 
 
 // returns length, in residues, of Seq_loc
-// return = -1 = couldn't calculate due to error
-// return = -2 = couldn't calculate because of data type
-int CSeq_loc::GetLength(void) const
+TSeqPos CSeq_loc::GetLength(void) const THROWS((CSeq_loc::CException))
 {
     switch (Which()) {
-    case e_not_set:      /* this should never be */
-        return eError;
-    case e_Bond:         /* can't calculate length */
-    case e_Feat:
-        return eUndefined;
     case e_Pnt:
         return 1;
     case e_Int:
@@ -123,14 +119,16 @@ int CSeq_loc::GetLength(void) const
         return GetPacked_int().GetLength();
     case e_Mix:
         return GetMix().GetLength();
-    case e_Packed_pnt:
-        return eUndefined;  /* this is a bunch of points */
-    case e_Equiv:
-        return eUndefined;  /* unless they are all equal */
+    case e_not_set:
+    case e_Bond:         /* can't calculate length */
+    case e_Feat:
+    case e_Packed_pnt: // just a bunch of points
+    case e_Equiv: // unless actually the same length...
     default:
-        break;
+        THROW1_TRACE(CException,
+                     "GetLength called on an unsupported location type:"
+                     + SelectionName(Which()));
     }
-    return eError;   /* new unsupported type */
 }
 
 // returns enclosing location range
@@ -213,11 +211,11 @@ inline bool s_IsSameBioseq
 }
 
 
-// Returns the length of a CBioseq if it can be determined, else -1
-inline int s_GetSeqLength(const CSeq_id& seq_id, CScope* scope)
+// Returns the length of a CBioseq if it can be determined, else 0
+inline TSeqPos s_GetSeqLength(const CSeq_id& seq_id, CScope* scope)
 {
     if( !scope ) {
-        return -1;
+        return 0;
     }
 
     // Get the CBioseq core (less the sequence data).
@@ -226,7 +224,7 @@ inline int s_GetSeqLength(const CSeq_id& seq_id, CScope* scope)
     const CScope::TBioseqCore bs   = scope->GetBioseqCore(h1);
     const CSeq_inst&          inst = bs->GetInst();
 
-    return inst.IsSetLength() ? inst.GetLength() : -1;
+    return inst.IsSetLength() ? inst.GetLength() : 0;
 }
 
 
@@ -451,7 +449,7 @@ inline CSeq_loc::ECompare s_Compare
     }
 
     // If point in interval, then interval contains point
-    int pnt = point.GetPoint();
+    TSeqPos pnt = point.GetPoint();
     if (interval.GetFrom() <= pnt  &&  interval.GetTo() >= pnt ) {
         return CSeq_loc::eContains;
     }
@@ -498,7 +496,7 @@ inline CSeq_loc::ECompare s_Compare
     // If on the same bioseq, and any of the packed points are the
     // same as point, then the point is contained in the packed point
     if ( s_IsSameBioseq(point.GetId(), points.GetId(), scope) ) {
-        int pnt = point.GetPoint();
+        TSeqPos pnt = point.GetPoint();
 
         // This loop will only be executed if points.GetPoints().size() > 0
         iterate(CSeq_loc::TPoints, it, points.GetPoints()) {
@@ -566,10 +564,10 @@ inline CSeq_loc::ECompare s_Compare
     // in interval, then overlap. If all points are in interval, then
     // contained. Else, no overlap.
     if ( s_IsSameBioseq(points.GetId(), interval.GetId(), scope) ) {
-        bool got_one    = false;
-        bool missed_one = false;
-        int from = interval.GetFrom();
-        int to   = interval.GetTo();
+        bool    got_one    = false;
+        bool    missed_one = false;
+        TSeqPos from = interval.GetFrom();
+        TSeqPos to   = interval.GetTo();
 
         // This loop will only be executed if points.GetPoints().size() > 0
         iterate(CSeq_loc::TPoints, it, points.GetPoints()) {
@@ -630,7 +628,7 @@ inline CSeq_loc::ECompare s_Compare
     }
 
     // Check for containment
-    unsigned int hits = 0;
+    size_t hits = 0;
     // This loop will only be executed if pointsA.size() > 0
     iterate(CSeq_loc::TPoints, iA, pointsA) {
         iterate(CSeq_loc::TPoints, iB, pointsB) {
@@ -662,7 +660,7 @@ CSeq_loc::ECompare s_Compare
 
     // Check for containment of the first residue in the bond
     if ( s_IsSameBioseq(points.GetId(), bondA.GetId(), scope) ) {
-        int pntA = bondA.GetPoint();
+        TSeqPos pntA = bondA.GetPoint();
 
         // This loop will only be executed if points.GetPoints().size() > 0
         iterate(CSeq_loc::TPoints, it, points.GetPoints()) {
@@ -683,7 +681,7 @@ CSeq_loc::ECompare s_Compare
         return cmp;
     }
 
-    int pntB = bondB.GetPoint();
+    TSeqPos pntB = bondB.GetPoint();
     // This loop will only be executed if points.GetPoints().size() > 0
     iterate(CSeq_loc::TPoints, it, points.GetPoints()) {
         if (pntB == *it) {
@@ -1243,14 +1241,9 @@ bool CSeq_loc::IsOneBioseq(CScope* scope) const
 // If only one CBioseq is represented, return the lowest residue posisiton
 // represented by this CSeq_loc. scope, if not null, is used to determine if
 // two CSeq_ids represenet the same CBioseq
-int CSeq_loc::GetStart(CScope* scope) const
+TSeqPos CSeq_loc::GetStart(CScope* scope) const THROWS((CSeq_loc::CException))
 {
     switch( Which() ) {
-    case e_not_set:
-    case e_Null:
-    case e_Empty:
-    case e_Feat:
-        return -1;
     case e_Whole:
         return 0;
     case e_Int:
@@ -1262,8 +1255,8 @@ int CSeq_loc::GetStart(CScope* scope) const
     case e_Packed_pnt:
     {
         // Loop through the points and return the minimum position
-        int min = GetPacked_pnt().GetPoints().front();
-        iterate(list<int>, it, GetPacked_pnt().GetPoints()) {
+        TSeqPos min = GetPacked_pnt().GetPoints().front();
+        iterate(TPoints, it, GetPacked_pnt().GetPoints()) {
             min = min < *it ? min : *it;
         }
         return min;
@@ -1277,10 +1270,13 @@ int CSeq_loc::GetStart(CScope* scope) const
         // found
         CTypeConstIterator<CSeq_interval> prv = ConstBegin(*this);
         CTypeConstIterator<CSeq_interval> cur = ConstBegin(*this);
-        int min = prv->GetFrom();
+        TSeqPos min = prv->GetFrom();
         for( ++cur; cur; ++cur, ++prv ) {
             if( !s_IsSameBioseq(prv->GetId(), cur->GetId(), scope) ) {
-                return -1;
+                if( !IsOneBioseq(scope) ) {
+                    THROW1_TRACE(CException,
+                                 "GetStart requires a single Bioseq");
+                }
             }
             min = min < cur->GetFrom() ? min : cur->GetFrom();
         }
@@ -1290,23 +1286,33 @@ int CSeq_loc::GetStart(CScope* scope) const
     case e_Equiv:
     {
         if( !IsOneBioseq(scope) ) {
-            return -1;
+            THROW1_TRACE(CException, "GetStart requires a single Bioseq");
         }
         
         // Loop  through embedded CSeq_locs looking for CSeq_locs that are
         // neither e_Mix nor e_Equiv and determine the minimum residue
         // position
-        int min = kMax_Int, n;
+        TSeqPos min = numeric_limits<TSeqPos>::max(), n;
         for( CTypeConstIterator<CSeq_loc> it = ConstBegin(*this); it; ++it ) {
             if( it->Which() == e_Mix || it->Which() == e_Equiv ) {
                 continue;
             }
             min = min < (n = it->GetStart()) ? min : n;
         }
-        return min < kMax_Int ? min : -1;
+        if (min == numeric_limits<TSeqPos>::max()) {
+            THROW1_TRACE(CException,
+                         "CSeq_loc::GetStart: unable to find a real location!");
+        }
+        return min;
     }
+    case e_not_set:
+    case e_Null:
+    case e_Empty:
+    case e_Feat:
     default:
-        return -1;
+        THROW1_TRACE(CException,
+                     "GetStart called on an unsupported location type:"
+                     + SelectionName(Which()));
     }
 }
 

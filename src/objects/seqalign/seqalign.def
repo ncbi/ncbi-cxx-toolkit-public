@@ -1,0 +1,12 @@
+[Dense-diag]
+starts.E._type = TSeqPos
+len._type      = TSeqPos
+
+[Dense-seg]
+; may contain occurrences of -1
+starts.E._type = TSignedSeqPos
+lens.E._type   = TSeqPos
+
+[Packed-seg]
+starts.E._type = TSeqPos
+lens.E._type   = TSeqPos

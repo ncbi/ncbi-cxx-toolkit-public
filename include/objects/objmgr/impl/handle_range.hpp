@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/05/03 21:28:10  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.6  2002/04/22 20:05:35  grichenk
 * +MergeRange()
 *
@@ -67,7 +70,7 @@ BEGIN_SCOPE(objects)
 class CHandleRange
 {
 public:
-    typedef CRange<int> TRange;
+    typedef CRange<TSeqPos> TRange;
     typedef pair<TRange, ENa_strand> TRangeWithStrand;
     typedef list<TRangeWithStrand> TRanges;
 

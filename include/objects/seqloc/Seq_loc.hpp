@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2002/05/03 21:28:04  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 1.7  2002/04/17 15:39:06  grichenk
  * Moved CSeq_loc_CI to the seq-loc library
  *
@@ -95,12 +98,10 @@ public:
     // destructor
     virtual ~CSeq_loc(void);
 
-    // returns length, in residues, of Seq_loc
-    // return = -1 = couldn't calculate due to error
-    // return = -2 = couldn't calculate because of data type
-    enum {
-        eError     = -1,
-        eUndefined = -2
+    class CException : public runtime_error
+    {
+    public:
+        CException(const string& s) : runtime_error(s) { }
     };
 
     // Method to determine the containment relationship between CSeq_locs
@@ -113,9 +114,9 @@ public:
     };
     ECompare Compare(const CSeq_loc& seqloc, CScope* scope = 0) const;
 
-    int GetLength(void) const;
+    TSeqPos GetLength(void) const THROWS((CException));
 
-    typedef CRange<int> TRange;
+    typedef CRange<TSeqPos> TRange;
     TRange GetTotalRange(void) const;
     
     // Returns true if all CSeq_ids contained in this CSeq_loc represent the
@@ -126,7 +127,7 @@ public:
     // one CBioseq, else -1. Also returns -1 for e_not_set, e_Null, 
     // e_Feat, and e_Empty. For a bond, returns the lowest residue position of
     // the A member of the bond
-    int GetStart(CScope* scope = 0) const;
+    TSeqPos GetStart(CScope* scope = 0) const THROWS((CException));
     
     // Returns a pointer to the first CSeq_id found in this CSeq_loc
     // if exactly one CBioseq is represented, else returns a null pointer
@@ -156,7 +157,7 @@ public:
     CSeq_loc_CI& operator++ (int);
     operator bool (void) const;
 
-    typedef CRange<int> TRange;
+    typedef CRange<TSeqPos> TRange;
 
     // Get seq_id of the current location
     const CSeq_id& GetSeq_id(void) const;

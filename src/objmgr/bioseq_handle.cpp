@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/05/03 21:28:08  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.12  2002/04/29 16:23:28  grichenk
 * GetSequenceView() reimplemented in CSeqVector.
 * CSeqVector optimized for better performance.
@@ -205,7 +208,7 @@ CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
     case e_ViewExcluded:
         {
             // Exclude intervals from "rlist"
-            int last_from = 0;
+            TSeqPos last_from = 0;
             iterate (CHandleRange::TRanges, rit, rlist.GetRanges()) {
                 if (last_from < rit->first.GetFrom()) {
                     mode_rlist.MergeRange(
@@ -219,7 +222,7 @@ CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
                     last_from = CHandleRange::TRange::GetWholeTo();
                 }
             }
-            int total_length = GetSeqVector().size();
+            TSeqPos total_length = GetSeqVector().size();
             if (last_from < total_length) {
                 mode_rlist.MergeRange(
                     CHandleRange::TRange(last_from, total_length-1),

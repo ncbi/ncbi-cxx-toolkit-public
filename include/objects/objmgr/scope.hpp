@@ -39,6 +39,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/05/03 21:28:02  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.13  2002/04/17 21:09:38  grichenk
 * Fixed annotations loading
 *
@@ -127,7 +130,7 @@ public:
     bool AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap);
     // Add seq-data to a bioseq if it is in this scope
     bool AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
-                      TSeqPosition start, TSeqLength length);
+                       TSeqPos start, TSeqPos length);
 
     // Get bioseq handle by seq-id
     // Declared "virtual" to avoid circular dependencies with seqloc
@@ -168,7 +171,7 @@ private:
                           CAnnotTypes_CI::TTSESet& tse_set);
 
     bool x_GetSequence(const CBioseq_Handle& handle,
-                       TSeqPosition point,
+                       TSeqPos point,
                        SSeqData* seq_piece);
 
     CSeq_id_Mapper& x_GetIdMapper(void) const;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/05/03 21:28:12  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.7  2002/04/25 18:15:25  grichenk
 * Adjusted tests to work with the updated CSeqVector
 *
@@ -315,7 +318,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry1(int index)
                 id->SetGi(12+index*1000);
                 id_list.push_back(id);
                 // start OFFSETS in ids order
-                list<int>& start_list = diag->SetStarts();
+                list<TSeqPos>& start_list = diag->SetStarts();
                 start_list.push_back(0);
                 start_list.push_back(9);
                 diag->SetLen(7);
@@ -804,13 +807,15 @@ CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
         enumerate alignments for an interval
 ************************************************************************/
 void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
-                             int seq_len_unresolved, int seq_len_resolved,
+                             TSeqPos seq_len_unresolved,
+                             TSeqPos seq_len_resolved,
                              string seq_str, string seq_str_compl,
                              int seq_desc_cnt,
                              int seq_feat_cnt, int seq_featrg_cnt,
                              int seq_align_cnt, int seq_alignrg_cnt,
-                             int feat_annots_cnt, int featrg_annots_cnt,
-                             int align_annots_cnt, int alignrg_annots_cnt,
+                             size_t feat_annots_cnt, size_t featrg_annots_cnt,
+                             size_t align_annots_cnt,
+                             size_t alignrg_annots_cnt,
                              bool tse_feat_test)
 {
     CBioseq_Handle handle = scope.GetBioseqHandle(id);
@@ -825,7 +830,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     {{
         CSeqMap seq_map = handle.GetSeqMap();
         // Iterate seq-map except the last element
-        int len = 0;
+        TSeqPos len = 0;
         for (size_t i = 0; i < seq_map.size(); i++) {
             switch (seq_map[i].GetType()) {
             case CSeqMap::eSeqData:
@@ -851,7 +856,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     {{
         CSeqVector seq_vect = handle.GetSeqVector();
         string sout = "";
-        for (size_t i = 0; i < seq_vect.size(); i++) {
+        for (TSeqPos i = 0; i < seq_vect.size(); i++) {
             sout += seq_vect[i];
         }
         _ASSERT(NStr::PrintableString(sout) == seq_str);
@@ -860,7 +865,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         seq_core->GetInst().GetStrand() == CSeq_inst::eStrand_ds) {
         CSeqVector seq_vect_rev = handle.GetSeqVector(false, false);
         string sout_rev = "";
-        for (size_t i = seq_vect_rev.size(); i> 0; i--) {
+        for (TSeqPos i = seq_vect_rev.size(); i> 0; i--) {
             sout_rev += seq_vect_rev[i-1];
         }
         _ASSERT(NStr::PrintableString(sout_rev) == seq_str_compl);
@@ -873,7 +878,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         // Get another seq-map - some lengths may have been resolved
         CSeqMap seq_map = handle.GetSeqMap();
         // Iterate seq-map except the last element
-        int len = 0;
+        TSeqPos len = 0;
         for (size_t i = 0; i < seq_map.size(); i++) {
             switch (seq_map[i].GetType()) {
             case CSeqMap::eSeqData:

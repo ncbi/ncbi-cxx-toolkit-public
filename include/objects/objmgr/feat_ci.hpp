@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/05/03 21:28:01  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.9  2002/04/30 14:30:42  grichenk
 * Added eResolve_TSE flag in CAnnot_Types_CI, made it default
 *
@@ -92,7 +95,7 @@ public:
     // the whole bioseq is searched. References are resolved depending on the
     // "resolve" flag (see above).
     CFeat_CI(CBioseq_Handle& bioseq,
-             int start, int stop,
+             TSeqPos start, TSeqPos stop,
              SAnnotSelector::TFeatChoice feat_choice,
                    EResolveMethod resolve = eResolve_TSE);
     CFeat_CI(const CFeat_CI& iter);

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2002/05/03 21:28:17  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 6.19  2002/01/16 18:56:32  grichenk
  * Removed CRef<> argument from choice variant setter, updated sources to
  * use references instead of CRef<>s
@@ -751,17 +754,17 @@ bool CSeq_id::Equals(const CSerialUserOp& object) const
 }
 
 // Get sequence length if a scope is available to resolve sequence, else
-// return kMax_Int
-int CSeq_id::GetLength(CScope* scope) const
+// return maximum value allowed by type
+TSeqPos CSeq_id::GetLength(CScope* scope) const
 {
     if( !scope ) {
-        return kMax_Int;
+        return numeric_limits<TSeqPos>::max();
     }
     
     CBioseqHandle hnd = scope->GetBioseqHandle(*this);
     CScope::TBioseqCore core = scope->GetBioseqCore(hnd);
     return core->GetInst().IsSetLength() ? core->GetInst().GetLength() : 
-        kMax_Int;
+        numeric_limits<TSeqPos>::max();
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

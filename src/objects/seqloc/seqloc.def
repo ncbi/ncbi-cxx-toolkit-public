@@ -1,0 +1,9 @@
+[Seq-interval]
+from._type = TSeqPos
+to._type   = TSeqPos
+
+[Seq-point]
+point._type = TSeqPos
+
+[Packed-seqpnt]
+points.E._type = TSeqPos

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2002/05/03 21:28:04  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 1.13  2002/01/10 18:43:34  clausen
  * Added GetLength
  *
@@ -177,8 +180,8 @@ public:
     const CSerializable& DumpAsFasta(void)  const { return Dump(eAsFasta); }
     
     // Get sequence length if a scope is available to resolve sequence. If
-    // scope is null, returns kMax_Int
-    int GetLength(CScope* scope) const;
+    // scope is null, returns maximum value allowed by type
+    TSeqPos GetLength(CScope* scope) const;
     
 
 protected:

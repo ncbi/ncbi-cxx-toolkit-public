@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/05/03 21:28:02  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.14  2002/04/30 18:54:50  gouriano
 * added GetRefSeqid function
 *
@@ -92,23 +95,21 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-// Position in the sequence
-typedef int TSeqPosition;
-
-// Length of the sequence
-typedef int TSeqLength;
+// Provided for compatibility with old code; new code should just use TSeqPos.
+typedef TSeqPos TSeqPosition;
+typedef TSeqPos TSeqLength;
 
 // Interval in the sequence
 struct SSeqInterval {
-    TSeqPosition start;
-    TSeqLength   length;
+    TSeqPos start;
+    TSeqPos length;
 };
 
 // Sequence data
 struct SSeqData {
-    TSeqLength           length;      /// Length of the sequence data piece
-    TSeqPosition         dest_start;  /// Starting pos in the dest. Bioseq
-    TSeqPosition         src_start;   /// Starting pos in the source Bioseq
+    TSeqPos              length;      /// Length of the sequence data piece
+    TSeqPos              dest_start;  /// Starting pos in the dest. Bioseq
+    TSeqPos              src_start;   /// Starting pos in the source Bioseq
     CConstRef<CSeq_data> src_data;    /// Source sequence data
 };
 
@@ -137,7 +138,7 @@ public:
     {
     public:
         CSegmentInfo(ESegmentType seg_type,
-            TSeqPosition position, TSeqLength length,
+            TSeqPos position, TSeqPos length,
             bool minus_strand /*= false*/);
         CSegmentInfo(const CSegmentInfo& seg);
         ~CSegmentInfo(void);
@@ -147,8 +148,8 @@ public:
         bool operator<  (const CSegmentInfo& seg) const;
 
         ESegmentType GetType(void) const;
-        TSeqPosition GetPosition(void) const;
-        TSeqLength   GetLength(void) const;
+        TSeqPos      GetPosition(void) const;
+        TSeqPos      GetLength(void) const;
         // The following function makes sense only
         // when the segment is a reference to another seq.
         const CSeq_id& GetRefSeqid(void) const;
@@ -157,15 +158,15 @@ public:
         // Type of map segment
         ESegmentType         m_SegType;
         // Position of the segment
-        TSeqPosition         m_Position;
+        TSeqPos              m_Position;
         // Length of the segment or 0 for unknown length
-        TSeqLength           m_Length;
+        TSeqPos              m_Length;
         // Referenced bioseq information
         CSeq_id_Handle       m_RefSeq;
         // Seq-data (m_RefPos and m_RefLen must be also set)
         CConstRef<CSeq_data> m_RefData;
         // Referenced location -- position on the source sequence
-        TSeqPosition m_RefPos;
+        TSeqPos      m_RefPos;
         // TSeqLength   m_RefLen; // use m_Length instead
         bool         m_MinusStrand;
         bool         m_Resolved;
@@ -184,29 +185,29 @@ public:
     const size_t size(void) const;
     CSeqMap& operator=(const CSeqMap& another);
     // Get all intervals
-    const CSegmentInfo& operator[](int seg_idx) const;
+    const CSegmentInfo& operator[](size_t seg_idx) const;
 
 private:
     // Add interval to the map.
     // Throw an exception if there is an "equal" interval.
     void Add(CSegmentInfo& interval);
     void Add(ESegmentType seg_type,
-        TSeqPosition position, TSeqLength length,
+        TSeqPos position, TSeqPos length,
         bool minus_strand = false);
 
 private:
     // Get the segment containing point "pos"
-    int x_FindSegment(int pos);
+    size_t x_FindSegment(TSeqPos pos);
     // Try to resolve segment lengths up to the "pos". Return index of the
     // segment containing "pos".
-    CSegmentInfo x_Resolve(int pos, CScope& scope);
+    CSegmentInfo x_Resolve(TSeqPos pos, CScope& scope);
     //### This is an obsolete function since segments positions are calculated
     //### from their lengths, not the lengths from the  positions.
     //### void x_CalculateSegmentLengths(void);
 
     vector< CRef<CSegmentInfo> > m_Data;
-    // Segment lengths are resolved up to this position (not index)
-    int m_FirstUnresolvedPos;
+    // Segment lengths are resolved up to this index
+    size_t m_FirstUnresolvedPos;
 
     friend class CDataSource;
     friend class CAnnotTypes_CI;
@@ -229,7 +230,7 @@ bool operator< (const CSeqMap::CSegmentInfo& int1,
 
 inline
 CSeqMap::CSegmentInfo::CSegmentInfo(ESegmentType seg_type,
-    TSeqPosition position, TSeqLength length, bool minus_strand)
+    TSeqPos position, TSeqPos length, bool minus_strand)
     : m_SegType(seg_type),
       m_Position(position),
       m_Length(length),
@@ -378,15 +379,14 @@ CSeqMap& CSeqMap::operator=(const CSeqMap& another)
 }
 
 inline
-const CSeqMap::CSegmentInfo& CSeqMap::operator[](int seg_idx) const
+const CSeqMap::CSegmentInfo& CSeqMap::operator[](size_t seg_idx) const
 {
     return *m_Data[seg_idx];
 }
 
 
 inline
-void CSeqMap::Add(ESegmentType seg_type,
-                  TSeqPosition position, TSeqLength length,
+void CSeqMap::Add(ESegmentType seg_type, TSeqPos position, TSeqPos length,
                   bool minus_strand)
 {
     Add(*(new CSegmentInfo(seg_type, position, length, minus_strand)));

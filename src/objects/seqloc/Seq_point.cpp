@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/05/03 21:28:19  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 6.1  2002/01/10 19:12:12  clausen
  * Committing add
  *
@@ -60,7 +63,7 @@ CSeq_point::~CSeq_point(void)
 bool CSeq_point::IsValid(CScope* scope) const
 {
     // Check that point >= 0 and point < length. If scope is null
-    // GetLength returns kMax_Int.
+    // GetLength returns the maximum possible value of its type.
     if( GetPoint() < 0 || GetPoint() >= GetId().GetLength(scope) ) {
         return false;
     }

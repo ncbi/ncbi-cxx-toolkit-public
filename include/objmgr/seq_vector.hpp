@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/05/03 21:28:02  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.11  2002/05/03 18:36:13  grichenk
 * Fixed members initialization
 *
@@ -97,9 +100,9 @@ public:
 
     CSeqVector& operator= (const CSeqVector& vec);
 
-    int size(void);
+    TSeqPos size(void);
     // 0-based array of residues
-    TResidue operator[] (int pos);
+    TResidue operator[] (TSeqPos pos);
 
     // Target sequence coding. CSeq_data::e_not_set -- do not
     // convert sequence (use GetCoding() to check the real coding).
@@ -124,41 +127,43 @@ private:
     // Process seq-loc, create visible area ranges
     void x_SetVisibleArea(const CSeq_loc& view_loc);
     // Calculate sequence and visible area size
-    size_t x_GetTotalSize(void);
-    size_t x_GetVisibleSize(void);
+    TSeqPos x_GetTotalSize(void);
+    TSeqPos x_GetVisibleSize(void);
 
-    void x_UpdateVisibleRange(int pos);
-    void x_UpdateSeqData(int pos);
+    void x_UpdateVisibleRange(TSeqPos pos);
+    void x_UpdateSeqData(TSeqPos pos);
     // Get residue assuming the data in m_CurrentData are valid
-    TResidue x_GetResidue(int pos);
+    TResidue x_GetResidue(TSeqPos pos);
 
     // Single visible interval
-    typedef CRange<int> TRange;
+    typedef CRange<TSeqPos> TRange;
     // Interval with the plus strand flag (true = plus)
     typedef pair<TRange, bool> TRangeWithStrand;
     // Map visible interval end (not start!) to an interval with strand.
     // E.g. if there is only one visible interval [20..30], it will be
     // mapped with 10 (=30-20) key.
-    typedef map<int, TRangeWithStrand> TRanges;
+    typedef map<TSeqPos, TRangeWithStrand> TRanges;
 
     CScope*            m_Scope;
     CBioseq_Handle     m_Handle;
     bool               m_PlusStrand;
     SSeqData           m_CurData;
     CConstRef<CSeqMap> m_SeqMap;
-    int                m_Size;
+    TSeqPos            m_Size;
     string             m_CachedData;
-    int                m_CachedPos;
-    int                m_CachedLen;
+    TSeqPos            m_CachedPos;
+    TSeqPos            m_CachedLen;
     TCoding            m_Coding;
     TRanges            m_Ranges;    // Set of visible ranges
-    int                m_RangeSize; // Visible area size
+    TSeqPos            m_RangeSize; // Visible area size
     TRanges::const_iterator m_SelRange;  // Selected range from the visible area
     // Current visible range limits -- for faster checks in []
-    int                m_CurFrom;   // visible segment start
-    int                m_CurTo;     // visible segment end
+    TSeqPos            m_CurFrom;   // visible segment start
+    TSeqPos            m_CurTo;     // visible segment end
     // End of visible segment on the original sequence
-    int                m_OrgTo;
+    TSeqPos            m_OrgTo;
+
+    static const TSeqPos sm_SizeUnknown;
 };
 
 
@@ -176,9 +181,9 @@ CSeqVector::CSeqVector(const CSeqVector& vec)
 }
 
 inline
-int CSeqVector::size(void)
+TSeqPos CSeqVector::size(void)
 {
-    if (m_RangeSize < 0)
+    if (m_RangeSize == sm_SizeUnknown)
         x_GetVisibleSize();
     return m_RangeSize;
 }
@@ -202,16 +207,15 @@ void CSeqVector::SetCoding(TCoding coding)
     if (m_Coding == coding) return;
     m_Coding = coding;
     // Reset cached data
-    m_CachedPos = -1;
     m_CachedLen = 0;
     m_CachedData = "";
 }
 
 inline
-CSeqVector::TResidue CSeqVector::operator[] (int pos)
+CSeqVector::TResidue CSeqVector::operator[] (TSeqPos pos)
 {
     // Force size calculation
-    int seq_size = size();
+    TSeqPos seq_size = size();
     // Convert position to destination strand
     if ( !m_PlusStrand ) {
         pos = seq_size - pos - 1;

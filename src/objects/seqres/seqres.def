@@ -1,0 +1,3 @@
+[Seq-graph]
+comp._type   = TSeqPos
+numval._type = TSeqPos

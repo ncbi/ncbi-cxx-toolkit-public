@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/05/03 21:28:20  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.3  2002/04/09 20:58:09  ucko
 * Look for "processed active peptide" in addition to "mature chain";
 * SWISS-PROT changed their labels.
@@ -75,7 +78,8 @@ static const int kNumSe[] =
 static const int kMaxRes = sizeof(kNumC) / sizeof(*kNumC) - 1;
 
 
-double GetProteinWeight(CSeq_vector& v, int start, int end)
+double GetProteinWeight(CSeq_vector& v, TSeqPos start, TSeqPos end)
+    THROWS((CBadResidueException))
 {
     v.SetCoding(CSeq_data::e_Ncbistdaa);
 
@@ -86,9 +90,10 @@ double GetProteinWeight(CSeq_vector& v, int start, int end)
         end = v.size() - 1;
     }
 
-    int c = 0, h = 2, n = 0, o = 1, s = 0, se = 0; // Start with water (H2O)
+    // Start with water (H2O)
+    TSeqPos c = 0, h = 2, n = 0, o = 1, s = 0, se = 0;
 
-    for (unsigned int i = start;  i <= end;  i++) {
+    for (TSeqPos i = start;  i <= end;  i++) {
         CSeq_vector::TResidue res = v[i];
         if ( res >= kMaxRes  ||  !kNumC[res] ) {
             THROW1_TRACE(CBadResidueException,

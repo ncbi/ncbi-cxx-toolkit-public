@@ -82,7 +82,7 @@ CTimer::Start()
 void
 CTimer::Stop()
 {
-  int x = Time() - m_StartTime; // test request timing in seconds
+  time_t x = Time() - m_StartTime; // test request timing in seconds
   m_ReasonableRefreshDelay = 60 /*sec*/ * 
     (x==0 ? 5 /*min*/ : x*50 /* 50 min per sec of test request*/);
   m_LastCalibrated = m_Time;
@@ -141,6 +141,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/05/03 21:28:09  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.7  2002/04/04 01:35:35  kimelman
 * more MT tests
 *

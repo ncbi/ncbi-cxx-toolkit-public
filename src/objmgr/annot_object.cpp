@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/05/03 21:28:08  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.5  2002/04/05 21:26:19  grichenk
 * Enabled iteration over annotations defined on segments of a
 * delta-sequence.
@@ -83,7 +86,7 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
                     (*it)->GetIds().begin();
                 CDense_diag::TStarts::const_iterator it_start =
                     (*it)->GetStarts().begin();
-                int len = (*it)->GetLen();
+                TSeqPos len = (*it)->GetLen();
                 CDense_diag::TStrands::const_iterator it_strand;
                 if ( (*it)->IsSetStrands() ) {
                     it_strand = (*it)->GetStrands().begin();

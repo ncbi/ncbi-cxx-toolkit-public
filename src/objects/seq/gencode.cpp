@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/05/03 21:28:13  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 6.4  2001/11/13 12:13:33  clausen
  * Added Codon2Idx and Idx2Codon. Modified type of code_breaks
  *
@@ -78,8 +81,8 @@ public:
      CSeq_data*                   out_seq,
      const CGenetic_code&         genetic_code,
      const CGencode::TCodeBreaks& code_breaks,
-     unsigned int                 uBeginIdx,
-     unsigned int                 uLength,
+     TSeqPos                      uBeginIdx,
+     TSeqPos                      uLength,
      bool                         bCheck_first,
      bool                         bPartial_start,
      ENa_strand                   eStrand,
@@ -155,8 +158,8 @@ void CGencode::Translate
  CSeq_data*           out_seq,
  const CGenetic_code& genetic_code,
  const TCodeBreaks&    code_breaks,
- unsigned int         uBeginIdx,
- unsigned int         uLength,
+ TSeqPos              uBeginIdx,
+ TSeqPos              uLength,
  bool                 bCheck_first,
  bool                 bPartial_start,
  ENa_strand           eStrand,
@@ -213,8 +216,8 @@ void CGencode_implementation::Translate
  CSeq_data*                   out_seq,
  const CGenetic_code&         genetic_code,
  const CGencode::TCodeBreaks& code_breaks,
- unsigned int                 uBeginIdx,
- unsigned int                 uLength,
+ TSeqPos                      uBeginIdx,
+ TSeqPos                      uLength,
  bool                         bCheck_first,
  bool                         bPartial_start,
  ENa_strand                   eStrand,
@@ -260,7 +263,7 @@ void CGencode_implementation::Translate
 
     // Calculate in_seq length such that it is the greatest
     // number divisible by 3 that is less than uLength
-    unsigned int uLenMod3 = 3 * (uLength/3);
+    TSeqPos uLenMod3 = 3 * (uLength/3);
 
     // Allocate memory for out_seq
     size_t out_size = uLength/3;
@@ -316,7 +319,7 @@ void CGencode_implementation::Translate
 	    // Translate in_seq as is
 	    if (bStop) {
 		// Variable to track output sequence size
-		int nSize = 0;
+		TSeqPos nSize = 0;
 
 		// Check for stop codon, and quit if found
 		for (i_in=i_in_begin; i_in != i_in_end; i_in += 3) {
@@ -373,7 +376,7 @@ void CGencode_implementation::Translate
 	    // Translate on the complementary strand to in_seq
 	    if(bStop) {
 		// Variable to track output sequence size
-		int nSize = 0;
+		TSeqPos nSize = 0;
 
 		// Check for stop codon, and quit if found
 		for(i_in=i_in_begin; i_in != i_in_end; i_in += 3) {
@@ -423,7 +426,7 @@ void CGencode_implementation::Translate
         char saa;
         if(eStrand == eNa_strand_plus) {
             // Get start codon
-            unsigned int u = uBeginIdx;
+            TSeqPos u = uBeginIdx;
 
             // Get the start aa for start in_seq codon (Use Sncbieaa string)
             saa =
@@ -439,7 +442,7 @@ void CGencode_implementation::Translate
         }
         else {  // eStrand == eNa_strand_minus
             // Get index of start codon
-            unsigned int u = uBeginIdx + uLength - 1;
+            TSeqPos u = uBeginIdx + uLength - 1;
 
             // Get the start aa for start in_seq codon (Use Sncbieaa string)
             saa =
@@ -474,7 +477,7 @@ void CGencode_implementation::Translate
     // Remove trailing Xs, if requested.
     if(bRemove_trailing_x)
         {
-            int nSize;
+            SIZE_TYPE nSize;
             bool bLoop = true;
             nSize = out_seq_data.size();
             while(bLoop)

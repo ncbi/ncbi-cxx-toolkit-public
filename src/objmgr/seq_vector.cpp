@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/05/03 21:28:10  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.19  2002/05/03 18:36:19  grichenk
 * Fixed members initialization
 *
@@ -119,6 +122,8 @@ BEGIN_SCOPE(objects)
 //
 
 
+const TSeqPos CSeqVector::sm_SizeUnknown = numeric_limits<TSeqPos>::max();
+
 CSeqVector::CSeqVector(const CBioseq_Handle& handle,
                        bool use_iupac_coding,
                        bool plus_strand,
@@ -127,17 +132,17 @@ CSeqVector::CSeqVector(const CBioseq_Handle& handle,
     : m_Scope(&scope),
       m_Handle(handle),
       m_PlusStrand(plus_strand),
-      m_Size(-1),
+      m_Size(sm_SizeUnknown),
       m_CachedData(""),
-      m_CachedPos(-1),
+      m_CachedPos(0),
       m_CachedLen(0),
       m_Coding(CSeq_data::e_not_set),
-      m_RangeSize(-1),
-      m_CurFrom(-1),
-      m_CurTo(-1),
+      m_RangeSize(sm_SizeUnknown),
+      m_CurFrom(0),
+      m_CurTo(0),
       m_OrgTo(0)
 {
-    m_CurData.dest_start = -1;
+    m_CurData.dest_start = 0;
     m_CurData.length = 0;
     m_SeqMap.Reset(&m_Handle.x_GetDataSource().GetSeqMap(m_Handle));
     if ( view_loc ) {
@@ -173,7 +178,7 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
     m_SeqMap = vec.m_SeqMap;
     m_Size = vec.m_Size;
     m_Coding = vec.m_Coding;
-    m_CachedPos = -1;
+    m_CachedPos = 0;
     m_CachedLen = 0;
     m_CachedData = "";
     m_Ranges.clear();
@@ -193,14 +198,14 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
 
 void CSeqVector::x_SetVisibleArea(const CSeq_loc& view_loc)
 {
-    int rg_end = 0;
+    TSeqPos rg_end = 0;
     CSeq_loc_CI lit(view_loc);
     for ( ; lit; lit++) {
         if ( lit.IsEmpty() )
             continue;
-        int from = lit.GetRange().IsWholeFrom() ?
+        TSeqPos from = lit.GetRange().IsWholeFrom() ?
             0 : lit.GetRange().GetFrom();
-        int to = lit.GetRange().IsWholeTo() ?
+        TSeqPos to = lit.GetRange().IsWholeTo() ?
             x_GetTotalSize()-1 : lit.GetRange().GetTo();
         rg_end += to - from + 1;
         m_Ranges[rg_end] = TRangeWithStrand(TRange(from, to + 1),
@@ -209,9 +214,9 @@ void CSeqVector::x_SetVisibleArea(const CSeq_loc& view_loc)
 }
 
 
-size_t CSeqVector::x_GetTotalSize(void)
+TSeqPos CSeqVector::x_GetTotalSize(void)
 {
-    if (m_Size < 0) {
+    if (m_Size == sm_SizeUnknown) {
         // Calculate total sequence size
         m_Size = 0;
         for (size_t i = 0; i < m_SeqMap->size(); i++) {
@@ -258,17 +263,17 @@ size_t CSeqVector::x_GetTotalSize(void)
 }
 
 
-size_t CSeqVector::x_GetVisibleSize(void)
+TSeqPos CSeqVector::x_GetVisibleSize(void)
 {
-    if (m_Size < 0)
+    if (m_Size == sm_SizeUnknown)
         x_GetTotalSize();
-    if (m_RangeSize < 0) {
+    if (m_RangeSize == sm_SizeUnknown) {
         // Calculate the visible area size
         m_RangeSize = 0;
         iterate (TRanges, rit, m_Ranges) {
-            int from = rit->second.first.IsWholeFrom() ?
+            TSeqPos from = rit->second.first.IsWholeFrom() ?
                 0 : rit->second.first.GetFrom();
-            int to = rit->second.first.IsWholeTo() ?
+            TSeqPos to = rit->second.first.IsWholeTo() ?
                 m_Size : rit->second.first.GetTo();
             m_RangeSize += to - from;
         }
@@ -284,7 +289,7 @@ size_t CSeqVector::x_GetVisibleSize(void)
 }
 
 
-void CSeqVector::x_UpdateVisibleRange(int pos)
+void CSeqVector::x_UpdateVisibleRange(TSeqPos pos)
 {
     // Find a range, containing the "pos" point. Ranges are
     // mapped by ends, not starts, so that we can use lower_bound()
@@ -294,9 +299,9 @@ void CSeqVector::x_UpdateVisibleRange(int pos)
             "CSeqVector::x_UpdateVisibleRange() -- "
             "Position beyond vector end");
     }
-    int sel_from = m_SelRange->second.first.IsWholeFrom() ?
+    TSeqPos sel_from = m_SelRange->second.first.IsWholeFrom() ?
         0 : m_SelRange->second.first.GetFrom();
-    int sel_to = m_SelRange->second.first.IsWholeTo() ?
+    TSeqPos sel_to = m_SelRange->second.first.IsWholeTo() ?
         x_GetTotalSize() : m_SelRange->second.first.GetTo();
     m_CurTo = m_SelRange->first;
     m_CurFrom = m_SelRange->first - (sel_to - sel_from);
@@ -306,12 +311,11 @@ void CSeqVector::x_UpdateVisibleRange(int pos)
 }
 
 
-void CSeqVector::x_UpdateSeqData(int pos)
+void CSeqVector::x_UpdateSeqData(TSeqPos pos)
 {
     m_CurData.src_data = 0; // Reset data
     m_Scope->x_GetSequence(m_Handle, pos, &m_CurData);
-    m_CachedPos = -1; // Reset cached data
-    m_CachedLen = 0;
+    m_CachedLen = 0; // Reset cached data
     m_CachedData = "";
 }
 
@@ -347,30 +351,31 @@ CSeqVector::TResidue CSeqVector::GetGapChar(void)
 }
 
 
-const int kCacheSize = 65536;
+const TSeqPos kCacheSize = 65536;
 
 
-CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
+CSeqVector::TResidue CSeqVector::x_GetResidue(TSeqPos pos)
 {
     // The cache must be initialized and include the point requested
-    if (m_CachedPos < 0  ||  m_CachedLen <= 0  ||
-        m_CachedPos > pos  ||  m_CachedPos+m_CachedLen <= pos) {
+    if (m_CachedLen <= 0  ||  m_CachedPos > pos
+        ||  m_CachedPos+m_CachedLen <= pos) {
         // Select cache position and length to cover maximum of
         // kCacheSize*2 characters around pos.
-        m_CachedPos = pos - kCacheSize;
-        int cend = m_CachedPos + kCacheSize*2;
+        m_CachedPos = pos - min(pos, kCacheSize);
+        TSeqPos cend = m_CachedPos + kCacheSize*2;
         if (m_CachedPos < m_CurData.dest_start) {
             m_CachedPos = m_CurData.dest_start;
             cend = m_CachedPos + kCacheSize*2;
         }
         if (cend > m_CurData.dest_start + m_CurData.length) {
             cend = m_CurData.dest_start + m_CurData.length;
-            m_CachedPos = cend - kCacheSize*2;
+            m_CachedPos = cend - min(cend, kCacheSize*2);
             if (m_CachedPos < m_CurData.dest_start)
                 m_CachedPos = m_CurData.dest_start;
         }
         m_CachedLen = cend - m_CachedPos;
-        int src_start = m_CurData.src_start + m_CachedPos - m_CurData.dest_start;
+        TSeqPos src_start
+            = m_CurData.src_start + m_CachedPos - m_CurData.dest_start;
         if (!m_CurData.src_data) {
             // No data - fill with the gap symbol
             m_CachedData = string(m_CachedLen, GetGapChar());
@@ -379,7 +384,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
             // Prepare real data
             CConstRef<CSeq_data> out;
 
-            TSeqPosition start = src_start;
+            TSeqPos start = src_start;
 
             if (m_CurData.src_data->Which() == m_Coding  ||
                 m_Coding == CSeq_data::e_not_set) {
@@ -419,7 +424,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
                     m_CachedData = "";
                     m_CachedData.reserve(m_CachedLen);
                     const vector<char>& buf = out->GetNcbi2na().Get();
-                    for (int i = start; i < start + m_CachedLen; i++) {
+                    for (TSeqPos i = start; i < start + m_CachedLen; i++) {
                         m_CachedData += (buf[i/4] >> (6-(i%4)*2)) & 0x03;
                     }
                     break;
@@ -429,7 +434,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
                     m_CachedData = "";
                     m_CachedData.reserve(m_CachedLen);
                     const vector<char>& buf = out->GetNcbi4na().Get();
-                    for (int i = start; i < start + m_CachedLen; i++) {
+                    for (TSeqPos i = start; i < start + m_CachedLen; i++) {
                         m_CachedData += (buf[i/2] >> (4-(i % 2)*4)) & 0x0f;
                     }
                     break;
@@ -439,7 +444,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
                     m_CachedData = "";
                     m_CachedData.reserve(m_CachedLen);
                     const vector<char>& buf = out->GetNcbi8na().Get();
-                    for (int i = start; i < start + m_CachedLen; i++) {
+                    for (TSeqPos i = start; i < start + m_CachedLen; i++) {
                         m_CachedData += buf[i];
                     }
                     break;
@@ -454,7 +459,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
                 {
                     m_CachedData = "";
                     const vector<char>& buf = out->GetNcbipna().Get();
-                    for (int i = start; i < start + m_CachedLen; i++) {
+                    for (TSeqPos i = start; i < start + m_CachedLen; i++) {
                         m_CachedData += buf[i];
                     }
                     break;
@@ -463,7 +468,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
                 {
                     m_CachedData = "";
                     const vector<char>& buf = out->GetNcbi8aa().Get();
-                    for (int i = start; i < start + m_CachedLen; i++) {
+                    for (TSeqPos i = start; i < start + m_CachedLen; i++) {
                         m_CachedData += buf[i];
                     }
                     break;
@@ -472,7 +477,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
                 {
                     m_CachedData = "";
                     const vector<char>& buf = out->GetNcbipaa().Get();
-                    for (int i = start; i < start + m_CachedLen; i++) {
+                    for (TSeqPos i = start; i < start + m_CachedLen; i++) {
                         m_CachedData += buf[i];
                     }
                     break;
@@ -481,7 +486,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
                 {
                     m_CachedData = "";
                     const vector<char>& buf = out->GetNcbistdaa().Get();
-                    for (int i = start; i < start + m_CachedLen; i++) {
+                    for (TSeqPos i = start; i < start + m_CachedLen; i++) {
                         m_CachedData += buf[i];
                     }
                     break;
@@ -505,8 +510,7 @@ void CSeqVector::SetIupacCoding(void)
     size();
     m_CurData.src_data = 0; // Reset data
     m_Scope->x_GetSequence(m_Handle, 0, &m_CurData);
-    m_CachedPos = -1; // Reset cached data
-    m_CachedLen = 0;
+    m_CachedLen = 0; // Reset cached data
     m_CachedData = "";
 
     // Check sequence type

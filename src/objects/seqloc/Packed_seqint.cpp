@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/05/03 21:28:17  ucko
+ * Introduce T(Signed)SeqPos.
+ *
  * Revision 6.1  2000/11/17 21:35:09  vasilche
  * Added GetLength() method to CSeq_loc class.
  *
@@ -61,14 +64,11 @@ CPacked_seqint::~CPacked_seqint(void)
 }
 
 // length calculator
-int CPacked_seqint::GetLength(void) const
+TSeqPos CPacked_seqint::GetLength(void) const
 {
-	int length = 0;
+	TSeqPos length = 0;
         iterate ( Tdata, i, Get() ) {
-                int ret = (**i).GetLength();
-                if (ret < 0)   /* error return */
-                        return ret;
-                length += ret;
+                length += (**i).GetLength();
         }
 	return length;
 }

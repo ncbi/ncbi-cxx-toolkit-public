@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/05/03 21:28:10  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.6  2002/04/05 21:26:19  grichenk
 * Enabled iteration over annotations defined on segments of a
 * delta-sequence.
@@ -79,7 +82,7 @@ CGraph_CI::CGraph_CI(CScope& scope,
 }
 
 
-CGraph_CI::CGraph_CI(CBioseq_Handle& bioseq, int start, int stop,
+CGraph_CI::CGraph_CI(CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
                      EResolveMethod resolve)
     : CAnnotTypes_CI(bioseq, start, stop,
           SAnnotSelector(CSeq_annot::C_Data::e_Graph),

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/05/03 21:28:05  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.2  2002/04/19 17:50:03  ucko
 * Add forward declaration for CBioseqHandle.
 *
@@ -62,8 +65,8 @@ public:
 
 // Handles the standard 20 amino acids and Sec; treats Asx as Asp and
 // Glx as Glu; throws CBadResidueException on anything else.
-double GetProteinWeight(CSeq_vector& v, unsigned int start = 0,
-                        unsigned int end = kMax_UInt)
+double GetProteinWeight(CSeq_vector& v, TSeqPos start = 0,
+                        TSeqPos end = numeric_limits<TSeqPos>::max())
     THROWS((CBadResidueException));
 
 

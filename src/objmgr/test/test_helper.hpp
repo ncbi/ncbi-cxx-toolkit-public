@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/05/03 21:28:12  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.3  2002/04/22 20:07:45  grichenk
 * Commented calls to CBioseq::ConstructExcludedSequence()
 *
@@ -75,13 +78,13 @@ class CTestHelper
 {
 public:
     static void ProcessBioseq(CScope& scope, CSeq_id& id,
-        int seq_len_unresolved, int seq_len_resolved,
+        TSeqPos seq_len_unresolved, TSeqPos seq_len_resolved,
         string seq_str, string seq_str_compl,
         int seq_desc_cnt,
         int seq_feat_cnt, int seq_featrg_cnt,
         int seq_align_cnt, int seq_alignrg_cnt,
-        int feat_annots_cnt, int featrg_annots_cnt,
-        int align_annots_cnt, int alignrg_annots_cnt,
+        size_t feat_annots_cnt, size_t featrg_annots_cnt,
+        size_t align_annots_cnt, size_t alignrg_annots_cnt,
         bool tse_feat_test = false);
 
     static void TestDataRetrieval( CScope& scope, int idx,

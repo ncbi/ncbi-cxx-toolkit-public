@@ -38,7 +38,7 @@ BEGIN_SCOPE(objects)
 
 CT_INT_TYPE CStrStreamBuf::underflow()
 {
-  int n = CIStream::Read(*m_Stream, buffer, sizeof(buffer));
+  size_t n = CIStream::Read(*m_Stream, buffer, sizeof(buffer));
   setg(buffer, buffer, buffer + n);
   return n == 0 ? CT_EOF : CT_TO_INT_TYPE(buffer[0]);
 }
@@ -50,6 +50,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/05/03 21:28:11  ucko
+* Introduce T(Signed)SeqPos.
+*
 * Revision 1.1  2002/04/09 16:10:58  ucko
 * Split CStrStreamBuf out into a common location.
 *
