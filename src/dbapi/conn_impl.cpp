@@ -31,8 +31,8 @@
 *
 *
 * $Log$
-* Revision 1.24  2004/03/09 20:37:15  kholodov
-* Added: four new public methods
+* Revision 1.25  2004/03/12 16:27:09  sponomar
+* correct nested querys
 *
 * Revision 1.23  2004/03/08 22:15:19  kholodov
 * Added: 3 new Get...() methods internally
@@ -255,14 +255,6 @@ CDB_Connection* CConnection::CloneCDB_Conn()
 
 void CConnection::Close()
 {
-    delete m_stmt;
-    //m_stmt = 0;
-    delete m_cstmt;
-    //m_cstmt = 0;
-    delete m_cursor;
-    // m_cursor = 0;
-    delete m_bulkInsert;
-    //m_bulkInsert = 0;
     delete m_connection;
     m_connection = 0;
 }
@@ -356,7 +348,7 @@ IBulkInsert* CConnection::GetBulkInsert(const string& table_name,
 IStatement* CConnection::CreateStatement()
 {
     if( m_stmt != 0 || m_cstmt != 0 || m_cursor != 0 || m_bulkInsert != 0 ) 
-        throw CDbapiException("CConnection::CreateStatement(): new interface is in use");
+        throw CDbapiException("CConnection::CreateStatement(): Get...() methods used");
     
     CStatement *stmt = new CStatement(GetAuxConn());
     AddListener(stmt);
@@ -369,7 +361,7 @@ CConnection::PrepareCall(const string& proc,
                          int nofArgs)
 {
     if( m_stmt != 0 || m_cstmt != 0 || m_cursor != 0 || m_bulkInsert != 0 ) 
-        throw CDbapiException("CConnection::CreateCallableStatement(): new interface is in use");
+        throw CDbapiException("CConnection::CreateCallableStatement(): Get...() methods used");
     
     CCallableStatement *cstmt = new CCallableStatement(proc, nofArgs, GetAuxConn());
     AddListener(cstmt);
@@ -383,7 +375,7 @@ ICursor* CConnection::CreateCursor(const string& name,
                                    int batchSize)
 {
     if( m_stmt != 0 || m_cstmt != 0 || m_cursor != 0 || m_bulkInsert != 0 ) 
-        throw CDbapiException("CConnection::CreateCursor(): new interface is in use");
+        throw CDbapiException("CConnection::CreateCursor(): Get...() methods used");
     
     CCursor *cur = new CCursor(name, sql, nofArgs, batchSize, GetAuxConn());
     AddListener(cur);
@@ -395,7 +387,7 @@ IBulkInsert* CConnection::CreateBulkInsert(const string& table_name,
                                            unsigned int nof_cols)
 {
     if( m_stmt != 0 || m_cstmt != 0 || m_cursor != 0 || m_bulkInsert != 0 ) 
-        throw CDbapiException("CConnection::CreateBulkInsert(): new interface is in use");
+        throw CDbapiException("CConnection::CreateBulkInsert(): Get...() methods used");
     
     CBulkInsert *bcp = new CBulkInsert(table_name, nof_cols, GetAuxConn());
     AddListener(bcp);
@@ -421,16 +413,16 @@ void CConnection::Action(const CDbapiEvent& e)
         CCallableStatement *cstmt;
         CCursor *cursor;
         CBulkInsert *bulkInsert;
-        if( (cstmt = dynamic_cast<CCallableStatement*>(e.GetSource())) != 0 ) {
-            if( cstmt == m_cstmt ) {
-                _TRACE("CConnection: Clearing cached callable statement " << (void*)m_cstmt); 
-                m_cstmt = 0;
-            }
-        }
-        else if( (stmt = dynamic_cast<CStatement*>(e.GetSource())) != 0 ) {
+        if( (stmt = dynamic_cast<CStatement*>(e.GetSource())) != 0 ) {
             if( stmt == m_stmt ) {
                 _TRACE("CConnection: Clearing cached statement " << (void*)m_stmt); 
                 m_stmt = 0;
+            }
+        }
+        else if( (cstmt = dynamic_cast<CCallableStatement*>(e.GetSource())) != 0 ) {
+            if( cstmt == m_cstmt ) {
+                _TRACE("CConnection: Clearing cached callable statement " << (void*)m_cstmt); 
+                m_cstmt = 0;
             }
         }
         else if( (cursor = dynamic_cast<CCursor*>(e.GetSource())) != 0 ) {

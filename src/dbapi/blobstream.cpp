@@ -31,8 +31,8 @@
 *
 *
 * $Log$
-* Revision 1.5  2004/03/09 20:37:15  kholodov
-* Added: four new public methods
+* Revision 1.6  2004/03/12 16:27:09  sponomar
+* correct nested querys
 *
 * Revision 1.4  2002/08/26 15:35:56  kholodov
 * Added possibility to disable transaction log
@@ -78,8 +78,6 @@ CBlobOStream::CBlobOStream(CDB_Connection* connAux,
                            bool log_it)
                            : ostream(new CByteStreamBuf(bufsize)), m_desc(desc), m_conn(connAux)
 {
-    _TRACE("CBlobOStream::ctor(): Assigned CDB_Connection " << (void*)m_conn);
-
     if( log_it ) {
         _TRACE("CBlobOStream::ctor(): Transaction log enabled");
     }
@@ -109,10 +107,7 @@ CBlobOStream::~CBlobOStream()
 {
     delete rdbuf();
     delete m_desc;
-    if( m_conn != 0 ) {
-        _TRACE("CBlobOStream::dtor(): Deleting CDB_Connection " << (void*)m_conn);
-        delete m_conn;
-    }
+    delete m_conn;
 }
 
 END_NCBI_SCOPE
