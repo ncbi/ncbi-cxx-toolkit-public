@@ -35,6 +35,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/05/21 21:44:43  vakatov
+* SIZE_TYPE --> string::size_type
+*
 * Revision 1.22  2001/05/17 14:53:41  lavr
 * Typos corrected
 *
@@ -119,7 +122,6 @@
 #include <stdexcept>
 
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
 
@@ -330,7 +332,8 @@ STD_CATCH(message) \
 //   CErrnoException
 //   CParseException
 //
-class CErrnoException : public runtime_error {
+class CErrnoException : public runtime_error
+{
     int m_Errno;
 public:
     // Report description of "errno" along with "what"
@@ -340,16 +343,17 @@ public:
 };
 
 
-class CParseException : public runtime_error {
-    SIZE_TYPE m_Pos;
+class CParseException : public runtime_error
+{
+    string::size_type m_Pos;
 public:
     // Report "pos" along with "what"
-    CParseException(const string& what, SIZE_TYPE pos) THROWS_NONE;
+    CParseException(const string& what, string::size_type pos) THROWS_NONE;
     ~CParseException(void) THROWS_NONE;
-    SIZE_TYPE GetPos(void) const THROWS_NONE { return m_Pos; }
+    string::size_type GetPos(void) const THROWS_NONE { return m_Pos; }
 };
 
-// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
+
 END_NCBI_SCOPE
 
 #endif  /* NCBIEXPT__HPP */

@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/05/21 21:44:00  vakatov
+* SIZE_TYPE --> string::size_type
+*
 * Revision 1.17  2001/05/17 15:04:59  lavr
 * Typos corrected
 *
@@ -156,7 +159,7 @@ CErrnoException::~CErrnoException(void) THROWS_NONE
 /////////////////////////////////
 //  CParseException
 
-static string s_ComposeParse(const string& what, SIZE_TYPE pos)
+static string s_ComposeParse(const string& what, string::size_type pos)
 {
     char s[32];
     ::sprintf(s, "%ld", (long)pos);
@@ -165,7 +168,8 @@ static string s_ComposeParse(const string& what, SIZE_TYPE pos)
     return str.append("{").append(s).append("} ").append(what);
 }
 
-CParseException::CParseException(const string& what, SIZE_TYPE pos) THROWS_NONE
+CParseException::CParseException(const string& what, string::size_type pos)
+THROWS_NONE
     : runtime_error(s_ComposeParse(what,pos)), m_Pos(pos)
 {
 }
