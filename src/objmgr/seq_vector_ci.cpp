@@ -157,6 +157,7 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector_CI& sv_it)
     }
     catch (...) {
         x_DestroyCache();
+        throw;
     }
 }
 
@@ -199,26 +200,39 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos)
     }
     catch (...) {
         x_DestroyCache();
+        throw;
     }
 }
 
 
 void CSeqVector_CI::x_DestroyCache(void)
 {
+    m_CachePos = m_BackupPos = kInvalidSeqPos;
+
     delete[] m_CacheData;
+    m_CacheData = m_CacheEnd = m_Cache = 0;
+
     delete[] m_BackupData;
+    m_BackupData = m_BackupEnd = 0;
 }
 
 
 void CSeqVector_CI::x_InitializeCache(void)
 {
-    m_CachePos = kInvalidSeqPos;
+    m_CachePos = m_BackupPos = kInvalidSeqPos;
+    m_CacheData = m_CacheEnd = m_Cache = 0;
+    m_BackupData = m_BackupEnd = 0;
+
     m_CacheData = new char[kCacheSize];
-    m_BackupPos = kInvalidSeqPos;
-    m_BackupData = new char[kCacheSize];
-    m_CacheEnd = m_CacheData;
+    try {
+        m_BackupData = new char[kCacheSize];
+    }
+    catch (...) {
+        x_DestroyCache();
+        throw;
+    }
+    m_Cache = m_CacheEnd = m_CacheData;
     m_BackupEnd = m_BackupData;
-    m_Cache = m_CacheEnd;
 }
 
 
@@ -515,6 +529,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/07/21 14:30:48  vasilche
+* Fixed buffer destruction and exception processing.
+*
 * Revision 1.19  2003/07/18 20:41:48  grichenk
 * Fixed memory leaks in CSeqVector_CI
 *
