@@ -45,7 +45,7 @@ status=$?
 
 # Special check for core file on Darwin
 if [ $status != 0  -a  `uname -s` = "Darwin" -a -d "/cores" ]; then
-   core_files=`find /cores/core.* -newer timestamp_file`
+   core_files=`find /cores/core.* -newer timestamp_file 2>/dev/null`
    for core in $core_files ; do
       if [ -O "$core" ]; then
          # Move the core file to current directory with name "core"
