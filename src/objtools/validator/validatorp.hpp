@@ -294,6 +294,7 @@ enum EErrType {
     eErr_SEQ_FEAT_CDSmRNAmismatch,
     eErr_SEQ_FEAT_UnnecessaryException,
     eErr_SEQ_FEAT_LocusTagProductMismatch,
+    eErr_SEQ_FEAT_MrnaTransFail,
     ERR_CODE_END(SEQ_FEAT),
 
     ERR_CODE_BEGIN(SEQ_ALIGN),
@@ -980,6 +981,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.77  2004/09/21 19:08:31  shomrat
+* + eErr_SEQ_FEAT_MrnaTransFail
+*
 * Revision 1.76  2004/09/21 18:35:08  shomrat
 * Added ValidateLocusTagGeneral, reports eErr_SEQ_FEAT_LocusTagProductMismatch
 *
