@@ -29,6 +29,9 @@
  *   Program to read nucleotide FASTA and produce DUST'd version.
  */
 
+/// @file dust_app.cpp
+/// This is the top level implementation file of dust_app, a utility
+/// to find low complexity NA regions in FASTA format sequence data.
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -289,7 +292,7 @@ int CDustApplication::Run(void)
 
                     // Print result
                     start = 0;
-                    TSeqPos copy_size = copy_data.size();
+                    TSeqPos copy_size = (TSeqPos) copy_data.size();
                     while (start < copy_size)
                     {
                         end = ((start+FASTA_LEN) >= copy_size) ? copy_size : start+FASTA_LEN;

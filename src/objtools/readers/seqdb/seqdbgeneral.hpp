@@ -30,6 +30,13 @@
  *
  */
 
+
+/// @file seqdbgeneral.hpp
+/// This file defines several SeqDB utility functions related to byte
+/// order and file system portability.
+/// Implemented for: UNIX, MS-Windows
+
+
 #include <objtools/readers/seqdb/seqdbcommon.hpp>
 #include <corelib/ncbi_bswap.hpp>
 #include "seqdbatlas.hpp"

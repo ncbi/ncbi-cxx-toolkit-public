@@ -25,7 +25,8 @@
  */
 
 /** @file blast_message.c
- * @todo FIXME needs file description & doxygen comments
+ * These functions provide access to Blast_Message objects, used by
+ * the BLAST code as a wrapper for error and warning messages.
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -112,6 +113,9 @@ Blast_Perror(Int2 error_code)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2005/02/07 15:18:39  bealer
+ * - Fix doxygen file-level comments.
+ *
  * Revision 1.16  2004/11/26 20:28:38  camacho
  * + BLASTERR_REDOALIGNMENTCORE_NOTSUPPORTED
  *
