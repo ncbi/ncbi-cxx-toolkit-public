@@ -39,6 +39,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/04/08 19:14:15  gouriano
+* corrected comment to AddDefaults()
+*
 * Revision 1.11  2002/03/27 18:46:26  gouriano
 * three functions made public
 *
@@ -101,7 +104,7 @@ public:
     CScope(CObjectManager& objmgr);
     virtual ~CScope(void);
 
-    // Add default data loaders and seq_entries from object manager
+    // Add default data loaders from object manager
     void AddDefaults(void);
     // Add data loader by name.
     // The loader (or its factory) must be known to Object Manager.
