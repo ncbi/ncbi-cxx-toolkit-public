@@ -10,6 +10,6 @@ REQUIRES = dbapi
 
 APP = objmgr_demo
 SRC = objmgr_demo
-LIB = $(OBJMGR_LIBS) bdb
+LIB = bdb $(OBJMGR_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(BERKELEYDB_LIBS) $(ORIG_LIBS)
