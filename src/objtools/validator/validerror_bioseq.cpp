@@ -3264,13 +3264,13 @@ void CValidError_bioseq::ValidateGraphValues
     if ( vals_below_min > 0 ) {
         PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphBelow,
             NStr::IntToString(vals_below_min) + 
-            " quality scores have values below the reported minimum", 
+            " quality scores have values below the reported minimum or 0", 
             seq, graph);
     }
     if ( vals_above_max > 0 ) {
         PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphAbove,
             NStr::IntToString(vals_above_max) + 
-            " quality scores have values above the reported maximum", 
+            " quality scores have values above the reported maximum or 100", 
             seq, graph);
     }
 }
@@ -3557,6 +3557,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.68  2004/04/02 22:09:15  shomrat
+* clarify explanation of GraphAbove and GraphBelow criteria
+*
 * Revision 1.67  2004/03/31 18:37:40  shomrat
 * Report GraphMax > 100 at WARNING level, <= 0 at ERROR level
 *
