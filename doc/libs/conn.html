@@ -408,36 +408,8 @@ to deal with this structure:
 <ol>
 <a name="ref_Registry"></a><b><u>Note about the registry</u></b>. The registry used by <tt>connect</tt> library is
 separate from <a href="../programming_manual/registry.html"><b><i>CNcbiRegistry</i></b></a> class.
-Namely, in order to be included in <i>both</i> C <i>and</i> C++ NCBI Toolkits, <tt>connect</tt> library
-uses another <a href="../lxr/ident?i=REG">registry</a> (C structure), called C registry and defined in
-<a href="../lxr/source/include/connect/ncbi_core.h"><b><i>connect/ncbi_core.h</i></b></a>.
-The global registry object (so called <i>CORE C registry</i>) consulted by the library
-is set by means of <a href="../lxr/ident?i=CORE_SetREG"><b><i>CORE_SetREG()</i></b></a>
-declared in <a href="../lxr/source/include/connect/ncbi_util.h"><b><i>connect/ncbi_util.h</i></b></a>.
-The same notice applies to the logging facility, that is <tt>connect</tt> library has its own
-<a href="../lxr/ident?i=LOG">logger</a> defined in the
-same header <a href="../lxr/source/include/connect/ncbi_core.h"><b><i>connect/ncbi_core.h</i></b></a>. The
-global logger (<i>CORE logger</i>) used by the library is set by convenience routines declared in
-<a href="../lxr/source/include/connect/ncbi_util.h"><b><i>connect/ncbi_util.h</i></b></a>:
-<a href="../lxr/ident?i=CORE_SetLOG"><b><i>CORE_SetLOG()</i></b></a>,
-<a href="../lxr/ident?i=CORE_SetLOGFILE"><b><i>CORE_SetLOGFILE()</i></b></a> etc.
-There is, however, a means for a C++ program, using NCBI C++ Toolkit, to bind <b><i>CNcbiRegistry</b></i>
-object to the C registry <b><i>REG</i></b>, <a href="../programming_manual/diag.html"><b><i>CNcbiDiag</i></b></a> to the C logger
-<b><i>LOG</i></b> etc.
-The interface defined in <a href="../lxr/source/include/connect/ncbi_core_cxx.hpp"><b><i>connect/ncbi_core_cxx.hpp</i></b></a>
-includes the following C++ functions:
-<ul>
-<li> <tt>REG</tt> <a href="../lxr/ident?i=REG_cxx2c"><b><i>REG_cxx2c</i></b></a>&nbsp;<tt>(CNcbiRegistry* reg, bool pass_ownership = false)</tt>
-<li> <tt>LOG</tt> <a href="../lxr/ident?i=LOG_cxx2c"><b><i>LOG_cxx2c</i></b></a>&nbsp;<tt>(void)</tt>
-</ul>
-Returned <b><i>REG</i></b> and <b><i>LOG</i></b> are created on top of the corresponding C++ objects,
-and then both C and C++ objects could be manipulated interchangeably, causing exactly the same effect on the underlying
-registry or logger. An example could be seen in the test program
-<a href="../lxr/source/src/connect/test/test_ncbi_conn_stream.cpp"><tt>test_ncbi_conn_stream.cpp</tt></a>.
-Also, returned C handles <b><i>REG</i></b> and <b><i>LOG</i></b>
-can be set as <i>CORE</i> registry and logger using <b><i>CORE_SetREG()</i></b> and <b><i>CORE_SetLOG()</i></b>,
-respectively.
-</ol>
+To learn more about the difference, and how to use both objects together in 
+a single program, please follow <a href="c_cxx.html">this link</a>.
 
 <p>
 The following fields of <b><i>SConnNetInfo</i></b> pertain to the HTTP connector:
@@ -773,7 +745,7 @@ debugging can be activated directly from the environment by setting
 <tt>CONN_DEBUG_PRINTOUT</tt> to <tt>TRUE</tt> or <tt>SOME</tt>. Similarly, a registry key
 <tt>DEBUG_PRINTOUT</tt> with a value of either <tt>TRUE</tt> or <tt>SOME</tt> found in the section <tt>[CONN]</tt>
 would have the same effect: it turns on only logging of connection parameters each time the link gets established.
-Been set to <tt>ALL</tt> this variable (or key) also turns on debugging output on all
+When set to <tt>ALL</tt>, this variable (or key) also turns on debugging output on all
 underlying sockets ever created during the life of the connection. Value <tt>FALSE</tt>
 (default) turns debugging printouts off. Moreover, for <tt>SERVICE</tt> connector the debugging
 output option can be set on a per-service basis using <tt><i>service</i>_CONN_DEBUG_PRINTOUT</tt>
@@ -794,6 +766,20 @@ output available, the application has to set the log file to be
 <a href="../lxr/source/src/connect/test/test_ncbi_service_connector.c">example program</a> by means
 of <a href="../lxr/ident?i=CORE_SetLOGFILE"><b><i>CORE_SetLOGFILE</i></b></a><tt>(stderr, 0/*false*/)</tt>
 declared in <a href="../lxr/source/include/connect/ncbi_util.h"><b><i>connect/ncbi_util.h</i></b></a>.
+
+<p>
+There is a common problem reported several times and actually concerning
+network configuration rather than a misbehavior of the library. If a test program,
+which connects to a named NCBI service, is not getting anything back from the NCBI
+site, one first has to check whether there is a transparent proxying/caching in between the
+host and NCBI. As the service dispatching is implemented on top of ordinary HTTP
+protocol, the transparent proxying may latch unsuccessful service search (which could
+happen and may not indicate a real problem) as an error response from the NCBI
+server. Afterwards, instead of actually connecting to NCBI, the proxy returns
+that cached error (or sometimes just an empty document),
+which breaks the service dispatcher code. In most cases there are configurable ways
+to exclude certain URLs from proxying and caching, and are subject for discussion
+with a local network administrator.
 
 <p>
 <hr>

@@ -63,7 +63,7 @@ same at the source code level. To provide data interoperability,
 of both Toolkits, which is kept same in its entirety in both Toolkits.
 The old API of <tt>CONNECT</tt> library is still supported by means of
 simple wrapper code, which is situated in the C Toolkit only.
-There is an extrenal <a href="../lxr/source/scripts/internal/c_toolkit/check_sync.sh">safety script</a>,
+There is an external <a href="../lxr/source/scripts/internal/c_toolkit/check_sync.sh">safety script</a>,
 which periodically (controlled by a <tt>cron</tt> daemon) checks and maintains source file indentity.
 Conventionally, all development for <tt>CONNECT</tt> library is done within the C++ Toolkit tree.
 When a modified source file is committed to the CVS repository
@@ -108,22 +108,48 @@ with helper objects coded entirely in C (as tables of function pointers and data
 
 <p>
 On the other hand, throughout the code <tt>CONNECT</tt> library refers to
-predefined objects <tt>CORE_LOG</tt> and <tt>CORE_REG</tt>,
-which in reality are never initialized by the library, i.e.
+predefined objects <tt>CORE_LOG</tt> (so called <i>CORE C logger</i>)and <tt>CORE_REG</tt>
+(<i>CORE C registry</i>), which in reality are never initialized by the library, i.e.
 they are empty objects, which do nothing. It is an application's
 resposibility to replace these dummies with real working
 logger and registry. There are two approaches, one for C and another one for C++ application.
 
 <p>
-In a C program, <a href="../lxr/source/connect/ncbi_util.h><b><i>connect/ncbi_util.h</i></b></a>
+In a C program <a href="../lxr/source/connect/ncbi_util.h"><b><i>connect/ncbi_util.h</i></b></a>
 module can be used with calls to <a href="../lxr/ident?i=CORE_SetREG"><b><i>CORE_SetREG()</i></b></a>,
-<a href="../lxr/ident?i=CORE_SetLOG"><b><i>CORE_SetLOG()</i></b></a> to set up the
-logger and registry. There are even convenience routines concerning <tt>CORE_LOG</tt>,
-<a href="../lxr/ident?i=CORE_SetLOGFILE"><b><i>CORE_SetLOGFILE()</i></b></a>
-<a href="../lxr/ident?i=LOG_ToFILE"><b><i>LOG_ToFILE()</i></b></a>, which
-facilitate redirecting logging messages to either C stream (<tt>FILE*</tt>)
+<a href="../lxr/ident?i=CORE_SetLOG"><b><i>CORE_SetLOG()</i></b></a> can be used to set up the
+logger and the registry, correspondingly. There are even more convenience routines concerning
+<tt>CORE_LOG</tt>, like <a href="../lxr/ident?i=CORE_SetLOGFILE"><b><i>CORE_SetLOGFILE()</i></b></a>,
+<a href="../lxr/ident?i=CORE_SetLOGFILE_NAME"><b><i>CORE_SetLOGFILE_NAME()</i></b></a>,
+which facilitate redirecting logging messages to either a C stream (<tt>FILE*</tt>) or a named file.
+
+<p>
+In a C++ program, yet another additional step is necessary of converting <i>native</i> C++ objects
+so that they could be used for both <tt>CORE_LOG</tt> and
+<tt>CORE_REG</tt> by calls declared in
+<a href="../lxr/source/include/connect/ncbi_core_cxx.h"><b><i>connect/ncbi_core_cxx.hpp</i></b></a>
+as described later in this section.
 
 <a name="ref_LOG"></a><h3><tt>LOG</tt> and <tt>CNcbiDiag</tt></h3>
+
+<tt>CONNECT</tt> library has its own <a href="../lxr/ident?i=LOG">logger</a>, which
+has to be set by any of routines declared in
+<a href="../lxr/source/include/connect/ncbi_util.h"><b><i>connect/ncbi_util.h</i></b></a>:
+<a href="../lxr/ident?i=CORE_SetLOG"><b><i>CORE_SetLOG()</i></b></a>,
+<a href="../lxr/ident?i=CORE_SetLOGFILE"><b><i>CORE_SetLOGFILE()</i></b></a> etc.
+
+On the other hand, the interface defined in
+<a href="../lxr/source/include/connect/ncbi_core_cxx.hpp"><b><i>connect/ncbi_core_cxx.hpp</i></b></a>
+provides the following C++ function to convert a logging stream of the NCBI C++ Toolkit into a <tt>LOG</tt> object:
+<pre>
+<tt>LOG</tt> <a href="../lxr/ident?i=LOG_cxx2c"><b><i>LOG_cxx2c</i></b></a>&nbsp;<tt>(void)</tt>
+</pre>
+which creates the <b><i>LOG</i></b> object on top of the corresponding C++ objects <b><i>CNcbiDiag</i></b>,
+and then both C and C++ objects could be manipulated interchangeably, causing exactly the same effect on the underlying
+logger. An example could be seen in the test program
+<a href="../lxr/source/src/connect/test/test_ncbi_conn_stream.cpp"><tt>test_ncbi_conn_stream.cpp</tt></a>.
+Then, the returned C handle <b><i>LOG</i></b> can be subsequently used as a <i>CORE</i> logger by means of
+<b><i>CORE_SetLOG()</i></b>.
 
 <p>
 <hr>
@@ -131,13 +157,41 @@ facilitate redirecting logging messages to either C stream (<tt>FILE*</tt>)
 
 <a name="ref_REG"></a><h3><tt>REG</tt> and <tt>CNcbiRegistry</tt></h3>
 
+<a href="../lxr/source/include/connect/ncbi_core_cxx.hpp"><b><i>connect/ncbi_core_cxx.hpp</i></b></a>
+declares the following C++ function to bind C <tt>REG</tt> object to <b><i>CNcbiRegistry</b></i>
+used in C++ programs built with the use of the NCBI C++ Toolkit:
+<pre>
+<tt>REG</tt> <a href="../lxr/ident?i=REG_cxx2c"><b><i>REG_cxx2c</i></b></a>&nbsp;<tt>(CNcbiRegistry* reg, bool pass_ownership = false)</tt>
+</pre>
+<p>
+Similarly to <i>CORE LOG</i> setting, the returned handle can be later used
+with <a href="../lxr/ident?i=CORE_SetREG"><b><i>CORE_SetREG()</i></b></a>
+declared in <a href="../lxr/source/include/connect/ncbi_util.h"><b><i>connect/ncbi_util.h</i></b></a>
+to set up the global registry object (<i>CORE C registry</i>).
 <p>
 <hr>
 
 
 <a name="ref_ConnectCxx"></a><h3><tt>CONNECT</tt> Library in C++ Code</h3>
 
+There is <a href="../lxr/source/src/connect/test/test_ncbi_conn_stream.cpp">an example</a> of how to properly setup
+<i>CORE logger</i> and <i>CORE ragistry</i> in order for them to use the same data both in C and C++ parts
+of both the library and the remaining code of the application.
+
+<p>
+Another good source of information is a working application examples found in
+<a href="../lxr/source/src/app/id1_fetch"><b><i>src/app/id1_fetch</i></b></a>.
+
 <a name="ref_SettingLOG"></a><h4>Setting <tt>LOG</tt></h4>
+
+To set up the <i>CORE C logger</i> to use the same logging format of messages and destination
+as used by <b><i>CNcbiDiag</i></b>, the following sequence of calls may be used:
+<pre>
+    CORE_SetLOG(LOG_cxx2c());
+    SetDiagTrace(eDT_Enable);
+    SetDiagPostLevel(eDiag_Info);
+    SetDiagPostFlag(eDPF_All);
+</pre>
 
 <p>
 <hr>
@@ -145,11 +199,20 @@ facilitate redirecting logging messages to either C stream (<tt>FILE*</tt>)
 
 <a name="ref_SettingREG"></a><h4>Setting <tt>REG</tt></h4>
 
+To set the <i>CORE C registry</i> be the same as C++ registry <b><i>CNcbiRegistry</i></b>, the following
+call is necessary:
+<pre>
+    CORE_SetREG(REG_cxx2c(cxxreg, true));
+</pre>
+here <tt>cxxreg</tt> is a <b><i>CNcbiRegistry</i></b> registry object created and maintained by C++ application.
+
 <p>
 <hr>
 
 
 <a name="ref_SettingLOCK"></a><h4>Setting MT-Locking</h4>
+
+This section is yet to be written.
 
 
 <p>
