@@ -128,7 +128,7 @@ CAlnVec::TNumrow CAlnVec::GetConsensusRow(void) const
 inline 
 CSeqVector::TResidue CAlnVec::GetResidue(TNumrow row, TSeqPos aln_pos) const
 {
-    return x_GetSeqVector(row)[GetSeqPosFromAlnPos(aln_pos, row)];
+    return x_GetSeqVector(row)[GetSeqPosFromAlnPos(row, aln_pos)];
 }
 
 
@@ -184,6 +184,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2002/09/27 17:01:16  todorov
+ * changed order of params for GetSeqPosFrom{Seq,Aln}Pos
+ *
  * Revision 1.8  2002/09/25 19:34:15  todorov
  * "un-inlined" x_GetSeqVector
  *

@@ -139,9 +139,10 @@ public:
     TNumseg       GetSeg             (TSeqPos aln_pos)                  const;
     TNumseg       GetRawSeg          (TNumrow row, TSeqPos seq_pos)     const;
     TSignedSeqPos GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos)     const;
-    TSignedSeqPos GetSeqPosFromAlnPos(TSeqPos aln_pos, TNumrow for_row) const;
-    TSignedSeqPos GetSeqPosFromSeqPos(TNumrow row, TSeqPos seq_pos,
-                                      TNumrow for_row)                  const;
+    TSignedSeqPos GetSeqPosFromAlnPos(TNumrow for_row,
+                                      TSeqPos aln_pos)                  const;
+    TSignedSeqPos GetSeqPosFromSeqPos(TNumrow for_row,
+                                      TNumrow row, TSeqPos seq_pos)     const;
     TSeqPos       GetBestSeqPosFromAlnPos(TNumrow for_row,
 
  
@@ -477,11 +478,14 @@ CAlnMap::GetTypeAtAlnPos(TNumrow row, TSeqPos aln_pos) const
 ////////////////// end of inline methods //////////////////
 ///////////////////////////////////////////////////////////
 
+END_NCBI_SCOPE
+
+/*
+* ===========================================================================
 *
 * $Log$
-* Revision 1.7  2002/09/27 02:26:32  ucko
-* Remove static from the definition of CAlnMap::IsTypeInsert, as
-* (like virtual) it should appear only on the initial declaration.
+* Revision 1.8  2002/09/27 16:58:21  todorov
+* changed order of params for GetSeqPosFrom{Seq,Aln}Pos
 *
 * Revision 1.8  2002/09/27 16:58:21  todorov
 * changed order of params for GetSeqPosFrom{Seq,Aln}Pos

@@ -283,8 +283,8 @@ TSignedSeqPos CAlnMap::GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos) const
 }
 
 
-TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TSeqPos aln_pos, TNumrow for_row)
-    const
+TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
+                                           TSeqPos aln_pos) const
 {
     TNumseg seg = GetSeg(aln_pos);
     if (seg < 0) {
@@ -316,8 +316,8 @@ TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TSeqPos aln_pos, TNumrow for_row)
 }
 
 
-TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow row, TSeqPos seq_pos,
-                                           TNumrow for_row) const
+TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow for_row,
+                                           TNumrow row, TSeqPos seq_pos) const
 {
     TNumseg raw_seg = GetRawSeg(row, seq_pos);
     TSeqPos delta
@@ -550,6 +550,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2002/09/27 16:57:46  todorov
+* changed order of params for GetSeqPosFrom{Seq,Aln}Pos
+*
 * Revision 1.10  2002/09/26 18:24:50  todorov
 * fixed a just introduced bug
 *
