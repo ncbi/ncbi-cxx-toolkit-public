@@ -460,59 +460,6 @@ NCBI_NS_NCBI::CAutoInitializeStaticMutex id
 
 
 
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CAutoInitializeStaticBase --
-///
-/// Define thread safe initializer base class. 
-///
-/// Needed on platforms where system mutex struct cannot be initialized at
-/// compile time (e.g. Win32).
-
-class NCBI_XNCBI_EXPORT CAutoInitializeStaticBase
-{
-protected:
-    /// Determine if initialization is needed.
-    ///
-    /// This method returns TRUE only once, and wait in all other threads.
-    /// @sa
-    ///   DoneInitialization()
-    bool NeedInitialization(void);
-
-    /// Determine if initialization has been done.
-    ///
-    /// This method should be called only once after NeedInitialization() has
-    /// returned true.
-    ///
-    /// Use pattern:
-    ///
-    /// if ( NeedInitialization() ) {
-    ///     // do some initialization;
-    ///     DoneInitialization();
-    /// }
-    /// // Here our object is safely initialized
-    ///
-    /// @sa
-    ///   NeedInitialization()
-    void DoneInitialization(void);
-
-
-private:
-    enum {
-        kMaxUninitialized = 1000000000,
-                ///< Large enough - should be more than any possible amount 
-                ///< of simultaniously running threads
-
-        kSpinCounter = 100,
-                ///< Counter of polling cycle before scheduling
-
-        kMaxWaitCounter = 1000
-                ///< Max counter of scheduled waits
-    };
-
-    volatile TNCBIAtomicValue m_InitializeCounter; ///< Initialize counter
-};
-
 #if defined(NEED_AUTO_INITIALIZE_MUTEX)
 
 
@@ -527,7 +474,6 @@ private:
 /// compile time (e.g. Win32).
 
 class NCBI_XNCBI_EXPORT CAutoInitializeStaticFastMutex
-    : protected CAutoInitializeStaticBase
 {
 public:
     typedef SSystemFastMutex TObject; ///< Simplified alias name for fast mutex
@@ -570,7 +516,6 @@ private:
 /// compile time (e.g. Win32).
 
 class NCBI_XNCBI_EXPORT CAutoInitializeStaticMutex
-    : protected CAutoInitializeStaticBase
 {
 public:
     typedef SSystemMutex TObject;   ///< Simplified alias name for fast mutex
@@ -1130,6 +1075,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/09/29 20:50:30  ivanov
+ * Removed CAutoInitializeStaticBase
+ *
  * Revision 1.29  2003/09/17 18:09:05  vasilche
  * Removed unnecessary assignment operator - it causes problems on MSVC.
  *
