@@ -235,7 +235,7 @@ Int2 BLAST_PackDNA(Uint1Ptr buffer, Int4 length, Uint1 encoding,
  * @param query_info Query information structure containing offsets into the* 
  *                   concatenated sequence. [in]
  */
-Int2 BLAST_InitDNAPSeq(BLAST_SequenceBlkPtr query_blk, 
+Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlkPtr query_blk, 
                        BlastQueryInfoPtr query_info);
 
 #ifdef __cplusplus
