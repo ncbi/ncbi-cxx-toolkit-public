@@ -205,12 +205,12 @@ void CValidError_bioseqset::ValidateSegSet(const CBioseq_set& seqset, int segcnt
     CSeq_inst::EMol     mol = CSeq_inst::eMol_not_set;
     CSeq_inst::EMol     seq_inst_mol;
     
-    ITERATE ( list< CRef<CSeq_entry> >, se_list_it, seqset.GetSeq_set() ) {
-        if ( (**se_list_it).IsSeq() ) {
-            const CSeq_inst& seq_inst = (**se_list_it).GetSeq().GetInst();
+    ITERATE ( CBioseq_set::TSeq_set, se_list_it, seqset.GetSeq_set() ) {
+        if ( (*se_list_it)->IsSeq() ) {
+            const CSeq_inst& seq_inst = (*se_list_it)->GetSeq().GetInst();
             
             if ( mol == CSeq_inst::eMol_not_set ||
-                mol == CSeq_inst::eMol_other ) {
+                 mol == CSeq_inst::eMol_other ) {
                 mol = seq_inst.GetMol();
             } else if ( (seq_inst_mol = seq_inst.GetMol()) != CSeq_inst::eMol_other) {
                 if ( seq_inst.IsNa() != CSeq_inst::IsNa(mol) ) {
@@ -220,19 +220,21 @@ void CValidError_bioseqset::ValidateSegSet(const CBioseq_set& seqset, int segcnt
                     break;
                 }
             }
-        } else if ( (**se_list_it).IsSet() ) {
-            const CBioseq_set& set = (**se_list_it).GetSet();
-            
-            const CEnumeratedTypeValues* tv = 
-                CBioseq_set::GetTypeInfo_enum_EClass();
-            const string& set_class_str = 
-                tv->FindName(set.GetClass(), true);
-            
-            PostErr(eDiag_Critical, eErr_SEQ_PKG_SegSetNotParts,
-                "Segmented set contains wrong Bioseq-set, "
-                "its class is \"" + set_class_str + "\"", set);
-            
-            break;
+        } else if ( (*se_list_it)->IsSet() ) {
+            const CBioseq_set& set = (*se_list_it)->GetSet();
+
+            if ( set.IsSetClass()  &&  
+                 set.GetClass() != CBioseq_set::eClass_parts ) {
+                const CEnumeratedTypeValues* tv = 
+                    CBioseq_set::GetTypeInfo_enum_EClass();
+                const string& set_class_str = 
+                    tv->FindName(set.GetClass(), true);
+                
+                PostErr(eDiag_Critical, eErr_SEQ_PKG_SegSetNotParts,
+                    "Segmented set contains wrong Bioseq-set, "
+                    "its class is \"" + set_class_str + "\"", set);
+                break;
+            }
         } // else if
     } // iterate
     
@@ -418,6 +420,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/04/29 14:45:47  shomrat
+* Bug fix in ValidateSegSet
+*
 * Revision 1.10  2003/03/31 14:40:42  shomrat
 * $id: -> $id$
 *
