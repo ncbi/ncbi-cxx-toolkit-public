@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/07/18 19:09:03  vasilche
+* Fixed uninitialized members.
+* Fixed NextCell to advance to next cell.
+*
 * Revision 1.15  2000/07/18 17:21:42  vasilche
 * Added possibility to force output of empty attribute value.
 * Added caching to CHTML_table, now large tables work much faster.
@@ -109,6 +113,30 @@ SFactoryList < CHTMLBasicPage > PageList [] = {
     { CPmFrontPage::New, "", 0 }
 };
 
+CHTMLNode* CreateSubmitInput(const string& cmd, const string& label)
+{
+    string action("SUBMIT");
+    action += "('";
+    action += cmd;
+    action += "')";
+
+    CHTML_input* btn = new CHTML_input( "BUTTON", label );
+
+    btn->SetAttribute("VALUE", label);
+    btn->SetAttribute("OnClick", action);
+    return btn;
+}
+
+CHTML_table* CreateQueryBox(void)
+{
+    auto_ptr<CHTML_table> buttons(new CHTML_table);
+    buttons->SetCellSpacing(0)->SetCellPadding(0);
+
+    buttons->InsertNextCell(CreateSubmitInput("Save", "Save"));
+    buttons->InsertNextCell(CreateSubmitInput("Text", "Text"));
+    buttons->InsertNextCell( new CHTMLText( "&nbsp;&nbsp;&nbsp;" ) );
+    return buttons.release();
+}
 
 int CMyApp::ProcessRequest(CCgiContext& ctx) 
 {
@@ -195,6 +223,7 @@ int CMyApp::ProcessRequest(CCgiContext& ctx)
             }
         }
         Page->AppendChild(new CHTMLComment("this is comment"));
+        Page->AppendChild(CreateQueryBox());
         ctx.GetResponse().WriteHeader();
         Page->Print(ctx.GetResponse().out());
         return 0;

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/07/18 19:08:48  vasilche
+* Fixed uninitialized members.
+* Fixed NextCell to advance to next cell.
+*
 * Revision 1.43  2000/07/18 17:21:34  vasilche
 * Added possibility to force output of empty attribute value.
 * Added caching to CHTML_table, now large tables work much faster.
@@ -459,16 +463,16 @@ class CHTML_tc : public CHTMLElement
 public:
     typedef unsigned TIndex;
     CHTML_tc(const char* tagname)
-        : CParent(tagname)
+        : CParent(tagname), m_Parent(0)
         { }
     CHTML_tc(const char* tagname, const char* text)
-        : CParent(tagname, text)
+        : CParent(tagname, text), m_Parent(0)
         { }
     CHTML_tc(const char* tagname, const string& text)
-        : CParent(tagname, text)
+        : CParent(tagname, text), m_Parent(0)
         { }
     CHTML_tc(const char* tagname, CNCBINode* node)
-        : CParent(tagname, node)
+        : CParent(tagname, node), m_Parent(0)
         { }
     ~CHTML_tc(void);
 

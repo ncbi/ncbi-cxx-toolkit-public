@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2000/07/18 19:08:55  vasilche
+* Fixed uninitialized members.
+* Fixed NextCell to advance to next cell.
+*
 * Revision 1.55  2000/07/18 17:21:39  vasilche
 * Added possibility to force output of empty attribute value.
 * Added caching to CHTML_table, now large tables work much faster.
@@ -682,17 +686,17 @@ private:
 };
 
 CHTML_tr::CHTML_tr(void)
-    : CParent("tr")
+    : CParent("tr"), m_Parent(0)
 {
 }
 
 CHTML_tr::CHTML_tr(CNCBINode* node)
-    : CParent("tr", node)
+    : CParent("tr", node), m_Parent(0)
 {
 }
 
 CHTML_tr::CHTML_tr(const string& text)
-    : CParent("tr", text)
+    : CParent("tr", text), m_Parent(0)
 {
 }
 
@@ -1109,13 +1113,15 @@ CHTML_tr* CHTML_table::Row(TIndex row)  // todo: exception
 
 CHTML_tc* CHTML_table::Cell(TIndex row, TIndex col, ECellType type)
 {
-    return GetCache().GetCellNode(row, col, type);
+    return GetCache().GetCellNode(m_CurrentRow = row, m_CurrentCol = col,
+                                 type);
 }
 
 CHTML_tc* CHTML_table::Cell(TIndex row, TIndex col, ECellType type,
                             TIndex rowSpan, TIndex colSpan)
 {
-    return GetCache().GetCellNode(row, col, type, rowSpan, colSpan);
+    return GetCache().GetCellNode(m_CurrentRow = row, m_CurrentCol = col,
+                                  type, rowSpan, colSpan);
 }
 
 void CHTML_table::CheckTable(void) const
