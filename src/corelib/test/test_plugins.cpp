@@ -33,6 +33,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/plugin_manager.hpp>
+#include <corelib/plugin_manager_impl.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -244,6 +245,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/11/19 14:02:17  kuznets
+ * Included plugin_manager_impl.hpp
+ *
  * Revision 1.2  2003/11/18 17:08:07  kuznets
  * Fixed Workshop compile warnings
  *
