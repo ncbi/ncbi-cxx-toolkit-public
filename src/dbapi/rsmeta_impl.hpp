@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.6  2002/11/25 15:32:06  kholodov
+* Modified: using STL vector istead of CDynamicArray.
+*
 * Revision 1.5  2002/09/18 18:49:27  kholodov
 * Modified: class declaration and Action method to reflect
 * direct inheritance of CActiveObject from IEventListener
@@ -57,8 +60,9 @@
 
 #include <dbapi/dbapi.hpp>
 #include "dbexception.hpp"
-#include "array.hpp"
 #include "active_obj.hpp"
+
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
@@ -96,7 +100,7 @@ private:
   };
   
   unsigned int m_totalColumns;
-  CDynArray<SColMetaData> m_colInfo;
+  vector<SColMetaData> m_colInfo;
 
 };
 
@@ -110,19 +114,19 @@ unsigned int CResultSetMetaData::GetTotalColumns() const
 inline
 EDB_Type CResultSetMetaData::GetType(unsigned int idx) const 
 {
-  return m_colInfo[idx-1].m_type;
+  return m_colInfo.at(idx-1).m_type;
 }
 
 inline
 int CResultSetMetaData::GetMaxSize(unsigned int idx) const 
 {
-  return m_colInfo[idx-1].m_maxSize;
+  return m_colInfo.at(idx-1).m_maxSize;
 }
 
 inline
 string CResultSetMetaData::GetName(unsigned int idx) const 
 {
-  return m_colInfo[idx-1].m_name;
+  return m_colInfo.at(idx-1).m_name;
 }
 //====================================================================
 
