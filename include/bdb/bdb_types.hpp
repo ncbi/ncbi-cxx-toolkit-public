@@ -86,15 +86,15 @@ public:
 class IBDB_FieldConvert
 {
 public:
-    virtual void SetInt(int val)
+    virtual void SetInt(int)
         { BDB_THROW(eType, "Bad conversion"); }
-    virtual void SetUint(unsigned val)  // ???
+    virtual void SetUint(unsigned)  // ???
         { BDB_THROW(eType, "Bad conversion"); }
-    virtual void SetString(const char* val)
+    virtual void SetString(const char*)
         { BDB_THROW(eType, "Bad conversion"); }
-    virtual void SetFloat(float val)
+    virtual void SetFloat(float)
         { BDB_THROW(eType, "Bad conversion"); }
-    virtual void SetDouble(double val)
+    virtual void SetDouble(double)
         { BDB_THROW(eType, "Bad conversion"); }
 };
 
@@ -1165,6 +1165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/04/29 16:48:31  kuznets
+ * Fixed minor warnings in Sun Workshop compiler
+ *
  * Revision 1.1  2003/04/24 16:31:16  kuznets
  * Initial revision
  *

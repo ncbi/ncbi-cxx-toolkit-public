@@ -128,7 +128,7 @@ public:
         eType,
         eIdxSearch,
         eInvalidValue,
-        eNull,
+        eNull
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -180,6 +180,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/04/29 16:48:31  kuznets
+ * Fixed minor warnings in Sun Workshop compiler
+ *
  * Revision 1.1  2003/04/24 16:31:16  kuznets
  * Initial revision
  *
