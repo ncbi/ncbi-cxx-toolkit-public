@@ -198,7 +198,7 @@ static size_t s_ComposeCodonRecognizedStr(const CTrna_ext& trna, string& recogni
         while (it != codons.end()) {
             string& codon1 = *prev;
             string& codon2 = *it;
-            if (codon1.compare(0, 2, codon2, 0, 2) == 0) {
+            if (codon1[0] == codon2[0]  &&  codon1[1] == codon2[1]) {
                 codon1[2] = s_MakeDegenerateBase(codon1, codon2);
                 it = codons.erase(it);
             } else {
@@ -782,6 +782,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/10/05 20:44:23  ucko
+* s_ComposeCodonRecognizedStr: tweak to avoid string::compare, whose
+* syntax has varied over time.
+*
 * Revision 1.19  2004/10/05 20:25:47  ucko
 * s_MakeDegenerateBase: tweak initializer for symbol_to_idx to avoid
 * triggering an inappropriate template with some compilers.
