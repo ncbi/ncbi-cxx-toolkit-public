@@ -56,8 +56,8 @@ Blast4-request-body ::= CHOICE {
     finish-params           Blast4-finish-params-request,
     get-databases           NULL,
     get-matrices            NULL,
-	get-parameters			NULL,
-	get-programs			NULL,
+    get-parameters          NULL,
+    get-programs            NULL,
     get-search-results      Blast4-get-search-results-request,
     get-sequences           Blast4-get-sequences-request,
     queue-search            Blast4-queue-search-request
@@ -66,7 +66,7 @@ Blast4-request-body ::= CHOICE {
 Blast4-finish-params-request ::= SEQUENCE {
     program                 VisibleString,
     service                 VisibleString,
-	paramset				VisibleString OPTIONAL,
+    paramset                VisibleString OPTIONAL,
     params                  Blast4-parameters OPTIONAL
 }
 
@@ -84,7 +84,7 @@ Blast4-queue-search-request ::= SEQUENCE {
     service                 VisibleString,
     queries                 Bioseq-set,
     subject                 Blast4-subject,
-	paramset				VisibleString OPTIONAL,
+    paramset                VisibleString OPTIONAL,
     params                  Blast4-parameters OPTIONAL
 }
 
@@ -103,8 +103,8 @@ Blast4-reply-body ::= CHOICE {
     finish-params           Blast4-finish-params-reply,
     get-databases           Blast4-get-databases-reply,
     get-matrices            Blast4-get-matrices-reply,
-	get-parameters			Blast4-get-parameters-reply,
-	get-programs			Blast4-get-programs-reply,
+    get-parameters          Blast4-get-parameters-reply,
+    get-programs            Blast4-get-programs-reply,
     get-search-results      Blast4-get-search-results-reply,
     get-sequences           Blast4-get-sequences-reply,
     queue-search            Blast4-queue-search-reply
@@ -227,8 +227,8 @@ Blast4-parameter ::= SEQUENCE {
 }
 
 Blast4-parameter-info ::= SEQUENCE {
-	name					VisibleString,
-	type					VisibleString
+    name                    VisibleString,
+    type                    VisibleString
 }
 
 Blast4-program-info ::= SEQUENCE {
