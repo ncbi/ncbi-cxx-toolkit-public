@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/10/25 00:06:29  thiessen
+* fix concurrent rendering problem in wxMSW PNG output
+*
 * Revision 1.2  2001/10/24 17:07:30  thiessen
 * add PNG output for wxGTK
 *
@@ -105,15 +108,16 @@ ProgressMeter::ProgressMeter(wxWindow *myParent,
 
     // automatically bring up the window and let it be shown right away
     Show(true);
+
 #ifdef __WXGTK__
     // wxSafeYield seems to force redraws in wxGTK, so make window modal
     // so that it's safe to call wxYield() instead
     SetFocus();
     MakeModal(true);
     wxYield();
-#else        
+#else
     wxSafeYield();
-#endif        
+#endif
 }
 
 void ProgressMeter::OnCloseWindow(wxCloseEvent& event)
@@ -129,7 +133,6 @@ void ProgressMeter::OnCloseWindow(wxCloseEvent& event)
 #endif
 }
 
-
 void ProgressMeter::SetValue(int value, bool doYield)
 {
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(gauge, ID_GAUGE, wxGauge)
@@ -139,12 +142,12 @@ void ProgressMeter::SetValue(int value, bool doYield)
         gauge->SetValue((value <= 0) ? 0 : ((value >= max) ? max : value));
 
         // yield for window redraw
-        if (doYield) 
+        if (doYield)
 #ifdef __WXGTK__
             wxYield();  // wxSafeYield seems to force redraws in wxGTK...
 #else
             wxSafeYield();
-#endif        
+#endif
     }
 }
 

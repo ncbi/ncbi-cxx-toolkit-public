@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/10/25 00:06:29  thiessen
+* fix concurrent rendering problem in wxMSW PNG output
+*
 * Revision 1.5  2001/10/24 22:02:02  thiessen
 * fix wxGTK concurrent rendering problem
 *
@@ -433,8 +436,6 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
     GLXDrawable currentXdrw = 0;
     Display *display;
     int (*currentXErrHandler)(Display *, XErrorEvent *) = NULL;
-    
-    glCanvas->SuspendRendering(true);
 
 #else
     ERR_POST("PNG export not (yet) implemented on this platform");
@@ -448,6 +449,10 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
 
     try {
         TESTMSG("saving PNG file '" << filename.c_str() << "'");
+
+        // need to avoid any GL calls in glCanvas while off-screen rendering is happening; so
+        // temporarily prevent glCanvas from responding to window resize/exposure, etc.
+        glCanvas->SuspendRendering(true);
 
         int windowViewport[4];
         glCanvas->renderer->GetViewport(windowViewport);
@@ -468,7 +473,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         // create and show progress meter
         wxString message;
         message.Printf("Writing PNG file %s (%ix%i)",
-            (wxString(wxFileNameFromPath(filename.c_str()))).c_str(), 
+            (wxString(wxFileNameFromPath(filename.c_str()))).c_str(),
             outputWidth, outputHeight);
         progressMeter = new ProgressMeter(NULL, message, "Saving...", PROGRESS_RESOLUTION);
 
@@ -558,25 +563,24 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         glxPixmap = glXCreateGLXPixmap(display, visinfo, xPixmap);
         if (!glxPixmap) throw "failed to create GLXPixmap";
         if (gotAnXError) throw "Got an X error creating GLXPixmap";
-        
+
         // try to share display lists with "regular" context
         glCtx = glXCreateContext(display, visinfo, currentCtx, GL_FALSE);
         if (!glCtx || !glXMakeCurrent(display, glxPixmap, glCtx)) {
             ERR_POST(Warning << "failed to make GLXPixmap rendering context with shared display lists");
             shareDisplayLists = false;
             if (glCtx) glXDestroyContext(display, glCtx);
-            
+
             // try to create context without shared lists
             glCtx = glXCreateContext(display, visinfo, NULL, GL_FALSE);
             if (!glCtx || !glXMakeCurrent(display, glxPixmap, glCtx))
                 throw "failed to make GLXPixmap rendering context without shared display lists";
         }
-
 #endif
 
         TESTMSG("interlaced: " << interlaced << ", nChunks: " << nChunks
             << ", buffer height: " << bufferHeight << ", shared: " << shareDisplayLists);
-        
+
         // allocate a row of pixel storage
         rowStorage = new unsigned char[outputWidth * bytesPerPixel];
         if (!rowStorage) throw "failed to allocate pixel row buffer";
@@ -652,12 +656,13 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         else {
             int bufferRow, bufferRowStart;
             nRows = outputHeight;
-
             for (int chunk = nChunks - 1; chunk >= 0; chunk--) {
 
                 // set viewport for this chunk and redraw
-                if (nChunks > 1) TESTMSG("drawing chunk #" << (chunk + 1));
-                if (nChunks > 1) glViewport(0, -chunk*bufferHeight, outputWidth, outputHeight);
+                if (nChunks > 1) {
+                    TESTMSG("drawing chunk #" << (chunk + 1));
+                    glViewport(0, -chunk*bufferHeight, outputWidth, outputHeight);
+                }
                 glCanvas->renderer->Display();
 
                 // only draw "visible" part of top chunk
@@ -676,8 +681,8 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
 
         // finish up PNG write
         png_write_end(png_ptr, info_ptr);
-
         success = true;
+
     } catch (const char *err) {
         ERR_POST("Error creating PNG: " << err);
     } catch (exception& e) {
@@ -717,11 +722,10 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
     if (localVI && visinfo) XFree(visinfo);
     if (gotAnXError) ERR_POST(Warning << "Got an X error destroying GLXPixmap context");
     XSetErrorHandler(currentXErrHandler);
-    
-    glCanvas->SuspendRendering(false);
 #endif
 
     // reset font after "regular" context restore
+    glCanvas->SuspendRendering(false);
     if (outputHeight != glCanvas->GetClientSize().GetHeight()) {
         glCanvas->SetCurrent();
         glCanvas->SetGLFontFromRegistry(1.0);
