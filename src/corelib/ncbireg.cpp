@@ -507,7 +507,7 @@ const string CNcbiRegistry::GetString
 }
 
 
-const int CNcbiRegistry::GetInt
+int CNcbiRegistry::GetInt
 (const string& section,
  const string& name,
  int           default_value,
@@ -538,7 +538,7 @@ const int CNcbiRegistry::GetInt
 }
 
 
-const bool CNcbiRegistry::GetBool
+bool CNcbiRegistry::GetBool
 (const string& section,
  const string& name,
  bool          default_value,
@@ -569,7 +569,7 @@ const bool CNcbiRegistry::GetBool
 }
 
 
-const double CNcbiRegistry::GetDouble
+double CNcbiRegistry::GetDouble
 (const string& section,
  const string& name,
  double        default_value,
@@ -874,6 +874,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/02/28 19:24:51  vakatov
+ * Get rid of redundant "const" in the return type of GetInt/Bool/Double()
+ *
  * Revision 1.30  2003/02/24 19:56:05  gouriano
  * use template-based exceptions instead of errno and parse exceptions
  *

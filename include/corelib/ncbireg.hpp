@@ -180,15 +180,15 @@ public:
         eReturn   // return default value
     };
 
-    const int     GetInt    (const string& section, const string& name,
-                             int    default_value,  TFlags flags = 0,
-                             EErrAction err_action = eThrow) const;
-    const bool    GetBool   (const string& section, const string& name,
-                             bool   default_value,  TFlags flags = 0,
-                             EErrAction err_action = eThrow) const;
-    const double  GetDouble (const string& section, const string& name,
-                             double default_value,  TFlags flags = 0,
-                             EErrAction err_action = eThrow) const;
+    int     GetInt    (const string& section, const string& name,
+                       int    default_value,  TFlags flags = 0,
+                       EErrAction err_action = eThrow) const;
+    bool    GetBool   (const string& section, const string& name,
+                       bool   default_value,  TFlags flags = 0,
+                       EErrAction err_action = eThrow) const;
+    double  GetDouble (const string& section, const string& name,
+                       double default_value,  TFlags flags = 0,
+                       EErrAction err_action = eThrow) const;
 
     // Set the configuration parameter value(unset if "value" is empty)
     // Return TRUE if the new "value" is successfully set(or unset)
@@ -261,6 +261,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/02/28 19:24:42  vakatov
+ * Get rid of redundant "const" in the return type of GetInt/Bool/Double()
+ *
  * Revision 1.22  2003/02/24 19:54:51  gouriano
  * use template-based exceptions instead of errno and parse exceptions
  *
