@@ -93,10 +93,12 @@ public:
         formatter.FormatFeature(*this, text_os);
     }
     bool operator<(const CFeatureItemBase& f2) const 
-        { return m_Feat->Compare(*f2.m_Feat, *m_Loc, *f2.m_Loc) < 0; }
+        { return m_Feat->Compare(*f2.m_Feat, GetLoc(), f2.GetLoc()) < 0; }
 
     const CSeq_feat& GetFeat(void)  const { return *m_Feat; }
-    const CSeq_loc&  GetLoc(void)   const { return *m_Loc; }
+    const CSeq_loc&  GetLoc(void)   const { 
+        return m_Loc ? *m_Loc : m_Feat->GetLocation();
+    }
     virtual string GetKey(void) const
         { return m_Feat->GetData().GetKey(CSeqFeatData::eVocabulary_genbank); }
 
@@ -105,7 +107,7 @@ protected:
     // constructor
     CFeatureItemBase(const CSeq_feat& feat, CFFContext& ctx,
                      const CSeq_loc* loc = 0)
-        : CFlatItem(ctx), m_Feat(&feat), m_Loc(loc ? loc : &feat.GetLocation())
+        : CFlatItem(ctx), m_Feat(&feat), m_Loc(loc)
     {}
 
     virtual void x_AddQuals   (CFFContext& ctx) const = 0;
@@ -121,49 +123,75 @@ protected:
 class CFeatureItem : public CFeatureItemBase
 {
 public:
+    enum EMapped
+    {
+        eMapped_not_mapped,
+        eMapped_from_genomic,
+        eMapped_from_cdna,
+        eMapped_from_prot
+    };
+
     // constructors
     CFeatureItem(const CSeq_feat& feat, CFFContext& ctx,
-                     const CSeq_loc* loc = 0, bool is_product = false)
-        : CFeatureItemBase(feat, ctx, loc), m_IsProduct(is_product)
+                 const CSeq_loc* loc = 0, EMapped mapped = eMapped_not_mapped)
+        : CFeatureItemBase(feat, ctx, loc), m_Mapped(mapped)
     {
         x_GatherInfo(ctx);
     }
     CFeatureItem(const CMappedFeat& feat, CFFContext& ctx,
-                     const CSeq_loc* loc = 0, bool is_product = false)
+                 const CSeq_loc* loc = 0, EMapped mapped = eMapped_not_mapped)
         : CFeatureItemBase(feat.GetOriginalFeature(), ctx,
                            loc ? loc : &feat.GetLocation()),
-          m_IsProduct(is_product)
+          m_Mapped(mapped)
     {
         x_GatherInfo(ctx);
     }
-
     string GetKey(void) const;
+
+    bool IsMapped           (void) const { return m_Mapped != eMapped_not_mapped;   }
+    bool IsMappedFromGenomic(void) const { return m_Mapped == eMapped_from_genomic; }
+    bool IsMappedFromCDNA   (void) const { return m_Mapped == eMapped_from_cdna;    }
+    bool IsMappedFromProt   (void) const { return m_Mapped == eMapped_from_prot;    }
 
 private:
     void x_GatherInfo(CFFContext& ctx);
 
     void x_AddQuals(CFFContext& ctx)       const;
-    void x_AddQuals(const CGene_ref& gene) const;
     void x_AddQuals(const CCdregion& cds)  const;
     void x_AddQuals(const CProt_ref& prot) const;
-    // ...
+    void x_AddGeneQuals(const CSeq_feat& gene, CScope& scope) const;
+    void x_AddCdregionQuals(const CSeq_feat& cds, CFFContext& ctx,
+        bool& pseudo) const;
+    //void x_AddCdregionQualsOnProt(const CSeq_feat& cds, CFFContext& ctx) const;
+    void x_AddProteinQuals(CBioseq_Handle& prot) const;
+    void x_AddRnaQuals(const CSeq_feat& feat, CFFContext& ctx,
+        bool& pseudo) const;
+    void x_AddProtQuals(const CSeq_feat& feat, CFFContext& ctx,
+        bool pseudo) const;
+    void x_AddRegionQuals(const CSeq_feat& feat, CFFContext& ctx) const;
+    void x_AddQuals(const CGene_ref& gene) const;
+    void x_AddExtQuals(const CSeq_feat::TExt& ext) const;
+    void x_AddGoQuals(const CUser_object& uo) const;
 
     // XXX - massage slot as necessary and perhaps sanity-check value's type
     void x_AddQual(EFeatureQualifier slot, const IFlatQVal* value) const
         { m_Quals.insert(TQuals::value_type(slot,CConstRef<IFlatQVal>(value))); }
     void x_ImportQuals(const CSeq_feat::TQual& quals) const;
+    void x_RemoveQuals(EFeatureQualifier slot) const;
 
-    void x_FormatQuals   (void) const;
+    void x_FormatQuals(void) const;
+    void x_FormatNoteQuals(void) const;
     void x_FormatQual(EFeatureQualifier slot, const string& name,
-        IFlatQVal::TFlags flags = 0) const;
+        CFlatFeature::TQuals& qvec, IFlatQVal::TFlags flags = 0) const;
     void x_FormatNoteQual(EFeatureQualifier slot, const string& name, 
-                          IFlatQVal::TFlags flags = 0) const 
-        { x_FormatQual(slot, name, flags | IFlatQVal::fIsNote); }
+        CFlatFeature::TQuals& qvec, IFlatQVal::TFlags flags = 0) const 
+        { x_FormatQual(slot, "note", qvec, flags | IFlatQVal::fIsNote); }
 
     typedef multimap<EFeatureQualifier, CConstRef<IFlatQVal> > TQuals;
     mutable CSeqFeatData::ESubtype m_Type;
     mutable TQuals                 m_Quals;
-    bool                           m_IsProduct;
+    //bool                           m_IsProduct;
+    EMapped                        m_Mapped;
 };
 
 
@@ -214,7 +242,7 @@ private:
         CFlatFeature::TQuals& qvec, IFlatQVal::TFlags flags = 0) const;
     void x_FormatNoteQual(ESourceQualifier slot, const string& name,
             CFlatFeature::TQuals& qvec, IFlatQVal::TFlags flags = 0) const {
-        x_FormatQual(slot, name, qvec, flags | IFlatQVal::fIsNote); 
+        x_FormatQual(slot, "note", qvec, flags | IFlatQVal::fIsNote); 
     }
 
     typedef multimap<ESourceQualifier, CConstRef<IFlatQVal> > TQuals;
@@ -231,6 +259,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/03/05 18:49:26  shomrat
+* enhancements to qualifier collection and formatting
+*
 * Revision 1.4  2004/02/11 22:48:18  shomrat
 * override GetKey
 *
