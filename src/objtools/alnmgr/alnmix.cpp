@@ -46,8 +46,8 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
 CAlnMix::CAlnMix(void)
-    : m_SingleRefseq(false),
-      m_MergeFlags(0)
+    : m_MergeFlags(0),
+      m_SingleRefseq(false)
 {
     x_CreateScope();
 }
@@ -55,8 +55,8 @@ CAlnMix::CAlnMix(void)
 
 CAlnMix::CAlnMix(CScope& scope)
     : m_Scope(&scope),
-      m_SingleRefseq(false),
-      m_MergeFlags(0)
+      m_MergeFlags(0),
+      m_SingleRefseq(false)
 {
 }
 
@@ -1354,6 +1354,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2003/04/15 14:21:12  vasilche
+* Fixed order of member initializers.
+*
 * Revision 1.42  2003/04/14 18:03:19  todorov
 * reuse of matches bug fix
 *
