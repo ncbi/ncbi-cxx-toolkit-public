@@ -963,11 +963,13 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                         //save the current alnment regardless
                         SAlnInfo* alnvecInfo = new SAlnInfo;
                         int sum_n;
+                        int num_ident;
                         CBlastFormatUtil::GetAlnScores(**iter, 
                                                        alnvecInfo->score, 
                                                        alnvecInfo->bits, 
                                                        alnvecInfo->evalue, 
                                                        sum_n, 
+                                                       num_ident,
                                                        alnvecInfo->use_this_gi);
                         alnvecInfo->alnvec = avRef;
                         avList.push_back(alnvecInfo);
@@ -2327,6 +2329,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.63  2005/02/23 16:28:03  jianye
+*change due to num_ident addition
+*
 *Revision 1.62  2005/02/22 15:58:55  jianye
 *some style change
 *

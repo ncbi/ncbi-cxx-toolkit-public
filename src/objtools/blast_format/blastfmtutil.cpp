@@ -87,16 +87,18 @@ Reference</a>:</b>";
 ///@param bits: place to extract the bit score to
 ///@param evalue: place to extract the e value to
 ///@param sum_n: place to extract the sum_n to
+///@param num_ident: place to extract the num_ident to
 ///@param use_this_gi: place to extract use_this_gi to
 ///@return true if found score, false otherwise
 ///
 template<class container> bool
 s_GetBlastScore(const container&  scoreList, 
-                                int& score, 
-                                double& bits, 
-                                double& evalue, 
-                                int& sum_n, 
-                                list<int>& use_this_gi)
+                int& score, 
+                double& bits, 
+                double& evalue, 
+                int& sum_n, 
+                int& num_ident,
+                list<int>& use_this_gi)
 {
     bool hasScore = false;
     ITERATE (typename container, iter, scoreList) {
@@ -115,6 +117,8 @@ s_GetBlastScore(const container&  scoreList,
                 use_this_gi.push_back((*iter)->GetValue().GetInt());
             } else if (id.GetStr()=="sum_n"){
                 sum_n = (*iter)->GetValue().GetInt();          
+            } else if (id.GetStr()=="num_ident"){
+                num_ident = (*iter)->GetValue().GetInt();
             }
         }
     }
@@ -391,6 +395,7 @@ void CBlastFormatUtil::GetAlnScores(const CSeq_align& aln,
                                     double& bits, 
                                     double& evalue,
                                     int& sum_n,
+                                    int& num_ident,
                                     list<int>& use_this_gi)
 {
     bool hasScore = false;
@@ -398,23 +403,24 @@ void CBlastFormatUtil::GetAlnScores(const CSeq_align& aln,
     bits = -1;
     evalue = -1;
     sum_n = -1;
-
+    num_ident = -1;
+    
     //look for scores at seqalign level first
-    hasScore = s_GetBlastScore(aln.GetScore(),  score, bits, evalue, 
-                               sum_n, use_this_gi);
+    hasScore = s_GetBlastScore(aln.GetScore(), score, bits, evalue, 
+                               sum_n, num_ident, use_this_gi);
     
     //look at the seg level
     if(!hasScore){
         const CSeq_align::TSegs& seg = aln.GetSegs();
         if(seg.Which() == CSeq_align::C_Segs::e_Std){
             s_GetBlastScore(seg.GetStd().front()->GetScores(),  
-                            score, bits, evalue, sum_n, use_this_gi);
+                            score, bits, evalue, sum_n, num_ident, use_this_gi);
         } else if (seg.Which() == CSeq_align::C_Segs::e_Dendiag){
             s_GetBlastScore(seg.GetDendiag().front()->GetScores(), 
-                            score, bits, evalue, sum_n, use_this_gi);
+                            score, bits, evalue, sum_n, num_ident, use_this_gi);
         }  else if (seg.Which() == CSeq_align::C_Segs::e_Denseg){
             s_GetBlastScore(seg.GetDenseg().GetScores(),  
-                            score, bits, evalue, sum_n, use_this_gi);
+                            score, bits, evalue, sum_n, num_ident, use_this_gi);
         }
     }	
 }

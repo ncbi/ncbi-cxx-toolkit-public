@@ -751,14 +751,17 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
     int score = 0;
     double bits = 0;
     double evalue = 0;
-    int sum_n =0;
+    int sum_n = 0;
+    int num_ident = 0;
     list<int> use_this_gi;       
       
     try{
         const CBioseq_Handle& handle = m_ScopeRef->GetBioseqHandle(id);
       
-        CBlastFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n, use_this_gi);
-        CBlastFormatUtil::GetScoreString(evalue, bits, evalue_buf, bit_score_buf);
+        CBlastFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n, 
+                                       num_ident, use_this_gi);
+        CBlastFormatUtil::GetScoreString(evalue, bits, evalue_buf, 
+                                         bit_score_buf);
         sdl = new SDeflineInfo;
 
         x_FillDeflineAndId(handle, id, use_this_gi, sdl);
@@ -767,7 +770,8 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
         sdl->evalue_string = evalue_buf;
     } catch (CException& ){
         sdl = new SDeflineInfo;
-        CBlastFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n, use_this_gi);
+        CBlastFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n,
+                                       num_ident, use_this_gi);
         CBlastFormatUtil::GetScoreString(evalue, bits, evalue_buf, bit_score_buf);
         sdl->sum_n = sum_n;
         sdl->bit_string = bit_score_buf;
@@ -802,6 +806,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.10  2005/02/23 16:28:03  jianye
+*change due to num_ident addition
+*
 *Revision 1.9  2005/02/15 17:47:29  grichenk
 *Replaces CRef<CSeq_id> with CConstRef<CSeq_id>
 *
