@@ -120,13 +120,13 @@ void CLDS_Database::Create()
     m_db.object_db.Open(fname.c_str(),
                     "object",
                     CBDB_RawFile::eCreate);
-
+/*
     LOG_POST(Info << "Creating LDS table: " << "objectattr");
     fname = m_LDS_DirName + "lds_objectattr.db"; 
     m_db.object_attr_db.Open(fname.c_str(),
                              "objectattr",
                              CBDB_RawFile::eCreate);
-
+*/
     LOG_POST(Info << "Creating LDS table: " << "annotation");
     fname = m_LDS_DirName + "lds_annotation.db"; 
     m_db.annot_db.Open(fname.c_str(),
@@ -152,7 +152,7 @@ void CLDS_Database::Sync()
     m_db.annot2obj_db.Sync();
     m_db.annot_db.Sync();
     m_db.file_db.Sync();
-    m_db.object_attr_db.Sync();
+//    m_db.object_attr_db.Sync();
     m_db.object_db.Sync();
     m_db.object_type_db.Sync();
     m_db.seq_id_list.Sync();    
@@ -185,12 +185,12 @@ void CLDS_Database::Open()
     m_db.object_db.Open(fname.c_str(),
                         "object",
                         CBDB_RawFile::eReadWrite);
-
+/*
     fname = m_LDS_DirName + "lds_objectattr.db"; 
     m_db.object_attr_db.Open(fname.c_str(),
                             "objectattr",
                             CBDB_RawFile::eReadWrite);
-
+*/
     fname = m_LDS_DirName + "lds_annotation.db"; 
     m_db.annot_db.Open(fname.c_str(),
                        "annotation",
@@ -264,6 +264,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/03/09 17:16:59  kuznets
+ * Merge object attributes with objects
+ *
  * Revision 1.15  2003/10/29 16:23:31  kuznets
  * Implemented CLDS_DatabaseHolder::EnumerateAliases
  *

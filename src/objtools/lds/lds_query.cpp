@@ -150,17 +150,19 @@ public:
 
         // Primary seq id gave no hit. Scanning the supplemental list (attributes)
         //
+/*
         m_db.object_attr_db.object_attr_id = object_id;
         if (m_db.object_attr_db.Fetch() != eBDB_Ok) {
             return;
         }
+*/
 
-        if (m_db.object_attr_db.seq_ids.IsNull() || 
-            m_db.object_attr_db.seq_ids.IsEmpty()) {
+        if (dbf.seq_ids.IsNull() || 
+            dbf.seq_ids.IsEmpty()) {
             return;
         }
 
-        string attr_seq_ids(m_db.object_attr_db.seq_ids);
+        string attr_seq_ids(dbf.seq_ids);
         vector<string> seq_id_arr;
         
         NStr::Tokenize(attr_seq_ids, " ", seq_id_arr, NStr::eMergeDelims);
@@ -310,12 +312,13 @@ CLDS_Query::GetObjectDescr(const map<string, int>& type_map,
         descr.format = (CFormatGuess::EFormat)(int)m_db.file_db.format;
         descr.file_name = m_db.file_db.file_name;
         descr.offset = m_db.object_db.file_offset;
-
+        descr.title = m_db.object_db.object_title;
+/*
         m_db.object_attr_db.object_attr_id = id;
         if (m_db.object_attr_db.Fetch() == eBDB_Ok) {
             descr.title = m_db.object_attr_db.object_title;
         }
-
+*/
         return descr;
     }
 
@@ -363,6 +366,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/03/09 17:16:59  kuznets
+ * Merge object attributes with objects
+ *
  * Revision 1.9  2003/08/06 20:49:13  kuznets
  * SObjectDescr::title handled in CLDS_Query::GetObjectDescr
  *

@@ -103,7 +103,7 @@ public:
 
         // Primaty seq_id scan gave no results
         // Trying supplemental aliases
-
+/*
         m_db.object_attr_db.object_attr_id = object_id;
         if (m_db.object_attr_db.Fetch() != eBDB_Ok) {
             return;
@@ -113,8 +113,12 @@ public:
             m_db.object_attr_db.seq_ids.IsEmpty()) {
             return;
         }
-
-        string attr_seq_ids((const char*)m_db.object_attr_db.seq_ids);
+*/
+        if (dbf.seq_ids.IsNull() || 
+            dbf.seq_ids.IsEmpty()) {
+            return;
+        }
+        string attr_seq_ids((const char*)dbf.seq_ids);
         vector<string> seq_id_arr;
         
         NStr::Tokenize(attr_seq_ids, " ", seq_id_arr, NStr::eMergeDelims);
@@ -294,6 +298,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/03/09 17:17:20  kuznets
+ * Merge object attributes with objects
+ *
  * Revision 1.13  2003/12/16 20:49:18  vasilche
  * Fixed compile errors - added missing includes and declarations.
  *

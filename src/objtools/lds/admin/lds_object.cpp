@@ -82,12 +82,14 @@ void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids,
     while (cur.Fetch() == eBDB_Ok) { 
         int fid = m_db.object_db.file_id;
         if (fid && LDS_SetTest(file_ids, fid)) {
+/*
             int object_attr_id = m_db.object_db.object_attr_id;
             
             if (object_attr_id) {  // delete dependent object attr
                 m_db.object_attr_db.object_attr_id = object_attr_id;
                 m_db.object_attr_db.Delete();
             }
+*/
             int object_id = m_db.object_db.object_id;
 
             objects_deleted->insert(object_id);
@@ -256,20 +258,22 @@ int CLDS_Object::SaveObject(int file_id,
                             int type_id)
 {
     ++m_MaxObjRecId;
-
+    EBDB_ErrCode err;
+/*
     m_db.object_attr_db.object_attr_id = m_MaxObjRecId;
     m_db.object_attr_db.object_title = description;
     EBDB_ErrCode err = m_db.object_attr_db.Insert();
     BDB_CHECK(err, "LDS::ObjectAttribute");
-
+*/
     m_db.object_db.object_id = m_MaxObjRecId;
     m_db.object_db.file_id = file_id;
     m_db.object_db.seqlist_id = 0;
     m_db.object_db.object_type = type_id;
     m_db.object_db.file_offset = offset;
-    m_db.object_db.object_attr_id = m_MaxObjRecId;
+//    m_db.object_db.object_attr_id = m_MaxObjRecId;
     m_db.object_db.TSE_object_id = 0;
     m_db.object_db.parent_object_id = 0;
+    m_db.object_db.object_title = description;
     
     string ups = seq_id; 
     NStr::ToUpper(ups);
@@ -360,21 +364,25 @@ int CLDS_Object::SaveObject(int file_id,
         m_db.object_db.primary_seqid = NStr::ToUpper(id_str);
 
         obj_info->ext_id = m_MaxObjRecId; // Keep external id for the next scan
-
+        EBDB_ErrCode err;
+/*
         m_db.object_attr_db.object_attr_id = m_MaxObjRecId;
         m_db.object_attr_db.object_title = molecule_title;
         m_db.object_attr_db.seq_ids = NStr::ToUpper(all_seq_id);
         EBDB_ErrCode err = m_db.object_attr_db.Insert();
         BDB_CHECK(err, "LDS::ObjectAttr");
-
+*/
         m_db.object_db.object_id = m_MaxObjRecId;
         m_db.object_db.file_id = file_id;
         m_db.object_db.seqlist_id = 0;  // TODO:
         m_db.object_db.object_type = type_id;
         m_db.object_db.file_offset = obj_info->offset;
-        m_db.object_db.object_attr_id = m_MaxObjRecId; 
+//        m_db.object_db.object_attr_id = m_MaxObjRecId; 
         m_db.object_db.TSE_object_id = top_level_id;
         m_db.object_db.parent_object_id = parent_id;
+        m_db.object_db.object_title = molecule_title;
+        m_db.object_db.seq_ids = NStr::ToUpper(all_seq_id);
+
 
 //        LOG_POST(Info << "Saving object: " << type_name << " " << id_str);
 
@@ -568,6 +576,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/03/09 17:16:59  kuznets
+ * Merge object attributes with objects
+ *
  * Revision 1.17  2003/10/09 16:48:01  kuznets
  * More LDS logging when parsing files + minor bug fix.
  *
