@@ -69,14 +69,19 @@ struct SSERV_IterTag {
     const SSERV_VTable* op;      /* table of virtual functions             */
 
     void*        data;           /* private data field                     */
-    int/*bool*/  external;       /* true for mapping of external requests  */
+    int/*bool*/  external;       /* whether this is an external request    */
+    unsigned int origin;         /* IP of the origin                       */
+    const char*  arg;            /* argument to match                      */
+    size_t       arglen;
+    const char*  val;            /* value to match                         */
+    size_t       vallen;
 };
 
 
 /* Modified 'fast track' routine for one-shot obtaining of a service info.
  * Please see <connect/ncbi_service.h> for explanations [SERV_GetInfoEx()].
  * For now, this call is to exclusively support MYgethostbyname() replacement
- * of standard gethostbyname() libcall in apache Web daemon (see in daemons/).
+ * of standard gethostbyname() libcall in Apache Web daemon (see in daemons/).
  *
  * NOTE: Preference 0.0 does not prohibit the preferred_host to be selected;
  *       nor preference 100.0 ultimately opts for the preferred_host; rather,
@@ -90,7 +95,10 @@ SSERV_Info* SERV_GetInfoP
  TSERV_Type          types,         /* mask of type(s) of servers requested  */
  unsigned int        preferred_host,/* preferred host to use service on, nbo */
  double              preference,    /* [0=min..100=max] preference in %%     */
- int/*bool*/         external       /* whether mapping is not local to NCBI  */
+ int/*bool*/         external,      /* whether mapping is not local to NCBI  */
+ unsigned int        origin,        /* origin IP                             */
+ const char*         arg,           /* environment variable name to search   */
+ const char*         val            /* environment variable value to match   */
  );
 
 /* same as the above but creates an iterator to get services one by one */
@@ -99,7 +107,10 @@ SERV_ITER SERV_OpenP
  TSERV_Type          type,
  unsigned int        preferred_host,
  double              preference,
- int/*bool*/         external
+ int/*bool*/         external,
+ unsigned int        origin,
+ const char*         arg,
+ const char*         val
  );
 
 
@@ -155,6 +166,9 @@ double SERV_Preference(double pref, double gap, unsigned int n);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2005/01/31 17:09:34  lavr
+ * Argument affinity moved into service iterator
+ *
  * Revision 6.25  2004/08/19 15:48:04  lavr
  * SERV_ITER::type renamed into SERV_ITER::types to reflect its bitmask nature
  *

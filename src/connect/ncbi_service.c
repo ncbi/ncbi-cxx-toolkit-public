@@ -132,7 +132,9 @@ static SERV_ITER s_Open(const char* service, TSERV_Type types,
                         unsigned int preferred_host, double preference,
                         const SConnNetInfo* net_info,
                         const SSERV_Info* const skip[], size_t n_skip,
-                        SSERV_Info** info, HOST_INFO* host_info, int external)
+                        SSERV_Info** info, HOST_INFO* host_info,
+                        int/*bool*/ external, unsigned int origin,
+                        const char* arg, const char* val)
 {
     const char* s = s_ServiceName(service, 0);
     const SSERV_VTable* op;
@@ -153,6 +155,11 @@ static SERV_ITER s_Open(const char* service, TSERV_Type types,
     iter->op             = 0;
     iter->data           = 0;
     iter->external       = external;
+    iter->origin         = origin;
+    iter->arg            = arg;
+    iter->arglen         = arg ? strlen(arg) : 0;
+    iter->val            = val;
+    iter->vallen         = val ? strlen(val) : 0;
 
     if (n_skip) {
         size_t i;
@@ -203,17 +210,20 @@ SERV_ITER SERV_OpenEx(const char* service,
                       const SConnNetInfo* net_info,
                       const SSERV_Info* const skip[], size_t n_skip)
 {
-    return s_Open(service, types, preferred_host, 0.0,
-                  net_info, skip, n_skip, 0, 0, 0/*not external*/);
+    return s_Open(service, types, preferred_host, 0.0/*preference*/,
+                  net_info, skip, n_skip, 0/*info*/, 0/*host_info*/,
+                  0/*not external*/, 0/*origin*/, 0/*arg*/, 0/*val*/);
 }
 
 
 SERV_ITER SERV_OpenP(const char* service, TSERV_Type types,
                      unsigned int preferred_host, double preference,
-                     int/*bool*/ external)
+                     int/*bool*/ external, unsigned int origin,
+                     const char* arg, const char* val)
 {
     return s_Open(service, types, preferred_host, preference,
-                  0, 0, 0, 0, 0, external);
+                  0/*net_info*/, 0/*skip*/, 0/*n_skip*/, 0/*info*/, 0/*hinfo*/,
+                  external, origin, arg, val);
 }
 
 
@@ -221,11 +231,14 @@ static SSERV_Info* s_GetInfo(const char* service, TSERV_Type types,
                              unsigned int preferred_host, double preference,
                              const SConnNetInfo* net_info,
                              const SSERV_Info* const skip[], size_t n_skip,
-                             HOST_INFO* host_info, int/*bool*/ external)
+                             HOST_INFO* host_info,
+                             int/*bool*/ external, unsigned int origin,
+                             const char* arg, const char* val)
 {
     SSERV_Info* info = 0;
     SERV_ITER iter= s_Open(service, types, preferred_host, preference,
-                           net_info, skip, n_skip, &info, host_info, external);
+                           net_info, skip, n_skip, &info, host_info,
+                           external, origin, arg, val);
     if (iter && !info && iter->op && iter->op->GetNextInfo)
         info = (*iter->op->GetNextInfo)(iter, host_info);
     SERV_Close(iter);
@@ -239,17 +252,20 @@ SSERV_Info* SERV_GetInfoEx(const char* service, TSERV_Type types,
                            const SSERV_Info* const skip[], size_t n_skip,
                            HOST_INFO* host_info)
 {
-    return s_GetInfo(service, types, preferred_host, 0.0,
-                     net_info, skip, n_skip, host_info, 0/*not external*/);
+    return s_GetInfo(service, types, preferred_host, 0.0/*preference*/,
+                     net_info, skip, n_skip, host_info,
+                     0/*not external*/, 0/*origin*/, 0/*arg*/, 0/*val*/);
 }
 
 
 SSERV_Info* SERV_GetInfoP(const char* service, TSERV_Type types,
                           unsigned int preferred_host, double preference,
-                          int/*bool*/ external)
+                          int/*bool*/ external, unsigned int origin,
+                          const char* arg, const char* val)
 {
     return s_GetInfo(service, types, preferred_host, preference,
-                     0, 0, 0, 0, external);
+                     0/*net_info*/, 0/*skip*/, 0/*n_skip*/, 0/*host_info*/,
+                     external, origin, arg, val);
 }
 
 
@@ -539,6 +555,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.58  2005/01/31 17:09:55  lavr
+ * Argument affinity moved into service iterator
+ *
  * Revision 6.57  2005/01/05 19:15:26  lavr
  * Do not use C99-compliant declaration, kills MSVC compilation
  *
