@@ -101,8 +101,8 @@ struct SQueueDB : public CBDB_File
         BindData("run_counter", &run_counter);
         BindData("ret_code",    &ret_code);
 
-        BindData("input",  &input,  1024);
-        BindData("output", &output, 1024);
+        BindData("input",  &input,  kNetScheduleMaxDataSize);
+        BindData("output", &output, kNetScheduleMaxDataSize);
 
         BindData("cout",  &cout, 128);
         BindData("cerr",  &cerr, 128);
@@ -134,8 +134,8 @@ public:
 
     void Close();
 
-    SLockedQueue& GetLockedQueue(const string& name);
-    bool QueueExists(const string& name) const;
+    SLockedQueue& GetLockedQueue(const string& qname);
+    bool QueueExists(const string& qname) const;
 
     /// Collection takes ownership of queue
     void AddQueue(const string& name, SLockedQueue* queue);
@@ -162,6 +162,9 @@ public:
     void Open(const string& path, unsigned cache_ram_size);
     void MountQueue(const string& queue_name);
     void Close();
+    bool QueueExists(const string& qname) const 
+                { return m_QueueCollection.QueueExists(qname); }
+
 
     /// Main queue entry point
     ///
@@ -171,9 +174,6 @@ public:
     {
     public:
         CQueue(CQueueDataBase& db, const string& queue_name);
-    private:
-        CQueue(const CQueue&);
-        CQueue& operator=(const CQueue&);
 
         unsigned int Submit(const string& input);
         void Cancel(unsigned int job_id);
@@ -184,6 +184,10 @@ public:
                     unsigned int*  job_id, 
                     string*        input);
         void ReturnJob(unsigned int job_id);
+
+    private:
+        CQueue(const CQueue&);
+        CQueue& operator=(const CQueue&);
     private:
         CQueueDataBase& m_Db;
         SLockedQueue&   m_LQueue;
@@ -222,6 +226,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/09 18:56:08  kuznets
+ * private->public fix
+ *
  * Revision 1.1  2005/02/08 16:42:55  kuznets
  * Initial revision
  *
