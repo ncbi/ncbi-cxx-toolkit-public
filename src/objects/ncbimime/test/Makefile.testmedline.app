@@ -8,8 +8,9 @@
 
 APP = testmedline
 OBJ = testmedline
-LIB = ncbimime mmdb1 mmdb2 mmdb3 seqset seq seqres seqloc seqalign \
-      seqfeat seqblock pub medline medlars biblio general xser xncbi
+LIB = ncbimime mmdb1 mmdb2 mmdb3 \
+	seqset seq seqres seqloc seqalign seqfeat seqblock \
+	pub medline medlars biblio general \
+	xser xutil xncbi
 
-LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(MATH_LIBS) \
-  $(ORIG_LIBS)
+LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(MATH_LIBS) $(ORIG_LIBS)

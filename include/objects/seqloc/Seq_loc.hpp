@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/01/05 20:11:41  vasilche
+ * CRange, CRangeMap were moved to util.
+ *
  * Revision 1.2  2001/01/03 16:38:58  vasilche
  * Added CAbstractObjectManager - stub for object manager.
  * CRange extracted to separate file.
@@ -53,7 +56,7 @@
 // generated includes
 #include <objects/seqloc/Seq_loc_.hpp>
 
-#include <objects/objmgr/range.hpp>
+#include <util/range.hpp>
 
 // generated classes
 
