@@ -771,9 +771,9 @@ CScope_Impl::x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
     }
     CSeqMatch_Info info;
     {{
-        CSeq_id_Handle found_id = idh;
         CFastMutexGuard guard(ds_info.GetMutex());
         ITERATE(TTSE_LockSet, tse_it, ds_info.GetTSESet()) {
+            CSeq_id_Handle found_id = idh;
             CTSE_Info::TBioseqs::const_iterator seq =
                 (*tse_it)->m_Bioseqs.find(idh);
             if (seq == (*tse_it)->m_Bioseqs.end()) {
@@ -1093,19 +1093,22 @@ CScope_Impl::x_GetSynonyms(CRef<CBioseq_ScopeInfo> info)
                     ITERATE(TSeq_id_HandleSet, mit, hset) {
                         // Check current ID for conflicts, add to the set.
                         try {
-                            TSeq_idMapValue& seq_id_info = x_GetSeq_id_Info(*mit);
-                            if ( x_InitBioseq_Info(seq_id_info) == info ) {
+                            TSeq_idMapValue& seq_id_info =
+                                x_GetSeq_id_Info(*mit);
+                            CRef<CBioseq_ScopeInfo> info2 =
+                                x_InitBioseq_Info(seq_id_info);
+                            if ( info2 == info ) {
                                 // the same bioseq - add synonym
                                 syn_set->AddSynonym(&seq_id_info);
                             }
                             else {
                                 LOG_POST(Warning << "CScope::GetSynonyms: "
-                                         "one of Bioseq's ids is resolved to another sequence");
+                                         "Bioseq["<<info->GetBioseq_Info().IdsString()<<"]: id "<<mit->AsString()<<" is resolved to another Bioseq ["<<info2->GetBioseq_Info().IdsString()<<"]");
                             }
                         }
                         catch ( exception& exc ) {
                             LOG_POST(Warning << "CScope::GetSynonyms: "
-                                     "one of Bioseq's ids cannot be resolved: " <<
+                                     "Bioseq["<<info->GetBioseq_Info().IdsString()<<"]: id "<<mit->AsString()<<" cannot be resolved: "<<
                                      exc.what());
                         }
                     }
@@ -1137,6 +1140,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.96  2004/01/28 20:50:49  vasilche
+* Fixed NULL pointer exception in GetSynonyms() when matching Seq-id w/o version.
+*
 * Revision 1.95  2004/01/07 20:42:01  grichenk
 * Fixed matching of accession to accession.version
 *
