@@ -1726,8 +1726,25 @@ START_SUBTYPE(region)
     ADD_QUAL(usedin);
 END_SUBTYPE
 
-//START_SUBTYPE(comment)
-//END_SUBTYPE
+START_SUBTYPE(comment)  // same as misc_feature
+    ADD_QUAL(allele);
+    ADD_QUAL(citation);
+    ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
+    ADD_QUAL(function);
+    ADD_QUAL(gene);
+    ADD_QUAL(label);
+    ADD_QUAL(locus_tag);
+    ADD_QUAL(map);
+    ADD_QUAL(note);
+    ADD_QUAL(number);
+    ADD_QUAL(old_locus_tag);
+    ADD_QUAL(phenotype);
+    ADD_QUAL(product);
+    ADD_QUAL(pseudo);
+    ADD_QUAL(standard_name);
+    ADD_QUAL(usedin);
+END_SUBTYPE
 
 //START_SUBTYPE(bond)
 //END_SUBTYPE
@@ -1912,6 +1929,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.17  2004/08/24 15:21:44  shomrat
+* Add legal qualifiers for comment (same as misc_feat)
+*
 * Revision 6.16  2004/08/20 16:17:52  shomrat
 * Added legal qualifiers for site; D_loop -> D-loop
 *
