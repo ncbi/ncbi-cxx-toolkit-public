@@ -126,17 +126,18 @@ for i in 'DLL' '' ; do
 done
 
 
-cd "$builddir"/compilers/$compiler
 
 # Gbench public installation
 #for i in ReleaseDLL DebugDLL; do
-#  if test -d ./gbench/gbench_install/"$i" ; then
+#  if test -d "$builddir"/compilers/$compiler/dll/bin/"$i" ; then
 #    makedir "$bindir"/gbench/"$i" -p
-#    cp -pr ./gbench/gbench_install/"$i"/* "$bindir"/gbench/"$i"
+#    cp -pr "$builddir"/compilers/$compiler/dll/bin/$i/gbench/* "$bindir"/gbench/"$i"
 #  fi
 #done
 
+
 # CVS checkout info file
 cp -p "$builddir"/cvs_info "$target"
+
 
 exit 0
