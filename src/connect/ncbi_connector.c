@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/03/22 22:17:29  lavr
+ * No <stdlib.h> needed in here, removed
+ *
  * Revision 6.4  2001/03/02 20:07:56  lavr
  * Typo fixed
  *
@@ -49,7 +52,6 @@
 
 #include "ncbi_priv.h"
 #include <connect/ncbi_connector.h>
-#include <stdlib.h>
 
 
 /* Standard logging message
