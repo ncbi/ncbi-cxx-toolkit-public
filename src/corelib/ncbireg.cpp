@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/01/30 00:41:58  vakatov
+* Read/Write -- serialize '\r' as "\\r"
+*
 * Revision 1.11  2000/03/30 21:06:35  kans
 * bad end of line detected on Mac
 *
@@ -271,6 +274,9 @@ Single(unescaped) '\"' in the middle of registry value: '" + str + "'", line);
                         beg = 0;
                         read_next_line = true;
                         line++;
+                    } else if (str[i+1] == 'r') {
+                        value += '\r';
+                        i++;
                     } else if (str[i+1] == '\\') {
                         value += '\\';
                         i++;
@@ -324,6 +330,8 @@ const
                 switch ( *cs ) {
                 case '\n':
                     os << '\\' << s_Endl;  break;
+                case '\r':
+                    os << "\\r";  break;
                 case '\\':
                     os << "\\\\";  break;
                 case '"':
