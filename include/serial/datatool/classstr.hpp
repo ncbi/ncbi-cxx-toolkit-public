@@ -173,6 +173,7 @@ public:
     CClassRefTypeStrings(const string& className, const CNamespace& ns,
                          const string& fileName);
 
+    string GetClassName(void) const;
     string GetCType(const CNamespace& ns) const;
     string GetPrefixedCType(const CNamespace& ns,
                             const string& methodPrefix) const;
@@ -200,6 +201,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2004/03/08 20:08:02  gouriano
+* Correct namespaces of generated classes
+*
 * Revision 1.21  2003/11/20 14:32:12  gouriano
 * changed generated C++ code so NULL data types have no value
 *

@@ -35,6 +35,7 @@
 #include <serial/datatool/aliasstr.hpp>
 #include <serial/datatool/code.hpp>
 #include <serial/datatool/srcutil.hpp>
+#include <serial/datatool/classstr.hpp>
 #include <serial/serialdef.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -135,7 +136,15 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
     switch ( m_RefType->GetKind() ) {
     case eKindClass:
     case eKindObject:
-        code.SetParentClass(ref_name, m_RefType->GetNamespace());
+        {
+            string name(ref_name);
+            const CClassRefTypeStrings* cls =
+                dynamic_cast<const CClassRefTypeStrings*>(m_RefType.get());
+            if (cls) {
+                name = cls->GetClassName();
+            }
+            code.SetParentClass(name, m_RefType->GetNamespace());
+        }
         is_class = true;
         break;
     case eKindStd:
@@ -405,6 +414,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/03/08 20:08:53  gouriano
+* Correct namespaces of generated classes
+*
 * Revision 1.3  2003/11/13 20:52:04  grichenk
 * Fixed namespaces in generated files.
 *

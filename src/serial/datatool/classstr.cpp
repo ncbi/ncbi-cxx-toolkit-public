@@ -1269,6 +1269,11 @@ void CClassRefTypeStrings::GeneratePointerTypeCode(CClassContext& ctx) const
     ctx.CPPIncludes().insert(m_FileName);
 }
 
+string CClassRefTypeStrings::GetClassName(void) const
+{
+    return m_ClassName;
+}
+
 string CClassRefTypeStrings::GetCType(const CNamespace& ns) const
 {
     return ns.GetNamespaceRef(m_Namespace)+m_ClassName;
@@ -1301,6 +1306,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2004/03/08 20:08:53  gouriano
+* Correct namespaces of generated classes
+*
 * Revision 1.59  2003/11/20 14:32:41  gouriano
 * changed generated C++ code so NULL data types have no value
 *

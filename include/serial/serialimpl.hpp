@@ -528,7 +528,7 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
 #define SET_STD_ALIAS_DATA_PTR \
     info->SetDataOffset(GetDataPtr(BASE_OBJECT()))
 #define SET_CLASS_ALIAS_DATA_PTR \
-    info->SetDataOffset(TPointerOffsetType(BASE_OBJECT()))
+    info->SetDataOffset(NCBI_NS_NCBI::TPointerOffsetType(BASE_OBJECT()))
 #define END_ALIAS_INFO \
             s_info = info; \
         } \
