@@ -1,4 +1,4 @@
---$Revision: 1.15 $
+--$Revision: 1.16 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -148,7 +148,10 @@ ID2S-Request-Get-Chunks ::= SEQUENCE {
         blob-id         ID2-Blob-Id,
 
         -- requests for specific chunks of splitted blob
-        chunks          SEQUENCE OF ID2S-Chunk-Id
+        chunks          SEQUENCE OF ID2S-Chunk-Id,
+
+        -- blob split version
+        split-version   INTEGER OPTIONAL
 }
 
 
