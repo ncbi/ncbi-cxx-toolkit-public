@@ -283,6 +283,7 @@ CConn_MemoryStream::~CConn_MemoryStream()
 
 string& CConn_MemoryStream::ToString(string& str)
 {
+    flush();
     CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
     size_t size = sb ? (size_t)(tellp() - tellg()) : 0;
     str.resize(size);
@@ -298,6 +299,7 @@ string& CConn_MemoryStream::ToString(string& str)
 
 char* CConn_MemoryStream::ToCStr(void)
 {
+    flush();
     CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
     size_t size = sb ? (size_t)(tellp() - tellg()) : 0;
     char* str = new char[size + 1];
@@ -370,6 +372,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.44  2005/02/25 17:20:54  lavr
+ * CConn_MemoryStream::"string conversions" to do flush first
+ *
  * Revision 6.43  2005/02/25 16:50:50  lavr
  * CConn_MemoryStream::dtor() to explicitly call Cleanup() to avoid using dead members
  *
