@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/03/29 17:21:47  vakatov
+ * + CORE_SetLOG(0) at the program end.
+ *
  * Revision 6.1  2000/03/24 22:53:38  vakatov
  * Initial revision
  *
@@ -154,7 +157,8 @@ int main(int argc, char** argv)
         fprintf(stdout, "\n");
     }}
 
-    /* Success:  close the socket and exit */
+    /* Success:  close the socket, cleanup, and exit */
     SOCK_Close(sock);
+    CORE_SetLOG(0);
     return 0;
 }

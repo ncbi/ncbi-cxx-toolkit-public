@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/03/29 17:21:48  vakatov
+ * + CORE_SetLOG(0) at the program end.
+ *
  * Revision 6.1  2000/03/24 22:53:38  vakatov
  * Initial revision
  *
@@ -224,5 +227,7 @@ int main(void)
 
     TEST_URL_Encoding();
     TEST_Misc();
+
+    CORE_SetLOG(0);
     return 0;
 }
