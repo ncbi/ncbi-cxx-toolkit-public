@@ -313,6 +313,23 @@ int CLDS_Object::SaveObject(int file_id,
     string molecule_title;
     bool is_object = IsObject(*obj_info, &id_str, &molecule_title);
     if (is_object) {
+
+        const CBioseq* bioseq = CType<CBioseq>().Get(obj_info->info);
+        _ASSERT(bioseq);
+
+        string all_seq_id; // Space separated list of seq_ids
+        // Get list of all Seq_ids
+        {{
+            const CBioseq::TId&  id_list = bioseq->GetId();
+            ITERATE(CBioseq::TId, it, id_list) {
+                const CSeq_id* seq_id = *it;
+                if (seq_id) {
+                    all_seq_id.append(seq_id->AsFastaString());
+                    all_seq_id.append(" ");
+                }
+            }
+        }}
+
         m_db.object_db.primary_seqid = id_str;
 
         ++m_MaxObjRecId;
@@ -321,6 +338,7 @@ int CLDS_Object::SaveObject(int file_id,
 
         m_db.object_attr_db.object_attr_id = m_MaxObjRecId;
         m_db.object_attr_db.object_title = molecule_title;
+        m_db.object_attr_db.seq_ids = all_seq_id;
         EBDB_ErrCode err = m_db.object_attr_db.Insert();
         BDB_CHECK(err, "LDS::ObjectAttr");
 
@@ -391,8 +409,11 @@ bool CLDS_Object::IsObject(const CLDS_CoreObjectsReader::SObjectDetails& parse_i
     const CBioseq* bioseq = CType<CBioseq>().Get(parse_info.info);
     if (bioseq) {
         const CSeq_id* seq_id = bioseq->GetFirstId();
-        _ASSERT(seq_id);
-        *object_str_id = seq_id->AsFastaString();
+        if (seq_id) {
+            *object_str_id = seq_id->AsFastaString();
+        } else {
+            *object_str_id = "";
+        }
 
         if (m_Scope) { // we are under OM here
             CBioseq_Handle bio_handle = m_Scope->GetBioseqHandle(*bioseq);
@@ -454,6 +475,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/06/13 16:00:30  kuznets
+ * Improved work with sequence ids. Now it keeps all sequence ids bioseq has
+ *
  * Revision 1.4  2003/06/10 19:00:32  kuznets
  * Code clean-up
  *
