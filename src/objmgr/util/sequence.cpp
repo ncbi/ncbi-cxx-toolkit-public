@@ -3234,7 +3234,7 @@ void x_Translate(const Container& seq,
     size_t i;
     size_t k;
     size_t state = 0;
-    size_t length = seq.size() / 3 + ((seq.size() % 3) ? 1 : 0);
+    size_t length = seq.size() / 3;
     for (i = 0;  i < length;  ++i) {
 
         // loop through one codon at a time
@@ -4110,6 +4110,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.81  2004/05/25 21:06:34  johnson
+* Bug fix in x_Translate
+*
 * Revision 1.80  2004/05/21 21:42:14  gorelenk
 * Added PCH ncbi_pch.hpp
 *
