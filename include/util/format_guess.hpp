@@ -66,6 +66,7 @@ public:
 
     // Guess file format structure.
     EFormat Format(const string& path);
+    EFormat Format(CNcbiIstream& input);
 
 };
 
@@ -74,6 +75,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/03/23 22:29:50  jcherry
+ * Added Format(CNcbiIstream& input)
+ *
  * Revision 1.2  2003/05/13 15:16:13  kuznets
  * added sequence type guessing function
  *

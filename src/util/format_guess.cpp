@@ -88,20 +88,28 @@ CFormatGuess::SequenceType(const char* str, unsigned length)
 
 CFormatGuess::EFormat CFormatGuess::Format(const string& path)
 {
+    CNcbiIfstream input(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
+    if (!input.is_open()) {
+        return eUnknown;
+    }
+    return Format(input);
+}
+
+
+CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
+{
     EFormat format = eUnknown;
 
-    CNcbiIfstream input(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
-
-    if (!input.is_open()) 
-        return eUnknown;
+    int orig_pos = input.tellg();
 
     unsigned char buf[1024];
 
     input.read((char*)buf, sizeof(buf));
     size_t count = input.gcount();
 
-    if (!count) 
+    if (!count) {
         return eUnknown;
+    }
 
     // Buffer analysis (completely ad-hoc heuristics).
 
@@ -119,6 +127,7 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
                 }
             }
             if (xml_flag) {
+                input.seekg(orig_pos);
                 return eXml;
             }
         }
@@ -131,6 +140,7 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
     {{
         for (i = 0;  i < count;  ++i) {
             if ( !isgraph(buf[i])  &&  !isspace(buf[i]) ) {
+                input.seekg(orig_pos);
                 return eBinaryASN;
             }
         }
@@ -152,6 +162,7 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
         }
         seq_length = (unsigned)count - i;
         if (seq_length == 0) {
+            input.seekg(orig_pos);
             return eUnknown;   // No way to tell what format is this...
         }
     }
@@ -180,9 +191,11 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
     double a_content = (double)alpha_content / (double)count;
     if (buf[0] == '>') {
         if (dna_content > 0.7 && a_content > 0.91) {
+            input.seekg(orig_pos);
             return eFasta;  // DNA fasta file
         }
         if (prot_content > 0.7 && a_content > 0.91) {
+            input.seekg(orig_pos);
             return eFasta;  // Protein fasta file
         }
     }
@@ -203,7 +216,8 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
             --ptr;
             if (!isspace(*ptr)) break;
         }
-        if (*ptr == '{') {  // "{" simbol says it's most likely ASN text
+        if (*ptr == '{') {  // "{" symbol says it's most likely ASN text
+            input.seekg(orig_pos);
             return eTextASN;
         }
     }
@@ -211,14 +225,16 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
     // Signature check
     if (buf[1] == 0x80) {
         if (buf[0] == 0x30 || buf[0] == 0x31) {
-            return eBinaryASN;
+            input.seekg(orig_pos);
+            //return eBinaryASN;
         }
         if (buf[0] >= 0xA0) {
-            return eBinaryASN;
+            input.seekg(orig_pos);
+            //return eBinaryASN;
         }
     }
 
-    input.close();
+    input.seekg(orig_pos);
     return format;
 
 }
@@ -228,6 +244,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/03/23 22:29:50  jcherry
+ * Added Format(CNcbiIstream& input)
+ *
  * Revision 1.12  2004/03/02 20:06:59  johnson
  * bug fix: missing loop initializers
  *
