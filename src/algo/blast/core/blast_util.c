@@ -48,21 +48,23 @@ BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
       *seq_blk = MemNew(sizeof(BLAST_SequenceBlk));
    }
 
-        if (buffer_allocated) {
-           (*seq_blk)->sequence_start = buffer;
-           (*seq_blk)->sequence_allocated = buffer_allocated;
-           /* The first byte is a sentinel byte. */
-           (*seq_blk)->sequence = (*seq_blk)->sequence_start+1;
-        } else {
-           (*seq_blk)->sequence = buffer;
-        }
-
-	(*seq_blk)->length = length;
-	(*seq_blk)->context = context;
-	if (frame)
-		(*seq_blk)->frame = frame[context];
-
-	return 0;
+   (*seq_blk)->sequence_allocated = buffer_allocated;
+   
+   if (buffer_allocated) {
+      (*seq_blk)->sequence_start = buffer;
+      /* The first byte is a sentinel byte. */
+      (*seq_blk)->sequence = (*seq_blk)->sequence_start+1;
+   } else {
+      (*seq_blk)->sequence = buffer;
+      (*seq_blk)->sequence_start = NULL;
+   }
+   
+   (*seq_blk)->length = length;
+   (*seq_blk)->context = context;
+   if (frame)
+      (*seq_blk)->frame = frame[context];
+   
+   return 0;
 }
 
 /** Create the subject sequence block given an ordinal id in a database */

@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.11  2003/04/21 18:19:52  dondosha
+* UMR fixes
+*
 * Revision 1.10  2003/04/21 16:18:22  dondosha
 * Minor correction in BlastSetUp_GetSequence
 *
@@ -1696,7 +1699,7 @@ Blast_MessagePtr *blast_message
 )
 {
 	BLAST_ScoreBlkPtr sbp;
-	BLAST_SequenceBlkPtr sequence_block;	/* Stores sequence as Uint1Ptr and length. */
+	BLAST_SequenceBlkPtr sequence_block = NULL;/* Stores sequence as Uint1Ptr and length. */
 	BLAST_SequenceBlkPtr seq_block_array;	/* array of BLAST_SequenceBlk. */
 	Boolean mask_at_hash;			/* mask only for making lookup table? */
 	Boolean is_na;				/* Is this nucleotide? */
