@@ -5,7 +5,6 @@
 
 APP = flatten_asn
 SRC = flatten_asn
-LIB = xflat xobjutil xalnmgr xobjmgr id1 gbseq seqset $(SEQ_LIBS) \
-      pub medline biblio general dbapi_driver xser xconnect xutil xncbi
+LIB = xflat xobjutil xalnmgr tables gbseq $(OBJMGR_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
