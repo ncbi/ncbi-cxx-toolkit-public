@@ -12,6 +12,7 @@
   <li> <a href="#errno"> The CErrnoException Class </a>
   <li> <a href="#parse"> The CParseException Class </a>
   <li> <a href="#tracex"> Exception Tracing </a>
+  <li> <a href="../libs/err_msg.html#ref_Exception"> Reference Manual pages</a>
 </ul>
 
 <a name="macro"> <h3> Macros for standard C++ exception handling</h3>
@@ -19,7 +20,7 @@
 The following preprocessor macros have been defined in the NCBI C++ Toolkit to support 
 standard C++ exception handling:<p>
 
-<table border=1 width=700 cellspacing=1>
+<table border=1 cellspacing=1>
   <caption></caption>
   <tr>
 	 <th>Macro</th>
@@ -56,10 +57,11 @@ standard C++ exception handling:<p>
 </table>
 <p>
 
-Exception specifications cause <i>std::unexpected()</i> to be raised when
-undeclared exceptions are thrown. Because various compilers handle these events differently, the
-first two macros (<i>THROWS(()), THROWS_NONE</i>) were designed to support platform-independent
-exception specifications.<p>
+C++ requires that all object types which may be thrown by an exception occurring inside a function
+must be declared in that function's definition using the <i>throw</i> statement. Failure to do so
+will cause <i>std::unexpected()</i> to be raised when an undeclared exception type is
+thrown. Various compilers handle these events differently however, and the first two macros,
+(<i>THROWS(()), THROWS_NONE</i>), support platform-independent exception specifications.<p>
 
 The <i> catch</i> macros provide uniform, routine exception handling with minimal effort from
 the programmer.  The <i>STD_CATCH()</i> macro prints formatted messages to the application's <a
@@ -68,7 +70,12 @@ exception of the form:
 
 <center> <tt> throw std::runtime_error(</tt><i>throw-msg</i>)</center> <br>
 
-then <tt>STD_CATCH(</tt><i>catch-msg</i>) will generate a message of the form:<p>
+then 
+<pre>
+		try {F();}
+		STD_CATCH(catch-msg);
+</pre>
+will generate a message of the form:<p>
 
 <center> <tt> Error: [</tt><i>catch-msg</i><tt>] Exception: </tt><i>throw-msg</i></center><br>
 
@@ -78,7 +85,7 @@ classes that are derived from <i>std::exception</i> will be treated uniformly in
 manner. The <i>throw</i> clause in this case creates a new instance of
 <i>std::runtime_error</i> whose data member <i>desc</i> is initialized to
 <i>throw-msg</i>. When the exception is then caught, the exception's member function
-<i>what()</i> is used to access that message.<p>
+<i>what()</i> can be used to retrieve that message.<p>
 
 The <i>STD_CATCH_ALL</i> macro catches all exceptions. If however, the exception
 caught is <i>not</i> derived from <i>std::exception</i>, then the <i>catch</i> clause cannot
@@ -91,8 +98,8 @@ assume that <i>what()</i> has been defined for this object, and a default messag
 The <i>CErrnoException</i> class is derived from <i>std::runtime_error</i>, and in addition to the
 <i>desc</i> string, has an <i>int</i> data member called <i>m_Errno</i>.  Like its parent class, 
 its constructor takes a single string argument which will be stored in <i>desc</i>. The constructor
-itself however, adds information about the most recent error state via the global system variable
-<i>errno</i>:
+itself however, automagically adds information about the most recent error state as obtained via the 
+global system variable <i>errno</i>:
 
 <pre>
 CErrnoException::CErrnoException(const string& what) THROWS_NONE
@@ -111,50 +118,74 @@ to be caught. Thus the call to instantiate a <i>CParseException</i> object is:
 <i>CParseException(msg, position)</i>.
 
 <a name="tracex"> <h3> Exception Tracing </h3>
+Knowing exactly where an exception first occurs can often provide critical information
+during develpment. Standard C++ exception handling mechanisms do not have access to this
+information, but a set of <i>THROW*_TRACE()</i> macros defined in the NCBI C++ Toolkit combine
+exception handling with <a href="diag.html#trace"> <i>trace</i></a> mechanisms to provide such
+information.<p>
 
-During devleopment it is often useful to have direct feedback with respect to where
-an exception is thrown, but in general this is not possible. A set of macros are
-defined in <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbiexpt.hpp">
-<i> ncbiexpt.hpp </i></a> that in addtion to throwing the requested exception object, generate a detailed
-<a href="diag.html#severity">trace</a> message:
+The most commonly used of these macros, <i>THROW1_TRACE(class_name, init_arg) </i>, instantiates
+an object of type <i>class_name</i> using <i>init_arg</i> to initialize it. When this newly
+created object is thrown, detailed trace information specifying the file and line number where
+the exception was raised is then generated on the diagnostic stream. <p>
 
-<ul>
+More generally, three sets of <i>THROW*_TRACE</i> macros are defined:
+
+<ul><font color="#000080">
  <li><i> THROW0_TRACE(exception_object) </i>
  <li><i> THROW0p_TRACE(exception_object) </i>
  <li><i> THROW0np_TRACE(exception_object) </i>
+</font><font color="#008080">
  <li><i> THROW1_TRACE(exception_class, exception_arg) </i>
  <li><i> THROW1p_TRACE(exception_class, exception_arg)</i>
  <li><i> THROW1np_TRACE(exception_class, exception_arg) </i>
+</font><font color="#004080">
  <li><i> THROW_TRACE(exception_class, exception_args) </i>
  <li><i> THROWp_TRACE(exception_class, exception_args) </i>
  <li><i> THROWnp_TRACE(exception_class, exception_args) </i>
+</font>
 </ul>
 
-The first of these takes a single argument, which may be a newly constructed exception, as
-in:<p> <center><i>THROW0_TRACE(runtime_error("message"))</i></center><p> or simply a string, as
-in: <i>THROW0_TRACE("message")</i>. Note however, that as <i>string</i> is not a
-<i>std::exception</i>, you will need to use <i>STD_CATCH_ALL</i> to catch the thrown object in
-this case.  The second macro also takes a single argument and can accept printable objects that
-are neither <i>std::exception</i>s nor strings, such as <i>complex(1,3)</i>. Any object with a
-defined output operator is, of course, printable.  The third macro generalizes this one step
-further, and accepts arguments such as <i>vector&lt;T&gt;()</i>, where <i>T</i> is a printable
-object. <p>
+The first three macros (<i>THROW0*_TRACE</i>) take a single argument, which may be a newly
+constructed exception, as in: <p> <center><i>THROW0_TRACE(runtime_error("message"))</i></center><p>
 
-The next three macros accept two arguments: an "exception" class name and an initialization
-argument.  The class argument need not actually be derived from <i>std::exception</i>, as the
-pre-processor simply uses the class name to construct a new object of that type using the
-initialization argument.  An implicit assumption however, is that there is a single initialization
-argument. Both arguments are also passed to the trace message. As in the first three macros,
-<i>THROW1_TRACE()</i>, THROW1p_TRACE()</i> and <i>THROW1np_TRACE()</i> specialize in different
-types of printable objects, ranging from exceptions and numeric and character types, to
-aggregate and container types. <p>
+or simply a <i>printable</i> object to be thrown, as in:
+
+<p> <center> <i>THROW0_TRACE("print this message")</i> </center> <p>
+
+The <i>THROW0_TRACE</i> macro accepts either an exception object or a string as the argument to be
+thrown. The <i>THROW0p_TRACE</i> macro generalizes this functionality by accepting any
+<i>printable</i> object, such as <i>complex(1,3)</i>, as its single argument.  Any object with a
+defined output operator is, of course, printable.  The third macro generalizes this one step
+further, and accepts aggregate arguments such as <i>vector&lt;T&gt;</i>, where <i>T</i> is a printable
+object.  Note that in cases where the object to be thrown is not a <i>std::exception</i> however,
+you will need to use <i>STD_CATCH_ALL</i> or a custom catch to catch the thrown object. <p>
+
+The remaining six macros accept two arguments: an "exception" class name and an initialization
+argument, where both arguments are also passed to the trace message.  The class argument need not actually
+be derived from <i>std::exception</i>, as the pre-processor simply uses the class name to construct
+a new object of that type using the initialization argument.
+
+All of the <i>THROW1*_TRACE</i> macros assume that there is a single initialization argument.  As in
+the first three macros, <i>THROW1_TRACE()</i>, THROW1p_TRACE()</i> and <i>THROW1np_TRACE()</i>
+specialize in different types of printable objects, ranging from exceptions and numeric and
+character types, to aggregate and container types. <p>
 
 The last three macros parallel the previous two sets of macros in their specializations, and
-may be applied where the exception object's constructor takes multiple arguments. See also the
-discussion of <a href="../libs/err_msg.html#ref_Exception">Exception handling</a> in the Reference Manual. 
-	  <p>
+may be applied where the exception object's constructor takes multiple arguments. (See also the
+discussion of <a href="../libs/err_msg.html#ref_Exception">Exception handling</a> in the Reference Manual). 
+<p>
 
-  </body>
+It is also possible to specify that execution should abort immediately when an exception occurs. By
+default, this feature is not activated, but the 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetThrowTraceAbort">
+<i>SetThrowTraceAbort()</i> </a> function can be used to activate it. Alternatively, you can turn it
+on for the entire application by setting either the $ABORT_ON_THROW environment variable, or 
+the application's registry ABORT_ON_THROW  entry (in the [DEBUG] section) to an arbitrary non-empty value.
+
+
+
+<p>  </body>
 <a href="diag.html"> <i> previous</i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="../index.html"> <i> up </i> </a>
