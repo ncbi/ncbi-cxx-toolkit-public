@@ -742,6 +742,12 @@ string NStr::Join(const list<string>& arr, const string& delim)
 
     string                       result = arr.front();
     list<string>::const_iterator it     = arr.begin();
+    SIZE_TYPE needed = result.size();
+    while (++it != arr.end()) {
+        needed += delim.size() + it->size();
+    }
+    result.reserve(needed);
+    it = arr.begin();
     while (++it != arr.end()) {
         result += delim;
         result += *it;
@@ -1255,6 +1261,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.96  2003/10/03 15:16:02  ucko
+ * NStr::Join: preallocate as much space as we need for result.
+ *
  * Revision 1.95  2003/09/17 15:18:29  vasilche
  * Reduce memory allocations in NStr::PrintableString()
  *
