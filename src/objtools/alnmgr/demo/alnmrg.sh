@@ -57,6 +57,8 @@ test1 multiple_row_inserts "" "multiple row inserts"
 
 test2 iterator_minus_minus "" "iterator minus minus"
 
+test2 blast "-queryseqmergeonly t" "blast output merge"
+
 rm $tmp_out
 echo "Done!"
 exit $return_status
