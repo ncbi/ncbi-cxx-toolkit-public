@@ -66,6 +66,17 @@ const string DRV_PUBSEQOS = "PUBSEQOS";
 const string DRV_ID1 = "ID1";
 
 
+CTSEUpload::CTSEUpload()
+    : m_mode(eNone)
+{
+}
+
+
+CTSEUpload::~CTSEUpload()
+{
+}
+
+
 CGBDataLoader::STSEinfo::STSEinfo()
     : locked(0), tseinfop(0)
 {
@@ -303,15 +314,15 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,
     GBLOG_POST( "ResolveConflict" );
     CGBLGuard g(m_Locks,"ResolveConflict");
     CRef<SSeqrefs> sr;
+    CConstRef<CTSE_Info> best;
     {
         int cnt = 20;
         while ( !(sr = x_ResolveHandle(handle))  && cnt>0 )
             cnt --;
         if ( !sr )
-            return 0;
+            return best;
     }
 
-    CConstRef<CTSE_Info> best;
     ITERATE(TTSE_LockSet, sit, tse_set) {
         CConstRef<CTSE_Info> ti = *sit;
         CRef<STSEinfo> tse = GetTSEinfo(*ti);
@@ -911,6 +922,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2003/05/20 16:18:42  vasilche
+* Fixed compilation errors on GCC.
+*
 * Revision 1.69  2003/05/20 15:44:37  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.
 * Fixed some warnings on WorkShop.

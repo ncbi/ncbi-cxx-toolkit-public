@@ -148,12 +148,13 @@ public:
         eDone,
         ePartial
     };
-    CTSEUpload()
-        : m_mode(eNone)
-        {
-        }
+    CTSEUpload();
+    ~CTSEUpload();
     EChoice                       m_mode;
     CRef<CSeq_entry>              m_tse;
+
+private:
+    CTSEUpload(const CTSEUpload&);
 };
 
 class NCBI_XOBJMGR_EXPORT CGBDataLoader : public CDataLoader
@@ -291,6 +292,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.36  2003/05/20 16:18:42  vasilche
+ * Fixed compilation errors on GCC.
+ *
  * Revision 1.35  2003/05/20 15:44:37  vasilche
  * Fixed interaction of CDataSource and CDataLoader in multithreaded app.
  * Fixed some warnings on WorkShop.
