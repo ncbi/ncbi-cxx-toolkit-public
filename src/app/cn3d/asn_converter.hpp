@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/23 21:08:37  thiessen
+* fix memory leak
+*
 * Revision 1.2  2001/09/19 22:55:43  thiessen
 * add preliminary net import and BLAST
 *
@@ -120,7 +123,7 @@ static Pointer ConvertAsnFromCPPToC(const ASNClass& from, AsnReadFunc readFunc, 
         objOstream << from;
 
         auto_ptr<char> strData(asnOstrstream.str()); // to make sure data gets freed
-        AsnIoMemPtr aimp = AsnIoMemOpen("rb", (unsigned char *) asnOstrstream.str(), asnOstrstream.pcount());
+        aimp = AsnIoMemOpen("rb", (unsigned char *) asnOstrstream.str(), asnOstrstream.pcount());
         if (!aimp || !(cObject = (*readFunc)(aimp->aip, NULL)))
             throw "AsnIoMem -> C object failed";
 
