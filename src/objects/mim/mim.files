@@ -1,0 +1,10 @@
+GENFILES = objects/mim/Mim_allelic_variant objects/mim/Mim_author objects/mim/Mim_cit objects/mim/Mim_date objects/mim/Mim_edit_item objects/mim/Mim_entry objects/mim/Mim_index_term objects/mim/Mim_link objects/mim/Mim_page objects/mim/Mim_reference objects/mim/Mim_set objects/mim/Mim_text
+GENFILES_LOCAL = Mim_allelic_variant Mim_author Mim_cit Mim_date Mim_edit_item Mim_entry Mim_index_term Mim_link Mim_page Mim_reference Mim_set Mim_text
+GENERATED_HPP = objects/mim/Mim_allelic_variant objects/mim/Mim_author objects/mim/Mim_cit objects/mim/Mim_date objects/mim/Mim_edit_item objects/mim/Mim_entry objects/mim/Mim_index_term objects/mim/Mim_link objects/mim/Mim_page objects/mim/Mim_reference objects/mim/Mim_set objects/mim/Mim_text
+GENERATED_CPP = objects/mim/Mim_allelic_variant objects/mim/Mim_author objects/mim/Mim_cit objects/mim/Mim_date objects/mim/Mim_edit_item objects/mim/Mim_entry objects/mim/Mim_index_term objects/mim/Mim_link objects/mim/Mim_page objects/mim/Mim_reference objects/mim/Mim_set objects/mim/Mim_text
+GENERATED_HPP_LOCAL = Mim_allelic_variant Mim_author Mim_cit Mim_date Mim_edit_item Mim_entry Mim_index_term Mim_link Mim_page Mim_reference Mim_set Mim_text
+GENERATED_CPP_LOCAL = Mim_allelic_variant Mim_author Mim_cit Mim_date Mim_edit_item Mim_entry Mim_index_term Mim_link Mim_page Mim_reference Mim_set Mim_text
+SKIPPED_HPP =
+SKIPPED_CPP =
+SKIPPED_HPP_LOCAL =
+SKIPPED_CPP_LOCAL =
