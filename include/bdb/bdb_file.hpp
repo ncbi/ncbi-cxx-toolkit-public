@@ -289,7 +289,8 @@ public:
     /// Free the DBT structure created by CloneDBT_Key.
     static void DestroyDBT_Clone(DBT* dbt);
 
-
+    /// Set C-str detection
+    void SetLegacyStringsCheck(bool value);
 protected:
     /// Unpack internal record buffers
     void Discard();
@@ -337,6 +338,7 @@ private:
     bool                           m_BufsAttached;
     bool                           m_BufsCreated;
     bool                           m_DataBufDisabled;
+    bool                           m_LegacyString;
 
     friend class CBDB_FileCursor;
 };
@@ -437,6 +439,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/12/22 18:53:50  kuznets
+ * Added legacy(c-string) string format check flag.
+ *
  * Revision 1.25  2003/12/16 13:42:58  kuznets
  * Added internal method to close association between transaction object
  * and BDB file object when transaction goes out of scope.
