@@ -661,6 +661,7 @@ AC_MSG_CHECKING(for union semun)
 AC_TRY_COMPILE(
    [#include <sys/sem.h>],
    [union semun { double a;  void* b; } ],
+   ,
    AC_DEFINE_UNQUOTED(HAVE_SEMUN, 1)
 )
 AC_MSG_RESULT()
