@@ -31,6 +31,7 @@
 #include <connect/ncbi_pipe.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <memory>
+#include <stdio.h>
 
 #ifdef NCBI_OS_MSWIN
 #  include <windows.h>
@@ -1261,6 +1262,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2003/11/14 13:06:01  ucko
+ * +<stdio.h> (still needed by source...)
+ *
  * Revision 1.34  2003/11/04 03:11:51  lavr
  * x_GetHandle(): default switch case added [for GCC2.95.2 to be happy]
  *
