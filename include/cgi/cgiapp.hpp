@@ -110,7 +110,7 @@ protected:
     // NOTE: Context and Resource are not valid at the time of this method call
     // The default implementation prints out "e.what()" to "os" and then
     // returns zero if the printout has got through, -1 otherwise.
-    virtual int            OnException(exception& e, CNcbiOstream& os);
+    virtual int            OnException(std::exception& e, CNcbiOstream& os);
 
     void                   RegisterDiagFactory(const string& key,
                                                CDiagFactory* fact);
@@ -238,6 +238,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2003/06/24 15:02:18  ucko
+* Prefix exception with std:: in OnException's declaration to avoid
+* possible clashes with the struct exception in Sun's <math.h>.
+*
 * Revision 1.38  2003/05/21 17:38:04  vakatov
 *    CCgiApplication::x_RunFastCGI():  increased the default number of
 * FastCGI iterations from 3 to 10; also changed the meaning of the exit code.
