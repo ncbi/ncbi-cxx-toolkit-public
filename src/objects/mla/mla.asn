@@ -1,0 +1,88 @@
+--$Revision: 1.1 $
+--********************************************************************
+--
+--  Network MEDLINE Archive message formats
+--  Ostell 1993
+--
+--
+--*********************************************************************
+--
+--  mla.asn
+--
+--     messages for medline archive data access
+--
+--*********************************************************************
+
+NCBI-MedArchive DEFINITIONS ::=
+BEGIN
+
+IMPORTS Medline-entry FROM NCBI-Medline
+        Pub FROM NCBI-Pub
+        Title FROM NCBI-Biblio;
+
+        --**********************************
+        -- requests
+        --
+
+Mla-request ::= CHOICE {
+    init NULL ,                     -- DlInit
+    getmle INTEGER ,                -- get MedlineEntry
+    getpub INTEGER ,                -- get citation by muid
+    gettitle Title-msg ,            -- match titles
+    citmatch Pub ,                  --
+    fini NULL                       -- DlFini
+    }
+
+--**********************************************************************
+--
+--  if request = all
+--	if one row returned
+--	   reply=all, return every column
+--	else 
+--	   reply=ml-jta for each row
+--
+--  if request = not-set, reply=ml-jta
+--
+--  otherwise,
+--	if request != ml-jta
+--	   if column exist, reply=column, else reply=ml-jta
+--
+--**********************************************************************
+
+Title-type ::= ENUMERATED {
+    not-set (0) ,                   -- request=ml-jta (default), reply=not-found
+    name (1) ,
+    tsub (2) ,
+    trans (3) ,
+    jta (4) ,
+    iso-jta (5),
+    ml-jta (6),
+    coden (7),
+    issn (8),
+    abr (9),
+    isbn (10),
+    all (255) }
+
+Title-msg ::= SEQUENCE {            -- Title match request/response
+    type Title-type    ,            -- type to get, or type returned
+    title Title }                   -- title(s) to look up, or title(s) found
+
+Title-msg-list ::= SEQUENCE {
+    num INTEGER ,                   -- number of titles
+    titles SEQUENCE OF Title-msg }
+
+Error-val ::= ENUMERATED {
+    not-found (0) ,                 -- Entry was not found
+    operational-error (1) }         -- A run-time operation error was occurred
+
+Mla-back ::= CHOICE {
+    init NULL ,                     -- DlInit
+    error Error-val ,               -- not found for getmle/getpub/citmatch
+    getmle Medline-entry ,          -- get Medline Entry
+    getpub Pub ,
+    gettitle Title-msg-list ,       -- match titles
+    citmatch INTEGER ,              -- citation lookup muid or 0
+    fini NULL                       -- DlFini
+    }
+
+END
