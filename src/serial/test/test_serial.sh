@@ -1,25 +1,22 @@
-@script_shell@
-
+#! /bin/sh
 #
 # $Id$
 # Author:  Eugene Vasilchenko
 # 
 
-
-if test -n "@NCBI_C_ncbi@" ; then
-    testprefix=c
-else
-    testprefix=cpp
-fi
+testprefix=c
+echo " $features " | grep " C-Toolkit " > /dev/null  || testprefix=cpp
 
 for f in webenv.ent webenv.bin ${testprefix}test_serial.asn ${testprefix}test_serial.asb ; do
-    cp @srcdir@/$f ./
+    cp $top_srcdir/src/serial/test/$f ./
 done
 
 mv ${testprefix}test_serial.asn test_serial.asn
 mv ${testprefix}test_serial.asb test_serial.asb
 
-@build_root@/bin/test_serial > test_serial.out 2> test_serial.err
+test_serial > test_serial.out 2> test_serial.err  ||  exit 1
+
+status=0
 
 for f in webenv.ent webenv.bin test_serial.asn test_serial.asb ; do
     tr -d "\n " < ${f}  > ${f}.$$.tmp
@@ -27,8 +24,11 @@ for f in webenv.ent webenv.bin test_serial.asn test_serial.asb ; do
     cmp -s ${f}.$$.tmp ${f}o.$$.tmp
     if test $? -ne 0 ; then
         echo "Error in file ${f}o"
+        status=1
     fi
     rm ${f}.$$.tmp ${f}o.$$.tmp
 done
 
+test $status -eq 0  ||  exit 2
 echo "Test finished."
+exit 0
