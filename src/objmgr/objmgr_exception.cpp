@@ -48,6 +48,7 @@ const char* CObjMgrException::GetErrCodeString(void) const
     case eAddDataError:     return "eAddDataError";
     case eModifyDataError:  return "eModifyDataError";
     case eIdMapperError:    return "eIdMapperError";
+    case eInvalidHandle:    return "eInvalidHandle";
     case eOtherError:       return "eOtherError";
     default:                return CException::GetErrCodeString();
     }

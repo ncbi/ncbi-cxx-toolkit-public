@@ -38,6 +38,7 @@
 
 #include <objmgr/seq_id_handle.hpp>
 #include <objmgr/impl/mutex_pool.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 #include <set>
 #include <utility>
@@ -107,6 +108,9 @@ public:
 
     const CTSE_Info& GetTSE_Info(void) const;
     CDataSource& GetDataSource(void) const;
+
+     // check if the scope has not been reset
+    void CheckScope(void) const;
 
 private:
     friend class CScope_Impl;
@@ -242,12 +246,25 @@ const CSeq_id_Handle& CBioseq_ScopeInfo::GetSeq_id_Handle(void) const
 }
 
 
+inline
+void CBioseq_ScopeInfo::CheckScope(void) const
+{
+    if ( !m_ScopeInfo ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "No scope associated with bioseq info");
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/11/17 16:03:13  grichenk
+* Throw exception in CBioseq_Handle if the parent scope has been reset
+*
 * Revision 1.6  2003/10/07 13:43:22  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

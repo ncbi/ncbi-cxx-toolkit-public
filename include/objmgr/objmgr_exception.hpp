@@ -52,6 +52,7 @@ public:
         eAddDataError,
         eModifyDataError,
         eIdMapperError,
+        eInvalidHandle,
         eOtherError
     };
     virtual const char* GetErrCodeString(void) const;
@@ -125,6 +126,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/11/17 16:03:12  grichenk
+* Throw exception in CBioseq_Handle if the parent scope has been reset
+*
 * Revision 1.3  2003/10/22 16:12:37  vasilche
 * Added CLoaderException::eNoConnection.
 * Added check for 'fail' state of ID1 connection stream.

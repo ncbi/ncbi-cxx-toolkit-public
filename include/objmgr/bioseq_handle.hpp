@@ -229,6 +229,8 @@ bool CBioseq_Handle::operator!(void) const
 inline
 const CBioseq_ScopeInfo& CBioseq_Handle::x_GetBioseq_ScopeInfo(void) const
 {
+    _ASSERT(m_Bioseq_Info);
+    m_Bioseq_Info->CheckScope();
     return *m_Bioseq_Info;
 }
 
@@ -236,6 +238,8 @@ const CBioseq_ScopeInfo& CBioseq_Handle::x_GetBioseq_ScopeInfo(void) const
 inline
 const CBioseq_Info& CBioseq_Handle::x_GetBioseq_Info(void) const
 {
+    _ASSERT(m_Bioseq_Info);
+    m_Bioseq_Info->CheckScope();
     return m_Bioseq_Info->GetBioseq_Info();
 }
 
@@ -288,6 +292,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/11/17 16:03:12  grichenk
+* Throw exception in CBioseq_Handle if the parent scope has been reset
+*
 * Revision 1.45  2003/11/10 18:12:43  grichenk
 * Added MapLocation()
 *

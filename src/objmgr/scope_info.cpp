@@ -164,6 +164,7 @@ CDataSource& CBioseq_ScopeInfo::GetDataSource(void) const
 
 CScope& CBioseq_ScopeInfo::GetScope(void) const
 {
+    CheckScope();
     return *m_ScopeInfo->second.m_Scope;
 }
 
@@ -187,6 +188,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/11/17 16:03:13  grichenk
+* Throw exception in CBioseq_Handle if the parent scope has been reset
+*
 * Revision 1.5  2003/09/30 16:22:03  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
