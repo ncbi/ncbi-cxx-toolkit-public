@@ -114,7 +114,9 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text);
  * contained in the iterator; to be used in mapping requests to DISPD.
  * Return value must be 'free'd.
  */
-char* SERV_Print(SERV_ITER iter);
+char* SERV_PrintEx(SERV_ITER iter, const SConnNetInfo* referrer);
+
+#define SERV_Print(iter) SERV_PrintEx(iter, 0)
 
 
 /* Get name of underlying service mapper.
@@ -153,6 +155,9 @@ double SERV_Preference(double pref, double gap, unsigned int n);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2004/07/01 16:27:55  lavr
+ * +SERV_PrintEx()
+ *
  * Revision 6.23  2003/06/26 15:19:56  lavr
  * Additional parameter "external" for SERV_{Open|GetInfo}P()
  *
