@@ -80,11 +80,11 @@ void NetCache_ConfigureWithLB(CNetCacheClient* nc_client,
                               const string&    service_name)
 {
     SERV_ITER srv_it = SERV_OpenSimple(service_name.c_str());
+    STimeout& to = nc_client->SetCommunicationTimeout();
 
     if (srv_it == 0) {
         goto static_connect;
     }
-    STimeout& to = nc_client->SetCommunicationTimeout();
 
     {{
     const SSERV_Info* sinfo;
@@ -359,6 +359,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/02/07 16:20:20  ucko
+ * NetCache_ConfigureWithLB: Fix build error introduced in previous
+ * revision by moving the declaration of "STimeout& to" further up.
+ *
  * Revision 1.7  2005/02/07 15:16:26  kuznets
  * Added service1:9009 as an emergency instance when LB is down
  *
