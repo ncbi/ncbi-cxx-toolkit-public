@@ -53,7 +53,8 @@ public:
         eNoProj,
         eLib,
         eApp,
-        eLast   //TODO - add eDll
+        eDll,
+        eLast 
     } TProjType;
 
     CProjKey(void);
@@ -156,6 +157,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/03/10 16:45:39  gorelenk
+ * Added eDll to enum TProjType.
+ *
  * Revision 1.14  2004/03/02 16:33:12  gorelenk
  * Declarations of classes CProjectItemsTree CCyclicDepends
  * SProjectTreeFolder CProjectTreeFolders moved to proj_tree.hpp
