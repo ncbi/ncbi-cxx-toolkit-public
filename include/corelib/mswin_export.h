@@ -1024,6 +1024,15 @@
 #endif
 
 /*
+ * Export specifier for library ncbi_xloader_table
+ */
+#ifdef NCBI_XLOADER_TABLE_EXPORTS
+#  define NCBI_XLOADER_TABLE_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XLOADER_TABLE_EXPORT     __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library ncbi_xloader_genbank
  */
 #ifdef NCBI_XLOADER_GENBANK_EXPORTS
@@ -1226,6 +1235,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.52  2003/12/17 19:41:24  kuznets
+ * Restored accidentally deleted NCBI_XLOADER_TABLE_EXPORT. Sorry.
+ *
  * Revision 1.51  2003/12/17 13:48:39  kuznets
  * Added export symbols for genbank data loader and associated readers.
  *
