@@ -352,7 +352,7 @@ s_ShowAlign(CNcbiOstream         & os,
             CRef<CRemoteBlast>   cb4o,
             CRef<CScope>           scope,
             CAlignParms          & alparms,
-            bool                   gapped)
+            bool                   /*gapped*/)
 {
     CRef<CSeq_align_set> alignments = cb4o->GetAlignments();
     
@@ -546,6 +546,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/04/19 14:37:52  bealer
+ * - Fix compiler warnings.
+ *
  * Revision 1.3  2004/03/22 20:46:21  bealer
  * - Fix non-literate comments to look less like doxygen comments.
  *

@@ -52,14 +52,13 @@ private:
     void x_AddRemoteBlastKeys(void);
 };
 
-
 // Builds interface elements specific to this program
 
 void CRemote_blastApplication::x_AddRemoteBlastKeys(void)
 {
     // Program, Service, and Algorithm Selection options
     
-    m_ArgDesc = auto_ptr<CArgDescriptions>(new CArgDescriptions);
+    m_ArgDesc.reset(new CArgDescriptions);
     
     m_ArgDesc->AddDefaultKey("program", "ProgramName",
                             "Program type (blastn, blastp, blastx, tblastn, "
@@ -231,6 +230,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/04/19 14:37:52  bealer
+ * - Fix compiler warnings.
+ *
  * Revision 1.7  2004/04/12 14:59:29  ucko
  * Don't redeclare trace_blast_api.  (search_opts.hpp already declares it.)
  *
