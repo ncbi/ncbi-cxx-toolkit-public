@@ -597,23 +597,23 @@ const CUser_object* s_FindModelEvidanceUop(const CUser_object& uo)
 
 bool s_GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me)
 {
-    const CUser_object* moduop = 0;
+    CConstRef<CUser_object> moduop;
     bool result = false;
 
     for (CSeqdesc_CI it(bsh, CSeqdesc::e_User);  it;  ++it) {
-        const CUser_object* modup = s_FindModelEvidanceUop(it->GetUser());
-        if ( modup != 0 ) {
+        moduop.Reset(s_FindModelEvidanceUop(it->GetUser()));
+        if (moduop.NotEmpty()) {
             result = true;
-            const CUser_field* ufp = 0;
+            CConstRef<CUser_field> ufp;
             if ( moduop->HasField("Contig Name") ) {
-                ufp = &(moduop->GetField("Contig Name"));
-                if ( ufp->CanGetData()  &&  ufp->GetData().IsStr() ) {
+                ufp.Reset(&(moduop->GetField("Contig Name")));
+                if ( ufp.NotEmpty()  &&  ufp->IsSetData()  &&  ufp->GetData().IsStr() ) {
                     me.name = ufp->GetData().GetStr();
                 }
             }
             if ( moduop->HasField("Method") ) {
                 ufp = &(moduop->GetField("Method"));
-                if ( ufp->CanGetData()  &&  ufp->GetData().IsStr() ) {
+                if ( ufp.NotEmpty()  &&  ufp->IsSetData()  &&  ufp->GetData().IsStr() ) {
                     me.method = ufp->GetData().GetStr();
                 }
             }
@@ -673,6 +673,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2005/02/07 15:02:06  shomrat
+* Bug fix
+*
 * Revision 1.19  2005/01/31 16:32:05  shomrat
 * Added validation of accession.version
 *
