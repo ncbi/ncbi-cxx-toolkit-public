@@ -47,6 +47,11 @@
 #include <objects/entrez2/Entrez2_get_links.hpp>
 #include <objects/entrez2/Entrez2_id_list.hpp>
 
+#include <objects/entrez2/Entrez2_boolean_element.hpp>
+#include <objects/entrez2/Entrez2_boolean_exp.hpp>
+#include <objects/entrez2/Entrez2_eval_boolean.hpp>
+#include <objects/entrez2/Entrez2_boolean_reply.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -113,6 +118,54 @@ CEntrez2Client::GetNeighborCounts(int query_uid,
 }
 
 
+/// Query a db with a string, returning uids as integers
+void CEntrez2Client::Query(const string& query, const string& db,
+                           vector<int>& result_uids)
+{
+    CRef<CEntrez2_boolean_element> bel(new CEntrez2_boolean_element);
+    bel->SetStr(query);
+
+    CEntrez2_boolean_exp bexp;
+    bexp.SetDb().Set(db);
+    bexp.SetExp().push_back(bel);
+
+    CEntrez2_eval_boolean req;
+    req.SetReturn_UIDs(true);
+    req.SetQuery(bexp);
+
+    CRef<CEntrez2_boolean_reply> reply = AskEval_boolean(req);
+    
+    // now extract the UIDs
+    for (CEntrez2_id_list::TConstUidIterator it
+             = reply->GetUids().GetConstUidIterator();  
+         !it.AtEnd();  ++it) {
+        result_uids.push_back(*it);
+    }
+}
+
+
+/// Given some uids, a database, and an entrez query string,
+/// determine which of these uids match the query string
+void CEntrez2Client::FilterIds(const vector<int> query_uids, const string& db,
+                               const string& query_string,
+                               vector<int>& result_uids)
+{
+
+    if (query_uids.empty()) {
+        return;
+    }
+
+    string whole_query = '(' + query_string + ')' + " AND " + '(';
+    ITERATE (vector<int>, uid, query_uids) {
+        if (uid != query_uids.begin()) {
+            whole_query += " OR ";
+        }
+        whole_query += NStr::IntToString(*uid) + "[UID]";
+    }
+    Query(whole_query, db, result_uids);
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -122,6 +175,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/10/16 20:10:23  jcherry
+* Added some simplified interfaces for querying
+*
 * Revision 1.3  2003/10/08 19:56:44  jcherry
 * OK, we're back
 *

@@ -78,6 +78,19 @@ public:
     /// Retrieve counts of the various types of neighbors available
     CRef<CEntrez2_link_count_list> GetNeighborCounts(int query_uid,
                                                      const string& db);
+    
+    /// Some other simplified interfaces
+
+    /// Query a db with a string, returning uids as integers
+    void Query(const string& query, const string& db,
+               vector<int>& result_uids);
+
+    /// Given some uids, a database, and an entrez query string,
+    /// determine which of these uids match the query string
+    void FilterIds(const vector<int> query_uids, const string& db,
+                   const string& query_string,
+                   vector<int>& result_uids);
+
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -111,6 +124,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/10/16 20:10:24  jcherry
+* Added some simplified interfaces for querying
+*
 * Revision 1.3  2003/10/08 19:18:01  jcherry
 * Added a simplified interface for getting neighbors
 *
