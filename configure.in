@@ -170,7 +170,7 @@ if test "$msvc" != "yes" ; then
       CXXFLAGS=`echo $CXXFLAGS | sed 's/-g[0-9]*//g'`" -DNDEBUG"
       if echo "$CXXFLAGS" |grep -v >/dev/null '\-O' ; then
          CXXFLAGS="$CXXFLAGS -O" ; fi
-      LDFLAGS=`echo $LDFLAGS   | sed 's/-g[0-9]*//g'`" -DNDEBUG"
+      LDFLAGS=`echo $LDFLAGS   | sed 's/-g[0-9]*//g'`
       if echo "$LDFLAGS"  |grep -v >/dev/null '\-O' ; then
          LDFLAGS="$LDFLAGS -O"   ; fi
    else
@@ -182,7 +182,7 @@ if test "$msvc" != "yes" ; then
       CXXFLAGS=`echo $CXXFLAGS | sed 's/-O[0-9]*//g'`" -D_DEBUG"
       if echo "$CXXFLAGS" |grep -v >/dev/null '\-g' ; then
          CXXFLAGS="$CXXFLAGS -g" ; fi
-      LDFLAGS=`echo $LDFLAGS   | sed 's/-O[0-9]*//g'`" -D_DEBUG"
+      LDFLAGS=`echo $LDFLAGS   | sed 's/-O[0-9]*//g'`
       if echo "$LDFLAGS"  |grep -v >/dev/null '\-g' ;
          then LDFLAGS="$LDFLAGS -g"   ; fi
    fi
