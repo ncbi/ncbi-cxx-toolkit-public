@@ -122,6 +122,14 @@ int BDB_Int2Compare(DB*, const DBT* val1, const DBT* val2)
                      : ((v2 < v1) ? 1 : 0);
 }
 
+int BDB_CharCompare(DB*, const DBT* val1, const DBT* val2)
+{
+    const char& v1=*static_cast<char*>(val1->data);
+    const char& v2=*static_cast<char*>(val2->data);
+
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
 
 int BDB_FloatCompare(DB*, const DBT* val1, const DBT* val2)
 {
@@ -869,6 +877,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/05/05 19:18:21  rotmistr
+ * CBDB_FieldChar added
+ *
  * Revision 1.20  2004/03/08 13:30:39  kuznets
  * + ToString
  *

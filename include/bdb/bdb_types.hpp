@@ -81,6 +81,10 @@ int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2);
 int BDB_Int2Compare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
+/// non-segmented "char" keys
+int BDB_CharCompare(DB*, const DBT* val1, const DBT* val2);
+
+/// Simple and fast comparison function for tables with 
 /// non-segmented "float" keys
 int BDB_FloatCompare(DB*, const DBT* val1, const DBT* val2);
 
@@ -671,6 +675,64 @@ public:
 
 };
 
+/// Char field type
+///
+
+class CBDB_FieldChar:public CBDB_FieldSimpleInt<char>
+{
+public:
+    const CBDB_FieldChar& operator = (char val) 
+    { 
+        Set(val); 
+        return *this; 
+    }
+
+    const CBDB_FieldChar& operator = (const CBDB_FieldChar& val) 
+    { 
+        Set(val); 
+        return *this; 
+    }
+
+    virtual CBDB_Field * Construct(size_t) const
+    { 
+        return new CBDB_FieldChar(); 
+    }
+    
+    char Get() const  
+    { 
+        return *(const char*)GetBuffer(); 
+    }
+
+    operator char () const  
+    { 
+        return Get(); 
+    }
+
+    virtual string GetString() const  
+    { 
+        return string(1, Get()); 
+    }
+
+    virtual void ToString(string& s) const 
+    { 
+        s.assign(1, Get()); 
+    }
+
+    virtual BDB_CompareFunction GetCompareFunction(bool) const 
+    { 
+        return BDB_CharCompare; 
+    }
+    
+    virtual int Compare(const void * p1, 
+                        const void * p2, 
+                        bool) const 
+    { 
+        const char& c1=*(const char *)p1;
+        const char& c2=*(const char *)p2;
+        
+        return (c1 < c2) ? -1 : (c1 > c2) ? 1 : 0;
+    }
+};
 
 
 ///  Uint4 field type
@@ -1767,6 +1829,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/05/05 19:18:21  rotmistr
+ * CBDB_FieldChar added
+ *
  * Revision 1.34  2004/04/26 16:43:59  ucko
  * Qualify inherited dependent names with this-> where needed by GCC 3.4.
  *
