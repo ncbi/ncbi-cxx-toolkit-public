@@ -40,7 +40,6 @@
 
 // generated includes
 #include <objects/general/Int_fuzz.hpp>
-#include <objects/seqloc/Seq_point.hpp>
 
 // generated classes
 
@@ -120,6 +119,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2002/12/26 12:46:37  dicuccio
+ * Removed spurious dependency on Seq_point.hpp
+ *
  * Revision 6.3  2002/10/08 18:52:21  clausen
  * Changed TSeqPos from 0 based to 1 based in GetLabel()
  *
