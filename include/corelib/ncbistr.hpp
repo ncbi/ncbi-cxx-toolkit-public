@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/03/16 19:38:55  grichenk
+* Added NStr::Split()
+*
 * Revision 1.2  2000/12/28 16:57:41  golikov
 * add string version of case an nocase cmp
 *
@@ -48,6 +51,7 @@
 #include <corelib/ncbitype.h>
 #include <corelib/ncbistl.hpp>
 #include <string>
+#include <list>
 
 BEGIN_NCBI_SCOPE
 
@@ -156,6 +160,12 @@ struct NStr {
                           const string& search,
                           const string& replace,
                           SIZE_TYPE start_pos = 0, size_t max_replace = 0);
+
+    // Split string "str" using symbols from "delim" as delimiters
+    // Add the resultant tockens to the list "arr". Return "arr".
+    static list<string>& Split(const string& str,
+                               const string& delim,
+                               list<string>& arr);
 
     // Make a printable version of "str". The non-printable characters will
     // be represented as "\r", "\n", "\v", "\t", "\0", "\\", or

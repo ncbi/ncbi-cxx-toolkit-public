@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2001/03/16 19:38:35  grichenk
+* Added NStr::Split()
+*
 * Revision 1.39  2001/01/03 17:45:35  vakatov
 * + <ncbi_limits.h>
 *
@@ -531,6 +534,21 @@ string NStr::Replace(const string& src,
     string dst;
     return Replace(src, search, replace, dst, start_pos, max_replace);
 }
+
+
+list<string>& NStr::Split(const string& str, const string& delim,
+                          list<string>& arr)
+{
+    for (size_t pos = 0; ; ) {
+        size_t not_pos = str.find_first_not_of(delim, pos);
+        pos = str.find_first_of(delim, not_pos);
+        if (pos == not_pos) // both are NPOS or 0 (for an empty string)
+            break;
+        arr.push_back(str.substr(not_pos, pos - not_pos));
+    }
+    return arr;
+}
+
 
 string NStr::PrintableString(const string& str)
 {
