@@ -935,6 +935,7 @@ static BlastHitList* BLAST_HitListNew(Int4 hitlist_size)
    BlastHitList* new_hitlist = (BlastHitList*) 
       calloc(1, sizeof(BlastHitList));
    new_hitlist->hsplist_max = hitlist_size;
+   new_hitlist->low_score = INT4_MAX;
    return new_hitlist;
 }
 
