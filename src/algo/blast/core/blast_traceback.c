@@ -600,14 +600,6 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
       } else if (program_number == eBlastTypeRpsTblastn) {
 	 translation_buffer = subject_blk->sequence - 1;
 	 frame_offsets = query_info_in->context_offsets;
-	 /* Create a local BlastQueryInfo structure for this subject sequence
-	    that has been switched with the query. */
-	 query_info = BlastMemDup(query_info_in, sizeof(BlastQueryInfo));
-	 query_info->first_context = query_info->last_context = 0;
-	 query_info->num_queries = 1;
-	 offsets[0] = 0;
-	 offsets[1] = query_blk->length + 1;
-	 query_info->context_offsets = offsets; 
       } else {
          SetUpSubjectTranslation(subject_blk, gen_code_string,
             &translation_buffer, &frame_offsets, &partial_translation);
@@ -617,6 +609,18 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
       /* Subject is not translated */
       subject = subject_blk->sequence;
       subject_length = subject_blk->length;
+   }
+
+   if (program_number == eBlastTypeRpsBlast || 
+       program_number == eBlastTypeRpsTblastn) {
+      /* Create a local BlastQueryInfo structure for this subject sequence
+	 that has been switched with the query. */
+      query_info = BlastMemDup(query_info_in, sizeof(BlastQueryInfo));
+      query_info->first_context = query_info->last_context = 0;
+      query_info->num_queries = 1;
+      offsets[0] = 0;
+      offsets[1] = query_blk->length + 1;
+      query_info->context_offsets = offsets; 
    }
 
    for (index=0; index < hsp_list->hspcnt; index++) {
