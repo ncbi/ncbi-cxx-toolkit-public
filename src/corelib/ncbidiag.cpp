@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/12/29 21:22:30  vakatov
+* Fixed "delete" to "delete[]"
+*
 * Revision 1.13  1999/12/27 19:44:18  vakatov
 * Fixes for R1.13:
 * ERR_POST() -- use eDPF_Default rather than eDPF_Trace;  forcibly flush
@@ -232,7 +235,7 @@ extern void UnsetDiagPostFlag(EDiagPostFlag flag)
 extern void SetDiagPostPrefix(const char* prefix)
 {
     //## MUTEX_LOCK(s_Mutex);
-    delete CDiagBuffer::sm_PostPrefix;
+    delete[] CDiagBuffer::sm_PostPrefix;
     if (prefix  &&  *prefix) {
         CDiagBuffer::sm_PostPrefix = new char[::strlen(prefix) + 1];
         ::strcpy(CDiagBuffer::sm_PostPrefix, prefix);
