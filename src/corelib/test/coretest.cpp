@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1998/11/27 15:55:07  vakatov
+* + TestCgi(USER STDIN)
+*
 * Revision 1.14  1998/11/26 00:29:55  vakatov
 * Finished NCBI CGI API;  successfully tested on MSVC++ and SunPro C++ 5.0
 *
@@ -502,6 +505,25 @@ static void TestCgi(void)
         _ASSERT( !putenv("HTTP_COOKIE=_cook1=_val1;_cook2=_val2") );
         TestCgi_Request_Full(istr);
     } STD_CATCH("TestCgi(ERRONEOUS STDIN)");
+
+    try { // USER INPUT(real STDIN)
+        _ASSERT( !putenv("QUERY_STRING=u_query1=uq1") );
+        _ASSERT( !putenv("HTTP_COOKIE=u_cook1=u_val1; u_cook2=u_val2") );
+        _ASSERT( !putenv("REQUEST_METHOD=POST") );
+        NcbiCout << "Enter the length of CGI posted data now: ";
+        long l = 0;
+        if (!(NcbiCin >> l)  ||  len < 0) {
+            NcbiCin.clear();
+            runtime_error("Invalid length of CGI posted data");
+        }
+        char cs[32];
+        _ASSERT( sprintf(cs, "CONTENT_LENGTH=%ld", (long)l) );
+        _ASSERT( !putenv(cs) );
+        NcbiCout << "Enter the CGI posted data now(no spaces): ";
+        NcbiCin >> NcbiWs;
+        TestCgi_Request_Full(NcbiCin);
+        NcbiCin.clear();
+    } STD_CATCH("TestCgi(USER STDIN)");
 }
 
 
