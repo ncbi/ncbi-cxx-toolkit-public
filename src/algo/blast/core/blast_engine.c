@@ -107,7 +107,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    BlastThrInfoPtr thr_info;
    Int4Ptr oid_list = NULL;
    Int4 start = 0, stop = 0, oid_list_length = 0;
-   Boolean done = FALSE, use_oid_list;
+   Boolean done = FALSE, use_oid_list = FALSE;
    
    /* search prologue */
 
@@ -246,88 +246,89 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
             subject->sequence = translation_buffer + 1;
          }
      
-      /* Split subject sequence into chunks if it is too long */
-      num_chunks = (subject->length - DBSEQ_CHUNK_OVERLAP) / 
-         (MAX_DBSEQ_LEN - DBSEQ_CHUNK_OVERLAP) + 1;
-      offset = 0;
-      total_subject_length = subject->length;
-      combined_hsp_list = NULL;
-
-      for (chunk = 0; chunk < num_chunks; ++chunk) {
-         subject->length = MIN(total_subject_length - offset, 
-                               MAX_DBSEQ_LEN);
-     
-         init_hitlist->total = 0;
+         /* Split subject sequence into chunks if it is too long */
+         num_chunks = (subject->length - DBSEQ_CHUNK_OVERLAP) / 
+            (MAX_DBSEQ_LEN - DBSEQ_CHUNK_OVERLAP) + 1;
+         offset = 0;
+         total_subject_length = subject->length;
+         combined_hsp_list = NULL;
          
-	 num_hits = wordfinder(subject,
-			       query,
-			       lookup,
-			       gap_align->sbp->matrix,
-			       word_params,
-			       ewp,
-			       query_offsets,
-			       subject_offsets,
-			       offset_array_size,
-			       init_hitlist);
-	 
-         if (init_hitlist->total == 0)
-            continue;
-
-         max_hits = MAX(max_hits, num_hits);
-         total_hits += num_hits;
-         num_init_hsps += init_hitlist->total;
-
-	 if (score_options->gapped_calculation)
-	   GetGappedScore(query,
-			  subject,
-			  gap_align,
-			  score_options,
-			  ext_params,
-			  hit_params,
-			  init_hitlist,
-			  &hsp_list);
-
-         if (hsp_list->hspcnt == 0)
-            continue;
-         
-         num_hsps += hsp_list->hspcnt;
-
-         /* The subject ordinal id is not yet filled in this HSP list */
-         hsp_list->oid = oid;
-         
-         /* Multiple contexts - adjust all HSP offsets to the individual 
-            query coordinates; also assign frames */
-         BLAST_AdjustQueryOffsets(program_number, hsp_list, query_info);
-
+         for (chunk = 0; chunk < num_chunks; ++chunk) {
+            subject->length = MIN(total_subject_length - offset, 
+                                  MAX_DBSEQ_LEN);
+            
+            init_hitlist->total = 0;
+            
+            num_hits = wordfinder(subject,
+                                  query,
+                                  lookup,
+                                  gap_align->sbp->matrix,
+                                  word_params,
+                                  ewp,
+                                  query_offsets,
+                                  subject_offsets,
+                                  offset_array_size,
+                                  init_hitlist);
+            
+            if (init_hitlist->total == 0)
+               continue;
+            
+            max_hits = MAX(max_hits, num_hits);
+            total_hits += num_hits;
+            num_init_hsps += init_hitlist->total;
+            
+            if (score_options->gapped_calculation)
+               GetGappedScore(query,
+                              subject,
+                              gap_align,
+                              score_options,
+                              ext_params,
+                              hit_params,
+                              init_hitlist,
+                              &hsp_list);
+            
+            if (hsp_list->hspcnt == 0)
+               continue;
+            
+            num_hsps += hsp_list->hspcnt;
+            
+            /* The subject ordinal id is not yet filled in this HSP list */
+            hsp_list->oid = oid;
+            
+            /* Multiple contexts - adjust all HSP offsets to the individual 
+               query coordinates; also assign frames */
+            BLAST_AdjustQueryOffsets(program_number, hsp_list, query_info);
+            
 #ifdef DO_LINK_HSPS
-         if (hit_options->do_sum_stats == TRUE)
-            status = BLAST_LinkHsps(hsp_list);
-         else
+            if (hit_options->do_sum_stats == TRUE)
+               status = BLAST_LinkHsps(hsp_list);
+            else
 #endif
-            /* Calculate e-values for all HSPs */
-            status = BLAST_GetNonSumStatsEvalue(program_number, 
-                        query_info, hsp_list, hit_options, gap_align->sbp);
+               /* Calculate e-values for all HSPs */
+               status = 
+                  BLAST_GetNonSumStatsEvalue(program_number, query_info, 
+                     hsp_list, hit_options, gap_align->sbp);
 
-         /* Discard HSPs that don't pass the e-value test */
-         status = BLAST_ReapHitlistByEvalue(hsp_list, hit_options);
+            /* Discard HSPs that don't pass the e-value test */
+            status = BLAST_ReapHitlistByEvalue(hsp_list, hit_options);
+            
+            AdjustOffsetsInHSPList(hsp_list, offset);
+            /* Allow merging of HSPs either if traceback is already 
+               available, or if it is an ungapped search */
+            if (MergeHSPLists(hsp_list, &combined_hsp_list, offset,
+                   (hsp_list->traceback_done || !hit_options->is_gapped),
+                   FALSE)) {
+               /* HSPs from this list are moved elsewhere, reset count back 
+                  to 0 */
+               hsp_list->hspcnt = 0;
+            }
+            offset += subject->length - DBSEQ_CHUNK_OVERLAP;
+            subject->sequence += 
+               (subject->length - DBSEQ_CHUNK_OVERLAP)/COMPRESSION_RATIO;
+         } /* End loop on chunks of subject sequence */
          
-         AdjustOffsetsInHSPList(hsp_list, offset);
-         /* Allow merging of HSPs either if traceback is already available,
-            or if it is an ungapped search */
-         if (MergeHSPLists(hsp_list, &combined_hsp_list, offset,
-                (hsp_list->traceback_done || !hit_options->is_gapped),
-                FALSE)) {
-            /* HSPs from this list are moved elsewhere, reset count back 
-               to 0 */
-            hsp_list->hspcnt = 0;
-         }
-         offset += subject->length - DBSEQ_CHUNK_OVERLAP;
-         subject->sequence += 
-            (subject->length - DBSEQ_CHUNK_OVERLAP)/COMPRESSION_RATIO;
-      } /* End loop on chunks of subject sequence */
-
-      MergeHSPLists(combined_hsp_list, &full_hsp_list, 0, FALSE, TRUE);
-
+         MergeHSPLists(combined_hsp_list, &full_hsp_list, 0, FALSE, TRUE);
+         
       } /* End loop on frames */
       
       if (!full_hsp_list || full_hsp_list->hspcnt == 0)
