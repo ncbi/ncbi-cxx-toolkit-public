@@ -42,6 +42,21 @@
 
 BEGIN_NCBI_SCOPE
 
+///@internal
+///
+class CSockGuard
+{
+public:
+    CSockGuard(CSocket& sock) : m_Sock(sock) {}
+    ~CSockGuard() { m_Sock.Close(); }
+private:
+    CSockGuard(const CSockGuard&);
+    CSockGuard& operator=(const CSockGuard&);
+private:
+    CSocket&    m_Sock;
+};
+
+
 const string kNetCache_KeyPrefix = "NCID";
 
 void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str)
@@ -283,6 +298,8 @@ string  CNetCacheClient::PutData(const string& key,
 {
     CheckConnect(key);
 
+    CSockGuard sg(*m_Sock);
+
     string blob_id;
     string request;
     
@@ -316,8 +333,6 @@ string  CNetCacheClient::PutData(const string& key,
     // Write the actual BLOB
     WriteStr((const char*) buf, size);
 
-    m_Sock->Close();
-
     return blob_id;
 }
 
@@ -331,6 +346,7 @@ bool CNetCacheClient::IsAlive()
 string CNetCacheClient::ServerVersion()
 {
     CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
 
     string request;
     string version;
@@ -354,8 +370,6 @@ string CNetCacheClient::ServerVersion()
         }
         NCBI_THROW(CNetCacheException, eCommunicationError, msg);
     }
-
-    m_Sock->Close();
 
     version.erase(0, 3);
     return version;
@@ -390,6 +404,7 @@ void CNetCacheClient::SendClientName()
 void CNetCacheClient::Remove(const string& key)
 {
     CheckConnect(key);
+    CSockGuard sg(*m_Sock);
 
     string request;
     
@@ -400,8 +415,6 @@ void CNetCacheClient::Remove(const string& key)
     request.append("\r\nREMOVE ");    
     request += key;
     WriteStr(request.c_str(), request.length() + 1);
-
-    m_Sock->Close();
 }
 
 
@@ -458,8 +471,12 @@ CNetCacheClient::GetData(const string&  key,
 {
     _ASSERT(buf && buf_size);
 
+    CheckConnect(key);
+    CSockGuard sg(*m_Sock);
+
     size_t x_blob_size = 0;
     size_t x_read = 0;
+
 
     try {
 
@@ -510,8 +527,6 @@ CNetCacheClient::GetData(const string&  key,
         throw;
     }
 
-    m_Sock->Close();
-
     if (x_read == x_blob_size) {
         return CNetCacheClient::eReadComplete;
     }
@@ -523,18 +538,18 @@ CNetCacheClient::GetData(const string&  key,
 void CNetCacheClient::ShutdownServer()
 {
     CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
 
     SendClientName();
 
     const char command[] = "SHUTDOWN";
     WriteStr(command, sizeof(command));
-
-    m_Sock->Close();
 }
 
 void CNetCacheClient::Logging(bool on_off)
 {
     CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
 
     SendClientName();
     const char* command;
@@ -544,7 +559,6 @@ void CNetCacheClient::Logging(bool on_off)
         command = "LOG OFF";
 
     WriteStr(command, strlen(command));
-    m_Sock->Close();
 }
 
 
@@ -584,6 +598,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/01/03 19:11:30  kuznets
+ * Code cleanup: polishing resource management
+ *
  * Revision 1.28  2004/12/27 16:30:42  kuznets
  * + logging control function
  *
