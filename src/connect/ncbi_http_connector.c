@@ -254,9 +254,9 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,int/*bool*/ drop_unread)
 /* Parse HTTP header */
 static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
 {
-    int/*bool*/ server_error = 0/*false*/;
     int/*bool*/ moved = 0/*false*/;
-    int v1, v2, http_status = 0;
+    int         server_error = 0;
+    int         http_status = 0;
     EIO_Status  status;
     char*       header;
     size_t      size;
@@ -295,15 +295,17 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
         CORE_LOG(eLOG_Warning, "[HTTP]  Cannot drop HTTP header buffer");
 
     /* HTTP status must come on the first line of the reply */
-    if (sscanf(header, " HTTP/%d.%d %d ", &v1, &v2, &http_status) != 3  ||
+    if (sscanf(header, " HTTP/%*d.%*d %d ", &http_status) != 1  ||
         http_status < 200  ||  299 < http_status) {
-        server_error = 1/*true*/;
+        server_error = http_status;
         if (http_status == 301  ||  http_status == 302)
             moved = 1;
     }
 
-    if (uuu->net_info->debug_printout)
-        CORE_DATA(header, size, "HTTP header");
+    if (uuu->net_info->debug_printout) {
+        CORE_DATA(header, size,
+                  server_error ? "HTTP header (server error)" : "HTTP header");
+    }
 
     if (uuu->parse_http_hdr) {
         if (!(*uuu->parse_http_hdr)
@@ -873,6 +875,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2002/11/19 19:20:37  lavr
+ * Server error parsing slightly changed
+ *
  * Revision 6.35  2002/10/28 15:46:20  lavr
  * Use "ncbi_ansi_ext.h" privately
  *
