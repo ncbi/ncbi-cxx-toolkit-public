@@ -80,6 +80,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/03 18:04:25  kuznets
+ * + newline at the end of the file to make GCC happy
+ *
  * Revision 1.3  2003/06/25 18:27:47  kuznets
  * +OpenCreateDB() class method
  *
