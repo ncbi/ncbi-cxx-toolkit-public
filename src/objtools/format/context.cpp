@@ -381,7 +381,9 @@ const CBioseq& CBioseqContext::x_GetMasterForPart(const CBioseq& part) const
 
 void CBioseqContext::x_SetId(const CBioseq& seq)
 {
-    m_PrimaryId.Reset(FindBestChoice(seq.GetId(), CSeq_id::Score));
+    //m_PrimaryId.Reset(FindBestChoice(seq.GetId(), CSeq_id::Score));
+    m_PrimaryId.Reset(new CSeq_id);
+    m_PrimaryId->Assign(GetId(m_Handle, eGetId_Best));
     m_Accession = m_PrimaryId->GetSeqIdString(true);
 
     ITERATE(CBioseq::TId, id_iter, seq.GetId()) {
@@ -566,6 +568,11 @@ CFFContext::CFlags::CFlags(TMode mode, TFlags flags) :
     m_CopyGeneToCDNA((flags & fCopyGeneToCDNA) != 0),
     m_CopyCDSFromCDNA((flags & fCopyCDSFromCDNA) != 0),
     m_HideSourceFeats((flags & fHideSourceFeats) != 0),
+    m_AlwaysTranslateCDS((flags & fAlwaysTranslateCDS) != 0),
+    m_ShowFarTranslations((flags & fShowFarTranslations) != 0),
+    m_TranslateIfNoProd((flags & fTranslateIfNoProduct) != 0),
+    m_ShowTranscript((flags & fShowTranscriptions) != 0),
+    m_ShowPeptides((flags & fShowPeptides) != 0),
     m_DoHtml((flags & fProduceHTML) != 0)
 {
     switch ( mode ) {
@@ -587,121 +594,125 @@ CFFContext::CFlags::CFlags(TMode mode, TFlags flags) :
 
 void CFFContext::CFlags::x_SetReleaseFlags(void)
 {
-    m_SupressLocalId     = true;
-    m_ValidateFeats      = true;
-    m_IgnorePatPubs      = true;
-    m_DropShortAA        = true;
-    m_AvoidLocusColl     = true;
-    m_IupacaaOnly        = true;
-    m_DropBadCitGens     = true;
-    m_NoAffilOnUnpub     = true;
-    m_DropIllegalQuals   = true;
-    m_CheckQualSyntax    = true;
-    m_NeedRequiredQuals  = true;
-    m_NeedOrganismQual   = true;
-    m_NeedAtLeastOneRef  = true;
-    m_CitArtIsoJta       = true;
-    m_DropBadDbxref      = true;
-    m_UseEmblMolType     = true;
-    m_HideBankItComment  = true;
-    m_CheckCDSProductId  = true;
-    m_SupressSegLoc      = true;
-    m_SrcQualsToNote     = true;
-    m_HideEmptySource    = true;
-    m_GoQualsToNote      = true;
-    m_GeneSynsToNote     = true;
-    m_ForGBRelease       = true;
-    m_HideUnclassPartial = true;
+    m_SupressLocalId       = true;
+    m_ValidateFeats        = true;
+    m_IgnorePatPubs        = true;
+    m_DropShortAA          = true;
+    m_AvoidLocusColl       = true;
+    m_IupacaaOnly          = true;
+    m_DropBadCitGens       = true;
+    m_NoAffilOnUnpub       = true;
+    m_DropIllegalQuals     = true;
+    m_CheckQualSyntax      = true;
+    m_NeedRequiredQuals    = true;
+    m_NeedOrganismQual     = true;
+    m_NeedAtLeastOneRef    = true;
+    m_CitArtIsoJta         = true;
+    m_DropBadDbxref        = true;
+    m_UseEmblMolType       = true;
+    m_HideBankItComment    = true;
+    m_CheckCDSProductId    = true;
+    m_SupressSegLoc        = true;
+    m_SrcQualsToNote       = true;
+    m_HideEmptySource      = true;
+    m_GoQualsToNote        = true;
+    m_GeneSynsToNote       = true;
+    m_SelenocysteineToNote = true;
+    m_ForGBRelease         = true;
+    m_HideUnclassPartial   = true;
 }
 
 
 void CFFContext::CFlags::x_SetEntrezFlags(void)
 {
-    m_SupressLocalId     = false;
-    m_ValidateFeats      = true;
-    m_IgnorePatPubs      = true;
-    m_DropShortAA        = true;
-    m_AvoidLocusColl     = true;
-    m_IupacaaOnly        = false;
-    m_DropBadCitGens     = true;
-    m_NoAffilOnUnpub     = true;
-    m_DropIllegalQuals   = true;
-    m_CheckQualSyntax    = true;
-    m_NeedRequiredQuals  = true;
-    m_NeedOrganismQual   = true;
-    m_NeedAtLeastOneRef  = false;
-    m_CitArtIsoJta       = true;
-    m_DropBadDbxref      = true;
-    m_UseEmblMolType     = true;
-    m_HideBankItComment  = true;
-    m_CheckCDSProductId  = false;
-    m_SupressSegLoc      = false;
-    m_SrcQualsToNote     = true;
-    m_HideEmptySource    = true;
-    m_GoQualsToNote      = true;
-    m_GeneSynsToNote     = true;
-    m_ForGBRelease       = false;
-    m_HideUnclassPartial = true;
+    m_SupressLocalId       = false;
+    m_ValidateFeats        = true;
+    m_IgnorePatPubs        = true;
+    m_DropShortAA          = true;
+    m_AvoidLocusColl       = true;
+    m_IupacaaOnly          = false;
+    m_DropBadCitGens       = true;
+    m_NoAffilOnUnpub       = true;
+    m_DropIllegalQuals     = true;
+    m_CheckQualSyntax      = true;
+    m_NeedRequiredQuals    = true;
+    m_NeedOrganismQual     = true;
+    m_NeedAtLeastOneRef    = false;
+    m_CitArtIsoJta         = true;
+    m_DropBadDbxref        = true;
+    m_UseEmblMolType       = true;
+    m_HideBankItComment    = true;
+    m_CheckCDSProductId    = false;
+    m_SupressSegLoc        = false;
+    m_SrcQualsToNote       = true;
+    m_HideEmptySource      = true;
+    m_GoQualsToNote        = true;
+    m_GeneSynsToNote       = true;
+    m_SelenocysteineToNote = true;
+    m_ForGBRelease         = false;
+    m_HideUnclassPartial   = true;
 }
 
 
 void CFFContext::CFlags::x_SetGBenchFlags(void)
 {
-    m_SupressLocalId     = false;
-    m_ValidateFeats      = false;
-    m_IgnorePatPubs      = false;
-    m_DropShortAA        = false;
-    m_AvoidLocusColl     = false;
-    m_IupacaaOnly        = false;
-    m_DropBadCitGens     = false;
-    m_NoAffilOnUnpub     = true;
-    m_DropIllegalQuals   = false;
-    m_CheckQualSyntax    = false;
-    m_NeedRequiredQuals  = false;
-    m_NeedOrganismQual   = false;
-    m_NeedAtLeastOneRef  = false;
-    m_CitArtIsoJta       = false;
-    m_DropBadDbxref      = false;
-    m_UseEmblMolType     = false;
-    m_HideBankItComment  = false;
-    m_CheckCDSProductId  = false;
-    m_SupressSegLoc      = false;
-    m_SrcQualsToNote     = false;
-    m_HideEmptySource    = false;
-    m_GoQualsToNote      = false;
-    m_GeneSynsToNote     = false;
-    m_ForGBRelease       = false;
-    m_HideUnclassPartial = false;
+    m_SupressLocalId       = false;
+    m_ValidateFeats        = false;
+    m_IgnorePatPubs        = false;
+    m_DropShortAA          = false;
+    m_AvoidLocusColl       = false;
+    m_IupacaaOnly          = false;
+    m_DropBadCitGens       = false;
+    m_NoAffilOnUnpub       = true;
+    m_DropIllegalQuals     = false;
+    m_CheckQualSyntax      = false;
+    m_NeedRequiredQuals    = false;
+    m_NeedOrganismQual     = false;
+    m_NeedAtLeastOneRef    = false;
+    m_CitArtIsoJta         = false;
+    m_DropBadDbxref        = false;
+    m_UseEmblMolType       = false;
+    m_HideBankItComment    = false;
+    m_CheckCDSProductId    = false;
+    m_SupressSegLoc        = false;
+    m_SrcQualsToNote       = false;
+    m_HideEmptySource      = false;
+    m_GoQualsToNote        = false;
+    m_GeneSynsToNote       = false;
+    m_SelenocysteineToNote = false;
+    m_ForGBRelease         = false;
+    m_HideUnclassPartial   = false;
 }
 
 
 void CFFContext::CFlags::x_SetDumpFlags(void)
 {
-    m_SupressLocalId     = false;
-    m_ValidateFeats      = false;
-    m_IgnorePatPubs      = false;
-    m_DropShortAA        = false;
-    m_AvoidLocusColl     = false;
-    m_IupacaaOnly        = false;
-    m_DropBadCitGens     = false;
-    m_NoAffilOnUnpub     = false;
-    m_DropIllegalQuals   = false;
-    m_CheckQualSyntax    = false;
-    m_NeedRequiredQuals  = false;
-    m_NeedOrganismQual   = false;
-    m_NeedAtLeastOneRef  = false;
-    m_CitArtIsoJta       = false;
-    m_DropBadDbxref      = false;
-    m_UseEmblMolType     = false;
-    m_HideBankItComment  = false;
-    m_CheckCDSProductId  = false;
-    m_SupressSegLoc      = false;
-    m_SrcQualsToNote     = false;
-    m_HideEmptySource    = false;
-    m_GoQualsToNote      = false;
-    m_GeneSynsToNote     = false;
-    m_ForGBRelease       = false;
-    m_HideUnclassPartial = false;
+    m_SupressLocalId       = false;
+    m_ValidateFeats        = false;
+    m_IgnorePatPubs        = false;
+    m_DropShortAA          = false;
+    m_AvoidLocusColl       = false;
+    m_IupacaaOnly          = false;
+    m_DropBadCitGens       = false;
+    m_NoAffilOnUnpub       = false;
+    m_DropIllegalQuals     = false;
+    m_CheckQualSyntax      = false;
+    m_NeedRequiredQuals    = false;
+    m_NeedOrganismQual     = false;
+    m_NeedAtLeastOneRef    = false;
+    m_CitArtIsoJta         = false;
+    m_DropBadDbxref        = false;
+    m_UseEmblMolType       = false;
+    m_HideBankItComment    = false;
+    m_CheckCDSProductId    = false;
+    m_SupressSegLoc        = false;
+    m_SrcQualsToNote       = false;
+    m_HideEmptySource      = false;
+    m_GoQualsToNote        = false;
+    m_GeneSynsToNote       = false;
+    m_SelenocysteineToNote = false;
+    m_ForGBRelease         = false;
+    m_HideUnclassPartial   = false;
 }
 
 
@@ -712,6 +723,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/03/05 18:46:26  shomrat
+* Added customization flags
+*
 * Revision 1.6  2004/02/19 18:03:29  shomrat
 * changed implementation of GetPreferredSynonym
 *
