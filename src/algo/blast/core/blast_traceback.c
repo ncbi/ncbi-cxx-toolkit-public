@@ -1129,8 +1129,14 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
                              query->length, query->sequence, one_db_seq.length,
                              orig_pssm + db_seq_start[0],
                              sbp->name);
-         if (sbp->posMatrix == NULL)
-            return -1;
+         /* The composition of the query could have caused this one
+            subject sequence to produce a bad PSSM. This should
+            not be a fatal error, so just go on to the next subject
+            sequence */
+         if (sbp->posMatrix == NULL) {
+            hsp_list = Blast_HSPListFree(hsp_list);
+            continue;
+         }
          
          sbp->kbp_gap[0]->K = RPS_K_MULT * karlin_k[hsp_list->oid];
          sbp->kbp_gap[0]->logK = log(RPS_K_MULT * karlin_k[hsp_list->oid]);
