@@ -449,7 +449,7 @@ CNetCacheClient::GetData(const string&  key,
                 break;
             case eRW_Eof:
                 if (x_read == 0)
-                    CNetCacheClient::eNotFound;
+                    return CNetCacheClient::eNotFound;
                 if (n_read)
                     *n_read = x_read;
                 return CNetCacheClient::eReadComplete;
@@ -553,6 +553,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/11/10 12:40:30  kuznets
+ * Bug fix: missing return
+ *
  * Revision 1.20  2004/11/09 20:04:47  kuznets
  * Fixed logical errors in GetData
  *
