@@ -91,7 +91,7 @@ USING_SCOPE (sequence);
 
 
 #define ENTREZ_URL "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=%s&list_uids=%ld&dopt=%s\" %s>"
-#define TRACE_URL  "<a href=\"http://www.ncbi.nlm.nih.gov/Traces/trace.cgi?val=%s&cmd=retrieve&dopt=fasta\">"
+#define TRACE_URL  "<a href=\"http://www.ncbi.nlm.nih.gov/Traces/trace.cgi?cmd=raw&query=retrieve+fasta+%s\">"
 
 /* url for linkout*/
 #define URL_LocusLink "<a href=\"http://www.ncbi.nlm.nih.gov/LocusLink/list.cgi?Q=%d%s\"><img border=0 height=16 width=16 src=\"/blast/images/L.gif\" alt=\"LocusLink info\"></a>"
@@ -153,6 +153,7 @@ CDisplaySeqalign::CDisplaySeqalign(CSeq_align_set& seqalign, list <SeqlocInfo>& 
   m_EntrezTerm = NcbiEmptyString;
   m_QueryNumber = 0;
   m_BlastType = NcbiEmptyString;
+  m_MidLineStyle = eBar;
 
   const int (*matrixToUse)[m_PMatrixSize];
   if(!matrix){
@@ -208,6 +209,57 @@ static int GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids);
 
 static string MakeURLSafe(char* src);
 static void getAlnScores(const CSeq_align& aln, int& score, double& bits, double& evalue);
+static int s_GetStdsegFrame(const CStd_seg& ss, CScope& scope);
+static bool s_canDoMultiAlign(const CSeq_align& aln, CScope scope);
+static CRef<CSeq_id> GetSeqIdByType(const list<CRef<CSeq_id> >& ids, CSeq_id::E_Choice choice);
+static int s_getFrame (int start, ENa_strand strand, const CSeq_id& id, CScope& sp);
+
+static int s_GetStdsegMasterFrame(const CStd_seg& ss, CScope& scope){
+  const CRef<CSeq_loc> slc = ss.GetLoc().front();
+  ENa_strand strand = GetStrand(*slc);
+  int frame = s_getFrame(strand ==  eNa_strand_plus ? GetStart(*slc) : GetStop(*slc), strand ==  eNa_strand_plus? eNa_strand_plus : eNa_strand_minus, *(ss.GetIds().front()), scope);
+  
+  return frame;
+}
+
+/*Note that start is zero bases.  It returns frame +/1(1-3).  ) indicates erro*/
+static int s_getFrame (int start, ENa_strand strand, const CSeq_id& id, CScope& sp) {
+  int frame = 0;
+  if (strand == eNa_strand_plus) {
+    frame = (start % 3) + 1;
+  } else if (strand == eNa_strand_minus) {
+    frame = -((sp.GetBioseqHandle(id).GetBioseq().GetInst().GetLength() - start - 1) % 3 + 1);
+   
+  }
+  return frame;
+}
+static bool s_canDoMultiAlign(const CSeq_align_set& aln, CScope& scope){
+  bool multiAlign = true;
+  int firstFrame = 0;
+  bool isFirstSeqalign = true;
+  /*Make sure that in case of stdseg, the master must be in same frame for all pairwise for multialign view */
+  for (CTypeConstIterator<CSeq_align> seqalign = ConstBegin(aln); seqalign; ++ seqalign){
+    if (seqalign->GetSegs().Which() == CSeq_align::C_Segs::e_Denseg){
+      break;
+    } else if (seqalign->GetSegs().Which() == CSeq_align::C_Segs::e_Std){
+      CTypeConstIterator<CStd_seg> ss = ConstBegin(*seqalign);     
+      int curFrame = s_GetStdsegMasterFrame(*ss, scope);
+      if (isFirstSeqalign){
+	firstFrame = curFrame;
+	isFirstSeqalign = false;
+      } else {
+	if (firstFrame != curFrame){
+	  multiAlign = false;
+	  break;
+	}
+       
+      }
+    }
+   
+  }
+  return multiAlign;
+}
+
 
 static void getAlnScores(const CSeq_align& aln, int& score, double& bits, double& evalue){
   for (CSeq_align::TScore::const_iterator iter = aln.GetScore().begin(); iter != aln.GetScore().end(); iter++){
@@ -368,7 +420,7 @@ static const string GetSeqIdStringByFastaOrder(const CSeq_id& id, CScope& sp, bo
   return idString;
 }
 
-CRef<CSeq_id> CDisplaySeqalign::GetSeqIdByType(const list<CRef<CSeq_id> >& ids, CSeq_id::E_Choice choice) {
+static CRef<CSeq_id> GetSeqIdByType(const list<CRef<CSeq_id> >& ids, CSeq_id::E_Choice choice) {
   CRef<CSeq_id> cid;
 
   for (CBioseq::TId::const_iterator iter = ids.begin(); iter != ids.end(); iter ++){
@@ -383,7 +435,7 @@ CRef<CSeq_id> CDisplaySeqalign::GetSeqIdByType(const list<CRef<CSeq_id> >& ids, 
 
 static int GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids){
   int gi = 0;
-  CRef<CSeq_id> id = CDisplaySeqalign::GetSeqIdByType(ids, CSeq_id::e_Gi);
+  CRef<CSeq_id> id = GetSeqIdByType(ids, CSeq_id::e_Gi);
   if (!(id.Empty())){
     return id->GetGi();
   }
@@ -414,6 +466,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
   string middleLine;
   list<alnFeatureInfo*>* bioseqFeature= new list<alnFeatureInfo*>[rowNum];
   CAlnMap::TSignedRange* rowRng = new CAlnMap::TSignedRange[rowNum];
+  int* frame = new int[rowNum];
 
   //conver to aln coordinates for mask seqloc
   list<alnSeqlocInfo*> alnLocList;
@@ -447,6 +500,8 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
   //prepare data for each row
   for (int row=0; row<rowNum; row++) {
     rowRng[row] = m_AV->GetSeqAlnRange(row);
+    frame[row] = (m_AV->GetWidth(row) == 3 ? s_getFrame(m_AV->IsPositiveStrand(row) ? m_AV->GetSeqStart(row) : m_AV->GetSeqStop(row), m_AV->IsPositiveStrand(row) ? eNa_strand_plus : eNa_strand_minus, m_AV->GetSeqId(row), m_Scope) : 0);
+ 
     //make feature
     if(m_AlignOption & eShowCdsFeature){
       getFeatureInfo(bioseqFeature[row], *m_featScope, CSeqFeatData::e_Cdregion, row);
@@ -517,6 +572,13 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
     if (m_AlignType&eNuc){ 
       out<<" Strand="<<(m_AV->StrandSign(0)==1 ? "Plus" : "Minus")<<"/"<<(m_AV->StrandSign(1)==1? "Plus" : "Minus")<<endl;
     }
+    if(frame[0] != 0 && frame[1] != 0) {
+      out <<" Frame = " << ((frame[0] > 0) ? "+" : "") << frame[0] <<"/"<<((frame[1] > 0) ? "+" : "") << frame[1]<<endl;
+    } else if (frame[0] != 0){
+      out <<" Frame = " << ((frame[0] > 0) ? "+" : "") << frame[0] <<endl;
+    }  else if (frame[1] != 0){
+      out <<" Frame = " << ((frame[1] > 0) ? "+" : "") << frame[1] <<endl;
+    } 
     out<<endl;
   }
   //output rows
@@ -531,9 +593,9 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
     //here is each row
     for (int row=0; row<rowNum; row++) {
       bool hasSequence = true;
-      if(m_AlignOption&eMultiAlign){
-	hasSequence = curRange.IntersectingWith(rowRng[row]);
-      }
+   
+      hasSequence = curRange.IntersectingWith(rowRng[row]);
+     
       //only output rows that have sequence
       if (hasSequence){
 	int start = seqStarts[row].front() + 1;  //+1 for 1 based
@@ -585,7 +647,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 	    }         
 	  }
 	}
-	OutputSeq(sequence[row], m_AV->GetSeqId(row), j, actualLineLen, out);
+	OutputSeq(sequence[row], m_AV->GetSeqId(row), j, actualLineLen, frame[row], out);
         AddSpace(out, m_SeqStopMargin);
 	out << end;
         
@@ -627,15 +689,15 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 	    }
 	    out<<(*iter)->feature->featureId;
 	    AddSpace(out, maxIdLen+m_IdStartMargin+maxStartLen+m_StartSequenceMargin-(*iter)->feature->featureId.size());
-	    OutputSeq((*iter)->featureString, CSeq_id(), j, actualLineLen, out);
+	    OutputSeq((*iter)->featureString, CSeq_id(), j, actualLineLen, 0, out);
 	    out<<endl;
 	  }
 	}
 	
 	//display middle line
-	if (row == 0 && ((m_AlignOption & eShowBarMiddleLine)||(m_AlignOption & eShowCharMiddleLine)) && !(m_AlignOption&eMultiAlign)) {
+	if (row == 0 && ((m_AlignOption & eShowMiddleLine)) && !(m_AlignOption&eMultiAlign)) {
 	  AddSpace(out, maxIdLen+m_IdStartMargin+maxStartLen+m_StartSequenceMargin);
-	  OutputSeq(middleLine, CSeq_id(), j, actualLineLen, out);
+	  OutputSeq(middleLine, CSeq_id(), j, actualLineLen, 0, out);
 	  out<<endl;
 	}
       }
@@ -666,9 +728,10 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
   delete [] rowRng;
   delete [] seqStarts;
   delete [] seqStops;
+  delete [] frame;
 }
 
-//To display teh seqalign
+//To display the seqalign
 void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
 
   string previous_id = NcbiEmptyString, subid = NcbiEmptyString;
@@ -696,10 +759,10 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
   if(!(m_AlignOption&eMultiAlign)){//pairwise alignment
 
     list<alnInfo*> avList;  
-    if(!(m_AlignOption&eMultiAlign)){ //construct aln vector and store alignment start and stop for dumpgnl
+    // if(!(m_AlignOption&eMultiAlign)){ //construct aln vector and store alignment start and stop for dumpgnl
       for (CTypeConstIterator<CSeq_align> sa_it2 = ConstBegin(*m_SeqalignSetRef); sa_it2&&num_align<m_NumAlignToShow; ++sa_it2, num_align++) {
-
-	CTypeConstIterator<CDense_seg> ds = ConstBegin(*sa_it2);
+	
+	CTypeConstIterator<CDense_seg> ds = ConstBegin(sa_it2->GetSegs().Which() == CSeq_align::C_Segs::e_Std ? *(sa_it2->CreateDensegFromStdseg()) : *sa_it2);
 	CRef<CAlnVec> avRef( new CAlnVec(*ds, m_Scope));
 	
 	try{
@@ -723,7 +786,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
 	  continue;
 	}
       }
-    } 
+      //} 
     //display
   
     for(list<alnInfo*>::iterator iterAv = avList.begin(); iterAv != avList.end(); iterAv ++){
@@ -757,7 +820,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
     CAlnMix mix(m_Scope);
     num_align = 0;
     for (CTypeConstIterator<CSeq_align> sa_it = ConstBegin(*m_SeqalignSetRef); sa_it&&num_align<m_NumAlignToShow; ++sa_it, num_align++) {
-      CTypeConstIterator<CDense_seg> ds = ConstBegin(*sa_it);
+      CTypeConstIterator<CDense_seg> ds = ConstBegin(sa_it->GetSegs().Which() == CSeq_align::C_Segs::e_Std ? *(sa_it->CreateDensegFromStdseg()) : *sa_it);
       if(m_Scope.GetBioseqHandle(*((*ds).GetIds())[1])){
 	mix.Add(*ds);
       }
@@ -767,7 +830,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
     
     mix.Merge(CAlnMix::fGen2EST| CAlnMix::fMinGap | CAlnMix::fQuerySeqMergeOnly | CAlnMix::fFillUnalignedRegions);  
   
-    // *out2<<mix.GetDenseg();
+    //  *out2<<mix.GetDenseg();
     out<<endl;
     CRef<CAlnVec> avRef (new CAlnVec (mix.GetDenseg(), m_Scope));
     m_AV = avRef;
@@ -785,25 +848,31 @@ const void CDisplaySeqalign::fillIdentityInfo(const string& sequenceStandard, co
   match = 0;
   positive = 0;
   int min_length=min<int>(sequenceStandard.size(), sequence.size());
-  if(m_AlignOption & eShowBarMiddleLine || m_AlignOption & eShowCharMiddleLine){
+  if(m_AlignOption & eShowMiddleLine){
     middleLine = sequence;
   }
   for(int i=0; i<min_length; i++){
     if(sequenceStandard[i]==sequence[i]){
-      if(m_AlignOption & eShowBarMiddleLine ) {
-	middleLine[i] = '|';
-      } else if (m_AlignOption & eShowCharMiddleLine){
-	middleLine[i] = sequence[i];
+      if(m_AlignOption & eShowMiddleLine){
+	if(m_MidLineStyle == eBar ) {
+	  middleLine[i] = '|';
+	} else if (m_MidLineStyle == eChar){
+	  middleLine[i] = sequence[i];
+	}
       }
       match ++;
     } else {
       if ((m_AlignType&eProt) && m_Matrix[sequenceStandard[i]][sequence[i]] > 0){  
 	positive ++;
-	if (m_AlignOption & eShowCharMiddleLine){
-	  middleLine[i] = '+';
+	if(m_AlignOption & eShowMiddleLine){
+	  if (m_MidLineStyle == eChar){
+	    middleLine[i] = '+';
+	  }
 	}
       } else {
-	middleLine[i] = ' ';
+	if (m_AlignOption & eShowMiddleLine){
+	  middleLine[i] = ' ';
+	}
       }    
     }
   }  
@@ -821,7 +890,9 @@ const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, CNcbi
     int firstGi = 0;
   
     if(bdl.empty()){ //no blast defline struct, should be no such case now
+      out << ">"; 
       wid->WriteAsFasta(out);
+      out<<" ";
       out << GetTitle(bspHandle);
       out << endl;
     } else {
@@ -883,7 +954,7 @@ const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, CNcbi
 }
 
 //Output sequence and mask sequences if any
-const void CDisplaySeqalign::OutputSeq(string& sequence, const CSeq_id& id, int start, int len, CNcbiOstream& out) const {
+const void CDisplaySeqalign::OutputSeq(string& sequence, const CSeq_id& id, int start, int len, int frame, CNcbiOstream& out) const {
   int actualSize = sequence.size();
   assert(actualSize > start);
   list<CRange<int> > actualSeqloc;
@@ -892,7 +963,8 @@ const void CDisplaySeqalign::OutputSeq(string& sequence, const CSeq_id& id, int 
   for (list<alnSeqlocInfo*>::const_iterator iter = m_Alnloc.begin();  iter != m_Alnloc.end(); iter++){
     int from=(*iter)->alnRange.GetFrom();
     int to=(*iter)->alnRange.GetTo();
-    if(id.Match((*iter)->seqloc->seqloc->GetInt().GetId())){
+    int locFrame = (*iter)->seqloc->frame;
+    if(id.Match((*iter)->seqloc->seqloc->GetInt().GetId()) && locFrame == frame){
       bool isFirstChar = true;
       CRange<int> eachSeqloc(0, 0);
       //go through each residule and mask it
@@ -1093,7 +1165,7 @@ void  CDisplaySeqalign::setFeatureInfo(alnFeatureInfo* featInfo, const CSeq_loc&
 }
 
 //May need to add a "|" to the current insert for insert on next rows
-int addBar(string& seq, int insertAlnPos, int alnStart){
+static int addBar(string& seq, int insertAlnPos, int alnStart){
   int end = seq.size() -1 ;
   int barPos = insertAlnPos - alnStart + 1;
   string addOn;
@@ -1108,7 +1180,7 @@ int addBar(string& seq, int insertAlnPos, int alnStart){
 }
 
 //Add new insert seq to the current insert seq and return the end position of the latest insert
-int adjustInsert(string& curInsert, string& newInsert, int insertAlnPos, int alnStart){
+static int adjustInsert(string& curInsert, string& newInsert, int insertAlnPos, int alnStart){
   int insertEnd = 0;
   int curInsertSize = curInsert.size();
   int insertLeftSpace = insertAlnPos - alnStart - curInsertSize + 2;  //plus2 because insert is put after the position
@@ -1150,7 +1222,7 @@ void CDisplaySeqalign::doFills(int row, CAlnMap::TSignedRange& alnRange, int aln
 	bar[curInsertAlnStart-alnStart+1] = '|';  
 	int seqStart = (*iter)->GetRange().GetFrom();
 	int seqEnd = (*iter)->GetRange().GetTo();
-	string newInsert(abs(seqStart - seqEnd) + 1, ' ');
+	string newInsert;
 	newInsert = m_AV->GetSeqString(newInsert, row, seqStart, seqEnd);
 	prvsInsertAlnEnd = adjustInsert(seq, newInsert, curInsertAlnStart, alnStart);
 	isFirstChunk = false;
@@ -1411,7 +1483,7 @@ void CDisplaySeqalign::setDbGi() {
       }
     }
   }
- 
+
 }
 
 

@@ -67,8 +67,7 @@ public:
     eLinkout = (1 <<1 ),  //linkout gifs. 
     eSequenceRetrieval = (1 << 2),  //Get sequence feature
     eMultiAlign = (1 << 3 ),   //Multiple alignment view. Default pairwise
-    eShowBarMiddleLine = (1 << 4),  //show "|" as identity between query and hit. 
-    eShowCharMiddleLine = (1 << 5),  //show character or "+" as identity between query and hit.
+    eShowMiddleLine = (1 << 4),  //show line that indicates identity between query and hit. 
     eShowGi = (1 << 6),
     eShowIdentity = (1 << 7),  //show dot as identity to master
     eShowBlastInfo = (1 << 8),  //show blast type defline and score info for pairwise alignment
@@ -77,6 +76,12 @@ public:
     eShowCdsFeature = (1 << 11),  //show cds for sequence 
     eShowGeneFeature = (1 << 12), //show gene for sequence
     eMasterAnchored = (1 << 13)  //Query anchored, for multialignment only, default not anchored
+  };
+
+  //Need to set eShowMiddleLine to get this
+  enum MiddleLineStyle {
+    eChar = 0, //show character as identity between query and hit. Default
+    eBar       //show bar as identity between query and hit
   };
 
   //character used to display seqloc
@@ -117,6 +122,7 @@ public:
   void SetSeqLocColor (SeqLocColorOption option = eBlack) {m_SeqLocColor=option;}
   void SetLineLen (int len) {m_LineLen = len;}  //number of bases or amino acids per line
   void SetNumAlignToShow (int num) {m_NumAlignToShow = num;}  //Display top num seqalign
+  void SetMiddleLineStyle (MiddleLineStyle option = eBar) {m_MidLineStyle = option;}
 
   /*These are for blast alignment style display only*/
   void SetAlignType (AlignType type) {m_AlignType = type;}  //Needed only if you want to display blast-related information  
@@ -132,8 +138,7 @@ public:
   //display seqalign
   void DisplaySeqalign(CNcbiOstream& out) ;
   
-  static CRef<CSeq_id> GetSeqIdByType(const list<CRef<CSeq_id> >& ids, CSeq_id::E_Choice choice);
-
+ 
 private:
 
   struct alnInfo { //store alnvec and score info
@@ -188,11 +193,11 @@ private:
   CRef<CObjectManager> m_FeatObj; //used for fetching feature
   CRef<CScope> m_featScope; //used for fetching feature
   list<alnSeqlocInfo*> m_Alnloc; //seqloc display info (i.e., mask) for current alnvec
-
+  MiddleLineStyle m_MidLineStyle;
   //helper functions
   void DisplayAlnvec(CNcbiOstream& out);
   const void PrintDefLine(const CBioseq_Handle& bspHandle, CNcbiOstream& out) const;
-  const void OutputSeq(string& sequence, const CSeq_id& id, int start, int len, CNcbiOstream& out) const; //display sequence, start is seqalign coodinate
+  const void OutputSeq(string& sequence, const CSeq_id& id, int start, int len, int frame, CNcbiOstream& out) const; //display sequence, start is seqalign coodinate
 
   int getNumGaps();  //Count number of total gaps
   const CRef<CBlast_def_line_set> GetBlastDefline (const CBioseq& cbsp) const;
@@ -207,6 +212,7 @@ private:
   const void fillIdentityInfo(const string& sequenceStandard, const string& sequence , int& match, int& positive, string& middleLine);
   void setFeatureInfo(alnFeatureInfo* featInfo, const CSeq_loc& seqloc, int alnFrom, int alnTo, int alnStop, char patternChar, string patternId) const;  
   void setDbGi();
+
 };
 
 
