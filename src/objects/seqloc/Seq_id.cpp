@@ -35,6 +35,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2001/05/24 20:24:27  grichenk
+ * Renamed seq/objmgrstub.hpp -> obgmgr/objmgr_base.hpp
+ * Added Genbank, Embl and Ddbj support in CSeq_id::Compare()
+ * Fixed General output by CSeq_id::WriteAsFasta()
+ *
  * Revision 6.11  2001/04/17 04:14:49  vakatov
  * CSeq_id::AsFastaString() --> CSeq_id::WriteAsFasta()
  *
@@ -85,7 +90,7 @@
 
 // object manager includes
 #include <objects/seq/Bioseq.hpp>
-#include <objects/seq/objmgrstub.hpp>
+#include <objects/objmgr/objmgr_base.hpp>
 
 // generated classes
 
@@ -162,6 +167,12 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
         return GetPrf().Match(sid2.GetPrf())? e_YES: e_NO;
     case e_Pdb:
         return GetPdb().Match(sid2.GetPdb())? e_YES: e_NO;
+    case e_Genbank:
+        return GetGenbank().Match(sid2.GetGenbank())? e_YES: e_NO;
+    case e_Embl:
+        return GetEmbl().Match(sid2.GetEmbl())? e_YES: e_NO;
+    case e_Ddbj:
+        return GetDdbj().Match(sid2.GetDdbj())? e_YES: e_NO;
     default:
         return e_error;
     }
@@ -233,7 +244,8 @@ void CSeq_id::WriteAsFasta(ostream& out)
     case e_General:
         {
             const CDbtag& dbt = GetGeneral();
-            out << Upcase(dbt.GetDb()) << '|' << (dbt.GetTag().AsString(out));
+            out << Upcase(dbt.GetDb()) << '|';
+            dbt.GetTag().AsString(out);
         }
         break;
     case e_Gi:
