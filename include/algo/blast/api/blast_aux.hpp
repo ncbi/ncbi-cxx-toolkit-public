@@ -64,6 +64,22 @@ END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
+/* Convenience typedef's for common types used in BLAST to implement the RAII
+ * idiom.
+ */
+
+/// Uses C Deleter (free) - used in functions that deal with CORE BLAST
+#define TYPEDEF_AUTOPTR_CDELETER(type) \
+typedef AutoPtr<type, CDeleter<type> > TAuto ## type ## Ptr
+
+/// Uses delete [] operator - for C++ arrays
+#define TYPEDEF_AUTOPTR_ARRAYDELETER(type) \
+typedef AutoPtr<type, ArrayDeleter<type> > TAuto ## type ## ArrayPtr
+
+TYPEDEF_AUTOPTR_CDELETER(Uint1);
+TYPEDEF_AUTOPTR_CDELETER(Char);
+TYPEDEF_AUTOPTR_ARRAYDELETER(Uint1);
+
 /// Map a string into an element of the ncbi::blast::EProgram enumeration 
 /// (except eBlastProgramMax).
 /// @param program_name [in]
@@ -106,7 +122,7 @@ void BlastMaskLocProteinToDNA(BlastMaskLoc** mask, TSeqLocVector &slp);
  * @return NULL if memory allocation failure, otherwise genetic code string.
  */
 NCBI_XBLAST_EXPORT
-AutoPtr<Uint1, ArrayDeleter<Uint1> >
+TAutoUint1ArrayPtr
 FindGeneticCode(int genetic_code);
 
 /** Initializes a special extra structure for RPS BLAST database, needed
@@ -198,6 +214,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2004/12/28 16:45:57  camacho
+* Move typedefs to AutoPtr to public header so that they are used consistently
+*
 * Revision 1.49  2004/12/20 21:50:17  camacho
 * + RAII BlastEffectiveLengthsParameters
 *

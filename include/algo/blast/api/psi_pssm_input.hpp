@@ -36,6 +36,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <algo/blast/api/pssm_input.hpp>
+#include <algo/blast/api/blast_aux.hpp>
 
 /// Forward declaration for unit test classes
 class CPssmEngineTest;
@@ -119,7 +120,7 @@ private:
     /////////////////////////// Auxiliary functions ///////////////////////////
 
     /// Typedef for sequence data and its length
-    typedef pair<AutoPtr<Uint1, ArrayDeleter<Uint1> >, TSeqPos> TSeqPair;
+    typedef pair<TAutoUint1ArrayPtr, TSeqPos> TSeqPair;
 
     /// Tries to fetch the sequence data for the subject for the segments 
     /// specified in the Dense-seg. If the sequence cannot be retrieved from the
@@ -173,6 +174,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/12/28 16:45:57  camacho
+ * Move typedefs to AutoPtr to public header so that they are used consistently
+ *
  * Revision 1.8  2004/11/02 20:37:16  camacho
  * Doxygen fixes
  *
