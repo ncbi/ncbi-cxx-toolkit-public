@@ -57,11 +57,16 @@ public:
   virtual streambuf *BlobStreamBuf(int start, int stop, const CBlobClass &cl);
   virtual CBlob *RetrieveBlob(istream &is);
   virtual CSeqref* Dup();
-  virtual int Compare(CSeqref &seqRef,EMatchLevel ml=eSeq) ;
+  virtual int Compare(const CSeqref &seqRef,EMatchLevel ml=eSeq) const ;
+  virtual void print() const ;
 
   CIntStreamable::TInt &Gi() { return m_Gi.Value(); };
   string &Sat() { return m_Sat.Value(); };
   CIntStreamable::TInt &SatKey() { return m_SatKey.Value(); };
+  
+  const CIntStreamable::TInt  Gi()     const { return m_Gi.Value(); };
+  const string               &Sat()    const { return m_Sat.Value(); };
+  const CIntStreamable::TInt  SatKey() const { return m_SatKey.Value(); };
 
 private:
   CIntStreamable m_Gi;
@@ -102,6 +107,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.3  2002/03/21 01:34:51  kimelman
+* gbloader related bugfixes
+*
 * Revision 1.2  2002/03/20 04:50:35  kimelman
 * GB loader added
 *

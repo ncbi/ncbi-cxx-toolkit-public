@@ -50,10 +50,12 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId)
   CID1server_back id1_reply;
   CObjectIStream& server_input = *CObjectIStream::Open(eSerial_AsnBinary, *server, false);
   server_input >> id1_reply;
-
-  int gi = id1_reply.GetGotgi();
+  
   CID1server_request id1_request1;
-  id1_request1.SetGetgirev(gi);
+  {{
+    int gi = id1_reply.GetGotgi();
+    id1_request1.SetGetgirev(gi);
+  }}
   {
     CObjectOStreamAsnBinary server_output(*server);
     server_output << id1_request1;
@@ -65,7 +67,7 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId)
   {
     int number = 0;
     string dbname;
-    gi = 0;
+    int gi = 0;
 
     iterate(CSeq_hist_rec::TIds, it2, it->GetIds())
     {
@@ -94,6 +96,7 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId)
     id1Seqref.SatKey() = number;
     id1Seqref.Flag() = 0;
     m_Stream << id1Seqref;
+    break; // mk - get only the first one
   }
   return m_Stream.rdbuf();
 }
@@ -140,10 +143,10 @@ CId1StreamBuf::CId1StreamBuf(CId1Seqref &id1Seqref) : m_Id1Seqref(id1Seqref)
   params->SetGi(m_Id1Seqref.Gi());
   params->SetEnt(m_Id1Seqref.SatKey());
   params->SetSat(m_Id1Seqref.Sat());
-
+  
   CID1server_request id1_request;
   id1_request.SetGetsefromgi(*params);
-
+  
   STimeout tmout;
   tmout.sec = 9;
   tmout.usec = 0;
@@ -202,20 +205,30 @@ void CId1Blob::Restore(istream &is)
   CBlob::Restore(is);
 }
 
-int CId1Seqref::Compare(CSeqref &seqRef,EMatchLevel ml)
+void CId1Seqref::print() const
 {
-  CId1Seqref *p = dynamic_cast<CId1Seqref*>(&seqRef);
-  if(p==0) return -1 ; // runtime_error("Attempt to compare seqrefs from different sources");
+  cout << "SeqRef(" << Sat() << "," << SatKey () << "," << Gi() << ")" ;
+}
+
+int CId1Seqref::Compare(const CSeqref &seqRef,EMatchLevel ml) const
+{
+  const CId1Seqref *p = dynamic_cast<const CId1Seqref*>(& seqRef);
+  if(p==0) throw runtime_error("Attempt to compare seqrefs from different sources");
   if(ml==eContext) return 0;
+
+  //cout << "Compare" ; print(); cout << " vs "; p->print(); cout << endl;
+    
   if(Sat() < p->Sat())  return -1;
   if(Sat() > p->Sat())  return 1;
   // Sat() == p->Sat()
   if(SatKey() < p->SatKey())  return -1;
   if(SatKey() > p->SatKey())  return 1;
-  // blob == p->blob 
+  // blob == p->blob
+  //cout << "Same TSE" << endl;
   if(ml==eTSE) return 0;
   if(Gi() < p->Gi())  return -1;
   if(Gi() > p->Gi())  return 1;
+  //cout << "Same GI" << endl;
   return 0;
 }
 
@@ -224,6 +237,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.4  2002/03/21 01:34:55  kimelman
+* gbloader related bugfixes
+*
 * Revision 1.3  2002/03/20 04:50:13  kimelman
 * GB loader added
 *

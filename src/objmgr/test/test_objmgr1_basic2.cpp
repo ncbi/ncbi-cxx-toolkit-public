@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/03/21 01:34:57  kimelman
+* gbloader related bugfixes
+*
 * Revision 1.1  2002/03/20 04:50:16  kimelman
 * GB loader added
 *
@@ -95,9 +98,10 @@ using namespace objects;
 class CTestDataLoader : public CGBDataLoader
 {
 public:
-    CTestDataLoader(const string& loader_name) : CGBDataLoader(*(new CId1Reader),loader_name) {};
-    CTestDataLoader() : CGBDataLoader(*(new CId1Reader()),"tiny-id",2) {};
+    CTestDataLoader(const string& loader_name) : CGBDataLoader(loader_name) {};
+    CTestDataLoader() : CGBDataLoader("tiny-id",new CId1Reader) {};
 };
+
 
 //===========================================================================
 // CTestApplication
@@ -122,7 +126,7 @@ NcbiCout << "      Reading Data    ==============================" << NcbiEndl;
             CRef< CTestDataLoader> pLoader2 = new CTestDataLoader();
             pOm->RegisterDataLoader( *pLoader2, CObjectManager::eDefault);
             
-            int i = 2;
+            int i = 16;
             while(i<1800)
               {
                 CScope scope2(*pOm);
@@ -131,9 +135,21 @@ NcbiCout << "      Reading Data    ==============================" << NcbiEndl;
                 CSeq_id x;
                 x.SetGi(i);
                 CObjectOStreamAsn oos(NcbiCout);
-                oos << scope2.GetBioseqHandle(x).GetBioseq();
+                try
+                  {
+                    iterate(list< CRef< CSeq_id > >, it, scope2.GetBioseqHandle(x).GetBioseq().GetId())
+                      {
+                        oos << **it;
+                        NcbiCout << NcbiEndl;
+                      }
+                    NcbiCout << NcbiEndl;
+                  }
+                catch (exception e)
+                  {
+                    cout << e.what();
+                  }
                 NcbiCout << NcbiEndl;
-                i=1801;
+                i++;
               }
         }
         // scopes deleted, all dataloaders alive

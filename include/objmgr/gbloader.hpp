@@ -131,11 +131,14 @@ private:
     private:
       CSeqref *m_sr;
     public:
-      CCmpTSE(CSeqref *sr) : m_sr(sr) {};
+      CCmpTSE(CSeqref *sr)           : m_sr(sr)        {};
+      CCmpTSE(auto_ptr<CSeqref> &asr): m_sr(asr.get()) {};
       ~CCmpTSE(void) {};
-      operator bool  (void)       const { return m_sr==0;};
-      bool operator< (CCmpTSE &b) { return m_sr->Compare(*b.m_sr,CSeqref::eTSE)< 0;};
-      bool operator==(CCmpTSE &b) { return m_sr->Compare(*b.m_sr,CSeqref::eTSE)==0;};
+      operator bool  (void)       const { return m_sr!=0;};
+      bool operator< (const CCmpTSE &b) const { return m_sr->Compare(*b.m_sr,CSeqref::eTSE)< 0;};
+      bool operator==(const CCmpTSE &b) const { return m_sr->Compare(*b.m_sr,CSeqref::eTSE)==0;};
+      bool operator<=(const CCmpTSE &b) const { return *this == b && *this < b ;};
+      CSeqref& get() const { return *m_sr; };
   };
   struct STSEinfo;
   struct SSeqrefs;
@@ -190,6 +193,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.5  2002/03/21 01:34:49  kimelman
+ * gbloader related bugfixes
+ *
  * Revision 1.4  2002/03/20 21:26:23  gouriano
  * *** empty log message ***
  *

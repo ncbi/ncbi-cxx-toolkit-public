@@ -59,7 +59,7 @@ struct CGBDataLoader::STSEinfo
   
   TSeqids           m_SeqIds;
   CTSEUpload        m_upload;
-  STSEinfo() : prev(0), next(0) { };
+  STSEinfo() : prev(0), next(0),m_upload() { };
 };
 
 struct CGBDataLoader::SSeqrefs
@@ -84,6 +84,7 @@ struct CGBDataLoader::SSeqrefs
 CGBDataLoader::CGBDataLoader(const string& loader_name,CReader *driver,int gc_threshold)
   : CDataLoader(loader_name)
 {
+  cout << "CGBDataLoader" << endl;
   m_Driver=(driver?driver:new CId1Reader);
   m_UseListHead = m_UseListTail = 0;
   
@@ -99,6 +100,7 @@ CGBDataLoader::CGBDataLoader(const string& loader_name,CReader *driver,int gc_th
 
 CGBDataLoader::~CGBDataLoader(void)
 {
+  cout << "~CGBDataLoader" << endl;
   iterate(TSeqId2Seqrefs,sih_it,m_Bs2Sr)
     {
       delete sih_it->second->m_Sr;
@@ -219,7 +221,7 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,const TTSESet& tse_s
   best=0;conflict=false;
   iterate (SSeqrefs::TSeqrefs, srp, *sr->m_Sr)
     {
-      TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(CCmpTSE(&**srp));
+      TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(CCmpTSE(*srp));
       if (tsep == m_Sr2TseInfo.end()) continue;
       iterate(TTSESet, sit, tse_set)
         {
@@ -331,7 +333,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
   TInt         blob_mask = x_Request2BlobMask(choice);
   SSeqrefs*    sr=0;
   
-  //cout << "x_GetRecords-0" <<endl;
+  cout << "x_GetRecords" <<endl;
   m_LookupMutex.Lock();
   if(!x_ResolveHandle(sih,sr))
     return false;// mutex has already been unlocked
@@ -342,19 +344,29 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
       // skip TSE which doesn't contain requested type of info
       //cout << "x_GetRecords-Seqref_iterate_0" <<endl;
       if( ((~(*srp)->Flag()) & sr_mask) == 0 ) continue;
-      //cout << "x_GetRecords-Seqref_iterate_1" <<endl;
+      //cout << "list uploaded TSE" << endl;
+      //for(TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.begin(); tsep != m_Sr2TseInfo.end(); ++tsep)
+      //  {
+      //     tsep->first.get().print();
+      //  }
+      //cout << "x_GetRecords-Seqref_iterate_1" << endl;
+      //(*srp)->print(); cout << endl ;
       
       // find TSE info for each seqref
       TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(CCmpTSE(*srp));
       STSEinfo *tse;
       if (tsep != m_Sr2TseInfo.end())
-        tse = tsep->second;
+        {
+          tse = tsep->second;
+          //cout << "x_GetRecords-oldTSE(" << tse << ") mode=" << (tse->m_upload.m_mode) << endl;
+        }
       else
         {
-          tse = new STSEinfo;
+          tse = new STSEinfo();
           tse->key.reset((*srp)->Dup());
           m_Sr2TseInfo[CCmpTSE(tse->key.get())] = tse;
           m_TseCount++;
+          //cout << "x_GetRecords-newTSE(" << tse << ") mode=" << (tse->m_upload.m_mode) << endl;
         }
       
       bool use_global_lock=true;
@@ -372,7 +384,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
         {
           //cout << "x_GetRecords-range_0" <<endl;
           // check Data
-          cout << "x_GetRecords-range_0" <<endl;
+          //cout << "x_GetRecords-range_0" <<endl;
           if(!x_NeedMoreData(&tse->m_upload,
                              *srp,
                              lrange->first.GetFrom(),
@@ -428,7 +440,7 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
   TSeqId2Seqrefs::iterator bsit = m_Bs2Sr.find(h);
   if (bsit == m_Bs2Sr.end() )
     {
-      sr = new SSeqrefs ;
+      sr = new SSeqrefs() ;
       m_Bs2Sr[h]=sr;
     }
   else
@@ -446,25 +458,31 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
   m_LookupMutex.Unlock();
   if(!local_lock) m_Pool.GetMutex(sr).Lock();
 
+  cout << "ResolveHandle-before(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) <<endl;
+  
   bool calibrating = m_Timer.NeedCalibration();
   if(calibrating) m_Timer.Start();
   
-  //cout << "ResolveHandle-before(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) <<endl;
   SSeqrefs::TSeqrefs *osr=sr->m_Sr;
   sr->m_Sr=0;
   for(CIStream srs(m_Driver->SeqrefStreamBuf(*x_GetSeqId(h))); ! srs.Eof(); )
     {
       CSeqref *seqRef = m_Driver->RetrieveSeqref(srs);
-      if(!sr->m_Sr) sr->m_Sr = new SSeqrefs::TSeqrefs;
+      if(!sr->m_Sr) sr->m_Sr = new SSeqrefs::TSeqrefs();
       sr->m_Sr->push_back(seqRef);
     }
   if(calibrating) m_Timer.Stop();
-  cout << "ResolveHandle(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) <<endl;
   sr->m_Timer.Reset(m_Timer);
+  cout << "ResolveHandle(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) <<endl;
+  
   m_Pool.GetMutex(sr).Unlock();
   m_LookupMutex.Lock();
   m_SlowTraverseMode--;
   local_lock=m_SlowTraverseMode>0;
+  //iterate(SSeqrefs::TSeqrefs, srp, *(sr->m_Sr))
+  //  {
+  //    (*srp)->print(); cout << endl;
+  //  }
   if(osr)
     {
       bsit = m_Bs2Sr.find(h); // make sure we are not deleted in the unlocked time 
@@ -473,8 +491,10 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
           SSeqrefs::TSeqrefs *nsr=bsit->second->m_Sr;
           
           // catch dissolving TSE and mark them dead
+          //cout << "old seqrefs" << endl;
           iterate(SSeqrefs::TSeqrefs,srp,*osr)
             {
+              //(*srp)->print(); cout << endl;
               bool found=false;
               iterate(SSeqrefs::TSeqrefs,nsrp,*nsr)
                 if(CCmpTSE(*srp)==CCmpTSE(*nsrp)) {found=true; break;}
@@ -514,7 +534,7 @@ CGBDataLoader::x_NeedMoreData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TI
       // and return from routine if all data already loaded
       // present;
     }
-  cout << "x_NeedMoreData(" << srp << "," << tse_up << ") need_data " << need_data << " " <<endl;
+  //cout << "x_NeedMoreData(" << srp << "," << tse_up << ") need_data " << need_data << " " <<endl;
   return need_data;
 }
 
@@ -525,16 +545,17 @@ CGBDataLoader::x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt bl
     return false;
   m_InvokeGC=true;
   bool new_tse = false;
-  cout << "GetBlob(" << srp << "," << tse_up << ") " << from << ":"<< to << ":=" << tse_up->m_mode << endl;
+  cout << "GetBlob(" ; srp->print(); cout << "," << tse_up << ") " << from << ":"<< to << ":=" << tse_up->m_mode << endl;
   _VERIFY(tse_up->m_mode != CTSEUpload::eDone);
   if (tse_up->m_mode == CTSEUpload::eNone)
     {
       CBlobClass cl;
+      int count=0;
       cl.Value() = blob_mask;
-      for(CIStream bs(srp->BlobStreamBuf(from, to, cl)); ! bs.Eof(); )
+      for(CIStream bs(srp->BlobStreamBuf(from, to, cl)); ! bs.Eof();count++ )
         {
           CBlob *blob = srp->RetrieveBlob(bs);
-          cout << "GetBlob(" << srp << ") " << from << ":"<< to << "  class("<<blob->Class()<<")" << endl;
+          //cout << "GetBlob(" << srp << ") " << from << ":"<< to << "  class("<<blob->Class()<<")" << endl;
           if (blob->Class()==0)
             {
               cout << "GetBlob(" << srp << ") " << "- whole blob uploaded" << endl;
@@ -554,6 +575,13 @@ CGBDataLoader::x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt bl
             }
           delete blob;
         }
+      if(count==0)
+        {
+          tse_up->m_mode = CTSEUpload::eDone;
+          // TODO log message
+          cout << "ERROR: can not retrive blob : " ; srp->print(); cout << endl;
+        }
+      
       //cout << "GetData-after:: " << from << to <<  endl;
     }
   else
@@ -569,6 +597,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/03/21 01:34:53  kimelman
+* gbloader related bugfixes
+*
 * Revision 1.4  2002/03/20 21:24:59  gouriano
 * *** empty log message ***
 *

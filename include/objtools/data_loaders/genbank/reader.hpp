@@ -51,7 +51,8 @@ public:
   CIntStreamable(TInt value = 0) : m_Value(value) {}
   virtual void Save(ostream &) const;
   virtual void Restore(istream &);
-  TInt &Value() { return m_Value; }
+  TInt      &Value()       { return m_Value; }
+  const TInt Value() const { return m_Value; }
   
 private:
   TInt m_Value;
@@ -63,7 +64,8 @@ public:
   CStringStreamable(const string &value = "") : m_Value(value) {}
   virtual void Save(ostream &) const;
   virtual void Restore(istream &);
-  string &Value() { return m_Value; }
+  string       &Value()       { return m_Value; }
+  const string &Value() const { return m_Value; }
 
 private:
   string m_Value;
@@ -115,13 +117,14 @@ public:
   virtual streambuf *BlobStreamBuf(int start, int stop, const CBlobClass &cl) = 0;
   virtual CBlob     *RetrieveBlob(istream &is) = 0;
   virtual CSeqref*   Dup() = 0 ;
+  virtual void       print() const = 0;
 
   enum EMatchLevel {
     eContext,
     eTSE    ,
     eSeq
   };
-  virtual int Compare(CSeqref &seqRef,EMatchLevel ml=eSeq) = 0;
+  virtual int Compare(const CSeqref &seqRef,EMatchLevel ml=eSeq) const = 0;
   CSeqrefFlag::TInt &Flag() { return m_Flag.Value(); }
 private:
   CSeqrefFlag m_Flag;
@@ -152,6 +155,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.3  2002/03/21 01:34:50  kimelman
+* gbloader related bugfixes
+*
 * Revision 1.2  2002/03/20 04:50:35  kimelman
 * GB loader added
 *
