@@ -78,4 +78,4 @@ LIBS = \
 
 
 # for distribution on linux/gcc, do:
-#		-Wl,-Bstatic -lpng -lz -ljpeg -ltiff -Wl,-Bdynamic
+#   gcc  ....  -lpthread -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic
