@@ -35,6 +35,7 @@
 #include <serial/typeinfo.hpp>
 #include <objects/objmgr/impl/tse_info.hpp>
 #include <objects/objmgr/impl/handle_range_map.hpp>
+#include <objects/objmgr/impl/synonyms.hpp>
 #include <objects/objmgr/scope.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -667,12 +668,11 @@ void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
             continue;
         }
 
-        set<CSeq_id_Handle> syns;
-        m_Scope->GetSynonyms(idit->first, syns);
+        const CSynonymsSet& syns = *m_Scope->x_GetSynonyms(idit->first);
         if ( syns.find(idit->first) == syns.end() ) {
             x_Search(idit->first, idit->second, cvt);
         }
-        iterate ( set<CSeq_id_Handle>, synit, syns ) {
+        iterate ( CSynonymsSet, synit, syns ) {
             x_Search(*synit, idit->second, cvt);
         }
     }
@@ -733,6 +733,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2003/03/03 20:32:24  vasilche
+* Use cached synonyms.
+*
 * Revision 1.49  2003/02/28 19:27:19  vasilche
 * Cleaned Seq_loc conversion class.
 *
