@@ -48,7 +48,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objmgr/seq_descr_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
@@ -107,13 +107,15 @@ int CSampleObjmgrApplication::Run(void)
     const CArgs& args = GetArgs();
     int gi = args["gi"].AsInteger();
 
+    /////////////////////////////////////////////////////////////////////////
     // Create object manager
     // * We use CRef<> here to automatically delete the OM on exit.
+    // * While the CRef<> exists GetInstance() will return the same object.
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
     // Create GenBank data loader and register it with the OM.
-    // * The last argument "eDefault" informs the OM that the loader must
-    // * be included in scopes during the CScope::AddDefaults() call.
+    // * The GenBank loader is automatically marked as a default loader
+    // * to be included in scopes during the CScope::AddDefaults() call.
     CGBDataLoader::RegisterInObjectManager(*object_manager);
 
     // Create a new scope ("attached" to our OM).
@@ -125,6 +127,7 @@ int CSampleObjmgrApplication::Run(void)
     CSeq_id seq_id;
     seq_id.SetGi(gi);
 
+    /////////////////////////////////////////////////////////////////////////
     // Get Bioseq handle for the Seq-id.
     // * Most of requests will use this handle.
     CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(seq_id);
@@ -134,111 +137,121 @@ int CSampleObjmgrApplication::Run(void)
         ERR_POST(Fatal << "Bioseq not found, with GI=" << gi);
     }
 
-    // Get the Bioseq object.
-    CConstRef<CBioseq> bioseq(&bioseq_handle.GetBioseq());
+    /////////////////////////////////////////////////////////////////////////
+    // Get the bioseq core, which is CBioseq with only most important
+    // members (Id and parts of Inst) guaranteed to be set.
+    CBioseq_Handle::TBioseqCore bioseq_core = bioseq_handle.GetBioseqCore();
     // Printout each Seq-id from the Bioseq.
-    cout << "ID: ";
+    NcbiCout << "ID: ";
     // "iterate" is the same as:
-    // for (CBioseq::TId::const_iterator id_it = bioseq->GetId().begin();
+    // for (CBioseq::TId::const_iterator id_it = bioseq_core->GetId().begin();
     //      id_it != bioseq->GetId().end(); ++id_it)
-    ITERATE (CBioseq::TId, id_it, bioseq->GetId()) {
-        if (id_it != bioseq->GetId().begin())
-            cout << " + "; // print id separator
-        cout << (*id_it)->DumpAsFasta();
+    ITERATE (CBioseq::TId, id_it, bioseq_core->GetId()) {
+        if (id_it != bioseq_core->GetId().begin())
+            NcbiCout << " + "; // print id separator
+        NcbiCout << (*id_it)->DumpAsFasta();
     }
-    cout << endl;
+    NcbiCout << NcbiEndl;
 
+    /////////////////////////////////////////////////////////////////////////
     // Get the sequence using CSeqVector.
     // Use default encoding:  CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
     CSeqVector seq_vect = bioseq_handle.GetSeqVector();
-    // Printout the length and the first 10 symbols of the sequence.
-    cout << "Sequence:  length=" << seq_vect.size();
-    cout << ",  data=";
-    string str;
-    for (TSeqPos i = 0;  i < seq_vect.size()  &&  i < 10;  i++) {
-        str += seq_vect[i];
-    }
-    cout << NStr::PrintableString(str) << endl;
+    // Printout length of the sequence.
+    NcbiCout << "Sequence:  length=" << seq_vect.size();
+    NcbiCout << ",  data=";
 
-    // Use CSeq_descr iterator.
+    // Copy up to 10 first symbmols into string and print it.
+    string str;
+    seq_vect.GetSeqData(0, 9, str);
+    // Use NStr::PrintableString() to print the sequence since it may
+    // contain non-printable characters.
+    NcbiCout << NStr::PrintableString(str) << NcbiEndl;
+
+    /////////////////////////////////////////////////////////////////////////
+    // Use CSeqdesc iterator.
     // Iterate through all descriptors -- starting from the Bioseq, go
     // all the way up the Seq-entries tree, to the top-level Seq-entry (TSE).
     unsigned desc_count = 0;
-    for (CSeq_descr_CI desc_it(bioseq_handle);
-         desc_it;  ++desc_it) {
+    for (CSeqdesc_CI desc_it(bioseq_handle); desc_it; ++desc_it) {
         desc_count++;
     }
-    cout << "# of descriptions:  " << desc_count << endl;
+    NcbiCout << "# of descriptors:  " << desc_count << NcbiEndl;
 
+    /////////////////////////////////////////////////////////////////////////
     // Use CSeq_feat iterator.
     // Iterate through all features which can be found for the given Bioseq
     // in the current scope, including features from all TSEs.
     // Construct Seq-loc to get features for.
     CSeq_loc seq_loc;
-    cout << "# of features:" << endl;
-
     // No region restrictions -- use the whole Bioseq
     seq_loc.SetWhole().SetGi(gi);
+
+    // Construct selector to restrict features by type etc. Right now
+    // it's set to find all features includung those located on sequence
+    // segments, resolve far references if any.
+    SAnnotSelector sel(CSeqFeatData::e_not_set); // no type restrictions
+    sel.SetResolveAll();                         // no resolution restrictions
+    NcbiCout << "# of features:" << NcbiEndl;
+
     unsigned feat_count = 0;
     // Create CFeat_CI using the current scope and location.
     // The 3rd arg value specifies that no feature type restriction is applied.
-    for (CFeat_CI feat_it(scope, seq_loc, CSeqFeatData::e_not_set);
-         feat_it;  ++feat_it) {
+    for (CFeat_CI feat_it(scope, seq_loc, sel); feat_it; ++feat_it) {
         feat_count++;
         // Get Seq-annot containing the feature
         CConstRef<CSeq_annot> annot(&feat_it.GetSeq_annot());
     }
-    cout << "   [whole]           Any:    " << feat_count << endl;
+    NcbiCout << "   [whole]           Any:    " << feat_count << NcbiEndl;
 
     // The same region (whole sequence), but restricted feature type:
     // searching for e_Gene features only.
     unsigned gene_count = 0;
-    for (CFeat_CI feat_it(scope, seq_loc, CSeqFeatData::e_Gene);
-         feat_it;  ++feat_it) {
+    sel.SetFeatType(CSeqFeatData::e_Gene);
+    for (CFeat_CI feat_it(scope, seq_loc, sel); feat_it; ++feat_it) {
         gene_count++;
     }
-    cout << "   [whole]           Genes:  " << gene_count << endl;
+    NcbiCout << "   [whole]           Genes:  " << gene_count << NcbiEndl;
 
     // Region set to interval 0..9 on the Bioseq.
     // Any feature intersecting with the region should be selected.
     seq_loc.SetInt().SetId().SetGi(gi);
     seq_loc.SetInt().SetFrom(0);
     seq_loc.SetInt().SetTo(9);
+    sel.SetFeatType(CSeqFeatData::e_not_set);
     unsigned ranged_feat_count = 0;
     // No feature type restrictions applied.
-    for (CFeat_CI feat_it(scope, seq_loc, CSeqFeatData::e_not_set);
-         feat_it;  ++feat_it) {
+    for (CFeat_CI feat_it(scope, seq_loc, sel); feat_it; ++feat_it) {
         ranged_feat_count++;
     }
-    cout << "   [0..9]            Any:    " << ranged_feat_count << endl;
+    NcbiCout << "   [0..9]            Any:    " << ranged_feat_count << NcbiEndl;
 
     // Search features only in the TSE containing the target Bioseq.
     // Since only one Seq-id can be used as the target Bioseq, the iterator
     // is constructed not from a Seq-loc, but from a Bioseq handle and the
     // start/stop points on the Bioseq. If both start and stop are 0, then the
-    // whole Bioseq is used. The last parameter may be used for type filtering.
+    // whole Bioseq is used.
     unsigned ranged_tse_feat_count = 0;
-    for (CFeat_CI feat_it(bioseq_handle, 0, 999, CSeqFeatData::e_not_set);
-         feat_it;  ++feat_it) {
+    for (CFeat_CI feat_it(bioseq_handle, 0, 999, sel); feat_it; ++feat_it) {
         ranged_tse_feat_count++;
     }
-    cout << "   [0..9, TSE-only]  Any:    " << ranged_tse_feat_count << endl;
+    NcbiCout << "   [0..999, TSE]     Any:    "
+        << ranged_tse_feat_count << NcbiEndl;
 
-
+    /////////////////////////////////////////////////////////////////////////
     // The same method can be used to iterate through alignments and graphs,
     // except that there is no type filtering for these two.
-    cout << "# of alignments:" << endl;
+    NcbiCout << "# of alignments:" << NcbiEndl;
 
     seq_loc.SetWhole().SetGi(gi);
     unsigned align_count = 0;
-    for (CAlign_CI align_it(scope, seq_loc);  align_it;  ++align_it) {
+    for (CAlign_CI align_it(scope, seq_loc); align_it; ++align_it) {
         align_count++;
     }
-    cout << "   [whole]           Any:    " << align_count << endl;
-
+    NcbiCout << "   [whole]           Any:    " << align_count << NcbiEndl;
 
     // Done
-    cout << "Done" << endl;
+    NcbiCout << "Done" << NcbiEndl;
     return 0;
 }
 
@@ -260,6 +273,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2004/08/19 21:10:51  grichenk
+ * Updated object manager sample code
+ *
  * Revision 1.16  2004/07/21 15:51:24  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added
