@@ -1,4 +1,4 @@
---$Revision: 6.0 $
+--$Revision: 6.1 $
 --********************************************************************
 --
 --  Direct Submission of Sequence Data
@@ -16,7 +16,7 @@
 NCBI-Submit DEFINITIONS ::=
 BEGIN
 
-EXPORTS Seq-submit;
+EXPORTS Seq-submit, Contact-info;
 
 IMPORTS Cit-sub, Author FROM NCBI-Biblio
         Date, Object-id FROM NCBI-General
