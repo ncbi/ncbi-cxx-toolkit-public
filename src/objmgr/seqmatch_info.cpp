@@ -48,15 +48,14 @@ CSeqMatch_Info::CSeqMatch_Info(void)
 
 CSeqMatch_Info::CSeqMatch_Info(const CSeq_id_Handle& h,
                                CTSE_Info& tse)
-    : m_Handle(h), m_TSE(&tse), m_Lock(&tse)
+    : m_Handle(h), m_TSE(&tse)
 {
 }
 
 
 CSeqMatch_Info::CSeqMatch_Info(const CSeqMatch_Info& info)
     : m_Handle(info.m_Handle),
-      m_TSE(info.m_TSE),
-      m_Lock(info.m_TSE)
+      m_TSE(info.m_TSE)
 {
 }
 
@@ -67,7 +66,6 @@ CSeqMatch_Info::operator= (const CSeqMatch_Info& info)
     if (&info != this) {
         m_Handle = info.m_Handle;
         m_TSE = info.m_TSE;
-        m_Lock.Set(m_TSE);
     }
     return *this;
 }
@@ -99,6 +97,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/03/21 19:22:51  grichenk
+* Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
+*
 * Revision 1.9  2003/03/12 20:09:34  grichenk
 * Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
 *

@@ -149,23 +149,6 @@ bool CScope::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
     return false;
 }
 
-#if 0
-bool CScope::AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
-                           size_t index,
-                           TSeqPosition start, TSeqLength length)
-{
-    CMutexGuard guard(m_Scope_Mtx);
-    CRef<CDelta_seq> dseq(new CDelta_seq);
-    dseq->SetLiteral().SetSeq_data(seq);
-    dseq->SetLiteral().SetLength(length);
-    ITERATE (TDataSourceSet, it, m_setDataSrc) {
-        if ( it->m_DataSource->AttachSeqData(bioseq, *dseq, index, start, length) ) {
-            return true;
-        }
-    }
-    return false;
-}
-#endif
 
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
 {
@@ -286,9 +269,9 @@ CSeqMatch_Info CScope::x_BestResolve(CSeq_id_Handle idh)
     bool best_is_in_history = false;
     bool best_is_live = false;
     CSeqMatch_Info extra_live;
-    ITERATE (set<CSeqMatch_Info>, bm_it, bm_set) {
+    NON_CONST_ITERATE (set<CSeqMatch_Info>, bm_it, bm_set) {
         TRequestHistory::const_iterator hist =
-            m_History.find(CTSE_Lock(const_cast<CTSE_Info&>(**bm_it)));
+            m_History.find(TTSE_Lock(&const_cast<CTSE_Info&>(**bm_it)));
         if (hist != m_History.end()) {
             if ( !best_is_in_history ) {
                 // The first TSE from the history -- save it
@@ -351,15 +334,15 @@ void CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
         it->m_DataSource->GetTSESetWithAnnots(idh, tse_set, *this);
     }
     //### Filter the set depending on the requests history?
-    ITERATE (CAnnotTypes_CI::TTSESet, tse_it, tse_set) {
-        x_AddToHistory(**tse_it);
+    NON_CONST_ITERATE (CAnnotTypes_CI::TTSESet, tse_it, tse_set) {
+        x_AddToHistory(const_cast<CTSE_Info&>(**tse_it));
     }
 }
 
 
-CTSE_Lock CScope::GetTSEInfo(const CSeq_entry* tse)
+TTSE_Lock CScope::GetTSEInfo(const CSeq_entry* tse)
 {
-    CTSE_Lock ret;
+    TTSE_Lock ret;
     CMutexGuard guard(m_Scope_Mtx);
     ITERATE (TDataSourceSet, it, m_setDataSrc) {
         ret = it->m_DataSource->GetTSEInfo(tse);
@@ -396,7 +379,7 @@ const CScope::TRequestHistory& CScope::x_GetHistory(void)
 
 void CScope::x_AddToHistory(CTSE_Info& tse)
 {
-    if (!m_History.insert(CTSE_Lock(&tse)).second)
+    if (!m_History.insert(TTSE_Lock(&tse)).second)
         return;
     NON_CONST_ITERATE (CTSE_Info::TBioseqMap, bsi, tse.m_BioseqMap) {
         CBioseq_Handle bsh(bsi->first, *this, *bsi->second);
@@ -529,6 +512,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2003/03/21 19:22:51  grichenk
+* Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
+*
 * Revision 1.53  2003/03/19 21:55:50  grichenk
 * Avoid re-mapping TSEs in x_AddToHistory() if already indexed
 *

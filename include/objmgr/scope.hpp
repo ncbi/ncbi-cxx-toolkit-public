@@ -165,7 +165,7 @@ public:
     virtual void SetFindMode(EFindMode mode);
 
     // History of requests
-    typedef set<CTSE_Lock> TRequestHistory;
+    typedef set<TTSE_Lock> TRequestHistory;
 
     void ResetHistory(void);
 
@@ -178,7 +178,7 @@ public:
                           const CSeq_entry* limit_entry = 0);
     void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
                              CAnnotTypes_CI::TTSESet& tse_set);
-    CTSE_Lock GetTSEInfo(const CSeq_entry* tse);
+    TTSE_Lock GetTSEInfo(const CSeq_entry* tse);
 
 private:
     void x_DetachFromOM(void);
@@ -238,6 +238,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/03/21 19:22:48  grichenk
+* Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
+*
 * Revision 1.36  2003/03/18 14:46:36  grichenk
 * Set limit object type to "none" if the object is null.
 *

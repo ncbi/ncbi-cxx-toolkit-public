@@ -167,7 +167,7 @@ public:
 
     CAnnotTypes_CI& operator= (const CAnnotTypes_CI& it);
 
-    typedef set<CTSE_Lock> TTSESet;
+    typedef set<TTSE_Lock> TTSESet;
 
     const CSeq_annot& GetSeq_annot(void) const;
 
@@ -353,6 +353,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/03/21 19:22:48  grichenk
+* Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
+*
 * Revision 1.35  2003/03/18 21:48:27  grichenk
 * Removed obsolete class CAnnot_CI
 *

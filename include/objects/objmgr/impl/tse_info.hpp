@@ -68,9 +68,9 @@ struct NCBI_XOBJMGR_EXPORT SAnnotObject_Index {
     CHandleRangeMap::TLocMap::const_iterator  m_HandleRange;
 };
 
-class CTSE_Lock;
+typedef CRef<CTSE_Info> TTSE_Lock;
 
-class NCBI_XOBJMGR_EXPORT CTSE_Info : public CObject, public CMutableAtomicCounter
+class NCBI_XOBJMGR_EXPORT CTSE_Info : public CObject
 {
 public:
     // 'ctors
@@ -104,7 +104,7 @@ public:
     static void x_DropRangeMap(TAnnotSelectorMap& selMap,
                                const SAnnotSelector& selector);
 
-    bool CounterLocked(void) const;
+    bool Locked(void) const { return !ReferencedOnlyOnce(); }
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
     // Parent data-source
@@ -126,13 +126,7 @@ public:
     TBlob_ID   m_Blob_ID;
 
 private:
-    friend class CTSE_Lock;
     friend class CTSE_Guard;
-
-    void LockCounter(void) const;
-    void UnlockCounter(void) const;
-    void CounterOverflow(void) const;
-    void CounterUnderflow(void) const;
 
     // Hide copy methods
     CTSE_Info(const CTSE_Info&);
@@ -158,41 +152,6 @@ private:
 };
 
 
-class NCBI_XOBJMGR_EXPORT CTSE_Lock
-{
-public:
-    CTSE_Lock(void);
-    explicit CTSE_Lock(CTSE_Info& tse);
-    explicit CTSE_Lock(CTSE_Info* tse);
-    explicit CTSE_Lock(const CRef<CTSE_Info>& tse);
-    ~CTSE_Lock(void);
-
-    CTSE_Lock(const CTSE_Lock&);
-    CTSE_Lock& operator=(const CTSE_Lock&);
-
-    void Set(CTSE_Info& tse);
-    void Set(CTSE_Info* tse);
-    void Set(const CRef<CTSE_Info>& tse);
-
-    operator bool(void) const;
-    bool operator!(void) const;
-
-    CTSE_Info& operator*(void) const;
-    CTSE_Info* operator->(void) const;
-    CTSE_Info* GetPointer(void) const;
-
-    bool operator==(const CTSE_Lock& lock) const;
-    bool operator!=(const CTSE_Lock& lock) const;
-    bool operator<(const CTSE_Lock& lock) const;
-
-private:
-    void x_Lock(void) const;
-    void x_Unlock(void) const;
-
-    CRef<CTSE_Info> m_TSE;
-};
-
-
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -200,32 +159,6 @@ private:
 //
 /////////////////////////////////////////////////////////////////////
 
-
-inline
-void CTSE_Info::LockCounter(void) const
-{
-    if ( Add(1) == 0 ) {
-        // rollback
-        Add(-1);
-        CounterOverflow();
-    }
-}
-
-inline
-void CTSE_Info::UnlockCounter(void) const
-{
-    if ( Add(-1)+1 == 0 ) {
-        // rollback
-        Add(1);
-        CounterUnderflow();
-    }
-}
-
-inline
-bool CTSE_Info::CounterLocked(void) const
-{
-    return Get() > 0;
-}
 
 inline
 bool CTSE_Info::operator< (const CTSE_Info& info) const
@@ -253,174 +186,15 @@ CTSE_Guard::~CTSE_Guard(void)
 }
 
 
-inline
-CTSE_Info& CTSE_Lock::operator*(void) const
-{
-    return const_cast<CTSE_Info&>(*m_TSE);
-}
-
-
-inline
-CTSE_Info* CTSE_Lock::operator->(void) const
-{
-    return const_cast<CTSE_Info*>(&*m_TSE);
-}
-
-
-inline
-CTSE_Info* CTSE_Lock::GetPointer(void) const
-{
-    return const_cast<CTSE_Info*>(m_TSE.GetPointer());
-}
-
-
-inline
-void CTSE_Lock::x_Lock(void) const
-{
-    if ( m_TSE ) {
-        m_TSE->LockCounter();
-    }
-}
-
-
-inline
-void CTSE_Lock::x_Unlock(void) const
-{
-    if ( m_TSE ) {
-        m_TSE->UnlockCounter();
-    }
-}
-
-
-inline
-CTSE_Lock::CTSE_Lock(void)
-{
-}
-
-
-inline
-CTSE_Lock::CTSE_Lock(CTSE_Info* tse)
-    : m_TSE(tse)
-{
-    x_Lock();
-}
-
-
-inline
-CTSE_Lock::CTSE_Lock(CTSE_Info& tse)
-    : m_TSE(&tse)
-{
-    x_Lock();
-}
-
-
-inline
-CTSE_Lock::CTSE_Lock(const CRef<CTSE_Info>& tse)
-    : m_TSE(tse)
-{
-    x_Lock();
-}
-
-
-inline
-CTSE_Lock::~CTSE_Lock(void)
-{
-    x_Unlock();
-}
-
-
-inline
-CTSE_Lock::CTSE_Lock(const CTSE_Lock& lock)
-    : m_TSE(lock.m_TSE)
-{
-    x_Lock();
-}
-
-
-inline
-void CTSE_Lock::Set(CTSE_Info* tse)
-{
-    if ( m_TSE.GetPointerOrNull() != tse ) {
-        x_Unlock();
-        m_TSE.Reset(tse);
-        x_Lock();
-    }
-}
-
-
-inline
-void CTSE_Lock::Set(CTSE_Info& tse)
-{
-    if ( m_TSE.GetPointerOrNull() != &tse ) {
-        x_Unlock();
-        m_TSE.Reset(&tse);
-        x_Lock();
-    }
-}
-
-
-inline
-void CTSE_Lock::Set(const CRef<CTSE_Info>& tse)
-{
-    if ( m_TSE != tse ) {
-        x_Unlock();
-        m_TSE = tse;
-        x_Lock();
-    }
-}
-
-
-inline
-CTSE_Lock& CTSE_Lock::operator=(const CTSE_Lock& lock)
-{
-    if (this != &lock) {
-        Set(lock.m_TSE);
-    }
-    return *this;
-}
-
-
-inline
-CTSE_Lock::operator bool(void) const
-{
-    return m_TSE;
-}
-
-
-inline
-bool CTSE_Lock::operator!(void) const
-{
-    return !m_TSE;
-}
-
-
-inline
-bool CTSE_Lock::operator==(const CTSE_Lock& lock) const
-{
-    return m_TSE == lock.m_TSE;
-}
-
-
-inline
-bool CTSE_Lock::operator!=(const CTSE_Lock& lock) const
-{
-    return m_TSE != lock.m_TSE;
-}
-
-
-inline
-bool CTSE_Lock::operator<(const CTSE_Lock& lock) const
-{
-    return m_TSE < lock.m_TSE;
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/03/21 19:22:50  grichenk
+* Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
+*
 * Revision 1.25  2003/03/18 14:50:08  grichenk
 * Made CounterOverflow() and CounterUnderflow() private
 *

@@ -671,7 +671,7 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
         if ( m_TSESet.empty() ) {
             const CSeq_entry* tse = 
                 static_cast<const CSeq_entry*>(m_LimitObject.GetPointer());
-            CTSE_Lock tse_info = m_Scope->GetTSEInfo(tse);
+            TTSE_Lock tse_info(m_Scope->GetTSEInfo(tse));
             if ( tse_info ) {
                 m_TSESet.insert(tse_info);
             }
@@ -827,6 +827,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2003/03/21 19:22:51  grichenk
+* Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
+*
 * Revision 1.58  2003/03/20 20:36:06  vasilche
 * Fixed mapping of mix Seq-loc.
 *

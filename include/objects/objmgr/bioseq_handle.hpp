@@ -154,7 +154,7 @@ private:
     CSeq_id_Handle       m_Value;       // Seq-id equivalent
     CScope*              m_Scope;
     CRef<CBioseq_Info>   m_Bioseq_Info;
-    CTSE_Lock            m_TSE_Lock;
+    TTSE_Lock            m_TSE_Lock;
 
     friend class CSeqVector;
     friend class CHandleRangeMap;
@@ -182,7 +182,7 @@ CBioseq_Handle::CBioseq_Handle(const CBioseq_Handle& h)
 {
     // m_TSE_Info should never be null
     if ( m_Bioseq_Info )
-        m_TSE_Lock.Set(*m_Bioseq_Info->m_TSE_Info);
+        m_TSE_Lock.Reset(m_Bioseq_Info->m_TSE_Info);
 }
 
 inline
@@ -193,7 +193,7 @@ CBioseq_Handle& CBioseq_Handle::operator= (const CBioseq_Handle& h)
         m_Scope = h.m_Scope;
         m_Bioseq_Info = h.m_Bioseq_Info;
         if ( m_Bioseq_Info )
-            m_TSE_Lock.Set(*m_Bioseq_Info->m_TSE_Info);
+            m_TSE_Lock.Reset(m_Bioseq_Info->m_TSE_Info);
     }
     return *this;
 }
@@ -262,6 +262,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/03/21 19:22:48  grichenk
+* Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
+*
 * Revision 1.34  2003/03/18 21:48:27  grichenk
 * Removed obsolete class CAnnot_CI
 *

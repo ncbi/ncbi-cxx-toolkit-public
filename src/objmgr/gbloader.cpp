@@ -268,7 +268,7 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle, const TTSESet& tse_
   }
   ITERATE(TTSESet, sit, tse_set)
     {
-      CTSE_Info *ti = const_cast<CTSE_Info*>(sit->GetPointer());
+      CTSE_Info *ti = const_cast<CTSE_Info*>(*sit);
       const CSeq_entry *sep = ti->m_TSE;
       TTse2TSEinfo::iterator it = m_Tse2TseInfo.find(sep);
       if(it==m_Tse2TseInfo.end()) continue;
@@ -313,7 +313,7 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle, const TTSESet& tse_
           if (tsep == m_Sr2TseInfo.end()) continue;
           ITERATE(TTSESet, sit, tse_set)
             {
-              CTSE_Info *ti = const_cast<CTSE_Info*>(sit->GetPointer());;
+              CTSE_Info *ti = const_cast<CTSE_Info*>(*sit);;
               TTse2TSEinfo::iterator it = m_Tse2TseInfo.find(ti->m_TSE.GetPointer());
               if(it==m_Tse2TseInfo.end()) continue;
               if(it->second==tsep->second)
@@ -419,7 +419,7 @@ CGBDataLoader::GC(void)
         ++skip;
         // fast checks
         if (tse_to_drop->locked) continue;
-        if (tse_to_drop->tseinfop && tse_to_drop->tseinfop->CounterLocked()) continue;
+        if (tse_to_drop->tseinfop && tse_to_drop->tseinfop->Locked()) continue;
 
         const CSeq_entry *sep = tse_to_drop->m_upload.m_tse;
         if ( !sep ) {
@@ -839,6 +839,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2003/03/21 19:22:51  grichenk
+* Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
+*
 * Revision 1.54  2003/03/11 15:51:06  kuznets
 * iterate -> ITERATE
 *

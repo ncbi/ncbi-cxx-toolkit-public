@@ -51,26 +51,11 @@ BEGIN_SCOPE(objects)
 CTSE_Info::CTSE_Info(void)
     : m_DataSource(0), m_Dead(false)
 {
-    Set(0);
 }
 
 
 CTSE_Info::~CTSE_Info(void)
 {
-}
-
-
-void CTSE_Info::CounterOverflow(void) const
-{
-    THROW1_TRACE(runtime_error,
-                 "CTSE_Info::Lock() -- TSE lock counter overflow");
-}
-
-
-void CTSE_Info::CounterUnderflow(void) const
-{
-    THROW1_TRACE(runtime_error,
-                 "CTSE_Info::Unlock() -- The TSE is not locked");
 }
 
 
@@ -198,7 +183,7 @@ void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
             }
         }
     }
-    DebugDumpValue(ddc, "CMutableAtomicCounter::Get()", Get());
+    // DebugDumpValue(ddc, "CMutableAtomicCounter::Get()", Get());
 }
 
 
@@ -208,6 +193,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/03/21 19:22:51  grichenk
+* Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
+*
 * Revision 1.21  2003/03/12 20:09:34  grichenk
 * Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
 *

@@ -80,14 +80,14 @@ CDataSource::~CDataSource(void)
 {
     // Find and drop each TSE
     while ( !m_Entries.empty() ) {
-        _ASSERT( !m_Entries.begin()->second->CounterLocked() );
+        _ASSERT( !m_Entries.begin()->second->Locked() );
         DropTSE(*(m_Entries.begin()->second->m_TSE));
     }
     if(m_Loader) delete m_Loader;
 }
 
 
-CTSE_Lock
+TTSE_Lock
 CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle) const
 {
 //### Don't forget to unlock TSE in the calling function!
@@ -95,12 +95,12 @@ CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle) const
     CMutexGuard ds_guard(m_DataSource_Mtx);
     TTSEMap::const_iterator tse_set = m_TSE_seq.find(handle);
     if ( tse_set == m_TSE_seq.end() ) {
-        return CTSE_Lock();
+        return TTSE_Lock();
     }
     p_tse_set = const_cast<TTSESet*>(&tse_set->second);
     if ( p_tse_set->size() == 1) {
         // There is only one TSE, no matter live or dead
-        return CTSE_Lock(const_cast<CTSE_Info&>(**p_tse_set->begin()));
+        return TTSE_Lock(&const_cast<CTSE_Info&>(**p_tse_set->begin()));
     }
     // The map should not contain empty entries
     _ASSERT(p_tse_set->size() > 0);
@@ -116,13 +116,13 @@ CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle) const
     // Check live
     if (live.size() == 1) {
         // There is only one live TSE -- ok to use it
-        return CTSE_Lock(*live.begin());
+        return *live.begin();
     }
     else if ((live.size() == 0)  &&  m_Loader) {
         // No live TSEs -- try to select the best dead TSE
         CRef<CTSE_Info> best(m_Loader->ResolveConflict(handle, *p_tse_set));
         if ( best ) {
-            return CTSE_Lock(*p_tse_set->find(best));
+            return *p_tse_set->find(best);
         }
         THROW1_TRACE(runtime_error,
                      "CDataSource::x_FindBestTSE() -- "
@@ -132,7 +132,7 @@ CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle) const
     // TSEs may change)
     CRef<CTSE_Info> best(m_Loader->ResolveConflict(handle, live));
     if ( best ) {
-        return CTSE_Lock(*p_tse_set->find(best));
+        return *p_tse_set->find(best);
     }
     THROW1_TRACE(runtime_error,
                  "CDataSource::x_FindBestTSE() -- "
@@ -140,7 +140,7 @@ CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle) const
 }
 
 
-CTSE_Lock CDataSource::GetBlobById(const CSeq_id_Handle& idh)
+TTSE_Lock CDataSource::GetBlobById(const CSeq_id_Handle& idh)
 {
     TTSEMap::iterator tse_set = m_TSE_seq.find(idh);
     if (tse_set == m_TSE_seq.end()) {
@@ -150,12 +150,12 @@ CTSE_Lock CDataSource::GetBlobById(const CSeq_id_Handle& idh)
         }
         else {
             // No such blob, no loader to call
-            return CTSE_Lock();
+            return TTSE_Lock();
         }
 //###
     }
 //###
-    return CTSE_Lock();
+    return TTSE_Lock();
 }
 
 
@@ -217,14 +217,14 @@ const CSeq_entry& CDataSource::GetTSE(const CBioseq_Handle& handle)
 }
 
 
-CTSE_Lock CDataSource::GetTSEInfo(const CSeq_entry* entry)
+TTSE_Lock CDataSource::GetTSEInfo(const CSeq_entry* entry)
 {
     CConstRef<CSeq_entry> ref(entry);
     CMutexGuard guard(m_DataSource_Mtx);
     TEntries::iterator found = m_Entries.find(ref);
     if (found == m_Entries.end())
-        return CTSE_Lock();
-    return CTSE_Lock(found->second.GetPointerOrNull());
+        return TTSE_Lock();
+    return found->second;
 }
 
 
@@ -479,27 +479,27 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
                                      bool dead,
                                      TTSESet* tse_set)
 {
-    CTSE_Lock tse_info;
+    TTSE_Lock tse_info;
     // Lock indexes to prevent duplicate indexing
     CMutexGuard entries_guard(m_DataSource_Mtx);    
 
     TEntries::iterator found_tse = m_Entries.find(CRef<CSeq_entry>(&tse));
     if (found_tse == m_Entries.end()) {
         // New TSE info
-        tse_info.Set(new CTSE_Info);
+        tse_info.Reset(new CTSE_Info);
         tse_info->m_TSE = &tse;
         tse_info->m_Dead = dead;
         tse_info->m_DataSource = this;
-        // Do not lock TSE if there is no tse_set -- none will unlock it
+        m_TSELocks.insert(tse_info);
     }
     else {
         // existing TSE info
-        tse_info.Set(found_tse->second);
+        tse_info.Reset(found_tse->second);
     }
     _ASSERT(tse_info);
     CTSE_Guard tse_guard(*tse_info);
      
-    m_Entries[CRef<CSeq_entry>(&entry)].Reset(&*tse_info);
+    m_Entries[CRef<CSeq_entry>(&entry)] = &*tse_info;
     if ( entry.IsSeq() ) {
         CBioseq* seq = &entry.SetSeq();
         CBioseq_Info* info = new CBioseq_Info(entry);
@@ -517,7 +517,7 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
                 seq_tse_set.insert(CRef<CTSE_Info>(&*tse_info));
             }
             else {
-                tse_info.Set(const_cast<CTSE_Info&>(**tse_it));
+                tse_info.Reset(&const_cast<CTSE_Info&>(**tse_it));
             }
             TBioseqMap::iterator found = tse_info->m_BioseqMap.find(key);
             if ( found != tse_info->m_BioseqMap.end() ) {
@@ -716,16 +716,16 @@ void CDataSource::GetSynonyms(const CSeq_id_Handle& main_idh,
 {
     //### The TSE returns locked, unlock it
     CSeq_id_Handle idh = main_idh;
-    CTSE_Lock tse_info = x_FindBestTSE(main_idh);
+    TTSE_Lock tse_info(x_FindBestTSE(main_idh));
     if ( !tse_info ) {
         // Try to find the best matching id (not exactly equal)
         const CSeq_id& id = idh.GetSeqId();
         TSeq_id_HandleSet hset;
         GetSeq_id_Mapper().GetMatchingHandles(id, hset);
         ITERATE(TSeq_id_HandleSet, hit, hset) {
-            if ( tse_info  &&  idh.IsBetter(*hit) )
+            if ( bool(tse_info)  &&  idh.IsBetter(*hit) )
                 continue;
-            CTSE_Lock tmp_tse = x_FindBestTSE(*hit);
+            TTSE_Lock tmp_tse(x_FindBestTSE(*hit));
             if ( tmp_tse ) {
                 tse_info = tmp_tse;
                 idh = *hit;
@@ -755,32 +755,32 @@ void CDataSource::GetSynonyms(const CSeq_id_Handle& main_idh,
 
 
 void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
-                                      set<CTSE_Lock>& tse_set,
+                                      set<TTSE_Lock>& tse_set,
                                       CScope& scope)
 {
-    TTSESet tmp_tse_set;
-    TTSESet non_history;
+    TTSELockSet tmp_tse_set;
+    TTSELockSet non_history;
     CMutexGuard guard(m_DataSource_Mtx);    
 
     {{
         TTSEMap::const_iterator tse_it = m_TSE_ref.find(idh);
         if (tse_it != m_TSE_ref.end()) {
             _ASSERT(tse_it->second.size() > 0);
-            TTSESet selected_with_ref;
-            TTSESet selected_with_seq;
+            TTSELockSet selected_with_ref;
+            TTSELockSet selected_with_seq;
             ITERATE(TTSESet, tse, tse_it->second) {
                 if ( (*tse)->m_BioseqMap.find(idh) !=
                      (*tse)->m_BioseqMap.end() ) {
-                    selected_with_seq.insert(*tse); // with sequence
+                    selected_with_seq.insert(TTSE_Lock(*tse)); // with sequence
                 }
                 else
-                    selected_with_ref.insert(*tse); // with reference
+                    selected_with_ref.insert(TTSE_Lock(*tse)); // with reference
             }
 
             CRef<CTSE_Info> unique_from_history;
             CRef<CTSE_Info> unique_live;
-            ITERATE (TTSESet, with_seq, selected_with_seq) {
-                if ( scope.m_History.find(CTSE_Lock(*with_seq)) !=
+            ITERATE (TTSELockSet, with_seq, selected_with_seq) {
+                if ( scope.m_History.find(*with_seq) !=
                      scope.m_History.end() ) {
                     if ( unique_from_history ) {
                         THROW1_TRACE(runtime_error,
@@ -816,9 +816,9 @@ void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
                              "CDataSource::GetTSESetWithAnnots() -- "
                              "Ambigous request: multiple TSEs found");
             }
-            ITERATE(TTSESet, tse, selected_with_ref) {
+            ITERATE(TTSELockSet, tse, selected_with_ref) {
                 bool in_history =
-                    scope.m_History.find(CTSE_Lock(*tse)) !=
+                    scope.m_History.find(*tse) !=
                     scope.m_History.end();
                 if ( !(*tse)->m_Dead  || in_history ) {
                     // Select only TSEs present in the history and live TSEs
@@ -838,7 +838,7 @@ void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
     // Filter out TSEs not in the history yet and conflicting with any
     // history TSE. The conflict may be caused by any seq-id, even not
     // mentioned in the searched location.
-    ITERATE (TTSESet, tse_it, non_history) {
+    ITERATE (TTSELockSet, tse_it, non_history) {
         bool conflict = false;
         // Check each seq-id from the current TSE
         ITERATE (CTSE_Info::TBioseqMap, seq_it, (*tse_it)->m_BioseqMap) {
@@ -857,8 +857,8 @@ void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
             tmp_tse_set.insert(*tse_it);
         }
     }
-    ITERATE (TTSESet, lit, tmp_tse_set) {
-        tse_set.insert(CTSE_Lock(*lit));
+    ITERATE (TTSELockSet, lit, tmp_tse_set) {
+        tse_set.insert(*lit);
     }
 }
 
@@ -876,11 +876,17 @@ bool CDataSource::DropTSE(const CSeq_entry& tse)
     TEntries::iterator found = m_Entries.find(ref);
     if (found == m_Entries.end())
         return false;
-    if ( found->second->CounterLocked() )
+    if ( found->second->Locked() )
         return false; // Not really dropped, although found
     if ( m_Loader )
         m_Loader->DropTSE(found->first);
+    TTSE_Lock tse_lock(found->second);
     x_DropEntry(const_cast<CSeq_entry&>(*found->first));
+
+    // Release TSE lock
+    TTSELockSet::iterator tse_lock_it = m_TSELocks.find(tse_lock);
+    _ASSERT(tse_lock_it != m_TSELocks.end());
+    m_TSELocks.erase(tse_lock_it);
     return true;
 }
 
@@ -1194,7 +1200,7 @@ void CDataSource::x_CleanupUnusedEntries(void)
     while ( broken ) {
         broken = false;
         ITERATE(TEntries, it, m_Entries) {
-            if ( !it->second->CounterLocked() ) {
+            if ( !it->second->Locked() ) {
                 //### Lock the entry and check again
                 DropTSE(*it->first);
                 broken = true;
@@ -1228,16 +1234,16 @@ CSeqMatch_Info CDataSource::BestResolve(CSeq_id_Handle idh)
         m_Loader->GetRecords(hrm, CDataLoader::eBioseqCore, &loaded_tse_set);
     }
     CSeqMatch_Info match;
-    CTSE_Lock tse = x_FindBestTSE(idh);
+    TTSE_Lock tse(x_FindBestTSE(idh));
     if ( !tse ) {
         // Try to find the best matching id (not exactly equal)
         TSeq_id_HandleSet hset;
         GetSeq_id_Mapper().GetMatchingHandles(
             GetSeq_id_Mapper().GetSeq_id(idh), hset);
         ITERATE(TSeq_id_HandleSet, hit, hset) {
-            if ( tse  &&  idh.IsBetter(*hit) )
+            if ( bool(tse)  &&  idh.IsBetter(*hit) )
                 continue;
-            CTSE_Lock tmp_tse = x_FindBestTSE(*hit);
+            TTSE_Lock tmp_tse(x_FindBestTSE(*hit));
             if ( tmp_tse ) {
                 tse = tmp_tse;
                 idh = *hit;
@@ -1324,6 +1330,7 @@ bool CDataSource::GetTSEHandles(CScope& scope,
 
 void CDataSource::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
+/*
     ddc.SetFrame("CDataSource");
     CObject::DebugDump( ddc, depth);
 
@@ -1339,7 +1346,7 @@ void CDataSource::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     } else {
         DebugDumpValue(ddc, "m_Entries.type",
             "map<CRef<CSeq_entry>,CRef<CTSE_Info>>");
-        DebugDumpPairsCRefCRef(ddc, "m_Entries",
+        DebugDumpPairsCRef(ddc, "m_Entries",
             m_Entries.begin(), m_Entries.end(), depth);
 
         { //---  m_TSE_seq
@@ -1357,9 +1364,9 @@ void CDataSource::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
                 } else {
                     DebugDumpRangeCRef(ddc2, member_name,
                         (it->second).begin(), (it->second).end(), depth2);
-                }
             }
         }
+    }
 
         { //---  m_TSE_ref
             unsigned int depth2 = depth-1;
@@ -1385,6 +1392,7 @@ void CDataSource::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
         DebugDumpPairsCRefCRef(ddc, "m_SeqMaps",
             m_SeqMaps.begin(), m_SeqMaps.end(), depth);
     }
+*/
 }
 
 
@@ -1394,6 +1402,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2003/03/21 19:22:51  grichenk
+* Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
+*
 * Revision 1.92  2003/03/18 14:52:59  grichenk
 * Removed obsolete methods, replaced seq-id with seq-id handle
 * where possible. Added argument to limit annotations update to

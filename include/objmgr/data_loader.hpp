@@ -81,7 +81,7 @@ public:
     // CDataSource::AppendXXX() methods.
     //### virtual bool GetRecords(const CSeq_loc& loc, EChoice choice) = 0;
     
-    typedef set< CRef<CTSE_Info> > TTSESet;
+    typedef set<CTSE_Info*> TTSESet;
 
     // Request from a datasource using handles and ranges instead of seq-loc
     // The TSEs loaded in this call will be added to the tse_set.
@@ -139,6 +139,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/03/21 19:22:48  grichenk
+* Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
+*
 * Revision 1.13  2002/12/26 20:51:35  dicuccio
 * Added Win32 export specifier
 *

@@ -92,7 +92,6 @@ public:
 private:
     CSeq_id_Handle    m_Handle;     // best id handle, matching the request
     CRef<CTSE_Info>   m_TSE;        // TSE, containing the best match
-    CTSE_Lock         m_Lock;       // TSE, containing the best match
 };
 
 
@@ -103,6 +102,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/03/21 19:22:48  grichenk
+* Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
+*
 * Revision 1.10  2003/03/12 20:09:30  grichenk
 * Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
 *

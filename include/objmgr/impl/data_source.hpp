@@ -60,7 +60,9 @@ public:
     virtual ~CDataSource(void);
 
     /// Register new TSE (Top Level Seq-entry)
-    typedef set< CRef<CTSE_Info> > TTSESet;
+    typedef set< CTSE_Info* > TTSESet;
+    typedef set< CRef<CTSE_Info> > TTSELockSet;
+
     CTSE_Info* AddTSE(CSeq_entry& se, TTSESet* tse_set, bool dead = false);
 
     /// Add new sub-entry to "parent".
@@ -99,7 +101,7 @@ public:
 
     /// Get TSE info by seq-id handle. This should also get the list of all
     /// seq-ids for all bioseqs and the list of seq-ids used in annotations.
-    CTSE_Lock GetBlobById(const CSeq_id_Handle& idh);
+    TTSE_Lock GetBlobById(const CSeq_id_Handle& idh);
 
     /// Get Bioseq info by Seq-Id.
     /// Return "NULL" handle if the Bioseq cannot be resolved.
@@ -125,7 +127,7 @@ public:
     /// Get top level Seq-Entry for a Bioseq
     const CSeq_entry& GetTSE(const CBioseq_Handle& handle);
 
-    CTSE_Lock GetTSEInfo(const CSeq_entry* entry);
+    TTSE_Lock GetTSEInfo(const CSeq_entry* entry);
 
     /// Get Bioseq core structure
     CBioseq_Handle::TBioseqCore GetBioseqCore(const CBioseq_Handle& handle);
@@ -140,7 +142,7 @@ public:
     typedef CTSE_Info::TRange                       TRange;
     typedef CTSE_Info::TRangeMap                    TRangeMap;
     typedef CTSE_Info::TAnnotMap                    TAnnotMap;
-    typedef map<CConstRef<CSeq_entry>, CRef<CTSE_Info> > TEntries;
+    typedef map<CConstRef<CSeq_entry>, CTSE_Info* > TEntries;
     typedef CTSE_Info::TBioseqMap                   TBioseqMap;
     typedef map<CSeq_id_Handle, TTSESet>            TTSEMap;
     typedef map<CBioseq_Handle::TBioseqCore, CRef<CSeqMap> >  TSeqMaps;
@@ -152,7 +154,7 @@ public:
     void GetSynonyms(const CSeq_id_Handle& id,
                      set<CSeq_id_Handle>& syns);
     void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
-                             set<CTSE_Lock>& tse_set,
+                             set<TTSE_Lock>& tse_set,
                              CScope& scope);
 
     // Fill the set with bioseq handles for all sequences from a given TSE.
@@ -188,7 +190,7 @@ private:
     // The best bioseq is the bioseq from the live TSE or from the
     // only one TSE containing the ID (no matter live or dead).
     // If no matches were found, return 0.
-    CTSE_Lock x_FindBestTSE(const CSeq_id_Handle& handle) const;
+    TTSE_Lock x_FindBestTSE(const CSeq_id_Handle& handle) const;
 
     // Create CSeqMap for a bioseq
     void x_CreateSeqMap(const CBioseq& seq);
@@ -264,6 +266,7 @@ private:
     CRef<CSeq_entry>      m_pTopEntry;
     CObjectManager*       m_ObjMgr;
 
+    TTSELockSet           m_TSELocks;  // set of all TSEs to keep them locked
     TEntries              m_Entries;   // All known seq-entries and their TSEs
     TTSEMap               m_TSE_seq;   // id -> TSEs with bioseq
     TTSEMap               m_TSE_ref;   // id -> TSEs with references to id
@@ -310,6 +313,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/03/21 19:22:50  grichenk
+* Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
+*
 * Revision 1.46  2003/03/18 21:48:28  grichenk
 * Removed obsolete class CAnnot_CI
 *
