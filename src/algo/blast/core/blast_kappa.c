@@ -2558,6 +2558,7 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
   current_query_index = -1;
 
   while (BlastHSPStreamRead(hsp_stream, &thisMatch) != kBlastHSPStream_Eof) {
+
     /* for all matching sequences */
     Kappa_MatchingSequence matchingSeq; /* the data for a matching
                                          * database sequence */
@@ -2565,6 +2566,9 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
     if(thisMatch->hsp_array == NULL) {
       continue;
     }
+
+    /* Make sure the HSPs in this HSP list are sorted. */
+    Blast_HSPListCheckIfSorted(thisMatch);
 
     if (thisMatch->query_index != current_query_index) {
        /* This HSP list is for a new query sequence. Save results for 
