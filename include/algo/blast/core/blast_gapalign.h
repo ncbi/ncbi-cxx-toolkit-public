@@ -228,8 +228,7 @@ Int2 BLAST_MbGetGappedScore(BLAST_SequenceBlkPtr query,
  *        information from the ungapped alignment performed earlier) [in]
  * @param hsp_list_ptr Structure containing all saved HSPs [out]
  */
-Int2 LIBCALL
-BLAST_GetGappedScore (BLAST_SequenceBlkPtr query, 
+Int2 BLAST_GetGappedScore (BLAST_SequenceBlkPtr query, 
 		      BLAST_SequenceBlkPtr subject,
 		      BlastGapAlignStructPtr gap_align,
 		      BlastScoringOptionsPtr score_options, 

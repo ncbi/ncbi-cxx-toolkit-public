@@ -241,9 +241,9 @@ typedef struct BlastHitSavingOptions {
  */
 typedef struct BlastHitSavingParameters {
    BlastHitSavingOptionsPtr options; /**< The original (unparsed) options. */
-   int (LIBCALLBACK *handle_results)PROTO((VoidPtr query, VoidPtr subject, 
+   int (*handle_results)(VoidPtr query, VoidPtr subject, 
         VoidPtr hsp_list, VoidPtr hit_options, VoidPtr query_info, 
-        VoidPtr sbp, VoidPtr rdfp));
+        VoidPtr sbp, VoidPtr rdfp);
    /**< Callback for formatting results on the fly for each subject sequence */
    Int4 cutoff_score; /**< Raw cutoff score corresponding to the e-value 
                          provided by the user */

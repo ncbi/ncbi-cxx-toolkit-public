@@ -2119,8 +2119,7 @@ static Int4 BLAST_GetStartForGappedAlignment (BlastGapAlignStructPtr gap_align,
     return max_offset;
 }
 
-Int2 LIBCALL
-BLAST_GetGappedScore (BLAST_SequenceBlkPtr query, 
+Int2 BLAST_GetGappedScore (BLAST_SequenceBlkPtr query, 
         BLAST_SequenceBlkPtr subject, 
         BlastGapAlignStructPtr gap_align,
         BlastScoringOptionsPtr score_options,                               
