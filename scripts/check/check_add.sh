@@ -24,9 +24,10 @@
 #
 ###########################################################################
 
+
 # Parameters
 x_out=$CHECK_RUN_LIST
-x_srcdir=$1
+x_srcdir=`(cd "$1"; pwd)`
 x_test=$2
 x_signature=$3
 x_exeext=$4
