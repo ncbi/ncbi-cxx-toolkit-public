@@ -67,13 +67,8 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/genbank/readers/id1/reader_id1_cache.hpp>
 
 #include <serial/iterator.hpp>
-
-#ifdef HAVE_BERKELEY_DB
-# include <bdb/bdb_blobcache.hpp>
-#endif
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -92,10 +87,6 @@ public:
     virtual int  Run (void);
 
     CRef<CGBDataLoader> gb_loader;
-#ifdef HAVE_BERKELEY_DB
-    auto_ptr<CBDB_Cache> blob_cache;
-    auto_ptr<CBDB_Cache> id_cache;
-#endif
 };
 
 
@@ -227,14 +218,6 @@ void CDemoApp::Init(void)
                             NStr::IntToString(CSeqFeatData::eSubtype_any));
     arg_desc->AddFlag("used_memory_check", "exit(0) after loading sequence");
     arg_desc->AddFlag("reset_scope", "reset scope before exiting");
-
-#ifdef HAVE_BERKELEY_DB
-    arg_desc->AddFlag("cache",
-                      "use BDB cache");
-    arg_desc->AddDefaultKey("id_cache_days", "id_cache_days",
-                            "number of days to keep gi->sat/satkey cache",
-                            CArgDescriptions::eInteger, "1");
-#endif
 
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
@@ -384,91 +367,6 @@ int CDemoApp::Run(void)
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm = CObjectManager::GetInstance();
 
-#ifdef HAVE_BDB_CACHE
-    if ( args["cache"] ) {
-        // caching options
-        CNcbiRegistry& reg = GetConfig();
-
-        string cache_path = ".genbank_cache";
-        //CSystemPath::ResolvePath("<home>", "cache");
-        cache_path    = reg.GetString("LOCAL_CACHE", "Path", cache_path,
-                                      CNcbiRegistry::eErrPost);
-        int cache_age = reg.GetInt("LOCAL_CACHE", "Age", 5,
-                                   CNcbiRegistry::eErrPost);
-        if (cache_age == 0) {
-            cache_age = 5;   // keep objects for 5 days (default)
-        }
-
-        auto_ptr<CCachedId1Reader> id1_reader;
-
-        if (!cache_path.empty()) {
-            try {
-                {{
-                    // make sure our cache directory exists first
-                    CDir dir(cache_path);
-                    if ( !dir.Exists() ) {
-                        dir.Create();
-                    }
-                }}
-
-                // setup blob cache
-                blob_cache.reset(new CBDB_Cache());
-                
-                {{
-                    ICache::TTimeStampFlags flags =
-                        ICache::fTimeStampOnRead |
-                        ICache::fExpireLeastFrequentlyUsed |
-                        ICache::fPurgeOnStartup;
-                    blob_cache->SetTimeStampPolicy(flags, cache_age*24*60*60);
-                    blob_cache->SetReadUpdateLimit(1000);
-                    blob_cache->SetVersionRetention(ICache::eKeepAll);
-                    blob_cache->SetWriteSync(CBDB_Cache::eWriteNoSync);
-                    
-                    blob_cache->Open(cache_path.c_str(), "blobs");
-                }}
-                CCachedId1Reader* rdr =
-                    new CCachedId1Reader(5, blob_cache.get());
-                id1_reader.reset(rdr);
-
-                {{
-                    int id_days = args["id_cache_days"].AsInteger();
-                    
-                    id_cache.reset(new CBDB_Cache());
-                    
-                    ICache::TTimeStampFlags flags =
-                        ICache::fTimeStampOnCreate|
-                        ICache::fTrackSubKey|
-                        ICache::fCheckExpirationAlways;
-                    id_cache->SetTimeStampPolicy(flags, id_days*24*60*60+1);
-                    id_cache->SetVersionRetention(ICache::eKeepAll);
-                    id_cache->SetWriteSync(CBDB_Cache::eWriteNoSync);
-                    id_cache->SetPageSize(id_cache->eSmall);
-                    
-                    id_cache->Open(cache_path.c_str(), "ids");
-                }}
-                rdr->SetIdCache(id_cache.get());
-
-                LOG_POST(Info << "ID1 cache enabled in " << cache_path);
-            }
-            catch(CException& e) {
-                LOG_POST(Error << "ID1 cache initialization failed in "
-                         << cache_path << ": "
-                         << e.what());
-            }
-#ifndef _DEBUG
-            catch(...) {
-                LOG_POST(Error << "ID1 cache initialization failed in "
-                         << cache_path);
-            }
-#endif
-        } else {
-            LOG_POST(Info << "ID1 cache disabled.");
-        }
-
-        gb_loader.Reset(CGBDataLoader::RegisterInObjectManager(*pOm,
-                                                               id1_reader.release()).GetLoader());
-    }
-#endif
     if ( !gb_loader ) {
         // Create genbank data loader and register it with the OM.
         // The last argument "eDefault" informs the OM that the loader
@@ -763,10 +661,10 @@ int CDemoApp::Run(void)
             }
             for ( CFeat_CI it(scope, *range_loc, base_sel); it;  ++it) {
                 if ( count_types ) {
-                    ++types_counts[it->GetData().Which()];
+                    ++types_counts[it->GetFeatType()];
                 }
                 if ( count_subtypes ) {
-                    ++subtypes_counts[it->GetData().GetSubtype()];
+                    ++subtypes_counts[it->GetFeatSubtype()];
                 }
                 ++count;
                 if ( get_mapped_location )
@@ -1084,6 +982,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.100  2005/03/10 20:57:28  vasilche
+* New way of CGBLoader instantiation.
+*
 * Revision 1.99  2005/02/24 17:13:20  vasilche
 * Added flag -print_mapper to check CSeq_loc_Mapper.
 * Added scan of all features in TSE when -whole_tse is specified.
