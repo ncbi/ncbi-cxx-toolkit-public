@@ -143,6 +143,7 @@ private:
                                         const CRef<CAlnMixMatch>& aln_match2);
     static bool x_CompareAlnSegIndexes (const CAlnMixSegment* aln_seg1,
                                         const CAlnMixSegment* aln_seg2);
+    static void x_ValidateDenseg       (const CDense_seg& ds);
 
 
 
@@ -312,6 +313,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2003/08/20 19:35:41  todorov
+* Added x_ValidateDenseg
+*
 * Revision 1.30  2003/08/20 15:06:25  todorov
 * include path fixed
 *

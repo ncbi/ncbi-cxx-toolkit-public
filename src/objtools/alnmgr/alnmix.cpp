@@ -181,6 +181,9 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
         return; // it has already been added
     }
     x_Reset();
+#if OBJECTS_ALNMGR___ALNMIX__DBG
+    x_ValidateDenseg(ds);
+#endif    
 
     if (flags & fDontUseObjMgr  &&  flags & fCalcScore) {
         NCBI_THROW(CAlnException, eMergeFailure, "CAlnMix::Add(): "
@@ -1737,10 +1740,51 @@ void CAlnMix::x_CreateDenseg()
             widths[numrow] = m_Rows[numrow]->m_Width;
         }
     }
-
-
 #if OBJECTS_ALNMGR___ALNMIX__DBG
-    offset = 0;
+    x_ValidateDenseg(*m_DS);
+#endif    
+}
+
+
+void CAlnMix::x_ValidateDenseg(const CDense_seg& ds)
+{
+    const CDense_seg::TIds&     ids     = ds.GetIds();
+    const CDense_seg::TStarts&  starts  = ds.GetStarts();
+    const CDense_seg::TStrands& strands = ds.GetStrands();
+    const CDense_seg::TLens&    lens    = ds.GetLens();
+    const CDense_seg::TWidths&  widths  = ds.GetWidths();
+
+    const int numrows = ds.GetDim();
+    const int numsegs = ds.GetNumseg();
+    const int num     = numrows * numsegs;
+
+    if (ids.size() != numrows) {
+        string errstr = string("CAlnMix::x_ValidateDenseg():")
+            + " ids.size is inconsistent with dim";
+        NCBI_THROW(CAlnException, eMergeFailure, errstr);
+    }
+    if (starts.size() != num) {
+        string errstr = string("CAlnMix::x_ValidateDenseg():")
+            + " starts.size is inconsistent with dim * numseg";
+        NCBI_THROW(CAlnException, eMergeFailure, errstr);
+    }
+    if (lens.size() != numsegs) {
+        string errstr = string("CAlnMix::x_ValidateDenseg():")
+            + " lens.size is inconsistent with numseg";
+        NCBI_THROW(CAlnException, eMergeFailure, errstr);
+    }
+    if (strands.size()  &&  strands.size() != num) {
+        string errstr = string("CAlnMix::x_ValidateDenseg():")
+            + " strands.size is inconsistent with dim * numseg";
+        NCBI_THROW(CAlnException, eMergeFailure, errstr);
+    }
+    if (widths.size()  &&  widths.size() != numrows) {
+        string errstr = string("CAlnMix::x_ValidateDenseg():")
+            + " widths.size is inconsistent with dim";
+        NCBI_THROW(CAlnException, eMergeFailure, errstr);
+    }
+
+    int numseg = 0, numrow = 0, offset = 0;
     for (numrow = 0;  numrow < numrows;  numrow++) {
         TSignedSeqPos max_start = -1, start;
         bool plus = strands[numrow] == eNa_strand_plus;
@@ -1755,7 +1799,7 @@ void CAlnMix::x_CreateDenseg()
             start = starts[offset + numrow];
             if (start >= 0) {
                 if (start < max_start) {
-                    string errstr = string("CAlnMix::x_CreateDenseg():")
+                    string errstr = string("CAlnMix::x_ValidateDenseg():")
                         + " Starts are not consistent!"
                         + " Row=" + NStr::IntToString(numrow) +
                         " Seg=" + NStr::IntToString(plus ? numseg :
@@ -1767,7 +1811,7 @@ void CAlnMix::x_CreateDenseg()
                 }
                 max_start = start + 
                     lens[plus ? numseg : numsegs - 1 - numseg] *
-                    (m_ContainsNA  &&  m_ContainsAA ?
+                    (widths.size() == numrows ?
                      widths[numrow] : 1);
             }
             if (strands[numrow] == eNa_strand_plus) {
@@ -1777,7 +1821,6 @@ void CAlnMix::x_CreateDenseg()
             }
         }
     }
-#endif
 }
 
 
@@ -1788,6 +1831,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.67  2003/08/20 19:35:32  todorov
+* Added x_ValidateDenseg
+*
 * Revision 1.66  2003/08/20 14:34:58  todorov
 * Support for NA2AA Densegs
 *
