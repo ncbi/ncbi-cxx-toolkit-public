@@ -1056,7 +1056,7 @@ void CObjectIStreamAsn::ReadClassSequential(const CClassTypeInfo* classType,
     ReadClassSequentialContentsBegin(classType);
 
     TMemberIndex index;
-    while ( (index = BeginClassMember(classType)) != kInvalidMember ) {
+    while ( (index = BeginClassMember(classType,*pos)) != kInvalidMember ) {
         ReadClassSequentialContentsMember(classPtr);
     }
 
@@ -1088,7 +1088,7 @@ void CObjectIStreamAsn::SkipClassSequential(const CClassTypeInfo* classType)
     SkipClassSequentialContentsBegin(classType);
 
     TMemberIndex index;
-    while ( (index = BeginClassMember(classType)) != kInvalidMember ) {
+    while ( (index = BeginClassMember(classType,*pos)) != kInvalidMember ) {
         SkipClassSequentialContentsMember();
     }
 
@@ -1298,6 +1298,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.89  2004/03/09 16:16:59  gouriano
+* Corrected reading of sequential data
+*
 * Revision 1.88  2004/03/05 20:29:38  gouriano
 * make it possible to skip unknown data fields
 *
