@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/09/20 19:31:30  thiessen
+* fixes for SGI and wxWin 2.3.2
+*
 * Revision 1.9  2001/09/04 14:40:19  thiessen
 * add rainbow and charge coloring
 *
@@ -85,6 +88,10 @@
 #include <wx/listctrl.h>
 #include <wx/treectrl.h>
 #include <wx/notebook.h>
+
+#if wxVERSION_NUMBER >= 2302
+#define wxPanel wxWindow
+#endif
 
 // Declare window functions
 

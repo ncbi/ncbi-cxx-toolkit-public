@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/09/20 19:31:30  thiessen
+* fixes for SGI and wxWin 2.3.2
+*
 * Revision 1.14  2001/09/19 22:55:39  thiessen
 * add preliminary net import and BLAST
 *
@@ -326,7 +329,7 @@ void UpdateViewer::ImportAndAlign(void)
 
     // choose import type
     static const wxString choiceStrings[] = { "Network via GI/Accession", "From a FASTA File" };
-    static enum choiceValues { FROM_GI=0, FROM_FASTA, N_CHOICES };
+    enum choiceValues { FROM_GI=0, FROM_FASTA, N_CHOICES };
     int importFrom = wxGetSingleChoiceIndex(
         "From what source would you like to import a sequence?", "Select Import Source",
         N_CHOICES, choiceStrings, *viewerWindow);
