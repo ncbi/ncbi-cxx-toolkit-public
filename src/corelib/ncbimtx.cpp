@@ -42,6 +42,10 @@
 #  include <sys/time.h> // for gettimeofday()
 #endif
 
+
+#define STACK_THRESHOLD (1024)
+
+
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
@@ -94,7 +98,26 @@ void SSystemFastMutex::InitializeStatic(void)
 void SSystemFastMutex::InitializeDynamic(void)
 {
 #if !defined(NCBI_NO_THREADS)
-    xncbi_Validate(!IsInitialized(), "Double initialization of mutex");
+    bool is_initialized = IsInitialized();
+    if ( is_initialized ) {
+        char stack_object;
+        const char* stack_object_ptr = &stack_object;
+        const char* object_ptr = reinterpret_cast<const char*>(this);
+        bool in_stack =
+#  ifdef STACK_GROWS_UP
+            (object_ptr < stack_object_ptr) &&
+#  else
+            (object_ptr < stack_object_ptr + STACK_THRESHOLD) &&
+#  endif
+#  ifdef STACK_GROWS_DOWN
+            (object_ptr > stack_object_ptr)
+#  else
+            (object_ptr > stack_object_ptr - STACK_THRESHOLD)
+#  endif
+            ;
+        is_initialized = !in_stack;
+    }
+    xncbi_Validate(!is_initialized, "Double initialization of mutex");
 
     InitializeHandle();
 #endif
@@ -931,6 +954,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/05/06 16:12:24  vasilche
+ * Added check for mutexes located in stack.
+ *
  * Revision 1.9  2002/09/24 18:29:53  vasilche
  * Removed TAB symbols. Removed unused arg warning in single thread mode.
  *
