@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/03/04 15:07:46  grichenk
+* Added "bioseq" argument to CAnnotTypes_CI constructor to iterate
+* annotations from a single TSE.
+*
 * Revision 1.3  2002/02/21 19:27:00  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -57,7 +61,9 @@ class CGraph_CI : public CAnnotTypes_CI
 {
 public:
     CGraph_CI(void);
-    CGraph_CI(CScope& scope, const CSeq_loc& loc);
+    // If "bioseq" is not null, only the TSE containing
+    // this bioseq will be used for the search.
+    CGraph_CI(CScope& scope, const CSeq_loc& loc, CBioseq_Handle* bioseq = 0);
     CGraph_CI(const CGraph_CI& iter);
     virtual ~CGraph_CI(void);
     CGraph_CI& operator= (const CGraph_CI& iter);

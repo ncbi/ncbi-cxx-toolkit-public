@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/03/04 15:07:48  grichenk
+* Added "bioseq" argument to CAnnotTypes_CI constructor to iterate
+* annotations from a single TSE.
+*
 * Revision 1.7  2002/02/21 19:27:05  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -57,6 +61,7 @@
 */
 
 #include <objects/objmgr1/annot_types_ci.hpp>
+#include "data_source.hpp"
 #include "tse_info.hpp"
 #include "handle_range_map.hpp"
 #include <objects/objmgr1/scope.hpp>
@@ -74,12 +79,23 @@ CAnnotTypes_CI::CAnnotTypes_CI(void)
 
 CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
                                const CSeq_loc& loc,
-                               SAnnotSelector selector)
+                               SAnnotSelector selector,
+                               CBioseq_Handle* bioseq)
     : m_Selector(selector),
       m_Location(new CHandleRangeMap(scope.x_GetIdMapper()))
 {
     m_Location->AddLocation(loc);
-    scope.x_PopulateTSESet(*m_Location, m_Entries);
+    if ( bioseq ) {
+        // Search only the TSE, containing the bioseq
+        m_Entries.insert(bioseq->m_TSE);
+    }
+    else {
+        // Search all possible TSEs
+        scope.x_PopulateTSESet(*m_Location, m_Entries);
+    }
+    non_const_iterate(TTSESet, tse_it, m_Entries) {
+        (*tse_it)->Lock();
+    }
     m_CurrentTSE = m_Entries.begin();
     for ( ; m_CurrentTSE != m_Entries.end(); ++m_CurrentTSE) {
         m_CurrentAnnot = CAnnot_CI(**m_CurrentTSE, *m_Location, m_Selector);
@@ -96,6 +112,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CAnnotTypes_CI& it)
 {
     iterate (TTSESet, itr, it.m_Entries) {
         TTSESet::const_iterator cur = m_Entries.insert(*itr).first;
+        (*cur)->Lock();
         if (*itr == *it.m_CurrentTSE)
             m_CurrentTSE = cur;
     }
@@ -104,15 +121,24 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CAnnotTypes_CI& it)
 
 CAnnotTypes_CI::~CAnnotTypes_CI(void)
 {
-    return;
+    non_const_iterate(TTSESet, tse_it, m_Entries) {
+        (*tse_it)->Unlock();
+    }
 }
 
 
 CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
 {
+    {{
+        CMutexGuard guard(CDataSource::sm_DataSource_Mutex);
+        non_const_iterate(TTSESet, tse_it, m_Entries) {
+            (*tse_it)->Unlock();
+        }
+    }}
     m_Entries.clear();
     iterate (TTSESet, itr, it.m_Entries) {
         TTSESet::const_iterator cur = m_Entries.insert(*itr).first;
+        (*cur)->Lock();
         if (*itr == *it.m_CurrentTSE)
             m_CurrentTSE = cur;
     }

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/03/04 15:07:48  grichenk
+* Added "bioseq" argument to CAnnotTypes_CI constructor to iterate
+* annotations from a single TSE.
+*
 * Revision 1.3  2002/02/21 19:27:05  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -59,9 +63,11 @@ CFeat_CI::CFeat_CI(void)
 
 CFeat_CI::CFeat_CI(CScope& scope,
                    const CSeq_loc& loc,
-                   SAnnotSelector::TFeatChoice feat_choice)
+                   SAnnotSelector::TFeatChoice feat_choice,
+                   CBioseq_Handle* bioseq)
     : CAnnotTypes_CI(scope, loc,
-    SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_choice))
+          SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_choice),
+          bioseq)
 {
     return;
 }
