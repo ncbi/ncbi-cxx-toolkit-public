@@ -1791,70 +1791,6 @@ static void s_TEST_ICache(void)
 
 }
 
-static void s_TEST_IntCache(void)
-{
-    cout << "======== int cache test." << endl;
-
-    vector<int> data;
-    data.push_back(10);
-    data.push_back(20);
-    data.push_back(30);
-    data.push_back(40);
-
-    {{
-    CBDB_BLOB_Cache bcache;
-    bcache.Open(".");
-
-    IIntCache* icache = bcache.GetIntCache();
-
-    assert(icache);
-
-    icache->SetExpirationTime(30);
-
-    icache->Store(1, 1, data);
-
-    vector<int> data2;
-
-    icache->Read(1, 1, data2);
-
-    int sz = data2.size();
-
-    assert(data2.size() == 4);
-
-    assert(data2[0] == data[0]);
-    assert(data2[1] == data[1]);
-    assert(data2[2] == data[2]);
-    assert(data2[3] == data[3]);
-
-    }}
-
-    {{
-    CBDB_BLOB_Cache bcache;
-    bcache.Open(".");
-
-    IIntCache* icache = bcache.GetIntCache();
-
-    assert(icache);
-
-
-    vector<int> data2;
-
-    icache->Read(1, 1, data2);
-
-    int sz = data2.size();
-
-    assert(data2.size() == 4);
-
-    assert(data2[0] == data[0]);
-    assert(data2[1] == data[1]);
-    assert(data2[2] == data[2]);
-    assert(data2[3] == data[3]);
-
-    }}
-
-
-}
-
 
 ////////////////////////////////
 // Test application
@@ -1913,8 +1849,6 @@ int CBDB_Test::Run(void)
 
         s_TEST_ICache();
 
-        s_TEST_IntCache(); 
-
         s_TEST_BDB_Query();
 
         s_TEST_BDB_IdTable_FillStress();
@@ -1951,6 +1885,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2004/04/28 12:18:27  kuznets
+ * Remove obsolete IntCache test
+ *
  * Revision 1.43  2004/03/23 16:37:55  kuznets
  * Implemented NOT predicate
  *
