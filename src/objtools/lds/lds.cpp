@@ -29,6 +29,8 @@
  *
  */
 
+#include <corelib/ncbifile.hpp>
+
 #include <bdb/bdb_cursor.hpp>
 
 #include <objtools/lds/lds.hpp>
@@ -61,6 +63,22 @@ void CLDS_Database::Create()
 {
     string fname;
     LOG_POST(Info << "Creating LDS database: " << m_LDS_DbName);
+
+    {{
+        if (m_LDS_DirName.find("//LDS") == string::npos) {
+            m_LDS_DirName += "//LDS"; 
+        }
+        CDir  lds_dir(m_LDS_DirName);
+
+        if (!lds_dir.Exists()) {
+            if (!lds_dir.Create()) {
+                LDS_THROW(eCannotCreateDir, 
+                          "Cannot create directory:"+m_LDS_DirName);
+            }
+        }
+
+    }}
+
     LOG_POST(Info << "Creating LDS table: " << "file");
 
     fname = m_LDS_DirName + "//lds_file.db"; 
@@ -144,6 +162,10 @@ void CLDS_Database::Open()
 {
     string fname;
 
+    if (m_LDS_DirName.find("//LDS") == string::npos) {
+        m_LDS_DirName += "//LDS"; 
+    }
+
     fname = m_LDS_DirName + "//lds_file.db"; 
     m_db.file_db.Open(fname.c_str(),
                       "file",
@@ -198,6 +220,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/08/12 14:12:05  kuznets
+ * All database files now created in separate LDS subdirectory.
+ *
  * Revision 1.8  2003/08/11 20:01:00  kuznets
  * Reworked lds database and file open procedure.
  * Now all db tables are created in separate OS files, not colocate in one
