@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/07 22:31:12  vakatov
+* minor fixes
+*
 * Revision 1.4  1998/12/03 21:24:21  sandomir
 * NcbiApplication and CgiApplication updated
 *
@@ -67,7 +70,7 @@ public:
   static CNcbiApplication* Instance( void ); // Singleton method
   
   // throw if not-only instance
-  CNcbiApplication( int argc = 0, char* argv[] = 0 ); 
+  CNcbiApplication( int argc = 0, char** argv = 0 ); 
   virtual ~CNcbiApplication( void );
   
   virtual void Init( void ); // initialization

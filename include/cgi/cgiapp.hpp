@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/07 22:31:11  vakatov
+* minor fixes
+*
 * Revision 1.2  1998/12/04 18:11:22  sandomir
 * CNcbuResource - initial draft
 *
@@ -67,7 +70,7 @@ public:
 
   static CCgiApplication* Instance( void ); // Singleton method
 
-  CCgiApplication( int argc = 0, char* argv[] = 0,
+  CCgiApplication( int argc = 0, char** argv = 0,
                    CNcbiIstream* istr = 0, bool indexes_as_entries = true );
   virtual ~CCgiApplication( void );
 

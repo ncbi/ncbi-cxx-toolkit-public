@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/07 22:31:14  vakatov
+* minor fixes
+*
 * Revision 1.4  1998/12/03 21:24:23  sandomir
 * NcbiApplication and CgiApplication updated
 *
@@ -67,7 +70,7 @@ CNcbiApplication* CNcbiApplication::Instance( void )
 }
 
 CNcbiApplication::CNcbiApplication( int argc /* = 0 */, 
-                                    char* argv[] /* = 0 */ ) 
+                                    char** argv /* = 0 */ ) 
   : m_argc( argc ), m_argv( argv )
 {
   if( m_instance ) {
@@ -108,14 +111,19 @@ CCgiApplication* CCgiApplication::Instance( void )
   return static_cast< CCgiApplication* >( CNcbiApplication::Instance() ); 
 }
 
-CCgiApplication::CCgiApplication( int argc /* = 0 */, 
-                                  char* argv[] /* = 0 */ )
-  : CNcbiApplication(argc, argv),
-    m_CgiRequest( 0 )
-{}
+CCgiApplication::CCgiApplication(int argc, char** argv,
+                                 CNcbiIstream* istr, bool indexes_as_entries)
+    : CNcbiApplication(argc, argv)
+{
+    m_CgiRequest = 0;
+    m_istr = istr;
+    m_iase = indexes_as_entries;
+}
 
 CCgiApplication::~CCgiApplication( void )
-{}
+{
+    Exit();
+}
 
 void CCgiApplication::Init( void )
 {
