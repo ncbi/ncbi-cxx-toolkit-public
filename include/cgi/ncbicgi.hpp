@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1998/11/27 20:55:18  vakatov
+* CCgiRequest::  made the input stream arg. be optional(std.input by default)
+*
 * Revision 1.21  1998/11/27 19:44:31  vakatov
 * CCgiRequest::  Engage cmd.-line args if "$REQUEST_METHOD" is undefined
 *
@@ -257,11 +260,12 @@ public:
     // Startup initialization:
     //   retrieve request's properties and cookies from environment
     //   retrieve request's entries from environment and/or stream "istr"
-    CCgiRequest(CNcbiIstream& istr);
-    // (Mostly for the debugging) When "$REQUEST_METHOD" is undefined then
+    // By default(when "istr" is null) use standard input stream("NcbiCin")
+    CCgiRequest(CNcbiIstream* istr=0);
+    // (Mostly for the debugging) If "$REQUEST_METHOD" is undefined then
     // try to retrieve request's entries from the 1st cmd.-line argument, and
     // do not use "$QUERY_STRING" and "istr" at all
-    CCgiRequest(CNcbiIstream& istr, int argc, char* argv[]);
+    CCgiRequest(int argc, char* argv[], CNcbiIstream* istr=0);
     // Destructor
     ~CCgiRequest(void);
 
@@ -310,7 +314,7 @@ private:
     CCgiCookies m_Cookies;
 
     // the real constructor code
-    void x_Init(CNcbiIstream& istr, int argc, char** argv);
+    void x_Init(CNcbiIstream* istr, int argc, char** argv);
     // retrieve(and cache) a property of given name
     const string& x_GetPropertyByName(const string& name);
 

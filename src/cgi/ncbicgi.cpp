@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1998/11/27 20:55:21  vakatov
+* CCgiRequest::  made the input stream arg. be optional(std.input by default)
+*
 * Revision 1.12  1998/11/27 19:44:34  vakatov
 * CCgiRequest::  Engage cmd.-line args if "$REQUEST_METHOD" is undefined
 *
@@ -344,7 +347,7 @@ const string& CCgiRequest::GetPropertyName(ECgiProp prop)
 }
 
 
-void CCgiRequest::x_Init(CNcbiIstream& istr, int argc, char** argv)
+void CCgiRequest::x_Init(CNcbiIstream* istr, int argc, char** argv)
 {
     // cache "standard" properties
     for (size_t prop = 0;  prop < (size_t)eCgi_NProperties;  prop++) {
@@ -380,12 +383,14 @@ void CCgiRequest::x_Init(CNcbiIstream& istr, int argc, char** argv)
 
     // POST method?
     if (GetProperty(eCgi_RequestMethod).compare("POST") == 0) {
+        if ( !istr )
+            istr = &NcbiCin;  // default input stream
         size_t len = GetContentLength();
         string str;
         str.resize(len);
-        if (!istr.read(&str[0], len)  ||  istr.gcount() != len)
+        if (!istr->read(&str[0], len)  ||  istr->gcount() != len)
             throw CParseException("Init CCgiRequest::CCgiRequest -- error "
-                                  "in reading POST content", istr.gcount());
+                                  "in reading POST content", istr->gcount());
 
         SIZE_TYPE err_pos = ParseEntries(str, m_Entries);
         if (err_pos != 0)

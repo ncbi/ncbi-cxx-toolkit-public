@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1998/11/27 20:55:23  vakatov
+* CCgiRequest::  made the input stream arg. be optional(std.input by default)
+*
 * Revision 1.16  1998/11/27 19:46:06  vakatov
 * TestCgi() -- test the query string passed as a cmd.-line argument
 *
@@ -380,9 +383,9 @@ static void TestCgi_Request_Static(void)
     _ASSERT( !TestIndexes(indexes, "++") );
 }
 
-static void TestCgi_Request_Full(CNcbiIstream& istr, int argc=0, char** argv=0)
+static void TestCgi_Request_Full(CNcbiIstream* istr, int argc=0, char** argv=0)
 {
-    CCgiRequest CCR(istr, argc, argv);
+    CCgiRequest CCR(argc, argv, istr);
 
     NcbiCout << "\n\nCCgiRequest::\n";
 
@@ -453,7 +456,7 @@ static void TestCgi(int argc, char* argv[])
         _ASSERT( !putenv("REQUEST_METHOD=POST") );
         _ASSERT( !putenv("QUERY_STRING=") );
         _ASSERT( !putenv("HTTP_COOKIE=") );
-        TestCgi_Request_Full(istr);
+        TestCgi_Request_Full(&istr);
     } STD_CATCH("TestCgi(POST only)");
 
     try { // POST + aux. functions
@@ -467,7 +470,7 @@ static void TestCgi(int argc, char* argv[])
         _ASSERT( !putenv("HTTP_USER_AGENT=MyUserAgent") );
         _ASSERT( !putenv("HTTP_MY_RANDOM_PROP=MyRandomPropValue") );
         _ASSERT( !putenv("REMOTE_ADDRESS=130.14.25.129") );
-        TestCgi_Request_Full(istr);
+        TestCgi_Request_Full(&istr);
     } STD_CATCH("TestCgi(POST + aux. functions)");
 
     // this is for all following tests...
@@ -479,34 +482,34 @@ static void TestCgi(int argc, char* argv[])
     try { // POST + ISINDEX(action)
         CNcbiIstrstream istr(inp_str);
         _ASSERT( !putenv("QUERY_STRING=isidx1+isidx2+isidx3") );
-        TestCgi_Request_Full(istr);
+        TestCgi_Request_Full(&istr);
     } STD_CATCH("TestCgi(POST + ISINDEX(action))");
 
     try { // POST + QUERY(action)
         CNcbiIstrstream istr(inp_str);
         _ASSERT( !putenv("QUERY_STRING=query1=vv1&query2=") );
-        TestCgi_Request_Full(istr);
+        TestCgi_Request_Full(&istr);
     } STD_CATCH("TestCgi(POST + QUERY(action))");
 
     try { // GET ISINDEX + COOKIES
         CNcbiIstrstream istr(inp_str);
         _ASSERT( !putenv("QUERY_STRING=get_isidx1+get_isidx2+get_isidx3") );
         _ASSERT( !putenv("HTTP_COOKIE=cook1=val1; cook2=val2;") );
-        TestCgi_Request_Full(istr);
+        TestCgi_Request_Full(&istr);
     } STD_CATCH("TestCgi(GET ISINDEX + COOKIES)");
 
     try { // GET REGULAR + COOKIES
         CNcbiIstrstream istr(inp_str);
         _ASSERT( !putenv("QUERY_STRING=get_query1=gq1&get_query2=") );
         _ASSERT( !putenv("HTTP_COOKIE=_cook1=_val1;_cook2=_val2") );
-        TestCgi_Request_Full(istr);
+        TestCgi_Request_Full(&istr);
     } STD_CATCH("TestCgi(GET REGULAR + COOKIES)");
 
     try { // ERRONEOUS STDIN
         CNcbiIstrstream istr("123");
         _ASSERT( !putenv("QUERY_STRING=get_query1=gq1&get_query2=") );
         _ASSERT( !putenv("HTTP_COOKIE=_cook1=_val1;_cook2=_val2") );
-        TestCgi_Request_Full(istr);
+        TestCgi_Request_Full(&istr);
     } STD_CATCH("TestCgi(ERRONEOUS STDIN)");
 
     try { // USER INPUT(real STDIN)
@@ -524,16 +527,15 @@ static void TestCgi(int argc, char* argv[])
         _ASSERT( !putenv(cs) );
         NcbiCout << "Enter the CGI posted data now(no spaces): ";
         NcbiCin >> NcbiWs;
-        TestCgi_Request_Full(NcbiCin);
+        TestCgi_Request_Full(0);
         NcbiCin.clear();
     } STD_CATCH("TestCgi(USER STDIN)");
 
     try { // CMD.-LINE ARGS
         _ASSERT( !putenv("REQUEST_METHOD=") );
         _ASSERT( !putenv("QUERY_STRING=MUST NOT BE USED HERE!!!") );
-        TestCgi_Request_Full(NcbiCin/* dummy */, argc, argv);
+        TestCgi_Request_Full(&NcbiCin/* dummy */, argc, argv);
     } STD_CATCH("TestCgi(CMD.-LINE ARGS)");
-
 }
 
 
