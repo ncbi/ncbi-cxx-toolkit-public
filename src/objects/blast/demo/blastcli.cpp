@@ -138,6 +138,36 @@ get_matrices()
 
 //	==========================================================================
 //
+//	sample "get-parameters" command
+//
+//	==========================================================================
+
+static void
+get_parameters()
+{
+	CRef<CBlast4_request_body> body(new CBlast4_request_body);
+    body->SetGet_parameters();
+
+	submit(body);
+}
+
+//	==========================================================================
+//
+//	sample "get-programs" command
+//
+//	==========================================================================
+
+static void
+get_programs()
+{
+	CRef<CBlast4_request_body> body(new CBlast4_request_body);
+    body->SetGet_programs();
+
+	submit(body);
+}
+
+//	==========================================================================
+//
 //	sample "get-search-results" command
 //
 //	==========================================================================
@@ -291,8 +321,8 @@ static void
 finish_params()
 {
 	CRef<CBlast4_finish_params_request> q(new CBlast4_finish_params_request);
-	q->SetProgram(eBlast4_program_blastn);
-	q->SetService(eBlast4_service_plain);
+	q->SetProgram("blastn");
+	q->SetService("plain");
 
     CRef<CBlast4_cutoff> cutoff(new CBlast4_cutoff);
     cutoff->SetE_value(10);
@@ -337,8 +367,9 @@ queue_search()
 	subject->SetDatabase("nr");
 
 	CRef<CBlast4_queue_search_request> q(new CBlast4_queue_search_request);
-	q->SetProgram(eBlast4_program_blastp);
-	q->SetService(eBlast4_service_plain);
+	q->SetProgram("blastp");
+	q->SetService("plain");
+	q->SetParamset("dummy");
     q->SetQueries(*seqset);
 	q->SetSubject(*subject);
 
@@ -447,6 +478,10 @@ CBlastcliApplication::Run(void)
 		get_databases();
 	else if(a == "get-matrices")
 		get_matrices();
+	else if(a == "get-parameters")
+		get_parameters();
+	else if(a == "get-programs")
+		get_programs();
 	else if(a == "get-sequences")
 		get_sequences();
 	else if(a == "queue-search")

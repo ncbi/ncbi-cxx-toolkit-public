@@ -56,15 +56,18 @@ Blast4-request-body ::= CHOICE {
     finish-params           Blast4-finish-params-request,
     get-databases           NULL,
     get-matrices            NULL,
+	get-parameters			NULL,
+	get-programs			NULL,
     get-search-results      Blast4-get-search-results-request,
     get-sequences           Blast4-get-sequences-request,
     queue-search            Blast4-queue-search-request
 }
 
 Blast4-finish-params-request ::= SEQUENCE {
-    program                 Blast4-program,
-    service                 Blast4-service,
-    params                  SEQUENCE OF Blast4-parameter
+    program                 VisibleString,
+    service                 VisibleString,
+	paramset				VisibleString OPTIONAL,
+    params                  Blast4-parameters OPTIONAL
 }
 
 Blast4-get-search-results-request ::= SEQUENCE {
@@ -77,11 +80,12 @@ Blast4-get-sequences-request ::= SEQUENCE {
 }
 
 Blast4-queue-search-request ::= SEQUENCE {
-    program                 Blast4-program,
-    service                 Blast4-service,
+    program                 VisibleString,
+    service                 VisibleString,
     queries                 Bioseq-set,
     subject                 Blast4-subject,
-    params                  SEQUENCE OF Blast4-parameter
+	paramset				VisibleString OPTIONAL,
+    params                  Blast4-parameters OPTIONAL
 }
 
 --  --------------------------------------------------------------------
@@ -99,22 +103,22 @@ Blast4-reply-body ::= CHOICE {
     finish-params           Blast4-finish-params-reply,
     get-databases           Blast4-get-databases-reply,
     get-matrices            Blast4-get-matrices-reply,
+	get-parameters			Blast4-get-parameters-reply,
+	get-programs			Blast4-get-programs-reply,
     get-search-results      Blast4-get-search-results-reply,
     get-sequences           Blast4-get-sequences-reply,
     queue-search            Blast4-queue-search-reply
 }
 
-Blast4-finish-params-reply ::= SEQUENCE {
-    params                  SEQUENCE OF Blast4-parameter OPTIONAL
-}
+Blast4-finish-params-reply ::= Blast4-parameters
 
-Blast4-get-databases-reply ::= SEQUENCE {
-    databases               SEQUENCE OF Blast4-database-info OPTIONAL
-}
+Blast4-get-databases-reply ::= SEQUENCE OF Blast4-database-info
 
-Blast4-get-matrices-reply ::= SEQUENCE {
-    matrices                SEQUENCE OF Blast4-matrix-id OPTIONAL
-}
+Blast4-get-matrices-reply ::= SEQUENCE OF Blast4-matrix-id
+
+Blast4-get-parameters-reply ::= SEQUENCE OF Blast4-parameter-info
+
+Blast4-get-programs-reply ::= SEQUENCE OF Blast4-program-info
 
 Blast4-get-search-results-reply ::= SEQUENCE {
     alignments              Seq-align-set OPTIONAL,
@@ -124,9 +128,7 @@ Blast4-get-search-results-reply ::= SEQUENCE {
     search-stats            SEQUENCE OF VisibleString OPTIONAL
 }
 
-Blast4-get-sequences-reply ::= SEQUENCE {
-    sequences               SEQUENCE OF Bioseq OPTIONAL
-}
+Blast4-get-sequences-reply ::= SEQUENCE OF Bioseq
 
 Blast4-queue-search-reply ::= SEQUENCE {
     request-id              VisibleString OPTIONAL
@@ -224,27 +226,20 @@ Blast4-parameter ::= SEQUENCE {
     value                   Blast4-value
 }
 
-Blast4-program ::= ENUMERATED {
-    blastn                  (0),
-    blastp                  (1),
-    blastx                  (2),
-    tblastn                 (3),
-    tblastx                 (4)
+Blast4-parameter-info ::= SEQUENCE {
+	name					VisibleString,
+	type					VisibleString
+}
+
+Blast4-program-info ::= SEQUENCE {
+    program                 VisibleString,
+    services                SEQUENCE OF VisibleString
 }
 
 Blast4-residue-type ::= ENUMERATED {
     unknown                 (0),
     protein                 (1),
     nucleotide              (2)
-}
-
-Blast4-service ::= ENUMERATED {
-    plain                   (0),
-    psiblast                (1),
-    phiblast                (2),
-    rpsblast                (3),
-    megablast               (4),
-    vecscreen               (5)
 }
 
 Blast4-strand-type ::= ENUMERATED {
@@ -257,6 +252,8 @@ Blast4-subject ::= CHOICE {
     database                VisibleString,
     sequences               SEQUENCE OF Bioseq
 }
+
+Blast4-parameters ::= SEQUENCE OF Blast4-parameter
 
 Blast4-phi-alignments ::= SEQUENCE {
     num-alignments          INTEGER,
