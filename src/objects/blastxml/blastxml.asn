@@ -1,6 +1,6 @@
---$Id: blastxml.asn,v 6.3 2000/10/23 20:24:03 shavirin Exp $
+--$Id: blastxml.asn,v 6.4 2000/11/08 20:07:20 shavirin Exp $
 --
---$Revision: 6.3 $
+--$Revision: 6.4 $
 --**********************************************************************
 --
 --  ASN.1 for simplified BLAST output in XML
@@ -8,6 +8,10 @@
 --
 --
 -- $Log: blastxml.asn,v $
+-- Revision 6.4  2000/11/08 20:07:20  shavirin
+-- Added new parameter align_len analogos to the number reported in
+-- the Traditional Blast Output.
+--
 -- Revision 6.3  2000/10/23 20:24:03  shavirin
 -- Few parameters were changed to OPTIONAL to allow XML without results:
 -- failure or no hits found condition.
@@ -87,6 +91,7 @@ Hsp ::= SEQUENCE {
 	identity INTEGER OPTIONAL ,	-- number of identities in HSP
 	positive INTEGER OPTIONAL ,	-- number of positives in HSP
 	gaps INTEGER OPTIONAL ,		-- number of gaps in HSP
+	align-len INTEGER OPTIONAL ,	-- length of the alignment used
 	density INTEGER OPTIONAL ,	-- score density
 	qseq VisibleString ,		-- alignment string for the query (with gaps)
 	hseq VisibleString,		-- alignment string for subject (with gaps)
