@@ -118,15 +118,15 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
                 for (int seq = 0;  seq < dim;  seq++, ++it_start, ++it_id) {
                     if ( *it_start < 0 )
                         continue;
-                    CSeq_loc* loc = new CSeq_loc;
-                    loc->SetInt().SetId().Assign(**it_id);
-                    loc->SetInt().SetFrom(*it_start);
-                    loc->SetInt().SetTo(*it_start + *it_len);
+                    CSeq_loc loc;
+                    loc.SetInt().SetId().Assign(**it_id);
+                    loc.SetInt().SetFrom(*it_start);
+                    loc.SetInt().SetTo(*it_start + *it_len);
                     if ( denseg.IsSetStrands() ) {
-                        loc->SetInt().SetStrand(*it_strand);
+                        loc.SetInt().SetStrand(*it_strand);
                         ++it_strand;
                     }
-                    m_RangeMap->AddLocation(*loc);
+                    m_RangeMap->AddLocation(loc);
                 }
             }
             break;
@@ -284,6 +284,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/09/11 16:08:26  dicuccio
+* Fixed memory leak in x_PrepareAlign().
+*
 * Revision 1.12  2002/09/03 17:45:45  ucko
 * Avoid overrunning alignment data when the claimed dimensions are too high.
 *
