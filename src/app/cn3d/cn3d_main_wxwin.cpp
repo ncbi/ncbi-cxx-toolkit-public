@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.145  2002/06/05 18:14:49  thiessen
+* more title tweaks
+*
 * Revision 1.144  2002/06/05 17:50:07  thiessen
 * title tweaks
 *
@@ -2142,6 +2145,8 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
         else
             userDir = workingDir + wxPathOnly(outputFilename).c_str() + wxFILE_SEP_PATH;
         currentFile = wxFileNameFromPath(outputFilename);
+        SetWorkingTitle(glCanvas->structureSet);
+        GlobalMessenger()->SetAllWindowTitles();
     }
 }
 
