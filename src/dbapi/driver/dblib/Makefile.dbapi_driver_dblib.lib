@@ -6,4 +6,4 @@ LIB    = dbapi_driver_dblib
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SYBASE_INCLUDE)
 
-REQUIRES = Sybase
+REQUIRES = Sybase DBLib

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.19 2001/10/27 23:03:25 vakatov Exp $
+#  $Id: configure.ac,v 1.20 2001/11/09 18:00:56 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -129,6 +129,8 @@ AC_ARG_WITH(sybase,
    [ --without-sybase        do not use SYBASE libraries])
 AC_ARG_WITH(sybase-local,
    [ --with-sybase-local=DIR use local SYBASE install (DIR is optional)])
+AC_ARG_WITH(sybase-new,
+   [ --with-sybase-new       use newer SYBASE install (12.5 rather than 12.0)])
 AC_ARG_WITH(ftds,
    [ --without-ftds          do not use FreeTDS libraries])
 AC_ARG_WITH(wxwin,
@@ -172,7 +174,8 @@ x_with_list="\
 debug optimization dll static runpath mt 64 \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-ftds orbacus local-lbsm serial objects dbapi app ctools gui internal"
+sybase-new ftds orbacus \
+local-lbsm serial objects dbapi app ctools gui internal"
 
 changequote(, )dnl
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -1413,12 +1416,22 @@ if test -z "$with_sybase_local" ; then
    with_sybase_local="no"
 fi
 if test "$with_sybase" != "no" ; then
+   sybase_lib=lib$bit64_sfx
    # deduce the path to Sybase package
    if test "$with_sybase_local" != "no" ; then
       if test "$with_sybase_local" = "yes" ; then
          SYBASE_PATH=${SYBASE_PATH:="/export/home/sybase/clients/current"}
       else
          SYBASE_PATH=$with_sybase_local
+      fi
+   elif test "$with_sybase_new" = "yes" ; then
+      sybase_lib=lib
+      if test -n "$bit64_sfx"; then
+         : ${SYBASE_PATH="/netopt/Sybase/clients/12.5.64-EBF9728"}
+         : ${SYBASE_LCL_PATH="/export/home/sybase/clients/12.5.64"}
+      else
+         : ${SYBASE_PATH="/netopt/Sybase/clients/12.5-EBF9723"}
+         : ${SYBASE_LCL_PATH="/export/home/sybase/clients/12.5"}
       fi
    else
       SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
@@ -1454,12 +1467,12 @@ if test "$with_sybase" != "no" ; then
    changequote([, ])dnl
 
    # deduce conf.macro: SYBASE_INCLUDE, SYBASE_LIBS, SYBASE_DLLS, SYBASE_DBLIBS
-   SYBASE_LIBPATH="$SYBASE_PATH/lib${bit64_sfx}"
+   SYBASE_LIBPATH="$SYBASE_PATH/${sybase_lib}"
    SYBASE_INCLUDE="-I$SYBASE_PATH/include $SYBASE_INCLUDE"
    if test "$with_sybase_local" != "no" ; then
       SYBASE_LPATH="-L$SYBASE_LIBPATH ${CONF_f_runpath}$SYBASE_LIBPATH"
    else
-      SYBASE_LCL_LIBPATH="$SYBASE_LCL_PATH/lib${bit64_sfx}"
+      SYBASE_LCL_LIBPATH="$SYBASE_LCL_PATH/${sybase_lib}"
       SYBASE_LPATH="-L$SYBASE_LCL_LIBPATH -L$SYBASE_LIBPATH ${CONF_f_runpath}$SYBASE_LCL_LIBPATH:$SYBASE_LIBPATH"
       SYBASE_INCLUDE="-I$SYBASE_LCL_PATH/include $SYBASE_INCLUDE"
    fi
@@ -1503,6 +1516,31 @@ SYBASE_LCL_LIBPATH=
 SYBASE_LIBLIST=
 SYBASE_DLLLIST=
 SYBASE_LIBPATH=
+
+if test -n "$SYBASE_DBLIBS" ; then
+   AC_MSG_CHECKING(if SYBASE includes DBLib)
+   CPPFLAGS="$SYBASE_INCLUDE $prig_CPPFLAGS"
+   LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $orig_LIBS"   
+   AC_TRY_LINK(
+      [
+       #include <sybfront.h>
+       #include <sybdb.h>
+      ],
+      [
+       LOGINREC*  x_login     = 0;
+       DBPROCESS* x_dbproc    = dbopen(x_login, (char*) "SRV_NAME");
+      ],
+      [AC_DEFINE_UNQUOTED(HAVE_LIBSYBDB, 1)],
+      [SYBASE_DBLIBS=]
+   )
+   if test -n "$SYBASE_DBLIBS" ; then
+      WithPackages="$WithPackages DBLib"
+      AC_MSG_RESULT(yes)
+   else
+      WithoutPackages="$WithoutPackages DBLib"
+      AC_MSG_RESULT(no)
+   fi
+fi
 
 
 ## Free TDS libraries

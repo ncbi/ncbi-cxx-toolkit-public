@@ -89,6 +89,9 @@
 /* SYBASE libraries are available */
 #undef HAVE_LIBSYBASE
 
+/* SYBASE DBLib is available */
+#undef HAVE_LIBSYBDB
+
 /* FreeTDS libraries are available */
 #undef HAVE_LIBFTDS
 
