@@ -97,7 +97,7 @@ private:
 class CFlatCodeBreakQV : public IFlatQV
 {
 public:
-    CFlatCodeBreakQV(const CCdregion::TCode_break value) : m_Value(value) { }
+    CFlatCodeBreakQV(CCdregion::TCode_break value) : m_Value(value) { }
     void Format(TFlatQuals& quals, const string& name, CFlatContext& ctx,
                 TFlags flags) const;
 
@@ -277,6 +277,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/07/21 23:41:28  jcherry
+* Removed const qualifier from argument passed by value
+*
 * Revision 1.4  2004/01/27 17:12:06  ucko
 * Add missing #include directive for Code_break.hpp.
 *
