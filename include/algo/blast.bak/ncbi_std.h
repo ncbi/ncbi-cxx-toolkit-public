@@ -214,7 +214,7 @@ ListNode* ListNodeAdd (ListNode** head);
 ListNode* ListNodeAddPointer (ListNode** head, Int2 choice, void *value);
 ListNode* ListNodeFree (ListNode* vnp);
 ListNode* ListNodeFreeData (ListNode* vnp);
-ListNode* ListNodeSort (ListNode* list, 
+ListNode* ListNodeSort (ListNode* list_to_sort, 
                int (*compar) (const void *, const void *));
 ListNode* ListNodeCopyStr (ListNode** head, Int2 choice, char* str);
 Int4 ListNodeLen (ListNode* vnp);
