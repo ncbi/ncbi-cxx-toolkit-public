@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/06/14 18:59:27  thiessen
+* left out 'class' in 'friend ...' statments
+*
 * Revision 1.14  2001/06/02 17:22:58  thiessen
 * fixes for GCC
 *
@@ -123,7 +126,7 @@ class StructureSet;
 
 class AtomSet : public StructureBase
 {
-    friend StructureSet;
+    friend class StructureSet;
 public:
     AtomSet(StructureBase *parent, const ncbi::objects::CAtomic_coordinates& coords);
     ~AtomSet(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/06/14 18:59:27  thiessen
+* left out 'class' in 'friend ...' statments
+*
 * Revision 1.11  2001/06/01 21:48:02  thiessen
 * add terminal cutoff to threading
 *
@@ -81,7 +84,7 @@ class SequenceDisplay;
 
 class UpdateViewerWindow : public ViewerWindowBase
 {
-    friend SequenceDisplay;
+    friend class SequenceDisplay;
 
 public:
     UpdateViewerWindow(UpdateViewer *parentUpdateViewer);

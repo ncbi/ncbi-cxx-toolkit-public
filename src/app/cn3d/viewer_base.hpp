@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/06/14 18:59:27  thiessen
+* left out 'class' in 'friend ...' statments
+*
 * Revision 1.5  2001/04/05 22:54:51  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -68,7 +71,7 @@ class AlignmentManager;
 
 class ViewerBase
 {
-    friend ViewerWindowBase;
+    friend class ViewerWindowBase;
 
 public:
 
