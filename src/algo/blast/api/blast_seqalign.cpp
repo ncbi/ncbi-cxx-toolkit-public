@@ -470,7 +470,7 @@ x_GapEditBlock2SeqAlign(GapEditBlock* edit_block,
  * duplicated for the SeqAlign.
 */
 static CRef<CSeq_align>
-x_OOFEditBlock2SeqAlign(CBlastOption::EProgram program, 
+x_OOFEditBlock2SeqAlign(EProgram program, 
     GapEditBlock* edit_block, 
     const CSeq_id* id1, const CSeq_id* id2)
 {
@@ -504,7 +504,7 @@ x_MakeScore(const string& ident_string, double d = 0.0, int i = 0)
 static void
 x_BuildScoreList(const BlastHSP* hsp, const BlastScoreBlk* sbp, const
         BlastScoringOptions* score_options, CSeq_align::TScore& scores,
-        CBlastOption::EProgram program)
+        EProgram program)
 {
     string score_type;
     BLAST_KarlinBlk* kbp = NULL;
@@ -528,7 +528,7 @@ x_BuildScoreList(const BlastHSP* hsp, const BlastScoreBlk* sbp, const
 
     // Calculate the bit score from the raw score
     score_type = "bit_score";
-    if (program == CBlastOption::eBlastn || !score_options->gapped_calculation)
+    if (program == eBlastn || !score_options->gapped_calculation)
         kbp = sbp->kbp[hsp->context];
     else
         kbp = sbp->kbp_gap[hsp->context];
@@ -557,7 +557,7 @@ x_BuildScoreList(const BlastHSP* hsp, const BlastScoreBlk* sbp, const
 
 static void
 x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp, 
-        const BlastScoreBlk* sbp, CBlastOption::EProgram program,
+        const BlastScoreBlk* sbp, EProgram program,
         const BlastScoringOptions* score_options)
 {
     // Add the scores for this HSP
@@ -583,7 +583,7 @@ x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp,
 }
 
 static CRef<CSeq_align_set>
-BLASTUngappedHspListToSeqAlign(CBlastOption::EProgram program, 
+BLASTUngappedHspListToSeqAlign(EProgram program, 
     BlastHSPList* hsp_list, const CSeq_id *query_id, 
     const CSeq_id *subject_id, Int4 query_length, Int4 subject_length,
     const BlastScoringOptions* score_options, const BlastScoreBlk* sbp)
@@ -595,7 +595,7 @@ BLASTUngappedHspListToSeqAlign(CBlastOption::EProgram program,
 
 // This is called for each query and each subject in the BLAST search
 static CRef<CSeq_align_set>
-BLASTHspListToSeqAlign(CBlastOption::EProgram program, 
+BLASTHspListToSeqAlign(EProgram program, 
     BlastHSPList* hsp_list, const CSeq_id *query_id, 
     const CSeq_id *subject_id,
     const BlastScoringOptions* score_options, const BlastScoreBlk* sbp)
@@ -632,9 +632,72 @@ BLASTHspListToSeqAlign(CBlastOption::EProgram program,
     return retval;
 }
 
-CRef<CSeq_align_set>
+CSeq_align_set *
+BLAST_HitList2CSeqAlign(const BlastHitList* hit_list, 
+    EProgram prog, SSeqLoc &query,
+    const BlastSeqSrc* bssp, const SSeqLoc *subject,
+    const BlastScoringOptions* score_options, 
+    const BlastScoreBlk* sbp, bool is_gapped)
+{
+    CSeq_align_set* seq_aligns = new CSeq_align_set();
+
+    if (!hit_list)
+        return seq_aligns;
+
+    int index;
+    Int4 query_length, length;
+    CConstRef<CSeq_id> query_id(&sequence::GetId(*query.seqloc, query.scope));
+    CConstRef<CSeq_id> subject_id;
+
+    if (!is_gapped)
+        query_length = sequence::GetLength(*query.seqloc, query.scope);
+
+    if (!bssp) {
+        subject_id.Reset(&sequence::GetId(*subject->seqloc, 
+                                          subject->scope));
+        if (!is_gapped)
+           length = 
+              sequence::GetLength(*subject->seqloc, subject->scope);
+    }
+
+    for (index = 0; index < hit_list->hsplist_count; ++index) {
+        BlastHSPList* hsp_list = hit_list->hsplist_array[index];
+        if (!hsp_list)
+            continue;
+
+        if (bssp) {
+            char* id = 
+                BLASTSeqSrcGetSeqIdStr(bssp, (void*) &hsp_list->oid);
+            string seqid(id);
+            subject_id.Reset(new CSeq_id(seqid));
+            sfree(id);
+            if (!is_gapped)
+                length = 
+                    BLASTSeqSrcGetSeqLen(bssp, (void*) &hsp_list->oid); 
+        }
+        
+        // Create a CSeq_align_set for each matching sequence
+        CRef<CSeq_align_set> hit_aligns;
+        if (is_gapped) {
+            hit_aligns = 
+                BLASTHspListToSeqAlign(prog, hsp_list, query_id, 
+                                       subject_id, score_options, sbp);
+        } else {
+            hit_aligns = 
+                BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id, 
+                    subject_id, query_length, length, score_options, sbp);
+        }
+        if (hit_aligns) {
+            seq_aligns->Set().splice(seq_aligns->Set().end(), 
+                                     hit_aligns->Set());
+        }
+    }
+    return seq_aligns;
+}
+
+TSeqAlignVector
 BLAST_Results2CSeqAlign(const BlastResults* results, 
-        CBlastOption::EProgram prog,
+        EProgram prog,
         TSeqLocVector &query,
         const BlastSeqSrc* bssp,
         const SSeqLoc *subject,
@@ -644,71 +707,22 @@ BLAST_Results2CSeqAlign(const BlastResults* results,
     _ASSERT(results->num_queries == (int)query.size());
     _ASSERT(bssp || subject);
 
-    CRef<CSeq_align_set> retval(new CSeq_align_set());
-    int query_index, subject_index;
-    Int4 subject_length, query_length;
-    CConstRef<CSeq_id> subject_id;
+    TSeqAlignVector retval;
+    int index;
     CConstRef<CSeq_id> query_id;
 
-    if (!bssp) {
-        subject_id.Reset(&sequence::GetId(*subject->seqloc, 
-                                          subject->scope));
-        if (!is_gapped)
-           subject_length = 
-              sequence::GetLength(*subject->seqloc, subject->scope);
-    }
-
     // Process each query's hit list
-    for (query_index = 0; query_index < results->num_queries; 
-         ++query_index) {
-       BlastHitList* hit_list = results->hitlist_array[query_index];
-       if (!hit_list)
-          continue;
-       query_id.Reset(&sequence::GetId(*query[query_index].seqloc, 
-                                  query[query_index].scope));
-       if (!is_gapped)
-          query_length = sequence::GetLength(*query[query_index].seqloc, 
-                                             query[query_index].scope);
-       
-       for (subject_index = 0; subject_index < hit_list->hsplist_count;
-            ++subject_index) {
-          BlastHSPList* hsp_list = hit_list->hsplist_array[subject_index];
-          if (!hsp_list)
-             continue;
+    for (index = 0; index < results->num_queries; 
+         ++index) {
+       BlastHitList* hit_list = results->hitlist_array[index];
 
-          if (bssp) {
-             char* id = 
-                BLASTSeqSrcGetSeqIdStr(bssp, (void*) &hsp_list->oid);
-             string seqid(id);
-             subject_id.Reset(new CSeq_id(seqid));
-             sfree(id);
-             if (!is_gapped)
-                subject_length = 
-                   BLASTSeqSrcGetSeqLen(bssp, (void*) &hsp_list->oid); 
-          }
+       CRef<CSeq_align_set> seq_aligns(BLAST_HitList2CSeqAlign(hit_list, prog,
+                                           query[index], bssp, subject,
+                                           score_options, sbp, is_gapped));
 
-          // Create a CSeq_align_set for each matching sequence
-          CRef<CSeq_align_set> seqaligns;
-          if (is_gapped) {
-              seqaligns = 
-                  BLASTHspListToSeqAlign(prog, hsp_list, query_id, 
-                      subject_id, score_options, sbp);
-          } else {
-              seqaligns = 
-                  BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id, 
-                      subject_id, query_length, subject_length, 
-                      score_options, sbp);
-          }
-          if (seqaligns) {
-              retval->Set().splice(retval->Set().end(), seqaligns->Set());
-              //  retval->Set().merge(seqaligns->Set());
-          }
-          _TRACE("Query " << query_index << ": " << retval->Get().size() << " seqaligns");
-       }
+       retval.push_back(seq_aligns);
+       _TRACE("Query " << index << ": " << seq_aligns->Get().size() << " seqaligns");
     }
-    
-    if ( !(retval->Get().size() > 0))
-       retval.Reset(NULL);
     
     return retval;
 }
@@ -721,6 +735,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/08/19 20:27:51  dondosha
+* Rewrote the results-to-seqalign conversion slightly
+*
 * Revision 1.15  2003/08/19 13:46:13  dicuccio
 * Added 'USING_SCOPE(objects)' to .cpp files for ease of reading implementation.
 *
