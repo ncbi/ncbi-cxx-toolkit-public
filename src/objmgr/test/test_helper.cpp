@@ -966,10 +966,12 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
         _ASSERT(NStr::PrintableString(sout) == seq_str);
         seq_vect.SetCoding(CBioseq_Handle::eCoding_Ncbi);
-        vit.SetPos(seq_vect.size() - 1);
-        for ( ; bool(vit); --vit) {
+        int pos = seq_vect.size() - 1;
+        vit.SetPos(pos);
+        for ( ; pos > 0; --vit, --pos) {
             _ASSERT(sout[vit.GetPos()] == *vit);
         }
+        _ASSERT(sout[vit.GetPos()] == *vit);
         vit.GetSeqData(0, seq_vect.size(), sout);
         _ASSERT(NStr::PrintableString(sout) == seq_str);
         sout = "";
@@ -1270,6 +1272,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2003/06/02 21:04:25  vasilche
+* Fixed CSeqVector_CI test to not to go beyond begin().
+*
 * Revision 1.39  2003/06/02 16:06:39  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
