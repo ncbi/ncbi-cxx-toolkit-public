@@ -480,20 +480,20 @@ void CGenbankFormatter::FormatFeature
 (const CFeatureItemBase& f,
  IFlatTextOStream& text_os)
 { 
-    const CFlatFeature& feat = *f.Format();
+    CConstRef<CFlatFeature> feat = f.Format();
     list<string>        l;
-    Wrap(l, feat.GetKey(), feat.GetLoc().GetString(), eFeat);
-    ITERATE (vector<CRef<CFlatQual> >, it, feat.GetQuals()) {
+    Wrap(l, feat->GetKey(), feat->GetLoc().GetString(), eFeat);
+    ITERATE (vector<CRef<CFormatQual> >, it, feat->GetQuals()) {
         string qual = '/' + (*it)->GetName(), value = (*it)->GetValue();
         switch ((*it)->GetStyle()) {
-        case CFlatQual::eEmpty:
+        case CFormatQual::eEmpty:
             value = qual;
             qual.erase();
             break;
-        case CFlatQual::eQuoted:
+        case CFormatQual::eQuoted:
             qual += "=\"";  value += '"';
             break;
-        case CFlatQual::eUnquoted:
+        case CFormatQual::eUnquoted:
             qual += '=';
             break;
         }
@@ -695,6 +695,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/05/06 17:53:12  shomrat
+* CFlatQual -> CFormatQual
+*
 * Revision 1.12  2004/04/22 15:59:59  shomrat
 * Changes in context
 *

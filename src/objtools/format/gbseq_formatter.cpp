@@ -473,7 +473,7 @@ static void s_SetQuals(CGBFeature::TQuals& gbquals,
     ITERATE (CFlatFeature::TQuals, it, quals) {
         CRef<CGBQualifier> qual(new CGBQualifier);
         qual->SetName((*it)->GetName());
-        if ((*it)->GetStyle() != CFlatQual::eEmpty) {
+        if ((*it)->GetStyle() != CFormatQual::eEmpty) {
             qual->SetValue((*it)->GetValue());
             s_GBSeqQualCleanup(qual->SetValue());
         }
@@ -486,7 +486,7 @@ void CGBSeqFormatter::FormatFeature
 (const CFeatureItemBase& f,
  IFlatTextOStream&)
 {
-    CRef<CFlatFeature> feat = f.Format();
+    CConstRef<CFlatFeature> feat = f.Format();
 
     CRef<CGBFeature>    gbfeat(new CGBFeature);
     gbfeat->SetKey(feat->GetKey());
@@ -600,6 +600,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/05/06 17:52:53  shomrat
+* CFlatQual -> CFormatQual
+*
 * Revision 1.2  2004/04/22 15:53:26  shomrat
 * Changes in context
 *

@@ -166,7 +166,7 @@ void CFtableFormatter::x_FormatQuals
     string line;
     ITERATE (CFlatFeature::TQuals, it, quals) {
         line = "\t\t\t" + (*it)->GetName();
-        if ((*it)->GetStyle() != CFlatQual::eEmpty) {
+        if ((*it)->GetStyle() != CFormatQual::eEmpty) {
             string value;
             NStr::Replace((*it)->GetValue(), " \b", kEmptyStr, value);
             line += '\t' + value;
