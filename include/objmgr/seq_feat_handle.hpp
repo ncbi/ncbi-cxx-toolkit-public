@@ -43,10 +43,24 @@
 #include <objmgr/impl/snp_annot_info.hpp>
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_SCOPE(objects)
 
+
+/** @addtogroup ObjectManagerHandles
+ *
+ * @{
+ */
+
+
 class CSeq_annot_Handle;
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeq_feat_Handle --
+///
+///  Proxy to access the seq-feat objects data
+///
 
 class CSeq_feat_Handle
 {
@@ -60,16 +74,30 @@ public:
                      size_t index);
     ~CSeq_feat_Handle(void);
 
+    /// Check if handle points to a seq-feat
+    ///
+    /// @sa
+    ///    operator !()
     operator bool(void) const;
+
+    // Check if handle does not point to a seq-feat
+    ///
+    /// @sa
+    ///    operator bool()
     bool operator !(void) const;
 
+    /// Get handle to seq-annot for this feature
     CSeq_annot_Handle GetAnnot(void) const;
 
+    /// Get current seq-feat
     CConstRef<CSeq_feat> GetSeq_feat(void) const;
+
+    /// Check if table is SNP
     bool IsTableSNP(void) const;
 
     typedef CRange<TSeqPos> TRange;
 
+    /// Get range for current seq-feat
     TRange GetRange(void) const;
 
     // Mappings for CSeq_feat methods
@@ -402,12 +430,17 @@ CSeqFeatData::ESubtype CSeq_feat_Handle::GetFeatSubtype(void) const
 }
 
 
+/* @} */
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/09/29 16:59:54  kononenk
+* Added doxygen formatting
+*
 * Revision 1.3  2004/08/25 20:44:52  grichenk
 * Added operator bool() and operator !()
 *
