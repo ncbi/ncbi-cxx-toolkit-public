@@ -48,7 +48,6 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/seq__.hpp>
 
-#include <sys/types.h>
 #include <assert.h>
 #include <readdb.h>
 
