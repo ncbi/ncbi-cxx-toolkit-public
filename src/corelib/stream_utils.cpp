@@ -81,7 +81,7 @@ protected:
     virtual streambuf*  setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
 private:
-    void                x_FillBuffer(void);
+    void                x_FillBuffer(streamsize max_size = k_MinBufSize);
     void                x_DropBuffer(void);
 
     istream&            m_Is;      // i/o stream this streambuf is attached to
@@ -222,17 +222,9 @@ streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             buf     += (streamsize) n_read;
             n_total += (streamsize) n_read;
         } else {
-            streamsize n_read = m_Sb->sgetn(buf, m);
-            if ( n_read == 0 )
-                break;
-            m       -= n_read;
-            buf     += n_read;
-            n_total += n_read;
-            /*
-            x_FillBuffer();
+            x_FillBuffer(m);
             if (gptr() >= egptr())
                 break;
-            */
         }
     }
     return n_total;
@@ -276,7 +268,7 @@ streambuf* CPushback_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
 }
 
 
-void CPushback_Streambuf::x_FillBuffer()
+void CPushback_Streambuf::x_FillBuffer(streamsize max_size)
 {
     _ASSERT(m_Sb);
     CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (m_Sb);
@@ -286,7 +278,7 @@ void CPushback_Streambuf::x_FillBuffer()
         sb->m_Sb = 0;
         if (sb->gptr() >= sb->egptr()) {
             delete sb;
-            x_FillBuffer();
+            x_FillBuffer(max_size);
             return;
         }
         delete[] (CT_CHAR_TYPE*) m_DelPtr;
@@ -304,7 +296,8 @@ void CPushback_Streambuf::x_FillBuffer()
             buf_size = k_MinBufSize;
             bp = new CT_CHAR_TYPE[buf_size];
         }
-        streamsize n = m_Sb->sgetn(bp? bp : (CT_CHAR_TYPE*)m_DelPtr, buf_size);
+        streamsize n = m_Sb->sgetn(bp? bp : (CT_CHAR_TYPE*)m_DelPtr,
+                                   min(buf_size, max_size));
         if (n <= 0) {
             // NB: For unknown reasons WorkShop6 can return -1 from sgetn :-/
             delete bp;
@@ -467,6 +460,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.31  2003/11/19 16:49:35  vasilche
+ * Fix previous commit to maintain backup condition.
+ *
  * Revision 1.30  2003/11/19 15:41:50  vasilche
  * Temporary fix for wrong Readsome() after Pushback().
  *
