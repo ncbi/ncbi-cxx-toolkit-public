@@ -78,7 +78,7 @@ private:
     
     // Check if the pattern at position pos in the text lies on a
     // whole word boundry.
-    bool IsWholeWord(const string& text, int pos) const;
+    bool IsWholeWord(const string& text, unsigned int pos) const;
     
     // Member Variables
     string                  m_Pattern;  
@@ -422,6 +422,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/02/04 20:15:16  shomrat
+* Change int to unsigned
+*
 * Revision 1.8  2003/01/22 20:03:56  vasilche
 * Removed compiler warning.
 *
