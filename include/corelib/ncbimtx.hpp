@@ -46,6 +46,7 @@
 #  if defined(NCBI_OS_MSWIN)
 #    define NCBI_WIN32_THREADS
 #    include <windows.h>
+#    include <corelib/winundef.hpp>
 #  elif defined(NCBI_OS_UNIX)
 #    define NCBI_POSIX_THREADS
 #    include <pthread.h>
@@ -395,6 +396,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/08/19 18:15:58  ivanov
+ * +include <corelib/winundef.hpp>
+ *
  * Revision 1.9  2002/07/15 18:17:51  gouriano
  * renamed CNcbiException and its descendents
  *
