@@ -198,7 +198,7 @@ private:
 /// Contains 0..N CDiagMatcher objects
 ///
 
-class CDiagFilter
+class NCBI_XNCBI_EXPORT CDiagFilter
 {
 public:
     // 'tors
@@ -332,6 +332,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/09/22 22:39:15  vakatov
+ * CDiagFilter -- NCBI_XNCBI_EXPORT, as it is used by test applications
+ *
  * Revision 1.2  2004/09/22 16:52:39  ucko
  * Remove redundant headers, particularly <istream> (which is not
  * available everywhere); as ncbiutil.hpp includes ncbistd.hpp, it
