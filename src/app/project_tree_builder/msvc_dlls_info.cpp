@@ -218,10 +218,15 @@ static void s_InitalizeDllProj(const string&                  dll_id,
                                  depend_id, 
                                  GetApp().GetWholeTree()) ) {
 
-                CProjKey depend_key(CProjKey::eLib, depend_id);
-                dll->m_Depends.push_back(depend_key); 
-                tree_dst->m_Projects[depend_key] = 
-                 (GetApp().GetWholeTree().m_Projects.find(depend_key))->second;
+                if (GetApp().GetDllsInfo().IsDllHosted(depend_id)) {
+                    string dll_host = GetApp().GetDllsInfo().GetDllHost(depend_id);
+                    dll->m_Depends.push_back(CProjKey(CProjKey::eDll, dll_host));    
+                } else {
+                    CProjKey depend_key(CProjKey::eLib, depend_id);
+                    dll->m_Depends.push_back(depend_key); 
+                    tree_dst->m_Projects[depend_key] = 
+                    (GetApp().GetWholeTree().m_Projects.find(depend_key))->second;
+                }
 
             } else  {
                 LOG_POST(Warning << dll_id << ": project not found: " + depend_id);
@@ -580,6 +585,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/03/23 13:45:11  gouriano
+ * Check if a library is hosted in DLL before adding it to the build tree
+ *
  * Revision 1.29  2005/01/31 16:37:38  gouriano
  * Keep track of subproject types and propagate it down the project tree
  *
