@@ -154,6 +154,7 @@ EOF
 
 ###  APPLICATION BUILD RULES  -- DON'T EDIT OR MOVE THIS LINE !!!
 include \$(builddir)/Makefile.app
+MAKEFILE = `basename "$makefile_name"`
 
 
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) HERE
