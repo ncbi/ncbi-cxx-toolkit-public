@@ -410,6 +410,52 @@ public:
         }
 };
 
+// Helper hook for Serial_FilterObjects function template
+class CSerial_FilterRootHook : public CReadObjectHook
+{
+public:
+    void ReadObject(CObjectIStream& in,const CObjectInfo& object)
+    {
+        DefaultSkip(in,object);
+    }
+};
+
+// Helper hook for Serial_FilterObjects function template
+template<typename TObject>
+class CSerial_FilterObjectsHook : public CSkipObjectHook
+{
+public:
+    void SkipObject(CObjectIStream& in, const CObjectTypeInfo& type)
+    {
+        TObject obj;
+        type.GetTypeInfo()->DefaultReadData(in, &obj);
+        Process(obj);
+    }
+    virtual void Process(const TObject& obj) = 0;
+};
+
+class CEofException;
+// Scan input stream, finding objects of requested type (TObject) only
+template<typename TRoot, typename TObject>
+void Serial_FilterObjects(CObjectIStream& in, CSerial_FilterObjectsHook<TObject>* hook,
+                          bool readall=true)
+{
+    CObjectTypeInfo root = CType<TRoot>();
+    root.SetLocalReadHook(in, new CSerial_FilterRootHook);
+    CObjectTypeInfo request = CType<TObject>();
+    request.SetLocalSkipHook(in, hook);
+    do {
+        TRoot obj;
+        try {
+            in >> obj;
+        } catch ( CEofException& ) {
+            return;
+        }
+    } while (readall);
+}
+
+
+
 
 /* @} */
 
@@ -424,6 +470,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/06/14 17:20:58  gouriano
+* Added possibility to scan input stream finding objects of a specific type
+*
 * Revision 1.15  2004/04/30 13:28:40  gouriano
 * Remove obsolete function declarations
 *
