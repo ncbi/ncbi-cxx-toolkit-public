@@ -54,6 +54,27 @@ CPackStringHook::~CPackStringHook(void)
 }
 
 
+void CPackStringHook::x_RefCounterError(void)
+{
+    THROW1_TRACE(runtime_error,
+                 "CPackStringHook: bad ref counting");
+}
+
+
+inline
+void CPackStringHook::x_Assign(string& s, const string& src)
+{
+    s = src;
+    if ( s.c_str() != src.c_str() ) {
+        const_cast<string&>(src) = s;
+        s = src;
+        if ( s.c_str() != src.c_str() ) {
+            x_RefCounterError();
+        }
+    }
+}
+
+
 void CPackStringHook::ReadString(CObjectIStream& in, string& s)
 {
     in.ReadString(s);
@@ -62,19 +83,13 @@ void CPackStringHook::ReadString(CObjectIStream& in, string& s)
         return;
     }
     if ( m_CompressedOut < m_CountLimit ) {
-        ++m_CompressedIn;
         pair<set<string>::iterator,bool> ins = m_Strings.insert(s);
         if ( ins.second ) {
             ++m_CompressedOut;
             ins.first->c_str();
         }
-        s = *ins.first;
-#if _DEBUG
-        if ( s.c_str() != ins.first->data() ) {
-            THROW1_TRACE(runtime_error,
-                         "bad ref counting");
-        }
-#endif
+        x_Assign(s, *ins.first);
+        ++m_CompressedIn;
     }
     else {
         set<string>::const_iterator it = m_Strings.find(s);
@@ -82,14 +97,8 @@ void CPackStringHook::ReadString(CObjectIStream& in, string& s)
             ++m_Skipped;
             return;
         }
+        x_Assign(s, *it);
         ++m_CompressedIn;
-        s = *it;
-#if _DEBUG
-        if ( s.c_str() != it->data() ) {
-            THROW1_TRACE(runtime_error,
-                         "bad ref counting");
-        }
-#endif
     }
 }
 

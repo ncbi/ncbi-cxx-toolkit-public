@@ -37,13 +37,17 @@
 
 BEGIN_NCBI_SCOPE
 
-class CPackStringHook
+class NCBI_XOBJMGR_EXPORT CPackStringHook
 {
 public:
     CPackStringHook(size_t length_limit = 32, size_t count_limit = 256);
     ~CPackStringHook(void);
 
     void ReadString(CObjectIStream& in, string& s);
+
+private:
+    void x_RefCounterError(void);
+    void x_Assign(string& s, const string& src);
 
     size_t m_LengthLimit;
     size_t m_CountLimit;
@@ -82,6 +86,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.2  2003/07/22 21:55:11  vasilche
+ * Allow correct packing with limited reference counter (MSVC - 254 max).
+ *
  * Revision 1.1  2003/07/17 20:07:55  vasilche
  * Reduced memory usage by feature indexes.
  * SNP data is loaded separately through PUBSEQ_OS.
