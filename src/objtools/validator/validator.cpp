@@ -362,6 +362,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_INST_SeqLitGapLength0",
     "SEQ_INST_TpaAssmeblyProblem",
     "SEQ_INST_SeqLocLength",
+    "SEQ_INST_MissingGaps",
 
     "SEQ_DESCR_BioSourceMissing",
     "SEQ_DESCR_InvalidForType",
@@ -673,6 +674,8 @@ not be a gap of 0 length.",
 Seq-hist.assembly alignment for the PRIMARY block.",
 //  SEQ_INST_SeqLocLength
 "A SeqLoc component of a delta Bioseq is suspiciously small.",
+//  SEQ_INST_MissingGaps
+"HTGS delta records should have gaps between each sequence segment.",
 
 /* SEQ_DESCR */
 
@@ -1182,6 +1185,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2004/06/25 15:59:18  shomrat
+* + eErr_SEQ_INST_MissingGaps
+*
 * Revision 1.46  2004/06/25 14:55:59  shomrat
 * changes to CValidError and CValidErrorItem; +SEQ_FEAT_DuplicateTranslExcept,SEQ_FEAT_TranslExceptAndRnaEditing
 *

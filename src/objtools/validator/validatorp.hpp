@@ -22,7 +22,7 @@
  *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
- *
+ *`
  * Author:  Jonathan Kans, Clifford Clausen, Aaron Ucko......
  *
  * File Description:
@@ -142,6 +142,7 @@ enum EErrType {
     eErr_SEQ_INST_SeqLitGapLength0,
     eErr_SEQ_INST_TpaAssmeblyProblem,
     eErr_SEQ_INST_SeqLocLength,
+    eErr_SEQ_INST_MissingGaps,
 
     eErr_SEQ_DESCR_BioSourceMissing,
     eErr_SEQ_DESCR_InvalidForType,
@@ -935,6 +936,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.67  2004/06/25 15:58:27  shomrat
+* + eErr_SEQ_INST_MissingGaps
+*
 * Revision 1.66  2004/06/25 14:57:23  shomrat
 * +eErr_SEQ_FEAT_DuplicateTranslExcept,eErr_SEQ_FEAT_TranslExceptAndRnaEditing
 *
