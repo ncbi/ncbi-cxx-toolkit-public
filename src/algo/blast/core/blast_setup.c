@@ -695,8 +695,8 @@ BLAST_GapAlignSetUp(EBlastProgramType program_number,
    BlastExtensionParametersNew(program_number, ext_options, sbp, 
                                query_info, ext_params);
 
-   BlastHitSavingParametersNew(program_number, hit_options, *ext_params, 
-                               sbp, query_info, total_length/num_seqs, hit_params);
+   BlastHitSavingParametersNew(program_number, hit_options, sbp, query_info, 
+                               total_length/num_seqs, hit_params);
 
    /* To initialize the gapped alignment structure, we need to know the 
       maximal subject sequence length */
@@ -715,7 +715,6 @@ Int2 BLAST_OneSubjectUpdateParameters(EBlastProgramType program_number,
                     const BlastScoringOptions* scoring_options,
                     BlastQueryInfo* query_info, 
                     BlastScoreBlk* sbp, 
-                    const BlastExtensionParameters* ext_params,
                     BlastHitSavingParameters* hit_params,
                     BlastInitialWordParameters* word_params,
                     BlastEffectiveLengthsParameters* eff_len_params)
@@ -726,17 +725,15 @@ Int2 BLAST_OneSubjectUpdateParameters(EBlastProgramType program_number,
                                       eff_len_params, sbp, query_info)) != 0)
       return status;
    /* Update cutoff scores in hit saving parameters */
-   BlastHitSavingParametersUpdate(program_number, ext_params,
-                                  sbp, query_info, subject_length, 
+   BlastHitSavingParametersUpdate(program_number, sbp, query_info, subject_length, 
                                   hit_params);
    
    if (word_params) {
       /* Update cutoff scores in initial word parameters */
-      BlastInitialWordParametersUpdate(program_number, hit_params, ext_params,
-         sbp, query_info, subject_length, word_params);
+      BlastInitialWordParametersUpdate(program_number, hit_params, sbp, query_info, 
+           subject_length, word_params);
       /* Update the parameters for linking HSPs, if necessary. */
-      BlastLinkHSPParametersUpdate(word_params, ext_params, 
-         hit_params, scoring_options->gapped_calculation);
+      BlastLinkHSPParametersUpdate(word_params, hit_params, scoring_options->gapped_calculation);
    }
    return status;
 }
