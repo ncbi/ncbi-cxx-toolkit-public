@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.294 2004/04/22 21:22:38 vakatov Exp $
+#  $Id: configure.ac,v 1.295 2004/04/22 21:47:07 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2859,13 +2859,15 @@ if test "$with_fltk" = "no" ; then
    WithoutPackages="$WithoutPackages FLTK"
 else
    WithPackages="$WithPackages FLTK"
+   FLTK_CONFIG="$FLTK_BINPATH/fltk-config"
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$FLTK_INCLUDE"; then
-      FLTK_INCLUDE=`$FLTK_BINPATH/fltk-config --cxxflags --use-gl`
-      FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags`
+      FLTK_INCLUDE=`$FLTK_CONFIG --cxxflags --use-gl`
+      FLTK_LIBS=`$FLTK_CONFIG --ldflags`
    fi
-   FLTK_LIBS_GL=`$FLTK_BINPATH/fltk-config --ldflags --use-gl`
-   FLTK_CONFIG="$FLTK_BINPATH/fltk-config"
+   FLTK_LIBS_GL=`$FLTK_CONFIG --ldflags --use-gl`
+   FLTK_LIBS_IMAGES=`$FLTK_CONFIG --ldflags --use-images`
+   FLTK_LIBS_ALL=`$FLTK_CONFIG --ldflags --use-gl --use-images`
    AC_DEFINE(HAVE_FLTK, 1, [Define to 1 if FLTK is available.])
 fi
 
@@ -3925,6 +3927,8 @@ AC_SUBST(GLUT_LIBS)
 AC_SUBST(FLTK_INCLUDE)
 AC_SUBST(FLTK_LIBS)
 AC_SUBST(FLTK_LIBS_GL)
+AC_SUBST(FLTK_LIBS_IMAGES)
+AC_SUBST(FLTK_LIBS_ALL)
 AC_SUBST(FLTK_CONFIG)
 AC_SUBST(WXWIN_INCLUDE)
 AC_SUBST(WXWIN_LIBS)
