@@ -38,6 +38,7 @@
 #include <ctools/asn_connection.h>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
+#include <serial/serial.hpp>
 
 
 /** @addtogroup CToolsASNConv
@@ -122,6 +123,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/06/12 15:58:06  lavr
+* +#include <serial/serial.hpp>
+*
 * Revision 1.3  2003/05/28 14:53:51  lavr
 * Reduce the number of included headers
 *
