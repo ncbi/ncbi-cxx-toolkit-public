@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2002/11/05 17:45:54  grichenk
+* Throw runtime_error instead of CEofException when a stream is broken
+*
 * Revision 1.75  2002/10/25 14:49:27  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -487,29 +490,34 @@ bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse,
 
 char CObjectIStreamAsn::SkipWhiteSpace(void)
 {
-    for ( ;; ) {
-		char c = m_Input.SkipSpaces();
-        switch ( c ) {
-        case '\t':
-            m_Input.SkipChar();
-            continue;
-        case '\r':
-        case '\n':
-            m_Input.SkipChar();
-            SkipEndOfLine(c);
-            continue;
-        case '-':
-            // check for comments
-            if ( m_Input.PeekChar(1) != '-' ) {
-                return '-';
+    try { // catch CEofException
+        for ( ;; ) {
+		    char c = m_Input.SkipSpaces();
+            switch ( c ) {
+            case '\t':
+                m_Input.SkipChar();
+                continue;
+            case '\r':
+            case '\n':
+                m_Input.SkipChar();
+                SkipEndOfLine(c);
+                continue;
+            case '-':
+                // check for comments
+                if ( m_Input.PeekChar(1) != '-' ) {
+                    return '-';
+                }
+                m_Input.SkipChars(2);
+                // skip comments
+                SkipComments();
+                continue;
+            default:
+                return c;
             }
-            m_Input.SkipChars(2);
-            // skip comments
-            SkipComments();
-            continue;
-        default:
-            return c;
         }
+    } catch (CEofException& e) {
+        // There should be no eof here, report as an error
+        ThrowError(fEOF, e.what());
     }
 }
 
