@@ -42,11 +42,11 @@ BEGIN_NCBI_SCOPE
 ///    Bi-directionaly linked N way tree.
 ///
 
-template <class V> class CTreeNWay
+template <class TValue> class CTreeNWay
 {
 public:
-    typedef V                          value_type;
-    typedef CTreeNWay<V>               TTreeType;
+    typedef TValue                     TValueType;
+    typedef CTreeNWay<TValue>          TTreeType;
     typedef list<TTreeType*>           TNodeList;
     typedef TNodeList::iterator        TNodeList_I;
     typedef TNodeList::const_iterator  TNodeList_CI;
@@ -55,7 +55,7 @@ public:
     ///
     /// @param
     ///   value - node value
-    CTreeNWay(const V& value = V());
+    CTreeNWay(const TValue& value = V());
     ~CTreeNWay();
 
     CTreeNWay(const TTreeType& tree);
@@ -149,7 +149,7 @@ public:
     ///    val value reference
     ///
     /// @return pointer to new subtree
-    CTreeNWay<V>* AddNode(const V& val);
+    CTreeNWay<TValue>* AddNode(const V& val);
 
 
     /// Insert new subnode before the specified location in the subnode list
@@ -167,22 +167,52 @@ protected:
 protected:
     TTreeType*         m_Parent; ///< Pointer on the parent node
     TNodeList          m_Nodes;  ///< List of dependent nodes
-    V                  m_Value;  ///< Node value
+    TValue             m_Value;  ///< Node value
 };
+
+
+template <class TId, class TValue>
+struct CTreePair
+{
+    TId       id;
+    TValue    value;
+
+    CTreePair() {}
+    CTreePair(const TId& tid, const TValue& tvalue)
+    : id(tid),
+      value(tvalue)
+    {}
+};
+
+
+template <class TId, class TValue> class CTreePairNWay
+    : public CTreeNWay< CTreePair<TId, TValue> >
+{
+public:
+    typedef CTreeNWay< CTreePair<TId, TValue> >  TParent;
+    typedef CTreePair<TId, TValue>               TTreePair;
+
+public:
+    CTreePairNWay(const TId& id = TId(), const TValue& value = V());
+    CTreePairNWay(const CTreePairNWay<TId, TValue>& tr);
+    CTreePairNWay<TId, TValue>& operator=(const CTreePairNWay<TId, TValue>& tr);
+
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  CTreeNWay<V>
+//  CTreeNWay<TValue>
 //
 
-template<class V>
-CTreeNWay<V>::CTreeNWay(const V& value)
+template<class TValue>
+CTreeNWay<TValue>::CTreeNWay(const TValue& value)
 : m_Parent(0),
   m_Value(value)
 {}
 
-template<class V>
-CTreeNWay<V>::~CTreeNWay()
+template<class TValue>
+CTreeNWay<TValue>::~CTreeNWay()
 {
     ITERATE(TNodeList, it, m_Nodes) {
         CTreeNWay* node = *it;
@@ -190,14 +220,14 @@ CTreeNWay<V>::~CTreeNWay()
     }
 }
 
-template<class V>
-CTreeNWay<V>::CTreeNWay(const TTreeType& tree)
+template<class TValue>
+CTreeNWay<TValue>::CTreeNWay(const TTreeType& tree)
 {
     CopyFrom(tree);
 }
 
-template<class V>
-CTreeNWay<V>& CTreeNWay<V>::operator=(const TTreeType& tree)
+template<class TValue>
+CTreeNWay<TValue>& CTreeNWay<TValue>::operator=(const TTreeType& tree)
 {
     ITERATE(TNodeList, it, m_Nodes) {
         CTreeNWay* node = *it;
@@ -207,8 +237,8 @@ CTreeNWay<V>& CTreeNWay<V>::operator=(const TTreeType& tree)
     CopyFrom(tree);
 }
 
-template<class V>
-void CTreeNWay<V>::CopyFrom(const TTreeType& tree)
+template<class TValue>
+void CTreeNWay<TValue>::CopyFrom(const TTreeType& tree)
 {
     ITERATE(TNodeList, it, tree.m_Nodes) {
         CTreeNWay* src_node = *it;
@@ -217,8 +247,8 @@ void CTreeNWay<V>::CopyFrom(const TTreeType& tree)
     }
 }
 
-template<class V>
-void CTreeNWay<V>::RemoveNode(TTreeType* subnode)
+template<class TValue>
+void CTreeNWay<TValue>::RemoveNode(TTreeType* subnode)
 {
     ITERATE(TNodeList, it, m_Nodes) {
         CTreeNWay* node = *it;
@@ -230,8 +260,8 @@ void CTreeNWay<V>::RemoveNode(TTreeType* subnode)
     }    
 }
 
-template<class V>
-void CTreeNWay<V>::RemoveNode(TNodeList_I it)
+template<class TValue>
+void CTreeNWay<TValue>::RemoveNode(TNodeList_I it)
 {
     CTreeNWay* node = *it;
     m_Nodes.erase(it);
@@ -239,8 +269,8 @@ void CTreeNWay<V>::RemoveNode(TNodeList_I it)
 }
 
 
-template<class V>
-CTreeNWay<V>::TTreeType* CTreeNWay<V>::DetachNode(TTreeType* subnode)
+template<class TValue>
+CTreeNWay<TValue>::TTreeType* CTreeNWay<TValue>::DetachNode(TTreeType* subnode)
 {
     ITERATE(TNodeList, it, m_Nodes) {
         CTreeNWay* node = *it;
@@ -254,8 +284,8 @@ CTreeNWay<V>::TTreeType* CTreeNWay<V>::DetachNode(TTreeType* subnode)
 }
 
 
-template<class V>
-CTreeNWay<V>::TTreeType* CTreeNWay<V>::DetachNode(TNodeList_I it)
+template<class TValue>
+CTreeNWay<TValue>::TTreeType* CTreeNWay<TValue>::DetachNode(TNodeList_I it)
 {
     CTreeNWay* node = *it;
     m_Nodes.erase(it);
@@ -265,16 +295,16 @@ CTreeNWay<V>::TTreeType* CTreeNWay<V>::DetachNode(TNodeList_I it)
 }
 
 
-template<class V>
-void CTreeNWay<V>::AddNode(TTreeType* subnode)
+template<class TValue>
+void CTreeNWay<TValue>::AddNode(TTreeType* subnode)
 {
     m_Nodes.push_back(subnode);
     subnode->SetParent(this);
 }
 
 
-template<class V>
-CTreeNWay<V>* CTreeNWay<V>::AddNode(const V& val)
+template<class TValue>
+CTreeNWay<TValue>* CTreeNWay<TValue>::AddNode(const V& val)
 {
     TTreeType* subnode = new TTreeType(val);
     AddNode(subnode);
@@ -282,13 +312,40 @@ CTreeNWay<V>* CTreeNWay<V>::AddNode(const V& val)
 }
 
 
-template<class V>
-void CTreeNWay<V>::InsertNode(TNodeList_I it,
-                              TTreeType* subnode)
+template<class TValue>
+void CTreeNWay<TValue>::InsertNode(TNodeList_I it,
+                                   TTreeType* subnode)
 {
     m_Nodes.insert(it, subnode);
     subnode->SetParent(this);
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTreePairNWay<TId, TValue>
+//
+
+
+template<TId, TValue>
+CTreePairNWay<TId, TValue>::CTreePairNWay(const TId& id, const TValue& value)
+: TParent(TTreePair(id, value)
+{}
+
+
+template<TId, TValue>
+CTreePairNWay<TId, TValue>::CTreePairNWay(const CTreePairNWay<TId, TValue>& tr)
+: TParent(tr)
+{}
+
+
+template<TId, TValue>
+CTreePairNWay<TId, TValue>& 
+CTreePairNWay<TId, TValue>::operator=(const CTreePairNWay<TId, TValue>& tr)
+{
+    TParent::operator=(tr);
+}
+
 
 
 END_NCBI_SCOPE
@@ -297,6 +354,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/01/09 17:15:11  kuznets
+ * Cosmetic cleanup
+ *
  * Revision 1.5  2004/01/09 13:27:39  kuznets
  * Cosmetic fixes. nodelist_iterator renamed to match the NCBI coding policy.
  *
