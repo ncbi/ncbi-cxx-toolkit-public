@@ -192,6 +192,7 @@ CBl2Seq::SetupSearch()
         // FIXME
         BlastMaskLoc* filter_mask = NULL;
         Blast_Message* blmsg = NULL;
+        double scale_factor = 1.0;
         short st;
 
         st = BLAST_MainSetUp(m_OptsHandle->GetOptions().GetProgram(), 
@@ -199,7 +200,9 @@ CBl2Seq::SetupSearch()
                              m_OptsHandle->GetOptions().GetScoringOpts(),
                              m_OptsHandle->GetOptions().GetHitSaveOpts(),
                              mi_clsQueries, 
-                             mi_clsQueryInfo, &mi_pLookupSegments, 
+                             mi_clsQueryInfo, 
+                             scale_factor,
+                             &mi_pLookupSegments, 
                              &filter_mask, &mi_pScoreBlock, &blmsg);
 
         // Convert the BlastMaskLoc* into a CSeq_loc
@@ -316,6 +319,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.51  2004/05/07 15:28:05  papadopo
+ * add scale factor of 1.0 to BlastMainSetup
+ *
  * Revision 1.50  2004/05/05 15:28:56  dondosha
  * Renamed functions in blast_hits.h accordance with new convention Blast_[StructName][Task]
  *
