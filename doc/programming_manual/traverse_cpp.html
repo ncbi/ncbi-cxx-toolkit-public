@@ -9,24 +9,24 @@
 // Description: Reads an ASN.1 Biostruc text file into memory
 //		and visits its components
 <font color = "green">
-#include < serial/serial.hpp >		
-#include < serial/objistrasnb.hpp >	
-#include < serial/serialasn.hpp >		
-#include < objects/general/Dbtag.hpp >
-#include < objects/general/Object_id.hpp >
-#include < objects/mmdb1/Biostruc.hpp >
-#include < objects/mmdb1/Biostruc_id.hpp >
-#include < objects/mmdb1/Biostruc_history.hpp >
-#include < objects/mmdb1/Mmdb_id.hpp >
-#include < objects/mmdb1/Biostruc_descr.hpp >
-#include < objects/mmdb1/Biomol_descr.hpp >
-#include < objects/mmdb1/Molecule_graph.hpp >
-#include < objects/mmdb1/Inter_residue_bond.hpp >
-#include < objects/mmdb1/Residue_graph.hpp >
-#include < objects/mmdb3/Biostruc_feature_set.hpp >
-#include < objects/mmdb2/Biostruc_model.hpp >
-#include < objects/pub/Pub.hpp >
-#include < corelib/ncbistre.hpp >
+#include &lt;corelib/ncbistd.hpp&gt;
+#include &lt;serial/serial.hpp&gt;		
+#include &lt;serial/objistrasnb.hpp&gt;	
+#include &lt;serial/serialasn.hpp&gt;		
+#include &lt;objects/general/Dbtag.hpp&gt;
+#include &lt;objects/general/Object_id.hpp&gt;
+#include &lt;objects/mmdb1/Biostruc.hpp&gt;
+#include &lt;objects/mmdb1/Biostruc_id.hpp&gt;
+#include &lt;objects/mmdb1/Biostruc_history.hpp&gt;
+#include &lt;objects/mmdb1/Mmdb_id.hpp&gt;
+#include &lt;objects/mmdb1/Biostruc_descr.hpp&gt;
+#include &lt;objects/mmdb1/Biomol_descr.hpp&gt;
+#include &lt;objects/mmdb1/Molecule_graph.hpp&gt;
+#include &lt;objects/mmdb1/Inter_residue_bond.hpp&gt;
+#include &lt;objects/mmdb1/Residue_graph.hpp&gt;
+#include &lt;objects/mmdb3/Biostruc_feature_set.hpp&gt;
+#include &lt;objects/mmdb2/Biostruc_model.hpp&gt;
+#include &lt;objects/pub/Pub.hpp&gt;
 #include <a href="traverse_hpp.html"> "traverseBS.hpp" </a>
 <font color = "blue">
 BEGIN_NCBI_SCOPE
@@ -40,7 +40,7 @@ int CTestAsn::Run() {
 
 <font color = "red">  // initialize ASN input stream <font color = "black">
 
-  auto_ptr< CNcbiIstream > inFStream;
+  auto_ptr&lt;CNcbiIstream&gt; inFStream;
   CNcbiIstream* inStream;
   inFStream.reset(inStream = new CNcbiIfstream("1001.txt"));
   if ( !*inStream )
@@ -48,7 +48,7 @@ int CTestAsn::Run() {
 
 <font color = "red">  // associate an ASN input object with the input <font color = "black">
 
-  auto_ptr< CObjectIStream > inObject;
+  auto_ptr&lt;CObjectIStream&gt; inObject;
   inObject.reset(new CObjectIStreamAsnBinary(*inStream));
 
 <font color = "red">  // initialize and traverse the Biostruc <font color = "black">

@@ -94,15 +94,12 @@ data members is actually a <i>list</i> of references (pointers), as specified by
 the type definitions. Specifically, <i> NCBI_NS_STD</i> is an alias for the <i>std</i>
 namespace, so the lists are standard STL list containers whose arguments specify what
 type of elements the list will hold. For example, <i>TId</i> is a list of <i>NCBI_NS_NCBI::CRef</i>
-objects, where each <i>CRef</i> object points to a <i>CBiostruc_id</i>. 
-The <i>CRef</i> class is described in the section on <a href="cref.html"> smart pointers</a>,
-and is defined in <a href="/netopt/ncbi_tools/c++/include/corelib/ncbiobj.hpp"> 
-<i>corelib/ncbiobj.hpp</i></a>. Briefly, it is a specialization of the STL auto_ptr
-class that uses reference counts to determine whether or not an object can be deleted 
-when the pointer goes out of scope.<p>
+objects, where each <i>CRef</i> object points to a <i>CBiostruc_id</i>. <p>
 
+The <a href="cref.html"><i>CRef</i></a> class is a type of smart pointer used to hold a pointer 
+to a reference-counted object. 
 The derefencing operator, when applied to a <i>CRef</i> element of the Biostruc's TId list,
-<i>*listElt</i>, will by this definition return a <i>CBiostruc_id</i>.  Because the
+e.g. <i>*listElt</i>, will return a <i>CBiostruc_id</i>.  Because the
 <i>CRef</i> class is defined in the <i> NCBI_NS_NCBI</i> namespace, the scope operator is
 used to refer to it. The scope operator without a prefix refers to the scope that is "just
 one level up" - i.e. the set of prevailing definitions prior to entering the current class
@@ -124,7 +121,7 @@ respectively.
 
 <a name="example"> <h3> Traversing an ASN.1 Biostruc </h3> 
 The program <a href="traverse_cpp.html"><i>traverseBS.cpp</i></a> demonstrates
-how one might read an ASN.1 data file and iterate over the components of the resulting object. 
+how one might load an ASN.1 data file and iterate over the components of the resulting object. 
 This example opens an ASN.1 Biostruc file on a text input stream and stores the information
 in a <i>CBiostruc</i>. The overloaded <i>Visit()</i> function is then used to recursively examine
 <i>CBiostruc bs</i> and its components.<p>
@@ -208,7 +205,7 @@ void Visit (const CBiostruc::TDescr& descList) {
     for ( CBiostruc::TDescr::const_iterator i1 = descList.begin();
         i1 != descList.end(); ++i1 ) {
 
-        for ( CStdTypeConstIterator< string > i = ConstBegin(**i1); i; ++i ) {
+        for ( CStdTypeConstIterator&lt;string&gt; i = ConstBegin(**i1); i; ++i ) {
  	         cout << *i << endl;
         }
     }
@@ -222,7 +219,7 @@ if we had wanted to visit only the <i> CBiostruc_history </i> descriptors, the i
 be written as:
 <font color = "#000080">
 <pre>
-        for ( CTypeConstIterator< CBiostruc_history > i = ConstBegin(**i1); i; ++i ) {
+        for ( CTypeConstIterator&lt;CBiostruc_history&gt; i = ConstBegin(**i1); i; ++i ) {
  	         visit(*i);
         }
 </pre>
