@@ -326,16 +326,23 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
         ++index;
 
+        pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf;
+
         if (translate) {
             ASSERT(strand == eNa_strand_both ||
                    strand == eNa_strand_plus ||
                    strand == eNa_strand_minus);
-
             // Get both strands of the original nucleotide sequence with
             // sentinels
-            pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
-                GetSequence(*itr->seqloc, encoding, itr->scope, strand,
-                            eSentinels));
+            try {
+                seqbuf = 
+                    GetSequence(*itr->seqloc, encoding, itr->scope, strand,
+                                eSentinels);
+            } catch (const CSeqVectorException& exptn) {
+                sfree(buf);
+                NCBI_THROW(CBlastException, eBadParameter, 
+                           "Sequence not found: wrong query type provided");
+            }
             
 
             AutoPtr<Uint1, ArrayDeleter<Uint1> > gc = 
@@ -367,10 +374,14 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
             ASSERT(strand == eNa_strand_both ||
                    strand == eNa_strand_plus ||
                    strand == eNa_strand_minus);
-
-            pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
-                GetSequence(*itr->seqloc, encoding, itr->scope, strand,
-                            eSentinels));
+            try {
+                seqbuf = GetSequence(*itr->seqloc, encoding, itr->scope, strand,
+                                     eSentinels);
+            } catch (const CSeqVectorException&) {
+                sfree(buf);
+                NCBI_THROW(CBlastException, eBadParameter, 
+                           "Sequence not found: wrong query type provided");
+            }
             int idx = (strand == eNa_strand_minus) ? 
                 ctx_index + 1 : ctx_index;
             int offset = qinfo->context_offsets[idx];
@@ -378,9 +389,14 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
         } else {
 
-            pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
-                GetSequence(*itr->seqloc, encoding, itr->scope,
-                            eNa_strand_unknown, eSentinels));
+            try {
+                seqbuf = GetSequence(*itr->seqloc, encoding, itr->scope,
+                                     eNa_strand_unknown, eSentinels);
+            } catch (const CSeqVectorException&) {
+                sfree(buf);
+                NCBI_THROW(CBlastException, eBadParameter, 
+                           "Sequence not found: wrong query type provided");
+            }
             int offset = qinfo->context_offsets[ctx_index];
             memcpy(&buf[offset], seqbuf.first.get(), seqbuf.second);
 
@@ -958,6 +974,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/08/16 19:49:25  dondosha
+* Small memory leak fix; catch CSeqVectorException and throw CBlastException out of setup functions
+*
 * Revision 1.14  2004/07/20 21:11:04  dondosha
 * Fixed a memory leak in x_GetSequenceLengthAndId
 *
