@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/12/04 20:56:59  gouriano
+* corrected DTD generation for Bool type
+*
 * Revision 1.29  2003/08/13 18:22:31  gouriano
 * added conversion of ANY type DTD element to schema
 *
@@ -304,14 +307,11 @@ void CBoolDataType::GetXMLSchemaContents(string& type, string& contents) const
 void CBoolDataType::PrintDTDExtra(CNcbiOstream& out) const
 {
     const char *attr;
-    const CBoolDataValue *val = 
-        dynamic_cast<const CBoolDataValue*>(GetDataMember()->GetDefault());
+    const CBoolDataValue *val = GetDataMember() ?
+        dynamic_cast<const CBoolDataValue*>(GetDataMember()->GetDefault()) : 0;
 
     if(val) {
-        attr = val->GetValue() ? "'true'" : "'false'";
-    }
-    else if( GetDataMember()->Optional() ) {
-        attr = "#IMPLIED";
+        attr = val->GetValue() ? "\"true\"" : "\"false\"";
     }
     else {
         attr = "#REQUIRED";
