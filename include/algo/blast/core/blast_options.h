@@ -125,7 +125,7 @@ extern "C" {
 #define PSI_ETHRESH 0.005
 #define PSI_MAX_NUM_PASSES 1
 #define PSI_PSEUDO_COUNT_CONST 9
-#define PSI_SCALING_FACTOR 1
+#define PSI_SCALING_FACTOR 32
 
 /** Default genetic code for query and/or database */
 #define BLAST_GENETIC_CODE 1
@@ -669,13 +669,12 @@ Int2 BlastHitSavingOptionsNew(Uint1 program,
 
 /** Allocate memory for BlastHitSavingOptions.
  * @param options The options [in] [out]
- * @param is_gapped Specifies that search is gapped [in]
  * @param evalue The expected value threshold [in]
  * @param hitlist_size How many database sequences to save per query? [in]
 */
 Int2
 BLAST_FillHitSavingOptions(BlastHitSavingOptions* options, 
-   Boolean is_gapped, double evalue, Int4 hitlist_size);
+                           double evalue, Int4 hitlist_size);
 
 /** Deallocate memory for BlastHitSavingOptions*. 
  * @param parameters Structure to free [in]
