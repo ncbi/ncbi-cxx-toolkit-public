@@ -37,7 +37,7 @@
 BEGIN_NCBI_SCOPE
 
 
-const streamsize CRWStreambuf::kDefaultBufferSize = 4096;
+static const streamsize kDefaultBufferSize = 4096;
 
 
 CRWStreambuf::CRWStreambuf(IReaderWriter* rw,
@@ -261,6 +261,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2004/01/15 20:06:28  lavr
+ * Define kDefaultBufferSize statically in this file
+ *
  * Revision 1.6  2004/01/09 17:39:54  lavr
  * Use internal 1-byte buffer for unbuffered streams' get ops
  *
