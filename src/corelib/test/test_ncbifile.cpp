@@ -45,11 +45,6 @@
 
 USING_NCBI_SCOPE;
 
-#if defined(__MACOS__)
-#  define main testfiles
-extern int testfiles(int, const char *[]);
-#endif
-
 
 /////////////////////////////////
 // File name spliting tests
@@ -475,6 +470,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/03/01 16:06:24  kans
+ * removed erroneous __MACOS__ section
+ *
  * Revision 1.9  2002/01/24 22:18:52  ivanov
  * Changed tests for CDirEntry::Remove() and CDir::Remove()
  *
