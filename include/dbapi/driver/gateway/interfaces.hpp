@@ -191,7 +191,7 @@ protected:
       return localContext;
     }
 
-    void DropCmd(CDB_BaseEnt& cmd);
+    // void DropCmd(CDB_BaseEnt& cmd);
 
     //// Not implemented yet:
     virtual bool SendData(
@@ -213,7 +213,10 @@ protected:
 class CGW_BaseCmd : public I_BaseCmd, public CGW_Base
 {
 public:
-    // virtual bool Send() = 0;
+    virtual bool Send()
+    {
+      return comprot_bool("GWLib:BaseCmd:Send", remoteObj );
+    }
     virtual bool WasSent() const
     {
       return comprot_bool("GWLib:BaseCmd:WasSent", remoteObj);
@@ -280,7 +283,8 @@ protected:
 
     virtual bool Send()
     {
-      return comprot_bool("GWLib:LangCmd:Send", remoteObj );
+      // ?? send binded params ??
+      return CGW_BaseCmd::Send();
     }
 
     virtual bool WasSent() const
@@ -339,8 +343,8 @@ protected:
 
     virtual bool Send()
     {
-      // { send binded params }
-      return comprot_bool( "GWLib:RPCCmd:Send", remoteObj );
+      // ?? send binded params ??
+      return CGW_BaseCmd::Send();
     }
 
 
@@ -643,6 +647,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/03/19 21:45:09  sapojnik
+ * some small bugs fixed after testing - the ones related to Connection:SendDataCmd,DropCmd; BaseCmd:Send
+ *
  * Revision 1.3  2002/03/15 22:01:46  sapojnik
  * more methods and classes
  *

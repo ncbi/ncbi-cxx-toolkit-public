@@ -128,10 +128,11 @@ CDB_CursorCmd* CGW_Connection::Cursor( const string& cursor_name, const string& 
 {
   IGate* pGate = conn->getProtocol();
   pGate->set_RPC_call  ( "GWLib:Connection:Cursor" );
-  pGate->set_output_arg( "object"    , &remoteObj        );
-  pGate->set_output_arg( "query"     , query.c_str()     );
-  pGate->set_output_arg( "nof_params", (int*)&nof_params );
-  pGate->set_output_arg( "batch_size", (int*)&batch_size );
+  pGate->set_output_arg( "object"     , &remoteObj          );
+  pGate->set_output_arg( "cursor_name", cursor_name.c_str() );
+  pGate->set_output_arg( "query"      , query.c_str()       );
+  pGate->set_output_arg( "nof_params" , (int*)&nof_params   );
+  pGate->set_output_arg( "batch_size" , (int*)&batch_size   );
   pGate->send_data();
 
   int res;
@@ -154,7 +155,7 @@ CDB_SendDataCmd* CGW_Connection::SendDataCmd(
   I_ITDescriptor& desc, size_t data_size, bool log_it)
 {
   IGate* pGate = conn->getProtocol();
-  pGate->set_RPC_call  ( "GWLib::Connection:SendDataCmd" );
+  pGate->set_RPC_call  ( "GWLib:Connection:SendDataCmd" );
   pGate->set_output_arg( "object"    , &remoteObj        );
   CGW_ITDescriptor* gwDesc = dynamic_cast<CGW_ITDescriptor*>(&desc);
   if(gwDesc==NULL) {
@@ -219,6 +220,7 @@ const string& CGW_Connection::PoolName()   const
   return vars->m_PoolName;
 }
 
+/*
 void CGW_Connection::DropCmd(CDB_BaseEnt& cmd)
 {
   CGW_Base* p = dynamic_cast<CGW_Base*>(&cmd);
@@ -230,6 +232,7 @@ void CGW_Connection::DropCmd(CDB_BaseEnt& cmd)
   comprot_void("GWLib:Connection:DropCmd",p->remoteObj);
   // << also delete local proxy object?? >>
 }
+*/
 
 CDB_Result* CGW_BaseCmd::Result()
 {
@@ -423,7 +426,7 @@ CDB_Object* CGW_Result::GetItem(CDB_Object* item_buf)
   return read_CDB_Object(item_buf);
 }
 
-// A client callback invoked by comprot server from "GWLib:Result:ReadItem"
+// A client callback invoked by comprot server from GWLib:Result:ReadItem
 // May be called multiple times ( once on each send_data() ), to transfer
 // smaller chunks of blob data. This allows to save both client and server memory.
 class C_RDBLib_Result_ReadItem : public CRegProcCli
@@ -562,6 +565,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/03/19 21:45:10  sapojnik
+ * some small bugs fixed after testing - the ones related to Connection:SendDataCmd,DropCmd; BaseCmd:Send
+ *
  * Revision 1.3  2002/03/15 22:01:45  sapojnik
  * more methods and classes
  *
