@@ -1,161 +1,27 @@
-<!-- $Id$ -->
-<!--#set var="TITLE" value="NCBI C++ Toolkit:  Script Usage Messages" -->
-<!--#set var="HEADING" value="Shell Script Usage" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
-
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
-
-<!--  Page Contents -->
-
-<hr>
-
-<a name="ref_CVS_CoreUsage"></a>
-<h2><span class="ncbi_script">cvs_core.sh</span> Usage</h2>
-
-<pre class="ncbi_output">
-
-Usage:  cvs_core.sh &lt;dir&gt; [--without-cvs] [--with-objects] .... [--&lt;platform&gt;]
-Synopsis:
-   Checkout a portable part of the NCBI C++ tree.
-Arguments:
-   &lt;dir&gt;             -- path to checkout the tree to
-   --without-cvs     -- do not put CVS-related stuff to the resultant tree
-   --with-objects    -- generate ASN.1 serialization code in the "objects/" dir
-   --without-objects -- do not even checkout "objects/" dirs
-   --without-ctools  -- do not checkout projects that depend on the C Toolkit
-   --without-gui     -- do not checkout projects that depend on the wxWindows
-   --with-vc-cfgs[={all|inhouse|none}] -- multi-config MSVC project files
-   --without-dizzy   -- remove paths to \\DIZZY\ from MSVC project files
-   --&lt;platform&gt;      -- "--unix", "--msvc", "--cygwin", "--mac", "--all"
-Default:
-   cvs_core.sh &lt;dir&gt; --with-cvs --with-ctools --with-gui --all
-
-Note:  Must specify target directory (name cannot start with '-')
-
-</pre>
-
-<hr>
-
-<a name="ref_Import_ProjectUsage"></a>
-<h2><span class="ncbi_script">import_project.sh</span> Usage</h2>
-
-<pre class="ncbi_output">
-
-USAGE:  import_project.sh &lt;cvs_tree_path&gt; [builddir]
-SYNOPSIS:
-   Retrieve project (and all sub-projects) located in the NCBI C++ Toolkit
-   CVS tree at:
-      internal/c++/src/&lt;cvs_tree_path&gt;
-      internal/c++/include/&lt;cvs_tree_path&gt;
-   Create makefiles "Makefile.*_{lib,app}" (based on the original project
-   makefiles "Makefile.*.{lib,app}") to build libs/apps using pre-built NCBI
-   C++ Toolkit from [builddir]  (default: /netopt/ncbi_tools/c++/Debug/build); also create
-   top-level makefiles "Makefile" from "Makefile.in".
-LIMITATIONS:
-   - Supports only very basic substitutions in Makefile.in.
-   - May produce bogus library search paths.
-
-</pre>
-
-<hr>
-
-<a name="ref_New_ProjectUsage"></a>
-<h2><span class="ncbi_script">new_project.sh</span> Usage</h2>
-
-<pre class="ncbi_output">
-
-USAGE:  new_project.sh &lt;name&gt; &lt;type&gt; [builddir]
-SYNOPSIS:
-   Create a model makefile "Makefile.&lt;name&gt;_&lt;type&gt;" to build
-   a library or an application that uses pre-built NCBI C++ toolkit.
-   Also include sample code when creating applications.
-ARGUMENTS:
-   &lt;name&gt;      -- name of the project (will be subst. to the makefile name)
-   &lt;type&gt;      -- one of the following:
-                  lib         to build a library
-                  app[/basic] to build a simple application
-                  app/cgi     to build a CGI or FastCGI application
-                  app/objects to build an application using ASN.1 objects
-                  app/objmgr  to build an application using the object manager
-   [builddir]  -- path to the pre-built NCBI C++ toolkit
-                  (default = /netopt/ncbi_tools/c++/Debug/build)
 
 
-</pre>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<hr>
-
-<a name="ref_Update_CoreUsage"></a>
-<h2><span class="ncbi_script">update_core.sh</span> Usage</h2>
-
-<pre class="ncbi_output">
-
-Usage: update_core.sh [--no-projects] [--help] [&lt;dirs&gt;] 
-
-  --no-projects: Do not update Windows/MacOS project files.
-
-  --help:        Print this message.
-
-  &lt;dirs&gt;: The list of subdirectories to update; "." updates the files in the
-  top-level directory.  If no directories are specified, the default list is
-
-    . compilers doc include scripts src
-
-</pre>
-
-<hr>
-
-<a name="ref_Update_ProjectsUsage"></a>
-<h2><span class="ncbi_script">update_projects.sh</span> Usage</h2>
-
-<pre class="ncbi_output">
-
-Usage: update_projects.sh &lt;project-list&gt; [&lt;directory&gt;]
-
-This script supports two modes of operation:
-
-  * If you specify a directory name, it will create the directory if
-    necessary and check the specified portion of the C++ tree out into
-    it, along with any additional infrastructure needed for the build
-    system to work.  (If the directory already exists, it must be
-    empty.)  It will then optionally configure and build the new tree.
-
-  * If you run it from the top level of an existing checkout of the
-    C++ source tree, it will update the sources and headers for the
-    specified projects.  It will then optionally reconfigure and
-    rebuild the tree.
-
-The syntax for project lists is documented at
-<a href="config.html#ref_ProjectList" class="ncbi_url">http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/config.html#ref_ProjectList</a>
-
-In either mode, if <project-list> contains neither a directory nor an
-extension, the script will add the extension .lst and look in the
-system directory ".../c++/scripts/internal/projects".
-</pre>
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
-<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
-<script>
-<!--
-print_author('cpp-core', 'Chris Lanczycki', '$Date$', 'ncbi.nlm.nih.gov');
-// -->
-</script>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
 </table>
 
 <!--#include virtual="./ssi/footer.shtml" -->

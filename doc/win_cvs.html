@@ -1,121 +1,27 @@
-<!--#set var="TITLE" value="Using CVS on MS Windows in NCBI" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
 
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
 
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
-
-<h1>Using CVS on MS Windows in NCBI</h1>
-
-<ol>
-  <li>
-    You can have a pre-installed CVS executable on your PC,
-    for example in <span class="ncbi_util">C:\WINNT\System32\cvs.exe</span>.
-    If not, you can get it from
-    <span class="ncbi_util">\\DIZZY\coremake\public\bin\cvs.exe</span> or
-    <span class="ncbi_util">\\Basie\IEB\cvs.exe</span>.
-    You also can find its latest version at
-    <a href="http://www.cyclic.com/" class="ncbi_url">http://www.cyclic.com/</a>.
-    Just copy it to <span class="ncbi_file">C:\WINNT\System32\cvs.exe</span>.
-    <p>
-
-    <li>
-    Create environment variable <span class="ncbi_env">CVSROOT</span>:<p>
-    <ul>
-      <li>
-      Click the right mouse button on the icon of your PC "<span class="ncbi_menu">My Computer</span>"
-      (it is usually situated in the upper left corner of the desktop),
-      and then select "<span class="ncbi_menu">Properties</span>" from the popup menu.<p>
-      <li>
-      Form "<span class="ncbi_menu">System Properties</span>" shows up. Here, choose tab
-      "<span class="ncbi_menu">Advanced</span>" and then press the button "<span class="ncbi_menu">Environment
-      Variables</span>" (users of older NT systems may instead want to choose
-      tab "<span class="ncbi_menu">Environment</span>"). Locate the part of the window titled
-      "<span class="ncbi_menu">User Variables for <span class="ncbi_value">Yourname</span></span>", and then click at the end of the
-      list the line containing variable <span class="ncbi_env">TEMP</span>.<p>
-      <li>
-      Press button "<span class="ncbi_menu">New...</span>".<p>
-      <li>
-      Now, type <span class="ncbi_env">CVSROOT</span> in the text field "<span class="ncbi_menu">Variable Name</span>",
-      then type <span class="ncbi_value">:pserver:yourlogname@cvsvault.ncbi.nlm.nih.gov:/src/NCBI/vault.ncbi</span>
-      in the text field "<span class="ncbi_menu">Variable Value</span>". Here, the <span class="ncbi_value">yourlogname</span> stands
-      for your NCBI account name with all letter lowercased. For example,<br>
-      <span class="ncbi_value">:pserver:vakatov@cvsvault.ncbi.nlm.nih.gov:/src/NCBI/vault.ncbi</span>.
-		<br>
-				<span class="ncbi_note">
-				  In some cases, the
-<span class="ncbi_value">.ncbi.nlm.nih.gov</span>
-				<span class="ncbi_note">
-					 suffix needs to be dropped.
-				  </span>
-<p>
-      <li>
-      Press the button "<span class="ncbi_menu">OK</span>" (or "<span class="ncbi_menu">Set</span>"). The new variable
-      <span class="ncbi_env">CVSROOT</span> and its value should appear in the pane
-      "<span class="ncbi_menu">User Variables for <span class="ncbi_value">Yourname</span></span>".<p>
-      <li>
-      Apply the changes pressing "<span class="ncbi_menu">OK</span>", "<span class="ncbi_menu">Apply</span>", etc
-      buttons until all popup windows open in the previous steps
-      closed.<p>
-      <li>
-      Logout, then login to your PC again.<p>
-  </ul>
-  <li> Make sure you have your "home" directory set up -- i.e. pointed by
-       the environment variable <span class="ncbi_env">HOMEPATH</span>.
-       In NCBI, <span class="ncbi_env">HOMEPATH</span> is usually
-       set to <span class="ncbi_dir">/</span>, which usually means
-       <span class="ncbi_dir">U:\</span> or to something like
-       <span class="ncbi_dir">C:\Users\YourLoginName</span>.
-    <p>
-  <li> Create an empty file <span class="ncbi_file">.cvspass</span> in your
-       "home" directory.
-    <p>
-  <li> Execute (exactly once!) the following command (you can do so
-    by selecting "<span class="ncbi_menu">Run...</span>" from the main menu): <span class="ncbi_cmd">cvs login</span><br>
-    You will be asked for a password -- enter the word <em>allowed</em>.
-    <br>
-    This command will record your login info in the
-    <span class="ncbi_file">.cvspass</span> file
-    (so you would not have to login into CVS in the future, ever).
-    <br>
-    <span class="ncbi_note">
-    If you get an authorization error, then send e-mail with
-    the errors to</span>
-    <a href="mailto:cpp-core@ncbi.nlm.nih.gov">cpp-core</a>.
-    <p>
-  <li>
-  Now you are all set and can use all usual CVS commands.
-</ol>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
 <table border=0 width="100%" cellspacing=0>
-   <tr>
-<td><address>
- <a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a>
-   </address></td>
-<td align=right><span class="ncbi_cvs_date">$Date$</span></td></tr>
-   <tr>
-<td><address>
- <a href="mailto:cpp-core@ncbi.nlm.nih.gov">Anton Lavrentiev</a>
-   </address></td></tr>
-<td><address>
- <a href="mailto:cpp-core@ncbi.nlm.nih.gov">Dmitriy  Beloslyudtsev</a>
-   </address></td></tr>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
 </table>
 
 <!--#include virtual="./ssi/footer.shtml" -->
