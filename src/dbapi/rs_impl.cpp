@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.5  2002/05/14 19:53:17  kholodov
+* Modified: Read() returns 0 to signal end of column
+*
 * Revision 1.4  2002/05/13 19:07:33  kholodov
 * Modified: every call to GetBlobIStream() returns new istream& object. Changed to retrieve data from several BLOB columns.
 *
@@ -68,7 +71,7 @@ BEGIN_NCBI_SCOPE
 
 CResultSet::CResultSet(CConnection* conn, CDB_Result *rs)
     : m_conn(conn),
-      m_rs(rs), m_istr(0), m_ostr(0)
+      m_rs(rs), m_istr(0), m_ostr(0), m_column(-1)
 {
     if( m_rs == 0 ) {
         SetValid(false);
@@ -126,6 +129,7 @@ bool CResultSet::Next()
         }
 
         more = true;
+        m_column = m_rs->CurrentItemNo();
     }
   
     return more;
@@ -133,7 +137,15 @@ bool CResultSet::Next()
 
 size_t CResultSet::Read(void* buf, size_t size)
 {
-    return m_rs->ReadItem(buf, size);
+
+    if( m_column < 0 || m_column != m_rs->CurrentItemNo() ) {
+        _TRACE("End column: " << m_column);
+        m_column = m_rs->CurrentItemNo();
+        return 0;
+    }
+    else {
+        return m_rs->ReadItem(buf, size);
+    }
 }
 
 istream& CResultSet::GetBlobIStream(size_t buf_size)

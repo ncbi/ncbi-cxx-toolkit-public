@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/05/14 19:53:17  kholodov
+* Modified: Read() returns 0 to signal end of column
+*
 * Revision 1.2  2002/04/05 19:29:50  kholodov
 * Modified: GetBlobIStream() returns one and the same object, which is created
 * on the first call.
@@ -94,6 +97,7 @@ private:
     CDynArray<CVariant> m_data;
     CBlobIStream *m_istr;
     CBlobOStream *m_ostr;
+    int m_column;
 
 };
 
