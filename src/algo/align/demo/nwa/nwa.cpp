@@ -54,9 +54,9 @@ void CAppNWA::Init()
         ("matrix", "matrix", "scoring matrix",
          CArgDescriptions::eString, "nucl");
 
-    argdescr->AddFlag("mrna2dna",
-                      "mRna vs. Dna alignment "
-                      "(consider also specifying -esf zzxx)" );
+    argdescr->AddFlag("spliced",
+                      "Spliced mRna/EST-to-Genomic alignment "
+                      "(consider specifying -esf zzxx)" );
 
     argdescr->AddOptionalKey("pattern", "pattern",
                              "Use HSPs to guide spliced alignment",
@@ -140,7 +140,7 @@ void CAppNWA::Init()
 
     argdescr->AddOptionalKey
         ("oexons", "exons",
-         "Exon table output filename (mRna2Dna only)",
+         "Exon table output filename (spliced alignments only)",
          CArgDescriptions::eString);
     
     CArgAllow_Strings* paa_st = new CArgAllow_Strings;
@@ -190,7 +190,7 @@ void CAppNWA::x_RunOnPair() const
     // analyze parameters
     const bool bMM = args["mm"];
     const bool bMT = args["mt"];
-    const bool bMrna2Dna = args["mrna2dna"];
+    const bool bMrna2Dna = args["spliced"];
     const bool bGuides = args["pattern"];
 
     bool   output_type1  ( args["o1"] );
@@ -222,7 +222,7 @@ void CAppNWA::x_RunOnPair() const
     if(!bMrna2Dna && bGuides) {
         NCBI_THROW(CAppNWAException,
                    eInconsistentParameters,
-                   "Guides are only supported in mRna2Dna mode" );
+                   "Guides are only supported in spliced mode" );
     }
      
     if(bMT && !bMM) {
@@ -418,6 +418,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/11/07 18:30:17  kapustin
+ * mRna2Dna --> Spliced
+ *
  * Revision 1.24  2003/09/30 19:50:28  kapustin
  * Adjust for standard score matrix interface
  *

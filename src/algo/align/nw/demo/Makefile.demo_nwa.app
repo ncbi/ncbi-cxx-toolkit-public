@@ -9,7 +9,7 @@
 APP = demo_nwa
 SRC = nwa starter
 
-LIB = xalgoalign tables $(OBJMGR_LIBS)
+LIB = xalgoalign tables $(OBJMGR_LIBS:dbapi_driver=dbapi_driver-static)
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
