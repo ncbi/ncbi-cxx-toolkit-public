@@ -25,6 +25,9 @@
  * Authors:  Anton Butanayev, Denis Vakatov
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/11/21 18:15:05  butanaev
+ * Fixed bug in operator ++/-- (int)
+ *
  * Revision 6.2  2000/11/21 15:22:57  vakatov
  * Do not enforce "_DEBUG" -- it messes up the MSVC++ compilation
  *
@@ -46,6 +49,11 @@ static void s_TestMisc(void)
 {
     CTime t1(CTime::eCurrent);
     cout << "[" << t1.AsString() << "]" << endl;
+    cout << "[" << (t1++).AsString() << "]" << endl;
+    cout << "[" << (t1++).AsString() << "]" << endl;
+    cout << "[" << (t1++).AsString() << "]" << endl;
+    cout << "[" << (++t1).AsString() << "]" << endl;
+    cout << "[" << (++t1).AsString() << "]" << endl;
 
     CTime t2;
     cout << "[" << t2.AsString() << "]" << endl;

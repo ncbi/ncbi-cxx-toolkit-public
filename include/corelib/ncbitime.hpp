@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/11/21 18:15:29  butanaev
+* Fixed bug in operator ++/-- (int)
+*
 * Revision 1.1  2000/11/20 22:17:42  vakatov
 * Added NCBI date/time class CTime ("ncbitime.[ch]pp") and
 * its test suite ("test/test_ncbitime.cpp")
@@ -141,8 +144,8 @@ public:
     CTime& operator -= (int days)  { return AddDay(-days); }
     CTime& operator ++ (void)      { return AddDay( 1); }
     CTime& operator -- (void)      { return AddDay(-1); }
-    CTime  operator ++ (int)       { return NCBI_NS_NCBI::AddDay(*this,  1); }
-    CTime  operator -- (int)       { return NCBI_NS_NCBI::AddDay(*this, -1); }
+    CTime  operator ++ (int);
+    CTime  operator -- (int);
 
     // Time difference
     double DiffDay    (const CTime& tm) const;
