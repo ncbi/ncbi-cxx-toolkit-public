@@ -6,7 +6,7 @@
 # Build application for splitting blobs withing ID1 cache
 #################################
 
-REQUIRES = bdb
+REQUIRES = bdb BerkeleyDB
 
 APP = split_cache
 SRC = split_cache
