@@ -40,7 +40,18 @@
 #include <objtools/data_loaders/genbank/writer_interface.hpp>
 
 // TODO: remove the following includes
-#define REGISTER_READER_ENTRY_POINTS 1
+
+
+// CodeWarrior and Apple's version of the gcc compiler cannot 
+// handle static data members in template classes
+// Do not use new register mechanism through entry points
+#ifdef NCBI_OS_DARWIN
+#undef REGISTER_READER_ENTRY_POINTS
+#elif
+#  define REGISTER_READER_ENTRY_POINTS 1
+#endif
+
+
 #ifdef REGISTER_READER_ENTRY_POINTS
 # include <objtools/data_loaders/genbank/readers/readers.hpp>
 #endif
