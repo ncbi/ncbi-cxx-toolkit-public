@@ -158,7 +158,7 @@ echo
 
 
 # Run tests after build flag (Y - run, N - not run, other - ask)
-run_check=`echo "${cmd}" | tr '[a-z]' '[A-Z]' | sed -e 's/^.*RUN_CHECK=//' -e 's/^\(.\).*/\1/g'`
+run_check=`echo ${RUN_CHECK} | tr '[a-z]' '[A-Z]' | sed -e 's/^\(.\).*/\1/g'`
 
 case "$run_check" in
   Y )
