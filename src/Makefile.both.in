@@ -66,13 +66,15 @@ $(XLIB): $(XLIBOBJ)
 	-$(RM) $(XLIB)
 	$(AR) @f_outlib@$(XLIB) `@LORDER@ $(XLIBOBJ) $(XLOBJ) | @TSORT@`
 	@$(RANLIB) $(XLIB)
+	@echo $(srcdir) `pwd` $(TMPL) > $(XLIBDEP)
 	@$(TOUCH) -r $(XLIB) $(XLIBDEP)
 	$(BINCOPY) $(XLIB) $(libdir)
-	@echo $(srcdir) `pwd` $(TMPL) > $(libdir)/$(XLIBDEP)
+	@$(BINCOPY) $(XLIBDEP) $(libdir)
 	@$(BINTOUCH) -r $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)
 	-$(RM) $(libdir)/$(XLIBLINK) $(libdir)/$(XLIBDEPLINK)
-	@(cd $(libdir)  &&  $(LN_S) $(XLIB) $(XLIBLINK))
-	@(cd $(libdir)  &&  $(LN_S) $(XLIBDEP) $(XLIBDEPLINK))
+	@(cd $(libdir) && [ -f $(XLIBLINK) ] || $(LN_S) $(XLIB) $(XLIBLINK))
+	@(cd $(libdir) && [ -f $(XLIBDEPLINK) ] || \
+		 $(LN_S) $(XLIBDEP) $(XLIBDEPLINK))
 
 
 ### The shared library build rule
@@ -87,9 +89,11 @@ XDLL_LIBDEP = $(DLL_LIB:%=$(libdir)/.%.dep)
 $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	-$(RM) $(XDLL)
 	$(LINK_DLL) $(XDLL) $(XDLLOBJ) $(XDLL_LIB) $(LIBS)
-	$(TOUCH) -r $(XDLL) $(XDLLDEP)
+	@echo $(srcdir) `pwd` $(TMPL) > $(XDLLDEP)
+	@$(TOUCH) -r $(XDLL) $(XDLLDEP)
 	$(BINCOPY) $(XDLL) $(libdir)
-	$(BINTOUCH) -r $(libdir)/$(XDLL) $(libdir)/$(XDLLDEP)
+	@$(BINCOPY) $(XDLLDEP) $(libdir)
+	@$(BINTOUCH) -r $(libdir)/$(XDLL) $(libdir)/$(XDLLDEP)
 
 
 ### Standard targets
