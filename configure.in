@@ -163,6 +163,7 @@ case "$host:$compiler" in
    LDFLAGS="-xildoff $WS64_CFLAGS $LDFLAGS"
    AR="$CXX -xar -o"
    RANLIB=":"
+   CXX_FILTER="2>&1 | $(top_srcdir)/compilers/cxx_filter.WorkShop5.sh"
    serial_ws50_rtti_kludge="rtti"
    ;;
 
@@ -343,7 +344,7 @@ if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_ou
 #### For some compilers(e.g. SunPro 5.0), there is no sense to compare the
 #### old object/lib/binary file with the new one -- they will always be
 #### different because of some timestamp or smth. else ("--without-bincopy")
-BINCOPY="${CONFIG_SHELL-/bin/sh} \$(top_srcdir)/src/if_diff.sh \"cp -p\""
+BINCOPY="${CONFIG_SHELL-/bin/sh} \$(top_srcdir)/scripts/if_diff.sh \"cp -p\""
 if test "$with_bincopy" = "no" ; then
    BINCOPY="cp -p"
 fi
@@ -780,6 +781,8 @@ AC_SUBST(NCBI_PM_PATH)
 AC_SUBST(NCBI_C_ncbi)
 
 AC_SUBST(BINCOPY)
+AC_SUBST(CC_FILTER)
+AC_SUBST(CXX_FILTER)
 
 AC_SUBST(KeepStateTarget)
 AC_SUBST(serial_ws50_rtti_kludge)
