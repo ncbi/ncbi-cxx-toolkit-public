@@ -1318,7 +1318,7 @@ echo "$as_me: error: \"  $x_arg:  requires value\;  use --help to show usage\"" 
       ;;
 
       --with-extra-action=* | --exec-prefix=* | --with-projects=* \
-      | --cache-file=* | --build=* | --host=* | A-Z*=* \
+      | --cache-file=* | --build=* | --host=* | [A-Z]*=* \
       | --with-sybase-local=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
