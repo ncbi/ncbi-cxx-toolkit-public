@@ -431,7 +431,7 @@ streamsize CCompressionStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize count)
             done += block_size;
             // Update get pointers.
             // Satisfy "usual backup condition", see standard: 27.5.2.4.3.13
-            if ( block_size == egptr() - gptr() ) {
+            if ( block_size == size_t(egptr() - gptr()) ) {
                 *m_Reader->m_OutBuf = buf[done - 1];
                 setg(m_Reader->m_OutBuf, m_Reader->m_OutBuf + 1,
                      m_Reader->m_OutBuf + 1);
@@ -455,6 +455,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/08/11 15:22:16  vakatov
+ * Compilation warning fix
+ *
  * Revision 1.12  2004/06/02 16:15:46  ivanov
  * Fixed updating get pointers in the xsgetn()
  *
