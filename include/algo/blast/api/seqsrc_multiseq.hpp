@@ -70,11 +70,8 @@ public:
     bool GetIsProtein();
     Uint4 GetNumSeqs();
     BLAST_SequenceBlk* GetSeqBlk(int index);
-    void* GetSeqId(int index);
     Blast_Message* GetErrorMessage();
 private:
-    /// Passed from outside - not owned:
-    TSeqLocVector m_vSeqVector; ///< Vector of sequence locations
     /// Internal fields
     bool m_ibIsProt; ///< Are these sequences protein or nucleotide? 
     vector<BLAST_SequenceBlk*> m_ivSeqBlkVec; ///< Vector of sequence blocks
@@ -161,6 +158,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/10/06 14:50:13  dondosha
+ * Removed unnecessary member field from the data structure
+ *
  * Revision 1.8  2004/07/19 14:57:57  dondosha
  * Corrected file name
  *
