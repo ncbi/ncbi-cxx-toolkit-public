@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.14  2004/04/22 14:22:25  kholodov
+* Added: Cancel()
+*
 * Revision 1.13  2004/04/12 14:25:33  kholodov
 * Modified: resultset caching scheme, fixed single connection handling
 *
@@ -175,6 +178,11 @@ ostream& CCursor::GetBlobOStream(unsigned int col,
                               buf_size,
                               log_it == eEnableLog);
     return *m_ostr;
+}
+
+void CCursor::Cancel()
+{
+    GetCursorCmd()->Close();
 }
 
 void CCursor::Close()

@@ -293,6 +293,9 @@ public:
     // Delete statement for cursor
     virtual void Delete(const string& table) = 0;
 
+    // Cancel cursor
+    virtual void Cancel() = 0;
+    
     // Close cursor
     virtual void Close() = 0;
   
@@ -492,6 +495,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/04/22 14:22:51  kholodov
+ * Added: Cancel()
+ *
  * Revision 1.27  2004/03/09 20:37:37  kholodov
  * Added: four new public methods
  *

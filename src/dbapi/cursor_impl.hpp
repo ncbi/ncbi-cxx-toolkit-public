@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.8  2004/04/22 14:22:25  kholodov
+* Added: Cancel()
+*
 * Revision 1.7  2004/04/08 15:56:58  kholodov
 * Multiple bug fixes and optimizations
 *
@@ -94,6 +97,7 @@ public:
                             size_t buf_size);
     virtual void Update(const string& table, const string& updateSql);
     virtual void Delete(const string& table);
+    virtual void Cancel();
     virtual void Close();
 
     virtual IConnection* GetParentConn();
