@@ -246,15 +246,15 @@ on SetProjectData()
 	end tell
 	
 	-- fluid
-		set saveCppExt to pCPlusPlusExt
-		set pCPlusPlusExt to ".cxx"
+	set saveCppExt to pCPlusPlusExt
+	set pCPlusPlusExt to ".cxx"
 	set fluidFileData to mkFileData(gFLTKRootFolder & "fluid")
-	AddProject(DataPlusLibs(ProjectData("fluid", {"fltklib"}, {fluidFileData}), {}, {"fltk"}))
-		set pCPlusPlusExt to saveCppExt
+	AddProject(DataPlusLibs(ProjectData("fluid", {"fltklib"}, {fluidFileData}), {"fltk"}, {}))
+	set pCPlusPlusExt to saveCppExt
 	
 	---------- GENOME WORK BENCH ----------
 	AddAppProject("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", Â
-		{"w_flek", "w_table"}, {"gui_core", "fltk"})
+		{"w_flek", "w_table", "fltk"}, {"gui_core"})
 	AddAppProject("gbench_plugin_scan", {"libdl", "cmdline", "plainname"}, "gui:gbench:gbench_plugin_scan", Â
 		{}, {"gui_core"})
 	
@@ -721,6 +721,99 @@ on SetupTarget(proj, targetIndex)
 	end tell
 end SetupTarget
 
+
+on UpdateTarget(proj, targetIndex)
+	tell application "CodeWarrior IDE"
+		
+		set targetName to name of target targetIndex of project document 1
+		if targetName contains "Carbon" then
+			return -- we are not supporting Carbon Libs.
+		end if
+		
+		if targetName contains "Debug" then
+			set targetDebug to true
+		else -- if targeName contains "Final" then
+			set targetDebug to false
+		end if
+		
+		set libtype to "BSD"
+		if targetName contains "MSL" then
+			set libtype to "MSL"
+		end if
+		
+		set the current target of project document 1 to target targetIndex of project document 1
+		
+		-- initialize variables
+		set projFeatures to {}
+		
+		-- Grab the fields of our project record and store them in local variables.
+		try
+			set projFeatures to proj's features
+		end try
+		set projLibs to proj's projLibs
+		set dynaLibs to proj's dynaLibs
+		set projFileData to proj's fileData
+		
+		-- Figure out what our output file and input libraries will be named.
+		set fileNameSuffix to ""
+		
+		if libtype is "MSL" then
+			set fileNameSuffix to "_" & libtype
+		end if
+		
+		-- Debug or not.
+		if not targetDebug then
+			set fileNameSuffix to fileNameSuffix & "_O" -- for Optimized.
+		else
+			set fileNameSuffix to fileNameSuffix & "_D"
+		end if
+		
+		-- Are we assuming a .c or a .cpp extension?
+		if projFeatures contains "C++" then
+			set fileExtension to pCPlusPlusExt
+		else
+			set fileExtension to ".c"
+		end if
+		
+	end tell
+	
+	-- Add source files
+	repeat with group in projFileData
+		set projPath to projPath of group -- projPath is absolute,  not relative.
+		
+		set fileList to group's fileList
+		
+		set filesToAdd to {}
+		
+		repeat with i in fileList
+			if i does not contain "." then set i to i & fileExtension
+			tell application "CodeWarrior IDE"
+				set found to item 1 of (Is In Project {file i})
+			end tell
+			if (found is not 0) then
+				try -- ignore it if the file doesn't exist.
+					
+					-- NOTE: if the following line is within a tell "Codewarrior" block then
+					--  the following Add Files command will fail.
+					
+					copy alias (projPath & i) to end of filesToAdd
+				end try
+			end if
+		end repeat
+		
+		tell application "CodeWarrior IDE"
+			if ((count of filesToAdd) is not 0) then
+				Add Files filesToAdd
+			end if
+			
+			-- Take out source files that do not belong.
+			set fileNotList to group's fileNotList
+			Remove Files fileNotList
+		end tell
+	end repeat
+	
+end UpdateTarget
+
 on CreateFolder(folderPath)
 	set text item delimiters of AppleScript to ":"
 	-- strip off disk name.
@@ -770,7 +863,20 @@ on CreateProject(proj)
 			set the current target of project document 1 to target 1 of project document 1
 			
 			Close Project
+		else
+			-- project already exists. Make sure it has all right files.
+			open (projPathname)
+			if the name of window 1 is "Project Messages" then
+				close first window -- "close window 1" becomes "Close Window 1" (different event)
+			end if
+			repeat with i from 1 to (count targets of project document 1)
+				my UpdateTarget(proj, i)
+			end repeat
+			set the current target of project document 1 to target 1 of project document 1
+			
+			Close Project
 		end if
+		
 	end tell
 end CreateProject
 
@@ -800,7 +906,7 @@ end CreateAndBuildAllProjects
 	A project target must match one of the target specs to compile.
 	To match, a target's name must contain each of the words in the target spec.
 	An empty target spec matches everything.
-	An empty list of target specs matches nothing, (No Build files.) but
+	An empty list of target specs (no Build files) matches nothing, but
 		we make sure that won't happen.
 *)
 
