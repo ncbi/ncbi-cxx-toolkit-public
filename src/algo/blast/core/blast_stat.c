@@ -1590,7 +1590,7 @@ Blast_ScoreFreqNew(Int4 score_min, Int4 score_max)
  * @return zero on success
  */
 static Int2
-BlastScoreFreqCalc(BlastScoreBlk* sbp, Blast_ScoreFreq* sfp, Blast_ResFreq* rfp1, Blast_ResFreq* rfp2)
+BlastScoreFreqCalc(const BlastScoreBlk* sbp, Blast_ScoreFreq* sfp, Blast_ResFreq* rfp1, Blast_ResFreq* rfp2)
 {
 	Int4 **	matrix;
 	Int4	score, obs_min, obs_max;
@@ -2196,7 +2196,7 @@ BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int4 cont
 */
 
 Blast_KarlinBlk*
-Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp)
+Blast_KarlinBlkIdealCalc(const BlastScoreBlk* sbp)
 
 {
 	Blast_KarlinBlk* kbp_ideal;
@@ -3598,6 +3598,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.86  2004/07/14 18:04:52  camacho
+ * Add const type qualifier to BlastScoreBlk in BlastScoreFreqCalc & Blast_KarlinBlkIdealCalc
+ *
  * Revision 1.85  2004/06/21 12:52:05  camacho
  * Replace PSI_ALPHABET_SIZE for BLASTAA_SIZE
  *
