@@ -765,14 +765,16 @@ void CAlnVec::TranslateNAToAA(const string& na, string& aa)
 
     const CTrans_table& tbl = CGen_code_table::GetTransTable(1);
 
-    unsigned int i, state;
+    unsigned int i, j = 0, state = 0;
+
+    aa.resize(na.size() / 3);
 
     string::const_iterator res = na.begin();
     while (res != na.end()) {
         for (i = 0; i < 3; i++, res++) {
-            state = tbl.NextCodonState (state, *res);
+            state = tbl.NextCodonState(state, *res);
         }
-        aa += tbl.GetCodonResidue(state);
+        aa[j++] = tbl.GetCodonResidue(state);
     }
 }
 
@@ -839,6 +841,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2003/08/20 17:50:52  todorov
+* resize + direct string access rather than appending
+*
 * Revision 1.40  2003/08/20 17:23:54  ucko
 * TranslateNAToAA: append to strings with += rather than push_back
 * (which MSVC lacks); fix a typo while I'm at it.
