@@ -40,6 +40,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2001/04/03 18:20:45  grichenk
+ * CThread::Exit() and CThread::Wrapper() redesigned to use
+ * CExitThreadException instead of system functions
+ *
  * Revision 1.8  2001/03/30 22:57:34  grichenk
  * + CThread::GetSystemID()
  *
@@ -270,6 +274,80 @@ void CTlsBase::x_Reset(void)
 
 
 /////////////////////////////////////////////////////////////////////////////
+//  CExitThreadException::
+//
+//    Exception used to terminate threads safely, cleaning up
+//    all the resources allocated.
+//
+
+
+class CExitThreadException
+{
+public:
+    // Create new exception object, initialize counter.
+    CExitThreadException(void);
+
+    // Create a copy of exception object, increase counter.
+    CExitThreadException(const CExitThreadException& prev);
+
+    // Destroy the object, decrease counter. If the couter is
+    // zero outside of CThread::Wrapper(), rethrow exception.
+    ~CExitThreadException(void);
+
+    // Inform the object it has reached CThread::Wrapper().
+    void EnterWrapper(void)
+    {
+        *m_InWrapper = true;
+    }
+private:
+    int* m_RefCount;
+    bool* m_InWrapper;
+};
+
+
+CExitThreadException::CExitThreadException(void)
+    : m_RefCount(new int),
+      m_InWrapper(new bool)
+{
+    *m_RefCount = 1;
+    *m_InWrapper = false;
+}
+
+
+CExitThreadException::CExitThreadException(const CExitThreadException& prev)
+    : m_RefCount(prev.m_RefCount),
+      m_InWrapper(prev.m_InWrapper)
+{
+    (*m_RefCount)++;
+}
+
+
+CExitThreadException::~CExitThreadException(void)
+{
+    if (--(*m_RefCount) > 0) {
+        // Not the last object - continue to handle exceptions
+        return;
+    }
+
+    bool tmp_in_wrapper = *m_InWrapper; // save the flag
+    delete m_RefCount;
+    delete m_InWrapper;
+
+    if ( !tmp_in_wrapper ) {
+        // Something is wrong - terminate the thread
+        assert(((void)("CThread::Exit() -- can not exit thread"), 0));
+#if defined(NCBI_WIN32_THREADS)
+        ExitThread(0);
+#elif defined(NCBI_POSIX_THREADS)
+        pthread_exit(0);
+#endif
+    }
+
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
 //  CThread::
 //
 
@@ -317,13 +395,36 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     }}
 
     // Run user-provided thread main function here
-    void* exit_data = thread_obj->Main();
+    try {
+        thread_obj->m_ExitData = thread_obj->Main();
+    }
+    catch (CExitThreadException& E) {
+        E.EnterWrapper();
+    }
 
-    // Call Exit() here if it was not called inside Main()
-    thread_obj->Exit(exit_data);
+    // Call user-provided OnExit()
+    thread_obj->OnExit();
 
-    // We should never go beyond Exit()
-    assert(0);
+    // Cleanup local storages used by this thread
+    {{
+        CFastMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
+        non_const_iterate(TTlsSet, it, thread_obj->m_UsedTls) {
+            (*it)->x_Reset();
+        }
+    }}
+
+    {{
+        CFastMutexGuard state_guard(s_ThreadMutex);
+
+        // Indicate the thread is terminated
+        thread_obj->m_IsTerminated = true;
+
+        // Schedule the thread object for destruction, if detached
+        if ( thread_obj->m_IsDetached ) {
+            thread_obj->m_SelfRef.Reset();
+        }
+    }}
+
     return 0;
 }
 
@@ -481,39 +582,13 @@ void CThread::Exit(void* exit_data)
     s_Verify(x_this != 0,
              "CThread::Exit() -- attempt to call it for the main thread");
 
-    // Call user-provided OnExit()
-    x_this->OnExit();
-
-    // Cleanup local storages used by this thread
-    {{
-        CFastMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
-        non_const_iterate(TTlsSet, it, x_this->m_UsedTls) {
-            (*it)->x_Reset();
-        }
-    }}
-
     {{
         CFastMutexGuard state_guard(s_ThreadMutex);
-
-        // Indicate the thread is terminated
-        x_this->m_IsTerminated = true;
-
         x_this->m_ExitData = exit_data;
-
-        // Schedule the thread object for destruction, if detached
-        if ( x_this->m_IsDetached ) {
-            x_this->m_SelfRef.Reset();
-        }
     }}
 
-    // Terminate the thread
-#if defined(NCBI_WIN32_THREADS)
-    ExitThread(0);
-#elif defined(NCBI_POSIX_THREADS)
-    pthread_exit(0);
-#endif
-
-    assert(0);
+    // Throw the exception to be catched by Wrapper()
+    throw CExitThreadException();
 }
 
 
