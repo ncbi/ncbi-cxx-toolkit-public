@@ -86,7 +86,7 @@ BlastMaskPtr BlastMaskFree(BlastMaskPtr mask_loc)
 }
 
 /** Used for qsort, compares two SeqLoc's by starting position. */
-static int DoubleIntSortByStartPosition(VoidPtr vp1, VoidPtr vp2)
+static int DoubleIntSortByStartPosition(const void *vp1, const void *vp2)
 {
    ListNodePtr v1 = *((ListNodePtr PNTR) vp1);
    ListNodePtr v2 = *((ListNodePtr PNTR) vp2);
