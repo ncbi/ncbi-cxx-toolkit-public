@@ -1,5 +1,5 @@
-#ifndef NCBISTL__HPP
-#define NCBISTL__HPP
+#ifndef CORELIB___NCBISTL__HPP
+#define CORELIB___NCBISTL__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -157,6 +157,9 @@ typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2003/10/27 13:09:02  siyan
+ * Added CORELIB___ prefix to #ifndef, #define macro names.
+ *
  * Revision 1.32  2003/08/24 14:17:36  siyan
  * Documentation changes.
  *
