@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 CBlastRPSOptionsHandle::CBlastRPSOptionsHandle(EAPILocality locality)
-    : CBlastProteinOptionsHandle(locality)
+    : CBlastOptionsHandle(locality)
 {
     if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
         return;
@@ -54,7 +54,7 @@ CBlastRPSOptionsHandle::CBlastRPSOptionsHandle(EAPILocality locality)
     m_Opts->SetProgram(eRPSBlast);
 }
 
-void
+void 
 CBlastRPSOptionsHandle::SetLookupTableDefaults()
 {
     m_Opts->SetLookupTableType(RPS_LOOKUP_TABLE);
@@ -67,6 +67,71 @@ CBlastRPSOptionsHandle::SetQueryOptionDefaults()
     m_Opts->SetStrandOption(objects::eNa_strand_unknown);
 }
 
+void
+CBlastRPSOptionsHandle::SetInitialWordOptionsDefaults()
+{
+    SetXDropoff(BLAST_UNGAPPED_X_DROPOFF_PROT);
+    SetWindowSize(BLAST_WINDOW_SIZE_PROT);
+    // FIXME: extend_word_method is missing
+    m_Opts->SetUngappedExtension();
+}
+
+void
+CBlastRPSOptionsHandle::SetGappedExtensionDefaults()
+{
+    SetGapXDropoff(BLAST_GAP_X_DROPOFF_PROT);
+    SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_PROT);
+    SetGapTrigger(BLAST_GAP_TRIGGER_PROT);
+    m_Opts->SetGapExtnAlgorithm(EXTEND_DYN_PROG);
+}
+
+
+void
+CBlastRPSOptionsHandle::SetScoringOptionsDefaults()
+{
+    SetGappedMode();
+    m_Opts->SetMatrixName("BLOSUM62");
+    // set invalid values for options that are not applicable
+    m_Opts->SetOutOfFrameMode(false);
+    m_Opts->SetFrameShiftPenalty(INT2_MAX);
+    m_Opts->SetDecline2AlignPenalty(INT2_MAX);
+}
+
+void
+CBlastRPSOptionsHandle::SetHitSavingOptionsDefaults()
+{
+    SetHitlistSize(500);
+    SetPrelimHitlistSize(550);
+    SetEvalueThreshold(BLAST_EXPECT_VALUE);
+    SetPercentIdentity(0);
+    m_Opts->SetSumStatisticsMode(false);
+    // set some default here, allow INT4MAX to mean infinity
+    SetMaxNumHspPerSequence(0); 
+    // this is never used... altough it could be calculated
+    //SetTotalHspLimit(FIXME);
+
+    SetCutoffScore(0); // will be calculated based on evalue threshold,
+    // effective lengths and Karlin-Altschul params in BLAST_Cutoffs_simple
+    // and passed to the engine in the params structure
+
+    // not applicable
+    m_Opts->SetRequiredStart(0);
+    m_Opts->SetRequiredEnd(0);
+}
+
+void
+CBlastRPSOptionsHandle::SetEffectiveLengthsOptionsDefaults()
+{
+    SetDbLength(0);
+    SetDbSeqNum(1);
+    SetEffectiveSearchSpace(0);
+    SetUseRealDbSize();
+}
+
+void
+CBlastRPSOptionsHandle::SetSubjectSequenceOptionsDefaults()
+{}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -77,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/04/23 13:50:16  papadopo
+ * derived BlastRPSOptionsHandle from BlastOptions (again)
+ *
  * Revision 1.3  2004/04/16 14:27:47  papadopo
  * make this class a derived class of CBlastProteinOptionsHandle, that corresponds to the eRPSBlast program
  *
