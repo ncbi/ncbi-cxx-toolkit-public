@@ -1,4 +1,4 @@
-#if !defined(NCBI_USE_PCH)
+#if defined(NCBI_USE_PCH)
 
 #  ifndef NCBI_PCH__HPP
 #  define NCBI_PCH__HPP
@@ -73,6 +73,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/14 14:14:14  gorelenk
+ * Changed ifdef
+ *
  * Revision 1.1  2004/05/14 13:58:11  gorelenk
  * Initial revision
  *
