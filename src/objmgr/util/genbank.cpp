@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/11/02 20:32:28  ucko
+* Cope better with references to unavailable sequences.
+*
 * Revision 1.11  2001/11/01 16:32:24  ucko
 * Rework qualifier handling to support appropriate reordering
 *
@@ -1685,7 +1688,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
         case CSeqFeatData::e_Imp:
             if ((*feat)->GetData().GetImp().IsSetDescr()) {
                 gbfeat.AddQual(CGBQual::eType_note,
-                                     (*feat)->GetData().GetImp().GetDescr());
+                               (*feat)->GetData().GetImp().GetDescr());
             }
             break;
 
@@ -2270,10 +2273,16 @@ void CGenbankWriter::FormatIDPrefix(const CSeq_id& id,
 
     const CTextseq_id* tsid = id.GetTextseq_Id();
     if (tsid == NULL) {
-        const CBioseq& seq = m_Scope.GetBioseq(m_Scope.GetBioseqHandle(id));
-        for (CTypeConstIterator<CTextseq_id> it = ConstBegin(seq); it;  ++it) {
-            tsid = &*it;
-            BREAK(it);
+        try {
+            const CBioseq& seq
+                = m_Scope.GetBioseq(m_Scope.GetBioseqHandle(id));
+            for (CTypeConstIterator<CTextseq_id> it = ConstBegin(seq);
+                 it;  ++it) {
+                tsid = &*it;
+                BREAK(it);
+            }
+        } catch (exception& e) {
+            ERR_POST(Warning << e.what());
         }
     }
     if (tsid) {
@@ -2386,8 +2395,18 @@ void CGenbankWriter::FormatFeatureLocation(const CSeq_loc& location,
     {
         const CSeq_id& id = location.GetWhole();
         FormatIDPrefix(id, default_seq, dest);
-        dest << "1.." << (m_Scope.GetBioseq(m_Scope.GetBioseqHandle(id))
-                          .GetInst().GetLength());
+        try {
+            const CBioseqHandle& handle = m_Scope.GetBioseqHandle(id);
+            const CScope::TBioseqCore core = m_Scope.GetBioseqCore(handle);
+            if (core) {
+                dest << "1.." << (core->GetInst().GetLength());
+            } else {
+                dest << "1..N";
+            }
+        } catch (exception& e) {
+            ERR_POST(Warning << e.what());
+            dest << "1..N";
+        }
         break;
     }
 
