@@ -48,7 +48,7 @@ Contents: Functions needed for formatting of BLAST results
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 
-typedef list<objects::CDisplaySeqalign::SeqlocInfo> TSeqLocInfo; 
+typedef list<objects::CDisplaySeqalign::SeqlocInfo*> TSeqLocInfo; 
 typedef vector<TSeqLocInfo> TSeqLocInfoVector;
 
 #define BLAST_NUM_DESCRIPTIONS 500
@@ -143,7 +143,7 @@ inline CNcbiOstream* CBlastFormatOptions::GetOstream() const
 int
 BLAST_FormatResults(TSeqAlignVector &seqalign, 
     EProgram program, TSeqLocVector &query,
-    BlastMask* filter_loc, const CBlastFormatOptions* format_options, 
+    TSeqLocInfoVector& maskv, const CBlastFormatOptions* format_options, 
     bool is_ooframe);
 
 #endif /* !__BLAST_FORMAT__ */
