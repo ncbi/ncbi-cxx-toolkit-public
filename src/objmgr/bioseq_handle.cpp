@@ -165,7 +165,7 @@ CConstRef<CSynonymsSet> CBioseq_Handle::x_GetSynonyms(void) const
 }
 
 
-bool CBioseq_Handle::x_IsSynonym(const CSeq_id& id) const
+bool CBioseq_Handle::IsSynonym(const CSeq_id& id) const
 {
     if ( !(*this) )
         return false;
@@ -200,7 +200,7 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
         CHandleRange rlist;      // all intervals pointing to the sequence
         CSeq_loc_CI loc_it(loc);
         for ( ; loc_it; ++loc_it) {
-            if ( !x_IsSynonym(loc_it.GetSeq_id()) )
+            if ( !IsSynonym(loc_it.GetSeq_id()) )
                 continue;
             rlist.AddRange(loc_it.GetRange(), loc_it.GetStrand());
         }
@@ -341,6 +341,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/07/15 16:14:08  grichenk
+* CBioseqHandle::IsSynonym() made public
+*
 * Revision 1.42  2003/06/24 14:22:46  vasilche
 * Fixed CSeqMap constructor from CSeq_loc.
 *

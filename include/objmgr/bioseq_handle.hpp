@@ -88,6 +88,8 @@ public:
 
     const CSeq_id_Handle& GetSeq_id_Handle(void) const;
 
+    bool IsSynonym(const CSeq_id& id) const;
+
     // Get top level seq-entry for a bioseq
     const CSeq_entry& GetTopLevelSeqEntry(void) const;
 
@@ -180,7 +182,6 @@ private:
 
     const CBioseq_Info& x_GetBioseq_Info(void) const;
 
-    bool x_IsSynonym(const CSeq_id& id) const;
     CConstRef<CSynonymsSet> x_GetSynonyms(void) const;
 
     CSeq_id_Handle           m_Seq_id;
@@ -275,6 +276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/07/15 16:14:06  grichenk
+* CBioseqHandle::IsSynonym() made public
+*
 * Revision 1.40  2003/06/19 18:23:44  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
