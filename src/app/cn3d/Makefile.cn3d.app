@@ -9,6 +9,7 @@ APP = cn3d
 OBJ = \
 	alignment_manager \
 	alignment_set \
+	annotate_dialog \
 	atom_set \
 	block_multiple_alignment \
 	bond \
