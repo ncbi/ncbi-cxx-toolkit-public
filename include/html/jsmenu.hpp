@@ -28,28 +28,8 @@
  *
  * Author:  Vladimir Ivanov
  *
- * File Description:
- *   JavaScript menu support (Smith's menu)
+ * File Description:   JavaScript menu support (Smith's menu)
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.5  2001/11/29 16:05:16  ivanov
- * Changed using menu script name "menu.js" -> "ncbi_menu.js"
- *
- * Revision 1.4  2001/10/15 23:16:19  vakatov
- * + AddItem(const char* title, ...) to avoid "string/CNCBINode" ambiguity
- *
- * Revision 1.3  2001/08/15 19:43:30  ivanov
- * Added AddMenuItem( node, ...)
- *
- * Revision 1.2  2001/08/14 16:52:47  ivanov
- * Changed parent class for CHTMLPopupMenu.
- * Changed means for init JavaScript popup menu & add it to HTML document.
- *
- * Revision 1.1  2001/07/16 13:45:33  ivanov
- * Initialization
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbistd.hpp>
@@ -146,7 +126,7 @@ public:
     // Get HTML code for insert in the HEAD and BODY tags.
     // If "menu_lib_url" is not defined, then using default URL.
     static string GetCodeHead(const string& menu_lib_url = kEmptyStr);
-    static string GetCodeBody(void);
+    static string GetCodeBody(bool use_dynamic_menu = false);
 
 private:
     // Get code for menu items in text format (JS function inside code)
@@ -185,5 +165,32 @@ private:
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.6  2002/02/13 20:15:39  ivanov
+ * Added support of dynamic popup menus. Changed GetCodeBody().
+ *
+ * Revision 1.5  2001/11/29 16:05:16  ivanov
+ * Changed using menu script name "menu.js" -> "ncbi_menu.js"
+ *
+ * Revision 1.4  2001/10/15 23:16:19  vakatov
+ * + AddItem(const char* title, ...) to avoid "string/CNCBINode" ambiguity
+ *
+ * Revision 1.3  2001/08/15 19:43:30  ivanov
+ * Added AddMenuItem( node, ...)
+ *
+ * Revision 1.2  2001/08/14 16:52:47  ivanov
+ * Changed parent class for CHTMLPopupMenu.
+ * Changed means for init JavaScript popup menu & add it to HTML document.
+ *
+ * Revision 1.1  2001/07/16 13:45:33  ivanov
+ * Initialization
+ *
+ * ===========================================================================
+ */
 
 #endif // JSMENU__HPP

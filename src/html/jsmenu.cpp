@@ -25,31 +25,9 @@
  *
  * Author:  Vladimir Ivanov
  *
- * File Description:
- *   JavaScript menu support (Smith's menu)
+ * File Description:  JavaScript menu support (Smith's menu)
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.5  2001/11/29 16:06:31  ivanov
- * Changed using menu script name "menu.js" -> "ncbi_menu.js".
- * Fixed error in using menu script without menu definitions.
- *
- * Revision 1.4  2001/10/15 23:16:22  vakatov
- * + AddItem(const char* title, ...) to avoid "string/CNCBINode" ambiguity
- *
- * Revision 1.3  2001/08/15 19:43:13  ivanov
- * Added AddMenuItem( node, ...)
- *
- * Revision 1.2  2001/08/14 16:53:07  ivanov
- * Changed parent class for CHTMLPopupMenu.
- * Changed mean for init JavaScript popup menu & add it to HTML document.
- *
- * Revision 1.1  2001/07/16 13:41:32  ivanov
- * Initialization
- *
- * ===========================================================================
  */
-
 
 #include <html/jsmenu.hpp>
 
@@ -59,7 +37,7 @@ BEGIN_NCBI_SCOPE
 
 // URL to menu library (default)
 const string kJSMenuDefaultURL
-  = "http://www.ncbi.nlm.nih.gov/corehtml/jscript/ncbi_menu.js";
+  = "http://www.ncbi.nlm.nih.gov/corehtml/jscript/ncbi_menu_dyn.js";
 
 
 CHTMLPopupMenu::CHTMLPopupMenu(const string& name)
@@ -274,10 +252,13 @@ string CHTMLPopupMenu::GetCodeHead(const string& menu_lib_url)
 }
 
 
-string CHTMLPopupMenu::GetCodeBody(void)
+string CHTMLPopupMenu::GetCodeBody(bool use_dynamic_menu)
 {
+    string use_dm = use_dynamic_menu ? "true" : "false";
     return "<script language=\"JavaScript1.2\">\n"
-        "<!--\nfunction onLoad() {\nwindow.defaultjsmenu = new Menu();\n"
+        "<!--\nfunction onLoad() {\n"
+        "window.useDynamicMenu = " + use_dm + ";\n"
+        "window.defaultjsmenu = new Menu();\n"
         "defaultjsmenu.addMenuSeparator();\n"
         "defaultjsmenu.writeMenus();\n"
         "}\n"
@@ -286,3 +267,30 @@ string CHTMLPopupMenu::GetCodeBody(void)
 
 
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.6  2002/02/13 20:16:09  ivanov
+ * Added support of dynamic popup menus. Changed GetCodeBody().
+ *
+ * Revision 1.5  2001/11/29 16:06:31  ivanov
+ * Changed using menu script name "menu.js" -> "ncbi_menu.js".
+ * Fixed error in using menu script without menu definitions.
+ *
+ * Revision 1.4  2001/10/15 23:16:22  vakatov
+ * + AddItem(const char* title, ...) to avoid "string/CNCBINode" ambiguity
+ *
+ * Revision 1.3  2001/08/15 19:43:13  ivanov
+ * Added AddMenuItem( node, ...)
+ *
+ * Revision 1.2  2001/08/14 16:53:07  ivanov
+ * Changed parent class for CHTMLPopupMenu.
+ * Changed mean for init JavaScript popup menu & add it to HTML document.
+ *
+ * Revision 1.1  2001/07/16 13:41:32  ivanov
+ * Initialization
+ *
+ * ===========================================================================
+ */
