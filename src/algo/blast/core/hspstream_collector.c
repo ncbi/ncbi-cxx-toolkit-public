@@ -72,6 +72,10 @@ BlastHSPListCollectorClose(BlastHSPStream* hsp_stream)
 
    if (stream_data->sort_on_read) {
       Blast_HSPResultsReverseSort(stream_data->results);
+   } else {
+      /* Reverse the order of HSP lists, because they will be returned
+	 starting from end, for the sake of convenience. */
+      Blast_HSPResultsReverseOrder(stream_data->results);
    }
    stream_data->results_sorted = TRUE;
    stream_data->x_lock = MT_LOCK_Delete(stream_data->x_lock);
