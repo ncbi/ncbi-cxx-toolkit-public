@@ -245,9 +245,6 @@ void BioTreeConvert2Container(TBioTreeContainer&      tree_container,
 
     // convert tree data (nodes)
 
-    typedef typename TBioTreeContainer::TNodes  TDynNodes;
-    TDynNodes& nodes = tree_container.SetNodes();
-
     typedef typename TDynamicTree::TBioTreeNode TTreeNode;
     const TTreeNode *n = dyn_tree.GetTreeNode();
 
@@ -271,7 +268,7 @@ void BioTreeConvertContainer2Dynamic(TDynamicTree&             dyn_tree,
 
     CBioTreeFeatureDictionary& dict = dyn_tree.GetFeatureDict();
     const TContainerDict& fd = tree_container.GetFdict();
-    typename const TContainerDict::Tdata& feat_list = fd.Get();
+    const typename TContainerDict::Tdata& feat_list = fd.Get();
 
 		ITERATE(typename TContainerDict::Tdata, it, feat_list) {
         TBioTreeFeatureId fid = (*it)->GetId();
@@ -281,29 +278,32 @@ void BioTreeConvertContainer2Dynamic(TDynamicTree&             dyn_tree,
     }
 
 	// convert tree data (nodes)
-    typedef typename TBioTreeContainer::TNodes           TCNodeSet;
-    typedef typename TCNodeSet::Tdata                    TNodeList;
+    typedef typename TBioTreeContainer::TNodes            TCNodeSet;
+    typedef typename TCNodeSet::Tdata                     TNodeList;
+    typedef typename TNodeList::value_type::element_type  TCNode;
 
     const TNodeList node_list = tree_container.GetNodes().Get();
 
-	ITERATE(TNodeList, it, node_list) {
+	ITERATE(typename TNodeList, it, node_list) {
 
-		const CRef<CNode>& cnode = *it;
+		const CRef<TCNode>& cnode = *it;
 
         TBioTreeNodeId uid = cnode->GetId();
 
-	    typedef typename TDynamicTree::TBioTreeNode         TDynamicNodeType;
-		typedef typename TDynamicNodeType::TValueType       TDynamicNodeValueType;
+	    typedef typename TDynamicTree::TBioTreeNode      TDynamicNodeType;
+		typedef typename TDynamicNodeType::TValueType    TDynamicNodeValueType;
 
 		TDynamicNodeValueType v;
 		v.SetId(uid);
+    
+		typedef typename TCNode::TFeatures               TCNodeFeatureSet;
 
 		if (cnode->CanGetFeatures()) {
-			const typename CNodeFeatureSet& fset = cnode->GetFeatures();
+			const TCNodeFeatureSet& fset = cnode->GetFeatures();
 
-			const typename CNodeFeatureSet::Tdata& flist = fset.Get();
+			const typename TCNodeFeatureSet::Tdata& flist = fset.Get();
 
-			ITERATE(typename CNodeFeatureSet::Tdata, fit, flist) {
+			ITERATE(typename TCNodeFeatureSet::Tdata, fit, flist) {
 				unsigned int fid = (*fit)->GetFeatureid();
 				const string& fvalue = (*fit)->GetValue();
 
@@ -352,6 +352,8 @@ public:
 	{
         m_NodeList = &(tree_container->SetNodes().Set());
 	}
+	
+	virtual ~CTaxon1NodeConvertVisitor() {}
 
 	virtual 
 	EAction Execute(const TITaxon1Node* pNode)
@@ -449,7 +451,7 @@ public:
         m_NodeList->push_back(cnode);
 
 
-		return ITreeIterator::eOk;
+		return TITreeIterator::eOk;
 	}
 	
 	virtual 
@@ -463,7 +465,7 @@ public:
 	EAction LevelEnd(const TITaxon1Node* /*pParent*/)
 	{ 
 		m_Parents.pop_back();
-		return ITreeIterator::eOk; 
+		return TITreeIterator::eOk; 
 	}
 private:
 	TBioTreeContainer*  m_TreeContainer;
@@ -481,7 +483,7 @@ void BioTreeAddFeatureToDictionary(TBioTreeContainer&  tree_container,
 	typedef typename TContainerDict::Tdata::value_type::element_type TFeatureDescr;
 
     TContainerDict& fd = tree_container.SetFdict();
-    TContainerDict::Tdata& feat_list = fd.Set();
+    typename TContainerDict::Tdata& feat_list = fd.Set();
 
 
     CRef<TFeatureDescr> d(new TFeatureDescr);
@@ -493,41 +495,43 @@ void BioTreeAddFeatureToDictionary(TBioTreeContainer&  tree_container,
 
 
 
-template<class TBioTreeContainer, class TTaxon1>
-void Taxon1ConvertToBioTreeContainer(TBioTreeContainer&  tree_container,
-									 TTaxon1&            tax, 
-									 int                 tax_id)
+template<class TBioTreeContainer, 
+		 class TTaxon1, class TITaxon1Node, class TITreeIterator>
+class CTaxon1ConvertToBioTreeContainer
 {
-	// Setup features dictionary
+public:
+	void operator()(TBioTreeContainer&  tree_container,
+					TTaxon1&            tax, 
+					int                 tax_id)
+	{
+		// Setup features dictionary
 
-	BioTreeAddFeatureToDictionary(tree_container, 1, "name");
-	BioTreeAddFeatureToDictionary(tree_container, 2, "blast_name");
-	BioTreeAddFeatureToDictionary(tree_container, 3, "rank");
-	BioTreeAddFeatureToDictionary(tree_container, 4, "division");
-	BioTreeAddFeatureToDictionary(tree_container, 5, "GC");
-	BioTreeAddFeatureToDictionary(tree_container, 6, "MGC");
-	BioTreeAddFeatureToDictionary(tree_container, 7, "IsUncultured");
+		BioTreeAddFeatureToDictionary(tree_container, 1, "name");
+		BioTreeAddFeatureToDictionary(tree_container, 2, "blast_name");
+		BioTreeAddFeatureToDictionary(tree_container, 3, "rank");
+		BioTreeAddFeatureToDictionary(tree_container, 4, "division");
+		BioTreeAddFeatureToDictionary(tree_container, 5, "GC");
+		BioTreeAddFeatureToDictionary(tree_container, 6, "MGC");
+		BioTreeAddFeatureToDictionary(tree_container, 7, "IsUncultured");
 
-	// Convert nodes
+		// Convert nodes
 
-	class ITaxon1Node;
-	class ITreeIterator;
+		const TITaxon1Node* tax_node=0;
+		bool res = tax.LoadSubtree(tax_id, &tax_node);
+		if (res) {
+			CRef<TITreeIterator> tax_tree_iter(tax.GetTreeIterator());
+			tax_tree_iter->GoNode(tax_node);
 
-	const ITaxon1Node* tax_node=0;
-	bool res = tax.LoadSubtree(tax_id, &tax_node);
-	if (res) {
-		CRef<ITreeIterator> tax_tree_iter(tax.GetTreeIterator());
-		tax_tree_iter->GoNode(tax_node);
+			typedef typename TITreeIterator::I4Each T4Each;
 
-		typedef typename ITreeIterator::I4Each T4Each;
+			CTaxon1NodeConvertVisitor<T4Each, TITaxon1Node,
+			                    	  TITreeIterator, TBioTreeContainer>
+				tax_vis(&tree_container);
+			tax_tree_iter->TraverseDownward(tax_vis);
+		}
 
-		CTaxon1NodeConvertVisitor<T4Each, ITaxon1Node,
-			                      ITreeIterator, CBioTreeContainer>
-			tax_vis(&tree_container);
-		tax_tree_iter->TraverseDownward(tax_vis);
 	}
-
-}
+};
 
 
 
@@ -537,6 +541,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/06/09 13:38:40  kuznets
+ * Fixed compilation errors (GCC)
+ *
  * Revision 1.3  2004/06/07 11:54:12  kuznets
  * + converters for taxon1 protocol
  *
