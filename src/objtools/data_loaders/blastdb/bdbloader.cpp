@@ -35,8 +35,6 @@
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/data_loader_factory.hpp>
-
-#include <ctools/asn_converter.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objmgr/impl/data_source.hpp>
 
@@ -238,6 +236,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.17  2004/11/16 15:51:37  jianye
+ * delete asnconvertor.hpp include
+ *
  * Revision 1.16  2004/11/10 20:13:10  jianye
  * specify gi when finding oid
  *
