@@ -49,6 +49,7 @@ class CScope;
 class CAlnVec : public CAlnMap
 {
     typedef CAlnMap                         Tparent;
+    typedef CSeqVector::TResidue            TResidue;
     typedef map<TNumrow, CBioseq_Handle>    TBioseqHandleCache;
     typedef map<TNumrow, CRef<CSeqVector> > TSeqVectorCache;
 
@@ -69,7 +70,19 @@ public:
     string GetSegSeqString(TNumrow row, TNumseg seg, TNumseg offset = 0) const;
 
     const CBioseq_Handle& GetBioseqHandle(TNumrow row)                  const;
-    CSeqVector::TResidue  GetResidue     (TNumrow row, TSeqPos aln_pos) const;
+    TResidue              GetResidue     (TNumrow row, TSeqPos aln_pos) const;
+
+
+    // gap character could be explicitely set otherwise taken from seqvector
+    void     SetGapChar(TResidue gap_char);
+    void     UnsetGapChar();
+    bool     IsSetGapChar()                const;
+    TResidue GetGapChar(TNumrow row)       const;
+
+    // end character is ' ' by default
+    void     SetEndChar(TResidue gap_char);
+    bool     IsSetEndChar()                const;
+    TResidue GetEndChar()                  const;
 
     // functions for manipulating the consensus sequence
     void    CreateConsensus     (void);
@@ -98,6 +111,8 @@ private:
     CAlnVec(const CAlnVec&);
     CAlnVec& operator=(const CAlnVec&);
 
+    TResidue m_GapChar;
+    TResidue m_EndChar;
 };
 
 
@@ -128,7 +143,65 @@ CAlnVec::TNumrow CAlnVec::GetConsensusRow(void) const
 inline 
 CSeqVector::TResidue CAlnVec::GetResidue(TNumrow row, TSeqPos aln_pos) const
 {
-    return x_GetSeqVector(row)[GetSeqPosFromAlnPos(row, aln_pos)];
+    if (aln_pos > GetAlnStop()) {
+        return (TResidue) 0; // out of range
+    }
+    TSegTypeFlags type = GetSegType(row, GetSeg(aln_pos));
+    if (type & fSeq) {
+        return x_GetSeqVector(row)[GetSeqPosFromAlnPos(row, aln_pos)];
+    } else {
+        if (type & fNoSeqOnLeft  ||  type & fNoSeqOnRight) {
+            return GetEndChar();
+        } else {
+            return GetGapChar(row);
+        }
+    }
+}
+
+inline
+void CAlnVec::SetGapChar(TResidue gap_char)
+{
+    m_GapChar = gap_char;
+}
+
+inline
+void CAlnVec::UnsetGapChar()
+{
+    m_GapChar = (TResidue) 0;
+}
+
+inline
+bool CAlnVec::IsSetGapChar() const
+{
+    return m_GapChar;
+}
+
+inline
+CSeqVector::TResidue CAlnVec::GetGapChar(TNumrow row) const
+{
+    if (IsSetGapChar()) {
+        return m_GapChar;
+    } else {
+        return x_GetSeqVector(row).GetGapChar();
+    }
+}
+
+inline
+void CAlnVec::SetEndChar(TResidue end_char)
+{
+    m_EndChar = end_char;
+}
+
+inline
+bool CAlnVec::IsSetEndChar() const
+{
+    return m_EndChar;
+}
+
+inline
+CSeqVector::TResidue CAlnVec::GetEndChar() const
+{
+    return m_EndChar;
 }
 
 
@@ -184,6 +257,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2002/10/04 17:31:36  todorov
+ * Added gap char and end char
+ *
  * Revision 1.9  2002/09/27 17:01:16  todorov
  * changed order of params for GetSeqPosFrom{Seq,Aln}Pos
  *
