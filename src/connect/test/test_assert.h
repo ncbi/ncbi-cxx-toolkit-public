@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2002/05/01 19:14:08  lavr
+ * Changed: NCBI_COMPILER_MIPSPRO -> NCBI_OS_IRIX
+ *
  * Revision 6.16  2002/04/23 16:23:46  lavr
  * Yet another tweak for Windows :-(
  *
@@ -92,14 +95,14 @@
 
 
 #ifdef NCBI_OS_MSWIN
-#  ifdef    _ASSERT
-#    undef  _ASSERT
+#  ifdef   _ASSERT
+#    undef _ASSERT
 #  endif
-#  define Type aType
+#  define  Type aType
 #  include <crtdbg.h>
 #  include <stdio.h>
 #  include <windows.h>
-#  undef Type
+#  undef   Type
 
 /* Suppress popup messages on execution errors.
  * NOTE: Windows-specific, suppresses all error message boxes in both runtime
@@ -145,10 +148,17 @@ static void (*_SDPM)(void) = _SuppressDiagPopupMessages;
 #  undef assert
 #endif
 
-/* IRIX MIPSpro compiler fix: assert.h already included above */ 
-#ifdef   NCBI_COMPILER_MIPSPRO
+/* IRIX stdlib fix (MIPSpro compiler tested): assert.h already included above*/
+#ifdef NCBI_OS_IRIX
 #  ifdef   __ASSERT_H__
 #    undef __ASSERT_H__
+#  endif
+#endif
+
+/* Likewise on OSF/1 (at least with GCC 3, but this never hurts) */
+#ifdef NCBI_OS_OSF1
+#  ifdef   _ASSERT_H_
+#    undef _ASSERT_H_
 #  endif
 #endif
 

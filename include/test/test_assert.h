@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2002/05/01 19:14:07  lavr
+ * Changed: NCBI_COMPILER_MIPSPRO -> NCBI_OS_IRIX
+ *
  * Revision 1.10  2002/05/01 18:54:37  ucko
  * Deal with possible prior inclusion of <assert.h> on OSF/1 (as can
  * happen with GCC 3 at least).
@@ -99,14 +102,14 @@
 
 
 #ifdef NCBI_OS_MSWIN
-#  ifdef    _ASSERT
-#    undef  _ASSERT
+#  ifdef   _ASSERT
+#    undef _ASSERT
 #  endif
-#  define Type aType
+#  define  Type aType
 #  include <crtdbg.h>
 #  include <stdio.h>
 #  include <windows.h>
-#  undef Type
+#  undef   Type
 
 /* Suppress popup messages on execution errors.
  * NOTE: Windows-specific, suppresses all error message boxes in both runtime
@@ -152,8 +155,8 @@ static void (*_SDPM)(void) = _SuppressDiagPopupMessages;
 #  undef assert
 #endif
 
-/* IRIX MIPSpro compiler fix: assert.h already included above */ 
-#ifdef   NCBI_COMPILER_MIPSPRO
+/* IRIX stdlib fix (MIPSpro compiler tested): assert.h already included above*/
+#ifdef NCBI_OS_IRIX
 #  ifdef   __ASSERT_H__
 #    undef __ASSERT_H__
 #  endif
