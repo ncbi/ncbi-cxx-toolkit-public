@@ -46,6 +46,9 @@ global INCLUDEFILES
 global LIBRARIES
 global BINARIES
 
+global gCDistribPresent
+global gCDistribRoot
+
 --
 -- Routines specific to this project
 --
@@ -191,10 +194,12 @@ on SetProjectData()
 		
 		AddSimpleProject("xpbacktest", {"C++"}, "util:test", {"pbacktest"})
 		
-		set myFiles to {"ctools.cpp", "asn_connection"}
-		
-		AddProject(DataPlusSysPaths(SimpleProjectData("xctools", {"C"}, "ctools", myFiles), ¬
-			{CToolkitRoot() & "include:", CToolkitRoot() & "ctools:"}))
+		if gCDistribPresent then
+			set myFiles to {"ctools.cpp", "asn_connection"}
+			
+			AddProject(DataPlusSysPaths(SimpleProjectData("xctools", {"C"}, "ctools", myFiles), ¬
+				{CToolkitRoot() & "include:", CToolkitRoot() & "ctools:"}))
+		end if
 		
 		AddSimpleProject("xasn", {"C++"}, "ctools:asn", {"asnio", "asnwrite"})
 		
@@ -390,6 +395,9 @@ on SetGlobals()
 		
 		set gOpenGLdir to my FindOpenGL()
 		set gOpenGLpresent to (gOpenGLdir is not "")
+		
+		set gCDistribRoot to my CToolkitRoot()
+		set gCDistribPresent to (gCDistribRoot is not "")
 		
 		if pLinkExecutables then
 			set gProjectsDir to gOutputDir
@@ -613,6 +621,11 @@ on SetPaths2()
 		end repeat
 		if not pUsingCPlusPlus then
 			copy {name:gDistribRoot & "link:macmet:", recursive:true, origin:absolute} to end of pathsToAdd
+		end if
+		if pUsingCPlusPlus then
+			if gCDistribPresent then
+				copy {name:gCDistribRoot, recursive:true, origin:absolute} to end of pathsToAdd
+			end if
 		end if
 		Set Preferences of panel "Access Paths" to {User Paths:pathsToAdd}
 		
