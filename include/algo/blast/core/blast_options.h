@@ -170,16 +170,18 @@ typedef struct LookupTableOptions {
    Int4 lut_type; /**< What kind of lookup table to construct? E.g. blastn 
                      allows for traditional and megablast style lookup table */
    Int4 word_size; /**< Determines the size of the lookup table */
-   Int4 alphabet_size; /**< Size of the alphabet */
    Uint1 mb_template_length; /**< Length of the discontiguous words */
    Uint1 mb_template_type; /**< Type of a discontiguous word template */
    Int4 max_positions; /**< Max number of positions per word (MegaBlast only);
                          no restriction if 0 */
-   Uint1 scan_step; /**< Step at which database sequence should be parsed */
+   Boolean full_byte_scan; /**< subject sequence should be scanned a byte at a time 
+                           applies only to discontiguous megablast. */
    char* phi_pattern;  /**< PHI-BLAST pattern */
    Int4 max_num_patterns; /**< Maximal number of patterns allowed for 
                              PHI-BLAST */
    Boolean use_pssm; /**< Use a PSSM rather than a (protein) query to construct lookup table */
+   Boolean variable_wordsize; /**< Should the partial bytes be examined for 
+                             determining whether exact match is long enough? */
 } LookupTableOptions;
 
 /** Options required for setting up the query sequence */
@@ -192,38 +194,11 @@ typedef struct QuerySetUpOptions {
                              [t]blastx only */
 } QuerySetUpOptions;
 
-/** specifies the data structures used for bookkeeping
- *  during computation of ungapped extensions 
- */
-typedef enum ESeedContainerType {
-    eDiagArray,         /**< use diagonal structures with array of last hits
-                           and levels. */
-    eWordStacks,          /**< use stacks (megablast only) */
-    eMaxContainerType   /**< maximum value for this enumeration */
-} ESeedContainerType;
-
-/** when performing mini-extensions on hits from the
- *  blastn or megablast lookup table, this determines
- *  the direction in which the mini-extension is attempted 
- */
-typedef enum ESeedExtensionMethod {
-    eRight,             /**< extend only to the right */
-    eRightAndLeft,      /**< extend to left and right (used with AG method) */
-    eUpdateDiag,        /**< update match info on corresponding diagonal record*/
-    eMaxSeedExtensionMethod   /**< maximum value for this enumeration */
-} ESeedExtensionMethod;
-
 /** Options needed for initial word finding and processing */
 typedef struct BlastInitialWordOptions {
    double gap_trigger; /**< Score in bits for starting gapped extension */
    Int4 window_size; /**< Maximal allowed distance between 2 hits in case 2 
                         hits are required to trigger the extension */
-   ESeedContainerType container_type; /**< How to store offset pairs for initial
-                                        seeds? */
-   ESeedExtensionMethod extension_method; /**< How should exact matches be 
-                                            extended? */
-   Boolean variable_wordsize; /**< Should the partial bytes be examined for 
-                             determining whether exact match is long enough? */
    Boolean ungapped_extension; /**< Should the ungapped extension be 
                                   performed? */
    double x_dropoff; /**< X-dropoff value (in bits) for the ungapped 
@@ -465,22 +440,9 @@ Int2
 BlastInitialWordOptionsNew(EBlastProgramType program, 
    BlastInitialWordOptions* *options);
 
-/** Validate correctness of the initial word options. The following is checked:
- * 1. For blastn program:
- *  1a. If initial word extension is one-directional, scanning stride must be 4;
- *  1b. If variable word size is used, word size must be divisible by 4;
- *  1c. Classic megablast word finder requires megablast lookup table, 
- *      scanning stride 4 and either wordsize divisible by 4, or discontiguous
- *      word options;
- * 2. For other programs:
- *  2a. Initial word extension is always one-directional;
- *  2b. Variable wordsize option is not applicable;
- *  2c. The only container type available is diagonal array;
+/** Validate correctness of the initial word options.
  * @param program_number Type of BLAST program [in]
  * @param options Initial word options [in]
- * @param lookup_options Lookup table options - these contain some information
- *                       needed to determine correctness of initial word 
- *                       options [in]
  * @param blast_msg Describes any validation problems found [out]
  * @return Validation status
  */
@@ -488,7 +450,6 @@ NCBI_XBLAST_EXPORT
 Int2
 BlastInitialWordOptionsValidate(EBlastProgramType program_number,
    const BlastInitialWordOptions* options, 
-   const LookupTableOptions* lookup_options,
    Blast_Message* *blast_msg);
 
 /** Fill non-default values in the BlastInitialWordOptions structure.
@@ -497,8 +458,6 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
  * @param greedy Settings should assume greedy alignments. [in]
  * @param window_size Size of a largest window between 2 words for the two-hit
  *                    version [in]
- * @param variable_wordsize Will only full bytes of the compressed sequence be
- *        checked in initial word extension (blastn only)? [in]
  * @param ag_blast Is AG BLAST approach used for scanning the database 
  *                 (blastn only)? [in]
  * @param mb_lookup Is Mega BLAST (12-mer based) lookup table used? [in]
@@ -508,9 +467,7 @@ NCBI_XBLAST_EXPORT
 Int2
 BLAST_FillInitialWordOptions(BlastInitialWordOptions* options, 
    EBlastProgramType program, Boolean greedy, Int4 window_size, 
-   Boolean variable_wordsize, Boolean ag_blast, Boolean mb_lookup,
    double xdrop_ungapped);
-
 
 /** Deallocate memory for BlastExtensionOptions.
  * @param options Structure to free [in]
@@ -648,8 +605,7 @@ NCBI_XBLAST_EXPORT
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    EBlastProgramType program, Boolean is_megablast, Int4 threshold,
-   Int4 word_size, Boolean ag_blast, Boolean variable_wordsize,
-   Boolean use_pssm);
+   Int4 word_size, Boolean variable_wordsize, Boolean use_pssm);
 
 
 /** Deallocates memory for LookupTableOptions*.
@@ -768,20 +724,6 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
                            const BlastHitSavingOptions* hit_options,
                            Blast_Message* *blast_msg);
 
-/** Auxiliary function that calculates best database scanning stride for the
- * given parameters.
- * @param word_size Length of the exact match required to trigger 
- *                  extensions [in]
- * @param var_words If true, and word_size is divisible by 4, partial bytes 
- *                  need not be checked to test the length of the 
- *                  exact match [in]
- * @param lut_type  What kind of lookup table is used (based on 4-mers, 8-mers 
- *                  or 12-mers) [in]
- * @return          The stride necessary to find all exact matches of a given
- *                  word size.
- */
-NCBI_XBLAST_EXPORT
-Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_type);
 
 #ifdef __cplusplus
 }

@@ -45,6 +45,7 @@
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_message.h>
 #include <algo/blast/core/blast_stat.h>
+#include <algo/blast/core/lookup_wrap.h>
 
 
 #ifdef __cplusplus
@@ -68,6 +69,27 @@ extern "C" {
 #define CUTOFF_E_TBLASTN 1.0 /**< default evalue (ungapped tblastn) */
 #define CUTOFF_E_TBLASTX 1e-300/**< default evalue (tblastx) */
 
+/** specifies the data structures used for bookkeeping
+ *  during computation of ungapped extensions 
+ */
+typedef enum ESeedContainerType {
+    eDiagArray,         /**< use diagonal structures with array of last hits
+                           and levels. */
+    eWordStacks,          /**< use stacks (megablast only) */
+    eMaxContainerType   /**< maximum value for this enumeration */
+} ESeedContainerType;
+
+/** when performing mini-extensions on hits from the
+ *  blastn or megablast lookup table, this determines
+ *  the direction in which the mini-extension is attempted 
+ */
+typedef enum ESeedExtensionMethod {
+    eRight,             /**< extend only to the right */
+    eRightAndLeft,      /**< extend to left and right (used with AG method) */
+    eUpdateDiag,        /**< update match info on corresponding diagonal record*/
+    eMaxSeedExtensionMethod   /**< maximum value for this enumeration */
+} ESeedExtensionMethod;
+
 /** Parameter block that contains a pointer to BlastInitialWordOptions
  * and parsed values for those options that require it 
  * (in this case x_dropoff).
@@ -78,6 +100,10 @@ typedef struct BlastInitialWordParameters {
                            value in options. */
    Int4 x_dropoff; /**< Raw X-dropoff value used in the ungapped extension */
    Int4 cutoff_score; /**< Cutoff score for saving ungapped hits. */
+   ESeedContainerType container_type; /**< How to store offset pairs for initial
+                                        seeds? */
+   ESeedExtensionMethod extension_method; /**< How should exact matches be 
+                                            extended? */
 } BlastInitialWordParameters;
     
 /** Computed values used as parameters for gapped alignments */
@@ -168,11 +194,16 @@ BlastInitialWordParametersFree(BlastInitialWordParameters* parameters);
  * Calling BlastInitialWordParametersNew calculates the
  * raw x_dropoff from the bit x_dropoff and puts it into
  * the x_dropoff field of BlastInitialWordParameters*.
+ * The container type is also set.  For blastn queries over a certain
+ * length eWordStacks is set, otherwise it's eDiagArray.
+ * The extension method is also set via a call to s_GetBestExtensionMethod
  *
  * @param program_number Type of BLAST program [in]
  * @param word_options The initial word options [in]
  * @param hit_params The hit saving options (needed to calculate cutoff score 
  *                    for ungapped extensions) [in]
+ * @param extension_method how will ungapped extensions be done? Should
+ *        be obtained from LookupTableWrapGetBestExtendMethod [in]
  * @param sbp Statistical (Karlin-Altschul) information [in]
  * @param query_info Query information [in]
  * @param subject_length Average subject sequence length [in]
@@ -183,6 +214,7 @@ Int2
 BlastInitialWordParametersNew(EBlastProgramType program_number, 
    const BlastInitialWordOptions* word_options, 
    const BlastHitSavingParameters* hit_params, 
+   const LookupTableWrap* lookup_wrap,
    BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, 
    Uint4 subject_length,
@@ -352,6 +384,7 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
    BlastScoreBlk* sbp, BlastLinkHSPParameters* link_hsp_params, 
    const BlastInitialWordParameters* word_params,
    Int8 db_length, Int4 subject_length);
+
 
 #ifdef __cplusplus
 }
