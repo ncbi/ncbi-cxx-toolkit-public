@@ -145,16 +145,24 @@ public:
     CSeq_entry_EditHandle GetParentEntry(void) const;
 
     // Modify object tree
+    CSeq_entry_EditHandle AddNewEntry(int index) const;
+
     CSeq_annot_EditHandle AttachAnnot(const CSeq_annot& annot) const;
+    CSeq_annot_EditHandle CopyAnnot(const CSeq_annot_Handle&annot) const;
+    CSeq_annot_EditHandle TakeAnnot(const CSeq_annot_EditHandle& annot) const;
 
     CBioseq_EditHandle AttachBioseq(CBioseq& seq,
                                     int index = -1) const;
-    CBioseq_EditHandle MoveBioseq(const CBioseq_EditHandle& seq,
+    CBioseq_EditHandle CopyBioseq(const CBioseq_Handle& seq,
+                                  int index = -1) const;
+    CBioseq_EditHandle TakeBioseq(const CBioseq_EditHandle& seq,
                                   int index = -1) const;
 
     CSeq_entry_EditHandle AttachEntry(CSeq_entry& entry,
                                       int index = -1) const;
-    CSeq_entry_EditHandle MoveEntry(const CSeq_entry_EditHandle& entry,
+    CSeq_entry_EditHandle CopyEntry(const CSeq_entry_Handle& entry,
+                                    int index = -1) const;
+    CSeq_entry_EditHandle TakeEntry(const CSeq_entry_EditHandle& entry,
                                     int index = -1) const;
 
     void Remove(void) const;
@@ -274,6 +282,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/03/29 20:13:05  vasilche
+* Implemented whole set of methods to modify Seq-entry object tree.
+* Added CBioseq_Handle::GetExactComplexityLevel().
+*
 * Revision 1.2  2004/03/24 18:30:28  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

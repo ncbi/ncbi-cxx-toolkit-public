@@ -176,12 +176,30 @@ const CSeq_descr& CBioseq_set_Handle::GetDescr(void) const
 }
 
 
+CSeq_entry_EditHandle CBioseq_set_EditHandle::AddNewEntry(int index) const
+{
+    return AttachEntry(*new CSeq_entry, index);
+}
+
+
 CBioseq_EditHandle
 CBioseq_set_EditHandle::AttachBioseq(CBioseq& seq, int index) const
 {
-    CRef<CSeq_entry> entry(new CSeq_entry);
-    entry->SetSeq(seq);
-    return AttachEntry(*entry, index).SetSeq();
+    return AddNewEntry(index).SelectSeq(seq);
+}
+
+
+CBioseq_EditHandle
+CBioseq_set_EditHandle::CopyBioseq(const CBioseq_Handle& seq, int index) const
+{
+    return AddNewEntry(index).CopySeq(seq);
+}
+
+
+CBioseq_EditHandle
+CBioseq_set_EditHandle::TakeBioseq(const CBioseq_EditHandle& seq, int index) const
+{
+    return AddNewEntry(index).TakeSeq(seq);
 }
 
 
@@ -192,10 +210,40 @@ CBioseq_set_EditHandle::AttachEntry(CSeq_entry& entry, int index) const
 }
 
 
+CSeq_entry_EditHandle
+CBioseq_set_EditHandle::CopyEntry(const CSeq_entry_Handle& entry,
+                                  int index) const
+{
+    return m_Scope->CopyEntry(*this, entry, index);
+}
+
+
+CSeq_entry_EditHandle
+CBioseq_set_EditHandle::TakeEntry(const CSeq_entry_EditHandle& entry,
+                                  int index) const
+{
+    return m_Scope->TakeEntry(*this, entry, index);
+}
+
+
 CSeq_annot_EditHandle
 CBioseq_set_EditHandle::AttachAnnot(const CSeq_annot& annot) const
 {
-    return m_Scope->AttachAnnot(*this, annot);
+    return GetParentEntry().AttachAnnot(annot);
+}
+
+
+CSeq_annot_EditHandle
+CBioseq_set_EditHandle::CopyAnnot(const CSeq_annot_Handle& annot) const
+{
+    return GetParentEntry().CopyAnnot(annot);
+}
+
+
+CSeq_annot_EditHandle
+CBioseq_set_EditHandle::TakeAnnot(const CSeq_annot_EditHandle& annot) const
+{
+    return GetParentEntry().TakeAnnot(annot);
 }
 
 
@@ -211,6 +259,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/03/29 20:13:06  vasilche
+* Implemented whole set of methods to modify Seq-entry object tree.
+* Added CBioseq_Handle::GetExactComplexityLevel().
+*
 * Revision 1.3  2004/03/24 18:30:29  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

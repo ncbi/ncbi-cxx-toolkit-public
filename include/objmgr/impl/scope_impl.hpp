@@ -141,30 +141,48 @@ public:
     // other sequences.
     CBioseq_Handle AddBioseq(CBioseq& bioseq,
                              TPriority pri = kPriority_NotSet);
-    CBioseq_EditHandle AttachBioseq(const CSeq_entry_EditHandle& entry,
-                                    CBioseq& bioseq);
 
     // Add Seq-annot.
-    CSeq_annot_Handle AttachAnnot(const CSeq_annot& annot,
-                                  TPriority pri = kPriority_NotSet);
+    CSeq_annot_Handle AddAnnot(const CSeq_annot& annot,
+                               TPriority pri = kPriority_NotSet);
 
 
     // Add new sub-entry to the existing tree if it is in this scope
     CSeq_entry_EditHandle AttachEntry(const CBioseq_set_EditHandle& seqset,
                                       CSeq_entry& entry,
                                       int index = -1);
+    CSeq_entry_EditHandle CopyEntry(const CBioseq_set_EditHandle& seqset,
+                                    const CSeq_entry_Handle& entry,
+                                    int index = -1);
+    CSeq_entry_EditHandle TakeEntry(const CBioseq_set_EditHandle& seqset,
+                                    const CSeq_entry_EditHandle& entry,
+                                    int index = -1);
     void RemoveEntry(const CSeq_entry_EditHandle& entry);
 
     // Add annotations to a seq-entry (seq or set)
     CSeq_annot_EditHandle AttachAnnot(const CSeq_entry_EditHandle& entry,
                                       const CSeq_annot& annot);
-    // Add annotations to a seq-entry (seq or set)
-    CSeq_annot_EditHandle AttachAnnot(const CBioseq_EditHandle& seq,
-                                      const CSeq_annot& annot);
-    // Add annotations to a seq-entry (seq or set)
-    CSeq_annot_EditHandle AttachAnnot(const CBioseq_set_EditHandle& seqset,
-                                      const CSeq_annot& annot);
+    CSeq_annot_EditHandle CopyAnnot(const CSeq_entry_EditHandle& entry,
+                                    const CSeq_annot_Handle& annot);
+    CSeq_annot_EditHandle TakeAnnot(const CSeq_entry_EditHandle& entry,
+                                    const CSeq_annot_EditHandle& annot);
+    // Remove annotation
     void RemoveAnnot(const CSeq_annot_EditHandle& annot);
+
+    // Modify Seq-entry
+    CBioseq_EditHandle SelectSeq(const CSeq_entry_EditHandle& entry,
+                                 CBioseq& seq);
+    CBioseq_EditHandle CopySeq(const CSeq_entry_EditHandle& entry,
+                               const CBioseq_Handle& seq);
+    CBioseq_EditHandle TakeSeq(const CSeq_entry_EditHandle& entry,
+                               const CBioseq_EditHandle& seq);
+
+    CBioseq_set_EditHandle SelectSet(const CSeq_entry_EditHandle& entry,
+                                     CBioseq_set& seqset);
+    CBioseq_set_EditHandle CopySet(const CSeq_entry_EditHandle& entry,
+                                   const CBioseq_set_Handle& seqset);
+    CBioseq_set_EditHandle TakeSet(const CSeq_entry_EditHandle& entry,
+                                   const CBioseq_set_EditHandle& seqset);
 
     CSeq_entry_EditHandle StartEdit(const CSeq_entry_Handle& seh);
     CBioseq_EditHandle StartEdit(const CBioseq_Handle& bh);
@@ -238,6 +256,22 @@ private:
     void x_ClearCacheOnNewData(void);
     void x_ClearAnnotCache(void);
     void x_ClearCacheOnRemoveData(const CSeq_entry_Info& info);
+
+    /*
+    CBioseq_EditHandle x_AttachBioseq(const CBioseq_set_EditHandle& seqset,
+                                      CRef<CBioseq_Info> bioseq,
+                                      int index);
+    */
+    CSeq_entry_EditHandle x_AttachEntry(const CBioseq_set_EditHandle& seqset,
+                                        CRef<CSeq_entry_Info> entry,
+                                        int index);
+    CSeq_annot_EditHandle x_AttachAnnot(const CSeq_entry_EditHandle& entry,
+                                        CRef<CSeq_annot_Info> annot);
+
+    CBioseq_EditHandle x_SelectSeq(const CSeq_entry_EditHandle& entry,
+                                   CRef<CBioseq_Info> bioseq);
+    CBioseq_set_EditHandle x_SelectSet(const CSeq_entry_EditHandle& entry,
+                                       CRef<CBioseq_set_Info> seqset);
 
     // Find the best possible resolution for the Seq-id
     void x_ResolveSeq_id(TSeq_idMapValue& id);
@@ -336,6 +370,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/03/29 20:13:06  vasilche
+* Implemented whole set of methods to modify Seq-entry object tree.
+* Added CBioseq_Handle::GetExactComplexityLevel().
+*
 * Revision 1.2  2004/03/24 18:30:29  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

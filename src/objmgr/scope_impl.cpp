@@ -177,6 +177,231 @@ CBioseq_Handle CScope_Impl::AddBioseq(CBioseq& bioseq,
 }
 
 
+CSeq_entry_EditHandle
+CScope_Impl::x_AttachEntry(const CBioseq_set_EditHandle& seqset,
+                           CRef<CSeq_entry_Info> entry,
+                           int index)
+{
+    _ASSERT(seqset && entry);
+
+    TWriteLockGuard guard(m_Scope_Conf_RWLock);
+
+    //seqset.GetDataSource().AttachEntry(seqset, entry, index);
+    seqset.x_GetInfo().AddEntry(entry, index);
+
+    x_ClearCacheOnNewData();
+
+    return CSeq_entry_EditHandle(*m_HeapScope, *entry);
+}
+
+/*
+CBioseq_EditHandle
+CScope_Impl::x_AttachBioseq(const CBioseq_set_EditHandle& seqset,
+                            CRef<CBioseq_Info> bioseq,
+                            int index)
+{
+    _ASSERT(seqset && bioseq);
+
+    TWriteLockGuard guard(m_Scope_Conf_RWLock);
+
+    CRef<CSeq_entry_Info> entry(new CSeq_entry_Info);
+    entry->SelectSeq(*bioseq);
+    x_AttachEntry(seqset, entry, index);
+
+    x_ClearCacheOnNewData();
+
+    return GetBioseqHandle(*bioseq).GetEditHandle();
+}
+*/
+
+CBioseq_EditHandle
+CScope_Impl::x_SelectSeq(const CSeq_entry_EditHandle& entry,
+                         CRef<CBioseq_Info> bioseq)
+{
+    _ASSERT(entry && bioseq);
+    _ASSERT(entry.Which() == CSeq_entry::e_not_set);
+
+    TWriteLockGuard guard(m_Scope_Conf_RWLock);
+
+    // duplicate bioseq info
+    entry.x_GetInfo().SelectSeq(*bioseq);
+
+    x_ClearCacheOnNewData();
+
+    return GetBioseqHandle(*bioseq).GetEditHandle();
+}
+
+
+CBioseq_set_EditHandle
+CScope_Impl::x_SelectSet(const CSeq_entry_EditHandle& entry,
+                         CRef<CBioseq_set_Info> seqset)
+{
+    _ASSERT(entry && seqset);
+    _ASSERT(entry.Which() == CSeq_entry::e_not_set);
+
+    TWriteLockGuard guard(m_Scope_Conf_RWLock);
+
+    // duplicate bioseq info
+    entry.x_GetInfo().SelectSet(*seqset);
+
+    x_ClearCacheOnNewData();
+
+    return CBioseq_set_EditHandle(*m_HeapScope, *seqset);
+}
+
+
+CSeq_annot_EditHandle
+CScope_Impl::x_AttachAnnot(const CSeq_entry_EditHandle& entry,
+                           CRef<CSeq_annot_Info> annot)
+{
+    _ASSERT(entry && annot);
+
+    TWriteLockGuard guard(m_Scope_Conf_RWLock);
+
+    entry.x_GetInfo().AddAnnot(annot);
+
+    x_ClearAnnotCache();
+
+    return CSeq_annot_EditHandle(*m_HeapScope, *annot);
+}
+
+/*
+CBioseq_EditHandle
+CScope_Impl::AttachBioseq(const CBioseq_set_EditHandle& seqset,
+                          CBioseq& seq,
+                          int index)
+{
+    return x_AttachBioseq(seqset, Ref(new CBioseq_Info(seq)), index);
+}
+
+
+CBioseq_EditHandle
+CScope_Impl::CopyBioseq(const CBioseq_set_EditHandle& seqset,
+                        const CBioseq_Handle& seq,
+                        int index)
+{
+    return x_AttachBioseq(seqset, Ref(new CBioseq_Info(seq.x_GetInfo())),
+                          index);
+}
+
+
+CBioseq_EditHandle
+CScope_Impl::TakeBioseq(const CBioseq_set_EditHandle& seqset,
+                        const CBioseq_EditHandle& seq,
+                        int index)
+{
+    CRef<CBioseq_Info> info(&seq.x_GetInfo());
+    seq.Remove();
+    return x_AttachBioseq(seqset, info, index);
+}
+*/
+
+CSeq_entry_EditHandle
+CScope_Impl::AttachEntry(const CBioseq_set_EditHandle& seqset,
+                         CSeq_entry& entry,
+                         int index)
+{
+    return x_AttachEntry(seqset, Ref(new CSeq_entry_Info(entry)), index);
+}
+
+
+CSeq_entry_EditHandle
+CScope_Impl::CopyEntry(const CBioseq_set_EditHandle& seqset,
+                       const CSeq_entry_Handle& entry,
+                       int index)
+{
+    return x_AttachEntry(seqset, Ref(new CSeq_entry_Info(entry.x_GetInfo())),
+                         index);
+}
+
+
+CSeq_entry_EditHandle
+CScope_Impl::TakeEntry(const CBioseq_set_EditHandle& seqset,
+                       const CSeq_entry_EditHandle& entry,
+                       int index)
+{
+    CRef<CSeq_entry_Info> info(&entry.x_GetInfo());
+    entry.Remove();
+    return x_AttachEntry(seqset, info, index);
+}
+
+
+CBioseq_EditHandle CScope_Impl::SelectSeq(const CSeq_entry_EditHandle& entry,
+                                          CBioseq& seq)
+{
+    return x_SelectSeq(entry, Ref(new CBioseq_Info(seq)));
+}
+
+
+CBioseq_EditHandle CScope_Impl::CopySeq(const CSeq_entry_EditHandle& entry,
+                                        const CBioseq_Handle& seq)
+{
+    _ASSERT(seq.m_Scope != this);
+    return x_SelectSeq(entry, Ref(new CBioseq_Info(seq.x_GetInfo())));
+}
+
+
+CBioseq_EditHandle CScope_Impl::TakeSeq(const CSeq_entry_EditHandle& entry,
+                                        const CBioseq_EditHandle& seq)
+{
+    CRef<CBioseq_Info> info(&seq.x_GetInfo());
+    seq.Remove();
+    return x_SelectSeq(entry, info);
+}
+
+
+CBioseq_set_EditHandle
+CScope_Impl::SelectSet(const CSeq_entry_EditHandle& entry,
+                       CBioseq_set& seqset)
+{
+    return x_SelectSet(entry, Ref(new CBioseq_set_Info(seqset)));
+}
+
+
+CBioseq_set_EditHandle
+CScope_Impl::CopySet(const CSeq_entry_EditHandle& entry,
+                     const CBioseq_set_Handle& seqset)
+{
+    return x_SelectSet(entry, Ref(new CBioseq_set_Info(seqset.x_GetInfo())));
+}
+
+
+CBioseq_set_EditHandle
+CScope_Impl::TakeSet(const CSeq_entry_EditHandle& entry,
+                     const CBioseq_set_EditHandle& seqset)
+{
+    CRef<CBioseq_set_Info> info(&seqset.x_GetInfo());
+    seqset.Remove();
+    return x_SelectSet(entry, info);
+}
+
+
+CSeq_annot_EditHandle
+CScope_Impl::AttachAnnot(const CSeq_entry_EditHandle& entry,
+                         const CSeq_annot& annot)
+{
+    return x_AttachAnnot(entry, Ref(new CSeq_annot_Info(annot)));
+}
+
+
+CSeq_annot_EditHandle
+CScope_Impl::CopyAnnot(const CSeq_entry_EditHandle& entry,
+                       const CSeq_annot_Handle& annot)
+{
+    return x_AttachAnnot(entry, Ref(new CSeq_annot_Info(annot.x_GetInfo())));
+}
+
+
+CSeq_annot_EditHandle
+CScope_Impl::TakeAnnot(const CSeq_entry_EditHandle& entry,
+                       const CSeq_annot_EditHandle& annot)
+{
+    CRef<CSeq_annot_Info> info(&annot.x_GetInfo());
+    annot.Remove();
+    return x_AttachAnnot(entry, info);
+}
+
+
 void CScope_Impl::x_ClearCacheOnNewData(void)
 {
     // Clear unresolved bioseq handles
@@ -324,82 +549,24 @@ CScope_Impl::x_GetBioseq_Info(const CBioseq& bioseq)
 }
 
 
-CSeq_annot_EditHandle
-CScope_Impl::AttachAnnot(const CSeq_entry_EditHandle& entry,
-                         const CSeq_annot& annot)
-{
-    TWriteLockGuard guard(m_Scope_Conf_RWLock);
-    CSeq_entry_Info& info = entry.x_GetInfo();
-    CRef<CSeq_annot_Info> annot_info = 
-        info.GetDataSource().AttachAnnot(info, annot);
-    x_ClearAnnotCache();
-    return CSeq_annot_EditHandle(*m_HeapScope, *annot_info);
-}
-
-
-CSeq_annot_EditHandle
-CScope_Impl::AttachAnnot(const CBioseq_set_EditHandle& seqset,
-                         const CSeq_annot& annot)
-{
-    TWriteLockGuard guard(m_Scope_Conf_RWLock);
-    CBioseq_set_Info& info = seqset.x_GetInfo();
-    CRef<CSeq_annot_Info> annot_info = 
-        info.GetDataSource().AttachAnnot(info, annot);
-    x_ClearAnnotCache();
-    return CSeq_annot_EditHandle(*m_HeapScope, *annot_info);
-}
-
-
-CSeq_annot_EditHandle
-CScope_Impl::AttachAnnot(const CBioseq_EditHandle& seq,
-                         const CSeq_annot& annot)
-{
-    TWriteLockGuard guard(m_Scope_Conf_RWLock);
-    CBioseq_Info& info = seq.x_GetInfo();
-    CRef<CSeq_annot_Info> annot_info = 
-        info.GetDataSource().AttachAnnot(info, annot);
-    x_ClearAnnotCache();
-    return CSeq_annot_EditHandle(*m_HeapScope, *annot_info);
-}
-
-
 void CScope_Impl::RemoveAnnot(const CSeq_annot_EditHandle& annot)
 {
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
+
     CSeq_annot_Info& info = annot.x_GetInfo();
     info.GetDataSource().RemoveAnnot(info);
+
     x_ClearAnnotCache();
-}
-
-
-CBioseq_EditHandle
-CScope_Impl::AttachBioseq(const CSeq_entry_EditHandle& entry,
-                          CBioseq& seq)
-{
-    TWriteLockGuard guard(m_Scope_Conf_RWLock);
-    return GetBioseqHandle(entry.x_GetInfo().SelectSeq(seq)).GetEditHandle();
-}
-
-
-CSeq_entry_EditHandle
-CScope_Impl::AttachEntry(const CBioseq_set_EditHandle& parent,
-                         CSeq_entry& entry,
-                         int index)
-{
-    TWriteLockGuard guard(m_Scope_Conf_RWLock);
-    CBioseq_set_Info& parent_info = parent.x_GetInfo();
-    CRef<CSeq_entry_Info> new_info =
-        parent_info.GetDataSource().AttachEntry(parent_info, entry, index);
-    x_ClearCacheOnNewData();
-    return CSeq_entry_EditHandle(*m_HeapScope, *new_info);
 }
 
 
 void CScope_Impl::RemoveEntry(const CSeq_entry_EditHandle& entry)
 {
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
+
     CSeq_entry_Info& info = entry.x_GetInfo();
     x_ClearCacheOnRemoveData(info);
+
     if ( entry.GetParentEntry() ) {
         info.GetDataSource().RemoveEntry(info);
     }
@@ -1171,6 +1338,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/03/29 20:13:06  vasilche
+* Implemented whole set of methods to modify Seq-entry object tree.
+* Added CBioseq_Handle::GetExactComplexityLevel().
+*
 * Revision 1.4  2004/03/25 19:27:44  vasilche
 * Implemented MoveTo and CopyTo methods of handles.
 *

@@ -515,13 +515,25 @@ CBioseq_Handle::GetComplexityLevel(CBioseq_set::EClass cls) const
              s_Complexity[last.GetSet().GetClass()] == s_Complexity[cls] )
             break;
         // Gone too high
-        if ( s_Complexity[e.GetSet().GetClass()] > s_Complexity[cls] )
+        if ( s_Complexity[e.GetSet().GetClass()] > s_Complexity[cls] ) {
             break;
+        }
         // Go up one level
         last = e;
         e = e.GetParentEntry();
     }
     return last;
+}
+
+
+CSeq_entry_Handle
+CBioseq_Handle::GetExactComplexityLevel(CBioseq_set::EClass cls) const
+{
+    CSeq_entry_Handle ret = GetComplexityLevel(cls);
+    if ( ret && ret.GetSet().GetClass() != cls ) {
+        ret.Reset();
+    }
+    return ret;
 }
 
 
@@ -549,11 +561,13 @@ CRef<CSeq_loc> CBioseq_Handle::MapLocation(const CSeq_loc& loc) const
             it,
             it.GetRefSeqid(),
             &GetScope());
-        CConstRef<CSynonymsSet> syns = GetScope().GetSynonyms(it.GetRefSeqid());
+        CConstRef<CSynonymsSet> syns =
+            GetScope().GetSynonyms(it.GetRefSeqid());
         if (syns) {
             ITERATE ( CSynonymsSet, synit, *syns ) {
                 CSeq_id_Handle idh = CSynonymsSet::GetSeq_id_Handle(synit);
-                CRef<CSeq_loc_Conversion> cvt(new CSeq_loc_Conversion(def_cvt));
+                CRef<CSeq_loc_Conversion> cvt
+                    (new CSeq_loc_Conversion(def_cvt));
                 cvt->SetSrcId(idh);
                 conv_set.Add(*cvt);
             }
@@ -566,6 +580,29 @@ CRef<CSeq_loc> CBioseq_Handle::MapLocation(const CSeq_loc& loc) const
     CRef<CSeq_loc> dst;
     conv_set.Convert(loc, &dst);
     return dst;
+}
+
+
+CBioseq_EditHandle
+CBioseq_Handle::CopyTo(const CSeq_entry_EditHandle& entry,
+                       int index) const
+{
+    return entry.CopyBioseq(*this, index);
+}
+
+
+CBioseq_EditHandle
+CBioseq_Handle::CopyTo(const CBioseq_set_EditHandle& seqset,
+                       int index) const
+{
+    return seqset.CopyBioseq(*this, index);
+}
+
+
+CBioseq_EditHandle
+CBioseq_Handle::CopyToSeq(const CSeq_entry_EditHandle& entry) const
+{
+    return entry.CopySeq(*this);
 }
 
 
@@ -590,122 +627,52 @@ CSeq_entry_EditHandle CBioseq_EditHandle::GetParentEntry(void) const
 CSeq_annot_EditHandle
 CBioseq_EditHandle::AttachAnnot(const CSeq_annot& annot) const
 {
-    return m_Scope->AttachAnnot(GetParentEntry(), annot);
+    return GetParentEntry().AttachAnnot(annot);
 }
 
 
-void CBioseq_EditHandle::MoveTo(const CSeq_entry_EditHandle& entry,
-                                int index) const
+CSeq_annot_EditHandle
+CBioseq_EditHandle::CopyAnnot(const CSeq_annot_Handle& annot) const
 {
-    MoveTo(entry.SelectSet(), index);
+    return GetParentEntry().CopyAnnot(annot);
 }
 
 
-void CBioseq_EditHandle::MoveTo(const CBioseq_set_EditHandle& seqset,
-                                int index) const
+CSeq_annot_EditHandle
+CBioseq_EditHandle::TakeAnnot(const CSeq_annot_EditHandle& annot) const
 {
-    if ( !seqset || !*this ) {
-        NCBI_THROW(CObjMgrException, eInvalidHandle,
-                   "CBioseq_EditHandle::MoveTo: null handle");
-    }
-    CRef<CBioseq_Info> bioseq(&x_GetInfo());
-    CRef<CBioseq_set_Info> dst_set(&seqset.x_GetInfo());
-/*
-    if ( &dst_set->GetTSE_Info() == &bioseq->GetTSE_Info() ) {
-        bioseq->GetTSE_Info().MoveTo(bioseq, dst_set);
-    }
-    else
-*/
-        {
-        CRef<CSeq_entry_Info> src_entry(&bioseq->GetParentSeq_entry_Info());
-        src_entry->Reset();
-        CRef<CSeq_entry_Info> dst_entry(new CSeq_entry_Info);
-        dst_entry->SelectSeq(*bioseq);
-        dst_set->AddEntry(dst_entry, index);
-    }
-}
-
-
-void CBioseq_EditHandle::MoveToSeq(const CSeq_entry_EditHandle& entry) const
-{
-    if ( !entry || !*this ) {
-        NCBI_THROW(CObjMgrException, eInvalidHandle,
-                   "CBioseq_EditHandle::MoveToSeq: "
-                   "null handle");
-    }
-    if ( entry.Which() != CSeq_entry::e_not_set ) {
-        NCBI_THROW(CObjMgrException, eModifyDataError,
-                   "CBioseq_EditHandle::MoveToSeq: "
-                   "destination entry is not empty");
-    }
-    CRef<CBioseq_Info> bioseq(&x_GetInfo());
-    CRef<CSeq_entry_Info> dst_entry(&entry.x_GetInfo());
-/*
-    if ( &dst_entry->GetTSE_Info() == &bioseq->GetTSE_Info() ) {
-        bioseq->GetTSE_Info().MoveToSeq(bioseq, dst_entry);
-    }
-    else
-*/
-        {
-        CRef<CSeq_entry_Info> src_entry(&bioseq->GetParentSeq_entry_Info());
-        src_entry->Reset();
-        dst_entry->SelectSeq(*bioseq);
-    }
-}
-
-
-CBioseq_EditHandle CBioseq_Handle::CopyTo(const CSeq_entry_EditHandle& entry,
-                                          int index) const
-{
-    return CopyTo(entry.SelectSet(), index);
-}
-
-
-CBioseq_EditHandle CBioseq_Handle::CopyTo(const CBioseq_set_EditHandle& seqset,
-                                          int index) const
-{
-    if ( !seqset || !*this ) {
-        NCBI_THROW(CObjMgrException, eInvalidHandle,
-                   "CBioseq::CopyTo: "
-                   "null handle");
-    }
-    if ( &seqset.GetScope() == &GetScope() ) {
-        NCBI_THROW(CObjMgrException, eModifyDataError,
-                   "CBioseq::CopyTo: "
-                   "destination and source are in the same scope");
-    }
-    CRef<CBioseq_Info> bioseq(new CBioseq_Info(x_GetInfo()));
-    CRef<CBioseq_set_Info> dst_set(&seqset.x_GetInfo());
-    CRef<CSeq_entry_Info> dst_entry(new CSeq_entry_Info);
-    dst_entry->SelectSeq(*bioseq);
-    dst_set->AddEntry(dst_entry, index);
-    return seqset.m_Scope->GetBioseqHandle(*bioseq).GetEditHandle();
+    return GetParentEntry().TakeAnnot(annot);
 }
 
 
 CBioseq_EditHandle
-CBioseq_Handle::CopyToSeq(const CSeq_entry_EditHandle& entry) const
+CBioseq_EditHandle::MoveTo(const CSeq_entry_EditHandle& entry,
+                           int index) const
 {
-    if ( !entry || !*this ) {
-        NCBI_THROW(CObjMgrException, eInvalidHandle,
-                   "CBioseq::CopyToSeq: "
-                   "null handle");
-    }
-    if ( &entry.GetScope() == &GetScope() ) {
-        NCBI_THROW(CObjMgrException, eModifyDataError,
-                   "CBioseq::CopyToSeq: "
-                   "destination and source are in the same scope");
-    }
-    if ( entry.Which() != CSeq_entry::e_not_set ) {
-        NCBI_THROW(CObjMgrException, eModifyDataError,
-                   "CBioseq::CopyToSeq: "
-                   "destination entry is not empty");
-    }
-    CRef<CBioseq_Info> bioseq(new CBioseq_Info(x_GetInfo()));
-    CRef<CSeq_entry_Info> dst_entry(&entry.x_GetInfo());
-    dst_entry->SelectSeq(*bioseq);
-    return entry.m_Scope->GetBioseqHandle(*bioseq).GetEditHandle();
+    return entry.TakeBioseq(*this, index);
 }
+
+
+CBioseq_EditHandle
+CBioseq_EditHandle::MoveTo(const CBioseq_set_EditHandle& seqset,
+                                int index) const
+{
+    return seqset.TakeBioseq(*this, index);
+}
+
+
+CBioseq_EditHandle
+CBioseq_EditHandle::MoveToSeq(const CSeq_entry_EditHandle& entry) const
+{
+    return entry.TakeSeq(*this);
+}
+
+
+void CBioseq_EditHandle::Remove(void) const
+{
+    GetParentEntry().Remove();
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // Bioseq members
@@ -787,6 +754,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2004/03/29 20:13:06  vasilche
+* Implemented whole set of methods to modify Seq-entry object tree.
+* Added CBioseq_Handle::GetExactComplexityLevel().
+*
 * Revision 1.57  2004/03/25 19:27:44  vasilche
 * Implemented MoveTo and CopyTo methods of handles.
 *

@@ -196,6 +196,22 @@ CSeq_entry_EditHandle::AttachBioseq(CBioseq& seq, int index) const
 }
 
 
+CBioseq_EditHandle
+CSeq_entry_EditHandle::CopyBioseq(const CBioseq_Handle& seq,
+                                  int index) const
+{
+    return SetSet().CopyBioseq(seq, index);
+}
+
+
+CBioseq_EditHandle
+CSeq_entry_EditHandle::TakeBioseq(const CBioseq_EditHandle& seq,
+                                  int index) const
+{
+    return SetSet().TakeBioseq(seq, index);
+}
+
+
 CSeq_entry_EditHandle
 CSeq_entry_EditHandle::AttachEntry(CSeq_entry& entry, int index) const
 {
@@ -203,10 +219,40 @@ CSeq_entry_EditHandle::AttachEntry(CSeq_entry& entry, int index) const
 }
 
 
+CSeq_entry_EditHandle
+CSeq_entry_EditHandle::CopyEntry(const CSeq_entry_Handle& entry,
+                                 int index) const
+{
+    return SetSet().CopyEntry(entry, index);
+}
+
+
+CSeq_entry_EditHandle
+CSeq_entry_EditHandle::TakeEntry(const CSeq_entry_EditHandle& entry,
+                                 int index) const
+{
+    return SetSet().TakeEntry(entry, index);
+}
+
+
 CSeq_annot_EditHandle
 CSeq_entry_EditHandle::AttachAnnot(const CSeq_annot& annot) const
 {
     return m_Scope->AttachAnnot(*this, annot);
+}
+
+
+CSeq_annot_EditHandle
+CSeq_entry_EditHandle::CopyAnnot(const CSeq_annot_Handle& annot) const
+{
+    return m_Scope->CopyAnnot(*this, annot);
+}
+
+
+CSeq_annot_EditHandle
+CSeq_entry_EditHandle::TakeAnnot(const CSeq_annot_EditHandle& annot) const
+{
+    return m_Scope->TakeAnnot(*this, annot);
 }
 
 
@@ -218,13 +264,48 @@ void CSeq_entry_EditHandle::Remove(void) const
 
 CBioseq_set_EditHandle CSeq_entry_EditHandle::SelectSet(void) const
 {
-    return CBioseq_set_EditHandle(GetScope(), x_GetInfo().SelectSet());
+    return SelectSet(*new CBioseq_set);
+}
+
+
+CBioseq_set_EditHandle
+CSeq_entry_EditHandle::SelectSet(CBioseq_set& seqset) const
+{
+    return m_Scope->SelectSet(*this, seqset);
+}
+
+
+CBioseq_set_EditHandle
+CSeq_entry_EditHandle::CopySet(const CBioseq_set_Handle& seqset) const
+{
+    return m_Scope->CopySet(*this, seqset);
+}
+
+
+CBioseq_set_EditHandle
+CSeq_entry_EditHandle::TakeSet(const CBioseq_set_EditHandle& seqset) const
+{
+    return m_Scope->TakeSet(*this, seqset);
 }
 
 
 CBioseq_EditHandle CSeq_entry_EditHandle::SelectSeq(CBioseq& seq) const
 {
-    return m_Scope->AttachBioseq(*this, seq);
+    return m_Scope->SelectSeq(*this, seq);
+}
+
+
+CBioseq_EditHandle
+CSeq_entry_EditHandle::CopySeq(const CBioseq_Handle& seq) const
+{
+    return m_Scope->CopySeq(*this, seq);
+}
+
+
+CBioseq_EditHandle
+CSeq_entry_EditHandle::TakeSeq(const CBioseq_EditHandle& seq) const
+{
+    return m_Scope->TakeSeq(*this, seq);
 }
 
 
@@ -234,6 +315,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/03/29 20:13:06  vasilche
+* Implemented whole set of methods to modify Seq-entry object tree.
+* Added CBioseq_Handle::GetExactComplexityLevel().
+*
 * Revision 1.6  2004/03/24 18:30:30  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

@@ -162,21 +162,29 @@ public:
     // Returns new Bioseq-set handle.
     TSet SelectSet(CBioseq_set& seqset) const;
 
+    // Make the empty Seq-entry be in set state with given Bioseq-set object.
+    // Returns new Bioseq-set handle.
+    TSet CopySet(const CBioseq_set_Handle& seqset) const;
+
     // Make the empty Seq-entry be in set state with moving Bioseq-set object
     // from the argument seqset.
     // Returns new Bioseq-set handle which could be different from the argument
     // is the argument is from another scope.
-    TSet MoveAndSelectSet(const TSet& seqset) const;
+    TSet TakeSet(const TSet& seqset) const;
 
     // Make the empty Seq-entry be in seq state with specified Bioseq object.
     // Returns new Bioseq handle.
     TSeq SelectSeq(CBioseq& seq) const;
 
+    // Make the empty Seq-entry be in seq state with specified Bioseq object.
+    // Returns new Bioseq handle.
+    TSeq CopySeq(const CBioseq_Handle& seq) const;
+
     // Make the empty Seq-entry be in seq state with moving bioseq object
     // from the argument seq.
     // Returns new Bioseq handle which could be different from the argument
     // is the argument is from another scope.
-    TSeq MoveAndSelectSeq(const TSeq& seq) const;
+    TSeq TakeSeq(const TSeq& seq) const;
 
     // Convert the entry from Bioseq to Bioseq-set.
     // Old Bioseq will become the only entry of new Bioseq-set.
@@ -201,10 +209,24 @@ public:
 
     // Attach new Seq-annot to Bioseq or Bioseq-set
     CSeq_annot_EditHandle AttachAnnot(const CSeq_annot& annot) const;
+    CSeq_annot_EditHandle CopyAnnot(const CSeq_annot_Handle&annot) const;
+    CSeq_annot_EditHandle TakeAnnot(const CSeq_annot_EditHandle& annot) const;
 
     // Attach new sub objects to Bioseq-set
-    CBioseq_EditHandle AttachBioseq(CBioseq& seq, int index = -1) const;
-    CSeq_entry_EditHandle AttachEntry(CSeq_entry& entry, int index = -1) const;
+    // index < 0 or index >= current number of entries means to add at the end.
+    CBioseq_EditHandle AttachBioseq(CBioseq& seq,
+                                    int index = -1) const;
+    CBioseq_EditHandle CopyBioseq(const CBioseq_Handle& seq,
+                                  int index = -1) const;
+    CBioseq_EditHandle TakeBioseq(const CBioseq_EditHandle& seq,
+                                  int index = -1) const;
+
+    CSeq_entry_EditHandle AttachEntry(CSeq_entry& entry,
+                                      int index = -1) const;
+    CSeq_entry_EditHandle CopyEntry(const CSeq_entry_Handle& entry,
+                                    int index = -1) const;
+    CSeq_entry_EditHandle TakeEntry(const CSeq_entry_EditHandle& entry,
+                                    int index = -1) const;
 
     // Remove this Seq-entry from parent,
     // or scope if it's top level Seq-entry.
@@ -325,6 +347,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/03/29 20:13:05  vasilche
+* Implemented whole set of methods to modify Seq-entry object tree.
+* Added CBioseq_Handle::GetExactComplexityLevel().
+*
 * Revision 1.7  2004/03/25 20:06:41  vasilche
 * Fixed typo TSet -> TSeq.
 *

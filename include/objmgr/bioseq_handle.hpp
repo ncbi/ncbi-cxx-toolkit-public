@@ -187,6 +187,8 @@ public:
     // 4       wgs-set (18) ,       -- whole genome shotgun project
     // 0       other (255)
     CSeq_entry_Handle GetComplexityLevel(CBioseq_set::EClass cls) const;
+    // Return level with exact complexity, or empty handle if not found.
+    CSeq_entry_Handle GetExactComplexityLevel(CBioseq_set::EClass cls) const;
 
     // Get some values from core:
     CSeq_inst::TMol GetBioseqMolType(void) const;
@@ -308,12 +310,19 @@ public:
 
     // Add/remove/replace annotations:
     CSeq_annot_EditHandle AttachAnnot(const CSeq_annot& annot) const;
+    CSeq_annot_EditHandle CopyAnnot(const CSeq_annot_Handle& annot) const;
+    CSeq_annot_EditHandle TakeAnnot(const CSeq_annot_EditHandle& annot) const;
 
     // Tree modification, target handle must be in the same TSE
     // entry.Which() must be e_not_set or e_Set.
-    void MoveTo(const CSeq_entry_EditHandle& entry, int index = -1) const;
-    void MoveTo(const CBioseq_set_EditHandle& seqset, int index = -1) const;
-    void MoveToSeq(const CSeq_entry_EditHandle& entry) const;
+    CBioseq_EditHandle MoveTo(const CSeq_entry_EditHandle& entry,
+                              int index = -1) const;
+    CBioseq_EditHandle MoveTo(const CBioseq_set_EditHandle& seqset,
+                              int index = -1) const;
+
+    CBioseq_EditHandle MoveToSeq(const CSeq_entry_EditHandle& entry) const;
+
+    void Remove(void) const;
 
 protected:
     friend class CScope_Impl;
@@ -392,6 +401,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2004/03/29 20:13:05  vasilche
+* Implemented whole set of methods to modify Seq-entry object tree.
+* Added CBioseq_Handle::GetExactComplexityLevel().
+*
 * Revision 1.52  2004/03/25 19:27:43  vasilche
 * Implemented MoveTo and CopyTo methods of handles.
 *
