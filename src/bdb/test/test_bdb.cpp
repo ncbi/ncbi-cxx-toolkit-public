@@ -39,6 +39,7 @@
 #include <bdb/bdb_expt.hpp>
 #include <bdb/bdb_types.hpp>
 #include <bdb/bdb_file.hpp>
+#include <bdb/bdb_env.hpp>
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_map.hpp>
@@ -177,7 +178,12 @@ static void s_TEST_BDB_IdTable_Fill(void)
 {
     cout << "======== Id table filling test." << endl;
 
+    CBDB_Env env;
+    env.OpenWithLocks(0);
+
     TestDBF1  dbf1;
+
+    dbf1.SetEnv(env);
 
     dbf1.Open(s_TestFileName, CBDB_File::eCreate);
     assert(dbf1.idata.IsNull());
@@ -1102,6 +1108,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/08/27 20:05:33  kuznets
+ * Added test working with file locking environment
+ *
  * Revision 1.15  2003/07/25 15:35:59  kuznets
  * Added simple db_map<string, int> test
  *
