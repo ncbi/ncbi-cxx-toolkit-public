@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/01/12 23:51:40  lavr
+ * Message logging modified for use LOG facility only
+ *
  * Revision 6.8  2001/01/08 23:48:14  lavr
  * (unsigned char) conversion in isspace
  *
@@ -285,7 +288,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char *text)
             else
                 *p = '\0';
             if (b >= p) {
-                CORE_LOGF(eLOG_Error, ("[UNKNOWN DISPATCHER ERROR]\n"));
+                CORE_LOG(eLOG_Error, "[UNKNOWN DISPATCHER ERROR]\n");
             } else {
                 CORE_LOGF(eLOG_Error, ("[DISPATCHER ERROR] = %.*s\n",
                                        (int)(p - b), b));

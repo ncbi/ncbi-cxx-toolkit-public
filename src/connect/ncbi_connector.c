@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/01/12 23:51:38  lavr
+ * Message logging modified for use LOG facility only
+ *
  * Revision 6.1  2000/12/29 17:49:29  lavr
  * Initial revision
  *
@@ -41,14 +44,16 @@
 #include <connect/ncbi_connector.h>
 #include <stdlib.h>
 
-/* Standard error report
+
+/* Standard logging message
  */
-#define CONN_LOG(level, descr) \
+#define METACONN_LOG(level, descr) \
   CORE_LOGF(level, \
             ("%s (connector \"%s\", error \"%s\")", \
             descr, \
             (*meta->get_type)(meta->c_get_type), \
             IO_StatusStr(status)))
+
 
 extern EIO_Status METACONN_Remove
 (SMetaConnector* meta,
@@ -56,15 +61,14 @@ extern EIO_Status METACONN_Remove
 {
     if (connector) {
         CONNECTOR x_conn;
-
+        
         for (x_conn = meta->list; x_conn; x_conn = x_conn->next)
             if (x_conn == connector)
                 break;
         if (!x_conn) {
             EIO_Status status = eIO_Unknown;
-            
-            CONN_LOG(eLOG_Error,
-                     "[CONN_Remove]  Connector doesn't belong to connection");
+            METACONN_LOG(eLOG_Error,
+                         "[METACONN_Remove]  Connector is not in connection");
             return status;
         }
     }
@@ -90,10 +94,14 @@ extern EIO_Status METACONN_Add
 (SMetaConnector* meta,
  CONNECTOR       connector)
 {
-    assert(connector != 0 && meta != 0);
+    assert(connector && meta);
 
-    if (connector->next != 0 || !connector->setup)
-        return eIO_Unknown;
+    if (connector->next || !connector->setup) {
+        EIO_Status status = eIO_Unknown;
+        METACONN_LOG(eLOG_Error,
+                     "[METACONN_Add]  Input connector is in use/uninitable");
+        return status;
+    }
 
     (*connector->setup)(meta, connector);
     connector->meta = meta;

@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/01/12 23:51:38  lavr
+ * Message logging modified for use LOG facility only
+ *
  * Revision 6.3  2001/01/03 22:29:59  lavr
  * CONN_Status implemented
  *
@@ -66,6 +69,16 @@
 #include <memory.h>
 
 
+/* Standard logging message
+ */
+#define CONN_LOG(level, descr) \
+  CORE_LOGF(level, \
+            ("%s (connector \"%s\", error \"%s\")", \
+            descr, \
+            (*conn->meta.get_type)(conn->meta.c_get_type), \
+            IO_StatusStr(status)))
+
+
 /***********************************************************************
  *  INTERNAL
  ***********************************************************************/
@@ -96,16 +109,6 @@ typedef struct SConnectionTag {
     STimeout  ww_timeout;              /* storage for "w_timeout"           */
     STimeout  ll_timeout;              /* storage for "l_timeout"           */
 } SConnection;
-
-
-/* Standard error report
- */
-#define CONN_LOG(level, descr) \
-  CORE_LOGF(level, \
-            ("%s (connector \"%s\", error \"%s\")", \
-            descr, \
-            (*conn->meta.get_type)(conn->meta.c_get_type), \
-            IO_StatusStr(status)))
 
 
 /***********************************************************************
