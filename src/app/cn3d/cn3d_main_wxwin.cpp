@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2001/06/07 19:05:37  thiessen
+* functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
+*
 * Revision 1.50  2001/06/02 19:14:08  thiessen
 * Maximize() not implemented in wxGTK
 *
@@ -720,7 +723,7 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
                 break;
             default: ;
         }
-        glCanvas->structureSet->styleManager->CheckStyleSettings(glCanvas->structureSet);
+        glCanvas->structureSet->styleManager->CheckGlobalStyleSettings(glCanvas->structureSet);
         GlobalMessenger()->PostRedrawAllStructures();
         GlobalMessenger()->PostRedrawAllSequenceViewers();
     }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2001/06/07 19:05:37  thiessen
+* functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
+*
 * Revision 1.62  2001/06/05 13:21:08  thiessen
 * fix structure alignment list problems
 *
@@ -339,7 +342,7 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
 const BlockMultipleAlignment * AlignmentManager::GetCurrentMultipleAlignment(void) const
 {
     const ViewerBase::AlignmentList *currentAlignments = sequenceViewer->GetCurrentAlignments();
-    return (currentAlignments ? currentAlignments->front() : NULL);
+    return ((currentAlignments && currentAlignments->size() > 0) ? currentAlignments->front() : NULL);
 }
 
 static bool AlignedToAllSlaves(int masterResidue,

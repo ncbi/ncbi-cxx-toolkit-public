@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/06/07 19:05:38  thiessen
+* functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
+*
 * Revision 1.1  2001/05/31 18:47:10  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -42,6 +45,10 @@
 #include "cn3d/style_dialog.hpp"
 #include "cn3d/style_manager.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/structure_set.hpp"
+#include "cn3d/messenger.hpp"
+
+#include <wx/colordlg.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -59,8 +66,8 @@
 
 // Declare window functions
 
-#define ID_NOTEBOOK 10000
-#define ID_OK 10001
+#define ID_NOTEBODONE 10000
+#define ID_DONE 10001
 #define ID_CANCEL 10002
 #define ID_TEXT 10003
 #define ID_ALWAYS_APPLY 10004
@@ -84,6 +91,10 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
+TypeStringAssociator < StyleSettings::eBackboneType > StyleDialog::BackboneTypeStrings;
+TypeStringAssociator < StyleSettings::eDrawingStyle > StyleDialog::DrawingStyleStrings;
+TypeStringAssociator < StyleSettings::eColorScheme > StyleDialog::ColorSchemeStrings;
+
 BEGIN_EVENT_TABLE(StyleDialog, wxDialog)
     EVT_CLOSE       (       StyleDialog::OnCloseWindow)
     EVT_CHOICE      (-1,    StyleDialog::OnChange)
@@ -91,25 +102,142 @@ BEGIN_EVENT_TABLE(StyleDialog, wxDialog)
     EVT_BUTTON      (-1,    StyleDialog::OnButton)
 END_EVENT_TABLE()
 
-StyleDialog::StyleDialog(wxWindow* parent, const StyleSettings& initialSettings) :
+StyleDialog::StyleDialog(wxWindow* parent, StyleSettings *settingsToEdit, const StructureSet *set) :
     wxDialog(parent, -1, "Style Options", wxDefaultPosition, wxDefaultSize,
-        wxCAPTION | wxSYSTEM_MENU) // not resizable
+        wxCAPTION | wxSYSTEM_MENU), // not resizable
+    editedSettings(settingsToEdit), originalSettings(*settingsToEdit),
+    structureSet(set), changedSinceApply(false), changedEver(false)
 {
+    // setup maps for associating style types with strings
+    SetupStyleStrings();
+
     // construct the panel
     wxSizer *topSizer = LayoutNotebook(this, false);
 
     // set defaults
-    wxChoice *choice = wxDynamicCast(FindWindow(ID_PBB_SHOW), wxChoice);
-    choice->SetStringSelection("Partial");
+    SetControls(*editedSettings);
 
     // call sizer stuff
     topSizer->Fit(this);
     topSizer->SetSizeHints(this);
 }
 
+void StyleDialog::SetupStyleStrings(void)
+{
+    if (BackboneTypeStrings.Size() == 0) {
+
+        BackboneTypeStrings.Associate(StyleSettings::eOff, "None");
+        BackboneTypeStrings.Associate(StyleSettings::eTrace, "Trace");
+        BackboneTypeStrings.Associate(StyleSettings::ePartial, "Partial");
+        BackboneTypeStrings.Associate(StyleSettings::eComplete, "Complete");
+
+        DrawingStyleStrings.Associate(StyleSettings::eWire, "Wire");
+        DrawingStyleStrings.Associate(StyleSettings::eTubes, "Tubes");
+        DrawingStyleStrings.Associate(StyleSettings::eBallAndStick, "Ball and Stick");
+        DrawingStyleStrings.Associate(StyleSettings::eSpaceFill, "Space Fill");
+        DrawingStyleStrings.Associate(StyleSettings::eWireWorm, "Wire Worm");
+        DrawingStyleStrings.Associate(StyleSettings::eTubeWorm, "Tube Worm");
+        DrawingStyleStrings.Associate(StyleSettings::eWithArrows, "With Arrows");
+        DrawingStyleStrings.Associate(StyleSettings::eWithoutArrows, "Without Arrows");
+
+        ColorSchemeStrings.Associate(StyleSettings::eElement, "Element");
+        ColorSchemeStrings.Associate(StyleSettings::eObject, "Object");
+        ColorSchemeStrings.Associate(StyleSettings::eMolecule, "Molecule");
+        ColorSchemeStrings.Associate(StyleSettings::eDomain, "Domain");
+        ColorSchemeStrings.Associate(StyleSettings::eSecondaryStructure, "Secondary Structure");
+        ColorSchemeStrings.Associate(StyleSettings::eUserSelect, "User Color");
+        ColorSchemeStrings.Associate(StyleSettings::eAligned, "Aligned");
+        ColorSchemeStrings.Associate(StyleSettings::eIdentity, "Identity");
+        ColorSchemeStrings.Associate(StyleSettings::eVariety, "Variety");
+        ColorSchemeStrings.Associate(StyleSettings::eWeightedVariety, "Weighted Variety");
+        ColorSchemeStrings.Associate(StyleSettings::eInformationContent, "Information Content");
+        ColorSchemeStrings.Associate(StyleSettings::eFit, "Fit");
+    }
+}
+
+static bool ConvertColor(const wxColour& wxcol, Vector *vec)
+{
+    vec->Set(((double) wxcol.Red())/255.0, ((double) wxcol.Green())/255.0, ((double) wxcol.Blue())/255.0);
+    return true;
+}
+
+bool StyleDialog::GetBackboneStyle(StyleSettings::BackboneStyle *bbStyle,
+    int showID, int renderID, int colorID, int userID)
+{
+    wxChoice *choice;
+    wxButton *button;
+    return (
+        (choice = wxDynamicCast(FindWindow(showID), wxChoice)) != NULL &&
+        BackboneTypeStrings.Get(choice->GetStringSelection().c_str(), &(bbStyle->type)) &&
+        (choice = wxDynamicCast(FindWindow(renderID), wxChoice)) != NULL &&
+        DrawingStyleStrings.Get(choice->GetStringSelection().c_str(), &(bbStyle->style)) &&
+        (choice = wxDynamicCast(FindWindow(colorID), wxChoice)) != NULL &&
+        ColorSchemeStrings.Get(choice->GetStringSelection().c_str(), &(bbStyle->colorScheme)) &&
+        (button = wxDynamicCast(FindWindow(userID), wxButton)) != NULL &&
+        ConvertColor(button->GetBackgroundColour(), &(bbStyle->userColor))
+    );
+}
+
 bool StyleDialog::GetValues(StyleSettings *settings)
 {
+    bool okay = (
+        settings != NULL &&
+        GetBackboneStyle(&(settings->proteinBackbone),
+            ID_PBB_SHOW, ID_PBB_RENDER, ID_PBB_COLOR, ID_PBB_USER)
+    );
+    if (!okay) ERR_POST(Warning << "StyleDialog::GetValues() - invalid setting");
+    return okay;
+}
+
+static bool SetChoiceToString(wxChoice *choice, const std::string& name)
+{
+    int field = choice->FindString(name.c_str());
+    if (field < 0) return false;
+    choice->SetSelection(field);
     return true;
+}
+
+static bool SetButtonColor(wxButton *button, const Vector& color)
+{
+    if (!button) return false;
+    wxColour wxcol(
+        static_cast<unsigned char>((color[0] + 0.000001) * 255),
+        static_cast<unsigned char>((color[1] + 0.000001) * 255),
+        static_cast<unsigned char>((color[2] + 0.000001) * 255)
+    );
+    button->SetBackgroundColour(wxcol);
+    return true;
+}
+
+bool StyleDialog::SetBackboneStyle(const StyleSettings::BackboneStyle& bbStyle,
+    int showID, int renderID, int colorID, int userID)
+{
+    std::string name;
+    wxChoice *choice;
+    wxButton *button;
+    return (
+        BackboneTypeStrings.Get(bbStyle.type, &name) &&
+        (choice = wxDynamicCast(FindWindow(showID), wxChoice)) != NULL &&
+        SetChoiceToString(choice, name) &&
+        DrawingStyleStrings.Get(bbStyle.style, &name) &&
+        (choice = wxDynamicCast(FindWindow(renderID), wxChoice)) != NULL &&
+        SetChoiceToString(choice, name) &&
+        ColorSchemeStrings.Get(bbStyle.colorScheme, &name) &&
+        (choice = wxDynamicCast(FindWindow(colorID), wxChoice)) != NULL &&
+        SetChoiceToString(choice, name) &&
+        (button = wxDynamicCast(FindWindow(userID), wxButton)) != NULL &&
+        SetButtonColor(button, bbStyle.userColor)
+    );
+}
+
+bool StyleDialog::SetControls(const StyleSettings& settings)
+{
+    bool okay = (
+        SetBackboneStyle(settings.proteinBackbone,
+            ID_PBB_SHOW, ID_PBB_RENDER, ID_PBB_COLOR, ID_PBB_USER)
+    );
+    if (!okay) ERR_POST(Warning << "StyleDialog::SetControls() - invalid control");
+    return okay;
 }
 
 void StyleDialog::OnCloseWindow(wxCommandEvent& event)
@@ -120,31 +248,88 @@ void StyleDialog::OnCloseWindow(wxCommandEvent& event)
 void StyleDialog::OnButton(wxCommandEvent& event)
 {
     switch (event.GetId()) {
-        case ID_OK: {
+        case ID_DONE: {
             StyleSettings dummy;
-            if (GetValues(&dummy))  // can't successfully quit if values aren't valid
+            if (GetValues(&dummy)) {
+                if (changedSinceApply) {
+                    *editedSettings = dummy;
+                    GlobalMessenger()->PostRedrawAllStructures();
+                    GlobalMessenger()->PostRedrawAllSequenceViewers();
+                }
                 EndModal(wxOK);
-            else
+            } else
                 wxBell();
             break;
         }
         case ID_APPLY:
-            TESTMSG("apply pressed");
+            if (changedSinceApply) {
+                StyleSettings dummy;
+                if (GetValues(&dummy)) {
+                    *editedSettings = dummy;
+                    GlobalMessenger()->PostRedrawAllStructures();
+                    GlobalMessenger()->PostRedrawAllSequenceViewers();
+                    changedSinceApply = false;
+                } else
+                    wxBell();
+            }
             break;
         case ID_CANCEL:
+            if (changedEver) {
+                *editedSettings = originalSettings;
+                GlobalMessenger()->PostRedrawAllStructures();
+                GlobalMessenger()->PostRedrawAllSequenceViewers();
+            }
             EndModal(wxCANCEL);
             break;
+        default:
+            if (!HandleColorButton(event.GetId()))
+                event.Skip();
+    }
+}
+
+// return true if bID does actually correspond to a valid color button
+bool StyleDialog::HandleColorButton(int bID)
+{
+    // just a filter to make sure the button pushed is really a user color button
+    switch (bID) {
         case ID_PBB_USER:
-            TESTMSG("PBB user color button pushed");
             break;
         default:
-            event.Skip();
+            return false;
     }
+
+    wxButton *button = wxDynamicCast(FindWindow(bID), wxButton);
+    if (!button) {
+        ERR_POST(Error << "StyleDialog::HandleColorButton() - can't find button of given ID");
+        return false;
+    }
+
+    wxColour userColor = wxGetColourFromUser(this, button->GetBackgroundColour());
+    if (userColor.Ok()) {
+        button->SetBackgroundColour(userColor);
+        wxCommandEvent fake;
+        OnChange(fake);
+    }
+    return true;
 }
 
 void StyleDialog::OnChange(wxCommandEvent& event)
 {
     TESTMSG("control changed");
+    StyleSettings tmpSettings;
+    if (!GetValues(&tmpSettings) ||
+        !structureSet->styleManager->CheckStyleSettings(&tmpSettings, structureSet) ||
+        !SetControls(tmpSettings)) {
+        ERR_POST(Error << "StyleDialog::OnChange() - error adjusting settings/controls");
+        return;
+    }
+    changedSinceApply = changedEver = true;
+    if ((wxDynamicCast(FindWindow(ID_ALWAYS_APPLY), wxCheckBox))->GetValue()) {
+        *editedSettings = tmpSettings;
+        GlobalMessenger()->PostRedrawAllStructures();
+        GlobalMessenger()->PostRedrawAllSequenceViewers();
+        changedSinceApply = false;
+    }
 }
 
 END_SCOPE(Cn3D)
@@ -160,7 +345,7 @@ wxSizer *LayoutNotebook( wxPanel *parent, bool call_fit, bool set_sizer )
 {
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
 
-    wxNotebook *item2 = new wxNotebook( parent, ID_NOTEBOOK, wxDefaultPosition, wxDefaultSize, 0 );
+    wxNotebook *item2 = new wxNotebook( parent, ID_NOTEBODONE, wxDefaultPosition, wxDefaultSize, 0 );
     wxNotebookSizer *item1 = new wxNotebookSizer( item2 );
 
     wxPanel *item3 = new wxPanel( item2, -1 );
@@ -175,7 +360,7 @@ wxSizer *LayoutNotebook( wxPanel *parent, bool call_fit, bool set_sizer )
 
     wxBoxSizer *item5 = new wxBoxSizer( wxHORIZONTAL );
 
-    wxButton *item6 = new wxButton( parent, ID_OK, "OK", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item6 = new wxButton( parent, ID_DONE, "Done", wxDefaultPosition, wxDefaultSize, 0 );
     item6->SetDefault();
     item5->Add( item6, 0, wxALIGN_CENTRE|wxALL, 5 );
 

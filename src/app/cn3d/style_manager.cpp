@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/06/07 19:05:38  thiessen
+* functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
+*
 * Revision 1.34  2001/06/01 13:01:00  thiessen
 * fix wx-string problem again...
 *
@@ -139,6 +142,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
+#include <string.h> // for memcpy()
+
 #include "cn3d/style_manager.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/chemical_graph.hpp"
@@ -157,9 +162,7 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
-StyleManager::StyleManager(void)
-{
-}
+///// StyleSettings stuff /////
 
 void StyleSettings::SetToSecondaryStructure(void)
 {
@@ -310,38 +313,50 @@ void StyleSettings::SetToAlignment(StyleSettings::eColorScheme protBBType)
     backgroundColor.Set(0,0,0);
 }
 
-// check for inconsistencies in style settings - checks just globalStyle for now,
-// but should eventually check all styles (for user annotations) used in
-// this StructureSet. Return false if there's an uncorrectable problem.
-bool StyleManager::CheckStyleSettings(const StructureSet *set)
+StyleSettings& StyleSettings::operator = (const StyleSettings& orig)
+{
+    memcpy(this, &orig, sizeof(StyleSettings));
+    return *this;
+}
+
+
+///// StyleManager stuff /////
+
+StyleManager::StyleManager(void)
+{
+}
+
+bool StyleManager::CheckGlobalStyleSettings(const StructureSet *set)
+{
+    return CheckStyleSettings(&globalStyle, set);
+}
+
+// check for inconsistencies in style settings; returns false if there's an uncorrectable problem
+bool StyleManager::CheckStyleSettings(StyleSettings *settings, const StructureSet *set)
 {
     // can't do worm with partial or complete backbone
-    if (((globalStyle.proteinBackbone.style == StyleSettings::eWireWorm ||
-          globalStyle.proteinBackbone.style == StyleSettings::eTubeWorm) &&
-         (globalStyle.proteinBackbone.type == StyleSettings::ePartial ||
-          globalStyle.proteinBackbone.type == StyleSettings::eComplete))) {
-        ERR_POST(Error << "CheckStyleSettings(): can't have worm with non-trace backbone");
-        globalStyle.proteinBackbone.type = StyleSettings::eTrace;
+    if (((settings->proteinBackbone.style == StyleSettings::eWireWorm ||
+          settings->proteinBackbone.style == StyleSettings::eTubeWorm) &&
+         (settings->proteinBackbone.type == StyleSettings::ePartial ||
+          settings->proteinBackbone.type == StyleSettings::eComplete))) {
+        settings->proteinBackbone.type = StyleSettings::eTrace;
     }
-    if (((globalStyle.nucleotideBackbone.style == StyleSettings::eWireWorm ||
-          globalStyle.nucleotideBackbone.style == StyleSettings::eTubeWorm) &&
-         (globalStyle.nucleotideBackbone.type == StyleSettings::ePartial ||
-          globalStyle.nucleotideBackbone.type == StyleSettings::eComplete))) {
-        ERR_POST(Error << "CheckStyleSettings(): can't have worm with non-trace backbone");
-        globalStyle.nucleotideBackbone.type = StyleSettings::eTrace;
+    if (((settings->nucleotideBackbone.style == StyleSettings::eWireWorm ||
+          settings->nucleotideBackbone.style == StyleSettings::eTubeWorm) &&
+         (settings->nucleotideBackbone.type == StyleSettings::ePartial ||
+          settings->nucleotideBackbone.type == StyleSettings::eComplete))) {
+        settings->nucleotideBackbone.type = StyleSettings::eTrace;
     }
 
     // can't do non-trace backbones for ncbi-backbone models
     if (set->isAlphaOnly) {
-        if (globalStyle.proteinBackbone.type == StyleSettings::ePartial ||
-            globalStyle.proteinBackbone.type == StyleSettings::eComplete) {
-            ERR_POST(Error << "CheckStyleSettings(): ncbi-backbone models can only show backbone trace");
-            globalStyle.proteinBackbone.type = StyleSettings::eTrace;
+        if (settings->proteinBackbone.type == StyleSettings::ePartial ||
+            settings->proteinBackbone.type == StyleSettings::eComplete) {
+            settings->proteinBackbone.type = StyleSettings::eTrace;
         }
-        if (globalStyle.nucleotideBackbone.type == StyleSettings::ePartial ||
-            globalStyle.nucleotideBackbone.type == StyleSettings::eComplete) {
-            ERR_POST(Error << "CheckStyleSettings(): ncbi-backbone models can only show backbone trace");
-            globalStyle.nucleotideBackbone.type = StyleSettings::eTrace;
+        if (settings->nucleotideBackbone.type == StyleSettings::ePartial ||
+            settings->nucleotideBackbone.type == StyleSettings::eComplete) {
+            settings->nucleotideBackbone.type = StyleSettings::eTrace;
         }
     }
 
@@ -905,7 +920,7 @@ const Vector& StyleManager::GetObjectColor(const Molecule *molecule) const
 
 bool StyleManager::EditGlobalStyle(wxWindow *parent, const StructureSet *set)
 {
-    StyleDialog dialog(parent, globalStyle);
+    StyleDialog dialog(parent, &globalStyle, set);
     return (dialog.ShowModal() == wxOK);
 }
 

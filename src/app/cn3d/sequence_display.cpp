@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/06/07 19:05:38  thiessen
+* functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
+*
 * Revision 1.25  2001/06/05 13:21:08  thiessen
 * fix structure alignment list problems
 *
@@ -458,11 +461,7 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
     // process events in title area (launch of browser for entrez page on a sequence)
     if (column < 0 && row >= 0 && row < NRows()) {
         const Sequence *seq = rows[row]->GetSequence();
-        if (seq) {
-            seq->LaunchWebBrowserWithInfo();
-            GlobalMessenger()->RemoveAllHighlights(false);
-            GlobalMessenger()->AddHighlights(seq, 0, seq->sequenceString.size() - 1);
-        }
+        if (seq) seq->LaunchWebBrowserWithInfo();
         return false;
     }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/06/07 19:05:38  thiessen
+* functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
+*
 * Revision 1.24  2001/05/31 18:47:09  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -150,6 +153,7 @@ private:
     const SequenceViewerWidget_SequenceArea *sequenceArea;
 
     ViewableAlignment *alignment;
+    int highlightedTitleRow;
 
     wxColor currentBackgroundColor;
     wxFont *titleFont;
@@ -804,7 +808,7 @@ SequenceViewerWidget_TitleArea::SequenceViewerWidget_TitleArea(
         const wxSize& size) :
     wxWindow(parent, id, pos, size),
     titleFont(NULL), cellHeight(0), maxTitleWidth(20), alignment(NULL),
-    sequenceArea(NULL)
+    sequenceArea(NULL), highlightedTitleRow(-1)
 {
     currentBackgroundColor = *wxWHITE;
 }
@@ -817,6 +821,7 @@ SequenceViewerWidget_TitleArea::~SequenceViewerWidget_TitleArea(void)
 void SequenceViewerWidget_TitleArea::ShowTitles(ViewableAlignment *newAlignment)
 {
     alignment = newAlignment;
+    highlightedTitleRow = -1;
     if (!alignment) return;
 
     // set font
@@ -919,7 +924,10 @@ void SequenceViewerWidget_TitleArea::OnPaint(wxPaintEvent& event)
             if (!alignment->GetRowTitle(row, &title, &color)) continue;
 
             // set character color
-            dc.SetTextForeground(color);
+            if (row == highlightedTitleRow)
+                dc.SetTextForeground(*wxRED);
+            else
+                dc.SetTextForeground(color);
 
             // draw title centered vertically in the cell
             dc.GetTextExtent(title, &tW, &tH);
@@ -973,6 +981,10 @@ void SequenceViewerWidget_TitleArea::OnMouseEvent(wxMouseEvent& event)
 
         // send MouseDown message
         alignment->MouseDown(-1, MOY, controls);
+
+        // (temporarily) highlight this title
+        highlightedTitleRow = MOY;
+        Refresh();
     }
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2001/06/07 19:05:38  thiessen
+* functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
+*
 * Revision 1.62  2001/06/05 13:21:08  thiessen
 * fix structure alignment list problems
 *
@@ -918,7 +921,7 @@ void StructureSet::SetCenter(const Vector *given)
 bool StructureSet::Draw(const AtomSet *atomSet) const
 {
     TESTMSG("drawing StructureSet");
-    if (!styleManager->CheckStyleSettings(this)) return false;
+    if (!styleManager->CheckGlobalStyleSettings(this)) return false;
     return true;
 }
 
