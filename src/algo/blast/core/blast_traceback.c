@@ -357,6 +357,13 @@ s_HSPTestIdentityAndLength(EBlastProgramType program_number,
    return keep;
 }
 
+/** Remove scaling from scores previously calculated on the hsp_list.
+ * @param hsp_list list of HPSs with the score field calculated [in|out]
+ * @param scale_factor factor by which scores are scaled, for everything other
+ * than RPS-BLAST this should be 1 [in] 
+ * @todo rename to something which is more intention revealing, merge with
+ * function of the same name in blast_kappa.c
+ */
 static void 
 s_HSPListRescaleScores(BlastHSPList* hsp_list, double scale_factor)
 {
@@ -370,8 +377,10 @@ s_HSPListRescaleScores(BlastHSPList* hsp_list, double scale_factor)
          (Int4) ((hsp->score+(0.5*scale_factor)) / scale_factor);
    }
 
-   /* Sort HSPs by score again, as the expected order might change after
-      rescaling. */
+   /* Sort HSPs by score again because after the loop above scores that
+    * were previously different can become equal, and then the order of HSPs
+    * should be determined by the tie-breaking criteria 
+    * (e.g.: subject offsets, ...) */
    Blast_HSPListSortByScore(hsp_list);
 }
 
@@ -501,8 +510,9 @@ s_HSPListPostTracebackUpdate(EBlastProgramType program_number,
     */
    s_HSPListRescaleScores(hsp_list, score_params->scale_factor);
    
-   /* Calculate and fill the bit scores. This is the only time when 
-      they are calculated. */
+   /** Calculate and fill the bit scores. @todo: This is not the only time 
+    * when they are calculated, s_HSPListRescaleScores also does this in 
+    * blast_kappa.c */
    Blast_HSPListGetBitScores(hsp_list, kGapped, sbp);
 
    return 0;
