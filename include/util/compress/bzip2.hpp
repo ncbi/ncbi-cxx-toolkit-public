@@ -35,7 +35,6 @@
  */
 
 #include <util/compress/stream.hpp>
-#include <bzlib.h>
 
 /** @addtogroup Compression
  *
@@ -146,10 +145,10 @@ protected:
     string FormatErrorMessage(string where, bool use_stream_data = true) const;
 
 protected:
-    bz_stream  m_Stream;         // Compressor stream
-    int        m_Verbosity;      // Verbose monitoring/debugging output level
-    int        m_WorkFactor;     // See description above
-    int        m_SmallDecompress;// Use memory-frugal decompression algorithm
+    void*  m_Stream;          // Compressor stream
+    int    m_Verbosity;       // Verbose monitoring/debugging output level
+    int    m_WorkFactor;      // See description above
+    int    m_SmallDecompress; // Use memory-frugal decompression algorithm
 };
 
 
@@ -323,6 +322,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/11/17 17:59:25  ivanov
+ * Moved #include <bzlib.h> from .hpp to .cpp
+ *
  * Revision 1.8  2004/11/15 13:17:12  ivanov
  * Use #include <bzlib.h> for MSVC compiler also
  *
