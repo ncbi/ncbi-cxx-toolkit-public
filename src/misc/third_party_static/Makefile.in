@@ -1,0 +1,9 @@
+#################################
+# $Id$
+# Author:  Viatcheslav Gorelenkov
+#################################
+
+MSVC_PROJ = third_party_static_install
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
