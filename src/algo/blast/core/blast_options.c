@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.6  2003/04/16 22:20:24  dondosha
+ * Correction in calculation of cutoff score for ungapped extensions
+ *
  * Revision 1.5  2003/04/11 22:35:48  dondosha
  * Minor corrections for blastn
  *
@@ -290,10 +293,14 @@ Int2
 BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options, 
    BlastHitSavingOptionsPtr hit_options, 
    BlastExtensionParametersPtr ext_params, BLAST_ScoreBlkPtr sbp, 
-   BlastQueryInfoPtr query_info, BlastInitialWordParametersPtr *parameters)
+   BlastQueryInfoPtr query_info, FloatHi avglen, 
+   BlastInitialWordParametersPtr *parameters)
 {
    Int4 context = query_info->first_context;
-   Int4 cutoff_score = 0;
+   Int4 cutoff_score = 0, s2 = 0;
+   FloatHi e2 = UNGAPPED_CUTOFF_EVALUE;
+   BLAST_KarlinBlkPtr kbp;
+   FloatHi qlen;
 
    if (!word_options || !hit_options || !sbp || !sbp->kbp_std[context])
       return 8;
@@ -306,21 +313,32 @@ BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options,
    (*parameters)->x_dropoff = 
       ceil(word_options->x_dropoff*NCBIMATH_LN2/sbp->kbp_std[context]->Lambda);
 
-   /* A fixed score cut-off can be set only if there is just one query 
-      sequence */
+   if (hit_options->is_gapped && 
+       hit_options->program_number != blast_type_blastn)
+      kbp = sbp->kbp_gap[context];
+   else
+      kbp = sbp->kbp_std[context];
+
+   /* Calculate score cutoff corresponding to the user-provided 
+      e-value cutoff */
+   BlastCutoffs_simple(&cutoff_score, &(hit_options->expect_value), 
+      kbp, query_info->eff_searchsp_array[context], FALSE);
+
+   /* Calculate score cutoff corresponding to a fixed e-value (1e-5);
+      If it is smaller, then use this one */
+   qlen = query_info->context_offsets[query_info->last_context+1] - 1;
+
+   BlastCutoffs(&s2, &e2, kbp, MIN(avglen, qlen), avglen, TRUE);
+   if (s2 < cutoff_score)
+      cutoff_score = s2;
+
+   /* For non-blastn programs, the cutoff score should not be larger than 
+      gap trigger */
    if (hit_options->is_gapped && 
        hit_options->program_number != blast_type_blastn) {
-      BlastCutoffs_simple(&cutoff_score, &(hit_options->expect_value), 
-         sbp->kbp_gap[context], query_info->eff_searchsp_array[context], 
-         FALSE);
-   } else {
-      BlastCutoffs_simple(&cutoff_score, &(hit_options->expect_value), 
-         sbp->kbp_std[context], query_info->eff_searchsp_array[context], 
-         FALSE);
+      (*parameters)->cutoff_score = 
+         MIN((Int4)ext_params->gap_trigger, cutoff_score);
    }
-
-   (*parameters)->cutoff_score = 
-      MIN((Int4)ext_params->gap_trigger, cutoff_score);
 
    return 0;
 }
