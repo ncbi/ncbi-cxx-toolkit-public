@@ -1802,13 +1802,13 @@ fi
 
 ## `gui_ctools' project cluster
 
-if test "$with_tools" = "no"  -o  "$with_gui" = "no" ; then
+if test "$with_ctools" = "no"  -o  "$with_gui" = "no" ; then
    NoConfProjects="$NoConfProjects gui_ctools"
 fi
 
 if test -f ${srcdir}/src/gui_ctools/Makefile.in  -a  \
         -d ${srcdir}/include/gui_ctools  -a  \
-        "$with_tools" != "no"  -a  "$with_gui" != "no" ; then
+        "$with_ctools" != "no"  -a  "$with_gui" != "no" ; then
    OPT_GROUPS="$OPT_GROUPS gui_ctools"
 else
    WithoutProjects="$WithoutProjects gui_ctools"
