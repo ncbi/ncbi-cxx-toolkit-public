@@ -50,13 +50,13 @@ END_SCOPE(objects)
 BEGIN_SCOPE(blast)
 
 
-/** Converts BlastHSPResults structure into objects::CSeq_align_set class (handles 
- * query concatenation).
+/** Converts BlastHSPResults structure into a vector of CSeq_align_set classes
+ * Returns one vector element per query sequence; all subject matches form a 
+ * list of discontinuous CSeq_align's. 
  * @param results results from running the BLAST algorithm [in]
  * @param prog type of BLAST program [in]
  * @param query All query sequences [in]
- * @param bssp handle to BLAST Sequence Source ADT [in]
- * @param subject Subject sequence (for 2 sequences search) [in]
+ * @param seq_src handle to BLAST Sequence Source ADT [in]
  * @param score_options contains scoring options [in]
  * @param sbp scoring and statistical information [in]
  * @return Vector of seqalign sets (one set per query sequence).
@@ -65,8 +65,29 @@ TSeqAlignVector
 BLAST_Results2CSeqAlign(const BlastHSPResults* results, 
                           EProgram prog,
                           TSeqLocVector &query, 
-                          const BlastSeqSrc* bssp, 
-                          const SSeqLoc* subject,
+                          const BlastSeqSrc* seq_src, 
+                          const BlastScoringOptions* score_options, 
+                          const BlastScoreBlk* sbp);
+
+/** Extracts from the BlastHSPResults structure results for only one subject 
+ * sequence, identified by its index, and converts them into a vector of 
+ * CSeq_align_set classes. Returns one vector element per query sequence; 
+ * The CSeq_align_set (list of CSeq_align's) consists of exactly one 
+ * discontinuous CSeq_align for each vector element.
+ * @param results results from running the BLAST algorithm [in]
+ * @param prog type of BLAST program [in]
+ * @param query All query sequences [in]
+ * @param seq_src handle to BLAST Sequence Source ADT [in]
+ * @param index Index of the desired subject in the sequence source [in]
+ * @param score_options contains scoring options [in]
+ * @param sbp scoring and statistical information [in]
+ * @return Vector of seqalign sets (one set per query sequence).
+ */
+TSeqAlignVector
+BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results, 
+                          EProgram prog,
+                          TSeqLocVector &query, 
+                          const BlastSeqSrc* seq_src, Int4 index,
                           const BlastScoringOptions* score_options, 
                           const BlastScoreBlk* sbp);
 
@@ -77,6 +98,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/03/15 19:58:55  dondosha
+* Added BLAST_OneSubjectResults2CSeqalign function to retrieve single subject results from BlastHSPResults
+*
 * Revision 1.18  2003/12/03 16:43:47  dondosha
 * Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults
 *
