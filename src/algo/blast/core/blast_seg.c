@@ -1645,7 +1645,11 @@ s_IncrementSV(Int4* sv, Int4 class)
 	}
 }
 
-/*------------------------------------------------------------(shiftwin1)---*/
+/** Moves over the "window" of sequence seg is currently working on.
+ *
+ * @param win object to be operated on [in]
+ * @return FALSE if nothing done, TRUE otherwise
+ */
 
 static Boolean 
 s_ShiftWin1(SSequence* win)
