@@ -164,6 +164,14 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
         CBioseq_Handle bioseq_handle = 
             GetScope().GetBioseqHandle(*(ds.GetIds())[row]);
 
+        if ( !bioseq_handle ) {
+            string errstr = string("CAlnMix::Add(): ") 
+                + "Seq-id cannot be rosolved: "
+                + (ds.GetIds())[row]->AsFastaString();
+        
+            NCBI_THROW(CAlnException, eMergeFailure, errstr);
+        }
+
         CRef<CAlnMixSeq> aln_seq;
 
         TBioseqHandleMap::iterator it = m_BioseqHandles.find(bioseq_handle);
@@ -1395,6 +1403,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2003/06/03 20:56:52  todorov
+* Bioseq handle validation
+*
 * Revision 1.53  2003/06/03 16:07:05  todorov
 * Fixed overlap consistency check in case strands differ
 *
