@@ -471,7 +471,6 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
     CNcbiOstrstream strout;
 
     strout << text.substr(0, tagStart);
-    strout << '\0';
     SIZE_TYPE last = tagStart;
     do {
         SIZE_TYPE tagNameStart = tagStart + tag_start_size;
@@ -2257,6 +2256,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.109  2004/10/26 20:17:25  ivanov
+ * Removed debug code
+ *
  * Revision 1.108  2004/10/26 20:12:30  ivanov
  * CHTMLText::PrintBegin() -- using CNcbiOstrstreamToString() to convert
  * strstream to string. Fixed CHTMLText::x_PrintBegin to accept '\0'.
