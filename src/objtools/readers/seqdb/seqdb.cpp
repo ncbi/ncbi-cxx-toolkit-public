@@ -185,6 +185,20 @@ char CSeqDB::GetSeqType() const
     return m_Impl->GetSeqType();
 }
 
+CSeqDB::ESeqType CSeqDB::GetSequenceType() const
+{
+    switch(m_Impl->GetSeqType()) {
+    case 'p':
+        return eProtein;
+    case 'n':
+        return eNucleotide;
+    }
+    
+    NCBI_THROW(CSeqDBException,
+               eArgErr,
+               "Internal sequence type is not valid.");
+}
+
 CRef<CBioseq>
 CSeqDB::GetBioseq(TOID oid) const
 {
@@ -431,6 +445,30 @@ CSeqDB::SeqidToBioseq(const CSeq_id & seqid) const
 void
 CSeqDB::FindVolumePaths(const string   & dbname,
                         char             seqtype,
+                        vector<string> & paths)
+{
+    bool done = false;
+    
+    if ((seqtype == 'p') || (seqtype == 'n')) {
+        CSeqDBImpl::FindVolumePaths(dbname, seqtype, paths);
+    } else {
+        try {
+            CSeqDBImpl::FindVolumePaths(dbname, 'p', paths);
+            done = true;
+        }
+        catch(...) {
+            done = false;
+        }
+        
+        if (! done) {
+            CSeqDBImpl::FindVolumePaths(dbname, 'n', paths);
+        }
+    }
+}
+
+void
+CSeqDB::FindVolumePaths(const string   & dbname,
+                        ESeqType         seqtype,
                         vector<string> & paths)
 {
     bool done = false;
