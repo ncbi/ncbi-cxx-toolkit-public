@@ -153,11 +153,26 @@ on GuiFileData(section)
 	return fileData
 end GuiFileData
 
-on GuiFileDataList(section, fileList)
+on GuiFileDataExcept(section, notFiles)
 	if section does not start with "gui:" then
 		set section to "gui:" & section
 	end if
 	-- Get all the files, minus those whose basename ends with an underscore.
+	set fileData to mkFileDataExceptFiles(gSourceDir & section, notFiles)
+	set newFileList to {}
+	repeat with f in fileList of fileData
+		if f does not end with ("_" & pCPlusPlusExt) then
+			copy f as string to end of newFileList
+		end if
+	end repeat
+	set fileList of fileData to newFileList
+	return fileData
+end GuiFileDataExcept
+
+on GuiFileDataList(section, fileList)
+	if section does not start with "gui:" then
+		set section to "gui:" & section
+	end if
 	return mkFileDataListFiles(gSourceDir & section, fileList)
 end GuiFileDataList
 
@@ -376,6 +391,11 @@ on SetProjectData()
 		AddGuiProject("w_fltk", {}, "widgets:fl")
 		AddGuiProject("w_aln_crossaln", {}, "widgets:aln_crossaln")
 		AddGuiProject("w_aln_dotmatrix", {}, "widgets:aln_dotmatrix")
+		AddProject(ProjectData("w_aln_multi", {"fltk"}, Â
+			{GuiFileDataExcept("widgets:aln_multiple", {"alnmultib.cpp"})} Â
+				))
+		
+		
 		AddGuiProject("w_aln_text", {}, "widgets:aln_textaln")
 		AddGuiProject("w_flek", {}, "widgets:Flek")
 		(*
@@ -443,7 +463,7 @@ on SetProjectData()
 		AddPlugin("gui_doc_table", {}, "plugins:doc:table", {})
 		
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
-			{"w_aln_crossaln", "w_aln_dotmatrix", "w_flek", "w_seq_info", "w_fltable"})
+			{"w_aln_crossaln", "w_aln_dotmatrix", "w_flek", "w_seq_info", "w_fltable", "w_aln_multi", "gui_graph"})
 		AddPlugin("gui_view_graphic", {}, "plugins:view:graphic", Â
 			{"gui_dlg_feature", "w_flek", "w_seq_icon", "w_seq_info", "w_seq_graphic", "w_fltable"})
 		AddPlugin("gui_view_sequence", {}, "plugins:view:sequence", Â
@@ -947,7 +967,7 @@ on UpdateTarget(proj, targetIndex)
 		
 	end tell
 	
-	-- Add source files
+	-- Update source files
 	repeat with group in projFileData
 		set projPath to projPath of group -- projPath is absolute,  not relative.
 		
@@ -981,6 +1001,35 @@ on UpdateTarget(proj, targetIndex)
 			Remove Files fileNotList
 		end tell
 	end repeat
+	
+	-- Update libraries
+	set filesToAdd to {}
+	repeat with i in projLibs
+		set i to i & fileNameSuffix & pStaticLibExt
+		tell application "CodeWarrior IDE"
+			set found to item 1 of (Is In Project {file i})
+		end tell
+		if (found is not 0) and (exists file (gLibsDir & i) of application "Finder") then
+			copy (gLibsDir & i) to end of filesToAdd
+		end if
+	end repeat
+	
+	repeat with i in dynaLibs
+		set i to i & fileNameSuffix & pDynaLibExt
+		tell application "CodeWarrior IDE"
+			set found to item 1 of (Is In Project {file i})
+		end tell
+		if (found is not 0) and (exists file (gLibsDir & i) of application "Finder") then
+			copy (gLibsDir & i) to end of filesToAdd
+		end if
+	end repeat
+	
+	
+	tell application "CodeWarrior IDE"
+		if ((count of filesToAdd) is not 0) then
+			Add Files filesToAdd
+		end if
+	end tell
 	
 end UpdateTarget
 
