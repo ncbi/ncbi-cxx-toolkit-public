@@ -1,4 +1,4 @@
---$Revision: 6.4 $
+--$Revision: 6.5 $
 --*********************************************************
 --
 -- ASN.1 and XML for the components of a GenBank format sequence
@@ -108,8 +108,11 @@ GBSeq ::= SEQUENCE {
 	division VisibleString ,
 	update-date VisibleString ,
 	create-date VisibleString ,
+	update-release VisibleString OPTIONAL ,
+	create-release VisibleString OPTIONAL ,
 	definition VisibleString ,
 	primary-accession VisibleString OPTIONAL ,
+	entry-version VisibleString OPTIONAL ,
 	accession-version VisibleString OPTIONAL ,
 	other-seqids SEQUENCE OF GBSeqid OPTIONAL ,
 	secondary-accessions SEQUENCE OF GBSecondary-accn OPTIONAL,
@@ -122,6 +125,7 @@ GBSeq ::= SEQUENCE {
 	comment VisibleString OPTIONAL ,
 	primary VisibleString OPTIONAL ,
 	source-db VisibleString OPTIONAL ,
+	database-reference VisibleString OPTIONAL ,
 	feature-table SEQUENCE OF GBFeature OPTIONAL ,
 	sequence VisibleString OPTIONAL ,  -- Optional for other dump forms
 	contig VisibleString OPTIONAL }
