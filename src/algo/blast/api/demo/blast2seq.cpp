@@ -80,6 +80,7 @@ private:
 
     void InitScope(void);
     EProgram GetBlastProgramNum(const string& prog);
+    void ProcessCommandLineArgs(CBlastOption& opt);
 
     // needed for debugging only
     FILE* GetOutputFilePtr(void);
@@ -115,6 +116,7 @@ void CBlast2seqApplication::Init(void)
     arg_desc->AddDefaultKey("strand", "strand", 
         "Query strands to search: 1 forward, 2 reverse, 0,3 both",
         CArgDescriptions::eInteger, "0");
+    arg_desc->SetConstraint("strand", new CArgAllow_Integers(0,3));
     arg_desc->AddDefaultKey("filter", "filter", "Filtering option",
                             CArgDescriptions::eString, "T");
     arg_desc->AddDefaultKey("lcase", "lcase", "Should lower case be masked?",
@@ -242,6 +244,115 @@ CBlast2seqApplication::GetBlastProgramNum(const string& prog)
     return eBlastUndef;
 }
 
+void
+CBlast2seqApplication::ProcessCommandLineArgs(CBlastOption& opt)
+{
+    CArgs args = GetArgs();
+
+    if (args["strand"].AsInteger()) {
+        switch (args["strand"].AsInteger()) {
+        case 1: opt.SetStrandOption(eNa_strand_plus); break;
+        case 2: opt.SetStrandOption(eNa_strand_minus); break;
+        case 3: opt.SetStrandOption(eNa_strand_both); break;
+        default: abort();
+        }
+    }
+
+    opt.SetFilterString(args["filter"].AsString().c_str());
+    // FIXME: Handle lcase masking
+
+    if (args["lookup"].AsInteger()) {
+        opt.SetLookupTableType(args["lookup"].AsInteger());
+    }
+    opt.SetMatrixName(args["matrix"].AsString().c_str());
+    if (args["mismatch"].AsInteger()) {
+        opt.SetMismatchPenalty(args["mismatch"].AsInteger());
+    }
+    if (args["match"].AsInteger()) {
+        opt.SetMatchReward(args["match"].AsInteger());
+    }
+    if (args["word"].AsInteger()) {
+        opt.SetWordSize(args["word"].AsInteger());
+    }
+    if (args["templen"].AsInteger()) {
+        opt.SetMBTemplateLength(args["templen"].AsInteger());
+    }
+    if (args["templtype"].AsInteger()) {
+        opt.SetMBTemplateType(args["templtype"].AsInteger());
+    }
+    if (args["thresh"].AsInteger()) {
+        opt.SetWordThreshold(args["thresh"].AsInteger());
+    }
+    if (args["window"].AsInteger()) {
+        opt.SetWindowSize(args["window"].AsInteger());
+    }
+
+    if (args["ag"]) {
+        // applies to nucleotide searches only
+        opt.SetExtendWordMethod(EXTEND_WORD_AG);
+    }
+    if (args["varword"]) {
+        // applies to nucleotide searches only
+        opt.SetExtendWordMethod(EXTEND_WORD_VARIABLE_SIZE);
+    }
+    // applies to nucleotide searches only
+    if (args["stride"].AsInteger()) {
+        opt.SetScanStep(args["stride"].AsInteger());
+    }
+
+    if (args["xungap"].AsDouble()) {
+        opt.SetXDropoff(args["xungap"].AsDouble());
+    }
+
+    if (args["ungapped"].AsBoolean()) {
+        opt.SetGappedMode(false);
+    }
+
+    if (args["gopen"].AsInteger()) {
+        opt.SetGapOpeningPenalty(args["gopen"].AsInteger());
+    }
+    if (args["gext"].AsInteger()) {
+        opt.SetGapExtensionPenalty(args["gext"].AsInteger());
+    }
+
+    if (args["greedy"].AsBoolean()) {
+        opt.SetGapExtnAlgorithm(EXTEND_GREEDY);
+    }
+    if (args["xgap"].AsDouble()) {
+        opt.SetGapXDropoff(args["xgap"].AsDouble());
+    }
+    if (args["xfinal"].AsDouble()) {
+        opt.SetGapXDropoffFinal(args["xfinal"].AsDouble());
+    }
+
+    if (args["evalue"].AsDouble()) {
+        opt.SetEvalueThreshold(args["evalue"].AsDouble());
+    }
+
+    if (args["searchsp"].AsDouble()) {
+        opt.SetEffectiveSearchSpace((Int8) args["searchsp"].AsDouble());
+    }
+    if (args["perc"].AsDouble()) {
+        opt.SetPercentIdentity(args["perc"].AsDouble());
+    }
+
+    if (args["gencode"].AsInteger()) {
+        opt.SetQueryGeneticCode(args["gencode"].AsInteger());
+    }
+    if (args["dbgencode"].AsInteger()) {
+        opt.SetDbGeneticCode(args["dbgencode"].AsInteger());
+    }
+
+    if (args["maxintron"].AsInteger()) {
+        opt.SetLongestIntronLength(args["maxintron"].AsInteger());
+    }
+    if (args["frameshift"].AsInteger()) {
+        opt.SetFrameShiftPenalty(args["frameshift"].AsInteger());
+    }
+
+    return;
+}
+
 FILE*
 CBlast2seqApplication::GetOutputFilePtr(void)
 {
@@ -285,6 +396,7 @@ int CBlast2seqApplication::Run(void)
 
     sw.Start();
     CBl2Seq blaster(query_loc, subject_loc, prog);
+    ProcessCommandLineArgs(blaster.SetOptions());
     CRef<CSeq_align_set> seqalign = blaster.Run();
     double t = sw.Elapsed();
     cerr << "CBl2seq run took " << t << " seconds" << endl;
@@ -364,6 +476,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/08/28 23:17:20  camacho
+ * Add processing of command-line options
+ *
  * Revision 1.14  2003/08/19 20:36:44  dondosha
  * EProgram enum type is no longer part of CBlastOption class
  *
