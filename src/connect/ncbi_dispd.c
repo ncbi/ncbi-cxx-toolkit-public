@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2001/09/29 18:41:03  lavr
+ * "Server-Keyed-Info:" removed from protocol
+ *
  * Revision 6.30  2001/09/28 20:52:16  lavr
  * Update VT method revised as now called on a per-line basis
  *
@@ -169,7 +172,6 @@ static int s_RandomSeed = 0;
 
 typedef struct {
     SSERV_Info*   info;
-    unsigned long key;
     double        status;
 } SDISPD_Node;
 
@@ -208,19 +210,16 @@ static void s_FreeData(SDISPD_Data* data)
 }
 
 
-static int/*bool*/ s_AddServerInfo(SDISPD_Data* data,
-                                   SSERV_Info* info, unsigned long key)
+static int/*bool*/ s_AddServerInfo(SDISPD_Data* data, SSERV_Info* info)
 {
     size_t i;
 
     /* First check that the new server info is updating existing one */
     for (i = 0; i < data->n_node; i++) {
-        if (SERV_EqualInfo(data->s_node[i].info, info) &&
-            (!data->s_node[i].key || data->s_node[i].key == key)) {
+        if (SERV_EqualInfo(data->s_node[i].info, info)) {
             /* Replace older version */
             free(data->s_node[i].info);
             data->s_node[i].info = info;
-            data->s_node[i].key  = key;
             return 1;
         }
     }
@@ -241,8 +240,7 @@ static int/*bool*/ s_AddServerInfo(SDISPD_Data* data,
         data->n_max_node = n;
     }
 
-    data->s_node[data->n_node  ].info = info;
-    data->s_node[data->n_node++].key  = key;
+    data->s_node[data->n_node++].info = info;
     return 1;
 }
 
@@ -331,33 +329,20 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
 
 static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now, const char* text)
 {
-    static const char server_keyed_info[] = "Server-Keyed-Info-";
     static const char server_info[] = "Server-Info-";
     SDISPD_Data* data = (SDISPD_Data*) iter->data;
-    int keyed = 0;
 
-    if (strncasecmp(text, server_info, sizeof(server_info) - 1) == 0 ||
-        (keyed = (strncasecmp(text, server_keyed_info,
-                              sizeof(server_keyed_info) - 1) == 0)) != 0) {
-        const char* p = text + (keyed ? sizeof(server_keyed_info) - 1
-                                : sizeof(server_info) - 1);
-        unsigned long key;
+    if (strncasecmp(text, server_info, sizeof(server_info) - 1) == 0) {
+        const char* p = text + sizeof(server_info) - 1;
         SSERV_Info* info;
         unsigned int d1;
         int d2;
 
-        if (keyed) {
-            if (sscanf(p, "%u: %lx %n", &d1, &key, &d2) < 2 || !key)
-                return 0/*not updated*/;
-        } else {
-            key = 0;
-            if (sscanf(p, "%u: %n", &d1, &d2) < 1)
-                return 0/*not updated*/;
-        }
-        assert(!keyed || key);
+        if (sscanf(p, "%u: %n", &d1, &d2) < 1)
+            return 0/*not updated*/;
         if ((info = SERV_ReadInfo(p + d2)) != 0) {
             info->time += now; /* expiration time now */
-            if (s_AddServerInfo(data, info, key))
+            if (s_AddServerInfo(data, info))
                 return 1/*updated*/;
             free(info);
         }
