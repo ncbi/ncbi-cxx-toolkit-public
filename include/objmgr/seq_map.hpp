@@ -217,7 +217,7 @@ public:
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
-    static CConstRef<CSeqMap> CreateSeqMapForBioseq(CBioseq& seq);
+    static CConstRef<CSeqMap> CreateSeqMapForBioseq(const CBioseq& seq);
     static CConstRef<CSeqMap> CreateSeqMapForSeq_loc(const CSeq_loc& loc,
                                                      CScope* scope);
     static CConstRef<CSeqMap> CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
@@ -229,29 +229,29 @@ protected:
     // 'ctors
     CSeqMap(CSeqMap* parent, size_t index);
     CSeqMap(void);
-    CSeqMap(CSeq_data& data, TSeqPos len);
-    CSeqMap(CSeq_loc& ref);
+    CSeqMap(const CSeq_data& data, TSeqPos len);
+    CSeqMap(const CSeq_loc& ref);
     CSeqMap(TSeqPos len); // gap
 
     void x_AddEnd(void);
     CSegment& x_AddSegment(ESegmentType type, TSeqPos len);
-    CSegment& x_AddSegment(ESegmentType type, TSeqPos len, CObject* object);
-    CSegment& x_AddSegment(ESegmentType type, CObject* object,
+    CSegment& x_AddSegment(ESegmentType type, TSeqPos len, const CObject* object);
+    CSegment& x_AddSegment(ESegmentType type, const CObject* object,
                            TSeqPos refPos, TSeqPos len,
                            ENa_strand strand = eNa_strand_plus);
     CSegment& x_AddGap(TSeqPos len);
     CSegment& x_Add(CSeqMap* submap);
-    CSegment& x_Add(CSeq_data& data, TSeqPos len);
-    CSegment& x_Add(CPacked_seqint& seq);
-    CSegment& x_Add(CPacked_seqpnt& seq);
-    CSegment& x_Add(CSeq_loc_mix& seq);
-    CSegment& x_Add(CSeq_loc_equiv& seq);
-    CSegment& x_Add(CSeq_literal& seq);
-    CSegment& x_Add(CDelta_seq& seq);
-    CSegment& x_Add(CSeq_loc& seq);
-    CSegment& x_Add(CSeq_id& seq);
-    CSegment& x_Add(CSeq_point& seq);
-    CSegment& x_Add(CSeq_interval& seq);
+    CSegment& x_Add(const CSeq_data& data, TSeqPos len);
+    CSegment& x_Add(const CPacked_seqint& seq);
+    CSegment& x_Add(const CPacked_seqpnt& seq);
+    CSegment& x_Add(const CSeq_loc_mix& seq);
+    CSegment& x_Add(const CSeq_loc_equiv& seq);
+    CSegment& x_Add(const CSeq_literal& seq);
+    CSegment& x_Add(const CDelta_seq& seq);
+    CSegment& x_Add(const CSeq_loc& seq);
+    CSegment& x_Add(const CSeq_id& seq);
+    CSegment& x_Add(const CSeq_point& seq);
+    CSegment& x_Add(const CSeq_interval& seq);
     CSegment& x_AddUnloadedSubMap(TSeqPos len);
     CSegment& x_AddUnloadedSeq_data(TSeqPos len);
 
@@ -324,6 +324,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/11/12 16:53:16  grichenk
+* Modified CSeqMap to work with const objects (CBioseq, CSeq_loc etc.)
+*
 * Revision 1.42  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

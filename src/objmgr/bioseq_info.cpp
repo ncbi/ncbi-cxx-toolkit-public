@@ -344,8 +344,7 @@ const CSeqMap& CBioseq_Info::GetSeqMap(void) const
         CFastMutexGuard guard(m_SeqMap_Mtx);
         ret = m_SeqMap.GetPointer();
         if ( !ret ) {
-            m_SeqMap = CSeqMap::CreateSeqMapForBioseq(const_cast<CBioseq&>
-                                                      (GetBioseq()));
+            m_SeqMap = CSeqMap::CreateSeqMapForBioseq(GetBioseq());
             ret = m_SeqMap.GetPointer();
             _ASSERT(ret);
         }
@@ -383,6 +382,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/11/12 16:53:17  grichenk
+* Modified CSeqMap to work with const objects (CBioseq, CSeq_loc etc.)
+*
 * Revision 1.12  2003/09/30 16:22:02  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

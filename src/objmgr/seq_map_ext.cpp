@@ -50,31 +50,31 @@ BEGIN_SCOPE(objects)
 ////////////////////////////////////////////////////////////////////
 //  CSeqMap
 
-CSeqMap_Delta_seqs::CSeqMap_Delta_seqs(TObject& obj)
+CSeqMap_Delta_seqs::CSeqMap_Delta_seqs(const TObject& obj)
     : CSeqMap(),
       m_Object(&obj),
-      m_List(&obj.Set())
+      m_List(&obj.Get())
 {
     if ( sizeof(TList_I) > sizeof(CSegment::TList0_I) ) {
         NCBI_THROW(CSeqMapException, eIteratorTooBig,
                    "Cannot store CDelta_seq iterator: too big");
     }
-    x_IndexAll(obj.Set());
+    x_IndexAll(obj.Get());
 }
 
 CSeqMap_Delta_seqs::~CSeqMap_Delta_seqs(void)
 {
 }
 
-void CSeqMap_Delta_seqs::x_Index(TList& seq)
+void CSeqMap_Delta_seqs::x_Index(const TList& seq)
 {
-    NON_CONST_ITERATE ( TList, iter, seq ) {
+    ITERATE ( TList, iter, seq ) {
         x_SetSegmentList_I(x_Add(**iter), iter);
     }
 }
 
 
-void CSeqMap_Delta_seqs::x_IndexAll(TList& seq)
+void CSeqMap_Delta_seqs::x_IndexAll(const TList& seq)
 {
     x_AddEnd();
     x_Index(seq);
@@ -127,13 +127,14 @@ void CSeqMap_Delta_seqs::x_SetSeq_data(size_t index, CSeq_data& data)
     // set object
     segment.m_RefObject.Reset(&data);
     // update sequence
-    (*x_GetSegmentList_I(index))->SetLiteral().SetSeq_data(data);
+    const_cast<CDelta_seq&>(**x_GetSegmentList_I(index)).SetLiteral().SetSeq_data(data);
 }
 
 
 void CSeqMap_Delta_seqs::x_SetSubSeqMap(size_t index,
                                         CSeqMap_Delta_seqs* subMap)
 {
+/*
     // check segment type
     CSegment& segment = x_SetSegment(index);
     if ( segment.m_SegType != eSeqSubMap ) {
@@ -160,10 +161,11 @@ void CSeqMap_Delta_seqs::x_SetSubSeqMap(size_t index,
     // update submap
     subMap->m_List = m_List;
     subMap->m_Object = m_Object;
+*/
 }
 
 
-CSeqMap_Seq_locs::CSeqMap_Seq_locs(CSeg_ext& obj, TList& seq)
+CSeqMap_Seq_locs::CSeqMap_Seq_locs(const CSeg_ext& obj, const TList& seq)
     : CSeqMap(),
       m_Object(&obj),
       m_List(&seq)
@@ -176,7 +178,7 @@ CSeqMap_Seq_locs::CSeqMap_Seq_locs(CSeg_ext& obj, TList& seq)
 }
 
 
-CSeqMap_Seq_locs::CSeqMap_Seq_locs(CSeq_loc_mix& obj, TList& seq)
+CSeqMap_Seq_locs::CSeqMap_Seq_locs(const CSeq_loc_mix& obj, const TList& seq)
     : CSeqMap(),
       m_Object(&obj),
       m_List(&seq)
@@ -189,7 +191,7 @@ CSeqMap_Seq_locs::CSeqMap_Seq_locs(CSeq_loc_mix& obj, TList& seq)
 }
 
 
-CSeqMap_Seq_locs::CSeqMap_Seq_locs(CSeq_loc_equiv& obj, TList& seq)
+CSeqMap_Seq_locs::CSeqMap_Seq_locs(const CSeq_loc_equiv& obj, const TList& seq)
     : CSeqMap(),
       m_Object(&obj),
       m_List(&seq)
@@ -210,18 +212,18 @@ CSeqMap_Seq_locs::~CSeqMap_Seq_locs(void)
 void CSeqMap_Seq_locs::x_IndexAll(void)
 {
     x_AddEnd();
-    TList& seq = *m_List;
-    NON_CONST_ITERATE ( TList, iter, seq ) {
+    const TList& seq = *m_List;
+    ITERATE ( TList, iter, seq ) {
         x_SetSegmentList_I(x_Add(**iter), iter);
     }
     x_AddEnd();
 }
 
 
-CSeqMap_Seq_intervals::CSeqMap_Seq_intervals(TObject& obj)
+CSeqMap_Seq_intervals::CSeqMap_Seq_intervals(const TObject& obj)
     : CSeqMap(),
       m_Object(&obj),
-      m_List(&obj.Set())
+      m_List(&obj.Get())
 {
     if ( sizeof(TList_I) > sizeof(CSegment::TList0_I) ) {
         NCBI_THROW(CSeqMapException, eIteratorTooBig,
@@ -231,11 +233,11 @@ CSeqMap_Seq_intervals::CSeqMap_Seq_intervals(TObject& obj)
 }
 
 
-CSeqMap_Seq_intervals::CSeqMap_Seq_intervals(TObject& obj,
+CSeqMap_Seq_intervals::CSeqMap_Seq_intervals(const TObject& obj,
                                              CSeqMap* parent, size_t index)
     : CSeqMap(parent, index),
       m_Object(&obj),
-      m_List(&obj.Set())
+      m_List(&obj.Get())
 {
     if ( sizeof(TList_I) > sizeof(CSegment::TList0_I) ) {
         NCBI_THROW(CSeqMapException, eIteratorTooBig,
@@ -253,18 +255,18 @@ CSeqMap_Seq_intervals::~CSeqMap_Seq_intervals(void)
 void CSeqMap_Seq_intervals::x_IndexAll(void)
 {
     x_AddEnd();
-    TList& seq = *m_List;
-    NON_CONST_ITERATE ( TList, iter, seq ) {
+    const TList& seq = *m_List;
+    ITERATE ( TList, iter, seq ) {
         x_SetSegmentList_I(x_Add(**iter), iter);
     }
     x_AddEnd();
 }
 
 
-CSeqMap_SeqPoss::CSeqMap_SeqPoss(TObject& obj)
+CSeqMap_SeqPoss::CSeqMap_SeqPoss(const TObject& obj)
     : CSeqMap(),
       m_Object(&obj),
-      m_List(&obj.SetPoints())
+      m_List(&obj.GetPoints())
 {
     if ( sizeof(TList_I) > sizeof(CSegment::TList0_I) ) {
         NCBI_THROW(CSeqMapException, eIteratorTooBig,
@@ -274,10 +276,10 @@ CSeqMap_SeqPoss::CSeqMap_SeqPoss(TObject& obj)
 }
 
 
-CSeqMap_SeqPoss::CSeqMap_SeqPoss(TObject& obj, CSeqMap* parent, size_t index)
+CSeqMap_SeqPoss::CSeqMap_SeqPoss(const TObject& obj, CSeqMap* parent, size_t index)
     : CSeqMap(parent, index),
       m_Object(&obj),
-      m_List(&obj.SetPoints())
+      m_List(&obj.GetPoints())
 {
     if ( sizeof(TList_I) > sizeof(CSegment::TList0_I) ) {
         NCBI_THROW(CSeqMapException, eIteratorTooBig,
@@ -293,7 +295,7 @@ CSeqMap_SeqPoss::~CSeqMap_SeqPoss(void)
 
 
 inline
-CSeqMap::CSegment& CSeqMap_SeqPoss::x_AddPos(CSeq_id* id, TSeqPos pos, ENa_strand strand)
+CSeqMap::CSegment& CSeqMap_SeqPoss::x_AddPos(const CSeq_id* id, TSeqPos pos, ENa_strand strand)
 {
     return x_AddSegment(eSeqRef, id, pos, 1, strand);
 }
@@ -302,11 +304,11 @@ CSeqMap::CSegment& CSeqMap_SeqPoss::x_AddPos(CSeq_id* id, TSeqPos pos, ENa_stran
 void CSeqMap_SeqPoss::x_IndexAll(void)
 {
     x_AddEnd();
-    TList& seq = *m_List;
-    CSeq_id* id = &m_Object->SetId();
+    const TList& seq = *m_List;
+    const CSeq_id* id = &m_Object->GetId();
     ENa_strand strand =
         m_Object->IsSetStrand()? m_Object->GetStrand(): eNa_strand_unknown;
-    NON_CONST_ITERATE ( TList, iter, seq ) {
+    ITERATE ( TList, iter, seq ) {
         x_SetSegmentList_I(x_AddPos(id, *iter, strand), iter);
     }
     x_AddEnd();
@@ -319,6 +321,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/11/12 16:53:17  grichenk
+* Modified CSeqMap to work with const objects (CBioseq, CSeq_loc etc.)
+*
 * Revision 1.9  2003/09/30 16:22:04  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

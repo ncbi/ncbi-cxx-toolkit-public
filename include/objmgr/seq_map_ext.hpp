@@ -48,16 +48,16 @@ class NCBI_XOBJMGR_EXPORT CSeqMap_Delta_seqs : public CSeqMap
 public:
     typedef CDelta_ext TObject;
     typedef list< CRef<CDelta_seq> > TList;
-    typedef TList::iterator TList_I;
+    typedef TList::const_iterator TList_I;
 
-    CSeqMap_Delta_seqs(TObject& obj);
-    CSeqMap_Delta_seqs(TObject& obj, CSeqMap_Delta_seqs* parent, size_t index);
+    CSeqMap_Delta_seqs(const TObject& obj);
+    CSeqMap_Delta_seqs(const TObject& obj, CSeqMap_Delta_seqs* parent, size_t index);
 
     ~CSeqMap_Delta_seqs(void);
 
 protected:
-    void x_Index(TList& seq);
-    void x_IndexAll(TList& seq);
+    void x_Index(const TList& seq);
+    void x_IndexAll(const TList& seq);
     void x_IndexUnloadedSubMap(TSeqPos len);
     TList* x_Splice(size_t index, TList& seq);
 
@@ -84,8 +84,8 @@ protected:
     virtual void x_SetSubSeqMap(size_t index, CSeqMap_Delta_seqs* subMap);
 
 private:
-    CRef<TObject> m_Object;
-    TList*        m_List;
+    CConstRef<TObject> m_Object;
+    const TList*       m_List;
 };
 
 
@@ -94,11 +94,11 @@ class NCBI_XOBJMGR_EXPORT CSeqMap_Seq_locs : public CSeqMap
 public:
     typedef CObject TObject;
     typedef list< CRef<CSeq_loc> > TList;
-    typedef TList::iterator TList_I;
+    typedef TList::const_iterator TList_I;
 
-    CSeqMap_Seq_locs(CSeg_ext& obj, TList& seq);
-    CSeqMap_Seq_locs(CSeq_loc_mix& obj, TList& seq);
-    CSeqMap_Seq_locs(CSeq_loc_equiv& obj, TList& seq);
+    CSeqMap_Seq_locs(const CSeg_ext& obj, const TList& seq);
+    CSeqMap_Seq_locs(const CSeq_loc_mix& obj, const TList& seq);
+    CSeqMap_Seq_locs(const CSeq_loc_equiv& obj, const TList& seq);
 
     ~CSeqMap_Seq_locs(void);
 
@@ -124,8 +124,8 @@ protected:
         }
     
 private:
-    CRef<TObject> m_Object;
-    TList*        m_List;
+    CConstRef<TObject> m_Object;
+    const TList*       m_List;
 };
 
 
@@ -134,10 +134,10 @@ class NCBI_XOBJMGR_EXPORT CSeqMap_Seq_intervals : public CSeqMap
 public:
     typedef CPacked_seqint TObject;
     typedef list< CRef<CSeq_interval> > TList;
-    typedef TList::iterator TList_I;
+    typedef TList::const_iterator TList_I;
 
-    CSeqMap_Seq_intervals(TObject& obj);
-    CSeqMap_Seq_intervals(TObject& obj, CSeqMap* parent, size_t index);
+    CSeqMap_Seq_intervals(const TObject& obj);
+    CSeqMap_Seq_intervals(const TObject& obj, CSeqMap* parent, size_t index);
 
     ~CSeqMap_Seq_intervals(void);
 
@@ -163,8 +163,8 @@ protected:
         }
     
 private:
-    CRef<TObject> m_Object;
-    TList*        m_List;
+    CConstRef<TObject> m_Object;
+    const TList*       m_List;
 };
 
 
@@ -173,17 +173,17 @@ class NCBI_XOBJMGR_EXPORT CSeqMap_SeqPoss : public CSeqMap
 public:
     typedef CPacked_seqpnt TObject;
     typedef list< TSeqPos > TList;
-    typedef TList::iterator TList_I;
+    typedef TList::const_iterator TList_I;
 
-    CSeqMap_SeqPoss(TObject& obj);
-    CSeqMap_SeqPoss(TObject& obj, CSeqMap* parent, size_t index);
+    CSeqMap_SeqPoss(const TObject& obj);
+    CSeqMap_SeqPoss(const TObject& obj, CSeqMap* parent, size_t index);
 
     ~CSeqMap_SeqPoss(void);
 
 protected:
     void x_IndexAll(void);
 
-    CSegment& x_AddPos(CSeq_id* id, TSeqPos pos, ENa_strand strand);
+    CSegment& x_AddPos(const CSeq_id* id, TSeqPos pos, ENa_strand strand);
 
     TList_I x_GetSegmentList_I(size_t index) const
         {
@@ -208,8 +208,8 @@ private:
     CSeqMap_SeqPoss(const CSeqMap_SeqPoss&);
     CSeqMap_SeqPoss& operator= (const CSeqMap_SeqPoss&);
     
-    CRef<TObject> m_Object;
-    TList*        m_List;
+    CConstRef<TObject> m_Object;
+    const TList*       m_List;
 };
 
 END_SCOPE(objects)
@@ -218,6 +218,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/11/12 16:53:16  grichenk
+* Modified CSeqMap to work with const objects (CBioseq, CSeq_loc etc.)
+*
 * Revision 1.6  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

@@ -95,7 +95,7 @@ CSeqMap::CSeqMap(CSeqMap* parent, size_t /*index*/)
 }
 
 
-CSeqMap::CSeqMap(CSeq_loc& ref)
+CSeqMap::CSeqMap(const CSeq_loc& ref)
     : m_Resolved(0),
       m_Mol(CSeq_inst::eMol_not_set),
       m_SeqLength(kInvalidSeqPos)
@@ -106,7 +106,7 @@ CSeqMap::CSeqMap(CSeq_loc& ref)
 }
 
 
-CSeqMap::CSeqMap(CSeq_data& data, TSeqPos length)
+CSeqMap::CSeqMap(const CSeq_data& data, TSeqPos length)
     : m_Resolved(0),
       m_Mol(CSeq_inst::eMol_not_set),
       m_SeqLength(kInvalidSeqPos)
@@ -523,26 +523,26 @@ void CSeqMap::DebugDump(CDebugDumpContext /*ddc*/,
 }
 
 
-CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(CBioseq& seq)
+CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(const CBioseq& seq)
 {
     CConstRef<CSeqMap> ret;
-    CSeq_inst& inst = seq.SetInst();
+    const CSeq_inst& inst = seq.GetInst();
     if ( inst.IsSetSeq_data() ) {
-        ret.Reset(new CSeqMap(inst.SetSeq_data(),
+        ret.Reset(new CSeqMap(inst.GetSeq_data(),
                               inst.GetLength()));
     }
     else if ( inst.IsSetExt() ) {
-        CSeq_ext& ext = inst.SetExt();
+        const CSeq_ext& ext = inst.GetExt();
         switch (ext.Which()) {
         case CSeq_ext::e_Seg:
-            ret.Reset(new CSeqMap_Seq_locs(ext.SetSeg(),
-                                           ext.SetSeg().Set()));
+            ret.Reset(new CSeqMap_Seq_locs(ext.GetSeg(),
+                                           ext.GetSeg().Get()));
             break;
         case CSeq_ext::e_Ref:
-            ret.Reset(new CSeqMap(ext.SetRef()));
+            ret.Reset(new CSeqMap(ext.GetRef()));
             break;
         case CSeq_ext::e_Delta:
-            ret.Reset(new CSeqMap_Delta_seqs(ext.SetDelta()));
+            ret.Reset(new CSeqMap_Delta_seqs(ext.GetDelta()));
             break;
         case CSeq_ext::e_Map:
             //### Not implemented
@@ -583,7 +583,7 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(CBioseq& seq)
 CConstRef<CSeqMap> CSeqMap::CreateSeqMapForSeq_loc(const CSeq_loc& loc,
                                                    CScope* scope)
 {
-    CConstRef<CSeqMap> ret(new CSeqMap(const_cast<CSeq_loc&>(loc)));
+    CConstRef<CSeqMap> ret(new CSeqMap(loc));
     if ( scope ) {
         CSeqMap::const_iterator i(
             ret->BeginResolved(scope, size_t(-1), fFindData));
@@ -639,7 +639,7 @@ CSeqMap::CSegment& CSeqMap::x_AddSegment(ESegmentType type, TSeqPos len)
 
 
 CSeqMap::CSegment& CSeqMap::x_AddSegment(ESegmentType type, TSeqPos len,
-                                         CObject* object)
+                                         const CObject* object)
 {
     CSegment& ret = x_AddSegment(type, len);
     ret.m_RefObject.Reset(object);
@@ -648,7 +648,7 @@ CSeqMap::CSegment& CSeqMap::x_AddSegment(ESegmentType type, TSeqPos len,
 
 
 CSeqMap::CSegment& CSeqMap::x_AddSegment(ESegmentType type,
-                                         CObject* object,
+                                         const CObject* object,
                                          TSeqPos refPos,
                                          TSeqPos len,
                                          ENa_strand strand)
@@ -685,29 +685,29 @@ CSeqMap::CSegment& CSeqMap::x_AddUnloadedSeq_data(TSeqPos len)
 }
 
 
-CSeqMap::CSegment& CSeqMap::x_Add(CSeq_data& data, TSeqPos len)
+CSeqMap::CSegment& CSeqMap::x_Add(const CSeq_data& data, TSeqPos len)
 {
     return x_AddSegment(eSeqData, len, &data);
 }
 
 
-CSeqMap::CSegment& CSeqMap::x_Add(CSeq_point& ref)
+CSeqMap::CSegment& CSeqMap::x_Add(const CSeq_point& ref)
 {
-    return x_AddSegment(eSeqRef, &ref.SetId(),
+    return x_AddSegment(eSeqRef, &ref.GetId(),
                         ref.GetPoint(), 1,
                         ref.IsSetStrand()? ref.GetStrand(): eNa_strand_unknown);
 }
 
 
-CSeqMap::CSegment& CSeqMap::x_Add(CSeq_interval& ref)
+CSeqMap::CSegment& CSeqMap::x_Add(const CSeq_interval& ref)
 {
-    return x_AddSegment(eSeqRef, &ref.SetId(),
+    return x_AddSegment(eSeqRef, &ref.GetId(),
                         ref.GetFrom(), ref.GetLength(),
                         ref.IsSetStrand()? ref.GetStrand(): eNa_strand_unknown);
 }
 
 
-CSeqMap::CSegment& CSeqMap::x_Add(CSeq_id& ref)
+CSeqMap::CSegment& CSeqMap::x_Add(const CSeq_id& ref)
 {
     return x_AddSegment(eSeqRef, &ref, 0, kInvalidSeqPos);
 }
@@ -719,34 +719,34 @@ CSeqMap::CSegment& CSeqMap::x_Add(CSeqMap* submap)
 }
 
 
-CSeqMap::CSegment& CSeqMap::x_Add(CPacked_seqint& seq)
+CSeqMap::CSegment& CSeqMap::x_Add(const CPacked_seqint& seq)
 {
     return x_Add(new CSeqMap_Seq_intervals(seq));
 }
 
 
-CSeqMap::CSegment& CSeqMap::x_Add(CPacked_seqpnt& seq)
+CSeqMap::CSegment& CSeqMap::x_Add(const CPacked_seqpnt& seq)
 {
     return x_Add(new CSeqMap_SeqPoss(seq));
 }
 
 
-CSeqMap::CSegment& CSeqMap::x_Add(CSeq_loc_mix& seq)
+CSeqMap::CSegment& CSeqMap::x_Add(const CSeq_loc_mix& seq)
 {
-    return x_Add(new CSeqMap_Seq_locs(seq, seq.Set()));
+    return x_Add(new CSeqMap_Seq_locs(seq, seq.Get()));
 }
 
 
-CSeqMap::CSegment& CSeqMap::x_Add(CSeq_loc_equiv& seq)
+CSeqMap::CSegment& CSeqMap::x_Add(const CSeq_loc_equiv& seq)
 {
-    return x_Add(new CSeqMap_Seq_locs(seq, seq.Set()));
+    return x_Add(new CSeqMap_Seq_locs(seq, seq.Get()));
 }
 
 
-CSeqMap::CSegment& CSeqMap::x_Add(CSeq_literal& seq)
+CSeqMap::CSegment& CSeqMap::x_Add(const CSeq_literal& seq)
 {
     if ( seq.IsSetSeq_data() ) {
-        return x_Add(seq.SetSeq_data(), seq.GetLength());
+        return x_Add(seq.GetSeq_data(), seq.GetLength());
     }
     else {
         // No data exist - treat it like a gap
@@ -755,7 +755,7 @@ CSeqMap::CSegment& CSeqMap::x_Add(CSeq_literal& seq)
 }
 
 
-CSeqMap::CSegment& CSeqMap::x_Add(CSeq_loc& loc)
+CSeqMap::CSegment& CSeqMap::x_Add(const CSeq_loc& loc)
 {
     switch ( loc.Which() ) {
     case CSeq_loc::e_not_set:
@@ -763,19 +763,19 @@ CSeqMap::CSegment& CSeqMap::x_Add(CSeq_loc& loc)
     case CSeq_loc::e_Empty:
         return x_AddGap(0); // Add gap ???
     case CSeq_loc::e_Whole:
-        return x_Add(loc.SetWhole());
+        return x_Add(loc.GetWhole());
     case CSeq_loc::e_Int:
-        return x_Add(loc.SetInt());
+        return x_Add(loc.GetInt());
     case CSeq_loc::e_Pnt:
-        return x_Add(loc.SetPnt());
+        return x_Add(loc.GetPnt());
     case CSeq_loc::e_Packed_int:
-        return x_Add(loc.SetPacked_int());
+        return x_Add(loc.GetPacked_int());
     case CSeq_loc::e_Packed_pnt:
-        return x_Add(loc.SetPacked_pnt());
+        return x_Add(loc.GetPacked_pnt());
     case CSeq_loc::e_Mix:
-        return x_Add(loc.SetMix());
+        return x_Add(loc.GetMix());
     case CSeq_loc::e_Equiv:
-        return x_Add(loc.SetEquiv());
+        return x_Add(loc.GetEquiv());
     case CSeq_loc::e_Bond:
         NCBI_THROW(CSeqMapException, eDataError,
                    "e_Bond is not allowed as a reference type");
@@ -789,13 +789,13 @@ CSeqMap::CSegment& CSeqMap::x_Add(CSeq_loc& loc)
 }
 
 
-CSeqMap::CSegment& CSeqMap::x_Add(CDelta_seq& seq)
+CSeqMap::CSegment& CSeqMap::x_Add(const CDelta_seq& seq)
 {
     switch ( seq.Which() ) {
     case CDelta_seq::e_Loc:
-        return x_Add(seq.SetLoc());
+        return x_Add(seq.GetLoc());
     case CDelta_seq::e_Literal:
-        return x_Add(seq.SetLiteral());
+        return x_Add(seq.GetLiteral());
     default:
         NCBI_THROW(CSeqMapException, eDataError,
                    "Can not add empty Delta-seq");
@@ -809,6 +809,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2003/11/12 16:53:17  grichenk
+* Modified CSeqMap to work with const objects (CBioseq, CSeq_loc etc.)
+*
 * Revision 1.48  2003/09/30 16:22:04  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
