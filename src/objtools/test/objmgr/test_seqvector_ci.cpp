@@ -311,11 +311,21 @@ int CTestApp::Run(void)
     // Not using x_TestIterate() to also check operator bool()
     cout << "Testing basic iterator... ";
     const char* data = m_RefBuf.data();
-    const char* c = data;
     const char* data_end = data + m_RefBuf.size();
+    const char* c = data;
     for (vit.SetPos(0); vit; ++vit, ++c) {
         if (c == data_end ||  *vit != *c) {
             cout << "ERROR: Invalid data at " << vit.GetPos() << endl;
+            throw runtime_error("Basic iterator test failed");
+        }
+    }
+    if (c != data_end) {
+        cout << "ERROR: Invalid data length" << endl;
+        throw runtime_error("Basic iterator test failed");
+    }
+    for (vit.SetPos(0), c = data; vit; ) {
+        if (c == data_end ||  *vit++ != *c++) {
+            cout << "ERROR: Invalid data at " << vit.GetPos()-1 << endl;
             throw runtime_error("Basic iterator test failed");
         }
     }
@@ -494,6 +504,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/03/28 19:37:12  vasilche
+* Test post-increment operator.
+*
 * Revision 1.8  2004/12/22 15:56:44  vasilche
 * Fix CSeqMap usage to allow used TSE linking.
 *
