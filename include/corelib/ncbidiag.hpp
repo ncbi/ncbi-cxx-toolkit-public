@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/10/27 23:06:58  vakatov
+* Use NCBI C++ interface to iostream's
+*
 * Revision 1.1  1998/10/23 23:22:10  vakatov
 * Initial revision
 *
@@ -43,10 +46,9 @@
 
 NCBI_USING_STL;
 
-class ostream;      // (from std::)
-class CDiagBuffer;  // (internal class)
+class CDiagBuffer;  // (fwd-declaration of internal class)
 
-
+// Severity level for the posted diagnostics
 typedef enum {
     eDiag_Info = 0,
     eDiag_Warning,
@@ -99,7 +101,7 @@ private:
 
 // Do not post messages which severity is less than "min_sev"
 // Return previous post-level
-extern EDiagSev SetDiagPostLevel(EDiagSev min_sev=eDiag_Error);
+extern EDiagSev SetDiagPostLevel(EDiagSev post_sev=eDiag_Error);
 
 // Abrupt the application if severity is >= "max_sev"
 // Return previous die-level
@@ -107,8 +109,8 @@ extern EDiagSev SetDiagDieLevel(EDiagSev die_sev=eDiag_Fatal);
 
 // Write the error diagnostics to output stream "os"
 // (this uses the SetDiagHandler() functionality)
-// Return previous output stream, if any
-extern void SetDiagStream(ostream* os);
+// If "quick_flush" is "true" then do stream "flush()" after every message
+extern void SetDiagStream(CNcbiOstream* os, bool quick_flush=true);
 
 // Set new message handler("func"), data("data") and destructor("cleanup").
 // "func(..., data)" is to be called when any instance of "CNcbiDiagBuffer"
