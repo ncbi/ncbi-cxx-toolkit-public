@@ -83,7 +83,15 @@ BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp,
                                    const Uint1* subject, 
                                    const BlastScoreBlk* sbp);
 
-
+/** Check the gapped alignments for an overlap of two different alignments.
+ * A sufficient overlap is when two alignments have the same start values
+ * of have the same final values. 
+ * @param hsp_array Pointer to an array of BlastHSP structures [in]
+ * @param hsp_count The size of the hsp_array [in]
+ * @return The number of valid alignments remaining. 
+*/
+Int4
+Blast_CheckHSPsForCommonEndpoints(BlastHSP* *hsp_array, Int4 hsp_count);
 
 
 #ifdef __cplusplus
@@ -95,6 +103,9 @@ BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/01/03 15:53:17  dondosha
+ * Former static function s_CheckGappedAlignmentsForOverlap renamed Blast_CheckHSPsForCommonEndpoints and made semi-public, for use in unit test
+ *
  * Revision 1.3  2004/11/26 15:16:56  camacho
  * Moved common definition to private header
  *
