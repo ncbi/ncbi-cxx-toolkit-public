@@ -125,6 +125,7 @@ static const std::string
     // configuration
     REG_CONFIG_SECTION = "Cn3D-4-Config",
     REG_FAVORITES_NAME = "Favorites",
+        NO_FAVORITES_FILE = "(none)",   // to signal that no Favorites file is defined
     REG_ANIMATION_DELAY = "AnimationDelay",
     REG_SHOW_LOG_ON_START = "ShowLogOnStartup",
     // quality settings
@@ -202,6 +203,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/03/13 16:57:14  thiessen
+* fix favorites load/save problem
+*
 * Revision 1.27  2003/03/13 14:26:18  thiessen
 * add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
 *

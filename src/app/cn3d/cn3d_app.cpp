@@ -217,6 +217,7 @@ void Cn3DApp::InitRegistry(void)
     // default animation delay and log window startup
     RegistrySetInteger(REG_CONFIG_SECTION, REG_ANIMATION_DELAY, 500);
     RegistrySetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, false);
+    RegistrySetString(REG_CONFIG_SECTION, REG_FAVORITES_NAME, NO_FAVORITES_FILE);
 
     // default quality settings
     RegistrySetInteger(REG_QUALITY_SECTION, REG_QUALITY_ATOM_SLICES, 10);
@@ -448,6 +449,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/03/13 16:57:14  thiessen
+* fix favorites load/save problem
+*
 * Revision 1.1  2003/03/13 14:26:18  thiessen
 * add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
 *

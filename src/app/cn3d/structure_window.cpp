@@ -623,11 +623,10 @@ static string GetFavoritesFile(bool forRead)
     RegistryGetString(REG_CONFIG_SECTION, REG_FAVORITES_NAME, &file);
 
     // if not set, ask user for a folder, then set in registry
-    if (file.size() == 0) {
+    if (file == NO_FAVORITES_FILE) {
         file = wxFileSelector("Select a file for favorites:",
             GetPrefsDir().c_str(), "Favorites", "", "*.*",
             forRead ? wxOPEN : wxSAVE | wxOVERWRITE_PROMPT).c_str();
-
         if (file.size() > 0)
             if (!RegistrySetString(REG_CONFIG_SECTION, REG_FAVORITES_NAME, file))
                 ERRORMSG("Error setting favorites file in registry");
@@ -640,7 +639,7 @@ static bool LoadFavorites(void)
 {
     string favoritesFile;
     RegistryGetString(REG_CONFIG_SECTION, REG_FAVORITES_NAME, &favoritesFile);
-    if (favoritesFile.size() > 0) {
+    if (favoritesFile != NO_FAVORITES_FILE) {
         favoriteStyles.Reset();
         if (wxFile::Exists(favoritesFile.c_str())) {
             INFOMSG("loading favorites from " << favoritesFile);
@@ -651,7 +650,7 @@ static bool LoadFavorites(void)
             }
         } else {
             WARNINGMSG("Favorites file does not exist: " << favoritesFile);
-            RegistrySetString(REG_CONFIG_SECTION, REG_FAVORITES_NAME, "");
+            RegistrySetString(REG_CONFIG_SECTION, REG_FAVORITES_NAME, NO_FAVORITES_FILE);
         }
     }
     return false;
@@ -664,7 +663,7 @@ static void SaveFavorites(void)
             "Save favorites?", wxYES_NO);
         if (choice == wxYES) {
             string favoritesFile = GetFavoritesFile(false);
-            if (favoritesFile.size() > 0) {
+            if (favoritesFile != NO_FAVORITES_FILE) {
                 string err;
                 if (!WriteASNToFile(favoritesFile.c_str(), favoriteStyles, false, &err))
                     ERRORMSG("Error saving Favorites to " << favoritesFile << '\n' << err);
@@ -707,6 +706,7 @@ void StructureWindow::OnEditFavorite(wxCommandEvent& event)
         if (!glCanvas->structureSet->styleManager->GetGlobalStyle().SaveSettingsToASN(settings))
             ERRORMSG("Error converting global style to asn");
         settings->SetName(name.c_str());
+        favoriteStylesChanged = true;
     }
 
     else if (event.GetId() == MID_REMOVE_FAVORITE) {
@@ -721,6 +721,7 @@ void StructureWindow::OnEditFavorite(wxCommandEvent& event)
         for (f=favoriteStyles.Set().begin(), i=0; f!=fe; f++, i++) {
             if (i == picked) {
                 favoriteStyles.Set().erase(f);
+                favoriteStylesChanged = true;
                 break;
             }
         }
@@ -729,9 +730,9 @@ void StructureWindow::OnEditFavorite(wxCommandEvent& event)
     else if (event.GetId() == MID_FAVORITES_FILE) {
         SaveFavorites();
         favoriteStyles.Reset();
-        RegistrySetString(REG_CONFIG_SECTION, REG_FAVORITES_NAME, "");
+        RegistrySetString(REG_CONFIG_SECTION, REG_FAVORITES_NAME, NO_FAVORITES_FILE);
         string newFavorites = GetFavoritesFile(true);
-        if (newFavorites.size() > 0 && wxFile::Exists(newFavorites.c_str())) {
+        if (newFavorites != NO_FAVORITES_FILE && wxFile::Exists(newFavorites.c_str())) {
             if (!LoadFavorites())
                 ERRORMSG("Error loading Favorites from " << newFavorites.c_str());
         }
@@ -1248,7 +1249,7 @@ void StructureWindow::LoadFile(const char *filename)
             // if CDD is contained in a mime, then show CDD splash screen
             if (glCanvas->structureSet->IsCDD()) ShowCDDOverview();
         } else {
-            WARNINGMSG("error: " << err);
+//            WARNINGMSG("error: " << err);
             delete mime;
         }
     }
@@ -1262,7 +1263,7 @@ void StructureWindow::LoadFile(const char *filename)
         if (readOK) {
             glCanvas->structureSet = new StructureSet(cdd, structureLimit, glCanvas->renderer);
         } else {
-            WARNINGMSG("error: " << err);
+//            WARNINGMSG("error: " << err);
             delete cdd;
         }
     }
@@ -1389,6 +1390,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/03/13 16:57:14  thiessen
+* fix favorites load/save problem
+*
 * Revision 1.1  2003/03/13 14:26:18  thiessen
 * add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
 *
