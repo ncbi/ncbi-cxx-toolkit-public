@@ -124,6 +124,13 @@ NCBI_XNCBI_EXPORT
 extern unsigned int GetCpuCount(void);
 
 
+/// [UNIX & Windows]
+/// Return granularity with which virtual memory is allocated.
+/// Return 0 if cannot determine it on current platform or if an error occurs.
+NCBI_XNCBI_EXPORT
+extern unsigned long GetVirtualMemoryPageSize(void);
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// Sleep
@@ -152,6 +159,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/08/03 11:56:45  ivanov
+ * + GetVirtualMemoryPageSize()
+ *
  * Revision 1.14  2003/09/25 16:52:47  ivanov
  * CPIDGuard class moved to ncbi_process.hpp
  *

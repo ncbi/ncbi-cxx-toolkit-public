@@ -377,6 +377,35 @@ unsigned int GetCpuCount(void)
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// GetVirtualMemoryPageSize
+//
+
+unsigned long GetVirtualMemoryPageSize(void)
+{
+    unsigned long ps = 0;
+
+#if defined(NCBI_OS_MSWIN)
+    SYSTEM_INFO si;
+    GetSystemInfo(&si); 
+    ps = si.dwAllocationGranularity;
+#elif defined(NCBI_OS_UNIX)
+    long x = 0;
+#  ifdef _SC_PAGESIZE
+    x = sysconf(_SC_PAGESIZE);
+#  endif
+#  ifdef HAVE_GETPAGESIZE
+    if (x <= 0) {
+        x = getpagesize();
+    }
+    ps = (x <= 0) ? 0 : x;
+#  endif
+#endif /*OS_TYPE*/
+    return ps;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // Sleep
 //
 
@@ -417,6 +446,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/08/03 11:56:34  ivanov
+ * + GetVirtualMemoryPageSize()
+ *
  * Revision 1.38  2004/05/18 17:57:21  ucko
  * GetCpuCount(): return 1 rather than -1 (-> UINT_MAX !) if host_info
  * fails on Darwin.
