@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/11/19 23:53:30  vakatov
+* Bug/typo fixed
+*
 * Revision 1.4  1998/11/19 23:41:12  vakatov
 * Tested version of "CCgiCookie::" and "CCgiCookies::"
 *
@@ -216,7 +219,7 @@ void CCgiCookies::Add(const string& str)
             pos = pos_end + 1;
             pos_end--;
         } else {
-            pos_end = str.find_last_not_of(" \t\n", pos_mid);
+            pos_end = str.find_last_not_of(" \t\n", str.length());
             if (pos_end == NPOS)
                 break; // error
             pos = NPOS; // about to finish
