@@ -143,7 +143,8 @@ protected:
                          CBDB_FileCursor::ECondition cursor_condition) const
         {
             delete m_Cur; m_Cur = 0;
-            if (!m_CursorFile->IsAttached()) {
+            bool attached = m_CursorFile->IsAttached();
+            if (!attached) {
                 m_CursorFile->Attach(*m_ParentFile);
             }
             m_Cur = new CBDB_FileCursor(*m_CursorFile);
@@ -601,6 +602,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/12/16 17:47:09  kuznets
+ * minor code cleanup
+ *
  * Revision 1.7  2003/09/29 14:30:22  kuznets
  * Comments doxygenification
  *
