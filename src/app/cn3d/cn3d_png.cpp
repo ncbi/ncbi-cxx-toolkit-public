@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/10/25 14:19:44  thiessen
+* move png.h to top
+*
 * Revision 1.6  2001/10/25 00:06:29  thiessen
 * fix concurrent rendering problem in wxMSW PNG output
 *
@@ -50,6 +53,9 @@
 *
 * ===========================================================================
 */
+
+// must go first, because on Mac, some NCBI definitions cause conflicts
+#include <cn3d/png.h>
 
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
@@ -76,8 +82,6 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #endif
-
-#include <cn3d/png.h>
 
 #include "cn3d/cn3d_png.hpp"
 #include "cn3d/cn3d_main_wxwin.hpp"
