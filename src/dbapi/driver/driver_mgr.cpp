@@ -57,7 +57,8 @@ void C_DriverMgr::RegisterDriver(const string&        driver_name,
 }
 
 
-FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name)
+FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name,
+					    string* err_msg)
 {
     CFastMutexGuard mg(m_Mutex1);
     unsigned int i;
@@ -68,7 +69,7 @@ FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name)
         }
     }
     
-    if (!LoadDriverDll(driver_name)) {
+    if (!LoadDriverDll(driver_name, err_msg)) {
         return 0;
     }
 
@@ -83,7 +84,7 @@ FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name)
 }
 
 
-bool C_DriverMgr::LoadDriverDll(const string& driver_name)
+bool C_DriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
 {
     try {
         CDll drv_dll("dbapi_driver_" + driver_name);
@@ -97,7 +98,8 @@ bool C_DriverMgr::LoadDriverDll(const string& driver_name)
         reg(*this);
         return true;
     }
-    catch (exception&) {
+    catch (exception& e) {
+	if(err_msg) *err_msg= e.what();
         return false;
     }
 }
@@ -110,6 +112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/04/04 23:57:39  soussov
+ * return of error message from dlopen added
+ *
  * Revision 1.6  2002/02/14 00:59:42  vakatov
  * Clean-up: warning elimination, fool-proofing, fine-tuning, identation, etc.
  *
