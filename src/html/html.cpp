@@ -46,6 +46,9 @@ const char* kTagEnd      = "@>";   ///< Tag end.
 const char* kTagStartEnd = "</@";  ///< Tag start in the end of
                                    ///< block definition.
 
+#define INIT_STREAM_WRITE  \
+    errno = 0
+
 #define CHECK_STREAM_WRITE(out)                                               \
     if ( !out ) {                                                             \
         int x_errno = errno;                                                  \
@@ -340,6 +343,7 @@ CHTMLDualNode::~CHTMLDualNode(void)
 CNcbiOstream& CHTMLDualNode::PrintChildren(CNcbiOstream& out, TMode mode)
 {
     if ( mode == ePlainText ) {
+        INIT_STREAM_WRITE;
         out << m_Plain;
         CHECK_STREAM_WRITE(out);
         return out;
@@ -373,11 +377,14 @@ CHTMLPlainText::~CHTMLPlainText(void)
 
 CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)
 {
+    string str;
     if (mode == ePlainText  ||  NoEncode()) {
-        out << GetText();
+        str = GetText();
     } else {
-        out << CHTMLHelper::HTMLEncode(GetText());
+        str = CHTMLHelper::HTMLEncode(GetText());
     }
+    INIT_STREAM_WRITE;
+    out << str;
     CHECK_STREAM_WRITE(out);
     return out;
 }
@@ -450,6 +457,7 @@ CNcbiOstream& CHTMLText::x_PrintBegin(CNcbiOstream& out, TMode mode,
         default:
             pstr = &s;
     }
+    INIT_STREAM_WRITE;
     out.write(pstr->data(), pstr->size());
     CHECK_STREAM_WRITE(out);
     return out;
@@ -547,6 +555,7 @@ CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
         if ( HaveAttributes() ) {
             for ( TAttributes::const_iterator i = Attributes().begin();
                   i != Attributes().end(); ++i ) {
+                INIT_STREAM_WRITE;
                 out << ' ' << i->first;
                 CHECK_STREAM_WRITE(out);
                 if ( !i->second.IsOptional() ||
@@ -558,6 +567,7 @@ CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
         if ( m_NoWrap ) {
             out << " nowrap";
         }
+        INIT_STREAM_WRITE;
         out << '>';
         CHECK_STREAM_WRITE(out);
     }
@@ -574,6 +584,7 @@ CHTMLInlineElement::~CHTMLInlineElement(void)
 CNcbiOstream& CHTMLInlineElement::PrintEnd(CNcbiOstream& out, TMode mode)
 {
     if ( mode != ePlainText ) {
+        INIT_STREAM_WRITE;
         out << "</" << m_Name << '>';
         CHECK_STREAM_WRITE(out);
     }
@@ -590,9 +601,9 @@ CHTMLElement::~CHTMLElement(void)
 CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
 {
     CParent::PrintEnd(out, mode);
-
     if ( mode != ePlainText ) {
         const TMode* previous = mode.GetPreviousContext();
+        INIT_STREAM_WRITE;
         if ( previous ) {
             CNCBINode* parent = previous->GetNode();
             if ( parent && parent->HaveChildren() &&
@@ -601,8 +612,8 @@ CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
         } else {
             out << '\n';
         }
+        CHECK_STREAM_WRITE(out);
     }
-    CHECK_STREAM_WRITE(out);
     return out;
 }
 
@@ -626,6 +637,7 @@ CNcbiOstream& CHTMLBlockElement::PrintEnd(CNcbiOstream& out, TMode mode)
                 return out;
             }
         }
+        INIT_STREAM_WRITE;
         out << '\n';
         CHECK_STREAM_WRITE(out);
     }
@@ -653,6 +665,7 @@ CNcbiOstream& CHTMLComment::Print(CNcbiOstream& out, TMode mode)
 CNcbiOstream& CHTMLComment::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     if (mode == eHTML) {
+        INIT_STREAM_WRITE;
         out << "<!--";
         CHECK_STREAM_WRITE(out);
     }
@@ -662,9 +675,10 @@ CNcbiOstream& CHTMLComment::PrintBegin(CNcbiOstream& out, TMode mode)
 CNcbiOstream& CHTMLComment::PrintEnd(CNcbiOstream& out, TMode mode)
 {
     if (mode == eHTML) {
-        return out << "-->";
+        INIT_STREAM_WRITE;
+        out << "-->";
+        CHECK_STREAM_WRITE(out);
     }
-    CHECK_STREAM_WRITE(out);
     return out;
 }
 
@@ -725,11 +739,13 @@ CNcbiOstream& CHTMLSpecialChar::PrintChildren(CNcbiOstream& out, TMode mode)
 {
     if ( mode == ePlainText ) {
         for ( int i = 0; i < m_Count; i++ ) {
+            INIT_STREAM_WRITE;
             out << m_Plain;
             CHECK_STREAM_WRITE(out);
         }
     } else {
         for ( int i = 0; i < m_Count; i++ ) {
+            INIT_STREAM_WRITE;
             out << "&" << m_Html << ";";
             CHECK_STREAM_WRITE(out);
         }
@@ -880,6 +896,7 @@ CNcbiOstream& CHTML_tr::PrintEnd(CNcbiOstream& out, TMode mode)
 {
     CParent::PrintEnd(out, mode);
     if ( mode == ePlainText ) {
+        INIT_STREAM_WRITE;
         out << CHTMLHelper::GetNL();
         if (m_Parent->m_IsRowSep == CHTML_table::ePrintRowSep) {
             out << string(GetTextLength(mode), m_Parent->m_RowSepChar)
@@ -902,12 +919,13 @@ CNcbiOstream& CHTML_tr::PrintChildren(CNcbiOstream& out, TMode mode)
 
     NON_CONST_ITERATE ( TChildren, i, Children() ) {
         if ( i != Children().begin() ) {
+            INIT_STREAM_WRITE;
             out << m_Parent->m_ColSepM;
             CHECK_STREAM_WRITE(out);
         }
         Node(i)->Print(out, mode);
     }
-
+    INIT_STREAM_WRITE;
     out << m_Parent->m_ColSepR;
     CHECK_STREAM_WRITE(out);
 
@@ -1366,6 +1384,7 @@ CHTML_table::TIndex CHTML_table::CalculateNumberOfRows(void) const
 CNcbiOstream& CHTML_table::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     if ( mode == ePlainText ) {
+        INIT_STREAM_WRITE;
         out << CHTMLHelper::GetNL();
         CHECK_STREAM_WRITE(out);
         if ( m_IsRowSep == ePrintRowSep ) {
@@ -1380,6 +1399,7 @@ CNcbiOstream& CHTML_table::PrintBegin(CNcbiOstream& out, TMode mode)
             if ( !seplen ) {
                 seplen = 1;
             }
+            INIT_STREAM_WRITE;
             out << string(seplen, m_RowSepChar) << CHTMLHelper::GetNL();
             CHECK_STREAM_WRITE(out);
         }
@@ -1956,6 +1976,7 @@ CHTML_br::~CHTML_br(void)
 CNcbiOstream& CHTML_br::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     if ( mode == ePlainText ) {
+        INIT_STREAM_WRITE;
         out << CHTMLHelper::GetNL();
         CHECK_STREAM_WRITE(out);
     }
@@ -2145,6 +2166,7 @@ CHTML_hr* CHTML_hr::SetNoShade(void)
 CNcbiOstream& CHTML_hr::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     if ( mode == ePlainText ) {
+        INIT_STREAM_WRITE;
         out << CHTMLHelper::GetNL() << CHTMLHelper::GetNL();
         CHECK_STREAM_WRITE(out);
     }
@@ -2278,6 +2300,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.112  2004/11/12 13:25:54  ivanov
+ * Added macro INIT_STREAM_WRITE to init the errno variable.
+ *
  * Revision 1.111  2004/10/27 18:25:00  ivanov
  * CHTMLText : Added flag fDisableBuffering to disable internal buffering
  * at the cost of loss some functionality relative to tag mapping.
