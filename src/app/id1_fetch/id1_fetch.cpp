@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.22  2001/10/23 20:05:12  ucko
+ * Request ASCII from CSeq_vector.
+ *
  * Revision 1.21  2001/10/17 21:17:53  ucko
  * Seq_vector now properly starts from zero rather than one; adjust code
  * that uses it accordingly.
@@ -788,6 +791,7 @@ void CId1FetchApp::WriteFastaEntry(const CID1server_back& id1_reply)
         // Now print the actual sequence in an appropriate ASCII format.
         {{
             CSeq_vector vec = m_Scope->GetSequence(handle);
+            vec.SetIupacCoding();
             for (size_t pos = 0;  pos < vec.size();  ++pos) {
                 if (pos % 70 == 0)
                     *m_OutputFile << NcbiEndl;
