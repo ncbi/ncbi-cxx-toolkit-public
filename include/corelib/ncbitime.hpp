@@ -49,7 +49,6 @@
 #include <time.h>
 
 
-
 BEGIN_NCBI_SCOPE
 
 /** @addtogroup Time
@@ -512,6 +511,11 @@ public:
     ///
     /// Days since Sunday = 0..6
     int DayOfWeek(void) const;
+
+    /// Get number of days in the current month.
+    ///
+    /// Number of days = 1..31
+    int DaysInMonth(void) const;
 
     /// Add specified years and adjust for day light savings time.
     ///
@@ -1076,6 +1080,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/11/21 20:04:41  ivanov
+ * + DaysInMonth()
+ *
  * Revision 1.26  2003/11/18 11:58:24  siyan
  * Changed so @addtogroup does not cross namespace boundary
  *

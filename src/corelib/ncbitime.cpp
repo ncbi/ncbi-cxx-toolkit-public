@@ -446,6 +446,16 @@ int CTime::DayOfWeek(void) const
 }
 
 
+int CTime::DaysInMonth(void) const 
+{
+    int n_days = s_DaysInMonth[Month()-1];
+    if (n_days == 0) {
+        n_days = IsLeap() ? 29 : 28;
+    }
+    return n_days;
+}
+
+
 void CTime::SetFormat(const string& fmt)
 {
     x_VerifyFormat(fmt);
@@ -1126,12 +1136,9 @@ int CTime::DiffSecond(const CTime& t) const
 
 void CTime::x_AdjustDay()
 {
-    int DaysInMonth = s_DaysInMonth[Month()-1];
-    if (DaysInMonth == 0) {
-        DaysInMonth = IsLeap() ? 29 : 28;
-    }
-    if (Day() > DaysInMonth) {
-        m_Day = DaysInMonth;
+    int n_days = DaysInMonth();
+    if (Day() > n_days) {
+        m_Day = n_days;
     }
 }
 
@@ -1361,6 +1368,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2003/11/21 20:04:23  ivanov
+ * + DaysInMonth()
+ *
  * Revision 1.42  2003/10/06 13:59:01  ivanov
  * Some cosmetics
  *
