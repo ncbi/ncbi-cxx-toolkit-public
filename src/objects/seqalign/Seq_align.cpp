@@ -229,7 +229,7 @@ void CSeq_align::SwapRows(TDim row1, TDim row2)
 /// PRE : the Seq-align has StdSeg segs
 /// POST: Seq_align of type Dense-seg is created with m_Widths if necessary
 CRef<CSeq_align> 
-CSeq_align::CreateDensegFromStdseg(SSeqIdChooser* SeqIdChooser = 0) const
+CSeq_align::CreateDensegFromStdseg(SSeqIdChooser* SeqIdChooser) const
 {
     if ( !GetSegs().IsStd() ) {
         NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
@@ -514,6 +514,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/03/09 17:27:42  kuznets
+* Bug fix(compilation): CSeq_align::CreateDensegFromStdseg MSVC
+*
 * Revision 1.10  2004/03/09 17:14:33  todorov
 * changed the C-style callback to a functor
 *
