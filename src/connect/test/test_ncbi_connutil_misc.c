@@ -235,8 +235,8 @@ static void TEST_MIME(void)
                        eMIME_T_NcbiData, eMIME_Unknown, eENCOD_None));
     assert(s_Try_MIME("text/html",
                       eMIME_T_Text, eMIME_Html, eENCOD_None));
-    assert(s_Try_MIME("application/xml",
-                      eMIME_T_Application, eMIME_Xml, eENCOD_None));
+    assert(s_Try_MIME("application/xml+soap",
+                      eMIME_T_Application, eMIME_XmlSoap, eENCOD_None));
     assert(!s_Try_MIME("", eMIME_T_NcbiData, eMIME_Unknown, eENCOD_Unknown));
     assert(!s_Try_MIME(0, eMIME_T_NcbiData, eMIME_Unknown, eENCOD_Unknown));
 }
@@ -302,6 +302,9 @@ int main(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2004/01/14 18:53:09  lavr
+ * Use "application/xml+soap" in the test case
+ *
  * Revision 6.12  2004/01/07 19:24:03  lavr
  * Added test for MIME content-type "application/xml"
  *
