@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/11/21 16:17:44  vasilche
+* Correct closing of ASN.1 stream in DebugDump.
+*
 * Revision 1.19  2003/11/17 22:13:23  gouriano
 * in CSerialObject::Assign: on self-assignment issue a warning only
 *
@@ -142,15 +145,18 @@ void CSerialObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     ddc.SetFrame("CSerialObject");
     CObject::DebugDump( ddc, depth);
 // this is not good, but better than nothing
-    ostrstream ostr;
-    ostr << endl << "****** begin ASN dump ******" << endl;
-    auto_ptr<CObjectOStream> oos(CObjectOStream::Open(eSerial_AsnText, ostr));
-    oos->SetAutoSeparator(false);
-    oos->Write(this, GetThisTypeInfo());
-    ostr << endl << "****** end   ASN dump ******" << endl;
-    ostr << '\0';
-    ddc.Log( "Serial_AsnText", string(ostr.str()));
-    ostr.freeze(false);
+    CNcbiOstrstream ostr;
+    ostr << "\n****** begin ASN dump ******\n";
+    {{
+        auto_ptr<CObjectOStream> oos(CObjectOStream::Open(eSerial_AsnText,
+                                                          ostr));
+        oos->SetAutoSeparator(false);
+        oos->Write(this, GetThisTypeInfo());
+    }}
+    ostr << "\n****** end   ASN dump ******\n" << '\0';
+    const char* str = ostr.str();
+    ostr.freeze();
+    ddc.Log( "Serial_AsnText", str);
 }
 
 /////////////////////////////////////////////////////////////////////////////
