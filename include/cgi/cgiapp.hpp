@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/04/30 16:38:08  vakatov
+* #include <ncbireg.hpp> to provide CNcbiRegistry class definition(see R1.13)
+*
 * Revision 1.13  1999/04/27 17:01:23  vakatov
 * #include <ncbires.hpp> to provide CNcbiResource class definition
 * for the "auto_ptr<CNcbiResource>" (required by "delete" under MSVC++)
@@ -82,11 +85,11 @@
 #include <corelib/ncbicgi.hpp>
 #include <corelib/ncbicgir.hpp>
 #include <corelib/ncbires.hpp>
+#include <corelib/ncbireg.hpp>
 #include <list>
 
 BEGIN_NCBI_SCOPE
 
-class CNcbiRegistry;
 class CCgiContext;
 class CCgiServerContext;
 class CCgiApplication;
