@@ -392,11 +392,7 @@ void CSeqVector_CI::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer)
     buffer.erase();
     if ( start < stop ) {
         buffer.reserve(stop - start);
-        if ( m_Cache >= m_CacheData.end() ||
-             start < m_CachePos  ||
-             start >= x_CacheEnd() ) {
-            x_UpdateCache(start);
-        }
+        SetPos(start);
         do {
             size_t end_offset = min(m_CacheData.size(),
                                     static_cast<size_t>(stop - m_CachePos));
@@ -472,6 +468,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/06/18 15:01:19  vasilche
+* Fixed positioning of CSeqVector_CI in GetSeqData().
+*
 * Revision 1.14  2003/06/17 20:37:06  grichenk
 * Removed _TRACE-s, fixed bug in x_GetNextSeg()
 *
