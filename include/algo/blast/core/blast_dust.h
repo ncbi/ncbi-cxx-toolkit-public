@@ -45,7 +45,7 @@ extern "C" {
 
 #include <blast_def.h>
 
-Int2 SeqBufferDust (Uint1Ptr sequence, Int4 length,
+Int2 SeqBufferDust (Uint1Ptr sequence, Int4 length, Int4 offset,
                     Int2 level, Int2 window, Int2 minwin, Int2 linker,
                     BlastSeqLocPtr PNTR dust_loc);
 
