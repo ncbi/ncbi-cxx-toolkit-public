@@ -94,6 +94,8 @@ public:
     
     void WalkNodes(CSeqDB_AliasWalker * walker, vector< CRef<CSeqDBVol> > & vols);
     
+    void BuildMaskList(vector< CRef<CSeqDBVol> > & vols);
+    
 private:
     // To be called only from this class.  Note that the recursion
     // prevention list is passed by value.
@@ -111,8 +113,7 @@ private:
     void x_ReadLine(const char * bp, const char * ep);
     
     // Expand all DB members as aliases if they exist.
-    void x_ExpandAliases(const string & dbpath,
-                         const string & this_name,
+    void x_ExpandAliases(const string & this_name,
                          char           ending,
                          bool           use_mmap,
                          set<string>  & recurse);
@@ -131,6 +132,7 @@ private:
     typedef vector<string>                  TVolNames;
     typedef vector< CRef<CSeqDBAliasNode> > TSubNodeList;
     
+    string       m_DBPath;
     TVarList     m_Values;
     TVolNames    m_VolNames;
     TSubNodeList m_SubNodes;
@@ -171,6 +173,14 @@ public:
     Uint8 GetTotalLength(vector< CRef<CSeqDBVol> > & vols)
     {
         return m_Node.GetTotalLength(vols);
+    }
+    
+    void BuildMaskList(vector< CRef<CSeqDBVol> > & vols)
+    {
+        cout << "Walking volume list (size " << vols.size()
+             << "), using OIDLIST." << endl;
+        
+        m_Node.BuildMaskList(vols);
     }
     
 private:

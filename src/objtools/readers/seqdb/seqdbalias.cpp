@@ -52,6 +52,7 @@ CSeqDBAliasNode::CSeqDBAliasNode(const string & dbpath,
                                  const string & dbname_list,
                                  char           prot_nucl,
                                  bool           use_mmap)
+    : m_DBPath(dbpath)
 {
     set<string> recurse;
     
@@ -61,7 +62,7 @@ CSeqDBAliasNode::CSeqDBAliasNode(const string & dbpath,
     
     m_Values["DBLIST"] = dbname_list;
     
-    x_ExpandAliases(dbpath, "-", prot_nucl, use_mmap, recurse);
+    x_ExpandAliases("-", prot_nucl, use_mmap, recurse);
 }
 
 // Private Constructor
@@ -85,6 +86,7 @@ CSeqDBAliasNode::CSeqDBAliasNode(const string & dbpath,
                                  char           prot_nucl,
                                  bool           use_mmap,
                                  set<string>    recurse)
+    : m_DBPath(dbpath)
 {
     if (seqdb_debug_class && debug_alias) {
         bool comma = false;
@@ -100,11 +102,11 @@ CSeqDBAliasNode::CSeqDBAliasNode(const string & dbpath,
         cout << ">";
     }
     
-    string full_filename( x_MkPath(dbpath, dbname, prot_nucl) );
+    string full_filename( x_MkPath(m_DBPath, dbname, prot_nucl) );
     recurse.insert(full_filename);
     
     x_ReadValues(full_filename, use_mmap);
-    x_ExpandAliases(dbpath, dbname, prot_nucl, use_mmap, recurse);
+    x_ExpandAliases(dbname, prot_nucl, use_mmap, recurse);
 }
 
 void CSeqDBAliasNode::x_ReadLine(const char * bp,
@@ -167,8 +169,7 @@ void CSeqDBAliasNode::x_ReadValues(const string & fn, bool use_mmap)
     }
 }
 
-void CSeqDBAliasNode::x_ExpandAliases(const string & dbpath,
-                                      const string & this_name,
+void CSeqDBAliasNode::x_ExpandAliases(const string & this_name,
                                       char           prot_nucl,
                                       bool           use_mmap,
                                       set<string>  & recurse)
@@ -189,7 +190,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const string & dbpath,
             continue;
         }
         
-        string new_db_loc( x_MkPath(dbpath, namevec[i], prot_nucl) );
+        string new_db_loc( x_MkPath(m_DBPath, namevec[i], prot_nucl) );
         
         if (recurse.find(new_db_loc) != recurse.end()) {
             NCBI_THROW(CSeqDBException,
@@ -420,6 +421,50 @@ void CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker, vector< CRef<CSeqDB
             // Find volume "j".
             if (vols[j]->GetVolName() == m_VolNames[i]) {
                 walker->Accumulate( *vols[j] );
+                break;
+            }
+        }
+    }
+}
+
+// Rather than m<s,s> ......
+
+
+// What is communicated here?  One of two things.  First, that an
+// OIDLIST subset of a volume should be used (specifically, combined
+// with existing subsets via OR).  Alternately, we can communicate
+// that a volume should be used, in its entirety.  So, a set of
+// combineable partial volumes, or a whole volume.
+
+// Thus, for each volume, there is either no filtering, or filtering
+// by an OR of a set of mask files.
+
+// volset.IncludeAll(volname);
+// volset.AddMask(volname, filename);
+
+void CSeqDBAliasNode::BuildMaskList(vector< CRef<CSeqDBVol> > & vols)
+{
+    TVarList::iterator oid_iter = m_Values.find(string("OIDLIST"));
+    TVarList::iterator db_iter  = m_Values.find(string("DBLIST"));
+    
+    if (oid_iter != m_Values.end()) {
+        //walker->AddString( (*iter).second );
+        cout << "Mapping found: dbp(" << m_DBPath << "); DBLIST[" << (*db_iter).second << "], OIDLIST[" << (*oid_iter).second << "]" << endl;
+        return;
+    }
+    
+    Uint4 i,j;
+    
+    for(i = 0; i < m_SubNodes.size(); i++) {
+        m_SubNodes[i]->BuildMaskList( vols );
+    }
+    
+    for(i = 0; i < m_VolNames.size(); i++) {
+        for(j = 0; j < vols.size(); j++) {
+            // Find volume "j".
+            if (vols[j]->GetVolName() == m_VolNames[i]) {
+                cout << "Accumulate would be called: volume->GetVolName()=(" << vols[j]->GetVolName() << ")" << endl;
+                //walker->Accumulate( *vols[j] );
                 break;
             }
         }
