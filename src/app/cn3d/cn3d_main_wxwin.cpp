@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2001/08/15 20:32:26  juran
+* Define attribList for Mac OS.
+*
 * Revision 1.66  2001/08/14 17:18:22  thiessen
 * add user font selection, store in registry
 *
@@ -802,7 +805,8 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     };
 */
 #else
-#error need to define GL attrib list
+#warning need to define GL attrib list
+	int *attribList = NULL;
 #endif
     glCanvas = new Cn3DGLCanvas(this, attribList);
 
