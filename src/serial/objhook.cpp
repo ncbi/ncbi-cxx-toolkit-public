@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/07/29 19:14:31  vasilche
+* Added missing methods.
+*
 * Revision 1.7  2003/07/29 18:47:47  vasilche
 * Fixed thread safeness of object stream hooks.
 *
@@ -109,6 +112,24 @@ CWriteClassMemberHook::~CWriteClassMemberHook(void)
 }
 
 CWriteChoiceVariantHook::~CWriteChoiceVariantHook(void)
+{
+}
+
+CSkipObjectHook::~CSkipObjectHook(void)
+{
+}
+
+CSkipClassMemberHook::~CSkipClassMemberHook(void)
+{
+}
+
+void CSkipClassMemberHook::SkipMissingClassMember(CObjectIStream& stream,
+                                                  const CObjectTypeInfoMI& member)
+{
+    member.GetMemberInfo()->DefaultSkipMissingMember(stream);
+}
+
+CSkipChoiceVariantHook::~CSkipChoiceVariantHook(void)
 {
 }
 
