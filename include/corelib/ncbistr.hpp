@@ -104,9 +104,19 @@ public:
         eNocase  /// ignore character case
     };
 
-    ///  str[pos:pos+n) == pattern  --> return 0
-    ///  str[pos:pos+n) <  pattern  --> return negative value
-    ///  str[pos:pos+n) >  pattern  --> return positive value
+    /// ATTENTION.  Be aware that:
+    ///
+    /// 1) "Compare***(..., SIZE_TYPE pos, SIZE_TYPE n, ...)" functions
+    ///    follow the ANSI C++ comparison rules a la "basic_string::compare()":
+    ///       str[pos:pos+n) == pattern   --> return 0
+    ///       str[pos:pos+n) <  pattern   --> return negative value
+    ///       str[pos:pos+n) >  pattern   --> return positive value
+    ///
+    /// 2) "strn[case]cmp()" functions follow the ANSI C comparison rules:
+    ///       str[0:n) == pattern[0:n)   --> return 0
+    ///       str[0:n) <  pattern[0:n)   --> return negative value
+    ///       str[0:n) >  pattern[0:n)   --> return positive value
+
     static int CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                            const char* pattern);
     static int CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
@@ -136,11 +146,13 @@ public:
     static int Compare(const string& s1, const string& s2,
                        ECase use_case = eCase);
 
-    // Standart C-style string comparison
-    static int strcmp(const char* s1, const char* s2);
-    static int strncmp(const char* s1, const char* s2, size_t n);
-    static int strcasecmp(const char* s1, const char* s2);
-    static int strncasecmp(const char* s1, const char* s2, size_t n);
+    // NOTE.  On some platforms, "strn[case]cmp()" can work faster than their
+    //        "Compare***()" counterparts.
+    static int strcmp      (const char* s1, const char* s2);
+    static int strncmp     (const char* s1, const char* s2, size_t n);
+    static int strcasecmp  (const char* s1, const char* s2);
+    static int strncasecmp (const char* s1, const char* s2, size_t n);
+
 
     /// The following 4 methods change the passed string, then return it
     static string& ToLower(string& str);
@@ -191,7 +203,7 @@ public:
     /// be represented as "\r", "\n", "\v", "\t", "\0", "\\", or
     /// "\xDD" where DD is the character's code in hexadecimal.
     static string PrintableString(const string& str);
-}; // struct NStr
+}; // class NStr
 
 
 
@@ -268,7 +280,7 @@ inline
 const string& CNcbiEmptyString::Get(void)
 {
     const string* str = m_Str;
-    return str? *str: FirstGet();
+    return str ? *str: FirstGet();
 }
 
 
@@ -296,7 +308,7 @@ int NStr::strcasecmp(const char* s1, const char* s2)
 #if defined(HAVE_STRICMP)
     return ::stricmp(s1, s2);
 
-#elseif defined(HAVE_STRCASECMP)
+#elif defined(HAVE_STRCASECMP)
     return ::strcasecmp(s1, s2);
 
 #else
@@ -319,7 +331,7 @@ int NStr::strncasecmp(const char* s1, const char* s2, size_t n)
 #if defined(HAVE_STRICMP)
     return ::strnicmp(s1, s2, n);
 
-#elseif defined(HAVE_STRCASECMP)
+#elif defined(HAVE_STRCASECMP)
     return ::strncasecmp(s1, s2, n);
 
 #else
@@ -342,7 +354,7 @@ inline
 int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                   const char* pattern, ECase use_case)
 {
-    return use_case == eCase?
+    return use_case == eCase ?
         CompareCase(str, pos, n, pattern): CompareNocase(str, pos, n, pattern);
 }
 
@@ -350,7 +362,7 @@ inline
 int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                   const string& pattern, ECase use_case)
 {
-    return use_case == eCase?
+    return use_case == eCase ?
         CompareCase(str, pos, n, pattern): CompareNocase(str, pos, n, pattern);
 }
 
@@ -369,7 +381,7 @@ int NStr::CompareNocase(const char* s1, const char* s2)
 inline
 int NStr::Compare(const char* s1, const char* s2, ECase use_case)
 {
-    return use_case == eCase? CompareCase(s1, s2): CompareNocase(s1, s2);
+    return use_case == eCase ? CompareCase(s1, s2): CompareNocase(s1, s2);
 }
 
 inline
@@ -483,6 +495,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2002/02/22 22:23:20  vakatov
+ * Comments changed/added for string comparison functions
+ * #elseif --> #elif
+ *
  * Revision 1.10  2002/02/22 19:51:57  ivanov
  * Changed NCBI_OS_WIN to HAVE_STRICMP in the NStr::strncasecmp and
  * NStr::strcasecmp functions
