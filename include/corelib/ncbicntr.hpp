@@ -45,6 +45,10 @@
 #  if NCBI_COMPILER_VERSION >= 300
 #    define NCBI_COMPILER_GCC3 1
 #  endif
+#elif defined(NCBI_COMPILER_ICC)
+#  if NCBI_COMPILER_VERSION >= 600
+#    define NCBI_COMPILER_ICC6
+#  endif
 #endif
 
 #undef NCBI_COUNTER_UNSIGNED
@@ -57,7 +61,7 @@
 // Messy system-specific details; they're mostly grouped together here
 // to ensure consistency.
 
-#if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_WORKSHOP) || (defined(NCBI_COMPILER_KCC) && defined(NCBI_OS_LINUX))
+#if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_WORKSHOP) || (defined(NCBI_COMPILER_KCC) && defined(NCBI_OS_LINUX)) || defined(NCBI_COMPILER_ICC6)
 #  define NCBI_COUNTER_ASM_OK
 #endif
 
@@ -286,6 +290,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2002/10/30 17:14:33  ucko
+* Enable inline asm for ICC 6, which seems to be okay with our (modern) syntax.
+*
 * Revision 1.9  2002/09/20 13:51:04  vasilche
 * Fixed volatile argument to NCBI_COUNTER_ADD
 *
