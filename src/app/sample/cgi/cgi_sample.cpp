@@ -84,7 +84,8 @@ void CSampleCgiApplication::Init()
     arg_desc->AddOptionalKey("message",
                              "message",
                              "Message passed to CGI application",
-                             CArgDescriptions::eString);
+                             CArgDescriptions::eString,
+                             CArgDescriptions::fAllowMultiple);
 
 
 
@@ -191,6 +192,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/12/03 14:38:40  kuznets
+ * Use multiple args
+ *
  * Revision 1.9  2004/12/02 14:25:26  kuznets
  * Show how to use multiple key arguments (list of values)
  *
