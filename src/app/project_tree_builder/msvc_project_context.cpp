@@ -245,6 +245,8 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
                                             (const SConfigInfo& cfg_info) const
 {
     list<string> add_include_dirs_list;
+
+    // project dir
     add_include_dirs_list.push_back 
         (CDirEntry::CreateRelativePath(m_ProjectDir, 
                                       GetApp().GetProjectTreeInfo().m_Include));
@@ -296,8 +298,8 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     }
 
     //Leave only unique dirs and join them to string
-    add_include_dirs_list.sort();
-    add_include_dirs_list.unique();
+//    add_include_dirs_list.sort();
+//    add_include_dirs_list.unique();
     return NStr::Join(add_include_dirs_list, ", ");
 }
 
@@ -916,6 +918,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/11/09 17:38:32  gouriano
+ * Do not sort INCLUDE directories
+ *
  * Revision 1.38  2004/11/03 19:37:58  gouriano
  * Correctly process LibChoices settings
  *
