@@ -110,13 +110,25 @@ public:
     virtual const CVariant& GetVariant(unsigned int col) = 0;
     virtual const CVariant& GetVariant(const string& colName) = 0;
 
+    // Disables column binding.
+    // False by default
+    virtual void DisableBind(bool b) = 0;
+
     // If this mode is true, BLOB data is returned as CVariant
     // False by default
-    //virtual void SetBlobAsVariant(bool b) = 0;
+    virtual void BindBlobToVariant(bool b) = 0;
   
     // Reads unformatted data, returns bytes actually read.
     // Advances to next column as soon as data is read from the previous one.
+    // Returns 0 when the column data is fully read
+    // Valid only for unbound columns (see DisableBind())
     virtual size_t Read(void* buf, size_t size) = 0;
+
+    // Returns current column number (while using Read())
+    virtual int GetColumnNo() = 0;
+
+    // Returns total number of columns in the resultset
+    virtual unsigned int GetTotalColumns() = 0;
   
     // Streams for handling BLOBs.
     // NOTE: buf_size is the size of internal buffer, default 1024
@@ -410,6 +422,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2002/10/31 22:37:12  kholodov
+ * Added: DisableBind(), GetColumnNo(), GetTotalColumns() methods
+ *
  * Revision 1.15  2002/10/21 20:38:17  kholodov
  * Added: GetParentConn() method to get the parent connection from IStatement,
  * ICallableStatement and ICursor objects.
