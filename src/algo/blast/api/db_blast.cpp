@@ -601,7 +601,6 @@ void CDbBlast::RunTraceback()
     if (status) {
         NCBI_THROW(CBlastException, eInternal, 
                    "Setup failed for gapped alignment with traceback"); 
-        return;
     }
 
     status = 
@@ -620,10 +619,8 @@ void CDbBlast::RunTraceback()
     ext_params = BlastExtensionParametersFree(ext_params);
     eff_len_params = BlastEffectiveLengthsParametersFree(eff_len_params);
     
-    if (status) {
+    if (status)
         NCBI_THROW(CBlastException, eInternal, "Traceback failed"); 
-        return;
-    }
 
     /* If a limit is provided for number of HSPs to return, trim the extra
        HSPs here */
@@ -659,6 +656,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.39  2004/09/07 19:56:02  dondosha
+ * return statement not needed after exception is thrown
+ *
  * Revision 1.38  2004/09/07 17:59:30  dondosha
  * CDbBlast class changed to support multi-threaded search
  *
