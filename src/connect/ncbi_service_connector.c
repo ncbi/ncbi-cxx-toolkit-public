@@ -546,7 +546,10 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                 net_info->stateless = 1/*true*/;
                 return s_Open(uuu, timeout, 0, net_info, 1/*second try*/);
             }
-            SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
+            if (net_info->firewall && *net_info->proxy_host)
+                strcpy(net_info->host, net_info->proxy_host);
+            else
+                SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
             net_info->port = uuu->port;
             /* Build and return target SOCKET connector */
             return SOCK_CreateConnectorEx(net_info->host, net_info->port,
@@ -789,6 +792,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.47  2002/10/29 22:19:37  lavr
+ * Fix proper use of non-transparent proxy if one is specified
+ *
  * Revision 6.46  2002/10/28 15:44:00  lavr
  * Use "ncbi_ansi_ext.h" privately and use strncpy0()
  *
