@@ -49,6 +49,7 @@ void NetCache_ConfigureWithLB(CNetCacheClient* nc_client,
         goto err;
     }
 
+    {{
     const SSERV_Info* sinfo;
     STimeout& to = nc_client->SetCommunicationTimeout();
 
@@ -74,6 +75,7 @@ void NetCache_ConfigureWithLB(CNetCacheClient* nc_client,
     } // while
 
     SERV_Close(srv_it);
+    }}
 err:
     // cannot connect
     NCBI_THROW(CNetCacheException, eCommunicationError, 
@@ -88,6 +90,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/12/20 13:48:56  kuznets
+ * Fixed compilation problem (GCC)
+ *
  * Revision 1.1  2004/12/17 15:26:48  kuznets
  * Initial revision
  *
