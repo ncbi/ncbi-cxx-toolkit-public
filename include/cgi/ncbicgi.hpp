@@ -29,10 +29,13 @@
 * Author:  Denis Vakatov
 *
 * File Description:
-*   New NCBI CGI API on C++(using STL)
+*   NCBI C++ CGI API
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1998/11/18 21:47:50  vakatov
+* Draft version of CCgiCookie::
+*
 * Revision 1.11  1998/11/17 23:47:13  vakatov
 * + CCgiRequest::EMedia
 *
@@ -64,17 +67,21 @@ public:
     //  - both "name" and "value" must not contain: ";, "
     CCgiCookie(const string& name, const string& value);
 
+    // Compose and write to output stream "os":
+    //   "Set-Cookie: name=value; expires=date; path=val_path; domain=dom_name;
+    //    expires"
+    // (here, only "name=value" is mandatory)
+    CNcbiOstream& Write(CNcbiOstream& os) const;
+
     // All SetXXX() methods beneath:
     //  - set the property to "str" if "str" has valid format
     //  - throw the "invalid_argument" if "str" has invalid format
-    void SetName      (const string& str);
+    void SetName      (const string& str);  // mandatory
     void SetValue     (const string& str);
-    void SetDomain    (const string& str);
-    void SetValidPath (const string& str);
-    // "Wed Aug 9 07:49:37 1994\n\0"  (that is, the exact ANSI C "asctime()")
-    void SetExpDate   (const string& str);
-    void SetExpDate   (const tm& exp_date);
-    void SetSecure    (bool secure);
+    void SetDomain    (const string& str);  // not spec'd by default
+    void SetValidPath (const string& str);  // not spec'd by default
+    void SetExpDate   (const tm& exp_date); // infinite by default
+    void SetSecure    (bool secure);        // "false" by default
 
     // All GetXXX() methods beneath:
     //  - return "true"  and copy the property to the "str" if the prop. is set
@@ -84,17 +91,10 @@ public:
     bool GetValue     (string*  str) const;
     bool GetDomain    (string*  str) const;
     bool GetValidPath (string*  str) const;
+    // "Wed Aug 9 07:49:37 1994\n\0"  (that is, the exact ANSI C "asctime()")
     bool GetExpDate   (string*  str) const;
     bool GetExpDate   (tm* exp_date) const;
     bool GetSecure    (void)         const;
-
-    // Compose and write to output stream "os":
-    //   "Set-cookie: name=value; expires=date; path=val_path; domain=dom_name;
-    //    expires"
-    // (here, only "name=value" is mandatory)
-    CNcbiOstream& Put(CNcbiOstream& os) const;
-    friend CNcbiOstream& operator<<(CNcbiOstream& os,
-                                    const CCgiCookie& cookie);
 
 private:
     string m_Name;
@@ -103,6 +103,10 @@ private:
     string m_ValidPath;
     tm     m_Expires;
     bool   m_Secure;
+
+    static void CheckValidCookieField(const string& str,
+                                      const char* banned_symbols);
+    static bool GetString(string* str, const string& val);
 };  // CCgiCookie
 
 
@@ -239,7 +243,7 @@ private:
 
 ///////////////////////////////////////////////////////
 // All inline function implementations are in this file
-//#include <ncbicgi.inl>
+#include <ncbicgi.inl>
 
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
