@@ -34,6 +34,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/11/26 00:27:05  vakatov
+* Added <iomanip[.h]> and relevant #define's NcbiXXX
+*
 * Revision 1.7  1998/11/06 22:42:39  vakatov
 * Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
 * API to namespace "ncbi::" and to use it by default, respectively
@@ -56,6 +59,7 @@
 #  include <iostream>
 #  include <fstream>
 #  include <strstream>
+#  include <iomanip>
 #  if defined(NCBI_NO_NAMESPACE)
 #    define IO_PREFIX
 #  else
@@ -72,6 +76,7 @@
 #  else
 #    include <strstream.h>
 #  endif
+#  include <iomanip.h>
 #  define IO_PREFIX
 #  define IOS_BASE   ::ios
 #  define SEEKOFF    seekoff
@@ -119,6 +124,13 @@ typedef IO_PREFIX::fstream       CNcbiFstream;
 #define NcbiHex    IO_PREFIX::hex
 #define NcbiOct    IO_PREFIX::oct
 #define NcbiWs     IO_PREFIX::ws
+
+#define NcbiSetbase       IO_PREFIX::setbase
+#define NcbiResetiosflags IO_PREFIX::resetiosflags
+#define NcbiSetiosflags   IO_PREFIX::setiosflags
+#define NcbiSetfill       IO_PREFIX::setfill
+#define NcbiSetprecision  IO_PREFIX::setprecision
+#define NcbiSetw          IO_PREFIX::setw
 
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
