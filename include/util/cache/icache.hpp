@@ -146,7 +146,7 @@ public:
     /// @param data 
     ///    pointer on data buffer
     /// @param size 
-    ///    data buffer size
+    ///    data buffer size in bytes (chars)
     /// @param flag 
     ///    indicator to keep old BLOBs or drop it from the cache
     virtual void Store(const string&  key,
@@ -180,7 +180,7 @@ public:
     /// @param 
     ///    buf pointer on destination buffer
     /// @param 
-    ///    size buffer size
+    ///    size buffer size in bytes (chars)
     /// @return 
     ///    FALSE if BLOB doesn't exist or expired
     ///
@@ -282,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/04/19 18:05:40  kuznets
+ * Clarification in the comments department
+ *
  * Revision 1.3  2003/12/08 16:11:43  kuznets
  * Added plugin mananger support
  *
