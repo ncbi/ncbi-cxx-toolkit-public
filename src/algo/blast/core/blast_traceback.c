@@ -1134,6 +1134,9 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
             not be a fatal error, so just go on to the next subject
             sequence */
          if (sbp->posMatrix == NULL) {
+            /** @todo FIXME Results should not be silently skipped,
+             *        need a warning here
+             */
             hsp_list = Blast_HSPListFree(hsp_list);
             continue;
          }
