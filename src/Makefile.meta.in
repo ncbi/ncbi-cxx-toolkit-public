@@ -125,17 +125,24 @@ CHECK_ADD_KET = ||  exit 5 ; \
 fi
 
 
-all:
+all:       all.needs-reqs
+clean:     clean.needs-reqs
+purge:     purge.needs-reqs
+check:     check.needs-reqs
+check_add: check_add.needs-reqs
+
+
+all.real:
 	@$(USRP_BRA) all   $(USRP_KET)
 	@$(ASNP_BRA) all   $(ASNP_KET)
 	@$(LIBP_BRA) all   $(LIBP_KET)
 	@$(APPP_BRA) all   $(APPP_KET)
-clean:
+clean.real:
 	@$(USRP_BRA) clean $(USRP_KET)
 #	@$(ASNP_BRA) clean_sources $(ASNP_KET)
 	@$(LIBP_BRA) clean $(LIBP_KET)
 	@$(APPP_BRA) clean $(APPP_KET)
-purge:
+purge.real:
 	@$(USRP_BRA) purge $(USRP_KET)
 #	@$(ASNP_BRA) purge_sources $(ASNP_KET)
 	@$(LIBP_BRA) purge $(LIBP_KET)
@@ -144,13 +151,22 @@ sources:
 	@$(ASNP_BRA) all   $(ASNP_KET)
 libs:
 	@$(LIBP_BRA) all   $(LIBP_KET)
-check:
+check.real:
 	@$(CHECK_BRA) check_add $(CHECK_KET)
-check_add:
+check_add.real:
 	@$(CHECK_ADD_BRA)  $(CHECK_ADD_KET)
 
 status_dir = @status_dir@
-requirements: $(REQUIRES:%=$(status_dir)/%.enabled)
+reqs = $(REQUIRES:%=$(status_dir)/%.enabled)
+# uncommenting this makes gmake ignore the fallback rule for some reason
+# requirements: $(reqs)
+
+%.needs-reqs: $(reqs) %.real
+	@: dummy rule
+
+%.needs-reqs:
+	@echo "NOTE:  Skipping project \"`basename \`pwd\``\" due to unmet requirements:"
+	@for f in $(reqs);  do test -f "$$f" || basename "$$f" .enabled;  done
 
 ### Recursive build -- in the [SUB_PROJ] directories
 
@@ -164,28 +180,30 @@ SUB_BRA = \
             continue ; \
         fi ; \
         ( if test -d $$i ; then \
-          cd $$i  &&  if $(MAKE) $(MFLAGS) -q requirements ; then \
-            $(RWL) $(MAKE) $(MFLAGS)
+          cd $$i  &&  $(RWL) $(MAKE) $(MFLAGS)
 
 SUB_KET = || $(NOTK_BRA) exit 4 $(NOTK_KET) ; \
-          else \
-            echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
-          fi \
         else \
           echo "Warning:  non-existent sub-project \"$$i\"" ; \
         fi ) || $(NOTK_BRA)  exit 5 $(NOTK_KET) ; \
     done ; \
 fi
 
-all_r: all
+all_r:       all_r.needs-reqs
+clean_r:     clean_r.needs-reqs
+purge_r:     purge_r.needs-reqs
+check_r:     check_r.needs-reqs
+check_add_r: check_add_r.needs-reqs
+
+all_r.real: all.real
 	@$(SUB_BRA) all_r   $(SUB_KET)
-clean_r: clean
+clean_r.real: clean.real
 	@$(SUB_BRA) clean_r $(SUB_KET)
-purge_r: purge 
+purge_r.real: purge.real
 	@$(SUB_BRA) purge_r $(SUB_KET)
-check_r:
+check_r.real:
 	@$(CHECK_BRA) check_add_r $(CHECK_KET)
-check_add_r: check_add
+check_add_r.real: check_add.real
 	@$(SUB_BRA) check_add_r $(SUB_KET)
 
 
@@ -223,26 +241,31 @@ if test -n "$(SUB_PROJ)"             -o  -n "$(POTENTIAL_SUB_PROJ)"  -o \
     for i in $$x_subproj ; do \
         if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
         ( if test -d $$i ; then \
-          cd $$i  &&  if $(MAKE) $(MFLAGS) -q requirements ; then \
-            $(RWL) $(MAKE) $(MFLAGS)
+          cd $$i  &&  $(RWL) $(MAKE) $(MFLAGS)
 
 SUB_KET_P = $(SUB_KET)
 
-all_p: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
+all_p:       all_p.needs-reqs
+clean_p:     clean_p.needs-reqs
+purge_p:     purge_p.needs-reqs
+check_p:     check_p.needs-reqs
+check_add_p: check_add_p.needs-reqs
+
+all_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@+if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) all; else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) all_p $(SUB_KET_P); else true; fi
 
-clean_p: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
+clean_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) clean; else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) clean_p $(SUB_KET_P); else true; fi
 
-purge_p: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
+purge_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) purge; else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) purge_p $(SUB_KET_P); else true; fi
 
-check_p: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
+check_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@$(CHECK_BRA) check_add_p $(CHECK_KET)
 
-check_add_p: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
+check_add_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(CHECK_ADD_BRA) $(CHECK_ADD_KET); else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) check_add_p $(SUB_KET_P); else true; fi
