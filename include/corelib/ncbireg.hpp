@@ -32,7 +32,7 @@
  */
 
 /// @file ncbireg.hpp
-/// Process information in the NCBI Registry aka. configuration files.
+/// Process information in the NCBI Registry using configuration files.
 ///
 /// Classes to perform NCBI Registry operations including:
 /// - Read and parse configuration file
@@ -391,7 +391,7 @@ private:
     /// values (TRegSection).
     typedef map<string, TRegSection, PNocase>  TRegistry;
 
-    TRegistry    m_Registry;  ///< Registry.
+    TRegistry    m_Registry;  ///< Internal representation of Registry
 
     string       m_Comment;   ///< All-registry comment
 
@@ -424,6 +424,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/08/12 12:51:35  siyan
+ * Minor comment changes.
+ *
  * Revision 1.27  2003/07/21 18:42:38  siyan
  * Documentation changes.
  *
