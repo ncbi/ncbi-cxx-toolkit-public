@@ -160,8 +160,7 @@ void CSocket::GetPeerAddress(unsigned int* host, unsigned short* port,
             *host = 0;
         if ( port )
             *port = 0;
-    }
-    else {
+    } else {
         SOCK_GetPeerAddress(m_Socket, host, port, byte_order);
     }
 }
@@ -335,6 +334,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/09/17 20:43:49  lavr
+ * Style conforming tiny little change
+ *
  * Revision 6.5  2002/09/16 22:32:49  vakatov
  * Allow to change ownership for the underlying sockets "on-the-fly";
  * plus some minor (mostly formal) code and comments rearrangements
