@@ -437,8 +437,6 @@ bool CSeqDBImpl::OidToPig(Uint4 oid, Uint4 & pig) const
     NCBI_THROW(CSeqDBException,
                eArgErr,
                "OID not in valid range.");
-    
-    return false;
 }
 
 bool CSeqDBImpl::GiToOid(Uint4 gi, Uint4 & oid) const
@@ -467,8 +465,6 @@ bool CSeqDBImpl::OidToGi(Uint4 oid, Uint4 & gi) const
     NCBI_THROW(CSeqDBException,
                eArgErr,
                "OID not in valid range.");
-    
-    return false;
 }
 
 END_NCBI_SCOPE
