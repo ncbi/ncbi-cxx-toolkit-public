@@ -44,7 +44,7 @@ static char const rcsid[] =
 
 /* See description in blast_setup.h */
 Int2
-BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
+Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
                         const BlastScoringOptions * scoring_options,
                         EBlastProgramType program, BlastQueryInfo * query_info)
 {
@@ -70,11 +70,7 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
                 kbp_gap = sbp->kbp_gap_std[index];
                 kbp     = sbp->kbp_std[index];
 
-                kbp_gap->Lambda = kbp->Lambda;
-                kbp_gap->K      = kbp->K;
-                kbp_gap->logK   = kbp->logK;
-                kbp_gap->H      = kbp->H;
-                kbp_gap->paramC = kbp->paramC;
+                Blast_KarlinBlkCopy(kbp_gap, kbp);
             }
         }
 
@@ -99,13 +95,12 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
              * kbp_gap_psi (as in old code - BLASTSetUpSearchInternalByLoc) */
             sbp->kbp_gap_psi[index] = Blast_KarlinBlkNew();
             
-            sbp->kbp_gap_psi[index]->Lambda = sbp->kbp_gap_std[index]->Lambda;
-            sbp->kbp_gap_psi[index]->K      = sbp->kbp_gap_std[index]->K;
-            sbp->kbp_gap_psi[index]->logK   = sbp->kbp_gap_std[index]->logK;
-            sbp->kbp_gap_psi[index]->H      = sbp->kbp_gap_std[index]->H;
-            sbp->kbp_gap_psi[index]->paramC = sbp->kbp_gap_std[index]->paramC;
+            Blast_KarlinBlkCopy(sbp->kbp_gap_psi[index], 
+                                sbp->kbp_gap_std[index]);
         }
     }
+
+    sbp->kbp_gap = sbp->kbp_gap_std;
 
     return 0;
 }
@@ -125,10 +120,11 @@ s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
 
    sbp->read_in_matrix = TRUE;
    sbp->name = strdup(options->matrix);
-   if ((status = BLAST_ScoreBlkMatFill(sbp, options->matrix_path)) != 0)
+   if ((status = Blast_ScoreBlkMatrixFill(sbp, options->matrix_path)) != 0)
       return status;
    kbp = sbp->kbp_gap_std[0] = Blast_KarlinBlkNew();
-   sbp->kbp_std = sbp->kbp_gap_std;
+   /* All four Karlin blocks will point to the same structure. */
+   sbp->kbp = sbp->kbp_std = sbp->kbp_gap = sbp->kbp_gap_std;
 
    if (0 == strcmp("BLOSUM62", options->matrix)) {
       kbp->paramC = 0.50;
@@ -351,7 +347,7 @@ return status;
 }
 
 Int2
-BlastScoreBlkMatrixInit(EBlastProgramType program_number, 
+Blast_ScoreBlkMatrixInit(EBlastProgramType program_number, 
                   const BlastScoringOptions* scoring_options,
                   BlastScoreBlk* sbp)
 {
@@ -392,12 +388,7 @@ BlastScoreBlkMatrixInit(EBlastProgramType program_number,
             *p = toupper(*p);
         }
     }
-    status = BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix_path);
-    if (status) {
-        return status;
-    }
-
-    status = Blast_KarlinBlkIdealCalc(sbp);
+    status = Blast_ScoreBlkMatrixFill(sbp, scoring_options->matrix_path);
     if (status) {
         return status;
     }
@@ -405,21 +396,18 @@ BlastScoreBlkMatrixInit(EBlastProgramType program_number,
     return status;
 }
 
-
 Int2 
-BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, 
-                         BlastQueryInfo* query_info, 
-                         const BlastScoringOptions* scoring_options, 
-                         EBlastProgramType program_number, 
-                         Boolean phi_align, 
-                         BlastScoreBlk* *sbpp, 
-                         double scale_factor, 
-                         Blast_Message* *blast_message)
+BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk, 
+                        BlastQueryInfo* query_info, 
+                        const BlastScoringOptions* scoring_options, 
+                        EBlastProgramType program_number, 
+                        Boolean phi_align, 
+                        BlastScoreBlk* *sbpp, 
+                        double scale_factor, 
+                        Blast_Message* *blast_message)
 {
     BlastScoreBlk* sbp;
     Int2 status=0;      /* return value. */
-    Int4 context; /* loop variable. */
-    Boolean query_valid = FALSE;
 
     if (sbpp == NULL)
        return 1;
@@ -435,7 +423,7 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
     *sbpp = sbp;
     sbp->scale_factor = scale_factor;
 
-    status = BlastScoreBlkMatrixInit(program_number, scoring_options, sbp);
+    status = Blast_ScoreBlkMatrixInit(program_number, scoring_options, sbp);
     if (status) {
         *blast_message = Blast_Perror(status);
         return status;
@@ -445,34 +433,15 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
     if (phi_align) {
        s_PHIScoreBlkFill(sbp, scoring_options, blast_message);
     } else {
-       for (context = query_info->first_context;
-            context <= query_info->last_context; ++context) {
-      
-          Int4 context_offset;
-          Int4 query_length;
-          Uint1 *buffer;              /* holds sequence */
-          
-          /* For each query, check if forward strand is present */
-          if ((query_length = query_info->contexts[context].query_length) < 0)
-              continue;
-          
-          context_offset = query_info->contexts[context].query_offset;
-          buffer = &query_blk->sequence[context_offset];
-
-          if ((status = BLAST_ScoreBlkFill(sbp, (char *) buffer,
-                                           query_length, context)) == 0) {
-             query_valid = TRUE;
-          }
-       }
-
-       if (!query_valid) {
+       if ((status = Blast_ScoreBlkKbpUngappedCalc(program_number, sbp, 
+                        query_blk->sequence, query_info)) != 0) {
           Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
              "Query completely filtered; nothing left to search");
           return status;
        }
 
        if (scoring_options->gapped_calculation) {
-          status = BlastScoreBlkGappedFill(sbp, scoring_options, 
+          status = Blast_ScoreBlkKbpGappedCalc(sbp, scoring_options, 
                                            program_number, query_info);
           if (status) {
              Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
@@ -480,22 +449,6 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
              return status;
           }
        }
-    }
-
-    /* Set Blast_KarlinBlk* aliases, please keep these in one place! */
-    sbp->kbp = sbp->kbp_std;
-    if (scoring_options->gapped_calculation) {
-       sbp->kbp_gap = sbp->kbp_gap_std;
-    }
-
-    /* Get "ideal" values for these programs because the actual values were
-     * calculated using translated sequences */
-    if (program_number == eBlastTypeBlastx ||
-        program_number == eBlastTypeTblastx ||
-        program_number == eBlastTypeRpsTblastn) {
-        Blast_ReplaceUngappedKbpWithIdealKbp(sbp, 
-                                             query_info->first_context, 
-                                             query_info->last_context);
     }
 
     return 0;
@@ -560,7 +513,7 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     else 
         filter_maskloc = BlastMaskLocFree(filter_maskloc);
 
-    status = BlastSetup_GetScoreBlock(query_blk, query_info, scoring_options, 
+    status = BlastSetup_ScoreBlkInit(query_blk, query_info, scoring_options, 
                                       program_number, hit_options->phi_align, 
                                       sbpp, scale_factor, blast_message);
     if (status > 0) {

@@ -1077,7 +1077,7 @@ BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp)
 }
 
 Int2
-BLAST_ScoreBlkMatFill(BlastScoreBlk* sbp, char* matrix_path)
+Blast_ScoreBlkMatrixFill(BlastScoreBlk* sbp, char* matrix_path)
 {
     Int2 status = 0;
     
@@ -2116,7 +2116,7 @@ See:  Karlin, S. & Altschul, S.F. "Methods for Assessing the Statistical
 
 *******************************************************************************/
 Int2
-Blast_KarlinBlkCalc(Blast_KarlinBlk* kbp, Blast_ScoreFreq* sfp)
+Blast_KarlinBlkUngappedCalc(Blast_KarlinBlk* kbp, Blast_ScoreFreq* sfp)
 {
 	
 
@@ -2160,37 +2160,82 @@ ErrExit:
   The rfp and stdrfp are calculated for each context, this should be
   fixed. 
 */
-
 Int2
-BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int4 context_number)
+Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program, 
+                              BlastScoreBlk* sbp, Uint1* query, 
+                              BlastQueryInfo* query_info)
 {
+   Int4 context; /* loop variable. */
+   Boolean query_valid = FALSE;
 	Blast_ResFreq* rfp,* stdrfp;
-	Int2 retval=0;
+   Int2 status = 0;
+   Boolean check_ideal = 
+      (program == eBlastTypeBlastx || program == eBlastTypeTblastx ||
+       program == eBlastTypeRpsTblastn);
 
-	rfp = Blast_ResFreqNew(sbp);
+   /* Ideal Karlin block is filled unconditionally.
+    * @todo FIXME: Is it necessary? It is needed for searches with translated
+    * queries, and also in PSI BLAST, but not in other programs. 
+    */
+   status = Blast_ScoreBlkKbpIdealCalc(sbp);
+   if (status)
+      return status;
+
 	stdrfp = Blast_ResFreqNew(sbp);
 	Blast_ResFreqStdComp(sbp, stdrfp);
-	Blast_ResFreqString(sbp, rfp, query, query_length);
-	sbp->sfp[context_number] = Blast_ScoreFreqNew(sbp->loscore, sbp->hiscore);
-	BlastScoreFreqCalc(sbp, sbp->sfp[context_number], rfp, stdrfp);
-	sbp->kbp_std[context_number] = Blast_KarlinBlkNew();
-	retval = Blast_KarlinBlkCalc(sbp->kbp_std[context_number], sbp->sfp[context_number]);
-	if (retval)
-	{
-		rfp = Blast_ResFreqFree(rfp);
-		stdrfp = Blast_ResFreqFree(stdrfp);
-		return retval;
-	}
-	sbp->kbp_psi[context_number] = Blast_KarlinBlkNew();
-	retval = Blast_KarlinBlkCalc(sbp->kbp_psi[context_number], sbp->sfp[context_number]);
-	rfp = Blast_ResFreqFree(rfp);
+   rfp = Blast_ResFreqNew(sbp);
+
+   for (context = query_info->first_context;
+        context <= query_info->last_context; ++context) {
+      
+      Int4 context_offset;
+      Int4 query_length;
+      Uint1 *buffer;              /* holds sequence */
+      Blast_KarlinBlk* kbp;
+      
+      /* For each query, check if forward strand is present */
+      if ((query_length = query_info->contexts[context].query_length) < 0)
+         continue;
+      
+      context_offset = query_info->contexts[context].query_offset;
+      buffer = &query[context_offset];
+      
+      Blast_ResFreqString(sbp, rfp, buffer, query_length);
+      sbp->sfp[context] = Blast_ScoreFreqNew(sbp->loscore, sbp->hiscore);
+      BlastScoreFreqCalc(sbp, sbp->sfp[context], rfp, stdrfp);
+      sbp->kbp_std[context] = kbp = Blast_KarlinBlkNew();
+      status = Blast_KarlinBlkUngappedCalc(kbp, sbp->sfp[context]);
+      if (status)	{
+         continue;
+      }
+      /* For searches with translated queries, check whether ideal values
+         should be substituted instead of calculated values, so a more 
+         conservative (smaller) Lambda is used. */
+      if (check_ideal && kbp->Lambda >= sbp->kbp_ideal->Lambda)
+         Blast_KarlinBlkCopy(kbp, sbp->kbp_ideal);
+
+      sbp->kbp_psi[context] = Blast_KarlinBlkNew();
+      if ((status = Blast_KarlinBlkUngappedCalc(sbp->kbp_psi[context], 
+                                                sbp->sfp[context])) == 0)
+         query_valid = TRUE;
+   }
+
+   rfp = Blast_ResFreqFree(rfp);
 	stdrfp = Blast_ResFreqFree(stdrfp);
 
-	return retval;
+   if (query_valid)
+      status = 0;
+   else 
+      return status;
+
+   /* Set ungapped Blast_KarlinBlk* alias */
+   sbp->kbp = sbp->kbp_std;
+
+   return status;
 }
 
 Int2
-Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp)
+Blast_ScoreBlkKbpIdealCalc(BlastScoreBlk* sbp)
 
 {
 	Blast_ResFreq* stdrfp = NULL;
@@ -2206,46 +2251,12 @@ Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp)
 	sfp = Blast_ScoreFreqNew(sbp->loscore, sbp->hiscore);
 	BlastScoreFreqCalc(sbp, sfp, stdrfp, stdrfp);
 	sbp->kbp_ideal = Blast_KarlinBlkNew();
-	Blast_KarlinBlkCalc(sbp->kbp_ideal, sfp);
+	Blast_KarlinBlkUngappedCalc(sbp->kbp_ideal, sfp);
 
 	stdrfp = Blast_ResFreqFree(stdrfp);
 	sfp = Blast_ScoreFreqFree(sfp);
 
     return status;
-}
-
-Int2
-Blast_ReplaceUngappedKbpWithIdealKbp(BlastScoreBlk* sbp, 
-                                     Int4 context_start, 
-                                     Int4 context_end)
-{
-    Blast_KarlinBlk* kbp_ideal,* kbp;
-    Int4 index;
-
-    ASSERT(sbp);
-    ASSERT(sbp->kbp_ideal); /* this field is allocated unconditionally */
-
-    /* This function should NOT be called for gapped Karlin-Altschul blocks */
-    ASSERT(sbp->kbp != sbp->kbp_gap_std);
-    ASSERT(sbp->kbp != sbp->kbp_gap_psi);
-
-    kbp_ideal = sbp->kbp_ideal;
-    /* Replace the calculated values with ideal ones for blastx, tblastx. */
-    for (index=context_start; index<=context_end; index++)
-    {
-        kbp = sbp->kbp[index];    
-        if (!kbp)
-            continue;
-        if (kbp->Lambda >= kbp_ideal->Lambda)
-        {
-            kbp->Lambda = kbp_ideal->Lambda;
-            kbp->K = kbp_ideal->K;
-            kbp->logK = kbp_ideal->logK;
-            kbp->H = kbp_ideal->H;
-        }
-    }
-
-    return 0;
 }
 
 /*
@@ -2261,6 +2272,15 @@ Blast_KarlinBlkNew(void)
 	kbp = (Blast_KarlinBlk*) calloc(1, sizeof(Blast_KarlinBlk));
 
 	return kbp;
+}
+
+void Blast_KarlinBlkCopy(Blast_KarlinBlk* kbp_to, Blast_KarlinBlk* kbp_from)
+{
+   kbp_to->Lambda = kbp_from->Lambda;
+   kbp_to->K = kbp_from->K;
+   kbp_to->logK = kbp_from->logK;
+   kbp_to->H = kbp_from->H;
+   kbp_to->paramC = kbp_from->paramC;
 }
 
 static SBLASTMatrixStructure*
@@ -2596,7 +2616,7 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
 
 {
 	char buffer[256];
-	Int2 status = Blast_KarlinkGapBlkFill(kbp, gap_open, gap_extend, decline_align, matrix_name);
+	Int2 status = Blast_KarlinBlkGappedLoadFromTables(kbp, gap_open, gap_extend, decline_align, matrix_name);
 
 	if (status && error_return)
 	{
@@ -2643,7 +2663,7 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
 			2 if matrix found, but open, extend etc. values not supported.
 */
 Int2
-Blast_KarlinkGapBlkFill(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, const char* matrix_name)
+Blast_KarlinBlkGappedLoadFromTables(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, const char* matrix_name)
 {
 	Boolean found_matrix=FALSE;
 	array_of_8 *values;
@@ -3626,8 +3646,11 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.105  2004/12/09 15:22:56  dondosha
+ * Renamed some functions dealing with BlastScoreBlk and Blast_KarlinBlk structures
+ *
  * Revision 1.104  2004/11/30 18:34:28  camacho
- * Rename Blast_KarlinBlkStandardCalc to Blast_ReplaceUngappedKbpWithIdealKbp
+ * Rename Blast_KarlinBlkStandardCalc to Blast_ScoreBlkChooseUngappedOrIdealKbp
  *
  * Revision 1.103  2004/11/30 15:27:16  camacho
  * Rename Blast_ResFreqDestruct to Blast_ResFreqFree
@@ -3639,7 +3662,7 @@ BLAST_ComputeLengthAdjustment(double K,
  * Added and/or fixed doxygen comments
  *
  * Revision 1.100  2004/11/23 21:47:56  camacho
- * Changed signature of Blast_KarlinBlkIdealCalc so that it is used only
+ * Changed signature of Blast_ScoreBlkKbpIdealCalc so that it is used only
  * to initialize kbp_ideal field of BlastScoreBlk.
  * Rename Blast_KarlinBlk* allocation/deallocation structures
  * to follow standard naming conventions.
@@ -3696,7 +3719,7 @@ BLAST_ComputeLengthAdjustment(double K,
  * Doxygen fix
  *
  * Revision 1.86  2004/07/14 18:04:52  camacho
- * Add const type qualifier to BlastScoreBlk in BlastScoreFreqCalc & Blast_KarlinBlkIdealCalc
+ * Add const type qualifier to BlastScoreBlk in BlastScoreFreqCalc & Blast_ScoreBlkKbpIdealCalc
  *
  * Revision 1.85  2004/06/21 12:52:05  camacho
  * Replace PSI_ALPHABET_SIZE for BLASTAA_SIZE
@@ -3762,7 +3785,7 @@ BLAST_ComputeLengthAdjustment(double K,
  * Make Blast_GetStdAlphabet and Blast_ScoreFreqNew non-static
  *
  * Revision 1.66  2004/05/04 13:00:02  madden
- * Change BlastKarlinBlkStandardCalcEx to more descriptive Blast_KarlinBlkIdealCalc, make public
+ * Change BlastKarlinBlkStandardCalcEx to more descriptive Blast_ScoreBlkKbpIdealCalc, make public
  *
  * Revision 1.65  2004/04/30 14:39:44  papadopo
  * 1. Remove unneeded #defines

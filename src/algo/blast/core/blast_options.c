@@ -708,7 +708,7 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
 	{
 		Int2 status=0;
 
-		if ((status=Blast_KarlinkGapBlkFill(NULL, options->gap_open, 
+		if ((status=Blast_KarlinBlkGappedLoadFromTables(NULL, options->gap_open, 
                      options->gap_extend, options->decline_align, 
                      options->matrix)) != 0)
 		{
@@ -1682,6 +1682,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.146  2004/12/09 15:22:56  dondosha
+ * Renamed some functions dealing with BlastScoreBlk and Blast_KarlinBlk structures
+ *
  * Revision 1.145  2004/12/08 14:20:29  camacho
  * + PSIBlastOptionsValidate
  *
@@ -2185,7 +2188,7 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * Moved BlastNumber2Program and BlastProgram2Number from blast_options to blast_util
  *
  * Revision 1.16  2003/03/03 14:43:21  madden
- * Use BlastKarlinkGapBlkFill, PrintMatrixMessage, and PrintAllowedValuesMessage
+ * Use BlastKarlinBlkGappedFill, PrintMatrixMessage, and PrintAllowedValuesMessage
  *
  * Revision 1.15  2003/02/26 15:42:50  madden
  * const charPtr becomes const char *, add BlastExtensionOptionsValidate

@@ -181,16 +181,21 @@ Int2 BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp);
 Int2 BLAST_ScoreSetAmbigRes (BlastScoreBlk* sbp, char ambiguous_res);
 
 
-/** Calculate the ungapped Karlin parameters. This function should be called 
- * once for each context, or frame translated.
- * @param sbp the object to be modified [in|out]
- * @param string the query sequence [in]
- * @param length length of above sequence [in]
- * @param context_number which element in various arrays [in]
- * @return zero on success.
+/** Calculate and fill the ungapped Karlin-Altschul parameters in the
+ * BlastScoreBlk structure.
+ * @param program BLAST program type, needed to decide whether to substitute
+ *                ideal values. [in]
+ * @param sbp Scoring block to work with [in] [out]
+ * @param query Buffer containing (concatenated) query sequence [in]
+ * @param query_info Information about offsets of concatenated queries [in]
+ * @param return 0 if ungapped Karlin-Altschul parameters could be 
+ *               calculated for at least one context; 1 otherwise.
  */
-Int2 BLAST_ScoreBlkFill (BlastScoreBlk* sbp, char* string, Int4 length, Int4 context_number);
- 
+Int2
+Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program, 
+                              BlastScoreBlk* sbp, Uint1* query, 
+                              BlastQueryInfo* query_info);
+
 /** This function fills in the BlastScoreBlk structure.  
  * Tasks are:
  *	-read in the matrix
@@ -198,12 +203,20 @@ Int2 BLAST_ScoreBlkFill (BlastScoreBlk* sbp, char* string, Int4 length, Int4 con
  * @param sbp Scoring block [in] [out]
  * @param matrix Full path to the matrix in the directory structure [in]
 */
-Int2 BLAST_ScoreBlkMatFill (BlastScoreBlk* sbp, char* matrix);
+Int2 Blast_ScoreBlkMatrixFill (BlastScoreBlk* sbp, char* matrix);
  
 /** Callocs a Blast_KarlinBlk
  * @return pointer to the Blast_KarlinBlk
 */
 Blast_KarlinBlk* Blast_KarlinBlkNew (void);
+
+/** Copies contents of one Karlin block to another. Both must be allocated
+ * before this function is called.
+ * @param kbp_to Karlin block to copy values to [in] [out]
+ * @param kbp_from Karlin block to copy values from [in]
+ */ 
+void Blast_KarlinBlkCopy(Blast_KarlinBlk* kbp_to, Blast_KarlinBlk* kbp_from);
+
 
 /** Deallocates the KarlinBlk
  * @param kbp KarlinBlk to be deallocated [in]
@@ -234,21 +247,7 @@ Int2 Blast_KarlinBlkGappedCalc (Blast_KarlinBlk* kbp, Int4 gap_open,
  * @param sbp ScoreBlk used to calculate "ideal" values. [in|out]
  * @return 0 on success, 1 on failure
 */
-Int2 Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp);
-
-
-/** Replaces the ungapped KarlinBlk pointers in BlastScoreBlk with "ideal" 
- * values if the ideal Lambda is less than the actual Lambda.  This happens
- * if the query is translated and the calculated (real) Karlin
- * parameters are bad, as they're calculated for non-coding regions.
- * @param sbp the object to be modified [in|out]
- * @param context_start first context to start with [in]
- * @param context_end last context to work on [in]
- * @return zero on success
- */
-Int2 Blast_ReplaceUngappedKbpWithIdealKbp(BlastScoreBlk* sbp, 
-                                          Int4 context_start, 
-                                          Int4 context_end);
+Int2 Blast_ScoreBlkKbpIdealCalc(BlastScoreBlk* sbp);
 
 /** Attempts to fill KarlinBlk for given gap opening, extensions etc.
  *
@@ -261,16 +260,16 @@ Int2 Blast_ReplaceUngappedKbpWithIdealKbp(BlastScoreBlk* sbp,
  *          1 if matrix not found
  *           2 if matrix found, but open, extend etc. values not supported.
 */
-Int2 Blast_KarlinkGapBlkFill(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, const char* matrix_name);
+Int2 Blast_KarlinBlkGappedLoadFromTables(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, const char* matrix_name);
 
-/** Prints a messages about the allowed matrices, BlastKarlinkGapBlkFill should return 1 before this is called. 
+/** Prints a messages about the allowed matrices, BlastKarlinBlkGappedFill should return 1 before this is called. 
  * @param matrix the matrix to print a message about [in]
  * @return the message
  */
 char* BLAST_PrintMatrixMessage(const char *matrix);
 
 /** Prints a messages about the allowed open etc values for the given matrix, 
- * BlastKarlinkGapBlkFill should return 2 before this is called. 
+ * BlastKarlinBlkGappedFill should return 2 before this is called. 
  * @param matrix name of the matrix [in]
  * @param gap_open gap existence cost [in]
  * @param gap_extend cost to extend a gap by one [in]
@@ -523,7 +522,7 @@ Blast_GetStdAlphabet(Uint1 alphabet_code, Uint1* residues,
  * @return zero on success, 1 on error.
  */
 Int2
-Blast_KarlinBlkCalc(Blast_KarlinBlk* kbp, Blast_ScoreFreq* sfp);
+Blast_KarlinBlkUngappedCalc(Blast_KarlinBlk* kbp, Blast_ScoreFreq* sfp);
 
 /**  Given a sequence of 'length' amino acid residues, compute the
  *   probability of each residue and put that in the array resProb

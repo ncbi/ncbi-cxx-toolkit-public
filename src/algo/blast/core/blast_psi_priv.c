@@ -2204,7 +2204,7 @@ _PSIUpdateLambdaK(const int** pssm,              /* [in] */
         /* what about K? */
     } else {
         /* Calculate lambda and K */
-        Blast_KarlinBlkCalc(sbp->kbp_psi[0], score_freqs);
+        Blast_KarlinBlkUngappedCalc(sbp->kbp_psi[0], score_freqs);
 
         /* Shouldn't this be in a function? */
         ASSERT(sbp->kbp_ideal);
@@ -2360,6 +2360,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/12/09 15:22:56  dondosha
+ * Renamed some functions dealing with BlastScoreBlk and Blast_KarlinBlk structures
+ *
  * Revision 1.40  2004/12/08 15:06:01  camacho
  * Call _PSIUpdatePositionCounts is needed after purging query sequence for
  * structure group customization, thus this function has been changed to reset the

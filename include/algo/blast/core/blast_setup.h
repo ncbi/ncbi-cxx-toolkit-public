@@ -73,7 +73,7 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
         BlastScoreBlk* *sbpp, 
         Blast_Message* *blast_message);
 
-/** BlastScoreBlkGappedFill, fills the ScoreBlkPtr for a gapped search.  
+/** Blast_ScoreBlkKbpGappedCalc, fills the ScoreBlkPtr for a gapped search.  
  *      Should be moved to blast_stat.c in the future.
  * @param sbp Contains fields to be set, should not be NULL. [out]
  * @param scoring_options Scoring_options [in]
@@ -82,7 +82,7 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
  *
 */
 NCBI_XBLAST_EXPORT
-Int2 BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
+Int2 Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
     const BlastScoringOptions * scoring_options,
     EBlastProgramType program, BlastQueryInfo * query_info);
 
@@ -168,7 +168,7 @@ Int2 BLAST_OneSubjectUpdateParameters(EBlastProgramType program_number,
  *
 */
 NCBI_XBLAST_EXPORT
-Int2 BlastScoreBlkMatrixInit(EBlastProgramType program_number, 
+Int2 Blast_ScoreBlkMatrixInit(EBlastProgramType program_number, 
     const BlastScoringOptions* scoring_options,
     BlastScoreBlk* sbp);
 
@@ -183,7 +183,7 @@ Int2 BlastScoreBlkMatrixInit(EBlastProgramType program_number,
  * @param blast_message Error message [out]
  */
 NCBI_XBLAST_EXPORT
-Int2 BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, 
+Int2 BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk, 
     BlastQueryInfo* query_info, 
     const BlastScoringOptions* scoring_options, 
     EBlastProgramType program_number, 
@@ -212,6 +212,9 @@ BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to);
 /*
  *
 * $Log$
+* Revision 1.48  2004/12/09 15:21:32  dondosha
+* Renamed some functions dealing with BlastScoreBlk and Blast_KarlinBlk structures
+*
 * Revision 1.47  2004/11/30 16:54:43  dondosha
 * Added BlastSeqLoc_RestrictToInterval
 *
@@ -276,7 +279,7 @@ BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to);
 * Moved BLAST_CalcEffLengths from blast_engine.h; Added BLAST_GapAlignSetUp to set up only gapped alignment related structures
 *
 * Revision 1.27  2004/02/10 20:05:14  dondosha
-* Made BlastScoreBlkGappedFill external again: needed in unit test
+* Made Blast_ScoreBlkKbpGappedCalc external again: needed in unit test
 *
 * Revision 1.26  2003/12/03 16:31:46  dondosha
 * Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults, to avoid name conflicts
@@ -291,7 +294,7 @@ BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to);
 * Added algo/blast/core path to all #included headers
 *
 * Revision 1.22  2003/08/01 22:33:32  dondosha
-* Made BlastScoreBlkGappedFill static
+* Made Blast_ScoreBlkKbpGappedCalc static
 *
 * Revision 1.21  2003/08/01 17:20:39  dondosha
 * Renamed BLAST_ScoreBlk to BlastScoreBlk
@@ -402,7 +405,7 @@ BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to);
 * Create lookup table for proteins
 *
 * Revision 1.8  2002/12/20 20:55:19  dondosha
-* BlastScoreBlkGappedFill made external (probably temporarily)
+* Blast_ScoreBlkKbpGappedCalc made external (probably temporarily)
 *
 * Revision 1.7  2002/12/19 21:22:39  madden
 * Add BlastSetUp_Mega prototype

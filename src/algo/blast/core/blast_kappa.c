@@ -2556,10 +2556,7 @@ Kappa_RecordInitialSearch(Kappa_SearchParameters * searchParams,
 
     searchParams->orig_kbp_gap_array   = sbp->kbp_gap;
 
-    searchParams->kbp_gap_orig->Lambda = kbp->Lambda;
-    searchParams->kbp_gap_orig->K      = kbp->K;
-    searchParams->kbp_gap_orig->logK   = kbp->logK;
-    searchParams->kbp_gap_orig->H      = kbp->H;
+    Blast_KarlinBlkCopy(searchParams->kbp_gap_orig, kbp);
 
     for(i = 0; i < searchParams->mRows; i++) {
       for(j = 0; j < BLASTAA_SIZE; j++) {
@@ -2765,10 +2762,7 @@ Kappa_RestoreSearch(
     } else {
       kbp = sbp->kbp_gap_std[0];
     }
-    kbp->Lambda = searchParams->kbp_gap_orig->Lambda;
-    kbp->K      = searchParams->kbp_gap_orig->K;
-    kbp->logK   = searchParams->kbp_gap_orig->logK;
-    kbp->H      = searchParams->kbp_gap_orig->H;
+    Blast_KarlinBlkCopy(kbp, searchParams->kbp_gap_orig);
 
     for(i = 0; i < searchParams->mRows; i++) {
       for(j = 0; j < BLASTAA_SIZE; j++) {
