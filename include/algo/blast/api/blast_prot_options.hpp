@@ -81,13 +81,6 @@ public:
     }
     void SetGapXDropoffFinal(double x) { m_Opts->SetGapXDropoffFinal(x); }
 
-    /******************** Effective Length options *******************/
-    Int8 GetDbLength() const { return m_Opts->GetDbLength(); }
-    void SetDbLength(Int8 len) { m_Opts->SetDbLength(len); }
-
-    unsigned int GetDbSeqNum() const { return m_Opts->GetDbSeqNum(); }
-    void SetDbSeqNum(unsigned int num) { m_Opts->SetDbSeqNum(num); }
-
     Int8 GetEffectiveSearchSpace() const { 
         return m_Opts->GetEffectiveSearchSpace(); 
     }
@@ -119,6 +112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/12/15 23:41:36  dondosha
+ * Added [gs]etters of database (subject) length and number of sequences to general options handle
+ *
  * Revision 1.2  2003/12/09 12:40:22  camacho
  * Added windows export specifiers
  *

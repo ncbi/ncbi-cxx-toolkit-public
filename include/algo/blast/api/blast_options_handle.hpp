@@ -155,6 +155,13 @@ public:
     int GetGapExtensionCost() const { return m_Opts->GetGapExtensionCost(); }
     void SetGapExtensionCost(int e) { m_Opts->SetGapExtensionCost(e); }
 
+    /******************** Database (subject) options *******************/
+    Int8 GetDbLength() const { return m_Opts->GetDbLength(); }
+    void SetDbLength(Int8 len) { m_Opts->SetDbLength(len); }
+
+    unsigned int GetDbSeqNum() const { return m_Opts->GetDbSeqNum(); }
+    void SetDbSeqNum(unsigned int num) { m_Opts->SetDbSeqNum(num); }
+
 protected:
 
     /// Data type this class controls access to
@@ -181,6 +188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/12/15 23:41:35  dondosha
+ * Added [gs]etters of database (subject) length and number of sequences to general options handle
+ *
  * Revision 1.3  2003/12/09 12:40:22  camacho
  * Added windows export specifiers
  *
