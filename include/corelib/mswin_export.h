@@ -733,6 +733,16 @@
 #endif
 
 /*
+ * Export specifier for library gui_config
+ */
+#ifdef NCBI_GUICONFIG_EXPORTS
+#  define NCBI_GUICONFIG_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_GUICONFIG_EXPORT     __declspec(dllimport)
+#endif
+
+
+/*
  * Export specifier for library gui_utils
  */
 #ifdef NCBI_GUIUTILS_EXPORTS
@@ -992,6 +1002,7 @@
 #  define NCBI_GBSEQ_EXPORT
 #  define NCBI_GENERAL_EXPORT
 #  define NCBI_GUICORE_EXPORT
+#  define NCBI_GUICONFIG_EXPORT
 #  define NCBI_GUIDIALOGS_EXPORT
 #  define NCBI_GUIGRAPH_EXPORT
 #  define NCBI_GUIOPENGL_EXPORT
@@ -1068,6 +1079,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.40  2003/10/10 19:34:06  dicuccio
+ * Added export specifier for gui_config
+ *
  * Revision 1.39  2003/09/29 13:50:17  dicuccio
  * Added export specifiers for XSQLITE, XLOADER_TABLE, and XOBJMANIP
  *
