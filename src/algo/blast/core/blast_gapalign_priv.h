@@ -30,7 +30,7 @@
  *
  */
 
-/** @file blast_gapalign_pri.h
+/** @file blast_gapalign_priv.h
  *  Private interface for blast_gapalign.c
  */
 
@@ -61,6 +61,21 @@ Int2
 BLAST_TracebackToGapEditBlock(Int4* S, Int4 M, Int4 N, Int4 start1,
                                Int4 start2, GapEditBlock** edit_block);
 
+/** Function to check that the highest scoring region in an HSP still gives a 
+ * positive score. This value was originally calcualted by 
+ * GetStartForGappedAlignment but it may have changed due to the introduction 
+ * of ambiguity characters. Such a change can lead to 'strange' results from 
+ * ALIGN. 
+ * @param hsp An HSP structure [in]
+ * @param query Query sequence buffer [in]
+ * @param subject Subject sequence buffer [in]
+ * @param sbp Scoring block containing matrix [in]
+ * @return TRUE if region aroung starting offsets gives a positive score
+*/
+Boolean
+BLAST_CheckStartForGappedAlignment (BlastHSP* hsp, Uint1* query, 
+                                    Uint1* subject, const BlastScoreBlk* sbp);
+
 
 
 
@@ -73,6 +88,9 @@ BLAST_TracebackToGapEditBlock(Int4* S, Int4 M, Int4 N, Int4 start1,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/11/24 15:41:24  camacho
+ * Renamed *_pri.h to *_priv.h; moved BLAST_CheckStartForGappedAlignment to private header
+ *
  * Revision 1.1  2004/05/18 13:23:26  madden
  * Private declarations for blast_gapalign.c
  *
