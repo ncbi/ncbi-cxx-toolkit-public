@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/06/13 14:19:54  grichenk
+* Added operators == and != for C(Const)Ref
+*
 * Revision 1.23  2001/05/17 14:53:56  lavr
 * Typos corrected
 *
@@ -585,6 +588,53 @@ bool operator< (const CConstRef<T>& r1, const CConstRef<T>& r2)
     return r1.GetPointer() < r2.GetPointer();
 }
 
+template<class T>
+bool operator== (const CRef<T>& r1, const CRef<T>& r2)
+{
+    return r1.GetPointer() == r2.GetPointer();
+}
+
+template<class T>
+bool operator== (const CConstRef<T>& r1, const CConstRef<T>& r2)
+{
+    return r1.GetPointer() == r2.GetPointer();
+}
+
+template<class T>
+bool operator== (const CConstRef<T>& r1, const CRef<T>& r2)
+{
+    return r1.GetPointer() == r2.GetPointer();
+}
+
+template<class T>
+bool operator== (const CRef<T>& r1, const CConstRef<T>& r2)
+{
+    return r1.GetPointer() == r2.GetPointer();
+}
+
+template<class T>
+bool operator!= (const CRef<T>& r1, const CRef<T>& r2)
+{
+    return r1.GetPointer() != r2.GetPointer();
+}
+
+template<class T>
+bool operator!= (const CConstRef<T>& r1, const CConstRef<T>& r2)
+{
+    return r1.GetPointer() != r2.GetPointer();
+}
+
+template<class T>
+bool operator!= (const CConstRef<T>& r1, const CRef<T>& r2)
+{
+    return r1.GetPointer() != r2.GetPointer();
+}
+
+template<class T>
+bool operator!= (const CRef<T>& r1, const CConstRef<T>& r2)
+{
+    return r1.GetPointer() != r2.GetPointer();
+}
 
 
 template<typename T>
