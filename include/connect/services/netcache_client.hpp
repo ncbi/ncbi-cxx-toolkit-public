@@ -177,6 +177,10 @@ protected:
     ///  Protected to avoid a temptation to call it from time to time. :)
     void ShutdownServer();
 
+    /// Turn server-side logging on(off)
+    ///
+    void Logging(bool on_off);
+
 protected:
     bool ReadStr(CSocket& sock, string* str);
     void WriteStr(const char* str, size_t len);
@@ -287,6 +291,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/12/27 16:30:30  kuznets
+ * + logging control function
+ *
  * Revision 1.16  2004/12/20 13:13:14  kuznets
  * +NetCache_ConfigureWithLB
  *

@@ -131,7 +131,7 @@ void CNetCache_GenerateBlobKey(string*        key,
 
 
 static 
-STimeout s_DefaultCommTimeout = {4, 0};
+STimeout s_DefaultCommTimeout = {6, 0};
 
 
 
@@ -532,6 +532,21 @@ void CNetCacheClient::ShutdownServer()
     m_Sock->Close();
 }
 
+void CNetCacheClient::Logging(bool on_off)
+{
+    CheckConnect(kEmptyStr);
+
+    SendClientName();
+    const char* command;
+    if (on_off)
+        command = "LOG ON";
+    else
+        command = "LOG OFF";
+
+    WriteStr(command, strlen(command));
+    m_Sock->Close();
+}
+
 
 bool CNetCacheClient::ReadStr(CSocket& sock, string* str)
 {
@@ -569,6 +584,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/12/27 16:30:42  kuznets
+ * + logging control function
+ *
  * Revision 1.27  2004/12/20 13:14:10  kuznets
  * +NetcacheClient::SetSocket()
  *
