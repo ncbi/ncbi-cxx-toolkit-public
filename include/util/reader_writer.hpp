@@ -40,6 +40,14 @@
 BEGIN_NCBI_SCOPE
 
 
+enum {
+    eIO_NotImplemented = -1,
+    eIO_Success = 0,
+    eIO_Error,
+    eIO_Eof,
+} EIO_Result;
+
+
 /// A very basic data-read interface.
 ///
 /// It is however slightly adapted to build std::istreambuf on top of it.
@@ -47,18 +55,19 @@ BEGIN_NCBI_SCOPE
 class IReader
 {
 public:
-    /// Read as many as buf_size bytes into a buffer pointed
-    /// to by buf argument.  Return the number of bytes actually read,
-    /// or 0 on EOF, or -1 in case of an error.
-    /// Special case:  if buf_size is passed as 0, then the value of
-    /// buf is ignored, and the return value is unspecified, but no
-    /// change is done to the state of input device.
-    virtual ssize_t Read(void* buf, size_t buf_size) = 0;
+    /// Read as many as count bytes into a buffer pointed
+    /// to by buf argument.  Store the number of bytes actually read,
+    /// or 0 on EOF or error, via the pointer "bytes_read", if provided.
+    /// Special case:  if count passed as 0, then the value of
+    /// buf is ignored, and the return value is always eIO_Success, but
+    /// no change is actually done to the state of input device.
+    virtual EIO_Result Read(void* buf, size_t count,
+                            size_t* bytes_read = 0) = 0;
 
     /// Return the number of bytes ready to be read from input
     /// device without blocking.  Return 0 if no such number is
-    /// available, -1 in case of EOF (or an error).
-    virtual ssize_t SHowMany(void)  { return 0; }
+    /// available (in case of an error or EOF).
+    virtual EIO_Result PendingCount(size_t* count) = 0;
 
     virtual ~IReader() {}
 };
@@ -70,11 +79,13 @@ public:
 class IWriter
 {
 public:
-    /// Write buf_size bytes from the buffer pointed to by
-    /// buf argument onto output device.  Return the number
-    /// of bytes actually written, or 0 if buf_size was passed as 0
-    /// (buf is ignored in this case), or -1 on error.
-    virtual ssize_t Write(const void* buf, size_t buf_size) = 0;
+    /// Write up to count bytes from the buffer pointed to by
+    /// buf argument onto output device.  Store the number
+    /// of bytes actually written, or 0 if either count was
+    /// passed as 0 (buf is ignored in this case) or an error occured,
+    /// via the "bytes_written" pointer, if provided.
+    virtual EIO_Result Write(const void* buf, size_t count,
+                             size_t* bytes_written = 0) = 0;
 
     virtual ~IWriter() {}
 };
@@ -97,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/24 15:45:36  lavr
+ * Changed to use eIO_Result in return codes; pointers to store I/O counts
+ *
  * Revision 1.2  2003/09/22 22:38:21  vakatov
  * Minor (mostly style) fixes;  renaming
  *
