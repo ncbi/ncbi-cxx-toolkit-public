@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2000/10/24 19:54:48  vakatov
+* Diagnostics to go to CERR by default (was -- disabled by default)
+*
 * Revision 1.67  2000/10/11 21:03:50  vakatov
 * Cleanup to avoid 64-bit to 32-bit values truncation, etc.
 * (reported by Forte6 Patch 109490-01)
@@ -1175,6 +1178,8 @@ static CTestApplication theTestApplication;
 
 int main(int argc, const char* argv[], const char* envp[])
 {
+    ERR_POST("This message goes to the default diag.stream, CERR");
+
     // Execute main application function
     return theTestApplication.AppMain(argc, argv, envp, eDS_ToMemory);
 }

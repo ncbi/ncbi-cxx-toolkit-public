@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/10/24 19:54:44  vakatov
+* Diagnostics to go to CERR by default (was -- disabled by default)
+*
 * Revision 1.21  2000/04/18 19:50:10  vakatov
 * Get rid of the old-fashioned C-like "typedef enum {...} E;"
 *
@@ -277,9 +280,10 @@ extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt = eDT_Default);
 // has a new diagnostic message completed and ready to post.
 // "cleanup(data)" will be called whenever this hook gets replaced and
 // on the program termination.
-// NOTE:  "func()", "cleanup()" and "g_SetDiagHandler()" calls are
-//        MT-protected, so that they would never be called simultaneously
-//        from different threads
+// NOTE 1:  "func()", "cleanup()" and "g_SetDiagHandler()" calls are
+//          MT-protected, so that they would never be called simultaneously
+//          from different threads.
+// NOTE 2:  By default, the errors will be written to standard error stream.
 struct SDiagMessage {
     SDiagMessage(EDiagSev severity, const char* buf, size_t len, void* data,
                  const char* file = 0, size_t line = 0,
@@ -313,7 +317,7 @@ extern void SetDiagHandler(FDiagHandler func,
                            void*        data,
                            FDiagCleanup cleanup);
 
-// Return TRUE if any diag. handler is set
+// Return TRUE if user has ever set (or unset) diag. handler
 extern bool IsSetDiagHandler(void);
 
 

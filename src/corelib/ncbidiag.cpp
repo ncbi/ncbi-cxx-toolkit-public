@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/10/24 19:54:46  vakatov
+* Diagnostics to go to CERR by default (was -- disabled by default)
+*
 * Revision 1.21  2000/06/22 22:09:10  vakatov
 * Fixed:  GetTraceEnabledFirstTime(), sm_TraceDefault
 *
@@ -136,7 +139,12 @@ const char*  CDiagBuffer::sm_SeverityName[eDiag_Trace+1] = {
     "Info", "Warning", "Error", "Critical", "Fatal", "Trace"
 };
 
-FDiagHandler CDiagBuffer::sm_HandlerFunc    = 0;
+
+static void s_DefaultHandlerFunc(const SDiagMessage& mess) {
+    NcbiCerr << mess << NcbiFlush;
+}
+
+FDiagHandler CDiagBuffer::sm_HandlerFunc    = s_DefaultHandlerFunc;
 void*        CDiagBuffer::sm_HandlerData    = 0;
 FDiagCleanup CDiagBuffer::sm_HandlerCleanup = 0;
 
@@ -370,7 +378,7 @@ extern void SetDiagHandler(FDiagHandler func, void* data,
 
 extern bool IsSetDiagHandler(void)
 {
-    return (CDiagBuffer::sm_HandlerFunc != 0);
+    return (CDiagBuffer::sm_HandlerFunc != s_DefaultHandlerFunc);
 }
 
 
