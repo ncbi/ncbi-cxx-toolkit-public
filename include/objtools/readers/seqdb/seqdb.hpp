@@ -174,6 +174,10 @@ public:
     CSeqDB(const string & dbname, char prot_nucl);
     
     /// Constructor with MMap Flag and OID Range.
+    ///
+    /// If the oid_end value is specified as zero, or as a value
+    /// larger than the number of OIDs, it will be adjusted to the
+    /// number of OIDs in the database.
     /// 
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces.
@@ -219,10 +223,30 @@ public:
     /// Get the ASN.1 header for the sequence.
     CRef<CBlast_def_line_set> GetHdr(TOID oid) const;
     
-    /// Get a CBioseq of the sequence.
+    /// Get a CBioseq for a sequence.
+    ///
+    /// This builds and returns the header and sequence data
+    /// corresponding to the indicated sequence as a CBioseq.
+    ///
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @return
+    ///   A CBioseq object corresponding to the sequence.
     CRef<CBioseq> GetBioseq(TOID oid) const;
     
-    /// Get a CBioseq but restrict deflines to a particular gi.
+    /// Get a CBioseq for a sequence.
+    ///
+    /// This builds and returns the header and sequence data
+    /// corresponding to the indicated sequence as a CBioseq.  If
+    /// target_gi is non-null, the header information will be filtered
+    /// to only include the defline associated with that gi.
+    ///
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @param target_gi
+    ///   The target gi to filter the header information by.
+    /// @return
+    ///   A CBioseq object corresponding to the sequence.
     CRef<CBioseq> GetBioseq(TOID oid, TGI target_gi) const;
     
     /// Get a pointer to raw sequence data.
@@ -230,6 +254,10 @@ public:
     /// Get the raw sequence (strand data).  When done, resources
     /// should be returned with RetSequence.  This data pointed to
     /// by *buffer is in read-only memory (where supported).
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @param buffer
+    ///   A returned pointer to the data in the sequence.
     /// @return
     ///   The return value is the sequence length (in base pairs or
     ///   residues).  In case of an error, an exception is thrown.
@@ -243,6 +271,12 @@ public:
     /// data, either kSeqDBNucl4NA or kSeqDBNuclBlastNA, ignored if
     /// the sequence is a protein sequence.  When done, resources
     /// should be returned with RetSequence.
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @param buffer
+    ///   A returned pointer to the data in the sequence.
+    /// @param nucl_code
+    ///   The encoding to use for the returned sequence data.
     /// @return
     ///   The return value is the sequence length (in base pairs or
     ///   residues).  In case of an error, an exception is thrown.
@@ -259,6 +293,7 @@ public:
     /// from EAllocStrategy; the corresponding method should be used
     /// to delete the object.  Note that "delete[]" should be used
     /// instead of "delete"
+    ///
     /// @param oid
     ///   Ordinal ID.
     /// @param buffer
@@ -267,6 +302,9 @@ public:
     ///   The NA encoding, kSeqDBNuclNcbiNA8 or kSeqDBNuclBlastNA8.
     /// @param strategy
     ///   Indicate which allocation strategy to use.
+    /// @return
+    ///   The return value is the sequence length (in base pairs or
+    ///   residues).  In case of an error, an exception is thrown.
     Uint4 GetAmbigSeqAlloc(TOID               oid,
                            char            ** buffer,
                            Uint4              nucl_code,
@@ -278,6 +316,9 @@ public:
     /// is in read only memory; also, this method has no effect.  If
     /// memory mapping failed, the sequence is probably in dynamically
     /// allocated memory and this method frees that memory.
+    ///
+    /// @param buffer
+    ///   The buffer to return to SeqDB.
     void RetSequence(const char ** buffer) const;
     
     /// Gets a list of sequence identifiers.
