@@ -107,7 +107,7 @@ WAM_Donor<order>::WAM_Donor(const string& file, int cgcontent)
 {
     CNcbiOstrstream ost;
     ost << "[WAM_Donor_" << order << "]";
-    string label = ost.str();
+    string label = CNcbiOstrstreamToString(ost);
     ifstream from(file.c_str());
     pair<int,int> cgrange = FindContent(from,label,cgcontent);
     if(cgrange.first < 0) Error(label);
@@ -146,7 +146,7 @@ WAM_Acceptor<order>::WAM_Acceptor(const string& file, int cgcontent)
 {
     CNcbiOstrstream ost;
     ost << "[WAM_Acceptor_" << order << "]";
-    string label = ost.str();
+    string label = CNcbiOstrstreamToString(ost);
     ifstream from(file.c_str());
     pair<int,int> cgrange = FindContent(from,label,cgcontent);
     if(cgrange.first < 0) Error(label);
@@ -174,7 +174,7 @@ MC3_CodingRegion<order>::MC3_CodingRegion(const string& file, int cgcontent)
 {
     CNcbiOstrstream ost;
     ost << "[MC3_CodingRegion_" << order << "]";
-    string label = ost.str();
+    string label = CNcbiOstrstreamToString(ost);
     ifstream from(file.c_str());
     pair<int,int> cgrange = FindContent(from,label,cgcontent);
     if(cgrange.first < 0) Error(label);
@@ -198,7 +198,7 @@ MC_NonCodingRegion<order>::MC_NonCodingRegion(const string& file, int cgcontent)
 {
     CNcbiOstrstream ost;
     ost << "[MC_NonCodingRegion_" << order << "]";
-    string label = ost.str();
+    string label = CNcbiOstrstreamToString(ost);
     ifstream from(file.c_str());
     pair<int,int> cgrange = FindContent(from,label,cgcontent);
     if(cgrange.first < 0) Error(label);
@@ -358,6 +358,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/09/15 19:10:20  jcherry
+ * Use CNcbiOstrstreamToString rather than CNcbiOstrstream::str()
+ *
  * Revision 1.2  2004/07/28 12:33:19  dicuccio
  * Sync with Sasha's working tree
  *
