@@ -363,7 +363,7 @@ unsigned int CTest_validatorApplication::PrintValidError
     
     CNcbiOstream* os = args["x"] ? &(args["x"].AsOutputFile()) : &cout;
 
-    if ( errors.size() == 0 ) {
+    if ( errors.TotalSize() == 0 ) {
         *os << "All entries are OK!" << endl;
         os->flush();
         return 0;
@@ -385,6 +385,12 @@ unsigned int CTest_validatorApplication::PrintValidError
     *os << reported << " messages reported" << endl;
     os->flush();
 
+    *os << "Total number of errors: " << errors.TotalSize() << endl
+        << "Info: "     << errors.InfoSize()     << endl
+        << "Warning: "  << errors.WarningSize()  << endl
+        << "Error: "    << errors.ErrorSize()    << endl
+        << "Critical: " << errors.CriticalSize() << endl
+        << "Fatal: "    << errors.FatalSize()    << endl;
     return result;
 }
 
@@ -414,6 +420,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2003/03/10 18:13:14  shomrat
+ * Print extended statistics
+ *
  * Revision 1.13  2003/03/06 19:41:15  shomrat
  * Changed eval from auto_ptr to CRef
  *
