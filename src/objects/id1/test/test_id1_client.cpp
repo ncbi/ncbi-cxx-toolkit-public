@@ -39,7 +39,7 @@
 #include <serial/objostrasn.hpp>
 
 #include <objects/id1/Entry_complexities.hpp>
-#include <objects/id1/ID1seq_hist.hpp>
+#include <objects/id1/ID1Seq_hist.hpp>
 #include <objects/id1/ID1server_maxcomplex.hpp>
 #include <objects/id1/client.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -135,19 +135,23 @@ void CTestID1ClientApp::RunCommand(const string& command)
         m_OutAsn->Flush();
     } else if (verb == "getseqidsfromgi") {
         int gi = NStr::StringToInt(args.front());
-        *m_OutAsn << *m_Client->AskGetseqidsfromgi(gi);
-        m_OutAsn->Flush();
+        CID1server_back::TIds ids = m_Client->AskGetseqidsfromgi(gi);
+        iterate (CID1server_back::TIds, id, ids) {
+            *m_Out << (*id)->DumpAsFasta() << endl;
+        }
+#if 0 // lists don't work well with object streams :-/
     } else if (verb == "getgihist") {
         int gi = NStr::StringToInt(args.front());
-        *m_OutAsn << *m_Client->AskGetgihist(gi);
+        *m_OutAsn << m_Client->AskGetgihist(gi);
         m_OutAsn->Flush();
     } else if (verb == "getgirev") {
         int gi = NStr::StringToInt(args.front());
-        *m_OutAsn << *m_Client->AskGetgirev(gi);
+        *m_OutAsn << m_Client->AskGetgirev(gi);
         m_OutAsn->Flush();
+#endif
     } else if (verb == "getgistate") {
         int gi = NStr::StringToInt(args.front());
-        *m_Out << *m_Client->AskGetgistate(gi) << endl;
+        *m_Out << m_Client->AskGetgistate(gi) << endl;
     } else {
         ERR_POST("Unrecognized command \"" << command << "\"");
     }
@@ -163,6 +167,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/11/13 21:12:52  ucko
+* Fixed code introduced without a test compile.  (Oops.)
+*
 * Revision 1.1  2002/11/13 20:13:46  ucko
 * Add datatool-generated client classes
 *
