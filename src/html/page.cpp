@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/05/28 16:32:16  vasilche
+* Fixed memory leak in page tag mappers.
+*
 * Revision 1.15  1999/05/27 21:46:25  vakatov
 * CHTMLPage::CreateTemplate():  throw exception if cannot open or read
 * the page template file specified by user
@@ -70,6 +73,7 @@
 
 #include <html/components.hpp>
 #include <html/page.hpp>
+#include <corelib/ncbiutil.hpp>
 
 BEGIN_NCBI_SCOPE
  
@@ -87,6 +91,21 @@ CHTMLBasicPage::CHTMLBasicPage(CCgiApplication* application, int style)
     : m_CgiApplication(application),
       m_Style(style)
 {
+}
+
+CHTMLBasicPage::CHTMLBasicPage(const CHTMLBasicPage& page)
+    : CParent(page),
+      m_CgiApplication(page.m_CgiApplication), m_Style(page.m_Style)
+{
+    for ( TTagMap::const_iterator i = page.m_TagMap.begin();
+          i != page.m_TagMap.end(); ++i ) {
+        m_TagMap.insert(TTagMap::value_type(i->first, i->second->Clone()));
+    }
+}
+
+CHTMLBasicPage::~CHTMLBasicPage(void)
+{
+    DeleteElements(m_TagMap);
 }
 
 CNCBINode* CHTMLBasicPage::CloneSelf(void) const

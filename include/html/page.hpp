@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/05/28 16:32:11  vasilche
+* Fixed memory leak in page tag mappers.
+*
 * Revision 1.18  1999/04/27 14:49:59  vasilche
 * Added FastCGI interface.
 * CNcbiContext renamed to CCgiContext.
@@ -106,10 +109,13 @@ class CCgiApplication;
 class CHTMLBasicPage: public CNCBINode
 {
     typedef CNCBINode CParent; // parent class
+    typedef map<string, BaseTagMapper*> TTagMap;
 
 public: 
     CHTMLBasicPage(void);
     CHTMLBasicPage(CCgiApplication* app, int style = 0);
+    CHTMLBasicPage(const CHTMLBasicPage& page);
+    virtual ~CHTMLBasicPage(void);
 
     virtual CCgiApplication* GetApplication(void) const;
     virtual void SetApplication(CCgiApplication* App);
@@ -129,7 +135,7 @@ protected:
     int m_Style;
 
     // tag resolvers (as registered by AddTagMap)
-    map<string, BaseTagMapper*> m_TagMap;
+    TTagMap m_TagMap;
 
     // cloning
     virtual CNCBINode* CloneSelf(void) const;

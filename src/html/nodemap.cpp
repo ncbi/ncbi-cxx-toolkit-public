@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/05/28 16:32:15  vasilche
+* Fixed memory leak in page tag mappers.
+*
 * Revision 1.4  1999/01/06 21:35:37  vasilche
 * Avoid use of Clone.
 * Fixed default CHTML_text width.
@@ -68,6 +71,11 @@ StaticTagMapper::StaticTagMapper(CNCBINode* (*function)(void))
 {
 }
 
+BaseTagMapper* StaticTagMapper::Clone(void) const
+{
+    return new StaticTagMapper(*this);
+}
+
 CNCBINode* StaticTagMapper::MapTag(CNCBINode*, const string&) const
 {
     return (*m_Function)();
@@ -76,6 +84,11 @@ CNCBINode* StaticTagMapper::MapTag(CNCBINode*, const string&) const
 StaticTagMapperByName::StaticTagMapperByName(CNCBINode* (*function)(const string& name))
     : m_Function(function)
 {
+}
+
+BaseTagMapper* StaticTagMapperByName::Clone(void) const
+{
+    return new StaticTagMapperByName(*this);
 }
 
 CNCBINode* StaticTagMapperByName::MapTag(CNCBINode*, const string& name) const
@@ -88,14 +101,18 @@ ReadyTagMapper::ReadyTagMapper(CNCBINode* node)
 {
 }
 
-ReadyTagMapper::~ReadyTagMapper(void)
+BaseTagMapper* ReadyTagMapper::Clone(void) const
 {
-    delete m_Node;
+    return new ReadyTagMapper(m_Node->Clone());
 }
 
 CNCBINode* ReadyTagMapper::MapTag(CNCBINode*, const string&) const
 {
-    return m_Node; // we decided to avoid use of cloning // ->Clone()
+    // we decided to avoid use of cloning
+    // also to avoid double delete of node we release it
+    if ( !m_Node.get() )
+        ERR_POST("double call of ReadyTagMapper::MapTag");
+    return const_cast<ReadyTagMapper*>(this)->m_Node.release();
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/05/28 16:32:10  vasilche
+* Fixed memory leak in page tag mappers.
+*
 * Revision 1.5  1999/04/27 14:49:58  vasilche
 * Added FastCGI interface.
 * CNcbiContext renamed to CCgiContext.
@@ -61,7 +64,13 @@ inline StaticTagMapperByNode<C>::StaticTagMapperByNode(CNCBINode* (*function)(C*
 }
 
 template<class C>
-inline CNCBINode* StaticTagMapperByNode<C>::MapTag(CNCBINode* _this, const string&) const
+BaseTagMapper* StaticTagMapperByNode<C>::Clone(void) const
+{
+    return new StaticTagMapperByNode(*this);
+}
+
+template<class C>
+CNCBINode* StaticTagMapperByNode<C>::MapTag(CNCBINode* _this, const string&) const
 {
     return m_Function(dynamic_cast<C*>(_this));
 }
@@ -73,7 +82,13 @@ inline StaticTagMapperByNodeAndName<C>::StaticTagMapperByNodeAndName(CNCBINode* 
 }
 
 template<class C>
-inline CNCBINode* StaticTagMapperByNodeAndName<C>::MapTag(CNCBINode* _this, const string&) const
+BaseTagMapper* StaticTagMapperByNodeAndName<C>::Clone(void) const
+{
+    return new StaticTagMapperByNodeAndName(*this);
+}
+
+template<class C>
+CNCBINode* StaticTagMapperByNodeAndName<C>::MapTag(CNCBINode* _this, const string&) const
 {
     return m_Function(dynamic_cast<C*>(_this), name);
 }
@@ -85,7 +100,13 @@ inline TagMapper<C>::TagMapper(CNCBINode* (C::*method)(void))
 }
 
 template<class C>
-inline CNCBINode* TagMapper<C>::MapTag(CNCBINode* _this, const string&) const
+BaseTagMapper* TagMapper<C>::Clone(void) const
+{
+    return new TagMapper(*this);
+}
+
+template<class C>
+CNCBINode* TagMapper<C>::MapTag(CNCBINode* _this, const string&) const
 {
     return (dynamic_cast<C*>(_this)->*m_Method)();
 }
@@ -97,7 +118,13 @@ inline TagMapperByName<C>::TagMapperByName(CNCBINode* (C::*method)(const string&
 }
 
 template<class C>
-inline CNCBINode* TagMapperByName<C>::MapTag(CNCBINode* _this, const string& name) const
+BaseTagMapper* TagMapperByName<C>::Clone(void) const
+{
+    return new TagMapperByName(*this);
+}
+
+template<class C>
+CNCBINode* TagMapperByName<C>::MapTag(CNCBINode* _this, const string& name) const
 {
     return (dynamic_cast<C*>(_this)->*m_Method)(name);
 }

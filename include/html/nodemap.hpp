@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/05/28 16:32:10  vasilche
+* Fixed memory leak in page tag mappers.
+*
 * Revision 1.6  1999/04/27 14:49:58  vasilche
 * Added FastCGI interface.
 * CNcbiContext renamed to CCgiContext.
@@ -67,12 +70,16 @@ struct BaseTagMapper
 {
     virtual ~BaseTagMapper(void);
 
+    virtual BaseTagMapper* Clone(void) const = 0;
+
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const = 0;
 };
 
 struct StaticTagMapper : BaseTagMapper
 {
     StaticTagMapper(CNCBINode* (*function)(void));
+
+    virtual BaseTagMapper* Clone(void) const;
     
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
 
@@ -83,6 +90,8 @@ private:
 struct StaticTagMapperByName : BaseTagMapper
 {
     StaticTagMapperByName(CNCBINode* (*function)(const string& name));
+    
+    virtual BaseTagMapper* Clone(void) const;
     
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
 
@@ -95,6 +104,8 @@ struct StaticTagMapperByNode : BaseTagMapper
 {
     StaticTagMapperByNode(CNCBINode* (*function)(C* node));
     
+    virtual BaseTagMapper* Clone(void) const;
+    
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
 
 private:
@@ -106,6 +117,8 @@ struct StaticTagMapperByNodeAndName : BaseTagMapper
 {
     StaticTagMapperByNodeAndName(CNCBINode* (*function)(C* node, const string& name));
     
+    virtual BaseTagMapper* Clone(void) const;
+    
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
 
 private:
@@ -116,12 +129,12 @@ struct ReadyTagMapper : BaseTagMapper
 {
     ReadyTagMapper(CNCBINode* node);
 
-    ~ReadyTagMapper(void);
-
+    virtual BaseTagMapper* Clone(void) const;
+    
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
 
 private:
-    CNCBINode* m_Node;
+    auto_ptr<CNCBINode> m_Node;
 };
 
 template<class C>
@@ -129,6 +142,8 @@ struct TagMapper : BaseTagMapper
 {
     TagMapper(CNCBINode* (C::*method)(void));
 
+    virtual BaseTagMapper* Clone(void) const;
+    
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
 
 private:
@@ -140,6 +155,8 @@ struct TagMapperByName : BaseTagMapper
 {
     TagMapperByName(CNCBINode* (C::*method)(const string& name));
 
+    virtual BaseTagMapper* Clone(void) const;
+    
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
 
 private:

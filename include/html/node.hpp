@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/05/28 16:32:09  vasilche
+* Fixed memory leak in page tag mappers.
+*
 * Revision 1.9  1999/05/20 16:49:13  pubmed
 * Changes for SaveAsText: all Print() methods get mode parameter that can be HTML or PlainText
 *
@@ -156,6 +159,9 @@ protected:
     CNCBINode(const CNCBINode& origin);
 
 private:
+    // to prevent assignment operator
+    CNCBINode& operator=(const CNCBINode& node);
+
     void DoAppendChild(CNCBINode* child);
     void DetachFromParent();
 };
