@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2001/10/29 15:37:29  ucko
+* Rewrite dummy new/delete bodies to avoid GCC warnings.
+*
 * Revision 1.33  2001/10/29 15:25:55  ucko
 * Give (prohibited) CDiagRestorer::new/delete dummy bodies.
 *
@@ -152,6 +155,7 @@
 
 #include <corelib/ncbistre.hpp>
 #include <list>
+#include <stdexcept>
 
 
 BEGIN_NCBI_SCOPE
@@ -423,10 +427,10 @@ public:
 private:
     // Prohibit dynamic allocation; there's no good reason to allow it,
     // and out-of-order destruction is problematic,
-    void* operator new(size_t) { return NULL; }
-    void* operator new[](size_t) { return NULL; }
-    void operator delete(void*) {}
-    void operator delete[](void*) {}
+    void* operator new(size_t)    { throw runtime_error("forbidden"); }
+    void* operator new[](size_t)  { throw runtime_error("forbidden"); }
+    void operator delete(void*)   { throw runtime_error("forbidden"); }
+    void operator delete[](void*) { throw runtime_error("forbidden"); }
 
     string         m_PostPrefix;
     list<string>   m_PrefixList;
