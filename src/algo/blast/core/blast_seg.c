@@ -1579,7 +1579,7 @@ static double entropy(Int4* sv)
    ent = 0.0;
    for (i=0; sv[i]!=0; i++)
      {
-      ent += ((double)sv[i])*log(((double)sv[i])/(double)total)/LN2;
+      ent += ((double)sv[i])*log(((double)sv[i])/(double)total)/NCBIMATH_LN2;
      }
 
    ent = fabs(ent/(double)total);
