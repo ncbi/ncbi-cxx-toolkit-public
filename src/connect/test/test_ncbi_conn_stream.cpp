@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/03/24 00:35:21  lavr
+ * Two more tests added: random sized readback test, and binary (-1) read test
+ *
  * Revision 6.7  2001/03/22 19:19:17  lavr
  * Buffer size extended; random number generator seeded with current time
  *
@@ -93,6 +96,7 @@ END_NCBI_SCOPE
 int main(void)
 {
     USING_NCBI_SCOPE;
+    size_t i, j, k, l;
 
     srand(time(0));
 
@@ -106,15 +110,17 @@ int main(void)
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
 
-    CConn_HttpStream ios(0, "User-Header: My header\r\n", fHCC_UrlEncodeArgs);
+    LOG_POST("Test 1 of 3: Big buffer bounce");
+    CConn_HttpStream ios(0, "User-Header: My header\r\n",
+                         fHCC_UrlEncodeArgs | fHCC_AutoReconnect);
 
     char *buf1 = new char[kBufferSize + 1];
     char *buf2 = new char[kBufferSize + 2];
     
-    for (size_t j = 0; j < kBufferSize/1024; j++) {
-        for (size_t i = 0; i < 1024 - 1; i++)
+    for (j = 0; j < kBufferSize/1024; j++) {
+        for (i = 0; i < 1024 - 1; i++)
             buf1[j*1024 + i] = "0123456789"[rand() % 10];
-        buf1[j*1024 + 1023] = '\n';
+        buf1[j*1024 + 1024 - 1] = '\n';
     }
     buf1[kBufferSize] = '\0';
 
@@ -131,26 +137,103 @@ int main(void)
     }
 
     size_t buflen = ios.gcount();
-    LOG_POST(Info << buflen << " bytes obtained");
-
+    LOG_POST(Info << buflen << " bytes obtained" <<
+             (ios.eof() ? " (EOF)" : ""));
     buf2[buflen] = '\0';
-   
-    size_t len = strlen(buf1);
-    size_t i;
 
-    for (i = 0; i < len; i++) {
+    for (i = 0; i < kBufferSize; i++) {
         if (!buf2[i])
             break;
         if (buf2[i] != buf1[i])
             break;
     }
-    if (i < len)
-        ERR_POST("Not entirely bounced, mismatch position: " << i+1);
-    else if (buflen > len)
-        ERR_POST("Sent: " << len << ", bounced: " << buflen);
+    if (i < kBufferSize)
+        ERR_POST("Not entirely bounced, mismatch position: " << i + 1);
+    else if (buflen > kBufferSize)
+        ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
     else
-        LOG_POST(Info << "Reply received okay!");
+        LOG_POST(Info << "Test 1 passed");
 
+    // Clear EOF condition
+    ios.clear();
+
+    LOG_POST("Test 2 of 3: Random bounce");
+    
+    if (!(ios << buf1)) {
+        ERR_POST("Error sending data");
+        return 1;
+    }
+
+    j = 0;
+    buflen = 0;
+    for (i = 0, l = 0; i < kBufferSize; i += j, l++) {
+        k = rand()%15 + 1;
+
+        if (i + k > kBufferSize + 1)
+            k = kBufferSize + 1 - i;
+        ios.read(&buf2[i], k);
+        if (!ios.good() && !ios.eof()) {
+            ERR_POST("Error receiving data");
+            return 2;
+        }
+        if ((j = ios.gcount()) != k)
+            LOG_POST("Bytes requested: " << k << ", received: " << j);
+        buflen += j;
+        l++;
+    }
+
+    LOG_POST(Info << buflen << " bytes obtained in " << l << " iteration(s)" <<
+             (ios.eof() ? " (EOF)" : ""));
+    buf2[buflen] = '\0';
+
+    for (i = 0; i < kBufferSize; i++) {
+        if (!buf2[i])
+            break;
+        if (buf2[i] != buf1[i])
+            break;
+    }
+    if (i < kBufferSize)
+        ERR_POST("Not entirely bounced, mismatch position: " << i + 1);
+    else if (buflen > kBufferSize)
+        ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
+    else
+        LOG_POST(Info << "Test 2 passed");
+
+    // Clear EOF condition
+    ios.clear();
+
+    LOG_POST("Test 3 of 3: Truly binary bounce");
+
+    for (i = 0; i < kBufferSize; i++)
+        buf1[i] = 255/*rand()%255*/;
+
+    ios.write(buf1, kBufferSize);
+    
+    if (!ios.good()) {
+        ERR_POST("Error sending data");
+        return 1;
+    }
+    
+    ios.read(buf2, kBufferSize + 1);
+
+    if (!ios.good() && !ios.eof()) {
+        ERR_POST("Error receiving data");
+        return 2;
+    }
+    buflen = ios.gcount();
+    LOG_POST(Info << buflen << " bytes obtained" <<
+             (ios.eof() ? " (EOF)" : ""));
+
+    for (i = 0; i < kBufferSize; i++) {
+        if (buf2[i] != buf1[i])
+            break;
+    }
+    if (i < kBufferSize)
+        ERR_POST("Not entirely bounced, mismatch position: " << i + 1);
+    else if (buflen > kBufferSize)
+        ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
+    else
+        LOG_POST(Info << "Test 3 passed");
     CORE_SetREG(0);
     CORE_SetLOG(0);
 
