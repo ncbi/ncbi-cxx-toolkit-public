@@ -666,7 +666,6 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
         catch(const exception &e) {
             LOG_POST(e.what());
             LOG_POST("ID connection failed (exception): Reconnecting....");
-            _ASSERT(0);
         }
     }
     if ( !got ) {
@@ -813,6 +812,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2003/05/12 18:26:08  vasilche
+* Removed buggy _ASSERT() on reconnection.
+*
 * Revision 1.62  2003/05/06 16:52:28  vasilche
 * Try to reconnect to genbank on any exception.
 *
