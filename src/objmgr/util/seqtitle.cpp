@@ -106,12 +106,6 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         }
         switch ((*id)->Which()) {
         case CSeq_id::e_Other:
-            if ((*id)->GetOther().IsSetAccession()
-                &&  NStr::StartsWith((*id)->GetOther().GetAccession(), "NC_",
-                                     NStr::eNocase)) {
-                is_nc = true;
-            }
-            break;
         case CSeq_id::e_Genbank:
         case CSeq_id::e_Embl:
         case CSeq_id::e_Ddbj:
@@ -119,8 +113,12 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             const CTextseq_id& t = *(*id)->GetTextseq_Id();
             if (t.IsSetAccession()) {
                 const string& acc = t.GetAccession();
-                if (acc.size() == 12  &&  NStr::EndsWith(acc, "000000")) {
+                CSeq_id::EAccessionInfo type = CSeq_id::IdentifyAccession(acc);
+                if ((type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_wgs
+                    &&  NStr::EndsWith(acc, "000000")) {
                     wgs_master = true;
+                } else if (type == CSeq_id::eAcc_refseq_chromosome) {
+                    is_nc = true;
                 }
             }
             break;
@@ -776,6 +774,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2002/08/27 15:25:20  ucko
+* Use CSeq_id::IdentifyAccession to improve accession-based tests.
+*
 * Revision 1.6  2002/08/22 15:36:14  ucko
 * Fix stupid MSVC build error by adding yet another redundant .NotEmpty().
 *
