@@ -33,6 +33,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/12/04 15:55:07  lavr
+ * +SOCK_CreateConnectorOnTop(), +SOCK_CreateConnectorOnTopEx()
+ * Redesign of open-retry loop
+ *
  * Revision 6.6  2001/04/24 21:30:27  lavr
  * Added treatment of CONN_DEFAULT_TIMEOUT
  *
@@ -55,10 +59,13 @@
  * ==========================================================================
  */
 
+#include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_socket_connector.h>
 #include <connect/ncbi_socket.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define MAX_IP_ADDR_LEN       16 /* sizeof("255.255.255.255") */
 
 
 /***********************************************************************
@@ -132,40 +139,54 @@ static EIO_Status s_VT_Open
  const STimeout* timeout)
 {
     SSockConnector* xxx = (SSockConnector*) connector->handle;
-    EIO_Status   status = eIO_Success;
+    EIO_Status   status = eIO_Unknown;
+    unsigned int i = 0;
 
-    unsigned int i;
-    for (i = 0; i < xxx->max_try; i++) {
-        /* connect */
-        status = xxx->sock ?
-            SOCK_Reconnect(xxx->sock, 0, 0,
-                           timeout == CONN_DEFAULT_TIMEOUT ? 0 : timeout) :
-            SOCK_Create(xxx->host, xxx->port,
-                        timeout == CONN_DEFAULT_TIMEOUT ? 0 : timeout,
-                        &xxx->sock);
+    do {
+        if (xxx->sock && !xxx->host) {
+            /* on-top (connected) connector for the 1st time - only once here*/
+            unsigned int   host;
+            unsigned short port;
+            char           addr[MAX_IP_ADDR_LEN];
+            
+            SOCK_GetAddress(xxx->sock, &host, &port, 0/*native byte order*/);
+            if (SOCK_ntoa(SOCK_htonl(host), addr, sizeof(addr)) != 0)
+                return eIO_Unknown;
+            xxx->host = strdup(addr);
+            xxx->port = port;
+            status = eIO_Success;
+        } else {
+            if (!xxx->max_try)
+                break;
+            /* connect/reconnect */
+            status = xxx->sock ?
+                SOCK_Reconnect(xxx->sock, 0, 0,
+                               timeout == CONN_DEFAULT_TIMEOUT ? 0 : timeout) :
+                SOCK_Create(xxx->host, xxx->port,
+                            timeout == CONN_DEFAULT_TIMEOUT ? 0 : timeout,
+                            &xxx->sock);
+            i++;
+        }
 
         if (status == eIO_Success) {
             /* set data logging and write init data, if any */
             size_t n_written = 0;
-            
+
             SOCK_SetDataLogging(xxx->sock,
                                 (xxx->flags & eSCC_DebugPrintout)
-                                ? eOn
-                                : eDefault);
+                                ? eOn : eDefault);
             if (!xxx->init_data)
                 return eIO_Success;
+            SOCK_SetTimeout(xxx->sock, eIO_Write,
+                            timeout == CONN_DEFAULT_TIMEOUT ? 0 : timeout);
             status = SOCK_Write(xxx->sock, xxx->init_data, xxx->init_size,
                                 &n_written);
             if (status == eIO_Success)
                 return eIO_Success;
         }
 
-        /* error: close socket and continue trying */
-        if (xxx->sock) {
-            SOCK_Close(xxx->sock);
-            xxx->sock = 0;
-        }
-    }
+        /* error: continue trying */
+    } while (i < xxx->max_try);
 
     /* error: return status */
     return status;
@@ -287,7 +308,8 @@ static void s_Destroy
 {
     SSockConnector* xxx = (SSockConnector*) connector->handle;
 
-    free(xxx->host);
+    if (xxx->host)
+        free(xxx->host);
     if (xxx->init_data)
         free(xxx->init_data);
     free(xxx);
@@ -295,21 +317,9 @@ static void s_Destroy
 }
 
 
-/***********************************************************************
- *  EXTERNAL -- the connector's "constructors"
- ***********************************************************************/
-
-extern CONNECTOR SOCK_CreateConnector
-(const char*    host,
- unsigned short port,
- unsigned int   max_try)
-{
-    return SOCK_CreateConnectorEx(host, port, max_try, 0, 0, 0);
-}
-
-
-extern CONNECTOR SOCK_CreateConnectorEx
-(const char*    host,
+static CONNECTOR s_Init
+(SOCK           sock,
+ const char*    host,
  unsigned short port,
  unsigned int   max_try,
  const void*    init_data,
@@ -319,13 +329,18 @@ extern CONNECTOR SOCK_CreateConnectorEx
     CONNECTOR       ccc = (SConnector    *) malloc(sizeof(SConnector    ));
     SSockConnector* xxx = (SSockConnector*) malloc(sizeof(SSockConnector));
 
+    /* parameter check: either sock or host/port, not both */
+    assert((!sock && host && port) || (sock && !host && !port));
     /* initialize internal data structures */
-    xxx->sock      = 0;
-    xxx->host      = strcpy((char*) malloc(strlen(host) + 1), host);
-    xxx->port      = port;
-    xxx->max_try   = max_try ? max_try : 1;
-    xxx->flags     = flags;
-    xxx->init_size = init_data ? init_size : 0;
+    xxx->sock        = sock;
+    xxx->host        = host ? strdup(host) : 0;
+    xxx->port        = port;
+    if (sock)
+        xxx->max_try = SOCK_IsServerSide(sock) ? 0 : max_try;
+    else
+        xxx->max_try = max_try ? max_try : 1;
+    xxx->flags       = flags;
+    xxx->init_size   = init_data ? init_size : 0;
     if (xxx->init_size) {
         xxx->init_data = malloc(init_size);
         memcpy(xxx->init_data, init_data, xxx->init_size);
@@ -341,4 +356,48 @@ extern CONNECTOR SOCK_CreateConnectorEx
     ccc->destroy = s_Destroy;
 
     return ccc;
+}
+
+
+/***********************************************************************
+ *  EXTERNAL -- the connector's "constructors"
+ ***********************************************************************/
+
+extern CONNECTOR SOCK_CreateConnector
+(const char*    host,
+ unsigned short port,
+ unsigned int   max_try)
+{
+    return s_Init(0, host, port, max_try, 0, 0, 0);
+}
+
+
+extern CONNECTOR SOCK_CreateConnectorEx
+(const char*    host,
+ unsigned short port,
+ unsigned int   max_try,
+ const void*    init_data,
+ size_t         init_size,
+ TSCC_Flags     flags)
+{
+    return s_Init(0, host, port, max_try, init_data, init_size, flags);
+}
+
+
+extern CONNECTOR SOCK_CreateConnectorOnTop
+(SOCK         sock,
+ unsigned int max_try)
+{
+    return s_Init(sock, 0, 0, max_try, 0, 0, 0);
+}
+
+
+extern CONNECTOR SOCK_CreateConnectorOnTopEx
+(SOCK         sock,
+ unsigned int max_try,
+ const void*  init_data,
+ size_t       init_size,
+ TSCC_Flags   flags)
+{
+    return s_Init(sock, 0, 0, max_try, init_data, init_size, flags);
 }
