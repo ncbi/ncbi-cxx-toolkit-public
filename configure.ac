@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.167 2003/02/20 19:26:48 ucko Exp $
+#  $Id: configure.ac,v 1.168 2003/02/25 22:26:01 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -854,6 +854,11 @@ case "$compiler:$compiler_version" in
   ICC:6* )
     # Seems to use libcxa.so.1 even without -i_dynamic...
     LDFLAGS="-Xlinker -rpath -Xlinker $compiler_root/lib $LDFLAGS"
+    ;;
+  ICC:7* )
+    # Favor the static version, as libcxa.so.3 isn't exactly common....
+    # (Undocumented, and unavailable at all in older versions. :-/)
+    LDFLAGS="-static-libcxa $LDFLAGS"
     ;;
 esac
 

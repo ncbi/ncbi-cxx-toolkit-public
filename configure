@@ -3724,6 +3724,11 @@ case "$compiler:$compiler_version" in
     # Seems to use libcxa.so.1 even without -i_dynamic...
     LDFLAGS="-Xlinker -rpath -Xlinker $compiler_root/lib $LDFLAGS"
     ;;
+  ICC:7* )
+    # Favor the static version, as libcxa.so.3 isn't exactly common....
+    # (Undocumented, and unavailable at all in older versions. :-/)
+    LDFLAGS="-static-libcxa $LDFLAGS"
+    ;;
 esac
 
 # Provide runpath to the C++ Toolkit (or as specified by --with-runpath=) DLLs
