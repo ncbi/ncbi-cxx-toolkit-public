@@ -35,6 +35,7 @@
 #define ALGO_BLAST_API___BLAST_MTLOCK_HPP
 
 #include <connect/ncbi_core.h>
+#include <algo/blast/core/blast_export.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -46,7 +47,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /** Initialize a mutex locking mechanism for BLAST. */
-MT_LOCK Blast_CMT_LOCKInit(void);
+NCBI_XBLAST_EXPORT MT_LOCK Blast_CMT_LOCKInit(void);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -56,6 +57,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/03/30 16:21:27  jcherry
+* Added export specifier
+*
 * Revision 1.3  2005/03/29 15:58:54  dondosha
 * Added blast scope
 *

@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// Data structure for the queue implementation of BlastHSPStream
-class CBlastHSPListQueueData
+class NCBI_XBLAST_EXPORT CBlastHSPListQueueData
 {
 public:
     /// Constructor
@@ -87,6 +87,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/03/30 16:21:27  jcherry
+* Added export specifier
+*
 * Revision 1.4  2005/03/29 15:58:54  dondosha
 * Added blast scope
 *
