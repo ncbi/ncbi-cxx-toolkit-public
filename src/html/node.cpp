@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/01/25 19:32:44  vasilche
+* Virtual destructors now work properly.
+*
 * Revision 1.7  1999/01/04 20:06:14  vasilche
 * Redesigned CHTML_table.
 * Added selection support to HTML forms (via hidden values).
@@ -74,12 +77,10 @@ CNCBINode::CNCBINode(const string& name)
 // it can't handle a virtual destructor in any form for some reason.
 CNCBINode::~CNCBINode(void)
 {
-#if 0
-    while ( !m_ChildList.empty() ) {
+    while ( !m_ChildNodes.empty() ) {
         delete *ChildBegin();
     }
     DetachFromParent();
-#endif
 }
 
 CNCBINode::CNCBINode(const CNCBINode& origin)
