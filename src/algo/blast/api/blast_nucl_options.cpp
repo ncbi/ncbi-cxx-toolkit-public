@@ -62,10 +62,10 @@ CBlastNucleotideOptionsHandle::SetTraditionalBlastnDefaults()
         return;
     }
     SetQueryOptionDefaults();
-    SetInitialWordOptionsDefaults();
-    // NB: Lookup table defaults are set after initial word defaults, because
-    // scanning stride depends on the extension method
     SetLookupTableDefaults();
+    // NB: Initial word defaults must be set after lookup table defaults, 
+    // because default scanning stride depends on the lookup table type.
+    SetInitialWordOptionsDefaults();
     SetGappedExtensionDefaults();
     SetScoringOptionsDefaults();
     SetHitSavingOptionsDefaults();
@@ -79,10 +79,10 @@ CBlastNucleotideOptionsHandle::SetTraditionalMegablastDefaults()
         return;
     }
     SetQueryOptionDefaults();
-    SetMBInitialWordOptionsDefaults();
-    // NB: Lookup table defaults are set after initial word defaults, because
-    // scanning stride depends on the extension method
     SetMBLookupTableDefaults();
+    // NB: Initial word defaults must be set after lookup table defaults, 
+    // because default scanning stride depends on the lookup table type.
+    SetMBInitialWordOptionsDefaults();
     SetMBGappedExtensionDefaults();
     SetMBScoringOptionsDefaults();
     SetHitSavingOptionsDefaults();
@@ -98,7 +98,7 @@ CBlastNucleotideOptionsHandle::SetLookupTableDefaults()
     SetAlphabetSize(BLASTNA_SIZE);
 
     unsigned int stride = CalculateBestStride(GetWordSize(), 
-                                              GetVariableWordSize(), 
+                                              BLAST_VARWORD_NUCL, 
                                               GetLookupTableType());
     SetScanStep(stride);
 }
@@ -112,10 +112,10 @@ CBlastNucleotideOptionsHandle::SetMBLookupTableDefaults()
     m_Opts->SetMBMaxPositions(INT4_MAX);
     SetAlphabetSize(BLASTNA_SIZE);
 
-    // Note: stride makes no sense in the context of eRightAndLeft extension 
+    // Note: stride makes no sense in the context of eRight extension 
     // method
     unsigned int stride = CalculateBestStride(GetWordSize(), 
-                                              GetVariableWordSize(), 
+                                              BLAST_VARWORD_MEGABLAST, 
                                               GetLookupTableType());
     SetScanStep(stride);
 }
@@ -133,8 +133,8 @@ CBlastNucleotideOptionsHandle::SetInitialWordOptionsDefaults()
     SetXDropoff(BLAST_UNGAPPED_X_DROPOFF_NUCL);
     SetWindowSize(BLAST_WINDOW_SIZE_NUCL);
     SetSeedContainerType(eDiagArray);
+    SetVariableWordSize(BLAST_VARWORD_NUCL);
     SetSeedExtensionMethod(eRightAndLeft);
-    SetVariableWordSize(false);
     SetUngappedExtension();
 }
 
@@ -143,8 +143,8 @@ CBlastNucleotideOptionsHandle::SetMBInitialWordOptionsDefaults()
 {
     SetWindowSize(BLAST_WINDOW_SIZE_NUCL);
     SetSeedContainerType(eDiagArray);
+    SetVariableWordSize(BLAST_VARWORD_MEGABLAST);
     SetSeedExtensionMethod(eRightAndLeft);
-    SetVariableWordSize(true);
 }
 
 void
@@ -242,6 +242,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/17 19:15:28  dondosha
+ * Corrected order of defaults setting, so scanning stride is set properly
+ *
  * Revision 1.5  2004/03/11 17:27:12  camacho
  * Fix incorrect doxygen file directive
  *
