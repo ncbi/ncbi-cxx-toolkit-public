@@ -32,6 +32,7 @@
 
 #include <corelib/ncbi_os_mac.hpp>
 
+extern bool g_Mac_SpecialEnvironment = false;
 
 BEGIN_NCBI_SCOPE
 
@@ -71,9 +72,11 @@ COSErrException_Mac::~COSErrException_Mac(void) THROWS_NONE
 END_NCBI_SCOPE
 
 
-
 /* --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/12/03 22:00:55  juran
+ * Add g_Mac_SpecialEnvironment global.
+ *
  * Revision 1.1  2001/11/19 18:11:08  juran
  * Implements Mac OS-specific header.
  * Inital check-in.
