@@ -93,40 +93,34 @@ ensure automatic destruction of these objects when the function returns or an ex
 
 The streams now need to have <i> CObject[I/O]Stream</i>s associated with them in order to provide
 the proper data serialization mechanisms.
-
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/objistr.hpp">
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectIStream.html">
 <i> CObjectIStream</i></a> and 
-
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/objostr.hpp">
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectOStream.html">
 <i> CObjectOStream</i></a> are base classes which provide generic interfaces between the
-
 object-specific type information associated with a serializable object's class and an I/O stream. The object
-stream classes used in this application 
-
-(<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/objistrasnb.hpp">CObjectIStreamAsnBinary</a>, 
-
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/objostrasn.hpp">
-CObjectOStreamAsn</i></a>)
+stream classes used in this application,
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectIStreamAsnBinary.html">
+(<i>CObjectIStreamAsnBinary</i></a> and
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectOStreamAsn.html">
+<i>CObjectOStreamAsn</i></a>)
 are descendants of these base classes with specialized serialization methods for ASN.1 binary 
 input and ASN.1 text output.
 <p>
 
 Finally, a variable for the object type that will be generated from the input stream (in this
-case a 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/mmdb1/Biostruc_.hpp">
+case a <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CBiostruc.html">
 <i> CBiostruc</i></a>) is defined, and the <i>CObject[I/O]Stream</i> operators "<<" and
 ">>" are used to read and write the serialized data to and from the object. (Note that it is
 <i> not </i> possible to simply "pass the data through", from the input stream to the output
 stream, using a construct like:<i> *inObject >> *outObject</i>). The <i>CObject[I/O]Stream</i>s
 know nothing about the structure of the specific object - they have knowledge only of the
 serialization format (text ASN, binary ASN, XML, etc.). In contrast, the 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/mmdb1/Biostruc_.hpp">
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CBiostruc.html">
 <i>CBiostruc</i></a> knows
 nothing about I/O and serialization formats, but it contains explicit type information about
 itself.  Thus, the <i>CObject[I/O]Stream</i>s can apply their specialized serialization methods to
 the data members of 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/mmdb1/Biostruc_.hpp">
-<i>CBiostruc</i></a> using the type information associated with that object's
+<i>CBiostruc</i> using the type information associated with that object's
 class.
 
 <a name="includes">
@@ -135,7 +129,7 @@ class.
 As always, you will need to include your own local header file defining the current
 application class. In this example, <a href="asntrans_hpp.html"> <i>asntrans.hpp</i></a> defines the
 <i>CTestAsn</i> class (and in turn, includes the necessary <i>corelib</i> header file for
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbiapp.hpp">
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CNcbiApplication.html">
 <i> CNcbiApplication</i>)</a>.<p>
 
 Determining what additional header files should be included is fairly straightforward: look
@@ -192,9 +186,9 @@ with input streams containing binary ASN data; the second defines objects associ
 output streams containing ASN text. The last file, 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/serial.hpp">
 <i>serial.hpp</i></a>, defines the input and output operators on the generic object serialization streams 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/objistr.hpp">
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectIStream.html">
 <i>CObjectIStream</i></a> and 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/objostr.hpp">
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectOStream.html">
 <i>CObjectOStream</i></a> respectively.<p>
 
 Finally, we must include headers for the ASN type we are using. The easiest way to locate
@@ -236,14 +230,12 @@ well as the serial library,
 <a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/libs.html#ref_TableXSERIAL">
 <i>xser</i></a>. In addition we will need to link to whatever object libraries are
 entailed by using a 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/mmdb1/Biostruc_.hpp">
-<i>CBiostruc</i></a> object. Minimally, one would
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CBiostruc.html">
+<i>CBiostruc.</i></a> object. Minimally, one would
 expect to link to the <i>mmdb</i> libraries. This in itself is insufficient however,
-as the 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/mmdb1/Biostruc_.hpp">
-<i>Biostruc</i></a> class embeds other types of objects, including PubMed citations,
+as the <i>CBiostruc</i> class embeds other types of objects, including PubMed citations,
 features, and sequences, which in turn embed additional objects such as 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/general/Date.hpp">
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CDate.html">
 <i>Date</i></a>.
 The makefile for <i>asntrans.cpp</i>, <a href="make_asntrans.html"> <i>Makefile.asntrans.app</i></a> lists 
 the libraries required for linking in the make variable <i>LIB</i>.

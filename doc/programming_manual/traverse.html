@@ -20,19 +20,31 @@ example provided here involves an ASN.1 Biostruc type which is implemented
 by class <i>CBiostruc.</i> <p>
 
 The first question is: how do I locate the class definitions implementing the object
-to be traversed? As mentioned previously, the source browser is of little help in this case, as the
-compiled object classes are not registered in the C++ tree.  The <i>include</i> and
-<i>src</i> directories are available for browsing however, in <a
-href="/netopt/ncbi_tools/c++/include/objects"> <i> $NCBI/c++/include/objects </a> </i>and
-<A href = "/netopt/ncbi_tools/c++/src/objects"> <i>$NCBI/c++/src/objects</a></i>. <p>
+to be traversed? There are now two source browsers which you can use. To obtain a
+synopsis of the class, consult the 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/index.html">
+index </a> of the class hierarchy browser. For example, a synopsis of
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CBiostruc.html"> the
+<i>CBiostruc</i></a> class is readily available. From this page, you can also
+access source files for the class by following the 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CBiostruc">
+<i>Locate CBiostruc</i></a> link.  
+Alternatively, you may want to access this page directly by using the 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CBiostruc">
+Identifier search</a> tool. <p>
 
-Because we are using a <i>Biostruc</i>, the first place to search is in the <i>mmdb </i>
-include directories.  In the <i>mmdb1</i> directory, we find two header files that look appropriate: 
-<a href="/netopt/ncbi_tools/c++/include/objects/mmdb1/Biostruc.hpp"> <i> Biostruc.hpp</i> </a> and
-<a href="/netopt/ncbi_tools/c++/include/objects/mmdb1/Biostruc_.hpp"> <i> Biostruc_.hpp</i></a>.
-The first file defines the class <i>CBiostruc</i>, which inherits from the class <i>CBiostruc_Base</i>,
-defined in the second file.  The <i> base</i>
-class is where you must look for the definitions and access functions you will be using. However, it
+Because we wish to determine which headers to include, the synopsis displayed by
+the Identifier search tool is most useful. There we find a single header file,
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/mmdb1/Biostruc.hpp#L59">
+<i> Biostruc.hpp </i></a> listed as defining the class at line 59. Accordingly, this is
+the header file we must include. The <i>CBiostruc</i> class inherits from the <i>CBiostruc_Base</i> class
+however, and we will need to consult that file as well to understand the internal structure
+of the <i>CBiostruc</i> class. Following a link to the parent class from the class hierarchy browser, 
+we find the definition of the 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CBiostruc_Base.html">
+<i>CBiostruc_Base</i></a> class.
+<p>
+This is where we must look for the definitions and access functions we will be using. However, it
 is the inherited class (defined in <i>CBiostruc.hpp</i>) whose header should be <i>#included</i> in your source files, 
 and which should be instantiated by your local program variable. The inherited class's header file 
 will include the base header file for you. <p>
@@ -58,10 +70,10 @@ public:
 
     // type definitions 
 
-    typedef NCBI_NS_STD::list< NCBI_NS_NCBI::CRef< ::CBiostruc_id > > TId;
-    typedef NCBI_NS_STD::list< NCBI_NS_NCBI::CRef< ::CBiostruc_descr > > TDescr;
-    typedef NCBI_NS_STD::list< NCBI_NS_NCBI::CRef< ::CBiostruc_feature_set > > TFeatures;
-    typedef NCBI_NS_STD::list< NCBI_NS_NCBI::CRef< ::CBiostruc_model > > TModel;
+    typedef list< CRef< CBiostruc_id > > TId;
+    typedef list< CRef< CBiostruc_descr > > TDescr;
+    typedef list< CRef< CBiostruc_feature_set > > TFeatures;
+    typedef list< CRef< CBiostruc_model > > TModel;
     typedef ::CBiostruc_graph TChemical_graph;
 
     // Get() members 
@@ -89,29 +101,23 @@ private:
 };
 </pre>
 <font color = black>
+
 With the exception of the structure's chemical graph, each of the class's private
 data members is actually a <i>list</i> of references (pointers), as specified by
-the type definitions. Specifically, <i> NCBI_NS_STD</i> is an alias for the <i>std</i>
-namespace, so the lists are standard STL list containers whose arguments specify what
-type of elements the list will hold. For example, <i>TId</i> is a list of <i>NCBI_NS_NCBI::CRef</i>
-objects, where each <i>CRef</i> object points to a <i>CBiostruc_id</i>. <p>
+the type definitions. For example, <i>TId</i> is a list of 
+<a href="cref.html#cref"><i>CRef</i></a>
+objects, where each <i>CRef</i> object points to a 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CBiostruc_id.html">
+<i>CBiostruc_id</i></a>. 
 
-The <a href="cref.html"><i>CRef</i></a> class is a type of smart pointer used to hold a pointer 
-to a reference-counted object. 
-The derefencing operator, when applied to a <i>CRef</i> element of the Biostruc's TId list,
-e.g. <i>*listElt</i>, will return a <i>CBiostruc_id</i>.  Because the
-<i>CRef</i> class is defined in the <i> NCBI_NS_NCBI</i> namespace, the scope operator is
-used to refer to it. The scope operator without a prefix refers to the scope that is "just
-one level up" - i.e. the set of prevailing definitions prior to entering the current class
-scope. Thus <i>::CBiostruc_id</i> refers to the class definition occurring at the
-<i>same</i> level as <i>CBiostruc</i>, while <i>CBiostruc::TId</i>, references the list
-type definition we have been discussing here.
-<p>
-In summary, each of the above <i>list</i> type definitions defines an STL list of 
-pointers to the specified innermost <i>::type</i>. Thus the call to <i>GetId()</i>
-returns a list which must then be iterated over and dereferenced to get the 
-individual id objects. In contrast, the function <i>GetChemicalGraph()</i> returns the
-object directly, as it does not involve a list or a <i>CRef</i>. <p>
+The <i>CRef</i></a> class is a type of smart pointer used to hold a pointer
+to a reference-counted object.  The derefencing operator, when applied to an element
+of <i>CBiostruc::TId</i>, e.g. <i>*this_cref</i>, will return a <i>CBiostruc_id</i>.  
+
+Thus the call to <i>GetId()</i> returns a list which must then be iterated
+over and dereferenced to get the individual id objects. In contrast,
+the function <i>GetChemicalGraph()</i> returns the object directly, as
+it does not involve a list or a <i>CRef</i>. <p>
 
 In general, all objects in the NCBI libraries will have a similar structure: a set of private 
 data members and a set of <i> GetXxx()</i> and <i> SetXxx()</i> member functions to access
@@ -130,19 +136,21 @@ in a <i>CBiostruc</i>. The overloaded <i>Visit()</i> function is then used to re
 <i>Visit(bs)</i></a> simply calls <i>Visit()</i> on each of its data members, where the data members are
 accessed using <i>bs.GetXxx()</i>.  The information needed to write each of these functions -
 the data member types and member function signatures - is contained in the respective header
-files. For example, consulting <i>Biostruc_.hpp</i>, we learn that the structure's 
+files. For example, looking at
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/mmdb1/Biostruc_.hpp#L65">
+<i>Biostruc_.hpp</i></a>, we learn that the structure's 
 descriptor list can be accessed using <i>GetDescr()</i>, and that the type returned is a 
 list of pointers to descriptors:
 <font color = "#000080">
 <pre>
-     typedef NCBI_NS_STD::list< NCBI_NS_NCBI::CRef< ::CBiostruc_descr > > TDescr;
+     typedef list< CRef< CBiostruc_descr > > TDescr;
      const TDescr& GetDescr(void) const;
 </pre>
 <font color = black>
 
-Consulting 
-<a href="/netopt/ncbi_tools/c++/include/objects/mmdb1/Biostruc_desc_.hpp">
-<i>Biostruc_desc_.hpp</i> </a>in turn, we learn that this class has a <i>choice 
+Consulting the base class for 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/mmdb1/Biostruc_descr_.hpp#L62">
+<i>CBiostruc_desc</i></a> in turn, we learn that this class has a <i>choice 
 state</i> defining the type of value stored there as well as the method that should be
 used to access that value. This leads to an implementation of 
 <a href="traverse_cpp.html#visitDscr"> <i>Visit(CBiostruc::TDescr DescrList)</i></a>
@@ -172,8 +180,8 @@ a pointer that traverses consecutive elements of the container.
 For example, to iterate over the list of descriptors in the Biostruc, we use
 a container of type <i>CBiostruc::TDescr</i>, and an iterator of type <i>const_iterator</i>
 to ensure that the data is not mutated in the body of the loop. Because the descriptor
-list contains pointers (<i>CRefs</i>) to objects, we will actually need to dereference <i>twice</i>
-to get to the objects themselves. 
+list contains pointers (<a href="cref.html#cref"><i>CRefs</i></a>) to objects, we will 
+actually need to dereference <i>twice</i> to get to the objects themselves. 
 
 <font color = "#000080">
 <pre>
@@ -212,7 +220,11 @@ void Visit (const CBiostruc::TDescr& descList) {
 }
 </pre>
 <font color = black>
-The type iterators come in two flavors <i>CStdTypeIterators</i> and <i>CObjectTypeIterators</i>,
+The type iterators come in two flavors 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CStdTypeIterator.html">
+<i>CStdTypeIterator</i></a> and
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CTypeIterator.html">
+<i>CTypeIterator</i></a>,
 with corresponding <i>const</i> implementations. This example uses a <i> const</i> standard
 type iterator to visit all <i>string </i> data members in a <i>CBiostruc_descr</i> object. Alternatively,
 if we had wanted to visit only the <i> CBiostruc_history </i> descriptors, the inner loop could
