@@ -56,28 +56,28 @@ enum {         /* half of the (fixed) match score */
 
 /* -------- From original file edit.c ------------- */
 
-static Uint4 edit_val_get(edit_op_t op)
+static Uint4 edit_val_get(MBEditOpType op)
 {
     return op >> 2;
 }
-static Uint4 edit_opc_get(edit_op_t op)
+static Uint4 edit_opc_get(MBEditOpType op)
 {
     return op & EDIT_OP_MASK;
 }
 
-static edit_op_t edit_op_cons(Uint4 op, Uint4 val)
+static MBEditOpType edit_op_cons(Uint4 op, Uint4 val)
 {
     return (val << 2) | (op & EDIT_OP_MASK);
 }
 
-static edit_op_t edit_op_inc(edit_op_t op, Uint4 n)
+static MBEditOpType edit_op_inc(MBEditOpType op, Uint4 n)
 {
     return edit_op_cons(edit_opc_get(op), edit_val_get(op) + n);
 }
 
-static edit_op_t edit_op_inc_last(MBGapEditScript *es, Uint4 n)
+static MBEditOpType edit_op_inc_last(MBGapEditScript *es, Uint4 n)
 {
-    edit_op_t *last;
+    MBEditOpType *last;
     ASSERT (es->num > 0);
     last = &(es->op[es->num-1]);
     *last = edit_op_inc(*last, n);
@@ -86,11 +86,11 @@ static edit_op_t edit_op_inc_last(MBGapEditScript *es, Uint4 n)
 
 static Int4 edit_script_ready(MBGapEditScript *es, Uint4 n)
 {
-    edit_op_t *p;
+    MBEditOpType *p;
     Uint4 m = n + n/2;
     
     if (es->size <= n) {
-        p = realloc(es->op, m*sizeof(edit_op_t));
+        p = realloc(es->op, m*sizeof(MBEditOpType));
         if (p == 0) {
             return 0;
         } else {
@@ -129,12 +129,12 @@ static MBGapEditScript *edit_script_init(MBGapEditScript *es)
 	edit_script_ready(es, 8);
 	return es;
 }
-static edit_op_t *edit_script_first(MBGapEditScript *es)
+static MBEditOpType *edit_script_first(MBGapEditScript *es)
 {
     return es->num > 0 ? &es->op[0] : 0;
 }
 
-static edit_op_t *edit_script_next(MBGapEditScript *es, edit_op_t *op)
+static MBEditOpType *edit_script_next(MBGapEditScript *es, MBEditOpType *op)
 {
     /* XXX - assumes flat address space */
     if (&es->op[0] <= op && op < &es->op[es->num-1])
@@ -162,7 +162,7 @@ static Int4 edit_script_more(MBGapEditScript *data, Uint4 op, Uint4 k)
 
 MBGapEditScript *MBGapEditScriptAppend(MBGapEditScript *es, MBGapEditScript *et)
 {
-    edit_op_t *op;
+    MBEditOpType *op;
     
     for (op = edit_script_first(et); op; op = edit_script_next(et, op))
         edit_script_more(es, edit_opc_get(*op), edit_val_get(*op));
@@ -212,7 +212,7 @@ static MBGapEditScript *edit_script_reverse_inplace(MBGapEditScript *es)
     const Uint4 end = num-1;
     
     for (i = 0; i < mid; ++i) {
-        const edit_op_t t = es->op[i];
+        const MBEditOpType t = es->op[i];
         es->op[i] = es->op[end-i];
         es->op[end-i] = t;
     }

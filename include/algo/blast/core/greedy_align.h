@@ -41,11 +41,11 @@
 extern "C" {
 #endif
 
-typedef Uint4 edit_op_t; /* 32 bits */
+typedef Uint4 MBEditOpType; /* 32 bits */
 typedef struct MBGapEditScript {
-    edit_op_t *op;                  /* array of edit operations */
+    MBEditOpType *op;                  /* array of edit operations */
     Uint4 size, num;         /* size of allocation, number in use */
-    edit_op_t last;                 /* most recent operation added */
+    MBEditOpType last;                 /* most recent operation added */
 } MBGapEditScript;
 
 MBGapEditScript *MBGapEditScriptFree(MBGapEditScript *es);
