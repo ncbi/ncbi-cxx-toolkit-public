@@ -59,6 +59,8 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
+#include <algorithm>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -813,6 +815,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2004/09/03 21:18:46  ucko
+* +<algorithm> for sort()
+*
 * Revision 1.70  2004/09/03 19:03:02  grichenk
 * Sort ranges for eViewExcluded
 *
