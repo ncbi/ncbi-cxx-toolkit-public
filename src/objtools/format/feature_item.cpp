@@ -96,7 +96,7 @@ static bool s_ValidId(const CSeq_id& id)
 }
 
 
-static bool s_CheckQuals_cdregion(const CSeq_feat& feat, CBioseqContext& ctx)
+static bool s_CheckQuals_cdregion(const CSeq_feat& feat, const CSeq_loc& loc, CBioseqContext& ctx)
 {
     if ( !ctx.Config().CheckCDSProductId() ) {
         return true;
@@ -109,7 +109,7 @@ static bool s_CheckQuals_cdregion(const CSeq_feat& feat, CBioseqContext& ctx)
     if ( !pseudo ) {
         const CGene_ref* grp = feat.GetGeneXref();
         if ( grp == NULL ) {
-            CConstRef<CSeq_feat> gene = GetBestGeneForCds(feat, scope);
+            CConstRef<CSeq_feat> gene = GetOverlappingGene(loc, scope);
             if (gene) {
                 pseudo = gene->CanGetPseudo()  &&  gene->GetPseudo();
                 if ( !pseudo ) {
@@ -274,12 +274,12 @@ static bool s_CheckQuals_gap(const CSeq_feat& feat)
 }
 
 
-static bool s_CheckMandatoryQuals(const CSeq_feat& feat, CBioseqContext& ctx)
+static bool s_CheckMandatoryQuals(const CSeq_feat& feat, const CSeq_loc& loc, CBioseqContext& ctx)
 {
     switch ( feat.GetData().GetSubtype() ) {
     case CSeqFeatData::eSubtype_cdregion:
         {
-            return s_CheckQuals_cdregion(feat, ctx);
+            return s_CheckQuals_cdregion(feat, loc, ctx);
         }
     case CSeqFeatData::eSubtype_conflict:
         {
@@ -314,7 +314,7 @@ static bool s_CheckMandatoryQuals(const CSeq_feat& feat, CBioseqContext& ctx)
 }
 
 
-static bool s_SkipFeature(const CSeq_feat& feat, CBioseqContext& ctx)
+static bool s_SkipFeature(const CSeq_feat& feat, const CSeq_loc& loc, CBioseqContext& ctx)
 {
     CSeqFeatData::E_Choice type    = feat.GetData().Which();
     CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();        
@@ -380,7 +380,7 @@ static bool s_SkipFeature(const CSeq_feat& feat, CBioseqContext& ctx)
 
     // if RELEASE mode, make sure we have all info to create mandatory quals.
     if ( cfg.NeedRequiredQuals() ) {
-        return !s_CheckMandatoryQuals(feat, ctx);
+        return !s_CheckMandatoryQuals(feat, loc, ctx);
     }
 
     return false;
@@ -621,7 +621,7 @@ CFeatureItem::CFeatureItem
 
 void CFeatureItem::x_GatherInfo(CBioseqContext& ctx)
 {
-    if ( s_SkipFeature(GetFeat(), ctx) ) {
+    if ( s_SkipFeature(GetFeat(), GetLoc(), ctx) ) {
         x_SetSkip();
         return;
     }
@@ -732,7 +732,8 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
     }
 
     // operon qual for any feature but operon and gap
-    if (subtype != CSeqFeatData::eSubtype_operon  &&
+    if (ctx.HasOperon()  &&
+        subtype != CSeqFeatData::eSubtype_operon  &&
         subtype != CSeqFeatData::eSubtype_gap) {
         const CGene_ref* grp = m_Feat->GetGeneXref();
         if (grp == NULL  ||  !grp->IsSuppressed()) {
@@ -1028,9 +1029,18 @@ void CFeatureItem::x_AddCdregionQuals
                 // Add protein quals (comment, note, names ...) 
                 pref = x_AddProteinQuals(prot);
             } else {
-                x_AddQual(eFQ_protein_id, new CFlatSeqIdQVal(*prot_id));
-                if ( prot_id->IsGi() ) {
+                if (prot_id->IsGi()  &&  prot_id->GetGi() > 0) {
+                    string prot_acc;
+                    try {
+                        prot_acc = GetAccessionForGi(prot_id->GetGi(), scope);
+                    } catch (CException&) {}
+                    if (!cfg.DropIllegalQuals()  ||  IsValidAccession(prot_acc)) {
+                        CRef<CSeq_id> acc_id(new CSeq_id(prot_acc));
+                        x_AddQual(eFQ_protein_id, new CFlatSeqIdQVal(*acc_id));
+                    }
                     x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(*prot_id, true));
+                } else {
+                    x_AddQual(eFQ_protein_id, new CFlatSeqIdQVal(*prot_id));
                 }
             }
 
@@ -3540,6 +3550,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2005/03/07 17:18:28  shomrat
+* Supress overlap operon check if no operon in context; force protein_id accession
+*
 * Revision 1.46  2005/03/02 16:28:01  shomrat
 * Suppress /translation if flag is set
 *
