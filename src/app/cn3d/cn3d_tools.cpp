@@ -30,13 +30,13 @@
 *
 * ===========================================================================
 */
+#include <ncbi_pch.hpp>
 
 #ifdef _MSC_VER
 #pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
 #endif
 
 #if defined(__WXMSW__)
-#include <ncbi_pch.hpp>
 #include <windows.h>
 #include <shellapi.h>   // for ShellExecute, needed to launch browser
 
@@ -321,6 +321,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/05/24 15:56:33  gorelenk
+* Changed position of PCH include
+*
 * Revision 1.8  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *
