@@ -208,6 +208,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/04/19 16:38:06  dicuccio
+* Remove compiler warning about nested c-style comments
+*
 * Revision 1.3  2003/04/18 21:20:44  kans
 * regrouped ESubtype, removing most explicit numbers, added GetTypeFromSubtype, moved log to end of file
 *
@@ -219,4 +222,5 @@ END_NCBI_SCOPE
 *
 *
 * ===========================================================================
+*/
 /* Original file checksum: lines: 90, chars: 2439, CRC32: 742431cc */
