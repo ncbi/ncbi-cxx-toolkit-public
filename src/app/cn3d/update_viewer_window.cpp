@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2002/12/19 14:15:37  thiessen
+* mac fixes to menus, add icon
+*
 * Revision 1.52  2002/10/13 22:58:08  thiessen
 * add redo ability to editor
 *
@@ -277,6 +280,8 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     viewerWidget->SetMouseMode(SequenceViewerWidget::eDragHorizontal);
     menuBar->Check(MID_DRAG_HORIZ, true);
     menuBar->Check(MID_SELECT_RECT, false);
+
+    SetMenuBar(menuBar);
 }
 
 UpdateViewerWindow::~UpdateViewerWindow(void)

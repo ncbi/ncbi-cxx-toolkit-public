@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2002/12/19 14:15:37  thiessen
+* mac fixes to menus, add icon
+*
 * Revision 1.41  2002/11/22 19:54:29  thiessen
 * fixes for wxMac/OSX
 *
@@ -251,8 +254,6 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer, const wxPoint& pos,
     viewerWidget->TitleAreaOn();
     menuBar->Check(MID_SYNC_STRUCS_ON, true);
     EnableBaseEditorMenuItems(false);
-
-    SetMenuBar(menuBar);
 }
 
 ViewerWindowBase::~ViewerWindowBase(void)

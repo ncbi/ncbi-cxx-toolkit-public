@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2002/12/19 14:15:37  thiessen
+* mac fixes to menus, add icon
+*
 * Revision 1.45  2002/12/06 17:07:15  thiessen
 * remove seqrow export format; add choice of repeat handling for FASTA export; export rows in display order
 *
@@ -256,6 +259,8 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     menuBar->Append(updateMenu, "&Imports");
 
     EnableDerivedEditorMenuItems(false);
+
+    SetMenuBar(menuBar);
 }
 
 SequenceViewerWindow::~SequenceViewerWindow(void)
