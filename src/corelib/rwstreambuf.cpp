@@ -59,7 +59,7 @@ CRWStreambuf::CRWStreambuf(IReader*       r,
 }
 
 
-CRWStreambuf::~CRWStreambuf(void)
+CRWStreambuf::~CRWStreambuf()
 {
     sync();
     if (m_OwnBuf) {
@@ -95,7 +95,7 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize n)
     m_OwnBuf   = !s;
 
     setp(m_WriteBuf, m_WriteBuf + m_BufSize);
-    setg(m_ReadBuf,  m_WriteBuf, m_WriteBuf);
+    setg(m_ReadBuf,  m_ReadBuf, m_ReadBuf);
 
     return this;
 }
@@ -274,6 +274,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2003/11/13 17:52:37  lavr
+ * No backup area on new get buffer
+ *
  * Revision 1.4  2003/11/04 13:38:29  lavr
  * Unique value of visited MIPSPro-special gptr() is changed to (-1)
  *
