@@ -380,9 +380,11 @@ else
    case "$compiler" in
     WorkShop5 )
       LIBS="-Bstatic -L$CXX_PATH/../SC5.0/lib -lm -Bdynamic $LIBS"
+      MATH_LIBS=" "
       ;;
     WorkShop6 )
       LIBS="-Bstatic -L$CXX_PATH/../lib -lCrun -lm -Bdynamic $LIBS"
+      MATH_LIBS=" "
       ;;
     MIPSpro73 )
       ARCH_CFLAGS="-n32"
@@ -883,6 +885,10 @@ AC_MSG_RESULT()
 ### Common-use system and miscellaneous libs
 NETWORK_LIBS=${NETWORK_LIBS:="-lsocket -lnsl"}
 MATH_LIBS=${MATH_LIBS:="-lm"}
+
+
+### Math lib to be always linked in
+LIBS="$MATH_LIBS $LIBS"
 
 
 ### Save original compilator/linker flags
