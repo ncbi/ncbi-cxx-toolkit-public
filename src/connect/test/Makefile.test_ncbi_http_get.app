@@ -6,4 +6,4 @@ LIB = connect
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
-CHECK_CMD =
+CHECK_CMD = test_ncbi_http_get 'http://www.ncbi.nlm.nih.gov/entrez/viewer.cgi?view=0&maxplex=1&save=idf&val=4959943'
