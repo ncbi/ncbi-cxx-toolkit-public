@@ -145,7 +145,7 @@ public:
     // Set the discard flag. If set TRUE current deserialized object is not
     // deserialized. 
     // The mechanizm is based on CObjectIStream::SetDiscardCurrObject
-    void SetDiscardCurrObject(bool discard=true) { m_DiscardCurrObj = true; }
+    void SetDiscardCurrObject(bool discard=true) { m_DiscardCurrObj = discard; }
     bool GetDiscardCurrObject() const { return m_DiscardCurrObj; }
 
 protected:
@@ -195,6 +195,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/09/09 20:22:40  kuznets
+ * Fixed a bug in CObjectsSniffer::SetDiscardCurrObject()
+ *
  * Revision 1.13  2003/08/28 16:15:23  kuznets
  * + SetDiscardCurrObject() method
  *
