@@ -65,7 +65,6 @@ static list<string> s_XX;
 inline
 void CFlatEMBLFormatter::x_AddXX(void)
 {
-    static list<string> s_XX;
     if (s_XX.empty()) {
         string tmp;
         s_XX.push_back(Pad("XX", tmp, ePara));
@@ -369,6 +368,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/03/31 19:52:06  ucko
+* Fixed typo that made last commit ineffective.
+*
 * Revision 1.5  2003/03/31 16:25:14  ucko
 * Kludge: move the static "XX" paragraph to file scope, as it otherwise
 * becomes a common symbol on Darwin, preventing inclusion in shared libs.
