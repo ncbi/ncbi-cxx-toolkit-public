@@ -1,4 +1,4 @@
-/* ===========================================================================
+/* $Id$
 *
 *                            PUBLIC DOMAIN NOTICE
 *               National Center for Biotechnology Information
@@ -33,250 +33,6 @@ Contents: definitions and prototypes used by blastkar.c to calculate BLAST
 ******************************************************************************/
 
 /* $Revision$ 
-* $Log$
-* Revision 1.14  2003/07/31 18:58:56  dondosha
-* Do not use BLAST_Score typedef
-*
-* Revision 1.12  2003/07/31 14:31:37  camacho
-* Replaced Char for char
-*
-* Revision 1.11  2003/07/31 14:19:18  camacho
-* Replaced FloatHi for double
-*
-* Revision 1.10  2003/07/31 00:32:35  camacho
-* Eliminated Ptr notation
-*
-* Revision 1.9  2003/07/30 22:01:08  dondosha
-* Added some comments
-*
-* Revision 1.8  2003/07/30 21:52:57  camacho
-* Follow conventional structure definition
-*
-* Revision 1.7  2003/07/30 19:43:07  camacho
-* Remove PNTRs
-*
-* Revision 1.6  2003/07/30 18:41:25  dondosha
-* Changed ValNode to ListNode
-*
-* Revision 1.5  2003/07/24 22:37:28  dondosha
-* Removed some unused function parameters
-*
-* Revision 1.4  2003/07/24 21:31:12  dondosha
-* Changed to calls to BlastConstructErrorMessage to API from blast_message.h
-*
-* Revision 1.3  2003/07/24 19:38:14  dondosha
-* Removed LIBCALL, LIBCALLBACK, PROTO macros from declarations
-*
-* Revision 1.2  2003/07/24 17:37:52  dondosha
-* Removed MakeBlastScore function that is dependent on objalign.h
-*
-* Revision 1.1  2003/07/24 15:18:03  dondosha
-* Copy of blastkar.h from ncbitools library, stripped of dependency on ncbiobj
-*
-* Revision 6.31  2003/02/27 19:07:56  madden
-* Add functions PrintMatrixMessage and PrintAllowedValuesMessage
-*
-* Revision 6.30  2003/02/26 18:23:50  madden
-* Add functions BlastKarlinkGapBlkFill and BlastKarlinReportAllowedValues, call from BlastKarlinBlkGappedCalcEx
-*
-* Revision 6.29  2002/12/04 13:28:37  madden
-* Add effective length parameters
-*
-* Revision 6.28  2002/09/03 14:21:50  camacho
-* Changed type of karlinK from double to double
-*
-* Revision 6.27  2002/08/29 13:58:08  camacho
-* Added field to store K parameter associated with posMatrix
-*
-* Revision 6.26  2002/03/18 21:31:56  madden
-* Added comments
-*
-* Revision 6.25  2000/12/28 16:23:24  madden
-* Function getAlphaBeta from AS
-*
-* Revision 6.24  2000/12/26 17:46:20  madden
-* Add function BlastKarlinGetMatrixValuesEx2 to return alpha and beta
-*
-* Revision 6.23  2000/11/24 22:07:33  shavirin
-* Added new function BlastResFreqFree().
-*
-* Revision 6.22  2000/09/27 21:27:15  dondosha
-* Added original_matrix member to BLAST_Matrix structure
-*
-* Revision 6.21  2000/09/12 16:03:51  dondosha
-* Added functions to create and destroy matrix used in txalign
-*
-* Revision 6.20  2000/08/31 15:45:07  dondosha
-* Added function BlastUnevenGapSumE for sum evalue computation with different gap size on two sequences
-*
-* Revision 6.19  2000/08/23 18:50:02  madden
-* Changes to support decline-to-align checking
-*
-* Revision 6.18  2000/08/04 15:49:26  sicotte
-* added BlastScoreBlkMatCreateEx(reward,penalty) and BlastKarlinGetDefaultMatrixValues as external functions
-*
-* Revision 6.17  2000/07/07 21:20:08  vakatov
-* Get all "#include" out of the 'extern "C" { }' scope!
-*
-* Revision 6.16  2000/05/26 17:29:55  shavirin
-* Added array of pos frequencies into BLAST_Matrix structure and it's
-* handling.
-*
-* Revision 6.15  2000/04/17 20:41:37  madden
-* Added BLAST_MatrixFetch
-*
-* Revision 6.14  1999/12/22 21:06:35  shavirin
-* Added new function BlastPSIMaxScoreGet().
-*
-* Revision 6.13  1999/09/16 17:38:42  madden
-* Add posFreqs for position-specific frequencies
-*
-* Revision 6.12  1999/03/17 16:49:11  madden
-* Removed comment within comment
-*
-* Revision 6.11  1998/12/31 18:17:05  madden
-* Added strand option
-*
- * Revision 6.10  1998/09/11 19:02:07  madden
- * Added paramC
- *
- * Revision 6.9  1998/07/17 15:39:58  madden
- * Changes for Effective search space.
- *
- * Revision 6.8  1998/04/24 19:27:55  madden
- * Added BlastKarlinBlkStandardCalcEx for ideal KarlinBlk
- *
- * Revision 6.7  1998/04/10 15:05:49  madden
- * Added pref_flags return by value to BlastKarlinGetMatrixValues
- *
- * Revision 6.6  1998/03/09 17:15:04  madden
- * Added BlastKarlinGetMatrixValues
- *
- * Revision 6.5  1998/02/26 22:34:35  madden
- * Changes for 16 bit windows
- *
- * Revision 6.4  1998/02/06 18:28:07  madden
- * Added functions to produce pseudo-scores from p and e values
- *
- * Revision 6.3  1997/11/14 17:14:57  madden
- * Added Karlin parameter to matrix structure
- *
- * Revision 6.2  1997/11/07 00:48:10  madden
- * Added defintitions and functions for BLAST_Matrix
- *
- * Revision 6.1  1997/09/22 17:36:26  madden
- * MACROS for position-specific matrices from Andy Neuwald
- *
- * Revision 6.0  1997/08/25 18:52:41  madden
- * Revision changed to 6.0
- *
- * Revision 1.16  1997/08/19 18:19:49  madden
- * BLAST_Score is Int4, not long
- *
- * Revision 1.15  1997/07/14 15:31:07  madden
- * Changed call to BlastKarlinBlkGappedCalc
- *
- * Revision 1.14  1997/05/01 15:53:16  madden
- * Addition of extra KarlinBlk's for psi-blast
- *
- * Revision 1.13  1997/01/22  17:46:30  madden
- * Added BLAST_ScorePtr* posMatrix.
- *
- * Revision 1.12  1996/12/16  14:35:48  madden
- * Removed gapped_calculation Boolean.
- *
- * Revision 1.11  1996/12/10  17:30:59  madden
- * Changed statistics for gapped blastp
- *
- * Revision 1.10  1996/12/03  19:13:47  madden
- * Made BlastRes functions non-static.
- *
- * Revision 1.9  1996/11/26  19:55:25  madden
- * Added check for matrices in standard places.
- *
- * Revision 1.8  1996/11/18  14:49:26  madden
- * Rewrote BlastScoreSetAmbigRes to take multiple ambig. chars.
- *
- * Revision 1.7  1996/11/08  21:45:03  madden
- * Added BLASTNA_SEQ_CODE define.
- *
- * Revision 1.6  1996/10/03  20:49:29  madden
- * Added function BlastKarlinBlkStandardCalc to calculate standard
- * Karlin parameters for blastx and tblastx.
- *
- * Revision 1.5  1996/10/02  21:43:31  madden
- * Replaced kbp and sfp with arrays of same.
- *
- * Revision 1.4  1996/09/30  21:56:12  madden
- * Replaced query alphabet of ncbi2na with blastna alphabet.
- *
- * Revision 1.3  1996/09/10  19:40:35  madden
- * Added function BlastScoreBlkMatCreate for blastn matrices.
- *
- * Revision 1.2  1996/08/22  20:38:11  madden
- * Changed all doubles and floats to double.
- *
- * Revision 1.1  1996/08/05  19:47:42  madden
- * Initial revision
- *
- * Revision 1.19  1996/06/21  15:23:54  madden
- * Corelibed BlastSumP.
- *
- * Revision 1.18  1996/06/21  15:14:55  madden
- * Made some functions static, added LIBCALL to others.
- *
- * Revision 1.17  1996/06/04  15:34:55  madden
- * *** empty log message ***
- *
- * Revision 1.16  1996/05/22  20:38:05  madden
- * *** empty log message ***
- *
- * Revision 1.15  1996/05/20  21:18:51  madden
- * Added BLASTMatrixStructure.
- *
- * Revision 1.14  1996/05/16  19:50:15  madden
- * Added documentation block.
- *
- * Revision 1.13  1996/04/24  12:53:12  madden
- * *** empty log message ***
- *
- * Revision 1.12  1996/04/16  15:34:10  madden
- * renamed variable in BlastLargeGapSumE.
- *
- * Revision 1.11  1996/03/25  16:34:19  madden
- * Changes to mimic old statistics.
- *
- * Revision 1.10  1996/02/15  23:20:35  madden
- * Added query length to a number of calls.
- *
- * Revision 1.9  1996/01/17  23:19:13  madden
- * Added BlastScoreSetAmbigRes.
- *
- * Revision 1.8  1996/01/17  17:01:19  madden
- * Fixed BlastSmallGapSumE  and BlastLargeGapSumE.
- *
- * Revision 1.7  1996/01/17  13:46:55  madden
- * Added prototype for BlastKarlinPtoE.
- *
- * Revision 1.6  1996/01/06  18:58:28  madden
- * Added prototype for BlastSumP.
- *
- * Revision 1.5  1995/12/30  18:39:27  madden
- * added q_frame and s_frame to KarlinBlkPtr.
- *
- * Revision 1.4  1995/12/26  23:05:19  madden
- * *** empty log message ***
- *
- * Revision 1.3  1995/12/26  20:28:10  madden
- * Replaced BLAST_ScoreMat wiht BLAST_ScorePtr*.
- *
- * Revision 1.2  1995/12/26  14:26:22  madden
- * *** empty log message ***
- *
- * Revision 1.1  1995/12/21  23:07:35  madden
- * Initial revision
- *
- *
  * */
 #ifndef __BLASTKAR__
 #define __BLASTKAR__
@@ -365,9 +121,6 @@ typedef struct BLAST_KarlinBlk {
 
 ********************************************************************/
 
-/* BLAST_Score must be a signed datatype */
-typedef Int4    BLAST_Score,* BLAST_ScorePtr;
-
 /*
 SCORE_MIN is (-2**31 + 1)/2 because it has been observed more than once that
 a compiler did not properly calculate the quantity (-2**31)/2.  The list
@@ -389,8 +142,8 @@ For this reason, SCORE_MIN is not simply defined to be LONG_MIN/2.
 #define BLAST_SCORE_RANGE_MAX	(BLAST_SCORE_1MAX - BLAST_SCORE_1MIN)
 
 typedef struct BLAST_ScoreFreq {
-    BLAST_Score	score_min, score_max;
-    BLAST_Score	obs_min, obs_max;
+    Int4	score_min, score_max;
+    Int4	obs_min, obs_max;
     double	score_avg;
     double* sprob0,* sprob;
 } BLAST_ScoreFreq;
@@ -398,8 +151,8 @@ typedef struct BLAST_ScoreFreq {
 #define BLAST_MATRIX_SIZE 32
 
 typedef struct BLASTMatrixStructure {
-    BLAST_ScorePtr matrix[BLAST_MATRIX_SIZE];
-    BLAST_Score long_matrix[BLAST_MATRIX_SIZE*BLAST_MATRIX_SIZE];
+    Int4 *matrix[BLAST_MATRIX_SIZE];
+    Int4 long_matrix[BLAST_MATRIX_SIZE*BLAST_MATRIX_SIZE];
 } BLASTMatrixStructure;
 
 typedef struct BLAST_ScoreBlk {
@@ -409,13 +162,13 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	Int2 		alphabet_size;  /* size of alphabet. */
 	Int2 		alphabet_start;  /* numerical value of 1st letter. */
 	BLASTMatrixStructure* matrix_struct;	/* Holds info about matrix. */
-	BLAST_ScorePtr* matrix;  /* Substitution matrix */
-	BLAST_ScorePtr* posMatrix;  /* Sub matrix for position depend BLAST. */
-    double karlinK; /* Karlin-Altschul parameter associated with posMatrix */
-	Int2		mat_dim1, mat_dim2;	/* dimensions of matrix. */
-	BLAST_ScorePtr	maxscore; /* Max. score for each letter */
-	BLAST_Score	loscore, hiscore; /* Min. & max. substitution scores */
-	BLAST_Score	penalty, reward; /* penalty and reward for blastn. */
+	Int4 **matrix;  /* Substitution matrix */
+	Int4 **posMatrix;  /* Sub matrix for position depend BLAST. */
+   double karlinK; /* Karlin-Altschul parameter associated with posMatrix */
+	Int2	mat_dim1, mat_dim2;	/* dimensions of matrix. */
+	Int4 *maxscore; /* Max. score for each letter */
+	Int4	loscore, hiscore; /* Min. & max. substitution scores */
+	Int4	penalty, reward; /* penalty and reward for blastn. */
 	Boolean		read_in_matrix; /* If TRUE, matrix is read in, otherwise
 					produce one from penalty and reward above. */
 	BLAST_ScoreFreq** sfp;	/* score frequencies. */
@@ -489,13 +242,13 @@ Int2 BlastScoreBlkFill (BLAST_ScoreBlk* sbp, char* string, Int4 length, Int2 con
  * @param matrix_path Full path to the matrix in the directory structure [in]
 */
 Int2 BlastScoreBlkMatFill (BLAST_ScoreBlk* sbp, char* matrix);
-BLAST_ScorePtr* BlastScoreBlkMatCreateEx(BLAST_ScorePtr* matrix,BLAST_Score penalty, BLAST_Score reward);
+Int4 **BlastScoreBlkMatCreateEx(Int4 **matrix,Int4 penalty, Int4 reward);
  
 Int2 BlastScoreBlkMatRead (BLAST_ScoreBlk* sbp, FILE *fp);
  
 Int2 BlastScoreBlkMaxScoreSet (BLAST_ScoreBlk* sbp);
-BLAST_ScorePtr BlastPSIMaxScoreGet(BLAST_ScorePtr* posMatrix, 
-                                   Int4 start, Int4 length);
+Int4 *BlastPSIMaxScoreGet(Int4 **posMatrix, 
+                          Int4 start, Int4 length);
 
 BLAST_ResComp* BlastResCompNew (BLAST_ScoreBlk* sbp);
 
@@ -554,27 +307,27 @@ double BlastKarlinLambdaNR (BLAST_ScoreFreq* sfp);
 
 double BlastKarlinLtoH (BLAST_ScoreFreq* sfp, double  lambda);
 
-BLAST_Score BlastKarlinEtoS (double  E, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
+Int4 BlastKarlinEtoS (double  E, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
 
-BLAST_Score BlastKarlinEtoS_simple (double  E, BLAST_KarlinBlk* kbp, double searchsp); 
+Int4 BlastKarlinEtoS_simple (double  E, BLAST_KarlinBlk* kbp, double searchsp); 
 
 double BlastKarlinPtoE (double p);
 
 double BlastKarlinEtoP (double x);
 
-double BlastKarlinStoP (BLAST_Score S, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
+double BlastKarlinStoP (Int4 S, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
 
-double BlastKarlinStoP_simple (BLAST_Score S, BLAST_KarlinBlk* kbp, double  searchsp);
+double BlastKarlinStoP_simple (Int4 S, BLAST_KarlinBlk* kbp, double  searchsp);
 
-double BlastKarlinStoE (BLAST_Score S, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
+double BlastKarlinStoE (Int4 S, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
 
-double BlastKarlinStoE_simple (BLAST_Score S, BLAST_KarlinBlk* kbp, double  searchsp);
+double BlastKarlinStoE_simple (Int4 S, BLAST_KarlinBlk* kbp, double  searchsp);
 
-Int2 BlastCutoffs (BLAST_ScorePtr S, double* E, BLAST_KarlinBlk* kbp, double qlen, double dblen, Boolean dodecay);
+Int2 BlastCutoffs (Int4 *S, double* E, BLAST_KarlinBlk* kbp, double qlen, double dblen, Boolean dodecay);
 
 
-Int2 BlastCutoffs_simple (BLAST_ScorePtr S, double* E, BLAST_KarlinBlk* kbp, double search_sp, Boolean dodecay);
-double BlastKarlinStoLen (BLAST_KarlinBlk* kbp, BLAST_Score S);
+Int2 BlastCutoffs_simple (Int4 *S, double* E, BLAST_KarlinBlk* kbp, double search_sp, Boolean dodecay);
+double BlastKarlinStoLen (BLAST_KarlinBlk* kbp, Int4 S);
 
 /* SumP function. Called by BlastSmallGapSumE and BlastLargeGapSumE. */
 double BlastSumP (Int4 r, double s);
@@ -604,7 +357,7 @@ Int2 BlastResFreqResComp (BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, BLAST_ResComp
 
 Int2 BlastResFreqClr (BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp);
 
-BLAST_ScoreFreq* BlastScoreFreqNew (BLAST_Score score_min, BLAST_Score score_max);
+BLAST_ScoreFreq* BlastScoreFreqNew (Int4 score_min, Int4 score_max);
 
 BLAST_ScoreFreq* BlastScoreFreqDestruct (BLAST_ScoreFreq* sfp);
 
