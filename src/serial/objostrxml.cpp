@@ -875,8 +875,12 @@ void CObjectOStreamXml::WriteOther(TConstObjectPtr object,
 
 void CObjectOStreamXml::BeginContainer(const CContainerTypeInfo* containerType)
 {
+    bool needNs = x_ProcessTypeNamespace(containerType);
     if (!x_IsStdXml()) {
         OpenTagIfNamed(containerType);
+    }
+    if (needNs) {
+        x_WriteClassNamespace(containerType);
     }
 }
 
@@ -885,6 +889,7 @@ void CObjectOStreamXml::EndContainer(void)
     if (!x_IsStdXml()) {
         CloseTagIfNamed(TopFrame().GetTypeInfo());
     }
+    x_EndTypeNamespace();
 }
 
 bool CObjectOStreamXml::WillHaveName(TTypeInfo elementType)
@@ -1328,6 +1333,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2004/07/29 15:53:44  gouriano
+* write XML namespace when the root object is container
+*
 * Revision 1.75  2004/06/22 14:58:25  gouriano
 * Corrected writing AnyContentObject with no value
 *
