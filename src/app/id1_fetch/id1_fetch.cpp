@@ -302,9 +302,8 @@ int CId1FetchApp::Run(void)
         }
     }}
 
-    // Setup application registry and logs for CONNECT library
-    CORE_SetLOG(LOG_cxx2c());
-    CORE_SetREG(REG_cxx2c(&GetConfig(), false));
+    // Setup application registry, error log, and MT-lock for CONNECT library
+    CONNECT_Init(&GetConfig());
 
     // Open output file
     m_OutputFile = &args["out"].AsOutputFile();
@@ -906,6 +905,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/06/12 16:51:55  lavr
+* Take advantage of CONNECT_Init()
+*
 * Revision 1.33  2002/06/07 16:11:40  ucko
 * GetTitle() is now in sequence::.
 *

@@ -27,42 +27,6 @@
  *
  * File Description:
  *   New IDFETCH network client (get Seq-Entry by GI)
- *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.10  2002/03/11 21:52:05  lavr
- * Print complete debug and trace information when compiled with _DEBUG
- *
- * Revision 1.9  2002/01/17 17:22:21  vakatov
- * It should be okay to use "CObjectIStreamAsnBinary" instead of
- * CObjectIStream::Open() for non-blocking streams now (so rollback R1.4)
- *
- * Revision 1.8  2001/09/25 14:04:06  ucko
- * Update call to CConn_ServiceStream constructor for new interface.
- *
- * Revision 1.7  2001/07/19 19:40:20  lavr
- * Typo fixed
- *
- * Revision 1.6  2001/06/01 18:43:44  vakatov
- * Comment out excessive debug/trace printout
- *
- * Revision 1.5  2001/05/16 17:55:37  grichenk
- * Redesigned support for non-blocking stream read operations
- *
- * Revision 1.4  2001/05/11 20:41:16  grichenk
- * Added support for non-blocking stream reading
- *
- * Revision 1.3  2001/05/11 14:06:45  grichenk
- * The first working revision
- *
- * Revision 1.2  2001/04/13 14:09:34  grichenk
- * Next debug version, still not working
- *
- * Revision 1.1  2001/04/10 22:39:04  vakatov
- * Initial revision.
- * Compiles and links, but apparently is not working yet.
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbiapp.hpp>
@@ -148,10 +112,8 @@ void CId1FetchApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               prog_description, false);
 
-
     // Pass argument descriptions to the application
     //
-
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -166,14 +128,13 @@ int CId1FetchApp::Run(void)
         SetDiagStream( &args["log"].AsOutputFile() );
     }
 #ifdef _DEBUG
-    SetDiagTrace(eDT_Enable);
+    // SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_All);
 #endif
 
-    // Setup application registry and logs for CONNECT library
-    CORE_SetLOG(LOG_cxx2c());
-    CORE_SetREG(REG_cxx2c(&GetConfig(), false));
+    // Setup application registry, error log, and MT-lock for CONNECT library
+    CONNECT_Init(&GetConfig());
     
     // Compose request to ID1 server
     CID1server_request id1_request;
@@ -252,3 +213,45 @@ int main(int argc, const char* argv[])
 {
     return CId1FetchApp().AppMain(argc, argv /*, 0, eDS_Default, 0*/);
 }
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 1.11  2002/06/12 16:51:55  lavr
+ * Take advantage of CONNECT_Init()
+ *
+ * Revision 1.10  2002/03/11 21:52:05  lavr
+ * Print complete debug and trace information when compiled with _DEBUG
+ *
+ * Revision 1.9  2002/01/17 17:22:21  vakatov
+ * It should be okay to use "CObjectIStreamAsnBinary" instead of
+ * CObjectIStream::Open() for non-blocking streams now (so rollback R1.4)
+ *
+ * Revision 1.8  2001/09/25 14:04:06  ucko
+ * Update call to CConn_ServiceStream constructor for new interface.
+ *
+ * Revision 1.7  2001/07/19 19:40:20  lavr
+ * Typo fixed
+ *
+ * Revision 1.6  2001/06/01 18:43:44  vakatov
+ * Comment out excessive debug/trace printout
+ *
+ * Revision 1.5  2001/05/16 17:55:37  grichenk
+ * Redesigned support for non-blocking stream read operations
+ *
+ * Revision 1.4  2001/05/11 20:41:16  grichenk
+ * Added support for non-blocking stream reading
+ *
+ * Revision 1.3  2001/05/11 14:06:45  grichenk
+ * The first working revision
+ *
+ * Revision 1.2  2001/04/13 14:09:34  grichenk
+ * Next debug version, still not working
+ *
+ * Revision 1.1  2001/04/10 22:39:04  vakatov
+ * Initial revision.
+ * Compiles and links, but apparently is not working yet.
+ *
+ * ===========================================================================
+ */
