@@ -517,10 +517,10 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
     CAlnMap::TNumseg stop_seg  = m_StopSegs[i];
 
     CRef<CAlnChunk>  chunk(new CAlnChunk());
-    int from, to;
+    TSignedSeqPos from, to;
     from = m_AlnMap.m_DS->GetStarts()[start_seg * m_AlnMap.m_DS->GetDim()
                                      + m_Row];
-    if ( !chunk->IsGap() ) {
+    if (from >= 0) {
         to = chunk->GetRange().GetFrom()
             + m_AlnMap.m_DS->GetLens()[start_seg] - 1;
     } else {
@@ -681,6 +681,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2002/12/20 20:30:42  todorov
+* Fixed a bug introduced in the previous revision
+*
 * Revision 1.18  2002/12/19 20:24:53  grichenk
 * Updated usage of CRange<>
 *
