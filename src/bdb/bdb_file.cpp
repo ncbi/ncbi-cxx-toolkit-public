@@ -456,6 +456,41 @@ unsigned CBDB_RawFile::CountRecs()
     return rc;
 }
 
+void CBDB_RawFile::PrintStat(CNcbiOstream & out)
+{
+    DB_BTREE_STAT* stp;
+#ifdef BDB_USE_NEW_STAT
+    CBDB_Transaction* trans = GetTransaction();
+    DB_TXN* txn = trans ? trans->GetTxn() : 0;
+    int ret = m_DB->stat(m_DB, txn, &stp, 0);
+#else
+    int ret = m_DB->stat(m_DB, &stp, 0);
+#endif
+
+    BDB_CHECK(ret, FileName().c_str());
+
+    out << FileName().c_str() << NcbiEndl;
+    out << "bt_version    : " << stp->bt_version    << NcbiEndl
+        << "bt_nkeys      : " << stp->bt_nkeys      << NcbiEndl
+        << "bt_ndata      : " << stp->bt_ndata      << NcbiEndl
+        << "bt_pagesize   : " << stp->bt_pagesize   << NcbiEndl
+        << "bt_levels     : " << stp->bt_levels     << NcbiEndl
+        << "bt_int_pg     : " << stp->bt_int_pg     << NcbiEndl
+        << "bt_leaf_pg    : " << stp->bt_leaf_pg    << NcbiEndl
+        << "bt_dup_pg     : " << stp->bt_dup_pg     << NcbiEndl
+        << "bt_over_pg    : " << stp->bt_over_pg    << NcbiEndl
+        << "bt_empty_pg   : " << stp->bt_empty_pg   << NcbiEndl
+        << "bt_free       : " << stp->bt_free       << NcbiEndl
+        << "bt_int_pgfree : " << stp->bt_int_pgfree << NcbiEndl
+        << "bt_leaf_pgfree: " << stp->bt_leaf_pgfree<< NcbiEndl
+        << "bt_dup_pgfree : " << stp->bt_dup_pgfree << NcbiEndl
+        << "bt_over_pgfree: " << stp->bt_over_pgfree<< NcbiEndl
+    ;
+
+    ::free(stp);
+}
+
+
 void CBDB_RawFile::x_Create(const char* filename, const char* database)
 {
     _ASSERT(!m_DB_Attached);
@@ -1074,6 +1109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/03/22 16:11:53  kuznets
+ * +PrintStat() method to print btree statistics
+ *
  * Revision 1.50  2005/03/15 14:46:45  kuznets
  * Optimization in record packing
  *

@@ -35,6 +35,7 @@
 /// @file bdb_file.hpp
 /// BDB File management.
 
+#include <corelib/ncbistre.hpp>
 #include <bdb/bdb_types.hpp>
 #include <stdio.h>
 
@@ -164,6 +165,9 @@ public:
     /// Compute database statistic, return number of records.
     /// (Can be time consuming)
     unsigned CountRecs();
+
+    /// Print database statistics
+    void PrintStat(CNcbiOstream & out);
     
     /// Set current transaction
     void SetTransaction(CBDB_Transaction* trans);
@@ -537,6 +541,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/03/22 16:11:44  kuznets
+ * +PrintStat() method to print btree statistics
+ *
  * Revision 1.39  2005/03/15 14:43:48  kuznets
  * +DisableDataPacking()
  *
