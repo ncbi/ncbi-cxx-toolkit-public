@@ -1102,6 +1102,18 @@ public:
     static bool StartsWith(const string& str, const string& start,
                            ECase use_case = eCase);
 
+    /// Check if a string starts with a specified character value.
+    ///
+    /// @param str
+    ///   String to check.
+    /// @param start
+    ///   Character value to check for.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   case-insensitive compare (eNocase) while checking.
+    static bool StartsWith(const string& str, char start,
+                           ECase use_case = eCase);
+
     /// Check if a string ends with a specified suffix value.
     ///
     /// @param str
@@ -1114,6 +1126,23 @@ public:
     static bool EndsWith(const string& str, const string& end,
                          ECase use_case = eCase);
 
+    /// Check if a string ends with a specified character value.
+    ///
+    /// @param str
+    ///   String to check.
+    /// @param end
+    ///   Character value to check for.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   case-insensitive compare (eNocase) while checking.
+    static bool EndsWith(const string& str, char end,
+                         ECase use_case = eCase);
+
+    /// Check if a string is blank (has no text).
+    ///
+    /// @param str
+    ///   String to check.
+    static bool IsBlank(const string& str);
 
     /// Whether it is the first or last occurrence.
     enum EOccurrence {
@@ -2264,10 +2293,29 @@ bool NStr::StartsWith(const string& str, const string& start, ECase use_case)
 }
 
 inline
+bool NStr::StartsWith(const string& str, char start, ECase use_case)
+{
+    return !str.empty()  &&
+        ((use_case == eCase) ? (str[0] == start) :
+         (toupper(str[0]) == start  ||  tolower(str[0])));
+}
+
+inline
 bool NStr::EndsWith(const string& str, const string& end, ECase use_case)
 {
     return str.size() >= end.size()  &&
         Compare(str, str.size() - end.size(), end.size(), end, use_case) == 0;
+}
+
+inline
+bool NStr::EndsWith(const string& str, char end, ECase use_case)
+{
+    if (!str.empty()) {
+        char last = str[str.length() - 1];
+        return (use_case == eCase) ? (last == end) :
+               (toupper(last) == end  ||  tolower(last) == end);
+    }
+    return false;
 }
 
 inline
@@ -2399,6 +2447,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.64  2004/10/01 15:17:38  shomrat
+ * Added test if string starts/ends with a specified char and test if string is blank
+ *
  * Revision 1.63  2004/09/22 13:32:16  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
