@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.45  2003/12/05 16:03:57  camacho
+ * Remove compiler warnings
+ *
  * Revision 1.44  2003/11/28 22:39:11  camacho
  * + static keyword to BlastKarlinLtoH
  *
@@ -286,9 +289,11 @@ static Uint1 ncbieaa_to_ncbistdaa[128]={
  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+#if 0  /* Is this really needed ? */
 static Uint1 ncbistdaa_to_ncbieaa[BLASTAA_SIZE]={
 '-','A','B','C','D','E','F','G','H','I','K','L','M',
 'N','P','Q','R','S','T','V','W','X','Y','Z','U','*'};
+#endif
 
 /* Used in BlastKarlinBlkGappedCalc */
 typedef double array_of_8[8];
@@ -1407,6 +1412,10 @@ typedef struct BLAST_LetterProb {
 		double	p;
 	} BLAST_LetterProb;
 
+#if 0
+
+/* Unused for right now, but do not remove */
+
 /*  M. O. Dayhoff amino acid background frequencies   */
 static BLAST_LetterProb	Dayhoff_prob[] = {
 		{ 'A', 87.13 },
@@ -1454,6 +1463,7 @@ static BLAST_LetterProb Altschul_prob[] = {
 		{ 'W', 13.00 },
 		{ 'Y', 32.00 }
 	};
+#endif
 
 /* amino acid background frequencies from Robinson and Robinson */
 static BLAST_LetterProb Robinson_prob[] = {

@@ -42,6 +42,9 @@
 * 12-22-93 Schuler     Converted ERRPOST((...)) to ErrPostEx(...)
 *
 * $Log$
+* Revision 1.7  2003/12/05 16:03:57  camacho
+* Remove compiler warnings
+*
 * Revision 1.6  2003/09/26 20:39:32  dondosha
 * Rearranged code so it compiles
 *
@@ -110,8 +113,10 @@
 
 #include <algo/blast/core/ncbi_math.h>
 
+#if 0
 extern char * g_corelib;
 static char * _this_file = __FILE__;
+#endif
 
 
 /*
