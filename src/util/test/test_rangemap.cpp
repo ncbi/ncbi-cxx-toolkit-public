@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/01/05 13:59:17  vasilche
+* Reduced CRangeMap* templates size.
+* Added CRangeMultimap template.
+*
 * Revision 1.3  2001/01/03 16:39:29  vasilche
 * Added CAbstractObjectManager - stub for object manager.
 * CRange extracted to separate file.
@@ -77,20 +81,19 @@ string ToString(CRange<int> range)
 
 int CTestRangeMap::Run(void)
 {
-    typedef CRangeMap<string> TRangeMap;
+    typedef CRangeMultimap<string> TRangeMap;
     typedef TRangeMap::range_type range_type;
 
     TRangeMap rm;
 
     // fill
     NcbiCout << "Filling:" << NcbiEndl;
-    for ( int i = 0; i < 100; ++i ) {
+    while ( rm.size() < 100 ) {
         range_type range;
         string s;
-        do {
-            range.SetFrom(rand() % 20).SetLength(rand() % 10 + 1);
-            s = ToString(range);
-        } while ( !rm.insert(TRangeMap::value_type(range, s)).second );
+        range.SetFrom(rand() % 20).SetLength(rand() % 10 + 1);
+        s = ToString(range);
+        rm.insert(TRangeMap::value_type(range, s));
         NcbiCout << range << " = \"" << s << "\"" << NcbiEndl;
     }
     NcbiCout << "Map: count=" << rm.size() << NcbiEndl;
