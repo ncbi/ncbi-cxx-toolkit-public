@@ -121,20 +121,11 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
                        TFlags flags)
     : m_Scope(scope)
 {
-    m_Selector
-        .SetResolveCount(maxResolveCount)
-        .SetFlags(flags);
-    TSeqPos len = seqMap->GetLength(scope);
-    if (pos > len) {
-        pos = len;
-    }
-    x_Push(seqMap, 0, len, false, pos);
-    while ( !x_Found() ) {
-        if ( !x_Push(pos - m_Selector.m_Position) ) {
-            x_SettleNext();
-            break;
-        }
-    }
+    x_Select(seqMap,
+             SSeqMapSelector().
+             SetResolveCount(maxResolveCount).
+             SetFlags(flags),
+             pos);
 }
 
 
@@ -146,77 +137,66 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
                        TFlags flags)
     : m_Scope(scope)
 {
-    m_Selector
-        .SetStrand(strand)
-        .SetResolveCount(maxResolveCount)
-        .SetFlags(flags);
-    TSeqPos len = seqMap->GetLength(scope);
-    if (pos > len) {
-        pos = len;
-    }
-    x_Push(seqMap, 0, seqMap->GetLength(scope), m_Selector.m_MinusStrand, pos);
-    while ( !x_Found() ) {
-        if ( !x_Push(pos - m_Selector.m_Position) ) {
-            x_SettleNext();
-            break;
-        }
-    }
+    x_Select(seqMap,
+             SSeqMapSelector().
+             SetStrand(strand).
+             SetResolveCount(maxResolveCount).
+             SetFlags(flags),
+             pos);
 }
 
 
 CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
                        CScope* scope,
-                       SSeqMapSelector& selector)
-    : m_Scope(scope),
-      m_Selector(selector)
+                       const SSeqMapSelector& selector)
+    : m_Scope(scope)
 {
-    x_Push(seqMap,
-           m_Selector.m_Position,
-           seqMap->GetLength(scope),
-           m_Selector.m_MinusStrand,
-           0);
-    while ( !x_Found() ) {
-        if ( !x_Push(0) ) {
-            x_SettleNext();
-            break;
-        }
-    }
+    x_Select(seqMap, selector, 0);
 }
 
 
 CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
                        CScope* scope,
                        TSeqPos pos,
-                       SSeqMapSelector& selector)
-    : m_Scope(scope),
-      m_Selector(selector)
+                       const SSeqMapSelector& selector)
+    : m_Scope(scope)
 {
-    TSeqPos len = seqMap->GetLength(scope);
-    if (m_Selector.m_Length == kInvalidSeqPos) {
-        m_Selector.m_Length = len - m_Selector.m_Position;
+    x_Select(seqMap, selector, pos);
+}
+
+
+CSeqMap_CI::~CSeqMap_CI(void)
+{
+}
+
+
+void CSeqMap_CI::x_Select(const CConstRef<CSeqMap>& seqMap,
+                          const SSeqMapSelector& selector,
+                          TSeqPos pos)
+{
+    m_Selector = selector;
+    if ( m_Selector.m_Length == kInvalidSeqPos ) {
+        TSeqPos len = seqMap->GetLength(GetScope());
+        len -= min(len, m_Selector.m_Position);
+        m_Selector.m_Length = len;
     }
-    if (pos < m_Selector.m_Position) {
+    if ( pos < m_Selector.m_Position ) {
         pos = m_Selector.m_Position;
     }
-    if (m_Selector.m_Length < pos - m_Selector.m_Position) {
+    else if ( pos > m_Selector.m_Position + m_Selector.m_Length ) {
         pos = m_Selector.m_Position + m_Selector.m_Length;
     }
     x_Push(seqMap,
            m_Selector.m_Position,
-           seqMap->GetLength(scope),
+           m_Selector.m_Length,
            m_Selector.m_MinusStrand,
-           pos);
+           pos - m_Selector.m_Position);
     while ( !x_Found() ) {
         if ( !x_Push(pos - m_Selector.m_Position) ) {
             x_SettleNext();
             break;
         }
     }
-}
-
-
-CSeqMap_CI::~CSeqMap_CI(void)
-{
 }
 
 
@@ -331,6 +311,9 @@ bool CSeqMap_CI::x_CanResolve(const CSeqMap::CSegment& seg) const
 bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
 {
     const TSegmentInfo& info = x_GetSegmentInfo();
+    if ( !info.InRange() ) {
+        return false;
+    }
     const CSeqMap::CSegment& seg = info.x_GetSegment();
     CSeqMap::ESegmentType type = CSeqMap::ESegmentType(seg.m_SegType);
     if ( !(type == CSeqMap::eSeqSubMap  ||
@@ -557,6 +540,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/10/14 17:44:02  vasilche
+* Use one initialization method in all constructors.
+* Fixed reverse iteration from end().
+*
 * Revision 1.29  2004/09/30 18:37:24  vasilche
 * Fixed CSeqMap::End().
 *
