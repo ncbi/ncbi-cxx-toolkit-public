@@ -228,11 +228,38 @@ void CreateUtilityProject(const string&            name,
 /// Project naming schema
 string CreateProjectName(const CProjKey& project_id);
 
+
+class CBuildType
+{
+public:
+    CBuildType(bool dll_flag);
+
+    typedef enum {
+        eStatic,
+        eDll
+    } TBuildType;
+
+    TBuildType GetType   (void) const;
+    string     GetTypeStr(void) const;
+
+private:
+    TBuildType m_Type;
+    
+    //prohibited to:
+    CBuildType(void);
+    CBuildType(const CBuildType&);
+    CBuildType& operator= (const CBuildType&);
+};
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/03/02 23:28:17  gorelenk
+ * Added declaration of class CBuildType.
+ *
  * Revision 1.13  2004/02/20 22:54:45  gorelenk
  * Added analysis of ASN projects depends.
  *
