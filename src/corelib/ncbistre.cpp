@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/03 18:56:14  vakatov
+* minor fixes
+*
 * Revision 1.1  1998/12/03 16:40:26  vakatov
 * Initial revision
 * Aux. function "Getline()" to read from "istream" to a "string"
@@ -84,13 +87,15 @@ END_NCBI_SCOPE
 
 // See in the header why it's outside the NCBI scope(SunPro bug workaround...)
 #if !defined(NCBI_USE_NEW_IOSTREAM)
-extern ncbi::CNcbiOstream& operator<<(ncbi::CNcbiOstream& os, const std::string& str)
+extern NCBI_NS_NCBI::CNcbiOstream& operator<<(NCBI_NS_NCBI::CNcbiOstream& os,
+                                              const NCBI_NS_STD::string& str)
 {
     return str.empty() ? os : os << str.c_str();
 }
 
 
-extern ncbi::CNcbiIstream& operator>>(ncbi::CNcbiIstream& is, std::string& str)
+extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
+                                              NCBI_NS_STD::string& str)
 {
     int ch;
     if ( !is.ipfx() )

@@ -34,6 +34,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1998/12/03 18:56:12  vakatov
+* minor fixes
+*
 * Revision 1.9  1998/12/03 16:38:32  vakatov
 * Added aux. function "Getline()" to read from "istream" to a "string"
 * Adopted standard I/O "string" <--> "istream" for old-fashioned streams
@@ -68,11 +71,11 @@
 #  if defined(NCBI_NO_NAMESPACE)
 #    define IO_PREFIX
 #  else
-#    define IO_PREFIX  std
+#    define IO_PREFIX  NCBI_NS_STD
 #  endif
 #  define IOS_BASE    IO_PREFIX::ios_base
 #  define IOS_PREFIX  IO_PREFIX::ios
-#  define SEEKOFF    pubseekoff
+#  define SEEKOFF     pubseekoff
 
 #elif defined(HAVE_IOSTREAM_H)
 #  if defined(NCBI_USE_NEW_IOSTREAM)
@@ -163,10 +166,10 @@ END_NCBI_SCOPE
 // NOTE:  these must have been inside the _NCBI_SCOPE and without the
 //        "ncbi::" and "std::" prefixes, but there is some bug in SunPro 5.0...
 #if !defined(NCBI_USE_NEW_IOSTREAM)
-extern ncbi::CNcbiOstream& operator<<(ncbi::CNcbiOstream& os,
-                                      const std::string& str);
-extern ncbi::CNcbiIstream& operator>>(ncbi::CNcbiIstream& is,
-                                      std::string& str);
+extern NCBI_NS_NCBI::CNcbiOstream& operator<<(NCBI_NS_NCBI::CNcbiOstream& os,
+                                              const NCBI_NS_STD::string& str);
+extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
+                                              NCBI_NS_STD::string& str);
 #endif
 
 
