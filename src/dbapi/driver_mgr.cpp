@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.6  2002/07/09 17:12:29  kholodov
+* Fixed duplicate context creation
+*
 * Revision 1.5  2002/07/03 15:03:05  kholodov
 * Added: throw exception when driver cannot be loaded
 *
@@ -87,6 +90,10 @@ IDataSource* CDriverManager::CreateDs(const string& driver_name,
 {
     string err;
 
+    map<string, IDataSource*>::iterator i_ds = m_ds_list.find(driver_name);
+    if( i_ds != m_ds_list.end() ) {
+        return (*i_ds).second;
+    }
     FDBAPI_CreateContext ctx_func = GetDriver(driver_name, &err);
     if( ctx_func != 0 ) {
         I_DriverContext *ctx = ctx_func(attr);
@@ -136,14 +143,9 @@ IDataSource* CDriverManager::CreateDsFrom(const string& drivers,
 IDataSource* CDriverManager::RegisterDs(const string& driver_name,
                                         I_DriverContext* ctx)
 {
-    map<string, IDataSource*>::iterator i_ds = m_ds_list.find(driver_name);
-    if( i_ds == m_ds_list.end() ) {
-        IDataSource *ds = new CDataSource(ctx, 0);
-        m_ds_list[driver_name] = ds;
-        return ds;
-    }
-    else
-        return (*i_ds).second;
+    IDataSource *ds = new CDataSource(ctx, 0);
+    m_ds_list[driver_name] = ds;
+    return ds;
 }
 
 END_NCBI_SCOPE
