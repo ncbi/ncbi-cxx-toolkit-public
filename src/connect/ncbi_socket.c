@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2001/04/25 19:16:01  juran
+ * Set non-blocking mode on Mac OS. (from pjc)
+ *
  * Revision 6.26  2001/04/24 21:03:42  vakatov
  * s_NCBI_Recv()   -- restore "r_status" to eIO_Success on success.
  * SOCK_Wait(READ) -- return eIO_Success if data pending in the buffer.
@@ -482,16 +485,18 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
 #if defined(NCBI_OS_MSWIN)
     unsigned long argp = nonblock ? 1 : 0;
     return (ioctlsocket(sock, FIONBIO, &argp) == 0);
-#elif defined(NCBI_OS_UNIX)
+#elif defined(NCBI_OS_UNIX) || defined(NCBI_OS_MAC)
     return (fcntl(sock, F_SETFL,
                   nonblock ?
                   fcntl(sock, F_GETFL, 0) | O_NONBLOCK :
                   fcntl(sock, F_GETFL, 0) & (int) ~O_NONBLOCK) != -1);
+/*	removed 2/22/01 pjc
 #elif defined(NCBI_OS_MAC)
     return (fcntl(sock, F_SETFL,
                   nonblock ?
                   fcntl(sock, F_GETFL, 0) | O_NDELAY :
                   fcntl(sock, F_GETFL, 0) & (int) ~O_NDELAY) != -1);
+ */
 #else
     assert(0);
     return 0/*false*/;
