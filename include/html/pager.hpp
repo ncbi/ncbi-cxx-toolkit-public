@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/09/15 20:33:33  golikov
+* GetPagerView defaults added
+*
 * Revision 1.6  1999/09/13 15:37:16  golikov
 * Image sizes in page numbers added
 *
@@ -83,7 +86,7 @@ public:
     pair<int, int> GetRange(void) const;
 
     CNCBINode* GetPagerView(const string& imgDir,
-                            const int imgX, const int imgY) const;
+                            const int imgX = 0, const int imgY = 0) const;
 
     CNCBINode* GetPageInfo(void) const;
     CNCBINode* GetItemInfo(void) const;
