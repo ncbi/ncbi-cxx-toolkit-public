@@ -38,6 +38,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/link_hsps.h>
 #include <algo/blast/core/blast_setup.h>
+#include <algo/blast/core/blast_kappa.h>
 #include "blast_psi_priv.h"
 
 /* Comparison function for sorting HSPs by score. 
@@ -893,6 +894,16 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
 
       if (!hit_list)
          continue;
+
+     if (program_number == blast_type_blastp && 
+         (ext_params->options->compositionBasedStats == TRUE || 
+            ext_params->options->eTbackExt == eSmithWatermanTbck))
+     {
+         Kappa_RedoAlignmentCore(query, query_info, sbp, hit_list, seq_src, 
+           score_params, ext_params, hit_params, psi_options); 
+     }
+     else
+     {
       for (subject_index = 0; subject_index < hit_list->hsplist_count;
            ++subject_index) {
          hsp_list = hit_list->hsplist_array[subject_index];
@@ -923,6 +934,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
             BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
          }
       }
+     }
    }
 
    /* Re-sort the hit lists according to their best e-values, because
