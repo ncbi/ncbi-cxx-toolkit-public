@@ -152,12 +152,17 @@ class CSingletonObjectStore : protected CObjectStoreProtectedBase
 public:
     typedef CReverseObjectStore<TKey, TObject> TReverseObjectStore;
 public:
+    ~CSingletonObjectStore(void)
+    {
+        Clear();
+    }
+
     /// Clear all objects from the store
     static 
     void Clear() 
     {
         CFastMutexGuard guard(m_Lock);
-        m_ObjStore.Clear();
+        GetObjStore().Clear();
     }
 
     /// Retrieve a named object from the data store. 
@@ -167,7 +172,7 @@ public:
     TObject* GetObject(const TKey& key)
     {
         CFastMutexGuard guard(m_Lock);
-        return m_ObjStore.GetObject(key);
+        return GetObjStore().GetObject(key);
     }
 
     /// Put an object in the store.  This will return TRUE if the
@@ -176,7 +181,7 @@ public:
     bool PutObject(const TKey& key, TObject* obj)
     {
         CFastMutexGuard guard(m_Lock);
-        return m_ObjStore.PutObject(key, obj);
+        return GetObjStore().PutObject(key, obj);
     }
 
     /// Release an object from the data store
@@ -184,7 +189,7 @@ public:
     void ReleaseObject(const TKey& key)
     {
         CFastMutexGuard guard(m_Lock);
-        m_ObjStore.ReleaseObject(key);
+        GetObjStore().ReleaseObject(key);
     }
 
     /// Check to see if a named object exists
@@ -192,7 +197,7 @@ public:
     bool HasObject(const TKey& key)
     {
         CFastMutexGuard guard(m_Lock);
-        return m_ObjStore.HasObject(key);
+        return GetObjStore().HasObject(key);
     }
 
     /// check to see if a given object is in the store
@@ -200,17 +205,17 @@ public:
     bool  HasObject(const CObject* obj)
     {
         CFastMutexGuard guard(m_Lock);
-        return m_ObjStore.HasObject(obj);
+        return GetObjStore().HasObject(obj);
     }
 
 protected:
-    static  TReverseObjectStore   m_ObjStore;
+    static
+    TReverseObjectStore& GetObjStore(void)
+    {
+        static TReverseObjectStore s_obj_store;
+        return s_obj_store;
+    }
 };
-
-template<class TKey, class TObject>
-CReverseObjectStore<TKey, TObject>  
-CSingletonObjectStore<TKey, TObject>::m_ObjStore;
-
 
 
 END_NCBI_SCOPE
@@ -219,6 +224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/12/23 18:08:25  vasilche
+ * Fixed use of static variables in template class.
+ *
  * Revision 1.4  2004/08/02 16:35:16  kuznets
  * Added missing static
  *
