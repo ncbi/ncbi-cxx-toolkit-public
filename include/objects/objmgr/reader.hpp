@@ -158,10 +158,13 @@ public:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif
-
 /*
 * $Log$
+* Revision 1.16  2002/07/08 20:50:56  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
 * Revision 1.15  2002/05/06 20:37:08  ucko
 * Drop redundant CIStream:: which generated warnings under some compilers.
 *
@@ -230,3 +233,5 @@ END_NCBI_SCOPE
 * New streamable interfaces designed, ID1 reimplemented.
 *
 */
+
+#endif // READER__HPP_INCLUDED

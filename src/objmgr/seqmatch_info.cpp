@@ -28,19 +28,6 @@
 * File Description:
 *   CSeqMatch_Info -- used internally by CScope and CDataSource
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2002/05/06 03:28:48  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.2  2002/02/25 21:05:29  grichenk
-* Removed seq-data references caching. Increased MT-safety. Fixed typos.
-*
-* Revision 1.1  2002/02/21 19:21:04  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
 */
 
 
@@ -107,6 +94,26 @@ bool CSeqMatch_Info::operator! (void)
 }
 
 
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.4  2002/07/08 20:51:02  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.3  2002/05/06 03:28:48  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.2  2002/02/25 21:05:29  grichenk
+* Removed seq-data references caching. Increased MT-safety. Fixed typos.
+*
+* Revision 1.1  2002/02/21 19:21:04  grichenk
+* Initial revision
+*
+*
+* ===========================================================================
+*/

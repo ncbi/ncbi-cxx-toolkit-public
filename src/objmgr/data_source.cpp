@@ -28,185 +28,6 @@
 * File Description:
 *   DataSource for object manager
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.55  2002/07/01 15:44:51  grichenk
-* Fixed typos
-*
-* Revision 1.54  2002/07/01 15:40:58  grichenk
-* Fixed 'tse_set' warning.
-* Removed duplicate call to tse_set.begin().
-* Fixed version resolving for annotation iterators.
-* Fixed strstream bug in KCC.
-*
-* Revision 1.53  2002/06/28 17:30:42  grichenk
-* Duplicate seq-id: ERR_POST() -> THROW1_TRACE() with the seq-id
-* list.
-* Fixed x_CleanupUnusedEntries().
-* Fixed a bug with not found sequences.
-* Do not copy bioseq data in GetBioseqCore().
-*
-* Revision 1.52  2002/06/21 15:12:15  grichenk
-* Added resolving seq-id to the best version
-*
-* Revision 1.51  2002/06/12 14:39:53  grichenk
-* Performance improvements
-*
-* Revision 1.50  2002/06/04 17:18:33  kimelman
-* memory cleanup :  new/delete/Cref rearrangements
-*
-* Revision 1.49  2002/05/31 17:53:00  grichenk
-* Optimized for better performance (CTSE_Info uses atomic counter,
-* delayed annotations indexing, no location convertions in
-* CAnnot_Types_CI if no references resolution is required etc.)
-*
-* Revision 1.48  2002/05/29 21:21:13  gouriano
-* added debug dump
-*
-* Revision 1.47  2002/05/28 18:00:43  gouriano
-* DebugDump added
-*
-* Revision 1.46  2002/05/24 14:57:12  grichenk
-* SerialAssign<>() -> CSerialObject::Assign()
-*
-* Revision 1.45  2002/05/21 18:57:25  grichenk
-* Fixed annotations dropping
-*
-* Revision 1.44  2002/05/21 18:40:50  grichenk
-* Fixed annotations droppping
-*
-* Revision 1.43  2002/05/14 20:06:25  grichenk
-* Improved CTSE_Info locking by CDataSource and CDataLoader
-*
-* Revision 1.42  2002/05/13 15:28:27  grichenk
-* Fixed seqmap for virtual sequences
-*
-* Revision 1.41  2002/05/09 14:18:15  grichenk
-* More TSE conflict resolving rules for annotations
-*
-* Revision 1.40  2002/05/06 03:28:46  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.39  2002/05/03 21:28:09  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.38  2002/05/02 20:42:37  grichenk
-* throw -> THROW1_TRACE
-*
-* Revision 1.37  2002/04/22 20:05:08  grichenk
-* Fixed minor bug in GetSequence()
-*
-* Revision 1.36  2002/04/19 18:02:47  kimelman
-* add verify to catch coredump
-*
-* Revision 1.35  2002/04/17 21:09:14  grichenk
-* Fixed annotations loading
-* +IsSynonym()
-*
-* Revision 1.34  2002/04/11 18:45:39  ucko
-* Pull in extra headers to make KCC happy.
-*
-* Revision 1.33  2002/04/11 12:08:21  grichenk
-* Fixed GetResolvedSeqMap() implementation
-*
-* Revision 1.32  2002/04/05 21:23:08  grichenk
-* More duplicate id warnings fixed
-*
-* Revision 1.31  2002/04/05 20:27:52  grichenk
-* Fixed duplicate identifier warning
-*
-* Revision 1.30  2002/04/04 21:33:13  grichenk
-* Fixed GetSequence() for sequences with unresolved segments
-*
-* Revision 1.29  2002/04/03 18:06:47  grichenk
-* Fixed segmented sequence bugs (invalid positioning of literals
-* and gaps). Improved CSeqVector performance.
-*
-* Revision 1.27  2002/03/28 14:02:31  grichenk
-* Added scope history checks to CDataSource::x_FindBestTSE()
-*
-* Revision 1.26  2002/03/22 17:24:12  gouriano
-* loader-related fix in DropTSE()
-*
-* Revision 1.25  2002/03/21 21:39:48  grichenk
-* garbage collector bugfix
-*
-* Revision 1.24  2002/03/20 21:24:59  gouriano
-* *** empty log message ***
-*
-* Revision 1.23  2002/03/15 18:10:08  grichenk
-* Removed CRef<CSeq_id> from CSeq_id_Handle, added
-* key to seq-id map th CSeq_id_Mapper
-*
-* Revision 1.22  2002/03/11 21:10:13  grichenk
-* +CDataLoader::ResolveConflict()
-*
-* Revision 1.21  2002/03/07 21:25:33  grichenk
-* +GetSeq_annot() in annotation iterators
-*
-* Revision 1.20  2002/03/06 19:37:19  grichenk
-* Fixed minor bugs and comments
-*
-* Revision 1.19  2002/03/05 18:44:55  grichenk
-* +x_UpdateTSEStatus()
-*
-* Revision 1.18  2002/03/05 16:09:10  grichenk
-* Added x_CleanupUnusedEntries()
-*
-* Revision 1.17  2002/03/04 15:09:27  grichenk
-* Improved MT-safety. Added live/dead flag to CDataSource methods.
-*
-* Revision 1.16  2002/02/28 20:53:31  grichenk
-* Implemented attaching segmented sequence data. Fixed minor bugs.
-*
-* Revision 1.15  2002/02/25 21:05:29  grichenk
-* Removed seq-data references caching. Increased MT-safety. Fixed typos.
-*
-* Revision 1.14  2002/02/21 19:27:05  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.13  2002/02/20 20:23:27  gouriano
-* corrected FilterSeqid()
-*
-* Revision 1.12  2002/02/15 20:35:38  gouriano
-* changed implementation of HandleRangeMap
-*
-* Revision 1.11  2002/02/12 19:41:42  grichenk
-* Seq-id handles lock/unlock moved to CSeq_id_Handle 'ctors.
-*
-* Revision 1.10  2002/02/07 21:27:35  grichenk
-* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
-*
-* Revision 1.9  2002/02/06 21:46:11  gouriano
-* *** empty log message ***
-*
-* Revision 1.8  2002/02/05 21:46:28  gouriano
-* added FindSeqid function, minor tuneup in CSeq_id_mapper
-*
-* Revision 1.7  2002/01/30 22:09:28  gouriano
-* changed CSeqMap interface
-*
-* Revision 1.6  2002/01/29 17:45:00  grichenk
-* Added seq-id handles locking
-*
-* Revision 1.5  2002/01/28 19:44:49  gouriano
-* changed the interface of BioseqHandle: two functions moved from Scope
-*
-* Revision 1.4  2002/01/23 21:59:31  grichenk
-* Redesigned seq-id handles and mapper
-*
-* Revision 1.3  2002/01/18 15:56:23  gouriano
-* changed TSeqMaps definition
-*
-* Revision 1.2  2002/01/16 16:25:57  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:06:18  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 
@@ -238,24 +59,33 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CMutex CDataSource::sm_DataSource_Mutex;
+
+CMutexPool_Base<CDataSource::TTSESet> CDataSource::sm_TSESet_MP;
+CMutexPool_Base<CDataSource> CDataSource::sm_DataSource_MP;
+
 
 CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
                                       const CScope::TRequestHistory& history) const
 {
     const TTSESet* p_tse_set = 0;
     {{
-        CMutexGuard guard(sm_DataSource_Mutex);
+        //### Locking the tse set will make this lock obsolete
+        //### CMutexGuard guard(sm_DataSource_Mutex);
         TTSEMap::const_iterator tse_set = m_TSE_seq.find(handle);
-        if ( tse_set == m_TSE_seq.end() )
+        if ( tse_set == m_TSE_seq.end() ) {
             return 0;
+        }
+        //### Lock the tse set to prevent its deletion
         p_tse_set = &tse_set->second;
-        //### Obtain MT-lock for the TSE
     }}
+    CMutexGuard guard(sm_TSESet_MP.GetMutex(p_tse_set));
+    //### If the tse set is unlocked, its size may change between the two
+    //### actions: == and return
     if ( p_tse_set->size() == 1) {
         // There is only one TSE, no matter live or dead
         return *p_tse_set->begin();
     }
+    //### The following code is not safe unless the tse set is not locked
     // The map should not contain empty entries
     _ASSERT(p_tse_set->size() > 0);
     TTSESet live;
@@ -308,11 +138,13 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
 CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope, const CSeq_id& id)
 {
     CSeqMatch_Info info = BestResolve(id, scope);
+    // The TSE is locked by the BestResolve, so, it can not be deleted.
+
     if ( !info )
         return CBioseq_Handle();
     CSeq_entry* se = 0;
     {{
-        CMutexGuard guard(sm_DataSource_Mutex);
+        //### CMutexGuard guard(sm_DataSource_Mutex);
         TBioseqMap::iterator found = info.m_TSE->
             m_BioseqMap.find(info.m_Handle);
         _ASSERT(found != info.m_TSE->m_BioseqMap.end());
@@ -321,7 +153,7 @@ CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope, const CSeq_id& id)
     CBioseq_Handle h(info.m_Handle);
     h.x_ResolveTo(scope, *this, *se, *info.m_TSE);
     scope.x_AddToHistory(*info.m_TSE);
-    info.m_TSE->Unlock(); // Locked by BestResolve()
+    info.m_TSE->UnlockCounter(); // Locked by BestResolve()
     return h;
 }
 
@@ -332,10 +164,12 @@ void CDataSource::FilterSeqid(TSeq_id_HandleSet& setResult,
     _ASSERT(&setResult != &setSource);
     // for each handle
     TSeq_id_HandleSet::iterator itHandle;
-    CMutexGuard guard(sm_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));
     for( itHandle = setSource.begin(); itHandle != setSource.end(); ) {
         // if it is in my map
         if (m_TSE_seq.find(*itHandle) != m_TSE_seq.end()) {
+            //### The id handle is reported to be good, but it can be deleted
+            //### by the next request!
             setResult.insert(*itHandle);
         }
         ++itHandle;
@@ -384,7 +218,7 @@ CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
 /*
     const CBioseq* seq = &GetBioseq(handle);
 
-    CMutexGuard guard(sm_DataSource_Mutex);
+    //### CMutexGuard guard(sm_DataSource_Mutex);
     CBioseq* seq_core = new CBioseq();
     // Assign seq members to seq_core:
     CBioseq::TId& id_list = seq_core->SetId();
@@ -468,7 +302,10 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
     }
 
     _ASSERT(handle.m_DataSource == this);
+    // No need to lock anything since the TSE should be locked by the handle
     const CBioseq& seq = GetBioseq(handle);
+    //### Lock seq-maps to prevent duplicate seq-map creation
+    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
     TSeqMaps::iterator found = m_SeqMaps.find(&seq);
     if (found == m_SeqMaps.end()) {
         // Create sequence map
@@ -508,7 +345,9 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
     CSeq_entry* entry = handle.m_Entry;
     CBioseq_Handle rhandle = handle; // resolved handle for local use
     if ( !entry ) {
+        //### Lock the TSE until the rhandle is resolved to prevent its deletion
         CTSE_Info* info = x_FindBestTSE(rhandle.GetKey(), scope.m_History);
+        CTSE_Guard guard(*info);
         if ( !info )
             return false;
         entry = info->m_BioseqMap[rhandle.GetKey()]->m_Entry;
@@ -622,6 +461,8 @@ CSeq_entry* CDataSource::x_FindEntry(const CSeq_entry& entry)
 {
     CRef<CSeq_entry> ref(const_cast<CSeq_entry*>(&entry));
     //### CMutexGuard guard(sm_DataSource_Mutex);
+    //### Lock the entries list to prevent "found" destruction
+    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));
     TEntries::iterator found = m_Entries.find(ref);
     if (found == m_Entries.end())
         return 0;
@@ -631,12 +472,16 @@ CSeq_entry* CDataSource::x_FindEntry(const CSeq_entry& entry)
 
 bool CDataSource::AttachEntry(const CSeq_entry& parent, CSeq_entry& bioseq)
 {
-    //### Write-lock TSE instead!!!
     //### CMutexGuard guard(sm_DataSource_Mutex);
+
+    //### Lock the entry to prevent destruction or modification ???
+    //### May need to find and lock the TSE_Info for this.
     CSeq_entry* found = x_FindEntry(parent);
     if ( !found ) {
         return false;
     }
+    // Lock the TSE
+    CTSE_Guard tse_guard(*m_Entries[found]);
     _ASSERT(found  &&  found->IsSet());
 
     found->SetSet().SetSeq_set().push_back(&bioseq);
@@ -657,10 +502,15 @@ bool CDataSource::AttachEntry(const CSeq_entry& parent, CSeq_entry& bioseq)
 bool CDataSource::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
 {
     //### CMutexGuard guard(sm_DataSource_Mutex);
+    //### Lock the entry to prevent destruction or modification
+    //### May need to lock the TSE instead.
     CSeq_entry* found = x_FindEntry(bioseq);
     if ( !found ) {
         return false;
     }
+    // Lock the TSE
+    CTSE_Guard tse_guard(*m_Entries[found]);
+
     CSeq_entry& entry = *found;
     _ASSERT(entry.IsSeq());
     m_SeqMaps[&entry.GetSeq()] = &seqmap;
@@ -681,10 +531,15 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
 */
     // Get non-const reference to the entry
     //### CMutexGuard guard(sm_DataSource_Mutex);
+    //### Lock the entry to prevent destruction or modification
+    //### May need to lock the TSE instead.
     CSeq_entry* found = x_FindEntry(bioseq);
     if ( !found ) {
         return false;
     }
+    // Lock the TSE
+    CTSE_Guard tse_guard(*m_Entries[found]);
+
     CSeq_entry& entry = *found;
     _ASSERT( entry.IsSeq() );
     CSeq_inst& inst = entry.SetSeq().SetInst();
@@ -795,6 +650,9 @@ bool CDataSource::AttachAnnot(const CSeq_entry& entry,
                            CSeq_annot& annot)
 {
     //### CMutexGuard guard(sm_DataSource_Mutex);
+    //### Lock the entry to prevent destruction or modification
+    //### May need to lock the TSE instead. In this case also lock
+    //### the entries list for a while.
     CSeq_entry* found = x_FindEntry(entry);
     if ( !found ) {
         return false;
@@ -802,6 +660,7 @@ bool CDataSource::AttachAnnot(const CSeq_entry& entry,
 
     CTSE_Info* tse = m_Entries[found];
     //### Lock the TSE !!!!!!!!!!!
+    CTSE_Guard tse_guard(*tse);
 
     CBioseq_set::TAnnot* annot_list = 0;
     if ( found->IsSet() ) {
@@ -854,6 +713,7 @@ CTSE_Info* CDataSource::x_AddToBioseqMap(CSeq_entry& entry,
                                          TTSESet* tse_set)
 {
     // Search for bioseqs, add each to map
+    //### The entry is not locked here
     entry.Parentize();
     CTSE_Info* info = x_IndexEntry(entry, entry, dead, tse_set);
     // Do not index new TSEs -- wait for annotations request
@@ -872,6 +732,9 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
                                      TTSESet* tse_set)
 {
     CTSE_Info* tse_info = 0;
+    // Lock indexes to prevent duplicate indexing
+    CMutexGuard entries_guard(sm_DataSource_MP.GetMutex(this));    
+
     TEntries::iterator found_tse = m_Entries.find(&tse);
     if (found_tse == m_Entries.end()) {
         // New TSE info
@@ -880,7 +743,7 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
         tse_info->m_Dead = dead;
         // Do not lock TSE if there is no tse_set -- none will unlock it
         if (tse_set) {
-            tse_info->Lock();
+            tse_info->LockCounter();
         }
     }
     else {
@@ -888,6 +751,8 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
         tse_info = found_tse->second;
     }
     _ASSERT(tse_info);
+    CTSE_Guard tse_guard(*tse_info);
+
     m_Entries[&entry] = tse_info;
     if ( entry.IsSeq() ) {
         CBioseq* seq = &entry.GetSeq();
@@ -959,8 +824,11 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
 void CDataSource::x_AddToAnnotMap(CSeq_entry& entry)
 {
     // The entry must be already in the m_Entries map
+    // Lock indexes
+    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
+
     CTSE_Info* tse = m_Entries[&entry];
-    //### Lock the TSE !!!!!!!!!!!!!!
+    CTSE_Guard tse_guard(*tse);
     tse->SetIndexed(true);
     const CBioseq::TAnnot* annot_list = 0;
     if ( entry.IsSeq() ) {
@@ -1012,6 +880,9 @@ void CDataSource::x_AddToAnnotMap(CSeq_entry& entry)
 
 void CDataSource::x_CreateSeqMap(const CBioseq& seq)
 {
+    //### Make sure the bioseq is not deleted while creating the seq-map
+    CConstRef<CBioseq> guard(&seq);
+
     CSeqMap* seqmap = new CSeqMap;
     TSeqPos pos = 0;
     if ( seq.GetInst().IsSetSeq_data() ) {
@@ -1226,6 +1097,9 @@ void CDataSource::x_MapFeature(const CSeq_feat& feat,
                                const CSeq_annot& annot,
                                CTSE_Info& tse)
 {
+    // Lock indexes
+    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
+
     // Create annotation object. It will split feature location
     // to a handle-ranges map.
     CAnnotObject* aobj = new CAnnotObject(*this, feat, annot);
@@ -1243,6 +1117,9 @@ void CDataSource::x_MapAlign(const CSeq_align& align,
                              const CSeq_annot& annot,
                              CTSE_Info& tse)
 {
+    // Lock indexes
+    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
+
     // Create annotation object. It will process the align locations
     CAnnotObject* aobj = new CAnnotObject(*this, align, annot);
     // Iterate handles
@@ -1259,6 +1136,9 @@ void CDataSource::x_MapGraph(const CSeq_graph& graph,
                              const CSeq_annot& annot,
                              CTSE_Info& tse)
 {
+    // Lock indexes
+    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
+
     // Create annotation object. It will split graph location
     // to a handle-ranges map.
     CAnnotObject* aobj = new CAnnotObject(*this, graph, annot);
@@ -1280,6 +1160,8 @@ void CDataSource::PopulateTSESet(CHandleRangeMap& loc,
     // Index all annotations if not indexed yet
     if ( !m_IndexedAnnot ) {
         iterate (TEntries, tse_it, m_Entries) {
+            //### Lock TSE so that another thread can not index it too
+            CTSE_Guard guard(*tse_it->second);
             if ( !tse_it->second->IsIndexed() )
                 x_AddToAnnotMap(*tse_it->second->m_TSE);
         }
@@ -1317,7 +1199,6 @@ without the sequence but with references to the id and all dead TSEs
             break;
         }
     }
-    //### CMutexGuard guard(sm_DataSource_Mutex);
     x_ResolveLocationHandles(loc, scope.m_History);
     TTSESet non_history;
     iterate(CHandleRangeMap::TLocMap, hit, loc.GetMap()) {
@@ -1411,7 +1292,7 @@ without the sequence but with references to the id and all dead TSEs
     // Unlock unused TSEs
     iterate (TTSESet, lit, loaded_tse_set) {
         if (tmp_tse_set.find(*lit) == tmp_tse_set.end()) {
-            (*lit)->Unlock();
+            (*lit)->UnlockCounter();
         }
     }
     // Lock used TSEs loaded before this call (the scope does not know
@@ -1419,7 +1300,7 @@ without the sequence but with references to the id and all dead TSEs
     iterate (TTSESet, lit, tmp_tse_set) {
         TTSESet::iterator loaded_it = loaded_tse_set.find(*lit);
         if (loaded_it == loaded_tse_set.end()) {
-            (*lit)->Lock();
+            (*lit)->LockCounter();
         }
         tse_set.insert(*lit);
     }
@@ -1482,11 +1363,14 @@ bool CDataSource::DropTSE(const CSeq_entry& tse)
     _ASSERT(tse.GetParentEntry() == 0);
 
     CRef<CSeq_entry> ref(const_cast<CSeq_entry*>(&tse));
+
+    // Lock indexes
+    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
+
     TEntries::iterator found = m_Entries.find(ref);
     if (found == m_Entries.end())
         return false;
-    //### CMutexGuard guard(sm_DataSource_Mutex);
-    if ( found->second->Locked() )
+    if ( found->second->CounterLocked() )
         return false; // Not really dropped, although found
     if ( m_Loader )
         m_Loader->DropTSE(found->first);
@@ -1509,6 +1393,7 @@ void CDataSource::x_DropEntry(CSeq_entry& entry)
             key = GetIdMapper().GetHandle(**id);
             TTSEMap::iterator tse_set = m_TSE_seq.find(key);
             _ASSERT(tse_set != m_TSE_seq.end());
+            CMutexGuard guard(sm_TSESet_MP.GetMutex(&tse_set->second));
             TTSESet::iterator tse_it = tse_set->second.begin();
             for ( ; tse_it != tse_set->second.end(); ++tse_it) {
                 if ((*tse_it)->m_TSE == tse)
@@ -1608,6 +1493,7 @@ void CDataSource::x_DropFeature(const CSeq_feat& feat,
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
         // Find TSEs containing references to the id
+        //### Lock the map and the set
         TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
         if (tse_set == m_TSE_ref.end())
             continue; // The referenced ID is not currently loaded
@@ -1628,6 +1514,7 @@ void CDataSource::x_DropFeature(const CSeq_feat& feat,
             if (rg == annot_it->second.end())
                 continue;
             // Delete the feature from all indexes
+            //### Lock all containers before erasing items
             annot_it->second.erase(rg);
             if (annot_it->second.size() == 0) {
                 tse_set->second.erase(tse_info);
@@ -1650,6 +1537,7 @@ void CDataSource::x_DropAlign(const CSeq_align& align,
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
         // Find TSEs containing references to the id
+        //### Lock the map and the set
         TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
         if (tse_set == m_TSE_ref.end())
             continue; // The referenced ID is not currently loaded
@@ -1670,6 +1558,7 @@ void CDataSource::x_DropAlign(const CSeq_align& align,
             if (rg == annot_it->second.end())
                 continue;
             // Delete the align from all indexes
+            //### Lock all containers before erasing items
             annot_it->second.erase(rg);
             if (annot_it->second.size() == 0) {
                 tse_set->second.erase(tse_info);
@@ -1692,6 +1581,7 @@ void CDataSource::x_DropGraph(const CSeq_graph& graph,
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
         // Find TSEs containing references to the id
+        //### Lock the map and the set
         TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
         if (tse_set == m_TSE_ref.end())
             continue; // The referenced ID is not currently loaded
@@ -1712,6 +1602,7 @@ void CDataSource::x_DropGraph(const CSeq_graph& graph,
             if (rg == annot_it->second.end())
                 continue;
             // Delete the graph from all indexes
+            //### Lock all containers before erasing items
             annot_it->second.erase(rg);
             if (annot_it->second.size() == 0) {
                 tse_set->second.erase(tse_info);
@@ -1727,12 +1618,14 @@ void CDataSource::x_DropGraph(const CSeq_graph& graph,
 
 void CDataSource::x_CleanupUnusedEntries(void)
 {
-    //### CMutexGuard guard(sm_DataSource_Mutex);
+    // Lock indexes
+    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
+
     bool broken = true;
     while ( broken ) {
         broken = false;
         iterate(TEntries, it, m_Entries) {
-            if ( !it->second->Locked() ) {
+            if ( !it->second->CounterLocked() ) {
                 //### Lock the entry and check again
                 DropTSE(*it->first);
                 broken = true;
@@ -1745,9 +1638,9 @@ void CDataSource::x_CleanupUnusedEntries(void)
 
 void CDataSource::x_UpdateTSEStatus(CSeq_entry& tse, bool dead)
 {
-    //### CMutexGuard guard(sm_DataSource_Mutex);
     TEntries::iterator tse_it = m_Entries.find(&tse);
     _ASSERT(tse_it != m_Entries.end());
+    CTSE_Guard guard(*tse_it->second);
     tse_it->second->m_Dead = dead;
 }
 
@@ -1793,14 +1686,14 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id, CScope& scope)
     bool just_loaded = false;
     iterate (TTSESet, lit, loaded_tse_set) {
         if (*lit != tse) {
-            (*lit)->Unlock();
+            (*lit)->UnlockCounter();
         }
         else {
             just_loaded = true;
         }
     }
     if ( !just_loaded  &&  match ) {
-        match.m_TSE->Lock(); // will be unlocked by the scope
+        match.m_TSE->LockCounter(); // will be unlocked by the scope
     }
     return match;
 }
@@ -1864,6 +1757,8 @@ void CDataSource::x_ResolveMapSegment(CSeq_id_Handle rh,
         GetIdMapper().GetSeq_id(rh));
     // This tricky way of getting the seq-map is used to obtain
     // the non-const reference.
+    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
+
     CSeqMap& rmap = rbsh.x_GetDataSource().x_GetSeqMap(rbsh);
     // Resolve the reference map up to the end of the referenced region
     rmap.x_Resolve(start + len, scope);
@@ -1925,9 +1820,11 @@ bool CDataSource::IsSynonym(const CSeq_id& id1, CSeq_id& id2) const
 {
     CSeq_id_Handle h1 = GetIdMapper().GetHandle(id1);
     CSeq_id_Handle h2 = GetIdMapper().GetHandle(id2);
+
     TTSEMap::const_iterator tse_set = m_TSE_seq.find(h1);
     if (tse_set == m_TSE_seq.end())
         return false; // Could not find id1 in the datasource
+    CMutexGuard guard(sm_TSESet_MP.GetMutex(&tse_set->second));    
     iterate ( TTSESet, tse_it, tse_set->second ) {
         const CBioseq_Info& bioseq = *(*tse_it)->m_BioseqMap[h1];
         if (bioseq.m_Synonyms.find(h2) != bioseq.m_Synonyms.end())
@@ -2004,3 +1901,190 @@ void CDataSource::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.56  2002/07/08 20:51:01  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.55  2002/07/01 15:44:51  grichenk
+* Fixed typos
+*
+* Revision 1.54  2002/07/01 15:40:58  grichenk
+* Fixed 'tse_set' warning.
+* Removed duplicate call to tse_set.begin().
+* Fixed version resolving for annotation iterators.
+* Fixed strstream bug in KCC.
+*
+* Revision 1.53  2002/06/28 17:30:42  grichenk
+* Duplicate seq-id: ERR_POST() -> THROW1_TRACE() with the seq-id
+* list.
+* Fixed x_CleanupUnusedEntries().
+* Fixed a bug with not found sequences.
+* Do not copy bioseq data in GetBioseqCore().
+*
+* Revision 1.52  2002/06/21 15:12:15  grichenk
+* Added resolving seq-id to the best version
+*
+* Revision 1.51  2002/06/12 14:39:53  grichenk
+* Performance improvements
+*
+* Revision 1.50  2002/06/04 17:18:33  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
+* Revision 1.49  2002/05/31 17:53:00  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
+* Revision 1.48  2002/05/29 21:21:13  gouriano
+* added debug dump
+*
+* Revision 1.47  2002/05/28 18:00:43  gouriano
+* DebugDump added
+*
+* Revision 1.46  2002/05/24 14:57:12  grichenk
+* SerialAssign<>() -> CSerialObject::Assign()
+*
+* Revision 1.45  2002/05/21 18:57:25  grichenk
+* Fixed annotations dropping
+*
+* Revision 1.44  2002/05/21 18:40:50  grichenk
+* Fixed annotations droppping
+*
+* Revision 1.43  2002/05/14 20:06:25  grichenk
+* Improved CTSE_Info locking by CDataSource and CDataLoader
+*
+* Revision 1.42  2002/05/13 15:28:27  grichenk
+* Fixed seqmap for virtual sequences
+*
+* Revision 1.41  2002/05/09 14:18:15  grichenk
+* More TSE conflict resolving rules for annotations
+*
+* Revision 1.40  2002/05/06 03:28:46  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.39  2002/05/03 21:28:09  ucko
+* Introduce T(Signed)SeqPos.
+*
+* Revision 1.38  2002/05/02 20:42:37  grichenk
+* throw -> THROW1_TRACE
+*
+* Revision 1.37  2002/04/22 20:05:08  grichenk
+* Fixed minor bug in GetSequence()
+*
+* Revision 1.36  2002/04/19 18:02:47  kimelman
+* add verify to catch coredump
+*
+* Revision 1.35  2002/04/17 21:09:14  grichenk
+* Fixed annotations loading
+* +IsSynonym()
+*
+* Revision 1.34  2002/04/11 18:45:39  ucko
+* Pull in extra headers to make KCC happy.
+*
+* Revision 1.33  2002/04/11 12:08:21  grichenk
+* Fixed GetResolvedSeqMap() implementation
+*
+* Revision 1.32  2002/04/05 21:23:08  grichenk
+* More duplicate id warnings fixed
+*
+* Revision 1.31  2002/04/05 20:27:52  grichenk
+* Fixed duplicate identifier warning
+*
+* Revision 1.30  2002/04/04 21:33:13  grichenk
+* Fixed GetSequence() for sequences with unresolved segments
+*
+* Revision 1.29  2002/04/03 18:06:47  grichenk
+* Fixed segmented sequence bugs (invalid positioning of literals
+* and gaps). Improved CSeqVector performance.
+*
+* Revision 1.27  2002/03/28 14:02:31  grichenk
+* Added scope history checks to CDataSource::x_FindBestTSE()
+*
+* Revision 1.26  2002/03/22 17:24:12  gouriano
+* loader-related fix in DropTSE()
+*
+* Revision 1.25  2002/03/21 21:39:48  grichenk
+* garbage collector bugfix
+*
+* Revision 1.24  2002/03/20 21:24:59  gouriano
+* *** empty log message ***
+*
+* Revision 1.23  2002/03/15 18:10:08  grichenk
+* Removed CRef<CSeq_id> from CSeq_id_Handle, added
+* key to seq-id map th CSeq_id_Mapper
+*
+* Revision 1.22  2002/03/11 21:10:13  grichenk
+* +CDataLoader::ResolveConflict()
+*
+* Revision 1.21  2002/03/07 21:25:33  grichenk
+* +GetSeq_annot() in annotation iterators
+*
+* Revision 1.20  2002/03/06 19:37:19  grichenk
+* Fixed minor bugs and comments
+*
+* Revision 1.19  2002/03/05 18:44:55  grichenk
+* +x_UpdateTSEStatus()
+*
+* Revision 1.18  2002/03/05 16:09:10  grichenk
+* Added x_CleanupUnusedEntries()
+*
+* Revision 1.17  2002/03/04 15:09:27  grichenk
+* Improved MT-safety. Added live/dead flag to CDataSource methods.
+*
+* Revision 1.16  2002/02/28 20:53:31  grichenk
+* Implemented attaching segmented sequence data. Fixed minor bugs.
+*
+* Revision 1.15  2002/02/25 21:05:29  grichenk
+* Removed seq-data references caching. Increased MT-safety. Fixed typos.
+*
+* Revision 1.14  2002/02/21 19:27:05  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.13  2002/02/20 20:23:27  gouriano
+* corrected FilterSeqid()
+*
+* Revision 1.12  2002/02/15 20:35:38  gouriano
+* changed implementation of HandleRangeMap
+*
+* Revision 1.11  2002/02/12 19:41:42  grichenk
+* Seq-id handles lock/unlock moved to CSeq_id_Handle 'ctors.
+*
+* Revision 1.10  2002/02/07 21:27:35  grichenk
+* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
+*
+* Revision 1.9  2002/02/06 21:46:11  gouriano
+* *** empty log message ***
+*
+* Revision 1.8  2002/02/05 21:46:28  gouriano
+* added FindSeqid function, minor tuneup in CSeq_id_mapper
+*
+* Revision 1.7  2002/01/30 22:09:28  gouriano
+* changed CSeqMap interface
+*
+* Revision 1.6  2002/01/29 17:45:00  grichenk
+* Added seq-id handles locking
+*
+* Revision 1.5  2002/01/28 19:44:49  gouriano
+* changed the interface of BioseqHandle: two functions moved from Scope
+*
+* Revision 1.4  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
+* Revision 1.3  2002/01/18 15:56:23  gouriano
+* changed TSeqMaps definition
+*
+* Revision 1.2  2002/01/16 16:25:57  gouriano
+* restructured objmgr
+*
+* Revision 1.1  2002/01/11 19:06:18  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/

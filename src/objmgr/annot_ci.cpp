@@ -28,33 +28,6 @@
 * File Description:
 *   Object manager iterators
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2002/05/06 03:28:46  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.6  2002/04/05 21:26:19  grichenk
-* Enabled iteration over annotations defined on segments of a
-* delta-sequence.
-*
-* Revision 1.5  2002/02/21 19:27:04  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.4  2002/02/15 20:35:38  gouriano
-* changed implementation of HandleRangeMap
-*
-* Revision 1.3  2002/02/07 21:27:35  grichenk
-* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
-*
-* Revision 1.2  2002/01/16 16:25:56  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:06:15  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 #include <objects/objmgr/annot_ci.hpp>
@@ -82,6 +55,8 @@ CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
       m_RangeMap(0),
       m_HandleRangeMap(&loc)
 {
+    CTSE_Guard guard(tse);
+    m_TSEInfo->LockCounter();
     iterate ( CHandleRangeMap::TLocMap, it, m_HandleRangeMap->GetMap() ) {
         if ( !it->second.GetRanges().empty() ) {
             TAnnotMap::iterator ait =
@@ -110,12 +85,17 @@ CAnnot_CI::CAnnot_CI(const CAnnot_CI& iter)
       m_HandleRangeMap(iter.m_HandleRangeMap),
       m_CurrentHandle(iter.m_CurrentHandle)
 {
+    //### Prevent TSE destruction between "if" and "lock"
+    if ( m_TSEInfo )
+        m_TSEInfo->LockCounter();
     return;
 }
 
 
 CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
 {
+    if ( m_TSEInfo )
+        m_TSEInfo->UnlockCounter();
     m_TSEInfo = iter.m_TSEInfo;
     m_Selector = iter.m_Selector;
     m_RangeMap = iter.m_RangeMap;
@@ -123,47 +103,18 @@ CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
     m_Current = iter.m_Current;
     m_HandleRangeMap = iter.m_HandleRangeMap;
     m_CurrentHandle = iter.m_CurrentHandle;
+    //### Prevent TSE destruction between "if" and "lock"
+    if ( m_TSEInfo )
+        m_TSEInfo->LockCounter();
     return *this;
 }
 
 
 CAnnot_CI::~CAnnot_CI(void)
 {
+    if ( m_TSEInfo )
+        m_TSEInfo->UnlockCounter();
     return;
-}
-
-
-CAnnot_CI& CAnnot_CI::operator++(void)
-{
-    x_Walk();
-    return *this;
-}
-
-
-CAnnot_CI& CAnnot_CI::operator++(int)
-{
-    x_Walk();
-    return *this;
-}
-
-
-CAnnot_CI::operator bool (void) const
-{
-    return bool(m_TSEInfo)  &&  bool(m_Current);
-}
-
-
-CAnnotObject& CAnnot_CI::operator* (void) const
-{
-    _ASSERT(bool(m_TSEInfo)  &&  bool(m_Current));
-    return *m_Current->second;
-}
-
-
-CAnnotObject* CAnnot_CI::operator-> (void) const
-{
-    _ASSERT(bool(m_TSEInfo)  &&  bool(m_Current));
-    return m_Current->second;
 }
 
 
@@ -229,3 +180,38 @@ void CAnnot_CI::x_Walk(void)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.8  2002/07/08 20:51:00  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.7  2002/05/06 03:28:46  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.6  2002/04/05 21:26:19  grichenk
+* Enabled iteration over annotations defined on segments of a
+* delta-sequence.
+*
+* Revision 1.5  2002/02/21 19:27:04  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.4  2002/02/15 20:35:38  gouriano
+* changed implementation of HandleRangeMap
+*
+* Revision 1.3  2002/02/07 21:27:35  grichenk
+* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
+*
+* Revision 1.2  2002/01/16 16:25:56  gouriano
+* restructured objmgr
+*
+* Revision 1.1  2002/01/11 19:06:15  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/

@@ -30,38 +30,6 @@
 *
 * File Description:
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.9  2002/06/12 14:40:47  grichenk
-* Made some methods inline
-*
-* Revision 1.8  2002/05/06 03:28:47  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.7  2002/05/03 21:28:10  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.6  2002/04/22 20:05:35  grichenk
-* +MergeRange()
-*
-* Revision 1.5  2002/02/21 19:27:05  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.4  2002/02/15 20:35:38  gouriano
-* changed implementation of HandleRangeMap
-*
-* Revision 1.3  2002/01/23 21:59:31  grichenk
-* Redesigned seq-id handles and mapper
-*
-* Revision 1.2  2002/01/16 16:25:58  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:06:20  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 #include <objects/objmgr/bioseq_handle.hpp>
@@ -190,5 +158,45 @@ bool CHandleRange::IntersectingWith(const CHandleRange& hloc) const
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.10  2002/07/08 20:51:01  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.9  2002/06/12 14:40:47  grichenk
+* Made some methods inline
+*
+* Revision 1.8  2002/05/06 03:28:47  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.7  2002/05/03 21:28:10  ucko
+* Introduce T(Signed)SeqPos.
+*
+* Revision 1.6  2002/04/22 20:05:35  grichenk
+* +MergeRange()
+*
+* Revision 1.5  2002/02/21 19:27:05  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.4  2002/02/15 20:35:38  gouriano
+* changed implementation of HandleRangeMap
+*
+* Revision 1.3  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
+* Revision 1.2  2002/01/16 16:25:58  gouriano
+* restructured objmgr
+*
+* Revision 1.1  2002/01/11 19:06:20  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/
 
 #endif  // HANDLE_RANGE__HPP

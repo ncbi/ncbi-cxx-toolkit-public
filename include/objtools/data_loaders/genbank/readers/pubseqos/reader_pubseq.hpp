@@ -125,11 +125,13 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 
-#endif
-
-
 /*
 * $Log$
+* Revision 1.9  2002/07/08 20:50:56  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
 * Revision 1.8  2002/05/06 03:30:36  vakatov
 * OM/OM1 renaming
 *
@@ -174,3 +176,5 @@ END_NCBI_SCOPE
 * Removed duplicate code, created frame for CPubseq* implementation.
 *
 */
+
+#endif // READER_PUBSEQ__HPP_INCLUDED

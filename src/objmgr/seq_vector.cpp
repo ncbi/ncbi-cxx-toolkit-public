@@ -28,88 +28,6 @@
 * File Description:
 *   Sequence data container for object manager
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.25  2002/05/31 20:58:19  grichenk
-* Fixed GetSeqData() bug
-*
-* Revision 1.24  2002/05/31 17:53:00  grichenk
-* Optimized for better performance (CTSE_Info uses atomic counter,
-* delayed annotations indexing, no location convertions in
-* CAnnot_Types_CI if no references resolution is required etc.)
-*
-* Revision 1.23  2002/05/17 17:14:53  grichenk
-* +GetSeqData() for getting a range of characters from a seq-vector
-*
-* Revision 1.22  2002/05/09 14:16:31  grichenk
-* sm_SizeUnknown -> kPosUnknown, minor fixes for unsigned positions
-*
-* Revision 1.21  2002/05/06 03:28:47  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.20  2002/05/03 21:28:10  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.19  2002/05/03 18:36:19  grichenk
-* Fixed members initialization
-*
-* Revision 1.18  2002/05/02 20:42:38  grichenk
-* throw -> THROW1_TRACE
-*
-* Revision 1.17  2002/04/29 16:23:28  grichenk
-* GetSequenceView() reimplemented in CSeqVector.
-* CSeqVector optimized for better performance.
-*
-* Revision 1.16  2002/04/26 14:37:21  grichenk
-* Limited CSeqVector cache size
-*
-* Revision 1.15  2002/04/25 18:14:47  grichenk
-* e_not_set coding gap symbol set to 0
-*
-* Revision 1.14  2002/04/25 16:37:21  grichenk
-* Fixed gap coding, added GetGapChar() function
-*
-* Revision 1.13  2002/04/23 19:01:07  grichenk
-* Added optional flag to GetSeqVector() and GetSequenceView()
-* for switching to IUPAC encoding.
-*
-* Revision 1.12  2002/04/22 20:03:08  grichenk
-* Updated comments
-*
-* Revision 1.11  2002/04/17 21:07:59  grichenk
-* String pre-allocation added
-*
-* Revision 1.10  2002/04/03 18:06:48  grichenk
-* Fixed segmented sequence bugs (invalid positioning of literals
-* and gaps). Improved CSeqVector performance.
-*
-* Revision 1.8  2002/03/28 18:34:58  grichenk
-* Fixed convertions bug
-*
-* Revision 1.7  2002/03/08 21:24:35  gouriano
-* fixed errors with unresolvable references
-*
-* Revision 1.6  2002/02/21 19:27:06  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.5  2002/02/15 20:35:38  gouriano
-* changed implementation of HandleRangeMap
-*
-* Revision 1.4  2002/01/30 22:09:28  gouriano
-* changed CSeqMap interface
-*
-* Revision 1.3  2002/01/23 21:59:32  grichenk
-* Redesigned seq-id handles and mapper
-*
-* Revision 1.2  2002/01/16 16:25:58  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:06:24  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 
@@ -595,3 +513,93 @@ void CSeqVector::SetIupacCoding(void)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.26  2002/07/08 20:51:02  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.25  2002/05/31 20:58:19  grichenk
+* Fixed GetSeqData() bug
+*
+* Revision 1.24  2002/05/31 17:53:00  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
+* Revision 1.23  2002/05/17 17:14:53  grichenk
+* +GetSeqData() for getting a range of characters from a seq-vector
+*
+* Revision 1.22  2002/05/09 14:16:31  grichenk
+* sm_SizeUnknown -> kPosUnknown, minor fixes for unsigned positions
+*
+* Revision 1.21  2002/05/06 03:28:47  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.20  2002/05/03 21:28:10  ucko
+* Introduce T(Signed)SeqPos.
+*
+* Revision 1.19  2002/05/03 18:36:19  grichenk
+* Fixed members initialization
+*
+* Revision 1.18  2002/05/02 20:42:38  grichenk
+* throw -> THROW1_TRACE
+*
+* Revision 1.17  2002/04/29 16:23:28  grichenk
+* GetSequenceView() reimplemented in CSeqVector.
+* CSeqVector optimized for better performance.
+*
+* Revision 1.16  2002/04/26 14:37:21  grichenk
+* Limited CSeqVector cache size
+*
+* Revision 1.15  2002/04/25 18:14:47  grichenk
+* e_not_set coding gap symbol set to 0
+*
+* Revision 1.14  2002/04/25 16:37:21  grichenk
+* Fixed gap coding, added GetGapChar() function
+*
+* Revision 1.13  2002/04/23 19:01:07  grichenk
+* Added optional flag to GetSeqVector() and GetSequenceView()
+* for switching to IUPAC encoding.
+*
+* Revision 1.12  2002/04/22 20:03:08  grichenk
+* Updated comments
+*
+* Revision 1.11  2002/04/17 21:07:59  grichenk
+* String pre-allocation added
+*
+* Revision 1.10  2002/04/03 18:06:48  grichenk
+* Fixed segmented sequence bugs (invalid positioning of literals
+* and gaps). Improved CSeqVector performance.
+*
+* Revision 1.8  2002/03/28 18:34:58  grichenk
+* Fixed convertions bug
+*
+* Revision 1.7  2002/03/08 21:24:35  gouriano
+* fixed errors with unresolvable references
+*
+* Revision 1.6  2002/02/21 19:27:06  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.5  2002/02/15 20:35:38  gouriano
+* changed implementation of HandleRangeMap
+*
+* Revision 1.4  2002/01/30 22:09:28  gouriano
+* changed CSeqMap interface
+*
+* Revision 1.3  2002/01/23 21:59:32  grichenk
+* Redesigned seq-id handles and mapper
+*
+* Revision 1.2  2002/01/16 16:25:58  gouriano
+* restructured objmgr
+*
+* Revision 1.1  2002/01/11 19:06:24  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/

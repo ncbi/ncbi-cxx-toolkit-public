@@ -31,30 +31,6 @@
 * File Description:
 *   Seq-id mapper for Object Manager
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2002/05/06 03:28:47  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.6  2002/04/22 20:03:48  grichenk
-* Redesigned keys usage table to work in 64-bit mode
-*
-* Revision 1.5  2002/03/15 18:10:09  grichenk
-* Removed CRef<CSeq_id> from CSeq_id_Handle, added
-* key to seq-id map th CSeq_id_Mapper
-*
-* Revision 1.4  2002/02/21 19:27:06  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.3  2002/02/12 19:41:42  grichenk
-* Seq-id handles lock/unlock moved to CSeq_id_Handle 'ctors.
-*
-* Revision 1.2  2002/01/23 21:59:32  grichenk
-* Redesigned seq-id handles and mapper
-*
-*
-* ===========================================================================
 */
 
 #include <objects/objmgr/seq_id_handle.hpp>
@@ -150,5 +126,37 @@ private:
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.8  2002/07/08 20:51:02  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.7  2002/05/06 03:28:47  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.6  2002/04/22 20:03:48  grichenk
+* Redesigned keys usage table to work in 64-bit mode
+*
+* Revision 1.5  2002/03/15 18:10:09  grichenk
+* Removed CRef<CSeq_id> from CSeq_id_Handle, added
+* key to seq-id map th CSeq_id_Mapper
+*
+* Revision 1.4  2002/02/21 19:27:06  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.3  2002/02/12 19:41:42  grichenk
+* Seq-id handles lock/unlock moved to CSeq_id_Handle 'ctors.
+*
+* Revision 1.2  2002/01/23 21:59:32  grichenk
+* Redesigned seq-id handles and mapper
+*
+*
+* ===========================================================================
+*/
 
 #endif  /* OBJECTS_OBJMGR___SEQ_ID_MAPPER__HPP */

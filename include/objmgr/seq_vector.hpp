@@ -31,64 +31,6 @@
 * File Description:
 *   Sequence data container for object manager
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.16  2002/05/31 17:52:58  grichenk
-* Optimized for better performance (CTSE_Info uses atomic counter,
-* delayed annotations indexing, no location convertions in
-* CAnnot_Types_CI if no references resolution is required etc.)
-*
-* Revision 1.15  2002/05/17 17:14:50  grichenk
-* +GetSeqData() for getting a range of characters from a seq-vector
-*
-* Revision 1.14  2002/05/09 14:16:29  grichenk
-* sm_SizeUnknown -> kPosUnknown, minor fixes for unsigned positions
-*
-* Revision 1.13  2002/05/06 03:30:36  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.12  2002/05/03 21:28:02  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.11  2002/05/03 18:36:13  grichenk
-* Fixed members initialization
-*
-* Revision 1.10  2002/04/30 14:32:51  ucko
-* Have size() return int in keeping with its actual behavior; should cut
-* down on warnings about truncation of 64-bit integers.
-*
-* Revision 1.9  2002/04/29 16:23:25  grichenk
-* GetSequenceView() reimplemented in CSeqVector.
-* CSeqVector optimized for better performance.
-*
-* Revision 1.8  2002/04/25 16:37:19  grichenk
-* Fixed gap coding, added GetGapChar() function
-*
-* Revision 1.7  2002/04/23 19:01:06  grichenk
-* Added optional flag to GetSeqVector() and GetSequenceView()
-* for switching to IUPAC encoding.
-*
-* Revision 1.6  2002/02/21 19:27:00  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.5  2002/02/15 20:36:29  gouriano
-* changed implementation of HandleRangeMap
-*
-* Revision 1.4  2002/01/28 19:45:34  gouriano
-* changed the interface of BioseqHandle: two functions moved from Scope
-*
-* Revision 1.3  2002/01/23 21:59:29  grichenk
-* Redesigned seq-id handles and mapper
-*
-* Revision 1.2  2002/01/16 16:26:36  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:04:04  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 #include <objects/objmgr/seq_map.hpp>
@@ -263,5 +205,71 @@ CSeqVector::TResidue CSeqVector::operator[] (TSeqPos pos)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.17  2002/07/08 20:50:56  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.16  2002/05/31 17:52:58  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
+* Revision 1.15  2002/05/17 17:14:50  grichenk
+* +GetSeqData() for getting a range of characters from a seq-vector
+*
+* Revision 1.14  2002/05/09 14:16:29  grichenk
+* sm_SizeUnknown -> kPosUnknown, minor fixes for unsigned positions
+*
+* Revision 1.13  2002/05/06 03:30:36  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.12  2002/05/03 21:28:02  ucko
+* Introduce T(Signed)SeqPos.
+*
+* Revision 1.11  2002/05/03 18:36:13  grichenk
+* Fixed members initialization
+*
+* Revision 1.10  2002/04/30 14:32:51  ucko
+* Have size() return int in keeping with its actual behavior; should cut
+* down on warnings about truncation of 64-bit integers.
+*
+* Revision 1.9  2002/04/29 16:23:25  grichenk
+* GetSequenceView() reimplemented in CSeqVector.
+* CSeqVector optimized for better performance.
+*
+* Revision 1.8  2002/04/25 16:37:19  grichenk
+* Fixed gap coding, added GetGapChar() function
+*
+* Revision 1.7  2002/04/23 19:01:06  grichenk
+* Added optional flag to GetSeqVector() and GetSequenceView()
+* for switching to IUPAC encoding.
+*
+* Revision 1.6  2002/02/21 19:27:00  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.5  2002/02/15 20:36:29  gouriano
+* changed implementation of HandleRangeMap
+*
+* Revision 1.4  2002/01/28 19:45:34  gouriano
+* changed the interface of BioseqHandle: two functions moved from Scope
+*
+* Revision 1.3  2002/01/23 21:59:29  grichenk
+* Redesigned seq-id handles and mapper
+*
+* Revision 1.2  2002/01/16 16:26:36  gouriano
+* restructured objmgr
+*
+* Revision 1.1  2002/01/11 19:04:04  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/
 
 #endif  // SEQ_VECTOR__HPP

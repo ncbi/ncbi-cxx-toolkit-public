@@ -31,8 +31,92 @@
 * File Description:
 *   Object manager iterators
 *
+*/
+
+#include <objects/objmgr/annot_types_ci.hpp>
+#include <corelib/ncbistd.hpp>
+
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
+
+class CAlign_CI : public CAnnotTypes_CI
+{
+public:
+    CAlign_CI(void);
+    // Search all TSEs in all datasources
+    CAlign_CI(CScope& scope, const CSeq_loc& loc,
+              CAnnotTypes_CI::EResolveMethod resolve =
+              CAnnotTypes_CI::eResolve_TSE);
+    // Search only in TSE, containing the bioseq
+    CAlign_CI(CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+              CAnnotTypes_CI::EResolveMethod resolve =
+              CAnnotTypes_CI::eResolve_TSE);
+    CAlign_CI(const CAlign_CI& iter);
+    virtual ~CAlign_CI(void);
+
+    CAlign_CI& operator= (const CAlign_CI& iter);
+
+    CAlign_CI& operator++ (void);
+    CAlign_CI& operator++ (int);
+    operator bool (void) const;
+    const CSeq_align& operator* (void) const;
+    const CSeq_align* operator-> (void) const;
+};
+
+
+inline
+CAlign_CI::CAlign_CI(void)
+{
+    return;
+}
+
+inline
+CAlign_CI::CAlign_CI(const CAlign_CI& iter)
+    : CAnnotTypes_CI(iter)
+{
+    return;
+}
+
+inline
+CAlign_CI& CAlign_CI::operator= (const CAlign_CI& iter)
+{
+    CAnnotTypes_CI::operator=(iter);
+    return *this;
+}
+
+inline
+CAlign_CI& CAlign_CI::operator++ (void)
+{
+    Walk();
+    return *this;
+}
+
+inline
+CAlign_CI& CAlign_CI::operator++ (int)
+{
+    Walk();
+    return *this;
+}
+
+inline
+CAlign_CI::operator bool (void) const
+{
+    return IsValid();
+}
+
+
+END_SCOPE(objects)
+END_NCBI_SCOPE
+
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/07/08 20:50:55  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
 * Revision 1.10  2002/05/06 03:30:35  vakatov
 * OM/OM1 renaming
 *
@@ -69,40 +153,5 @@
 *
 * ===========================================================================
 */
-
-#include <objects/objmgr/annot_types_ci.hpp>
-#include <corelib/ncbistd.hpp>
-
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
-
-
-class CAlign_CI : public CAnnotTypes_CI
-{
-public:
-    CAlign_CI(void);
-    // Search all TSEs in all datasources
-    CAlign_CI(CScope& scope, const CSeq_loc& loc,
-              CAnnotTypes_CI::EResolveMethod resolve =
-              CAnnotTypes_CI::eResolve_TSE);
-    // Search only in TSE, containing the bioseq
-    CAlign_CI(CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              CAnnotTypes_CI::EResolveMethod resolve =
-              CAnnotTypes_CI::eResolve_TSE);
-    CAlign_CI(const CAlign_CI& iter);
-    virtual ~CAlign_CI(void);
-
-    CAlign_CI& operator= (const CAlign_CI& iter);
-
-    CAlign_CI& operator++ (void);
-    CAlign_CI& operator++ (int);
-    operator bool (void) const;
-    const CSeq_align& operator* (void) const;
-    const CSeq_align* operator-> (void) const;
-};
-
-
-END_SCOPE(objects)
-END_NCBI_SCOPE
 
 #endif  // ALIGN_CI__HPP

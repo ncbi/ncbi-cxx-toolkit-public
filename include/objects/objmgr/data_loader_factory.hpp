@@ -30,13 +30,6 @@
 *
 * File Description:
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2002/01/11 19:04:00  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 
@@ -100,5 +93,20 @@ typedef CObject* (*TFACTORY_AUTOCREATE)();
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.2  2002/07/08 20:50:56  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.1  2002/01/11 19:04:00  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/
 
 #endif // DATA_LOADER_FACTORY__HPP

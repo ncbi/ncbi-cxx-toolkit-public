@@ -28,23 +28,6 @@
 * File Description:
 *   Object manager iterators
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2002/05/09 14:20:54  grichenk
-* Added checking of m_Current validity
-*
-* Revision 1.3  2002/05/06 03:28:48  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.2  2002/02/21 19:27:06  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.1  2002/01/11 19:06:25  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 #include <objects/objmgr/seqdesc_ci.hpp>
@@ -160,3 +143,28 @@ const CSeqdesc* CSeqdesc_CI::operator->(void) const
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.5  2002/07/08 20:51:02  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.4  2002/05/09 14:20:54  grichenk
+* Added checking of m_Current validity
+*
+* Revision 1.3  2002/05/06 03:28:48  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.2  2002/02/21 19:27:06  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.1  2002/01/11 19:06:25  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/

@@ -353,11 +353,14 @@ void CSeqMap::Add(ESegmentType seg_type, TSeqPos position, TSeqPos length,
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/07/08 20:50:56  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
 * Revision 1.19  2002/06/30 03:27:38  vakatov
 * Get rid of warnings, ident the code, move CVS logs to the end of file
 *

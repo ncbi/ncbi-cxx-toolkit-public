@@ -31,33 +31,6 @@
 * File Description:
 *   Annotation object wrapper
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2002/05/29 21:21:13  gouriano
-* added debug dump
-*
-* Revision 1.6  2002/04/05 21:26:19  grichenk
-* Enabled iteration over annotations defined on segments of a
-* delta-sequence.
-*
-* Revision 1.5  2002/03/07 21:25:33  grichenk
-* +GetSeq_annot() in annotation iterators
-*
-* Revision 1.4  2002/02/21 19:27:04  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.3  2002/01/23 21:59:31  grichenk
-* Redesigned seq-id handles and mapper
-*
-* Revision 1.2  2002/01/16 16:25:57  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:06:16  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 #include "data_source.hpp"
@@ -279,5 +252,40 @@ CAnnotObject::CAnnotObject(const CSeq_graph& graph,
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.8  2002/07/08 20:51:01  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.7  2002/05/29 21:21:13  gouriano
+* added debug dump
+*
+* Revision 1.6  2002/04/05 21:26:19  grichenk
+* Enabled iteration over annotations defined on segments of a
+* delta-sequence.
+*
+* Revision 1.5  2002/03/07 21:25:33  grichenk
+* +GetSeq_annot() in annotation iterators
+*
+* Revision 1.4  2002/02/21 19:27:04  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.3  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
+* Revision 1.2  2002/01/16 16:25:57  gouriano
+* restructured objmgr
+*
+* Revision 1.1  2002/01/11 19:06:16  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/
 
 #endif  // ANNOT_OBJECT__HPP

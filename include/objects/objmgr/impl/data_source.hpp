@@ -31,92 +31,6 @@
 * File Description:
 *   Data source for object manager
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.25  2002/06/04 17:18:33  kimelman
-* memory cleanup :  new/delete/Cref rearrangements
-*
-* Revision 1.24  2002/05/31 17:53:00  grichenk
-* Optimized for better performance (CTSE_Info uses atomic counter,
-* delayed annotations indexing, no location convertions in
-* CAnnot_Types_CI if no references resolution is required etc.)
-*
-* Revision 1.23  2002/05/28 18:00:43  gouriano
-* DebugDump added
-*
-* Revision 1.22  2002/05/14 20:06:26  grichenk
-* Improved CTSE_Info locking by CDataSource and CDataLoader
-*
-* Revision 1.21  2002/05/06 03:28:47  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.20  2002/05/03 21:28:09  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.19  2002/04/17 21:09:14  grichenk
-* Fixed annotations loading
-* +IsSynonym()
-*
-* Revision 1.18  2002/04/11 12:08:21  grichenk
-* Fixed GetResolvedSeqMap() implementation
-*
-* Revision 1.17  2002/03/28 14:02:31  grichenk
-* Added scope history checks to CDataSource::x_FindBestTSE()
-*
-* Revision 1.16  2002/03/20 04:50:13  kimelman
-* GB loader added
-*
-* Revision 1.15  2002/03/07 21:25:34  grichenk
-* +GetSeq_annot() in annotation iterators
-*
-* Revision 1.14  2002/03/05 18:44:55  grichenk
-* +x_UpdateTSEStatus()
-*
-* Revision 1.13  2002/03/05 16:09:10  grichenk
-* Added x_CleanupUnusedEntries()
-*
-* Revision 1.12  2002/03/04 15:09:27  grichenk
-* Improved MT-safety. Added live/dead flag to CDataSource methods.
-*
-* Revision 1.11  2002/03/01 19:41:34  gouriano
-* *** empty log message ***
-*
-* Revision 1.10  2002/02/28 20:53:32  grichenk
-* Implemented attaching segmented sequence data. Fixed minor bugs.
-*
-* Revision 1.9  2002/02/21 19:27:05  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.8  2002/02/07 21:27:35  grichenk
-* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
-*
-* Revision 1.7  2002/02/06 21:46:11  gouriano
-* *** empty log message ***
-*
-* Revision 1.6  2002/02/05 21:46:28  gouriano
-* added FindSeqid function, minor tuneup in CSeq_id_mapper
-*
-* Revision 1.5  2002/01/29 17:45:00  grichenk
-* Added seq-id handles locking
-*
-* Revision 1.4  2002/01/28 19:44:49  gouriano
-* changed the interface of BioseqHandle: two functions moved from Scope
-*
-* Revision 1.3  2002/01/23 21:59:31  grichenk
-* Redesigned seq-id handles and mapper
-*
-* Revision 1.2  2002/01/18 15:56:24  gouriano
-* changed TSeqMaps definition
-*
-* Revision 1.1  2002/01/16 16:25:55  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:04:01  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 #include "tse_info.hpp"
@@ -127,6 +41,7 @@
 #include <objects/objmgr/data_loader.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/objmgr/mutex_pool.hpp>
 #include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -316,7 +231,11 @@ private:
                              CSeqMap& dmap, TSeqPos& dpos, TSeqPos dstop,
                              CScope& scope);
 
-    static CMutex sm_DataSource_Mutex;
+    // Used to lock a separate TSE set (an element of m_TSE_xxx)
+    static CMutexPool_Base<TTSESet> sm_TSESet_MP;
+
+    // Used to lock: m_Entries, m_TSE_seq, m_TSE_ref, m_SeqMaps
+    static CMutexPool_Base<CDataSource> sm_DataSource_MP;
 
     CDataLoader          *m_Loader;
     CRef<CSeq_entry>      m_pTopEntry;
@@ -359,7 +278,7 @@ CDataSource::~CDataSource(void)
     //LOG_POST("~CDataSource " << this );
     // Find and drop each TSE
     while (m_Entries.size() > 0) {
-        _ASSERT( !m_Entries.begin()->second->Locked() );
+        _ASSERT( !m_Entries.begin()->second->CounterLocked() );
         DropTSE(*(m_Entries.begin()->second->m_TSE));
     }
     if(m_Loader) delete m_Loader;
@@ -392,5 +311,99 @@ CSeq_id_Mapper& CDataSource::GetIdMapper(void) const
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.26  2002/07/08 20:51:01  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.25  2002/06/04 17:18:33  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
+* Revision 1.24  2002/05/31 17:53:00  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
+* Revision 1.23  2002/05/28 18:00:43  gouriano
+* DebugDump added
+*
+* Revision 1.22  2002/05/14 20:06:26  grichenk
+* Improved CTSE_Info locking by CDataSource and CDataLoader
+*
+* Revision 1.21  2002/05/06 03:28:47  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.20  2002/05/03 21:28:09  ucko
+* Introduce T(Signed)SeqPos.
+*
+* Revision 1.19  2002/04/17 21:09:14  grichenk
+* Fixed annotations loading
+* +IsSynonym()
+*
+* Revision 1.18  2002/04/11 12:08:21  grichenk
+* Fixed GetResolvedSeqMap() implementation
+*
+* Revision 1.17  2002/03/28 14:02:31  grichenk
+* Added scope history checks to CDataSource::x_FindBestTSE()
+*
+* Revision 1.16  2002/03/20 04:50:13  kimelman
+* GB loader added
+*
+* Revision 1.15  2002/03/07 21:25:34  grichenk
+* +GetSeq_annot() in annotation iterators
+*
+* Revision 1.14  2002/03/05 18:44:55  grichenk
+* +x_UpdateTSEStatus()
+*
+* Revision 1.13  2002/03/05 16:09:10  grichenk
+* Added x_CleanupUnusedEntries()
+*
+* Revision 1.12  2002/03/04 15:09:27  grichenk
+* Improved MT-safety. Added live/dead flag to CDataSource methods.
+*
+* Revision 1.11  2002/03/01 19:41:34  gouriano
+* *** empty log message ***
+*
+* Revision 1.10  2002/02/28 20:53:32  grichenk
+* Implemented attaching segmented sequence data. Fixed minor bugs.
+*
+* Revision 1.9  2002/02/21 19:27:05  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.8  2002/02/07 21:27:35  grichenk
+* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
+*
+* Revision 1.7  2002/02/06 21:46:11  gouriano
+* *** empty log message ***
+*
+* Revision 1.6  2002/02/05 21:46:28  gouriano
+* added FindSeqid function, minor tuneup in CSeq_id_mapper
+*
+* Revision 1.5  2002/01/29 17:45:00  grichenk
+* Added seq-id handles locking
+*
+* Revision 1.4  2002/01/28 19:44:49  gouriano
+* changed the interface of BioseqHandle: two functions moved from Scope
+*
+* Revision 1.3  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
+* Revision 1.2  2002/01/18 15:56:24  gouriano
+* changed TSeqMaps definition
+*
+* Revision 1.1  2002/01/16 16:25:55  gouriano
+* restructured objmgr
+*
+* Revision 1.1  2002/01/11 19:04:01  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/
 
 #endif  // DATA_SOURCE__HPP

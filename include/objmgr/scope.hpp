@@ -37,70 +37,12 @@
 *           Its purpose is to define a scope of visibility and reference
 *           resolution and provide access to the bio sequence data
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.18  2002/06/04 17:18:32  kimelman
-* memory cleanup :  new/delete/Cref rearrangements
-*
-* Revision 1.17  2002/05/28 18:01:11  gouriano
-* DebugDump added
-*
-* Revision 1.16  2002/05/14 20:06:23  grichenk
-* Improved CTSE_Info locking by CDataSource and CDataLoader
-*
-* Revision 1.15  2002/05/06 03:30:36  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.14  2002/05/03 21:28:02  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.13  2002/04/17 21:09:38  grichenk
-* Fixed annotations loading
-*
-* Revision 1.12  2002/04/08 19:14:15  gouriano
-* corrected comment to AddDefaults()
-*
-* Revision 1.11  2002/03/27 18:46:26  gouriano
-* three functions made public
-*
-* Revision 1.10  2002/03/20 21:20:38  grichenk
-* +CScope::ResetHistory()
-*
-* Revision 1.9  2002/02/21 19:27:00  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.8  2002/02/07 21:27:33  grichenk
-* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
-*
-* Revision 1.7  2002/02/06 21:46:43  gouriano
-* *** empty log message ***
-*
-* Revision 1.6  2002/02/05 21:47:21  gouriano
-* added FindSeqid function, minor tuneup in CSeq_id_mapper
-*
-* Revision 1.5  2002/01/28 19:45:33  gouriano
-* changed the interface of BioseqHandle: two functions moved from Scope
-*
-* Revision 1.4  2002/01/23 21:59:29  grichenk
-* Redesigned seq-id handles and mapper
-*
-* Revision 1.3  2002/01/18 17:07:12  gouriano
-* renamed GetSequence to GetSeqVector
-*
-* Revision 1.2  2002/01/16 16:26:35  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:04:03  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 #include <objects/objmgr/annot_types_ci.hpp>
 #include <objects/objmgr/seq_map.hpp>
 #include <objects/objmgr/seqmatch_info.hpp>
+#include <objects/objmgr/mutex_pool.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbithr.hpp>
@@ -207,7 +149,7 @@ private:
 
     TRequestHistory m_History;
 
-    static CMutex sm_Scope_Mutex;
+    static CMutexPool_Base<CScope> sm_Scope_MP;
 
     friend class CObjectManager;
     friend class CSeqVector;
@@ -218,5 +160,72 @@ private:
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.19  2002/07/08 20:50:56  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.18  2002/06/04 17:18:32  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
+* Revision 1.17  2002/05/28 18:01:11  gouriano
+* DebugDump added
+*
+* Revision 1.16  2002/05/14 20:06:23  grichenk
+* Improved CTSE_Info locking by CDataSource and CDataLoader
+*
+* Revision 1.15  2002/05/06 03:30:36  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.14  2002/05/03 21:28:02  ucko
+* Introduce T(Signed)SeqPos.
+*
+* Revision 1.13  2002/04/17 21:09:38  grichenk
+* Fixed annotations loading
+*
+* Revision 1.12  2002/04/08 19:14:15  gouriano
+* corrected comment to AddDefaults()
+*
+* Revision 1.11  2002/03/27 18:46:26  gouriano
+* three functions made public
+*
+* Revision 1.10  2002/03/20 21:20:38  grichenk
+* +CScope::ResetHistory()
+*
+* Revision 1.9  2002/02/21 19:27:00  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.8  2002/02/07 21:27:33  grichenk
+* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
+*
+* Revision 1.7  2002/02/06 21:46:43  gouriano
+* *** empty log message ***
+*
+* Revision 1.6  2002/02/05 21:47:21  gouriano
+* added FindSeqid function, minor tuneup in CSeq_id_mapper
+*
+* Revision 1.5  2002/01/28 19:45:33  gouriano
+* changed the interface of BioseqHandle: two functions moved from Scope
+*
+* Revision 1.4  2002/01/23 21:59:29  grichenk
+* Redesigned seq-id handles and mapper
+*
+* Revision 1.3  2002/01/18 17:07:12  gouriano
+* renamed GetSequence to GetSeqVector
+*
+* Revision 1.2  2002/01/16 16:26:35  gouriano
+* restructured objmgr
+*
+* Revision 1.1  2002/01/11 19:04:03  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/
 
 #endif  // SCOPE__HPP

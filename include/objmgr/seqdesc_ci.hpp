@@ -31,20 +31,6 @@
 * File Description:
 *   Object manager iterators
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2002/05/06 03:30:36  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.2  2002/02/21 19:27:01  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.1  2002/01/11 19:04:04  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 
@@ -87,5 +73,27 @@ private:
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.4  2002/07/08 20:50:56  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.3  2002/05/06 03:30:36  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.2  2002/02/21 19:27:01  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.1  2002/01/11 19:04:04  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/
 
 #endif  // SEQDESC_CI__HPP

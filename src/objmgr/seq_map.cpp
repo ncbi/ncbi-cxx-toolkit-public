@@ -29,73 +29,9 @@
 *           Andrei Gourianov
 *
 * File Description:
+*   Sequence map for the Object Manager. Describes sequence as a set of
+*   segments of different types (data, reference, gap or end).
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.21  2002/05/29 21:21:13  gouriano
-* added debug dump
-*
-* Revision 1.20  2002/05/06 17:43:06  ivanov
-* ssize_t changed to long
-*
-* Revision 1.19  2002/05/06 17:03:49  ivanov
-* Sorry. Rollback to R1.17
-*
-* Revision 1.18  2002/05/06 16:56:23  ivanov
-* Fixed typo ssize_t -> size_t
-*
-* Revision 1.17  2002/05/06 03:28:47  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.16  2002/05/03 21:28:10  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.15  2002/05/02 20:42:38  grichenk
-* throw -> THROW1_TRACE
-*
-* Revision 1.14  2002/04/30 18:55:41  gouriano
-* added GetRefSeqid function
-*
-* Revision 1.13  2002/04/11 12:07:30  grichenk
-* Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
-*
-* Revision 1.12  2002/04/04 21:33:55  grichenk
-* Fixed x_FindSegment() for sequences with unresolved segments
-*
-* Revision 1.11  2002/04/03 18:06:48  grichenk
-* Fixed segmented sequence bugs (invalid positioning of literals
-* and gaps). Improved CSeqVector performance.
-*
-* Revision 1.9  2002/03/08 21:36:21  gouriano
-* *** empty log message ***
-*
-* Revision 1.8  2002/03/08 21:24:35  gouriano
-* fixed errors with unresolvable references
-*
-* Revision 1.7  2002/02/25 21:05:29  grichenk
-* Removed seq-data references caching. Increased MT-safety. Fixed typos.
-*
-* Revision 1.6  2002/02/21 19:27:06  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.5  2002/02/01 21:49:38  gouriano
-* minor changes to make it compilable and run on Solaris Workshop
-*
-* Revision 1.4  2002/01/30 22:09:28  gouriano
-* changed CSeqMap interface
-*
-* Revision 1.3  2002/01/23 21:59:32  grichenk
-* Redesigned seq-id handles and mapper
-*
-* Revision 1.2  2002/01/16 16:25:56  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:06:24  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 #include <objects/objmgr/seq_map.hpp>
@@ -298,3 +234,77 @@ void CSeqMap::CSegmentInfo::DebugDump(CDebugDumpContext ddc,
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.22  2002/07/08 20:51:02  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.21  2002/05/29 21:21:13  gouriano
+* added debug dump
+*
+* Revision 1.20  2002/05/06 17:43:06  ivanov
+* ssize_t changed to long
+*
+* Revision 1.19  2002/05/06 17:03:49  ivanov
+* Sorry. Rollback to R1.17
+*
+* Revision 1.18  2002/05/06 16:56:23  ivanov
+* Fixed typo ssize_t -> size_t
+*
+* Revision 1.17  2002/05/06 03:28:47  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.16  2002/05/03 21:28:10  ucko
+* Introduce T(Signed)SeqPos.
+*
+* Revision 1.15  2002/05/02 20:42:38  grichenk
+* throw -> THROW1_TRACE
+*
+* Revision 1.14  2002/04/30 18:55:41  gouriano
+* added GetRefSeqid function
+*
+* Revision 1.13  2002/04/11 12:07:30  grichenk
+* Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
+*
+* Revision 1.12  2002/04/04 21:33:55  grichenk
+* Fixed x_FindSegment() for sequences with unresolved segments
+*
+* Revision 1.11  2002/04/03 18:06:48  grichenk
+* Fixed segmented sequence bugs (invalid positioning of literals
+* and gaps). Improved CSeqVector performance.
+*
+* Revision 1.9  2002/03/08 21:36:21  gouriano
+* *** empty log message ***
+*
+* Revision 1.8  2002/03/08 21:24:35  gouriano
+* fixed errors with unresolvable references
+*
+* Revision 1.7  2002/02/25 21:05:29  grichenk
+* Removed seq-data references caching. Increased MT-safety. Fixed typos.
+*
+* Revision 1.6  2002/02/21 19:27:06  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.5  2002/02/01 21:49:38  gouriano
+* minor changes to make it compilable and run on Solaris Workshop
+*
+* Revision 1.4  2002/01/30 22:09:28  gouriano
+* changed CSeqMap interface
+*
+* Revision 1.3  2002/01/23 21:59:32  grichenk
+* Redesigned seq-id handles and mapper
+*
+* Revision 1.2  2002/01/16 16:25:56  gouriano
+* restructured objmgr
+*
+* Revision 1.1  2002/01/11 19:06:24  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/

@@ -28,8 +28,53 @@
 * File Description:
 *   Object manager iterators
 *
+*/
+
+#include <objects/objmgr/feat_ci.hpp>
+#include "annot_object.hpp"
+
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
+
+CFeat_CI::CFeat_CI(CScope& scope,
+                   const CSeq_loc& loc,
+                   SAnnotSelector::TFeatChoice feat_choice,
+                   EResolveMethod resolve)
+    : CAnnotTypes_CI(scope, loc,
+          SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_choice),
+          resolve)
+{
+    return;
+}
+
+
+const CSeq_feat& CFeat_CI::operator* (void) const
+{
+    CAnnotObject* annot = Get();
+    _ASSERT(annot  &&  annot->IsFeat());
+    return annot->GetFeat();
+}
+
+
+const CSeq_feat* CFeat_CI::operator-> (void) const
+{
+    CAnnotObject* annot = Get();
+    _ASSERT(annot  &&  annot->IsFeat());
+    return &annot->GetFeat();
+}
+
+END_SCOPE(objects)
+END_NCBI_SCOPE
+
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/07/08 20:51:01  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
 * Revision 1.8  2002/05/06 03:28:47  vakatov
 * OM/OM1 renaming
 *
@@ -60,98 +105,3 @@
 *
 * ===========================================================================
 */
-
-#include <objects/objmgr/feat_ci.hpp>
-#include "annot_object.hpp"
-
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
-
-
-CFeat_CI::CFeat_CI(void)
-{
-    return;
-}
-
-
-CFeat_CI::CFeat_CI(CScope& scope,
-                   const CSeq_loc& loc,
-                   SAnnotSelector::TFeatChoice feat_choice,
-                   EResolveMethod resolve)
-    : CAnnotTypes_CI(scope, loc,
-          SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_choice),
-          resolve)
-{
-    return;
-}
-
-
-CFeat_CI::CFeat_CI(CBioseq_Handle& bioseq,
-                   TSeqPos start, TSeqPos stop,
-                   SAnnotSelector::TFeatChoice feat_choice,
-                   EResolveMethod resolve)
-    : CAnnotTypes_CI(bioseq, start, stop,
-          SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_choice),
-          resolve)
-{
-    return;
-}
-
-
-CFeat_CI::CFeat_CI(const CFeat_CI& iter)
-    : CAnnotTypes_CI(iter)
-{
-    return;
-}
-
-
-CFeat_CI::~CFeat_CI(void)
-{
-    return;
-}
-
-
-CFeat_CI& CFeat_CI::operator= (const CFeat_CI& iter)
-{
-    CAnnotTypes_CI::operator=(iter);
-    return *this;
-}
-
-
-CFeat_CI& CFeat_CI::operator++ (void)
-{
-    Walk();
-    return *this;
-}
-
-
-CFeat_CI& CFeat_CI::operator++ (int)
-{
-    Walk();
-    return *this;
-}
-
-
-CFeat_CI::operator bool (void) const
-{
-    return IsValid();
-}
-
-
-const CSeq_feat& CFeat_CI::operator* (void) const
-{
-    CAnnotObject* annot = Get();
-    _ASSERT(annot  &&  annot->IsFeat());
-    return annot->GetFeat();
-}
-
-
-const CSeq_feat* CFeat_CI::operator-> (void) const
-{
-    CAnnotObject* annot = Get();
-    _ASSERT(annot  &&  annot->IsFeat());
-    return &annot->GetFeat();
-}
-
-END_SCOPE(objects)
-END_NCBI_SCOPE

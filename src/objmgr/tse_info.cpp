@@ -28,31 +28,6 @@
 * File Description:
 *   TSE info -- entry for data source seq-id to TSE map
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2002/07/01 15:32:30  grichenk
-* Fixed 'unused variable depth3' warning
-*
-* Revision 1.5  2002/05/31 17:53:00  grichenk
-* Optimized for better performance (CTSE_Info uses atomic counter,
-* delayed annotations indexing, no location convertions in
-* CAnnot_Types_CI if no references resolution is required etc.)
-*
-* Revision 1.4  2002/05/29 21:21:13  gouriano
-* added debug dump
-*
-* Revision 1.3  2002/03/14 18:39:13  gouriano
-* added mutex for MT protection
-*
-* Revision 1.2  2002/02/21 19:27:06  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.1  2002/02/07 21:25:05  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
 */
 
 
@@ -72,6 +47,10 @@ BEGIN_SCOPE(objects)
 //
 
 
+const size_t kTSEMutexPoolSize = 16;
+static CMutex s_TSEMutexPool[kTSEMutexPoolSize];
+
+
 CTSE_Info::CTSE_Info(void)
     : m_Dead(false)
 {
@@ -82,6 +61,19 @@ CTSE_Info::CTSE_Info(void)
 CTSE_Info::~CTSE_Info(void)
 {
 }
+
+
+CFastMutex CTSE_Info::sm_TSEPool_Mutex;
+
+
+void CTSE_Info::x_AssignMutex(void) const
+{
+    CFastMutexGuard guard(sm_TSEPool_Mutex);
+    if ( m_TSE_Mutex )
+        return;
+    m_TSE_Mutex = &s_TSEMutexPool[((size_t)const_cast<CTSE_Info*>(this) >> 4) % kTSEMutexPoolSize];
+}
+
 
 void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
@@ -153,3 +145,36 @@ void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.7  2002/07/08 20:51:02  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.6  2002/07/01 15:32:30  grichenk
+* Fixed 'unused variable depth3' warning
+*
+* Revision 1.5  2002/05/31 17:53:00  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
+* Revision 1.4  2002/05/29 21:21:13  gouriano
+* added debug dump
+*
+* Revision 1.3  2002/03/14 18:39:13  gouriano
+* added mutex for MT protection
+*
+* Revision 1.2  2002/02/21 19:27:06  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.1  2002/02/07 21:25:05  grichenk
+* Initial revision
+*
+*
+* ===========================================================================
+*/

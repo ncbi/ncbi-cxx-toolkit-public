@@ -28,8 +28,70 @@
 * File Description:
 *   Object manager iterators
 *
+*/
+
+#include <objects/objmgr/align_ci.hpp>
+
+#include "annot_object.hpp"
+
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
+
+
+CAlign_CI::CAlign_CI(CScope& scope,
+                     const CSeq_loc& loc,
+                     EResolveMethod resolve)
+    : CAnnotTypes_CI(scope, loc,
+          SAnnotSelector(CSeq_annot::C_Data::e_Align),
+          resolve)
+{
+    return;
+}
+
+
+CAlign_CI::CAlign_CI(CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+                     EResolveMethod resolve)
+    : CAnnotTypes_CI(bioseq, start, stop,
+          SAnnotSelector(CSeq_annot::C_Data::e_Align),
+          resolve)
+{
+    return;
+}
+
+
+CAlign_CI::~CAlign_CI(void)
+{
+    return;
+}
+
+
+const CSeq_align& CAlign_CI::operator* (void) const
+{
+    CAnnotObject* annot = Get();
+    _ASSERT(annot  &&  annot->IsAlign());
+    return annot->GetAlign();
+}
+
+
+const CSeq_align* CAlign_CI::operator-> (void) const
+{
+    CAnnotObject* annot = Get();
+    _ASSERT(annot  &&  annot->IsAlign());
+    return &annot->GetAlign();
+}
+
+END_SCOPE(objects)
+END_NCBI_SCOPE
+
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/07/08 20:51:00  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
 * Revision 1.8  2002/05/06 03:28:46  vakatov
 * OM/OM1 renaming
 *
@@ -60,97 +122,3 @@
 *
 * ===========================================================================
 */
-
-#include <objects/objmgr/align_ci.hpp>
-
-#include "annot_object.hpp"
-
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
-
-
-
-CAlign_CI::CAlign_CI(void)
-{
-    return;
-}
-
-
-CAlign_CI::CAlign_CI(CScope& scope,
-                     const CSeq_loc& loc,
-                     EResolveMethod resolve)
-    : CAnnotTypes_CI(scope, loc,
-          SAnnotSelector(CSeq_annot::C_Data::e_Align),
-          resolve)
-{
-    return;
-}
-
-
-CAlign_CI::CAlign_CI(CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-                     EResolveMethod resolve)
-    : CAnnotTypes_CI(bioseq, start, stop,
-          SAnnotSelector(CSeq_annot::C_Data::e_Align),
-          resolve)
-{
-    return;
-}
-
-
-CAlign_CI::CAlign_CI(const CAlign_CI& iter)
-    : CAnnotTypes_CI(iter)
-{
-    return;
-}
-
-
-CAlign_CI::~CAlign_CI(void)
-{
-    return;
-}
-
-
-CAlign_CI& CAlign_CI::operator= (const CAlign_CI& iter)
-{
-    CAnnotTypes_CI::operator=(iter);
-    return *this;
-}
-
-
-CAlign_CI& CAlign_CI::operator++ (void)
-{
-    Walk();
-    return *this;
-}
-
-
-CAlign_CI& CAlign_CI::operator++ (int)
-{
-    Walk();
-    return *this;
-}
-
-
-CAlign_CI::operator bool (void) const
-{
-    return IsValid();
-}
-
-
-const CSeq_align& CAlign_CI::operator* (void) const
-{
-    CAnnotObject* annot = Get();
-    _ASSERT(annot  &&  annot->IsAlign());
-    return annot->GetAlign();
-}
-
-
-const CSeq_align* CAlign_CI::operator-> (void) const
-{
-    CAnnotObject* annot = Get();
-    _ASSERT(annot  &&  annot->IsAlign());
-    return &annot->GetAlign();
-}
-
-END_SCOPE(objects)
-END_NCBI_SCOPE

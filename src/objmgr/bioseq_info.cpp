@@ -28,20 +28,6 @@
 * File Description:
 *   Bioseq info for data source
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2002/05/29 21:21:13  gouriano
-* added debug dump
-*
-* Revision 1.2  2002/02/21 19:27:05  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.1  2002/02/07 21:25:05  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
 */
 
 
@@ -128,3 +114,25 @@ void CBioseq_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.4  2002/07/08 20:51:01  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.3  2002/05/29 21:21:13  gouriano
+* added debug dump
+*
+* Revision 1.2  2002/02/21 19:27:05  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.1  2002/02/07 21:25:05  grichenk
+* Initial revision
+*
+*
+* ===========================================================================
+*/

@@ -33,44 +33,6 @@
 *           Object manager manages data objects,
 *           provides them to Scopes when needed
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.11  2002/06/04 17:18:33  kimelman
-* memory cleanup :  new/delete/Cref rearrangements
-*
-* Revision 1.10  2002/05/28 18:00:43  gouriano
-* DebugDump added
-*
-* Revision 1.9  2002/05/06 03:28:47  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.8  2002/05/02 20:42:37  grichenk
-* throw -> THROW1_TRACE
-*
-* Revision 1.7  2002/04/22 20:04:11  grichenk
-* Fixed TSE dropping
-*
-* Revision 1.6  2002/02/21 19:27:06  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.5  2002/01/29 17:45:21  grichenk
-* Removed debug output
-*
-* Revision 1.4  2002/01/23 21:59:31  grichenk
-* Redesigned seq-id handles and mapper
-*
-* Revision 1.3  2002/01/18 15:53:29  gouriano
-* implemented RegisterTopLevelSeqEntry
-*
-* Revision 1.2  2002/01/16 16:25:58  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:06:21  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 #include <objects/objmgr/object_manager.hpp>
@@ -444,3 +406,49 @@ void CObjectManager::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.12  2002/07/08 20:51:02  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.11  2002/06/04 17:18:33  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
+* Revision 1.10  2002/05/28 18:00:43  gouriano
+* DebugDump added
+*
+* Revision 1.9  2002/05/06 03:28:47  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.8  2002/05/02 20:42:37  grichenk
+* throw -> THROW1_TRACE
+*
+* Revision 1.7  2002/04/22 20:04:11  grichenk
+* Fixed TSE dropping
+*
+* Revision 1.6  2002/02/21 19:27:06  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.5  2002/01/29 17:45:21  grichenk
+* Removed debug output
+*
+* Revision 1.4  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
+* Revision 1.3  2002/01/18 15:53:29  gouriano
+* implemented RegisterTopLevelSeqEntry
+*
+* Revision 1.2  2002/01/16 16:25:58  gouriano
+* restructured objmgr
+*
+* Revision 1.1  2002/01/11 19:06:21  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/

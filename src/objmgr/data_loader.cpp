@@ -28,19 +28,6 @@
 * File Description:
 *   Data loader base class for object manager
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2002/05/06 03:28:46  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.2  2002/03/18 17:26:35  grichenk
-* +CDataLoader::x_GetSeq_id(), x_GetSeq_id_Key(), x_GetSeq_id_Handle()
-*
-* Revision 1.1  2002/01/11 19:06:17  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 
@@ -119,3 +106,24 @@ CSeq_id_Handle CDataLoader::x_GetSeq_id_Handle(TSeq_id_Key key)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.4  2002/07/08 20:51:01  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.3  2002/05/06 03:28:46  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.2  2002/03/18 17:26:35  grichenk
+* +CDataLoader::x_GetSeq_id(), x_GetSeq_id_Key(), x_GetSeq_id_Handle()
+*
+* Revision 1.1  2002/01/11 19:06:17  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/

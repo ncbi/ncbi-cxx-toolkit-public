@@ -27,73 +27,6 @@
 *
 * File Description:
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.19  2002/06/12 14:39:02  grichenk
-* Renamed enumerators
-*
-* Revision 1.18  2002/06/06 21:00:42  clausen
-* Added include for scope.hpp
-*
-* Revision 1.17  2002/05/31 17:53:00  grichenk
-* Optimized for better performance (CTSE_Info uses atomic counter,
-* delayed annotations indexing, no location convertions in
-* CAnnot_Types_CI if no references resolution is required etc.)
-*
-* Revision 1.16  2002/05/24 14:57:12  grichenk
-* SerialAssign<>() -> CSerialObject::Assign()
-*
-* Revision 1.15  2002/05/21 18:39:30  grichenk
-* CBioseq_Handle::GetResolvedSeqMap() -> CreateResolvedSeqMap()
-*
-* Revision 1.14  2002/05/06 03:28:46  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.13  2002/05/03 21:28:08  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.12  2002/04/29 16:23:28  grichenk
-* GetSequenceView() reimplemented in CSeqVector.
-* CSeqVector optimized for better performance.
-*
-* Revision 1.11  2002/04/23 19:01:07  grichenk
-* Added optional flag to GetSeqVector() and GetSequenceView()
-* for switching to IUPAC encoding.
-*
-* Revision 1.10  2002/04/22 20:06:59  grichenk
-* +GetSequenceView(), +x_IsSynonym()
-*
-* Revision 1.9  2002/04/11 12:07:30  grichenk
-* Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
-*
-* Revision 1.8  2002/03/19 19:16:28  gouriano
-* added const qualifier to GetTitle and GetSeqVector
-*
-* Revision 1.7  2002/03/15 18:10:07  grichenk
-* Removed CRef<CSeq_id> from CSeq_id_Handle, added
-* key to seq-id map th CSeq_id_Mapper
-*
-* Revision 1.6  2002/03/04 15:08:44  grichenk
-* Improved CTSE_Info locks
-*
-* Revision 1.5  2002/02/21 19:27:05  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.4  2002/01/28 19:44:49  gouriano
-* changed the interface of BioseqHandle: two functions moved from Scope
-*
-* Revision 1.3  2002/01/23 21:59:31  grichenk
-* Redesigned seq-id handles and mapper
-*
-* Revision 1.2  2002/01/16 16:25:56  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:06:17  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 #include <objects/objmgr/bioseq_handle.hpp>
@@ -250,7 +183,7 @@ void CBioseq_Handle::x_ResolveTo(
     m_Scope = &scope;
     m_DataSource = &datasource;
     m_Entry = &entry;
-    CMutexGuard guard(CDataSource::sm_DataSource_Mutex);
+    //### CMutexGuard guard(CDataSource::sm_DataSource_Mutex);
     if ( m_TSE )
         m_TSE->Add(-1);
     m_TSE = &tse;
@@ -267,3 +200,78 @@ const CSeqMap& CBioseq_Handle::CreateResolvedSeqMap(void) const
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.20  2002/07/08 20:51:01  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.19  2002/06/12 14:39:02  grichenk
+* Renamed enumerators
+*
+* Revision 1.18  2002/06/06 21:00:42  clausen
+* Added include for scope.hpp
+*
+* Revision 1.17  2002/05/31 17:53:00  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
+* Revision 1.16  2002/05/24 14:57:12  grichenk
+* SerialAssign<>() -> CSerialObject::Assign()
+*
+* Revision 1.15  2002/05/21 18:39:30  grichenk
+* CBioseq_Handle::GetResolvedSeqMap() -> CreateResolvedSeqMap()
+*
+* Revision 1.14  2002/05/06 03:28:46  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.13  2002/05/03 21:28:08  ucko
+* Introduce T(Signed)SeqPos.
+*
+* Revision 1.12  2002/04/29 16:23:28  grichenk
+* GetSequenceView() reimplemented in CSeqVector.
+* CSeqVector optimized for better performance.
+*
+* Revision 1.11  2002/04/23 19:01:07  grichenk
+* Added optional flag to GetSeqVector() and GetSequenceView()
+* for switching to IUPAC encoding.
+*
+* Revision 1.10  2002/04/22 20:06:59  grichenk
+* +GetSequenceView(), +x_IsSynonym()
+*
+* Revision 1.9  2002/04/11 12:07:30  grichenk
+* Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
+*
+* Revision 1.8  2002/03/19 19:16:28  gouriano
+* added const qualifier to GetTitle and GetSeqVector
+*
+* Revision 1.7  2002/03/15 18:10:07  grichenk
+* Removed CRef<CSeq_id> from CSeq_id_Handle, added
+* key to seq-id map th CSeq_id_Mapper
+*
+* Revision 1.6  2002/03/04 15:08:44  grichenk
+* Improved CTSE_Info locks
+*
+* Revision 1.5  2002/02/21 19:27:05  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.4  2002/01/28 19:44:49  gouriano
+* changed the interface of BioseqHandle: two functions moved from Scope
+*
+* Revision 1.3  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
+* Revision 1.2  2002/01/16 16:25:56  gouriano
+* restructured objmgr
+*
+* Revision 1.1  2002/01/11 19:06:17  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/

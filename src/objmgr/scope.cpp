@@ -34,77 +34,6 @@
 *           Its purpose is to define a scope of visibility and reference
 *           resolution and provide access to the bio sequence data
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.22  2002/06/04 17:18:33  kimelman
-* memory cleanup :  new/delete/Cref rearrangements
-*
-* Revision 1.21  2002/05/28 18:00:43  gouriano
-* DebugDump added
-*
-* Revision 1.20  2002/05/14 20:06:26  grichenk
-* Improved CTSE_Info locking by CDataSource and CDataLoader
-*
-* Revision 1.19  2002/05/06 03:28:47  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.18  2002/04/22 20:04:39  grichenk
-* Fixed TSE dropping, removed commented code
-*
-* Revision 1.17  2002/04/17 21:09:40  grichenk
-* Fixed annotations loading
-*
-* Revision 1.16  2002/03/28 14:02:31  grichenk
-* Added scope history checks to CDataSource::x_FindBestTSE()
-*
-* Revision 1.15  2002/03/27 18:45:44  gouriano
-* three functions made public
-*
-* Revision 1.14  2002/03/20 21:20:39  grichenk
-* +CScope::ResetHistory()
-*
-* Revision 1.13  2002/02/28 20:53:32  grichenk
-* Implemented attaching segmented sequence data. Fixed minor bugs.
-*
-* Revision 1.12  2002/02/25 21:05:29  grichenk
-* Removed seq-data references caching. Increased MT-safety. Fixed typos.
-*
-* Revision 1.11  2002/02/21 19:27:06  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.10  2002/02/07 21:27:35  grichenk
-* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
-*
-* Revision 1.9  2002/02/06 21:46:11  gouriano
-* *** empty log message ***
-*
-* Revision 1.8  2002/02/05 21:46:28  gouriano
-* added FindSeqid function, minor tuneup in CSeq_id_mapper
-*
-* Revision 1.7  2002/01/29 17:45:34  grichenk
-* Removed debug output
-*
-* Revision 1.6  2002/01/28 19:44:49  gouriano
-* changed the interface of BioseqHandle: two functions moved from Scope
-*
-* Revision 1.5  2002/01/23 21:59:31  grichenk
-* Redesigned seq-id handles and mapper
-*
-* Revision 1.4  2002/01/18 17:06:29  gouriano
-* renamed CScope::GetSequence to CScope::GetSeqVector
-*
-* Revision 1.3  2002/01/18 15:54:14  gouriano
-* changed DropTopLevelSeqEntry()
-*
-* Revision 1.2  2002/01/16 16:25:57  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:06:22  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 #include <objects/objmgr/scope.hpp>
@@ -124,7 +53,7 @@ BEGIN_SCOPE(objects)
 //
 
 
-CMutex CScope::sm_Scope_Mutex;
+CMutexPool_Base<CScope> CScope::sm_Scope_MP;
 
 
 CScope::CScope(CObjectManager& objmgr)
@@ -159,7 +88,7 @@ void CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry)
 
 bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
 {
-    CMutexGuard guard(sm_Scope_Mutex);
+    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
     iterate (set<CDataSource*>, it, m_setDataSrc) {
         if ( (*it)->AttachAnnot(entry, annot) ) {
             return true;
@@ -171,7 +100,7 @@ bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
 
 bool CScope::AttachEntry(const CSeq_entry& parent, CSeq_entry& entry)
 {
-    CMutexGuard guard(sm_Scope_Mutex);
+    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
     iterate (set<CDataSource*>, it, m_setDataSrc) {
         if ( (*it)->AttachEntry(parent, entry) ) {
             return true;
@@ -183,7 +112,7 @@ bool CScope::AttachEntry(const CSeq_entry& parent, CSeq_entry& entry)
 
 bool CScope::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
 {
-    CMutexGuard guard(sm_Scope_Mutex);
+    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
     iterate (set<CDataSource*>, it, m_setDataSrc) {
         if ( (*it)->AttachMap(bioseq, seqmap) ) {
             return true;
@@ -196,7 +125,7 @@ bool CScope::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
 bool CScope::AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
                              TSeqPosition start, TSeqLength length)
 {
-    CMutexGuard guard(sm_Scope_Mutex);
+    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
     CRef<CDelta_seq> dseq = new CDelta_seq;
     dseq->SetLiteral().SetSeq_data(seq);
     dseq->SetLiteral().SetLength(length);
@@ -211,12 +140,12 @@ bool CScope::AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
 
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
 {
-    CMutexGuard guard(sm_Scope_Mutex);
+    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
     CSeqMatch_Info match = x_BestResolve(id);
     if (!match)
         return CBioseq_Handle();
     x_AddToHistory(*match.m_TSE);
-    match.m_TSE->Unlock(); // Locked by x_BestResolve()
+    match.m_TSE->UnlockCounter(); // Locked by x_BestResolve()
     return match.m_DataSource->GetBioseqHandle(*this, id);
 }
 
@@ -224,7 +153,7 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
 void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
                        const string& searchBy) const
 {
-    CMutexGuard guard(sm_Scope_Mutex);
+    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
     setId.clear();
 
     TSeq_id_HandleSet setSource, setResult;
@@ -296,11 +225,11 @@ CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
         x_ThrowConflict(eConflict_Live, best, extra_live);
     }
     if ( best ) {
-        best.m_TSE->Lock(); // Lock the best TSE
+        best.m_TSE->LockCounter(); // Lock the best TSE
     }
     iterate (set<CSeqMatch_Info>, bm_it, bm_set) {
         // Unlock all TSEs
-        bm_it->m_TSE->Unlock();
+        bm_it->m_TSE->UnlockCounter();
     }
     return best;
 }
@@ -310,14 +239,14 @@ void CScope::x_PopulateTSESet(CHandleRangeMap& loc,
                               CSeq_annot::C_Data::E_Choice sel,
                               CAnnotTypes_CI::TTSESet& tse_set)
 {
-    CMutexGuard guard(sm_Scope_Mutex);
+    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
     iterate (set<CDataSource*>, it, m_setDataSrc) {
         (*it)->PopulateTSESet(loc, tse_set, sel, *this);
     }
     //### Filter the set depending on the requests history?
     iterate (CAnnotTypes_CI::TTSESet, tse_it, tse_set) {
         x_AddToHistory(**tse_it);
-        (*tse_it)->Unlock();
+        (*tse_it)->UnlockCounter();
     }
 }
 
@@ -326,12 +255,12 @@ bool CScope::x_GetSequence(const CBioseq_Handle& handle,
                            TSeqPosition point,
                            SSeqData* seq_piece)
 {
-    CMutexGuard guard(sm_Scope_Mutex);
+    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
     CSeqMatch_Info match = x_BestResolve(*handle.GetSeqId());
     if (!match)
         return false;
     x_AddToHistory(*match.m_TSE);
-    match.m_TSE->Unlock();
+    match.m_TSE->UnlockCounter();
     return match.m_DataSource->GetSequence(handle, point, seq_piece, *this);
 }
 
@@ -356,7 +285,7 @@ const CScope::TRequestHistory& CScope::x_GetHistory(void)
 void CScope::x_AddToHistory(const CTSE_Info& tse, bool lock)
 {
     if ( m_History.insert(&tse).second  &&  lock ) {
-        tse.Lock();
+        tse.LockCounter();
     }
 }
 
@@ -390,9 +319,9 @@ void CScope::x_ThrowConflict(EConflict conflict_type,
 
 void CScope::ResetHistory(void)
 {
-    CMutexGuard guard(sm_Scope_Mutex);
+    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
     iterate(TRequestHistory, it, m_History) {
-        (*it)->Unlock();
+        (*it)->UnlockCounter();
     }
     m_History.clear();
 }
@@ -421,12 +350,12 @@ void CScope::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 void
 CScope::x_DetachFromOM(void)
 {
-    CMutexGuard guard(sm_Scope_Mutex);
+    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
     // Drop and release all TSEs
     if(!m_History.empty())
       {
         iterate(TRequestHistory, it, m_History) {
-          (*it)->Unlock();
+          (*it)->UnlockCounter();
         }
         m_History.clear();
       }
@@ -440,3 +369,82 @@ CScope::x_DetachFromOM(void)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.23  2002/07/08 20:51:02  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.22  2002/06/04 17:18:33  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
+* Revision 1.21  2002/05/28 18:00:43  gouriano
+* DebugDump added
+*
+* Revision 1.20  2002/05/14 20:06:26  grichenk
+* Improved CTSE_Info locking by CDataSource and CDataLoader
+*
+* Revision 1.19  2002/05/06 03:28:47  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.18  2002/04/22 20:04:39  grichenk
+* Fixed TSE dropping, removed commented code
+*
+* Revision 1.17  2002/04/17 21:09:40  grichenk
+* Fixed annotations loading
+*
+* Revision 1.16  2002/03/28 14:02:31  grichenk
+* Added scope history checks to CDataSource::x_FindBestTSE()
+*
+* Revision 1.15  2002/03/27 18:45:44  gouriano
+* three functions made public
+*
+* Revision 1.14  2002/03/20 21:20:39  grichenk
+* +CScope::ResetHistory()
+*
+* Revision 1.13  2002/02/28 20:53:32  grichenk
+* Implemented attaching segmented sequence data. Fixed minor bugs.
+*
+* Revision 1.12  2002/02/25 21:05:29  grichenk
+* Removed seq-data references caching. Increased MT-safety. Fixed typos.
+*
+* Revision 1.11  2002/02/21 19:27:06  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.10  2002/02/07 21:27:35  grichenk
+* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
+*
+* Revision 1.9  2002/02/06 21:46:11  gouriano
+* *** empty log message ***
+*
+* Revision 1.8  2002/02/05 21:46:28  gouriano
+* added FindSeqid function, minor tuneup in CSeq_id_mapper
+*
+* Revision 1.7  2002/01/29 17:45:34  grichenk
+* Removed debug output
+*
+* Revision 1.6  2002/01/28 19:44:49  gouriano
+* changed the interface of BioseqHandle: two functions moved from Scope
+*
+* Revision 1.5  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
+* Revision 1.4  2002/01/18 17:06:29  gouriano
+* renamed CScope::GetSequence to CScope::GetSeqVector
+*
+* Revision 1.3  2002/01/18 15:54:14  gouriano
+* changed DropTopLevelSeqEntry()
+*
+* Revision 1.2  2002/01/16 16:25:57  gouriano
+* restructured objmgr
+*
+* Revision 1.1  2002/01/11 19:06:22  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/

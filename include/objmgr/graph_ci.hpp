@@ -31,8 +31,90 @@
 * File Description:
 *   Object manager iterators
 *
+*/
+
+#include <objects/objmgr/annot_types_ci.hpp>
+#include <corelib/ncbistd.hpp>
+
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
+class CGraph_CI : public CAnnotTypes_CI
+{
+public:
+    CGraph_CI(void);
+    // Search all TSEs in all datasources
+    CGraph_CI(CScope& scope, const CSeq_loc& loc,
+              CAnnotTypes_CI::EResolveMethod resolve =
+              CAnnotTypes_CI::eResolve_TSE);
+    // Search only in TSE, containing the bioseq
+    CGraph_CI(CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+              CAnnotTypes_CI::EResolveMethod resolve =
+              CAnnotTypes_CI::eResolve_TSE);
+    CGraph_CI(const CGraph_CI& iter);
+    virtual ~CGraph_CI(void);
+    CGraph_CI& operator= (const CGraph_CI& iter);
+
+    CGraph_CI& operator++ (void);
+    CGraph_CI& operator++ (int);
+    operator bool (void) const;
+    const CSeq_graph& operator* (void) const;
+    const CSeq_graph* operator-> (void) const;
+};
+
+
+inline
+CGraph_CI::CGraph_CI(void)
+{
+    return;
+}
+
+inline
+CGraph_CI::CGraph_CI(const CGraph_CI& iter)
+    : CAnnotTypes_CI(iter)
+{
+    return;
+}
+
+inline
+CGraph_CI& CGraph_CI::operator= (const CGraph_CI& iter)
+{
+    CAnnotTypes_CI::operator=(iter);
+    return *this;
+}
+
+inline
+CGraph_CI& CGraph_CI::operator++ (void)
+{
+    Walk();
+    return *this;
+}
+
+inline
+CGraph_CI& CGraph_CI::operator++ (int)
+{
+    Walk();
+    return *this;
+}
+
+inline
+CGraph_CI::operator bool (void) const
+{
+    return IsValid();
+}
+
+
+END_SCOPE(objects)
+END_NCBI_SCOPE
+
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/07/08 20:50:56  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
 * Revision 1.10  2002/05/06 03:30:35  vakatov
 * OM/OM1 renaming
 *
@@ -69,37 +151,5 @@
 *
 * ===========================================================================
 */
-
-#include <objects/objmgr/annot_types_ci.hpp>
-#include <corelib/ncbistd.hpp>
-
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
-
-class CGraph_CI : public CAnnotTypes_CI
-{
-public:
-    CGraph_CI(void);
-    // Search all TSEs in all datasources
-    CGraph_CI(CScope& scope, const CSeq_loc& loc,
-              CAnnotTypes_CI::EResolveMethod resolve =
-              CAnnotTypes_CI::eResolve_TSE);
-    // Search only in TSE, containing the bioseq
-    CGraph_CI(CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              CAnnotTypes_CI::EResolveMethod resolve =
-              CAnnotTypes_CI::eResolve_TSE);
-    CGraph_CI(const CGraph_CI& iter);
-    virtual ~CGraph_CI(void);
-    CGraph_CI& operator= (const CGraph_CI& iter);
-
-    CGraph_CI& operator++ (void);
-    CGraph_CI& operator++ (int);
-    operator bool (void) const;
-    const CSeq_graph& operator* (void) const;
-    const CSeq_graph* operator-> (void) const;
-};
-
-END_SCOPE(objects)
-END_NCBI_SCOPE
 
 #endif  // GRAPH_CI__HPP

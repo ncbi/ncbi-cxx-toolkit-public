@@ -31,34 +31,6 @@
 * File Description:
 *   TSE info -- entry for data source seq-id to TSE map
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2002/05/31 17:53:00  grichenk
-* Optimized for better performance (CTSE_Info uses atomic counter,
-* delayed annotations indexing, no location convertions in
-* CAnnot_Types_CI if no references resolution is required etc.)
-*
-* Revision 1.6  2002/05/29 21:21:13  gouriano
-* added debug dump
-*
-* Revision 1.5  2002/05/03 21:28:11  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.4  2002/05/02 20:42:38  grichenk
-* throw -> THROW1_TRACE
-*
-* Revision 1.3  2002/03/14 18:39:14  gouriano
-* added mutex for MT protection
-*
-* Revision 1.2  2002/02/21 19:27:07  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.1  2002/02/07 21:25:06  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
 */
 
 
@@ -67,6 +39,7 @@
 #include <util/rangemap.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbicntr.hpp>
+#include <corelib/ncbithr.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -94,9 +67,9 @@ public:
     CTSE_Info(void);
     virtual ~CTSE_Info(void);
 
-    void Lock(void) const;
-    void Unlock(void) const;
-    bool Locked(void) const;
+    void LockCounter(void) const;
+    void UnlockCounter(void) const;
+    bool CounterLocked(void) const;
 
     bool IsIndexed(void) { return m_Indexed; }
     void SetIndexed(bool value) { m_Indexed = value; }
@@ -119,11 +92,33 @@ public:
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 private:
     // Hide copy methods
-    CTSE_Info(const CTSE_Info& info);
-    CTSE_Info& operator= (const CTSE_Info& info);
+    CTSE_Info(const CTSE_Info&);
+    CTSE_Info& operator= (const CTSE_Info&);
 
+    // Methods and members for distributing mutex pool between TSEs
+    CMutex& GetMutex(void) const;
+    void x_AssignMutex(void) const;
+    
     mutable CAtomicCounter m_LockCount;
     bool m_Indexed;
+
+    mutable CMutex* m_TSE_Mutex;
+    static CFastMutex sm_TSEPool_Mutex;
+    friend class CTSE_Guard;
+};
+
+
+class CTSE_Guard
+{
+public:
+    CTSE_Guard(const CTSE_Info& tse);
+    ~CTSE_Guard(void);
+private:
+    // Prohibit copy operation
+    CTSE_Guard(const CTSE_Guard&);
+    CTSE_Guard& operator= (const CTSE_Guard&);
+
+    const CTSE_Info& m_TSE;
 };
 
 
@@ -136,13 +131,13 @@ private:
 
 
 inline
-void CTSE_Info::Lock(void) const
+void CTSE_Info::LockCounter(void) const
 {
     m_LockCount.Add(1);
 }
 
 inline
-void CTSE_Info::Unlock(void) const
+void CTSE_Info::UnlockCounter(void) const
 {
     if (m_LockCount.Get() > 0) {
         m_LockCount.Add(-1);
@@ -154,7 +149,7 @@ void CTSE_Info::Unlock(void) const
 }
 
 inline
-bool CTSE_Info::Locked(void) const
+bool CTSE_Info::CounterLocked(void) const
 {
     return m_LockCount.Get() > 0;
 }
@@ -171,8 +166,66 @@ bool CTSE_Info::operator== (const CTSE_Info& info) const
     return m_TSE == info.m_TSE;
 }
 
+inline
+CMutex& CTSE_Info::GetMutex(void) const
+{
+    if ( !m_TSE_Mutex )
+        x_AssignMutex();
+    _ASSERT(m_TSE_Mutex);
+    return *m_TSE_Mutex;
+}
+
+inline
+CTSE_Guard::CTSE_Guard(const CTSE_Info& tse)
+    : m_TSE(tse)
+{
+    m_TSE.GetMutex().Lock();
+}
+
+inline
+CTSE_Guard::~CTSE_Guard(void)
+{
+    m_TSE.GetMutex().Unlock();
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.8  2002/07/08 20:51:02  grichenk
+* Moved log to the end of file
+* Replaced static mutex (in CScope, CDataSource) with the mutex
+* pool. Redesigned CDataSource data locking.
+*
+* Revision 1.7  2002/05/31 17:53:00  grichenk
+* Optimized for better performance (CTSE_Info uses atomic counter,
+* delayed annotations indexing, no location convertions in
+* CAnnot_Types_CI if no references resolution is required etc.)
+*
+* Revision 1.6  2002/05/29 21:21:13  gouriano
+* added debug dump
+*
+* Revision 1.5  2002/05/03 21:28:11  ucko
+* Introduce T(Signed)SeqPos.
+*
+* Revision 1.4  2002/05/02 20:42:38  grichenk
+* throw -> THROW1_TRACE
+*
+* Revision 1.3  2002/03/14 18:39:14  gouriano
+* added mutex for MT protection
+*
+* Revision 1.2  2002/02/21 19:27:07  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.1  2002/02/07 21:25:06  grichenk
+* Initial revision
+*
+*
+* ===========================================================================
+*/
 
 #endif  /* OBJECTS_OBJMGR___TSE_INFO__HPP */

@@ -201,9 +201,9 @@ private:
     ~MyMutex(void) {};
     void Lock(const string& loc)
       {
-        if(loc.size())
-          //GBLOG_POST("MyLock  tried  at "  << loc)
-            ;
+        if(loc.size()) {
+          //GBLOG_POST("MyLock  tried  at "  << loc);
+        }
         m_.Lock();
         //GBLOG_POST("MyLock  locked");
       }
@@ -253,6 +253,11 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.23  2002/07/08 20:50:56  grichenk
+ * Moved log to the end of file
+ * Replaced static mutex (in CScope, CDataSource) with the mutex
+ * pool. Redesigned CDataSource data locking.
+ *
  * Revision 1.22  2002/06/04 17:18:32  kimelman
  * memory cleanup :  new/delete/Cref rearrangements
  *
