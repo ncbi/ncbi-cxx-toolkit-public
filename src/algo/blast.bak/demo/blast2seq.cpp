@@ -266,7 +266,10 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CRef<CScope>& scope,
     vector< CConstRef<CSeq_loc> > retval;
     CRef<CSeq_entry> seq_entry;
 
-    if ( !(seq_entry = ReadFasta(in, fReadFasta_AllSeqIds, lcase_mask)))
+    static int counter = 1;
+
+    if ( !(seq_entry
+           = ReadFasta(in, fReadFasta_AllSeqIds, &counter, lcase_mask)) )
         throw runtime_error("Could not retrieve seq entry");
 
     for (CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry)); itr; ++itr) {
@@ -389,6 +392,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/08/07 21:13:44  ucko
+ * Adjust (again) for new ReadFasta interface.
+ *
  * Revision 1.3  2003/08/06 19:40:45  ucko
  * Adjust for new ReadFasta usage.
  *
