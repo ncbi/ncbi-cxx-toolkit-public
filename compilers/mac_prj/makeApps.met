@@ -3,11 +3,18 @@
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
 property pRootFolderPath : "" -- full path of the parent of the toolkit directory. Optional
 property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
+property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
+property pDLRootFolder : "sw:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
+
+property pSaveContinueOnErrors : false
+-- true if we want to save compilation errors in a file and continue.
+-- false if we want to stop on an error.
 
 property pProjectFileExt : ".mcp"
 property pAppExt : ".app"
 property pCPlusPlusExt : ".cpp"
 property pStaticLibExt : ".lib"
+property pPluginExt : ".so"
 property pDynaLibExt : ".dylib"
 
 -- Whether to recreate existing project files.
@@ -30,12 +37,15 @@ property pTargetKeyWords : "MSL BSD Debug Final"
 global gHomeDir
 global gDistribRoot
 global gProjectsDir
+global gPluginsDir
 global gSourceDir
 global gIncludeDir
 global gRsrcsDir
 global gMakeDir
 global gLibsDir
 global gFLTKRootFolder
+global gBdbRootFolder
+
 
 global gProjectData
 
@@ -235,9 +245,16 @@ on SetProjectData()
 		
 	end tell
 	
+	-- fluid
+		set saveCppExt to pCPlusPlusExt
+		set pCPlusPlusExt to ".cxx"
+	set fluidFileData to mkFileData(gFLTKRootFolder & "fluid")
+	AddProject(DataPlusLibs(ProjectData("fluid", {"fltklib"}, {fluidFileData}), {}, {"fltk"}))
+		set pCPlusPlusExt to saveCppExt
+	
 	---------- GENOME WORK BENCH ----------
 	AddAppProject("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", Â
-		{"w_flek", "w_table"}, {"gui_core"})
+		{"w_flek", "w_table"}, {"gui_core", "fltk"})
 	AddAppProject("gbench_plugin_scan", {"libdl", "cmdline", "plainname"}, "gui:gbench:gbench_plugin_scan", Â
 		{}, {"gui_core"})
 	
@@ -295,47 +312,57 @@ on ModuleRoot()
 	return modRoot
 end ModuleRoot
 
-on IsFltkFolder(aFolder, findit)
+-- number of directories in a Posix path.
+on PathLength(aPath)
+	set {stid, text item delimiters of AppleScript} to {text item delimiters of AppleScript, "/"}
+	set n to length of (text items of aPath)
+	set text item delimiters of AppleScript to stid
+	return n
+end PathLength
+
+on IsSpecialFolder(aFolder, findit, filePattern)
 	set aFolder to ResolveAlias(aFolder)
 	if aFolder is "" then return ""
 	set pfolder to POSIX path of aFolder
 	if findit then
-		set aFltkRoot to do shell script ("ls -1r " & pfolder & "*/src/Fl.cxx | head -1")
+		set aRootFolder to do shell script ("ls -1r " & pfolder & "*/" & filePattern & " | head -1")
 	else
-		set aFltkRoot to do shell script ("ls -1r " & pfolder & "src/Fl.cxx | head -1")
+		set aRootFolder to do shell script ("ls -1r " & pfolder & filePattern & " | head -1")
 	end if
-	if aFltkRoot is "" then return ""
-	set aFltkRoot to (POSIX file aFltkRoot) as string
-	-- strip off 'src/FL.cxx' from th path.
+	if aRootFolder is "" then return ""
+	set aRootFolder to (POSIX file aRootFolder) as string
+	set lastDirIndex to (PathLength(filePattern) + 1)
 	set text item delimiters of AppleScript to ":"
-	set aFltkRoot to (text items 1 thru -3 of aFltkRoot) as string
+	set aRootFolder to (text items 1 thru -lastDirIndex of aRootFolder) as string
 	set text item delimiters of AppleScript to ""
-	return aFltkRoot & ":"
-end IsFltkFolder
+	return aRootFolder & ":"
+end IsSpecialFolder
 
-on FLTKRoot()
+on FindSpecialFolder(default, pattern)
 	-- look where specified.
-	set aFltkRoot to IsFltkFolder(pFLTKRootFolder, false)
-	if aFltkRoot is "" then
+	set aSpecialFolder to IsSpecialFolder(default, false, pattern)
+	if aSpecialFolder is "" then
 		-- look next to the C++ toolkit directory.
-		set aFltkRoot to IsFltkFolder(pRootFolderPath, true)
-		if aFltkRoot is "" then
+		set aSpecialFolder to IsSpecialFolder(pRootFolderPath, true, pattern)
+		if aSpecialFolder is "" then
 			-- look in our home directory.
-			set aFltkRoot to IsFltkFolder(gHomeDir, true)
+			set aSpecialFolder to IsSpecialFolder(gHomeDir, true, pattern)
 		end if
 	end if
-	return aFltkRoot
-end FLTKRoot
+	return aSpecialFolder
+end FindSpecialFolder
 
 on GetMyPath()
 	set myPath to path to me as string
-	if myPath contains "Script Editor" then
+	if myPath contains "Script Editor" or Â
+		myPath contains "osascript" or Â
+		myPath contains "Smile.app" then
 		-- Oops! running under script editor. 'me' is Script Editor not this script.
 		-- use the location this script is supposed to be in.
 		return gDistribRoot & "compilers:mac_prj"
 	else
 		tell application "Finder"
-			return container of myPath
+			return container of myPath as string
 		end tell
 	end if
 end GetMyPath
@@ -350,10 +377,18 @@ on SetGlobals()
 		set gIncludeDir to gDistribRoot & "include:"
 		set gSourceDir to gDistribRoot & "src:"
 		set gProjectsDir to gDistribRoot & "compilers:mac_prj:bin:"
+		set gPluginsDir to gDistribRoot & "compilers:mac_prj:plugins:"
 		set gLibsDir to gDistribRoot & "compilers:mac_prj:lib:"
 		set gRsrcsDir to gDistribRoot & "compilers:mac_prj:"
 		set gMakeDir to my GetMyPath()
-		set gFLTKRootFolder to my FLTKRoot()
+		set gFLTKRootFolder to my FindSpecialFolder(pFLTKRootFolder, "src/Fl.cxx")
+		if gFLTKRootFolder is "" then
+			display dialog "Warning: Can't find FLTK. (download from www.fltk.org into your home directory). Not creating Gui libraries." with icon caution
+		end if
+		set gBdbRootFolder to my FindSpecialFolder(pBdbRootFolder, "dbinc/db_int.in")
+		if gBdbRootFolder is "" then
+			display dialog "Can't find bdb. (download from http://www.sleepycat.com/ into your home directory). Some libraries will fail to build." with icon caution
+		end if
 	end tell
 end SetGlobals
 
@@ -419,6 +454,11 @@ on CopyHeaders()
 		if gFLTKRootFolder is not "" then
 			my UpdateRenameHeader("fltk-config.h", prefixFolder, "config.h", folder gFLTKRootFolder)
 		end if
+		
+		my UpdateHeader("db.h", prefixFolder)
+		my UpdateHeader("db_int.h", prefixFolder)
+		my UpdateHeader("db_config.h", prefixFolder)
+		
 		my UpdateHeader("debug.pfx", prefixFolder)
 		my UpdateHeader("release.pfx", prefixFolder)
 		my UpdateHeader("Carbon-debug.pfx", prefixFolder)
@@ -430,7 +470,7 @@ on CopyHeaders()
 	end tell
 end CopyHeaders
 
-on SetAccessPath(aPath, isRecursive, isUserPath)
+on AppendAccessPath(aPath, isRecursive, isUserPath)
 	tell application "CodeWarrior IDE"
 		if (aPath does not end with ":") then set aPath to aPath & ":"
 		
@@ -442,7 +482,27 @@ on SetAccessPath(aPath, isRecursive, isUserPath)
 			Set Preferences of panel "Access Paths" to {System Paths:pathsToAdd}
 		end if
 	end tell
-end SetAccessPath
+end AppendAccessPath
+
+on PushAccessPath(aPath, isRecursive, isUserPath)
+	tell application "CodeWarrior IDE"
+		if (aPath does not end with ":") then set aPath to aPath & ":"
+		
+		set aPath to POSIX path of aPath
+		set pathToAdd to {name:aPath, recursive:isRecursive, origin:root relative, root:"OS X Volume", format:Unix Path}
+		if isUserPath then
+			set newPaths to Get Preferences of {User Paths} from panel "Access Paths"
+			copy pathToAdd to beginning of User Paths of newPaths
+			Set Preferences of panel "Access Paths" to {User Paths:{}}
+			Set Preferences of panel "Access Paths" to newPaths
+		else
+			set newPaths to Get Preferences of {System Paths} from panel "Access Paths"
+			copy pathToAdd to beginning of System Paths of newPaths
+			Set Preferences of panel "Access Paths" to {System Paths:{}}
+			Set Preferences of panel "Access Paths" to newPaths
+		end if
+	end tell
+end PushAccessPath
 
 on SetupTarget(proj, targetIndex)
 	tell application "CodeWarrior IDE"
@@ -553,10 +613,16 @@ on SetupTarget(proj, targetIndex)
 			Set Preferences of panel targetPanelName to ppcProject of projSettings
 		end if
 		
-		if gFLTKRootFolder is not "" and Â
-			projFeatures contains "fltk" or projFeatures contains "fltklib" then
-			my SetAccessPath(gFLTKRootFolder & "FL:", false, true)
-			my SetAccessPath(gFLTKRootFolder, false, false)
+		if projFeatures contains "fltk" or projFeatures contains "fltklib" then
+			my AppendAccessPath(gFLTKRootFolder & "FL:", false, true)
+			my AppendAccessPath(gFLTKRootFolder, false, false)
+		end if
+		if projFeatures contains "bdblib" then
+			my AppendAccessPath(gDistribRoot & "include:", false, true)
+			my AppendAccessPath(gBdbRootFolder, true, true)
+		end if
+		if projFeatures contains "bdb" then
+			my PushAccessPath(gDistribRoot & "include:", false, false)
 		end if
 		
 		-- Are we assuming a .c or a .cpp extension?
@@ -571,7 +637,7 @@ on SetupTarget(proj, targetIndex)
 	-- Add source files
 	repeat with group in projFileData
 		set projPath to projPath of group -- projPath is absolute,  not relative.
-		my SetAccessPath(projPath, true, true) -- add this folder to the access paths, as a recursive user path.
+		my AppendAccessPath(projPath, true, true) -- add this folder to the access paths, as a recursive user path.
 		
 		set fileList to group's fileList
 		
@@ -595,9 +661,9 @@ on SetupTarget(proj, targetIndex)
 		end tell
 	end repeat
 	
-	my SetAccessPath(gDistribRoot & "include:", true, false)
-	my SetAccessPath(gRsrcsDir, false, true)
-	my SetAccessPath(gLibsDir, false, true)
+	my AppendAccessPath(gDistribRoot & "include:", true, false)
+	my AppendAccessPath(gRsrcsDir, false, true)
+	my AppendAccessPath(gLibsDir, false, true)
 	
 	tell application "CodeWarrior IDE"
 		
@@ -610,23 +676,31 @@ on SetupTarget(proj, targetIndex)
 		-- Add user libraries.
 		set filesToAdd to {}
 		repeat with i in projLibs
-			copy gLibsDir & i & fileNameSuffix & pStaticLibExt to end of filesToAdd
+			if exists file (gLibsDir & i & fileNameSuffix & pStaticLibExt) of application "Finder" then
+				copy (gLibsDir & i & fileNameSuffix & pStaticLibExt) to end of filesToAdd
+			end if
 		end repeat
 		repeat with i in dynaLibs
-			copy gLibsDir & i & fileNameSuffix & pDynaLibExt to end of filesToAdd
+			if exists file (gLibsDir & i & fileNameSuffix & pDynaLibExt) of application "Finder" then
+				copy (gLibsDir & i & fileNameSuffix & pDynaLibExt) to end of filesToAdd
+			end if
 		end repeat
 		
 		if projFeatures contains "libdl" then
-			copy "/usr/lib/libdl.a" to end of filesToAdd
+			my PushAccessPath(pDLRootFolder & "include", false, false)
+			if projFeatures contains "DLL" or projFeatures contains "plugin" then
+				my PushAccessPath(pDLRootFolder & "lib", false, false)
+				copy (POSIX path of pDLRootFolder) & "lib/libdl.a" to end of filesToAdd
+			end if
 		end if
 		
-		try
-			Add Files filesToAdd
-		on error errmsg number errnum
-			-- ignore errors when none of those libraries exist.
-			-- happens when populating a target when we haven't built any of the libraries for that target spec.
-			if errnum is not 9393 then error errmsg number errnum
-		end try
+		-- try
+		Add Files filesToAdd
+		-- on error errmsg number errnum
+		-- ignore errors when none of those libraries exist.
+		-- happens when populating a target when we haven't built any of the libraries for that target spec.
+		-- 	if errnum is not 9393 then error errmsg number errnum
+		-- end try
 		
 		-- Add resources.
 		set filesToAdd to {}
@@ -730,10 +804,8 @@ end CreateAndBuildAllProjects
 		we make sure that won't happen.
 *)
 
-property gTargetKeyWords : "MSL BSD Debug Final"
-
 on GetTargetSpecs()
-	set theFiles to list folder (gMakeDir) without invisibles
+	set theFiles to (list folder gMakeDir without invisibles)
 	set targetSpecs to {}
 	repeat with f in theFiles
 		if (f begins with "Build ") then
@@ -750,7 +822,7 @@ end GetTargetSpecs
 on MakeTargetSpec(f)
 	set tspec to ""
 	repeat with w in (words of f)
-		if gTargetKeyWords contains w then
+		if pTargetKeyWords contains w then
 			set tspec to tspec & w & " "
 		end if
 	end repeat
@@ -784,7 +856,21 @@ on BuildProject(projName, targetSpecs)
 			if my OkaytoBuild(thisTarget, targetSpecs) then
 				
 				set the current target of project document 1 to target i of project document 1
-				Make Project
+				if pSaveContinueOnErrors then
+					try
+						Make Project
+					on error errmsg number errnum
+						if (errnum = 5) then
+							set errFileName to (gProjectsDir & projName & "-" & i & ".errs")
+							Save Error Window As (file errFileName)
+							close first window
+						else
+							error errmsg number errnum
+						end if
+					end try
+				else -- stop on any error.
+					Make Project
+				end if
 				-- If there were compiler warnings, then a compiler window will be in front.
 				-- For whatever reason, this causes the next "set the current target..." to fail.
 				-- So check for the window and close it.
@@ -804,7 +890,6 @@ on GetStationeryName(proj)
 	set stationeryName to pStationeryName & pProjectFileExt
 	
 	CreateFolder(stationeryDir)
-	
 	tell application "Finder"
 		-- does the Library Stationery already exist?
 		if not (exists file (stationeryDir & stationeryName)) then
@@ -812,27 +897,8 @@ on GetStationeryName(proj)
 			duplicate file (stationeryName) of folder gRsrcsDir to folder stationeryDir
 		end if
 	end tell
-	my CleanupFolder(stationeryDir, stationeryName)
-	try
-		tell application "Finder" to delete file (stationeryDir & ".DS_Store")
-	end try
-	
 	return (stationeryDir & stationeryName)
 end GetStationeryName
-
--- Delete everything in the folder 'thePath' except the saveFile.
-on CleanupFolder(thePath, saveFile)
-	repeat with f in list folder (thePath) with invisibles
-		if (f as string is not saveFile) then
-			try
-				tell application "Finder" to delete folder (thePath & f)
-			end try
-			try
-				tell application "Finder" to delete file (thePath & f)
-			end try
-		end if
-	end repeat
-end CleanupFolder
 
 on CleanupFiles(thePath)
 	-- get rid of all the files and folders starting with 'trashme' in thePath
