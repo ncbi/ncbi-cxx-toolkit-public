@@ -93,7 +93,7 @@ CRef<CBioseq_set> CMakeCdrProds::MakeCdrProds(CRef<CSeq_annot> annot,
         string num = NStr::IntToString(sm_Counter.Add(1));
         // pad to five digits
         if (num.size() < 5) {
-            num.insert(0, 5 - num.size(), '0');
+            num.insert(SIZE_TYPE(0), 5 - num.size(), '0');
         }
         string acc = "tp" + num;
         string full_acc = "lcl|" + acc;
@@ -134,6 +134,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/10 18:23:10  ucko
+ * Tweak call to string::insert to address WorkShop-reported ambiguity.
+ *
  * Revision 1.1  2003/11/10 16:37:06  jcherry
  * Initial version
  *
