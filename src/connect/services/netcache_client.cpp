@@ -139,7 +139,6 @@ void CNetCacheClient::SendClientName()
 IReader* CNetCacheClient::GetData(const string& key)
 {
     IReader* reader = 0;
-    EIO_Status io_st;
     string blob_id;
 
     SendClientName();
@@ -264,6 +263,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/10/06 15:27:24  kuznets
+ * Removed unused variable
+ *
  * Revision 1.3  2004/10/05 19:02:05  kuznets
  * Implemented ShutdownServer()
  *
