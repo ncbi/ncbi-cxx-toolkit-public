@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.18 2001/05/02 15:11:19 kholodov Exp $
+-- $Id: docsum.asn,v 1.19 2001/06/08 14:18:59 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.19  2001/06/08 14:18:59  sherry
+--  added exception value (9) to fxn-set
+--
 -- Revision 1.18  2001/05/02 15:11:19  kholodov
 -- Fixed: NSE-ss::orient: refersed -> reversed.
 --
@@ -265,9 +268,12 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
 	last-action NSE-Date OPTIONAL,		-- Date of update or create
 	link-data SET OF NSE-rslink OPTIONAL, 	-- link data for external resources
 	ss-list SET OF NSE-ss,			-- set of all subsnp id's in the refSNP cluster	
-	contig-mapset SET OF NSE-rsContigHit OPTIONAL, -- list of hits to genome in NT_ contig coordinates
+	contig-mapset SET OF NSE-rsContigHit OPTIONAL, -- list of hits to genome in NT_ contig coordinates and functional relationships
+						-- between variations and genes as annotated on contig sequence
 	sequence-mapset SET OF  NSE-rsSeqHit OPTIONAL, -- list of hits to genome in sequence component coordinates from MapLink and MapLinkArchive
-	gene-info SET OF NSE-rsLocusID OPTIONAL	-- set of gene information for locus if present
+	gene-info SET OF NSE-rsLocusID OPTIONAL	-- set of gene information inferred by blast similarity of variation and GenBank sequences.
+						-- analysis is independent of annotation of genome sequence (contig-mapset, above) and
+						-- includes variations mapped to mRNAs or genomic sequences that do not yet have a reference contig.
 }
 
 
@@ -372,7 +378,11 @@ NSE-FxnSet ::= SEQUENCE {
 		mrna-utr (5),			-- variation in transcript, but not in coding region interval
 		intron (6),				-- variation in intron, but not in first 2 or last 2 bases of intron
 		splice-site (7), 		-- variation in first 2 or last to bases of intron
-		reference (8) 			-- allele observed in reference contig sequence 				**allele-specific class**
+		reference (8), 			-- allele observed in reference contig sequence 				**allele-specific class**
+		exception (9)			-- variation in coding region with exception raised on
+								-- alignment. This occurs when protein with gap in sequence
+								-- is aligned back to contig sequence. variations 3' of
+								-- the gap have undefined functional inference.
 	} ,
 	reading-frame INTEGER OPTIONAL,		-- position of variation in reading frame of transcript		SNPContigLocusId.reading_Frame
 	allele VisibleString OPTIONAL,		-- allele, * denotes allele observed in contig sequence		SNPContigLocusId.allele
@@ -414,7 +424,7 @@ NSE-rsLocusID ::= SEQUENCE {
 	locus-id INTEGER,
 	url-id INTEGER DEFAULT 3,
 	symbol VisibleString OPTIONAL,
-	fxn-class ENUMERATED {
+	fxn-class ENUMERATED {			-- these values are the same encoding as Fxn-Set.fxn-class (above)
 		locus-region	(1),
 		coding		(2),
 		coding-synon	(3),
