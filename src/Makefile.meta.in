@@ -136,5 +136,5 @@ RELEVANT_DIR = pwd | $(RELEVANT)
 RELEVANT_SUBS = find "`pwd`" -type d | $(RELEVANT)
 
 all_p: $(RELEVANT_FILE)
-	@if $(RELEVANT_DIR); then make all; else true; fi
+	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) all; else true; fi
 	@if $(RELEVANT_SUBS); then $(SUB_BRA) all_p $(SUB_KET); else true; fi
