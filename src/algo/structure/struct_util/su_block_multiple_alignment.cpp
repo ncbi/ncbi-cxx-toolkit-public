@@ -42,8 +42,13 @@
 #include "su_sequence_set.hpp"
 #include "su_private.hpp"
 
-// borrow Cn3D's asn conversion functions
-#include "../src/app/cn3d/asn_converter.hpp"
+// C-toolkit stuff for PSSM calculation
+#include <objalign.h>
+#include <blast.h>
+#include <blastkar.h>
+#include <cddutil.h>
+#include <thrdatd.h>
+#include <thrddecl.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -51,9 +56,13 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(struct_util)
 
-const int SCALING_FACTOR = 1000000;
-const string ThreaderResidues = "ARNDCQEGHILKMFPSTWYV";
-const string BLASTResidues = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
+// from su_sequence_set.cpp
+extern BioseqPtr GetOrCreateBioseq(const Sequence *sequence);
+extern void AddCSeqId(SeqIdPtr *sid, const ncbi::objects::CSeq_id& cppid);
+
+static const int SCALING_FACTOR = 1000000;
+static const string ThreaderResidues = "ARNDCQEGHILKMFPSTWYV";
+static const string BLASTResidues = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
 
 BlockMultipleAlignment::BlockMultipleAlignment(const SequenceList& sequenceList)
 {
@@ -75,9 +84,6 @@ void BlockMultipleAlignment::InitCache(void)
 BlockMultipleAlignment::~BlockMultipleAlignment(void)
 {
     RemovePSSM();
-    BioseqMap::iterator i, ie = m_bioseqs.end();
-    for (i=m_bioseqs.begin(); i!=ie; ++i)
-        BioseqFree(i->second);
 }
 
 BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
@@ -121,30 +127,12 @@ static int GetBLOSUM62Score(char a, char b)
     return Blosum62Matrix.s[ScreenResidueCharacter(a)][ScreenResidueCharacter(b)];
 }
 
-static inline void AddCSeqId(SeqIdPtr *sid, const ncbi::objects::CSeq_id& cppid)
-{
-    string err;
-    ValNode *vn = (SeqIdPtr) Cn3D::ConvertAsnFromCPPToC(cppid, (AsnReadFunc) SeqIdAsnRead, &err);
-    if (!vn || err.size() > 0) {
-        ERROR_MESSAGE("AddCSeqId() - ConvertAsnFromCPPToC() failed");
-        return;
-    }
-    ValNodeLink(sid, vn);
-}
-
-static inline void AddCSeqIdAll(SeqIdPtr *id, const Sequence& sequence)
-{
-    CBioseq::TId::const_iterator i, ie = sequence.GetAllIdentifiers().end();
-    for (i=sequence.GetAllIdentifiers().begin(); i!=ie; ++i)
-        AddCSeqId(id, **i);
-}
-
 // creates a SeqAlign from a BlockMultipleAlignment
-SeqAlignPtr BlockMultipleAlignment::CreateCSeqAlign(void) const
+static SeqAlignPtr CreateCSeqAlign(const BlockMultipleAlignment& multiple)
 {
     // one SeqAlign (chained into a linked list) for each slave row
     SeqAlignPtr prevSap = NULL, firstSap = NULL;
-    for (unsigned int row=1; row<NRows(); ++row) {
+    for (unsigned int row=1; row<multiple.NRows(); ++row) {
 
         SeqAlignPtr sap = SeqAlignNew();
         if (prevSap) prevSap->next = sap;
@@ -156,19 +144,19 @@ SeqAlignPtr BlockMultipleAlignment::CreateCSeqAlign(void) const
         sap->segtype = SAS_DENDIAG;
 
         DenseDiagPtr prevDd = NULL;
-        UngappedAlignedBlockList m_blocks;
-        GetUngappedAlignedBlocks(&m_blocks);
-        UngappedAlignedBlockList::const_iterator b, be = m_blocks.end();
+        BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+        multiple.GetUngappedAlignedBlocks(&blocks);
+        BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
 
-        for (b=m_blocks.begin(); b!=be; ++b) {
+        for (b=blocks.begin(); b!=be; ++b) {
             DenseDiagPtr dd = DenseDiagNew();
             if (prevDd) prevDd->next = dd;
             prevDd = dd;
-            if (b == m_blocks.begin()) sap->segs = dd;
+            if (b == blocks.begin()) sap->segs = dd;
 
             dd->dim = 2;
-            AddCSeqId(&(dd->id), GetSequenceOfRow(0)->GetPreferredIdentifier());
-            AddCSeqId(&(dd->id), GetSequenceOfRow(row)->GetPreferredIdentifier());
+            AddCSeqId(&(dd->id), multiple.GetSequenceOfRow(0)->GetPreferredIdentifier());
+            AddCSeqId(&(dd->id), multiple.GetSequenceOfRow(row)->GetPreferredIdentifier());
 
             dd->len = (*b)->m_width;
 
@@ -183,60 +171,31 @@ SeqAlignPtr BlockMultipleAlignment::CreateCSeqAlign(void) const
     return firstSap;
 }
 
-BioseqPtr BlockMultipleAlignment::GetOrCreateBioseq(const Sequence *sequence) const
+static void CreateAllBioseqs(const BlockMultipleAlignment& multiple)
 {
-    if (!sequence || !sequence->m_isProtein) {
-        ERROR_MESSAGE("GetOrCreateBioseq() - got non-protein or NULL Sequence");
-        return NULL;
-    }
-
-    // if already done
-    BioseqMap::const_iterator b = m_bioseqs.find(sequence);
-    if (b != m_bioseqs.end())
-        return b->second;
-
-    // create new Bioseq and fill it in from Sequence data
-    BioseqPtr bioseq = BioseqNew();
-    bioseq->mol = Seq_mol_aa;
-    bioseq->seq_data_type = Seq_code_ncbieaa;
-    bioseq->repr = Seq_repr_raw;
-    bioseq->length = sequence->Length();
-    bioseq->seq_data = BSNew(bioseq->length);
-    BSWrite(bioseq->seq_data, const_cast<char*>(sequence->m_sequenceString.c_str()), bioseq->length);
-
-    // create Seq-id
-    AddCSeqIdAll(&(bioseq->id), *sequence);
-
-    // store Bioseq
-    m_bioseqs[sequence] = bioseq;
-
-    return bioseq;
+    for (unsigned int row=0; row<multiple.NRows(); ++row)
+        GetOrCreateBioseq(multiple.GetSequenceOfRow(row));
 }
 
-void BlockMultipleAlignment::CreateAllBioseqs() const
-{
-    for (unsigned int row=0; row<NRows(); ++row)
-        GetOrCreateBioseq(GetSequenceOfRow(row));
-}
-
-Seq_Mtf * BlockMultipleAlignment::CreateSeqMtf(double weightPSSM, BLAST_KarlinBlkPtr karlinBlock) const
+static Seq_Mtf * CreateSeqMtf(const BlockMultipleAlignment& multiple,
+    double weightPSSM, BLAST_KarlinBlkPtr karlinBlock)
 {
     // special case for "PSSM" of single-row "alignment" - just use BLOSUM62 score
-    if (NRows() == 1) {
-        Seq_Mtf *seqMtf = NewSeqMtf(GetMaster()->Length(), ThreaderResidues.size());
-        for (unsigned int res=0; res<GetMaster()->Length(); ++res)
+    if (multiple.NRows() == 1) {
+        Seq_Mtf *seqMtf = NewSeqMtf(multiple.GetMaster()->Length(), ThreaderResidues.size());
+        for (unsigned int res=0; res<multiple.GetMaster()->Length(); ++res)
             for (unsigned int aa=0; aa<ThreaderResidues.size(); ++aa)
                 seqMtf->ww[res][aa] = ThrdRound(weightPSSM * SCALING_FACTOR *
-                    GetBLOSUM62Score(GetMaster()->m_sequenceString[res], ThreaderResidues[aa]));
+                    GetBLOSUM62Score(multiple.GetMaster()->m_sequenceString[res], ThreaderResidues[aa]));
         WARNING_MESSAGE("Created Seq_Mtf (PSSM) from BLOSUM62 scores");
         return seqMtf;
     }
 
     // convert all sequences to Bioseqs
-    CreateAllBioseqs();
+    CreateAllBioseqs(multiple);
 
     // create SeqAlign from this BlockMultipleAlignment
-    SeqAlignPtr seqAlign = CreateCSeqAlign();
+    SeqAlignPtr seqAlign = CreateCSeqAlign(multiple);
 
     // "spread" unaligned residues between aligned blocks, for PSSM construction
     CddDegapSeqAlign(seqAlign);
@@ -246,7 +205,7 @@ Seq_Mtf * BlockMultipleAlignment::CreateSeqMtf(double weightPSSM, BLAST_KarlinBl
         // first try auto-determined pseudocount (-1); if fails, find higest <= 10 that works
         int pseudocount = (i == 11) ? -1 : i;
         seqMtf = CddDenDiagCposComp2KBP(
-            GetOrCreateBioseq(GetMaster()),
+            GetOrCreateBioseq(multiple.GetMaster()),
             pseudocount,
             seqAlign,
             NULL,
@@ -312,7 +271,7 @@ const BLAST_Matrix * BlockMultipleAlignment::GetPSSM(void) const
 
     // for now, use threader's SeqMtf
     BLAST_KarlinBlkPtr karlinBlock = BlastKarlinBlkCreate();
-    Seq_Mtf *seqMtf = CreateSeqMtf(1.0, karlinBlock);
+    Seq_Mtf *seqMtf = CreateSeqMtf(*this, 1.0, karlinBlock);
 
     m_pssm = (BLAST_Matrix *) MemNew(sizeof(BLAST_Matrix));
     m_pssm->is_prot = TRUE;
@@ -1688,6 +1647,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/05/28 09:46:57  thiessen
+* restructure C-toolkit header usage ; move C Bioseq storage into su_sequence_set
+*
 * Revision 1.7  2004/05/27 21:34:08  thiessen
 * add PSSM calculation (requires C-toolkit)
 *

@@ -43,13 +43,9 @@
 #include <vector>
 #include <map>
 
-// C-toolkit stuff for PSSM calculation
-#include <objalign.h>
-#include <blast.h>
-#include <blastkar.h>
-#include <cddutil.h>
-#include <thrdatd.h>
-#include <thrddecl.h>
+// forward declaration of BLAST_Matrix
+struct _blast_matrix;
+typedef struct _blast_matrix BLAST_Matrix_;
 
 
 BEGIN_SCOPE(struct_util)
@@ -130,7 +126,7 @@ public:
     void GetModifiableUngappedAlignedBlocks(ModifiableUngappedAlignedBlockList *blocks);
 
     // PSSM for this alignment (cached)
-    const BLAST_Matrix * GetPSSM(void) const;
+    const BLAST_Matrix_ * GetPSSM(void) const;
     void RemovePSSM(void) const;
 
     // NULL if block before is aligned; if NULL passed, retrieves last block (if unaligned; else NULL)
@@ -254,21 +250,8 @@ private:
     mutable std::vector < double > m_rowDoubles;
     mutable std::vector < std::string > m_rowStrings;
 
-    // holds C Bioseqs associated with Sequences
-    typedef std::map < const Sequence *, Bioseq * > BioseqMap;
-    mutable BioseqMap m_bioseqs;
-
-    // create C-object Bioseq, stored above; freed upon destruction of this objects
-    BioseqPtr GetOrCreateBioseq(const Sequence *sequence) const;
-    void CreateAllBioseqs() const;
-
-    // create a C-object SeqAlign from this alignment (actually a linked list of pairwise
-    // SeqAlign's; should be freed with SeqAlignSetFree())
-    SeqAlignPtr CreateCSeqAlign(void) const;
-
     // associated PSSM
-    mutable BLAST_Matrix *m_pssm;
-    Seq_Mtf * CreateSeqMtf(double weightPSSM, BLAST_KarlinBlkPtr karlinBlock) const;
+    mutable BLAST_Matrix_ *m_pssm;
 };
 
 
@@ -381,6 +364,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/05/28 09:46:57  thiessen
+* restructure C-toolkit header usage ; move C Bioseq storage into su_sequence_set
+*
 * Revision 1.6  2004/05/27 21:34:08  thiessen
 * add PSSM calculation (requires C-toolkit)
 *

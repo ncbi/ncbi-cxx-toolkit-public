@@ -42,6 +42,9 @@
 #include "su_alignment_set.hpp"
 #include "su_block_multiple_alignment.hpp"
 
+// for PSSM (BLAST_Matrix)
+#include <blastkar.h>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -277,6 +280,16 @@ bool AlignmentUtility::DoLeaveOneOut(
     bool prevState = CException::EnableBackgroundReporting(false);
 
     try {
+        // pull out the row we're realigning
+        if (rowToRealign < 1 || rowToRealign >= m_currentMultiple->NRows())
+            THROW_MESSAGE("invalid row number");
+        vector < unsigned int > rowsToRemove(1, rowToRealign);
+        BlockMultipleAlignment::AlignmentList toRealign;
+        TRACE_MESSAGE("extracting for realignment: "
+            << m_currentMultiple->GetSequenceOfRow(rowToRealign)->IdentifierString());
+        if (!m_currentMultiple->ExtractRows(rowsToRemove, &toRealign))
+            THROW_MESSAGE("ExtractRows() failed");
+
         // fill out DP_BlockInfo structure
         dpBlocks = DP_CreateBlockInfo(blocks.size());
         unsigned int b, r;
@@ -298,16 +311,6 @@ bool AlignmentUtility::DoLeaveOneOut(
             }
         }
         delete loopLengths;
-
-        // pull out row that we're realigning
-        if (rowToRealign < 1 || rowToRealign >= m_currentMultiple->NRows())
-            THROW_MESSAGE("invalid row number");
-        vector < unsigned int > rowsToRemove(1, rowToRealign);
-        BlockMultipleAlignment::AlignmentList toRealign;
-        TRACE_MESSAGE("extracting for realignment: "
-            << m_currentMultiple->GetSequenceOfRow(rowToRealign)->IdentifierString());
-        if (!m_currentMultiple->ExtractRows(rowsToRemove, &toRealign))
-            THROW_MESSAGE("ExtractRows() failed");
 
         // if we're not realigning, freeze blocks to original slave position
         if (blocksToRealign.size() == 0)
@@ -372,7 +375,7 @@ bool AlignmentUtility::DoLeaveOneOut(
         if (!m_currentMultiple->ReorderRows(rowOrder))
             THROW_MESSAGE("ReorderRows() failed");
 
-        // remove other alignment data, since it can no longer match the multiple
+        // remove other alignment data, since it no longer matches the multiple
         RemoveAlignAnnot();
 
         status = true;
@@ -413,6 +416,8 @@ void AlignmentUtility::RemoveAlignAnnot(void)
 const AlignmentUtility::SeqAnnotList& AlignmentUtility::GetSeqAnnots(void)
 {
     if (!m_alignmentSet || m_seqAnnots.size() == 0) {
+        if (m_alignmentSet)
+            ERROR_MESSAGE("ack - shouldn't have m_alignmentSet but empty m_seqAnnots");
         m_alignmentSet = AlignmentSet::CreateFromMultiple(
             m_currentMultiple, &m_seqAnnots, *m_sequenceSet);
     }
@@ -424,6 +429,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/05/28 09:46:57  thiessen
+* restructure C-toolkit header usage ; move C Bioseq storage into su_sequence_set
+*
 * Revision 1.7  2004/05/27 21:34:08  thiessen
 * add PSSM calculation (requires C-toolkit)
 *

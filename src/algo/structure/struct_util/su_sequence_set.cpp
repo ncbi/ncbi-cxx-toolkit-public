@@ -37,6 +37,7 @@
 #include <corelib/ncbistl.hpp>
 
 #include <vector>
+#include <map>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
@@ -64,11 +65,70 @@
 #include "su_sequence_set.hpp"
 #include "su_private.hpp"
 
+// borrow Cn3D's asn conversion functions
+#include "../src/app/cn3d/asn_converter.hpp"
+
+// C-toolkit stuff for BioseqPtr creation
+#include <objseq.h>
+#include <objalign.h>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(struct_util)
+
+// holds C Bioseqs associated with Sequences
+typedef map < const Sequence *, Bioseq * > BioseqMap;
+static BioseqMap bioseqs;
+
+void AddCSeqId(SeqIdPtr *sid, const ncbi::objects::CSeq_id& cppid)
+{
+    string err;
+    ValNode *vn = (SeqIdPtr) Cn3D::ConvertAsnFromCPPToC(cppid, (AsnReadFunc) SeqIdAsnRead, &err);
+    if (!vn || err.size() > 0) {
+        ERROR_MESSAGE("AddCSeqId() - ConvertAsnFromCPPToC() failed");
+        return;
+    }
+    ValNodeLink(sid, vn);
+}
+
+static void AddCSeqIdAll(SeqIdPtr *id, const Sequence& sequence)
+{
+    CBioseq::TId::const_iterator i, ie = sequence.GetAllIdentifiers().end();
+    for (i=sequence.GetAllIdentifiers().begin(); i!=ie; ++i)
+        AddCSeqId(id, **i);
+}
+
+BioseqPtr GetOrCreateBioseq(const Sequence *sequence)
+{
+    if (!sequence || !sequence->m_isProtein) {
+        ERROR_MESSAGE("GetOrCreateBioseq() - got non-protein or NULL Sequence");
+        return NULL;
+    }
+
+    // if already done
+    BioseqMap::const_iterator b = bioseqs.find(sequence);
+    if (b != bioseqs.end())
+        return b->second;
+
+    // create new Bioseq and fill it in from Sequence data
+    BioseqPtr bioseq = BioseqNew();
+    bioseq->mol = Seq_mol_aa;
+    bioseq->seq_data_type = Seq_code_ncbieaa;
+    bioseq->repr = Seq_repr_raw;
+    bioseq->length = sequence->Length();
+    bioseq->seq_data = BSNew(bioseq->length);
+    BSWrite(bioseq->seq_data, const_cast<char*>(sequence->m_sequenceString.c_str()), bioseq->length);
+
+    // create Seq-id
+    AddCSeqIdAll(&(bioseq->id), *sequence);
+
+    // store Bioseq
+    bioseqs[sequence] = bioseq;
+
+    return bioseq;
+}
 
 static void UnpackSeqSet(CBioseq_set& bss, SequenceSet::SequenceList& seqlist)
 {
@@ -265,6 +325,15 @@ Sequence::Sequence(ncbi::objects::CBioseq& bioseq) :
         THROW_MESSAGE("Sequence::Sequence(): confused by sequence representation");
 }
 
+Sequence::~Sequence(void)
+{
+    BioseqMap::iterator b = bioseqs.find(this);
+    if (b != bioseqs.end()) {
+        BioseqFree(b->second);
+        bioseqs.erase(b);
+    }
+}
+
 #define RETURN_FIRST_SEQID_THAT_(is) \
     for (i=m_bioseqASN->GetId().begin(); i!=ie; ++i) \
         if ((*i)->is()) \
@@ -302,6 +371,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/28 09:46:57  thiessen
+* restructure C-toolkit header usage ; move C Bioseq storage into su_sequence_set
+*
 * Revision 1.2  2004/05/25 15:52:18  thiessen
 * add BlockMultipleAlignment, IBM algorithm
 *

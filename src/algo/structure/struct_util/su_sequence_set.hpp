@@ -52,6 +52,7 @@ class Sequence : public ncbi::CObject
 {
 public:
     Sequence(ncbi::objects::CBioseq& bioseq);
+    ~Sequence(void);
 
     ncbi::CRef < ncbi::objects::CBioseq > m_bioseqASN;
 
@@ -83,6 +84,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/28 09:46:57  thiessen
+* restructure C-toolkit header usage ; move C Bioseq storage into su_sequence_set
+*
 * Revision 1.4  2004/05/27 21:34:08  thiessen
 * add PSSM calculation (requires C-toolkit)
 *
