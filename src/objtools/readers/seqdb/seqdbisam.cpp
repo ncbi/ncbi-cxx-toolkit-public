@@ -37,7 +37,7 @@
 #include <objects/general/general__.hpp>
 #include <corelib/ncbiutil.hpp>
 
-BEGIN_NCBI_SCOPE
+BEGIN_NCBI_SCOPE;
 
 USING_SCOPE(objects);
 
@@ -385,7 +385,8 @@ Int4 CSeqDBIsam::x_DiffCharLease(const string   & term_in,
     
     m_Atlas.Lock(locked);
     
-    // Add one to term_end to insure we don't "AA" and "AAB" as equal.
+    // Add one to term_end to insure we don't consider "AA" and "AAB"
+    // as equal.
     
     Uint4 offset_begin = KeyOffset;
     Uint4 term_end     = KeyOffset + term_in.size() + 1;
@@ -1000,7 +1001,6 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
     return rv;
 }
 
-
 CSeqDBIsam::CSeqDBIsam(CSeqDBAtlas  & atlas,
                        const string & dbname,
                        char           prot_nucl,
@@ -1070,8 +1070,8 @@ CSeqDBIsam::CSeqDBIsam(CSeqDBAtlas  & atlas,
                    "Error: Could not open input file.");
     }
     
-    if(m_IsamType == eNumeric ||
-       m_IsamType == eNumericNoData) {
+    if(m_Type == eNumeric ||
+       m_Type == eNumericNoData) {
         
         m_PageSize = DEFAULT_NISAM_SIZE;
     } else {

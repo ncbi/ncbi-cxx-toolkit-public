@@ -44,7 +44,7 @@
 
 BEGIN_NCBI_SCOPE
 
-using namespace ncbi::objects;
+USING_SCOPE(objects);
 
 /// CSeqDBTaxNames class
 /// 
