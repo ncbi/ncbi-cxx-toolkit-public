@@ -137,7 +137,7 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 
 
     // Get custom build files and adjust pathes 
-    m_MsvcProjectMakefile->GetCustomBuildInfo(&m_CustomBuildInfo);
+    GetMsvcProjectMakefile().GetCustomBuildInfo(&m_CustomBuildInfo);
     NON_CONST_ITERATE(list<SCustomBuildInfo>, p, m_CustomBuildInfo) {
        SCustomBuildInfo& build_info = *p;
        string file_path_abs = 
@@ -204,7 +204,7 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
 
     //MSVC Makefile additional include dirs
     list<string> makefile_add_incl_dirs;
-    m_MsvcProjectMakefile->GetAdditionalIncludeDirs(cfg_info, 
+    GetMsvcProjectMakefile().GetAdditionalIncludeDirs(cfg_info, 
                                                     &makefile_add_incl_dirs);
 
     ITERATE(list<string>, p, makefile_add_incl_dirs) {
@@ -322,10 +322,27 @@ void CMsvcPrjProjectContext::CreateLibsList(list<string>* libs_list) const
     libs_list->unique();
 }
 
-const CMsvcProjectMakefile& 
+const CMsvcCombinedProjectMakefile& 
 CMsvcPrjProjectContext::GetMsvcProjectMakefile(void) const
 {
-    return *m_MsvcProjectMakefile;
+    if ( m_MsvcCombinedProjectMakefile.get() )
+        return *m_MsvcCombinedProjectMakefile;
+
+    string rules_dir = GetApp().GetProjectTreeInfo().m_Compilers;
+    rules_dir = 
+            CDirEntry::ConcatPath(rules_dir, 
+                                  GetApp().GetRegSettings().m_CompilersSubdir);
+
+
+    // temporary fix with const_cast
+    (const_cast<auto_ptr<CMsvcCombinedProjectMakefile>&>
+        (m_MsvcCombinedProjectMakefile)).reset(new CMsvcCombinedProjectMakefile
+                                                  (m_ProjType,
+                                                   m_MsvcProjectMakefile.get(),
+                                                   rules_dir,
+                                                   m_Requires));
+
+    return *m_MsvcCombinedProjectMakefile;
 }
 
 
@@ -838,6 +855,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/06/07 13:56:17  gorelenk
+ * Changed CMsvcPrjProjectContext::GetMsvcProjectMakefile to accomodate
+ * project creation rules.
+ *
  * Revision 1.29  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *
