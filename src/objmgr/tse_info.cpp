@@ -732,6 +732,18 @@ CTSE_Info::x_GetUnnamedIdObjects(const CSeq_id_Handle& idh) const
 }
 
 
+bool CTSE_Info::x_HasIdObjects(const CSeq_id_Handle& idh) const
+{
+    // tse annot index should be locked by TAnnotLockReadGuard
+    ITERATE ( TNamedAnnotObjs, it, m_NamedAnnotObjs ) {
+        if ( x_GetIdObjects(it->second, idh) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 inline
 void CTSE_Info::x_MapAnnotObject(TRangeMap& rangeMap,
                                  const SAnnotObject_Key& key,

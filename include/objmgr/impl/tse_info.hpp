@@ -302,6 +302,10 @@ private:
     const SIdAnnotObjs* x_GetIdObjects(const CAnnotName& name,
                                        const CSeq_id_Handle& id) const;
     const SIdAnnotObjs* x_GetUnnamedIdObjects(const CSeq_id_Handle& id) const;
+
+    // tse annot index should be locked by TAnnotLockReadGuard
+    bool x_HasIdObjects(const CSeq_id_Handle& id) const;
+
     SIdAnnotObjs& x_SetIdObjects(TAnnotObjs& objs,
                                  const CAnnotName& name,
                                  const CSeq_id_Handle& id);
