@@ -162,6 +162,10 @@ public:
     // get a common symbolic name for the severity levels
     static const char* SeverityName(EDiagSev sev);
 
+    // get severity from string. "str_sev" can be the numeric value
+    // or a symbolic name (see CDiagBuffer::sm_SeverityName[])
+    static bool StrToSeverityLevel(const char* str_sev, EDiagSev& sev);
+
     // specify file name and line number to post
     // they are active for this message only, and they will be reset to
     // zero after this message is posted
@@ -404,6 +408,10 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.46  2002/07/10 16:18:42  ivanov
+ * Added CNcbiDiag::StrToSeverityLevel().
+ * Rewrite and rename SetDiagFixedStrPostLevel() -> SetDiagFixedPostLevel()
+ *
  * Revision 1.45  2002/07/09 16:38:00  ivanov
  * Added GetSeverityChangeEnabledFirstTime().
  * Fix usage forced set severity post level from environment variable

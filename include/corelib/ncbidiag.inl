@@ -67,7 +67,7 @@ class CDiagBuffer
     friend const CNcbiDiag& Endm(const CNcbiDiag& diag);
 
     friend EDiagSev SetDiagPostLevel(EDiagSev post_sev);
-    friend void SetDiagFixedStrPostLevel(const char* str_post_sev);
+    friend void SetDiagFixedPostLevel(const EDiagSev post_sev);
     friend bool DisableDiagPostLevelChange(bool disable_change);
 
     friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
@@ -339,6 +339,10 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2002/07/10 16:18:43  ivanov
+ * Added CNcbiDiag::StrToSeverityLevel().
+ * Rewrite and rename SetDiagFixedStrPostLevel() -> SetDiagFixedPostLevel()
+ *
  * Revision 1.32  2002/07/09 16:38:00  ivanov
  * Added GetSeverityChangeEnabledFirstTime().
  * Fix usage forced set severity post level from environment variable

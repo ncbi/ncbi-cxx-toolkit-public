@@ -234,9 +234,9 @@ bool CDiagBuffer::GetSeverityChangeEnabledFirstTime(void)
         return sm_PostSeverityChange == eDiagSC_Enable;
     }
     const char* str = ::getenv(DIAG_POST_LEVEL);
-    if (str  &&  *str) {
-        SetDiagFixedStrPostLevel(str);
-        sm_TraceDefault = eDT_Enable;
+    EDiagSev sev;
+    if (str  &&  *str  &&  CNcbiDiag::StrToSeverityLevel(str, sev)) {
+        SetDiagFixedPostLevel(sev);
     } else {
         sm_PostSeverityChange = eDiagSC_Enable;
     }
@@ -423,29 +423,9 @@ extern EDiagSev SetDiagPostLevel(EDiagSev post_sev)
 }
 
 
-extern void SetDiagFixedStrPostLevel(const char* str_post_sev)
+extern void SetDiagFixedPostLevel(const EDiagSev post_sev)
 {
-    if (!str_post_sev || !*str_post_sev) {
-        return;
-    } 
-    int sev = -1;
-    if ( strlen(str_post_sev) == 1  &&  *str_post_sev >= '0'  &&  *str_post_sev <= '9' ) {
-        // Digital value
-        sev = atoi(str_post_sev);
-    } else {
-        // String value
-        for (int s = eDiag_Info; s<= eDiag_Trace; s++) {
-            if (NStr::CompareNocase(str_post_sev, CNcbiDiag::SeverityName((EDiagSev)s)) == 0) {
-                sev = s;
-                break;
-            }
-        }
-    }
-    // Unknown value
-    if (sev == -1) {
-        return;
-    }
-    SetDiagPostLevel((EDiagSev)sev);
+    SetDiagPostLevel(post_sev);
     DisableDiagPostLevelChange();
 }
 
@@ -637,6 +617,30 @@ const CNcbiDiag& CNcbiDiag::operator<< (const CNcbiException& ex) const
     return *this;
 }
 
+
+bool CNcbiDiag::StrToSeverityLevel(const char* str_sev, EDiagSev& sev)
+{
+    if (!str_sev || !*str_sev) {
+        return false;
+    } 
+    // Digital value
+    int nsev = NStr::StringToNumeric(str_sev);
+
+    // String value
+    if ( nsev == -1 ) {
+        for (int s = eDiag_Info; s<= eDiag_Trace; s++) {
+            if (NStr::CompareNocase(str_sev, CNcbiDiag::SeverityName((EDiagSev)s)) == 0) {
+                nsev = s;
+                break;
+            }
+        }
+    }
+    sev = (EDiagSev)nsev;
+    // Unknown value
+    return sev >= eDiag_Info  && sev <= eDiag_Trace;
+}
+
+
 ///////////////////////////////////////////////////////
 //  CDiagRestorer::
 
@@ -778,6 +782,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.59  2002/07/10 16:19:00  ivanov
+ * Added CNcbiDiag::StrToSeverityLevel().
+ * Rewrite and rename SetDiagFixedStrPostLevel() -> SetDiagFixedPostLevel()
+ *
  * Revision 1.58  2002/07/09 16:37:11  ivanov
  * Added GetSeverityChangeEnabledFirstTime().
  * Fix usage forced set severity post level from environment variable
