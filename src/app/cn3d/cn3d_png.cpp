@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/10/21 15:11:29  thiessen
+* don't share lists in wxGTK build
+*
 * Revision 1.13  2002/10/18 20:33:54  thiessen
 * workaround for linux/Mesa bug
 *
@@ -596,20 +599,22 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         if (gotAnXError) throw "Got an X error creating GLXPixmap";
 
         // try to share display lists with "regular" context
-#ifndef __LINUX__
-	// seems to crash Mesa...
+#if 0
+	// seems to be too flaky - fails on Linux/Mesa, Solaris
         glCtx = glXCreateContext(display, visinfo, currentCtx, False);
-#endif
         if (!glCtx || !glXMakeCurrent(display, glxPixmap, glCtx)) {
             ERR_POST(Warning << "failed to make GLXPixmap rendering context with shared display lists");
-            shareDisplayLists = false;
             if (glCtx) glXDestroyContext(display, glCtx);
+#endif
+            shareDisplayLists = false;
 
             // try to create context without shared lists
             glCtx = glXCreateContext(display, visinfo, NULL, False);
             if (!glCtx || !glXMakeCurrent(display, glxPixmap, glCtx))
                 throw "failed to make GLXPixmap rendering context without shared display lists";
+#if 0
         }
+#endif
         if (gotAnXError) throw "Got an X error setting GLX context";
 
 #elif defined(__WXMAC__)
