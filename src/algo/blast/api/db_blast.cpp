@@ -68,16 +68,19 @@ void CDbBlast::x_InitFields()
 }
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
-                   EProgram p, RPSInfo* rps_info)
-    : m_tQueries(queries), m_pSeqSrc(seq_src), m_pRpsInfo(rps_info) 
+                   EProgram p, RPSInfo* rps_info, BlastHSPStream* hsp_stream)
+    : m_tQueries(queries), m_pSeqSrc(seq_src), m_pRpsInfo(rps_info), 
+      m_pHspStream(hsp_stream) 
 {
     m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
     x_InitFields();
 }
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src, 
-                   CBlastOptionsHandle& opts, RPSInfo* rps_info)
-    : m_tQueries(queries), m_pSeqSrc(seq_src), m_pRpsInfo(rps_info) 
+                   CBlastOptionsHandle& opts, RPSInfo* rps_info, 
+                   BlastHSPStream* hsp_stream)
+    : m_tQueries(queries), m_pSeqSrc(seq_src), m_pRpsInfo(rps_info), 
+      m_pHspStream(hsp_stream) 
 {
     m_OptsHandle.Reset(&opts);    
     x_InitFields();
@@ -178,8 +181,8 @@ int CDbBlast::SetupSearch()
 
 void CDbBlast::PartialRun()
 {
-    SetupSearch();
     m_OptsHandle->GetOptions().Validate();
+    SetupSearch();
     RunSearchEngine();
 }
 
@@ -274,18 +277,30 @@ CDbBlast::TrimBlastHSPResults()
 void 
 CDbBlast::RunSearchEngine()
 {
-    BlastHSPStream* hsp_stream = NULL;
-                  
-    if (m_ipLookupTable->lut_type == RPS_LOOKUP_TABLE) {
-        /* Initialize an HSPList stream to collect hits; 
-           results should be sorted when reading from this stream.
-           Number of "queries" for this purpose is number of sequences
-           in the RPS BLAST database, because queries and subjects are
-           switched in an RPS search. */
+    BlastHSPStream* hsp_stream = m_pHspStream;
+    BlastHSPResults** results_ptr = NULL;
+
+    // If HSP stream has been passed from the user, it means that results are
+    // handled outside of the BLAST engine, and hence we need to pass a NULL 
+    // results pointer to the engine.
+    if (!hsp_stream) {
+        Int4 num_results;
+        
+        /* For RPS BLAST, number of "queries" in HSP stream is equal to 
+           number of sequences in the RPS BLAST database, because queries 
+           and subjects are switched in an RPS search. In all other cases,
+           it is the real number of queries. */
+        num_results = ((m_ipLookupTable->lut_type == RPS_LOOKUP_TABLE) ?
+                       BLASTSeqSrcGetNumSeqs(m_pSeqSrc) : 
+                       m_iclsQueryInfo->num_queries);
         hsp_stream = Blast_HSPListCollectorInit(
                         m_OptsHandle->GetOptions().GetProgram(), 
                         m_OptsHandle->GetOptions().GetHitSaveOpts(),
-                        BLASTSeqSrcGetNumSeqs(m_pSeqSrc), TRUE);
+                        num_results, TRUE);
+        results_ptr = &m_ipResults;
+    }
+
+    if (m_ipLookupTable->lut_type == RPS_LOOKUP_TABLE) {
         BLAST_RPSSearchEngine(m_OptsHandle->GetOptions().GetProgram(), 
             m_iclsQueries, m_iclsQueryInfo, m_pSeqSrc, m_ipScoreBlock,
             m_OptsHandle->GetOptions().GetScoringOpts(), 
@@ -295,14 +310,8 @@ CDbBlast::RunSearchEngine()
             m_OptsHandle->GetOptions().GetEffLenOpts(),
             m_OptsHandle->GetOptions().GetPSIBlastOpts(), 
             m_OptsHandle->GetOptions().GetDbOpts(),
-            hsp_stream, m_ipDiagnostics, &m_ipResults);
+            hsp_stream, m_ipDiagnostics, results_ptr);
     } else {
-        /* Initialize an HSPList stream to collect hits; 
-           results should be sorted when reading from this stream. */
-        hsp_stream = Blast_HSPListCollectorInit(
-                        m_OptsHandle->GetOptions().GetProgram(), 
-                        m_OptsHandle->GetOptions().GetHitSaveOpts(),
-                        m_iclsQueryInfo->num_queries, TRUE);
         BLAST_SearchEngine(m_OptsHandle->GetOptions().GetProgram(),
             m_iclsQueries, m_iclsQueryInfo, m_pSeqSrc, m_ipScoreBlock, 
             m_OptsHandle->GetOptions().GetScoringOpts(), 
@@ -311,12 +320,14 @@ CDbBlast::RunSearchEngine()
             m_OptsHandle->GetOptions().GetHitSaveOpts(), 
             m_OptsHandle->GetOptions().GetEffLenOpts(), NULL, 
             m_OptsHandle->GetOptions().GetDbOpts(),
-            hsp_stream, m_ipDiagnostics, &m_ipResults);
+            hsp_stream, m_ipDiagnostics, results_ptr);
     }
 
-    hsp_stream = BlastHSPStreamFree(hsp_stream);
+    // Only free the HSP stream, if it was allocated locally
+    if (!m_pHspStream)
+        hsp_stream = BlastHSPStreamFree(hsp_stream);
+
     m_ipLookupTable = LookupTableWrapFree(m_ipLookupTable);
-    m_iclsQueries = BlastSequenceBlkFree(m_iclsQueries);
 
     /* The following works because the ListNodes' data point to simple
        double-integer structures */
@@ -331,6 +342,9 @@ TSeqAlignVector
 CDbBlast::x_Results2SeqAlign()
 {
     TSeqAlignVector retval;
+
+    if (!m_ipResults)
+        return retval;
 
     bool gappedMode = m_OptsHandle->GetOptions().GetGappedMode();
     bool outOfFrameMode = m_OptsHandle->GetOptions().GetOutOfFrameMode();
@@ -350,6 +364,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.33  2004/06/15 18:49:07  dondosha
+ * Added optional BlastHSPStream argument to constructors, to allow use of HSP
+ * stream by a separate thread doing on-the-fly formatting
+ *
  * Revision 1.32  2004/06/08 15:20:44  dondosha
  * Use BlastHSPStream interface
  *
