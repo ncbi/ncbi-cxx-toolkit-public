@@ -38,6 +38,7 @@
 BEGIN_NCBI_SCOPE
 
 
+NCBI_DBAPIDRIVER_EXPORT
 void g_SubstituteParam(string& query, const string& name, const string& val);
 
 
@@ -101,6 +102,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/15 21:03:19  gorelenk
+ * Added export prefix NCBI_DBAPIDRIVER_EXPORT to declaration of function
+ * g_SubstituteParam.
+ *
  * Revision 1.5  2003/02/13 15:40:50  ivanov
  * Added export specifier NCBI_DBAPIDRIVER_EXPORT
  *
