@@ -42,22 +42,6 @@
 #include <corelib/ncbistd.hpp>
 #include <vector>
 
-#ifdef NCBI_OS_BSD
-/* These fast macros mess up class defs below; make them real calls instead */
-#  ifdef ntohl
-#    undef ntohl
-#  endif
-#  ifdef ntohs
-#    undef ntohs
-#  endif
-#  ifdef htonl
-#    undef htonl
-#  endif
-#  ifdef htons
-#    undef htons
-#  endif
-#endif
-
 
 BEGIN_NCBI_SCOPE
 
@@ -236,10 +220,10 @@ public:
     static string gethostbyaddr(unsigned int host);  // empty string on error
     static unsigned int gethostbyname(const string& hostname);  // 0 on error
 
-    static unsigned int htonl(unsigned int   value);  // host-to-net, long
-    static unsigned int ntohl(unsigned int   value);  // net-to-host, long
-    static unsigned int htons(unsigned short value);  // host-to-net, short
-    static unsigned int ntohs(unsigned short value);  // net-to-host, short
+    static unsigned int HostToNetLong(unsigned int    value);
+    static unsigned int NetToHostLong(unsigned int    value);
+    static unsigned int HostToNetShort(unsigned short value);
+    static unsigned int NetToHostShort(unsigned short value);
 };
 
 
@@ -380,27 +364,27 @@ inline void CSocketAPI::SetInterruptOnSignal(ESwitch interrupt)
 }
 
 
-inline unsigned int CSocketAPI::htonl(unsigned int value)
+inline unsigned int CSocketAPI::HostToNetLong(unsigned int value)
 {
-    return SOCK_htonl(value);
+    return SOCK_HostToNetLong(value);
 }
 
 
-inline unsigned int CSocketAPI::ntohl(unsigned int value)
+inline unsigned int CSocketAPI::NetToHostLong(unsigned int value)
 {
-    return SOCK_ntohl(value);
+    return SOCK_NetToHostLong(value);
 }
 
 
-inline unsigned int CSocketAPI::htons(unsigned short value)
+inline unsigned int CSocketAPI::HostToNetShort(unsigned short value)
 {
-    return SOCK_htons(value);
+    return SOCK_HostToNetShort(value);
 }
 
 
-inline unsigned int CSocketAPI::ntohs(unsigned short value)
+inline unsigned int CSocketAPI::NetToHostShort(unsigned short value)
 {
-    return SOCK_ntohs(value);
+    return SOCK_NetToHostShort(value);
 }
 
 
@@ -413,6 +397,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/08/27 03:19:29  lavr
+ * CSocketAPI:: Removed methods: htonl(), htons(), ntohl(), ntohs(). Added
+ * as replacements: {Host|Net}To{Net|Host}{Long|Short}() (see ncbi_socket.h)
+ *
  * Revision 6.6  2002/08/15 18:45:03  lavr
  * CSocketAPI::Poll() documented in more details in ncbi_socket.h(SOCK_Poll)
  *
