@@ -42,9 +42,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class IFlatItem;
+class IFlatTextOStream;
 class IFormatter;
-class IFlatTextOStreamFactory;
 
 
 class CFormatItemOStream : public CFlatItemOStream
@@ -58,7 +57,7 @@ public:
     virtual void AddItem(CConstRef<IFlatItem> item);
 
 private:
-    auto_ptr<IFlatTextOStream>  m_TextOS;
+    IFlatTextOStream*  m_TextOS;
 };
 
 
@@ -70,6 +69,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/02/12 20:22:53  shomrat
+* pointer instead of auto_ptr
+*
 * Revision 1.1  2003/12/17 19:52:18  shomrat
 * Initial revision (adapted from flat lib)
 *
