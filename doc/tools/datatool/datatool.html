@@ -312,7 +312,7 @@ Equivalent to arguments of asntool
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-oR &lt;dir></span></td>
+<td><span class="ncbi_app_a">-oR &lt;dir&gt;</span></td>
 <td>set <a href="#refArg_op">-op*</a> and <a href="#refArg_or">-or*</a>
 arguments for NCBI dir tree</td>
 <td>&nbsp;</td>
@@ -322,6 +322,12 @@ arguments for NCBI dir tree</td>
 <td><span class="ncbi_app_a">-lax_syntax</span></td>
 <td>allow non-standard ASN.1 syntax accepted by asntool</td>
 <td>&nbsp;</td>
+</tr>
+
+<tr>
+<td><span class="ncbi_app_a">-oex &lt;export&gt;</span></td>
+<td>add storage-class modifier to generated classes</td>
+<td>sometimes required on Microsoft Windows</td>
 </tr>
 </table>
 
@@ -402,8 +408,10 @@ will affect generation of elements of <a href="#refMember_Int_fuzz_alt">alt</a>
 member of <a href="#refType_Int_fuzz">Int-fuzz</a> structure.
 <br>
 
-<h3>
-<a NAME="refDefCommon"></a>Some definitions affect whole generated type:</h3>
+<a NAME="refDefCommon"></a>
+<h3>Common definitions</h3>
+
+Some definitions affect the whole generated type:
 
 <table border cellspacing=0>
 <tr VALIGN=BASELINE NOSAVE>
@@ -446,6 +454,36 @@ type
 <br>(if <a href="#refDef_parent_class" class="ncbi_keyword">_parent_class</a> not specified)</td>
 </tr>
 </table>
+
+<br />
+It is also possible to specify a storage-class modifier, which is required on Microsoft Windows
+to export/import generated classes from/to a DLL. This setting affects all generated classes
+in a module. Appropriate section of the definition file should look like this:
+<blockquote class="ncbi_code">[-]<br />
+_export = EXPORT_SPECIFIER
+</blockquote>
+Since this modifier could also be specified in the <a href="#refArg_od">command line</a>,
+datatool code generator uses the followig rules to choose the proper one:
+<ol>
+  <li>
+If no <span class="ncbi_app_a">-oex</span> flag is given in the command line,
+then no modifier is added at all.
+  </li>
+  <li>
+If <span class="ncbi_app_a">-oex &quot;&quot;</span>
+(that is an empty modifier) is specified in the command line,
+then the modifier from the definition file will be used.
+  </li>
+  <li>
+The command line parameter in the form 
+<span class="ncbi_app_a">-oex NCBI_FOOBAR_EXPORT</span> will cause
+the generated classes to have <span class="ncbi_app_a">NCBI_FOOBAR_EXPORT</span>
+storage-class modiifer, unless another one is specified in the definition file.
+The modifier from the definition file always takes precedence.
+  </li>
+</ol>
+
+
 
 <h3>
 Definition which affect specific types:</h3>
