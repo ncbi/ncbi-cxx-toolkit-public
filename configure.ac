@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.129 2002/10/01 19:14:43 vakatov Exp $
+#  $Id: configure.ac,v 1.130 2002/10/02 15:25:57 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -147,6 +147,8 @@ AC_ARG_WITH(fltk,
    [ --without-fltk          do not use FLTK])
 AC_ARG_WITH(fltk2,
    [ --with-fltk=DIR         use FLTK installation in DIR])
+AC_ARG_WITH(opengl,
+   [ --without-opengl        do not use OpenGL])
 AC_ARG_WITH(wxwin,
    [ --without-wxwin         do not use wxWindows])
 AC_ARG_WITH(wxwin2,
@@ -188,7 +190,7 @@ x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-sybase-new ftds orbacus fltk \
+sybase-new ftds orbacus fltk opengl \
 local-lbsm serial objects dbapi app ctools gui internal"
 
 changequote(, )dnl
@@ -1867,6 +1869,34 @@ else
 fi
 
 
+## OpenGL
+if test "$with_opengl" != "no"; then
+   AC_PATH_XTRA
+   AC_CHECK_LIB(Xext, XextCreateExtension, Xext="-lXext", Xext=,
+     [$X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
+   X_ALL_LIBS="$Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+   AC_CACHE_CHECK([for OpenGL], ncbi_cv_lib_opengl,
+      [CPPFLAGS="$orig_CPPFLAGS $X_CFLAGS"
+       LDFLAGS="$orig_LDFLAGS $X_LIBS"
+       LIBS="-lGL $X_ALL_LIBS $orig_LIBS"
+       AC_TRY_LINK(
+          [#include <GL/gl.h>],
+          [glBegin(0);],
+          [ncbi_cv_lib_opengl=yes], [ncbi_cv_lib_opengl=no])])
+fi
+
+if test "$with_opengl" = "no" -o "$ncbi_cv_lib_opengl" = "no"; then
+   OPENGL_LIBS=
+   with_opengl="no"
+   WithoutPackages="$WithoutPackages OpenGL"
+else
+   WithPackages="$WithPackages OpenGL"
+   AC_DEFINE(HAVE_OPENGL, 1, [Define to 1 if you have OpenGL (-lGL).])
+   OPENGL_INCLUDE="$X_CFLAGS"
+   OPENGL_LIBS="$X_LIBS -lGL $X_ALL_LIBS"
+fi
+
+
 ## FLTK
 if test "$with_fltk" != "no"; then
    if test -z "$FLTK_PATH"; then
@@ -2490,12 +2520,14 @@ if test "$with_gui" = "no" ; then
    NoConfProjects="$NoConfProjects gui"
 fi
 
-if test ! -f ${srcdir}/src/gui/Makefile.in  -o  \
-        ! -d ${srcdir}/include/gui  -o  "$with_fltk" = "no"
+if test ! -f ${srcdir}/src/gui/Makefile.in  -o  ! -d ${srcdir}/include/gui \
+    -o  "$with_fltk" = "no"  -o  "$with_opengl" = "no"
 then
    if test "$with_gui" = "yes" ; then
       if test "$with_fltk" = "no" ; then
          AC_MSG_ERROR(["--with-gui:  FLTK package is missing"])
+      elif test "$with_opengl" = "no" ; then
+         AC_MSG_ERROR(["--with-gui:  OpenGL is missing"])
       else
          AC_MSG_ERROR(["--with-gui:  GUI sources are missing"])
       fi
@@ -2786,6 +2818,8 @@ AC_SUBST(SYBASE_DLLS)
 AC_SUBST(SYBASE_DBLIBS)
 AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
+AC_SUBST(OPENGL_INCLUDE)
+AC_SUBST(OPENGL_LIBS)
 AC_SUBST(FLTK_INCLUDE)
 AC_SUBST(FLTK_LIBS)
 AC_SUBST(FLTK_LIBS_GL)

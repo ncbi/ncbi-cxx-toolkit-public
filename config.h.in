@@ -109,6 +109,9 @@
 /* Define to 1 if `min'/`max' templates are not implemented. */
 #undef HAVE_NO_MINMAX_TEMPLATE
 
+/* Define to 1 if you have OpenGL (-lGL). */
+#undef HAVE_OPENGL
+
 /* Define to 1 if the ORBacus CORBA package is available. */
 #undef HAVE_ORBACUS
 
@@ -340,6 +343,9 @@
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
 #undef WORDS_BIGENDIAN
+
+/* Define to 1 if the X Window System is missing or not being used. */
+#undef X_DISPLAY_MISSING
 
 /* Define to 1 if type `char' is unsigned and you are not using gcc.  */
 #ifndef __CHAR_UNSIGNED__
