@@ -45,11 +45,11 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
     : is( !args["mk_counts"].AsBoolean() ? 
           ( !args["input"].AsString().empty() 
             ? new CNcbiIfstream( args["input"].AsString().c_str() ) 
-            : &NcbiCin ) : NULL ), reader( NULL ), 
+            : static_cast<CNcbiIstream*>(&NcbiCin) ) : NULL ), reader( NULL ), 
       os( !args["mk_counts"].AsBoolean() ?
           ( !args["output"].AsString().empty() 
             ? new CNcbiOfstream( args["output"].AsString().c_str() )
-            : &NcbiCout ) : NULL ), writer( NULL ),
+            : static_cast<CNcbiOstream*>(&NcbiCout) ) : NULL ), writer( NULL ),
       lstat_name( args["lstat"].AsString() ),
       xdrop( args["xdrop"].AsInteger() ), 
       cutoff_score( args["score"].AsInteger() ),
@@ -178,6 +178,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/01 18:18:25  ucko
+ * Make a couple of casts explicit for the sake of GCC 2.95.
+ *
  * Revision 1.1  2005/02/25 21:32:54  dicuccio
  * Rearranged winmasker files:
  * - move demo/winmasker to a separate app directory (src/app/winmasker)
