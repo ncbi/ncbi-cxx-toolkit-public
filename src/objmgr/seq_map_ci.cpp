@@ -342,11 +342,11 @@ bool CSeqMap_CI::x_Found(void) const
 {
     switch ( x_GetSegment().m_SegType ) {
     case CSeqMap::eSeqRef:
-        return m_Flags & fFindRef || m_MaxResolveCount <= 0;
+        return (m_Flags & fFindRef) != 0 || m_MaxResolveCount <= 0;
     case CSeqMap::eSeqData:
-        return m_Flags & fFindData;
+        return (m_Flags & fFindData) != 0;
     case CSeqMap::eSeqGap:
-        return m_Flags & fFindGap;
+        return (m_Flags & fFindGap) != 0;
     case CSeqMap::eSeqSubMap:
         return false; // always skip submaps
     default:
@@ -401,6 +401,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/02/25 14:48:29  vasilche
+* Removed performance warning on Windows.
+*
 * Revision 1.8  2003/02/24 18:57:22  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.
