@@ -101,7 +101,7 @@ int CCgiApplication::Run(void)
         }
         if ( is_stat_log ) {
             stat->Reset(start_time, result, e.what());
-            string msg = stat->Compose();
+            msg = stat->Compose();
             stat->Submit(msg);
         }
 
@@ -674,6 +674,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2003/02/21 22:20:44  vakatov
+* Get rid of a compiler warning
+*
 * Revision 1.38  2003/02/19 20:57:29  vakatov
 * ...and do not include <connect/ncbi_socket.h> too
 *
