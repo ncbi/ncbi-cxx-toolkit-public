@@ -215,9 +215,8 @@ int CPushback_Streambuf::sync(void)
 streambuf* CPushback_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
                                        streamsize    /*buf_size*/)
 {
-//    THROW1_TRACE(runtime_error, "CPushback_Streambuf::setbuf() not allowed");
-    NCBI_THROW(CUtilException,eWrongCommand,
-        "CPushback_Streambuf::setbuf: not allowed");
+    NCBI_THROW(CUtilException, eWrongCommand,
+               "CPushback_Streambuf::setbuf: not allowed");
     /*NOTREACHED*/
     return this;
 }
@@ -376,6 +375,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.16  2003/02/27 15:36:23  lavr
+ * Preper indentation for NCBI_THROW
+ *
  * Revision 1.15  2003/02/26 21:32:00  gouriano
  * modify C++ exceptions thrown by this library
  *
