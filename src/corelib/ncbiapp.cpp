@@ -37,6 +37,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbi_system.hpp>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
@@ -188,12 +189,12 @@ static void s_MacArgMunging(CNcbiApplication&   app,
     // arguments like when it is double clicked.
     // This will mess up argument processing later, so get rid of it.
     static const char* s_ArgMacPsn = "-psn_"; 
-    
+
     if (*argcPtr == 2  && 
         NStr::strncmp((*argvPtr)[1], s_ArgMacPsn, strlen(s_ArgMacPsn)) == 0) {
         --*argcPtr;
     }
-    
+
     if (*argcPtr > 1)
         return;
 
@@ -204,21 +205,21 @@ static void s_MacArgMunging(CNcbiApplication&   app,
     CDir::SplitPath(exepath, &exedir);
     string args_fname = exedir + app.GetProgramDisplayName() + ".args";
     CNcbiIfstream in(args_fname.c_str());
-        
+
     if ( !in.good() ) {
         ERR_POST(Info << "Mac arguments file not found: " << args_fname);
         return;
     }
 
     vector<string> v;
-            
+
     // remember or fake the executable name.
     if (*argcPtr > 0) {
         v.push_back((*argvPtr)[0]); // preserve the original argv[0].
     } else {
         v.push_back(exepath);
     }
-    
+
     // grab the rest of the arguments from the file.
     // arguments are separated by whitespace. Can be on 
     // more than one line.
@@ -226,7 +227,7 @@ static void s_MacArgMunging(CNcbiApplication&   app,
     while (in >> arg) {
         v.push_back(arg);
     }
-            
+
     // stash them away in the standard argc and argv places.
     *argcPtr = v.size();
 
@@ -252,7 +253,7 @@ int CNcbiApplication::AppMain
 
     // Get program executable's name & path.
     string exepath = FindProgramExecutablePath(argc, argv);
-    
+
     // Get program display name
     string appname = name;
     if (appname.empty()) {
@@ -265,7 +266,7 @@ int CNcbiApplication::AppMain
         }
     }
     SetProgramDisplayName(appname);
-    
+
     // Make sure we have something as our 'real' executable's name.
     // though if it does not contain a full path it won't be much use.
     if ( exepath.empty() ) {
@@ -276,7 +277,7 @@ int CNcbiApplication::AppMain
                  "Please fix FindProgramExecutablePath() on this platform.");
         exepath = appname;
     }
-    
+
 #if defined(NCBI_OS_DARWIN)
     // We do not know standard way of passing arguments to C++ program on Mac,
     // so we will read arguments from special file having extension ".args"
@@ -395,11 +396,12 @@ int CNcbiApplication::AppMain
             } else {
                 LoadConfig(*m_Config, NULL);
             }
-            // Setup the debugging features from the config file.
+
+            // Setup the standard features from the config file.
             // Don't call till after LoadConfig()
             // NOTE: this will override environment variables, 
             // except DIAG_POST_LEVEL which is Set*Fixed*.
-            HonorDebugSettings();
+            x_HonorStandardSettings();
 
             // Do init
             Init();
@@ -739,7 +741,7 @@ string CNcbiApplication::FindProgramExecutablePath
     ProcessSerialNumber psn;
     FSRef               fsRef;
     char                filePath[1024];
-    
+
     err = GetCurrentProcess(&psn);
     if (err == noErr) {
         err = GetProcessBundleLocation(&psn, &fsRef);
@@ -748,7 +750,7 @@ string CNcbiApplication::FindProgramExecutablePath
         }
     }    
     ret_val = filePath;
-    
+
 #elif defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
 
     string app_path = argv[0];
@@ -858,21 +860,27 @@ string CNcbiApplication::FindProgramExecutablePath
 }
 
 
-void CNcbiApplication::HonorDebugSettings(CNcbiRegistry* reg)
+void CNcbiApplication::x_HonorStandardSettings(CNcbiRegistry* reg)
 {
     if (reg == 0) {
         reg = m_Config;
         if (reg == 0)
             return;
     }
-    
-    // Setup the debugging features
+
+    // Debugging features
+
+    // [DEBUG.DIAG_TRACE]
     if ( !reg->Get("DEBUG", DIAG_TRACE).empty() ) {
         SetDiagTrace(eDT_Enable, eDT_Enable);
     }
+
+    // [DEBUG.ABORT_ON_THROW]
     if ( !reg->Get("DEBUG", ABORT_ON_THROW).empty() ) {
         SetThrowTraceAbort(true);
     }
+
+    // [DEBUG.DIAG_POST_LEVEL]
     string post_level = reg->Get("DEBUG", DIAG_POST_LEVEL);
     if ( !post_level.empty() ) {
         EDiagSev sev;
@@ -880,6 +888,8 @@ void CNcbiApplication::HonorDebugSettings(CNcbiRegistry* reg)
             SetDiagFixedPostLevel(sev);
         }
     }
+
+    // [DEBUG.MessageFile]
     string msg_file = reg->Get("DEBUG", DIAG_MESSAGE_FILE);
     if ( !msg_file.empty() ) {
         CDiagErrCodeInfo* info = new CDiagErrCodeInfo();
@@ -894,6 +904,40 @@ void CNcbiApplication::HonorDebugSettings(CNcbiRegistry* reg)
             SetDiagErrCodeInfo(info);
         }
     }
+
+
+    // CPU and heap limitations
+
+    // [NCBI.HeapSizeLimit]
+    if ( !reg->Get("NCBI", "HeapSizeLimit").empty() ) {
+        int heap_size_limit = reg->GetInt("NCBI", "HeapSizeLimit", 0);
+        if (heap_size_limit < 0) {
+            NCBI_THROW(CAppException, eLoadConfig,
+                       "Configuration file error:  [NCBI.HeapSizeLimit] < 0");
+        }
+        heap_size_limit *= 1024 * 1024;
+        if ( !SetHeapLimit(heap_size_limit) ) {
+            ERR_POST(Warning
+                     << "Failed to set the heap size limit to "
+                     << heap_size_limit
+                     << "Mb (as per the config param [NCBI.HeapSizeLimit])");
+        }
+    }
+    
+    // [NCBI.CpuTimeLimit]
+    if ( !reg->Get("NCBI", "CpuTimeLimit").empty() ) {
+        int cpu_time_limit = reg->GetInt("NCBI", "CpuTimeLimit", 0);
+        if (cpu_time_limit < 0) {
+            NCBI_THROW(CAppException, eLoadConfig,
+                       "Configuration file error:  [NCBI.CpuTimeLimit] < 0");
+        }
+        if ( !SetCpuTimeLimit(cpu_time_limit) ) {
+            ERR_POST(Warning
+                     << "Failed to set the CPU time limit to "
+                     << cpu_time_limit
+                     << " sec (as per the config param [NCBI.CpuTimeLimit])");
+        }
+    }
 }
 
 
@@ -903,6 +947,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.90  2004/07/04 18:34:30  vakatov
+ * HonorDebugSettings() --> x_HonorStandardSettings()
+ * the latter also allows to limit max CPU usage and max heap size
+ *
  * Revision 1.89  2004/06/18 18:44:42  vakatov
  * CNcbiApplication::AppMain() not to printout line of '=' before USAGE
  * (in case of invalid args)

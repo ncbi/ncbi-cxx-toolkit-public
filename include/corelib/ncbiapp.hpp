@@ -406,17 +406,15 @@ protected:
     ///   Name of application's executable file.
     string FindProgramExecutablePath(int argc, const char* const* argv);
 
-    /// Honor debug settings.
+private:
+    /// Read standard NCBI application configuration settings.
     ///
-    /// Read the [DEBUG] section of the specified registry and
-    /// set the diagnostic settings as found in that section.
-    /// Specifically, the method reads the settings for parameters:
-    /// ABORT_ON_THROW, DIAG_POST_LEVEL, DIAG_MESSAGE_FILE.
+    /// [NCBI]:   HeapSizeLimit, CpuTimeLimit
+    /// [DEBUG]:  ABORT_ON_THROW, DIAG_POST_LEVEL, MessageFile
     /// @param reg
     ///   Registry to read from. If NULL, use the current registry setting.
-    void HonorDebugSettings(CNcbiRegistry* reg = 0);
+    void x_HonorStandardSettings(CNcbiRegistry* reg = 0);
 
-private:
     /// Setup C++ standard I/O streams' behaviour.
     ///
     /// Called from AppMain() to do compiler-specific optimization
@@ -493,6 +491,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/07/04 18:34:41  vakatov
+ * HonorDebugSettings() --> x_HonorStandardSettings()
+ * the latter also allows to limit max CPU usage and max heap size
+ *
  * Revision 1.40  2004/01/06 18:17:21  dicuccio
  * Added APIs for setting environment variables
  *
