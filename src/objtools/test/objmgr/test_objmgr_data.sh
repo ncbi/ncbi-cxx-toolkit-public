@@ -2,8 +2,8 @@
 #$Id$
 
 for args in "" "-fromgi 30240900 -togi 30241000"; do
-    echo "Testing: ./test_objmgr_data $args"
-    if $CHECK_EXEC time ./test_objmgr_data $args; then
+    echo "Testing: test_objmgr_data $args"
+    if $CHECK_EXEC time test_objmgr_data $args; then
         echo "Done."
     else
         exit 1
