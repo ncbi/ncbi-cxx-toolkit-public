@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/02/04 20:20:28  lavr
+ * Notes about stream repositioning added
+ *
  * Revision 1.1  2001/12/09 06:28:59  vakatov
  * Initial revision
  *
@@ -46,7 +49,7 @@ BEGIN_NCBI_SCOPE
 
 
 // Push the block of data [buf, buf+buf_size) back to the input stream "is".
-// If "del_ptr" is not NULL, then `delete [] (char*)del_ptr' will be called
+// If "del_ptr" is not NULL, then `delete[] (CT_CHAR_TYPE*) del_ptr' is called
 // some time between the moment you call this function and when either the
 // passed data is all read from the stream, or if the stream is destroyed.
 // Until all of the passed data is read from the stream, this block of
@@ -55,6 +58,10 @@ BEGIN_NCBI_SCOPE
 //          used instead of the original [buf, buf+buf_size) area.
 // NOTE 2:  this data does not go to the original streambuf of "is".
 // NOTE 3:  it's okay if "is" is actually a duplex stream (iostream).
+// NOTE 4:  after a pushback "is" is not allowed to do stream positioning
+//          relative to current position (ios::cur); only direct-access
+//          (ios::beg, ios::end) seeks are okay.
+// NOTE 4:  stream re-positioning made after pushback clears all pushback data.
 extern void UTIL_StreamPushback(istream&      is,
                                 CT_CHAR_TYPE* buf,
                                 streamsize    buf_size,
