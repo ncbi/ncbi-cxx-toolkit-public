@@ -136,7 +136,6 @@ void   GetHitsMinMax(const vector<CHit>& hits,
 string RLE(const string& in);
 
 void   XFilter(vector<CHit>* hits);
-bool   IsConsensus(const char* donor, const char* acceptor);
 
 struct SCompliment
 {
@@ -157,6 +156,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2005/01/26 21:33:12  kapustin
+ * ::IsConsensusSplce ==> CSplign::SSegment::s_IsConsensusSplice
+ *
  * Revision 1.6  2004/12/16 23:12:26  kapustin
  * algo/align rearrangement
  *

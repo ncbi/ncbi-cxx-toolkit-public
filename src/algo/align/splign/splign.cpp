@@ -609,7 +609,9 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
         double min_a_content = 0.799;
         // also check splices
         if(s.m_exon && j > 0 && m_segments[j-1].m_exon) {
-            if(!IsConsensus(m_segments[j-1].GetDonor(), s.GetAcceptor())) {
+            bool consensus = CSplign::SSegment::s_IsConsensusSplice(
+                                 m_segments[j-1].GetDonor(), s.GetAcceptor());
+            if(!consensus) {
                 min_a_content = 0.599;
             }
         }
@@ -1269,6 +1271,15 @@ const char* CSplign::SSegment::GetAcceptor() const
 }
 
 
+bool CSplign::SSegment::s_IsConsensusSplice(const char* donor,
+                                            const char* acceptor)
+{
+  return donor && acceptor &&
+    (donor[0] == 'G' && (donor[1] == 'C' || donor[1] == 'T'))
+    &&
+    (acceptor[0] == 'A' && acceptor[1] == 'G');
+}
+
 
 double CSplign::SAlignedCompartment::GetIdentity() const
 {
@@ -1463,6 +1474,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/01/26 21:33:12  kapustin
+ * ::IsConsensusSplce ==> CSplign::SSegment::s_IsConsensusSplice
+ *
  * Revision 1.25  2004/12/16 23:12:26  kapustin
  * algo/align rearrangement
  *

@@ -180,15 +180,6 @@ bool CInf_EST::x_ParseLine (const char* line, string& accession, SInfo& info)
 #endif // GENOME_PIPELINE
 
 
-bool IsConsensus(const char* donor, const char* acceptor)
-{
-  return donor && acceptor &&
-    (donor[0] == 'G' && (donor[1] == 'C' || donor[1] == 'T'))
-    &&
-    (acceptor[0] == 'A' && acceptor[1] == 'G');
-}
-
-
 void CleaveOffByTail(vector<CHit>* hits, size_t polya_start)
 {
   const size_t hit_dim = hits->size();
@@ -311,6 +302,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2005/01/26 21:33:12  kapustin
+ * ::IsConsensusSplce ==> CSplign::SSegment::s_IsConsensusSplice
+ *
  * Revision 1.11  2004/12/16 23:12:26  kapustin
  * algo/align rearrangement
  *
