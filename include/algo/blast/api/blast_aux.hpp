@@ -113,7 +113,7 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastHitSavingParameters,
                            BlastHitSavingParametersFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(PSIBlastOptions, sfree);
-DECLARE_AUTO_CLASS_WRAPPER(BlastDatabaseOptions, BlastDatabaseOptions);
+DECLARE_AUTO_CLASS_WRAPPER(BlastDatabaseOptions, BlastDatabaseOptionsFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastScoreBlk, BlastScoreBlkFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastScoringOptions, BlastScoringOptionsFree);
@@ -131,6 +131,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2003/08/27 21:27:58  camacho
+* Fix to previous commit
+*
 * Revision 1.21  2003/08/27 18:40:02  camacho
 * Change free function for blast db options struct
 *
