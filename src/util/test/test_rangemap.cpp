@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/01/05 15:49:52  vasilche
+* Fixed warning.
+*
 * Revision 1.4  2001/01/05 13:59:17  vasilche
 * Reduced CRangeMap* templates size.
 * Added CRangeMultimap template.
@@ -116,5 +119,5 @@ END_NCBI_SCOPE
 
 int main(int argc, const char* argv[])
 {
-    NCBI_NS_NCBI::CTestRangeMap().AppMain(argc, argv);
+    return NCBI_NS_NCBI::CTestRangeMap().AppMain(argc, argv);
 }
