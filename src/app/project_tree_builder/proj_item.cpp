@@ -30,6 +30,8 @@
 #include <app/project_tree_builder/proj_item.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/proj_src_resolver.hpp>
+#include <app/project_tree_builder/msvc_prj_defines.hpp>
+
 #include <set>
 #include <algorithm>
 
@@ -195,6 +197,7 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_IncludeDirs    = item.m_IncludeDirs;
     m_DatatoolSources= item.m_DatatoolSources;
     m_Defines        = item.m_Defines;
+    m_NcbiCLibs      = item.m_NcbiCLibs;
 }
 
 
@@ -664,6 +667,51 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends_libs,
 
 
 //-----------------------------------------------------------------------------
+void SAppProjectT::CreateNcbiCToolkitLibs(const string& applib_mfilepath,
+                                          const TFiles& makeapp,
+                                          list<string>* libs_list)
+{
+    libs_list->clear();
+    CProjectItemsTree::TFiles::const_iterator m = makeapp.find(applib_mfilepath);
+    if (m == makeapp.end()) {
+
+        LOG_POST(Info << "No Makefile.*.app for Makefile.in :"
+                  + applib_mfilepath);
+        return;
+    }
+
+    CSimpleMakeFileContents::TContents::const_iterator k = 
+    m->second.m_Contents.find("NCBI_C_LIBS");
+    if (k == m->second.m_Contents.end()) {
+        return;
+    }
+    const list<string>& values = k->second;
+
+    ITERATE(list<string>, p, values) {
+        const string& val = *p;
+        if ( NStr::StartsWith(val, "-l") ) {
+            string lib_id = val.substr(2);
+            libs_list->push_back(lib_id);
+        }
+        if ( NStr::StartsWith(val, "@") &&
+             NStr::EndsWith  (val, "@") ) {
+            string lib_define = val.substr(1, val.length() - 2);
+            string lib_id_str = GetApp().GetSite().ResolveDefine(lib_define);
+            if ( !lib_id_str.empty() ) {
+                list<string> lib_ids;
+                NStr::Split(lib_id_str, LIST_SEPARATOR, lib_ids);
+                copy(lib_ids.begin(), lib_ids.end(), back_inserter(*libs_list));
+            } else {
+                LOG_POST(Error << "No define in local site : "
+                          + lib_define);
+            }
+        }
+    }
+
+    libs_list->sort();
+    libs_list->unique();
+}
+
 CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
                                 const string& proj_name,
                                 const string& applib_mfilepath,
@@ -762,10 +810,12 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
 
     //NCBI_C_LIBS - Special case for NCBI C Toolkit
     k = m->second.m_Contents.find("NCBI_C_LIBS");
+    list<string> ncbi_clibs;
     if (k != m->second.m_Contents.end()) {
         libs_3_party.push_back("NCBI_C_LIBS");
+        CreateNcbiCToolkitLibs(applib_mfilepath, makeapp, &ncbi_clibs);
     }
-
+    
     CProjItem project(CProjKey::eApp, 
                       proj_name, 
                       proj_id,
@@ -776,6 +826,8 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
                       libs_3_party,
                       include_dirs,
                       defines);
+    //
+    project.m_NcbiCLibs = ncbi_clibs;
 
     //DATATOOL_SRC
     k = m->second.m_Contents.find("DATATOOL_SRC");
@@ -1282,6 +1334,7 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
         set<string> keys;
         keys.insert("LIB");
         keys.insert("LIBS");
+        keys.insert("NCBI_C_LIBS");
         SMakeProjectT::DoResolveDefs(resolver, makefiles.m_App, keys);
     }}
 
@@ -1422,6 +1475,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/02/24 17:20:11  gorelenk
+ * Added implementation of member-function CreateNcbiCToolkitLibs
+ * of struct SAppProjectT.
+ * Changed implementation of member-function DoCreate
+ * of struct SAppProjectT.
+ *
  * Revision 1.17  2004/02/23 20:58:41  gorelenk
  * Fixed double properties apperience in generated MSVC projects.
  *
