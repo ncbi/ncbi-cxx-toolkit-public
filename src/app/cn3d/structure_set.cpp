@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/09/11 22:57:33  thiessen
+* working highlighting
+*
 * Revision 1.28  2000/09/11 14:06:29  thiessen
 * working alignment coloring
 *
@@ -247,7 +250,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime, Messenger *mesg) :
     lastDisplayList(OpenGLRenderer::NO_LIST),
     isMultipleStructure(mime.IsAlignstruc()),
     sequenceSet(NULL), alignmentSet(NULL), alignmentManager(NULL),
-    messenger(mesg)
+    messenger(mesg), highlightColor(1,1,0)
 {
     StructureObject *object;
     parentSet = this;
@@ -257,6 +260,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime, Messenger *mesg) :
         ERR_POST(Fatal << "StructureSet::StructureSet() - out of memory");
         return;
     }
+    messenger->RemoveAllHighlights(false);
     
     // create StructureObjects from (list of) biostruc
     if (mime.IsStrucseq()) { 
@@ -429,10 +433,8 @@ void StructureSet::SelectedAtom(unsigned int name)
     const StructureObject *object;
     if (!molecule->GetParentOfType(&object)) return;
 
-    // to test highlighting recolor for now
-    object->parentSet->styleManager->HighlightResidue(object, molecule->id, residue->id);
-    messenger->PostRedrawMolecule(object, molecule->id);
-    messenger->PostRedrawSequenceViewers();
+    // add highlight
+    object->parentSet->messenger->ToggleHighlightOnAnyResidue(molecule, residue->id);
 
     TESTMSG("rotating about " << object->pdbID
         << " molecule " << molecule->id << " residue " << residue->id << ", atom " << atomID);

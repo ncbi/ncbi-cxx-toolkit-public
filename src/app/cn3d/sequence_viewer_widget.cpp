@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/11 22:57:33  thiessen
+* working highlighting
+*
 * Revision 1.5  2000/09/11 01:46:16  thiessen
 * working messenger for sequence<->structure window communication
 *
@@ -152,6 +155,8 @@ void SequenceViewerWidget::SetMouseMode(eMouseMode mode)
 
 void SequenceViewerWidget::OnPaint(wxPaintEvent& event)
 {
+    ERR_POST(Info << "painting SequenceViewerWidget");
+
     wxPaintDC dc(this);
 
     int vsX, vsY, 
@@ -446,7 +451,6 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
     // keep track of position of selection start, as well as last
     // cell dragged to during selection
     static int fromX, fromY, prevToX, prevToY;
-    static unsigned int controls;
 
     // limit dragging movement if necessary
     if (dragging) {
@@ -456,26 +460,32 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
 
     // process beginning of selection
     if (event.LeftDown()) {
-        prevToX = fromX = cellX;
-        prevToY = fromY = cellY;
-        dragging = true;
 
         // find out which (if any) control keys are down at this time
-        controls = 0;
+        unsigned int controls = 0;
         if (event.ShiftDown()) controls |= ViewableAlignment::eShiftDown;
         if (event.ControlDown()) controls |= ViewableAlignment::eControlDown;
         if (event.AltDown() || event.MetaDown()) controls |= ViewableAlignment::eAltOrMetaDown;
 
-        wxClientDC dc(this);
-        dc.BeginDrawing();
-        currentRubberbandType = (mouseMode == eSelect) ? eDot : eSolid;
-        DrawRubberband(dc, fromX, fromY, fromX, fromY, vsX, vsY);
-        dc.EndDrawing();
+        // send MouseDown message
+        alignment->MouseDown(MOX, MOY, controls);
+
+        if (MOX != -1) {    // don't start selection if mouse-down is not inside display area
+            prevToX = fromX = cellX;
+            prevToY = fromY = cellY;
+            dragging = true;
+
+            ERR_POST(Info << "drawing initial rubberband");
+            wxClientDC dc(this);
+            dc.BeginDrawing();
+            currentRubberbandType = (mouseMode == eSelect) ? eDot : eSolid;
+            DrawRubberband(dc, fromX, fromY, fromX, fromY, vsX, vsY);
+            dc.EndDrawing();
+        }
     }
     
-    // process end of selection, on mouse-up, or if the mouse leaves the window,
-    // or if somehow "dragging" is true but the button isn't actually down
-    else if (event.LeftUp() || (dragging && (event.Leaving() || !event.LeftIsDown()))) {
+    // process end of selection, on mouse-up, or if the mouse leaves the window
+    else if (dragging && (event.LeftUp() || event.Leaving() || event.Entering())) {
         if (!event.LeftUp()) {
             cellX = prevToX;
             cellY = prevToY;
@@ -501,10 +511,9 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
                 (fromX < cellX) ? fromX : cellX,
                 (fromY < cellY) ? fromY : cellY,
                 (cellX > fromX) ? cellX : fromX,
-                (cellY > fromY) ? cellY : fromY,
-                controls);
+                (cellY > fromY) ? cellY : fromY);
         else
-            alignment->DraggedCell(fromX, fromY, cellX, cellY, controls);
+            alignment->DraggedCell(fromX, fromY, cellX, cellY);
     }
 
     // process continuation of selection - redraw rectangle

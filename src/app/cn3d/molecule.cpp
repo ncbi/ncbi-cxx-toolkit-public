@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/09/11 22:57:32  thiessen
+* working highlighting
+*
 * Revision 1.14  2000/09/08 20:16:55  thiessen
 * working dynamic alignment views
 *
@@ -129,6 +132,23 @@ Molecule::Molecule(StructureBase *parent,
         }
     }
 
+    // load inter-residue bonds from SEQUENCE OF Inter-residue-bond OPTIONAL
+    CMolecule_graph::TInter_residue_bonds::const_iterator j, je;
+    if (graph.IsSetInter_residue_bonds()) {
+        je = graph.GetInter_residue_bonds().end();
+        for (j=graph.GetInter_residue_bonds().begin(); j!=je; j++) {
+            
+            int order = j->GetObject().IsSetBond_order() ? 
+                j->GetObject().GetBond_order() : Bond::eUnknown;
+            const Bond *bond = MakeBond(this, 
+                j->GetObject().GetAtom_id_1(), 
+                j->GetObject().GetAtom_id_2(),
+                order);
+            if (bond) interResidueBonds.push_back(bond);
+        }
+        j=graph.GetInter_residue_bonds().begin();
+    }
+
     // load residues from SEQUENCE OF Residue, storing virtual bonds along the way
     const Residue *prevResidue = NULL;
     const Bond *prevBond = NULL;
@@ -144,36 +164,46 @@ Molecule::Molecule(StructureBase *parent,
         // virtual bonds
         if (prevResidue && prevResidue->alphaID != Residue::NO_ALPHA_ID &&
             residue->alphaID != Residue::NO_ALPHA_ID) {
-            const Bond *bond = MakeBond(this, 
-                id, prevResidue->id, prevResidue->alphaID,
-                id, residue->id, residue->alphaID,
-                Bond::eVirtual);
-            if (bond) {
-                virtualBonds.push_back(bond);
-                if (prevBond) {
-                    (const_cast<Bond *>(prevBond))->nextVirtual = bond;
-                    (const_cast<Bond *>(bond))->previousVirtual = prevBond;
-                }
+
+            // make sure there's a "real" inter-residue bond between these
+            bool restarted = false, found = false;
+            if (graph.IsSetInter_residue_bonds()) {
+                do {
+                    if (j == je) {
+                        if (!restarted) {
+                            j = graph.GetInter_residue_bonds().begin();
+                            restarted = true;
+                        } else
+                        break;
+                    }
+                    if ((j->GetObject().GetAtom_id_1().GetResidue_id().Get() == prevResidue->id &&
+                         j->GetObject().GetAtom_id_2().GetResidue_id().Get() == residue->id) ||
+                        (j->GetObject().GetAtom_id_2().GetResidue_id().Get() == prevResidue->id &&
+                         j->GetObject().GetAtom_id_1().GetResidue_id().Get() == residue->id)) {
+                        found = true;
+                    }    
+                    j++;
+                } while (!found);
             }
-            prevBond = bond;
+
+            if (found) {
+                const Bond *bond = MakeBond(this, 
+                    id, prevResidue->id, prevResidue->alphaID,
+                    id, residue->id, residue->alphaID,
+                    Bond::eVirtual);
+                if (bond) {
+                    virtualBonds.push_back(bond);
+                    if (prevBond) {
+                        (const_cast<Bond *>(prevBond))->nextVirtual = bond;
+                        (const_cast<Bond *>(bond))->previousVirtual = prevBond;
+                    }
+                }
+                prevBond = bond;
+            } else
+                prevBond = NULL;
         } else
             prevBond = NULL;
         prevResidue = residue;
-    }
-
-    // load inter-residue bonds from SEQUENCE OF Inter-residue-bond OPTIONAL
-    if (graph.IsSetInter_residue_bonds()) {
-        CMolecule_graph::TInter_residue_bonds::const_iterator j, je=graph.GetInter_residue_bonds().end();
-        for (j=graph.GetInter_residue_bonds().begin(); j!=je; j++) {
-            
-            int order = j->GetObject().IsSetBond_order() ? 
-                j->GetObject().GetBond_order() : Bond::eUnknown;
-            const Bond *bond = MakeBond(this, 
-                j->GetObject().GetAtom_id_1(), 
-                j->GetObject().GetAtom_id_2(),
-                order);
-            if (bond) interResidueBonds.push_back(bond);
-        }
     }
 }
 

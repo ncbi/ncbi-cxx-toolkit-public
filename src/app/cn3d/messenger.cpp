@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/11 22:57:32  thiessen
+* working highlighting
+*
 * Revision 1.2  2000/09/11 14:06:28  thiessen
 * working alignment coloring
 *
@@ -47,6 +50,7 @@
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/chemical_graph.hpp"
+#include "cn3d/sequence_set.hpp"
 
 #include "cn3d/cn3d_main_wxwin.hpp"
 
@@ -145,6 +149,162 @@ void Messenger::ClearSequenceViewers(void)
     for (q=sequenceViewers.begin(); q!=qe; q++)
         (*q)->ClearGUI();
     PostRedrawSequenceViewers();
+}
+
+
+///// highlighting functions /////
+
+bool Messenger::IsHighlighted(const Molecule *molecule, int residueID) const
+{
+    // use sequence-wise highlight stores
+    if (molecule->sequence) {
+        return IsHighlighted(molecule->sequence, residueID - 1);
+    }
+
+    // use residue-wise highlight stores
+    else {
+        ResidueIdentifier rid = std::make_pair(molecule, residueID);
+        PerResidueHighlightStore::const_iterator rh = residueHighlights.find(rid);
+        if (rh != residueHighlights.end())
+            return true;
+        else
+            return false;
+    }
+}
+
+bool Messenger::IsHighlighted(const Sequence *sequence, int seqIndex) const
+{
+    if (seqIndex < 0 || seqIndex >= sequence->sequenceString.size()) {
+        ERR_POST(Error << "Messenger::IsHighlighted() - seqIndex out of range");
+        return false;
+    }
+
+    PerSequenceHighlightStore::const_iterator sh, she = sequenceHighlights.end();
+    for (sh=sequenceHighlights.begin(); sh!=she; sh++) {
+        if (SAME_SEQUENCE(sequence, sh->first)) {
+            if (sh->second[seqIndex])
+                return true;
+            else
+                return false;
+        }
+    }
+    return false;
+}
+
+void Messenger::AddHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo)
+{
+    if (seqIndexFrom < 0 || seqIndexTo < 0 || seqIndexFrom > seqIndexTo ||
+        seqIndexFrom >= sequence->sequenceString.size() || 
+        seqIndexTo >= sequence->sequenceString.size()) {
+        ERR_POST(Error << "Messenger::AddHighlights() - seqIndex out of range");
+        return;
+    }
+
+    PerSequenceHighlightStore::iterator sh, she = sequenceHighlights.end();
+    for (sh=sequenceHighlights.begin(); sh!=she; sh++) {
+        if (SAME_SEQUENCE(sequence, sh->first)) break;
+    }
+    if (sh == she) {
+        sequenceHighlights[sequence].resize(sequence->sequenceString.size());
+        sh = sequenceHighlights.find(sequence);
+    }
+
+    for (int i=seqIndexFrom; i<=seqIndexTo; i++) sh->second[i] = true;
+
+    PostRedrawSequenceViewers();
+    if (sequence->molecule) {
+        const StructureObject *object;
+        if (!sequence->molecule->GetParentOfType(&object)) return;
+        PostRedrawMolecule(object, sequence->molecule->id);
+    }
+}
+
+void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo)
+{
+    if (seqIndexFrom < 0 || seqIndexTo < 0 || seqIndexFrom > seqIndexTo ||
+        seqIndexFrom >= sequence->sequenceString.size() || 
+        seqIndexTo >= sequence->sequenceString.size()) {
+        ERR_POST(Error << "Messenger::RemoveHighlights() - seqIndex out of range");
+        return;
+    }
+
+    PerSequenceHighlightStore::iterator sh, she = sequenceHighlights.end();
+    for (sh=sequenceHighlights.begin(); sh!=she; sh++) {
+        if (SAME_SEQUENCE(sequence, sh->first)) break;
+    }
+    if (sh != she) {
+        int i;
+        for (i=seqIndexFrom; i<=seqIndexTo; i++) sh->second[i] = false;
+
+        // remove sequence from store if no highlights left
+        for (i=0; i<sequence->sequenceString.size(); i++)
+            if (sh->second[i] == true) break;
+        if (i == sequence->sequenceString.size())
+            sequenceHighlights.erase(sh);
+
+        PostRedrawSequenceViewers();
+        if (sequence->molecule) {
+            const StructureObject *object;
+            if (!sequence->molecule->GetParentOfType(&object)) return;
+            PostRedrawMolecule(object, sequence->molecule->id);
+        }
+    }
+}
+
+void Messenger::ToggleHighlightOnAnyResidue(const Molecule *molecule, int residueID)
+{
+    const StructureObject *object;
+    if (!molecule->GetParentOfType(&object)) return;
+
+    // use sequence-wise highlight stores
+    if (molecule->sequence) {
+        int seqIndex = residueID - 1;
+        if (IsHighlighted(molecule->sequence, seqIndex))
+            RemoveHighlights(molecule->sequence, seqIndex, seqIndex);
+        else
+            AddHighlights(molecule->sequence, seqIndex, seqIndex);
+    }
+
+    // use residue-wise highlight stores
+    else {
+        ResidueIdentifier rid = std::make_pair(molecule, residueID);
+        PerResidueHighlightStore::iterator rh = residueHighlights.find(rid);
+        if (rh != residueHighlights.end())
+            residueHighlights.erase(rh);    // remove highlight
+        else
+            residueHighlights[rid] = true;  // add highlight
+    }
+
+    PostRedrawMolecule(object, molecule->id);
+}
+
+bool Messenger::RemoveAllHighlights(bool postRedraws)
+{
+    bool anyRemoved = (sequenceHighlights.size() > 0 || residueHighlights.size() > 0);
+
+    if (postRedraws) {
+        if (anyRemoved) PostRedrawSequenceViewers();
+        const StructureObject *object;
+
+        PerSequenceHighlightStore::iterator sh, she = sequenceHighlights.end();
+        for (sh=sequenceHighlights.begin(); sh!=she; sh++) {
+            if (sh->first->molecule) {
+                if (!sh->first->molecule->GetParentOfType(&object)) continue;
+                PostRedrawMolecule(object, sh->first->molecule->id);
+            }
+        }
+
+        PerResidueHighlightStore::const_iterator rh, rhe = residueHighlights.end();
+        for (rh = residueHighlights.begin(); rh!=rhe; rh++) {
+            if (!rh->first.first->GetParentOfType(&object)) continue;
+            PostRedrawMolecule(object, rh->first.first->id);
+        }
+    }
+
+    sequenceHighlights.clear();
+    residueHighlights.clear();
+
+    return anyRemoved;
 }
 
 END_SCOPE(Cn3D)

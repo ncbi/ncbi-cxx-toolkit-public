@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/09/11 22:57:31  thiessen
+* working highlighting
+*
 * Revision 1.7  2000/09/11 14:06:28  thiessen
 * working alignment coloring
 *
@@ -127,7 +130,7 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignme
     BlockMultipleAlignment::SequenceList::iterator s = sequenceList->begin();
     *(s++) = alignmentSet->master;
     for (a=alignments.begin(); a!=ae; a++, s++) *s = (*a)->slave;
-    BlockMultipleAlignment *multipleAlignment = new BlockMultipleAlignment(sequenceList);
+    BlockMultipleAlignment *multipleAlignment = new BlockMultipleAlignment(sequenceList, messenger);
 
     // each block is a continuous region on the master, over which each master
     // residue is aligned to a residue of each slave, and where there are no
@@ -181,9 +184,9 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignme
 }
 
 
-BlockMultipleAlignment::BlockMultipleAlignment(const SequenceList *sequenceList) :
+BlockMultipleAlignment::BlockMultipleAlignment(const SequenceList *sequenceList, Messenger *mesg) :
     sequences(sequenceList), currentJustification(eRight),
-    prevRow(-1), prevBlock(NULL)
+    prevRow(-1), prevBlock(NULL), messenger(mesg)
 {
 }
 
@@ -332,7 +335,10 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(int alignmentColumn, int row,
     else
         color->Set(0,0,0);
 
-    *isHighlighted = false;
+    if (seqIndex >= 0)
+        *isHighlighted = messenger->IsHighlighted(sequence, seqIndex);
+    else
+        *isHighlighted = false;
 
     return true;
 }
@@ -451,6 +457,31 @@ int BlockMultipleAlignment::GetFirstAlignedBlockPosition(void) const
         return blocks.front()->width;
     else
         return -1;
+}
+
+void BlockMultipleAlignment::SelectedRange(int row, int from, int to) const
+{
+    // translate from,to (alignment columns) into sequence indexes
+    const Sequence *sequence;
+    int fromIndex, toIndex;
+    bool ignored;
+
+    // find first residue within range
+    while (from <= to) {
+        GetSequenceAndIndexAt(from, row, &sequence, &fromIndex, &ignored);
+        if (fromIndex >= 0) break;
+        from++;
+    }
+    if (from > to) return;
+
+    // find last residue within range
+    while (to >= from) {
+        GetSequenceAndIndexAt(to, row, &sequence, &toIndex, &ignored);
+        if (toIndex >= 0) break;
+        to--;
+    }
+        
+    messenger->AddHighlights(sequence, fromIndex, toIndex);
 }
 
 END_SCOPE(Cn3D)

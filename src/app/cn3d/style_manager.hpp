@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/09/11 22:57:56  thiessen
+* working highlighting
+*
 * Revision 1.13  2000/09/11 14:06:03  thiessen
 * working alignment coloring
 *
@@ -209,12 +212,7 @@ public:
     // check style option consistency
     bool CheckStyleSettings(const StructureSet *set);
 
-    // just to test molecule redrawing for now
-    void HighlightResidue(const StructureObject *object, int moleculeID, int residueID);
-
 private:
-    const StructureObject *highlightObject;
-    int highlightMoleculeID, highlightResidueID;
 
     StyleSettings globalStyle;
     // StyleSettings accessors
@@ -241,6 +239,7 @@ public:
     double radius;
     unsigned int name;
     std::string centerLabel;
+    bool isHighlighted;
 };
 
 class BondStyle
@@ -252,6 +251,7 @@ public:
         double radius;
         bool atomCap;
         unsigned int name;
+        bool isHighlighted;
     };
     EndStyle end1, end2;
     bool midCap;

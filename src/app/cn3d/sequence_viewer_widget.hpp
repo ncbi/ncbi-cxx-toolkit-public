@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/11 22:57:55  thiessen
+* working highlighting
+*
 * Revision 1.3  2000/09/09 14:35:35  thiessen
 * fix wxWin problem with large alignments
 *
@@ -95,19 +98,22 @@ public:
         eAltOrMetaDown  = 0x04
     };
 
+    // this is called when the mouse-down event occurs (i.e., at the
+    // beginning of selection), saying where the mouse was at the time and
+    // with what control keys (see eControlKeys above)
+    virtual void MouseDown(int column, int row, unsigned int controls) const { }
+
     // this is the callback when the the widget is in eSelect mode; it gives the
     // corners of the rectangle of cells selected.
     virtual void SelectedRectangle(
         int columnLeft, int rowTop, 
-        int columnRight, int rowBottom,
-        unsigned int controls) const { }
+        int columnRight, int rowBottom) const { }
 
     // this is the callback when the widget is in eDrag mode; it gives two cells,
     // one where the mouse button-down occurred, and one where mouse-up occurred.
     virtual void DraggedCell(
         int columnFrom, int rowFrom,
-        int columnTo, int rowTo,
-        unsigned int controls) const { }
+        int columnTo, int rowTo) const { }
 };
 
 

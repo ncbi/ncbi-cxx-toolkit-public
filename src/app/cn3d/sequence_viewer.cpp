@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/09/11 22:57:33  thiessen
+* working highlighting
+*
 * Revision 1.7  2000/09/11 14:06:29  thiessen
 * working alignment coloring
 *
@@ -82,6 +85,7 @@ public:
         char *character, Vector *color, bool *isHighlighted) const = 0;
     virtual bool GetSequenceAndIndexAt(int column,
         const Sequence **sequence, int *index) const = 0;
+    virtual void SelectedRange(int from, int to) const = 0;
 };
 
 class DisplayRowFromAlignment : public DisplayRow
@@ -90,7 +94,8 @@ public:
     const int row;
     const BlockMultipleAlignment * const alignment;
 
-    DisplayRowFromAlignment(int r, const BlockMultipleAlignment *a) : row(r), alignment(a) { }
+    DisplayRowFromAlignment(int r, const BlockMultipleAlignment *a) :
+        row(r), alignment(a) { }
 
     int Size() const { return alignment->AlignmentWidth(); }
 
@@ -106,14 +111,21 @@ public:
 		bool ignore;
         return alignment->GetSequenceAndIndexAt(column, row, sequence, index, &ignore);
     }
+
+    void SelectedRange(int from, int to) const
+    {
+        alignment->SelectedRange(row, from, to);
+    }
 };
 
 class DisplayRowFromSequence : public DisplayRow
 {
 public:
     const Sequence * const sequence;
+    Messenger *messenger;
 
-    DisplayRowFromSequence(const Sequence *s) : sequence(s) { }
+    DisplayRowFromSequence(const Sequence *s, Messenger *mesg) :
+        sequence(s), messenger(mesg) { }
 
     int Size() const { return sequence->sequenceString.size(); }
     
@@ -122,6 +134,8 @@ public:
 
     bool GetSequenceAndIndexAt(int column,
         const Sequence **sequenceHandle, int *index) const;
+
+    void SelectedRange(int from, int to) const;
 };
 
 bool DisplayRowFromSequence::GetCharacterTraitsAt(int column,
@@ -135,7 +149,7 @@ bool DisplayRowFromSequence::GetCharacterTraitsAt(int column,
         *color = sequence->molecule->GetResidueColor(column);
     else
         color->Set(0,0,0);
-    *isHighlighted = false;
+    *isHighlighted = messenger->IsHighlighted(sequence, column);
     return true;
 }
 
@@ -148,6 +162,23 @@ bool DisplayRowFromSequence::GetSequenceAndIndexAt(int column,
     *sequenceHandle = sequence;
     *index = column;
     return true;
+}
+
+void DisplayRowFromSequence::SelectedRange(int from, int to) const
+{
+    int len = sequence->sequenceString.size();
+    
+    // skip if selected outside range
+    if (from < 0 && to < 0) return;
+    if (from >= len && to >= len) return;
+
+    // trim to within range
+    if (from < 0) from = 0;
+    else if (from >= len) from = len - 1;
+    if (to < 0) to = 0;
+    else if (to >= len) to = len - 1;
+
+    messenger->AddHighlights(sequence, from, to);
 }
 
 class DisplayRowFromString : public DisplayRow
@@ -166,6 +197,8 @@ public:
 
     bool GetSequenceAndIndexAt(int column,
         const Sequence **sequenceHandle, int *index) const { return false; }
+
+    void SelectedRange(int from, int to) const { } // do nothing
 };
 
 bool DisplayRowFromString::GetCharacterTraitsAt(int column,
@@ -183,28 +216,26 @@ bool DisplayRowFromString::GetCharacterTraitsAt(int column,
 class SequenceDisplay : public ViewableAlignment
 {
 public:
-    SequenceDisplay(SequenceViewerWindow * const *parentViewer);
+    SequenceDisplay(SequenceViewerWindow * const *parentViewer, Messenger *messenger);
     ~SequenceDisplay(void);
 
     // these functions add a row to the display, from various sources
     void AddRowFromAlignment(int row, const BlockMultipleAlignment *fromAlignment);
-    void AddRowFromSequence(const Sequence *sequence);
+    void AddRowFromSequence(const Sequence *sequence, Messenger *messenger);
     void AddRowFromString(const std::string& anyString);
 
 private:
-
-    int startingColumn;
-
+    
     void AddRow(DisplayRow *row);
 
+    Messenger *messenger;
+    int startingColumn;
     typedef std::vector < DisplayRow * > RowVector;
     RowVector rows;
-
     int maxRowWidth;
-
     const BlockMultipleAlignment *alignment;
-
     SequenceViewerWindow * const *viewerWindow;
+    bool controlDown;
 
 public:
     // column to scroll to when this display is first shown
@@ -222,16 +253,9 @@ public:
     
     // callbacks for ViewableAlignment
     void MouseOver(int column, int row) const;
-
-    void SelectedRectangle(int columnLeft, int rowTop, 
-        int columnRight, int rowBottom, unsigned int controls) const
-        { TESTMSG("got SelectedRectangle " << columnLeft << ',' << rowTop << " to "
-            << columnRight << ',' << rowBottom); }
-
-    void DraggedCell(int columnFrom, int rowFrom,
-        int columnTo, int rowTo, unsigned int controls) const
-        { TESTMSG("got DraggedCell " << columnFrom << ',' << rowFrom << " to "
-            << columnTo << ',' << rowTo); }
+    void MouseDown(int column, int row, unsigned int controls) const;
+    void SelectedRectangle(int columnLeft, int rowTop, int columnRight, int rowBottom) const;
+    void DraggedCell(int columnFrom, int rowFrom, int columnTo, int rowTo) const;
 };
 
 class SequenceViewerWindow : public wxFrame
@@ -284,7 +308,6 @@ void SequenceViewer::DestroyGUI(void)
 
 void SequenceViewer::Refresh(void)
 {
-    TESTMSG("refreshing SequenceViewer");
     if (viewerWindow)
         viewerWindow->Refresh();
     else
@@ -302,7 +325,7 @@ void SequenceViewer::NewAlignment(const SequenceDisplay *display)
 void SequenceViewer::DisplayAlignment(const BlockMultipleAlignment *multiple)
 {
     if (display) delete display;
-    display = new SequenceDisplay(&viewerWindow);
+    display = new SequenceDisplay(&viewerWindow, messenger);
     
     for (int row=0; row<multiple->NRows(); row++)
         display->AddRowFromAlignment(row, multiple);
@@ -317,21 +340,23 @@ void SequenceViewer::DisplayAlignment(const BlockMultipleAlignment *multiple)
 void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
 {
     if (display) delete display;
-    display = new SequenceDisplay(&viewerWindow);
+    display = new SequenceDisplay(&viewerWindow, messenger);
 
     // populate each line of the display with one sequence, with blank lines inbetween
     SequenceList::const_iterator s, se = sequenceList->end();
     for (s=sequenceList->begin(); s!=se; s++) {
         if (s != sequenceList->begin()) display->AddRowFromString("");
-        display->AddRowFromSequence(*s);
+        display->AddRowFromSequence(*s, messenger);
     }
 
     NewAlignment(display);
 }
 
 
-SequenceDisplay::SequenceDisplay(SequenceViewerWindow * const *parentViewerWindow) : 
-    maxRowWidth(0), viewerWindow(parentViewerWindow), alignment(NULL), startingColumn(0)
+SequenceDisplay::SequenceDisplay(SequenceViewerWindow * const *parentViewerWindow,
+    Messenger *mesg) : 
+    maxRowWidth(0), viewerWindow(parentViewerWindow), alignment(NULL), startingColumn(0),
+    messenger(mesg)
 {
 }
 
@@ -357,14 +382,14 @@ void SequenceDisplay::AddRowFromAlignment(int row, const BlockMultipleAlignment 
     AddRow(new DisplayRowFromAlignment(row, fromAlignment));
 }
 
-void SequenceDisplay::AddRowFromSequence(const Sequence *sequence)
+void SequenceDisplay::AddRowFromSequence(const Sequence *sequence, Messenger *messenger)
 {
     if (!sequence) {
         ERR_POST(Error << "SequenceDisplay::AddRowFromSequence() failed");
         return;
     }
 
-    AddRow(new DisplayRowFromSequence(sequence));
+    AddRow(new DisplayRowFromSequence(sequence, messenger));
 }
 
 void SequenceDisplay::AddRowFromString(const std::string& anyString)
@@ -428,6 +453,34 @@ void SequenceDisplay::MouseOver(int column, int row) const
         (*viewerWindow)->SetStatusText(message, 0);
     }
 }
+
+void SequenceDisplay::MouseDown(int column, int row, unsigned int controls) const
+{
+    TESTMSG("got MouseDown");
+    (const_cast<SequenceDisplay*>(this))->
+        controlDown = ((controls & ViewableAlignment::eControlDown) > 0);
+}
+
+void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop, 
+    int columnRight, int rowBottom) const
+{
+    TESTMSG("got SelectedRectangle " << columnLeft << ',' << rowTop << " to "
+        << columnRight << ',' << rowBottom);
+
+    if (!controlDown)
+        messenger->RemoveAllHighlights(true);
+
+    for (int i=rowTop; i<=rowBottom; i++)
+        rows[i]->SelectedRange(columnLeft, columnRight);
+}
+
+void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
+    int columnTo, int rowTo) const
+{
+    TESTMSG("got DraggedCell " << columnFrom << ',' << rowFrom << " to "
+        << columnTo << ',' << rowTo);
+}
+
 
 enum {
     MID_SELECT,

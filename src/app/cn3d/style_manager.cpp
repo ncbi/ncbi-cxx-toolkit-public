@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/09/11 22:57:34  thiessen
+* working highlighting
+*
 * Revision 1.13  2000/09/11 14:06:30  thiessen
 * working alignment coloring
 *
@@ -81,14 +84,14 @@
 #include "cn3d/show_hide_manager.hpp"
 #include "cn3d/object_3d.hpp"
 #include "cn3d/alignment_manager.hpp"
+#include "cn3d/messenger.hpp"
 
 USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
 
-StyleManager::StyleManager(void) :
-    highlightObject(NULL)
+StyleManager::StyleManager(void)
 {
 }
 
@@ -252,12 +255,12 @@ bool StyleManager::CheckStyleSettings(const StructureSet *set)
     if (set->isAlphaOnly) {
         if (globalStyle.proteinBackbone.type == StyleSettings::ePartial ||
             globalStyle.proteinBackbone.type == StyleSettings::eComplete) {
-            ERR_POST(Error << "CheckStyleSettings(): can't have worm with ncbi-backbone models");
+            ERR_POST(Error << "CheckStyleSettings(): can only have backbone trace with ncbi-backbone models");
             globalStyle.proteinBackbone.type = StyleSettings::eTrace;
         }
         if (globalStyle.nucleotideBackbone.type == StyleSettings::ePartial ||
             globalStyle.nucleotideBackbone.type == StyleSettings::eComplete) {
-            ERR_POST(Error << "CheckStyleSettings(): can't have worm with ncbi-backbone models");
+            ERR_POST(Error << "CheckStyleSettings(): can only have backbone trace with ncbi-backbone models");
             globalStyle.nucleotideBackbone.type = StyleSettings::eTrace;
         }
     }
@@ -392,45 +395,39 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         atomStyle->radius = 0.0;
 
     // determine color
-    if (object == highlightObject && molecule->id == highlightMoleculeID &&
-        residue->id == highlightResidueID)
-        atomStyle->color.Set(1,1,0); // highlight color
-    else {
-
-        switch (backboneStyle ? backboneStyle->colorScheme : generalStyle->colorScheme) {
-            case StyleSettings::eElement:
-                atomStyle->color = element->color;
+    switch (backboneStyle ? backboneStyle->colorScheme : generalStyle->colorScheme) {
+        case StyleSettings::eElement:
+            atomStyle->color = element->color;
+            break;
+        case StyleSettings::eAlignment:
+            if (molecule->sequence &&
+                molecule->parentSet->alignmentManager->
+                    IsAligned(molecule->sequence, residue->id - 1)) { // assume seqIndex is rID - 1
+                atomStyle->color.Set(1,0,0);   // red
                 break;
-            case StyleSettings::eAlignment:
-                if (molecule->sequence &&
-                    molecule->parentSet->alignmentManager->
-                        IsAligned(molecule->sequence, residue->id - 1)) { // assume seqIndex is rID - 1
-                    atomStyle->color.Set(1,0,0);   // red
-                    break;
-                } // if not aligned, then use eObject coloring
-            case StyleSettings::eMolecule:
-                // should actually be a color cycle...
-            case StyleSettings::eObject:
-                // should actually be a color cycle...
-                if (object->IsMaster())
-                    atomStyle->color.Set(1,0,1);
-                else
-                    atomStyle->color.Set(0,0,1);
-                break;
-            case StyleSettings::eSecondaryStructure:
-                // needs to be done right, once residue->secondary structure lookup is in place
-                atomStyle->color.Set(0,1,1);
-                break;
-            case StyleSettings::eUserSelect:
-                if (backboneStyle)
-                    atomStyle->color = backboneStyle->userColor;
-                else
-                    atomStyle->color = generalStyle->userColor;
-                break;
-            default:
-                ERR_POST(Error << "StyleManager::GetAtomStyle() - inappropriate color scheme for atom");
-                return false;
-        }
+            } // if not aligned, then use eObject coloring
+        case StyleSettings::eMolecule:
+            // should actually be a color cycle...
+        case StyleSettings::eObject:
+            // should actually be a color cycle...
+            if (object->IsMaster())
+                atomStyle->color.Set(1,0,1);
+            else
+                atomStyle->color.Set(0,0,1);
+            break;
+        case StyleSettings::eSecondaryStructure:
+            // needs to be done right, once residue->secondary structure lookup is in place
+            atomStyle->color.Set(0,1,1);
+            break;
+        case StyleSettings::eUserSelect:
+            if (backboneStyle)
+                atomStyle->color = backboneStyle->userColor;
+            else
+                atomStyle->color = generalStyle->userColor;
+            break;
+        default:
+            ERR_POST(Error << "StyleManager::GetAtomStyle() - inappropriate color scheme for atom");
+            return false;
     }
 
     // determine transparency
@@ -444,6 +441,10 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         atomStyle->centerLabel = element->symbol;
     } else
         atomStyle->style = eSolidAtom;
+
+    // determine whether it's highlighted
+    atomStyle->isHighlighted = molecule->parentSet->
+        messenger->IsHighlighted(molecule, residue->id);
 
     atomStyle->name = info->glName;
     return true;
@@ -639,6 +640,12 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         bondStyle->midCap = true;
     }
 
+    // set highlighting color if necessary
+    if (atomStyle1.isHighlighted)
+        bondStyle->end1.color = bond->parentSet->highlightColor;
+    if (atomStyle2.isHighlighted)
+        bondStyle->end2.color = bond->parentSet->highlightColor;
+
     return true;
 }
 
@@ -740,14 +747,6 @@ const StyleSettings& StyleManager::GetStyleForResidue(const StructureObject *obj
     int moleculeID, int residueID) const
 { 
     return globalStyle;
-}
-
-// this is really braindead for now, for testing...
-void StyleManager::HighlightResidue(const StructureObject *object, int moleculeID, int residueID)
-{
-    highlightObject = object;
-    highlightMoleculeID = moleculeID;
-    highlightResidueID = residueID;
 }
 
 END_SCOPE(Cn3D)

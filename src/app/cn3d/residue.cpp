@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/09/11 22:57:32  thiessen
+* working highlighting
+*
 * Revision 1.15  2000/08/25 14:22:00  thiessen
 * minor tweaks
 *
@@ -337,6 +340,10 @@ bool Residue::Draw(const AtomSet *atomSet) const
         // get Style
         if (!parentSet->styleManager->GetAtomStyle(this, ap, &atomStyle))
             return false;
+
+        // use highlighting color if necessary
+        if (atomStyle.isHighlighted)
+            atomStyle.color = parentSet->highlightColor;
 
         // get AtomCoord* for appropriate altConf and draw the atom
         if (atomStyle.style != StyleManager::eNotDisplayed &&

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/09/11 22:57:55  thiessen
+* working highlighting
+*
 * Revision 1.1  2000/09/11 01:45:53  thiessen
 * working messenger for sequence<->structure window communication
 *
@@ -41,6 +44,8 @@
 #define CN3D_MESSENGER__HPP
 
 #include <list>
+#include <map>
+#include <vector>
 
 #include <corelib/ncbistl.hpp>
 
@@ -52,6 +57,7 @@ class BlockMultipleAlignment;
 class Sequence;
 class Cn3DMainFrame;
 class StructureObject;
+class Molecule;
 
 class Messenger
 {
@@ -67,6 +73,23 @@ public:
     // should be called only by Cn3DApp at idle time; processes any redraws
     // that have been posted by prior event(s)
     void ProcessRedraws(void);
+
+    // these next few are related to highlighting:
+
+    // clear all highlight stores - and optionally post redraws. Returns 'true'
+    // if there were actually any highlights to remove
+    bool RemoveAllHighlights(bool postRedraws);
+
+    // check for highlight
+    bool IsHighlighted(const Molecule *molecule, int residueID) const;
+    bool IsHighlighted(const Sequence *sequence, int seqIndex) const;
+
+    // highlight any 'ole residue, regardless of molecule type
+    void ToggleHighlightOnAnyResidue(const Molecule *molecule, int residueID);
+    
+    // add/remove highlights based on sequence
+    void AddHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo);
+    void RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo);
 
     // inform sequence viewers that there's a new entity to display
     typedef std::list < const Sequence * > SequenceList;
@@ -90,6 +113,14 @@ private:
 
     bool redrawAllStructures;
     bool redrawSequenceViewers;
+
+    // to store lists of highlighted stuff
+    typedef std::pair < const Molecule *, int > ResidueIdentifier;
+    typedef std::map < ResidueIdentifier, bool > PerResidueHighlightStore;
+    PerResidueHighlightStore residueHighlights;
+
+    typedef std::map < const Sequence *, std::vector < bool > > PerSequenceHighlightStore;
+    PerSequenceHighlightStore sequenceHighlights;
 
 public:
     Messenger(void) : redrawAllStructures(false), redrawSequenceViewers(false) { }

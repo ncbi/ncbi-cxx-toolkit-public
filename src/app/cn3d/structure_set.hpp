@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/09/11 22:57:56  thiessen
+* working highlighting
+*
 * Revision 1.23  2000/09/11 01:45:54  thiessen
 * working messenger for sequence<->structure window communication
 *
@@ -156,6 +159,8 @@ public:
     OpenGLRenderer *renderer;
     ShowHideManager *showHideManager;
     StyleManager *styleManager;
+
+    const Vector highlightColor;
 
     Vector center; // center of structure (relative to Master's coordinates)
     double maxDistFromCenter; // max distance of any atom from center

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/09/11 22:57:55  thiessen
+* working highlighting
+*
 * Revision 1.6  2000/09/11 14:06:02  thiessen
 * working alignment coloring
 *
@@ -80,7 +83,7 @@ class BlockMultipleAlignment
 {
 public:
     typedef std::vector < const Sequence * > SequenceList;
-    BlockMultipleAlignment(const SequenceList *sequenceList);
+    BlockMultipleAlignment(const SequenceList *sequenceList, Messenger *messenger);
 
     ~BlockMultipleAlignment(void);
 
@@ -109,6 +112,8 @@ public:
     int GetFirstAlignedBlockPosition(void) const;
     
 private:
+    Messenger *messenger;
+
     typedef std::list < Block * > BlockList;
     BlockList blocks;
     int totalWidth;
@@ -147,6 +152,8 @@ public:
     // get sequence and index (if any) at given position, and whether that residue is aligned
     bool GetSequenceAndIndexAt(int alignmentColumn, int row,
         const Sequence **sequence, int *index, bool *isAligned) const;
+
+    void SelectedRange(int row, int from, int to) const;
 };
 
 // base class for Block - BlockMultipleAlignment is made up of a list of these
