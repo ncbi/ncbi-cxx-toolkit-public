@@ -84,14 +84,17 @@ static bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBi
     }
 
     // Read the asn data
+    bool okay = true;
+    SetDiagTrace(eDT_Disable);
     try {
         *inObject >> *ASNobject;
     } catch (std::exception& e) {
         *err = e.what();
-        return false;
+        okay = false;
     }
+    SetDiagTrace(eDT_Default);
 
-    return true;
+    return okay;
 }
 
 // for writing ASN data
@@ -120,14 +123,17 @@ static bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool
     }
 
     // write the asn data
+    bool okay = true;
+    SetDiagTrace(eDT_Disable);
     try {
         *outObject << ASNobject;
     } catch (std::exception& e) {
         *err = e.what();
-        return false;
+        okay = false;
     }
+    SetDiagTrace(eDT_Default);
 
-    return true;
+    return okay;
 }
 
 // for loading (binary) ASN data via HTTP connection
@@ -154,12 +160,14 @@ static bool GetAsnDataViaHTTP(
             inObject.reset(new ncbi::CObjectIStreamAsnBinary(httpStream));
         else
             inObject.reset(new ncbi::CObjectIStreamAsn(httpStream));
+        SetDiagTrace(eDT_Disable);
         *inObject >> *asnObject;
         okay = true;
 
     } catch (std::exception& e) {
         *err = e.what();
     }
+    SetDiagTrace(eDT_Default);
 
     CORE_SetREG(NULL);
     return okay;
@@ -172,6 +180,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/03/19 14:43:50  thiessen
+* disable trace messages in object loaders for now
+*
 * Revision 1.14  2003/02/03 19:20:00  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -91,6 +91,7 @@ static bool ConvertAsnFromCToCPP(Pointer from, AsnWriteFunc writeFunc, ASNClass 
 
         ncbi::CNcbiIstrstream asnIstrstream(asnDataBlock, dataSize);
         ncbi::CObjectIStreamAsnBinary objIstream(asnIstrstream);
+        SetDiagTrace(eDT_Disable);
         objIstream >> *to;
         retval = true;
 
@@ -99,6 +100,7 @@ static bool ConvertAsnFromCToCPP(Pointer from, AsnWriteFunc writeFunc, ASNClass 
     } catch (std::exception& e) {
         *err = std::string("uncaught exception: ") + e.what();
     }
+    SetDiagTrace(eDT_Default);
 
     if (asnDataBlock) delete[] asnDataBlock;
     if (aibp) AsnIoBSClose(aibp);
@@ -117,6 +119,7 @@ static Pointer ConvertAsnFromCPPToC(const ASNClass& from, AsnReadFunc readFunc, 
     try {
         ncbi::CNcbiOstrstream asnOstrstream;
         ncbi::CObjectOStreamAsnBinary objOstream(asnOstrstream);
+        SetDiagTrace(eDT_Disable);
         objOstream << from;
 
         NS_AUTO_PTR<char> strData(asnOstrstream.str()); // to make sure data gets freed
@@ -129,6 +132,7 @@ static Pointer ConvertAsnFromCPPToC(const ASNClass& from, AsnReadFunc readFunc, 
     } catch (std::exception& e) {
         *err = std::string("uncaught exception: ") + e.what();
     }
+    SetDiagTrace(eDT_Default);
 
     if (aimp) AsnIoMemClose(aimp);
     return cObject;
@@ -142,16 +146,8 @@ static ASNClass * CopyASNObject(const ASNClass& originalObject, std::string *err
     NS_AUTO_PTR<ASNClass> newObject;
 
     try {
-        // create output stream and load object into it
-        ncbi::CNcbiStrstream asnIOstream;
-        ncbi::CObjectOStreamAsnBinary outObject(asnIOstream);
-        outObject << originalObject;
-
-        // create input stream and load into new object
-        ncbi::CObjectIStreamAsnBinary inObject(asnIOstream);
         newObject.reset(new ASNClass());
-        inObject >> *newObject;
-
+        newObject->Assign(originalObject);
     } catch (std::exception& e) {
         *err = e.what();
         return NULL;
@@ -168,6 +164,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/03/19 14:43:49  thiessen
+* disable trace messages in object loaders for now
+*
 * Revision 1.9  2003/02/03 19:20:00  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
