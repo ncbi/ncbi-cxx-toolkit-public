@@ -1404,7 +1404,7 @@ void ChangeSeqLocId(CSeq_loc* loc, bool best, CScope* scope)
 
 
 bool BadSeqLocSortOrder
-(const CBioseq&  seq,
+(const CBioseq&, //  seq,
  const CSeq_loc& loc,
  CScope*         scope)
 {
@@ -1950,6 +1950,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2002/10/23 16:41:12  clausen
+* Fixed warning in WorkShop53
+*
 * Revision 1.12  2002/10/23 15:33:50  clausen
 * Fixed local variable scope warnings
 *
