@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/06/19 20:16:19  lavr
+ * Added #include <connect/ncbi_types.h>
+ *
  * Revision 6.7  2001/06/19 19:09:35  lavr
  * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
  *
@@ -51,7 +54,7 @@
  * ==========================================================================
  */
 
-#include <connect/ncbi_type.h>
+#include <connect/ncbi_types.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -62,8 +62,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2001/06/19 20:16:18  lavr
+ * Added #include <connect/ncbi_types.h>
+ *
  * Revision 6.10  2001/06/19 19:08:28  lavr
- * STimeout and ESwitch moved to ncbi_type.h
+ * STimeout and ESwitch moved to <connect/ncbi_types.h>
  *
  * Revision 6.9  2001/05/17 18:10:22  vakatov
  * Moved the logging macros from <ncbi_core.h> to <ncbi_util.h>.
@@ -98,7 +101,7 @@
  * ===========================================================================
  */
 
-#include <connect/ncbi_type.h>
+#include <connect/ncbi_types.h>
 
 #include <assert.h>
 #if defined(NDEBUG)
