@@ -67,15 +67,14 @@ public:
     // Run this algorithm, return the alignment's score
     virtual TScore Run();
 
-    void    EnableMultipleThreads(bool enable = true) {
-        m_mt = enable;
-    }
+    void    EnableMultipleThreads(bool enable = true);
 
 protected:
 
     TScore                   m_score;
     list<ETranscriptSymbol>  m_TransList;
     bool                     m_mt; // multiple threads
+    unsigned int             m_maxthreads;
     
     void x_DoSubmatrix(const SCoordRect& submatr,
                    list<ETranscriptSymbol>::iterator translist_pos,
@@ -111,7 +110,8 @@ protected:
                            bool direction,
                            list<ETranscriptSymbol>& subpath) const;
 
-    friend class CMTRunHalf;
+    friend class CThreadRunOnTop;
+    friend class CThreadDoSM;
 
 };
 
@@ -119,8 +119,12 @@ protected:
     
 struct SCoordRect {
     size_t i1, j1, i2, j2;
+    SCoordRect() {};
     SCoordRect(size_t l, size_t t, size_t r, size_t b):
         i1(l), j1(t), i2(r), j2(b) {}
+    unsigned int GetArea() {
+        return (i2 - i1 + 1)*(j2 - j1 + 1);
+    }
 };
 
 
@@ -130,6 +134,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/01/22 13:29:11  kapustin
+ * CMMAligner: thread classes declared as friends
+ *
  * Revision 1.2  2003/01/21 16:36:22  kapustin
  * Support multi-thread interface
  *
