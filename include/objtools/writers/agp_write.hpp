@@ -36,15 +36,6 @@
 
 BEGIN_NCBI_SCOPE
 
-/// This form uses its own object manager instance,
-/// which has the GB loader as a default loader.
-/// It is a simple way to write a sequence whose
-/// components are in the database.
-void NCBI_XOBJWRITE_EXPORT AgpWrite(CNcbiOstream& os,
-                                    const objects::CSeqMap& seq_map,
-                                    const string& object_id,
-                                    const string& gap_type,
-                                    bool linkage);
 /// This version takes an object manager instance.
 /// This is useful to prevent another object manager
 /// from being instantiated when the caller has access
@@ -75,6 +66,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/07/07 21:45:07  jcherry
+ * Removed form of AgpWrite that creates its own object manager
+ *
  * Revision 1.2  2004/07/06 13:21:10  jcherry
  * Added export specifiers
  *

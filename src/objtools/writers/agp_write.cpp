@@ -124,25 +124,6 @@ void AgpWrite(CNcbiOstream& os,
 }
 
 
-// Create out object manager instance, if it hasn't already
-// been created, adding CGBDataLoader as a default loader.
-// Call version of AgpWrite that takes an object manager
-static CRef<CObjectManager> s_OM;
-void AgpWrite(CNcbiOstream& os,
-              const CSeqMap& seq_map,
-              const string& object_id,
-              const string& gap_type,
-              bool linkage)
-{
-    if (!s_OM) {
-        s_OM = new CObjectManager;
-        s_OM->RegisterDataLoader(*(new CGBDataLoader),
-                                 CObjectManager::eDefault);
-    }
-    AgpWrite(os, seq_map, object_id, gap_type, linkage, *s_OM);
-}
-
-
 // This function tries to figure out the "component type"
 // to put into column 5 (F, A, D, P, W, or O) by examining
 // the referenced Bioseq.
@@ -224,6 +205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/07/07 21:45:07  jcherry
+ * Removed form of AgpWrite that creates its own object manager
+ *
  * Revision 1.2  2004/06/29 16:26:59  ucko
  * Move E(Agp)Type's definition out of s_DetermineComponentType because
  * templates (namely, max) can't necessarily use local types.
