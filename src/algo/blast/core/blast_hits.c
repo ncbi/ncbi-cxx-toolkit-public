@@ -1362,7 +1362,6 @@ Int2 MergeHSPLists(BlastHSPListPtr hsp_list,
       for (index = new_hspcnt - combined_hsp_list->hspcnt; 
            index < hsp_list->hspcnt; ++index)
          BlastHSPFree(hsp_list->hsp_array[index]);
-      hsp_list->hsp_array = MemFree(hsp_list->hsp_array);
 
       combined_hsp_list->hspcnt = new_hspcnt;
 
@@ -1463,7 +1462,6 @@ Int2 MergeHSPLists(BlastHSPListPtr hsp_list,
       for ( ; index1 < hsp_list->hspcnt; ++index1)
          BlastHSPFree(hsp_list->hsp_array[index]);
    }
-   hsp_list->hsp_array = MemFree(hsp_list->hsp_array);
 
    hspp1 = MemFree(hspp1);
    hspp2 = MemFree(hspp2);
