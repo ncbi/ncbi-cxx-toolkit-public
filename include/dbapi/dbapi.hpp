@@ -172,9 +172,15 @@ public:
     // NOTE: All resultsets are discarded.
     virtual void ExecuteUpdate(const string& sql) = 0;
 
+    // Executes the last command (with changed parameters, if any)
+    virtual void ExecuteLast() = 0;
+
     // Set input parameter
     virtual void SetParam(const CVariant& v, 
 	  		  const string& name) = 0;
+
+    // Clear parameter list
+    virtual void ClearParamList() = 0;
 
     // Get total of rows returned. 
     // NOTE: Valid only after all rows are retrieved from a resultset
@@ -285,6 +291,9 @@ public:
 
     // Complete batch
     virtual void Complete() = 0;
+
+    // Close
+    virtual void Close() = 0;
   
 };
 
@@ -392,6 +401,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2002/10/03 18:51:03  kholodov
+ * Added: IStatement::ExecuteLast() method
+ * Added: IBulkInsert::Close() method
+ *
  * Revision 1.12  2002/09/30 20:45:38  kholodov
  * Added: ForceSingle() method to enforce single connection used
  *
