@@ -60,9 +60,12 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 
-#ifndef NCBI_OS_MAC
-// The system limits are presumably sane, and some system headers explicitly
-// use std::numeric_limits<>, so just stick with the system version on MacOS.
+#if defined(HAVE_LIMITS) && !defined(NCBI_COMPILER_WORKSHOP)
+// Ideally, we would use std::numeric_limits<> whenever available.
+// However, certain compilers leave out support for extensions such as
+// long long, so we still have to use our implementation with them.
+#  include <limits>
+#else
 
 BEGIN_NCBI_SCOPE
 
@@ -71,7 +74,7 @@ BEGIN_NCBI_SCOPE
 //  Forcibly overrides (using preprocessor) the original "numeric_limits<>"!
 //
 
-#define numeric_limits ncbi_numeric_limits
+#  define numeric_limits ncbi_numeric_limits
 template <class T> class numeric_limits;
 
 
@@ -80,7 +83,7 @@ template <class T> class numeric_limits;
 //  "numeric_limits<>" template
 //
 
-#define NCBI_NUMERIC_LIMITS(type, alias) \
+#  define NCBI_NUMERIC_LIMITS(type, alias) \
   template <> \
   class numeric_limits<type> \
   { \
@@ -89,7 +92,7 @@ template <class T> class numeric_limits;
       static inline type max() THROWS_NONE { return kMax_##alias; } \
   }
 
-#define NCBI_NUMERIC_LIMITS_UNSIGNED(type, alias) \
+#  define NCBI_NUMERIC_LIMITS_UNSIGNED(type, alias) \
   template <> \
   class numeric_limits<type> \
   { \
@@ -120,25 +123,29 @@ NCBI_NUMERIC_LIMITS_UNSIGNED (unsigned long, ULong);
 NCBI_NUMERIC_LIMITS          (float,  Float);
 NCBI_NUMERIC_LIMITS          (double, Double);
 
-#if (SIZEOF_LONG_LONG > 0)
+#  if (SIZEOF_LONG_LONG > 0)
 NCBI_NUMERIC_LIMITS          (signed   long long,  LongLong);
 NCBI_NUMERIC_LIMITS_UNSIGNED (unsigned long long, ULongLong);
-#endif
+#  endif
 
-#if defined(NCBI_USE_INT64)
+#  if defined(NCBI_USE_INT64)
 NCBI_NUMERIC_LIMITS          (signed   __int64,  Int64);
 NCBI_NUMERIC_LIMITS_UNSIGNED (unsigned __int64, UInt64);
-#endif
+#  endif
 
 
 END_NCBI_SCOPE
 
-#endif // NCBI_OS_MAC
+#endif // !HAVE_LIMITS  ||  NCBI_COMPILER_WORKSHOP
 
 
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2002/11/04 21:47:56  ucko
+ * Use system numeric_limits<> whenever <limits> exists, except on
+ * WorkShop (which has "long long" but not numeric_limits<long long>).
+ *
  * Revision 1.4  2002/04/11 20:39:15  ivanov
  * CVS log moved to end of the file
  *
