@@ -116,7 +116,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         return 0/*failure*/;
 
     /* client host */
-    SOCK_gethostname(info->client_host, sizeof(info->client_host));
+    if (!SOCK_gethostbyaddr(0, info->client_host, sizeof(info->client_host)))
+        SOCK_gethostname(info->client_host, sizeof(info->client_host));
 
     /* dispatcher host name */
     REG_VALUE(REG_CONN_HOST, info->host, DEF_CONN_HOST);
@@ -1415,6 +1416,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.42  2002/11/12 05:50:33  lavr
+ * Modify client host name discovery
+ *
  * Revision 6.41  2002/11/01 20:13:50  lavr
  * Remove MAXHOSTNAMELEN and MAX_IP_ADDR_LEN macros
  *
