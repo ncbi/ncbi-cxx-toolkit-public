@@ -112,8 +112,8 @@ private:
 
     static bool x_CompareAlnSeqScores  (const CAlnMixSeq* aln_seq1,
                                         const CAlnMixSeq* aln_seq2);
-    static bool x_CompareAlnMatchScores(const CAlnMixMatch* aln_match1,
-                                        const CAlnMixMatch* aln_match2);
+    static bool x_CompareAlnMatchScores(const CRef<CAlnMixMatch>& aln_match1,
+                                        const CRef<CAlnMixMatch>& aln_match2);
     static bool x_CompareAlnSegIndexes (const CAlnMixSegment* aln_seg1,
                                         const CAlnMixSegment* aln_seg2);
 
@@ -288,6 +288,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/03/10 22:12:10  todorov
+* fixed x_CompareAlnMatchScores callback
+*
 * Revision 1.18  2003/03/05 17:42:28  todorov
 * Allowing multiple mixes + general case speed optimization
 *

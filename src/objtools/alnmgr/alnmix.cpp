@@ -73,8 +73,8 @@ bool CAlnMix::x_CompareAlnSeqScores(const CAlnMixSeq* aln_seq1,
 
 
 inline
-bool CAlnMix::x_CompareAlnMatchScores(const CAlnMixMatch* aln_match1, 
-                                      const CAlnMixMatch* aln_match2) 
+bool CAlnMix::x_CompareAlnMatchScores(const CRef<CAlnMixMatch>& aln_match1, 
+                                      const CRef<CAlnMixMatch>& aln_match2) 
 {
     return aln_match1->m_Score > aln_match2->m_Score;
 }
@@ -1276,6 +1276,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2003/03/10 22:12:02  todorov
+* fixed x_CompareAlnMatchScores callback
+*
 * Revision 1.35  2003/03/06 21:42:38  todorov
 * bug fix in x_Reset()
 *
