@@ -20,6 +20,7 @@ fi
 
 CC="$WS_BIN/cc"
 CXX="$WS_BIN/CC"
+CCC="$CXX"
 if test ! -x "$CXX" ; then
     echo "ERROR:  cannot find WorkShop C++ compiler at:"
     echo "  $CXX"
@@ -74,6 +75,6 @@ fi
 
 
 ## Configure
-export CC CXX
+export CC CXX CCC
 
 ${CONFIG_SHELL-/bin/sh} `dirname $0`/../configure $HELP $EXEC_PREFIX $ARCH --with-internal "$@"
