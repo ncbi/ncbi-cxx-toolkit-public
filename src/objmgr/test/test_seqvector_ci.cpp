@@ -72,6 +72,7 @@ private:
                       TSeqPos stop);
     bool x_CheckBuf(const string& buf, size_t pos, size_t len) const;
 
+    CRef<CObjectManager> m_OM;
     CSeqVector m_Vect;
     string m_RefBuf;
 };
@@ -247,12 +248,11 @@ int CTestApp::Run(void)
     // GI with many segments of different sizes.
     int gi = args["gi"].AsInteger(); // 29791621;
 
-    CRef<CObjectManager> pOm(new CObjectManager);
-    pOm->RegisterDataLoader(
-        *new CGBDataLoader("ID", 0, 2),
-        CObjectManager::eDefault);
+    m_OM.Reset(new CObjectManager);
+    m_OM->RegisterDataLoader(*new CGBDataLoader("ID", 0, 2),
+                             CObjectManager::eDefault);
 
-    CScope scope(*pOm);
+    CScope scope(*m_OM);
     scope.AddDefaults();
 
     CSeq_id id;
@@ -482,6 +482,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/11/12 20:16:15  vasilche
+* Fixed error: Attempt to delete Object Manager with open scopes.
+*
 * Revision 1.5  2003/08/29 13:34:48  vasilche
 * Rewrote CSeqVector/CSeqVector_CI code to allow better inlining.
 * CSeqVector::operator[] made significantly faster.
