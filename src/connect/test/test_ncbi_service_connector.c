@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/12/29 18:25:27  lavr
+ * More tests added (still not yet complete).
+ *
  * Revision 6.1  2000/10/20 17:31:07  lavr
  * Initial revision
  *
@@ -41,25 +44,57 @@
 #endif 
 
 #include <connect/ncbi_service_connector.h>
-
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 
 int main(int argc, const char* argv[])
 {
-    STimeout  timeout;
+    const char buffer[] = "UUUUUZZZZZZUUUUUUZUZUZZUZUZUZUZUZ";
     CONNECTOR connector;
+    STimeout  timeout;
+    char buf[1024];
+    CONN conn;
+    size_t n;
 
     SConnNetInfo *info = ConnNetInfo_Create("stnd1");
     strcpy(info->host, "ray");
-    ConnNetInfo_Print(info, stdout);
+    info->debug_printout = 1;
+    info->client_mode = eClientModeStatefulCapable;
 
-    connector = SERVICE_CreateConnectorEx("io_bounce", 0, info);
+    connector = SERVICE_CreateConnectorEx("io_bounce", fSERV_Any, info);
 
-    if (!connector)
-        printf("Failed\n");
+    if (!connector) {
+        printf("Failed to create service connector\n");
+        exit(-1);
+    }
 
+    if (CONN_Create(connector, &conn) != eIO_Success) {
+        printf("Connection creation failed\n");
+        exit(-1);
+    }
 
     timeout.sec  = 5;
     timeout.usec = 123456;
+
+    CONN_SetTimeout(conn, eIO_ReadWrite, &timeout);
+    
+    if (CONN_Write(conn, buffer, sizeof(buffer) - 1, &n) != eIO_Success ||
+        n != sizeof(buffer) - 1) {
+        printf("Error writing to connection\n");
+        exit (-1);
+    }
+    
+    if (CONN_Wait(conn, eIO_Read, 0) != eIO_Success) {
+        printf("Error waiting for reading\n");
+        exit(-1);
+    }
+
+    if (CONN_Read(conn, buf, sizeof(buf), &n, eIO_Plain) != eIO_Success) {
+        printf("Error reading from connection\n");
+        exit(-1);
+    }
+    printf("%d bytes read from service:\n%.*s\n", (int)n, (int)n, buf);
 
     return 0/*okay*/;
 }
