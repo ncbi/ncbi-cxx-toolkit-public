@@ -435,12 +435,14 @@ int CDemoApp::Run(void)
         }
     }
 
+    CSeq_id_Handle master_id = CSeq_id_Handle::GetHandle(*id);
+
     for ( int c = 0; c < repeat_count; ++c ) {
         if ( c && pause ) {
             SleepSec(pause);
         }
 
-        {{
+        if ( 0 ) {
             TSeqRange range(0, handle.GetBioseqLength()-1);
             for (size_t levels = 0;  levels < 4;  ++levels) {
                 CConstRef<CSeqMap> seq_map(&handle.GetSeqMap());
@@ -451,14 +453,11 @@ int CDemoApp::Run(void)
                                                    eNa_strand_plus, levels);
                 
                 for ( ;  seg;  ++seg ) {
-                    TSeqRange map_range;
                     switch (seg.GetType()) {
                     case CSeqMap::eSeqRef:
                         break;
                     case CSeqMap::eSeqData:
                     case CSeqMap::eSeqGap:
-                        map_range = TSeqRange(seg.GetPosition(),
-                                              seg.GetEndPosition());
                         break;
                     case CSeqMap::eSeqEnd:
                         _ASSERT("Unexpected END segment" && 0);
@@ -467,11 +466,9 @@ int CDemoApp::Run(void)
                         _ASSERT("Unexpected segment type" && 0);
                         break;
                     }
-                    
-                    TSeqRange ref_range(seg.GetPosition(), seg.GetEndPosition());
                 }
             }
-        }}
+        }
 
         string sout;
         int count;
@@ -606,6 +603,12 @@ int CDemoApp::Run(void)
                     }
                 }
                 CConstRef<CSeq_annot> annot(&it.GetSeq_annot());
+                /*
+                const CSeq_id* mapped_id = 0;
+                it->GetLocation().CheckId(mapped_id);
+                _ASSERT(mapped_id);
+                _ASSERT(CSeq_id_Handle::GetHandle(*mapped_id) == master_id);
+                */
             }
             //int cnt2 = newCObjects.Get();
             if ( feat_type >= 0 || feat_subtype >= 0 ) {
@@ -644,6 +647,18 @@ int CDemoApp::Run(void)
                         it->GetOriginalFeature().GetLocation();
                     NcbiCout << "Zero size to: " << MSerial_AsnText <<
                         it->GetMappedFeature().GetLocation();
+                    NcbiCout << "Zero size to: " << MSerial_AsnText <<
+                        it->GetLocation();
+
+                    CSeqVector v2 = handle.GetSequenceView
+                        (it->GetLocation(), CBioseq_Handle::eViewMerged,
+                         CBioseq_Handle::eCoding_Iupac);
+                    NcbiCout << v2.size() << NcbiEndl;
+
+                    const CSeq_id* mapped_id = 0;
+                    it->GetMappedFeature().GetLocation().CheckId(mapped_id);
+                    _ASSERT(mapped_id);
+                    _ASSERT(CSeq_id_Handle::GetHandle(*mapped_id)==master_id);
                 }
                 sout = "";
                 for (TSeqPos i = 0; (i < cds_vect.size()) && (i < 10); i++) {
@@ -735,6 +750,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2004/01/29 20:38:47  vasilche
+* Removed loading of whole sequence by CSeqMap_CI.
+*
 * Revision 1.54  2004/01/26 18:06:35  vasilche
 * Add option for printing Seq-align.
 * Use MSerial_Asn* manipulators.
