@@ -528,7 +528,7 @@ int CSplignApp::Run()
         splign.Run(&hits);
         const CSplign::TResults& results = splign.GetResult();
         copy(results.begin(), results.end(), back_inserter(splign_results));
-        mid = splign.GetLastModelId();
+        mid = splign.GetNextModelId();
         }}
         {{
         splign.SetStrand(false);
@@ -642,6 +642,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/06/23 19:24:59  ucko
+ * GetLastModelID() --> GetNextModelID()
+ *
  * Revision 1.27  2004/06/21 18:16:45  kapustin
  * Support computation on both query strands
  *
