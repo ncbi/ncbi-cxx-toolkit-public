@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.15  2001/09/25 20:31:13  ucko
+ * Work around bug in Workshop's handling of declarations in for-loop
+ * initializers.
+ *
  * Revision 1.14  2001/09/25 20:12:02  ucko
  * More cleanups from Denis.
  * Put utility code in the objects namespace.
@@ -131,6 +135,13 @@
 
 #include <memory>
 #include <algorithm>
+
+
+#ifdef NCBI_COMPILER_WORKSHOP // workaround for compiler bug
+#define BREAK(it) while (it) { ++(it); }  break
+#else
+#define BREAK(it) break
+#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -877,7 +888,7 @@ void CId1FetchApp::WriteQualityScores(const CID1server_back& id1_reply)
     for (CTypeConstIterator<CTextseq_id> it = ConstBegin(id1_reply);
          it;  ++it) {
         id = it->GetAccession() + '.' + NStr::IntToString(it->GetVersion());
-        break;
+        BREAK(it);
     }
 
     for (CTypeConstIterator<CSeq_graph> it = ConstBegin(id1_reply);
