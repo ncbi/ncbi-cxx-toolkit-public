@@ -1,5 +1,5 @@
-#ifndef NCBI_CGI_EXCEPTION__HPP
-#define NCBI_CGI_EXCEPTION__HPP
+#ifndef CGI___CGI_EXCEPTION__HPP
+#define CGI___CGI_EXCEPTION__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -26,12 +26,14 @@
 *
 * ===========================================================================
 *
-* Authors:
-*	Andrei Gourianov
+* Author:  Andrei Gourianov
 *
-* File Description:
-*   CGI library exceptions
 */
+
+/// @file cgi_exception.hpp
+/// Exception classes used by the NCBI CGI framework
+///
+
 
 #include <corelib/ncbiexpt.hpp>
 
@@ -44,17 +46,33 @@
 
 BEGIN_NCBI_SCOPE
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCgiException --
+///
+///   Base class for the exceptions used by CGI framework
+
 class CCgiException : EXCEPTION_VIRTUAL_BASE public CException
 {
-    NCBI_EXCEPTION_DEFAULT(CCgiException,CException);
+    NCBI_EXCEPTION_DEFAULT(CCgiException, CException);
 };
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCgiErrnoException --
+///
+///   Exceptions used by CGI framework when the error is more system-related
+///   and there is an "errno" status from the system call that can be obtained
 
 class CCgiErrnoException : public CErrnoTemplException<CCgiException>
 {
 public:
     enum EErrCode {
-        eErrno,
-        eModTime
+        eErrno,   //< Generic system call failure
+        eModTime  //< File modification time cannot be obtained
     };
     virtual const char* GetErrCodeString(void) const
     {
@@ -64,23 +82,37 @@ public:
         default:       return CException::GetErrCodeString();
         }
     }
-    NCBI_EXCEPTION_DEFAULT(CCgiErrnoException,CErrnoTemplException<CCgiException>);
+    NCBI_EXCEPTION_DEFAULT
+    (CCgiErrnoException,
+     CErrnoTemplException<CCgiException>);
 };
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCgiParseException --
+///
+///   Exceptions used by CGI framework when the error has occured while
+///   parsing the contents (header and/or body) of the HTTP request
 
 class CCgiParseException : public CParseTemplException<CCgiException>
 {
 public:
+    /// Bad (malformed or missing) HTTP request components
     enum EErrCode {
-        eCookie,
-        eIndex,
-        eEntry,
-        eAttribute,
-        eFormat
+        eCookie,     //< Cookie
+        eRead,       //< Error in reading raw content of HTTP request
+        eIndex,      //< ISINDEX
+        eEntry,      //< Entry value
+        eAttribute,  //< Entry attribute
+        eFormat      //< Format or encoding
     };
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
         case eCookie:    return "eCookie";
+        case eRead:      return "eRead";
         case eIndex:     return "eIndex";
         case eEntry:     return "eEntry";
         case eAttribute: return "eAttribute";
@@ -88,8 +120,9 @@ public:
         default:         return CException::GetErrCodeString();
         }
     }
-    NCBI_EXCEPTION_DEFAULT2(CCgiParseException,
-        CParseTemplException<CCgiException>,std::string::size_type);
+    NCBI_EXCEPTION_DEFAULT2
+    (CCgiParseException,
+     CParseTemplException<CCgiException>, std::string::size_type);
 };
 
 
@@ -100,17 +133,19 @@ END_NCBI_SCOPE
 
 
 /*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2003/04/10 19:01:39  siyan
-* Added doxygen support
-*
-* Revision 1.1  2003/02/24 19:59:58  gouriano
-* use template-based exceptions instead of errno and parse exceptions
-*
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ * $Log$
+ * Revision 1.3  2004/08/04 15:52:57  vakatov
+ * CCgiParseException::EErrCode += eRead.
+ * Also, commented and Doxynen'ized.
+ *
+ * Revision 1.2  2003/04/10 19:01:39  siyan
+ * Added doxygen support
+ *
+ * Revision 1.1  2003/02/24 19:59:58  gouriano
+ * use template-based exceptions instead of errno and parse exceptions
+ *
+ * ===========================================================================
+ */
 
-#endif // NCBI_CGI_EXCEPTION__HPP
+#endif  // CGI___CGI_EXCEPTION__HPP
