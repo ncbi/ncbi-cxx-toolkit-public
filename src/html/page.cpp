@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/07/19 21:05:02  pubmed
+* minor change in CHTMLPage::CreateTemplate() - show file name
+*
 * Revision 1.17  1999/05/28 20:43:10  vakatov
 * ::~CHTMLBasicPage(): MSVC++ 6.0 SP3 cant compile:  DeleteElements(m_TagMap);
 *
@@ -196,7 +199,7 @@ CNCBINode* CHTMLPage::CreateTemplate(void)
     CNcbiIfstream ifstr(m_TemplateFile.c_str());
     if ( !ifstr.good() ) {
         THROW1_TRACE(runtime_error, "\
-CHTMLPage::CreateTemplate():  failed to open template file");
+CHTMLPage::CreateTemplate():  failed to open template file " + m_TemplateFile);
     }
 
     while ( ifstr ) {
@@ -206,7 +209,7 @@ CHTMLPage::CreateTemplate():  failed to open template file");
 
     if ( !ifstr.eof() ) {
         THROW1_TRACE(runtime_error, "\
-CHTMLPage::CreateTemplate():  error reading template file");
+CHTMLPage::CreateTemplate():  error reading template file" + m_TemplateFile);
     }
     return new CHTMLText(str);
 }
