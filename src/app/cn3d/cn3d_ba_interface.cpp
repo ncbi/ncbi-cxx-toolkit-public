@@ -30,8 +30,8 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.9  2002/08/13 20:46:35  thiessen
-* add global block aligner
+* Revision 1.10  2002/08/14 00:02:08  thiessen
+* combined block/global aligner from Alejandro
 *
 * Revision 1.8  2002/08/09 18:24:08  thiessen
 * improve/add magic formula to avoid Windows symbol clashes
@@ -101,18 +101,16 @@
 #include <ncbi.h>
 #include <blastkar.h>
 #include <posit.h>
+#include "cn3d/cn3d_blocka.h"
 
-// functions from cn3d_blockalign.c (no header for these yet...)
+// functions from cn3d_blockalign.c accessed herein (no header for these yet...)
 extern "C" {
 extern void allocateAlignPieceMemory(Int4 numBlocks);
 void findAllowedGaps(SeqAlign *listOfSeqAligns, Int4 numBlocks, Int4 *allowedGaps,
     Nlm_FloatHi percentile, Int4 gapAddition);
 extern void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
     Int4 startQueryPosition, Int4 endQueryPosition, Int4 numBlocks, Int4 *blockStarts, Int4 *blockEnds,
-    Int4 masterLength, BLAST_Score **posMatrix, BLAST_Score scoreThreshold);
-extern void globalFindAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
-    Int4 startQueryPosition, Int4 endQueryPosition, Int4 numBlocks, Int4 *blockStarts, Int4 *blockEnds,
-    Int4 masterLength, BLAST_Score **posMatrix, BLAST_Score scoreThreshold);
+    Int4 masterLength, BLAST_Score **posMatrix, BLAST_Score scoreThreshold, Boolean localAlignment);
 extern void LIBCALL sortAlignPieces(Int4 numBlocks);
 extern SeqAlign *makeMultiPieceAlignments(Uint1Ptr query, Int4 numBlocks, Int4 queryLength, Uint1Ptr seq,
     Int4 seqLength, Int4 *blockStarts, Int4 *blockEnds, Int4 *allowedGaps, Int4 scoreThresholdMultipleBlock,
@@ -285,7 +283,8 @@ void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultip
     SeqAlignPtr listOfSeqAligns;
 
     // the following would be command-line arguments to Alejandro's standalone program
-    BLAST_Score scoreThresholdSingleBlock = currentOptions.singleBlockThreshold;
+    BLAST_Score scoreThresholdSingleBlock =
+        localAlignment ? currentOptions.singleBlockThreshold : NEG_INFINITY;
     BLAST_Score scoreThresholdMultipleBlock = currentOptions.multipleBlockThreshold;
     Nlm_FloatHi Lambda = currentOptions.lambda;
     Nlm_FloatHi K = currentOptions.K;
@@ -351,12 +350,9 @@ void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultip
                 ((*s)->alignTo + 1) : query->Length();
 
         // actually do the block alignment
-        if (localAlignment)
-            findAlignPieces(convertedQuery, queryLength, startQueryPosition, endQueryPosition, numBlocks,
-                blockStarts, blockEnds, masterLength, thisScoreMat, scoreThresholdSingleBlock);
-        else
-            globalFindAlignPieces(convertedQuery, queryLength, startQueryPosition, endQueryPosition, numBlocks,
-                blockStarts, blockEnds, masterLength, thisScoreMat, scoreThresholdSingleBlock);
+        findAlignPieces(convertedQuery, queryLength, startQueryPosition, endQueryPosition,
+            numBlocks, blockStarts, blockEnds, masterLength, thisScoreMat,
+            scoreThresholdSingleBlock, (localAlignment ? TRUE : FALSE));
         sortAlignPieces(numBlocks);
         results = makeMultiPieceAlignments(convertedQuery, numBlocks,
             queryLength, masterSequence, masterLength,
