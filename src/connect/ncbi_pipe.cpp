@@ -230,11 +230,20 @@ void CPipe::Open(const char *cmdname, const vector<string> args,
 
 int CPipe::Close()
 {
-    m_StdIn = m_StdOut = m_StdErr = -1;
-    if ( m_Pid == -1 )
-        return -1;
-    int status = CExec::Wait(m_Pid);
-    m_Pid = -1;
+    int status = -1;
+    if ( m_Pid != -1 ) {
+        status = CExec::Wait(m_Pid);
+    }
+    if ( m_StdIn != -1 ) {
+        close(m_StdIn);
+    }
+    if ( m_StdOut != -1 ) {
+        close(m_StdOut);
+    }
+    if ( m_StdErr != -1 ) {
+        close(m_StdErr);
+    }
+    m_Pid = m_StdIn = m_StdOut = m_StdErr = -1;
     return status;
 }
 
@@ -415,6 +424,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/07/02 16:22:25  ivanov
+ * Added closing file descriptors of the local end of the pipe in Close()
+ *
  * Revision 1.5  2002/06/12 14:20:44  ivanov
  * Fixed some bugs in CPipeStreambuf class.
  *
