@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/02/13 20:44:23  vakatov
+* Use `reinterpret_cast<IoFuncType>(WriteAsn)' instead of a more safe
+* (but not-compilable by MIPSpro7.3 compiler on IRIX) `extern "C"'
+* pre-declaration.
+*
 * Revision 1.10  2001/02/10 05:00:17  lavr
 * ctools added in #includes
 *
@@ -70,12 +75,13 @@
 #include <ctools/asn/asnio.hpp>
 #include <algorithm>
 
+
 BEGIN_NCBI_SCOPE
 
-extern "C" {
-    static Int2 LIBCALLBACK ReadAsn(Pointer data, CharPtr buffer, Uint2 size);
-    static Int2 LIBCALLBACK WriteAsn(Pointer data, CharPtr buffer, Uint2 size);
-}
+
+/////////////////////////////////////////////////////////////////////////////
+//  AsnMemoryRead::
+//
 
 AsnMemoryRead::AsnMemoryRead(Uint2 mode, const string& str)
     : m_Source(str), m_Data(str.c_str()), m_Size(str.size()), m_mode(mode)
@@ -94,12 +100,6 @@ AsnMemoryRead::~AsnMemoryRead(void)
     AsnIoClose(m_In);
 }
 
-void AsnMemoryRead::Init(void)
-{
-    m_Ptr = 0;
-    m_In = AsnIoNew(m_mode | ASNIO_IN, 0, this, ReadAsn, 0);
-}
-
 size_t AsnMemoryRead::Read(char* buffer, size_t size)
 {
     size_t count = min(size, m_Size - m_Ptr);
@@ -108,7 +108,7 @@ size_t AsnMemoryRead::Read(char* buffer, size_t size)
     return count;
 }
 
-Int2 LIBCALLBACK ReadAsn(Pointer data, CharPtr buffer, Uint2 size)
+static Int2 LIBCALLBACK ReadAsn(Pointer data, CharPtr buffer, Uint2 size)
 {
     if ( !data || !buffer )
         return -1;
@@ -116,10 +116,32 @@ Int2 LIBCALLBACK ReadAsn(Pointer data, CharPtr buffer, Uint2 size)
     return Int2(static_cast<AsnMemoryRead*>(data)->Read(buffer, size));
 }
 
+void AsnMemoryRead::Init(void)
+{
+    m_Ptr = 0;
+    m_In = AsnIoNew(m_mode | ASNIO_IN, 0, this,
+		    reinterpret_cast<IoFuncType>(ReadAsn), 0);
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  AsnMemoryWrite::
+//
+
+static Int2 LIBCALLBACK WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
+{
+    if ( !data || !buffer )
+        return -1;
+
+    return Int2(static_cast<AsnMemoryWrite*>(data)->Write(buffer, size));
+}
+
 AsnMemoryWrite::AsnMemoryWrite(Uint2 mode)
     : m_Data(new char[512]), m_Size(512), m_Ptr(0)
 {
-    m_Out = AsnIoNew(mode | ASNIO_OUT, 0, this, 0, WriteAsn);
+    m_Out = AsnIoNew(mode | ASNIO_OUT, 0, this,
+		     0, reinterpret_cast<IoFuncType>(WriteAsn));
 }
 
 AsnMemoryWrite::~AsnMemoryWrite(void)
@@ -147,18 +169,9 @@ size_t AsnMemoryWrite::Write(const char* buffer, size_t size)
     return size;
 }
 
-Int2 LIBCALLBACK WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
-{
-    if ( !data || !buffer )
-        return -1;
-
-    return Int2(static_cast<AsnMemoryWrite*>(data)->Write(buffer, size));
-}
-
 void AsnMemoryWrite::flush(void) const
 {
     AsnIoFlush(m_Out);
 }
 
 END_NCBI_SCOPE
-

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/02/13 20:44:24  vakatov
+* Use `reinterpret_cast<IoFuncType>(WriteAsn)' instead of a more safe
+* (but not-compilable by MIPSpro7.3 compiler on IRIX) `extern "C"'
+* pre-declaration.
+*
 * Revision 1.8  2001/02/10 05:00:17  lavr
 * ctools added in #includes
 *
@@ -65,9 +70,6 @@
 
 BEGIN_NCBI_SCOPE
 
-extern "C" {
-    static Int2 LIBCALLBACK WriteAsn(Pointer data, CharPtr buffer, Uint2 size);
-}
 
 CAsnWriteNode::CAsnWriteNode(void)
     : m_Out(0), m_Mode(ASNIO_TEXT)
@@ -84,22 +86,25 @@ CAsnWriteNode::~CAsnWriteNode(void)
     AsnIoClose(m_Out);
 }
 
-AsnIoPtr CAsnWriteNode::GetOut(void)
-{
-    AsnIoPtr out = m_Out;
-    if ( !out ) {
-        out = m_Out = AsnIoNew(m_Mode | ASNIO_OUT, 0, this, 0, WriteAsn);
-    }
-    return out;
-}
 
-Int2 LIBCALLBACK WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
+static Int2 LIBCALLBACK WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
 {
     if ( !data || !buffer )
         return -1;
 
     static_cast<CAsnWriteNode*>(data)->AppendPlainText(string(buffer, size));
     return size;
+}
+
+
+AsnIoPtr CAsnWriteNode::GetOut(void)
+{
+    AsnIoPtr out = m_Out;
+    if ( !out ) {
+        out = m_Out = AsnIoNew(m_Mode | ASNIO_OUT, 0, this,
+                               0, reinterpret_cast<IoFuncType>(WriteAsn));
+    }
+    return out;
 }
 
 CNcbiOstream& CAsnWriteNode::PrintChildren(CNcbiOstream& out, TMode mode)
