@@ -13,7 +13,4 @@ reply    = ID2-Reply.reply
 
 reply.get-packages = get-package
 reply.get-chunks   = get-chunk
-reply.reget-tse    = get-tse
-reply.string-to-gi = seq-id-to-gi
-
-
+reply.get-blob-info= get-blob
