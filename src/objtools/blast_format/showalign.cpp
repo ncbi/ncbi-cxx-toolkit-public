@@ -100,8 +100,9 @@ static const int k_NumFrame = 6;
 static const string k_FrameConversion[k_NumFrame] = {"+1", "+2", "+3", "-1",
                                                      "-2", "-3"};
 static const int k_GetSubseqThreshhold = 10000;
-static const int k_ColorMismatchIdentity = 0;  /*threshhold to color mismatch.
-                                                 98 means 98% */
+
+///threshhold to color mismatch. 98 means 98% 
+static const int k_ColorMismatchIdentity = 0; 
 static const int k_GetDynamicFeatureSeqLength = 200000;
 static const string k_DumpGnlUrl = "/blast/dumpgnl.cgi";
 static const int k_FeatureIdLen = 16;
@@ -122,7 +123,7 @@ static const string k_Checkbox = "<input type=\"checkbox\" \
 name=\"getSeqGi\" value=\"%d\" onClick=\"synchronizeCheck(this.value, \
 'getSeqAlignment%d', 'getSeqGi', this.checked)\">";
 
-//Constructor
+
 CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign, 
                                    CScope& scope,
                                    list <SeqlocInfo*>* mask_seqloc, 
@@ -183,7 +184,7 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_Matrix = temp;
 }
 
-//Destructor
+
 CDisplaySeqalign::~CDisplaySeqalign()
 {
     for(int i = 0; i<k_NumAsciiChar; ++i) {
@@ -201,20 +202,11 @@ CDisplaySeqalign::~CDisplaySeqalign()
         delete m_DynamicFeature;
     }
 }
-static string s_GetSeqForm(char* formName, bool dbIsNa, int queryNumber);
 
-static int s_GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids);
-
-static string s_MakeURLSafe(char* src);
-static CRef<CSeq_id> s_GetSeqIdByType(const list<CRef<CSeq_id> >& ids, 
-                                      CSeq_id::E_Choice choice);
-static int s_GetFrame (int start, ENa_strand strand, const CSeq_id& id, 
-                       CScope& sp);
-static CRef<CSeq_align> s_CreateDensegFromDendiag(const CSeq_align& aln);
-static void s_ColorDifferentBases(string& seq, char identityChar, 
-                                  CNcbiOstream& out);
-static void s_WrapOutputLine(CNcbiOstream& out, const string& str);
-
+///extract seqalign set
+///@param target: new seqalign set
+///@param source: source seqalign set containing seqalign set
+///
 static void s_ExtractSeqalign(CSeq_align_set& target, 
                               const CSeq_align_set& source)
 {
@@ -235,8 +227,20 @@ static void s_ExtractSeqalign(CSeq_align_set& target,
     }
 }
 
-
-static void s_DisplayIndentityInfo(CNcbiOstream& out, int aln_stop, 
+///show blast identity, positive etc.
+///@param out: output stream
+///@param aln_stop: stop in aln coords
+///@param identity: identity
+///@param positive: positives
+///@param match: match
+///@param gap: gap
+///@param master_strand: plus strand = 1 and minus strand = -1
+///@param slave_strand:  plus strand = 1 and minus strand = -1
+///@param master_frame: frame for master
+///@param slave_frame: frame for slave
+///@param aln_is_prot: is protein alignment?
+///
+static void s_DisplayIdentityInfo(CNcbiOstream& out, int aln_stop, 
                                    int identity, int positive, int match,
                                    int gap, int master_strand, 
                                    int slave_strand, int master_frame, 
@@ -268,7 +272,10 @@ static void s_DisplayIndentityInfo(CNcbiOstream& out, int aln_stop,
     
 }
 
-
+///wrap line
+///@param out: output stream
+///@param str: string to wrap
+///
 static void s_WrapOutputLine(CNcbiOstream& out, const string& str)
 {
     const int line_len = 60;
@@ -292,14 +299,17 @@ static void s_WrapOutputLine(CNcbiOstream& out, const string& str)
     }
 }
 
-
-//To add color to bases other than identityChar
-static void s_ColorDifferentBases(string& seq, char identityChar,
+///To add color to bases other than identityChar
+///@param seq: sequence
+///@param identity_char: identity character
+///@param out: output stream
+///
+static void s_ColorDifferentBases(string& seq, char identity_char,
                                   CNcbiOstream& out){
     string base_color = "#FF0000";
     bool tagOpened = false;
     for(int i = 0; i < (int)seq.size(); i ++){
-        if(seq[i] != identityChar){
+        if(seq[i] != identity_char){
             if(!tagOpened){
                 out << "<font color=\""+base_color+"\"><b>";
                 tagOpened =  true;
@@ -319,7 +329,10 @@ static void s_ColorDifferentBases(string& seq, char identityChar,
     } 
 }
 
-
+///Create denseseg representation for densediag seqalign
+///@param aln: the input densediag seqalign
+///@return: the new denseseg seqalign
+///
 static CRef<CSeq_align> s_CreateDensegFromDendiag(const CSeq_align& aln) 
 {
     CRef<CSeq_align> sa(new CSeq_align);
@@ -381,20 +394,14 @@ static CRef<CSeq_align> s_CreateDensegFromDendiag(const CSeq_align& aln)
 }
 
 
-static int s_GetStdsegMasterFrame(const CStd_seg& ss, CScope& scope)
-{
-    const CRef<CSeq_loc> slc = ss.GetLoc().front();
-    ENa_strand strand = GetStrand(*slc);
-    int frame = s_GetFrame(strand ==  eNa_strand_plus ?
-                           GetStart(*slc, &scope) : GetStop(*slc, &scope),
-                           strand ==  eNa_strand_plus ?
-                           eNa_strand_plus : eNa_strand_minus,
-                           *(ss.GetIds().front()), scope);
-    return frame;
-}
-
-
-/*Note that start is zero bases.  It returns frame +/-(1-3). 0 indicates error*/
+///return the frame for a given strand
+///Note that start is zero bases.  It returns frame +/-(1-3). 0 indicates error
+///@param start: sequence start position
+///@param strand: strand
+///@param id: the seqid
+///@param scope: the scope
+///@return: the frame
+///
 static int s_GetFrame (int start, ENa_strand strand, const CSeq_id& id, 
                        CScope& sp) 
 {
@@ -407,6 +414,86 @@ static int s_GetFrame (int start, ENa_strand strand, const CSeq_id& id,
         
     }
     return frame;
+}
+
+///reture the frame for master seq in stdseg
+///@param ss: the input stdseg
+///@param scope: the scope
+///@return: the frame
+///
+static int s_GetStdsegMasterFrame(const CStd_seg& ss, CScope& scope)
+{
+    const CRef<CSeq_loc> slc = ss.GetLoc().front();
+    ENa_strand strand = GetStrand(*slc);
+    int frame = s_GetFrame(strand ==  eNa_strand_plus ?
+                           GetStart(*slc, &scope) : GetStop(*slc, &scope),
+                           strand ==  eNa_strand_plus ?
+                           eNa_strand_plus : eNa_strand_minus,
+                           *(ss.GetIds().front()), scope);
+    return frame;
+}
+
+///return the get sequence table for html display
+///@param form_name: form name
+///@parm db_is_na: is the db of nucleotide type?
+///@query_number: the query number
+///@return: the from string
+///
+static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number)
+{
+    char buf[2048] = {""};
+    if(form_name){
+        sprintf(buf, "<table border=\"0\"><tr><td><FORM  method=\"post\" \
+action=\"http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?SUBMIT=y\" \
+name=\"%s\"><input type=button value=\"Get selected sequences\" \
+onClick=\"finalSubmit(%d, 'getSeqAlignment%d', 'getSeqGi', '%s')\"><input \
+type=\"hidden\" name=\"db\" value=\"\"><input type=\"hidden\" name=\"term\" \
+value=\"\"><input type=\"hidden\" name=\"doptcmdl\" value=\"docsum\"><input \
+type=\"hidden\" name=\"cmd\" value=\"search\"></form></td><td><FORM><input \
+type=\"button\" value=\"Select all\" onClick=\"handleCheckAll('select', \
+'getSeqAlignment%d', 'getSeqGi')\"></form></td><td><FORM><input \
+type=\"button\" value=\"Deselect all\" onClick=\"handleCheckAll('deselect', \
+'getSeqAlignment%d', 'getSeqGi')\"></form></td></tr></table>", form_name, \
+                db_is_na?1:0, query_number, form_name, query_number, 
+                query_number);
+        
+    }
+    return buf;
+}
+
+///return id type specified or null ref
+///@param ids: the input ids
+///@param choice: id of choice
+///@return: the id with specified type
+///
+static CRef<CSeq_id> s_GetSeqIdByType(const list<CRef<CSeq_id> >& ids, 
+                                      CSeq_id::E_Choice choice)
+{
+    CRef<CSeq_id> cid;
+    
+    for (CBioseq::TId::const_iterator iter = ids.begin(); iter != ids.end(); 
+         iter ++){
+        if ((*iter)->Which() == choice){
+            cid = *iter;
+            break;
+        }
+    }
+    
+    return cid;
+}
+
+///return gi from id list
+///@param ids: the input ids
+///@return: the gi if found
+///
+static int s_GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids)
+{
+    int gi = 0;
+    CRef<CSeq_id> id = s_GetSeqIdByType(ids, CSeq_id::e_Gi);
+    if (!(id.Empty())){
+        return id->GetGi();
+    }
+    return gi;
 }
 
 
@@ -500,61 +587,10 @@ void CDisplaySeqalign::x_AddLinkout(const CBioseq& cbsp,
 }
 
 
-//return the get sequence table for html display
-static string s_GetSeqForm(char* formName, bool dbIsNa, int queryNumber)
-{
-    char buf[2048] = {""};
-    if(formName){
-        sprintf(buf, "<table border=\"0\"><tr><td><FORM  method=\"post\" \
-action=\"http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?SUBMIT=y\" \
-name=\"%s\"><input type=button value=\"Get selected sequences\" \
-onClick=\"finalSubmit(%d, 'getSeqAlignment%d', 'getSeqGi', '%s')\"><input \
-type=\"hidden\" name=\"db\" value=\"\"><input type=\"hidden\" name=\"term\" \
-value=\"\"><input type=\"hidden\" name=\"doptcmdl\" value=\"docsum\"><input \
-type=\"hidden\" name=\"cmd\" value=\"search\"></form></td><td><FORM><input \
-type=\"button\" value=\"Select all\" onClick=\"handleCheckAll('select', \
-'getSeqAlignment%d', 'getSeqGi')\"></form></td><td><FORM><input \
-type=\"button\" value=\"Deselect all\" onClick=\"handleCheckAll('deselect', \
-'getSeqAlignment%d', 'getSeqGi')\"></form></td></tr></table>", formName, \
-                dbIsNa?1:0, queryNumber, formName, queryNumber, queryNumber);
-        
-    }
-    return buf;
-}
-
-
-static CRef<CSeq_id> s_GetSeqIdByType(const list<CRef<CSeq_id> >& ids, 
-                                      CSeq_id::E_Choice choice)
-{
-    CRef<CSeq_id> cid;
-    
-    for (CBioseq::TId::const_iterator iter = ids.begin(); iter != ids.end(); 
-         iter ++){
-        if ((*iter)->Which() == choice){
-            cid = *iter;
-            break;
-        }
-    }
-    
-    return cid;
-}
-
-
-static int s_GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids)
-{
-    int gi = 0;
-    CRef<CSeq_id> id = s_GetSeqIdByType(ids, CSeq_id::e_Gi);
-    if (!(id.Empty())){
-        return id->GetGi();
-    }
-    return gi;
-}
-
-
 void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
 { 
-    int maxIdLen=0, maxStartLen=0, startLen=0, actualLineLen=0;
-    int aln_stop=m_AV->GetAlnStop();
+    size_t maxIdLen=0, maxStartLen=0, startLen=0, actualLineLen=0;
+    size_t aln_stop=m_AV->GetAlnStop();
     const int rowNum=m_AV->GetNumRows();   
     if(m_AlignOption & eMasterAnchored){
         m_AV->SetAnchor(0);
@@ -573,7 +609,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
     int* frame = new int[rowNum];
     //Add external query feature info such as phi blast pattern
     list<SAlnFeatureInfo*>* bioseqFeature= x_GetQueryFeatureList(rowNum,
-                                                                aln_stop);
+                                                                (int)aln_stop);
     //conver to aln coordinates for mask seqloc
     list<SAlnSeqlocInfo*> alnLocList;
     x_FillLocList(alnLocList);    
@@ -590,7 +626,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
         //make sequence
         m_AV->GetWholeAlnSeqString(row, sequence[row], &insertAlnStart[row],
                                    &insertStart[row], &insertLength[row],
-                                   m_LineLen, &seqStarts[row], &seqStops[row]);
+                                   (int)m_LineLen, &seqStarts[row], &seqStops[row]);
         //make feature. Only for pairwise, non-query-anchored and untranslated
         if(!(m_AlignOption & eMasterAnchored) && 
            !(m_AlignOption & eMultiAlign) && m_AV->GetWidth(row) != 3){
@@ -605,14 +641,14 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
         }
         //make id
         x_FillSeqid(seqidArray[row], row);
-        maxIdLen=max<int>(seqidArray[row].size(), maxIdLen);
-        int maxCood=max<int>(m_AV->GetSeqStart(row), m_AV->GetSeqStop(row));
-        maxStartLen = max<int>(NStr::IntToString(maxCood).size(), maxStartLen);
+        maxIdLen=max<size_t>(seqidArray[row].size(), maxIdLen);
+        size_t maxCood=max<size_t>(m_AV->GetSeqStart(row), m_AV->GetSeqStop(row));
+        maxStartLen = max<size_t>(NStr::IntToString(maxCood).size(), maxStartLen);
     }
     for(int i = 0; i < rowNum; i ++){//adjust max id length for feature id 
         for (list<SAlnFeatureInfo*>::iterator iter=bioseqFeature[i].begin();
              iter != bioseqFeature[i].end(); iter++){
-            maxIdLen=max<int>((*iter)->feature->feature_id.size(), maxIdLen );
+            maxIdLen=max<size_t>((*iter)->feature->feature_id.size(), maxIdLen );
         }
     }  //end of preparing row data
     bool colorMismatch = false; //color the mismatches
@@ -623,24 +659,24 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
         int gap = 0;
         int identity = 0;
         x_FillIdentityInfo(sequence[0], sequence[1], match, positive, middleLine);
-        identity = (match*100)/(aln_stop+1);
+        identity = (match*100)/((int)aln_stop+1);
         if(identity >= k_ColorMismatchIdentity && identity <100){
             colorMismatch = true;
         }
         gap = x_GetNumGaps();
-        s_DisplayIndentityInfo(out, aln_stop, identity, positive, match, gap,
+        s_DisplayIdentityInfo(out, (int)aln_stop, identity, positive, match, gap,
                                m_AV->StrandSign(0), m_AV->StrandSign(1),
                                frame[0], frame[1], (bool)(m_AlignType & eProt));
     }
     //output rows
-    for(int j=0; j<=aln_stop; j+=m_LineLen){
+    for(int j=0; j<=(int)aln_stop; j+=(int)m_LineLen){
         //output according to aln coordinates
         if(aln_stop-j+1<m_LineLen) {
             actualLineLen=aln_stop-j+1;
         } else {
             actualLineLen=m_LineLen;
         }
-        CAlnMap::TSignedRange curRange(j, j+actualLineLen-1);
+        CAlnMap::TSignedRange curRange(j, j+(int)actualLineLen-1);
         //here is each row
         for (int row=0; row<rowNum; row++) {
             bool hasSequence = true;   
@@ -655,7 +691,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                     list<SInsertInformation*> insertList;
                     x_GetInserts(insertList, insertAlnStart[row], 
                                  insertStart[row], insertLength[row],  
-                                 j + m_LineLen);
+                                 j + (int)m_LineLen);
                     x_FillInserts(row, curRange, j, inserts, insertPosString, 
                                   insertList);
                     ITERATE(list<SInsertInformation*>, iterINsert, insertList){
@@ -699,7 +735,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 bool has_mismatch = false;
                 //change the alignment line to identity style
                 if (row>0 && m_AlignOption & eShowIdentity){
-                    for (int index = j; index < j + actualLineLen && 
+                    for (int index = j; index < j + (int)actualLineLen && 
                              index < (int)sequence[row].size(); index ++){
                         if (sequence[row][index] == sequence[0][index] &&
                             isalpha(sequence[row][index])) {
@@ -735,7 +771,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 CBlastFormatUtil::AddSpace(out, maxStartLen-startLen+
                                            k_StartSequenceMargin);
                 x_OutputSeq(sequence[row], m_AV->GetSeqId(row), j, 
-                            actualLineLen, frame[row], row,
+                            (int)actualLineLen, frame[row], row,
                             (row > 0 && colorMismatch)?true:false,  
                             alnLocList, out);
                 CBlastFormatUtil::AddSpace(out, k_SeqStopMargin);
@@ -799,7 +835,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                                      +maxStartLen + k_StartSequenceMargin
                                      -(*iter)->feature->feature_id.size());
                         x_OutputSeq((*iter)->feature_string, no_id, j,
-                                    actualLineLen, 0, row, false,  alnLocList,
+                                    (int)actualLineLen, 0, row, false,  alnLocList,
                                     out);
                         out<<endl;
                     }
@@ -810,7 +846,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                     CBlastFormatUtil::
                         AddSpace(out, maxIdLen + k_IdStartMargin
                                  + maxStartLen + k_StartSequenceMargin);
-                    x_OutputSeq(middleLine, no_id, j, actualLineLen, 0, row, 
+                    x_OutputSeq(middleLine, no_id, j, (int)actualLineLen, 0, row, 
                                 false,  alnLocList, out);
                     out<<endl;
                 }
@@ -1142,7 +1178,6 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
 }
 
 
-//compute number of identical and positive residues; set middle line accordingly
 const void CDisplaySeqalign::x_FillIdentityInfo(const string& sequence_standard,
                                                 const string& sequence , 
                                                 int& match, int& positive, 
@@ -1150,7 +1185,7 @@ const void CDisplaySeqalign::x_FillIdentityInfo(const string& sequence_standard,
 {
     match = 0;
     positive = 0;
-    int min_length=min<int>(sequence_standard.size(), sequence.size());
+    int min_length=min<int>((int)sequence_standard.size(), (int)sequence.size());
     if(m_AlignOption & eShowMiddleLine){
         middle_line = sequence;
     }
@@ -1290,7 +1325,6 @@ HSP\"></a>";
 }
 
 
-//Output sequence and mask sequences if any
 const void CDisplaySeqalign::x_OutputSeq(string& sequence, const CSeq_id& id, 
                                          int start, int len, int frame, int row,
                                          bool color_mismatch, 
@@ -1413,12 +1447,10 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                            CSeq_id::e_Gi);
     if(!(id.Empty())){
         const CBioseq_Handle& handle = scope.GetBioseqHandle(*id);
+        CRef<CSeq_loc> loc_ref = handle.GetRangeSeq_loc(m_AV->GetSeqStart(row),
+                                                        m_AV->GetSeqStop(row));
         //cds feature
-        for  (CFeat_CI feat(scope,
-                            *handle.GetRangeSeq_loc(m_AV->GetSeqStart(row),
-                                                    m_AV->GetSeqStop(row)),
-                            choice); feat;  ++feat) {
-            
+        for (CFeat_CI feat(scope, *loc_ref, choice); feat; ++feat) {
             const CSeq_loc& loc = feat->GetLocation();
             string featLable = NcbiEmptyString;
             string featId;
@@ -1585,10 +1617,16 @@ void  CDisplaySeqalign::x_SetFeatureInfo(SAlnFeatureInfo* feat_info,
     feat_info->feature = feat;
 }
 
-//May need to add a "|" to the current insert for insert on next rows
-static int x_AddBar(string& seq, int insertAlnPos, int alnStart){
-    int end = seq.size() -1 ;
-    int barPos = insertAlnPos - alnStart + 1;
+///add a "|" to the current insert for insert on next rows and return the
+///insert end position.
+///@param seq: the seq string
+///@param insert_aln_pos: the position of insert
+///@param aln_start: alnment start position
+///@return: the insert end position
+///
+static int x_AddBar(string& seq, int insert_alnpos, int aln_start){
+    int end = (int)seq.size() -1 ;
+    int barPos = insert_alnpos - aln_start + 1;
     string addOn;
     if(barPos - end > 1){
         string spacer(barPos - end - 1, ' ');
@@ -1601,37 +1639,42 @@ static int x_AddBar(string& seq, int insertAlnPos, int alnStart){
 }
 
 
-//Add new insert seq to the current insert seq and return the end position of
-// the latest insert
-static int s_AdjustInsert(string& curInsert, string& newInsert, 
-                          int insertAlnPos, int alnStart)
+///Add new insert seq to the current insert seq and return the end position of
+///the latest insert
+///@param cur_insert: the current insert string
+///@param new_insert: the new insert string
+///@param insert_alnpos: insert position
+///@param aln_start: alnment start
+///@return: the updated insert end position
+///
+static int s_AdjustInsert(string& cur_insert, string& new_insert, 
+                          int insert_alnpos, int aln_start)
 {
     int insertEnd = 0;
-    int curInsertSize = curInsert.size();
-    int insertLeftSpace = insertAlnPos - alnStart - curInsertSize + 2;  
+    int curInsertSize = (int)cur_insert.size();
+    int insertLeftSpace = insert_alnpos - aln_start - curInsertSize + 2;  
     //plus2 because insert is put after the position
     if(curInsertSize > 0){
         assert(insertLeftSpace >= 2);
     }
-    int newInsertSize = newInsert.size();  
+    int newInsertSize = (int)new_insert.size();  
     if(insertLeftSpace - newInsertSize >= 1){ 
         //can insert with the end position right below the bar
         string spacer(insertLeftSpace - newInsertSize, ' ');
-        curInsert += spacer + newInsert;
+        cur_insert += spacer + new_insert;
         
     } else { //Need to insert beyond the insert postion
         if(curInsertSize > 0){
-            curInsert += " " + newInsert;
+            cur_insert += " " + new_insert;
         } else {  //can insert right at the firt position
-            curInsert += newInsert;
+            cur_insert += new_insert;
         }
     }
-    insertEnd = alnStart + curInsert.size() -1 ; //-1 back to string position
+    insertEnd = aln_start + (int)cur_insert.size() -1 ; //-1 back to string position
     return insertEnd;
 }
 
 
-//recusively fill the insert
 void CDisplaySeqalign::x_DoFills(int row, CAlnMap::TSignedRange& aln_range, 
                                  int  aln_start, 
                                  list<SInsertInformation*>& insert_list, 
@@ -1681,7 +1724,6 @@ void CDisplaySeqalign::x_DoFills(int row, CAlnMap::TSignedRange& aln_range,
 }
 
 
-/*fill a list of inserts for a particular row*/
 void CDisplaySeqalign::x_FillInserts(int row, CAlnMap::TSignedRange& aln_range,
                                      int aln_start, list<string>& inserts,
                                      string& insert_pos_string, 
@@ -1726,7 +1768,6 @@ void CDisplaySeqalign::x_GetInserts(list<SInsertInformation*>& insert_list,
 }
 
 
-//segments starts and stops used for map viewer 
 string CDisplaySeqalign::x_GetSegs(int row) const 
 {
     string segs = NcbiEmptyString;
@@ -1744,10 +1785,12 @@ string CDisplaySeqalign::x_GetSegs(int row) const
 }
 
 
-/* transforms a string so that it becomes safe to be used as part of URL
- * the function converts characters with special meaning (such as
- * semicolon -- protocol separator) to escaped hexadecimal (%xx)
- */
+///transforms a string so that it becomes safe to be used as part of URL
+///the function converts characters with special meaning (such as
+///semicolon -- protocol separator) to escaped hexadecimal (%xx)
+///@param src: the input url
+///@return: the safe url
+///
 static string s_MakeURLSafe(char* src){
     static char HEXDIGS[] = "0123456789ABCDEF";
     char* buf;
@@ -1795,7 +1838,7 @@ static string s_MakeURLSafe(char* src){
     return url;
 }
 
-//make url for dumpgnl.cgi
+
 string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids, 
                                           int row, 
                                           const string& alternative_url)const
@@ -1821,7 +1864,7 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
     if (toolUrl.find("dumpgnl.cgi") ==string::npos){
         nodb_path = true;
     }  
-    int length = m_DbName.size();
+    int length = (int)m_DbName.size();
     string str;
     char  *chptr, *dbtmp;
     Char tmpbuff[256];
@@ -1871,7 +1914,7 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
     unsigned char buf[32];
     CMD5 urlHash;
     if (bestid && bestid->Which() !=  CSeq_id::e_Gi){
-        length = passwd.size();
+        length = (int)passwd.size();
         urlHash.Update(passwd.c_str(), length);
         strcpy(gnl, bestid->AsFastaString().c_str());
         urlHash.Update(gnl, strlen(gnl));
@@ -2199,7 +2242,6 @@ void CDisplaySeqalign::x_FillLocList(list<SAlnSeqlocInfo*>& loc_list) const
 }
 
 
-//Add external query feature info such as phi blast pattern
 list<CDisplaySeqalign::SAlnFeatureInfo*>* 
 CDisplaySeqalign::x_GetQueryFeatureList(int row_num, int aln_stop) const
 {
@@ -2329,6 +2371,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.64  2005/03/02 18:19:58  jianye
+*fixed some sun solaris compiler warnings
+*
 *Revision 1.63  2005/02/23 16:28:03  jianye
 *change due to num_ident addition
 *
