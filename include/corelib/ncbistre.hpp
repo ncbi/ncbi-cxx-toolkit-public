@@ -34,6 +34,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/10/21 15:44:18  vasilche
+* Added helper class CNcbiOstreamToString to convert CNcbiOstrstream buffer
+* to string.
+*
 * Revision 1.14  1999/06/08 21:34:35  vakatov
 * #HAVE_NO_CHAR_TRAITS::  handle the case of missing "std::char_traits::"
 *
@@ -196,6 +200,35 @@ inline CT_INT_TYPE ct_not_eof(CT_INT_TYPE i) {
 #  define CT_NOT_EOF   NCBI_NS_STD::char_traits<char>::not_eof
 #endif /* HAVE_NO_CHAR_TRAITS */
 
+// CNcbiOstrstreamToString class helps to convert CNcbiOstream buffer to string
+// Sample usage:
+/*
+string GetString(void)
+{
+    CNcbiOstream buffer;
+    buffer << "some text";
+    return CNcbiOstrstreamToString(buffer);
+}
+*/
+// Note: there is no requirements to put '\0' char at the end of buffer
+class CNcbiOstrstreamToString
+{
+public:
+    CNcbiOstrstreamToString(CNcbiOstrstream& out)
+        : m_Out(out)
+        {
+        }
+
+    operator string(void) const
+        {
+            const char* str = m_Out.str();
+            m_Out.freeze(false);
+            return string(str, m_Out.pcount());
+        }
+
+private:
+    CNcbiOstrstream& m_Out;
+};
 
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
@@ -210,6 +243,5 @@ extern NCBI_NS_NCBI::CNcbiOstream& operator<<(NCBI_NS_NCBI::CNcbiOstream& os,
 extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
                                               NCBI_NS_STD::string& str);
 #endif
-
 
 #endif /* NCBISTRE__HPP */

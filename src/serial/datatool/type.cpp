@@ -280,7 +280,8 @@ string ASNFixedType::GetDefaultCType(void) const
     CNcbiOstrstream msg;
     msg << typeid(*this).name() << ": Cannot generate C++ type: ";
     Print(msg, 0);
-    THROW1_TRACE(runtime_error, string(msg.str(), msg.pcount()));
+    string message = CNcbiOstrstreamToString(msg);
+    THROW1_TRACE(runtime_error, message);
 }
 
 ASNNullType::ASNNullType(const CDataTypeContext& context)
@@ -558,7 +559,7 @@ void ASNEnumeratedType::GetCType(CTypeStrings& tType, CClassCode& code) const
     CNcbiOstrstream h;
     CNcbiOstrstream c;
     GenerateCode(code, h, c, &tType);
-    code.AddMethod(string(h.str(), h.pcount()), string(c.str(), c.pcount()));
+    code.AddMethod(CNcbiOstrstreamToString(h), CNcbiOstrstreamToString(c));
 }
 
 void ASNEnumeratedType::GenerateCode(CClassCode& code) const
@@ -1129,8 +1130,8 @@ void ASNChoiceType::GenerateCode(CClassCode& code) const
             '{' << endl <<
             "    return dynamic_cast<const " << variantClass << "*>(this);" << endl <<
             '}' << endl;
-        code.AddMethod(string(hpp.str(), hpp.pcount()),
-                       string(cpp.str(), cpp.pcount()));
+        code.AddMethod(CNcbiOstrstreamToString(hpp),
+                       CNcbiOstrstreamToString(cpp));
     }
 }
 

@@ -44,7 +44,7 @@ string Ptr(const void* p)
 {
     CNcbiOstrstream b;
     b << "0x" << hex << long(p);
-    return string(b.str(), b.pcount());
+    return CNcbiOstrstreamToString(b);
 }
 
 void CSerialObject::Dump(CNcbiOstream& out) const

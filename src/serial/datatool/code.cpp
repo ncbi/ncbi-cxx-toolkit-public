@@ -431,7 +431,8 @@ CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
 {
     if ( IsNonClass() ) {
         // enum
-        return header << m_HPP.str();
+        header << m_HPP.str(); m_HPP.freeze(false);
+        return header;
     }
     header <<
         "class " << GetClassName() << "_Base";
@@ -454,8 +455,10 @@ CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
     header << endl <<
         "private:" << endl <<
         "    friend class " << GetClassName() << ';' << endl <<
-        endl <<
-        m_HPP.str() <<
+        endl;
+    const char* body = m_HPP.str(); m_HPP.freeze(false);
+    header <<
+        body <<
         "};" << endl;
     return header;
 }
@@ -464,7 +467,8 @@ CNcbiOstream& CClassCode::GenerateCPP(CNcbiOstream& code) const
 {
     if ( IsNonClass() ) {
         // enum
-        return code << m_CPP.str();
+        code << m_CPP.str(); m_CPP.freeze(false);
+        return code;
     }
     code <<
         GetClassName() << "_Base::" <<
@@ -493,8 +497,9 @@ CNcbiOstream& CClassCode::GenerateCPP(CNcbiOstream& code) const
         code << "    SET_PARENT_CLASS(" <<
             GetParentClass() << ")->SetOptional();" << endl;
     }
+    const char* body = m_CPP.str(); m_CPP.freeze(false);
     code << endl <<
-        m_CPP.str() <<
+        body <<
         '}' << endl <<
         "END_CLASS_INFO" << endl;
     return code;

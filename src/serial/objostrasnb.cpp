@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/10/21 15:44:22  vasilche
+* Added helper class CNcbiOstreamToString to convert CNcbiOstrstream buffer
+* to string.
+*
 * Revision 1.23  1999/10/05 14:08:34  vasilche
 * Fixed class name under GCC and MSVC.
 *
@@ -486,7 +490,8 @@ void CObjectOStreamAsnBinary::WriteDouble(double data)
     size_t length = buff.pcount();
     WriteShortLength(length + 1);
     WriteByte(eDecimal);
-    WriteBytes(buff.str(), length);
+    const char* str = buff.str();    buff.freeze(false);
+    WriteBytes(str, length);
 }
 
 void CObjectOStreamAsnBinary::WriteString(const string& str)
