@@ -394,7 +394,9 @@ enum ETreeTraverseCode
 /// Algorithm calls the visitor function on the way back so it revisits
 /// some tree nodes. It is possible to implement both variants of tree 
 /// traversal (pre-order and post-order)
-/// When visitor decides to stop the traverse it returns TRUE.
+/// Visitor controls the traversal by returning ETreeTraverseCode
+///
+/// @sa ETreeTraverseCode
 ///
 template<class TTreeNode, class Fun>
 Fun TreeDepthFirstTraverse(TTreeNode& tree_node, Fun func)
@@ -714,6 +716,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/04/06 15:53:16  kuznets
+ * Minor correction in the comments
+ *
  * Revision 1.23  2004/03/10 15:59:33  kuznets
  * TreeDepthFirstTraverse fixed bug in tree iteration logic
  * (corner case for empty tree)
