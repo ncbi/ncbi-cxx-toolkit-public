@@ -56,7 +56,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
     setp(m_WriteBuf, m_WriteBuf + m_BufSize);
 
     m_ReadBuf = bp.get() + m_BufSize;
-    setg(0, 0, 0); // we wish to have underflow() called at the first read
+    setg(m_ReadBuf, m_ReadBuf, m_ReadBuf);
 
     if (LOG_IF_ERROR(CONN_Create(connector, &m_Conn),
                      "CConn_Streambuf(): CONN_Create() failed") !=eIO_Success){
@@ -287,6 +287,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2003/05/20 18:24:06  lavr
+ * Set non-zero ptrs (but still empty buf) in constructor to explicitly show
+ * (to the stream level) that this streambuf has a memory-resident buffer
+ *
  * Revision 6.30  2003/05/20 18:05:53  lavr
  * x_LogIfError() to accept and print approproate file location
  *
