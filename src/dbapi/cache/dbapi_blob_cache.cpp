@@ -545,12 +545,16 @@ private:
 
 CDBAPI_Cache::CDBAPI_Cache()
 : m_Conn(0),
+  m_OwnConnection(false),
   m_MemBufferSize(s_WriterBufferSize)
 {
 }
 
 CDBAPI_Cache::~CDBAPI_Cache()
 {
+    if (m_Conn && m_OwnConnection) {
+        delete m_Conn;
+    }
 }
 
 void CDBAPI_Cache::SetMemBufferSize(unsigned int buf_size)
@@ -564,6 +568,7 @@ void CDBAPI_Cache::Open(IConnection* conn,
                         const string& temp_prefix)
 {
     m_Conn = conn;
+    m_OwnConnection = false;
     m_TempDir = temp_dir;
     m_TempPrefix = temp_prefix;
 
@@ -579,6 +584,30 @@ void CDBAPI_Cache::Open(IConnection* conn,
     }
 
 }
+
+void CDBAPI_Cache::Open(const string& driver,
+                        const string& server,
+                        const string& database,
+                        const string& login,
+                        const string& password,
+                        const string& temp_dir,
+                        const string& temp_prefix)
+{
+    CDriverManager &db_drv_man = CDriverManager::GetInstance(); 
+    IDataSource* ds = db_drv_man.CreateDs(driver);
+    auto_ptr<IConnection> conn(ds->CreateConnection());  // TODO: Add ownership flag
+    if (conn.get() == 0) {
+        NCBI_THROW(CDBAPI_ICacheException, eConnectionError, 
+                "Cannot create connection");
+    }
+    conn->Connect(login, password, server, database);
+
+    Open(conn.get(), temp_dir, temp_prefix);
+
+    m_Conn = conn.release();
+    m_OwnConnection = true;
+}
+
 
 void CDBAPI_Cache::SetTimeStampPolicy(TTimeStampFlags policy, 
                                     int             timeout)
@@ -1164,12 +1193,16 @@ void CDBAPI_Cache::x_UpdateAccessTime(IStatement&    stmt,
 }
 
 
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/07/26 14:06:03  kuznets
+ * + Open with all connection parameters
+ *
  * Revision 1.9  2004/07/21 19:04:16  kuznets
  * Added functions to change the size of the memory buffer
  *

@@ -53,6 +53,8 @@ class NCBI_DBAPI_EXPORT CDBAPI_ICacheException : public CException
 {
 public:
     enum EErrCode {
+        eCannotInitCache,
+        eConnectionError,
         eInvalidDirectory,
         eStreamClosed,
         eCannotCreateBLOB,
@@ -64,6 +66,8 @@ public:
     {
         switch (GetErrCode())
         {
+        case eCannotInitCache:   return "eCannotInitCache";
+        case eConnectionError:   return "eConnectionError";
         case eInvalidDirectory:  return "eInvalidDirectory";
         case eStreamClosed:      return "eStreamClosed";
         case eCannotCreateBLOB:  return "eCannotCreateBLOB";
@@ -95,7 +99,7 @@ public:
     CDBAPI_Cache();
     virtual ~CDBAPI_Cache();
 
-    /// Open cache. Does not take IConnection owbership.
+    /// Open cache. Does not take IConnection ownership.
     /// Connection should be already logged into the destination server
     /// 
     /// Implementation uses temporary files to keep local BLOBs.
@@ -111,6 +115,16 @@ public:
     void Open(IConnection*  conn,
               const string& temp_dir = kEmptyStr,
               const string& temp_prefix = kEmptyStr);
+
+    /// Open cache. Creates it's own connection.
+    void Open(const string& driver,
+              const string& server,
+              const string& database,
+              const string& login,
+              const string& password,
+              const string& temp_dir = kEmptyStr,
+              const string& temp_prefix = kEmptyStr);
+
 
     IConnection* GetConnection() { return m_Conn; }
     
@@ -227,6 +241,7 @@ public:
 
 private:
     IConnection*            m_Conn;         ///< db connection
+    bool                    m_OwnConnection;///< Connection ownership flag
     TTimeStampFlags         m_TimeStampFlag;///< Time stamp flag
     int                     m_Timeout;      ///< Timeout expiration policy
     EKeepVersions           m_VersionFlag;  ///< Version retention policy
@@ -243,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/07/26 14:05:39  kuznets
+ * + Open with all connection parameters
+ *
  * Revision 1.3  2004/07/21 19:04:33  kuznets
  * Added functions to change the size of the memory buffer
  *
