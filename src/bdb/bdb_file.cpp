@@ -501,6 +501,21 @@ void CBDB_File::SetFieldOwnership(bool own_fields)
     }
 }
 
+void CBDB_File::x_ConstructKeyBuf()
+{
+	m_KeyBuf.reset(new CBDB_BufferManager);
+    m_KeyBuf->SetLegacyStringsCheck(m_LegacyString);
+    m_KeyBuf->SetFieldOwnership(m_OwnFields);
+}		
+
+void CBDB_File::x_ConstructDataBuf()
+{
+	m_DataBuf.reset(new CBDB_BufferManager);
+    m_DataBuf->SetNullable();
+    m_DataBuf->SetLegacyStringsCheck(m_LegacyString);
+    m_DataBuf->SetFieldOwnership(m_OwnFields);
+}		
+
 void CBDB_File::BindKey(const char* field_name,
                         CBDB_Field* key_field,
                         size_t      buf_size)
@@ -527,11 +542,7 @@ void CBDB_File::BindData(const char* field_name,
     data_field->SetName(field_name);
 
     if (m_DataBuf.get() == 0) {  // data buffer is not yet created 
-        auto_ptr<CBDB_BufferManager> dbuf(new CBDB_BufferManager);
-        m_DataBuf = dbuf;
-        m_DataBuf->SetNullable();
-        m_DataBuf->SetLegacyStringsCheck(m_LegacyString);
-        m_DataBuf->SetFieldOwnership(m_OwnFields);
+		x_ConstructDataBuf();
     }
 
     m_DataBuf->Bind(data_field);
@@ -776,6 +787,38 @@ CBDB_Field& CBDB_File::GetField(TUnifiedFieldIndex idx)
 }
 
 
+void CBDB_File::CopyFrom(const CBDB_File& dbf)
+{
+    const CBDB_BufferManager* src_key  = dbf.GetKeyBuffer();
+    const CBDB_BufferManager* src_data = dbf.GetDataBuffer();
+	
+    CBDB_BufferManager* key  = GetKeyBuffer();
+    CBDB_BufferManager* data = GetDataBuffer();
+	
+	key->CopyFrom(*src_key);
+	if (data) {
+		data->CopyFrom(*src_data);
+	}
+}
+
+void CBDB_File::DuplicateStructure(const CBDB_File& dbf)
+{
+    const CBDB_BufferManager* src_key  = dbf.GetKeyBuffer();
+    const CBDB_BufferManager* src_data = dbf.GetDataBuffer();
+	
+	_ASSERT(src_key);
+	
+	x_ConstructKeyBuf();
+	m_KeyBuf->DuplicateStructureFrom(*src_key);
+	
+	if (src_data) {
+		x_ConstructDataBuf();
+		m_DataBuf->DuplicateStructureFrom(*src_data);
+	} else {
+		m_DataBuf.reset(0);
+	}
+}
+
 EBDB_ErrCode CBDB_File::ReadCursor(DBC* dbc, unsigned int bdb_flag)
 {
     x_StartRead();
@@ -937,6 +980,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/06/29 12:26:53  kuznets
+ * Added functions to bulk copy fields and field structures
+ *
  * Revision 1.40  2004/06/21 15:09:51  kuznets
  * Fixed formatting
  *

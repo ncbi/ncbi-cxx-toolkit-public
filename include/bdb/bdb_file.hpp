@@ -278,6 +278,9 @@ public:
                   CBDB_Field* data_field, 
                   size_t buf_size = 0, 
                   ENullable is_null = eNullable);
+	
+	/// Create the same fieldset as in dbf and bind them to the current file
+	void DuplicateStructure(const CBDB_File& dbf);
 
     /// Get Buffer manager for key section of the file
     const CBDB_BufferManager* GetKeyBuffer() const { return m_KeyBuf.get(); }
@@ -285,6 +288,11 @@ public:
     /// Get Buffer manager for data section of the file
     const CBDB_BufferManager* GetDataBuffer() const { return m_DataBuf.get(); }
 
+    /// Get Buffer manager for key section of the file
+    CBDB_BufferManager* GetKeyBuffer() { return m_KeyBuf.get(); }
+
+    /// Get Buffer manager for data section of the file
+    CBDB_BufferManager* GetDataBuffer() { return m_DataBuf.get(); }
 
     /// Sets maximum number of key fields participating in comparison
     /// Should be less than total number of key fields
@@ -326,6 +334,10 @@ public:
 	
 	/// Return fields ownership flag
 	bool IsOwnFields() const { return m_OwnFields; }
+	
+	/// Copy record (fields) from another BDB file 
+	/// (MUST have the same structure)
+	void CopyFrom(const CBDB_File& dbf);
 
 protected:
     /// Unpack internal record buffers
@@ -373,6 +385,9 @@ private:
                          DBC * dbc = 0);
 
     void x_CheckConstructBuffers();
+	
+	void x_ConstructKeyBuf();
+	void x_ConstructDataBuf();
 
 private:
     auto_ptr<CBDB_BufferManager>   m_KeyBuf;
@@ -498,6 +513,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/06/29 12:26:34  kuznets
+ * Added functions to bulk copy fields and field structures
+ *
  * Revision 1.32  2004/06/17 16:26:32  kuznets
  * + field ownership flag to file
  *
