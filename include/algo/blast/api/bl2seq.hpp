@@ -114,8 +114,8 @@ private:
     /************ Internal data structures (m_i = internal members)***********/
     //< done once for every query
     bool                                mi_bQuerySetUpDone;
-    CBLAST_SequenceBlk               mi_clsQueries;  // one for all queries
-    CBlastQueryInfo                  mi_clsQueryInfo; // one for all queries
+    CBLAST_SequenceBlk                  mi_clsQueries;  // one for all queries
+    CBlastQueryInfo                     mi_clsQueryInfo; // one for all queries
     vector<BLAST_SequenceBlk*>          mi_vSubjects; // should use structures?
     unsigned int                        mi_iMaxSubjLength; // should use int8?
 
@@ -223,6 +223,7 @@ CBl2Seq::SetOptions()
 inline void
 CBl2Seq::SetOptions(const CBlastOption& opts)
 {
+    delete m_pOptions;
     m_pOptions = const_cast<CBlastOption*>(&opts);
     m_eProgram = m_pOptions->GetProgram();
     mi_bQuerySetUpDone = false;
@@ -247,6 +248,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/08/28 17:36:21  camacho
+* Delete options before reassignment
+*
 * Revision 1.16  2003/08/25 17:15:33  camacho
 * Removed redundant typedef
 *
