@@ -91,7 +91,7 @@ Int4 LookupTableNew(const LookupTableOptions* opt,
   lookup->thin_backbone = 
      (Int4**) calloc(lookup->backbone_size , sizeof(Int4*));
   lookup->use_pssm = opt->use_pssm;
-
+  lookup->neighbors=NULL;
   return 0;
 }
 
@@ -390,8 +390,8 @@ Int4 BlastAaLookupIndexQueries(LookupTable* lookup,
     }
 
   /* free neighbor array*/
-  sfree(lookup->neighbors);
-  lookup->neighbors=NULL;
+  if (lookup->neighbors != NULL)
+    sfree(lookup->neighbors);
 
   return 0;
 }
