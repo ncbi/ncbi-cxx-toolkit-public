@@ -36,6 +36,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/09/24 20:25:11  lavr
+ * +SSERVICE_Extra, +4th parameter for SERVICE_CreateConnectorEx()
+ * -SERVICE_CreateConnector() - now implemented as macro
+ *
  * Revision 6.4  2001/09/10 21:20:19  lavr
  * Few unimportant layout changes
  *
@@ -51,19 +55,32 @@
  * ==========================================================================
  */
 
-#include <connect/ncbi_connector.h>
 #include <connect/ncbi_server_info.h>
+#include <connect/ncbi_service.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-extern CONNECTOR SERVICE_CreateConnector(const char* service);
+typedef const SSERV_Info* (*FSERVICE_GetNextInfo)(SERV_ITER iter, void* data);
+typedef void              (*FSERVICE_CleanupData)(void* data);
 
-extern CONNECTOR SERVICE_CreateConnectorEx(const char*         service,
-                                           TSERV_Type          types,
-                                           const SConnNetInfo* net_info);
+typedef struct {
+    void*                data;
+    FSERVICE_CleanupData cleanup;
+    FSERVICE_GetNextInfo get_next_info;
+} SSERVICE_Extra;
+
+
+extern CONNECTOR SERVICE_CreateConnectorEx(const char*           service,
+                                           TSERV_Type            types,
+                                           const SConnNetInfo*   net_info,
+                                           const SSERVICE_Extra* params);
+
+#define SERVICE_CreateConnector(service) \
+    SERVICE_CreateConnectorEx(service, fSERV_Any, 0, 0)
+
 
 #ifdef __cplusplus
 }  /* extern "C" */
