@@ -206,6 +206,15 @@
 #endif
 
 /*
+ * Export specifier for library objects_blast
+ */
+#ifdef NCBI_BLAST_EXPORTS
+#  define NCBI_BLAST_EXPORT         __declspec(dllexport)
+#else
+#  define NCBI_BLAST_EXPORT         __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library objects_medline
  */
 #ifdef NCBI_MEDLINE_EXPORTS
@@ -434,6 +443,15 @@
 #endif
 
 /*
+ * Export specifier for library objects_entrezgene
+ */
+#ifdef NCBI_ENTREZGENE_EXPORTS
+#  define NCBI_ENTREZGENE_EXPORT    __declspec(dllexport)
+#else
+#  define NCBI_ENTREZGENE_EXPORT    __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library objects_gbseq
  */
 #ifdef NCBI_GBSEQ_EXPORTS
@@ -600,9 +618,9 @@
  * Export specifier for library gui_dialogs
  */
 #ifdef NCBI_GUIDIALOGS_EXPORTS
-#  define NCBI_GUIDIALOGS_EXPORT     __declspec(dllexport)
+#  define NCBI_GUIDIALOGS_EXPORT    __declspec(dllexport)
 #else
-#  define NCBI_GUIDIALOGS_EXPORT     __declspec(dllimport)
+#  define NCBI_GUIDIALOGS_EXPORT    __declspec(dllimport)
 #endif
 
 /*
@@ -693,6 +711,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.16  2003/04/08 20:07:05  ivanov
+ * Added export specifiers NCBI_BLAST_EXPORT and NCBI_ENTREZGENE_EXPORT
+ *
  * Revision 1.15  2003/03/28 20:29:42  kans
  * define NCBI_FLAT_EXPORT at end
  *
