@@ -256,6 +256,12 @@ public:
     /// database from beginning to end.
     CSeqDBIter Begin(void);
     
+    /// Restrict iterators to range of OIDs.
+    ///
+    /// This causes iteration using iterators or the CheckOrFindOID()
+    /// method to skip OIDs outside of the range [first,last].
+    void SetOIDRange(TOID first, TOID last);
+    
     /// Find an included OID, incrementing next_oid if necessary.
     ///
     /// If the specified OID is not included in the set (i.e. the OID
