@@ -300,7 +300,7 @@ void CBioseqContext::x_SetId(void)
         } 
 
         // GBB source
-        m_ShowGBBSource = m_ShowGBBSource  ||  (acc_type == CSeq_id::eAcc_gsdb_dirsub);
+        m_ShowGBBSource = m_ShowGBBSource  ||  (acc_info == CSeq_id::eAcc_gsdb_dirsub);
     }
 }
 
@@ -586,6 +586,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2004/09/01 19:56:36  shomrat
+* fixed intializaion of ShowGBBSource flag
+*
 * Revision 1.22  2004/09/01 15:33:44  grichenk
 * Check strand in GetStart and GetEnd. Circular length argument
 * made optional.
