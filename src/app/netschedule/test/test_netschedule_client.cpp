@@ -126,6 +126,27 @@ int CTestNetScheduleClient::Run(void)
     vector<string> jobs;
 
     {{
+
+    NcbiCout << "SubmitAndWait..." << NcbiEndl;
+    int ret_code;
+    string output;
+    unsigned wait_time = 60;
+    status = 
+        cl.SubmitJobAndWait(input, &job_key, &ret_code, &output, 
+                            wait_time, 9112);
+    if (status == CNetScheduleClient::eDone) {
+        NcbiCout << job_key << " done." << NcbiEndl;
+    } else {
+        NcbiCout << job_key << " is not done in " 
+                 << wait_time << " seconds." << NcbiEndl;
+    }
+    NcbiCout << "SubmitAndWait...done." << NcbiEndl;
+
+
+    }}
+
+
+    {{
     CStopWatch sw(true);
 
     NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
@@ -213,7 +234,7 @@ int CTestNetScheduleClient::Run(void)
 
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
     if (jobs.size()) {
-        NcbiCout << "Remaning job count = " << jobs.size() << NcbiEndl;
+        NcbiCout << "Unfinished job count = " << jobs.size() << NcbiEndl;
     }
     return 0;
 }
@@ -228,6 +249,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/03/15 20:14:59  kuznets
+ * Added test for SubmitJobAndWait()
+ *
  * Revision 1.6  2005/03/10 14:20:59  kuznets
  * Cosmetics
  *
