@@ -52,13 +52,12 @@ static void s_ByteReverse(unsigned char* buf, size_t longs)
 // Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
 // initialization constants.
 CMD5::CMD5(void)
+    : m_Bits(0), m_Finalized(false)
 {
     m_Buf[0] = 0x67452301;
     m_Buf[1] = 0xefcdab89;
     m_Buf[2] = 0x98badcfe;
     m_Buf[3] = 0x10325476;
-
-    m_Bits = 0;
 }
 
 // Update state to reflect the concatenation of another buffer full of bytes.
@@ -277,6 +276,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/07/30 12:42:22  ucko
+* Properly initialize m_Finalized to false in the default constructor.
+*
 * Revision 1.3  2003/07/29 23:58:43  ucko
 * Fix log for last revision, sigh.
 *
