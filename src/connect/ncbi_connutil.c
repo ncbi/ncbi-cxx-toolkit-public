@@ -31,6 +31,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2001/01/23 23:06:18  lavr
+ * SConnNetInfo.debug_printout converted from boolean to enum
+ * BUF_StripToPattern() introduced
+ *
  * Revision 6.14  2001/01/12 00:01:27  lavr
  * CONN_PROXY_HOST was forgotten to init in ConnNetInfo_Create
  *
@@ -225,10 +229,16 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     /* turn on debug printout? */
     REG_VALUE(REG_CONN_DEBUG_PRINTOUT, str, DEF_CONN_DEBUG_PRINTOUT);
-    info->debug_printout = (*str  &&
-                            (strcmp(str, "1") == 0  ||
-                             strcasecmp(str, "true") == 0  ||
-                             strcasecmp(str, "yes" ) == 0));
+    if (*str  &&
+        (strcmp(str, "1") == 0 ||
+         strcasecmp(str, "true") == 0 ||
+         strcasecmp(str, "yes" ) == 0 ||
+         strcasecmp(str, "some") == 0))
+        info->debug_printout = eDebugPrintout_Some;
+    else if (*str  &&  strcasecmp(str, "data") == 0)
+        info->debug_printout = eDebugPrintout_Data;
+    else 
+        info->debug_printout = eDebugPrintout_None;
 
     /* stateless client? */
     REG_VALUE(REG_CONN_STATELESS, str, DEF_CONN_STATELESS);
@@ -355,7 +365,13 @@ extern void ConnNetInfo_Print(const SConnNetInfo* info, FILE* fp)
         s_PrintString(fp, "http_proxy_host", info->http_proxy_host);
         s_PrintULong (fp, "http_proxy_port", info->http_proxy_port);
         s_PrintString(fp, "proxy_host",      info->proxy_host);
-        s_PrintBool  (fp, "debug_printout",  info->debug_printout);
+        s_PrintString(fp, "debug_printout", 
+                      info->debug_printout == eDebugPrintout_None
+                      ? "NONE" :
+                      (info->debug_printout == eDebugPrintout_Some
+                       ? "SOME" :
+                       (info->debug_printout == eDebugPrintout_Data
+                        ? "DATA" : "Unknown")));
         s_PrintBool  (fp, "stateless",       info->stateless);   
         s_PrintBool  (fp, "firewal",         info->firewall);
         s_PrintBool  (fp, "lb_disable",      info->lb_disable);
@@ -389,7 +405,8 @@ extern SOCK URL_Connect
  const STimeout* c_timeout,
  const STimeout* rw_timeout,
  const char*     user_header,
- int/*bool*/     encode_args)
+ int/*bool*/     encode_args,
+ ESwitch         data_logging)
 {
     static const char *X_REQ_R; /* "POST "/"GET " */
     static const char  X_REQ_Q[] = "?";
@@ -435,6 +452,8 @@ extern SOCK URL_Connect
         return 0/*error*/;
     }
     
+    SOCK_SetDataLogging(sock, data_logging);
+
     /* setup i/o timeout for the connection */
     if (SOCK_SetTimeout(sock, eIO_ReadWrite, rw_timeout) != eIO_Success) {
         CORE_LOG(eLOG_Error, "[URL_Connect]  Cannot setup connection timeout");
@@ -507,8 +526,8 @@ extern SOCK URL_Connect
 /* Code for the "*_StripToPattern()" functions
  */
 typedef EIO_Status (*FDoRead)
-     (void*          source,
-      void*          buffer,
+     (void*          src,
+      void*          dest,
       size_t         size,
       size_t*        n_read,
       EIO_ReadMethod how
@@ -604,12 +623,12 @@ static EIO_Status s_StripToPattern
 
 static EIO_Status s_CONN_Read
 (void*          source,
- void*          buffer,
+ void*          dest,
  size_t         size,
  size_t*        n_read,
  EIO_ReadMethod how)
 {
-    return CONN_Read((CONN)source, buffer, size, n_read, how);
+    return CONN_Read((CONN)source, dest, size, n_read, how);
 }
 
 extern EIO_Status CONN_StripToPattern
@@ -626,12 +645,12 @@ extern EIO_Status CONN_StripToPattern
 
 static EIO_Status s_SOCK_Read
 (void*          source,
- void*          buffer,
+ void*          dest,
  size_t         size,
  size_t*        n_read,
  EIO_ReadMethod how)
 {
-    return SOCK_Read((SOCK)source, buffer, size, n_read, how);
+    return SOCK_Read((SOCK)source, dest, size, n_read, how);
 }
 
 extern EIO_Status SOCK_StripToPattern
@@ -643,6 +662,33 @@ extern EIO_Status SOCK_StripToPattern
 {
     return s_StripToPattern
         (sock, s_SOCK_Read, pattern, pattern_size, buf, n_discarded);
+}
+
+
+static EIO_Status s_BUF_Read
+(void*          source,
+ void*          dest,
+ size_t         size,
+ size_t*        n_read,
+ EIO_ReadMethod how)
+{
+    size_t read = (how == eIO_Peek
+                   ? BUF_Peek((BUF)source, dest, size)
+                   : BUF_Read((BUF)source, dest, size));
+    if (n_read)
+        *n_read = read;
+    return read ? eIO_Success : eIO_Closed;
+}
+
+extern EIO_Status BUF_StripToPattern
+(BUF         buffer,
+ const void* pattern,
+ size_t      pattern_size,
+ BUF*        buf,
+ size_t*     n_discarded)
+{
+    return s_StripToPattern
+        (buffer, s_BUF_Read, pattern, pattern_size, buf, n_discarded);
 }
 
 

@@ -60,6 +60,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/01/23 23:06:15  lavr
+ * SConnNetInfo.debug_printout converted from boolean to enum
+ * BUF_StripToPattern() introduced
+ *
  * Revision 6.8  2001/01/11 23:05:13  lavr
  * ConnNetInfo_Create() fully documented
  *
@@ -111,6 +115,13 @@ typedef enum {
 } EReqMethod;
 
 
+typedef enum {
+    eDebugPrintout_None = 0,
+    eDebugPrintout_Some,
+    eDebugPrintout_Data
+} EDebugPrintout;
+
+
 /* Network connection related configurable info struct
  */
 typedef struct {
@@ -125,7 +136,7 @@ typedef struct {
     char           http_proxy_host[64];  /* hostname of HTTP proxy server    */
     unsigned short http_proxy_port;      /* port #   of HTTP proxy server    */
     char           proxy_host[64];   /* host of CERN-like firewall proxy srv */
-    int/*bool*/    debug_printout;   /* printout some debug info             */
+    EDebugPrintout debug_printout;   /* printout some debug info             */
     int/*bool*/    stateless;        /* to connect in HTTP-like fashion only */
     int/*bool*/    firewall;         /* to use firewall/relay in connects    */
     int/*bool*/    lb_disable;       /* to disable local load-balancing      */
@@ -285,10 +296,11 @@ extern SOCK URL_Connect
  const char*     args,
  EReqMethod      req_method,
  size_t          content_length,
- const STimeout* c_timeout,       /* timeout for the CONNECT stage */
- const STimeout* rw_timeout,      /* timeout for READ and WRITE */
+ const STimeout* c_timeout,       /* timeout for the CONNECT stage          */
+ const STimeout* rw_timeout,      /* timeout for READ and WRITE             */
  const char*     user_header,
- int/*bool*/     encode_args      /* URL-encode the "args", if any */
+ int/*bool*/     encode_args,     /* URL-encode the "args", if any          */
+ ESwitch         data_logging     /* sock.data log.; eDefault in most cases */
  );
 
 
@@ -307,6 +319,14 @@ extern EIO_Status CONN_StripToPattern
 
 extern EIO_Status SOCK_StripToPattern
 (SOCK        sock,
+ const void* pattern,
+ size_t      pattern_size,
+ BUF*        buf,
+ size_t*     n_discarded
+ );
+
+extern EIO_Status BUF_StripToPattern
+(BUF         buffer,
  const void* pattern,
  size_t      pattern_size,
  BUF*        buf,
