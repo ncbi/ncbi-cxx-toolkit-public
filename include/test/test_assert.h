@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/04/18 14:16:07  lavr
+ * Work around MSVC compiler bug treating formal parameter as a class name
+ *
  * Revision 1.1  2002/04/16 18:41:11  ivanov
  * Copied from connect library. Added #undef _ASSERT
  *
@@ -70,9 +73,11 @@
 
 #ifdef NCBI_OS_MSWIN
 #  undef _ASSERT
+#  define Type aType
 #  include <crtdbg.h>
 #  include <stdio.h>
 #  include <windows.h>
+#  undef Type
 
 /* Suppress popup messages on execution errors.
  * NOTE: Windows-specific, suppresses all error message boxes in both runtime
