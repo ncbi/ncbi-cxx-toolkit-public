@@ -381,7 +381,7 @@ public:
   
     // Get callable statement object for stored procedures
     virtual ICallableStatement* PrepareCall(const string& proc, 
-					    int nofArgs) = 0;
+					    int nofArgs = 0) = 0;
 
     // Get cursor object
     virtual ICursor* CreateCursor(const string& name, 
@@ -453,6 +453,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/05/16 20:17:01  kholodov
+ * Modified: default 0 arguments in PrepareCall()
+ *
  * Revision 1.21  2003/04/11 17:45:55  siyan
  * Added doxygen support
  *

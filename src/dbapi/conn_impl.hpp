@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.12  2003/05/16 20:17:28  kholodov
+* Modified: default 0 arguments in PrepareCall()
+*
 * Revision 1.11  2003/03/07 21:21:15  kholodov
 * Added: IsAlive() method
 *
@@ -103,7 +106,7 @@ public:
 
     virtual IStatement* CreateStatement();
     virtual ICallableStatement* PrepareCall(const string& proc,
-                                            int nofArgs);
+                                            int nofArgs = 0);
     virtual ICursor* CreateCursor(const string& name,
                                   const string& sql,
                                   int nofArgs,
