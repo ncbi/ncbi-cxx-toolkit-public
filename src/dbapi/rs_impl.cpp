@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/03/13 16:40:16  kholodov
+* Modified indent formatting
+*
 * Revision 1.1  2002/01/30 14:51:21  kholodov
 * User DBAPI implementation, first commit
 *
@@ -53,123 +56,123 @@
 BEGIN_NCBI_SCOPE
 
 CResultSet::CResultSet(CConnection* conn, CDB_Result *rs)
-  : m_conn(conn),
-    m_rs(rs), m_istr(0), m_ostr(0)
+    : m_conn(conn),
+      m_rs(rs), m_istr(0), m_ostr(0)
 {
-  if( m_rs == 0 ) {
-    SetValid(false);
-  }
-  else {
-    // Reserve storage for column data
-    EDB_Type type;
-    for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
-      type = m_rs->ItemDataType(i);
-      m_data.Add(CVariant(type));
+    if( m_rs == 0 ) {
+        SetValid(false);
     }
-  }
+    else {
+        // Reserve storage for column data
+        EDB_Type type;
+        for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
+            type = m_rs->ItemDataType(i);
+            m_data.Add(CVariant(type));
+        }
+    }
 }
 
 CResultSet::~CResultSet()
 {
-  Close();
-  Notify(CDbapiDeletedEvent(this));
-  delete m_istr;
-  delete m_ostr;
+    Close();
+    Notify(CDbapiDeletedEvent(this));
+    delete m_istr;
+    delete m_ostr;
 }
 
 IResultSetMetaData* CResultSet::GetMetaData() 
 {
-  CheckValid();
-  CResultSetMetaData *md = new CResultSetMetaData(m_rs);
-  md->AddListener(this);
-  AddListener(md);
-  return md;
+    CheckValid();
+    CResultSetMetaData *md = new CResultSetMetaData(m_rs);
+    md->AddListener(this);
+    AddListener(md);
+    return md;
 }
 
 EDB_ResType CResultSet::GetResultType() 
 {
-  CheckValid();
-  return m_rs->ResultType();
+    CheckValid();
+    return m_rs->ResultType();
 }
 
 bool CResultSet::Next() 
 {
-  CheckValid();
+    CheckValid();
 
-  bool more = false;
-  EDB_Type type = eDB_UnsupportedType;
+    bool more = false;
+    EDB_Type type = eDB_UnsupportedType;
 
-  if( m_rs->Fetch() ) {
-    for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
+    if( m_rs->Fetch() ) {
+        for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
       
-      type = m_rs->ItemDataType(i);
+            type = m_rs->ItemDataType(i);
 
-      if( type == eDB_Text || type == eDB_Image ) {
-	break;
-      }
+            if( type == eDB_Text || type == eDB_Image ) {
+                break;
+            }
 
-      m_rs->GetItem(m_data[i].GetNonNullData());
+            m_rs->GetItem(m_data[i].GetNonNullData());
+        }
+
+        more = true;
     }
-
-    more = true;
-  }
   
-  return more;
+    return more;
 }
 
 size_t CResultSet::Read(void* buf, size_t size)
 {
-  CheckValid();
-  return m_rs->ReadItem(buf, size);
+    CheckValid();
+    return m_rs->ReadItem(buf, size);
 }
 
 istream& CResultSet::GetBlobIStream(size_t buf_size)
 {
-  CheckValid();
-  delete m_istr;
-  m_istr = new CBlobIStream(m_rs, buf_size);
-  return *m_istr;
+    CheckValid();
+    delete m_istr;
+    m_istr = new CBlobIStream(m_rs, buf_size);
+    return *m_istr;
 }
 
 ostream& CResultSet::GetBlobOStream(size_t blob_size, 
-				    size_t buf_size)
+                                    size_t buf_size)
 {
-  CheckValid();
-  // GetConnAux() returns pointer to pooled CDB_Connection.
-  // we need to delete it every time we request new one.
-  // The same with ITDescriptor
-  delete m_ostr;
-  m_ostr = new CBlobOStream(m_conn->GetConnAux(),
-			    m_rs->GetImageOrTextDescriptor(),
-			    blob_size,
-			    buf_size);
-  // To avoid write locks we need to read the column to /dev/null
-  const unsigned int SIZE = 2048;
-  char buf[SIZE];
-  while( m_rs->ReadItem(buf, SIZE) == SIZE );
+    CheckValid();
+    // GetConnAux() returns pointer to pooled CDB_Connection.
+    // we need to delete it every time we request new one.
+    // The same with ITDescriptor
+    delete m_ostr;
+    m_ostr = new CBlobOStream(m_conn->GetConnAux(),
+                              m_rs->GetImageOrTextDescriptor(),
+                              blob_size,
+                              buf_size);
+    // To avoid write locks we need to read the column to /dev/null
+    const unsigned int SIZE = 2048;
+    char buf[SIZE];
+    while( m_rs->ReadItem(buf, SIZE) == SIZE );
 
-  return *m_ostr;
+    return *m_ostr;
 }
 
 void CResultSet::Close()
 {
-  delete m_rs;
-  m_rs = 0;
-  SetValid(false);
+    delete m_rs;
+    m_rs = 0;
+    SetValid(false);
 }
   
 void CResultSet::Action(const CDbapiEvent& e) 
 {
-  if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
+    if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
 
-    RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
+        RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
 
-    if(dynamic_cast<CStatement*>(e.GetSource()) != 0
-       || dynamic_cast<CCursor*>(e.GetSource()) != 0 ) {
-      delete this;
-      //SetValid(false);
+        if(dynamic_cast<CStatement*>(e.GetSource()) != 0
+           || dynamic_cast<CCursor*>(e.GetSource()) != 0 ) {
+            delete this;
+            //SetValid(false);
+        }
     }
-  }
 }
 
 END_NCBI_SCOPE
