@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/04/09 20:58:09  ucko
+* Look for "processed active peptide" in addition to "mature chain";
+* SWISS-PROT changed their labels.
+*
 * Revision 1.2  2002/03/21 18:57:31  ucko
 * Fix check for initial Met.
 *
@@ -135,7 +139,9 @@ void GetProteinWeights(CScope* scope, const CBioseqHandle& handle,
             break;
 
         case CSeqFeatData::e_Region:
-            if (!NStr::CompareNocase(data.GetRegion(), "mature chain")) {
+            if (!NStr::CompareNocase(data.GetRegion(), "mature chain")
+                ||  !NStr::CompareNocase(data.GetRegion(),
+                                         "processed active peptide")) {
                 is_mature = true;
             } else if (!NStr::CompareNocase(data.GetRegion(), "signal")) {
                 is_signal = true;
