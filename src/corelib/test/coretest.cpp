@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2001/06/13 20:50:00  ivanov
+* Added test for stack post prefix messages and ErrCode manipulator.
+*
 * Revision 1.72  2001/03/26 20:59:57  vakatov
 * String-related tests moved to "test_ncbistr.cpp" (by A.Grichenko)
 *
@@ -607,7 +610,7 @@ static void TestDiag(void)
 
     diag << Critical << "This message has severity \"Critical\"" << Endm;
 
-    diag << Trace << "This message has severity \"Trace\"" << Endm;
+    diag << Trace << "1This message has severity \"Trace\"" << Endm;
 
     SetDiagPostFlag(eDPF_All);
     SetDiagPostPrefix("Foo-Prefix");
@@ -627,7 +630,24 @@ static void TestDiag(void)
     UnsetDiagPostFlag(eDPF_All);
     ERR_POST("This is the least detailed error posting");
     SetDiagPostFlag(eDPF_All);
+    UnsetDiagPostFlag(eDPF_LongFilename);
+
+    PushDiagPostPrefix("Prefix1");
+    ERR_POST("Message");
+    PushDiagPostPrefix("Prefix2");
+    ERR_POST("Message");
+    PushDiagPostPrefix("Prefix3");
+    ERR_POST("Message");
+    PopDiagPostPrefix();
+    ERR_POST("Message");
+    PopDiagPostPrefix();
+    PopDiagPostPrefix();
+    PopDiagPostPrefix();
+    ERR_POST("Message");
     SetDiagPostPrefix(0);
+
+    ERR_POST_EX("Message",1,2);
+    diag << Error << ErrCode(3,4) << "Message with error code" << Endm;
 }
 
 
