@@ -46,13 +46,6 @@ Contents: Structures used for BLAST extension
 extern "C" {
 #endif
 
-#define EXTEND_WORD_BLASTN        0x00000001
-#define EXTEND_WORD_DIAG_ARRAY    0x00000002
-#define EXTEND_WORD_MB_STACKS     0x00000004
-#define EXTEND_WORD_AG            0x00000008
-#define EXTEND_WORD_VARIABLE_SIZE 0x00000010
-#define EXTEND_WORD_UNGAPPED      0x00000020
-
 /** Structure to hold ungapped alignment information */
 typedef struct BlastUngappedData {
    Int4 q_start; /**< Start of the ungapped alignment in query */
