@@ -39,7 +39,7 @@ global AllApplications -- All GUI applications to build
 (* Libraries for linking (note the extra space before the lib name! )*)
 property Z_LIBS : " bz2 z"
 --property IMG_LIBS : " jpeg png tiff gif"
-property IMG_LIBS : " png tiff"
+property IMG_LIBS : " png tiff gif"
 property FLTK_LIBS : " fltk_images fltk_gl fltk"
 property BDB_LIBS : " db"
 property SQLITE_LIBS : " sqlite"
@@ -404,6 +404,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/03/24 15:36:15  lebedev
+ * gif lib added
+ *
  * Revision 1.47  2005/03/22 12:42:29  lebedev
  * xconnect updated
  *
@@ -543,10 +546,3 @@ end script
  * Initial revision
  * ===========================================================================
  *)
-on cell value theObject table column tableColumn row theRow
-	(*Add your script here.*)
-end cell value
-
-on number of rows theObject
-	(*Add your script here.*)
-end number of rows
