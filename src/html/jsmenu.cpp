@@ -39,13 +39,11 @@ BEGIN_NCBI_SCOPE
 
 // Smith's menu 
 const string kJSMenuDefaultURL_Smith
-    = "http://www.ncbi.nlm.nih.gov/corehtml/jscript/ncbi_menu_dnd.js";
+ = "http://www.ncbi.nlm.nih.gov/corehtml/jscript/ncbi_menu_dnd.js";
 
 // Sergey Kurdin's menu
-const string kJSMenuDefaultURL_Kurdin  // URL base
-    = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2";
-const string kJSMenuDefaultURL_Kurdin_stylesheet = "popupmenu2_styles.css";
-const string kJSMenuDefaultURL_Kurdin_script     = "popupmenu2_1.js";
+const string kJSMenuDefaultURL_Kurdin
+ = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_1.js";
 
  
 
@@ -311,14 +309,8 @@ string CHTMLPopupMenu::GetCodeHead(EType type, const string& menu_lib_url)
         break;
 
     case eKurdin:
-        url = menu_lib_url.empty() ? kJSMenuDefaultURL_Kurdin : menu_lib_url;
-        if (url[url.length()-1] != '/') {
-            url += '/';
-        }
-        code = "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + url + 
-                    kJSMenuDefaultURL_Kurdin_stylesheet + "\">\n" \
-               "<script language=\"JavaScript1.2\" src=\"" + url + 
-                    kJSMenuDefaultURL_Kurdin_script + "\"></script>\n";
+        url  = menu_lib_url.empty() ? kJSMenuDefaultURL_Kurdin : menu_lib_url;
+        code = "<script language=\"JavaScript1.2\" src=\"" + url + "\"></script>\n";
         break;
     }
     return code;
@@ -367,6 +359,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2003/04/29 18:42:14  ivanov
+ * Fix for previous commit
+ *
  * Revision 1.13  2003/04/29 17:45:43  ivanov
  * Changed array with file names for Kurdin's menu to const definitions
  *
