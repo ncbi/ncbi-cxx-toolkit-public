@@ -81,8 +81,9 @@ public:
     // be delivered
     enum EEventCallBackMode
     {
-        eCallAlways,
-        eDoNotCall
+        eCallAlways,  // Default mode of operation
+        eDoNotCall,   // Object deserialized, but OnObjectFound not called
+        eSkipObject   // Object is skipped from deserialization
     };
 
     struct SCandidateInfo
@@ -175,6 +176,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/08/05 21:11:48  kuznets
+ * +eSkipObject deserialization callback mode
+ *
  * Revision 1.10  2003/08/05 14:31:06  kuznets
  * Implemented background "do not call" candidates for recognition.
  *

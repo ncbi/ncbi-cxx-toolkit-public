@@ -80,8 +80,14 @@ void COffsetReadHook::ReadObject(CObjectIStream &in,
         m_Sniffer->OnObjectFoundPost(object);
 
     } 
-    else {
-        DefaultRead(in, object);
+    else 
+    {
+        if (m_EventMode == CObjectsSniffer::eSkipObject) {
+            DefaultSkip(in, object);
+        }
+        else {
+            DefaultRead(in, object);
+        }
     }
 }
 
@@ -218,6 +224,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2003/08/05 21:12:14  kuznets
+* +eSkipObject deserialization callback mode
+*
 * Revision 1.10  2003/08/05 14:43:47  kuznets
 * Fixed compilation warnings
 *
