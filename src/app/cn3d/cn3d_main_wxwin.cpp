@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.92  2001/10/09 18:57:05  thiessen
+* add CDD references editing dialog
+*
 * Revision 1.91  2001/10/08 14:18:33  thiessen
 * fix show/hide dialog under wxGTK
 *
@@ -393,6 +396,7 @@
 #include "cn3d/multitext_dialog.hpp"
 #include "cn3d/cdd_annot_dialog.hpp"
 #include "cn3d/preferences_dialog.hpp"
+#include "cn3d/cdd_ref_dialog.hpp"
 
 #include <wx/file.h>
 #include <wx/fontdlg.h>
@@ -674,7 +678,7 @@ void Cn3DApp::InitRegistry(void)
         TESTMSG("loading program registry " << registryFile);
         registry.Read(*iniIn);
     }
-    
+
     registryChanged = false;
 }
 
@@ -934,6 +938,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_EDIT_CDD_NAME, "Edit &Name");
     menu->Append(MID_EDIT_CDD_DESCR, "Edit &Description");
     menu->Append(MID_EDIT_CDD_NOTES, "Edit N&otes");
+    menu->Append(MID_EDIT_CDD_REFERENCES, "Edit &References");
     menu->Append(MID_ANNOT_CDD, "&Annotate");
     menuBar->Append(menu, "&CDD");
 
@@ -1261,6 +1266,11 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
                 if (!glCanvas->structureSet->SetCDDNotes(lines))
                     ERR_POST(Error << "Error saving CDD notes");
             }
+            break;
+        }
+        case MID_EDIT_CDD_REFERENCES: {
+            CDDRefDialog dialog(glCanvas->structureSet, this, -1, "CDD References");
+            dialog.ShowModal();
             break;
         }
         case MID_ANNOT_CDD: {

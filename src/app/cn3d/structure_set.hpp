@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2001/10/09 18:57:27  thiessen
+* add CDD references editing dialog
+*
 * Revision 1.57  2001/10/08 00:00:02  thiessen
 * estimate threader N random starts; edit CDD name
 *
@@ -367,6 +370,7 @@ public:
     bool HasDataChanged(void) const { return (dataChanged > 0); }
     void StyleDataChanged(void) const { dataChanged |= eStyleData; }
     void UserAnnotationDataChanged(void) const { dataChanged |= eUserAnnotationData; }
+    void CDDDataChanged(void) const { dataChanged |= eCDDData; }
 
     // creates Bioseq from Sequence; registed with SeqMgr and stored in BioseqMap
     Bioseq * GetOrCreateBioseq(const Sequence *sequence);
@@ -381,6 +385,7 @@ public:
     typedef std::vector < std::string > TextLines;
     bool GetCDDNotes(TextLines *lines) const;
     bool SetCDDNotes(const TextLines& lines);
+    ncbi::objects::CCdd_descr_set * GetCDDDescrSet(void);
     ncbi::objects::CAlign_annot_set * GetCDDAnnotSet(void);
 };
 

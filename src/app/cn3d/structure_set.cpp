@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2001/10/09 18:57:05  thiessen
+* add CDD references editing dialog
+*
 * Revision 1.82  2001/10/08 00:00:09  thiessen
 * estimate threader N random starts; edit CDD name
 *
@@ -1226,6 +1229,19 @@ bool StructureSet::SetCDDNotes(const TextLines& lines)
     dataChanged |= eCDDData;
 
     return true;
+}
+
+ncbi::objects::CCdd_descr_set * StructureSet::GetCDDDescrSet(void)
+{
+    if (cddData) {
+        // make a new descr set if not present
+        if (!cddData->IsSetDescription()) {
+            CRef < CCdd_descr_set > ref(new CCdd_descr_set());
+            cddData->SetDescription(ref);
+        }
+        return &(cddData->SetDescription());
+    } else
+        return NULL;
 }
 
 ncbi::objects::CAlign_annot_set * StructureSet::GetCDDAnnotSet(void)

@@ -17,6 +17,7 @@ OBJ = \
 	bond \
 	chemical_graph \
 	cdd_annot_dialog \
+	cdd_ref_dialog \
 	cn3d_blast \
 	cn3d_colors \
 	cn3d_main_wxwin \

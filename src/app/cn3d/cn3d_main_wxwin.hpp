@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2001/10/09 18:57:27  thiessen
+* add CDD references editing dialog
+*
 * Revision 1.45  2001/10/08 00:00:02  thiessen
 * estimate threader N random starts; edit CDD name
 *
@@ -346,6 +349,7 @@ public:
             MID_EDIT_CDD_NAME,
             MID_EDIT_CDD_DESCR,
             MID_EDIT_CDD_NOTES,
+            MID_EDIT_CDD_REFERENCES,
             MID_ANNOT_CDD,
 
         // not actually a menu item, but used to enumerate style favorites list
