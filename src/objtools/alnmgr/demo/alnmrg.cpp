@@ -337,7 +337,7 @@ void CAlnMrgApp::PrintMergedAlignment(void)
 
 void CAlnMrgApp::View4(int scrn_width)
 {
-    CAlnVec av(m_Mix->GetDenseg());
+    CAlnVec av(m_Mix->GetDenseg(), GetScope());
     CAlnMap::TNumrow row, nrows = av.GetNumRows();
 
     vector<string> buffer(nrows);
@@ -411,6 +411,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/12/22 20:28:11  ucko
+* Added missing call to GetScope.
+*
 * Revision 1.17  2003/12/22 18:33:48  ucko
 * Simplify format autodetection behavior by means of Read(..., eNoFileHeader);
 * fixes problems observed with GCC 2.95.
