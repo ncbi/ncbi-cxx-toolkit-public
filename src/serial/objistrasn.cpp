@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2000/07/03 20:39:55  vasilche
+* Fixed comments.
+*
 * Revision 1.49  2000/07/03 18:42:45  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -995,7 +998,7 @@ void CObjectIStreamAsn::ReadClassRandom(CObjectClassReader& reader,
 }
 
 void CObjectIStreamAsn::ReadClassSequential(CObjectClassReader& reader,
-                                            const CClassTypeInfo*/*classInfo*/,
+                                            const CClassTypeInfo* /*classInfo*/,
                                             const CMembersInfo& members)
 {
     Expect('{', true);

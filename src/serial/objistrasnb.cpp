@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2000/07/03 20:39:56  vasilche
+* Fixed comments.
+*
 * Revision 1.38  2000/07/03 18:42:45  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -950,7 +953,7 @@ void CObjectIStreamAsnBinary::EndClassMember(CObjectStackClassMember& m)
 }
 
 void CObjectIStreamAsnBinary::ReadClassRandom(CObjectClassReader& reader,
-                                              const CClassTypeInfo*/*clsInfo*/,
+                                              const CClassTypeInfo* /*clsInfo*/,
                                               const CMembersInfo& members)
 {
     ExpectSysTag(eUniversal, true, eSet);
