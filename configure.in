@@ -500,9 +500,11 @@ if test "$with_64" = "yes" ; then
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
       LIBS="-Bstatic -L$CXX_PATH/../lib -lCrun -Bdynamic $LIBS"
       ;;
-    sparc-sun-solaris*:WorkShop52 )
+changequote(, )dnl
+    sparc-sun-solaris*:WorkShop5[23] )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
       ;;
+changequote([, ])dnl
     mips-sgi-irix*:MIPSpro73 )
       ARCH_CFLAGS="-64"
       CPPFLAGS="$ARCH_CFLAGS $CPPFLAGS"
@@ -512,7 +514,8 @@ if test "$with_64" = "yes" ; then
       ARCH_CFLAGS="-64"
       ;;
     * )
-      AC_MSG_ERROR(["Do not know how to compile 64-bit with compiler $CXX $compiler_ver"])
+      AC_MSG_ERROR(["Do not know how to compile 64-bit with compiler $CXX $compiler_ver
+	$host:$compiler"])
       ;;
    esac
 else
@@ -527,9 +530,11 @@ else
       LIBS="-Bstatic -L$CXX_PATH/../lib -lCrun -lm -Bdynamic $LIBS"
       MATH_LIBS=" "
       ;;
-    solaris*:WorkShop52 )
+changequote(, )dnl
+    solaris*:WorkShop5[23] )
       MATH_LIBS=" "
       ;;
+changequote([, ])dnl
     irix*:MIPSpro73 | irix*:KCC )
       ARCH_CFLAGS="-n32"
       ;;
