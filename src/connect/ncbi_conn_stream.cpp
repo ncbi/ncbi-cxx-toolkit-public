@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 
 CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
                                streamsize buf_size, bool do_tie) :
-    iostream(0), m_CSb(0)
+    CNcbiIostream(0), m_CSb(0)
 {
     auto_ptr<CConn_Streambuf>
         csb(new CConn_Streambuf(connector, timeout, buf_size, do_tie));
@@ -281,6 +281,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2003/10/23 12:16:27  lavr
+ * CConn_IOStream:: base class is now CNcbiIostream
+ *
  * Revision 6.25  2003/09/23 21:05:23  lavr
  * +CConn_PipeStream, +CConn_NamedPipeStream
  *

@@ -87,7 +87,7 @@ const streamsize kConn_DefaultBufSize = 4096;
  * further buffering, if needed).
  */
 
-class NCBI_XCONNECT_EXPORT CConn_IOStream : public iostream
+class NCBI_XCONNECT_EXPORT CConn_IOStream : public CNcbiIostream
 {
 public:
     CConn_IOStream
@@ -324,6 +324,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2003/10/23 12:16:48  lavr
+ * CConn_IOStream:: base class is now CNcbiIostream
+ *
  * Revision 6.22  2003/09/23 21:00:02  lavr
  * +CConn_PipeStream, +CConn_NamedPipeStream, +disabled copy ctors and assigns
  *
