@@ -317,11 +317,6 @@ public:
         for (; it != it_end; ++it) {
             TryCandidate(*it);
         }
-/*        
-        ITERATE(TClass, it, candidates) {
-            TryCandidate(*it);
-        }
-*/        
     }
 
     /// Try to resolve all files matching the specified masks in the
@@ -372,6 +367,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/11/07 17:11:53  kuznets
+ * Minor cleanup.
+ *
  * Revision 1.13  2003/11/06 13:22:36  kuznets
  * Fixed minor compilation bug
  *
