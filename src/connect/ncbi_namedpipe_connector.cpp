@@ -48,7 +48,7 @@ USING_NCBI_SCOPE;
 typedef struct {
     CNamedPipeClient* pipe;       // pipe handle; NULL if not connected yet
     string            pipename;   // pipe name
-    size_t            bufsize;    // pipe buffer size
+    size_t            pipesize;   // pipe size
     bool              is_open;    // true if pipe is open
 } SPipeConnector;
 
@@ -59,6 +59,7 @@ typedef struct {
 
 
 extern "C" {
+
 
 static const char* s_VT_GetType
 (CONNECTOR /*connector*/)
@@ -100,7 +101,7 @@ static EIO_Status s_VT_Open
         return eIO_Unknown;
     }
     // Open new connection
-    EIO_Status status = xxx->pipe->Open(xxx->pipename, timeout, xxx->bufsize);
+    EIO_Status status = xxx->pipe->Open(xxx->pipename, timeout, xxx->pipesize);
     if (status == eIO_Success) {
         xxx->is_open = true;
     }
@@ -138,8 +139,8 @@ static EIO_Status s_VT_Write
     if (!xxx->is_open) {
         return eIO_Closed;
     }
-    if (!xxx->pipe  ||  xxx->pipe->SetTimeout(eIO_Write, timeout) != 
-        eIO_Success) {
+    if (!xxx->pipe  ||
+        xxx->pipe->SetTimeout(eIO_Write, timeout) != eIO_Success) {
         return eIO_Unknown;
     }
     return xxx->pipe->Write(buf, size, n_written);
@@ -158,8 +159,8 @@ static EIO_Status s_VT_Read
     if (!xxx->is_open) {
         return eIO_Closed;
     }
-    if (!xxx->pipe  ||  xxx->pipe->SetTimeout(eIO_Read, timeout) !=
-        eIO_Success) {
+    if (!xxx->pipe  ||
+        xxx->pipe->SetTimeout(eIO_Read, timeout) != eIO_Success) {
         return eIO_Unknown;
     }
     return xxx->pipe->Read(buf, size, n_read);
@@ -226,26 +227,28 @@ static void s_Destroy
     free(connector);
 }
 
+
 } /* extern "C" */
+
+
+BEGIN_NCBI_SCOPE
 
 
 /***********************************************************************
  *  EXTERNAL -- the connector's "constructors"
  ***********************************************************************/
 
-BEGIN_NCBI_SCOPE
-
 extern CONNECTOR NAMEDPIPE_CreateConnector
-(const char*  pipename,
- size_t       bufsize) 
+(const string& pipename,
+ size_t        pipesize) 
 {
     CONNECTOR       ccc = (SConnector*) malloc(sizeof(SConnector));
     SPipeConnector* xxx = new SPipeConnector();
 
     // Initialize internal data structures
     xxx->pipe     = new CNamedPipeClient();
-    xxx->pipename = pipename ? pipename : kEmptyStr;
-    xxx->bufsize  = bufsize;
+    xxx->pipename = pipename;
+    xxx->pipesize = pipesize;
     xxx->is_open  = false;
 
     // Initialize connector data
@@ -265,6 +268,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2003/09/23 21:07:51  lavr
+ * bufsize -> pipesize; accept string in ctor instead of char*
+ *
  * Revision 1.5  2003/09/03 13:58:12  ivanov
  * ncbi_namedpipe_connector.h -> ncbi_namedpipe_connector.hpp
  *
