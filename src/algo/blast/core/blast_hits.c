@@ -156,7 +156,7 @@ Boolean Blast_HSPReevaluateWithAmbiguities(BlastHSP* hsp,
    Uint1 mask = 0x0f;
    GapEditScript* esp,* last_esp = NULL,* prev_esp,* first_esp = NULL;
    Boolean delete_hsp;
-   double searchsp_eff;
+   Int8 searchsp_eff;
    Int4 last_esp_num = 0;
    Int4 align_length;
    Blast_KarlinBlk* kbp;
@@ -165,7 +165,7 @@ Boolean Blast_HSPReevaluateWithAmbiguities(BlastHSP* hsp,
    /* NB: this function is called only for BLASTn, so we know where the 
       Karlin block is */
    kbp = sbp->kbp_std[hsp->context];
-   searchsp_eff = (double)query_info->eff_searchsp_array[hsp->context];
+   searchsp_eff = query_info->eff_searchsp_array[hsp->context];
 
    if (score_params->gap_open == 0 && score_params->gap_extend == 0) {
       if (score_params->reward % 2 == 1) 
@@ -1080,11 +1080,11 @@ Int2 Blast_HSPListGetEvalues(Uint1 program, BlastQueryInfo* query_info,
          query information block, in order of preference */
       if (sbp->effective_search_sp) {
          hsp->evalue = BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
-                          (double)sbp->effective_search_sp);
+                          sbp->effective_search_sp);
       } else {
          hsp->evalue = 
             BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
-               (double)query_info->eff_searchsp_array[hsp->context]);
+               query_info->eff_searchsp_array[hsp->context]);
       }
    }
    

@@ -254,7 +254,7 @@ BlastInitialWordParametersUpdate(Uint1 program_number,
    } else {
       Int4 s2 = 0;
       double e2;
-      double qlen;
+      Int4 qlen;
       /* Calculate score cutoff corresponding to a fixed e-value (0.05);
          If it is smaller, then use this one */
       qlen = query_info->context_offsets[query_info->last_context+1] - 1;
@@ -1112,7 +1112,7 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
       params->cutoff_score = options->cutoff_score * (Int4) sbp->scale_factor;
    } else if (!options->phi_align) {
       Int4 context = query_info->first_context;
-      double searchsp = (double)query_info->eff_searchsp_array[context];
+      Int8 searchsp = query_info->eff_searchsp_array[context];
 
       /* translated RPS searches must scale the search space down */
       if (program_number == blast_type_rpstblastn)
@@ -1329,6 +1329,9 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.109  2004/05/20 16:29:30  madden
+ * Make searchsp an Int8 consistent with rest of blast
+ *
  * Revision 1.108  2004/05/19 14:52:02  camacho
  * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
  * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i

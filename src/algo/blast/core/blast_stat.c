@@ -2764,13 +2764,12 @@ BLAST_GapDecayDivisor(double decayrate, unsigned nsegs )
 /*
 	BlastCutoffs
 	Calculate the cutoff score, S, and the highest expected score.
-	WRG (later modified by TLM).
 */
 Int2
 BLAST_Cutoffs(Int4 *S, /* cutoff score */
 	double* E, /* expected no. of HSPs scoring at or above S */
 	Blast_KarlinBlk* kbp,
-	double searchsp, /* size of search space. */
+	Int8 searchsp, /* size of search space. */
 	Boolean dodecay,  /* TRUE ==> use gapdecay feature */
    double gap_decay_rate)
 {
@@ -2836,7 +2835,7 @@ BLAST_Cutoffs(Int4 *S, /* cutoff score */
 double
 BLAST_KarlinStoE_simple(Int4 S,
 		Blast_KarlinBlk* kbp,
-		double	searchsp)	/* size of search space. */
+		Int8	searchsp)	/* size of search space. */
 {
 	double	Lambda, K, H; /* parameters for Karlin statistics */
 
@@ -2847,7 +2846,7 @@ BLAST_KarlinStoE_simple(Int4 S,
 		return -1.;
 	}
 
-	return searchsp * exp((double)(-Lambda * S) + kbp->logK);
+	return (double) searchsp * exp((double)(-Lambda * S) + kbp->logK);
 }
 
 /*
@@ -3517,6 +3516,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.75  2004/05/20 16:29:30  madden
+ * Make searchsp an Int8 consistent with rest of blast
+ *
  * Revision 1.74  2004/05/19 15:34:38  dondosha
  * Moved Blast_ResComp definition from header file
  *

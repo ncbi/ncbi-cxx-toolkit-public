@@ -248,7 +248,15 @@ char* BLAST_PrintAllowedValues(const char *matrix, Int4 gap_open, Int4 gap_exten
 double
 Blast_KarlinLambdaNR(Blast_ScoreFreq* sfp, double initialLambdaGuess);
 
-double BLAST_KarlinStoE_simple (Int4 S, Blast_KarlinBlk* kbp, double  searchsp);
+/** Calculates the Expect value based upon the search space and some Karlin-Altschul 
+ * parameters.  It is "simple" as it does not use sum-statistics.
+ * @param S the score of the alignment. [in]
+ * @param kbp the Karlin-Altschul parameters. [in]
+ * @param searchsp total search space to be used [in]
+ * @return the expect value
+ */
+
+double BLAST_KarlinStoE_simple (Int4 S, Blast_KarlinBlk* kbp, Int8  searchsp);
 double BLAST_GapDecayDivisor(double decayrate, unsigned nsegs );
 
 /** Calculate the cutoff score from the expected number of HSPs or vice versa.
@@ -260,7 +268,7 @@ double BLAST_GapDecayDivisor(double decayrate, unsigned nsegs );
  * @param gap_decay_rate Gap decay rate to use, if dodecay is set [in]
  */
 Int2 BLAST_Cutoffs (Int4 *S, double* E, Blast_KarlinBlk* kbp, 
-                    double searchsp, Boolean dodecay, double gap_decay_rate);
+                    Int8 searchsp, Boolean dodecay, double gap_decay_rate);
 
 /* Functions to calculate SumE (for large and small gaps). */
 double BLAST_SmallGapSumE (Blast_KarlinBlk* kbp, Int4 gap, Int2 num,  double xsum, Int4 query_length, Int4 subject_length, double weight_divisor);

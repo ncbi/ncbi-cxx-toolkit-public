@@ -448,7 +448,7 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
                      Blast_HSPPHIGetEvalue(hsp, sbp);
                   } else {
                      hsp->evalue = BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
-                          (double)query_info->eff_searchsp_array[hsp->context]);
+                          query_info->eff_searchsp_array[hsp->context]);
                   }
                   if (hsp->evalue > hit_options->expect_value) 
                     /* put in for comp. based stats. */
@@ -468,7 +468,7 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
                    hsp->evalue = 
                      BLAST_KarlinStoE_simple(hsp->score, 
                      sbp->kbp_gap[hsp->context],
-                     (double) query_info->eff_searchsp_array[hsp->context]);
+                     query_info->eff_searchsp_array[hsp->context]);
                }
            }
 
