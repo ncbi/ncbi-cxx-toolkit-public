@@ -748,9 +748,10 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject,
  * @param extended_left How far has the left extension succeeded? [out]
  * @return TRUE if extension successful 
  */
-static Boolean BlastNaExactMatchExtend(Uint1Ptr q_start, Uint1Ptr s_start, 
-        Int4 max_bases_left, Int4 max_bases_right, Int4 max_length, 
-        Boolean extend_partial_byte, Int4Ptr extended_left)
+static Boolean 
+BlastNaExactMatchExtend(Uint1Ptr q_start, Uint1Ptr s_start, 
+   Int4 max_bases_left, Int4 max_bases_right, Int4 max_length, 
+   Boolean extend_partial_byte, Int4Ptr extended_left)
 {
    Int4 length = 0;
    Uint1Ptr q, s;
@@ -919,7 +920,7 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlkPtr subject,
    Int4 query_length = query->length;
    Int4 subject_length = subject->length;
    Int4 hitsfound, total_hits = 0;
-   Uint4 word_length, reduced_word_length;
+   Uint4 extra_length, reduced_word_length, min_extra_length;
    Uint1Ptr q;
    Int4 start_offset, end_offset, next_start;
    Uint4 max_bases_left, max_bases_right;
@@ -927,12 +928,15 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlkPtr subject,
    Boolean variable_wordsize = (Boolean) 
       (word_options->extend_word_method & EXTEND_WORD_VARIABLE_SIZE);
    Int4 extended_left;
+   Uint1Ptr q_tmp, s_tmp;
+   Int4 length;
 
    s_end = subject->sequence + subject_length/COMPRESSION_RATIO;
    bases_in_last_byte = subject_length % COMPRESSION_RATIO;
 
-   word_length = lookup->word_length;
    reduced_word_length = COMPRESSION_RATIO*lookup->reduced_wordsize;
+   min_extra_length = reduced_word_length - COMPRESSION_RATIO;
+   extra_length = lookup->word_length - min_extra_length;
    start_offset = 0;
    end_offset = subject_length - reduced_word_length;
 
@@ -947,13 +951,48 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlkPtr subject,
          q = q_start + q_offsets[i] - s_offsets[i]%COMPRESSION_RATIO;
          s = s_start + s_offsets[i]/COMPRESSION_RATIO;
 	    
-         max_bases_left = MIN(word_length, MIN(q_offsets[i], s_offsets[i]));
+         max_bases_left = 
+            MIN(extra_length, MIN(q_offsets[i], s_offsets[i]) 
+                - min_extra_length);
 
-         max_bases_right = MIN(word_length, 
+         max_bases_right = MIN(extra_length, 
             MIN(query_length-q_offsets[i], subject_length-s_offsets[i]));
-                                                
-         if (BlastNaExactMatchExtend(q, s, max_bases_left, max_bases_right, 
-                word_length, !variable_wordsize, &extended_left)) {
+                                 
+
+         q_tmp = q - reduced_word_length;
+         s_tmp = s - lookup->reduced_wordsize;
+         length = 0;
+         while (max_bases_left >= COMPRESSION_RATIO) {
+            if (*s_tmp != PACK_WORD(q_tmp))
+               break;
+            length += COMPRESSION_RATIO;
+            --s_tmp;
+            q_tmp -= COMPRESSION_RATIO;
+            max_bases_left -= COMPRESSION_RATIO;
+         }
+         extended_left = length + reduced_word_length;
+         if (!variable_wordsize) {
+            length += BlastNaMiniExtendLeft(q_tmp+COMPRESSION_RATIO, s_tmp, 
+                                            max_bases_left);
+         }
+         /* Extend to the right; start after the end of the word */
+         max_bases_right = MIN(max_bases_right, extra_length - length);
+         q_tmp = q;
+         s_tmp = s;
+         while (max_bases_right >= COMPRESSION_RATIO) {
+            if (*s_tmp != PACK_WORD(q_tmp))
+               break;
+            length += COMPRESSION_RATIO;
+            ++s_tmp;
+            q_tmp += COMPRESSION_RATIO;
+            max_bases_right -= COMPRESSION_RATIO;
+         }
+         if (!variable_wordsize) {
+            length += BlastNaMiniExtendRight(q_tmp, s_tmp, 
+                                             max_bases_right);
+         }
+               
+         if (length >= extra_length) {
 	    /* Check if this diagonal has already been explored. */
 	    BlastnExtendInitialHit(query, subject, word_params, matrix, ewp,
                q_offsets[i], s_offsets[i] - extended_left, s_offsets[i], 
