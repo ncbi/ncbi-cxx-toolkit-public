@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2000/10/04 19:18:59  vasilche
+* Fixed processing floating point data.
+*
 * Revision 1.56  2000/10/03 17:22:43  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -520,6 +523,21 @@ CLightString CObjectIStreamAsn::ReadTypeId(char c)
     }
 }
 
+CLightString CObjectIStreamAsn::ReadNumber(void)
+{
+    char c = SkipWhiteSpace();
+    if ( c != '-' && c != '+' && !isdigit(c) )
+        ThrowError(eFormatError, "invalid number");
+    for ( size_t i = 1; ; ++i ) {
+        c = m_Input.PeekChar(i);
+        if ( !isdigit(c) ) {
+            const char* ptr = m_Input.GetCurrentPos();
+            m_Input.SkipChars(i);
+            return CLightString(ptr, i);
+        }
+    }
+}
+
 inline
 CLightString CObjectIStreamAsn::ReadUCaseId(char c)
 {
@@ -618,23 +636,33 @@ unsigned long CObjectIStreamAsn::ReadULong(void)
 double CObjectIStreamAsn::ReadDouble(void)
 {
     Expect('{', true);
-    long im = ReadLong();
+    CLightString mantissaStr = ReadNumber();
+    size_t mantissaLength = mantissaStr.GetLength();
+    char buffer[128];
+    if ( mantissaLength >= sizeof(buffer) - 1 )
+        ThrowError(eFormatError, "buffer overflow");
+    memcpy(buffer, mantissaStr.GetString(), mantissaLength);
+    buffer[mantissaLength] = '\0';
+    char* endptr;
+    double mantissa = strtod(buffer, &endptr);
+    if ( *endptr != 0 )
+        ThrowError(eFormatError, "bad number");
     Expect(',', true);
     unsigned base = ReadUInt();
     Expect(',', true);
-    int ic = ReadInt();
+    int exp = ReadInt();
     Expect('}', true);
     if ( base != 2 && base != 10 )
         ThrowError(eFormatError, "illegal REAL base (must be 2 or 10)");
 
     if ( base == 10 ) {     /* range checking only on base 10, for doubles */
-    	if ( ic > DBL_MAX_10_EXP )   /* exponent too big */
-    		return im < 0 ? -DBL_MAX: DBL_MAX;
-    	else if ( ic < DBL_MIN_10_EXP )  /* exponent too small */
+    	if ( exp > DBL_MAX_10_EXP )   /* exponent too big */
+    		return mantissa < 0 ? -DBL_MAX: DBL_MAX;
+    	else if ( exp < DBL_MIN_10_EXP )  /* exponent too small */
     		return 0;
     }
 
-	return im * pow(double(base), ic);
+	return mantissa * pow(double(base), exp);
 }
 
 void CObjectIStreamAsn::ReadString(string& s)

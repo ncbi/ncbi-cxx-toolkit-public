@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/10/04 19:18:54  vasilche
+* Fixed processing floating point data.
+*
 * Revision 1.41  2000/10/03 17:22:34  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -257,6 +260,7 @@ protected:
     CLightString ReadMemberId(char firstChar);
     CLightString ReadUCaseId(char firstChar);
     CLightString ReadLCaseId(char firstChar);
+    CLightString ReadNumber(void);
 
     virtual bool ReadBool(void);
     virtual char ReadChar(void);

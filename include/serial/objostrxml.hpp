@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/10/04 19:18:54  vasilche
+* Fixed processing floating point data.
+*
 * Revision 1.9  2000/09/29 16:18:15  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -108,7 +111,9 @@ protected:
     virtual void WriteUInt(unsigned data);
     virtual void WriteLong(long data);
     virtual void WriteULong(unsigned long data);
+    virtual void WriteFloat(float data);
     virtual void WriteDouble(double data);
+    void WriteDouble2(double data, size_t digits);
     virtual void WriteCString(const char* str);
     virtual void WriteString(const string& s);
     virtual void WriteStringStore(const string& s);

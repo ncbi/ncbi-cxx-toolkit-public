@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/10/04 19:19:00  vasilche
+* Fixed processing floating point data.
+*
 * Revision 1.12  2000/10/03 17:22:45  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -103,6 +106,15 @@
 #include <serial/choice.hpp>
 #include <serial/continfo.hpp>
 #include <serial/delaybuf.hpp>
+
+#include <math.h>
+#include <limits.h>
+#if HAVE_WINDOWS_H
+// In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
+# include <float.h>
+// In MSVC snprintf is prefixed by underscore
+# define snprintf _snprintf
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -258,13 +270,37 @@ void CObjectOStreamXml::WriteULong(unsigned long data)
     m_Output.PutULong(data);
 }
 
+void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
+{
+    int shift = int(ceil(log10(fabs(data))));
+    int precision = digits - shift;
+    if ( precision < 0 )
+        precision = 0;
+
+    char buffer[128];
+    int width = snprintf(buffer, sizeof(buffer), "%.*f", precision, data);
+    if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
+        THROW1_TRACE(runtime_error, "buffer overflow");
+    _ASSERT(int(strlen(buffer)) == width);
+    if ( precision != 0 ) { // skip trailing zeroes
+        while ( buffer[width - 1] == '0' ) {
+            --width;
+        }
+        if ( buffer[width - 1] == '.' )
+            --width;
+    }
+
+    m_Output.PutString(buffer, width);
+}
+
 void CObjectOStreamXml::WriteDouble(double data)
 {
-    CNcbiOstrstream buff;
-    buff << IO_PREFIX::setprecision(15) << data;
-    size_t length = buff.pcount();
-    const char* str = buff.str();    buff.freeze(false);
-    m_Output.PutString(str, length);
+    WriteDouble2(data, DBL_DIG);
+}
+
+void CObjectOStreamXml::WriteFloat(float data)
+{
+    WriteDouble2(data, FLT_DIG);
 }
 
 void CObjectOStreamXml::WriteNull(void)

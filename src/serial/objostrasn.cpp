@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2000/10/04 19:18:59  vasilche
+* Fixed processing floating point data.
+*
 * Revision 1.48  2000/10/03 17:22:44  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -242,11 +245,16 @@
 #include <serial/choice.hpp>
 #include <serial/continfo.hpp>
 #include <serial/delaybuf.hpp>
+
 #include <math.h>
+#include <limits.h>
 #if HAVE_WINDOWS_H
 // In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
 # include <float.h>
+// In MSVC snprintf is prefixed by underscore
+# define snprintf _snprintf
 #endif
+
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
@@ -344,13 +352,51 @@ void CObjectOStreamAsn::WriteULong(unsigned long data)
     m_Output.PutULong(data);
 }
 
-void CObjectOStreamAsn::WriteDouble(double data)
+void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
 {
 	if ( data == 0.0 ) {
         m_Output.PutString("{ 0, 10, 0 }");
         return;
 	}
 
+    char buffer[128];
+    int width = snprintf(buffer, sizeof(buffer), "%.*e", (digits-1), data);
+    if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
+        THROW1_TRACE(runtime_error, "buffer overflow");
+    _ASSERT(int(strlen(buffer)) == width);
+    char* dotPos = strchr(buffer, '.');
+    _ASSERT(dotPos);
+    char* ePos = strchr(dotPos, 'e');
+    _ASSERT(ePos);
+
+    // now we have:
+    // mantissa with dot - buffer:ePos
+    // exponent - (ePos+1):
+
+    int exp;
+    // calcilate exponent
+    if ( sscanf(ePos + 1, "%d", &exp) != 1 )
+        THROW1_TRACE(runtime_error, "double conversion error");
+
+    // remove trailing zeroes
+    int fractDigits = ePos - dotPos - 1;
+    while ( fractDigits > 0 && ePos[-1] == '0' ) {
+        --ePos;
+        --fractDigits;
+    }
+
+    // now we have:
+    // mantissa with dot without trailing zeroes - buffer:ePos
+
+	m_Output.PutString("{ ");
+    m_Output.PutString(buffer, dotPos - buffer);
+    m_Output.PutString(dotPos + 1, fractDigits);
+    m_Output.PutString(", 10, ");
+    m_Output.PutInt(exp - fractDigits);
+    m_Output.PutString(" }");
+
+#if 0
+    // old code
     bool minus;
     if ( data < 0.0 ) {
         minus = true;
@@ -363,32 +409,38 @@ void CObjectOStreamAsn::WriteDouble(double data)
     double thelog = log10(data);
     int characteristic;
     if ( thelog >= 0.0 )
-        characteristic = 8 - int(thelog);/* give it 9 significant digits */
+        characteristic = digits - int(thelog);
     else
-        characteristic = 8 + int(ceil(-thelog));
+        characteristic = digits + int(ceil(-thelog));
     
     double mantissa = floor(data * pow(double(10), characteristic) + 0.5);
+    char buffer[128];
+    int width = snprintf(buffer, sizeof(buffer), "%.0f", mantissa);
+    if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
+        THROW1_TRACE(runtime_error, "buffer overflow");
     int ic = -characteristic; /* reverse direction */
-    
-    long im;
-    if ( mantissa >= LONG_MAX )
-        im = LONG_MAX;
-    else
-        im = long(mantissa);
-    
-    /* strip trailing 0 */
-    while ( im % 10 == 0 ) {
-        im /= 10;
+    while ( width > 0 && buffer[width - 1] == '0' ) {
+        --width;
         ic++;
     }
-    
-    if (minus)
-        im = -im;
 	m_Output.PutString("{ ");
-    m_Output.PutLong(im);
+    if ( minus )
+        m_Output.PutChar('-');
+    m_Output.PutString(buffer, width);
     m_Output.PutString(", 10, ");
     m_Output.PutInt(ic);
     m_Output.PutString(" }");
+#endif
+}
+
+void CObjectOStreamAsn::WriteDouble(double data)
+{
+    WriteDouble2(data, DBL_DIG);
+}
+
+void CObjectOStreamAsn::WriteFloat(float data)
+{
+    WriteDouble2(data, FLT_DIG);
 }
 
 void CObjectOStreamAsn::WriteNull(void)

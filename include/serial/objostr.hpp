@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2000/10/04 19:18:54  vasilche
+* Fixed processing floating point data.
+*
 * Revision 1.47  2000/10/03 17:22:35  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -354,7 +357,7 @@ public:
         }
     void WriteStd(const float& data)
         {
-            WriteDouble(data);
+            WriteFloat(data);
         }
     void WriteStd(const double& data)
         {
@@ -536,6 +539,7 @@ protected:
     virtual void WriteUInt(unsigned int data) = 0;
     virtual void WriteLong(long data) = 0;
     virtual void WriteULong(unsigned long data) = 0;
+    virtual void WriteFloat(float data) = 0;
     virtual void WriteDouble(double data) = 0;
 
     void RegisterObject(TTypeInfo typeInfo);

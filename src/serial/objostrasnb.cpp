@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2000/10/04 19:18:59  vasilche
+* Fixed processing floating point data.
+*
 * Revision 1.45  2000/10/03 17:22:45  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -224,6 +227,16 @@
 #include <serial/choice.hpp>
 #include <serial/continfo.hpp>
 #include <serial/delaybuf.hpp>
+
+#include <math.h>
+#include <limits.h>
+#if HAVE_WINDOWS_H
+// In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
+# include <float.h>
+// In MSVC snprintf is prefixed by underscore
+# define snprintf _snprintf
+#endif
+
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
@@ -711,16 +724,40 @@ void CObjectOStreamAsnBinary::WriteULong(unsigned long data)
     WriteNumberValue(*this, data);
 }
 
+void CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
+{
+    int shift = int(ceil(log10(fabs(data))));
+    int precision = digits - shift;
+    if ( precision < 0 )
+        precision = 0;
+
+    char buffer[128];
+    int width = snprintf(buffer, sizeof(buffer), "%.*f", precision, data);
+    if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
+        THROW1_TRACE(runtime_error, "buffer overflow");
+    _ASSERT(int(strlen(buffer)) == width);
+    if ( precision != 0 ) { // skip trailing zeroes
+        while ( buffer[width - 1] == '0' ) {
+            --width;
+        }
+        if ( buffer[width - 1] == '.' )
+            --width;
+    }
+
+    WriteSysTag(eReal);
+    WriteShortLength(width + 1);
+    WriteByte(eDecimal);
+    WriteBytes(buffer, width);
+}
+
 void CObjectOStreamAsnBinary::WriteDouble(double data)
 {
-    WriteSysTag(eReal);
-    CNcbiOstrstream buff;
-    buff << IO_PREFIX::setprecision(15) << data;
-    size_t length = buff.pcount();
-    WriteShortLength(length + 1);
-    WriteByte(eDecimal);
-    const char* str = buff.str();    buff.freeze(false);
-    WriteBytes(str, length);
+    WriteDouble2(data, DBL_DIG);
+}
+
+void CObjectOStreamAsnBinary::WriteFloat(float data)
+{
+    WriteDouble2(data, FLT_DIG);
 }
 
 void CObjectOStreamAsnBinary::WriteString(const string& str)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2000/10/04 19:18:58  vasilche
+* Fixed processing floating point data.
+*
 * Revision 1.63  2000/10/03 17:22:43  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -291,10 +294,13 @@
 #include <serial/delaybuf.hpp>
 #include <serial/objistrimpl.hpp>
 #include <serial/object.hpp>
+
+#include <limits.h>
 #if HAVE_WINDOWS_H
 // In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
 # include <float.h>
 #endif
+
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
