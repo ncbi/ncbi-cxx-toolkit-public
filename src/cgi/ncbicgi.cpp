@@ -933,18 +933,6 @@ const string& CCgiRequest::GetRandomProperty(const string& key, bool http)
 const CCgiEntry& CCgiRequest::GetEntry(const string& name, bool* is_found)
     const
 {
-    TCgiEntriesCI it = GetEntries().find(name);
-    bool x_found = (it != GetEntries().end());
-    if ( is_found ) {
-        *is_found = x_found;
-    }
-    return x_found ? it->second : kEmptyStr;
-}
-
-
-const CCgiEntry& CCgiRequest::GetEntryEx(const string& name, bool* is_found)
-    const
-{
     static const CCgiEntry kEmptyEntry(kEmptyStr);
     TCgiEntriesCI it = GetEntries().find(name);
     bool x_found = (it != GetEntries().end());
@@ -1135,6 +1123,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.58  2002/07/11 17:39:56  gouriano
+* corrected wrong merge of v1.56 and v1.57
+*
 * Revision 1.57  2002/07/11 14:22:59  gouriano
 * exceptions replaced by CNcbiException-type ones
 *
