@@ -36,7 +36,7 @@
 #define __BLAST_GAPALIGN__
 
 #include <algo/blast/core/blast_def.h>
-#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_parameters.h>
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/gapinfo.h>
 #include <algo/blast/core/greedy_align.h>

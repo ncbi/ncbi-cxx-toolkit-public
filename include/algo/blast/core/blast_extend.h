@@ -36,7 +36,7 @@
 #define __BLAST_EXTEND__
 
 #include <algo/blast/core/blast_def.h>
-#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_parameters.h>
 #include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/blast_diagnostics.h>
 

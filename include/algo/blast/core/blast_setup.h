@@ -35,7 +35,7 @@
 #define __BLAST_SETUP__
 
 #include <algo/blast/core/blast_def.h>
-#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_parameters.h>
 #include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_gapalign.h>
@@ -211,6 +211,9 @@ BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to);
 /*
  *
 * $Log$
+* Revision 1.50  2004/12/29 13:32:43  madden
+* Replaced include of blast_options.h with include of blast_parameters.h
+*
 * Revision 1.49  2004/12/09 21:16:26  camacho
 * Removed inaccurate comment for Blast_ScoreBlkMatrixInit
 *

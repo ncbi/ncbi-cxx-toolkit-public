@@ -34,7 +34,7 @@
 #ifndef __BLAST_HITS__
 #define __BLAST_HITS__
 
-#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_parameters.h>
 #include <algo/blast/core/gapinfo.h>
 #include <algo/blast/core/blast_seqsrc.h>
 
