@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/07/18 00:06:00  thiessen
+* allow arbitrary rotation center
+*
 * Revision 1.10  2000/07/17 22:37:18  thiessen
 * fix vector_math typo; correctly set initial view
 *
@@ -130,15 +133,20 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     }
 }
 
-void StructureSet::FindCenter(void)
+void StructureSet::SetCenter(const Vector *given)
 {
     Vector siteSum;
     int nAtoms = 0;
+    double dist;
     maxDistFromCenter = 0.0;
+
+    // set new center if given one
+    if (given) center = *given;
 
     // loop trough all atoms twice - once to get average center, then once to
     // find max distance from this center
     for (int i=0; i<2; i++) {
+        if (given && i==0) continue; // skip center calculation if given one
         ObjectList::const_iterator o, oe=objects.end();
         for (o=objects.begin(); o!=oe; o++) {
             StructureObject::CoordSetList::const_iterator c, ce=(*o)->coordSets.end();
@@ -152,7 +160,7 @@ void StructureSet::FindCenter(void)
                         siteSum += site;
                         nAtoms++;
                     } else {
-                        double dist = (site - center).length();
+                        dist = (site - center).length();
                         if (dist > maxDistFromCenter)
                             maxDistFromCenter = dist;
                     }
@@ -160,6 +168,13 @@ void StructureSet::FindCenter(void)
             }
         }
         if (i==0) center = siteSum / nAtoms;
+    }
+    TESTMSG("center: " << center << ", maxDistFromCenter " << maxDistFromCenter);
+
+    // set camera to center on the selected point
+    if (renderer) {
+        renderer->ChangeView(OpenGLRenderer::eCenterCamera);
+        renderer->ResetCamera();
     }
 }
 

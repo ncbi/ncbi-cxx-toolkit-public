@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/07/18 00:05:45  thiessen
+* allow arbitrary rotation center
+*
 * Revision 1.5  2000/07/17 22:36:46  thiessen
 * fix vector_math typo; correctly set initial view
 *
@@ -92,7 +95,8 @@ public:
         eXYTranslateHV,     // translate in X,Y according to horiz. & vert. movement
         eZoomHHVV,          // zoom according to (H1,V1),(H2,V2) box
         eZoomIn,            // zoom in
-        eZoomOut            // zoom out
+        eZoomOut,           // zoom out
+        eCenterCamera       // reset camera to look at origin
     };
     void ChangeView(eViewAdjust control, int dX = 0, int dY = 0, int X2 = 0, int Y2 = 0);
 

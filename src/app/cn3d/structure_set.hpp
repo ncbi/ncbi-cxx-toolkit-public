@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/07/18 00:05:45  thiessen
+* allow arbitrary rotation center
+*
 * Revision 1.10  2000/07/17 22:36:46  thiessen
 * fix vector_math typo; correctly set initial view
 *
@@ -101,7 +104,11 @@ public:
     double maxDistFromCenter; // max distance of any atom from center
 
     // public methods
-    void FindCenter(void);
+
+    // set screen and rotation center of model (coordinate relative to Master);
+    // if NULL, will calculate average geometric center
+    void SetCenter(const Vector *setTo = NULL);
+
     bool Draw(const StructureBase *data) const;
 
 private:

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/07/18 00:06:00  thiessen
+* allow arbitrary rotation center
+*
 * Revision 1.5  2000/07/17 22:37:18  thiessen
 * fix vector_math typo; correctly set initial view
 *
@@ -218,6 +221,10 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
         cameraAngleRad /= 1.5;
         NewView();
         break;
+    case eCenterCamera:
+        cameraLookAtX = cameraLookAtY = 0.0;
+        NewView();
+        break;
     }
 
     if (structureSet && (control==eXYRotateHV || control==eZRotateH))
@@ -261,7 +268,7 @@ void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
     structureSet = targetStructureSet;
     if (structureSet) {
         structureSet->renderer = this;
-        structureSet->FindCenter();
+        structureSet->SetCenter();
     }
 
     // make sure general GL stuff is set up
