@@ -458,7 +458,7 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
                          lookup_wrap->lut_type == PHI_NA_LOOKUP);
    
    Boolean ag_blast = (Boolean)
-      (word_options->extend_word_method & EXTEND_WORD_AG);
+      (word_options->extension_method == eRightAndLeft);
    Int4 offset_array_size = 0;
    BLAST_ExtendWord* ewp;
    BlastCoreAuxStruct* aux_struct;

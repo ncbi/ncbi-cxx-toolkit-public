@@ -121,7 +121,7 @@ CBlastOptions::SetBlastp()
     SetFilterString("S");
 
     // Initial word options
-    m_InitWordOpts->extend_word_method |= EXTEND_WORD_UNGAPPED;
+    m_InitWordOpts->ungapped_extension = TRUE;
     m_InitWordOpts->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
     m_InitWordOpts->window_size = BLAST_WINDOW_SIZE_PROT;
 
@@ -178,8 +178,8 @@ CBlastOptions::SetBlastn()
     SetFilterString("D");
 
     // Initial word options
-    m_InitWordOpts->extend_word_method |= (EXTEND_WORD_UNGAPPED | 
-            EXTEND_WORD_AG);
+    m_InitWordOpts->ungapped_extension = TRUE;
+    m_InitWordOpts->extension_method = eRightAndLeft;
     m_InitWordOpts->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_NUCL;
     m_InitWordOpts->window_size = BLAST_WINDOW_SIZE_NUCL;
 
@@ -240,8 +240,8 @@ void CBlastOptions::SetMegablast()
 
     // Initial word options
     // variable word size is not supported if discontiguous MB
-    m_InitWordOpts->extend_word_method |= (EXTEND_WORD_UNGAPPED | 
-            EXTEND_WORD_MB_STACKS);
+    m_InitWordOpts->ungapped_extension = TRUE;
+    m_InitWordOpts->container_type = eMbStacks;
     m_InitWordOpts->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_NUCL;
     m_InitWordOpts->window_size = BLAST_WINDOW_SIZE_NUCL;
 
@@ -292,7 +292,7 @@ CBlastOptions::SetBlastx()
     SetFilterString("S");
 
     // Initial word options
-    m_InitWordOpts->extend_word_method |= EXTEND_WORD_UNGAPPED;
+    m_InitWordOpts->ungapped_extension = TRUE;
     m_InitWordOpts->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
     m_InitWordOpts->window_size = BLAST_WINDOW_SIZE_PROT;
 
@@ -342,7 +342,7 @@ CBlastOptions::SetTblastn()
     SetFilterString("S");
 
     // Initial word options
-    m_InitWordOpts->extend_word_method |= EXTEND_WORD_UNGAPPED;
+    m_InitWordOpts->ungapped_extension = TRUE;
     m_InitWordOpts->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
     m_InitWordOpts->window_size = BLAST_WINDOW_SIZE_PROT;
 
@@ -393,7 +393,7 @@ CBlastOptions::SetTblastx()
     SetFilterString("S");
 
     // Initial word options
-    m_InitWordOpts->extend_word_method |= EXTEND_WORD_UNGAPPED;
+    m_InitWordOpts->ungapped_extension = TRUE;
     m_InitWordOpts->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
     m_InitWordOpts->window_size = BLAST_WINDOW_SIZE_PROT;
 
@@ -481,6 +481,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2003/10/17 18:21:53  dondosha
+* Use separate variables for different initial word extension options
+*
 * Revision 1.22  2003/10/02 22:10:46  dondosha
 * Corrections for one-strand translated searches
 *

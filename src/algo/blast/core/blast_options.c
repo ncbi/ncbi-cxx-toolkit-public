@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.65  2003/10/17 18:20:20  dondosha
+ * Use separate variables for different initial word extension options
+ *
  * Revision 1.64  2003/10/15 16:59:43  coulouri
  * type correctness fixes
  *
@@ -413,32 +416,30 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptions* options,
    /* Ungapped extension is performed in all cases except when greedy
       gapped extension is used */
    if (program != blast_type_blastn) {
-      options->extend_word_method |= EXTEND_WORD_UNGAPPED;
+      options->ungapped_extension = TRUE;
       options->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
    } else if (!greedy) {
-      options->extend_word_method |= EXTEND_WORD_UNGAPPED;
+      options->ungapped_extension = TRUE;
       options->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_NUCL;
    } else {
-      options->extend_word_method &= ~EXTEND_WORD_UNGAPPED;
+      options->ungapped_extension = FALSE;
    }
 
    if (window_size != 0)
       options->window_size = window_size;
    if (xdrop_ungapped != 0)
       options->x_dropoff = xdrop_ungapped;
-   if (variable_wordsize) 
-      options->extend_word_method |= EXTEND_WORD_VARIABLE_SIZE;
-   else
-      options->extend_word_method &= ~EXTEND_WORD_VARIABLE_SIZE;
+
+   options->variable_wordsize = variable_wordsize;
 
    if (ag_blast) {
-      options->extend_word_method |= EXTEND_WORD_AG;
+      options->extension_method = eRightAndLeft;
    } else {
-      options->extend_word_method &= ~EXTEND_WORD_AG;
+      options->extension_method = eRight;
       if (mb_lookup)
-         options->extend_word_method |= EXTEND_WORD_MB_STACKS;
+         options->container_type = eMbStacks;
       else
-         options->extend_word_method &= ~EXTEND_WORD_MB_STACKS;
+         options->container_type = eDiagArray;
    }
 
    return 0;

@@ -116,7 +116,7 @@ Int2 BLAST_ExtendWordInit(BLAST_SequenceBlk* query,
       return -1;
    }
 
-   if (word_options->extend_word_method & EXTEND_WORD_MB_STACKS) {
+   if (word_options->container_type == eMbStacks) {
       double av_search_space;
       Int4 stack_size, num_stacks;
       MB_StackTable* stack_table;
@@ -237,8 +237,7 @@ MB_ExtendInitialHit(BLAST_SequenceBlk* query,
       mb_lt->word_length - COMPRESSION_RATIO*mb_lt->compressed_wordsize;
    scan_step = mb_lt->scan_step;
    two_hits = (window > 0);
-   do_ungapped_extension = 
-      (word_options->extend_word_method & EXTEND_WORD_UNGAPPED);
+   do_ungapped_extension = word_options->ungapped_extension;
 
    if (diag_table) {
       DiagStruct* diag_array = diag_table->diag_array;
@@ -689,8 +688,7 @@ BlastnExtendInitialHit(BLAST_SequenceBlk* query,
    Boolean new_hit = FALSE, second_hit = FALSE;
    Int4 min_step, step;
    DiagStruct* diag_array_elem;
-   Boolean do_ungapped_extension = 
-      (word_options->extend_word_method & EXTEND_WORD_UNGAPPED);
+   Boolean do_ungapped_extension = word_options->ungapped_extension;
 
    diag_table = ewp->diag_table;
 
@@ -730,7 +728,7 @@ BlastnExtendInitialHit(BLAST_SequenceBlk* query,
    hit_ready = ((window_size == 0) && new_hit) || second_hit;
 
    if (hit_ready) {
-      if (word_options->extend_word_method & EXTEND_WORD_UNGAPPED) {
+      if (word_options->ungapped_extension) {
          /* Perform ungapped extension */
          BlastnWordUngappedExtend(query, subject, matrix, q_off, s_off, 
             word_params->cutoff_score, -word_params->x_dropoff, 
@@ -954,9 +952,8 @@ Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
    q_start = query->sequence;
    word_length = mb_lt->word_length;
    reduced_word_length = COMPRESSION_RATIO*mb_lt->compressed_wordsize;
-   ag_blast = (Boolean) (word_options->extend_word_method & EXTEND_WORD_AG);
-   variable_wordsize = (Boolean) 
-      (word_options->extend_word_method & EXTEND_WORD_VARIABLE_SIZE);
+   ag_blast = (Boolean) (word_options->container_type == eRightAndLeft);
+   variable_wordsize = word_options->variable_wordsize;
 
    start_offset = 0;
    if (mb_lt->discontiguous) {
@@ -1048,8 +1045,7 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
    Int4 start_offset, end_offset, next_start;
    Uint1 max_bases_left, max_bases_right;
    Int4 bases_in_last_byte;
-   Boolean variable_wordsize = (Boolean) 
-      (word_options->extend_word_method & EXTEND_WORD_VARIABLE_SIZE);
+   Boolean variable_wordsize = word_options->variable_wordsize;
    Int4 extended_right;
    Uint1* q_tmp,* s_tmp;
    Uint4 length;

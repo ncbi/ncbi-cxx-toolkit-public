@@ -294,9 +294,8 @@ CBlast2seqApplication::ProcessCommandLineArgs(CBlastOptions& opt)
     // The next 3 apply to nucleotide searches only
     string program = args["program"].AsString();
     if (program == "blastn") {
-        opt.SetExtendWordMethod(EXTEND_WORD_AG, args["ag"].AsBoolean());
-        opt.SetExtendWordMethod(EXTEND_WORD_VARIABLE_SIZE,
-                                args["varword"].AsBoolean());
+        opt.SetSeedExtensionMethod(args["ag"].AsBoolean());
+        opt.SetVariableWordsize(args["varword"].AsBoolean());
         if (args["stride"].AsInteger()) {
             opt.SetScanStep(args["stride"].AsInteger());
         }
@@ -319,7 +318,7 @@ CBlast2seqApplication::ProcessCommandLineArgs(CBlastOptions& opt)
 
     if (args["greedy"].AsBoolean()) {
         opt.SetGapExtnAlgorithm(EXTEND_GREEDY);
-        opt.SetExtendWordMethod(EXTEND_WORD_UNGAPPED, false);
+        opt.SetUngappedExtension(false);
     }
     if (args["xgap"].AsDouble()) {
         opt.SetGapXDropoff(args["xgap"].AsDouble());
@@ -507,6 +506,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/10/17 18:22:28  dondosha
+ * Use separate variables for different initial word extension options
+ *
  * Revision 1.22  2003/10/08 15:27:02  camacho
  * Remove unnecessary conditional
  *

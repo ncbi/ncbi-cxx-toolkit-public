@@ -167,14 +167,29 @@ typedef struct QuerySetUpOptions {
                              [t]blastx only */
 } QuerySetUpOptions;
 
+typedef enum {
+    eDiagArray,         /**< EXTEND_WORD_DIAG_ARRAY */
+    eMbStacks,          /**< EXTEND_WORD_MB_STACKS */
+    eMaxContainerType
+} SeedContainerType;
+
+typedef enum {
+    eRight,             /**< EXTEND_WORD_BLASTN */
+    eRightAndLeft      /**< EXTEND_WORD_AG */
+} SeedExtensionMethod;
+
 /** Options needed for initial word finding and processing */
 typedef struct BlastInitialWordOptions {
    Int4 window_size; /**< Maximal allowed distance between 2 hits in case 2 
                         hits are required to trigger the extension */
-   Int4 extend_word_method; /**< What to do with the initial words? E.g. for
-                              blastn: do mini-extension to the word size; in
-                              megablast: keep word information on stacks, 
-                              etc. */
+   SeedContainerType container_type; /**< How to store offset pairs for initial
+                                        seeds? */
+   SeedExtensionMethod extension_method; /**< How should exact matches be 
+                                            extended? */
+   Boolean variable_wordsize; /**< Should the partial bytes be examined for 
+                             determining whether exact match is long enough? */
+   Boolean ungapped_extension; /**< Should the ungapped extension be 
+                                  performed? */
    double x_dropoff; /**< X-dropoff value (in bits) for the ungapped 
                          extension */
 } BlastInitialWordOptions;

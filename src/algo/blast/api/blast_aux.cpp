@@ -109,7 +109,10 @@ CBlastInitialWordOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) c
         return;
 
     DebugDumpValue(ddc, "window_size", m_Ptr->window_size);
-    DebugDumpValue(ddc, "extend_word_method", m_Ptr->extend_word_method);
+    DebugDumpValue(ddc, "container_type", m_Ptr->container_type);
+    DebugDumpValue(ddc, "extension_method", m_Ptr->extension_method);
+    DebugDumpValue(ddc, "variable_wordsize", m_Ptr->variable_wordsize);
+    DebugDumpValue(ddc, "ungapped_extension", m_Ptr->ungapped_extension);
     DebugDumpValue(ddc, "x_dropoff", m_Ptr->x_dropoff);
 }
 void
