@@ -98,24 +98,28 @@ private:
 
     auto_ptr<CProjectItemsTree> m_WholeTree;
 
+    auto_ptr<CDllSrcFilesDistr> m_DllSrcFilesDistr;
+
 public:
 
     void GetMetaDataFiles(list<string>* files) const;
 
 
-    const CMsvc7RegSettings& GetRegSettings (void);
+    const CMsvc7RegSettings& GetRegSettings    (void);
     
-    const CMsvcSite&         GetSite(void);
+    const CMsvcSite&         GetSite           (void);
 
-    const CMsvcMetaMakefile& GetMetaMakefile(void);
+    const CMsvcMetaMakefile& GetMetaMakefile   (void);
 
     const SProjectTreeInfo&  GetProjectTreeInfo(void);
 
-    const CBuildType&        GetBuildType(void);
+    const CBuildType&        GetBuildType      (void);
 
-    const CMsvcDllsInfo&     GetDllsInfo (void);
+    const CMsvcDllsInfo&     GetDllsInfo       (void);
 
-    const CProjectItemsTree& GetWholeTree(void);
+    const CProjectItemsTree& GetWholeTree      (void);
+
+    const CDllSrcFilesDistr& GetDllFilesDistr  (void);
 
     string GetDatatoolId          (void) const;
     string GetDatatoolPathForApp  (void) const;
@@ -181,6 +185,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/05/17 16:21:00  gorelenk
+ * Added CDllSrcFilesDistr to class CProjBulderApp - binded CDllSrcFilesDistr
+ * singleton to app singleton.
+ *
  * Revision 1.13  2004/03/23 14:33:59  gorelenk
  * Added member m_WholeTree and member-function GetWholeTree to declaration
  * of class CProjBulderApp.
