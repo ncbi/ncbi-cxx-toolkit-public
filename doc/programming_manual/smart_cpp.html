@@ -44,7 +44,7 @@ int CTestApp::Run()
         cout << "orig_ap = " << *orig_ap << endl;
     }
       
-    CRef&lt; CObjectFor&lt;int&gt; &gt; orig = CObjectFor&lt;int&gt;::New();
+    CRef&lt; CObjectFor&lt;int&gt; &gt; orig(new  CObjectFor&lt;int&gt;);
     *orig = 5;
     {
         CRef&lt; CObjectFor&lt;int&gt; &gt; copy = orig;
