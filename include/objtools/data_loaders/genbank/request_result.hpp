@@ -477,21 +477,6 @@ public:
 class NCBI_XREADER_EXPORT CReaderRequestResult
 {
 public:
-    enum EActionResult {
-        eActionFailed,
-        eActionNoData,
-        eActionRetry,
-        eActionSuccess
-    };
-
-    enum EProcessedBy {
-        eProcessedByNone,
-        eProcessedById1,
-        eProcessedById2,
-        eProcessedByCache,
-        eProcessedByPubSeqos
-    };
-
     CReaderRequestResult(const CSeq_id_Handle& requested_id);
     virtual ~CReaderRequestResult(void);
 
@@ -539,22 +524,13 @@ public:
 
     typedef int TConn;
 
-    EActionResult GetActionResult() const { return m_ActionResult; };
-    EProcessedBy  GetProcessedBy()  const { return m_ProcessedBy; }
     TLevel GetLevel() const { return m_Level; }
     void SetLevel(TLevel level) { m_Level = level; }
     bool IsCached() const { return m_Cached; }
     void SetCached() { m_Cached = true; }
-    void SetActionResult(EActionResult res, EProcessedBy proc) 
-    { m_ActionResult = res; m_ProcessedBy = proc; }
 
     const CSeq_id_Handle& GetRequestedId(void) const { return m_RequestedId; }
-
-protected:
-    void SetRequestedId(const CSeq_id_Handle& requested_id)
-        {
-            m_RequestedId = requested_id;
-        }
+    void SetRequestedId(const CSeq_id_Handle& requested_id);
 
 private:
     friend class CLoadInfoLock;
@@ -567,8 +543,6 @@ private:
     TLockMap        m_LockMap;
     TTSE_LockSet    m_TSE_LockSet;
     TBlobLoadLocks  m_BlobLoadLocks;
-    EActionResult   m_ActionResult;
-    EProcessedBy    m_ProcessedBy;
     TLevel          m_Level;
     bool            m_Cached;
     CSeq_id_Handle  m_RequestedId;
@@ -597,8 +571,6 @@ public:
 
     virtual TConn GetConn(void);
     virtual void ReleaseConn(void);
-
-    EActionResult m_ActionResult;
 
     CInitMutexPool    m_MutexPool;
 

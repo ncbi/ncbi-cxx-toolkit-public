@@ -1026,7 +1026,6 @@ CGBReaderRequestResult::GetInfoSeq_ids(const string& key)
 CRef<CLoadInfoSeq_ids>
 CGBReaderRequestResult::GetInfoSeq_ids(const CSeq_id_Handle& key)
 {
-    SetRequestedId(key);
     return GetLoader().GetLoadInfoSeq_ids(key);
 }
 

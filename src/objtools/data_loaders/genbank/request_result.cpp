@@ -227,14 +227,21 @@ CLoadLockSeq_ids::CLoadLockSeq_ids(TMutexSource& src,
 {
     CRef<TInfo> info = src.GetInfoSeq_ids(seq_id);
     Lock(*info, src);
+    if ( !IsLoaded() ) {
+        src.SetRequestedId(seq_id);
+    }
 }
 
 
 CLoadLockSeq_ids::CLoadLockSeq_ids(TMutexSource& src,
-                                   const CSeq_id& seq_id)
+                                   const CSeq_id& seq_id_obj)
 {
-    CRef<TInfo> info = src.GetInfoSeq_ids(CSeq_id_Handle::GetHandle(seq_id));
+    CSeq_id_Handle seq_id = CSeq_id_Handle::GetHandle(seq_id_obj);
+    CRef<TInfo> info = src.GetInfoSeq_ids(seq_id);
     Lock(*info, src);
+    if ( !IsLoaded() ) {
+        src.SetRequestedId(seq_id);
+    }
 }
 
 
@@ -260,14 +267,21 @@ CLoadLockBlob_ids::CLoadLockBlob_ids(TMutexSource& src,
 {
     CRef<TInfo> info = src.GetInfoBlob_ids(seq_id);
     Lock(*info, src);
+    if ( !IsLoaded() ) {
+        src.SetRequestedId(seq_id);
+    }
 }
 
 
 CLoadLockBlob_ids::CLoadLockBlob_ids(TMutexSource& src,
-                                     const CSeq_id& seq_id)
+                                     const CSeq_id& seq_id_obj)
 {
-    CRef<TInfo> info = src.GetInfoBlob_ids(CSeq_id_Handle::GetHandle(seq_id));
+    CSeq_id_Handle seq_id = CSeq_id_Handle::GetHandle(seq_id_obj);
+    CRef<TInfo> info = src.GetInfoBlob_ids(seq_id);
     Lock(*info, src);
+    if ( !IsLoaded() ) {
+        src.SetRequestedId(seq_id);
+    }
 }
 
 
@@ -317,6 +331,11 @@ CLoadLockBlob::CLoadLockBlob(CReaderRequestResult& src,
     if ( IsLoaded() ) {
         src.AddTSE_Lock(*this);
     }
+    else {
+        if ( src.GetRequestedId() ) {
+            (**this).SetRequestedId(src.GetRequestedId());
+        }
+    }
 }
 
 
@@ -360,9 +379,7 @@ void CLoadLockBlob::SetBlobVersion(TBlobVersion version)
 
 
 CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id)
-    : m_ActionResult(eActionNoData),
-      m_ProcessedBy(eProcessedByNone),
-      m_Level(0),
+    : m_Level(0),
       m_Cached(false),
       m_RequestedId(requested_id)
 {
@@ -372,6 +389,14 @@ CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id)
 CReaderRequestResult::~CReaderRequestResult(void)
 {
     _ASSERT(m_LockMap.empty());
+}
+
+
+void CReaderRequestResult::SetRequestedId(const CSeq_id_Handle& requested_id)
+{
+    if ( !m_RequestedId ) {
+        m_RequestedId = requested_id;
+    }
 }
 
 
@@ -440,7 +465,6 @@ void CReaderRequestResult::AddTSE_Lock(const TTSE_Lock& tse_lock)
 {
     _ASSERT(tse_lock);
     m_TSE_LockSet.insert(tse_lock);
-    tse_lock->SetRequestedId(m_RequestedId);
 }
 
 #if 0
@@ -528,7 +552,6 @@ CStandaloneRequestResult::GetInfoSeq_ids(const string& key)
 CRef<CLoadInfoSeq_ids>
 CStandaloneRequestResult::GetInfoSeq_ids(const CSeq_id_Handle& key)
 {
-    SetRequestedId(key);
     CRef<CLoadInfoSeq_ids>& ret = m_InfoSeq_ids2[key];
     if ( !ret ) {
         ret = new CLoadInfoSeq_ids();
