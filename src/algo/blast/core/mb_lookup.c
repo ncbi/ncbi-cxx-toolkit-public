@@ -430,11 +430,12 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
             }
          }
       }
-      if (masked_word_count)
+      if (masked_word_count) {
 #ifdef ERR_POST_EX_DEFINED
 	 ErrPostEx(SEV_WARNING, 0, 0, "Masked %d %dmers", masked_word_count,
 		   4*width);
 #endif
+      }
 #if 0
    }
 #endif
