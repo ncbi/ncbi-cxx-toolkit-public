@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/04/17 21:09:14  grichenk
+* Fixed annotations loading
+* +IsSynonym()
+*
 * Revision 1.18  2002/04/11 12:08:21  grichenk
 * Fixed GetResolvedSeqMap() implementation
 *
@@ -212,10 +216,13 @@ public:
     // Get TSEs containing annotations for the given location
     void PopulateTSESet(CHandleRangeMap& loc,
                         TTSESet& tse_set,
+                        CSeq_annot::C_Data::E_Choice sel,
                         const CScope::TRequestHistory& history) const;
 
     CSeqMatch_Info BestResolve(const CSeq_id& id,
         const CScope::TRequestHistory& history);
+
+    bool IsSynonym(const CSeq_id& id1, CSeq_id& id2) const;
 
     string GetName(void) const;
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2002/04/17 21:09:14  grichenk
+* Fixed annotations loading
+* +IsSynonym()
+*
 * Revision 1.34  2002/04/11 18:45:39  ucko
 * Pull in extra headers to make KCC happy.
 *
@@ -1165,6 +1169,7 @@ void CDataSource::x_MapGraph(const CSeq_graph& graph,
 
 void CDataSource::PopulateTSESet(CHandleRangeMap& loc,
                                  TTSESet& tse_set,
+                                 CSeq_annot::C_Data::E_Choice sel,
                                  const CScope::TRequestHistory& history) const
 {
 /*
@@ -1181,6 +1186,20 @@ The resulting set will contain 0 or 1 TSE with the sequence, all live TSEs
 without the sequence but with references to the id and all dead TSEs
 (with references and without the sequence), referenced by the history.
 */
+    if ( m_Loader ) {
+        // Send request to the loader
+        switch ( sel ) {
+        case CSeq_annot::C_Data::e_Ftable:
+            m_Loader->GetRecords(loc, CDataLoader::eFeatures);
+            break;
+        case CSeq_annot::C_Data::e_Align:
+            //### m_Loader->GetRecords(loc, CDataLoader::eAlign);
+            break;
+        case CSeq_annot::C_Data::e_Graph:
+            m_Loader->GetRecords(loc, CDataLoader::eGraph);
+            break;
+        }
+    }
     CMutexGuard guard(sm_DataSource_Mutex);
     x_ResolveLocationHandles(loc, history);
     iterate(CHandleRangeMap::TLocMap, hit, loc.GetMap()) {
@@ -1622,7 +1641,7 @@ void CDataSource::x_ResolveMapSegment(CSeq_id_Handle rh,
 
     // Get enough segments to cover the "start+length" range on the
     // destination sequence
-    while (dpos < dstop) {
+    while (dpos < dstop  &&  len > 0) {
         // Get and adjust the segment start
         int rstart = rmap[rseg].m_Position;
         int rlength = rmap[rseg].m_Length;
@@ -1668,6 +1687,22 @@ void CDataSource::x_ResolveMapSegment(CSeq_id_Handle rh,
         if (++rseg >= rmap.size())
             break;
     }
+}
+
+
+bool CDataSource::IsSynonym(const CSeq_id& id1, CSeq_id& id2) const
+{
+    CSeq_id_Handle h1 = GetIdMapper().GetHandle(id1);
+    CSeq_id_Handle h2 = GetIdMapper().GetHandle(id2);
+    TTSEMap::const_iterator tse_set = m_TSE_seq.find(h1);
+    if (tse_set == m_TSE_seq.end())
+        return false; // Could not find id1 in the datasource
+    iterate ( TTSESet, tse_it, tse_set->second ) {
+        const CBioseq_Info& bioseq = *(*tse_it)->m_BioseqMap[h1];
+        if (bioseq.m_Synonyms.find(h2) != bioseq.m_Synonyms.end())
+            return true;
+    }
+    return false;
 }
 
 
