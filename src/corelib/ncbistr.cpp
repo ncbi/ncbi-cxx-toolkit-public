@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/11/07 04:06:08  vakatov
+* kEmptyCStr (equiv. to NcbiEmptyCStr)
+*
 * Revision 1.33  2000/10/11 21:03:49  vakatov
 * Cleanup to avoid 64-bit to 32-bit values truncation, etc.
 * (reported by Forte6 Patch 109490-01)
@@ -152,6 +155,9 @@
 
 
 BEGIN_NCBI_SCOPE
+
+
+const char *const kEmptyCStr = "";
 
 
 const string* CNcbiEmptyString::m_Str = 0;
