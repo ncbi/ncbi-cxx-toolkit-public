@@ -101,10 +101,6 @@ typedef enum {
    BLAST_SEQSRC_CPP_SEQID,    /**< C++ ASN.1 generated CSeq_id class */ 
    BLAST_SEQSRC_CPP_SEQID_REF,/**< Pointer to a CRef wrapper over CSeq_id
                                   object */
-   BLAST_SEQSRC_C_SEQLOC,     /**< Pointer to a C ASN.1 generated SeqLoc 
-                                 structure */
-   BLAST_SEQSRC_CPP_SEQLOC,   /**< Pointer to a C++ ASN.1 generated CSeq_loc 
-                                 structure */
    BLAST_SEQSRC_MESSAGE       /**< Pointer to a Blast_Message structure */
 } BlastSeqSrcDataType;
 
