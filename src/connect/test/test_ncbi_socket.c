@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/05/21 15:11:13  ivanov
+ * Added test for automatic read on write data from the socket
+ * (stall protection).
+ *
  * Revision 6.9  2001/01/26 23:55:10  vakatov
  * [NCBI_OS_MAC]  Do not do server write shutdown for MAC client
  *
@@ -121,7 +125,7 @@ static const char s_M1[] = "M1";
 static const char s_S1[] = "S1";
 
 #define N_SUB_BLOB    10
-#define SUB_BLOB_SIZE 7000
+#define SUB_BLOB_SIZE 70000
 #define BIG_BLOB_SIZE (N_SUB_BLOB * SUB_BLOB_SIZE)
 
 
@@ -173,6 +177,47 @@ static void TEST__client_1(SOCK sock)
     SOCK_SetDataLoggingAPI(eDefault);
     SOCK_SetDataLogging(sock, eDefault);
 
+    /* Send a very big binary blob */
+    {{
+        size_t i;
+        unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
+        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char) i, i++)
+            continue;
+        for (i = 0;  i < 10;  i++) {
+            status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
+                                &n_io_done);
+            assert(status == eIO_Success  &&  n_io_done==SUB_BLOB_SIZE);
+        }
+        free(blob);
+    }}
+
+    /* Send a very big binary blob with read on write */
+    /* (it must be bounced by the server) */
+    {{
+        size_t i;
+        unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
+
+        SOCK_SetReadOnWrite(sock, eOn);
+
+        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char) i, i++)
+            continue;
+        for (i = 0;  i < 10;  i++) {
+            status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
+                                &n_io_done);
+            assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
+        }
+        /* Receive back a very big binary blob, and check its content */
+        memset(blob,0,BIG_BLOB_SIZE);
+        for (i = 0;  i < 10;  i++) {
+            status = SOCK_Read(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
+                               &n_io_done, eIO_Persist);
+            assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
+        }
+        for (n_io = 0;  n_io < BIG_BLOB_SIZE;  n_io++)
+            assert(blob[n_io] == (unsigned char) n_io);
+        free(blob);
+    }}
+
     /* Try to read more data (must hit EOF as the peer is shutdown) */
 #if !defined(NCBI_OS_MAC)
     assert(SOCK_Read(sock, buf, 1, &n_io_done, eIO_Peek)
@@ -195,21 +240,6 @@ static void TEST__client_1(SOCK sock)
     assert(SOCK_Read    (sock, buf, 1, &n_io_done, eIO_Peek)  == eIO_Closed);
     assert(SOCK_Status  (sock, eIO_Read)  == eIO_Closed);
     assert(SOCK_Status  (sock, eIO_Write) == eIO_Success);
-
-
-    /* Send a very big binary blob */
-    {{
-        size_t i;
-        unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
-        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char) i, i++)
-            continue;
-        for (i = 0;  i < 10;  i++) {
-            status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
-                                &n_io_done);
-            assert(status == eIO_Success  &&  n_io_done==SUB_BLOB_SIZE);
-        }
-        free(blob);
-    }}
 
     /* Shutdown on write */
     assert(SOCK_Shutdown(sock, eIO_Write)          == eIO_Success);
@@ -255,15 +285,6 @@ static void TEST__server_1(SOCK sock)
     assert(status == eIO_Success  &&  n_io == n_io_done);
     SOCK_SetDataLoggingAPI(eOff);
 
-    /* Shutdown on write */
-    if (strcmp(buf, s_C1) == 0) {
-        assert(SOCK_Shutdown(sock, eIO_Write)        == eIO_Success);
-        assert(SOCK_Status  (sock, eIO_Write)        == eIO_Closed);
-        assert(SOCK_Write   (sock, 0, 0, &n_io_done) == eIO_Closed);
-        assert(SOCK_Status  (sock, eIO_Write)        == eIO_Closed);
-        assert(SOCK_Status  (sock, eIO_Read)         == eIO_Success);
-    }
-
     /* Receive a very big binary blob, and check its content */
     {{
 #define DO_LOG_SIZE    300
@@ -284,6 +305,33 @@ static void TEST__server_1(SOCK sock)
             assert(blob[n_io] == (unsigned char) n_io);
         free(blob);
     }}
+
+    /* Receive a very big binary blob, and write data back */
+    {{
+#define DO_LOG_SIZE    300
+#define DONT_LOG_SIZE  BIG_BLOB_SIZE - DO_LOG_SIZE
+        unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
+        int i;
+        for (i = 0;  i < 10;  i++) {
+            /*            X_SLEEP(1);*/
+            status = SOCK_Read(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
+                               &n_io_done, eIO_Persist);
+            assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
+            status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
+                               &n_io_done);
+            assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
+        }
+        for (n_io = 0;  n_io < BIG_BLOB_SIZE;  n_io++)
+            assert(blob[n_io] == (unsigned char) n_io);
+        free(blob);
+    }}
+
+    /* Shutdown on write */
+    assert(SOCK_Shutdown(sock, eIO_Write)        == eIO_Success);
+    assert(SOCK_Status  (sock, eIO_Write)        == eIO_Closed);
+    assert(SOCK_Write   (sock, 0, 0, &n_io_done) == eIO_Closed);
+    assert(SOCK_Status  (sock, eIO_Write)        == eIO_Closed);
+    assert(SOCK_Status  (sock, eIO_Read)         == eIO_Success);
 }
 
 
