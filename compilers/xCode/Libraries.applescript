@@ -354,7 +354,7 @@ property demo_spline : {name:"demo_spline", path:"gui:opengl:demo", inc:{"spline
 property demo_tex : {name:"demo_texture", path:"gui:opengl:demo", inc:{"tex_demo.cpp", "tex_demo_ui.cpp", "tex_window.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets ncbi_xloader_genbank" & gui2link, req:false}
 
 
-property gbench : {name:"gbench", path:"gui:gbench", exc:{"windows_registry.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank gui_core gui_utils gui_dialogs gui_widgets gui_config" & gui2link, gbench:true, req:true}
+property gbench : {name:"Genome Workbench", path:"gui:gbench", exc:{"windows_registry.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank gui_core gui_utils gui_dialogs gui_widgets gui_config" & gui2link, gbench:true, req:true}
 property gbench_plugin_scan : {name:"gbench_plugin_scan", path:"gui:gbench:gbench_plugin_scan", dep:"ncbi_core ncbi_xloader_genbank ncbi_seq ncbi_seqext gui_core gui_utils" & FLTK_LIBS & Z_LIBS & IMG_LIBS, req:true}
 (* ====================================================================================================== *)
 
@@ -389,6 +389,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/09/30 12:59:01  lebedev
+ * Renamed: gbench -> Genome Workbench
+ *
  * Revision 1.25  2004/09/29 16:15:17  lebedev
  * Missing dependencies added
  *
