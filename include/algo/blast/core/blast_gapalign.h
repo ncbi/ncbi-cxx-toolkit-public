@@ -89,6 +89,7 @@ BLAST_GapAlignStructNew(const BlastScoringParameters* score_params,
    BlastGapAlignStruct** gap_align_ptr);
 
 /** Deallocates memory in the BlastGapAlignStruct structure */
+NCBI_XBLAST_EXPORT
 BlastGapAlignStruct* 
 BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align);
 
@@ -116,13 +117,13 @@ BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align);
 */
 Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number, 
              BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
-			    BLAST_SequenceBlk* subject,
-			    BlastGapAlignStruct* gap_align,
-			    const BlastScoringParameters* score_params, 
-			    const BlastExtensionParameters* ext_params,
-			    const BlastHitSavingParameters* hit_params,
-			    BlastInitHitList* init_hitlist,
-			    BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats);
+                BLAST_SequenceBlk* subject,
+                BlastGapAlignStruct* gap_align,
+                const BlastScoringParameters* score_params, 
+                const BlastExtensionParameters* ext_params,
+                const BlastHitSavingParameters* hit_params,
+                BlastInitHitList* init_hitlist,
+                BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats);
 
 
 
@@ -148,13 +149,13 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
  */
 Int2 BLAST_GetGappedScore (EBlastProgramType program_number, 
             BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
-		      BLAST_SequenceBlk* subject,
-		      BlastGapAlignStruct* gap_align,
-		      const BlastScoringParameters* score_params, 
-		      const BlastExtensionParameters* ext_params,
-		      const BlastHitSavingParameters* hit_params,
-		      BlastInitHitList* init_hitlist,
-		      BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats);
+              BLAST_SequenceBlk* subject,
+              BlastGapAlignStruct* gap_align,
+              const BlastScoringParameters* score_params, 
+              const BlastExtensionParameters* ext_params,
+              const BlastHitSavingParameters* hit_params,
+              BlastInitHitList* init_hitlist,
+              BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats);
 
 /** Perform a gapped alignment with traceback
  * @param program Type of BLAST program [in]

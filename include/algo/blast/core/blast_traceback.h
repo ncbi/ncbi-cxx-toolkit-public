@@ -60,6 +60,7 @@ extern "C" {
  * @param hit_params Hit saving parameters [in]
  * @param gen_code_string specifies genetic code [in]
  */
+NCBI_XBLAST_EXPORT
 Int2
 Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_list,
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk,
@@ -89,6 +90,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
  * @param results All results from the BLAST search [out]
  * @return nonzero indicates failure, otherwise zero
  */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_ComputeTraceback(EBlastProgramType program_number, BlastHSPStream* hsp_stream, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         const BlastSeqSrc* bssp, BlastGapAlignStruct* gap_align,
@@ -132,6 +134,7 @@ Int2 BLAST_ComputeTraceback(EBlastProgramType program_number, BlastHSPStream* hs
  *                traceback information. [out]
  * @return nonzero indicates failure, otherwise zero
  */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
         BlastHSPStream* hsp_stream, 
         BLAST_SequenceBlk* concat_db,
@@ -149,6 +152,7 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
 /** Get the subject sequence encoding type for the traceback,
  * given a program number.
  */
+NCBI_XBLAST_EXPORT
 Uint1 Blast_TracebackGetEncoding(EBlastProgramType program_number);
 
 #ifdef __cplusplus

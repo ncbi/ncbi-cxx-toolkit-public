@@ -132,9 +132,11 @@ the following structures:
 ********************************************************************************/
 
 /** Deallocate memory for an HSP structure */
+NCBI_XBLAST_EXPORT
 BlastHSP* Blast_HSPFree(BlastHSP* hsp);
 
 /** Allocate and zeros out memory for an HSP structure */
+NCBI_XBLAST_EXPORT
 BlastHSP* Blast_HSPNew(void);
 
 /** Allocates BlastHSP and inits with information from input.
@@ -153,6 +155,7 @@ BlastHSP* Blast_HSPNew(void);
  *    if a traceback was not calculated may be NULL [in] [out]
  * @param ret_hsp allocated and filled in BlastHSP [out]
  */
+NCBI_XBLAST_EXPORT
 Int2
 Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start, 
               Int4 subject_end,
@@ -171,6 +174,7 @@ Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start,
  * @param gap_edit traceback from final gapped alignment [in] [out]
  * @param hsp Original HSP from the preliminary stage [in] [out]
  */
+NCBI_XBLAST_EXPORT
 Int2
 Blast_HSPReset(Int4 query_start, Int4 query_end, Int4 subject_start, 
                Int4 subject_end, Int4 score, GapEditBlock* *gap_edit, 
@@ -180,6 +184,7 @@ Blast_HSPReset(Int4 query_start, Int4 query_end, Int4 subject_start,
  * @param hsp An HSP found by PHI BLAST [in]
  * @param sbp Scoring block with statistical parameters [in]
  */
+NCBI_XBLAST_EXPORT
 void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp);
 
 /** Reevaluate the HSP's score, e-value and percent identity after taking
@@ -195,6 +200,7 @@ void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp);
  * @param sbp Score block with Karlin-Altschul parameters [in]
  * @return Should this HSP be deleted after the score reevaluation?
  */
+NCBI_XBLAST_EXPORT
 Boolean Blast_HSPReevaluateWithAmbiguities(BlastHSP* hsp, 
            Uint1* query_start, Uint1* subject_start, 
            const BlastHitSavingOptions* hit_options, 
@@ -209,6 +215,7 @@ Boolean Blast_HSPReevaluateWithAmbiguities(BlastHSP* hsp,
  * @param num_ident_ptr Number of identities [out]
  * @param align_length_ptr The alignment length, including gaps [out]
  */
+NCBI_XBLAST_EXPORT
 Int2
 Blast_HSPGetNumIdentities(Uint1* query, Uint1* subject, BlastHSP* hsp, 
                           Boolean is_gapped, Int4* num_ident_ptr, 
@@ -222,6 +229,7 @@ Blast_HSPGetNumIdentities(Uint1* query, Uint1* subject, BlastHSP* hsp,
  * @param num_ident_ptr Number of identities [out]
  * @param align_length_ptr The alignment length, including gaps [out]
  */
+NCBI_XBLAST_EXPORT
 Int2
 Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject, BlastHSP* hsp, 
                              EBlastProgramType program, Int4* num_ident_ptr, 
@@ -235,6 +243,7 @@ Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject, BlastHSP* hsp,
  * @param gaps Total number of gaps in this HSP [out]
  * @param gap_opens Number of gap openings in this HSP [out] 
  */
+NCBI_XBLAST_EXPORT
 void Blast_HSPCalcLengthAndGaps(BlastHSP* hsp, Int4* length,
                                 Int4* gaps, Int4* gap_opens);
 
@@ -246,6 +255,7 @@ void Blast_HSPCalcLengthAndGaps(BlastHSP* hsp, Int4* length,
  * @param s_start Start of alignment in subject [out]
  * @param s_end End of alignment in subject [out]
  */
+NCBI_XBLAST_EXPORT
 void 
 Blast_HSPGetAdjustedOffsets(BlastHSP* hsp, Int4* q_start, Int4* q_end,
                             Int4* s_start, Int4* s_end);
@@ -258,12 +268,14 @@ Blast_HSPGetAdjustedOffsets(BlastHSP* hsp, Int4* q_start, Int4* q_end,
  *  as well as all it's components.
  * @param hsp_list the BlastHSPList to be freed [in]. 
 */
+NCBI_XBLAST_EXPORT
 BlastHSPList* Blast_HSPListFree(BlastHSPList* hsp_list);
 
 /** Creates HSP list structure with a default size HSP array 
  * @param hsp_max the maximum number of HSP's that can ever be
  *    saved at once [in].
 */
+NCBI_XBLAST_EXPORT
 BlastHSPList* Blast_HSPListNew(Int4 hsp_max);
 
 /** Saves HSP information into a BlastHSPList structure
@@ -271,6 +283,7 @@ BlastHSPList* Blast_HSPListNew(Int4 hsp_max);
  *        information [in] [out]
  * @param hsp The new HSP to be inserted into the HSPList [in]
 */
+NCBI_XBLAST_EXPORT
 Int2
 Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* hsp);
 
@@ -279,6 +292,7 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* hsp);
  * @param hsp_list List of HSPs for one subject sequence [in] [out]
  * @param is_ooframe Is out-of-frame gapping used? [in]
 */
+NCBI_XBLAST_EXPORT
 void 
 Blast_HSPListSetFrames(EBlastProgramType program_number, BlastHSPList* hsp_list, 
                  Boolean is_ooframe);
@@ -293,6 +307,7 @@ Blast_HSPListSetFrames(EBlastProgramType program_number, BlastHSPList* hsp_list,
  * @param gapped_calculation Is this for a gapped or ungapped search? [in]
  * @param sbp Structure containing statistical information [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListGetEvalues(BlastQueryInfo* query_info,
         BlastHSPList* hsp_list, Boolean gapped_calculation, 
         BlastScoreBlk* sbp);
@@ -301,6 +316,7 @@ Int2 Blast_HSPListGetEvalues(BlastQueryInfo* query_info,
  * @param hsp_list HSP list found by PHI BLAST [in] [out]
  * @param sbp Scoring block with statistical parameters [in]
  */
+NCBI_XBLAST_EXPORT
 void Blast_HSPListPHIGetEvalues(BlastHSPList* hsp_list, BlastScoreBlk* sbp);
 
 /** Calculate bit scores from raw scores in an HSP list.
@@ -308,6 +324,7 @@ void Blast_HSPListPHIGetEvalues(BlastHSPList* hsp_list, BlastScoreBlk* sbp);
  * @param gapped_calculation Is this a gapped search? [in]
  * @param sbp Scoring block with statistical parameters [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListGetBitScores(BlastHSPList* hsp_list, 
                                Boolean gapped_calculation, BlastScoreBlk* sbp);
 
@@ -315,6 +332,7 @@ Int2 Blast_HSPListGetBitScores(BlastHSPList* hsp_list,
  * @param hsp_list List of HSPs for one subject sequence [in] [out]
  * @param hit_options Options block containing the e-value cut-off [in]
 */
+NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListReapByEvalue(BlastHSPList* hsp_list, 
                                BlastHitSavingOptions* hit_options);
 
@@ -323,6 +341,7 @@ Int2 Blast_HSPListReapByEvalue(BlastHSPList* hsp_list,
  * @param hsp_list Contains array of pointers to HSP structures [in]
  * @return status of function call.
 */
+NCBI_XBLAST_EXPORT
 Int2
 Blast_HSPListPurgeNullHSPs(BlastHSPList* hsp_list);
 
@@ -341,6 +360,7 @@ Blast_HSPListPurgeNullHSPs(BlastHSPList* hsp_list);
  * @param seq_src The BLAST database structure (for retrieving uncompressed
  *             sequence) [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 
 Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
@@ -356,6 +376,7 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
  * @param hsp_num_max Maximal allowed number of HSPs to save (unlimited if INT4_MAX) [in]
  * @return Status: 0 on success, -1 on failure.
  */ 
+NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListAppend(BlastHSPList* hsp_list, 
                          BlastHSPList** combined_hsp_list_ptr, 
                          Int4 hsp_num_max);
@@ -369,6 +390,7 @@ Int2 Blast_HSPListAppend(BlastHSPList* hsp_list,
  * @param merge_hsps Should the overlapping HSPs be merged into one? [in]
  * @return 0 if HSP lists have been merged successfully, -1 otherwise.
  */
+NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListsMerge(BlastHSPList* hsp_list, 
                    BlastHSPList** combined_hsp_list_ptr, 
                    Int4 hsp_num_max, Int4 start, Boolean merge_hsps);
@@ -379,9 +401,11 @@ Int2 Blast_HSPListsMerge(BlastHSPList* hsp_list,
  * @param hsp_list List of HSPs from a chunk of a subject sequence [in]
  * @param offset Offset where the chunk starts [in]
  */
+NCBI_XBLAST_EXPORT
 void Blast_HSPListAdjustOffsets(BlastHSPList* hsp_list, Int4 offset);
 
 /** Sort the HSPs in an HSP list by diagonal and remove redundant HSPs. */
+NCBI_XBLAST_EXPORT
 Int2
 Blast_HSPListUniqSort(BlastHSPList* hsp_list);
 
@@ -392,15 +416,18 @@ Blast_HSPListUniqSort(BlastHSPList* hsp_list);
 /** Allocate memory for a hit list of a given size.
  * @param hitlist_size Size of the hit list (number of HSP lists) [in]
  */
+NCBI_XBLAST_EXPORT
 BlastHitList* Blast_HitListNew(Int4 hitlist_size);
 
 /** Deallocate memory for the hit list */
+NCBI_XBLAST_EXPORT
 BlastHitList* Blast_HitListFree(BlastHitList* hitlist);
 
 /** Deallocate memory for every HSP list on BlastHitList,
  *  as well as all their components.
  * @param hitlist contains the BlastHSPList array to be freed [in/out]. 
 */
+NCBI_XBLAST_EXPORT
 Int2 Blast_HitListHSPListsFree(BlastHitList* hitlist);
 
 /** Insert a new HSP list into the hit list.
@@ -411,6 +438,7 @@ Int2 Blast_HitListHSPListsFree(BlastHitList* hitlist);
  * @param hit_list Contains all HSP lists saved so far [in] [out]
  * @param hsp_list A new HSP list to be inserted into the hit list [in]
 */
+NCBI_XBLAST_EXPORT
 Int2 Blast_HitListUpdate(BlastHitList* hit_list, BlastHSPList* hsp_list);
 
 /********************************************************************************
@@ -422,15 +450,19 @@ Int2 Blast_HitListUpdate(BlastHitList* hit_list, BlastHSPList* hsp_list);
  *                    for [in]
  * @param results_ptr The allocated structure [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 Blast_HSPResultsInit(Int4 num_queries, BlastHSPResults** results_ptr);
 
 /** Deallocate memory for BLAST results */
+NCBI_XBLAST_EXPORT
 BlastHSPResults* Blast_HSPResultsFree(BlastHSPResults* results);
 
 /** Sort each hit list in the BLAST results by best e-value */
+NCBI_XBLAST_EXPORT
 Int2 Blast_HSPResultsSortByEvalue(BlastHSPResults* results);
 /** Sort each hit list in the BLAST results by best e-value, in reverse
     order. */
+NCBI_XBLAST_EXPORT
 Int2 Blast_HSPResultsReverseSort(BlastHSPResults* results);
 
 /** Blast_HSPResultsSaveRPSHSPList
@@ -445,6 +477,7 @@ Int2 Blast_HSPResultsReverseSort(BlastHSPResults* results);
  *                 sequence coordinates [in]
  * @param hit_options The options related to saving hits [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* results, 
         BlastHSPList* hsp_list, const BlastHitSavingOptions* hit_options);
 
@@ -459,6 +492,7 @@ Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* 
  *                 sequence coordinates [in]
  * @param hit_options The options related to saving hits [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* results, 
         BlastHSPList* hsp_list, const BlastHitSavingOptions* hit_options);
 
@@ -470,6 +504,7 @@ Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* res
  * @param hsp_list The results for one query-subject sequence pair. [in]
  * @param hitlist_size Maximal allowed hit list size. [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 Blast_HSPResultsInsertHSPList(BlastHSPResults* results, 
         BlastHSPList* hsp_list, Int4 hitlist_size);
 

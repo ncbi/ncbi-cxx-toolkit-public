@@ -35,6 +35,7 @@
 #define __BLAST_DEF__
 
 #include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_export.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -102,8 +103,8 @@ typedef struct BLAST_SequenceBlk {
    Uint1* sequence_start; /**< Start of sequence, usually one byte before 
                                sequence as that byte is a NULL sentinel byte.*/
    Int4     length;         /**< Length of sequence. */
-   Int4	context; /**< Context of the query, needed for multi-query searches */
-   Int2	frame; /**< Frame of the query, needed for translated searches */
+   Int4 context; /**< Context of the query, needed for multi-query searches */
+   Int2 frame; /**< Frame of the query, needed for translated searches */
    Int4 oid; /**< The ordinal id of the current sequence */
    Boolean sequence_allocated; /**< TRUE if memory has been allocated for 
                                   sequence */

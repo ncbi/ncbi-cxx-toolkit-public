@@ -253,7 +253,7 @@ typedef struct BlastInitialWordParameters {
    Int4 x_dropoff; /**< Raw X-dropoff value used in the ungapped extension */
    Int4 cutoff_score; /**< Cutoff score for saving ungapped hits. */
 } BlastInitialWordParameters;
-	
+    
 /** The algorithm to be used for preliminary
  *  gapped extensions
  */
@@ -486,20 +486,22 @@ typedef struct BlastDatabaseOptions {
 
 /********************************************************************************
 
-	Functions to create options blocks with default values
-	and free them after use.
+    Functions to create options blocks with default values
+    and free them after use.
 
 *********************************************************************************/
 
 /** Deallocate memory for QuerySetUpOptions. 
  * @param options Structure to free [in]
  */
+NCBI_XBLAST_EXPORT
 QuerySetUpOptions* BlastQuerySetUpOptionsFree(QuerySetUpOptions* options);
 
 
 /** Allocate memory for QuerySetUpOptions and fill with default values.  
  * @param options The options that have are being returned [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 BlastQuerySetUpOptionsNew(QuerySetUpOptions* *options);
 
 /** Fill non-default contents of the QuerySetUpOptions.
@@ -508,6 +510,7 @@ Int2 BlastQuerySetUpOptionsNew(QuerySetUpOptions* *options);
  * @param filter_string Parsable string of filtering options [in] 
  * @param strand_option which strand to search [in]
 */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptions* options,
         EBlastProgramType program, const char *filter_string, Uint1 strand_option);
 
@@ -515,6 +518,7 @@ Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptions* options,
 /** Deallocate memory for BlastInitialWordOptions.
  * @param options Structure to free [in]
  */
+NCBI_XBLAST_EXPORT
 BlastInitialWordOptions*
 BlastInitialWordOptionsFree(BlastInitialWordOptions* options);
 
@@ -522,6 +526,7 @@ BlastInitialWordOptionsFree(BlastInitialWordOptions* options);
  * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that have are being returned [out] 
 */
+NCBI_XBLAST_EXPORT
 Int2
 BlastInitialWordOptionsNew(EBlastProgramType program, 
    BlastInitialWordOptions* *options);
@@ -545,6 +550,7 @@ BlastInitialWordOptionsNew(EBlastProgramType program,
  * @param blast_msg Error message [out]
  * @return Validation status
  */
+NCBI_XBLAST_EXPORT
 Int2
 BlastInitialWordOptionsValidate(EBlastProgramType program_number,
    const BlastInitialWordOptions* options, 
@@ -564,6 +570,7 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
  * @param mb_lookup Is Mega BLAST (12-mer based) lookup table used? [in]
  * @param xdrop_ungapped The value of the X-dropoff for ungapped extensions [in]
 */
+NCBI_XBLAST_EXPORT
 Int2
 BLAST_FillInitialWordOptions(BlastInitialWordOptions* options, 
    EBlastProgramType program, Boolean greedy, Int4 window_size, 
@@ -574,6 +581,7 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptions* options,
 /** Deallocate memory for BlastInitialWordParameters.
  * @param parameters Structure to free [in]
  */
+NCBI_XBLAST_EXPORT
 BlastInitialWordParameters*
 BlastInitialWordParametersFree(BlastInitialWordParameters* parameters);
 
@@ -592,6 +600,7 @@ BlastInitialWordParametersFree(BlastInitialWordParameters* parameters);
  * @param subject_length Average subject sequence length [in]
  * @param parameters Resulting parameters [out]
 */
+NCBI_XBLAST_EXPORT
 Int2
 BlastInitialWordParametersNew(EBlastProgramType program_number, 
    const BlastInitialWordOptions* word_options, 
@@ -613,6 +622,7 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
  * @param subject_length Average subject sequence length [in]
  * @param parameters Preallocated parameters [in] [out]
 */
+NCBI_XBLAST_EXPORT
 Int2
 BlastInitialWordParametersUpdate(EBlastProgramType program_number, 
    const BlastHitSavingParameters* hit_params, 
@@ -623,6 +633,7 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
 /** Deallocate memory for BlastExtensionOptions.
  * @param options Structure to free [in]
  */
+NCBI_XBLAST_EXPORT
 BlastExtensionOptions*
 BlastExtensionOptionsFree(BlastExtensionOptions* options);
 
@@ -630,6 +641,7 @@ BlastExtensionOptionsFree(BlastExtensionOptions* options);
  * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
 */
+NCBI_XBLAST_EXPORT
 Int2
 BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *options);
 
@@ -643,6 +655,7 @@ BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *opti
  * @param x_dropoff_final X-dropoff parameter value for final gapped 
  *                        extensions with traceback [in]
 */
+NCBI_XBLAST_EXPORT
 Int2
 BLAST_FillExtensionOptions(BlastExtensionOptions* options, 
    EBlastProgramType program, Int4 greedy, double x_dropoff, 
@@ -654,6 +667,7 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
  * @param options Options to be validated [in]
  * @param blast_msg Describes any validation problems found [out]
 */
+NCBI_XBLAST_EXPORT
 Int2 BlastExtensionOptionsValidate(EBlastProgramType program_number, 
         const BlastExtensionOptions* options, Blast_Message* *blast_msg);
 
@@ -665,6 +679,7 @@ Int2 BlastExtensionOptionsValidate(EBlastProgramType program_number,
  *                   context [in]
  * @param parameters Extension parameters [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 BlastExtensionParametersNew(EBlastProgramType blast_program, 
         const BlastExtensionOptions* options, 
         BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
@@ -673,6 +688,7 @@ Int2 BlastExtensionParametersNew(EBlastProgramType blast_program,
 /** Deallocate memory for BlastExtensionParameters. 
  * @param parameters Structure to free [in]
  */
+NCBI_XBLAST_EXPORT
 BlastExtensionParameters*
 BlastExtensionParametersFree(BlastExtensionParameters* parameters);
 
@@ -680,12 +696,14 @@ BlastExtensionParametersFree(BlastExtensionParameters* parameters);
 /**  Deallocate memory for BlastScoringOptions. 
  * @param options Structure to free [in]
  */
+NCBI_XBLAST_EXPORT
 BlastScoringOptions* BlastScoringOptionsFree(BlastScoringOptions* options);
 
 /** Allocate memory for BlastScoringOptions and fill with default values. 
  * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
 */
+NCBI_XBLAST_EXPORT
 Int2 BlastScoringOptionsNew(EBlastProgramType program, BlastScoringOptions* *options);
 
 /** Fill non-default values in the BlastScoringOptions structure. 
@@ -698,6 +716,7 @@ Int2 BlastScoringOptionsNew(EBlastProgramType program, BlastScoringOptions* *opt
  * @param gap_open Extra cost for opening a gap [in]
  * @param gap_extend Cost of a gap [in]
 */
+NCBI_XBLAST_EXPORT
 Int2 
 BLAST_FillScoringOptions(BlastScoringOptions* options, EBlastProgramType program, 
    Boolean greedy_extension, Int4 penalty, Int4 reward, const char *matrix, 
@@ -708,6 +727,7 @@ BLAST_FillScoringOptions(BlastScoringOptions* options, EBlastProgramType program
  * @param options Options to be validated [in]
  * @param blast_msg Describes any validation problems found [out]
 */
+NCBI_XBLAST_EXPORT
 Int2
 BlastScoringOptionsValidate(EBlastProgramType program_number, 
    const BlastScoringOptions* options, Blast_Message* *blast_msg);
@@ -716,11 +736,13 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
  * @param new_opt Contains copied BlastScoringOptions upon return [out]
  * @param old_opt BlastScoringOptions to be copied [in]
 */
+NCBI_XBLAST_EXPORT
 Int2 BlastScoringOptionsDup(BlastScoringOptions* *new_opt, const BlastScoringOptions* old_opt);
 
 /**  Deallocate memory for BlastScoringParameters.
  * @param parameters Structure to free [in]
  */
+NCBI_XBLAST_EXPORT
 BlastScoringParameters* BlastScoringParametersFree(
                                      BlastScoringParameters* parameters);
 
@@ -729,6 +751,7 @@ BlastScoringParameters* BlastScoringParametersFree(
  * @param sbp Structure containing scale factor [in]
  * @param parameters Scoring parameters [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 BlastScoringParametersNew(const BlastScoringOptions *options,
                                BlastScoreBlk* sbp, 
                                BlastScoringParameters* *parameters);
@@ -736,6 +759,7 @@ Int2 BlastScoringParametersNew(const BlastScoringOptions *options,
 /** Deallocate memory for BlastEffectiveLengthsOptions*. 
  * @param options Structure to free [in]
  */
+NCBI_XBLAST_EXPORT
 BlastEffectiveLengthsOptions* 
 BlastEffectiveLengthsOptionsFree(BlastEffectiveLengthsOptions* options);
 
@@ -743,11 +767,13 @@ BlastEffectiveLengthsOptionsFree(BlastEffectiveLengthsOptions* options);
  * default values. 
  * @param options The options that are being returned [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 BlastEffectiveLengthsOptionsNew(BlastEffectiveLengthsOptions* *options);
 
 /** Deallocate memory for BlastEffectiveLengthsParameters*. 
  * @param parameters Structure to free [in]
  */
+NCBI_XBLAST_EXPORT
 BlastEffectiveLengthsParameters* 
 BlastEffectiveLengthsParametersFree(BlastEffectiveLengthsParameters* parameters);
 
@@ -757,6 +783,7 @@ BlastEffectiveLengthsParametersFree(BlastEffectiveLengthsParameters* parameters)
  * @param num_seqs Number of sequences in database [in]
  * @param parameters The parameters structure returned [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 
 BlastEffectiveLengthsParametersNew(const BlastEffectiveLengthsOptions* options, 
                                Int8 db_length, Int4 num_seqs,
@@ -768,6 +795,7 @@ BlastEffectiveLengthsParametersNew(const BlastEffectiveLengthsOptions* options,
  * @param db_length Total length of the database (if zero real value will be used) [in]
  * @param searchsp_eff Effective search space (if zero real value will be used) [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 
 BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptions* options, 
    Int4 dbseq_num, Int8 db_length, Int8 searchsp_eff);
@@ -777,6 +805,7 @@ BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptions* options,
  * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 LookupTableOptionsNew(EBlastProgramType program, LookupTableOptions* *options);
 
 /** Auxiliary function that calculates best database scanning stride for the
@@ -791,6 +820,7 @@ Int2 LookupTableOptionsNew(EBlastProgramType program, LookupTableOptions* *optio
  * @return          The stride necessary to find all exact matches of a given
  *                  word size.
  */
+NCBI_XBLAST_EXPORT
 Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_type);
 
 
@@ -805,6 +835,7 @@ Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_type);
  *        checked to find initial words? [in]
  * @param use_pssm Use PSSM rather than (protein) query to build lookup table.
  */
+NCBI_XBLAST_EXPORT
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    EBlastProgramType program, Boolean is_megablast, Int4 threshold,
@@ -815,6 +846,7 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
 /** Deallocates memory for LookupTableOptions*.
  * @param options Structure to free [in]
  */
+NCBI_XBLAST_EXPORT
 LookupTableOptions*
 LookupTableOptionsFree(LookupTableOptions* options);
 
@@ -823,6 +855,7 @@ LookupTableOptionsFree(LookupTableOptions* options);
  * @param options The options that have are being returned [in]
  * @param blast_msg The options that have are being returned [out]
 */
+NCBI_XBLAST_EXPORT
 Int2
 LookupTableOptionsValidate(EBlastProgramType program_number, 
    const LookupTableOptions* options,  Blast_Message* *blast_msg);
@@ -830,6 +863,7 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
 /** Deallocate memory for BlastHitSavingOptions. 
  * @param options Structure to free [in]
  */
+NCBI_XBLAST_EXPORT
 BlastHitSavingOptions*
 BlastHitSavingOptionsFree(BlastHitSavingOptions* options);
 
@@ -839,6 +873,7 @@ BlastHitSavingOptionsFree(BlastHitSavingOptions* options);
  * @param blast_msg The options that have are being returned [out]
 */
 
+NCBI_XBLAST_EXPORT
 Int2
 BlastHitSavingOptionsValidate(EBlastProgramType program_number,
    const BlastHitSavingOptions* options, Blast_Message* *blast_msg);
@@ -847,6 +882,7 @@ BlastHitSavingOptionsValidate(EBlastProgramType program_number,
  * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
 */
+NCBI_XBLAST_EXPORT
 Int2 BlastHitSavingOptionsNew(EBlastProgramType program, 
         BlastHitSavingOptions* *options);
 
@@ -855,6 +891,7 @@ Int2 BlastHitSavingOptionsNew(EBlastProgramType program,
  * @param evalue The expected value threshold [in]
  * @param hitlist_size How many database sequences to save per query? [in]
 */
+NCBI_XBLAST_EXPORT
 Int2
 BLAST_FillHitSavingOptions(BlastHitSavingOptions* options, 
                            double evalue, Int4 hitlist_size);
@@ -862,6 +899,7 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
 /** Deallocate memory for BlastLinkHSPParameters;
  * @param parameters Structure to free [in] 
  */
+NCBI_XBLAST_EXPORT
 BlastLinkHSPParameters* 
 BlastLinkHSPParametersFree(BlastLinkHSPParameters* parameters);
 
@@ -870,6 +908,7 @@ BlastLinkHSPParametersFree(BlastLinkHSPParameters* parameters);
  * @param gapped_calculation Is this a gapped search? [in]
  * @param link_hsp_params Initialized parameters structure [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 BlastLinkHSPParametersNew(EBlastProgramType program_number, 
                                Boolean gapped_calculation,
                                BlastLinkHSPParameters** link_hsp_params);
@@ -881,6 +920,7 @@ Int2 BlastLinkHSPParametersNew(EBlastProgramType program_number,
  *                   parameters [in] [out]
  * @param gapped_calculation Is this a gapped search? [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 
 BlastLinkHSPParametersUpdate(const BlastInitialWordParameters* word_params,
                              const BlastExtensionParameters* ext_params,
@@ -890,6 +930,7 @@ BlastLinkHSPParametersUpdate(const BlastInitialWordParameters* word_params,
 /** Deallocate memory for BlastHitSavingOptions*. 
  * @param parameters Structure to free [in]
  */
+NCBI_XBLAST_EXPORT
 BlastHitSavingParameters*
 BlastHitSavingParametersFree(BlastHitSavingParameters* parameters);
 
@@ -906,6 +947,7 @@ BlastHitSavingParametersFree(BlastHitSavingParameters* parameters);
  *                   from e-value [in]
  * @param parameters Resulting parameters [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 BlastHitSavingParametersNew(EBlastProgramType program_number, 
         const BlastHitSavingOptions* options, 
         const BlastExtensionParameters* ext_params,
@@ -922,23 +964,28 @@ Int2 BlastHitSavingParametersNew(EBlastProgramType program_number,
  *                   from e-value [in]
  * @param parameters Preallocated parameters [in] [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 BlastHitSavingParametersUpdate(EBlastProgramType program_number, 
         const BlastExtensionParameters* ext_params,
         BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
         BlastHitSavingParameters* parameters);
 
 /** Initialize default options for PSI BLAST */
+NCBI_XBLAST_EXPORT
 Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options);
 
 /** Deallocate PSI BLAST options */
+NCBI_XBLAST_EXPORT
 PSIBlastOptions* PSIBlastOptionsFree(PSIBlastOptions* psi_options);
 
 /** Allocates the BlastDatabase options structure and sets the default
  * database genetic code value (BLAST_GENETIC_CODE). Genetic code string in
  * ncbistdaa must be populated by client code */
+NCBI_XBLAST_EXPORT
 Int2 BlastDatabaseOptionsNew(BlastDatabaseOptions** db_options);
 
 /** Deallocate database options */
+NCBI_XBLAST_EXPORT
 BlastDatabaseOptions* 
 BlastDatabaseOptionsFree(BlastDatabaseOptions* db_options);
 
@@ -956,6 +1003,7 @@ BlastDatabaseOptionsFree(BlastDatabaseOptions* db_options);
  * @param protein_options Protein BLAST options [out]
  * @param db_options BLAST database options [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_InitDefaultOptions(EBlastProgramType blast_program,
    LookupTableOptions** lookup_options,
    QuerySetUpOptions** query_setup_options, 
@@ -968,6 +1016,7 @@ Int2 BLAST_InitDefaultOptions(EBlastProgramType blast_program,
    BlastDatabaseOptions** db_options);
 
 /** Validate all options */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
                            const BlastExtensionOptions* ext_options,
                            const BlastScoringOptions* score_options, 
@@ -977,7 +1026,7 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
                            Blast_Message* *blast_msg);
 
 /** Calculates cutoff scores and returns them.
- *	Equations provided by Stephen Altschul.
+ *  Equations provided by Stephen Altschul.
  * @param program BLAST program type [in]
  * @param query_info Query(ies) information [in]
  * @param sbp Scoring statistical parameters [in]
@@ -987,6 +1036,7 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * @param subject_length Length of the subject sequence. [in]
  * 
 */
+NCBI_XBLAST_EXPORT
 void
 CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, BlastLinkHSPParameters* link_hsp_params, 

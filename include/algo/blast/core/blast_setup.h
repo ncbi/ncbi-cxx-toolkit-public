@@ -116,6 +116,7 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
  * @param eff_len_params Parameters for search space calculations [out]
  * @param gap_align Gapped alignment information and allocated memory [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 
 BLAST_GapAlignSetUp(EBlastProgramType program_number,
    const BlastSeqSrc* seq_src,
@@ -147,6 +148,7 @@ BLAST_GapAlignSetUp(EBlastProgramType program_number,
  * @param eff_len_params Parameters for effective lengths calculation. Reset
  *                       with the current sequence data [in] [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_OneSubjectUpdateParameters(EBlastProgramType program_number,
     Uint4 subject_length,
     const BlastScoringOptions* scoring_options,
@@ -197,6 +199,9 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
 /*
  *
 * $Log$
+* Revision 1.43  2004/08/10 14:52:00  ivanov
+* Added export specifier NCBI_XBLAST_EXPORT
+*
 * Revision 1.42  2004/07/06 15:35:12  dondosha
 * Use EBlastProgramType enumeration type instead of Uint1 for program argument in all functions
 *

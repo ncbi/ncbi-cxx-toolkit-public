@@ -36,13 +36,6 @@
 
 #include <algo/blast/core/blast_def.h>
 
-#ifdef NCBI_DLL_BUILD
-#include <algo/blast/core/blast_export.h>
-#endif
-#ifndef NCBI_XBLAST_EXPORT
-#define NCBI_XBLAST_EXPORT
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -69,9 +62,11 @@ extern "C" {
 
 
 /** Deallocate memory only for the sequence in the sequence block */
+NCBI_XBLAST_EXPORT
 Int2 BlastSequenceBlkClean(BLAST_SequenceBlk* seq_blk);
    
 /** Deallocate memory for a sequence block */
+NCBI_XBLAST_EXPORT
 BLAST_SequenceBlk* BlastSequenceBlkFree(BLAST_SequenceBlk* seq_blk);
 
 /** Copies contents of the source sequence block without copying sequence 
@@ -80,6 +75,7 @@ BLAST_SequenceBlk* BlastSequenceBlkFree(BLAST_SequenceBlk* seq_blk);
  * @param copy New sequence block [out]
  * @param src Input sequence block [in]
  */
+NCBI_XBLAST_EXPORT
 void BlastSequenceBlkCopy(BLAST_SequenceBlk** copy, 
                           BLAST_SequenceBlk* src);
 
@@ -94,6 +90,7 @@ Int2 BlastProgram2Number(const char *program, EBlastProgramType *number);
  * @param number Enumerated value of program [in]
  * @param program string name of program (memory should be deallocated by called) [out]
 */
+NCBI_XBLAST_EXPORT
 Int2 BlastNumber2Program(EBlastProgramType number, char* *program);
 
 /** Allocates memory for *sequence_blk and then populates it.
@@ -105,14 +102,16 @@ Int2 BlastNumber2Program(EBlastProgramType number, char* *program);
  *        the start of the sequence, otherwise it is 'sequence'. [in]
  * @deprecated Use BlastSeqBlkNew and BlastSeqBlkSet* functions instead
 */
+NCBI_XBLAST_EXPORT
 Int2
 BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length, Int4 context,
-	BLAST_SequenceBlk* *seq_blk, Boolean buffer_allocated);
+    BLAST_SequenceBlk* *seq_blk, Boolean buffer_allocated);
 
 /** Allocates a new sequence block structure. 
  * @param retval Pointer to where the sequence block structure will be
  * allocated [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 BlastSeqBlkNew(BLAST_SequenceBlk** retval);
 
 /** Stores the sequence in the sequence block structure.
@@ -121,6 +120,7 @@ Int2 BlastSeqBlkNew(BLAST_SequenceBlk** retval);
  * byte [in]
  * @param seqlen Length of the sequence buffer above [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 BlastSeqBlkSetSequence(BLAST_SequenceBlk* seq_blk, 
                             const Uint1* sequence,
                             Int4 seqlen);
@@ -131,6 +131,7 @@ Int2 BlastSeqBlkSetSequence(BLAST_SequenceBlk* seq_blk,
  * @param seq_blk The sequence block structure to modify [in/out]
  * @param sequence Actual sequence buffer. [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 BlastSeqBlkSetCompressedSequence(BLAST_SequenceBlk* seq_blk,
                                       const Uint1* sequence);
                             
@@ -148,6 +149,7 @@ Int2 BlastSeqBlkSetCompressedSequence(BLAST_SequenceBlk* seq_blk,
  *                     in ncbistdaa encoding [in]
  * @return Length of the traslated protein sequence.
 */
+NCBI_XBLAST_EXPORT
 Int4 BLAST_GetTranslation(const Uint1* query_seq, 
    const Uint1* query_seq_rev, Int4 nt_length, Int2 frame, Uint1* buffer, 
    const Uint1* genetic_code);
@@ -181,6 +183,7 @@ Int4 BLAST_GetTranslation(const Uint1* query_seq,
  * @param prot_seq Preallocated buffer for the (translated) protein sequence, 
  *                 with NULLB sentinels on either end. [out]
 */
+NCBI_XBLAST_EXPORT
 Int4 BLAST_TranslateCompressedSequence(Uint1* translation, Int4 length, 
         const Uint1* nt_seq, Int2 frame, Uint1* prot_seq);
 
@@ -190,6 +193,7 @@ Int4 BLAST_TranslateCompressedSequence(Uint1* translation, Int4 length,
  * @param length Length of the sequence plus 1 for the sentinel byte [in]
  * @param rev_sequence_ptr Reverse strand of the sequence [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length, 
                             Uint1** rev_sequence_ptr);
 
@@ -199,6 +203,7 @@ Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length,
  * @param context_number Context number 
  * @return Sequence frame (+-1 for nucleotides, -3..3 for translations)
 */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_ContextToFrame(EBlastProgramType prog_number, Int4 context_number);
 
 /** Given a context from BLAST engine core, return the query index.
@@ -206,6 +211,7 @@ Int2 BLAST_ContextToFrame(EBlastProgramType prog_number, Int4 context_number);
  * @param program Type of BLAST program [in]
  * @return Query index in a set of queries.
  */
+NCBI_XBLAST_EXPORT
 Int4 Blast_GetQueryIndexFromContext(Int4 context, EBlastProgramType program);
 
 /** Find the length of an individual query within a concatenated set of 
@@ -216,14 +222,18 @@ Int4 Blast_GetQueryIndexFromContext(Int4 context, EBlastProgramType program);
  *                set [in]
  * @return Length of the individual sequence/strand/frame.
  */
+NCBI_XBLAST_EXPORT
 Int4 BLAST_GetQueryLength(const BlastQueryInfo* query_info, Int4 context);
 
 /** Deallocate memory for query information structure */
+NCBI_XBLAST_EXPORT
 BlastQueryInfo* BlastQueryInfoFree(BlastQueryInfo* query_info);
 
 /** Duplicates the query information structure */
+NCBI_XBLAST_EXPORT
 BlastQueryInfo* BlastQueryInfoDup(BlastQueryInfo* query_info);
 
+NCBI_XBLAST_EXPORT
 Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding, 
                    Uint1** packed_seq);
 
@@ -233,6 +243,7 @@ Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding,
  * @param query_info Query information structure containing offsets into the* 
  *                   concatenated sequence. [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk, 
                        BlastQueryInfo* query_info);
 
@@ -251,6 +262,7 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk,
  *                          frame. [out]
  * @param mixed_seq_ptr Pointer to buffer for the mixed frame sequence [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
         Int4 nucl_length, const Uint1* genetic_code, 
         Uint1** translation_buffer_ptr, Int4** frame_offsets_ptr,
@@ -269,6 +281,7 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
  *                      of out-of-frame gapping; buffer filled only if argument
  *                      not NULL. [out]
  */
+NCBI_XBLAST_EXPORT
 int GetPartialTranslation(const Uint1* nucl_seq,
         Int4 nucl_length, Int2 frame, const Uint1* genetic_code,
         Uint1** translation_buffer_ptr, Int4* protein_length, 
@@ -278,10 +291,12 @@ int GetPartialTranslation(const Uint1* nucl_seq,
 /** Convert translation frame into a context for the concatenated translation
  * buffer.
  */
+NCBI_XBLAST_EXPORT
 Int4 FrameToContext(Int2 frame);
 
 
 /** The following binary search routine assumes that array A is filled. */
+NCBI_XBLAST_EXPORT
 Int4 BSearchInt4(Int4 n, Int4* A, Int4 size);
 
 #ifdef __cplusplus

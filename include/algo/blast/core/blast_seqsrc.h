@@ -230,6 +230,7 @@ BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* bssp);
 
 /** Copy function: needed to guarantee thread safety. 
  */
+NCBI_XBLAST_EXPORT
 BlastSeqSrc* BlastSeqSrcCopy(const BlastSeqSrc* seq_src);
 
 /** Convenience macros call function pointers (TODO: needs to be more robust)
@@ -271,10 +272,10 @@ DECLARE_ACCESSOR(member_type, member, data_structure_type); \
 DECLARE_MUTATOR(member_type, member, data_structure_type)
 
 #define DECLARE_ACCESSOR(member_type, member, data_structure_type) \
-member_type Get##member(const data_structure_type var)
+NCBI_XBLAST_EXPORT member_type Get##member(const data_structure_type var)
 
 #define DECLARE_MUTATOR(member_type, member, data_structure_type) \
-void Set##member(data_structure_type var, member_type arg) \
+NCBI_XBLAST_EXPORT void Set##member(data_structure_type var, member_type arg) \
 
 DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcConstructor, NewFnPtr, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr, BlastSeqSrc*);

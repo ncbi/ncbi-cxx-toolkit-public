@@ -50,6 +50,7 @@ extern "C" {
  * @param linker Distance at which to link segments  [in]
  * @param dust_loc The locations found by dust [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 SeqBufferDust (Uint1* sequence, Int4 length, Int4 offset,
                     Int2 level, Int2 window, Int2 linker,
                     BlastSeqLoc** dust_loc);

@@ -94,6 +94,7 @@ typedef struct BlastHSPStreamNewInfo {
  * @param bhsn_info Structure defining constructor and its argument to be
  *        invoked from this function [in]
  */
+NCBI_XBLAST_EXPORT
 BlastHSPStream* BlastHSPStreamNew(const BlastHSPStreamNewInfo* bhsn_info);
 
 /** Frees the BlastHSPStream structure by invoking the destructor function set 
@@ -103,12 +104,14 @@ BlastHSPStream* BlastHSPStreamNew(const BlastHSPStreamNewInfo* bhsn_info);
  * @param hsp_stream BlastHSPStream to free [in]
  * @return NULL
  */
+NCBI_XBLAST_EXPORT
 BlastHSPStream* BlastHSPStreamFree(BlastHSPStream* hsp_stream);
 
 /** Closes the BlastHSPStream structure for writing. Any subsequent attempt
  * to write to the stream will return error.
  * @param hsp_stream The stream to close [in] [out]
  */
+NCBI_XBLAST_EXPORT
 void BlastHSPStreamClose(BlastHSPStream* hsp_stream);
 
 /** Standard error return value for BlastHSPStream methods */
@@ -119,6 +122,7 @@ extern const int kBlastHSPStream_Success;
 
 /** Return value when the end of the stream is reached (applicable to read
  * method only) */
+NCBI_XBLAST_EXPORT
 extern const int kBlastHSPStream_Eof;
 
 /** Invokes the user-specified write function for this BlastHSPStream
@@ -128,6 +132,7 @@ extern const int kBlastHSPStream_Eof;
  * releases ownership of the hsp_list [in]
  * @return kBlastHSPStream_Success on success, otherwise kBlastHSPStream_Error 
  */
+NCBI_XBLAST_EXPORT
 int BlastHSPStreamWrite(BlastHSPStream* hsp_stream, BlastHSPList** hsp_list);
 
 /** Invokes the user-specified read function for this BlastHSPStream
@@ -138,6 +143,7 @@ int BlastHSPStreamWrite(BlastHSPStream* hsp_stream, BlastHSPList** hsp_list);
  * @return kBlastHSPStream_Success on success, kBlastHSPStream_Error, or
  * kBlastHSPStream_Eof on end of stream
  */
+NCBI_XBLAST_EXPORT
 int BlastHSPStreamRead(BlastHSPStream* hsp_stream, BlastHSPList** hsp_list);
 
 /*****************************************************************************/
@@ -175,6 +181,7 @@ typedef union BlastHSPStreamFunctionPointerTypes {
  * @return kBlastHSPStream_Error if hsp_stream is NULL else,
  * kBlastHSPStream_Success;
  */
+NCBI_XBLAST_EXPORT
 int SetData(BlastHSPStream* hsp_stream, void* data);
 
 /** Gets implementation specific data structure 
@@ -184,6 +191,7 @@ int SetData(BlastHSPStream* hsp_stream, void* data);
  * @return pointer to internal data structure of the implementation of the
  * BlastHSPStream, or NULL if hsp_stream is NULL
  */
+NCBI_XBLAST_EXPORT
 void* GetData(BlastHSPStream* hsp_stream);
 
 /** Use this function to set the pointers to functions implementing the various
@@ -195,6 +203,7 @@ void* GetData(BlastHSPStream* hsp_stream);
  * @return kBlastHSPStream_Error if hsp_stream is NULL else,
  * kBlastHSPStream_Success;
  */
+NCBI_XBLAST_EXPORT
 int SetMethod(BlastHSPStream* hsp_stream, 
                EMethodName name,
                BlastHSPStreamFunctionPointerTypes fnptr_type);

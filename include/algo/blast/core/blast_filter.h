@@ -47,12 +47,15 @@ extern "C" {
  * @param to End of the interval [in]
  * @return Pointer to the allocated BlastSeqLoc structure.
  */
+NCBI_XBLAST_EXPORT
 BlastSeqLoc* BlastSeqLocNew(Int4 from, Int4 to);
 
 /** Deallocate a BlastSeqLoc structure */
+NCBI_XBLAST_EXPORT
 BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc);
 
 /** Deallocate memory for a list of BlastMaskLoc structures */
+NCBI_XBLAST_EXPORT
 BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc);
 
 /** Allocate memory for a BlastMaskLoc.
@@ -60,6 +63,7 @@ BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc);
  * @param loc_list List of locations on that strand [in]
  * @return Pointer to the allocated BlastMaskLoc structure.
 */
+NCBI_XBLAST_EXPORT
 BlastMaskLoc* BlastMaskLocNew(Int4 index, BlastSeqLoc *loc_list);
 
 /** Go through all mask locations in one sequence, 
@@ -70,6 +74,7 @@ BlastMaskLoc* BlastMaskLocNew(Int4 index, BlastSeqLoc *loc_list);
  * @param link_value Largest gap size between locations fow which they
  *                   should be linked together [in] 
 */
+NCBI_XBLAST_EXPORT
 Int2
 CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
                      Int4 link_value);
@@ -87,6 +92,7 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
  * @param mask_loc All mask locations [in]
  * @param complement_mask Linked list of SSeqRange*s with offsets. [out]
 */
+NCBI_XBLAST_EXPORT
 Int2 
 BLAST_ComplementMaskLocations(EBlastProgramType program_number, 
    BlastQueryInfo* query_info, BlastMaskLoc* mask_loc, 
@@ -103,6 +109,7 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
  *                     only. [out] 
  * @param seqloc_retval Resulting locations for filtered region. [out]
 */
+NCBI_XBLAST_EXPORT
 Int2
 BlastSetUp_Filter(EBlastProgramType program_number, 
     Uint1* sequence, 
@@ -123,6 +130,7 @@ BlastSetUp_Filter(EBlastProgramType program_number,
  *                     only. [out] 
  * @param blast_message message that needs to be sent back to user.
 */
+NCBI_XBLAST_EXPORT
 Int2
 BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info,
     EBlastProgramType program_number, const char* filter_string, BlastMaskLoc* *filter_out, Boolean* mask_at_hash,
@@ -139,6 +147,7 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* q
  * @param offset how far along sequence is 1st residuse in buffer [in]
  *
 */
+NCBI_XBLAST_EXPORT
 Int2
 Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na, 
     ListNode * mask_loc, Boolean reverse, Int4 offset);
@@ -149,6 +158,7 @@ Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
  * @param filter_maskloc Locations to filter [in]
  * @param program_number one of blastn,blastp,blastx,etc. [in]
 */
+NCBI_XBLAST_EXPORT
 Int2
 BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info,
     BlastMaskLoc *filter_maskloc, EBlastProgramType program_number);
