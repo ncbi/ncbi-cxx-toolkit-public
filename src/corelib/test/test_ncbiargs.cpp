@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2000/10/20 20:26:11  butanaev
+ * Modified example #9.
+ *
  * Revision 6.7  2000/10/11 21:03:50  vakatov
  * Cleanup to avoid 64-bit to 32-bit values truncation, etc.
  * (reported by Forte6 Patch 109490-01)
@@ -67,22 +70,21 @@ USING_NCBI_SCOPE;
 // Allowing
 void Example9(CArgDescriptions& m, int argc, const char* argv[])
 {
-    m.AddKey("a", "alphaNumericKey",
-             "A test alpha-num key argument, can have values (one, two) ",
-             CArgDescriptions::eAlnum);
+  m.AddKey("a", "alphaNumericKey",
+           "This is a test alpha-num argument",
+           CArgDescriptions::eAlnum);
 
-    m.AddKey("i", "integerKey",
-             "This is a test integer key argument with values [5 .. 10]",
-             CArgDescriptions::eInteger);
+  m.AddKey("i", "integerKey",
+           "This is a test integer argument",
+           CArgDescriptions::eInteger);
 
-    m.Allow("a", new CArgAllowValue("one"));
-    m.Allow("a", new CArgAllowValue("two"));
-    m.Allow("i", new CArgAllowIntInterval(5, 10));
+  m.SetConstraint("a", &(*new CArgAllow_Strings, "foo", "bar", "etc"));
+  m.SetConstraint("i", new CArgAllow_Integers(-3, 34));
 
-    auto_ptr<CArgs> a(m.CreateArgs(argc, argv));
+  auto_ptr<CArgs> a(m.CreateArgs(argc, argv));
 
-    cout << "a=" << (*a)["a"].AsString() << endl;
-    cout << "i=" << (*a)["i"].AsInteger() << endl;
+  cout << "a=" << (*a)["a"].AsString() << endl;
+  cout << "i=" << (*a)["i"].AsInteger() << endl;
 }
 
 
