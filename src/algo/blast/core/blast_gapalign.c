@@ -2301,25 +2301,24 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
       }
       if (!delete_hsp) {
          Boolean good_hit = TRUE;
+         Int4 hsp_length;
 
          if (gapped_stats)
             ++gapped_stats->extensions;
 
          BLAST_GreedyGappedAlignment(query_tmp.sequence, 
             subject->sequence, query_tmp.length, subject->length, gap_align, 
-            score_params, init_hsp->q_off, init_hsp->s_off, 
-            (Boolean) TRUE, (Boolean) (ext_options->ePrelimGapExt == eGreedyWithTracebackExt));
-         /* For neighboring we have a stricter criterion to keep an HSP */
-         if (hit_options->is_neighboring) {
-            Int4 hsp_length;
-               
-            hsp_length = 
-               MIN(gap_align->query_stop-gap_align->query_start, 
-                   gap_align->subject_stop-gap_align->subject_start) + 1;
-            if (hsp_length < MIN_NEIGHBOR_HSP_LENGTH || 
-                gap_align->percent_identity < MIN_NEIGHBOR_PERC_IDENTITY)
-               good_hit = FALSE;
-         }
+            score_params, init_hsp->q_off, init_hsp->s_off, (Boolean) TRUE, 
+            (Boolean) (ext_options->ePrelimGapExt == eGreedyWithTracebackExt));
+
+         /* Take advantage of an opportunity to easily check whether this 
+            hit passes the percent identity and minimal length criteria. */
+         hsp_length = 
+            MIN(gap_align->query_stop-gap_align->query_start, 
+                gap_align->subject_stop-gap_align->subject_start) + 1;
+         if (hsp_length < hit_options->min_hit_length || 
+             gap_align->percent_identity < hit_options->percent_identity)
+            good_hit = FALSE;
                
          if (good_hit && gap_align->score >= hit_options->cutoff_score) {
             /* gap_align contains alignment endpoints; init_hsp contains 

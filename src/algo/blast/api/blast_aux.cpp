@@ -181,7 +181,6 @@ CBlastHitSavingOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/)
     ddc.Log("percent_identity", m_Ptr->percent_identity);
     ddc.Log("do_sum_stats", m_Ptr->do_sum_stats);
     ddc.Log("longest_longron", m_Ptr->longest_intron);
-    ddc.Log("is_neighboring", m_Ptr->is_neighboring);
 }
 void
 CBlastHitSavingParameters::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
@@ -310,6 +309,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.42  2004/06/08 14:58:46  dondosha
+ * Removed is_neighboring option; let application set min_hit_length and percent_identity options instead
+ *
  * Revision 1.41  2004/06/02 15:57:06  bealer
  * - Isolate object manager dependent code.
  *

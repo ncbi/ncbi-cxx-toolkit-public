@@ -346,9 +346,6 @@ typedef struct BlastHitSavingOptions {
 
    Int4 min_hit_length;    /**< optional minimum alignment length; alignments
                                 not at least this long are discarded */
-   Boolean is_neighboring; /**< @todo FIXME: neighboring is specified by a percent 
-                             identity and a minimum hit length */
-
    Boolean phi_align;   /**< Is this a PHI BLAST search? */
 } BlastHitSavingOptions;
 

@@ -2268,18 +2268,6 @@ CBlastOptionsLocal::SetGappedMode(bool m)
     m_ScoringOpts->gapped_calculation = m;
 }
 
-inline bool
-CBlastOptionsLocal::GetNeighboringMode() const
-{
-    return m_HitSaveOpts->is_neighboring ? true : false;
-}
-
-inline void
-CBlastOptionsLocal::SetNeighboringMode(bool m)
-{
-    m_HitSaveOpts->is_neighboring = m;
-}
-
 /************************ Scoring options ************************/
 inline int 
 CBlastOptionsLocal::GetMatchReward() const
@@ -2475,6 +2463,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.63  2004/06/08 14:58:57  dondosha
+* Removed is_neighboring option; let application set min_hit_length and percent_identity options instead
+*
 * Revision 1.62  2004/06/07 15:45:53  dondosha
 * do_sum_stats hit saving option is now an enum
 *
