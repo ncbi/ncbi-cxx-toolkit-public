@@ -70,7 +70,7 @@ void SFlatContext::SetFlags(const CSeq_entry& entry, bool do_parents)
         if (m_SegmentCount > 0  &&  m_SegmentNum == 1) {
             // Properly number individual segments
             const CBioseq_set& bss = entry.GetParentEntry()->GetSet();
-            iterate (CBioseq_set::TSeq_set, it, bss.GetSeq_set()) {
+            ITERATE (CBioseq_set::TSeq_set, it, bss.GetSeq_set()) {
                 if (*it == &entry) {
                     break;
                 }
@@ -119,6 +119,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/11 15:37:51  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.1  2003/03/10 16:39:09  ucko
 * Initial check-in of new flat-file generator
 *

@@ -68,7 +68,7 @@ void IFlatFormatter::Format(const CSeq_entry& entry, IFlatItemOStream& out,
         Format(seq, out, ctx);
     } else {
         const CBioseq_set& bss = entry.GetSet();
-        iterate (CBioseq_set::TSeq_set, it, bss.GetSeq_set()) {
+        ITERATE (CBioseq_set::TSeq_set, it, bss.GetSeq_set()) {
             if (ctx->m_InSegSet  &&  (*it)->IsSet()
                 &&  (*it)->GetSet().GetClass() == CBioseq_set::eClass_parts) {
                 // skip internal parts sets -- covered indirectly
@@ -230,14 +230,14 @@ bool IFlatFormatter::x_FormatSegments(const CBioseq& seq,
 
     const CSeg_ext::Tdata& segs = seq.GetInst().GetExt().GetSeg().Get();
     ctx.m_SegmentCount = 0;
-    iterate (CSeg_ext::Tdata, it, segs) {
+    ITERATE (CSeg_ext::Tdata, it, segs) {
         if ( !(*it)->IsNull() ) {
             ++ctx.m_SegmentCount;
         }
     }
 
     ctx.m_SegmentNum = 1;
-    iterate (CSeg_ext::Tdata, it, segs) {
+    ITERATE (CSeg_ext::Tdata, it, segs) {
         CRef<SFlatContext> ctx2(new SFlatContext(ctx));
         if ( !(*it)->IsNull() ) {
             Format(**it, true, out, ctx2);
@@ -264,7 +264,7 @@ void IFlatFormatter::x_FormatReferences(SFlatContext& ctx,
                                         &it->GetLocation(), ctx)));
     }
     SFlatReference::Sort(ctx.m_References, ctx);
-    iterate (vector<TRefRef>, it, ctx.m_References) {
+    ITERATE (vector<TRefRef>, it, ctx.m_References) {
         out << *it;
     }
 }
@@ -333,7 +333,7 @@ void IFlatFormatter::x_FormatFeatures(SFlatContext& ctx,
     }
     if ( !l.empty() ) {
         l.merge(l2);
-        iterate (list<TFFRef>, it, l) { 
+        ITERATE (list<TFFRef>, it, l) { 
             out << *it;
         }
     }
@@ -347,6 +347,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/03/11 15:37:51  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.2  2003/03/10 22:02:14  ucko
 * Rename s_FFLess to operator <, due to bogus MSVC pickiness.
 *

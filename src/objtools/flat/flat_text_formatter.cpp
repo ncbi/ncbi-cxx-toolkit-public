@@ -65,7 +65,7 @@ void CFlatTextOStream::AddParagraph(const list<string>& lines,
         m_TraceStream->Write(topic, topic->GetThisTypeInfo());
         m_TraceStream->FlushBuffer();
     }
-    iterate (list<string>, it, lines) {
+    ITERATE (list<string>, it, lines) {
         m_Stream << *it << '\n';
     }
     m_Stream << flush;
@@ -139,7 +139,7 @@ void CFlatTextFormatter::FormatHead(const SFlatHead& head)
 
     {{
         string acc = m_Context->m_PrimaryID->GetSeqIdString(false);
-        iterate (list<string>, it, head.m_SecondaryIDs) {
+        ITERATE (list<string>, it, head.m_SecondaryIDs) {
             acc += ' ' + *it;
         }
         Wrap(l, "ACCESSION", acc);
@@ -152,7 +152,7 @@ void CFlatTextFormatter::FormatHead(const SFlatHead& head)
     if ( !head.m_DBSource.empty() ) {
         l.clear();
         string tag = "DBSOURCE";
-        iterate (list<string>, it, head.m_DBSource) {
+        ITERATE (list<string>, it, head.m_DBSource) {
             Wrap(l, tag, *it);
             tag.erase();
         }
@@ -166,7 +166,7 @@ void CFlatTextFormatter::FormatHead(const SFlatHead& head)
 void CFlatTextFormatter::FormatKeywords(const SFlatKeywords& keys)
 {
     list<string> l, kw;
-    iterate (list<string>, it, keys.m_Keywords) {
+    ITERATE (list<string>, it, keys.m_Keywords) {
         kw.push_back(*it + (&*it == &keys.m_Keywords.back() ? '.' : ';'));
     }
     if (kw.empty()) {
@@ -219,7 +219,7 @@ void CFlatTextFormatter::FormatReference(const SFlatReference& ref)
     
     {{
         string authors;
-        iterate (list<string>, it, ref.m_Authors) {
+        ITERATE (list<string>, it, ref.m_Authors) {
             if (it != ref.m_Authors.begin()) {
                 authors += (&*it == &ref.m_Authors.back()) ? " and " : ", ";
             }
@@ -236,7 +236,7 @@ void CFlatTextFormatter::FormatReference(const SFlatReference& ref)
         Wrap(l, "JOURNAL", journal, eSubp);
     }}
 
-    iterate (set<int>, it, ref.m_MUIDs) {
+    ITERATE (set<int>, it, ref.m_MUIDs) {
         if (DoHTML()) {
             Wrap(l, "MEDLINE",
                  "<a href=\"" + ref.GetMedlineURL(*it) + "\">"
@@ -246,7 +246,7 @@ void CFlatTextFormatter::FormatReference(const SFlatReference& ref)
             Wrap(l, "MEDLINE", NStr::IntToString(*it), eSubp);
         }
     }
-    iterate (set<int>, it, ref.m_PMIDs) {
+    ITERATE (set<int>, it, ref.m_PMIDs) {
         if (DoHTML()) {
             Wrap(l, " PUBMED",
                  "<a href=\"" + ref.GetPubMedURL(*it) + "\">"
@@ -282,7 +282,7 @@ void CFlatTextFormatter::FormatPrimary(const SFlatPrimary& primary)
 {
     list<string> l;
     Wrap(l, "PRIMARY", primary.GetHeader());
-    iterate (SFlatPrimary::TPieces, it, primary.m_Pieces) {
+    ITERATE (SFlatPrimary::TPieces, it, primary.m_Pieces) {
         string s;        
         Wrap(l, kEmptyStr, it->Format(s));
     }
@@ -303,7 +303,7 @@ void CFlatTextFormatter::FormatFeature(const SFlatFeature& feat)
 {
     list<string> l;
     Wrap(l, feat.m_Key, feat.m_Loc->m_String, eFeat);
-    iterate (vector<CRef<SFlatQual> >, it, feat.m_Quals) {
+    ITERATE (vector<CRef<SFlatQual> >, it, feat.m_Quals) {
         string qual = '/' + (*it)->m_Name, value = (*it)->m_Value;
         switch ((*it)->m_Style) {
         case SFlatQual::eEmpty:                    value.erase();  break;
@@ -436,6 +436,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/11 15:37:51  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.1  2003/03/10 16:39:09  ucko
 * Initial check-in of new flat-file generator
 *

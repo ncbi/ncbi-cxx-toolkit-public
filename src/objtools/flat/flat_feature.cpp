@@ -167,7 +167,7 @@ void CFlattishFeature::x_AddQuals(const CGene_ref& gene) const
         got_name = true;
     }
     if (gene.IsSetSyn()  &&  !gene.GetSyn().empty() ) {
-        iterate (CGene_ref::TSyn, it, gene.GetSyn()) {
+        ITERATE (CGene_ref::TSyn, it, gene.GetSyn()) {
             if ( !it->empty() ) {
                 x_AddQual(got_name ? eFQ_gene_syn : eFQ_gene,
                           new CFlatStringQV(*it));
@@ -242,7 +242,7 @@ void CFlattishFeature::x_AddQuals(const CProt_ref& prot) const
 {
     bool got_name = false;
     if (prot.IsSetName()  &&  !prot.GetName().empty() ) {
-        iterate (CProt_ref::TName, it, prot.GetName()) {
+        ITERATE (CProt_ref::TName, it, prot.GetName()) {
             if ( !it->empty() ) {
                 x_AddQual(got_name ? eFQ_prot_names : eFQ_product,
                           new CFlatStringQV(*it));
@@ -329,7 +329,7 @@ void CFlattishFeature::x_ImportQuals(const CSeq_feat::TQual& quals) const
     static const SLegalImport* kLegalImportsEnd
         = kLegalImports + sizeof(kLegalImports)/sizeof(SLegalImport);
 
-    iterate (CSeq_feat::TQual, it, quals) {
+    ITERATE (CSeq_feat::TQual, it, quals) {
         const string&       name = (*it)->GetQual();
         const SLegalImport* li   = lower_bound(kLegalImports, kLegalImportsEnd,
                                                name, PNocase());
@@ -623,7 +623,7 @@ void CFlattishSourceFeature::x_AddQuals(const CBioSource& src) const
 {
     x_AddQual(eSQ_organelle, new CFlatOrganelleQV(src.GetGenome()));
     x_AddQuals(src.GetOrg());
-    iterate (CBioSource::TSubtype, it, src.GetSubtype()) {
+    ITERATE (CBioSource::TSubtype, it, src.GetSubtype()) {
         ESourceQualifier slot = s_SubSourceToSlot(**it);
         if (slot != eSQ_none) {
             x_AddQual(slot, new CFlatSubSourceQV(**it));
@@ -755,6 +755,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/03/11 15:37:51  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.2  2003/03/10 22:01:36  ucko
 * Change SLegalImport::m_Name from string to const char* (needed by MSVC).
 *

@@ -98,7 +98,7 @@ SFlatHead::SFlatHead(SFlatContext& ctx)
             m_Locus = m_Context->m_PrimaryID->GetSeqIdString(false);
         }
     }}
-    iterate (CBioseq::TId, it, seq->GetId()) {
+    ITERATE (CBioseq::TId, it, seq->GetId()) {
         if (*it != ctx.m_PrimaryID) {
             m_OtherIDs.push_back(*it);
         }
@@ -371,7 +371,7 @@ void SFlatHead::x_AddDBSource(void)
                 sources.insert(scope.GetBioseqHandle(*id2));
             }
         }
-        iterate (set<CBioseq_Handle>, it, sources) {
+        ITERATE (set<CBioseq_Handle>, it, sources) {
             m_DBSource.push_back(x_FormatDBSourceID
                                  (*FindBestChoice(it->GetBioseqCore()->GetId(),
                                                   s_ScoreForDBSource)));
@@ -499,7 +499,7 @@ void SFlatHead::x_AddPIRBlock(void)
     }
     if (pir.IsSetSeqref()) {
         list<string> xrefs;
-        iterate (CPIR_block::TSeqref, it, pir.GetSeqref()) {
+        ITERATE (CPIR_block::TSeqref, it, pir.GetSeqref()) {
             const char* type = 0;
             switch ((*it)->Which()) {
             case CSeq_id::e_Genbank:    type = "genbank ";    break;
@@ -519,7 +519,7 @@ void SFlatHead::x_AddPIRBlock(void)
             m_DBSource.push_back("xrefs: " + NStr::Join(xrefs, ", "));
         }
     }
-    non_const_iterate (list<string>, it, m_DBSource) {
+    NON_CONST_ITERATE (list<string>, it, m_DBSource) {
         // The C version puts newlines before these for some reason
         *it += (&*it == &m_DBSource.back() ? '.' : ';');
     }
@@ -575,7 +575,7 @@ void SFlatHead::x_AddSPBlock(void)
     }
     if (sp.IsSetSeqref()  &&  !sp.GetSeqref().empty() ) {
         list<string> xrefs;
-        iterate (CSP_block::TSeqref, it, sp.GetSeqref()) {
+        ITERATE (CSP_block::TSeqref, it, sp.GetSeqref()) {
             const char* s = 0;
             switch ((*it)->Which()) {
             case CSeq_id::e_Genbank:  s = "genbank accession ";          break;
@@ -602,7 +602,7 @@ void SFlatHead::x_AddSPBlock(void)
     }
     if (sp.IsSetDbref()  &&  !sp.GetDbref().empty() ) {
         list<string> xrefs;
-        iterate (CSP_block::TDbref, it, sp.GetDbref()) {
+        ITERATE (CSP_block::TDbref, it, sp.GetDbref()) {
             const CObject_id& tag = (*it)->GetTag();
             string            id  = (tag.IsStr() ? tag.GetStr()
                                      : NStr::IntToString(tag.GetId()));
@@ -649,7 +649,7 @@ void SFlatHead::x_AddPRFBlock(void)
             m_DBSource.push_back("taxonomy: " + es.GetTaxon());
         }
     }
-    non_const_iterate (list<string>, it, m_DBSource) {
+    NON_CONST_ITERATE (list<string>, it, m_DBSource) {
         *it += (&*it == &m_DBSource.back() ? '.' : ';');
     }
 }
@@ -687,7 +687,7 @@ void SFlatHead::x_AddPDBBlock(void)
         m_Context->m_Formatter->FormatDate(rep.GetDate(), s);
         m_DBSource.push_back(s);
     }
-    non_const_iterate (list<string>, it, m_DBSource) {
+    NON_CONST_ITERATE (list<string>, it, m_DBSource) {
         *it += (&*it == &m_DBSource.back() ? '.' : ';');
     }
 }
@@ -700,6 +700,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/11 15:37:51  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.1  2003/03/10 16:39:09  ucko
 * Initial check-in of new flat-file generator
 *

@@ -68,7 +68,7 @@ void CFlatEMBLFormatter::FormatHead(const SFlatHead& head)
     x_AddXX();
     {{
         string acc = m_Context->m_PrimaryID->GetSeqIdString(false);
-        iterate (list<string>, it, head.m_SecondaryIDs) {
+        ITERATE (list<string>, it, head.m_SecondaryIDs) {
             acc += "; " + *it;
         }
         Wrap(l, "AC", acc + ';');
@@ -102,11 +102,11 @@ void CFlatEMBLFormatter::FormatKeywords(const SFlatKeywords& keys)
     x_AddXX();
     list<string>   l, kw;
     vector<string> v;
-    iterate (list<string>, it, keys.m_Keywords) {
+    ITERATE (list<string>, it, keys.m_Keywords) {
         v.push_back(*it);
     }
     sort(v.begin(), v.end());
-    iterate (vector<string>, it, v) {
+    ITERATE (vector<string>, it, v) {
         kw.push_back(*it + (&*it == &v.back() ? '.' : ';'));
     }
     if (kw.empty()) {
@@ -154,7 +154,7 @@ void CFlatEMBLFormatter::FormatReference(const SFlatReference& ref)
     Wrap(l, "RC", ref.m_Remark, eSubp);
     // Wrap(l, "RC", "CONSORTIUM: " + ref.m_Consortium, eSubp);
     Wrap(l, "RP", ref.GetRange(*m_Context), eSubp);
-    iterate (set<int>, it, ref.m_MUIDs) {
+    ITERATE (set<int>, it, ref.m_MUIDs) {
         if (DoHTML()) {
             Wrap(l, "RX",
                  "MEDLINE; <a href=\"" + ref.GetMedlineURL(*it) + "\">"
@@ -167,7 +167,7 @@ void CFlatEMBLFormatter::FormatReference(const SFlatReference& ref)
     
     {{
         list<string> authors;
-        iterate (list<string>, it, ref.m_Authors) {
+        ITERATE (list<string>, it, ref.m_Authors) {
             authors.push_back(NStr::Replace(*it, ",", " ")
                               + (&*it == &ref.m_Authors.back() ? ';' : ','));
         }
@@ -208,7 +208,7 @@ void CFlatEMBLFormatter::FormatPrimary(const SFlatPrimary& primary)
     x_AddXX();
     list<string> l;
     Wrap(l, "AH", primary.GetHeader());
-    iterate (SFlatPrimary::TPieces, it, primary.m_Pieces) {
+    ITERATE (SFlatPrimary::TPieces, it, primary.m_Pieces) {
         string s;        
         Wrap(l, "AS", it->Format(s));
     }
@@ -340,6 +340,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/11 15:37:51  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.1  2003/03/10 16:39:09  ucko
 * Initial check-in of new flat-file generator
 *

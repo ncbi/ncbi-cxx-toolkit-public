@@ -148,14 +148,14 @@ void CTestID1ClientApp::RunCommand(const string& command)
     } else if (verb == "getseqidsfromgi") {
         int gi = NStr::StringToInt(args.front());
         CID1server_back::TIds ids = m_Client->AskGetseqidsfromgi(gi);
-        iterate (CID1server_back::TIds, id, ids) {
+        ITERATE (CID1server_back::TIds, id, ids) {
             *m_Out << (*id)->DumpAsFasta() << endl;
         }
     } else if (verb == "getgihist") {
         int gi = NStr::StringToInt(args.front());
         typedef list< CRef<CID1Seq_hist> > THistory;
         THistory hist = m_Client->AskGetgihist(gi);
-        iterate (THistory, iter, hist) {
+        ITERATE (THistory, iter, hist) {
             *m_OutAsn << **iter;
         }
         m_OutAsn->Flush();
@@ -163,7 +163,7 @@ void CTestID1ClientApp::RunCommand(const string& command)
         int gi = NStr::StringToInt(args.front());
         typedef list< CRef<CID1Seq_hist> > THistory;
         THistory hist = m_Client->AskGetgirev(gi);
-        iterate (THistory, iter, hist) {
+        ITERATE (THistory, iter, hist) {
             *m_OutAsn << **iter;
         }
         m_OutAsn->Flush();
@@ -185,6 +185,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/03/11 15:39:12  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.3  2002/12/23 15:32:08  dicuccio
 * Added 'help' command.  Implemented getgihist and getgirev commands.
 *

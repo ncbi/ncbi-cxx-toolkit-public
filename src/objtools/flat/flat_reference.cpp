@@ -124,7 +124,7 @@ SFlatReference::SFlatReference(const CPubdesc& pub, const CSeq_loc* loc,
                                const SFlatContext& ctx)
     : m_Pubdesc(&pub), m_Loc(loc), m_Category(eUnknown), m_Serial(0)
 {
-    iterate (CPub_equiv::Tdata, it, pub.GetPub().Get()) {
+    ITERATE (CPub_equiv::Tdata, it, pub.GetPub().Get()) {
         x_Init(**it, ctx);
     }
     if (m_Date.NotEmpty()  &&  m_Date->IsStd()) {
@@ -304,7 +304,7 @@ void SFlatReference::x_Init(const CPub& pub, const SFlatContext& ctx)
     case CPub::e_Patent:   x_Init(pub.GetPatent(), ctx);          break;
     case CPub::e_Man:      x_Init(pub.GetMan(), ctx);             break;
     case CPub::e_Equiv:
-        iterate (CPub_equiv::Tdata, it, pub.GetEquiv().Get()) {
+        ITERATE (CPub_equiv::Tdata, it, pub.GetEquiv().Get()) {
             x_Init(**it, ctx);
         }
         break;
@@ -406,7 +406,7 @@ void SFlatReference::x_Init(const CCit_art& art, const SFlatContext& ctx)
         break;
     }
     if (art.IsSetIds()) {
-        iterate (CArticleIdSet::Tdata, it, art.GetIds().Get()) {
+        ITERATE (CArticleIdSet::Tdata, it, art.GetIds().Get()) {
             switch ((*it)->Which()) {
             case CArticleId::e_Pubmed:
                 m_PMIDs.insert((*it)->GetPubmed());
@@ -448,7 +448,7 @@ void SFlatReference::x_Init(const CCit_pat& pat, const SFlatContext& ctx)
     m_Title = pat.GetTitle();
     x_AddAuthors(pat.GetAuthors());
     int seqid = 0;
-    iterate (CBioseq::TId, it, ctx.m_Handle.GetBioseqCore()->GetId()) {
+    ITERATE (CBioseq::TId, it, ctx.m_Handle.GetBioseqCore()->GetId()) {
         if ((*it)->IsPatent()) {
             seqid = (*it)->GetPatent().GetSeqid();
         }
@@ -513,7 +513,7 @@ void SFlatReference::x_AddAuthors(const CAuth_list& auth)
     const TNames& names = auth.GetNames();
     switch (names.Which()) {
     case TNames::e_Std:
-        iterate (TNames::TStd, it, names.GetStd()) {
+        ITERATE (TNames::TStd, it, names.GetStd()) {
             const CPerson_id& name = (*it)->GetName();
             switch (name.Which()) {
             case CPerson_id::e_Name:
@@ -552,7 +552,7 @@ void SFlatReference::x_AddAuthors(const CAuth_list& auth)
         break;
 
     case TNames::e_Ml:
-        iterate (TNames::TMl, it, names.GetMl()) {
+        ITERATE (TNames::TMl, it, names.GetMl()) {
             string s = *it;
             m_Authors.push_back(s_FixMedlineName(s));
         }
@@ -571,7 +571,7 @@ void SFlatReference::x_AddAuthors(const CAuth_list& auth)
 
 void SFlatReference::x_SetJournal(const CTitle& title, const SFlatContext& ctx)
 {
-    iterate (CTitle::Tdata, it, title.Get()) {
+    ITERATE (CTitle::Tdata, it, title.Get()) {
         if ((*it)->IsIso_jta()) {
             m_Journal = (*it)->GetIso_jta();
             return;
@@ -640,6 +640,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/03/11 15:37:51  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.3  2003/03/10 22:06:04  ucko
 * Explicitly call NotEmpty to avoid a bogus MSVC error.
 * Fix a typo that interpreted some MUIDs as PMIDs.

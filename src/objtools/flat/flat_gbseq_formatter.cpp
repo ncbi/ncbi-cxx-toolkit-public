@@ -166,11 +166,11 @@ void CFlatGBSeqFormatter::FormatHead(const SFlatHead& head)
             (new CGBSeqid(m_Context->m_PrimaryID->AsFastaString()));
         m_Seq->SetOther_seqids().push_back(id);
     }}
-    iterate (CBioseq::TId, it, head.m_OtherIDs) {
+    ITERATE (CBioseq::TId, it, head.m_OtherIDs) {
         CRef<CGBSeqid> id(new CGBSeqid((*it)->AsFastaString()));
         m_Seq->SetOther_seqids().push_back(id);
     }
-    iterate (list<string>, it, head.m_SecondaryIDs) {
+    ITERATE (list<string>, it, head.m_SecondaryIDs) {
         CRef<CGBSecondary_accn> accn(new CGBSecondary_accn(*it));
         m_Seq->SetSecondary_accessions().push_back(accn);
     }
@@ -183,7 +183,7 @@ void CFlatGBSeqFormatter::FormatHead(const SFlatHead& head)
 
 void CFlatGBSeqFormatter::FormatKeywords(const SFlatKeywords& keys)
 {
-    iterate (list<string>, it, keys.m_Keywords) {
+    ITERATE (list<string>, it, keys.m_Keywords) {
         CRef<CGBKeyword> key(new CGBKeyword(*it));
         m_Seq->SetKeywords().push_back(key);
     }
@@ -216,7 +216,7 @@ void CFlatGBSeqFormatter::FormatReference(const SFlatReference& ref)
     CRef<CGBReference> gbref(new CGBReference);
     gbref->SetReference(NStr::IntToString(ref.m_Serial)
                         + ref.GetRange(*m_Context));
-    iterate (list<string>, it, ref.m_Authors) {
+    ITERATE (list<string>, it, ref.m_Authors) {
         CRef<CGBAuthor> author(new CGBAuthor(*it));
         gbref->SetAuthors().push_back(author);
     }
@@ -251,7 +251,7 @@ void CFlatGBSeqFormatter::FormatComment(const SFlatComment& comment)
 void CFlatGBSeqFormatter::FormatPrimary(const SFlatPrimary& primary)
 {
     m_Seq->SetPrimary(primary.GetHeader());
-    iterate (SFlatPrimary::TPieces, it, primary.m_Pieces) {
+    ITERATE (SFlatPrimary::TPieces, it, primary.m_Pieces) {
         m_Seq->SetPrimary() += '~';
         it->Format(m_Seq->SetPrimary());
     }
@@ -263,7 +263,7 @@ void CFlatGBSeqFormatter::FormatFeature(const SFlatFeature& feat)
     CRef<CGBFeature> gbfeat(new CGBFeature);
     gbfeat->SetKey(feat.m_Key);
     gbfeat->SetLocation(feat.m_Loc->m_String);
-    iterate (vector<SFlatLoc::SInterval>, it, feat.m_Loc->m_Intervals) {
+    ITERATE (vector<SFlatLoc::SInterval>, it, feat.m_Loc->m_Intervals) {
         CRef<CGBInterval> ival(new CGBInterval);
         if (it->m_Range.GetLength() == 1) {
             ival->SetPoint(it->m_Range.GetFrom());
@@ -274,7 +274,7 @@ void CFlatGBSeqFormatter::FormatFeature(const SFlatFeature& feat)
         ival->SetAccession(it->m_Accession);
         gbfeat->SetIntervals().push_back(ival);
     }
-    iterate (vector<CRef<SFlatQual> >, it, feat.m_Quals) {
+    ITERATE (vector<CRef<SFlatQual> >, it, feat.m_Quals) {
         CRef<CGBQualifier> qual(new CGBQualifier);
         qual->SetName((*it)->m_Name);
         if ((*it)->m_Style != SFlatQual::eEmpty) {
@@ -318,6 +318,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/11 15:37:51  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.1  2003/03/10 16:39:09  ucko
 * Initial check-in of new flat-file generator
 *

@@ -162,7 +162,7 @@ void CDate_std::GetDate(string* label, const string& format) const
     unsigned int                        depth = 0;
     vector<pair<SIZE_TYPE, SIZE_TYPE> > starts;
     starts.push_back(make_pair(label->size(), (SIZE_TYPE)0));
-    iterate (string, it, format) {
+    ITERATE (string, it, format) {
         if (*it != '%') {
             *label += *it;
             continue;
@@ -324,6 +324,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.6  2003/03/11 15:38:42  kuznets
+ * iterate -> ITERATE
+ *
  * Revision 6.5  2003/02/24 20:02:36  gouriano
  * use template-based exceptions instead of errno and parse exceptions
  *

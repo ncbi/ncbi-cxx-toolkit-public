@@ -95,7 +95,7 @@ void SFlatLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
     case CSeq_loc::e_Packed_int:
     {
         string delim("join(");
-        iterate (CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
+        ITERATE (CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
             oss << delim;
             x_Add(**it, oss, ctx);
             delim = ",";
@@ -128,7 +128,7 @@ void SFlatLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
             oss << "complement(";
         }
         string delim("join(");
-        iterate (CPacked_seqpnt::TPoints, it, ppnt.GetPoints()) {
+        ITERATE (CPacked_seqpnt::TPoints, it, ppnt.GetPoints()) {
             oss << delim;
             x_AddPnt(*it, ppnt.IsSetFuzz() ? &ppnt.GetFuzz() : 0, oss, ctx);
             x_AddInt(*it, *it, accn);
@@ -143,7 +143,7 @@ void SFlatLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
     case CSeq_loc::e_Mix:
     {
         string delim("join(");
-        iterate (CSeq_loc_mix::Tdata, it, loc.GetMix().Get()) {
+        ITERATE (CSeq_loc_mix::Tdata, it, loc.GetMix().Get()) {
             oss << delim;
             x_Add(**it, oss, ctx);
             delim = ",";
@@ -227,7 +227,7 @@ void SFlatLoc::x_AddPnt(TSeqPos pnt, const CInt_fuzz* fuzz,
         }
 
         case CInt_fuzz::e_Alt:
-            iterate (CInt_fuzz::TAlt, it, fuzz->GetAlt()) {
+            ITERATE (CInt_fuzz::TAlt, it, fuzz->GetAlt()) {
                 if (*it < from) {
                     from = *it;
                 } else if (*it > to) {
@@ -280,6 +280,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/11 15:37:51  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.1  2003/03/10 16:39:09  ucko
 * Initial check-in of new flat-file generator
 *

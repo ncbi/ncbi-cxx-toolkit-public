@@ -85,7 +85,7 @@ void CFlatStringQV::Format(TFlatQuals& q, const string& name,
 void CFlatCodeBreakQV::Format(TFlatQuals& q, const string& name,
                               SFlatContext& ctx, IFlatQV::TFlags) const
 {
-    iterate (CCdregion::TCode_break, it, m_Value) {
+    ITERATE (CCdregion::TCode_break, it, m_Value) {
         string pos = SFlatLoc((*it)->GetLoc(), ctx).m_String;
         string aa  = "OTHER";
         switch ((*it)->GetAa().Which()) {
@@ -251,7 +251,7 @@ void CFlatPubSetQV::Format(TFlatQuals& q, const string& name,
                            SFlatContext& ctx, IFlatQV::TFlags) const
 {
     bool found = false;
-    iterate (vector<CRef<SFlatReference> >, it, ctx.m_References) {
+    ITERATE (vector<CRef<SFlatReference> >, it, ctx.m_References) {
         if ((*it)->Matches(*m_Value)) {
             x_AddFQ(q, name, '[' + NStr::IntToString((*it)->m_Serial) + ']',
                     SFlatQual::eUnquoted);
@@ -312,7 +312,7 @@ void CFlatXrefQV::Format(TFlatQuals& q, const string& name,
                          SFlatContext& ctx, IFlatQV::TFlags flags) const
 {
     // XXX - add link in HTML mode?
-    iterate (TXref, it, m_Value) {
+    ITERATE (TXref, it, m_Value) {
         string s((*it)->GetDb());
         const CObject_id& id = (*it)->GetTag();
         switch (id.Which()) {
@@ -331,6 +331,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/11 15:37:51  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.1  2003/03/10 16:39:09  ucko
 * Initial check-in of new flat-file generator
 *

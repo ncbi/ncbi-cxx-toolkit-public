@@ -171,7 +171,7 @@ SFlatPrimary::SFlatPrimary(const SFlatContext& ctx)
     if ( !inst.IsSetHist()  ||  !inst.GetHist().IsSetAssembly()) {
         return;
     }
-    iterate (CSeq_hist::TAssembly, it, inst.GetHist().GetAssembly()) {
+    ITERATE (CSeq_hist::TAssembly, it, inst.GetHist().GetAssembly()) {
         if ( !(*it)->GetSegs().IsDenseg() ) {
             // complain
             continue;
@@ -257,7 +257,7 @@ SFlatWGSRange::SFlatWGSRange(const SFlatContext& ctx)
             ||  NStr::CompareNocase(uo.GetType().GetStr(), "WGSProjects")) {
             continue;
         }
-        iterate (CUser_object::TData, it, uo.GetData()) {
+        ITERATE (CUser_object::TData, it, uo.GetData()) {
             if ( !(*it)->GetLabel().IsStr() ) {
                 // complain?
                 continue;
@@ -298,7 +298,7 @@ SFlatGenomeInfo::SFlatGenomeInfo(const SFlatContext& ctx)
             ||  NStr::CompareNocase(uo.GetType().GetStr(), "GenomeProject")) {
             continue;
         }
-        iterate (CUser_object::TData, it, uo.GetData()) {
+        ITERATE (CUser_object::TData, it, uo.GetData()) {
             if ( !(*it)->GetLabel().IsStr() ) {
                 // complain?
                 continue;
@@ -328,6 +328,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/03/11 15:37:51  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.2  2003/03/10 22:04:43  ucko
 * Expand out x_AddKeys manually because MSVC wouldn't.
 *
