@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/09/11 14:06:28  thiessen
+* working alignment coloring
+*
 * Revision 1.1  2000/09/11 01:46:14  thiessen
 * working messenger for sequence<->structure window communication
 *
@@ -125,6 +128,7 @@ void Messenger::DisplaySequences(const SequenceList *sequences)
     SequenceViewerList::iterator q, qe = sequenceViewers.end();
     for (q=sequenceViewers.begin(); q!=qe; q++)
         (*q)->DisplaySequences(sequences);
+    PostRedrawSequenceViewers();
 }
    
 void Messenger::DisplayAlignment(const BlockMultipleAlignment *alignment)
@@ -132,6 +136,7 @@ void Messenger::DisplayAlignment(const BlockMultipleAlignment *alignment)
     SequenceViewerList::iterator q, qe = sequenceViewers.end();
     for (q=sequenceViewers.begin(); q!=qe; q++)
         (*q)->DisplayAlignment(alignment);
+    PostRedrawSequenceViewers();
 }
 
 void Messenger::ClearSequenceViewers(void)
@@ -139,6 +144,7 @@ void Messenger::ClearSequenceViewers(void)
     SequenceViewerList::iterator q, qe = sequenceViewers.end();
     for (q=sequenceViewers.begin(); q!=qe; q++)
         (*q)->ClearGUI();
+    PostRedrawSequenceViewers();
 }
 
 END_SCOPE(Cn3D)

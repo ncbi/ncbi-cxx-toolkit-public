@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/09/11 14:06:28  thiessen
+* working alignment coloring
+*
 * Revision 1.6  2000/09/11 01:46:14  thiessen
 * working messenger for sequence<->structure window communication
 *
@@ -263,6 +266,7 @@ Cn3DMainFrame::Cn3DMainFrame(Messenger *mesg,
     // Style menu
     menu = new wxMenu;
     menu->Append(MID_SECSTRUC, "&Secondary Structure");
+    menu->Append(MID_ALIGN, "&Alignment");
     menu->Append(MID_WIREFRAME, "&Wireframe");
     menuBar->Append(menu, "&Style");
 
@@ -342,12 +346,16 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
             case MID_SECSTRUC:
                 glCanvas->structureSet->styleManager->SetToSecondaryStructure();
                 break;
+            case MID_ALIGN:
+                glCanvas->structureSet->styleManager->SetToAlignment();
+                break;
             case MID_WIREFRAME:
                 glCanvas->structureSet->styleManager->SetToWireframe();
                 break;
             default: ;
         }
         messenger->PostRedrawAllStructures();
+        messenger->PostRedrawSequenceViewers();
     }
 }
 

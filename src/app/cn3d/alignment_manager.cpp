@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/09/11 14:06:28  thiessen
+* working alignment coloring
+*
 * Revision 1.6  2000/09/11 01:46:13  thiessen
 * working messenger for sequence<->structure window communication
 *
@@ -179,7 +182,8 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignme
 
 
 BlockMultipleAlignment::BlockMultipleAlignment(const SequenceList *sequenceList) :
-    sequences(sequenceList), currentJustification(eRight)
+    sequences(sequenceList), currentJustification(eRight),
+    prevRow(-1), prevBlock(NULL)
 {
 }
 
@@ -303,7 +307,7 @@ bool BlockMultipleAlignment::AddUnalignedBlocksAndIndex(void)
         }
     }
 
-    TESTMSG("alignment display size: " << totalWidth << " x " << NSequences());
+    TESTMSG("alignment display size: " << totalWidth << " x " << NRows());
     return true;
 }
 
@@ -343,10 +347,10 @@ bool BlockMultipleAlignment::GetSequenceAndIndexAt(int alignmentColumn, int row,
 
     if (!blockInfo.block->isAligned) {
         *isAligned = false;
-        if (blockInfo.block == blocks.front())
-            justification = eRight;
-        else if (blockInfo.block == blocks.back())
+        if (blockInfo.block == blocks.back()) // also true if there's a single aligned block
             justification = eLeft;
+        else if (blockInfo.block == blocks.front())
+            justification = eRight;
         else
             justification = currentJustification;
     } else
@@ -380,6 +384,73 @@ int UnalignedBlock::GetIndexAt(int blockColumn, int row,
     if (seqIndex < range->from || seqIndex > range->to) seqIndex = -1;
 
     return seqIndex;
+}
+
+bool BlockMultipleAlignment::IsAligned(const Sequence *sequence, int seqIndex) const
+{
+    // find first occurrence of this sequence in the alignment
+    if (prevRow < 0 || sequence != sequences->at(prevRow)) {
+        for (int row=0; row<NRows(); row++) if (sequences->at(row) == sequence) break;
+        if (row == NRows()) {
+            ERR_POST(Error << "BlockMultipleAlignment::IsAligned() - can't find given Sequence");
+            return false;
+        }
+        (const_cast<BlockMultipleAlignment*>(this))->prevRow = row;
+    }
+
+    const Block *block = GetBlock(prevRow, seqIndex);
+    if (block && block->isAligned)
+        return true;
+    else
+        return false;
+}
+
+const Block * BlockMultipleAlignment::GetBlock(int row, int seqIndex) const
+{
+    // make sure we're in range for this sequence
+    if (seqIndex < 0 || seqIndex >= sequences->at(row)->sequenceString.size()) {
+        ERR_POST(Error << "BlockMultipleAlignment::GetBlock() - seqIndex out of range");
+        return false;
+    }
+    
+    const Block::Range *range;
+
+    // first check to see if it's in the same block as last time. (Yes, there are
+    // a lot of const_casts... but this ugliness is unfortunately necessary to be able
+    // to call this function on const objects, while still being able to change
+    // the cache values.)
+    if (prevBlock) {
+        range = prevBlock->GetRangeOfRow(row);
+        if (seqIndex >= range->from && seqIndex <= range->to)
+            return prevBlock;
+        (const_cast<BlockMultipleAlignment*>(this))->blockIterator++; // start search at next block
+    } else {
+        (const_cast<BlockMultipleAlignment*>(this))->blockIterator = blocks.begin();
+    }
+
+    // otherwise, perform block search. This search is most efficient when queries
+    // happen in order from left to right along a given row.
+    do {
+        if (blockIterator == blocks.end())
+            (const_cast<BlockMultipleAlignment*>(this))->blockIterator = blocks.begin();
+        range = (*blockIterator)->GetRangeOfRow(row);
+        if (seqIndex >= range->from && seqIndex <= range->to) {
+            (const_cast<BlockMultipleAlignment*>(this))->prevBlock = *blockIterator; // cache this block
+            return prevBlock;
+        }
+        (const_cast<BlockMultipleAlignment*>(this))->blockIterator++;
+    } while (1);
+}
+
+int BlockMultipleAlignment::GetFirstAlignedBlockPosition(void) const
+{
+    BlockList::const_iterator b = blocks.begin();
+    if (blocks.size() > 0 && (*b)->isAligned) // first block is aligned
+        return 0;
+    else if (blocks.size() >= 2 && (*(++b))->isAligned) // second block is aligned
+        return blocks.front()->width;
+    else
+        return -1;
 }
 
 END_SCOPE(Cn3D)

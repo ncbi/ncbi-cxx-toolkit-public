@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/09/11 14:06:30  thiessen
+* working alignment coloring
+*
 * Revision 1.12  2000/09/08 20:16:55  thiessen
 * working dynamic alignment views
 *
@@ -77,6 +80,7 @@
 #include "cn3d/bond.hpp"
 #include "cn3d/show_hide_manager.hpp"
 #include "cn3d/object_3d.hpp"
+#include "cn3d/alignment_manager.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -153,6 +157,51 @@ void StyleSettings::SetToWireframe(void)
 
     connections.isOn = true;
     connections.style = eWire;
+    connections.colorScheme = eUserSelect;
+    connections.userColor.Set(1,1,0); // yellow
+    
+    helixObjects.isOn = strandObjects.isOn = false;
+    helixObjects.style = strandObjects.style = eWithArrows;
+    helixObjects.colorScheme = strandObjects.colorScheme = eSecondaryStructure;
+    helixRadius = 1.8;
+    strandWidth = 2.0;
+    strandThickness = 0.5;
+
+    proteinSidechains.userColor = nucleotideSidechains.userColor =
+    proteinBackbone.userColor = nucleotideBackbone.userColor =
+    heterogens.userColor = solvents.userColor =
+    helixObjects.userColor = strandObjects.userColor = Vector(0.7,0.5,0.5);
+
+    hydrogensOn = true;
+
+    ballRadius = 0.4;
+    stickRadius = 0.2;
+    tubeRadius = 0.3;
+    tubeWormRadius = 0.3;
+
+    backgroundColor.Set(0,0,0);
+}
+
+void StyleSettings::SetToAlignment(void)
+{
+    proteinBackbone.type = nucleotideBackbone.type = eTrace;
+    proteinBackbone.style = nucleotideBackbone.style = eTubes;
+    proteinBackbone.colorScheme = nucleotideBackbone.colorScheme = eAlignment;
+
+    proteinSidechains.isOn = nucleotideSidechains.isOn = true;
+    proteinSidechains.style = nucleotideSidechains.style = eWire;
+    proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
+
+    heterogens.isOn = true;
+    heterogens.style = eWire;
+    heterogens.colorScheme = eElement;
+
+    solvents.isOn = false;
+    solvents.style = eBallAndStick;
+    solvents.colorScheme = eElement;
+
+    connections.isOn = true;
+    connections.style = eTubes;
     connections.colorScheme = eUserSelect;
     connections.userColor.Set(1,1,0); // yellow
     
@@ -352,6 +401,13 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             case StyleSettings::eElement:
                 atomStyle->color = element->color;
                 break;
+            case StyleSettings::eAlignment:
+                if (molecule->sequence &&
+                    molecule->parentSet->alignmentManager->
+                        IsAligned(molecule->sequence, residue->id - 1)) { // assume seqIndex is rID - 1
+                    atomStyle->color.Set(1,0,0);   // red
+                    break;
+                } // if not aligned, then use eObject coloring
             case StyleSettings::eMolecule:
                 // should actually be a color cycle...
             case StyleSettings::eObject:

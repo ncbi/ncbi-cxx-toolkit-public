@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/11 14:06:02  thiessen
+* working alignment coloring
+*
 * Revision 1.5  2000/09/11 01:45:52  thiessen
 * working messenger for sequence<->structure window communication
 *
@@ -65,38 +68,11 @@ class Sequence;
 class SequenceSet;
 class AlignmentSet;
 class MasterSlaveAlignment;
-class BlockMultipleAlignment;
 class SequenceViewer;
 class Messenger;
 
-class AlignmentManager
-{
-public:
-    AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet, Messenger *messenger);
-    ~AlignmentManager(void);
 
-    const SequenceSet *sequenceSet;
-    const AlignmentSet *alignmentSet;
-
-    // creates the current multiple alignment from the given pairwise alignments (which are
-    // assumed to be members of the AlignmentSet).
-    typedef std::list < const MasterSlaveAlignment * > AlignmentList;
-    BlockMultipleAlignment *
-		CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments);
-
-private:
-    // for now, will own the current multiple alignment
-    BlockMultipleAlignment *currentMultipleAlignment;
-
-    Messenger *messenger;
-
-public:
-    const BlockMultipleAlignment * GetCurrentMultipleAlignment(void) const
-        { return currentMultipleAlignment; }
-};
-
-
-///// The stuff below makes up the implementation of a multiple alignment /////
+///// The next few classes make up the implementation of a multiple alignment /////
 
 class Block; // defined below
 
@@ -118,13 +94,19 @@ public:
     // and fills out the BlockMap for mapping alignment column -> block+column.
     bool AddUnalignedBlocksAndIndex(void);
 
+    // find out if a residue is aligned - only works for non-repeated sequences!
+    bool IsAligned(const Sequence *sequence, int seqIndex) const;
+
     // will be used to control padding of unaligned blocks
     enum eUnalignedJustification {
         eLeft,
         eRight,
         eCenter,
         eSplit
-    };    
+    };
+
+    // return alignment position of left side first aligned block (-1 if no aligned blocks)
+    int GetFirstAlignedBlockPosition(void) const;
     
 private:
     typedef std::list < Block * > BlockList;
@@ -142,9 +124,17 @@ private:
 
     eUnalignedJustification currentJustification;
 
+    // for cacheing of residue->block lookups
+    int prevRow;
+    const Block *prevBlock;
+    BlockList::const_iterator blockIterator;
+
+    // given a row and seqIndex, find block that contains that residue
+    const Block * GetBlock(int row, int seqIndex) const;
+
 public:
     int NBlocks(void) const { return blocks.size(); }
-    int NSequences(void) const { return sequences->size(); }
+    int NRows(void) const { return sequences->size(); }
     int AlignmentWidth(void) const { return totalWidth; }
 
     void SetUnalignedJustification(eUnalignedJustification j) { currentJustification = j; }
@@ -218,6 +208,44 @@ public:
     UnalignedBlock(const SequenceList *sequenceList) : Block(sequenceList, false) { }
     int GetIndexAt(int blockColumn, int row,
         BlockMultipleAlignment::eUnalignedJustification justification) const;
+};
+
+
+///// The next class is the actual AlignmentManager implementation /////
+
+class AlignmentManager
+{
+public:
+    AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet, Messenger *messenger);
+    ~AlignmentManager(void);
+
+    const SequenceSet *sequenceSet;
+    const AlignmentSet *alignmentSet;
+
+    // creates the current multiple alignment from the given pairwise alignments (which are
+    // assumed to be members of the AlignmentSet).
+    typedef std::list < const MasterSlaveAlignment * > AlignmentList;
+    BlockMultipleAlignment *
+		CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments);
+
+private:
+    // for now, will own the current multiple alignment
+    BlockMultipleAlignment *currentMultipleAlignment;
+
+    Messenger *messenger;
+
+public:
+    //const BlockMultipleAlignment * GetCurrentMultipleAlignment(void) const
+    //    { return currentMultipleAlignment; }
+
+    // find out if a residue is aligned - only works for non-repeated sequences!
+    bool IsAligned(const Sequence *sequence, int seqIndex) const
+    { 
+        if (currentMultipleAlignment)
+            return currentMultipleAlignment->IsAligned(sequence, seqIndex);
+        else
+            return false;
+    }
 };
 
 END_SCOPE(Cn3D)

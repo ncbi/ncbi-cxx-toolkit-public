@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/11 14:06:02  thiessen
+* working alignment coloring
+*
 * Revision 1.5  2000/09/11 01:45:53  thiessen
 * working messenger for sequence<->structure window communication
 *
@@ -145,6 +148,7 @@ public:
             MID_RESET,
         // Style menu
             MID_SECSTRUC,
+            MID_ALIGN,
             MID_WIREFRAME,
         // Quality menu
             MID_QLOW,

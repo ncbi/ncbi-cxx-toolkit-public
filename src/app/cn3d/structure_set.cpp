@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/09/11 14:06:29  thiessen
+* working alignment coloring
+*
 * Revision 1.27  2000/09/11 01:46:16  thiessen
 * working messenger for sequence<->structure window communication
 *
@@ -270,6 +273,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime, Messenger *mesg) :
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime.GetStrucseqs().GetSeqalign());
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, messenger);
+        styleManager->SetToAlignment();
 
     } else if (mime.IsAlignstruc()) {
         TESTMSG("Master:");
@@ -291,6 +295,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime, Messenger *mesg) :
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime.GetAlignstruc().GetSeqalign());
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, messenger);
+        styleManager->SetToAlignment();
 
     } else if (mime.IsEntrez() && mime.GetEntrez().GetData().IsStructure()) {
         object = new StructureObject(this, mime.GetEntrez().GetData().GetStructure(), true);

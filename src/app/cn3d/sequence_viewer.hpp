@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/11 14:06:02  thiessen
+* working alignment coloring
+*
 * Revision 1.4  2000/09/11 01:45:54  thiessen
 * working messenger for sequence<->structure window communication
 *
@@ -72,7 +75,7 @@ public:
     SequenceViewer(Messenger *messenger);
     ~SequenceViewer(void);
 
-    void NewAlignment(const ViewableAlignment *display);
+    void NewAlignment(const SequenceDisplay *display);
 
     // to create displays from unaligned sequence(s), or multiple alignment
     typedef std::list < const Sequence * > SequenceList;

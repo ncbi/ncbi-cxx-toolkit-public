@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/09/11 14:06:29  thiessen
+* working alignment coloring
+*
 * Revision 1.6  2000/09/11 01:46:16  thiessen
 * working messenger for sequence<->structure window communication
 *
@@ -190,6 +193,8 @@ public:
 
 private:
 
+    int startingColumn;
+
     void AddRow(DisplayRow *row);
 
     typedef std::vector < DisplayRow * > RowVector;
@@ -202,6 +207,10 @@ private:
     SequenceViewerWindow * const *viewerWindow;
 
 public:
+    // column to scroll to when this display is first shown
+    void SetStartingColumn(int column) { startingColumn = column; }
+    int GetStartingColumn(void) const { return startingColumn; }
+
     // methods required by ViewableAlignment base class
     void GetSize(int *setColumns, int *setRows) const
         { *setColumns = maxRowWidth; *setRows = rows.size(); }
@@ -242,6 +251,9 @@ private:
     SequenceViewer *viewer;
 
 public:
+    // scroll over to a given column
+    void ScrollToColumn(int column) { viewerWidget->Scroll(column, 0); };
+
     void Refresh(void) { viewerWidget->Refresh(false); }
 };
 
@@ -279,10 +291,11 @@ void SequenceViewer::Refresh(void)
         NewAlignment(display);
 }
 
-void SequenceViewer::NewAlignment(const ViewableAlignment *display)
+void SequenceViewer::NewAlignment(const SequenceDisplay *display)
 {
     if (!viewerWindow) viewerWindow = new SequenceViewerWindow(this);
     viewerWindow->NewAlignment(display);
+    viewerWindow->ScrollToColumn(display->GetStartingColumn());
     messenger->PostRedrawSequenceViewers();
 }
 
@@ -291,8 +304,12 @@ void SequenceViewer::DisplayAlignment(const BlockMultipleAlignment *multiple)
     if (display) delete display;
     display = new SequenceDisplay(&viewerWindow);
     
-    for (int row=0; row<multiple->NSequences(); row++)
+    for (int row=0; row<multiple->NRows(); row++)
         display->AddRowFromAlignment(row, multiple);
+
+
+    // set starting scroll to a few residues left of the first aligned block
+    display->SetStartingColumn(multiple->GetFirstAlignedBlockPosition() - 5);
 
     NewAlignment(display);
 }
@@ -314,7 +331,7 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
 
 
 SequenceDisplay::SequenceDisplay(SequenceViewerWindow * const *parentViewerWindow) : 
-    maxRowWidth(0), viewerWindow(parentViewerWindow), alignment(NULL)
+    maxRowWidth(0), viewerWindow(parentViewerWindow), alignment(NULL), startingColumn(0)
 {
 }
 
@@ -331,7 +348,7 @@ void SequenceDisplay::AddRow(DisplayRow *row)
 
 void SequenceDisplay::AddRowFromAlignment(int row, const BlockMultipleAlignment *fromAlignment)
 {
-    if (!fromAlignment || row < 0 || row >= fromAlignment->NSequences() ||
+    if (!fromAlignment || row < 0 || row >= fromAlignment->NRows() ||
         (alignment && alignment != fromAlignment)) {
         ERR_POST(Error << "SequenceDisplay::AddRowFromAlignment() failed");
         return;

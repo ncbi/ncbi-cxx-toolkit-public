@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/09/11 14:06:03  thiessen
+* working alignment coloring
+*
 * Revision 1.12  2000/08/24 23:39:54  thiessen
 * add 'atomic ion' labels
 *
@@ -116,6 +119,7 @@ public:
         eObject,
         eMolecule,
         eSecondaryStructure,
+        eAlignment,
         eUserSelect
     };
 
@@ -151,6 +155,7 @@ public:
     // methods to set to predetermined states
     void SetToSecondaryStructure(void);
     void SetToWireframe(void);
+    void SetToAlignment(void);
 
     StyleSettings::StyleSettings(void) { SetToSecondaryStructure(); }
 };
@@ -222,6 +227,7 @@ private:
 public:
     void SetToSecondaryStructure(void) { globalStyle.SetToSecondaryStructure(); }
     void SetToWireframe(void) { globalStyle.SetToWireframe(); }
+    void SetToAlignment(void) { globalStyle.SetToAlignment(); }
 };
 
 // the following are convenience containers to tell the Draw functions how
