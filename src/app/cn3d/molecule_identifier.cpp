@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/12/12 14:04:14  thiessen
+* add missing object headers after object loader change
+*
 * Revision 1.4  2001/11/27 16:26:08  thiessen
 * major update to data management system
 *
@@ -52,6 +55,7 @@
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
+#include <objects/seqloc/PDB_mol_id.hpp>
 
 #include <memory>
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.89  2001/12/12 14:04:15  thiessen
+* add missing object headers after object loader change
+*
 * Revision 1.88  2001/12/06 23:13:46  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -325,6 +328,10 @@
 #include <objects/cn3d/Cn3d_user_annotations.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/mmdb3/Biostruc_feature_set_id.hpp>
+#include <objects/mmdb1/Molecule_id.hpp>
+#include <objects/mmdb1/Residue_id.hpp>
+
 
 #include "cn3d/structure_set.hpp"
 #include "cn3d/data_manager.hpp"

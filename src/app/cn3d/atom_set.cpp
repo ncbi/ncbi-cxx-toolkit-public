@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/12/12 14:04:12  thiessen
+* add missing object headers after object loader change
+*
 * Revision 1.14  2001/08/09 19:07:13  thiessen
 * add temperature and hydrophobicity coloring
 *
@@ -86,6 +89,7 @@
 #include <objects/mmdb2/Anisotro_temperatu_factors.hpp>
 #include <objects/mmdb2/Isotropi_temperatu_factors.hpp>
 #include <objects/mmdb2/Conformation_ensemble.hpp>
+#include <objects/mmdb3/Atom_pntrs.hpp>
 
 #include "cn3d/atom_set.hpp"
 #include "cn3d/vector_math.hpp"

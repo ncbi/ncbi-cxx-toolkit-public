@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/12/12 14:04:13  thiessen
+* add missing object headers after object loader change
+*
 * Revision 1.32  2001/10/16 21:49:07  thiessen
 * restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
 *
@@ -134,6 +137,8 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/mmdb1/Residue_id.hpp>
+#include <objects/seqloc/PDB_mol_id.hpp>
 
 #include "cn3d/molecule.hpp"
 #include "cn3d/residue.hpp"

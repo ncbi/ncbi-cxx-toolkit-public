@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/12/12 14:04:14  thiessen
+* add missing object headers after object loader change
+*
 * Revision 1.5  2001/02/08 23:01:50  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -50,6 +53,8 @@
 
 #include <objects/mmdb3/Residue_interval_pntr.hpp>
 #include <objects/mmdb3/Model_space_point.hpp>
+#include <objects/mmdb1/Molecule_id.hpp>
+#include <objects/mmdb1/Residue_id.hpp>
 
 #include "cn3d/object_3d.hpp"
 #include "cn3d/opengl_renderer.hpp"

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2001/12/12 14:04:15  thiessen
+* add missing object headers after object loader change
+*
 * Revision 1.58  2001/12/06 23:13:46  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -224,6 +227,7 @@
 #include <objects/cn3d/Cn3d_molecule_location.hpp>
 #include <objects/cn3d/Cn3d_residue_range.hpp>
 #include <objects/mmdb1/Residue_id.hpp>
+#include <objects/mmdb1/Molecule_id.hpp>
 
 #include <memory>
 #include <string.h> // for memcpy()

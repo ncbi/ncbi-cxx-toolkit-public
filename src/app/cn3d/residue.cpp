@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/12/12 14:04:14  thiessen
+* add missing object headers after object loader change
+*
 * Revision 1.27  2001/10/16 21:49:07  thiessen
 * restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
 *
@@ -120,6 +123,11 @@
 #include <objects/mmdb1/Biomol_descr.hpp>
 #include <objects/mmdb1/Intra_residue_bond.hpp>
 #include <objects/mmdb1/Atom.hpp>
+#include <objects/mmdb1/Biostruc_id.hpp>
+#include <objects/mmdb1/Residue_id.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/mmdb1/Residue_graph_id.hpp>
+#include <objects/mmdb1/Atom_id.hpp>
 
 #include "cn3d/residue.hpp"
 #include "cn3d/bond.hpp"

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2001/12/12 14:04:14  thiessen
+* add missing object headers after object loader change
+*
 * Revision 1.55  2001/11/30 14:02:05  thiessen
 * progress on sequence imports to single structures
 *
@@ -227,6 +230,7 @@
 #include <stdlib.h> // for rand, srand
 
 #include <objects/cn3d/Cn3d_GL_matrix.hpp>
+#include <objects/cn3d/Cn3d_vector.hpp>
 
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/cn3d_main_wxwin.hpp"

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/12/12 14:04:13  thiessen
+* add missing object headers after object loader change
+*
 * Revision 1.18  2001/12/06 23:13:44  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -106,6 +109,8 @@
 #include <objects/mmdb3/Chem_graph_pntrs.hpp>
 #include <objects/mmdb3/Residue_pntrs.hpp>
 #include <objects/mmdb3/Residue_interval_pntr.hpp>
+#include <objects/mmdb1/Molecule_id.hpp>
+#include <objects/mmdb1/Residue_id.hpp>
 
 #include "cn3d/cdd_annot_dialog.hpp"
 #include "cn3d/structure_set.hpp"

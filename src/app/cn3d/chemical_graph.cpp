@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/12/12 14:04:13  thiessen
+* add missing object headers after object loader change
+*
 * Revision 1.30  2001/11/27 16:26:07  thiessen
 * major update to data management system
 *
@@ -134,6 +137,10 @@
 #include <objects/mmdb3/Residue_pntrs.hpp>
 #include <objects/mmdb3/Residue_interval_pntr.hpp>
 #include <objects/mmdb3/Biostruc_feature_id.hpp>
+#include <objects/mmdb1/Molecule_id.hpp>
+#include <objects/mmdb1/Residue_id.hpp>
+#include <objects/mmdb1/Atom_id.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/molecule.hpp"
