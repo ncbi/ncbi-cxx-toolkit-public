@@ -51,9 +51,19 @@ BEGIN_SCOPE(objects)
 //
 
 
-CSeqVector::CSeqVector(const CSeqVector& vec)
+CSeqVector::CSeqVector(void)
+    : m_Scope(0)
 {
-    *this = vec;
+}
+
+
+CSeqVector::CSeqVector(const CSeqVector& vec)
+    : m_SeqMap(vec.m_SeqMap),
+      m_Scope(vec.m_Scope),
+      m_Coding(vec.m_Coding),
+      m_Strand(vec.m_Strand),
+      m_SequenceType(vec.m_SequenceType)
+{
 }
 
 
@@ -63,8 +73,7 @@ CSeqVector::CSeqVector(CConstRef<CSeqMap> seqMap, CScope& scope,
       m_Scope(&scope),
       m_Coding(CSeq_data::e_not_set),
       m_Strand(strand),
-      m_SequenceType(eType_not_set),
-      m_Iterator(0)
+      m_SequenceType(eType_not_set)
 {
     SetCoding(coding);
 }
@@ -76,8 +85,7 @@ CSeqVector::CSeqVector(const CSeqMap& seqMap, CScope& scope,
       m_Scope(&scope),
       m_Coding(CSeq_data::e_not_set),
       m_Strand(strand),
-      m_SequenceType(eType_not_set),
-      m_Iterator(0)
+      m_SequenceType(eType_not_set)
 {
     SetCoding(coding);
 }
@@ -106,6 +114,7 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
         m_SequenceType = vec.m_SequenceType;
         m_Coding = vec.m_Coding;
         m_Strand = vec.m_Strand;
+        m_Iterator.reset();
     }
     return *this;
 }
@@ -379,6 +388,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2003/06/12 18:39:21  vasilche
+* Added default constructor of CSeqVector.
+* Cleared cache iterator on CSeqVector assignment.
+*
 * Revision 1.53  2003/06/11 19:32:55  grichenk
 * Added molecule type caching to CSeqMap, simplified
 * coding and sequence type calculations in CSeqVector.
