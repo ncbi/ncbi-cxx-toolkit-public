@@ -505,11 +505,12 @@ void CBDB_Cache::Open(const char* cache_path,
                          " Running the recovery procedure.");
             }
             m_Env->OpenWithTrans(cache_path, 
-                                 CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
+                                 CBDB_Env::eThreaded | CBDB_Env::eRunRecoveryFatal);
         }
         catch (CBDB_Exception&)
         {
-            m_Env->OpenWithTrans(cache_path, CBDB_Env::eThreaded);
+            m_Env->OpenWithTrans(cache_path, 
+                   CBDB_Env::eThreaded | CBDB_Env::eRunRecoveryFatal);
         }
     }
 
@@ -522,7 +523,7 @@ void CBDB_Cache::Open(const char* cache_path,
         m_Env->SetTransactionTimeout(30 * 1000000); // 30 sec
     }
 
-    m_Env->CleanLog();
+//    m_Env->CleanLog();
 
     m_CacheDB = new SCacheDB();
     m_CacheAttrDB = new SCache_AttrDB();
@@ -1687,6 +1688,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2004/08/13 15:57:34  kuznets
+ * Commented log removal (temp)
+ *
  * Revision 1.67  2004/08/13 11:04:16  kuznets
  * +Verify()
  *
