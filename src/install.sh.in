@@ -156,7 +156,7 @@ test "$with_bin" != "no"  &&  install_dirs="bin $install_dirs"
 if test -d $install_dir ; then
    # Delete previous installation
    for d in $all_install_dirs ; do 
-      test ! -r "$install_dir/$d"  ||  rm -r "$install_dir/$d"  ||  \
+      test ! -r "$install_dir/$d"  ||  rm -rf "$install_dir/$d"  ||  \
          Usage "Cannot delete $install_dir/$d"
    done
 else
@@ -233,7 +233,7 @@ touch -r $build_dir       $install_dir
 
 #####  MOVE mode (remove the original build dir)
 
-test "$with_move" = "yes"  &&  rm -r "$build_dir"
+test "$with_move" = "yes"  &&  rm -rf "$build_dir"
 
 
 #####  DONE
