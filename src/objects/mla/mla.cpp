@@ -43,6 +43,7 @@
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/mla/mla__.hpp>
 #include <objects/pub/Pub.hpp>
+#include <objects/pubmed/Pubmed_entry.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -139,8 +140,8 @@ METHOD(CMla_back::TGetuids, GetAccUids, const CMedline_si&, SetGetaccuids(in),
        response->GetGetuids())
 METHOD(int, UidToPmid, int, SetUidtopmid(in), response->GetOutpmid().Get())
 METHOD(int, PmidToUid, int, SetPmidtouid().Set(in), response->GetOutuid())
-METHOD(CRef<CMedline_entry>, GetMlePmid, int, SetGetmlepmid().Set(in),
-       &response->SetGetmle())
+METHOD(CRef<CPubmed_entry>, GetMlePmid, int, SetGetmlepmid().Set(in),
+       &response->SetGetpme())
 METHOD(CRef<CPub>, GetPubPmid, int, SetGetpubpmid().Set(in),
        &response->SetGetpub())
 METHOD(int, CitMatchPmid, const CPub&, SetCitmatchpmid(in),
@@ -151,8 +152,8 @@ METHOD(CMla_back::TGetpmids, GetAccPmids, const CMedline_si&,
        SetGetaccpmids(in), response->GetGetpmids())
 METHOD(CMla_back::TGetpmids, CitLstPmids, const CPub&, SetCitlstpmids(in),
        response->GetGetpmids())
-METHOD(CRef<CMedline_entry>, GetMleUid, int, SetGetmleuid(in),
-       &response->SetGetmle())
+METHOD(CRef<CPubmed_entry>, GetMleUid, int, SetGetmleuid(in),
+       &response->SetGetpme())
 METHOD(CRef<CMedlars_entry>, GetMlrPmid, int, SetGetmlrpmid().Set(in),
        &response->SetGetmlr())
 METHOD(CRef<CMedlars_entry>, GetMlrUid, int, SetGetmlruid(in),
@@ -164,6 +165,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 6.3  2002/07/30 15:02:20  ucko
+* Fix result type of GetMle{Pmid,Uid} to CPubmed_entry.
+*
 * Revision 6.2  2002/04/22 19:01:19  ucko
 * Switch from CFastMutex to CMutex because SendRequest can call itself via Init.
 * Throw runtime_error rather than string from Init.

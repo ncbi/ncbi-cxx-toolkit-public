@@ -78,13 +78,13 @@ public:
     CMla_back::TGetuids   GetAccUids  (const CMedline_si&);
     int                   UidToPmid   (int);
     int                   PmidToUid   (int);
-    CRef<CMedline_entry>  GetMlePmid  (int);
+    CRef<CPubmed_entry>   GetMlePmid  (int);
     CRef<CPub>            GetPubPmid  (int);
     int                   CitMatchPmid(const CPub&);
     CMla_back::TGetpmids  GetMriPmids (int);
     CMla_back::TGetpmids  GetAccPmids (const CMedline_si&);
     CMla_back::TGetpmids  CitLstPmids (const CPub&);
-    CRef<CMedline_entry>  GetMleUid   (int);
+    CRef<CPubmed_entry>   GetMleUid   (int);
     CRef<CMedlars_entry>  GetMlrPmid  (int);
     CRef<CMedlars_entry>  GetMlrUid   (int);
 
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2002/07/30 15:02:16  ucko
+* Fix result type of GetMle{Pmid,Uid} to CPubmed_entry.
+*
 * Revision 1.2  2002/04/22 19:00:15  ucko
 * Switch from CFastMutex to CMutex because SendRequest can call itself via Init.
 * Move log to end.
