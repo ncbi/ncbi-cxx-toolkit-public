@@ -26,16 +26,16 @@
 *
 * ===========================================================================
 *
-* Author:  Denis Vakatov
+* Author:  Denis Vakatov, Eugene Vasilchenko
 *
 * File Description:
 *   The NCBI C++ standard #include's and #defin'itions
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.47  2000/12/15 21:27:11  vasilche
-* Moved some typedefs/enums to serial/serialbase.hpp.
-* Removed explicit keyword from AutoPtr costructor.
+* Revision 1.48  2000/12/24 00:01:48  vakatov
+* Moved some code from NCBIUTIL to NCBISTD.
+* Fixed AutoPtr to always work with assoc.containers
 *
 * Revision 1.46  2000/12/15 15:36:30  vasilche
 * Added header corelib/ncbistr.hpp for all string utility functions.
@@ -187,17 +187,23 @@
 #include <corelib/ncbidbg.hpp>
 #include <corelib/ncbiexpt.hpp>
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
+
 BEGIN_NCBI_SCOPE
 
-// auto_ptr
+
+//  auto_ptr
+//
+// Replacement of std::auto_ptr for compilers with poor "auto_ptr"
+// implementtaion.
+//
 
 #if defined(HAVE_NO_AUTO_PTR)
-template <class X> class auto_ptr {
-private:
-    X* m_Ptr;
-
+template <class X>
+class auto_ptr
+{
 public:
+    typedef X element_type;
+
     explicit auto_ptr(X* p = 0) : m_Ptr(p) {}
     auto_ptr(auto_ptr<X>& a) : m_Ptr(a.release()) {}
     auto_ptr<X>& operator=(auto_ptr<X>& a) {
@@ -229,11 +235,143 @@ public:
             m_Ptr = p;
         }
     }
+
+private:
+    X* m_Ptr;
 };
 #endif /* HAVE_NO_AUTO_PTR */
 
 
+
+// default create function
+template<class X>
+struct Creater
+{
+    static X* Create(void)
+    { return new X; }
+};
+
+// default delete function
+template<class X>
+struct Deleter
+{
+    static void Delete(X* object)
+    { delete object; }
+};
+
+// array delete function
+template<class X>
+struct ArrayDeleter
+{
+    static void Delete(X* object)
+    { delete[] object; }
+};
+
+// C structures delete function
+template<class X>
+struct CDeleter
+{
+    static void Delete(X* object)
+    { free(object); }
+};
+
+
+
+//  class AutoPtr
+//
+// Standard auto_ptr template from STL have designed in a way which doesn't
+// allow to put it in STL containers (list, vector, map etc.).
+// The reason is absence of copy constructor and assignment operator.
+// We decided that it would be useful to have analog of STL's auto_ptr
+// without this restriction - AutoPtr.
+// NOTE: due to nature of AutoPtr its copy constructor and assignment
+// operator modify the state of the source AutoPtr object (as it transfers
+// ownernership to the target utoPtr object).
+// Also we added possibility to redefine the way pointer will be deleted:
+// second argument of template allows to put pointers from "malloc" in
+// AutoPtr, or you can use "ArrayDeleter" (see above) to properly delete
+// an array of objects using "delete[]" instead of "delete".
+// By default, the internal pointer will be deleted by C++ "delete" operator.
+//
+
+template< class X, class Del = Deleter<X> >
+class AutoPtr
+{
+public:
+    typedef X element_type;
+
+    AutoPtr(X* p = 0)
+        : m_Ptr(p), m_Owner(true)
+    {
+    }
+    AutoPtr(const AutoPtr<X>& p)
+        : m_Ptr(p.x_Release()), m_Owner(true)
+    {
+    }
+
+    ~AutoPtr(void)
+    {
+        reset();
+    }
+
+    AutoPtr& operator=(const AutoPtr<X>& p)
+    {
+        if (this != &p) {
+            reset(p.x_Release());
+        }
+        return *this;
+    }
+    AutoPtr& operator=(X* p)
+    {
+        reset(p);
+        return *this;
+    }
+
+    // bool operator is for using in if() clause
+    operator bool(void) const
+    {
+        return m_Ptr != 0;
+    }
+
+    // standard getters
+    X& operator* (void) const { return *m_Ptr; }
+    X* operator->(void) const { return  m_Ptr; }
+    X* get       (void) const { return  m_Ptr; }
+
+    // release will release ownership of pointer to caller
+    X* release(void)
+    {
+        m_Owner = false;
+        return m_Ptr;
+    }
+
+    // reset will delete old pointer, set content to new value,
+    // and accept ownership upon the new pointer
+    void reset(X* p = 0)
+    {
+        if (m_Ptr  &&  m_Owner) {
+            Del::Delete(release());
+        }
+        m_Ptr   = p;
+        m_Owner = true;
+    }
+
+private:
+    X* m_Ptr;
+    mutable bool m_Owner;
+
+    // release for const object
+    X* x_Release(void) const
+    {
+        return const_cast<AutoPtr<X>*>(this)->release();
+    }
+};
+
+
+
 // "min" and "max" templates
+//
+
 #if defined(HAVE_NO_MINMAX_TEMPLATE)
 #  define NOMINMAX
 #  ifdef min
@@ -254,12 +392,31 @@ const T& max(const T& a, const T& b) {
 }
 #endif /* HAVE_NO_MINMAX_TEMPLATE */
 
+
+
 // strdup()
+//
+
 #if !defined(HAVE_STRDUP)
 extern char* strdup(const char* str);
 #endif
 
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+
+
+//  iterate
+//  non_const_iterate
+//
+// Useful macro to write 'for' statements with the STL container iterator as
+// a variable.
+//
+
+#define iterate(Type, Var, Cont) \
+    for ( Type::const_iterator Var = (Cont).begin(), NCBI_NAME2(Var,_end) = (Cont).end();  Var != NCBI_NAME2(Var,_end);  ++Var )
+
+#define non_const_iterate(Type, Var, Cont) \
+    for ( Type::iterator Var = Cont.begin();  Var != Cont.end();  ++Var )
+
+
 END_NCBI_SCOPE
 
 #endif /* NCBISTD__HPP */

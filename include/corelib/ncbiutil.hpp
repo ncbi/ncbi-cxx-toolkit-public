@@ -34,9 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.14  2000/12/15 21:27:11  vasilche
-* Moved some typedefs/enums to serial/serialbase.hpp.
-* Removed explicit keyword from AutoPtr costructor.
+* Revision 1.15  2000/12/24 00:01:48  vakatov
+* Moved some code from NCBIUTIL to NCBISTD.
+* Fixed AutoPtr to always work with assoc.containers
 *
 * Revision 1.13  2000/12/12 14:20:14  vasilche
 * Added operator bool to CArgValue.
@@ -124,14 +124,12 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <map>
-#include <set>
 #include <memory>
-#include <list>
-#include <vector>
-#include <functional>
+#include <map>
+
 
 BEGIN_NCBI_SCOPE
+
 
 //-------------------------------------------
 // Utilities
@@ -142,7 +140,7 @@ struct p_equal_to : public binary_function
 <const T*, const T*, bool>
 {
     bool operator() (const T*& x, const T*& y) const
-        { return *x == *y; }
+    { return *x == *y; }
 };
 
 // check for equality object pointed by pointer
@@ -152,7 +150,7 @@ struct pair_equal_to : public binary_function
 {
     bool operator() (const Pair& x,
                      const typename Pair::second_type& y) const
-        { return x.second == y; }
+    { return x.second == y; }
 };
 
 // checker for not null value (after C malloc, strdup etc.)
@@ -165,38 +163,6 @@ inline X* NotNull(X* object)
     }
     return object;
 }
-
-// default create function
-template<class X>
-struct Creater
-{
-    static X* Create(void)
-        { return new X; }
-};
-
-// default delete function
-template<class X>
-struct Deleter
-{
-    static void Delete(X* object)
-        { delete object; }
-};
-
-// array delete function
-template<class X>
-struct ArrayDeleter
-{
-    static void Delete(X* object)
-        { delete[] object; }
-};
-
-// C structures delete function
-template<class X>
-struct CDeleter
-{
-    static void Delete(X* object)
-        { free(object); }
-};
 
 // get map element (pointer) or NULL if absent
 template<class Key, class Element>
@@ -229,13 +195,14 @@ template<class Key>
 inline string GetMapString(const map<Key, string>& m, const Key& key)
 {
     typename map<Key, string>::const_iterator ptr = m.find(key);
-    if ( ptr !=m.end() )
+    if ( ptr != m.end() )
         return ptr->second;
     return string();
 }
 
 template<class Key>
-inline void SetMapString(map<Key, string>& m, const Key& key, const string& data)
+inline void SetMapString(map<Key, string>& m,
+                         const Key& key, const string& data)
 {
     if ( !data.empty() )
         m[key] = data;
@@ -243,129 +210,40 @@ inline void SetMapString(map<Key, string>& m, const Key& key, const string& data
         m.erase(key);
 }
 
-// delete all elements from a container of pointers (list, vector, set, multiset)
-// clear container afterwards
+// delete all elements from a container of pointers
+// (list, vector, set, multiset);  clear the container afterwards
 template<class Cnt>
 inline void DeleteElements( Cnt& cnt )
 {
     for ( typename Cnt::iterator i = cnt.begin(); i != cnt.end(); ++i ) {
         delete *i;
     }
-	cnt.clear();
+    cnt.clear();
 }
 
-// delete all elements from map containing pointers
+// delete all elements from map containing pointers;
 // clear container afterwards
 template<class Key, class Element>
 inline void DeleteElements(map<Key, Element*>& m)
 {
-    for ( typename map<Key, Element*>::iterator i = m.begin(); i != m.end(); ++i ) {
+    for ( typename map<Key, Element*>::iterator i = m.begin();  i != m.end();
+          ++i ) {
         delete i->second;
     }
-	m.clear();
+    m.clear();
 }
 
-// delete all elements from multimap containing pointers
+// delete all elements from multimap containing pointers;
 // clear container afterwards
 template<class Key, class Element>
 inline void DeleteElements(multimap<Key, Element*>& m)
 {
-    for ( typename map<Key, Element*>::iterator i = m.begin(); i != m.end(); ++i ) {
+    for ( typename map<Key, Element*>::iterator i = m.begin();  i != m.end();
+          ++i ) {
         delete i->second;
     }
-	m.clear();
+    m.clear();
 }
-
-// Standard auto_ptr template from STL have designed in a way which does'n
-// allow to put it in STL containers (list, vector, map etc.).
-// The reason is absence of copy constructor and assignment operator.
-// We decided that it would be useful to have analog of STL's auto_ptr
-// without this restriction - AutoPtr.
-// NOTE: due to nature of AutoPtr it's copy constructor and assignment
-// operator modify source object - source object will hold NULL after use.
-// Also we added possibility to redefine the way pointer will be deleted:
-// second argument of template allows to put pointers from malloc in
-// AutoPtr. By default, nevertheless, pointers will be deleted by C++
-// delete operator.
-template< class X, class Del = Deleter<X> >
-class AutoPtr
-{
-public:
-    typedef X element_type;
-
-    AutoPtr(X* p = 0)
-        : m_Ptr(p)
-        {
-        }
-    AutoPtr(const AutoPtr<X>& p)
-        : m_Ptr(p.x_Release())
-        {
-        }
-
-    ~AutoPtr(void)
-        {
-            reset();
-        }
-
-    AutoPtr& operator=(const AutoPtr<X>& p)
-        {
-            reset(p.x_Release());
-            return *this;
-        }
-    AutoPtr& operator=(X* p)
-        {
-            reset(p);
-            return *this;
-        }
-
-    // bool operator is for using in if() clause
-    operator bool(void) const
-        {
-            return m_Ptr != 0;
-        }
-    // standard getters
-    X& operator*(void) const
-        {
-            return *m_Ptr;
-        }
-    X* operator->(void) const
-        {
-            return m_Ptr;
-        }
-    X* get(void) const
-        {
-            return m_Ptr;
-        }
-
-    // release will release ownership of pointer to caller
-    X* release(void)
-        {
-            X* ret = m_Ptr;
-            m_Ptr = 0;
-            return ret;
-        }
-    // reset will delete old pointer and set content to new value
-    void reset(X* p)
-        {
-            reset();
-            m_Ptr = p;
-        }
-
-private:
-    X* m_Ptr;
-
-    // release for const object
-    X* x_Release(void) const
-        {
-            return const_cast<AutoPtr<X>*>(this)->release();
-        }
-
-    // reset without  arguments
-    void reset(void)
-        {
-            Del::Delete(release());
-        }
-};
 
 template<class Result, class Source, class ToKey>
 inline
@@ -388,17 +266,11 @@ template<class Value>
 struct CNameGetter
 {
     const string& GetKey(const Value* value) const
-        {
-            return value->GetName();
-        }
+    {
+        return value->GetName();
+    }
 };
 
-// iterate is useful macro for writing 'for' statements with STL container
-// iterator as an variable.
-#define iterate(Type, Var, Cont) \
-    for ( Type::const_iterator Var = (Cont).begin(), NCBI_NAME2(Var,_end) = (Cont).end(); Var != NCBI_NAME2(Var,_end); ++Var )
-#define non_const_iterate(Type, Var, Cont) \
-    for ( Type::iterator Var = Cont.begin(); Var != Cont.end(); ++Var )
 
 END_NCBI_SCOPE
 
