@@ -164,7 +164,9 @@ public:
     // read 5-column feature table and return Seq-annot
     CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIstream& ifs,
                                              const string& seqid,
-                                             const string& annotname);
+                                             const string& annotname,
+                                             const bool reportBadKeys,
+                                             const bool keepBadKeys);
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -199,16 +201,16 @@ private:
 
     int x_ParseTrnaString (const string& val);
 
-    TFeatReaderMap   m_FeatKeys;
-    TQualReaderMap   m_QualKeys;
-    TOrgRefReaderMap m_OrgRefKeys;
-    TGenomeReaderMap m_GenomeKeys;
-    TSubSrcReaderMap m_SubSrcKeys;
-    TOrgModReaderMap m_OrgModKeys;
-    TBondReaderMap   m_BondKeys;
-    TSiteReaderMap   m_SiteKeys;
-    TTrnaReaderMap   m_TrnaKeys;
-    TSingleQualList  m_SingleKeys;
+    TFeatReaderMap    m_FeatKeys;
+    TQualReaderMap    m_QualKeys;
+    TOrgRefReaderMap  m_OrgRefKeys;
+    TGenomeReaderMap  m_GenomeKeys;
+    TSubSrcReaderMap  m_SubSrcKeys;
+    TOrgModReaderMap  m_OrgModKeys;
+    TBondReaderMap    m_BondKeys;
+    TSiteReaderMap    m_SiteKeys;
+    TTrnaReaderMap    m_TrnaKeys;
+    TSingleQualList   m_SingleKeys;
 };
 
 auto_ptr<CFeature_table_reader_imp> CFeature_table_reader::sm_Implementation;
@@ -315,8 +317,7 @@ static FeatInit feat_key_to_subtype [] = {
     { "virion",             CSeqFeatData::eSubtype_virion             },
     { "V_region",           CSeqFeatData::eSubtype_V_region           },
     { "V_segment",          CSeqFeatData::eSubtype_V_segment          },
-    { "Xref",               CSeqFeatData::eSubtype_seq                },
-    { "",                   CSeqFeatData::eSubtype_bad                }
+    { "Xref",               CSeqFeatData::eSubtype_seq                }
 };
 
 typedef struct qualinit {
@@ -1089,157 +1090,157 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
     } else if (m_QualKeys.find (qual) != m_QualKeys.end ()) {
 
         EQual qtype = m_QualKeys [qual];
-		switch (typ) {
-			case CSeqFeatData::e_Gene:
-				if (x_AddQualifierToGene (sfdata, qtype, val)) return true;
-				break;
-			case CSeqFeatData::e_Cdregion:
-				if (x_AddQualifierToCdregion (sfp, sfdata, qtype, val)) return true;
-				break;
-			case CSeqFeatData::e_Rna:
-				if (x_AddQualifierToRna (sfdata, qtype, val)) return true;
-				break;
-		   case CSeqFeatData::e_Imp:
-				if (x_AddQualifierToImp (sfp, sfdata, qtype, qual, val)) return true;
-				break;
-			case CSeqFeatData::e_Region:
-				if (qtype == eQual_region_name) {
-					sfdata.SetRegion (val);
-					return true;
-				}
-				break;
-			case CSeqFeatData::e_Bond:
-				if (qtype == eQual_bond_type) {
-					if (m_BondKeys.find (val) != m_BondKeys.end ()) {
-						CSeqFeatData::EBond btyp = m_BondKeys [val];
-						sfdata.SetBond (btyp);
-						return true;
-					}
-				}
-				break;
-			case CSeqFeatData::e_Site:
-				if (qtype == eQual_site_type) {
-					if (m_SiteKeys.find (val) != m_SiteKeys.end ()) {
-						CSeqFeatData::ESite styp = m_SiteKeys [val];
-						sfdata.SetSite (styp);
-						return true;
-					}
-				}
-				break;
-			default:
-				break;
-		}
-		switch (qtype) {
-			case eQual_pseudo:
-				sfp->SetPseudo (true);
-				return true;
-			case eQual_partial:
-				sfp->SetPartial (true);
-				return true;
-			case eQual_exception:
-				sfp->SetExcept (true);
-				sfp->SetExcept_text (val);
-				return true;
-			case eQual_evidence:
-				if (val == "experimental") {
-					sfp->SetExp_ev (CSeq_feat::eExp_ev_experimental);
-				} else if (val == "not_experimental" || val == "non_experimental" ||
-						   val == "not-experimental" || val == "non-experimental") {
-					sfp->SetExp_ev (CSeq_feat::eExp_ev_not_experimental);
-				}
-				return true;
-			case eQual_note:
-				{
-					if (sfp->CanGetComment ()) {
-						const CSeq_feat::TComment& comment = sfp->GetComment ();
-						CSeq_feat::TComment revised = comment + "; " + val;
-						sfp->SetComment (revised);
-					} else {
-						sfp->SetComment (val);
-					}
-					return true;
-				}
-			case eQual_allele:
-			case eQual_bound_moiety:
-			case eQual_clone:
-			case eQual_cons_splice:
-			case eQual_direction:
-			case eQual_EC_number:
-			case eQual_frequency:
-			case eQual_function:
-			case eQual_insertion_seq:
-			case eQual_label:
-			case eQual_map:
-			case eQual_number:
+        switch (typ) {
+            case CSeqFeatData::e_Gene:
+                if (x_AddQualifierToGene (sfdata, qtype, val)) return true;
+                break;
+            case CSeqFeatData::e_Cdregion:
+                if (x_AddQualifierToCdregion (sfp, sfdata, qtype, val)) return true;
+                break;
+            case CSeqFeatData::e_Rna:
+                if (x_AddQualifierToRna (sfdata, qtype, val)) return true;
+                break;
+           case CSeqFeatData::e_Imp:
+                if (x_AddQualifierToImp (sfp, sfdata, qtype, qual, val)) return true;
+                break;
+            case CSeqFeatData::e_Region:
+                if (qtype == eQual_region_name) {
+                    sfdata.SetRegion (val);
+                    return true;
+                }
+                break;
+            case CSeqFeatData::e_Bond:
+                if (qtype == eQual_bond_type) {
+                    if (m_BondKeys.find (val) != m_BondKeys.end ()) {
+                        CSeqFeatData::EBond btyp = m_BondKeys [val];
+                        sfdata.SetBond (btyp);
+                        return true;
+                    }
+                }
+                break;
+            case CSeqFeatData::e_Site:
+                if (qtype == eQual_site_type) {
+                    if (m_SiteKeys.find (val) != m_SiteKeys.end ()) {
+                        CSeqFeatData::ESite styp = m_SiteKeys [val];
+                        sfdata.SetSite (styp);
+                        return true;
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+        switch (qtype) {
+            case eQual_pseudo:
+                sfp->SetPseudo (true);
+                return true;
+            case eQual_partial:
+                sfp->SetPartial (true);
+                return true;
+            case eQual_exception:
+                sfp->SetExcept (true);
+                sfp->SetExcept_text (val);
+                return true;
+            case eQual_evidence:
+                if (val == "experimental") {
+                    sfp->SetExp_ev (CSeq_feat::eExp_ev_experimental);
+                } else if (val == "not_experimental" || val == "non_experimental" ||
+                           val == "not-experimental" || val == "non-experimental") {
+                    sfp->SetExp_ev (CSeq_feat::eExp_ev_not_experimental);
+                }
+                return true;
+            case eQual_note:
+                {
+                    if (sfp->CanGetComment ()) {
+                        const CSeq_feat::TComment& comment = sfp->GetComment ();
+                        CSeq_feat::TComment revised = comment + "; " + val;
+                        sfp->SetComment (revised);
+                    } else {
+                        sfp->SetComment (val);
+                    }
+                    return true;
+                }
+            case eQual_allele:
+            case eQual_bound_moiety:
+            case eQual_clone:
+            case eQual_cons_splice:
+            case eQual_direction:
+            case eQual_EC_number:
+            case eQual_frequency:
+            case eQual_function:
+            case eQual_insertion_seq:
+            case eQual_label:
+            case eQual_map:
+            case eQual_number:
             case eQual_operon:
-			case eQual_organism:
-			case eQual_PCR_conditions:
-			case eQual_phenotype:
-			case eQual_product:
-			case eQual_protein_id:
-			case eQual_replace:
-			case eQual_rpt_family:
-			case eQual_rpt_type:
-			case eQual_rpt_unit:
-			case eQual_standard_name:
-			case eQual_transcript_id:
-			case eQual_transposon:
-			case eQual_usedin:
-				{
-					CSeq_feat::TQual& qlist = sfp->SetQual ();
-					CRef<CGb_qual> gbq (new CGb_qual);
-					gbq->SetQual (qual);
-					gbq->SetVal (val);
-					qlist.push_back (gbq);
-					return true;
-				}
-			case eQual_gene:
-				{
-					CGene_ref& grp = sfp->SetGeneXref ();
-					if (val == "-") {
-						grp.SetLocus ("");
-					} else {
-						grp.SetLocus (val);
-					}
-					return true;
-				}
-			case eQual_gene_desc:
-				{
-					CGene_ref& grp = sfp->SetGeneXref ();
-					grp.SetDesc (val);
-					return true;
-				}
-			case eQual_gene_syn:
-				{
-					CGene_ref& grp = sfp->SetGeneXref ();
-					CGene_ref::TSyn& syn = grp.SetSyn ();
-					syn.push_back (val);
-					return true;
-				}
-			case eQual_locus_tag:
-				{
-					CGene_ref& grp = sfp->SetGeneXref ();
-					grp.SetLocus_tag (val);
-					return true;
-				}
-			case eQual_db_xref:
-				{
-					string db, tag;
-					if (NStr::SplitInTwo (val, ":", db, tag)) {
-						CSeq_feat::TDbxref& dblist = sfp->SetDbxref ();
-						CRef<CDbtag> dbt (new CDbtag);
-						dbt->SetDb (db);
-						CRef<CObject_id> oid (new CObject_id);
-						oid->SetStr (tag);
-						dbt->SetTag (*oid);
-						dblist.push_back (dbt);
-						return true;
-					}
-					return true;
-				}
-			default:
-				break;
-		}
+            case eQual_organism:
+            case eQual_PCR_conditions:
+            case eQual_phenotype:
+            case eQual_product:
+            case eQual_protein_id:
+            case eQual_replace:
+            case eQual_rpt_family:
+            case eQual_rpt_type:
+            case eQual_rpt_unit:
+            case eQual_standard_name:
+            case eQual_transcript_id:
+            case eQual_transposon:
+            case eQual_usedin:
+                {
+                    CSeq_feat::TQual& qlist = sfp->SetQual ();
+                    CRef<CGb_qual> gbq (new CGb_qual);
+                    gbq->SetQual (qual);
+                    gbq->SetVal (val);
+                    qlist.push_back (gbq);
+                    return true;
+                }
+            case eQual_gene:
+                {
+                    CGene_ref& grp = sfp->SetGeneXref ();
+                    if (val == "-") {
+                        grp.SetLocus ("");
+                    } else {
+                        grp.SetLocus (val);
+                    }
+                    return true;
+                }
+            case eQual_gene_desc:
+                {
+                    CGene_ref& grp = sfp->SetGeneXref ();
+                    grp.SetDesc (val);
+                    return true;
+                }
+            case eQual_gene_syn:
+                {
+                    CGene_ref& grp = sfp->SetGeneXref ();
+                    CGene_ref::TSyn& syn = grp.SetSyn ();
+                    syn.push_back (val);
+                    return true;
+                }
+            case eQual_locus_tag:
+                {
+                    CGene_ref& grp = sfp->SetGeneXref ();
+                    grp.SetLocus_tag (val);
+                    return true;
+                }
+            case eQual_db_xref:
+                {
+                    string db, tag;
+                    if (NStr::SplitInTwo (val, ":", db, tag)) {
+                        CSeq_feat::TDbxref& dblist = sfp->SetDbxref ();
+                        CRef<CDbtag> dbt (new CDbtag);
+                        dbt->SetDb (db);
+                        CRef<CObject_id> oid (new CObject_id);
+                        oid->SetStr (tag);
+                        dbt->SetTag (*oid);
+                        dblist.push_back (dbt);
+                        return true;
+                    }
+                    return true;
+                }
+            default:
+                break;
+        }
     }
     return false;
 }
@@ -1288,7 +1289,13 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSe
 }
 
 
-CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIstream& ifs, const string& seqid, const string& annotname)
+CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
+  CNcbiIstream& ifs,
+  const string& seqid,
+  const string& annotname,
+  const bool reportBadKeys,
+  const bool keepBadKeys
+)
 
 {
     string line;
@@ -1386,7 +1393,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIstream
                                 imp.SetKey (feat);
                             }
 
-                            ftable.push_back(sfp);
+                            ftable.push_back (sfp);
 
                             // now create location
 
@@ -1398,11 +1405,24 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIstream
 
                             x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3);
 
-                        } else {
-                            // post error - unrecognized feature key
                         }
                     } else {
-                        // post error - unrecognized feature key
+
+                        // unrecognized feature key
+
+                        if (reportBadKeys) {
+                            ERR_POST (Warning << "Unrecognized feature " << feat);
+                        }
+
+                        if (keepBadKeys) {
+                            sfp.Reset (new CSeq_feat);
+                            sfp->ResetLocation ();
+                            sfp->SetData ().Select (CSeqFeatData::e_Imp);
+                            CSeqFeatData& sfdata = sfp->SetData ();
+                            CImp_feat_Base& imp = sfdata.SetImp ();
+                            imp.SetKey (feat);
+                            ftable.push_back (sfp);
+                        }
                     }
 
                 } else if (start >= 0 && stop >= 0 && feat.empty () && qual.empty () && val.empty ()) {
@@ -1415,7 +1435,22 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIstream
 
                     // process qual - val qualifier line
 
-                    x_AddQualifierToFeature (sfp, qual, val);
+                    if (! x_AddQualifierToFeature (sfp, qual, val)) {
+
+                        // unrecognized qualifier key
+
+                        if (reportBadKeys) {
+                            ERR_POST (Warning << "Unrecognized qualifier " << qual);
+                        }
+
+                        if (keepBadKeys) {
+                            CSeq_feat::TQual& qlist = sfp->SetQual ();
+                            CRef<CGb_qual> gbq (new CGb_qual);
+                            gbq->SetQual (qual);
+                            gbq->SetVal (val);
+                            qlist.push_back (gbq);
+                        }
+                    }
 
                 } else if ((! qual.empty ()) && (val.empty ())) {
 
@@ -1436,7 +1471,12 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIstream
 
 // public access functions
 
-CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (CNcbiIstream& ifs)
+CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
+  CNcbiIstream& ifs,
+  const bool reportBadKeys,
+  const bool keepBadKeys
+)
+
 {
     string line, fst, scd, seqid, annotname;
     int pos;
@@ -1460,7 +1500,8 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (CNcbiIstream& if
 
     // then read features from 5-column table
 
-    CRef<CSeq_annot> sap = x_GetImplementation ().ReadSequinFeatureTable (ifs, seqid, annotname);
+    CRef<CSeq_annot> sap = x_GetImplementation ().ReadSequinFeatureTable (ifs, seqid, annotname,
+                                                                          reportBadKeys, keepBadKeys);
 
     // go through all features and demote single interval seqlocmix to seqlocint
 
@@ -1485,11 +1526,19 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (CNcbiIstream& if
     return sap;
 }
 
-CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (CNcbiIstream& ifs, const string& seqid, const string& annotname)
+CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
+  CNcbiIstream& ifs,
+  const string& seqid,
+  const string& annotname,
+  const bool reportBadKeys,
+  const bool keepBadKeys
+)
+
 {
     // just read features from 5-column table
 
-    CRef<CSeq_annot> sap = x_GetImplementation ().ReadSequinFeatureTable (ifs, seqid, annotname);
+    CRef<CSeq_annot> sap = x_GetImplementation ().ReadSequinFeatureTable (ifs, seqid, annotname,
+                                                                          reportBadKeys, keepBadKeys);
 
     // go through all features and demote single interval seqlocmix to seqlocint
 
