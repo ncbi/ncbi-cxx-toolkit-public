@@ -128,8 +128,10 @@ static string s_SetterName(const string& element) {
 
 
 CClientPseudoDataType::CClientPseudoDataType(const CCodeGenerator& generator,
+                                             const string& section_name,
                                              const string& class_name)
-    : m_Generator(generator), m_ClassName(class_name)
+    : m_Generator(generator), m_SectionName(section_name),
+      m_ClassName(class_name)
 {
     // Just take the first potential module; should normally give sane
     // results.
@@ -137,9 +139,9 @@ CClientPseudoDataType::CClientPseudoDataType(const CCodeGenerator& generator,
               ->GetModules().front().get(),
               class_name);
 
-    s_SplitName(generator.GetConfig().Get("client", "request"),
+    s_SplitName(generator.GetConfig().Get(m_SectionName, "request"),
                 m_RequestType, m_RequestElement);
-    s_SplitName(generator.GetConfig().Get("client", "reply"),
+    s_SplitName(generator.GetConfig().Get(m_SectionName, "reply"),
                 m_ReplyType, m_ReplyElement);
     if (m_RequestType.empty()) {
         NCBI_THROW(CDatatoolException, eInvalidData,
@@ -185,6 +187,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
                                                  const string& /* classPfx */)
     const
 {
+    const string&         sect_name  = m_Source.m_SectionName;
     const string&         class_name = m_Source.m_ClassName;
     string                class_base = class_name + "_Base";
     const CCodeGenerator& generator  = m_Source.m_Generator;
@@ -229,8 +232,8 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
 
     {{
         // Figure out arguments to parent's constructor
-        string service = generator.GetConfig().Get("client", "service");
-        string format  = generator.GetConfig().Get("client", "serialformat");
+        string service = generator.GetConfig().Get(sect_name, "service");
+        string format  = generator.GetConfig().Get(sect_name, "serialformat");
         string args;
         if (service.empty()) {
             ERR_POST(Warning << "No service name provided for " << class_name);
@@ -394,7 +397,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
     ITERATE (TChoices, it, choices) {
         typedef AutoPtr<CTypeStrings> TTypeStr;
         string name  = (*it)->GetName();
-        string reply = m_Source.m_Generator.GetConfig().Get("client",
+        string reply = m_Source.m_Generator.GetConfig().Get(sect_name,
                                                             "reply." + name);
         if (reply.empty()) {
             reply = name;
@@ -468,6 +471,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/04/08 20:40:08  ucko
+* Get client name(s) from [-]clients rather than hardcoding "client"
+*
 * Revision 1.7  2003/04/04 19:34:25  ucko
 * Let request and reply be deeply nested subelements.
 * Make s_* actually static.  (Oops.)

@@ -103,7 +103,8 @@ public:
     bool Check(void) const;
 
     void GenerateCode(void);
-    bool GenerateClientCode(void);
+    void GenerateClientCode(void);
+    void GenerateClientCode(const string& name, bool mandatory);
 
     bool Imported(const CDataType* type) const;
 
@@ -167,6 +168,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/04/08 20:40:08  ucko
+* Get client name(s) from [-]clients rather than hardcoding "client"
+*
 * Revision 1.9  2003/02/24 21:56:38  gouriano
 * added odw flag - to issue a warning about missing DEF file
 *

@@ -422,22 +422,43 @@ void CCodeGenerator::GenerateCode(void)
     GenerateClientCode();
 }
 
-bool CCodeGenerator::GenerateClientCode(void)
+void CCodeGenerator::GenerateClientCode(void)
 {
-    string class_name = m_Config.Get("client", "class");
-    if (class_name.empty()) {
-        return false; // not configured
+    string clients = m_Config.Get("-", "clients");
+    if (clients.empty()) {
+        // // for compatibility with older specifications
+        // GenerateClientCode("client", false);
+    } else {
+        // explicit name; must be enabled
+        list<string> l;
+        // if multiple items, may have whitespace, commas, or both...
+        NStr::Split(clients, ", \t", l);
+        iterate (list<string>, it, l) {
+            if ( !it->empty() ) {
+                GenerateClientCode(*it, true);
+            }
+        }
     }
-    CFileCode code(this,Path(m_FileNamePrefix, "client"));
+}
+
+void CCodeGenerator::GenerateClientCode(const string& name, bool mandatory)
+{
+    string class_name = m_Config.Get(name, "class");
+    if (class_name.empty()) {
+        if (mandatory) {
+            ERR_POST(Fatal << "No configuration for mandatory client " + name);
+        }
+        return; // not configured
+    }
+    CFileCode code(this,Path(m_FileNamePrefix, name));
     code.UseQuotedForm(m_UseQuotedForm);
-    code.AddType(new CClientPseudoDataType(*this, class_name));
+    code.AddType(new CClientPseudoDataType(*this, name, class_name));
     code.GenerateCode();
     string filename;
     code.GenerateHPP(m_HPPDir, filename);
     code.GenerateCPP(m_CPPDir, filename);
     code.GenerateUserHPP(m_HPPDir, filename);
     code.GenerateUserCPP(m_CPPDir, filename);
-    return true;
 }
 
 bool CCodeGenerator::AddType(const CDataType* type)
@@ -640,6 +661,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2003/04/08 20:40:08  ucko
+* Get client name(s) from [-]clients rather than hardcoding "client"
+*
 * Revision 1.49  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
 *

@@ -45,6 +45,7 @@ class CClientPseudoDataType : public CDataType
 public:
     // real methods
     CClientPseudoDataType(const CCodeGenerator& generator,
+                          const string& section_name,
                           const string& class_name);
     AutoPtr<CTypeStrings> GenerateCode(void) const;
 
@@ -57,6 +58,7 @@ public:
 
 private:
     const CCodeGenerator& m_Generator; // source of all wisdom
+    string                m_SectionName;
     string                m_ClassName; // already extracted anyway...
     string                m_RequestType,         m_ReplyType;
     string                m_RequestElement,      m_ReplyElement;
@@ -72,6 +74,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/04/08 20:40:08  ucko
+* Get client name(s) from [-]clients rather than hardcoding "client"
+*
 * Revision 1.1  2002/11/13 00:46:06  ucko
 * Add RPC client generator; CVS logs to end in generate.?pp
 *
