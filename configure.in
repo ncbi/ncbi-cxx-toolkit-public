@@ -1,0 +1,197 @@
+#############################################################################
+#  $RCSfile$  $Revision$  $Date$
+# ==========================================================================
+#
+#                            PUBLIC DOMAIN NOTICE
+#               National Center for Biotechnology Information
+#
+#  This software/database is a "United States Government Work" under the
+#  terms of the United States Copyright Act.  It was written as part of
+#  the author's official duties as a United States Government employee and
+#  thus cannot be copyrighted.  This software/database is freely available
+#  to the public for use. The National Library of Medicine and the U.S.
+#  Government have not placed any restriction on its use or reproduction.
+#
+#  Although all reasonable efforts have been taken to ensure the accuracy
+#  and reliability of the software and data, the NLM and the U.S.
+#  Government do not and cannot warrant the performance or results that
+#  may be obtained by using this software or data. The NLM and the U.S.
+#  Government disclaim all warranties, express or implied, including
+#  warranties of performance, merchantability or fitness for any particular
+#  purpose.
+#
+#  Please cite the author in any work or product based on this material.
+#
+# ==========================================================================
+#
+# Author:  Denis Vakatov
+#
+# File Description:
+#   Generate platform-dependent header("config.h") for NCBI C++ libs
+#   USAGE:
+#    1) Process this file with "autoconf" to produce a "configure" script.
+#    2) Run the resultant "configure" script to produce
+#      a) "ncbiconf.h"
+#      a) "Makefile"
+#    NOTE:  "--exec_prefix" flag must be specified by the user!
+#
+#############################################################################
+
+
+AC_REVISION($Revision$)
+AC_INIT(${top_srcdir}/include/corelib/ncbitype.h)
+AC_CONFIG_HEADER(${exec_prefix}/include/ncbiconf.h:config.h.in)
+
+
+#############################################################################
+
+
+#### Check if "${exec_prefix}" dir is defined
+if test -z "${exec_prefix}"  ||  test "${exec_prefix}" = "NONE" ; then
+  AC_MSG_ERROR([Use option \"--exec_prefix\" to define output dirs!])
+fi
+
+#### Check if there is "${exec_prefix}" dir
+if test ! -d "${exec_prefix}" ; then
+  AC_MSG_ERROR(
+   [Directory \"${exec_prefix}\"(see \"--exec_prefix\") does not exist!])
+fi
+
+#### Check if the source directory already has a configured system in it.
+if test -f "${exec_prefix}/include/ncbiconf.h" ; then
+  AC_MSG_ERROR([There is already a built "${exec_prefix}/include/ncbiconf.h"!])
+fi
+
+AC_CANONICAL_HOST
+AC_DEFINE_UNQUOTED(HOST,        "$host")
+AC_DEFINE_UNQUOTED(HOST_CPU,    "$host_cpu")
+AC_DEFINE_UNQUOTED(HOST_VENDOR, "$host_vendor")
+AC_DEFINE_UNQUOTED(HOST_OS,     "$host_os")
+
+AC_LANG_CPLUSPLUS
+AC_PROG_CXX
+
+changequote(, )dnl
+if test -z "$ac_not_debug"  ; then ### debug / non-debug
+  CFLAGS=`echo $CFLAGS | sed 's/[-]O[0-9]*/-D_DEBUG/g'`
+  CXXFLAGS=`echo $CXXFLAGS | sed 's/[-]O[0-9]*/-D_DEBUG/g'`
+else
+  CFLAGS=`echo $CFLAGS | sed 's/[-]g[0-9]//g'`
+  CXXFLAGS=`echo $CXXFLAGS | sed 's/[-]g[0-9]//g'`
+fi
+
+if test "$GCC" = "yes" ; then
+  CFLAGS=`echo $CFLAGS | sed 's/[-]g[0-9]*/-g3/g;s/[-]O[0-9]*/-O4/g' `
+  CFLAGS="-Wall $CFLAGS"
+  CXXFLAGS=`echo $CXXFLAGS | sed 's/[-]g[0-9]*/-g3/g;s/[-]O[0-9]*/-O4/g' `
+  CXXFLAGS="-Wall $CXXFLAGS"
+elif test "$CXX" = "cl -TP"  ||  test "$CXX" = "cl.exe -TP" ; then  ### MSVC++ compiler
+  CFLAGS=`echo $CFLAGS | sed 's/[-]g[0-9]*/-DEBUG/g;s/[-]O[0-9]*/-O/g' `
+  CFLAGS="-W4 $CFLAGS"
+  CXXFLAGS=`echo $CXXFLAGS | sed 's/[-]g[0-9]*/-DEBUG/g;s/[-]O[0-9]*/-O/g' `
+  CXXFLAGS="-W4 $CXXFLAGS"
+  CPPFLAGS="/nologo $CPPFLAGS"
+elif test -d /usr/local/lib ; then
+    LDFLAGS="-L/usr/local/lib $LDFLAGS"
+fi
+changequote([, ])dnl
+
+
+### ------------------------------------------------------------------
+### ------------------------------------------------------------------
+
+dnl Check for header files.
+dnl ---------------------------------
+AC_CHECK_HEADERS(iostream  iostream.h)
+AC_CHECK_HEADERS(fstream   fstream.h)
+AC_CHECK_HEADERS(strstream strstream.h strstrea.h)
+AC_CHECK_HEADERS(string)
+AC_CHECK_HEADERS(unistd.h windows.h)
+
+
+dnl Check for typedefs, structures, and compiler characteristics.
+dnl --------------------------------------------------------------
+AC_CXX_CONST
+AC_TYPE_SIZE_T
+
+AC_MSG_CHECKING(if C++ namespaces are supported)
+AC_TRY_COMPILE(
+   [namespace NS { int i; }  using namespace NS;],
+   ,
+   AC_DEFINE_UNQUOTED(HAVE_NAMESPACE, 1)
+)
+AC_MSG_RESULT()
+
+AC_MSG_CHECKING(if in-class template functions are supported)
+AC_TRY_COMPILE(
+   [class C { template<class T> operator<<(const T& t) {} };],
+   ,
+   ,
+   AC_DEFINE_UNQUOTED(NO_INCLASS_TMPL, 1)
+)
+AC_MSG_RESULT()
+
+AC_MSG_CHECKING(can we use exception specifications throw(...) in func.proto)
+AC_TRY_RUN(
+   [template <class T> inline int test_throw_spec(const T&) throw() {
+      return 0;
+   }
+   int main(void) {
+      return test_throw_spec(123);
+   }],
+   AC_DEFINE_UNQUOTED(NCBI_USE_THROW_SPEC, 1)
+)
+AC_MSG_RESULT()
+
+
+
+dnl Check for C standard types
+dnl ---------------------------------
+AC_C_BIGENDIAN
+AC_C_CHAR_UNSIGNED
+AC_CHECK_SIZEOF(void*)
+AC_CHECK_SIZEOF(char)
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
+AC_CHECK_SIZEOF(__int64)
+AC_CHECK_SIZEOF(double)
+AC_CHECK_SIZEOF(long double)
+
+AC_OUTPUT(, echo "done")
+
+
+#############################################################################
+### Compose a list of makefile templates("Makefile.in") in subdirs,
+### then configure them into regular makefiles("Makefile")
+
+makefiles=`find ${top_srcdir} -name Makefile.in -print | sed 's/Makefile\.in/Makefile/g'`
+if test -z "$makefiles" ; then
+  AC_MSG_ERROR([Cannot find any of \"Makefile.in\" below \"${top_srcdir}\"!])
+fi
+
+dnl Makefile substitutions
+dnl ----------------------
+
+AC_SUBST(host)
+
+AC_SUBST(top_srcdir)
+AC_SUBST(srcdir)
+AC_SUBST(bindir)
+AC_SUBST(libdir)
+
+AC_SUBST(CC)
+AC_SUBST(CXX)
+AC_SUBST(CPP)
+AC_SUBST(AR)
+AC_SUBST(RANLIB)
+
+AC_SUBST(CFLAGS)
+AC_SUBST(CXXFLAGS)
+AC_SUBST(CPPFLAGS)
+AC_SUBST(LDFLAGS)
+AC_SUBST(LIBS)
+
+
+AC_OUTPUT(  ${makefiles} )

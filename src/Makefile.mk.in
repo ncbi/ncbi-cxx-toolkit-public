@@ -1,0 +1,77 @@
+#################################
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+#################################
+#
+# This template must be "configure"d and included in the very beginning
+# of all underlying configurable NCBI project makefiles exactly this way:
+#
+# srcdir = @srcdir@
+# include @exec_prefix@/Makefile.mk
+#
+#################################
+
+
+### Make sure we are using a right command shell
+
+SHELL = /bin/sh
+
+
+### Configurable directories
+
+exec_prefix = @exec_prefix@
+top_srcdir  = @top_srcdir@
+includedir  = $(top_srcdir)/include
+libdir      = @libdir@
+bindir      = @bindir@
+
+INCLUDE = -I$(exec_prefix)/include -I$(srcdir) -I$(includedir) 
+
+
+### Auxiliary commands
+
+RM    = rm
+RMDIR = rm -r
+COPY  = cp -p
+
+
+### Configurable compiler/librarian/linker binaries and options
+### (ORIG-Set:  not to be alternated!)
+
+ORIG_CC     = @CC@
+ORIG_CXX    = @CXX@
+ORIG_CPP    = @CPP@
+ORIG_AR     = @AR@
+ORIG_RANLIB = @RANLIB@
+ORIG_LINK   = @CXX@
+
+ORIG_CFLAGS   = @CFLAGS@
+ORIG_CXXFLAGS = @CXXFLAGS@
+ORIG_CPPFLAGS = @CPPFLAGS@
+ORIG_LDFLAGS  = @LDFLAGS@
+ORIG_LIBS     = @LIBS@ 
+
+
+### Configurable compiler/librarian/linker binaries and options
+### (WORK-Set:  to be used by standard build rules;
+###             can be modified to meet a particular project requirements)
+
+CC     = @CC@
+CXX    = @CXX@
+CPP    = @CPP@
+AR     = @AR@
+RANLIB = @RANLIB@
+LINK   = @CXX@
+
+CFLAGS   = @CFLAGS@
+CXXFLAGS = @CXXFLAGS@
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS  = @LDFLAGS@
+LIBS     = @LIBS@ 
+
+
+### Do not use any default suffix rules
+
+.SUFFIXES:
+
+#################################
