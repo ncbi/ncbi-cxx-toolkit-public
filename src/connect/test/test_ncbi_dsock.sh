@@ -2,7 +2,7 @@
 # $Id$
 
 exit_code=0
-port="555`expr $$ % 100`"
+port="585`expr $$ % 100`"
 
 test_ncbi_dsock server $port >/dev/null 2>&1 &
 server_pid=$!

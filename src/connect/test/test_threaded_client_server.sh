@@ -2,7 +2,7 @@
 # $Id$
 
 status=0
-port="555`expr $$ % 100`"
+port="565`expr $$ % 100`"
 
 test_threaded_server -port $port &
 server_pid=$!

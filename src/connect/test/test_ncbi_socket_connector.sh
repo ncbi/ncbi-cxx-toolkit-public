@@ -2,7 +2,7 @@
 # $Id$
 
 exit_code=0
-port="555`expr $$ % 100`"
+port="575`expr $$ % 100`"
 rm -f socket_io_bouncer.log test_ncbi_socket_connector.log
 
 CONN_DEBUG_PRINTOUT=ALL; export CONN_DEBUG_PRINTOUT
