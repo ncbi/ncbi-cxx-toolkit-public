@@ -405,20 +405,44 @@ int CBlast2seqApplication::Run(void)
 {
     try {
         InitObjMgr();
+        int counter = 0;
         const CArgs args = GetArgs();
+        Uint1 program_number;
+
         if (args["trace"])
             SetDiagTrace(eDT_Enable);
 
-        int counter = 0;
+        BlastProgram2Number(args["program"].AsString().c_str(), 
+                            &program_number);
+        EProgram program = static_cast<EProgram>(program_number);
+        ENa_strand query_strand = eNa_strand_unknown;
+        ENa_strand subject_strand = eNa_strand_unknown;
+
+        if (program == eBlastn ||
+            program == eBlastx) {
+            int cmdline_strand = args["strand"].AsInteger();
+
+            if (cmdline_strand == 1)
+                query_strand = eNa_strand_plus;
+            else if (cmdline_strand == 2)
+                query_strand = eNa_strand_minus;
+            else
+                query_strand = eNa_strand_both;
+         }
+
+        if (program == eBlastn ||
+            program == eTblastn ||
+            program == eTblastx)
+            subject_strand = eNa_strand_both;
 
         // Retrieve input sequences
         TSeqLocVector query_loc = 
             BLASTGetSeqLocFromStream(args["query"].AsInputFile(), *m_ObjMgr,
-              eNa_strand_unknown, 0, 0, &counter, args["lcase"].AsBoolean());
+              query_strand, 0, 0, &counter, args["lcase"].AsBoolean());
 
         TSeqLocVector subject_loc = 
             BLASTGetSeqLocFromStream(args["subject"].AsInputFile(), *m_ObjMgr,
-              eNa_strand_unknown, 0, 0, &counter);
+              subject_strand, 0, 0, &counter);
 
         CBlastOptionsHandle& opt_handle = *ProcessCommandLineArgs();
 
@@ -469,6 +493,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/04/19 21:35:23  papadopo
+ * explicitly calculate strands for input sequences
+ *
  * Revision 1.40  2004/03/26 18:50:32  camacho
  * Use CException::what() in catch block
  *
