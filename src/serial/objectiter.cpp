@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/08/11 15:25:52  grichenk
+* Added possibility to reset an object member from
+* a read hook (including non-optional members).
+*
 * Revision 1.7  2003/07/29 18:47:47  vasilche
 * Fixed thread safeness of object stream hooks.
 *
@@ -237,10 +241,11 @@ pair<TObjectPtr, TTypeInfo> CObjectInfoMI::GetMemberPair(void) const
                      memberInfo->GetTypeInfo());
 }
 
-void CObjectInfoMI::Erase(void)
+void CObjectInfoMI::Erase(EEraseFlag flag)
 {
     const CMemberInfo* mInfo = GetMemberInfo();
-    if ( !mInfo->Optional() || mInfo->GetDefault() )
+    if ( !(mInfo->Optional() || flag == eErase_Mandatory)
+        || mInfo->GetDefault() )
         NCBI_THROW(CSerialException,eIllegalCall, "cannot reset non OPTIONAL member");
     
     TObjectPtr objectPtr = m_Object.GetObjectPtr();

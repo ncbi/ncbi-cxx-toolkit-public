@@ -37,6 +37,7 @@
 #include <serial/serialdef.hpp>
 #include <serial/objecttype.hpp>
 #include <serial/objstack.hpp>
+#include <serial/objectiter.hpp>
 
 
 /** @addtogroup HookSupport
@@ -53,12 +54,6 @@ class CObjectStreamCopier;
 class CObjectInfo;
 class CConstObjectInfo;
 class CObjectTypeInfo;
-class CObjectInfoMI;
-class CConstObjectInfoMI;
-class CObjectTypeInfoMI;
-class CObjectInfoCV;
-class CConstObjectInfoCV;
-class CObjectTypeInfoCV;
 
 class NCBI_XSERIAL_EXPORT CReadObjectHook : public CObject
 {
@@ -87,6 +82,9 @@ public:
                      const CObjectInfoMI& object);
     void DefaultSkip(CObjectIStream& in,
                      const CObjectInfoMI& object);
+    void ResetMember(const CObjectInfoMI& object,
+                     CObjectInfoMI::EEraseFlag flag =
+                         CObjectInfoMI::eErase_Optional);
 };
 
 class NCBI_XSERIAL_EXPORT CReadChoiceVariantHook : public CObject
@@ -426,6 +424,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/08/11 15:25:50  grichenk
+* Added possibility to reset an object member from
+* a read hook (including non-optional members).
+*
 * Revision 1.13  2003/07/29 18:47:46  vasilche
 * Fixed thread safeness of object stream hooks.
 *

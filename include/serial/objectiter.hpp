@@ -295,7 +295,11 @@ public:
     CObjectInfo operator*(void) const;
 
     // reset value of member to default state
-    void Erase(void);
+    enum EEraseFlag {
+        eErase_Optional, // default - erase optional member only
+        eErase_Mandatory // allow erasing mandatory members, may be dangerous!
+    };
+    void Erase(EEraseFlag flag = eErase_Optional);
     void Reset(void);
 
 private:
@@ -427,6 +431,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/08/11 15:25:50  grichenk
+* Added possibility to reset an object member from
+* a read hook (including non-optional members).
+*
 * Revision 1.6  2003/07/29 18:47:46  vasilche
 * Fixed thread safeness of object stream hooks.
 *

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/08/11 15:25:52  grichenk
+* Added possibility to reset an object member from
+* a read hook (including non-optional members).
+*
 * Revision 1.8  2003/07/29 19:14:31  vasilche
 * Added missing methods.
 *
@@ -168,6 +172,12 @@ void CReadClassMemberHook::DefaultRead(CObjectIStream& in,
                                        const CObjectInfoMI& object)
 {
     in.ReadClassMember(object);
+}
+
+void CReadClassMemberHook::ResetMember(const CObjectInfoMI& object,
+                                       CObjectInfoMI::EEraseFlag flag)
+{
+    const_cast<CObjectInfoMI&>(object).Erase(flag);
 }
 
 void CReadClassMemberHook::DefaultSkip(CObjectIStream& in,
