@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2002/11/18 20:49:11  thiessen
+* move unaligned/no-coord colors into Colors class
+*
 * Revision 1.68  2002/11/10 01:26:16  thiessen
 * tweak loading of style annotation residue ranges
 *
@@ -897,7 +900,6 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
     }
 
     // determine color
-    static const Vector unalignedColor(175.0/255, 175.0/255, 175.0/255);
     StyleSettings::eColorScheme
         colorStyle = backboneStyle ? backboneStyle->colorScheme : generalStyle->colorScheme;
     switch (colorStyle) {
@@ -924,7 +926,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
                 break;
             }
             if (colorStyle != StyleSettings::eAligned) {
-                atomStyle->color = unalignedColor;
+                atomStyle->color = GlobalColors()->Get(Colors::eUnaligned);
                 break;
             }
             // if eAligned and not aligned, then fall through to use eObject coloring

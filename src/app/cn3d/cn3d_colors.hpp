@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/11/18 20:49:11  thiessen
+* move unaligned/no-coord colors into Colors class
+*
 * Revision 1.11  2001/09/04 14:40:26  thiessen
 * add rainbow and charge coloring
 *
@@ -111,6 +114,8 @@ public:
         eNoDomain,
         eNoTemperature,
         eNoHydrophobicity,
+        eUnaligned,
+        eNoCoordinates,
 
         eNumColors
     };

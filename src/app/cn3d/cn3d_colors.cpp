@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/11/18 20:49:11  thiessen
+* move unaligned/no-coord colors into Colors class
+*
 * Revision 1.14  2001/09/04 15:38:03  thiessen
 * switch red/blue charge colors
 *
@@ -124,6 +127,8 @@ Colors::Colors(void)
     colors[eNoDomain].Set(.4, .4, .4);
     colors[eNoTemperature].Set(.4, .4, .4);
     colors[eNoHydrophobicity].Set(.4, .4, .4);
+    colors[eUnaligned].Set(.4, .4, .4);
+    colors[eNoCoordinates].Set(.4, .4, .4);
 
     // cycles and maps
     cycleColors.resize(eNumColorCycles);

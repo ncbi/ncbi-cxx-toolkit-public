@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2002/11/18 20:49:11  thiessen
+* move unaligned/no-coord colors into Colors class
+*
 * Revision 1.39  2002/10/23 01:29:25  thiessen
 * fix block cache bug
 *
@@ -393,10 +396,11 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
     else
         *character = tolower(*character);
 
-    static const Vector gray(.4, .4, .4);  // dark gray
     // try to color by molecule first
     if (sequence->molecule) {
-        *color = (seqIndex >= 0) ? sequence->molecule->GetResidueColor(seqIndex) : gray;
+        *color = (seqIndex >= 0) ?
+            sequence->molecule->GetResidueColor(seqIndex) :
+            GlobalColors()->Get(Colors::eNoCoordinates);;
     }
     // or color by hydrophobicity
     else if (sequence->isProtein &&
@@ -421,7 +425,7 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
         if (isAligned && (aColor = GetAlignmentColor(row, seqIndex)) != NULL) {
             *color = *aColor;
         } else {
-            *color = gray;
+            *color = GlobalColors()->Get(Colors::eUnaligned);
         }
     }
 
