@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/03/21 21:39:48  grichenk
+* garbage collector bugfix
+*
 * Revision 1.24  2002/03/20 21:24:59  gouriano
 * *** empty log message ***
 *
@@ -1212,7 +1215,7 @@ bool CDataSource::DropTSE(const CSeq_entry& tse)
     if (found == m_Entries.end())
         return false;
     if ( found->second->Locked() )
-        return true; // Not really dropped, but found
+        return false; // Not really dropped, although found
     x_DropEntry(*found->first);
     if ( m_Loader )
         m_Loader->DropTSE(found->first);

@@ -282,28 +282,31 @@ CGBDataLoader::x_GC(void)
   // dirty read - but that ok for garbage collector 
   if(m_TseCount<m_TseGC_Threshhold) return;
   if(!m_InvokeGC) return ;
-  //cout << "X_GC " << m_TseCount << endl;
-  GetDataSource()->x_CleanupUnusedEntries();
+  cout << "X_GC " << m_TseCount << endl;
+  //GetDataSource()->x_CleanupUnusedEntries();
 
-#if 0
+//#if 0
   int skip=0;
-  while(skip<m_TseCount - 0.9*m_TseGC_Threshhold)
+  CMutexGuard x(m_LookupMutex);
+  while(skip+1<m_TseCount - 0.9*m_TseGC_Threshhold)
     {
       const CSeq_entry *sep=0;
-      m_LookupMutex.Lock();
       int i=skip;
       STSEinfo *tse_to_drop=m_UseListHead;
       while(tse_to_drop && i-->0)
         tse_to_drop = tse_to_drop->next;
       if(tse_to_drop)
         {
-          sep=tse_to_drop->m_upload->tse;
-          if(!GetDataSource()->DropTSE(sep))
+          sep=tse_to_drop->m_upload.m_tse;
+          char b[100];
+          LOG_POST("X_GC::DropTSE(" << tse_to_drop << "::" << tse_to_drop->key->printTSE(b,sizeof(b)) << ")");
+          if(!GetDataSource()->DropTSE(*sep))
             skip++;
         }
-      m_LookupMutex.Unlock();
+      else
+          break;
     }
-#endif
+//#endif
   m_InvokeGC=false;
   //cout << "X_GC " << m_TseCount << endl;
 }
@@ -618,6 +621,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/03/21 21:39:48  grichenk
+* garbage collector bugfix
+*
 * Revision 1.6  2002/03/21 19:14:53  kimelman
 * GB related bugfixes
 *
