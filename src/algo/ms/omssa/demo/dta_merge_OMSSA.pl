@@ -62,7 +62,7 @@ use vars qw ($opt_i $opt_o $opt_s $opt_n);
 getopts('i:o:s:n:');
 #print "input path => $opt_i\noutput path => $opt_o\nMax. No. of files to be concatnated => $opt_s\noutput file nameROOT => $opt_n\n";
 
-  my $maxNo_Files = $opt_s ||= 10000;     # number of dta files to be concatnated into a batching file, default 10000
+  my $maxNo_Files = $opt_s ||= 2000;     # number of dta files to be concatnated into a batching file, default 10000
 
 
   my $batch_index=1;      		# indexing for batching file(s)
