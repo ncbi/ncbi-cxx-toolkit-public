@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/05/11 15:30:02  lavr
+ * Correction in comment
+ *
  * Revision 6.9  2001/04/26 14:18:45  lavr
  * SERV_MapperName moved to the private header
  *
@@ -102,7 +105,7 @@ struct SSERV_IterTag {
 
 
 /* Private interface: update mapper information from the given text
- * (<CR><LF> separated lines, usually kept from HTTP header).
+ * (<CR><LF> separated lines, usually taken from HTTP header).
  */
 int/*bool*/ SERV_Update(SERV_ITER iter, const char* text);
 
