@@ -1051,7 +1051,8 @@ static EIO_Status s_Select(size_t                n,
                                     break;
                             } else if (polls[i].event == eIO_Write)
                                 break;
-                        }
+                        } else if (polls[i].event == eIO_Write)
+                            break;
                         /*FALLTHRU*/
                     case eIO_Read:
                         if (polls[i].sock->type != eSOCK_Datagram
@@ -3919,6 +3920,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.129  2003/09/23 21:10:42  lavr
+ * s_Select(): Do not check for read in listening socks if write-only requested
+ *
  * Revision 6.128  2003/09/05 19:29:50  ivanov
  * SOCK_CreateOnTopEx(): Workaround for unnamed peer's UNIX sockets on IRIX
  *
