@@ -567,7 +567,7 @@ public:
     ///   The number of volumes available from this set.
     int GetNumVols() const
     {
-        return m_VolList.size();
+        return (int)m_VolList.size();
     }
     
     /// Test for existence of an inclusion filter

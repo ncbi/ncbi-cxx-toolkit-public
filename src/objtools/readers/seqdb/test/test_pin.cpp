@@ -71,19 +71,19 @@ s_TokenizeKeepDelims(const string   & input,
     
     NStr::Tokenize(input, delim, results);
     
-    Uint4 numres = results.size();
+    int numres = (int) results.size();
     
     if ((! results.empty()) && results[numres-1].empty()) {
         results.resize(--numres);
     }
     
     {
-        Uint4 orig_loc = 0;
+        int orig_loc = 0;
         
         for(Uint4 i = 0; i < numres; i++) {
-            orig_loc += results[i].length();
+            orig_loc += (int) results[i].length();
             
-            if (orig_loc < input.size()) {
+            if (orig_loc < (int) input.size()) {
                 taken.push_back(input[orig_loc++]);
             }
         }
@@ -207,7 +207,7 @@ static void s_MutateString(string & s_in)
         case 0:
             {
                 // Removal of character.
-                Uint4 point = prng.GetRand(0, s.size()-1);
+                int point = prng.GetRand(0, (int) s.size()-1);
                 
                 s.erase(s.begin() + point);
                 break;
@@ -217,8 +217,8 @@ static void s_MutateString(string & s_in)
             {
                 // Insertion of character.
                 
-                Uint4 point = prng.GetRand(0, s.size());
-                Uint4 item  = prng.GetRand(0, alph.size()-1);
+                int point = prng.GetRand(0, (int) s.size());
+                int item  = prng.GetRand(0, (int) alph.size()-1);
                 
                 s.insert(point, 1, alph[item]);
                 break;
@@ -227,8 +227,8 @@ static void s_MutateString(string & s_in)
         case 2:
             {
                 // Swap characters
-                Uint4 point1 = prng.GetRand(0, s.size()-1);
-                Uint4 point2 = prng.GetRand(0, s.size()-1);
+                int point1 = prng.GetRand(0, (int) s.size()-1);
+                int point2 = prng.GetRand(0, (int) s.size()-1);
                 
                 char ch = s[point1];
                 s[point1] = s[point2];
@@ -240,8 +240,8 @@ static void s_MutateString(string & s_in)
             {
                 // Mutate character
                 
-                Uint4 point = prng.GetRand(0, s.size()-1);
-                Uint4 item  = prng.GetRand(0, alph.size()-1);
+                int point = prng.GetRand(0, (int) s.size()-1);
+                int item  = prng.GetRand(0, (int) alph.size()-1);
                 
                 s[point] = alph[item];
                 break;
@@ -841,27 +841,27 @@ int test1(int argc, char ** argv)
                 if (randomize) {
                     cout << "Randomizing " << oids.size() << " entries ..." << endl;
                 
-                    Uint4 i = 0;
+                    int i2 = 0;
                 
                     CRandom prng;
                 
-                    for(i = 0; i<oids.size(); i+= jump) {
-                        Uint4 j = prng.GetRand(0, oids.size()-1);
+                    for(i2 = 0; i2<oids.size(); i2+= jump) {
+                        Uint4 j = prng.GetRand(0, (int) oids.size()-1);
                     
-                        Uint4 oid_tmp = oids[i];
-                        oids[i] = oids[j];
+                        Uint4 oid_tmp = oids[i2];
+                        oids[i2] = oids[j];
                         oids[j] = oid_tmp;
                     
-                        Uint4 gi_tmp = gis[i];
-                        gis[i] = gis[j];
+                        Uint4 gi_tmp = gis[i2];
+                        gis[i2] = gis[j];
                         gis[j] = gi_tmp;
                     }
                 }
                 
                 ofstream gilist("gilist.txt");
                 
-                for(Uint4 i = 0; i<oids.size(); i++) {
-                    gilist << gis[i] << "\n";
+                for(Uint4 i2 = 0; i2<oids.size(); i2++) {
+                    gilist << gis[i2] << "\n";
                 }
             } else {
                 cout << "Reading from file..." << endl;
@@ -955,8 +955,8 @@ int test1(int argc, char ** argv)
         
         
         if (s == "-fastacmd") {
-            string dbname("nr");
-            CSeqDB::ESeqType seqtype(CSeqDB::eUnknown);
+            dbname = "nr";
+            seqtype = CSeqDB::eUnknown;
             string acc;
             
             while(! args.empty()) {
@@ -1027,7 +1027,7 @@ int test1(int argc, char ** argv)
         
         
         if (s == "-xlate3") {
-            string dbname("nr");
+            dbname = "nr";
             //string dbname("prot_dbs");
             string acc("AAK53449");
             //string acc("AAK53420"); //!!!!!!!!
@@ -1351,14 +1351,14 @@ int test1(int argc, char ** argv)
                 Uint4 num_found(0);
                 
                 if (range_type == CSeqDB::eOidList) {
-                    num_found = oids.size();
+                    num_found = (int) oids.size();
 //                     ITERATE(vector<Uint4>, iter, oids) {
 //                         Uint4 iter_gi(0);
 //                         db.OidToGi(*iter, iter_gi);
 //                         cout << *iter << ":" << iter_gi << endl;
 //                    }
                 } else {
-                    num_found = oend-obegin;
+                    num_found = oend - obegin;
 //                     for(Uint4 iter = obegin; iter < oend; iter++) {
 //                         Uint4 iter_gi(0);
 //                         db.OidToGi(iter, iter_gi);
@@ -2259,7 +2259,7 @@ int test1(int argc, char ** argv)
             
             string db_list;
             
-            Uint4 num_dbs = sizeof(dbs)/sizeof(dbs[0]);
+            Uint4 num_dbs = int(sizeof(dbs)/sizeof(dbs[0]));
             
             cout << "\nDatabase will include data from:\n";
             
