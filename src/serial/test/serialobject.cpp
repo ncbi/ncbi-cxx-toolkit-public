@@ -3,9 +3,8 @@
 #include <serial/classinfo.hpp>
 #if HAVE_NCBI_C
 # include <asn.h>
+# include <twebenv.h>
 #endif
-
-#include <twebenv.h>
 
 BEGIN_CLASS_INFO(CSerialObject)
 {

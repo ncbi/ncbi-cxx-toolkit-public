@@ -7,7 +7,7 @@
 #################################
 
 APP = serialtest
-OBJ = serialobject testserial cppwebenv twebenv
+OBJ = serialobject testserial cppwebenv
 LIB = xser xncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) \
