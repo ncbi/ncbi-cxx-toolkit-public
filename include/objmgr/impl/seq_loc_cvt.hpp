@@ -117,6 +117,8 @@ public:
                         CRef<CSeq_feat>& mapped_feat);
     void ConvertCdregion(CAnnotObject_Ref& ref,
                          CRef<CSeq_feat>& mapped_feat);
+    void ConvertRna(CAnnotObject_Ref& ref,
+                    CRef<CSeq_feat>& mapped_feat);
 
     enum EConvertFlag {
         eCnvDefault,
@@ -284,6 +286,8 @@ private:
                         CRef<CSeq_feat>& mapped_feat);
     void ConvertCdregion(CAnnotObject_Ref& ref,
                          CRef<CSeq_feat>& mapped_feat);
+    void ConvertRna(CAnnotObject_Ref& ref,
+                    CRef<CSeq_feat>& mapped_feat);
 
     CRef<CSeq_loc_Conversion> m_SingleConv;
     unsigned int              m_SingleIndex;
@@ -372,6 +376,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/10/21 17:13:06  grichenk
+* Added mapping of anticodons.
+*
 * Revision 1.22  2004/10/12 17:09:00  grichenk
 * Added mapping of code-break.
 *

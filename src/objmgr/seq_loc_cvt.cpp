@@ -47,6 +47,8 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Code_break.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -607,6 +609,69 @@ void CSeq_loc_Conversion::ConvertCdregion(CAnnotObject_Ref& ref,
 }
 
 
+void CSeq_loc_Conversion::ConvertRna(CAnnotObject_Ref& ref,
+                                     CRef<CSeq_feat>& mapped_feat)
+{
+    const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
+    _ASSERT( obj.IsFeat() );
+    const CSeqFeatData& src_feat_data = obj.GetFeatFast()->GetData();
+    _ASSERT( src_feat_data.IsRna() );
+    if (!src_feat_data.GetRna().IsSetExt()  ||
+        !src_feat_data.GetRna().GetExt().IsTRNA()  ||
+        !src_feat_data.GetRna().GetExt().GetTRNA().IsSetAnticodon()) {
+        return;
+    }
+    const CRNA_ref::TExt& src_ext = src_feat_data.GetRna().GetExt();
+    // Map anticodon location
+    const CSeq_loc& src_anticodon = src_ext.GetTRNA().GetAnticodon();
+    mapped_feat.Reset(new CSeq_feat);
+    // Initialize mapped feature
+    ref.InitializeMappedSeq_feat(*obj.GetFeatFast(), *mapped_feat);
+    
+    // Copy RNA-ext, do not change the original one
+    CRef<CRNA_ref::TExt> new_ext(new CRNA_ref::TExt);
+
+    // Shallow-copy the feature, replace data.rna.ext.trna.anticodon
+    // with the mapped location
+    mapped_feat->Assign(*obj.GetFeatFast(), eShallow);
+    mapped_feat->SetData(*(new CSeqFeatData));
+    mapped_feat->SetData().Assign(src_feat_data, eShallow);
+    mapped_feat->SetData().SetRna(*(new CRNA_ref));
+
+    mapped_feat->SetData().SetRna().SetType(src_feat_data.GetRna().GetType());
+    if ( src_feat_data.GetRna().IsSetPseudo() ) {
+        mapped_feat->SetData().SetRna().SetPseudo(
+            src_feat_data.GetRna().GetPseudo());
+    }
+    else {
+        mapped_feat->SetData().SetRna().ResetPseudo();
+    }
+    mapped_feat->SetData().SetRna().SetExt().SetTRNA().SetAa(
+        const_cast<CTrna_ext::C_Aa&>(src_ext.GetTRNA().GetAa()));
+    if ( src_ext.GetTRNA().IsSetCodon() ) {
+        mapped_feat->SetData().SetRna().SetExt().SetTRNA().SetCodon() =
+            src_ext.GetTRNA().GetCodon();
+    }
+    else {
+        mapped_feat->SetData().SetRna().SetExt().SetTRNA().ResetCodon();
+    }
+    CRef<CSeq_loc> ac_loc;
+    Convert(src_anticodon, &ac_loc, eCnvAlways);
+    // Preserve partial flag
+    bool partial = m_Partial;
+    Reset();
+    m_Partial = partial;
+    if (bool(ac_loc)  &&  ac_loc->Which() != CSeq_loc::e_not_set) {
+        mapped_feat->SetData()
+            .SetRna().SetExt().SetTRNA().SetAnticodon(*ac_loc);
+    }
+    else {
+        mapped_feat->SetData()
+            .SetRna().SetExt().SetTRNA().ResetAnticodon();
+    }
+}
+
+
 void CSeq_loc_Conversion::ConvertFeature(CAnnotObject_Ref& ref,
                                          CRef<CSeq_feat>& mapped_feat)
 {
@@ -615,6 +680,9 @@ void CSeq_loc_Conversion::ConvertFeature(CAnnotObject_Ref& ref,
     const CSeqFeatData& src_feat_data = obj.GetFeatFast()->GetData();
     if ( src_feat_data.IsCdregion() ) {
         ConvertCdregion(ref, mapped_feat);
+    }
+    else if ( src_feat_data.IsRna() ) {
+        ConvertRna(ref, mapped_feat);
     }
 }
 
@@ -799,11 +867,67 @@ void CSeq_loc_Conversion_Set::ConvertCdregion(CAnnotObject_Ref& ref,
             cb->SetLoc(*cb_loc);
             mapped_cbs.push_back(cb);
         }
-        /*else {
-            // Keep the original code-break
-            CRef<CCode_break> cb(&const_cast<CCode_break&>(**it));
-            mapped_cbs.push_back(cb);
-        }*/
+    }
+}
+
+
+void CSeq_loc_Conversion_Set::ConvertRna(CAnnotObject_Ref& ref,
+                                         CRef<CSeq_feat>& mapped_feat)
+{
+    const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
+    _ASSERT( obj.IsFeat() );
+    const CSeqFeatData& src_feat_data = obj.GetFeatFast()->GetData();
+    _ASSERT( src_feat_data.IsRna() );
+    if (!src_feat_data.GetRna().IsSetExt()  ||
+        !src_feat_data.GetRna().GetExt().IsTRNA()  ||
+        !src_feat_data.GetRna().GetExt().GetTRNA().IsSetAnticodon()) {
+        return;
+    }
+    const CRNA_ref::TExt& src_ext = src_feat_data.GetRna().GetExt();
+    // Map anticodon location
+    const CSeq_loc& src_anticodon = src_ext.GetTRNA().GetAnticodon();
+    mapped_feat.Reset(new CSeq_feat);
+    // Initialize mapped feature
+    ref.InitializeMappedSeq_feat(*obj.GetFeatFast(), *mapped_feat);
+    
+    // Copy RNA-ext, do not change the original one
+    CRef<CRNA_ref::TExt> new_ext(new CRNA_ref::TExt);
+
+    // Shallow-copy the feature, replace data.rna.ext.trna.anticodon
+    // with the mapped location
+    mapped_feat->Assign(*obj.GetFeatFast(), eShallow);
+    mapped_feat->SetData(*(new CSeqFeatData));
+    mapped_feat->SetData().Assign(src_feat_data, eShallow);
+    mapped_feat->SetData().SetRna(*(new CRNA_ref));
+
+    mapped_feat->SetData().SetRna().SetType(src_feat_data.GetRna().GetType());
+    if ( src_feat_data.GetRna().IsSetPseudo() ) {
+        mapped_feat->SetData().SetRna().SetPseudo(
+            src_feat_data.GetRna().GetPseudo());
+    }
+    else {
+        mapped_feat->SetData().SetRna().ResetPseudo();
+    }
+    mapped_feat->SetData().SetRna().SetExt().SetTRNA().SetAa(
+        const_cast<CTrna_ext::C_Aa&>(src_ext.GetTRNA().GetAa()));
+    if ( src_ext.GetTRNA().IsSetCodon() ) {
+        mapped_feat->SetData().SetRna().SetExt().SetTRNA().SetCodon() =
+            src_ext.GetTRNA().GetCodon();
+    }
+    else {
+        mapped_feat->SetData().SetRna().SetExt().SetTRNA().ResetCodon();
+    }
+    CRef<CSeq_loc> ac_loc;
+    Convert(src_anticodon, &ac_loc, 0);
+    // Preserve partial flag
+    m_TotalRange = TRange::GetEmpty();
+    if (bool(ac_loc)  &&  ac_loc->Which() != CSeq_loc::e_not_set) {
+        mapped_feat->SetData()
+            .SetRna().SetExt().SetTRNA().SetAnticodon(*ac_loc);
+    }
+    else {
+        mapped_feat->SetData()
+            .SetRna().SetExt().SetTRNA().ResetAnticodon();
     }
 }
 
@@ -816,6 +940,9 @@ void CSeq_loc_Conversion_Set::ConvertFeature(CAnnotObject_Ref& ref,
     const CSeqFeatData& src_feat_data = obj.GetFeatFast()->GetData();
     if ( src_feat_data.IsCdregion() ) {
         ConvertCdregion(ref, mapped_feat);
+    }
+    else if ( src_feat_data.IsRna() ) {
+        ConvertRna(ref, mapped_feat);
     }
 }
 
@@ -1224,6 +1351,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/10/21 17:13:06  grichenk
+* Added mapping of anticodons.
+*
 * Revision 1.38  2004/10/19 20:52:37  vasilche
 * Keep PARTIAL flag on mapped features.
 *
