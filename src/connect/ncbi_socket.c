@@ -2092,7 +2092,7 @@ static EIO_Status s_Send(SOCK        sock,
         if (x_written > 0) {
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn))
-                s_DoLog(sock, eIO_Write, buf, (size_t) x_written, (void*) oob);
+                s_DoLog(sock, eIO_Write, buf, (size_t) x_written, oob ? "" : 0);
             sock->n_written += x_written;
 
             *n_written = x_written;
@@ -4379,6 +4379,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.168  2005/03/08 16:46:20  lavr
+ * Fix 32/64 int/ptr discrepancy
+ *
  * Revision 6.167  2005/03/08 16:17:26  lavr
  * Remove an extra const qualifier
  *
