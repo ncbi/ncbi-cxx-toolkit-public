@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/04/25 16:37:21  grichenk
+* Fixed gap coding, added GetGapChar() function
+*
 * Revision 1.13  2002/04/23 19:01:07  grichenk
 * Added optional flag to GetSeqVector() and GetSequenceView()
 * for switching to IUPAC encoding.
@@ -200,7 +203,6 @@ size_t CSeqVector::size(void)
 CSeqVector::TResidue CSeqVector::operator[] (int pos)
 {
     if ( !m_PlusStrand ) {
-        //### The character needs to be converted to its complement
         pos = size() - pos - 1;
     }
     if (m_CurData.dest_start > pos  ||
@@ -214,7 +216,35 @@ CSeqVector::TResidue CSeqVector::operator[] (int pos)
 }
 
 
-const CSeqVector::TResidue kGap = 'N';
+
+CSeqVector::TResidue CSeqVector::GetGapChar(void)
+{
+    switch (GetCoding()) {
+    // DNA - N
+    case CSeq_data::e_Iupacna:   return 'N';
+    // DNA - bit representation
+    case CSeq_data::e_Ncbi8na:
+    case CSeq_data::e_Ncbi4na:   return 0x0f;  // all bits set == any base
+
+    // Proteins - X
+    case CSeq_data::e_Ncbieaa:
+    case CSeq_data::e_Iupacaa:   return 'X';
+    // Protein - numeric representation
+    case CSeq_data::e_Ncbi8aa:
+    case CSeq_data::e_Ncbistdaa: return 21;
+
+    // Codings without gap symbols
+    case CSeq_data::e_not_set:
+    case CSeq_data::e_Ncbi2na:
+    case CSeq_data::e_Ncbipaa:                 //### Not sure about this
+    case CSeq_data::e_Ncbipna:                 //### Not sure about this
+    default:
+        {
+            throw runtime_error("CSeqVector -- can not indicate gap using the selected coding");
+        }
+    }
+}
+
 
 CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
 {
@@ -223,7 +253,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
         m_CachedLen = m_CurData.length;
         if (!m_CurData.src_data) {
             // No data - fill with the gap symbol
-            m_CachedData = string(m_CachedLen, kGap);
+            m_CachedData = string(m_CachedLen, GetGapChar());
         }
         else {
             // Prepare real data
@@ -336,9 +366,10 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
                 }
             default:
                 {
-                    return kGap;
+                    throw runtime_error("CSeqVector -- unknown coding");
                 }
             }
+            //out.Release();
         }
     }
     return m_CachedData[pos - m_CurData.dest_start];
@@ -347,7 +378,13 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
 
 void CSeqVector::SetIupacCoding(void)
 {
-    (void) ((*this)[0]); // force instantiantion
+    // force instantiantion
+    m_CurData.src_data = 0; // Reset data
+    m_Scope->x_GetSequence(m_Handle, 0, &m_CurData);
+    m_CachedPos = -1; // Reset cached data
+    m_CachedData = "";
+
+    // Check sequence type
     if ( !m_CurData.src_data ) {
         return;
     }

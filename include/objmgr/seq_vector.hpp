@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/04/25 16:37:19  grichenk
+* Fixed gap coding, added GetGapChar() function
+*
 * Revision 1.7  2002/04/23 19:01:06  grichenk
 * Added optional flag to GetSeqVector() and GetSequenceView()
 * for switching to IUPAC encoding.
@@ -91,6 +94,9 @@ public:
     void SetCoding(TCoding coding);
     // Set coding to either Iupacaa or Iupacna depending on molecule type
     void SetIupacCoding(void);
+
+    // Return gap symbol corresponding to the selected coding
+    TResidue GetGapChar(void);
 
 private:
     friend class CBioseq_Handle;
