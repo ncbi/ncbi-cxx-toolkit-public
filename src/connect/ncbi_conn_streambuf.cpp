@@ -56,7 +56,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
     m_WriteBuf = bp.get() + m_BufSize;
 
     setp(m_WriteBuf, m_WriteBuf + m_BufSize);
-    setg(m_ReadBuf,  m_WriteBuf, m_WriteBuf);
+    setg(m_ReadBuf,  m_ReadBuf, m_ReadBuf);
 
     if (LOG_IF_ERROR(CONN_Create(connector, &m_Conn),
                      "CConn_Streambuf(): CONN_Create() failed") !=eIO_Success){
@@ -291,6 +291,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.40  2003/11/12 16:40:13  ivanov
+ * Fixed initial setup of get pointers (by Anton Lavrentiev)
+ *
  * Revision 6.39  2003/11/04 03:09:28  lavr
  * xsgetn() fixed to advance buffer pointer when reading
  *
