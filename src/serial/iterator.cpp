@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/10/20 15:51:38  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.12  2000/10/03 17:22:42  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -85,6 +91,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <serial/objectiter.hpp>
 #include <serial/iterator.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -451,5 +458,53 @@ template class CTypeIteratorBase<CTreeIterator>;
 template class CTypeIteratorBase<CTreeConstIterator>;
 template class CTypesIteratorBase<CTreeIterator>;
 template class CTypesIteratorBase<CTreeConstIterator>;
+
+bool CType_Base::Match(const CTypesIterator& it, TTypeInfo typeInfo)
+{
+    return it.GetMatchType() == typeInfo;
+}
+
+bool CType_Base::Match(const CTypesConstIterator& it, TTypeInfo typeInfo)
+{
+    return it.GetMatchType() == typeInfo;
+}
+
+void CType_Base::AddTo(CTypesIterator& it, TTypeInfo typeInfo)
+{
+    it.AddType(typeInfo);
+}
+
+void CType_Base::AddTo(CTypesConstIterator& it,  TTypeInfo typeInfo)
+{
+    it.AddType(typeInfo);
+}
+
+TObjectPtr CType_Base::GetObjectPtr(const CTypesIterator& it)
+{
+    return it.GetFoundPtr();
+}
+
+TConstObjectPtr CType_Base::GetObjectPtr(const CTypesConstIterator& it)
+{
+    return it.GetFoundPtr();
+}
+
+class CCObjectClassInfo : public CVoidTypeInfo
+{
+    typedef CTypeInfo CParent;
+public:
+    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
+};
+
+TTypeInfo CObjectGetTypeInfo::GetTypeInfo(void)
+{
+    static TTypeInfo typeInfo = new CCObjectClassInfo;
+    return typeInfo;
+}
+
+bool CCObjectClassInfo::IsParentClassOf(const CClassTypeInfo* classInfo) const
+{
+    return classInfo->IsCObject();
+}
 
 END_NCBI_SCOPE

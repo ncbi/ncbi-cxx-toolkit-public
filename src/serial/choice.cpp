@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/10/20 15:51:37  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.23  2000/10/13 20:22:53  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -313,7 +319,7 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
     BEGIN_OBJECT_FRAME_OF2(in, eFrameChoice, choiceType);
     TMemberIndex index = in.BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember )
-        in.ThrowError(CObjectIStream::eFormatError,
+        in.ThrowError(in.eFormatError,
                       "choice variant id expected");
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     BEGIN_OBJECT_FRAME_OF2(in, eFrameChoiceVariant, variantInfo->GetId());
@@ -335,7 +341,7 @@ void CChoiceTypeInfoFunctions::WriteChoiceDefault(CObjectOStream& out,
     BEGIN_OBJECT_FRAME_OF2(out, eFrameChoice, choiceType);
     TMemberIndex index = choiceType->GetIndex(objectPtr);
     if ( index == kInvalidMember )
-        THROW1_TRACE(runtime_error, "cannot write empty choice");
+        out.ThrowError(out.eIllegalCall, "cannot write empty choice");
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     BEGIN_OBJECT_FRAME_OF2(out, eFrameChoiceVariant, variantInfo->GetId());
@@ -363,7 +369,7 @@ void CChoiceTypeInfoFunctions::SkipChoiceDefault(CObjectIStream& in,
     BEGIN_OBJECT_FRAME_OF2(in, eFrameChoice, choiceType);
     TMemberIndex index = in.BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember )
-        in.ThrowError(CObjectIStream::eFormatError,
+        in.ThrowError(in.eFormatError,
                       "choice variant id expected");
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     BEGIN_OBJECT_FRAME_OF2(in, eFrameChoiceVariant, variantInfo->GetId());

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/10/20 15:51:41  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.22  2000/10/17 18:45:35  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -134,7 +140,6 @@
 #include <serial/objlist.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/member.hpp>
-#include <serial/object.hpp>
 #include <serial/typeinfoimpl.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -158,12 +163,18 @@ void CWriteObjectList::RegisterObject(TTypeInfo typeInfo)
     m_Objects.push_back(CWriteObjectInfo(typeInfo, NextObjectIndex()));
 }
 
+static inline
+TConstObjectPtr EndOf(TConstObjectPtr objectPtr, TTypeInfo objectType)
+{
+    return Add(objectPtr, TPointerOffsetType(objectType->GetSize()));
+}
+
 const CWriteObjectInfo*
 CWriteObjectList::RegisterObject(TConstObjectPtr object, TTypeInfo typeInfo)
 {
     _TRACE("CWriteObjectList::RegisterObject("<<NStr::PtrToString(object)<<
            ", "<<typeInfo->GetName()<<") size: "<<typeInfo->GetSize()<<
-           ", end: "<<NStr::PtrToString(Add(object, typeInfo->GetSize())));
+           ", end: "<<NStr::PtrToString(EndOf(object, typeInfo)));
     TObjectIndex index = NextObjectIndex();
     CWriteObjectInfo info(object, typeInfo, index);
     
@@ -215,15 +226,15 @@ CWriteObjectList::RegisterObject(TConstObjectPtr object, TTypeInfo typeInfo)
     TObjectsByPtr::iterator check = ins.first;
     if ( check != m_ObjectsByPtr.begin() ) {
         --check;
-        if ( Add(check->first,
-                 m_Objects[check->second].GetTypeInfo()->GetSize()) > object )
+        if ( EndOf(check->first,
+                   m_Objects[check->second].GetTypeInfo()) > object )
             THROW1_TRACE(runtime_error, "overlapping objects");
     }
 
     // check for overlapping with next object
     check = ins.first;
     if ( ++check != m_ObjectsByPtr.end() ) {
-        if ( Add(object, typeInfo->GetSize()) > check->first )
+        if ( EndOf(object, typeInfo) > check->first )
             THROW1_TRACE(runtime_error, "overlapping objects");
     }
 #endif
@@ -233,7 +244,6 @@ CWriteObjectList::RegisterObject(TConstObjectPtr object, TTypeInfo typeInfo)
 
 void CWriteObjectList::ForgetObjects(TObjectIndex from, TObjectIndex to)
 {
-    _ASSERT(0 <= from);
     _ASSERT(from <= to);
     _ASSERT(to <= GetObjectCount());
     for ( TObjectIndex i = from; i < to; ++i ) {
@@ -272,14 +282,13 @@ void CReadObjectList::RegisterObject(TObjectPtr objectPtr, TTypeInfo typeInfo)
 const CReadObjectInfo&
 CReadObjectList::GetRegisteredObject(TObjectIndex index) const
 {
-    if ( index < 0 || index >= GetObjectCount() )
+    if ( index >= GetObjectCount() )
         THROW1_TRACE(runtime_error, "invalid object index");
     return m_Objects[index];
 }
 
 void CReadObjectList::ForgetObjects(TObjectIndex from, TObjectIndex to)
 {
-    _ASSERT(0 <= from);
     _ASSERT(from <= to);
     _ASSERT(to <= GetObjectCount());
     for ( TObjectIndex i = from; i < to; ++i ) {

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/10/20 15:51:26  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.43  2000/10/17 18:45:24  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -355,6 +361,8 @@ private:
     char SkipWhiteSpaceAndGetChar(void);
     void SkipComments(void);
     void UnexpectedMember(const CLightString& id, const CItemsInfo& items);
+    void BadStringChar(size_t startLine, char c);
+    void UnendedString(size_t startLine);
 
     void StartBlock(void);
     bool NextElement(void);

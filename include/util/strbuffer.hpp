@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/10/20 15:51:28  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.18  2000/10/13 20:59:12  vasilche
 * Avoid using of ssize_t absent on some compilers.
 *
@@ -132,11 +138,15 @@ public:
 
     bool fail(void) const
         {
-            return m_Fail;
+            return m_Error != 0;
         }
     void ResetFail(void)
         {
-            m_Fail = false;
+            m_Error = 0;
+        }
+    const char* GetError(void) const
+        {
+            return m_Error;
         }
 
     void Open(const CRef<CByteSourceReader>& reader);
@@ -253,17 +263,19 @@ protected:
     char FillBufferNoEOF(char* pos)
         THROWS1((CSerialIOException, bad_alloc));
 
+    void BadNumber(void);
+
 private:
     CRef<CByteSourceReader> m_Input;
 
-    size_t m_BufferOffset;    // offset of current buffer in source stream
+    const char* m_Error;
+
+    size_t m_BufferOffset; // offset of current buffer in source stream
     size_t m_BufferSize;      // buffer size
     char* m_Buffer;           // buffer pointer
     char* m_CurrentPos;       // current char position in buffer
     char* m_DataEndPos;       // end of valid content in buffer
     size_t m_Line;            // current line counter
-
-    bool m_Fail;
 
     char* m_CollectPos;
     CRef<CSubSourceCollector> m_Collector;
@@ -276,11 +288,29 @@ public:
         THROWS1((bad_alloc));
     ~COStreamBuffer(void) THROWS1((CSerialIOException));
 
+    bool fail(void) const
+        {
+            return m_Error != 0;
+        }
+    void ResetFail(void)
+        {
+            m_Error = 0;
+        }
+    const char* GetError(void) const
+        {
+            return m_Error;
+        }
+
     void Close(void);
 
-    size_t GetCurrentLineNumber(void) const THROWS1_NONE
+    // return: current line counter
+    size_t GetLine(void) const THROWS1_NONE
         {
             return m_Line;
+        }
+    size_t GetStreamOffset(void) const THROWS1_NONE
+        {
+            return m_BufferOffset + (m_CurrentPos - m_Buffer);
         }
 
     size_t GetCurrentLineLength(void) const THROWS1_NONE
@@ -452,6 +482,8 @@ private:
     CNcbiOstream& m_Output;
     bool m_DeleteOutput;
 
+    const char* m_Error;
+
     size_t GetUsedSpace(void) const
         {
             return m_CurrentPos - m_Buffer;
@@ -467,6 +499,7 @@ private:
 
     size_t m_IndentLevel;
 
+    size_t m_BufferOffset; // offset of current buffer in source stream
     char* m_Buffer;           // buffer pointer
     char* m_CurrentPos;       // current char position in buffer
     char* m_BufferEnd;       // end of valid content in buffer

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2000/10/20 15:51:41  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.45  2000/10/17 18:45:34  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -280,14 +286,14 @@ string CObjectIStreamAsnBinary::GetPosition(void) const
 TByte CObjectIStreamAsnBinary::PeekTagByte(size_t index)
 {
     if ( m_CurrentTagState != eTagStart )
-        THROW1_TRACE(runtime_error, "bad PeekTagByte call");
+        ThrowError(eIllegalCall, "bad PeekTagByte call");
     return m_Input.PeekChar(index);
 }
 
 TByte CObjectIStreamAsnBinary::StartTag(void)
 {
     if ( m_CurrentTagLength != 0 )
-        THROW1_TRACE(runtime_error, "bad StartTag call");
+        ThrowError(eIllegalCall, "bad StartTag call");
     return PeekTagByte();
 }
 #endif
@@ -395,7 +401,7 @@ void CObjectIStreamAsnBinary::UnexpectedByte(TByte byte)
 TByte CObjectIStreamAsnBinary::FlushTag(void)
 {
     if ( m_CurrentTagState != eTagParsed || m_CurrentTagLength == 0 )
-        THROW1_TRACE(runtime_error, "illegal FlushTag call");
+        ThrowError(eIllegalCall, "illegal FlushTag call");
     m_Input.SkipChars(m_CurrentTagLength);
     m_CurrentTagState = eLengthValue;
     return m_Input.GetChar();
@@ -404,7 +410,7 @@ TByte CObjectIStreamAsnBinary::FlushTag(void)
 bool CObjectIStreamAsnBinary::PeekIndefiniteLength(void)
 {
     if ( m_CurrentTagState != eTagParsed )
-        THROW1_TRACE(runtime_error, "illegal PeekIndefiniteLength call");
+        ThrowError(eIllegalCall, "illegal PeekIndefiniteLength call");
     return TByte(m_Input.PeekChar(m_CurrentTagLength)) == 0x80;
 }
 
@@ -412,7 +418,7 @@ void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
 {
     // indefinite length allowed only for constructed tags
     if ( !ExtractConstructed(m_Input.PeekChar()) )
-        THROW1_TRACE(runtime_error, "illegal ExpectIndefiniteLength call");
+        ThrowError(eFormatError, "illegal ExpectIndefiniteLength call");
     if ( FlushTag() != 0x80 ) {
         ThrowError(eFormatError, "indefinite length is expected");
     }
@@ -486,12 +492,12 @@ void CObjectIStreamAsnBinary::ExpectShortLength(size_t length)
 void CObjectIStreamAsnBinary::EndOfTag(void)
 {
     if ( m_CurrentTagState != eData )
-        THROW1_TRACE(runtime_error, "illegal EndOfTag call");
+        ThrowError(eIllegalCall, "illegal EndOfTag call");
     // check for all bytes read
     if ( m_CurrentTagLimit != INT_MAX ) {
         if ( m_Input.GetStreamOffset() != m_CurrentTagLimit )
-            THROW1_TRACE(runtime_error,
-                         "illegal EndOfTag call: not all data bytes read");
+            ThrowError(eIllegalCall,
+                       "illegal EndOfTag call: not all data bytes read");
     }
     m_CurrentTagState = eTagStart;
     m_CurrentTagLength = 0;
@@ -504,7 +510,7 @@ void CObjectIStreamAsnBinary::EndOfTag(void)
 void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
 {
     if ( m_CurrentTagState != eTagStart )
-        THROW1_TRACE(runtime_error, "illegal ExpectEndOfContent call");
+        ThrowError(eFormatError, "illegal ExpectEndOfContent call");
     ExpectSysTag(eNone);
     if ( FlushTag() != 0 ) {
         ThrowError(eFormatError, "zero length expected");
@@ -521,7 +527,7 @@ void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
 TByte CObjectIStreamAsnBinary::ReadByte(void)
 {
     if ( m_CurrentTagState != eData )
-        THROW1_TRACE(runtime_error, "illegal ReadByte call");
+        ThrowError(eIllegalCall, "illegal ReadByte call");
     if ( m_Input.GetStreamOffset() >= m_CurrentTagLimit )
         ThrowError(eOverflow, "tag size overflow");
     return m_Input.GetChar();
@@ -532,7 +538,7 @@ void CObjectIStreamAsnBinary::ReadBytes(char* buffer, size_t count)
 {
 #if CHECK_STREAM_INTEGRITY
     if ( m_CurrentTagState != eData ) {
-        THROW1_TRACE(runtime_error, "illegal ReadBytes call");
+        ThrowError(eIllegalCall, "illegal ReadBytes call");
     }
 #endif
     if ( count == 0 )
@@ -548,7 +554,7 @@ void CObjectIStreamAsnBinary::SkipBytes(size_t count)
 {
 #if CHECK_STREAM_INTEGRITY
     if ( m_CurrentTagState != eData ) {
-        THROW1_TRACE(runtime_error, "illegal ReadBytes call");
+        ThrowError(eIllegalCall, "illegal ReadBytes call");
     }
 #endif
     if ( count == 0 )

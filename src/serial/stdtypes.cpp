@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/10/20 15:51:43  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.23  2000/10/17 18:45:36  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -246,26 +252,26 @@ void CVoidTypeFunctions::Assign(TObjectPtr , TConstObjectPtr )
     ThrowIllegalCall();
 }
 
-void CVoidTypeFunctions::Read(CObjectIStream& ,
-                              TTypeInfo objectType, TObjectPtr )
+void CVoidTypeFunctions::Read(CObjectIStream& in, TTypeInfo ,
+                              TObjectPtr )
 {
-    ThrowException("read", objectType);
+    in.ThrowError(in.eIllegalCall, "cannot read");
 }
 
-void CVoidTypeFunctions::Write(CObjectOStream& ,
-                               TTypeInfo objectType, TConstObjectPtr )
+void CVoidTypeFunctions::Write(CObjectOStream& out, TTypeInfo ,
+                               TConstObjectPtr )
 {
-    ThrowException("write", objectType);
+    out.ThrowError(out.eIllegalCall, "cannot write");
 }
 
-void CVoidTypeFunctions::Copy(CObjectStreamCopier& , TTypeInfo objectType)
+void CVoidTypeFunctions::Copy(CObjectStreamCopier& copier, TTypeInfo )
 {
-    ThrowException("copy", objectType);
+    copier.ThrowError(CObjectIStream::eIllegalCall, "cannot copy");
 }
 
-void CVoidTypeFunctions::Skip(CObjectIStream& , TTypeInfo objectType)
+void CVoidTypeFunctions::Skip(CObjectIStream& in, TTypeInfo )
 {
-    ThrowException("skip", objectType);
+    in.ThrowError(in.eIllegalCall, "cannot skip");
 }
 
 TObjectPtr CVoidTypeFunctions::Create(TTypeInfo objectType)
@@ -595,18 +601,18 @@ public:
             TObjectType value = Get(objectPtr);
             if ( sizeof(TObjectType) == sizeof(long) && !x_IsSigned() ) {
                 // type is unsigned long
-                x_CheckNoSign(value);
+                x_CheckNoSign(long(value));
             }
-            return value;
+            return long(value);
         }
     static unsigned long GetValueULong(TConstObjectPtr objectPtr)
         {
             TObjectType value = Get(objectPtr);
             if ( sizeof(TObjectType) == sizeof(long) && x_IsSigned() ) {
                 // type is signed long
-                x_CheckNoSign(value);
+                x_CheckNoSign(long(value));
             }
-            return value;
+            return static_cast<unsigned long>(value);
         }
     static void SetValueLong(TObjectPtr objectPtr, long value)
         {
@@ -630,7 +636,7 @@ public:
             if ( sizeof(TObjectType) == sizeof(long) ) {
                 if ( x_IsSigned() ) {
                     // type is signed long
-                    x_CheckNoSign(newValue);
+                    x_CheckNoSign(long(newValue));
                 }
             }
             else {
@@ -1065,6 +1071,7 @@ public:
             CObjectOStream::ByteBlock block(out, length);
             if ( length > 0 )
                 block.Write(ToChar(&o.front()), length);
+            block.End();
         }
 };
 

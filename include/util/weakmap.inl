@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/10/20 15:51:28  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.3  2000/10/13 16:28:34  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -129,6 +135,7 @@ void CWeakMap<Object>::Forget(key_type& key)
 {
     _ASSERT(m_Map.find(&key) != m_Map.end());
     m_Map.erase(&key);
+    key.Deregister(this);
 }
 
 template<class Object>

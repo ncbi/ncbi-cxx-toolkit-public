@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/10/20 15:51:36  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.13  2000/10/17 18:45:32  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -134,11 +140,11 @@ void CAutoPointerTypeInfo::WriteAutoPtr(CObjectOStream& out,
 
     TConstObjectPtr dataPtr = autoPtrType->GetObjectPointer(objectPtr);
     if ( dataPtr == 0 )
-        THROW1_TRACE(runtime_error, "null auto pointer");
+        out.ThrowError(out.eIllegalCall, "null auto pointer");
 
     TTypeInfo dataType = autoPtrType->GetPointedType();
     if ( dataType->GetRealTypeInfo(dataPtr) != dataType )
-        THROW1_TRACE(runtime_error, "auto pointer have different type");
+        out.ThrowError(out.eIllegalCall, "auto pointer have different type");
     out.WriteObject(dataPtr, dataType);
 }
 
@@ -155,7 +161,7 @@ void CAutoPointerTypeInfo::ReadAutoPtr(CObjectIStream& in,
         autoPtrType->SetObjectPointer(objectPtr, dataPtr = dataType->Create());
     }
     else if ( dataType->GetRealTypeInfo(dataPtr) != dataType ) {
-        THROW1_TRACE(runtime_error, "auto pointer have different type");
+        in.ThrowError(in.eIllegalCall, "auto pointer have different type");
     }
     in.ReadObject(dataPtr, dataType);
 }

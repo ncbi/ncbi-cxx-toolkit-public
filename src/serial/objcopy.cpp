@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/10/20 15:51:39  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.4  2000/10/17 18:45:33  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -58,7 +64,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/object.hpp>
+#include <serial/objectinfo.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/continfo.hpp>
 #include <serial/choice.hpp>
@@ -79,117 +85,104 @@ void CObjectStreamCopier::Copy(const CObjectTypeInfo& objectType)
 {
     TTypeInfo type = objectType.GetTypeInfo();
     // root object
-    BEGIN_OBJECT_FRAME_OF2(In(), eFrameNamed, type);
+    BEGIN_OBJECT_2FRAMES2(eFrameNamed, type);
     In().SkipFileHeader(type);
-
-    BEGIN_OBJECT_FRAME_OF2(Out(), eFrameNamed, type);
     Out().WriteFileHeader(type);
 
     CopyObject(type);
     
     Out().EndOfWrite();
-    END_OBJECT_FRAME_OF(Out());
-
     In().EndOfRead();
-    END_OBJECT_FRAME_OF(In());
+    END_OBJECT_2FRAMES();
 }
 
 void CObjectStreamCopier::Copy(TTypeInfo type, ENoFileHeader)
 {
     // root object
-    BEGIN_OBJECT_FRAME_OF2(In(), eFrameNamed, type);
-
-    BEGIN_OBJECT_FRAME_OF2(Out(), eFrameNamed, type);
+    BEGIN_OBJECT_2FRAMES2(eFrameNamed, type);
     Out().WriteFileHeader(type);
 
     CopyObject(type);
     
     Out().EndOfWrite();
-    END_OBJECT_FRAME_OF(Out());
-
     In().EndOfRead();
-    END_OBJECT_FRAME_OF(In());
+    END_OBJECT_2FRAMES();
 }
 
 void CObjectStreamCopier::CopyPointer(TTypeInfo declaredType)
 {
-    try {
-        _TRACE("CObjectIStream::ReadPointer("<<declaredType->GetName()<<")");
-        TTypeInfo typeInfo;
-        switch ( In().ReadPointerType() ) {
-        case CObjectIStream::eNullPointer:
-            _TRACE("CObjectIStream::ReadPointer: null");
-            Out().WriteNullPointer();
-            return;
-        case CObjectIStream::eObjectPointer:
-            {
-                _TRACE("CObjectIStream::ReadPointer: @...");
-                CObjectIStream::TObjectIndex index = In().ReadObjectPointer();
-                _TRACE("CObjectIStream::ReadPointer: @" << index);
-                typeInfo = In().GetRegisteredObject(index).GetTypeInfo();
-                Out().WriteObjectReference(index);
-                break;
-            }
-        case CObjectIStream::eThisPointer:
-            {
-                _TRACE("CObjectIStream::ReadPointer: new");
-                In().RegisterObject(declaredType);
-                Out().RegisterObject(declaredType);
-                CopyObject(declaredType);
-                In().ReadThisPointerEnd();
-                return;
-            }
-        case CObjectIStream::eOtherPointer:
-            {
-                _TRACE("CObjectIStream::ReadPointer: new...");
-                string className = In().ReadOtherPointer();
-                _TRACE("CObjectIStream::ReadPointer: new " << className);
-                typeInfo = CClassTypeInfoBase::GetClassInfoByName(className);
-
-                BEGIN_OBJECT_FRAME_OF2(In(), eFrameNamed, typeInfo);
-                BEGIN_OBJECT_FRAME_OF2(Out(), eFrameNamed, typeInfo);
-                
-                In().RegisterObject(typeInfo);
-                Out().RegisterObject(typeInfo);
-
-                Out().WriteOtherBegin(typeInfo);
-
-                CopyObject(typeInfo);
-
-                Out().WriteOtherEnd(typeInfo);
-                
-                END_OBJECT_FRAME_OF(Out());
-                END_OBJECT_FRAME_OF(In());
-
-                In().ReadOtherPointerEnd();
-                break;
-            }
-        default:
-            In().SetFailFlags(CObjectIStream::eFormatError);
-            THROW1_TRACE(runtime_error, "illegal pointer type");
-        }
-        while ( typeInfo != declaredType ) {
-            // try to check parent class pointer
-            if ( typeInfo->GetTypeFamily() != eTypeFamilyClass ) {
-                In().SetFailFlags(CObjectIStream::eFormatError);
-                THROW1_TRACE(runtime_error, "incompatible member type");
-            }
-            const CClassTypeInfo* parentClass =
-                CTypeConverter<CClassTypeInfo>::SafeCast(typeInfo)->GetParentClassInfo();
-            if ( parentClass ) {
-                typeInfo = parentClass;
-            }
-            else {
-                In().SetFailFlags(CObjectIStream::eFormatError);
-                THROW1_TRACE(runtime_error, "incompatible member type");
-            }
-        }
+    _TRACE("CObjectIStream::CopyPointer("<<declaredType->GetName()<<")");
+    if ( !In().DetectLoops() ) {
+        CopyObject(declaredType);
         return;
     }
-    catch (...) {
-        In().SetFailFlags(CObjectIStream::eFail);
-        throw;
+    TTypeInfo typeInfo;
+    switch ( In().ReadPointerType() ) {
+    case CObjectIStream::eNullPointer:
+        _TRACE("CObjectIStream::CopyPointer: null");
+        Out().WriteNullPointer();
+        return;
+    case CObjectIStream::eObjectPointer:
+        {
+            _TRACE("CObjectIStream::CopyPointer: @...");
+            CObjectIStream::TObjectIndex index = In().ReadObjectPointer();
+            _TRACE("CObjectIStream::CopyPointer: @" << index);
+            typeInfo = In().GetRegisteredObject(index).GetTypeInfo();
+            Out().WriteObjectReference(index);
+            break;
+        }
+    case CObjectIStream::eThisPointer:
+        {
+            _TRACE("CObjectIStream::CopyPointer: new");
+            In().RegisterObject(declaredType);
+            Out().RegisterObject(declaredType);
+            CopyObject(declaredType);
+            return;
+        }
+    case CObjectIStream::eOtherPointer:
+        {
+            _TRACE("CObjectIStream::CopyPointer: new...");
+            string className = In().ReadOtherPointer();
+            _TRACE("CObjectIStream::CopyPointer: new " << className);
+            typeInfo = CClassTypeInfoBase::GetClassInfoByName(className);
+
+            BEGIN_OBJECT_2FRAMES2(eFrameNamed, typeInfo);
+
+            In().RegisterObject(typeInfo);
+            Out().RegisterObject(typeInfo);
+
+            Out().WriteOtherBegin(typeInfo);
+
+            CopyObject(typeInfo);
+
+            Out().WriteOtherEnd(typeInfo);
+                
+            END_OBJECT_2FRAMES();
+
+            In().ReadOtherPointerEnd();
+            break;
+        }
+    default:
+        ThrowError(CObjectIStream::eFormatError, "illegal pointer type");
+        return;
     }
+    while ( typeInfo != declaredType ) {
+        // try to check parent class pointer
+        if ( typeInfo->GetTypeFamily() != eTypeFamilyClass ) {
+            ThrowError(CObjectIStream::eFormatError,
+                       "incompatible member type");
+        }
+        const CClassTypeInfo* parentClass =
+            CTypeConverter<CClassTypeInfo>::SafeCast(typeInfo)->GetParentClassInfo();
+        if ( parentClass ) {
+            typeInfo = parentClass;
+        }
+        else {
+            ThrowError(CObjectIStream::eFormatError,
+                       "incompatible member type");
+        }
+    }
+    return;
 }
 
 void CObjectStreamCopier::CopyByteBlock(void)
@@ -203,6 +196,7 @@ void CObjectStreamCopier::CopyByteBlock(void)
         while ( (count = ib.Read(buffer, sizeof(buffer))) != 0 ) {
             ob.Write(buffer, count);
         }
+        ob.End();
     }
     else {
         // length is unknown -> copy via buffer
@@ -221,6 +215,7 @@ void CObjectStreamCopier::CopyByteBlock(void)
             CObjectOStream::ByteBlock ob(Out(), length);
             if ( length > 0 )
                 ob.Write(&o.front(), length);
+            ob.End();
         }
     }
     ib.End();

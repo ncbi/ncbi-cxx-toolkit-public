@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/10/20 15:51:23  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.4  2000/10/13 16:28:31  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -120,7 +126,26 @@ public:
 
     void CopyChoice(const CChoiceTypeInfo* choiceType);
 
+    typedef CObjectIStream::EFailFlags EFailFlags;
+    void ThrowError1(EFailFlags fail, const char* message);
+    void ThrowError1(EFailFlags fail, const string& message);
+    void ThrowError1(const char* file, int line,
+                     EFailFlags fail, const char* message);
+    void ThrowError1(const char* file, int line,
+                     EFailFlags fail, const string& message);
     void ExpectedMember(const CMemberInfo* memberInfo);
+    void DuplicatedMember(const CMemberInfo* memberInfo);
+
+#ifndef FILE_LINE
+# ifdef _DEBUG
+#  define FILE_LINE __FILE__, __LINE__, 
+# else
+#  define FILE_LINE
+# endif
+# define ThrowError(flag, mess) ThrowError1(FILE_LINE flag, mess)
+# define ThrowIOError(in) ThrowIOError1(FILE_LINE in)
+# define CheckIOError(in) CheckIOError1(FILE_LINE in)
+#endif
 
 private:
     CObjectIStream& m_In;

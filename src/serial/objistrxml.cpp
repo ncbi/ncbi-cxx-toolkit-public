@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/10/20 15:51:41  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.13  2000/10/13 20:59:21  vasilche
 * Avoid using of ssize_t absent on some compilers.
 *
@@ -720,7 +726,7 @@ CLightString CObjectIStreamXml::SkipStackTagName(CLightString tag,
     default:
         break;
     }
-    THROW1_TRACE(runtime_error, "illegal frame type");
+    ThrowError(eIllegalCall, "illegal frame type");
     return tag;
 }
 

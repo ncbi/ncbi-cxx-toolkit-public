@@ -4,6 +4,7 @@
 #include <serial/serialasn.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/object.hpp>
 #include <serial/iterator.hpp>
 #include "cppwebenv.hpp"
 

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/10/20 15:51:37  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.23  2000/10/13 16:28:38  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -277,7 +283,7 @@ public:
                      TObjectPtr objectPtr)
         {
             if ( objectPtr != 0 ) {
-                THROW1_TRACE(runtime_error, "non null value");
+                in.ThrowError(in.eInvalidData, "non null value");
             }
             in.ReadNull();
         }
@@ -285,7 +291,7 @@ public:
                       TConstObjectPtr objectPtr)
         {
             if ( objectPtr != 0 ) {
-                THROW1_TRACE(runtime_error, "non null value");
+                out.ThrowError(out.eInvalidData, "non null value");
             }
             out.WriteNull();
         }

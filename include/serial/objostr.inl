@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/10/20 15:51:27  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.7  2000/10/03 17:22:35  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -100,16 +106,9 @@ void CObjectOStream::WriteClassSequential(const CClassTypeInfo* classType,
 
 inline
 CObjectOStream::ByteBlock::ByteBlock(CObjectOStream& out, size_t length)
-    : m_Stream(out), m_Length(length)
+    : m_Stream(out), m_Length(length), m_Ended(false)
 {
     out.BeginBytes(*this);
-}
-
-inline
-CObjectOStream::ByteBlock::~ByteBlock(void)
-{
-    _ASSERT(m_Length == 0);
-    GetStream().EndBytes(*this);
 }
 
 inline

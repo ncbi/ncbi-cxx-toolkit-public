@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/10/20 15:51:38  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.17  2000/10/17 18:45:33  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -113,7 +119,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/member.hpp>
-#include <serial/object.hpp>
+#include <serial/objectinfo.hpp>
+#include <serial/objectiter.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
@@ -846,8 +853,8 @@ void CMemberInfoFunctions::WriteParentClass(CObjectOStream& /*out*/,
 void CMemberInfoFunctions::CopyParentClass(CObjectStreamCopier& copier,
                                            const CMemberInfo* /*memberInfo*/)
 {
-    copier.In().ThrowError(CObjectIStream::eFormatError,
-                           "cannot copy parent class");
+    copier.ThrowError(CObjectIStream::eFormatError,
+                      "cannot copy parent class");
 }
 
 void CMemberInfoFunctions::CopyMissingParentClass(CObjectStreamCopier& /*copier*/,

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2000/10/20 15:51:42  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.52  2000/10/17 18:45:35  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -256,7 +262,7 @@
 #include <serial/continfo.hpp>
 #include <serial/member.hpp>
 #include <serial/variant.hpp>
-#include <serial/object.hpp>
+#include <serial/objectinfo.hpp>
 #include <serial/objlist.hpp>
 
 #if HAVE_NCBI_C
@@ -324,7 +330,7 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
 }
 
 CObjectOStream::CObjectOStream(CNcbiOstream& out, bool deleteOut)
-    : m_Output(out, deleteOut)
+    : m_Output(out, deleteOut), m_Fail(0)
 {
 }
 
@@ -334,10 +340,90 @@ CObjectOStream::~CObjectOStream(void)
 
 void CObjectOStream::Close(void)
 {
+    m_Fail = eNotOpen;
     m_Output.Close();
     if ( m_Objects )
         m_Objects->Clear();
     ClearStack();
+}
+
+unsigned CObjectOStream::SetFailFlagsNoError(unsigned flags)
+{
+    unsigned old = m_Fail;
+    m_Fail |= flags;
+    return old;
+}
+
+unsigned CObjectOStream::SetFailFlags(unsigned flags, const char* message)
+{
+    unsigned old = m_Fail;
+    m_Fail |= flags;
+    if ( !old && flags ) {
+        // first fail
+        ERR_POST("CObjectOStream: error at "<<
+                 GetPosition()<<": "<<GetStackTrace() << ": " << message);
+    }
+    return old;
+}
+
+bool CObjectOStream::InGoodState(void)
+{
+    if ( fail() ) {
+        // fail flag already set
+        return false;
+    }
+    else if ( m_Output.fail() ) {
+        // IO exception thrown without setting fail flag
+        SetFailFlags(eWriteError, m_Output.GetError());
+        m_Output.ResetFail();
+        return false;
+    }
+    else {
+        // ok
+        return true;
+    }
+}
+
+void CObjectOStream::Unended(const string& msg)
+{
+    if ( InGoodState() )
+        ThrowError(eFail, msg);
+}
+
+void CObjectOStream::UnendedFrame(void)
+{
+    Unended("internal error: unended object stack frame");
+}
+
+string CObjectOStream::GetStackTrace(void) const
+{
+    return GetStackTraceASN();
+}
+
+void CObjectOStream::ThrowError1(EFailFlags fail, const char* message)
+{
+    SetFailFlags(fail, message);
+    THROW1_TRACE(runtime_error, message);
+}
+
+void CObjectOStream::ThrowError1(EFailFlags fail, const string& message)
+{
+    SetFailFlags(fail, message.c_str());
+    THROW1_TRACE(runtime_error, message);
+}
+
+void CObjectOStream::ThrowError1(const char* file, int line, 
+                                 EFailFlags fail, const char* message)
+{
+    CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << message;
+    ThrowError1(fail, message);
+}
+
+void CObjectOStream::ThrowError1(const char* file, int line, 
+                                 EFailFlags fail, const string& message)
+{
+    CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << message;
+    ThrowError1(fail, message);
 }
 
 void CObjectOStream::EndOfWrite(void)
@@ -499,21 +585,25 @@ void CObjectOStream::CopyNamedType(TTypeInfo namedTypeInfo,
                                    TTypeInfo objectType,
                                    CObjectStreamCopier& copier)
 {
+#ifndef VIRTUAL_MID_LEVEL_IO
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameNamed, namedTypeInfo);
+    copier.In().BeginNamedType(namedTypeInfo);
+    BeginNamedType(namedTypeInfo);
+
+    CopyObject(objectType, copier);
+
+    EndNamedType();
+    copier.In().EndNamedType();
+    END_OBJECT_2FRAMES_OF(copier);
+#else
     BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameNamed, namedTypeInfo);
     copier.In().BeginNamedType(namedTypeInfo);
 
-#ifndef VIRTUAL_MID_LEVEL_IO
-    BEGIN_OBJECT_FRAME2(eFrameNamed, namedTypeInfo);
-    BeginNamedType(namedTypeInfo);
-#endif
     CopyObject(objectType, copier);
-#ifndef VIRTUAL_MID_LEVEL_IO
-    EndNamedType();
-    END_OBJECT_FRAME();
-#endif
 
     copier.In().EndNamedType();
     END_OBJECT_FRAME_OF(copier.In());
+#endif
 }
 
 void CObjectOStream::WriteOther(TConstObjectPtr object,
@@ -578,15 +668,12 @@ void CObjectOStream::WriteContainerElement(const CConstObjectInfo& element)
 void CObjectOStream::CopyContainer(const CContainerTypeInfo* cType,
                                    CObjectStreamCopier& copier)
 {
-    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameArray, cType);
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameArray, cType);
     copier.In().BeginContainer(cType);
-
-    BEGIN_OBJECT_FRAME2(eFrameArray, cType);
     BeginContainer(cType);
 
     TTypeInfo elementType = cType->GetElementType();
-    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameArrayElement, elementType);
-    BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameArrayElement, elementType);
 
     while ( copier.In().BeginContainerElement(elementType) ) {
         BeginContainerElement(elementType);
@@ -597,14 +684,11 @@ void CObjectOStream::CopyContainer(const CContainerTypeInfo* cType,
         copier.In().EndContainerElement();
     }
 
-    END_OBJECT_FRAME();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
     
     EndContainer();
-    END_OBJECT_FRAME();
-
     copier.In().EndContainer();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
 }
 
 void CObjectOStream::EndClass(void)
@@ -661,16 +745,13 @@ bool CObjectOStream::WriteClassMember(const CMemberId& memberId,
 void CObjectOStream::CopyClassRandom(const CClassTypeInfo* classType,
                                      CObjectStreamCopier& copier)
 {
-    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameClass, classType);
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameClass, classType);
     copier.In().BeginClass(classType);
-
-    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
     BeginClass(classType);
 
     vector<bool> read(classType->GetMembers().LastIndex() + 1);
 
-    BEGIN_OBJECT_FRAME_OF(copier.In(), eFrameClassMember);
-    BEGIN_OBJECT_FRAME(eFrameClassMember);
+    BEGIN_OBJECT_2FRAMES_OF(copier, eFrameClassMember);
 
     TMemberIndex index;
     while ( (index = copier.In().BeginClassMember(classType)) !=
@@ -694,8 +775,7 @@ void CObjectOStream::CopyClassRandom(const CClassTypeInfo* classType,
         copier.In().EndClassMember();
     }
 
-    END_OBJECT_FRAME();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
 
     // init all absent members
     for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) {
@@ -705,22 +785,19 @@ void CObjectOStream::CopyClassRandom(const CClassTypeInfo* classType,
     }
 
     EndClass();
-    END_OBJECT_FRAME();
     copier.In().EndClass();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
 }
 
 void CObjectOStream::CopyClassSequential(const CClassTypeInfo* classType,
                                          CObjectStreamCopier& copier)
 {
-    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameClass, classType);
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameClass, classType);
     copier.In().BeginClass(classType);
-    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
     BeginClass(classType);
 
     CClassTypeInfo::CIterator pos(classType);
-    BEGIN_OBJECT_FRAME_OF(copier.In(), eFrameClassMember);
-    BEGIN_OBJECT_FRAME(eFrameClassMember);
+    BEGIN_OBJECT_2FRAMES_OF(copier, eFrameClassMember);
 
     TMemberIndex index;
     while ( (index = copier.In().BeginClassMember(classType, *pos)) !=
@@ -743,8 +820,7 @@ void CObjectOStream::CopyClassSequential(const CClassTypeInfo* classType,
         copier.In().EndClassMember();
     }
 
-    END_OBJECT_FRAME();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
 
     // init all absent members
     for ( ; pos.Valid(); ++pos ) {
@@ -752,9 +828,8 @@ void CObjectOStream::CopyClassSequential(const CClassTypeInfo* classType,
     }
 
     EndClass();
-    END_OBJECT_FRAME();
     copier.In().EndClass();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
 }
 
 void CObjectOStream::EndChoiceVariant(void)
@@ -781,29 +856,26 @@ void CObjectOStream::WriteChoice(const CChoiceTypeInfo* choiceType,
 void CObjectOStream::CopyChoice(const CChoiceTypeInfo* choiceType,
                                 CObjectStreamCopier& copier)
 {
-    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameChoice, choiceType);
-    BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameChoice, choiceType);
 
     TMemberIndex index = copier.In().BeginChoiceVariant(choiceType);
-    if ( index == kInvalidMember )
-        copier.In().ThrowError(CObjectIStream::eFormatError,
-                      "choice variant id expected");
+    if ( index == kInvalidMember ) {
+        copier.ThrowError(CObjectIStream::eFormatError,
+                          "choice variant id expected");
+    }
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameChoiceVariant,
-                           variantInfo->GetId());
-    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameChoiceVariant,
+                             variantInfo->GetId());
     BeginChoiceVariant(choiceType, variantInfo->GetId());
 
     variantInfo->CopyVariant(copier);
 
     EndChoiceVariant();
-    END_OBJECT_FRAME();
     copier.In().EndChoiceVariant();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
 
-    END_OBJECT_FRAME();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
 }
 
 void CObjectOStream::BeginBytes(const ByteBlock& )
@@ -812,6 +884,22 @@ void CObjectOStream::BeginBytes(const ByteBlock& )
 
 void CObjectOStream::EndBytes(const ByteBlock& )
 {
+}
+
+void CObjectOStream::ByteBlock::End(void)
+{
+    _ASSERT(!m_Ended);
+    _ASSERT(m_Length == 0);
+    if ( GetStream().InGoodState() ) {
+        GetStream().EndBytes(*this);
+        m_Ended = true;
+    }
+}
+
+CObjectOStream::ByteBlock::~ByteBlock(void)
+{
+    if ( !m_Ended )
+        GetStream().Unended("byte block not fully written");
 }
 
 #if HAVE_NCBI_C
@@ -827,16 +915,26 @@ extern "C" {
 }
 
 CObjectOStream::AsnIo::AsnIo(CObjectOStream& out, const string& rootTypeName)
-    : m_Stream(out), m_RootTypeName(rootTypeName), m_Count(0)
+    : m_Stream(out), m_RootTypeName(rootTypeName), m_Ended(false), m_Count(0)
 {
     m_AsnIo = AsnIoNew(out.GetAsnFlags() | ASNIO_OUT, 0, this, 0, WriteAsn);
     out.AsnOpen(*this);
 }
 
+void CObjectOStream::AsnIo::End(void)
+{
+    _ASSERT(!m_Ended);
+    if ( GetStream().InGoodState() ) {
+        AsnIoClose(*this);
+        GetStream().AsnClose(*this);
+        m_Ended = true;
+    }
+}
+
 CObjectOStream::AsnIo::~AsnIo(void)
 {
-    AsnIoClose(*this);
-    GetStream().AsnClose(*this);
+    if ( !m_Ended )
+        GetStream().Unended("AsnIo write error");
 }
 
 void CObjectOStream::AsnOpen(AsnIo& )
@@ -854,7 +952,7 @@ unsigned CObjectOStream::GetAsnFlags(void)
 
 void CObjectOStream::AsnWrite(AsnIo& , const char* , size_t )
 {
-    THROW1_TRACE(runtime_error, "illegal call");
+    ThrowError(eIllegalCall, "illegal call");
 }
 #endif
 

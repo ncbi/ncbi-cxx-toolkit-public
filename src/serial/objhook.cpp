@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/10/20 15:51:40  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.3  2000/09/26 17:38:21  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -52,7 +58,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objhook.hpp>
-#include <serial/object.hpp>
+#include <serial/objectinfo.hpp>
+#include <serial/objectiter.hpp>
 #include <serial/objistr.hpp>
 #include <serial/member.hpp>
 #include <serial/memberid.hpp>

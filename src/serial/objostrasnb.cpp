@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2000/10/20 15:51:43  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.50  2000/10/13 20:22:55  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -290,13 +296,18 @@ CObjectOStreamAsnBinary::~CObjectOStreamAsnBinary(void)
 {
 #if CHECK_STREAM_INTEGRITY
     if ( !m_Limits.empty() || m_CurrentTagState != eTagStart )
-        THROW1_TRACE(runtime_error, "CObjectOStreamAsnBinary not finished");
+        ThrowError(eFail, "CObjectOStreamAsnBinary not finished");
 #endif
 }
 
 ESerialDataFormat CObjectOStreamAsnBinary::GetDataFormat(void) const
 {
     return eSerial_AsnBinary;
+}
+
+string CObjectOStreamAsnBinary::GetPosition(void) const
+{
+    return "byte "+NStr::UIntToString(m_Output.GetStreamOffset());
 }
 
 #if CHECK_STREAM_INTEGRITY
@@ -313,7 +324,7 @@ inline
 void CObjectOStreamAsnBinary::EndTag(void)
 {
     if ( m_Limits.empty() )
-        THROW1_TRACE(runtime_error, "too many tag ends");
+        ThrowError(eIllegalCall, "too many tag ends");
     m_CurrentTagState = eTagStart;
     m_CurrentTagLimit = m_Limits.top();
     m_Limits.pop();
@@ -324,7 +335,7 @@ void CObjectOStreamAsnBinary::SetTagLength(size_t length)
 {
     size_t limit = m_CurrentPosition + 1 + length;
     if ( limit > m_CurrentTagLimit )
-        THROW1_TRACE(runtime_error, "tag will overflow enclosing tag");
+        ThrowError(eIllegalCall, "tag will overflow enclosing tag");
     else
         m_CurrentTagLimit = limit;
     if ( m_CurrentTagCode & 0x20 ) // constructed
@@ -344,7 +355,7 @@ void CObjectOStreamAsnBinary::WriteByte(TByte byte)
 #if CHECK_STREAM_INTEGRITY
     //_TRACE("WriteByte: " << NStr::PtrToString(byte));
     if ( m_CurrentPosition >= m_CurrentTagLimit )
-        THROW1_TRACE(runtime_error, "tag size overflow");
+        ThrowError(eOverflow, "tag size overflow");
     switch ( m_CurrentTagState ) {
     case eTagStart:
         StartTag(byte);
@@ -361,8 +372,8 @@ void CObjectOStreamAsnBinary::WriteByte(TByte byte)
         }
         else if ( byte == 0x80 ) {
             if ( !(m_CurrentTagCode & 0x20) ) {
-                THROW1_TRACE(runtime_error,
-                             "cannot use indefinite form for primitive tag");
+                ThrowError(eIllegalCall,
+                           "cannot use indefinite form for primitive tag");
             }
             m_CurrentTagState = eTagStart;
         }
@@ -372,13 +383,13 @@ void CObjectOStreamAsnBinary::WriteByte(TByte byte)
         else {
             m_CurrentTagLengthSize = byte - 0x80;
             if ( m_CurrentTagLengthSize > sizeof(size_t) )
-                THROW1_TRACE(runtime_error, "too big length");
+                ThrowError(eOverflow, "too big length");
             m_CurrentTagState = eLengthValueFirst;
         }
         break;
     case eLengthValueFirst:
         if ( byte == 0 )
-            THROW1_TRACE(runtime_error, "first byte of length is zero");
+            ThrowError(eFormatError, "first byte of length is zero");
         if ( --m_CurrentTagLengthSize == 0 ) {
             SetTagLength(byte);
 		}
@@ -413,9 +424,9 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
 #if CHECK_STREAM_INTEGRITY
     //_TRACE("WriteBytes: " << size);
     if ( m_CurrentTagState != eData )
-        THROW1_TRACE(runtime_error, "WriteBytes only allowed in DATA");
+        ThrowError(eFormatError, "WriteBytes only allowed in DATA");
     if ( m_CurrentPosition + size > m_CurrentTagLimit )
-        THROW1_TRACE(runtime_error, "tag DATA overflow");
+        ThrowError(eFormatError, "tag DATA overflow");
     if ( (m_CurrentPosition += size) == m_CurrentTagLimit )
         EndTag();
 #endif
@@ -448,7 +459,7 @@ void CObjectOStreamAsnBinary::WriteLongTag(EClass c, bool constructed,
                                            TTag tag)
 {
     if ( tag <= 0 )
-        THROW1_TRACE(runtime_error, "negative tag number");
+        ThrowError(eFormatError, "negative tag number");
     
     // long form
     WriteShortTag(c, constructed, eLongTag);
@@ -482,7 +493,7 @@ void CObjectOStreamAsnBinary::WriteClassTag(TTypeInfo typeInfo)
 {
     const string& tag = typeInfo->GetName();
     if ( tag.empty() )
-        THROW1_TRACE(runtime_error, "empty tag string");
+        ThrowError(eFormatError, "empty tag string");
 
     _ASSERT( tag[0] > eLongTag );
 
@@ -755,7 +766,7 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
     _ASSERT(sizeof(buffer) > size_t(precision + 16));
     int width = sprintf(buffer, "%.*f", precision, data);
     if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
-        THROW1_TRACE(runtime_error, "buffer overflow");
+        ThrowError(eOverflow, "buffer overflow");
     _ASSERT(int(strlen(buffer)) == width);
     if ( precision != 0 ) { // skip trailing zeroes
         while ( buffer[width - 1] == '0' ) {
@@ -971,8 +982,7 @@ void CObjectOStreamAsnBinary::CopyContainer(const CContainerTypeInfo* cType,
     WriteIndefiniteLength();
 
     TTypeInfo elementType = cType->GetElementType();
-    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameArrayElement, elementType);
-    BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameArrayElement, elementType);
 
     while ( copier.In().BeginContainerElement(elementType) ) {
 
@@ -981,8 +991,7 @@ void CObjectOStreamAsnBinary::CopyContainer(const CContainerTypeInfo* cType,
         copier.In().EndContainerElement();
     }
 
-    END_OBJECT_FRAME();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
     
     WriteEndOfContent();
 
@@ -1080,8 +1089,7 @@ void CObjectOStreamAsnBinary::CopyClassRandom(const CClassTypeInfo* classType,
 
     vector<bool> read(classType->GetMembers().LastIndex() + 1);
 
-    BEGIN_OBJECT_FRAME_OF(copier.In(), eFrameClassMember);
-    BEGIN_OBJECT_FRAME(eFrameClassMember);
+    BEGIN_OBJECT_2FRAMES_OF(copier, eFrameClassMember);
 
     TMemberIndex index;
     while ( (index = copier.In().BeginClassMember(classType)) !=
@@ -1091,7 +1099,7 @@ void CObjectOStreamAsnBinary::CopyClassRandom(const CClassTypeInfo* classType,
         SetTopMemberId(memberInfo->GetId());
 
         if ( read[index] ) {
-            copier.In().DuplicatedMember(memberInfo);
+            copier.DuplicatedMember(memberInfo);
         }
         else {
             read[index] = true;
@@ -1107,8 +1115,7 @@ void CObjectOStreamAsnBinary::CopyClassRandom(const CClassTypeInfo* classType,
         copier.In().EndClassMember();
     }
 
-    END_OBJECT_FRAME();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
 
     // init all absent members
     for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) {
@@ -1136,8 +1143,7 @@ void CObjectOStreamAsnBinary::CopyClassSequential(const CClassTypeInfo* classTyp
     WriteIndefiniteLength();
     
     CClassTypeInfo::CIterator pos(classType);
-    BEGIN_OBJECT_FRAME_OF(copier.In(), eFrameClassMember);
-    BEGIN_OBJECT_FRAME(eFrameClassMember);
+    BEGIN_OBJECT_2FRAMES_OF(copier, eFrameClassMember);
 
     TMemberIndex index;
     while ( (index = copier.In().BeginClassMember(classType, *pos)) !=
@@ -1163,8 +1169,7 @@ void CObjectOStreamAsnBinary::CopyClassSequential(const CClassTypeInfo* classTyp
         copier.In().EndClassMember();
     }
 
-    END_OBJECT_FRAME();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
 
     // init all absent members
     for ( ; pos.Valid(); ++pos ) {
@@ -1212,24 +1217,23 @@ void CObjectOStreamAsnBinary::CopyChoice(const CChoiceTypeInfo* choiceType,
     BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameChoice, choiceType);
 
     TMemberIndex index = copier.In().BeginChoiceVariant(choiceType);
-    if ( index == kInvalidMember )
-        copier.In().ThrowError(CObjectIStream::eFormatError,
-                      "choice variant id expected");
+    if ( index == kInvalidMember ) {
+        copier.ThrowError(CObjectIStream::eFormatError,
+                          "choice variant id expected");
+    }
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameChoiceVariant,
-                           variantInfo->GetId());
-    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameChoiceVariant,
+                             variantInfo->GetId());
     WriteTag(eContextSpecific, true, variantInfo->GetId().GetTag());
     WriteIndefiniteLength();
 
     variantInfo->CopyVariant(copier);
 
     WriteEndOfContent();
-    END_OBJECT_FRAME();
 
     copier.In().EndChoiceVariant();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
 
     END_OBJECT_FRAME_OF(copier.In());
 }
@@ -1260,9 +1264,9 @@ void CObjectOStreamAsnBinary::AsnWrite(AsnIo& , const char* data, size_t length)
 #if CHECK_STREAM_INTEGRITY
     _TRACE("WriteBytes: " << length);
     if ( m_CurrentTagState != eTagStart )
-        THROW1_TRACE(runtime_error, "AsnWrite only allowed at tag start");
+        ThrowError(eIllegalCall, "AsnWrite only allowed at tag start");
     if ( m_CurrentPosition + length > m_CurrentTagLimit )
-        THROW1_TRACE(runtime_error, "tag DATA overflow");
+        ThrowError(eIllegalCall, "tag DATA overflow");
     m_CurrentPosition += length;
 #endif
     m_Output.PutString(data, length);

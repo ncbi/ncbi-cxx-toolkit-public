@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/10/20 15:51:27  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.10  2000/10/04 19:18:54  vasilche
 * Fixed processing floating point data.
 *
@@ -96,6 +102,8 @@ public:
     virtual ~CObjectOStreamXml(void);
 
     ESerialDataFormat GetDataFormat(void) const;
+
+    virtual string GetPosition(void) const;
 
     virtual void WriteFileHeader(TTypeInfo type);
     virtual void WriteEnum(const CEnumeratedTypeValues& values, long value);

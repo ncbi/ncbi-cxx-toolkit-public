@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/10/20 15:51:43  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.4  2000/09/01 18:16:48  vasilche
 * Added files to MSVC project.
 * Fixed errors on MSVC.
@@ -93,16 +99,20 @@ string CObjectStack::GetStackTraceASN(void) const
         case TFrame::eFrameClassMember:
         case TFrame::eFrameChoiceVariant:
             {
-                _ASSERT(frame.m_MemberId);
-                const CMemberId& id = *frame.m_MemberId;
-                stack += '.';
-                if ( !id.GetName().empty() ) {
-                    stack += id.GetName();
+                if ( !frame.m_MemberId ) {
+                    _ASSERT(i == GetStackDepth() - 1);
                 }
                 else {
-                    stack += '[';
-                    stack += NStr::IntToString(id.GetTag());
-                    stack += ']';
+                    const CMemberId& id = *frame.m_MemberId;
+                    stack += '.';
+                    if ( !id.GetName().empty() ) {
+                        stack += id.GetName();
+                    }
+                    else {
+                        stack += '[';
+                        stack += NStr::IntToString(id.GetTag());
+                        stack += ']';
+                    }
                 }
             }
             break;

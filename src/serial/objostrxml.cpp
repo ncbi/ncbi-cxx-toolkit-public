@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/10/20 15:51:43  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.18  2000/10/17 18:45:35  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -157,6 +163,11 @@ CObjectOStreamXml::~CObjectOStreamXml(void)
 ESerialDataFormat CObjectOStreamXml::GetDataFormat(void) const
 {
     return eSerial_Xml;
+}
+
+string CObjectOStreamXml::GetPosition(void) const
+{
+    return "line "+NStr::UIntToString(m_Output.GetLine());
 }
 
 void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
@@ -305,7 +316,7 @@ void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
     _ASSERT(sizeof(buffer) > size_t(precision + 16));
     int width = sprintf(buffer, "%.*f", precision, data);
     if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
-        THROW1_TRACE(runtime_error, "buffer overflow");
+        ThrowError(eOverflow, "buffer overflow");
     _ASSERT(int(strlen(buffer)) == width);
     if ( precision != 0 ) { // skip trailing zeroes
         while ( buffer[width - 1] == '0' ) {
@@ -390,7 +401,7 @@ void CObjectOStreamXml::WriteObjectReference(TObjectIndex index)
     else if ( sizeof(TObjectIndex) == sizeof(long) )
         m_Output.PutLong(long(index));
     else
-        THROW1_TRACE(runtime_error, "invalid size of TObjectIndex");
+        ThrowError(eIllegalCall, "invalid size of TObjectIndex");
     m_Output.PutString("/>");
 }
 
@@ -456,7 +467,7 @@ void CObjectOStreamXml::PrintTagName(size_t level)
     default:
         break;
     }
-    THROW1_TRACE(runtime_error, "illegal frame type");
+    ThrowError(eIllegalCall, "illegal frame type");
 }
 
 void CObjectOStreamXml::WriteOtherBegin(TTypeInfo typeInfo)
@@ -588,19 +599,17 @@ void CObjectOStreamXml::CopyNamedType(TTypeInfo namedTypeInfo,
                                       TTypeInfo objectType,
                                       CObjectStreamCopier& copier)
 {
-    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameNamed, namedTypeInfo);
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameNamed, namedTypeInfo);
     copier.In().BeginNamedType(namedTypeInfo);
 
-    BEGIN_OBJECT_FRAME2(eFrameNamed, namedTypeInfo);
     OpenTag(namedTypeInfo);
 
     CopyObject(objectType, copier);
 
     CloseTag(namedTypeInfo);
-    END_OBJECT_FRAME();
 
     copier.In().EndNamedType();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
 }
 #endif
 

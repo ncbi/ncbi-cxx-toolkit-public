@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/10/20 15:51:28  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.6  2000/09/18 20:00:07  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -119,6 +125,8 @@ public:
     CObjectStack(void);
     virtual ~CObjectStack(void);
 
+    size_t GetStackDepth(void) const;
+
     TFrame& PushFrame(EFrameType type, TTypeInfo typeInfo);
     TFrame& PushFrame(EFrameType type, const CMemberId& memberId);
     TFrame& PushFrame(EFrameType type);
@@ -129,7 +137,6 @@ public:
     void SetTopMemberId(const CMemberId& memberId);
 
 protected:
-    size_t GetStackDepth(void) const;
     bool StackIsEmpty(void) const;
 
     void ClearStack(void);
@@ -169,6 +176,19 @@ private:
 #define BEGIN_OBJECT_FRAME(Type) BEGIN_OBJECT_FRAME_OF(*this, Type)
 #define BEGIN_OBJECT_FRAME2(Type, Arg) BEGIN_OBJECT_FRAME_OF2(*this, Type, Arg)
 #define END_OBJECT_FRAME() END_OBJECT_FRAME_OF(*this)
+
+#define BEGIN_OBJECT_2FRAMES_OFx(Stream, Args) \
+    (Stream).In().PushFrame Args; (Stream).Out().PushFrame Args; try {
+#define END_OBJECT_2FRAMES_OF(Stream) \
+    } catch (...) { (Stream).Out().PopFrame(); (Stream).Out().SetFailFlagsNoError(CObjectOStream::eInvalidData); (Stream).In().PopErrorFrame(); throw; } (Stream).Out().PopFrame(); (Stream).In().PopFrame()
+
+#define BEGIN_OBJECT_2FRAMES_OF(Stream, Type) \
+    BEGIN_OBJECT_2FRAMES_OFx(Stream, (CObjectStackFrame::Type))
+#define BEGIN_OBJECT_2FRAMES_OF2(Stream, Type, Arg) \
+    BEGIN_OBJECT_2FRAMES_OFx(Stream, (CObjectStackFrame::Type, Arg))
+#define BEGIN_OBJECT_2FRAMES(Type) BEGIN_OBJECT_2FRAMES_OF(*this, Type)
+#define BEGIN_OBJECT_2FRAMES2(Type, Arg) BEGIN_OBJECT_2FRAMES_OF2(*this, Type, Arg)
+#define END_OBJECT_2FRAMES() END_OBJECT_2FRAMES_OF(*this)
 
 END_NCBI_SCOPE
 

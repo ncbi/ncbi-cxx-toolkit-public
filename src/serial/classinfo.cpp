@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2000/10/20 15:51:37  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.57  2000/10/17 18:45:33  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -677,15 +683,16 @@ void CClassTypeInfo::Assign(TObjectPtr dst,
 
 bool CClassTypeInfo::IsType(TTypeInfo typeInfo) const
 {
-    return typeInfo->IsParentClassOf(this);
+    return typeInfo == this || typeInfo->IsParentClassOf(this);
 }
 
 bool CClassTypeInfo::IsParentClassOf(const CClassTypeInfo* typeInfo) const
 {
-    for ( ; typeInfo; typeInfo = typeInfo->m_ParentClassInfo ) {
+    do {
+        typeInfo = typeInfo->m_ParentClassInfo;
         if ( typeInfo == this )
             return true;
-    }
+    } while ( typeInfo );
     return false;
 }
 

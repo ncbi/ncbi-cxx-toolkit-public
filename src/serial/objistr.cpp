@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2000/10/20 15:51:40  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.65  2000/10/17 18:45:34  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -297,7 +303,7 @@
 #include <serial/bytesrc.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/objistrimpl.hpp>
-#include <serial/object.hpp>
+#include <serial/objectinfo.hpp>
 #include <serial/objlist.hpp>
 
 #include <limits.h>
@@ -438,14 +444,14 @@ void CObjectIStream::Close(void)
     m_Fail = eNotOpen;
 }
 
-unsigned CObjectIStream::SetFailFlags(unsigned flags)
+unsigned CObjectIStream::SetFailFlags(unsigned flags, const char* message)
 {
     unsigned old = m_Fail;
     m_Fail |= flags;
     if ( !old && flags ) {
         // first fail
         ERR_POST("CObjectIStream: error at "<<
-                 GetPosition()<<": "<<GetStackTrace());
+                 GetPosition()<<": "<<GetStackTrace() << ": " << message);
     }
     return old;
 }
@@ -458,8 +464,7 @@ bool CObjectIStream::InGoodState(void)
     }
     else if ( m_Input.fail() ) {
         // IO exception thrown without setting fail flag
-        ERR_POST("CObjectIStream: read error");
-        SetFailFlags(eFail);
+        SetFailFlags(eReadError, m_Input.GetError());
         m_Input.ResetFail();
         return false;
     }
@@ -487,24 +492,14 @@ string CObjectIStream::GetStackTrace(void) const
 
 void CObjectIStream::ThrowError1(EFailFlags fail, const char* message)
 {
-    SetFailFlags(fail);
+    SetFailFlags(fail, message);
     THROW1_TRACE(runtime_error, message);
 }
 
 void CObjectIStream::ThrowError1(EFailFlags fail, const string& message)
 {
-    SetFailFlags(fail);
+    SetFailFlags(fail, message.c_str());
     THROW1_TRACE(runtime_error, message);
-}
-
-void CObjectIStream::ThrowIOError1(CNcbiIstream& in)
-{
-    if ( in.eof() ) {
-        ThrowError1(eEOF, "unexpected EOF");
-    }
-    else {
-        ThrowError1(eReadError, "read error");
-    }
 }
 
 void CObjectIStream::ThrowError1(const char* file, int line, 
@@ -519,17 +514,6 @@ void CObjectIStream::ThrowError1(const char* file, int line,
 {
     CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << message;
     ThrowError1(fail, message);
-}
-
-void CObjectIStream::ThrowIOError1(const char* file, int line,
-                                   CNcbiIstream& in)
-{
-    if ( in.eof() ) {
-        ThrowError1(file, line, eEOF, "unexpected EOF");
-    }
-    else {
-        ThrowError1(file, line, eReadError, "read error");
-    }
 }
 
 static inline
@@ -551,13 +535,13 @@ void CObjectIStream::RegisterObject(TObjectPtr objectPtr, TTypeInfo typeInfo)
 }
 
 const CReadObjectInfo&
-CObjectIStream::GetRegisteredObject(CReadObjectInfo::TObjectIndex index) const
+CObjectIStream::GetRegisteredObject(CReadObjectInfo::TObjectIndex index)
 {
-    if ( m_Objects )
-        return m_Objects->GetRegisteredObject(index);
-    else
-        THROW1_TRACE(runtime_error,
-                     "invalid object index: NO_COLLECT defined");
+    if ( !m_Objects ) {
+        ThrowError(eFormatError,
+                   "invalid object index: NO_COLLECT defined");
+    }
+    return m_Objects->GetRegisteredObject(index);
 }
 
 // root reader
@@ -714,8 +698,13 @@ string CObjectIStream::ReadFileHeader(void)
 pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
 {
     _TRACE("CObjectIStream::ReadPointer("<<declaredType->GetName()<<")");
-    TTypeInfo objectType;
     TObjectPtr objectPtr;
+    if ( !m_Objects ) {
+        objectPtr = declaredType->Create();
+        ReadObject(objectPtr, declaredType);
+        return make_pair(objectPtr, declaredType);
+    }
+    TTypeInfo objectType;
     switch ( ReadPointerType() ) {
     case eNullPointer:
         _TRACE("CObjectIStream::ReadPointer: null");
@@ -729,9 +718,8 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
             objectType = info.GetTypeInfo();
             objectPtr = info.GetObjectPtr();
             if ( !objectPtr ) {
-                SetFailFlags(eFormatError);
-                THROW1_TRACE(runtime_error,
-                             "invalid reference to skipped object");
+                ThrowError(eFormatError,
+                           "invalid reference to skipped object");
             }
             break;
         }
@@ -741,7 +729,6 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
             objectPtr = declaredType->Create();
             RegisterObject(objectPtr, declaredType);
             ReadObject(objectPtr, declaredType);
-            ReadThisPointerEnd();
             return make_pair(objectPtr, declaredType);
         }
     case eOtherPointer:
@@ -763,14 +750,13 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
             break;
         }
     default:
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "illegal pointer type");
+        ThrowError(eFormatError, "illegal pointer type");
+        break;
     }
     while ( objectType != declaredType ) {
         // try to check parent class pointer
         if ( objectType->GetTypeFamily() != eTypeFamilyClass ) {
-            SetFailFlags(eFormatError);
-            THROW1_TRACE(runtime_error, "incompatible member type");
+            ThrowError(eFormatError, "incompatible member type");
         }
         const CClassTypeInfo* parentClass =
             CTypeConverter<CClassTypeInfo>::SafeCast(objectType)->GetParentClassInfo();
@@ -778,18 +764,13 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
             objectType = parentClass;
         }
         else {
-            SetFailFlags(eFormatError);
-            THROW1_TRACE(runtime_error, "incompatible member type");
+            ThrowError(eFormatError, "incompatible member type");
         }
     }
     return make_pair(objectPtr, objectType);
 }
 
 void CObjectIStream::ReadOtherPointerEnd(void)
-{
-}
-
-void CObjectIStream::ReadThisPointerEnd(void)
 {
 }
 
@@ -820,7 +801,6 @@ void CObjectIStream::SkipPointer(TTypeInfo declaredType)
             _TRACE("CObjectIStream::ReadPointer: new");
             RegisterObject(declaredType);
             SkipObject(declaredType);
-            ReadThisPointerEnd();
             break;
         }
     case eOtherPointer:
@@ -839,8 +819,7 @@ void CObjectIStream::SkipPointer(TTypeInfo declaredType)
             break;
         }
     default:
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "illegal pointer type");
+        ThrowError(eFormatError, "illegal pointer type");
     }
 }
 
@@ -1297,8 +1276,8 @@ void CObjectIStream::AsnClose(AsnIo& )
 
 size_t CObjectIStream::AsnRead(AsnIo& , char* , size_t )
 {
-    SetFailFlags(eIllegalCall);
-    THROW1_TRACE(runtime_error, "illegal call");
+    ThrowError(eIllegalCall, "illegal call");
+    return 0;
 }
 #endif
 

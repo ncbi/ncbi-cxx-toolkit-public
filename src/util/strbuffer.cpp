@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/10/20 15:51:44  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.19  2000/10/13 20:59:21  vasilche
 * Avoid using of ssize_t absent on some compilers.
 *
@@ -134,10 +140,10 @@ size_t BiggerBufferSize(size_t size) THROWS1_NONE
 
 CIStreamBuffer::CIStreamBuffer(void)
     THROWS1((bad_alloc))
-    : m_BufferOffset(0),
+    : m_Error(0), m_BufferOffset(0),
       m_BufferSize(KInitialBufferSize), m_Buffer(new char[KInitialBufferSize]),
       m_CurrentPos(m_Buffer), m_DataEndPos(m_Buffer),
-      m_Line(1), m_Fail(false),
+      m_Line(1),
       m_CollectPos(0)
 {
 }
@@ -150,7 +156,7 @@ CIStreamBuffer::~CIStreamBuffer(void)
 void CIStreamBuffer::Open(const CRef<CByteSourceReader>& reader)
 {
     m_Input = reader;
-    m_Fail = false;
+    m_Error = 0;
 }
 
 void CIStreamBuffer::Close(void)
@@ -160,7 +166,7 @@ void CIStreamBuffer::Close(void)
     m_CurrentPos = m_Buffer;
     m_DataEndPos = m_Buffer;
     m_Line = 1;
-    m_Fail = false;
+    m_Error = 0;
 }
 
 void CIStreamBuffer::StartSubSource(void)
@@ -342,11 +348,11 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
                              m_CollectPos<=m_CurrentPos));
                     return pos;
                 }
-                m_Fail = true;
+                m_Error = "end of file";
                 THROW0_TRACE(CSerialEofException());
             }
             else {
-                m_Fail = true;
+                m_Error = "read fault";
                 THROW1_TRACE(CSerialIOException, "read fault");
             }
         }
@@ -462,6 +468,12 @@ size_t CIStreamBuffer::ReadLine(char* buff, size_t size)
     }
 }
 
+void CIStreamBuffer::BadNumber(void)
+{
+    m_Error = "bad number";
+    THROW1_TRACE(runtime_error, "bad number");
+}
+
 int CIStreamBuffer::GetInt(void)
 {
     bool sign;
@@ -479,10 +491,8 @@ int CIStreamBuffer::GetInt(void)
         sign = false;
         break;
     }
-    if ( c < '0' || c > '9' ) {
-        m_Fail = true;
-        THROW1_TRACE(runtime_error, "bad number");
-    }
+    if ( c < '0' || c > '9' )
+        BadNumber();
 
     int n = c - '0';
     for ( ;; ) {
@@ -505,10 +515,8 @@ unsigned CIStreamBuffer::GetUInt(void)
     char c = GetChar();
     if ( c == '+' )
         c = GetChar();
-    if ( c < '0' || c > '9' ) {
-        m_Fail = true;
-        THROW1_TRACE(runtime_error, "bad number");
-    }
+    if ( c < '0' || c > '9' )
+        BadNumber();
 
     unsigned n = c - '0';
     for ( ;; ) {
@@ -545,10 +553,8 @@ long CIStreamBuffer::GetLong(void)
         sign = false;
         break;
     }
-    if ( c < '0' || c > '9' ) {
-        m_Fail = true;
-        THROW1_TRACE(runtime_error, "bad number");
-    }
+    if ( c < '0' || c > '9' )
+        BadNumber();
 
     long n = c - '0';
     for ( ;; ) {
@@ -576,10 +582,8 @@ unsigned long CIStreamBuffer::GetULong(void)
     char c = GetChar();
     if ( c == '+' )
         c = GetChar();
-    if ( c < '0' || c > '9' ) {
-        m_Fail = true;
-        THROW1_TRACE(runtime_error, "bad number");
-    }
+    if ( c < '0' || c > '9' )
+        BadNumber();
 
     unsigned long n = c - '0';
     for ( ;; ) {
@@ -597,7 +601,8 @@ unsigned long CIStreamBuffer::GetULong(void)
 
 COStreamBuffer::COStreamBuffer(CNcbiOstream& out, bool deleteOut)
     THROWS1((bad_alloc))
-    : m_Output(out), m_DeleteOutput(deleteOut), m_IndentLevel(0),
+    : m_Output(out), m_DeleteOutput(deleteOut), m_Error(0),
+      m_IndentLevel(0), m_BufferOffset(0),
       m_Buffer(new char[KInitialBufferSize]),
       m_CurrentPos(m_Buffer),
       m_BufferEnd(m_Buffer + KInitialBufferSize),
@@ -619,6 +624,7 @@ void COStreamBuffer::Close(void)
     if ( m_DeleteOutput )
         delete &m_Output;
     m_DeleteOutput = false;
+    m_Error = 0;
     m_IndentLevel = 0;
     m_CurrentPos = m_Buffer;
     m_Line = 1;
@@ -642,8 +648,10 @@ void COStreamBuffer::FlushBuffer(bool fullBuffer)
         count = used - leave;
     }
     if ( count != 0 ) {
-        if ( !m_Output.write(m_Buffer, count) )
+        if ( !m_Output.write(m_Buffer, count) ) {
+            m_Error = "write fault";
             THROW1_TRACE(CSerialIOException, "write fault");
+        }
         if ( leave != 0 ) {
             memmove(m_Buffer, m_Buffer + count, leave);
             m_CurrentPos -= count;
@@ -651,6 +659,7 @@ void COStreamBuffer::FlushBuffer(bool fullBuffer)
         else {
             m_CurrentPos = m_Buffer;
         }
+        m_BufferOffset += count;
     }
 }
 
@@ -706,7 +715,7 @@ void COStreamBuffer::PutInt(int v)
             v = -v;
         
         do {
-            *--pos = '0' + (v % 10);
+            *--pos = char('0' + (v % 10));
             v /= 10;
         } while ( v );
         
@@ -727,7 +736,7 @@ void COStreamBuffer::PutUInt(unsigned v)
     }
     else {
         do {
-            *--pos = '0' + (v % 10);
+            *--pos = char('0' + (v % 10));
             v /= 10;
         } while ( v );
     }
@@ -777,17 +786,10 @@ void COStreamBuffer::PutULong(unsigned long v)
         *--pos = '0';
     }
     else {
-        bool sign = v < 0;
-        if ( sign )
-            v = -v;
-        
         do {
             *--pos = char('0' + (v % 10));
             v /= 10;
         } while ( v );
-        
-        if ( sign )
-            *--pos = '-';
     }
     PutString(pos, b + BSIZE - pos);
 #endif

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/10/20 15:51:23  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.16  2000/10/03 17:22:32  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -105,7 +111,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/object.hpp>
+#include <serial/objectinfo.hpp>
+#include <serial/objecttype.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/serialutil.hpp>
 #include <set>
@@ -558,6 +565,13 @@ public:
         }
 };
 
+// get special typeinfo of CObject
+class CObjectGetTypeInfo
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+};
+
 // class for iteration on objects derived from class CObject
 typedef CTypeIterator<CObject, CObjectGetTypeInfo> CObjectIterator;
 // class for iteration on objects derived from class CObject
@@ -619,53 +633,6 @@ CConstBeginInfo Begin(const C& obj, EDetectLoops)
 {
     return CConstBeginInfo(&obj, C::GetTypeInfo(), true);
 }
-
-// helper template for working with CTypesIterator and CTypesConstIterator
-template<class C>
-class Type
-{
-public:
-    static TTypeInfo GetTypeInfo(void)
-        {
-            return C::GetTypeInfo();
-        }
-    operator CObjectTypeInfo(void) const
-        {
-            return GetTypeInfo();
-        }
-    operator TTypeInfo(void) const
-        {
-            return GetTypeInfo();
-        }
-    static void AddTo(CTypesIterator& i)
-        {
-            i.AddType(GetTypeInfo());
-        }
-    static void AddTo(CTypesConstIterator& i)
-        {
-            i.AddType(GetTypeInfo());
-        }
-    static bool Match(const CTypesIterator& i)
-        {
-            return i.GetMatchType() == GetTypeInfo();
-        }
-    static bool Match(const CTypesConstIterator& i)
-        {
-            return i.GetMatchType() == GetTypeInfo();
-        }
-    static C* Get(const CTypesIterator& i)
-        {
-            if ( !Match(i) )
-                return 0;
-            return static_cast<C*>(i.GetFoundPtr());
-        }
-    static const C* Get(const CTypesConstIterator& i)
-        {
-            if ( !Match(i) )
-                return 0;
-            return static_cast<const C*>(i.GetFoundPtr());
-        }
-};
 
 //#include <serial/iterator.inl>
 

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2000/10/20 15:51:41  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.58  2000/10/17 18:45:34  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -420,15 +426,6 @@ bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse,
     return false;
 }
 
-void CObjectIStreamAsn::ExpectString(const char* s, bool skipWhiteSpace)
-{
-    Expect(*s++, skipWhiteSpace);
-    char c;
-    while ( (c = *s++) != 0 ) {
-        Expect(c);
-    }
-}
-
 char CObjectIStreamAsn::SkipWhiteSpace(void)
 {
     for ( ;; ) {
@@ -562,14 +559,28 @@ CLightString CObjectIStreamAsn::ReadMemberId(char c)
 
 void CObjectIStreamAsn::ReadNull(void)
 {
-    ExpectString("NULL", true);
+    if ( SkipWhiteSpace() == 'N' && 
+         m_Input.PeekCharNoEOF(1) == 'U' &&
+         m_Input.PeekCharNoEOF(2) == 'L' &&
+         m_Input.PeekCharNoEOF(3) == 'L' &&
+         !IdChar(m_Input.PeekCharNoEOF(4)) ) {
+        m_Input.SkipChars(4);
+    }
+    else
+        ThrowError(eFormatError, "'NULL' expected");
 }
 
 string CObjectIStreamAsn::ReadFileHeader()
 {
     CLightString id = ReadTypeId(SkipWhiteSpace());
     string s(id);
-    ExpectString("::=", true);
+    if ( SkipWhiteSpace() == ':' && 
+         m_Input.PeekCharNoEOF(1) == ':' &&
+         m_Input.PeekCharNoEOF(2) == '=' ) {
+        m_Input.SkipChars(3);
+    }
+    else
+        ThrowError(eFormatError, "'::=' expected");
     return s;
 }
 
@@ -591,14 +602,28 @@ long CObjectIStreamAsn::ReadEnum(const CEnumeratedTypeValues& values)
 
 bool CObjectIStreamAsn::ReadBool(void)
 {
-    CLightString id = ReadUCaseId(SkipWhiteSpace());
-    if ( id == "TRUE" )
-        return true;
-    if ( id == "FALSE" )
-        return false;
-
-    ThrowError(eFormatError,
-               "\""+string(id)+"\": TRUE or FALSE expected");
+    switch ( SkipWhiteSpace() ) {
+    case 'T':
+        if ( m_Input.PeekCharNoEOF(1) == 'R' &&
+             m_Input.PeekCharNoEOF(2) == 'U' &&
+             m_Input.PeekCharNoEOF(3) == 'E' &&
+             !IdChar(m_Input.PeekCharNoEOF(4)) ) {
+            m_Input.SkipChars(4);
+            return true;
+        }
+        break;
+    case 'F':
+        if ( m_Input.PeekCharNoEOF(1) == 'A' &&
+             m_Input.PeekCharNoEOF(2) == 'L' &&
+             m_Input.PeekCharNoEOF(3) == 'S' &&
+             m_Input.PeekCharNoEOF(4) == 'E' &&
+             !IdChar(m_Input.PeekCharNoEOF(5)) ) {
+            m_Input.SkipChars(5);
+            return false;
+        }
+        break;
+    }
+    ThrowError(eFormatError, "TRUE or FALSE expected");
     return false;
 }
 
@@ -669,53 +694,73 @@ double CObjectIStreamAsn::ReadDouble(void)
 	return mantissa * pow(double(base), exp);
 }
 
+void CObjectIStreamAsn::BadStringChar(size_t startLine, char c)
+{
+    ThrowError(eFormatError,
+               "bad char in string stating at line "+
+               NStr::UIntToString(startLine)+": "+
+               NStr::IntToString(c));
+}
+
+void CObjectIStreamAsn::UnendedString(size_t startLine)
+{
+    ThrowError(eFormatError,
+               "unclosed string starts at line "+
+               NStr::UIntToString(startLine));
+}
+
 void CObjectIStreamAsn::ReadString(string& s)
 {
     Expect('\"', true);
     s.erase();
+    size_t startLine = m_Input.GetLine();
     size_t i = 0;
-    for (;;) {
-        char c = m_Input.PeekChar(i);
-        switch ( c ) {
-        case '\r':
-        case '\n':
-            // flush string
-            s.append(m_Input.GetCurrentPos(), i);
-            m_Input.SkipChars(i + 1);
-            i = 0;
-            // skip end of line
-            SkipEndOfLine(c);
-            break;
-        case '\"':
-            if ( m_Input.PeekCharNoEOF(i + 1) == '\"' ) {
-                // double quote -> one quote
-                s.append(m_Input.GetCurrentPos(), i + 1);
-                m_Input.SkipChars(i + 2);
-                i = 0;
-            }
-            else {
-                // end of string
+    try {
+        for (;;) {
+            char c = m_Input.PeekChar(i);
+            switch ( c ) {
+            case '\r':
+            case '\n':
+                // flush string
                 s.append(m_Input.GetCurrentPos(), i);
                 m_Input.SkipChars(i + 1);
-                return;
-            }
-            break;
-        default:
-            if ( c < ' ' && c >= 0 ) {
-                ThrowError(eFormatError,
-                           "bad char in string: " + NStr::IntToString(c));
-            }
-            else {
-                ++i;
-                if ( i == 128 ) {
-                    // too long string -> flush it
-                    s.append(m_Input.GetCurrentPos(), i);
-                    m_Input.SkipChars(i);
+                i = 0;
+                // skip end of line
+                SkipEndOfLine(c);
+                break;
+            case '\"':
+                if ( m_Input.PeekCharNoEOF(i + 1) == '\"' ) {
+                    // double quote -> one quote
+                    s.append(m_Input.GetCurrentPos(), i + 1);
+                    m_Input.SkipChars(i + 2);
                     i = 0;
                 }
+                else {
+                    // end of string
+                    s.append(m_Input.GetCurrentPos(), i);
+                    m_Input.SkipChars(i + 1);
+                    return;
+                }
+                break;
+            default:
+                if ( c < ' ' && c > '~' )
+                    BadStringChar(startLine, c);
+                else {
+                    ++i;
+                    if ( i == 128 ) {
+                        // too long string -> flush it
+                        s.append(m_Input.GetCurrentPos(), i);
+                        m_Input.SkipChars(i);
+                        i = 0;
+                    }
+                }
+                break;
             }
-            break;
         }
+    }
+    catch ( CSerialEofException& ) {
+        UnendedString(startLine);
+        throw;
     }
 }
 
@@ -816,45 +861,50 @@ void CObjectIStreamAsn::SkipFNumber(void)
 void CObjectIStreamAsn::SkipString(void)
 {
     Expect('\"', true);
+    size_t startLine = m_Input.GetLine();
     size_t i = 0;
-    for (;;) {
-        char c = m_Input.PeekChar(i);
-        switch ( c ) {
-        case '\r':
-        case '\n':
-            // flush string
-            m_Input.SkipChars(i + 1);
-            i = 0;
-            // skip end of line
-            SkipEndOfLine(c);
-            break;
-        case '\"':
-            if ( m_Input.PeekChar(i + 1) == '\"' ) {
-                // double quote -> one quote
-                m_Input.SkipChars(i + 2);
-                i = 0;
-            }
-            else {
-                // end of string
+    try {
+        for (;;) {
+            char c = m_Input.PeekChar(i);
+            switch ( c ) {
+            case '\r':
+            case '\n':
+                // flush string
                 m_Input.SkipChars(i + 1);
-                return;
-            }
-            break;
-        default:
-            if ( c < ' ' && c >= 0 ) {
-                ThrowError(eFormatError,
-                           "bad char in string: " + NStr::IntToString(c));
-            }
-            else {
-                ++i;
-                if ( i == 128 ) {
-                    // too long string -> flush it
-                    m_Input.SkipChars(i);
+                i = 0;
+                // skip end of line
+                SkipEndOfLine(c);
+                break;
+            case '\"':
+                if ( m_Input.PeekChar(i + 1) == '\"' ) {
+                    // double quote -> one quote
+                    m_Input.SkipChars(i + 2);
                     i = 0;
                 }
+                else {
+                    // end of string
+                    m_Input.SkipChars(i + 1);
+                    return;
+                }
+                break;
+            default:
+                if ( c < ' ' && c > '~' )
+                    BadStringChar(startLine, c);
+                else {
+                    ++i;
+                    if ( i == 128 ) {
+                        // too long string -> flush it
+                        m_Input.SkipChars(i);
+                        i = 0;
+                    }
+                }
+                break;
             }
-            break;
         }
+    }
+    catch ( CSerialEofException& ) {
+        UnendedString(startLine);
+        throw;
     }
 }
 
@@ -909,15 +959,20 @@ bool CObjectIStreamAsn::NextElement(void)
 {
     char c = SkipWhiteSpace();
     if ( m_BlockStart ) {
+        // first element
         m_BlockStart = false;
+        return c != '}';
     }
     else {
+        // next element
         if ( c == ',' ) {
             m_Input.SkipChar();
             return true;
         }
+        else if ( c != '}' )
+            ThrowError(eFormatError, "',' or '}' expected");
+        return false;
     }
-    return c != '}';
 }
 
 void CObjectIStreamAsn::EndBlock(void)
@@ -925,7 +980,7 @@ void CObjectIStreamAsn::EndBlock(void)
     Expect('}');
 }
 
-void CObjectIStreamAsn::BeginContainer(const CContainerTypeInfo* /*containerType*/)
+void CObjectIStreamAsn::BeginContainer(const CContainerTypeInfo* /*cType*/)
 {
     StartBlock();
 }
@@ -1162,10 +1217,10 @@ int CObjectIStreamAsn::GetHexChar(void)
         if ( c >= '0' && c <= '9' ) {
             return c - '0';
         }
-        else if ( c >= 'A' && c <= 'Z' ) {
+        else if ( c >= 'A' && c <= 'F' ) {
             return c - 'A' + 10;
         }
-        else if ( c >= 'a' && c <= 'z' ) {
+        else if ( c >= 'a' && c <= 'f' ) {
             return c - 'a' + 10;
         }
         switch ( c ) {
@@ -1216,9 +1271,15 @@ CObjectIStream::EPointerType CObjectIStreamAsn::ReadPointerType(void)
 {
     switch ( PeekChar(true) ) {
     case 'N':
-        m_Input.SkipChar();
-        ExpectString("ULL");
-        return eNullPointer;
+        if ( m_Input.PeekCharNoEOF(1) == 'U' &&
+             m_Input.PeekCharNoEOF(2) == 'L' &&
+             m_Input.PeekCharNoEOF(3) == 'L' &&
+             !IdChar(m_Input.PeekCharNoEOF(4)) ) {
+            // "NULL"
+            m_Input.SkipChars(4);
+            return eNullPointer;
+        }
+        break;
     case '@':
         m_Input.SkipChar();
         return eObjectPointer;
@@ -1226,8 +1287,9 @@ CObjectIStream::EPointerType CObjectIStreamAsn::ReadPointerType(void)
         m_Input.SkipChar();
         return eOtherPointer;
     default:
-        return eThisPointer;
+        break;
     }
+    return eThisPointer;
 }
 
 CObjectIStream::TObjectIndex CObjectIStreamAsn::ReadObjectPointer(void)

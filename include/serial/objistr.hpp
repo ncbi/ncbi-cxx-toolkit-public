@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2000/10/20 15:51:26  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.55  2000/10/17 18:45:24  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -498,14 +504,15 @@ public:
 
     // low level readers:
     enum EFailFlags {
-        eNoError = 0,
-        eEOF = 1,
-        eReadError = 2,
-        eFormatError = 4,
-        eOverflow = 8,
-        eIllegalCall = 16,
-        eFail = 32,
-        eNotOpen = 64
+        eNoError       = 0,
+        eEOF           = 1 << 0,
+        eReadError     = 1 << 1,
+        eFormatError   = 1 << 2,
+        eOverflow      = 1 << 3,
+        eInvalidData   = 1 << 4,
+        eIllegalCall   = 1 << 5,
+        eFail          = 1 << 6,
+        eNotOpen       = 1 << 7
     };
     bool fail(void) const
         {
@@ -515,7 +522,7 @@ public:
         {
             return m_Fail;
         }
-    unsigned SetFailFlags(unsigned flags);
+    unsigned SetFailFlags(unsigned flags, const char* message);
     unsigned ClearFailFlags(unsigned flags)
         {
             unsigned old = m_Fail;
@@ -528,32 +535,21 @@ public:
 
     void ThrowError1(EFailFlags fail, const char* message);
     void ThrowError1(EFailFlags fail, const string& message);
-    void ThrowIOError1(CNcbiIstream& in);
-    void CheckIOError1(CNcbiIstream& in)
-        {
-            if ( !in )
-                ThrowIOError1(in);
-        }
-
     void ThrowError1(const char* file, int line,
                      EFailFlags fail, const char* message);
     void ThrowError1(const char* file, int line,
                      EFailFlags fail, const string& message);
-    void ThrowIOError1(const char* file, int line, CNcbiIstream& in);
-    void CheckIOError1(const char* file, int line, CNcbiIstream& in)
-        {
-            if ( !in )
-                ThrowIOError1(file, line, in);
-        }
 
-#ifdef _DEBUG
-# define FILE_LINE __FILE__, __LINE__, 
-#else
-# define FILE_LINE
+#ifndef FILE_LINE
+# ifdef _DEBUG
+#  define FILE_LINE __FILE__, __LINE__, 
+# else
+#  define FILE_LINE
+# endif
+# define ThrowError(flag, mess) ThrowError1(FILE_LINE flag, mess)
+# define ThrowIOError(in) ThrowIOError1(FILE_LINE in)
+# define CheckIOError(in) CheckIOError1(FILE_LINE in)
 #endif
-#define ThrowError(flag, mess) ThrowError1(FILE_LINE flag, mess)
-#define ThrowIOError(in) ThrowIOError1(FILE_LINE in)
-#define CheckIOError(in) CheckIOError1(FILE_LINE in)
 
 	class ByteBlock
     {
@@ -693,7 +689,6 @@ protected:
     pair<TObjectPtr, TTypeInfo> ReadObjectInfo(void);
     virtual EPointerType ReadPointerType(void) = 0;
     virtual TObjectIndex ReadObjectPointer(void) = 0;
-    virtual void ReadThisPointerEnd(void);
     virtual string ReadOtherPointer(void) = 0;
     virtual void ReadOtherPointerEnd(void);
 
@@ -731,7 +726,7 @@ protected:
 
     void RegisterObject(TTypeInfo typeInfo);
     void RegisterObject(TObjectPtr object, TTypeInfo typeInfo);
-    const CReadObjectInfo& GetRegisteredObject(TObjectIndex index) const;
+    const CReadObjectInfo& GetRegisteredObject(TObjectIndex index);
 
 public:
     // open helpers

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/10/20 15:51:38  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.15  2000/10/17 18:45:33  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -259,8 +265,14 @@ void CEnumeratedTypeInfo::ReadEnum(CObjectIStream& in,
 {
     const CEnumeratedTypeInfo* enumType =
         CTypeConverter<CEnumeratedTypeInfo>::SafeCast(objectType);
-    enumType->m_ValueType->SetValueLong(objectPtr,
-                                        in.ReadEnum(enumType->Values()));
+    try {
+        enumType->m_ValueType->SetValueLong(objectPtr,
+                                            in.ReadEnum(enumType->Values()));
+    }
+    catch ( ... ) {
+        in.ThrowError(in.eFormatError, "invalid enum value");
+        throw;
+    }
 }
 
 void CEnumeratedTypeInfo::WriteEnum(CObjectOStream& out,
@@ -269,8 +281,14 @@ void CEnumeratedTypeInfo::WriteEnum(CObjectOStream& out,
 {
     const CEnumeratedTypeInfo* enumType =
         CTypeConverter<CEnumeratedTypeInfo>::SafeCast(objectType);
-    out.WriteEnum(enumType->Values(),
-                  enumType->m_ValueType->GetValueLong(objectPtr));
+    try {
+        out.WriteEnum(enumType->Values(),
+                      enumType->m_ValueType->GetValueLong(objectPtr));
+    }
+    catch ( ... ) {
+        out.ThrowError(out.eInvalidData, "invalid enum value");
+        throw;
+    }
 }
 
 void CEnumeratedTypeInfo::CopyEnum(CObjectStreamCopier& copier,
@@ -278,8 +296,13 @@ void CEnumeratedTypeInfo::CopyEnum(CObjectStreamCopier& copier,
 {
     const CEnumeratedTypeInfo* enumType =
         CTypeConverter<CEnumeratedTypeInfo>::SafeCast(objectType);
-    copier.Out().WriteEnum(enumType->Values(),
-                           copier.In().ReadEnum(enumType->Values()));
+    try {
+        copier.Out().CopyEnum(enumType->Values(), copier.In());
+    }
+    catch ( ... ) {
+        copier.ThrowError(CObjectIStream::eFormatError, "invalid enum value");
+        throw;
+    }
 }
 
 void CEnumeratedTypeInfo::SkipEnum(CObjectIStream& in,
@@ -287,7 +310,13 @@ void CEnumeratedTypeInfo::SkipEnum(CObjectIStream& in,
 {
     const CEnumeratedTypeInfo* enumType =
         CTypeConverter<CEnumeratedTypeInfo>::SafeCast(objectType);
-    in.ReadEnum(enumType->Values());
+    try {
+        in.ReadEnum(enumType->Values());
+    }
+    catch ( ... ) {
+        in.ThrowError(in.eFormatError, "invalid enum value");
+        throw;
+    }
 }
 
 END_NCBI_SCOPE

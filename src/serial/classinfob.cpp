@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/10/20 15:51:38  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.9  2000/10/13 20:22:54  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -84,7 +90,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/classinfob.hpp>
-#include <serial/object.hpp>
+#include <serial/objectinfo.hpp>
 #include <serial/objhook.hpp>
 
 BEGIN_NCBI_SCOPE

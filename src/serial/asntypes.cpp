@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2000/10/20 15:51:36  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.50  2000/10/17 18:45:32  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -704,7 +710,7 @@ void COctetStringTypeInfo::WriteOctetString(CObjectOStream& out,
 {
 	bytestore* bs = const_cast<bytestore*>(Get(objectPtr));
 	if ( bs == 0 )
-		THROW1_TRACE(runtime_error, "null bytestore pointer");
+		out.ThrowError(out.eIllegalCall, "null bytestore pointer");
 	Int4 len = BSLen(bs);
 	CObjectOStream::ByteBlock block(out, len);
 	BSSeek(bs, 0, SEEK_SET);
@@ -717,6 +723,7 @@ void COctetStringTypeInfo::WriteOctetString(CObjectOStream& out,
 		block.Write(buff, chunk);
 		len -= chunk;
 	}
+    block.End();
 }
 
 void COctetStringTypeInfo::CopyOctetString(CObjectStreamCopier& copier,
@@ -828,7 +835,8 @@ void COldAsnTypeInfo::WriteOldAsnStruct(CObjectOStream& out,
 
     CObjectOStream::AsnIo io(out, oldAsnType->GetName());
     if ( !oldAsnType->m_WriteProc(Get(objectPtr), io, 0) )
-        THROW1_TRACE(runtime_error, "write fault");
+        out.ThrowError(out.eFail, "write fault");
+    io.End();
 }
 
 END_NCBI_SCOPE

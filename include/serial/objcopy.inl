@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/10/20 15:51:23  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.3  2000/09/29 16:18:13  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -73,9 +79,51 @@ void CObjectStreamCopier::CopyObject(TTypeInfo type)
 }
 
 inline
+void CObjectStreamCopier::ThrowError1(EFailFlags flags,
+                                      const char* message)
+{
+    Out().SetFailFlagsNoError(CObjectOStream::eInvalidData);
+    In().ThrowError1(flags, message);
+}
+
+inline
+void CObjectStreamCopier::ThrowError1(EFailFlags flags,
+                                      const string& message)
+{
+    Out().SetFailFlagsNoError(CObjectOStream::eInvalidData);
+    In().ThrowError1(flags, message);
+}
+
+inline
+void CObjectStreamCopier::ThrowError1(const char* file, int line,
+                                      EFailFlags flags,
+                                      const char* message)
+{
+    Out().SetFailFlagsNoError(CObjectOStream::eInvalidData);
+    In().ThrowError1(file, line, flags, message);
+}
+
+inline
+void CObjectStreamCopier::ThrowError1(const char* file, int line,
+                                      EFailFlags flags,
+                                      const string& message)
+{
+    Out().SetFailFlagsNoError(CObjectOStream::eInvalidData);
+    In().ThrowError1(file, line, flags, message);
+}
+
+inline
 void CObjectStreamCopier::ExpectedMember(const CMemberInfo* memberInfo)
 {
+    Out().SetFailFlagsNoError(CObjectOStream::eInvalidData);
     In().ExpectedMember(memberInfo);
+}
+
+inline
+void CObjectStreamCopier::DuplicatedMember(const CMemberInfo* memberInfo)
+{
+    Out().SetFailFlagsNoError(CObjectOStream::eInvalidData);
+    In().DuplicatedMember(memberInfo);
 }
 
 inline

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/10/20 15:51:26  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.10  2000/10/03 17:22:34  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -88,6 +94,12 @@ inline
 void CObjectIStream::SkipObject(TTypeInfo typeInfo)
 {
     typeInfo->SkipData(*this);
+}
+
+inline
+bool CObjectIStream::DetectLoops(void) const
+{
+    return m_Objects;
 }
 
 inline

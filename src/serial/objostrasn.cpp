@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2000/10/20 15:51:42  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.54  2000/10/17 18:45:35  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -306,6 +312,11 @@ ESerialDataFormat CObjectOStreamAsn::GetDataFormat(void) const
     return eSerial_AsnText;
 }
 
+string CObjectOStreamAsn::GetPosition(void) const
+{
+    return "line "+NStr::UIntToString(m_Output.GetLine());
+}
+
 void CObjectOStreamAsn::WriteFileHeader(TTypeInfo type)
 {
     if ( true || m_Output.ZeroIndentLevel() ) {
@@ -384,7 +395,7 @@ void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
     _ASSERT(sizeof(buffer) > digits + 16);
     int width = sprintf(buffer, "%.*e", int(digits-1), data);
     if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
-        THROW1_TRACE(runtime_error, "buffer overflow");
+        ThrowError(eOverflow, "buffer overflow");
     _ASSERT(int(strlen(buffer)) == width);
     char* dotPos = strchr(buffer, '.');
     _ASSERT(dotPos);
@@ -398,7 +409,7 @@ void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
     int exp;
     // calcilate exponent
     if ( sscanf(ePos + 1, "%d", &exp) != 1 )
-        THROW1_TRACE(runtime_error, "double conversion error");
+        ThrowError(eFail, "double conversion error");
 
     // remove trailing zeroes
     int fractDigits = int(ePos - dotPos - 1);
@@ -439,6 +450,10 @@ void CObjectOStreamAsn::WriteString(const char* ptr, size_t length)
     while ( length > 0 ) {
         char c = *ptr++;
         --length;
+        if ( c < ' ' || c > '~' ) {
+            ERR_POST("bad char in string: " << int(c));
+            c = '#';
+        }
         m_Output.WrapAt(78, true);
         m_Output.PutChar(c);
         if ( c == '"' )
@@ -507,7 +522,7 @@ void CObjectOStreamAsn::WriteObjectReference(TObjectIndex index)
     else if ( sizeof(TObjectIndex) == sizeof(long) )
         m_Output.PutLong(long(index));
     else
-        THROW1_TRACE(runtime_error, "invalid size of TObjectIndex");
+        ThrowError(eIllegalCall, "invalid size of TObjectIndex");
 }
 
 void CObjectOStreamAsn::WriteOtherBegin(TTypeInfo typeInfo)
@@ -600,8 +615,7 @@ void CObjectOStreamAsn::CopyContainer(const CContainerTypeInfo* cType,
     StartBlock();
 
     TTypeInfo elementType = cType->GetElementType();
-    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameArrayElement, elementType);
-    BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameArrayElement, elementType);
 
     while ( copier.In().BeginContainerElement(elementType) ) {
         NextElement();
@@ -611,8 +625,7 @@ void CObjectOStreamAsn::CopyContainer(const CContainerTypeInfo* cType,
         copier.In().EndContainerElement();
     }
 
-    END_OBJECT_FRAME();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
     
     EndBlock();
 
@@ -704,8 +717,7 @@ void CObjectOStreamAsn::CopyClassRandom(const CClassTypeInfo* classType,
 
     vector<bool> read(classType->GetMembers().LastIndex() + 1);
 
-    BEGIN_OBJECT_FRAME_OF(copier.In(), eFrameClassMember);
-    BEGIN_OBJECT_FRAME(eFrameClassMember);
+    BEGIN_OBJECT_2FRAMES_OF(copier, eFrameClassMember);
 
     TMemberIndex index;
     while ( (index = copier.In().BeginClassMember(classType)) !=
@@ -715,7 +727,7 @@ void CObjectOStreamAsn::CopyClassRandom(const CClassTypeInfo* classType,
         SetTopMemberId(memberInfo->GetId());
 
         if ( read[index] ) {
-            copier.In().DuplicatedMember(memberInfo);
+            copier.DuplicatedMember(memberInfo);
         }
         else {
             read[index] = true;
@@ -732,8 +744,7 @@ void CObjectOStreamAsn::CopyClassRandom(const CClassTypeInfo* classType,
         copier.In().EndClassMember();
     }
 
-    END_OBJECT_FRAME();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
 
     // init all absent members
     for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) {
@@ -757,8 +768,7 @@ void CObjectOStreamAsn::CopyClassSequential(const CClassTypeInfo* classType,
     StartBlock();
 
     CClassTypeInfo::CIterator pos(classType);
-    BEGIN_OBJECT_FRAME_OF(copier.In(), eFrameClassMember);
-    BEGIN_OBJECT_FRAME(eFrameClassMember);
+    BEGIN_OBJECT_2FRAMES_OF(copier, eFrameClassMember);
 
     TMemberIndex index;
     while ( (index = copier.In().BeginClassMember(classType, *pos)) !=
@@ -785,8 +795,7 @@ void CObjectOStreamAsn::CopyClassSequential(const CClassTypeInfo* classType,
         copier.In().EndClassMember();
     }
 
-    END_OBJECT_FRAME();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
 
     // init all absent members
     for ( ; pos.Valid(); ++pos ) {
@@ -829,23 +838,21 @@ void CObjectOStreamAsn::CopyChoice(const CChoiceTypeInfo* choiceType,
     BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameChoice, choiceType);
 
     TMemberIndex index = copier.In().BeginChoiceVariant(choiceType);
-    if ( index == kInvalidMember )
-        copier.In().ThrowError(CObjectIStream::eFormatError,
-                      "choice variant id expected");
+    if ( index == kInvalidMember ) {
+        copier.ThrowError(CObjectIStream::eFormatError,
+                          "choice variant id expected");
+    }
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameChoiceVariant,
-                           variantInfo->GetId());
-    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameChoiceVariant,
+                             variantInfo->GetId());
     m_Output.PutString(variantInfo->GetId().GetName());
     m_Output.PutChar(' ');
 
     variantInfo->CopyVariant(copier);
 
-    END_OBJECT_FRAME();
-
     copier.In().EndChoiceVariant();
-    END_OBJECT_FRAME_OF(copier.In());
+    END_OBJECT_2FRAMES_OF(copier);
 
     END_OBJECT_FRAME_OF(copier.In());
 }

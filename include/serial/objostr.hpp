@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2000/10/20 15:51:27  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.50  2000/10/17 18:45:25  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -411,6 +417,56 @@ public:
     // delayed buffer
     virtual bool Write(const CRef<CByteSource>& source);
 
+    // low level readers:
+    enum EFailFlags {
+        eNoError       = 0,
+        eEOF           = 1 << 0,
+        eWriteError    = 1 << 1,
+        eFormatError   = 1 << 2,
+        eOverflow      = 1 << 3,
+        eInvalidData   = 1 << 4,
+        eIllegalCall   = 1 << 5,
+        eFail          = 1 << 6,
+        eNotOpen       = 1 << 7
+    };
+    bool fail(void) const
+        {
+            return m_Fail != 0;
+        }
+    unsigned GetFailFlags(void) const
+        {
+            return m_Fail;
+        }
+    unsigned SetFailFlagsNoError(unsigned flags);
+    unsigned SetFailFlags(unsigned flags, const char* message);
+    unsigned ClearFailFlags(unsigned flags)
+        {
+            unsigned old = m_Fail;
+            m_Fail &= ~flags;
+            return old;
+        }
+    bool InGoodState(void);
+    virtual string GetStackTrace(void) const;
+    virtual string GetPosition(void) const = 0;
+
+    void ThrowError1(EFailFlags fail, const char* message);
+    void ThrowError1(EFailFlags fail, const string& message);
+    void ThrowError1(const char* file, int line,
+                     EFailFlags fail, const char* message);
+    void ThrowError1(const char* file, int line,
+                     EFailFlags fail, const string& message);
+
+#ifndef FILE_LINE
+# ifdef _DEBUG
+#  define FILE_LINE __FILE__, __LINE__, 
+# else
+#  define FILE_LINE
+# endif
+# define ThrowError(flag, mess) ThrowError1(FILE_LINE flag, mess)
+# define ThrowIOError(in) ThrowIOError1(FILE_LINE in)
+# define CheckIOError(in) CheckIOError1(FILE_LINE in)
+#endif
+
 	class ByteBlock;
 	friend class ByteBlock;
 	class ByteBlock
@@ -425,9 +481,12 @@ public:
 
 		void Write(const void* bytes, size_t length);
 
+        void End(void);
+
 	private:
         CObjectOStream& m_Stream;
 		size_t m_Length;
+        bool m_Ended;
 	};
 
 #if HAVE_NCBI_C
@@ -441,6 +500,8 @@ public:
 
         void Write(const char* data, size_t length);
 
+        void End(void);
+
         operator asnio*(void);
         asnio* operator->(void);
         const string& GetRootTypeName(void) const;
@@ -449,6 +510,7 @@ public:
         CObjectOStream& m_Stream;
         string m_RootTypeName;
         asnio* m_AsnIo;
+        bool m_Ended;
 
     public:
         size_t m_Count;
@@ -557,8 +619,15 @@ protected:
     void RegisterObject(TTypeInfo typeInfo);
     void RegisterObject(TConstObjectPtr object, TTypeInfo typeInfo);
 
+    // report error about unended block
+    void Unended(const string& msg);
+    // report error about unended object stack frame
+    virtual void UnendedFrame(void);
+
 protected:
     COStreamBuffer m_Output;
+
+    unsigned m_Fail;
 
     AutoPtr<CWriteObjectList> m_Objects;
 

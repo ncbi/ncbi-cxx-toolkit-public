@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/10/20 15:51:52  vasilche
+* Fixed data error processing.
+* Added interface for costructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
 * Revision 1.27  2000/10/18 13:07:17  ostell
 * added proper program name to usage
 *
@@ -164,6 +170,7 @@ END_NCBI_SCOPE
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <serial/object.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
@@ -197,29 +204,67 @@ void SeqEntryProcess(CRef<CSeq_entry>& entry)
 }
 #endif
 
+class CCounter
+{
+public:
+    CCounter(void)
+        : m_Counter(0)
+        {
+        }
+    ~CCounter(void)
+        {
+            _ASSERT(m_Counter == 0);
+        }
+
+    operator int(void) const
+        {
+            return m_Counter;
+        }
+private:
+    friend class CInc;
+    int m_Counter;
+};
+
+class CInc
+{
+public:
+    CInc(CCounter& counter)
+        : m_Counter(counter)
+        {
+            ++counter.m_Counter;
+        }
+    ~CInc(void)
+        {
+            --m_Counter.m_Counter;
+        }
+private:
+    CCounter& m_Counter;
+};
+
 class CReadSeqSetHook : public CReadClassMemberHook
 {
 public:
     CReadSeqSetHook(void)
-        : m_Level(0)
+        : CReadClassMemberHook(eCanDelete)
         {
         }
-    ~CReadSeqSetHook(void)
-        {
-            _ASSERT(m_Level == 0);
-        }
-
     void ReadClassMember(CObjectIStream& in,
                          const CObjectInfo::CMemberIterator& member);
 
-    class CReadSeqEntryHook : public CReadContainerElementHook
-    {
-    public:
-        void ReadContainerElement(CObjectIStream& in,
-                                  const CObjectInfo& container);
-    };
+    CCounter m_Level;
+};
 
-    int m_Level;
+class CWriteSeqSetHook : public CWriteClassMemberHook
+{
+public:
+    CWriteSeqSetHook(void)
+        : CWriteClassMemberHook(eCanDelete)
+        {
+        }
+    void WriteClassMember(CObjectOStream& out,
+                          const CConstObjectInfo::CMemberIterator& member);
+
+    CCounter m_Level;
 };
 
 /*****************************************************************************
@@ -351,13 +396,9 @@ int CAsn2Asn::Run(void)
                     NcbiCerr << "Reading Bioseq-set..." << NcbiEndl;
                 if ( readHook ) {
                     CObjectTypeInfo bioseqSetType = Type<CBioseq_set>();
-                    CObjectTypeInfo::CMemberIterator seqSetMember = 
-                        bioseqSetType.FindMember("seq-set");
-                    _ASSERT(seqSetMember);
-                    CReadSeqSetHook hook;
-                    seqSetMember.SetLocalReadHook(*in, &hook);
+                    bioseqSetType.FindMember("seq-set")
+                        .SetLocalReadHook(*in, new CReadSeqSetHook);
                     *in >> entries;
-                    seqSetMember.ResetLocalReadHook(*in);
                 }
                 else {
                     *in >> entries;
@@ -370,6 +411,10 @@ int CAsn2Asn::Run(void)
                     if ( displayMessages )
                         NcbiCerr << "Writing Bioseq-set..." << NcbiEndl;
                     if ( writeHook ) {
+                        CObjectTypeInfo bioseqSetType = Type<CBioseq_set>();
+                        bioseqSetType.FindMember("seq-set")
+                            .SetLocalWriteHook(*out, new CWriteSeqSetHook);
+                        *out << entries;
                     }
                     else {
                         *out << entries;
@@ -396,34 +441,36 @@ void SeqEntryProcess(CSeq_entry& seqEntry)
 void CReadSeqSetHook::ReadClassMember(CObjectIStream& in,
                                       const CObjectInfo::CMemberIterator& member)
 {
-    ++m_Level;
-    //    NcbiCerr << "+Level: " << m_Level << NcbiEndl;
-    try {
-        if ( m_Level == 1 ) {
-            CReadSeqEntryHook hook;
-            (*member).ReadContainer(in, hook);
-        }
-        else {
-            in.ReadObject(*member);
+    CInc inc(m_Level);
+    if ( m_Level == 1 ) {
+        for ( CIStreamContainer i(in, member); i; ++i ) {
+            TSeqEntry entry;
+            i >> entry;
+            SeqEntryProcess(entry);
         }
     }
-    catch (...) {
-        --m_Level;
-        throw;
+    else {
+        in >> member;
     }
-    //    NcbiCerr << "-Level: " << m_Level << NcbiEndl;
-    --m_Level;
 }
 
-void CReadSeqSetHook::
-CReadSeqEntryHook::ReadContainerElement(CObjectIStream& in,
-                                        const CObjectInfo& /*cont*/)
+void CWriteSeqSetHook::WriteClassMember(CObjectOStream& out,
+                                        const CConstObjectInfo::CMemberIterator& member)
 {
-    TSeqEntry entry;
-    in.ReadSeparateObject(ObjectInfo(entry));
-#if CSEQ_ENTRY_REF_CHOICE
-    if ( !entry->ReferencedOnlyOnce() )
-        THROW1_TRACE(runtime_error, "error");
-#endif
-    SeqEntryProcess(entry);
+    CInc inc(m_Level);
+    if ( m_Level == 1 ) {
+        COStreamClassMember m(out, member);
+        COStreamContainer o(out, member);
+
+        typedef CBioseq_set::TSeq_set TSeq_set;
+        const TSeq_set& cnt = *Type<TSeq_set>::GetUnchecked(*member);
+
+        for ( TSeq_set::const_iterator i = cnt.begin(); i != cnt.end(); ++i ) {
+            const TSeqEntry& entry = **i;
+            o << entry;
+        }
+    }
+    else {
+        out << member;
+    }
 }
