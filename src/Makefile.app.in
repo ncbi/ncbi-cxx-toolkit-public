@@ -2,40 +2,19 @@
 # $Id$
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
 #################################
-# Must be used this way:
+# This can be used to build/install/clean
+# a single(sic!) application [APP] using [OBJ, LIB]
 #
 # srcdir = @srcdir@
 # include @builddir@/Makefile.mk
 #
-# APP1  = app1
-# OBJ1  = app1
-# LIB1  = libp1
-#
-# APP2  = app2
-# OBJ2  = app2 app2_1 app2_2
-# LIB2  = libp1
-#
-# SUBPROJ = sub_proj1 sub_proj2
-#
+# APP = my_app
+# OBJ = my_main my_obj1 my_obj2
+# LIB = foo bar
 # .....
-# CXXFLAGS = -g $(ORIG_CXXFLAGS) -D_DEBUG -DXYZ_APP1
+# CXXFLAGS = -g $(ORIG_CXXFLAGS) -D_DEBUG -DXYZ_MY_APP
 # .....
 # include @builddir@/Makefile.app
-#
-# ### Standard build rules for "app1"
-# XAPP1 = $(APP1)@exe_ext@
-# XOBJ1 = $(APPOBJ_APP1:=@obj_ext@)
-# XLIB1 = @f_libpath@$(libdir) $(LIB1:lib=@lib_pre@)
-# $(XAPP1): $(XOBJ1) $(libdir)/$(LIB_APP1)@lib_ext@
-# 	$(LINK) $(LDFLAGS) $(XOBJ1) $(XLIB1) $(LIBS)
-#
-# ### Standard build rules for "app2"
-# XAPP2 = $(APP2)@exe_ext@
-# XOBJ2 = $(APPOBJ_APP2:=@obj_ext@)
-# XLIB2 = @f_libpath@$(libdir) $(LIB2:lib=@lib_pre@)
-# $(XAPP2): $(XOBJ2) $(libdir)/$(LIB_APP2)@lib_ext@
-# 	$(LINK) $(LDFLAGS) $(XOBJ2) $(XLIB2) $(LIBS)
-#
 #################################
 
 
@@ -45,6 +24,23 @@
 	$(CXX) @f_compile@ $(CXXFLAGS) $(CPPFLAGS) $< @f_outobj@ $@
 %.@obj_ext@: $(srcdir)/%.c
 	$(CC)  @f_compile@ $(CFLAGS)   $(CPPFLAGS) $< @f_outobj@ $@
+
+
+### Library dependencies
+
+%.dep: $(libdir)/@lib_pre@%@lib_ext@
+	touch $@
+
+
+### Standard application build rules
+
+XAPP = $(APP)@exe_ext@
+XOBJ = $(APPOBJ_APP:=@obj_ext@)
+XLIB = @f_libpath@$(libdir) $(LIB:%=@lib_l_pre@%@lib_l_ext@)
+XLIBDEP = $(LIB:=.dep)
+
+$(XAPP): $(XOBJ) $(XLIBDEP)
+	$(LINK) $(LDFLAGS) $(XOBJ) $(XLIB) $(LIBS)
 
 
 ### Standard targets(non-recursive)
