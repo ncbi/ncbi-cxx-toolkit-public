@@ -42,6 +42,7 @@
 #include <time.h>
 #include <util/bitset/bm.h>
 #include <util/bitset/bmalgo.h>
+#include <util/bitset/bmserial.h>
 
 using namespace bm;
 using namespace std;
@@ -2371,11 +2372,11 @@ void DesrializationTest2()
 
    unsigned char* sermem = new unsigned char[st1.max_serialize_mem];
 
-   unsigned slen2 = bv1.serialize(sermem);
+   unsigned slen2 = bm::serialize(bv1, sermem);
    assert(slen2);
    slen2 = 0;
 
-   bvtotal.deserialize(sermem);
+   bm::deserialize(bvtotal, sermem);
    bvtotal.optimize();
 
    for (i = 55000; i < 165536; ++i)
@@ -2390,19 +2391,19 @@ void DesrializationTest2()
 
    unsigned char* sermem2 = new unsigned char[st2.max_serialize_mem];
 
-   unsigned slen = bv2.serialize(sermem2);
+   unsigned slen = bm::serialize(bv2, sermem2);
    assert(slen);
    slen = 0;
 
-   bvtotal.deserialize(sermem2);
+   bm::deserialize(bvtotal, sermem2);
    bvtotal.stat();
 
 //   bvtotal.optimize();
  //  bvtotal.stat();
 
-   bvtotal.deserialize(sermem2);
+   bm::deserialize(bvtotal, sermem2);
 
-   bvtotal.deserialize(sermem);
+   bm::deserialize(bvtotal, sermem);
 
    delete [] sermem;
    delete [] sermem2;
@@ -2427,7 +2428,7 @@ void DesrializationTest2()
 
        unsigned char* sermem = new unsigned char[st.max_serialize_mem];
 
-       unsigned slen = bvect_full1->serialize(sermem);
+       unsigned slen = bm::serialize(*bvect_full1, sermem);
 
        unsigned char* smem = new unsigned char[slen];
        ::memcpy(smem, sermem, slen);
@@ -2437,7 +2438,7 @@ void DesrializationTest2()
 
 //       cout << "Before deserialization" << endl;
 //       bvtotal.stat();
-       bvtotal.deserialize(smem);
+       bm::deserialize(bvtotal, smem);
 
 //       cout << "After deserialization" << endl;
 //       bvtotal.stat();
@@ -2774,7 +2775,7 @@ void StressTest(int repetitions)
 //    bvect_full1->stat();
 
         cout << "Serialization...";
-        unsigned slen = bvect_full1->serialize(sermem);
+        unsigned slen = bm::serialize(*bvect_full1, sermem);
         cout << "Ok" << endl;
 
         delete bvect_full1;
@@ -2797,9 +2798,9 @@ void StressTest(int repetitions)
 
         cout << "Deserialization...";
 
-        bvect_full3->deserialize(new_sermem);
+        bm::deserialize(*bvect_full3, new_sermem);
 
-        bvtotal.deserialize(new_sermem);
+        bm::deserialize(bvtotal, new_sermem);
 
         cout << "Ok." << endl;
         delete [] new_sermem;
@@ -3868,12 +3869,12 @@ void MutationOperationsTest()
     // serialization
 
     unsigned char* sermem = new unsigned char[st.max_serialize_mem];
-    unsigned slen = bvect_full1.serialize(sermem);
+    unsigned slen = bm::serialize(bvect_full1, sermem);
     cout << "BVECTOR SERMEM=" << slen << endl;
 
 
     bvect        bvect_full3;
-    bvect_full3.deserialize(sermem);
+    bm::deserialize(bvect_full3, sermem);
     bvect_full3.stat();
     CheckVectors(bvect_min1, bvect_full3, 100, true);
    }
@@ -3939,13 +3940,13 @@ void MutationOperationsTest()
     // serialization
 
     unsigned char* sermem = new unsigned char[st.max_serialize_mem];
-    unsigned slen = bvect_full1.serialize(sermem);
+    unsigned slen = bm::serialize(bvect_full1, sermem);
     cout << "BVECTOR SERMEM=" << slen << endl;
 
 
     
     bvect        bvect_full3;
-    bvect_full3.deserialize(sermem);
+    bm::deserialize(bvect_full3, sermem);
     bvect_full3.stat();
     CheckVectors(bvect_min1, bvect_full3, max+10, true);
     
@@ -3999,13 +4000,13 @@ void SerializationTest()
     bvect::statistics st;
     bvect_full1->calc_stat(&st);
     unsigned char* sermem = new unsigned char[st.max_serialize_mem];
-    unsigned slen = bvect_full1->serialize(sermem);
+    unsigned slen = bm::serialize(*bvect_full1, sermem);
     cout << "Serialized mem_max = " << st.max_serialize_mem 
          << " size= " << slen 
          << " Ratio=" << (slen*100)/st.max_serialize_mem << "%"
          << endl;
 
-    bvect_full2->deserialize(sermem);
+    bm::deserialize(*bvect_full2, sermem);
     delete [] sermem;
 
 
@@ -4039,13 +4040,13 @@ void SerializationTest()
     bvect::statistics st;
     bvect_full1->calc_stat(&st);
     unsigned char* sermem = new unsigned char[st.max_serialize_mem];
-    unsigned slen = bvect_full1->serialize(sermem);
+    unsigned slen = bm::serialize(*bvect_full1, sermem);
     cout << "Serialized mem_max = " << st.max_serialize_mem 
          << " size= " << slen 
          << " Ratio=" << (slen*100)/st.max_serialize_mem << "%"
          << endl;
 
-    bvect_full2->deserialize(sermem);
+    bm::deserialize(*bvect_full2, sermem);
     delete [] sermem;
 
     CheckVectors(*bvect_min1, *bvect_full2, size, true);
@@ -4091,12 +4092,12 @@ void SerializationTest()
     unsigned char* sermem = new unsigned char[st.max_serialize_mem];
     bvect_full1.stat();
     
-    unsigned slen = bvect_full1.serialize(sermem);
+    unsigned slen = bm::serialize(bvect_full1, sermem);
 
     cout << "Serialized len = " << slen << endl;
 
     bvect        bvect_full3;
-    bvect_full3.deserialize(sermem);
+    bm::deserialize(bvect_full3, sermem);
     CheckVectors(bvect_min1, bvect_full3, max+10, true);
 
     delete [] sermem;
@@ -4126,14 +4127,14 @@ cout << "Filling. OK." << endl;
 cout << st.max_serialize_mem << endl;
     unsigned char* sermem = new unsigned char[st.max_serialize_mem];
 cout << "Serialization" << endl;
-    unsigned slen = bvect_full1->serialize(sermem);
+    unsigned slen = bm::serialize(*bvect_full1, sermem);
 
     cout << "Serialized mem_max = " << st.max_serialize_mem 
          << " size= " << slen 
          << " Ratio=" << (slen*100)/st.max_serialize_mem << "%"
          << endl;
 cout << "Deserialization" << endl;
-    bvect_full2->deserialize(sermem);
+    bm::deserialize(*bvect_full2, sermem);
 cout << "Deserialization ok" << endl;
 
     CheckVectors(*bvect_min1, *bvect_full2, BITVECT_SIZE, true);
@@ -4168,14 +4169,14 @@ cout << "Deserialization ok" << endl;
     bvect::statistics st;
     bvect_full1->calc_stat(&st);
     unsigned char* sermem = new unsigned char[st.max_serialize_mem];
-    unsigned slen = bvect_full1->serialize(sermem);
+    unsigned slen = bm::serialize(*bvect_full1, sermem);
     delete bvect_full1;
 
     cout << "Serialized mem_max = " << st.max_serialize_mem 
          << " size= " << slen 
          << " Ratio=" << (slen*100)/st.max_serialize_mem << "%"
          << endl;
-    bvect_full2->deserialize(sermem);
+    bm::deserialize(*bvect_full2, sermem);
     delete [] sermem;
     
     bvect_min2->combine_or(*bvect_min1);
@@ -4231,7 +4232,7 @@ cout << "Deserialization ok" << endl;
     bvect::statistics st;
     bvect_full1->calc_stat(&st);
     unsigned char* sermem = new unsigned char[st.max_serialize_mem];
-    unsigned slen = bvect_full1->serialize(sermem);
+    unsigned slen = bm::serialize(*bvect_full1, sermem);
     cout << "Serialized mem_max = " << st.max_serialize_mem 
          << " size= " << slen 
          << " Ratio=" << (slen*100)/st.max_serialize_mem << "%"
@@ -4240,7 +4241,7 @@ cout << "Deserialization ok" << endl;
     unsigned char* new_sermem = new unsigned char[st.max_serialize_mem];
     ::memcpy(new_sermem, sermem, slen);
 
-    bvect_full2->deserialize(new_sermem);
+    bm::deserialize(*bvect_full2, new_sermem);
     delete [] sermem;
     delete [] new_sermem;
 
@@ -4690,11 +4691,11 @@ void BlockLevelTest()
 
     unsigned char* sermem = new unsigned char[st.max_serialize_mem];
 
-    unsigned slen = bv2.serialize(sermem);
+    unsigned slen = bm::serialize(bv2, sermem);
     assert(slen);
     slen = 0;
     
-    bv.deserialize(sermem);
+    bm::deserialize(bv, sermem);
 //    bv.optimize();
 
     bv.stat();
@@ -4729,6 +4730,8 @@ void SyntaxTest()
 {
     cout << "----------------------------- Syntax test." << endl;
     bvect bv1;
+    
+    bvect::allocator_type a = bv1.get_allocator();
 
     bvect bv2(bv1);
     bvect bv3;
@@ -5303,5 +5306,4 @@ int main(void)
 
     return 0;
 }
-
 
