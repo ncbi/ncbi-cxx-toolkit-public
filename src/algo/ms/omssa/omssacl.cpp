@@ -250,7 +250,7 @@ void COMSSA::Init()
 	argDesc->AddDefaultKey("zl", "mincharge", 
 				"minimum precursor charge to search when not 1+",
 				CArgDescriptions::eInteger, 
-				"2");
+				"1");
 	argDesc->AddDefaultKey("zt", "chargethresh", 
 				 "minimum precursor charge to start considering multiply charged products",
 				 CArgDescriptions::eInteger, 
@@ -527,6 +527,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.30  2005/03/25 22:02:34  lewisg
+  fix code to honor lower charge bound
+
   Revision 1.29  2005/03/22 22:22:34  lewisg
   search executable path for mods.xml
 

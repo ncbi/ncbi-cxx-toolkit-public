@@ -502,7 +502,7 @@ void CMSPeak::SetComputedCharge(const CMSChargeHandle& ChargeHandle)
 	MaxCharge = min(ChargeHandle.GetMaxcharge(), MSMAXCHARGE);
     PlusOne = ChargeHandle.GetPlusone();
 
-    if(IsPlus1(PercentBelow())) {
+    if(MinCharge <= 1 && IsPlus1(PercentBelow())) {
 		ComputedCharge = eCharge1;
 		Charges[0] = 1;
 		NumCharges = 1;
