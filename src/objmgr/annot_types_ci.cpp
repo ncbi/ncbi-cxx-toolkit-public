@@ -947,6 +947,11 @@ bool CAnnotTypes_CI::x_Search(const TTSE_LockSet& tse_set,
 
         CTSE_Info::TAnnotReadLockGuard guard(tse.m_AnnotObjsLock);
 
+        // Skip excluded TSEs
+        if ( ExcludedTSE(tse.GetTSE()) ) {
+            continue;
+        }
+
         if ( m_AdaptiveDepth && tse.ContainsSeqid(id) ) {
             const SIdAnnotObjs* objs = tse.x_GetUnnamedIdObjects(id);
             if ( objs ) {
@@ -1338,6 +1343,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.102  2003/11/13 19:12:53  grichenk
+* Added possibility to exclude TSEs from annotations request.
+*
 * Revision 1.101  2003/11/10 18:11:03  grichenk
 * Moved CSeq_loc_Conversion_Set to seq_loc_cvt
 *

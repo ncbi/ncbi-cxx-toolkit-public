@@ -271,12 +271,40 @@ SAnnotSelector::SetAdaptiveTrigger(const SAnnotTypeSelector& sel)
 }
 
 
+SAnnotSelector&
+SAnnotSelector::ExcludeTSE(const CSeq_entry& tse)
+{
+    if ( !ExcludedTSE(tse) ) {
+        m_ExcludedTSE.push_back(&tse);
+    }
+    return *this;
+}
+
+
+SAnnotSelector&
+SAnnotSelector::ResetExcludedTSE(void)
+{
+    m_ExcludedTSE.clear();
+    return *this;
+}
+
+
+bool SAnnotSelector::ExcludedTSE(const CSeq_entry& tse) const
+{
+    return find(m_ExcludedTSE.begin(), m_ExcludedTSE.end(), &tse)
+        != m_ExcludedTSE.end();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/11/13 19:12:52  grichenk
+* Added possibility to exclude TSEs from annotations request.
+*
 * Revision 1.2  2003/10/09 20:20:58  vasilche
 * Added possibility to include and exclude Seq-annot names to annot iterator.
 * Fixed adaptive search. It looked only on selected set of annot names before.

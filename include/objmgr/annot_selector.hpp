@@ -415,6 +415,11 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     bool IncludedAnnotName(const CAnnotName& name) const;
     bool ExcludedAnnotName(const CAnnotName& name) const;
 
+    // Limit search with a set of TSEs
+    typedef vector<const CSeq_entry*> TTSE_Limits;
+    SAnnotSelector& ExcludeTSE(const CSeq_entry& tse);
+    SAnnotSelector& ResetExcludedTSE(void);
+    bool ExcludedTSE(const CSeq_entry& tse) const;
 
     // No locations mapping flag. Set to true by CAnnot_CI.
     SAnnotSelector& SetNoMapping(bool value = true)
@@ -445,6 +450,7 @@ protected:
     bool                  m_NoMapping;
     bool                  m_AdaptiveDepth;
     TAdaptiveTriggers     m_AdaptiveTriggers;
+    TTSE_Limits           m_ExcludedTSE;
 };
 
 
@@ -454,6 +460,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/11/13 19:12:51  grichenk
+* Added possibility to exclude TSEs from annotations request.
+*
 * Revision 1.21  2003/10/09 20:20:59  vasilche
 * Added possibility to include and exclude Seq-annot names to annot iterator.
 * Fixed adaptive search. It looked only on selected set of annot names before.
