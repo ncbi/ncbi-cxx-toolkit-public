@@ -738,11 +738,13 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
 
     {{ // Find organism name 
         CConstRef<COrg_ref> org;
-        // Don't go up(!)
-        ITERATE(CSeq_descr::Tdata, it, core->GetDescr().Get()) {
-            if ((*it)->IsSource()) {
-                org = &(*it)->GetSource().GetOrg();
-                break;
+        if (core->CanGetDescr()) {
+            // Don't go up(!)
+            ITERATE(CSeq_descr::Tdata, it, core->GetDescr().Get()) {
+                if ((*it)->IsSource()) {
+                    org = &(*it)->GetSource().GetOrg();
+                    break;
+                }
             }
         }
         if (org.Empty()  &&  cds_loc.NotEmpty()) {
@@ -837,6 +839,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.24  2003/06/23 15:35:03  kuznets
+* Fixed problem with calling CBioseq_Handle::TBioseqCore::GetDescr()
+* for descriptionless protein molecules (can come from hand made fasta files)
+* Added CanGetDescr() guard call.
+*
 * Revision 1.23  2003/06/02 16:06:39  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
