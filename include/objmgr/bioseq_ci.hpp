@@ -42,13 +42,26 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
+/** @addtogroup ObjectManagerIterators
+ *
+ * @{
+ */
+
+
 class CScope;
 class CBioseq_Handle;
 class CSeq_entry;
 class CSeq_entry_Handle;
 
 
-// Base class for CBioseq_CI to make enums visible in CScope
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CBioseq_CI_Base --
+///
+///  Base class for CBioseq_CI to make enums visible in CScope
+///
+
 class CBioseq_CI_Base {
 public:
     enum EBioseqLevelFlag {
@@ -59,26 +72,45 @@ public:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CBioseq_CI --
+///
+///  Enumerate bioseqs in a given seq-entry
+///
+
 class NCBI_XOBJMGR_EXPORT CBioseq_CI : public CBioseq_CI_Base
 {
 public:
     // 'ctors
     CBioseq_CI(void);
-    // Iterate over bioseqs from the entry taken from the scope. Use optional
-    // filter to iterate over selected bioseq types only.
+
+    /// Create an iterator that enumerates bioseqs
+    /// from the entry taken from the scope. Use optional
+    /// filter to iterate over selected bioseq types only.
     CBioseq_CI(const CSeq_entry_Handle& entry,
                CSeq_inst::EMol filter = CSeq_inst::eMol_not_set,
                EBioseqLevelFlag level = eLevel_All);
+
+    /// Create an iterator that enumerates bioseqs
+    /// from the entry taken from the given scope. Use optional
+    /// filter to iterate over selected bioseq types only.
     CBioseq_CI(CScope& scope, const CSeq_entry& entry,
                CSeq_inst::EMol filter = CSeq_inst::eMol_not_set,
                EBioseqLevelFlag level = eLevel_All);
+
     CBioseq_CI(const CBioseq_CI& bioseq_ci);
     ~CBioseq_CI(void);
 
+    /// Get the current scope for the iterator
     CScope& GetScope(void) const;
 
     CBioseq_CI& operator= (const CBioseq_CI& bioseq_ci);
+
+    /// Move to the next object in iterated sequence
     CBioseq_CI& operator++ (void);
+
+    /// Check if iterator points to an object
     operator bool (void) const;
 
     const CBioseq_Handle& operator* (void) const;
@@ -132,12 +164,18 @@ CScope& CBioseq_CI::GetScope(void) const
 }
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/10/01 14:45:19  kononenk
+* Added doxygen formatting
+*
 * Revision 1.15  2004/03/16 15:47:25  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
