@@ -623,7 +623,7 @@ BlastQueryInfo* BlastQueryInfoFree(BlastQueryInfo* query_info)
 Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding, 
                           Uint1** packed_seq)
 {
-   Int4 new_length = (length+COMPRESSION_RATIO-1)/COMPRESSION_RATIO;
+   Int4 new_length = length/COMPRESSION_RATIO + 1;
    Uint1* new_buffer = (Uint1*) malloc(new_length);
    Int4 index, new_index;
    Uint1 remainder;
@@ -643,34 +643,23 @@ Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding,
             (NCBI4NA_TO_BLASTNA[buffer[index+3]]&PACK_MASK);
    }
 
-   /* Handle the last byte of the compressed sequence */
-   if ( (remainder = length%COMPRESSION_RATIO) == 0) {
-       if (encoding == BLASTNA_ENCODING)
-          new_buffer[new_index] =
-            ((buffer[index]&PACK_MASK)<<6) | ((buffer[index+1]&PACK_MASK)<<4) |
-            ((buffer[index+2]&PACK_MASK)<<2) | (buffer[index+3]&PACK_MASK);
-       else
-          new_buffer[new_index] =
-            ((NCBI4NA_TO_BLASTNA[buffer[index]]&PACK_MASK)<<6) |
-            ((NCBI4NA_TO_BLASTNA[buffer[index]]&PACK_MASK)<<4) |
-            ((NCBI4NA_TO_BLASTNA[buffer[index]]&PACK_MASK)<<2) |
-            (NCBI4NA_TO_BLASTNA[buffer[index]]&PACK_MASK);
-   } else {
-       new_buffer[new_index] = 0;
-       for (; index < length; index++) {
-           switch (index%COMPRESSION_RATIO) {
-           case 0: shift = 6; break;
-           case 1: shift = 4; break;
-           case 2: shift = 2; break;
-           default: abort();     /* should never happen */
-           }
-           if (encoding == BLASTNA_ENCODING)
-              new_buffer[new_index] |= ((buffer[index]&PACK_MASK)<<shift);
-           else
-              new_buffer[new_index] |=
-                  ((NCBI4NA_TO_BLASTNA[buffer[index]]&PACK_MASK)<<shift);
-       }
-       new_buffer[new_index] |= remainder;
+   /* Handle the last byte of the compressed sequence.
+      Last 2 bits of the last byte tell the number of valid 
+      packed sequence bases in it. */
+   new_buffer[new_index] = length % COMPRESSION_RATIO;
+
+   for (; index < length; index++) {
+      switch (index%COMPRESSION_RATIO) {
+      case 0: shift = 6; break;
+      case 1: shift = 4; break;
+      case 2: shift = 2; break;
+      default: abort();     /* should never happen */
+      }
+      if (encoding == BLASTNA_ENCODING)
+         new_buffer[new_index] |= ((buffer[index]&PACK_MASK)<<shift);
+      else
+         new_buffer[new_index] |=
+            ((NCBI4NA_TO_BLASTNA[buffer[index]]&PACK_MASK)<<shift);
    }
 
    *packed_seq = new_buffer;
