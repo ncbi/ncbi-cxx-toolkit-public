@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  1999/10/04 16:22:16  vasilche
+* Fixed bug with old ASN.1 structures.
+*
 * Revision 1.30  1999/09/27 16:17:19  vasilche
 * Fixed several incompatibilities with Windows
 *
@@ -158,25 +161,49 @@ unsigned CObjectIStream::SetFailFlags(unsigned flags)
     return old;
 }
 
-void CObjectIStream::ThrowError(EFailFlags fail, const char* message)
+void CObjectIStream::ThrowError1(EFailFlags fail, const char* message)
 {
     SetFailFlags(fail);
-    THROW1_TRACE(runtime_error, message);
+    throw runtime_error(message);
 }
 
-void CObjectIStream::ThrowError(EFailFlags fail, const string& message)
+void CObjectIStream::ThrowError1(EFailFlags fail, const string& message)
 {
     SetFailFlags(fail);
-    THROW1_TRACE(runtime_error, message);
+    throw runtime_error(message);
 }
 
-void CObjectIStream::ThrowError(CNcbiIstream& in)
+void CObjectIStream::ThrowIOError1(CNcbiIstream& in)
 {
     if ( in.eof() ) {
-        ThrowError(eEOF, "unexpected EOF");
+        ThrowError1(eEOF, "unexpected EOF");
     }
     else {
-        ThrowError(eReadError, "read error");
+        ThrowError1(eReadError, "read error");
+    }
+}
+
+void CObjectIStream::ThrowError1(const char* file, int line, 
+                                 EFailFlags fail, const char* message)
+{
+    CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << message;
+    ThrowError1(fail, message);
+}
+
+void CObjectIStream::ThrowError1(const char* file, int line, 
+                                 EFailFlags fail, const string& message)
+{
+    CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << message;
+    ThrowError1(fail, message);
+}
+
+void CObjectIStream::ThrowIOError1(const char* file, int line, CNcbiIstream& in)
+{
+    if ( in.eof() ) {
+        ThrowError1(file, line, eEOF, "unexpected EOF");
+    }
+    else {
+        ThrowError1(file, line, eReadError, "read error");
     }
 }
 
@@ -254,6 +281,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
         return 0;
     case eObjectPointer:
         {
+            _TRACE("CObjectIStream::ReadPointer: @...");
             TIndex index = ReadObjectPointer();
             _TRACE("CObjectIStream::ReadPointer: @" << index);
             info = GetRegisteredObject(index);
@@ -261,6 +289,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
         }
     case eMemberPointer:
         {
+            _TRACE("CObjectIStream::ReadPointer: member...");
             string memberName = ReadMemberPointer();
             _TRACE("CObjectIStream::ReadPointer: member " << memberName);
             info = ReadObjectInfo();
@@ -276,7 +305,9 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
                 info.GetTypeInfo()->GetMemberInfo(index);
             if ( memberInfo->GetTypeInfo() != declaredType ) {
                 SetFailFlags(eFormatError);
-                THROW1_TRACE(runtime_error, "incompatible member type");
+                THROW1_TRACE(runtime_error, "incompatible member type: " +
+                             memberInfo->GetTypeInfo()->GetName() + " need: " +
+                             declaredType->GetName());
             }
             return memberInfo->GetMember(info.GetObject());
         }
@@ -290,6 +321,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
         }
     case eOtherPointer:
         {
+            _TRACE("CObjectIStream::ReadPointer: new...");
             string className = ReadOtherPointer();
             _TRACE("CObjectIStream::ReadPointer: new " << className);
             TTypeInfo typeInfo = MapType(className);
@@ -304,6 +336,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
         THROW1_TRACE(runtime_error, "illegal pointer type");
     }
     while ( HaveMemberSuffix() ) {
+        _TRACE("CObjectIStream::ReadPointer: member...");
         string memberName = ReadMemberSuffix();
         _TRACE("CObjectIStream::ReadPointer: member " << memberName);
         CTypeInfo::TMemberIndex index =
@@ -316,11 +349,21 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
         const CMemberInfo* memberInfo =
             info.GetTypeInfo()->GetMemberInfo(index);
         info = CObject(memberInfo->GetMember(info.GetObject()),
-                            memberInfo->GetTypeInfo());
+                       memberInfo->GetTypeInfo());
     }
-    if ( info.GetTypeInfo() != declaredType ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "incompatible member type");
+    while ( info.GetTypeInfo() != declaredType ) {
+        // try to check parent class pointer
+        if ( info.GetTypeInfo()->FindMember(NcbiEmptyString) == 0 ) {
+            const CMemberInfo* parent = info.GetTypeInfo()->GetMemberInfo(0);
+            info = CObject(parent->GetMember(info.GetObject()),
+                           parent->GetTypeInfo());
+        }
+        else {
+            SetFailFlags(eFormatError);
+            THROW1_TRACE(runtime_error, "incompatible member type: " +
+                         info.GetTypeInfo()->GetName() + " need: " +
+                         declaredType->GetName());
+        }
     }
     return info.GetObject();
 }
@@ -629,8 +672,8 @@ extern "C" {
     }
 }
 
-CObjectIStream::AsnIo::AsnIo(CObjectIStream& in)
-    : m_In(in), m_Count(0)
+CObjectIStream::AsnIo::AsnIo(CObjectIStream& in, const string& rootTypeName)
+    : m_In(in), m_RootTypeName(rootTypeName), m_Count(0)
 {
     m_AsnIo = AsnIoNew(in.GetAsnFlags() | ASNIO_IN, 0, this, ReadAsn, 0);
     in.AsnOpen(*this);
@@ -642,21 +685,17 @@ CObjectIStream::AsnIo::~AsnIo(void)
     m_In.AsnClose(*this);
 }
 
+unsigned CObjectIStream::GetAsnFlags(void)
+{
+    return 0;
+}
+
 void CObjectIStream::AsnOpen(AsnIo& )
 {
 }
 
-void CObjectIStream::AsnClose(AsnIo& asn)
+void CObjectIStream::AsnClose(AsnIo& )
 {
-    if ( asn.m_Count != 0 ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "not all bytes read");
-    }
-}
-
-unsigned CObjectIStream::GetAsnFlags(void)
-{
-    return 0;
 }
 
 size_t CObjectIStream::AsnRead(AsnIo& , char* , size_t )

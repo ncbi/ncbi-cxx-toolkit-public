@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  1999/10/04 16:22:10  vasilche
+* Fixed bug with old ASN.1 structures.
+*
 * Revision 1.30  1999/09/24 19:01:17  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -381,11 +384,12 @@ CTypeRef GetChoiceTypeRef(TTypeInfo (*func)(void))
 
 template<typename T>
 inline
-CTypeRef GetOldAsnTypeRef(T* (*newProc)(void), T* (*freeProc)(T*),
+CTypeRef GetOldAsnTypeRef(const string& name,
+                          T* (*newProc)(void), T* (*freeProc)(T*),
                           T* (*readProc)(asnio*, asntype*),
                           unsigned char (*writeProc)(T*, asnio*, asntype*))
 {
-    return COldAsnTypeInfo::GetTypeInfo(
+    return new COldAsnTypeInfo(name,
         reinterpret_cast<COldAsnTypeInfo::TNewProc>(newProc),
         reinterpret_cast<COldAsnTypeInfo::TFreeProc>(freeProc),
         reinterpret_cast<COldAsnTypeInfo::TReadProc>(readProc),
@@ -615,13 +619,14 @@ CMemberInfo* ChoiceMemberInfo(const valnode* const* member,
 
 template<typename T>
 inline
-CMemberInfo* OldAsnMemberInfo(const T* const* member,
+CMemberInfo* OldAsnMemberInfo(const T* const* member, const string& name,
                               T* (*newProc)(void), T* (*freeProc)(T*),
                               T* (*readProc)(asnio*, asntype*),
                               unsigned char (*writeProc)(T*, asnio*, asntype*))
 {
-    return MemberInfo(member, GetOldAsnTypeRef(newProc, freeProc,
-                                               readProc, writeProc));
+    return MemberInfo(member,
+                      GetOldAsnTypeRef(name, newProc, freeProc,
+                                       readProc, writeProc));
 }
 #endif
 
@@ -732,14 +737,14 @@ BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
 	info->AddMember(Name, ASN_MEMBER(Member, Type))
 #define ADD_ASN_MEMBER(Member, Type) ADD_ASN_MEMBER2(#Member, Member, Type)
 
-#define OLD_ASN_MEMBER(Member, Type) \
-    OldAsnMemberInfo(MEMBER_PTR(Member), \
+#define OLD_ASN_MEMBER(Member, Name, Type) \
+    OldAsnMemberInfo(MEMBER_PTR(Member), Name, \
                      NAME2(Type, New), NAME2(Type, Free), \
                      NAME2(Type, AsnRead), NAME2(Type, AsnWrite))
-#define ADD_OLD_ASN_MEMBER2(Name, Member, Type) \
-	info->AddMember(Name, OLD_ASN_MEMBER(Member, Type))
+#define ADD_OLD_ASN_MEMBER2(Name, Member, TypeName, Type) \
+	info->AddMember(Name, OLD_ASN_MEMBER(Member, TypeName, Type))
 #define ADD_OLD_ASN_MEMBER(Member, Type) \
-    ADD_OLD_ASN_MEMBER2(#Member, Member, Type)
+    ADD_OLD_ASN_MEMBER2(#Member, Member, #Type, Type)
 
 #define CHOICE_MEMBER(Member, Choices) \
     ChoiceMemberInfo(MEMBER_PTR(Member), \

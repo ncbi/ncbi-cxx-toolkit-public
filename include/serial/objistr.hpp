@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/10/04 16:22:08  vasilche
+* Fixed bug with old ASN.1 structures.
+*
 * Revision 1.26  1999/09/27 14:17:59  vasilche
 * Fixed bug with overloaded construtors of Block.
 *
@@ -252,14 +255,35 @@ public:
             m_Fail &= ~flags;
             return old;
         }
-    void ThrowError(EFailFlags flags, const char* message);
-    void ThrowError(EFailFlags flags, const string& message);
-    void ThrowError(CNcbiIstream& in);
-    void CheckError(CNcbiIstream& in)
+
+    void ThrowError1(EFailFlags fail, const char* message);
+    void ThrowError1(EFailFlags fail, const string& message);
+    void ThrowIOError1(CNcbiIstream& in);
+    void CheckIOError1(CNcbiIstream& in)
         {
             if ( !in )
-                ThrowError(in);
+                ThrowIOError1(in);
         }
+
+    void ThrowError1(const char* file, int line,
+                     EFailFlags fail, const char* message);
+    void ThrowError1(const char* file, int line,
+                     EFailFlags fail, const string& message);
+    void ThrowIOError1(const char* file, int line, CNcbiIstream& in);
+    void CheckIOError1(const char* file, int line, CNcbiIstream& in)
+        {
+            if ( !in )
+                ThrowIOError1(file, line, in);
+        }
+
+#ifdef _DEBUG
+# define FILE_LINE __FILE__, __LINE__, 
+#else
+# define FILE_LINE
+#endif
+#define ThrowError(flag, mess) ThrowError1(FILE_LINE flag, mess)
+#define ThrowIOError(in) ThrowIOError1(FILE_LINE in)
+#define CheckIOError(in) CheckIOError1(FILE_LINE in)
 
     // member interface
     class Member {
@@ -413,7 +437,7 @@ public:
     // ASN.1 interface
     class AsnIo {
     public:
-        AsnIo(CObjectIStream& in);
+        AsnIo(CObjectIStream& in, const string& rootTypeName);
         ~AsnIo(void);
         operator asnio*(void)
             {
@@ -423,12 +447,17 @@ public:
             {
                 return m_AsnIo;
             }
+        const string& GetRootTypeName(void) const
+            {
+                return m_RootTypeName;
+            }
         size_t Read(char* data, size_t length)
             {
                 return m_In.AsnRead(*this, data, length);
             }
     private:
         CObjectIStream& m_In;
+        string m_RootTypeName;
         asnio* m_AsnIo;
 
     public:
@@ -437,10 +466,10 @@ public:
     friend class AsnIo;
 protected:
     // ASN.1 interface
-    virtual void AsnOpen(AsnIo& asn);
-    virtual void AsnClose(AsnIo& asn);
     virtual unsigned GetAsnFlags(void);
+    virtual void AsnOpen(AsnIo& asn);
     virtual size_t AsnRead(AsnIo& asn, char* data, size_t length);
+    virtual void AsnClose(AsnIo& asn);
 #endif
 
 protected:

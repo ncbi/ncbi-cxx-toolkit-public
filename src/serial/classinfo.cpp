@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/10/04 16:22:16  vasilche
+* Fixed bug with old ASN.1 structures.
+*
 * Revision 1.22  1999/09/22 20:11:54  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -423,6 +426,17 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
                 info->GetTypeInfo()->Assign(member, info->GetDefault());
         }
     }
+}
+
+size_t CClassInfoTmpl::GetFirstMemberOffset(void) const
+{
+    size_t offset = INT_MAX;
+    for ( TMembersInfo::const_iterator i = m_MembersInfo.begin();
+          i != m_MembersInfo.end();
+          ++i ) {
+        offset = min(offset, (*i)->GetOffset());
+    }
+    return offset;
 }
 
 const CClassInfoTmpl::TMembersByOffset&

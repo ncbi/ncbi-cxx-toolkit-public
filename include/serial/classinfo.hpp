@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/10/04 16:22:08  vasilche
+* Fixed bug with old ASN.1 structures.
+*
 * Revision 1.19  1999/09/14 18:54:02  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -168,6 +171,7 @@ public:
         }
 
     const TMembersByOffset& GetMembersByOffset(void) const;
+    size_t GetFirstMemberOffset(void) const;
 
     virtual TMemberIndex FindMember(const string& name) const;
     virtual TMemberIndex LocateMember(TConstObjectPtr object,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/10/04 16:22:17  vasilche
+* Fixed bug with old ASN.1 structures.
+*
 * Revision 1.17  1999/09/24 18:19:18  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -165,7 +168,7 @@ unsigned char CObjectIStreamAsnBinary::ReadByte(void)
 {
     char c;
     m_Input.get(c);
-    CheckError(m_Input);
+    CheckIOError(m_Input);
 #if CHECK_STREAM_INTEGRITY
     TByte byte = TByte(c);
     if ( m_CurrentPosition >= m_CurrentTagLimit ) {
@@ -257,7 +260,7 @@ void CObjectIStreamAsnBinary::ReadBytes(char* buffer, size_t count)
     }
 #endif
     m_Input.read(buffer, count);
-    CheckError(m_Input);
+    CheckIOError(m_Input);
 }
 
 #if !CHECK_STREAM_INTEGRITY
@@ -281,7 +284,7 @@ void CObjectIStreamAsnBinary::SkipBytes(size_t count)
     }
 #endif
     m_Input.seekg(count, ios::cur);
-    CheckError(m_Input);
+    CheckIOError(m_Input);
 }
 
 void CObjectIStreamAsnBinary::ExpectByte(TByte byte)
@@ -755,7 +758,9 @@ void CObjectIStreamAsnBinary::ReadMemberPointerEnd(void)
 
 CObjectIStream::TIndex CObjectIStreamAsnBinary::ReadObjectPointer(void)
 {
-    return ReadUInt();
+    unsigned data;
+    ReadStdUnsigned(*this, data);
+    return data;
 }
 
 string CObjectIStreamAsnBinary::ReadOtherPointer(void)

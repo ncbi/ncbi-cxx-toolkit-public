@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/10/04 16:22:09  vasilche
+* Fixed bug with old ASN.1 structures.
+*
 * Revision 1.5  1999/09/14 18:54:04  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -167,7 +170,9 @@ protected:
     void CheckAllWritten(void) const;
 
 private:
-    typedef map<TConstObjectPtr, CORootObjectInfo, greater<TConstObjectPtr> > TObjects;
+    // we need reverse order map due to faster algorithm of lookup
+    typedef map<TConstObjectPtr, CORootObjectInfo,
+        greater<TConstObjectPtr> > TObjects;
 
     TObjects m_Objects;
     TIndex m_NextObjectIndex;

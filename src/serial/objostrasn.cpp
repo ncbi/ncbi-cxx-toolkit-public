@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/10/04 16:22:18  vasilche
+* Fixed bug with old ASN.1 structures.
+*
 * Revision 1.26  1999/09/24 18:19:19  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -356,6 +359,7 @@ unsigned CObjectOStreamAsn::GetAsnFlags(void)
 
 void CObjectOStreamAsn::AsnOpen(AsnIo& asn)
 {
+    asn.m_Count = 0;
     size_t indent = asn->indent_level = m_Ident;
     size_t max_indent = asn->max_indent;
     if ( indent >= max_indent ) {
@@ -367,18 +371,35 @@ void CObjectOStreamAsn::AsnOpen(AsnIo& asn)
     }
 }
 
-void CObjectOStreamAsn::AsnWrite(AsnIo& , const char* data, size_t length)
+void CObjectOStreamAsn::AsnWrite(AsnIo& asn, const char* data, size_t length)
 {
-#if 0
-    // dirty hack to skip structure name with '::='
-    if ( length > 3 ) {
-        const char* p = (const char*)memchr(data, ':', length - 3);
+#if 1
+    if ( asn.m_Count == 0 ) {
+        // dirty hack to skip structure name with '::='
+        const char* p = (const char*)memchr(data, ':', length);
         if ( p && p[1] == ':' && p[2] == '=' ) {
+            // check type name
+            const char* beg = data;
+            const char* end = p;
+            while ( beg < end && isspace(beg[0]) )
+                beg++;
+            while ( end > beg && isspace(end[-1]) )
+                end--;
+            if ( string(beg, end) != asn.GetRootTypeName() ) {
+                ERR_POST("AsnWrite: wrong ASN.1 type name: must be \"" <<
+                         asn.GetRootTypeName() << "\"");
+            }
+            // skip header
             size_t skip = p + 3 - data;
-            _TRACE(Warning << "AsnWrite: skipping \"" << string(data, skip) << "\"");
+            _TRACE(Warning <<
+                   "AsnWrite: skipping \"" << string(data, skip) << "\"");
             data += skip;
             length -= skip;
         }
+        else {
+            ERR_POST("AsnWrite: no \"Asn-Type ::=\" header");
+        }
+        asn.m_Count = 1;
     }
 #endif
     if ( !m_Output.write(data, length) )

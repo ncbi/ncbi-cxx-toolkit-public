@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  1999/10/04 16:22:15  vasilche
+* Fixed bug with old ASN.1 structures.
+*
 * Revision 1.27  1999/09/29 22:36:33  vakatov
 * Dont forget to #include ncbistd.hpp before #ifdef HAVE_NCBI_C...
 *
@@ -129,6 +132,7 @@
 #include <serial/autoptrinfo.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
+#include <serial/classinfo.hpp>
 #include <asn.h>
 
 BEGIN_NCBI_SCOPE
@@ -207,12 +211,27 @@ void CSequenceOfTypeInfo::Init(void)
     const CAutoPointerTypeInfo* ptrInfo =
         dynamic_cast<const CAutoPointerTypeInfo*>(type);
     if ( ptrInfo != 0 ) {
+        // data type is auto_ptr
         TTypeInfo asnType = ptrInfo->GetDataTypeInfo();
         if ( dynamic_cast<const CChoiceTypeInfo*>(asnType) != 0 ) {
             // CHOICE
             _TRACE("SequenceOf(" << type->GetName() << ") AUTO CHOICE");
             SetChoiceNext();
             m_DataType = asnType;
+        }
+        else if ( dynamic_cast<const CClassInfoTmpl*>(asnType) != 0 ) {
+            // user types
+            if ( dynamic_cast<const CClassInfoTmpl*>(asnType)->
+                 GetFirstMemberOffset() < sizeof(void*) ) {
+                THROW1_TRACE(runtime_error,
+                             "CSequenceOfTypeInfo: incompatible type: " +
+                             type->GetName() + ": " + typeid(*type).name() +
+                             " size: " + NStr::IntToString(type->GetSize()));
+            }
+            m_NextOffset = 0;
+            m_DataOffset = 0;
+            m_DataType = asnType;
+            _TRACE("SequenceOf(" << type->GetName() << ") SEQUENCE");
         }
         else if ( asnType->GetSize() <= sizeof(dataval) ) {
             // statndard types and SET/SEQUENCE OF
@@ -221,10 +240,15 @@ void CSequenceOfTypeInfo::Init(void)
 			m_DataType = asnType;
         }
 		else {
-            // user types
+/*
 			_ASSERT(type->GetSize() <= sizeof(dataval));
             _TRACE("SequenceOf(" << type->GetName() << ") VALNODE");
             SetValNodeNext();
+*/
+            THROW1_TRACE(runtime_error,
+                         "CSequenceOfTypeInfo: incompatible type: " +
+                         type->GetName() + ": " + typeid(*type).name() +
+                         " size: " + NStr::IntToString(type->GetSize()));
 		}
     }
     else if ( type->GetSize() <= sizeof(dataval) ) {
@@ -259,11 +283,12 @@ bool CSequenceOfTypeInfo::RandomOrder(void) const
 
 TObjectPtr CSequenceOfTypeInfo::CreateData(void) const
 {
-	_ASSERT(m_NextOffset == offsetof(valnode, next));
     if ( m_DataOffset == 0 ) {
+        _ASSERT(m_NextOffset == 0 || m_NextOffset == offsetof(valnode, next));
         return GetDataTypeInfo()->Create();
 	}
     else {
+        _ASSERT(m_NextOffset == offsetof(valnode, next));
 		_ASSERT(m_DataOffset == offsetof(valnode, data));
         return Alloc(sizeof(valnode));
 	}
@@ -515,14 +540,16 @@ void COctetStringTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 
 map<COldAsnTypeInfo::TNewProc, COldAsnTypeInfo*> COldAsnTypeInfo::m_Types;
 
-COldAsnTypeInfo::COldAsnTypeInfo(TNewProc newProc, TFreeProc freeProc,
+COldAsnTypeInfo::COldAsnTypeInfo(const string& name,
+                                 TNewProc newProc, TFreeProc freeProc,
                                  TReadProc readProc, TWriteProc writeProc)
-    : CParent("old ASN.1"),
+    : CParent(name),
       m_NewProc(newProc), m_FreeProc(freeProc),
       m_ReadProc(readProc), m_WriteProc(writeProc)
 {
 }
 
+/*
 TTypeInfo COldAsnTypeInfo::GetTypeInfo(TNewProc newProc, TFreeProc freeProc,
                                        TReadProc readProc, TWriteProc writeProc)
 {
@@ -537,6 +564,7 @@ TTypeInfo COldAsnTypeInfo::GetTypeInfo(TNewProc newProc, TFreeProc freeProc,
     }
     return info;
 }
+*/
 
 bool COldAsnTypeInfo::IsDefault(TConstObjectPtr object) const
 {
@@ -551,7 +579,7 @@ bool COldAsnTypeInfo::Equals(TConstObjectPtr object1,
 
 void COldAsnTypeInfo::SetDefault(TObjectPtr dst) const
 {
-    Get(dst) = m_NewProc();
+    Get(dst) = 0;
 }
 
 void COldAsnTypeInfo::Assign(TObjectPtr , TConstObjectPtr ) const
@@ -562,13 +590,13 @@ void COldAsnTypeInfo::Assign(TObjectPtr , TConstObjectPtr ) const
 void COldAsnTypeInfo::WriteData(CObjectOStream& out,
                                 TConstObjectPtr object) const
 {
-    if ( !m_WriteProc(Get(object), CObjectOStream::AsnIo(out), 0) )
+    if ( !m_WriteProc(Get(object), CObjectOStream::AsnIo(out, GetName()), 0) )
         THROW1_TRACE(runtime_error, "write fault");
 }
 
 void COldAsnTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
-    if ( (Get(object) = m_ReadProc(CObjectIStream::AsnIo(in), 0)) == 0 )
+    if ( (Get(object) = m_ReadProc(CObjectIStream::AsnIo(in, GetName()), 0)) == 0 )
         THROW1_TRACE(runtime_error, "read fault");
 }
 

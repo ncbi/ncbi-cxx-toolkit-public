@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/10/04 16:22:07  vasilche
+* Fixed bug with old ASN.1 structures.
+*
 * Revision 1.17  1999/09/29 22:36:30  vakatov
 * Dont forget to #include ncbistd.hpp before #ifdef HAVE_NCBI_C...
 *
@@ -266,8 +269,9 @@ public:
     typedef TObjectPtr (*TReadProc)(asnio*, asntype*);
     typedef unsigned char (*TWriteProc)(TObjectPtr, asnio*, asntype*);
 
-    static TTypeInfo GetTypeInfo(TNewProc newProc, TFreeProc freeProc,
-                                 TReadProc readProc, TWriteProc writeProc);
+    COldAsnTypeInfo(const string& name,
+                    TNewProc newProc, TFreeProc freeProc,
+                    TReadProc readProc, TWriteProc writeProc);
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr object1,
@@ -282,9 +286,6 @@ protected:
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
 private:
-    COldAsnTypeInfo(TNewProc newProc, TFreeProc freeProc,
-                    TReadProc readProc, TWriteProc writeProc);
-
     TNewProc m_NewProc;
     TFreeProc m_FreeProc;
     TReadProc m_ReadProc;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/10/04 16:22:16  vasilche
+* Fixed bug with old ASN.1 structures.
+*
 * Revision 1.5  1999/07/22 19:40:55  vasilche
 * Fixed bug with complex object graphs (pointers to members of other objects).
 *
@@ -64,6 +67,7 @@ CMembers::~CMembers(void)
 
 void CMembers::AddMember(const CMemberId& id)
 {
+    // clear cached maps (byname and bytag)
     m_MembersByName.reset(0);
     m_MembersByTag.reset(0);
     m_Members.push_back(id);
@@ -92,6 +96,8 @@ const CMembers::TMembersByName& CMembers::GetMembersByName(void) const
     TMembersByName* members = m_MembersByName.get();
     if ( !members ) {
         m_MembersByName.reset(members = new TMembersByName);
+        // TMembers is vector so we'll use index access instead iterator
+        // because we need index value to inser in map too
         for ( TIndex i = 0, size = m_Members.size(); i < size; ++i ) {
             const string& name = m_Members[i].GetName();
             if ( !members->insert(TMembersByName::
@@ -110,6 +116,8 @@ const CMembers::TMembersByTag& CMembers::GetMembersByTag(void) const
     if ( !members ) {
         m_MembersByTag.reset(members = new TMembersByTag);
         CMemberId currentId;
+        // TMembers is vector so we'll use index access instead iterator
+        // because we need index value to inser in map too
         for ( TIndex i = 0, size = m_Members.size(); i < size; ++i ) {
             currentId.SetNext(m_Members[i]);
             if ( !members->insert(TMembersByTag::

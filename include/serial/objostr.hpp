@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/10/04 16:22:09  vasilche
+* Fixed bug with old ASN.1 structures.
+*
 * Revision 1.24  1999/09/27 14:17:59  vasilche
 * Fixed bug with overloaded construtors of Block.
 *
@@ -320,7 +323,7 @@ public:
 #if HAVE_NCBI_C
     class AsnIo {
     public:
-        AsnIo(CObjectOStream& out);
+        AsnIo(CObjectOStream& out, const string& rootTypeName);
         ~AsnIo(void);
         operator asnio*(void)
             {
@@ -330,20 +333,28 @@ public:
             {
                 return m_AsnIo;
             }
+        const string& GetRootTypeName(void) const
+            {
+                return m_RootTypeName;
+            }
         void Write(const char* data, size_t length)
             {
                 m_Out.AsnWrite(*this, data, length);
             }
     private:
         CObjectOStream& m_Out;
+        string m_RootTypeName;
         asnio* m_AsnIo;
+
+    public:
+        size_t m_Count;
     };
     friend class AsnIo;
 protected:
-    virtual void AsnOpen(AsnIo& asn);
-    virtual void AsnClose(AsnIo& asn);
     virtual unsigned GetAsnFlags(void);
+    virtual void AsnOpen(AsnIo& asn);
     virtual void AsnWrite(AsnIo& asn, const char* data, size_t length);
+    virtual void AsnClose(AsnIo& asn);
 #endif
 
 protected:

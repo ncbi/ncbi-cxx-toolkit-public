@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/10/04 16:22:17  vasilche
+* Fixed bug with old ASN.1 structures.
+*
 * Revision 1.26  1999/09/24 18:19:18  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -174,7 +177,7 @@ char CObjectIStreamAsn::GetChar(void)
 	else {
 		char c;
 		m_Input.get(c);
-        CheckError(m_Input);
+        CheckIOError(m_Input);
 		return c;
 	}
 }
@@ -731,18 +734,39 @@ unsigned CObjectIStreamAsn::GetAsnFlags(void)
     return ASNIO_TEXT;
 }
 
-void CObjectIStreamAsn::AsnOpen(AsnIo& )
+void CObjectIStreamAsn::AsnOpen(AsnIo& asn)
 {
+    asn.m_Count = 0;
 }
 
-size_t CObjectIStreamAsn::AsnRead(AsnIo& , char* data, size_t length)
+size_t CObjectIStreamAsn::AsnRead(AsnIo& asn, char* data, size_t length)
 {
-    m_Input.get(data, length);
-    CheckError(m_Input);
-    size_t count = m_Input.gcount();
-    data[count++] = m_Input.get();
-    CheckError(m_Input);
-    return count;
+    size_t count = 0;
+#if 1
+    if ( asn.m_Count == 0 ) {
+        // dirty hack to add structure name with '::='
+        const string& name = asn.GetRootTypeName();
+        SIZE_TYPE nameLength = name.size();
+        count = nameLength + 3;
+        if ( length < count ) {
+            ThrowError(eFormatError,
+                       "buffer too small to put structure name: " + name);
+        }
+        memcpy(data, name.data(), nameLength);
+        data[nameLength] = ':';
+        data[nameLength + 1] = ':';
+        data[nameLength + 2] = '=';
+        data += count;
+        length -= count;
+        asn.m_Count = 1;
+    }
+#endif
+    m_Input.get(data, length - 1);
+    CheckIOError(m_Input);
+    size_t read = m_Input.gcount();
+    data[read++] = m_Input.get();
+    CheckIOError(m_Input);
+    return count + read;
 }
 #endif
 

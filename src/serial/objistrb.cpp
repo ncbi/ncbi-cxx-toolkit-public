@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  1999/10/04 16:22:17  vasilche
+* Fixed bug with old ASN.1 structures.
+*
 * Revision 1.30  1999/09/24 18:19:18  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -150,20 +153,20 @@ unsigned char CObjectIStreamBinary::ReadByte(void)
 {
     char c;
     m_Input.get(c);
-    CheckError(m_Input);
+    CheckIOError(m_Input);
     return c;
 }
 
 void CObjectIStreamBinary::ReadBytes(char* mem, size_t count)
 {
     m_Input.read(mem, count);
-    CheckError(m_Input);
+    CheckIOError(m_Input);
 }
 
 void CObjectIStreamBinary::SkipBytes(size_t count)
 {
     m_Input.seekg(count, ios::cur);
-    CheckError(m_Input);
+    CheckIOError(m_Input);
 }
 
 typedef unsigned char TByte;
@@ -908,8 +911,9 @@ unsigned CObjectIStreamBinary::GetAsnFlags(void)
     return ASNIO_BIN;
 }
 
-void CObjectIStreamBinary::AsnOpen(AsnIo& )
+void CObjectIStreamBinary::AsnOpen(AsnIo& asn)
 {
+    asn.m_Count = 0;
 }
 
 size_t CObjectIStreamBinary::AsnRead(AsnIo& asn, char* data, size_t length)
@@ -925,6 +929,15 @@ size_t CObjectIStreamBinary::AsnRead(AsnIo& asn, char* data, size_t length)
     asn.m_Count -= count;
     return count;
 }
+
+void CObjectIStreamBinary::AsnClose(AsnIo& asn)
+{
+    if ( asn.m_Count != 0 ) {
+        SetFailFlags(eFormatError);
+        THROW1_TRACE(runtime_error, "not all bytes read");
+    }
+}
+
 #endif
 
 END_NCBI_SCOPE

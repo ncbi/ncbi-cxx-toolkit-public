@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/10/04 16:22:18  vasilche
+* Fixed bug with old ASN.1 structures.
+*
 * Revision 1.24  1999/09/27 14:18:02  vasilche
 * Fixed bug with overloaded construtors of Block.
 *
@@ -395,8 +398,8 @@ extern "C" {
     }
 }
 
-CObjectOStream::AsnIo::AsnIo(CObjectOStream& out)
-    : m_Out(out)
+CObjectOStream::AsnIo::AsnIo(CObjectOStream& out, const string& rootTypeName)
+    : m_Out(out), m_RootTypeName(rootTypeName), m_Count(0)
 {
     m_AsnIo = AsnIoNew(out.GetAsnFlags() | ASNIO_OUT, 0, this, 0, WriteAsn);
     out.AsnOpen(*this);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/10/04 16:22:09  vasilche
+* Fixed bug with old ASN.1 structures.
+*
 * Revision 1.17  1999/09/24 18:19:13  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -131,6 +134,7 @@ protected:
     virtual unsigned GetAsnFlags(void);
     virtual void AsnOpen(AsnIo& asn);
     virtual size_t AsnRead(AsnIo& asn, char* data, size_t length);
+    virtual void AsnClose(AsnIo& asn);
 #endif
 
 protected:
