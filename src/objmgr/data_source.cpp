@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2002/05/21 18:57:25  grichenk
+* Fixed annotations dropping
+*
 * Revision 1.44  2002/05/21 18:40:50  grichenk
 * Fixed annotations droppping
 *
@@ -1528,7 +1531,8 @@ void CDataSource::x_DropFeature(const CSeq_feat& feat,
         mapit, aobj->GetRangeMap().GetMap() ) {
         // Find TSEs containing references to the id
         TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
-        _ASSERT(tse_set != m_TSE_ref.end());
+        if (tse_set == m_TSE_ref.end())
+            continue; // The referenced ID is not currently loaded
         // Find the TSE containing the feature
         TTSESet::iterator tse_info = tse_set->second.begin();
         for ( ; tse_info != tse_set->second.end(); ++tse_info) {
@@ -1569,7 +1573,8 @@ void CDataSource::x_DropAlign(const CSeq_align& align,
         mapit, aobj->GetRangeMap().GetMap() ) {
         // Find TSEs containing references to the id
         TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
-        _ASSERT(tse_set != m_TSE_ref.end());
+        if (tse_set == m_TSE_ref.end())
+            continue; // The referenced ID is not currently loaded
         // Find the TSE containing the align
         TTSESet::iterator tse_info = tse_set->second.begin();
         for ( ; tse_info != tse_set->second.end(); ++tse_info) {
@@ -1610,7 +1615,8 @@ void CDataSource::x_DropGraph(const CSeq_graph& graph,
         mapit, aobj->GetRangeMap().GetMap() ) {
         // Find TSEs containing references to the id
         TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
-        _ASSERT(tse_set != m_TSE_ref.end());
+        if (tse_set == m_TSE_ref.end())
+            continue; // The referenced ID is not currently loaded
         // Find the TSE containing the graph
         TTSESet::iterator tse_info = tse_set->second.begin();
         for ( ; tse_info != tse_set->second.end(); ++tse_info) {
