@@ -339,6 +339,11 @@ CSeq_loc* SeqLocMerge(const CBioseq_Handle& target,
                       const CSeq_loc& loc1, const CSeq_loc& loc2,
                       TSeqLocFlags flags = 0);
 
+// Merge a single Seq-loc
+NCBI_XOBJUTIL_EXPORT
+CSeq_loc* SeqLocMergeOne(const CBioseq_Handle& target,
+                        const CSeq_loc& loc,
+                        TSeqLocFlags flags = 0);
 
 // Merge a set of locations, returning the result.
 template<typename LocContainer>
@@ -354,12 +359,6 @@ CSeq_loc* SeqLocMerge(const CBioseq_Handle& target,
     }
     return SeqLocMergeOne(target, temp, flags);
 }
-
-// Merge a single Seq-loc
-NCBI_XOBJUTIL_EXPORT
-CSeq_loc* SeqLocMergeOne(const CBioseq_Handle& target,
-                        const CSeq_loc& loc,
-                        TSeqLocFlags flags = 0);
 
 
 NCBI_XOBJUTIL_EXPORT
@@ -676,6 +675,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.43  2004/05/06 18:34:11  ucko
+* Reorder SeqLocMerge<> and SeqLocMergeOne to avoid compilation errors
+* on (at least) GCC 3.4.
+*
 * Revision 1.42  2004/05/06 17:38:37  shomrat
 * + Changed SeqLocMerge API
 *
