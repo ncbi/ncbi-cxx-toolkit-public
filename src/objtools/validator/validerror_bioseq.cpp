@@ -645,8 +645,9 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
         CheckForPubOnBioseq(seq);
     }
     // make sure that there is a source on this bioseq
-    if ( !m_Imp.IsNoBioSource() ) { 
-        CheckForBiosourceOnBioseq(seq);
+    if ( !m_Imp.IsNoBioSource() ) {
+        CheckSoureDescriptor(bsh);
+        //CheckForBiosourceOnBioseq(seq);
     }
     
     // flag missing molinfo even if not in Sequin
@@ -1981,12 +1982,23 @@ bool CValidError_bioseq::ValidateRepr
 }
 
 
-void CValidError_bioseq::CheckForBiosourceOnBioseq(const CBioseq& seq)
+void CValidError_bioseq::CheckSoureDescriptor(const CBioseq_Handle& bsh)
 {
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     CSeqdesc_CI di(bsh, CSeqdesc::e_Source);
-    if ( !di ) {
-        m_Imp.AddBioseqWithNoBiosource(seq);
+    if (!di) {
+        // add to list of sources with no descriptor later to be reported
+        m_Imp.AddBioseqWithNoBiosource(*(bsh.GetBioseqCore()));
+        return;
+    }
+    _ASSERT(di);
+
+    if (m_Imp.IsTransgenic(di->GetSource())  &&
+        CSeq_inst::IsNa(bsh.GetInst_Mol())) {
+        if (!CFeat_CI(bsh, 0, 0, CSeqFeatData::e_Biosrc)) {
+            PostErr(eDiag_Warning, eErr_SEQ_DESCR_TransgenicProblem,
+                "Transgenic source descriptor requires presence of source feature",
+                *(bsh.GetBioseqCore()));
+        }
     }
 }
 
@@ -3720,6 +3732,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.83  2004/07/29 17:11:37  shomrat
+* Added test for transgenic problem
+*
 * Revision 1.82  2004/07/12 13:20:15  shomrat
 * suppress DuplicateFeat warning if partialL or partialR are different and the labels are different
 *
