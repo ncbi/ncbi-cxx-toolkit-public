@@ -13,7 +13,8 @@ script_dir=`(cd "${script_dir}" ; pwd)`
 
 
 PLUGINS='doc_basic doc_table algo_basic algo_stdio view_text view_graphic view_align view_sequence view_table'
-BINS='gbench gbench_plugin_scan'
+BINS='gbench-bin gbench_plugin_scan'
+LIBS='gui_doc gui_view gui_algo'
 
 
 Usage()
@@ -67,6 +68,18 @@ CopyFiles()
             COMMON_Exec $BINCOPY $src_file $target_dir/bin/
         else
             COMMON_Error "File not found: $src_file"
+        fi
+    done
+
+    for x in $LIBS; do
+        echo copying: lib_$x.so
+        src_file=$src_dir/lib/lib$x.so 
+        if [ -f $src_file ]; then
+            rm -f $target_dir/lib/lib$x.so
+            $BINCOPY $src_file $target_dir/lib/ \
+                || Error "Cannot copy file $x"
+        else
+            Error "File not found: $src_file"
         fi
     done
 
@@ -143,12 +156,13 @@ MakeDirs $target_dir
 CopyFiles
 
 
-echo preparing scripts 
+echo "Preparing scripts"
 
 COMMON_Exec cp ${source_dir}/gbench_install/run-gbench.sh ${target_dir}/bin/run-gbench.sh
+rm -f ${src_dir}/bin/gbench
+ln -s ${target_dir}/bin/run-gbench.sh ${src_dir}/bin/gbench
 
 COMMON_Exec cp -p ${source_dir}/gbench_install/move-gbench.sh ${target_dir}/bin/
-
 COMMON_Exec cp -p ${source_dir}/gbench.ini ${target_dir}/etc/
 
 COMMON_Exec ${target_dir}/bin/move-gbench.sh
