@@ -217,13 +217,15 @@ NCBI_XOBJREAD_EXPORT
 void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis);
 
 NCBI_XOBJREAD_EXPORT
-void SeqDB_ReadMemoryGiList(const char * fbeginp,
-                            const char * fendp,
-                            vector<CSeqDBGiList::SGiOid> & gis);
+void SeqDB_ReadMemoryGiList(const char                   * fbeginp,
+                            const char                   * fendp,
+                            vector<CSeqDBGiList::SGiOid> & gis,
+                            bool                         * in_order = 0);
 
 NCBI_XOBJREAD_EXPORT
-void SeqDB_ReadGiList(const string & fname,
-                      vector<CSeqDBGiList::SGiOid> & gis);
+void SeqDB_ReadGiList(const string                 & fname,
+                      vector<CSeqDBGiList::SGiOid> & gis,
+                      bool                         * in_order = 0);
 
 
 /// CSeqDBFileGiList

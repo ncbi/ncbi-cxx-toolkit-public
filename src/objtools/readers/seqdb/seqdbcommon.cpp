@@ -305,6 +305,11 @@ void CSeqDBGiList::InsureOrder(ESortOrder order)
             
         case eOid:
             {
+                // This is a major time sink for GI list processing.
+                // It would probably be faster to build the OID mask
+                // without this (by creating a second bitmap and
+                // combining the two with AND).
+                
                 CSeqDB_SortOidLessThan sorter;
                 sort(m_GisOids.begin(), m_GisOids.end(), sorter);
             }
@@ -401,7 +406,8 @@ void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
 
 void SeqDB_ReadMemoryGiList(const char * fbeginp,
                             const char * fendp,
-                            vector<CSeqDBGiList::SGiOid> & gis)
+                            vector<CSeqDBGiList::SGiOid> & gis,
+                            bool * in_order)
 {
     bool is_binary = false;
     
@@ -439,8 +445,32 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
         
         gis.reserve(num_gis);
         
-        for(Int4 * elem = bbeginp + 2; elem < bendp; elem ++) {
-            gis.push_back((int) SeqDB_GetStdOrd(elem));
+        if (in_order) {
+            int prev_gi =0;
+            bool in_gi_order = true;
+            
+            Int4 * elem = bbeginp + 2;
+            while(elem < bendp) {
+                int this_gi = (int) SeqDB_GetStdOrd(elem);
+                gis.push_back(this_gi);
+            
+                if (prev_gi > this_gi) {
+                    in_gi_order = false;
+                    break;
+                }
+                prev_gi = this_gi;
+                elem ++;
+            }
+            
+            while(elem < bendp) {
+                gis.push_back((int) SeqDB_GetStdOrd(elem++));
+            }
+            
+            *in_order = in_gi_order;
+        } else {
+            for(Int4 * elem = bbeginp + 2; elem < bendp; elem ++) {
+                gis.push_back((int) SeqDB_GetStdOrd(elem));
+            }
         }
     } else {
         // We would prefer to do only one allocation, so assume
@@ -520,7 +550,7 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
     }
 }
 
-void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis)
+void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis, bool * in_order)
 {
     CMemoryFile mfile(fname);
     
@@ -528,12 +558,14 @@ void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis)
     const char * fbeginp = (char*) mfile.GetPtr();
     const char * fendp   = fbeginp + (int)file_size;
     
-    SeqDB_ReadMemoryGiList(fbeginp, fendp, gis);
+    SeqDB_ReadMemoryGiList(fbeginp, fendp, gis, in_order);
 }
 
 CSeqDBFileGiList::CSeqDBFileGiList(const string & fname)
 {
-    SeqDB_ReadGiList(fname, m_GisOids);
+    bool in_order = false;
+    SeqDB_ReadGiList(fname, m_GisOids, & in_order);
+    m_CurrentOrder = in_order ? eGi : eNone;
 }
 
 END_NCBI_SCOPE

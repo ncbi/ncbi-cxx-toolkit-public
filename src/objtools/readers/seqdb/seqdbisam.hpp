@@ -73,7 +73,7 @@ public:
     /// Types of database this class can access.
     enum EIsamDbType {
         eNumeric         = 0, /// Numeric database with Key/Value pairs in the index file.
-        eNumericNoData   = 1, /// Numeric database without Key/Value pairs in the index file.
+        eNumericNoData   = 1, /// This type is not supported.
         eString          = 2, /// String database type used here.
         eStringDatabase  = 3, /// This type is not supported.
         eStringBin       = 4  /// This type is not supported.
@@ -721,15 +721,12 @@ private:
     /// correct.  The key value found will be compared to the search
     /// key.  This method will return 0 for an exact match, -1 if the
     /// key is less than the sample, or 1 if the key is greater.  If
-    /// the match is exact, it will also return the data in data_out
-    /// (if no_data is not specified).
+    /// the match is exact, it will also return the data in data_out.
     ///
     /// @param index
     ///   The index of the sample to get.
     /// @param key_in
     ///   The key for which the user is searching.
-    /// @param no_data
-    ///   Specify true for ISAM indices that omit value data.
     /// @param key_out
     ///   The key found will be returned here.
     /// @param data_out
@@ -739,7 +736,6 @@ private:
     int x_TestNumericSample(CSeqDBMemLease & index_lease,
                             int              index,
                             int              key_in,
-                            bool             no_data,
                             int            & key_out,
                             int            & data_out);
     
@@ -752,15 +748,12 @@ private:
     ///
     /// @param index
     ///   The index of the sample to get.
-    /// @param no_data
-    ///   Specify true for ISAM indices that omit value data.
     /// @param key_out
     ///   The key found will be returned here.
     /// @param data_out
     ///   If an exact match, the data found will be returned here.
     void x_GetNumericSample(CSeqDBMemLease & index_lease,
                             int   index,
-                            bool  no_data,
                             int & key_out,
                             int & data_out);
     
@@ -768,28 +761,22 @@ private:
                          int            vol_end,
                          CSeqDBGiList & gis,
                          int          & index,
-                         bool           no_data,
                          int            key,
                          int            data);
     
     bool x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,
                             int            & index,
                             int              target_gi,
-                            bool             no_data,
                             int            & isam_key,
                             int            & isam_data);
     
     void x_MapDataPage(int                sample_index,
-                       int                no_data,
                        int              & start,
                        int              & num_elements,
-                       Int4            ** key_page_begin,
                        SNumericKeyData ** data_page_begin,
                        CSeqDBLockHold   & locked);
     
-    void x_GetDataElement(Int4            * kpage,
-                          SNumericKeyData * dpage,
-                          bool              no_data,
+    void x_GetDataElement(SNumericKeyData * dpage,
                           int               index,
                           int             & key,
                           int             & data);
@@ -862,25 +849,16 @@ inline int
 CSeqDBIsam::x_TestNumericSample(CSeqDBMemLease & index_lease,
                                 int              index,
                                 int              key_in,
-                                bool             no_data,
                                 int            & key_out,
                                 int            & data_out)
 {
     SNumericKeyData * keydatap = 0;
     
-    if (no_data) {
-        int obj_size = (int) sizeof(Int4);
-        TIndx offset_begin = m_KeySampleOffset + (obj_size * index);
-        
-        key_out = (int)
-            SeqDB_GetStdOrd((Int4*) index_lease.GetPtr(offset_begin));
-    } else {
-        int obj_size = (int) sizeof(SNumericKeyData);
-        TIndx offset_begin = m_KeySampleOffset + (obj_size * index);
-        
-        keydatap = (SNumericKeyData*) index_lease.GetPtr(offset_begin);
-        key_out = (int) SeqDB_GetStdOrd(& (keydatap->key));
-    }
+    int obj_size = (int) sizeof(SNumericKeyData);
+    TIndx offset_begin = m_KeySampleOffset + (obj_size * index);
+    
+    keydatap = (SNumericKeyData*) index_lease.GetPtr(offset_begin);
+    key_out = (int) SeqDB_GetStdOrd(& (keydatap->key));
     
     int rv = 0;
     
@@ -890,10 +868,7 @@ CSeqDBIsam::x_TestNumericSample(CSeqDBMemLease & index_lease,
         rv = 1;
     } else {
         rv = 0;
-        
-        if (! no_data) {
-            data_out = (int) SeqDB_GetStdOrd(& (keydatap->data));
-        }
+        data_out = (int) SeqDB_GetStdOrd(& (keydatap->data));
     }
     
     return rv;
@@ -901,27 +876,18 @@ CSeqDBIsam::x_TestNumericSample(CSeqDBMemLease & index_lease,
 
 inline void
 CSeqDBIsam::x_GetNumericSample(CSeqDBMemLease & index_lease,
-                               int   index,
-                               bool  no_data,
-                               int & key_out,
-                               int & data_out)
+                               int              index,
+                               int            & key_out,
+                               int            & data_out)
 {
     SNumericKeyData * keydatap = 0;
     
-    if (no_data) {
-        int obj_size = (int) sizeof(Int4);
-        TIndx offset_begin = m_KeySampleOffset + (obj_size * index);
-        
-        key_out = (int)
-            SeqDB_GetStdOrd((Int4*) index_lease.GetPtr(offset_begin));
-    } else {
-        int obj_size = (int) sizeof(SNumericKeyData);
-        TIndx offset_begin = m_KeySampleOffset + (obj_size * index);
-        
-        keydatap = (SNumericKeyData*) index_lease.GetPtr(offset_begin);
-        key_out = (int) SeqDB_GetStdOrd(& (keydatap->key));
-        data_out = (int) SeqDB_GetStdOrd(& (keydatap->data));
-    }
+    int obj_size = (int) sizeof(SNumericKeyData);
+    TIndx offset_begin = m_KeySampleOffset + (obj_size * index);
+    
+    keydatap = (SNumericKeyData*) index_lease.GetPtr(offset_begin);
+    key_out = (int) SeqDB_GetStdOrd(& (keydatap->key));
+    data_out = (int) SeqDB_GetStdOrd(& (keydatap->data));
 }
 
 inline bool
@@ -929,7 +895,6 @@ CSeqDBIsam::x_AdvanceGiList(int            vol_start,
                             int            vol_end,
                             CSeqDBGiList & gis,
                             int          & index,
-                            bool           no_data,
                             int            key,
                             int            data)
 {
@@ -956,19 +921,17 @@ CSeqDBIsam::x_AdvanceGiList(int            vol_start,
     // If the sample is an exact match to one (or more) GIs, apply
     // the translation (if we have it) for those GIs.
     
-    if (! no_data) {
-        while((index < gis_size) &&
-              (gis[index].gi == key)) {
-            
-            if (gis[index].oid == -1) {
-                if ((data + vol_start) < vol_end) {
-                    gis.SetTranslation(index, data + vol_start);
-                }
+    while((index < gis_size) &&
+          (gis[index].gi == key)) {
+        
+        if (gis[index].oid == -1) {
+            if ((data + vol_start) < vol_end) {
+                gis.SetTranslation(index, data + vol_start);
             }
-            
-            advanced = true;
-            index ++;
         }
+        
+        advanced = true;
+        index ++;
     }
     
     // Continue skipping to eliminate any gi/oid pairs that are
@@ -986,7 +949,6 @@ inline bool
 CSeqDBIsam::x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,
                                int            & index,
                                int              target_gi,
-                               bool             no_data,
                                int            & isam_key,
                                int            & isam_data)
 {
@@ -1006,7 +968,6 @@ CSeqDBIsam::x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,
           (x_TestNumericSample(index_lease,
                                index + 1,
                                target_gi,
-                               no_data,
                                post_key,
                                post_data) >= 0)) {
         
@@ -1025,7 +986,6 @@ CSeqDBIsam::x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,
               (x_TestNumericSample(index_lease,
                                    index + jump + 1,
                                    target_gi,
-                                   no_data,
                                    post_key,
                                    post_data) >= 0)) {
             index += jump + 1;
@@ -1041,65 +1001,38 @@ CSeqDBIsam::x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,
 
 inline void
 CSeqDBIsam::x_MapDataPage(int                sample_index,
-                          int                no_data,
                           int              & start,
                           int              & num_elements,
-                          Int4            ** key_page_begin,
                           SNumericKeyData ** data_page_begin,
                           CSeqDBLockHold   & locked)
 {
     num_elements =
         x_GetPageNumElements(sample_index, & start);
     
-    if (no_data) {
-        TIndx offset_begin = start * sizeof(Int4);
-        TIndx offset_end = offset_begin + sizeof(Int4) * num_elements;
-        
-        m_Atlas.Lock(locked);
-        
-        if (! m_DataLease.Contains(offset_begin, offset_end)) {
-            m_Atlas.GetRegion(m_DataLease,
-                              m_DataFname,
-                              offset_begin,
-                              offset_end);
-        }
-        
-        *key_page_begin = (Int4*) m_DataLease.GetPtr(offset_begin);
-        *data_page_begin = 0;
-    } else {
-        TIndx offset_begin = start * sizeof(SNumericKeyData);
-        TIndx offset_end =
-            offset_begin + sizeof(SNumericKeyData) * num_elements;
-        
-        m_Atlas.Lock(locked);
-        
-        if (! m_DataLease.Contains(offset_begin, offset_end)) {
-            m_Atlas.GetRegion(m_DataLease,
-                              m_DataFname,
-                              offset_begin,
-                              offset_end);
-        }
-        
-        *key_page_begin = 0;
-        *data_page_begin = (SNumericKeyData*) m_DataLease.GetPtr(offset_begin);
+    TIndx offset_begin = start * sizeof(SNumericKeyData);
+    TIndx offset_end =
+        offset_begin + sizeof(SNumericKeyData) * num_elements;
+    
+    m_Atlas.Lock(locked);
+    
+    if (! m_DataLease.Contains(offset_begin, offset_end)) {
+        m_Atlas.GetRegion(m_DataLease,
+                          m_DataFname,
+                          offset_begin,
+                          offset_end);
     }
+    
+    *data_page_begin = (SNumericKeyData*) m_DataLease.GetPtr(offset_begin);
 }
 
 inline void
-CSeqDBIsam::x_GetDataElement(Int4            * kpage,
-                             SNumericKeyData * dpage,
-                             bool              no_data,
+CSeqDBIsam::x_GetDataElement(SNumericKeyData * dpage,
                              int               index,
                              int             & key,
                              int             & data)
 {
-    if (no_data) {
-        key = (int) SeqDB_GetStdOrd((Int4*) & kpage[index]);
-        data = -1;
-    } else {
-        key = (int) SeqDB_GetStdOrd((Int4*) & dpage[index].key);
-        data = (int) SeqDB_GetStdOrd((Int4*) & dpage[index].data);
-    }
+    key = (int) SeqDB_GetStdOrd((Int4*)  & dpage[index].key);
+    data = (int) SeqDB_GetStdOrd((Int4*) & dpage[index].data);
 }
 
 END_NCBI_SCOPE

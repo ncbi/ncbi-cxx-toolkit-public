@@ -153,14 +153,14 @@ CSeqDBIsam::x_SearchIndexNumeric(int              Number,
         }
     }
     
-    bool NoData = (m_Type == eNumericNoData);
+    _ASSERT(m_Type != eNumericNoData);
     
     // Search the sample file.
     
     Int4 Start     (0);
     Int4 Stop      (m_NumSamples - 1);
     
-    int obj_size = int(NoData ? sizeof(Int4) : sizeof(SNumericKeyData));
+    int obj_size = sizeof(SNumericKeyData);
     
     while(Stop >= Start) {
         SampleNum = ((Uint4)(Stop + Start)) >> 1;
@@ -181,22 +181,14 @@ CSeqDBIsam::x_SearchIndexNumeric(int              Number,
         
         Uint4 Key(0);
         
-        if (NoData) {
-            Key = SeqDB_GetStdOrd((Int4*) m_IndexLease.GetPtr(offset_begin));
-        } else {
-            keydatap = (SNumericKeyData*) m_IndexLease.GetPtr(offset_begin);
-            Key = SeqDB_GetStdOrd(& (keydatap->key));
-        }
+        keydatap = (SNumericKeyData*) m_IndexLease.GetPtr(offset_begin);
+        Key = SeqDB_GetStdOrd(& (keydatap->key));
         
         // If this is an exact match, return the master term number.
         
         if ((int) Key == Number) {
             if (Data != NULL) {
-                if (NoData) {
-                    *Data = SampleNum * m_PageSize;
-                } else {
-                    *Data = SeqDB_GetStdOrd(& keydatap->data);
-                }
+                *Data = SeqDB_GetStdOrd(& keydatap->data);
             }
             
             if (Index != NULL)
@@ -271,7 +263,7 @@ CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
                           m_IndexFileLength);
     }
     
-    bool no_data = (m_Type == eNumericNoData);
+    _ASSERT(m_Type != eNumericNoData);
     
     //......................................................................
     //
@@ -289,7 +281,7 @@ CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
     // and isam_data to the corresponding values.
     
     int isam_key(0), isam_data(0);
-    x_GetNumericSample(index_lease, samples_index, no_data, isam_key, isam_data);
+    x_GetNumericSample(index_lease, samples_index, isam_key, isam_data);
     
     while((gilist_index < gilist_size) && (samples_index < num_samples)) {
         bool advanced = true;
@@ -304,7 +296,6 @@ CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
                                 vol_end,
                                 gis,
                                 gilist_index,
-                                no_data,
                                 isam_key,
                                 isam_data);
             
@@ -317,19 +308,20 @@ CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
             if (x_AdvanceIsamIndex(index_lease,
                                    samples_index,
                                    gis[gilist_index].gi,
-                                   no_data,
                                    isam_key,
                                    isam_data)) {
                 advanced = true;
             }
             
-            // If either of the above calls returned true, we may
-            // benefit from another round.  There is a more complex
-            // test that would be a better here, but I'm not sure what
-            // exactly it is.  It will be rare to be able to advance
-            // GI list and ISAM more than once, but it *can* happen.
-            
-            // With no_data true, we can advance at least four times:
+            // If either of the above calls returned true, we might
+            // benefit from another round.  There probably exists a
+            // more complex test that could determine whether another
+            // iteration would be useful.  It will be rare to be able
+            // to advance the GI list and ISAM index more than once,
+            // but it *can* happen.
+            //
+            // Without translating any GIs from index file samples, we
+            // can advance at least four times:
             //
             // 1. GIs: remove GIs that are previous to first GI in
             //    ISAM index.
@@ -344,16 +336,18 @@ CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
             // 4. ISAM: skip blocks again until the new first GI's
             //    block is found.
             //
-            // With no_data == false, this process can run
-            // indefinitely because each GI in the target list could
-            // be a sample GI, which means the data file will never
-            // need to be consulted, and all translation can happen
-            // here.  It is unlikely on any given search, but at
-            // volume it becomes a statistical eventuality.
+            // If such translations occur, this process *could* run
+            // indefinitely, since each GI in the target list could
+            // happen to be a sample GI and therefore the data file
+            // would never need to be accessed, and all translation
+            // would happen in this loop.  (This is unlikely unless
+            // the number of GIs is very small.)
         }
         
-        // We can be done here because we exhausted the GI list, but
-        // not because of exhausting the ISAM file.
+        // We could be finished here because we exhausted the GI list
+        // in the above loop, but not because of exhausting the ISAM
+        // file (which can never be "exhausted" without consulting the
+        // last page of the data file).
         
         if (gilist_index >= gilist_size) {
             break;
@@ -375,7 +369,6 @@ CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
         if (samples_index < num_samples)
             x_GetNumericSample(index_lease,
                                samples_index,
-                               no_data,
                                isam_key,
                                isam_data);
     }
@@ -392,7 +385,7 @@ CSeqDBIsam::x_SearchDataNumeric(int              Number,
                                 CSeqDBLockHold & locked)
 {
     // Load the appropriate page of numbers into memory.
-    bool NoData = (m_Type == eNumericNoData);
+    _ASSERT(m_Type != eNumericNoData);
     
     Int4 Start(0);
     Int4 NumElements = x_GetPageNumElements(SampleNum, & Start);
@@ -400,77 +393,41 @@ CSeqDBIsam::x_SearchDataNumeric(int              Number,
     Int4 first = Start;
     Int4 last  = Start + NumElements - 1;
     
-    Int4 * KeyPage     (0);
-    Int4 * KeyPageStart(0);
-    
     SNumericKeyData * KeyDataPage      = NULL;
     SNumericKeyData * KeyDataPageStart = NULL;
     
-    if (NoData) {
-        TIndx offset_begin = Start*sizeof(Int4);
-        TIndx offset_end = offset_begin + sizeof(Int4)*NumElements;
-        
-        m_Atlas.Lock(locked);
-        
-        if (! m_DataLease.Contains(offset_begin, offset_end)) {
-            m_Atlas.GetRegion(m_DataLease,
-                              m_DataFname,
-                              offset_begin,
-                              offset_end);
-        }
-        
-        KeyPageStart = (Int4*) m_DataLease.GetPtr(offset_begin);
-        
-        KeyPage = KeyPageStart - Start;
-    } else {
-        TIndx offset_begin = Start * sizeof(SNumericKeyData);
-        TIndx offset_end = offset_begin + sizeof(SNumericKeyData) * NumElements;
-        
-        m_Atlas.Lock(locked);
-        
-        if (! m_DataLease.Contains(offset_begin, offset_end)) {
-            m_Atlas.GetRegion(m_DataLease,
-                              m_DataFname,
-                              offset_begin,
-                              offset_end);
-        }
-        
-        KeyDataPageStart = (SNumericKeyData*) m_DataLease.GetPtr(offset_begin);
-        
-        KeyDataPage = KeyDataPageStart - Start;
+    TIndx offset_begin = Start * sizeof(SNumericKeyData);
+    TIndx offset_end = offset_begin + sizeof(SNumericKeyData) * NumElements;
+    
+    m_Atlas.Lock(locked);
+    
+    if (! m_DataLease.Contains(offset_begin, offset_end)) {
+        m_Atlas.GetRegion(m_DataLease,
+                          m_DataFname,
+                          offset_begin,
+                          offset_end);
     }
+    
+    KeyDataPageStart = (SNumericKeyData*) m_DataLease.GetPtr(offset_begin);
+    
+    KeyDataPage = KeyDataPageStart - Start;
     
     bool found   (false);
     Int4 current (0);
     
     // Search the page for the number.
-    if (NoData) {
-        while (first <= last) {
-            current = (first+last)/2;
-            
-            Uint4 Key = SeqDB_GetStdOrd(& KeyPage[current]);
-            
-            if ((int) Key > Number)
-                last = --current;
-            else if ((int) Key < Number)
-                first = ++current;
-            else {
-                found = true;
-                break;
-            }
-        }
-    } else {
-        while (first <= last) {
-            current = (first+last)/2;
-            Uint4 Key = SeqDB_GetStdOrd(& KeyDataPage[current].key);
-            if ((int) Key > Number) {
-                last = --current;
-            } else if ((int) Key < Number) {
-                first = ++current;
-            } else {
-                found = true;
-                break;
-            }
+    while (first <= last) {
+        current = (first+last)/2;
+        
+        Uint4 Key = SeqDB_GetStdOrd(& KeyDataPage[current].key);
+        
+        if ((int) Key > Number) {
+            last = --current;
+        } else if ((int) Key < Number) {
+            first = ++current;
+        } else {
+            found = true;
+            break;
         }
     }
     
@@ -485,10 +442,7 @@ CSeqDBIsam::x_SearchDataNumeric(int              Number,
     }
     
     if (Data != NULL) {
-        if (NoData)
-            *Data = Start + current;
-        else
-            *Data = SeqDB_GetStdOrd(& KeyDataPage[current].data);
+        *Data = SeqDB_GetStdOrd(& KeyDataPage[current].data);
     }
     
     if(Index != NULL)
@@ -516,20 +470,16 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
     
     // 1. Get mapping of entire data block from atlas layer.
     
-    // (what good is this?)
-    bool no_data = (m_Type == eNumericNoData);
+    _ASSERT(m_Type != eNumericNoData);
     
-    Int4            * key_page  (0);
     SNumericKeyData * data_page (0);
     
     int start(0);
     int num_elements(0);
     
     x_MapDataPage(sample_index,
-                  no_data,
                   start,
                   num_elements,
-                  & key_page,
                   & data_page,
                   locked);
     
@@ -550,9 +500,7 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
     
     // Get the current data element
     
-    x_GetDataElement(key_page,
-                     data_page,
-                     no_data,
+    x_GetDataElement(data_page,
                      elem_index,
                      data_gi,
                      data_oid);
@@ -597,9 +545,7 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
         int target_gi = gis[gilist_index].gi;
         
         while((elem_index < num_elements) && (target_gi > data_gi)) {
-            x_GetDataElement(key_page,
-                             data_page,
-                             no_data,
+            x_GetDataElement(data_page,
                              ++elem_index,
                              data_gi,
                              data_oid);
@@ -610,9 +556,7 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
                 int next_gi(0);
                 int next_oid(0);
                 
-                x_GetDataElement(key_page,
-                                 data_page,
-                                 no_data,
+                x_GetDataElement(data_page,
                                  elem_index + jump,
                                  next_gi,
                                  next_oid);
@@ -652,9 +596,7 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
             if (elem_index >= num_elements)
                 break;
             
-            x_GetDataElement(key_page,
-                             data_page,
-                             no_data,
+            x_GetDataElement(data_page,
                              elem_index,
                              data_gi,
                              data_oid);
@@ -1215,23 +1157,12 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
         }
         
         if (diff == -1) {
-            //if (collect_all) {
-            
             x_ExtractAllData(term_in,
                              SampleNum,
                              indices_out,
                              terms_out,
                              values_out,
                              locked);
-
-//           } else {
-//               x_ExtractData(KeyData,
-//                             KeyData + BytesToEnd,
-//                             terms_out,
-//                             values_out);
-//              
-//               indices_out.push_back(m_PageSize * SampleNum);
-//           }
             
             return eNoError;
         }
@@ -1401,9 +1332,7 @@ CSeqDBIsam::CSeqDBIsam(CSeqDBAtlas  & atlas,
                    "Error: Could not open input file.");
     }
     
-    if(m_Type == eNumeric ||
-       m_Type == eNumericNoData) {
-        
+    if(m_Type == eNumeric) {
         m_PageSize = DEFAULT_NISAM_SIZE;
     } else {
         m_PageSize = DEFAULT_SISAM_SIZE;

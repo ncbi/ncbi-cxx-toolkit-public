@@ -93,7 +93,11 @@ public:
         const char * fendp   = fbeginp + (int)file_size;
         
         try {
-            SeqDB_ReadMemoryGiList(fbeginp, fendp, m_GisOids);
+            bool in_order = false;
+            SeqDB_ReadMemoryGiList(fbeginp, fendp, m_GisOids, & in_order);
+            if (in_order) {
+                m_CurrentOrder = eGi;
+            }
         }
         catch(...) {
             memlease.Clear();
