@@ -193,6 +193,8 @@ BlastHSPList* BlastHSPListDestruct(BlastHSPList* hsp_list);
  *      structure.
  * @param program_number Not needed: added for prototype consistency.
  * @param query The query sequence [in]
+ * @param query_info Query information structure, containing offsets into 
+ *                   the concatenated sequence [in]
  * @param subject The subject sequence [in]
  * @param gap_align A placeholder for gapped alignment information and 
  *        score block. [in] [out]
@@ -203,7 +205,7 @@ BlastHSPList* BlastHSPListDestruct(BlastHSPList* hsp_list);
  * @param hsp_list_ptr List of HSPs with full extension information [out]
 */
 Int2 BLAST_MbGetGappedScore(Uint1 program_number, 
-        BLAST_SequenceBlk* query, 
+             BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
 			    BLAST_SequenceBlk* subject,
 			    BlastGapAlignStruct* gap_align,
 			    const BlastScoringOptions* score_options, 
@@ -222,6 +224,8 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
  * Saves HSPs into an HSP list.
  * @param program_number Type of BLAST program [in]
  * @param query The query sequence block [in]
+ * @param query_info Query information structure, containing offsets into 
+ *                   the concatenated sequence [in]
  * @param subject The subject sequence block [in]
  * @param gap_align The auxiliary structure for gapped alignment [in]
  * @param score_options Options related to scoring [in]
@@ -231,7 +235,8 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
  *        information from the ungapped alignment performed earlier) [in]
  * @param hsp_list_ptr Structure containing all saved HSPs [out]
  */
-Int2 BLAST_GetGappedScore (Uint1 program_number, BLAST_SequenceBlk* query, 
+Int2 BLAST_GetGappedScore (Uint1 program_number, 
+            BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
 		      BLAST_SequenceBlk* subject,
 		      BlastGapAlignStruct* gap_align,
 		      const BlastScoringOptions* score_options, 
@@ -299,18 +304,22 @@ Int2 PHIGappedAlignmentWithTraceback(Uint1 program,
  * to work.
  * @param init_hitlist List of initial HSPs with ungapped extension 
  *                     information [in]
+ * @param query_info Query information structure, containing offsets into
+ *                   the concatenated queries/strands/frames [in]
  * @param subject Subject sequence block containing frame information [in]
  * @param hit_options Hit saving options [in]
  * @param hsp_list_ptr HSPs in the final form [out]
  */
 Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist, 
-        BLAST_SequenceBlk* subject, 
+        BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
         const BlastHitSavingOptions* hit_options, 
         BlastHSPList** hsp_list_ptr);
 
 /** Preliminary gapped alignment for PHI BLAST.
  * @param program_number Type of BLAST program [in]
  * @param query The query sequence block [in]
+ * @param query_info Query information structure, containing offsets into 
+ *                   the concatenated sequence [in]
  * @param subject The subject sequence block [in]
  * @param gap_align The auxiliary structure for gapped alignment [in]
  * @param score_options Options related to scoring [in]
@@ -321,7 +330,7 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
  * @param hsp_list_ptr Structure containing all saved HSPs [out]
  */
 Int2 PHIGetGappedScore (Uint1 program_number, 
-        BLAST_SequenceBlk* query, 
+        BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         BLAST_SequenceBlk* subject, 
         BlastGapAlignStruct* gap_align,
         const BlastScoringOptions* score_options,
