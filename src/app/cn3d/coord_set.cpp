@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/02/08 23:01:50  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
 * Revision 1.9  2000/08/27 18:52:21  thiessen
 * extract sequence information
 *
@@ -77,14 +80,14 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-CoordSet::CoordSet(StructureBase *parent, 
+CoordSet::CoordSet(StructureBase *parent,
                    const CBiostruc_model::TModel_coordinates& modelCoords) :
     StructureBase(parent), atomSet(NULL)
 {
     // iterate SEQUENCE OF Model-coordinate-set
     CBiostruc_model::TModel_coordinates::const_iterator j, je=modelCoords.end();
     for (j=modelCoords.begin(); j!=je; j++) {
-        const CModel_coordinate_set::C_Coordinates& 
+        const CModel_coordinate_set::C_Coordinates&
             coordSet = j->GetObject().GetCoordinates();
         if (coordSet.IsLiteral()) {
             const CCoordinates& coords = coordSet.GetLiteral();
@@ -102,7 +105,7 @@ CoordSet::CoordSet(StructureBase *parent,
                 j->GetObject().GetDescr().front().GetObject().IsOther_comment() &&
                 coords.GetSurface().GetContents().IsResidues()) {
 
-                const std::string& descr = 
+                const std::string& descr =
                     j->GetObject().GetDescr().front().GetObject().GetOther_comment();
 
                 // helix cylinder
@@ -110,25 +113,25 @@ CoordSet::CoordSet(StructureBase *parent,
                     Helix3D *helix =
                         new Helix3D(this, coords.GetSurface().GetSurface().GetCylinder(),
                             coords.GetSurface().GetContents().GetResidues());
-                    if (helix->moleculeID == Object3D::NOT_SET) {
+                    if (helix->moleculeID == Object3D::VALUE_NOT_SET) {
                         this->_RemoveChild(helix);
                         delete helix;
                         TESTMSG("bad helix");
                     } else
                         objectMap[helix->moleculeID].push_back(helix);
-                
+
                 // strand brick
                 } else if (descr == "strand" && coords.GetSurface().GetSurface().IsBrick()) {
                     Strand3D *strand =
                         new Strand3D(this, coords.GetSurface().GetSurface().GetBrick(),
                             coords.GetSurface().GetContents().GetResidues());
-                    if (strand->moleculeID == Object3D::NOT_SET) {
+                    if (strand->moleculeID == Object3D::VALUE_NOT_SET) {
                         this->_RemoveChild(strand);
                         delete strand;
                         TESTMSG("bad strand");
                     } else
                         objectMap[strand->moleculeID].push_back(strand);
-                }                
+                }
             }
         }
     }

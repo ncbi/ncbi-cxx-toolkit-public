@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/02/08 23:01:13  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
 * Revision 1.18  2000/12/15 15:52:08  thiessen
 * show/hide system installed
 *
@@ -135,7 +138,7 @@ public:
         eOther = ncbi::objects::CBiomol_descr::eMolecule_type_other
     };
     eType type;
-    static const int NOT_SET;
+    static const int VALUE_NOT_SET;
     int id, gi, pdbChain;
     std::string name, pdbID;
 

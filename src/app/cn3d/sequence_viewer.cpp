@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/02/08 23:01:51  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
 * Revision 1.32  2001/01/26 19:29:59  thiessen
 * limit undo stack size ; fix memory leak
 *
@@ -166,6 +169,7 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_ENABLE_EDIT, MID_SYNC_STRUCS_ON, SequenceViewerWindow::OnEditMenu)
     EVT_MENU_RANGE(MID_SELECT_RECT, MID_DRAG_HORIZ,     SequenceViewerWindow::OnMouseMode)
     EVT_MENU_RANGE(MID_LEFT,        MID_SPLIT,          SequenceViewerWindow::OnJustification)
+    EVT_MENU      (MID_TEST_THREADER,                   SequenceViewerWindow::OnTestThreader)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
@@ -216,6 +220,10 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     menu->Append(MID_CENTER, "&Center", noHelp, true);
     menu->Append(MID_SPLIT, "&Split", noHelp, true);
     menuBar->Append(menu, "Unaligned &Justification");
+
+    menu = new wxMenu;
+    menu->Append(MID_TEST_THREADER, "&Test");
+    menuBar->Append(menu, "&Threader");
 
     // set default initial modes
     viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectRectangle);
@@ -477,6 +485,11 @@ bool SequenceViewerWindow::QueryShowAllRows(void)
     for (i=0; i<visibilities.size(); i++) visibilities[i] = true;
     viewer->alignmentManager->SelectionCallback(visibilities);
     return true;
+}
+
+void SequenceViewerWindow::OnTestThreader(wxCommandEvent& event)
+{
+    viewer->alignmentManager->TestThreader();
 }
 
 

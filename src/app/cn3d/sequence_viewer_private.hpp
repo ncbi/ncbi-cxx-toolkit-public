@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/02/08 23:01:14  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
 * Revision 1.5  2000/12/21 23:42:24  thiessen
 * load structures from cdd's
 *
@@ -91,6 +94,8 @@ public:
     void OnMouseMode(wxCommandEvent& event);
     void OnJustification(wxCommandEvent& event);
 
+    void OnTestThreader(wxCommandEvent& event);
+
     // menu identifiers
     enum {
         // view menu
@@ -119,7 +124,10 @@ public:
         MID_LEFT,
         MID_RIGHT,
         MID_CENTER,
-        MID_SPLIT
+        MID_SPLIT,
+
+        // threader stuff
+        MID_TEST_THREADER
     };
 
     DECLARE_EVENT_TABLE()

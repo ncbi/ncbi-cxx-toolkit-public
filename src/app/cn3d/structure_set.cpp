@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2001/02/08 23:01:51  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
 * Revision 1.47  2001/02/02 20:17:33  thiessen
 * can read in CDD with multi-structure but no struct. alignments
 *
@@ -270,13 +273,13 @@ void StructureSet::MatchSequencesToMolecules(void)
                             nSequenceMatches++;
 
                             // see if we can fill out gi/pdbID any further once we've verified the match
-                            if (m->second->gi == Molecule::NOT_SET && (*s)->gi != Molecule::NOT_SET)
+                            if (m->second->gi == Molecule::VALUE_NOT_SET && (*s)->gi != Molecule::VALUE_NOT_SET)
                                 (const_cast<Molecule*>(m->second))->gi = (*s)->gi;
                             if (m->second->pdbID.size() == 0 && (*s)->pdbID.size() > 0) {
                                 (const_cast<Molecule*>(m->second))->pdbID = (*s)->pdbID;
                                 (const_cast<Molecule*>(m->second))->pdbChain = (*s)->pdbChain;
                             }
-                            if ((*s)->gi == Molecule::NOT_SET && m->second->gi != Molecule::NOT_SET)
+                            if ((*s)->gi == Molecule::VALUE_NOT_SET && m->second->gi != Molecule::VALUE_NOT_SET)
                                 (const_cast<Sequence*>(*s))->gi = m->second->gi;
                             if ((*s)->pdbID.size() == 0 && m->second->pdbID.size() > 0) {
                                 (const_cast<Sequence*>(*s))->pdbID = m->second->pdbID;
@@ -332,6 +335,7 @@ void StructureSet::Init(void)
     if (!showHideManager || !styleManager)
         ERR_POST(Fatal << "StructureSet::StructureSet() - out of memory");
     GlobalMessenger()->RemoveAllHighlights(false);
+    structureAlignments = NULL;
 }
 
 StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
@@ -453,12 +457,12 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
     vector < int > mmdbIDs;
     SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
     for (s=sequenceSet->sequences.begin(); s!=se; s++)
-        if ((*s)->mmdbLink != Sequence::NOT_SET) mmdbIDs.push_back((*s)->mmdbLink);
+        if ((*s)->mmdbLink != Sequence::VALUE_NOT_SET) mmdbIDs.push_back((*s)->mmdbLink);
 
     // if more than one structure, the Biostruc-annot-set should contain structure alignments
     // for slaves->master - and thus also the identity of the master.
-    static const int NOT_SET = -1;
-    int masterMMDBID = NOT_SET;
+    static const int VALUE_NOT_SET = -1;
+    int masterMMDBID = VALUE_NOT_SET;
     if (mmdbIDs.size() == 1) {
         masterMMDBID = mmdbIDs[0];
     } else if (mmdbIDs.size() > 1) {
@@ -479,7 +483,7 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
         else {
             SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
             for (s=sequenceSet->sequences.begin(); s!=se; s++) {
-                if ((*s)->pdbID.size() > 0 && (*s)->mmdbLink != Sequence::NOT_SET) {
+                if ((*s)->pdbID.size() > 0 && (*s)->mmdbLink != Sequence::VALUE_NOT_SET) {
                     ERR_POST(Error << "Warning: no structure alignments, "
                          << "so the first sequence with MMDB link ("
                          << (*s)->GetTitle() << ") is assumed to be the master structure");
@@ -491,7 +495,7 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
             }
         }
 
-        if (masterMMDBID == NOT_SET) {
+        if (masterMMDBID == VALUE_NOT_SET) {
             ERR_POST(Error << "StructureSet::StructureSet() - "
                 "can't determine master MMDB id from structure or sequence alignments. "
                 "Structures not loaded.");
@@ -500,7 +504,7 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
 
     // Once the master MMDB id is determined,
     // then we can load structures and slave structure alignments.
-    if (masterMMDBID != NOT_SET) {
+    if (masterMMDBID != VALUE_NOT_SET) {
         for (int m=0; m<mmdbIDs.size(); m++) {
 
             // load Biostrucs from external files or network

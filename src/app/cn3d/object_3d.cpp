@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/02/08 23:01:50  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
 * Revision 1.4  2000/08/17 14:24:06  thiessen
 * added working StyleManager
 *
@@ -59,11 +62,11 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-const int Object3D::NOT_SET = -1;
+const int Object3D::VALUE_NOT_SET = -1;
 
 Object3D::Object3D(StructureBase *parent, const CResidue_pntrs& residues) :
     StructureBase(parent),
-    moleculeID(NOT_SET), fromResidueID(NOT_SET), toResidueID(NOT_SET)
+    moleculeID(VALUE_NOT_SET), fromResidueID(VALUE_NOT_SET), toResidueID(VALUE_NOT_SET)
 {
     if (!residues.IsInterval() || residues.GetInterval().size() != 1) {
         ERR_POST(Error << "Object3D::Object3D() - can't handle this type of Residue-pntrs (yet)!");
@@ -87,7 +90,7 @@ static inline void ModelPoint2Vector(const CModel_space_point& msp, Vector *v)
 Helix3D::Helix3D(StructureBase *parent, const CCylinder& cylinder, const CResidue_pntrs& residues) :
     Object3D(parent, residues)
 {
-    if (moleculeID == Object3D::NOT_SET) return;
+    if (moleculeID == Object3D::VALUE_NOT_SET) return;
 
     ModelPoint2Vector(cylinder.GetAxis_bottom(), &Nterm);
     ModelPoint2Vector(cylinder.GetAxis_top(), &Cterm);
@@ -119,7 +122,7 @@ bool Helix3D::Draw(const AtomSet *data) const
 Strand3D::Strand3D(StructureBase *parent, const CBrick& brick, const CResidue_pntrs& residues) :
     Object3D(parent, residues)
 {
-    if (moleculeID == Object3D::NOT_SET) return;
+    if (moleculeID == Object3D::VALUE_NOT_SET) return;
 
     Vector c1, c2;
     ModelPoint2Vector(brick.GetCorner_000(), &c1);

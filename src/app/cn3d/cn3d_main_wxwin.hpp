@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/02/08 23:01:13  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
 * Revision 1.16  2001/01/18 19:37:00  thiessen
 * save structure (re)alignments to asn output
 *
@@ -199,9 +202,7 @@ public:
         // Quality menu
             MID_QLOW,
             MID_QMED,
-            MID_QHIGH,
-        // test linking of threader
-            MID_THREADER
+            MID_QHIGH
     };
 
     void OnExit(wxCommandEvent& event);
@@ -216,8 +217,6 @@ public:
     void OnShowHide(wxCommandEvent& event);
     void OnSetStyle(wxCommandEvent& event);
     void OnSetQuality(wxCommandEvent& event);
-
-    void OnThreader(wxCommandEvent& event);
 
     DECLARE_EVENT_TABLE()
 

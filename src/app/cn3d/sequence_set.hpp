@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/02/08 23:01:14  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
 * Revision 1.13  2001/01/04 18:21:00  thiessen
 * deal with accession seq-id
 *
@@ -116,9 +119,10 @@ class Sequence : public StructureBase
 public:
     Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq);
 
-    static const int NOT_SET;
+    static const int VALUE_NOT_SET;
     int gi, pdbChain, mmdbLink;
     std::string pdbID, sequenceString, accession;
+    bool isProtein;
 
     // corresponding protein chain
     const Molecule *molecule;

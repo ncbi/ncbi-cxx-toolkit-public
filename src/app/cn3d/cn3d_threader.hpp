@@ -26,71 +26,62 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      holds 3d-objects - helix cylinders and strand bricks
+*       class to isolate and run the threader
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  2001/02/08 23:01:14  thiessen
+* Revision 1.1  2001/02/08 23:01:24  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
-*
-* Revision 1.3  2000/08/16 14:18:20  thiessen
-* map 3-d objects to molecules
-*
-* Revision 1.2  2000/08/13 02:42:13  thiessen
-* added helix and strand objects
-*
-* Revision 1.1  2000/08/11 18:24:41  thiessen
-* add 3-d objects code
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_OBJECT_3D__HPP
-#define CN3D_OBJECT_3D__HPP
+#ifndef CN3D_THREADER__HPP
+#define CN3D_THREADER__HPP
 
-#include <objects/mmdb3/Residue_pntrs.hpp>
-#include <objects/mmdb3/Cylinder.hpp>
-#include <objects/mmdb3/Brick.hpp>
+#include <corelib/ncbistl.hpp>
 
-#include "cn3d/structure_base.hpp"
-#include "cn3d/vector_math.hpp"
+#include <map>
+
+// to avoid having to include many C-toolkit headers here
+struct bioseq;
+typedef struct bioseq Bioseq_fwddecl;
+struct _Seq_Mtf;
+typedef struct _Seq_Mtf Seq_Mtf_fwddecl;
 
 
 BEGIN_SCOPE(Cn3D)
 
-class Object3D : public StructureBase
+class BlockMultipleAlignment;
+class Sequence;
+
+class Threader
 {
 public:
-    static const int VALUE_NOT_SET;
-    int moleculeID, fromResidueID, toResidueID;
+    Threader(void) { }
+    ~Threader(void);
 
-protected:
-    Object3D(StructureBase *parent,
-        const ncbi::objects::CResidue_pntrs& residues);
-};
+    void Test(const BlockMultipleAlignment* multiple);
 
-class Helix3D : public Object3D
-{
+    // construct a PSSM for the given alignment
+    Seq_Mtf_fwddecl * CreateSeqMtf(const BlockMultipleAlignment* multiple, double weightPSSM);
+
+    // creates Bioseq from Sequence; registed with SeqMgr and stored locally
+    void CreateBioseq(const Sequence *sequence);
+    void CreateBioseqs(const BlockMultipleAlignment *multiple);
+
+private:
+    typedef std::map < const Sequence *, Bioseq_fwddecl* > BioseqMap;
+    BioseqMap bioseqs;
+
 public:
-    Helix3D(StructureBase *parent,
-        const ncbi::objects::CCylinder& cylinder, const ncbi::objects::CResidue_pntrs& residues);
-
-    Vector Nterm, Cterm;
-
-    bool Draw(const AtomSet *data) const;
-};
-
-class Strand3D : public Object3D
-{
-public:
-    Strand3D(StructureBase *parent,
-        const ncbi::objects::CBrick& brick, const ncbi::objects::CResidue_pntrs& residues);
-
-    Vector Nterm, Cterm, unitNormal;
-
-    bool Draw(const AtomSet *data) const;
+    Bioseq_fwddecl * GetBioseq(const Sequence *sequence)
+    {
+        BioseqMap::const_iterator b = bioseqs.find(sequence);
+        return ((b != bioseqs.end()) ? b->second : NULL);
+    }
 };
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_OBJECT_3D__HPP
+#endif // CN3D_THREADER__HPP

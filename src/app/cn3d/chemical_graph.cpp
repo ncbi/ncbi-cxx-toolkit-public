@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/02/08 23:01:48  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
 * Revision 1.19  2000/12/20 23:47:47  thiessen
 * load CDD's
 *
@@ -291,9 +294,9 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
     for (m=molecules.begin(); m!=me; m++) {
         if (m->second->IsProtein() || m->second->IsNucleotide()) {
             bool firstUnassigned = true;
-            int domainID = Molecule::NOT_SET;
+            int domainID = Molecule::VALUE_NOT_SET;
             for (int r=0; r<m->second->residues.size(); r++) {
-                if (m->second->residueDomains[r] == Molecule::NOT_SET) {
+                if (m->second->residueDomains[r] == Molecule::VALUE_NOT_SET) {
                     if (firstUnassigned) {
                         domainID = ++((const_cast<StructureSet*>(parentSet))->nDomains);
                         (const_cast<Molecule*>(m->second))->nDomains++;
@@ -340,7 +343,7 @@ void ChemicalGraph::UnpackDomainFeatures(const CBiostruc_feature_set& featureSet
                         ERR_POST(Error << "Bad residue range in domain feature for moleculeID "
                             << molecule->id << " residueID " << r+1);
                         break;
-                    } else if (molecule->residueDomains[r] != Molecule::NOT_SET) {
+                    } else if (molecule->residueDomains[r] != Molecule::VALUE_NOT_SET) {
                         ERR_POST(Warning << "Overlapping domain feature for moleculeID "
                             << molecule->id << " residueID " << r+1);
                         break;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/02/08 23:01:50  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
 * Revision 1.17  2001/01/25 20:21:18  thiessen
 * fix ostrstream memory leaks
 *
@@ -161,7 +164,7 @@ SequenceSet::SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries) 
     TESTMSG("number of sequences: " << sequences.size());
 }
 
-const int Sequence::NOT_SET = -1;
+const int Sequence::VALUE_NOT_SET = -1;
 
 #define FIRSTOF2(byte) (((byte) & 0xF0) >> 4)
 #define SECONDOF2(byte) ((byte) & 0x0F)
@@ -223,7 +226,8 @@ static void StringFrom2na(const std::vector< char >& vec, std::string *str, bool
 }
 
 Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) :
-    StructureBase(parent), gi(NOT_SET), pdbChain(' '), molecule(NULL), mmdbLink(NOT_SET)
+    StructureBase(parent), gi(VALUE_NOT_SET), pdbChain(' '), molecule(NULL), mmdbLink(VALUE_NOT_SET),
+    isProtein(false)
 {
     // get Seq-id info
     CBioseq::TId::const_iterator s, se = bioseq.GetId().end();
@@ -240,7 +244,7 @@ Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) 
             accession = s->GetObject().GetGenbank().GetAccession();
         }
     }
-    if (gi == NOT_SET && pdbID.size() == 0) {
+    if (gi == VALUE_NOT_SET && pdbID.size() == 0) {
         ERR_POST(Error << "Sequence::Sequence() - can't parse SeqId");
         return;
     }
@@ -263,7 +267,7 @@ Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) 
             }
         }
     }
-    if (mmdbLink != NOT_SET)
+    if (mmdbLink != VALUE_NOT_SET)
         TESTMSG("sequence gi " << gi << ", PDB '" << pdbID << "' chain '" << (char) pdbChain <<
             "', is from MMDB id " << mmdbLink);
 
@@ -273,8 +277,10 @@ Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) 
         // protein formats
         if (bioseq.GetInst().GetSeq_data().IsNcbieaa()) {
             sequenceString = bioseq.GetInst().GetSeq_data().GetNcbieaa().Get();
+            isProtein = true;
         } else if (bioseq.GetInst().GetSeq_data().IsIupacaa()) {
             sequenceString = bioseq.GetInst().GetSeq_data().GetIupacaa().Get();
+            isProtein = true;
         }
 
         // nucleotide formats
@@ -329,7 +335,7 @@ std::string Sequence::GetTitle(void) const
         if (pdbChain != ' ') {
             oss <<  '_' << (char) pdbChain;
         }
-    } else if (gi != NOT_SET)
+    } else if (gi != VALUE_NOT_SET)
         oss << "gi " << gi;
     else if (accession.size() > 0)
         oss << "acc " << accession;

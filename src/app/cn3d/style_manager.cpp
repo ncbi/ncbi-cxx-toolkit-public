@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/02/08 23:01:51  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
 * Revision 1.22  2001/01/30 20:51:20  thiessen
 * minor fixes
 *
@@ -458,7 +461,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             break;
 
         case StyleSettings::eDomain:
-            atomStyle->color = (molecule->residueDomains[residue->id - 1] == Molecule::NOT_SET) ?
+            atomStyle->color = (molecule->residueDomains[residue->id - 1] == Molecule::VALUE_NOT_SET) ?
                 object->parentSet->colors->Get(Colors::eCycle1, 0) :
                 object->parentSet->colors->Get(Colors::eCycle1, molecule->residueDomains[residue->id - 1]);
             break;
@@ -746,7 +749,7 @@ bool StyleManager::GetObjectStyle(const StructureObject *object, const Object3D&
                 int domainID = molecule->residueDomains[object3D.fromResidueID - 1];
                 objectStyle->color =
                     object->parentSet->colors->
-                        Get(Colors::eCycle1, (domainID == Molecule::NOT_SET) ? 0 : domainID);
+                        Get(Colors::eCycle1, (domainID == Molecule::VALUE_NOT_SET) ? 0 : domainID);
             }
             break;
         case StyleSettings::eSecondaryStructure:

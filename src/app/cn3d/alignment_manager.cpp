@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/02/08 23:01:48  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
 * Revision 1.35  2001/02/02 20:17:33  thiessen
 * can read in CDD with multi-structure but no struct. alignments
 *
@@ -148,6 +151,7 @@
 #include "cn3d/sequence_viewer.hpp"
 #include "cn3d/molecule.hpp"
 #include "cn3d/show_hide_manager.hpp"
+#include "cn3d/cn3d_threader.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -159,6 +163,7 @@ BEGIN_SCOPE(Cn3D)
 AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet) :
     sequenceViewer(NULL)
 {
+    threader = new Threader();
     NewAlignments(sSet, aSet);
 }
 
@@ -166,6 +171,7 @@ AlignmentManager::~AlignmentManager(void)
 {
     GlobalMessenger()->RemoveSequenceViewer(sequenceViewer);
     delete sequenceViewer;
+    delete threader;
 }
 
 void AlignmentManager::NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet)
@@ -491,6 +497,11 @@ const Vector * AlignmentManager::GetAlignmentColor(const Sequence *sequence, int
         return currentAlignment->GetAlignmentColor(sequence, seqIndex);
     else
         return NULL;
+}
+
+void AlignmentManager::TestThreader(void)
+{
+    threader->Test(GetCurrentMultipleAlignment());
 }
 
 END_SCOPE(Cn3D)

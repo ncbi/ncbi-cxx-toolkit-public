@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/02/08 23:01:13  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
 * Revision 1.25  2000/12/29 19:23:49  thiessen
 * save row order
 *
@@ -129,6 +132,7 @@ class MasterSlaveAlignment;
 class SequenceViewer;
 class Messenger;
 class BlockMultipleAlignment;
+class Threader;
 
 class AlignmentManager : public ShowHideCallback
 {
@@ -171,9 +175,13 @@ public:
     // (e.g., for coloring by sequence conservation)
     const Vector * GetAlignmentColor(const Sequence *sequence, int seqIndex) const;
 
+    // threader functions
+    void TestThreader(void);
+
 private:
     const SequenceSet *sequenceSet;
     const AlignmentSet *alignmentSet;
+    Threader *threader;
 
     std::vector < bool > slavesVisible;
 

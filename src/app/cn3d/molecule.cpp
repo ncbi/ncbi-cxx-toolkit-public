@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/02/08 23:01:50  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
 * Revision 1.21  2000/12/15 15:51:47  thiessen
 * show/hide system installed
 *
@@ -115,14 +118,14 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-const int Molecule::NOT_SET = -1;
+const int Molecule::VALUE_NOT_SET = -1;
 
 Molecule::Molecule(StructureBase *parent,
     const CMolecule_graph& graph,
     const ResidueGraphList& standardDictionary,
     const ResidueGraphList& localDictionary) :
     StructureBase(parent), type(eOther), sequence(NULL),
-    gi(NOT_SET), pdbChain(' '), nDomains(0)
+    gi(VALUE_NOT_SET), pdbChain(' '), nDomains(0)
 {
     // get ID, name, and type
     id = graph.GetId().Get();
@@ -150,7 +153,7 @@ Molecule::Molecule(StructureBase *parent,
                 graph.GetSeq_id().GetLocal().IsStr())
                 pdbID = graph.GetSeq_id().GetLocal().GetStr();
         }
-        if (gi == NOT_SET && pdbID.size() == 0) {
+        if (gi == VALUE_NOT_SET && pdbID.size() == 0) {
             ERR_POST(Critical << "Molecule::Molecule() - biopolymer molecule, but can't get Seq-id");
             return;
         }
@@ -236,7 +239,7 @@ Molecule::Molecule(StructureBase *parent,
         prevResidue = residue;
     }
 
-    residueDomains.resize(residues.size(), NOT_SET);
+    residueDomains.resize(residues.size(), VALUE_NOT_SET);
     // keep s.s. maps only for protein chains
     if (IsProtein()) residueSecondaryStructures.resize(residues.size(), eCoil);
 }
