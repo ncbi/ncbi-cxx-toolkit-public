@@ -605,7 +605,8 @@ void CCachedId1Reader::GetTSEChunk(CTSE_Chunk_Info& chunk_info,
 #endif
 
     CID2_Reply_Data chunk_data;
-    size = LoadData(key, version, GetChunkSubkey(chunk_info.GetChunkId()),
+    string subkey = GetChunkSubkey(chunk_info.GetChunkId());
+    size = LoadData(key, version, subkey,
                     chunk_data, CID2_Reply_Data::eData_type_id2s_chunk);
     if ( !size ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
@@ -614,7 +615,8 @@ void CCachedId1Reader::GetTSEChunk(CTSE_Chunk_Info& chunk_info,
 
 #ifdef ID1_COLLECT_STATS
     if ( CollectStatistics() ) {
-        LogStat("CId1Cache: load chunk", blob_id, chunk_load, sw, size);
+        LogStat("CId1Cache: load chunk",
+                key+' '+subkey, chunk_load, sw, size);
     }
 #endif
 
@@ -629,7 +631,8 @@ void CCachedId1Reader::GetTSEChunk(CTSE_Chunk_Info& chunk_info,
 
 #ifdef ID1_COLLECT_STATS
     if ( CollectStatistics() ) {
-        LogStat("CId1Cache: parse chunk", blob_id, chunk_parse, sw, size);
+        LogStat("CId1Cache: parse chunk",
+                key+' '+subkey, chunk_parse, sw, size);
     }
 #endif
 }
