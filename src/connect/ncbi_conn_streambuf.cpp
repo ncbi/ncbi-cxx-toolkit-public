@@ -52,11 +52,11 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
 
     auto_ptr<CT_CHAR_TYPE> bp(new CT_CHAR_TYPE[2 * m_BufSize]);
 
-    m_WriteBuf = bp.get();
-    setp(m_WriteBuf, m_WriteBuf + m_BufSize);
+    m_ReadBuf  = bp.get();
+    m_WriteBuf = bp.get() + m_BufSize;
 
-    m_ReadBuf = bp.get() + m_BufSize;
-    setg(m_ReadBuf, m_ReadBuf, m_ReadBuf);
+    setp(m_WriteBuf, m_WriteBuf + m_BufSize);
+    setg(m_ReadBuf,  m_WriteBuf, m_WriteBuf);
 
     if (LOG_IF_ERROR(CONN_Create(connector, &m_Conn),
                      "CConn_Streambuf(): CONN_Create() failed") !=eIO_Success){
@@ -89,29 +89,26 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
 {
     if ( !m_Conn )
         return CT_EOF;
+    _ASSERT(!pbase()  ||  pbase() == m_WriteBuf);
 
-    size_t n_written;
-
-    if ( pbase() ) {
+    if (pbase()  &&  pptr()) {
         // send buffer
-        size_t n_write = pptr() - pbase();
-        if ( !n_write ) {
-            _ASSERT(CT_EQ_INT_TYPE(c, CT_EOF));
-            return CT_NOT_EOF(CT_EOF);
+        size_t n_write = pptr() - m_WriteBuf;
+        if ( n_write ) {
+            size_t n_written;
+            n_write *= sizeof(CT_CHAR_TYPE);
+            LOG_IF_ERROR(CONN_Write(m_Conn, m_WriteBuf, n_write, &n_written),
+                         "overflow(): CONN_Write() failed");
+            if ( !n_written )
+                return CT_EOF;
+            n_written /= sizeof(CT_CHAR_TYPE);
+            // update buffer content (get rid of data just sent)
+            if (n_written != n_write) {
+                memmove(m_WriteBuf, m_WriteBuf + n_written,
+                        (n_write - n_written)*sizeof(CT_CHAR_TYPE));
+            }
+            setp(m_WriteBuf + n_write - n_written, m_WriteBuf + m_BufSize);
         }
-
-        LOG_IF_ERROR(CONN_Write(m_Conn, m_WriteBuf,
-                                n_write*sizeof(CT_CHAR_TYPE), &n_written),
-                     "overflow(): CONN_Write() failed");
-        if ( !n_written )
-            return CT_EOF;
-
-        // update buffer content (get rid of the sent data)
-        if ((n_written /= sizeof(CT_CHAR_TYPE)) != n_write) {
-            memmove(m_WriteBuf, pbase() + n_written,
-                    (n_write - n_written)*sizeof(CT_CHAR_TYPE));
-        }
-        setp(m_WriteBuf + n_write - n_written, m_WriteBuf + m_BufSize);
 
         // store char
         return CT_EQ_INT_TYPE(c, CT_EOF)
@@ -119,8 +116,9 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
     }
 
     if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
-        CT_CHAR_TYPE b = CT_TO_CHAR_TYPE(c);
         // send char
+        size_t n_written;
+        CT_CHAR_TYPE b = CT_TO_CHAR_TYPE(c);
         LOG_IF_ERROR(CONN_Write(m_Conn, &b, sizeof(b), &n_written),
                      "overflow(): CONN_Write(1) failed");
         return n_written == sizeof(b) ? c : CT_EOF;
@@ -141,6 +139,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
         _VERIFY(sync() == 0);
     }
     _ASSERT(!gptr()  ||  gptr() >= egptr());
+    _ASSERT(!gptr()  ||  eback() == m_ReadBuf);
 
 #ifdef NCBI_COMPILER_MIPSPRO
     if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
@@ -148,22 +147,24 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
     m_MIPSPRO_ReadsomeGptr = 0;
 #endif
 
-    // read from the connection
-    size_t n_read;
-    EIO_Status status = CONN_Read(m_Conn, m_ReadBuf,
-                                  m_BufSize*sizeof(CT_CHAR_TYPE),
+    // read from connection
+    CT_CHAR_TYPE  c;
+    size_t        n_read;
+    CT_CHAR_TYPE* x_buf  = gptr() ? m_ReadBuf : &c;
+    size_t        x_read = gptr() ? m_BufSize : 1;
+    EIO_Status status = CONN_Read(m_Conn, x_buf, x_read*sizeof(CT_CHAR_TYPE),
                                   &n_read, eIO_ReadPlain);
-    if (status != eIO_Success) {
+    if ( !n_read ) {
         if (status != eIO_Closed)
-            LOG_IF_ERROR(status,"underflow(): CONN_Read() failed");
+            LOG_IF_ERROR(status, "underflow(): CONN_Read() failed");
         return CT_EOF;
     }
-    _ASSERT(n_read);
 
-    // update input buffer with the data we have just read
-    setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read/sizeof(CT_CHAR_TYPE));
-
-    return CT_TO_INT_TYPE(*m_ReadBuf);
+    if ( gptr() ) {
+        // update input buffer with data just read
+        setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read/sizeof(CT_CHAR_TYPE));
+    }
+    return CT_TO_INT_TYPE(*x_buf);
 }
 
 
@@ -173,6 +174,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
     if ( !m_Conn )
         return 0;
+    _ASSERT(gptr()  ||  eback() == m_ReadBuf);
 
     // flush output buffer, if tied up to it
     if ( m_Tie ) {
@@ -185,30 +187,29 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
     size_t n_read;
     // read from the memory buffer
-    if (gptr() < egptr()) {
+    if (gptr()  &&  gptr() < egptr()) {
         n_read = egptr() - gptr();
         if (n_read > n)
             n_read = n;
         memcpy(buf, gptr(), n_read*sizeof(CT_CHAR_TYPE));
         gbump((int) n_read);
         buf += n_read;
-        n -= n_read;
+        n   -= n_read;
     } else
         n_read = 0;
 
-    /* Do not even try to read directly from the connection if it
-     * can lead to waiting while we already have read at least some data.
+    /* Do not even try to read directly from connection if it can lead
+     * to waiting while we already have read at least some data.
      */
     if (n == 0  ||  (n_read > 0  &&
                      CONN_Wait(m_Conn, eIO_Read, &s_ZeroTmo) != eIO_Success)) {
         return (streamsize) n_read;
     }
 
-    size_t        x_read = n < (size_t) m_BufSize ? m_BufSize : n;
-    CT_CHAR_TYPE*  x_buf = n < (size_t) m_BufSize ? m_ReadBuf : buf;
-    // read directly from the connection
-    CONN_Read(m_Conn, x_buf, x_read*sizeof(CT_CHAR_TYPE),
-              &x_read, eIO_ReadPlain);
+    CT_CHAR_TYPE* x_buf = gptr() && n < (size_t) m_BufSize ? m_ReadBuf : buf;
+    size_t       x_read = gptr() && n < (size_t) m_BufSize ? m_BufSize : n;
+    // read directly from connection
+    CONN_Read(m_Conn,x_buf,x_read*sizeof(CT_CHAR_TYPE),&x_read, eIO_ReadPlain);
     if (x_read /= sizeof(CT_CHAR_TYPE)) {
         // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
         if (x_buf == m_ReadBuf) {
@@ -217,7 +218,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
                 x_read = n;
             memcpy(buf, m_ReadBuf, x_read*sizeof(CT_CHAR_TYPE));
             setg(m_ReadBuf, m_ReadBuf + x_read, m_ReadBuf + xx_read);
-        } else {
+        } else if (gptr()) {
             size_t xx_read = x_read > (size_t) m_BufSize ? m_BufSize : x_read;
             memcpy(m_ReadBuf,buf+x_read-xx_read,xx_read*sizeof(CT_CHAR_TYPE));
             setg(m_ReadBuf, m_ReadBuf + xx_read, m_ReadBuf + xx_read);
@@ -262,8 +263,8 @@ int CConn_Streambuf::sync(void)
 }
 
 
-streambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
-                                   streamsize    /*buf_size*/)
+CNcbiStreambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
+                                        streamsize    /*buf_size*/)
 {
     NCBI_THROW(CConnException, eConn, "CConn_Streambuf::setbuf() not allowed");
     /*NOTREACHED*/
@@ -288,6 +289,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2003/10/22 18:16:09  lavr
+ * More consistent use of buffer pointers in the implementation
+ *
  * Revision 6.35  2003/10/07 19:59:40  lavr
  * Replace '==' with (better) 'CT_EQ_INT_TYPE'
  *
