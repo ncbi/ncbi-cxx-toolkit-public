@@ -17,7 +17,13 @@
   How to construct Seq_id by accession?
   </a></li>
   <li><a href="#seqmap">
-  How to use SeqMap?
+  How to use CSeqMap?
+  </a></li>
+  <li><a href="#seqvector">
+  What is the format of data CSeqVector returns?
+  </a></li>
+  <li><a href="#fcgi">
+  How to convert CGI application into FCGI one?
   </a></li>
   <li><a href="#other">
   Other suggestions.
@@ -46,7 +52,6 @@ C toolkit which does it:
 This function is called from SeqIdFromAccession (sequtil.c).
 </p>
 <p>
-</p>
 Currently, one has to specify an exact version number, otherwise
 GetBioseqHandle fails. A user might not know a version number for an accession
 s/he wants to retrieve, so, if version is not provided, the last version of the
@@ -57,9 +62,9 @@ accession should be fetched.
 
 <hr>
 <a name="seqmap"></a>
-<h4>How to use SeqMap?</h4>
+<h4>How to use CSeqMap?</h4>
 <p>
-There are two methods in Bioseq_Handle, which return SeqMap object:
+There are two methods in CBioseq_Handle, which return CSeqMap object:
 <pre>
     const CSeqMap&amp; GetSeqMap(void) const;
     const CSeqMap&amp GetResolvedSeqMap(void) const;
@@ -72,8 +77,41 @@ references until a client needs it. So, the contents of SeqMap object returned b
 does not contain references to references, nor references to gaps - only either data,
 or references to data, or gaps.
 </p>
-Hi,
 
+
+
+<hr>
+<a name="seqvector"></a>
+<h4>What is the format of data CSeqVector returns?</h4>
+<p>
+CSeqVector object has a <tt>SetCoding</tt> method, which defines the format
+of the data it should return. In case this function was never called
+CSeqVector does not perform any conversion, returning the data
+in the original format (in which it receives it from the database).
+<br>
+More information about various sequence data formats can be found
+<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/BIOSEQ.HTML#Seq-data: Encoding the Sequence Data Itself">here</a>.
+</p>
+
+
+
+<hr>
+<a name="fcgi"></a>
+<h4>How to convert CGI application into FCGI one?</h4>
+<ol>
+  <li>
+Replace <tt>cgi</tt> library by <tt>fcgi</tt> one in the <tt>LIB=...</tt> section
+of your <tt>Makefile.*.app</tt>.
+  </li>
+  <li>
+Add the path to Fast-CGI header files to compilation flags and FCGI libraries
+to link flags: 
+<pre>
+CPPFLAGS =  $(FASTCGI_INCLUDE)
+LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(FASTCGI_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+</pre>
+  </li>
+</ol>
 
 
 
