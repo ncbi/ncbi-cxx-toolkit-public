@@ -133,7 +133,7 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastHitSavingOptions, BlastHitSavingOptionsFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastHitSavingParameters,
                            BlastHitSavingParametersFree);
 
-DECLARE_AUTO_CLASS_WRAPPER(PSIBlastOptions, sfree);
+DECLARE_AUTO_CLASS_WRAPPER(PSIBlastOptions, PSIBlastOptionsFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastDatabaseOptions, BlastDatabaseOptionsFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastScoreBlk, BlastScoreBlkFree);
@@ -154,6 +154,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2004/06/21 15:23:01  camacho
+* Fix PSIBlastOptions free function
+*
 * Revision 1.35  2004/05/14 16:02:56  madden
 * Rename BLAST_ExtendWord to Blast_ExtendWord in order to fix conflicts with C toolkit
 *
