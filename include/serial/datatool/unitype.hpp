@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/02/02 19:08:59  gouriano
+* Corrected DTD generation
+*
 * Revision 1.9  2004/05/19 17:23:25  gouriano
 * Corrected generation of C++ code by DTD for containers
 *
@@ -86,7 +89,7 @@ public:
     CUniSequenceDataType(const AutoPtr<CDataType>& elementType);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
-    void PrintDTDElement(CNcbiOstream& out) const;
+    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
     void PrintDTDExtra(CNcbiOstream& out) const;
 
     void PrintXMLSchemaElement(CNcbiOstream& out) const;

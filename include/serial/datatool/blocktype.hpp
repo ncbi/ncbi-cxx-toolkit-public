@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/02/02 19:08:59  gouriano
+* Corrected DTD generation
+*
 * Revision 1.13  2003/05/14 14:42:55  gouriano
 * added generation of XML schema
 *
@@ -182,7 +185,7 @@ public:
     typedef list< AutoPtr<CDataMember> > TMembers;
 
     void PrintASN(CNcbiOstream& out, int indent) const;
-    void PrintDTDElement(CNcbiOstream& out) const;
+    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
     void PrintDTDExtra(CNcbiOstream& out) const;
     void PrintXMLSchemaElement(CNcbiOstream& out) const;
     void PrintXMLSchemaExtra(CNcbiOstream& out) const;

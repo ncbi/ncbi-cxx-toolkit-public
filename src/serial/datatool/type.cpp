@@ -117,7 +117,6 @@ void CDataType::PrintDTD(CNcbiOstream& out) const
     }
     m_Comments.PrintDTD(out);
     PrintDTDElement(out);
-    out << '\n';
     x_AddSavedName(XmlTagName());
     PrintDTDExtra(out);
 }
@@ -125,6 +124,9 @@ void CDataType::PrintDTD(CNcbiOstream& out) const
 void CDataType::PrintDTD(CNcbiOstream& out,
                          const CComments& extra) const
 {
+    if (m_DataMember && (m_DataMember->Attlist() || m_DataMember->Notag())) {
+        return;
+    }
     if (x_IsSavedName(XmlTagName())) {
         return;
     }
@@ -137,7 +139,6 @@ void CDataType::PrintDTD(CNcbiOstream& out,
         out << ' ';
         extra.PrintDTD(out, CComments::eOneLine);
     }
-    out << '\n';
     x_AddSavedName(XmlTagName());
     PrintDTDExtra(out);
 }
@@ -156,15 +157,10 @@ void CDataType::PrintXMLSchema(CNcbiOstream& out) const
     if (x_IsSavedName(XmlTagName())) {
         return;
     }
-//    out <<
-//        "<!-- Definition of "<< XmlTagName() <<" -->\n"
-//        "\n";
     m_Comments.PrintDTD(out);
     PrintXMLSchemaElement(out);
-    out << '\n';
     x_AddSavedName(XmlTagName());
     PrintXMLSchemaExtra(out);
-    out << '\n';
 }
                                                                                                                                                       
 void CDataType::PrintXMLSchema(CNcbiOstream& out,
@@ -176,9 +172,6 @@ void CDataType::PrintXMLSchema(CNcbiOstream& out,
     if (x_IsSavedName(XmlTagName())) {
         return;
     }
-//    out <<
-//        "<!-- Definition of "<< XmlTagName() <<" -->\n"
-//        "\n";
     m_Comments.PrintDTD(out);
     bool oneLineComment = extra.OneLine();
     if ( oneLineComment ) {
@@ -189,10 +182,8 @@ void CDataType::PrintXMLSchema(CNcbiOstream& out,
         extra.PrintDTD(out);
     }
     PrintXMLSchemaElement(out);
-    out << '\n';
     x_AddSavedName(XmlTagName());
     PrintXMLSchemaExtra(out);
-    out << '\n';
 }
 
 void CDataType::PrintXMLSchemaExtra(CNcbiOstream& /*out*/) const
@@ -693,6 +684,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.81  2005/02/02 19:08:36  gouriano
+* Corrected DTD generation
+*
 * Revision 1.80  2004/05/19 17:24:18  gouriano
 * Corrected generation of C++ code by DTD for containers
 *

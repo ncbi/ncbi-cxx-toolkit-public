@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2005/02/02 19:08:36  gouriano
+* Corrected DTD generation
+*
 * Revision 1.53  2005/01/12 18:05:10  gouriano
 * Corrected generation of XML schema for sequence of choice types,
 * and simple types with default
@@ -291,51 +294,143 @@ void CDataMemberContainerType::PrintASN(CNcbiOstream& out, int indent) const
     out << "}";
 }
 
-void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out) const
+void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
 {
-    out <<
-        "<!ELEMENT "<<XmlTagName()<<" (\n";
-    const char* separator = XmlMemberSeparator();
-    ITERATE ( TMembers, i, m_Members ) {
-        if ( i != m_Members.begin() )
-            out <<separator<<'\n';
-        const CDataMember& member = **i;
-        out << "               ";
-        if (GetEnforcedStdXml()) {
-            const CUniSequenceDataType* type =
+    string tag = XmlTagName();
+    bool hasAttlist= false, isAttlist= false;
+    bool hasNotag= false, isOptional= false;
+    bool isSimple= false, isSeq= false;
+    string indent("    ");
+
+    if (GetEnforcedStdXml()) {
+        ITERATE ( TMembers, i, m_Members ) {
+            if (i->get()->Attlist()) {
+                hasAttlist = true;
+                break;
+            }
+        }
+        if (GetDataMember()) {
+            isAttlist = GetDataMember()->Attlist();
+            hasNotag   = GetDataMember()->Notag();
+        }
+        if (GetMembers().size()==1) {
+            const CDataMember* member = GetMembers().front().get();
+            const CUniSequenceDataType* uniType =
+                dynamic_cast<const CUniSequenceDataType*>(member->GetType());
+            if (uniType && member->Notag()) {
+                isSeq = true;
+            }
+        }
+        if (hasAttlist && GetMembers().size()==2) {
+            ITERATE ( TMembers, i, GetMembers() ) {
+                if (i->get()->Attlist()) {
+                    continue;
+                }
+                if (i->get()->SimpleType()) {
+                    isSimple = true;
+                    i->get()->GetType()->PrintDTDElement(out);
+                } else {
+                    const CUniSequenceDataType* uniType =
+                        dynamic_cast<const CUniSequenceDataType*>(i->get()->GetType());
+                    if (uniType && i->get()->Notag()) {
+                        isSeq = true;
+                    }
+                }
+            }
+        }
+    }
+
+    if (isAttlist) {
+        ITERATE ( TMembers, i, m_Members ) {
+            out << indent;
+            i->get()->GetType()->PrintDTDElement(out);
+        }
+        return;
+    }
+    if (!isSimple) {
+        if (!contents_only) {
+            out << "\n<!ELEMENT " << tag << " ";
+            if (!isSeq) {
+                out << "(";
+            }
+        }
+        bool need_separator = false;
+        ITERATE ( TMembers, i, m_Members ) {
+            if (need_separator) {
+                out << XmlMemberSeparator();
+            }
+            need_separator = true;
+            const CDataMember& member = **i;
+            string member_name( member.GetType()->XmlTagName());
+            const CUniSequenceDataType* uniType =
                 dynamic_cast<const CUniSequenceDataType*>(member.GetType());
-            if (type) {
+            if (GetEnforcedStdXml()) {
+                if (member.Attlist()) {
+                    need_separator = false;
+                    continue;
+                }
+                if (member.Notag()) {
+                    out << "(";
+                    member.GetType()->PrintDTDElement(out,true);
+                    out << ")";
+                } else {
+                    out << "\n        " << member_name;
+                }
+            } else {
+                out << "\n        " << member_name;
+            }
+            if (uniType) {
                 const CStaticDataType* elemType =
-                    dynamic_cast<const CStaticDataType*>(type->GetElementType());
-                if (elemType) {
-                    out << member.GetName();
-                    if ( (*i)->Optional() ) {
+                    dynamic_cast<const CStaticDataType*>(uniType->GetElementType());
+                if ((elemType || member.NoPrefix()) && GetEnforcedStdXml()) {
+                    if ( member.Optional() ) {
                         out << '*';
                     } else {
                         out << '+';
                     }
-                    continue;
+                } else {
+                    if ( member.Optional() ) {
+                        out << '?';
+                    }
+                }
+            } else {
+                if ( member.Optional() ) {
+                    out << '?';
                 }
             }
-        } else {
-            out << XmlTagName() << '_';
         }
-        out << member.GetName();
-        if ( (*i)->Optional() )
-            out << '?';
+        if (!contents_only) {
+            if (!isSeq) {
+                out << ")";
+            }
+            out << ">";
+        }
     }
-    out << " )>";
+    if (hasAttlist) {
+        out << "\n<!ATTLIST " << tag << '\n';
+        ITERATE ( TMembers, i, m_Members ) {
+            const CDataMember& member = **i;
+            if (member.Attlist()) {
+                member.GetType()->PrintDTDElement(out);
+                break;
+            }
+        }
+        out << indent << ">";
+    }
+    if (!contents_only && !isSimple) {
+        out << '\n';
+    }
 }
 
 void CDataMemberContainerType::PrintDTDExtra(CNcbiOstream& out) const
 {
-    if ( GetParentType() == 0 ) {
-        out <<
-            "\n";
-    }
     ITERATE ( TMembers, i, m_Members ) {
         const CDataMember& member = **i;
-        member.PrintDTD(out);
+        if (member.Notag()) {
+            member.GetType()->PrintDTDExtra(out);
+        } else {
+            member.PrintDTD(out);
+        }
     }
     m_LastComments.PrintDTD(out, CComments::eMultiline);
 }
@@ -543,8 +638,7 @@ void CDataMemberContainerType::PrintXMLSchemaElement(CNcbiOstream& out) const
 void CDataMemberContainerType::PrintXMLSchemaExtra(CNcbiOstream& out) const
 {
     if ( GetParentType() == 0 ) {
-        out << 
-            "\n";
+        out << "\n";
     }
     ITERATE ( TMembers, i, m_Members ) {
         const CDataMember& member = **i;
@@ -584,7 +678,7 @@ TObjectPtr CDataMemberContainerType::CreateDefault(const CDataValue& ) const
 
 const char* CDataContainerType::XmlMemberSeparator(void) const
 {
-    return ",";
+    return ", ";
 }
 
 CTypeInfo* CDataContainerType::CreateTypeInfo(void)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2005/02/02 19:08:36  gouriano
+* Corrected DTD generation
+*
 * Revision 1.27  2004/07/22 17:49:23  gouriano
 * Corrected XML schema generation for named integers
 *
@@ -153,6 +156,18 @@ const char* CEnumDataType::GetASNKeyword(void) const
     return "ENUMERATED";
 }
 
+string CEnumDataType::GetXMLContents(void) const
+{
+    string content("\n");
+    ITERATE ( TValues, i, m_Values ) {
+        if (i != m_Values.begin()) {
+            content += " |\n";
+        }
+        content += "        " + i->GetName();
+    }
+    return content;
+}
+
 bool CEnumDataType::IsInteger(void) const
 {
     return false;
@@ -189,25 +204,44 @@ void CEnumDataType::PrintASN(CNcbiOstream& out, int indent) const
     out << "}";
 }
 
-void CEnumDataType::PrintDTDElement(CNcbiOstream& out) const
+void CEnumDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
 {
-    out <<
-        "<!ELEMENT "<<XmlTagName()<<" ";
-    if ( IsInteger() )
-        out << "( %INTEGER; )>";
-    else
-        out << "%ENUM; >";
+    string tag(XmlTagName());
+    string content(GetXMLContents());
+    if (GetParentType() && 
+        GetParentType()->GetDataMember() &&
+        GetParentType()->GetDataMember()->Attlist()) {
+        const CDataMember* mem = GetDataMember();
+        out << tag << " (" << content << ") ";
+        if (mem->GetDefault()) {
+            out << "\"" << mem->GetDefault()->GetXmlString() << "\"";
+        } else {
+            if (mem->Optional()) {
+                out << "#IMPLIED";
+            } else {
+                out << "#REQUIRED";
+            }
+        }
+        out << '\n';
+    } else {
+        out <<
+            "\n<!ELEMENT " << tag << " ";
+        if ( IsInteger() )
+            out << "( %INTEGER; )>";
+        else
+            out << "%ENUM; >";
+    }
 }
 
 void CEnumDataType::PrintDTDExtra(CNcbiOstream& out) const
 {
     out <<
-        "<!ATTLIST "<<XmlTagName()<<" value (\n";
+        "\n<!ATTLIST "<<XmlTagName()<<" value (\n";
     bool haveComments = false;
     ITERATE ( TValues, i, m_Values ) {
         if ( i != m_Values.begin() )
             out << " |\n";
-        out << "               " << i->GetName();
+        out << "        " << i->GetName();
         if ( !i->GetComments().Empty() )
             haveComments = true;
     }

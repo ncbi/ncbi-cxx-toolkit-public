@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2005/02/02 19:08:36  gouriano
+* Corrected DTD generation
+*
 * Revision 1.33  2005/01/26 18:53:36  gouriano
 * Undo the previous change - it introduced other problems
 *
@@ -196,46 +199,81 @@ void CUniSequenceDataType::PrintASN(CNcbiOstream& out, int indent) const
     GetElementType()->PrintASN(out, indent);
 }
 
-void CUniSequenceDataType::PrintDTDElement(CNcbiOstream& out) const
+void CUniSequenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
 {
-    const CDataType* data = GetElementType();
-    const CStaticDataType* elemType = 0;
+    const CDataType* typeElem = GetElementType();
+    const CReferenceDataType* typeRef =
+        dynamic_cast<const CReferenceDataType*>(typeElem);
+    const CStaticDataType* typeStatic = 0;
     if (GetEnforcedStdXml()) {
-        elemType = dynamic_cast<const CStaticDataType*>(data);
+        typeStatic = dynamic_cast<const CStaticDataType*>(typeElem);
     }
-    const CReferenceDataType* ref =
-        dynamic_cast<const CReferenceDataType*>(data);
-    out <<
-        "<!ELEMENT "<< XmlTagName() << ' ';
-    if ( ref ) {
-        out <<"( " << ref->UserTypeXmlTagName() << "* )";
-    } else {
-        if (elemType) {
-            out << elemType->GetXMLContents();
+    string tag(XmlTagName());
+    string userType =
+        typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
+
+    if (tag == userType || (GetEnforcedStdXml() && !typeRef)) {
+        if (!GetParentType() || typeStatic) {
+            out << "\n<!ELEMENT " << tag << ' ';
+        }
+        if (typeStatic) {
+            typeStatic->PrintDTDElement(out, true);
+            out << ">";
         } else {
-            out <<"( " << data->XmlTagName() << "* )";
+            if (!GetParentType()) {
+                out << '(';
+            }
+            typeElem->PrintDTDElement(out,true);
+            if (!GetParentType()) {
+                out << ')';
+                if (m_NonEmpty) {
+                    out << '+';
+                } else {
+                    out << '*';
+                }
+            }
+        }
+        if (!GetParentType()) {
+            out << ">";
+        }
+        return;
+    }
+    out <<
+        "\n<!ELEMENT "<< tag << ' ';
+    if ( typeRef ) {
+        out <<"(" << typeRef->UserTypeXmlTagName() << "*)";
+    } else {
+        if (typeStatic) {
+            out << "(" << typeStatic->GetXMLContents() << ")";
+        } else {
+            out <<"(" << typeElem->XmlTagName() << "*)";
         }
     }
-    out << '>';
+    out << ">";
 }
 
 void CUniSequenceDataType::PrintDTDExtra(CNcbiOstream& out) const
 {
-    const CDataType* data = GetElementType();
-    const CStaticDataType* elemType = 0;
-    if (GetEnforcedStdXml()) {
-        elemType = dynamic_cast<const CStaticDataType*>(data);
-        if (elemType) {
-            return;
+    const CDataType* typeElem = GetElementType();
+    const CReferenceDataType* typeRef =
+        dynamic_cast<const CReferenceDataType*>(typeElem);
+    string tag(XmlTagName());
+    string userType =
+        typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
+
+    if (tag == userType || (GetEnforcedStdXml() && !typeRef)) {
+        const CStaticDataType* typeStatic =
+            dynamic_cast<const CStaticDataType*>(typeElem);
+        if (!typeStatic) {
+            typeElem->PrintDTDExtra(out);
         }
+        return;
     }
-    const CReferenceDataType* ref =
-        dynamic_cast<const CReferenceDataType*>(data);
-    if ( !ref ) {
-        // array of internal type, we should generate tag for element type
+
+    if ( !typeRef ) {
         if ( GetParentType() == 0 )
             out << '\n';
-        data->PrintDTD(out);
+        typeElem->PrintDTD(out);
     }
 }
 

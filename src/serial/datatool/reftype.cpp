@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/02/02 19:08:36  gouriano
+* Corrected DTD generation
+*
 * Revision 1.31  2004/08/03 15:11:24  gouriano
 * Check if GetDataMember() returns 0 before using it
 *
@@ -166,10 +169,32 @@ void CReferenceDataType::PrintASN(CNcbiOstream& out, int /*indent*/) const
     out << m_UserTypeName;
 }
 
-void CReferenceDataType::PrintDTDElement(CNcbiOstream& out) const
+void CReferenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
 {
+    string tag(XmlTagName());
+    string userType(UserTypeXmlTagName());
+    const CUniSequenceDataType* uniType = 
+        dynamic_cast<const CUniSequenceDataType*>(GetParentType());
+
+    if (tag == userType || (GetEnforcedStdXml() && uniType)) {
+        const CDataType* realType = Resolve();
+        realType->PrintDTDElement(out);
+        return;
+    }
     out <<
-        "<!ELEMENT "<<XmlTagName()<<" ( "<<UserTypeXmlTagName()<<" )>";
+        "\n<!ELEMENT "<<XmlTagName()<<" ("<<UserTypeXmlTagName()<<")>";
+}
+
+void CReferenceDataType::PrintDTDExtra(CNcbiOstream& out) const
+{
+    string tag(XmlTagName());
+    string userType(UserTypeXmlTagName());
+    const CUniSequenceDataType* uniType = 
+        dynamic_cast<const CUniSequenceDataType*>(GetParentType());
+
+    if (tag == userType || (GetEnforcedStdXml() && uniType)) {
+        Resolve()->PrintDTDExtra(out);
+    }
 }
 
 // XML schema generator submitted by

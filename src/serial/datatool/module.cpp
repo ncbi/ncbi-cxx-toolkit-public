@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/02/02 19:08:36  gouriano
+* Corrected DTD generation
+*
 * Revision 1.36  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -289,23 +292,15 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
     out << "\n";
 
     ITERATE ( TDefinitions, i, m_Definitions ) {
-        out <<
-            "<!-- Definition of "<<i->first<<" -->\n"
-            "\n";
+//        out <<
+//            "<!-- Definition of "<<i->first<<" -->\n\n";
         i->second->PrintDTD(out);
-        out <<
-            "\n"
-            "\n"
-            "\n";
+        out << "\n";
     }
 
     m_LastComments.PrintDTD(out, CComments::eMultiline);
 
-    out <<
-        "\n"
-        "\n"
-        "\n"
-        "\n";
+    out << "\n\n";
 }
 
 // XML schema generator submitted by

@@ -241,6 +241,9 @@ bool CDataTool::ProcessModules(void)
     }
 
     if ( const CArgValue& fx = args["fx"] ) {
+        if (srctype == SourceFile::eDTD) {
+            CDataType::SetEnforcedStdXml(true);
+        }
         if ( fx.AsString() == "m" )
             generator.GetMainModules().PrintDTDModular();
         else {
@@ -599,6 +602,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.78  2005/02/02 19:08:36  gouriano
+* Corrected DTD generation
+*
 * Revision 1.77  2005/01/06 20:23:03  gouriano
 * Added name property to lexers - for better diagnostics
 *

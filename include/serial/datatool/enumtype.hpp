@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/02/02 19:08:59  gouriano
+* Corrected DTD generation
+*
 * Revision 1.12  2004/05/12 18:33:23  gouriano
 * Added type conversion check (when using _type DEF file directive)
 *
@@ -136,11 +139,12 @@ public:
     CEnumDataType(void);
     virtual bool IsInteger(void) const;
     virtual const char* GetASNKeyword(void) const;
+    virtual string GetXMLContents(void) const;
 
     TValue& AddValue(const string& name, TEnumValueType value);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
-    void PrintDTDElement(CNcbiOstream& out) const;
+    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
     void PrintDTDExtra(CNcbiOstream& out) const;
     void PrintXMLSchemaElement(CNcbiOstream& out) const;
 

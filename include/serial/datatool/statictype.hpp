@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/02/02 19:08:59  gouriano
+* Corrected DTD generation
+*
 * Revision 1.15  2004/05/12 18:33:23  gouriano
 * Added type conversion check (when using _type DEF file directive)
 *
@@ -119,7 +122,7 @@ class CStaticDataType : public CDataType {
     typedef CDataType CParent;
 public:
     void PrintASN(CNcbiOstream& out, int indent) const;
-    void PrintDTDElement(CNcbiOstream& out) const;
+    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
     void PrintXMLSchemaElement(CNcbiOstream& out) const;
     void PrintXMLSchemaElementWithTag(CNcbiOstream& out,const string& tag) const;
 
@@ -269,7 +272,7 @@ class CAnyContentDataType : public CStaticDataType {
 public:
     bool CheckValue(const CDataValue& value) const;
     void PrintASN(CNcbiOstream& out, int indent) const;
-    void PrintDTDElement(CNcbiOstream& out) const;
+    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
     void PrintXMLSchemaElement(CNcbiOstream& out) const;
 
     TObjectPtr CreateDefault(const CDataValue& value) const;

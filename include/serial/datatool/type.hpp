@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/02/02 19:08:59  gouriano
+* Corrected DTD generation
+*
 * Revision 1.23  2004/05/12 18:33:23  gouriano
 * Added type conversion check (when using _type DEF file directive)
 *
@@ -230,7 +233,7 @@ public:
     virtual void PrintASN(CNcbiOstream& out, int indent) const = 0;
     void PrintDTD(CNcbiOstream& out) const;
     void PrintDTD(CNcbiOstream& out, const CComments& extra) const;
-    virtual void PrintDTDElement(CNcbiOstream& out) const = 0;
+    virtual void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const = 0;
     virtual void PrintDTDExtra(CNcbiOstream& out) const;
 
     void PrintXMLSchema(CNcbiOstream& out) const;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/02/02 19:08:59  gouriano
+* Corrected DTD generation
+*
 * Revision 1.8  2003/06/16 14:40:15  gouriano
 * added possibility to convert DTD to XML schema
 *
@@ -87,7 +90,8 @@ public:
     CReferenceDataType(const string& n);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
-    void PrintDTDElement(CNcbiOstream& out) const;
+    void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
+    void PrintDTDExtra(CNcbiOstream& out) const;
     void PrintXMLSchemaElement(CNcbiOstream& out) const;
     void PrintXMLSchemaExtra(CNcbiOstream& out) const;
 

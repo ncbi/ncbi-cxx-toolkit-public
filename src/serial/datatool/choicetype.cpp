@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/02/02 19:08:36  gouriano
+* Corrected DTD generation
+*
 * Revision 1.29  2004/05/17 21:03:13  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -217,7 +220,7 @@ void CChoiceDataType::FixTypeTree(void) const
 
 const char* CChoiceDataType::XmlMemberSeparator(void) const
 {
-    return " |";
+    return " | ";
 }
 
 bool CChoiceDataType::CheckValue(const CDataValue& value) const

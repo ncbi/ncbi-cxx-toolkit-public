@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/02/02 19:08:36  gouriano
+* Corrected DTD generation
+*
 * Revision 1.36  2005/02/01 21:47:14  grichenk
 * Fixed warnings
 *
@@ -191,10 +194,39 @@ void CStaticDataType::PrintASN(CNcbiOstream& out, int /*indent*/) const
     out << GetASNKeyword();
 }
 
-void CStaticDataType::PrintDTDElement(CNcbiOstream& out) const
+void CStaticDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
 {
-    out <<
-        "<!ELEMENT "<<XmlTagName()<<" "<<GetXMLContents()<<">";
+    string tag(XmlTagName());
+    string content(GetXMLContents());
+    if (GetParentType() && 
+        GetParentType()->GetDataMember() &&
+        GetParentType()->GetDataMember()->Attlist()) {
+        const CDataMember* mem = GetDataMember();
+        out << tag << " CDATA ";
+        if (mem->GetDefault()) {
+            out << "\"" << mem->GetDefault()->GetXmlString() << "\"";
+        } else {
+            if (mem->Optional()) {
+                out << "#IMPLIED";
+            } else {
+                out << "#REQUIRED";
+            }
+        }
+        out << '\n';
+    } else {
+        string open("("), close(")");
+        if (content == "EMPTY") {
+            open.erase();
+            close.erase();
+        }
+        if (!contents_only) {
+            out << "\n<!ELEMENT " << tag << ' ';
+        }
+        out << open << content << close;
+        if (!contents_only) {
+            out << ">";
+        }
+    }
 }
 
 // XML schema generator submitted by
@@ -259,7 +291,7 @@ const char* CNullDataType::GetASNKeyword(void) const
 
 const char* CNullDataType::GetXMLContents(void) const
 {
-    return "%NULL;";
+    return "EMPTY";
 }
 
 void CNullDataType::GetXMLSchemaContents(string& type, string& contents) const
@@ -346,9 +378,8 @@ void CBoolDataType::PrintDTDExtra(CNcbiOstream& out) const
     }
 
     out <<
-      "<!ATTLIST "<<XmlTagName()<<" value ( true | false ) " 
-	<< attr << " >\n"
-        "\n";
+      "\n<!ATTLIST "<<XmlTagName()<<" value ( true | false ) " 
+	<< attr << " >\n";
 }
 
 bool CBoolDataType::CheckValue(const CDataValue& value) const
@@ -392,7 +423,7 @@ const char* CRealDataType::GetASNKeyword(void) const
 
 const char* CRealDataType::GetXMLContents(void) const
 {
-    return "( %REAL; )";
+    return "%REAL;";
 }
 
 void CRealDataType::GetXMLSchemaContents(string& type, string& contents) const
@@ -467,7 +498,7 @@ const char* CStringDataType::GetASNKeyword(void) const
 
 const char* CStringDataType::GetXMLContents(void) const
 {
-    return "( #PCDATA )";
+    return "#PCDATA";
 }
 
 void CStringDataType::GetXMLSchemaContents(string& type, string& contents) const
@@ -584,7 +615,7 @@ bool CBitStringDataType::CheckValue(const CDataValue& value) const
 
 const char* CBitStringDataType::GetXMLContents(void) const
 {
-    return "( %BITS; )";
+    return "%BITS;";
 }
 
 void CBitStringDataType::GetXMLSchemaContents(string& type, string& contents) const
@@ -605,7 +636,7 @@ const char* COctetStringDataType::GetDefaultCType(void) const
 
 const char* COctetStringDataType::GetXMLContents(void) const
 {
-    return "( %OCTETS; )";
+    return "%OCTETS;";
 }
 
 void COctetStringDataType::GetXMLSchemaContents(string& type, string& contents) const
@@ -652,7 +683,7 @@ const char* CIntDataType::GetASNKeyword(void) const
 
 const char* CIntDataType::GetXMLContents(void) const
 {
-    return "( %INTEGER; )";
+    return "%INTEGER;";
 }
 
 void CIntDataType::GetXMLSchemaContents(string& type, string& contents) const
@@ -696,7 +727,7 @@ const char* CBigIntDataType::GetASNKeyword(void) const
 
 const char* CBigIntDataType::GetXMLContents(void) const
 {
-    return "( %INTEGER; )";
+    return "%INTEGER;";
 }
 
 void CBigIntDataType::GetXMLSchemaContents(string& type, string& contents) const
@@ -744,10 +775,15 @@ void CAnyContentDataType::PrintASN(CNcbiOstream& out, int /* indent */) const
     out << GetASNKeyword();
 }
 
-void CAnyContentDataType::PrintDTDElement(CNcbiOstream& out) const
+void CAnyContentDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
 {
-    out <<
-        "<!ELEMENT "<<XmlTagName()<<" "<<GetXMLContents()<<">";
+    if (!contents_only) {
+        out << "\n<!ELEMENT " << XmlTagName() << " ";
+    }
+    out << GetXMLContents();
+    if (!contents_only) {
+        out << ">";
+    }
 }
 
 void CAnyContentDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
