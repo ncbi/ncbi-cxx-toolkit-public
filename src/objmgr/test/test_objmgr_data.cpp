@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/01/29 17:34:18  vasilche
+* Added test code for negative strand CSeqVector.
+*
 * Revision 1.1  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *
@@ -166,7 +169,7 @@ bool CTestOM::Thread_Run(int idx)
     delta = (to > from) ? 1 : -1;
 
     for (int i = from;
-        ((delta > 0) && (i <= to)) || ((delta < 0) && (i >= to)); i += delta) {
+         ((delta > 0) && (i <= to)) || ((delta < 0) && (i >= to)); i += delta) {
         try {
 // load sequence
             CSeq_id sid;
@@ -178,6 +181,25 @@ bool CTestOM::Thread_Run(int idx)
             }
 
             int count = 0, count_prev;
+
+// check seqvector
+            if ( 0 ) {{
+                string buff;
+                CSeqVector sv =
+                    handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac, 
+                                        CBioseq_Handle::eStrand_Plus);
+
+                int start = max(0, int(sv.size()-60));
+                int stop  = sv.size();
+
+                sv.GetSeqData(start, stop, buff);
+                cout << "POS: " << buff << endl;
+
+                sv = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac, 
+                                         CBioseq_Handle::eStrand_Minus);
+                sv.GetSeqData(sv.size()-stop, sv.size()-start, buff);
+                cout << "NEG: " << buff << endl;
+            }}
 
 // enumerate descriptions
             // Seqdesc iterator
@@ -204,7 +226,7 @@ bool CTestOM::Thread_Run(int idx)
                                       CSeqFeatData::e_not_set,
                                       CAnnot_CI::eOverlap_Intervals,
                                       CAnnotTypes_CI::eResolve_All);
-                    feat_it;  ++feat_it) {
+                     feat_it;  ++feat_it) {
                     count++;
                 }
 // verify result
@@ -220,7 +242,7 @@ bool CTestOM::Thread_Run(int idx)
             }
             else {
                 for (CFeat_CI feat_it(handle, 0, 0, CSeqFeatData::e_not_set);
-                    feat_it;  ++feat_it) {
+                     feat_it;  ++feat_it) {
                     count++;
                 }
 // verify result
@@ -236,7 +258,7 @@ bool CTestOM::Thread_Run(int idx)
             }
         } catch (exception& e) {
             LOG_POST("T" << idx << ": gi = " << i 
-                << ": EXCEPTION = " << e.what());
+                     << ": EXCEPTION = " << e.what());
         }
         scope.ResetHistory();
     }
