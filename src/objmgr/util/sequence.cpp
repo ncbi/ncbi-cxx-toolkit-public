@@ -47,6 +47,8 @@
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Delta_ext.hpp>
@@ -631,15 +633,19 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
     SAnnotSelector sel;
     sel.SetOverlapIntervals()
         .ExcludeNamedAnnots("SNP")
-        //.SetExcludeExternal()
         .SetResolveAll()
         .SetFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+
+    list<CMappedFeat> feats;
+    CFeat_CI feat_iter(scope, cds_feat.GetLocation(), sel);
+    for ( ;  feat_iter;  ++feat_iter) {
+        feats.push_back(*feat_iter);
+    }
 
     // check for transcript_id; this is a fast check
     string transcript_id = cds_feat.GetNamedQual("transcript_id");
     if ( !transcript_id.empty() ) {
-        CFeat_CI feat_iter(scope, cds_feat.GetLocation(), sel);
-        for ( ;  feat_iter;  ++feat_iter) {
+        ITERATE (list<CMappedFeat>, feat_iter, feats) {
             // make sure the feature contains our feature of interest
             sequence::ECompare comp =
                 sequence::Compare(feat_iter->GetLocation(),
@@ -658,6 +664,46 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
         }
     }
 
+    if (cds_feat.IsSetProduct()) {
+        try {
+            // this may throw, if the product spans multiple sequences
+            // this would be extremely unlikely, but we catch anyway
+            const CSeq_id& product_id =
+                sequence::GetId(cds_feat.GetProduct(), &scope);
+
+            ITERATE (list<CMappedFeat>, feat_iter, feats) {
+                if ( !feat_iter->IsSetExt() ) {
+                    continue;
+                }
+
+                /// scan the user object in the ext field
+                /// we look for a user object of type MrnaProteinLink
+                /// this should contain a seq-d string that we can match
+                CTypeConstIterator<CUser_object> obj_iter
+                    (feat_iter->GetOriginalFeature());
+                for ( ;  obj_iter;  ++obj_iter) {
+                    if (obj_iter->IsSetType()  &&
+                        obj_iter->GetType().IsStr()  &&
+                        obj_iter->GetType().GetStr() == "MrnaProteinLink") {
+                        string prot_id_str = obj_iter->GetField("protein seqID")
+                            .GetData().GetStr();
+                        CSeq_id prot_id(prot_id_str);
+                        vector<CSeq_id_Handle> ids = scope.GetIds(prot_id);
+                        ids.push_back(CSeq_id_Handle::GetHandle(prot_id));
+                        ITERATE (vector<CSeq_id_Handle>, id_iter, ids) {
+                            if (product_id.Match(*id_iter->GetSeqId())) {
+                                mrna_feat.Reset(&feat_iter->GetOriginalFeature());
+                                return mrna_feat;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (CException&) {
+        }
+    }
+
     if (cds_feat.IsSetProduct()  &&  !(opts & fBestFeat_NoExpensive) ) {
         try {
             // this may throw, if the product spans multiple sequences
@@ -665,8 +711,7 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
             const CSeq_id& product_id =
                 sequence::GetId(cds_feat.GetProduct(), &scope);
 
-            CFeat_CI feat_iter(scope, cds_feat.GetLocation(), sel);
-            for ( ;  feat_iter  &&  !mrna_feat;  ++feat_iter) {
+            ITERATE (list<CMappedFeat>, feat_iter, feats) {
 
                 // we grab the mRNA product, if available, and scan it for
                 // a CDS feature.  the CDS feature should point to the same
@@ -695,9 +740,7 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
                 }
 
                 SAnnotSelector cds_sel(sel);
-                cds_sel.SetFeatSubtype(CSeqFeatData::eSubtype_cdregion)
-                    //.SetExcludeExternal()
-                    ;
+                cds_sel.SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
                 CFeat_CI other_iter(scope, mrna.GetProduct(), cds_sel);
                 for ( ;  other_iter  &&  !mrna_feat;  ++other_iter) {
                     const CSeq_feat& cds = other_iter->GetOriginalFeature();
@@ -719,7 +762,7 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
                 }
             }
         }
-        catch (...) {
+        catch (CException&) {
         }
     }
 
@@ -750,17 +793,22 @@ CConstRef<CSeq_feat> GetBestCdsForMrna(const CSeq_feat& mrna_feat,
 
     SAnnotSelector sel;
     sel.SetOverlapIntervals()
-        //.SetExcludeExternal()
+        .ExcludeNamedAnnots("SNP")
         .SetResolveAll()
         .SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+
+    list<CMappedFeat> feats;
+    CFeat_CI feat_iter(scope, mrna_feat.GetLocation(), sel);
+    for ( ;  feat_iter;  ++feat_iter) {
+        feats.push_back(*feat_iter);
+    }
 
     //
     // check for transcript_id; this is fast
     //
     string transcript_id = mrna_feat.GetNamedQual("transcript_id");
     if ( !transcript_id.empty() ) {
-        CFeat_CI feat_iter(scope, mrna_feat.GetLocation(), sel);
-        for ( ;  feat_iter;  ++feat_iter) {
+        ITERATE (list<CMappedFeat>, feat_iter, feats) {
             // make sure the feature contains our feature of interest
             sequence::ECompare comp =
                 sequence::Compare(feat_iter->GetLocation(),
@@ -775,6 +823,46 @@ CConstRef<CSeq_feat> GetBestCdsForMrna(const CSeq_feat& mrna_feat,
                 cds_feat.Reset(&feat_iter->GetOriginalFeature());
                 return cds_feat;
             }
+        }
+    }
+
+    if (mrna_feat.IsSetExt()) {
+        /// scan the user object in the ext field
+        /// we look for a user object of type MrnaProteinLink
+        /// this should contain a seq-d string that we can match
+        string prot_id_str;
+        CTypeConstIterator<CUser_object> obj_iter
+            (feat_iter->GetOriginalFeature());
+        for ( ;  obj_iter;  ++obj_iter) {
+            if (obj_iter->IsSetType()  &&
+                obj_iter->GetType().IsStr()  &&
+                obj_iter->GetType().GetStr() == "MrnaProteinLink") {
+                string prot_id_str = obj_iter->GetField("protein seqID")
+                    .GetData().GetStr();
+                break;
+            }
+        }
+        CSeq_id prot_id(prot_id_str);
+        vector<CSeq_id_Handle> ids = scope.GetIds(prot_id);
+        ids.push_back(CSeq_id_Handle::GetHandle(prot_id));
+
+        try {
+            /// look for a CDS feature that matches this expected ID
+            ITERATE (list<CMappedFeat>, feat_iter, feats) {
+                if ( !feat_iter->IsSetProduct() ) {
+                    continue;
+                }
+
+                const CSeq_id& id = sequence::GetId(feat_iter->GetLocation(), &scope);
+                ITERATE (vector<CSeq_id_Handle>, id_iter, ids) {
+                    if (id.Match(*id_iter->GetSeqId())) {
+                        cds_feat.Reset(&feat_iter->GetOriginalFeature());
+                        return cds_feat;
+                    }
+                }
+            }
+        }
+        catch (CException&) {
         }
     }
 
@@ -837,7 +925,7 @@ CConstRef<CSeq_feat> GetBestCdsForMrna(const CSeq_feat& mrna_feat,
                     if (prot_handle.IsSynonym(*protein_id)) {
                         // got it!
                         cds_feat.Reset(&cds);
-                        break;
+                        return cds_feat;
                     }
                 }
             }
@@ -2618,6 +2706,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.124  2005/03/15 19:25:05  dicuccio
+* Added additional check in GetBestMrnaForCds() and GetBestCdsForMrna(): check
+* the NCBI-supplied build object for pointers to related CDS features (avoids
+* retrieving product sequence)
+*
 * Revision 1.123  2005/03/14 18:19:02  grichenk
 * Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
 * SAnnotSelector.
