@@ -163,8 +163,9 @@ public:
 
     // bit flags to tell whether various parts of the data have been changed
     static const unsigned int
-        ePSSMData,
-        eRowOrderData,
+        ePSSMData,                  // PSSM values have changed
+        eRowOrderData,              // row order has changed
+        eAnyAlignmentData,          // any change to alignment (including edits that don't change prev two)
         eStructureAlignmentData,
         eSequenceData,
         eUpdateData,
@@ -301,6 +302,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2003/07/17 20:13:51  thiessen
+* don't ask for filename on save/termination with -f; add eAnyAlignmentData flag
+*
 * Revision 1.76  2003/07/17 16:52:34  thiessen
 * add FileSaved message with edit typing
 *

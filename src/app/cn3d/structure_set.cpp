@@ -100,13 +100,14 @@ BEGIN_SCOPE(Cn3D)
 const unsigned int
     StructureSet::ePSSMData                   = 0x01,
     StructureSet::eRowOrderData               = 0x02,
-    StructureSet::eStructureAlignmentData     = 0x04,
-    StructureSet::eSequenceData               = 0x08,
-    StructureSet::eUpdateData                 = 0x10,
-    StructureSet::eStyleData                  = 0x20,
-    StructureSet::eUserAnnotationData         = 0x40,
-    StructureSet::eCDDData                    = 0x80,
-    StructureSet::eOtherData                  = 0x100;
+    StructureSet::eAnyAlignmentData           = 0x04,
+    StructureSet::eStructureAlignmentData     = 0x08,
+    StructureSet::eSequenceData               = 0x10,
+    StructureSet::eUpdateData                 = 0x20,
+    StructureSet::eStyleData                  = 0x40,
+    StructureSet::eUserAnnotationData         = 0x80,
+    StructureSet::eCDDData                    = 0x100,
+    StructureSet::eOtherData                  = 0x200;
 
 StructureSet::StructureSet(CNcbi_mime_asn1 *mime, int structureLimit, OpenGLRenderer *r) :
     StructureBase(NULL), renderer(r)
@@ -741,7 +742,8 @@ void StructureSet::ReplaceAlignmentSet(AlignmentSet *newAlignmentSet)
     for (n=alignmentSet->newAsnAlignmentData->begin(); n!=ne; n++, o++)
         o->Reset(n->GetPointer());   // copy each Seq-annot CRef
 
-    // don't set data changed flags here; done by AlignmentManager::SavePairwiseFromMultiple()
+    // don't set data PSSM/row order flags here; done by AlignmentManager::SavePairwiseFromMultiple()
+    SetDataChanged(eAnyAlignmentData);
 }
 
 void StructureSet::ReplaceUpdates(ncbi::objects::CCdd::TPending& newUpdates)
@@ -1474,6 +1476,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.134  2003/07/17 20:13:51  thiessen
+* don't ask for filename on save/termination with -f; add eAnyAlignmentData flag
+*
 * Revision 1.133  2003/07/17 16:52:34  thiessen
 * add FileSaved message with edit typing
 *

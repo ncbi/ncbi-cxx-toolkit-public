@@ -1390,7 +1390,8 @@ void StructureWindow::OnSave(wxCommandEvent& event)
     wxString outputFolder = wxString(userDir.c_str(), userDir.size() - 1); // remove trailing /
     wxString outputFilename;
 
-    if (prompt) {
+    // don't ask for filename if Save As is disabled
+    if (prompt && fileMenu->IsEnabled(MID_SAVE_AS)) {
         wxFileName fn(currentFile.c_str());
         wxFileDialog dialog(this, "Choose a filename for output", outputFolder,
 #ifdef __WXGTK__
@@ -1455,6 +1456,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/07/17 20:13:52  thiessen
+* don't ask for filename on save/termination with -f; add eAnyAlignmentData flag
+*
 * Revision 1.15  2003/07/17 18:47:01  thiessen
 * add -f option to force save to same file
 *
