@@ -690,6 +690,11 @@ CScope_Impl::x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
                               const CSeq_id_Handle& idh,
                               CSeqMatch_Info& match_info)
 {
+    // skip already matched CDataSource
+    if ( match_info && 
+         &match_info.GetDataSource() == &ds_info.GetDataSource() ) {
+        return 0;
+    }
     CSeqMatch_Info info;
     {{
         CFastMutexGuard guard(ds_info.GetMutex());
@@ -1017,6 +1022,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2003/10/09 13:58:21  vasilche
+* Fixed conflict when the same datasource appears twice with equal priorities.
+*
 * Revision 1.83  2003/10/07 13:43:23  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.
