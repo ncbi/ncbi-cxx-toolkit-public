@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2001/12/06 00:19:55  vakatov
+* CCgiRequest::ParseEntries() -- allow leading '&' in the query string (temp.)
+*
 * Revision 1.50  2001/10/04 18:17:53  ucko
 * Accept additional query parameters for more flexible diagnostics.
 * Support checking the readiness of CGI input and output streams.
@@ -1126,6 +1129,12 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
 
     // Parse into entries
     for (SIZE_TYPE beg = 0;  beg < len;  ) {
+        // ignore 1st ampersand (it is just a temp. slack to some biz. clients)
+        if (beg == 0  &&  str[0] == '&') {
+            beg = 1;
+            continue;
+        }
+
         // parse and URL-decode name
         SIZE_TYPE mid = str.find_first_of("=&", beg);
         if (mid == beg  ||
