@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2001/09/10 21:17:10  lavr
+ * Support written for FIREWALL server type
+ *
  * Revision 6.29  2001/06/19 19:12:01  lavr
  * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
  *
@@ -139,9 +142,6 @@
 
 
 #define MAX_IP_ADDR_LEN  16 /* sizeof("255.255.255.255") */
-#ifndef   MAXHOSTNAMELEN
-#  define MAXHOSTNAMELEN 64
-#endif
 
 
 /*****************************************************************************
@@ -166,6 +166,12 @@ typedef struct {
     size_t            tag_len;
     SSERV_Info_VTable vtable;
 } SSERV_Attr;
+
+
+static const char* k_FlagTag[] = {
+    "Regular",  /* fSERV_Regular */
+    "Blast"     /* fSERV_Blast   */
+};
 
 
 /* Attributes' lookup (by either type or tag)
@@ -193,78 +199,6 @@ const char* SERV_ReadType(const char* str, ESERV_Type* type)
     *type = attr->type;
     return str + attr->tag_len; 
 }
-
-
-
-/*****************************************************************************
- *  Utilities
- */
-
-
-/* Utility routine, which tries to read [host][:port] from a string.
- * If successful, this routine returns advanced pointer past the
- * host/port been read. Otherwise, it returns exactly the input pointer,
- * and assigns values neither to host nor to port. On success, returned 'host'
- * is in network byte order; 'port' is in host (native) byte order.
- */
-static const char* s_Read_HostPort(const char* str,
-                                   unsigned int* host, unsigned short* port)
-{
-    char abuf[MAXHOSTNAMELEN];
-    unsigned short p;
-    unsigned int h;
-    const char* s;
-    size_t alen;
-    int n = 0;
-
-    *host = 0;
-    *port = 0;
-    for (s = str; *s; s++) {
-        if (isspace((unsigned char)(*s)) || *s == ':')
-            break;
-    }
-    if ((alen = (size_t)(s - str)) > sizeof(abuf) - 1)
-        return str;
-    if (alen) {
-        strncpy(abuf, str, alen);
-        abuf[alen] = '\0';
-        if (!(h = SOCK_gethostbyname(abuf)))
-            return str;
-    } else
-        h = 0;
-    if (*s == ':') {
-        if (sscanf(++s, "%hu%n", &p, &n) < 1)
-            return h || s == str ? 0 : str;
-    } else
-        p = 0;
-    *host = h;
-    *port = p;
-    return s + n;
-}
-
-
-/* Utility routine to print host:port to the string.
- * Suppress printing host if parameter 'host' is zero.
- */
-static int s_Write_HostPort(char *str, unsigned int host, unsigned short port)
-{
-    char abuf[MAX_IP_ADDR_LEN];
-
-    if (host) {
-        if (SOCK_ntoa(host, abuf, sizeof(abuf)) != 0)
-            *abuf = '\0';
-    } else
-        *abuf = '\0';
-
-    return sprintf(str, "%s:%hu", abuf, port);
-}
-
-
-#define N_FLAG_TAGS 2
-static const char *k_FlagTag[N_FLAG_TAGS] = {
-    "Regular",  /* fSERV_Regular */
-    "Blast"     /* fSERV_Blast   */
-};
 
 
 
@@ -305,7 +239,7 @@ char* SERV_WriteInfo(const SSERV_Info* info)
         memcpy(s, attr->tag, attr->tag_len);
         s += attr->tag_len;
         *s++ = ' ';
-        s += s_Write_HostPort(s, info->host, info->port);
+        s += HostPortToString(info->host, info->port, s, reserve);
         if ((n = strlen(str + reserve)) != 0) {
             *s++ = ' ';
             memmove(s, str + reserve, n+1);
@@ -313,8 +247,8 @@ char* SERV_WriteInfo(const SSERV_Info* info)
         }
         if (*c_t)
             s += sprintf(s, " C=%s", c_t);
-        assert(info->flag < N_FLAG_TAGS);
-        if (k_FlagTag[info->flag])
+        assert(info->flag < sizeof(k_FlagTag)/sizeof(k_FlagTag[0]));
+        if (k_FlagTag[info->flag] && *k_FlagTag[info->flag])
             s += sprintf(s, " %s", k_FlagTag[info->flag]);
         s += sprintf(s, " T=%lu R=%.2f B=%.2f L=%s", (unsigned long)info->time,
                      info->rate, info->coef, info->locl ? "yes" : "no");
@@ -340,7 +274,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
         return 0;
     while (*str && isspace((unsigned char)(*str)))
         str++;
-    if (!(str = s_Read_HostPort(str, &host, &port)))
+    if (!(str = StringToHostPort(str, &host, &port)))
         return 0;
     while (*str && isspace((unsigned char)(*str)))
         str++;
@@ -437,13 +371,13 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
             }
         } else {
             size_t i;
-            for (i = 0; i < N_FLAG_TAGS; i++) {
+            for (i = 0; i < sizeof(k_FlagTag)/sizeof(k_FlagTag[0]); i++) {
                 n = strlen(k_FlagTag[i]);
-                if (strncasecmp(str, k_FlagTag[i],n) == 0)
+                if (strncasecmp(str, k_FlagTag[i], n) == 0)
                     break;
             }
-            if (i < N_FLAG_TAGS) {
-                info->flag = (ESERV_Flags)i;
+            if (i < sizeof(k_FlagTag)/sizeof(k_FlagTag[0])) {
+                info->flag = (ESERV_Flags) i;
                 str += n;
             }
         }
@@ -484,7 +418,7 @@ static char* s_Ncbid_Write(size_t reserve, const USERV_Info* u)
 {
     const SSERV_NcbidInfo* info = &u->ncbid;
     char* str = (char*) malloc(reserve + strlen(SERV_NCBID_ARGS(info))+3);
-    
+
     if (str)
         sprintf(str + reserve, "%s",
                 *SERV_NCBID_ARGS(info) ? SERV_NCBID_ARGS(info) : "''");
@@ -494,9 +428,9 @@ static char* s_Ncbid_Write(size_t reserve, const USERV_Info* u)
 
 static SSERV_Info* s_Ncbid_Read(const char** str)
 {
-    SSERV_Info    *info;
-    char          *args, *c;
-    
+    SSERV_Info* info;
+    char        *args, *c;
+
     if (!(args = strdup(*str)))
         return 0;
     for (c = args; *c; c++)
@@ -513,13 +447,13 @@ static SSERV_Info* s_Ncbid_Read(const char** str)
 }
 
 
-static size_t s_Ncbid_SizeOf(const USERV_Info *u)
+static size_t s_Ncbid_SizeOf(const USERV_Info* u)
 {
     return sizeof(u->ncbid) + strlen(SERV_NCBID_ARGS(&u->ncbid))+1;
 }
 
 
-static int/*bool*/ s_Ncbid_Equal(const USERV_Info *u1, const USERV_Info *u2)
+static int/*bool*/ s_Ncbid_Equal(const USERV_Info* u1, const USERV_Info* u2)
 {
     return
         strcmp(SERV_NCBID_ARGS(&u1->ncbid), SERV_NCBID_ARGS(&u2->ncbid)) == 0;
@@ -575,14 +509,14 @@ static SSERV_Info* s_Standalone_Read(const char** str)
 }
 
 
-static size_t s_Standalone_SizeOf(const USERV_Info *u)
+static size_t s_Standalone_SizeOf(const USERV_Info* u)
 {
     return sizeof(u->standalone);
 }
 
 
-static int/*bool*/ s_Standalone_Equal(const USERV_Info *u1,
-                                      const USERV_Info *u2)
+static int/*bool*/ s_Standalone_Equal(const USERV_Info* u1,
+                                      const USERV_Info* u2)
 {
     return 1;
 }
@@ -727,6 +661,67 @@ SSERV_Info* SERV_CreateHttpInfo
 
 
 /*****************************************************************************
+ *  FIREWALL::   constructor and virtual functions
+ */
+
+static char* s_Firewall_Write(size_t reserve, const USERV_Info* u_info)
+{
+    const char* name = SERV_TypeStr(u_info->firewall.type);
+    size_t namelen = strlen(name);
+    char* str = (char*) malloc(reserve + (namelen ? namelen + 1 : 0));
+
+    if (str)
+        strcpy(str + reserve, name);
+    return str;
+}
+
+
+static SSERV_Info* s_Firewall_Read(const char** str)
+{
+    ESERV_Type type;
+    if (!(*str = SERV_ReadType(*str, &type)))
+        return 0;
+    return SERV_CreateFirewallInfo(0, 0, type);
+}
+
+
+static size_t s_Firewall_SizeOf(const USERV_Info* u)
+{
+    return sizeof(u->firewall);
+}
+
+
+static int/*bool*/ s_Firewall_Equal(const USERV_Info* u1, const USERV_Info* u2)
+{
+    return u1->firewall.type == u2->firewall.type;
+}
+
+
+SSERV_Info* SERV_CreateFirewallInfo(unsigned int host, unsigned short port,
+                                    ESERV_Type type)
+{
+    SSERV_Info* info = (SSERV_Info*) malloc(sizeof(SSERV_Info));
+
+    if (info) {
+        info->type   = fSERV_Firewall;
+        info->host   = host;
+        info->port   = port;
+        info->sful   = 0;
+        info->locl   = 0;
+        info->flag   = SERV_DEFAULT_FLAG;
+        info->time   = 0;
+        info->coef   = 0.0;
+        info->rate   = 0.0;
+        info->mime_t = SERV_MIME_TYPE_UNDEFINED;
+        info->mime_s = SERV_MIME_SUBTYPE_UNDEFINED;
+        info->u.firewall.type = type;
+    }
+    return info;
+}
+
+
+
+/*****************************************************************************
  *  Attributes for the different server types::  Implementation
  */
 
@@ -735,15 +730,14 @@ static const char kSTANDALONE[] = "STANDALONE";
 static const char kHTTP_GET  [] = "HTTP_GET";
 static const char kHTTP_POST [] = "HTTP_POST";
 static const char kHTTP      [] = "HTTP";
+static const char kFIREWALL  [] = "FIREWALL";
 
-
-#define N_SERV_ATTR 5
 
 /* Note: be aware of "prefixness" of tag constants and order of
  * their appearance in the table below, as comparison is done via
  * "strncmp", which can result 'true' on a smaller fit fragment.
  */
-static const SSERV_Attr s_SERV_Attr[N_SERV_ATTR] = {
+static const SSERV_Attr s_SERV_Attr[] = {
     { fSERV_Ncbid,
       kNCBID,      sizeof(kNCBID) - 1,
       {s_Ncbid_Write,       s_Ncbid_Read,
@@ -768,13 +762,18 @@ static const SSERV_Attr s_SERV_Attr[N_SERV_ATTR] = {
       kHTTP,  sizeof(kHTTP) - 1,
       {s_Http_Write,        s_Http_Read,
        s_Http_SizeOf,       s_Http_Equal} },
+
+    { fSERV_Firewall,
+      kFIREWALL, sizeof(kFIREWALL) - 1,
+      {s_Firewall_Write,    s_Firewall_Read,
+       s_Firewall_SizeOf,   s_Firewall_Equal} }
 };
 
 
 static const SSERV_Attr* s_GetAttrByType(ESERV_Type type)
 {
     size_t i;
-    for (i = 0;  i < N_SERV_ATTR;  i++) {
+    for (i = 0;  i < sizeof(s_SERV_Attr)/sizeof(s_SERV_Attr[0]);  i++) {
         if (s_SERV_Attr[i].type == type)
             return &s_SERV_Attr[i];
     }
@@ -786,9 +785,12 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 {
     if (tag) {
         size_t i;
-        for (i = 0;  i < N_SERV_ATTR;  i++) {
-            if (strncmp(s_SERV_Attr[i].tag, tag, s_SERV_Attr[i].tag_len) == 0)
-                return &s_SERV_Attr[i];
+        for (i = 0;  i < sizeof(s_SERV_Attr)/sizeof(s_SERV_Attr[0]);  i++) {
+            size_t len = s_SERV_Attr[i].tag_len;
+            if (strncmp(s_SERV_Attr[i].tag, tag, len) == 0)
+                if (!tag[len] || /* avoid prefix-only match */
+                    !(isalnum((unsigned char) tag[len]) || tag[len] == '_'))
+                    return &s_SERV_Attr[i];
         }
     }
     return 0;
