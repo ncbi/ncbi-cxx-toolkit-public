@@ -176,11 +176,13 @@ for d in $install_dirs ; do
    test $? -eq 0  ||  Usage "Failed copy to:  $install_dir/$d"
 done
 
-# Fix symlinks in bin/.gbench/bin
+# Fix gbench-related symlinks
 if test -d "$install_dir/bin/.gbench/bin"; then
     (cd "$install_dir/bin/.gbench/bin"  &&  \
      rm -f gbench-bin gbench_plugin_scan  &&  \
      ln -s ../../gbench-bin ../../gbench_plugin_scan .)
+     rm -f $install_dir/bin/gbench  &&  \
+     ln -s .gbench/bin/run-gbench.sh $install_dir/bin/gbench
 fi
 
 # Copy the configuration file -- only if it differs from the existing one
