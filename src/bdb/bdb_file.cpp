@@ -390,7 +390,14 @@ EBDB_ErrCode CBDB_File::Fetch()
 EBDB_ErrCode CBDB_File::Insert(EAfterWrite write_flag)
 {
     CheckNullDataConstraint();
-    return x_Write(DB_NOOVERWRITE, write_flag);
+    return x_Write(DB_NOOVERWRITE | DB_NODUPDATA, write_flag);
+}
+
+
+EBDB_ErrCode CBDB_File::UpdateInsert(EAfterWrite write_flag)
+{
+    CheckNullDataConstraint();
+    return x_Write(0, write_flag);
 }
 
 
@@ -511,6 +518,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/05/02 14:11:59  kuznets
+ * + UpdateInsert method
+ *
  * Revision 1.4  2003/04/30 20:25:42  kuznets
  * Bug fix
  *
