@@ -85,11 +85,10 @@ public:
     void SetSubjects(const TSeqLocVector& subjects);
     const TSeqLocVector& GetSubjects() const;
 
-    void SetOptions(CBlastOptions& opts);
     CBlastOptions& SetOptions();
     const CBlastOptions& GetOptions() const;
 
-    void SetOptionsHandle(CBlastOptionsHandle& opts);
+    //void SetOptionsHandle(CBlastOptionsHandle& opts);
     CBlastOptionsHandle& SetOptionsHandle();
     const CBlastOptionsHandle& GetOptionsHandle() const;
 
@@ -212,13 +211,6 @@ CBl2Seq::SetOptions()
     return m_OptsHandle->SetOptions();
 }
 
-inline void
-CBl2Seq::SetOptions(CBlastOptions& opts)
-{
-    m_OptsHandle->SetOptions() = opts;
-    mi_bQuerySetUpDone = false;
-}
-
 inline const CBlastOptions&
 CBl2Seq::GetOptions() const
 {
@@ -232,12 +224,14 @@ CBl2Seq::SetOptionsHandle()
     return *m_OptsHandle;
 }
 
+#if 0
 inline void
 CBl2Seq::SetOptionsHandle(CBlastOptionsHandle& opts)
 {
     m_OptsHandle.Reset(&opts);
     mi_bQuerySetUpDone = false;
 }
+#endif
 
 inline const CBlastOptionsHandle&
 CBl2Seq::GetOptionsHandle() const
@@ -258,6 +252,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2003/11/27 04:24:39  camacho
+* Remove unneeded setters for options
+*
 * Revision 1.24  2003/11/26 18:36:44  camacho
 * Renaming blast_option*pp -> blast_options*pp
 *
