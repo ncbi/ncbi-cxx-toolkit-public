@@ -35,6 +35,7 @@ cat >> ${CHECK_RUN_FILE} <<EOF
 
 res_journal="${CHECK_RUN_FILE}.journal"
 res_log="${CHECK_RUN_FILE}.log"
+res_log="${CHECK_RUN_FILE}.log"
 res_concat="${CHECK_RUN_FILE}.out"
 
 PATH=".:\$PATH"
@@ -44,13 +45,16 @@ PATH=".:\$PATH"
 Usage() {
   cat <<EOF_usage
 
-USAGE:  ./$script_name {run | clean | concat}
+USAGE:  ./$script_name {run | clean | concat | concat_err}
 
- run     Run the tests. Create output file ("*.test_out") for each tests, 
-         plus journal and log files. 
- clean   Remove all files created during the last "run" and this script itself.
- concat  Concatenate all files created during the last "run" into one big 
-         file "\$res_log".
+ run         Run the tests. Create output file ("*.test_out") for each tests, 
+             plus journal and log files. 
+ clean       Remove all files created during the last "run" and this script 
+             itself.
+ concat      Concatenate all files created during the last "run" into one big 
+             file "\$res_log".
+ concat_err  Like previous. But into the file "\$res_concat" 
+             will be added outputs of failed tests only.
 
 ERROR:  \$1
 EOF_usage
@@ -74,6 +78,7 @@ method="\$1"
 case "\$method" in
   run )
     ;;
+#----------------------------------------------------------
   clean )
     x_files=\`cat \$res_journal | sed -e 's/ /%gj_s4%/g'\`
     for x_file in \${x_files} ; do
@@ -83,6 +88,7 @@ case "\$method" in
     rm -f ${CHECK_RUN_FILE} 
     exit 0
     ;;
+#----------------------------------------------------------
   concat )
     rm -f "\$res_concat"
     ( 
@@ -97,6 +103,27 @@ case "\$method" in
     ) >> \$res_concat
     exit 0
     ;;
+#----------------------------------------------------------
+  concat_err )
+    rm -f "\$res_concat"
+    ( 
+    cat \$res_log | grep 'ERR \['
+    x_files=\`cat \$res_journal | sed -e 's/ /%gj_s4%/g'\`
+    for x_file in \${x_files} ; do
+      x_file=\`echo "\${x_file}" | sed -e 's/%gj_s4%/ /g'\`
+      x_code=\`cat \$x_file | grep -c '@@@ EXIT CODE:'\`
+      test \$x_code -ne 0 || continue
+      x_good=\`cat \$x_file | grep -c '@@@ EXIT CODE: 0'\`
+      if test \$x_good -ne 1 ; then
+         echo 
+         echo 
+         cat \$x_file
+      fi
+    done
+    ) >> \$res_concat
+    exit 0
+    ;;
+#----------------------------------------------------------
   * )
     Usage "Invalid method name."
     ;;
