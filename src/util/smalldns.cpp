@@ -36,8 +36,16 @@
 
 #if defined(NCBI_OS_MSWIN)
 #  include <winsock2.h>
-#elif defined(NCBI_OS_UNIX) || defined(NCBI_OS_MAC)
+#elif defined(NCBI_OS_UNIX)
 #  include <unistd.h>
+#  ifdef NCBI_COMPILER_MW_MSL
+#    include <ncbi_mslextras.h>
+#  else
+#    include <netdb.h>
+#  endif
+#elif defined(NCBI_OS_MAC)
+#  include <unistd.h>
+#  include <netdb.h>
 #else
 #  error "Unsupported platform"
 #endif
@@ -114,14 +122,23 @@ string CSmallDNS::GetLocalIP(void) const
 string CSmallDNS::GetLocalHost(void)
 {
     if ( sm_localHostName.empty() ) {
-        char buffer[1024];
+#if !defined(MAXHOSTNAMELEN)
+#  define MAXHOSTNAMELEN 256
+#endif
+        char buffer[MAXHOSTNAMELEN];
+        buffer[0] = buffer[MAXHOSTNAMELEN-1] = '\0';
         errno = 0;
         if ( gethostname(buffer, sizeof(buffer)) == 0 ) {
-            char* dot_pos = strstr(buffer, ".");
-            if ( dot_pos ) {
-                dot_pos[0] = '\0';
+            if ( buffer[MAXHOSTNAMELEN - 1] ) {
+                ERR_POST(Warning <<
+                    "CSmallDNS: Host name buffer too small");
+            } else {
+                char* dot_pos = strstr(buffer, ".");
+                if ( dot_pos ) {
+                    dot_pos[0] = '\0';
+                }
+                sm_localHostName = buffer;
             }
-            sm_localHostName = buffer;
         } else {
             ERR_POST(Warning <<
                 "CSmallDNS: Cannot detect host name, errno:" << errno);
@@ -163,6 +180,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/10/21 14:16:20  ivanov
+ * Fixed GetLocalHost(): use MAXHOSTNAMELEN as buffer size (by Anton Lavrentiev)
+ *
  * Revision 1.4  2003/10/20 21:16:56  ivanov
  * Replaced uname() with gethostname(). Some code rearrangement.
  *
