@@ -51,7 +51,7 @@ CSeq_feat::~CSeq_feat(void)
 }
 
 // Corresponds to SortFeatItemListByPos from the C toolkit
-bool operator<(const CSeq_feat& f1, const CSeq_feat& f2)
+int Compare(const CSeq_feat& f1, const CSeq_feat& f2)
 {
     const CSeq_loc& loc1 = f1.GetLocation();
     const CSeq_loc& loc2 = f2.GetLocation();
@@ -60,16 +60,16 @@ bool operator<(const CSeq_feat& f1, const CSeq_feat& f2)
     
     // smallest left extreme first
     if (range1.GetFrom() < range2.GetFrom()) {
-        return true;
+        return -1;
     } else if (range1.GetFrom() > range2.GetFrom()) {
-        return false;
+        return 1;
     }
 
     // longest feature first
     if (range1.GetTo() < range2.GetTo()) {
-        return false;
+        return 1;
     } else if (range1.GetTo() > range2.GetTo()) {
-        return true;
+        return -1;
     }
 
     CSeqFeatData::E_Choice type1 = f1.GetData().Which();
@@ -77,26 +77,26 @@ bool operator<(const CSeq_feat& f1, const CSeq_feat& f2)
    
     // genes first
     if (type1 == CSeqFeatData::e_Gene  &&  type2 != CSeqFeatData::e_Gene) {
-        return true;
+        return -1;
     } else if (type1 != CSeqFeatData::e_Gene
                &&  type2 == CSeqFeatData::e_Gene) {
-        return false;
+        return 1;
     }
 
     // RNA next
     if (type1 == CSeqFeatData::e_Rna  &&  type2 != CSeqFeatData::e_Rna) {
-        return true;
+        return -1;
     } else if (type1 != CSeqFeatData::e_Rna &&  type2 == CSeqFeatData::e_Rna) {
-        return false;
+        return 1;
     }
 
     // coding regions next
     if (type1 == CSeqFeatData::e_Cdregion
         &&  type2 != CSeqFeatData::e_Cdregion) {
-        return true;
+        return -1;
     } else if (type1 != CSeqFeatData::e_Cdregion
                &&  type2 == CSeqFeatData::e_Cdregion) {
-        return false;
+        return 1;
     }
 
     // compare internal intervals
@@ -109,13 +109,13 @@ bool operator<(const CSeq_feat& f1, const CSeq_feat& f2)
             CSeq_loc::TRange subrange1 = (*it1)->GetTotalRange();
             CSeq_loc::TRange subrange2 = (*it2)->GetTotalRange();
             if (subrange1.GetFrom() < subrange2.GetFrom()) {
-                return true;
+                return -1;
             } else if (subrange1.GetFrom() > subrange2.GetFrom()) {
-                return false;
+                return 1;
             } if (subrange1.GetTo() < subrange2.GetTo()) {
-                return false;
+                return 1;
             } else if (subrange1.GetTo() > subrange2.GetTo()) {
-                return true;
+                return -1;
             }
         }
     }
@@ -128,9 +128,9 @@ bool operator<(const CSeq_feat& f1, const CSeq_feat& f2)
         if (frame1 > CCdregion::eFrame_one
             ||  frame2 > CCdregion::eFrame_one) {
             if (frame1 < frame2) {
-                return true;
+                return -1;
             } else if (frame1 > frame2) {
-                return false;
+                return 1;
             }
         }
     }
@@ -139,14 +139,14 @@ bool operator<(const CSeq_feat& f1, const CSeq_feat& f2)
     CSeqFeatData::ESubtype subtype1 = f1.GetData().GetSubtype();
     CSeqFeatData::ESubtype subtype2 = f2.GetData().GetSubtype();
     if (subtype1 < subtype2) {
-        return true;
+        return -1;
     } else if (subtype1 > subtype2) {
-        return false;
+        return 1;
     }
 
     // XXX - should compare feature content labels and parent seq-annots
 
-    return false; // unknown
+    return 0; // unknown
 }
 
 const CGene_ref* CSeq_feat::GetGeneXref(void) const
@@ -180,6 +180,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.8  2003/01/29 17:43:23  vasilche
+ * Added Compare(CSeq_feat, CSeq_feat) returning int for easier comparison.
+ * operator<(CSeq_feat, CSeq_feat) uses Compare().
+ *
  * Revision 6.7  2002/12/19 21:31:29  kans
  * added GetGeneXref and GetProtXref
  *

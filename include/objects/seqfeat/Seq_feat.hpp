@@ -77,7 +77,13 @@ private:
 };
 
 // Corresponds to SortFeatItemListByPos from the C toolkit
-NCBI_SEQFEAT_EXPORT bool operator< (const CSeq_feat& f1, const CSeq_feat& f2);
+NCBI_SEQFEAT_EXPORT int Compare(const CSeq_feat& f1, const CSeq_feat& f2);
+NCBI_SEQFEAT_EXPORT
+inline
+bool operator< (const CSeq_feat& f1, const CSeq_feat& f2)
+{
+    return Compare(f1, f2) < 0;
+}
 
 /////////////////// CSeq_feat inline methods
 
@@ -102,6 +108,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2003/01/29 17:43:22  vasilche
+* Added Compare(CSeq_feat, CSeq_feat) returning int for easier comparison.
+* operator<(CSeq_feat, CSeq_feat) uses Compare().
+*
 * Revision 1.7  2002/12/26 12:43:27  dicuccio
 * Added Win32 export specifiers
 *
