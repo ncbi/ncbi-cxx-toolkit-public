@@ -33,6 +33,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/01/12 05:48:50  vakatov
+ * Use reintrepret_cast<> rather than static_cast<> to cast functions.
+ * Added more paranoia to catch ALL possible exceptions in the s_*** functions.
+ *
  * Revision 6.2  2001/01/11 23:51:47  lavr
  * static_cast instead of linkage specification 'extern "C" {}'.
  * Reason: MSVC++ doesn't allow C-linkage of the funs compiled in C++ file.
@@ -46,6 +50,7 @@
 #include <connect/ncbi_core_cxx.hpp>
 #include <string.h>
 
+
 BEGIN_NCBI_SCOPE
 
 
@@ -53,15 +58,16 @@ static void s_REG_Get(void* user_data,
                       const char* section, const char* name,
                       char* value, size_t value_size)
 {
-    CNcbiRegistry* reg = static_cast<CNcbiRegistry*>(user_data);
-    string result;
     try {
-        result = reg->Get(section, name);
-    } STD_CATCH_ALL("s_REG_Get() failed");
-    if (result.length()) {
-        strncpy(value, result.c_str(), value_size - 1);
-        value[value_size - 1] = '\0';
+        string result = static_cast<CNcbiRegistry*> (user_data)->
+            Get(section, name);
+
+        if ( !result.empty() ) {
+            strncpy(value, result.c_str(), value_size - 1);
+            value[value_size - 1] = '\0';
+        }
     }
+    STD_CATCH_ALL("s_REG_Get() failed");
 }
 
 
@@ -69,30 +75,33 @@ static void s_REG_Set(void* user_data,
                       const char* section, const char* name,
                       const char* value, EREG_Storage storage)
 {
-    CNcbiRegistry* reg = static_cast<CNcbiRegistry*>(user_data);
     try {
-        reg->Set(section, name, value,
-                 (storage == eREG_Persistent
-                  ? CNcbiRegistry::ePersistent : 0) |
-                 CNcbiRegistry::eOverride | CNcbiRegistry::eTruncate);
-    } STD_CATCH_ALL("s_REG_Set() failed");
+        static_cast<CNcbiRegistry*> (user_data)->
+            Set(section, name, value,
+                (storage == eREG_Persistent ? CNcbiRegistry::ePersistent : 0) |
+                CNcbiRegistry::eOverride | CNcbiRegistry::eTruncate);
+    }
+    STD_CATCH_ALL("s_REG_Set() failed");
 }
 
 
 static void s_REG_Cleanup(void* user_data)
 {
-    CNcbiRegistry* reg = static_cast<CNcbiRegistry*>(user_data);
-    delete reg;
+    try {
+        delete static_cast<CNcbiRegistry*> (user_data);
+    }
+    STD_CATCH_ALL("s_REG_Cleanup() failed");
 }
 
 
-REG REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership)
+extern REG REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership)
 {
-    return REG_Create(static_cast<void*>(reg),
-                      static_cast<FREG_Get>(s_REG_Get),
-					  static_cast<FREG_Set>(s_REG_Set),
-                      pass_ownership ? static_cast<FREG_Cleanup>(s_REG_Cleanup) : 0,
-                      0);
+    return REG_Create
+        (static_cast<void*> (reg),
+         reinterpret_cast<FREG_Get> (s_REG_Get),
+         reinterpret_cast<FREG_Set> (s_REG_Set),
+         pass_ownership ? reinterpret_cast<FREG_Cleanup> (s_REG_Cleanup) : 0,
+         0);
 }
 
 
