@@ -130,7 +130,7 @@ static string s_SeqDB_TryPaths(const string & blast_paths,
     return result;
 }
 
-string SeqDB_FindBlastDBPath(const string & dbname, char dbtype)
+string SeqDB_FindBlastDBPath(const string & dbname, char dbtype, string * sp)
 {
     // Local directory first;
     
@@ -153,6 +153,10 @@ string SeqDB_FindBlastDBPath(const string & dbname, char dbtype)
     }
     
     // Time to field test this new and terrible weapon.
+    
+    if (sp) {
+        *sp = pathology;
+    }
     
     return s_SeqDB_TryPaths(pathology, dbname, dbtype);
 }

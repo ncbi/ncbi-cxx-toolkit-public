@@ -144,13 +144,19 @@ void CSeqDBAliasNode::x_ResolveNames(string & dbname_list,
     Uint4 i = 0;
     
     for(i = 0; i < namevec.size(); i++) {
+        string component = namevec[i];
+        string search_path;
+        
         namevec[i] =
-            SeqDB_FindBlastDBPath(namevec[i], prot_nucl);
+            SeqDB_FindBlastDBPath(namevec[i], prot_nucl, & search_path);
         
         if (namevec[i].empty()) {
+            string msg("No alias or index file found for component [");
+            msg += component + "] in search path [" + search_path + "]";
+            
             NCBI_THROW(CSeqDBException,
                        eFileErr,
-                       "No alias or index file found.");
+                       msg);
         }
     }
     
