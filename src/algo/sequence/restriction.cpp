@@ -37,6 +37,7 @@
 
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 
 bool CRSpec::operator<(const CRSpec& rhs) const
@@ -525,6 +526,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/08/21 20:05:59  dicuccio
+ * Added USING_SCOPE(objects) for MSVC
+ *
  * Revision 1.6  2003/08/21 19:22:47  jcherry
  * Moved restriction site finding to algo/sequence
  *
