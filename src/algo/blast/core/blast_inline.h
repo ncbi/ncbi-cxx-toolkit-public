@@ -378,3 +378,27 @@ BlastNaMiniExtendRight(Uint1* q, const Uint1* s, Uint1 max_right)
    }
    return right;
 }
+
+/** Returns the index in the MaskLoc given a context number for the query.
+ * If the query is nucleotide
+ *
+ * @param is_na the query is nucleotide
+ * @param context offset in the QueryInfo array
+ * @return index in the maskloc
+ */
+static NCBI_INLINE Int2 BlastGetMaskLocIndexFromContext(Boolean is_na, Int2 context)
+{
+     return (is_na ? context / 2 : context);
+}
+
+/** Determines whether this is a nucleotide query and whether this a minus strand or not
+ *
+ * @param is_na the query is nucleotide
+ * @param context offset in the QueryInfo array
+ * @return TRUE if this is minus strand
+ */
+static NCBI_INLINE Boolean BlastIsReverseStrand(Boolean is_na, Int2 context)
+{
+     return (is_na && ((context & 1) != 0));
+
+}
