@@ -194,6 +194,7 @@ void ViewerWindowBase::UpdateDisplay(SequenceDisplay *display)
     menuBar->EnableTop(menuBar->FindMenu("Unaligned Justification"), display->IsEditable());
     GlobalMessenger()->PostRedrawAllSequenceViewers();
     viewer->SetUndoRedoMenuStates();
+    UpdateGeometryViolations();
 }
 
 void ViewerWindowBase::OnTitleView(wxCommandEvent& event)
@@ -332,8 +333,13 @@ void ViewerWindowBase::OnJustification(wxCommandEvent& event)
 
 void ViewerWindowBase::OnShowGeomVltns(wxCommandEvent& event)
 {
-    const ViewerBase::AlignmentList& alignments = viewer->GetCurrentAlignments();
+    UpdateGeometryViolations();
+    GlobalMessenger()->PostRedrawSequenceViewer(viewer);
+}
 
+void ViewerWindowBase::UpdateGeometryViolations(void) const
+{
+    const ViewerBase::AlignmentList& alignments = viewer->GetCurrentAlignments();
     ViewerBase::AlignmentList::const_iterator a, ae = alignments.end();
     int nViolations = 0;
     for (a=alignments.begin(); a!=ae; ++a)
@@ -341,7 +347,6 @@ void ViewerWindowBase::OnShowGeomVltns(wxCommandEvent& event)
     if (GeometryViolationsShown())
         INFOMSG("Found " << nViolations << " geometry violation"
             << ((nViolations == 1) ? "" : "s") << " in this window");
-    GlobalMessenger()->PostRedrawSequenceViewer(viewer);
 }
 
 void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
@@ -391,6 +396,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2004/09/27 18:31:20  thiessen
+* continually track GV's in message log when on
+*
 * Revision 1.51  2004/06/23 20:34:53  thiessen
 * sho geometry violations in alignments added to import window
 *

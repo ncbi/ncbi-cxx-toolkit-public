@@ -105,6 +105,7 @@ public:
 
     // are geometry violations on?
     bool GeometryViolationsShown(void) const { return menuBar->IsChecked(MID_SHOW_GEOM_VLTNS); }
+    void UpdateGeometryViolations(void) const;
 
     // menu callbacks
     void OnTitleView(wxCommandEvent& event);
@@ -241,6 +242,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/09/27 18:31:20  thiessen
+* continually track GV's in message log when on
+*
 * Revision 1.27  2004/06/23 20:34:53  thiessen
 * sho geometry violations in alignments added to import window
 *
