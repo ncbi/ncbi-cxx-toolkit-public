@@ -28,9 +28,12 @@
  *
  * Author:  Denis Vakatov, Vladimir Ivanov
  *
- * File Description:   Portable DLL handling.
  *
  */
+
+/// @file ncbidll.hpp
+/// Define class Dll and for Portable DLL handling.
+
 
 #include <corelib/ncbistd.hpp>
 
@@ -44,96 +47,138 @@
 BEGIN_NCBI_SCOPE
 
 
-//////////////////////////////////////////////////////////////////
-//
-//  CDll  --  portable DLL handling
-//
-//////////////////////////////////////////////////////////////////
-//
-//
-//  The DLL name is considered basename if it does not contain
-//  embedded '/', '\', or ':' symbols.
-//  Also, in this case, if the DLL name does not match pattern
-//  "lib*.so", "lib*.so.*", or "*.dll" (and if eExactName flag not passed
-//  to the constructor), then it will be automagically transformed:
-//    UNIX:        <name>  --->  lib<name>.so
-//    MS Windows:  <name>  --->  <name>.dll
-//
-//  If the DLL is specified by its basename, then it will be searched
-//  (after the transformation described above) in the following locations:
-//    UNIX:
-//      1) the directories that are listed in the LD_LIBRARY_PATH environment
-//         variable (analyzed once at the process startup);
-//      2) the directory from which the application loaded;
-//      3) hard-coded (e.g. with `ldconfig' on Linux) paths.
-//    MS Windows:
-//      1) the directory from which the application is loaded;
-//      2) the current directory; 
-//      3) the Windows system directory;
-//      4) the Windows directory;
-//      5) the directories that are listed in the PATH environment variable.
-//
-
-// fwd-decl of struct containing OS-specific DLL handle
+// Forward declaration of struct containing OS-specific DLL handle.
 struct SDllHandle;
 
 
-class CDll
-{
-    // All methods of this class (but destructor)
-    // throw exception CCoreException::eDll on error
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CDll --
+///
+/// Define class for portable Dll handling.
+///
+/// The DLL name is considered the basename if it does not contain embedded
+/// '/', '\', or ':' symbols. Also, in this case, if the DLL name does not
+/// match pattern "lib*.so", "lib*.so.*", or "*.dll" (and if eExactName flag
+/// not passed to the constructor), then it will be automagically transformed
+/// according to the following rules:
+/// - UNIX:        <name>  --->  lib<name>.so
+/// - MS Windows:  <name>  --->  <name>.dll
+///
+///  If the DLL is specified by its basename, then it will be searched
+///  (after the transformation described above) in the following locations:
+///
+///    UNIX:
+///      1) the directories that are listed in the LD_LIBRARY_PATH environment
+///         variable (analyzed once at the process startup);
+///      2) the directory from which the application loaded;
+///      3) hard-coded (e.g. with `ldconfig' on Linux) paths.
+///
+///    MS Windows:
+///      1) the directory from which the application is loaded;
+///      2) the current directory; 
+///      3) the Windows system directory;
+///      4) the Windows directory;
+///      5) the directories that are listed in the PATH environment variable.
+///
+/// NOTE: All methods of this class except the destructor throw exception
+/// CCoreException::eDll on error.
+
+class CDll {
 
 public:
-    // When to load DLL
+    /// When to load DLL.
     enum ELoad {
-        eLoadNow,   // immediately in the constructor
-        eLoadLater  // later, using method Load()
-    };
-    // If to unload DLL in the destructor
-    enum EAutoUnload {
-        eAutoUnload,   // do     unload DLL in the destructor
-        eNoAutoUnload  // do not unload DLL in the destructor
-    };
-    // If to transform the DLL basename (like:  <name>  --->  lib<name>.so)
-    enum EBasename {
-        eBasename,  // treate as basename (if it looks like one)
-        eExactName  // use the name "as is" (no prefix/suffix adding)
+        eLoadNow,      ///< Load DLL immediately in the constructor
+        eLoadLater     ///< Load DLL later, using method Load()
     };
 
-    // The "name" can be either DLL basename (see explanations above) or
-    // an absolute file path.
+    /// Whether to unload DLL in the destructor.
+    enum EAutoUnload {
+        eAutoUnload,   ///< Do unload DLL in the destructor
+        eNoAutoUnload  ///< Do not unload DLL in the destructor
+    };
+
+    /// Whether to transform the DLL basename.
+    ///
+    /// Transformation is done according to the following:
+    ///
+    ///    UNIX:        <name>  --->  lib<name>.so
+    ///    MS Windows:  <name>  --->  <name>.dll
+    enum EBasename {
+        eBasename,  ///< Treat as basename (if it looks like one)
+        eExactName  ///< Use the name "as is" (no prefix/suffix adding)
+    };
+
+    /// Constructor.
+    ///
+    /// @param name
+    ///   Can be either DLL basename or an absolute file path.
+    /// @param when_to_load
+    ///   Choice to load now or later using Load().
+    /// @param auto_load
+    ///   Choice to unload DLL in destructor.
+    /// @param treat_as
+    ///   Choice to transform the DLL base name.
+    /// @sa
+    ///   Basename discussion in CDll header,
+    ///   Eload, EAutoUnload, EBasename definition.
     NCBI_XNCBI_EXPORT
     CDll(const string& name,
          ELoad         when_to_load = eLoadNow,
          EAutoUnload   auto_unload  = eNoAutoUnload,
          EBasename     treate_as    = eBasename);
 
-    // The absolute file path to the DLL will be formed of the
-    // "path" and "name" in the following way:
-    //  UNIX:    <path>/lib<name>.so ;  <path>/<name> if "name" is not basename
-    //  MS-Win:  <path>\<name>.dll   ;  <path>\<name> if "name" is not basename
+    /// Constructor.
+    ///
+    /// The absolute file path to the DLL will be formed using the "path"
+    /// and "name" parameters in the following way:
+    /// - UNIX:    <path>/lib<name>.so ; <path>/<name> if "name" is not basename
+    /// - MS-Win:  <path>\<name>.dll   ; <path>\<name> if "name" is not basename
+    ///
+    /// @param path
+    ///   Path to DLL.
+    /// @param name
+    ///   Name of DLL.
+    /// @param when_to_load
+    ///   Choice to load now or later using Load().
+    /// @param auto_load
+    ///   Choice to unload DLL in destructor.
+    /// @param treat_as
+    ///   Choice to transform the DLL base name.
+    /// @sa
+    ///   Basename discussion in CDll header,
+    ///   Eload, EAutoUnload, EBasename definition.
     NCBI_XNCBI_EXPORT
     CDll(const string& path, const string& name,
          ELoad         when_to_load = eLoadNow,
          EAutoUnload   auto_unload  = eNoAutoUnload,
          EBasename     treate_as    = eBasename);
 
-    // Unload DLL if constructor was passed "eAutoUnload".
-    // Destructor does not throw any exceptions.
+    /// Destructor.
+    ///
+    /// Unload DLL if constructor was passed "eAutoUnload". Destructor does not
+    /// throw any exceptions.
     NCBI_XNCBI_EXPORT ~CDll(void);
 
-    // Load DLL (name specified in the constructor's "dll_name").
-    // If Load() is called more than once without calling Unload() in between,
-    // then it will do nothing.
+    /// Load DLL.
+    ///
+    /// Load the DLL using the name specified in the constructor's DLL "name".
+    /// If Load() is called more than once without calling Unload() in between,
+    /// then it will do nothing.
     NCBI_XNCBI_EXPORT void Load(void);
 
-    // Unload DLL. Do nothing (and no error) if the DLL is not loaded.
+    /// Unload DLL.
+    ///
+    /// Do nothing and do not generate errors if the DLL is not loaded.
     NCBI_XNCBI_EXPORT void Unload(void);
 
-    // Find an entry point (e.g. a function) with name "name" in the DLL.
-    // Return the entry point's address on success, NULL on error.
-    // If the DLL is not loaded yet, then this method will call Load(),
-    // which can result in throwing an exception (if Load() fails).
+    /// Get the DLLs entry point.
+    ///
+    /// Get the entry point (e.g. a function) with name "name" in the DLL and
+    /// return the entry point's address on success, or return NULL on error.
+    /// If the DLL is not loaded yet, then this method will call Load(),
+    /// which can result in throwing an exception if Load() fails.
     template <class TPointer>
     TPointer GetEntryPoint(const string& name, TPointer* entry_ptr) {
         union {
@@ -148,29 +193,52 @@ public:
     }
 
 private:
-    // Find an entry point (e.g. a function) with name "name" in the DLL.
-    // Return the entry point's address on success, NULL on error.
+    /// Helper find method for getting a DLLs entry point.
+    ///
+    /// Get the entry point (e.g. a function) with name "name" in the DLL.
+    /// @param name
+    ///   Name of DLL.
+    /// @param pointer_size
+    ///   Size of pointer.
+    /// @return
+    ///   The entry point's address on success, or return NULL on error.
     NCBI_XNCBI_EXPORT
     void* x_GetEntryPoint(const string& name, size_t pointer_size);
 
-    // Throw exception with system-specific error message
+    /// Helper method to throw exception with system-specific error message.
     void  x_ThrowException(const string& what);
 
-    // Initialize object (called from constructors)
+    /// Helper method to initialize object.
+    ///
+    /// Called from constructor.
+    /// @param path
+    ///   Path to DLL.
+    /// @param name
+    ///   Name of DLL.
+    /// @param when_to_load
+    ///   Choice to load now or later using Load().
+    /// @param auto_load
+    ///   Choice to unload DLL in destructor.
+    /// @param treat_as
+    ///   Choice to transform the DLL base name.
+    /// @sa
+    ///   Eload, EAutoUnload, EBasename definition.
     void  x_Init(const string& path, const string& name, 
                  ELoad       when_to_load, 
                  EAutoUnload auto_unload, 
                  EBasename   treate_as);
 
 protected:
-    // Prohibit copy constructor and assignment operator
+    /// Private copy constructor to prohibit copy.
     CDll(const CDll&);
+
+    /// Private assignment operator to prohibit assignment.
     CDll& operator= (const CDll&);
 
 private:
-    string      m_Name;        // DLL name
-    SDllHandle* m_Handle;      // DLL handle
-    bool        m_AutoUnload;  // if to unload the DLL in the destructor
+    string      m_Name;       ///< DLL name
+    SDllHandle* m_Handle;     ///< DLL handle
+    bool        m_AutoUnload; ///< Whether to unload the DLL in the destructor
 };
 
 
@@ -183,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/07/28 19:07:04  siyan
+ * Documentation changes.
+ *
  * Revision 1.9  2003/03/31 15:44:33  siyan
  * Added doxygen support
  *
