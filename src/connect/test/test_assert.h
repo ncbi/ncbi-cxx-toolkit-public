@@ -34,6 +34,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/01/20 04:56:27  vakatov
+ * Use #_MSC_VER rather than #include <ncbiconf.h> as the latter does not
+ * exist when the code is compiled for the C Toolkit
+ *
  * Revision 6.2  2002/01/19 00:04:00  vakatov
  * Do not force #_DEBUG on MSVC -- or it fails to link some functions which
  * defined in the debug C run-time lib only (such as _CrtDbgReport)
@@ -44,13 +48,11 @@
  * ===========================================================================
  */
 
-#include <ncbiconf.h>
-
 #if defined(NDEBUG)
 #  undef  NDEBUG
 #endif 
 
-#if !defined(_DEBUG)  &&  !defined(NCBI_OS_MSWIN)
+#if !defined(_DEBUG)  &&  !defined(_MSC_VER)
 #  define _DEBUG
 #endif 
 
