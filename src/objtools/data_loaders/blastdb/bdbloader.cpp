@@ -45,6 +45,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <corelib/plugin_manager_impl.hpp>
+#include <objtools/readers/seqdb/seqdb.hpp>
 
 //=======================================================================
 // BlastDbDataLoader Public interface 
@@ -77,20 +78,16 @@ CBlastDbDataLoader::CBlastDbDataLoader(const string&        loader_name,
                                        const SBlastDbParam& param)
     : CDataLoader(loader_name),
       m_dbname(param.m_DbName),
-      m_dbtype(param.m_DbType),
-      m_rdfp(0)
+      m_dbtype(param.m_DbType)
+     
 {
-    m_mutex = new CFastMutex();
+    CRef<CSeqDB> seq_db(new CSeqDB(param.m_DbName, param.m_DbType ==  eProtein ? 'p' : 'n'));
+    m_seqdb = seq_db;
 }
 
 CBlastDbDataLoader::~CBlastDbDataLoader(void)
 {
-    if (m_rdfp) {
-        CFastMutexGuard mtx(*m_mutex);
-        if (m_rdfp)
-            m_rdfp = readdb_destruct(m_rdfp);
-    }
-    delete m_mutex;
+  
 }
 
 
@@ -101,90 +98,49 @@ CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh,
         const EChoice choice)
 {
     TTSE_LockSet locks;
-    //LOG_POST("***CBlastDbDataLoader::GetRecords***");
     // only eBioseq and eBioseqCore are supported
     switch (choice) {
-        case eBlob:
-        case eCore:
-        case eSequence:
-        case eFeatures:
-        case eGraph:
-        case eAll:
-        default:
-            LOG_POST("Invalid choice: " + NStr::IntToString(choice));
+    case eBlob:
+    case eCore:
+    case eSequence:
+    case eFeatures:
+    case eGraph:
+    case eAll:
+    default:
+        LOG_POST("Invalid choice: " + NStr::IntToString(choice));
             return locks;
-        case eBioseq:
-        case eBioseqCore:
-            break;
+    case eBioseq:
+    case eBioseqCore:
+        break;
     }
-
-    // Open the blast database if it hasn't been accessed yet
-    if (!m_rdfp) {
-        CFastMutexGuard mtx(*m_mutex);
-        if (!m_rdfp) {
-            char* tmp = strdup(m_dbname.c_str());
-            m_rdfp = readdb_new_ex2(tmp, (int)m_dbtype, READDB_NEW_INDEX |
-                    READDB_NEW_DO_TAXDB, NULL, NULL);
-            free(tmp);
-        }
-    }
-
-    // for each seqid in hrmap, look them up in db and add them to the data
-    // source
+    
     {{
-
-        DECLARE_ASN_CONVERTER(CSeq_id, SeqId, sic);
-        DECLARE_ASN_CONVERTER(CBioseq, Bioseq, bc);
-        SeqIdPtr sip = NULL, sip_tmp = NULL, sip_itr = NULL, all_seqids = NULL;
-        BioseqPtr bsp = NULL;
         int oid = -1;
-        unsigned int index = 0;
         TOid2Bioseq::iterator found;
-
+        
         CConstRef<CSeq_id> seq_id = idh.GetSeqId();
-        if ( !(sip = sic.ToC(*seq_id)) )
+        vector<CSeqDB::TOID> oid_list;
+        m_seqdb->SeqidToOids(*seq_id, oid_list);
+        if(oid_list.empty()){
             return locks;
-
-        if ( (oid = SeqId2OrdinalId(m_rdfp, sip)) < 0)
-            return locks;
-
-        // If we've already retrieved this particular ordinal id, ignore it
-        if ( (found = m_cache.find(oid)) != m_cache.end())
-            return locks;
-
-        {{  // protect access to the blast database
-            CFastMutexGuard mtx(*m_mutex);
-            bsp = readdb_get_bioseq(m_rdfp, oid);
-
-            // Retrieve multiple seqids if there are any
-            while (readdb_get_header(m_rdfp, oid, &index, &sip_tmp, NULL)) {
-                if (!all_seqids) {
-                    all_seqids = sip_tmp;
-                } else {
-                    sip_itr = all_seqids;
-                    while (sip_itr->next)
-                        sip_itr = sip_itr->next;
-                    sip_itr->next = sip_tmp;
-                }
-            }
-        }}
-
-        if (all_seqids) {
-            SeqIdSetFree(bsp->id);
-            bsp->id = all_seqids;
         }
-
-        CRef<CBioseq> bsr(bc.FromC(bsp));
-
+        // If we've already retrieved this particular ordinal id, ignore it
+        if ( (found = m_cache.find(oid_list[0])) != m_cache.end()){
+            return locks;
+        }
+        
+        CRef<CBioseq> bsr = m_seqdb->GetBioseq(oid_list[0], false, false);
+        list< CRef<CSeq_id> > id_list = m_seqdb->GetSeqIDs(oid_list[0]);
+        if(id_list.size() > bsr->SetId().size()){
+            bsr->SetId().clear();
+            bsr->SetId() = id_list;
+        }
         CRef<CSeq_entry> ser(new CSeq_entry());
         ser->Select(CSeq_entry::e_Seq);
-        ser->SetSeq(*bsr);
-
+        ser->SetSeq(*bsr);        
         locks.insert(GetDataSource()->AddTSE(*ser));
         m_cache[oid] = bsr;
-
-        bsp = BioseqFree(bsp);
-        sip = SeqIdFree(sip);
+        
     }}
     return locks;
 }
@@ -197,7 +153,7 @@ CBlastDbDataLoader::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     // CObject::DebugDump( ddc, depth);
     DebugDumpValue(ddc,"m_dbname", m_dbname);
     DebugDumpValue(ddc,"m_dbtype", m_dbtype);
-    DebugDumpValue(ddc,"m_rdfp", m_rdfp);
+   
 }
 
 END_SCOPE(objects)
@@ -283,6 +239,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.13  2004/10/05 16:37:58  jianye
+ * Use CSeqDB
+ *
  * Revision 1.12  2004/08/10 16:56:11  grichenk
  * Fixed dll export declarations, moved entry points to cpp.
  *
