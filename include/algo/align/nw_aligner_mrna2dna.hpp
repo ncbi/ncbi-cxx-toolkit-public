@@ -67,6 +67,11 @@ public:
         throw(CNWAlignerException);
     static size_t GetDefaultIntronMinSize () { return 50; }
 
+    // Formatters
+    virtual void FormatAsText(string* output, EFormat type,
+                              size_t line_width = 100) const
+                              throw(CNWAlignerException);
+
 protected:
 
     TScore   m_Wi [splice_type_count];  // intron weights
@@ -86,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/04/02 20:52:24  kapustin
+ * Make FormatAsText virtual. Pass output string as a parameter.
+ *
  * Revision 1.5  2003/03/31 15:31:47  kapustin
  * Calculate score independently from transcript
  *

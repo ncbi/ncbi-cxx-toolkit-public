@@ -84,10 +84,14 @@ public:
         eFormatType1,
         eFormatType2,
         eFormatAsn,
-        eFormatFastA
+        eFormatFastA,
+        eFormatExonTable  // spliced alignment only
     };
-    string FormatAsText(EFormat type, size_t line_width = 100) const;
-    void   FormatAsSeqAlign(CSeq_align*) const;
+    virtual void FormatAsText(string* output, EFormat type,
+                              size_t line_width = 100) const
+                              throw(CNWAlignerException);
+
+    void FormatAsSeqAlign(CSeq_align*) const;
 
     // Retrieve transcript string
     string GetTranscript() const;
@@ -180,6 +184,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/04/02 20:52:24  kapustin
+ * Make FormatAsText virtual. Pass output string as a parameter.
+ *
  * Revision 1.15  2003/03/31 15:31:47  kapustin
  * Calculate score independently from transcript
  *

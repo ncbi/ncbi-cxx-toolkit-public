@@ -477,7 +477,10 @@ void CNWAligner::FormatAsSeqAlign(CSeq_align* seqalign) const
 
 // creates formatted output of alignment;
 // requires prior call to Run
-string CNWAligner::FormatAsText(EFormat type, size_t line_width) const
+void CNWAligner::FormatAsText(string* output, 
+                              EFormat type, size_t line_width) const
+        throw(CNWAlignerException)
+
 {
     CNcbiOstrstream ss;
 
@@ -582,10 +585,17 @@ string CNWAligner::FormatAsText(EFormat type, size_t line_width) const
         }
     }
     break;
+    
+    default: {
+        NCBI_THROW(
+                   CNWAlignerException,
+                   eBadParameter,
+                   "Incorrect format specified");
+    }
 
     }
 
-    return CNcbiOstrstreamToString(ss);
+    *output = CNcbiOstrstreamToString(ss);
 }
 
 
@@ -1000,6 +1010,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/04/02 20:52:55  kapustin
+ * Make FormatAsText virtual. Pass output string as a parameter.
+ *
  * Revision 1.20  2003/03/31 15:32:05  kapustin
  * Calculate score independently from transcript
  *
