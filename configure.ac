@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.65 2002/04/29 14:20:35 ucko Exp $
+#  $Id: configure.ac,v 1.66 2002/05/01 18:56:18 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -393,7 +393,10 @@ changequote([, ])dnl
   GCC:3* )
     # Need to specify runpath for compiler-provided libraries
     libgcc_s=`$CXX -print-file-name=libgcc_s.so`
-    LDFLAGS="-Xlinker -R`dirname $libgcc_s` $LDFLAGS"
+    case "$host_os" in
+       osf*) LDFLAGS="-Wl,-rpath,`dirname $libgcc_s` $LDFLAGS" ;;
+       *)    LDFLAGS="-Wl,-R`dirname $libgcc_s` $LDFLAGS" ;;
+    esac
     ;;
 esac
 
@@ -708,10 +711,12 @@ if test -z "$CONF_f_runpath" ; then
       CONF_f_runpath="-R"
       ;;
     solaris*:GCC )
-      CONF_f_runpath="-Xlinker -R -Xlinker "
+      CONF_f_runpath="-Wl,-R"
       ;;
     linux*:GCC | linux*:ICC )
-      CONF_f_runpath="-Xlinker -rpath -Xlinker "
+      # osf*:GCC could go here as well, but then the linker's
+      # unwillingness to merge -rpath options bites us if we use GCC 3. :-/
+      CONF_f_runpath="-Wl,-rpath,"
       ;;
     irix*:* | linux*:KCC )
       CONF_f_runpath="-rpath "
