@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2000/06/26 20:56:35  vakatov
+* TestDiag() -- using user-istalled message posting handler
+*
 * Revision 1.64  2000/06/23 19:57:19  vakatov
 * TestDiag() -- added tests for the switching diag.handlers
 *
@@ -529,6 +532,12 @@ inline CNcbiOstream& operator <<(CNcbiOstream& os, const CNcbiTestDiag& cntd) {
 }
 
 
+static void s_TestDiagHandler(const SDiagMessage& mess)
+{ 
+    NcbiCout << "<Installed Handler> " << mess << NcbiEndl;
+}
+
+
 static void TestDiag(void)
 {
     CNcbiDiag diag;
@@ -542,6 +551,12 @@ static void TestDiag(void)
              << "FLUSHing memory-stored diagnostics (if any):" << NcbiEndl;
     SIZE_TYPE n_flush = CNcbiApplication::Instance()->FlushDiag(&NcbiCout);
     NcbiCout << "FLUSHed diag: " << n_flush << " bytes" << NcbiEndl <<NcbiEndl;
+
+    {{
+        CNcbiDiag diagWarning;
+        SetDiagHandler(s_TestDiagHandler, 0, 0);
+        diagWarning << "*Warning* -- must be printed by Installed Handler!";
+    }}
 
     SetDiagStream(&NcbiCerr);
     diag << "***ERROR*** THIS MESSAGE MUST NOT BE VISIBLE!!!\n\n";
