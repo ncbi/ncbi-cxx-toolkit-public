@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/11 18:13:51  lewisg
+* frontpage added
+*
 * Revision 1.5  1998/12/09 23:02:56  lewisg
 * update to new cgiapp class
 *
@@ -65,11 +68,10 @@ BEGIN_NCBI_SCOPE
 class CHTMLBasicPage: public CHTMLNode {
 public: 
     CHTMLBasicPage();
-    virtual void Create(void) { Create(0); }
-    virtual void Create(int style) { InitMembers(style); InitSubPages(style); Finish(style); }
-    virtual void InitMembers(int style) {}  
-    virtual void InitSubPages(int style) {}  // initialize members
-    virtual void Finish(int style) = 0;  // create and aggregate sub pages + other html
+    virtual void Create(int style = 0) { InitMembers(style); InitSubPages(style); Finish(style); }
+    virtual void InitMembers(int style = 0) {}  
+    virtual void InitSubPages(int style = 0) {}  // initialize members
+    virtual void Finish(int style = 0) = 0;  // create and aggregate sub pages + other html
     virtual CCgiApplication * GetApplication(void) { return m_CgiApplication; }
     virtual void SetApplication(CCgiApplication * App) { m_CgiApplication = App; }
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/11 18:13:50  lewisg
+* frontpage added
+*
 * Revision 1.4  1998/12/09 23:02:55  lewisg
 * update to new cgiapp class
 *
@@ -116,6 +119,7 @@ public:
 
 class CPagerBox: public CHTMLBasicPage
 {
+public:
     int m_Width; // in pixels
     CButtonList * m_TopButton;  // display button
     CButtonList * m_LeftButton; // save button
@@ -124,11 +128,25 @@ class CPagerBox: public CHTMLBasicPage
     int m_NumResults;  // the number of results to display
 
     virtual void InitMembers(int);
-    virtual void InitSubPages(int);
     virtual void Finish(int);
 
     CPagerBox();
 };
+
+
+class CSmallPagerBox: public CHTMLBasicPage
+{
+public:
+    int m_Width; // in pixels
+    CPageList * m_PageList;  // the pager
+    int m_NumResults;  // the number of results to display
+
+    virtual void InitMembers(int);
+    virtual void Finish(int);
+
+    CSmallPagerBox();
+};
+
 
 END_NCBI_SCOPE
 #endif

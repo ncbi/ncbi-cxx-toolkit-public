@@ -5,9 +5,9 @@ SUFFIXES = .o .c .h .hpp .cpp
 .SUFFIXES:
 .SUFFIXES: $(SUFFIXES)
 
-CFLAGS = -I../include -I../../corelib/include -I/netopt/ncbi_tools/ver0.0/ncbi/include 
+CFLAGS = -I../include -I../../html/include -I../../corelib/include -I/netopt/ncbi_tools/ver0.0/ncbi/include 
 
-LDFLAGS = -xar
+LDFLAGS = -L../../corelib/src -L../src -lncbi -lxncbi -lxhtml
 
 #CFLAGS = $(iLOCALINCPATH) $(iINCPATH) $(iCFLAGS)
 #LDFLAGS = $(iLDFLAGS) -L../../libs $(iLOCALLIBS) $(iLIBS) -lm
@@ -43,9 +43,9 @@ LDFLAGS = -xar
 #-lm \
 #-ldl
 
-EXE = libxhtml.a
+EXE = test
 
-OBJ =  page.o html.o node.o components.o querypages.o
+OBJ =  test.o 
 
 .cpp.o:
 	$(CCC) $(CFLAGS) -c $<
@@ -54,7 +54,7 @@ OBJ =  page.o html.o node.o components.o querypages.o
 all: $(EXE)
 
 $(EXE): $(OBJ) 
-	$(CCC) $(LDFLAGS) $(CFLAGS) $(OBJ) -o $@
+	$(CCC) $(CFLAGS) $(OBJ) $(LDFLAGS) -o $@
 
 #	$(CC) $(OBJ) $(LDFLAGS) -o $@
 
@@ -72,6 +72,5 @@ purify:
 	$(MAKE) debug "CCC=purify CC"
 
 .KEEP_STATE:
-
 	
 
