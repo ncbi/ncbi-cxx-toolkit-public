@@ -1003,6 +1003,10 @@ void CFeatureItem::x_AddCdregionQuals
             // protein id
             try {
                 prot_id = &GetId(m_Feat->GetProduct(), &scope);
+                CBioseq_Handle h = scope.GetBioseqHandle(*prot_id);
+                if (h) {
+                    prot_id = &GetId(h, eGetId_Best);
+                }
             } catch (CException&) {
                 prot_id = 0;
             }
@@ -2880,6 +2884,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2004/05/08 12:12:00  dicuccio
+* Use best ID representation for protein products
+*
 * Revision 1.22  2004/05/07 15:22:39  shomrat
 * Added qualifiers add Seq-id filters
 *
