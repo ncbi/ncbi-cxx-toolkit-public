@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/05/21 18:39:30  grichenk
+* CBioseq_Handle::GetResolvedSeqMap() -> CreateResolvedSeqMap()
+*
 * Revision 1.14  2002/05/06 03:28:46  vakatov
 * OM/OM1 renaming
 *
@@ -267,7 +270,7 @@ void CBioseq_Handle::x_ResolveTo(
 }
 
 
-const CSeqMap& CBioseq_Handle::GetResolvedSeqMap(void) const
+const CSeqMap& CBioseq_Handle::CreateResolvedSeqMap(void) const
 {
     return x_GetDataSource().GetResolvedSeqMap(*this);
 }

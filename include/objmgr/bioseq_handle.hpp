@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/05/21 18:39:27  grichenk
+* CBioseq_Handle::GetResolvedSeqMap() -> CreateResolvedSeqMap()
+*
 * Revision 1.17  2002/05/06 03:30:35  vakatov
 * OM/OM1 renaming
 *
@@ -152,7 +155,7 @@ public:
     // The resulting map should contain regions of literals, gaps
     // and references to literals only (but not gaps or refs) of other
     // sequences.
-    virtual const CSeqMap& GetResolvedSeqMap(void) const;
+    virtual const CSeqMap& CreateResolvedSeqMap(void) const;
 
     // Get sequence: Iupacna or Iupacaa if use_iupac_coding is true
     virtual CSeqVector GetSeqVector(bool use_iupac_coding = false,

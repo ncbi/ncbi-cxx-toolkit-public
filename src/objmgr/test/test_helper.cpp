@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/05/21 18:39:31  grichenk
+* CBioseq_Handle::GetResolvedSeqMap() -> CreateResolvedSeqMap()
+*
 * Revision 1.10  2002/05/09 14:21:50  grichenk
 * Turned GetTitle() test on, removed unresolved seq-map test
 *
@@ -833,7 +836,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     handle.GetTitle();
     CBioseq_Handle::TBioseqCore seq_core = handle.GetBioseqCore();
     {{
-        CSeqMap seq_map = handle.GetSeqMap();
+        const CSeqMap& seq_map = handle.GetSeqMap();
         // Iterate seq-map except the last element
         TSeqPos len = 0;
         for (size_t i = 0; i < seq_map.size(); i++) {
