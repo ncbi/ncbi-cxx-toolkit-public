@@ -62,58 +62,57 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
     set<string> sources_dirs;
     sources_dirs.insert(m_SourcesBaseDir);
     ITERATE(list<string>, p, project.m_Sources) {
-        
+
+        const string& src_rel = *p;
+        string src_path = CDirEntry::ConcatPath(m_SourcesBaseDir, src_rel);
+        src_path = CDirEntry::NormalizePath(src_path);
+
         string dir;
-        CDirEntry::SplitPath(*p, &dir);
+        CDirEntry::SplitPath(src_path, &dir);
         sources_dirs.insert(dir);
     }
     copy(sources_dirs.begin(), 
          sources_dirs.end(), 
          back_inserter(m_SourcesDirsAbs));
 
-    // /src/
-    const string src_tag(string(1,CDirEntry::GetPathSeparator()) + 
-                         "src" +
-                         CDirEntry::GetPathSeparator());
- 
-    // /include/
-    const string include_tag(string(1,CDirEntry::GetPathSeparator()) + 
-                             "include" +
-                             CDirEntry::GetPathSeparator());
-
-
-    // /compilers/msvc7_prj/
-    const string project_tag(string(1,CDirEntry::GetPathSeparator()) + 
-                             "compilers" +
-                             CDirEntry::GetPathSeparator() + 
-                             GetApp().GetRegSettings().m_CompilersSubdir +
-                             CDirEntry::GetPathSeparator()); 
-
 
     // Creating project dir:
-    m_ProjectDir = m_SourcesBaseDir;
-    m_ProjectDir.replace(m_ProjectDir.find(src_tag), 
-                         src_tag.length(), 
-                         project_tag);
+    m_ProjectDir = GetApp().GetProjectTreeInfo().m_Compilers;
+    m_ProjectDir = 
+        CDirEntry::ConcatPath(m_ProjectDir, 
+                              GetApp().GetRegSettings().m_CompilersSubdir);
+    m_ProjectDir = 
+        CDirEntry::ConcatPath(m_ProjectDir, 
+                              CDirEntry::CreateRelativePath
+                                  (GetApp().GetProjectTreeInfo().m_Src, 
+                                  m_SourcesBaseDir));
+    m_ProjectDir = CDirEntry::AddTrailingPathSeparator(m_ProjectDir);
 
     m_ProjType = project.m_ProjType;
 
      // Generate include dirs:
-    //Root for all include dirs:
-    string incl_dir = string(m_SourcesBaseDir, 
-                             0, 
-                             m_SourcesBaseDir.find(src_tag));
-    m_IncludeDirsRoot = CDirEntry::ConcatPath(incl_dir, "include");
+    string include_base_dir = 
+        CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include, 
+                              CDirEntry::CreateRelativePath
+                                         (GetApp().GetProjectTreeInfo().m_Src,
+                                          m_SourcesBaseDir));
+    
+    // Include dirs for appropriate src dirs
+    set<string> include_dirs;
+    ITERATE(list<string>, p, project.m_Sources) {
 
+        const string& src_rel = *p;
+        string src_path = CDirEntry::ConcatPath(include_base_dir, src_rel);
+        src_path = CDirEntry::NormalizePath(src_path);
 
-    ITERATE(list<string>, p, m_SourcesDirsAbs) {
-        //Make include dirs from the source dirs
-        string include_dir(*p);
-        include_dir.replace(include_dir.find(src_tag), 
-                            src_tag.length(), 
-                            include_tag);
-        m_IncludeDirsAbs.push_back(include_dir);
+        string dir;
+        CDirEntry::SplitPath(src_path, &dir);
+        include_dirs.insert(dir);
     }
+    copy(include_dirs.begin(), 
+         include_dirs.end(), 
+         back_inserter(m_IncludeDirsAbs));
+
 
     // Get custom build files and adjust pathes 
     m_MsvcProjectMakefile->GetCustomBuildInfo(&m_CustomBuildInfo);
@@ -124,6 +123,12 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
        build_info.m_SourceFile = 
            CDirEntry::CreateRelativePath(m_ProjectDir, file_path_abs);           
     }
+
+    // Collect include dirs, specified in project Makefiles
+    m_ProjectIncludeDirs = project.m_IncludeDirs;
+
+    // LIBS from Makefiles
+    m_ProjectLibs = project.m_Libs3Party;
 }
 
 
@@ -131,7 +136,17 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
                                             (const SConfigInfo& cfg_info) const
 {
     string add_include_dirs = 
-        CDirEntry::CreateRelativePath(m_ProjectDir, m_IncludeDirsRoot);
+        CDirEntry::CreateRelativePath(m_ProjectDir, 
+                                      GetApp().GetProjectTreeInfo().m_Include);
+    
+    //take into account project include dirs
+    ITERATE(list<string>, p, m_ProjectIncludeDirs) {
+        const string& dir_abs = *p;
+        add_include_dirs += ", ";
+        add_include_dirs += 
+            CDirEntry::CreateRelativePath
+                        (m_ProjectDir, dir_abs);
+    }
 
     list<string> makefile_add_incl_dirs;
     m_MsvcProjectMakefile->GetAdditionalIncludeDirs(cfg_info, 
@@ -148,9 +163,10 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
             CDirEntry::CreateRelativePath
                         (m_ProjectDir, dir_abs);
     }
-    //take into account default libs from site:
-    list<string> libs_list(m_Requires);
-    libs_list.push_back(MSVC_DEFAULT_LIBS_TAG);
+
+    // We'll build libs list.
+    list<string> libs_list;
+    CreateLibsList(&libs_list);
     ITERATE(list<string>, p, libs_list) {
         const string& requires = *p;
         SLibInfo lib_info;
@@ -171,8 +187,8 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
     string libs_str("");
 
     // Take into account default libs from site:
-    list<string> libs_list(m_Requires);
-    libs_list.push_back(MSVC_DEFAULT_LIBS_TAG);
+    list<string> libs_list;
+    CreateLibsList(&libs_list);
     ITERATE(list<string>, p, libs_list) {
         const string& requires = *p;
         SLibInfo lib_info;
@@ -200,8 +216,8 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
     string dirs_str("");
 
     // Take into account default libs from site:
-    list<string> libs_list(m_Requires);
-    libs_list.push_back(MSVC_DEFAULT_LIBS_TAG);
+    list<string> libs_list;
+    CreateLibsList(&libs_list);
     ITERATE(list<string>, p, libs_list) {
         const string& requires = *p;
         SLibInfo lib_info;
@@ -216,6 +232,24 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
 }
 
 
+void CMsvcPrjProjectContext::CreateLibsList(list<string>* libs_list) const
+{
+    libs_list->clear();
+    // We'll build libs list.
+    *libs_list = m_Requires;
+    //take into account default libs from site:
+    libs_list->push_back(MSVC_DEFAULT_LIBS_TAG);
+    //and LIBS from Makefiles:
+    ITERATE(list<string>, p, m_ProjectLibs) {
+        const string& lib = *p;
+        list<string> components;
+        GetComponents(lib, &components);
+        copy(components.begin(), 
+             components.end(), back_inserter(*libs_list));
+
+    }
+    libs_list->unique();
+}
 
 const CMsvcProjectMakefile& 
 CMsvcPrjProjectContext::GetMsvcProjectMakefile(void) const
@@ -281,9 +315,10 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
                    eProjectType, NStr::IntToString(m_Type));
     }
 
-    string output_dir_abs = CDirEntry::ConcatPath(output_dir_prefix, config.m_Name);
-    m_OutputDirectory = CDirEntry::CreateRelativePath(project_dir, 
-                                                      output_dir_abs);
+    string output_dir_abs = 
+        CDirEntry::ConcatPath(output_dir_prefix, config.m_Name);
+    m_OutputDirectory = 
+        CDirEntry::CreateRelativePath(project_dir, output_dir_abs);
 }
 
 //------------------------------------------------------------------------------
@@ -606,6 +641,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/03 17:17:38  gorelenk
+ * Changed implementation of class CMsvcPrjProjectContext constructor.
+ *
  * Revision 1.7  2004/01/29 15:46:44  gorelenk
  * Added support of default libs, defined in user site
  *
