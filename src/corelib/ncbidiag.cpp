@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/11/03 22:30:20  vakatov
+* cosmetics...
+*
 * Revision 1.4  1998/11/03 22:28:35  vakatov
 * Renamed Die/Post...Severity() to ...Level()
 *
@@ -150,7 +153,7 @@ static void s_ToStream_Handler(EDiagSev    sev,
         return;
 
     CNcbiOstream& os = *x_data->os;
-    os << CNcbiDiag::SeverityName(sev) << ":\t";
+    os << CNcbiDiag::SeverityName(sev) << ": ";
     os.write(message_buf, message_len);
     os << endl;
     if ( x_data->quick_flush )
