@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/10/17 18:18:30  grichenk
+* Added CObjectOStreamXml::xxxFilePrefix() and
+* CObjectOStreamXml::xxxFileName()
+*
 * Revision 1.26  2001/05/17 15:07:08  lavr
 * Typos corrected
 *
@@ -172,6 +176,9 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamXml(CNcbiOstream& out,
     return new CObjectOStreamXml(out, deleteOut);
 }
 
+
+string CObjectOStreamXml::sm_DefaultDTDFilePrefix = "";
+
 CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
     : CObjectOStream(out, deleteOut), m_LastTagAction(eTagClose)
 {
@@ -206,28 +213,21 @@ static string GetPublicModuleName(TTypeInfo type)
     return name;
 }
 
-static string dtdFileName = "";
-
-void SetDTDFileName(const string& name) {
-  dtdFileName = name;
-}
-
-
-static string GetModuleName(TTypeInfo type)
+string CObjectOStreamXml::GetModuleName(TTypeInfo type)
 {
-
-  if( ! dtdFileName.empty() ) {
-    return dtdFileName;
-  }
-
-    const string& s = type->GetModuleName();
     string name;
-    for ( string::const_iterator i = s.begin(); i != s.end(); ++i ) {
-        char c = *i;
-        if ( c == '-' )
-            name += '_';
-        else
-            name += c;
+    if( !m_DTDFileName.empty() ) {
+        name = m_DTDFileName;
+    }
+    else {
+        const string& s = type->GetModuleName();
+        for ( string::const_iterator i = s.begin(); i != s.end(); ++i ) {
+            char c = *i;
+            if ( c == '-' )
+                name += '_';
+            else
+                name += c;
+        }
     }
     return name;
 }
@@ -241,7 +241,7 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
     m_Output.PutString(" PUBLIC \"-//NCBI//");
     m_Output.PutString(GetPublicModuleName(type));
     m_Output.PutString("/EN\" \"");
-    m_Output.PutString(GetModuleName(type));
+    m_Output.PutString(GetDTDFilePrefix() + GetModuleName(type));
     m_Output.PutString(".dtd\">");
     m_Output.PutEol();
     m_LastTagAction = eTagClose;
@@ -842,5 +842,6 @@ void CObjectOStreamXml::WriteBytes(const ByteBlock& ,
         m_Output.PutChar(HEX[c & 0xf]);
 	}
 }
+
 
 END_NCBI_SCOPE

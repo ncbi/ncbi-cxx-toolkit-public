@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/10/17 18:18:28  grichenk
+* Added CObjectOStreamXml::xxxFilePrefix() and
+* CObjectOStreamXml::xxxFileName()
+*
 * Revision 1.2  2000/11/07 17:25:12  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -114,6 +118,47 @@ void CObjectOStreamXml::CloseTagIfNamed(TTypeInfo type)
 {
     if ( !type->GetName().empty() )
         CloseTag(type->GetName());
+}
+
+inline
+void CObjectOStreamXml::SetDTDFilePrefix(const string prefix)
+{
+    m_DTDFilePrefix = prefix;
+}
+
+inline
+void CObjectOStreamXml::SetDTDFileName(const string filename)
+{
+    m_DTDFileName = filename;
+}
+
+inline
+string CObjectOStreamXml::GetDTDFilePrefix(void)
+{
+    if ( !m_DTDFilePrefix.empty() ) {
+        return m_DTDFilePrefix;
+    }
+    else {
+        return sm_DefaultDTDFilePrefix;
+    }
+}
+
+inline
+string CObjectOStreamXml::GetDTDFileName(void)
+{
+    return m_DTDFileName;
+}
+
+inline
+void CObjectOStreamXml::SetDefaultDTDFilePrefix(const string def_prefix)
+{
+    sm_DefaultDTDFilePrefix = def_prefix;
+}
+
+inline
+string CObjectOStreamXml::s_GetDefaultDTDFilePrefix(void)
+{
+    return sm_DefaultDTDFilePrefix;
 }
 
 #endif /* def OBJOSTRXML__HPP  &&  ndef OBJOSTRXML__INL */

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/10/17 18:18:28  grichenk
+* Added CObjectOStreamXml::xxxFilePrefix() and
+* CObjectOStreamXml::xxxFileName()
+*
 * Revision 1.16  2001/05/17 14:59:47  lavr
 * Typos corrected
 *
@@ -131,6 +135,18 @@ public:
                           CObjectIStream& in);
     void WriteEnum(const CEnumeratedTypeValues& values,
                    TEnumValueType value, const string& valueName);
+
+    // DTD file name and prefix. The final module name is built as
+    // DTDFilePrefix + DTDFileName. If no DTDFilePrefix was defined,
+    // DefaultDTDFilePrefix is used instead. If no DTDFileName
+    // was set, type name is used as the file name.
+    void SetDTDFilePrefix(const string prefix);
+    void SetDTDFileName(const string filename);
+    static void SetDefaultDTDFilePrefix(const string def_prefix = "");
+
+    string GetDTDFilePrefix(void);
+    string GetDTDFileName(void);
+    static string s_GetDefaultDTDFilePrefix(void);
 
 protected:
     virtual void WriteBool(bool data);
@@ -239,17 +255,22 @@ private:
     void CloseTagIfNamed(TTypeInfo type);
     void PrintTagName(size_t level);
     bool WillHaveName(TTypeInfo elementType);
+    string GetModuleName(TTypeInfo type);
+
     enum ETagAction {
         eTagOpen,
         eTagClose,
         eTagSelfClosed
     };
     ETagAction m_LastTagAction;
+
+    // DTD file name and prefix
+    string m_DTDFilePrefix;
+    string m_DTDFileName;
+    static string sm_DefaultDTDFilePrefix;
 };
 
 #include <serial/objostrxml.inl>
-
-void SetDTDFileName(const string& name);
 
 END_NCBI_SCOPE
 
