@@ -12,7 +12,7 @@ script_dir=`(cd "${script_dir}" ; pwd)`
 . ${script_dir}/common.sh
 
 
-PLUGINS='doc_basic doc_table algo_basic algo_stdio view_text view_graphic view_align view_sequence view_table'
+PLUGINS='doc_basic doc_table algo_basic algo_stdio algo_align view_text view_graphic view_align view_sequence view_table'
 BINS='gbench-bin gbench_plugin_scan'
 LIBS='gui_doc gui_view gui_algo'
 
