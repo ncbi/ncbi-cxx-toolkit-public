@@ -1091,7 +1091,8 @@ CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
                             // target below
                             if (m_MergeFlags & fTruncateOverlaps) {
                                 delta /= width1;
-                                if ((len -= delta) > 0) {
+                                if (len > delta) {
+                                    len -= delta;
                                     start2 += delta * width2;
                                 } else {
                                     return eIgnoreMatch;
@@ -1111,7 +1112,8 @@ CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
                             // below target
                             if (m_MergeFlags & fTruncateOverlaps) {
                                 delta /= width1;
-                                if ((len -= delta) > 0) {
+                                if (len > delta) {
+                                    len -= delta;
                                     start1 += delta * width1;
                                     start2 += delta * width2;
                                 } else {
@@ -1134,7 +1136,8 @@ CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
                 // below target
                 if (m_MergeFlags & fTruncateOverlaps) {
                     delta /= width2;
-                    if ((len -= delta) > 0) {
+                    if (len > delta) {
+                        len -= delta;
                         start2 += delta * width2;
                         if ( !match->m_StrandsDiffer ) {
                             start1 += delta * width1;
@@ -1204,7 +1207,8 @@ CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
                             // (---x (----x
                             // above target
                             if (m_MergeFlags & fTruncateOverlaps) {
-                                if ((len -= delta / width1) > 0) {
+                                if (len > delta / width1) {
+                                    len -= delta / width1;
                                     start1 += delta;
                                 } else {
                                     return eIgnoreMatch;
@@ -1221,7 +1225,7 @@ CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
                             // x----) x---)
                             // target above
                             if (m_MergeFlags & fTruncateOverlaps) {
-                                if ((len -= delta / width1) <= 0) {
+                                if (len <= delta / width1) {
                                     return eIgnoreMatch;
                                 }
                             } else {
@@ -2008,6 +2012,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.97  2004/06/21 20:35:48  todorov
+* Fixed a signed/unsigned bug when truncating the len with delta
+*
 * Revision 1.96  2004/06/14 21:01:59  todorov
 * 1) added iterators bounds checks; 2) delta check
 *
