@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/03/10 14:18:37  vasilche
+* Added CRef<>::GetPointerOrNull() method similar to std::auto_ptr<>.get()
+*
 * Revision 1.3  2000/03/08 14:18:19  vasilche
 * Fixed throws instructions.
 *
@@ -181,6 +184,16 @@ public:
         }
 
     // get object reference
+    inline
+    const TObjectType* GetPointerOrNull(void) const THROWS_NONE
+        {
+            return m_Ptr;
+        }
+    inline
+    TObjectType* GetPointerOrNull(void) THROWS_NONE
+        {
+            return m_Ptr;
+        }
     inline
     const TObjectType& operator*(void) const THROWS((CNullPointerError))
         {
