@@ -523,7 +523,8 @@ s_PSIValidateNoGapsInQuery(const _PSIMsa* msa, Boolean ignore_consensus)
     }
 
     for (p = 0; p < msa->dimensions->query_length; p++) {
-        if (msa->cell[kQueryIndex][p].letter == kGapResidue || msa->query[p] == kGapResidue) {
+        if (msa->cell[kQueryIndex][p].letter == kGapResidue || 
+            msa->query[p] == kGapResidue) {
             return PSIERR_GAPINQUERY;
         }
     }
@@ -2382,6 +2383,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/11/15 16:54:36  camacho
+ * break long lines
+ *
  * Revision 1.33  2004/11/15 16:32:37  dondosha
  * Changed constant names and static functions names in accordance with C++ toolkit guidelines
  *
