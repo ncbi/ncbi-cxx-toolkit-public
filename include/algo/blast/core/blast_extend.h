@@ -176,8 +176,6 @@ typedef struct BLAST_DiagTable {
                             neccessary, but possible. */
    Int4 actual_window; /**< The actual window used if the multiple
                           hits method was used and a hit was found. */
-   Int4 bias;   /**< diagonal = (subject offset + bias) - (query offset)
-                   This may not be needed ??????????? */
 } BLAST_DiagTable, PNTR BLAST_DiagTablePtr;
 
 typedef struct MB_StackTable {

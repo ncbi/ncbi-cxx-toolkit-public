@@ -286,7 +286,7 @@ static inline Int4 DiagGetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, In
   if (diag == NULL)
     return 0;
 
-  diag_coord = (subject_offset + diag->bias) - query_offset;
+  diag_coord = (subject_offset - query_offset) & diag->diag_mask;
   
     return diag->diag_array[diag_coord].last_hit - diag->offset;
 }
@@ -306,7 +306,7 @@ static inline Int4 DiagSetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, In
   if (diag == NULL)
     return 0;
   
-  diag_coord = (subject_offset + diag->bias) - query_offset;
+  diag_coord = (subject_offset - query_offset) & diag->diag_mask;
   
   diag->diag_array[diag_coord].last_hit = subject_offset + diag->offset;
   return 0;
@@ -331,7 +331,7 @@ static inline Int4 DiagCheckLevel(BLAST_DiagTablePtr diag, Int4 query_offset, In
   if (diag == NULL)
     return 0;
 
-  diag_coord = (subject_offset + diag->bias) - query_offset;
+  diag_coord = (subject_offset  - query_offset) & diag->diag_mask;
 
   /*
    * if we've previously extended past the current subject offset,
@@ -532,7 +532,7 @@ static inline Int4 DiagUpdateLevel(BLAST_DiagTablePtr diag, Int4 query_offset, I
   if (diag==NULL)
     return 0;
 
-  diag_coord = (subject_offset + diag->bias) - query_offset;
+  diag_coord = (subject_offset - query_offset) & diag->diag_mask;
   
   diag->diag_array[diag_coord].diag_level = subject_extension + diag->offset;
 
