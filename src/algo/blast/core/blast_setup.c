@@ -238,6 +238,8 @@ Int2 BLAST_MainSetUp(const Uint1 program_number,
          if (filter_slp && mask_slp) {
             for (loc = filter_slp; loc->next; loc = loc->next);
             loc->next = mask_slp->loc_list;
+            /* Set location list to NULL, to allow safe memory deallocation */
+            mask_slp->loc_list = NULL;
          }
          
          filter_slp_combined = NULL;
