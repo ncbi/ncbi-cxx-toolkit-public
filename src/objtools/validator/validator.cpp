@@ -30,37 +30,73 @@
  *
  */
 #include <corelib/ncbistd.hpp>
+#include <serial/serialbase.hpp>
+#include <objects/objmgr/object_manager.hpp>
 #include <objects/validator/validator.hpp>
+
 #include "validatorp.hpp"
 
-#include <serial/serialbase.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(validator)
 
 
-// *********************** CValidError implementation **********************
+// *********************** CValidator implementation **********************
 
 
-CValidError::CValidError
-(CObjectManager&   objmgr,
- const CSeq_entry& se,
- unsigned int      options)
+CValidator::CValidator(CObjectManager& objmgr) :
+    m_ObjMgr(&objmgr)
 {
-    CValidError_imp imp(objmgr, this, options);
-    imp.Validate(se);
 }
 
 
-CValidError::CValidError
-(CObjectManager&    objmgr,
- const CSeq_submit& ss,
- unsigned int       options)
+CValidator::~CValidator(void)
 {
+}
 
-    CValidError_imp imp(objmgr, this, options);
-    imp.Validate(ss);
+
+auto_ptr<CValidError> CValidator::Validate
+(const CSeq_entry& se,
+ CScope* scope,
+ Uint4 options)
+{
+    auto_ptr<CValidError> errors(new CValidError());
+    CValidError_imp imp(*m_ObjMgr, errors.get(), options);
+    imp.Validate(se, 0, scope);
+    return errors;
+}
+
+
+auto_ptr<CValidError> CValidator::Validate
+(const CSeq_submit& ss,
+ CScope* scope,
+ Uint4 options)
+{
+    auto_ptr<CValidError> errors(new CValidError());
+    CValidError_imp imp(*m_ObjMgr, errors.get(), options);
+    imp.Validate(ss, scope);
+    return errors;
+}
+
+
+auto_ptr<CValidError> CValidator::Validate
+(const CSeq_annot& sa,
+ CScope* scope,
+ Uint4 options)
+{
+    auto_ptr<CValidError> errors(new CValidError());
+    CValidError_imp imp(*m_ObjMgr, errors.get(), options);
+    imp.Validate(sa, scope);
+    return errors;
+}
+
+
+// *********************** CValidError implementation **********************
+
+
+CValidError::CValidError(void)
+{
 }
 
 
@@ -165,12 +201,12 @@ CValidError_CI::CValidError_CI
  EDiagSev           minsev,
  EDiagSev           maxsev) :
     m_Validator(&ve),
-    m_ErrIter(ve.m_ErrItems.begin()),
+    m_Current(ve.m_ErrItems.begin()),
     m_ErrCodeFilter(errcode),
     m_MinSeverity(minsev),
     m_MaxSeverity(maxsev)
 {
-    if ( !Filter(**m_ErrIter) ) {
+    if ( !Filter(**m_Current) ) {
         Next();
     }
 }
@@ -196,7 +232,7 @@ CValidError_CI& CValidError_CI::operator=(const CValidError_CI& iter)
     }
 
     m_Validator = iter.m_Validator;
-    m_ErrIter = iter.m_ErrIter;
+    m_Current = iter.m_Current;
     m_ErrCodeFilter = iter.m_ErrCodeFilter;
     m_MinSeverity = iter.m_MinSeverity;
     m_MaxSeverity = iter.m_MaxSeverity;
@@ -213,25 +249,25 @@ CValidError_CI& CValidError_CI::operator++(void)
 
 CValidError_CI::operator bool (void) const
 {
-    return m_ErrIter != m_Validator->m_ErrItems.end();
+    return m_Current != m_Validator->m_ErrItems.end();
 }
 
 
 const CValidErrItem& CValidError_CI::operator*(void) const
 {
-    return **m_ErrIter;
+    return **m_Current;
 }
 
 
 const CValidErrItem* CValidError_CI::operator->(void) const
 {
-    return &(**m_ErrIter);
+    return &(**m_Current);
 }
 
 
 bool CValidError_CI::Filter(const CValidErrItem& item) const
 {
-    EDiagSev item_sev = (*m_ErrIter)->GetSeverity();
+    EDiagSev item_sev = (*m_Current)->GetSeverity();
     if ( (m_ErrCodeFilter.empty()  ||  
           NStr::StartsWith(item.GetErrCode(), m_ErrCodeFilter))  &&
          ((item_sev >= m_MinSeverity)  &&  (item_sev <= m_MaxSeverity)) ) {
@@ -248,14 +284,14 @@ void CValidError_CI::Next(void)
     }
 
     do {
-        ++m_ErrIter;
-    } while ( !AtEnd()  &&  !Filter(**m_ErrIter) );
+        ++m_Current;
+    } while ( !AtEnd()  &&  !Filter(**m_Current) );
 }
 
 
 bool CValidError_CI::AtEnd(void) const
 {
-    return m_ErrIter == m_Validator->m_ErrItems.end();
+    return m_Current == m_Validator->m_ErrItems.end();
 }
 
 
@@ -1046,6 +1082,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/03/20 18:54:00  shomrat
+* Added CValidator implementation
+*
 * Revision 1.12  2003/03/10 18:12:50  shomrat
 * Record statistics information for each item
 *
