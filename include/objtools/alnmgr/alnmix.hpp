@@ -156,7 +156,7 @@ private:
     void x_ConsolidateGaps     (TSegmentsContainer& gapped_segs);
     void x_MinimizeGaps        (TSegmentsContainer& gapped_segs);
     void x_IdentifyAlnMixSeq   (CRef<CAlnMixSeq>& aln_seq, const CSeq_id& seq_id);
-
+    void x_SetSeqFrame         (CAlnMixMatch* match, CAlnMixSeq*& seq);
 
     // SChooseSeqId implementation
     virtual void ChooseSeqId(CSeq_id& id1, const CSeq_id& id2);
@@ -340,6 +340,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2004/09/27 16:18:17  todorov
+* + truncate segments of sequences on multiple frames
+*
 * Revision 1.41  2004/09/22 17:00:53  todorov
 * +CAlnMix::fPreserveRows
 *

@@ -40,7 +40,6 @@ test2() {
 
 
 # fill unaligned
-
 test1 unaln "-fillunaln t -noobjmgr t" \
 "test that fillunaln does not affect this alignment"
 
@@ -64,35 +63,25 @@ test2 iterator_minus_minus "" "iterator minus minus"
 
 
 # test2 blast "-queryseqmergeonly t" "blast output merge"
-
 test2 seg_overlap "" "overlapping segments"
-
 test2 trunc1 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 1"
-
 test2 trunc2 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 2"
-
 test2 trunc3 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 3"
-
 test2 trunc4 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 4"
-
 test2 trunc5 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 5"
-
 test2 trunc6 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 6"
-
 test2 trunc7 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 7"
-
 test2 trunc8 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 8"
-
 test2 framed_refseq "" "query sequence is on diff frames w/ overlaps on subject"
 
 
 # test preservation of rows
-
 test1 preserve_rows "-preserverows t" "preservation of rows"
-
 test2 preserve_rows_set "-noobjmgr t -preserverows t -truncateoverlaps t" \
 "preserve rows and truncate overlaps"
 
+
+test2 frames_with_overlaps "-noobjmgr t -truncateoverlaps t" "frames with truncation of overlaps"
 
 
 # clean

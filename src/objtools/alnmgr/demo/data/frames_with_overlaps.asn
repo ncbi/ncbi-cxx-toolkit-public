@@ -1,0 +1,109 @@
+Seq-align-set ::= {
+  {
+    type partial ,
+    dim 2 ,
+    segs
+    std {
+    {
+      dim 2 ,
+      ids {
+	local id 0,
+	local id 1 },
+      loc {
+	int {
+	  from 0 ,
+	  to 9 ,
+	  id
+	  local id
+	  0 } ,
+	int {
+	  from 0 ,
+	  to 29 ,
+	  strand plus ,
+	  id
+	  local id 1 } 
+      } 
+    }
+    }
+  } , {
+    type partial ,
+    dim 2 ,
+    segs
+    std {
+    {
+      dim 2 ,
+      ids {
+	local id 0,
+	local id 1 },
+      loc {
+	int {
+	  from 0 ,
+	  to 9 ,
+	  id
+	  local id
+	  0 } ,
+	int {
+	  from 1000 ,
+	  to 1029 ,
+	  strand plus ,
+	  id
+	  local id 1 } 
+      } 
+    }
+    }
+  } , {
+    type partial ,
+    dim 2 ,
+    segs
+    std {
+    {
+      dim 2 ,
+      ids {
+	local id 0,
+	local id 1 },
+      loc {
+	int {
+	  from 10 ,
+	  to 19 ,
+	  id
+	  local id
+	  0 } ,
+	int {
+	  from 30 ,
+	  to 59 ,
+	  strand plus ,
+	  id
+	  local id 1 } 
+      } 
+    }
+    }
+  } , {
+    type partial ,
+    dim 2 ,
+    segs
+    std {
+    {
+      dim 2 ,
+      ids {
+	local id 0,
+	local id 1 },
+      loc {
+	int {
+	  from 5 ,
+	  to 19 ,
+	  id
+	  local id
+	  0 } ,
+	int {
+	  from 1018 ,
+	  to 1062 ,
+	  strand plus ,
+	  id
+	  local id 1 } 
+      } 
+    }
+    }
+  }
+  }
+  
+  

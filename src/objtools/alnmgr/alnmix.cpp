@@ -668,35 +668,19 @@ void CAlnMix::x_Merge()
 
             // in case of translated refseq
             if (width1 == 3) {
-
-                // check the frame 
-                int frame = start1 % 3;
-                if (seq1->m_Starts.empty()) {
-                    seq1->m_Frame = frame;
-                } else {
-                    while (seq1->m_Frame != frame) {
-                        if (!seq1->m_ExtraRow) {
-                            // create an extra row
-                            CRef<CAlnMixSeq> row (new CAlnMixSeq);
-                            row->m_BioseqHandle = seq1->m_BioseqHandle;
-                            row->m_SeqId = seq1->m_SeqId;
-                            row->m_PositiveStrand = seq1->m_PositiveStrand;
-                            row->m_Width = seq1->m_Width;
-                            row->m_Frame = frame;
-                            row->m_SeqIndex = seq1->m_SeqIndex;
-                            if (m_MergeFlags & fQuerySeqMergeOnly) {
-                                row->m_DSIndex = match->m_DSIndex;
-                            }
-                            m_ExtraRows.push_back(row);
-                            seq1->m_ExtraRow = row;
-                            seq1 = match->m_AlnSeq1 = seq1->m_ExtraRow;
-                            break;
-                        }
-                        seq1 = match->m_AlnSeq1 = seq1->m_ExtraRow;
-                    }
-                }
+                x_SetSeqFrame(match, match->m_AlnSeq1);
+                {{
+                    // reset the ones below,
+                    // since match may have been modified
+                    seq1 = match->m_AlnSeq1;
+                    start1 = match->m_Start1;
+                    match_list_iter1 = match->m_MatchIter1;
+                    seq2 = match->m_AlnSeq2;
+                    start2 = match->m_Start2;
+                    match_list_iter2 = match->m_MatchIter2;
+                    curr_len = len = match->m_Len;
+                }}
             }
-
 
             // this match is used, erase from seq1 list
             if ( !first_refseq ) {
@@ -747,11 +731,18 @@ void CAlnMix::x_Merge()
 
 
             if (seq2) {
+                if (width2 == 3) {
+                    // Set the frame if necessary
+                    x_SetSeqFrame(match, match->m_AlnSeq2);
+                }
                 // check if the second row fits
                 // this will truncate the match if 
                 // there's an inconsistent overlap
                 // and truncation was requested
                 second_row_fits = x_SecondRowFits(match);
+                if (second_row_fits == eIgnoreMatch) {
+                    continue;
+                }
                 {{
                     // reset the ones below,
                     // since match may have been modified
@@ -763,9 +754,6 @@ void CAlnMix::x_Merge()
                     match_list_iter2 = match->m_MatchIter2;
                     curr_len = len = match->m_Len;
                 }}
-                if (second_row_fits == eIgnoreMatch) {
-                    continue;
-                }
             }
 
 
@@ -981,12 +969,6 @@ void CAlnMix::x_Merge()
                  
             // try to resolve the second row
             if (seq2) {
-
-                // set the frame if not initialized
-                if (width2 == 3  &&  seq2->m_Starts.empty()) {
-                    seq2->m_Frame = start2 % 3;
-                }
-
                 // create a copy of the match,
                 // which we could work with temporarily
                 // without modifying the original
@@ -998,6 +980,7 @@ void CAlnMix::x_Merge()
                     // try it again, it may fit this time
                     // since the second row may have been
                     // cut into smaller segments
+                    // or new frame was set
                     second_row_fits = x_SecondRowFits(match);
                 }
                 while (second_row_fits != eSecondRowFitsOk  &&
@@ -1116,6 +1099,41 @@ void CAlnMix::x_Merge()
     x_CreateSegmentsVector();
     x_CreateDenseg();
 }
+
+void
+CAlnMix::x_SetSeqFrame(CAlnMixMatch* match, CAlnMixSeq*& seq)
+{
+    int frame;
+    if (seq == match->m_AlnSeq1) {
+        frame = match->m_Start1 % 3;
+    } else {
+        frame = match->m_Start2 % 3;
+    }
+    if (seq->m_Starts.empty()) {
+        seq->m_Frame = frame;
+    } else {
+        while (seq->m_Frame != frame) {
+            if (!seq->m_ExtraRow) {
+                // create an extra frame
+                CRef<CAlnMixSeq> new_seq (new CAlnMixSeq);
+                new_seq->m_BioseqHandle = seq->m_BioseqHandle;
+                new_seq->m_SeqId = seq->m_SeqId;
+                new_seq->m_PositiveStrand = seq->m_PositiveStrand;
+                new_seq->m_Width = seq->m_Width;
+                new_seq->m_Frame = frame;
+                new_seq->m_SeqIndex = seq->m_SeqIndex;
+                if (m_MergeFlags & fQuerySeqMergeOnly) {
+                    new_seq->m_DSIndex = match->m_DSIndex;
+                }
+                m_ExtraRows.push_back(new_seq);
+                seq = seq->m_ExtraRow = new_seq;
+                break;
+            }
+            seq = seq->m_ExtraRow;
+        }
+    }
+}
+
 
 CAlnMix::TSecondRowFits
 CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
@@ -2112,6 +2130,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.108  2004/09/27 16:18:16  todorov
+* + truncate segments of sequences on multiple frames
+*
 * Revision 1.107  2004/09/23 18:55:31  todorov
 * 1) avoid an introduced m_DS_Count mismatch; 2) + reeval x_SecondRowFits for some cases
 *
