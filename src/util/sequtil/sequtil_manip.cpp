@@ -162,8 +162,8 @@ SIZE_TYPE s_Reverse
     AdjustLength(src, src_coding, pos, length);
     ResizeDst(dst, src_coding, length);
 
-    return CSeqManip::Reverse(&(src[0]), src_coding,
-                              pos, length, &(dst[0]));
+    return CSeqManip::Reverse(&*src.begin(), src_coding,
+                              pos, length, &*dst.begin());
 }
 
 
@@ -239,8 +239,8 @@ SIZE_TYPE s_Complement
     AdjustLength(src, src_coding, pos, length);
     ResizeDst(dst, src_coding, length);
 
-    return CSeqManip::Complement(&(src[0]), src_coding,
-                                 pos, length, &(dst[0]));
+    return CSeqManip::Complement(&*src.begin(), src_coding,
+                                 pos, length, &*dst.begin());
 }
 
 
@@ -420,8 +420,8 @@ SIZE_TYPE s_ReverseComplement
     AdjustLength(src, src_coding, pos, length);
     ResizeDst(dst, src_coding, length);
 
-    return CSeqManip::ReverseComplement(&(src[0]), src_coding, 
-                                        pos, length, &(dst[0]));
+    return CSeqManip::ReverseComplement(&*src.begin(), src_coding, 
+                                        pos, length, &*dst.begin());
 }
 
 
@@ -608,7 +608,8 @@ SIZE_TYPE s_ReverseComplement
     
     AdjustLength(src, src_coding, pos, length);
 
-    return CSeqManip::ReverseComplement(&(src[0]), src_coding, pos, length);
+    return CSeqManip::ReverseComplement(&*src.begin(), src_coding,
+                                        pos, length);
 }
 
 
@@ -728,6 +729,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/10/14 14:51:14  ucko
+* Fix for GCC 2.95, whose operator[] const returns a copy rather than a
+* const reference, by substituting *x.begin().
+*
 * Revision 1.1  2003/10/08 13:35:24  shomrat
 * Initial version
 *

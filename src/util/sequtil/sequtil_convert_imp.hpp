@@ -65,8 +65,8 @@ public:
         AdjustLength(src, src_coding, pos, length);
         ResizeDst(dst, dst_coding, length);
         
-        return Convert(&(src[0]), src_coding, pos, length,
-            &(dst[0]), dst_coding);
+        return Convert(&*src.begin(), src_coding, pos, length,
+            &*dst.begin(), dst_coding);
     }
 
 
@@ -93,7 +93,7 @@ public:
         AdjustLength(src, coding, pos, length);
         ResizeDst(dst, coding, length);
         
-        return Subseq(&(src[0]), coding, pos, length, &(dst[0]));
+        return Subseq(&*src.begin(), coding, pos, length, &*dst.begin());
     }
 
     static SIZE_TYPE Subseq(const char* src, TCoding coding,
@@ -119,8 +119,8 @@ public:
         // if the result will be ncbi2na coding we'll resize (see below)
         ResizeDst(dst, CSeqUtil::e_Ncbi4na, length);
         
-        SIZE_TYPE res = Pack(&(src[0]), length, src_coding, 
-                             &(dst[0]), dst_coding);
+        SIZE_TYPE res = Pack(&*src.begin(), length, src_coding, 
+                             &*dst.begin(), dst_coding);
         if ( dst_coding == CSeqUtil::e_Ncbi2na ) {
             size_t new_size = res / 4;
             if ( (res % 4) != 0 ) {
@@ -233,6 +233,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/10/14 14:51:02  ucko
+* Fix for GCC 2.95, whose operator[] const returns a copy rather than a
+* const reference, by substituting *x.begin().
+*
 * Revision 1.1  2003/10/08 13:35:10  shomrat
 * Initial version
 *
