@@ -3,16 +3,14 @@
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
 #################################
 # This can be used to build/install/clean
-#  1) a single(sic!) library [LIBOBJ, LIB],  and/or
-#  2) set of separate standalone object files [OBJ]
+# a single(sic!) library [LIB] made of object files [OBJ]
+# (and [OBJ].o will be compiled from [OBJ].cpp or [OBJ].c)
 #
 # srcdir = @srcdir@
 # include @builddir@/Makefile.mk
 #
-# LIBOBJ  = p1_lib1 p1_lib2 
 # LIB     = p1
-# OBJ     = p1_obj1
-# SUBPROJ = app sub_proj1 sub_proj2
+# OBJ     = p1_src1 p1_src2
 # .....
 # CXXFLAGS = -g $(ORIG_CXXFLAGS) -D_DEBUG -DXYZ_P1_PROJECT
 # .....
