@@ -1,4 +1,4 @@
---$Revision: 1.2 $
+--$Revision: 1.3 $
 --****************************************************************
 --
 --  NCBI Bibliographic data elements
@@ -63,7 +63,6 @@ Cit-let ::= SEQUENCE {                  -- letter, thesis, or manuscript
     cit Cit-book ,                      -- same fields as a book
     man-id VisibleString OPTIONAL ,     -- Manuscript identifier
     type ENUMERATED {
-        not-set (0) ,
         manuscript (1) ,
         letter (2) ,
         thesis (3) } OPTIONAL }
@@ -74,7 +73,6 @@ Cit-sub ::= SEQUENCE {               -- citation for a direct submission
     authors Auth-list ,              -- not necessarily authors of the paper
     imp Imprint ,
     medium ENUMERATED {              -- medium of submission
-        not-set (0) ,
         paper   (1) ,
         tape    (2) ,
         floppy  (3) ,
