@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/09/23 15:51:42  vakatov
+* Added <unistd.h> for the getcwd() proto
+*
 * Revision 1.20  1999/09/17 14:16:09  sandomir
 * tmp diagnostics to find error
 *
@@ -88,6 +91,10 @@
 #include <corelib/ncbiutil.hpp>
 
 #include <errno.h>
+#if defined(HAVE_UNISTD_H)
+#  include <unistd.h>
+#endif
+
 
 BEGIN_NCBI_SCOPE
  
