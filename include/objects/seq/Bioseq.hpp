@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2001/10/12 19:32:55  ucko
+ * move BREAK to a central location; move CBioseq::GetTitle to object manager
+ *
  * Revision 1.6  2001/10/04 19:11:54  ucko
  * Centralize (rudimentary) code to get a sequence's title.
  *
@@ -85,8 +88,8 @@ public:
     // Manage Seq-entry tree structure
     CSeq_entry* GetParentEntry(void) const;
 
-    // Title of sequence (used in various human-friendly output formats)
-    string GetTitle(void) const;
+    // see CScope::GetTitle in object manager.
+    // string GetTitle(void) const;
 
 protected:
     // From CSerialUserOp

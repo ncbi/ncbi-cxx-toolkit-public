@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/10/12 19:32:54  ucko
+* move BREAK to a central location; move CBioseq::GetTitle to object manager
+*
 * Revision 1.23  2001/09/18 17:42:53  grichenk
 * Disabled warning 4355
 *
@@ -171,6 +174,16 @@ typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
 #define EMPTY_TEMPLATE
 #else
 #define EMPTY_TEMPLATE template<>
+#endif
+
+// Sun WorkShop fails to call destructors for objects created in
+// for-loop initializers; this macro prevents trouble with iterators
+// that contain CRefs by advancing them to the end, avoiding
+// "deletion of referenced CObject" errors.
+#ifdef NCBI_COMPILER_WORKSHOP
+#define BREAK(it) while (it) { ++(it); }  break
+#else
+#define BREAK(it) break
 #endif
 
 #endif /* NCBISTL__HPP */

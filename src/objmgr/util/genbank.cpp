@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/10/12 19:32:58  ucko
+* move BREAK to a central location; move CBioseq::GetTitle to object manager
+*
 * Revision 1.5  2001/10/12 15:34:12  ucko
 * Edit in-source version of CVS log to avoid end-of-comment marker.  (Oops.)
 *
@@ -143,13 +146,6 @@
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqset/Seq_entry.hpp>
-
-
-#ifdef NCBI_COMPILER_WORKSHOP // workaround for compiler bug
-#define BREAK(it) while (it) { ++(it); }  break
-#else
-#define BREAK(it) break
-#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -460,7 +456,7 @@ bool CGenbankWriter::WriteLocus(const CBioseqHandle& handle)
 
 bool CGenbankWriter::WriteDefinition(const CBioseqHandle& handle)
 {
-    string definition = m_Scope.GetBioseq(handle).GetTitle();
+    string definition = m_Scope.GetTitle(handle);
     if (definition.empty()  ||  definition[definition.size()-1] != '.') {
         definition += '.';
     }

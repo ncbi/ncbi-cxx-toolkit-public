@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.20  2001/10/12 19:32:58  ucko
+ * move BREAK to a central location; move CBioseq::GetTitle to object manager
+ *
  * Revision 1.19  2001/10/12 15:34:01  ucko
  * Edit in-source version of CVS log to avoid end-of-comment marker.  (Oops.)
  *
@@ -143,13 +146,6 @@
 
 #include <memory>
 #include <algorithm>
-
-
-#ifdef NCBI_COMPILER_WORKSHOP // workaround for compiler bug
-#define BREAK(it) while (it) { ++(it); }  break
-#else
-#define BREAK(it) break
-#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -771,6 +767,7 @@ void CId1FetchApp::WriteFastaIDs(const CID1server_back::TIds& ids)
 void CId1FetchApp::WriteFastaEntry(const CID1server_back& id1_reply)
 {
     for (CTypeConstIterator<CBioseq> it = ConstBegin(id1_reply);  it;  ++it) {
+        CBioseqHandle handle = m_Scope->GetBioseqHandle(*it->GetId().front());
         // Print the identifier(s) and description.
         *m_OutputFile << '>';
         WriteFastaIDs(it->GetId());
@@ -782,12 +779,11 @@ void CId1FetchApp::WriteFastaEntry(const CID1server_back& id1_reply)
                 }
             }
         }
-        *m_OutputFile << ' ' << it->GetTitle();
+        *m_OutputFile << ' ' << m_Scope->GetTitle(handle);
 
         // Now print the actual sequence in an appropriate ASCII format.
         {{
-            CSeq_vector vec = m_Scope->GetSequence(m_Scope->GetBioseqHandle
-                                                   (*it->GetId().front()));
+            CSeq_vector vec = m_Scope->GetSequence(handle);
             for (size_t pos = 1;  pos <= vec.size();  ++pos) {
                 if (pos % 70 == 1)
                     *m_OutputFile << NcbiEndl;
