@@ -56,7 +56,7 @@ class CMySQL_LangCmd;
 //  CMySQLContext::
 //
 
-class CMySQLContext : public I_DriverContext
+class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQLContext : public I_DriverContext
 {
     friend class CMySQL_Connection;
 
@@ -89,7 +89,7 @@ public:
 //  CMySQL_Connection::
 //
 
-class CMySQL_Connection : public I_Connection
+class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQL_Connection : public I_Connection
 {
     friend class CMySQLContext;
 
@@ -152,7 +152,7 @@ private:
 //  CMySQL_LangCmd::
 //
 
-class CMySQL_LangCmd : public I_LangCmd
+class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQL_LangCmd : public I_LangCmd
 {
     friend class CMySQL_Connection;
 
@@ -204,7 +204,7 @@ struct SMySQL_ColDescr
 //  CMySQL_RowResult::
 //
 
-class CMySQL_RowResult : public I_Result
+class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQL_RowResult : public I_Result
 {
     friend class CMySQL_LangCmd;
 
@@ -246,6 +246,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/02/26 17:08:30  kuznets
+ * Added NCBI_DBAPIDRIVER_MYSQL_EXPORT declaration to classes for Windows DLL.
+ *
  * Revision 1.4  2003/02/26 17:03:28  kuznets
  * Fixed to compile on windows. Added #include <windows.h> (Required by MySQL manual)
  *
