@@ -342,26 +342,29 @@ public:
 
 
 
-// Location relative to a base Seq-loc: one (usually) or more ranges
-// of offsets
+/// Location relative to a base Seq-loc: one (usually) or more ranges
+/// of offsets.
 // XXX - handle fuzz?
 struct NCBI_XOBJUTIL_EXPORT SRelLoc
 {
     enum EFlags {
-        fNoMerge = 0x1 // don't merge adjacent intervals
+        fNoMerge = 0x1 ///< don't merge adjacent intervals
     };
-    typedef int TFlags; // binary OR of EFlags
+    typedef int TFlags; ///< binary OR of EFlags
 
-    // Beware: treats locations corresponding to different sequences as
-    // disjoint, even if one is actually a segment of the other. :-/
+    /// Beware: treats locations corresponding to different sequences as
+    /// disjoint, even if one is actually a segment of the other. :-/
     SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope = 0,
             TFlags flags = 0);
     CRef<CSeq_loc> Resolve(CScope* scope = 0, TFlags flags = 0) const;
 
+    /// The only fields we use are from, to, and strand, and maybe
+    /// eventually also fuzz-*.  In particular, id is irrelevant and
+    /// normally unset.
     typedef CSeq_interval         TRange;
     typedef vector<CRef<TRange> > TRanges;
 
-    // for manual work
+    /// For manual work.  As noted above, ranges need not contain any IDs.
     SRelLoc(const CSeq_loc& parent, const TRanges& ranges)
         : m_ParentLoc(&parent), m_Ranges(ranges) { }
 
@@ -503,6 +506,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.32  2003/10/09 18:53:24  ucko
+* SRelLoc: clarified and doxygen-ized comments
+*
 * Revision 1.31  2003/10/08 21:07:32  ucko
 * CCdregion_translate: take const Bioseq_Handles, since there's no need
 * to modify them.
