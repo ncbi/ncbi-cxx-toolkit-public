@@ -1213,7 +1213,7 @@ CNcbiRegistry::CNcbiRegistry(void)
 
 CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is, TFlags flags)
 {
-    x_CheckFlags("CNcbiRegistry::CNcbiRegistry", flags, fTransient);
+    x_CheckFlags("CNcbiRegistry::CNcbiRegistry", flags,  fTransient | fInternalSpaces );
     x_Init();
     m_FileRegistry->Read(is, flags);
 }
@@ -1399,6 +1399,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/03/22 13:36:31  rsmith
+ * Allow internal space in sections names when initializing a registry.
+ *
  * Revision 1.49  2005/03/21 19:46:30  ucko
  * Add support for two new flags: fIgnoreErrors, fInternalSpaces.
  *
