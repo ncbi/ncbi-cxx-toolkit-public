@@ -2,6 +2,6 @@
 
 APP = test_ncbipipe
 SRC = test_ncbipipe
-LIB = xncbi xutil
+LIB = xncbi
 
 CHECK_CMD =
