@@ -393,6 +393,41 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-alphabeta]";
         
+        if (s == "-gi2bs") {
+            CSeqDB db(dbname, seqtype);
+            
+            if (args.empty() || (! isdigit(args.begin()->c_str()[0]))) {
+                cout << "The gi2bs command needs a GI to work with." << endl;
+                return 1;
+            }
+            
+            Uint4 gi = atoi(args.begin()->c_str());
+            args.pop_front();
+            
+            if (gi < 1) {
+                cout << "The GI " << gi << " is not valid." << endl;
+                return 1;
+            }
+            
+            Uint4 oid(0);
+            
+            if (! db.GiToOid(gi,oid)) {
+                cout << "The GI " << gi << " was not found." << endl;
+                return 0;
+            }
+            
+            CRef<CBioseq> bs = db.GetBioseq(oid);
+            
+            cout << "--- gi " << gi << " ---" << endl;
+            
+            auto_ptr<CObjectOStream>
+                outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+            
+            *outpstr << *bs;
+            
+            return 0;
+        } else desc += " [-gi2bs]";
+        
         if (s == "-here") {
             CSeqDB nr("tenth", 'p');
             
