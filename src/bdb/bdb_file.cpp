@@ -36,6 +36,9 @@
 
 #include <db.h>
 
+#ifdef verify
+#undef verify
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -993,6 +996,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/08/12 20:13:15  ucko
+ * Avoid possible interference from macros named verify.
+ *
  * Revision 1.42  2004/08/12 19:13:24  kuznets
  * +CBDB_File::Verify()
  *
