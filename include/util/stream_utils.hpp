@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2002/10/29 22:06:22  ucko
+ * Make *buf const in the copying version of UTIL_StreamPushback.
+ *
  * Revision 1.3  2002/02/05 19:37:04  lavr
  * List of included header files revised
  *
@@ -74,9 +77,9 @@ extern void UTIL_StreamPushback(istream&      is,
 // Acts just like its counterpart with 4 args (above), but this variant always
 // copies the "pushback data" into internal buffer, so you can do whatever you
 // want to with the [buf, buf+buf_size) area after calling this function.
-extern void UTIL_StreamPushback(istream&      is,
-                                CT_CHAR_TYPE* buf,
-                                streamsize    buf_size);
+extern void UTIL_StreamPushback(istream&            is,
+                                const CT_CHAR_TYPE* buf,
+                                streamsize          buf_size);
 
 
 END_NCBI_SCOPE

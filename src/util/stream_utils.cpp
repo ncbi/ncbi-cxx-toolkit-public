@@ -318,9 +318,9 @@ extern void UTIL_StreamPushback(istream&      is,
 }
 
 
-extern void UTIL_StreamPushback(istream&      is,
-                                CT_CHAR_TYPE* buf,
-                                streamsize    buf_size)
+extern void UTIL_StreamPushback(istream&            is,
+                                const CT_CHAR_TYPE* buf,
+                                streamsize          buf_size)
 {
     CT_CHAR_TYPE* buf_copy = new CT_CHAR_TYPE[buf_size];
     memcpy(buf_copy, buf, buf_size);
@@ -334,6 +334,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2002/10/29 22:06:27  ucko
+ * Make *buf const in the copying version of UTIL_StreamPushback.
+ *
  * Revision 1.10  2002/09/17 20:47:05  lavr
  * Add a comment to unreachable return from CPushback_Streambuf::setbuf()
  *
