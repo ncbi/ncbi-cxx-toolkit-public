@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/01/06 21:28:04  vasilche
+* Fixed for variable scope.
+*
 * Revision 1.1  2000/01/05 19:46:58  vasilche
 * Added asn2asn test application.
 *
@@ -148,35 +151,37 @@ int CAsn2Asn::Run(void)
     if ( m_Argc == 1 )
         PrintUsage();
 
-    for ( int i = 1; i < m_Argc; ++i ) {
-        const char* arg = m_Argv[i];
-        if ( arg[0] == '-' ) {
-            switch ( arg[1] ) {
-            case 'i':
-                inFile = StringArgument(m_Argv[++i]);
-                break;
-            case 'e':
-                inSeqEntry = true;
-                break;
-            case 'b':
-                inBinary = true;
-                break;
-            case 'o':
-                outFile = StringArgument(m_Argv[++i]);
-                break;
-            case 's':
-                outBinary = true;
-                break;
-            case 'l':
-                logFile = StringArgument(m_Argv[++i]);
-                break;
-            default:
-                InvalidArgument(arg);
-                break;
+    {
+        for ( int i = 1; i < m_Argc; ++i ) {
+            const char* arg = m_Argv[i];
+            if ( arg[0] == '-' ) {
+                switch ( arg[1] ) {
+                case 'i':
+                    inFile = StringArgument(m_Argv[++i]);
+                    break;
+                case 'e':
+                    inSeqEntry = true;
+                    break;
+                case 'b':
+                    inBinary = true;
+                    break;
+                case 'o':
+                    outFile = StringArgument(m_Argv[++i]);
+                    break;
+                case 's':
+                    outBinary = true;
+                    break;
+                case 'l':
+                    logFile = StringArgument(m_Argv[++i]);
+                    break;
+                default:
+                    InvalidArgument(arg);
+                    break;
+                }
             }
-        }
-        else {
-            InvalidArgument(arg);
+            else {
+                InvalidArgument(arg);
+            }
         }
     }
 
