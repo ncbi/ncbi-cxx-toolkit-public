@@ -249,6 +249,27 @@ SConfigInfo::SConfigInfo(const string& name,
 }
 
 
+void LoadConfigInfoByNames(const CNcbiRegistry& registry, 
+                           const list<string>&  config_names, 
+                           list<SConfigInfo>*   configs)
+{
+    ITERATE(list<string>, p, config_names) {
+
+        const string& config_name = *p;
+        SConfigInfo config;
+        config.m_Name  = config_name;
+        config.m_Debug = registry.GetString(config_name, 
+                                            "debug",
+                                            "FALSE") != "FALSE";
+        config.m_RuntimeLibrary = registry.GetString(config_name, 
+                                                     "runtimeLibraryOption",
+                                                     "0");
+        configs->push_back(config);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
 CMsvc7RegSettings::CMsvc7RegSettings(void)
 {
     //TODO
@@ -447,6 +468,8 @@ string CreateProjectName(const CProjKey& project_id)
         return project_id.Id() + ".exe";
     case CProjKey::eLib:
         return project_id.Id() + ".lib";
+    case CProjKey::eDll:
+        return project_id.Id() + ".dll";
     default:
         NCBI_THROW(CProjBulderAppException, eProjectType, project_id.Id());
         return "";
@@ -491,6 +514,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/03/10 16:42:44  gorelenk
+ * Changed implementation of class CMsvc7RegSettings.
+ *
  * Revision 1.16  2004/03/02 23:32:54  gorelenk
  * Added implemetation of class CBuildType member-functions.
  *
