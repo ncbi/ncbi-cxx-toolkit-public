@@ -750,8 +750,11 @@ CSeqDBAtlas::CRegionMap::~CRegionMap()
         m_Data    = 0;
     }
     if (m_ManualMap) {
+#if defined(NCBI_OS_UNIX)
         munmap((void*) m_Data, (size_t)(m_End - m_Begin));
         m_Data = 0;
+#endif
+        _ASSERT(m_Data == 0);
     }
     if (m_Data) {
         delete[] m_Data;
