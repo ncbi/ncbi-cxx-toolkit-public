@@ -40,6 +40,9 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/GIBB_mol.hpp>
 #include <util/strsearch.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Std_seg.hpp>
+#include <objects/seqalign/Packed_seg.hpp>
 
 #include <objects/validator/validator.hpp>
 
@@ -67,6 +70,9 @@ class CUser_object;
 class CSeqdesc_CI;
 class CSeq_graph;
 class CMappedGraph;
+class CDense_diag;
+class CDense_seg;
+class CSeq_align_set;
 class CPubdesc;
 class CBioSource;
 class COrg_ref;
@@ -77,7 +83,6 @@ class CGene_ref;
 class CCdregion;
 class CRNA_ref;
 class CImp_feat;
-class CSeq_align;
 
 
 BEGIN_SCOPE(validator)
@@ -243,20 +248,19 @@ enum EErrType {
     eErr_SEQ_ALIGN_SeqIdProblem,
     eErr_SEQ_ALIGN_StrandRev,
     eErr_SEQ_ALIGN_DensegLenStart,
-    eErr_SEQ_ALIGN_StartLessthanZero,
     eErr_SEQ_ALIGN_StartMorethanBiolen,
-    eErr_SEQ_ALIGN_EndLessthanZero,
     eErr_SEQ_ALIGN_EndMorethanBiolen,
-    eErr_SEQ_ALIGN_LenLessthanZero,
     eErr_SEQ_ALIGN_LenMorethanBiolen,
     eErr_SEQ_ALIGN_SumLenStart,
-    eErr_SEQ_ALIGN_AlignDimSeqIdNotMatch,
-    eErr_SEQ_ALIGN_SegsDimSeqIdNotMatch,
+    eErr_SEQ_ALIGN_SegsDimMismatch,
+    eErr_SEQ_ALIGN_SegsNumsegMismatch,
+    eErr_SEQ_ALIGN_SegsStartsMismatch,
+    eErr_SEQ_ALIGN_SegsPresentMismatch,
+    eErr_SEQ_ALIGN_SegsPresentStartsMismatch,
+    eErr_SEQ_ALIGN_SegsPresentStrandsMismatch,
     eErr_SEQ_ALIGN_FastaLike,
-    eErr_SEQ_ALIGN_NullSegs,
     eErr_SEQ_ALIGN_SegmentGap,
-    eErr_SEQ_ALIGN_SegsDimOne,
-    eErr_SEQ_ALIGN_AlignDimOne,
+    eErr_SEQ_ALIGN_SegsInvalidDim,
     eErr_SEQ_ALIGN_Segtype,
     eErr_SEQ_ALIGN_BlastAligns,
 
@@ -321,6 +325,8 @@ public:
     typedef const CSeqdesc& TDesc;
     typedef const CSeq_annot& TAnnot;
     typedef const CSeq_graph& TGraph;
+    typedef const CSeq_align& TAlign;
+    typedef const CSeq_entry& TEntry;
     typedef const list< CRef< CDbtag > >& TDbtags;
     typedef map < const CSeq_feat*, const CSeq_annot* >& TFeatAnnotMap;
 
@@ -339,6 +345,8 @@ public:
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TGraph graph);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TBioseq sq,
         TGraph graph);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TAlign align);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TEntry entry);
 
     // General use validation methods
     void ValidatePubdesc(const CPubdesc& pub, const CSerialObject& obj);
@@ -531,6 +539,8 @@ protected:
     typedef CValidError_imp::TDesc TDesc;
     typedef CValidError_imp::TAnnot TAnnot;
     typedef CValidError_imp::TGraph TGraph;
+    typedef CValidError_imp::TAlign TAlign;
+    typedef CValidError_imp::TEntry TEntry;
     typedef CValidError_imp::TDbtags TDbtags;
 
     CValidError_base(CValidError_imp& imp);
@@ -550,6 +560,8 @@ protected:
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TGraph graph);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TBioseq sq,
         TGraph graph);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TAlign align);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TEntry entry);
 
     CValidError_imp& m_Imp;
     CScope* m_Scope;
@@ -752,9 +764,53 @@ public:
     CValidError_align(CValidError_imp& imp);
     virtual ~CValidError_align(void);
 
-    void ValidateSeqAlign(const CSeq_align& bsset);
+    void ValidateSeqAlign(const CSeq_align& align);
 
 private:
+    typedef CSeq_align::C_Segs::TDendiag    TDendiag;
+    typedef CSeq_align::C_Segs::TDenseg     TDenseg;
+    typedef CSeq_align::C_Segs::TPacked     TPacked;
+    typedef CSeq_align::C_Segs::TStd        TStd;
+    typedef CSeq_align::C_Segs::TDisc       TDisc;
+
+    void x_ValidateDendiag(const TDendiag& dendiags, const CSeq_align& align);
+    void x_ValidateDenseg(const TDenseg& denseg, const CSeq_align& align);
+    void x_ValidateStd(const TStd& stdsegs, const CSeq_align& align);
+    void x_ValidatePacked(const TPacked& packed, const CSeq_align& align);
+    size_t x_CountBits(const CPacked_seg::TPresent& present);
+
+    // Check if dimension is valid
+    template <typename T>
+    bool x_ValidateDim(T& obj, const CSeq_align& align, size_t part = 0);
+
+    // Check if the  strand is consistent in SeqAlignment of global 
+    // or partial type
+    void x_ValidateStrand(const TDenseg& denseg, const CSeq_align& align);
+    void x_ValidateStrand(const TPacked& packed, const CSeq_align& align);
+    void x_ValidateStrand(const TStd& std_segs, const CSeq_align& align);
+
+    // Check if an alignment is FASTA-like. 
+    // Alignment is FASTA-like if all gaps are at the end with dimensions > 2.
+    void x_ValidateFastaLike(const TDenseg& denseg, const CSeq_align& align);
+    void x_ValidateFastaLike(const TPacked& packed, const CSeq_align& align);
+    void x_ValidateFastaLike(const TStd& std_segs, const CSeq_align& align);
+
+    // Check if there is a gap for all sequences in a segment.
+    void x_ValidateSegmentGap(const TDenseg& denseg, const CSeq_align& align);
+    void x_ValidateSegmentGap(const TPacked& packed, const CSeq_align& align);
+    void x_ValidateSegmentGap(const TStd& std_segs, const CSeq_align& align);
+
+    // Validate SeqId in sequence alignment.
+    void x_ValidateSeqId(const CSeq_align& align);
+    void x_GetIds(const CSeq_align& align, vector< CRef< CSeq_id > >& ids);
+
+    // Check segment length, start and end point in Dense_seg, Dense_diag 
+    // and Std_seg
+    void x_ValidateSeqLength(const TDenseg& denseg, const CSeq_align& align);
+    void x_ValidateSeqLength(const TPacked& packed, const CSeq_align& align);
+    void x_ValidateSeqLength(const TStd& std_segs, const CSeq_align& align);
+    void x_ValidateSeqLength(const CDense_diag& dendiag, size_t dendiag_num,
+        const CSeq_align& align);
 };
 
 
@@ -810,6 +866,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2003/04/29 14:55:09  shomrat
+* Added SeqAlign validation
+*
 * Revision 1.26  2003/04/24 16:16:00  vasilche
 * Added missing includes and forward class declarations.
 *
