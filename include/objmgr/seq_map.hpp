@@ -257,13 +257,18 @@ private:
 protected:    
     // interface for iterators
     size_t x_GetSegmentsCount(void) const;
+    size_t x_GetLastEndSegmentIndex(void) const;
+    size_t x_GetFirstEndSegmentIndex(void) const;
+
     const CSegment& x_GetSegment(size_t index) const;
     void x_GetSegmentException(size_t index) const;
     CSegment& x_SetSegment(size_t index);
+
     size_t x_FindSegment(TSeqPos position, CScope* scope) const;
     
     TSeqPos x_GetSegmentLength(size_t index, CScope* scope) const;
     TSeqPos x_GetSegmentPosition(size_t index, CScope* scope) const;
+    TSeqPos x_GetSegmentEndPosition(size_t index, CScope* scope) const;
     TSeqPos x_ResolveSegmentLength(size_t index, CScope* scope) const;
     TSeqPos x_ResolveSegmentPosition(size_t index, CScope* scope) const;
     CBioseq_Handle x_GetBioseqHandle(const CSegment& seg, CScope* scope) const;
@@ -315,6 +320,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2004/09/30 18:36:11  vasilche
+* Added methods to work with end segments.
+*
 * Revision 1.50  2004/09/30 15:03:41  grichenk
 * Fixed segments resolving
 *

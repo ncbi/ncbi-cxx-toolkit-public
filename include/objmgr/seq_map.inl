@@ -45,6 +45,20 @@ size_t CSeqMap::x_GetSegmentsCount(void) const
 
 
 inline
+size_t CSeqMap::x_GetLastEndSegmentIndex(void) const
+{
+    return m_Segments.size() - 1;
+}
+
+
+inline
+size_t CSeqMap::x_GetFirstEndSegmentIndex(void) const
+{
+    return 0;
+}
+
+
+inline
 const CSeqMap::CSegment& CSeqMap::x_GetSegment(size_t index) const
 {
     if ( index > x_GetSegmentsCount() ) {
@@ -75,6 +89,13 @@ TSeqPos CSeqMap::x_GetSegmentLength(size_t index, CScope* scope) const
 
 
 inline
+TSeqPos CSeqMap::x_GetSegmentEndPosition(size_t index, CScope* scope) const
+{
+    return x_GetSegmentPosition(index, scope)+x_GetSegmentLength(index, scope);
+}
+
+
+inline
 TSeqPos CSeqMap::GetLength(CScope* scope) const
 {
     if (m_SeqLength == kInvalidSeqPos) {
@@ -94,6 +115,9 @@ CSeqMap::TMol CSeqMap::GetMol(void) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/09/30 18:36:11  vasilche
+ * Added methods to work with end segments.
+ *
  * Revision 1.4  2003/06/26 19:47:26  grichenk
  * Added sequence length cache
  *
