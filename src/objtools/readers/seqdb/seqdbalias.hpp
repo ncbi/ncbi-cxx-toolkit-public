@@ -52,9 +52,9 @@ class CSeqDB_AliasWalker {
 public:
     virtual ~CSeqDB_AliasWalker() {}
     
-    virtual const char * GetFileKey(void)           = 0;
-    virtual void         Accumulate(CSeqDBVol &)    = 0;
-    virtual void         AddString (const string &) = 0;
+    virtual const char * GetFileKey(void) const        = 0;
+    virtual void         Accumulate(const CSeqDBVol &) = 0;
+    virtual void         AddString (const string &)    = 0;
 };
 
 class CSeqDBAliasNode : public CObject {
@@ -64,21 +64,22 @@ public:
                     bool           use_mmap);
     
     // Add our volumes and our subnode's volumes to the end of "vols".
-    void GetVolumeNames(vector<string> & vols);
+    void GetVolumeNames(vector<string> & vols) const;
     
     // Compute title by recursive appending of subnodes values until
     // value specification or volume is reached.
-    string GetTitle(CSeqDBVolSet & volset);
+    string GetTitle(const CSeqDBVolSet & volset) const;
     
     // Compute sequence count by recursive appending of subnodes
     // values until value specification or volume is reached.
-    Uint4 GetNumSeqs(CSeqDBVolSet & volset);
+    Uint4 GetNumSeqs(const CSeqDBVolSet & volset) const;
     
     // Compute sequence count by recursive appending of subnodes
     // values until value specification or volume is reached.
-    Uint8 GetTotalLength(CSeqDBVolSet & volset);
+    Uint8 GetTotalLength(const CSeqDBVolSet & volset) const;
     
-    void WalkNodes(CSeqDB_AliasWalker * walker, CSeqDBVolSet & volset);
+    void WalkNodes(CSeqDB_AliasWalker * walker,
+                   const CSeqDBVolSet & volset) const;
     
     void SetMasks(CSeqDBVolSet & volset);
     
@@ -104,13 +105,13 @@ private:
                          bool           use_mmap,
                          set<string>  & recurse);
     
-    string x_MkPath(const string & dir, const string & name, char prot_nucl)
+    string x_MkPath(const string & dir, const string & name, char prot_nucl) const
     {
         return SeqDB_CombinePath(dir, name) + "." + prot_nucl + "al";
     }
     
     // Add our volumes and our subnode's volumes to the end of "vols".
-    void x_GetVolumeNames(set<string> & vols);
+    void x_GetVolumeNames(set<string> & vols) const;
     
     void x_ResolveNames(string & dbname_list,
                         string & dbname_path,
@@ -137,25 +138,25 @@ public:
         m_Node.GetVolumeNames(m_VolumeNames);
     }
     
-    const vector<string> & GetVolumeNames(void)
+    const vector<string> & GetVolumeNames(void) const
     {
         return m_VolumeNames;
     }
     
     // Add our volumes and our subnode's volumes to the end of "vols".
-    string GetTitle(CSeqDBVolSet & volset)
+    string GetTitle(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetTitle(volset);
     }
     
     // Add our volumes and our subnode's seq counts.
-    Uint4 GetNumSeqs(CSeqDBVolSet & volset)
+    Uint4 GetNumSeqs(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetNumSeqs(volset);
     }
     
     // Add our volumes and our subnode's base lengths.
-    Uint8 GetTotalLength(CSeqDBVolSet & volset)
+    Uint8 GetTotalLength(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetTotalLength(volset);
     }

@@ -61,7 +61,7 @@ void CSeqDBImpl::SetOIDRange(Uint4 first, Uint4 last)
     }
 }
 
-bool CSeqDBImpl::CheckOrFindOID(Uint4 & next_oid)
+bool CSeqDBImpl::CheckOrFindOID(Uint4 & next_oid) const
 {
     bool success = true;
     
@@ -84,22 +84,22 @@ bool CSeqDBImpl::CheckOrFindOID(Uint4 & next_oid)
     return success;
 }
 
-Int4 CSeqDBImpl::GetSeqLength(Uint4 oid)
+Int4 CSeqDBImpl::GetSeqLength(Uint4 oid) const
 {
     Uint4 vol_oid = 0;
     
-    if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetSeqLength(vol_oid, false);
     }
     
     return -1;
 }
 
-Int4 CSeqDBImpl::GetSeqLengthApprox(Uint4 oid)
+Int4 CSeqDBImpl::GetSeqLengthApprox(Uint4 oid) const
 {
     Uint4 vol_oid = 0;
     
-    if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetSeqLength(vol_oid, true);
     }
     
@@ -109,26 +109,27 @@ Int4 CSeqDBImpl::GetSeqLengthApprox(Uint4 oid)
 CRef<CBioseq>
 CSeqDBImpl::GetBioseq(Int4 oid,
                       bool use_objmgr,
-                      bool insert_ctrlA)
+                      bool insert_ctrlA) const
 {
     Uint4 vol_oid = 0;
     
-    if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetBioseq(vol_oid, use_objmgr, insert_ctrlA);
     }
     
     return CRef<CBioseq>();
 }
 
-void CSeqDBImpl::RetSequence(const char ** buffer)
+void CSeqDBImpl::RetSequence(const char ** buffer) const
 {
     m_MemPool.Free((void*) *buffer);
 }
 
-Int4 CSeqDBImpl::GetSequence(Int4 oid, const char ** buffer)
+Int4 CSeqDBImpl::GetSequence(Int4 oid, const char ** buffer) const
 {
     Uint4 vol_oid = 0;
-    if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+    
+    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetSequence(vol_oid, buffer);
     }
     
@@ -138,70 +139,70 @@ Int4 CSeqDBImpl::GetSequence(Int4 oid, const char ** buffer)
 Int4 CSeqDBImpl::GetAmbigSeq(Int4            oid,
                              char         ** buffer,
                              Uint4           nucl_code,
-                             ESeqDBAllocType alloc_type)
+                             ESeqDBAllocType alloc_type) const
 {
     Uint4 vol_oid = 0;
-    if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetAmbigSeq(vol_oid, buffer, nucl_code, alloc_type);
     }
     
     return -1;
 }
 
-list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(Uint4 oid)
+list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(Uint4 oid) const
 {
     Uint4 vol_oid = 0;
     
-    if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetSeqIDs(vol_oid);
     }
     
     return list< CRef<CSeq_id> >();
 }
 
-Uint4 CSeqDBImpl::GetNumSeqs(void)
+Uint4 CSeqDBImpl::GetNumSeqs(void) const
 {
     return m_Aliases.GetNumSeqs(m_VolSet);
 }
 
-Uint8 CSeqDBImpl::GetTotalLength(void)
+Uint8 CSeqDBImpl::GetTotalLength(void) const
 {
     return m_Aliases.GetTotalLength(m_VolSet);
 }
 
-string CSeqDBImpl::GetTitle(void)
+string CSeqDBImpl::GetTitle(void) const
 {
     return m_Aliases.GetTitle(m_VolSet);
 }
 
-char CSeqDBImpl::GetSeqType(void)
+char CSeqDBImpl::GetSeqType(void) const
 {
-    if (CSeqDBVol * vol = m_VolSet.GetVol(0)) {
+    if (const CSeqDBVol * vol = m_VolSet.GetVol(0)) {
         return vol->GetSeqType();
     }
     return kSeqTypeUnkn;
 }
 
-string CSeqDBImpl::GetDate(void)
+string CSeqDBImpl::GetDate(void) const
 {
-    if (CSeqDBVol * vol = m_VolSet.GetVol(0)) {
+    if (const CSeqDBVol * vol = m_VolSet.GetVol(0)) {
         return vol->GetDate();
     }
     return string();
 }
 
-CRef<CBlast_def_line_set> CSeqDBImpl::GetHdr(Uint4 oid)
+CRef<CBlast_def_line_set> CSeqDBImpl::GetHdr(Uint4 oid) const
 {
     Uint4 vol_oid = 0;
     
-    if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetHdr(vol_oid);
     }
     
     return CRef<CBlast_def_line_set>();
 }
 
-Uint4 CSeqDBImpl::GetMaxLength(void)
+Uint4 CSeqDBImpl::GetMaxLength(void) const
 {
     Uint4 max_len = 0;
     
@@ -215,7 +216,7 @@ Uint4 CSeqDBImpl::GetMaxLength(void)
     return max_len;
 }
 
-const string & CSeqDBImpl::GetDBNameList(void)
+const string & CSeqDBImpl::GetDBNameList(void) const
 {
     return m_DBNames;
 }

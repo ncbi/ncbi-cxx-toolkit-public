@@ -286,7 +286,7 @@ void CSeqDBOIDList::x_SetBit(TOID oid)
     }
 }
 
-bool CSeqDBOIDList::x_IsSet(TOID oid)
+bool CSeqDBOIDList::x_IsSet(TOID oid) const
 {
     TCUC * bp = m_Bits + (oid >> 3);
     
@@ -301,7 +301,7 @@ bool CSeqDBOIDList::x_IsSet(TOID oid)
     return false;
 }
 
-bool CSeqDBOIDList::x_FindNext(TOID & oid)
+bool CSeqDBOIDList::x_FindNext(TOID & oid) const
 {
     // If the specified OID is valid, use it.
     

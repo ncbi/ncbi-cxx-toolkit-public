@@ -49,6 +49,8 @@ public:
     
     ~CSeqDBMemPool()
     {
+        CFastMutexGuard guard(m_Lock);
+        
         //cout << "Destruct of mempool with " << dec << m_Pool.size() << " objects." << endl;
         
         for(set<char*>::iterator i = m_Pool.begin(); i != m_Pool.end(); i++) {
@@ -62,6 +64,8 @@ public:
     
     void * Alloc(Uint4 length)
     {
+        CFastMutexGuard guard(m_Lock);
+        
         if (! length) {
             length = 1;
         }
@@ -80,6 +84,8 @@ public:
     
     void Free(void * freeme)
     {
+        CFastMutexGuard guard(m_Lock);
+        
         // The first check we do is whether m_Pool is empty; in the
         // memory mapped case, this will often be true, making this
         // method nearly a no-op.
@@ -100,6 +106,7 @@ public:
     
 private:
     set<char *> m_Pool;
+    CFastMutex  m_Lock;
 };
 
 END_NCBI_SCOPE

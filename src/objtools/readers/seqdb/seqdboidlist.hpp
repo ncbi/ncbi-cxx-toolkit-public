@@ -50,7 +50,7 @@ public:
     
     ~CSeqDBOIDList();
     
-    bool CheckOrFindOID(TOID & next_oid)
+    bool CheckOrFindOID(TOID & next_oid) const
     {
         if (x_IsSet(next_oid)) {
             return true;
@@ -62,9 +62,9 @@ private:
     typedef const unsigned char TCUC;
     typedef unsigned char TUC;
     
-    bool x_IsSet   (TOID   oid);
+    bool x_IsSet   (TOID   oid) const;
     void x_SetBit  (TOID   oid);
-    bool x_FindNext(TOID & oid);
+    bool x_FindNext(TOID & oid) const;
     
     void x_Setup(const string & filename, bool use_mmap);
     void x_Setup(CSeqDBVolSet & volset, bool use_mmap);

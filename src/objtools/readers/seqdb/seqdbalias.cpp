@@ -321,7 +321,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const string & this_name,
     }
 }
 
-void CSeqDBAliasNode::GetVolumeNames(vector<string> & vols)
+void CSeqDBAliasNode::GetVolumeNames(vector<string> & vols) const
 {
     set<string> volset;
     x_GetVolumeNames(volset);
@@ -335,7 +335,7 @@ void CSeqDBAliasNode::GetVolumeNames(vector<string> & vols)
     sort(vols.begin(), vols.end());
 }
 
-void CSeqDBAliasNode::x_GetVolumeNames(set<string> & vols)
+void CSeqDBAliasNode::x_GetVolumeNames(set<string> & vols) const
 {
     Uint4 i = 0;
     
@@ -350,12 +350,12 @@ void CSeqDBAliasNode::x_GetVolumeNames(set<string> & vols)
 
 class CSeqDB_TitleWalker : public CSeqDB_AliasWalker {
 public:
-    virtual const char * GetFileKey(void)
+    virtual const char * GetFileKey(void) const
     {
         return "TITLE";
     }
     
-    virtual void Accumulate(CSeqDBVol & vol)
+    virtual void Accumulate(const CSeqDBVol & vol)
     {
         AddString( vol.GetTitle() );
     }
@@ -396,7 +396,7 @@ public:
         m_Value = 0;
     }
     
-    virtual const char * GetFileKey(void)
+    virtual const char * GetFileKey(void) const
     {
         // This field is not overrideable.
         
@@ -433,12 +433,12 @@ public:
         m_Value = 0;
     }
     
-    virtual const char * GetFileKey(void)
+    virtual const char * GetFileKey(void) const
     {
         return "NSEQ";
     }
     
-    virtual void Accumulate(CSeqDBVol & vol)
+    virtual void Accumulate(const CSeqDBVol & vol)
     {
         m_Value += vol.GetNumSeqs();
     }
@@ -448,7 +448,7 @@ public:
         m_Value += NStr::StringToUInt(value);
     }
     
-    Uint4 GetNumSeqs(void)
+    Uint4 GetNumSeqs(void) const
     {
         return m_Value;
     }
@@ -465,12 +465,12 @@ public:
         m_Value = 0;
     }
     
-    virtual const char * GetFileKey(void)
+    virtual const char * GetFileKey(void) const
     {
         return "LENGTH";
     }
     
-    virtual void Accumulate(CSeqDBVol & vol)
+    virtual void Accumulate(const CSeqDBVol & vol)
     {
         m_Value += vol.GetTotalLength();
     }
@@ -480,7 +480,7 @@ public:
         m_Value += NStr::StringToUInt8(value);
     }
     
-    Uint8 GetTotalLength(void)
+    Uint8 GetTotalLength(void) const
     {
         return m_Value;
     }
@@ -489,9 +489,13 @@ private:
     Uint8 m_Value;
 };
 
-void CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker, CSeqDBVolSet & volset)
+
+void
+CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker,
+                           const CSeqDBVolSet & volset) const
 {
-    TVarList::iterator iter = m_Values.find(walker->GetFileKey());
+    TVarList::const_iterator iter =
+        m_Values.find(walker->GetFileKey());
     
     if (iter != m_Values.end()) {
         walker->AddString( (*iter).second );
@@ -508,7 +512,7 @@ void CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker, CSeqDBVolSet & vols
     // call Accumulate.
     
     for(i = 0; i < m_VolNames.size(); i++) {
-        if (CSeqDBVol * vptr = volset.GetVol(m_VolNames[i])) {
+        if (const CSeqDBVol * vptr = volset.GetVol(m_VolNames[i])) {
             walker->Accumulate( *vptr );
         }
     }
@@ -546,7 +550,7 @@ void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
     }
 }
 
-string CSeqDBAliasNode::GetTitle(CSeqDBVolSet & volset)
+string CSeqDBAliasNode::GetTitle(const CSeqDBVolSet & volset) const
 {
     CSeqDB_TitleWalker walk;
     WalkNodes(& walk, volset);
@@ -554,7 +558,7 @@ string CSeqDBAliasNode::GetTitle(CSeqDBVolSet & volset)
     return walk.GetTitle();
 }
 
-Uint4 CSeqDBAliasNode::GetNumSeqs(CSeqDBVolSet & vols)
+Uint4 CSeqDBAliasNode::GetNumSeqs(const CSeqDBVolSet & vols) const
 {
     CSeqDB_NSeqsWalker walk;
     WalkNodes(& walk, vols);
@@ -562,7 +566,7 @@ Uint4 CSeqDBAliasNode::GetNumSeqs(CSeqDBVolSet & vols)
     return walk.GetNumSeqs();
 }
 
-Uint8 CSeqDBAliasNode::GetTotalLength(CSeqDBVolSet & volset)
+Uint8 CSeqDBAliasNode::GetTotalLength(const CSeqDBVolSet & volset) const
 {
     CSeqDB_TotalLengthWalker walk;
     WalkNodes(& walk, volset);

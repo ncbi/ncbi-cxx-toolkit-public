@@ -51,53 +51,53 @@ public:
     
     ~CSeqDBImpl(void);
     
-    Int4 GetSeqLength(Uint4 oid);
+    Int4 GetSeqLength(Uint4 oid) const;
     
-    Int4 GetSeqLengthApprox(Uint4 oid);
+    Int4 GetSeqLengthApprox(Uint4 oid) const;
     
-    CRef<CBlast_def_line_set> GetHdr(Uint4 oid);
+    CRef<CBlast_def_line_set> GetHdr(Uint4 oid) const;
     
-    char GetSeqType(void);
+    char GetSeqType(void) const;
     
     CRef<CBioseq> GetBioseq(Int4 oid,
                             bool use_objmgr,
-                            bool insert_ctrlA);
+                            bool insert_ctrlA) const;
     
-    Int4 GetSequence(Int4 oid, const char ** buffer);
+    Int4 GetSequence(Int4 oid, const char ** buffer) const;
     
     Int4 GetAmbigSeq(Int4            oid,
                      char         ** buffer,
                      Uint4           nucl_code,
-                     ESeqDBAllocType strategy);
+                     ESeqDBAllocType strategy) const;
     
-    void RetSequence(const char ** buffer);
+    void RetSequence(const char ** buffer) const;
     
-    list< CRef<CSeq_id> > GetSeqIDs(Uint4 oid);
+    list< CRef<CSeq_id> > GetSeqIDs(Uint4 oid) const;
     
-    string GetTitle(void);
+    string GetTitle(void) const;
     
-    string GetDate(void);
+    string GetDate(void) const;
     
-    Uint4  GetNumSeqs(void);
+    Uint4  GetNumSeqs(void) const;
     
-    Uint8  GetTotalLength(void);
+    Uint8  GetTotalLength(void) const;
     
-    Uint4  GetMaxLength(void);
+    Uint4  GetMaxLength(void) const;
     
-    bool   CheckOrFindOID(Uint4 & next_oid);
+    bool   CheckOrFindOID(Uint4 & next_oid) const;
     
     void   SetOIDRange(Uint4 first, Uint4 last);
     
-    const string & GetDBNameList(void);
+    const string & GetDBNameList(void) const;
     
 private:
-    string              m_DBNames;
-    CSeqDBMemPool       m_MemPool;
-    CSeqDBAliasFile     m_Aliases;
-    CSeqDBVolSet        m_VolSet;
-    CRef<CSeqDBOIDList> m_OIDList;
-    Uint4               m_RestrictFirst;
-    Uint4               m_RestrictLast;
+    string                m_DBNames;
+    mutable CSeqDBMemPool m_MemPool;
+    CSeqDBAliasFile       m_Aliases;
+    CSeqDBVolSet          m_VolSet;
+    CRef<CSeqDBOIDList>   m_OIDList;
+    Uint4                 m_RestrictFirst;
+    Uint4                 m_RestrictLast;
 };
 
 END_NCBI_SCOPE

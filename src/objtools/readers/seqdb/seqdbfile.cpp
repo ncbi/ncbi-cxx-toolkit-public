@@ -37,6 +37,31 @@ BEGIN_NCBI_SCOPE
 /// find information in other files.  The OID is the (implied) key.
 
 
+// A Word About Mutexes and Mutability in the File Classes
+//
+// The stream object in CSeqDBRawFile is mutable: this is because the
+// stream access methods modify the file.  Specifically, they modify
+// the file offset.  This means that two users of a stream object will
+// step on each other if they try to read from different offsets
+// concurrently.  Memory mapping does not have this problem of course.
+//
+// To fix this, the file object is mutable, but to access it, the user
+// needs to hold the m_FileLock mutex.
+//
+// One goal I have for these classes is to eliminate all locking for
+// the mmap case.  Locking is not needed to call a const method, so
+// methods are marked const whenever possible.  After construction of
+// CSeqDB, ONLY const methods are called.
+//
+// Some of the const methods need to modify fields; to do this, I mark
+// the fields 'mutable' and hold a mutex whenever accessing them.
+//
+// Each method falls into one of these categories:
+//
+// 1. Non-const: called only during CSeqDB construction.
+// 2. Const: no changes to any fields.
+// 3. Const: modifies mutable fields while holding m_FileLock.
+
 Uint8 BytesToUint8(char * bytes_sc)
 {
     unsigned char * bytes = (unsigned char *) bytes_sc;
@@ -55,29 +80,33 @@ Uint8 BytesToUint8(char * bytes_sc)
 bool CSeqDBRawFile::Open(const string & name)
 {
     Clear();
-        
+    
     if (m_UseMMap) {
         try {
             m_Mapped = new CMemoryFile(name);
+            x_SetLength();
         }
         catch(...) {
         }
     }
-        
+    
     if (! m_Mapped) {
         try {
             // For now, no file creation
+            CFastMutexGuard guard(m_FileLock);
+            
             m_Stream.clear();
             m_Stream.open(name.data());
-                
+            
             if (m_Stream) {
                 m_Opened = true;
+                x_SetLength();
             }
         }
         catch(...) {
         }
     }
-        
+    
     return Valid();
 }
 
@@ -88,30 +117,13 @@ void CSeqDBRawFile::Clear(void)
         m_Mapped = 0;
     }
     
-    // It might be good to keep a handle to a mempool and clear out
-    // the parts of the mempool that relate to this file, by
-    // range... if and only if the design was changed so that volumes
-    // could expire, or be cleaned up in some way, before the final
-    // destruction of CSeqDB.  There are several reasons this might be
-    // done, which should be obvious to the reader (like the proof to
-    // Fermat's last theorem.)
+    // It might be good to clear out the parts of the mempool that
+    // relate to this file, by range... but only if the design was
+    // changed so that volumes could expire, or be cleaned up in some
+    // way, before the destruction of CSeqDB.
 }
 
-Int4 CSeqDBRawFile::x_GetOpenedLength(void)
-{
-    // Should this cache the length?
-        
-    CT_POS_TYPE p = m_Stream.tellg();
-        
-    m_Stream.seekg(0, ios::end);
-    CT_POS_TYPE retval = m_Stream.tellg();
-        
-    m_Stream.seekg(p);
-        
-    return retval - CT_POS_TYPE(0);
-}
-
-const char * CSeqDBRawFile::GetRegion(Uint4 start, Uint4 end)
+const char * CSeqDBRawFile::GetRegion(Uint4 start, Uint4 end) const
 {
     const char * retval = 0;
         
@@ -119,7 +131,7 @@ const char * CSeqDBRawFile::GetRegion(Uint4 start, Uint4 end)
         if (x_ValidGet(start, end, m_Mapped->GetSize())) {
             retval = ((const char *)m_Mapped->GetPtr()) + start;
         }
-    } else if (m_Opened && x_ValidGet(start, end, x_GetOpenedLength())) {
+    } else if (m_Opened && x_ValidGet(start, end, m_Length)) {
         //  Note that a more 'realistic' approach would involve a
         //  cache of blocks or sections that have been brought in;
         //  and would either free these on a refcount basis, or
@@ -149,15 +161,22 @@ const char * CSeqDBRawFile::GetRegion(Uint4 start, Uint4 end)
     return retval;
 }
 
-Uint8 CSeqDBRawFile::GetFileLength(void)
+void CSeqDBRawFile::x_SetLength(void)
 {
     if (m_Mapped) {
-        return (Uint8) m_Mapped->GetSize();
+        m_Length = m_Mapped->GetSize();
     } else if (m_Opened) {
-        return (Uint8) x_GetOpenedLength();
+        CFastMutexGuard guard(m_FileLock);
+        
+        CT_POS_TYPE p = m_Stream.tellg();
+        
+        m_Stream.seekg(0, ios::end);
+        CT_POS_TYPE retval = m_Stream.tellg();
+        
+        m_Stream.seekg(p);
+        
+        m_Length = retval - CT_POS_TYPE(0);
     }
-    
-    return 0;
 }
 
 void CSeqDBRawFile::ReadSwapped(Uint4 * z)
@@ -167,6 +186,8 @@ void CSeqDBRawFile::ReadSwapped(Uint4 * z)
         m_Offset += 4;
         *z = SeqDB_GetStdOrd( (const Uint4 *)(((char *)m_Mapped->GetPtr()) + offset) );
     } else if (m_Opened) {
+        CFastMutexGuard guard(m_FileLock);
+        
         char buf[4];
         Uint4 offset = m_Offset;
         m_Stream.seekg(offset, ios::beg);
@@ -187,6 +208,8 @@ void CSeqDBRawFile::ReadSwapped(Uint8 * z)
         m_Offset += 8;
 	*z = SeqDB_GetBroken((Int8 *) (((char *)m_Mapped->GetPtr()) + offset));
     } else if (m_Opened) {
+        CFastMutexGuard guard(m_FileLock);
+        
         char buf[8];
         Uint4 offset = m_Offset;
         m_Stream.seekg(offset, ios::beg);
@@ -217,6 +240,8 @@ void CSeqDBRawFile::ReadSwapped(string * z)
 	
         z->assign(str, str + string_size);
     } else if (m_Opened) {
+        CFastMutexGuard guard(m_FileLock);
+        
         char sl_buf[4];
         m_Stream.seekg(m_Offset, ios::beg);
         m_Stream.read(sl_buf, 4);
@@ -239,7 +264,7 @@ void CSeqDBRawFile::ReadSwapped(string * z)
 
 // Does not modify (or use) internal file offset
 
-bool CSeqDBRawFile::ReadBytes(char * z, Uint4 start, Uint4 end)
+bool CSeqDBRawFile::ReadBytes(char * z, Uint4 start, Uint4 end) const
 {
     // Read bytes from memory, no handling or adjustments.
     if (m_Mapped) {
@@ -252,10 +277,12 @@ bool CSeqDBRawFile::ReadBytes(char * z, Uint4 start, Uint4 end)
         
         return true;
     } else if (m_Opened) {
-        if (! x_ValidGet(start, end, x_GetOpenedLength())) {
+        if (! x_ValidGet(start, end, m_Length)) {
             NCBI_THROW(CSeqDBException, eFileErr,
                        "Invalid file offset: possible file corruption.");
         }
+        
+        CFastMutexGuard guard(m_FileLock);
         
         m_Stream.seekg(start, ios::beg);
         m_Stream.read((char *) z, end - start);
@@ -266,8 +293,10 @@ bool CSeqDBRawFile::ReadBytes(char * z, Uint4 start, Uint4 end)
     return false;
 }
 
-bool CSeqDBRawFile::x_ReadFileRegion(char * region, Uint4 start, Uint4 end)
+bool CSeqDBRawFile::x_ReadFileRegion(char * region, Uint4 start, Uint4 end) const
 {
+    CFastMutexGuard guard(m_FileLock);
+    
     bool retval = false;
     _ASSERT(m_Opened);
     
@@ -294,7 +323,7 @@ bool CSeqDBRawFile::x_ReadFileRegion(char * region, Uint4 start, Uint4 end)
     
     if (size_left == 0) {
         retval = true;
-        m_Offset += end - start;
+        //m_Offset += end - start;
     }
         
     return retval;

@@ -31,26 +31,26 @@
 
 BEGIN_NCBI_SCOPE
 
-char CSeqDBVol::GetSeqType(void)
+char CSeqDBVol::GetSeqType(void) const
 {
     CFastMutexGuard guard(m_Lock);
     return x_GetSeqType();
 }
 
-char CSeqDBVol::x_GetSeqType(void)
+char CSeqDBVol::x_GetSeqType(void) const
 {
     return m_Idx.GetSeqType();
 }
 
-Int4 CSeqDBVol::GetSeqLength(Uint4 oid, bool approx)
+Int4 CSeqDBVol::GetSeqLength(Uint4 oid, bool approx) const
 {
     CFastMutexGuard guard(m_Lock);
     
     Uint4 start_offset = 0;
     Uint4 end_offset   = 0;
-        
+    
     Int4 length = -1;
-        
+    
     if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset))
         return -1;
     
@@ -547,7 +547,7 @@ void s_GetDescrFromDefline(CRef<CBlast_def_line_set> deflines, string & descr)
 CRef<CBioseq>
 CSeqDBVol::GetBioseq(Int4 oid,
                      bool use_objmgr,
-                     bool insert_ctrlA)
+                     bool insert_ctrlA) const
 {
     CFastMutexGuard guard(m_Lock);
     
@@ -705,13 +705,13 @@ CSeqDBVol::GetBioseq(Int4 oid,
     return bioseq;
 }
 
-Int4 CSeqDBVol::GetSequence(Int4 oid, const char ** buffer)
+Int4 CSeqDBVol::GetSequence(Int4 oid, const char ** buffer) const
 {
     CFastMutexGuard guard(m_Lock);
     return x_GetSequence(oid, buffer);
 }
 
-char * CSeqDBVol::x_AllocType(Uint4 length, ESeqDBAllocType alloc_type)
+char * CSeqDBVol::x_AllocType(Uint4 length, ESeqDBAllocType alloc_type) const
 {
     // Specifying an allocation type of zero, uses the memory pool to
     // do the allocation.  This is not intended to be visible to the
@@ -743,7 +743,7 @@ char * CSeqDBVol::x_AllocType(Uint4 length, ESeqDBAllocType alloc_type)
 Int4 CSeqDBVol::GetAmbigSeq(Int4            oid,
                             char         ** buffer,
                             Uint4           nucl_code,
-                            ESeqDBAllocType alloc_type)
+                            ESeqDBAllocType alloc_type) const
 {
     CFastMutexGuard guard(m_Lock);
     
@@ -757,7 +757,7 @@ Int4 CSeqDBVol::GetAmbigSeq(Int4            oid,
 Int4 CSeqDBVol::x_GetAmbigSeq(Int4            oid,
                               char         ** buffer,
                               Uint4           nucl_code,
-                              ESeqDBAllocType alloc_type)
+                              ESeqDBAllocType alloc_type) const
 {
     Int4 base_length = -1;
     
@@ -835,7 +835,7 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4            oid,
     return base_length;
 }
 
-Int4 CSeqDBVol::x_GetSequence(Int4 oid, const char ** buffer)
+Int4 CSeqDBVol::x_GetSequence(Int4 oid, const char ** buffer) const
 {
     Uint4 start_offset = 0;
     Uint4 end_offset   = 0;
@@ -872,7 +872,7 @@ Int4 CSeqDBVol::x_GetSequence(Int4 oid, const char ** buffer)
     return length;
 }
 
-list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(Uint4 oid)
+list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(Uint4 oid) const
 {
     CFastMutexGuard guard(m_Lock);
     
@@ -891,19 +891,19 @@ list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(Uint4 oid)
     return seqids;
 }
 
-Uint8 CSeqDBVol::GetTotalLength(void)
+Uint8 CSeqDBVol::GetTotalLength(void) const
 {
     CFastMutexGuard guard(m_Lock);
     return m_Idx.GetTotalLength();
 }
 
-CRef<CBlast_def_line_set> CSeqDBVol::GetHdr(Uint4 oid)
+CRef<CBlast_def_line_set> CSeqDBVol::GetHdr(Uint4 oid) const
 {
     CFastMutexGuard guard(m_Lock);
     return x_GetHdr(oid);
 }
 
-CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid)
+CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid) const
 {
     CRef<CBlast_def_line_set> nullret;
         
@@ -913,9 +913,9 @@ CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid)
     if (! m_Idx.GetHdrStartEnd(oid, hdr_start, hdr_end)) {
         return nullret;
     }
-        
+    
     const char * asn_region = m_Hdr.GetRegion(hdr_start, hdr_end);
-        
+    
     // Now; create an ASN.1 object from the memory chunk provided
     // here.
         
@@ -942,7 +942,7 @@ CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid)
     return phil;
 }
 
-bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> ambchars)
+bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> ambchars) const
 {
     Uint4 start_offset = 0;
     Uint4 end_offset   = 0;
@@ -977,25 +977,25 @@ bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> ambchars)
     return true;
 }
 
-Uint4 CSeqDBVol::GetNumSeqs(void)
+Uint4 CSeqDBVol::GetNumSeqs(void) const
 {
     CFastMutexGuard guard(m_Lock);
     return m_Idx.GetNumSeqs();
 }
 
-string CSeqDBVol::GetTitle(void)
+string CSeqDBVol::GetTitle(void) const
 {
     CFastMutexGuard guard(m_Lock);
     return m_Idx.GetTitle();
 }
 
-string CSeqDBVol::GetDate(void)
+string CSeqDBVol::GetDate(void) const
 {
     CFastMutexGuard guard(m_Lock);
     return m_Idx.GetDate();
 }
 
-Uint4 CSeqDBVol::GetMaxLength(void)
+Uint4 CSeqDBVol::GetMaxLength(void) const
 {
     CFastMutexGuard guard(m_Lock);
     return m_Idx.GetMaxLength();

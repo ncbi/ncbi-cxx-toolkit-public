@@ -47,6 +47,22 @@ public:
                  char                   prot_nucl,
                  bool                   use_mmap);
     
+    const CSeqDBVol * FindVol(Uint4 oid, Uint4 & vol_oid) const
+    {
+        for(Uint4 index = 0; index < m_VolList.size(); index++) {
+            if ((m_VolList[index].OIDStart() <= oid) &&
+                (m_VolList[index].OIDEnd()   >  oid)) {
+                
+                m_RecentVol = index;
+                
+                vol_oid = oid - m_VolList[index].OIDStart();
+                return m_VolList[index].Vol();
+            }
+        }
+        
+        return 0;
+    }
+    
     CSeqDBVol * FindVol(Uint4 oid, Uint4 & vol_oid)
     {
         for(Uint4 index = 0; index < m_VolList.size(); index++) {
@@ -63,7 +79,7 @@ public:
         return 0;
     }
     
-    CSeqDBVol * GetVol(Uint4 i)
+    const CSeqDBVol * GetVol(Uint4 i) const
     {
         if (m_VolList.empty()) {
             return 0;
@@ -78,6 +94,14 @@ public:
         return m_VolList[i].Vol();
     }
     
+    const CSeqDBVol * GetVol(const string & volname) const
+    {
+        if (const CVolEntry * v = x_FindVolName(volname)) {
+            return v->Vol();
+        }
+        return 0;
+    }
+    
     CSeqDBVol * GetVol(const string & volname)
     {
         if (CVolEntry * v = x_FindVolName(volname)) {
@@ -86,9 +110,9 @@ public:
         return 0;
     }
     
-    CSeqDBVol * GetRecentVol(void)
+    const CSeqDBVol * GetRecentVol(void) const
     {
-        CSeqDBVol * v = GetVol(m_RecentVol);
+        const CSeqDBVol * v = GetVol(m_RecentVol);
         
         if (! v) {
             v = GetVol(0);
@@ -97,7 +121,7 @@ public:
         return v;
     }
     
-    CSeqDBVol * GetLastVol(void)
+    const CSeqDBVol * GetLastVol(void) const
     {
         if (! m_VolList.empty()) {
             return m_VolList.back().Vol();
@@ -105,17 +129,17 @@ public:
         return 0;
     }
     
-    void SetRecentVol(Uint4 i)
+    void SetRecentVol(Uint4 i) const
     {
         m_RecentVol = i;
     }
     
-    Uint4 GetNumVols(void)
+    Uint4 GetNumVols(void) const
     {
         return m_VolList.size();
     }
     
-    bool HasMask(void)
+    bool HasMask(void) const
     {
         for(Uint4 i = 0; i < m_VolList.size(); i++) {
             if (0 != m_VolList[i].NumMasks()) {
@@ -125,19 +149,19 @@ public:
         return false;
     }
     
-    bool HasSimpleMask(void)
+    bool HasSimpleMask(void) const
     {
         return ((m_VolList.size()        == 1) &&
                 (m_VolList[0].NumMasks() == 1));
     }
     
-    string GetSimpleMask(void)
+    string GetSimpleMask(void) const
     {
         _ASSERT(HasSimpleMask());
         return m_VolList[0].GetSimpleMask();
     }
     
-    Uint4 GetNumSeqs(void)
+    Uint4 GetNumSeqs(void) const
     {
         if (! m_VolList.empty()) {
             return m_VolList.back().OIDEnd();
@@ -149,9 +173,9 @@ public:
                       bool         & all_oids,
                       list<string> & mask_files,
                       Uint4        & oid_start,
-                      Uint4        & oid_end)
+                      Uint4        & oid_end) const
     {
-        CVolEntry & v = m_VolList[index];
+        const CVolEntry & v = m_VolList[index];
         
         if (v.GetIncludeAll()) {
             all_oids = true;
@@ -216,22 +240,22 @@ private:
             m_MaskFiles.clear();
         }
         
-        bool GetIncludeAll(void)
+        bool GetIncludeAll(void) const
         {
             return (m_AllOIDs || m_MaskFiles.empty());
         }
         
-        Uint4 NumMasks(void)
+        Uint4 NumMasks(void) const
         {
             return m_MaskFiles.size();
         }
         
-        Uint4 OIDStart(void)
+        Uint4 OIDStart(void) const
         {
             return m_OIDStart;
         }
         
-        Uint4 OIDEnd(void)
+        Uint4 OIDEnd(void) const
         {
             return m_OIDEnd;
         }
@@ -241,13 +265,18 @@ private:
             return m_Vol.GetNonNullPointer();
         }
         
-        string GetSimpleMask(void)
+        const CSeqDBVol * Vol(void) const
+        {
+            return m_Vol.GetNonNullPointer();
+        }
+        
+        string GetSimpleMask(void) const
         {
             _ASSERT(1 == m_MaskFiles.size());
             return *(m_MaskFiles.begin());
         }
         
-        void GetMaskFiles(list<string> & mask_files)
+        void GetMaskFiles(list<string> & mask_files) const
         {
             set<string>::iterator i = m_MaskFiles.begin();
             
@@ -283,6 +312,17 @@ private:
         m_VolList.push_back( new_vol );
     }
     
+    const CVolEntry * x_FindVolName(const string & volname) const
+    {
+        for(Uint4 i = 0; i<m_VolList.size(); i++) {
+            if (volname == m_VolList[i].Vol()->GetVolName()) {
+                return & m_VolList[i];
+            }
+        }
+        
+        return 0;
+    }
+    
     CVolEntry * x_FindVolName(const string & volname)
     {
         for(Uint4 i = 0; i<m_VolList.size(); i++) {
@@ -295,9 +335,17 @@ private:
     }
     
     // Data
-
-    vector<CVolEntry> m_VolList;
-    volatile Uint4    m_RecentVol;
+    
+    // m_RecentVol is mutable and volatile, but is not protected by
+    // locking.  Instead the following precautions are always taken:
+    // 
+    // 1. First, the value is copied into a local variable.
+    // 2. Secondly, the range is always checked.
+    // 3. It is always treated as a hint; there is always fallback
+    //    code to search for the correct volume.
+    
+    vector<CVolEntry>      m_VolList;
+    mutable volatile Uint4 m_RecentVol;
 };
 
 END_NCBI_SCOPE

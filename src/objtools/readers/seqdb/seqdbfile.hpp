@@ -56,11 +56,12 @@ BEGIN_NCBI_SCOPE
 class CSeqDBRawFile : public CObject {
 public:
     CSeqDBRawFile(CSeqDBMemPool & mempool, bool use_mmap)
-        : m_MemPool(mempool),
-          m_UseMMap(use_mmap),
+        : m_Length (0),
           m_Mapped (0),
+          m_MemPool(mempool),
+          m_Offset (0),
           m_Opened (false),
-          m_Offset (0)
+          m_UseMMap(use_mmap)
     {
     }
     
@@ -74,56 +75,62 @@ public:
     
     void Clear(void);
     
-    bool Valid(void)
+    bool Valid(void) const
     {
         return (m_Mapped || m_Opened) ? true : false;
     }
     
-    const char * GetRegion(Uint4 start, Uint4 end);
+    const char * GetRegion(Uint4 start, Uint4 end) const;
     
     void SetFileOffset(Uint4 offset)
     {
         m_Offset = offset;
     }
     
-    Uint4 GetFileOffset(void)
+    Uint4 GetFileOffset(void) const
     {
         return m_Offset;
     }
     
-    Uint8 GetFileLength(void);
+    Uint8 GetFileLength(void) const
+    {
+        return m_Length;
+    }
     
-    Uint8 Swap8(const char * input);
+    Uint8 Swap8(const char * input) const;
     
     void ReadSwapped(Uint4 * z);
     void ReadSwapped(Uint8 * z);
     void ReadSwapped(string * z);
     
     // Does not modify (or use) internal file offset
-    bool ReadBytes(char * z, Uint4 start, Uint4 end);
+    bool ReadBytes(char * z, Uint4 start, Uint4 end) const;
     
 private:
-    Int4 x_GetOpenedLength(void);
-    
-    bool x_ValidGet(Uint4 start, Uint4 end, Uint4 filesize)
+    bool x_ValidGet(Uint4 start, Uint4 end, Uint4 filesize) const
     {
         return (start <= end) && (end <= filesize);
     }
     
-    bool x_ReadFileRegion(char * region, Uint4 start, Uint4 end);
+    bool x_ReadFileRegion(char * region, Uint4 start, Uint4 end) const;
+    
+    void x_SetLength(void);
+    
     
     // Data
     
-    CSeqDBMemPool  & m_MemPool;
-    string           m_Name;
-    bool             m_UseMMap;
-    CMemoryFile    * m_Mapped;
-    bool             m_Opened;
-    CNcbiIfstream    m_Stream;
-    Uint4            m_Offset;
+    mutable CFastMutex    m_FileLock;
+    Uint8                 m_Length;
+    CMemoryFile         * m_Mapped;
+    CSeqDBMemPool       & m_MemPool;
+    string                m_Name;
+    Uint4                 m_Offset;
+    bool                  m_Opened;
+    mutable CNcbiIfstream m_Stream;
+    bool                  m_UseMMap;
 };
 
-inline Uint8 CSeqDBRawFile::Swap8(const char * input)
+inline Uint8 CSeqDBRawFile::Swap8(const char * input) const
 {
     unsigned char * bytes = (unsigned char *) input;
         
@@ -165,12 +172,12 @@ public:
     }
     
 protected:
-    const char * x_GetRegion(Uint4 start, Uint4 end)
+    const char * x_GetRegion(Uint4 start, Uint4 end) const
     {
         return m_File.GetRegion(start, end);
     }
     
-    Uint4 x_GetFileOffset(void)
+    Uint4 x_GetFileOffset(void) const
     {
         return m_File.GetFileOffset();
     }
@@ -180,7 +187,7 @@ protected:
         m_File.SetFileOffset(offset);
     }
     
-    void x_ReadBytes(char * x, Uint4 start, Uint4 end)
+    void x_ReadBytes(char * x, Uint4 start, Uint4 end) const
     {
         m_File.ReadBytes(x, start, end);
     }
@@ -191,7 +198,7 @@ protected:
         m_File.ReadSwapped(x);
     }
     
-    char x_GetSeqType(void)
+    char x_GetSeqType(void) const
     {
         return m_ProtNucl;
     }
@@ -241,51 +248,54 @@ public:
     {
     }
     
-    bool GetSeqStartEnd(Uint4 oid, Uint4 & start, Uint4 & end);
+    bool GetSeqStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const;
     
-    bool GetHdrStartEnd(Uint4 oid, Uint4 & start, Uint4 & end);
+    bool GetHdrStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const;
     
-    bool GetAmbStartEnd(Uint4 oid, Uint4 & start, Uint4 & end);
+    bool GetAmbStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const;
     
-    char GetSeqType(void);
-
-    string GetTitle(void)
+    char GetSeqType(void) const
+    {
+        return x_GetSeqType();
+    }
+    
+    string GetTitle(void) const
     {
         return m_Title;
     }
     
-    string GetDate(void)
+    string GetDate(void) const
     {
         return m_Date;
     }
     
-    Uint4 GetNumSeqs(void)
+    Uint4 GetNumSeqs(void) const
     {
         return m_NumSeqs;
     }
     
-    Uint8 GetTotalLength(void)
+    Uint8 GetTotalLength(void) const
     {
         return m_TotLen;
     }
     
-    Uint4 GetMaxLength(void)
+    Uint4 GetMaxLength(void) const
     {
         return m_MaxLen;
     }
     
 private:
-    Uint4 x_GetSeqOffset(int oid)
+    Uint4 x_GetSeqOffset(int oid) const
     {
 	return SeqDB_GetStdOrd( (const Uint4 *)(m_SeqHandle + (oid * 4)) );
     }
     
-    Uint4 x_GetAmbCharOffset(int oid)
+    Uint4 x_GetAmbCharOffset(int oid) const
     {
         return SeqDB_GetStdOrd( (const Uint4 *)(m_AmbCharHandle + (oid * 4)) );
     }
     
-    Uint4 x_GetHdrOffset(int oid)
+    Uint4 x_GetHdrOffset(int oid) const
     {
         return SeqDB_GetStdOrd( (const Uint4 *)(m_HdrHandle + (oid * 4)) );
     }
@@ -305,8 +315,8 @@ private:
     const char * m_AmbCharHandle;
 };
 
-
-bool inline CSeqDBIdxFile::GetSeqStartEnd(Uint4 oid, Uint4 & start, Uint4 & end)
+bool inline
+CSeqDBIdxFile::GetSeqStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const
 {
     start = x_GetSeqOffset(oid);
         
@@ -319,7 +329,8 @@ bool inline CSeqDBIdxFile::GetSeqStartEnd(Uint4 oid, Uint4 & start, Uint4 & end)
     return true;
 }
     
-bool inline CSeqDBIdxFile::GetHdrStartEnd(Uint4 oid, Uint4 & start, Uint4 & end)
+bool inline
+CSeqDBIdxFile::GetHdrStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const
 {
     start = x_GetHdrOffset(oid);
     end   = x_GetHdrOffset(oid + 1);
@@ -327,7 +338,8 @@ bool inline CSeqDBIdxFile::GetHdrStartEnd(Uint4 oid, Uint4 & start, Uint4 & end)
     return true;
 }
     
-bool inline CSeqDBIdxFile::GetAmbStartEnd(Uint4 oid, Uint4 & start, Uint4 & end)
+bool inline
+CSeqDBIdxFile::GetAmbStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const
 {
     if (kSeqTypeNucl == x_GetSeqType()) {
         start = x_GetAmbCharOffset(oid);
@@ -339,17 +351,6 @@ bool inline CSeqDBIdxFile::GetAmbStartEnd(Uint4 oid, Uint4 & start, Uint4 & end)
     }
     
     return false;
-}
-
-char inline CSeqDBIdxFile::GetSeqType(void)
-{
-    char ch = x_GetSeqType();
-        
-    if (kSeqTypeUnkn == ch) {
-        ch = x_GetSeqType();
-    }
-        
-    return ch;
 }
 
 
@@ -367,12 +368,12 @@ public:
     {
     }
     
-    void ReadBytes(char * x, Uint4 start, Uint4 end)
+    void ReadBytes(char * x, Uint4 start, Uint4 end) const
     {
         x_ReadBytes(x, start, end);
     }
     
-    const char * GetRegion(Uint4 start, Uint4 end)
+    const char * GetRegion(Uint4 start, Uint4 end) const
     {
         return x_GetRegion(start, end);
     }
@@ -393,12 +394,12 @@ public:
     {
     }
     
-    void ReadBytes(char * x, Uint4 start, Uint4 end)
+    void ReadBytes(char * x, Uint4 start, Uint4 end) const
     {
         x_ReadBytes(x, start, end);
     }
     
-    const char * GetRegion(Uint4 start, Uint4 end)
+    const char * GetRegion(Uint4 start, Uint4 end) const
     {
         return x_GetRegion(start, end);
     }

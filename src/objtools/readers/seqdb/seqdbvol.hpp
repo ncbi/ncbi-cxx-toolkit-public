@@ -70,36 +70,36 @@ public:
     {
     }
     
-    Int4 GetSeqLength(Uint4 oid, bool approx);
+    Int4 GetSeqLength(Uint4 oid, bool approx) const;
     
-    Int4 GetSeqLengthApprox(Uint4 oid);
+    Int4 GetSeqLengthApprox(Uint4 oid) const;
     
-    CRef<CBlast_def_line_set> GetHdr(Uint4 oid);
+    CRef<CBlast_def_line_set> GetHdr(Uint4 oid) const;
     
-    char GetSeqType(void);
+    char GetSeqType(void) const;
     
     CRef<CBioseq> GetBioseq(Int4 oid,
                             bool use_objmgr,
-                            bool insert_ctrlA);
+                            bool insert_ctrlA) const;
     
-    Int4 GetSequence(Int4 oid, const char ** buffer);
+    Int4 GetSequence(Int4 oid, const char ** buffer) const;
     
     Int4 GetAmbigSeq(Int4            oid,
                      char         ** buffer,
                      Uint4           nucl_code,
-                     ESeqDBAllocType alloc_type);
+                     ESeqDBAllocType alloc_type) const;
     
-    list< CRef<CSeq_id> > GetSeqIDs(Uint4 oid);
+    list< CRef<CSeq_id> > GetSeqIDs(Uint4 oid) const;
     
-    string GetTitle(void);
+    string GetTitle(void) const;
     
-    string GetDate(void);
+    string GetDate(void) const;
     
-    Uint4  GetNumSeqs(void);
+    Uint4  GetNumSeqs(void) const;
     
-    Uint8  GetTotalLength(void);
+    Uint8  GetTotalLength(void) const;
     
-    Uint4  GetMaxLength(void);
+    Uint4  GetMaxLength(void) const;
     
     string GetVolName(void) const
     {
@@ -107,28 +107,28 @@ public:
     }
     
 private:
-    CRef<CBlast_def_line_set> x_GetHdr(Uint4 oid);
+    CRef<CBlast_def_line_set> x_GetHdr(Uint4 oid) const;
 
-    char   x_GetSeqType(void);
+    char   x_GetSeqType(void) const;
 
-    bool   x_GetAmbChar(Uint4 oid, vector<Int4> ambchars);
+    bool   x_GetAmbChar(Uint4 oid, vector<Int4> ambchars) const;
 
-    Int4   x_GetSequence(Int4 oid, const char ** buffer);
+    Int4   x_GetSequence(Int4 oid, const char ** buffer) const;
 
     Int4   x_GetAmbigSeq(Int4            oid,
                          char         ** buffer,
                          Uint4           nucl_code,
-                         ESeqDBAllocType alloc_type);
+                         ESeqDBAllocType alloc_type) const;
     
     char * x_AllocType(Uint4           length,
-                       ESeqDBAllocType alloc_type);
+                       ESeqDBAllocType alloc_type) const;
     
-    CSeqDBMemPool & m_MemPool;
-    string          m_VolName;
-    CFastMutex      m_Lock;
-    CSeqDBIdxFile   m_Idx;
-    CSeqDBSeqFile   m_Seq;
-    CSeqDBHdrFile   m_Hdr;
+    CSeqDBMemPool      & m_MemPool;
+    string               m_VolName;
+    mutable CFastMutex   m_Lock;
+    CSeqDBIdxFile        m_Idx;
+    CSeqDBSeqFile        m_Seq;
+    CSeqDBHdrFile        m_Hdr;
 };
 
 END_NCBI_SCOPE
