@@ -559,7 +559,7 @@ public:
     // data manipulations
     virtual size_t Read     (void* buff, size_t nof_bytes);
     virtual size_t Append   (const void* buff, size_t nof_bytes);
-    virtual void   Truncate (size_t nof_bytes = kMax_UInt);
+    virtual void   Truncate (size_t nof_bytes = kMax_Int);
     virtual bool   MoveTo   (size_t byte_number);
 
     // current size of data
@@ -839,6 +839,14 @@ public:
 
     string Value() const;
 
+    Uint1 Precision() const {
+        return m_Precision;
+    }
+
+    Uint1 Scale() const {
+        return m_Scale;
+    }
+
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
     virtual void AssignValue(CDB_Object& v);
@@ -862,6 +870,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/09/13 18:28:05  soussov
+ * fixed bug with long overflow
+ *
  * Revision 1.9  2002/05/16 21:27:01  soussov
  * AssignValue methods added
  *

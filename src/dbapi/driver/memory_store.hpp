@@ -100,8 +100,8 @@ public:
     size_t Write       (const void* buff, size_t nof_bytes);
     size_t Insert      (const void* buff, size_t nof_bytes);
 
-    size_t Delete      (size_t nof_bytes = kMax_UInt);
-    size_t Truncate    (size_t nof_bytes = kMax_UInt);
+    size_t Delete      (size_t nof_bytes = kMax_Int);
+    size_t Truncate    (size_t nof_bytes = kMax_Int);
 
     void   Flush       (void)  { return; };
     long   Seek        (long offset, EWhence whence);
@@ -148,6 +148,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/09/13 18:27:02  soussov
+ * fixed bug with long overflow
+ *
  * Revision 1.2  2001/11/06 17:59:53  lavr
  * Formatted uniformly as the rest of the library
  *

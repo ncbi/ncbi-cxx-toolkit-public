@@ -78,6 +78,7 @@ size_t CMemStore::Append(const void* buff, size_t size)
     TSize f_free;
     TSize n = 0;
     char* b = (char*) buff;
+    if(size > kMax_Int) size= kMax_Int;
     TSize nof_bytes = (TSize) size;
 
     while (nof_bytes > 0) {
@@ -109,6 +110,8 @@ size_t CMemStore::Read(void* buff, size_t size)
 
     if (!m_Current  ||  !buff  ||  !size)
         return 0;
+
+    if(size > kMax_Int) size= kMax_Int;
 
     TSize n = 0;
     char* b = (char*) buff;
@@ -256,6 +259,8 @@ size_t CMemStore::Write(const void* buff, size_t size)
     if (!buff  ||  !size)
         return 0;
 
+    if(size > kMax_Int) size= kMax_Int;
+
     char* b         = (char*) buff;
     TSize nof_bytes = (TSize) size;
 
@@ -306,6 +311,8 @@ size_t CMemStore::Write(const void* buff, size_t size)
 
 size_t CMemStore::Truncate(size_t size)
 {
+    if(size > kMax_Int) size= kMax_Int;
+
     TSize nof_bytes = (TSize) size;
 
     if (nof_bytes >= m_Size) {
@@ -354,6 +361,8 @@ size_t CMemStore::Insert(const void* buff, size_t size)
 {
     if (!buff  ||  !size)
         return 0;
+
+    if(size > kMax_Int) size= kMax_Int;
 
     if ( !m_Current )
         return Append(buff, size);
@@ -434,6 +443,8 @@ size_t CMemStore::Delete(size_t size)
     if (!m_Last  ||  !size == 0)
         return m_Size;
 
+    if(size > kMax_Int) size= kMax_Int;
+
     if ( !m_Current )
         return Truncate(size);
 
@@ -497,6 +508,7 @@ size_t CMemStore::Delete(size_t size)
 
 CMemStore::CMemStore(C_SA_Storage& storage, size_t block_size)
 {
+    if(block_size > kMax_Int) block_size= kMax_Int;
     x_Init((TSize) block_size);
 
     char* buff = new char[m_BlockSize];
@@ -528,6 +540,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/09/13 18:27:02  soussov
+ * fixed bug with long overflow
+ *
  * Revision 1.4  2002/03/20 22:23:12  soussov
  * fixes bug in Truncate method
  *
