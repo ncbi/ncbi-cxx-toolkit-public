@@ -61,7 +61,7 @@ BEGIN_NCBI_SCOPE
             } \
         } \
         else { \
-            CORE_ASSERT(expression)
+            CORE_ASSERT(expression) \
         } \
     } while (0)
 
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/04/10 18:32:04  ivanov
+ * Fixed typo
+ *
  * Revision 1.4  2002/04/10 18:30:02  ivanov
  * Added new macros CORE_ASSERT
  *
