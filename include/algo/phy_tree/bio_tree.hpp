@@ -324,7 +324,7 @@ public:
     void SetNodeId(TBioTreeNode* node)
     {
         TBioTreeNodeId uid = GetNodeId(*node);
-        node->uid = uid;
+        node->GetValue().uid = uid;
     }
 
     /// Assign new top level tree node
@@ -412,6 +412,9 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/06/05 13:36:53  jcherry
+ * Fix to CBioTree::SetNodeId
+ *
  * Revision 1.10  2004/06/01 15:20:04  kuznets
  * Minor modifications
  *
