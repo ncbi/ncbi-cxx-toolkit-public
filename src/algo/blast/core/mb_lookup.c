@@ -284,7 +284,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
       /* Also add 1 to all indices, because lookup table indices count 
          from 1. */
       from -= word_length - 2;
-      last_offset = to - extra_length;
+      last_offset = to - extra_length + 2;
       amb_cond = TRUE;
 
       for (index = from; index <= last_offset; index++) {
@@ -421,7 +421,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
          }
       }
    }
-   
+
    mb_lt->pv_array_bts = pv_array_bts = PV_ARRAY_BTS + pv_shift; 
 
 #ifdef QUESTION_PV_ARRAY_USE
