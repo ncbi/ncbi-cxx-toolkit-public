@@ -802,6 +802,7 @@ const string CCountries::sm_Countries[] = {
   "Djibouti",
   "Dominica",
   "Dominican Republic",
+  "East Timor",
   "Ecuador",
   "Egypt",
   "El Salvador",
@@ -1137,6 +1138,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/11/12 20:30:23  shomrat
+* added East Timor to the legal country codes
+*
 * Revision 1.17  2003/10/27 14:15:57  shomrat
 * added utility functions for retrieving sequence under Seq-loc or Seq-feat
 *
