@@ -70,6 +70,24 @@ int test1(int argc, char ** argv)
         string s = args.front();
         args.pop_front();
         
+        if (s == "-fromcpp") {
+            const char * ge = getenv("BLASTDB");
+            string pe("BLASTDB=/home/bealer/code/ut/internal/blast/unit_test/data:" + string(ge ? ge : ""));
+            putenv((char*)pe.c_str());
+            
+            CSeqDB local1("seqp", 'p');
+            CSeqDB local2("seqp", 'p', 0, 0, false);
+            
+            Int4 num1 = local1.GetNumSeqs();
+            Int4 num2 = local1.GetNumSeqs();
+        
+            assert(num1 >= 1);
+            assert(num1 == num2);
+            
+            cout << "Test worked." << endl;
+            return 0;
+        } else desc += " [-fromcpp]";
+        
         if (s == "-alphabeta") {
             
             // Note: this test is NOT EXPECTED to work, unless the
