@@ -584,11 +584,11 @@ void CValidError_imp::ValidatePubArticle
                                     PostErr(sev, eErr_GENERIC_BadPageNumbering,
                                         "Page numbering greater than 50", obj);
                                 }
-                            } catch ( CStringException& e ) {
+                            } catch ( CStringException& ) {
                                 PostErr(sev, eErr_GENERIC_BadPageNumbering,
                                     "Page numbering stop looks strange", obj);
                             }
-                        } catch ( CStringException& e ) {
+                        } catch ( CStringException& ) {
                             PostErr(sev, eErr_GENERIC_BadPageNumbering,
                                 "Page numbering start looks strange", obj);
                         }
@@ -1694,6 +1694,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/01/31 19:46:46  lavr
+* Remove unused variable "e" from catch() clause
+*
 * Revision 1.9  2003/01/29 21:55:14  shomrat
 * Added check for et al
 *
