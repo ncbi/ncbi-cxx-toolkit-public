@@ -88,11 +88,24 @@ public:
     CBlastOptions& SetOptions();
     const CBlastOptions& GetOptions() const;
 
-    //void SetOptionsHandle(CBlastOptionsHandle& opts);
     CBlastOptionsHandle& SetOptionsHandle();
     const CBlastOptionsHandle& GetOptionsHandle() const;
 
-    // Perform BLAST search with multiple query sequences
+    /// Perform BLAST search
+    /// Assuming N queries and M subjects, the structure of the returned 
+    /// vector is as follows, with types indicated in parenthesis:
+    /// TSeqAlignVector = [ {Results for query 1 (Seq-align-set)}, 
+    ///                     {Results for query 2 (Seq-align-set)}, ...
+    ///                     {Results for query N (Seq-align-set)} ]
+    /// 
+    /// The individual query-subject alignments are returned in the
+    /// CSeq_align_set for that query:
+    /// {Results for query i} = 
+    ///     [ {Results for query i and subject 1 (discontinuous Seq-align)}, 
+    ///       {Results for query i and subject 2 (discontinuous Seq-align)}, ...
+    ///       {Results for query i and subject M (discontinuous Seq-align)} ]
+    /// Discontinuous Seq-aligns are used to allow grouping of multiple HSPs
+    /// that correspond to that query-subject alignment.
     virtual TSeqAlignVector Run();
 
     /// Retrieves regions filtered on the query/queries
@@ -224,15 +237,6 @@ CBl2Seq::SetOptionsHandle()
     return *m_OptsHandle;
 }
 
-#if 0
-inline void
-CBl2Seq::SetOptionsHandle(CBlastOptionsHandle& opts)
-{
-    m_OptsHandle.Reset(&opts);
-    mi_bQuerySetUpDone = false;
-}
-#endif
-
 inline const CBlastOptionsHandle&
 CBl2Seq::GetOptionsHandle() const
 {
@@ -252,6 +256,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2003/12/09 13:41:22  camacho
+* Added comment to Run method
+*
 * Revision 1.26  2003/12/03 16:36:07  dondosha
 * Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults
 *
