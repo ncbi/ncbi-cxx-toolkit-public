@@ -424,12 +424,12 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                         // comparing current strand to the prevailing one
                         if (m_AddFlags & fForceTranslation  &&
                             (aln_seq1->m_StrandScore > 0  && 
-                             strand1 == eNa_strand_minus) ||
-                            (aln_seq1->m_StrandScore < 0  && 
-                             strand1 != eNa_strand_minus) ||
-                            (aln_seq2->m_StrandScore > 0  && 
-                             strand2 == eNa_strand_minus) ||
-                            (aln_seq2->m_StrandScore < 0  && 
+                             strand1 == eNa_strand_minus ||
+                             aln_seq1->m_StrandScore < 0  && 
+                             strand1 != eNa_strand_minus ||
+                             aln_seq2->m_StrandScore > 0  && 
+                             strand2 == eNa_strand_minus ||
+                             aln_seq2->m_StrandScore < 0  && 
                              strand2 != eNa_strand_minus)) {
                             NCBI_THROW(CAlnException, eMergeFailure,
                                        "CAlnMix::Add(): "
@@ -2044,6 +2044,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.100  2004/06/23 22:22:23  todorov
+* Fixed condition logic
+*
 * Revision 1.99  2004/06/23 18:31:10  todorov
 * Calculate the prevailing strand per row (using scores)
 *
