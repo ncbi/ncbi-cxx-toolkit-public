@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/03/19 18:47:57  thiessen
+* small bug fixes; remember PSSM weight
+*
 * Revision 1.26  2002/02/21 22:01:49  thiessen
 * remember alignment range on demotion
 *
@@ -1131,7 +1134,8 @@ static double CalculatePSSMScore(const BlockMultipleAlignment::UngappedAlignedBl
         masterRange = (*b)->GetRangeOfRow(0);
         slaveRange = (*b)->GetRangeOfRow(row);
         for (i=0; i<(*b)->width; i++)
-            score += seqMtf->ww[masterRange->from + i][residueNumbers[slaveRange->from + i]];
+            if (residueNumbers[slaveRange->from + i] >= 0)
+                score += seqMtf->ww[masterRange->from + i][residueNumbers[slaveRange->from + i]];
     }
 
 //    TESTMSG("PSSM score for row " << row << ": " << score);

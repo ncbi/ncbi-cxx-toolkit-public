@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/03/19 18:48:00  thiessen
+* small bug fixes; remember PSSM weight
+*
 * Revision 1.27  2002/03/04 15:52:14  thiessen
 * hide sequence windows instead of destroying ; add perspective/orthographic projection choice
 *
@@ -138,6 +141,8 @@ USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
+
+static double prevPSSMWeight = -1.0;    // so scoring dialog remembers prev value
 
 BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     INCLUDE_VIEWER_WINDOW_BASE_EVENTS
@@ -406,9 +411,9 @@ void SequenceViewerWindow::OnSort(wxCommandEvent& event)
             if (DoProximitySort()) ProximitySortOff();
             GetFloatingPointDialog fpDialog(NULL,
                 "Weighting of PSSM/Contact score? ([0..1], 1 = PSSM only)", "Enter PSSM Weight",
-                0.0, 1.0, 0.05, 0.5);
+                0.0, 1.0, 0.05, ((prevPSSMWeight >= 0.0) ? prevPSSMWeight : 0.5));
             if (fpDialog.ShowModal() == wxOK) {
-                double weightPSSM = fpDialog.GetValue();
+                double weightPSSM = prevPSSMWeight = fpDialog.GetValue();
                 SetCursor(*wxHOURGLASS_CURSOR);
                 sequenceViewer->GetCurrentDisplay()->SortRowsByThreadingScore(weightPSSM);
                 SetCursor(wxNullCursor);
@@ -436,9 +441,9 @@ void SequenceViewerWindow::OnScoreThreader(wxCommandEvent& event)
 {
     GetFloatingPointDialog fpDialog(NULL,
         "Weighting of PSSM/Contact score? ([0..1], 1 = PSSM only)", "Enter PSSM Weight",
-        0.0, 1.0, 0.05, 0.5);
+        0.0, 1.0, 0.05, ((prevPSSMWeight >= 0.0) ? prevPSSMWeight : 0.5));
     if (fpDialog.ShowModal() == wxOK) {
-        double weightPSSM = fpDialog.GetValue();
+        double weightPSSM = prevPSSMWeight = fpDialog.GetValue();
         SetCursor(*wxHOURGLASS_CURSOR);
         if (sequenceViewer->GetCurrentDisplay()->IsEditable())
             sequenceViewer->GetCurrentDisplay()->CalculateRowScoresWithThreader(weightPSSM);

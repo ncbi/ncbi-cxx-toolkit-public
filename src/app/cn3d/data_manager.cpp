@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/03/19 18:47:58  thiessen
+* small bug fixes; remember PSSM weight
+*
 * Revision 1.8  2002/02/27 16:29:41  thiessen
 * add model type flag to general mime type
 *
@@ -409,11 +412,11 @@ void ASNDataManager::SetStructureAlignments(ncbi::objects::CBiostruc_annot_set *
             mimeData->SetGeneral().SetSeq_align_data().SetBundle().SetStrucaligns(*strucAligns);
         else
             mimeData->SetGeneral().SetSeq_align_data().SetBundle().ResetStrucaligns();
-    } else if (cddData.NotEmpty()) {
+    } else if (GetInternalCDDData()) {
         if (strucAligns)
-            cddData->SetFeatures(*strucAligns);
+            GetInternalCDDData()->SetFeatures(*strucAligns);
         else
-            cddData->ResetFeatures();
+            GetInternalCDDData()->ResetFeatures();
     } else
         ERR_POST(Error << "ASNDataManager::SetStructureAlignments() - can't add to this data type");
     structureAlignments = strucAligns;
