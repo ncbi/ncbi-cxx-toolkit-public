@@ -1214,9 +1214,11 @@ void CAlnMix::x_CreateSegmentsVector()
         } else {
             row->m_StartIt = row->m_Starts.end();
 #if _DEBUG
-            NCBI_THROW(CAlnException, eMergeFailure,
-                       "CAlnMix::x_CreateSegmentsVector(): "
-                       "Internal error: no starts for this row. ");
+            string errstr =
+                string("CAlnMix::x_CreateSegmentsVector():") +
+                " Internal error: no starts for row " +
+                NStr::IntToString(row->m_RowIndex) + ".";
+            NCBI_THROW(CAlnException, eMergeFailure, errstr);
 #endif
         }
     }
@@ -1234,9 +1236,11 @@ void CAlnMix::x_CreateSegmentsVector()
         } else {
             row->m_StartIt = row->m_Starts.end();
 #if _DEBUG
-            NCBI_THROW(CAlnException, eMergeFailure,
-                       "CAlnMix::x_CreateSegmentsVector(): "
-                       "Internal error: no starts for this row. ");
+            string errstr =
+                string("CAlnMix::x_CreateSegmentsVector():") +
+                " Internal error: no starts for row " +
+                NStr::IntToString(row->m_RowIndex) + ".";
+            NCBI_THROW(CAlnException, eMergeFailure, errstr);
 #endif
         }
     }
@@ -1861,6 +1865,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.76  2003/09/16 14:45:56  todorov
+* more informative exception strng
+*
 * Revision 1.75  2003/09/12 16:18:36  todorov
 * -unneeded checks (">=" for unsigned)
 *
