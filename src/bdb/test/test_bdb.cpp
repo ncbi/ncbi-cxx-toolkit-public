@@ -177,18 +177,19 @@ struct TestDBF3 : public CBDB_File
 static
 void s_TEST_BDB_Transaction(void)
 {
+    cout << "======== Transactions test." << endl;
+
     CBDB_Env env;
     env.OpenWithTrans(".");
     
     TestDBF3  dbf3;
     
     dbf3.SetEnv(env);
-    
-    dbf3.Open("trans_test.db", CBDB_File::eCreate);
+   
+    dbf3.Open("trans_test.db", CBDB_File::eReadWriteCreate);
+    cout << dbf3.CountRecs() << endl;
 
     CBDB_Transaction trans(env);
-
-//    dbf3.Reopen(CBDB_File::eReadWrite);
 
     dbf3.SetTransaction(&trans);
 
@@ -236,6 +237,7 @@ void s_TEST_BDB_Transaction(void)
     idata = dbf3.idata;
     assert(idata == 11);
 
+    cout << "======== Transactions test ok." << endl;
 }
 
 
@@ -1385,6 +1387,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/12/12 19:13:31  kuznets
+ * Transaction test: minor change file opening option.
+ *
  * Revision 1.30  2003/12/12 14:09:53  kuznets
  * + s_TEST_BDB_Transaction()
  *
