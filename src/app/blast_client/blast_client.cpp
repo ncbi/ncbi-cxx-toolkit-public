@@ -115,7 +115,7 @@ void CBlast_clientApplication::Init(void)
 // 1. If phi_query is specified, service = "phi"
 //
 
-void s_SetService(string & service, string & program, const CArgs & args)
+void s_SetService(string & service, string & /*program*/, const CArgs & args)
 {
     if (service == "plain") {
         if (args["phi_query"].HasValue()) {
@@ -192,6 +192,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2003/09/26 20:01:13  bealer
+ * - Fix compile warning.
+ *
  * Revision 1.1  2003/09/26 16:53:49  bealer
  * - Add blast_client project for netblast protocol, initial code commit.
  *

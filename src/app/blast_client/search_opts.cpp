@@ -115,7 +115,7 @@ public:
     }
     
     template <class T>
-    void Remote(T & valobj, CNetName)
+    void Remote(T &, CNetName)
     {
     }
     
@@ -216,6 +216,9 @@ void COptionWalker::ReadOpt(const ncbi::CArgs & args,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2003/09/26 20:00:48  bealer
+ * - Fix compile warning.
+ *
  * Revision 1.1  2003/09/26 16:53:49  bealer
  * - Add blast_client project for netblast protocol, initial code commit.
  *
