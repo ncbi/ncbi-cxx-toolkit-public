@@ -13,10 +13,11 @@ include ./Makefile.mk
 
 MANDATORY_PROJ  = corelib util connect cgi html hello
 
-OPTIONAL_PROJ   = @serial@ @dbapi@ @objects@ @ctools@ @gui@ @app@ \
+OPTIONAL_PROJ   = @serial@ @dbapi@ @objects@ @ctools@ @app@ \
    @internal@ @check@
-X_OPTIONAL_PROJ =  serial   dbapi   objects   ctools   gui   app \
+X_OPTIONAL_PROJ =  serial   dbapi   objects   ctools   app \
    internal check
+POTENTIAL_PROJ = @gui@
 
 SUB_PROJ = $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
 include ./Makefile.meta
