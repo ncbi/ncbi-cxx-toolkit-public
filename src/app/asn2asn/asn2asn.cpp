@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/04/07 19:27:34  vasilche
+* Generated objects now are placed in NCBI_NS_NCBI::objects namespace.
+*
 * Revision 1.11  2000/04/06 16:12:14  vasilche
 * Added -c option.
 *
@@ -70,7 +73,6 @@
 #include "asn2asn.hpp"
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbienv.hpp>
-#include <objects/biblio/Affil.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <serial/objistrasn.hpp>
@@ -78,7 +80,10 @@
 #include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/serial.hpp>
-#include <serial/iterator.hpp>
+
+USING_NCBI_SCOPE;
+
+using namespace NCBI_NS_NCBI::objects;
 
 class CNcbiDiagStream
 {
@@ -330,14 +335,5 @@ int CAsn2Asn::Run(void)
 static
 void SeqEntryProcess (CSeq_entry& sep)
 {
-/*
-    for ( CTypeConstIterator<CAffil> i = ConstBegin(sep); i; ++i ) {
-        const CAffil& affil = *i;
-        NcbiCout<<"Affil: "<<affil.Which()<<" = "<<CAffil::SelectionName(affil.Which())<<NcbiEndl;
-        for ( CStdTypeConstIterator<string> s = ConstBegin(affil); s; ++s ) {
-            NcbiCout << "String: \"" << *s << "\"" << NcbiEndl;
-        }
-    }
-*/
 }
 

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2000/04/07 19:27:36  vasilche
+ * Generated objects now are placed in NCBI_NS_NCBI::objects namespace.
+ *
  * Revision 1.1  2000/04/06 16:12:24  vasilche
  * Added PostRead test method.
  *
@@ -48,6 +51,11 @@
 #include <objects/seqset/Bioseq_set.hpp>
 
 // generated classes
+
+BEGIN_NCBI_SCOPE
+
+namespace objects {
+
 // constructor for static/automatic objects
 CBioseq_set::CBioseq_set(void)
 {
@@ -66,5 +74,9 @@ CBioseq_set::~CBioseq_set(void)
 
 void CBioseq_set::PostRead(void)
 {
-    NcbiCout << "Bioseq-set loaded" << NcbiEndl;
+    _TRACE("Bioseq-set loaded");
 }
+
+} // namespace objects
+
+END_NCBI_SCOPE
