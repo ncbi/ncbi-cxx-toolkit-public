@@ -322,7 +322,7 @@ void CDllResolver::AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
 
     // Add hardcoded runpath
 
-#if defined(NCBI_OS_UNIX)  &&  ! defined(NCBI_COMPILER_METROWERKS)
+#if !defined(NCBI_COMPILER_METROWERKS)
     if ((which & fToolkitDllPath) != 0) {
         const char* runpath = NCBI_GetRunpath();
         if (runpath  &&  *runpath) {
@@ -377,6 +377,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/10/12 19:59:23  ivanov
+ * Do not call NCBI_GetRunpath() when compiling with Codewarrior only --
+ * MS Windows have NCBI_GetRunpath().
+ *
  * Revision 1.24  2004/10/12 19:46:08  rsmith
  * Do not call NCBI_GetRunpath when compiling with Codewarrior.
  *
