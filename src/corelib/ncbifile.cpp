@@ -413,7 +413,8 @@ static void s_StripDir(const string& dir, vector<string> * dir_parts)
     for (;;) {
         sep_pos = dir.find(sep, sep_pos);
         if (sep_pos == NPOS) {
-            dir_parts->push_back(string(part_start, dir.length() - part_start));
+            dir_parts->push_back(string(dir, part_start,
+                                        dir.length() - part_start));
             break;
         }
 
@@ -1913,6 +1914,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2004/01/07 13:58:28  ucko
+ * Add missing first argument to string constructor in s_StripDir.
+ *
  * Revision 1.66  2004/01/05 21:40:54  gorelenk
  * += Exception throwing in CDirEntry::CreateRelativePath()
  *
