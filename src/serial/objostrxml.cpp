@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2003/10/31 17:39:40  grichenk
+* Allow empty containers
+*
 * Revision 1.64  2003/09/25 19:44:08  gouriano
 * Corrected serialization of AnyContent object's attributes
 *
@@ -1151,8 +1154,6 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
                 WriteObject(cType->GetElementPtr(i), elementType);
 
             } while ( cType->NextElement(i) );
-        } else {
-           ThrowError(fInvalidData, "container is empty");
         }
     }
     else {
