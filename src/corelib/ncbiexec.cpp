@@ -131,6 +131,7 @@ static int s_SpawnUnix(const ESpawnFunc func, const CExec::EMode mode,
     return pid;
 }
 
+
 // Get exec arguments
 #define GET_EXEC_ARGS \
     int xcnt = 2; \
@@ -139,6 +140,8 @@ static int s_SpawnUnix(const ESpawnFunc func, const CExec::EMode mode,
     while ( va_arg(vargs, const char*) ) xcnt++; \
     va_end(vargs); \
     const char **args = new const char*[xcnt]; \
+    typedef ArrayDeleter<const char*> TArgsDeleter; \
+    AutoPtr<const char*, TArgsDeleter> p_args(args); \
     if ( !args ) return -1; \
     args[0] = cmdname; \
     args[1] = argv; \
@@ -149,9 +152,6 @@ static int s_SpawnUnix(const ESpawnFunc func, const CExec::EMode mode,
         args[xi] = va_arg(vargs, const char*); \
     } \
     args[xi] = 0
-
-#define FREE_EXEC_ARGS \
-    delete[] args
 
 #endif
 
@@ -193,7 +193,6 @@ int CExec::SpawnL(const EMode mode, const char *cmdname, const char *argv, ...)
 #elif defined(NCBI_OS_UNIX)
     GET_EXEC_ARGS;
     status = s_SpawnUnix(eV, mode, cmdname, args);
-    FREE_EXEC_ARGS;
 #elif defined(NCBI_OS_MAC)
     ?
 #endif
@@ -213,7 +212,6 @@ int CExec::SpawnLE(const EMode mode, const char *cmdname,  const char *argv, ...
     GET_EXEC_ARGS;
     char** envp = va_arg(vargs, char**);
     status = s_SpawnUnix(eVE, mode, cmdname, args, envp);
-    FREE_EXEC_ARGS;
 #elif defined(NCBI_OS_MAC)
     ?
 #endif
@@ -230,7 +228,6 @@ int CExec::SpawnLP(const EMode mode, const char *cmdname,
 #elif defined(NCBI_OS_UNIX)
     GET_EXEC_ARGS;
     status = s_SpawnUnix(eVP, mode, cmdname, args);
-    FREE_EXEC_ARGS;
 #elif defined(NCBI_OS_MAC)
     ?
 #endif
@@ -251,7 +248,6 @@ int CExec::SpawnLPE(const EMode mode, const char *cmdname,
     GET_EXEC_ARGS;
     char** envp = va_arg(vargs, char**);
     status = s_SpawnUnix(eVPE, mode, cmdname, args, envp);
-    FREE_EXEC_ARGS;
 #elif defined(NCBI_OS_MAC)
     ?
 #endif
@@ -350,6 +346,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/06/11 19:28:31  ivanov
+ * Use AutoPtr<char*> for exec arguments in GET_EXEC_ARGS
+ *
  * Revision 1.3  2002/06/04 19:43:20  ivanov
  * Done s_ThrowException static
  *
