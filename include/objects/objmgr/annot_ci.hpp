@@ -44,7 +44,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CAnnotObject;
+class CAnnotObject_Info;
 
 // Structure to select type of Seq-annot
 struct SAnnotSelector
@@ -91,7 +91,7 @@ class NCBI_XOBJMGR_EXPORT CAnnot_CI
 {
 public:
     typedef CRange<TSeqPos>                                          TRange;
-    typedef CRangeMultimap<CRef<CAnnotObject>,TRange::position_type> TRangeMap;
+    typedef CRangeMultimap<CRef<CAnnotObject_Info>,TRange::position_type> TRangeMap;
     typedef map<SAnnotSelector, TRangeMap>                   TAnnotSelectorMap;
     typedef map<CSeq_id_Handle, TAnnotSelectorMap>                   TAnnotMap;
 
@@ -111,8 +111,8 @@ public:
 
     CAnnot_CI& operator++ (void);
     operator bool (void) const;
-    CAnnotObject& operator* (void) const;
-    CAnnotObject* operator-> (void) const;
+    CAnnotObject_Info& operator* (void) const;
+    CAnnotObject_Info* operator-> (void) const;
 
 private:
 
@@ -153,14 +153,14 @@ CAnnot_CI::operator bool (void) const
 }
 
 inline
-CAnnotObject& CAnnot_CI::operator* (void) const
+CAnnotObject_Info& CAnnot_CI::operator* (void) const
 {
     _ASSERT(bool(m_TSEInfo)  &&  bool(m_Current));
     return *m_Current->second;
 }
 
 inline
-CAnnotObject* CAnnot_CI::operator-> (void) const
+CAnnotObject_Info* CAnnot_CI::operator-> (void) const
 {
     _ASSERT(bool(m_TSEInfo)  &&  bool(m_Current));
     return m_Current->second;
@@ -173,6 +173,14 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/02/13 14:34:31  grichenk
+* Renamed CAnnotObject -> CAnnotObject_Info
+* + CSeq_annot_Info and CAnnotObject_Ref
+* Moved some members of CAnnotObject to CSeq_annot_Info
+* and CAnnotObject_Ref.
+* Added feat/align/graph to CAnnotObject_Info map
+* to CDataSource.
+*
 * Revision 1.15  2003/01/29 17:45:04  vasilche
 * Annotaions index is split by annotation/feature type.
 *

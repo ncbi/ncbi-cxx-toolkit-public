@@ -46,20 +46,36 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-bool CAnnotObject_Less::x_CompareAnnot(const CAnnotObject& x,
-                                       const CAnnotObject& y) const
+bool CAnnotObject_Less::x_CompareAnnot(const CAnnotObject_Ref& x,
+                                       const CAnnotObject_Ref& y) const
 {
-    if ( x.IsFeat()  &&  y.IsFeat() ) {
+    if ( x.Get().IsFeat()  &&  y.Get().IsFeat() ) {
         // CSeq_feat::operator<() may report x == y while the features
         // are different. In this case compare pointers too.
-        int diff = x.GetFeat().Compare(y.GetFeat(),
+        int diff = x.Get().GetFeat().Compare(y.Get().GetFeat(),
             x.IsMappedLoc() ? &x.GetMappedLoc() : 0,
             y.IsMappedLoc() ? &y.GetMappedLoc() : 0);
         if ( diff != 0 )
             return diff < 0;
     }
     // Compare pointers
-    return &x < &y;
+    return &x.Get() < &y.Get();
+}
+
+
+CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
+    : m_Object(&object),
+      m_MappedLoc(0),
+      m_MappedProd(0),
+      m_Partial(false)
+{
+    return;
+}
+
+
+CAnnotObject_Ref::~CAnnotObject_Ref(void)
+{
+    return;
 }
 
 
@@ -199,7 +215,7 @@ void CAnnotTypes_CI::Walk(void)
 }
 
 
-const CAnnotObject* CAnnotTypes_CI::Get(void) const
+const CAnnotObject_Ref* CAnnotTypes_CI::Get(void) const
 {
     _ASSERT( IsValid() );
     return *m_CurAnnot;
@@ -209,7 +225,7 @@ const CAnnotObject* CAnnotTypes_CI::Get(void) const
 const CSeq_annot& CAnnotTypes_CI::GetSeq_annot(void) const
 {
     _ASSERT( IsValid() );
-    return (*m_CurAnnot)->GetSeq_annot();
+    return (*m_CurAnnot)->Get().GetSeq_annot();
 }
 
 
@@ -250,8 +266,8 @@ has_references = true;
         TAnnotSet orig_annots;
         swap(orig_annots, m_AnnotSet);
         non_const_iterate(TAnnotSet, it, orig_annots) {
-            m_AnnotSet.insert(CRef<CAnnotObject>
-                              (x_ConvertAnnotToMaster(**it)));
+            m_AnnotSet.insert(CRef<CAnnotObject_Ref>
+                              (x_ConvertAnnotToMaster((*it)->Get())));
         }
     }
     m_CurAnnot = m_AnnotSet.begin();
@@ -348,16 +364,17 @@ void CAnnotTypes_CI::x_SearchLocation(CHandleRangeMap& loc)
                 (m_SingleEntry != &annot_it->GetSeq_entry())) {
                 continue;
             }
-            m_AnnotSet.insert(CRef<CAnnotObject>(&(*annot_it)));
+            m_AnnotSet.insert(CRef<CAnnotObject_Ref>(
+                new CAnnotObject_Ref(*annot_it)));
         }
     }
 }
 
 
-CAnnotObject*
-CAnnotTypes_CI::x_ConvertAnnotToMaster(const CAnnotObject& annot_obj) const
+CAnnotObject_Ref*
+CAnnotTypes_CI::x_ConvertAnnotToMaster(const CAnnotObject_Info& annot_obj) const
 {
-    CAnnotObject* AnnotCopy = new CAnnotObject(annot_obj);
+    CAnnotObject_Ref* AnnotCopy = new CAnnotObject_Ref(annot_obj);
     CRef<CSeq_loc> lcopy(new CSeq_loc);
     EConverted conv_res;
     switch ( annot_obj.Which() ) {
@@ -625,6 +642,14 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/02/13 14:34:34  grichenk
+* Renamed CAnnotObject -> CAnnotObject_Info
+* + CSeq_annot_Info and CAnnotObject_Ref
+* Moved some members of CAnnotObject to CSeq_annot_Info
+* and CAnnotObject_Ref.
+* Added feat/align/graph to CAnnotObject_Info map
+* to CDataSource.
+*
 * Revision 1.40  2003/02/12 19:17:31  vasilche
 * Fixed GetInt() when CSeq_loc is Whole.
 *

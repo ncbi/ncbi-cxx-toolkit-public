@@ -36,6 +36,7 @@
 #include <objects/objmgr/bioseq_handle.hpp>
 #include <objects/objmgr/annot_ci.hpp>
 #include <objects/seqloc/Na_strand.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <set>
 #include <memory>
@@ -47,7 +48,39 @@ BEGIN_SCOPE(objects)
 class CScope;
 class CTSE_Info;
 class CSeq_loc;
-class CAnnotObject;
+class CAnnotObject_Info;
+
+
+class CAnnotObject_Ref : public CObject
+{
+public:
+    CAnnotObject_Ref(const CAnnotObject_Info& object);
+    ~CAnnotObject_Ref(void);
+
+    const CAnnotObject_Info& Get(void) const;
+
+    bool IsPartial(void) const;
+    void SetPartial(bool value);
+
+    bool IsMappedLoc(void) const;
+    const CSeq_loc& GetMappedLoc(void) const;
+    CSeq_loc& SetMappedLoc(void);
+    void SetMappedLoc(CSeq_loc& loc);
+
+    bool IsMappedProd(void) const;
+    const CSeq_loc& GetMappedProd(void) const;
+    CSeq_loc& SetMappedProd(void);
+    void SetMappedProd(CSeq_loc& loc);
+
+private:
+    CAnnotObject_Ref(const CAnnotObject_Ref&);
+    CAnnotObject_Ref& operator=(const CAnnotObject_Ref&);
+
+    CConstRef<CAnnotObject_Info> m_Object;
+    CRef<CSeq_loc>          m_MappedLoc;  // master sequence coordinates
+    CRef<CSeq_loc>          m_MappedProd; // master sequence coordinates
+    bool                    m_Partial;    // Partial flag (same as in features)
+};
 
 
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Less
@@ -55,10 +88,10 @@ class NCBI_XOBJMGR_EXPORT CAnnotObject_Less
 public:
     // Compare CRef-s: if at least one is NULL, compare as pointers,
     // otherwise call non-inline x_CompareAnnot() method
-    bool operator ()(const CRef<CAnnotObject>& x, const CRef<CAnnotObject>& y) const;
+    bool operator ()(const CRef<CAnnotObject_Ref>& x, const CRef<CAnnotObject_Ref>& y) const;
 private:
     // Compare annot objects
-    bool x_CompareAnnot(const CAnnotObject& x, const CAnnotObject& y) const;
+    bool x_CompareAnnot(const CAnnotObject_Ref& x, const CAnnotObject_Ref& y) const;
 };
 
 
@@ -106,7 +139,7 @@ protected:
     // Move to the next valid position
     void Walk(void);
     // Return current annotation
-    const CAnnotObject* Get(void) const;
+    const CAnnotObject_Ref* Get(void) const;
 
 private:
     struct SConvertionRec : public CObject {
@@ -128,7 +161,7 @@ private:
     };
     typedef list< CRef<SConvertionRec> >      TIdConvList;
     typedef map<CSeq_id_Handle, TIdConvList>  TConvMap;
-    typedef set<CRef<CAnnotObject>, CAnnotObject_Less> TAnnotSet;
+    typedef set<CRef<CAnnotObject_Ref>, CAnnotObject_Less> TAnnotSet;
 
     // Initialize the iterator
     void x_Initialize(const CSeq_loc& loc);
@@ -149,7 +182,7 @@ private:
                              ENa_strand strand,         // ref. strand
                              TSignedSeqPos shift);      // shift to master
     // Convert an annotation to the master location coordinates
-    CAnnotObject* x_ConvertAnnotToMaster(const CAnnotObject& annot_obj) const;
+    CAnnotObject_Ref* x_ConvertAnnotToMaster(const CAnnotObject_Info& annot_obj) const;
     // Convert seq-loc to the master location coordinates, return ePartial
     // if any location was adjusted (used as Partial flag for features),
     // eMapped if a location was recalculated but not truncated, eNone
@@ -183,7 +216,7 @@ private:
 
 
 inline
-bool CAnnotObject_Less::operator ()(const CRef<CAnnotObject>& x, const CRef<CAnnotObject>& y) const
+bool CAnnotObject_Less::operator ()(const CRef<CAnnotObject_Ref>& x, const CRef<CAnnotObject_Ref>& y) const
 {
     if ( !x.GetPointer()  ||  !y.GetPointer() )
         return x < y;
@@ -191,12 +224,94 @@ bool CAnnotObject_Less::operator ()(const CRef<CAnnotObject>& x, const CRef<CAnn
 }
 
 
+inline
+const CAnnotObject_Info& CAnnotObject_Ref::Get(void) const
+{
+    return *m_Object;
+}
+
+inline
+bool CAnnotObject_Ref::IsPartial(void) const
+{
+    return m_Partial;
+}
+
+inline
+void CAnnotObject_Ref::SetPartial(bool value)
+{
+    m_Partial = value;
+}
+
+inline
+bool CAnnotObject_Ref::IsMappedLoc(void) const
+{
+    return bool(m_MappedLoc);
+}
+
+inline
+const CSeq_loc& CAnnotObject_Ref::GetMappedLoc(void) const
+{
+    _ASSERT(m_MappedLoc);
+    return *m_MappedLoc;
+}
+
+inline
+CSeq_loc& CAnnotObject_Ref::SetMappedLoc(void)
+{
+    if (!m_MappedLoc) {
+        m_MappedLoc.Reset(new CSeq_loc);
+    }
+    return *m_MappedLoc;
+}
+
+inline
+void CAnnotObject_Ref::SetMappedLoc(CSeq_loc& loc)
+{
+    m_MappedLoc.Reset(&loc);
+}
+
+inline
+bool CAnnotObject_Ref::IsMappedProd(void) const
+{
+    return bool(m_MappedProd);
+}
+
+inline
+const CSeq_loc& CAnnotObject_Ref::GetMappedProd(void) const
+{
+    _ASSERT(m_MappedProd);
+    return *m_MappedProd;
+}
+
+inline
+CSeq_loc& CAnnotObject_Ref::SetMappedProd(void)
+{
+    if (!m_MappedProd) {
+        m_MappedProd.Reset(new CSeq_loc);
+    }
+    return *m_MappedProd;
+}
+
+inline
+void CAnnotObject_Ref::SetMappedProd(CSeq_loc& loc)
+{
+    m_MappedProd.Reset(&loc);
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/02/13 14:34:31  grichenk
+* Renamed CAnnotObject -> CAnnotObject_Info
+* + CSeq_annot_Info and CAnnotObject_Ref
+* Moved some members of CAnnotObject to CSeq_annot_Info
+* and CAnnotObject_Ref.
+* Added feat/align/graph to CAnnotObject_Info map
+* to CDataSource.
+*
 * Revision 1.26  2003/02/04 21:44:10  grichenk
 * Convert seq-loc instead of seq-annot to the master coordinates
 *

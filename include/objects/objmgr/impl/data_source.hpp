@@ -49,6 +49,7 @@ BEGIN_SCOPE(objects)
 
 class CDelta_seq;
 class CSeq_interval;
+class CSeq_annot_Info;
 
 class CDataSource : public CObject
 {
@@ -152,7 +153,8 @@ public:
     typedef map<CRef<CSeq_entry>, CRef<CTSE_Info> > TEntries;
     typedef CTSE_Info::TBioseqMap                   TBioseqMap;
     typedef map<CSeq_id_Handle, TTSESet>            TTSEMap;
-    typedef map<CBioseq_Handle::TBioseqCore, CRef<CSeqMap> >     TSeqMaps;
+    typedef map<CBioseq_Handle::TBioseqCore, CRef<CSeqMap> >  TSeqMaps;
+    typedef map<const CObject*, CRef<CAnnotObject_Info> >     TAnnotObjectMap;
 
     // Get TSEs containing annotations for the given location
     void PopulateTSESet(CHandleRangeMap& loc,
@@ -214,17 +216,14 @@ private:
 
     // Process a single data element
     void x_MapFeature(const CSeq_feat& feat,
-                      const CSeq_annot& annot,
-                      CTSE_Info& tse,
-                      const CSeq_entry* entry);
+                      CSeq_annot_Info& annot,
+                      CTSE_Info& tse);
     void x_MapAlign(const CSeq_align& align,
-                    const CSeq_annot& annot,
-                    CTSE_Info& tse,
-                    const CSeq_entry* entry);
+                    CSeq_annot_Info& annot,
+                    CTSE_Info& tse);
     void x_MapGraph(const CSeq_graph& graph,
-                    const CSeq_annot& annot,
-                    CTSE_Info& tse,
-                    const CSeq_entry* entry);
+                    CSeq_annot_Info& annot,
+                    CTSE_Info& tse);
 
     // Check if the Seq-entry is handled by this data-source
     CSeq_entry* x_FindEntry(const CSeq_entry& entry);
@@ -307,6 +306,8 @@ private:
     // "true" if annotations need to be indexed immediately, "false" while
     // delayed indexing is allowed.
     bool                  m_IndexedAnnot;
+    // map feature/align/graph to CAnnotObject_Info (need for faster dropping)
+    TAnnotObjectMap       m_AnnotObjectMap;
 
     friend class CAnnot_CI;
     friend class CAnnotTypes_CI; // using mutex etc.
@@ -345,6 +346,14 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/02/13 14:34:32  grichenk
+* Renamed CAnnotObject -> CAnnotObject_Info
+* + CSeq_annot_Info and CAnnotObject_Ref
+* Moved some members of CAnnotObject to CSeq_annot_Info
+* and CAnnotObject_Ref.
+* Added feat/align/graph to CAnnotObject_Info map
+* to CDataSource.
+*
 * Revision 1.36  2003/02/05 17:57:41  dicuccio
 * Moved into include/objects/objmgr/impl to permit data loaders to be defined
 * outside of xobjmgr.

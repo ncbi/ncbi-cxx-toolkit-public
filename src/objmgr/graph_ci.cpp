@@ -37,10 +37,10 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CMappedGraph& CMappedGraph::Set(const CAnnotObject& annot)
+CMappedGraph& CMappedGraph::Set(const CAnnotObject_Ref& annot)
 {
-    _ASSERT(annot.IsGraph());
-    m_Graph = &annot.GetGraph();
+    _ASSERT(annot.Get().IsGraph());
+    m_Graph = &annot.Get().GetGraph();
     m_MappedGraph.Reset();
     m_Partial = annot.IsPartial();
     if ( annot.IsMappedLoc() )
@@ -83,7 +83,7 @@ CGraph_CI::~CGraph_CI(void)
 
 const CMappedGraph& CGraph_CI::operator* (void) const
 {
-    const CAnnotObject* annot = Get();
+    const CAnnotObject_Ref* annot = Get();
     _ASSERT(annot);
     return m_Graph.Set(*annot);
 }
@@ -91,7 +91,7 @@ const CMappedGraph& CGraph_CI::operator* (void) const
 
 const CMappedGraph* CGraph_CI::operator-> (void) const
 {
-    const CAnnotObject* annot = Get();
+    const CAnnotObject_Ref* annot = Get();
     _ASSERT(annot);
     m_Graph.Set(*annot);
     return &m_Graph;
@@ -103,6 +103,14 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/02/13 14:34:34  grichenk
+* Renamed CAnnotObject -> CAnnotObject_Info
+* + CSeq_annot_Info and CAnnotObject_Ref
+* Moved some members of CAnnotObject to CSeq_annot_Info
+* and CAnnotObject_Ref.
+* Added feat/align/graph to CAnnotObject_Info map
+* to CDataSource.
+*
 * Revision 1.14  2003/02/10 22:04:44  grichenk
 * CGraph_CI resolves to CMappedGraph instead of CSeq_graph
 *

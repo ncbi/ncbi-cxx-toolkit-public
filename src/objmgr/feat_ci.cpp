@@ -37,10 +37,10 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CMappedFeat& CMappedFeat::Set(const CAnnotObject& annot)
+CMappedFeat& CMappedFeat::Set(const CAnnotObject_Ref& annot)
 {
-    _ASSERT(annot.IsFeat());
-    m_Feat = &annot.GetFeat();
+    _ASSERT(annot.Get().IsFeat());
+    m_Feat = &annot.Get().GetFeat();
     m_MappedFeat.Reset();
     m_Partial = annot.IsPartial();
     if ( annot.IsMappedLoc() )
@@ -57,7 +57,7 @@ CMappedFeat& CMappedFeat::Set(const CAnnotObject& annot)
 
 const CMappedFeat& CFeat_CI::operator* (void) const
 {
-    const CAnnotObject* annot = Get();
+    const CAnnotObject_Ref* annot = Get();
     _ASSERT(annot);
     return m_Feat.Set(*annot);
 }
@@ -65,7 +65,7 @@ const CMappedFeat& CFeat_CI::operator* (void) const
 
 const CMappedFeat* CFeat_CI::operator-> (void) const
 {
-    const CAnnotObject* annot = Get();
+    const CAnnotObject_Ref* annot = Get();
     _ASSERT(annot);
     m_Feat.Set(*annot);
     return &m_Feat;
@@ -77,6 +77,14 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/02/13 14:34:34  grichenk
+* Renamed CAnnotObject -> CAnnotObject_Info
+* + CSeq_annot_Info and CAnnotObject_Ref
+* Moved some members of CAnnotObject to CSeq_annot_Info
+* and CAnnotObject_Ref.
+* Added feat/align/graph to CAnnotObject_Info map
+* to CDataSource.
+*
 * Revision 1.13  2003/02/10 15:50:45  grichenk
 * + CMappedFeat, CFeat_CI resolves to CMappedFeat
 *

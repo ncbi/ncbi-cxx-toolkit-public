@@ -44,11 +44,11 @@ BEGIN_SCOPE(objects)
 
 ////////////////////////////////////////////////////////////////////
 //
-//  CAnnotObject::
+//  CAnnotObject_Info::
 //
 
 
-void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
+void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
 {
     //### Check the implementation.
     switch ( align.GetSegs().Which() ) {
@@ -205,9 +205,9 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
     }
 }
 
-void CAnnotObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+void CAnnotObject_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
-    ddc.SetFrame("CAnnotObject");
+    ddc.SetFrame("CAnnotObject_Info");
     CObject::DebugDump( ddc, depth);
 
     string choice;
@@ -221,9 +221,9 @@ void CAnnotObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     case CSeq_annot::C_Data::e_Locs:    choice="locs";      break;
     }
     ddc.Log("m_Choice", choice);
-    ddc.Log("m_DataSource", m_DataSource,0);
+//    ddc.Log("m_DataSource", m_DataSource,0);
     ddc.Log("m_Object", m_Object.GetPointer(),0);
-    ddc.Log("m_Annot", m_Annot.GetPointer(),0);
+//    ddc.Log("m_Annot", m_Annot.GetPointer(),0);
     // m_RangeMap is not dumpable
     if (m_RangeMap.get()) {
         CDebugDumpContext ddc2(ddc,"m_RangeMap");
@@ -281,6 +281,14 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/02/13 14:34:34  grichenk
+* Renamed CAnnotObject -> CAnnotObject_Info
+* + CSeq_annot_Info and CAnnotObject_Ref
+* Moved some members of CAnnotObject to CSeq_annot_Info
+* and CAnnotObject_Ref.
+* Added feat/align/graph to CAnnotObject_Info map
+* to CDataSource.
+*
 * Revision 1.16  2003/02/04 18:53:36  dicuccio
 * Include file clean-up
 *

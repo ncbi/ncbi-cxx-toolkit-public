@@ -58,7 +58,7 @@ BEGIN_SCOPE(objects)
 // forward declaration
 class CSeq_entry;
 class CBioseq;
-class CAnnotObject;
+class CAnnotObject_Info;
 
 class NCBI_XOBJMGR_EXPORT CTSE_Info : public CObject, public CMutableAtomicCounter
 {
@@ -79,7 +79,7 @@ public:
 
     typedef map<CSeq_id_Handle, CRef<CBioseq_Info> >                 TBioseqMap;
     typedef CRange<TSeqPos>                                          TRange;
-    typedef CRangeMultimap<CRef<CAnnotObject>,TRange::position_type> TRangeMap;
+    typedef CRangeMultimap<CRef<CAnnotObject_Info>,TRange::position_type> TRangeMap;
     typedef map<SAnnotSelector, TRangeMap>                   TAnnotSelectorMap;
     typedef map<CSeq_id_Handle, TAnnotSelectorMap>                   TAnnotMap;
 
@@ -187,6 +187,14 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/02/13 14:34:32  grichenk
+* Renamed CAnnotObject -> CAnnotObject_Info
+* + CSeq_annot_Info and CAnnotObject_Ref
+* Moved some members of CAnnotObject to CSeq_annot_Info
+* and CAnnotObject_Ref.
+* Added feat/align/graph to CAnnotObject_Info map
+* to CDataSource.
+*
 * Revision 1.17  2003/02/05 17:57:41  dicuccio
 * Moved into include/objects/objmgr/impl to permit data loaders to be defined
 * outside of xobjmgr.

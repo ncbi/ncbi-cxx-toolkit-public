@@ -176,7 +176,7 @@ public:
 
 private:
     friend class CFeat_CI;
-    CMappedFeat& Set(const CAnnotObject& annot);
+    CMappedFeat& Set(const CAnnotObject_Ref& annot);
 
     CConstRef<CSeq_feat>         m_Feat;
     mutable CConstRef<CSeq_feat> m_MappedFeat;
@@ -315,6 +315,14 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/02/13 14:34:31  grichenk
+* Renamed CAnnotObject -> CAnnotObject_Info
+* + CSeq_annot_Info and CAnnotObject_Ref
+* Moved some members of CAnnotObject to CSeq_annot_Info
+* and CAnnotObject_Ref.
+* Added feat/align/graph to CAnnotObject_Info map
+* to CDataSource.
+*
 * Revision 1.19  2003/02/10 22:03:55  grichenk
 * operator++(int) made private
 *

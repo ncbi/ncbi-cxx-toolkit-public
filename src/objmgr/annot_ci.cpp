@@ -172,7 +172,7 @@ bool CAnnot_CI::x_IsValid(void) const
         return true; // Do not need to walk ahead
     if (m_Selector.m_AnnotChoice == CSeq_annot::C_Data::e_not_set)
         return true;
-    const CAnnotObject& obj = *m_Current->second;
+    const CAnnotObject_Info& obj = *m_Current->second;
     //_TRACE("found annot: " << obj.Which() << " at " << obj.GetRangeMap());
     if (m_Selector.m_AnnotChoice != obj.Which())
         return false;
@@ -241,6 +241,14 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/02/13 14:34:34  grichenk
+* Renamed CAnnotObject -> CAnnotObject_Info
+* + CSeq_annot_Info and CAnnotObject_Ref
+* Moved some members of CAnnotObject to CSeq_annot_Info
+* and CAnnotObject_Ref.
+* Added feat/align/graph to CAnnotObject_Info map
+* to CDataSource.
+*
 * Revision 1.16  2003/02/05 17:59:16  dicuccio
 * Moved formerly private headers into include/objects/objmgr/impl
 *

@@ -171,7 +171,7 @@ public:
 
 private:
     friend class CGraph_CI;
-    CMappedGraph& Set(const CAnnotObject& annot);
+    CMappedGraph& Set(const CAnnotObject_Ref& annot);
 
     CConstRef<CSeq_graph>         m_Graph;
     mutable CConstRef<CSeq_graph> m_MappedGraph;
@@ -250,6 +250,14 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/02/13 14:34:31  grichenk
+* Renamed CAnnotObject -> CAnnotObject_Info
+* + CSeq_annot_Info and CAnnotObject_Ref
+* Moved some members of CAnnotObject to CSeq_annot_Info
+* and CAnnotObject_Ref.
+* Added feat/align/graph to CAnnotObject_Info map
+* to CDataSource.
+*
 * Revision 1.17  2003/02/10 22:04:42  grichenk
 * CGraph_CI resolves to CMappedGraph instead of CSeq_graph
 *
