@@ -129,6 +129,11 @@ void CAppNWA::Init()
 
     argdescr->AddOptionalKey
         ("oasn", "oasn", "ASN.1 output filename", CArgDescriptions::eString);
+
+    argdescr->AddOptionalKey
+        ("oexons", "exons",
+         "Exon table output filename (mRna2Dna only)",
+         CArgDescriptions::eString);
     
     CArgAllow_Strings* paa_st = new CArgAllow_Strings;
     paa_st->Allow("nucl")->Allow("blosum62");
@@ -176,11 +181,23 @@ void CAppNWA::x_RunOnPair() const
     const bool bMT = args["mt"];
     const bool bMrna2Dna = args["mrna2dna"];
 
+    bool   output_type1  ( args["o1"] );
+    bool   output_type2  ( args["o2"] );
+    bool   output_asn    ( args["oasn"] );
+    bool   output_fasta  ( args["ofasta"] );
+    bool   output_exons  ( args["oexons"] );
+
     if(bMrna2Dna && args["matrix"].AsString() != "nucl") {
         NCBI_THROW(CAppNWAException,
                    eInconsistentParameters,
                    "Spliced alignment assumes nucleotide sequences "
                    "(matrix = nucl)");
+    }
+
+    if(output_exons && !bMrna2Dna) {
+        NCBI_THROW(CAppNWAException,
+                   eInconsistentParameters,
+                   "Exon output can only be requested in mRna2Dna mode");
     }
      
     if(bMrna2Dna && bMM) {
@@ -247,16 +264,12 @@ void CAppNWA::x_RunOnPair() const
         CMMAligner* pmma = static_cast<CMMAligner*> (aligner.get());
         pmma -> EnableMultipleThreads();
     }
-
-    bool   output_type1  ( args["o1"] );
-    bool   output_type2  ( args["o2"] );
-    bool   output_asn    ( args["oasn"] );
-    bool   output_fasta  ( args["ofasta"] );
     
     auto_ptr<ofstream> pofs1 (0);
     auto_ptr<ofstream> pofs2 (0);
     auto_ptr<ofstream> pofsAsn (0);
     auto_ptr<ofstream> pofsFastA (0);
+    auto_ptr<ofstream> pofsExons (0);
 
     if(output_type1) {
         pofs1.reset(open_ofstream (args["o1"].AsString()).release());
@@ -274,6 +287,10 @@ void CAppNWA::x_RunOnPair() const
         pofsFastA.reset(open_ofstream (args["ofasta"].AsString()).release());
     }
 
+    if(output_exons) {
+        pofsExons.reset(open_ofstream (args["oexons"].AsString()).release());
+    }
+
     aligner->SetSeqIds(seqname1, seqname2);
     
     {{  // setup end penalties
@@ -289,29 +306,35 @@ void CAppNWA::x_RunOnPair() const
     cerr << "Score = " << score << endl;
 
     const size_t line_width = 50;
+    string s;
     if(pofs1.get()) {
-        *pofs1 << aligner->FormatAsText(
-                                CNWAligner::eFormatType1, line_width);
+        aligner->FormatAsText(&s, CNWAligner::eFormatType1, line_width);
+        *pofs1 << s;
     }
 
     if(pofs2.get()) {
-        *pofs2 << aligner->FormatAsText(
-                                CNWAligner::eFormatType2, line_width);
+        aligner->FormatAsText(&s, CNWAligner::eFormatType2, line_width);
+        *pofs2 << s;
     }
 
     if(pofsAsn.get()) {
-        *pofsAsn << aligner->FormatAsText(
-                                  CNWAligner::eFormatAsn, line_width);
+        aligner->FormatAsText(&s, CNWAligner::eFormatAsn, line_width);
+        *pofsAsn << s;
     }
 
     if(pofsFastA.get()) {
-        *pofsFastA << aligner->FormatAsText(
-                                    CNWAligner::eFormatFastA, line_width);
+        aligner->FormatAsText(&s, CNWAligner::eFormatFastA, line_width);
+        *pofsFastA << s;
+    }
+
+    if(pofsExons.get()) {
+        aligner->FormatAsText(&s, CNWAligner::eFormatExonTable, line_width);
+        *pofsExons << s;
     }
     
     if(!output_type1 && !output_type2 && !output_asn && !output_fasta) {
-        cout << aligner->FormatAsText(
-                                    CNWAligner::eFormatType2, line_width);
+        aligner->FormatAsText(&s, CNWAligner::eFormatType2, line_width);
+        cout << s;
     }
 }
 
@@ -361,6 +384,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/04/02 20:53:31  kapustin
+ * Add exon table output format
+ *
  * Revision 1.15  2003/03/25 22:06:02  kapustin
  * Support non-canonical splice signals
  *

@@ -45,17 +45,6 @@ static unsigned char acceptor[splice_type_count][2] = {
     {'A','G'}, {'A','G'}, {'A','C'}
 };
 
-/*
-
-static unsigned char donor[splice_type_count][2] = {
-    {'G','T'}
-};
-
-static unsigned char acceptor[splice_type_count][2] = {
-    {'A','G'}
-};
-
-*/
 
 CNWAlignerMrna2Dna::CNWAlignerMrna2Dna(const char* seq1, size_t len1,
                                        const char* seq2, size_t len2)
@@ -350,10 +339,6 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
     throw (CNWAlignerException)
 {
     const size_t dim = m_Transcript.size();
-    vector<ETranscriptSymbol> transcript (dim);
-    for(size_t i = 0; i < dim; ++i) {
-        transcript[i] = m_Transcript[dim - i - 1];
-    }
 
     TScore score = 0;
 
@@ -363,7 +348,7 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
     char state1;   // 0 = normal, 1 = gap, 2 = intron
     char state2;   // 0 = normal, 1 = gap
 
-    switch(transcript[0]) {
+    switch(m_Transcript[dim-1]) {
     case eMatch:    state1 = state2 = 0; break;
     case eInsert:   state1 = 1; state2 = 0; score += m_Wg; break;
     case eDelete:   state1 = 0; state2 = 1; score += m_Wg; break;
@@ -378,11 +363,11 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
     TScore L1 = 0, R1 = 0, L2 = 0, R2 = 0;
     bool   bL1 = false, bR1 = false, bL2 = false, bR2 = false;
     
-    for(size_t i = 0; i < dim; ++i) {
+    for(int i = dim-1; i >= 0; --i) {
 
         char c1 = *p1;
         char c2 = *p2;
-        switch(transcript[i]) {
+        switch(m_Transcript[i]) {
 
         case eMatch: {
             state1 = state2 = 0;
@@ -432,8 +417,8 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
 
     if(m_esf_L1) {
         size_t g = 0;
-        for(size_t i = 0; i < dim; ++i) {
-            if(transcript[i] == eInsert) ++g; else break;
+        for(int i = dim - 1; i >= 0; --i) {
+            if(m_Transcript[i] == eInsert) ++g; else break;
         }
         if(g > 0) {
             score -= (m_Wg + g*m_Ws);
@@ -442,8 +427,8 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
 
     if(m_esf_L2) {
         size_t g = 0;
-        for(size_t i = 0; i < dim; ++i) {
-            if(transcript[i] == eDelete) ++g; else break;
+        for(int i = dim - 1; i >= 0; --i) {
+            if(m_Transcript[i] == eDelete) ++g; else break;
         }
         if(g > 0) {
             score -= (m_Wg + g*m_Ws);
@@ -452,8 +437,8 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
 
     if(m_esf_R1) {
         size_t g = 0;
-        for(int i = dim - 1; i >= 0; --i) {
-            if(transcript[i] == eInsert) ++g; else break;
+        for(size_t i = 0; i < dim; ++i) {
+            if(m_Transcript[i] == eInsert) ++g; else break;
         }
         if(g > 0) {
             score -= (m_Wg + g*m_Ws);
@@ -462,8 +447,8 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
 
     if(m_esf_R2) {
         size_t g = 0;
-        for(int i = dim - 1; i >= 0; --i) {
-            if(transcript[i] == eDelete) ++g; else break;
+        for(size_t i = 0; i < dim; ++i) {
+            if(m_Transcript[i] == eDelete) ++g; else break;
         }
         if(g > 0) {
             score -= (m_Wg + g*m_Ws);
@@ -474,6 +459,70 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
 }
 
 
+void CNWAlignerMrna2Dna::FormatAsText(string* output, 
+                              EFormat type, size_t line_width) const
+    throw(CNWAlignerException)
+
+{
+    CNcbiOstrstream ss;
+    ss.precision(2);
+    switch (type) {
+            
+    case eFormatExonTable: {
+        const char* p1 = m_Seq1;
+        const char* p2 = m_Seq2;
+        int tr_idx_hi = m_Transcript.size() - 1;
+        int tr_idx_lo = 0;
+        while(m_esf_L1 && m_Transcript[tr_idx_hi] == eInsert) {
+            --tr_idx_hi;
+            ++p2;
+        };
+        while(m_esf_R1 && m_Transcript[tr_idx_lo] == eInsert) {
+            ++tr_idx_lo;
+        };
+
+        for(int tr_idx = tr_idx_hi; tr_idx >= tr_idx_lo;) {
+            const char* p1_beg = p1;
+            const char* p2_beg = p2;
+            size_t matches = 0, exon_size = 0;
+            while(tr_idx >= tr_idx_lo && m_Transcript[tr_idx] != eIntron) {
+                if(*p1 == *p2) ++matches;
+                if(m_Transcript[tr_idx] != eInsert) ++p1;
+                if(m_Transcript[tr_idx] != eDelete) ++p2;
+                --tr_idx;
+                ++exon_size;
+            }
+            if(exon_size > 0) {
+                float identity = float(matches) / exon_size;
+                size_t beg1  = p1_beg - m_Seq1, end1 = p1 - m_Seq1 - 1;
+                size_t beg2  = p2_beg - m_Seq2, end2 = p2 - m_Seq2 - 1;
+                ss << beg1 << '\t'<< end1<< '\t'<< beg2 << '\t'<< end2<< '\t';
+                ss << exon_size << '\t' << identity << '\t';
+                char c1 = (p2_beg >= m_Seq2 + 2)? *(p2_beg - 2): ' ';
+                char c2 = (p2_beg >= m_Seq2 + 1)? *(p2_beg - 1): ' ';
+                char c3 = (p2 < m_Seq2 + m_SeqLen2)? *(p2): ' ';
+                char c4 = (p2 < m_Seq2 + m_SeqLen2 - 1)? *(p2+1): ' ';
+                ss << c1 << c2 << "<exon>" << c3 << c4 << '\t';
+                ss << endl;
+            }
+            // find next exon
+            while(tr_idx >= tr_idx_lo && m_Transcript[tr_idx] == eIntron) {
+                --tr_idx;
+                ++p2;
+            }
+        }
+    }
+    break;
+    
+    default: {
+        CNWAligner::FormatAsText(output, type, line_width);
+        return;
+    }
+    }
+    
+    *output = CNcbiOstrstreamToString(ss);
+}
+
 END_NCBI_SCOPE
 
 
@@ -481,6 +530,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/04/02 20:53:21  kapustin
+ * Add exon table output format
+ *
  * Revision 1.11  2003/03/31 15:32:05  kapustin
  * Calculate score independently from transcript
  *
