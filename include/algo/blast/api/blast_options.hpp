@@ -52,6 +52,7 @@ class CBlastTraceBackTest;
 class CScoreBlkTest; 
 class CRPSTest; 
 class CBlastRedoAlignmentTest; 
+class CBlastSetupTest;
 class CPsimodulestestApplication;
 
 class CBlastTabularFormatThread;
@@ -1696,6 +1697,7 @@ public:
     friend class ::CScoreBlkTest;          // unit test class
     friend class ::CRPSTest;               // unit test class
     friend class ::CBlastRedoAlignmentTest;// unit test class
+    friend class ::CBlastSetupTest;        // unit test class
     friend class ::CPsimodulestestApplication;  // bulk test application class
 
 protected:
@@ -2476,6 +2478,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.78  2004/12/21 15:12:19  dondosha
+* Added friend class for blastsetup unit test
+*
 * Revision 1.77  2004/12/20 20:10:55  camacho
 * + option to set composition based statistics
 * + option to use pssm in lookup table
