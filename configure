@@ -18590,8 +18590,8 @@ _ACEOF
 fi
 
 
-## many daemons under 'connect' require <sys/poll.h>
-if test $ac_cv_header_sys_poll_h = yes; then
+## many daemons under 'connect' require <poll.h>
+if test $ac_cv_header_poll_h = yes; then
    daemons=daemons
 else
    daemons=

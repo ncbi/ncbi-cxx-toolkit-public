@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.267 2004/02/04 01:29:01 ucko Exp $
+#  $Id: configure.ac,v 1.268 2004/02/04 02:50:27 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3250,8 +3250,8 @@ else
 fi
 
 
-## many daemons under 'connect' require <sys/poll.h>
-if test $ac_cv_header_sys_poll_h = yes; then
+## many daemons under 'connect' require <poll.h>
+if test $ac_cv_header_poll_h = yes; then
    daemons=daemons
 else
    daemons=
