@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/03/21 20:37:16  ucko
+* Pull in full bioseq when counting HTG pieces [also in objmgr]
+*
 * Revision 1.5  2002/03/21 20:09:06  ucko
 * Look at parents' title descriptors in some cases.
 * Incorporate recent changes from the C version (CreateDefLineEx):
@@ -304,9 +307,11 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
             un = "un";
         }
         if (core->GetInst().GetRepr() == CSeq_inst::eRepr_delta) {
+            // We need the full bioseq here...
+            const CBioseq& seq = GetBioseq(handle);
             unsigned int pieces = 0;
             iterate (CDelta_ext::Tdata, it,
-                     core->GetInst().GetExt().GetDelta().Get()) {
+                     seq.GetInst().GetExt().GetDelta().Get()) {
                 switch ((*it)->Which()) {
                 case CDelta_seq::e_Loc:
                     if ( !(*it)->GetLoc().IsNull() ) {
