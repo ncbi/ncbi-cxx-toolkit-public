@@ -428,7 +428,8 @@ EProgram ProgramNameToEnum(const std::string& program_name)
         
         // Handle others ...
     }
-    NCBI_THROW(CBlastException, eNotSupported, program_name + " not supported");
+    NCBI_THROW(CBlastException, eNotSupported, 
+               "Program type '" + program_name + "' not supported");
 }
 
 Int2 Blast_FillRPSInfo( BlastRPSInfo **ppinfo, CMemoryFile **rps_mmap,
@@ -543,6 +544,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.57  2004/12/03 22:23:35  camacho
+ * Minor change
+ *
  * Revision 1.56  2004/11/23 23:00:59  camacho
  * + RAII class for BlastSeqSrc
  *
