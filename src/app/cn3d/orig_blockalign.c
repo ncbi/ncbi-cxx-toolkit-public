@@ -452,18 +452,51 @@ void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
 		     Int4 startQueryPosition, Int4 endQueryPosition,
 		     Int4 numBlocks,
                      Int4 *blockStarts, Int4 *blockEnds, Int4 masterLength,
-		     BLAST_Score **posMatrix, BLAST_Score scoreThreshold)
+		     BLAST_Score **posMatrix, BLAST_Score scoreThreshold,
+		     Boolean localAlign)
 {
 
-  Int4 blockIndex;  /*loop index*/
+   Int4 blockIndex;  /*loop index*/
    Int4 recordIndex = 0;
    Int4 queryPos, dbPos; /*positions in database and query sequences*/
+   Int4 actualStartQuery, actualEndQuery; /*actual starting and
+					    ending position+1 we can use*/
    Int4 incrementedQueryPos; /*index for moving down quey diagonal*/
    Int4 score; /*total score*/
+   Int4 *requiredStartMAX, *requiredStartMIN; /*where do block alignments have to 
+                                        start w. r. t. query to fit 
+					in*/
+   Int4 currentLength; /*current length of blocks*/
    alignPiece *newPiece;
    Int4 candidateQueryEnd; /*candidate for end of match in query*/
 
+   if (!localAlign) {
+     requiredStartMAX = (Int4 *) MemNew(numBlocks * sizeof(Int4));
+     requiredStartMIN = (Int4 *) MemNew(numBlocks * sizeof(Int4));
+     for(blockIndex = 0; blockIndex < numBlocks; blockIndex++) {
+       requiredStartMIN[blockIndex] = 0;
+       requiredStartMAX[blockIndex] = queryLength -1;
+     }
+     currentLength = 0;
+     for(blockIndex = numBlocks -1; blockIndex >= 0; blockIndex--){
+       currentLength += blockEnds[blockIndex] - blockStarts[blockIndex] + 1;
+       requiredStartMAX[blockIndex] = queryLength - currentLength;
+     }
+     currentLength = 0;     
+     for(blockIndex = 0; blockIndex < numBlocks; blockIndex++) {
+       requiredStartMIN[blockIndex] = currentLength;
+       currentLength += blockEnds[blockIndex] - blockStarts[blockIndex] + 1;
+     }
+   }
    for(blockIndex = 0; blockIndex < numBlocks; blockIndex++) {
+     if (localAlign) {
+       actualStartQuery = startQueryPosition;
+       actualEndQuery = endQueryPosition;
+     }
+     else {
+       actualStartQuery = MAX(startQueryPosition,requiredStartMIN[blockIndex]);
+       actualEndQuery = MIN(endQueryPosition,requiredStartMAX[blockIndex]);
+     }
      for(queryPos = startQueryPosition; queryPos < endQueryPosition; queryPos++) {
        score = 0;
        for (dbPos = blockStarts[blockIndex], incrementedQueryPos = queryPos; 
@@ -484,6 +517,10 @@ void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
 	 recordIndex++;
        }
      }
+   }
+   if (!localAlign) {
+     MemFree(requiredStartMAX);
+     MemFree(requiredStartMIN);
    }
 }
 
@@ -804,7 +841,7 @@ void freeBestScores(Int4 numBlocks)
     MemFree(bestScores);
 }
 
-void initializeBestPairs(Int4 numBlocks, Int4 queryLength)
+void initializeBestPairs(Int4 numBlocks, Int4 queryLength, Int4 initialBestScore)
 {
   Int4 blockIndex, blockIndex2; /*loop indices over blocks*/
   alignPiece *thisAlignPiece; /*used to walked down a list*/
@@ -819,14 +856,14 @@ void initializeBestPairs(Int4 numBlocks, Int4 queryLength)
     for(blockIndex2 = blockIndex; blockIndex2 < numBlocks; blockIndex2++) {
       bestScores[blockIndex][blockIndex2] = (Int4 *) MemNew(queryLength * sizeof(Int4));
       for(c = 0; c < queryLength; c++)
-	bestScores[blockIndex][blockIndex2][c] = 0;
+	bestScores[blockIndex][blockIndex2][c] = initialBestScore;
     }
   }
   for(blockIndex = 0; blockIndex < numBlocks; blockIndex++) {
     thisAlignBlock = NULL;
     thisAlignPiece = alignPieceLists[blockIndex];
     /*convert alignPieces into alignBlocks with 1 block, and keep in
-      decreasing sorted orde of score*/
+      decreasing sorted order of score*/
     while (NULL != thisAlignPiece) {
       nextAlignBlock = alignBlocksNew(numBlocks);
       nextAlignBlock->score = thisAlignPiece->score;
@@ -851,7 +888,7 @@ void initializeBestPairs(Int4 numBlocks, Int4 queryLength)
   last query position list; assumes alignments
   go from blockIndex1 through blockIndex2*/
 void pruneBestPairs(Int4 blockIndex1, Int4 blockIndex2, Int4 queryLength,
-		    Int4 scoreThreshold)
+		    Int4 scoreThreshold, Boolean localAlignment)
 {
   alignBlocks *prevAlignBlock,*thisAlignBlock, *nextAlignBlock;
   Int4 lastPosition; /*what is the last position matched in the query*/
@@ -860,7 +897,8 @@ void pruneBestPairs(Int4 blockIndex1, Int4 blockIndex2, Int4 queryLength,
   prevAlignBlock = NULL;
   while(thisAlignBlock != NULL) {
     lastPosition = thisAlignBlock->queryEnds[blockIndex2];
-    if ((thisAlignBlock->score < bestScores[blockIndex1][blockIndex2][lastPosition]) || (thisAlignBlock->score < scoreThreshold)) {
+    if ((thisAlignBlock->score < bestScores[blockIndex1][blockIndex2][lastPosition]) || 
+      ((localAlignment) && (thisAlignBlock->score < scoreThreshold))) {
       numInBestPairs[blockIndex1][blockIndex2]--;
       if (NULL == prevAlignBlock) {
 	bestPairs[blockIndex1][blockIndex2] = thisAlignBlock->next;
@@ -901,7 +939,7 @@ Boolean alignBlocksCompatible (alignBlocks *firstBlockCandidate,
   }
 
 void updateBestPairs(Int4 numBlocks, Int4 queryLength, Int4 *allowedGaps, 
-		     Int4 scoreThreshold )
+		     Int4 scoreThreshold, Boolean localAlignment)
 {
   Int4 blockIndex1, blockIndex2; /*indices over blocks*/
   alignBlocks *firstBlockCandidate, *secondBlockCandidate, *newAlignBlocks;
@@ -952,7 +990,8 @@ void updateBestPairs(Int4 numBlocks, Int4 queryLength, Int4 *allowedGaps,
 	  }
 	}
       }
-      pruneBestPairs(blockIndex1, blockIndex2, queryLength, scoreThreshold);
+      pruneBestPairs(blockIndex1, blockIndex2, queryLength, scoreThreshold,
+                     localAlignment);
     }
   }
 }
@@ -1059,8 +1098,8 @@ SeqAlign *getAlignmentsFromBestPairs(Uint1Ptr query, SeqIdPtr subject_id,
 				     SeqIdPtr query_id, 
 				     Uint1Ptr seq, Int4 seqLength,
     Int4 numBlocks, Int4 queryLength, Int4 *blockStarts, Int4 *blockEnds,
-    Int4 *bestFirstBlock, Int4 *bestLastBlock, Nlm_FloatHi Lambda, Nlm_FloatHi K,
-    Int4 searchSpaceSize)
+    Int4 *bestFirstBlock, Int4 *bestLastBlock, Nlm_FloatHi Lambda, 
+    Nlm_FloatHi K, Int4 searchSpaceSize, Boolean localAlignment)
 {
   Int4 blockIndex1, blockIndex2;
   alignBlocks *oldAlignBlock, *newAlignBlock, *lastAlignBlock;
@@ -1068,6 +1107,9 @@ SeqAlign *getAlignmentsFromBestPairs(Uint1Ptr query, SeqIdPtr subject_id,
   Int4 numToPrint = 0;
   Int4 i; /*loop index*/
   Int4 actualSearchSpace;
+  Int4 startLoop1, endLoop1, startLoop2, endLoop2; /*loop bounds that
+      depend on whether we are doing local or global alignment*/
+            
 
 
   *bestFirstBlock = -1;
@@ -1077,8 +1119,24 @@ SeqAlign *getAlignmentsFromBestPairs(Uint1Ptr query, SeqIdPtr subject_id,
     actualSearchSpace = queryLength * seqLength;
   else
     actualSearchSpace = searchSpaceSize;
-  for(blockIndex1 = 0; blockIndex1 < numBlocks; blockIndex1++) {  
-    for(blockIndex2 = blockIndex1; blockIndex2 < numBlocks; blockIndex2++) {
+  if (localAlignment) {
+    startLoop1 = 0;
+    endLoop1 = numBlocks;
+  }
+  else {
+    startLoop1 = 0;
+    endLoop1 = 1;
+  }
+  for(blockIndex1 = startLoop1; blockIndex1 < endLoop1; blockIndex1++) {  
+    if (localAlignment) {
+      startLoop2 = blockIndex1;
+      endLoop2 = numBlocks;
+    }
+    else {
+      startLoop2 = numBlocks-1;
+      endLoop2 = numBlocks;
+    }
+    for(blockIndex2 = startLoop2; blockIndex2 < endLoop2; blockIndex2++) {
       oldAlignBlock = bestPairs[blockIndex1][blockIndex2];
       while(NULL != oldAlignBlock) {
 	if ((0 == oldAlignBlock->extendedForwardScore) &&
@@ -1134,16 +1192,21 @@ SeqAlign *makeMultiPieceAlignments(Uint1Ptr query, Int4 numBlocks,
    Int4 *allowedGaps, Int4 scoreThreshold, SeqIdPtr subject_id, 
 				   SeqIdPtr query_id, Int4* bestFirstBlock,
                                    Int4 *bestLastBlock, Nlm_FloatHi Lambda,
-                                   Nlm_FloatHi K, Int4 searchSpaceSize)
+                                   Nlm_FloatHi K, Int4 searchSpaceSize,
+				   Boolean localAlignment)
 {
    SeqAlign *returnValue;
 
-   initializeBestPairs(numBlocks, queryLength);
-   updateBestPairs(numBlocks, queryLength, allowedGaps, scoreThreshold);
+   if (localAlignment)
+     initializeBestPairs(numBlocks, queryLength, 0);
+   else
+     initializeBestPairs(numBlocks, queryLength, NEG_INFINITY);
+   updateBestPairs(numBlocks, queryLength, allowedGaps, scoreThreshold,
+		   localAlignment);
    returnValue = getAlignmentsFromBestPairs(query, subject_id, 
          query_id, seq, seqLength, numBlocks, queryLength, 
          blockStarts, blockEnds, bestFirstBlock, bestLastBlock,
-         Lambda,K,searchSpaceSize);
+         Lambda,K,searchSpaceSize, localAlignment);
    return(returnValue);
 }
 
@@ -1223,7 +1286,9 @@ static Args myargs [] = {
     { "Start of desired region in query", /* 27 */
       "1", NULL, NULL, FALSE, 'Q', ARG_INT, 0.0, 0, NULL},
     { "End of required region in query (-1 indicates end of query)", /* 28 */
-      "-1", NULL, NULL, FALSE, 'R', ARG_INT, 0.0, 0, NULL}
+      "-1", NULL, NULL, FALSE, 'R', ARG_INT, 0.0, 0, NULL},
+    { "Local alignment if T (default), global alignment if F",  /* 29 */
+      "T", NULL, NULL, FALSE, 'l', ARG_BOOLEAN, 0.0, 0, NULL}
 };
 
 Int2  Main(void)
@@ -1277,6 +1342,7 @@ Int2  Main(void)
    Int4 i; /*loop index*/
    Int4 startQueryRegion, endQueryRegion; /*start and end positions of query 
 					    desired in alignments*/
+   Boolean localAlignment; /*should the alignment be local or global*/
 
    if (! GetArgs ("blockalign", NUMARG, myargs))
      {
@@ -1387,13 +1453,18 @@ Int2  Main(void)
    if (1 <= myargs[28].intvalue) 
      endQueryRegion = MIN(queryLength, myargs[28].intvalue);
    allocateAlignPieceMemory(numBlocks);
-   findAlignPieces(convertedQuery,queryLength, startQueryRegion, endQueryRegion, numBlocks, blockStarts,blockEnds,masterLength, thisScoreMat, myargs[17].intvalue);
+   localAlignment = (Boolean) myargs[29].intvalue;
+   if (localAlignment)
+     findAlignPieces(convertedQuery,queryLength, startQueryRegion, endQueryRegion, numBlocks, blockStarts,blockEnds,masterLength, thisScoreMat, myargs[17].intvalue, localAlignment);
+   else
+     findAlignPieces(convertedQuery,queryLength, startQueryRegion, endQueryRegion, numBlocks, blockStarts,blockEnds,masterLength, thisScoreMat, 
+NEG_INFINITY, localAlignment);
    sortAlignPieces(numBlocks);
    results = makeMultiPieceAlignments(convertedQuery, numBlocks, 
       queryLength, masterSequence, masterLength,
    blockStarts, blockEnds, allowedGaps, myargs[18].intvalue,
    subject_id,query_id, &bestFirstBlock,&bestLastBlock,myargs[24].floatvalue,
-   myargs[25].floatvalue,searchSpaceSize);
+   myargs[25].floatvalue,searchSpaceSize, localAlignment);
    
    
 #ifdef OS_UNIX
@@ -1479,7 +1550,8 @@ Int2  Main(void)
        AsnIoReset(aip);
        aip = AsnIoClose(aip);
    }
-   fprintf(diagfp, "Highest-scoring alignment extends from block %d through block %d\n",
+   if (localAlignment)
+     fprintf(diagfp, "Highest-scoring alignment extends from block %d through block %d\n",
 	   bestFirstBlock, bestLastBlock);
 
    free_buff();
