@@ -309,6 +309,9 @@ s_MidpointTreeHasHSPEndpoint(BlastIntervalTree *tree,
 
     while (1) {
 
+        ASSERT(target_offset >= root_node->leftend);
+        ASSERT(target_offset <= root_node->rightend);
+
         /* First perform matching endpoint tests on all of the HSPs
            in the midpoint list for the current node. If the input 
            shares an endpoint with an HSP already in the list, and the
@@ -415,6 +418,9 @@ s_IntervalTreeHasHSPEndpoint(BlastIntervalTree *tree,
 
     while (1) {
 
+        ASSERT(target_offset >= root_node->leftend);
+        ASSERT(target_offset <= root_node->rightend);
+
         /* First perform matching endpoint tests on all of the HSPs
            in the midpoint tree for the current node */
 
@@ -498,6 +504,17 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
 
     query_start = s_GetQueryStrandOffset(query_info, hsp->context);
 
+    region_start = query_start + hsp->query.offset;
+    region_end = query_start + hsp->query.end;
+
+    nodes = tree->nodes;
+    ASSERT(region_start >= nodes->leftend);
+    ASSERT(region_end <= nodes->rightend);
+    ASSERT(hsp->subject.offset >= tree->s_min);
+    ASSERT(hsp->subject.end <= tree->s_max);
+    ASSERT(hsp->query.offset <= hsp->query.end);
+    ASSERT(hsp->subject.offset <= hsp->subject.end);
+
     /* Before adding the HSP, determine whether one or more
        HSPs already in the tree share a common endpoint with
        in_hsp. Remove from the tree any leaves containing 
@@ -523,8 +540,6 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
 
     /* begin by indexing the HSP query offsets */
 
-    region_start = query_start + hsp->query.offset;
-    region_end = query_start + hsp->query.end;
     index_subject_range = FALSE;
 
     /* encapsulate the input HSP in an SIntervalNode */
@@ -538,6 +553,9 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
     /* Descend the tree to reach the correct subtree for the new node */
 
     while (1) {
+
+        ASSERT(region_start >= nodes[root_index].leftend);
+        ASSERT(region_end <= nodes[root_index].rightend);
 
         middle = (nodes[root_index].leftend +
                   nodes[root_index].rightend) / 2;
@@ -789,6 +807,9 @@ s_MidpointTreeContainsHSP(const BlastIntervalTree *tree,
 
     while (node->hsp == NULL) {
 
+        ASSERT(region_start >= node->leftend);
+        ASSERT(region_end <= node->rightend);
+
         /* First perform containment tests on all of the HSPs
            in the midpoint list for the current node. These
            HSPs are not indexed in a tree format, so all HSPs
@@ -847,9 +868,19 @@ BlastIntervalTreeContainsHSP(const BlastIntervalTree *tree,
     Int4 region_end = query_start + hsp->query.end;
     Int4 middle;
 
+    ASSERT(region_start >= node->leftend);
+    ASSERT(region_end <= node->rightend);
+    ASSERT(hsp->subject.offset >= tree->s_min);
+    ASSERT(hsp->subject.end <= tree->s_max);
+    ASSERT(hsp->query.offset <= hsp->query.end);
+    ASSERT(hsp->subject.offset <= hsp->subject.end);
+
     /* Descend the tree */
 
     while (node->hsp == NULL) {
+
+        ASSERT(region_start >= node->leftend);
+        ASSERT(region_end <= node->rightend);
 
         /* First perform containment tests on all of the HSPs
            in the midpoint tree for the current node */
