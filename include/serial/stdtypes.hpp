@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/12/28 18:55:40  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.13  1999/12/17 19:04:54  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -89,10 +95,25 @@ class CObjectOStream;
 
 // template to standard C types with default value 0 (int, double, char* etc.)
 template<typename T>
-class CStdTypeInfo : public CTypeInfoTmpl<T>
+class CStdTypeInfo : public CTypeInfo
 {
-    typedef CTypeInfoTmpl<T> CParent;
+    typedef CTypeInfo CParent;
+    typedef T TObjectType;
+    typedef CType<TObjectType> TType;
 public:
+    static TObjectType& Get(TObjectPtr object)
+        {
+            return TType::Get(object);
+        }
+    static const TObjectType& Get(TConstObjectPtr object)
+        {
+            return TType::Get(object);
+        }
+
+    virtual size_t GetSize(void) const
+        {
+            return TType::GetSize();
+        }
     virtual TObjectPtr Create(void) const
         {
             return new TObjectType(0);
@@ -121,11 +142,11 @@ public:
     static TTypeInfo GetTypeInfo(void);
 
 protected:
-    CStdTypeInfo<T>(const string& name)
+    CStdTypeInfo(const string& name)
         : CParent(name)
         {
         }
-    CStdTypeInfo<T>(const char* name)
+    CStdTypeInfo(const char* name)
         : CParent(name)
         {
         }
@@ -159,18 +180,33 @@ protected:
     virtual void ReadData(CObjectIStream& , TObjectPtr ) const;
     virtual void WriteData(CObjectOStream& , TConstObjectPtr ) const;
 
+    ~CStdTypeInfo(void);
+
 private:
     CStdTypeInfo(void);
 };
 
 // CTypeInfo for C++ STL type string
 template<>
-class CStdTypeInfo<string> : public CTypeInfoTmpl<string>
+class CStdTypeInfo<string> : public CTypeInfo
 {
-    typedef CTypeInfoTmpl<string> CParent;
+    typedef CTypeInfo CParent;
+    typedef string TObjectType;
+    typedef CType<TObjectType> TType;
 public:
-    CStdTypeInfo<string>(void);
+    CStdTypeInfo(void);
+    ~CStdTypeInfo(void);
 
+    static TObjectType& Get(TObjectPtr object)
+        {
+            return TType::Get(object);
+        }
+    static const TObjectType& Get(TConstObjectPtr object)
+        {
+            return TType::Get(object);
+        }
+
+    virtual size_t GetSize(void) const;
     virtual TObjectPtr Create(void) const;
     
     virtual bool IsDefault(TConstObjectPtr object) const;

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/12/28 18:55:29  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.5  1999/11/19 15:45:32  vasilche
 * CNodeRef implemented as CRef<CNCBINode>
 *
@@ -189,18 +195,6 @@ CNCBINode::TAttributes& CNCBINode::GetAttributes(void)
         m_Attributes.reset(attributes = new TAttributes);
     return *attributes;
 #endif
-}
-
-inline
-void CNCBINode::SetAttribute(const string& name, int value)
-{
-    SetAttribute(name, NStr::IntToString(value));
-}
-
-inline
-void CNCBINode::SetAttribute(const char* name, int value)
-{
-    SetAttribute(name, NStr::IntToString(value));
 }
 
 inline

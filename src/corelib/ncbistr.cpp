@@ -31,6 +31,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/12/28 18:55:43  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.22  1999/12/17 19:04:09  vasilche
 * NcbiEmptyString made extern.
 *
@@ -112,6 +118,24 @@ BEGIN_NCBI_SCOPE
 const char   NcbiEmptyCStr[] = "";
 const string NcbiEmptyString;
 
+int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                  const char* pattern) {
+#if defined(NCBI_OBSOLETE_STR_COMPARE)
+    return str.compare(pattern, pos, n);
+#else
+    return str.compare(pos, n, pattern);
+#endif
+}
+
+int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                  const string& pattern) {
+#if defined(NCBI_OBSOLETE_STR_COMPARE)
+    return str.compare(pattern, pos, n);
+#else
+    return str.compare(pos, n, pattern);
+#endif
+}
+
 int NStr::StringToInt(const string& str, int base /* = 10 */ )
 {
     errno = 0;
@@ -172,6 +196,12 @@ string NStr::DoubleToString(double value)
     return buffer;
 }
 
+string NStr::PtrToString(const void* value)
+{
+    char buffer[64];
+    ::sprintf(buffer, "%p", value);
+    return buffer;
+}
 
 static const string kTrueString  = "true";
 static const string kFalseString = "false";

@@ -34,6 +34,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/12/28 18:55:25  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.16  1999/11/09 20:57:03  vasilche
 * Fixed exception with conversion empty strstream to string.
 *
@@ -214,23 +220,18 @@ string GetString(void)
 }
 */
 // Note: there is no requirements to put '\0' char at the end of buffer
+
 class CNcbiOstrstreamToString
 {
+    CNcbiOstrstreamToString(const CNcbiOstrstreamToString&);
+    CNcbiOstrstreamToString& operator=(const CNcbiOstrstreamToString&);
 public:
     CNcbiOstrstreamToString(CNcbiOstrstream& out)
         : m_Out(out)
         {
         }
 
-    operator string(void) const
-        {
-            SIZE_TYPE length = m_Out.pcount();
-            if ( length == 0 )
-                return string();
-            const char* str = m_Out.str();
-            m_Out.freeze(false);
-            return string(str, length);
-        }
+    operator string(void) const;
 
 private:
     CNcbiOstrstream& m_Out;

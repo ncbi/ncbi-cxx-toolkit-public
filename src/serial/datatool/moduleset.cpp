@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/12/28 18:55:59  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.15  1999/12/21 17:18:36  vasilche
 * Added CDelayedFostream class which rewrites file only if contents is changed.
 *
@@ -49,12 +55,12 @@
 #include "exceptions.hpp"
 #include "fileutil.hpp"
 
-CModuleSet::CModuleSet(const string& name)
+CFileModules::CFileModules(const string& name)
     : m_SourceFileName(name)
 {
 }
 
-void CModuleSet::AddModule(const AutoPtr<CDataTypeModule>& module)
+void CFileModules::AddModule(const AutoPtr<CDataTypeModule>& module)
 {
     module->SetModuleContainer(this);
     AutoPtr<CDataTypeModule>& mptr = m_Modules[module->GetName()];
@@ -67,7 +73,7 @@ void CModuleSet::AddModule(const AutoPtr<CDataTypeModule>& module)
     }
 }
 
-bool CModuleSet::Check(void) const
+bool CFileModules::Check(void) const
 {
     bool ok = true;
     for ( TModules::const_iterator mi = m_Modules.begin();
@@ -78,7 +84,7 @@ bool CModuleSet::Check(void) const
     return ok;
 }
 
-bool CModuleSet::CheckNames(void) const
+bool CFileModules::CheckNames(void) const
 {
     bool ok = true;
     for ( TModules::const_iterator mi = m_Modules.begin();
@@ -89,7 +95,7 @@ bool CModuleSet::CheckNames(void) const
     return ok;
 }
 
-void CModuleSet::PrintASN(CNcbiOstream& out) const
+void CFileModules::PrintASN(CNcbiOstream& out) const
 {
     for ( TModules::const_iterator mi = m_Modules.begin();
           mi != m_Modules.end(); ++mi ) {
@@ -97,23 +103,25 @@ void CModuleSet::PrintASN(CNcbiOstream& out) const
     }
 }
 
-const string& CModuleSet::GetSourceFileName(void) const
+const string& CFileModules::GetSourceFileName(void) const
 {
     return m_SourceFileName;
 }
 
-string CModuleSet::GetHeadersPrefix(void) const
+string CFileModules::GetFileNamePrefix(void) const
 {
-    const string& prefix = GetModuleContainer().GetHeadersPrefix();
-    if ( GetHeadersDirNameSource() == eFromSourceFileName ) {
+    _TRACE("file " << m_SourceFileName << ": " << GetModuleContainer().GetFileNamePrefixSource());
+    string prefix = GetModuleContainer().GetFileNamePrefix();
+    if ( MakeFileNamePrefixFromSourceFileName() ) {
         if ( m_PrefixFromSourceFileName.empty() )
-            m_PrefixFromSourceFileName = BaseName(m_SourceFileName);
+            m_PrefixFromSourceFileName = DirName(m_SourceFileName);
+        _TRACE("file " << m_SourceFileName << ": \"" << prefix << "\" \"" << m_PrefixFromSourceFileName << "\"");
         return Path(prefix, m_PrefixFromSourceFileName);
     }
     return prefix;
 }
 
-CDataType* CModuleSet::ExternalResolve(const string& moduleName,
+CDataType* CFileModules::ExternalResolve(const string& moduleName,
                                        const string& typeName,
                                        bool allowInternal) const
 {
@@ -127,7 +135,7 @@ CDataType* CModuleSet::ExternalResolve(const string& moduleName,
     return mi->second->ExternalResolve(typeName, allowInternal);
 }
 
-CDataType* CModuleSet::ResolveInAnyModule(const string& typeName,
+CDataType* CFileModules::ResolveInAnyModule(const string& typeName,
                                           bool allowInternal) const
 {
     int count = 0;
@@ -155,7 +163,7 @@ CDataType* CModuleSet::ResolveInAnyModule(const string& typeName,
     }
 }
 
-void CFileSet::AddFile(const AutoPtr<CModuleSet>& moduleSet)
+void CFileSet::AddFile(const AutoPtr<CFileModules>& moduleSet)
 {
     moduleSet->SetModuleContainer(this);
     m_ModuleSets.push_back(moduleSet);

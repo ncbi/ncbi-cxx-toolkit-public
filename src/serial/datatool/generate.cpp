@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/12/28 18:55:57  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.23  1999/12/21 17:18:34  vasilche
 * Added CDelayedFostream class which rewrites file only if contents is changed.
 *
@@ -74,7 +80,7 @@
 USING_NCBI_SCOPE;
 
 CCodeGenerator::CCodeGenerator(void)
-    : m_ExcludeRecursion(false), m_HeadersDirNameSource(eFromNone)
+    : m_ExcludeRecursion(false), m_FileNamePrefixSource(eFileName_FromNone)
 {
 	m_MainFiles.SetModuleContainer(this);
 	m_ImportFiles.SetModuleContainer(this); 
@@ -89,29 +95,25 @@ const CNcbiRegistry& CCodeGenerator::GetConfig(void) const
     return m_Config;
 }
 
-const string& CCodeGenerator::GetSourceFileName(void) const
+string CCodeGenerator::GetFileNamePrefix(void) const
 {
-    return NcbiEmptyString;
+    return m_FileNamePrefix;
 }
 
-string CCodeGenerator::GetHeadersPrefix(void) const
+void CCodeGenerator::SetFileNamePrefix(const string& prefix)
 {
-    return m_HeadersDirPrefix;
+    m_FileNamePrefix = prefix;
 }
 
-void CCodeGenerator::SetHeadersDirPrefix(const string& prefix)
+EFileNamePrefixSource CCodeGenerator::GetFileNamePrefixSource(void) const
 {
-    m_HeadersDirPrefix = prefix;
+    return m_FileNamePrefixSource;
 }
 
-EHeadersDirNameSource CCodeGenerator::GetHeadersDirNameSource(void) const
+void CCodeGenerator::SetFileNamePrefixSource(EFileNamePrefixSource source)
 {
-    return m_HeadersDirNameSource;
-}
-
-void CCodeGenerator::SetHeadersDirNameSource(EHeadersDirNameSource source)
-{
-    m_HeadersDirNameSource = source;
+    m_FileNamePrefixSource =
+        EFileNamePrefixSource(m_FileNamePrefixSource | source);
 }
 
 CDataType* CCodeGenerator::InternalResolve(const string& module,
@@ -184,10 +186,8 @@ CDataType* CCodeGenerator::ResolveMain(const string& fullName) const
 
 void CCodeGenerator::IncludeAllMainTypes(void)
 {
-    const CFileSet::TModuleSets& moduleSets = m_MainFiles.GetModuleSets();
-    iterate ( CFileSet::TModuleSets, msi, moduleSets ) {
-        const CModuleSet::TModules& modules = (*msi)->GetModules();
-        iterate ( CModuleSet::TModules, mi, modules ) {
+    iterate ( CFileSet::TModuleSets, msi, m_MainFiles.GetModuleSets() ) {
+        iterate ( CFileModules::TModules, mi, (*msi)->GetModules() ) {
             const CDataTypeModule* module = mi->second.get();
             iterate ( CDataTypeModule::TDefinitions, ti,
                       module->GetDefinitions() ) {
@@ -233,21 +233,8 @@ void CCodeGenerator::IncludeTypes(const string& typeList)
     GetTypes(m_GenerateTypes, typeList);
 }
 
-static inline
-string MkDirName(const string& s)
-{
-    SIZE_TYPE length = s.size();
-    if ( length == 0 || s[length-1] == '/' )
-        return s;
-    else
-        return s + '/';
-}
-
 void CCodeGenerator::GenerateCode(void)
 {
-    m_HeadersDir = MkDirName(m_HeadersDir);
-    m_SourcesDir = MkDirName(m_SourcesDir);
-
     // collect types
     iterate ( TTypeNames, ti, m_GenerateTypes ) {
         CollectTypes(ResolveMain(*ti), eRoot);
@@ -256,10 +243,10 @@ void CCodeGenerator::GenerateCode(void)
     // generate output files
     iterate ( TOutputFiles, filei, m_Files ) {
         CFileCode* code = filei->second.get();
-        code->GenerateHPP(m_HeadersDir);
-        code->GenerateCPP(m_SourcesDir);
-        code->GenerateUserHPP(m_HeadersDir);
-        code->GenerateUserCPP(m_SourcesDir);
+        code->GenerateHPP(m_HPPDir);
+        code->GenerateCPP(m_CPPDir);
+        code->GenerateUserHPP(m_HPPDir);
+        code->GenerateUserCPP(m_CPPDir);
     }
 
     if ( !m_FileListFileName.empty() ) {
@@ -268,12 +255,11 @@ void CCodeGenerator::GenerateCode(void)
         fileList << "GENFILES =";
         {
             iterate ( TOutputFiles, filei, m_Files ) {
-                fileList << ' ' << BaseName(filei->first) << "_Base";
+                fileList << ' ' << filei->first;
             }
         }
         fileList << NcbiEndl;
-
-        fileList << "GENUSERFILES =";
+        fileList << "GENFILES_LOCAL =";
         {
             iterate ( TOutputFiles, filei, m_Files ) {
                 fileList << ' ' << BaseName(filei->first);

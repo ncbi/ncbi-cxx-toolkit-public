@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  1999/12/28 18:55:51  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.27  1999/12/20 15:29:35  vasilche
 * Fixed bug with old ASN structures.
 *
@@ -135,9 +141,9 @@ CObjectOStream::~CObjectOStream(void)
 
 void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
 {
-    _TRACE("CObjectOStream::Write(" << unsigned(object) << ", "
+    _TRACE("CObjectOStream::Write(" << NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ')');
-    _TRACE("CTypeInfo::CollectObjects: " << unsigned(object));
+    _TRACE("CTypeInfo::CollectObjects: " << NStr::PtrToString(object));
     typeInfo->CollectObjects(m_Objects, object);
     COObjectInfo info(m_Objects, object, typeInfo);
     if ( info.IsMember() ) {
@@ -152,7 +158,7 @@ void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
                          "trying to write already written object");
         }
         m_Objects.RegisterObject(info.GetRootObjectInfo());
-        _TRACE("CTypeInfo::Write: " << unsigned(object)
+        _TRACE("CTypeInfo::Write: " << NStr::PtrToString(object)
                << " @" << info.GetRootObjectInfo().GetIndex());
     }
     WriteTypeName(typeInfo->GetName());
@@ -168,7 +174,8 @@ void CObjectOStream::Write(TConstObjectPtr object, const CTypeRef& type)
 void CObjectOStream::WriteExternalObject(TConstObjectPtr object,
                                          TTypeInfo typeInfo)
 {
-    _TRACE("CObjectOStream::RegisterAndWrite(" << unsigned(object) << ", "
+    _TRACE("CObjectOStream::RegisterAndWrite(" <<
+           NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ')');
     COObjectInfo info(m_Objects, object, typeInfo);
     if ( info.IsMember() ) {
@@ -181,7 +188,7 @@ void CObjectOStream::WriteExternalObject(TConstObjectPtr object,
                          "trying to write already written object");
         }
         m_Objects.RegisterObject(info.GetRootObjectInfo());
-        _TRACE("CTypeInfo::Write: " << unsigned(object)
+        _TRACE("CTypeInfo::Write: " << NStr::PtrToString(object)
                << " @" << info.GetRootObjectInfo().GetIndex());
     }
     WriteData(object, typeInfo);
@@ -204,10 +211,10 @@ void CObjectOStream::WriteEnumValue(int value)
 
 void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)
 {
-    _TRACE("WritePointer(" << unsigned(object) << ", "
+    _TRACE("WritePointer(" << NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ")");
     if ( object == 0 ) {
-        _TRACE("WritePointer: " << unsigned(object) << ": null");
+        _TRACE("WritePointer: " << NStr::PtrToString(object) << ": null");
         WriteNullPointer();
         return;
     }
@@ -230,7 +237,8 @@ void CObjectOStream::WritePointer(COObjectInfo& info, TTypeInfo typeInfo)
         const CORootObjectInfo& root = info.GetRootObjectInfo();
         if ( root.IsWritten() ) {
             // put reference on it
-            _TRACE("WritePointer: " << unsigned(info.GetRootObject()) <<
+            _TRACE("WritePointer: " <<
+                   NStr::PtrToString(info.GetRootObject()) <<
                    ": @" << root.GetIndex());
             WriteObjectReference(root.GetIndex());
         }
@@ -238,12 +246,13 @@ void CObjectOStream::WritePointer(COObjectInfo& info, TTypeInfo typeInfo)
             // new object
             TTypeInfo realTypeInfo = root.GetTypeInfo();
             if ( typeInfo == realTypeInfo ) {
-                _TRACE("WritePointer: " << unsigned(info.GetRootObject())
-                       << ": new");
+                _TRACE("WritePointer: " <<
+                       NStr::PtrToString(info.GetRootObject()) << ": new");
                 WriteThis(info.GetRootObject(), realTypeInfo);
             }
             else {
-                _TRACE("WritePointer: " << unsigned(info.GetRootObject())
+                _TRACE("WritePointer: " <<
+                       NStr::PtrToString(info.GetRootObject())
                        << ": new " << realTypeInfo->GetName());
                 WriteOther(info.GetRootObject(), realTypeInfo);
             }

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/12/28 18:55:40  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.19  1999/12/17 19:04:55  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -206,6 +212,33 @@ private:
 
 // helper template for various types:
 template<typename T>
+struct CType
+{
+    CType(void);
+    CType(const CType&);
+    CType& operator=(const CType&);
+    ~CType(void);
+public:
+    typedef T TObjectType; // type of object
+
+    // object getters:
+    static TObjectType& Get(TObjectPtr object)
+        {
+            return *static_cast<TObjectType*>(object);
+        }
+    static const TObjectType& Get(TConstObjectPtr object)
+        {
+            return *static_cast<const TObjectType*>(object);
+        }
+
+    static size_t GetSize(void)
+        {
+            return sizeof(TObjectType);
+        }
+};
+
+#if 0
+template<typename T>
 class CTypeInfoTmpl : public CTypeInfo
 {
     typedef CTypeInfo CParent;
@@ -238,8 +271,9 @@ protected:
         {
         }
 };
+#endif
 
-#include <serial/typeinfo.inl>
+//#include <serial/typeinfo.inl>
 
 END_NCBI_SCOPE
 

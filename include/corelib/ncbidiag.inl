@@ -33,6 +33,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/12/28 18:55:24  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.13  1999/09/27 16:23:20  vasilche
 * Changed implementation of debugging macros (_TRACE, _THROW*, _ASSERT etc),
 * so that they will be much easier for compilers to eat.
@@ -88,13 +94,15 @@
 /////////////////////////////////////////////////////////////////////////////
 
 
-
 //////////////////////////////////////////////////////////////////
 // CDiagBuffer
 // (can be accessed only by "CNcbiDiag" and created only by GetDiagBuffer())
 //
 
 class CDiagBuffer {
+    CDiagBuffer(const CDiagBuffer&);
+    CDiagBuffer& operator=(const CDiagBuffer&);
+
     friend CDiagBuffer& GetDiagBuffer(void);
     friend bool IsSetDiagPostFlag(EDiagPostFlag flag, unsigned int flags);
     friend void SetDiagPostFlag(EDiagPostFlag flag);
@@ -201,18 +209,22 @@ inline unsigned int CNcbiDiag::GetPostFlags(void) const {
 
 #if defined(NO_INCLASS_TMPL)
 template<class X>
+inline
 void Put(CNcbiDiag& diag, CDiagBuffer& dbuff, const X& x) {
     if ( dbuff.SetDiag(diag) )
         dbuff.m_Stream << x;
 }
 
-template<class X> CNcbiDiag& operator <<(CNcbiDiag& diag, const X& x) {
+template<class X>
+inline
+CNcbiDiag& operator <<(CNcbiDiag& diag, const X& x) {
     Put(diag, diag.m_Buffer, x);
     return diag;
 }
 #endif /* NO_INCLASS_TMPL */
 
-inline const char* CNcbiDiag::SeverityName(EDiagSev sev) {
+inline
+const char* CNcbiDiag::SeverityName(EDiagSev sev) {
     return CDiagBuffer::SeverityName[sev];
 }
 
@@ -220,37 +232,44 @@ inline const char* CNcbiDiag::SeverityName(EDiagSev sev) {
 ///////////////////////////////////////////////////////
 //  CNcbiDiag:: manipulators
 
-inline CNcbiDiag& Reset(CNcbiDiag& diag)  {
+inline
+CNcbiDiag& Reset(CNcbiDiag& diag)  {
     diag.m_Buffer.Reset(diag);
     return diag;
 }
 
-inline CNcbiDiag& Endm(CNcbiDiag& diag)  {
+inline
+CNcbiDiag& Endm(CNcbiDiag& diag)  {
     diag.m_Buffer.EndMess(diag);
     return diag;
 }
 
-inline CNcbiDiag& Info(CNcbiDiag& diag)  {
+inline
+CNcbiDiag& Info(CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Info;
     return diag;
 }
-inline CNcbiDiag& Warning(CNcbiDiag& diag)  {
+inline
+CNcbiDiag& Warning(CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Warning;
     return diag;
 }
-inline CNcbiDiag& Error(CNcbiDiag& diag)  {
+inline
+CNcbiDiag& Error(CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Error;
     return diag;
 }
-inline CNcbiDiag& Fatal(CNcbiDiag& diag)  {
+inline
+CNcbiDiag& Fatal(CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Fatal;
     return diag;
 }
-inline CNcbiDiag& Trace(CNcbiDiag& diag)  {
+inline
+CNcbiDiag& Trace(CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Trace;
     return diag;
@@ -260,8 +279,8 @@ inline CNcbiDiag& Trace(CNcbiDiag& diag)  {
 
 ///////////////////////////////////////////////////////
 //  CDiagBuffer::
-
-inline CDiagBuffer::CDiagBuffer(void) {
+inline
+CDiagBuffer::CDiagBuffer(void) {
     m_Diag = 0;
 }
 
@@ -270,17 +289,20 @@ inline CDiagBuffer::~CDiagBuffer(void) {
         ::abort();
 }
 
-inline void CDiagBuffer::Reset(const CNcbiDiag& diag) {
+inline
+void CDiagBuffer::Reset(const CNcbiDiag& diag) {
     if (&diag == m_Diag)
         m_Stream.rdbuf()->SEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
 }
 
-inline void CDiagBuffer::EndMess(const CNcbiDiag& diag) {
+inline
+void CDiagBuffer::EndMess(const CNcbiDiag& diag) {
     if (&diag == m_Diag)
         Flush();
 }
 
-inline void CDiagBuffer::Detach(const CNcbiDiag* diag) {
+inline
+void CDiagBuffer::Detach(const CNcbiDiag* diag) {
     if (diag == m_Diag) {
         Flush();
         m_Diag = 0;
@@ -292,7 +314,8 @@ inline void CDiagBuffer::Detach(const CNcbiDiag* diag) {
 ///////////////////////////////////////////////////////
 //  EDiagPostFlag::
 
-inline bool IsSetDiagPostFlag(EDiagPostFlag flag, unsigned int flags) {
+inline
+bool IsSetDiagPostFlag(EDiagPostFlag flag, unsigned int flags) {
     if (flags & eDPF_Default)
         flags = CDiagBuffer::sm_PostFlags;
     return (flags & flag) != 0;
@@ -303,10 +326,11 @@ inline bool IsSetDiagPostFlag(EDiagPostFlag flag, unsigned int flags) {
 ///////////////////////////////////////////////////////
 //  CDiagMessage::
 
-inline SDiagMessage::SDiagMessage(EDiagSev severity,
-                                  const char* buf, size_t len,
-                                  void* data, const char* file, size_t line,
-                                  unsigned int flags, const char* prefix) {
+inline
+SDiagMessage::SDiagMessage(EDiagSev severity,
+                           const char* buf, size_t len,
+                           void* data, const char* file, size_t line,
+                           unsigned int flags, const char* prefix) {
     m_Severity  = severity;
     m_Buffer    = buf;
     m_BufferLen = len;
@@ -316,6 +340,5 @@ inline SDiagMessage::SDiagMessage(EDiagSev severity,
     m_Flags     = flags;
     m_Prefix    = prefix;
 }
-
 
 #endif /* def NCBIDIAG__HPP  &&  ndef NCBIDIAG__INL */

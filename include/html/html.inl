@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/12/28 18:55:28  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.20  1999/10/29 18:28:53  vakatov
 * [MSVC]  bool vs. const string& arg confusion
 *
@@ -110,333 +116,270 @@
 * ===========================================================================
 */
 
-inline CHTMLNode::CHTMLNode(void)
-{
-}
-
-inline CHTMLNode::CHTMLNode(const string& name)
-    : CParent(name)
-{
-}
-
-inline CHTMLNode* CHTMLNode::SetClass(const string& class_name)
-{
-    SetOptionalAttribute(KHTMLAttributeName_class, class_name);
-    return this;
-}
-
-inline CHTMLNode* CHTMLNode::SetWidth(int width)
-{
-    SetAttribute(KHTMLAttributeName_width, width);
-    return this;
-}
-
-inline CHTMLNode* CHTMLNode::SetHeight(int height)
-{
-    SetAttribute(KHTMLAttributeName_height, height);
-    return this;
-}
-
-inline CHTMLNode* CHTMLNode::SetWidth(const string& width)
-{
-    SetOptionalAttribute(KHTMLAttributeName_width, width);
-    return this;
-}
-
-inline CHTMLNode* CHTMLNode::SetHeight(const string& height)
-{
-    SetOptionalAttribute(KHTMLAttributeName_height, height);
-    return this;
-}
-
-inline CHTMLNode* CHTMLNode::SetSize(int size)
-{
-    SetAttribute(KHTMLAttributeName_size, size);
-    return this;
-}
-
-inline CHTMLNode* CHTMLNode::SetAlign(const string& align)
-{
-    SetOptionalAttribute(KHTMLAttributeName_align, align);
-    return this;
-}
-
-inline CHTMLNode* CHTMLNode::SetVAlign(const string& align)
-{
-    SetOptionalAttribute(KHTMLAttributeName_valign, align);
-    return this;
-}
-
-inline CHTMLNode* CHTMLNode::SetColor(const string& color)
-{
-    SetOptionalAttribute(KHTMLAttributeName_color, color);
-    return this;
-}
-
-inline CHTMLNode* CHTMLNode::SetBgColor(const string& color)
-{
-    SetOptionalAttribute(KHTMLAttributeName_bgcolor, color);
-    return this;
-}
-
-inline CHTMLNode* CHTMLNode::SetNameAttribute(const string& name)
-{
-    SetAttribute(KHTMLAttributeName_name, name);
-    return this;
-}
-
-inline string CHTMLNode::GetNameAttribute(void) const
-{
-    return GetAttribute(KHTMLAttributeName_name);
-}
-
-inline const string& CHTMLPlainText::GetText(void) const
+inline
+const string& CHTMLPlainText::GetText(void) const
 {
     return GetName();
 }
 
-inline const string& CHTMLText::GetText(void) const
+inline
+const string& CHTMLText::GetText(void) const
 {
     return GetName();
 }
 
-template<const string* TagName>
-inline const string& CHTMLListElementTmpl<TagName>::s_GetTagName(void)
+inline
+CHTMLListElement* CHTMLListElement::AppendItem(const char* text)
 {
-    return *TagName;
-}
-
-template<const string* TagName>
-inline CHTMLListElementTmpl<TagName>::CHTMLListElementTmpl(void)
-    : CParent(s_GetTagName())
-{
-}
-
-template<const string* TagName>
-inline CHTMLListElementTmpl<TagName>::CHTMLListElementTmpl(const string& type)
-    : CParent(s_GetTagName())
-{
-    SetAttribute(KHTMLAttributeName_type, type);
-}
-
-template<const string* TagName>
-inline CHTMLListElementTmpl<TagName>::CHTMLListElementTmpl(bool compact)
-    : CParent(s_GetTagName())
-{
-    SetOptionalAttribute(KHTMLAttributeName_compact, compact);
-}
-
-template<const string* TagName>
-inline CHTMLListElementTmpl<TagName>::CHTMLListElementTmpl(const string& type, bool compact)
-    : CParent(s_GetTagName())
-{
-    SetAttribute(KHTMLAttributeName_type, type);
-    SetOptionalAttribute(KHTMLAttributeName_compact, compact);
-}
-
-template<const string* TagName>
-inline CHTMLListElementTmpl<TagName>* CHTMLListElementTmpl<TagName>::AppendItem(const string& item)
-{
-    AppendChild(new CHTML_li(item));
+    AppendChild(new CHTML_li(text));
     return this;
 }
 
-template<const string* TagName>
-inline CHTMLListElementTmpl<TagName>* CHTMLListElementTmpl<TagName>::AppendItem(CNCBINode* item)
+inline
+CHTMLListElement* CHTMLListElement::AppendItem(const string& text)
 {
-    AppendChild(new CHTML_li(item));
+    AppendChild(new CHTML_li(text));
     return this;
 }
 
-inline CHTML_tc* CHTML_table::NextCell(ECellType type)
+inline
+CHTMLListElement* CHTMLListElement::AppendItem(CNCBINode* node)
+{
+    AppendChild(new CHTML_li(node));
+    return this;
+}
+
+inline
+CHTML_tc* CHTML_table::NextCell(ECellType type)
 {
     return Cell(m_CurrentRow, m_CurrentCol + 1, type);
 }
 
-inline CHTML_tc* CHTML_table::NextRowCell(ECellType type)
+inline
+CHTML_tc* CHTML_table::NextRowCell(ECellType type)
 {
     return Cell(m_CurrentRow + 1, 0, type);
 }
 
-inline CHTML_tc* CHTML_table::InsertAt(TIndex row, TIndex column, CNCBINode* node)
+inline
+CHTML_tc* CHTML_table::InsertAt(TIndex row, TIndex column, CNCBINode* node)
 {
     CHTML_tc* cell = Cell(row, column);
     cell->AppendChild(node);
     return cell;
 }
 
-inline CHTML_tc* CHTML_table::InsertAt(TIndex row, TIndex column, const string& text)
+inline
+CHTML_tc* CHTML_table::InsertAt(TIndex row, TIndex column, const string& text)
 {
     return InsertAt(row, column, new CHTMLPlainText(text));
 }
 
-inline CHTML_tc* CHTML_table::InsertTextAt(TIndex row, TIndex column,
-                                           const string& text)
+inline
+CHTML_tc* CHTML_table::InsertTextAt(TIndex row, TIndex column,
+                                    const string& text)
 {
     return InsertAt(row, column, text);
 }
 
-inline CHTML_tc* CHTML_table::InsertNextCell(CNCBINode* node)
+inline
+CHTML_tc* CHTML_table::InsertNextCell(CNCBINode* node)
 {
     CHTML_tc* cell = NextCell();
     cell->AppendChild(node);
     return cell;
 }
 
-inline CHTML_tc* CHTML_table::InsertNextCell(const string& text)
+inline
+CHTML_tc* CHTML_table::InsertNextCell(const string& text)
 {
     return InsertNextCell(new CHTMLPlainText(text));
 }
 
-inline CHTML_tc* CHTML_table::InsertNextRowCell(CNCBINode* node)
+inline
+CHTML_tc* CHTML_table::InsertNextRowCell(CNCBINode* node)
 {
     CHTML_tc* cell = NextRowCell();
     cell->AppendChild(node);
     return cell;
 }
 
-inline CHTML_tc* CHTML_table::InsertNextRowCell(const string& text)
+inline
+CHTML_tc* CHTML_table::InsertNextRowCell(const string& text)
 {
     return InsertNextRowCell(new CHTMLPlainText(text));
 }
 
-inline void CHTML_table::CheckTable(void) const
+inline
+void CHTML_table::CheckTable(void) const
 {
     x_CheckTable(0);
 }
 
-inline CHTML_ol::CHTML_ol(bool compact)
-    : CParent(compact)
+inline
+CHTML_ol::CHTML_ol(bool compact)
+    : CParent(sm_TagName, compact)
 {
 }
 
-inline CHTML_ol::CHTML_ol(const char* type, bool compact)
-    : CParent(type, compact)
+inline
+CHTML_ol::CHTML_ol(const string& type, bool compact)
+    : CParent(sm_TagName, type, compact)
 {
 }
 
-inline CHTML_ol::CHTML_ol(const string& type, bool compact)
-    : CParent(type, compact)
+inline
+CHTML_ol::CHTML_ol(int start, bool compact)
+    : CParent(sm_TagName, compact)
 {
+    SetStart(start);
 }
 
-inline CHTML_ol::CHTML_ol(int start, bool compact)
-    : CParent(compact)
+inline
+CHTML_ol::CHTML_ol(int start, const string& type, bool compact)
+    : CParent(sm_TagName, type, compact)
 {
-    SetAttribute(KHTMLAttributeName_start, start);
+    SetStart(start);
 }
 
-inline CHTML_ol::CHTML_ol(int start, const char* type, bool compact)
-    : CParent(type, compact)
+inline
+CHTML_a::CHTML_a(const string& href)
+    : CParent(sm_TagName)
 {
-    SetAttribute(KHTMLAttributeName_start, start);
+    SetHref(href);
 }
 
-inline CHTML_ol::CHTML_ol(int start, const string& type, bool compact)
-    : CParent(type, compact)
+inline
+CHTML_a::CHTML_a(const string& href, CNCBINode* node)
+    : CParent(sm_TagName, node)
 {
-    SetAttribute(KHTMLAttributeName_start, start);
+    SetHref(href);
 }
 
-inline CHTML_a::CHTML_a(const string& href, CNCBINode* node)
-    : CParent(node)
+inline
+CHTML_a::CHTML_a(const string& href, const char* text)
+    : CParent(sm_TagName, text)
 {
-    SetOptionalAttribute(KHTMLAttributeName_href, href);
+    SetHref(href);
 }
 
-inline CHTML_a::CHTML_a(const string& href, const string& text)
-    : CParent(text)
+inline
+CHTML_a::CHTML_a(const string& href, const string& text)
+    : CParent(sm_TagName, text)
 {
-    SetOptionalAttribute(KHTMLAttributeName_href, href);
+    SetHref(href);
 }
 
-inline CHTML_option::CHTML_option(const string& value, bool selected)
-    : CParent(value)
+inline
+CHTML_option::CHTML_option(const string& value, bool selected)
+    : CParent(sm_TagName, value)
 {
-    SetOptionalAttribute(KHTMLAttributeName_selected, selected);
+    if ( selected )
+        SetSelected();
 }
 
-inline CHTML_option::CHTML_option(const string& value, const string& label, bool selected)
-    : CParent(label)
+inline
+CHTML_option::CHTML_option(const string& value, const string& label,
+                           bool selected)
+    : CParent(sm_TagName, label)
 {
-    SetAttribute(KHTMLAttributeName_value, value);
-    SetOptionalAttribute(KHTMLAttributeName_selected, selected);
+    SetValue(value);
+    if ( selected )
+        SetSelected();
 }
 
-inline CHTML_select::CHTML_select(const string& name, bool multiple)
+inline
+CHTML_select::CHTML_select(const string& name, bool multiple)
+    : CParent(sm_TagName)
 {
-    SetAttribute(KHTMLAttributeName_name, name);
-    SetOptionalAttribute(KHTMLAttributeName_multiple, multiple);
+    SetNameAttribute(name);
+    if ( multiple )
+        SetMultiple();
 }
 
-inline CHTML_select::CHTML_select(const string& name, int size, bool multiple)
+inline
+CHTML_select::CHTML_select(const string& name, int size, bool multiple)
+    : CParent(sm_TagName)
 {
-    SetAttribute(KHTMLAttributeName_name, name);
+    SetNameAttribute(name);
     SetSize(size);
-    SetOptionalAttribute(KHTMLAttributeName_multiple, multiple);
+    if ( multiple )
+        SetMultiple();
 }
 
-inline CHTML_select* CHTML_select::AppendOption(const string& value, bool selected)
+inline
+CHTML_select* CHTML_select::AppendOption(const string& value, bool selected)
 {
     AppendChild(new CHTML_option(value, selected));
     return this;
 }
 
-inline CHTML_select* CHTML_select::AppendOption(const string& value, const char* label, bool selected)
+inline
+CHTML_select* CHTML_select::AppendOption(const string& value,
+                                         const string& label, bool selected)
 {
     AppendChild(new CHTML_option(value, label, selected));
     return this;
 }
 
-inline CHTML_select* CHTML_select::AppendOption(const string& value, const string& label, bool selected)
-{
-    AppendChild(new CHTML_option(value, label, selected));
-    return this;
-}
-
-
-inline CHTML_br::CHTML_br(void)
+inline
+CHTML_br::CHTML_br(void)
+    : CParent(sm_TagName)
 {
 }
 
-inline CHTML_dl::CHTML_dl(bool compact)
+inline
+CHTML_dl::CHTML_dl(bool compact)
+    : CParent(sm_TagName)
 {
-    SetOptionalAttribute(KHTMLAttributeName_compact, compact);
+    if ( compact )
+        SetCompact();
 }
 
-inline CHTML_basefont::CHTML_basefont(int size)
+inline
+CHTML_basefont::CHTML_basefont(int size)
+    : CParent(sm_TagName)
 {
     SetSize(size);
 }
 
-inline CHTML_basefont::CHTML_basefont(const string& typeface)
+inline
+CHTML_basefont::CHTML_basefont(const string& typeface)
+    : CParent(sm_TagName)
 {
-    SetAttribute(KHTMLAttributeName_face, typeface);
+    SetTypeFace(typeface);
 }
 
-inline CHTML_basefont::CHTML_basefont(const string& typeface, int size)
+inline
+CHTML_basefont::CHTML_basefont(const string& typeface, int size)
+    : CParent(sm_TagName)
 {
-    SetAttribute(KHTMLAttributeName_face, typeface);
+    SetTypeFace(typeface);
     SetSize(size);
 }
 
-inline CHTML_font::CHTML_font(void)
+inline
+CHTML_font::CHTML_font(void)
+    : CParent(sm_TagName)
 {
 }
 
-inline CHTML_font::CHTML_font(int size, CNCBINode* node)
-    : CParent(node)
-{
-    SetRelativeSize(size);
-}
-
-inline CHTML_font::CHTML_font(int size, const string& text)
-    : CParent(text)
+inline
+CHTML_font::CHTML_font(int size, CNCBINode* node)
+    : CParent(sm_TagName, node)
 {
     SetRelativeSize(size);
 }
 
-inline CHTML_font* CHTML_font::SetFontSize(int size, bool absolute)
+inline
+CHTML_font::CHTML_font(int size, const string& text)
+    : CParent(sm_TagName, text)
+{
+    SetRelativeSize(size);
+}
+
+inline
+CHTML_font* CHTML_font::SetFontSize(int size, bool absolute)
 {
     if ( absolute )
         SetSize(size);
@@ -445,102 +388,117 @@ inline CHTML_font* CHTML_font::SetFontSize(int size, bool absolute)
     return this;
 }
 
-inline CHTML_font::CHTML_font(int size, bool absolute, CNCBINode* node)
-    : CParent(node)
+inline
+CHTML_font::CHTML_font(int size, bool absolute, CNCBINode* node)
+    : CParent(sm_TagName, node)
 {
     SetFontSize(size, absolute);
 }
 
-inline CHTML_font::CHTML_font(int size, bool absolute, const string& text)
-    : CParent(text)
+inline
+CHTML_font::CHTML_font(int size, bool absolute, const string& text)
+    : CParent(sm_TagName, text)
 {
     SetFontSize(size, absolute);
 }
 
-inline CHTML_font::CHTML_font(const string& typeface, CNCBINode* node)
-    : CParent(node)
+inline
+CHTML_font::CHTML_font(const string& typeface, CNCBINode* node)
+    : CParent(sm_TagName, node)
 {
-    SetAttribute(KHTMLAttributeName_face, typeface);
+    SetTypeFace(typeface);
 }
 
-inline CHTML_font::CHTML_font(const string& typeface, const string& text)
-    : CParent(text)
+inline
+CHTML_font::CHTML_font(const string& typeface, const string& text)
+    : CParent(sm_TagName, text)
 {
-    SetAttribute(KHTMLAttributeName_face, typeface);
+    SetTypeFace(typeface);
 }
 
-inline CHTML_font::CHTML_font(const string& typeface, int size, CNCBINode* node)
-    : CParent(node)
+inline
+CHTML_font::CHTML_font(const string& typeface, int size, CNCBINode* node)
+    : CParent(sm_TagName, node)
 {
-    SetAttribute(KHTMLAttributeName_face, typeface);
+    SetTypeFace(typeface);
     SetRelativeSize(size);
 }
 
-inline CHTML_font::CHTML_font(const string& typeface, int size, const string& text)
-    : CParent(text)
+inline
+CHTML_font::CHTML_font(const string& typeface, int size, const string& text)
+    : CParent(sm_TagName, text)
 {
-    SetAttribute(KHTMLAttributeName_face, typeface);
+    SetTypeFace(typeface);
     SetRelativeSize(size);
 }
 
-inline CHTML_font::CHTML_font(const string& typeface, int size, bool absolute, CNCBINode* node)
-    : CParent(node)
+inline
+CHTML_font::CHTML_font(const string& typeface, int size, bool absolute,
+                       CNCBINode* node)
+    : CParent(sm_TagName, node)
 {
-    SetAttribute(KHTMLAttributeName_face, typeface);
+    SetTypeFace(typeface);
     SetFontSize(size, absolute);
 }
 
-inline CHTML_font::CHTML_font(const string& typeface, int size, bool absolute, const string& text)
-    : CParent(text)
+inline
+CHTML_font::CHTML_font(const string& typeface, int size, bool absolute,
+                       const string& text)
+    : CParent(sm_TagName, text)
 {
-    SetAttribute(KHTMLAttributeName_face, typeface);
+    SetTypeFace(typeface);
     SetFontSize(size, absolute);
 }
 
-inline CHTML_color::CHTML_color(const string& color, const string& text)
+inline
+CHTML_color::CHTML_color(const string& color, const string& text)
 {
     SetColor(color);
     AppendPlainText(text);
 }
 
-inline CHTML_color::CHTML_color(const string& color, CNCBINode* node)
+inline
+CHTML_color::CHTML_color(const string& color, CNCBINode* node)
 {
     SetColor(color);
     AppendChild(node);
 }
 
-inline CHTML_hr* CHTML_hr::SetNoShade(void)
-{
-    SetAttribute(KHTMLAttributeName_noshade);
-    return this;
-}
-
-inline CHTML_hr* CHTML_hr::SetNoShade(bool noShade)
+inline
+CHTML_hr* CHTML_hr::SetNoShade(bool noShade)
 {
     if ( noShade )
         SetNoShade();
     return this;
 }
 
-inline CHTML_hr::CHTML_hr(bool noShade)
+inline
+CHTML_hr::CHTML_hr(bool noShade)
+    : CParent(sm_TagName)
 {
     SetNoShade(noShade);
 }
 
-inline CHTML_hr::CHTML_hr(int size, bool noShade)
+inline
+CHTML_hr::CHTML_hr(int size, bool noShade)
+    : CParent(sm_TagName)
 {
     SetSize(size);
     SetNoShade(noShade);
 }
 
-inline CHTML_hr::CHTML_hr(int size, int width, bool noShade)
+inline
+CHTML_hr::CHTML_hr(int size, int width, bool noShade)
+    : CParent(sm_TagName)
 {
     SetSize(size);
     SetWidth(width);
     SetNoShade(noShade);
 }
 
-inline CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
+inline
+CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
+    : CParent(sm_TagName)
 {
     SetSize(size);
     SetWidth(width);

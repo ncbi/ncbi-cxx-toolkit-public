@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/12/28 18:55:58  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.10  1999/12/21 17:18:34  vasilche
 * Added CDelayedFostream class which rewrites file only if contents is changed.
 *
@@ -76,13 +82,13 @@ public:
         }
     void IncludeAllMainTypes(void);
 
-    void SetSourcesDir(const string& dir)
+    void SetCPPDir(const string& dir)
         {
-            m_SourcesDir = dir;
+            m_CPPDir = dir;
         }
-    void SetHeadersDir(const string& dir)
+    void SetHPPDir(const string& dir)
         {
-            m_HeadersDir = dir;
+            m_HPPDir = dir;
         }
     void SetFileListFileName(const string& file)
         {
@@ -106,11 +112,10 @@ public:
 
     // generation interface
     const CNcbiRegistry& GetConfig(void) const;
-    const string& GetSourceFileName(void) const;
-    string GetHeadersPrefix(void) const;
-    void SetHeadersDirPrefix(const string& prefix);
-    EHeadersDirNameSource GetHeadersDirNameSource(void) const;
-    void SetHeadersDirNameSource(EHeadersDirNameSource source);
+    string GetFileNamePrefix(void) const;
+    void SetFileNamePrefix(const string& prefix);
+    EFileNamePrefixSource GetFileNamePrefixSource(void) const;
+    void SetFileNamePrefixSource(EFileNamePrefixSource source);
     CDataType* InternalResolve(const string& moduleName,
                                const string& typeName) const;
 
@@ -143,10 +148,10 @@ private:
     TTypeNames m_GenerateTypes;
     bool m_ExcludeRecursion;
     string m_FileListFileName;
-    string m_HeadersDir;
-    string m_SourcesDir;
-    string m_HeadersDirPrefix;
-    EHeadersDirNameSource m_HeadersDirNameSource;
+    string m_HPPDir;
+    string m_CPPDir;
+    string m_FileNamePrefix;
+    EFileNamePrefixSource m_FileNamePrefixSource;
 
     TOutputFiles m_Files;
 };

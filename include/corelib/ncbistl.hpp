@@ -33,6 +33,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/12/28 18:55:25  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.13  1999/10/12 21:46:31  vakatov
 * Assume all supported compilers are namespace-capable and have "std::"
 *
@@ -113,6 +119,13 @@ namespace NCBI_NS_NCBI { /* the fake one */ }
 
 #if !defined(NPOS)
 #  define NPOS NCBI_NS_STD::string::npos
+#endif
+
+#if !defined(NCBI_NAME2)
+#  define NCBI_NAME2(Name1, Name2) Name1##Name2
+#endif
+#if !defined(NCBI_NAME3)
+#  define NCBI_NAME3(Name1, Name2, Name3) Name1##Name2##Name3
 #endif
 
 #endif /* NCBISTL__HPP */

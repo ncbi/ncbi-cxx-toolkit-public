@@ -35,6 +35,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/12/28 18:55:25  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.17  1999/11/18 20:12:40  vakatov
 * DoDbgPrint() -- prototyped in both _DEBUG and NDEBUG
 *
@@ -155,28 +161,32 @@ extern void DoDbgPrint(const char* file, int line,
 
 template<typename T>
 inline
-const T& DbgPrint(const char* file, int line, const T& e, const char* e_str)
+const T& DbgPrint(const char* file, int line,
+                  const T& e, const char* e_str)
 {
     DoDbgPrint(file, line, e_str, e.what());
     return e;
 }
 
 inline
-const char* DbgPrint(const char* file, int line, const char* e, const char* )
+const char* DbgPrint(const char* file, int line,
+                     const char* e, const char* )
 {
     DoDbgPrint(file, line, e);
     return e;
 }
 
 inline
-char* DbgPrint(const char* file, int line, char* e, const char* )
+char* DbgPrint(const char* file, int line,
+               char* e, const char* )
 {
     DoDbgPrint(file, line, e);
     return e;
 }
 
 inline
-const string& DbgPrint(const char* file, int line, const string& e, const char* )
+const string& DbgPrint(const char* file, int line,
+                       const string& e, const char* )
 {
     DoDbgPrint(file, line, e);
     return e;
@@ -306,7 +316,6 @@ STD_CATCH(message) \
 //   CErrnoException
 //   CParseException
 //
-
 class CErrnoException : public runtime_error {
     int m_Errno;
 public:
@@ -323,7 +332,6 @@ public:
     CParseException(const string& what, SIZE_TYPE pos) throw();
     SIZE_TYPE GetPos(void) const THROWS_NONE { return m_Pos; }
 };
-
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE

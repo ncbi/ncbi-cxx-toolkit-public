@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/12/28 18:55:52  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.14  1999/12/17 19:05:04  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -124,13 +130,6 @@ TTypeInfo CPointerTypeInfo::GetTypeInfo(TTypeInfo base)
     return new CPointerTypeInfo(base);
 }
 
-pair<TConstObjectPtr, TTypeInfo>
-CPointerTypeInfo::GetSource(TConstObjectPtr object) const
-{
-    TConstObjectPtr source = GetObjectPointer(object);
-    return make_pair(source, GetRealDataTypeInfo(source));
-}
-
 TTypeInfo CPointerTypeInfo::GetRealDataTypeInfo(TConstObjectPtr object) const
 {
     TTypeInfo dataTypeInfo = GetDataTypeInfo();
@@ -163,22 +162,23 @@ TObjectPtr CPointerTypeInfo::Create(void) const
 
 bool CPointerTypeInfo::IsDefault(TConstObjectPtr object) const
 {
-    return GetSource(object).first == 0;
+    return GetObjectPointer(object) == 0;
 }
 
 bool CPointerTypeInfo::Equals(TConstObjectPtr object1,
                               TConstObjectPtr object2) const
 {
-    pair<TConstObjectPtr, TTypeInfo> data1 = GetSource(object1);
-    pair<TConstObjectPtr, TTypeInfo> data2 = GetSource(object2);
-    if ( data1.first == 0 ) {
-        return data2.first == 0;
+    TConstObjectPtr data1 = GetObjectPointer(object1);
+    TConstObjectPtr data2 = GetObjectPointer(object2);
+    if ( data1 == 0 ) {
+        return data2 == 0;
     }
     else {
-        if ( data2.first == 0 )
+        if ( data2 == 0 )
             return false;
-        return data1.second == data2.second &&
-            data1.second->Equals(data1.first, data2.first);
+        TTypeInfo type1 = GetRealDataTypeInfo(data1);
+        TTypeInfo type2 = GetRealDataTypeInfo(data2);
+        return type1 == type2 && type1->Equals(data1, data2);
     }
 }
 
@@ -189,13 +189,14 @@ void CPointerTypeInfo::SetDefault(TObjectPtr dst) const
 
 void CPointerTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
-    pair<TConstObjectPtr, TTypeInfo> data = GetSource(src);
-    if ( data.first == 0 ) {
+    TConstObjectPtr data = GetObjectPointer(src);
+    if ( data == 0 ) {
         SetObjectPointer(dst, 0);
     }
     else {
-        TObjectPtr object = data.second->Create();
-        data.second->Assign(object, data.first);
+        TTypeInfo type = GetRealDataTypeInfo(data);
+        TObjectPtr object = type->Create();
+        type->Assign(object, data);
         SetObjectPointer(dst, object);
     }
 }
@@ -203,16 +204,16 @@ void CPointerTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 void CPointerTypeInfo::CollectExternalObjects(COObjectList& objectList,
                                               TConstObjectPtr object) const
 {
-    pair<TConstObjectPtr, TTypeInfo> data = GetSource(object);
-    if ( data.first )
-        data.second->CollectObjects(objectList, data.first);
+    TConstObjectPtr data = GetObjectPointer(object);
+    if ( data )
+        GetRealDataTypeInfo(data)->CollectObjects(objectList, data);
 }
 
 void CPointerTypeInfo::WriteData(CObjectOStream& out,
                                  TConstObjectPtr object) const
 {
-    pair<TConstObjectPtr, TTypeInfo> data = GetSource(object);
-    out.WritePointer(data.first, data.second);
+    TConstObjectPtr data = GetObjectPointer(object);
+    out.WritePointer(data, GetRealDataTypeInfo(data));
 }
 
 void CPointerTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const

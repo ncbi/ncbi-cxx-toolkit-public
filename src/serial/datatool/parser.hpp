@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/12/28 18:56:00  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.10  1999/11/19 15:48:11  vasilche
 * Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
 *
@@ -47,7 +53,7 @@
 #include "moduleset.hpp"
 #include <list>
 
-class CModuleSet;
+class CFileModules;
 class CDataModule;
 class CDataType;
 class CDataMemberContainerType;
@@ -63,7 +69,7 @@ public:
         {
         }
 
-    AutoPtr<CModuleSet> Modules(const string& fileName);
+    AutoPtr<CFileModules> Modules(const string& fileName);
     AutoPtr<CDataTypeModule> Module(void);
     void Imports(CDataTypeModule& module);
     void Exports(CDataTypeModule& module);

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/12/28 18:55:58  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.1  1999/12/21 17:18:35  vasilche
 * Added CDelayedFostream class which rewrites file only if contents is changed.
 *
@@ -52,10 +58,10 @@ END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 
-enum EHeadersDirNameSource {
-    eFromNone,
-    eFromSourceFileName,
-    eFromModuleName
+enum EFileNamePrefixSource {
+    eFileName_FromNone = 0,
+    eFileName_FromSourceFileName = 1,
+    eFileName_FromModuleName = 2
 };
 
 class CModuleContainer
@@ -66,8 +72,18 @@ public:
 
     virtual const CNcbiRegistry& GetConfig(void) const;
     virtual const string& GetSourceFileName(void) const;
-    virtual string GetHeadersPrefix(void) const;
-    virtual EHeadersDirNameSource GetHeadersDirNameSource(void) const;
+    virtual string GetFileNamePrefix(void) const;
+    virtual EFileNamePrefixSource GetFileNamePrefixSource(void) const;
+    bool MakeFileNamePrefixFromSourceFileName(void) const
+        {
+            return (GetFileNamePrefixSource() & eFileName_FromSourceFileName)
+                != 0;
+        }
+    bool MakeFileNamePrefixFromModuleName(void) const
+        {
+            return (GetFileNamePrefixSource() & eFileName_FromModuleName)
+                != 0;
+        }
     virtual CDataType* InternalResolve(const string& moduleName,
                                        const string& typeName) const;
 

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/12/28 18:55:58  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.22  1999/12/21 17:18:35  vasilche
 * Added CDelayedFostream class which rewrites file only if contents is changed.
 *
@@ -125,7 +131,9 @@ const char* FileOutArgument(const char* arg)
     return StringArgument(arg);
 }
 
-static void LoadDefinitions(CFileSet& fileSet, const list<FileInfo>& file);
+static void LoadDefinitions(CFileSet& fileSet,
+                            const string& modulesDir,
+                            const list<FileInfo>& file);
 static void StoreDefinition(const CFileSet& types, const FileInfo& file);
 static TObject LoadValue(CFileSet& types, const FileInfo& file,
                          const string& typeName);
@@ -180,6 +188,7 @@ int main(int argc, const char*argv[])
 {
     SetDiagStream(&NcbiCerr);
 
+    string modulesDir;
     list<FileInfo> mainModules;
     list<FileInfo> importModules;
     FileInfo moduleOut;
@@ -247,21 +256,37 @@ int main(int argc, const char*argv[])
                     generator.LoadConfig(FileInArgument(argv[++i]));
                     break;
                 case 'h':
-                    generator.SetHeadersDir(DirArgument(argv[++i]));
+                    generator.SetHPPDir(DirArgument(argv[++i]));
                     break;
                 case 'c':
-                    generator.SetSourcesDir(DirArgument(argv[++i]));
+                    generator.SetCPPDir(DirArgument(argv[++i]));
+                    break;
+                case 'm':
+                    modulesDir = DirArgument(argv[++i]);
+                    break;
+                case 'r':
+                    switch ( arg[3] ) {
+                    case 's':
+                        generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
+                        break;
+                    case 'm':
+                        generator.SetFileNamePrefixSource(eFileName_FromModuleName);
+                        break;
+                    case 'a':
+                        generator.SetFileNamePrefix(StringArgument(argv[++i]));
+                        break;
+                    default:
+                        ERR_POST(Fatal << "Invalid argument: " << arg);
+                    }
                     break;
                 case 'R':
                     ++i;
-                    generator.SetHeadersDir(Path(DirArgument(argv[i]),
+                    generator.SetHPPDir(Path(DirArgument(argv[i]),
                                                  "include"));
-                    generator.SetSourcesDir(Path(DirArgument(argv[i]),
+                    generator.SetCPPDir(Path(DirArgument(argv[i]),
                                                  "src"));
-                    break;
-                case 's':
-                    generator.SetHeadersDirPrefix(StringArgument(argv[++i]));
-                    generator.SetHeadersDirNameSource(eFromSourceFileName);
+                    modulesDir = Path(DirArgument(argv[i]), "src");
+                    generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
                     break;
                 case 'f':
                     generator.SetFileListFileName(FileOutArgument(argv[++i]));
@@ -281,11 +306,13 @@ int main(int argc, const char*argv[])
             ERR_POST(Fatal << "Module file not specified");
 
         
-        LoadDefinitions(generator.GetMainModules(), mainModules);
+        LoadDefinitions(generator.GetMainModules(),
+                        modulesDir, mainModules);
         if ( moduleOut )
             StoreDefinition(generator.GetMainModules(), moduleOut);
 
-        LoadDefinitions(generator.GetImportModules(), importModules);
+        LoadDefinitions(generator.GetImportModules(),
+                        modulesDir, importModules);
         if ( !generator.Check() ) {
             ERR_POST((ignoreErrors? Error: Fatal) << "Errors was found...");
         }
@@ -315,17 +342,18 @@ int main(int argc, const char*argv[])
 }
 
 
-void LoadDefinitions(CFileSet& fileSet, const list<FileInfo>& names)
+void LoadDefinitions(CFileSet& fileSet,
+                     const string& modulesDir,
+                     const list<FileInfo>& names)
 {
-    for ( list<FileInfo>::const_iterator fi = names.begin();
-          fi != names.end(); ++fi ) {
+    iterate ( list<FileInfo>, fi, names ) {
         const string& name = *fi;
         if ( fi->type != eASNText ) {
             ERR_POST("data definition format not supported: " << name);
             continue;
         }
         try {
-			SourceFile fName(name);
+			SourceFile fName(Path(modulesDir, name));
             ASNLexer lexer(fName);
             ASNParser parser(lexer);
             fileSet.AddFile(parser.Modules(name));

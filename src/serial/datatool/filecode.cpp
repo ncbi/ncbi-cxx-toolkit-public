@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/12/28 18:55:57  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.7  1999/12/21 17:18:34  vasilche
 * Added CDelayedFostream class which rewrites file only if contents is changed.
 *
@@ -162,7 +168,7 @@ void CFileCode::AddForwardDeclarations(const TForwards& forwards)
 
 void CFileCode::GenerateHPP(const string& path) const
 {
-    string fileName = path + GetHPPName();
+    string fileName = Path(path, GetHPPName());
     CDelayedOfstream header(fileName.c_str());
     if ( !header ) {
         ERR_POST("Cannot create file: " << fileName);
@@ -224,7 +230,7 @@ void CFileCode::GenerateHPP(const string& path) const
 
 void CFileCode::GenerateCPP(const string& path) const
 {
-    string fileName = path + GetCPPName();
+    string fileName = Path(path, GetCPPName());
     CDelayedOfstream code(fileName.c_str());
     if ( !code ) {
         ERR_POST("Cannot create file: " << fileName);
@@ -265,7 +271,7 @@ void CFileCode::GenerateCPP(const string& path) const
 
 bool CFileCode::GenerateUserHPP(const string& path) const
 {
-    string fileName = path + GetUserHPPName();
+    string fileName = Path(path, GetUserHPPName());
     CNcbiOfstream header(fileName.c_str(), IOS_BASE::app);
     if ( !header ) {
         ERR_POST("Cannot create file: " << fileName);
@@ -314,7 +320,7 @@ bool CFileCode::GenerateUserHPP(const string& path) const
 
 bool CFileCode::GenerateUserCPP(const string& path) const
 {
-    string fileName = path + GetUserCPPName();
+    string fileName = Path(path, GetUserCPPName());
     CNcbiOfstream code(fileName.c_str(), IOS_BASE::app);
     if ( !code ) {
         ERR_POST("Cannot create file: " << fileName);

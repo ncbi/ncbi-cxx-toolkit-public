@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/12/28 18:55:40  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.25  1999/12/17 19:04:54  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -714,8 +720,10 @@ public:
 };
 
 template<typename Char>
-class CStlClassInfoChar_vector : public CTypeInfoTmpl< vector<Char> > {
-    typedef CTypeInfoTmpl< vector<Char> > CParent;
+class CStlClassInfoChar_vector : public CTypeInfo {
+    typedef CTypeInfo CParent;
+    typedef vector<Char> TObjectType;
+    typedef CType<TObjectType> TType;
 public:
     typedef Char TChar;
 
@@ -724,7 +732,19 @@ public:
         {
         }
 
-    static TTypeInfo GetTypeInfo(void);
+    static TObjectType& Get(TObjectPtr object)
+        {
+            return TType::Get(object);
+        }
+    static const TObjectType& Get(TConstObjectPtr object)
+        {
+            return TType::Get(object);
+        }
+
+    virtual size_t GetSize(void) const
+        {
+            return TType::GetSize();
+        }
 
     virtual TObjectPtr Create(void) const
         {
@@ -750,6 +770,8 @@ public:
         {
             Get(dst) = Get(src);
         }
+
+    static TTypeInfo GetTypeInfo(void);
 
 private:
     static char* ToChar(Char* p)

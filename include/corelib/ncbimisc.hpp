@@ -33,6 +33,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  1999/12/28 18:55:25  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.32  1999/12/17 19:04:06  vasilche
 * NcbiEmptyString made extern.
 *
@@ -131,7 +137,6 @@ BEGIN_NCBI_SCOPE
 extern const char   NcbiEmptyCStr[];
 extern const string NcbiEmptyString;
 // tools
-
 struct NStr {
 
     // conversion functions
@@ -144,38 +149,26 @@ struct NStr {
     static string DoubleToString(double value);
     static string BoolToString(bool value);
     static bool   StringToBool(const string& str);
+    static string PtrToString(const void* ptr);
 
     /*  str[pos:pos+n) == pattern  --> return 0
      *  str[pos:pos+n) <  pattern  --> return negative mismatch position
      *  str[pos:pos+n) >  pattern  --> return positive mismatch position
      */
     static int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                       const char* pattern) {
-#if defined(NCBI_OBSOLETE_STR_COMPARE)
-        return str.compare(pattern, pos, n);
-#else
-        return str.compare(pos, n, pattern);
-#endif
-    }
+                       const char* pattern);
     static int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                       const string& pattern) {
-#if defined(NCBI_OBSOLETE_STR_COMPARE)
-        return str.compare(pattern, pos, n);
-#else
-        return str.compare(pos, n, pattern);
-#endif
-    }
+                      const string& pattern);
     
-    static bool StartsWith(const string& str, const string& start) {
+    static inline bool StartsWith(const string& str, const string& start) {
         return str.size() >= start.size()  &&
             Compare(str, (SIZE_TYPE)0, start.size(), start) == 0;
     }
     
-    static bool EndsWith(const string& str, const string& end) {
+    static inline bool EndsWith(const string& str, const string& end) {
         return str.size() >= end.size()  &&
             Compare(str, str.size() - end.size(), end.size(), end) == 0;
     }
-
     enum ETrunc {
         eTrunc_Begin,
         eTrunc_End,
@@ -198,7 +191,6 @@ struct NStr {
                           SIZE_TYPE start_pos = 0, size_t max_replace = 0);
 
 }; // struct NStr
-       
 // predicates
 
 // case-insensitive string comparison
@@ -270,11 +262,13 @@ public:
 #undef max
 #endif
 template <class T>
-inline const T& min(const T& a, const T& b) {
+inline
+const T& min(const T& a, const T& b) {
   return b < a ? b : a;
 }
 template <class T>
-inline const T& max(const T& a, const T& b) {
+inline
+const T& max(const T& a, const T& b) {
   return  a < b ? b : a;
 }
 #endif /* min && max */
@@ -283,7 +277,6 @@ inline const T& max(const T& a, const T& b) {
 #if !defined(HAVE_STRDUP)
 extern char* strdup(const char* str);
 #endif
-
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/12/28 18:55:39  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.14  1999/12/17 19:04:53  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -86,14 +92,13 @@
 */
 
 #include <serial/typeinfo.hpp>
-#include <memory>
 
 BEGIN_NCBI_SCOPE
 
 // CTypeInfo for pointers
-class CPointerTypeInfo : public CTypeInfoTmpl<void*>
+class CPointerTypeInfo : public CTypeInfo
 {
-    typedef CTypeInfoTmpl<void*> CParent;
+    typedef CTypeInfo CParent;
 public:
     CPointerTypeInfo(TTypeInfo type);
     CPointerTypeInfo(const char* name, TTypeInfo type);
@@ -108,8 +113,6 @@ public:
         {
             return m_DataType;
         }
-
-    pair<TConstObjectPtr, TTypeInfo> GetSource(TConstObjectPtr object) const;
     
     virtual TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const;
     virtual TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const;

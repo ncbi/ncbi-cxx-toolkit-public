@@ -33,6 +33,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/12/28 18:55:24  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.14  1999/12/27 19:44:15  vakatov
 * Fixes for R1.13:
 * ERR_POST() -- use eDPF_Default rather than eDPF_Trace;  forcibly flush
@@ -194,13 +200,17 @@ private:
     size_t       m_Line;      // line #
     CDiagBuffer& m_Buffer;    // this thread's error message buffer
     unsigned int m_PostFlags; // bitwise OR of "EDiagPostFlag"
+
     // prohibit assignment
-    CNcbiDiag& operator =(const CNcbiDiag&) { return *this; }
+    CNcbiDiag(const CNcbiDiag&);
+    CNcbiDiag& operator=(const CNcbiDiag&);
 };
 
 #if defined(NO_INCLASS_TMPL)
 // formatted output
-template<class X> CNcbiDiag& operator <<(CNcbiDiag& diag, const X& x);
+template<class X>
+inline
+CNcbiDiag& operator <<(CNcbiDiag& diag, const X& x);
 #endif
 
 

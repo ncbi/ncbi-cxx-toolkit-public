@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  1999/12/28 18:55:49  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.30  1999/12/17 19:05:01  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -184,6 +190,10 @@ CSequenceOfTypeInfo::CSequenceOfTypeInfo(const char* name, TTypeInfo type)
 	Init();
 }
 
+CSequenceOfTypeInfo::~CSequenceOfTypeInfo(void)
+{
+}
+
 void CSequenceOfTypeInfo::Init(void)
 {
 	TTypeInfo type = m_DataType;
@@ -261,6 +271,11 @@ bool CSequenceOfTypeInfo::RandomOrder(void) const
     return false;
 }
 
+size_t CSequenceOfTypeInfo::GetSize(void) const
+{
+    return TType::GetSize();
+}
+
 TObjectPtr CSequenceOfTypeInfo::CreateData(void) const
 {
     if ( m_DataOffset == 0 ) {
@@ -317,7 +332,8 @@ void CSequenceOfTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 void CSequenceOfTypeInfo::CollectExternalObjects(COObjectList& l,
                                                  TConstObjectPtr object) const
 {
-    _TRACE("SequenceOf<" << GetDataTypeInfo()->GetName() << ">::Collect: " << unsigned(object));
+    _TRACE("SequenceOf<" << GetDataTypeInfo()->GetName() << ">::Collect: " <<
+           NStr::PtrToString(object));
     for ( object = First(object); object != 0; object = Next(object) ) {
         GetDataTypeInfo()->CollectObjects(l, Data(object));
     }
@@ -336,7 +352,8 @@ void CSequenceOfTypeInfo::WriteData(CObjectOStream& out,
 void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
                                    TObjectPtr object) const
 {
-    _TRACE("SequenceOf<" << GetDataTypeInfo()->GetName() << ">::ReadData(" << unsigned(object) << ")");
+    _TRACE("SequenceOf<" << GetDataTypeInfo()->GetName() << ">::ReadData(" <<
+           NStr::PtrToString(object) << ")");
     CObjectIStream::Block block(in, RandomOrder());
     if ( !block.Next() ) {
         First(object) = 0;
@@ -348,7 +365,8 @@ void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
     if ( next == 0 ) {
         ERR_POST(Warning << "null sequence pointer"); 
         next = First(object) = CreateData();
-        _TRACE("new " << dataType->GetName() << ": " << unsigned(next));
+        _TRACE("new " << dataType->GetName() << ": " <<
+               NStr::PtrToString(next));
     }
     object = next;
 
@@ -360,7 +378,8 @@ void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
         if ( next == 0 ) {
             ERR_POST(Warning << "null sequence pointer"); 
             next = Next(object) = CreateData();
-            _TRACE("new " << dataType->GetName() << ": " << unsigned(next));
+            _TRACE("new " << dataType->GetName() << ": " <<
+                   NStr::PtrToString(next));
         }
         object = next;
 
@@ -390,6 +409,10 @@ CSetOfTypeInfo::CSetOfTypeInfo(const char* name, TTypeInfo type)
 {
 }
 
+CSetOfTypeInfo::~CSetOfTypeInfo(void)
+{
+}
+
 bool CSetOfTypeInfo::RandomOrder(void) const
 {
     return true;
@@ -402,6 +425,10 @@ CChoiceTypeInfo::CChoiceTypeInfo(const string& name)
 
 CChoiceTypeInfo::CChoiceTypeInfo(const char* name)
     : CParent(name)
+{
+}
+
+CChoiceTypeInfo::~CChoiceTypeInfo(void)
 {
 }
 
@@ -435,6 +462,15 @@ TObjectPtr CChoiceTypeInfo::x_GetData(TObjectPtr object) const
 COctetStringTypeInfo::COctetStringTypeInfo(void)
     : CParent("OCTET STRING")
 {
+}
+
+COctetStringTypeInfo::~COctetStringTypeInfo(void)
+{
+}
+
+size_t COctetStringTypeInfo::GetSize(void) const
+{
+    return TType::GetSize();
 }
 
 bool COctetStringTypeInfo::IsDefault(TConstObjectPtr object) const
@@ -530,7 +566,7 @@ TTypeInfo COctetStringTypeInfo::GetTypeInfo(void)
     return typeInfo;
 }
 
-map<COldAsnTypeInfo::TNewProc, COldAsnTypeInfo*> COldAsnTypeInfo::m_Types;
+//map<COldAsnTypeInfo::TNewProc, COldAsnTypeInfo*> COldAsnTypeInfo::m_Types;
 
 COldAsnTypeInfo::COldAsnTypeInfo(const string& name,
                                  TNewProc newProc, TFreeProc freeProc,
@@ -550,6 +586,10 @@ COldAsnTypeInfo::COldAsnTypeInfo(const char* name,
 {
 }
 
+COldAsnTypeInfo::~COldAsnTypeInfo(void)
+{
+}
+
 /*
 TTypeInfo COldAsnTypeInfo::GetTypeInfo(TNewProc newProc, TFreeProc freeProc,
                                        TReadProc readProc, TWriteProc writeProc)
@@ -566,6 +606,11 @@ TTypeInfo COldAsnTypeInfo::GetTypeInfo(TNewProc newProc, TFreeProc freeProc,
     return info;
 }
 */
+
+size_t COldAsnTypeInfo::GetSize(void) const
+{
+    return TType::GetSize();
+}
 
 bool COldAsnTypeInfo::IsDefault(TConstObjectPtr object) const
 {

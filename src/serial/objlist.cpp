@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/12/28 18:55:51  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.10  1999/08/13 15:53:51  vasilche
 * C++ analog of asntool: datatool
 *
@@ -83,9 +89,9 @@ COObjectList::~COObjectList(void)
 
 bool COObjectList::Add(TConstObjectPtr object, TTypeInfo typeInfo)
 {
-    _TRACE("COObjectList::Add(" << unsigned(object) << ", " <<
+    _TRACE("COObjectList::Add(" << NStr::PtrToString(object) << ", " <<
            typeInfo->GetName() << ") size: " << typeInfo->GetSize() <<
-           ", end: " << (unsigned(object) + typeInfo->GetSize()));
+           ", end: " << NStr::PtrToString(typeInfo->EndOf(object)));
     // note that TObject have reverse sort order
     // just in case typedef in header file will be redefined:
     typedef map<TConstObjectPtr, CORootObjectInfo, greater<TConstObjectPtr> > TObject;
@@ -192,9 +198,9 @@ void COObjectList::CheckAllWritten(void) const
           i != m_Objects.end();
           ++i ) {
         if ( !i->second.IsWritten() ) {
-            ERR_POST("object not written: " << unsigned(i->first) <<
+            ERR_POST("object not written: " << NStr::PtrToString(i->first) <<
                      '{' << i->second.GetTypeInfo()->GetName() << '}');
-            _TRACE("object not written: " << unsigned(i->first) <<
+            _TRACE("object not written: " << NStr::PtrToString(i->first) <<
                    '{' << i->second.GetTypeInfo()->GetName() << '}');
             THROW1_TRACE(runtime_error, "object not written");
         }

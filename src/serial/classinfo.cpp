@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/12/28 18:55:49  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.26  1999/12/17 19:05:02  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -572,7 +578,8 @@ CTypeInfo::TMemberIndex CClassInfoTmpl::LocateMember(TConstObjectPtr object,
                                                      TConstObjectPtr member,
                                                      TTypeInfo memberTypeInfo) const
 {
-    _TRACE("LocateMember(" << unsigned(object) << ", " << unsigned(member) <<
+    _TRACE("LocateMember(" << NStr::PtrToString(object) << ", " <<
+           NStr::PtrToString(member) <<
            ", " << memberTypeInfo->GetName() << ")");
     TConstObjectPtr objectEnd = EndOf(object);
     TConstObjectPtr memberEnd = memberTypeInfo->EndOf(member);
@@ -647,7 +654,7 @@ TObjectPtr CStructInfoTmpl::Create(void) const
     TObjectPtr object = calloc(GetSize(), 1);
     if ( object == 0 )
         THROW_TRACE(bad_alloc, ());
-    _TRACE("Create: " << GetName() << ": " << unsigned(object));
+    _TRACE("Create: " << GetName() << ": " << NStr::PtrToString(object));
     return object;
 }
 

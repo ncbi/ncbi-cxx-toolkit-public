@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/12/28 18:55:46  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.15  1999/11/01 14:32:04  vasilche
 * Fixed null pointer reference in MapTagAll
 *
@@ -92,6 +98,11 @@ CNCBINode::CNCBINode(void)
 }
 
 CNCBINode::CNCBINode(const string& name)
+    : m_RefCount(0), m_Name(name)
+{
+}
+
+CNCBINode::CNCBINode(const char* name)
     : m_RefCount(0), m_Name(name)
 {
 }
@@ -163,6 +174,16 @@ const string* CNCBINode::GetAttributeValue(const string& name) const
         }
     }
     return 0;
+}
+
+void CNCBINode::SetAttribute(const string& name, int value)
+{
+    SetAttribute(name, NStr::IntToString(value));
+}
+
+void CNCBINode::SetAttribute(const char* name, int value)
+{
+    SetAttribute(name, NStr::IntToString(value));
 }
 
 void CNCBINode::SetAttribute(const string& name)

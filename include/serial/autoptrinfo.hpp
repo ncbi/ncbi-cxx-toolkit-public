@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/12/28 18:55:39  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.4  1999/12/17 19:04:51  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -56,9 +62,8 @@ BEGIN_NCBI_SCOPE
 class CAutoPointerTypeInfo : public CPointerTypeInfo {
     typedef CPointerTypeInfo CParent;
 public:
-    CAutoPointerTypeInfo(TTypeInfo type)
-        : CParent(type->GetName(), type)
-        { }
+    CAutoPointerTypeInfo(TTypeInfo type);
+    ~CAutoPointerTypeInfo(void);
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
 

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/28 18:55:39  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.3  1999/12/17 19:04:52  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -99,62 +105,6 @@ protected:
 private:
     CMembers m_Variants;
     vector<CTypeRef> m_VariantTypes;
-};
-
-template<typename T>
-class CChoiceTypeInfoTmpl : public CChoiceTypeInfoBase
-{
-    typedef CChoiceTypeInfoBase CParent;
-public:
-    typedef T TDataType;
-    typedef struct {
-        TMemberIndex index;
-        TDataType data;
-    } TObjectType;
-
-    CChoiceTypeInfoTmpl(const string& name)
-        : CParent(name)
-        {
-        }
-    CChoiceTypeInfoTmpl(const char* name)
-        : CParent(name)
-        {
-        }
-
-    // object getters:
-    static TObjectType& Get(TObjectPtr object)
-        {
-            return *static_cast<TObjectType*>(object);
-        }
-    static const TObjectType& Get(TConstObjectPtr object)
-        {
-            return *static_cast<const TObjectType*>(object);
-        }
-
-    virtual size_t GetSize(void) const
-        {
-            return sizeof(TObjectType);
-        }
-    virtual TObjectPtr Create(void) const
-        {
-            TObjectType* obj = new TObjectType;
-            obj->index = -1;
-            return obj;
-        }
-
-protected:
-    virtual TMemberIndex GetIndex(TConstObjectPtr object) const
-        {
-            return Get(object).index;
-        }
-    virtual void SetIndex(TObjectPtr object, TMemberIndex index) const
-        {
-            Get(object).index = index;
-        }
-    virtual TObjectPtr x_GetData(TObjectPtr object) const
-        {
-            return &Get(object).data;
-        }
 };
 
 END_NCBI_SCOPE

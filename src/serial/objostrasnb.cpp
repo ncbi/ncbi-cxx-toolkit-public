@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/12/28 18:55:51  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.25  1999/12/17 19:05:04  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -185,7 +191,7 @@ inline
 void CObjectOStreamAsnBinary::WriteByte(TByte byte)
 {
 #if CHECK_STREAM_INTEGRITY
-    //_TRACE("WriteByte: " << unsigned(byte));
+    //_TRACE("WriteByte: " << NStr::PtrToString(byte));
     if ( m_CurrentPosition >= m_CurrentTagLimit )
         THROW1_TRACE(runtime_error, "tag size overflow");
     switch ( m_CurrentTagState ) {
@@ -263,7 +269,7 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
         EndTag();
 #endif
     if ( size != 0 && !m_Output.write(bytes, size) ) {
-        ERR_POST("write error: " << size << '@' << unsigned(bytes));
+        ERR_POST("write error: " << size << '@' << NStr::PtrToString(bytes));
         THROW1_TRACE(runtime_error, "write error");
     }
 }

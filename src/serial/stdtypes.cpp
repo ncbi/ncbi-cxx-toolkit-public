@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/12/28 18:55:52  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.10  1999/12/17 19:05:04  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -101,6 +107,10 @@ CStdTypeInfo<void>::CStdTypeInfo(void)
 {
 }
 
+CStdTypeInfo<void>::~CStdTypeInfo(void)
+{
+}
+
 size_t CStdTypeInfo<void>::GetSize(void) const
 {
     return 0;
@@ -144,6 +154,15 @@ void CStdTypeInfo<void>::WriteData(CObjectOStream& , TConstObjectPtr ) const
 CStdTypeInfo<string>::CStdTypeInfo(void)
     : CParent("string")
 {
+}
+
+CStdTypeInfo<string>::~CStdTypeInfo(void)
+{
+}
+
+size_t CStdTypeInfo<string>::GetSize(void) const
+{
+    return TType::GetSize();
 }
 
 TObjectPtr CStdTypeInfo<string>::Create(void) const

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/28 18:55:57  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.3  1999/12/21 17:44:18  vasilche
 * Fixed compilation on SunPro C++
 *
@@ -103,8 +109,10 @@ DestinationFile::~DestinationFile(void)
 
 string Path(const string& dir, const string& file)
 {
-    if ( dir.size() == 0 )
+    if ( dir.empty() )
         return file;
+    if ( file.empty() )
+        _TRACE("Path(\"" << dir << "\", \"" << file << "\")");
     switch ( dir[dir.size() - 1] ) {
     case '/':
     case '\\':
@@ -127,6 +135,20 @@ string BaseName(const string& path)
     if ( extStart != NPOS )
         name = name.substr(0, extStart);
     return name;
+}
+
+string DirName(const string& path)
+{
+    SIZE_TYPE dirEnd = path.find_last_of(":/\\");
+    if ( dirEnd != NPOS ) {
+        if ( dirEnd == 0 ) // "/" root directory
+            return path.substr(0, 1);
+        else
+            return path.substr(0, dirEnd);
+    }
+    else {
+        return NcbiEmptyString;
+    }
 }
 
 string Identifier(const string& typeName, bool capitalize)

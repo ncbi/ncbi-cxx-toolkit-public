@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  1999/12/28 18:55:45  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.50  1999/10/28 13:40:35  vasilche
 * Added reference counters to CNCBINode.
 *
@@ -206,128 +212,92 @@
 
 BEGIN_NCBI_SCOPE
 
-// HTML element names
-const string KHTMLTagName_html = "HTML";
-const string KHTMLTagName_head = "HEAD";
-const string KHTMLTagName_body = "BODY";
-const string KHTMLTagName_base = "BASE";
-const string KHTMLTagName_isindex = "ISINDEX";
-const string KHTMLTagName_link = "LINK";
-const string KHTMLTagName_meta = "META";
-const string KHTMLTagName_script = "SCRIPT";
-const string KHTMLTagName_style = "STYLE";
-const string KHTMLTagName_title = "TITLE";
-const string KHTMLTagName_address = "ADDRESS";
-const string KHTMLTagName_blockquote = "BLOCKQUOTE";
-const string KHTMLTagName_center = "CENTER";
-const string KHTMLTagName_div = "DIV";
-const string KHTMLTagName_h1 = "H1";
-const string KHTMLTagName_h2 = "H2";
-const string KHTMLTagName_h3 = "H3";
-const string KHTMLTagName_h4 = "H4";
-const string KHTMLTagName_h5 = "H5";
-const string KHTMLTagName_h6 = "H6";
-const string KHTMLTagName_hr = "HR";
-const string KHTMLTagName_p = "P";
-const string KHTMLTagName_pre = "PRE";
-const string KHTMLTagName_form = "FORM";
-const string KHTMLTagName_input = "INPUT";
-const string KHTMLTagName_select = "SELECT";
-const string KHTMLTagName_option = "OPTION";
-const string KHTMLTagName_textarea = "TEXTAREA";
-const string KHTMLTagName_dl = "DL";
-const string KHTMLTagName_dt = "DT";
-const string KHTMLTagName_dd = "DD";
-const string KHTMLTagName_ol = "OL";
-const string KHTMLTagName_ul = "UL";
-const string KHTMLTagName_dir = "DIR";
-const string KHTMLTagName_menu = "MENU";
-const string KHTMLTagName_li = "LI";
-const string KHTMLTagName_table = "TABLE";
-const string KHTMLTagName_caption = "CAPTION";
-const string KHTMLTagName_col = "COL";
-const string KHTMLTagName_colgroup = "COLGROUP";
-const string KHTMLTagName_thead = "THEAD";
-const string KHTMLTagName_tbody = "TBODY";
-const string KHTMLTagName_tfoot = "TFOOT";
-const string KHTMLTagName_tr = "TR";
-const string KHTMLTagName_th = "TH";
-const string KHTMLTagName_td = "TD";
-const string KHTMLTagName_applet = "APPLET";
-const string KHTMLTagName_param = "PARAM";
-const string KHTMLTagName_img = "IMG";
-const string KHTMLTagName_a = "A";
-const string KHTMLTagName_cite = "CITE";
-const string KHTMLTagName_code = "CODE";
-const string KHTMLTagName_dfn = "DFN";
-const string KHTMLTagName_em = "EM";
-const string KHTMLTagName_kbd = "KBD";
-const string KHTMLTagName_samp = "SAMP";
-const string KHTMLTagName_strike = "STRIKE";
-const string KHTMLTagName_strong = "STRONG";
-const string KHTMLTagName_var = "VAR";
-const string KHTMLTagName_b = "B";
-const string KHTMLTagName_big = "BIG";
-const string KHTMLTagName_font = "FONT";
-const string KHTMLTagName_i = "I";
-const string KHTMLTagName_s = "S";
-const string KHTMLTagName_small = "SMALL";
-const string KHTMLTagName_sub = "SUB";
-const string KHTMLTagName_sup = "SUP";
-const string KHTMLTagName_tt = "TT";
-const string KHTMLTagName_u = "U";
-const string KHTMLTagName_blink = "BLINK";
-const string KHTMLTagName_br = "BR";
-const string KHTMLTagName_basefont = "BASEFONT";
-const string KHTMLTagName_map = "MAP";
-const string KHTMLTagName_area = "AREA";
-
-
-// HTML attribute names
-const string KHTMLAttributeName_action = "ACTION";
-const string KHTMLAttributeName_align = "ALIGN";
-const string KHTMLAttributeName_bgcolor = "BGCOLOR";
-const string KHTMLAttributeName_border = "BORDER";
-const string KHTMLAttributeName_cellpadding = "CELLPADDING";
-const string KHTMLAttributeName_cellspacing = "CELLSPACING";
-const string KHTMLAttributeName_checked = "CHECKED";
-const string KHTMLAttributeName_color = "COLOR";
-const string KHTMLAttributeName_cols = "COLS";
-const string KHTMLAttributeName_colspan = "COLSPAN";
-const string KHTMLAttributeName_compact = "COMPACT";
-const string KHTMLAttributeName_enctype = "ENCTYPE";
-const string KHTMLAttributeName_face = "FACE";
-const string KHTMLAttributeName_height = "HEIGHT";
-const string KHTMLAttributeName_href = "HREF";
-const string KHTMLAttributeName_maxlength = "MAXLENGTH";
-const string KHTMLAttributeName_method = "METHOD";
-const string KHTMLAttributeName_multiple = "MULTIPLE";
-const string KHTMLAttributeName_name = "NAME";
-const string KHTMLAttributeName_noshade = "NOSHADE";
-const string KHTMLAttributeName_rows = "ROWS";
-const string KHTMLAttributeName_rowspan = "ROWSPAN";
-const string KHTMLAttributeName_selected = "SELECTED";
-const string KHTMLAttributeName_size = "SIZE";
-const string KHTMLAttributeName_src = "SRC";
-const string KHTMLAttributeName_start = "START";
-const string KHTMLAttributeName_type = "TYPE";
-const string KHTMLAttributeName_valign = "VALIGN";
-const string KHTMLAttributeName_value = "VALUE";
-const string KHTMLAttributeName_width = "WIDTH";
-const string KHTMLAttributeName_class = "CLASS";
-
-
 // CHTMLNode
 
-void CHTMLNode::AppendPlainText(const string& appendstring)
+CHTMLNode::~CHTMLNode(void)
 {
-    if ( !appendstring.empty() )
-        AppendChild(new CHTMLPlainText(appendstring));
+}
+
+CHTMLNode* CHTMLNode::SetClass(const string& class_name)
+{
+    SetOptionalAttribute("class", class_name);
+    return this;
+}
+
+CHTMLNode* CHTMLNode::SetWidth(int width)
+{
+    SetAttribute("width", width);
+    return this;
+}
+
+CHTMLNode* CHTMLNode::SetHeight(int height)
+{
+    SetAttribute("height", height);
+    return this;
+}
+
+CHTMLNode* CHTMLNode::SetWidth(const string& width)
+{
+    SetOptionalAttribute("width", width);
+    return this;
+}
+
+CHTMLNode* CHTMLNode::SetHeight(const string& height)
+{
+    SetOptionalAttribute("height", height);
+    return this;
+}
+
+CHTMLNode* CHTMLNode::SetSize(int size)
+{
+    SetAttribute("size", size);
+    return this;
+}
+
+CHTMLNode* CHTMLNode::SetAlign(const string& align)
+{
+    SetOptionalAttribute("align", align);
+    return this;
+}
+
+CHTMLNode* CHTMLNode::SetVAlign(const string& align)
+{
+    SetOptionalAttribute("valign", align);
+    return this;
+}
+
+CHTMLNode* CHTMLNode::SetColor(const string& color)
+{
+    SetOptionalAttribute("color", color);
+    return this;
+}
+
+CHTMLNode* CHTMLNode::SetBgColor(const string& color)
+{
+    SetOptionalAttribute("bgcolor", color);
+    return this;
+}
+
+CHTMLNode* CHTMLNode::SetNameAttribute(const string& name)
+{
+    SetAttribute("name", name);
+    return this;
+}
+
+const string& CHTMLNode::GetNameAttribute(void) const
+{
+    return GetAttribute("name");
 }
 
 void CHTMLNode::AppendPlainText(const string& appendstring, bool noEncode)
 {
     if ( !appendstring.empty() )
+        AppendChild(new CHTMLPlainText(appendstring, noEncode));
+}
+
+void CHTMLNode::AppendPlainText(const char* appendstring, bool noEncode)
+{
+    if ( appendstring && *appendstring )
         AppendChild(new CHTMLPlainText(appendstring, noEncode));
 }
 
@@ -337,10 +307,25 @@ void CHTMLNode::AppendHTMLText(const string& appendstring)
         AppendChild(new CHTMLText(appendstring));
 }
 
+void CHTMLNode::AppendHTMLText(const char* appendstring)
+{
+    if ( appendstring && *appendstring )
+        AppendChild(new CHTMLText(appendstring));
+}
+
 // <@XXX@> mapping tag node
+
+CHTMLTagNode::CHTMLTagNode(const char* name)
+    : CParent(name)
+{
+}
 
 CHTMLTagNode::CHTMLTagNode(const string& name)
     : CParent(name)
+{
+}
+
+CHTMLTagNode::~CHTMLTagNode(void)
 {
 }
 
@@ -354,13 +339,17 @@ CNcbiOstream& CHTMLTagNode::PrintChildren(CNcbiOstream& out, TMode mode)
 
 // plain text node
 
-CHTMLPlainText::CHTMLPlainText(const string& text)
-    : CNCBINode(text), m_NoEncode(false)
+CHTMLPlainText::CHTMLPlainText(const char* text, bool noEncode)
+    : CNCBINode(text), m_NoEncode(noEncode)
 {
 }
 
 CHTMLPlainText::CHTMLPlainText(const string& text, bool noEncode)
     : CNCBINode(text), m_NoEncode(noEncode)
+{
+}
+
+CHTMLPlainText::~CHTMLPlainText(void)
 {
 }
 
@@ -382,7 +371,16 @@ CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)
 // text node
 
 CHTMLText::CHTMLText(const string& text)
-    : CNCBINode(text)
+    : CParent(text)
+{
+}
+
+CHTMLText::CHTMLText(const char* text)
+    : CParent(text)
+{
+}
+
+CHTMLText::~CHTMLText(void)
 {
 }
 
@@ -392,7 +390,9 @@ void CHTMLText::SetText(const string& text)
 }
 
 static const string KTagStart = "<@";
+static SIZE_TYPE KTagStart_size = 2;
 static const string KTagEnd = "@>";
+static SIZE_TYPE KTagEnd_size = 2;
 
 CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
 {
@@ -405,7 +405,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
     out << text.substr(0, tagStart);
     SIZE_TYPE last = tagStart;
     do {
-        SIZE_TYPE tagNameStart = tagStart + KTagStart.size();
+        SIZE_TYPE tagNameStart = tagStart + KTagStart_size;
         SIZE_TYPE tagNameEnd = text.find(KTagEnd, tagNameStart);
         if ( tagNameEnd == NPOS ) {
             // tag not closed
@@ -423,7 +423,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
             if ( tag )
                 tag->Print(out, mode);
 
-            last = tagNameEnd + KTagEnd.size();
+            last = tagNameEnd + KTagEnd_size;
             tagStart = text.find(KTagStart, last);
         }
     } while ( tagStart != NPOS );
@@ -434,21 +434,8 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
     return out;
 }
 
-CHTMLOpenElement::CHTMLOpenElement(const string& name)
-    : CParent(name)
+CHTMLOpenElement::~CHTMLOpenElement(void)
 {
-}
-
-CHTMLOpenElement::CHTMLOpenElement(const string& name, CNCBINode* node)
-    : CParent(name)
-{
-    AppendChild(node);
-}
-
-CHTMLOpenElement::CHTMLOpenElement(const string& name, const string& text)
-    : CParent(name)
-{
-    AppendPlainText(text);
 }
 
 CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
@@ -471,21 +458,8 @@ CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
     }
 }
 
-CHTMLElement::CHTMLElement(const string& name)
-    : CParent(name)
+CHTMLElement::~CHTMLElement(void)
 {
-}
-
-CHTMLElement::CHTMLElement(const string& name, CNCBINode* node)
-    : CParent(name)
-{
-    AppendChild(node);
-}
-
-CHTMLElement::CHTMLElement(const string& name, const string& text)
-    : CParent(name)
-{
-    AppendPlainText(text);
 }
 
 CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
@@ -498,18 +472,8 @@ CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
 }
 
 // HTML comment class
-CHTMLComment::CHTMLComment(void)
+CHTMLComment::~CHTMLComment(void)
 {
-}
-
-CHTMLComment::CHTMLComment(CNCBINode* node)
-{
-    AppendChild(node);
-}
-
-CHTMLComment::CHTMLComment(const string& text)
-{
-    AppendPlainText(text);
 }
 
 CNcbiOstream& CHTMLComment::PrintBegin(CNcbiOstream& out, TMode mode)
@@ -530,36 +494,75 @@ CNcbiOstream& CHTMLComment::PrintEnd(CNcbiOstream& out, TMode mode)
     }
 }
 
+CHTMLListElement::~CHTMLListElement(void)
+{
+}
+
+CHTMLListElement* CHTMLListElement::SetType(const string& type)
+{
+    SetAttribute("type", type);
+    return this;
+}
+
+CHTMLListElement* CHTMLListElement::SetCompact(void)
+{
+    SetOptionalAttribute("compact", true);
+    return this;
+}
+
 // TABLE element
 
-CHTML_table::CHTML_table(void)
-    : m_CurrentRow(0), m_CurrentCol(TIndex(-1))
+CHTML_tc::~CHTML_tc(void)
 {
-}
-
-CHTML_table* CHTML_table::SetCellSpacing(int spacing)
-{
-    SetAttribute(KHTMLAttributeName_cellspacing, spacing);
-    return this;
-}
-
-CHTML_table* CHTML_table::SetCellPadding(int padding)
-{
-    SetAttribute(KHTMLAttributeName_cellpadding, padding);
-    return this;
 }
 
 CHTML_tc* CHTML_tc::SetRowSpan(TIndex span)
 {
-    SetAttribute(KHTMLAttributeName_rowspan, span);
+    SetAttribute("rowspan", span);
     return this;
 }
 
 CHTML_tc* CHTML_tc::SetColSpan(TIndex span)
 {
-    SetAttribute(KHTMLAttributeName_colspan, span);
+    SetAttribute("colspan", span);
     return this;
 }
+
+CHTML_table::CHTML_table(void)
+    : CParent("table"), m_CurrentRow(0), m_CurrentCol(TIndex(-1))
+{
+}
+
+CHTML_table::~CHTML_table(void)
+{
+}
+
+CHTML_table* CHTML_table::SetCellSpacing(int spacing)
+{
+    SetAttribute("cellspacing", spacing);
+    return this;
+}
+
+CHTML_table* CHTML_table::SetCellPadding(int padding)
+{
+    SetAttribute("cellpadding", padding);
+    return this;
+}
+
+class CHTML_table::CTableInfo
+{
+public:
+    TIndex m_Rows;
+    TIndex m_Columns;
+        TIndex m_FinalRow;
+    vector<TIndex> m_FinalRowSpans;
+    vector<TIndex> m_RowSizes;
+    bool m_BadNode, m_BadRowNode, m_BadCellNode, m_Overlapped, m_BadSpan;
+    
+    CTableInfo(void);
+    void AddRowSize(TIndex columns);
+    void SetFinalRowSpans(TIndex rows, const vector<TIndex>& rowSpans);
+};
 
 CHTML_table::TIndex CHTML_table::sx_GetSpan(const CNCBINode* node,
                             const string& attributeName, CTableInfo* info)
@@ -623,22 +626,28 @@ CHTML_tr* CHTML_table::Row(TIndex needRow)  // todo: exception
 
 CHTML_tc* CHTML_table::sx_CheckType(CHTMLNode* cell, ECellType type)
 {
+    CHTML_tc* ret;
     switch (type) {
     case eHeaderCell:
-        if ( cell->GetName() != CHTML_th::s_GetTagName() )
+        ret = dynamic_cast<CHTML_th*>(cell);
+        if ( !ret )
             THROW1_TRACE(runtime_error,
-                         "CHTML_table::CheckType: wrong cell type: TH expected");
+                         "CHTML_table: wrong cell type: TH expected");
         break;
     case eDataCell:
-        if ( cell->GetName() != CHTML_td::s_GetTagName() )
+        ret = dynamic_cast<CHTML_td*>(cell);
+        if ( !ret )
             THROW1_TRACE(runtime_error,
-                         "CHTML_table::CheckType: wrong cell type: TD expected");
+                         "CHTML_table: wrong cell type: TD expected");
         break;
     case eAnyCell:
-        // no check
+        ret = dynamic_cast<CHTML_tc*>(cell);
+        if ( !ret )
+            THROW1_TRACE(runtime_error,
+                         "CHTML_table: wrong cell type: TD or TH expected");
         break;
     }
-    return static_cast<CHTML_tc*>(cell);
+    return ret;
 }
 
 CHTML_tc* CHTML_table::Cell(TIndex needRow, TIndex needCol, ECellType type)
@@ -699,9 +708,9 @@ CHTML_tc* CHTML_table::Cell(TIndex needRow, TIndex needCol, ECellType type)
                     
                     // determine current cell size
                     TIndex rowSpan =
-                        sx_GetSpan(cell, KHTMLAttributeName_rowspan, 0);
+                        sx_GetSpan(cell, "rowspan", 0);
                     TIndex colSpan =
-                        sx_GetSpan(cell, KHTMLAttributeName_colspan, 0);
+                        sx_GetSpan(cell, "colspan", 0);
                     
                     // end of new cell in columns
                     const TIndex colEnd = col + colSpan;
@@ -783,24 +792,30 @@ CHTML_tc* CHTML_table::Cell(TIndex needRow, TIndex needCol, ECellType type)
 
 bool CHTML_table::sx_IsRow(const CNCBINode* node)
 {
-    return node->GetName() == CHTML_tr::s_GetTagName();
+    return dynamic_cast<const CHTML_tr*>(node) != 0;
 }
 
 bool CHTML_table::sx_IsCell(const CNCBINode* node)
 {
-    return node->GetName() == CHTML_td::s_GetTagName() ||
-        node->GetName() == CHTML_th::s_GetTagName();
+    return dynamic_cast<const CHTML_tc*>(node) != 0;
 }
+
+static auto_ptr< set<string, PNocase> > CHTML_table_validTags;
 
 bool CHTML_table::sx_CanContain(const CNCBINode* node)
 {
-    return ( node->GetName() == CHTML_caption::s_GetTagName() ||
-             node->GetName() == CHTML_col::s_GetTagName() ||
-             node->GetName() == CHTML_colgroup::s_GetTagName() ||
-             node->GetName() == CHTML_tbody::s_GetTagName() ||
-             node->GetName() == CHTML_tfoot::s_GetTagName() ||
-             node->GetName() == CHTML_thead::s_GetTagName() ||
-             node->GetName() == CHTML_tr::s_GetTagName() );
+    if ( !CHTML_table_validTags.get() ) {
+        CHTML_table_validTags.reset(new set<string, PNocase>);
+        CHTML_table_validTags->insert("caption");
+        CHTML_table_validTags->insert("col");
+        CHTML_table_validTags->insert("colgroup");
+        CHTML_table_validTags->insert("tbody");
+        CHTML_table_validTags->insert("tfoot");
+        CHTML_table_validTags->insert("thead");
+        CHTML_table_validTags->insert("tr");
+    }
+    return CHTML_table_validTags->find(node->GetName()) !=
+        CHTML_table_validTags->end();
 }
 
 void CHTML_table::x_CheckTable(CTableInfo *info) const
@@ -854,9 +869,9 @@ void CHTML_table::x_CheckTable(CTableInfo *info) const
                     
                     // determine current cell size
                     TIndex rowSpan =
-                        sx_GetSpan(cell, KHTMLAttributeName_rowspan, info);
+                        sx_GetSpan(cell, "rowspan", info);
                     TIndex colSpan =
-                        sx_GetSpan(cell, KHTMLAttributeName_colspan, info);
+                        sx_GetSpan(cell, "colspan", info);
                     
                     // end of new cell in columns
                     const TIndex colEnd = col + colSpan;
@@ -981,33 +996,43 @@ CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out, TMode mode)
 
 // form element
 
+CHTML_form::CHTML_form(void)
+    : CParent("form")
+{
+}
+
 CHTML_form::CHTML_form(const string& url, EMethod method)
+    : CParent("form")
 {
     Init(url, method);
 }
 
 CHTML_form::CHTML_form(const string& url, CNCBINode* node, EMethod method)
+    : CParent("form", node)
 {
     Init(url, method);
-    AppendChild(node);
+}
+
+CHTML_form::~CHTML_form(void)
+{
 }
 
 void CHTML_form::Init(const string& url, EMethod method)
 {
-    SetOptionalAttribute(KHTMLAttributeName_action, url);
+    SetOptionalAttribute("action", url);
     switch ( method ) {
     case eGet:
-        SetAttribute(KHTMLAttributeName_method, "GET");
+        SetAttribute("method", "GET");
         break;
     case ePost:
-        SetAttribute(KHTMLAttributeName_enctype,
+        SetAttribute("enctype",
                      "application/x-www-form-urlencoded");
-        SetAttribute(KHTMLAttributeName_method, "POST");
+        SetAttribute("method", "POST");
         break;
     case ePostData:
-        SetAttribute(KHTMLAttributeName_enctype,
+        SetAttribute("enctype",
                      "multipart/form-data");
-        SetAttribute(KHTMLAttributeName_method, "POST");
+        SetAttribute("method", "POST");
         break;
     }
 }
@@ -1025,209 +1050,265 @@ void CHTML_form::AddHidden(const string& name, int value)
 // textarea element
 
 CHTML_textarea::CHTML_textarea(const string& name, int cols, int rows)
+    : CParent("textarea")
 {
     SetNameAttribute(name);
-    SetAttribute(KHTMLAttributeName_cols, cols);
-    SetAttribute(KHTMLAttributeName_rows, rows);
+    SetAttribute("cols", cols);
+    SetAttribute("rows", rows);
 }
 
-CHTML_textarea::CHTML_textarea(const string& name, int cols, int rows, const string& value)
-    : CParent(value)
+CHTML_textarea::CHTML_textarea(const string& name, int cols, int rows,
+                               const string& value)
+    : CParent("textarea", value)
 {
     SetNameAttribute(name);
-    SetAttribute(KHTMLAttributeName_cols, cols);
-    SetAttribute(KHTMLAttributeName_rows, rows);
+    SetAttribute("cols", cols);
+    SetAttribute("rows", rows);
 }
 
+CHTML_textarea::~CHTML_textarea(void)
+{
+}
 
 //input tag
 
-CHTML_input::CHTML_input(const string& type, const string& name)
+CHTML_input::CHTML_input(const char* type, const string& name)
+    : CParent("input")
 {
-    SetAttribute(KHTMLAttributeName_type, type);
+    SetAttribute("type", type);
     SetNameAttribute(name);
 }
 
-
-// HTML input type names
-const string KHTMLInputTypeName_text = "TEXT";
-const string KHTMLInputTypeName_file = "FILE";
-const string KHTMLInputTypeName_radio = "RADIO";
-const string KHTMLInputTypeName_checkbox = "CHECKBOX";
-const string KHTMLInputTypeName_hidden = "HIDDEN";
-const string KHTMLInputTypeName_image = "IMAGE";
-const string KHTMLInputTypeName_submit = "SUBMIT";
-const string KHTMLInputTypeName_reset = "RESET";
-
-const string& CHTML_text::s_GetInputType(void)
+CHTML_input::~CHTML_input(void)
 {
-    return KHTMLInputTypeName_text;
-}
-
-const string& CHTML_file::s_GetInputType(void)
-{
-    return KHTMLInputTypeName_file;
-}
-
-const string& CHTML_radio::s_GetInputType(void)
-{
-    return KHTMLInputTypeName_radio;
-}
-
-const string& CHTML_checkbox::s_GetInputType(void)
-{
-    return KHTMLInputTypeName_checkbox;
-}
-
-const string& CHTML_hidden::s_GetInputType(void)
-{
-    return KHTMLInputTypeName_hidden;
-}
-
-const string& CHTML_image::s_GetInputType(void)
-{
-    return KHTMLInputTypeName_image;
-}
-
-const string& CHTML_submit::s_GetInputType(void)
-{
-    return KHTMLInputTypeName_submit;
-}
-
-const string& CHTML_reset::s_GetInputType(void)
-{
-    return KHTMLInputTypeName_reset;
 }
 
 // checkbox tag 
 
+const char CHTML_checkbox::sm_InputType[] = "checkbox";
+
 CHTML_checkbox::CHTML_checkbox(const string& name)
-    : CParent(s_GetInputType(), name)
+    : CParent(sm_InputType, name)
 {
 }
 
 CHTML_checkbox::CHTML_checkbox(const string& name, const string& value)
-    : CParent(s_GetInputType(), name)
+    : CParent(sm_InputType, name)
 {
-    SetOptionalAttribute(KHTMLAttributeName_value, value);
+    SetOptionalAttribute("value", value);
 }
 
-CHTML_checkbox::CHTML_checkbox(const string& name, bool checked, const string& description)
-    : CParent(s_GetInputType(), name)
+CHTML_checkbox::CHTML_checkbox(const string& name, bool checked,
+                               const string& description)
+    : CParent(sm_InputType, name)
 {
-    SetOptionalAttribute(KHTMLAttributeName_checked, checked);
+    SetOptionalAttribute("checked", checked);
     AppendPlainText(description);  // adds the description at the end
 }
 
-CHTML_checkbox::CHTML_checkbox(const string& name, const string& value, bool checked, const string& description)
-    : CParent(s_GetInputType(), name)
+CHTML_checkbox::CHTML_checkbox(const string& name, const string& value,
+                               bool checked, const string& description)
+    : CParent(sm_InputType, name)
 {
-    SetOptionalAttribute(KHTMLAttributeName_value, value);
-    SetOptionalAttribute(KHTMLAttributeName_checked, checked);
+    SetOptionalAttribute("value", value);
+    SetOptionalAttribute("checked", checked);
     AppendPlainText(description);  // adds the description at the end
 }
 
+CHTML_checkbox::~CHTML_checkbox(void)
+{
+}
 
 // image tag 
 
+const char CHTML_image::sm_InputType[] = "image";
+
 CHTML_image::CHTML_image(const string& name, const string& src)
-    : CParent(s_GetInputType(), name)
+    : CParent(sm_InputType, name)
 {
-    SetAttribute(KHTMLAttributeName_src, src);
+    SetAttribute("src", src);
 }
 
 CHTML_image::CHTML_image(const string& name, const string& src, int border)
-    : CParent(s_GetInputType(), name)
+    : CParent(sm_InputType, name)
 {
-    SetAttribute(KHTMLAttributeName_src, src);
-    SetAttribute(KHTMLAttributeName_border, border);
+    SetAttribute("src", src);
+    SetAttribute("border", border);
+}
+
+CHTML_image::~CHTML_image(void)
+{
 }
 
 // radio tag 
 
+const char CHTML_radio::sm_InputType[] = "radio";
+
 CHTML_radio::CHTML_radio(const string& name, const string& value)
-    : CParent(s_GetInputType(), name)
+    : CParent(sm_InputType, name)
 {
-    SetAttribute(KHTMLAttributeName_value, value);
+    SetAttribute("value", value);
 }
 
 CHTML_radio::CHTML_radio(const string& name, const string& value, bool checked, const string& description)
-    : CParent(s_GetInputType(), name)
+    : CParent(sm_InputType, name)
 {
-    SetAttribute(KHTMLAttributeName_value, value);
-    SetOptionalAttribute(KHTMLAttributeName_checked, checked);
+    SetAttribute("value", value);
+    SetOptionalAttribute("checked", checked);
     AppendPlainText(description);  // adds the description at the end
 }
 
+CHTML_radio::~CHTML_radio(void)
+{
+}
+
 // hidden tag 
+const char CHTML_hidden::sm_InputType[] = "hidden";
 
 CHTML_hidden::CHTML_hidden(const string& name, const string& value)
-    : CParent(s_GetInputType(), name)
+    : CParent(sm_InputType, name)
 {
-    SetAttribute(KHTMLAttributeName_value, value);
+    SetAttribute("value", value);
 }
 
 CHTML_hidden::CHTML_hidden(const string& name, int value)
-    : CParent(s_GetInputType(), name)
+    : CParent(sm_InputType, name)
 {
-    SetAttribute(KHTMLAttributeName_value, value);
+    SetAttribute("value", value);
 }
 
-CHTML_submit::CHTML_submit(const string& name)
-    : CParent(s_GetInputType(), NcbiEmptyString)
+CHTML_hidden::~CHTML_hidden(void)
 {
-    SetOptionalAttribute(KHTMLAttributeName_value, name);
+}
+
+const char CHTML_submit::sm_InputType[] = "submit";
+
+CHTML_submit::CHTML_submit(const string& name)
+    : CParent(sm_InputType, NcbiEmptyString)
+{
+    SetOptionalAttribute("value", name);
 }
 
 CHTML_submit::CHTML_submit(const string& name, const string& label)
-    : CParent(s_GetInputType(), name)
+    : CParent(sm_InputType, name)
 {
-    SetOptionalAttribute(KHTMLAttributeName_value, label);
+    SetOptionalAttribute("value", label);
 }
 
-CHTML_reset::CHTML_reset(const string& label)
-    : CParent(s_GetInputType(), NcbiEmptyString)
+CHTML_submit::~CHTML_submit(void)
 {
-    SetOptionalAttribute(KHTMLAttributeName_value, label);
+}
+
+const char CHTML_reset::sm_InputType[] = "reset";
+
+CHTML_reset::CHTML_reset(const string& label)
+    : CParent(sm_InputType, NcbiEmptyString)
+{
+    SetOptionalAttribute("value", label);
+}
+
+CHTML_reset::~CHTML_reset(void)
+{
 }
 
 // text tag 
 
+const char CHTML_text::sm_InputType[] = "text";
+
 CHTML_text::CHTML_text(const string& name, const string& value)
-    : CParent(s_GetInputType(), name)
+    : CParent(sm_InputType, name)
 {
-    SetOptionalAttribute(KHTMLAttributeName_value, value);
+    SetOptionalAttribute("value", value);
 }
 
 CHTML_text::CHTML_text(const string& name, int size, const string& value)
-    : CParent(s_GetInputType(), name)
+    : CParent(sm_InputType, name)
 {
     SetSize(size);
-    SetOptionalAttribute(KHTMLAttributeName_value, value);
+    SetOptionalAttribute("value", value);
 }
 
 CHTML_text::CHTML_text(const string& name, int size, int maxlength, const string& value)
-    : CParent(s_GetInputType(), name)
+    : CParent(sm_InputType, name)
 {
     SetSize(size);
-    SetAttribute(KHTMLAttributeName_maxlength, maxlength);
-    SetOptionalAttribute(KHTMLAttributeName_value, value);
+    SetAttribute("maxlength", maxlength);
+    SetOptionalAttribute("value", value);
+}
+
+CHTML_text::~CHTML_text(void)
+{
 }
 
 // text tag 
 
+const char CHTML_file::sm_InputType[] = "file";
+
 CHTML_file::CHTML_file(const string& name, const string& value)
-    : CParent(s_GetInputType(), name)
+    : CParent(sm_InputType, name)
 {
-    SetOptionalAttribute(KHTMLAttributeName_value, value);
+    SetOptionalAttribute("value", value);
+}
+
+CHTML_file::~CHTML_file(void)
+{
+}
+
+const char CHTML_select::sm_TagName[] = "select";
+
+CHTML_select::~CHTML_select(void)
+{
+}
+
+CHTML_select* CHTML_select::SetMultiple(void)
+{
+    SetAttribute("multiple");
+    return this;
+}
+
+const char CHTML_option::sm_TagName[] = "option";
+
+CHTML_option::~CHTML_option(void)
+{
+}
+
+CHTML_option* CHTML_option::SetValue(const string& value)
+{
+    SetAttribute("value", value);
+    return this;
+}
+
+CHTML_option* CHTML_option::SetSelected(void)
+{
+    SetAttribute("selected");
+    return this;
+}
+
+const char CHTML_a::sm_TagName[] = "a";
+
+CHTML_a::~CHTML_a(void)
+{
+}
+
+CHTML_a* CHTML_a::SetHref(const string& href)
+{
+    SetAttribute("href", href);
+    return this;
 }
 
 // br tag
 
+const char CHTML_br::sm_TagName[] = "br";
+
 CHTML_br::CHTML_br(int count)
+    : CParent(sm_TagName)
 {
     for ( int i = 1; i < count; ++i )
         AppendChild(new CHTML_br());
+}
+
+CHTML_br::~CHTML_br(void)
+{
 }
 
 CNcbiOstream& CHTML_br::PrintBegin(CNcbiOstream& out, TMode mode)  
@@ -1235,25 +1316,37 @@ CNcbiOstream& CHTML_br::PrintBegin(CNcbiOstream& out, TMode mode)
     if( mode == ePlainText ) {
         return out << CHTMLHelper::GetNL();
     } else {
-        return CHTML_br_Base::PrintBegin(out,mode);
+        return CParent::PrintBegin(out,mode);
     }
 }
 
 // img tag
 
 CHTML_img::CHTML_img(const string& url)
+    : CParent("img")
 {
-    SetAttribute(KHTMLAttributeName_src, url);
+    SetAttribute("src", url);
 }
 
 CHTML_img::CHTML_img(const string& url, int width, int height)
+    : CParent("img")
 {
-    SetAttribute(KHTMLAttributeName_src, url);
+    SetAttribute("src", url);
     SetWidth(width);
     SetHeight(height);
 }
 
+CHTML_img::~CHTML_img(void)
+{
+}
+
 // dl tag
+
+const char CHTML_dl::sm_TagName[] = "dl";
+
+CHTML_dl::~CHTML_dl(void)
+{
+}
 
 CHTML_dl* CHTML_dl::AppendTerm(const string& term, const string& definition)
 {
@@ -1287,14 +1380,72 @@ CHTML_dl* CHTML_dl::AppendTerm(CNCBINode* term, CNCBINode* definition)
     return this;
 }
 
-CHTML_font* CHTML_font::SetRelativeSize(int size)
+CHTML_dl* CHTML_dl::SetCompact(void)
 {
-    if ( size != 0 )
-        SetAttribute(KHTMLAttributeName_size, NStr::IntToString(size, true));
+    SetAttribute("compact");
     return this;
 }
 
+const char CHTML_ol::sm_TagName[] = "ol";
+
+CHTML_ol::~CHTML_ol(void)
+{
+}
+
+CHTML_ol* CHTML_ol::SetStart(int start)
+{
+    SetAttribute("start", start);
+    return this;
+}
+
+const char CHTML_font::sm_TagName[] = "font";
+
+CHTML_font::~CHTML_font(void)
+{
+}
+
+CHTML_font* CHTML_font::SetTypeFace(const string& typeface)
+{
+    SetAttribute("typeface", typeface);
+    return this;
+}
+
+CHTML_font* CHTML_font::SetRelativeSize(int size)
+{
+    if ( size != 0 )
+        SetAttribute("size", NStr::IntToString(size, true));
+    return this;
+}
+
+const char CHTML_basefont::sm_TagName[] = "basefont";
+
+CHTML_basefont::~CHTML_basefont(void)
+{
+}
+
+CHTML_basefont* CHTML_basefont::SetTypeFace(const string& typeface)
+{
+    SetAttribute("typeface", typeface);
+    return this;
+}
+
+CHTML_color::~CHTML_color(void)
+{
+}
+
 // hr tag
+
+const char CHTML_hr::sm_TagName[] = "hr";
+
+CHTML_hr::~CHTML_hr(void)
+{
+}
+
+CHTML_hr* CHTML_hr::SetNoShade(void)
+{
+    SetAttribute("noshade");
+    return this;
+}
 
 CNcbiOstream& CHTML_hr::PrintBegin(CNcbiOstream& out, TMode mode)  
 {
@@ -1302,8 +1453,76 @@ CNcbiOstream& CHTML_hr::PrintBegin(CNcbiOstream& out, TMode mode)
         return out << CHTMLHelper::GetNL()
                    << CHTMLHelper::GetNL();
     } else {
-        return CHTML_hr_Base::PrintBegin(out,mode);
+        return CParent::PrintBegin(out, mode);
     }
 }
+
+#define DEFINE_HTML_ELEMENT(Tag) \
+CHTML_(Tag)::~CHTML_(Tag)(void) \
+{ \
+} \
+const char CHTML_(Tag)::sm_TagName[] = #Tag
+
+DEFINE_HTML_ELEMENT(html);
+DEFINE_HTML_ELEMENT(head);
+DEFINE_HTML_ELEMENT(body);
+DEFINE_HTML_ELEMENT(base);
+DEFINE_HTML_ELEMENT(isindex);
+DEFINE_HTML_ELEMENT(link);
+DEFINE_HTML_ELEMENT(meta);
+DEFINE_HTML_ELEMENT(script);
+DEFINE_HTML_ELEMENT(style);
+DEFINE_HTML_ELEMENT(title);
+DEFINE_HTML_ELEMENT(address);
+DEFINE_HTML_ELEMENT(blockquote);
+DEFINE_HTML_ELEMENT(center);
+DEFINE_HTML_ELEMENT(div);
+DEFINE_HTML_ELEMENT(h1);
+DEFINE_HTML_ELEMENT(h2);
+DEFINE_HTML_ELEMENT(h3);
+DEFINE_HTML_ELEMENT(h4);
+DEFINE_HTML_ELEMENT(h5);
+DEFINE_HTML_ELEMENT(h6);
+DEFINE_HTML_ELEMENT(p);
+DEFINE_HTML_ELEMENT(pnop);
+DEFINE_HTML_ELEMENT(pre);
+DEFINE_HTML_ELEMENT(dt);
+DEFINE_HTML_ELEMENT(dd);
+DEFINE_HTML_ELEMENT(ul);
+DEFINE_HTML_ELEMENT(dir);
+DEFINE_HTML_ELEMENT(menu);
+DEFINE_HTML_ELEMENT(li);
+DEFINE_HTML_ELEMENT(caption);
+DEFINE_HTML_ELEMENT(col);
+DEFINE_HTML_ELEMENT(colgroup);
+DEFINE_HTML_ELEMENT(thead);
+DEFINE_HTML_ELEMENT(tbody);
+DEFINE_HTML_ELEMENT(tfoot);
+DEFINE_HTML_ELEMENT(tr);
+DEFINE_HTML_ELEMENT(th);
+DEFINE_HTML_ELEMENT(td);
+DEFINE_HTML_ELEMENT(applet);
+DEFINE_HTML_ELEMENT(param);
+DEFINE_HTML_ELEMENT(cite);
+DEFINE_HTML_ELEMENT(code);
+DEFINE_HTML_ELEMENT(dfn);
+DEFINE_HTML_ELEMENT(em);
+DEFINE_HTML_ELEMENT(kbd);
+DEFINE_HTML_ELEMENT(samp);
+DEFINE_HTML_ELEMENT(strike);
+DEFINE_HTML_ELEMENT(strong);
+DEFINE_HTML_ELEMENT(var);
+DEFINE_HTML_ELEMENT(b);
+DEFINE_HTML_ELEMENT(big);
+DEFINE_HTML_ELEMENT(i);
+DEFINE_HTML_ELEMENT(s);
+DEFINE_HTML_ELEMENT(small);
+DEFINE_HTML_ELEMENT(sub);
+DEFINE_HTML_ELEMENT(sup);
+DEFINE_HTML_ELEMENT(tt);
+DEFINE_HTML_ELEMENT(u);
+DEFINE_HTML_ELEMENT(blink);
+DEFINE_HTML_ELEMENT(map);
+DEFINE_HTML_ELEMENT(area);
 
 END_NCBI_SCOPE

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/12/28 18:55:59  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.16  1999/12/03 21:42:12  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -55,9 +61,9 @@
 #include "choicetype.hpp"
 #include "value.hpp"
 
-AutoPtr<CModuleSet> ASNParser::Modules(const string& fileName)
+AutoPtr<CFileModules> ASNParser::Modules(const string& fileName)
 {
-    AutoPtr<CModuleSet> modules(new CModuleSet(fileName));
+    AutoPtr<CFileModules> modules(new CFileModules(fileName));
     while ( Next() != T_EOF ) {
         modules->AddModule(Module());
     }

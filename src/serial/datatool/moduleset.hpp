@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/12/28 18:55:59  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.11  1999/12/21 17:18:37  vasilche
 * Added CDelayedFostream class which rewrites file only if contents is changed.
 *
@@ -60,15 +66,51 @@ class CDataTypeModule;
 
 USING_NCBI_SCOPE;
 
-class CModuleSet;
+class CFileModules;
 class CFileSet;
+
+class CFileModules : public CModuleContainer
+{
+public:
+    typedef map<string, AutoPtr<CDataTypeModule> > TModules;
+
+    CFileModules(const string& fileName);
+
+    bool Check(void) const;
+    bool CheckNames(void) const;
+
+    void PrintASN(CNcbiOstream& out) const;
+
+    const string& GetSourceFileName(void) const;
+    string GetFileNamePrefix(void) const;
+
+    void AddModule(const AutoPtr<CDataTypeModule>& module);
+
+    const TModules& GetModules(void) const
+        {
+            return m_Modules;
+        }
+
+    CDataType* ExternalResolve(const string& moduleName,
+                               const string& typeName,
+                               bool allowInternal = false) const;
+    CDataType* ResolveInAnyModule(const string& fullName,
+                                  bool allowInternal = false) const;
+
+private:
+    TModules m_Modules;
+    string m_SourceFileName;
+    mutable string m_PrefixFromSourceFileName;
+
+    friend class CFileSet;
+};
 
 class CFileSet : public CModuleContainer
 {
 public:
-    typedef list< AutoPtr< CModuleSet > > TModuleSets;
+    typedef list< AutoPtr< CFileModules > > TModuleSets;
 
-    void AddFile(const AutoPtr<CModuleSet>& moduleSet);
+    void AddFile(const AutoPtr<CFileModules>& moduleSet);
 
     const TModuleSets& GetModuleSets(void) const
         {
@@ -92,42 +134,6 @@ public:
 
 private:
     TModuleSets m_ModuleSets;
-};
-
-class CModuleSet : public CModuleContainer
-{
-public:
-    typedef map<string, AutoPtr<CDataTypeModule> > TModules;
-
-    CModuleSet(const string& fileName);
-
-    bool Check(void) const;
-    bool CheckNames(void) const;
-
-    void PrintASN(CNcbiOstream& out) const;
-
-    const string& GetSourceFileName(void) const;
-    string GetHeadersPrefix(void) const;
-
-    void AddModule(const AutoPtr<CDataTypeModule>& module);
-
-    const TModules& GetModules(void) const
-        {
-            return m_Modules;
-        }
-
-    CDataType* ExternalResolve(const string& moduleName,
-                               const string& typeName,
-                               bool allowInternal = false) const;
-    CDataType* ResolveInAnyModule(const string& fullName,
-                                  bool allowInternal = false) const;
-
-private:
-    TModules m_Modules;
-    string m_SourceFileName;
-    mutable string m_PrefixFromSourceFileName;
-
-    friend class CFileSet;
 };
 
 #endif

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/12/28 18:55:39  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.21  1999/12/17 19:04:51  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -111,7 +117,6 @@
 #include <serial/typeref.hpp>
 #include <serial/choice.hpp>
 #include <serial/serialasn.hpp>
-#include <map>
 
 struct valnode;
 struct bytestore;
@@ -120,28 +125,30 @@ struct asntype;
 
 BEGIN_NCBI_SCOPE
 
-class CSequenceOfTypeInfo : public CTypeInfoTmpl<void*> {
-    typedef CTypeInfoTmpl<TObjectPtr> CParent;
+class CSequenceOfTypeInfo : public CTypeInfo {
+    typedef CTypeInfo CParent;
+    typedef CType<void*> TType;
 public:
     CSequenceOfTypeInfo(TTypeInfo type);
 	CSequenceOfTypeInfo(const string& name, TTypeInfo type);
 	CSequenceOfTypeInfo(const char* name, TTypeInfo type);
+    ~CSequenceOfTypeInfo(void);
 
     static TObjectPtr& First(TObjectPtr object)
         {
-            return Get(object);
+            return TType::Get(object);
         }
     static TConstObjectPtr First(TConstObjectPtr object)
         {
-            return Get(object);
+            return TType::Get(object);
         }
     TObjectPtr& Next(TObjectPtr object) const
         {
-            return Get(Add(object, m_NextOffset));
+            return TType::Get(Add(object, m_NextOffset));
         }
     TConstObjectPtr Next(TConstObjectPtr object) const
         {
-            return Get(Add(object, m_NextOffset));
+            return TType::Get(Add(object, m_NextOffset));
         }
     TObjectPtr Data(TObjectPtr object) const
         {
@@ -151,6 +158,8 @@ public:
         {
             return Add(object, m_DataOffset);
         }
+
+    size_t GetSize(void) const;
 
     virtual bool RandomOrder(void) const;
     
@@ -202,6 +211,7 @@ public:
     CSetOfTypeInfo(TTypeInfo type);
     CSetOfTypeInfo(const string& name, TTypeInfo type);
     CSetOfTypeInfo(const char* name, TTypeInfo type);
+    ~CSetOfTypeInfo(void);
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
 
@@ -213,18 +223,20 @@ class CChoiceTypeInfo : public CChoiceTypeInfoBase {
     typedef CChoiceTypeInfoBase CParent;
 public:
     typedef valnode TObjectType;
+    typedef CType<valnode> TType;
 
     CChoiceTypeInfo(const string& name);
     CChoiceTypeInfo(const char* name);
+    ~CChoiceTypeInfo(void);
 
     // object getters:
     static TObjectType& Get(TObjectPtr object)
         {
-            return *static_cast<TObjectType*>(object);
+            return TType::Get(object);
         }
     static const TObjectType& Get(TConstObjectPtr object)
         {
-            return *static_cast<const TObjectType*>(object);
+            return TType::Get(object);
         }
 
     virtual size_t GetSize(void) const;
@@ -236,10 +248,23 @@ protected:
     virtual TObjectPtr x_GetData(TObjectPtr object) const;
 };
 
-class COctetStringTypeInfo : public CTypeInfoTmpl<bytestore*> {
-    typedef CTypeInfoTmpl<bytestore*> CParent;
+class COctetStringTypeInfo : public CTypeInfo {
+    typedef CTypeInfo CParent;
+    typedef bytestore* TObjectType;
+    typedef CType<TObjectType> TType;
 public:
     COctetStringTypeInfo(void);
+    ~COctetStringTypeInfo(void);
+
+    static TObjectType& Get(TObjectPtr object)
+        {
+            return TType::Get(object);
+        }
+    static const TObjectType& Get(TConstObjectPtr object)
+        {
+            return TType::Get(object);
+        }
+    size_t GetSize(void) const;
 
     static TTypeInfo GetTypeInfo(void);
 
@@ -258,9 +283,11 @@ protected:
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
 };
 
-class COldAsnTypeInfo : public CTypeInfoTmpl<void*>
+class COldAsnTypeInfo : public CTypeInfo
 {
-    typedef CTypeInfoTmpl<void*> CParent;
+    typedef CTypeInfo CParent;
+    typedef void* TObjectType;
+    typedef CType<TObjectType> TType;
 public:
     typedef TObjectPtr (ASNCALL*TNewProc)(void);
     typedef TObjectPtr (ASNCALL*TFreeProc)(TObjectPtr);
@@ -273,6 +300,17 @@ public:
     COldAsnTypeInfo(const char* name,
                     TNewProc newProc, TFreeProc freeProc,
                     TReadProc readProc, TWriteProc writeProc);
+    ~COldAsnTypeInfo(void);
+
+    static TObjectType& Get(TObjectPtr object)
+        {
+            return TType::Get(object);
+        }
+    static const TObjectType& Get(TConstObjectPtr object)
+        {
+            return TType::Get(object);
+        }
+    size_t GetSize(void) const;
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr object1,
@@ -291,8 +329,6 @@ private:
     TFreeProc m_FreeProc;
     TReadProc m_ReadProc;
     TWriteProc m_WriteProc;
-
-    static map<TNewProc, COldAsnTypeInfo*> m_Types;
 };
 
 //#include <serial/asntypes.inl>

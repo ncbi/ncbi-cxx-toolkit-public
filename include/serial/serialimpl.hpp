@@ -70,7 +70,7 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 {
     return &CStdTypeInfo<const char*>::GetTypeInfo;
 }
-
+#if 0
 inline
 TTypeInfoGetter GetTypeInfoGetter(const bool* object)
 {
@@ -160,12 +160,10 @@ TTypeInfoGetter GetTypeInfoGetter(const char* const* object)
 {
     return GetStdTypeInfoGetter(object);
 }
+#endif
 
-#define SERIAL_NAME2(n1, n2) n1##n2
-#define SERIAL_NAME3(n1, n2, n3) n1##n2##n3
-
-#define SERIAL_TYPE(Name) SERIAL_NAME2(SERIAL_TYPE_,Name)
-#define SERIAL_REF(Name) SERIAL_NAME2(SERIAL_REF_,Name)
+#define SERIAL_TYPE(Name) NCBI_NAME2(SERIAL_TYPE_,Name)
+#define SERIAL_REF(Name) NCBI_NAME2(SERIAL_REF_,Name)
 
 #define SERIAL_TYPE_CLASS(Name) Name
 #define SERIAL_REF_CLASS(Name) &Name::GetTypeInfo
@@ -175,7 +173,7 @@ TTypeInfoGetter GetTypeInfoGetter(const char* const* object)
 
 #define SERIAL_TYPE_ENUM(Type, Name) Type
 #define SERIAL_REF_ENUM(Type, Name) \
-    NCBI_NS_NCBI::CreateEnumeratedTypeInfo(Type(0), SERIAL_NAME2(GetEnumInfo_,Name)())
+    NCBI_NS_NCBI::CreateEnumeratedTypeInfo(Type(0), NCBI_NAME2(GetEnumInfo_,Name)())
 
 #define SERIAL_TYPE_POINTER(Type,Args) SERIAL_TYPE(Type)Args*
 #define SERIAL_REF_POINTER(Type,Args) \
@@ -245,7 +243,7 @@ TTypeInfoGetter GetTypeInfoGetter(const char* const* object)
     SERIAL_REF(Type)Args
 
 #define SERIAL_TYPE_CHOICE(Type,Args) SERIAL_TYPE(Type)Args
-#define SERIAL_REF_CHOICE(Type,Args) SERIAL_REF(SERIAL_NAME2(CHOICE_,Type))Args
+#define SERIAL_REF_CHOICE(Type,Args) SERIAL_REF(NCBI_NAME2(CHOICE_,Type))Args
 
 template<typename T>
 struct Check
@@ -265,17 +263,24 @@ private:
     Check<T>& operator=(const Check<T>&);
 };
 
-template<typename T>
-inline
-CMemberInfo* Member(const T* member)
-{
-    return new CRealMemberInfo(size_t(member), GetTypeRef(member));
-}
-
 inline
 CMemberInfo* Member(const void* member, const CTypeRef& typeRef)
 {
     return new CRealMemberInfo(size_t(member), typeRef);
+}
+
+template<typename T>
+inline
+CMemberInfo* StdMember(const T* member)
+{
+    return new CRealMemberInfo(size_t(member), GetStdTypeInfoGetter(member));
+}
+
+template<typename T>
+inline
+CMemberInfo* ClassMember(const T* member)
+{
+    return new CRealMemberInfo(size_t(member), &T::GetTypeInfo);
 }
 
 template<typename T>
@@ -295,10 +300,10 @@ CMemberInfo* EnumMember(const T* member, const CEnumeratedTypeValues* enumInfo)
     NCBI_NS_NCBI::Check<SERIAL_TYPE(Type)Args>::Ptr(MEMBER_PTR(Name)),\
     SERIAL_REF(Type)Args
 #define STD_M(Name) \
-    MEMBER_PTR(Name),NCBI_NS_NCBI::GetTypeInfoGetter(MEMBER_PTR(Name))
+    MEMBER_PTR(Name),NCBI_NS_NCBI::GetStdTypeInfoGetter(MEMBER_PTR(Name))
 #define ENUM_M(Name,Type) \
     NCBI_NS_NCBI::EnumMember(MEMBER_PTR(Name),\
-    SERIAL_NAME2(GetEnumInfo_, Type)())
+    NCBI_NAME2(GetEnumInfo_, Type)())
     
 #define ADD_N_M(Name,Mem,Type,Args) \
     NCBI_NS_NCBI::AddMember(info,Name,M(Mem,Type,Args))
@@ -320,9 +325,16 @@ CMemberInfo* MemberInfo(const T* member, const CTypeRef typeRef)
 
 template<typename T>
 inline
-CMemberInfo* MemberInfo(const T* member)
+CMemberInfo* ClassMemberInfo(const T* member)
 {
 	return MemberInfo(member, GetTypeRef(member));
+}
+
+template<typename T>
+inline
+CMemberInfo* StdMemberInfo(const T* member)
+{
+	return MemberInfo(member, GetStdTypeInfoGetter(member));
 }
 
 template<typename T>
@@ -400,8 +412,8 @@ CMemberInfo* OldAsnMemberInfo(const T* const* member, const string& name,
                       GetOldAsnTypeRef(name, newProc, freeProc,
                                        readProc, writeProc));
 }
-#endif
 
+#endif
 // type info definition
 #define BEGIN_TYPE_INFO(Class, Method, Info, Args) \
 const NCBI_NS_NCBI::CTypeInfo* Method(void) \
@@ -448,13 +460,13 @@ BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, NCBI_NS_NCBI::CClassInfo<CClass>, (Na
 #define END_DERIVED_CLASS_INFO END_TYPE_INFO
 
 #define BEGIN_STRUCT_INFO2(Name, Class) \
-BEGIN_TYPE_INFO(SERIAL_NAME2(struct_, Class), SERIAL_NAME2(GetTypeInfo_struct_, Class), \
+BEGIN_TYPE_INFO(NCBI_NAME2(struct_, Class), NCBI_NAME2(GetTypeInfo_struct_, Class), \
                 NCBI_NS_NCBI::CStructInfo<CClass>, (Name))
 #define BEGIN_STRUCT_INFO(Class) BEGIN_STRUCT_INFO2(#Class, Class)
 #define END_STRUCT_INFO END_TYPE_INFO
 
 #define BEGIN_CHOICE_INFO2(Name, Class) \
-BEGIN_TYPE_INFO(valnode, SERIAL_NAME2(GetTypeInfo_struct_, Class), \
+BEGIN_TYPE_INFO(valnode, NCBI_NAME2(GetTypeInfo_struct_, Class), \
                 NCBI_NS_NCBI::CChoiceTypeInfo, (Name))
 #define BEGIN_CHOICE_INFO(Class) BEGIN_CHOICE_INFO2(#Class, Class)
 #define END_CHOICE_INFO END_TYPE_INFO
@@ -470,14 +482,14 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* Method(void) \
 #define END_ENUM_INFO } return enumInfo; }
 
 // adding members
-#define MEMBER(Member, Type) \
-    NCBI_NS_NCBI::MemberInfo(MEMBER_PTR(Member), Type)
-#define ADD_MEMBER2(Name, Member, Type) \
-    info->AddMember(Name, MEMBER(Member, Type))
-#define ADD_MEMBER(Member, Type) ADD_MEMBER2(#Member, Member, Type)
+#define STD_MEMBER(Member) \
+    NCBI_NS_NCBI::StdMemberInfo(MEMBER_PTR(Member))
+#define ADD_STD_MEMBER2(Name, Member) \
+    info->AddMember(Name, STD_MEMBER(Member))
+#define ADD_STD_MEMBER(Member) ADD_STD_MEMBER2(#Member, Member)
 
 #define CLASS_MEMBER(Member) \
-	NCBI_NS_NCBI::MemberInfo(MEMBER_PTR(Member))
+	NCBI_NS_NCBI::ClassMemberInfo(MEMBER_PTR(Member))
 #define ADD_CLASS_MEMBER2(Name, Member) \
 	info->AddMember(Name, CLASS_MEMBER(Member))
 #define ADD_CLASS_MEMBER(Member) ADD_CLASS_MEMBER2(#Member, Member)
@@ -495,15 +507,15 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* Method(void) \
 #define ADD_STL_CLASS_MEMBER(Member) ADD_STL_CLASS_MEMBER2(#Member, Member)
 
 #define ASN_MEMBER(Member, Type) \
-	SERIAL_NAME2(Type, MemberInfo)(MEMBER_PTR(Member))
+	NCBI_NAME2(Type, MemberInfo)(MEMBER_PTR(Member))
 #define ADD_ASN_MEMBER2(Name, Member, Type) \
 	info->AddMember(Name, ASN_MEMBER(Member, Type))
 #define ADD_ASN_MEMBER(Member, Type) ADD_ASN_MEMBER2(#Member, Member, Type)
 
 #define OLD_ASN_MEMBER(Member, Name, Type) \
     NCBI_NS_NCBI::OldAsnMemberInfo(MEMBER_PTR(Member), Name, \
-                     &SERIAL_NAME2(Type, New), &SERIAL_NAME2(Type, Free), \
-                     &SERIAL_NAME2(Type, AsnRead), &SERIAL_NAME2(Type, AsnWrite))
+                     &NCBI_NAME2(Type, New), &NCBI_NAME2(Type, Free), \
+                     &NCBI_NAME2(Type, AsnRead), &NCBI_NAME2(Type, AsnWrite))
 #define ADD_OLD_ASN_MEMBER2(Name, Member, TypeName, Type) \
 	info->AddMember(Name, OLD_ASN_MEMBER(Member, TypeName, Type))
 #define ADD_OLD_ASN_MEMBER(Member, Type) \
@@ -511,16 +523,16 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* Method(void) \
 
 #define CHOICE_MEMBER(Member, Choices) \
     NCBI_NS_NCBI::ChoiceMemberInfo(MEMBER_PTR(Member), \
-                     SERIAL_NAME2(GetTypeInfo_struct_, Choices))
+                     NCBI_NAME2(GetTypeInfo_struct_, Choices))
 #define ADD_CHOICE_MEMBER2(Name, Member, Choices) \
     info->AddMember(Name, CHOICE_MEMBER(Member, Choices))
 #define ADD_CHOICE_MEMBER(Member, Choices) \
     ADD_CHOICE_MEMBER2(#Member, Member, Choices)
 
 #define ADD_CHOICE_STD_VARIANT(Name, Member) \
-    info->AddVariant(#Name, GetTypeRef(MEMBER_PTR(data.SERIAL_NAME2(Member, value))))
+    info->AddVariant(#Name, GetStdTypeInfoGetter(MEMBER_PTR(data.NCBI_NAME2(Member, value))))
 #define ADD_CHOICE_VARIANT(Name, Type, Struct) \
-    info->AddVariant(#Name, SERIAL_NAME3(Get, Type, TypeRef)(reinterpret_cast<const SERIAL_NAME2(struct_, Struct)* const*>(MEMBER_PTR(data.ptrvalue))))
+    info->AddVariant(#Name, NCBI_NAME3(Get, Type, TypeRef)(reinterpret_cast<const NCBI_NAME2(struct_, Struct)* const*>(MEMBER_PTR(data.ptrvalue))))
 
 #define ADD_SUB_CLASS2(Name, SubClass) \
     info->AddSubClass(Name, &SubClass::GetTypeInfo)
@@ -528,15 +540,15 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* Method(void) \
     ADD_SUB_CLASS2(#Class, Class)
 
 #define CHOICE_VARIANT_METHODS(BaseClass,VariantClass,Name) \
-bool SERIAL_NAME2(BaseClass,_Base)::SERIAL_NAME2(Is,Name)(void) const \
+bool NCBI_NAME2(BaseClass,_Base)::NCBI_NAME2(Is,Name)(void) const \
 { \
     return dynamic_cast<const VariantClass*>(this) != 0; \
 } \
-VariantClass* SERIAL_NAME2(BaseClass,_Base)::SERIAL_NAME2(Get,Name)(void) \
+VariantClass* NCBI_NAME2(BaseClass,_Base)::NCBI_NAME2(Get,Name)(void) \
 { \
     return dynamic_cast<VariantClass*>(this); \
 } \
-const VariantClass* SERIAL_NAME2(BaseClass,_Base)::SERIAL_NAME2(Get,Name)(void) const \
+const VariantClass* NCBI_NAME2(BaseClass,_Base)::NCBI_NAME2(Get,Name)(void) const \
 { \
     return dynamic_cast<const VariantClass*>(this); \
 }

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/28 18:55:56  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.3  1999/12/21 17:18:33  vasilche
 * Added CDelayedFostream class which rewrites file only if contents is changed.
 *
@@ -49,6 +55,49 @@
 #include "code.hpp"
 #include "typestr.hpp"
 #include "fileutil.hpp"
+
+CChoiceTypeInfoAnyType::CChoiceTypeInfoAnyType(const string& name)
+    : CParent(name)
+{
+}
+
+CChoiceTypeInfoAnyType::CChoiceTypeInfoAnyType(const char* name)
+    : CParent(name)
+{
+}
+
+CChoiceTypeInfoAnyType::~CChoiceTypeInfoAnyType(void)
+{
+}
+
+size_t CChoiceTypeInfoAnyType::GetSize(void) const
+{
+    return TType::GetSize();
+}
+
+TObjectPtr CChoiceTypeInfoAnyType::Create(void) const
+{
+    TObjectType* obj = new TObjectType;
+    obj->index = -1;
+    return obj;
+}
+
+CChoiceTypeInfoAnyType::TMemberIndex
+CChoiceTypeInfoAnyType::GetIndex(TConstObjectPtr object) const
+{
+    return Get(object).index;
+}
+
+void CChoiceTypeInfoAnyType::SetIndex(TObjectPtr object,
+                                      TMemberIndex index) const
+{
+    Get(object).index = index;
+}
+
+TObjectPtr CChoiceTypeInfoAnyType::x_GetData(TObjectPtr object) const
+{
+    return &Get(object).data;
+}
 
 const char* CChoiceDataType::GetASNKeyword(void) const
 {
@@ -82,7 +131,7 @@ bool CChoiceDataType::CheckValue(const CDataValue& value) const
 CTypeInfo* CChoiceDataType::CreateTypeInfo(void)
 {
     auto_ptr<CChoiceTypeInfoBase> typeInfo(
-        new CChoiceTypeInfoTmpl<AnyType>(IdName()));
+        new CChoiceTypeInfoAnyType(IdName()));
     for ( TMembers::const_iterator i = GetMembers().begin();
           i != GetMembers().end(); ++i ) {
         CDataMember* member = i->get();

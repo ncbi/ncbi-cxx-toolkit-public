@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/28 18:55:57  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.3  1999/12/21 17:44:19  vasilche
 * Fixed compilation on SunPro C++
 *
@@ -131,8 +137,11 @@ private:
 // return combined dir and name, inserting if needed '/'
 string Path(const string& dir, const string& name);
 
-// return base name of file e.g. without dir and extension
+// return base name of file i.e. without dir and extension
 string BaseName(const string& path);
+
+// return dir name of file
+string DirName(const string& path);
 
 // return valid C name
 string Identifier(const string& typeName, bool capitalize = true);

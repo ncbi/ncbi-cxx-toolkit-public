@@ -128,10 +128,8 @@ CTypeRef GetOldAsnTypeRef(const string& name,
 #endif
 
 // type info declaration
-#define SERIALASN_NAME2(n1, n2) n1##n2
-#define ASN_TYPE_INFO_GETTER_NAME(name) \
-    SERIALASN_NAME2(GetTypeInfo_struct_, name)
-#define ASN_STRUCT_NAME(name) SERIALASN_NAME2(struct_, name)
+#define ASN_TYPE_INFO_GETTER_NAME(name) NCBI_NAME2(GetTypeInfo_struct_, name)
+#define ASN_STRUCT_NAME(name) NCBI_NAME2(struct_, name)
 
 #define ASN_TYPE_INFO_GETTER_DECL(name) \
 NCBI_NS_NCBI::TTypeInfo ASN_TYPE_INFO_GETTER_NAME(name)(void)

@@ -31,6 +31,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/12/28 18:55:43  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.5  1999/05/06 23:02:40  vakatov
 * Use the new(template-based, std::) stream library by default
 *
@@ -92,6 +98,16 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 #endif /* ndef!else NCBI_USE_OLD_IOSTREAM */
 }
 
+
+CNcbiOstrstreamToString::operator string(void) const
+{
+    SIZE_TYPE length = m_Out.pcount();
+    if ( length == 0 )
+        return string();
+    const char* str = m_Out.str();
+    m_Out.freeze(false);
+    return string(str, length);
+}
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE

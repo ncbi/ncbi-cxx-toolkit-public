@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/12/28 18:55:57  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.1  1999/12/03 21:42:11  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -54,6 +60,40 @@ public:
     void GetRefCType(CTypeStrings& tType, CClassCode& code) const;
     void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
     const char* GetASNKeyword(void) const;
+};
+
+class CChoiceTypeInfoAnyType : public CChoiceTypeInfoBase
+{
+    typedef CChoiceTypeInfoBase CParent;
+public:
+    typedef AnyType TDataType;
+    typedef struct {
+        TMemberIndex index;
+        TDataType data;
+    } TObjectType;
+    typedef CType<TObjectType> TType;
+
+    CChoiceTypeInfoAnyType(const string& name);
+    CChoiceTypeInfoAnyType(const char* name);
+    ~CChoiceTypeInfoAnyType(void);
+
+    // object getters:
+    static TObjectType& Get(TObjectPtr object)
+        {
+            return TType::Get(object);
+        }
+    static const TObjectType& Get(TConstObjectPtr object)
+        {
+            return TType::Get(object);
+        }
+
+    size_t GetSize(void) const;
+    virtual TObjectPtr Create(void) const;
+
+protected:
+    virtual TMemberIndex GetIndex(TConstObjectPtr object) const;
+    virtual void SetIndex(TObjectPtr object, TMemberIndex index) const;
+    virtual TObjectPtr x_GetData(TObjectPtr object) const;
 };
 
 #endif

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/12/28 18:55:58  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.1  1999/12/21 17:18:35  vasilche
 * Added CDelayedFostream class which rewrites file only if contents is changed.
 *
@@ -69,14 +75,14 @@ const string& CModuleContainer::GetSourceFileName(void) const
     return GetModuleContainer().GetSourceFileName();
 }
 
-string CModuleContainer::GetHeadersPrefix(void) const
+string CModuleContainer::GetFileNamePrefix(void) const
 {
-    return GetModuleContainer().GetHeadersPrefix();
+    return GetModuleContainer().GetFileNamePrefix();
 }
 
-EHeadersDirNameSource CModuleContainer::GetHeadersDirNameSource(void) const
+EFileNamePrefixSource CModuleContainer::GetFileNamePrefixSource(void) const
 {
-    return GetModuleContainer().GetHeadersDirNameSource();
+    return GetModuleContainer().GetFileNamePrefixSource();
 }
 
 CDataType* CModuleContainer::InternalResolve(const string& module,

@@ -17,20 +17,20 @@ BEGIN_STRUCT_INFO2("Web-Env", Web_Env)
 END_STRUCT_INFO
 
 BEGIN_STRUCT_INFO2("Db-Env", Db_Env)
-    ADD_CLASS_MEMBER(name);
+    ADD_STD_MEMBER(name);
     ADD_ASN_MEMBER(arguments, SetOf)->SetOptional();
     ADD_ASN_MEMBER(filters, SetOf)->SetOptional();
 //    ADD_ASN_MEMBER(clipboard, Sequence)->SetOptional();
 END_STRUCT_INFO
 
 BEGIN_STRUCT_INFO(Argument)
-    ADD_CLASS_MEMBER(name);
-    ADD_CLASS_MEMBER(value);
+    ADD_STD_MEMBER(name);
+    ADD_STD_MEMBER(value);
 END_STRUCT_INFO
 
 BEGIN_STRUCT_INFO2("Query-History", Query_History)
-    ADD_CLASS_MEMBER(name)->SetOptional();
-    ADD_CLASS_MEMBER(seqNumber);
+    ADD_STD_MEMBER(name)->SetOptional();
+    ADD_STD_MEMBER(seqNumber);
     ADD_CHOICE_MEMBER(time, Time);
     ADD_CHOICE_MEMBER(command, Query_Command);
 END_STRUCT_INFO
@@ -42,16 +42,16 @@ BEGIN_CHOICE_INFO2("Query-Command", Query_Command)
 END_CHOICE_INFO
 
 BEGIN_STRUCT_INFO2("Query-Search", Query_Search)
-    ADD_CLASS_MEMBER(db);
-    ADD_CLASS_MEMBER(term);
-    ADD_CLASS_MEMBER(field)->SetOptional();
+    ADD_STD_MEMBER(db);
+    ADD_STD_MEMBER(term);
+    ADD_STD_MEMBER(field)->SetOptional();
     ADD_ASN_MEMBER(filters, SetOf)->SetOptional();
-    ADD_CLASS_MEMBER(count);
-	ADD_CLASS_MEMBER(flags)->SetOptional();
+    ADD_STD_MEMBER(count);
+	ADD_STD_MEMBER(flags)->SetOptional();
 END_STRUCT_INFO
 
 BEGIN_STRUCT_INFO2("Query-Select", Query_Select)
-    ADD_CLASS_MEMBER(db);
+    ADD_STD_MEMBER(db);
     ADD_ASN_MEMBER(items, Sequence);
 END_STRUCT_INFO
 
@@ -62,14 +62,14 @@ END_CHOICE_INFO
 
 BEGIN_STRUCT_INFO2("Query-Related", Query_Related)
     ADD_CHOICE_MEMBER(base, Query_Command);
-    ADD_CLASS_MEMBER(relation);
-    ADD_CLASS_MEMBER(db);
+    ADD_STD_MEMBER(relation);
+    ADD_STD_MEMBER(db);
     ADD_CHOICE_MEMBER2("items", Items_items, Query_Related_items);
 END_STRUCT_INFO
 
 BEGIN_STRUCT_INFO2("Filter-Value", Filter_Value)
-    ADD_CLASS_MEMBER(name);
-    ADD_CLASS_MEMBER(value);
+    ADD_STD_MEMBER(name);
+    ADD_STD_MEMBER(value);
 END_STRUCT_INFO
 
 BEGIN_CHOICE_INFO(Time)
@@ -78,17 +78,17 @@ BEGIN_CHOICE_INFO(Time)
 END_CHOICE_INFO
 
 BEGIN_STRUCT_INFO2("Full-Time", Full_Time)
-    ADD_CLASS_MEMBER(year);
-    ADD_CLASS_MEMBER(month);
-    ADD_CLASS_MEMBER(day);
-    ADD_CLASS_MEMBER(hour);
-    ADD_CLASS_MEMBER(minute);
-    ADD_CLASS_MEMBER(second);
+    ADD_STD_MEMBER(year);
+    ADD_STD_MEMBER(month);
+    ADD_STD_MEMBER(day);
+    ADD_STD_MEMBER(hour);
+    ADD_STD_MEMBER(minute);
+    ADD_STD_MEMBER(second);
 END_STRUCT_INFO
 
 BEGIN_STRUCT_INFO2("Item-Set", Item_Set)
     ADD_ASN_MEMBER(items, OctetString);
-    ADD_CLASS_MEMBER(count);
+    ADD_STD_MEMBER(count);
 END_STRUCT_INFO
 
 #endif

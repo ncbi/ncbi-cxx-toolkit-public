@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/12/28 18:55:59  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.14  1999/12/21 17:18:36  vasilche
 * Added CDelayedFostream class which rewrites file only if contents is changed.
 *
@@ -220,12 +226,14 @@ CDataType* CDataTypeModule::InternalResolve(const string& typeName) const
     THROW1_TRACE(CTypeNotFound, "undefined type: " + typeName);
 }
 
-string CDataTypeModule::GetHeadersPrefix(void) const
+string CDataTypeModule::GetFileNamePrefix(void) const
 {
-    const string& prefix = GetModuleContainer().GetHeadersPrefix();
-    if ( GetHeadersDirNameSource() == eFromModuleName ) {
+    _TRACE("module " << m_Name << ": " << GetModuleContainer().GetFileNamePrefixSource());
+    string prefix = GetModuleContainer().GetFileNamePrefix();
+    if ( MakeFileNamePrefixFromModuleName() ) {
         if ( m_PrefixFromName.empty() )
             m_PrefixFromName = Identifier(m_Name);
+        _TRACE("module " << m_Name << ": \"" << prefix << "\" \"" << m_PrefixFromName << "\"");
         return Path(prefix, m_PrefixFromName);
     }
     return prefix;

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  1999/12/28 18:55:49  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
 * Revision 1.35  1999/12/20 15:29:35  vasilche
 * Fixed bug with old ASN structures.
 *
@@ -224,13 +230,14 @@ void CObjectIStream::ThrowIOError1(const char* file, int line, CNcbiIstream& in)
 // root reader
 void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
 {
-    _TRACE("CObjectIStream::Read(" << unsigned(object) << ", "
+    _TRACE("CObjectIStream::Read(" << NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ")");
     string name = ReadTypeName();
     if ( !name.empty() && name != typeInfo->GetName() )
-        THROW1_TRACE(runtime_error, "incompatible type " + name + "<>" + typeInfo->GetName());
+        THROW1_TRACE(runtime_error,
+                     "incompatible type " + name + "<>" + typeInfo->GetName());
     TIndex index = RegisterObject(object, typeInfo);
-    _TRACE("CObjectIStream::ReadData(" << unsigned(object) << ", "
+    _TRACE("CObjectIStream::ReadData(" << NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ") @" << index);
     ReadData(object, typeInfo);
 }
@@ -242,10 +249,10 @@ void CObjectIStream::Read(TObjectPtr object, const CTypeRef& type)
 
 void CObjectIStream::ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo)
 {
-    _TRACE("CObjectIStream::Read(" << unsigned(object) << ", "
+    _TRACE("CObjectIStream::Read(" << NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ")");
     TIndex index = RegisterObject(object, typeInfo);
-    _TRACE("CObjectIStream::ReadData(" << unsigned(object) << ", "
+    _TRACE("CObjectIStream::ReadData(" << NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ") @" << index);
     ReadData(object, typeInfo);
 }
