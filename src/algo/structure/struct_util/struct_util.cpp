@@ -230,23 +230,6 @@ bool AlignmentUtility::DoIBM(void)
     return true;
 }
 
-static inline int GetPSSMScoreOfCharWithAverageOfBZ(const Int4 * const *matrix, unsigned int pssmIndex, char resChar)
-{
-    int score, blRes = LookupBLASTResidueNumberFromCharacter(resChar);
-    switch (blRes) {
-        case 2: // B -> rounded average D/N
-            score = Round(((double) matrix[pssmIndex][4] + matrix[pssmIndex][13]) / 2);
-            break;
-        case 23: // Z -> rounded average E/Q
-            score = Round(((double) matrix[pssmIndex][5] + matrix[pssmIndex][15]) / 2);
-            break;
-        default:
-            score = matrix[pssmIndex][blRes];
-            break;
-    }
-    return score;
-}
-
 // global stuff for DP block aligner score callback
 DP_BlockInfo *g_dpBlocks = NULL;
 const BLAST_Matrix *g_dpPSSM = NULL;
@@ -525,6 +508,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/10/26 22:37:17  lanczyck
+* make GetPSSMScoreOfCharWithAverageOfBZ public
+*
 * Revision 1.16  2004/10/14 13:55:11  thiessen
 * move averaging of B/Z scores into separate function, use for all score reporting
 *

@@ -47,9 +47,29 @@ typedef struct _blast_matrix BLAST_Matrix_;
 
 BEGIN_SCOPE(struct_util)
 
+extern int LookupBLASTResidueNumberFromCharacter(unsigned char r);
+extern int Round(double d);
+
 class SequenceSet;
 class AlignmentSet;
 class BlockMultipleAlignment;
+
+static inline int GetPSSMScoreOfCharWithAverageOfBZ(const Int4 * const *matrix, unsigned int pssmIndex, char resChar)
+{
+    int score, blRes = LookupBLASTResidueNumberFromCharacter(resChar);
+    switch (blRes) {
+        case 2: // B -> rounded average D/N
+            score = Round(((double) matrix[pssmIndex][4] + matrix[pssmIndex][13]) / 2);
+            break;
+        case 23: // Z -> rounded average E/Q
+            score = Round(((double) matrix[pssmIndex][5] + matrix[pssmIndex][15]) / 2);
+            break;
+        default:
+            score = matrix[pssmIndex][blRes];
+            break;
+    }
+    return score;
+}
 
 class AlignmentUtility
 {
@@ -124,6 +144,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/10/26 22:36:56  lanczyck
+* make GetPSSMScoreOfCharWithAverageOfBZ public
+*
 * Revision 1.9  2004/09/07 18:51:03  lanczyck
 * add SetBlockMultipleAlignment & GetSequenceSet methods
 *
