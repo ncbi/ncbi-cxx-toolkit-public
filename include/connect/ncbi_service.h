@@ -172,6 +172,17 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
  );
 
 
+/* Set message hook procedure for messages originating from NCBI network
+ * dispatcher (if used).  Any hook will be called not more than once.
+ * If no hook is installed, warning message will be generated in the
+ * standard log file, not more than once.
+ */
+
+typedef void (*FDISP_MessageHook)(const char* message);
+
+extern NCBI_XCONNECT_EXPORT void DISP_SetMessageHook(FDISP_MessageHook);
+
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
@@ -183,6 +194,9 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2003/08/11 19:05:54  lavr
+ * +DISP_SetMessageHook()
+ *
  * Revision 6.30  2003/06/12 13:20:59  lavr
  * Added notes for SERV_GetNextInfoEx()
  *
