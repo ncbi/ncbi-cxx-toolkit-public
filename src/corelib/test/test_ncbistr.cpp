@@ -47,7 +47,6 @@ USING_NCBI_SCOPE;
 // Utilities
 //
 
-
 static void TestStrings_StrCompare(int expr_res, int valid_res)
 {
     int res = expr_res > 0 ? 1 :
@@ -60,8 +59,8 @@ typedef struct {
     const char* s1;
     const char* s2;
 
-    int case_res;    /* -1, 0, 1 */
-    int nocase_res;  /* -1, 0, 1 */
+    int case_res;      /* -1, 0, 1 */
+    int nocase_res;    /* -1, 0, 1 */
 
     SIZE_TYPE n; 
     int n_case_res;    /* -1, 0, 1 */
@@ -147,6 +146,7 @@ void CTestApplication::Init(void)
     SetDiagPostLevel(eDiag_Info);
 }
 
+
 //#define TEST_MEMORY_USAGE
 #ifdef TEST_MEMORY_USAGE
 enum ContainerType {
@@ -156,12 +156,14 @@ enum ContainerType {
     eRef
 };
 
+
 void DumpSize(void)
 {
     char buffer[1024];
     NcbiCout << "Press enter..." << flush;
     gets(buffer);
 }
+
 
 void TestAllocate(ContainerType cont, int size, int count)
 {
@@ -217,6 +219,7 @@ void TestAllocate(ContainerType cont, int size, int count)
     }
 }
 
+
 void Test(ContainerType cont)
 {
     for ( int j = 0; j <= 2; ++j ) {
@@ -227,6 +230,7 @@ void Test(ContainerType cont)
     }
 }
 #endif
+
 
 int CTestApplication::Run(void)
 {
@@ -465,11 +469,10 @@ int CTestApplication::Run(void)
 
     size_t j;
     const SStrCompare* rec;
-    string s1, s2;
 
     for (j = 0;  j < sizeof(s_StrCompare) / sizeof(s_StrCompare[0]);  j++) {
         rec = &s_StrCompare[j];
-        s1 = rec->s1;
+        string s1 = rec->s1;
 
         TestStrings_StrCompare
             (NStr::Compare(s1, rec->s2, NStr::eCase), rec->case_res);
@@ -483,7 +486,7 @@ int CTestApplication::Run(void)
             (NStr::Compare(s1, 0, rec->n, rec->s2, NStr::eNocase),
              rec->n_nocase_res);
 
-        s2 = rec->s2;
+        string s2 = rec->s2;
 
         TestStrings_StrCompare
             (NStr::Compare(s1, s2, NStr::eCase), rec->case_res);
@@ -505,7 +508,7 @@ int CTestApplication::Run(void)
 
     NcbiCout << " completed successfully!" << NcbiEndl;
 
-    // NStr::Split()
+
     NcbiCout << NcbiEndl << "NStr::Split() tests...";
 
     static const string s_SplitStr[] = {
@@ -610,8 +613,12 @@ int CTestApplication::Run(void)
     {{
         string  string1, string2;
         bool    result;
-        for (size_t i = 0; i < sizeof(s_SplitInTwoTest) / sizeof(s_SplitInTwoTest[0]); i++) {
-            result = NStr::SplitInTwo(s_SplitInTwoTest[i].str, s_SplitInTwoTest[i].delim, string1, string2);
+        for ( size_t i = 0; 
+              i < sizeof(s_SplitInTwoTest) / sizeof(s_SplitInTwoTest[0]);
+              i++) {
+            result = NStr::SplitInTwo(s_SplitInTwoTest[i].str,
+                                      s_SplitInTwoTest[i].delim,
+                                      string1, string2);
             assert(s_SplitInTwoTest[i].expected_ret == result);
             assert(s_SplitInTwoTest[i].expected_str1 == string1);
             assert(s_SplitInTwoTest[i].expected_str2 == string2);
@@ -713,27 +720,26 @@ int CTestApplication::Run(void)
     NcbiCout << " completed successfully!" << NcbiEndl;
 
     {{
-        NcbiCout << NcbiEndl <<
-            "Testing string reference counting properties:" << NcbiEndl;
+        NcbiCout << NcbiEndl 
+                 << "Testing string reference counting properties:"
+                 << NcbiEndl;
         string s1(10, '1');
         string s2(s1);
         if ( s1.data() != s2.data() ) {
-            NcbiCout << 
-                "BAD: string reference counting is OFF" << NcbiEndl;
+            NcbiCout << "BAD: string reference counting is OFF" << NcbiEndl;
         }
         else {
-            NcbiCout << 
-                "GOOD: string reference counting is ON" << NcbiEndl;
+            NcbiCout << "GOOD: string reference counting is ON" << NcbiEndl;
             for ( int i = 0; i < 4; ++i ) {
 
                 NcbiCout << "Restoring reference counting"<<NcbiEndl;
                 s2 = s1;
                 if ( s1.data() != s2.data() ) {
-                    NcbiCout << 
-                        "BAD: cannot restore string reference counting" << NcbiEndl;
+                    NcbiCout << "BAD: cannot restore string reference " \
+                        "counting" << NcbiEndl;
                     continue;
                 }
-                NcbiCout << "GOOD: reference counting is ON"<<NcbiEndl;
+                NcbiCout << "GOOD: reference counting is ON" << NcbiEndl;
 
                 const char* type = i&1? "str.begin()": "str.c_str()";
                 NcbiCout << "Calling "<<type<<NcbiEndl;
@@ -744,36 +750,39 @@ int CTestApplication::Run(void)
                     s1.c_str();
                 }
                 if ( s1.data() == s2.data() ) {
-                    NcbiCout << 
-                        "GOOD: "<<type<<" doesn't affect reference counting" << NcbiEndl;
+                    NcbiCout << "GOOD: "<< type 
+                             <<" doesn't affect reference counting"<< NcbiEndl;
                     continue;
                 }
-                NcbiCout << 
-                    "OK: "<<type<<" turns reference counting OFF" << NcbiEndl;
+                NcbiCout << "OK: "<< type 
+                         << " turns reference counting OFF" << NcbiEndl;
 
                 NcbiCout << "Restoring reference counting"<<NcbiEndl;
                 s2 = s1;
                 if ( s1.data() != s2.data() ) {
-                    NcbiCout << 
-                        "BAD: "<<type<<" turns reference counting OFF completely" << NcbiEndl;
+                    NcbiCout << "BAD: " << type 
+                             <<" turns reference counting OFF completely"
+                             << NcbiEndl;
                     continue;
                 }
-                NcbiCout << "GOOD: reference counting is ON"<<NcbiEndl;
+                NcbiCout << "GOOD: reference counting is ON" << NcbiEndl;
 
                 if ( i&1 ) continue;
 
-                NcbiCout << "Calling "<<type<<" on source"<<NcbiEndl;
+                NcbiCout << "Calling " << type << " on source" << NcbiEndl;
                 s1.c_str();
                 if ( s1.data() != s2.data() ) {
-                    NcbiCout << 
-                        "BAD: "<<type<<" on source turns reference counting OFF" << NcbiEndl;
+                    NcbiCout << "BAD: "<< type
+                             << " on source turns reference counting OFF"
+                             << NcbiEndl;
                 }
 
-                NcbiCout << "Calling "<<type<<" on destination"<<NcbiEndl;
+                NcbiCout << "Calling "<< type <<" on destination" << NcbiEndl;
                 s2.c_str();
                 if ( s1.data() != s2.data() ) {
-                    NcbiCout << 
-                        "BAD: "<<type<<" on destination turns reference counting OFF" << NcbiEndl;
+                    NcbiCout << "BAD: " << type
+                             <<" on destination turns reference counting OFF"
+                             << NcbiEndl;
                 }
             }
         }
@@ -785,14 +794,10 @@ int CTestApplication::Run(void)
     return 0;
 }
 
-
   
 /////////////////////////////////
-// APPLICATION OBJECT
-//   and
-// MAIN
+// APPLICATION OBJECT and MAIN
 //
-
 
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
@@ -802,8 +807,11 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 
 
 /*
- * --------------------------------------------------------------------------
+ * ==========================================================================
  * $Log$
+ * Revision 6.24  2003/10/01 20:43:30  ivanov
+ * Get rid of compilation warnings; some formal code rearrangement
+ *
  * Revision 6.23  2003/08/19 15:17:20  rsmith
  * Add NStr::SplitInTwo() function.
  *
