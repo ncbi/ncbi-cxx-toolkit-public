@@ -81,88 +81,94 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Null:
     case CSeq_loc::e_Empty:
-        {
-            return;
-        }
+    {
+        return;
+    }
     case CSeq_loc::e_Whole:
-        {
-            AddRange(loc.GetWhole(), CHandleRange::TRange::GetWhole());
-            return;
-        }
+    {
+        AddRange(loc.GetWhole(), CHandleRange::TRange::GetWhole());
+        return;
+    }
     case CSeq_loc::e_Int:
-        {
-            AddRange(loc.GetInt().GetId(),
-                     loc.GetInt().GetFrom(),
-                     loc.GetInt().GetTo(),
-                     loc.GetInt().GetStrand());
-            return;
-        }
+    {
+        const CSeq_interval& i = loc.GetInt();
+        AddRange(i.GetId(),
+                 i.GetFrom(),
+                 i.GetTo(),
+                 i.IsSetStrand()? i.GetStrand(): eNa_strand_unknown);
+        return;
+    }
     case CSeq_loc::e_Pnt:
-        {
-            AddRange(loc.GetPnt().GetId(),
-                     loc.GetPnt().GetPoint(),
-                     loc.GetPnt().GetPoint(),
-                     loc.GetPnt().GetStrand());
-            return;
-        }
+    {
+        const CSeq_point& p = loc.GetPnt();
+        AddRange(p.GetId(),
+                 p.GetPoint(),
+                 p.GetPoint(),
+                 p.IsSetStrand()? p.GetStrand(): eNa_strand_unknown);
+        return;
+    }
     case CSeq_loc::e_Packed_int:
-        {
-            // extract each range
-            ITERATE( CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
-                AddRange((*ii)->GetId(),
-                         (*ii)->GetFrom(),
-                         (*ii)->GetTo(),
-                         (*ii)->GetStrand());
-            }
-            return;
+    {
+        // extract each range
+        const CPacked_seqint& pi = loc.GetPacked_int();
+        ITERATE( CPacked_seqint::Tdata, ii, pi.Get() ) {
+            const CSeq_interval& i = **ii;
+            AddRange(i.GetId(),
+                     i.GetFrom(),
+                     i.GetTo(),
+                     i.IsSetStrand()? i.GetStrand(): eNa_strand_unknown);
         }
+        return;
+    }
     case CSeq_loc::e_Packed_pnt:
-        {
-            // extract each point
-            CHandleRange& hr =
-                m_LocMap[m_IdMapper->GetHandle(loc.GetPacked_pnt().GetId())];
-            ENa_strand strand = loc.GetPacked_pnt().GetStrand();
-            ITERATE ( CPacked_seqpnt::TPoints, pi,
-                      loc.GetPacked_pnt().GetPoints() ) {
-                hr.AddRange(CHandleRange::TRange(*pi, *pi), strand);
-            }
-            return;
+    {
+        // extract each point
+        const CPacked_seqpnt& pp = loc.GetPacked_pnt();
+        CHandleRange& hr = m_LocMap[m_IdMapper->GetHandle(pp.GetId())];
+        ENa_strand strand = pp.IsSetStrand()? pp.GetStrand(): eNa_strand_unknown;
+        ITERATE ( CPacked_seqpnt::TPoints, pi, pp.GetPoints() ) {
+            hr.AddRange(CHandleRange::TRange(*pi, *pi), strand);
         }
+        return;
+    }
     case CSeq_loc::e_Mix:
-        {
-            // extract sub-locations
-            ITERATE ( CSeq_loc_mix::Tdata, li, loc.GetMix().Get() ) {
-                AddLocation(**li);
-            }
-            return;
+    {
+        // extract sub-locations
+        ITERATE ( CSeq_loc_mix::Tdata, li, loc.GetMix().Get() ) {
+            AddLocation(**li);
         }
+        return;
+    }
     case CSeq_loc::e_Equiv:
-        {
-            // extract sub-locations
-            ITERATE ( CSeq_loc_equiv::Tdata, li, loc.GetEquiv().Get() ) {
-                AddLocation(**li);
-            }
-            return;
+    {
+        // extract sub-locations
+        ITERATE ( CSeq_loc_equiv::Tdata, li, loc.GetEquiv().Get() ) {
+            AddLocation(**li);
         }
+        return;
+    }
     case CSeq_loc::e_Bond:
-        {
-            AddRange(loc.GetBond().GetA().GetId(),
-                     loc.GetBond().GetA().GetPoint(),
-                     loc.GetBond().GetA().GetPoint(),
-                     loc.GetBond().GetA().GetStrand());
-            if ( loc.GetBond().IsSetB() ) {
-                AddRange(loc.GetBond().GetB().GetId(),
-                         loc.GetBond().GetB().GetPoint(),
-                         loc.GetBond().GetB().GetPoint(),
-                         loc.GetBond().GetB().GetStrand());
-            }
-            return;
+    {
+        const CSeq_bond& bond = loc.GetBond();
+        const CSeq_point& pa = bond.GetA();
+        AddRange(pa.GetId(),
+                 pa.GetPoint(),
+                 pa.GetPoint(),
+                 pa.IsSetStrand()? pa.GetStrand(): eNa_strand_unknown);
+        if ( bond.IsSetB() ) {
+            const CSeq_point& pb = bond.GetB();
+            AddRange(pb.GetId(),
+                     pb.GetPoint(),
+                     pb.GetPoint(),
+                     pb.IsSetStrand()? pb.GetStrand(): eNa_strand_unknown);
         }
+        return;
+    }
     case CSeq_loc::e_Feat:
-        {
-            //### Not implemented (do we need it?)
-            return;
-        }
+    {
+        //### Not implemented (do we need it?)
+        return;
+    }
     } // switch
 }
 
@@ -241,6 +247,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/05/21 16:03:08  vasilche
+* Fixed access to uninitialized optional members.
+* Added initialization of mandatory members.
+*
 * Revision 1.15  2003/04/24 16:12:38  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

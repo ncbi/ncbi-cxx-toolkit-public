@@ -31,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/05/21 16:03:08  vasilche
+* Fixed access to uninitialized optional members.
+* Added initialization of mandatory members.
+*
 * Revision 1.14  2003/05/20 15:44:39  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.
 * Fixed some warnings on WorkShop.
@@ -116,7 +120,10 @@ CRef<CSeq_entry> CTestApplication::CreateTestEntry(void)
 //---------------------------------------------------------------------------
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
-    entry->SetSeq();
+    entry->SetSeq().SetId();
+    entry->SetSeq().SetInst();
+    entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_not_set);
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_not_set);
     return entry;
 }
 

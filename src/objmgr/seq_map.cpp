@@ -672,14 +672,16 @@ CSeqMap::CSegment& CSeqMap::x_Add(CSeq_data& data, TSeqPos len)
 CSeqMap::CSegment& CSeqMap::x_Add(CSeq_point& ref)
 {
     return x_AddSegment(eSeqRef, &ref.SetId(),
-                        ref.GetPoint(), 1, ref.GetStrand());
+                        ref.GetPoint(), 1,
+                        ref.IsSetStrand()? ref.GetStrand(): eNa_strand_unknown);
 }
 
 
 CSeqMap::CSegment& CSeqMap::x_Add(CSeq_interval& ref)
 {
     return x_AddSegment(eSeqRef, &ref.SetId(),
-                        ref.GetFrom(), ref.GetLength(), ref.GetStrand());
+                        ref.GetFrom(), ref.GetLength(),
+                        ref.IsSetStrand()? ref.GetStrand(): eNa_strand_unknown);
 }
 
 
@@ -787,6 +789,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/05/21 16:03:08  vasilche
+* Fixed access to uninitialized optional members.
+* Added initialization of mandatory members.
+*
 * Revision 1.35  2003/05/20 20:36:14  vasilche
 * Added FindResolved() with strand argument.
 *

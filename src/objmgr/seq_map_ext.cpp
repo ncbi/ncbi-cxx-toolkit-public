@@ -299,21 +299,24 @@ CSeqMap_SeqPoss::~CSeqMap_SeqPoss(void)
 }
 
 
+inline
+CSeqMap::CSegment& CSeqMap_SeqPoss::x_AddPos(CSeq_id* id, TSeqPos pos, ENa_strand strand)
+{
+    return x_AddSegment(eSeqRef, id, pos, 1, strand);
+}
+
+
 void CSeqMap_SeqPoss::x_IndexAll(void)
 {
     x_AddEnd();
     TList& seq = *m_List;
+    CSeq_id* id = &m_Object->SetId();
+    ENa_strand strand =
+        m_Object->IsSetStrand()? m_Object->GetStrand(): eNa_strand_unknown;
     NON_CONST_ITERATE ( TList, iter, seq ) {
-        x_SetSegmentList_I(x_AddPos(*iter), iter);
+        x_SetSegmentList_I(x_AddPos(id, *iter, strand), iter);
     }
     x_AddEnd();
-}
-
-
-CSeqMap::CSegment& CSeqMap_SeqPoss::x_AddPos(TSeqPos pos)
-{
-    return x_AddSegment(eSeqRef, &m_Object->SetId(),
-                        pos, 1, m_Object->GetStrand());
 }
 
 
@@ -323,6 +326,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/05/21 16:03:08  vasilche
+* Fixed access to uninitialized optional members.
+* Added initialization of mandatory members.
+*
 * Revision 1.5  2003/04/24 16:12:38  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

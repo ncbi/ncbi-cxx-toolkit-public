@@ -183,7 +183,7 @@ public:
 protected:
     void x_IndexAll(void);
 
-    CSegment& x_AddPos(TSeqPos pos);
+    CSegment& x_AddPos(CSeq_id* id, TSeqPos pos, ENa_strand strand);
 
     TList_I x_GetSegmentList_I(size_t index) const
         {
@@ -214,6 +214,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/05/21 16:03:07  vasilche
+* Fixed access to uninitialized optional members.
+* Added initialization of mandatory members.
+*
 * Revision 1.3  2003/01/22 20:11:53  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.
