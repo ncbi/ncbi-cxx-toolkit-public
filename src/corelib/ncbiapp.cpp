@@ -608,16 +608,15 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
     if ( !conf ) {
         return false;
     } else if (conf->empty()) {
-        entry = CMetaRegistry::Load(basename, CMetaRegistry::eName_Ini,
-                                    CMetaRegistry::fDontOwn, reg_flags, &reg);
+        entry = CMetaRegistry::Load(basename, CMetaRegistry::eName_Ini, 0,
+                                    reg_flags, &reg);
         if ( !entry.registry  &&  basename2 != basename ) {
-            entry = CMetaRegistry::Load(basename2, CMetaRegistry::eName_Ini,
-                                        CMetaRegistry::fDontOwn, reg_flags,
-                                        &reg);
+            entry = CMetaRegistry::Load(basename2, CMetaRegistry::eName_Ini, 0,
+                                        reg_flags, &reg);
         }
     } else {
-        entry = CMetaRegistry::Load(*conf, CMetaRegistry::eName_AsIs,
-                                    CMetaRegistry::fDontOwn, reg_flags, &reg);
+        entry = CMetaRegistry::Load(*conf, CMetaRegistry::eName_AsIs, 0,
+                                    reg_flags, &reg);
     }
     if ( !entry.registry ) {
         // failed; complain as appropriate
@@ -635,7 +634,8 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
     } else if (entry.registry != &reg) {
         // should be impossible with new CMetaRegistry interface...
         if (&reg == m_Config  &&  reg.Empty()) {
-            m_Config.Reset(entry.registry);
+            m_Config.Reset(dynamic_cast<CNcbiRegistry*>
+                           (entry.registry.GetPointer()));
         } else {
             // copy into reg
             CNcbiStrstream str;
@@ -1249,6 +1249,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.102  2005/01/10 16:58:38  ucko
+ * Reflect recent changes to CMetaRegistry's interface to take advantage
+ * of CNcbiRegistry's refactoring.
+ *
  * Revision 1.101  2005/01/05 18:45:29  vasilche
  * Added GetConfigXxx() functions.
  *
