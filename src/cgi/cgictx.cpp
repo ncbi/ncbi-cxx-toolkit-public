@@ -37,10 +37,10 @@
 
 #ifdef NCBI_OS_UNIX
 #  ifdef _AIX32 // version 3.2 *or higher*
-#    include <strings.h> // needed for bzero
+#    include <strings.h> // needed for bzero()
 #  endif
 #  include <sys/time.h>
-#  include <unistd.h> // needed for select on some platforms
+#  include <unistd.h> // needed for select() on some platforms
 #endif
 
 
@@ -166,13 +166,15 @@ CCgiServerContext& CCgiContext::x_GetServerContext(void) const
 }
 
 
-CCgiEntry CCgiContext::GetRequestValue(const string& name) const
+const CCgiEntry& CCgiContext::GetRequestValue(const string& name) const
 {
     pair<TCgiEntriesCI, TCgiEntriesCI> range =
         GetRequest().GetEntries().equal_range(name);
 
-    if (range.second == range.first)
-        return kEmptyStr;
+    if (range.second == range.first) {
+        static const CCgiEntry kEmptyCgiEntry(kEmptyStr);
+        return kEmptyCgiEntry;
+    }
 
     const CCgiEntry& value = range.first->second;
     while (++range.first != range.second) {
@@ -199,7 +201,7 @@ void CCgiContext::AddRequestValue(const string& name, const CCgiEntry& value)
 }
 
 
-void CCgiContext::ReplaceRequestValue(const string& name,
+void CCgiContext::ReplaceRequestValue(const string&    name,
                                       const CCgiEntry& value)
 {
     RemoveRequestValues(name);
@@ -227,7 +229,7 @@ const string& CCgiContext::GetSelfURL(void) const
 
 
 CCgiContext::TStreamStatus
-CCgiContext::GetStreamStatus(STimeout *timeout) const
+CCgiContext::GetStreamStatus(STimeout* timeout) const
 {
 #ifdef NCBI_OS_UNIX
     int ifd  = m_Request->GetInputFD();
@@ -264,11 +266,19 @@ CCgiContext::GetStreamStatus(STimeout *timeout) const
 #endif
 }
 
+
 END_NCBI_SCOPE
+
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.28  2003/02/16 05:30:27  vakatov
+* GetRequestValue() to return "const CCgiEntry&" rather than just "CCgiEntry"
+* to avoid some nasty surprises for earlier user code looking as:
+*    const string& s = GetRequestValue(...);
+* caused by 'premature' destruction of temporary CCgiEntry object (GCC 3.0.4).
+*
 * Revision 1.27  2002/07/10 18:40:44  ucko
 * Made CCgiEntry-based functions the only version; kept "Ex" names as
 * temporary synonyms, to go away in a few days.

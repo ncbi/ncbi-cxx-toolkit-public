@@ -88,6 +88,7 @@ public:
     virtual CNcbiOstream& Write(CNcbiOstream& os) const;
 
     static string sm_nl;
+
 private:
     string m_Message;
 };
@@ -132,23 +133,23 @@ public:
     
     // these methods will throw exception if no server context is set
     const CNcbiResource& GetResource(void) const;
-    CNcbiResource& GetResource(void);
+    CNcbiResource&       GetResource(void);
 
     const CCgiRequest& GetRequest(void) const;
-    CCgiRequest& GetRequest(void);
+    CCgiRequest&       GetRequest(void);
     
     const CCgiResponse& GetResponse(void) const;
-    CCgiResponse& GetResponse(void);
+    CCgiResponse&       GetResponse(void);
     
     // these methods will throw exception if no server context set
     const CCgiServerContext& GetServCtx(void) const;
-    CCgiServerContext& GetServCtx(void);
+    CCgiServerContext&       GetServCtx(void);
 
     // message buffer functions
     CNcbiOstream& PrintMsg(CNcbiOstream& os);
 
     void PutMsg(const string& msg);
-    void PutMsg(CCtxMsg* msg);
+    void PutMsg(CCtxMsg*      msg);
 
     bool EmptyMsg(void);
     void ClearMsg(void);
@@ -158,9 +159,9 @@ public:
     // return entry from request
     // return empty string if no such entry
     // throw runtime_error if there are several entries with the same name
-    CCgiEntry GetRequestValue(const string& name) const;
+    const CCgiEntry& GetRequestValue(const string& name) const;
 
-    void AddRequestValue(const string& name, const CCgiEntry& value);
+    void AddRequestValue    (const string& name, const CCgiEntry& value);
     void RemoveRequestValues(const string& name);
     void ReplaceRequestValue(const string& name, const CCgiEntry& value);
 
@@ -172,7 +173,7 @@ public:
         fInputReady  = 0x1,
         fOutputReady = 0x2
     };
-    typedef int TStreamStatus;
+    typedef int TStreamStatus;  // binary OR of 'EStreamStatus'
     TStreamStatus GetStreamStatus(STimeout* timeout) const;
     TStreamStatus GetStreamStatus(void) const; // supplies {0,0}
 
@@ -260,7 +261,7 @@ CCgiServerContext& CCgiContext::GetServCtx(void)
 inline
 CNcbiOstream& CCgiContext::PrintMsg(CNcbiOstream& os)
 {
-    iterate ( TMessages, it, m_Messages ) {
+    iterate (TMessages, it, m_Messages) {
         os << **it;
     }
     return os;
@@ -270,14 +271,14 @@ CNcbiOstream& CCgiContext::PrintMsg(CNcbiOstream& os)
 inline
 void CCgiContext::PutMsg(const string& msg)
 {
-    m_Messages.push_back( new CCtxMsgString( msg ) );
+    m_Messages.push_back(new CCtxMsgString(msg));
 }
 
 
 inline
 void CCgiContext::PutMsg(CCtxMsg* msg)
 {
-    m_Messages.push_back( msg );
+    m_Messages.push_back(msg);
 }
 
 
@@ -305,9 +306,17 @@ CCgiContext::TStreamStatus CCgiContext::GetStreamStatus(void) const
 
 END_NCBI_SCOPE
 
+
+
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.22  2003/02/16 05:30:18  vakatov
+* GetRequestValue() to return "const CCgiEntry&" rather than just "CCgiEntry"
+* to avoid some nasty surprises for earlier user code looking as:
+*    const string& s = GetRequestValue(...);
+* caused by 'premature' destruction of temporary CCgiEntry object (GCC 3.0.4).
+*
 * Revision 1.21  2002/07/17 17:03:01  ucko
 * Phase out GetRequestValueEx.
 *
