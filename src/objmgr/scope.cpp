@@ -70,7 +70,7 @@ BEGIN_SCOPE(objects)
 
 
 CScope::CScope(CObjectManager& objmgr)
-    : m_pObjMgr(&objmgr), m_FindMode(eFirst)
+    : m_pObjMgr(&objmgr)
 {
     m_pObjMgr->RegisterScope(*this);
     m_setDataSrc.SetTree();
@@ -495,12 +495,6 @@ const CSeq_entry& CScope::x_GetTSEFromInfo(const TTSE_Lock& tse)
 }
 
 
-void CScope::SetFindMode(EFindMode mode)
-{
-    m_FindMode = mode;
-}
-
-
 CSeq_id_Mapper& CScope::x_GetIdMapper(void) const
 {
     return CSeq_id_Mapper::GetSeq_id_Mapper();
@@ -707,7 +701,6 @@ void CScope::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
             m_History.begin(), m_History.end(), depth);
         */
     }
-    DebugDumpValue(ddc,"m_FindMode", m_FindMode);
 }
 
 
@@ -731,6 +724,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2003/05/27 19:44:06  grichenk
+* Added CSeqVector_CI class
+*
 * Revision 1.68  2003/05/20 15:44:37  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.
 * Fixed some warnings on WorkShop.

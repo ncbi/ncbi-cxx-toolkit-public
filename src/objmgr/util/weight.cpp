@@ -35,6 +35,7 @@
 #include <objects/objmgr/bioseq_handle.hpp>
 #include <objects/objmgr/feat_ci.hpp>
 #include <objects/objmgr/seq_vector.hpp>
+#include <objects/objmgr/seq_vector_ci.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
@@ -82,8 +83,8 @@ double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
     // Start with water (H2O)
     TSeqPos c = 0, h = 2, n = 0, o = 1, s = 0, se = 0;
 
-    for (TSeqPos i = 0;  i < size;  i++) {
-        CSeqVector::TResidue res = v[i];
+    for (CSeqVector_CI vit(v);  vit.GetPos() < size;  ++vit) {
+        CSeqVector::TResidue res = *vit;
         if ( res >= kMaxRes  ||  !kNumC[res] ) {
             THROW1_TRACE(CBadResidueException,
                          "GetProteinWeight: bad residue");
@@ -190,6 +191,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.22  2003/05/27 19:44:10  grichenk
+* Added CSeqVector_CI class
+*
 * Revision 1.21  2003/03/18 21:48:35  grichenk
 * Removed obsolete class CAnnot_CI
 *

@@ -34,6 +34,7 @@
 #include <objects/objmgr/object_manager.hpp>
 #include <objects/objmgr/scope.hpp>
 #include <objects/objmgr/seq_vector.hpp>
+#include <objects/objmgr/seq_vector_ci.hpp>
 #include <objects/objmgr/seqdesc_ci.hpp>
 #include <objects/objmgr/feat_ci.hpp>
 
@@ -2352,28 +2353,11 @@ void CCdregion_translate::ReadSequenceByLocation (string& seq,
                                                   const CSeq_loc& loc)
 
 {
-    // clear contents of result string
-    seq.erase();
-
     // get vector of sequence under location
     CSeqVector seqv = bsh.GetSequenceView (loc,
                                            CBioseq_Handle::eViewConstructed,
                                            CBioseq_Handle::eCoding_Iupac);
-
-    // number of real sequence letters to take
-    int len = seqv.size ();
-    if (len < 1) return;
-
-    // resize string to appropriate length
-    seq.resize (len);
-
-    // copy characters from sequence vector
-    for (int i = 0; i < len; i++) {
-        seq [i] = seqv [i];
-    }
-
-    // this currently has a bug that does not skip past introns
-    // seqv.GetSeqData (0, len - 1, seq);
+    seqv.GetSeqData(0, seqv.size() - 1, seq);
 }
 
 void CCdregion_translate::TranslateCdregion (string& prot,
@@ -2923,6 +2907,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.52  2003/05/27 19:44:10  grichenk
+* Added CSeqVector_CI class
+*
 * Revision 1.51  2003/05/15 19:27:02  shomrat
 * Compare handle only if both valid; Check IsLim before GetLim
 *

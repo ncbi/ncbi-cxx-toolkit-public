@@ -45,6 +45,7 @@ class CScope;
 class CSeq_loc;
 class CSeqMap;
 class CSeq_data;
+class CSeqVector_CI;
 
 // Sequence data
 struct NCBI_XOBJMGR_EXPORT SSeqData {
@@ -103,31 +104,19 @@ public:
     // Return gap symbol corresponding to the selected coding
     TResidue GetGapChar(void) const;
 
-    void ClearCache(void);
-
 private:
     enum {
         kTypeUnknown = 1 << 7
     };
 
     friend class CBioseq_Handle;
-    //typedef CSeqMap::resolved_const_iterator TSeqMap_CI;
-    typedef vector<char> TCacheData;
-    typedef char* TCache_I;
+    friend class CSeqVector_CI;
 
-    // Get residue
-    TResidue x_GetResidue(TSeqPos pos) const;
-    // fill part of cache
-    void x_ResizeCache(size_t size) const;
-    void x_UpdateCachePtr(void) const;
-    void x_FillCache(TSeqPos start, TSeqPos end) const;
-    void x_ConvertCache(TCache_I pos, size_t count, TCoding from, TCoding to) const;
-    void x_ReverseCache(TCache_I pos, size_t count, TCoding coding) const;
-
-    TCoding x_GetCoding(TCoding dataCoding) const;
+    TCoding x_GetCoding(TCoding cacheCoding, TCoding dataCoding) const;
     TCoding x_UpdateCoding(void) const;
     bool x_UpdateSequenceType(TCoding coding) const;
     void x_InitSequenceType(void);
+    TResidue x_GetGapChar(TCoding coding) const;
 
     static const char* sx_GetConvertTable(TCoding src, TCoding dst);
     static const char* sx_GetComplementTable(TCoding coding);
@@ -138,10 +127,7 @@ private:
     ENa_strand            m_Strand;
 
     mutable ESequenceType m_SequenceType;
-    mutable TSeqPos       m_CachePos;
-    mutable TSeqPos       m_CacheLen;
-    mutable TCache_I      m_Cache;
-    mutable TCacheData    m_CacheData;
+    mutable auto_ptr<CSeqVector_CI> m_Iterator;
 };
 
 
@@ -153,26 +139,16 @@ private:
 
 
 inline
-void CSeqVector::ClearCache(void)
-{
-    // Reset cached data
-    m_CacheLen = 0;
-}
-
-
-inline
 CSeqVector::TCoding CSeqVector::GetCoding(void) const
 {
     TCoding coding = m_Coding;
     return int(coding) & kTypeUnknown? x_UpdateCoding(): coding;
 }
 
-
 inline
-CSeqVector::TResidue CSeqVector::operator[] (TSeqPos pos) const
+CSeqVector::TResidue CSeqVector::GetGapChar(void) const
 {
-    TSeqPos offset = pos - m_CachePos;
-    return offset < m_CacheLen? m_Cache[offset]: x_GetResidue(pos);
+    return x_GetGapChar(GetCoding());
 }
 
 
@@ -182,6 +158,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/05/27 19:44:04  grichenk
+* Added CSeqVector_CI class
+*
 * Revision 1.32  2003/05/20 15:44:37  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.
 * Fixed some warnings on WorkShop.

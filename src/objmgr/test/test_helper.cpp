@@ -62,6 +62,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/objmgr/bioseq_handle.hpp>
 #include <objects/objmgr/seq_vector.hpp>
+#include <objects/objmgr/seq_vector_ci.hpp>
 #include <objects/objmgr/desc_ci.hpp>
 #include <objects/objmgr/feat_ci.hpp>
 #include <objects/objmgr/align_ci.hpp>
@@ -957,6 +958,22 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     CHECK_WRAP();
     CSeqVector seq_vect = handle.GetSeqVector(CBioseq_Handle::eCoding_NotSet);
     string sout = "";
+    {{
+        CSeqVector_CI vit(seq_vect, 0);
+        for ( ; vit.GetPos() < seq_vect.size(); ++vit) {
+            sout += *vit;
+        }
+        _ASSERT(NStr::PrintableString(sout) == seq_str);
+        seq_vect.SetCoding(CBioseq_Handle::eCoding_Ncbi);
+        vit.SetPos(seq_vect.size() - 1);
+        for ( ; bool(vit); --vit) {
+            _ASSERT(sout[vit.GetPos()] == *vit);
+        }
+        vit.GetSeqData(0, seq_vect.size(), sout);
+        _ASSERT(NStr::PrintableString(sout) == seq_str);
+        sout = "";
+        seq_vect.SetCoding(CBioseq_Handle::eCoding_NotSet);
+    }}
     for (TSeqPos i = 0; i < seq_vect.size(); i++) {
         sout += seq_vect[i];
     }
@@ -1026,7 +1043,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             }
             //### _ASSERT(feat_it->
         }
-              _ASSERT(count == seq_feat_ra_cnt);
+        _ASSERT(count == seq_feat_ra_cnt);
     }
     CHECK_END("get annot set");
 
@@ -1252,6 +1269,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2003/05/27 19:44:07  grichenk
+* Added CSeqVector_CI class
+*
 * Revision 1.35  2003/05/23 16:32:54  vasilche
 * Added tests for backward traversal of CSeqMap_CI.
 *

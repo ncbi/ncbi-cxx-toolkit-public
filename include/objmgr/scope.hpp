@@ -177,15 +177,6 @@ public:
     void FindSeqid(set< CRef<const CSeq_id> >& setId,
                    const string& searchBy) const;
 
-    // Find mode flags: how to treat duplicate IDs within the same scope
-    enum EFindMode {
-        eFirst,       // silently return the first handle found (default)
-        eDup_Warning,  // generate warning, act like "eFirst"
-        eDup_Fatal,    // generate fatal error
-        eDup_Throw     // throw runtime_error
-    };
-    virtual void SetFindMode(EFindMode mode);
-
     void ResetHistory(void);
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
@@ -253,9 +244,7 @@ private:
 
     CObjectManager*     m_pObjMgr;
     CPriorityNode       m_setDataSrc;   // Data sources ordered by priority
-    TDataSource_Cache   m_DS_Cache;     // Reverse lookup of priorities and TSEs
-
-    EFindMode m_FindMode;
+    TDataSource_Cache   m_DS_Cache;     // Cache of TSEs by data sources
 
     TCache m_Cache;
     TSynCache m_SynCache;
@@ -280,6 +269,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2003/05/27 19:44:04  grichenk
+* Added CSeqVector_CI class
+*
 * Revision 1.48  2003/05/20 15:44:37  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.
 * Fixed some warnings on WorkShop.

@@ -11,7 +11,7 @@ SRC = data_source bioseq_handle scope \
       align_ci annot_object annot_types_ci \
       data_loader desc_ci feat_ci graph_ci handle_range \
       handle_range_map object_manager reader reader_id1 reader_pubseq \
-      seq_vector seqdesc_ci seq_id_handle seq_id_mapper \
+      seq_vector seq_vector_ci seqdesc_ci seq_id_handle seq_id_mapper \
       gbload_util gbloader
 
 LIB    = xobjmgr

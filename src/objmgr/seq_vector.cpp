@@ -32,19 +32,20 @@
 
 
 #include <objects/objmgr/seq_vector.hpp>
+#include <objects/objmgr/seq_vector_ci.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <objects/objmgr/impl/data_source.hpp>
-#include <objects/seq/NCBI8aa.hpp>
-#include <objects/seq/NCBIpaa.hpp>
-#include <objects/seq/NCBIstdaa.hpp>
-#include <objects/seq/NCBIeaa.hpp>
-#include <objects/seq/NCBIpna.hpp>
-#include <objects/seq/NCBI8na.hpp>
-#include <objects/seq/NCBI4na.hpp>
-#include <objects/seq/NCBI2na.hpp>
-#include <objects/seq/IUPACaa.hpp>
-#include <objects/seq/IUPACna.hpp>
-#include <objects/seq/Seq_inst.hpp>
+//#include <objects/seq/NCBI8aa.hpp>
+//#include <objects/seq/NCBIpaa.hpp>
+//#include <objects/seq/NCBIstdaa.hpp>
+//#include <objects/seq/NCBIeaa.hpp>
+//#include <objects/seq/NCBIpna.hpp>
+//#include <objects/seq/NCBI8na.hpp>
+//#include <objects/seq/NCBI4na.hpp>
+//#include <objects/seq/NCBI2na.hpp>
+//#include <objects/seq/IUPACaa.hpp>
+//#include <objects/seq/IUPACna.hpp>
+//#include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/objmgr/seq_map.hpp>
@@ -74,9 +75,7 @@ CSeqVector::CSeqVector(CConstRef<CSeqMap> seqMap, CScope& scope,
       m_Coding(CSeq_data::e_not_set),
       m_Strand(strand),
       m_SequenceType(eType_not_set),
-      m_CachePos(kInvalidSeqPos),
-      m_CacheLen(0),
-      m_Cache(0)
+      m_Iterator(0)
 {
     SetCoding(coding);
 }
@@ -89,9 +88,7 @@ CSeqVector::CSeqVector(const CSeqMap& seqMap, CScope& scope,
       m_Coding(CSeq_data::e_not_set),
       m_Strand(strand),
       m_SequenceType(eType_not_set),
-      m_CachePos(kInvalidSeqPos),
-      m_CacheLen(0),
-      m_Cache(0)
+      m_Iterator(0)
 {
     SetCoding(coding);
 }
@@ -102,18 +99,13 @@ CSeqVector::~CSeqVector(void)
 }
 
 
-inline
-void CSeqVector::x_UpdateCachePtr(void) const
+CSeqVector::TResidue CSeqVector::operator[] (TSeqPos pos) const
 {
-    m_Cache = m_CacheData.empty()? 0: &m_CacheData[0];
-}
-
-
-inline
-void CSeqVector::x_ResizeCache(size_t size) const
-{
-    m_CacheData.resize(size);
-    x_UpdateCachePtr();
+    if ( !m_Iterator.get() ) {
+        m_Iterator.reset(new CSeqVector_CI(*this, pos));
+    }
+    m_Iterator->SetPos(pos);
+    return **m_Iterator;
 }
 
 
@@ -125,10 +117,6 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
         m_SequenceType = vec.m_SequenceType;
         m_Coding = vec.m_Coding;
         m_Strand = vec.m_Strand;
-        m_CacheData = vec.m_CacheData;
-        x_UpdateCachePtr();
-        m_CachePos = vec.m_CachePos;
-        m_CacheLen = vec.m_CacheLen;
     }
     return *this;
 }
@@ -141,9 +129,9 @@ TSeqPos CSeqVector::size(void) const
 }
 
 
-CSeqVector::TResidue CSeqVector::GetGapChar(void) const
+CSeqVector::TResidue CSeqVector::x_GetGapChar(TCoding coding) const
 {
-    switch (GetCoding()) {
+    switch (coding) {
     case CSeq_data::e_Iupacna: // DNA - N
         return 'N';
     
@@ -175,267 +163,6 @@ CSeqVector::TResidue CSeqVector::GetGapChar(void) const
 
 static const TSeqPos kCacheSize = 16384;
 static const TSeqPos kCacheKeep = kCacheSize / 16;
-
-
-CSeqVector::TResidue CSeqVector::x_GetResidue(TSeqPos pos) const
-{
-    TSeqPos totalSize = size();
-    TSeqPos oldCachePos = m_CachePos;
-    TSeqPos oldCacheLen = m_CacheLen;
-    TSeqPos oldCacheEnd = oldCachePos + oldCacheLen;
-
-    TSignedSeqPos start;
-    if ( m_CachePos == kInvalidSeqPos ) {
-        start = pos - kCacheSize / 2;
-    }
-    else if ( pos >= m_CachePos ) {
-        start = pos - kCacheKeep;
-    }
-    else {
-        start = pos - (kCacheSize - kCacheKeep);
-    }
-    TSeqPos newCachePos;
-    TSeqPos newCacheEnd;
-    if ( start < 0 ) {
-        newCachePos = 0;
-        newCacheEnd = min(totalSize, kCacheSize);
-    }
-    else if ( start + kCacheSize > totalSize ) {
-        newCachePos = max(kCacheSize, totalSize) - kCacheSize;
-        newCacheEnd = totalSize;
-    }
-    else {
-        newCachePos = start;
-        newCacheEnd = start + kCacheSize;
-    }
-    TSeqPos newCacheLen = newCacheEnd - newCachePos;
-
-    TSeqPos copyCachePos = max(oldCachePos, newCachePos);
-    TSeqPos copyCacheEnd = min(oldCacheEnd, newCacheEnd);
-    if ( copyCacheEnd > copyCachePos ) {
-        // copy some cache data
-        TSeqPos oldCopyPos = copyCachePos - oldCachePos;
-        TSeqPos newCopyPos = copyCachePos - newCachePos;
-        if ( newCopyPos != oldCopyPos ) {
-            TSeqPos oldCopyEnd = copyCacheEnd - oldCachePos;
-            if ( newCacheLen != oldCacheLen ) {
-                TCacheData newCacheData(newCacheLen);
-                copy(m_Cache+oldCopyPos, m_Cache+oldCopyEnd,
-                     &newCacheData[0]+newCopyPos);
-                swap(m_CacheData, newCacheData);
-            }
-            else {
-                if ( newCopyPos > oldCopyPos ) {
-                    TSeqPos newCopyEnd = copyCacheEnd - newCachePos;
-                    copy_backward(m_Cache+oldCopyPos, m_Cache+oldCopyEnd,
-                         m_Cache+newCopyEnd);
-                }
-                else {
-                    copy(m_Cache+oldCopyPos, m_Cache+oldCopyEnd,
-                         m_Cache+newCopyPos);
-                }
-            }
-        }
-        x_ResizeCache(newCacheLen);
-        m_CachePos = newCachePos;
-        m_CacheLen = newCacheLen;
-        if ( copyCachePos > newCachePos ) {
-            x_FillCache(newCachePos, copyCachePos);
-        }
-        if ( newCacheEnd > copyCacheEnd ) {
-            x_FillCache(copyCacheEnd, newCacheEnd);
-        }
-    }
-    else {
-        x_ResizeCache(newCacheLen);
-        m_CachePos = newCachePos;
-        m_CacheLen = newCacheLen;
-        x_FillCache(newCachePos, newCacheEnd);
-    }
-
-    return m_Cache[pos - m_CachePos];
-}
-
-
-template<class DstIter, class SrcCont>
-void copy_8bit(DstIter dst, size_t count,
-               const SrcCont& srcCont, size_t srcPos)
-{
-    typename SrcCont::const_iterator src = srcCont.begin() + srcPos;
-    copy(src, src+count, dst);
-}
-
-
-template<class DstIter, class SrcCont>
-void copy_4bit(DstIter dst, size_t count,
-               const SrcCont& srcCont, size_t srcPos)
-{
-    typename SrcCont::const_iterator src = srcCont.begin() + srcPos / 2;
-    if ( srcPos % 2 ) {
-        // odd char first
-        *dst++ = *src++ & 0x0f;
-        --count;
-    }
-    for ( size_t count2 = count/2; count2; --count2, dst += 2, ++src ) {
-        char c = *src;
-        *(dst) = (c >> 4) & 0x0f;
-        *(dst+1) = (c) & 0x0f;
-    }
-    if ( count % 2 ) {
-        // remaining odd char
-        *dst = (*src >> 4) & 0x0f;
-    }
-}
-
-
-template<class DstIter, class SrcCont>
-void copy_2bit(DstIter dst, size_t count,
-               const SrcCont& srcCont, size_t srcPos)
-{
-    typename SrcCont::const_iterator src = srcCont.begin() + srcPos / 4;
-    // odd chars first
-    switch ( srcPos % 4 ) {
-    case 1:
-        *dst++ = (*src >> 4) & 0x03;
-        if ( --count == 0 )
-            return;
-        // intentional fall through
-    case 2:
-        *dst++ = (*src >> 2) & 0x03;
-        if ( --count == 0 )
-            return;
-        // intentional fall through
-    case 3:
-        *dst++ = (*src++) & 0x03;
-        --count;
-        break;
-    }
-    for ( size_t count4 = count / 4; count4; --count4, dst += 4, ++src ) {
-        char c = *src;
-        *(dst) = (c >> 6) & 0x03;
-        *(dst+1) = (c >> 4) & 0x03;
-        *(dst+2) = (c >> 2) & 0x03;
-        *(dst+3) = (c) & 0x03;
-    }
-    // remaining odd chars
-    switch ( count % 4 ) {
-    case 3:
-        *(dst+2) = (*src >> 2) & 0x03;
-        // intentional fall through
-    case 2:
-        *(dst+1) = (*src >> 4) & 0x03;
-        // intentional fall through
-    case 1:
-        *dst = (*src >> 6) & 0x03;
-        break;
-    }
-}
-
-
-void translate(char* dst, size_t count, const char* table)
-{
-    for ( ; count; ++dst, --count ) {
-        *dst = table[static_cast<unsigned char>(*dst)];
-    }
-}
-
-
-void CSeqVector::x_FillCache(TSeqPos pos, TSeqPos end) const
-{
-    _ASSERT(pos >= m_CachePos);
-    _ASSERT(pos < end);
-    _ASSERT(end <= m_CachePos+m_CacheLen);
-
-    TCache_I dst = m_Cache + (pos - m_CachePos);
-    for ( CSeqMap::const_iterator seg =
-              m_SeqMap->ResolvedRangeIterator(m_Scope, m_Strand, pos, end-pos);
-          seg; ++seg ) {
-        _ASSERT(seg.GetType() != CSeqMap::eSeqEnd);
-        TSeqPos count = seg.GetLength();
-        if ( count == 0 ) {
-            continue;
-        }
-
-        _ASSERT(dst - m_Cache + m_CachePos + count <= end);
-        switch ( seg.GetType() ) {
-        case CSeqMap::eSeqData:
-        {
-            const CSeq_data& data = seg.GetRefData();
-            TSeqPos dataPos = seg.GetRefPosition();
-            TCoding dataCoding = data.Which();
-
-            TCoding cacheCoding = x_GetCoding(dataCoding);
-
-            switch ( dataCoding ) {
-            case CSeq_data::e_Iupacna:
-                copy_8bit(dst, count, data.GetIupacna().Get(), dataPos);
-                break;
-            case CSeq_data::e_Iupacaa:
-                copy_8bit(dst, count, data.GetIupacaa().Get(), dataPos);
-                break;
-            case CSeq_data::e_Ncbi2na:
-                copy_2bit(dst, count, data.GetNcbi2na().Get(), dataPos);
-                break;
-            case CSeq_data::e_Ncbi4na:
-                copy_4bit(dst, count, data.GetNcbi4na().Get(), dataPos);
-                break;
-            case CSeq_data::e_Ncbi8na:
-                copy_8bit(dst, count, data.GetNcbi8na().Get(), dataPos);
-                break;
-            case CSeq_data::e_Ncbipna:
-                THROW1_TRACE(runtime_error,
-                             "CSeqVector::x_FillCache: "
-                             "Ncbipna conversion not implemented");
-            case CSeq_data::e_Ncbi8aa:
-                copy_8bit(dst, count, data.GetNcbi8aa().Get(), dataPos);
-                break;
-            case CSeq_data::e_Ncbieaa:
-                copy_8bit(dst, count, data.GetNcbieaa().Get(), dataPos);
-                break;
-            case CSeq_data::e_Ncbipaa:
-                THROW1_TRACE(runtime_error,
-                             "CSeqVector::x_FillCache: "
-                             "Ncbipaa conversion not implemented");
-            case CSeq_data::e_Ncbistdaa:
-                copy_8bit(dst, count, data.GetNcbistdaa().Get(), dataPos);
-                break;
-            default:
-                THROW1_TRACE(runtime_error,
-                             "CSeqVector::x_FillCache: "
-                             "invalid data type");
-            }
-            if ( cacheCoding != dataCoding ) {
-                const char* table = sx_GetConvertTable(dataCoding,
-                                                       cacheCoding);
-                if ( table ) {
-                    translate(dst, count, table);
-                }
-                else {
-                    THROW1_TRACE(runtime_error,
-                                 "CSeqVector::x_ConvertCache: "
-                                 "incompatible codings");
-                }
-            }
-            if ( seg.GetRefMinusStrand() ) {
-                reverse(dst, dst+count);
-                const char* table = sx_GetComplementTable(cacheCoding);
-                if ( table ) {
-                    translate(dst, count, table);
-                }
-            }
-            break;
-        }
-        case CSeqMap::eSeqGap:
-            x_GetCoding(CSeq_data::e_not_set);
-            fill(dst, dst+count, GetGapChar());
-            break;
-        default:
-            THROW1_TRACE(runtime_error,
-                         "CSeqVector::x_FillCache: invalid segment type");
-        }
-        dst += count;
-    }
-}
 
 
 DEFINE_STATIC_FAST_MUTEX(s_ConvertTableMutex);
@@ -539,17 +266,17 @@ CSeqVector::TCoding CSeqVector::x_UpdateCoding(void) const
 }
 
 
-CSeqVector::TCoding CSeqVector::x_GetCoding(TCoding dataCoding) const
+CSeqVector::TCoding CSeqVector::x_GetCoding(TCoding cacheCoding,
+                                            TCoding dataCoding) const
 {
     if ( m_SequenceType == eType_not_set )
         x_UpdateSequenceType(dataCoding);
 
-    TCoding coding = m_Coding;
-    if ( int(coding) & kTypeUnknown ) {
+    if ( int(cacheCoding) & kTypeUnknown ) {
         TCoding newCoding = CSeq_data::e_not_set;
         switch ( GetSequenceType() ) {
         case eType_aa:
-            switch ( coding & ~kTypeUnknown ) {
+            switch ( cacheCoding & ~kTypeUnknown ) {
             case CBioseq_Handle::eCoding_Iupac:
                 newCoding = CSeq_data::e_Iupacaa;
                 break;
@@ -559,7 +286,7 @@ CSeqVector::TCoding CSeqVector::x_GetCoding(TCoding dataCoding) const
             }
             break;
         case eType_na:
-            switch ( coding & ~kTypeUnknown ) {
+            switch ( cacheCoding & ~kTypeUnknown ) {
             case CBioseq_Handle::eCoding_Iupac:
                 newCoding = CSeq_data::e_Iupacna;
                 break;
@@ -569,18 +296,18 @@ CSeqVector::TCoding CSeqVector::x_GetCoding(TCoding dataCoding) const
             }
             break;
         }
-        coding = const_cast<CSeqVector*>(this)->m_Coding = newCoding;
+        cacheCoding = newCoding;
     }
 
-    return coding != CSeq_data::e_not_set? coding: dataCoding;
+    return cacheCoding != CSeq_data::e_not_set? cacheCoding: dataCoding;
 }
 
 
 void CSeqVector::SetCoding(TCoding coding)
 {
     if (m_Coding != coding) {
-        ClearCache();
         m_Coding = coding;
+        m_Iterator.reset();
     }
 }
 
@@ -676,19 +403,8 @@ bool CSeqVector::x_UpdateSequenceType(TCoding coding) const
 
 void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const
 {
-    stop = min(stop, size());
-    buffer.erase();
-    if ( start < stop ) {
-        buffer.reserve(stop-start);
-        do {
-            (*this)[start];
-            TSeqPos cachePos = start - m_CachePos;
-            _ASSERT(cachePos < m_CacheLen);
-            TSeqPos cacheEnd = min(m_CacheLen, stop - m_CachePos);
-            buffer.append(m_Cache+cachePos, m_Cache+cacheEnd);
-            start += (cacheEnd - cachePos);
-        } while ( start < stop );
-    }
+    CSeqVector_CI it(*this, start);
+    it.GetSeqData(start, stop, buffer);
 }
 
 
@@ -698,6 +414,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2003/05/27 19:44:06  grichenk
+* Added CSeqVector_CI class
+*
 * Revision 1.49  2003/05/20 15:44:38  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.
 * Fixed some warnings on WorkShop.
