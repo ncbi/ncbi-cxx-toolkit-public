@@ -203,8 +203,9 @@ protected:
 template <class TPrim>
 class CAliasBase
 {
-    typedef CAliasBase<TPrim> TThis;
 public:
+    typedef CAliasBase<TPrim> TThis;
+
     CAliasBase(void) {}
     explicit CAliasBase(const TPrim& value)
         : m_Data(value) {}
@@ -435,6 +436,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/05/22 20:19:17  jcherry
+* Made CAliasBase::TThis typedef public
+*
 * Revision 1.31  2004/04/26 16:40:59  ucko
 * Tweak for GCC 3.4 compatibility.
 *
