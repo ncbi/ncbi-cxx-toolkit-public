@@ -937,10 +937,10 @@ bool CAnnot_Collector::x_Search(const TTSE_Lock&      tse,
                 if ( !indexes[index] ) {
                     continue;
                 }
-                if ( index >= objs->m_AnnotSet.size() ) {
+                if ( index >= objs->x_GetRangeMapCount() ) {
                     break;
                 }
-                if ( !objs->m_AnnotSet[index].empty() ) {
+                if ( !objs->x_RangeMapIsEmpty(index) ) {
                     found = true;
                     break;
                 }
@@ -1034,7 +1034,7 @@ void CAnnot_Collector::x_Search(const TTSE_Lock&      tse,
         pair<size_t, size_t> range(0, 0);
         bool last_bit = false;
         bool cur_bit;
-        for (size_t idx = 0; idx < objs->m_AnnotSet.size(); ++idx) {
+        for (size_t idx = 0; idx < objs->x_GetRangeMapCount(); ++idx) {
             cur_bit = m_Selector.m_AnnotTypesSet[idx];
             if (!last_bit  &&  cur_bit) {
                 // open range
@@ -1051,7 +1051,7 @@ void CAnnot_Collector::x_Search(const TTSE_Lock&      tse,
         if (last_bit) {
             // search to the end of annot set
             x_SearchRange(tse, objs, guard, annot_name, id, hr, cvt,
-                range.first, objs->m_AnnotSet.size());
+                range.first, objs->x_GetRangeMapCount());
         }
     }
 
@@ -1105,11 +1105,11 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Lock&      tse,
 
     for ( size_t index = from_idx; index < to_idx; ++index ) {
         size_t start_size = m_AnnotSet.size(); // for rollback
-        
-        const CTSE_Info::TRangeMap& rmap = objs->m_AnnotSet[index];
-        if ( rmap.empty() ) {
+
+        if ( objs->x_RangeMapIsEmpty(index) ) {
             continue;
         }
+        const CTSE_Info::TRangeMap& rmap = objs->x_GetRangeMap(index);
 
         for ( CTSE_Info::TRangeMap::const_iterator aoit(rmap.begin(range));
               aoit; ++aoit ) {
@@ -1482,6 +1482,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/08/31 14:23:47  vasilche
+* Use methods instead of data members directly.
+*
 * Revision 1.22  2004/08/17 14:31:46  grichenk
 * operators <, == and != made inline
 *
