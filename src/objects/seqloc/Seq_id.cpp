@@ -812,6 +812,7 @@ CSeq_id::x_Init
     }
 }
 
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -819,6 +820,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.36  2002/10/03 17:17:11  clausen
+ * Added BestRank() and WorstRank()
+ *
  * Revision 6.35  2002/10/03 16:03:00  ucko
  * +BZ (eAcc_gb_gss)
  *
