@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/03/26 21:45:54  vakatov
+* Made MT-safe (with A.Grichenko)
+*
 * Revision 1.25  2001/01/23 23:20:42  lavr
 * MSVS++ -> MSVC++
 *
@@ -116,14 +119,15 @@
 */
 
 #include <corelib/ncbidiag.hpp>
+#include <corelib/ncbithr.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <stdlib.h>
+
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
-
-//## DECLARE_MUTEX(s_Mutex);  // protective mutex
-
+static CMutex s_DiagMutex;
 
 
 ///////////////////////////////////////////////////////
@@ -169,33 +173,39 @@ CDiagBuffer::~CDiagBuffer(void)
     if (m_Diag  ||  dynamic_cast<CNcbiOstrstream*>(m_Stream)->pcount())
         ::abort();
     delete m_Stream;
+    m_Stream = 0;
 }
 
 void CDiagBuffer::DiagHandler(SDiagMessage& mess)
 {
     if ( CDiagBuffer::sm_HandlerFunc ) {
-        //## MUTEX_LOCK(s_Mutex);
+        CMutexGuard LOCK(s_DiagMutex);
         if ( CDiagBuffer::sm_HandlerFunc ) {
             mess.m_Data   = CDiagBuffer::sm_HandlerData;
             mess.m_Prefix = CDiagBuffer::sm_PostPrefix;
             CDiagBuffer::sm_HandlerFunc(mess);
         }
-        //## MUTEX_UNLOCK(s_Mutex);
     }
 }
 
 bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
 {
+    if ( !m_Stream ) {
+        return false;
+    }
+
     if (diag.GetSeverity() < sm_PostSeverity  ||
         (diag.GetSeverity() == eDiag_Trace  &&  !GetTraceEnabled())) {
         return false;
     }
+
     if (m_Diag != &diag) {
         if ( dynamic_cast<CNcbiOstrstream*>(m_Stream)->pcount() ) {
             Flush();
         }
         m_Diag = &diag;
     }
+
     return true;
 }
 
@@ -229,7 +239,7 @@ void CDiagBuffer::Flush(void)
 
 bool CDiagBuffer::GetTraceEnabledFirstTime(void)
 {
-    //## MUTEX_LOCK(s_Mutex);
+    CMutexGuard LOCK(s_DiagMutex);
     const char* str = ::getenv(DIAG_TRACE);
     if (str  &&  *str) {
         sm_TraceDefault = eDT_Enable;
@@ -237,7 +247,6 @@ bool CDiagBuffer::GetTraceEnabledFirstTime(void)
         sm_TraceDefault = eDT_Disable;
     }
     sm_TraceEnabled = (sm_TraceDefault == eDT_Enable);
-    //## MUTEX_UNLOCK(s_Mutex);
     return sm_TraceEnabled;
 }
 
@@ -309,9 +318,8 @@ extern void SetDiagPostFlag(EDiagPostFlag flag)
     if (flag == eDPF_Default)
         return;
 
-    //## MUTEX_LOCK(s_Mutex);
+    CMutexGuard LOCK(s_DiagMutex);
     CDiagBuffer::sm_PostFlags |= flag;
-    //## MUTEX_UNLOCK(s_Mutex);
 }
 
 extern void UnsetDiagPostFlag(EDiagPostFlag flag)
@@ -319,15 +327,14 @@ extern void UnsetDiagPostFlag(EDiagPostFlag flag)
     if (flag == eDPF_Default)
         return;
 
-    //## MUTEX_LOCK(s_Mutex);
+    CMutexGuard LOCK(s_DiagMutex);
     CDiagBuffer::sm_PostFlags &= ~flag;
-    //## MUTEX_UNLOCK(s_Mutex);
 }
 
 
 extern void SetDiagPostPrefix(const char* prefix)
 {
-    //## MUTEX_LOCK(s_Mutex);
+    CMutexGuard LOCK(s_DiagMutex);
     delete[] CDiagBuffer::sm_PostPrefix;
     if (prefix  &&  *prefix) {
         CDiagBuffer::sm_PostPrefix = new char[strlen(prefix) + 1];
@@ -335,32 +342,29 @@ extern void SetDiagPostPrefix(const char* prefix)
     } else {
         CDiagBuffer::sm_PostPrefix = 0;
     }
-    //## MUTEX_UNLOCK(s_Mutex);
 }
 
 extern EDiagSev SetDiagPostLevel(EDiagSev post_sev)
 {
-    //## MUTEX_LOCK(s_Mutex);
+    CMutexGuard LOCK(s_DiagMutex);
     EDiagSev sev = CDiagBuffer::sm_PostSeverity;
     CDiagBuffer::sm_PostSeverity = post_sev;
-    //## MUTEX_UNLOCK(s_Mutex);
     return sev;
 }
 
 
 extern EDiagSev SetDiagDieLevel(EDiagSev die_sev)
 {
-    //## MUTEX_LOCK(s_Mutex);
+    CMutexGuard LOCK(s_DiagMutex);
     EDiagSev sev = CDiagBuffer::sm_DieSeverity;
     CDiagBuffer::sm_DieSeverity = die_sev;
-    //## MUTEX_UNLOCK(s_Mutex);
     return sev;
 }
 
 
 extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt)
 {
-    //## MUTEX_LOCK(s_Mutex);
+    CMutexGuard LOCK(s_DiagMutex);
     (void) CDiagBuffer::GetTraceEnabled();
 
     if (dflt != eDT_Default)
@@ -369,20 +373,18 @@ extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt)
     if (how == eDT_Default)
         how = CDiagBuffer::sm_TraceDefault;
     CDiagBuffer::sm_TraceEnabled = (how == eDT_Enable);
-    //## MUTEX_UNLOCK(s_Mutex);
 }
 
 
 extern void SetDiagHandler(FDiagHandler func, void* data,
                            FDiagCleanup cleanup)
 {
-    //## MUTEX_LOCK(s_Mutex);
+    CMutexGuard LOCK(s_DiagMutex);
     if ( CDiagBuffer::sm_HandlerCleanup )
         CDiagBuffer::sm_HandlerCleanup(CDiagBuffer::sm_HandlerData);
     CDiagBuffer::sm_HandlerFunc    = func;
     CDiagBuffer::sm_HandlerData    = data;
     CDiagBuffer::sm_HandlerCleanup = cleanup;
-    //## MUTEX_UNLOCK(s_Mutex);
 }
 
 extern bool IsSetDiagHandler(void)
@@ -391,23 +393,40 @@ extern bool IsSetDiagHandler(void)
 }
 
 
-//## static void s_TlsCleanup(TTls TLS, void* old_value)
-//## {
-//##     delete (CDiagBuffer *)old_value;
-//## }
+static void s_TlsDataCleanup(CDiagBuffer* old_value, void* /* cleanup_data */)
+{
+    delete old_value;
+}
+
+static bool s_TlsDestroyed; /* = false */
+
+static void s_TlsObjectCleanup(void* /* ptr */)
+{
+    s_TlsDestroyed = true;
+}
+
 
 extern CDiagBuffer& GetDiagBuffer(void)
 {
-    //## TLS_DECLARE(s_DiagBufferTls);
-    //## CDiagBuffer* msg_buf = TLS_GET_VALUE(s_DiagBufferTls);
-    //## if ( !msg_buf ) {
-    //##    msg_buf = new CDiagBuffer;
-    //##    TLS_SET_VALUE(s_DiagBufferTls, msg_buf, s_TlsCleanup);
-    //## }
-    //## return *msg_buf;
+    static CSafeStaticRef< CTls<CDiagBuffer> >
+        s_DiagBufferTls(s_TlsObjectCleanup);
 
-    static CDiagBuffer s_DiagBuffer;
-    return s_DiagBuffer;
+    // Create and use dummy buffer if all real buffers are gone already
+    // (on the application exit)
+    if ( s_TlsDestroyed ) {
+        static CDiagBuffer s_DiagBuffer;
+        return s_DiagBuffer;
+    }
+
+    // Create thread-specific diag.buffer (if not created yet),
+    // and store it to TLS
+    CDiagBuffer* msg_buf = s_DiagBufferTls->GetValue();
+    if ( !msg_buf ) {
+        msg_buf = new CDiagBuffer;
+        s_DiagBufferTls->SetValue(msg_buf, s_TlsDataCleanup);
+    }
+
+    return *msg_buf;
 }
 
 
@@ -469,7 +488,7 @@ extern void SetDiagStream
 extern bool IsDiagStream(const CNcbiOstream* os)
 {
     bool res;
-    //## MUTEX_LOCK(s_Mutex);
+    CMutexGuard LOCK(s_DiagMutex);
     if ( !CDiagBuffer::sm_HandlerData ) {
         res = (os == 0);
     } else {
@@ -477,7 +496,6 @@ extern bool IsDiagStream(const CNcbiOstream* os)
             CDiagBuffer::sm_HandlerFunc == s_ToStream_Handler  &&
             ((SToStream_Data*) CDiagBuffer::sm_HandlerData)->os == os;
     }
-    //## MUTEX_UNLOCK(s_Mutex);
     return res;
 }
 
