@@ -314,7 +314,7 @@ public:
     };
     class CharBlock;
     friend class CharBlock;
-    class CharBlock
+    class NCBI_XSERIAL_EXPORT CharBlock
     {
     public:
         CharBlock(CObjectOStream& out, size_t length);
@@ -526,6 +526,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2004/03/10 23:18:11  gorelenk
+* Added prefix NCBI_XSERIAL_EXPORT for class CObjectOStream::CharBlock .
+*
 * Revision 1.83  2004/02/09 18:21:53  gouriano
 * enforced checking environment vars when setting initialization
 * verification parameters
