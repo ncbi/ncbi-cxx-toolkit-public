@@ -405,7 +405,6 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
  * @param word_options options for initial word finding. [in]
  * @param ext_options options for gapped extension. [in]
  * @param hit_options options for saving hits. [in]
- * @param db_options Database options (containing database genetic code)[in]
  * @param query The query sequence block [in]
  * @param query_info The query information block [in]
  * @param sbp Contains scoring information. [in]
@@ -414,7 +413,6 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
  * @param word_params Parameters for initial word processing [out]
  * @param ext_params Parameters for gapped extension [out]
  * @param hit_params Parameters for saving hits [out]
- * @param db_params Database parameters (db_options + genetic code string)[in]
  * @param aux_struct_ptr Placeholder joining various auxiliary memory 
  *                       structures [out]
  */
@@ -426,14 +424,12 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    const BlastInitialWordOptionsPtr word_options,
    const BlastExtensionOptionsPtr ext_options,
    const BlastHitSavingOptionsPtr hit_options,
-   const BlastDatabaseOptionsPtr db_options,
    BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info, 
    BLAST_ScoreBlkPtr sbp, Uint4 max_subject_length,
    BlastGapAlignStructPtr PNTR gap_align, 
    BlastInitialWordParametersPtr PNTR word_params,
    BlastExtensionParametersPtr PNTR ext_params,
    BlastHitSavingParametersPtr PNTR hit_params,
-   BlastDatabaseParametersPtr PNTR db_params,                         
    BlastCoreAuxStructPtr PNTR aux_struct_ptr)
 {
    Int2 status = 0;
@@ -463,8 +459,6 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
 
    BlastInitialWordParametersNew(program_number, word_options, *hit_params, 
       *ext_params, sbp, query_info, eff_len_options, word_params);
-
-   BlastDatabaseParametersNew(program_number, db_options, db_params);
 
    if ((status = BLAST_GapAlignStructNew(scoring_options, *ext_params, 1, 
                     max_subject_length, query->length, program_number, sbp,
@@ -646,7 +640,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    const BlastHitSavingOptionsPtr hit_options,
    const BlastEffectiveLengthsOptionsPtr eff_len_options,
    const PSIBlastOptionsPtr psi_options, 
-   const BlastDatabaseOptionsPtr db_options,
+   const BlastDatabaseParametersPtr db_params,
    BlastResultsPtr results, BlastReturnStatPtr return_stats)
 {
    ReadDBFILEPtr db; /* Loop variable */
@@ -662,7 +656,6 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    BlastInitialWordParametersPtr word_params;
    BlastExtensionParametersPtr ext_params;
    BlastHitSavingParametersPtr hit_params;
-   BlastDatabaseParametersPtr db_params;
    BlastGapAlignStructPtr gap_align;
    Int2 status = 0;
    
@@ -677,9 +670,9 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    if ((status = 
        BLAST_SetUpAuxStructures(program_number, score_options, 
           eff_len_options, lookup_wrap, word_options, ext_options, 
-          hit_options, db_options, query, query_info, sbp, 
+          hit_options, query, query_info, sbp, 
           max_subject_length, &gap_align, &word_params, &ext_params, 
-          &hit_params, &db_params, &aux_struct)) != 0)
+          &hit_params, &aux_struct)) != 0)
       return status;
 
    FillReturnXDropoffsInfo(return_stats, word_params, ext_params);
@@ -755,7 +748,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
    const BlastHitSavingOptionsPtr hit_options, 
    const BlastEffectiveLengthsOptionsPtr eff_len_options,
    const PSIBlastOptionsPtr psi_options, 
-   const BlastDatabaseOptionsPtr db_options,
+   const BlastDatabaseParametersPtr db_params,
    BlastResultsPtr results, BlastReturnStatPtr return_stats)
 {
    BlastCoreAuxStructPtr aux_struct = NULL;
@@ -763,7 +756,6 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
    BlastHitSavingParametersPtr hit_params; 
    BlastInitialWordParametersPtr word_params; 
    BlastExtensionParametersPtr ext_params;
-   BlastDatabaseParametersPtr db_params;
    BlastGapAlignStructPtr gap_align;
    Int2 status = 0;
 
@@ -773,9 +765,9 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
    if ((status = 
         BLAST_SetUpAuxStructures(program_number, score_options, 
            eff_len_options, lookup_wrap, word_options, ext_options, 
-           hit_options, db_options, query, query_info, 
+           hit_options, query, query_info, 
            sbp, subject->length, &gap_align, &word_params, &ext_params, 
-           &hit_params, &db_params, &aux_struct)) != 0)
+           &hit_params, &aux_struct)) != 0)
       return status;
 
    FillReturnXDropoffsInfo(return_stats, word_params, ext_params);
@@ -808,8 +800,6 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
 
    ext_params = (BlastExtensionParametersPtr) MemFree(ext_params);
    hit_params = (BlastHitSavingParametersPtr) MemFree(hit_params);
-   /* db_params do not own any of its contents! */
-   db_params = (BlastDatabaseParametersPtr) MemFree(db_params);
    
    return status;
 }

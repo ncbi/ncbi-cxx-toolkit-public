@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.36  2003/07/22 20:26:16  dondosha
+ * Initialize BlastDatabaseParameters structure outside engine
+ *
  * Revision 1.35  2003/07/22 15:32:55  dondosha
  * Removed dependence on readdb API
  *
@@ -1095,37 +1098,6 @@ BlastDatabaseOptionsFree(BlastDatabaseOptionsPtr db_options)
    MemFree(db_options->entrez_query);
    
    return (BlastDatabaseOptionsPtr) MemFree(db_options);
-}
-
-Int2 BlastDatabaseParametersNew(Uint1 program, 
-        const BlastDatabaseOptionsPtr db_options,
-        BlastDatabaseParametersPtr PNTR db_params)
-{
-   ValNodePtr vnp;
-   GeneticCodePtr gcp;
-
-   if (!db_options) {
-      /* Probably database parameters are not needed for this case */
-      *db_params = NULL;
-      return 0;
-   }
-
-   *db_params = (BlastDatabaseParametersPtr)
-      MemNew(sizeof(BlastDatabaseParameters));
-
-   if (program == blast_type_tblastn || program == blast_type_tblastx) {
-      gcp = GeneticCodeFind(db_options->genetic_code, NULL);
-      for (vnp = (ValNodePtr)gcp->data.ptrvalue; vnp != NULL; 
-           vnp = vnp->next) {
-         if (vnp->choice == 3) {  /* ncbieaa */
-            (*db_params)->gen_code_string = (CharPtr)vnp->data.ptrvalue;
-            break;
-         }
-      }
-   }
-   (*db_params)->options = db_options;
-
-   return 0;
 }
 
 Int2 BLAST_InitDefaultOptions(Uint1 program_number,

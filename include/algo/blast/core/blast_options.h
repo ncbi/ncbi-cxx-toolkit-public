@@ -698,16 +698,6 @@ Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr PNTR db_options);
 BlastDatabaseOptionsPtr 
 BlastDatabaseOptionsFree(BlastDatabaseOptionsPtr db_options);
 
-/** Initialize database parameters,including calculation of the 
- * database genetic code string.
- * @param program Type of BLAST program [in]
- * @param db_options Database options [in]
- * @param db_params Returned parameters structure [out]
- */
-Int2 BlastDatabaseParametersNew(Uint1 program, 
-        const BlastDatabaseOptionsPtr db_options,
-        BlastDatabaseParametersPtr PNTR db_params);
-
 /** Initialize all the BLAST search options structures with the default
  * values.
  * @param blast_program Type of blast program: blastn, blastp, blastx, 
