@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+ <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
   <head>
     <title>Standard NCBI C++ types</title>
@@ -11,83 +11,91 @@
 		<li> <a href="#ref_Int">Basic integer types</a>
 		<li> <a href="#ref_Aux">Auxiliary types</a>
 		<li> <a href="#ref_Float">Floating point types</a>
+		<li> <a href="#ref_IntFixed">Fixed-size integer types</a>
+		<li> <a href="#ref_BigScalar">The <i>"BigScalar"</i> type</a>
+		<li> <a href="#ref_Policy">Encouraged and discouraged types</a>
 	 </ul>
 
 	 <br></br>
 	 <a name="ref_Int"></a>
 	 <h2>Basic integer types</h2>
 
-	 It was decided that everyone must use the standard C/C++ types
-	 as much as possible, having in mind the following assumptions of
-	 their sizes and limits:
+	 We <a href="#ref_Policy">encourage</a> the use of following standard
+	 C/C++ types, and we state that the following assumptions
+	 (no less, no more) on their sizes and limits will be valid
+	 for all supported platforms:
 
 	 <br></br>
-    <table border=1 cellspacing=0>
-      <tr>
-		  <th>Name</th>
-		  <th>Size(bytes)</th>
-		  <th>Min</th>
-		  <th>Max</th>
-		  <th>Note</th>
-		</tr>
-      <tr>
-		  <td><i>char</i></td>
-		  <td>1</td>
-		  <td>?</td>
-		  <td>?</td>
-		  <td>It can be either signed or unsigned!</td>
-		</tr>
-      <tr>
-		  <td><i>signed char</i></td>
-		  <td>1</td>
-		  <td>-128</td>
-		  <td>127</td>
-		  <td></td>
-		</tr>
-      <tr>
-		  <td><i>unsigned char</i></td>
-		  <td>1</td>
-		  <td>0</td>
-		  <td>255</td>
-		  <td></td>
-		</tr>
-      <tr>
-		  <td><i>signed short, short</i></td>
-		  <td>2 or more</td>
-		  <td>-32768 or less</td>
-		  <td>32767 or greater</td>
-		  <td>Use <i>"int"</i> if size isn't critical</td>
-		</tr>
-      <tr>
-		  <td><i>usigned short</i></td>
-		  <td>2 or more</td>
-		  <td>0</td>
-		  <td>65535 or greater</td>
-		  <td>Use <i>"unsigned int"</i> if size isn't critical</td>
-		</tr>
-      <tr>
-		  <td><i>int, signed int</i></td>
-		  <td>4 or more</td>
-		  <td>-2147483648 or less</td>
-		  <td>2147483647 or greater</td>
-		  <td></td>
-		</tr>
-      <tr>
-		  <td><i>unsigned int</i></td>
-		  <td>4 or more</td>
-		  <td>0</td>
-		  <td>4294967295 or greater</td>
-		  <td></td>
-		</tr>
-	 </table>
+	 <a name="ref_TableIntStd">
+		<table border=1 cellspacing=0>
+		  <caption>Table 1</caption>
+		  <tr>
+			 <th>Name</th>
+			 <th>Size(bytes)</th>
+			 <th>Min</th>
+			 <th>Max</th>
+			 <th>Note</th>
+		  </tr>
+		  <tr>
+			 <td><i>char</i></td>
+			 <td>1</td>
+			 <td>?</td>
+			 <td>?</td>
+			 <td>It can be either <a href="http://www.cygnus.com/misc/wp/dec96pub/basic.html#basic.fundamental">signed or unsigned</a>!
+				Use it whereever you dont care of +/-
+				(e.g. in character strings).
+			 </td>
+		  </tr>
+		  <tr>
+			 <td><i>signed char</i></td>
+			 <td>1</td>
+			 <td>-128</td>
+			 <td>127</td>
+			 <td></td>
+		  </tr>
+		  <tr>
+			 <td><i>unsigned char</i></td>
+			 <td>1</td>
+			 <td>0</td>
+			 <td>255</td>
+			 <td></td>
+		  </tr>
+		  <tr>
+			 <td><i>short, signed short</i></td>
+			 <td>2 or more</td>
+			 <td>-32768 or less</td>
+			 <td>32767 or greater</td>
+			 <td>Use <i>"int"</i> if size isn't critical</td>
+		  </tr>
+		  <tr>
+			 <td><i>usigned short</i></td>
+			 <td>2 or more</td>
+			 <td>0</td>
+			 <td>65535 or greater</td>
+			 <td>Use <i>"unsigned int"</i> if size isn't critical</td>
+		  </tr>
+		  <tr>
+			 <td><i>int,<br>signed int</i></td>
+			 <td>4 or more</td>
+			 <td>-2147483648 or less</td>
+			 <td>2147483647 or greater</td>
+			 <td></td>
+		  </tr>
+		  <tr>
+			 <td><i>unsigned int</i></td>
+			 <td>4 or more</td>
+			 <td>0</td>
+			 <td>4294967295 or greater</td>
+			 <td></td>
+		  </tr>
+		</table>
 
 	 <p>
-	 It is not recommended to use <i>"long"</i> type unless it is
-	 absolutely necessary(e.g. in the lower-level code and when third-party
-	 code is used);  and even if you have to -- try to localize the
-	 <i>"long"</i> as much as possible.
-
-	 The use of "long long" type is now prohibited in the portable code.
+	 The use of <i>"long long"</i> type is now <b>prohibited</b> in the
+	 portable code.
+	 <p>
+	 The <i>"long"</i> type is <a href="#ref_Policy">discouraged</a>
+	 to use.
 
 
 	 <br></br>
@@ -96,12 +104,13 @@
 	 <h2>Auxiliary types</h2>
 	 
 	 <p>
-	 Use the <i>"bool"</i> type to represent boolean values. It accepts one
-	 of { <i>false</i>, <i>true</i> }.
+	 <b>Use</b> the <i>"bool"</i> type to represent boolean values.
+	 It accepts one of { <i>false</i>, <i>true</i> }.
 
 	 <p>
-	 Use the <i>"size_t"</i> type to represent a size of memory structure,
-	 e.g. obtained as a result of <i>sizeof</i> operation.
+	 <b>Use</b> the <i>"size_t"</i> type to represent a size of memory
+	 structure, e.g. obtained as a result of <i>sizeof</i> operation.
+
 
 	 <br></br>
 	 <br></br>
@@ -109,8 +118,212 @@
 	 <h2>Floating point types</h2>
 	 
 	 <p>
-	 To do...
+	 Use <i>"double"</i> whereever it is possible. Avoid using
+	 <i>"float"</i> and dont use <i>"long double"</i> in the portable
+	 code.
 
+
+	 <br></br>
+	 <br></br>
+	 <a name="ref_IntFixed"></a>
+	 <h2>Fixed-size integer types</h2>
+	 
+	 <p>
+	 Sometimes it is necessary to use an integer type which:
+	 <ul>
+		<li> has a well-known fixed size(and lower/upper limits) 
+		<li> be just the same on all platforms(but maybe a byte/bit order,
+		depending on the processor architecture)
+	 </ul>
+	 NCBI C++ standard headers provide the following fixed-size
+	 integer types:
+
+	 <br></br>
+	 <a name="ref_TableIntFixed">
+		<table border=1 cellspacing=0>
+		  <caption>Table 2</caption>
+		  <tr>
+			 <th>Name</th>
+			 <th>Size(bytes)</th>
+			 <th>Min</th>
+			 <th>Max</th>
+		  </tr>
+		  <tr>
+			 <td><i>Char, Int1</i></td>
+			 <td>1</td>
+			 <td>kMin_I1</td>
+			 <td>kMax_I1</td>
+		  </tr>
+		  <tr>
+			 <td><i>Uchar, Uint1</i></td>
+			 <td>1</td>
+			 <td>0</td>
+			 <td>kMax_UI1</td>
+		  </tr>
+		  <tr>
+			 <td><i>Int2</i></td>
+			 <td>2</td>
+			 <td>kMin_I2</td>
+			 <td>kMax_I2</td>
+		  </tr>
+		  <tr>
+			 <td><i>Uint2</i></td>
+			 <td>2</td>
+			 <td>0</td>
+			 <td>kMax_UI2</td>
+		  </tr>
+		  <tr>
+			 <td><i>Int4</i></td>
+			 <td>4</td>
+			 <td>kMin_I4</td>
+			 <td>kMax_I4</td>
+		  </tr>
+		  <tr>
+			 <td><i>Uint4</i></td>
+			 <td>4</td>
+			 <td>0</td>
+			 <td>kMax_UI4</td>
+		  </tr>
+		  <tr>
+			 <td><i>Int8</i></td>
+			 <td>8</td>
+			 <td>kMin_I8</td>
+			 <td>kMax_I8</td>
+		  </tr>
+		  <tr>
+			 <td><i>Uint8</i></td>
+			 <td>8</td>
+			 <td>0</td>
+			 <td>kMax_UI8</td>
+		  </tr>
+		</table>
+
+	 <p>
+	 Here, <i>"kM*_*"</i> are constants of relevant fixed-size
+	 integer type. They are guaranteed to be <b>equal</b> to the
+	 appropriate "preprocessor constants" from the old NCBI C
+	 headers(<i>*INT*_M*"</i>).
+
+
+	 <br></br>
+    <table border=1 cellspacing=0 rules="groups">
+		<caption>Table 3</caption>
+		<thead>
+		  <tr>
+			 <th>Constant(NCBI C++)</th>
+			 <th>Value</th>
+			 <th>Define(NCBI C)</h>
+		  </tr>
+		  <tbody>
+			 <tr>
+				<td><i>kMin_I1</i></td>
+				<td>-128</td>
+				<td><i>INT1_MIN</i></td>
+			 </tr>
+			 <tr>
+				<td><i>kMax_I1</i></td>
+				<td>+127</td>
+				<td><i>INT1_MAX</i></td>
+			 </tr>
+			 <tr>
+				<td><i>kMax_UI1</i></td>
+				<td>+255</td>
+				<td><i>UINT1_MAX</i></td>
+			 </tr>
+			 <tr>
+				<td><i>kMin_I2</i></td>
+				<td>-32768</td>
+				<td><i>INT2_MIN</i></td>
+			 </tr>
+			 <tr>
+				<td><i>kMax_I2</i></td>
+				<td>+32767</td>
+				<td><i>INT2_MAX</i></td>
+			 </tr>
+			 <tr>
+				<td><i>kMax_UI2</i></td>
+				<td>+65535</td>
+				<td><i>UINT2_MAX</i></td>
+			 </tr>
+			 <tr>
+				<td><i>kMin_I4</i></td>
+				<td>-2147483648</td>
+				<td><i>INT4_MIN</i></td>
+			 </tr>
+			 <tr>
+				<td><i>kMax_I4</i></td>
+				<td>+2147483647</td>
+				<td><i>INT4_MAX</i></td>
+			 </tr>
+			 <tr>
+				<td><i>kMax_UI4</i></td>
+				<td>+4294967295</td>
+				<td><i>UINT4_MAX</i></td>
+			 </tr>
+			 <tr>
+				<td><i>kMin_I8</i></td>
+				<td>-9223372036854775808</td>
+				<td><i>INT8_MIN</i></td>
+			 </tr>
+			 <tr>
+				<td><i>kMax_I8</i></td>
+				<td>+9223372036854775807</td>
+				<td><i>INT8_MAX</i></td>
+			 </tr>
+			 <tr>
+				<td><i>kMax_UI8</i></td>
+				<td>+18446744073709551615</td>
+				<td><i>UINT8_MAX</i></td>
+			 </tr>
+	 </table>
+
+
+	 <br></br>
+	 <br></br>
+	 <a name="ref_BigScalar"></a>
+	 <h2>The <i>"BigScalar"</i> type</h2>
+
+	 <p>
+	 NCBI C++ standard headers also define a special type
+	 <i>"BigScalar"</i>.
+	 The only assumption that can be made(and used in your code) is
+	 that <i>"BigScalar"</i> variable has a size which is enough to hold
+	 any integral, floating-point or pointer variable
+	 (like <i>"Int8"</i>, or <i>"double"</i>, or <i>"void*</i>).
+	 This type can be useful e.g. to hold a callback data of arbitrary
+	 fundamental type); but, in general, the use of this type is
+	 <b>discouraged</b>.
+
+	 <br></br>
+	 <br></br>
+	 <a name="ref_Policy"></a>
+	 <h2>Encouraged and discouraged types</h2>
+	 
+	 <p>
+	 For the sake of code portability and for better compatibility with
+	 the third-party and system libraries, one should follow the following
+	 set of rules:
+	 <ul>
+		<li> Use standard C/C++ integer types
+		<i> "char", "signed char", "unsigned char",
+		  "short", "unsigned short", "int", "unsigned int"</i>
+		in <b>any</b> case when the assumptions made for them in
+		<a href="#ref_TableIntStd">Table 1</a>
+		are enough to fit this case requirements.
+		<li> It is not recommended to use <i>"long"</i> type unless it is
+		absolutely necessary(e.g. in the lower-level or third-party
+		code);  and even if you have to -- try to localize the
+		<i>"long"</i> as much as possible.
+		<li> The same(as for <i>"long"</i>) is for the fixed-size types
+		enlisted in <a href="#ref_TableIntFixed">Table 3</a>. -- If you
+		<b>have to</b> use these in your code, try to keep them inside
+		your modules and avoid mixing them with standard C/C++ types
+		(as in assignments, function arg-by-value passing and in arithmetic
+		expressions) as much as possible.
+		<li> For the policy on other types see in sections
+		<a href="#ref_Aux">"Auxiliary types"</a>
+		and <a href="#ref_Float">"Floating point types"</a>.
+	 </ul>
 
 	 <br></br>
 	 <hr>
