@@ -154,10 +154,10 @@ bool CSeqDB::CheckOrFindOID(TOID & oid) const
 CSeqDB::EOidListType
 CSeqDB::GetNextOIDChunk(TOID         & begin,
                         TOID         & end,
-                        vector<TOID> & list,
+                        vector<TOID> & lst,
                         Uint4        * state)
 {
-    return m_Impl->GetNextOIDChunk(begin, end, list, state);
+    return m_Impl->GetNextOIDChunk(begin, end, lst, state);
 }
 
 const string & CSeqDB::GetDBNameList(void) const
