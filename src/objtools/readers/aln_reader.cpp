@@ -29,8 +29,8 @@
  *
  */
 
+#include <objtools/readers/aln_reader.hpp>
 #include <util/creaders/alnread.h>
-#include <util/creaders/aln_reader.hpp>
 
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -309,6 +309,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/19 18:38:13  ucko
+ * Update path to aln_reader.hpp.
+ *
  * Revision 1.1  2004/02/19 16:54:59  todorov
  * File moved from util/creaders and renamed to aln_reader
  *
