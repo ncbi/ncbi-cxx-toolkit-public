@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/05/02 18:40:25  thiessen
+* do BLAST/PSSM for debug builds only, for testing
+*
 * Revision 1.6  2002/03/28 14:06:02  thiessen
 * preliminary BLAST/PSSM ; new CD startup style
 *
@@ -231,7 +234,6 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const Sequence *master,
         (*seqs)[1] = *s;
         BlockMultipleAlignment *newAlignment =
             new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager);
-        TESTMSG("sizeof BlockMultipleAlignment : " << sizeof(BlockMultipleAlignment));
 
         // process the result
         if (!salp) {
@@ -239,9 +241,11 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const Sequence *master,
         } else {
 
             // convert C SeqAlign to C++ for convenience
-//            AsnIoPtr aip = AsnIoOpen("seqalign.txt", "w");
-//            SeqAlignAsnWrite(salp, aip, NULL);
-//            AsnIoFree(aip, true);
+#ifdef _DEBUG
+            AsnIoPtr aip = AsnIoOpen("seqalign.txt", "w");
+            SeqAlignAsnWrite(salp, aip, NULL);
+            AsnIoFree(aip, true);
+#endif
             CSeq_align sa;
             bool okay = ConvertAsnFromCToCPP(salp, (AsnWriteFunc) SeqAlignAsnWrite, &sa, &err);
             SeqAlignFree(salp);

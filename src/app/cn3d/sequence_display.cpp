@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2002/05/02 18:40:25  thiessen
+* do BLAST/PSSM for debug builds only, for testing
+*
 * Revision 1.47  2002/04/26 19:01:00  thiessen
 * fix display delete bug
 *
@@ -701,11 +704,13 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
             }
 
             // BLAST/PSSM single
-//            if (updateWindow->DoBlastPSSMSingle()) {
-//                updateWindow->updateViewer->BlastUpdate(alignment, true);
-//                if (!controlDown) updateWindow->BlastPSSMSingleOff();
-//                return false;
-//            }
+#ifdef _DEBUG
+            if (updateWindow->DoBlastPSSMSingle()) {
+                updateWindow->updateViewer->BlastUpdate(alignment, true);
+                if (!controlDown) updateWindow->BlastPSSMSingleOff();
+                return false;
+            }
+#endif
 
             // merge single
             if (updateWindow->DoMergeSingle()) {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/05/02 18:40:25  thiessen
+* do BLAST/PSSM for debug builds only, for testing
+*
 * Revision 1.21  2002/04/27 16:32:16  thiessen
 * fix small leaks/bugs found by BoundsChecker
 *
@@ -138,7 +141,9 @@ private:
         MID_THREAD_ONE,
         MID_THREAD_ALL,
         MID_BLAST_ONE,
-//        MID_BLAST_PSSM_ONE,
+#ifdef _DEBUG
+        MID_BLAST_PSSM_ONE,
+#endif
         MID_MERGE_ONE,
         MID_MERGE_ALL,
         MID_DELETE_ONE,
@@ -163,11 +168,13 @@ private:
         menuBar->Check(MID_BLAST_ONE, false);
         SetCursor(wxNullCursor);
     }
-//    void BlastPSSMSingleOff(void)
-//    {
-//        menuBar->Check(MID_BLAST_PSSM_ONE, false);
-//        SetCursor(wxNullCursor);
-//    }
+#ifdef _DEBUG
+    void BlastPSSMSingleOff(void)
+    {
+        menuBar->Check(MID_BLAST_PSSM_ONE, false);
+        SetCursor(wxNullCursor);
+    }
+#endif
     void MergeSingleOff(void)
     {
         menuBar->Check(MID_MERGE_ONE, false);
@@ -189,7 +196,9 @@ private:
 public:
     bool DoThreadSingle(void) const { return menuBar->IsChecked(MID_THREAD_ONE); }
     bool DoBlastSingle(void) const { return menuBar->IsChecked(MID_BLAST_ONE); }
-//    bool DoBlastPSSMSingle(void) const { return menuBar->IsChecked(MID_BLAST_PSSM_ONE); }
+#ifdef _DEBUG
+    bool DoBlastPSSMSingle(void) const { return menuBar->IsChecked(MID_BLAST_PSSM_ONE); }
+#endif
     bool DoMergeSingle(void) const { return menuBar->IsChecked(MID_MERGE_ONE); }
     bool DoDeleteSingle(void) const { return menuBar->IsChecked(MID_DELETE_ONE); }
 
@@ -197,7 +206,9 @@ public:
     {
         if (DoThreadSingle()) ThreadSingleOff();
         if (DoBlastSingle()) BlastSingleOff();
-//        if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
+#ifdef _DEBUG
+        if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
+#endif
         if (DoDeleteSingle()) DeleteSingleOff();
         if (DoMergeSingle()) MergeSingleOff();
     }
