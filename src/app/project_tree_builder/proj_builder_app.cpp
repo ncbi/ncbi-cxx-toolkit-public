@@ -56,6 +56,19 @@ struct PIsExcludedByMakefile
     }
 };
 
+struct PIsExcludedByRequires
+{
+    bool operator() (const pair<string, CProjItem>& item) const
+    {
+        const CProjItem& project = item.second;
+        CMsvcPrjProjectContext prj_context(project);
+        if ( CMsvcPrjProjectContext::IsRequiresOk(project) )
+            return false;
+
+        return true;
+    }
+};
+
 
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
@@ -113,8 +126,11 @@ int CProjBulderApp::Run(void)
 
     // MSVC specific part:
     
-    // Exclude some projects from build.
+    // Exclude some projects from build:
+    // Implicit/Exclicit exclude by msvc makefiles.
     EraseIf(projects_tree.m_Projects, PIsExcludedByMakefile());
+    // Project requires are not provided
+    EraseIf(projects_tree.m_Projects, PIsExcludedByRequires());
 
     // Projects
     CMsvcProjectGenerator prj_gen(GetRegSettings().m_ConfigInfo);
@@ -345,6 +361,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/01/29 15:45:13  gorelenk
+ * Added support of project tree filtering
+ *
  * Revision 1.7  2004/01/28 17:55:50  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,
