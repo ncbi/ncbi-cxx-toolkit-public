@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 //
 //  
 //
-class CVariantException : public exception 
+class CVariantException : public std::exception 
 {
 
 public:
@@ -234,6 +234,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.13  2003/08/01 20:33:02  vakatov
+ * Explicitly qualify "exception" with "std::" to avoid a silly name conflict
+ * with <math.h> for SUN Forte6u2 compiler
+ *
  * Revision 1.12  2003/06/25 22:24:46  kholodov
  * Added: GetBlobSize() method
  *

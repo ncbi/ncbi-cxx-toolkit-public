@@ -54,7 +54,7 @@ enum EDB_Severity {
 
 
 
-class NCBI_DBAPIDRIVER_EXPORT CDB_Exception : public exception
+class NCBI_DBAPIDRIVER_EXPORT CDB_Exception : public std::exception
 {
 public:
     // exception type
@@ -308,6 +308,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/08/01 20:33:03  vakatov
+ * Explicitly qualify "exception" with "std::" to avoid a silly name conflict
+ * with <math.h> for SUN Forte6u2 compiler
+ *
  * Revision 1.14  2003/04/11 17:46:05  siyan
  * Added doxygen support
  *
