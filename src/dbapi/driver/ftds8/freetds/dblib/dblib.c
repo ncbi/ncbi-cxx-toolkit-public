@@ -2031,7 +2031,7 @@ TDSSOCKET *tds;
 
 		do {
 			marker = tds_get_byte(tds);
-			if(marker == 0 && tds->s == 0) return FAIL;
+			if(tds->s == 0) return FAIL;
 			tds_process_default_tokens(tds, marker);
 		} while (marker!=TDS_DONE_TOKEN);
 
@@ -2060,6 +2060,9 @@ TDSSOCKET *tds;
 				rc=FAIL;
 			}
 		}
+#ifdef NCBI_FTDS
+		if(tds->s == 0) return FAIL;
+#endif
 	} while (!is_hard_end_token(marker) && !is_result_token(marker));
 
 	/* clean up */
@@ -2069,6 +2072,9 @@ TDSSOCKET *tds;
 			if (tds_process_default_tokens(tds, marker)!=TDS_SUCCEED) {
 				return FAIL;
 			}
+#ifdef NCBI_FTDS
+			if(tds->s == 0) return FAIL;
+#endif
 		} while (marker!=TDS_DONE_TOKEN);
 	}
 	return rc;
