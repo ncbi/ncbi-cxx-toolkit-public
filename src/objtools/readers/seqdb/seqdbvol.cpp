@@ -886,7 +886,7 @@ CSeqDBVol::x_GetAsnDefline(Uint4            oid,
         uobj->SetData().push_back(uf);
         
         asndef = new CSeqdesc;
-        asndef->SetUser(*uobj); // or something.
+        asndef->SetUser(*uobj);
     }
     
     return asndef;
@@ -1214,11 +1214,15 @@ Int4 CSeqDBVol::x_GetSequence(Int4             oid,
     return length;
 }
 
-list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(Uint4 oid, CSeqDBLockHold & locked) const
+list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(Uint4            oid,
+                                           bool             have_oidlist,
+                                           Uint4            membership_bit,
+                                           CSeqDBLockHold & locked) const
 {
     list< CRef< CSeq_id > > seqids;
     
-    CRef<CBlast_def_line_set> defline_set(x_GetHdrAsn1(oid, locked));
+    CRef<CBlast_def_line_set> defline_set =
+        x_GetHdrMembBit(oid, have_oidlist, membership_bit, locked);
     
     if ((! defline_set.Empty()) && defline_set->CanGet()) {
         ITERATE(list< CRef<CBlast_def_line> >, defline, defline_set->Get()) {

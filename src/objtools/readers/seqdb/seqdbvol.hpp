@@ -241,11 +241,18 @@ public:
     /// 
     /// @param oid
     ///   The OID of the sequence
+    /// @param have_oidlist
+    ///   True if the database is filtered.
+    /// @param membership_bit
+    ///   Membership bit to filter deflines.
     /// @param locked
     ///   The lock holder object for this thread
     /// @return
     ///   The list of Seq-id objects for this sequences.
-    list< CRef<CSeq_id> > GetSeqIDs(Uint4 oid, CSeqDBLockHold & locked) const;
+    list< CRef<CSeq_id> > GetSeqIDs(Uint4            oid,
+                                    bool             have_oidlist,
+                                    Uint4            membership_bit,
+                                    CSeqDBLockHold & locked) const;
     
     /// Get the volume title
     string GetTitle() const;
@@ -411,8 +418,8 @@ private:
     /// 
     /// @param oid
     ///   The OID of the sequence
-    /// @return
-    ///   The binary asn.1 of the Blast-def-line-set.
+    /// @param hdr_data
+    ///   The returned binary ASN.1 of the Blast-def-line-set.
     /// @param locked
     ///   The lock holder object for this thread
     void x_GetHdrBinary(Uint4            oid,
@@ -425,11 +432,15 @@ private:
     /// encoded ASN.1) into a supplied char vector.
     /// 
     /// @param oid
-    ///   The OID of the sequence
-    /// @return
-    ///   The binary asn.1 of the Blast-def-line-set.
+    ///   The OID of the sequence.
+    /// @param hdr_data
+    ///   The returned binary ASN.1 of the Blast-def-line-set.
+    /// @param have_oidlist
+    ///   True if the database is filtered.
+    /// @param membership_bit
+    ///   Membership bit to filter deflines.
     /// @param locked
-    ///   The lock holder object for this thread
+    ///   The lock holder object for this thread.
     void
     x_GetHdrBinaryMembBit(Uint4            oid,
                           vector<char>   & hdr_data,
@@ -461,11 +472,29 @@ private:
                     Uint4            membership_bit,
                     CSeqDBLockHold & locked) const;
     
+    /// Get sequence header information structures
+    /// 
+    /// This method reads the sequence header information and returns
+    /// a Seqdesc suitable for inclusion in a CBioseq.  This object
+    /// will contain an opaque type, storing the sequence headers as
+    /// binary ASN.1, wrapped in a C++ ASN.1 structure (CSeqdesc).
+    /// 
+    /// @param oid
+    ///   The OID of the sequence.
+    /// @param have_oidlist
+    ///   True if the database is filtered.
+    /// @param membership_bit
+    ///   Membership bit to filter deflines.
+    /// @param locked
+    ///   The lock holder object for this thread.
+    /// @return
+    ///   The CSeqdesc to include in the CBioseq.
     CRef<CSeqdesc> x_GetAsnDefline(Uint4            oid,
                                    bool             have_oidlist,
                                    Uint4            membership_bit,
                                    CSeqDBLockHold & locked) const;
     
+    /// Returns 'p' for protein databases, or 'n' for nucleotide.
     char   x_GetSeqType() const;
     
     bool   x_GetAmbChar(Uint4            oid,

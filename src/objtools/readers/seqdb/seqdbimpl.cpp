@@ -344,8 +344,15 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(Uint4 oid) const
     CSeqDBLockHold locked(m_Atlas);
     Uint4 vol_oid = 0;
     
+    if (! m_OidListSetup) {
+        x_GetOidList(locked);
+    }
+    
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetSeqIDs(vol_oid, locked);
+        bool have_oidlist = m_OIDList.NotEmpty();
+        Uint4 memb_bit    = m_Aliases.GetMembBit(m_VolSet);
+        
+        return vol->GetSeqIDs(vol_oid, have_oidlist, memb_bit, locked);
     }
     
     NCBI_THROW(CSeqDBException,
