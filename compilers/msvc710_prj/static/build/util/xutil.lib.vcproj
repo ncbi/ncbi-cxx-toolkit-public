@@ -121,8 +121,11 @@
       <File RelativePath="..\..\..\..\include\util\bytesrc.hpp"></File>
       <File RelativePath="..\..\..\..\include\util\checksum.hpp"></File>
       <File RelativePath="..\..\..\..\include\util\ddump_viewer.hpp"></File>
+      <File RelativePath="..\..\..\..\include\util\event.hpp"></File>
       <File RelativePath="..\..\..\..\include\util\file_obsolete.hpp"></File>
       <File RelativePath="..\..\..\..\include\util\format_guess.hpp"></File>
+      <File RelativePath="..\..\..\..\include\util\ievent_receiver.hpp"></File>
+      <File RelativePath="..\..\..\..\include\util\ievent_transmitter.hpp"></File>
       <File RelativePath="..\..\..\..\include\util\itree.hpp"></File>
       <File RelativePath="..\..\..\..\include\util\lightstr.hpp"></File>
       <File RelativePath="..\..\..\..\include\util\linkedset.hpp"></File>
