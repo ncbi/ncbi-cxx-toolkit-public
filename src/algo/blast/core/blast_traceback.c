@@ -838,16 +838,29 @@ Int2 BLAST_ComputeTraceback(BlastResultsPtr results,
       subject_id = SeqIdDup(subject->seqid);
    }
    
-   if (gap_align->program == blast_type_blastn) {
+   switch (gap_align->program) {
+   case blast_type_blastn:
       num_frames = 2;
       encoding = BLASTNA_ENCODING;
-   } else if (gap_align->program == blast_type_blastx || 
-              gap_align->program == blast_type_tblastx) {
+      break;
+   case blast_type_blastp:
+      num_frames = 1;
+      encoding = BLASTP_ENCODING;
+      break;
+   case blast_type_blastx:
       num_frames = 6;
       encoding = BLASTP_ENCODING;
-   } else {
+      break;
+   case blast_type_tblastn:
       num_frames = 1;
       encoding = NCBI4NA_ENCODING;
+      break;
+   case blast_type_tblastx:
+      num_frames = 6;
+      encoding = NCBI4NA_ENCODING;
+      break;
+   default:
+      break;
    }
 
    for (query_index = 0; query_index < results->num_queries; ++query_index) {
