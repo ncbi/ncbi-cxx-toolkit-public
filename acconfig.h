@@ -63,3 +63,6 @@
 
 /* There is no "std::char_traits" type defined */
 #undef HAVE_NO_CHAR_TRAITS
+
+/* Make it Multi-Thread safe */
+#undef NCBI_MT
