@@ -96,7 +96,7 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
 
     ///protein matrix define
     enum {
-        kPMatrixSize = 23       // number of amino acid for matrix
+        ePMatrixSize = 23       // number of amino acid for matrix
     };
 
     ///option for alignment display
@@ -175,7 +175,7 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
                      CScope & scope,
                      list < SeqlocInfo * >* mask_seqloc = NULL,
                      list < FeatureInfo * >* external_feature = NULL,
-                     const int matrix[][kPMatrixSize] = NULL);
+                     const int matrix[][ePMatrixSize] = NULL);
     
     /// Destructor
     ~CDisplaySeqalign();
@@ -550,6 +550,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.27  2005/03/14 15:50:12  jianye
+*minor naming change
+*
 *Revision 1.26  2005/03/02 18:21:17  jianye
 *some style fix
 *
