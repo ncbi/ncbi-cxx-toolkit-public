@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/11/14 20:47:22  gouriano
+* modified constructor to use CClassTypeInfoBase,
+* added Attlist and Notag flags
+*
 * Revision 1.21  2002/09/25 19:38:25  gouriano
 * added the possibility of having no tag prefix in XML I/O streams
 *
@@ -141,7 +145,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CClassTypeInfo;
+class CClassTypeInfoBase;
 
 class CObjectIStream;
 class CObjectOStream;
@@ -164,20 +168,22 @@ public:
     typedef TObjectPtr (*TMemberGet)(const CMemberInfo* memberInfo,
                                      TObjectPtr classPtr);
 
-    CMemberInfo(const CClassTypeInfo* classType, const CMemberId& id,
+    CMemberInfo(const CClassTypeInfoBase* classType, const CMemberId& id,
                 TPointerOffsetType offset, const CTypeRef& type);
-    CMemberInfo(const CClassTypeInfo* classType, const CMemberId& id,
+    CMemberInfo(const CClassTypeInfoBase* classType, const CMemberId& id,
                 TPointerOffsetType offset, TTypeInfo type);
-    CMemberInfo(const CClassTypeInfo* classType, const char* id,
+    CMemberInfo(const CClassTypeInfoBase* classType, const char* id,
                 TPointerOffsetType offset, const CTypeRef& type);
-    CMemberInfo(const CClassTypeInfo* classType, const char* id,
+    CMemberInfo(const CClassTypeInfoBase* classType, const char* id,
                 TPointerOffsetType offset, TTypeInfo type);
 
-    const CClassTypeInfo* GetClassType(void) const;
+    const CClassTypeInfoBase* GetClassType(void) const;
 
     bool Optional(void) const;
     CMemberInfo* SetOptional(void);
     CMemberInfo* SetNoPrefix(void);
+    CMemberInfo* SetAttlist(void);
+    CMemberInfo* SetNotag(void);
 
     TConstObjectPtr GetDefault(void) const;
     CMemberInfo* SetDefault(TConstObjectPtr def);
@@ -246,7 +252,7 @@ private:
     TObjectPtr CreateClass(void) const;
 
     // containing class type info
-    const CClassTypeInfo* m_ClassType;
+    const CClassTypeInfoBase* m_ClassType;
     // is optional
     bool m_Optional;
     // default value
