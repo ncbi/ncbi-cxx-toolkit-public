@@ -35,14 +35,11 @@
 #include "mm_aligner_threads.hpp"
 
 #include <corelib/ncbimtx.hpp>
-#include <corelib/ncbi_system.hpp>
 #include <algo/align/align_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 
-CMMAligner::CMMAligner():
-    m_mt(false),
-    m_maxthreads(1)
+CMMAligner::CMMAligner()
 {
 }
 
@@ -50,16 +47,8 @@ CMMAligner::CMMAligner():
 CMMAligner::CMMAligner( const char* seq1, size_t len1,
                         const char* seq2, size_t len2,
                         const SNCBIPackedScoreMatrix* scoremat )
-  : CNWAligner(seq1, len1, seq2, len2, scoremat),
-    m_mt(false),
-    m_maxthreads(1)
+  : CNWAligner(seq1, len1, seq2, len2, scoremat)
 {
-}
-
-
-void CMMAligner::EnableMultipleThreads(bool allow)
-{
-    m_maxthreads = (m_mt = allow)? GetCpuCount(): 1;
 }
 
 
@@ -949,6 +938,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/06/29 20:53:04  kapustin
+ * Move EnableMultipleThread() and associated members to CNWAligner
+ *
  * Revision 1.20  2004/05/21 21:41:01  gorelenk
  * Added PCH ncbi_pch.hpp
  *
