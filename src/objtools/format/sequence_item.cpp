@@ -99,7 +99,7 @@ bool CSequenceItem::IsFirst(void) const
 
 void CSequenceItem::x_GatherInfo(CBioseqContext& ctx)
 {
-    x_SetObject(*ctx.GetHandle().GetCompleteBioseq());
+    x_SetObject(*ctx.GetHandle().GetBioseqCore());
 
     const CSeq_loc& loc = ctx.GetLocation();
     TSeqPos offset = loc.GetStart();
@@ -132,6 +132,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/11/19 15:15:16  shomrat
+* Do not force fetching the complete bioseq
+*
 * Revision 1.8  2004/09/01 15:33:44  grichenk
 * Check strand in GetStart and GetEnd. Circular length argument
 * made optional.
