@@ -190,12 +190,22 @@ AC_PROG_CXX
 
 #### Detect KCC compiler
 if test "$GCC" != "yes" ; then
-   touch kcc_test.c
-   kcc_ver="`$CXX -V -c kcc_test.c 2>&1 | grep '^KAI '`"
-   kcc_license="`$CXX -V -c kcc_test.c 2>&1 | grep -v '^KAI '`"
-   rm -f kcc_test.c kcc_test.o
+   touch kcc_test.cpp
+   kcc_ver="`$CXX -V -c kcc_test.cpp 2>&1 | grep '^KAI '`"
+   kcc_license="`$CXX -V -c kcc_test.cpp 2>&1 | grep -v '^KAI '`"
+   rm -f kcc_test.cpp kcc_test.o
    case "$kcc_ver" in 
       KAI* )  KCC="yes" ;;
+   esac
+fi
+
+
+#### Detect ICC compiler
+if test "$GCC" != "yes"  -a  "$KCC" != "yes"; then
+   icc_ver="`$CXX -V 2>&1 | grep '^Intel(R) C++ Compiler'`"
+   icc_license="`$CXX -c 2>&1 | grep '^icc: NOTE: The evaluation period for this product ends on '`"
+   case "$icc_ver" in 
+      Intel*C*Compiler* )  ICC="yes" ;;
    esac
 fi
 
@@ -220,6 +230,11 @@ elif test "$KCC" = "yes" ; then
    compiler="KCC"
    ncbi_compiler="KCC"
    ncbi_compiler_ver="`echo $kcc_ver | sed 's%KAI C\+\+ \([0-9.]*\).*%\1%'`"
+elif test "$ICC" = "yes" ; then
+   compiler_ver="$icc_ver"
+   compiler="ICC"
+   ncbi_compiler="ICC"
+   ncbi_compiler_ver="`echo $icc_ver | sed 's%.*Version \([0-9.]*\).*%\1%'`"
 else
    case "$host_os" in
     solaris* )
@@ -502,7 +517,8 @@ if test -z "$CFLAGS_DLL"  -a  -z "$CXXFLAGS_DLL" ; then
       CFLAGS_DLL="-fPIC"
       CXXFLAGS_DLL="-fPIC"
       ;;
-    solaris*:WorkShop* | irix*:MIPSpro73 | solaris*:KCC | irix*:KCC)
+    solaris*:WorkShop* | irix*:MIPSpro73 | \
+    solaris*:KCC | irix*:KCC | linux*:ICC)
       CFLAGS_DLL="-KPIC"
       CXXFLAGS_DLL="-KPIC"
       ;;
@@ -524,7 +540,7 @@ if test "$with_runpath" != "no" ; then
     linux*:GCC )
       CONF_f_runpath="-Xlinker -rpath "
       ;;
-    irix*:* | linux*:KCC )
+    irix*:* | linux*:KCC | linux:ICC )
       CONF_f_runpath="-rpath "
       ;;
    esac
@@ -540,7 +556,7 @@ fi
 LIB_OR_DLL="lib"
 if test "$with_dll" = "yes" ; then
    case "$host_os:$compiler" in
-    linux*:GCC | irix*:* | solaris*:WorkShop* | *:KCC)
+    linux*:GCC | irix*:* | solaris*:WorkShop* | *:KCC | linux*:ICC)
       ;;
     * )
       echo
@@ -565,7 +581,7 @@ fi
 
 # Linker command-line to build DLL
 case "$compiler" in
- GCC | MIPSpro73 )
+ GCC | MIPSpro73 | ICC )
    LINK_DLL="$CXX $ARCH_CFLAGS -shared -o"
    ;;
  WorkShop* )
@@ -605,6 +621,17 @@ if test "$compiler" = "KCC" ; then
       kcc_CXX="$CXX"
       CC="./compilers/cxx_filter.KCC.sh $CC"
       CXX="./compilers/cxx_filter.KCC.sh $CXX"
+   fi
+fi
+
+
+#### Intel compiler::  common flags and definitions
+if test "$compiler" = "ICC" ; then
+   if test -n "$icc_license" ; then
+      icc_CC="$CC"
+      icc_CXX="$CXX"
+      CC="./compilers/cxx_filter.ICC.sh $CC"
+      CXX="./compilers/cxx_filter.ICC.sh $CXX"
    fi
 fi
 
@@ -1202,11 +1229,10 @@ if test "$with_wxwin" != "no" ; then
       WXWIN_PATH="$NCBI/wxwin"
       if test -z "$WXWIN_LIBPATH" ; then
          WXWIN_LIBPATH="$WXWIN_PATH/"
-         if test "$compiler" = "GCC" ; then
-            WXWIN_LIBPATH="${WXWIN_LIBPATH}GCC-"
-         elif test "$compiler" = "KCC" ; then
-            WXWIN_LIBPATH="${WXWIN_LIBPATH}KCC-"
-         fi
+         case "$compiler" in
+           GCC | KCC | ICC )
+             WXWIN_LIBPATH="${WXWIN_LIBPATH}${compiler}-" ;;
+         esac
          if test "$with_debug" = "no" ; then
             WXWIN_LIBPATH="${WXWIN_LIBPATH}Release"
             WXWIN_GTK="wx_gtk"
@@ -1311,6 +1337,8 @@ else
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}GNU"
       elif test "$compiler" = "KCC" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}KAI"
+      elif test "$compiler" = "ICC" ; then
+         NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}ICC"
       fi
       if test -n "$bit64_sfx" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}64"
@@ -1543,6 +1571,13 @@ if test "$KCC" = "yes"  -a  -n "$kcc_license" ; then
    CC="$kcc_CC"
    CXXCPP="$kcc_CXX -E"
    CXX="$kcc_CXX"
+fi
+
+### Get rid of the ICC "anti-license-warning" filter
+if test "$ICC" = "yes"  -a  -n "$icc_license" ; then
+   CC="$icc_CC"
+   CXXCPP="$icc_CXX -E"
+   CXX="$icc_CXX"
 fi
 
 
