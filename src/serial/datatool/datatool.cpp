@@ -365,8 +365,14 @@ bool CDataTool::GenerateCode(void)
         return true;
 
     // set the export specifier, if provided
-    if ( const CArgValue& oex = args["oex"] )
-        CClassCode::SetExportSpecifier(oex.AsString());
+    if ( const CArgValue& oex = args["oex"] ) {
+        string ex;
+        ex = generator.GetConfig().Get("-","_export");
+        if (ex.empty()) {
+            ex = oex.AsString();
+        }
+        CClassCode::SetExportSpecifier(ex);
+    }
 
     // prepare generator
     
@@ -454,6 +460,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2002/12/31 20:14:24  gouriano
+* corrected usage of export specifiers when generating C++ classes
+*
 * Revision 1.57  2002/12/23 18:40:07  dicuccio
 * Added new command-line option: -oex <export-specifier> for adding WIn32 export
 * specifiers to generated objects.

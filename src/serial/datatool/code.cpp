@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2002/12/31 20:14:24  gouriano
+* corrected usage of export specifiers when generating C++ classes
+*
 * Revision 1.37  2002/12/23 18:40:07  dicuccio
 * Added new command-line option: -oex <export-specifier> for adding WIn32 export
 * specifiers to generated objects.
@@ -143,11 +146,13 @@ CClassCode::~CClassCode(void)
 void CClassCode::SetExportSpecifier(const string& str)
 {
     sm_ExportSpecifier = str;
+/*
     int pos;
     while ( (pos = sm_ExportSpecifier.find_first_of(" !@#$%^&*()")) !=
         string::npos) {
         sm_ExportSpecifier.erase (pos, 1);
     }
+*/
 }
 
 const string& CClassCode::GetExportSpecifier(void)
