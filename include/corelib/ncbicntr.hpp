@@ -143,6 +143,24 @@ private:
 };
 
 
+// Mutable version of atomic counter
+class CMutableAtomicCounter
+{
+public:
+    typedef CAtomicCounter::TValue TValue;
+
+    TValue Get(void) const THROWS_NONE
+        { return m_Counter.Get(); }
+    void   Set(TValue new_value) const THROWS_NONE
+        { m_Counter.Set(new_value); }
+    TValue Add(int delta) const THROWS_NONE
+        { return m_Counter.Add(delta); }
+
+private:
+    mutable CAtomicCounter m_Counter;
+};
+
+
 //////////////////////////////////////////////////////////////////////
 // 
 // Inline methods
@@ -277,6 +295,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2002/05/31 17:48:56  grichenk
+* +CMutableAtomicCounter
+*
 * Revision 1.4  2002/05/24 18:43:34  ucko
 * Use trivial implementation for single-threaded builds.
 *
