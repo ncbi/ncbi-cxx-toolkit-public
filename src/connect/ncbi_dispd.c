@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/12/29 18:05:46  lavr
+ * First working revision.
+ *
  * Revision 6.5  2000/10/20 17:36:05  lavr
  * Partially working dispd dispatcher client (service mapping works)
  * Checkin for backup purposes; working code '#if 0'-ed out
@@ -52,18 +55,12 @@
  */
 
 #include "ncbi_servicep_dispd.h"
+#include <connect/ncbi_ansi_ext.h>
+#include <connect/ncbi_connection.h>
+#include <connect/ncbi_http_connector.h>
 #include <stdlib.h>
 #include <string.h>
 
-#if 1
-
-const SSERV_VTable *SERV_DISPD_Open(SERV_ITER iter,
-                                    const SConnNetInfo *net_info)
-{
-    return 0;
-}
-
-#else
 
 #ifdef __cplusplus
 extern "C" {
@@ -84,7 +81,8 @@ typedef struct SDISPD_DataTag {
     SConnNetInfo* net_info;
     SSERV_Info**  s_info;
     size_t        n_info;
-    size_t        n_max_info;  
+    size_t        n_max_info;
+    int/*bool*/   pending;
 } SDISPD_Data;
 
 
@@ -94,7 +92,7 @@ static void s_FreeData(SDISPD_Data *data)
         return;
 
     if (data->net_info)
-        ConnNetInfo_Destroy(&(data->net_info));
+        ConnNetInfo_Destroy(data->net_info);
 
     if (data->s_info) {
         size_t i;
@@ -107,6 +105,10 @@ static void s_FreeData(SDISPD_Data *data)
     free(data);
 }
 
+
+/***********************************************************************
+ *  EXTERNAL
+ ***********************************************************************/
 
 static int/*bool*/ s_AddServerInfo(SDISPD_Data *data, SSERV_Info *info)
 {
@@ -130,101 +132,88 @@ static int/*bool*/ s_AddServerInfo(SDISPD_Data *data, SSERV_Info *info)
 }
 
 
+#ifdef __cplusplus
+extern "C" {
+    static int s_ParseHeader(const char *, void *, int);
+}
+#endif /* __cplusplus */
+
+static int/*bool*/ s_ParseHeader(const char* header, void *data,
+                          int/*bool*/ server_error)
+{
+    SERV_ITER iter = (SERV_ITER) data;
+
+    if (!server_error && header)
+        s_Update(iter, header);
+    return 1;
+}
+
+
 static int/*bool*/ s_Resolve(SERV_ITER iter)
 {
-    const static char client_mode[] = "Client-Mode: DISPATCH_ONLY\r\n";
-    const static char accepted_types[] = "Accepted-Server-Types:";
-    const static char service[] = "service=";
+    static const char service[] = "service=";
+    static const char stateless_only[] = "Client-Mode: STATELESS_ONLY\r\n";
+    static const char stateful_capable[] = "Client-Mode: STATEFUL_CAPABLE\r\n";
     SConnNetInfo *net_info = ((SDISPD_Data *)iter->data)->net_info;
-    TSERV_Type type = (iter->type & ~fSERV_StatelessOnly), t;
-    char service_arg[128];
-    char buffer[128];
     size_t buflen;
-    SOCK s;
-    int/*bool*/ server_error = 0/*false*/;
-    EIO_Status  status;
-    BUF         buf = 0;
-    
+    CONNECTOR c;
+    BUF buf = 0;
+    CONN conn;
+    char *s;
+
     /* Form service name argument (as CGI argument) */
-    if (strlen(iter->service) + sizeof(service) > sizeof(service_arg))
+    if (strlen(iter->service) + sizeof(service) > sizeof(net_info->args))
         return 0/*failed*/;
-    strcpy(service_arg, service);
-    strcat(service_arg, iter->service);
-    /* Form accepted server types (as customized header) */
-    strcpy(buffer, accepted_types);
-    buflen = sizeof(accepted_types) - 1;
-    for (t = 1; t; t <<= 1) {
-        if (type & t) {
-            const char *name = SERV_TypeStr(t);
-            size_t namelen = strlen(name);
-            
-            if (namelen) {
-                if (buflen + namelen < sizeof(buffer) - 1) {
-                    buffer[buflen++] = ' ';
-                    strcpy(&buffer[buflen], name);
-                    buflen += namelen;
-                }
-            } else
-                break;
+    strcpy(net_info->args, service);
+    strcat(net_info->args, iter->service);
+    /* Reset request method to be GET (as no body will follow) */
+    net_info->req_method = eReqMethodGet;
+    /* Obtain additional header information */
+    s = SERV_Print(iter);
+    if (s) {
+        int status = BUF_Write(&buf, s, strlen(s));
+        free(s);
+        if (!status) {
+            BUF_Destroy(buf);
+            return 0/*failure*/;
         }
     }
-    assert(buflen < sizeof(buffer));
-    if (buffer[buflen - 1] != ':' && buflen < sizeof(buffer) - 2)
-        strcpy(&buffer[buflen - 1], "\r\n");
-    else
-        buffer[0] = '\0';
-    /* Append customized header with client mode information */
-    buflen = strlen(buffer);
-    assert(buflen < sizeof(buffer));
-    if (buflen + sizeof(client_mode)-1 < sizeof(buffer))
-        strcpy(&buffer[buflen], client_mode);
-
-    /* Now connect to the mapper with everything above */
-    if (!(s = URL_Connect(net_info->host, net_info->port,
-                          net_info->path, service_arg,
-                          eReqMethodGet, 0/* request_length */,
-                          &net_info->timeout, &net_info->timeout,
-                          *buffer ? buffer : 0, 0/*no arg encoding*/))) {
-        return 0/* failed */;
+    if (!BUF_Write(&buf, iter->type & fSERV_StatelessOnly
+                   ? stateless_only : stateful_capable,
+                   iter->type & fSERV_StatelessOnly
+                   ? sizeof(stateless_only)-1 : sizeof(stateful_capable)-1)) {
+        BUF_Destroy(buf);
+        return 0/*failure*/;
     }
-
-    /* set timeout */
-    SOCK_SetTimeout(s, eIO_Read, &net_info->timeout);
-
-    /* check status (assume the reply status is in the first line) */
-    if ((status = SOCK_StripToPattern(s, "\r\n", 2, &buf, 0)) == eIO_Success) {
-        int http_v1, http_v2, http_status = 0;
-        buflen = BUF_Peek(buf, buffer, sizeof(buffer)-1);
-        assert(2 <= buflen   &&  buflen < sizeof(buffer));
-        buffer[buflen] = '\0';
-        if (sscanf(buffer, " HTTP/%d.%d %d ",
-                   &http_v1, &http_v2, &http_status) != 3  ||
-            http_status < 200  ||  299 < http_status)
-            server_error = 1/*true*/;
+    /* Now the entire user header is ready, take it out of the buffer */
+    buflen = BUF_Size(buf);
+    assert(buflen != 0);
+    if ((s = (char *)malloc(buflen + 1)) != 0) {
+        if (BUF_Read(buf, s, buflen) != buflen) {
+            free(s);
+            s = 0;
+        } else
+            s[buflen] = '\0';
     }
-
-    if (!server_error) {
-        /* Grab the entire HTTP header */
-        status = SOCK_StripToPattern(s, "\r\n\r\n", 4, &buf, 0);
-        if (status == eIO_Success) {
-            size_t header_size = BUF_Size(buf);
-            char *header = malloc(header_size + 1);
-
-            if ((header_size = BUF_Read(buf, header, header_size)) != 0) {
-                header[header_size] = '\0';
-                if (!s_Update(iter, header))
-                    status = eIO_Unknown;
-            }
-            free(header);
-        }
-    }
-
     BUF_Destroy(buf);
-
-    if (server_error || status != eIO_Success)
-        return 0/* fail */;
-
-    return 1/* success */;
+    if (!s)
+        return 0/*failure*/;
+    ConnNetInfo_SetUserHeader(net_info, s);
+    assert(strcmp(net_info->http_user_header, s) == 0);
+    free(s);
+    /* All the rest in the structure is fine with us */
+    if (!(c = HTTP_CreateConnectorEx(net_info, 0, s_ParseHeader,
+                                     0/*adj.info*/, iter/*data*/, 0)))
+        return 0/*failed*/;
+    if (CONN_Create(c, &conn) != eIO_Success)
+        return 0/*failed*/;
+    CONN_SetTimeout(conn, eIO_Open, &net_info->timeout);
+    CONN_SetTimeout(conn, eIO_ReadWrite, &net_info->timeout);
+    CONN_SetTimeout(conn, eIO_Close, &net_info->timeout);
+    /* This dummy read will send all the HTTP data, we'll get a callback */
+    CONN_Read(conn, 0, 0, &buflen, eIO_Plain);
+    CONN_Close(conn);
+    return ((SDISPD_Data*)(iter->data))->n_info != 0;
 }
 
 
@@ -233,10 +222,22 @@ const SSERV_VTable *SERV_DISPD_Open(SERV_ITER iter,
 {
     SDISPD_Data *data;
 
-    if (!(data = calloc(1, sizeof(*data))))
+    if (!(data = (SDISPD_Data *)calloc(1, sizeof(*data))))
         return 0;
     data->net_info = ConnNetInfo_Clone(net_info);
     iter->data = data;
+    /* Check the type, and make adjustements */
+    switch (data->net_info->client_mode) {
+    case eClientModeStatelessOnly:
+        iter->type |= fSERV_StatelessOnly;
+        break;
+    case eClientModeFirewall:
+        iter->type &= ~fSERV_Http;
+        /* fall thru */
+    case eClientModeStatefulCapable:
+        iter->type &= ~fSERV_StatelessOnly;
+        break;
+    }
 
     if (!s_Resolve(iter)) {
         iter->data = 0;
@@ -248,17 +249,12 @@ const SSERV_VTable *SERV_DISPD_Open(SERV_ITER iter,
 }
 
 
-static void s_Close(SERV_ITER iter)
-{
-    s_FreeData(iter->data);
-    iter->data = 0;
-}
-
-
 static int/*bool*/ s_Update(SERV_ITER iter, const char *text)
 {
     const char server_info[] = "Server-Info-";
-    char *buf = malloc(strlen(text) + 1);
+    SDISPD_Data* data = (SDISPD_Data *)iter->data;
+    char *buf = (char *)malloc(strlen(text) + 1);
+    time_t t = time(0);
     char *b = buf, *c;
     SSERV_Info *info;
     int n = 0;
@@ -279,34 +275,93 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char *text)
             break;
         if (!(info = SERV_ReadInfo(b + d2, 0)))
             break;
-        if (!s_AddServerInfo((SDISPD_Data *)iter->data, info))
+        info->time += t;        /* Set 'expiration time' */
+        if (!s_AddServerInfo(data, info))
             break;
         n++;
     }
     free(buf);
 
-    return n != 0;
+    if (n != 0) {
+        data->pending = 0;
+        return 1/*okay*/;
+    }
+    return 0;
+}
+
+
+static int/*bool*/ s_IsUpdateNeeded(SDISPD_Data *data)
+{
+    double status = 0.0, total = 0.0;
+    time_t t = time(0);
+    size_t i = 0;
+
+    while (i < data->n_info) {
+        SSERV_Info* info = data->s_info[i];
+
+        total += info->rate;
+        if (info->time < t) {
+            if (i < --data->n_info) {
+                memmove(data->s_info + i, data->s_info + i + 1,
+                        (data->n_info - i)*sizeof(*data->s_info));
+            }
+            free(info);
+        } else {
+            status += info->rate;
+            i++;
+        }
+    }
+    return total != 0.0 ? (status/total < SERV_DISPD_STALE_RATIO_OK) : 1;
 }
 
 
 static SSERV_Info* s_GetNextInfo(SERV_ITER iter)
 {
     SDISPD_Data *data = (SDISPD_Data *)iter->data;
-    SSERV_Info *info;
+    double status, point;
+    SSERV_Info* info = 0;
+    size_t i;
 
     if (!data)
         return 0;
 
-    if (!data->n_info && !s_Resolve(iter))
-        return 0;
+    if (s_IsUpdateNeeded(data)) {
+        if (!data->pending) {
+            data->pending = 1;
+            return 0;
+        }
+        if (!s_Resolve(iter))
+            return 0;
+        assert(data->pending == 0);
+    }
+    assert(data->n_info != 0);
+    
+    status = 0.0;
+    for (i = 0; i < data->n_info; i++) {
+        status += data->s_info[i]->rate;
+    }
+    
+    point = (status * rand()) / (double)RAND_MAX;
+    status = 0.0;
+    for (i = 0; i < data->n_info; i++) {
+        status += data->s_info[i]->rate;
+        if (point < status)
+            break;
+    }
+    assert(i < data->n_info);
 
-    assert(data->n_info > 0);
-
-    info = data->s_info[0];
-    memmove(&data->s_info[0], &data->s_info[1],
-            (--data->n_info)*sizeof(*data->s_info));
+    info = data->s_info[i];
+    if (i < --data->n_info) {
+        memmove(data->s_info + i, data->s_info + i + 1,
+                (data->n_info - i)*sizeof(*data->s_info));
+    }
 
     return info;
 }
 
-#endif
+
+static void s_Close(SERV_ITER iter)
+{
+    s_FreeData((SDISPD_Data *)iter->data);
+    iter->data = 0;
+}
