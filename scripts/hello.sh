@@ -58,7 +58,7 @@ rm -r $tmpdir
 # Adjust project makefile
 
 cd $targetdir  ||  Usage "cd $targetdir"
-sed 's/^LOCAL_CPPFLAGS *=.*/LOCAL_CPPFLAGS = ../' < Makefile.${target}_app > makefile
+sed 's/^LOCAL_CPPFLAGS *=.*/LOCAL_CPPFLAGS = -I.. -I./' < Makefile.${target}_app > makefile
 rm Makefile.*
 
 
