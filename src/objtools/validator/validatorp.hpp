@@ -704,6 +704,7 @@ private:
     void ValidateCommonCDSProduct(const CSeq_feat& feat);
     void ValidateBadMRNAOverlap(const CSeq_feat& feat);
     void ValidateBadGeneOverlap(const CSeq_feat& feat);
+    void ValidateCDSPartial(const CSeq_feat& feat);
     void ValidateCodeBreakNotOnCodon(const CSeq_feat& feat,const CSeq_loc& loc,
                                      const CCdregion& cdregion);
 
@@ -872,6 +873,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2003/07/02 21:03:38  shomrat
+* Added ValidateCDSPartial
+*
 * Revision 1.32  2003/06/27 18:53:20  shomrat
 * Changed ValidateDbxref definition
 *
