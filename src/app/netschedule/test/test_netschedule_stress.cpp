@@ -159,6 +159,45 @@ void TestRunTimeout(const string&  host,
     NcbiCout <<  NcbiEndl << "Test end." << NcbiEndl;
 }
 
+void TestNetscheduleLB(const string&  queue)
+{
+    NcbiCout << "Load balancing client test" << NcbiEndl;
+
+    CNetScheduleClient_LB cl("stress_test", "NC_test", queue, 1, 50);
+    cl.AddServiceAddress("didimo", 9100);
+    cl.AddServiceAddress("icoremake2", 9100);
+
+    string job_key;
+    const string input = "Hello " + queue;
+
+    unsigned jcount = 70;
+    NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
+
+    for (unsigned i = 0; i < jcount; ++i) {
+        job_key = cl.SubmitJob(input);
+        NcbiCout << job_key << " ";
+    }
+    NcbiCout << NcbiEndl << "Done." << NcbiEndl;
+
+
+    NcbiCout << NcbiEndl << "Take jobs..." << NcbiEndl;
+    string input_str;
+    unsigned cnt = 0;
+    for (; true; ++cnt) {
+        bool job_exists = cl.WaitJob(&job_key, &input_str, 600, 9111);
+        if (!job_exists)
+            break;
+        cl.SetRunTimeout(job_key, 5);
+        NcbiCout << job_key << " ";
+    }
+    NcbiCout << "Jobs count" << cnt << NcbiEndl;
+    NcbiCout << NcbiEndl << "Done." << NcbiEndl;
+
+
+
+    NcbiCout <<  NcbiEndl << "Test end." << NcbiEndl;
+}
+
 
 int CTestNetScheduleStress::Run(void)
 {
@@ -170,7 +209,7 @@ int CTestNetScheduleStress::Run(void)
     int ret_code;
 
 //    TestRunTimeout(host, port, queue_name);
-
+//    TestNetscheduleLB(queue_name);
 
     unsigned jcount = 10000;
     if (args["jcount"]) {
@@ -372,6 +411,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/03/17 17:19:54  kuznets
+ * Add LB test
+ *
  * Revision 1.6  2005/03/15 14:54:02  kuznets
  * DropJob() test added
  *
