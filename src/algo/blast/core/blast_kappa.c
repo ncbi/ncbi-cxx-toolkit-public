@@ -1793,8 +1793,7 @@ scalePosMatrix(int **fillPosMatrix,
 
     posSearch = Kappa_posSearchItemsNew(queryLength, matrixName, 
                                         fillPosMatrix, posFreqs);
-    compactSearch = Kappa_compactSearchItemsNew(query, queryLength, 
-                                                nonposMatrix, sbp);
+    compactSearch = Kappa_compactSearchItemsNew(query, queryLength, sbp);
 
     /* Copy data into new structures */
     internal_pssm = _PSIInternalPssmDataNew(queryLength, BLASTAA_SIZE);
