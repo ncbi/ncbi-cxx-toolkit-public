@@ -52,6 +52,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+const CSourceItem::TTaxid CSourceItem::kInvalidTaxid = -1;
+
+
 ///////////////////////////////////////////////////////////////////////////
 //
 // SOURCE
@@ -61,7 +64,7 @@ CSourceItem::CSourceItem(CBioseqContext& ctx) :
     CFlatItem(&ctx),
     m_Taxname(&scm_Unknown), m_Common(&kEmptyStr),
     m_Organelle(&kEmptyStr), m_Lineage(scm_Unclassified),
-    m_SourceLine(&kEmptyStr), m_Mod(&scm_EmptyList),
+    m_SourceLine(&kEmptyStr), m_Mod(&scm_EmptyList), m_Taxid(kInvalidTaxid),
     m_UsingAnamorph(false)
 {
     x_GatherInfo(ctx);
@@ -289,6 +292,14 @@ void CSourceItem::x_SetSource
             }
         }
     }}
+
+    // Taxid
+    {{
+        TTaxid taxid = org.GetTaxId();
+        if (taxid != 0) {
+            m_Taxid = taxid;
+        }
+    }}
 }
 
 
@@ -300,6 +311,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/02/07 15:01:27  shomrat
+* Added Taxid
+*
 * Revision 1.10  2004/11/01 19:33:09  grichenk
 * Removed deprecated methods
 *

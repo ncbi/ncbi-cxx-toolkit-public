@@ -58,6 +58,10 @@ class IFormatter;
 class CSourceItem : public CFlatItem
 {
 public:
+    typedef int TTaxid;
+
+    static const TTaxid kInvalidTaxid;
+
     CSourceItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
@@ -67,8 +71,8 @@ public:
     const string&       GetOrganelle    (void) const;
     const string&       GetSourceLine   (void) const;
     const list<string>& GetMod          (void) const;
+    TTaxid              GetTaxid        (void) const;
     bool                IsUsingAnamorph (void) const;
-    // TaxId ???
 
 private:
     void x_GatherInfo(CBioseqContext& ctx);
@@ -89,6 +93,7 @@ private:
     string              m_Lineage;       // semicolon-delimited
     const string*       m_SourceLine;    // for "old" format style
     const list<string>* m_Mod;
+    TTaxid              m_Taxid;
     bool                m_UsingAnamorph;
 };
 
@@ -140,6 +145,13 @@ const list<string>& CSourceItem::GetMod(void) const
 
 
 inline
+CSourceItem::TTaxid CSourceItem::GetTaxid(void) const
+{
+    return m_Taxid;
+}
+
+
+inline
 bool CSourceItem::IsUsingAnamorph(void) const
 { 
     return m_UsingAnamorph;
@@ -154,6 +166,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/02/07 14:57:52  shomrat
+* Added Taxid
+*
 * Revision 1.3  2004/08/19 16:15:22  shomrat
 * made m_Lineage non-const
 *
