@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2001/02/02 20:17:33  thiessen
+* can read in CDD with multi-structure but no struct. alignments
+*
 * Revision 1.46  2001/01/30 20:51:19  thiessen
 * minor fixes
 *
@@ -459,10 +462,10 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
     if (mmdbIDs.size() == 1) {
         masterMMDBID = mmdbIDs[0];
     } else if (mmdbIDs.size() > 1) {
-        if (!cdd->IsSetFeatures()) {
-            ERR_POST(Error << "StructureSet::StructureSet() - no slave structure alignments."
-                "Structures not loaded.");
-        } else {
+
+        // try to get master MMDB ID from structure alignments if present
+        if (cdd->IsSetFeatures()) {
+            structureAlignments = &(cdd->SetFeatures());
             CBiostruc_annot_set::TId::const_iterator i, ie = cdd->GetFeatures().GetId().end();
             for (i=cdd->GetFeatures().GetId().begin(); i!=ie; i++) {
                 if (i->GetObject().IsMmdb_id()) {
@@ -470,10 +473,28 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
                     break;
                 }
             }
-            if (i == ie) {
-                ERR_POST(Error << "StructureSet::StructureSet() - can't get master MMDB id."
-                    "Structures not loaded.");
+        }
+
+        // else assume the first sequence with a PDB and MMDB ID is the master
+        else {
+            SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
+            for (s=sequenceSet->sequences.begin(); s!=se; s++) {
+                if ((*s)->pdbID.size() > 0 && (*s)->mmdbLink != Sequence::NOT_SET) {
+                    ERR_POST(Error << "Warning: no structure alignments, "
+                         << "so the first sequence with MMDB link ("
+                         << (*s)->GetTitle() << ") is assumed to be the master structure");
+                    masterMMDBID = (*s)->mmdbLink;
+                    // create a new (empty) "features" area for the structure alignments
+                    ClearStructureAlignments(masterMMDBID);
+                    break;
+                }
             }
+        }
+
+        if (masterMMDBID == NOT_SET) {
+            ERR_POST(Error << "StructureSet::StructureSet() - "
+                "can't determine master MMDB id from structure or sequence alignments. "
+                "Structures not loaded.");
         }
     }
 
@@ -528,7 +549,6 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
     styleManager->SetToAlignment(StyleSettings::eAligned);
     VerifyFrameMap();
     showHideManager->ConstructShowHideArray(this);
-    structureAlignments = &(cdd->SetFeatures());
 }
 
 StructureSet::~StructureSet(void)
@@ -541,7 +561,7 @@ StructureSet::~StructureSet(void)
     if (mimeData) delete mimeData;
 }
 
-void StructureSet::ClearStructureAlignments(void)
+void StructureSet::ClearStructureAlignments(int masterMMDBID)
 {
     // create or empty the Biostruc-annot-set that will contain these alignments
     // in the asn data, erasing any structure alignments currently stored there
@@ -551,17 +571,22 @@ void StructureSet::ClearStructureAlignments(void)
         structureAlignments->SetFeatures().clear();
     } else {
         structureAlignments = new CBiostruc_annot_set();
+        // this should only happen if this is a Cdd, so plug in this new 'features' set
+        if (cddData) {
+            CRef < CBiostruc_annot_set > featRef(structureAlignments);
+            cddData->SetFeatures(featRef);
+        }
     }
 
     // set up the skeleton of the new Biostruc-annot-set
     // new Mmdb-id
     structureAlignments->SetId().resize(1);
     structureAlignments->SetId().front().Reset(new CBiostruc_id());
-    CRef<CMmdb_id> mid(new CMmdb_id(objects.front()->mmdbID));
+    CRef<CMmdb_id> mid(new CMmdb_id(masterMMDBID));
     structureAlignments->SetId().front().GetObject().SetMmdb_id(mid);
     // new Biostruc-feature-set
     CRef<CBiostruc_feature_set> featSet(new CBiostruc_feature_set());
-    featSet.GetObject().SetId().Set(objects.front()->mmdbID);
+    featSet.GetObject().SetId().Set(masterMMDBID);
     structureAlignments->SetFeatures().resize(1, featSet);
 
     // flag a change in data

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/02/02 20:17:33  thiessen
+* can read in CDD with multi-structure but no struct. alignments
+*
 * Revision 1.34  2001/01/30 20:51:18  thiessen
 * minor fixes
 *
@@ -360,9 +363,11 @@ void AlignmentManager::RealignAllSlaves(void) const
     CVP *masterCoords = new CVP[nResidues], *slaveCoords = new CVP[nResidues];
     if (!masterMol->GetAlphaCoords(nResidues, masterSeqIndexes, masterCoords)) {
         ERR_POST(Warning << "Can't get master alpha coords");
+    } else if (!masterSeq->mmdbLink) {
+        ERR_POST(Warning << "Don't know master MMDB ID");
     } else {
 
-        masterMol->parentSet->ClearStructureAlignments();
+        masterMol->parentSet->ClearStructureAlignments(masterSeq->mmdbLink);
 
         for (i=1; i<multiple->NRows(); i++) {
             slaveSeq = multiple->GetSequenceOfRow(i);

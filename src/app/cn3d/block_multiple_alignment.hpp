@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/02/02 20:17:42  thiessen
+* can read in CDD with multi-structure but no struct. alignments
+*
 * Revision 1.3  2001/01/26 19:30:37  thiessen
 * limit undo stack size ; fix memory leak
 *
@@ -190,9 +193,9 @@ private:
     void RemoveBlock(Block *block);
 
     // for cacheing of residue->block lookups
-    int prevRow;
-    const Block *prevBlock;
-    BlockList::const_iterator blockIterator;
+    mutable int prevRow;
+    mutable const Block *prevBlock;
+    mutable BlockList::const_iterator blockIterator;
     void InitCache(void);
 
     // given a row and seqIndex, find block that contains that residue

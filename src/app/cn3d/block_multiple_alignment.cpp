@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/02/02 20:17:33  thiessen
+* can read in CDD with multi-structure but no struct. alignments
+*
 * Revision 1.2  2001/01/26 19:29:59  thiessen
 * limit undo stack size ; fix memory leak
 *
@@ -301,7 +304,7 @@ int BlockMultipleAlignment::GetRowForSequence(const Sequence *sequence) const
 //            ERR_POST(Error << "BlockMultipleAlignment::GetRowForSequence() - can't find given Sequence");
             return -1;
         }
-        (const_cast<BlockMultipleAlignment*>(this))->prevRow = row;
+        prevRow = row;
     }
     return prevRow;
 }
@@ -384,30 +387,25 @@ const Block * BlockMultipleAlignment::GetBlock(int row, int seqIndex) const
 
     const Block::Range *range;
 
-    // first check to see if it's in the same block as last time. (Yes, there are
-    // a lot of const_casts... but this ugliness is unfortunately necessary to be able
-    // to call this function on const objects, while still being able to change
-    // the cache values.)
+    // first check to see if it's in the same block as last time.
     if (prevBlock) {
         range = prevBlock->GetRangeOfRow(row);
-        if (seqIndex >= range->from && seqIndex <= range->to)
-            return prevBlock;
-        (const_cast<BlockMultipleAlignment*>(this))->blockIterator++; // start search at next block
+        if (seqIndex >= range->from && seqIndex <= range->to) return prevBlock;
+        blockIterator++; // start search at next block
     } else {
-        (const_cast<BlockMultipleAlignment*>(this))->blockIterator = blocks.begin();
+        blockIterator = blocks.begin();
     }
 
     // otherwise, perform block search. This search is most efficient when queries
     // happen in order from left to right along a given row.
     do {
-        if (blockIterator == blocks.end())
-            (const_cast<BlockMultipleAlignment*>(this))->blockIterator = blocks.begin();
+        if (blockIterator == blocks.end()) blockIterator = blocks.begin();
         range = (*blockIterator)->GetRangeOfRow(row);
         if (seqIndex >= range->from && seqIndex <= range->to) {
-            (const_cast<BlockMultipleAlignment*>(this))->prevBlock = *blockIterator; // cache this block
+            prevBlock = *blockIterator; // cache this block
             return prevBlock;
         }
-        (const_cast<BlockMultipleAlignment*>(this))->blockIterator++;
+        blockIterator++;
     } while (1);
 }
 

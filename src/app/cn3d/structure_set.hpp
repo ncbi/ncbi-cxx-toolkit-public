@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2001/02/02 20:17:42  thiessen
+* can read in CDD with multi-structure but no struct. alignments
+*
 * Revision 1.37  2001/01/18 19:37:01  thiessen
 * save structure (re)alignments to asn output
 *
@@ -274,7 +277,7 @@ public:
     bool HasDataChanged(void) const { return (dataChanged > 0); }
 
     // empty the structure alignment data, in preparation for recomputing
-    void ClearStructureAlignments(void);
+    void ClearStructureAlignments(int masterMMDBID);
     void AddStructureAlignment(ncbi::objects::CBiostruc_feature *feature);
 };
 
