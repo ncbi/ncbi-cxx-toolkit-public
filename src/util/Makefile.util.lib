@@ -3,6 +3,7 @@
 SRC = random_gen utf8 checksum bytesrc strbuffer itree smalldns \
       stream_utils thread_pool ddump_viewer strsearch logrotate \
       format_guess ascii85 md5 rwstreambuf file_obsolete unicode \
-      dictionary  obj_store  plugin_manager_store thread_nonstop
+      dictionary  obj_store  plugin_manager_store thread_nonstop \
+      sgml_entity
 
 LIB = xutil
