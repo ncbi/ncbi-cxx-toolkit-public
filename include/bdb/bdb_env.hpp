@@ -100,6 +100,8 @@ public:
     ///
     /// @param 
     ///    file_name - name of the error file
+    ///    if file_name == "stderr" or "stdout" 
+    ///    all errors are redirected to that device
     void OpenErrFile(const char* file_name);
 
     /// Join the existing environment
@@ -147,6 +149,17 @@ public:
 
     /// Set timeout value for transactions in microseconds (1 000 000 in sec)
     void SetTransactionTimeout(unsigned timeout);
+
+    /// Non-force removal of BDB environment. (data files remains intact).
+    /// @return
+    ///   FALSE if environment is busy and cannot be deleted
+    bool Remove();
+
+    /// Force remove BDB environment.
+    void ForceRemove();
+
+    /// Close the environment;
+    void Close();
     
 private:
     /// Opens BDB environment returns error code
@@ -160,6 +173,7 @@ private:
     DB_ENV*  m_Env;
     bool     m_Transactional; ///< TRUE if environment is transactional
     FILE*    m_ErrFile;
+    string   m_HomePath;
 };
 
 /* @} */
@@ -169,6 +183,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/08/13 11:02:53  kuznets
+ * +Remove(), ForceRemove(), Close()
+ *
  * Revision 1.15  2004/08/10 11:52:48  kuznets
  * +timeout control functions
  *

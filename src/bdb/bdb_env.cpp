@@ -54,9 +54,22 @@ CBDB_Env::CBDB_Env(DB_ENV* env)
 
 CBDB_Env::~CBDB_Env()
 {
-    /*int ret = */m_Env->close(m_Env, 0);
+    try {
+        Close();
+    } 
+    catch (CBDB_Exception&)
+    {}
     if (m_ErrFile) {
         fclose(m_ErrFile);
+    }
+}
+
+void CBDB_Env::Close()
+{
+    if (m_Env) {
+        int ret = m_Env->close(m_Env, 0);
+        BDB_CHECK(ret, "DB_ENV::close");
+        m_Env = 0;
     }
 }
 
@@ -76,6 +89,16 @@ void CBDB_Env::Open(const char* db_home, int flags)
 int CBDB_Env::x_Open(const char* db_home, int flags)
 {
     int ret = m_Env->open(m_Env, db_home, flags, 0664);
+    if (ret == DB_RUNRECOVERY) {
+        int recover_flag = flags | DB_RECOVER | DB_CREATE;
+        ret = m_Env->open(m_Env, db_home, recover_flag, 0664);
+
+        if (ret == DB_RUNRECOVERY) {
+            recover_flag = flags | DB_RECOVER_FATAL | DB_CREATE;
+            ret = m_Env->open(m_Env, db_home, recover_flag, 0664);
+        }
+    }
+    m_HomePath = db_home;
     return ret;
 }
 
@@ -89,9 +112,15 @@ void CBDB_Env::OpenWithTrans(const char* db_home, TEnvOpenFlags opt)
     int ret = m_Env->set_lk_detect(m_Env, DB_LOCK_DEFAULT);
     BDB_CHECK(ret, "DB_ENV");
     
-    int flag =  DB_INIT_TXN | /* DB_RECOVER | */
+    int flag =  DB_INIT_TXN |
                 DB_CREATE | DB_INIT_LOCK | DB_INIT_MPOOL;
     
+    // for windows we try to init environment in system memory 
+    // (not file based)
+    // so it is reclaimed by OS automatically even if the application crashes
+# ifdef NCBI_OS_MSWIN
+    flag |= DB_SYSTEM_MEM;
+# endif
     if (opt & eThreaded) {
         flag |= DB_THREAD;
     }
@@ -100,11 +129,24 @@ void CBDB_Env::OpenWithTrans(const char* db_home, TEnvOpenFlags opt)
     
     if (opt & eRunRecovery) {
         // use private environment as prescribed by "db_recover" utility
-        int recover_flag = flag | DB_RECOVER | DB_CREATE | DB_PRIVATE;
+        int recover_flag = flag | DB_RECOVER | DB_CREATE; 
+        
+        if (!(recover_flag & DB_SYSTEM_MEM)) {
+            recover_flag |= DB_PRIVATE;
+        }
         
         ret = x_Open(db_home, recover_flag);
         BDB_CHECK(ret, "DB_ENV");
         
+        // non-private recovery
+        if (!(recover_flag & DB_PRIVATE)) {
+            m_Transactional = true;
+            return;
+        }
+
+        // "Private" recovery requires reopening, to make
+        // it available for other programs
+
         ret = m_Env->close(m_Env, 0);
         BDB_CHECK(ret, "DB_ENV");
         
@@ -169,6 +211,39 @@ void CBDB_Env::JoinEnv(const char* db_home, TEnvOpenFlags opt)
 */
 }
 
+bool CBDB_Env::Remove()
+{
+    _ASSERT(!m_HomePath.empty());
+    Close();
+
+    int ret = db_env_create(&m_Env, 0);
+    BDB_CHECK(ret, "DB_ENV");
+
+    ret = m_Env->remove(m_Env, m_HomePath.c_str(), 0);
+    m_Env = 0;
+
+    if (ret == EBUSY)
+        return false;
+    
+    BDB_CHECK(ret, "DB_ENV::remove");
+    return true;
+}
+
+void CBDB_Env::ForceRemove()
+{
+    _ASSERT(!m_HomePath.empty());
+    Close();
+
+    int ret = db_env_create(&m_Env, 0);
+    BDB_CHECK(ret, "DB_ENV");
+
+    ret = m_Env->remove(m_Env, m_HomePath.c_str(), DB_FORCE);
+    m_Env = 0;
+    BDB_CHECK(ret, "DB_ENV::remove");
+}
+
+
+
 DB_TXN* CBDB_Env::CreateTxn(DB_TXN* parent_txn, unsigned int flags)
 {
     DB_TXN* txn = 0;
@@ -183,6 +258,16 @@ void CBDB_Env::OpenErrFile(const char* file_name)
         fclose(m_ErrFile);
         m_ErrFile = 0;
     }
+
+    if (::strcmp(file_name, "stderr") == 0) {
+        m_Env->set_errfile(m_Env, stderr);
+        return;
+    }
+    if (::strcmp(file_name, "stdout") == 0) {
+        m_Env->set_errfile(m_Env, stdout);
+        return;
+    }
+
     m_ErrFile = fopen(file_name, "a");
     if (m_ErrFile) {
         m_Env->set_errfile(m_Env, m_ErrFile);
@@ -248,6 +333,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/08/13 11:02:59  kuznets
+ * +Remove(), ForceRemove(), Close()
+ *
  * Revision 1.23  2004/08/10 11:52:54  kuznets
  * +timeout control functions
  *
