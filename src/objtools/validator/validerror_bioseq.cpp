@@ -456,32 +456,36 @@ void CValidError_bioseq::ValidateInst(const CBioseq& seq)
     // Check molecule, topology, and strand
     const CSeq_inst::EMol& mol = inst.GetMol();
     switch (mol) {
+
         case CSeq_inst::eMol_na:
             PostErr(eDiag_Error, eErr_SEQ_INST_MolNuclAcid,
                      "Bioseq.mol is type na", seq);
             break;
+
         case CSeq_inst::eMol_aa:
-            if (inst.IsSetTopology()  &&
-              inst.GetTopology() != CSeq_inst::eTopology_linear)
-            {
+            if ( inst.IsSetTopology()  &&
+                 inst.GetTopology() != CSeq_inst::eTopology_not_set  &&
+                 inst.GetTopology() != CSeq_inst::eTopology_linear ) {
                 PostErr(eDiag_Error, eErr_SEQ_INST_CircularProtein,
                          "Non-linear topology set on protein", seq);
             }
-            if (inst.IsSetStrand()  &&
-              inst.GetStrand() != CSeq_inst::eStrand_ss)
-            {
+            if ( inst.IsSetStrand()  &&
+                 inst.GetStrand() != CSeq_inst::eStrand_ss ) {
                 PostErr(eDiag_Error, eErr_SEQ_INST_DSProtein,
                          "Protein not single stranded", seq);
             }
             break;
+
         case CSeq_inst::eMol_not_set:
             PostErr(eDiag_Error, eErr_SEQ_INST_MolNotSet, "Bioseq.mol not set",
                 seq);
             break;
+
         case CSeq_inst::eMol_other:
             PostErr(eDiag_Error, eErr_SEQ_INST_MolOther,
                      "Bioseq.mol is type other", seq);
             break;
+
         default:
             break;
     }
@@ -2083,9 +2087,9 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                                      curr->GetMappedFeature());
                         } else if ( curr_subtype != CSeqFeatData::eSubtype_pub ) {
                             PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
-                                "Features have identical intervals, but labels"
+                                "Features have identical intervals, but labels "
                                 "differ",
-                                     curr->GetMappedFeature());
+                                curr->GetMappedFeature());
                         }
                     } else {
                         if (same_label) {
@@ -2094,7 +2098,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                                 curr->GetMappedFeature());
                         } else if ( prev_subtype != CSeqFeatData::eSubtype_pub ) {
                             PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
-                                "Features have identical intervals, but labels"
+                                "Features have identical intervals, but labels "
                                 "differ (packaged in different feature table)",
                                 curr->GetMappedFeature());
                         }
@@ -3049,6 +3053,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2003/05/14 20:35:11  shomrat
+* Bug fixes
+*
 * Revision 1.32  2003/04/29 14:51:38  shomrat
 * Bug fix in ValidateSeqParts
 *
