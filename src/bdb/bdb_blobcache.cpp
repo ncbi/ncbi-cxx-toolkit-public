@@ -276,6 +276,7 @@ public:
         m_AttrDB.Sync();
 
         trans.Commit();
+        m_AttrDB.GetEnv()->TransactionCheckpoint();
     }
 
     virtual ERW_Result Write(const void* buf, size_t count,
@@ -349,6 +350,7 @@ public:
         }
 
         trans.Commit();
+        m_AttrDB.GetEnv()->TransactionCheckpoint();
 
         return eRW_Success;
     }
@@ -456,6 +458,9 @@ void CBDB_Cache::Open(const char* cache_path,
     {
         m_Env->OpenWithTrans(cache_path);
     }
+
+    m_Env->SetDirectDB(true);
+    m_Env->SetDirectLog(true);
 
     m_CacheDB = new SCacheDB();
     m_CacheAttrDB = new SCache_AttrDB();
@@ -579,6 +584,7 @@ void CBDB_Cache::Store(const string&  key,
     m_CacheAttrDB->UpdateInsert();
 
     trans.Commit();
+    m_CacheAttrDB->GetEnv()->TransactionCheckpoint();
 }
 
 
@@ -875,6 +881,7 @@ void CBDB_Cache::Remove(const string& key)
     }
 
     trans.Commit();
+    m_CacheAttrDB->GetEnv()->TransactionCheckpoint();
 
 }
 
@@ -2020,6 +2027,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2004/03/26 14:05:39  kuznets
+ * Force transaction checkpoints and turn-off buffering
+ *
  * Revision 1.45  2004/03/24 13:51:03  friedman
  * Fixed mutex comments
  *
