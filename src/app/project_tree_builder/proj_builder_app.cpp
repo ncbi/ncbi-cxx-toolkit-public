@@ -46,15 +46,18 @@ struct PIsExcludedByMakefile
     {
         const CProjItem& project = item.second;
         CMsvcPrjProjectContext prj_context(project);
-        if ( IsSubdir(GetApp().GetProjectTreeInfo().m_ImplicitExclude, 
-                      project.m_SourcesBaseDir) ) {
-            // implicitly excluded from build
-            return prj_context.GetMsvcProjectMakefile().IsExcludeProject(true);
-        } else {
-            // implicitly included to build
-            return prj_context.GetMsvcProjectMakefile().IsExcludeProject
-                                                                       (false);
+        const list<string> implicit_exclude_dirs = 
+            GetApp().GetProjectTreeInfo().m_ImplicitExcludedAbsDirs;
+        ITERATE(list<string>, p, implicit_exclude_dirs) {
+            const string& dir = *p;
+            if ( IsSubdir(dir, project.m_SourcesBaseDir) ) {
+                // implicitly excluded from build
+                return prj_context.GetMsvcProjectMakefile().IsExcludeProject
+                                                                        (true);
+            }
         }
+        // implicitly included to build
+        return prj_context.GetMsvcProjectMakefile().IsExcludeProject(false);
     }
 };
 
@@ -353,17 +356,19 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
                        (m_ProjectTreeInfo->m_Compilers);
 
 
-        // ImplicitExclude - all subdirs will be excluded by default
-        string implicit_exclude 
+        // ImplicitExcludedBranches - all subdirs will be excluded by default
+        string implicit_exclude_str 
             = GetConfig().GetString("ProjectTree", "ImplicitExclude", "");
-        if ( !implicit_exclude.empty() ) {
-            m_ProjectTreeInfo->m_ImplicitExclude = 
-                CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Src, 
-                                      implicit_exclude);
-            
-            m_ProjectTreeInfo->m_ImplicitExclude = 
-                CDirEntry::AddTrailingPathSeparator
-                           (m_ProjectTreeInfo->m_ImplicitExclude);
+        list<string> implicit_exclude_list;
+        NStr::Split(implicit_exclude_str, 
+                    LIST_SEPARATOR, 
+                    implicit_exclude_list);
+        ITERATE(list<string>, p, implicit_exclude_list) {
+            const string& subdir = *p;
+            string dir = CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Src, 
+                                               subdir);
+            dir = CDirEntry::AddTrailingPathSeparator(dir);
+            m_ProjectTreeInfo->m_ImplicitExcludedAbsDirs.push_back(dir);
         }
     }
     return *m_ProjectTreeInfo;
@@ -416,6 +421,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/02/11 15:40:44  gorelenk
+ * Implemented support for multiple implicit excludes from source tree.
+ *
  * Revision 1.13  2004/02/10 18:18:43  gorelenk
  * Changed LOG_POST massages.
  *
