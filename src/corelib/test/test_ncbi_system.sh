@@ -1,10 +1,7 @@
 #! /bin/sh
 # $Id$
 
-#
-# ./test_ncbi_system cpu;  test_cpu=$?;  echo "exit_code(CPU-test) = $test_cpu"
-test_cpu=1;  echo 'exit_code(CPU-test) = <temp. disabled>'
-
+./test_ncbi_system cpu;  test_cpu=$?;  echo "exit_code(CPU-test) = $test_cpu"
 ./test_ncbi_system mem;  test_mem=$?;  echo "exit_code(MEM-test) = $test_mem"
 
 os=`uname -s`
