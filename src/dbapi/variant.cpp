@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.23  2003/11/18 16:59:18  kholodov
+* Added: operator=(const char*)
+*
 * Revision 1.22  2003/08/15 19:48:43  kholodov
 * Fixed: const method GetBlobSize()
 *
@@ -314,7 +317,7 @@ CVariant::CVariant(double v)
     : m_data(new CDB_Double(v)) {}
 
 CVariant::CVariant(bool v) 
-    : m_data(new CDB_Bit(v ? 1 : 0)) {}
+    : m_data(new CDB_Bit(v)) {}
 
 CVariant::CVariant(const string& v) 
     : m_data(new CDB_VarChar(v)) {}
@@ -660,12 +663,38 @@ CVariant& CVariant::operator=(const double& v)
 
 CVariant& CVariant::operator=(const string& v)
 {
-    if( GetType() == eDB_VarChar )
+    switch( GetType()) {
+    case eDB_VarChar:
         *((CDB_VarChar*)GetData()) = v;
-    else if( GetType() == eDB_LongChar )
+        break;
+    case eDB_LongChar:
         *((CDB_LongChar*)GetData()) = v;
-    else
+        break;
+    case eDB_Char:
+        *((CDB_Char*)GetData()) = v;
+        break;
+    default:
         VerifyType(false);
+    }
+
+    return *this;
+}
+
+CVariant& CVariant::operator=(const char* v)
+{
+    switch( GetType()) {
+    case eDB_VarChar:
+        *((CDB_VarChar*)GetData()) = v;
+        break;
+    case eDB_LongChar:
+        *((CDB_LongChar*)GetData()) = v;
+        break;
+    case eDB_Char:
+        *((CDB_Char*)GetData()) = v;
+        break;
+    default:
+        VerifyType(false);
+    }
 
     return *this;
 }
@@ -673,7 +702,7 @@ CVariant& CVariant::operator=(const string& v)
 CVariant& CVariant::operator=(const bool& v)
 {
     VerifyType(GetType() == eDB_Bit);
-    *((CDB_Bit*)GetData()) = v ? 1 : 0;
+    *((CDB_Bit*)GetData()) = v;
     return *this;
 }
 

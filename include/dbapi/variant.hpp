@@ -167,6 +167,7 @@ public:
     CVariant& operator=(const float& v);
     CVariant& operator=(const double& v);
     CVariant& operator=(const string& v);
+    CVariant& operator=(const char* v);
     CVariant& operator=(const bool& v);
     CVariant& operator=(const CTime& v);
     
@@ -236,6 +237,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.16  2003/11/18 16:58:52  kholodov
+ * Added: operator=(const char*)
+ *
  * Revision 1.15  2003/08/15 19:48:26  kholodov
  * Fixed: const method GetBlobSize()
  *
