@@ -248,7 +248,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const TSeqLocVector & v)
 {
     char errbuf[1024];
     
-    sprintf(errbuf, "tried to set option (%d) and TSeqLocVector (size %d), line (%d).",
+    sprintf(errbuf, "tried to set option (%d) and TSeqLocVector (size %zd), line (%d).",
             int(opt), v.size(), __LINE__);
     
     x_Throwx(string("err:") + errbuf);
@@ -608,6 +608,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2005/01/26 18:13:16  camacho
+* Fix compiler warning
+*
 * Revision 1.57  2005/01/10 13:36:06  madden
 * Removed deleted options from x_LookupTableOptions_cmp
 *
