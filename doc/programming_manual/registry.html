@@ -27,7 +27,7 @@ The CNcbiRegistry Class</h1>
 <h3>
 <a NAME="intro"></a>Introduction</h3>
 The <i><a href="../docxx/CNcbiRegistry.html">CNcbiRegistry</a></i> class
-is used to access, modify and story runtime information read from a configuration
+is used to access, modify and store runtime information read from a configuration
 file. Previously, these files were by convention named "<i>.*r</i>c" files
 on UNIX systems. The convention for all platforms now is to name such files
 "<i>*.ini"</i>, where "*" is by default the application name.&nbsp; Unless
@@ -115,8 +115,9 @@ all leading and trailing spaces will be truncated</li>
 <h3>
 <i>CNcbiRegistry::EFlags</i></h3>
 In addition to the constructor, which initializes the registry in memory
-and loads parameters a file, the <i>CNcbiRegistry</i> class provides methods
-for <i>saving</i> the registry (as a new configuration file), and <i>reading
+and loads parameters from a file, the <i>CNcbiRegistry</i> class provides
+methods for <i>saving</i> the registry (as a new configuration file), and
+<i>reading
 in</i> additonal parameters from a secondary file(s).&nbsp; Each &lt;<i>name=value</i>>
 pair stored in the registry has three attributes, specifying whether or
 not that value is:
@@ -160,12 +161,15 @@ eNoTruncate&nbsp; = 0x400</font></tt>
 a combination (bit-wise <i>OR</i>) of <i>EFlags</i> is expected - not just
 an arbitrary "regular" <i>int</i>.&nbsp; Many of <i>CNcbiRegistry</i>'s
 methods take an optional <i>TFlags</i> argument, which qualifies the selected
-values with respect to these attributes. For example, this will
-<br>set the value of registry entry <i>MyName</i> in section <i>MySection</i>
-to <i>"Eugene"</i>. It will truncate the leading and trailing blanks in
-the value (<i>eTruncate</i>); also, if this entry value has been set already,
-then it will <b>not</b> be overridden (<i>eNoOverride</i>) by this new
-value ("<i>Eugene"</i>).
+values with respect to these attributes.
+<p>For example, the following code excerpt sets the value of registry entry
+<i>MyName</i>
+in section <i>MySection</i> to <i>"Eugene"</i>.&nbsp; In particular, the
+<i>TFlags</i> argument, derived from the bit-wise OR of
+<i>eTruncate </i>and
+<i>eNoOverride</i>, specifies that (1) all leading and trailing blanks
+in the new value should be truncated, and (2) that the new value <b>cannot</b>
+be applied to override a previous value if one exists:
 <p><tt><font color="#005050">&nbsp;&nbsp; CNcbiRegistry reg(.....);</font></tt>
 <br><tt><font color="#005050">&nbsp;&nbsp; .....................</font></tt>
 <br><tt><font color="#005050">&nbsp;&nbsp; reg.Set("MySection", "MyName",
@@ -193,9 +197,9 @@ possible to load additional parameters from other file(s) using the
 
 <p>Valid flags for the <i>Read() </i>method include <font color="#000000"><i>eTransient
 </i>and<i>
-eNoOverride. </i></font>The default is that all the read values to be stored
-as <i>persistent</i>, and that they <i>can</i> override when a new value
-associated with the same name is loaded.&nbsp; Either or both of these
+eNoOverride. </i></font>The default is for all&nbsp; values to be read
+in as <i>persistent</i>, with the capability of overriding any previously
+loaded value associated with the same name.&nbsp; Either or both of these
 defaults can be modified by specifying <font color="#000000"><i>eTransient,
 eNoOverride,
 </i>or (<i>eTransient | eNoOverride</i>) as the <i>flags</i>
@@ -219,9 +223,10 @@ for this parameter, then the value is not reset, and the method returns
 of <i>transient</i> parameters for a parameter named <i>name</i>, in section
 <i>section</i>,
 and if this fails,&nbsp; continues by searching the set of <i>persistent</i>
-parameters. However, If the <i>ePersistent</i> flag is used, then only&nbsp;
+parameters. However, if the <i>ePersistent</i> flag is used, then only&nbsp;
 the set of <i>persistent</i> parameters will be searched. On success, <i>Get()
-</i>returns the stored value. On failure, the empty string is returned.</font>
+</i>returns
+the stored value. On failure, the empty string is returned.</font>
 <center>
 <p><tt><font color="#005050">const string&amp; Get(const string&amp; section,
 const string&amp; name, TFlags flags = 0) const;</font></tt></center>
@@ -243,7 +248,8 @@ section,&nbsp; list&lt;string>* entries) const;</font></tt>
 out the registry, discarding all stored parameters. <i>EnumerateSections()&nbsp;</i>
 writes all registry section names to <i>sections.&nbsp;</i> <i>EnumerateEntries()&nbsp;</i>
 writes the list of parameter names in <i>section </i>to<i> entries.</i>
-<p><a href="argdescr.html"><i>previous</i>&nbsp;</a>&nbsp; <i><a href="../index.html">up</a></i>
+<p><a href="argdescr.html"><i>previous</i>&nbsp;</a>&nbsp; <i><a href="../index.html">up</a></i>&nbsp;&nbsp;
+
 <i><a href="diag.html">next</a></i>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
