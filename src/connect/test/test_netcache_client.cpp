@@ -182,7 +182,10 @@ void s_StressTest(const string&             host,
                   size_t                    size, 
                   unsigned int              repeats,
                   vector<STransactionInfo>* log_write,
-                  vector<STransactionInfo>* log_read
+                  vector<STransactionInfo>* log_read,
+
+                  vector<string>*           rep_keys,  // key representatives
+                  unsigned                  key_factor // repr. choose factor
                   )
 {
     cout << "Stress test. BLOB size = " << size 
@@ -224,6 +227,13 @@ void s_StressTest(const string&             host,
             idx0.push_back(i0);
             idx1.push_back(i1);
 
+            // take every "key_factor" key, 
+            // so we have evenly (across db pages)
+            // distributed slice of the database
+            if (i % key_factor == 0 && rep_keys) {
+                rep_keys->push_back(key);
+            }
+
             ch[i0] = ch[i1] = 0;
 
             if (i % 1000 == 0) cout << "." << flush;
@@ -258,6 +268,22 @@ void s_StressTest(const string&             host,
     cout << endl;
 }
 
+///@internal
+static
+void s_TestKeysRead(vector<string>&           rep_keys,
+                    unsigned                  size,
+                    vector<STransactionInfo>* log_read)
+{
+    AutoPtr<char, ArrayDeleter<char> > buf  = new char[size];
+
+    ITERATE(vector<string>, it, rep_keys) {
+        const string& key = *it;
+        bool exists = 
+            s_CheckExists("", 0, 
+                            key, (unsigned char*)buf.get(), size, log_read);
+        assert(exists);
+    }
+}
 
 
 void CTestNetCacheClient::Init(void)
@@ -356,6 +382,7 @@ int CTestNetCacheClient::Run(void)
         CNetCacheClient nc_client(&sock);
 
         char dataBuf[1024];
+        memset(dataBuf, 0xff, sizeof(dataBuf));
         size_t blob_size;
         IReader* reader = nc_client.GetData(key, &blob_size);
         assert(reader);
@@ -371,7 +398,9 @@ int CTestNetCacheClient::Run(void)
     {{
         CNetCacheClient nc_client;
 
-        char dataBuf[1024] = {0};
+        char dataBuf[1024];
+        memset(dataBuf, 0xff, sizeof(dataBuf));
+
         CNetCacheClient::EReadResult rres = 
             nc_client.GetData(key, dataBuf, sizeof(dataBuf));
         assert(rres == CNetCacheClient::eReadComplete);
@@ -388,7 +417,8 @@ int CTestNetCacheClient::Run(void)
         }
         {
         CNetCacheClient nc_client(host, port);
-        char dataBuf[1024] = {0};
+        char dataBuf[1024];
+        memset(dataBuf, 0xff, sizeof(dataBuf));
         CNetCacheClient::EReadResult rres = 
             nc_client.GetData(key, dataBuf, sizeof(dataBuf));
         assert(rres == CNetCacheClient::eReadComplete);
@@ -438,9 +468,11 @@ int CTestNetCacheClient::Run(void)
 
     vector<STransactionInfo> log;
     vector<STransactionInfo> log_read;
+    vector<string>           rep_keys;
 
     unsigned repeats = 5000;
-    s_StressTest(host, port, 256, repeats, &log, &log_read);
+
+    s_StressTest(host, port, 256, repeats, &log, &log_read, &rep_keys, 10);
     NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
     s_ReportStatistics(log);
     NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
@@ -448,22 +480,14 @@ int CTestNetCacheClient::Run(void)
     NcbiCout << NcbiEndl << NcbiEndl;
 
 
-    s_StressTest(host, port, 1024 * 5, repeats, &log, &log_read);
+    s_StressTest(host, port, 1024 * 5, repeats, &log, &log_read, &rep_keys, 10);
     NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
     s_ReportStatistics(log);
     NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
     s_ReportStatistics(log_read);
     NcbiCout << NcbiEndl;
 
-    s_StressTest(host, port, 1024 * 100, repeats/2, &log, &log_read);
-    NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
-    s_ReportStatistics(log);
-    NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
-    s_ReportStatistics(log_read);
-    NcbiCout << NcbiEndl;
-
-
-    s_StressTest(host, port, 1024 * 1024 * 5, repeats/50, &log, &log_read);
+    s_StressTest(host, port, 1024 * 100, repeats/2, &log, &log_read, &rep_keys, 20);
     NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
     s_ReportStatistics(log);
     NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
@@ -471,9 +495,26 @@ int CTestNetCacheClient::Run(void)
     NcbiCout << NcbiEndl;
 
 
+    s_StressTest(host, port, 1024 * 1024 * 5, repeats/50, &log, &log_read, &rep_keys, 30);
+    NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
+    s_ReportStatistics(log);
+    NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
+    s_ReportStatistics(log_read);
+    NcbiCout << NcbiEndl;
+
+    log_read.resize(0);
+    NcbiCout << NcbiEndl << "Random BLOB read statistics. Number of BLOBs=" 
+             << rep_keys.size() 
+             << NcbiEndl;
+    s_TestKeysRead(rep_keys, 1024 * 1024 * 10, &log_read);
+    s_ReportStatistics(log_read);
+    NcbiCout << NcbiEndl;
+
+
+/*
     cout << "Shutdown server" << endl;
     // Shutdown server
-/*
+
     {{
         CNetCacheClient nc_client(host, port);
         nc_client.ShutdownServer();
@@ -492,6 +533,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/12/22 16:43:58  kuznets
+ * Added read-test of random read BLOBs
+ *
  * Revision 1.17  2004/12/21 16:02:21  dicuccio
  * Bug fix: don't depend on uninitialized value for if/then
  *
