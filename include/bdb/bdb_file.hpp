@@ -88,7 +88,8 @@ public:
     enum EOpenMode {
         eReadWrite,
         eReadOnly,
-        eCreate     // implies 'eReadWrite' too
+        eCreate,         // implies 'eReadWrite' too
+        eReadWriteCreate // read-write, create if it doesn't exist
     };
 
     enum EReallocMode {
@@ -137,8 +138,20 @@ public:
     // Return TRUE if the file is open
     bool IsOpen() const;
 
-    // Return TRUE if file can contain duplicate keys.
+    // Return TRUE if file can contain duplicate keys
     bool DuplicatesAllowed() const { return m_DuplicateKeys == eDuplicatesEnable; }
+
+    // Return the key duplicate mode value
+    EDuplicateKeys GetDupKeysMode() const { return m_DuplicateKeys; }
+
+    // Return file name
+    const string& GetFileName() const { return m_FileName; }
+
+    // Return the file open mode
+    EOpenMode GetOpenMode() const { return m_OpenMode; }
+
+    // Flushe any cached information to disk
+    void Sync();
 
 private:
     CBDB_RawFile(const CBDB_RawFile&);
@@ -169,6 +182,7 @@ private:
     unsigned         m_PageSize;
     unsigned         m_CacheSize;
     EDuplicateKeys   m_DuplicateKeys;
+    EOpenMode        m_OpenMode;
 
     static const int kOpenFileMask;
 };
@@ -359,6 +373,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/07/18 20:11:05  kuznets
+ * Added ReadWrite or Create open mode, added several accessor methods, Sync() method.
+ *
  * Revision 1.10  2003/07/09 14:29:01  kuznets
  * Added support of files with duplicate access keys. (DB_DUP mode)
  *
