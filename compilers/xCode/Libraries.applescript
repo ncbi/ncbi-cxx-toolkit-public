@@ -40,6 +40,7 @@ global AllApplications -- All GUI applications to build
 (* Libraries for linking (note the extra space before the lib name! )*)
 property Z_LIBS : " bz2 z"
 property IMG_LIBS : " jpeg png tiff gif"
+--property IMG_LIBS : " png"
 property FLTK_LIBS : " fltk_images fltk_gl fltk"
 property BDB_LIBS : " db"
 property SQLITE_LIBS : " sqlite"
@@ -74,7 +75,7 @@ property xser : {name:"xser", path:"serial", exc:{"asntypes.cpp", "object.cpp", 
 property xutil : {name:"xutil", path:"util"}
 property bdb : {name:"bdb", path:"bdb", exc:{"bdb_query_bison.tab.c", "bdb_query_lexer.cpp"}}
 property xsqlite : {name:"xsqlite", path:"sqlite"}
-property xregexp : {name:"xregexp", path:"util:regexp"}
+property xregexp : {name:"xregexp", path:"util:regexp", exc:{"pcreposix.c"}}
 property ximage : {name:"ximage", path:"util:image"}
 property xcompress : {name:"xcompress", path:"util:compress"}
 property tables : {name:"tables", path:"util:tables", inc:{"raw_scoremat.c"}}
@@ -223,6 +224,7 @@ property w_serial_browse : {name:"w_serial_browse", path:"gui:widgets:serial_bro
 property w_feat_compare : {name:"w_feat_compare", path:"gui:widgets:feat_compare"}
 property w_feat_table : {name:"w_feat_table", path:"gui:widgets:feat_table"}
 property w_config : {name:"w_config", path:"gui:widgets:config"}
+property w_controls : {name:"w_controls", path:"gui:widgets:controls"}
 
 (* GUI Plugins *)
 property gui_doc_basic : {name:"gui_doc_basic", path:"gui:plugins:doc:basic"}
@@ -282,7 +284,7 @@ property ncbi_xobjsimple : {name:"ncbi_xobjsimple", libs:{xobjsimple}, dep:"ncbi
 property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_opengl, gui_print, gui_math}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_image ncbi_general", req:true}
 property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncbi_core ncbi_seq ncbi_seqext", req:true}
 property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core", req:true}
-property gui_widgets : {name:"gui_widgets", libs:{w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config}, dep:"gui_utils ncbi_image ncbi_core", req:true}
+property gui_widgets : {name:"gui_widgets", libs:{w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config, w_controls}, dep:"gui_utils ncbi_image ncbi_core", req:true}
 property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_basic, gui_dlg_featedit, gui_dlg_edit, gui_dlg_feat_search, gui_dlg_seq_goto}, dep:"gui_config gui_utils gui_widgets ncbi_core ncbi_seq ncbi_seqext", req:true} -- gui_dlg_registry
 property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:true}
 property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_utils gui_graph gui_widgets gui_config", req:true}
@@ -337,7 +339,7 @@ property id1_fetch_simple : {name:"id1_fetch_simple", path:"app:id1_fetch", inc:
 property objmgr_demo : {name:"objmgr_demo", path:"app:objmgr:demo", dep:"ncbi_core ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank ncbi_xreader_id1 ncbi_lds" & Z_LIBS & BDB_LIBS, req:false}
 property blast_client : {name:"blast_client", path:"app:blast_client", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank ncbi_lds" & Z_LIBS, req:false}
 
-property datatool : {name:"datatool", path:"serial:datatool", dep:"ncbi_core pcre" & Z_LIBS, req:true}
+property datatool : {name:"datatool", path:"serial:datatool", dep:"ncbi_core" & Z_LIBS, req:true}
 
 
 -- Tests
@@ -399,6 +401,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/03/10 14:23:34  lebedev
+ * w_controls added to gui_widgets
+ *
  * Revision 1.44  2005/03/01 19:35:17  lebedev
  * w_controls added to gui_widgets
  *
