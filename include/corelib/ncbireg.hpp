@@ -265,8 +265,8 @@ protected:
     /// Implementations of the fundamental operations above, to be run with
     /// the lock already acquired and some basic sanity checks performed.
     virtual bool x_Empty(TFlags flags) const = 0;
-    virtual bool x_Modified(TFlags flags) const { return false; }
-    virtual void x_SetModifiedFlag(bool modified, TFlags flags) {}
+    virtual bool x_Modified(TFlags /* flags */) const { return false; }
+    virtual void x_SetModifiedFlag(bool /* modified */, TFlags /* flags */) {}
     virtual const string& x_Get(const string& section, const string& name,
                                 TFlags flags) const = 0;
     virtual bool x_HasEntry(const string& section, const string& name,
@@ -279,7 +279,7 @@ protected:
                              TFlags flags) const = 0;
 
     typedef void (IRegistry::*FLockAction)(void);
-    virtual void x_ChildLockAction(FLockAction action) {}
+    virtual void x_ChildLockAction(FLockAction /* action */) {}
 
 private:
     mutable CRWLock m_Lock;
@@ -752,6 +752,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/12/21 16:20:58  ucko
+ * IRegistry: comment out trivial x_* methods' unused arguments' names.
+ *
  * Revision 1.35  2004/12/20 17:33:52  ucko
  * Expose CMemoryRegistry's internal types to make WorkShop happy.
  *
