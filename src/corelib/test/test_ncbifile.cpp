@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/11/15 16:36:29  ivanov
+ * Moved from util to corelib
+ *
  * Revision 1.2  2001/11/01 20:06:50  juran
  * Replace directory streams with Contents() method.
  * Implement and test Mac OS platform.
@@ -45,13 +48,8 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
-#include <util/files.hpp>
+#include <corelib/ncbifile.hpp>
 #include <stdio.h>
-
-
-BEGIN_NCBI_SCOPE
-
-END_NCBI_SCOPE
 
 
 USING_NCBI_SCOPE;

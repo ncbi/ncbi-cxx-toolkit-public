@@ -1,8 +1,9 @@
-#################################
 # $Id$
 
-APP = test_files
-OBJ = test_files
-LIB = xutil xncbi
+APP = test_ncbifile
+OBJ = test_ncbifile
+LIB = xncbi
 
 # LINK = purify $(ORIG_LINK)
+
+CHECK_CMD =

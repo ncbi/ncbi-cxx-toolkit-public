@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2001/11/15 16:34:12  ivanov
+ * Moved from util to corelib
+ *
+ * ---------------------------------------------------------------------------
  * Revision 1.5  2001/11/06 14:34:11  ivanov
  * Fixed compile errors in CDir::Contents() under MS Windows
  *
@@ -51,7 +55,7 @@
  * ===========================================================================
  */
 
-#include <util/files.hpp>
+#include <corelib/ncbifile.hpp>
 
 #ifndef NCBI_OS_MAC
 #  include <sys/types.h>
@@ -680,46 +684,11 @@ static const CDirEntry& MacGetIndexedItem(const CDir& container, SInt16 index)
 #endif
 
 
-#if defined NCBI_OS_MAC
 vector<CDirEntry> CDir::Contents() const
 {
 	vector<CDirEntry> contents;
-	try {
-		for (int index = 1; ; index++) {
-			CDirEntry item = MacGetIndexedItem(*this, index);
-			contents.push_back(item);
-		}
-	} catch (OSErr err) {
-		if (err != fnfErr) {
-			// Report error?
-			return vector<CDirEntry>();
-		}
-	}
-	return contents;
-}
-#endif
-
-#if defined NCBI_OS_UNIX
-vector<CDirEntry> CDir::Contents() const
-{
-	vector<CDirEntry> contents;
-	
-	DIR *dir = opendir(GetPath().c_str());
-	if (dir != NULL) {
-		while (struct dirent *entry = readdir(dir)) {
-			contents.push_back(CDirEntry(entry->d_name));
-	    }
-	}
-	closedir(dir);
-	return contents;
-}
-#endif
 
 #if defined NCBI_OS_MSWIN
-vector<CDirEntry> CDir::Contents() const
-{
-	vector<CDirEntry> contents;
-	
     // Append to the "path" mask for all files in directory
     string mask = GetPath();
     if ( mask[mask.size()-1] != GetPathSeparator() ) {
@@ -737,9 +706,32 @@ vector<CDirEntry> CDir::Contents() const
 	    }
 	}
 	_findclose(desc);
+
+#elif defined NCBI_OS_UNIX
+	DIR *dir = opendir(GetPath().c_str());
+	if (dir != NULL) {
+		while (struct dirent *entry = readdir(dir)) {
+			contents.push_back(CDirEntry(entry->d_name));
+	    }
+	}
+	closedir(dir);
+
+#elif defined NCBI_OS_MAC
+	try {
+		for (int index = 1; ; index++) {
+			CDirEntry item = MacGetIndexedItem(*this, index);
+			contents.push_back(item);
+		}
+	} catch (OSErr err) {
+		if (err != fnfErr) {
+			// Report error?
+			return vector<CDirEntry>();
+		}
+	}
+#endif
 	return contents;
 }
-#endif
+
 
 bool CDir::Create(void) const
 {

@@ -1,5 +1,5 @@
-#ifndef FILES_UTIL__H
-#define FILES_UTIL__H
+#ifndef NCBIFILE__HPP
+#define NCBIFILE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/11/15 16:30:46  ivanov
+ * Moved from util to corelib
+ *
  * Revision 1.3  2001/11/01 21:02:18  ucko
  * Fix to work on non-MacOS platforms again.
  *
@@ -415,4 +418,4 @@ bool CDir::Exists(void) const
 
 END_NCBI_SCOPE
 
-#endif  /* FILES_UTIL__H */
+#endif  /* NCBIFILE__HPP */
