@@ -625,6 +625,54 @@ string CBuildType::GetTypeStr(void) const
 }
 
 
+//-----------------------------------------------------------------------------
+CDllSrcFilesDistr::CDllSrcFilesDistr(void)
+{
+}
+
+
+void CDllSrcFilesDistr::RegisterSource(const string&   src_file_path, 
+                                       const CProjKey& dll_project_id,
+                                       const CProjKey& lib_project_id)
+{
+    m_SourcesMap[ TDllSrcKey(src_file_path,dll_project_id) ] = lib_project_id;
+}
+
+void CDllSrcFilesDistr::RegisterHeader(const string&   hdr_file_path, 
+                                       const CProjKey& dll_project_id,
+                                       const CProjKey& lib_project_id)
+{
+    m_HeadersMap[ TDllSrcKey(hdr_file_path,dll_project_id) ] = lib_project_id;
+}
+
+
+CProjKey CDllSrcFilesDistr::GetSourceLib(const string&   src_file_path, 
+                                         const CProjKey& dll_project_id) const
+{
+    TDllSrcKey key(src_file_path, dll_project_id);
+    TDistrMap::const_iterator p = m_SourcesMap.find(key);
+    if (p != m_SourcesMap.end()) {
+        const CProjKey& lib_id = p->second;
+        return lib_id;
+    }
+
+    return CProjKey();
+}
+
+
+CProjKey CDllSrcFilesDistr::GetHeaderLib(const string&   hdr_file_path, 
+                                         const CProjKey& dll_project_id) const
+{
+    TDllSrcKey key(hdr_file_path, dll_project_id);
+    TDistrMap::const_iterator p = m_HeadersMap.find(key);
+    if (p != m_HeadersMap.end()) {
+        const CProjKey& lib_id = p->second;
+        return lib_id;
+    }
+
+    return CProjKey();
+}
+
 
 
 END_NCBI_SCOPE
@@ -632,6 +680,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/05/17 16:14:17  gorelenk
+ * Implemented class CDllSrcFilesDistr .
+ *
  * Revision 1.22  2004/05/17 14:40:30  gorelenk
  * Changed implementation of CSourceFileToProjectInserter::operator():
  * get rid of hard-coded define for PCH usage.
