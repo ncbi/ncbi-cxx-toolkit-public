@@ -476,7 +476,7 @@ void CNetCacheServer::ProcessPut(CSocket& sock, Request& req)
     WriteMsg(sock, "ID:", rid);
     //LOG_POST(Info << "PUT request. Generated key=" << rid);
     auto_ptr<IWriter> 
-        iwrt(m_Cache->GetWriteStream(rid, 0, kEmptyStr));
+        iwrt(m_Cache->GetWriteStream(rid, 0, kEmptyStr, req.timeout));
 
     // Reconfigure socket for no-timeout operation
     STimeout to;
@@ -866,6 +866,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/11/08 16:02:53  kuznets
+ * BLOB timeout passed to ICache
+ *
  * Revision 1.24  2004/11/01 16:16:02  kuznets
  * Use NStr instead of itoa
  *
