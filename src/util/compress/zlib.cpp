@@ -779,7 +779,6 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
                     // Data block is very small and was cached.
                     *in_avail  = 0;
                     *out_avail = 0;
-                    IncreaseProcessedSize(in_len);
                     return eStatus_Success;
                 }
             }
@@ -819,6 +818,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
     if ( from_cache ) {
         m_Cache.erase(0, old_avail_in - m_Stream.avail_in);
         *in_avail = avail_adj;
+        IncreaseProcessedSize(old_avail_in - m_Stream.avail_in);
     } else {
         *in_avail = m_Stream.avail_in;
         IncreaseProcessedSize(in_len - *in_avail);
@@ -883,6 +883,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/06/02 16:14:12  ivanov
+ * Fixed processed bytes counting in the CZipDecompressor::Process()
+ *
  * Revision 1.13  2004/05/17 21:07:25  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
