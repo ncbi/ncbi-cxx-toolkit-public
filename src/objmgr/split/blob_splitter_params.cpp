@@ -51,8 +51,8 @@ void SSplitterParams::Compress(vector<char>& dst,
     case eCompression_nlm_zip:
     {{
         CZipCompression compr(CCompression::eLevel_Default);
-        dst.resize(size_t(size*1.01) + 32);
-        size_t real_size = 0;
+        dst.resize(size_t(double(size)*1.01) + 32);
+        unsigned real_size = 0;
         if ( !compr.CompressBuffer(data, size,
                                    &dst[12], dst.size(), &real_size) ) {
             NCBI_THROW(CLoaderException, eCompressionError,
@@ -62,10 +62,10 @@ void SSplitterParams::Compress(vector<char>& dst,
             dst[i] = "ZIP"[i];
         }
         for ( size_t i = 0, s = real_size; i < 4; ++i, s <<= 8 ) {
-            dst[i+4] = (s >> 24) & 0xff;
+            dst[i+4] = char(s >> 24);
         }
         for ( size_t i = 0, s = size; i < 4; ++i, s <<= 8 ) {
-            dst[i+8] = (s >> 24) & 0xff;
+            dst[i+8] = char(s >> 24);
         }
         dst.resize(12+real_size);
         break;
@@ -83,6 +83,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/12/18 21:15:57  vasilche
+* Fixed size_t <-> unsigned incompatibility.
+*
 * Revision 1.4  2003/11/26 23:04:58  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *
