@@ -27,7 +27,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didneko, Anatoliy Kuznetsov
+ * Authors:  Maxim Didenko, Anatoliy Kuznetsov
  *
  * File Description:
  *   NetSchedule Worker Node Framework Application.
@@ -56,17 +56,19 @@ BEGIN_NCBI_SCOPE
  */
 
 
-/// Base worker node application
+/// Main Worker Node application
 ///
-class NCBI_XCONNECT_EXPORT CGridWorkerApp 
-    : public CNcbiApplication,
-      protected IWorkerNodeJobFactory,
-      protected INetScheduleClientFactory,
-      protected INetScheduleStorageFactory
+/// @note
+/// Worker node application is parameterised using INI file settings.
+/// Please read the sample ini file for more information.
+///
+class NCBI_XCONNECT_EXPORT CGridWorkerApp : public CNcbiApplication
 {
 public:
 
-    CGridWorkerApp();
+    CGridWorkerApp(IWorkerNodeJobFactory* job_factory, 
+                   INetScheduleStorageFactory* storage_factory = NULL,
+                   INetScheduleClientFactory* client_factory = NULL);
     virtual ~CGridWorkerApp();
 
     virtual int Run(void);
@@ -77,61 +79,44 @@ public:
 
 protected:
 
-    /// IWorkerNodeJobFactory interface, should be overloaded
-    /// to create job execution units.
-    /// 
-    virtual IWorkerNodeJob* CreateJob(void) = 0;
-
-    /// Get the worker node version
-    ///
-    virtual string GetJobVersion(void) const = 0;
-
-    /// INetScheduleClientFactory interface
-    virtual CNetScheduleClient* CreateClient(void);
-
-    /// INetScheduleStorageFactory interface
-    /// Elements on netschedule infrastructure can store job input and
-    /// output information using different storage options.
-    /// The default is NetCache, but potentially we may want to use
-    /// SQL server
-    ///
-    virtual INetScheduleStorage* CreateStorage(void) = 0;
+    IWorkerNodeJobFactory&      GetJobFactory() { return *m_JobFactory; }
+    INetScheduleStorageFactory& GetStorageFactory() 
+                                           { return *m_StorageFactory; }
+    INetScheduleClientFactory&  GetClientFactory()
+                                           { return *m_ClientFactory; }
 
 private:
+    auto_ptr<IWorkerNodeJobFactory>      m_JobFactory;
+    auto_ptr<INetScheduleStorageFactory> m_StorageFactory;
+    auto_ptr<INetScheduleClientFactory>  m_ClientFactory;
+
     typedef CPluginManager<CNetScheduleClient> TPMNetSchedule;
     TPMNetSchedule            m_PM_NetSchedule;
 
     auto_ptr<CGridWorkerNode> m_WorkerNode;
-
     bool                      m_HandleSignals;
 
+
 };
 
-/// Main worker node application
-///
-/// This application uses NetCache as a job network storage.
-/// 
-/// @note
-/// Worker node application is parameterised using INI file settings.
-/// Please read the sample ini file for more information.
-///
-class NCBI_XCONNECT_EXPORT CGridWorkerNCSApp : public CGridWorkerApp
+class NCBI_XCONNECT_EXPORT CGridWorkerAppException : public CException
 {
 public:
-    CGridWorkerNCSApp();
+    enum EErrCode {
+        eJobFactoryIsNotSet
+    };
 
-protected:
-    /// Override this function to implement worker node functionality
-    virtual IWorkerNodeJob* CreateJob(void) = 0;
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eJobFactoryIsNotSet: return "eJobFactoryIsNotSetError";
+        default:      return CException::GetErrCodeString();
+        }
+    }
 
-protected:
-    virtual INetScheduleStorage* CreateStorage(void);
-
-private:
-    typedef CPluginManager<CNetCacheClient>    TPMNetCache;
-    TPMNetCache                                m_PM_NetCache;
+    NCBI_EXCEPTION_DEFAULT(CGridWorkerAppException, CException);
 };
-
 
 /* @} */
 
@@ -141,6 +126,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/23 21:26:04  didenko
+ * Class Hierarchy restructure
+ *
  * Revision 1.2  2005/03/23 13:10:32  kuznets
  * documented and doxygenized
  *

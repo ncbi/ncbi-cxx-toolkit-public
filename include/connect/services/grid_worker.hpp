@@ -223,7 +223,7 @@ class IWorkerNodeJobFactory
 public:
     /// Create a job
     ///
-    virtual IWorkerNodeJob* CreateJob(void) = 0;
+    virtual IWorkerNodeJob* CreateInstance(void) = 0;
 
     /// Get the job version
     ///
@@ -239,7 +239,7 @@ class INetScheduleStorageFactory
 public:
     /// Create a NetSchedule storage
     ///
-    virtual INetScheduleStorage* CreateStorage(void) = 0;
+    virtual INetScheduleStorage* CreateInstance(void) = 0;
 };
 
 /// NetSchedule Client Factory interface
@@ -251,7 +251,7 @@ class INetScheduleClientFactory
 public:
     /// Create a NetSchedule client
     ///
-    virtual CNetScheduleClient* CreateClient(void) = 0;
+    virtual CNetScheduleClient* CreateInstance(void) = 0;
 };
 
 /// Grid Worker Node
@@ -265,9 +265,9 @@ public:
 
     /// Construct a worker node using class factories
     ///
-    CGridWorkerNode(INetScheduleClientFactory&  ns_client_creator, 
+    CGridWorkerNode(IWorkerNodeJobFactory& job_creator,
                     INetScheduleStorageFactory& ns_storage_creator,
-                    IWorkerNodeJobFactory&      job_creator);
+                    INetScheduleClientFactory& ns_client_creator);
 
     virtual ~CGridWorkerNode();
 
@@ -279,10 +279,6 @@ public:
     ///
     void SetMaxThreads(unsigned int max_threads) 
                       { m_MaxThreads = max_threads; }
-
-    /// Set the maximum number of jobs ready to execution
-    ///                    
-    void SetQueueSize(unsigned int queue_size) { m_QueueSize = queue_size; }
 
     void SetInitThreads(unsigned int init_threads) 
                        { m_InitThreads = init_threads; }
@@ -322,15 +318,14 @@ public:
     }
 
 private:
-    INetScheduleClientFactory&   m_NSClientFactory;
-    INetScheduleStorageFactory&  m_NSStorageFactory;
     IWorkerNodeJobFactory&       m_JobFactory;
+    INetScheduleStorageFactory&  m_NSStorageFactory;
+    INetScheduleClientFactory&   m_NSClientFactory;
 
     auto_ptr<CNetScheduleClient> m_NSReadClient;
     auto_ptr<CStdPoolOfThreads>  m_ThreadsPool;
     unsigned int                 m_UdpPort;
     unsigned int                 m_MaxThreads;
-    unsigned int                 m_QueueSize;
     unsigned int                 m_InitThreads;
     unsigned int                 m_NSTimeout;
     unsigned int                 m_ThreadsPoolTimeout;
@@ -343,17 +338,17 @@ private:
     IWorkerNodeJob* CreateJob()
     {
         CMutexGuard guard(m_JobFactoryMutex);
-        return m_JobFactory.CreateJob();
+        return m_JobFactory.CreateInstance();
     }
     INetScheduleStorage* CreateStorage()
     {
         CMutexGuard guard(m_StorageFactoryMutex);
-        return  m_NSStorageFactory.CreateStorage();
+        return  m_NSStorageFactory.CreateInstance();
     }
     CNetScheduleClient* CreateClient()
     {
         CMutexGuard guard(m_NSClientFactoryMutex);
-        return m_NSClientFactory.CreateClient();
+        return m_NSClientFactory.CreateInstance();
     }
 
     CGridWorkerNode(const CGridWorkerNode&);
@@ -369,6 +364,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/23 21:26:04  didenko
+ * Class Hierarchy restructure
+ *
  * Revision 1.4  2005/03/23 13:10:32  kuznets
  * documented and doxygenized
  *

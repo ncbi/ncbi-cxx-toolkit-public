@@ -231,13 +231,13 @@ void CWorkerNodeRequest::Process(void)
 /////////////////////////////////////////////////////////////////////////////
 //
 //     CGridWorkerNode       -- 
-CGridWorkerNode::CGridWorkerNode(INetScheduleClientFactory&  client_creator, 
-                                 INetScheduleStorageFactory& storage_creator,
-                                 IWorkerNodeJobFactory&      job_creator)
-    : m_NSClientFactory(client_creator), 
-      m_NSStorageFactory(storage_creator),
-      m_JobFactory(job_creator),
-      m_UdpPort(9111), m_MaxThreads(4), m_QueueSize(40), m_InitThreads(20),
+CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&      job_factory,
+                                 INetScheduleStorageFactory& storage_factory,
+                                 INetScheduleClientFactory&  client_factory)
+    : m_JobFactory(job_factory),
+      m_NSStorageFactory(storage_factory),
+      m_NSClientFactory(client_factory), 
+      m_UdpPort(9111), m_MaxThreads(4), m_InitThreads(20),
       m_NSTimeout(30), m_ThreadsPoolTimeout(30), 
       m_ShutdownLevel(CNetScheduleClient::eNoShutdown)
 {
@@ -252,7 +252,7 @@ CGridWorkerNode::~CGridWorkerNode()
 void CGridWorkerNode::Start()
 {
     m_NSReadClient.reset(CreateClient());
-    m_ThreadsPool.reset(new CStdPoolOfThreads(m_MaxThreads, m_QueueSize));
+    m_ThreadsPool.reset(new CStdPoolOfThreads(m_MaxThreads, m_MaxThreads));
     m_ThreadsPool->Spawn(m_InitThreads);
 
     string    job_key;
@@ -263,11 +263,13 @@ void CGridWorkerNode::Start()
         if (GetShutdownLevel() != CNetScheduleClient::eNoShutdown)
             break;
         try {
-            try {
-                m_ThreadsPool->WaitForRoom(m_ThreadsPoolTimeout);
-            }
-            catch (CBlockingQueueException&) {
-                continue;
+            if (m_ThreadsPool->IsFull()) {
+                try {
+                    m_ThreadsPool->WaitForRoom(m_ThreadsPoolTimeout);
+                }
+                catch (CBlockingQueueException&) {
+                    continue;
+                }
             }
             int try_count = 0;
             while(1) {
@@ -294,12 +296,19 @@ void CGridWorkerNode::Start()
                 auto_ptr<CWorkerNodeJobContext> 
                     context(new CWorkerNodeJobContext(*this, job_key, input));
                 CRef<CStdRequest> job_req(new CWorkerNodeRequest(context));
-                m_ThreadsPool->AcceptRequest(job_req);
+                try {
+                    m_ThreadsPool->AcceptRequest(job_req);
+                }
+                catch (CBlockingQueueException&) {
+                    // that must not happen after CBlockingQueue is fixed
+                    _ASSERT(0);
+                    m_NSReadClient->ReturnJob(job_key);
+                }
             }
         } 
         catch (exception& ex) {
             LOG_POST(Error << ex.what());
-            RequestShutdown(CNetScheduleClient::eImmidiate);
+            RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
         }
     }
     LOG_POST(Info << "Shutting down...");
@@ -331,6 +340,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/23 21:26:06  didenko
+ * Class Hierarchy restructure
+ *
  * Revision 1.3  2005/03/22 21:43:15  didenko
  * Got rid of warnning on Sun WorkShop
  *

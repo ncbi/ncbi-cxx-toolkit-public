@@ -163,9 +163,10 @@ void CWorkerNodeThreadedServer::Process(SOCK sock)
         
         if( strncmp( request.c_str(), SHUTDOWN_CMD.c_str(), 
                      SHUTDOWN_CMD.length() ) == 0 ) {
-            m_WorkerNode.RequestShutdown(CNetScheduleClient::eNormal); 
+            m_WorkerNode.RequestShutdown(CNetScheduleClient::eNormalShutdown);
             string ans = "OK:";
             socket.Write(ans.c_str(), ans.length() + 1 );
+            LOG_POST(Info << "Shutdown request has been received.");
             return;
         }
         if( strncmp( request.c_str(), VERSION_CMD.c_str(), 
@@ -185,124 +186,30 @@ void CWorkerNodeThreadedServer::Process(SOCK sock)
 
 /////////////////////////////////////////////////////////////////////////////
 //
-
-#if defined(NCBI_OS_UNIX)
 /// @internal
-extern "C" 
-void GridWorker_SignalHandler( int )
+class CNetScheduleStorageFactory_NetCache : public INetScheduleStorageFactory
 {
-    CGridWorkerApp* app = 
-        dynamic_cast<CGridWorkerApp*>(CNcbiApplication::Instance());
-    if (app) {
-        app->RequestShutdown();
-    }
-}
-#endif
+public:
+    CNetScheduleStorageFactory_NetCache(const IRegistry& reg);
 
-CGridWorkerApp::CGridWorkerApp()
-: m_HandleSignals(true)
-{
-    m_PM_NetSchedule.RegisterWithEntryPoint(NCBI_EntryPoint_xnetschedule);
-}
-CGridWorkerApp::~CGridWorkerApp()
-{
-}
+    virtual INetScheduleStorage* CreateInstance(void);
 
-int CGridWorkerApp::Run(void)
-{
-    const IRegistry& reg = GetConfig();
-
-    unsigned int udp_port =
-       reg.GetInt("server", "udp_port", 9111,0,IRegistry::eReturn);
-    unsigned int max_threads = 
-       reg.GetInt("server","max_threads",4,0,IRegistry::eReturn);
-    unsigned int queue_size =
-       reg.GetInt("server","max_queue_size",10,0,IRegistry::eReturn);
-    unsigned int init_threads = 
-       reg.GetInt("server","init_threads",2,0,IRegistry::eReturn);
-    unsigned int ns_timeout = 
-       reg.GetInt("server","job_wait_timeout",30,0,IRegistry::eReturn);
-    unsigned int threads_pool_timeout = 
-       reg.GetInt("server","thread_pool_timeout",30,0,IRegistry::eReturn);
-    unsigned int control_port = 
-       reg.GetInt("server","control_port",9300,0,IRegistry::eReturn);
-
-    m_WorkerNode.reset( new CGridWorkerNode( *this, *this, *this ) );
-    m_WorkerNode->SetListeningPort(udp_port);
-    m_WorkerNode->SetMaxThreads(max_threads);
-    m_WorkerNode->SetInitThreads(init_threads);
-    m_WorkerNode->SetNSTimeout(ns_timeout);
-    m_WorkerNode->SetQueueSize(queue_size);
-    m_WorkerNode->SetThreadsPoolTimeout(threads_pool_timeout);
-
-
-#if defined(NCBI_OS_UNIX)
-    if (m_HandleSignals ) {
-    // attempt to get server gracefully shutdown on signal
-        signal( SIGINT, GridWorker_SignalHandler);
-        signal( SIGTERM, GridWorker_SignalHandler);    
-    }
-#endif
-
-    {{
-    CRef<CGridWorkerNodeThread> worker_thread(
-                                new CGridWorkerNodeThread(*m_WorkerNode));
-    worker_thread->Run();
-    string msg = "Grid Worker Node \"" + GetJobVersion() + "\" is started.";
-    LOG_POST(Info 
-        << "Grid Worker Node \"" << GetJobVersion() << "\" is started.\n"
-        << "Waiting for jobs on UDP port " << udp_port << "\n"
-        << "Waiting for control commands on TCP port " << control_port << "\n"
-        << "Maximum job threads is " << max_threads << "\n");
-
-    CWorkerNodeThreadedServer control_server(control_port, *m_WorkerNode);
-    control_server.Run();
-    worker_thread->Join();
-    }}
-    m_WorkerNode.reset(0);    
-    return 0;
-}
-
-void CGridWorkerApp::RequestShutdown()
-{
-    if (m_WorkerNode.get())
-        m_WorkerNode->RequestShutdown(CNetScheduleClient::eImmidiate);
-}
-
-    // INetScheduleClientFactory interface
-CNetScheduleClient* CGridWorkerApp::CreateClient(void)
-{
-    auto_ptr<CNetScheduleClient> ret;
-
-    CConfig conf(GetConfig());
-    const CConfig::TParamTree* param_tree = conf.GetTree();
-    const TPluginManagerParamTree* netschedule_tree = 
-            param_tree->FindSubNode(kNetScheduleDriverName);
-
-    if (netschedule_tree) {
-        ret.reset( 
-            m_PM_NetSchedule.CreateInstance(
-                    kNetScheduleDriverName,
-                    CVersionInfo(TPMNetSchedule::TInterfaceVersion::eMajor,
-                                 TPMNetSchedule::TInterfaceVersion::eMinor,
-                                 TPMNetSchedule::TInterfaceVersion::ePatchLevel), 
-                                 netschedule_tree)
-                                 );
-        ret->ActivateRequestRateControl(false);
-    }
-    return ret.release();
-                                 
-}
-
-CGridWorkerNCSApp::CGridWorkerNCSApp()
+private:
+    typedef CPluginManager<CNetCacheClient>    TPMNetCache;
+    TPMNetCache               m_PM_NetCache;
+    const IRegistry& m_Registry;
+};
+CNetScheduleStorageFactory_NetCache::
+        CNetScheduleStorageFactory_NetCache(const IRegistry& reg)
+: m_Registry(reg)
 {
     m_PM_NetCache.RegisterWithEntryPoint(NCBI_EntryPoint_xnetcache);
 }
 
-    // INetScheduleStorageFactory interface
-INetScheduleStorage* CGridWorkerNCSApp::CreateStorage(void)
+INetScheduleStorage* 
+CNetScheduleStorageFactory_NetCache::CreateInstance(void)
 {
-    CConfig conf(GetConfig());
+    CConfig conf(m_Registry);
     const CConfig::TParamTree* param_tree = conf.GetTree();
     const TPluginManagerParamTree* netcache_tree = 
             param_tree->FindSubNode(kNetCacheDriverName);
@@ -323,11 +230,166 @@ INetScheduleStorage* CGridWorkerNCSApp::CreateStorage(void)
 }
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+/// @internal
+class CNetScheduleClientFactory : public INetScheduleClientFactory
+{
+public:
+    CNetScheduleClientFactory(const IRegistry& reg);
+
+    virtual CNetScheduleClient* CreateInstance(void);
+
+private:
+    typedef CPluginManager<CNetScheduleClient> TPMNetSchedule;
+    TPMNetSchedule            m_PM_NetSchedule;
+    const IRegistry& m_Registry;
+};
+
+CNetScheduleClientFactory::CNetScheduleClientFactory(const IRegistry& reg)
+: m_Registry(reg)
+{
+    m_PM_NetSchedule.RegisterWithEntryPoint(NCBI_EntryPoint_xnetschedule);
+}
+CNetScheduleClient* CNetScheduleClientFactory::CreateInstance(void)
+{
+    auto_ptr<CNetScheduleClient> ret;
+
+    CConfig conf(m_Registry);
+    const CConfig::TParamTree* param_tree = conf.GetTree();
+    const TPluginManagerParamTree* netschedule_tree = 
+            param_tree->FindSubNode(kNetScheduleDriverName);
+
+    if (netschedule_tree) {
+        ret.reset( 
+            m_PM_NetSchedule.CreateInstance(
+                    kNetScheduleDriverName,
+                    CVersionInfo(TPMNetSchedule::TInterfaceVersion::eMajor,
+                                 TPMNetSchedule::TInterfaceVersion::eMinor,
+                                 TPMNetSchedule::TInterfaceVersion::ePatchLevel), 
+                                 netschedule_tree)
+                                 );
+        ret->ActivateRequestRateControl(false);
+    }
+    return ret.release();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+#if defined(NCBI_OS_UNIX)
+/// @internal
+extern "C" 
+void GridWorker_SignalHandler( int )
+{
+    CGridWorkerApp* app = 
+        dynamic_cast<CGridWorkerApp*>(CNcbiApplication::Instance());
+    if (app) {
+        app->RequestShutdown();
+    }
+}
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+//
+CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory, 
+                               INetScheduleStorageFactory* storage_factory,
+                               INetScheduleClientFactory* client_factory)
+: m_JobFactory(job_factory), m_StorageFactory(storage_factory),
+  m_ClientFactory(client_factory), m_HandleSignals(true)
+{
+    if (!m_JobFactory.get())
+        NCBI_THROW(CGridWorkerAppException,
+                   eJobFactoryIsNotSet, "The JobFactory is not set.");
+    if (!m_StorageFactory.get())
+        m_StorageFactory.reset(
+            new CNetScheduleStorageFactory_NetCache(GetConfig()) 
+                              );
+    if (!m_ClientFactory.get())
+        m_ClientFactory.reset(
+            new CNetScheduleClientFactory(GetConfig())
+                              );
+
+}
+CGridWorkerApp::~CGridWorkerApp()
+{
+}
+
+int CGridWorkerApp::Run(void)
+{
+    const IRegistry& reg = GetConfig();
+
+    unsigned int udp_port =
+       reg.GetInt("server", "udp_port", 9111,0,IRegistry::eReturn);
+    unsigned int max_threads = 
+       reg.GetInt("server","max_threads",4,0,IRegistry::eReturn);
+    unsigned int init_threads = 
+       reg.GetInt("server","init_threads",2,0,IRegistry::eReturn);
+    unsigned int ns_timeout = 
+       reg.GetInt("server","job_wait_timeout",30,0,IRegistry::eReturn);
+    unsigned int threads_pool_timeout = 
+       reg.GetInt("server","thread_pool_timeout",30,0,IRegistry::eReturn);
+    unsigned int control_port = 
+       reg.GetInt("server","control_port",9300,0,IRegistry::eReturn);
+    bool server_log = 
+        reg.GetBool("server","log",false,0,IRegistry::eReturn);
+    if (server_log)
+        SetDiagPostLevel(eDiag_Info);
+
+    m_WorkerNode.reset( new CGridWorkerNode(GetJobFactory(), 
+                                            GetStorageFactory(), 
+                                            GetClientFactory())
+                       );
+    m_WorkerNode->SetListeningPort(udp_port);
+    m_WorkerNode->SetMaxThreads(max_threads);
+    m_WorkerNode->SetInitThreads(init_threads);
+    m_WorkerNode->SetNSTimeout(ns_timeout);
+    m_WorkerNode->SetThreadsPoolTimeout(threads_pool_timeout);
+
+
+#if defined(NCBI_OS_UNIX)
+    if (m_HandleSignals ) {
+    // attempt to get server gracefully shutdown on signal
+        signal( SIGINT, GridWorker_SignalHandler);
+        signal( SIGTERM, GridWorker_SignalHandler);    
+    }
+#endif
+
+    {{
+    CRef<CGridWorkerNodeThread> worker_thread(
+                                new CGridWorkerNodeThread(*m_WorkerNode));
+    worker_thread->Run();
+    LOG_POST(Info 
+        << "Grid Worker Node \"" << GetJobFactory().GetJobVersion() 
+        << "\" is started.\n"
+        << "Waiting for jobs on UDP port " << udp_port << "\n"
+        << "Waiting for control commands on TCP port " << control_port << "\n"
+        << "Maximum job threads is " << max_threads << "\n");
+
+    CWorkerNodeThreadedServer control_server(control_port, *m_WorkerNode);
+    control_server.Run();
+    worker_thread->Join();
+    }}
+    m_WorkerNode.reset(0);    
+    return 0;
+}
+
+void CGridWorkerApp::RequestShutdown()
+{
+    if (m_WorkerNode.get())
+        m_WorkerNode->RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/23 21:26:06  didenko
+ * Class Hierarchy restructure
+ *
  * Revision 1.2  2005/03/22 20:36:22  didenko
  * Make it compile under CGG
  *
