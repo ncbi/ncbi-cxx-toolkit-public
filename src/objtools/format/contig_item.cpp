@@ -66,40 +66,29 @@ void CContigItem::Format
 
 void CContigItem::x_GatherInfo(CBioseqContext& ctx)
 {
-    typedef CRef<CSeq_loc>  TLoc;
+    typedef CSeq_loc_mix::Tdata::value_type TLoc;
+
     if ( !ctx.GetHandle().IsSetInst_Ext() ) {
         return;
     }
 
     CSeq_loc_mix::Tdata& data = m_Loc->SetMix().Set();
-    //const CSeq_inst& inst = ctx.GetHandle().GetSeq_inst();
-    //if ( !inst.CanGetExt() ) {
-    //    return;
-    //}
-    const CSeq_ext& ext = ctx.GetHandle().GetInst_Ext();
+    const CSeq_ext& const_ext = ctx.GetHandle().GetInst_Ext();
+    CSeq_ext& ext = const_cast<CSeq_ext&>(const_ext);
 
     if (ctx.IsSegmented()) {
         ITERATE (CSeg_ext::Tdata, it, ext.GetSeg().Get()) {
             data.push_back(*it);
         }
     } else if ( ctx.IsDelta() ) {
-        ITERATE (CDelta_ext::Tdata, it, ext.GetDelta().Get()) {
-            if ( (*it)->IsLoc() ) {
-                CSeq_loc& l = const_cast<CSeq_loc&>((*it)->GetLoc());
-                CRef<CSeq_loc> lr(&l);
-                data.push_back(lr);
+        NON_CONST_ITERATE (CDelta_ext::Tdata, it, ext.SetDelta().Set()) {
+            if ((*it)->IsLoc()) {
+                data.push_back(TLoc(&((*it)->SetLoc())));
             } else {  // literal
                 const CSeq_literal& lit = (*it)->GetLiteral();
                 TSeqPos len = lit.CanGetLength() ? lit.GetLength() : 0;
-                if ( lit.CanGetSeq_data() ) {
-                    // data with 0 length => gap
-                    if ( len == 0 ) {
-                        data.push_back(TLoc(new CFlatGapLoc(0)));
-                    } else {
-                        // !!! don't know what to do here
-                    }
-                } else {
-                    // no data => gap
+                // no data or data with 0 length => gap
+                if (!lit.CanGetSeq_data()  ||  len == 0) {
                     data.push_back(TLoc(new CFlatGapLoc(len)));
                 }
             }
@@ -116,6 +105,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/11/15 20:06:21  shomrat
+* Code cleanup
+*
 * Revision 1.6  2004/08/30 13:37:19  shomrat
 * allow contig for segmented with far segments
 *
