@@ -93,6 +93,7 @@ public:
     EOperatorType GetOperatorType() const;
 
     const string& GetValue() const { return m_Value; }
+    string& GetValue() { return m_Value; }
     void SetValue(const string& value) { m_Value = value; }
 
     bool HasValue() const { return !m_Value.empty(); }
@@ -251,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/01 14:01:59  kuznets
+ * Add non const GetValue() accessor to query node
+ *
  * Revision 1.5  2004/02/24 16:30:47  kuznets
  * Improved doxygen documentation
  *
