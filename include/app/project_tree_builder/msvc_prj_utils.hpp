@@ -391,16 +391,16 @@ class CBuildType
 public:
     CBuildType(bool dll_flag);
 
-    typedef enum {
+    enum EBuildType {
         eStatic,
         eDll
-    } TBuildType;
+    };
 
-    TBuildType GetType   (void) const;
+    EBuildType GetType   (void) const;
     string     GetTypeStr(void) const;
 
 private:
-    TBuildType m_Type;
+    EBuildType m_Type;
     
     //prohibited to:
     CBuildType(void);
@@ -460,6 +460,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/06/14 19:18:43  gorelenk
+ * Changed definition of enum in CBuildType .
+ *
  * Revision 1.23  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

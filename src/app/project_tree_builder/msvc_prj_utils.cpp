@@ -932,7 +932,7 @@ CBuildType::CBuildType(bool dll_flag)
 }
 
 
-CBuildType::TBuildType CBuildType::GetType(void) const
+CBuildType::EBuildType CBuildType::GetType(void) const
 {
     return m_Type;
 }
@@ -1027,6 +1027,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/06/14 19:19:08  gorelenk
+ * Changed definition of enum in CBuildType .
+ *
  * Revision 1.27  2004/06/14 18:02:29  gorelenk
  * Changed size_t to streampos in PromoteIfDifferent .
  *
