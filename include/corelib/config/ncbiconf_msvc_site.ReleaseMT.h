@@ -1,12 +1,3 @@
-#ifndef CORELIB_CONFIG___NCBICONF_MSVC_SITE__RELEASE_MT__H
-#define CORELIB_CONFIG___NCBICONF_MSVC_SITE__RELEASE_MT__H
-
-#ifdef CORELIB_CONFIG___NCBICONF_MSVC_SITE__H
-#  error "Must not include MSVC site headers from different configurations!"
-#endif
-#define CORELIB_CONFIG___NCBICONF_MSVC_SITE__H
-
-
 /* $Id$
 * ===========================================================================
 *
@@ -39,6 +30,3 @@
 *   when configuring the toolkit
 *
 */
-
-
-#endif  // CORELIB_CONFIG___NCBICONF_MSVC_SITE__RELEASE_MT__H

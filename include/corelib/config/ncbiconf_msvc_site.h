@@ -1,5 +1,5 @@
-#ifndef CORELIB_CONFIG___NCBICONF_MSVC_SITE__H_ROOT
-#define CORELIB_CONFIG___NCBICONF_MSVC_SITE__H_ROOT
+#ifndef CORELIB_CONFIG___NCBICONF_MSVC_SITE__H
+#define CORELIB_CONFIG___NCBICONF_MSVC_SITE__H
 
 /* $Id$
 * ===========================================================================
@@ -55,4 +55,4 @@
 #  endif
 #endif
 
-#endif // CORELIB_CONFIG___NCBICONF_MSVC_SITE__H_ROOT
+#endif // CORELIB_CONFIG___NCBICONF_MSVC_SITE__H

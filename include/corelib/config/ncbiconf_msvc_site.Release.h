@@ -1,6 +1,3 @@
-#ifndef CORELIB_CONFIG___NCBICONF_MSVC_SITE__H
-#define CORELIB_CONFIG___NCBICONF_MSVC_SITE__H
-
 /* $Id$
 * ===========================================================================
 *
@@ -33,5 +30,3 @@
 *   when configuring the toolkit
 *
 */
-
-#endif // CORELIB_CONFIG___NCBICONF_MSVC_SITE__H
