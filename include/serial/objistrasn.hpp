@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/06/01 19:06:56  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.32  2000/05/24 20:08:13  vasilche
 * Implemented XML dump.
 *
@@ -172,6 +175,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objistr.hpp>
+#include <serial/lightstr.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -204,7 +208,8 @@ protected:
     // action: read ID into local buffer
     // return: ID pointer and length
     // note: it is not zero ended
-    pair<const char*, size_t> ReadId(char firstChar);
+    CLightString ReadId(char firstChar);
+    CLightString ReadNonEmptyId(char firstChar);
 
     virtual bool ReadBool(void);
     virtual char ReadChar(void);
@@ -245,9 +250,18 @@ protected:
     virtual TMemberIndex BeginClassMember(CObjectStackClassMember& m,
                                           const CMembers& members,
                                           CClassMemberPosition& pos);
+    virtual void ReadClassRandom(CObjectClassReader& reader,
+                                 TTypeInfo classType,
+                                 const CMembersInfo& members);
+    virtual void ReadClassSequential(CObjectClassReader& reader,
+                                     TTypeInfo classType,
+                                     const CMembersInfo& members);
 
     virtual TMemberIndex BeginChoiceVariant(CObjectStackChoiceVariant& v,
                                             const CMembers& members);
+    virtual void ReadChoice(CObjectChoiceReader& reader,
+                            TTypeInfo classType,
+                            const CMembersInfo& variants);
 
 	virtual void BeginBytes(ByteBlock& block);
     int GetHexChar(void);
@@ -258,8 +272,6 @@ private:
     virtual EPointerType ReadPointerType(void);
     virtual TIndex ReadObjectPointer(void);
     virtual string ReadOtherPointer(void);
-    virtual bool HaveMemberSuffix(void);
-    virtual TMemberIndex ReadMemberSuffix(const CMembers& members);
 
     void SkipObjectData(void);
     void SkipObjectPointer(void);
@@ -290,6 +302,7 @@ private:
     char SkipWhiteSpace(void);
     char SkipWhiteSpaceAndGetChar(void);
     void SkipComments(void);
+    void UnexpectedMember(const CLightString& id, const CMembers& members);
 };
 
 //#include <objistrb.inl>

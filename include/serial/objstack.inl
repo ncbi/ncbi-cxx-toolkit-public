@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/06/01 19:06:58  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.1  2000/05/24 20:08:15  vasilche
 * Implemented XML dump.
 *
@@ -196,9 +199,17 @@ CObjectStackArray::CObjectStackArray(CObjectStack& stack,
 }
 
 inline
+CObjectStackArrayElement::CObjectStackArrayElement(CObjectStack& stack,
+                                                   bool ended)
+    : CObjectStackFrame(stack, eFrameArrayElement, 'E', ended)
+{
+}
+
+inline
 CObjectStackArrayElement::CObjectStackArrayElement(CObjectStackArray& array,
-                                                   TTypeInfo elementType)
-    : CObjectStackFrame(array, eFrameArrayElement, 'E', true),
+                                                   TTypeInfo elementType,
+                                                   bool ended)
+    : CObjectStackFrame(array, eFrameArrayElement, 'E', ended),
       m_ElementType(elementType)
 {
 }
@@ -207,6 +218,20 @@ inline
 CObjectStackClass::CObjectStackClass(CObjectStack& stack,
                                      TTypeInfo classInfo, bool randomOrder)
     : CObjectStackBlock(stack, eFrameClass, classInfo, randomOrder)
+{
+}
+
+inline
+CObjectStackClassMember::CObjectStackClassMember(CObjectStack& stack,
+                                                 bool ended)
+    : CObjectStackFrame(stack, eFrameClassMember, ended)
+{
+}
+
+inline
+CObjectStackClassMember::CObjectStackClassMember(CObjectStack& stack,
+                                                 const CMemberId& id)
+    : CObjectStackFrame(stack, eFrameClassMember, id)
 {
 }
 
@@ -227,6 +252,12 @@ inline
 CObjectStackChoice::CObjectStackChoice(CObjectStack& stack,
                                        TTypeInfo choiceInfo)
     : CObjectStackFrame(stack, eFrameChoice, choiceInfo)
+{
+}
+
+inline
+CObjectStackChoiceVariant::CObjectStackChoiceVariant(CObjectStack& stack)
+    : CObjectStackFrame(stack, eFrameChoiceVariant)
 {
 }
 

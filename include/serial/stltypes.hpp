@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2000/06/01 19:06:58  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.40  2000/05/25 13:27:13  vasilche
 * Fixed error with mixing list<> and set<>.
 *
@@ -398,7 +401,7 @@ public:
         {
         }
 
-    virtual void WriteTo(CObjectOStream& out)
+    virtual void WriteElement(CObjectOStream& out)
         {
             m_DataTypeInfo->WriteData(out, &*m_Iterator);
             m_NoMoreElements = ++m_Iterator == m_End;
@@ -419,7 +422,7 @@ public:
         {
         }
 
-    virtual void ReadFrom(CObjectIStream& in)
+    virtual void ReadElement(CObjectIStream& in)
         {
 			typename List::value_type value;
             m_Object.push_back(value);
@@ -440,7 +443,7 @@ public:
         {
         }
 
-    virtual void ReadFrom(CObjectIStream& in)
+    virtual void ReadElement(CObjectIStream& in)
         {
             typename Set::value_type data;
             m_DataTypeInfo->ReadData(in, &data);
@@ -833,10 +836,11 @@ public:
         {
         }
 
-    virtual void WriteTo(CObjectOStream& out);
+    virtual void WriteElement(CObjectOStream& out);
 
 protected:
-    virtual void WriteElement(CObjectOStream& out, CObjectStackClass& cls) = 0;
+    virtual void WriteClassElement(CObjectOStream& out,
+                                   CObjectStackClass& cls) = 0;
 
     const CStlClassInfoMapImpl* m_MapTypeInfo;
 };
@@ -852,7 +856,7 @@ public:
         }
 
 protected:
-    virtual void WriteElement(CObjectOStream& out, CObjectStackClass& cls)
+    virtual void WriteClassElement(CObjectOStream& out, CObjectStackClass& cls)
         {
             m_MapTypeInfo->WriteKeyAndValue(out, cls,
                                             &m_Iterator->first,
@@ -873,10 +877,11 @@ public:
         {
         }
 
-    virtual void ReadFrom(CObjectIStream& in);
+    virtual void ReadElement(CObjectIStream& in);
 
 protected:
-    virtual void ReadElement(CObjectIStream& in, CObjectStackClass& cls) = 0;
+    virtual void ReadClassElement(CObjectIStream& in,
+                                  CObjectStackClass& cls) = 0;
 
     const CStlClassInfoMapImpl* m_MapTypeInfo;
 };
@@ -892,7 +897,7 @@ public:
         }
 
 protected:
-    virtual void ReadElement(CObjectIStream& in, CObjectStackClass& cls)
+    virtual void ReadClassElement(CObjectIStream& in, CObjectStackClass& cls)
         {
             Key key;
             m_MapTypeInfo->ReadKey(in, cls, &key);
@@ -914,7 +919,7 @@ public:
         }
     
 protected:
-    virtual void ReadElement(CObjectIStream& in, CObjectStackClass& cls)
+    virtual void ReadClassElement(CObjectIStream& in, CObjectStackClass& cls)
         {
             Key key;
             m_MapTypeInfo->ReadKey(in, cls, &key);

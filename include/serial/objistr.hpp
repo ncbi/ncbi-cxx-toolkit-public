@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/06/01 19:06:56  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.41  2000/05/24 20:08:13  vasilche
 * Implemented XML dump.
 *
@@ -195,6 +198,7 @@ BEGIN_NCBI_SCOPE
 class CTypeMapper;
 class CMemberId;
 class CMembers;
+class CMembersInfo;
 class CDelayBuffer;
 class CByteSource;
 class CByteSourceReader;
@@ -204,7 +208,7 @@ class CObjectArrayReader
 public:
     virtual ~CObjectArrayReader(void);
 
-    virtual void ReadFrom(CObjectIStream& in) = 0;
+    virtual void ReadElement(CObjectIStream& in) = 0;
 };
 
 class CObjectArraySkipper : public CObjectArrayReader
@@ -215,10 +219,33 @@ public:
         {
         }
 
-    virtual void ReadFrom(CObjectIStream& in);
+    virtual void ReadElement(CObjectIStream& in);
 
 private:
     TTypeInfo m_TypeInfo;
+};
+
+class CObjectClassReader
+{
+public:
+    virtual ~CObjectClassReader(void);
+
+    virtual void ReadParentClass(CObjectIStream& in,
+                                 TTypeInfo parentClassInfo);
+    virtual void ReadMember(CObjectIStream& in,
+                            const CMembersInfo& members, int index) = 0;
+    virtual void AssignMemberDefault(CObjectIStream& in,
+                                     const CMembersInfo& members, int index);
+};
+
+class CObjectChoiceReader
+{
+public:
+    virtual ~CObjectChoiceReader(void);
+
+    virtual void ReadChoiceVariant(CObjectIStream& in,
+                                   const CMembersInfo& variants,
+                                   int index) = 0;
 };
 
 class CObjectIStream : public CObjectStack
@@ -412,7 +439,9 @@ public:
     virtual TObjectPtr ReadPointer(TTypeInfo declaredType);
     enum EPointerType {
         eNullPointer,
+#if 0
         eMemberPointer,
+#endif
         eObjectPointer,
         eThisPointer,
         eOtherPointer
@@ -582,8 +611,10 @@ public:
         }
 
     // class interface
-    virtual void BeginNamedType(CObjectStackNamedFrame& type);
-    virtual void EndNamedType(CObjectStackNamedFrame& type);
+    virtual void ReadNamedType(TTypeInfo namedTypeInfo,
+                               TTypeInfo typeInfo, TObjectPtr object);
+    virtual void SkipNamedType(TTypeInfo namedTypeInfo,
+                               TTypeInfo typeInfo);
 
     virtual void BeginClass(CObjectStackClass& cls) = 0;
     virtual void EndClass(CObjectStackClass& cls);
@@ -595,10 +626,29 @@ public:
                                           CClassMemberPosition& pos) = 0;
     virtual void EndClassMember(CObjectStackClassMember& m);
 
+    void DuplicatedMember(const CMembersInfo& members, int index);
+    virtual void ReadClassRandom(CObjectClassReader& reader,
+                                 TTypeInfo classType,
+                                 const CMembersInfo& members);
+    virtual void ReadClassSequential(CObjectClassReader& reader,
+                                     TTypeInfo classType,
+                                     const CMembersInfo& members);
+    void ReadClass(CObjectClassReader& reader, TTypeInfo classType,
+                   const CMembersInfo& members, bool randomOrder)
+        {
+            if ( randomOrder )
+                ReadClassRandom(reader, classType, members);
+            else
+                ReadClassSequential(reader, classType, members);
+        }
+
     // choice interface
     virtual TMemberIndex BeginChoiceVariant(CObjectStackChoiceVariant& v,
                                             const CMembers& variants) = 0;
     virtual void EndChoiceVariant(CObjectStackChoiceVariant& v);
+    virtual void ReadChoice(CObjectChoiceReader& reader,
+                            TTypeInfo classType,
+                            const CMembersInfo& variants);
 
     // byte block
 	virtual void BeginBytes(ByteBlock& block) = 0;
@@ -613,9 +663,6 @@ protected:
     virtual void ReadThisPointerEnd(void);
     virtual string ReadOtherPointer(void) = 0;
     virtual void ReadOtherPointerEnd(void);
-    virtual bool HaveMemberSuffix(void);
-    virtual TMemberIndex ReadMemberSuffix(const CMembers& members) = 0;
-    void SelectMember(CObjectInfo& object);
 
     virtual bool ReadBool(void) = 0;
     virtual char ReadChar(void) = 0;

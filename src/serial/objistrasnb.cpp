@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/06/01 19:07:04  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.34  2000/05/24 20:08:47  vasilche
 * Implemented XML dump.
 *
@@ -194,6 +197,8 @@ TByte MakeTagByte(EClass c, bool constructed)
     return (c << 6) | (constructed? 0x20: 0);
 }
 
+static const TByte KEndOfContentsByte = 0;
+
 static inline
 ETag ExtractTag(TByte byte)
 {
@@ -277,13 +282,15 @@ TByte CObjectIStreamAsnBinary::PeekTagByte(size_t index)
     if ( m_CurrentTagState != eTagStart )
         THROW1_TRACE(runtime_error, "bad PeekTagByte call");
 #endif
-    try {
-        return m_Input.PeekChar(index);
-    }
-    CATCH_READ_ERROR;
+    //try {
+    return m_Input.PeekChar(index);
+    //}
+    //CATCH_READ_ERROR;
 }
 
+#if !CHECK_STREAM_INTEGRITY
 inline
+#endif
 TByte CObjectIStreamAsnBinary::StartTag(void)
 {
 #if CHECK_STREAM_INTEGRITY
@@ -378,19 +385,30 @@ TByte CObjectIStreamAsnBinary::PeekAnyTag(void)
     return fByte;
 }
 
+inline
 void CObjectIStreamAsnBinary::ExpectSysTag(EClass c, bool constructed,
                                            ETag tag)
 {
     _ASSERT(tag != eLongTag);
-    if ( StartTag() != MakeTagByte(c, constructed, tag) ) {
-        ThrowError(eFormatError,
-                   "unexpected tag: " + NStr::IntToString(m_Input.PeekChar()) +
-                   ", should be: " + NStr::IntToString(tag));
-    }
+    if ( StartTag() != MakeTagByte(c, constructed, tag) )
+        UnexpectedTag(tag);
     m_CurrentTagLength = 1;
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagParsed;
 #endif
+}
+
+void CObjectIStreamAsnBinary::UnexpectedTag(TTag tag)
+{
+    ThrowError(eFormatError,
+               "unexpected tag: " + NStr::IntToString(m_Input.PeekChar()) +
+               ", should be: " + NStr::IntToString(tag));
+}
+
+void CObjectIStreamAsnBinary::UnexpectedByte(TByte byte)
+{
+    ThrowError(eFormatError,
+               "byte " + NStr::IntToString(byte) + " expected");
 }
 
 inline
@@ -412,10 +430,10 @@ TByte CObjectIStreamAsnBinary::FlushTag(void)
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eLengthValue;
 #endif
-    try {
-        return m_Input.GetChar();
-    }
-    CATCH_READ_ERROR;
+    //try {
+    return m_Input.GetChar();
+    //}
+    //CATCH_READ_ERROR;
 }
 
 #if !CHECK_STREAM_INTEGRITY
@@ -427,10 +445,10 @@ bool CObjectIStreamAsnBinary::PeekIndefiniteLength(void)
     if ( m_CurrentTagState != eTagParsed )
         THROW1_TRACE(runtime_error, "illegal PeekIndefiniteLength call");
 #endif
-    try {
-        return TByte(m_Input.PeekChar(m_CurrentTagLength)) == 0x80;
-    }
-    CATCH_READ_ERROR;
+    //try {
+    return TByte(m_Input.PeekChar(m_CurrentTagLength)) == 0x80;
+    //}
+    //CATCH_READ_ERROR;
 }
 
 #if !CHECK_STREAM_INTEGRITY
@@ -456,6 +474,9 @@ void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
 #endif
 }
 
+#if !CHECK_STREAM_INTEGRITY
+inline
+#endif
 size_t CObjectIStreamAsnBinary::StartTagData(size_t length)
 {
 #if CHECK_STREAM_INTEGRITY
@@ -491,10 +512,10 @@ size_t CObjectIStreamAsnBinary::ReadLength(void)
     if ( lengthLength > sizeof(size_t) ) {
         ThrowError(eOverflow, "length overflow");
     }
-    try {
-        byte = m_Input.GetChar();
-    }
-    CATCH_READ_ERROR;
+    //try {
+    byte = m_Input.GetChar();
+    //}
+    //CATCH_READ_ERROR;
     if ( byte == 0 ) {
         ThrowError(eFormatError, "illegal length start");
     }
@@ -506,11 +527,11 @@ size_t CObjectIStreamAsnBinary::ReadLength(void)
     }
     lengthLength--;
     size_t length = byte;
-    try {
-        while ( lengthLength-- > 0 )
-            length = (length << 8) | TByte(m_Input.GetChar());
-    }
-    CATCH_READ_ERROR;
+    //try {
+    while ( lengthLength-- > 0 )
+        length = (length << 8) | TByte(m_Input.GetChar());
+    //}
+    //CATCH_READ_ERROR;
     return StartTagData(length);
 }
 
@@ -521,7 +542,9 @@ void CObjectIStreamAsnBinary::ExpectShortLength(size_t length)
     }
 }
 
+#if !CHECK_STREAM_INTEGRITY
 inline
+#endif
 void CObjectIStreamAsnBinary::EndOfTag(void)
 {
 #if CHECK_STREAM_INTEGRITY
@@ -566,7 +589,9 @@ void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
 #endif
 }
 
+#if !CHECK_STREAM_INTEGRITY
 inline
+#endif
 TByte CObjectIStreamAsnBinary::ReadByte(void)
 {
 #if CHECK_STREAM_INTEGRITY
@@ -575,10 +600,10 @@ TByte CObjectIStreamAsnBinary::ReadByte(void)
     if ( m_Input.GetStreamOffset() >= m_CurrentTagLimit )
         ThrowError(eOverflow, "tag size overflow");
 #endif
-    try {
-        return m_Input.GetChar();
-    }
-    CATCH_READ_ERROR;
+    //try {
+    return m_Input.GetChar();
+    //}
+    //CATCH_READ_ERROR;
 }
 
 inline
@@ -590,9 +615,8 @@ signed char CObjectIStreamAsnBinary::ReadSByte(void)
 inline
 void CObjectIStreamAsnBinary::ExpectByte(TByte byte)
 {
-    if ( ReadByte() != byte ) {
-        ThrowError(eFormatError, "byte " + NStr::IntToString(byte) + " expected");
-    }
+    if ( ReadByte() != byte )
+        UnexpectedByte(byte);
 }
 
 void CObjectIStreamAsnBinary::ReadBytes(char* buffer, size_t count)
@@ -608,10 +632,10 @@ void CObjectIStreamAsnBinary::ReadBytes(char* buffer, size_t count)
     if ( m_Input.GetStreamOffset() + count > m_CurrentTagLimit )
         ThrowError(eOverflow, "tag size overflow");
 #endif
-    try {
-        m_Input.GetChars(buffer, count);
-    }
-    CATCH_READ_ERROR;
+    //try {
+    m_Input.GetChars(buffer, count);
+    //}
+    //CATCH_READ_ERROR;
 }
 
 void CObjectIStreamAsnBinary::SkipBytes(size_t count)
@@ -627,10 +651,10 @@ void CObjectIStreamAsnBinary::SkipBytes(size_t count)
     if ( m_Input.GetStreamOffset() + count > m_CurrentTagLimit )
         ThrowError(eOverflow, "tag size overflow");
 #endif
-    try {
-        m_Input.GetChars(count);
-    }
-    CATCH_READ_ERROR;
+    //try {
+    m_Input.GetChars(count);
+    //}
+    //CATCH_READ_ERROR;
 }
 
 template<typename T>
@@ -837,35 +861,39 @@ void CObjectIStreamAsnBinary::EndArray(CObjectStackArray& array)
     array.End();
 }
 
+inline
+bool CObjectIStreamAsnBinary::HaveMoreElements(void)
+{
+    return PeekTagByte() != KEndOfContentsByte;
+}
+
 bool CObjectIStreamAsnBinary::BeginArrayElement(CObjectStackArrayElement& e)
 {
-    if ( PeekTagByte() == MakeTagByte(eUniversal, false, eNone) )
-        return false;
-
-    e.Begin();
-    return true;
+    if ( HaveMoreElements() ) {
+        e.Begin();
+        return true;
+    }
+    return false;
 }
 
 void CObjectIStreamAsnBinary::ReadArray(CObjectArrayReader& reader,
                                         TTypeInfo arrayType, bool randomOrder,
                                         TTypeInfo elementType)
 {
-    CObjectStackArray array(*this, arrayType, randomOrder);
-
     ExpectSysTag(eUniversal, true, randomOrder? eSet: eSequence);
     ExpectIndefiniteLength();
 
-    CObjectStackArrayElement e(array, elementType);
-    e.Begin();
-
-    while ( PeekTagByte() != MakeTagByte(eUniversal, false, eNone) ) {
-        reader.ReadFrom(*this);
+    {
+        CObjectStackArrayElement e(*this, false);
+        
+        while ( HaveMoreElements() ) {
+            reader.ReadElement(*this);
+        }
+        
+        e.End();
     }
 
-    e.End();
-
     ExpectEndOfContent();
-    array.End();
 }
 
 void CObjectIStreamAsnBinary::BeginClass(CObjectStackClass& cls)
@@ -880,21 +908,24 @@ void CObjectIStreamAsnBinary::EndClass(CObjectStackClass& cls)
     cls.End();
 }
 
+void CObjectIStreamAsnBinary::UnexpectedMember(TTag tag)
+{
+    ThrowError(eFormatError,
+               "unexpected member: ["+NStr::IntToString(tag)+"]");
+}
+
 CObjectIStreamAsnBinary::TMemberIndex
 CObjectIStreamAsnBinary::BeginClassMember(CObjectStackClassMember& m,
                                           const CMembers& members)
 {
-    if ( PeekTagByte() == MakeTagByte(eUniversal, false, eNone) )
+    if ( !HaveMoreElements() )
         return -1;
 
     TTag tag = PeekTag(eContextSpecific, true);
     ExpectIndefiniteLength();
     TMemberIndex index = members.FindMember(tag);
-    if ( index < 0 ) {
-        ThrowError(eFormatError,
-                   "unexpected member: [" +
-                   NStr::IntToString(tag) + "]");
-    }
+    if ( index < 0 )
+        UnexpectedMember(tag);
     m.SetName(members.GetMemberId(index));
     m.Begin();
     return index;
@@ -905,17 +936,14 @@ CObjectIStreamAsnBinary::BeginClassMember(CObjectStackClassMember& m,
                                           const CMembers& members,
                                           CClassMemberPosition& pos)
 {
-    if ( PeekTagByte() == MakeTagByte(eUniversal, false, eNone) )
+    if ( !HaveMoreElements() )
         return -1;
 
     TTag tag = PeekTag(eContextSpecific, true);
     ExpectIndefiniteLength();
     TMemberIndex index = members.FindMember(tag, pos.GetLastIndex());
-    if ( index < 0 ) {
-        ThrowError(eFormatError,
-                   "unexpected member: [" +
-                   NStr::IntToString(tag) + "]");
-    }
+    if ( index < 0 )
+        UnexpectedMember(tag);
     m.SetName(members.GetMemberId(index));
     m.Begin();
     pos.SetLastIndex(index);
@@ -928,6 +956,108 @@ void CObjectIStreamAsnBinary::EndClassMember(CObjectStackClassMember& m)
     m.End();
 }
 
+void CObjectIStreamAsnBinary::ReadClassRandom(CObjectClassReader& reader,
+                                              TTypeInfo classInfo,
+                                              const CMembersInfo& members)
+{
+    ExpectSysTag(eUniversal, true, eSet);
+    ExpectIndefiniteLength();
+
+    TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
+    if ( parentClassInfo &&
+         parentClassInfo != CObjectGetTypeInfo::GetTypeInfo() ) {
+        reader.ReadParentClass(*this, parentClassInfo);
+    }
+
+    size_t memberCount = members.GetSize();
+
+    if ( HaveMoreElements() ) {
+        vector<bool> read(memberCount);
+        CObjectStackClassMember m(*this, false);
+
+        do {
+            TTag tag = PeekTag(eContextSpecific, true);
+            ExpectIndefiniteLength();
+            TMemberIndex index = members.FindMember(tag);
+            if ( index < 0 )
+                UnexpectedMember(tag);
+            m.SetName(members.GetMemberId(index));
+            
+            if ( read[index] )
+                DuplicatedMember(members, index);
+            read[index] = true;
+            reader.ReadMember(*this, members, index);
+            
+            ExpectEndOfContent();
+        } while ( HaveMoreElements() );
+        
+        m.End();
+        // init all absent members
+        for ( size_t index = 0; index < memberCount; ++index ) {
+            if ( !read[index] ) {
+                reader.AssignMemberDefault(*this, members, index);
+            }
+        }
+    }
+    else {
+        // init all members
+        for ( size_t index = 0; index < memberCount; ++index ) {
+            reader.AssignMemberDefault(*this, members, index);
+        }
+    }
+
+    ExpectEndOfContent();
+}
+
+void CObjectIStreamAsnBinary::ReadClassSequential(CObjectClassReader& reader,
+                                                  TTypeInfo classInfo,
+                                                  const CMembersInfo& members)
+{
+    ExpectSysTag(eUniversal, true, eSequence);
+    ExpectIndefiniteLength();
+
+    TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
+    if ( parentClassInfo &&
+         parentClassInfo != CObjectGetTypeInfo::GetTypeInfo() ) {
+        reader.ReadParentClass(*this, parentClassInfo);
+    }
+    
+    TMemberIndex pos = -1;
+    if ( HaveMoreElements() ) {
+        CObjectStackClassMember m(*this, false);
+
+        do {
+            TTag tag = PeekTag(eContextSpecific, true);
+            ExpectIndefiniteLength();
+            TMemberIndex index = members.FindMember(tag, pos);
+            if ( index < 0 )
+                UnexpectedMember(tag);
+            m.SetName(members.GetMemberId(index));
+
+            size_t end = index;
+            for ( size_t i = pos + 1; i < end; ++i ) {
+                // init missing member
+                reader.AssignMemberDefault(*this, members, i);
+            }
+            pos = index;
+
+            reader.ReadMember(*this, members, index);
+
+            ExpectEndOfContent();
+        } while ( HaveMoreElements() );
+
+        m.End();
+    }
+
+    // init all absent members
+    size_t end = members.GetSize();
+    for ( size_t i = pos + 1; i < end; ++i ) {
+        reader.AssignMemberDefault(*this, members, i);
+    }
+
+    ExpectEndOfContent();
+}
+
 CObjectIStreamAsnBinary::TMemberIndex
 CObjectIStreamAsnBinary::BeginChoiceVariant(CObjectStackChoiceVariant& v,
                                             const CMembers& variants)
@@ -935,11 +1065,8 @@ CObjectIStreamAsnBinary::BeginChoiceVariant(CObjectStackChoiceVariant& v,
     TTag tag = PeekTag(eContextSpecific, true);
     ExpectIndefiniteLength();
     TMemberIndex index = variants.FindMember(tag);
-    if ( index < 0 ) {
-        ThrowError(eFormatError,
-                   "unexpected member: [" +
-                   NStr::IntToString(tag) + "]");
-    }
+    if ( index < 0 )
+        UnexpectedMember(tag);
     v.SetName(variants.GetMemberId(index));
     return index;
 }
@@ -949,6 +1076,22 @@ void CObjectIStreamAsnBinary::EndChoiceVariant(CObjectStackChoiceVariant& v)
     ExpectEndOfContent();
     v.End();
     v.GetChoiceFrame().End();
+}
+
+void CObjectIStreamAsnBinary::ReadChoice(CObjectChoiceReader& reader,
+                                         TTypeInfo choiceInfo,
+                                         const CMembersInfo& variants)
+{
+    CObjectStackChoiceVariant v(*this);
+    TTag tag = PeekTag(eContextSpecific, true);
+    ExpectIndefiniteLength();
+    TMemberIndex index = variants.FindMember(tag);
+    if ( index < 0 )
+        UnexpectedMember(tag);
+    v.SetName(variants.GetMemberId(index));
+    reader.ReadChoiceVariant(*this, variants, index);
+    ExpectEndOfContent();
+    v.End();
 }
 
 void CObjectIStreamAsnBinary::BeginBytes(ByteBlock& block)
@@ -985,14 +1128,10 @@ CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
     //    eApplication,  constructed, eLongTag          -> other class
     //    eApplication, !constructed, eObjectReference  -> object reference
     // any other -> this class
-    if ( byte == MakeTagByte(eUniversal, false, eNull) ) {
+    if ( byte == KEndOfContentsByte ) {
         ExpectShortLength(0);
         EndOfTag();
         return eNullPointer;
-    }
-    else if ( byte == MakeTagByte(eApplication, true, eMemberReference) ) {
-        ExpectIndefiniteLength();
-        return eMemberPointer;
     }
     else if ( byte == MakeTagByte(eApplication, true, eLongTag) ) {
         return eOtherPointer;
@@ -1024,20 +1163,6 @@ CObjectIStreamAsnBinary::ReadEnum(const CEnumeratedTypeValues& values)
 #endif
     values.FindName(value, false); // check value
     return make_pair(value, true);
-}
-
-CObjectIStreamAsnBinary::TMemberIndex
-CObjectIStreamAsnBinary::ReadMemberSuffix(const CMembers& members)
-{
-    string member;
-    ReadString(member);
-    ExpectEndOfContent();
-    TMemberIndex index = members.FindMember(member);
-    if ( index < 0 ) {
-        ThrowError(eFormatError,
-                   "member not found: " + member);
-    }
-    return index;
 }
 
 CObjectIStream::TIndex CObjectIStreamAsnBinary::ReadObjectPointer(void)
@@ -1101,10 +1226,10 @@ void CObjectIStreamAsnBinary::AsnOpen(AsnIo& )
 
 size_t CObjectIStreamAsnBinary::AsnRead(AsnIo& , char* data, size_t )
 {
-    try {
-        *data = m_Input.GetChar();
-    }
-    CATCH_READ_ERROR;
+    //try {
+    *data = m_Input.GetChar();
+    //}
+    //CATCH_READ_ERROR;
     return 1;
 }
 #endif

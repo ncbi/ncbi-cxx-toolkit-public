@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/06/01 19:07:08  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.15  2000/05/24 20:09:54  vasilche
 * Implemented XML dump.
 *
@@ -145,15 +148,16 @@ static
 void PrintUsage(void)
 {
     NcbiCout <<
-        "Arguments:\n" <<
-        "  -i  Filename for asn.1 input\n" <<
-        "  -e  Input is a Seq-entry\n" <<
-        "  -b  Input asnfile in binary mode\n" <<
-        "  -S  Skip value in file without reading it in memory (no write after)\n" <<
-        "  -o  Filename for asn.1 output\n" <<
-        "  -s  Output asnfile in binary mode\n" <<
-        "  -x  Output XML file\n" <<
-        "  -l  Log errors to file named\n" <<
+        "Arguments:\n"
+        "  -i  Filename for asn.1 input\n"
+        "  -e  Input is a Seq-entry\n"
+        "  -b  Input asnfile in binary mode\n"
+        "  -X  Input XML file\n"
+        "  -S  Skip value in file without reading it in memory (no write)\n"
+        "  -o  Filename for asn.1 output\n"
+        "  -s  Output asnfile in binary mode\n"
+        "  -x  Output XML file\n"
+        "  -l  Log errors to file named\n"
         "  -c <number>  Repeat action <number> times\n";
     exit(1);
 }
@@ -211,6 +215,9 @@ int CAsn2Asn::Run(void)
                     break;
                 case 'b':
                     inFormat = eSerial_AsnBinary;
+                    break;
+                case 'X':
+                    inFormat = eSerial_Xml;
                     break;
                 case 'o':
                     outFile = StringArgument(GetArguments(), ++i);

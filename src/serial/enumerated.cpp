@@ -30,44 +30,16 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.7  2000/01/10 19:46:39  vasilche
-* Fixed encoding/decoding of REAL type.
-* Fixed encoding/decoding of StringStore.
-* Fixed encoding/decoding of NULL type.
-* Fixed error reporting.
-* Reduced object map (only classes).
-*
-* Revision 1.6  2000/01/05 19:43:53  vasilche
-* Fixed error messages when reading from ASN.1 binary file.
-* Fixed storing of integers with enumerated values in ASN.1 binary file.
-* Added TAG support to key/value of map.
-* Added support of NULL variant in CHOICE.
-*
-* Revision 1.5  1999/12/17 19:05:02  vasilche
-* Simplified generation of GetTypeInfo methods.
-*
-* Revision 1.4  1999/10/28 15:37:40  vasilche
-* Fixed null choice pointers handling.
-* Cleaned enumertion interface.
-*
-* Revision 1.3  1999/10/19 13:43:07  vasilche
-* Fixed error on IRIX
-*
-* Revision 1.2  1999/10/18 20:21:40  vasilche
-* Enum values now have long type.
-* Fixed template generation for enums.
-*
-* Revision 1.1  1999/09/24 18:20:07  vasilche
-* Removed dependency on NCBI toolkit.
-*
+* Revision 1.8  2000/06/01 19:07:02  vasilche
+* Added parsing of XML data.
 *
 * ===========================================================================
 */
 
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <serial/enumvalues.hpp>
 #include <serial/enumerated.hpp>
-#include <serial/objostr.hpp>
-#include <serial/objistr.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -87,12 +59,7 @@ CEnumeratedTypeValues::~CEnumeratedTypeValues(void)
 {
 }
 
-long CEnumeratedTypeValues::FindValue(const string& name) const
-{
-    return FindValue(name.c_str());
-}
-
-long CEnumeratedTypeValues::FindValue(const char* name) const
+long CEnumeratedTypeValues::FindValue(const CLightString& name) const
 {
     const TNameToValue& m = NameToValue();
     TNameToValue::const_iterator i = m.find(name);
@@ -117,7 +84,7 @@ const string& CEnumeratedTypeValues::FindName(long value,
                          "invalid value of enumerated type");
         }
     }
-    return i->second;
+    return *i->second;
 }
 
 void CEnumeratedTypeValues::AddValue(const string& name, long value)
@@ -136,7 +103,7 @@ CEnumeratedTypeValues::ValueToName(void) const
     if ( !m ) {
         m_ValueToName.reset(m = new TValueToName);
         iterate ( TValues, i, m_Values ) {
-            (*m)[i->second] = i->first;
+            (*m)[i->second] = &i->first;
         }
     }
     return *m;
@@ -149,9 +116,9 @@ CEnumeratedTypeValues::NameToValue(void) const
     if ( !m ) {
         m_NameToValue.reset(m = new TNameToValue);
         iterate ( TValues, i, m_Values ) {
+            const string& s = i->first;
             pair<TNameToValue::iterator, bool> p =
-                m->insert(TNameToValue::value_type(i->first.c_str(),
-                                                   i->second));
+                m->insert(TNameToValue::value_type(s, i->second));
             if ( !p.second ) {
                 THROW1_TRACE(runtime_error,
                              "duplicated enum value name " + i->first);

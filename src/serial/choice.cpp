@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/06/01 19:07:02  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.14  2000/05/24 20:08:46  vasilche
 * Implemented XML dump.
 *
@@ -129,7 +132,7 @@ CChoiceTypeInfoBase::~CChoiceTypeInfoBase(void)
 void CChoiceTypeInfoBase::AddVariant(const CMemberId& id,
                                      const CTypeRef& typeRef)
 {
-    m_Members.AddMember(id, new CRealMemberInfo(0, typeRef));
+    m_Members.AddMember(id, 0, typeRef.Get());
 }
 
 void CChoiceTypeInfoBase::AddVariant(const string& name,
@@ -231,43 +234,67 @@ void CChoiceTypeInfoBase::WriteData(CObjectOStream& out,
     }
 }
 
+class CChoiceTypeInfoReader : public CObjectChoiceReader
+{
+public:
+    CChoiceTypeInfoReader(const CChoiceTypeInfoBase* choice,
+                          TObjectPtr object)
+        : m_Choice(choice), m_Object(object)
+        {
+        }
+
+    virtual void ReadChoiceVariant(CObjectIStream& in,
+                                   const CMembersInfo& members, int index)
+        {
+            const CChoiceTypeInfoBase* choice = m_Choice;
+            TObjectPtr obj = m_Object;
+            const CMemberInfo* m = members.GetMemberInfo(index);
+            bool sameIndex = (index == choice->GetIndex(obj));
+            if ( sameIndex ) {
+                // already have some values set -> plain read even if
+                // member can be delayed
+            }
+            else {
+                // index is differnet from current -> first, reset choice
+                choice->ResetIndex(obj);
+                if ( m->CanBeDelayed() &&
+                     m->GetDelayBuffer(obj).DelayRead(in, obj, index, m) ) {
+                    // we've got delayed buffer -> select using delay buffer
+                    choice->SetDelayIndex(obj, index);
+                    return;
+                }
+                // select for reading
+                choice->SetIndex(obj, index);
+            }
+            m->GetTypeInfo()->ReadData(in, choice->GetData(obj, index));
+        }
+
+private:
+    const CChoiceTypeInfoBase* m_Choice;
+    TObjectPtr m_Object;
+};
+
+class CChoiceTypeInfoSkipper : public CObjectChoiceReader
+{
+public:
+    virtual void ReadChoiceVariant(CObjectIStream& in,
+                                   const CMembersInfo& members, int index)
+        {
+            members.GetMemberInfo(index)->GetTypeInfo()->SkipData(in);
+        }
+};
+
 void CChoiceTypeInfoBase::ReadData(CObjectIStream& in,
                                    TObjectPtr object) const
 {
-    CObjectStackChoice choice(in, this);
-    CObjectStackChoiceVariant v(choice);
-    TMemberIndex index = in.BeginChoiceVariant(v, GetMembers());
-    const CMemberInfo* memberInfo = m_Members.GetMemberInfo(index);
-    bool sameIndex = (index == GetIndex(object));
-    if ( sameIndex ) {
-        // already have some values set -> plain read even if
-        // member can be delayed
-    }
-    else {
-        // index is differnet from current -> first, reset choice
-        ResetIndex(object);
-        if ( memberInfo->CanBeDelayed() &&
-             memberInfo->GetDelayBuffer(object).DelayRead(in,
-                                                          object, index,
-                                                          memberInfo) ) {
-            // we've got delayed buffer -> select using delay buffer
-            SetDelayIndex(object, index);
-            return;
-        }
-        // select for reading
-        SetIndex(object, index);
-    }
-    memberInfo->GetTypeInfo()->ReadData(in, GetData(object, index));
-    in.EndChoiceVariant(v);
+    CChoiceTypeInfoReader reader(this, object);
+    in.ReadChoice(reader, this, m_Members);
 }
 
 void CChoiceTypeInfoBase::SkipData(CObjectIStream& in) const
 {
-    CObjectStackChoice choice(in, this);
-    CObjectStackChoiceVariant v(choice);
-    TMemberIndex index = in.BeginChoiceVariant(v, GetMembers());
-    GetVariantTypeInfo(index)->SkipData(in);
-    in.EndChoiceVariant(v);
+    CChoiceTypeInfoSkipper skipper;
+    in.ReadChoice(skipper, this, m_Members);
 }
 
 bool CChoiceTypeInfoBase::MayContainType(TTypeInfo typeInfo) const

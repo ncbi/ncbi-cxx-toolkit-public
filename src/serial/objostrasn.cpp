@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2000/06/01 19:07:05  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.38  2000/05/24 20:08:48  vasilche
 * Implemented XML dump.
 *
@@ -184,6 +187,7 @@
 #include <serial/memberid.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
+#include <serial/delaybuf.hpp>
 #include <math.h>
 #if HAVE_WINDOWS_H
 // In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
@@ -234,7 +238,7 @@ bool CObjectOStreamAsn::WriteEnum(const CEnumeratedTypeValues& values,
 {
     const string& name = values.FindName(value, values.IsInteger());
     if ( !name.empty() ) {
-        WriteId(name);
+		m_Output.PutString(name);
         return true;
     }
     return false;
@@ -369,12 +373,6 @@ void CObjectOStreamAsn::WriteId(const string& str)
 	}
 }
 
-void CObjectOStreamAsn::WriteMemberSuffix(const CMemberId& id)
-{
-    m_Output.PutChar('.');
-    m_Output.PutString(id.GetName());
-}
-
 void CObjectOStreamAsn::WriteNullPointer(void)
 {
     WriteNull();
@@ -434,12 +432,12 @@ void CObjectOStreamAsn::WriteArray(CObjectArrayWriter& writer,
         m_Output.IncIndentLevel();
 
         m_Output.PutEol();
-        writer.WriteTo(*this);
+        writer.WriteElement(*this);
         
         while ( !writer.NoMoreElements() ) {
             m_Output.PutChar(',');
             m_Output.PutEol();
-            writer.WriteTo(*this);
+            writer.WriteElement(*this);
         }
         
         m_Output.DecIndentLevel();
@@ -476,6 +474,62 @@ void CObjectOStreamAsn::BeginClassMember(CObjectStackClassMember& m,
     m_Output.PutEol();
     m_Output.PutString(id.GetName());
     m_Output.PutChar(' ');
+}
+
+void CObjectOStreamAsn::WriteClass(CObjectClassWriter& writer,
+                                   TTypeInfo classInfo,
+                                   const CMembersInfo& members,
+                                   bool /*randomOrder*/)
+{
+    m_Output.PutChar('{');
+    m_Output.IncIndentLevel();
+    
+    TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
+    if ( parentClassInfo &&
+         parentClassInfo != CObjectGetTypeInfo::GetTypeInfo() )
+        writer.WriteParentClass(*this, parentClassInfo);
+
+    writer.WriteMembers(*this, members);
+    
+    m_Output.DecIndentLevel();
+    m_Output.PutEol();
+    m_Output.PutChar('}');
+}
+
+void CObjectOStreamAsn::WriteClassMember(const CMemberId& id,
+                                         size_t index,
+                                         TTypeInfo memberTypeInfo,
+                                         TConstObjectPtr memberPtr)
+{
+    if ( index != 0 )
+        m_Output.PutChar(',');
+    
+    CObjectStackClassMember m(*this, id);
+    m_Output.PutEol();
+    m_Output.PutString(id.GetName());
+    m_Output.PutChar(' ');
+
+    memberTypeInfo->WriteData(*this, memberPtr);
+    
+    m.End();
+}
+
+void CObjectOStreamAsn::WriteDelayedClassMember(const CMemberId& id,
+                                                size_t index,
+                                                const CDelayBuffer& buffer)
+{
+    if ( index != 0 )
+        m_Output.PutChar(',');
+    
+    CObjectStackClassMember m(*this, id);
+    m_Output.PutEol();
+    m_Output.PutString(id.GetName());
+    m_Output.PutChar(' ');
+
+    if ( !buffer.Write(*this) )
+        THROW1_TRACE(runtime_error, "internal error");
+    
+    m.End();
 }
 
 void CObjectOStreamAsn::BeginChoiceVariant(CObjectStackChoiceVariant& /*v*/,

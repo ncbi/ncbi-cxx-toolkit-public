@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2000/06/01 19:07:04  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.39  2000/05/24 20:08:48  vasilche
 * Implemented XML dump.
 *
@@ -184,6 +187,7 @@
 #include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/bytesrc.hpp>
+#include <serial/delaybuf.hpp>
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
@@ -269,14 +273,7 @@ void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
                      "trying to write already written object");
     }
 #endif
-    TTypeInfo globalType = typeInfo;
-    while ( globalType->GetName().empty() ) {
-        TTypeInfo pointedType = globalType->GetPointedTypeInfo();
-        if ( !pointedType )
-            break;
-        globalType = pointedType;
-    }
-    WriteTypeName(globalType->GetName());
+    WriteTypeName(typeInfo->GetName());
 #if NCBISER_ALLOW_CYCLES
     WriteObject(object, info);
     m_Objects.CheckAllWritten();
@@ -432,14 +429,6 @@ void CObjectOStream::WriteStringStore(const string& str)
 	WriteString(str);
 }
 
-void CObjectOStream::WriteMemberPrefix(void)
-{
-}
-
-void CObjectOStream::WriteMemberSuffix(const CMemberId& )
-{
-}
-
 void CObjectOStream::WriteThis(TConstObjectPtr object, CWriteObjectInfo& info)
 {
     WriteObject(object, info);
@@ -471,7 +460,7 @@ void CObjectOStream::WriteArray(CObjectArrayWriter& writer,
         CObjectStackArrayElement element(array, elementType);
         do {
             BeginArrayElement(element);
-            writer.WriteTo(*this);
+            writer.WriteElement(*this);
             EndArrayElement(element);
         } while ( !writer.NoMoreElements() );
     }
@@ -479,13 +468,11 @@ void CObjectOStream::WriteArray(CObjectArrayWriter& writer,
     EndArray(array);
 }
 
-void CObjectOStream::BeginNamedType(CObjectStackNamedFrame& /*type*/)
+void CObjectOStream::WriteNamedType(TTypeInfo /*namedTypeInfo*/,
+                                    TTypeInfo typeInfo,
+                                    TConstObjectPtr object)
 {
-}
-
-void CObjectOStream::EndNamedType(CObjectStackNamedFrame& type)
-{
-    type.End();
+    typeInfo->WriteData(*this, object);
 }
 
 void CObjectOStream::EndClass(CObjectStackClass& cls)
@@ -496,6 +483,50 @@ void CObjectOStream::EndClass(CObjectStackClass& cls)
 void CObjectOStream::EndClassMember(CObjectStackClassMember& m)
 {
     m.End();
+}
+
+void CObjectOStream::WriteClass(CObjectClassWriter& writer,
+                                TTypeInfo classInfo,
+                                const CMembersInfo& members,
+                                bool randomOrder)
+{
+    CObjectStackClass cls(*this, classInfo, randomOrder);
+    BeginClass(cls);
+    
+    TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
+    if ( parentClassInfo &&
+         parentClassInfo != CObjectGetTypeInfo::GetTypeInfo() )
+        writer.WriteParentClass(*this, parentClassInfo);
+
+    writer.WriteMembers(*this, members);
+    
+    EndClass(cls);
+}
+
+void CObjectOStream::WriteClassMember(const CMemberId& id,
+                                      size_t /*index*/,
+                                      TTypeInfo memberTypeInfo,
+                                      TConstObjectPtr memberPtr)
+{
+    CObjectStackClassMember m(*this, id);
+    BeginClassMember(m, id);
+
+    memberTypeInfo->WriteData(*this, memberPtr);
+    
+    EndClassMember(m);
+}
+
+void CObjectOStream::WriteDelayedClassMember(const CMemberId& id,
+                                             size_t /*index*/,
+                                             const CDelayBuffer& buffer)
+{
+    CObjectStackClassMember m(*this, id);
+    BeginClassMember(m, id);
+
+    if ( !buffer.Write(*this) )
+        THROW1_TRACE(runtime_error, "internal error");
+    
+    EndClassMember(m);
 }
 
 void CObjectOStream::EndChoiceVariant(CObjectStackChoiceVariant& v)
@@ -557,6 +588,10 @@ void CObjectOStream::AsnWrite(AsnIo& , const char* , size_t )
 #endif
 
 CObjectArrayWriter::~CObjectArrayWriter(void)
+{
+}
+
+CObjectClassWriter::~CObjectClassWriter(void)
 {
 }
 

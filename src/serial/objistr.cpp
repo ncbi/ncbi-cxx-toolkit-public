@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2000/06/01 19:07:03  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.51  2000/05/24 20:08:47  vasilche
 * Implemented XML dump.
 *
@@ -241,6 +244,7 @@ BEGIN_NCBI_SCOPE
 
 CObjectIStream* CreateObjectIStreamAsn(void);
 CObjectIStream* CreateObjectIStreamAsnBinary(void);
+CObjectIStream* CreateObjectIStreamXml(void);
 
 CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
                                             const string& fileName,
@@ -255,6 +259,7 @@ CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
         bool binary;
         switch ( format ) {
         case eSerial_AsnText:
+        case eSerial_Xml:
             binary = false;
             break;
         case eSerial_AsnBinary:
@@ -296,6 +301,8 @@ CObjectIStream* CObjectIStream::Create(ESerialDataFormat format)
         return CreateObjectIStreamAsn();
     case eSerial_AsnBinary:
         return CreateObjectIStreamAsnBinary();
+    case eSerial_Xml:
+        return CreateObjectIStreamXml();
     default:
         break;
     }
@@ -626,6 +633,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
                 info = GetRegisteredObject(index);
                 break;
             }
+#if 0
         case eMemberPointer:
             {
                 _TRACE("CObjectIStream::ReadPointer: member...");
@@ -640,6 +648,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
                 }
                 return info.GetObjectPtr();
             }
+#endif
         case eThisPointer:
             {
                 _TRACE("CObjectIStream::ReadPointer: new");
@@ -667,10 +676,6 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
         default:
             SetFailFlags(eFormatError);
             THROW1_TRACE(runtime_error, "illegal pointer type");
-        }
-        while ( HaveMemberSuffix() ) {
-            _TRACE("CObjectIStream::ReadPointer: member...");
-            SelectMember(info);
         }
         while ( info.GetTypeInfo() != declaredType ) {
             // try to check parent class pointer
@@ -703,6 +708,7 @@ CObjectInfo CObjectIStream::ReadObjectInfo(void)
             _TRACE("CObjectIStream::ReadPointer: @" << index);
             return GetRegisteredObject(index);
         }
+#if 0
     case eMemberPointer:
         {
             _TRACE("CObjectIStream::ReadPointer: member...");
@@ -710,6 +716,7 @@ CObjectInfo CObjectIStream::ReadObjectInfo(void)
             SelectMember(info);
             return info;
         }
+#endif
     case eOtherPointer:
         {
             string className = ReadOtherPointer();
@@ -729,27 +736,6 @@ CObjectInfo CObjectIStream::ReadObjectInfo(void)
 
     SetFailFlags(eFormatError);
     THROW1_TRACE(runtime_error, "illegal pointer type");
-}
-
-void CObjectIStream::SelectMember(CObjectInfo& object)
-{
-    const CClassInfoTmpl* classInfo =
-        dynamic_cast<const CClassInfoTmpl*>(object.GetTypeInfo());
-    if ( !classInfo ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error,
-                     "member of non class: " +
-                     object.GetTypeInfo()->GetName());
-    }
-    TMemberIndex index = ReadMemberSuffix(classInfo->GetMembers());
-    const CMemberInfo* memberInfo = classInfo->GetMemberInfo(index);
-    object.Set(memberInfo->GetMember(object.GetObjectPtr()),
-               memberInfo->GetTypeInfo());
-}
-
-bool CObjectIStream::HaveMemberSuffix(void)
-{
-    return false;
 }
 
 void CObjectIStream::ReadOtherPointerEnd(void)
@@ -882,6 +868,11 @@ void CObjectIStream::EndArray(CObjectStackArray& array)
     array.End();
 }
 
+void CObjectIStream::EndArrayElement(CObjectStackArrayElement& e)
+{
+    e.End();
+}
+
 void CObjectIStream::ReadArray(CObjectArrayReader& reader,
                                TTypeInfo arrayType, bool randomOrder,
                                TTypeInfo elementType)
@@ -892,25 +883,23 @@ void CObjectIStream::ReadArray(CObjectArrayReader& reader,
     CObjectStackArrayElement e(array, elementType);
     
     while ( BeginArrayElement(e) ) {
-        reader.ReadFrom(*this);
+        reader.ReadElement(*this);
         EndArrayElement(e);
     }
     
     EndArray(array);
 }
 
-void CObjectIStream::EndArrayElement(CObjectStackArrayElement& e)
+void CObjectIStream::ReadNamedType(TTypeInfo /*namedTypeInfo*/,
+                                   TTypeInfo typeInfo, TObjectPtr object)
 {
-    e.End();
+    typeInfo->ReadData(*this, object);
 }
 
-void CObjectIStream::BeginNamedType(CObjectStackNamedFrame& /*type*/)
+void CObjectIStream::SkipNamedType(TTypeInfo /*namedTypeInfo*/,
+                                   TTypeInfo typeInfo)
 {
-}
-
-void CObjectIStream::EndNamedType(CObjectStackNamedFrame& type)
-{
-    type.End();
+    typeInfo->SkipData(*this);
 }
 
 void CObjectIStream::EndClass(CObjectStackClass& cls)
@@ -923,10 +912,102 @@ void CObjectIStream::EndClassMember(CObjectStackClassMember& m)
     m.End();
 }
 
+void CObjectIStream::DuplicatedMember(const CMembersInfo& members, int index)
+{
+    ThrowError(eFormatError,
+               "duplicated member: "+members.GetMemberId(index).ToString());
+}
+
+void CObjectIStream::ReadClassRandom(CObjectClassReader& reader,
+                                     TTypeInfo classInfo,
+                                     const CMembersInfo& members)
+{
+    CObjectStackClass cls(*this, classInfo, true);
+    BeginClass(cls);
+
+    TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
+    if ( parentClassInfo &&
+         parentClassInfo != CObjectGetTypeInfo::GetTypeInfo() ) {
+        reader.ReadParentClass(*this, parentClassInfo);
+    }
+    
+    vector<bool> read(members.GetSize());
+    for ( ;; ) {
+        CObjectStackClassMember m(cls);
+        TMemberIndex index = BeginClassMember(m, members);
+        if ( index < 0 )
+            break;
+        
+        if ( read[index] )
+            DuplicatedMember(members, index);
+        read[index] = true;
+        reader.ReadMember(*this, members, index);
+        
+        EndClassMember(m);
+    }
+
+    // init all absent members
+    for ( size_t index = 0, end = members.GetSize(); index < end; ++index ) {
+        if ( !read[index] ) {
+            reader.AssignMemberDefault(*this, members, index);
+        }
+    }
+
+    EndClass(cls);
+}
+
+void CObjectIStream::ReadClassSequential(CObjectClassReader& reader,
+                                         TTypeInfo classInfo,
+                                         const CMembersInfo& members)
+{
+    CObjectStackClass cls(*this, classInfo, false);
+    BeginClass(cls);
+    
+    TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
+    if ( parentClassInfo &&
+         parentClassInfo != CObjectGetTypeInfo::GetTypeInfo() ) {
+        reader.ReadParentClass(*this, parentClassInfo);
+    }
+    
+    CClassMemberPosition pos;
+    for ( ;; ) {
+        CObjectStackClassMember m(cls);
+        TMemberIndex index = BeginClassMember(m, members, pos);
+        if ( index < 0 )
+            break;
+        
+        size_t end = index;
+        for ( size_t i = pos.GetLastIndex() + 1; i < end; ++i ) {
+            // init missing member
+            reader.AssignMemberDefault(*this, members, i);
+        }
+        reader.ReadMember(*this, members, index);
+        
+        EndClassMember(m);
+    }
+    // init all absent members
+    size_t end = members.GetSize();
+    for ( size_t i = pos.GetLastIndex() + 1; i < end; ++i ) {
+        reader.AssignMemberDefault(*this, members, i);
+    }
+    EndClass(cls);
+}
+
 void CObjectIStream::EndChoiceVariant(CObjectStackChoiceVariant& v)
 {
     v.End();
     v.GetChoiceFrame().End();
+}
+
+void CObjectIStream::ReadChoice(CObjectChoiceReader& reader,
+                                TTypeInfo choiceInfo,
+                                const CMembersInfo& members)
+{
+    CObjectStackChoice choice(*this, choiceInfo);
+    CObjectStackChoiceVariant v(choice);
+    TMemberIndex index = BeginChoiceVariant(v, members);
+    reader.ReadChoiceVariant(*this, members, index);
+    EndChoiceVariant(v);
 }
 
 size_t CObjectIStream::ByteBlock::Read(void* dst, size_t needLength,
@@ -1150,9 +1231,34 @@ CObjectArrayReader::~CObjectArrayReader(void)
 {
 }
 
-void CObjectArraySkipper::ReadFrom(CObjectIStream& in)
+void CObjectArraySkipper::ReadElement(CObjectIStream& in)
 {
     m_TypeInfo->SkipData(in);
+}
+
+CObjectClassReader::~CObjectClassReader(void)
+{
+}
+
+void CObjectClassReader::ReadParentClass(CObjectIStream& in,
+                                         TTypeInfo parentClassInfo)
+{
+    in.ThrowError(CObjectIStream::eFormatError,
+                  "parent class "+parentClassInfo->GetName()+
+                  " data expected");
+}
+
+void CObjectClassReader::AssignMemberDefault(CObjectIStream& in,
+                                             const CMembersInfo& members,
+                                             int index)
+{
+    in.ThrowError(CObjectIStream::eFormatError,
+                  "member "+members.GetMemberId(index).ToString()+
+                  " expected");
+}
+
+CObjectChoiceReader::~CObjectChoiceReader(void)
+{
 }
 
 END_NCBI_SCOPE

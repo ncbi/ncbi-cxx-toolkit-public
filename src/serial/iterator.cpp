@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/06/01 19:07:02  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.7  2000/05/05 17:59:06  vasilche
 * Unfortunately MSVC doesn't support explicit instantiation of template methods.
 *
@@ -170,7 +173,7 @@ bool CTreeIterator::CanSelectCurrentObject(void)
 bool CTreeIterator::CanEnterCurrentObject(void)
 {
     return !m_SkipSubTree && m_CurrentObject &&
-        GetCurrentTypeInfo()->HaveChildren(m_CurrentObject.GetObjectPtr());
+        m_CurrentObject.GetTypeInfo()->HaveChildren(m_CurrentObject.GetObjectPtr());
 }
 
 void CTreeIterator::Erase(void)
@@ -290,7 +293,7 @@ bool CTreeConstIterator::CanSelectCurrentObject(void)
 bool CTreeConstIterator::CanEnterCurrentObject(void)
 {
     return !m_SkipSubTree && m_CurrentObject &&
-        GetCurrentTypeInfo()->HaveChildren(m_CurrentObject.GetObjectPtr());
+        m_CurrentObject.GetTypeInfo()->HaveChildren(m_CurrentObject.GetObjectPtr());
 }
 
 
@@ -298,14 +301,14 @@ template<class Parent>
 bool CTypeIteratorBase<Parent>::CanSelectCurrentObject(void)
 {
     return CParent::CanSelectCurrentObject() &&
-        GetCurrentTypeInfo()->IsType(m_NeedType);
+        m_CurrentObject.GetTypeInfo()->IsType(m_NeedType);
 }
 
 template<class Parent>
 bool CTypeIteratorBase<Parent>::CanEnterCurrentObject(void)
 {
     return CParent::CanEnterCurrentObject() &&
-        GetCurrentTypeInfo()->MayContainType(m_NeedType);
+        m_CurrentObject.GetTypeInfo()->MayContainType(m_NeedType);
 }
 
 template<class Parent>
@@ -314,7 +317,7 @@ bool CTypesIteratorBase<Parent>::CanSelectCurrentObject(void)
     if ( !CParent::CanSelectCurrentObject() )
         return false;
     m_MatchType = 0;
-    TTypeInfo type = GetCurrentTypeInfo();
+    TTypeInfo type = m_CurrentObject.GetTypeInfo();
     iterate ( TTypeList, i, GetTypeList() ) {
         if ( type->IsType(*i) ) {
             m_MatchType = *i;
@@ -329,7 +332,7 @@ bool CTypesIteratorBase<Parent>::CanEnterCurrentObject(void)
 {
     if ( !CParent::CanEnterCurrentObject() )
         return false;
-    TTypeInfo type = GetCurrentTypeInfo();
+    TTypeInfo type = m_CurrentObject.GetTypeInfo();
     iterate ( TTypeList, i, GetTypeList() ) {
         if ( type->MayContainType(*i) )
             return true;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/06/01 19:07:03  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.12  2000/05/24 20:08:47  vasilche
 * Implemented XML dump.
 *
@@ -116,8 +119,8 @@ const CMembers::TMembersByName& CMembers::GetMembersByName(void) const
         // because we need index value to inser in map too
         for ( TIndex i = 0, size = m_Members.size(); i < size; ++i ) {
             const string& name = m_Members[i].GetName();
-            if ( !members->insert(TMembersByName::
-                      value_type(name.c_str(), i)).second ) {
+            if ( !members->insert(TMembersByName::value_type(name,
+                                                             i)).second ) {
                 if ( !name.empty() )
                     THROW1_TRACE(runtime_error,
                                  "duplicated member name: " + name);
@@ -176,28 +179,23 @@ void CMembers::UpdateMemberTags(void)
     }
 }
 
-CMembers::TIndex CMembers::FindMember(const CMemberId& id) const
-{
-    if ( id.GetTag() < 0 ) {
-        return FindMember(id.GetName());
-    }
-    else {
-        return FindMember(id.GetTag());
-    }
-}
-
-CMembers::TIndex CMembers::FindMember(const string& name) const
-{
-    return FindMember(name.c_str());
-}
-
-CMembers::TIndex CMembers::FindMember(const char* name) const
+CMembers::TIndex CMembers::FindMember(const CLightString& name) const
 {
     const TMembersByName& members = GetMembersByName();
     TMembersByName::const_iterator i = members.find(name);
     if ( i == members.end() )
         return -1;
     return i->second;
+}
+
+CMembers::TIndex CMembers::FindMember(const CLightString& name,
+                                      TIndex pos) const
+{
+    for ( size_t i = pos + 1, size = m_Members.size(); i < size; ++i ) {
+        if ( name == m_Members[i].GetName() )
+            return i;
+    }
+    return -1;
 }
 
 CMembers::TIndex CMembers::FindMember(TTag tag) const
@@ -207,18 +205,6 @@ CMembers::TIndex CMembers::FindMember(TTag tag) const
     if ( i == members.end() )
         return -1;
     return i->second;
-}
-
-CMembers::TIndex CMembers::FindMember(const pair<const char*, size_t>& name,
-                                      TIndex pos) const
-{
-    for ( size_t i = pos + 1, size = m_Members.size(); i < size; ++i ) {
-        const string& s = m_Members[i].GetName();
-        if ( s.size() == name.second &&
-             memcmp(s.data(), name.first, name.second) == 0 )
-            return i;
-    }
-    return -1;
 }
 
 CMembers::TIndex CMembers::FindMember(TTag tag, TIndex pos) const
@@ -248,13 +234,22 @@ CMemberInfo* CMembersInfo::AddMember(const CMemberId& id,
     return member;
 }
 
-CMemberInfo* CMembersInfo::AddMember(const char* name, const void* member,
+CMemberInfo* CMembersInfo::AddMember(const CMemberId& name,
+                                     TConstObjectPtr member,
                                      TTypeInfo type)
 {
     return AddMember(name, new CRealMemberInfo(size_t(member), type));
 }
 
-CMemberInfo* CMembersInfo::AddMember(const char* name, const void* member,
+CMemberInfo* CMembersInfo::AddMember(const char* name,
+                                     TConstObjectPtr member,
+                                     TTypeInfo type)
+{
+    return AddMember(name, new CRealMemberInfo(size_t(member), type));
+}
+
+CMemberInfo* CMembersInfo::AddMember(const char* name,
+                                     TConstObjectPtr member,
                                      const CTypeRef& type)
 {
     return AddMember(name, new CRealMemberInfo(size_t(member), type));

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/06/01 19:06:57  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.23  2000/05/24 20:08:14  vasilche
 * Implemented XML dump.
 *
@@ -157,7 +160,6 @@ protected:
     virtual void AsnWrite(AsnIo& asn, const char* data, size_t length);
 #endif
 
-    virtual void WriteMemberSuffix(const CMemberId& id);
     virtual void WriteNullPointer(void);
     virtual void WriteObjectReference(TIndex index);
     virtual void WriteOther(TConstObjectPtr object,
@@ -177,6 +179,17 @@ protected:
     virtual void EndClass(CObjectStackClass& cls);
     virtual void BeginClassMember(CObjectStackClassMember& m,
                                   const CMemberId& id);
+    virtual void WriteClass(CObjectClassWriter& writer,
+                            TTypeInfo classInfo, 
+                            const CMembersInfo& members,
+                            bool randomOrder);
+    virtual void WriteClassMember(const CMemberId& id,
+                                  size_t index,
+                                  TTypeInfo memberInfo,
+                                  TConstObjectPtr memberPtr);
+    virtual void WriteDelayedClassMember(const CMemberId& id,
+                                         size_t index,
+                                         const CDelayBuffer& buffer);
 
     virtual void BeginChoiceVariant(CObjectStackChoiceVariant& v,
                                     const CMemberId& id);

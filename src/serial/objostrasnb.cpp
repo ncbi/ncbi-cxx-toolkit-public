@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/06/01 19:07:05  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.35  2000/05/24 20:08:48  vasilche
 * Implemented XML dump.
 *
@@ -165,6 +168,7 @@
 #include <serial/memberid.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
+#include <serial/delaybuf.hpp>
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
@@ -336,13 +340,19 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
 }
 
 template<typename T>
-inline
-void WriteBytesOf(CObjectOStreamAsnBinary& out, const T& value)
+static
+void WriteBytesOf(CObjectOStreamAsnBinary& out, const T& value, size_t count)
 {
-    for ( size_t shift = (sizeof(value) - 1) * 8; shift != 0; shift -= 8 ) {
+    for ( int shift = (count - 1) * 8; shift >= 0; shift -= 8 ) {
         out.WriteByte(value >> shift);
     }
-    out.WriteByte(value);
+}
+
+template<typename T>
+static inline
+void WriteBytesOf(CObjectOStreamAsnBinary& out, const T& value)
+{
+    WriteBytesOf(out, value, sizeof(value));
 }
 
 inline
@@ -391,22 +401,18 @@ void CObjectOStreamAsnBinary::WriteClassTag(TTypeInfo typeInfo)
     if ( tag.empty() )
         THROW1_TRACE(runtime_error, "empty tag string");
 
-    if ( tag[0] <= eLongTag )
-        THROW1_TRACE(runtime_error, "bad tag string start");
+    _ASSERT( tag[0] > eLongTag );
 
     // long form
     WriteShortTag(eApplication, true, eLongTag);
     SIZE_TYPE last = tag.size() - 1;
-    for ( SIZE_TYPE i = 0; i < last; ++i ) {
+    for ( SIZE_TYPE i = 0; i <= last; ++i ) {
         char c = tag[i];
-        if ( (c & 0x80) != 0 )
-            THROW1_TRACE(runtime_error, "bad tag string char");
+        _ASSERT( (c & 0x80) == 0 );
+        if ( i == last )
+            c |= 0x80;
         WriteByte(c);
     }
-    char c = tag[last];
-    if ( (c & 0x80) != 0 )
-        THROW1_TRACE(runtime_error, "bad tag string char");
-    WriteByte(c | 0x80);
 }
 
 inline
@@ -427,31 +433,22 @@ void CObjectOStreamAsnBinary::WriteLength(size_t length)
         // short form
         WriteShortLength(length);
     }
-    else if ( length <= 0xff ) {
-        // long form 1 byte
-        WriteByte(0x81);
-        WriteByte(length);
-    }
-    else if ( length <= 0xffff ) {
-        WriteByte(0x82);
-        WriteByte(length >> 8);
-        WriteByte(length);
-    }
-    else if ( length < 0xffffff ) {
-        WriteByte(0x83);
-        WriteByte(length >> 16);
-        WriteByte(length >> 8);
-        WriteByte(length);
-    }
-    else if ( length < 0xffffffff ) {
-        WriteByte(0x84);
-        WriteByte(length >> 24);
-        WriteByte(length >> 16);
-        WriteByte(length >> 8);
-        WriteByte(length);
-    }
     else {
-        THROW1_TRACE(runtime_error, "too big length");
+        // long form
+        size_t count;
+        if ( length <= 0xff )
+            count = 1;
+        else if ( length <= 0xffff )
+            count = 2;
+        else if ( length <= 0xffffff )
+            count = 3;
+        else if ( length < 0xffffffff )
+            count = 4;
+        else
+            THROW1_TRACE(runtime_error, "length too big");
+
+        WriteByte(0x80 + count);
+        WriteBytesOf(*this, length, count);
     }
 }
 
@@ -468,73 +465,70 @@ void CObjectOStreamAsnBinary::WriteNull(void)
 }
 
 template<typename T>
-static inline
+static
 void WriteSNumberValue(CObjectOStreamAsnBinary& out, const T& data)
 {
+    size_t length;
     if ( data >= -0x80 && data < 0x80 ) {
         // one byte
-        out.WriteShortLength(1);
-        out.WriteByte(data);
+        length = 1;
     }
     else if ( data >= -0x8000 && data < 0x8000 ) {
         // two bytes
-        out.WriteShortLength(2);
-        out.WriteByte(data >> 8);
-        out.WriteByte(data);
+        length = 2;
     }
     else if ( data >= -0x800000 && data < 0x800000 ) {
         // three bytes
-        out.WriteShortLength(3);
-        out.WriteByte(data >> 16);
-        out.WriteByte(data >> 8);
-        out.WriteByte(data);
-    }
-    else if ( T(-1) >= 0 && (data & (1 << (sizeof(T) * 8 - 1))) != 0 ) {
-        // full length unsigned - and doesn't fit in signed place
-        out.WriteShortLength(sizeof(data) + 1);
-        out.WriteByte(0);
-        WriteBytesOf(out, data);
+        length = 3;
     }
     else {
-        // full length signed
-        out.WriteShortLength(sizeof(data));
+        if ( T(-1) >= 0 && (data & (1 << (sizeof(T) * 8 - 1))) != 0 ) {
+            // full length unsigned - and doesn't fit in signed place
+            out.WriteShortLength(sizeof(data) + 1);
+            out.WriteByte(0);
+        }
+        else {
+            // full length signed
+            out.WriteShortLength(sizeof(data));
+        }
         WriteBytesOf(out, data);
+        return;
     }
+    
+    out.WriteShortLength(length);
+    WriteBytesOf(out, data, length);
 }
 
 template<typename T>
-static inline
+static
 void WriteUNumberValue(CObjectOStreamAsnBinary& out, const T& data)
 {
+    size_t length;
     if ( data < 0x80 ) {
-        // one byte
-        out.WriteShortLength(1);
-        out.WriteByte(data);
+        length = 1;
     }
     else if ( data < 0x8000 ) {
-        // two bytes
-        out.WriteShortLength(2);
-        out.WriteByte(data >> 8);
-        out.WriteByte(data);
+        length = 2;
     }
     else if ( data < 0x800000 ) {
-        // three bytes
-        out.WriteShortLength(3);
-        out.WriteByte(data >> 16);
-        out.WriteByte(data >> 8);
-        out.WriteByte(data);
-    }
-    else if ( (data & (1 << (sizeof(T) * 8 - 1))) != 0 ) {
-        // full length unsigned - and doesn't fit in signed place
-        out.WriteShortLength(sizeof(data) + 1);
-        out.WriteByte(0);
-        WriteBytesOf(out, data);
+        length = 3;
     }
     else {
-        // full length signed
-        out.WriteShortLength(sizeof(data));
+        if ( (data & (1 << (sizeof(T) * 8 - 1))) != 0 ) {
+            // full length unsigned - and doesn't fit in signed place
+            out.WriteShortLength(sizeof(data) + 1);
+            out.WriteByte(0);
+        }
+        else {
+            // full length signed
+            out.WriteShortLength(sizeof(data));
+        }
         WriteBytesOf(out, data);
+        return;
     }
+    
+    out.WriteShortLength(length);
+    WriteBytesOf(out, data, length);
 }
 
 template<typename T>
@@ -653,18 +647,6 @@ bool CObjectOStreamAsnBinary::WriteEnum(const CEnumeratedTypeValues& values,
     return true;
 }
 
-void CObjectOStreamAsnBinary::WriteMemberPrefix(void)
-{
-    WriteTag(eApplication, true, eMemberReference);
-    WriteIndefiniteLength();
-}
-
-void CObjectOStreamAsnBinary::WriteMemberSuffix(const CMemberId& id)
-{
-    WriteString(id.GetName());
-    WriteEndOfContent();
-}
-
 void CObjectOStreamAsnBinary::WriteObjectReference(TIndex index)
 {
     WriteTag(eApplication, false, eObjectReference);
@@ -710,7 +692,7 @@ void CObjectOStreamAsnBinary::WriteArray(CObjectArrayWriter& writer,
     element.Begin();
 
     while ( !writer.NoMoreElements() ) {
-        writer.WriteTo(*this);
+        writer.WriteElement(*this);
     }
     
     element.End();
@@ -740,6 +722,59 @@ void CObjectOStreamAsnBinary::BeginClassMember(CObjectStackClassMember& /*m*/,
 
 void CObjectOStreamAsnBinary::EndClassMember(CObjectStackClassMember& m)
 {
+    WriteEndOfContent();
+    m.End();
+}
+
+void CObjectOStreamAsnBinary::WriteClass(CObjectClassWriter& writer,
+                                         TTypeInfo classInfo,
+                                         const CMembersInfo& members,
+                                         bool randomOrder)
+{
+    if ( randomOrder )
+        WriteShortTag(eUniversal, true, eSet);
+    else
+        WriteShortTag(eUniversal, true, eSequence);
+    WriteIndefiniteLength();
+    
+    TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
+    if ( parentClassInfo &&
+         parentClassInfo != CObjectGetTypeInfo::GetTypeInfo() )
+        writer.WriteParentClass(*this, parentClassInfo);
+
+    writer.WriteMembers(*this, members);
+    
+    WriteEndOfContent();
+}
+
+void CObjectOStreamAsnBinary::WriteClassMember(const CMemberId& id,
+                                               size_t /*index*/,
+                                               TTypeInfo memberTypeInfo,
+                                               TConstObjectPtr memberPtr)
+{
+    CObjectStackClassMember m(*this, id);
+
+    WriteTag(eContextSpecific, true, id.GetTag());
+    WriteIndefiniteLength();
+    
+    memberTypeInfo->WriteData(*this, memberPtr);
+    
+    WriteEndOfContent();
+    m.End();
+}
+
+void CObjectOStreamAsnBinary::WriteDelayedClassMember(const CMemberId& id,
+                                                      size_t /*index*/,
+                                                      const CDelayBuffer& buff)
+{
+    CObjectStackClassMember m(*this, id);
+
+    WriteTag(eContextSpecific, true, id.GetTag());
+    WriteIndefiniteLength();
+    
+    if ( !buff.Write(*this) )
+        THROW1_TRACE(runtime_error, "internal error");
+    
     WriteEndOfContent();
     m.End();
 }

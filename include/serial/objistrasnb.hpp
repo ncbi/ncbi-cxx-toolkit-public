@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/06/01 19:06:56  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.23  2000/05/24 20:08:13  vasilche
 * Implemented XML dump.
 *
@@ -180,7 +183,7 @@ protected:
     virtual void ReadArray(CObjectArrayReader& reader,
                            TTypeInfo arrayType, bool randomOrder,
                            TTypeInfo elementType);
-    
+
     virtual void BeginClass(CObjectStackClass& cls);
     virtual void EndClass(CObjectStackClass& cls);
     virtual TMemberIndex BeginClassMember(CObjectStackClassMember& m,
@@ -189,10 +192,19 @@ protected:
                                           const CMembers& members,
                                           CClassMemberPosition& pos);
     virtual void EndClassMember(CObjectStackClassMember& m);
+    virtual void ReadClassRandom(CObjectClassReader& reader,
+                                 TTypeInfo classType,
+                                 const CMembersInfo& members);
+    virtual void ReadClassSequential(CObjectClassReader& reader,
+                                     TTypeInfo classType,
+                                     const CMembersInfo& members);
 
     virtual TMemberIndex BeginChoiceVariant(CObjectStackChoiceVariant& v,
                                             const CMembers& variants);
     virtual void EndChoiceVariant(CObjectStackChoiceVariant& v);
+    virtual void ReadChoice(CObjectChoiceReader& reader,
+                            TTypeInfo classType,
+                            const CMembersInfo& variants);
 
 	virtual void BeginBytes(ByteBlock& block);
 	virtual size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
@@ -206,7 +218,6 @@ protected:
 
 private:
     virtual EPointerType ReadPointerType(void);
-    virtual TMemberIndex ReadMemberSuffix(const CMembers& members);
     virtual TIndex ReadObjectPointer(void);
     virtual string ReadOtherPointer(void);
     virtual void ReadOtherPointerEnd(void);
@@ -276,6 +287,10 @@ private:
 
     void ReadStringValue(string& s);
     void SkipTagData(void);
+    bool HaveMoreElements(void);
+    void UnexpectedMember(TTag tag);
+    void UnexpectedTag(TTag tag);
+    void UnexpectedByte(TByte byte);
 };
 
 //#include <serial/objistrasnb.inl>

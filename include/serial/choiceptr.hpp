@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/06/01 19:06:55  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.14  2000/05/24 20:08:11  vasilche
 * Implemented XML dump.
 *
@@ -126,9 +129,11 @@ public:
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
 
-    void AddVariant(const CMemberId& id, const CTypeRef& type);
-    void AddVariant(const string& id, const CTypeRef& type);
-    void AddVariant(const char* id, const CTypeRef& type);
+    const CMembersInfo& GetVariants(void) const
+        {
+            return m_Variants;
+        }
+    TTypeInfo GetVariantType(TMemberIndex index) const;
 
 protected:
     virtual TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const;
@@ -144,8 +149,7 @@ private:
     const TVariantsByType& VariantsByType(void) const;
     TIndex FindVariant(TConstObjectPtr object) const;
 
-    CMembers m_Variants;
-    TVariantTypes m_VariantTypes;
+    CMembersInfo m_Variants;
     mutable auto_ptr<TVariantsByType> m_VariantsByType;
 };
 

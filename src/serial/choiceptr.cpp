@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/06/01 19:07:02  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.15  2000/05/24 20:08:46  vasilche
 * Implemented XML dump.
 *
@@ -136,11 +139,17 @@ TTypeInfo CChoicePointerTypeInfo::GetTypeInfo(TTypeInfo base)
     return new CChoicePointerTypeInfo(base);
 }
 
-TTypeInfo CChoicePointerTypeInfo::GetRealDataTypeInfo(TConstObjectPtr object) const
+TTypeInfo
+CChoicePointerTypeInfo::GetRealDataTypeInfo(TConstObjectPtr object) const
 {
-    return m_VariantTypes[FindVariant(object)].Get();
+    return GetVariantType(FindVariant(object));
 }
-    
+
+TTypeInfo CChoicePointerTypeInfo::GetVariantType(TMemberIndex index) const
+{
+    return GetVariants().GetMemberInfo(index)->GetTypeInfo();
+}
+
 void CChoicePointerTypeInfo::Init(void)
 {
     const CClassInfoTmpl::TSubClasses* subclasses =
@@ -149,8 +158,7 @@ void CChoicePointerTypeInfo::Init(void)
         return;
     for ( CClassInfoTmpl::TSubClasses::const_iterator i = subclasses->begin();
           i != subclasses->end(); ++i ) {
-        m_Variants.AddMember(i->first);
-        m_VariantTypes.push_back(i->second);
+        m_Variants.AddMember(i->first, 0, i->second.Get());
     }
 }
 
@@ -161,9 +169,9 @@ CChoicePointerTypeInfo::VariantsByType(void) const
     if ( !variants ) {
         m_VariantsByType.reset(variants = new TVariantsByType);
 
-        for ( TIndex i = 0, size = m_VariantTypes.size();
+        for ( TIndex i = 0, size = GetVariants().GetSize();
               i != size; ++i ) {
-            TTypeInfo type = m_VariantTypes[i].Get();
+            TTypeInfo type = GetVariantType(i);
             const type_info* id;
             if ( !type ) {
                 // null variant
@@ -219,7 +227,7 @@ void CChoicePointerTypeInfo::WriteData(CObjectOStream& out,
 
     out.BeginChoiceVariant(variant, id);
 
-    TTypeInfo dataType = m_VariantTypes[index].Get();
+    TTypeInfo dataType = GetVariantType(index);
     if ( !dataType )
         dataType = CNullTypeInfo::GetTypeInfo();
     out.WriteExternalObject(data, dataType);
@@ -233,7 +241,7 @@ void CChoicePointerTypeInfo::ReadData(CObjectIStream& in,
     CObjectStackChoice choice(in, this);
     CObjectStackChoiceVariant v(choice);
     TMemberIndex index = in.BeginChoiceVariant(v, m_Variants);
-    TTypeInfo dataType = m_VariantTypes[index].Get();
+    TTypeInfo dataType = GetVariantType(index);
     if ( !dataType )
         dataType = CNullTypeInfo::GetTypeInfo();
     TObjectPtr data = dataType->Create();
@@ -247,7 +255,7 @@ void CChoicePointerTypeInfo::SkipData(CObjectIStream& in) const
     CObjectStackChoice choice(in, this);
     CObjectStackChoiceVariant v(choice);
     TMemberIndex index = in.BeginChoiceVariant(v, m_Variants);
-    TTypeInfo dataType = m_VariantTypes[index].Get();
+    TTypeInfo dataType = GetVariantType(index);
     if ( !dataType )
         dataType = CNullTypeInfo::GetTypeInfo();
     in.SkipExternalObject(dataType);

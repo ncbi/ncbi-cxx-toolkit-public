@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/06/01 19:06:56  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.11  2000/05/24 20:08:12  vasilche
 * Implemented XML dump.
 *
@@ -84,13 +87,12 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/serialdef.hpp>
+#include <serial/lightstr.hpp>
 #include <serial/memberid.hpp>
 #include <serial/member.hpp>
 #include <serial/iteratorbase.hpp>
 #include <vector>
 #include <map>
-#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -108,7 +110,7 @@ public:
     typedef CMemberId::TTag TTag;
     typedef int TIndex;
     typedef vector<CMemberId> TMembers;
-    typedef map<const char*, TIndex, StrCmp> TMembersByName;
+    typedef map<CLightString, TIndex> TMembersByName;
     typedef map<TTag, TIndex> TMembersByTag;
 
     CMembers(void);
@@ -146,11 +148,9 @@ public:
             return m_Members[index];
         }
 
-    TIndex FindMember(const CMemberId& id) const;
-    TIndex FindMember(const string& name) const;
-    TIndex FindMember(const char* name) const;
+    TIndex FindMember(const CLightString& name) const;
+    TIndex FindMember(const CLightString& name, TIndex pos) const;
     TIndex FindMember(TTag tag) const;
-    TIndex FindMember(const pair<const char*, size_t>& name, TIndex pos) const;
     TIndex FindMember(TTag tag, TIndex pos) const;
 
 private:
@@ -173,10 +173,12 @@ public:
 
     // AddMember will take ownership of member
     CMemberInfo* AddMember(const CMemberId& id, CMemberInfo* member);
-    CMemberInfo* AddMember(const char* name, const void* member,
-                           TTypeInfo type);
-    CMemberInfo* AddMember(const char* name, const void* member,
-                           const CTypeRef& type);
+    CMemberInfo* AddMember(const CMemberId& id,
+                           TConstObjectPtr member, TTypeInfo type);
+    CMemberInfo* AddMember(const char* name,
+                           TConstObjectPtr member, TTypeInfo type);
+    CMemberInfo* AddMember(const char* name,
+                           TConstObjectPtr member, const CTypeRef& type);
 
     const TMembersByOffset& GetMembersByOffset(void) const;
     size_t GetFirstMemberOffset(void) const;

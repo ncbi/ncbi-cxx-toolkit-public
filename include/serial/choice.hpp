@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/06/01 19:06:54  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.10  2000/04/28 16:58:01  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -89,6 +92,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CChoiceTypeInfoReader;
+
 class CChoiceTypeInfoBase : public CTypeInfo {
     typedef CTypeInfo CParent;
 public:
@@ -136,6 +141,8 @@ public:
     virtual void Erase(CChildrenIterator& cc) const;
 
 protected:
+    friend class CChoiceTypeInfoReader;
+
     virtual TMemberIndex GetIndex(TConstObjectPtr object) const = 0;
     virtual void ResetIndex(TObjectPtr object) const;
     virtual void SetIndex(TObjectPtr object, TMemberIndex index) const = 0;

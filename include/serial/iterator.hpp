@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/06/01 19:06:55  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.10  2000/05/24 20:08:12  vasilche
 * Implemented XML dump.
 *
@@ -252,7 +255,9 @@ private:
     CTreeLevel* m_Stack;
     size_t m_StackDepth;
     // currently selected object
+protected:
     TObjectInfo m_CurrentObject;
+private:
     auto_ptr<TVisitedObjects> m_VisitedObjects;
 };
 
@@ -356,7 +361,9 @@ private:
     CTreeLevel* m_Stack;
     size_t m_StackDepth;
     // currently selected object
+protected:
     TObjectInfo m_CurrentObject;
+private:
     auto_ptr<TVisitedObjects> m_VisitedObjects;
 };
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/06/01 19:07:05  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.23  2000/05/24 20:08:50  vasilche
 * Implemented XML dump.
 *
@@ -281,19 +284,19 @@ const CClassInfoTmpl* CStlClassInfoMapImpl::GetElementType(void) const
     return m_ElementType.get();
 }
 
-void CMapArrayReaderBase::ReadFrom(CObjectIStream& in)
+void CMapArrayReaderBase::ReadElement(CObjectIStream& in)
 {
     CObjectStackClass cls(in, m_MapTypeInfo->GetElementType(), false);
     in.BeginClass(cls);
-    ReadElement(in, cls);
+    ReadClassElement(in, cls);
     in.EndClass(cls);
 }
 
-void CMapArrayWriterBase::WriteTo(CObjectOStream& out)
+void CMapArrayWriterBase::WriteElement(CObjectOStream& out)
 {
     CObjectStackClass cls(out, m_MapTypeInfo->GetElementType(), false);
     out.BeginClass(cls);
-    WriteElement(out, cls);
+    WriteClassElement(out, cls);
     out.EndClass(cls);
 }
 

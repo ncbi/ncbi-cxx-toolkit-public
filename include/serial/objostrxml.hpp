@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/06/01 19:06:58  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.1  2000/05/24 20:08:14  vasilche
 * Implemented XML dump.
 *
@@ -84,15 +87,31 @@ protected:
     virtual void WriteArray(CObjectArrayWriter& writer,
                             TTypeInfo arrayType, bool randomOrder,
                             TTypeInfo elementType);
+    bool WriteArrayContents(CObjectArrayWriter& writer,
+                            TTypeInfo elementType);
 
-    virtual void BeginNamedType(CObjectStackNamedFrame& type);
-    virtual void EndNamedType(CObjectStackNamedFrame& type);
+    virtual void WriteNamedType(TTypeInfo namedTypeInfo,
+                                TTypeInfo typeInfo, TConstObjectPtr object);
 
     virtual void BeginClass(CObjectStackClass& cls);
     virtual void EndClass(CObjectStackClass& cls);
     virtual void BeginClassMember(CObjectStackClassMember& m,
                                   const CMemberId& id);
     virtual void EndClassMember(CObjectStackClassMember& m);
+    virtual void WriteClass(CObjectClassWriter& writer,
+                            TTypeInfo classInfo, 
+                            const CMembersInfo& members,
+                            bool randomOrder);
+    bool WriteClassContents(CObjectClassWriter& writer,
+                            TTypeInfo classInfo,
+                            const CMembersInfo& members);
+    virtual void WriteClassMember(const CMemberId& id,
+                                  size_t index,
+                                  TTypeInfo memberInfo,
+                                  TConstObjectPtr memberPtr);
+    virtual void WriteDelayedClassMember(const CMemberId& id,
+                                         size_t index,
+                                         const CDelayBuffer& buffer);
 
     virtual void BeginChoiceVariant(CObjectStackChoiceVariant& v,
                                     const CMemberId& id);

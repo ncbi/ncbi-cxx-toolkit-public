@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/06/01 19:06:55  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.29  2000/05/24 20:08:11  vasilche
 * Implemented XML dump.
 *
@@ -223,10 +226,6 @@ public:
             m_Implicit = implicit;
             return this;
         }
-
-    TMemberIndex FindMember(const string& name) const;
-    const CMemberId* GetMemberId(TMemberIndex index) const;
-    const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
 
     // finds type info (throws runtime_error if absent)
     static TTypeInfo GetClassInfoByName(const string& name);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/06/01 19:06:58  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.1  2000/05/24 20:08:14  vasilche
 * Implemented XML dump.
 *
@@ -147,6 +150,26 @@ public:
             return m_NameType != eNameNone;
         }
 
+    const char* GetNameCharPtr(void) const
+        {
+            _ASSERT(m_NameType == eNameCharPtr);
+            return m_NameCharPtr;
+        }
+    const string& GetNameString(void) const
+        {
+            _ASSERT(m_NameType == eNameString);
+            return *m_NameString;
+        }
+    const CMemberId& GetNameId(void) const
+        {
+            _ASSERT(m_NameType == eNameId);
+            return *m_NameId;
+        }
+    char GetNameChar(void) const
+        {
+            _ASSERT(m_NameType == eNameChar);
+            return m_NameChar;
+        }
     TTypeInfo GetNameTypeInfo(void) const
         {
             _ASSERT(m_NameType == eNameTypeInfo);
@@ -241,7 +264,9 @@ public:
 class CObjectStackArrayElement : public CObjectStackFrame
 {
 public:
-    CObjectStackArrayElement(CObjectStackArray& array, TTypeInfo elementType);
+    CObjectStackArrayElement(CObjectStack& stack, bool ended = true);
+    CObjectStackArrayElement(CObjectStackArray& array,
+                             TTypeInfo elementType, bool ended = true);
 
     CObjectStackArray& GetArrayFrame(void) const
         {
@@ -267,6 +292,8 @@ public:
 class CObjectStackClassMember : public CObjectStackFrame
 {
 public:
+    CObjectStackClassMember(CObjectStack& stack, bool ended = true);
+    CObjectStackClassMember(CObjectStack& stack, const CMemberId& id);
     CObjectStackClassMember(CObjectStackClass& cls);
     CObjectStackClassMember(CObjectStackClass& cls, const CMemberId& id);
     
@@ -290,6 +317,7 @@ public:
 class CObjectStackChoiceVariant : public CObjectStackFrame
 {
 public:
+    CObjectStackChoiceVariant(CObjectStack& stack);
     CObjectStackChoiceVariant(CObjectStackChoice& choice);
     CObjectStackChoiceVariant(CObjectStackChoice& choice, const CMemberId& id);
 

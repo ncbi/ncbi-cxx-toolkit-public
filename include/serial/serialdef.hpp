@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/06/01 19:06:58  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.8  2000/04/28 16:58:03  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -97,14 +100,6 @@ TConstObjectPtr Add(TConstObjectPtr object, int offset);
 // calculate offset of member inside object
 inline
 int Sub(TConstObjectPtr first, TConstObjectPtr second);
-
-struct StrCmp
-{
-    bool operator()(const char* arg1, const char* arg2) const
-        {
-            return strcmp(arg1, arg2) < 0;
-        }
-};
 
 #define NCBISER_ALLOW_CYCLES 1
 

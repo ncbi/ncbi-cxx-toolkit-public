@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/06/01 19:06:55  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.1  2000/05/24 20:08:12  vasilche
 * Implemented XML dump.
 *
@@ -40,9 +43,11 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <memory>
+#include <serial/serialdef.hpp>
+#include <serial/lightstr.hpp>
 #include <list>
 #include <map>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -50,8 +55,8 @@ class CEnumeratedTypeValues
 {
 public:
     typedef list< pair<string, long> > TValues;
-    typedef map<const char*, long, StrCmp> TNameToValue;
-    typedef map<long, string> TValueToName;
+    typedef map<CLightString, long> TNameToValue;
+    typedef map<long, const string*> TValueToName;
 
     CEnumeratedTypeValues(const string& name, bool isInteger);
     CEnumeratedTypeValues(const char* name, bool isInteger);
@@ -71,8 +76,7 @@ public:
 
     // returns value of enum element, if found
     // otherwise, throws exception
-    long FindValue(const string& name) const;
-    long FindValue(const char* name) const;
+    long FindValue(const CLightString& name) const;
 
     // returns name of enum element, if found
     // otherwise, if (allowBadValue == true) returns empty string,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/06/01 19:07:05  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.1  2000/05/24 20:08:49  vasilche
 * Implemented XML dump.
 *
@@ -41,6 +44,7 @@
 #include <serial/memberid.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/enumvalues.hpp>
+#include <serial/delaybuf.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -106,28 +110,25 @@ bool CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
     else {
         // local enum (member, variant or element)
         _ASSERT(m_LastTagAction == eTagOpen);
+        if ( name.empty() ) {
+            _ASSERT(values.IsInteger());
+            return false;
+        }
+        m_Output.BackChar('>');
+        m_Output.PutString(" value=\"");
+        m_Output.PutString(name);
         if ( values.IsInteger() ) {
-            if ( !name.empty() ) {
-                m_Output.BackChar('>');
-                m_Output.PutString(" value=\"");
-                m_Output.PutString(name);
-                m_Output.PutString("\">");
-            }
+            m_Output.PutString("\">");
             return false;
         }
         else {
-            _ASSERT(!name.empty());
-            m_Output.BackChar('>');
-            m_Output.PutString(" value=\"");
-            m_Output.PutString(name);
-            m_Output.PutString("\"/>");
             m_LastTagAction = eTagSelfClosed;
+            m_Output.PutString("\"/>");
             return true;
         }
     }
 }
 
-inline
 void CObjectOStreamXml::WriteEscapedChar(char c)
 {
     switch ( c ) {
@@ -155,12 +156,10 @@ void CObjectOStreamXml::WriteEscapedChar(char c)
 void CObjectOStreamXml::WriteBool(bool data)
 {
     m_Output.BackChar('>');
-    m_Output.PutString(" value=\"");
     if ( data )
-        m_Output.PutString("true");
+        m_Output.PutString(" value=\"true\"/>");
     else
-        m_Output.PutString("false");
-    m_Output.PutString("\"/>");
+        m_Output.PutString(" value=\"false\"/>");
     m_LastTagAction = eTagSelfClosed;
 }
 
@@ -340,42 +339,26 @@ void CObjectOStreamXml::WriteOther(TConstObjectPtr object,
     CloseTag(name);
 }
 
-inline
-void XmlComment(COStreamBuffer& _DEBUG_ARG(out),
-                const char* _DEBUG_ARG(comment))
-{
-#if 0
-    out.PutString("<!--");
-    out.PutString(comment);
-    out.PutString("-->");
-#endif
-}
-
 void CObjectOStreamXml::BeginArray(CObjectStackArray& array)
 {
     const string& name = array.GetTypeInfo()->GetName();
-    if ( !name.empty() ) {
+    if ( !name.empty() )
         OpenTag(name);
-        XmlComment(m_Output, "array");
-    }
 }
 
 void CObjectOStreamXml::EndArray(CObjectStackArray& array)
 {
     const string& name = array.GetTypeInfo()->GetName();
-    if ( !name.empty() ) {
+    if ( !name.empty() )
         CloseTag(name, array.IsEmpty());
-    }
     array.End();
 }
 
 void CObjectOStreamXml::BeginArrayElement(CObjectStackArrayElement& e)
 {
     e.GetArrayFrame().SetNonEmpty();
-    if ( e.GetElementType()->GetName().empty() ) {
+    if ( e.GetElementType()->GetName().empty() )
         OpenTag(e);
-        XmlComment(m_Output, "element");
-    }
     e.Begin();
 }
 
@@ -387,82 +370,76 @@ void CObjectOStreamXml::EndArrayElement(CObjectStackArrayElement& e)
     e.End();
 }
 
+bool CObjectOStreamXml::WriteArrayContents(CObjectArrayWriter& writer,
+                                           TTypeInfo elementType)
+{
+    if ( writer.NoMoreElements() )
+        return true;
+
+    if ( elementType->GetName().empty() ) {
+        CObjectStackArrayElement element(*this, elementType);
+        element.Begin();
+        
+        do {
+            OpenTag(element);
+            
+            writer.WriteElement(*this);
+            
+            CloseTag(element);
+        } while ( !writer.NoMoreElements() );
+        
+        element.End();
+    }
+    else {
+        do {
+            writer.WriteElement(*this);
+        } while ( !writer.NoMoreElements() );
+    }
+    return false;
+}
+
 void CObjectOStreamXml::WriteArray(CObjectArrayWriter& writer,
                                    TTypeInfo arrayType, bool randomOrder,
                                    TTypeInfo elementType)
 {
-    CObjectStackArray array(*this, arrayType, randomOrder);
-    const string& arrayName = array.GetTypeInfo()->GetName();
-    bool haveArrayTag = !arrayName.empty();
-    if ( haveArrayTag ) {
-        OpenTag(arrayName);
-        XmlComment(m_Output, "array");
-    }
-    
-    if ( writer.NoMoreElements() ) {
-        // empty array
-        if ( haveArrayTag )
-            CloseTag(arrayName, true);
+    const string& arrayName = arrayType->GetName();
+    if ( arrayName.empty() ) {
+        WriteArrayContents(writer, elementType);
     }
     else {
-        CObjectStackArrayElement element(array, elementType);
-        element.Begin();
-        
-        bool haveElementTag = elementType->GetName().empty();
-
-        if ( haveElementTag ) {
-            OpenTag(element);
-            XmlComment(m_Output, "element");
-        }
-        writer.WriteTo(*this);
-        if ( haveElementTag )
-            CloseTag(element);
-
-        while ( !writer.NoMoreElements() ) {
-            if ( haveElementTag ) {
-                OpenTag(element);
-                XmlComment(m_Output, "element");
-            }
-            writer.WriteTo(*this);
-            if ( haveElementTag )
-                CloseTag(element);
-        }
-        
-        element.End();
-        if ( haveArrayTag )
-            CloseTag(arrayName, false);
+        CObjectStackArray array(*this, arrayType, randomOrder);
+        OpenTag(arrayName);
+        bool empty = WriteArrayContents(writer, elementType);
+        CloseTag(arrayName, empty);
+        array.End();
     }
-
-    array.End();
 }
 
-void CObjectOStreamXml::BeginNamedType(CObjectStackNamedFrame& name)
+void CObjectOStreamXml::WriteNamedType(TTypeInfo namedTypeInfo,
+                                       TTypeInfo typeInfo,
+                                       TConstObjectPtr object)
 {
-    OpenTag(name);
-    XmlComment(m_Output, "named type");
-}
-
-void CObjectOStreamXml::EndNamedType(CObjectStackNamedFrame& name)
-{
-    CloseTag(name);
+    CObjectStackNamedFrame name(*this, namedTypeInfo);
+    const string& typeName = namedTypeInfo->GetName();
+    _ASSERT(!typeName.empty());
+    OpenTag(typeName);
+    typeInfo->WriteData(*this, object);
+    CloseTag(typeName);
     name.End();
 }
 
 void CObjectOStreamXml::BeginClass(CObjectStackClass& cls)
 {
     const string& name = cls.GetTypeInfo()->GetName();
-    if ( !name.empty() ) {
+    if ( !name.empty() )
         OpenTag(name);
-        XmlComment(m_Output, "class");
-    }
 }
 
 void CObjectOStreamXml::EndClass(CObjectStackClass& cls)
 {
     const string& name = cls.GetTypeInfo()->GetName();
-    if ( !name.empty() ) {
+    if ( !name.empty() )
         CloseTag(name, cls.IsEmpty());
-    }
     cls.End();
 }
 
@@ -471,7 +448,6 @@ void CObjectOStreamXml::BeginClassMember(CObjectStackClassMember& m,
 {
     m.GetClassFrame().SetNonEmpty();
     OpenTag(m);
-    XmlComment(m_Output, "member");
 }
 
 void CObjectOStreamXml::EndClassMember(CObjectStackClassMember& m)
@@ -480,16 +456,73 @@ void CObjectOStreamXml::EndClassMember(CObjectStackClassMember& m)
     m.End();
 }
 
+bool CObjectOStreamXml::WriteClassContents(CObjectClassWriter& writer,
+                                           TTypeInfo classInfo,
+                                           const CMembersInfo& members)
+{
+    TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
+    if ( parentClassInfo &&
+         parentClassInfo != CObjectGetTypeInfo::GetTypeInfo() )
+        writer.WriteParentClass(*this, parentClassInfo);
+    
+    return writer.WriteMembers(*this, members) == 0;
+}
+
+void CObjectOStreamXml::WriteClass(CObjectClassWriter& writer,
+                                   TTypeInfo classInfo,
+                                   const CMembersInfo& members,
+                                   bool randomOrder)
+{
+    const string& name = classInfo->GetName();
+    if ( name.empty() ) {
+        WriteClassContents(writer, classInfo, members);
+    }
+    else {
+        CObjectStackClass cls(*this, classInfo, randomOrder);
+        OpenTag(name);
+    
+        bool empty = WriteClassContents(writer, classInfo, members);
+
+        CloseTag(name, empty);
+        cls.End();
+    }
+}
+
+void CObjectOStreamXml::WriteClassMember(const CMemberId& id,
+                                         size_t /*index*/,
+                                         TTypeInfo memberTypeInfo,
+                                         TConstObjectPtr memberPtr)
+{
+    CObjectStackClassMember m(*this, id);
+    OpenTag(m);
+
+    memberTypeInfo->WriteData(*this, memberPtr);
+    
+    CloseTag(m);
+    m.End();
+}
+
+void CObjectOStreamXml::WriteDelayedClassMember(const CMemberId& id,
+                                                size_t /*index*/,
+                                                const CDelayBuffer& buffer)
+{
+    CObjectStackClassMember m(*this, id);
+    OpenTag(m);
+
+    if ( !buffer.Write(*this) )
+        THROW1_TRACE(runtime_error, "internal error");
+    
+    CloseTag(m);
+    m.End();
+}
+
 void CObjectOStreamXml::BeginChoiceVariant(CObjectStackChoiceVariant& v,
                                            const CMemberId& /*id*/)
 {
     const string& name = v.GetChoiceFrame().GetChoiceType()->GetName();
-    if ( !name.empty() ) {
+    if ( !name.empty() )
         OpenTag(name);
-        XmlComment(m_Output, "choice");
-    }
     OpenTag(v);
-    XmlComment(m_Output, "variant");
 }
 
 void CObjectOStreamXml::EndChoiceVariant(CObjectStackChoiceVariant& v)
@@ -497,9 +530,8 @@ void CObjectOStreamXml::EndChoiceVariant(CObjectStackChoiceVariant& v)
     CloseTag(v);
     v.End();
     const string& name = v.GetChoiceFrame().GetChoiceType()->GetName();
-    if ( !name.empty() ) {
+    if ( !name.empty() )
         CloseTag(name);
-    }
     v.GetChoiceFrame().End();
 }
 

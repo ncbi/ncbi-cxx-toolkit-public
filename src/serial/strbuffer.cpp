@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/06/01 19:07:05  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.13  2000/05/24 20:08:50  vasilche
 * Implemented XML dump.
 *
@@ -102,13 +105,13 @@ BEGIN_NCBI_SCOPE
 static const size_t KInitialBufferSize = 4096;
 
 static inline
-size_t BiggerBufferSize(size_t size) THROWS_NONE
+size_t BiggerBufferSize(size_t size) THROWS1_NONE
 {
     return size * 2;
 }
 
 CIStreamBuffer::CIStreamBuffer(void)
-    THROWS((bad_alloc))
+    THROWS1((bad_alloc))
     : m_BufferOffset(0),
       m_BufferSize(KInitialBufferSize), m_Buffer(new char[KInitialBufferSize]),
       m_CurrentPos(m_Buffer), m_DataEndPos(m_Buffer),
@@ -164,7 +167,7 @@ CRef<CByteSource> CIStreamBuffer::EndSubSource(void)
 
 // this method is highly optimized
 char CIStreamBuffer::SkipSpaces(void)
-    THROWS((CSerialIOException))
+    THROWS1((CSerialIOException))
 {
     // cache pointers
     char* pos = m_CurrentPos;
@@ -205,8 +208,60 @@ char CIStreamBuffer::SkipSpaces(void)
     }
 }
 
+// this method is highly optimized
+void CIStreamBuffer::FindChar(char c)
+    THROWS1((CSerialIOException))
+{
+    // cache pointers
+    char* pos = m_CurrentPos;
+    char* end = m_DataEndPos;
+    // make sure thire is at least one char in buffer
+    if ( pos == end ) {
+        // fill buffer
+        pos = FillBuffer(pos);
+        // cache m_DataEndPos
+        end = m_DataEndPos;
+    }
+    // main cycle
+    // at the beginning:
+    //     pos == m_CurrentPos
+    //     end == m_DataEndPos
+    //     pos < end
+    for (;;) {
+        char* found = static_cast<char*>(memchr(pos, c, end - pos));
+        if ( found ) {
+            m_CurrentPos = found;
+            return;
+        }
+        // point m_CurrentPos to end of buffer
+        m_CurrentPos = end;
+        // fill next portion
+        pos = FillBuffer(pos);
+        // cache m_DataEndPos
+        end = m_DataEndPos;
+    }
+}
+
+// this method is highly optimized
+int CIStreamBuffer::PeekFindChar(char c, size_t limit)
+    THROWS1((CSerialIOException))
+{
+    _ASSERT(limit > 0);
+    PeekCharNoEOF(limit - 1);
+    // cache pointers
+    char* pos = m_CurrentPos;
+    size_t bufferSize = m_DataEndPos - pos;
+    if ( bufferSize != 0 ) {
+        char* found =
+            static_cast<char*>(memchr(pos, c, min(limit, bufferSize)));
+        if ( found )
+            return found - pos;
+    }
+    return -1;
+}
+
 char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
-    THROWS((CSerialIOException, bad_alloc))
+    THROWS1((CSerialIOException, bad_alloc))
 {
     _ASSERT(pos >= m_DataEndPos);
     // remove unused portion of buffer at the beginning
@@ -281,7 +336,7 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
 }
 
 char CIStreamBuffer::FillBufferNoEOF(char* pos)
-    THROWS((CSerialIOException, bad_alloc))
+    THROWS1((CSerialIOException, bad_alloc))
 {
     pos = FillBuffer(pos, true);
     if ( pos >= m_DataEndPos )
@@ -291,7 +346,7 @@ char CIStreamBuffer::FillBufferNoEOF(char* pos)
 }
 
 void CIStreamBuffer::GetChars(char* buffer, size_t count)
-    THROWS((CSerialIOException))
+    THROWS1((CSerialIOException))
 {
     // cache pos
     char* pos = m_CurrentPos;
@@ -314,7 +369,7 @@ void CIStreamBuffer::GetChars(char* buffer, size_t count)
 }
 
 void CIStreamBuffer::GetChars(size_t count)
-    THROWS((CSerialIOException))
+    THROWS1((CSerialIOException))
 {
     // cache pos
     char* pos = m_CurrentPos;
@@ -334,7 +389,7 @@ void CIStreamBuffer::GetChars(size_t count)
 }
 
 void CIStreamBuffer::SkipEndOfLine(char lastChar)
-    THROWS((CSerialIOException))
+    THROWS1((CSerialIOException))
 {
     _ASSERT(lastChar == '\n' || lastChar == '\r');
     _ASSERT(m_CurrentPos > m_Buffer && m_CurrentPos[-1] == lastChar);
@@ -353,7 +408,7 @@ void CIStreamBuffer::SkipEndOfLine(char lastChar)
 }
 
 size_t CIStreamBuffer::ReadLine(char* buff, size_t size)
-    THROWS((CSerialIOException))
+    THROWS1((CSerialIOException))
 {
     size_t count = 0;
     try {
@@ -381,8 +436,133 @@ size_t CIStreamBuffer::ReadLine(char* buff, size_t size)
     }
 }
 
+int CIStreamBuffer::GetInt(void)
+{
+    bool sign;
+    char c = GetChar();
+    switch ( c ) {
+    case '-':
+        sign = true;
+        c = GetChar();
+        break;
+    case '+':
+        sign = false;
+        c = GetChar();
+        break;
+    default:
+        sign = false;
+        break;
+    }
+    if ( c < '0' || c > '9' )
+        THROW1_TRACE(runtime_error, "bad number");
+
+    int n = c - '0';
+    for ( ;; ) {
+        c = PeekCharNoEOF();
+        if  ( c < '0' || c > '9' )
+            break;
+
+        SkipChar();
+        // TODO: check overflow
+        n = n * 10 + (c - '0');
+    }
+    if ( sign )
+        return -n;
+    else
+        return n;
+}
+
+unsigned CIStreamBuffer::GetUInt(void)
+{
+    char c = GetChar();
+    if ( c == '+' )
+        c = GetChar();
+    if ( c < '0' || c > '9' )
+        THROW1_TRACE(runtime_error, "bad number");
+
+    unsigned n = c - '0';
+    for ( ;; ) {
+        c = PeekCharNoEOF();
+        if  ( c < '0' || c > '9' )
+            break;
+
+        SkipChar();
+        // TODO: check overflow
+        n = n * 10 + (c - '0');
+    }
+    return n;
+}
+
+// code reduction if long and int have the same size
+long CIStreamBuffer::GetLong(void)
+    THROWS1((CSerialIOException))
+{
+#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
+    return GetInt();
+#else
+    bool sign;
+    char c = GetChar();
+    switch ( c ) {
+    case '-':
+        sign = true;
+        c = GetChar();
+        break;
+    case '+':
+        sign = false;
+        c = GetChar();
+        break;
+    default:
+        sign = false;
+        break;
+    }
+    if ( c < '0' || c > '9' )
+        THROW1_TRACE(runtime_error, "bad number");
+
+    long n = c - '0';
+    for ( ;; ) {
+        c = PeekCharNoEOF();
+        if  ( c < '0' || c > '9' )
+            break;
+
+        SkipChar();
+        // TODO: check overflow
+        n = n * 10 + (c - '0');
+    }
+    if ( sign )
+        return -n;
+    else
+        return n;
+#endif
+}
+
+unsigned long CIStreamBuffer::GetULong(void)
+    THROWS1((CSerialIOException))
+{
+#if ULONG_MAX == UINT_MAX
+    return GetUInt();
+#else
+    char c = GetChar();
+    if ( c == '+' )
+        c = GetChar();
+    if ( c < '0' || c > '9' )
+        THROW1_TRACE(runtime_error, "bad number");
+
+    unsigned long n = c - '0';
+    for ( ;; ) {
+        c = PeekCharNoEOF();
+        if  ( c < '0' || c > '9' )
+            break;
+
+        SkipChar();
+        // TODO: check overflow
+        n = n * 10 + (c - '0');
+    }
+    return n;
+#endif
+}
+
 COStreamBuffer::COStreamBuffer(CNcbiOstream& out, bool deleteOut)
-    THROWS((bad_alloc))
+    THROWS1((bad_alloc))
     : m_Output(out), m_DeleteOutput(deleteOut), m_IndentLevel(0),
       m_Buffer(new char[KInitialBufferSize]),
       m_CurrentPos(m_Buffer),
@@ -393,7 +573,7 @@ COStreamBuffer::COStreamBuffer(CNcbiOstream& out, bool deleteOut)
 }
 
 COStreamBuffer::~COStreamBuffer(void)
-    THROWS((CSerialIOException))
+    THROWS1((CSerialIOException))
 {
     FlushBuffer();
     delete[] m_Buffer;
@@ -402,7 +582,7 @@ COStreamBuffer::~COStreamBuffer(void)
 }
 
 void COStreamBuffer::FlushBuffer(bool fullBuffer)
-    THROWS((CSerialIOException))
+    THROWS1((CSerialIOException))
 {
     size_t used = GetUsedSpace();
     size_t count;
@@ -431,7 +611,7 @@ void COStreamBuffer::FlushBuffer(bool fullBuffer)
 }
 
 void COStreamBuffer::Flush(void)
-    THROWS((CSerialIOException))
+    THROWS1((CSerialIOException))
 {
     FlushBuffer();
     if ( !m_Output.flush() )
@@ -439,7 +619,7 @@ void COStreamBuffer::Flush(void)
 }
 
 char* COStreamBuffer::DoReserve(size_t count)
-    THROWS((CSerialIOException, bad_alloc))
+    THROWS1((CSerialIOException, bad_alloc))
 {
     FlushBuffer(false);
     size_t usedSize = m_CurrentPos - m_Buffer;
@@ -468,7 +648,7 @@ char* COStreamBuffer::DoReserve(size_t count)
 }
 
 void COStreamBuffer::PutInt(int v)
-    THROWS((CSerialIOException, bad_alloc))
+    THROWS1((CSerialIOException, bad_alloc))
 {
     const size_t BSIZE = (sizeof(int)*CHAR_BIT) / 3 + 2;
     char b[BSIZE];
@@ -493,7 +673,7 @@ void COStreamBuffer::PutInt(int v)
 }
 
 void COStreamBuffer::PutUInt(unsigned v)
-    THROWS((CSerialIOException, bad_alloc))
+    THROWS1((CSerialIOException, bad_alloc))
 {
     const size_t BSIZE = (sizeof(unsigned)*CHAR_BIT) / 3 + 2;
     char b[BSIZE];
@@ -512,7 +692,7 @@ void COStreamBuffer::PutUInt(unsigned v)
 
 // code reduction if long and int have the same size
 void COStreamBuffer::PutLong(long v)
-    THROWS((CSerialIOException, bad_alloc))
+    THROWS1((CSerialIOException, bad_alloc))
 {
 #if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
     PutInt(int(v));
@@ -541,7 +721,7 @@ void COStreamBuffer::PutLong(long v)
 }
 
 void COStreamBuffer::PutULong(unsigned long v)
-    THROWS((CSerialIOException, bad_alloc))
+    THROWS1((CSerialIOException, bad_alloc))
 {
 #if ULONG_MAX == UINT_MAX
     PutUInt(unsigned(v));
@@ -570,7 +750,7 @@ void COStreamBuffer::PutULong(unsigned long v)
 }
 
 void COStreamBuffer::PutEolAtWordEnd(size_t lineLength)
-    THROWS((CSerialIOException, bad_alloc))
+    THROWS1((CSerialIOException, bad_alloc))
 {
     Reserve(1);
     size_t linePos = m_LineLength;
@@ -618,7 +798,7 @@ void COStreamBuffer::PutEolAtWordEnd(size_t lineLength)
 }
 
 void COStreamBuffer::Write(const char* data, size_t dataLength)
-    THROWS((CSerialIOException, bad_alloc))
+    THROWS1((CSerialIOException, bad_alloc))
 {
     while ( dataLength > 0 ) {
         size_t available = GetFreeSpace();
@@ -638,7 +818,7 @@ void COStreamBuffer::Write(const char* data, size_t dataLength)
 }
 
 void COStreamBuffer::Write(const CRef<CByteSourceReader>& reader)
-    THROWS((CSerialIOException, bad_alloc))
+    THROWS1((CSerialIOException, bad_alloc))
 {
     for ( ;; ) {
         size_t available = GetFreeSpace();

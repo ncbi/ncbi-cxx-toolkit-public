@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2000/06/01 19:06:57  vasilche
+* Added parsing of XML data.
+*
 * Revision 1.38  2000/05/24 20:08:13  vasilche
 * Implemented XML dump.
 *
@@ -202,10 +205,22 @@ public:
         {
             return m_NoMoreElements;
         }
-    virtual void WriteTo(CObjectOStream& out) = 0;
+    virtual void WriteElement(CObjectOStream& out) = 0;
 
 protected:
     bool m_NoMoreElements;
+};
+
+class CObjectClassWriter
+{
+public:
+    virtual ~CObjectClassWriter(void);
+
+    virtual void WriteParentClass(CObjectOStream& out,
+                                  TTypeInfo parentClassInfo) = 0;
+    // returns amount of members written
+    virtual size_t WriteMembers(CObjectOStream& out,
+                                const CMembersInfo& members) = 0;
 };
 
 class CObjectOStream : public CObjectStack
@@ -392,8 +407,8 @@ public:
                             TTypeInfo elementType);
 
     // class interface
-    virtual void BeginNamedType(CObjectStackNamedFrame& namedType);
-    virtual void EndNamedType(CObjectStackNamedFrame& namedType);
+    virtual void WriteNamedType(TTypeInfo namedTypeInfo,
+                                TTypeInfo typeInfo, TConstObjectPtr object);
 
     virtual void BeginClass(CObjectStackClass& cls) = 0;
     virtual void EndClass(CObjectStackClass& cls);
@@ -401,6 +416,17 @@ public:
     virtual void BeginClassMember(CObjectStackClassMember& member,
                                   const CMemberId& id) = 0;
     virtual void EndClassMember(CObjectStackClassMember& member);
+    virtual void WriteClass(CObjectClassWriter& writer,
+                            TTypeInfo classInfo, 
+                            const CMembersInfo& members,
+                            bool randomOrder);
+    virtual void WriteClassMember(const CMemberId& id,
+                                  size_t index,
+                                  TTypeInfo memberInfo,
+                                  TConstObjectPtr memberPtr);
+    virtual void WriteDelayedClassMember(const CMemberId& id,
+                                         size_t index,
+                                         const CDelayBuffer& buffer);
 
     virtual void BeginChoiceVariant(CObjectStackChoiceVariant& variant,
                                     const CMemberId& id) = 0;
@@ -417,8 +443,6 @@ protected:
     virtual void WritePointer(TConstObjectPtr object,
                               CWriteObjectInfo& info,
                               TTypeInfo declaredTypeInfo);
-    virtual void WriteMemberPrefix(void);
-    virtual void WriteMemberSuffix(const CMemberId& id);
     virtual void WriteNullPointer(void) = 0;
     virtual void WriteObjectReference(TIndex index) = 0;
     virtual void WriteThis(TConstObjectPtr object,
