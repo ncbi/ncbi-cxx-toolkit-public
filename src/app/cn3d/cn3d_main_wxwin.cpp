@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.109  2001/12/07 19:33:32  thiessen
+* fix extra path sep. in save file name
+*
 * Revision 1.108  2001/12/06 23:13:44  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -1621,8 +1624,9 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
     // force a save of any edits to alignment and updates first
     GlobalMessenger()->SequenceWindowsSave();
 
+    wxString outputFolder = wxString(userDir.c_str(), userDir.size() - 1); // remove trailing /
     wxString outputFilename = wxFileSelector(
-        "Choose a filename for output", userDir.c_str(), "",
+        "Choose a filename for output", outputFolder, "",
         ".prt", "All Files|*.*|Binary ASN (*.val)|*.val|ASCII CDD (*.acd)|*.acd|ASCII ASN (*.prt)|*.prt",
         wxSAVE | wxOVERWRITE_PROMPT);
     TESTMSG("save file: '" << outputFilename.c_str() << "'");
