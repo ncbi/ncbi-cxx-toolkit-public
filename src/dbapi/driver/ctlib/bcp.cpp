@@ -118,8 +118,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.datatype = CS_NUMERIC_TYPE;
             CS_NUMERIC value;
             Int8 val8 = par.Value();
-	    memset(&value, 0, sizeof(value));
-	    value.precision= 18;
+            memset(&value, 0, sizeof(value));
+            value.precision= 18;
             if (longlong_to_numeric(val8, 18, value.array) == 0)
                 return false;
             param_fmt.scale     = 0;
@@ -344,29 +344,52 @@ bool CTL_BCPInCmd::SendRow()
 
 bool CTL_BCPInCmd::Cancel()
 {
+    if(!m_WasSent) return false;
+
     CS_INT outrow = 0;
 
-    bool result =
-        m_WasSent  &&  blk_done(m_Cmd, CS_BLK_CANCEL, &outrow) == CS_SUCCEED;
-
-    m_WasSent = false;
-    return result;
+    switch( blk_done(m_Cmd, CS_BLK_CANCEL, &outrow) ) {
+    case CS_SUCCEED: m_WasSent= false; return true;
+    case CS_FAIL:
+        m_HasFailed = true;
+        throw CDB_ClientEx(eDB_Fatal, 123020,
+                           "CTL_BCPInCmd::Cancel", "blk_done failed");
+    default: m_WasSent = false; return false;
+    }
 }
 
 
 bool CTL_BCPInCmd::CompleteBatch()
 {
+    if(!m_WasSent) return false;
+
     CS_INT outrow = 0;
 
-    return m_WasSent  &&  blk_done(m_Cmd, CS_BLK_BATCH, &outrow) == CS_SUCCEED;
+    switch( blk_done(m_Cmd, CS_BLK_BATCH, &outrow) ) {
+    case CS_SUCCEED: return (outrow > 0);
+    case CS_FAIL:
+        m_HasFailed = true;
+        throw CDB_ClientEx(eDB_Fatal, 123020,
+                           "CTL_BCPInCmd::CompleteBatch", "blk_done failed");
+    default: return false;
+    }
 }
 
 
 bool CTL_BCPInCmd::CompleteBCP()
 {
+    if(!m_WasSent) return false;
+
     CS_INT outrow = 0;
 
-    return m_WasSent  &&   blk_done(m_Cmd, CS_BLK_ALL, &outrow) == CS_SUCCEED;
+    switch( blk_done(m_Cmd, CS_BLK_ALL, &outrow) ) {
+    case CS_SUCCEED: return (outrow > 0);
+    case CS_FAIL:
+        m_HasFailed = true;
+        throw CDB_ClientEx(eDB_Fatal, 123020,
+                           "CTL_BCPInCmd::CompleteBCP", "blk_done failed");
+    default: return false;
+    }
 }
 
 
@@ -394,10 +417,7 @@ CTL_BCPInCmd::~CTL_BCPInCmd()
 
     delete[] m_Bind;
 
-    if (blk_drop(m_Cmd) != CS_SUCCEED) {
-        throw CDB_ClientEx(eDB_Fatal, 123021,
-                           "CTL_BCPInCmd::~CTL_BCPInCmd", "blk_drop failed");
-    }
+    blk_drop(m_Cmd);
 }
 
 
@@ -408,6 +428,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/09/16 15:13:12  soussov
+ * throw exceptions in CompleteBCP, CompleteBatch, Cancel if blk_done fails
+ *
  * Revision 1.4  2001/11/06 17:59:55  lavr
  * Formatted uniformly as the rest of the library
  *
