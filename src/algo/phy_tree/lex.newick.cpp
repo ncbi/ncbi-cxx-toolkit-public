@@ -1,3 +1,5 @@
+#include <ncbi_pch.hpp>
+
 #define yy_create_buffer newick_create_buffer
 #define yy_delete_buffer newick_delete_buffer
 #define yy_scan_buffer newick_scan_buffer
@@ -26,7 +28,7 @@
 #define YY_FLEX_MAJOR_VERSION 2
 #define YY_FLEX_MINOR_VERSION 5
 
-#include <ncbi_pch.hpp>
+
 #include <stdio.h>
 
 
@@ -1654,8 +1656,8 @@ void newick_flex_reset(void)
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.4  2004/05/21 21:41:03  gorelenk
- * Added PCH ncbi_pch.hpp
+ * Revision 1.5  2004/05/24 18:13:37  gorelenk
+ * PCH moved upmost
  *
  * Revision 1.2  2004/02/11 22:18:16  ucko
  * erase() strings rather than clear()ing them for older compilers' sake.
