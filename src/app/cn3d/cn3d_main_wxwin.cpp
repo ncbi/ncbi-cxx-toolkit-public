@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2001/05/25 18:15:13  thiessen
+* another programDir fix
+*
 * Revision 1.46  2001/05/25 18:10:40  thiessen
 * programDir path fix
 *
@@ -381,7 +384,7 @@ bool Cn3DApp::OnInit(void)
     else if (wxPathOnly(argv[0]) == "")
         programDir = workingDir;
     else
-        programDir = workingDir + wxFILE_SEP_PATH + wxPathOnly(argv[0]);
+        programDir = workingDir + wxFILE_SEP_PATH + wxPathOnly(argv[0]).c_str();
     workingDir = workingDir + wxFILE_SEP_PATH;
     programDir = programDir + wxFILE_SEP_PATH;
 
