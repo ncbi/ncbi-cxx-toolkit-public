@@ -36,6 +36,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2000/05/01 16:58:12  vasilche
+* Allow missing Content-Length and Content-Type headers.
+*
 * Revision 1.42  2000/02/01 22:19:53  vakatov
 * CCgiRequest::GetRandomProperty() -- allow to retrieve value of
 * properties whose names are not prefixed by "HTTP_" (optional).
@@ -445,7 +448,9 @@ public:
     const string& GetRandomProperty(const string& key, bool http=true) const;
 
     // Get content length (using value of the property 'eCgi_ContentLength')
+    // may return kContentLengthUnknown if Content-Length header is missing
     size_t GetContentLength(void) const;
+    static const size_t kContentLengthUnknown = size_t(-1);
 
     // Retrieve the request cookies
     const CCgiCookies& GetCookies(void) const;

@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2000/05/01 16:58:18  vasilche
+* Allow missing Content-Length and Content-Type headers.
+*
 * Revision 1.39  2000/02/15 19:25:33  vakatov
 * CCgiRequest::ParseEntries() -- fixed UMR
 *
@@ -774,7 +777,8 @@ CCgiRequest::ParseMultipartQuery(\"" + boundary + "\"): bad name header " +
 static void s_ParsePostQuery(const string& contentType, const string& str,
                              TCgiEntries&  entries)
 {
-    if ( contentType == "application/x-www-form-urlencoded" ) {
+    if ( contentType.empty() ||
+         contentType == "application/x-www-form-urlencoded" ) {
         SIZE_TYPE err_pos = CCgiRequest::ParseEntries(str, entries);
         if ( err_pos != 0 )
             throw CParseException("Init CCgiRequest::ParseFORM(\"" +
@@ -874,19 +878,41 @@ void CCgiRequest::x_Init
             istr = &NcbiCin;  // default input stream
         size_t len = GetContentLength();
         string str;
-        str.resize(len);
-        for ( size_t pos = 0; pos < len; ) {
-            if ( !istr ) {
-                THROW1_TRACE(runtime_error, "\
-CCgiRequest::x_Init() -- error in reading POST content: bad stream state");
+        if ( len == kContentLengthUnknown ) {
+            // read data until end of file
+            for (;;) {
+                char buffer[1024];
+                istr->read(buffer, sizeof(buffer));
+                size_t count = istr->gcount();
+                if ( count == 0 ) {
+                    if ( istr->eof() ) {
+                        break; // end of data
+                    }
+                    else {
+                        THROW1_TRACE(runtime_error, "\
+CCgiRequest::x_Init() -- error in reading POST content: read fault");
+                    }
+                }
+                str.append(buffer, count);
             }
-            istr->read(&str[pos], len - pos);
-            size_t count = istr->gcount();
-            if ( count == 0 ) {
-                THROW1_TRACE(runtime_error, "\
+        }
+        else {
+            str.resize(len);
+            for ( size_t pos = 0; pos < len; ) {
+                istr->read(&str[pos], len - pos);
+                size_t count = istr->gcount();
+                if ( count == 0 ) {
+                    if ( istr->eof() ) {
+                        THROW1_TRACE(runtime_error, "\
 CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF");
+                    }
+                    else {
+                        THROW1_TRACE(runtime_error, "\
+CCgiRequest::x_Init() -- error in reading POST content: read fault");
+                    }
+                }
+                pos += count;
             }
-            pos += count;
         }
         // parse query from the POST content
         s_ParsePostQuery(GetProperty(eCgi_ContentType), str, m_Entries);
@@ -959,11 +985,10 @@ const
 
 size_t CCgiRequest::GetContentLength(void) const
 {
-    long l = -1;
     const string& str = GetProperty(eCgi_ContentLength);
-    if (sscanf(str.c_str(), "%ld", &l) != 1  ||  l < 0)
-        throw runtime_error("CCgiRequest:: Invalid content length: " + str);
-    return (size_t) l;
+    if ( str.empty() )
+        return kContentLengthUnknown;
+    return size_t(NStr::StringToUInt(str));
 }
 
 
