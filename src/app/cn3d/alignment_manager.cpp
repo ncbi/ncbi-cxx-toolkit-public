@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/10/02 23:25:19  thiessen
+* working sequence identifier window in sequence viewer
+*
 * Revision 1.11  2000/09/20 22:22:26  thiessen
 * working conservation coloring; split and center unaligned justification
 *
@@ -76,6 +79,7 @@
 #include "cn3d/style_manager.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/conservation_colorer.hpp"
+#include "cn3d/sequence_viewer.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -89,8 +93,12 @@ AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *
     sequenceSet(sSet), alignmentSet(aSet), currentMultipleAlignment(NULL),
     messenger(mesg)
 {
+    // create a sequence viewer for this alignment
+    sequenceViewer = new SequenceViewer(messenger);
+    messenger->AddSequenceViewer(sequenceViewer);
+
     if (!alignmentSet) {
-        messenger->DisplaySequences(&(sequenceSet->sequences));
+        sequenceViewer->DisplaySequences(&(sequenceSet->sequences));
         return;
     }
 
@@ -103,13 +111,14 @@ AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *
     for (a=alignmentSet->alignments.begin(); a!=ae; a++) alignments.push_back(*a);
     currentMultipleAlignment = CreateMultipleFromPairwiseWithIBM(alignments);
 
-    messenger->DisplayAlignment(currentMultipleAlignment);
+    sequenceViewer->DisplayAlignment(currentMultipleAlignment);
 }
 
 AlignmentManager::~AlignmentManager(void)
 {
-    messenger->ClearSequenceViewers();
     if (currentMultipleAlignment) delete currentMultipleAlignment;
+    messenger->RemoveSequenceViewer(sequenceViewer);
+    delete sequenceViewer;
 }
 
 static bool AlignedToAllSlaves(int masterResidue,

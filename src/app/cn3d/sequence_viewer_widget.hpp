@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/10/02 23:25:08  thiessen
+* working sequence identifier window in sequence viewer
+*
 * Revision 1.5  2000/09/14 14:55:26  thiessen
 * add row reordering; misc fixes
 *
@@ -58,6 +61,7 @@
 #define WX_SEQUENCE_VIEWER_WIDGET__HPP
 
 #include <wx/wx.h>
+#include <wx/splitter.h>
 
 
 // This is the generic interface to a viewable alignment; it provides a minimal
@@ -70,6 +74,10 @@ class ViewableAlignment
 public:
     // should set the overall size of the display, in columns (width) and rows (height)
     virtual void GetSize(int *columns, int *rows) const = 0;
+
+    // should set a title string and color for a row; if the return value is false,
+    // the title area will be left blank.
+    virtual bool GetRowTitle(int row, wxString *title, wxColour *color) const = 0;
 
     // should set the character and its traits to display at the given location;
     // both columns and rows are numbered from zero. If the return value is false,
@@ -120,11 +128,12 @@ public:
 };
 
 
-// This is the GUI class itself. It is a wxScrolledWindow - a viewing area where
+// This is the GUI class itself. It is a wxSplitterWindow - a viewing area where
 // characters are drawn, with right and bottom scrollbars that will automatically
 // be added if necessary. Note that it is *not* a complete top-level window!
-// If you want a separate sequence viewing window, then simply put this object
-// into a wxFrame (with whatever menus you want to attach to it).
+// Thus, it can be embedded in other windows, and more than one can exist in a window.
+// If you want a separate top-level sequence viewing window, then simply put this
+// object into a wxFrame (with whatever menus you want to attach to it).
 
 // A note on memory and processor efficiency: the SequenceViewerWidget does *not*
 // keep an entire array of characters in memory, nor does it keep a canvas of the
@@ -138,17 +147,18 @@ public:
 // is equal only to the number of rows in the visible region. Hopefully this will
 // provide a reasonable compromise between memory and CPU efficiency.
 
-class SequenceViewerWidget : public wxScrolledWindow
+class SequenceViewerWidget_SequenceArea;
+class SequenceViewerWidget_TitleArea;
+
+class SequenceViewerWidget : public wxSplitterWindow
 {
 public:
-    // constructor (same as wxScrolledWindow)
+    // constructor
     SequenceViewerWidget(
         wxWindow* parent,
         wxWindowID id = -1,
         const wxPoint& pos = wxDefaultPosition,
-        const wxSize& size = wxDefaultSize,
-        long style = wxHSCROLL | wxVSCROLL,
-        const wxString& name = "scrolledWindow"
+        const wxSize& size = wxDefaultSize
     );
 
     // destructor
@@ -187,39 +197,15 @@ public:
 
     // set the rubber band color after refresh
     void SetRubberbandColor(const wxColor& rubberbandColor);
+
+    // scroll sequence area to specific column
+    void ScrollToColumn(int column);
     
-    ///// everything else below here is part of the actual implementation /////
 private:
+    SequenceViewerWidget_SequenceArea *sequenceArea;
+    SequenceViewerWidget_TitleArea *titleArea;
 
-    void OnPaint(wxPaintEvent& event);
-    void OnMouseEvent(wxMouseEvent& event);
-
-    ViewableAlignment *alignment;
-
-    wxFont *currentFont;            // character font
-    wxColor currentBackgroundColor; // background for whole window
-    wxColor currentHighlightColor;  // background for highlighted chars
-    wxColor currentRubberbandColor; // color of rubber band
-    eMouseMode mouseMode;           // mouse mode
-    int cellWidth, cellHeight;      // dimensions of cells in pixels
-    int areaWidth, areaHeight;      // dimensions of the alignment (virtual area) in cells
-
-    void DrawCell(wxDC& dc, int x, int y, int vsX, int vsY, bool redrawBackground); // draw a single cell
-
-    enum eRubberbandType {
-        eSolid,
-        eDot
-    };
-    eRubberbandType currentRubberbandType;
-    void DrawLine(wxDC& dc, int x1, int y1, int x2, int y2);
-    void DrawRubberband(wxDC& dc,                           // draw rubber band around cells
-        int fromX, int fromY, int toX, int toY, int vsX, int vsY);
-    void MoveRubberband(wxDC &dc, int fromX, int fromY,     // change rubber band
-        int prevToX, int prevToY, int toX, int toY, int vsX, int vsY);
-    void RemoveRubberband(wxDC& dc, int fromX, int fromY,   // remove rubber band
-        int toX, int toY, int vsX, int vsY);
-
-    DECLARE_EVENT_TABLE()
+    void OnDoubleClickSash(int x, int y);
 };
 
 #endif // WX_SEQUENCE_VIEWER_WIDGET__HPP

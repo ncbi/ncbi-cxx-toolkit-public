@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/10/02 23:25:20  thiessen
+* working sequence identifier window in sequence viewer
+*
 * Revision 1.10  2000/09/20 22:22:27  thiessen
 * working conservation coloring; split and center unaligned justification
 *
@@ -212,15 +215,11 @@ bool Cn3DApp::OnInit(void)
     // create the messenger; tell it about sequence & structure windows
     messenger = new Messenger();
 
-    // create the sequence viewer
-    sequenceViewer = new SequenceViewer(messenger);
-
     // create the main frame window
     structureWindow = new Cn3DMainFrame(messenger, NULL, "Cn3D++",
         wxPoint(0,0), wxSize(500,500), wxDEFAULT_FRAME_STYLE);
 
     // register viewers with messenger
-    messenger->AddSequenceViewer(sequenceViewer);
     messenger->AddStructureWindow(structureWindow);
 
     // get file name from command line, if present
@@ -239,6 +238,7 @@ int Cn3DApp::OnExit(void)
     DeleteStandardDictionary();
 
     delete messenger;
+
 	return 0;
 }
 
@@ -288,13 +288,13 @@ Cn3DMainFrame::Cn3DMainFrame(Messenger *mesg,
     // Style menu
     menu = new wxMenu;
     menu->Append(MID_SECSTRUC, "&Secondary Structure");
+    menu->Append(MID_WIREFRAME, "&Wireframe");
     menu->Append(MID_ALIGN, "&Alignment");
     wxMenu *subMenu = new wxMenu;
     subMenu->Append(MID_IDENT, "&Identity");
     subMenu->Append(MID_VARIETY, "&Variety");
     subMenu->Append(MID_WGHT_VAR, "&Weighted Variety");
     menu->Append(MID_CONS, "&Conservation", subMenu);
-    menu->Append(MID_WIREFRAME, "&Wireframe");
     menuBar->Append(menu, "&Style");
 
     // Quality menu
@@ -316,7 +316,7 @@ Cn3DMainFrame::Cn3DMainFrame(Messenger *mesg,
         GLX_DOUBLEBUFFER, None };
 #endif
     glCanvas = new Cn3DGLCanvas(messenger,
-        this, -1, wxPoint(0, 0), wxSize(400, 400), 0, "Cn3DGLCanvas", gl_attrib);
+        this, -1, wxPoint(0, 0), wxSize(400, 400), wxSUNKEN_BORDER, "Cn3DGLCanvas", gl_attrib);
     glCanvas->SetCurrent();
 
     Show(true);
@@ -324,9 +324,7 @@ Cn3DMainFrame::Cn3DMainFrame(Messenger *mesg,
 
 Cn3DMainFrame::~Cn3DMainFrame(void)
 {
-    glCanvas->Destroy();
     if (logFrame) {
-        logText->Destroy();
         logFrame->Destroy();
         logText = NULL;
         logFrame = NULL;

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/10/02 23:25:21  thiessen
+* working sequence identifier window in sequence viewer
+*
 * Revision 1.5  2000/09/15 19:24:22  thiessen
 * allow repeated structures w/o different local id
 *
@@ -124,37 +127,15 @@ void Messenger::RemoveStructureWindow(const Cn3DMainFrame *structureWindow)
         if (*t == structureWindow) structureWindows.erase(t);
         break;
     }
+}
 
-    if (structureWindows.size() == 0) {
-        SequenceViewerList::iterator q, qe = sequenceViewers.end();
-        for (q=sequenceViewers.begin(); q!=qe; q++)
-            delete *q;
-        sequenceViewers.empty();
+void Messenger::RemoveSequenceViewer(const SequenceViewer *sequenceViewer)
+{
+    SequenceViewerList::iterator t, te = sequenceViewers.end();
+    for (t=sequenceViewers.begin(); t!=te; t++) {
+        if (*t == sequenceViewer) sequenceViewers.erase(t);
+        break;
     }
-}
-
-void Messenger::DisplaySequences(const SequenceList *sequences)
-{
-    SequenceViewerList::iterator q, qe = sequenceViewers.end();
-    for (q=sequenceViewers.begin(); q!=qe; q++)
-        (*q)->DisplaySequences(sequences);
-    PostRedrawSequenceViewers();
-}
-   
-void Messenger::DisplayAlignment(const BlockMultipleAlignment *alignment)
-{
-    SequenceViewerList::iterator q, qe = sequenceViewers.end();
-    for (q=sequenceViewers.begin(); q!=qe; q++)
-        (*q)->DisplayAlignment(alignment);
-    PostRedrawSequenceViewers();
-}
-
-void Messenger::ClearSequenceViewers(void)
-{
-    SequenceViewerList::iterator q, qe = sequenceViewers.end();
-    for (q=sequenceViewers.begin(); q!=qe; q++)
-        (*q)->ClearGUI();
-    PostRedrawSequenceViewers();
 }
 
 

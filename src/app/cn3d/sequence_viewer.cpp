@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/10/02 23:25:22  thiessen
+* working sequence identifier window in sequence viewer
+*
 * Revision 1.12  2000/09/20 22:22:27  thiessen
 * working conservation coloring; split and center unaligned justification
 *
@@ -122,20 +125,23 @@ private:
     SequenceViewerWidget *viewerWidget;
     SequenceViewer *viewer;
 
+    void OnCloseWindow(wxCloseEvent& event);
+
 public:
     // scroll over to a given column
-    void ScrollToColumn(int column) { viewerWidget->Scroll(column, 0); };
+    void ScrollToColumn(int column) { viewerWidget->ScrollToColumn(column); };
 
     void Refresh(void) { viewerWidget->Refresh(false); }
 };
 
 BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
+    EVT_CLOSE     (                                     SequenceViewerWindow::OnCloseWindow)
     EVT_MENU_RANGE(MID_SELECT,      MID_MOVE_ROW,       SequenceViewerWindow::OnMouseMode)
     EVT_MENU_RANGE(MID_LEFT,        MID_SPLIT,          SequenceViewerWindow::OnJustification)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
-    wxFrame(NULL, -1, "Cn3D++ Sequence Viewer", wxPoint(0,500), wxSize(500,200)),
+    wxFrame(NULL, -1, "Cn3D++ Sequence Viewer", wxPoint(0,500), wxSize(1000,200)),
     viewerWidget(NULL), viewer(parent)
 {
     // status bar with a single field
@@ -164,8 +170,12 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
 
 SequenceViewerWindow::~SequenceViewerWindow(void)
 {
+}
+
+void SequenceViewerWindow::OnCloseWindow(wxCloseEvent& event)
+{
     viewer->viewerWindow = NULL; // make sure SequenceViewer knows the GUI is gone
-    viewerWidget->Destroy();
+    Destroy();
 }
 
 void SequenceViewerWindow::NewAlignment(ViewableAlignment *newAlignment)
@@ -217,6 +227,7 @@ public:
         char *character, Vector *color, bool *isHighlighted) const = 0;
     virtual bool GetSequenceAndIndexAt(int column,
         const Sequence **sequence, int *index) const = 0;
+    virtual const Sequence * GetSequence(void) const = 0;
     virtual void SelectedRange(int from, int to) const = 0;
 };
 
@@ -244,6 +255,11 @@ public:
         return alignment->GetSequenceAndIndexAt(column, row, sequence, index, &ignore);
     }
 
+    const Sequence * GetSequence(void) const
+    {
+        return alignment->GetSequenceOfRow(row);
+    }
+
     void SelectedRange(int from, int to) const
     {
         alignment->SelectedRange(row, from, to);
@@ -267,6 +283,9 @@ public:
     bool GetSequenceAndIndexAt(int column,
         const Sequence **sequenceHandle, int *index) const;
 
+    const Sequence * GetSequence(void) const
+        { return sequence; }
+    
     void SelectedRange(int from, int to) const;
 };
 
@@ -286,6 +305,8 @@ public:
 
     bool GetSequenceAndIndexAt(int column,
         const Sequence **sequenceHandle, int *index) const { return false; }
+
+    const Sequence * GetSequence(void) const { return NULL; }
 
     void SelectedRange(int from, int to) const { } // do nothing
 };
@@ -388,7 +409,8 @@ public:
     // methods required by ViewableAlignment base class
     void GetSize(int *setColumns, int *setRows) const
         { *setColumns = maxRowWidth; *setRows = rows.size(); }
-    bool GetCharacterTraitsAt(int column, int row,				// location
+    bool GetRowTitle(int row, wxString *title, wxColour *color) const;
+    bool GetCharacterTraitsAt(int column, int row,              // location
         char *character,										// character to draw
         wxColour *color,                                        // color of this character
         bool *isHighlighted
@@ -446,6 +468,38 @@ void SequenceDisplay::AddRowFromString(const std::string& anyString)
     AddRow(new DisplayRowFromString(anyString));
 }
 
+bool SequenceDisplay::GetRowTitle(int row, wxString *title, wxColour *color) const
+{
+    const DisplayRow *displayRow = rows[row];
+    const Sequence *sequence = displayRow->GetSequence();
+    if (!sequence) return false;
+
+    // set title
+    if (sequence->molecule) {
+        wxString pdbID(sequence->molecule->pdbID.data(), sequence->molecule->pdbID.size());
+        if (sequence->molecule->name.size() > 0 && 
+            sequence->molecule->pdbChain != Molecule::NOT_SET &&
+            sequence->molecule->name[0] != ' ') {
+            wxString chain;
+            chain.Printf("_%c", sequence->molecule->name[0]);
+            pdbID += chain;
+        }
+        *title = pdbID;
+    } else {
+        title->clear();
+        title->Printf("gi %i", sequence->gi);
+    }
+
+    // set color
+    const DisplayRowFromAlignment *alnRow = dynamic_cast<const DisplayRowFromAlignment*>(displayRow);
+    if (alnRow && alnRow->alignment->IsMaster(sequence))
+        color->Set(255,0,0);    // red
+    else
+        color->Set(0,0,0);      // black
+
+    return true;
+}
+
 bool SequenceDisplay::GetCharacterTraitsAt(int column, int row,
         char *character, wxColour *color, bool *isHighlighted) const
 {
@@ -484,18 +538,11 @@ void SequenceDisplay::MouseOver(int column, int row) const
                 int index;
                 if (displayRow->GetSequenceAndIndexAt(column, &sequence, &index)) {
                     if (index >= 0) {
-                        if (sequence->molecule) {
-                            wxString pdbID(sequence->molecule->pdbID.data(),
-                            sequence->molecule->pdbID.size());
-                            if (sequence->molecule->name.size() > 0 && 
-                                sequence->molecule->pdbChain != Molecule::NOT_SET &&
-                                sequence->molecule->name[0] != ' ')
-                                message.Printf("_%c, loc %i", sequence->molecule->name[0], index);
-                            else
-                                message.Printf(", loc %i", index);
-                            message = pdbID + message;
-                        } else {
-                            message.Printf("gi %i, loc %i", sequence->gi, index);
+                        wxString title;
+                        wxColour color;
+                        if (GetRowTitle(row, &title, &color)) {
+                            message.Printf(", loc %i", index);
+                            message = title + message;
                         }
                     }
                 }
@@ -597,6 +644,7 @@ void SequenceViewer::NewAlignment(SequenceDisplay *display)
         if (!viewerWindow) viewerWindow = new SequenceViewerWindow(this);
         viewerWindow->NewAlignment(display);
         viewerWindow->ScrollToColumn(display->GetStartingColumn());
+        viewerWindow->Show(true);
         messenger->PostRedrawSequenceViewers();
     }
 }

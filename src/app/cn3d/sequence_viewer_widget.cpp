@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/10/02 23:25:23  thiessen
+* working sequence identifier window in sequence viewer
+*
 * Revision 1.9  2000/09/20 22:22:28  thiessen
 * working conservation coloring; split and center unaligned justification
 *
@@ -74,12 +77,123 @@
 USING_NCBI_SCOPE;
 
 
-BEGIN_EVENT_TABLE(SequenceViewerWidget, wxScrolledWindow)
-    EVT_PAINT               (SequenceViewerWidget::OnPaint)
-    EVT_MOUSE_EVENTS        (SequenceViewerWidget::OnMouseEvent)
+/////////////////////////////////////////////////////////////////////////////////
+///////// These are definitions of the sequence and title drawing areas /////////
+/////////////////////////////////////////////////////////////////////////////////
+
+class SequenceViewerWidget_TitleArea : public wxWindow
+{
+public:
+    // constructor (same as wxWindow)
+    SequenceViewerWidget_TitleArea(
+        wxWindow* parent,
+        wxWindowID id = -1,
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize
+    );
+
+    // destructor
+    ~SequenceViewerWidget_TitleArea(void);
+
+    void ShowTitles(const ViewableAlignment *newAlignment);
+    void SetCharacterFont(wxFont *font, int newCellHeight);
+    void SetBackgroundColor(const wxColor& backgroundColor);
+
+private:
+    void OnPaint(wxPaintEvent& event);
+
+    const SequenceViewerWidget_SequenceArea *sequenceArea;
+
+    const ViewableAlignment *alignment;
+
+    wxColor currentBackgroundColor;
+    wxFont *titleFont;
+    int cellHeight, nTitles, maxTitleWidth;
+
+    DECLARE_EVENT_TABLE()
+
+public:
+    int GetMaxTitleWidth(void) const { return maxTitleWidth; }
+    void SetSequenceArea(const SequenceViewerWidget_SequenceArea *seqA)
+        { sequenceArea = seqA; }
+
+};
+
+class SequenceViewerWidget_SequenceArea : public wxScrolledWindow
+{
+public:
+    // constructor (same as wxScrolledWindow)
+    SequenceViewerWidget_SequenceArea(
+        wxWindow* parent,
+        wxWindowID id = -1,
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        long style = wxHSCROLL | wxVSCROLL,
+        const wxString& name = "scrolledWindow"
+    );
+
+    // destructor
+    ~SequenceViewerWidget_SequenceArea(void);
+
+    // stuff from parent widget
+    bool AttachAlignment(ViewableAlignment *newAlignment);
+    void SetMouseMode(SequenceViewerWidget::eMouseMode mode);
+    void SetBackgroundColor(const wxColor& backgroundColor);
+    void SetHighlightColor(const wxColor& highlightColor);
+    void SetCharacterFont(wxFont *font);
+    void SetRubberbandColor(const wxColor& rubberbandColor);
+    
+    ///// everything else below here is part of the actual implementation /////
+private:
+
+    void OnPaint(wxPaintEvent& event);
+    void OnMouseEvent(wxMouseEvent& event);
+
+    SequenceViewerWidget_TitleArea *titleArea;
+    ViewableAlignment *alignment;
+
+    wxFont *currentFont;            // character font
+    wxColor currentBackgroundColor; // background for whole window
+    wxColor currentHighlightColor;  // background for highlighted chars
+    wxColor currentRubberbandColor; // color of rubber band
+    SequenceViewerWidget::eMouseMode mouseMode;           // mouse mode
+    int cellWidth, cellHeight;      // dimensions of cells in pixels
+    int areaWidth, areaHeight;      // dimensions of the alignment (virtual area) in cells
+
+    void DrawCell(wxDC& dc, int x, int y, int vsX, int vsY, bool redrawBackground); // draw a single cell
+
+    enum eRubberbandType {
+        eSolid,
+        eDot
+    };
+    eRubberbandType currentRubberbandType;
+    void DrawLine(wxDC& dc, int x1, int y1, int x2, int y2);
+    void DrawRubberband(wxDC& dc,                           // draw rubber band around cells
+        int fromX, int fromY, int toX, int toY, int vsX, int vsY);
+    void MoveRubberband(wxDC &dc, int fromX, int fromY,     // change rubber band
+        int prevToX, int prevToY, int toX, int toY, int vsX, int vsY);
+    void RemoveRubberband(wxDC& dc, int fromX, int fromY,   // remove rubber band
+        int toX, int toY, int vsX, int vsY);
+
+    DECLARE_EVENT_TABLE()
+
+public:
+    int GetCellHeight(void) const { return cellHeight; }
+    void SetTitleArea(SequenceViewerWidget_TitleArea *titleA)
+        { titleArea = titleA; }
+};
+
+
+///////////////////////////////////////////////////////////////////////////
+///////// This is the implementation of the sequence drawing area /////////
+///////////////////////////////////////////////////////////////////////////
+
+BEGIN_EVENT_TABLE(SequenceViewerWidget_SequenceArea, wxScrolledWindow)
+    EVT_PAINT               (SequenceViewerWidget_SequenceArea::OnPaint)
+    EVT_MOUSE_EVENTS        (SequenceViewerWidget_SequenceArea::OnMouseEvent)
 END_EVENT_TABLE()
 
-SequenceViewerWidget::SequenceViewerWidget(
+SequenceViewerWidget_SequenceArea::SequenceViewerWidget_SequenceArea(
         wxWindow* parent,
         wxWindowID id,
         const wxPoint& pos,
@@ -88,30 +202,27 @@ SequenceViewerWidget::SequenceViewerWidget(
         const wxString& name
     ) :
     wxScrolledWindow(parent, -1, pos, size, style, name),
-    alignment(NULL), currentFont(NULL)
+    alignment(NULL), currentFont(NULL), titleArea(NULL)
 {
     // set default background color
     currentBackgroundColor = *wxWHITE;
-
-    // set default font
-    SetCharacterFont(new wxFont(10, wxROMAN, wxNORMAL, wxNORMAL));
 
     // set default highlight color
     currentHighlightColor.Set(255,255,0);   // yellow
 
     // set default mouse mode
-    mouseMode = eSelect;
+    mouseMode = SequenceViewerWidget::eSelect;
 
     // set default rubber band color
     currentRubberbandColor = *wxRED;
 }
 
-SequenceViewerWidget::~SequenceViewerWidget(void)
+SequenceViewerWidget_SequenceArea::~SequenceViewerWidget_SequenceArea(void)
 {
     if (currentFont) delete currentFont;
 }
 
-bool SequenceViewerWidget::AttachAlignment(ViewableAlignment *newAlignment)
+bool SequenceViewerWidget_SequenceArea::AttachAlignment(ViewableAlignment *newAlignment)
 {
     alignment = newAlignment;
 
@@ -137,17 +248,17 @@ bool SequenceViewerWidget::AttachAlignment(ViewableAlignment *newAlignment)
     return true;
 }
 
-void SequenceViewerWidget::SetHighlightColor(const wxColor& highlightColor)
+void SequenceViewerWidget_SequenceArea::SetHighlightColor(const wxColor& highlightColor)
 {
     currentHighlightColor = highlightColor;
 }
 
-void SequenceViewerWidget::SetBackgroundColor(const wxColor& backgroundColor)
+void SequenceViewerWidget_SequenceArea::SetBackgroundColor(const wxColor& backgroundColor)
 {
     currentBackgroundColor = backgroundColor;
 }
 
-void SequenceViewerWidget::SetCharacterFont(wxFont *font)
+void SequenceViewerWidget_SequenceArea::SetCharacterFont(wxFont *font)
 {
     if (!font) return;
 
@@ -168,28 +279,43 @@ void SequenceViewerWidget::SetCharacterFont(wxFont *font)
     AttachAlignment(alignment);
 }
 
-void SequenceViewerWidget::SetMouseMode(eMouseMode mode)
+void SequenceViewerWidget_SequenceArea::SetMouseMode(SequenceViewerWidget::eMouseMode mode)
 {
     mouseMode = mode;
 }
 
-void SequenceViewerWidget::OnPaint(wxPaintEvent& event)
+void SequenceViewerWidget_SequenceArea::SetRubberbandColor(const wxColor& rubberbandColor)
+{
+    currentRubberbandColor = rubberbandColor;
+}
+
+void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
 {
     wxPaintDC dc(this);
 
-    int vsX, vsY, 
+    int vsX, vsY,
         updLeft, updRight, updTop, updBottom,
         firstCellX, firstCellY,
         lastCellX, lastCellY,
         x, y;
+    static int prevVsY = -1;
 
     dc.BeginDrawing();
 
-    // characters to be drawn transparently over background
-    dc.SetBackgroundMode(wxTRANSPARENT);
-
     // set font for characters
-    if (alignment) dc.SetFont(*currentFont);
+    if (alignment) {
+        dc.SetFont(*currentFont);
+        dc.SetMapMode(wxMM_TEXT);
+        // characters to be drawn transparently over background
+        dc.SetBackgroundMode(wxTRANSPARENT);
+
+        // get upper left corner of visible area
+        GetViewStart(&vsX, &vsY);  // returns coordinates in scroll units (cells)
+        if (vsY != prevVsY) {
+            if (titleArea) titleArea->Refresh();
+            prevVsY = vsY;
+        }
+    }
 
     // get the update rect list, so that we can draw *only* the cells 
     // in the part of the window that needs redrawing; update region
@@ -198,9 +324,9 @@ void SequenceViewerWidget::OnPaint(wxPaintEvent& event)
 
     for (; upd; upd++) {
 
-        if (upd.GetW() == GetClientSize().GetWidth() &&
-            upd.GetH() == GetClientSize().GetHeight())
-            ERR_POST(Info << "repainting whole SequenceViewerWidget");
+//        if (upd.GetW() == GetClientSize().GetWidth() &&
+//            upd.GetH() == GetClientSize().GetHeight())
+//            ERR_POST(Info << "repainting whole SequenceViewerWidget_SequenceArea");
 
         // draw background
         dc.SetPen(*(wxThePenList->
@@ -212,9 +338,6 @@ void SequenceViewerWidget::OnPaint(wxPaintEvent& event)
         if (!alignment) continue;
 
         // figure out which cells contain the corners of the update region
-
-        // get upper left corner of visible area
-        GetViewStart(&vsX, &vsY);  // returns coordinates in scroll units (cells)
 
         // get coordinates of update region corners relative to virtual area
         updLeft = vsX*cellWidth + upd.GetX();
@@ -249,7 +372,7 @@ void SequenceViewerWidget::OnPaint(wxPaintEvent& event)
     dc.EndDrawing();
 }
 
-void SequenceViewerWidget::DrawCell(wxDC& dc, int x, int y, int vsX, int vsY, bool redrawBackground)
+void SequenceViewerWidget_SequenceArea::DrawCell(wxDC& dc, int x, int y, int vsX, int vsY, bool redrawBackground)
 {
 	char character;
     wxColor color;
@@ -301,7 +424,7 @@ static inline void min_max(int a, int b, int *c, int *d)
     }
 }
 
-void SequenceViewerWidget::DrawLine(wxDC& dc, int x1, int y1, int x2, int y2)
+void SequenceViewerWidget_SequenceArea::DrawLine(wxDC& dc, int x1, int y1, int x2, int y2)
 {
     if (currentRubberbandType == eSolid) {
         dc.DrawLine(x1, y1, x2, y2);
@@ -322,7 +445,7 @@ void SequenceViewerWidget::DrawLine(wxDC& dc, int x1, int y1, int x2, int y2)
 }
 
 // draw a rubberband around the cells
-void SequenceViewerWidget::DrawRubberband(wxDC& dc, int fromX, int fromY, int toX, int toY, int vsX, int vsY)
+void SequenceViewerWidget_SequenceArea::DrawRubberband(wxDC& dc, int fromX, int fromY, int toX, int toY, int vsX, int vsY)
 {
     // find upper-left and lower-right corners
     int minX, minY, maxX, maxY;
@@ -347,7 +470,7 @@ void SequenceViewerWidget::DrawRubberband(wxDC& dc, int fromX, int fromY, int to
 
 // move the rubber band to a new rectangle, erasing only the side(s) of the
 // rectangle that is changing
-void SequenceViewerWidget::MoveRubberband(wxDC &dc, int fromX, int fromY, 
+void SequenceViewerWidget_SequenceArea::MoveRubberband(wxDC &dc, int fromX, int fromY, 
     int prevToX, int prevToY, int toX, int toY, int vsX, int vsY)
 {
     int i;
@@ -408,7 +531,7 @@ void SequenceViewerWidget::MoveRubberband(wxDC &dc, int fromX, int fromY,
 }
 
 // redraw only those cells necessary to remove rubber band
-void SequenceViewerWidget::RemoveRubberband(wxDC& dc, int fromX, int fromY, int toX, int toY, int vsX, int vsY)
+void SequenceViewerWidget_SequenceArea::RemoveRubberband(wxDC& dc, int fromX, int fromY, int toX, int toY, int vsX, int vsY)
 {
     int i, min, max;
 
@@ -426,7 +549,7 @@ void SequenceViewerWidget::RemoveRubberband(wxDC& dc, int fromX, int fromY, int 
     }
 }
 
-void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
+void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
 {
     static const ViewableAlignment *prevAlignment = NULL;
     static int prevMOX = -1, prevMOY = -1;
@@ -483,8 +606,8 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
 
     // limit dragging movement if necessary
     if (dragging) {
-        if (mouseMode == eDragHorizontal) cellY = fromY;
-        if (mouseMode == eDragVertical) cellX = fromX;
+        if (mouseMode == SequenceViewerWidget::eDragHorizontal) cellY = fromY;
+        if (mouseMode == SequenceViewerWidget::eDragVertical) cellX = fromX;
     }
 
     // process beginning of selection
@@ -507,7 +630,7 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
             ERR_POST(Info << "drawing initial rubberband");
             wxClientDC dc(this);
             dc.BeginDrawing();
-            currentRubberbandType = (mouseMode == eSelect) ? eDot : eSolid;
+            currentRubberbandType = (mouseMode == SequenceViewerWidget::eSelect) ? eDot : eSolid;
             DrawRubberband(dc, fromX, fromY, fromX, fromY, vsX, vsY);
             dc.EndDrawing();
         }
@@ -525,7 +648,7 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
         dc.SetFont(*currentFont);
 
         // remove rubberband
-        if (mouseMode == eSelect)
+        if (mouseMode == SequenceViewerWidget::eSelect)
             RemoveRubberband(dc, fromX, fromY, cellX, cellY, vsX, vsY);
         else {
             DrawCell(dc, fromX, fromY, vsX, vsY, true);
@@ -535,7 +658,7 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
         dc.EndDrawing();
 
         // do appropriate callback
-        if (mouseMode == eSelect)
+        if (mouseMode == SequenceViewerWidget::eSelect)
             alignment->SelectedRectangle(
                 (fromX < cellX) ? fromX : cellX,
                 (fromY < cellY) ? fromY : cellY,
@@ -551,7 +674,7 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
         dc.BeginDrawing();
         dc.SetFont(*currentFont);
         currentRubberbandType = eDot;
-        if (mouseMode == eSelect) {
+        if (mouseMode == SequenceViewerWidget::eSelect) {
             MoveRubberband(dc, fromX, fromY, prevToX, prevToY, cellX, cellY, vsX, vsY);
         } else {
             if (prevToX != fromX || prevToY != fromY)
@@ -565,4 +688,225 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
         prevToY = cellY;
     }
 }
+
+
+////////////////////////////////////////////////////////////////////////
+///////// This is the implementation of the title drawing area /////////
+////////////////////////////////////////////////////////////////////////
+
+BEGIN_EVENT_TABLE(SequenceViewerWidget_TitleArea, wxWindow)
+    EVT_PAINT               (SequenceViewerWidget_TitleArea::OnPaint)
+END_EVENT_TABLE()
+
+SequenceViewerWidget_TitleArea::SequenceViewerWidget_TitleArea(
+        wxWindow* parent,
+        wxWindowID id,
+        const wxPoint& pos,
+        const wxSize& size) :
+    wxWindow(parent, id, pos, size),
+    titleFont(NULL), cellHeight(0), maxTitleWidth(20), alignment(NULL),
+    sequenceArea(NULL)
+{
+    currentBackgroundColor = *wxWHITE;
+}
+
+SequenceViewerWidget_TitleArea::~SequenceViewerWidget_TitleArea(void)
+{
+    if (titleFont) delete titleFont;
+}
+
+void SequenceViewerWidget_TitleArea::ShowTitles(const ViewableAlignment *newAlignment)
+{
+    alignment = newAlignment;
+    if (!alignment) return;
+
+    // set font
+    wxClientDC dc(this);
+    dc.SetFont(*titleFont);
+    dc.SetMapMode(wxMM_TEXT);
+
+    int i;
+    wxString title;
+    wxColor color;
+    wxCoord tW, tH;
+
+    // get maximum width of any title
+    alignment->GetSize(&i, &nTitles);
+    if (nTitles <= 0) return;
+    maxTitleWidth = 20;
+    for (i=0; i<nTitles; i++) {
+        if (!alignment->GetRowTitle(i, &title, &color)) continue;
+        // measure title size
+        dc.GetTextExtent(title, &tW, &tH);
+        if (tW > maxTitleWidth) maxTitleWidth = tW;
+    }
+}
+
+void SequenceViewerWidget_TitleArea::SetCharacterFont(wxFont *font, int newCellHeight)
+{
+    if (!font) return;
+
+    if (titleFont) delete titleFont;
+    titleFont = font;
+    cellHeight = newCellHeight;
+
+    ShowTitles(alignment);
+}
+
+void SequenceViewerWidget_TitleArea::SetBackgroundColor(const wxColor& backgroundColor)
+{
+    currentBackgroundColor = backgroundColor;
+}
+
+void SequenceViewerWidget_TitleArea::OnPaint(wxPaintEvent& event)
+{
+    wxPaintDC dc(this);
+
+    int vsX, vsY, 
+        updTop, updBottom,
+        firstRow, lastRow, row;
+
+    dc.BeginDrawing();
+
+    // set font for characters
+    if (alignment) {
+        dc.SetFont(*titleFont);
+        dc.SetMapMode(wxMM_TEXT);
+        // characters to be drawn transparently over background
+        dc.SetBackgroundMode(wxTRANSPARENT);
+
+        // get upper left corner of visible area
+        sequenceArea->GetViewStart(&vsX, &vsY);  // returns coordinates in scroll units (cells)
+    }
+
+    // get the update rect list, so that we can draw *only* the cells 
+    // in the part of the window that needs redrawing; update region
+    // coordinates are relative to the visible part of the drawing area
+    wxRegionIterator upd(GetUpdateRegion());
+
+    for (; upd; upd++) {
+
+//        if (upd.GetW() == GetClientSize().GetWidth() &&
+//            upd.GetH() == GetClientSize().GetHeight())
+//            ERR_POST(Info << "repainting whole SequenceViewerWidget_TitleArea");
+
+        // draw background
+        dc.SetPen(*(wxThePenList->
+            FindOrCreatePen(currentBackgroundColor, 1, wxSOLID)));
+        dc.SetBrush(*(wxTheBrushList->
+            FindOrCreateBrush(currentBackgroundColor, wxSOLID)));
+        dc.DrawRectangle(upd.GetX(), upd.GetY(), upd.GetW(), upd.GetH());
+
+        if (!alignment) continue;
+
+        // figure out which cells contain the corners of the update region
+
+        // get coordinates of update region corners relative to virtual area
+        updTop = vsY*cellHeight + upd.GetY();
+        updBottom = updTop + upd.GetH() - 1;
+        firstRow = updTop / cellHeight;
+        lastRow = updBottom / cellHeight;
+
+        // restrict to size of virtual area, if visible area is larger
+        // than the virtual area
+        if (lastRow >= nTitles) lastRow = nTitles - 1;
+
+        // draw titles
+        wxString title;
+        wxColor color;
+        wxCoord tW, tH;
+        for (row=firstRow; row<=lastRow; row++) {
+
+            if (!alignment->GetRowTitle(row, &title, &color)) continue;
+
+            // set character color
+            dc.SetTextForeground(color);
+
+            // draw title centered vertically in the cell
+            dc.GetTextExtent(title, &tW, &tH);
+            dc.DrawText(title, 0, cellHeight * (row - vsY) + (cellHeight - tH)/2);
+        }
+    }
+
+    dc.EndDrawing();
+}
+
+
+//////////////////////////////////////////////////////////////////////
+///////// This is the implementation of SequenceViewerWidget /////////
+//////////////////////////////////////////////////////////////////////
+
+SequenceViewerWidget::SequenceViewerWidget(
+        wxWindow* parent,
+        wxWindowID id,
+        const wxPoint& pos,
+        const wxSize& size) :
+    wxSplitterWindow(parent, -1, wxPoint(0,0), parent->GetClientSize(), wxSP_3D)
+{
+    sequenceArea = new SequenceViewerWidget_SequenceArea(this);
+    titleArea = new SequenceViewerWidget_TitleArea(this);
+
+    sequenceArea->SetTitleArea(titleArea);
+    titleArea->SetSequenceArea(sequenceArea);
+
+    SetCharacterFont(new wxFont(10, wxROMAN, wxNORMAL, wxNORMAL));
+
+    SplitVertically(titleArea, sequenceArea);
+}
+
+SequenceViewerWidget::~SequenceViewerWidget(void)
+{
+}
+
+void SequenceViewerWidget::OnDoubleClickSash(int x, int y)
+{
+    Unsplit(titleArea);
+}
+
+bool SequenceViewerWidget::AttachAlignment(ViewableAlignment *newAlignment)
+{
+    sequenceArea->AttachAlignment(newAlignment);
+    titleArea->ShowTitles(newAlignment);
+
+    SetSashPosition(titleArea->GetMaxTitleWidth() + 10, true);
+	return true;
+}
+
+void SequenceViewerWidget::SetMouseMode(eMouseMode mode)
+{
+    sequenceArea->SetMouseMode(mode);
+}
+
+void SequenceViewerWidget::SetBackgroundColor(const wxColor& backgroundColor)
+{
+    sequenceArea->SetBackgroundColor(backgroundColor);
+    titleArea->SetBackgroundColor(backgroundColor);
+}
+
+void SequenceViewerWidget::SetHighlightColor(const wxColor& highlightColor)
+{
+    sequenceArea->SetHighlightColor(highlightColor);
+}
+
+void SequenceViewerWidget::SetCharacterFont(wxFont *font)
+{
+    wxFont *newFont = new wxFont(font->GetPointSize(), font->GetFamily(),
+        wxNORMAL, wxNORMAL, false, font->GetFaceName(), font->GetDefaultEncoding());
+    sequenceArea->SetCharacterFont(newFont);
+    newFont = new wxFont(font->GetPointSize(), font->GetFamily(),
+        wxITALIC, wxNORMAL, false, font->GetFaceName(), font->GetDefaultEncoding());
+    titleArea->SetCharacterFont(newFont, sequenceArea->GetCellHeight());
+    delete font;
+}
+
+void SequenceViewerWidget::SetRubberbandColor(const wxColor& rubberbandColor)
+{
+    sequenceArea->SetRubberbandColor(rubberbandColor);
+}
+
+void SequenceViewerWidget::ScrollToColumn(int column)
+{
+    sequenceArea->Scroll(column, 0);
+}
+    
 

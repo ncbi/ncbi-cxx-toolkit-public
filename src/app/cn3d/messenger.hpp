@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/10/02 23:25:07  thiessen
+* working sequence identifier window in sequence viewer
+*
 * Revision 1.3  2000/09/15 19:24:33  thiessen
 * allow repeated structures w/o different local id
 *
@@ -94,14 +97,6 @@ public:
     void AddHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo);
     void RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo);
 
-    // inform sequence viewers that there's a new entity to display
-    typedef std::list < const Sequence * > SequenceList;
-    void DisplaySequences(const SequenceList *sequences);
-    void DisplayAlignment(const BlockMultipleAlignment *alignment);
-
-    // remove any alignment from sequence viewers
-    void ClearSequenceViewers(void);
-
 private:
     typedef std::list < SequenceViewer * > SequenceViewerList;
     SequenceViewerList sequenceViewers;
@@ -130,16 +125,16 @@ private:
 public:
     Messenger(void) : redrawAllStructures(false), redrawSequenceViewers(false) { }
 
-    // to register sequence and structure viewers
+    // to register sequence and structure viewers for redraw postings
     void AddSequenceViewer(SequenceViewer *sequenceViewer)
         { sequenceViewers.push_back(sequenceViewer); }
 
     void AddStructureWindow(Cn3DMainFrame *structureWindow)
         { structureWindows.push_back(structureWindow); }
 
-    // to remove viewers - if no structure viewers left, will kill all sequence
-    // windows and exit application
+    // to unregister viewers
     void RemoveStructureWindow(const Cn3DMainFrame *structureWindow);
+    void RemoveSequenceViewer(const SequenceViewer *sequenceViewer);
 
 };
 

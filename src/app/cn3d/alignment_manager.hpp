@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/10/02 23:25:06  thiessen
+* working sequence identifier window in sequence viewer
+*
 * Revision 1.9  2000/09/20 22:22:02  thiessen
 * working conservation coloring; split and center unaligned justification
 *
@@ -108,6 +111,19 @@ public:
     // find out if a residue is aligned - only works for non-repeated sequences!
     bool IsAligned(const Sequence *sequence, int seqIndex) const;
 
+    // return true if this sequence is the master
+    bool IsMaster(const Sequence *sequence) const
+        { return (sequence == sequences->at(0)); }
+
+    // return sequence for given row
+    const Sequence * GetSequenceOfRow(int row) const
+    {
+        if (row >= 0 && row < sequences->size())
+            return sequences->at(row);
+        else
+            return NULL;
+    }
+    
     // given a sequence, return row number in this alignment (or -1 if not found)
     int GetRowForSequence(const Sequence *sequence) const;
 
@@ -258,6 +274,9 @@ public:
 		CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments);
 
 private:
+    // viewer for the current alignment
+    SequenceViewer *sequenceViewer;
+    
     // for now, will own the current multiple alignment
     BlockMultipleAlignment *currentMultipleAlignment;
 
