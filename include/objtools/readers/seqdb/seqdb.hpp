@@ -124,7 +124,7 @@ private:
 /// calling methods on objects which represent the various database
 /// files, such as the index, header, sequence, and alias files.
 
-class CSeqDB : public CObject {
+class NCBI_XOBJREAD_EXPORT CSeqDB : public CObject {
 public:
     /// Sequence type accepted and returned for OID indexes.
     typedef Uint4 TOID;
