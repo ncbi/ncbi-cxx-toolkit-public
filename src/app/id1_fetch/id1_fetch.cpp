@@ -30,6 +30,12 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2001/09/25 20:12:02  ucko
+ * More cleanups from Denis.
+ * Put utility code in the objects namespace.
+ * Moved utility code to {src,include}/objects/util (to become libxobjutil).
+ * Moved static members of CGenbankWriter to above their first use.
+ *
  * Revision 1.13  2001/09/25 13:26:36  lavr
  * CConn_ServiceStream() - arguments adjusted
  *
@@ -120,18 +126,21 @@
 #include <objects/seqres/Byte_graph.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/util/asciiseqdata.hpp>
+#include <objects/util/genbank.hpp>
 
 #include <memory>
 #include <algorithm>
 
-#include "genbank.hpp"
-#include "util.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(NCBI_NS_NCBI::objects); // MSVC requires qualification (!)
 
+
 static CRef<CSeq_id> s_ParseFastaSeqID(const string& s);
 static CRef<CSeq_id> s_ParseFlatSeqID(const string& s);
+
+
 
 /////////////////////////////////
 //  CId1FetchApp::
@@ -140,17 +149,18 @@ static CRef<CSeq_id> s_ParseFlatSeqID(const string& s);
 class CId1FetchApp : public CNcbiApplication
 {
     virtual void Init(void);
-    virtual int  Run(void);
+    virtual int  Run (void);
     virtual void Exit(void);
 
 private:
-
     bool LookUpGI(int gi);
-    int LookUpSeqID(CRef<CSeq_id> id);
-    bool CheckEntrezReply(const CE2Reply& rep);
-    void WriteFastaIDs(const CID1server_back::TIds& ids);
-    void WriteFastaEntry(const CID1server_back& id1_reply);
-    void WriteHistoryTable(const CID1server_back& id1_reply);
+    int  LookUpSeqID(CRef<CSeq_id> id);
+
+    bool CheckEntrezReply  (const CE2Reply& rep);
+
+    void WriteFastaIDs     (const CID1server_back::TIds& ids);
+    void WriteFastaEntry   (const CID1server_back& id1_reply);
+    void WriteHistoryTable (const CID1server_back& id1_reply);
     void WriteQualityScores(const CID1server_back& id1_reply);
 
     CNcbiOstream*                 m_OutputFile;
@@ -200,18 +210,15 @@ void CId1FetchApp::Init(void)
          CArgDescriptions::eOutputFile,
          0);
 
-    // Additional options from idfetch; not yet implemented
-    //
-
     // Database to use
     arg_desc->AddOptionalKey
-        ("db", "Database", // was -d
+        ("db", "Database", // was "-d" in `idfetch'
          "Database to use",
          CArgDescriptions::eString);
     
-    // Entity number (how is this different from GI ID?)
+    // Entity number
     arg_desc->AddOptionalKey
-        ("ent", "EntityNumber", // was -e
+        ("ent", "EntityNumber", // was "-e" in `idfetch'
          "(Sub)entity number (retrieval number) to dump",
          CArgDescriptions::eInteger);
     arg_desc->SetConstraint
@@ -219,7 +226,7 @@ void CId1FetchApp::Init(void)
 
     // Type of lookup
     arg_desc->AddDefaultKey
-        ("lt", "LookupType", // combination of -i (!) and -n
+        ("lt", "LookupType", // combination of "-i" (!) and "-n" in `idfetch'
          "Type of lookup",
          CArgDescriptions::eString, "entry");
     arg_desc->SetConstraint
@@ -228,13 +235,13 @@ void CId1FetchApp::Init(void)
     
     // File with list of stuff to dump
     arg_desc->AddOptionalKey
-        ("in", "RequestFile", // was -G (!)
+        ("in", "RequestFile", // was "-G" (!) in `idfetch'
          "File with list of GIs, (versioned) accessions, FASTA SeqIDs to dump",
          CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
          
     // Maximum complexity
     arg_desc->AddDefaultKey
-        ("maxplex", "MaxComplexity", // was -c
+        ("maxplex", "MaxComplexity", // was "-c" in `idfetch'
          "Maximum complexity to return",
          CArgDescriptions::eString, "entry");
     arg_desc->SetConstraint
@@ -244,7 +251,7 @@ void CId1FetchApp::Init(void)
     
     // Flattened SeqID
     arg_desc->AddOptionalKey
-        ("flat", "FlatID", // was -f
+        ("flat", "FlatID", // was "-f" in `idfetch'
          "Flattened SeqID; format can be\n"
          "\t'type([name][,[accession][,[release][,version]]])'"
          " [e.g., '5(HUMHBB)'],\n"
@@ -253,7 +260,7 @@ void CId1FetchApp::Init(void)
     
     // FASTA-style SeqID
     arg_desc->AddOptionalKey
-        ("fasta", "FastaID", // was -s
+        ("fasta", "FastaID", // was "-s" in `idfetch'
          "FASTA-style SeqID, in the form \"type|data\"; choices are\n"
          "\tlcl|int lcl|str bbs|int bbm|int gim|int gb|acc|loc emb|acc|loc\n"
          "\tpir|acc|name sp|acc|name pat|country|patent|seq ref|acc|name|rel\n"
@@ -263,11 +270,11 @@ void CId1FetchApp::Init(void)
 
     // Generate GI list by Entrez query
     arg_desc->AddOptionalKey
-        ("query", "EntrezQueryString", // was -q
+        ("query", "EntrezQueryString", // was "-q" in `idfetch'
          "Generate GI list by Entrez query given on command line",
          CArgDescriptions::eString);
     arg_desc->AddOptionalKey
-        ("qf", "EntrezQueryFile", // was -Q
+        ("qf", "EntrezQueryFile", // was "-Q" in `idfetch'
          "Generate GI list by Entrez query in given file",
          CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
 
@@ -286,8 +293,11 @@ void CId1FetchApp::Init(void)
 }
 
 
-// workaround for replace_if stupidity
-inline bool IsControl(char c) { return iscntrl(c) ? true : false; }
+// Workaround for "replace_if"
+inline bool s_IsControl(char c)
+{
+    return iscntrl(c) ? true : false;
+}
 
 
 int CId1FetchApp::Run(void)
@@ -303,7 +313,7 @@ int CId1FetchApp::Run(void)
     // SetDiagPostLevel(eDiag_Info);
     // SetDiagPostFlag(eDPF_All);
 
-    // Make sure the combination of arguments is valid.
+    // Make sure the combination of arguments is valid
     {{
         int id_count = 0;
         const string& fmt = args["fmt"].AsString();
@@ -340,14 +350,14 @@ int CId1FetchApp::Run(void)
     // Open output file
     m_OutputFile = &args["out"].AsOutputFile();
 
-    // Open connections to servers we may need.
+    // Open connections to servers we may need
     STimeout tmout;  tmout.sec = 9;  tmout.usec = 0;  
     m_ID1_Server.reset
         (new CConn_ServiceStream("ID1",     fSERV_Any, 0, 0, &tmout));
     m_E2_Server.reset
         (new CConn_ServiceStream("Entrez2", fSERV_Any, 0, 0, &tmout));
 
-    // Set up object manager.
+    // Set up object manager
     m_Scope = &m_ObjMgr.CreateScope();
 
     if (args["gi"]) {
@@ -356,24 +366,24 @@ int CId1FetchApp::Run(void)
     }
 
     if (args["fasta"]) {
-        int gi = LookUpSeqID(s_ParseFastaSeqID(args["fasta"].AsString()));
-        if (gi <= 0 || !LookUpGI(gi)) {
+        int gi = LookUpSeqID( s_ParseFastaSeqID(args["fasta"].AsString()) );
+        if (gi <= 0  ||  !LookUpGI(gi)) {
             return -1;
         }
     }
 
     if (args["flat"]) {
-        int gi = LookUpSeqID(s_ParseFlatSeqID(args["flat"].AsString()));
-        if (gi <= 0 || !LookUpGI(gi)) {
+        int gi = LookUpSeqID( s_ParseFlatSeqID(args["flat"].AsString()) );
+        if (gi <= 0  ||  !LookUpGI(gi)) {
             return -1;
         }
     }
 
     if (args["in"]) {
         CNcbiIstream& is = args["in"].AsInputFile();
-        while (is && !is.eof()) {
+        while (is  &&  !is.eof()) {
             string id;
-            int gi;
+            int    gi;
 
             is >> id;
             if (id.find('|') != NPOS) {
@@ -381,10 +391,10 @@ int CId1FetchApp::Run(void)
             } else if (id.find_first_of(":=(") != NPOS) {
                 gi = LookUpSeqID(s_ParseFlatSeqID(id));
             } else {
-                gi = atoi(id.c_str());
+                gi = NStr::StringToInt(id);
             }
 
-            if (gi <= 0 || !LookUpGI(gi)) {
+            if (gi <= 0  ||  !LookUpGI(gi)) {
                 return -1;
             }
         }
@@ -404,7 +414,7 @@ int CId1FetchApp::Run(void)
             string& str = e2_element->SetStr();
             str.assign(oss.str(), oss.pcount());
             oss.freeze(false);
-            replace_if(str.begin(), str.end(), IsControl, ' ');
+            replace_if(str.begin(), str.end(), s_IsControl, ' ');
         }
 
         {{
@@ -424,6 +434,7 @@ int CId1FetchApp::Run(void)
             e2_server_output.Flush();
         }}
 
+        // "Entrez2" service response
         CEntrez2_reply e2_reply;
 
         // Get response from "Entrez2" service
@@ -434,10 +445,10 @@ int CId1FetchApp::Run(void)
         }}
 
         // Deal with bad or unsuccessful queries
-        if (!CheckEntrezReply(e2_reply.GetReply())) {
+        if ( !CheckEntrezReply(e2_reply.GetReply()) ) {
             return -1;
         }
-        if (!e2_reply.GetReply().GetEval_boolean().GetCount()) {
+        if ( !e2_reply.GetReply().GetEval_boolean().GetCount() ) {
             ERR_POST("Entrez query returned no results.");
             return -1;
         }
@@ -447,30 +458,31 @@ int CId1FetchApp::Run(void)
                  = e2_reply.GetReply().GetEval_boolean().GetUids()
                  .GetConstUidIterator();
              !it.AtEnd();  ++it) {
-            if (!LookUpGI(*it)) {
+            if ( !LookUpGI(*it) ) {
                 return -1;
             }
         }
     }
+
     return 0;
 }
 
 
 bool CId1FetchApp::LookUpGI(int gi)
 {    
-    const CArgs& args = GetArgs();
-    CConn_ServiceStream* server = m_ID1_Server.get();
-    bool using_id1_server = true;
-    const string& fmt = args["fmt"].AsString();
-    const string& lt = args["lt"].AsString();
+    const CArgs&         args             = GetArgs();
+    CConn_ServiceStream* server           = m_ID1_Server.get();
+    bool                 using_id1_server = true;
+    const string&        fmt              = args["fmt"].AsString();
+    const string&        lt               = args["lt"].AsString();
 
     // Compose request to appropriate server
     CID1server_request id1_request;
-    CEntrez2_request e2_request;
+    CEntrez2_request   e2_request;
 
     if (lt == "none") {
         *m_OutputFile << gi << NcbiEndl;
-        return true;
+        return true;  // Done
     } else if (fmt == "docsum") {
         // Handling this here costs some efficiency when the GI came
         // from an Entrez query in the first place, but wins on generality.
@@ -484,16 +496,16 @@ bool CId1FetchApp::LookUpGI(int gi)
         CEntrez2_id_list::TUidIterator it = uids.GetUidIterator();
         *it = gi;
     } else if (lt == "entry") {
-        CRef<CID1server_maxcomplex> p(new CID1server_maxcomplex);
-        p->SetGi(gi);
+        CRef<CID1server_maxcomplex> params(new CID1server_maxcomplex);
+        params->SetGi(gi);
         int maxplex = GetTypeInfo_enum_EEntry_complexities()
             ->FindValue(args["maxplex"].AsString());
-        p->SetMaxplex(maxplex); // Why doesn't this affect the output?
+        params->SetMaxplex(maxplex); // Why doesn't this affect the output?
         if (args["ent"])
-            p->SetEnt(args["ent"].AsInteger());
+            params->SetEnt(args["ent"].AsInteger());
         if (args["db"])
-            p->SetSat(args["db"].AsString());
-        id1_request.SetGetsefromgi(p);
+            params->SetSat(args["db"].AsString());
+        id1_request.SetGetsefromgi(params);
     } else if (lt == "state") {
         id1_request.SetGetgistate(gi);
     } else if (lt == "ids") {
@@ -532,17 +544,19 @@ bool CId1FetchApp::LookUpGI(int gi)
         // Read server response in ASN.1 binary format
         //### Use CObjectIStream::Open() since only this function
         //### supports opening streams with non-blocking read.
-        CObjectIStream& server_input = *CObjectIStream::Open
-            (eSerial_AsnBinary, *server, false);
-        if (using_id1_server)
+        CObjectIStream& server_input
+            = *CObjectIStream::Open(eSerial_AsnBinary, *server, false);
+
+        if (using_id1_server) {
             server_input >> id1_reply;
-        else
+        } else {
             server_input >> e2_reply;
+        }
     }}
 
-    if (id1_reply.IsGotseqentry()) {
+    if ( id1_reply.IsGotseqentry() ) {
         m_ObjMgr.AddEntry(id1_reply.SetGotseqentry(), m_Scope);
-    } else if (id1_reply.IsGotdeadseqentry()) {
+    } else if ( id1_reply.IsGotdeadseqentry() ) {
         m_ObjMgr.AddEntry(id1_reply.SetGotdeadseqentry(), m_Scope);
     }
 
@@ -555,10 +569,11 @@ bool CId1FetchApp::LookUpGI(int gi)
     } else if (fmt == "xml") {
         format = eSerial_Xml;
     } else if (fmt == "docsum") {
-        // Deal with bad or unsuccessful queries.
-        if (!CheckEntrezReply(e2_reply.GetReply()))
+        // Deal with bad or unsuccessful queries
+        if ( !CheckEntrezReply(e2_reply.GetReply()) ) {
             return false;
-        if (!e2_reply.GetReply().GetGet_docsum().GetCount()) {
+        }
+        if ( !e2_reply.GetReply().GetGet_docsum().GetCount() ) {
             ERR_POST("Entrez query returned no results.");
             return false;
         }
@@ -567,18 +582,20 @@ bool CId1FetchApp::LookUpGI(int gi)
             = *e2_reply.GetReply().GetGet_docsum().GetList().front();
 #if 0 // old interface
         *m_OutputFile << '>';
-        if (docsum.IsSetCaption())
+        if ( docsum.IsSetCaption() ) {
             *m_OutputFile << docsum.GetCaption();
+        }
         *m_OutputFile << ' ';
-        if (docsum.IsSetTitle())
+        if ( docsum.IsSetTitle() ) {
             *m_OutputFile << docsum.GetTitle();
+        }
 #else // dump as ASN.1 text for now
         auto_ptr<CObjectOStream> docsum_output
             (CObjectOStream::Open(eSerial_AsnText, *m_OutputFile));
         *docsum_output << docsum;
 #endif
     } else if (fmt == "fasta"  &&  lt == "ids") {
-        WriteFastaIDs(id1_reply.GetIds());
+        WriteFastaIDs( id1_reply.GetIds() );
     } else if (fmt == "fasta"  &&  lt == "entry") {
         WriteFastaEntry(id1_reply);
     } else if (fmt == "fasta"  &&  lt == "state") {
@@ -601,18 +618,16 @@ bool CId1FetchApp::LookUpGI(int gi)
             *m_OutputFile << "|CONFIDENTIAL";
         }
     } else if (fmt == "fasta") {
-        // lt should be "history" or "revisions"
+        // `lt' should be "history" or "revisions"
         WriteHistoryTable(id1_reply);
     } else if (fmt == "quality") {
         WriteQualityScores(id1_reply);
     } else if (fmt == "genbank") {
-        CGenbankWriter(*m_OutputFile, *m_Scope,
-                       CGenbankWriter::eFormat_Genbank)
-            .Write(id1_reply.GetGotseqentry());
+        CGenbankWriter(*m_OutputFile, *m_Scope, CGenbankWriter::eFormat_Genbank)
+            .Write( id1_reply.GetGotseqentry() );
     } else if (fmt == "genpept") {
-        CGenbankWriter(*m_OutputFile, *m_Scope,
-                       CGenbankWriter::eFormat_Genpept)
-            .Write(id1_reply.GetGotseqentry());
+        CGenbankWriter(*m_OutputFile, *m_Scope, CGenbankWriter::eFormat_Genpept)
+            .Write( id1_reply.GetGotseqentry() );
     }
 
     if (format != eSerial_None) {
@@ -620,7 +635,8 @@ bool CId1FetchApp::LookUpGI(int gi)
             (CObjectOStream::Open(format, *m_OutputFile));
         *id1_client_output << id1_reply;
     }
-    if (fmt != "asnb" && fmt != "raw") {
+
+    if (fmt != "asnb"  &&  fmt != "raw") {
         *m_OutputFile << NcbiEndl;
     }
 
@@ -689,32 +705,36 @@ static CRef<CSeq_id> s_ParseFlatSeqID(const string& s)
 
 int CId1FetchApp::LookUpSeqID(CRef<CSeq_id> id)
 {
-    CID1server_request request;
+    CID1server_request      request;
     CObjectOStreamAsnBinary server_output(*m_ID1_Server);
+
     request.SetGetgi(id);
     server_output << request;
 
-    CID1server_back reply;
+    CID1server_back         reply;
     CObjectIStreamAsnBinary server_input(*m_ID1_Server);
+
     server_input >> reply;
-    if (reply.IsError()) {
+    if ( reply.IsError() ) {
         CNcbiOstrstream oss;
         id->WriteAsFasta(oss);
         string s(oss.str(), oss.pcount());
         oss.freeze(0);
         THROW1_TRACE(runtime_error, "Unable to find seq_id for " + s);
     }
+
     return reply.GetGotgi();
 }
 
 
 bool CId1FetchApp::CheckEntrezReply(const CE2Reply& rep)
 {
-    if (rep.IsError()) {
+    if ( rep.IsError() ) {
         ERR_POST("[Entrez] " << rep.GetError()
                  << "\nTry -db Nucleotide or -db Protein?");
         return false;
     }
+
     return true;
 }
 
@@ -722,8 +742,9 @@ bool CId1FetchApp::CheckEntrezReply(const CE2Reply& rep)
 void CId1FetchApp::WriteFastaIDs(const CID1server_back::TIds& ids)
 {
     iterate (CID1server_back::TIds, it, ids) {
-        if (it != ids.begin())
+        if (it != ids.begin()) {
             *m_OutputFile << '|';
+        }
         (*it)->WriteAsFasta(*m_OutputFile);
     }
 }
@@ -733,8 +754,7 @@ void CId1FetchApp::WriteFastaEntry(const CID1server_back& id1_reply)
 {
     for (CTypeConstIterator<CBioseq> it = ConstBegin(id1_reply);  it;  ++it) {
         // Print the identifier(s) and description.  (idfetch produces
-        // more complete descriptions, but this should be good enough
-        // for now.)
+        // more complete descriptions, but this should be good enough for now.)
         *m_OutputFile << '>';
         WriteFastaIDs(it->GetId());
         if (it->IsSetDescr()) {
@@ -771,11 +791,11 @@ void CId1FetchApp::WriteFastaEntry(const CID1server_back& id1_reply)
 
 
 // for formatting text
-class CColumn
+class CTextColumn
 {
 public:
-    CColumn() : m_Width(0) { }
-    CColumn& Add(string s) {
+    CTextColumn() : m_Width(0) { }
+    CTextColumn& Add(string s) {
         m_Strings.push_back(s);
         if (s.size() > m_Width)
             m_Width = s.size();
@@ -785,8 +805,9 @@ public:
         const string& s = m_Strings[index];
         return s + string(m_Width - s.size(), ' ');
     }
-    SIZE_TYPE Width() const { return m_Width; }
-    size_t Height() const { return m_Strings.size(); } 
+    SIZE_TYPE Width()  const { return m_Width; }
+    size_t    Height() const { return m_Strings.size(); }
+ 
 private:
     SIZE_TYPE      m_Width;
     vector<string> m_Strings;
@@ -795,17 +816,17 @@ private:
 
 void CId1FetchApp::WriteHistoryTable(const CID1server_back& id1_reply)
 {
-    CColumn gis, dates, dbs, numbers;
+    CTextColumn gis, dates, dbs, numbers;
     gis.Add("GI").Add("--");
     dates.Add("Loaded").Add("------");
     dbs.Add("DB").Add("--");
     numbers.Add("Retrieval No.").Add("-------------");
     for (CTypeConstIterator<CSeq_hist_rec> it = ConstBegin(id1_reply);
          it;  ++it) {
-        int gi = 0;
+        int    gi = 0;
         string dbname, number;
 
-        if (it->GetDate().IsStr()) {
+        if ( it->GetDate().IsStr() ) {
             dates.Add(it->GetDate().GetStr());
         } else {
             CNcbiOstrstream oss;
@@ -817,12 +838,12 @@ void CId1FetchApp::WriteHistoryTable(const CID1server_back& id1_reply)
         }
 
         iterate (CSeq_hist_rec::TIds, it2, it->GetIds()) {
-            if ((*it2)->IsGi()) {
+            if ( (*it2)->IsGi() ) {
                 gi = (*it2)->GetGi();
-            } else if ((*it2)->IsGeneral()) {
+            } else if ( (*it2)->IsGeneral() ) {
                 dbname = (*it2)->GetGeneral().GetDb();
                 const CObject_id& tag = (*it2)->GetGeneral().GetTag();
-                if (tag.IsStr()) {
+                if ( tag.IsStr() ) {
                     number = tag.GetStr();
                 } else {
                     number = NStr::IntToString(tag.GetId());
@@ -834,7 +855,8 @@ void CId1FetchApp::WriteHistoryTable(const CID1server_back& id1_reply)
         dbs.Add(dbname);
         numbers.Add(number);
     }
-    for (unsigned int n = 0; n < gis.Height(); n++) {
+
+    for (unsigned int n = 0;  n < gis.Height();  n++) {
         *m_OutputFile << gis.Get(n) << "  " << dates.Get(n) << "  "
                       << dbs.Get(n) << "  " << numbers.Get(n) << NcbiEndl;
     }
@@ -857,6 +879,7 @@ void CId1FetchApp::WriteQualityScores(const CID1server_back& id1_reply)
         id = it->GetAccession() + '.' + NStr::IntToString(it->GetVersion());
         break;
     }
+
     for (CTypeConstIterator<CSeq_graph> it = ConstBegin(id1_reply);
          it;  ++it) {
         string title = it->GetTitle();
@@ -881,11 +904,13 @@ void CId1FetchApp::WriteQualityScores(const CID1server_back& id1_reply)
 
 END_NCBI_SCOPE
 
-USING_NCBI_SCOPE;
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 //
+
+USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[]) 
 {

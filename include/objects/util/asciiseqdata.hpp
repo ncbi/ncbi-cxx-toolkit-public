@@ -1,3 +1,6 @@
+#ifndef ASCIISEQDATA__HPP
+#define ASCIISEQDATA__HPP
+
 /*  $Id$
 * ===========================================================================
 *
@@ -26,67 +29,44 @@
 * Author:  Aaron Ucko
 *
 * File Description:
-*   Utilities shared by Genbank and non-Genbank code.
+*   Code to produce a reasonable ASCII version of sequence data.
+*   WARNING:  This is a temporary measure while CSeq_vector is in
+*   development, and WILL GO AWAY when CSeq_vector is ready for use.
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.1  2001/09/04 16:20:54  ucko
-* Dramatically fleshed out id1_fetch
+* Revision 1.1  2001/09/25 20:12:04  ucko
+* More cleanups from Denis.
+* Put utility code in the objects namespace.
+* Moved utility code to {src,include}/objects/util (to become libxobjutil).
+* Moved static members of CGenbankWriter to above their first use.
+*
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include "util.hpp"
+#include <objects/objmgr/seqvector.hpp>
 
-#include <objects/seq/IUPACaa.hpp> // temp
-#include <objects/seq/IUPACna.hpp> // temp
-#include <objects/seq/Seq_data.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seq/seqport_util.hpp>
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 
-#ifndef USE_SEQ_VECTOR
-string ToASCII(const CSeq_inst& seq_inst)
-{
-    if (!seq_inst.IsSetSeq_data()) {
-        return kEmptyStr;
-    }
-    const CSeq_data& data = seq_inst.GetSeq_data();
-    CSeq_data out;
-    unsigned int length = seq_inst.GetLength();
-    switch (data.Which()) {
-    case CSeq_data::e_Iupacna:
-        return data.GetIupacna().Get();
-    case CSeq_data::e_Iupacaa:
-        return data.GetIupacaa().Get();
+class CSeq_inst;
+class CSeq_vector;
 
-    case CSeq_data::e_Ncbi2na:
-    case CSeq_data::e_Ncbi4na:
-    case CSeq_data::e_Ncbi8na:
-    case CSeq_data::e_Ncbipna:
-        CSeqportUtil::Convert(data, &out,
-                              CSeq_data::e_Iupacna, 0, length);
-        return out.GetIupacna().Get();
-
-    case CSeq_data::e_Ncbi8aa:
-    case CSeq_data::e_Ncbieaa:
-    case CSeq_data::e_Ncbipaa:
-    case CSeq_data::e_Ncbistdaa:
-        CSeqportUtil::Convert(data, &out,
-                              CSeq_data::e_Iupacaa, 0, length);
-        return out.GetIupacaa().Get();
-
-    default:
-        return kEmptyStr;
-    }
-}
+// #define USE_SEQ_VECTOR
+#ifdef USE_SEQ_VECTOR
+typedef CSeq_vector TASCIISeqData;
+#else
+typedef string TASCIISeqData;
+TASCIISeqData ToASCII(const CSeq_inst& seq_inst);
 #endif
 
 
-// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
+END_SCOPE(objects)
 END_NCBI_SCOPE
+
+
+#endif  /* ASCIISEQDATA__HPP */

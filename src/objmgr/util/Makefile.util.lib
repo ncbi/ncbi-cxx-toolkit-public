@@ -1,0 +1,7 @@
+# $Id$
+
+# Build library "xobjutil"
+###############################
+
+LIBOBJ = asciiseqdata genbank
+LIB    = xobjutil

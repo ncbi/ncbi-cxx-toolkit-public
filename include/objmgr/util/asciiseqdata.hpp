@@ -1,5 +1,5 @@
-#ifndef UTIL__HPP
-#define UTIL__HPP
+#ifndef ASCIISEQDATA__HPP
+#define ASCIISEQDATA__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -29,15 +29,18 @@
 * Author:  Aaron Ucko
 *
 * File Description:
-*   Utilities shared by Genbank and non-Genbank code.
+*   Code to produce a reasonable ASCII version of sequence data.
+*   WARNING:  This is a temporary measure while CSeq_vector is in
+*   development, and WILL GO AWAY when CSeq_vector is ready for use.
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2001/09/05 14:44:47  ucko
-* Use NStr::IntToString instead of Stringify.
+* Revision 1.1  2001/09/25 20:12:04  ucko
+* More cleanups from Denis.
+* Put utility code in the objects namespace.
+* Moved utility code to {src,include}/objects/util (to become libxobjutil).
+* Moved static members of CGenbankWriter to above their first use.
 *
-* Revision 1.1  2001/09/04 16:20:54  ucko
-* Dramatically fleshed out id1_fetch
 *
 * ===========================================================================
 */
@@ -45,15 +48,13 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/objmgr/seqvector.hpp>
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
-BEGIN_NCBI_SCOPE
 
+BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+
 class CSeq_inst;
 class CSeq_vector;
-END_SCOPE(objects)
-
-USING_SCOPE(objects);
 
 // #define USE_SEQ_VECTOR
 #ifdef USE_SEQ_VECTOR
@@ -64,7 +65,8 @@ TASCIISeqData ToASCII(const CSeq_inst& seq_inst);
 #endif
 
 
-// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif  /* UTIL__HPP */
+
+#endif  /* ASCIISEQDATA__HPP */

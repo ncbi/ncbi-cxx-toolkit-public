@@ -26,11 +26,18 @@
 * Author:  Aaron Ucko
 *
 * File Description:
-*   Code to write Genbank/Genpept flat-file records.  Will move elsewhere
-*   when stable.
+*   Code to write Genbank/Genpept flat-file records.
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2001/09/25 20:12:06  ucko
+* More cleanups from Denis.
+* Put utility code in the objects namespace.
+* Moved utility code to {src,include}/objects/util (to become libxobjutil).
+* Moved static members of CGenbankWriter to above their first use.
+*
+* ---------------------------------------------------------------------------
+* old log:
 * Revision 1.4  2001/09/24 14:37:55  ucko
 * Comment out names of unused args to WriteXxx.
 *
@@ -46,8 +53,7 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
-#include "genbank.hpp"
+#include <objects/util/genbank.hpp>
 
 #include <algorithm>
 
@@ -124,8 +130,7 @@
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqset/Seq_entry.hpp>
-
-#include "util.hpp"
+#include <objects/util/asciiseqdata.hpp>
 
 
 #ifdef NCBI_COMPILER_WORKSHOP // workaround for compiler bug
@@ -135,9 +140,8 @@
 #endif
 
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 
 typedef CConstRef<CSeq_descr> TDescRef;
@@ -2716,5 +2720,5 @@ void CGenbankWriter::WriteFeatureQualifier(const string& name,
 }
 
 
-// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
+END_SCOPE(objects)
 END_NCBI_SCOPE

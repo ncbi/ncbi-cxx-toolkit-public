@@ -29,13 +29,16 @@
 * Author:  Aaron Ucko
 *
 * File Description:
-*   Code to write Genbank/Genpept flat-file records.  Will move elsewhere
-*   when stable.
+*   Code to write Genbank/Genpept flat-file records.
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.1  2001/09/04 16:20:53  ucko
-* Dramatically fleshed out id1_fetch
+* Revision 1.1  2001/09/25 20:12:04  ucko
+* More cleanups from Denis.
+* Put utility code in the objects namespace.
+* Moved utility code to {src,include}/objects/util (to become libxobjutil).
+* Moved static members of CGenbankWriter to above their first use.
+*
 *
 * ===========================================================================
 */
@@ -45,25 +48,21 @@
 #include <serial/serialbase.hpp>
 #include <objects/objmgr/objmgr.hpp>
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
+
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
 
 // forward declarations
-class CDescList;
-
-BEGIN_SCOPE(objects)
 class CBioSource;
 class CBioseq;
+class CDescList; // internal
 class CFeat_id;
 class COrg_ref;
 class CSeq_descr;
 class CSeq_entry;
 class CSeq_feat;
 class CSeq_loc;
-END_SCOPE(objects)
-
-
-USING_SCOPE(objects);
 
 class CGenbankWriter
 {
@@ -88,22 +87,30 @@ public:
     bool Write(CSeq_entry& entry); // returns true on success
 
 private:
+    // useful constants
+    static const unsigned int sm_KeywordWidth;
+    static const unsigned int sm_LineWidth;
+    static const unsigned int sm_DataWidth;
+    static const unsigned int sm_FeatureNameIndent;
+    static const unsigned int sm_FeatureNameWidth;
+
     void SetParameters(void); // sets formatting parameters (below)
 
-    // The descriptions here are in decreasing order of specificity.
-    bool Write(const CSeq_entry& entry, const CDescList& descs);
-    bool WriteLocus(const CBioseq& seq, const CDescList& descs);
-    bool WriteDefinition(const CBioseq& seq, const CDescList& descs);
-    bool WriteAccession(const CBioseq& seq, const CDescList& descs);
-    bool WriteVersion(const CBioseq& seq, const CDescList& descs);
-    bool WriteID(const CBioseq& seq, const CDescList& descs);
-    bool WriteKeywords(const CBioseq& seq, const CDescList& descs);
-    bool WriteSegment(const CBioseq& seq, const CDescList& descs);
-    bool WriteSource(const CBioseq& seq, const CDescList& descs);
-    bool WriteReference(const CBioseq& seq, const CDescList& descs);
-    bool WriteComment(const CBioseq& seq, const CDescList& descs);
-    bool WriteFeatures(const CBioseq& seq, const CDescList& descs);
-    bool WriteSequence(const CBioseq& seq, const CDescList& descs);
+    // The descriptions in descs are in decreasing order of specificity.
+    bool Write          (const CSeq_entry& entry, const CDescList& descs);
+
+    bool WriteLocus     (const CBioseq&    seq,   const CDescList& descs);
+    bool WriteDefinition(const CBioseq&    seq,   const CDescList& descs);
+    bool WriteAccession (const CBioseq&    seq,   const CDescList& descs);
+    bool WriteVersion   (const CBioseq&    seq,   const CDescList& descs);
+    bool WriteID        (const CBioseq&    seq,   const CDescList& descs);
+    bool WriteKeywords  (const CBioseq&    seq,   const CDescList& descs);
+    bool WriteSegment   (const CBioseq&    seq,   const CDescList& descs);
+    bool WriteSource    (const CBioseq&    seq,   const CDescList& descs);
+    bool WriteReference (const CBioseq&    seq,   const CDescList& descs);
+    bool WriteComment   (const CBioseq&    seq,   const CDescList& descs);
+    bool WriteFeatures  (const CBioseq&    seq,   const CDescList& descs);
+    bool WriteSequence  (const CBioseq&    seq,   const CDescList& descs);
 
     void Wrap(const string& keyword, const string& contents,
               unsigned int indent = sm_KeywordWidth);
@@ -139,17 +146,11 @@ private:
     unsigned int  m_DivisionWidth;
     unsigned int  m_GenpeptBlanks;
     string        m_LengthUnit; // bases or residues
-
-    // useful constants
-    static const unsigned int sm_KeywordWidth;
-    static const unsigned int sm_LineWidth;
-    static const unsigned int sm_DataWidth;
-    static const unsigned int sm_FeatureNameIndent;
-    static const unsigned int sm_FeatureNameWidth;
 };
 
 
-// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
+END_SCOPE(objects)
 END_NCBI_SCOPE
+
 
 #endif  /* GENBANK__HPP */
