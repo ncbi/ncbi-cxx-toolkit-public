@@ -45,6 +45,7 @@ int main(int argc, const char* argv[])
     const char* host = argc > 2 && *argv[2] ? argv[2] : "www.ncbi.nlm.nih.gov";
     SConnNetInfo* net_info;
     CONNECTOR connector;
+    EIO_Status status;
     STimeout* timeout;
     char ibuf[1024];
     CONN conn;
@@ -161,6 +162,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2005/01/28 17:44:48  lavr
+ * Fix:  forgotten to merge status variable relocation
+ *
  * Revision 6.30  2005/01/28 17:41:22  lavr
  * Allow CONN_TIMEOUT from the environment to be used in Wait-on-Read
  *
