@@ -497,21 +497,18 @@ BLAST_GapAlignStructFree(BlastGapAlignStructPtr gap_align)
 Int2
 BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options, 
    BlastExtensionParametersPtr ext_params, Int4 total_num_contexts, 
-   const Uint4 max_subject_length, const Int4 query_length, 
-   const Uint1 program, BLAST_ScoreBlkPtr sbp, 
+   Uint4 max_subject_length, Int4 query_length, 
+   Uint1 program, BLAST_ScoreBlkPtr sbp, 
    BlastGapAlignStructPtr PNTR gap_align_ptr)
 {
    Int2 status = 0;
    Boolean is_na = (program == blast_type_blastn ||
                     program == blast_type_blastx ||
                     program == blast_type_tblastx);
-   Uint4 max_dbseq_length;
    BlastGapAlignStructPtr gap_align = 
       (BlastGapAlignStructPtr) MemNew(sizeof(BlastGapAlignStruct));
 
    *gap_align_ptr = gap_align;
-
-   gap_align->program = program;
 
    if (sbp) {
       gap_align->sbp = sbp;
@@ -537,10 +534,10 @@ BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options,
       if (!gap_align->dyn_prog)
          gap_align = BLAST_GapAlignStructFree(gap_align);
    } else {
-      max_dbseq_length = MIN(max_subject_length, MAX_DBSEQ_LEN);
+      max_subject_length = MIN(max_subject_length, MAX_DBSEQ_LEN);
       gap_align->greedy_align_mem = 
          MB_GreedyAlignMemAlloc(score_options, ext_params, 
-                                max_dbseq_length);
+                                max_subject_length);
       if (!gap_align->greedy_align_mem)
          gap_align = BLAST_GapAlignStructFree(gap_align);
    }
@@ -1423,7 +1420,8 @@ diag_compare_match(VoidPtr v1, VoidPtr v2)
    return (h1->q_off - h1->s_off) - (h2->q_off - h2->s_off);
 }
 
-Int2 BLAST_MbGetGappedScore(BLAST_SequenceBlkPtr query, 
+Int2 BLAST_MbGetGappedScore(Uint1 program_number, 
+        BLAST_SequenceBlkPtr query, 
 			    BLAST_SequenceBlkPtr subject,
 			    BlastGapAlignStructPtr gap_align,
 			    BlastScoringOptionsPtr score_options, 
@@ -2121,7 +2119,8 @@ static Int4 BLAST_GetStartForGappedAlignment (BlastGapAlignStructPtr gap_align,
     return max_offset;
 }
 
-Int2 BLAST_GetGappedScore (BLAST_SequenceBlkPtr query, 
+Int2 BLAST_GetGappedScore (Uint1 program_number, 
+        BLAST_SequenceBlkPtr query, 
         BLAST_SequenceBlkPtr subject, 
         BlastGapAlignStructPtr gap_align,
         BlastScoringOptionsPtr score_options,                               
@@ -2158,7 +2157,7 @@ Int2 BLAST_GetGappedScore (BLAST_SequenceBlkPtr query,
    gap_trigger = ext_params->gap_trigger;
    cutoff_score = hit_params->cutoff_score;
 
-   is_prot = (gap_align->program != blast_type_blastn);
+   is_prot = (program_number != blast_type_blastn);
 
    if (*hsp_list_ptr == NULL)
       *hsp_list_ptr = hsp_list = BlastHSPListNew();
