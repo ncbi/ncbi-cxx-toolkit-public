@@ -36,8 +36,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class NCBI_XALGOSEQ_EXPORT CGnomonException
-: EXCEPTION_VIRTUAL_BASE public CException
+class CGnomonException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     // Enumerated list of document management errors
@@ -65,6 +64,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/08/19 12:42:48  dicuccio
+ * Dropped unnecessary export specifier
+ *
  * Revision 1.1  2003/10/24 15:06:30  dicuccio
  * Initial revision
  *

@@ -45,7 +45,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class NCBI_XALGOALIGN_EXPORT CAlgoAlignException : public CException
+class CAlgoAlignException : public CException
 {
 public:
     enum EErrCode {
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/08/19 12:42:26  dicuccio
+ * Dropped unnecessary export specifier
+ *
  * Revision 1.14  2004/04/23 14:39:22  kapustin
  * Add Splign librry and other changes
  *

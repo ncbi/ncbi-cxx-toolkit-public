@@ -152,8 +152,7 @@ private:
 /// CPIDGuardException --
 ///
 
-class NCBI_XNCBI_EXPORT CPIDGuardException
-    : EXCEPTION_VIRTUAL_BASE public CException
+class CPIDGuardException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
@@ -256,6 +255,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/08/19 12:43:47  dicuccio
+ * Dropped unnecessary export specifier
+ *
  * Revision 1.8  2004/07/04 19:11:23  vakatov
  * Do not use "throw()" specification after constructors and assignment
  * operators of exception classes inherited from "std::exception" -- as it

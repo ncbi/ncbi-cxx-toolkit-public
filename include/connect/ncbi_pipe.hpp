@@ -71,7 +71,7 @@ class CPipeHandle;
 /// CPipeException inherits its basic functionality from CCoreException
 /// and defines additional error codes for CPipe.
 
-class NCBI_XCONNECT_EXPORT CPipeException : public CCoreException
+class CPipeException : public CCoreException
 {
 public:
     /// Error types for pipe exceptions.
@@ -371,6 +371,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/08/19 12:43:30  dicuccio
+ * Dropped unnecessary export specifier
+ *
  * Revision 1.20  2003/12/04 16:29:50  ivanov
  * Added new create flags: fKeepOnClose, fCloseOnClose, fKillOnClose.
  * Added GetProcessHandle(). Comments changes.

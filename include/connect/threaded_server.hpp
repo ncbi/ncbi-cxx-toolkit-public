@@ -47,7 +47,7 @@
 BEGIN_NCBI_SCOPE
 
 /// Exceptions thrown by CThreadedServer::Run
-class NCBI_XCONNECT_EXPORT CThreadedServerException
+class CThreadedServerException
     : EXCEPTION_VIRTUAL_BASE public CConnException
 {
 public:
@@ -130,6 +130,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2004/08/19 12:43:38  dicuccio
+ * Dropped unnecessary export specifier
+ *
  * Revision 6.9  2004/07/15 18:58:10  ucko
  * Make more versatile, per discussion with Peter Meric:
  * - Periodically check whether to keep going or gracefully bail out,

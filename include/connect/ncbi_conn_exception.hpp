@@ -46,7 +46,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class NCBI_XCONNECT_EXPORT CConnException : EXCEPTION_VIRTUAL_BASE public CException
+class CConnException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
@@ -72,6 +72,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2004/08/19 12:43:21  dicuccio
+ * Dropped unnecessary export specifier
+ *
  * Revision 6.6  2003/04/09 17:58:41  siyan
  * Added doxygen support
  *

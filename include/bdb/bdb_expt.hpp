@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 
 /// Base BDB exception class
 
-class NCBI_BDB_EXPORT CBDB_Exception : EXCEPTION_VIRTUAL_BASE public CException
+class CBDB_Exception : EXCEPTION_VIRTUAL_BASE public CException
 {
     NCBI_EXCEPTION_DEFAULT(CBDB_Exception, CException);
 };
@@ -79,7 +79,7 @@ public:
 /// ::strerror function returning valid error messages for both errno and 
 /// BDB error codes.
 
-class NCBI_BDB_EXPORT CBDB_ErrnoException : 
+class CBDB_ErrnoException : 
     public CErrnoTemplExceptionEx<CBDB_Exception, CBDB_StrErrAdapt::strerror>
 {
 public:
@@ -115,7 +115,7 @@ public:
 /// BDB library exception. 
 /// Thrown if error is specific to the NCBI BDB C++ library.
 
-class NCBI_BDB_EXPORT CBDB_LibException : public CBDB_Exception
+class CBDB_LibException : public CBDB_Exception
 {
 public:
     enum EErrCode {
@@ -190,6 +190,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/08/19 12:43:09  dicuccio
+ * Dropped unnecessary export specifier
+ *
  * Revision 1.13  2004/06/17 13:37:00  kuznets
  * +new exception InvalidType
  *
