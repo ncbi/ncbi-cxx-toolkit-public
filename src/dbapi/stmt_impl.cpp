@@ -30,88 +30,6 @@
 * File Description:  Statement implementation
 *
 *
-* $Log$
-* Revision 1.24  2004/07/20 17:49:17  kholodov
-* Added: IReader/IWriter support for BLOB I/O
-*
-* Revision 1.23  2004/07/19 15:51:57  kholodov
-* Fixed: unwanted resultset cleanup while calling ExecuteUpdate()
-*
-* Revision 1.22  2004/05/17 21:10:28  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.21  2004/04/26 14:15:28  kholodov
-* Added: ExecuteQuery() method
-*
-* Revision 1.20  2004/04/22 15:14:53  kholodov
-* Added: PurgeResults()
-*
-* Revision 1.19  2004/04/12 14:25:33  kholodov
-* Modified: resultset caching scheme, fixed single connection handling
-*
-* Revision 1.18  2004/04/08 15:56:58  kholodov
-* Multiple bug fixes and optimizations
-*
-* Revision 1.17  2004/03/02 19:37:56  kholodov
-* Added: process close event from CStatement to CResultSet
-*
-* Revision 1.16  2004/03/01 16:21:55  kholodov
-* Fixed: double deletion in calling subsequently CResultset::Close() and delete
-*
-* Revision 1.15  2004/02/26 18:52:34  kholodov
-* Added: more trace messages
-*
-* Revision 1.14  2004/02/26 16:56:01  kholodov
-* Added: Trace message to HasMoreResults()
-*
-* Revision 1.13  2004/02/19 15:23:21  kholodov
-* Fixed: attempt to delete cached CDB_Result when it was already deleted by the CResultSet object
-*
-* Revision 1.12  2004/02/10 18:50:44  kholodov
-* Modified: made Move() method const
-*
-* Revision 1.11  2003/06/16 19:43:58  kholodov
-* Added: SQL command logging
-*
-* Revision 1.10  2002/12/16 18:56:50  kholodov
-* Fixed: memory leak in CStatement object
-*
-* Revision 1.9  2002/12/06 23:00:21  kholodov
-* Memory leak fix rolled back
-*
-* Revision 1.8  2002/12/05 17:37:23  kholodov
-* Fixed: potential memory leak in CStatement::HasMoreResults() method
-* Modified: getter and setter name for the internal CDB_Result pointer.
-*
-* Revision 1.7  2002/10/21 20:38:08  kholodov
-* Added: GetParentConn() method to get the parent connection from IStatement,
-* ICallableStatement and ICursor objects.
-* Fixed: Minor fixes
-*
-* Revision 1.6  2002/10/03 18:50:00  kholodov
-* Added: additional TRACE diagnostics about object deletion
-* Fixed: setting parameters in IStatement object is fully supported
-* Added: IStatement::ExecuteLast() to execute the last statement with
-* different parameters if any
-*
-* Revision 1.5  2002/09/18 18:49:27  kholodov
-* Modified: class declaration and Action method to reflect
-* direct inheritance of CActiveObject from IEventListener
-*
-* Revision 1.4  2002/09/09 20:48:57  kholodov
-* Added: Additional trace output about object life cycle
-* Added: CStatement::Failed() method to check command status
-*
-* Revision 1.3  2002/05/16 22:11:12  kholodov
-* Improved: using minimum connections possible
-*
-* Revision 1.2  2002/02/08 17:38:26  kholodov
-* Moved listener registration to parent objects
-*
-* Revision 1.1  2002/01/30 14:51:22  kholodov
-* User DBAPI implementation, first commit
-*
-*
 *
 *
 */
@@ -244,7 +162,6 @@ void CStatement::ExecuteUpdate(const string& sql)
     Execute(sql);
     //while( HasMoreResults() );
     GetBaseCmd()->DumpResults();
-    m_rowCount = GetBaseCmd()->RowCount();
 }
 
 void CStatement::ExecuteLast()
@@ -272,6 +189,10 @@ bool CStatement::Failed()
 
 int CStatement::GetRowCount() 
 {
+    int v;
+    if( (v = GetBaseCmd()->RowCount()) > 0 ) {
+        m_rowCount = v;
+    }
     return m_rowCount;
 }
 
@@ -325,8 +246,8 @@ void CStatement::Action(const CDbapiEvent& e)
     if(dynamic_cast<const CDbapiFetchCompletedEvent*>(&e) != 0 ) {
         if( m_irs != 0 && (rs = dynamic_cast<CResultSet*>(e.GetSource())) != 0 ) {
             if( rs == m_irs ) {
-                m_rowCount = GetBaseCmd()->RowCount();
-                _TRACE("Updating rowcount: " << m_rowCount); 
+                m_rowCount = rs->GetTotalRows();
+                _TRACE("Rowcount from the last resultset: " << m_rowCount); 
             }
         } 
     }
@@ -347,3 +268,90 @@ void CStatement::Action(const CDbapiEvent& e)
 }
 
 END_NCBI_SCOPE
+/*
+* $Log$
+* Revision 1.25  2004/07/21 18:43:58  kholodov
+* Added: separate row counter for resultsets
+*
+* Revision 1.24  2004/07/20 17:49:17  kholodov
+* Added: IReader/IWriter support for BLOB I/O
+*
+* Revision 1.23  2004/07/19 15:51:57  kholodov
+* Fixed: unwanted resultset cleanup while calling ExecuteUpdate()
+*
+* Revision 1.22  2004/05/17 21:10:28  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
+* Revision 1.21  2004/04/26 14:15:28  kholodov
+* Added: ExecuteQuery() method
+*
+* Revision 1.20  2004/04/22 15:14:53  kholodov
+* Added: PurgeResults()
+*
+* Revision 1.19  2004/04/12 14:25:33  kholodov
+* Modified: resultset caching scheme, fixed single connection handling
+*
+* Revision 1.18  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
+* Revision 1.17  2004/03/02 19:37:56  kholodov
+* Added: process close event from CStatement to CResultSet
+*
+* Revision 1.16  2004/03/01 16:21:55  kholodov
+* Fixed: double deletion in calling subsequently CResultset::Close() and delete
+*
+* Revision 1.15  2004/02/26 18:52:34  kholodov
+* Added: more trace messages
+*
+* Revision 1.14  2004/02/26 16:56:01  kholodov
+* Added: Trace message to HasMoreResults()
+*
+* Revision 1.13  2004/02/19 15:23:21  kholodov
+* Fixed: attempt to delete cached CDB_Result when it was already deleted by the CResultSet object
+*
+* Revision 1.12  2004/02/10 18:50:44  kholodov
+* Modified: made Move() method const
+*
+* Revision 1.11  2003/06/16 19:43:58  kholodov
+* Added: SQL command logging
+*
+* Revision 1.10  2002/12/16 18:56:50  kholodov
+* Fixed: memory leak in CStatement object
+*
+* Revision 1.9  2002/12/06 23:00:21  kholodov
+* Memory leak fix rolled back
+*
+* Revision 1.8  2002/12/05 17:37:23  kholodov
+* Fixed: potential memory leak in CStatement::HasMoreResults() method
+* Modified: getter and setter name for the internal CDB_Result pointer.
+*
+* Revision 1.7  2002/10/21 20:38:08  kholodov
+* Added: GetParentConn() method to get the parent connection from IStatement,
+* ICallableStatement and ICursor objects.
+* Fixed: Minor fixes
+*
+* Revision 1.6  2002/10/03 18:50:00  kholodov
+* Added: additional TRACE diagnostics about object deletion
+* Fixed: setting parameters in IStatement object is fully supported
+* Added: IStatement::ExecuteLast() to execute the last statement with
+* different parameters if any
+*
+* Revision 1.5  2002/09/18 18:49:27  kholodov
+* Modified: class declaration and Action method to reflect
+* direct inheritance of CActiveObject from IEventListener
+*
+* Revision 1.4  2002/09/09 20:48:57  kholodov
+* Added: Additional trace output about object life cycle
+* Added: CStatement::Failed() method to check command status
+*
+* Revision 1.3  2002/05/16 22:11:12  kholodov
+* Improved: using minimum connections possible
+*
+* Revision 1.2  2002/02/08 17:38:26  kholodov
+* Moved listener registration to parent objects
+*
+* Revision 1.1  2002/01/30 14:51:22  kholodov
+* User DBAPI implementation, first commit
+*
+*
+*/

@@ -54,7 +54,7 @@ CResultSet::CResultSet(CConnection* conn, CDB_Result *rs)
     : m_conn(conn),
       m_rs(rs), m_istr(0), m_ostr(0), m_column(-1),
       m_bindBlob(false), m_disableBind(false), m_wasNull(true),
-      m_rd(0)
+      m_rd(0), m_totalRows(0)
 {
     SetIdent("CResultSet");
 
@@ -152,6 +152,9 @@ bool CResultSet::Next()
     EDB_Type type = eDB_UnsupportedType;
 
     more = m_rs->Fetch();
+
+    ++m_totalRows;
+
     if( more && !IsDisableBind() ) {
 
         for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
@@ -317,6 +320,7 @@ void CResultSet::FreeResources()
     m_ostr = 0;
     delete m_rd;
     m_rd = 0;
+    m_totalRows = -1;
 }
   
 void CResultSet::Action(const CDbapiEvent& e) 
@@ -377,6 +381,9 @@ void CResultSet::CheckIdx(unsigned int idx)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.34  2004/07/21 18:43:58  kholodov
+* Added: separate row counter for resultsets
+*
 * Revision 1.33  2004/07/20 17:49:17  kholodov
 * Added: IReader/IWriter support for BLOB I/O
 *

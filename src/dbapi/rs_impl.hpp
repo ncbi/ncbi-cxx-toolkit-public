@@ -91,6 +91,11 @@ public:
     void Invalidate() {
         delete m_rs;
         m_rs = 0;
+        m_totalRows = -1;
+    }
+
+    int GetTotalRows() {
+        return m_totalRows;
     }
 
 protected:
@@ -121,6 +126,7 @@ private:
     bool m_disableBind;
     bool m_wasNull;
     CBlobReader *m_rd;
+    int m_totalRows;
 
 };
 
@@ -129,6 +135,9 @@ private:
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.17  2004/07/21 18:43:58  kholodov
+* Added: separate row counter for resultsets
+*
 * Revision 1.16  2004/07/20 17:49:17  kholodov
 * Added: IReader/IWriter support for BLOB I/O
 *
