@@ -33,6 +33,8 @@
 */
 
 #include <objects/objmgr/seq_id_handle.hpp>
+#include <objects/objmgr/impl/bioseq_info.hpp>
+#include <objects/objmgr/impl/tse_info.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -43,7 +45,6 @@ BEGIN_SCOPE(objects)
 
 class CDataSource;
 class CSeqMap;
-class CTSE_Info;
 class CSeqVector;
 class CScope;
 
@@ -61,9 +62,7 @@ public:
 
     CBioseq_Handle(void)
         : m_Scope(0),
-          m_DataSource(0),
-          m_Entry(0),
-          m_TSE(0) {}
+          m_Bioseq_Info(0) {}
     CBioseq_Handle(const CBioseq_Handle& h);
     CBioseq_Handle& operator= (const CBioseq_Handle& h);
 
@@ -73,8 +72,8 @@ public:
     bool operator<  (const CBioseq_Handle& h) const;
 
     // Check
-    operator bool(void)  const { return ( m_DataSource  &&  m_Value); }
-    bool operator!(void) const { return (!m_DataSource  || !m_Value); }
+    operator bool(void)  const { return ( bool(m_Bioseq_Info)  &&  m_Value); }
+    bool operator!(void) const { return (!m_Bioseq_Info  || !m_Value); }
 
     // Get the complete bioseq (as loaded by now)
     // Declared "virtual" to avoid circular dependencies with seqloc
@@ -161,19 +160,16 @@ private:
 
     // Get data source
     CDataSource& x_GetDataSource(void) const;
+
     // Set the handle seq-entry and datasource
-    void x_ResolveTo(CScope& scope, CDataSource& datasource,
-                     CSeq_entry& entry, CTSE_Info& tse);
+    void x_ResolveTo(CScope& scope, CBioseq_Info& bioseq);
 
     bool x_IsSynonym(const CSeq_id& id) const;
 
     CSeq_id_Handle       m_Value;       // Seq-id equivalent
     CScope*              m_Scope;
-    mutable CDataSource* m_DataSource;  // Data source for resolved handles
-    mutable CSeq_entry*  m_Entry;       // Seq-entry, containing the bioseq
-
-    // Top-level seq-entry is declared as an atomic counter to use inline locks
-    mutable CMutableAtomicCounter* m_TSE;         // Top level seq-entry
+    CRef<CBioseq_Info>   m_Bioseq_Info;
+    CTSE_Lock            m_TSE_Lock;
 
     friend class CSeqVector;
     friend class CHandleRangeMap;
@@ -188,9 +184,7 @@ inline
 CBioseq_Handle::CBioseq_Handle(const CSeq_id_Handle& value)
     : m_Value(value),
       m_Scope(0),
-      m_DataSource(0),
-      m_Entry(0),
-      m_TSE(0)
+      m_Bioseq_Info(0)
 {
 }
 
@@ -198,12 +192,11 @@ inline
 CBioseq_Handle::CBioseq_Handle(const CBioseq_Handle& h)
     : m_Value(h.m_Value),
       m_Scope(h.m_Scope),
-      m_DataSource(h.m_DataSource),
-      m_Entry(h.m_Entry),
-      m_TSE(h.m_TSE)
+      m_Bioseq_Info(h.m_Bioseq_Info)
 {
-    if ( m_TSE )
-        m_TSE->Add(1);
+    // m_TSE_Info should never be null
+    if ( m_Bioseq_Info )
+        m_TSE_Lock.Set(*m_Bioseq_Info->m_TSE_Info);
 }
 
 inline
@@ -211,13 +204,9 @@ CBioseq_Handle& CBioseq_Handle::operator= (const CBioseq_Handle& h)
 {
     m_Value = h.m_Value;
     m_Scope = h.m_Scope;
-    m_DataSource = h.m_DataSource;
-    m_Entry = h.m_Entry;
-    if ( m_TSE )
-        m_TSE->Add(-1);
-    m_TSE = h.m_TSE;
-    if ( m_TSE )
-        m_TSE->Add(1);
+    m_Bioseq_Info = h.m_Bioseq_Info;
+    if ( m_Bioseq_Info )
+        m_TSE_Lock.Set(*m_Bioseq_Info->m_TSE_Info);
     return *this;
 }
 
@@ -235,8 +224,8 @@ bool CBioseq_Handle::operator== (const CBioseq_Handle& h) const
             "CBioseq_Handle::operator==() -- "
             "Unable to compare handles from different scopes");
     }
-    if ( m_Entry  &&  h.m_Entry )
-        return m_Entry == h.m_Entry;
+    if (bool(m_Bioseq_Info)  &&  bool(h.m_Bioseq_Info))
+        return m_Bioseq_Info == h.m_Bioseq_Info;
     // Compare by id key
     return m_Value == h.m_Value;
 }
@@ -255,20 +244,21 @@ bool CBioseq_Handle::operator< (const CBioseq_Handle& h) const
             "CBioseq_Handle::operator<() -- "
             "Unable to compare CBioseq_Handles from different scopes");
     }
-    if ( m_Entry  &&  h.m_Entry )
-	return m_Entry < h.m_Entry;
+    if (bool(m_Bioseq_Info)  &&  bool(h.m_Bioseq_Info))
+        return m_Bioseq_Info < h.m_Bioseq_Info;
     return m_Value < h.m_Value;
 }
 
 inline
 CDataSource& CBioseq_Handle::x_GetDataSource(void) const
 {
-    if ( !m_DataSource ) {
+    // m_TSE_Info and its m_DataSource should never be null
+    if ( !m_Bioseq_Info ) {
         THROW1_TRACE(runtime_error,
             "CBioseq_Handle::x_GetDataSource() -- "
             "Can not resolve data source for bioseq handle.");
     }
-    return *m_DataSource;
+    return *m_Bioseq_Info->m_TSE_Info->m_DataSource;
 }
 
 inline
@@ -284,6 +274,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/03/12 20:09:30  grichenk
+* Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
+*
 * Revision 1.30  2003/02/27 14:35:32  vasilche
 * Splitted PopulateTSESet() by logically independent parts.
 *

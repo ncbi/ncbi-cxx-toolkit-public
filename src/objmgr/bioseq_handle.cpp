@@ -48,8 +48,6 @@ BEGIN_SCOPE(objects)
 
 CBioseq_Handle::~CBioseq_Handle(void)
 {
-    if ( m_TSE )
-        m_TSE->Add(-1);
 }
 
 
@@ -128,10 +126,8 @@ bool CBioseq_Handle::x_IsSynonym(const CSeq_id& id) const
     if ( !(*this) )
         return false;
     CSeq_id_Handle h = CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(id);
-    return static_cast<CTSE_Info*>(m_TSE)->
-        m_BioseqMap[m_Value]->m_Synonyms.find(h) !=
-        static_cast<CTSE_Info*>(m_TSE)->
-        m_BioseqMap[m_Value]->m_Synonyms.end();
+    const CSynonymsSet* syns = m_Scope->x_GetSynonyms(m_Value);
+    return syns->find(h) != syns->end();
 }
 
 
@@ -236,16 +232,11 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
 
 
 void CBioseq_Handle::x_ResolveTo(
-    CScope& scope, CDataSource& datasource,
-    CSeq_entry& entry, CTSE_Info& tse)
+    CScope& scope, CBioseq_Info& bioseq)
 {
     m_Scope = &scope;
-    m_DataSource = &datasource;
-    m_Entry = &entry;
-    if ( m_TSE )
-        m_TSE->Add(-1);
-    m_TSE = &tse;
-    m_TSE->Add(1);
+    m_Bioseq_Info.Reset(&bioseq);
+    m_TSE_Lock.Set(*m_Bioseq_Info->m_TSE_Info);
 }
 
 /*
@@ -257,23 +248,23 @@ const CSeqMap& CBioseq_Handle::CreateResolvedSeqMap(void) const
 
 void CBioseq_Handle::AddAnnot(CSeq_annot& annot)
 {
-    _ASSERT(m_DataSource  &&  m_Entry);
-    m_DataSource->AttachAnnot(*m_Entry, annot);
+    _ASSERT(bool(m_Bioseq_Info)  &&  bool(m_Bioseq_Info->m_Entry));
+    x_GetDataSource().AttachAnnot(*m_Bioseq_Info->m_Entry, annot);
 }
 
 
 void CBioseq_Handle::RemoveAnnot(const CSeq_annot& annot)
 {
-    _ASSERT(m_Scope  &&  m_Entry);
-    m_DataSource->RemoveAnnot(*m_Entry, annot);
+    _ASSERT(bool(m_Bioseq_Info)  &&  bool(m_Bioseq_Info->m_Entry));
+    x_GetDataSource().RemoveAnnot(*m_Bioseq_Info->m_Entry, annot);
 }
 
 
 void CBioseq_Handle::ReplaceAnnot(const CSeq_annot& old_annot,
                                   CSeq_annot& new_annot)
 {
-    _ASSERT(m_Scope  &&  m_Entry);
-    m_DataSource->ReplaceAnnot(*m_Entry, old_annot, new_annot);
+    _ASSERT(bool(m_Bioseq_Info)  &&  bool(m_Bioseq_Info->m_Entry));
+    x_GetDataSource().ReplaceAnnot(*m_Bioseq_Info->m_Entry, old_annot, new_annot);
 }
 
 
@@ -284,6 +275,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/03/12 20:09:33  grichenk
+* Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
+*
 * Revision 1.32  2003/03/11 15:51:06  kuznets
 * iterate -> ITERATE
 *

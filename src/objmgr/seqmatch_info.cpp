@@ -41,15 +41,14 @@ BEGIN_SCOPE(objects)
 
 
 CSeqMatch_Info::CSeqMatch_Info(void)
-    : m_TSE(0), m_DataSource(0)
+    : m_TSE(0)
 {
 }
 
 
 CSeqMatch_Info::CSeqMatch_Info(const CSeq_id_Handle& h,
-                               CTSE_Info& tse,
-                               CDataSource& ds)
-    : m_Handle(h), m_TSE(&tse), m_Lock(&tse), m_DataSource(&ds)
+                               CTSE_Info& tse)
+    : m_Handle(h), m_TSE(&tse), m_Lock(&tse)
 {
 }
 
@@ -57,8 +56,7 @@ CSeqMatch_Info::CSeqMatch_Info(const CSeq_id_Handle& h,
 CSeqMatch_Info::CSeqMatch_Info(const CSeqMatch_Info& info)
     : m_Handle(info.m_Handle),
       m_TSE(info.m_TSE),
-      m_Lock(info.m_TSE),
-      m_DataSource(info.m_DataSource)
+      m_Lock(info.m_TSE)
 {
 }
 
@@ -70,7 +68,6 @@ CSeqMatch_Info::operator= (const CSeqMatch_Info& info)
         m_Handle = info.m_Handle;
         m_TSE = info.m_TSE;
         m_Lock.Set(m_TSE);
-        m_DataSource = info.m_DataSource;
     }
     return *this;
 }
@@ -102,6 +99,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/03/12 20:09:34  grichenk
+* Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
+*
 * Revision 1.8  2003/02/24 18:57:22  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

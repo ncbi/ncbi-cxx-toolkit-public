@@ -227,6 +227,7 @@ private:
     friend class CDataSource;
     friend class CBioseq_CI;
     friend class CAnnotTypes_CI;
+    friend class CBioseq_Handle;
 };
 
 
@@ -236,6 +237,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/03/12 20:09:30  grichenk
+* Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
+*
 * Revision 1.34  2003/03/11 14:15:49  grichenk
 * +Data-source priority
 *

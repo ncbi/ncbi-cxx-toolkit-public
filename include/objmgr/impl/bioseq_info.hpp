@@ -54,6 +54,7 @@ BEGIN_SCOPE(objects)
 // forward declaration
 class CSeq_entry;
 class CSeq_id_Handle;
+class CTSE_Info;
 
 class NCBI_XOBJMGR_EXPORT CBioseq_Info : public CObject
 {
@@ -74,8 +75,9 @@ public:
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
-    CRef<CSeq_entry> m_Entry;
-    TSynonyms        m_Synonyms;
+    CTSE_Info*       m_TSE_Info;  // Top-level seq-entry for the sequence
+    CRef<CSeq_entry> m_Entry;     // Parent seq-entry for the bioseq
+    TSynonyms        m_Synonyms;  // Set of bioseq synonyms
 };
 
 
@@ -93,6 +95,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2003/03/12 20:09:31  grichenk
+ * Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
+ *
  * Revision 1.7  2003/02/05 17:57:41  dicuccio
  * Moved into include/objects/objmgr/impl to permit data loaders to be defined
  * outside of xobjmgr.

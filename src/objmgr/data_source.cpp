@@ -166,9 +166,8 @@ CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope,
         info->m_BioseqMap.find(info.GetIdHandle());
     if ( found == info->m_BioseqMap.end() )
         return CBioseq_Handle();
-    CSeq_entry* se = found->second->m_Entry;
     CBioseq_Handle h(info.GetIdHandle());
-    h.x_ResolveTo(scope, *this, *se, *info);
+    h.x_ResolveTo(scope, *found->second);
     // Locked by BestResolve() in CScope::x_BestResolve()
     return h;
 }
@@ -206,8 +205,8 @@ const CBioseq& CDataSource::GetBioseq(const CBioseq_Handle& handle)
     }
     //### CMutexGuard guard(sm_DataSource_Mtx);
     // the handle must be resolved to this data source
-    _ASSERT(handle.m_DataSource == this);
-    return handle.m_Entry->GetSeq();
+    _ASSERT(&handle.x_GetDataSource() == this);
+    return handle.m_Bioseq_Info->m_Entry->GetSeq();
 }
 
 
@@ -215,8 +214,8 @@ const CSeq_entry& CDataSource::GetTSE(const CBioseq_Handle& handle)
 {
     // Bioseq and TSE must be loaded if there exists a handle
     //### CMutexGuard guard(sm_DataSource_Mtx);
-    _ASSERT(handle.m_DataSource == this);
-    return *m_Entries[CRef<CSeq_entry>(handle.m_Entry)]->m_TSE;
+    _ASSERT(&handle.x_GetDataSource() == this);
+    return *m_Entries[CRef<CSeq_entry>(handle.m_Bioseq_Info->m_Entry)]->m_TSE;
 }
 
 
@@ -237,8 +236,8 @@ CDataSource::GetBioseqCore(const CBioseq_Handle& handle)
     // Bioseq core and TSE must be loaded if there exists a handle --
     // just return the bioseq as-is.
     // the handle must be resolved to this data source
-    _ASSERT(handle.m_DataSource == this);
-    return CBioseq_Handle::TBioseqCore(&handle.m_Entry->GetSeq());
+    _ASSERT(&handle.x_GetDataSource() == this);
+    return CBioseq_Handle::TBioseqCore(&handle.m_Bioseq_Info->m_Entry->GetSeq());
 }
 
 
@@ -251,7 +250,7 @@ const CSeqMap& CDataSource::GetSeqMap(const CBioseq_Handle& handle)
 
 CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
 {
-    _ASSERT(handle.m_DataSource == this);
+    _ASSERT(&handle.x_GetDataSource() == this);
     // No need to lock anything since the TSE should be locked by the handle
     CBioseq_Handle::TBioseqCore core = GetBioseqCore(handle);
     //### Lock seq-maps to prevent duplicate seq-map creation
@@ -348,150 +347,6 @@ bool CDataSource::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
     return true;
 }
 
-
-#if 0
-bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
-                                const CDelta_ext& delta,
-                                size_t index,
-                                TSeqPos start,
-                                TSeqPos length)
-{
-    vector<CSeqMap::CSegment> block;
-    x_AppendDelta(delta, block);
-    x_GetSeqMap(bioseq).AddBlock(block, index, start, length);
-    return true;
-}
-
-bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
-                                CDelta_seq& seq_seg,
-                                TSeqPos start,
-                                TSeqPos length)
-{
-/*
-    The function should be used mostly by data loaders. If a segment of a
-    bioseq is a reference to a whole sequence, the positioning mechanism may
-    not work correctly, since the length of such reference is unknown. In most
-    cases "whole" reference should be the only segment of a delta-ext.
-*/
-    // Get non-const reference to the entry
-    //### CMutexGuard guard(sm_DataSource_Mtx);
-    //### Lock the entry to prevent destruction or modification
-    //### May need to lock the TSE instead.
-    CSeq_entry* found = x_FindEntry(bioseq);
-    if ( !found ) {
-        return false;
-    }
-    // Lock the TSE
-    CTSE_Guard tse_guard(*m_Entries[CConstRef<CSeq_entry>(found)]);
-
-    CSeq_entry& entry = *found;
-    _ASSERT( entry.IsSeq() );
-    CSeq_inst& inst = entry.SetSeq().SetInst();
-    if (start == 0  &&
-        inst.IsSetLength()  &&
-        inst.GetLength() == length  &&
-        seq_seg.IsLiteral()  &&
-        seq_seg.GetLiteral().IsSetSeq_data()) {
-        // Non-segmented sequence, non-reference segment -- just add seq-data
-        entry.SetSeq().SetInst().SetSeq_data(
-            seq_seg.SetLiteral().SetSeq_data());
-        return true;
-    }
-    // Possibly segmented sequence. Use delta-ext.
-    _ASSERT( !inst.IsSetSeq_data() );
-    CDelta_ext::Tdata& delta = inst.SetExt().SetDelta().Set();
-    TSeqPosition ex_lower = 0; // the last of the existing points before start
-    TSeqPosition ex_upper = 0; // the first of the existing points after start
-    TSeqPosition ex_cur = 0; // current position while processing the sequence
-    CDelta_ext::Tdata::iterator gap = delta.end();
-    NON_CONST_ITERATE(CDelta_ext::Tdata, dit, delta) {
-        ex_lower = ex_cur;
-        if ( (*dit)->IsLiteral() ) {
-            if ( (*dit)->GetLiteral().IsSetSeq_data() ) {
-                ex_cur += (*dit)->GetLiteral().GetLength();
-                if (ex_cur <= start)
-                    continue;
-                // ex_cur > start
-                // This is not good - we could not find the correct
-                // match for the new segment start. The start should be
-                // in a gap, not in a real literal.
-                THROW1_TRACE(runtime_error,
-                             "CDataSource::AttachSeqData() -- "
-                             "Can not insert segment into a literal");
-            }
-            else {
-                // No data exist - treat it like a gap
-                if ((*dit)->GetLiteral().GetLength() > 0) {
-                    // Known length -- check if the starting point
-                    // is whithin this gap.
-                    ex_cur += (*dit)->GetLiteral().GetLength();
-                    if (ex_cur < start)
-                        continue;
-                    // The new segment must be whithin this gap.
-                    ex_upper = ex_cur;
-                    gap = dit;
-                    break;
-                }
-                // Gap of 0 or unknown length
-                if (ex_cur == start) {
-                    ex_upper = ex_cur;
-                    gap = dit;
-                    break;
-                }
-            }
-        }
-        else if ( (*dit)->IsLoc() ) {
-            CSeqMap dummyseqmap; // Just to calculate the seq-loc length
-            x_LocToSeqMap((*dit)->GetLoc(), ex_cur, dummyseqmap);
-            if (ex_cur <= start) {
-                continue;
-            }
-            // ex_cur > start
-            THROW1_TRACE(runtime_error,
-                         "CDataSource::AttachSeqData() -- "
-                         "Segment position conflict");
-        }
-        else {
-            THROW1_TRACE(runtime_error,
-                "CDataSource::AttachSeqData() -- Invalid delta-seq type");
-        }
-    }
-    if ( gap != delta.end() ) {
-        // Found the correct gap
-        if ( ex_upper > start ) {
-            // Insert the new segment before the gap
-            delta.insert(gap, CRef<CDelta_seq>(&seq_seg));
-        }
-        else if ( ex_lower < start ) {
-            // Insert the new segment after the gap
-            ++gap;
-            delta.insert(gap, CRef<CDelta_seq>(&seq_seg));
-        }
-        else {
-            // Split the gap, insert the new segment between the two gaps
-            CRef<CDelta_seq> gap_dup(new CDelta_seq);
-            gap_dup->Assign(**gap);
-            if ((*gap)->GetLiteral().GetLength() > 0) {
-                // Adjust gap lengths
-                _ASSERT((*gap)->GetLiteral().GetLength() >= length);
-                gap_dup->SetLiteral().SetLength(start - ex_lower);
-                (*gap)->SetLiteral().SetLength(ex_upper - start - length);
-            }
-            // Insert new_seg before gap, and gap_dup before new_seg
-            delta.insert(delta.insert(gap, CRef<CDelta_seq>(&seq_seg)),
-                         gap_dup);
-        }
-    }
-    else {
-        // No gap found -- The sequence must be empty
-        _ASSERT(delta.size() == 0);
-        delta.push_back(CRef<CDelta_seq>(&seq_seg));
-    }
-    // Replace seq-map for the updated bioseq if it was already created
-    x_CreateSeqMap( entry.SetSeq() );
-    return true;
-}
-#endif
 
 bool CDataSource::AttachAnnot(const CSeq_entry& entry,
                               CSeq_annot& annot)
@@ -636,6 +491,7 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
         tse_info.Set(new CTSE_Info);
         tse_info->m_TSE = &tse;
         tse_info->m_Dead = dead;
+        tse_info->m_DataSource = this;
         // Do not lock TSE if there is no tse_set -- none will unlock it
     }
     else {
@@ -649,6 +505,7 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
     if ( entry.IsSeq() ) {
         CBioseq* seq = &entry.SetSeq();
         CBioseq_Info* info = new CBioseq_Info(entry);
+        info->m_TSE_Info = tse_info.GetPointer();
         ITERATE ( CBioseq::TId, id, seq->GetId() ) {
             // Find the bioseq index
             CSeq_id_Handle key = GetSeq_id_Mapper().GetHandle(**id);
@@ -805,35 +662,6 @@ void PrintSeqMap(const string& /*id*/, const CSeqMap& /*smap*/)
 #endif
 }
 
-#if 0
-void CDataSource::x_AppendDelta(const CDelta_ext& delta,
-                                vector<CSeqMap::CSegment>& block)
-{
-    const CDelta_ext::Tdata& data = delta.Get();
-    ITERATE ( CDelta_ext::Tdata, it, data ) {
-        switch ( (*it)->Which() ) {
-        case CDelta_seq::e_Loc:
-            x_AppendLoc((*it)->GetLoc(), block);
-            break;
-        case CDelta_seq::e_Literal:
-        {
-            const CSeq_literal& literal = (*it)->GetLiteral();
-            if ( literal.IsSetSeq_data() ) {
-                block.push_back(CSeqMap::CSegment(literal.GetSeq_data(),
-                                                  literal.GetLength()));
-            }
-            else {
-                // No data exist - treat it like a gap
-                block.push_back(CSeqMap::CSegment(CSeqMap::eSeqGap,
-                                                  literal.GetLength())); //???
-            }
-            break;
-        }
-        }
-    }
-}
-#endif
-
 
 void CDataSource::x_CreateSeqMap(const CBioseq& seq, CScope& /*scope*/)
 {
@@ -844,287 +672,6 @@ void CDataSource::x_CreateSeqMap(const CBioseq& seq, CScope& /*scope*/)
     m_SeqMaps[CBioseq_Handle::TBioseqCore(&seq)]
         .Reset(const_cast<CSeqMap*>(seqMap.GetPointer()));
 }
-
-#if 0
-const CSeqMap& CDataSource::x_CreateResolvedSeqMap(const CSeqMap& smap,
-                                                   CScope& scope)
-{
-    // Create destination map (not stored in the indexes,
-    // must be deleted by user or user's CRef).
-    vector<CSeqMap::CSegment> segments;
-    ITERATE ( CSeqMap, it, smap ) {
-        if ( it.GetType() == CSeqMap::eSeqRef ) {
-            // Resolve references
-            //segments.push_back(CSeqMap::CSegment(it.Get(), scope));
-            x_AppendResolved(it.GetRefSeqid(),
-                             it.GetRefPosition(),
-                             it.GetLength(),
-                             it.GetRefMinusStrand(),
-                             segments, scope);
-        }
-        else {
-            //segments.push_back(it.x_GetSegment());
-        }
-    }
-    return *new CSeqMap(segments);
-}
-#endif
-#if 0
-void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
-                                TSeqPos& pos,
-                                CSeqMap& seqmap)
-{
-    switch ( loc.Which() ) {
-    case CSeq_loc::e_not_set:
-    case CSeq_loc::e_Null:
-    case CSeq_loc::e_Empty:
-        {
-            // Add gap
-            seqmap.Add(CSeqMap::eSeqGap, pos, 0); //???
-            return;
-        }
-    case CSeq_loc::e_Whole:
-        {
-            // Reference to the whole sequence - do not check its
-            // length, use 0 instead.
-            CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
-                CSeqMap::eSeqRef, pos, 0, false);
-            seg->m_RefPos = 0;
-            seg->m_RefSeq = GetSeq_id_Mapper().GetHandle(loc.GetWhole());
-            seqmap.Add(*seg);
-            return;
-        }
-    case CSeq_loc::e_Int:
-        {
-            bool minus_strand = loc.GetInt().IsSetStrand()  &&
-                loc.GetInt().GetStrand() == eNa_strand_minus; //???
-            CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
-                CSeqMap::eSeqRef, pos, loc.GetInt().GetLength(),
-                minus_strand);
-            seg->m_RefSeq =
-                GetSeq_id_Mapper().GetHandle(loc.GetInt().GetId());
-            seg->m_RefPos = min(loc.GetInt().GetFrom(), loc.GetInt().GetTo());
-            seg->m_Length = loc.GetInt().GetLength();
-            seqmap.Add(*seg);
-            pos += loc.GetInt().GetLength();
-            return;
-        }
-    case CSeq_loc::e_Pnt:
-        {
-            bool minus_strand = loc.GetPnt().IsSetStrand()  &&
-                loc.GetPnt().GetStrand() == eNa_strand_minus; //???
-            CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
-                CSeqMap::eSeqRef, pos, 1, minus_strand);
-            seg->m_RefSeq =
-                GetSeq_id_Mapper().GetHandle(loc.GetPnt().GetId());
-            seg->m_RefPos = loc.GetPnt().GetPoint();
-            seg->m_Length = 1;
-            seqmap.Add(*seg);
-            pos++;
-            return;
-        }
-    case CSeq_loc::e_Packed_int:
-        {
-            ITERATE ( CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
-                bool minus_strand = (*ii)->IsSetStrand()  &&
-                    (*ii)->GetStrand() == eNa_strand_minus; //???
-                CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
-                    CSeqMap::eSeqRef, pos, (*ii)->GetLength(), minus_strand);
-                seg->m_RefSeq =
-                    GetSeq_id_Mapper().GetHandle((*ii)->GetId());
-                seg->m_RefPos = min((*ii)->GetFrom(), (*ii)->GetTo());
-                seg->m_Length = (*ii)->GetLength();
-                seqmap.Add(*seg);
-                pos += (*ii)->GetLength();
-            }
-            return;
-        }
-    case CSeq_loc::e_Packed_pnt:
-        {
-            bool minus_strand = loc.GetPacked_pnt().IsSetStrand()  &&
-                loc.GetPacked_pnt().GetStrand() == eNa_strand_minus; //???
-            ITERATE ( CPacked_seqpnt::TPoints, pi,
-                loc.GetPacked_pnt().GetPoints() ) {
-                CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
-                    CSeqMap::eSeqRef, pos, 1, minus_strand);
-                seg->m_RefSeq =
-                    GetSeq_id_Mapper().GetHandle(loc.GetPacked_pnt().GetId());
-                seg->m_RefPos = *pi;
-                seg->m_Length = 1;
-                seqmap.Add(*seg);
-                pos++;
-            }
-            return;
-        }
-    case CSeq_loc::e_Mix:
-        {
-            ITERATE ( CSeq_loc_mix::Tdata, li, loc.GetMix().Get() ) {
-                x_LocToSeqMap(**li, pos, seqmap);
-            }
-            return;
-        }
-    case CSeq_loc::e_Equiv:
-        {
-            ITERATE ( CSeq_loc_equiv::Tdata, li, loc.GetEquiv().Get() ) {
-                //### Is this type allowed here?
-                x_LocToSeqMap(**li, pos, seqmap);
-            }
-            return;
-        }
-    case CSeq_loc::e_Bond:
-        {
-            THROW1_TRACE(runtime_error,
-                         "CDataSource::x_LocToSeqMap() -- "
-                         "e_Bond is not allowed as a reference type");
-        }
-    case CSeq_loc::e_Feat:
-        {
-            THROW1_TRACE(runtime_error,
-                         "CDataSource::x_LocToSeqMap() -- "
-                         "e_Feat is not allowed as a reference type");
-        }
-    }
-}
-
-void CDataSource::x_DataToSeqMap(const CSeq_data& data,
-                                 TSeqPos& pos, TSeqPos len,
-                                 CSeqMap& seqmap)
-{
-    //### Search for gaps in the data
-    CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
-        CSeqMap::eSeqData, pos, len, false);
-    // Assume starting position on the referenced sequence is 0
-    seg->m_RefData = &data;
-    seg->m_RefPos = 0;
-    seg->m_Length = len;
-    seqmap.Add(*seg);
-    pos += len;
-}
-#endif
-#if 0
-inline
-void CDataSource::x_AppendRef(const CSeq_id_Handle& ref,
-                              TSeqPos from,
-                              TSeqPos length,
-                              bool minus_strand,
-                              vector<CSeqMap::CSegment>& segments)
-{
-    segments.push_back(CSeqMap::CSegment(ref, from, length, minus_strand));
-}
-
-
-inline
-void CDataSource::x_AppendRef(const CSeq_id_Handle& ref,
-                              TSeqPos from,
-                              TSeqPos length,
-                              ENa_strand strand,
-                              vector<CSeqMap::CSegment>& segments)
-{
-    segments.push_back(CSeqMap::CSegment(ref, from, length, strand));
-}
-
-
-inline
-void CDataSource::x_AppendRef(const CSeq_id_Handle& ref,
-                              const CSeq_interval& interval,
-                              vector<CSeqMap::CSegment>& segments)
-{
-    x_AppendRef(ref,
-                interval.GetFrom(),
-                interval.GetLength(),
-                interval.GetStrand(),
-                segments);
-}
-
-
-inline
-void CDataSource::x_AppendRef(const CSeq_interval& interval,
-                              vector<CSeqMap::CSegment>& segments)
-{
-    x_AppendRef(GetSeq_id_Mapper().GetHandle(interval.GetId()), interval,
-                segments);
-}
-
-
-void CDataSource::x_AppendLoc(const CSeq_loc& loc,
-                              vector<CSeqMap::CSegment>& segments)
-{
-    switch ( loc.Which() ) {
-    case CSeq_loc::e_not_set:
-    case CSeq_loc::e_Null:
-    case CSeq_loc::e_Empty:
-        // Add gap
-        segments.push_back(CSeqMap::CSegment(CSeqMap::eSeqGap, 0)); //???
-        break;
-    case CSeq_loc::e_Whole:
-    {
-        // Reference to the whole sequence - do not check its
-        // length, use 0 instead.
-        const CSeq_id& ref = loc.GetWhole();
-        segments.push_back(CSeqMap::
-                           CSegment(GetSeq_id_Mapper().GetHandle(ref)));
-        break;
-    }
-    case CSeq_loc::e_Int:
-        x_AppendRef(loc.GetInt(), segments);
-        break;
-    case CSeq_loc::e_Pnt:
-    {
-        const CSeq_point& point = loc.GetPnt();
-        x_AppendRef(GetSeq_id_Mapper().GetHandle(point.GetId()),
-                    point.GetPoint(),
-                    1,
-                    point.GetStrand(),
-                    segments);
-        break;
-    }
-    case CSeq_loc::e_Packed_int:
-    {
-        const CPacked_seqint::Tdata& data = loc.GetPacked_int().Get();
-        ITERATE ( CPacked_seqint::Tdata, it, data ) {
-            x_AppendRef(**it, segments);
-        }
-        break;
-    }
-    case CSeq_loc::e_Packed_pnt:
-    {
-        const CPacked_seqpnt& points = loc.GetPacked_pnt();
-        CSeq_id_Handle seqRef = GetSeq_id_Mapper().GetHandle(points.GetId());
-        ENa_strand strand = points.GetStrand();
-        const CPacked_seqpnt::TPoints& data = points.GetPoints();
-        ITERATE ( CPacked_seqpnt::TPoints, it, data ) {
-            x_AppendRef(seqRef, *it, 1, strand, segments);
-        }
-        break;
-    }
-    case CSeq_loc::e_Mix:
-    {
-        const CSeq_loc_mix::Tdata& data = loc.GetMix().Get();
-        ITERATE ( CSeq_loc_mix::Tdata, it, data ) {
-            x_AppendLoc(**it, segments);
-        }
-        break;
-    }
-    case CSeq_loc::e_Equiv:
-    {
-        const CSeq_loc_equiv::Tdata& data = loc.GetEquiv().Get();
-        ITERATE ( CSeq_loc_equiv::Tdata, it, data ) {
-            //### Is this type allowed here?
-            x_AppendLoc(**it, segments);
-        }
-        break;
-    }
-    case CSeq_loc::e_Bond:
-        THROW1_TRACE(runtime_error,
-                     "CDataSource::x_AppendLoc() -- "
-                     "e_Bond is not allowed as a reference type");
-    case CSeq_loc::e_Feat:
-        THROW1_TRACE(runtime_error,
-                     "CDataSource::x_AppendLoc() -- "
-                     "e_Feat is not allowed as a reference type");
-    }
-}
-#endif
 
 
 void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& loc,
@@ -1697,7 +1244,7 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id, CScope& scope)
         }
     }
     if ( tse ) {
-        match = CSeqMatch_Info(idh, *tse, *this);
+        match = CSeqMatch_Info(idh, *tse);
     }
     return match;
 }
@@ -1711,201 +1258,6 @@ string CDataSource::GetName(void) const
         return kEmptyStr;
 }
 
-#if 0
-void CDataSource::x_ResolveMapSegment(const CSeq_id_Handle& rh,
-                                      TSeqPos start, TSeqPos len,
-                                      CSeqMap& dmap, TSeqPos& dpos,
-                                      TSeqPos dstop,
-                                      CScope& scope)
-{
-    CBioseq_Handle rbsh = scope.GetBioseqHandle(
-        GetSeq_id_Mapper().GetSeq_id(rh));
-    if ( !rbsh ) {
-        THROW1_TRACE(runtime_error,
-            "CDataSource::x_ResolveMapSegment() -- "
-            "Can not resolve reference.");
-    }
-    // This tricky way of getting the seq-map is used to obtain
-    // the non-const reference.
-
-    CSeqMap& rmap = rbsh.x_GetDataSource().x_GetSeqMap(rbsh);
-    // Resolve the reference map up to the end of the referenced region
-    rmap.x_Resolve(start + len, scope);
-    size_t rseg = rmap.x_FindSegment(start, &scope);
-
-    auto_ptr<CMutexGuard> guard(new CMutexGuard(m_DataSource_Mtx));    
-    // Get enough segments to cover the "start+length" range on the
-    // destination sequence
-    while (dpos < dstop  &&  len > 0) {
-        // Get and adjust the segment start
-        TSeqPos rstart = rmap[rseg].m_Position;
-        TSeqPos rlength = rmap[rseg].m_Length;
-        if (rstart < start) {
-            rlength -= start - rstart;
-            rstart = start;
-        }
-        if (rstart + rlength > start + len)
-            rlength = start + len - rstart;
-        switch (rmap[rseg].m_SegType) {
-        case CSeqMap::eSeqData:
-            {
-                // Put the final reference
-                CSeqMap::CSegmentInfo* new_seg = new CSeqMap::CSegmentInfo(
-                    CSeqMap::eSeqRef, dpos, rlength, rmap[rseg].m_MinusStrand);
-                new_seg->m_RefPos = rstart;
-                new_seg->m_RefSeq = rh; //rmap[rseg].m_RefSeq;
-                dmap.Add(*new_seg);
-                dpos += rlength;
-                break;
-            }
-        case CSeqMap::eSeqGap:
-        case CSeqMap::eSeqEnd:
-            {
-                // Copy gaps and literals
-                dmap.Add(rmap[rseg].m_SegType, dpos, rlength,
-                    rmap[rseg].m_MinusStrand);
-                dpos += rlength;
-                break;
-            }
-        case CSeqMap::eSeqRef:
-            {
-                // Resolve multi-level references
-                TSignedSeqPos rshift
-                    = rmap[rseg].m_RefPos - rmap[rseg].m_Position;
-                // Unlock mutex to prevent dead-locks
-                guard.reset();
-                x_ResolveMapSegment(rmap[rseg].m_RefSeq,
-                    rstart + rshift, rlength,
-                    dmap, dpos, dstop, scope);
-                guard.reset(new CMutexGuard(m_DataSource_Mtx));    
-                break;
-            }
-        }
-        start += rlength;
-        len -= rlength;
-        if (++rseg >= rmap.size())
-            break;
-    }
-}
-#endif
-#if 0
-void CDataSource::x_AppendResolved(const CSeq_id_Handle& seqid,
-                                   TSeqPos ref_pos,
-                                   TSeqPos ref_len,
-                                   bool minus_strand,
-                                   vector<CSeqMap::CSegment>& segments,
-                                   CScope& scope)
-{
-    _TRACE("x_AppendResolved("<<seqid.AsString()<<','<<ref_pos<<','<<
-           ref_len<<','<<minus_strand<<')');
-    CBioseq_Handle rbsh =
-        scope.GetBioseqHandle(GetSeq_id_Mapper().GetSeq_id(seqid));
-    if ( !rbsh ) {
-        THROW1_TRACE(runtime_error,
-                     "CDataSource::x_AppendResolved() -- "
-                     "Can not resolve sequence reference.");
-    }
-    const CSeqMap& rmap = rbsh.GetSeqMap();
-    PrintSeqMap(GetSeq_id_Mapper().GetHandle(*rbsh.GetSeqId()).AsString(),
-                rmap);
-    TSeqPos ref_end = ref_pos + ref_len;
-    for ( CSeqMap::const_iterator it = rmap.find(minus_strand?
-                                                 ref_end-1: ref_pos);; ) {
-        // intersection of current segment and referenced region
-        TSeqPos pos = max(ref_pos, it.GetPosition());
-        TSeqPos end = min(ref_pos+ref_len, it.GetPosition()+it.GetLength());
-        if ( end <= pos ) // no intersection -> end of region
-            break;
-        TSeqPos shift = minus_strand?
-            ref_pos+ref_len-end:
-            pos - it.GetPosition();
-        TSeqPos len = end - pos;
-        _TRACE("  segment: "<<it.GetPosition()<<' '<<it.GetLength()<<
-               "  pos="<<pos<<" end="<<end<<" len="<<len<<" shift="<<shift);
-        switch ( it.GetType() ) {
-        case CSeqMap::eSeqData:
-            x_AppendRef(seqid, pos, len,
-                        it.GetRefMinusStrand() ^ minus_strand, segments);
-            break;
-        case CSeqMap::eSeqRef:
-            x_AppendResolved(it.GetRefSeqid(),
-                             it.GetRefPosition() + shift, len,
-                             it.GetRefMinusStrand() ^ minus_strand,
-                             segments, scope);
-            break;
-        default:
-            segments.push_back(CSeqMap::CSegment(it.GetType(), len));
-            break;
-        }
-        if ( minus_strand ) {
-            // go to previous segment
-            if ( pos == ref_pos ) // no more
-                break;
-            --it;
-        }
-        else {
-            // go to next segment
-            if ( end == ref_end ) // no more
-                break;
-            ++it;
-        }
-    }
-
-#if 0
-    auto_ptr<CMutexGuard> guard(new CMutexGuard(m_DataSource_Mtx));    
-    // Get enough segments to cover the "start+length" range on the
-    // destination sequence
-    while (dpos < dstop  &&  len > 0) {
-        // Get and adjust the segment start
-        TSeqPos rstart = rmap[rseg].m_Position;
-        TSeqPos rlength = rmap[rseg].m_Length;
-        if (rstart < start) {
-            rlength -= start - rstart;
-            rstart = start;
-        }
-        if (rstart + rlength > start + len)
-            rlength = start + len - rstart;
-        switch (rmap[rseg].m_SegType) {
-        case CSeqMap::eSeqData:
-        {
-            x_AppendRef(rh,
-                        rstart,
-                        rlength,
-                        rmap[rseg].m_MinusStrand,
-                        segments);
-            break;
-        }
-        case CSeqMap::eSeqGap:
-        case CSeqMap::eSeqEnd:
-        {
-            // Copy gaps and literals
-            segments.push_back(CSeqMap::CSegment(rmap[rseg].m_SegType,
-                                                 rlength));
-            // rmap[rseg].m_MinusStrand ??
-            break;
-        }
-        case CSeqMap::eSeqRef:
-        {
-            // Resolve multi-level references
-            TSignedSeqPos rshift
-                = rmap[rseg].m_RefPos - rmap[rseg].m_Position;
-            // Unlock mutex to prevent dead-locks
-            guard.reset();
-            x_AppendResolved(rmap[rseg].m_RefSeq,
-                             rstart + rshift, rlength,
-                             dmap, dpos, dstop, scope);
-            guard.reset(new CMutexGuard(m_DataSource_Mtx));    
-            break;
-        }
-        }
-        start += rlength;
-        len -= rlength;
-        if (++rseg >= rmap.size())
-            break;
-    }
-#endif
-}
-#endif
 
 bool CDataSource::IsSynonym(const CSeq_id& id1, CSeq_id& id2) const
 {
@@ -1960,9 +1312,9 @@ bool CDataSource::GetTSEHandles(CScope& scope,
             = bit->second;
     }
     // Convert each map entry into bioseq handle
-    ITERATE (TEntryToInfo, eit, bioseq_map) {
+    NON_CONST_ITERATE (TEntryToInfo, eit, bioseq_map) {
         CBioseq_Handle h(*eit->second->m_Synonyms.begin());
-        h.x_ResolveTo(scope, *this, *eit->first, *found->second);
+        h.x_ResolveTo(scope, *eit->second);
         handles.insert(h);
     }
     return true;
@@ -2041,6 +1393,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2003/03/12 20:09:34  grichenk
+* Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
+*
 * Revision 1.90  2003/03/11 15:51:06  kuznets
 * iterate -> ITERATE
 *

@@ -56,7 +56,7 @@ class CDataSource;
 class NCBI_XOBJMGR_EXPORT CSeqMatch_Info {
 public:
     CSeqMatch_Info(void);
-    CSeqMatch_Info(const CSeq_id_Handle& h, CTSE_Info& tse, CDataSource& ds);
+    CSeqMatch_Info(const CSeq_id_Handle& h, CTSE_Info& tse);
     CSeqMatch_Info(const CSeqMatch_Info& info);
     
     CSeqMatch_Info& operator= (const CSeqMatch_Info& info);
@@ -87,13 +87,12 @@ public:
         }
     CDataSource* GetDataSource(void) const
         {
-            return m_DataSource;
+            return m_TSE->m_DataSource;
         }
 private:
     CSeq_id_Handle    m_Handle;     // best id handle, matching the request
     CRef<CTSE_Info>   m_TSE;        // TSE, containing the best match
     CTSE_Lock         m_Lock;       // TSE, containing the best match
-    CDataSource      *m_DataSource; // Data source, containing the match
 };
 
 
@@ -104,6 +103,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/03/12 20:09:30  grichenk
+* Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
+*
 * Revision 1.9  2003/02/24 18:57:21  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

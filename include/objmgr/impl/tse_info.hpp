@@ -58,6 +58,7 @@ BEGIN_SCOPE(objects)
 // forward declaration
 class CSeq_entry;
 class CBioseq;
+class CDataSource;
 class CAnnotObject_Info;
 struct SAnnotSelector;
 
@@ -103,21 +104,32 @@ public:
     static void x_DropRangeMap(TAnnotSelectorMap& selMap,
                                const SAnnotSelector& selector);
 
-    // Reference to the TSE
-    CRef<CSeq_entry> m_TSE;
-    // Dead seq-entry flag
-    bool m_Dead;
-    TBioseqMap m_BioseqMap;
-    TAnnotMap  m_AnnotMap;
-
     void CounterOverflow(void) const;
     void CounterUnderflow(void) const;
+    bool CounterLocked(void) const;
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
-    bool CounterLocked(void) const;
+    // Parent data-source
+    CDataSource* m_DataSource;
+
+    // Reference to the TSE
+    CRef<CSeq_entry> m_TSE;
+
+    // Dead seq-entry flag
+    bool m_Dead;
+
+    // ID to bioseq-info
+    TBioseqMap m_BioseqMap;
+    // ID to annot-selector-map
+    TAnnotMap  m_AnnotMap;
+
+    // May be used by data loaders to store blob-id
+    typedef CRef<CObject> TBlob_ID;
+    TBlob_ID   m_Blob_ID;
 
 private:
     friend class CTSE_Lock;
+    friend class CTSE_Guard;
 
     void LockCounter(void) const;
     void UnlockCounter(void) const;
@@ -129,7 +141,6 @@ private:
     bool m_Indexed;
 
     mutable CMutex m_TSE_Mutex;
-    friend class CTSE_Guard;
 };
 
 
@@ -408,6 +419,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/03/12 20:09:31  grichenk
+* Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
+*
 * Revision 1.22  2003/03/05 20:56:43  vasilche
 * SAnnotSelector now holds all parameters of annotation iterators.
 *

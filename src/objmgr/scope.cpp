@@ -210,8 +210,7 @@ CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
     TSeq_id_HandleSet hset;
     x_GetIdMapper().GetMatchingHandles(id.GetSeqId(), hset);
     ITERATE ( TSeq_id_HandleSet, hit, hset ) {
-        CSeqMatch_Info match(id, *static_cast<CTSE_Info*>(bh.m_TSE),
-                             bh.x_GetDataSource());
+        CSeqMatch_Info match(id, *bh.m_Bioseq_Info->m_TSE_Info);
         ret = match.GetDataSource()->GetBioseqHandle(*this, match);
         if ( ret )
             break;
@@ -443,7 +442,6 @@ void CScope::x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
 
 const CSynonymsSet* CScope::x_GetSynonyms(const CSeq_id_Handle& id)
 {
-    //### Check priority
     TSynCache::const_iterator cached = m_SynCache.find(id);
     if (cached != m_SynCache.end()) {
         return cached->second;
@@ -455,20 +453,18 @@ const CSynonymsSet* CScope::x_GetSynonyms(const CSeq_id_Handle& id)
     if ( !h ) {
         return 0;
     }
-    CBioseq_Handle::TBioseqCore core = h.GetBioseqCore();
     // It's OK to use CRef, at least one copy should be kept
     // alive by the id cache (for the ID requested).
     CRef<CSynonymsSet> synset(new CSynonymsSet);
-    ITERATE(CBioseq::TId, it, core->GetId()) {
+    ITERATE(CBioseq_Info::TSynonyms, it, h.m_Bioseq_Info->m_Synonyms) {
         // Check current ID for conflicts, add to the set.
-        CSeq_id_Handle idh = x_GetIdMapper().GetHandle(**it);
-        TCache::const_iterator seq = m_Cache.find(idh);
+        TCache::const_iterator seq = m_Cache.find(*it);
         if (seq != m_Cache.end()  &&  seq->second != h) {
             // already cached for a different bioseq - ignore the id
             continue;
         }
-        synset->AddSynonym(idh);
-        m_SynCache[idh] = synset;
+        synset->AddSynonym(*it);
+        m_SynCache[*it] = synset;
     }
     // Map the original ID which may be not in the resulting set,
     // e.g. id="A", set={"A.1", gi1}
@@ -521,6 +517,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2003/03/12 20:09:34  grichenk
+* Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
+*
 * Revision 1.50  2003/03/11 15:51:06  kuznets
 * iterate -> ITERATE
 *

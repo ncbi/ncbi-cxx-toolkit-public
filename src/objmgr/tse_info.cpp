@@ -49,7 +49,7 @@ BEGIN_SCOPE(objects)
 
 
 CTSE_Info::CTSE_Info(void)
-    : m_Dead(false)
+    : m_DataSource(0), m_Dead(false)
 {
     Set(0);
 }
@@ -208,6 +208,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/03/12 20:09:34  grichenk
+* Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
+*
 * Revision 1.20  2003/03/11 15:51:06  kuznets
 * iterate -> ITERATE
 *
