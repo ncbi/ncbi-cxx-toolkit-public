@@ -390,6 +390,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
       }
       for (i = 0; i < num_strands; ++i) {
          query_info->eff_searchsp_array[index] = effective_search_space;
+         query_info->length_adjustments[index] = length_adjustment;
          ++index;
       }
    }
