@@ -120,7 +120,7 @@ int CTestLogrotateApplication::Run(void)
     SetDiagPostPrefix(me.c_str());
     srand(time(0));
 
-    for (;;) {
+    for (unsigned int n = 0;  n < 1000000;  ++n) {
         static const char* messages[] = { "foo", "bar", "baz", "quux" };
         EDiagSev    severity = (EDiagSev)(s_Rand(eDiag_Fatal));
         ErrCode     errcode(rand(), rand());
@@ -165,6 +165,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/12/30 20:56:18  ucko
+ * Bound the main loop to avoid "statement is unreachable" warnings.
+ *
  * Revision 1.1  2002/11/25 17:21:01  ucko
  * Add support for automatic log rotation (CRotatingLogStream)
  *
