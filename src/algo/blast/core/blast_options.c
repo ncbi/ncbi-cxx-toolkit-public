@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.47  2003/07/30 22:06:25  dondosha
+ * Convert matrix name to upper case when filling scoring options
+ *
  * Revision 1.46  2003/07/30 19:39:14  camacho
  * Remove PNTRs
  *
@@ -592,7 +595,7 @@ BlastScoringOptionsFree(BlastScoringOptionsPtr options)
 		return NULL;
 
 	sfree(options->matrix);
-
+   sfree(options->matrix_path);
 	sfree(options);
 
 	return NULL;
@@ -630,10 +633,15 @@ BLAST_FillScoringOptions(BlastScoringOptionsPtr options,
       return 1;
 
    if (program_number != blast_type_blastn) {	/* protein-protein options. */
-      if (matrix)
+      if (matrix) {
+         int i;
          options->matrix = strdup(matrix);
-      else
+         /* Make it all upper case */
+         for (i=0; i<strlen(options->matrix); ++i)
+            options->matrix[i] = toupper(options->matrix[i]);
+      } else {
          options->matrix = strdup("BLOSUM62");
+      }
    } else {	/* nucleotide-nucleotide options. */
       if (penalty)
          options->penalty = penalty;
