@@ -138,7 +138,7 @@ static bool s_IsCommented(const string& str)
 void CSimpleMakeFileContents::SParser::AcceptLine(const string& line)
 {
     string strline = NStr::TruncateSpaces(line);
-    if( s_IsCommented(strline) )
+    if ( s_IsCommented(strline) )
 	    return;
 
     if (m_Continue) {

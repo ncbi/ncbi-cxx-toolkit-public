@@ -4,7 +4,6 @@
 #include <app/project_tree_builder/msvc_project_context.hpp>
 
 #include <corelib/ncbienv.hpp>
-
 BEGIN_NCBI_SCOPE
 //------------------------------------------------------------------------------
 
@@ -15,6 +14,8 @@ public:
     ~CMsvcSolutionGenerator();
     
     void AddProject(const CProjItem& project);
+    
+    void AddMasterProject(const string& base_name);
 
     void SaveSolution(const string& file_path);
     
@@ -23,9 +24,9 @@ private:
 
     string m_SolutionDir;
 
-    // File tags:
-    const string m_HeaderLine;//"Microsoft Visual Studio Solution File, Format Version 8.00"
-    const string m_RootGUID; //"{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
+    /// Basename / GUID
+    pair<string, string> m_MasterProject;
+    bool IsSetMasterProject() const;
 
     class CPrjContext
     {
@@ -54,8 +55,13 @@ private:
     //Writers:
     void WriteProjectAndSection(CNcbiOfstream& ofs, 
                             const CMsvcSolutionGenerator::CPrjContext& project);
+    
+    void WriteMasterProject(CNcbiOfstream& ofs);
+
     void WriteProjectConfigurations(CNcbiOfstream& ofs, 
                             const CMsvcSolutionGenerator::CPrjContext& project);
+
+    void WriteMasterProjectConfiguration(CNcbiOfstream& ofs);
 
     // Prohibited to:
     CMsvcSolutionGenerator(void);

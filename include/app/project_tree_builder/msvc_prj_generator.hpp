@@ -22,11 +22,6 @@ private:
 
     list<string> m_Configs;
 
-    const string m_Platform;
-    const string m_ProjectType;
-    const string m_Version;
-    const string m_Keyword;
-
     /// Helpers:
     static void CollectSources(const CProjItem& project,
                                const CMsvcPrjProjectContext& context,
@@ -37,9 +32,6 @@ private:
                                const CMsvcPrjProjectContext& context,
                                list<string> * pRelPathes);
 
-    static void CollectHeaderDirs(const CProjItem& project,
-                               const CMsvcPrjProjectContext& context,
-                               list<string> * pRelDirs);
 
     static void CollectInlines(const CProjItem& project,
                                const CMsvcPrjProjectContext& context,

@@ -12,6 +12,7 @@
 #include "Filter.hpp"
 
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
+#include <app/project_tree_builder/msvc_prj_defines.hpp>
 
 #include <algorithm>
 
@@ -25,11 +26,6 @@ static void s_CollectRelPathes(const string&        path_from,
 
 
 CMsvcProjectGenerator::CMsvcProjectGenerator(const list<string>& configs)
-    :m_Platform     ("Win32"),
-     m_ProjectType  ("Visual C++"),
-     m_Version      ("7.10"),
-     m_Keyword      ("Win32Proj")
-
 {
     m_Configs = configs;
 }
@@ -43,23 +39,23 @@ CMsvcProjectGenerator::~CMsvcProjectGenerator()
 bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 {
     //TODO - delete this !!!!
-    //if(prj.m_ID != "xncbi") return false;
+    //if (prj.m_ID != "xncbi") return false;
 
     CVisualStudioProject xmlprj;
     CMsvcPrjProjectContext project_context(prj);
     
     {{
         //Attributes:
-        xmlprj.SetAttlist().SetProjectType (m_ProjectType);
-        xmlprj.SetAttlist().SetVersion     (m_Version);
+        xmlprj.SetAttlist().SetProjectType (MSVC_PROJECT_PROJECT_TYPE);
+        xmlprj.SetAttlist().SetVersion     (MSVC_PROJECT_VERSION);
         xmlprj.SetAttlist().SetName        (project_context.ProjectName());
-        xmlprj.SetAttlist().SetKeyword     (m_Keyword);
+        xmlprj.SetAttlist().SetKeyword     (MSVC_PROJECT_KEYWORD_WIN32);
     }}
     
     {{
         //Platforms
          CRef<CPlatform> platform(new CPlatform(""));
-         platform->SetAttlist().SetName(m_Platform);
+         platform->SetAttlist().SetName(MSVC_PROJECT_PLATFORM);
          xmlprj.SetPlatforms().SetPlatform().push_back(platform);
     }}
 
@@ -76,7 +72,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
         CRef<CConfiguration> conf(new CConfiguration());
 
-#define BIND_TOOLS( tool, msvctool, X ) tool->SetAttlist().Set##X(msvctool->##X())
+#define BIND_TOOLS(tool, msvctool, X) tool->SetAttlist().Set##X(msvctool->##X())
 
         {{
             //Configuration
@@ -110,9 +106,9 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
             //AdditionalIncludeDirectories
             {{
-                //BIND_TOOLS(tool, msvc_tool.Compiler(), 
-                //                    AdditionalIncludeDirectories);
-                
+                BIND_TOOLS(tool, msvc_tool.Compiler(), 
+                                    AdditionalIncludeDirectories);
+#if 0
                 const string generic_includes = 
                            msvc_tool.Compiler()->AdditionalIncludeDirectories();
                 
@@ -171,6 +167,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
                     tool->SetAttlist().SetAdditionalIncludeDirectories(
                       generic_includes + ", " + NStr::Join(include_dirs, ", "));
                 }
+#endif
                 
             }}
             
@@ -335,13 +332,16 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
             BIND_TOOLS(tool, msvc_tool.ResourceCompiler(), Name);
              
             //PreprocessorDefinitions
-            BIND_TOOLS(tool, msvc_tool.ResourceCompiler(), PreprocessorDefinitions);
+            BIND_TOOLS( tool, 
+                        msvc_tool.ResourceCompiler(), PreprocessorDefinitions );
             
             //Culture
             BIND_TOOLS(tool, msvc_tool.ResourceCompiler(), Culture);
 
             //AdditionalIncludeDirectories
-            BIND_TOOLS(tool, msvc_tool.ResourceCompiler(), AdditionalIncludeDirectories);
+            BIND_TOOLS( tool, 
+                        msvc_tool.ResourceCompiler(), 
+                        AdditionalIncludeDirectories );
 
             conf->SetTool().push_back(tool);
         }}
@@ -378,7 +378,8 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
             CRef<CTool> tool(new CTool(""));
 
             //Name
-            BIND_TOOLS(tool, msvc_tool.AuxiliaryManagedWrapperGenerator(), Name);
+            BIND_TOOLS( tool, 
+                        msvc_tool.AuxiliaryManagedWrapperGenerator(), Name );
 
             conf->SetTool().push_back(tool);
         }}
@@ -394,8 +395,8 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
         //Files - source files
         CRef<CFilter> filter(new CFilter());
         filter->SetAttlist().SetName("Source Files");
-        filter->SetAttlist().SetFilter("cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx");
-        filter->SetFile();
+        filter->SetAttlist().SetFilter(
+                                      "cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx");
 
         list<string> rel_pathes;
         CollectSources(prj,project_context, &rel_pathes); 
@@ -403,7 +404,10 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
             CRef< CFFile > file(new CFFile());
             file->SetAttlist().SetRelativePath(*p);
-            filter->SetFile().push_back(file);
+
+            CRef< CFilter_Base::C_FF::C_E > ce( new CFilter_Base::C_FF::C_E() );
+            ce->SetFile(*file);
+            filter->SetFF().SetFF().push_back(ce);
         }
         xmlprj.SetFiles().SetFilter().push_back(filter);
     }}
@@ -412,7 +416,6 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
         CRef<CFilter> filter(new CFilter());
         filter->SetAttlist().SetName("Header Files");
         filter->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
-        filter->SetFile();
 
         list<string> rel_pathes;
         CollectHeaders(prj, project_context, &rel_pathes);
@@ -420,7 +423,10 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
             CRef<CFFile> file(new CFFile());
             file->SetAttlist().SetRelativePath(*p);
-            filter->SetFile().push_back(file);
+
+            CRef< CFilter_Base::C_FF::C_E > ce( new CFilter_Base::C_FF::C_E() );
+            ce->SetFile(*file);
+            filter->SetFF().SetFF().push_back(ce);
         }
         xmlprj.SetFiles().SetFilter().push_back(filter);
     }}
@@ -429,7 +435,6 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
         CRef<CFilter> filter(new CFilter());
         filter->SetAttlist().SetName("Inline Files");
         filter->SetAttlist().SetFilter("inl");
-        filter->SetFile();
 
         list<string> rel_pathes;
         CollectInlines(prj, project_context, &rel_pathes);
@@ -437,7 +442,10 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
             CRef< CFFile > file(new CFFile());
             file->SetAttlist().SetRelativePath(*p);
-            filter->SetFile().push_back(file);
+
+            CRef< CFilter_Base::C_FF::C_E > ce( new CFilter_Base::C_FF::C_E() );
+            ce->SetFile(*file);
+            filter->SetFF().SetFF().push_back(ce);
         }
         xmlprj.SetFiles().SetFilter().push_back(filter);
     }}
@@ -447,7 +455,6 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
         filter->SetAttlist().SetName("Resource Files");
         filter->SetAttlist().SetFilter(
                     "rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx");
-        filter->SetFile();
 
         xmlprj.SetFiles().SetFilter().push_back(filter);
     }}
@@ -459,8 +466,8 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
 
     string project_path = CDirEntry::ConcatPath(project_context.ProjectDir(), 
-                                                project_context.ProjectName() );
-    project_path += ".vcproj";
+                                                project_context.ProjectName());
+    project_path += MSVC_PROJECT_FILE_EXT;
 
     SaveToXmlFile(project_path, xmlprj);
 
@@ -510,7 +517,7 @@ void CMsvcProjectGenerator::CollectHeaders(
     copy(context.SourcesDirsAbs().begin(), 
          context.SourcesDirsAbs().end(), 
          back_inserter(abs_dirs));
-
+#if 0
     // also it may be in some subdirs:
     list<string> additional_abs_dirs;
     list<string> additional_inlude_subdirs;
@@ -525,7 +532,9 @@ void CMsvcProjectGenerator::CollectHeaders(
     copy(additional_abs_dirs.begin(), 
          additional_abs_dirs.end(), 
          back_inserter(abs_dirs));
-    
+#endif
+
+    //collect *.h and *.hpp files
     list<string> exts;
     exts.push_back(".h");
     exts.push_back(".hpp");
@@ -534,6 +543,7 @@ void CMsvcProjectGenerator::CollectHeaders(
 }
 
 
+#if 0
 void CMsvcProjectGenerator::CollectHeaderDirs(
                                           const CProjItem& project,
                                           const CMsvcPrjProjectContext& context,
@@ -554,7 +564,7 @@ void CMsvcProjectGenerator::CollectHeaderDirs(
 
     copy(dir_set.begin(), dir_set.end(), back_inserter(*pRelDirs));
 }
-
+#endif
 
 void CMsvcProjectGenerator::CollectInlines(
                                           const CProjItem& project,

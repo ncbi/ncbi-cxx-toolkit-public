@@ -86,6 +86,24 @@ struct STriple
     C m_Third;    
 };
 
+//------------------------------------------------------------------------------
+
+inline string GetParentDir(const string& dir)
+{
+    string parent_dir;
+    CDirEntry::SplitPath( CDirEntry::DeleteTrailingPathSeparator(dir), 
+                          &parent_dir );
+    return parent_dir;
+}
+
+
+inline string GetFolder(const string& dir)
+{
+    string folder;
+    CDirEntry::SplitPath( CDirEntry::DeleteTrailingPathSeparator(dir), 
+                          NULL, &folder );
+    return folder;
+}
 
 //------------------------------------------------------------------------------
 END_NCBI_SCOPE

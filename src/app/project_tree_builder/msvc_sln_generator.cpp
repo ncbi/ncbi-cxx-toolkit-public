@@ -4,16 +4,14 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbistr.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
-
+#include <app/project_tree_builder/msvc_prj_defines.hpp>
 
 BEGIN_NCBI_SCOPE
 //------------------------------------------------------------------------------
 
 
 CMsvcSolutionGenerator::CMsvcSolutionGenerator(const list<string>& configs)
-    :m_Configs(configs),
-     m_HeaderLine("Microsoft Visual Studio Solution File, Format Version 8.00"),
-     m_RootGUID("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}")
+    :m_Configs(configs)
 {
 }
 
@@ -29,6 +27,19 @@ void CMsvcSolutionGenerator::AddProject(const CProjItem& project)
 }
 
 
+void CMsvcSolutionGenerator::AddMasterProject(const string& base_name)
+{
+    m_MasterProject.first  = base_name;
+    m_MasterProject.second = GenerateSlnGUID();
+}
+
+
+bool CMsvcSolutionGenerator::IsSetMasterProject() const
+{
+    return !m_MasterProject.first.empty() && !m_MasterProject.second.empty();
+}
+
+
 void CMsvcSolutionGenerator::SaveSolution(const string& file_path)
 {
     CDirEntry::SplitPath(file_path, &m_SolutionDir);
@@ -41,12 +52,14 @@ void CMsvcSolutionGenerator::SaveSolution(const string& file_path)
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
     //Start sln file
-    ofs << m_HeaderLine << endl;
+    ofs << MSVC_SOLUTION_HEADER_LINE << endl;
 
     ITERATE(TProjects, p, m_Projects) {
         
         WriteProjectAndSection(ofs, p->second);
     }
+    if ( IsSetMasterProject() )
+        WriteMasterProject(ofs);
 
     //Start "Global" section
     ofs << "Global" << endl;
@@ -64,6 +77,9 @@ void CMsvcSolutionGenerator::SaveSolution(const string& file_path)
         
         WriteProjectConfigurations(ofs, p->second);
     }
+    if ( IsSetMasterProject() )
+        WriteMasterProjectConfiguration(ofs);
+
     ofs << '\t' << "EndGlobalSection" << endl;
 
     //meanless stuff
@@ -99,7 +115,7 @@ CMsvcSolutionGenerator::CPrjContext::CPrjContext(const CProjItem& project)
     m_ProjectName = project_context.ProjectName();
     m_ProjectPath = CDirEntry::ConcatPath(project_context.ProjectDir(),
                                           project_context.ProjectName());
-    m_ProjectPath += ".vcproj";
+    m_ProjectPath += MSVC_PROJECT_FILE_EXT;
 }
 
 
@@ -162,7 +178,7 @@ void CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream& ofs,
                              const CMsvcSolutionGenerator::CPrjContext& project)
 {
     ofs << "Project(\"" 
-        << m_RootGUID 
+        << MSVC_SOLUTION_ROOT_GUID 
         << "\") = \"" 
         << project.m_ProjectName 
         << "\", \"";
@@ -181,7 +197,7 @@ void CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream& ofs,
         const string& id = *p;
 
         TProjects::const_iterator n = m_Projects.find(id);
-        if(n != m_Projects.end()) {
+        if (n != m_Projects.end()) {
 
             const CPrjContext& prj_i = n->second;
 
@@ -195,6 +211,28 @@ void CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream& ofs,
                       ". But no such project");
         }
     }
+    ofs << '\t' << "EndProjectSection" << endl;
+    ofs << "EndProject" << endl;
+}
+
+
+void CMsvcSolutionGenerator::WriteMasterProject(CNcbiOfstream& ofs)
+{
+    ofs << "Project(\"" 
+        << MSVC_SOLUTION_ROOT_GUID
+        << "\") = \"" 
+        << m_MasterProject.first //basename
+        << "\", \"";
+
+    ofs << m_MasterProject.first + MSVC_PROJECT_FILE_EXT 
+        << "\", \"";
+
+    ofs << m_MasterProject.second //m_GUID 
+        << "\"" 
+        << endl;
+
+    ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
+
     ofs << '\t' << "EndProjectSection" << endl;
     ofs << "EndProject" << endl;
 }
@@ -234,6 +272,34 @@ void CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream& ofs,
         ofs << '\t' 
             << '\t' 
             << project.m_GUID 
+            << '.' 
+            << config 
+            << ".Build.0 = " 
+            << config 
+            << "|Win32" 
+            << endl;
+    }
+}
+
+
+void CMsvcSolutionGenerator::WriteMasterProjectConfiguration(CNcbiOfstream& ofs)
+{
+    ITERATE(list<string>, p, m_Configs) {
+
+        const string& config = *p;
+        ofs << '\t' 
+            << '\t' 
+            << m_MasterProject.second // project.m_GUID 
+            << '.' 
+            << config 
+            << ".ActiveCfg = " 
+            << config 
+            << "|Win32" 
+            << endl;
+
+        ofs << '\t' 
+            << '\t' 
+            << m_MasterProject.second // project.m_GUID 
             << '.' 
             << config 
             << ".Build.0 = " 

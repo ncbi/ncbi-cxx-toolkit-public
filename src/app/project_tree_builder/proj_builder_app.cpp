@@ -3,6 +3,7 @@
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <app/project_tree_builder/msvc_prj_generator.hpp>
 #include <app/project_tree_builder/msvc_sln_generator.hpp>
+#include <app/project_tree_builder/msvc_masterproject_generator.hpp>
 #include <app/project_tree_builder/proj_utils.hpp>
 
 
@@ -27,8 +28,8 @@ void CProjBulderApp::Init(void)
     // Programm arguments:
 
     arg_desc->AddPositional("root",
-                     "Root directory of the build tree. This directory ends with \"c++\".",
-                     CArgDescriptions::eString);
+          "Root directory of the build tree. This directory ends with \"c++\".",
+          CArgDescriptions::eString);
 
     arg_desc->AddPositional("subtree",
                      "Subtree to build. Example: src/corelib/ .",
@@ -56,24 +57,32 @@ int CProjBulderApp::Run(void)
 
 
     // Build projects tree
-    CProjectItemsTree projects_tree;
-    CProjectTreeBuilder::BuildProjectTree(m_SubTree, m_RootSrc, &projects_tree); 
+    CProjectItemsTree projects_tree(m_RootSrc);
+    CProjectTreeBuilder::BuildProjectTree(m_SubTree, m_RootSrc, &projects_tree);
 
     // Get configurations
     list<string> configs;
     GetBuildConfigs(&configs);
+    
+    // Projects
     CMsvcProjectGenerator prj_gen(configs);
 
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
-
         prj_gen.Generate(p->second);
     }
 
+    // MasterProject
+    CMsvcMasterProjectGenerator master_prj_gen(projects_tree,
+                                               configs,
+                                               CDirEntry(m_Solution).GetDir());
+    master_prj_gen.SaveProject("_MasterProject");
+
+    // Solution
     CMsvcSolutionGenerator sln_gen(configs);
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
-
         sln_gen.AddProject(p->second);
     }
+    sln_gen.AddMasterProject("_MasterProject");
     sln_gen.SaveSolution(m_Solution);
 
     //
@@ -151,14 +160,22 @@ void CProjBulderApp::GetBuildConfigs(list<string> * pConfigs) const
     NStr::Split(config_str, " \t,", *pConfigs);
 }
 
-
+#if 0
 void CProjBulderApp::GetAdditionalPossibleIncludeDirs(list<string> * 
                                                             pIncludeDirs) const
 {
     pIncludeDirs->clear();
-    string include_str = GetConfig().GetString("Common", "AdditionalIncludeDirs", "");
+    string include_str = GetConfig().GetString("Common", 
+                                               "AdditionalIncludeDirs", "");
     NStr::Split(include_str, " \t,", *pIncludeDirs);
 }
+
+
+bool CProjBulderApp::GetRelaxedIncludeDirs(void) const
+{
+    return GetConfig().GetBool("Common", "RelaxedIncludeDirs", false);
+}
+#endif
 
 
 CProjBulderApp& GetApp()

@@ -61,7 +61,12 @@ public:
 
     void GetMetaDataFiles (list<string> * pFiles)   const;
     void GetBuildConfigs  (list<string> * pConfigs) const;
+
+#if 0
     void GetAdditionalPossibleIncludeDirs(list<string> * pIncludeDirs) const;
+    bool GetRelaxedIncludeDirs(void) const;
+#endif
+
 };
 
 

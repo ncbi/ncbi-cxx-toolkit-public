@@ -77,6 +77,13 @@ CProjectItemsTree::CProjectItemsTree(void)
 }
 
 
+CProjectItemsTree::CProjectItemsTree(const string& root_src)
+{
+    Clear();
+    m_RootSrc = root_src;
+}
+
+
 CProjectItemsTree::CProjectItemsTree(const CProjectItemsTree& projects)
 {
     SetFrom(projects);
@@ -103,22 +110,26 @@ CProjectItemsTree::~CProjectItemsTree(void)
 
 void CProjectItemsTree::Clear(void)
 {
+    m_RootSrc.erase();
     m_Projects.clear();
 }
 
 
 void CProjectItemsTree::SetFrom(const CProjectItemsTree& projects)
 {
+    m_RootSrc  = projects.m_RootSrc;
     m_Projects = projects.m_Projects;
 }
 
 
-void CProjectItemsTree::CreateFrom(const TFiles& makein, 
+void CProjectItemsTree::CreateFrom(const string& root_src,
+                                   const TFiles& makein, 
                                    const TFiles& makelib, 
                                    const TFiles& makeapp , 
                                    CProjectItemsTree * pTree)
 {
     pTree->m_Projects.clear();
+    pTree->m_RootSrc = root_src;
 
     ITERATE(TFiles, p, makein) {
 
@@ -140,7 +151,7 @@ void CProjectItemsTree::CreateFrom(const TFiles& makein,
                 string applib_mfilepath = CDirEntry::ConcatPath(sources_dir,
                                CreateMakeAppLibFileName(info.first, proj_name));
             
-                if (info.first == CProjItem.eApp) {
+                if (info.first == CProjItem::eApp) {
 
                     TFiles::const_iterator m = makeapp.find(applib_mfilepath);
                     if (m == makeapp.end()) {
@@ -191,7 +202,7 @@ void CProjectItemsTree::CreateFrom(const TFiles& makein,
                                                                depends);
 
                 }
-                else if (info.first == CProjItem.eLib) {
+                else if (info.first == CProjItem::eLib) {
 
                     TFiles::const_iterator m = makelib.find(applib_mfilepath);
                     if (m == makelib.end()) {
@@ -332,6 +343,52 @@ void CProjectItemsTree::GetExternalDepends(list<string>
     }
 }
 
+
+void CProjectItemsTree::GetRoots(list<string> * pIds) const
+{
+    pIds->clear();
+
+    set<string> dirs;
+    ITERATE(TProjects, p, m_Projects) {
+        //collect all project dirs:
+        const CProjItem& project = p->second;
+        dirs.insert(project.m_SourcesBaseDir);
+    }
+
+    ITERATE(TProjects, p, m_Projects) {
+        //if project parent dir is not in dirs - it's a root
+        const CProjItem& project = p->second;
+        if (dirs.find(GetParentDir(project.m_SourcesBaseDir)) == dirs.end())
+            pIds->push_back(project.m_ID);
+    }
+}
+
+
+void CProjectItemsTree::GetSiblings(const string& parent_id,
+                                    list<string> * pIds) const
+{
+    pIds->clear();
+
+    TProjects::const_iterator n = m_Projects.find(parent_id);
+    if (n == m_Projects.end()) 
+        return;
+
+    const CProjItem& parent_project = n->second;
+
+    ITERATE(TProjects, p, m_Projects) {
+        //looking for projects having parent dir as parent_project
+        const CProjItem& project_i = p->second;
+        if (GetParentDir(project_i.m_SourcesBaseDir) == 
+                                parent_project.m_SourcesBaseDir)
+            pIds->push_back(project_i.m_ID);
+    }
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //------------------------------------------------------------------------------
 static bool s_IsMakeInFile(const string& name)
 {
@@ -372,7 +429,8 @@ void CProjectTreeBuilder::BuildOneProjectTree( const string& start_node_path,
     }
 
     // Build projects tree
-    CProjectItemsTree::CreateFrom(subtree_makefiles.m_First, 
+    CProjectItemsTree::CreateFrom(root_src_path,
+                                  subtree_makefiles.m_First, 
                                   subtree_makefiles.m_Second, 
                                   subtree_makefiles.m_Third, pTree);
 }
@@ -526,7 +584,7 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
 		                modified = true;
                     }
                 }
-                if(modified)
+                if (modified)
                     values = new_vals; // by ref!
 		    }
         }

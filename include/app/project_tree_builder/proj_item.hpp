@@ -62,18 +62,23 @@ class CProjectItemsTree
 {
 public:
     CProjectItemsTree(void);
+    CProjectItemsTree(const string& root_src);
     CProjectItemsTree(const CProjectItemsTree& projects);
     CProjectItemsTree& operator = (const CProjectItemsTree& projects);
     ~CProjectItemsTree(void);
 
-    /// Project ID / ProjectItem
+    /// Root directory of Project Tree.
+    string m_RootSrc;
+
+    /// Project ID / ProjectItem.
     typedef map<string, CProjItem> TProjects;
     TProjects m_Projects;
 
-    /// full file path / file contents
+    /// Full file path / File contents.
     typedef map<string, CSimpleMakeFileContents> TFiles;
 
-    static void CreateFrom(	const TFiles& makein, 
+    static void CreateFrom(	const string& root_src,
+                            const TFiles& makein, 
                             const TFiles& makelib, 
                             const TFiles& makeapp , CProjectItemsTree * pTree);
 
@@ -82,6 +87,14 @@ public:
 
     /// Get depends that are not inside this project tree.
     void GetExternalDepends(list<string> * pExternalDepends) const;
+
+    /// Navigation through the tree:
+    /// Root items.
+    void GetRoots(list<string> * pIds) const;
+
+    /// First children.
+    void GetSiblings(const string& parent_id, 
+                     list<string> * pIds) const;
 
 private:
     void Clear(void);
