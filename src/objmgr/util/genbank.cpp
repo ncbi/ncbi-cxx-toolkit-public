@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/11/13 15:40:34  ucko
+* Use Idx2Codon to report genetic code variations.
+*
 * Revision 1.13  2001/11/02 20:54:51  ucko
 * Make gbqual.hpp private; clean up cruft from genbank.hpp.
 *
@@ -130,10 +133,15 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Heterogen.hpp>
 #include <objects/seq/MolInfo.hpp>
+#include <objects/seq/NCBI8aa.hpp>
+#include <objects/seq/NCBIeaa.hpp>
+#include <objects/seq/NCBIstdaa.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/gencode.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <objects/seqblock/EMBL_block.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seqblock/PIR_block.hpp>
@@ -1572,10 +1580,52 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
             }
             if (region.IsSetCode()) {
                 iterate (CGenetic_code::Tdata, it, region.GetCode().Get()) {
-                    if ((*it)->IsId()  &&  (*it)->GetId() != 1) {
-                        // XXX -- deal with other types
-                        gbfeat.AddQual(CGBQual::eType_transl_table,
-                                       NStr::IntToString((*it)->GetId()));
+                    switch ((*it)->Which()) {
+                    case CGenetic_code::C_E::e_Id:
+                        if ((*it)->GetId() != 1) {
+                            gbfeat.AddQual(CGBQual::eType_transl_table,
+                                           NStr::IntToString((*it)->GetId()));
+                        }
+                        break;
+
+                    case CGenetic_code::C_E::e_Ncbieaa:
+                    case CGenetic_code::C_E::e_Ncbi8aa:
+                    case CGenetic_code::C_E::e_Ncbistdaa:
+                    {
+                        static const string kUniversalCode
+                            = "FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRR"
+                              "IIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG";
+                        string custom_code;
+                        if ((*it)->IsNcbieaa()) {
+                            custom_code = (*it)->GetNcbieaa();
+                        } else if ((*it)->IsNcbi8aa()) {
+                            CSeq_data in, out;
+                            in.SetNcbi8aa().Set() = (*it)->GetNcbi8aa();
+                            CSeqportUtil::Convert(in, &out,
+                                                  CSeq_data::e_Ncbieaa);
+                            custom_code = out.GetNcbieaa().Get();
+                        } else { // Ncbistdaa
+                            CSeq_data in, out;
+                            in.SetNcbistdaa().Set() = (*it)->GetNcbistdaa();
+                            CSeqportUtil::Convert(in, &out,
+                                                  CSeq_data::e_Ncbieaa);
+                            custom_code = out.GetNcbieaa().Get();
+                        }
+                        for (unsigned int i = 0;  i < 4 * 4 * 4;  ++i) {
+                            if (custom_code[i] != kUniversalCode[i]) {
+                                string codon = CGencode::Idx2Codon(i);
+                                NStr::ToLower(codon);
+                                gbfeat.AddQual(CGBQual::eType_codon,
+                                               "(seq:\"" + codon + "\",aa:" +
+                                               s_ASCIIToAbbrev(custom_code[i])
+                                               + ")");
+                            }
+                        }
+                        break;
+                    }
+
+                    default:
+                        break;
                     }
                 }
             }
