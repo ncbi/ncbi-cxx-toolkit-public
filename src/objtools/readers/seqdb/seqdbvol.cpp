@@ -390,7 +390,7 @@ inline Uint4 s_ResPosNew(const vector<Int4> & ambchars, Uint4 i)
 
 inline Uint4 s_ResVal(const vector<Int4> & ambchars, Uint4 i)
 {
-    return (ambchars[i] >> 28);
+    return (ambchars[i] >> 28) & 0xF;
 }
 
 inline Uint4 s_ResLenOld(const vector<Int4> & ambchars, Uint4 i)
@@ -400,7 +400,7 @@ inline Uint4 s_ResLenOld(const vector<Int4> & ambchars, Uint4 i)
 
 inline Uint4 s_ResPosOld(const vector<Int4> & ambchars, Uint4 i)
 {
-    return ambchars[i];
+    return ambchars[i] & 0xFFFFFF; // RES_OFFSET
 }
 
 
@@ -1043,7 +1043,7 @@ bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold 
     ambchars.resize(total);
     
     for(int i = 0; i<total; i++) {
-	ambchars[i] = SeqDB_GetStdOrd((const unsigned char *)(& buffer[i]));
+	ambchars[i] = SeqDB_GetStdOrd((const Uint4 *)(& buffer[i]));
     }
     
     return true;
