@@ -17,6 +17,8 @@ function print_author(username, realname, datestr, hostname)
 function print_mailto(username, realname, hostname)
 {
     var host='ncbi.nlm.nih.gov';
+
+    username='cpp-core';
     if (hostname)
 	    host = hostname;
     print('<a href="mailto:' + username + '@' + host + '">' + realname + '</a>\n');
