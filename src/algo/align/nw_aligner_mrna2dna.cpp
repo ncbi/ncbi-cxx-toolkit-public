@@ -582,8 +582,7 @@ size_t CNWAlignerMrna2Dna::MakeGuides(const size_t guide_size)
     size_t idx = 0;
     const char* beg = m_Seq2 + idx;
     const char* end = m_Seq2 + m_SeqLen2;
-    size_t segs_size = segs.size();
-    for(size_t i = 0, seg_count = segs_size;
+    for(size_t i = 0, seg_count = segs.size();
         beg + guide_size <= end && i < seg_count; ++i) {
 
         const char* p = 0;
@@ -617,7 +616,7 @@ size_t CNWAlignerMrna2Dna::MakeGuides(const size_t guide_size)
                         guides[guides_dim - 1].q1 = i2;
                         guides[guides_dim - 1].s1 = i4;
                     }
-                    beg0 = beg + guide_size;
+                    beg0 = p + guide_size;
                 }
                 else {  // spurious match
                     beg = p + 1;
@@ -639,24 +638,8 @@ size_t CNWAlignerMrna2Dna::MakeGuides(const size_t guide_size)
         m_guides[4*k + 1]     = q0 + 5;
         m_guides[4*k + 2]     = s0 - 5;
         m_guides[4*k + 3]     = s0 + 5;
-        /*
-        m_guides[4*k]         = guides[k].q0;
-        m_guides[4*k + 1]     = guides[k].q1;
-        m_guides[4*k + 2]     = guides[k].s0;
-        m_guides[4*k + 3]     = guides[k].s1;
-        */
     }
-
-    /*
-    {
-        size_t dim = m_guides.size();
-        for(size_t k = 0; k < dim; k += 4) {
-            cerr << m_guides[k] << '\t' << m_guides[k+1] << '\t'
-                 << m_guides[k+2] << '\t' << m_guides[k+3] << endl;
-        }
-    }
-    */
-
+ 
     return m_guides.size();   
 }
 
@@ -695,12 +678,14 @@ void CNWAlignerMrna2Dna::FormatAsText(string* output,
                 ++exon_size;
             }
             if(exon_size > 0) {
+                if(m_Seq1Id.size() && m_Seq2Id.size()) {
+                    ss << m_Seq1Id << '\t' << m_Seq2Id << '\t';
+                }
                 float identity = float(matches) / exon_size;
+                ss << identity << '\t' << exon_size << '\t';
                 size_t beg1  = p1_beg - m_Seq1, end1 = p1 - m_Seq1 - 1;
                 size_t beg2  = p2_beg - m_Seq2, end2 = p2 - m_Seq2 - 1;
                 ss << beg1 << '\t'<< end1<< '\t'<< beg2 << '\t'<< end2<< '\t';
-                ss << exon_size << '\t';
-                ss << identity << '\t';
                 char c1 = (p2_beg >= m_Seq2 + 2)? *(p2_beg - 2): ' ';
                 char c2 = (p2_beg >= m_Seq2 + 1)? *(p2_beg - 1): ' ';
                 char c3 = (p2 < m_Seq2 + m_SeqLen2)? *(p2): ' ';
@@ -734,6 +719,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/04/30 16:06:17  kapustin
+ * Fix error in guide generation routine
+ *
  * Revision 1.14  2003/04/14 19:00:55  kapustin
  * Add guide creation facility.  x_Run() -> x_Align()
  *
