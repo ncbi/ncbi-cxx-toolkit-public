@@ -461,6 +461,18 @@ x_GapEditBlock2SeqAlign(GapEditBlock* edit_block,
     }
 }
 
+/** Get the current position. */
+static Int4 get_current_pos(Int4* pos, Int4 length)
+{
+    Int4 val;
+    if(*pos < 0)
+        val = -(*pos + length -1);
+    else
+        val = *pos;
+    *pos += length;
+    return val;
+}
+
 /** This function is used for Out-Of-Frame traceback conversion
  * Convert an OOF EditScript chain to a SeqAlign of type StdSeg.
  * Used for a non-simple interval (i.e., one without subs. or 
@@ -471,13 +483,342 @@ x_GapEditBlock2SeqAlign(GapEditBlock* edit_block,
 static CRef<CSeq_align>
 x_OOFEditBlock2SeqAlign(EProgram program, 
     GapEditBlock* edit_block, 
-    const CSeq_id* id1, const CSeq_id* id2)
+    const CSeq_id* query_id, const CSeq_id* subject_id)
 {
     ASSERT(edit_block != NULL);
-    // WAITS FOR IMPLEMENTATION!!!
+
     CRef<CSeq_align> seqalign(new CSeq_align());
-    NCBI_THROW(CBlastException, eInternal, 
-               "Out-of-frame gapped alignment construction is unimplemented");
+
+    Boolean reverse = FALSE;
+    GapEditScript* curr,* esp;
+    Int2 frame1, frame2;
+    Int4 start1, start2;
+    Int4 original_length1, original_length2;
+    CRef<CSeq_interval> seq_int1_last;
+    CRef<CSeq_interval> seq_int2_last;
+    CConstRef<CSeq_id> id1;
+    CConstRef<CSeq_id> id2;
+    CRef<CSeq_loc> slp1, slp2;
+    ENa_strand strand1, strand2;
+    bool first_shift;
+    Int4 from1, from2, to1, to2;
+    CRef<CSeq_id> tmp;
+
+    if (program == eBlastx) {
+       reverse = TRUE;
+       start1 = edit_block->start2;
+       start2 = edit_block->start1;
+       frame1 = edit_block->frame2;
+       frame2 = edit_block->frame1;
+       original_length1 = edit_block->original_length2;
+       original_length2 = edit_block->original_length1;
+       id1.Reset(subject_id);
+       id2.Reset(query_id);
+    } else { 
+       start1 = edit_block->start1;
+       start2 = edit_block->start2;
+       frame1 = edit_block->frame1;
+       frame2 = edit_block->frame2;
+       original_length1 = edit_block->original_length1;
+       original_length2 = edit_block->original_length2;
+       id1.Reset(query_id);
+       id2.Reset(subject_id);
+    }
+ 
+    strand1 = x_Frame2Strand(frame1);
+    strand2 = x_Frame2Strand(frame2);
+    
+    esp = edit_block->esp;
+    
+    seqalign->SetDim(2); /**only two dimention alignment**/
+    
+    seqalign->SetType(CSeq_align::eType_partial); /**partial for gapped translating search. */
+
+    esp = edit_block->esp;
+
+    first_shift = false;
+
+    for (curr=esp; curr; curr=curr->next) {
+
+        slp1.Reset(new CSeq_loc());
+        slp2.Reset(new CSeq_loc());
+        
+        switch (curr->op_type) {
+        case 0: /* deletion of three nucleotides. */
+            
+            first_shift = false;
+
+            slp1->SetInt().SetFrom(get_current_pos(&start1, curr->num));
+            slp1->SetInt().SetTo(MIN(start1,original_length1) - 1);
+            tmp.Reset(new CSeq_id(id1->AsFastaString()));
+            slp1->SetInt().SetId(*tmp);
+            slp1->SetInt().SetStrand(strand1);
+            
+            /* Empty nucleotide piece */
+            tmp.Reset(new CSeq_id(id2->AsFastaString()));
+            slp2->SetEmpty(*tmp);
+
+            seq_int1_last.Reset(&slp1->SetInt());
+            /* Keep previous seq_int2_last, in case there is a frame shift
+               immediately after this gap */
+            
+            break;
+
+        case 6: /* insertion of three nucleotides. */
+            /* If gap is followed after frameshift - we have to
+               add this element for the alignment to be correct */
+            
+            if(first_shift) { /* Second frameshift in a row */
+                /* Protein coordinates */
+                slp1->SetInt().SetFrom(get_current_pos(&start1, 1));
+                to1 = MIN(start1,original_length1) - 1;
+                slp1->SetInt().SetTo(to1);
+                tmp.Reset(new CSeq_id(id1->AsFastaString()));
+                slp1->SetInt().SetId(*tmp);
+                slp1->SetInt().SetStrand(strand1);
+                
+                /* Nucleotide scale shifted by op_type */
+                from2 = get_current_pos(&start2, 3);
+                to2 = MIN(start2,original_length2) - 1;
+                slp2->SetInt().SetFrom(from2);
+                slp2->SetInt().SetTo(to2);
+                if (start2 > original_length2)
+                    slp1->SetInt().SetTo(to1 - 1);
+                
+                /* Transfer to DNA minus strand coordinates */
+                if(strand2 == eNa_strand_minus) {
+                    slp2->SetInt().SetTo(original_length2 - from2 - 1);
+                    slp2->SetInt().SetFrom(original_length2 - to2 - 1);
+                }
+                
+                tmp.Reset(new CSeq_id(id2->AsFastaString()));
+                slp2->SetInt().SetId(*tmp);
+                slp2->SetInt().SetStrand(strand2);
+
+                CRef<CStd_seg> seg(new CStd_seg());
+                seg->SetDim(2);
+
+                CStd_seg::TIds& ids = seg->SetIds();
+
+                if (reverse) {
+                    seg->SetLoc().push_back(slp2);
+                    seg->SetLoc().push_back(slp1);
+                    tmp.Reset(new CSeq_id(id2->AsFastaString()));
+                    ids.push_back(tmp);
+                    tmp.Reset(new CSeq_id(id1->AsFastaString()));
+                    ids.push_back(tmp);
+                } else {
+                    seg->SetLoc().push_back(slp1);
+                    seg->SetLoc().push_back(slp2);
+                    tmp.Reset(new CSeq_id(id1->AsFastaString()));
+                    ids.push_back(tmp);
+                    tmp.Reset(new CSeq_id(id2->AsFastaString()));
+                    ids.push_back(tmp);
+                }
+                ids.resize(seg->GetDim());
+                
+                seqalign->SetSegs().SetStd().push_back(seg);
+            }
+
+            first_shift = false;
+
+            /* Protein piece is empty */
+            tmp.Reset(new CSeq_id(id1->AsFastaString()));
+            slp1->SetEmpty(*tmp);
+            
+            /* Nucleotide scale shifted by 3, protein gapped */
+            from2 = get_current_pos(&start2, curr->num*3);
+            to2 = MIN(start2,original_length2) - 1;
+            slp2->SetInt().SetFrom(from2);
+            slp2->SetInt().SetTo(to2);
+
+            /* Transfer to DNA minus strand coordinates */
+            if(strand2 == eNa_strand_minus) {
+                slp2->SetInt().SetTo(original_length2 - from2 - 1);
+                slp2->SetInt().SetFrom(original_length2 - to2 - 1);
+            }
+            tmp.Reset(new CSeq_id(id2->AsFastaString()));
+            slp2->SetInt().SetId(*tmp);
+            slp2->SetInt().SetStrand(strand2);
+            
+            seq_int1_last.Reset(NULL);
+            seq_int2_last.Reset(&slp2->SetInt()); /* Will be used to adjust "to" value */
+            
+            break;
+
+        case 3: /* Substitution. */
+
+            first_shift = false;
+
+            /* Protein coordinates */
+            from1 = get_current_pos(&start1, curr->num);
+            to1 = MIN(start1, original_length1) - 1;
+            /* Adjusting last segment and new start point in
+               nucleotide coordinates */
+            from2 = get_current_pos(&start2, curr->num*curr->op_type);
+            to2 = start2 - 1;
+            /* Chop off three bases and one residue at a time.
+               Why does this happen, seems like a bug?
+            */
+            while (to2 >= original_length2) {
+                to2 -= 3;
+                to1--;
+            }
+            /* Transfer to DNA minus strand coordinates */
+            if(strand2 == eNa_strand_minus) {
+                int tmp_int;
+                tmp_int = to2;
+                to2 = original_length2 - from2 - 1;
+                from2 = original_length2 - tmp_int - 1;
+            }
+
+            slp1->SetInt().SetFrom(from1);
+            slp1->SetInt().SetTo(to1);
+            tmp.Reset(new CSeq_id(id1->AsFastaString()));
+            slp1->SetInt().SetId(*tmp);
+            slp1->SetInt().SetStrand(strand1);
+            slp2->SetInt().SetFrom(from2);
+            slp2->SetInt().SetTo(to2);
+            tmp.Reset(new CSeq_id(id2->AsFastaString()));
+            slp2->SetInt().SetId(*tmp);
+            slp2->SetInt().SetStrand(strand2);
+           
+
+            seq_int1_last.Reset(&slp1->SetInt()); /* Will be used to adjust "to" value */
+            seq_int2_last.Reset(&slp2->SetInt()); /* Will be used to adjust "to" value */
+            
+            break;
+        case 1:	/* gap of two nucleotides. */
+        case 2: /* Gap of one nucleotide. */
+        case 4: /* Insertion of one nucleotide. */
+        case 5: /* Insertion of two nucleotides. */
+
+            if(first_shift) { /* Second frameshift in a row */
+                /* Protein coordinates */
+                from1 = get_current_pos(&start1, 1);
+                to1 = MIN(start1,original_length1) - 1;
+
+                /* Nucleotide scale shifted by op_type */
+                from2 = get_current_pos(&start2, curr->op_type);
+                to2 = start2 - 1;
+                if (to2 >= original_length2) {
+                    to2 = original_length2 -1;
+                    to1--;
+                }
+                /* Transfer to DNA minus strand coordinates */
+                if(strand2 == eNa_strand_minus) {
+                    int tmp_int;
+                    tmp_int = to2;
+                    to2 = original_length2 - from2 - 1;
+                    from2 = original_length2 - tmp_int - 1;
+                }
+
+                slp1->SetInt().SetFrom(from1);
+                slp1->SetInt().SetTo(to1);
+                tmp.Reset(new CSeq_id(id1->AsFastaString()));
+                slp1->SetInt().SetId(*tmp);
+                slp1->SetInt().SetStrand(strand1);
+                slp2->SetInt().SetFrom(from2);
+                slp2->SetInt().SetTo(to2);
+                tmp.Reset(new CSeq_id(id2->AsFastaString()));
+                slp2->SetInt().SetId(*tmp);
+                slp2->SetInt().SetStrand(strand2);
+
+                seq_int1_last.Reset(&slp1->SetInt()); 
+                seq_int2_last.Reset(&slp2->SetInt()); 
+
+                break;
+            }
+            
+            first_shift = true;
+
+            /* If this substitution is following simple frameshift
+               we do not need to start new segment, but may continue
+               old one */
+
+            if(seq_int2_last) {
+                get_current_pos(&start2, curr->num*(curr->op_type-3));
+                if(strand2 != eNa_strand_minus) {
+                    seq_int2_last->SetTo(start2 - 1);
+                } else {
+                    /* Transfer to DNA minus strand coordinates */
+                    seq_int2_last->SetFrom(original_length2 - start2);
+                }
+
+                /* Adjustment for multiple shifts - theoretically possible,
+                   but very improbable */
+                if(seq_int2_last->GetFrom() > seq_int2_last->GetTo()) {
+                    
+                    if(strand2 != eNa_strand_minus) {
+                        seq_int2_last->SetTo(seq_int2_last->GetTo() + 3);
+                    } else {
+                        seq_int2_last->SetFrom(seq_int2_last->GetFrom() - 3);
+                    }
+                    
+                    if(seq_int1_last && seq_int1_last->GetTo() != 0)
+                        seq_int1_last->SetTo(seq_int1_last->GetTo() + 1);
+                }
+
+            } else if (curr->op_type > 3) {
+                /* Protein piece is empty */
+                tmp.Reset(new CSeq_id(id1->AsFastaString()));
+                slp1->SetEmpty(*tmp);
+                /* Simulating insertion of nucleotides */
+                from2 = get_current_pos(&start2, 
+                                        curr->num*(curr->op_type-3));
+                to2 = MIN(start2,original_length2) - 1;
+
+                /* Transfer to DNA minus strand coordinates */
+                if(strand2 == eNa_strand_minus) {
+                    int tmp_int;
+                    tmp_int = to2;
+                    to2 = original_length2 - from2 - 1;
+                    from2 = original_length2 - tmp_int - 1;
+                }
+                slp2->SetInt().SetFrom(from2);
+                slp2->SetInt().SetTo(to2);
+                
+                tmp.Reset(new CSeq_id(id2->AsFastaString()));
+                slp2->SetInt().SetId(*tmp);
+
+                seq_int1_last.Reset(NULL);
+                seq_int2_last.Reset(&slp2->SetInt()); /* Will be used to adjust "to" value */
+                break;
+            } else {
+                continue;       /* Main loop */
+            }
+            continue;       /* Main loop */
+            /* break; */
+        default:
+            continue;       /* Main loop */
+            /* break; */
+        } 
+
+        CRef<CStd_seg> seg(new CStd_seg());
+        seg->SetDim(2);
+        
+        CStd_seg::TIds& ids = seg->SetIds();
+
+        if (reverse) {
+            seg->SetLoc().push_back(slp2);
+            seg->SetLoc().push_back(slp1);
+            tmp.Reset(new CSeq_id(id2->AsFastaString()));
+            ids.push_back(tmp);
+            tmp.Reset(new CSeq_id(id1->AsFastaString()));
+            ids.push_back(tmp);
+        } else {
+            seg->SetLoc().push_back(slp1);
+            seg->SetLoc().push_back(slp2);
+            tmp.Reset(new CSeq_id(id1->AsFastaString()));
+            ids.push_back(tmp);
+            tmp.Reset(new CSeq_id(id2->AsFastaString()));
+            ids.push_back(tmp);
+        }
+        ids.resize(seg->GetDim());
+        
+        seqalign->SetSegs().SetStd().push_back(seg);
+    }
+    
     return seqalign;
 }
 
@@ -927,6 +1268,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2003/11/04 17:13:31  dondosha
+* Implemented conversion of results to seqalign for out-of-frame search
+*
 * Revision 1.22  2003/10/31 22:08:39  dondosha
 * Implemented conversion of BLAST results to seqalign for ungapped search
 *
