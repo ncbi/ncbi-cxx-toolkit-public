@@ -72,7 +72,6 @@ USING_SCOPE(objects);
 
 /////////////////////////////////////////////////////////////////////////////
 /// CBlast2seqApplication: command line blast2sequences application
-/// @todo Implement formatting
 /// @todo refactor command line options, so that only those relevant to a
 /// particular program are shown (e.g: cvs -H command). This should be
 /// reusable by all BLAST command line clients
@@ -185,19 +184,6 @@ void CBlast2seqApplication::Init(void)
     arg_desc->AddDefaultKey("perc", "percident", 
         "Percentage of identities cutoff for saving hits",
         CArgDescriptions::eDouble, "0");
-    arg_desc->AddDefaultKey("descr", "descriptions",
-        "How many matching sequence descriptions to show?",
-        CArgDescriptions::eInteger, "500");
-    arg_desc->AddDefaultKey("align", "alignments", 
-        "How many matching sequence alignments to show?",
-        CArgDescriptions::eInteger, "250");
-    arg_desc->AddDefaultKey("out", "out", "File name for writing output",
-        CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
-    arg_desc->AddDefaultKey("format", "format", 
-        "How to format the results?",
-        CArgDescriptions::eInteger, "0");
-    arg_desc->AddDefaultKey("html", "html", "Produce HTML output?",
-                            CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("gencode", "gencode", "Query genetic code",
                             CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("dbgencode", "dbgencode", "Database genetic code",
@@ -208,9 +194,9 @@ void CBlast2seqApplication::Init(void)
     arg_desc->AddDefaultKey("frameshift", "frameshift",
                             "Frame shift penalty (blastx only)",
                             CArgDescriptions::eInteger, "0");
-    arg_desc->AddOptionalKey("asnout", "seqalignasn", 
+    arg_desc->AddDefaultKey("out", "outputfile", 
         "File name for writing the seqalign results in ASN.1 form",
-        CArgDescriptions::eOutputFile);
+        CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
 
     // Debug parameters
     arg_desc->AddFlag("trace", "Tracing enabled?", true);
@@ -459,12 +445,9 @@ int CBlast2seqApplication::Run(void)
 #endif
 
         // Our poor man's formatting ...  
-        if (args["asnout"]) {
-            auto_ptr<CObjectOStream> asnout(
-                CObjectOStream::Open(args["asnout"].AsString(), eSerial_AsnText));
-            for (unsigned int index = 0; index < seqalignv.size(); ++index)
-                *asnout << *seqalignv[index];
-        }
+        CNcbiOstream& out = args["out"].AsOutputFile();
+        for (unsigned int index = 0; index < seqalignv.size(); ++index)
+            out << MSerial_AsnText << *seqalignv[index];
 
     } catch (const CException& e) {
         cerr << e.what() << endl;
