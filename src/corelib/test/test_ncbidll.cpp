@@ -62,19 +62,19 @@ static void s_TEST_SimpleDll(void)
     string* (* Dll_StrRepeat) (const string&, unsigned int) = NULL;
 
     // Get addresses from DLL
-    DllVar_Counter = dll.GetEntryPoint("DllVar_Counter", &DllVar_Counter );
+    DllVar_Counter = dll.GetEntryPoint_Data("DllVar_Counter", &DllVar_Counter);
     if ( !DllVar_Counter ) {
         ERR_POST(Fatal << "Error get address of variable DllVar_Counter.");
     }
-    Dll_Inc = dll.GetEntryPoint("Dll_Inc", &Dll_Inc );
+    Dll_Inc = dll.GetEntryPoint_Func("Dll_Inc", &Dll_Inc );
     if ( !Dll_Inc ) {
         ERR_POST(Fatal << "Error get address of function Dll_Inc().");
     }
-    Dll_Add = dll.GetEntryPoint("Dll_Add", &Dll_Add );
+    Dll_Add = dll.GetEntryPoint_Func("Dll_Add", &Dll_Add );
     if ( !Dll_Add ) {
         ERR_POST(Fatal << "Error get address of function Dll_Add().");
     }
-    Dll_StrRepeat = dll.GetEntryPoint("Dll_StrRepeat", &Dll_StrRepeat );
+    Dll_StrRepeat = dll.GetEntryPoint_Func("Dll_StrRepeat", &Dll_StrRepeat );
     if ( !Dll_StrRepeat ) {
         ERR_POST(Fatal << "Error get address of function Dll_StrRepeat().");
     }
@@ -137,7 +137,7 @@ static void s_TEST_WinSystemDll(void)
     // );
     // LPFNGETUSERPROFILESDIR  dllGetProfilesDirectory = NULL;
 
-    dllMessageBeep = dll_user32.GetEntryPoint("MessageBeep", &dllMessageBeep );
+    dllMessageBeep = dll_user32.GetEntryPoint_Func("MessageBeep", &dllMessageBeep );
     if ( !dllMessageBeep ) {
         ERR_POST(Fatal << "Error get address of function MessageBeep().");
     }
@@ -145,12 +145,13 @@ static void s_TEST_WinSystemDll(void)
     dllMessageBeep(-1);
 
     #ifdef UNICODE
-    dll_userenv.GetEntryPoint("GetProfilesDirectoryW", &dllGetProfilesDirectory);
+    dll_userenv.GetEntryPoint_Func("GetProfilesDirectoryW", &dllGetProfilesDirectory);
     #else
-    dll_userenv.GetEntryPoint("GetProfilesDirectoryA", &dllGetProfilesDirectory);
+    dll_userenv.GetEntryPoint_Func("GetProfilesDirectoryA", &dllGetProfilesDirectory);
     #endif
     if ( !dllGetProfilesDirectory ) {
-        ERR_POST(Fatal << "Error get address of function GetUserProfileDirectory().");
+        ERR_POST(Fatal <<
+                 "Error get address of function GetUserProfileDirectory().");
     }
     // Call loaded function
     TCHAR szProfilePath[1024];
@@ -218,6 +219,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2003/11/19 13:51:20  ivanov
+ * GetEntryPoint() revamp
+ *
  * Revision 6.9  2002/07/01 16:45:03  ivanov
  * Darwin specific with leading underscores in entry names moved to
  * CDll::x_GetEntryPoint() function
