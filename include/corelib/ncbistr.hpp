@@ -124,11 +124,19 @@ public:
     ///     if it represents a number that does not fit into "int".
     static int StringToNumeric(const string& str);
 
+
     /// Whether to prohibit trailing symbols (any symbol but '\0')
     /// in the StringToXxx() conversion functions below.
     enum ECheckEndPtr {
-        eCheck_Need,   ///< Check is necessary
-        eCheck_Skip    ///< Skip this check
+        eCheck_Need,      ///< Check is necessary
+        eCheck_Skip       ///< Skip this check
+    };
+
+    /// Whether to throw an exception if there is a conversion error in
+    /// the StringToXxx() function.
+    enum EConvErrAction {
+        eConvErr_Throw,   ///< Throw an exception on error
+        eConvErr_NoThrow  ///< Return "natural null" value on error
     };
 
     /// Convert string to int.
@@ -140,10 +148,15 @@ public:
     /// @param check
     ///   Whether trailing symbols (other than '\0') are permitted - default
     ///   is eCheck_Needed which means that if there are trailing symbols
-    ///   after the number, an exception will be thrown. If the value is
-    ///   eCheck_Skip, the string can have trailing symbols after the number.
+    ///   after the number, an action defined by "on_error" parameter will
+    ///   be performed. If the value is eCheck_Skip, the string can have
+    ///   trailing symbols after the number.
+    /// @param on_error
+    ///   Whether to throw an exception on error, or just to return zero.
     static int StringToInt(const string& str, int base = 10,
-                           ECheckEndPtr check = eCheck_Need);
+                           ECheckEndPtr   check    = eCheck_Need,
+                           EConvErrAction on_error = eConvErr_Throw);
+
 
     /// Convert string to unsigned int.
     ///
@@ -154,10 +167,14 @@ public:
     /// @param check
     ///   Whether trailing symbols (other than '\0') are permitted - default
     ///   is eCheck_Needed which means that if there are trailing symbols
-    ///   after the number, an exception will be thrown. If the value is
-    ///   eCheck_Skip, the string can have trailing symbols after the number.
+    ///   after the number, an action defined by "on_error" parameter will
+    ///   be performed. If the value is eCheck_Skip, the string can have
+    ///   trailing symbols after the number.
+    /// @param on_error
+    ///   Whether to throw an exception on error, or just to return zero.
     static unsigned int StringToUInt(const string& str, int base = 10,
-                                     ECheckEndPtr check = eCheck_Need);
+                                     ECheckEndPtr   check    = eCheck_Need,
+                                     EConvErrAction on_error = eConvErr_Throw);
 
     /// Convert string to long.
     ///
@@ -168,10 +185,14 @@ public:
     /// @param check
     ///   Whether trailing symbols (other than '\0') are permitted - default
     ///   is eCheck_Needed which means that if there are trailing symbols
-    ///   after the number, an exception will be thrown. If the value is
-    ///   eCheck_Skip, the string can have trailing symbols after the number.
+    ///   after the number, an action defined by "on_error" parameter will
+    ///   be performed. If the value is eCheck_Skip, the string can have
+    ///   trailing symbols after the number.
+    /// @param on_error
+    ///   Whether to throw an exception on error, or just to return zero.
     static long StringToLong(const string& str, int base = 10,
-                             ECheckEndPtr check = eCheck_Need);
+                             ECheckEndPtr   check    = eCheck_Need,
+                             EConvErrAction on_error = eConvErr_Throw);
 
     /// Convert string to unsigned long.
     ///
@@ -182,10 +203,14 @@ public:
     /// @param check
     ///   Whether trailing symbols (other than '\0') are permitted - default
     ///   is eCheck_Needed which means that if there are trailing symbols
-    ///   after the number, an exception will be thrown. If the value is
-    ///   eCheck_Skip, the string can have trailing symbols after the number.
+    ///   after the number, an action defined by "on_error" parameter will
+    ///   be performed. If the value is eCheck_Skip, the string can have
+    ///   trailing symbols after the number.
+    /// @param on_error
+    ///   Whether to throw an exception on error, or just to return zero.
     static unsigned long StringToULong(const string& str, int base = 10,
-                                       ECheckEndPtr check = eCheck_Need);
+                                       ECheckEndPtr   check    = eCheck_Need,
+                                       EConvErrAction on_error = eConvErr_Throw);
 
     /// Convert string to double.
     ///
@@ -194,10 +219,14 @@ public:
     /// @param check
     ///   Whether trailing symbols (other than '\0') are permitted - default
     ///   is eCheck_Needed which means that if there are trailing symbols
-    ///   after the number, an exception will be thrown. If the value is
-    ///   eCheck_Skip, the string can have trailing symbols after the number.
+    ///   after the number, an action defined by "on_error" parameter will
+    ///   be performed. If the value is eCheck_Skip, the string can have
+    ///   trailing symbols after the number.
+    /// @param on_error
+    ///   Whether to throw an exception on error, or just to return zero.
     static double StringToDouble(const string& str,
-                                 ECheckEndPtr check = eCheck_Need);
+                                 ECheckEndPtr   check    = eCheck_Need,
+                                 EConvErrAction on_error = eConvErr_Throw);
 
     /// Convert string to Int8.
     ///
@@ -2345,6 +2374,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.57  2004/06/21 12:14:50  ivanov
+ * Added additional parameter for all StringToXxx() function that specify
+ * an action which will be performed on conversion error: to throw an
+ * exception, or just to return zero.
+ *
  * Revision 1.56  2004/05/26 20:46:35  ucko
  * Fix backwards logic in Equal{Case,Nocase}.
  *

@@ -297,81 +297,104 @@ int NStr::StringToNumeric(const string& str)
             s_DiffPtr(endptr, str.c_str()));                          \
     }
 
-int NStr::StringToInt(const string& str, int base /* = 10 */,
-                      ECheckEndPtr check_endptr   /* = eCheck_Need */ )
+int NStr::StringToInt(const string& str, int base  /* = 10 */,
+                      ECheckEndPtr   check_endptr  /* = eCheck_Need */,
+                      EConvErrAction on_error      /* = eConvErr_Throw */)
 {
     errno = 0;
     char* endptr = 0;
     long value = strtol(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str()  ||
         value < kMin_Int || value > kMax_Int) {
-        NCBI_THROW2(CStringException, eConvert,
-                    "String cannot be converted to int",
-                    s_DiffPtr(endptr, str.c_str()));
+        if ( on_error == eConvErr_Throw ) {
+            NCBI_THROW2(CStringException, eConvert,
+                        "String cannot be converted to int",
+                        s_DiffPtr(endptr, str.c_str()));
+        }
+        return 0;
     }
     CHECK_ENDPTR("int");
     return (int) value;
 }
 
 
-unsigned int NStr::StringToUInt(const string& str, int base /* =10 */,
-                                ECheckEndPtr check_endptr   /* =eCheck_Need */)
+unsigned int
+NStr::StringToUInt(const string& str, int base  /* =10 */,
+                   ECheckEndPtr   check_endptr  /* = eCheck_Need */,
+                   EConvErrAction on_error      /* = eConvErr_Throw */)
 {
     errno = 0;
     char* endptr = 0;
     unsigned long value = strtoul(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str()  ||  value > kMax_UInt) {
-        NCBI_THROW2(CStringException, eConvert,
-                    "String cannot be converted unsigned int",
-                    s_DiffPtr(endptr, str.c_str()));
+        if ( on_error == eConvErr_Throw ) {
+            NCBI_THROW2(CStringException, eConvert,
+                        "String cannot be converted unsigned int",
+                        s_DiffPtr(endptr, str.c_str()));
+        }
+        return 0;
     }
     CHECK_ENDPTR("unsigned int");
     return (unsigned int) value;
 }
 
 
-long NStr::StringToLong(const string& str, int base /* = 10 */,
-                        ECheckEndPtr check_endptr   /* = eCheck_Need */ )
+long NStr::StringToLong(const string& str, int base  /* = 10 */,
+                       ECheckEndPtr   check_endptr   /* = eCheck_Need */,
+                       EConvErrAction on_error       /* = eConvErr_Throw */)
 {
     errno = 0;
     char* endptr = 0;
     long value = strtol(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str()) {
-        NCBI_THROW2(CStringException, eConvert,
-                    "String cannot be converted to long",
-                    s_DiffPtr(endptr, str.c_str()));
+        if ( on_error == eConvErr_Throw ) {
+            NCBI_THROW2(CStringException, eConvert,
+                        "String cannot be converted to long",
+                        s_DiffPtr(endptr, str.c_str()));
+        }
+        return 0;
     }
     CHECK_ENDPTR("long");
     return value;
 }
 
 
-unsigned long NStr::StringToULong(const string& str, int base /*=10 */,
-                                  ECheckEndPtr check_endptr   /*=eCheck_Need*/)
+unsigned
+long NStr::StringToULong(const string& str, int base  /*=10 */,
+                         ECheckEndPtr   check_endptr  /* = eCheck_Need */,
+                         EConvErrAction on_error      /* = eConvErr_Throw */)
 {
     errno = 0;
     char* endptr = 0;
     unsigned long value = strtoul(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str()) {
-        NCBI_THROW2(CStringException, eConvert,
-                    "String cannot be converted to unsigned long",
-                    s_DiffPtr(endptr, str.c_str()));
+        if ( on_error == eConvErr_Throw ) {
+            NCBI_THROW2(CStringException, eConvert,
+                        "String cannot be converted to unsigned long",
+                        s_DiffPtr(endptr, str.c_str()));
+        }
+        return 0;
     }
     CHECK_ENDPTR("unsigned long");
     return value;
 }
 
 
-double NStr::StringToDouble(const string& str,
-                            ECheckEndPtr check_endptr /* = eCheck_Need */ )
+double
+NStr::StringToDouble(const string& str,
+                     ECheckEndPtr   check_endptr  /* = eCheck_Need */,
+                     EConvErrAction on_error      /* = eConvErr_Throw */)
 {
     errno = 0;
     char* endptr = 0;
     double value = strtod(str.c_str(), &endptr);
     if (errno  ||  !endptr  ||  endptr == str.c_str()) {
-        NCBI_THROW2(CStringException, eConvert,
-                    "String cannot be converted to double",
-                    s_DiffPtr(endptr, str.c_str()));
+        if ( on_error == eConvErr_Throw ) {
+            NCBI_THROW2(CStringException, eConvert,
+                        "String cannot be converted to double",
+                        s_DiffPtr(endptr, str.c_str()));
+        }
+        return 0.0;
     }
     if (*(endptr - 1) != '.'  &&  *endptr == '.')
         endptr++;
@@ -387,12 +410,14 @@ string NStr::IntToString(long value, bool sign /* = false */ )
     return buffer;
 }
 
+
 void NStr::IntToString(string& out_str, long value, bool sign)
 {
     char buffer[64];
     ::sprintf(buffer, sign ? "%+ld" : "%ld", value);
     out_str = buffer;
 }
+
 
 string NStr::UIntToString(unsigned long value)
 {
@@ -401,6 +426,7 @@ string NStr::UIntToString(unsigned long value)
     return buffer;
 }
 
+
 void NStr::UIntToString(string& out_str, unsigned long value)
 {
     char buffer[64];
@@ -408,12 +434,14 @@ void NStr::UIntToString(string& out_str, unsigned long value)
     out_str = buffer;
 }
 
+
 string NStr::Int8ToString(Int8 value, bool sign /* = false */ )
 {
     string ret;
     NStr::Int8ToString(ret, value, sign);
     return ret;
 }
+
 
 void NStr::Int8ToString(string& out_str, Int8 value, bool sign)
 {
@@ -537,6 +565,7 @@ Uint8 NStr::StringToUInt8(const string& str, int base /* = 10  */)
     return n;
 }
 
+
 void NStr::UInt8ToString(string& out_str, Uint8 value)
 {
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 3 + 2;
@@ -582,12 +611,14 @@ string NStr::DoubleToString(double value)
     return buffer;
 }
 
+
 void NStr::DoubleToString(string& out_str, double value)
 {
     char buffer[kMaxDoubleStringSize];
     ::sprintf(buffer, "%g", value);
     out_str = buffer;
 }
+
 
 string NStr::DoubleToString(double value, unsigned int precision)
 {
@@ -620,12 +651,14 @@ string NStr::PtrToString(const void* value)
     return buffer;
 }
 
+
 void NStr::PtrToString(string& out_str, const void* value)
 {
     char buffer[64];
     ::sprintf(buffer, "%p", value);
     out_str = buffer;
 }
+
 
 const void* NStr::StringToPtr(const string& str)
 {
@@ -905,10 +938,12 @@ string s_NStr_Join(const T& arr, const string& delim)
     return result;
 }
 
+
 string NStr::Join(const list<string>& arr, const string& delim)
 {
     return s_NStr_Join(arr, delim);
 }
+
 
 string NStr::Join(const vector<string>& arr, const string& delim)
 {
@@ -1486,6 +1521,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.110  2004/06/21 12:14:50  ivanov
+ * Added additional parameter for all StringToXxx() function that specify
+ * an action which will be performed on conversion error: to throw an
+ * exception, or just to return zero.
+ *
  * Revision 1.109  2004/05/26 19:21:25  ucko
  * FindNoCase: avoid looping in eLastMode when there aren't any full
  * matches but the first character of the string matches the first
