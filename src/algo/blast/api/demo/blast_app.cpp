@@ -419,7 +419,7 @@ int CBlastApplication::Run(void)
     const CArgs& args = GetArgs();
     
     BlastProgram2Number(args["program"].AsString().c_str(), &program_number);
-    EProgram e_program = BLASTGetEProgram(program_number);
+    EProgram e_program = static_cast<EProgram>(program_number);
 
     db_is_na = (e_program == eBlastn || 
                 e_program == eTblastn || 
