@@ -200,6 +200,26 @@ void CHandleRange::MergeRange(TRange range, ENa_strand /*strand*/)
 }
 
 
+TSeqPos CHandleRange::GetLeft(void) const
+{
+    if ( !m_IsCircular ) {
+        return min(m_TotalRanges[0].GetFrom(), m_TotalRanges[1].GetFrom());
+    }
+    return IsReverse(m_Ranges.front().second) ?
+        m_TotalRanges[1].GetFrom() : m_TotalRanges[0].GetFrom();
+}
+
+
+TSeqPos CHandleRange::GetRight(void) const
+{
+    if ( !m_IsCircular ) {
+        return max(m_TotalRanges[0].GetTo(), m_TotalRanges[1].GetTo());
+    }
+    return IsReverse(m_Ranges.front().second) ?
+        m_TotalRanges[0].GetTo() : m_TotalRanges[1].GetTo();
+}
+
+
 CHandleRange::TRange
 CHandleRange::GetOverlappingRange(TTotalRangeFlags flags) const
 {
@@ -276,6 +296,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/11/05 19:29:28  grichenk
+* Fixed sorting of circular features
+*
 * Revision 1.23  2004/08/25 21:55:25  grichenk
 * Fixed ranges splitting by strand.
 *

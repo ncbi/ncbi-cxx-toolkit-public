@@ -87,7 +87,10 @@ public:
     TTotalRangeFlags GetStrandsFlag(void) const;
 
     TRange GetOverlappingRange(TTotalRangeFlags flags = eStrandAny) const;
-    
+    // Leftmost and rightmost points of the total range ragardless of strand
+    TSeqPos GetLeft(void) const;
+    TSeqPos GetRight(void) const;
+
     // Get the range including all ranges in the list which (with any strand)
     // filter the list through 'range' argument
     TRange GetOverlappingRange(const TRange& range) const;
@@ -209,6 +212,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.23  2004/11/05 19:29:28  grichenk
+ * Fixed sorting of circular features
+ *
  * Revision 1.22  2004/08/26 18:25:43  grichenk
  * Fixed strands
  *

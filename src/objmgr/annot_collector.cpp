@@ -493,21 +493,24 @@ struct CAnnotObject_Less
     bool operator()(const CAnnotObject_Ref& x,
                     const CAnnotObject_Ref& y) const
         {
-            {
-                // smallest left extreme first
-                TSeqPos x_from = x.GetFrom();
-                TSeqPos y_from = y.GetFrom();
-                if ( x_from != y_from ) {
-                    return x_from < y_from;
-                }
+            TSeqPos x_from = x.GetFrom();
+            TSeqPos y_from = y.GetFrom();
+            TSeqPos x_to = x.GetToOpen();
+            TSeqPos y_to = y.GetToOpen();
+            // from > to = circular location.
+            // Any circular location is less than non-circular one.
+            // If both are circular, compare in normal way.
+            if ( (x_from > x_to || y_from > y_to)  &&
+                    (x_from > x_to) != (y_from > y_to) ) {
+                return x.GetTotalRange().Empty();
             }
-            {
-                // longest feature first
-                TSeqPos x_to = x.GetToOpen();
-                TSeqPos y_to = y.GetToOpen();
-                if ( x_to != y_to ) {
-                    return x_to > y_to;
-                }
+            // smallest left extreme first
+            if ( x_from != y_from ) {
+                return x_from < y_from;
+            }
+            // longest feature first
+            if ( x_to != y_to ) {
+                return x_to > y_to;
             }
             return type_less(x, y);
         }
@@ -782,6 +785,9 @@ void CAnnot_Collector::x_Sort(void)
     default:
         // do nothing
         break;
+    }
+    ITERATE(TAnnotSet, it, m_AnnotSet) {
+        LOG_POST("    " << it->GetFrom() << " - " << it->GetToOpen());
     }
 }
 
@@ -1345,8 +1351,9 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Lock&      tse,
                     continue;
                 }
 
-                need_unique |= bool(aoit->second.m_HandleRange)  &&
+                bool is_circular = bool(aoit->second.m_HandleRange)  &&
                     aoit->second.m_HandleRange->GetData().IsCircular();
+                need_unique |= is_circular;
                 CAnnotObject_Ref annot_ref(annot_info);
                 if (!cvt  &&  annot_info.GetMultiIdFlags()) {
                     // Create self-conversion, add to conversion set
@@ -1366,8 +1373,16 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Lock&      tse,
                             CSeq_loc_Conversion::eLocation);
                     }
                     else {
-                        annot_ref.SetAnnotObjectRange(aoit->first,
-                                                    m_Selector.m_FeatProduct);
+                        CHandleRange::TRange ref_rg = aoit->first;
+                        if (is_circular ) {
+                            TSeqPos from = aoit->second.m_HandleRange->
+                                GetData().GetLeft();
+                            TSeqPos to =aoit->second.m_HandleRange->
+                                GetData().GetRight();
+                            ref_rg = CHandleRange::TRange(from, to);
+                        }
+                        annot_ref.SetAnnotObjectRange(ref_rg,
+                            m_Selector.m_FeatProduct);
                     }
                     if ( x_AddObject(annot_ref, cvt,
                         aoit->second.m_AnnotLocationIndex) ) {
@@ -1856,6 +1871,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/11/05 19:29:28  grichenk
+* Fixed sorting of circular features
+*
 * Revision 1.38  2004/11/04 19:21:18  grichenk
 * Marked non-handle versions of SetLimitXXXX as deprecated
 *
