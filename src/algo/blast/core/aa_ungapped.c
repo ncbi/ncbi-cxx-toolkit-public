@@ -140,6 +140,9 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlkPtr subject,
          last_hit = diag_array[diag_coord].last_hit - diag_offset;
          diff = subject_offsets[i] - last_hit;
 
+         if (diff <= 0)
+            continue;
+
          if (level > 0) {
             /* Previous hit already started on this diagonal, but not
                extended yet */
@@ -173,13 +176,11 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlkPtr subject,
                diag_array[diag_coord].diag_level = 1;
             }
          } else {
-            /* Previous hit already extended */
+            /* Previous hit already extended, and we are beyond the 
+               end of the extension; start a new hit */
             diag_array[diag_coord].last_hit = 
                subject_offsets[i] + diag_offset;
-            /* Start a new hit only if this is not an immediate 
-               extension of a previous hit*/
-            if (diff > 1)
-               diag_array[diag_coord].diag_level = 1;
+            diag_array[diag_coord].diag_level = 1;
          }
       }/* end for - done with this batch of hits, call scansubject again. */
    } /* end while - done with the entire sequence. */
@@ -246,7 +247,7 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlkPtr subject,
          /* do an extension, but only if we have not already extended
             this far */
          if (diff > 0) {
-            score=BlastAaExtendOneHit(diag, matrix, subject, query,
+            score=BlastAaExtendOneHit(matrix, subject, query,
                      subject_offsets[i], query_offsets[i], dropoff,
                      &hsp_q, &hsp_s, &hsp_len);
 
@@ -255,7 +256,7 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlkPtr subject,
                BlastAaSaveInitHsp(ungapped_hsps, hsp_q, hsp_s, 
                   query_offsets[i], subject_offsets[i], hsp_len, score);
             }
-            diag_array[diag_coord].last_hit = hsp_s + hsp_len;
+            diag_array[diag_coord].last_hit = hsp_s + hsp_len + diag_offset;
          }
       } /* end for */
    } /* end while */
@@ -362,7 +363,7 @@ Int4 BlastAaExtendRight(Int4 ** matrix,
 			Int4 dropoff,
 			Int4Ptr displacement)
 {
-  Int4 i,n;
+  Int4 i, n, best_i = -1;
   Int4 score=0;
   Int4 maxscore=0;
 
@@ -372,18 +373,19 @@ Int4 BlastAaExtendRight(Int4 ** matrix,
   s=subject->sequence + s_off;
   q=query->sequence + q_off;
 
-  for(i=0;i<n;i++)
-    {
-      score += matrix[ s[i]] [ q[i] ];
+  for(i = 0; i < n; i++) {
+     score += matrix[ s[i]] [ q[i] ];
 
-      if (score > maxscore)
-	maxscore = score;
+     if (score > maxscore) {
+        maxscore = score;
+        best_i = i;
+     }
+     
+     if ((maxscore - score) > dropoff)
+        break;
+  }
 
-      if ((maxscore - score) > dropoff)
-	break;
-    }
-
-  *displacement = i;
+  *displacement = best_i;
   return maxscore;
 }
 
@@ -395,35 +397,34 @@ Int4 BlastAaExtendLeft(Int4 ** matrix,
 		       Int4 dropoff,
 		       Int4Ptr displacement)
 {
-  Int4 i,n;
-  Int4 score=0;
-  Int4 maxscore=0;
+   Int4 i, n, best_i;
+   Int4 score = 0;
+   Int4 maxscore = 0;
+   
+   Uint1Ptr s, q;
+   
+   n = MIN( s_off , q_off );
+   best_i = n + 1;
 
-  Uint1Ptr s,q;
-
-
-  n = MIN( s_off , q_off );
-
-  s=subject->sequence + s_off - n;
-  q=query->sequence + q_off - n;
-
-  for(i=n;i>0;i--)
-    {
+   s = subject->sequence + s_off - n;
+   q = query->sequence + q_off - n;
+   
+   for(i = n; i >= 0; i--) {
       score += matrix[ s[i] ] [ q[i] ];
-
-      if (score > maxscore)
-	maxscore = score;
-
+      
+      if (score > maxscore) {
+         maxscore = score;
+         best_i = i;
+      }
       if ((maxscore - score) > dropoff)
-	break;
-    }
-
-  *displacement = n-i;
-  return maxscore;
+         break;
+   }
+   
+   *displacement = n - best_i;
+   return maxscore;
 }
 
-Int4 BlastAaExtendOneHit(const BLAST_DiagTablePtr diag,
-			 Int4 ** matrix,
+Int4 BlastAaExtendOneHit(Int4 ** matrix,
                          const BLAST_SequenceBlkPtr subject,
                          const BLAST_SequenceBlkPtr query,
                          Int4 s_off,
@@ -436,19 +437,17 @@ Int4 BlastAaExtendOneHit(const BLAST_DiagTablePtr diag,
   Int4 left_score, right_score;
   Int4 left_disp, right_disp;
 
-/* first, extend to the left. */
-left_score = BlastAaExtendLeft(matrix, subject,query,s_off,q_off,dropoff,&left_disp);
-
-/* then, extend to the right. */
-right_score = BlastAaExtendRight(matrix, subject, query, s_off, q_off, dropoff,&right_disp);
-
-*hsp_q   = q_off - left_disp;
-*hsp_s   = s_off - left_disp;
-*hsp_len = left_disp + right_disp;
-
- DiagUpdateLevel(diag, q_off, s_off, *hsp_s + *hsp_len);
-
-return left_score + right_score;
+  /* first, extend to the left. */
+  left_score = BlastAaExtendLeft(matrix, subject,query,s_off,q_off,dropoff,&left_disp);
+  
+  /* then, extend to the right. */
+  right_score = BlastAaExtendRight(matrix, subject, query, s_off, q_off, dropoff,&right_disp);
+  
+  *hsp_q   = q_off - left_disp;
+  *hsp_s   = s_off - left_disp;
+  *hsp_len = left_disp + right_disp + 2;
+  
+  return left_score + right_score;
 }
 
 Int4 BlastAaExtendTwoHit(Int4 ** matrix,
@@ -486,7 +485,7 @@ Int4 BlastAaExtendTwoHit(Int4 ** matrix,
    }
    *hsp_q = q_right_off - left_d;
    *hsp_s = s_right_off - left_d;
-   *hsp_len = left_d + right_d;
+   *hsp_len = left_d + right_d + 2;
    
    return left_score + right_score;
 }
