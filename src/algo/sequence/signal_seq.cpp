@@ -37,7 +37,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 // Scoring matrix for eukaryotic signal sequences
-const double sc_EukMat[26][15] = {
+const double const_EukMat[26][15] = {
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {0.0984401, -0.109199, -0.0350913, 0.0339016, 0.321584,
      0.216223, 0.216223, 0.159065, 0.544727, 0.0339016, 
@@ -108,7 +108,7 @@ const double sc_EukMat[26][15] = {
 
 
 // Scoring matrix for bacterial signal sequences
-const double sc_BacMat[26][15] = {
+const double const_BacMat[26][15] = {
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {1.13943, 0.916291, 0.916291, 1.03407, 0.628609,
      0.782759, 0.446287, 0.628609, 0.782759, 0.782759,
@@ -185,9 +185,9 @@ void x_PredictSignalSeq(const Seq& seq, CSignalSeq::EDomain domain,
 
     const double (*Mat)[15];
     if (domain == CSignalSeq::eBacterial) {
-        Mat = sc_BacMat;
+        Mat = const_BacMat;
     } else {
-        Mat = sc_EukMat;
+        Mat = const_EukMat;
     }
 
     TSeqPos max_index = min((TSeqPos)seq.size() - 15, max_pos - 12);
@@ -240,6 +240,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/15 12:30:19  dicuccio
+ * Changed name of const arrays
+ *
  * Revision 1.4  2004/03/12 19:59:31  dicuccio
  * Dropped static on private arrays as WorkShop doesn't let templates use such
  * arrays
