@@ -254,7 +254,7 @@ on SetProjectData()
 	
 	---------- GENOME WORK BENCH ----------
 	AddAppProject("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", Â
-		{"w_flek", "w_table", "fltk"}, {"gui_core"})
+		{"w_flek", "w_table"}, {"gui_core"})
 	AddAppProject("gbench_plugin_scan", {"libdl", "cmdline", "plainname"}, "gui:gbench:gbench_plugin_scan", Â
 		{}, {"gui_core"})
 	
