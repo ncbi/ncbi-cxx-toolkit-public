@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.72 [en] (X11; U; Linux 2.2.14-5.0 i586) [Netscape]">
    <title>NCBI C++ Toolkit -- F.A.Q.</title>
 </head>
 <body>
@@ -17,9 +17,13 @@ NCBI C++ Toolkit -- F. A. Q.</h1>
 in something like:
 <i>SunWS_cache/CC_obj_b/bXmZkg3zX5VBJvYgjABX.o</i></a></li>
 
-<li><a href="#ref_CannotFindSer">The linker complains about undefined symbols Nlm_MemGet, AsnIoNew, Nlm_MemFree, Nlm_MemCopy, and AsnIoClose in libxser.a</a></li>
+<li>
+<a href="#ref_CannotFindSer">The linker complains about undefined symbols
+Nlm_MemGet, AsnIoNew, Nlm_MemFree, Nlm_MemCopy, and AsnIoClose in libxser.a</a></li>
 
-<li><a href="#ref_CannotFindObjectSymbol">How does one find the libraries to link when the linker complains of <i>undefined symbols</i></a></li>
+<li>
+<a href="#ref_CannotFindObjectSymbol">How does one find the libraries to
+link when the linker complains of <i>undefined symbols</i></a></li>
 
 <li>
 <a href="#ref_HowMakeDep">MAKE complains it does not know "<i>how to make
@@ -30,17 +34,26 @@ target: /home/qqq/c++/WorkShop6-Debug/lib/.seqset.dep</i>"</a></li>
 symbols, unfound libraries, etc., and nothing seems to help out much</a></li>
 
 <li>
-<a href="#ref_CannotFindGetTypeInfo">The GetTypeInfo() method is not declared or defined in any of the objects for which it is part of the interface.</a></li>
+<a href="#ref_CannotFindGetTypeInfo">The GetTypeInfo() method is not declared
+or defined in any of the objects for which it is part of the interface.</a></li>
 
-<li><a href="#ref_WhichIncludeFile">Which include file should be used in *.cpp files, <i>class</i>.hpp or <i>class_</i>.hpp?</a></li>
+<li>
+<a href="#ref_WhichIncludeFile">Which include file should be used in *.cpp
+files, <i>class</i>.hpp or <i>class_</i>.hpp?</a></li>
 
-<li><a href="#ref_DBX_Sources">Debugger (DBX) warns it
-<i>`cannot find file "/home/coremake/c++/foobar.cpp"'</i>, then it does not show source code</a></li>
+<li>
+<a href="#ref_DBX_Sources">Debugger (DBX) warns it
+<i>`cannot find file
+"/home/coremake/c++/foobar.cpp"'</i>, then it does not show source code</a></li>
 
-<li><a href="#ref_AddingASN">How to add new ASN.1 module from the C Toolkit to the C++ Toolkit?</a></li>
+<li>
+<a href="#ref_AddingUserASN">Creating an out-of-tree application that uses
+your own local ASN.1 spec and a pre-built C++ Toolkit</a></li>
 
+<li>
+<a href="#ref_AddingASN">How to add new ASN.1 module from the C Toolkit
+to the C++ Toolkit?</a></li>
 </ol>
-
 
 <hr><!-- **************************************************************** -->
 <h4>
@@ -49,75 +62,148 @@ symbol"</i> in something like:
 <i>SunWS_cache/CC_obj_b/bXmZkg3zX5VBJvYgjABX.o</i></h4>
 Go to the relevant build dir, clean and rebuild everything using:
 <pre>&nbsp;&nbsp; cd /home/qqq/c++/WorkShop6-Debug/build/FooBar
-&nbsp;&nbsp; make purge_r all_r</pre><br>
+&nbsp;&nbsp; make purge_r all_r</pre>
 
-<hr><h4><a NAME="ref_CannotFindSer">The linker complains about undefined symbols
-Nlm_MemGet, AsnIoNew, Nlm_MemFree, Nlm_MemCopy, and  AsnIoClose in libxser.a.</h4>
-The cause of this error is that the serialization library, by default, links in some code that references the 
-C Toolkit library. You must link in the C Toolkit library by putting the following into your make file:<br>
-<pre>
-CPPFLAGS = $(ORIG_CPPFLAGS) \
-  $(NCBI_C_INCLUDE)
+<hr>
+<h4>
+<a NAME="ref_CannotFindSer"></a>The linker complains about undefined symbols
+Nlm_MemGet, AsnIoNew, Nlm_MemFree, Nlm_MemCopy, and AsnIoClose in libxser.a.</h4>
+The cause of this error is that the serialization library, by default,
+links in some code that references the C Toolkit library. You must link
+in the C Toolkit library by putting the following into your make file:
+<pre>CPPFLAGS = $(ORIG_CPPFLAGS) \
+&nbsp; $(NCBI_C_INCLUDE)
 
 LIBS = \
-  $(NCBI_C_LIBPATH) -lncbi \
-  $(ORIG_LIBS)
-</pre>
-If you are using the make file created by new_project.sh, then just uncomment the applicable lines.<br><br>
-
-<hr><h4><a NAME="ref_CannotFindObjectSymbol"></a>How does one find the libraries to link when the linker complains of <i>undefined symbols</i></h4>
-For example, the linker may complain about the symbol <i>ncbi::objects::CSeq_id::GetTypeInfo(void)</i> being undefined. 
-The cause of this problem is that the applicable objects library has not been linked into the application. You 
-determine the applicable objects library as follows: <br><br>1) Look for the *.hpp file that declares the applicable class
-(e.g., for CSeq_id this will be include/objects/seqloc/Seq_id.hpp). This can be done by going to the <a href="lxr/ident?i=CSeq_id">source browser</a> and doing
-an identifier search on the class name (e.g., CSeq_id) and looking in the <b>Defined as a class</b> section for the path name. <br><br>2) Note the name of the sub directory in which the *.hpp file is located (in this case the sub directory is seqloc). <br><br>3) The name of the library to link is determined from the sub directory name. In the make file add the library name to the LIB macro (e.g., LIB = <b>seqloc</b> xncbi) or add -l<b>subdir</b> (e.g.,
--lseqloc) to the command line of the link command. 
-<br><br>The above describes how to find the libraries for classes in sub directories of the <b>object/</b> directory. A similar techniques works for other classes also. However, in a some cases, the library name is a variant on the sub directory name. These variants are summarized below.
+&nbsp; $(NCBI_C_LIBPATH) -lncbi \
+&nbsp; $(ORIG_LIBS)</pre>
+If you are using the make file created by new_project.sh, then just uncomment
+the applicable lines.
+<p>
+<hr>
+<h4>
+<a NAME="ref_CannotFindObjectSymbol"></a>How does one find the libraries
+to link when the linker complains of <i>undefined symbols</i></h4>
+For example, the linker may complain about the symbol <i>ncbi::objects::CSeq_id::GetTypeInfo(void)</i>
+being undefined. The cause of this problem is that the applicable objects
+library has not been linked into the application. You determine the applicable
+objects library as follows:
+<p>1) Look for the *.hpp file that declares the applicable class (e.g.,
+for CSeq_id this will be include/objects/seqloc/Seq_id.hpp). This can be
+done by going to the <a href="lxr/ident?i=CSeq_id">source browser</a> and
+doing an identifier search on the class name (e.g., CSeq_id) and looking
+in the <b>Defined as a class</b> section for the path name.
+<p>2) Note the name of the sub directory in which the *.hpp file is located
+(in this case the sub directory is seqloc).
+<p>3) The name of the library to link is determined from the sub directory
+name. In the make file add the library name to the LIB macro (e.g., LIB
+= <b>seqloc</b> xncbi) or add -l<b>subdir</b> (e.g., -lseqloc) to the command
+line of the link command.
+<p>The above describes how to find the libraries for classes in sub directories
+of the <b>object/</b> directory. A similar techniques works for other classes
+also. However, in a some cases, the library name is a variant on the sub
+directory name. These variants are summarized below.
 <table>
-<tr><th align=left>Directory<th align=left>Library
-<tr><td>corelib/test<td>test_mt
-<tr><td>corelib<td>xncbi
-<tr><td>ctools/asn<td>xasn
-<tr><td>cgi<td>xcgi or xfcgi
-<tr><td>connect<td>xconnect
-<tr><td>connect/test<td>xconntest
-<tr><td>ctools<td>xctools
-<tr><td>html<td>xhtml
-<tr><td>objects/objmgr<td>xobjmgr
-<tr><td>serial<td>xser
-<tr><td>util<td>xutil
+<tr>
+<th ALIGN=LEFT>Directory</th>
+
+<th ALIGN=LEFT>Library</th>
+</tr>
+
+<tr>
+<td>corelib/test</td>
+
+<td>test_mt</td>
+</tr>
+
+<tr>
+<td>corelib</td>
+
+<td>xncbi</td>
+</tr>
+
+<tr>
+<td>ctools/asn</td>
+
+<td>xasn</td>
+</tr>
+
+<tr>
+<td>cgi</td>
+
+<td>xcgi or xfcgi</td>
+</tr>
+
+<tr>
+<td>connect</td>
+
+<td>xconnect</td>
+</tr>
+
+<tr>
+<td>connect/test</td>
+
+<td>xconntest</td>
+</tr>
+
+<tr>
+<td>ctools</td>
+
+<td>xctools</td>
+</tr>
+
+<tr>
+<td>html</td>
+
+<td>xhtml</td>
+</tr>
+
+<tr>
+<td>objects/objmgr</td>
+
+<td>xobjmgr</td>
+</tr>
+
+<tr>
+<td>serial</td>
+
+<td>xser</td>
+</tr>
+
+<tr>
+<td>util</td>
+
+<td>xutil</td>
+</tr>
 </table>
-<br><br>Note: The C++ Toolkit libraries have dependencies on each other. For example, symbols defined in <b>seqfeat</b> (<i>libseqfeat.a</i>) are referenced in library <b>mmdb1</b> (<i>libmmdb1.a</i>). In this case you must link <b>seqfeat</b> after <b>mmdb1</b>.
 
-<p>
-There is a <a href="depgraph.html">Library Dependency Graph</a> to help you
-figure out dependencies between the NCBI C++ Toolkit libraries.
+<p>Note: The C++ Toolkit libraries have dependencies on each other. For
+example, symbols defined in <b>seqfeat</b> (<i>libseqfeat.a</i>) are referenced
+in library <b>mmdb1</b> (<i>libmmdb1.a</i>). In this case you must link
+<b>seqfeat</b>
+after <b>mmdb1</b>.
+<p>There is a <a href="depgraph.html">Library Dependency Graph</a> to help
+you figure out dependencies between the NCBI C++ Toolkit libraries.
+<p>Most often, difficulties arise when one is linking an application using
+these numerous <i>"objects/"</i> libraries. To give you some relieve, here
+are some examples involving such libraries. They show the right order of
+libraries, as well as which libraries you may actually need. Using this
+as a starting point, it's <i>much</i> easier to find the right combination
+of libraries:
+<ul>
+<li>
+first, to find and add missing libraries using the generic technique described
+above</li>
 
-<p>
-Most often, difficulties arise when one is linking an application using
-these numerous <i>"objects/"</i> libraries. To give you some relieve, here are some
-examples involving such libraries. They show the right order of libraries,
-as well as which libraries you may actually need. Using this as a starting
-point, it's <i>much</i> easier to find the right combination of libraries:
-	 <ul>
-		<li>
-		  first, to find and add missing libraries using the generic
-		  technique described above
-		</li>
-		<li>
-		  then, try to throw out libraries which you believe are not
-		  actually needed
-		</li>
-	 </ul>
+<li>
+then, try to throw out libraries which you believe are not actually needed</li>
+</ul>
 
-<pre>
-LIB = id1 seqset $(SEQ_LIBS) pub medline biblio general \
-      xser xutil xconnect xncbi		
+<pre>LIB = id1 seqset $(SEQ_LIBS) pub medline biblio general \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xser xutil xconnect xncbi&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 
 LIB = cdd ncbimime mmdb1 mmdb2 mmdb3 cn3d seqset $(SEQ_LIBS) \
-      pub medline biblio general xser xutil xconnect xncbi		
-</pre>
-
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pub medline biblio general xser xutil xconnect xncbi</pre>
 
 <hr>
 <h4>
@@ -141,141 +227,209 @@ As the last resort, try to CVS update, reconfigure, clean and rebuild everything
 
 <hr>
 <h4>
-<a NAME="ref_CannotFindGetTypeInfo"></a>The GetTypeInfo() method is not declared or defined in any of the objects for which it is part of the interface.</h4>The macro DECLARE_INTERNAL_TYPE_INFO() is used in the *.hpp files to declare the GetTypeInfo(). There are several macros that are used to implement GetTypeInfo() methods in *.cpp files. These macros are generally named and used as follows:<br>
-<pre>
-BEGIN_*_INFO(...)
+<a NAME="ref_CannotFindGetTypeInfo"></a>The GetTypeInfo() method is not
+declared or defined in any of the objects for which it is part of the interface.</h4>
+The macro DECLARE_INTERNAL_TYPE_INFO() is used in the *.hpp files to declare
+the GetTypeInfo(). There are several macros that are used to implement
+GetTypeInfo() methods in *.cpp files. These macros are generally named
+and used as follows:
+<pre>BEGIN_*_INFO(...)
 {
-  ADD_*(...)
-  ...
-}
-</pre>
-See <a href = "programming_manual/usrtypeinfo.html"><b>User-defined Type Information</b> in the <i>Programming Manual</i></a> for more information.
-
+&nbsp; ADD_*(...)
+&nbsp; ...
+}</pre>
+See <a href="programming_manual/usrtypeinfo.html"><b>User-defined Type
+Information</b> in the <i>Programming Manual</i></a> for more information.&nbsp;
 <hr>
-<h4><a NAME="ref_WhichIncludeFile"></a>Which include file should be used in *.cpp files, <i>class</i>.hpp or <i>class_</i>.hpp?</h4>Include the <i>class</i>.hpp (file without underscore). Never instantiate or use a class of the form C*_Base directly. Instead use the C* form which inherits from the C*_Base class (e.g., don't use CSeq_id_Base directly -- use CSeq_id instead).
-
-
-
-
+<h4>
+<a NAME="ref_WhichIncludeFile"></a>Which include file should be used in
+*.cpp files, <i>class</i>.hpp or <i>class_</i>.hpp?</h4>
+Include the <i>class</i>.hpp (file without underscore). Never instantiate
+or use a class of the form C*_Base directly. Instead use the C* form which
+inherits from the C*_Base class (e.g., don't use CSeq_id_Base directly
+-- use CSeq_id instead).&nbsp;
+<hr><!-- **************************************************************** -->
+<h4>
+<a NAME="ref_DBX_Sources"></a>Debugger (DBX) warns it
+<i>`cannot find file
+"/home/coremake/c++/foobar.cpp"'</i>, then it does not show source code</h4>
+This happens when you link to the public C++ Toolkit libraries (from <i>"$NCBI/c++/*/lib/"</i>),
+which are built on other hosts and thus hard-coded with the source paths
+on these other hosts. All you have to do is to point DBX to the public
+sources (at <i>"$NCBI/c++"</i>) by just adding to your DBX resource file
+(<i>~/.dbxrc</i>) the following line:
+<pre>&nbsp; pathmap /home/coremake/c++ /netopt/ncbi_tools/c++</pre>
 
 <hr><!-- **************************************************************** -->
 <h4>
-<a NAME="ref_DBX_Sources">Debugger (DBX) warns it
-<i>`cannot find file "/home/coremake/c++/foobar.cpp"'</i>, then it does not show source code</a></i></h4>
+<a NAME="ref_AddingUserASN"></a>Creating an out-of-tree application that
+uses your own local ASN.1 spec and a pre-built C++ Toolkit</h4>
 
-This happens when you link to the public C++ Toolkit libraries
-(from <i>"$NCBI/c++/*/lib/"</i>),
-which are built on other hosts and thus hard-coded with the
-source paths on these other hosts. All you have to do is to
-point DBX to the public sources (at <i>"$NCBI/c++"</i>) by
-just adding to your DBX resource file (<i>~/.dbxrc</i>) the following line:
-<br>
+<p>
+Lets say you have your ASN.1 specification (call it <i>foo.asn</i>)
+and now you want to build an application (call its source code
+<i>foo_main.cpp</i>) which performs serialization of objects described
+in <i>foo.asn</i>.
+
+To complicate things, lets also assume that your ASN.1 spec depends on
+(imports) one of the ASN.1 specs already in the C++ Toolkit, like <tt>Date</tt>
+described in the <tt>NCBI-General</tt> module of <i>general.asn</i>.
+
+For example, your <i>foo.asn</i> could look like:
+
 <pre>
-  pathmap /home/coremake/c++ /netopt/ncbi_tools/c++
+NCBI-Foo DEFINITIONS ::=
+BEGIN
+
+EXPORTS Foo;
+IMPORTS Date FROM NCBI-General;
+
+Foo ::= SEQUENCE {
+    str   VisibleString,
+    date  Date
+}
+
+END
+</pre>
+
+Now, lets assume that the pre-built version of the NCBI C++ Toolkit
+is available at <b><i>$NCBI/c++</i></b>, and that you want to use the Toolkit's
+pre-built sources and libraries in your application.
+
+First, generate (using <a href="tools/datatool/datatool.html">datatool</a>)
+the serialization sources, and create serialization library:
+
+<pre>
+## Create new project directory, with a model makefile for your
+## local ASN.1 serialization library, and copy "foo.asn"
+
+cd ~/tmp
+$NCBI/c++/scripts/new_project.sh foo lib
+cd foo
+cp /bar/bar/bar/foo.asn .
+
+## Using DATATOOL, generate data serialization sources for your
+## ASN.1 specs described in "foo.asn":
+
+$NCBI/c++/Release/bin/datatool -oR $NCBI/c++ -m foo.asn \
+ -M "objects/general/general.asn" -oA -oc -opc . -oph .
+
+## Adjust in the library makefile "Makefile.foo_lib"
+
+LIBOBJ = foo__ foo___
+
+## Build the library
+
+make -f Makefile.foo_lib
+</pre>
+
+Then, create and build the application:
+
+<pre>
+## Create new application project, and copy your app.sources
+
+$NCBI/c++/scripts/new_project.sh foo_main app
+cd foo_main
+cp /bar/bar/bar/foo_main.cpp .
+
+
+## Adjust in the library makefile "Makefile.foo_main_app"
+
+PRE_LIBS = -L.. -lfoo
+CPPFLAGS = -I.. $(ORIG_CPPFLAGS)
+
+LIB      = xgeneral xser xutil xncbi
+LIBS     = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi)
+
+## Build the application
+
+make -f Makefile.foo_app
 </pre>
 
 
-
+<br>
 <hr><!-- **************************************************************** -->
 <h4>
-<a NAME="ref_AddingASN">How to add new ASN.1 module from the C Toolkit to the C++ Toolkit?</a></i></h4>
-
+<a NAME="ref_AddingASN"></a>How to add new ASN.1 module from the C Toolkit
+to the C++ Toolkit?</h4>
 <b><i>Caution!</i></b>
-<br>
-If you are not in the C++ core developers group, please do not do it
-yourself! -- instead, just send your request to 
-<address><a href="mailto:cpp@ncbi.nlm.nih.gov">cpp@ncbi.nlm.nih.gov</a></address>
+<br>If you are not in the C++ core developers group, please do not do it
+yourself! -- instead, just send your request to
+<address>
+<a href="mailto:cpp@ncbi.nlm.nih.gov">cpp@ncbi.nlm.nih.gov</a>.</address>
 
-<p>
-Use script
-<a href="lxr/source/src/objects/add_asn.sh">src/objects/add_asn.sh</a> that automates the adding
-of new ASN.1 spec to the C++ Toolkit. Note that it does only the "UNIX part"
-of the job, and you will have to make changes in the MSVC and MAC projects
-later, manually.
-
-<p>
-Adding ASN.1 spec "entrez2" originally located in the C Toolkit,
+<br>Use script
+<a href="lxr/source/src/objects/add_asn.sh">src/objects/add_asn.sh</a>
+that automates the adding of new ASN.1 spec to the C++ Toolkit. Note that
+it does only the "UNIX part" of the job, and you will have to make changes
+in the MSVC and MAC projects later, manually.
+<p>Adding ASN.1 spec "entrez2" originally located in the C Toolkit,
 <i>$CVSROOT/distrib/access/entrez2.asn</i>:
-<br>
-<tt>$ src/objects/add_asn.sh distrib/access/entrez2.asn,v</tt>
+<br><tt>$ src/objects/add_asn.sh distrib/access/entrez2.asn,v</tt>
+<p>Now, to add your new project to the NCBI C++ Toolkit workspace for MS
+Visual C++:
+<ol>
+<li>
+Open workspace file <b><i>c++/compilers/msvc_prj/ncbi_cpp.dsw</i></b> in
+the MS Visual C++.</li>
 
-<p>
-Now, to add your new project to the NCBI C++ Toolkit workspace for
-MS Visual C++:
+<li>
+Create library project <b>"objects_entrez2"</b> containing source files
+<i>c++/src/objects/entrez2/entrez2__.cpp</i>
+and <i>c++/src/objects/entrez2/entrez2___.cpp</i>.</li>
 
-	 <ol>
-		<li>
-		  Open workspace file <b><i>c++/compilers/msvc_prj/ncbi_cpp.dsw</i></b>
-		  in the MS Visual C++.
-		</li>
-		<li>
-		  Create library project <b>"objects_entrez2"</b> containing
-		  source files <i>c++/src/objects/entrez2/entrez2__.cpp</i> and
-		  <i>c++/src/objects/entrez2/entrez2___.cpp</i>.
-		</li>
-		<li>
-		  The project file location should be:
-		  <b><i>c++/compilers/msvc_prj/objects/entrez2/objects_entrez2.dsp</i></b>
-		</li>
-		<li>
-		  Add project <b>"objects_entrez2"</b> as a dependency to the
-		  utility project <b>"all_objects_libs"</b>.
-		</li>
-		<li>
-		  Build project <b>'objects_entrez2'</b>.
-		</li>
-		<li>
-		  Check-in <b><i>c++/compilers/msvc_prj/objects/entrez2/objects_entrez2.dsp</i></b> and
-		  <b><i>c++/compilers/msvc_prj/ncbi_cpp.dsw</i></b>. Consult the
-        <a href="config.html#ref_MsvcProjFiles">
-			 "Working with NCBI C++ project files"</a> guidelines.
-		</li>
-	 </ol>
+<li>
+The project file location should be: <b><i>c++/compilers/msvc_prj/objects/entrez2/objects_entrez2.dsp</i></b></li>
 
-<p>
-		Here is the list of files affected:
-		<i>
-	 <ul>
-		<li>
-		  c++/scripts/internal/c_toolkit/<b>sync_asn.sh</b>
-		</li>
-		<li>
-		  c++/src/objects/<b>Makefile</b>
-		</li>
-		<li>
-		  c++/src/objects/<b>Makefile.in</b>
-		</li>
-		<li>
-		  c++/src/objects/<b>nt_sources.sh</b>
-		</li>
-		<li>
-		  c++/src/objects/entrez2/<b>entrez2.module</b>  <tt>[new file]</tt>
-		</li>
-		<li>
-		  c++/src/objects/entrez2/<b>Makefile.in</b>  <tt>[new file]</tt>
-		</li>
-		<li>
-		  c++/src/objects/entrez2/<b>.cvsignore</b>  <tt>[new file]</tt>
-		</li>
-		<li>
-		  c++/include/objects/entrez2/<b>.cvsignore</b>  <tt>[new file]</tt>
-		</li>
-		<li>
-		  c++/compilers/msvc_prj/objects/<b>entrez2/</b>  <tt>[new directory]</tt>
-		</li>
-		<li>
-		  c++/compilers/msvc_prj/objects/entrez2/<b>objects_entrez2.dsp</b>  <tt>[new file]</tt>
-		</li>
-		<li>
-		  c++/compilers/msvc_prj/<b>ncbi_cpp.dsw</b>
-		</li>
-	 </ul>
-  </i>
+<li>
+Add project <b>"objects_entrez2"</b> as a dependency to the utility project
+<b>"all_objects_libs"</b>.</li>
+
+<li>
+Build project <b>'objects_entrez2'</b>.</li>
+
+<li>
+Check-in <b><i>c++/compilers/msvc_prj/objects/entrez2/objects_entrez2.dsp</i></b>
+and <b><i>c++/compilers/msvc_prj/ncbi_cpp.dsw</i></b>. Consult the <a href="config.html#ref_MsvcProjFiles">"Working
+with NCBI C++ project files"</a> guidelines.</li>
 </ol>
+Here is the list of files affected:
+<ul>
+<li>
+<i>c++/scripts/internal/c_toolkit/<b>sync_asn.sh</b></i></li>
 
+<li>
+<i>c++/src/objects/<b>Makefile</b></i></li>
 
+<li>
+<i>c++/src/objects/<b>Makefile.in</b></i></li>
+
+<li>
+<i>c++/src/objects/<b>nt_sources.sh</b></i></li>
+
+<li>
+<i>c++/src/objects/entrez2/<b>entrez2.module</b> <tt>[new file]</tt></i></li>
+
+<li>
+<i>c++/src/objects/entrez2/<b>Makefile.in</b> <tt>[new file]</tt></i></li>
+
+<li>
+<i>c++/src/objects/entrez2/<b>.cvsignore</b> <tt>[new file]</tt></i></li>
+
+<li>
+<i>c++/include/objects/entrez2/<b>.cvsignore</b> <tt>[new file]</tt></i></li>
+
+<li>
+<i>c++/compilers/msvc_prj/objects/<b>entrez2/</b> <tt>[new directory]</tt></i></li>
+
+<li>
+<i>c++/compilers/msvc_prj/objects/entrez2/<b>objects_entrez2.dsp</b> <tt>[new
+file]</tt></i></li>
+
+<li>
+<i>c++/compilers/msvc_prj/<b>ncbi_cpp.dsw</b></i></li>
+</ul>
 <!-- **************************************************************** -->
-<br>
 <p>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
