@@ -203,16 +203,18 @@ static char* s_ComposeFrom(char* buf, size_t buf_size)
 
 SSendMailInfo* SendMailInfo_Init(SSendMailInfo* info)
 {
-    info->magic_number = MX_MAGIC_NUMBER;
-    info->cc = 0;
-    info->bcc = 0;
-    if (!s_ComposeFrom(info->from, sizeof(info->from)))
-        info->from[0] = 0;
-    info->header = 0;
-    info->mx_host = MX_HOST;
-    info->mx_port = MX_PORT;
-    info->mx_timeout.sec = MX_TIMEOUT;
-    info->mx_timeout.usec = 0;
+    if (info) {
+        info->magic_number = MX_MAGIC_NUMBER;
+        info->cc = 0;
+        info->bcc = 0;
+        if (!s_ComposeFrom(info->from, sizeof(info->from)))
+            info->from[0] = 0;
+        info->header = 0;
+        info->mx_host = MX_HOST;
+        info->mx_port = MX_PORT;
+        info->mx_timeout.sec = MX_TIMEOUT;
+        info->mx_timeout.usec = 0;
+    }
     return info;
 }
 
@@ -354,9 +356,8 @@ const char* CORE_SendMailEx(const char*          to,
             SENDMAIL_RETURN("Write error in sending Cc");
     }
 
-    if (!s_SockWrite(sock,
-                     "X-Mailer: CORE_SendMail (NCBI "
-                     NCBI_SENDMAIL_TOOLKIT " Toolkit)" MX_CRLF))
+    if (!s_SockWrite(sock, "X-Mailer: CORE_SendMail (NCBI "
+                           NCBI_SENDMAIL_TOOLKIT " Toolkit)" MX_CRLF))
         SENDMAIL_RETURN("Write error in sending mailer information");
 
     assert(sizeof(buffer) > sizeof(MX_CRLF) && sizeof(MX_CRLF) >= 3);
@@ -389,12 +390,10 @@ const char* CORE_SendMailEx(const char*          to,
     if (body && *body) {
         int/*bool*/ newline = 0/*false*/;
         size_t n = 0, m = strlen(body);
-        
         if (!s_SockWrite(sock, MX_CRLF))
             SENDMAIL_RETURN("Write error in sending text body delimiter");
         while (n < m) {
             size_t k = 0;
-            
             while (k < sizeof(buffer) - sizeof(MX_CRLF)) {
                 if (body[n] == '\n') {
                     memcpy(&buffer[k], MX_CRLF, sizeof(MX_CRLF) - 1);
@@ -405,7 +404,7 @@ const char* CORE_SendMailEx(const char*          to,
                         buffer[k++] = '.';
                         buffer[k++] = '.';
                     } else
-                        buffer[k++]   = body[n];
+                        buffer[k++] = body[n];
                     newline = 0/*false*/;
                 }
                 if (++n >= m)
@@ -440,6 +439,9 @@ const char* CORE_SendMailEx(const char*          to,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2003/03/24 19:46:17  lavr
+ * Few minor changes; do not init SSendMailInfo passed as NULL
+ *
  * Revision 6.17  2003/02/08 21:05:55  lavr
  * Unimportant change in comments
  *
