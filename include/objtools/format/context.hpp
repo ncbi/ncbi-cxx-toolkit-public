@@ -302,6 +302,8 @@ public:
 
     void AddSection(TSection& section) { m_Sections.push_back(section); }
 
+    void Reset(void);
+
 private:
 
     CFlatFileConfig             m_Cfg;
@@ -487,6 +489,17 @@ void CFlatFileContext::SetAnnotSelector(const SAnnotSelector& sel)
 }
 
 
+inline
+void CFlatFileContext::Reset(void)
+{
+    m_Entry.Reset();
+    m_Sections.clear();
+    m_Submit.Reset();
+    m_Selector.reset();
+    m_Loc.Reset();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -494,6 +507,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/05/19 14:45:50  shomrat
+* + CFlatFileContext::Reset
+*
 * Revision 1.17  2004/05/06 17:44:28  shomrat
 * + IsEMBL and IsInNucProt
 *
