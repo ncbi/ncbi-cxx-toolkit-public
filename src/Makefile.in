@@ -43,7 +43,7 @@ compress_tests:
 	for f in $(bindir)/*; do \
 	   case "`basename $$f`" in \
 	      testipub) ;; \
-	      *test* | *demo* | *sample*) test -d $$f  ||  gzip -N $$f ;; \
+	      *test* | *demo* | *sample*) test -d $$f  ||  gzip -Nf $$f ;; \
 	   esac; \
 	done
 
