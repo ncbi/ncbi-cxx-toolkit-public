@@ -56,6 +56,7 @@ CRef<CSeq_id_Mapper> CSeq_id_Mapper::GetSeq_id_Mapper(void)
 
 CSeq_id_Mapper::CSeq_id_Mapper(void)
 {
+    s_Seq_id_Mapper = this;
     CSeq_id_Which_Tree::Initialize(m_Trees);
 }
 
@@ -164,6 +165,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2004/06/14 13:57:09  grichenk
+* CSeq_id_Info locks CSeq_id_Mapper with a CRef
+*
 * Revision 1.46  2004/06/10 16:21:27  grichenk
 * Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
 * returns CRef<> which is locked by CObjectManager.

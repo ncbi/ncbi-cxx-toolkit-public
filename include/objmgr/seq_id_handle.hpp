@@ -76,12 +76,15 @@ public:
 
     CSeq_id_Which_Tree* GetTree(void) const;
 
+    CSeq_id_Mapper& GetSeq_id_Mapper(void) const;
+
 protected:
     void x_RemoveLastReference(void) const;
 
-    mutable CAtomicCounter m_Counter;
-    CSeq_id_Which_Tree*    m_Tree;
-    CConstRef<CSeq_id>     m_Seq_id;
+    mutable CAtomicCounter       m_Counter;
+    CSeq_id_Which_Tree*          m_Tree;
+    CConstRef<CSeq_id>           m_Seq_id;
+    mutable CRef<CSeq_id_Mapper> m_Mapper;
 
 private:
     CSeq_id_Info(const CSeq_id_Info&);
@@ -155,25 +158,6 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_id_Info
 /////////////////////////////////////////////////////////////////////////////
-
-
-inline
-CSeq_id_Info::CSeq_id_Info(CSeq_id_Which_Tree* tree)
-    : m_Tree(tree)
-{
-    _ASSERT(tree);
-    m_Counter.Set(0);
-}
-
-
-inline
-CSeq_id_Info::CSeq_id_Info(CSeq_id_Which_Tree* tree, const CConstRef<CSeq_id>& seq_id)
-    : m_Tree(tree),
-      m_Seq_id(seq_id)
-{
-    _ASSERT(tree);
-    m_Counter.Set(0);
-}
 
 
 inline
@@ -305,6 +289,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/06/14 13:57:09  grichenk
+* CSeq_id_Info locks CSeq_id_Mapper with a CRef
+*
 * Revision 1.22  2004/02/19 17:25:33  vasilche
 * Use CRef<> to safely hold pointer to CSeq_id_Info.
 * CSeq_id_Info holds pointer to owner CSeq_id_Which_Tree.

@@ -53,6 +53,25 @@ DEFINE_STATIC_FAST_MUTEX(sx_GetSeqIdMutex);
 #endif
 
 
+CSeq_id_Info::CSeq_id_Info(CSeq_id_Which_Tree* tree)
+    : m_Tree(tree),
+      m_Mapper(CSeq_id_Mapper::GetSeq_id_Mapper())
+{
+    _ASSERT(tree);
+    m_Counter.Set(0);
+}
+
+
+CSeq_id_Info::CSeq_id_Info(CSeq_id_Which_Tree* tree, const CConstRef<CSeq_id>& seq_id)
+    : m_Tree(tree),
+      m_Seq_id(seq_id),
+      m_Mapper(CSeq_id_Mapper::GetSeq_id_Mapper())
+{
+    _ASSERT(tree);
+    m_Counter.Set(0);
+}
+
+
 CConstRef<CSeq_id> CSeq_id_Info::GetGiSeqId(int gi) const
 {
     CConstRef<CSeq_id> ret;
@@ -86,6 +105,13 @@ CSeq_id_Info::~CSeq_id_Info(void)
 void CSeq_id_Info::x_RemoveLastReference(void) const
 {
     m_Tree->DropInfo(this);
+}
+
+
+inline
+CSeq_id_Mapper& CSeq_id_Info::GetSeq_id_Mapper(void) const
+{
+    return *m_Mapper;
 }
 
 
@@ -251,7 +277,7 @@ bool CSeq_id_Handle::x_Match(const CSeq_id_Handle& handle) const
 
 bool CSeq_id_Handle::IsBetter(const CSeq_id_Handle& h) const
 {
-    return CSeq_id_Mapper::GetSeq_id_Mapper()->x_IsBetter(*this, h);
+    return m_Info->GetSeq_id_Mapper().x_IsBetter(*this, h);
 }
 
 
@@ -260,7 +286,7 @@ bool CSeq_id_Handle::operator==(const CSeq_id& id) const
     if ( IsGi() ) {
         return id.IsGi() && id.GetGi() == GetGi();
     }
-    return *this == CSeq_id_Mapper::GetSeq_id_Mapper()->GetHandle(id);
+    return *this == m_Info->GetSeq_id_Mapper().GetHandle(id);
 }
 
 
@@ -285,6 +311,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/06/14 13:57:09  grichenk
+* CSeq_id_Info locks CSeq_id_Mapper with a CRef
+*
 * Revision 1.22  2004/06/10 16:21:27  grichenk
 * Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
 * returns CRef<> which is locked by CObjectManager.
