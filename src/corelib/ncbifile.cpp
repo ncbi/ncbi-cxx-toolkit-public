@@ -473,13 +473,18 @@ string CDirEntry::CreateRelativePath( const string& path_from,
                    "path_to is empty path");
     }
 
-
+//Platform-dependent compare mode
+#ifdef NCBI_OS_MSWIN
+# define DIR_PARTS_CMP_MODE NStr::eNocase
+#endif
+#ifdef NCBI_OS_UNIX
+# define DIR_PARTS_CMP_MODE NStr::eCase
+#endif
     // Roots must be the same to create relative path from one to another
-    string from_front = dir_from_parts.front();
-    NStr::ToUpper(from_front);
-    string to_front   = dir_to_parts.front();
-    NStr::ToUpper(to_front);
-    if ( from_front != to_front ) {
+
+    if (NStr::Compare(dir_from_parts.front(), 
+                      dir_to_parts.front(), 
+                      DIR_PARTS_CMP_MODE) != 0) {
         NCBI_THROW(CFileException, eRelativePath, 
                    "roots of input pathes are different");
     }
@@ -487,7 +492,9 @@ string CDirEntry::CreateRelativePath( const string& path_from,
     size_t min_parts = min(dir_from_parts.size(), dir_to_parts.size());
     size_t common_length = min_parts;
     for (size_t i = 0; i < min_parts; i++) {
-        if (dir_from_parts[i] != dir_to_parts[i]) {
+        if (NStr::Compare(dir_from_parts[i], 
+                          dir_to_parts[i],
+                          DIR_PARTS_CMP_MODE) != 0) {
             common_length = i;
             break;
         }
@@ -1919,6 +1926,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2004/02/11 20:49:57  gorelenk
+ * Implemented case-insensitivity of CreateRelativePath on NCBI_OS_MSWIN.
+ *
  * Revision 1.68  2004/02/11 20:30:21  gorelenk
  * Added case-insensitive test of root dirs inside CreateRelativePath.
  *
