@@ -87,6 +87,17 @@ CDbBlast::~CDbBlast()
     x_ResetQueryDs();
 }
 
+/// Resets results data structures
+void
+CDbBlast::x_ResetResultDs()
+{
+    m_ipResults = Blast_HSPResultsFree(m_ipResults);
+    
+    sfree(m_ipReturnStats);
+    NON_CONST_ITERATE(TBlastError, itr, m_ivErrors) {
+        *itr = Blast_MessageFree(*itr);
+    }
+}
 
 /// Resets query data structures
 void
@@ -101,13 +112,7 @@ CDbBlast::x_ResetQueryDs()
     m_ipLookupSegments = ListNodeFreeData(m_ipLookupSegments);
 
     m_ipFilteredRegions = BlastMaskLocFree(m_ipFilteredRegions);
-    m_ipResults = Blast_ResultsFree(m_ipResults);
-    
-    sfree(m_ipReturnStats);
-    NON_CONST_ITERATE(TBlastError, itr, m_ivErrors) {
-        *itr = Blast_MessageFree(*itr);
-    }
-
+    x_ResetResultDs();
 }
 
 int CDbBlast::SetupSearch()
@@ -152,7 +157,7 @@ int CDbBlast::SetupSearch()
             BlastMaskLocProteinToDNA(&m_ipFilteredRegions, m_tQueries);
         }
 
-        Blast_ResultsInit(m_iclsQueryInfo->num_queries, &m_ipResults);
+        Blast_HSPResultsInit(m_iclsQueryInfo->num_queries, &m_ipResults);
 
         LookupTableWrapInit(m_iclsQueries, 
             m_OptsHandle->GetOptions().GetLutOpts(), 
@@ -317,6 +322,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2004/05/05 15:28:56  dondosha
+ * Renamed functions in blast_hits.h accordance with new convention Blast_[StructName][Task]
+ *
  * Revision 1.23  2004/04/30 16:53:06  dondosha
  * Changed a number of function names to have the same conventional Blast_ prefix
  *

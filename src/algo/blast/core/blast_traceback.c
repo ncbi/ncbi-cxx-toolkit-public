@@ -424,7 +424,7 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
 
             /* Calculate alignment length and number of identical letters */
             if (scoring_options->is_ooframe) {
-               Blast_OOFGetNumIdentities(query, subject, hsp, program_number,
+               Blast_HSPGetOOFNumIdentities(query, subject, hsp, program_number,
                                        &hsp->num_ident, &align_length);
             }
             else {
@@ -454,7 +454,7 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
                      kbp = sbp->kbp;
 
                   if (hit_options->phi_align) {
-                     hsp->evalue = Blast_PHIScoreToEvalue(hsp->score, sbp);
+                     Blast_HSPPHIGetEvalue(hsp, sbp);
                   } else {
                      hsp->evalue = BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
                           (double)query_info->eff_searchsp_array[hsp->context]);
@@ -744,7 +744,7 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
             if (kGreedyTraceback) {
                /* Low level greedy algorithm ignores ambiguities, so the score
                   needs to be reevaluated. */
-               Blast_ReevaluateHSPWithAmbiguities(hsp, query, adjusted_subject,
+               Blast_HSPReevaluateWithAmbiguities(hsp, query, adjusted_subject,
                   hit_options, score_options, query_info, sbp);
             }
             
@@ -792,13 +792,13 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
            BLAST_LinkHsps(program_number, hsp_list, query_info, subject_blk,
                          sbp, hit_params, score_options->gapped_calculation);
         } else if (hit_options->phi_align) {
-           Blast_PHIGetEvalue(hsp_list, sbp);
+           Blast_HSPListPHIGetEvalues(hsp_list, sbp);
         } else {
-           Blast_GetNonSumStatsEvalue(program_number, query_info, hsp_list, 
+           Blast_HSPListGetEvalues(program_number, query_info, hsp_list, 
                                       score_options->gapped_calculation, sbp);
         }
         
-        Blast_ReapHitlistByEvalue(hsp_list, hit_options);
+        Blast_HSPListReapByEvalue(hsp_list, hit_options);
     }
     
     qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), score_compare_hsps);
@@ -941,7 +941,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
    /* Re-sort the hit lists according to their best e-values, because
       they could have changed. Only do this for a database search. */
    if (BLASTSeqSrcGetTotLen(seq_src) > 0)
-      Blast_SortResults(results);
+      Blast_HSPResultsSortByEvalue(results);
 
    /* Eliminate extra hits from results, if preliminary hit list size is larger
       than the final hit list size */

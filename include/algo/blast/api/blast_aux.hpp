@@ -144,7 +144,7 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastEffectiveLengthsOptions,
                            BlastEffectiveLengthsOptionsFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastGapAlignStruct, BLAST_GapAlignStructFree);
-DECLARE_AUTO_CLASS_WRAPPER(BlastHSPResults, Blast_ResultsFree);
+DECLARE_AUTO_CLASS_WRAPPER(BlastHSPResults, Blast_HSPResultsFree);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2004/05/05 15:28:10  dondosha
+* Renamed functions in blast_hits.h accordance with new convention Blast_[StructName][Task]
+*
 * Revision 1.33  2004/04/30 17:12:42  dondosha
 * Changed prefix from BLAST_ to conventional Blast_
 *
