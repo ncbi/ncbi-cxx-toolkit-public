@@ -47,7 +47,8 @@ public:
 	m_NofDrvs= 0;
     }
 
-    FDBAPI_CreateContext GetDriver(const string& driver_name);
+    FDBAPI_CreateContext GetDriver(const string& driver_name, 
+				   string* err_msg= 0);
 
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
@@ -57,7 +58,7 @@ public:
     }
 
 protected:
-    bool LoadDriverDll(const string& driver_name);
+    bool LoadDriverDll(const string& driver_name, string* err_msg);
 
 private:
     typedef void            (*FDriverRegister) (I_DriverMgr& mgr);
@@ -82,6 +83,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/04/04 23:48:44  soussov
+ * return of error message from dlopen added
+ *
  * Revision 1.4  2002/01/23 21:14:06  soussov
  * replaces map with array
  *
