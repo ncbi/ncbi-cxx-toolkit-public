@@ -47,6 +47,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/seq__.hpp>
+#include <objects/blastdb/blastdb__.hpp>
 
 #include <assert.h>
 
@@ -120,16 +121,16 @@ s_TokenizeAndGroupQuotes(const string   & inp,
                          vector<string> & results,
                          vector<char>   & taken)
 {
-    string delim("'\"");
+    string delimchars("'\"");
     
-    s_TokenizeKeepDelims(inp, delim, results, taken);
+    s_TokenizeKeepDelims(inp, delimchars, results, taken);
     
     // Allow embedding of ' within " and vice versa; does not (yet)
     // handle escaped quotes.
     
     for(unsigned i = 1; i < (results.size()-1); i++) {
-        char d1 = delim[0];
-        char d2 = delim[1];
+        char d1 = delimchars[0];
+        char d2 = delimchars[1];
         
         char delim = taken[i-1];
         char delim2 = (delim == d1) ? d2 : d1;
@@ -336,25 +337,25 @@ int test1(int argc, char ** argv)
             (s == "-bs10")) {
             // These require: -lncbitool -lz -lncbiobj -lncbi
             
-            const char * dbname = "nt";
+            const char * dbname1 = "nt";
             
             bool is_prot = false;
             Uint4 gi = 12831944;
             
             if (s == "-bs10") {
                 is_prot = true;
-                dbname = "nr";
+                dbname1 = "nr";
                 gi = 129291;
             }
             
             ostringstream oss_fn;
-            oss_fn << "." << dbname << "." << gi;
+            oss_fn << "." << dbname1 << "." << gi;
             
             vector<char> seqdb_data, readdb_data;
             string seqdb_bs, readdb_bs;
             
             {
-                CSeqDB db(dbname, is_prot ? 'p' : 'n');
+                CSeqDB db(dbname1, is_prot ? 'p' : 'n');
                 
                 Uint4 oid(0);
                 
@@ -392,7 +393,7 @@ int test1(int argc, char ** argv)
                 }
             }
             {
-                ReadDBFILEPtr rdfp = readdb_new_ex2((char*) dbname,
+                ReadDBFILEPtr rdfp = readdb_new_ex2((char*) dbname1,
                                                     is_prot ? 1 : 0,
                                                     READDB_NEW_DO_TAXDB,
                                                     NULL,
@@ -405,7 +406,7 @@ int test1(int argc, char ** argv)
                 if (bsp) {
                     string fn = string("readdb") + oss_fn.str() + ".txt";
                     
-                    AsnIoPtr myaip = AsnIoOpen((char*) fn.c_str(), "w");
+                    AsnIoPtr myaip = AsnIoOpen((char*) fn.c_str(), (char*)"w");
                     BioseqAsnWrite(bsp, myaip, NULL);
                     AsnIoClose(myaip);
                     
@@ -530,14 +531,14 @@ int test1(int argc, char ** argv)
 //         } else desc += " [-dyn]";
         
         if (s == "-xlate2") {
-            string dbname("prot_dbs");
+            string dbname1("prot_dbs");
             
             if ((! args.empty()) && ((*args.begin())[0] != '-')) {
-                dbname = *args.begin();
+                dbname1 = *args.begin();
                 args.pop_front();
             }
             
-            CSeqDB db(dbname, 'p');
+            CSeqDB db(dbname1, 'p');
             
             cout << "Num oids: " << db.GetNumSeqs() << endl;
             
@@ -562,7 +563,8 @@ int test1(int argc, char ** argv)
             cout << "Dumping deflines:" << endl;
             {
                 auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_AsnText, cout));
-                *os << *db.GetHdr(oid);
+                CRef<CBlast_def_line_set> obj(db.GetHdr(oid));
+                *os << *obj;
             }
             cout << "Done dumping deflines:" << endl;
             
@@ -575,6 +577,7 @@ int test1(int argc, char ** argv)
             
             return 0;
             
+#if 0
             cout << "PIG translations worked, trying bulk mode:" << endl;
             
             //Uint4 numseqs(db.GetNumSeqs());
@@ -612,18 +615,18 @@ int test1(int argc, char ** argv)
             cout << "Translations tested up to " << i << endl;
             
             return 0;
-
+#endif
         } else desc += " [-xlate2]";
         
         if (s == "-xlate") {
-            string dbname("nr pataa env_nr");
+            string dbname1("nr pataa env_nr");
             
             if ((! args.empty()) && ((*args.begin())[0] != '-')) {
-                dbname = *args.begin();
+                dbname1 = *args.begin();
                 args.pop_front();
             }
             
-            CSeqDB db(dbname, 'p');
+            CSeqDB db(dbname1, 'p');
             
             cout << "Num oids: " << db.GetNumSeqs() << endl;
             
@@ -642,7 +645,8 @@ int test1(int argc, char ** argv)
             cout << "Dumping deflines:" << endl;
             {
                 auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_AsnText, cout));
-                *os << *db.GetHdr(oid);
+                CRef<CBlast_def_line_set> obj(db.GetHdr(oid));
+                *os << *obj;
             }
             cout << "Done dumping deflines:" << endl;
             
@@ -1260,13 +1264,13 @@ int test1(int argc, char ** argv)
         if (s == "-chunk") {
             cout << "enter db name:" << endl;
             
-            string dbname;
-            cin >> dbname;
+            string dbname1;
+            cin >> dbname1;
             
-            cout << "entered db name: [" << dbname << "]" << endl;
+            cout << "entered db name: [" << dbname1 << "]" << endl;
             
-            //CSeqDB phil(dbname, 'p', 1000000, 1 << 30, true);
-            CSeqDB phil(dbname, 'p', 1880000, 1 << 30, true);
+            //CSeqDB phil(dbname1, 'p', 1000000, 1 << 30, true);
+            CSeqDB phil(dbname1, 'p', 1880000, 1 << 30, true);
             
             const Uint4 max_oids = 100;
             
