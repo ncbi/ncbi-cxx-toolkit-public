@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/02/26 16:24:59  gouriano
+* Skip datatype constraints when parsing ASN.1 spec
+*
 * Revision 1.33  2004/02/25 19:45:19  gouriano
 * Made it possible to define DEFAULT for data members of type REAL
 *
@@ -344,10 +347,26 @@ bool ASNParser::HaveMoreElements(void)
         case '}':
             Consume();
             return false;
+        case '(':
+            Consume();
+	    // skip constraints definition
+            SkipTo(')');
+            return HaveMoreElements();
         }
     }
-    ParseError("',' or '}' expected");
+    ParseError("',' or '}'");
     return false;
+}
+
+void ASNParser::SkipTo(char ch)
+{
+    for ( TToken tok = Next(); tok != T_EOF; tok = Next() ) {
+        if (tok == T_SYMBOL && NextToken().GetSymbol() == ch) {
+            Consume();
+            return;
+        }
+        Consume();
+    }
 }
 
 CDataType* ASNParser::TypesBlock(CDataMemberContainerType* containerType,

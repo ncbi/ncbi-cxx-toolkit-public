@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/02/26 16:23:48  gouriano
+* Skip datatype constraints when parsing ASN.1 spec
+*
 * Revision 1.9  2004/02/25 19:45:48  gouriano
 * Made it possible to define DEFAULT for data members of type REAL
 *
@@ -145,6 +148,7 @@ public:
     const string& ModuleReference(void);
 
     bool HaveMoreElements(void);
+    void SkipTo(char ch);
 };
 
 END_NCBI_SCOPE
