@@ -66,6 +66,10 @@ public:
     {
         return true;
     }
+    const CItemInfo* GetItemInfo(void) const
+    {
+        return 0;
+    }
 private:
     bool CheckValid(void) const;
 
@@ -101,6 +105,10 @@ public:
     {
         return true;
     }
+    const CItemInfo* GetItemInfo(void) const
+    {
+        return 0;
+    }
 private:
     bool CheckValid(void) const;
 
@@ -126,6 +134,7 @@ public:
     
     void Next(void);
 
+    const CItemInfo* GetItemInfo(void) const;
 protected:
     CObjectTypeInfoII(void);
     CObjectTypeInfoII(const CClassTypeInfoBase* typeInfo);
@@ -134,7 +143,6 @@ protected:
     const CObjectTypeInfo& GetOwnerType(void) const;
     const CClassTypeInfoBase* GetClassTypeInfoBase(void) const;
     TMemberIndex GetItemIndex(void) const;
-    const CItemInfo* GetItemInfo(void) const;
 
     void Init(const CClassTypeInfoBase* typeInfo);
     void Init(const CClassTypeInfoBase* typeInfo, TMemberIndex index);
@@ -467,6 +475,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/07/27 17:11:48  gouriano
+* Give access to the context of tree iterator
+*
 * Revision 1.11  2004/04/30 13:28:39  gouriano
 * Remove obsolete function declarations
 *

@@ -130,11 +130,14 @@ public:
         return true;
     }
     virtual TObjectInfo Get(void) const = 0;
+    virtual const CItemInfo* GetItemInfo(void) const = 0;
 
     static CConstTreeLevelIterator* Create(const TObjectInfo& object);
     static CConstTreeLevelIterator* CreateOne(const TObjectInfo& object);
 
     static bool HaveChildren(const CConstObjectInfo& object);
+protected:
+    virtual void SetItemInfo(const CItemInfo* info) = 0;
 };
 
 class NCBI_XSERIAL_EXPORT CTreeLevelIterator
@@ -152,11 +155,14 @@ public:
         return true;
     }
     virtual TObjectInfo Get(void) const = 0;
+    virtual const CItemInfo* GetItemInfo(void) const = 0;
 
     static CTreeLevelIterator* Create(const TObjectInfo& object);
     static CTreeLevelIterator* CreateOne(const TObjectInfo& object);
 
     virtual void Erase(void);
+protected:
+    virtual void SetItemInfo(const CItemInfo* info) = 0;
 };
 
 // CTreeIterator is base class for all iterators over non-modifiable object
@@ -169,6 +175,7 @@ public:
     typedef typename LevelIterator::TObjectInfo TObjectInfo;
     typedef typename LevelIterator::TBeginInfo TBeginInfo;
     typedef set<TConstObjectPtr> TVisitedObjects;
+    typedef list< pair< TTypeInfo, const CItemInfo*> > TIteratorContext;
 
     // construct object iterator
     CTreeIteratorTmpl(void)
@@ -255,6 +262,56 @@ public:
         {
             Init(beginInfo);
             return *this;
+        }
+
+    TIteratorContext GetContextData(void) const
+        {
+            TIteratorContext stk_info;
+            stack< AutoPtr<LevelIterator> >& stk =
+                const_cast< stack< AutoPtr<LevelIterator> >& >(m_Stack);
+            stack< AutoPtr<LevelIterator> > tmp;
+            while ( !stk.empty() ) {
+                AutoPtr<LevelIterator>& t = stk.top();
+                stk_info.push_front(
+                    make_pair( t->Get().GetTypeInfo(), t->GetItemInfo()));
+                tmp.push(t);
+                stk.pop();
+            }
+            while ( !tmp.empty() ) {
+                AutoPtr<LevelIterator>& t = tmp.top();
+                stk.push(t);
+                tmp.pop();
+            }
+            return stk_info;
+        }
+
+    string GetContext(void) const
+        {
+            string loc;
+            TIteratorContext stk_info = GetContextData();
+            TIteratorContext::const_iterator i;
+            for (i = stk_info.begin(); i != stk_info.end(); ++i) {
+                TTypeInfo tt = i->first;
+                const CItemInfo* ii = i->second;
+                string name;
+                if (ii) {
+                    const CMemberId& id = ii->GetId();
+                    if (!id.IsAttlist() && !id.HasNotag()) {
+                        name = id.GetName();
+                    }
+                } else {
+                    if (loc.empty()) {
+                        name = tt->GetName();
+                    }
+                }
+                if (!name.empty()) {
+                    if (!loc.empty()) {
+                        loc += ".";
+                    }
+                    loc += name;
+                }
+            }
+            return loc;
         }
 
 protected:
@@ -868,6 +925,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/07/27 17:11:48  gouriano
+* Give access to the context of tree iterator
+*
 * Revision 1.30  2004/04/26 16:40:59  ucko
 * Tweak for GCC 3.4 compatibility.
 *

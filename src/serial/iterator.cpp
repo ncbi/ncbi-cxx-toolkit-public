@@ -47,7 +47,7 @@ class CTreeLevelIteratorOne : public CTreeLevelIterator
 {
 public:
     CTreeLevelIteratorOne(const CObjectInfo& object)
-        : m_Object(object)
+        : m_Object(object), m_ItemInfo(0)
         {
         }
 
@@ -63,15 +63,25 @@ public:
         {
             return m_Object;
         }
+    const CItemInfo* GetItemInfo(void) const
+        {
+            return m_ItemInfo;
+        }
+protected:
+    void SetItemInfo(const CItemInfo* info)
+        {
+            m_ItemInfo = info;
+        }
 private:
     CObjectInfo m_Object;
+    const CItemInfo* m_ItemInfo;
 };
 
 class CConstTreeLevelIteratorOne : public CConstTreeLevelIterator
 {
 public:
     CConstTreeLevelIteratorOne(const CConstObjectInfo& object)
-        : m_Object(object)
+        : m_Object(object), m_ItemInfo(0)
         {
         }
 
@@ -87,8 +97,18 @@ public:
         {
             return m_Object;
         }
+    const CItemInfo* GetItemInfo(void) const
+        {
+            return m_ItemInfo;
+        }
+protected:
+    void SetItemInfo(const CItemInfo* info)
+        {
+            m_ItemInfo = info;
+        }
 private:
     CConstObjectInfo m_Object;
+    const CItemInfo* m_ItemInfo;
 };
 
 template<class ChildIterator>
@@ -120,6 +140,14 @@ public:
         {
             m_Iterator.Erase();
         }
+    const CItemInfo* GetItemInfo(void) const
+        {
+            return m_Iterator.GetItemInfo();
+        }
+protected:
+    void SetItemInfo(const CItemInfo* /*info*/)
+        {
+        }
 private:
     ChildIterator m_Iterator;
 };
@@ -149,6 +177,14 @@ public:
         {
             return *m_Iterator;
         }
+    const CItemInfo* GetItemInfo(void) const
+        {
+            return m_Iterator.GetItemInfo();
+        }
+protected:
+    void SetItemInfo(const CItemInfo* /*info*/)
+        {
+        }
 private:
     ChildIterator m_Iterator;
 };
@@ -177,8 +213,11 @@ CConstTreeLevelIterator::Create(const CConstObjectInfo& obj)
     case eTypeFamilyChoice:
         {
             CConstObjectInfo::CChoiceVariant v(obj);
-            if ( v )
-                return CreateOne(*v);
+            if ( v ) {
+                CConstTreeLevelIterator* it = CreateOne(*v);
+                it->SetItemInfo(v.GetVariantInfo());
+                return it;
+            }
             else
                 return 0;
         }
@@ -259,8 +298,11 @@ CTreeLevelIterator::Create(const CObjectInfo& obj)
     case eTypeFamilyChoice:
         {
             CObjectInfo::CChoiceVariant v(obj);
-            if ( v )
-                return CreateOne(*v);
+            if ( v ) {
+                CTreeLevelIterator* it = CreateOne(*v);
+                it->SetItemInfo(v.GetVariantInfo());
+                return it;
+            }
             else
                 return 0;
         }
@@ -392,6 +434,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/07/27 17:12:12  gouriano
+* Give access to the context of tree iterator
+*
 * Revision 1.25  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
