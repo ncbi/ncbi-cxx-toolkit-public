@@ -65,10 +65,27 @@ _PSIDeallocateMatrix(void** matrix, unsigned int ncols)
     return NULL;
 }
 
+void
+_PSICopyMatrix(double** dest, const double** src, 
+               unsigned int ncols, unsigned int nrows)
+{
+    unsigned int i = 0;
+    unsigned int j = 0;
+
+    for (i = 0; i < ncols; i++) {
+        for (j = 0; j < nrows; j++) {
+            dest[i][j] = src[i][j];
+        }
+    }
+}
+
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/05/06 14:01:40  camacho
+ * + _PSICopyMatrix
+ *
  * Revision 1.2  2004/04/07 22:08:37  kans
  * needed to include blast_def.h for sfree prototype
  *

@@ -64,6 +64,17 @@ _PSIAllocateMatrix(unsigned int ncols, unsigned int nrows,
 void**
 _PSIDeallocateMatrix(void** matrix, unsigned int ncols);
 
+/** Copies src matrix into dest matrix, both of which must be ncols by nrows 
+ * matrices 
+ * @param dest Destination matrix           [out]
+ * @param src Source matrix                 [in]
+ * @param ncols Number of columns to copy   [in]
+ * @param ncows Number of rows to copy      [in]
+ */
+void
+_PSICopyMatrix(double** dest, const double** src, 
+               unsigned int ncols, unsigned int nrows);
+
 #ifdef __cplusplus
 }
 #endif
@@ -73,6 +84,9 @@ _PSIDeallocateMatrix(void** matrix, unsigned int ncols);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/05/06 14:01:40  camacho
+ * + _PSICopyMatrix
+ *
  * Revision 1.2  2004/04/07 21:43:47  camacho
  * Removed unneeded #include directive
  *
