@@ -116,7 +116,7 @@ The resultant <a href="src_tree.gif"><i>NCBI C++  source tree</i></a> will conta
 		 <a href="#ref_Running">configuration and installation</a>:
        <ul>
          <li>  <i><b>configure</b></i> -- a multi-platform configuration shell
-               script (generated from template <i>configure.in</i> using
+               script (generated from template <i>configure.ac</i> using
                <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">
                autoconf</a>)
          <li>  various scripts and template files used by
@@ -183,7 +183,7 @@ utility to automatically generate compiler-specific header file
 User performs both configuration and installation by merely running
 platform-independent(<i>sh, bash</i>) shell script
 <b><i>configure</i></b> (we pre-generate it in-house from template
-<i>configure.in</i> using
+<i>configure.ac</i> using
 <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">
 autoconf</a>).
 
@@ -375,14 +375,14 @@ the following platforms:
 		</li>
 
   <li> <a href="http://www.sun.com/workshop/visual/">
-       <b>Sun WorkShop 5.0, 5.1, 5.2 and 5.3</b></a>
+       <b>Sun WorkShop 5.1, 5.2 and 5.3</b></a>
     <ul>
       <li> <i>All configurations listed in the <a href="#ref_Compilers">List of supported compilers</a>
 				(see below)</i> </li>
     </ul>
   </li>
 
-  <li> <u><b>MIPSpro 7.3.1.1m (-n32)</b></u>
+  <li> <u><b>MIPSpro 7.3.1.1m, 7.3.1.2m (-n32)</b></u>
     <ul>
       <li> IRIX64 6.5 --- <i>SGI-Mips</i> </li>
     </ul>
@@ -1359,21 +1359,12 @@ libraries and tools:
 		</li>
 
   <li> <a href="http://gcc.gnu.org/">
-       <b>GCC 2.95.3</b></a>
-    <ul>
-      <li> Compaq Tru64 UNIX V5.1 --- <i>DEC-Alpha</i></li>
-    </ul>
-  </li>
-
-  <li> <a href="http://gcc.gnu.org/">
        <b>GCC 2.95.[1,2,3]</b></a>
     <ul>
       <li> Solaris 2.7, 2.8 --- <i>SUN-Sparc</i> and <i>PC-Intel</i></li>
       <li> Linux RedHat 5.2 and higher --- <i>PC-Intel</i></li>
       <li> FreeBSD 4.1-RELEASE --- <i>PC-Intel</i></li>
-      <li> OSF1 4.0 --- <i>DEC-Alpha</i> <br>
-				<i>(Note:  we do not have it anymore, use Compaq Tru64 UNIX V5.1 since Mar 2001)</i> </li>
-      <li> Compaq Tru64 UNIX V5.1 --- <i>DEC-Alpha</i></li>
+      <li> OSF1 Compaq Tru64 UNIX V5.1 --- <i>DEC-Alpha</i></li>
       <li> IRIX64 6.5 --- <i>SGI-Mips</i></li>
     </ul>
   </li>
@@ -1398,22 +1389,13 @@ libraries and tools:
     </ul>
   </li>
 
-  <li> <a href="http://www.sun.com/workshop/visual/">
-       <b>Sun WorkShop 5.0</b></a>
-    <ul>
-      <li> 32-bit: Solaris 2.6 and higher --- <i>SUN-Sparc</i> and <i>PC-Intel</i>
-      <li> 64-bit: Solaris 2.6 and higher --- <i>SUN-Sparc</i> <br>
-				<i>(Note:  has not been built for a long long time)</i>
-    </ul>
-  </li>
-
   <li> <u><b>MSVC++ 6.0 (SP3)</b></u>
     <ul>
       <li> Windows NT 4.0  --- <i>PC-Intel</i> </li>
     </ul>
   </li>
 
-  <li> <u><b>MIPSpro 7.3.1.1m</b></u>
+  <li> <u><b>MIPSpro 7.3.1.1m, 7.3.1.2m</b></u>
     <ul>
       <li> 32-bit (-n32): IRIX64 6.5 --- <i>SGI-Mips</i> </li>
       <li> 64-bit:  IRIX64 6.5 --- <i>SGI-Mips</i> </li>
@@ -1444,7 +1426,8 @@ libraries and tools:
 
 NOTE: Some projects are very platform-specific, and they cannot
 be built for all of the supported platforms.
-All such projects are located under the <i><b>internal/c++/{src|include}/internal/</b></i>
+Most of such projects are located under the
+<i><b>internal/c++/{src|include}/internal/</b></i>
 directories.
 
 
