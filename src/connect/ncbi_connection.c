@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2001/08/20 20:13:15  vakatov
+ * CONN_ReInit() -- Check connection handle for NULL (it was missed in R6.17)
+ *
  * Revision 6.17  2001/08/20 20:00:43  vakatov
  * CONN_SetTimeout() to return "EIO_Status".
  * CONN_***() -- Check connection handle for NULL.
@@ -215,6 +218,8 @@ extern EIO_Status CONN_ReInit
 {
     CONNECTOR  x_conn = 0;
     EIO_Status status;
+
+    CONN_NOT_NULL("ReInit");
 
     /* check arg */
     if (!connector  &&  !conn->meta.list) {
