@@ -39,7 +39,7 @@ extern "C" {
 #endif
 
 /* function result codes */
-#define STRUCT_DP_FOUND_ALIGNMENT  1  /* found an alignment */    
+#define STRUCT_DP_FOUND_ALIGNMENT  1  /* found an alignment */
 #define STRUCT_DP_NO_ALIGNMENT     2  /* algorithm successful, but no significant alignment found */
 #define STRUCT_DP_PARAMETER_ERROR  3  /* error/inconsistency in function parameters */
 #define STRUCT_DP_ALGORITHM_ERROR  4  /* error encountered during algorithm execution */
@@ -71,8 +71,9 @@ typedef struct {
 extern DP_BlockInfo * DP_CreateBlockInfo(unsigned int nBlocks);
 extern void DP_DestroyBlockInfo(DP_BlockInfo *blocks);
 
-/* callback function to get the score for a block at a specified position;
-   should return NEGATIVE_INFINITY if the block can't be aligned at this position */
+/* callback function to get the score for a block at a specified position; should
+   return NEGATIVE_INFINITY if the block can't be aligned at this position. For
+   local alignments, the average expected score for a random match must be <= zero. */
 typedef int (*DP_BlockScoreFunction)(unsigned int block, unsigned int queryPos);
 
 /* returned alignment structure */
@@ -86,10 +87,20 @@ typedef struct {
 /* for destroying alignment result; do not use free (MemFree) */
 extern void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment);
 
-/* main alignment routine */
+/* global alignment routine */
 extern int                              /* returns an above STRUCT_DP_ error code */
 DP_GlobalBlockAlign(
     const DP_BlockInfo *blocks,         /* blocks on subject */
+    DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
+    unsigned int queryFrom,             /* range of query to search */
+    unsigned int queryTo,
+    DP_AlignmentResult **alignment      /* alignment, if one found; caller should destroy */
+);
+
+/* local alignment routine */
+extern int                              /* returns an above STRUCT_DP_ error code */
+DP_LocalBlockAlign(
+    const DP_BlockInfo *blocks,         /* blocks on subject; NOTE: block freezing ignored! */
     DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
     unsigned int queryFrom,             /* range of query to search */
     unsigned int queryTo,
@@ -105,6 +116,9 @@ DP_GlobalBlockAlign(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/06/22 12:11:37  thiessen
+* add local alignment
+*
 * Revision 1.5  2003/06/19 13:48:23  thiessen
 * cosmetic/typo fixes
 *

@@ -36,7 +36,6 @@
 #include <corelib/ncbi_limits.h>
 
 #include <vector>
-#include <deque>
 
 #include <struct_dp/struct_dp.h>
 
@@ -87,7 +86,7 @@ int ValidateFrozenBlockPositions(const DP_BlockInfo *blocks, unsigned int queryF
     for (block=0; block<blocks->nBlocks; block++) {
 
         /* keep track of max gap space between frozen blocks */
-        if (block > 0) 
+        if (block > 0)
             maxGapsLength += blocks->maxLoops[block - 1];
 
         /* to allow room for unfrozen blocks between frozen ones */
@@ -108,7 +107,7 @@ int ValidateFrozenBlockPositions(const DP_BlockInfo *blocks, unsigned int queryF
 
         /* checks for legal distances between frozen blocks */
         if (prevFrozenBlock != NONE) {
-            unsigned int prevFrozenBlockEnd = 
+            unsigned int prevFrozenBlockEnd =
                 blocks->freezeBlocks[prevFrozenBlock] + blocks->blockSizes[prevFrozenBlock] - 1;
 
             /* check for adequate room for unfrozen blocks between frozen blocks */
@@ -118,7 +117,7 @@ int ValidateFrozenBlockPositions(const DP_BlockInfo *blocks, unsigned int queryF
                 return STRUCT_DP_PARAMETER_ERROR;
             }
 
-            /* check for too much gap space since last frozen block, 
+            /* check for too much gap space since last frozen block,
                but if frozen blocks are adjacent, issue warning only */
             if (blocks->freezeBlocks[block] > prevFrozenBlockEnd + 1 + unfrozenBlocksLength + maxGapsLength)
             {
@@ -127,8 +126,8 @@ int ValidateFrozenBlockPositions(const DP_BlockInfo *blocks, unsigned int queryF
                         " from adjacent frozen block " << (prevFrozenBlock+1));
                 } else {
                     ERROR_MESSAGE("Frozen block " << (block+1) << " is too far away from prior frozen block"
-                        " given allowed intervening loop length(s) " << maxGapsLength 
-                        << " plus unfrozen block length(s) " << unfrozenBlocksLength); 
+                        " given allowed intervening loop length(s) " << maxGapsLength
+                        << " plus unfrozen block length(s) " << unfrozenBlocksLength);
                     return STRUCT_DP_PARAMETER_ERROR;
                 }
             }
@@ -143,7 +142,7 @@ int ValidateFrozenBlockPositions(const DP_BlockInfo *blocks, unsigned int queryF
 }
 
 // fill matrix values; return true on success. Matrix must have only default values when passed in.
-int CalculateGlobalMatrix(Matrix& matrix, 
+int CalculateGlobalMatrix(Matrix& matrix,
     const DP_BlockInfo *blocks, DP_BlockScoreFunction BlockScore,
     unsigned int queryFrom, unsigned int queryTo)
 {
@@ -158,7 +157,7 @@ int CalculateGlobalMatrix(Matrix& matrix,
             lastPos[lastBlock] = queryTo - blocks->blockSizes[lastBlock] + 1;
         } else {
             firstPos[block] = firstPos[block - 1] + blocks->blockSizes[block - 1];
-            lastPos[lastBlock - block] = 
+            lastPos[lastBlock - block] =
                 lastPos[lastBlock - block + 1] - blocks->blockSizes[lastBlock - block];
         }
     }
@@ -183,24 +182,24 @@ int CalculateGlobalMatrix(Matrix& matrix,
 
     // for each successive block, find the best allowed pairing of the block with the previous block
     bool blockScoreCalculated;
-    for (block=1; block<=lastBlock; block++) {                
+    for (block=1; block<=lastBlock; block++) {
         for (residue=firstPos[block]; residue<=lastPos[block]; residue++) {
             blockScoreCalculated = false;
 
-            for (prevResidue=firstPos[block-1]; prevResidue<=lastPos[block-1]; prevResidue++) {
+            for (prevResidue=firstPos[block - 1]; prevResidue<=lastPos[block - 1]; prevResidue++) {
 
                 // current block must come after the previous block
-                if (residue < prevResidue + blocks->blockSizes[block-1])     
+                if (residue < prevResidue + blocks->blockSizes[block - 1])
                     break;
 
                 // cut off at max loop length from previous block, but not if both blocks are frozen
-                if (residue > prevResidue + blocks->blockSizes[block-1] + blocks->maxLoops[block-1] &&
-                        (blocks->freezeBlocks[block] == UNFROZEN_BLOCK || 
-                         blocks->freezeBlocks[block-1] == UNFROZEN_BLOCK))
+                if (residue > prevResidue + blocks->blockSizes[block - 1] + blocks->maxLoops[block - 1] &&
+                        (blocks->freezeBlocks[block] == UNFROZEN_BLOCK ||
+                         blocks->freezeBlocks[block - 1] == UNFROZEN_BLOCK))
                     continue;
-            
+
                 // make sure previous block is at an allowed position
-                if (matrix[block-1][prevResidue - queryFrom].score == NEGATIVE_INFINITY)
+                if (matrix[block - 1][prevResidue - queryFrom].score == NEGATIVE_INFINITY)
                     continue;
 
                 // get score at this position
@@ -212,7 +211,7 @@ int CalculateGlobalMatrix(Matrix& matrix,
                 }
 
                 // find highest sum of scores for allowed pairing of this block with any previous
-                sum = score + matrix[block-1][prevResidue - queryFrom].score;
+                sum = score + matrix[block - 1][prevResidue - queryFrom].score;
                 if (sum > matrix[block][residue - queryFrom].score) {
                     matrix[block][residue - queryFrom].score = sum;
                     matrix[block][residue - queryFrom].tracebackResidue = prevResidue;
@@ -224,11 +223,78 @@ int CalculateGlobalMatrix(Matrix& matrix,
     return STRUCT_DP_OKAY;
 }
 
+// fill matrix values; return true on success. Matrix must have only default values when passed in.
+int CalculateLocalMatrix(Matrix& matrix,
+    const DP_BlockInfo *blocks, DP_BlockScoreFunction BlockScore,
+    unsigned int queryFrom, unsigned int queryTo)
+{
+    unsigned int block, residue, prevResidue, lastBlock = blocks->nBlocks - 1, tracebackResidue;
+    int score, sum, bestPrevScore;
+
+    // find last possible block positions, based purely on block lengths
+    vector < unsigned int > lastPos(blocks->nBlocks);
+    for (block=0; block<=lastBlock; block++)
+        lastPos[block] = queryTo - blocks->blockSizes[block] + 1;
+
+    // first row: positive scores of first block at all possible positions
+    for (residue=queryFrom; residue<=lastPos[0]; residue++) {
+        score = BlockScore(0, residue);
+        matrix[0][residue - queryFrom].score = (score > 0) ? score : 0;
+    }
+
+    // first column: positive scores of all blocks at first positions
+    for (block=1; block<=lastBlock; block++) {
+        score = BlockScore(block, queryFrom);
+        matrix[block][0].score = (score > 0) ? score : 0;
+    }
+
+    // for each successive block, find the best positive scoring with a previous block, if any
+    for (block=1; block<=lastBlock; block++) {
+        for (residue=queryFrom+1; residue<=lastPos[block]; residue++) {
+
+            // get score at this position
+            score = BlockScore(block, residue);
+            if (score == NEGATIVE_INFINITY)
+                continue;
+
+            // find max score of any allowed previous block
+            bestPrevScore = NEGATIVE_INFINITY;
+            for (prevResidue=queryFrom+1; prevResidue<=lastPos[block - 1]; prevResidue++) {
+
+                // current block must come after the previous block
+                if (residue < prevResidue + blocks->blockSizes[block - 1])
+                    break;
+
+                // cut off at max loop length from previous block
+                if (residue > prevResidue + blocks->blockSizes[block - 1] + blocks->maxLoops[block - 1])
+                    continue;
+
+                if (matrix[block - 1][prevResidue - queryFrom].score > bestPrevScore) {
+                    bestPrevScore = matrix[block - 1][prevResidue - queryFrom].score;
+                    tracebackResidue = prevResidue;
+                }
+            }
+
+            // extend alignment if the sum of this block's + previous block's score is positive
+            if (bestPrevScore > 0 && (sum=bestPrevScore+score) > 0) {
+                matrix[block][residue - queryFrom].score = sum;
+                matrix[block][residue - queryFrom].tracebackResidue = tracebackResidue;
+            }
+
+            // otherwise, start new alignment if score is positive
+            else if (score > 0)
+                matrix[block][residue - queryFrom].score = score;
+        }
+    }
+
+    return STRUCT_DP_OKAY;
+}
+
 int TracebackAlignment(const Matrix& matrix, unsigned int lastBlock, unsigned int lastBlockPos,
     unsigned int queryFrom, DP_AlignmentResult **alignment)
 {
     // trace backwards from last block/pos
-    deque < unsigned int > blockPositions;
+    vector < unsigned int > blockPositions;
     unsigned int block = lastBlock, pos = lastBlockPos;
     do {
         blockPositions.push_back(pos);  // list is backwards after this...
@@ -245,10 +311,11 @@ int TracebackAlignment(const Matrix& matrix, unsigned int lastBlock, unsigned in
     (*alignment)->blockPositions = new unsigned int[blockPositions.size()];
     for (block=0; block<blockPositions.size(); block++)
         (*alignment)->blockPositions[block] = blockPositions[lastBlock - firstBlock - block];
+
     return STRUCT_DP_FOUND_ALIGNMENT;
 }
 
-int TracebackGlobalAlignment(const Matrix& matrix, 
+int TracebackGlobalAlignment(const Matrix& matrix,
     const DP_BlockInfo *blocks, unsigned int queryFrom, unsigned int queryTo,
     DP_AlignmentResult **alignment)
 {
@@ -266,9 +333,35 @@ int TracebackGlobalAlignment(const Matrix& matrix,
         ERROR_MESSAGE("TracebackGlobalAlignment() - somehow failed to find any allowed global alignment");
         return STRUCT_DP_ALGORITHM_ERROR;
     }
-    INFO_MESSAGE("Score of best global alignment: " << score);
 
+    INFO_MESSAGE("Score of best global alignment: " << score);
     return TracebackAlignment(matrix, blocks->nBlocks - 1, lastBlockPos, queryFrom, alignment);
+}
+
+int TracebackLocalAlignment(const Matrix& matrix,
+    const DP_BlockInfo *blocks, unsigned int queryFrom, unsigned int queryTo,
+    DP_AlignmentResult **alignment)
+{
+    // find max score (e.g., best-scoring position of any block)
+    int score = NEGATIVE_INFINITY;
+    unsigned int block, residue, lastBlock, lastBlockPos;
+    for (block=0; block<blocks->nBlocks; block++) {
+        for (residue=queryFrom; residue<=queryTo; residue++) {
+            if (matrix[block][residue - queryFrom].score > score) {
+                score = matrix[block][residue - queryFrom].score;
+                lastBlock = block;
+                lastBlockPos = residue;
+            }
+        }
+    }
+
+    if (score <= 0) {
+        INFO_MESSAGE("No positive-scoring local alignment found.");
+        return STRUCT_DP_NO_ALIGNMENT;
+    }
+
+    INFO_MESSAGE("Score of best local alignment: " << score);
+    return TracebackAlignment(matrix, lastBlock, lastBlockPos, queryFrom, alignment);
 }
 
 END_SCOPE(struct_dp)
@@ -285,7 +378,7 @@ int DP_GlobalBlockAlign(
     DP_AlignmentResult **alignment)
 {
     if (!blocks || blocks->nBlocks < 1 || !blocks->blockSizes || !BlockScore || queryTo < queryFrom) {
-        ERROR_MESSAGE("GlobalBlockAlign() - invalid parameters");
+        ERROR_MESSAGE("DP_GlobalBlockAlign() - invalid parameters");
         return STRUCT_DP_PARAMETER_ERROR;
     }
 
@@ -293,13 +386,13 @@ int DP_GlobalBlockAlign(
     for (i=0; i<blocks->nBlocks; i++)
         sumBlockLen += blocks->blockSizes[i];
     if (sumBlockLen > queryTo - queryFrom + 1) {
-        ERROR_MESSAGE("GlobalBlockAlign() - sum of block lengths longer than query region");
+        ERROR_MESSAGE("DP_GlobalBlockAlign() - sum of block lengths longer than query region");
         return STRUCT_DP_PARAMETER_ERROR;
     }
 
     int status = ValidateFrozenBlockPositions(blocks, queryFrom, queryTo);
     if (status != STRUCT_DP_OKAY) {
-        ERROR_MESSAGE("GlobalBlockAlign() - ValidateFrozenBlockPositions() returned error");
+        ERROR_MESSAGE("DP_GlobalBlockAlign() - ValidateFrozenBlockPositions() returned error");
         return status;
     }
 
@@ -307,12 +400,38 @@ int DP_GlobalBlockAlign(
 
     status = CalculateGlobalMatrix(matrix, blocks, BlockScore, queryFrom, queryTo);
     if (status != STRUCT_DP_OKAY) {
-        ERROR_MESSAGE("GlobalBlockAlign() - CalculateMatrix() failed");
+        ERROR_MESSAGE("DP_GlobalBlockAlign() - CalculateGlobalMatrix() failed");
         return status;
     }
 
-    status = TracebackGlobalAlignment(matrix, blocks, queryFrom, queryTo, alignment);
-    return status;
+    return TracebackGlobalAlignment(matrix, blocks, queryFrom, queryTo, alignment);
+}
+
+int DP_LocalBlockAlign(
+    const DP_BlockInfo *blocks, DP_BlockScoreFunction BlockScore,
+    unsigned int queryFrom, unsigned int queryTo,
+    DP_AlignmentResult **alignment)
+{
+    if (!blocks || blocks->nBlocks < 1 || !blocks->blockSizes || !BlockScore || queryTo < queryFrom) {
+        ERROR_MESSAGE("DP_LocalBlockAlign() - invalid parameters");
+        return STRUCT_DP_PARAMETER_ERROR;
+    }
+    for (int block=0; block<blocks->nBlocks; block++) {
+        if (blocks->freezeBlocks[block] != UNFROZEN_BLOCK) {
+            WARNING_MESSAGE("DP_LocalBlockAlign() - frozen block specifications are ignored...");
+            break;
+        }
+    }
+
+    Matrix matrix(blocks->nBlocks, queryTo - queryFrom + 1);
+
+    int status = CalculateLocalMatrix(matrix, blocks, BlockScore, queryFrom, queryTo);
+    if (status != STRUCT_DP_OKAY) {
+        ERROR_MESSAGE("DP_LocalBlockAlign() - CalculateLocalMatrix() failed");
+        return status;
+    }
+
+    return TracebackLocalAlignment(matrix, blocks, queryFrom, queryTo, alignment);
 }
 
 DP_BlockInfo * DP_CreateBlockInfo(unsigned int nBlocks)
@@ -341,7 +460,7 @@ void DP_DestroyBlockInfo(DP_BlockInfo *blocks)
 
 void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment)
 {
-    if (!alignment) 
+    if (!alignment)
         return;
     delete alignment->blockPositions;
     delete alignment;
@@ -350,6 +469,9 @@ void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/06/22 12:11:37  thiessen
+* add local alignment
+*
 * Revision 1.5  2003/06/19 13:48:23  thiessen
 * cosmetic/typo fixes
 *

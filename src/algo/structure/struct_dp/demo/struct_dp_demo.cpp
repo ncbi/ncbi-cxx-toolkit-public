@@ -134,7 +134,7 @@ int ScoreByBlosum62(unsigned int block, unsigned int queryPos)
         score += GetBLOSUM62Score(
             subject[blocks->blockPositions[block] + i],
             query[queryPos + i]);
-        
+
 //    INFO_MESSAGE("score for block " << block << " pos " << queryPos << ": " << score);
     return score;
 }
@@ -171,14 +171,14 @@ int DPApp::Run(void)
 //    blocks->freezeBlocks[4] = 85;
 
 //    for (int b=0; b<blocks->nBlocks; b++)
-//        INFO_MESSAGE("Block " << (b+1) << ": " 
+//        INFO_MESSAGE("Block " << (b+1) << ": "
 //            << subject.substr(blocks->blockPositions[b], blocks->blockSizes[b]));
 
     query = "ASYQVRLINKKQDIDTTIEIDEETTILDGAEENGIELPFSCHSGSCSSCVGKVVEGEVDQSDQ"
                 "IFLDDEQMGKGFALLCVTYPRSNCTIKTHQEPYLA";
 
     DP_AlignmentResult *alignment;
-    int result = DP_GlobalBlockAlign(blocks, ScoreByBlosum62, 0, query.size() - 1, &alignment);
+    int result = DP_LocalBlockAlign(blocks, ScoreByBlosum62, 0, query.size() - 1, &alignment);
 
     // crudely print out alignment result
     if (result == STRUCT_DP_FOUND_ALIGNMENT) {
@@ -191,17 +191,17 @@ int DPApp::Run(void)
                 queryStart = alignment->blockPositions[block],
                 blockSize = blocks->blockSizes[block + alignment->firstBlock];
             INFO_MESSAGE(
-                "Block " << (block + alignment->firstBlock + 1) << ", score " 
+                "Block " << (block + alignment->firstBlock + 1) << ", score "
                 << ScoreByBlosum62(block + alignment->firstBlock, queryStart) << ":\n"
                 << "S: " << subject.substr(subjectStart, blockSize)
                 << ' ' << (subjectStart + 1) << '-' << (subjectStart + blockSize) << '\n'
                 << "Q: " << query.substr(queryStart, blockSize)
                 << ' ' << (queryStart + 1) << '-' << (queryStart + blockSize)
             );
-            
+
         }
         DP_DestroyAlignmentResult(alignment);
-    } 
+    }
 
     else if (result == STRUCT_DP_NO_ALIGNMENT) {
         INFO_MESSAGE("Found no significant alignment");
@@ -233,6 +233,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/06/22 12:11:38  thiessen
+* add local alignment
+*
 * Revision 1.6  2003/06/18 22:25:37  thiessen
 * simplify alignment printout code, yet again... ;)
 *
