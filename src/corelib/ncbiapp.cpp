@@ -205,7 +205,7 @@ int CNcbiApplication::AppMain
     if (argc > 1  &&  argv) {
         const char** v = new const char*[argc];
         v[0] = argv[0];
-        int real_arg_index = 0;
+        int real_arg_index = 1;
         for (int i = 1;  i < argc;  i++) {
             if ( !argv[i] ) {
                 continue;
@@ -240,10 +240,10 @@ int CNcbiApplication::AppMain
                 v[real_arg_index++] = argv[i];
             }
         }
-        if (real_arg_index + 1 == argc ) {
+        if (real_arg_index == argc ) {
             delete[] v;
         } else {
-            argc = real_arg_index + 1;
+            argc = real_arg_index;
             argv = v;
         }
     }
@@ -596,6 +596,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2002/07/22 19:33:28  ivanov
+ * Fixed bug with internal processing parameters -conffile and -logfile
+ *
  * Revision 1.43  2002/07/15 18:17:23  gouriano
  * renamed CNcbiException and its descendents
  *
