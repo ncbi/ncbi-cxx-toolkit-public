@@ -201,11 +201,10 @@ CHit::CHit(const CSeq_align& sa)
     }
 
     const CDense_seg &ds = sa.GetSegs().GetDenseg();
-    if (ds.GetStrands()[0] == eNa_strand_minus  &&
-        ds.GetStrands()[1] == eNa_strand_plus) {
-        swap(m_an[0], m_an[1]);
-    } else if (ds.GetStrands()[0] == eNa_strand_plus  &&
-               ds.GetStrands()[1] == eNa_strand_minus) {
+    if ((ds.GetStrands()[0] == eNa_strand_minus  &&
+         ds.GetStrands()[1] == eNa_strand_plus)  ||
+        (ds.GetStrands()[0] == eNa_strand_plus  &&
+         ds.GetStrands()[1] == eNa_strand_minus)) {
         swap(m_an[2], m_an[3]);
     }
 
@@ -448,6 +447,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/05/06 17:43:27  johnson
+* CHit(CSeq_align&) now indicates minus strand via swapping subject
+* coordinates (*not* query coordinates)
+*
 * Revision 1.5  2004/05/04 15:23:45  ucko
 * Split splign code out of xalgoalign into new xalgosplign.
 *
