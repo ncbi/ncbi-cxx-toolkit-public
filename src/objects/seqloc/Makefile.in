@@ -1,3 +1,0 @@
-ASN_PROJ = seqloc
-srcdir = @srcdir@
-include @builddir@/Makefile.meta

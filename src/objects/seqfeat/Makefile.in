@@ -1,3 +1,0 @@
-ASN_PROJ = seqfeat
-srcdir = @srcdir@
-include @builddir@/Makefile.meta

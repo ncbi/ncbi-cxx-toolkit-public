@@ -1,2 +1,0 @@
-LIB = $(TMPL)
-SRC = $(LIB)__ $(LIB)___ readfeat

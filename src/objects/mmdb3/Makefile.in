@@ -1,3 +1,0 @@
-ASN_PROJ = mmdb3
-srcdir = @srcdir@
-include @builddir@/Makefile.meta

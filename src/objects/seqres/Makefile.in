@@ -1,3 +1,0 @@
-ASN_PROJ = seqres
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
