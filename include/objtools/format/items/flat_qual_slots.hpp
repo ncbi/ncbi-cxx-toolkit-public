@@ -58,6 +58,7 @@ enum EFeatureQualifier {
     eFQ_derived_from,
     eFQ_direction,
     eFQ_EC_number,
+    eFQ_encodes,
     eFQ_evidence,
     eFQ_exception,
     eFQ_exception_note,
@@ -69,6 +70,7 @@ enum EFeatureQualifier {
     eFQ_gene_allele,
     eFQ_gene_map,
     eFQ_gene_syn,
+    eFQ_gene_syn_refseq,
     eFQ_gene_note,
     eFQ_gene_xref,
     eFQ_go_component,
@@ -84,6 +86,7 @@ enum EFeatureQualifier {
     eFQ_mod_base,
     eFQ_modelev,
     eFQ_number,
+    eFQ_operon,
     eFQ_organism,
     eFQ_partial,
     eFQ_PCR_conditions,
@@ -112,12 +115,14 @@ enum EFeatureQualifier {
     eFQ_rrna_its,
     eFQ_sec_str_type,
     eFQ_selenocysteine,
+    eFQ_selenocysteine_note,
     eFQ_seqfeat_note,
     eFQ_site,
     eFQ_site_type,
     eFQ_standard_name,
     eFQ_transcription,
     eFQ_transcript_id,
+    eFQ_transcript_id_note,
     eFQ_transl_except,
     eFQ_transl_table,
     eFQ_translation,
@@ -224,6 +229,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/03/05 18:49:55  shomrat
+* added feature qualifiers
+*
 * Revision 1.1  2003/12/17 19:47:06  shomrat
 * Initial revision (adapted from flat lib)
 *
