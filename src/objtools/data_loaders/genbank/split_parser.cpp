@@ -59,6 +59,9 @@ CRef<CTSE_Chunk_Info> CSplitParser::Parse(const CID2S_Chunk_Info& info)
     ITERATE ( CID2S_Chunk_Info::TContent, it, info.GetContent() ) {
         const CID2S_Chunk_Content& content = **it;
         switch ( content.Which() ) {
+        case CID2S_Chunk_Content::e_Seq_descr:
+            x_Attach(*ret, content.GetSeq_descr());
+            break;
         case CID2S_Chunk_Content::e_Seq_annot:
             x_Attach(*ret, content.GetSeq_annot());
             break;
@@ -87,15 +90,38 @@ void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
 
 
 void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
+                            const CID2S_Seq_descr_Info& place)
+{
+    ITERATE ( CID2S_Seq_descr_Info::TBioseqs, it, place.GetBioseqs() ) {
+        const CID2_Id_Range& range = **it;
+        for( int id = range.GetStart(), cnt = range.GetCount(); cnt--; ++id ) {
+            chunk.x_AddDescrPlace(CTSE_Chunk_Info::eBioseq, id);
+        }
+    }
+    ITERATE( CID2S_Seq_descr_Info::TBioseq_sets, it, place.GetBioseq_sets() ) {
+        const CID2_Id_Range& range = **it;
+        for( int id = range.GetStart(), cnt = range.GetCount(); cnt--; ++id ) {
+            chunk.x_AddDescrPlace(CTSE_Chunk_Info::eBioseq_set, id);
+        }
+    }
+}
+
+
+void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
                             const CID2S_Seq_annot_place_Info& place)
 {
-    ITERATE ( CID2S_Seq_annot_place_Info::TBioseqs,
-              it, place.GetBioseqs() ) {
-        chunk.x_AddAnnotPlace(CTSE_Chunk_Info::eBioseq, *it);
+    ITERATE ( CID2S_Seq_annot_place_Info::TBioseqs, it, place.GetBioseqs() ) {
+        const CID2_Id_Range& range = **it;
+        for( int id = range.GetStart(), cnt = range.GetCount(); cnt--; ++id ) {
+            chunk.x_AddAnnotPlace(CTSE_Chunk_Info::eBioseq, id);
+        }
     }
     ITERATE ( CID2S_Seq_annot_place_Info::TBioseq_sets,
               it, place.GetBioseq_sets() ) {
-        chunk.x_AddAnnotPlace(CTSE_Chunk_Info::eBioseq_set, *it);
+        const CID2_Id_Range& range = **it;
+        for( int id = range.GetStart(), cnt = range.GetCount(); cnt--; ++id ) {
+            chunk.x_AddAnnotPlace(CTSE_Chunk_Info::eBioseq_set, id);
+        }
     }
 }
 
@@ -259,14 +285,11 @@ void CSplitParser::Load(CTSE_Chunk_Info& chunk,
         }
 
         ITERATE ( CID2S_Chunk_Data::TDescrs, it, data.GetDescrs() ) {
-            NCBI_THROW(CLoaderException, eOtherError,
-                       "split descr is not supported");
+            chunk.x_LoadDescr(place, **it);
         }
 
         ITERATE ( CID2S_Chunk_Data::TAnnots, it, data.GetAnnots() ) {
-            CSeq_annot& annot = const_cast<CSeq_annot&>(**it);
-            CRef<CSeq_annot_Info> annot_info(new CSeq_annot_Info(annot));
-            chunk.x_LoadAnnot(place, annot_info);
+            chunk.x_LoadAnnot(place, Ref(new CSeq_annot_Info(**it)));
         }
 
         ITERATE ( CID2S_Chunk_Data::TAssembly, it, data.GetAssembly() ) {
@@ -292,6 +315,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.8  2004/07/12 16:59:53  vasilche
+ * Added parsing of information of where split data is to be inserted.
+ *
  * Revision 1.7  2004/06/15 14:08:22  vasilche
  * Added parsing split info with split sequences.
  *

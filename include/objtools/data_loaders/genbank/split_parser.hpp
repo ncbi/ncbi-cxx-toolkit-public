@@ -41,6 +41,7 @@ BEGIN_SCOPE(objects)
 class CID2S_Split_Info;
 class CID2S_Chunk_Info;
 class CID2S_Chunk;
+class CID2S_Seq_descr_Info;
 class CID2S_Seq_annot_Info;
 class CID2S_Seq_annot_place_Info;
 class CID2S_Seq_data_Info;
@@ -59,6 +60,8 @@ public:
 
     static void Load(CTSE_Chunk_Info& chunk, const CID2S_Chunk& data);
 
+    static void x_Attach(CTSE_Chunk_Info& chunk,
+                         const CID2S_Seq_descr_Info& descr);
     static void x_Attach(CTSE_Chunk_Info& chunk,
                          const CID2S_Seq_annot_Info& annot);
     static void x_Attach(CTSE_Chunk_Info& chunk,
@@ -88,6 +91,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.5  2004/07/12 16:59:53  vasilche
+* Added parsing of information of where split data is to be inserted.
+*
 * Revision 1.4  2004/06/15 14:08:22  vasilche
 * Added parsing split info with split sequences.
 *
