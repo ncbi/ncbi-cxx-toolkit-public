@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/05/31 14:32:03  thiessen
+* better netscape launch for unix
+*
 * Revision 1.27  2001/05/25 01:38:16  thiessen
 * minor fixes for compiling on SGI
 *
@@ -444,6 +447,7 @@ static bool MSWin_OpenDocument(const char* doc_name)
 static void LaunchWebPage(const char *url)
 {
     if(!url) return;
+    TESTMSG("launching url " << url);
 
 #if defined(__WXMSW__)
     if (!MSWin_OpenDocument(url)) {
@@ -451,18 +455,11 @@ static void LaunchWebPage(const char *url)
     }
     
 #elif defined(__WXGTK__)
-    char *argv[8];
-    argv [0] = const_cast<char *>("netscape");
-    argv [1] = const_cast<char *>(url);
-    argv [2] = NULL;
-    int child;
-    child = fork();
-    if (child == 0) {
-        if (execvp("netscape", argv) == -1) {
-            ERR_POST(Error << "Unable to launch netscape");
-            exit(-1);
-        }
-    }
+    CNcbiOstrstream oss;
+    oss << "( netscape -raise -remote 'openURL(" << url << ")' || netscape '" << url 
+        << "' ) >/dev/null 2>&1 &" << '\0';
+    system(oss.str());
+    delete oss.str();
 #endif
 /*
 #ifdef __WXMAC__
@@ -484,7 +481,6 @@ void Sequence::LaunchWebBrowserWithInfo(void) const
     else if (accession.size() > 0)
         oss << accession.c_str();
     oss << '\0';
-    TESTMSG("launching url " << oss.str());
     LaunchWebPage(oss.str());
     delete oss.str();
 }
