@@ -11,7 +11,6 @@
 
 LIB_PROJ = connect xconnect
 SUB_PROJ = @daemons@ test
-SUB_PROJ = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
