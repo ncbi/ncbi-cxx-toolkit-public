@@ -55,11 +55,10 @@ int main()
 
     CId1Reader reader;
     for(int k = 0; k < 500; k++) {
-        CSeq_id seq_id;
-        seq_id.SetGi(gi);
-        CReaderRequestResult request;
+        CStandaloneRequestResult request;
+        CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(gi);
         CLoadLockBlob_ids ids(request, seq_id);
-        reader.ResolveSeq_id(ids, seq_id, 0);
+        reader.CId1ReaderBase::ResolveSeq_id(request, seq_id);
         ITERATE ( CLoadInfoBlob_ids, i, *ids ) {
             const CBlob_id& blob_id = i->first;
             cout << "K: " << k << " " << gi << endl;
@@ -78,6 +77,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.6  2004/09/08 16:28:35  vasilche
+* Use CStandaloneRequestResult.
+*
 * Revision 1.5  2004/08/17 16:02:46  vasilche
 * Added delayed loading of external annotations from satellite 26.
 *
