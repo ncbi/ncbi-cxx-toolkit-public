@@ -175,6 +175,21 @@
  *  @ingroup CONNECT
  */
 
+/* ========================================================================= */
+
+
+/** @defgroup BDB
+ *  Berkeley DB support API
+ */
+
+/** @defgroup BDB_Types	BDB library field types
+ *  @ingroup BDB
+ */
+
+/** @defgroup BDB_BLOB	BDB library BLOB support
+ *  @ingroup BDB
+ */
+
 
 /* ========================================================================= */
 
