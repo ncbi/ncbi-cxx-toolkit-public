@@ -355,16 +355,20 @@ public:
     inline bool IsNW(void) const { return m_IsNW; }
     inline bool IsXR(void) const { return m_IsXR; }
     inline bool IsGI(void) const { return m_IsGI; }
+    inline bool IsCuratedRefSeq(void) const;
     
+    const CSeq_entry& GetTSE(void) { return *m_TSE; }
 
     TFeatAnnotMap GetFeatAnnotMap(void);
 
     void AddBioseqWithNoPub(const CBioseq& seq);
     void AddBioseqWithNoBiosource(const CBioseq& seq);
+    void AddBioseqWithNoMolinfo(const CBioseq& seq);
     void AddProtWithoutFullRef(const CBioseq& seq);
-    void ReportMissingPubs(const CBioseq& seq, const CCit_sub* cs);
-    void ReportMissingBiosource(const CBioseq& seq);
+    void ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs);
+    void ReportMissingBiosource(const CSeq_entry& se);
     void ReportProtWithoutFullRef(void);
+    void ReportBioseqsWithNoMolinfo(void);
 
     bool IsFarLocation(const CSeq_loc& loc) const;
     CConstRef<CSeq_feat> GetCDSGivenProduct(const CBioseq& seq);
@@ -394,6 +398,7 @@ private:
 
     CObjectManager* const m_ObjMgr;
     CRef<CScope> m_Scope;
+    CConstRef<CSeq_entry> m_TSE;
 
     // error repoitory
     TErrs*              m_Errors;
@@ -442,6 +447,8 @@ private:
     vector< CConstRef<CBioseq> > m_BioseqWithNoPubs;
     // Bioseqs without source (should be considered only if m_NoSource is false)
     vector< CConstRef<CBioseq> > m_BioseqWithNoSource;
+    // Bioseqs without MolInfo
+    vector< CConstRef<CBioseq> > m_BioseqWithNoMolinfo;
     // Map features to the annotation they are packed in.
     map < const CSeq_feat*, const CSeq_annot* > m_FeatAnnotMap;
 
@@ -559,7 +566,8 @@ private:
 
     void CheckForPubOnBioseq(const CBioseq& seq);
     void CheckForBiosourceOnBioseq(const CBioseq& seq);
-    
+    void CheckForMolinfoOnBioseq(const CBioseq& seq);
+
     TSeqPos GetDataLen(const CSeq_inst& inst);
     bool CdError(const CBioseq& seq);
     bool IsMrna(const CBioseq_Handle& bsh);
@@ -731,6 +739,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/02/14 21:46:20  shomrat
+* Added methods to check Bioseqs with no MolInfo
+*
 * Revision 1.13  2003/02/12 17:40:35  shomrat
 * Added function for SEQ_DESCR checks
 *
