@@ -91,9 +91,8 @@ void CSplignApp::Init()
      "0.5");
   
   argdescr->AddFlag ("endgaps", "Always detect unaligning regions at the ends,"
-		     " regardless of exon identities.",
-		     true);
-      
+                     " regardless of exon identities.", true);
+
   argdescr->AddFlag ("norle", "Do not encode alignment transcripts.", true);
 
   argdescr->AddFlag ("nopolya", "Do not detect Poly(A).", true);
@@ -477,7 +476,8 @@ string CSplignApp::x_RunOnPair( vector<CHit>* hits )
     }
 
     if(seg.m_exon) {
-      oss << seg.m_annot << '\t' << (m_rle? RLE(seg.m_details): seg.m_details);
+      oss << seg.m_annot << '\t';
+      oss << (m_rle? RLE(seg.m_details): seg.m_details);
     }
     else {
       if(i == 0) {
@@ -499,14 +499,13 @@ string CSplignApp::x_RunOnPair( vector<CHit>* hits )
     oss << query << '\t' << subj << "\t-\t"
   	<< mrna_size - polya_start << '\t'
   	<< polya_start + 1 << '\t' << mrna_size << "\t-\t-\t<Poly(A)-Tail>\t";
-    copy(mrna.begin() + polya_start, mrna.end(),
-	 ostream_iterator<char>(oss));
+    string thetail (mrna.begin() + polya_start, mrna.end());
+    oss << (m_rle? RLE(thetail): thetail);
     oss << endl;
   }
 
   return CNcbiOstrstreamToString(oss);
 }
-
 
 
 END_NCBI_SCOPE
@@ -568,6 +567,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/11/21 16:04:18  kapustin
+ * Enable RLE for Poly(A) tail.
+ *
  * Revision 1.6  2003/11/20 17:58:20  kapustin
  * Make the code msvc6.0-friendly
  *
