@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/10/24 11:25:20  thiessen
+* fix wxString problem
+*
 * Revision 1.2  2001/10/23 20:10:23  thiessen
 * fix scaling of fonts in high-res PNG output
 *
@@ -39,6 +42,7 @@
 * ===========================================================================
 */
 
+#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 
