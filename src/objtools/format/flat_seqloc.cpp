@@ -86,8 +86,8 @@ void CFlatSeqLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
     {
         x_AddID(loc.GetWhole(), oss, ctx, &accn);
         TSeqPos l = (accn == ctx.GetAccession()) ? 
-            ctx.GetHandle().GetBioseqCore()->GetInst().GetLength() :
-            sequence::GetLength(loc.GetWhole(), &ctx.GetScope());
+            ctx.GetHandle().GetBioseqLength() :
+            sequence::GetLength(loc, &ctx.GetScope());
         oss << "1.." << l;
         x_AddInt(0, l - 1, accn);
         break;
@@ -304,6 +304,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/11 16:51:06  shomrat
+* use lenght from bioseq-handle
+*
 * Revision 1.3  2004/01/14 16:14:01  shomrat
 * minor fixes
 *
