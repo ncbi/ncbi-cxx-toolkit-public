@@ -433,12 +433,14 @@ void CPagerViewButtons::CreateSubNodes()
     }
     
     textpage->SetEventHandler(eHTML_EH_Change,
-							  "if(form.textpage" + suffix + "){form.textpage"
-                              + suffix +".value=" + "this.value}");
+                              "if(form.textpage" + suffix + "){form.textpage" +
+                              suffix +".value=" + "this.value; " 
+                              "form." + CPager::KParam_InputPage +".value=" 
+							  "this.value;}");
     
     textpage->SetEventHandler(eHTML_EH_KeyPress,
                               "form." + CPager::KParam_InputPage +".value=" 
-							  "this.value;KeyPress('Pager',event);");
+                              "this.value;KeyPress('Pager',event);");
                                          
     InsertAt(0, column++, textpage);
 
@@ -472,6 +474,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/06/09 15:28:45  yasmax
+ * Bug fix: Added synchronization inputpage field and textpage by OnChange event
+ *
  * Revision 1.39  2004/05/17 20:59:50  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
