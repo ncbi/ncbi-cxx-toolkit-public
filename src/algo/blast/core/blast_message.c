@@ -78,7 +78,7 @@ Blast_MessagePost(Blast_Message* blast_msg)
 Blast_Message*
 Blast_Perror(Int2 error_code)
 {
-    Blast_Message* retval = (Blast_Message*) malloc(sizeof(Blast_Message));
+    Blast_Message* retval = (Blast_Message*) calloc(1, sizeof(Blast_Message));
 
     switch (error_code) {
     case BLASTERR_IDEALSTATPARAMCALC:
@@ -87,8 +87,15 @@ Blast_Perror(Int2 error_code)
         retval->severity = BLAST_SEV_ERROR;
         break;
     case 0:
-    default:
         retval = Blast_MessageFree(retval);
+        break;
+    default:
+        {
+            char buf[512];
+            snprintf(buf, sizeof(buf) - 1, "Unknown error code %d", error_code);
+            retval->message = strdup(buf);
+            retval->severity = BLAST_SEV_ERROR;
+        }
         break;
     }
 
@@ -99,6 +106,9 @@ Blast_Perror(Int2 error_code)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2004/11/23 21:48:10  camacho
+ * Added default handler for undefined error codes in Blast_Perror.
+ *
  * Revision 1.14  2004/11/19 00:07:47  camacho
  * + Blast_Perror
  *
