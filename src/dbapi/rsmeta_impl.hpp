@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/06/11 18:21:52  kholodov
+* Fixed: column numbers are one-based for metadata
+*
 * Revision 1.2  2002/02/05 17:24:02  kholodov
 * Put into NCBI scope
 *
@@ -102,21 +105,21 @@ inline
 EDB_Type CResultSetMetaData::GetType(unsigned int idx) const 
 {
   CheckValid();
-  return m_colInfo[idx].m_type;
+  return m_colInfo[idx-1].m_type;
 }
 
 inline
 int CResultSetMetaData::GetMaxSize(unsigned int idx) const 
 {
   CheckValid();
-  return m_colInfo[idx].m_maxSize;
+  return m_colInfo[idx-1].m_maxSize;
 }
 
 inline
 string CResultSetMetaData::GetName(unsigned int idx) const 
 {
   CheckValid();
-  return m_colInfo[idx].m_name;
+  return m_colInfo[idx-1].m_name;
 }
 //====================================================================
 
