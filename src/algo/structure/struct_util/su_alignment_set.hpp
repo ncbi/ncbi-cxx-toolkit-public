@@ -36,7 +36,6 @@
 
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <corelib/ncbiexpt.hpp>
 
 #include <list>
 #include <vector>
@@ -56,22 +55,23 @@ class MasterSlaveAlignment : public ncbi::CObject
 {
 public:
     MasterSlaveAlignment(const ncbi::objects::CSeq_align& seqAlign,
-        const Sequence *masterSequence, const SequenceSet& sequenceSet) THROWS(ncbi::CException);
+        const Sequence *masterSequence, const SequenceSet& sequenceSet);
 
     // pointers to the sequences in this pairwise alignment
     const Sequence *m_master, *m_slave;
 
     // this vector maps slave residues onto the master - e.g., masterToSlave[10] = 5
     // means that residue #10 in the master is aligned to residue #5 of the slave.
-    // Residues are numbered from zero. masterToSlave[n] = -1 means that master
+    // Residues are numbered from zero. masterToSlave[n] = UNALIGNED means that master
     // residue n is unaligned.
-    typedef std::vector < int > ResidueVector;
+    static const unsigned int UNALIGNED;
+    typedef std::vector < unsigned int > ResidueVector;
     ResidueVector m_masterToSlave;
 
     // this vector contains the original block structure of the Seq-align, so that
     // the IBM algorithm can avoid merging blocks (primarily for CDD's).
     // blockStructure[i] = n means residue i (of the master) is from block n (0..nblocks-1),
-    // or n = -1 if residue i is unaligned
+    // or n = UNALIGNED if residue i is unaligned
     ResidueVector m_blockStructure;
 };
 
@@ -79,12 +79,7 @@ class AlignmentSet : public ncbi::CObject
 {
 public:
     typedef std::list< ncbi::CRef< ncbi::objects::CSeq_annot > > SeqAnnotList;
-    AlignmentSet(const SeqAnnotList& seqAnnots,
-        const Sequence *masterSequence, const SequenceSet& sequenceSet) THROWS(ncbi::CException);
-
-    // constructs a new AlignmentSet from a multiple alignment
-    static AlignmentSet * CreateFromMultiple(
-        const BlockMultipleAlignment *multiple, const std::vector < int > *rowOrder = NULL);
+    AlignmentSet(const SeqAnnotList& seqAnnots, const SequenceSet& sequenceSet);
 
     typedef std::list < ncbi::CRef < MasterSlaveAlignment > > AlignmentList;
     AlignmentList m_alignments;
@@ -92,8 +87,10 @@ public:
     // pointer to the master sequence for each pairwise master/slave alignment in this set
     const Sequence *m_master;
 
-    // new alignment data in asn1 format, created from (edited) BlockMultipleAlignment
-    SeqAnnotList newAsnAlignmentData;
+    // constructs a new AlignmentSet (and asn data) from a multiple alignment
+    static AlignmentSet * CreateFromMultiple(
+        const BlockMultipleAlignment *multiple, SeqAnnotList *newAsnAlignmentData,
+        const SequenceSet& sequenceSet, const std::vector < unsigned int > *rowOrder = NULL);
 };
 
 END_SCOPE(struct_util)
@@ -103,6 +100,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/05/25 15:52:17  thiessen
+* add BlockMultipleAlignment, IBM algorithm
+*
 * Revision 1.1  2004/05/24 23:04:05  thiessen
 * initial checkin
 *

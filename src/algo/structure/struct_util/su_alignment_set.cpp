@@ -33,6 +33,8 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbi_limits.hpp>
+
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 
@@ -41,7 +43,7 @@
 
 #include "su_alignment_set.hpp"
 #include "su_sequence_set.hpp"
-//#include "block_multiple_alignment.hpp"
+#include "su_block_multiple_alignment.hpp"
 #include "su_private.hpp"
 
 USING_NCBI_SCOPE;
@@ -50,31 +52,109 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(struct_util)
 
-AlignmentSet::AlignmentSet(const SeqAnnotList& seqAnnots,
-        const Sequence *masterSequence, const SequenceSet& sequenceSet) :
-    m_master(masterSequence)
+AlignmentSet::AlignmentSet(const SeqAnnotList& seqAnnots, const SequenceSet& sequenceSet)
 {
-    if (!m_master)
-        THROW_MESSAGE("AlignmentSet::AlignmentSet() - need master before parsing alignments");
-
+    // screen alignments to make sure they're a type we can handle
+    typedef list < CRef < CSeq_align > > SeqAlignList;
+    SeqAlignList seqAligns;
     SeqAnnotList::const_iterator n, ne = seqAnnots.end();
     for (n=seqAnnots.begin(); n!=ne; ++n) {
-        CSeq_annot::C_Data::TAlign::const_iterator a, ae = (*n)->GetData().GetAlign().end();
-        for (a=(*n)->GetData().GetAlign().begin(); a!=ae; ++a)
-            m_alignments.push_back(
-				CRef<MasterSlaveAlignment>(new MasterSlaveAlignment(**a, m_master, sequenceSet)));
+
+        if (!n->GetObject().GetData().IsAlign())
+            THROW_MESSAGE("AlignmentSet::AlignmentSet() - confused by Seq-annot data format");
+        if (n != seqAnnots.begin())
+            TRACE_MESSAGE("multiple Seq-annots");
+
+        CSeq_annot::C_Data::TAlign::const_iterator
+            a, ae = n->GetObject().GetData().GetAlign().end();
+        for (a=n->GetObject().GetData().GetAlign().begin(); a!=ae; ++a) {
+
+            if (!(a->GetObject().GetType() != CSeq_align::eType_partial ||
+                    a->GetObject().GetType() != CSeq_align::eType_diags) ||
+                    !a->GetObject().IsSetDim() || a->GetObject().GetDim() != 2 ||
+                    (!a->GetObject().GetSegs().IsDendiag() && !a->GetObject().GetSegs().IsDenseg()))
+                THROW_MESSAGE("AlignmentSet::AlignmentSet() - confused by alignment type");
+
+            seqAligns.push_back(*a);
+        }
     }
+    if (seqAligns.size() == 0)
+        THROW_MESSAGE("AlignmentSet::AlignmentSet() - must have at least one Seq-align");
+
+    // we need to determine the identity of the master sequence; most rigorous way is to look
+    // for a Seq-id that is present in all pairwise alignments
+    m_master = NULL;
+    const Sequence *seq1 = NULL, *seq2 = NULL;
+    bool seq1PresentInAll = true, seq2PresentInAll = true;
+
+    // first, find sequences for first pairwise alignment
+    const CSeq_id& frontSid = seqAligns.front()->GetSegs().IsDendiag() ?
+        seqAligns.front()->GetSegs().GetDendiag().front()->GetIds().front().GetObject() :
+        seqAligns.front()->GetSegs().GetDenseg().GetIds().front().GetObject();
+    const CSeq_id& backSid = seqAligns.front()->GetSegs().IsDendiag() ?
+        seqAligns.front()->GetSegs().GetDendiag().front()->GetIds().back().GetObject() :
+        seqAligns.front()->GetSegs().GetDenseg().GetIds().back().GetObject();
+    SequenceSet::SequenceList::const_iterator s, se = sequenceSet.m_sequences.end();
+    for (s=sequenceSet.m_sequences.begin(); s!=se; ++s) {
+        if ((*s)->MatchesSeqId(frontSid)) seq1 = *s;
+        if ((*s)->MatchesSeqId(backSid)) seq2 = *s;
+        if (seq1 && seq2) break;
+    }
+    if (!(seq1 && seq2))
+        THROW_MESSAGE("AlignmentSet::AlignmentSet() - can't match first pair of Seq-ids to Sequences");
+
+    // now, make sure one of these sequences is present in all the other pairwise alignments
+    SeqAlignList::const_iterator a = seqAligns.begin(), ae = seqAligns.end();
+    for (++a; a!=ae; ++a) {
+        const CSeq_id& frontSid2 = (*a)->GetSegs().IsDendiag() ?
+            (*a)->GetSegs().GetDendiag().front()->GetIds().front().GetObject() :
+            (*a)->GetSegs().GetDenseg().GetIds().front().GetObject();
+        const CSeq_id& backSid2 = (*a)->GetSegs().IsDendiag() ?
+            (*a)->GetSegs().GetDendiag().front()->GetIds().back().GetObject() :
+            (*a)->GetSegs().GetDenseg().GetIds().back().GetObject();
+        if (!seq1->MatchesSeqId(frontSid2) && !seq1->MatchesSeqId(backSid2))
+            seq1PresentInAll = false;
+        if (!seq2->MatchesSeqId(frontSid2) && !seq2->MatchesSeqId(backSid2))
+            seq2PresentInAll = false;
+    }
+    if (!seq1PresentInAll && !seq2PresentInAll)
+        THROW_MESSAGE("AlignmentSet::AlignmentSet() - "
+            "all pairwise sequence alignments must have a common master sequence");
+    else if (seq1PresentInAll && !seq2PresentInAll)
+        m_master = seq1;
+    else if (seq2PresentInAll && !seq1PresentInAll)
+        m_master = seq2;
+    else if (seq1PresentInAll && seq2PresentInAll && seq1 == seq2)
+        m_master = seq1;
+
+    // if still ambiguous, just use the first one for now
+    if (!m_master) {
+        WARNING_MESSAGE("alignment master sequence is ambiguous - using the first one ("
+            << seq1->IdentifierString() << ')');
+        m_master = seq1;
+    }
+    TRACE_MESSAGE("determined master sequence: " << m_master->IdentifierString());
+
+    // parse the pairwise alignments
+    SeqAlignList::const_iterator l, le = seqAligns.end();
+    for (l=seqAligns.begin(); l!=le; ++l)
+        m_alignments.push_back(
+            CRef<MasterSlaveAlignment>(new MasterSlaveAlignment(**l, m_master, sequenceSet)));
+
     TRACE_MESSAGE("number of alignments: " << m_alignments.size());
 }
 
 AlignmentSet * AlignmentSet::CreateFromMultiple(
-    const BlockMultipleAlignment *multiple, const vector < int > *rowOrder)
+    const BlockMultipleAlignment *multiple, SeqAnnotList *newAsnAlignmentData,
+    const SequenceSet& sequenceSet, const vector < unsigned int > *rowOrder)
 {
-/*
+    newAsnAlignmentData->clear();
+
     // sanity check on the row order map
     if (rowOrder) {
-        map < int, int > rowCheck;
-        for (int i=0; i<rowOrder->size(); ++i) rowCheck[(*rowOrder)[i]] = i;
+        map < unsigned int, unsigned int > rowCheck;
+        for (unsigned int i=0; i<rowOrder->size(); ++i)
+            rowCheck[(*rowOrder)[i]] = i;
         if (rowOrder->size() != multiple->NRows() || rowCheck.size() != multiple->NRows() || (*rowOrder)[0] != 0) {
             ERROR_MESSAGE("AlignmentSet::CreateFromMultiple() - bad row order vector");
             return NULL;
@@ -82,9 +162,9 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(
     }
 
     // create a single Seq-annot, with 'align' data that holds one Seq-align per slave
-    SeqAnnotList newAsnAlignmentData;
+    SeqAnnotList newSeqAnnots;
     CRef < CSeq_annot > seqAnnot(new CSeq_annot());
-    newAsnAlignmentData->push_back(seqAnnot);
+    newSeqAnnots.push_back(seqAnnot);
 
     CSeq_annot::C_Data::TAlign& seqAligns = seqAnnot->SetData().SetAlign();
     seqAligns.resize((multiple->NRows() == 1) ? 1 : multiple->NRows() - 1);
@@ -96,41 +176,39 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(
     // create Seq-aligns; if there's only one row (the master), then cheat and create an alignment
     // of the master with itself, because asn data doesn't take well to single-row "alignment"
     if (multiple->NRows() > 1) {
-        int newRow;
-        for (int row=1; row<multiple->NRows(); ++row, ++sa) {
-          newRow = rowOrder[row];
-          CSeq_align *seqAlign = CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks, newRow);
-          sa->Reset(seqAlign);
+        for (unsigned int row=1; row<multiple->NRows(); ++row, ++sa) {
+            sa->Reset(CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks,
+                (rowOrder ? (*rowOrder)[row] : row)));
         }
     } else
         sa->Reset(CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks, 0));
 
     auto_ptr<AlignmentSet> newAlignmentSet;
     try {
-        newAlignmentSet.reset(new AlignmentSet(parent, multiple->GetMaster(), *newAsnAlignmentData));
-    } catch (exception& e) {
+        newAlignmentSet.reset(new AlignmentSet(newSeqAnnots, sequenceSet));
+    } catch (CException& e) {
         ERROR_MESSAGE(
-            "AlignmentSet::CreateFromMultiple() - failed to create AlignmentSet from new asn object; "
-            << "exception: " << e.what());
+            "AlignmentSet::CreateFromMultiple() - failed to create AlignmentSet from new asn object: "
+            << e.GetMsg());
         return NULL;
     }
 
-    newAlignmentSet->newAsnAlignmentData = newAsnAlignmentData.release();
+    *newAsnAlignmentData = newSeqAnnots;
     return newAlignmentSet.release();
-*/
-    return NULL;
 }
 
 
 ///// MasterSlaveAlignment methods /////
+
+const unsigned int MasterSlaveAlignment::UNALIGNED = kMax_UInt;
 
 MasterSlaveAlignment::MasterSlaveAlignment(const ncbi::objects::CSeq_align& seqAlign,
     const Sequence *masterSequence, const SequenceSet& sequenceSet) :
         m_master(masterSequence), m_slave(NULL)
 {
     // resize alignment and block vector
-    m_masterToSlave.resize(m_master->Length(), -1);
-    m_blockStructure.resize(m_master->Length(), -1);
+    m_masterToSlave.resize(m_master->Length(), UNALIGNED);
+    m_blockStructure.resize(m_master->Length(), UNALIGNED);
 
     // find slave sequence for this alignment, and order (master or slave first)
     const CSeq_id& frontSeqId = seqAlign.GetSegs().IsDendiag() ?
@@ -231,10 +309,11 @@ MasterSlaveAlignment::MasterSlaveAlignment(const ncbi::objects::CSeq_align& seqA
                 slaveRes = *(starts++);
                 masterRes = *(starts++);
             }
-            if (masterRes != -1 && slaveRes != -1) { // skip gaps
+            if (masterRes != UNALIGNED && slaveRes != UNALIGNED) { // skip gaps
                 if ((masterRes + *lens - 1) >= m_master->Length() ||
                         (slaveRes + *lens - 1) >= m_slave->Length())
-                    THROW_MESSAGE("MasterSlaveAlignment::MasterSlaveAlignment() - seqloc in denseg block > length of sequence!");
+                    THROW_MESSAGE("MasterSlaveAlignment::MasterSlaveAlignment() - "
+                        "seqloc in denseg block > length of sequence!");
                 for (i=0; i<*lens; ++i) {
                     m_masterToSlave[masterRes + i] = slaveRes + i;
                     m_blockStructure[masterRes + i] = blockNum;
@@ -251,6 +330,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/05/25 15:52:17  thiessen
+* add BlockMultipleAlignment, IBM algorithm
+*
 * Revision 1.1  2004/05/24 23:04:05  thiessen
 * initial checkin
 *

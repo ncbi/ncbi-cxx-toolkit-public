@@ -6,6 +6,7 @@
 
 SRC =   struct_util \
         su_alignment_set \
+        su_block_multiple_alignment \
         su_sequence_set
 
 LIB = xstruct_util

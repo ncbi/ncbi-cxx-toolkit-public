@@ -37,7 +37,6 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <corelib/ncbiexpt.hpp>
 
 #include <string>
 #include <list>
@@ -52,24 +51,25 @@ BEGIN_SCOPE(struct_util)
 class Sequence : public ncbi::CObject
 {
 public:
-    Sequence(ncbi::objects::CBioseq& bioseq) THROWS(ncbi::CException);
+    Sequence(ncbi::objects::CBioseq& bioseq);
 
     ncbi::CRef < ncbi::objects::CBioseq > m_bioseqASN;
-    ncbi::objects::CBioseq::TId m_ids;
 
     std::string m_sequenceString, m_description;
     bool m_isProtein;
     unsigned int Length(void) const { return m_sequenceString.size(); }
 
-    // Seq-id matching stuff
+    // Seq-id stuff
+	const ncbi::objects::CSeq_id& GetPreferredIdentifier(void) const;
 	bool MatchesSeqId(const ncbi::objects::CSeq_id& seqID) const;
+    string IdentifierString(void) const;
 };
 
 class SequenceSet : public ncbi::CObject
 {
 public:
     typedef std::list < ncbi::CRef < ncbi::objects::CSeq_entry > > SeqEntryList;
-    SequenceSet(SeqEntryList& seqEntries) THROWS(ncbi::CException);
+    SequenceSet(SeqEntryList& seqEntries);
 
     typedef std::list < ncbi::CRef < Sequence > > SequenceList;
     SequenceList m_sequences;
@@ -82,6 +82,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/05/25 15:52:18  thiessen
+* add BlockMultipleAlignment, IBM algorithm
+*
 * Revision 1.1  2004/05/24 23:04:05  thiessen
 * initial checkin
 *

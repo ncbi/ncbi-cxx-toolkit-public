@@ -44,6 +44,7 @@ BEGIN_SCOPE(struct_util)
 
 class SequenceSet;
 class AlignmentSet;
+class BlockMultipleAlignment;
 
 class AlignmentUtility
 {
@@ -57,6 +58,11 @@ public:
 
     bool Okay(void) const { return m_okay; }
 
+    const SeqEntryList& GetSeqEntries(void) const { return m_seqEntries; }
+    const SeqAnnotList& GetSeqAnnots(void) const { return m_seqAnnots; }
+
+    bool DoIBM(void);
+
 private:
     SeqEntryList m_seqEntries;
     SequenceSet *m_sequenceSet;
@@ -65,6 +71,8 @@ private:
 
     void Init(void);
     bool m_okay;
+
+    BlockMultipleAlignment *m_currentMultiple;
 };
 
 END_SCOPE(struct_util)
@@ -74,6 +82,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/05/25 15:50:46  thiessen
+* add BlockMultipleAlignment, IBM algorithm
+*
 * Revision 1.1  2004/05/24 23:05:10  thiessen
 * initial checkin
 *

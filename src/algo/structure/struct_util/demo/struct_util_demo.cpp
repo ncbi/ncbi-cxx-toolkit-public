@@ -112,6 +112,20 @@ int SUApp::Run(void)
     if (!au.Okay())
         return 2;
 
+    // perform IBM on this alignment
+    if (!au.DoIBM())
+        return 3;
+
+    // repace Seq-annots in cdd with new data
+    cdd.SetSeqannot() = au.GetSeqAnnots();
+
+    // write out processed data
+    string err;
+    if (!Cn3D::WriteASNToFile(args["o"].AsString().c_str(), cdd, args["ob"].HasValue(), &err)) {
+        ERROR_MESSAGE("error writing output file " << args["o"].AsString());
+        return 4;
+    }
+
     return 0;
 }
 
@@ -148,6 +162,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/05/25 15:52:18  thiessen
+* add BlockMultipleAlignment, IBM algorithm
+*
 * Revision 1.1  2004/05/24 23:04:05  thiessen
 * initial checkin
 *

@@ -180,7 +180,7 @@ static void StringFromStdaa(const vector < char >& vec, string *str)
 }
 
 Sequence::Sequence(ncbi::objects::CBioseq& bioseq) :
-    m_bioseqASN(&bioseq), m_ids(bioseq.GetId()), m_isProtein(false)
+    m_bioseqASN(&bioseq), m_isProtein(false)
 {
     // fill out description
     if (bioseq.IsSetDescr()) {
@@ -265,14 +265,36 @@ Sequence::Sequence(ncbi::objects::CBioseq& bioseq) :
         THROW_MESSAGE("Sequence::Sequence(): confused by sequence representation");
 }
 
+#define RETURN_FIRST_SEQID_THAT_(is) \
+    for (i=m_bioseqASN->GetId().begin(); i!=ie; ++i) \
+        if ((*i)->is()) \
+            return **i
+
+const CSeq_id& Sequence::GetPreferredIdentifier(void) const
+{
+    CBioseq::TId::const_iterator i, ie = m_bioseqASN->GetId().end();
+
+    // try to find one of these first
+    RETURN_FIRST_SEQID_THAT_(IsPdb);
+    RETURN_FIRST_SEQID_THAT_(IsGi);
+
+    // otherwise, just use the first one
+    return m_bioseqASN->GetId().front().GetObject();
+}
+
 bool Sequence::MatchesSeqId(const CSeq_id& seqID) const
 {
-    CBioseq::TId::const_iterator i, ie = m_ids.end();
-    for (i=m_ids.begin(); i!=ie; ++i) {
+    CBioseq::TId::const_iterator i, ie = m_bioseqASN->GetId().end();
+    for (i=m_bioseqASN->GetId().begin(); i!=ie; ++i) {
         if (seqID.Match(**i))
             return true;
     }
     return false;
+}
+
+string Sequence::IdentifierString(void) const
+{
+    return CSeq_id::GetStringDescr(*m_bioseqASN, CSeq_id::eFormat_FastA);
 }
 
 END_SCOPE(struct_util)
@@ -280,6 +302,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/05/25 15:52:18  thiessen
+* add BlockMultipleAlignment, IBM algorithm
+*
 * Revision 1.1  2004/05/24 23:04:05  thiessen
 * initial checkin
 *

@@ -45,7 +45,38 @@ BEGIN_SCOPE(struct_util)
 #define INFO_MESSAGE(s) ERR_POST(Info << "struct_util: " << s)
 #define TRACE_MESSAGE(s) ERR_POST(Trace << "struct_util: " << s)
 
-#define THROW_MESSAGE(str) throw CException(__FILE__, __LINE__, NULL, CException::eUnknown, str)
+#define THROW_MESSAGE(str) throw CException(__FILE__, __LINE__, NULL, CException::eUnknown, (str))
+
+// utility function to remove some elements from a vector. Actually does this by copying to a new
+// vector, so T should have an efficient copy ctor.
+template < class T >
+static void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remove, int nToRemove)
+{
+    if (v.size() != remove.size()) {
+#ifndef _DEBUG
+        // MSVC gets internal compiler error here on debug builds... ugh!
+        ERROR_MESSAGE("VectorRemoveElements() - size mismatch");
+#endif
+        return;
+    }
+
+    std::vector < T > copy(v.size() - nToRemove);
+    unsigned int i, nRemoved = 0;
+    for (i=0; i<v.size(); ++i) {
+        if (remove[i])
+            ++nRemoved;
+        else
+            copy[i - nRemoved] = v[i];
+    }
+    if (nRemoved != nToRemove) {
+#ifndef _DEBUG
+        ERR_POST(Error << "VectorRemoveElements() - bad nToRemove");
+#endif
+        return;
+    }
+
+    v = copy;
+}
 
 END_SCOPE(struct_util)
 
@@ -54,6 +85,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/05/25 15:52:18  thiessen
+* add BlockMultipleAlignment, IBM algorithm
+*
 * Revision 1.1  2004/05/24 23:04:05  thiessen
 * initial checkin
 *
