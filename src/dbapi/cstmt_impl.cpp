@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.16  2004/09/22 14:27:57  kholodov
+* Modified: reference to unused basetmpl.hpp removed
+*
 * Revision 1.15  2004/05/17 21:10:28  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -87,7 +90,6 @@
 #include "conn_impl.hpp"
 #include "cstmt_impl.hpp"
 #include "rs_impl.hpp"
-#include "basetmpl.hpp"
 #include <dbapi/driver/public.hpp>
 
 BEGIN_NCBI_SCOPE
