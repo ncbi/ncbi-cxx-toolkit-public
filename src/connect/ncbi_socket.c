@@ -1134,14 +1134,13 @@ static EIO_Status s_Select(size_t                n,
     for (i = 0; i < n; i++) {
         if ( polls[i].sock ) {
             assert(polls[i].revent == eIO_Open);
-            if ( !FD_ISSET(polls[i].sock->sock, &e_fds) ) {
-                if ( FD_ISSET(polls[i].sock->sock, &r_fds) )
-                    polls[i].revent = eIO_Read;
-                if ( FD_ISSET(polls[i].sock->sock, &w_fds) )
-                    polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
-            } else
+            if ( FD_ISSET(polls[i].sock->sock, &r_fds) )
+                polls[i].revent = eIO_Read;
+            if ( FD_ISSET(polls[i].sock->sock, &w_fds) )
+                polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
+            if (!polls[i].revent  &&  FD_ISSET(polls[i].sock->sock, &e_fds))
                 polls[i].revent = eIO_Close;
-            if (polls[i].revent != eIO_Open)
+            if (polls[i].revent == eIO_Open)
                 n_fds++;
         }
     }
@@ -2861,6 +2860,7 @@ extern EIO_Status SOCK_SetTimeout(SOCK            sock,
 extern const STimeout* SOCK_GetTimeout(SOCK      sock,
                                        EIO_Event event)
 {
+    const STimeout *tr, *tw;
     char _id[32];
 
     switch ( event ) {
@@ -2868,6 +2868,20 @@ extern const STimeout* SOCK_GetTimeout(SOCK      sock,
         return s_tv2to(sock->r_timeout, &sock->r_to);
     case eIO_Write:
         return s_tv2to(sock->w_timeout, &sock->w_to);
+    case eIO_ReadWrite:
+        /* both timeouts come out normalized */
+        tr = s_tv2to(sock->r_timeout, &sock->r_to);
+        tw = s_tv2to(sock->w_timeout, &sock->w_to);
+        if ( !tr )
+            return tw;
+        if ( !tw )
+            return tr;
+        if (tr->sec > tw->sec)
+            return tw;
+        if (tw->sec > tr->sec)
+            return tr;
+        assert(tr->sec == tw->sec);
+        return tr->usec > tw->usec ? tw : tr;
     case eIO_Close:
         return s_tv2to(sock->c_timeout, &sock->c_to);
     default:
@@ -3939,6 +3953,10 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.135  2003/10/24 16:52:08  lavr
+ * GetTimeout(eIO_ReadWrite): return the lesser of eIO_Read and eIO_Write
+ * s_Select(): first check RW bits then E (otherwise, problems on Solaris)
+ *
  * Revision 6.134  2003/10/23 12:15:07  lavr
  * Socket feature setters made returning old feature values
  *
