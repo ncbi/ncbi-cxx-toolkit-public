@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2001/04/16 16:55:19  kholodov
+ * Modified: Added implementation for the ISerializable interface.
+ *
  * Revision 1.6  2001/01/03 16:38:53  vasilche
  * Added CAbstractObjectManager - stub for object manager.
  * CRange extracted to separate file.
@@ -64,6 +67,7 @@
 
 // generated includes
 #include <objects/seqloc/Seq_id_.hpp>
+#include <serial/serializable.hpp>
 
 // generated classes
 
@@ -74,7 +78,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CBioseq;
 class CAbstractObjectManager;
 
-class CSeq_id : public CSeq_id_Base
+class CSeq_id : public CSeq_id_Base, public ISerializable
 {
     typedef CSeq_id_Base Tparent;
 public:
@@ -108,8 +112,23 @@ public:
     // use object manager to resolve sequence
     CConstRef<CBioseq> Resolve(void) const;
 
+  // Implement serializable interface
+  virtual EOutputType GetOutputType() {
+    return m_OutputType;
+  }
+
+  virtual void WriteAsFasta(ostream& out) {
+    AsFastaString(out);
+  }
+
+  ISerializable& DumpAsFasta() {
+    m_OutputType = eAsFasta;
+    return *this;
+  }
+
 private:
     CRef<CAbstractObjectManager> m_ObjectManager;
+    EOutputType m_OutputType;
 };
 
 
