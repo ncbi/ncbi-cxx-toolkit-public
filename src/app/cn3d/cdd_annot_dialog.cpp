@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/11/12 20:35:36  thiessen
+* use ShowDomainsWithHighlights for structure evidence show
+*
 * Revision 1.28  2002/11/06 00:18:10  thiessen
 * fixes for new CRef/const rules in objects
 *
@@ -748,7 +751,7 @@ void CDDAnnotateDialog::EditEvidence(void)
     }
 }
 
-static const StructureObject * HighlightResidues(const StructureSet *set, const CBiostruc_annot_set& annot)
+static int HighlightResidues(const StructureSet *set, const CBiostruc_annot_set& annot)
 {
     try {
         if (!annot.IsSetId() || annot.GetId().size() == 0 || !annot.GetId().front()->IsMmdb_id())
@@ -794,7 +797,7 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
                         if (m == (*o)->graph->molecules.end())
                             throw "molecule with given ID not found";
                     }
-                    return (*o); // finished - return the object highlighted
+                    return (*o)->mmdbID; // finished - return the object highlighted
                 }
                 throw "unrecognized annotation structure";
             }
@@ -804,7 +807,7 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
     } catch (const char *err) {
         ERR_POST(Error << "HighlightResidues() - " << err);
     }
-    return NULL;
+    return 0;
 }
 
 void CDDAnnotateDialog::ShowEvidence(void)
@@ -830,25 +833,8 @@ void CDDAnnotateDialog::ShowEvidence(void)
 
     // highlight residues if structure evidence
     else if (IS_STRUCTURE_EVIDENCE_BSANNOT(*selectedEvidence)) {
-        const StructureObject *object = HighlightResidues(structureSet, selectedEvidence->GetBsannot());
-        if (object) {
-            // show the frame containing this object (get display list from first molecule)
-            unsigned int displayList = object->graph->molecules.find(1)->second->displayLists.front();
-            for (int frame=0; frame<structureSet->frameMap.size(); frame++) {
-                StructureSet::DisplayLists::const_iterator d, de = structureSet->frameMap[frame].end();
-                for (d=structureSet->frameMap[frame].begin(); d!=de; d++) {
-                    if (*d == displayList) { // is display list in this frame?
-                        structureSet->showHideManager->MakeAllVisible();
-                        // force redrawing of structures, so the frame that contains
-                        // this object isn't empty (otherwise, renderer won't show it)
-                        GlobalMessenger()->ProcessRedraws();
-                        structureSet->renderer->ShowFrameNumber(frame);
-                        frame = structureSet->frameMap.size(); // to exit out of next-up loop
-                        break;
-                    }
-                }
-            }
-        }
+        HighlightResidues(structureSet, selectedEvidence->GetBsannot());
+        structureSet->showHideManager->ShowDomainsWithHighlights(structureSet);
         wxMessageBox(
             selectedEvidence->GetBsannot().GetFeatures().front()->GetDescr().front()->GetName().c_str(),
             "Structure Evidence", wxOK | wxCENTRE, this);
