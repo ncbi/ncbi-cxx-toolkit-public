@@ -622,15 +622,14 @@ const unsigned int kNetScheduleMaxErrSize = 1024;
 extern NCBI_XCONNECT_EXPORT const char* kNetScheduleDriverName;
 
 
-extern "C" 
-{
+//extern "C" {
 
 void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetschedule(
      CPluginManager<CNetScheduleClient>::TDriverInfoList&   info_list,
      CPluginManager<CNetScheduleClient>::EEntryPointRequest method);
 
 
-} // extern C
+//} // extern C
 
 
 /* @} */
@@ -642,6 +641,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/03/22 21:42:50  didenko
+ * Got rid of warnning on Sun WorkShop
+ *
  * Revision 1.17  2005/03/22 18:54:18  kuznets
  * Changed project tree layout
  *

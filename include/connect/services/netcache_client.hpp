@@ -401,15 +401,14 @@ public:
 extern NCBI_XCONNECT_EXPORT const char* kNetCacheDriverName;
 
 
-extern "C" 
-{
+//extern "C" {
 
 void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetcache(
      CPluginManager<CNetCacheClient>::TDriverInfoList&   info_list,
      CPluginManager<CNetCacheClient>::EEntryPointRequest method);
 
 
-} // extern C
+//} // extern C
 
 /* @} */
 
@@ -420,6 +419,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/03/22 21:42:50  didenko
+ * Got rid of warnning on Sun WorkShop
+ *
  * Revision 1.26  2005/03/22 18:54:18  kuznets
  * Changed project tree layout
  *

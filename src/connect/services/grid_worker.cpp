@@ -150,7 +150,7 @@ CWorkerNodeRequest::CWorkerNodeRequest(auto_ptr<CWorkerNodeJobContext> context)
   : m_Context(context)
 {
     if (m_Context.get())
-        m_Job = m_Context->GetWorkerNode().CreateJob();
+        m_Job.reset(m_Context->GetWorkerNode().CreateJob());
 
 }
 
@@ -164,9 +164,9 @@ SThreadContext& CWorkerNodeRequest::x_GetThreadContext()
     SThreadContext* context = s_tls->GetValue();
     if (!context) {
         context = new SThreadContext();
-        context->reporter = m_Context->GetWorkerNode().CreateClient();
-        context->reader = m_Context->GetWorkerNode().CreateStorage();
-        context->writer = m_Context->GetWorkerNode().CreateStorage();
+        context->reporter.reset(m_Context->GetWorkerNode().CreateClient());
+        context->reader.reset(m_Context->GetWorkerNode().CreateStorage());
+        context->writer.reset(m_Context->GetWorkerNode().CreateStorage());
         s_tls->SetValue(context, s_TlsCleanup);
     }
     return *context;
@@ -251,7 +251,7 @@ CGridWorkerNode::~CGridWorkerNode()
 
 void CGridWorkerNode::Start()
 {
-    m_NSReadClient = CreateClient();
+    m_NSReadClient.reset(CreateClient());
     m_ThreadsPool.reset(new CStdPoolOfThreads(m_MaxThreads, m_QueueSize));
     m_ThreadsPool->Spawn(m_InitThreads);
 
@@ -331,6 +331,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/22 21:43:15  didenko
+ * Got rid of warnning on Sun WorkShop
+ *
  * Revision 1.2  2005/03/22 20:45:13  didenko
  * Got ride from warning on ICC
  *

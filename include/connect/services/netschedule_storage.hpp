@@ -76,19 +76,17 @@ public:
 class NCBI_XCONNECT_EXPORT CNullStorage : public INetScheduleStorage
 {
 public:
-    CNcbiIstream& GetIStream(const string& data_id,
+    CNcbiIstream& GetIStream(const string&,
                              size_t* blob_size = 0)
     {
         if (blob_size) *blob_size = 0;
         NCBI_THROW(CNetScheduleStorageException,
                    eReader, "Empty Storage reader.");
-        return *(CNcbiIstream*)NULL;
-    }
-    CNcbiOstream& CreateOStream(string& data_id)
+   }
+    CNcbiOstream& CreateOStream(string&)
     {
         NCBI_THROW(CNetScheduleStorageException,
                    eWriter, "Empty Storage writer.");
-        return *(CNcbiOstream*)NULL;
     }
     void Reset() {};
 };
@@ -101,6 +99,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/22 21:42:50  didenko
+ * Got rid of warnning on Sun WorkShop
+ *
  * Revision 1.1  2005/03/22 20:17:55  didenko
  * Initial version
  *

@@ -309,23 +309,20 @@ private:
     volatile CNetScheduleClient::EShutdownLevel m_ShutdownLevel;
 
     friend class CWorkerNodeRequest;
-    auto_ptr<IWorkerNodeJob> CreateJob()
+    IWorkerNodeJob* CreateJob()
     {
         CMutexGuard guard(m_JobFactoryMutex);
-        return 
-            auto_ptr<IWorkerNodeJob>(m_JobFactory.CreateJob());
+        return m_JobFactory.CreateJob();
     }
-    auto_ptr<INetScheduleStorage> CreateStorage()
+    INetScheduleStorage* CreateStorage()
     {
         CMutexGuard guard(m_StorageFactoryMutex);
-        return 
-            auto_ptr<INetScheduleStorage>(m_NSStorageFactory.CreateStorage());
+        return  m_NSStorageFactory.CreateStorage();
     }
-    auto_ptr<CNetScheduleClient> CreateClient()
+    CNetScheduleClient* CreateClient()
     {
         CMutexGuard guard(m_NSClientFactoryMutex);
-        return 
-            auto_ptr<CNetScheduleClient>(m_NSClientFactory.CreateClient());
+        return m_NSClientFactory.CreateClient();
     }
 
     CGridWorkerNode(const CGridWorkerNode&);
@@ -342,6 +339,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/22 21:42:50  didenko
+ * Got rid of warnning on Sun WorkShop
+ *
  * Revision 1.2  2005/03/22 20:35:56  didenko
  * Make it compile under CGG
  *

@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didneko
+ * Authors:  Maxim Didenko
  *
  */
 #include <corelib/ncbimisc.hpp>
@@ -79,6 +79,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/22 21:42:50  didenko
+ * Got rid of warnning on Sun WorkShop
+ *
  * Revision 1.2  2005/03/22 20:35:56  didenko
  * Make it compile under CGG
  *
