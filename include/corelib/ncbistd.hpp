@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2001/02/22 00:09:28  vakatov
+* non_const_iterate() -- added parenthesis around the "Cont" arg
+*
 * Revision 1.48  2000/12/24 00:01:48  vakatov
 * Moved some code from NCBIUTIL to NCBISTD.
 * Fixed AutoPtr to always work with assoc.containers
@@ -414,7 +417,7 @@ extern char* strdup(const char* str);
     for ( Type::const_iterator Var = (Cont).begin(), NCBI_NAME2(Var,_end) = (Cont).end();  Var != NCBI_NAME2(Var,_end);  ++Var )
 
 #define non_const_iterate(Type, Var, Cont) \
-    for ( Type::iterator Var = Cont.begin();  Var != Cont.end();  ++Var )
+    for ( Type::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
 
 
 END_NCBI_SCOPE
