@@ -299,7 +299,7 @@ CBl2Seq::x_Results2SeqAlign()
 
     ASSERT(mi_pResults->num_queries == (int)m_tQueries.size());
 
-    bool gappedMode = m_OptsHandle->GetOptions().GetGappedMode();
+    bool gappedMode = m_OptsHandle->GetGappedMode();
     bool outOfFrameMode = m_OptsHandle->GetOptions().GetOutOfFrameMode();
     Uint4 index;
 
@@ -368,6 +368,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.68  2005/03/29 17:15:51  dondosha
+ * Use CBlastOptionsHandle instead of CBlastOptions to retrieve gapped mode
+ *
  * Revision 1.67  2005/02/08 18:50:29  bealer
  * - Fix type truncation warnings.
  *

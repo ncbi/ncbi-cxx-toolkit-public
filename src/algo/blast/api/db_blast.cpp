@@ -638,7 +638,7 @@ CDbBlast::x_Results2SeqAlign()
     if (!m_ipResults)
         return retval;
 
-    bool gappedMode = GetOptions().GetGappedMode();
+    bool gappedMode = GetOptionsHandle().GetGappedMode();
     bool outOfFrameMode = GetOptions().GetOutOfFrameMode();
     string db_name(BLASTSeqSrcGetName(m_pSeqSrc));
     bool db_is_prot = (BLASTSeqSrcGetIsProt(m_pSeqSrc) ? true : false);
@@ -663,6 +663,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.58  2005/03/29 17:15:51  dondosha
+ * Use CBlastOptionsHandle instead of CBlastOptions to retrieve gapped mode
+ *
  * Revision 1.57  2005/03/08 21:10:30  dondosha
  * BlastMaskLocProteinToDNA is now called inside BLAST_MainSetUp, so extra call is no longer needed
  *
