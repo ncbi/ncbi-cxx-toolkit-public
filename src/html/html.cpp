@@ -339,15 +339,28 @@ void CHTMLText::SetText(const string& text)
     m_Name = text;
 }
 
-static const string KTagStart = "<@";
+static const char* KTagStart = "<@";
 static SIZE_TYPE KTagStart_size = 2;
-static const string KTagEnd = "@>";
+static const char* KTagEnd = "@>";
 static SIZE_TYPE KTagEnd_size = 2;
+
+inline
+static SIZE_TYPE s_Find(const string& s, const char* target,
+                        SIZE_TYPE start = 0)
+{
+    // return s.find(target);
+    // Some implementations of string::find call memcmp at every
+    // possible position, which is way too slow.
+    _ASSERT(start < s.size());
+    const char* cstr = s.c_str();
+    const char* p    = strstr(cstr + start, target);
+    return p ? p - cstr : NPOS;
+}
 
 CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     const string& text = GetText();
-    SIZE_TYPE tagStart = text.find(KTagStart);
+    SIZE_TYPE tagStart = s_Find(text, KTagStart);
     if ( tagStart == NPOS ) {
         return x_PrintBegin(out, mode, text);
     }
@@ -356,7 +369,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
     SIZE_TYPE last = tagStart;
     do {
         SIZE_TYPE tagNameStart = tagStart + KTagStart_size;
-        SIZE_TYPE tagNameEnd = text.find(KTagEnd, tagNameStart);
+        SIZE_TYPE tagNameEnd = s_Find(text, KTagEnd, tagNameStart);
         if ( tagNameEnd == NPOS ) {
             // tag not closed
             THROW1_TRACE(runtime_error, "tag not closed");
@@ -374,7 +387,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
                 tag->Print(out, mode);
 
             last = tagNameEnd + KTagEnd_size;
-            tagStart = text.find(KTagStart, last);
+            tagStart = s_Find(text, KTagStart, last);
         }
     } while ( tagStart != NPOS );
 
@@ -2062,6 +2075,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.83  2003/05/14 21:55:40  ucko
+ * CHTMLText::PrintBegin: Use strstr() instead of string::find() when
+ * looking for tags to replace, as the latter is much slower on some
+ * systems.
+ *
  * Revision 1.82  2003/04/22 15:04:05  ivanov
  * Removed HTMLEncode() for tags attributes in CHTMLOpenElement::PrintBegin()
  *
