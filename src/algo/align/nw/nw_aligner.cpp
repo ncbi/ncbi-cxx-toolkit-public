@@ -34,12 +34,6 @@
 
 #include <algo/align/nw_aligner.hpp>
 #include <corelib/ncbi_limits.h>
-#include <objects/seqalign/Score.hpp>
-#include <objects/general/Object_id.hpp>
-#include <objects/seqalign/Dense_seg.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <serial/objostrasn.hpp>
-#include <serial/serial.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -415,7 +409,7 @@ CNWAligner::TScore CNWAligner::x_Run()
 	    m_score = x_ScoreByTranscript();
 	}
     }
-    catch(bad_alloc& e) {
+    catch(bad_alloc&) {
       
       NCBI_THROW(
 		 CAlgoAlignException,
@@ -1044,6 +1038,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2003/09/03 17:28:40  kapustin
+ * Clean the list of includes
+ *
  * Revision 1.33  2003/09/02 22:38:18  kapustin
  * Move format functionality out of the class
  *
