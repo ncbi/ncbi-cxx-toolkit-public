@@ -35,30 +35,15 @@
 
 
 #include <corelib/ncbistd.hpp>
-#include <ctpublic.h>
 
 
 BEGIN_NCBI_SCOPE
 
+unsigned char*  longlong_to_numeric (long long l_num, unsigned int prec, 
+				     unsigned char* cs_num);
 
-char* numeric_to_string(CS_NUMERIC* numeric, char *s);
-
-// NOTE: The function string_to_numeric() require a pointer to
-//       the  CS_NUMERIC object. If pointer is NULL , CS_NUMERIC object         
-//       will be created inside this function. A deletion of the object 
-//       in this case is a user's responsibility.
-
-CS_NUMERIC* string_to_numeric(string str, int press, 
-                              int scale, CS_NUMERIC* num); 
-
-// NOTE: The function longlong_to_numeric() require a pointer to
-//       the  CS_NUMERIC object. If pointer is NULL , CS_NUMERIC object         
-//       will be created inside this function. A deletion of the object 
-//       in this case is a user's responsibility.
-
-CS_NUMERIC* longlong_to_numeric(long long l_num, int prec, 
-                                int scale, CS_NUMERIC* cs_num); 
-long long numeric_to_longlong(CS_NUMERIC* cs_num);
+// long long numeric_to_longlong(CS_NUMERIC* cs_num);
+long long numeric_to_longlong(unsigned int precision, unsigned char* cs_num);
 
 
 END_NCBI_SCOPE
@@ -70,6 +55,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/10/11 16:32:26  soussov
+ * excludes ctlib dependences fron numeric conversions calls
+ *
  * Revision 1.1  2001/09/21 23:39:54  vakatov
  * -----  Initial (draft) revision.  -----
  * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)

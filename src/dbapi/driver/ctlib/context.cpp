@@ -630,7 +630,9 @@ bool g_CTLIB_AssignCmdParam(CS_COMMAND*   cmd,
 
         CS_NUMERIC value;
         Int8 v8 = par.Value();
-        if (longlong_to_numeric(v8, 18, 0, &value) == 0)
+	memset(&value, 0, sizeof(value));
+	value.precision= 18;
+        if (longlong_to_numeric(v8, 18, value.array) == 0)
             return false;
 
         ret_code = ct_param(cmd, &param_fmt,
@@ -745,6 +747,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2001/10/11 16:30:44  soussov
+ * excludes ctlib dependences fron numeric conversions calls
+ *
  * Revision 1.5  2001/10/01 20:09:30  vakatov
  * Introduced a generic default user error handler and the means to
  * alternate it. Added an auxiliary error handler class

@@ -585,7 +585,7 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
                              (const unsigned char*) v.array);
                     }
                     else {
-                        *((CDB_BigInt*) item_buf) = numeric_to_longlong(&v);
+                        *((CDB_BigInt*) item_buf) = numeric_to_longlong((unsigned int) v.precision, v.array);
                     }
                 }
                 return item_buf;
@@ -594,7 +594,7 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
             if (fmt.scale == 0  &&  fmt.precision < 20) {
                 return (outlen == 0)
                     ? new CDB_BigInt
-                    : new CDB_BigInt(numeric_to_longlong(&v));
+                    : new CDB_BigInt(numeric_to_longlong((unsigned int) v.precision, v.array));
             } else {
                 return  (outlen == 0)
                     ? new CDB_Numeric
@@ -903,6 +903,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2001/10/11 16:30:44  soussov
+ * excludes ctlib dependences fron numeric conversions calls
+ *
  * Revision 1.8  2001/10/03 14:21:01  soussov
  * pevents the ct_cancel call in ~CTL_CursorResult()
  *

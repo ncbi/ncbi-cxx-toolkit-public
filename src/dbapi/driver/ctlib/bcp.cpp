@@ -116,7 +116,9 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.datatype = CS_NUMERIC_TYPE;
             CS_NUMERIC value;
             Int8 val8 = par.Value();
-            if (longlong_to_numeric(val8, 18, 0, &value) == 0)
+	    memset(&value, 0, sizeof(value));
+	    value.precision= 18;
+            if (longlong_to_numeric(val8, 18, value.array) == 0)
                 return false;
             param_fmt.scale     = 0;
             param_fmt.precision = 18;
@@ -416,6 +418,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/10/11 16:30:44  soussov
+ * excludes ctlib dependences fron numeric conversions calls
+ *
  * Revision 1.1  2001/09/21 23:40:02  vakatov
  * -----  Initial (draft) revision.  -----
  * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)
