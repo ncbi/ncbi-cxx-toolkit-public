@@ -416,6 +416,7 @@ CNetCacheClient::GetData(const string&  key,
 {
     _ASSERT(buf && buf_size);
 
+    try {
     auto_ptr<IReader> reader(GetData(key, blob_size));
     if (reader.get() == 0)
         return CNetCacheClient::eNotFound;
@@ -444,6 +445,16 @@ CNetCacheClient::GetData(const string&  key,
             return CNetCacheClient::eNotFound;
         } // switch
     } // while
+
+    } 
+    catch (CNetCacheException& ex)
+    {
+        const string& str = ex.what();
+        if (str.find_first_of("BLOB not found") > 0) {
+            return CNetCacheClient::eNotFound;
+        }
+        throw;
+    }
 
     return CNetCacheClient::eReadPart;
 }
@@ -522,6 +533,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/11/09 19:07:30  kuznets
+ * Return not found code in GetData instead of exception
+ *
  * Revision 1.18  2004/11/04 21:50:42  kuznets
  * CheckConnect() in Shutdown()
  *
