@@ -277,6 +277,7 @@ int CDemoApp::Run(void)
     }
     else if ( args["id"] ) {
         id.Reset(new CSeq_id(args["id"].AsString()));
+        NcbiCout << MSerial_AsnText << *id;
     }
     else if ( args["asn_id"] ) {
         id.Reset(new CSeq_id);
@@ -568,10 +569,14 @@ int CDemoApp::Run(void)
     if ( args["overlap"].AsString() == "intervals" )
         overlap = SAnnotSelector::eOverlap_Intervals;
 
+    handle.Reset();
     for ( int c = 0; c < repeat_count; ++c ) {
         if ( c && pause ) {
             SleepSec(pause);
         }
+        
+        // get handle again, check for scope TSE locking
+        handle = scope.GetBioseqHandle(idh);
 
         string sout;
         int count;
@@ -739,7 +744,10 @@ int CDemoApp::Run(void)
             if ( count_subtypes ) {
                 subtypes_counts.assign(CSeqFeatData::eSubtype_max+1, 0);
             }
-            CSeq_loc_Mapper mapper(handle);
+            CRef<CSeq_loc_Mapper> mapper;
+            if ( print_features ) {
+                mapper.Reset(new CSeq_loc_Mapper(handle));
+            }
             for ( CFeat_CI it(scope, *range_loc, base_sel); it;  ++it) {
                 if ( count_types ) {
                     ++types_counts[it->GetData().Which()];
@@ -775,7 +783,7 @@ int CDemoApp::Run(void)
                         NcbiCout << "Mapped location:";
                         NcbiCout << "\n" <<
                             MSerial_AsnText <<
-                            *mapper.Map(it->GetOriginalFeature().GetLocation());
+                            *mapper->Map(it->GetOriginalFeature().GetLocation());
                     }
                     else {
                         NcbiCout << "Location:\n" <<
@@ -929,6 +937,7 @@ int CDemoApp::Run(void)
                 range_to == 0? handle.GetBioseqLength(): range_to + 1;
             TSeqPos actual_length = actual_end - range_from;
             const CSeqMap& seq_map = handle.GetSeqMap();
+            NcbiCout << "Mol type: " << seq_map.GetMol() << NcbiEndl;
             for (size_t levels = 0;  levels < 4;  ++levels) {
                 TSeqPos total_length = 0;
                 CSeqMap::const_iterator seg =
@@ -1000,6 +1009,8 @@ int CDemoApp::Run(void)
             }
             exit(0);
         }
+
+        handle.Reset();
     }
 
     NcbiCout << "Done" << NcbiEndl;
@@ -1027,6 +1038,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.94  2004/12/22 15:56:45  vasilche
+* Added test for auto-release of TSEs by scope
+*
 * Revision 1.93  2004/12/21 18:57:35  vasilche
 * Display second location on cdregion features.
 *
