@@ -146,7 +146,13 @@ public:
     }
     virtual string GetJobVersion() const 
     {
-        return "Sample Job worker node version 1.0.1";
+        // Next formats are valid and supported:
+        //   ProgramName 1.2.3
+        //   ProgramName version 1.2.3
+        //   ProgramName v. 1.2.3
+        //   ProgramName ver. 1.2.3
+
+        return "SampleNode version 1.0.1";
     }
 };
 
@@ -182,6 +188,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/04 16:15:02  kuznets
+ * Version string modified to match Program 1.2.3 mask
+ *
  * Revision 1.6  2005/03/28 19:31:03  didenko
  * Added signals handling
  *
