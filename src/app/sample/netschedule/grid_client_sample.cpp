@@ -41,6 +41,9 @@
 #include <connect/services/netcache_client.hpp>
 #include <connect/services/netcache_nsstorage_imp.hpp>
 
+#include <math.h>
+#include <algorithm>
+
 USING_NCBI_SCOPE;
 
 class CGridClientSample : public CNcbiApplication
@@ -171,9 +174,6 @@ int CGridClientSample::Run(void)
     unsigned cnt = 0;
     SleepMilliSec(100);
     
-    unsigned last_jobs = 0;
-    unsigned no_jobs_executes_cnt = 0;
-
     while (jobs.size()) {
         NON_CONST_ITERATE(TJobs, it, jobs) {
             const string& jk = it->first;
@@ -199,8 +199,8 @@ int CGridClientSample::Run(void)
                 }
                 storage.Reset();
                 if (resvec.size() == dvec->size()) {
-                    for(int i = 0; i < resvec.size(); ++i) {
-                        if( abs((*dvec)[i] - resvec[i]) > 0.001 ) {
+                    for(size_t i = 0; i < resvec.size(); ++i) {
+                        if( fabs((*dvec)[i] - resvec[i]) > 0.001 ) {
                             LOG_POST( "Test failed! Wrong vector element." );
                             break;
                         }
@@ -261,6 +261,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/24 15:35:35  didenko
+ * Made it compile on Unixes
+ *
  * Revision 1.1  2005/03/24 15:10:41  didenko
  * Added samples for Worker node framework
  *

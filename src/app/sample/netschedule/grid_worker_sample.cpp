@@ -57,7 +57,7 @@ class CSampleJob : public IWorkerNodeJob
 {
 public:
     CSampleJob() {}
-    ~CSampleJob() {} 
+    virtual ~CSampleJob() {} 
 
     int Do(CWorkerNodeJobContext& context) 
     {
@@ -74,7 +74,7 @@ public:
                 LOG_POST( "Input stream error. Index : " << i );
                 /// if something bad has happend throw an exception
                 /// and its message will be delivered to the client.
-                throw exception("Input stream error"); 
+                throw runtime_error("Input stream error"); 
             }
             /// Don't forget to check if shutdown has been requested
             if (count % 1000 == 0) {
@@ -107,7 +107,7 @@ public:
                 LOG_POST( "Output stream error. Index : " << i );
                 /// if something bad has happend throw an exception
                 /// and its message will be delivered to the client.
-                throw exception("Output stream error"); 
+                throw runtime_error("Output stream error"); 
             }
             /// Don't forget to check if shutdown was requested
             /// We will interupt the job here only if urgent shutdown
@@ -155,6 +155,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/24 15:35:35  didenko
+ * Made it compile on Unixes
+ *
  * Revision 1.1  2005/03/24 15:10:41  didenko
  * Added samples for Worker node framework
  *
