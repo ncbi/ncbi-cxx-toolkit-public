@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/04/18 19:24:33  vasilche
+* Added BEGIN_SCOPE and END_SCOPE macros to allow source brawser gather names from namespaces.
+*
 * Revision 1.15  2000/04/06 16:07:54  vasilche
 * Added NCBI_EAT_SEMICOLON macro to allow tailing semicolon without warning.
 *
@@ -99,13 +102,16 @@
 #endif /* _MSC_VER >= 1200 */
 
 
+#define BEGIN_SCOPE(ns) namespace ns {
+#define END_SCOPE(ns) }
+
 // Using STD and NCBI namespaces
 #define NCBI_NS_STD  std
 #define NCBI_USING_NAMESPACE_STD using namespace NCBI_NS_STD
 
 #define NCBI_NS_NCBI ncbi
-#define BEGIN_NCBI_SCOPE namespace NCBI_NS_NCBI {
-#define END_NCBI_SCOPE }
+#define BEGIN_NCBI_SCOPE BEGIN_SCOPE(NCBI_NS_NCBI)
+#define END_NCBI_SCOPE END_SCOPE(NCBI_NS_NCBI)
 #define USING_NCBI_SCOPE using namespace NCBI_NS_NCBI
 
 

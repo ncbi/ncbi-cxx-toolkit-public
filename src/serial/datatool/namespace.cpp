@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/04/18 19:24:37  vasilche
+* Added BEGIN_SCOPE and END_SCOPE macros to allow source brawser gather names from namespaces.
+*
 * Revision 1.2  2000/04/12 15:36:52  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -146,7 +149,11 @@ void CNamespace::Open(const string& s, CNcbiOstream& out)
     }
     else {
         out <<
-            "namespace " << s << " { // namespace " << *this << "\n"
+            "#ifndef BEGIN_"<<s<<"_SCOPE\n"
+            "#  define BEGIN_"<<s<<"_SCOPE BEGIN_SCOPE("<<s<<")\n"
+            "#  define END_"<<s<<"_SCOPE END_SCOPE("<<s<<")\n"
+            "#endif\n"
+            "BEGIN_"<<s<<"_SCOPE // namespace "<<*this<<"\n"
             "\n";
     }
 }
@@ -161,7 +168,7 @@ void CNamespace::Close(CNcbiOstream& out)
     }
     else {
         out <<
-            "} // namespace " << *this << "\n"
+            "END_"<<m_Namespaces.back()<<"_SCOPE // namespace "<<*this<<"\n"
             "\n";
     }
     m_Namespaces.pop_back();
