@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/04/16 17:45:31  vakatov
+* [MSVC++] Replace the <windef.h>'s min/max macros by the hand-made templates.
+*
 * Revision 1.19  1999/04/15 21:56:47  vakatov
 * Introduced NcbiMin/NcbiMax to workaround some portability issues with
 * the standard "min/max"
@@ -195,17 +198,24 @@ private:
 #endif /* HAVE_NO_AUTO_PTR */
 
 
-// min/max
-
+// dont use min/max from MSVC++ <windef.h>
+#if defined(HAVE_WINDOWS_H)
+#define NOMINMAX
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
 template <class T>
-inline const T& NcbiMin(const T& a, const T& b) {
+inline const T& min(const T& a, const T& b) {
   return b < a ? b : a;
 }
-
 template <class T>
-inline const T& NcbiMax(const T& a, const T& b) {
+inline const T& max(const T& a, const T& b) {
   return  a < b ? b : a;
 }
+#endif /* min && max */
 
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)

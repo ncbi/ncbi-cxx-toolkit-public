@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/04/16 17:45:33  vakatov
+* [MSVC++] Replace the <windef.h>'s min/max macros by the hand-made templates.
+*
 * Revision 1.4  1999/04/15 21:58:24  vakatov
 * Use NcbiMin instead of MIN
 *
@@ -84,7 +87,7 @@ void AsnMemoryRead::Init(void)
 
 size_t AsnMemoryRead::Read(char* buffer, size_t size)
 {
-    int count = NcbiMin(size, m_Size - m_Ptr);
+    int count = min(size, m_Size - m_Ptr);
     memcpy(buffer, m_Data + m_Ptr, count);
     m_Ptr += count;
     return count;
