@@ -419,16 +419,21 @@ const string CSeq_id::GetSeqIdString(bool with_version) const {
     const CTextseq_id* tsid = GetTextseq_Id();
     //text id
     if (tsid) {
+        string acc;
         if (tsid->IsSetAccession()) {
+            acc = tsid->GetAccession();
+        } else if (tsid->IsSetName()) {
+            acc = tsid->GetName();
+        }
+        if ( !acc.empty() ) {
             if (with_version) {
                 int ver = 0;
                 if (tsid->IsSetVersion()) {
                     ver = tsid->GetVersion();
                 }
-                return tsid->GetAccession() + "." + NStr::IntToString(ver);
-            } else {
-                return tsid->GetAccession();
+                return acc + "." + NStr::IntToString(ver);
             }
+            return acc;
         }
     } else { //non-text id
         E_Choice the_type = Which();
@@ -1064,6 +1069,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.42  2002/12/03 15:55:12  dicuccio
+ * Corrected processing of text id accessions with no accession set (in
+ * GetSeqIdString()) - use name instead.
+ *
  * Revision 6.41  2002/11/26 15:13:32  dicuccio
  * Added CSeq_id::GetStringDescr() - provides text representations of seq-ids in a
  * number of formats.
