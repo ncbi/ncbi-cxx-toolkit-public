@@ -33,12 +33,16 @@ src_dir="$tmp_dir/c++.checklist"
 conf_name="TEST_CONF"
 
 # Get C++ tree from CVS for Unix platform
-rm -rf $src_dir > /dev/null
-echo $cvs_core $src_dir --without-gui --without-objects --without-cvs --unix $date_time 
-$cvs_core $src_dir --without-gui --without-objects --without-cvs --unix "$date_time"  ||  exit 1
+rm -rf "$src_dir" > /dev/null
+flags="--without-gui --without-objects --without-cvs --unix"
+if [ -n "$date_time" ]; then
+  $cvs_core "$src_dir" $flags "$date_time"  ||  exit 1
+else
+  $cvs_core "$src_dir" $flags ||  exit 1
+fi
 
 # Make any configururation
-cd $src_dir
+cd "$src_dir"
 ./configure --without-internal --with-build-root=$conf_name  ||  exit 2
 
 # Make check list
@@ -46,10 +50,10 @@ cd $conf_name/build  ||  exit 3
 make check_r RUN_CHECK=N CHECK_USE_IGNORE_LIST=N
 
 # Copy check list to target dir
-cp check.sh.list $target_dir  ||  exit 4
+cp check.sh.list "$target_dir"  ||  exit 4
 
 # Cleanup
 cd ../../..
-rm -rf $src_dir > /dev/null
+rm -rf "$src_dir" > /dev/null
 
 exit 0
