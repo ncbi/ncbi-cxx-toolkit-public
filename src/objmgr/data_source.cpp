@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/03/20 21:24:59  gouriano
+* *** empty log message ***
+*
 * Revision 1.23  2002/03/15 18:10:08  grichenk
 * Removed CRef<CSeq_id> from CSeq_id_Handle, added
 * key to seq-id map th CSeq_id_Mapper
@@ -369,7 +372,8 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
     TSeqMaps::iterator found = m_SeqMaps.find(&seq);
     if (found == m_SeqMaps.end()) {
         // Create sequence map
-        if ( !m_Loader ) {
+//        if ( !m_Loader )
+        {
             if ( seq.GetInst().IsSetSeq_data() || seq.GetInst().IsSetExt() ) {
                 x_CreateSeqMap(seq);
             }

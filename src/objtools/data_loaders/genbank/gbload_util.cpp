@@ -124,7 +124,7 @@ CMutexPool::SetSize(int size)
 CMutexPool::~CMutexPool(void)
 {
   if(m_size>0 && m_Locks)
-    delete m_Locks;
+    delete [] m_Locks;
 }
 
 void
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/03/20 21:24:59  gouriano
+* *** empty log message ***
+*
 * Revision 1.2  2002/03/20 17:03:24  gouriano
 * minor changes to make it compilable on MS Windows
 *

@@ -110,7 +110,7 @@ CGBDataLoader::~CGBDataLoader(void)
 }
 
 bool
-CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap,EChoice choice)
+CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice)
 {
   /*
     SeqLoc -> CHandleRangeMap ->
@@ -515,7 +515,7 @@ CGBDataLoader::x_NeedMoreData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TI
       // present;
     }
   cout << "x_NeedMoreData(" << srp << "," << tse_up << ") need_data " << need_data << " " <<endl;
-  return true;
+  return need_data;
 }
 
 bool
@@ -569,6 +569,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/03/20 21:24:59  gouriano
+* *** empty log message ***
+*
 * Revision 1.3  2002/03/20 19:06:30  kimelman
 * bugfixes
 *

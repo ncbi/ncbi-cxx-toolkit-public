@@ -119,7 +119,7 @@ public:
   virtual ~CGBDataLoader(void);
   
   virtual bool DropTSE(const CSeq_entry* sep);
-  virtual bool GetRecords(const CHandleRangeMap& hrmap, EChoice choice);
+  virtual bool GetRecords(const CHandleRangeMap& hrmap, const EChoice choice);
   
   virtual CTSE_Info*
   ResolveConflict(const CSeq_id_Handle& handle,
@@ -190,6 +190,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.4  2002/03/20 21:26:23  gouriano
+ * *** empty log message ***
+ *
  * Revision 1.3  2002/03/20 19:06:29  kimelman
  * bugfixes
  *
