@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/07/08 16:06:37  kholodov
+* Added GetBlobOStream() implementation
+*
 * Revision 1.2  2002/02/08 21:29:55  kholodov
 * SetDataBase() restored, connection cloning algorithm changed
 *
@@ -48,6 +51,7 @@
 #include "active_obj.hpp"
 #include <corelib/ncbistre.hpp>
 #include "dbexception.hpp"
+#include "blobstream.hpp"
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -69,6 +73,9 @@ public:
                           const string& name);
 
     virtual IResultSet* Open();
+    ostream& GetBlobOStream(unsigned int col,
+                            size_t blob_size, 
+                            size_t buf_size);
     virtual void Update(const string& table, const string& updateSql);
     virtual void Delete(const string& table);
     virtual void Close();
@@ -87,6 +94,7 @@ private:
     Parameters m_params;
     CDB_CursorCmd* m_cmd;
     CConnection* m_conn;
+    ostream *m_ostr;
   
 };
 

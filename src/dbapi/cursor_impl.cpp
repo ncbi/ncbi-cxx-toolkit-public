@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/07/08 16:06:37  kholodov
+* Added GetBlobOStream() implementation
+*
 * Revision 1.3  2002/05/16 22:11:12  kholodov
 * Improved: using minimum connections possible
 *
@@ -61,7 +64,7 @@ CCursor::CCursor(const string& name,
                  int nofArgs,
                  int batchSize,
                  CConnection* conn)
-    : m_nofArgs(nofArgs), m_cmd(0), m_conn(conn)
+    : m_nofArgs(nofArgs), m_cmd(0), m_conn(conn), m_ostr(0)
 {
     m_cmd = m_conn->GetCDB_Connection()->Cursor(name.c_str(), sql.c_str(),
                                             nofArgs, batchSize);
@@ -78,7 +81,6 @@ void CCursor::SetParam(const CVariant& v,
                        const string& name)
 {
 
-    CheckValid();
 
     Parameters::iterator cur = m_params.find(name);
     if( cur != m_params.end() ) {
@@ -99,7 +101,6 @@ void CCursor::SetParam(const CVariant& v,
 		
 IResultSet* CCursor::Open()
 {
-    CheckValid();
     CResultSet *ri = new CResultSet(m_conn, GetCursorCmd()->Open());
     ri->AddListener(this);
     AddListener(ri);
@@ -108,14 +109,26 @@ IResultSet* CCursor::Open()
 
 void CCursor::Update(const string& table, const string& updateSql) 
 {
-    CheckValid();
     GetCursorCmd()->Update(table.c_str(), updateSql.c_str());
 }
 
 void CCursor::Delete(const string& table)
 {
-    CheckValid();
     GetCursorCmd()->Delete(table.c_str());
+}
+
+ostream& CCursor::GetBlobOStream(unsigned int col,
+                                 size_t blob_size, 
+                                 size_t buf_size)
+{
+    // Delete previous ostream
+    delete m_ostr;
+
+    m_ostr = new CBlobOStream(GetCursorCmd(),
+                              col - 1,
+                              blob_size,
+                              buf_size);
+    return *m_ostr;
 }
 
 void CCursor::Close()
@@ -129,6 +142,8 @@ void CCursor::Close()
     m_params.clear();
     delete m_cmd;
     m_cmd = 0;
+    delete m_ostr;
+    m_ostr = 0;
     if( m_conn != 0 ) {
         if( m_conn->IsAux() ) {
             delete m_conn;
