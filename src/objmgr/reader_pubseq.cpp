@@ -116,9 +116,13 @@ CDB_Connection *CPubseqReader::NewConn()
   if(m_Context.get() == NULL)
   {
     C_DriverMgr drvMgr;
-    FDBAPI_CreateContext createContextFunc = drvMgr.GetDriver("ctlib");
+    string errmsg;
+    FDBAPI_CreateContext createContextFunc = drvMgr.GetDriver("ctlib",&errmsg);
     if(! createContextFunc)
-      throw runtime_error("No ctlib available");
+      {
+        LOG_POST(errmsg);
+        throw runtime_error("No ctlib available");
+      }
 
     m_Context.reset((*createContextFunc)(0));
   }
@@ -372,6 +376,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.8  2002/04/12 22:56:23  kimelman
+* processing of ctlib fail
+*
 * Revision 1.7  2002/04/12 14:52:34  butanaev
 * Typos fixed, code cleanup.
 *
