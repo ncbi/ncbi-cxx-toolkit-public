@@ -137,7 +137,7 @@ AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB_,
        in_path=" in [$]$2_PATH"
        test -d "[$]$2_PATH/include" && $2_INCLUDE="-I[$]$2_PATH/include"
        if test -d "[$]$2_PATH/lib${bit64_sfx}"; then
-          $2_LIBPATH="-L[$]$2_PATH/lib ${CONF_f_runpath}[$]$2_PATH/lib"
+          $2_LIBPATH="-L[$]$2_PATH/lib${bit64_sfx} ${CONF_f_runpath}[$]$2_PATH/lib${bit64_sfx}"
        fi
        $2_LIBS="[$]$2_LIBPATH -l$3 $5"
     else
