@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.139 2002/10/15 18:38:57 ucko Exp $
+#  $Id: configure.ac,v 1.140 2002/10/16 18:45:14 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -823,12 +823,13 @@ case "$compiler:$compiler_version" in
         *     ) major=5 ;; # ABI theoretically stable from 3.2 on
     esac
     found=false
-    for f in libstdc++.so.$compiler_version libgcc_s.so.1 libstdc++.a; do
-        path=`$CXX $LDFLAGS -print-file-name=libstdc++.a`
+    for f in libstdc++.so.$major libgcc_s.so.1 libstdc++.a; do
+        path=`$CXX $LDFLAGS -print-file-name=$f`
         dir=`dirname "$path"`
-        case "$dir" in
-            /lib | /usr/lib ) break ;; # no rpath needed
-            /*              ) found=true; break ;;
+	abs_dir=`cd "$dir" && pwd`
+        case "$dir:$abs_dir" in
+            *:/lib | *:/usr/lib ) break ;; # no rpath needed
+            /*                  ) found=true; break ;;
         esac
     done
     if test "$found" = "true"; then
