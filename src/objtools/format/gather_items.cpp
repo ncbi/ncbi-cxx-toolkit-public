@@ -195,7 +195,7 @@ bool CFlatGatherer::x_DisplayBioseq
 }
 
 
-bool s_IsSegmented(const CBioseq_Handle& seq)
+static bool s_IsSegmented(const CBioseq_Handle& seq)
 {
     return seq  &&
            seq.IsSetInst()  &&
@@ -204,18 +204,33 @@ bool s_IsSegmented(const CBioseq_Handle& seq)
 }
 
 
+static bool s_HasSegments(const CBioseq_Handle& seq)
+{
+    CSeq_entry_Handle h =
+        seq.GetExactComplexityLevel(CBioseq_set::eClass_segset);
+    if (h) {
+        for (CSeq_entry_CI it(h); it; ++it) {
+            if (it->IsSet()  &&  it->GetSet().IsSetClass()  &&
+                it->GetSet().GetClass() == CBioseq_set::eClass_parts) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
 // a defualt implementation for GenBank /  DDBJ formats
 void CFlatGatherer::x_GatherBioseq(const CBioseq_Handle& seq) const
 {
-    bool segmented = s_IsSegmented(seq);
     const CFlatFileConfig& cfg = Config();
 
     // Do multiple sections (segmented style) if:
-    // a. the bioseq is segmented
+    // a. the bioseq is segmented and has near parts
     // b. style is normal or segmented (not master)
     // c. user didn't specify a location
     // d. not FTable format
-    if ( segmented                                        &&
+    if ( s_IsSegmented(seq)  &&  s_HasSegments(seq)       &&
          (cfg.IsStyleNormal()  ||  cfg.IsStyleSegment())  &&
          (m_Context->GetLocation() == 0)                  &&
          !cfg.IsFormatFTable() ) {
@@ -715,12 +730,13 @@ void CFlatGatherer::x_CollectSourceDescriptors
     
     // if segmented collect descriptors from segments
     if ( ctx.IsSegmented() ) {
-        CConstRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForSeq_loc(loc, scope);
+        const CBioseq& seq = *ctx.GetHandle().GetBioseqCore();
+        CConstRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForBioseq(seq);
               
         // iterate over segments
         CSeqMap_CI smit(seq_map->BeginResolved(scope, 1, CSeqMap::fFindRef));
         for ( ; smit; ++smit ) {
-            CBioseq_Handle segh = scope->GetBioseqHandle(smit.GetRefSeqid());
+            CBioseq_Handle segh = scope->GetBioseqHandleFromTSE(smit.GetRefSeqid(), ctx.GetHandle());
             if ( !segh  ||  !segh.IsSetDescr() ) {
                 continue;
             }
@@ -841,10 +857,11 @@ struct SSortByLoc
                     const CRef<CSourceFeatureItem>& sfp2) 
     {
         // descriptor always goes first
-        if ( sfp1->WasDesc()  &&  !sfp2->WasDesc() ) {
+        if (sfp1->WasDesc()  &&  !sfp2->WasDesc()) {
             return true;
+        } else if (!sfp1->WasDesc()  &&  sfp2->WasDesc()) {
+            return false;
         }
-
         
         CSeq_loc::TRange range1 = sfp1->GetLoc().GetTotalRange();
         CSeq_loc::TRange range2 = sfp2->GetLoc().GetTotalRange();
@@ -940,14 +957,19 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
 }
 
 
-static bool s_FeatEndsOnBioseq(const CSeq_feat& feat, const CBioseq_Handle& seq)
+static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, const CBioseq_Handle& seq)
 {
     CSeq_loc_CI last;
-    for ( CSeq_loc_CI it(feat.GetLocation()); it; ++it ) {
+    for ( CSeq_loc_CI it(loc); it; ++it ) {
         last = it;
     }
-    
     return (last  &&  seq.IsSynonym(last.GetSeq_id()));
+}
+
+
+static bool s_FeatEndsOnBioseq(const CSeq_feat& feat, const CBioseq_Handle& seq)
+{
+    return s_SeqLocEndsOnBioseq(feat.GetLocation(), seq);
 }
 
 
@@ -1007,15 +1029,34 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
 
     CRef<CSeq_loc_Mapper> mapper(s_CreateMapper(ctx));
 
+    CSeq_feat_Handle prev_feat;
     for ( CFeat_CI it(scope, loc, sel); it; ++it ) {
         const CSeq_feat& feat = it->GetOriginalFeature();
-        
+
+        // supress dupliacte features
+        CSeq_annot_Handle annot = it->GetSeq_feat_Handle().GetAnnot();
+        if (prev_feat.GetSeq_feat()) {            
+            if (prev_feat.GetFeatSubtype() == feat.GetData().GetSubtype()) {
+                if (annot == prev_feat.GetAnnot()) {
+                    if (prev_feat.GetSeq_feat()->Equals(feat)) {
+                        continue;
+                    }
+                }
+            }
+        }
+        prev_feat = it->GetSeq_feat_Handle();
+
         // if part show only features ending on that part
-        if ( ctx.IsPart()  &&  
-             !s_FeatEndsOnBioseq(feat, ctx.GetHandle()) ) {
+        if (ctx.IsPart()  &&  !s_FeatEndsOnBioseq(feat, ctx.GetHandle()) ) {
+            // may need to map sig_peptide on a different segment
+            if (feat.GetData().IsCdregion()) {
+                if (!ctx.Config().IsFormatFTable()) {
+                    x_GetFeatsOnCdsProduct(feat, ctx, mapper);
+                }
+            }
             continue;
         }
-        
+
         CConstRef<CSeq_loc> feat_loc(&feat.GetLocation());
         if ( mapper ) {
             feat_loc.Reset(mapper->Map(*feat_loc));
@@ -1178,27 +1219,29 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
  CBioseqContext& ctx,
  CRef<CSeq_loc_Mapper>& mapper) const
 {
-    _ASSERT(feat.GetData().IsCdregion());
+    if (!feat.GetData().IsCdregion()) {
+        return;
+    }
 
     const CFlatFileConfig& cfg = ctx.Config();
     
-    if ( cfg.HideCDSProdFeatures() ) {
+    if (cfg.HideCDSProdFeatures()) {
         return;
     }
     
-    if ( !feat.CanGetProduct() ) {
+    if (!feat.CanGetProduct()) {
         return;
     }
 
     CScope& scope = ctx.GetScope();
     CBioseq_Handle  prot = scope.GetBioseqHandle(feat.GetProduct());
-    if ( !prot ) {
+    if (!prot) {
         return;
     }
-        
+    
     CFeat_CI prev;
     bool first = true;
-    CSeq_loc_Mapper prot_to_nuc(feat, CSeq_loc_Mapper::eProductToLocation, &scope);
+    CSeq_loc_Mapper prot_to_cds(feat, CSeq_loc_Mapper::eProductToLocation, &scope);
     // explore mat_peptides, sites, etc.
     for ( CFeat_CI it(prot, 0, 0); it; ++it ) {
         CSeqFeatData::ESubtype subtype = it->GetData().GetSubtype();
@@ -1220,7 +1263,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
         }
 
         // suppress duplicate features (on protein)
-        if ( !first ) {
+        if (!first) {
             const CSeq_loc& loc_curr = it->GetLocation();
             const CSeq_loc& loc_prev = prev->GetLocation();
             const CSeq_feat& feat_curr = it->GetOriginalFeature();
@@ -1232,14 +1275,18 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
         }
 
         // map prot location to nuc location
-        CRef<CSeq_loc> loc(prot_to_nuc.Map(it->GetLocation()));
+        CRef<CSeq_loc> loc(prot_to_cds.Map(it->GetLocation()));
         // possibly map again (e.g. from part to master)
         if ( loc.NotEmpty()  &&  mapper.NotEmpty() ) {
             loc.Reset(mapper->Map(*loc));
         }
-        if ( !loc  ||  loc->IsNull() ) {
+        if (!loc  ||  loc->IsNull()) {
             continue;
         }
+        if (ctx.IsPart()  &&  !s_SeqLocEndsOnBioseq(*loc, ctx.GetHandle())) {
+            continue;
+        }
+
         // make sure feature is within sublocation
         if ( ctx.GetMasterLocation() != 0 ) {
             const CSeq_loc& mloc = *ctx.GetMasterLocation();
@@ -1285,6 +1332,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2004/08/30 13:43:05  shomrat
+*  supress duplicate features;fixed mapping from prot to nuc
+*
 * Revision 1.25  2004/08/25 17:11:26  grichenk
 * Removed obsolete SAnnotSelector::SetCombineMethod()
 *
