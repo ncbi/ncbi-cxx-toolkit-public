@@ -197,7 +197,7 @@ string StringToAscii(const string& src, bool ascii_table)
         // Process one UTF character
         ch = StringToChar(src.data() + i, &utf_len, ascii_table);
         // Add character to the result vector
-        dst += ch;
+        if ( ch != kSkipChar ) dst += ch;
         i += utf_len;
     }
     return dst;
@@ -319,6 +319,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/01/24 20:10:21  vinokuro
+ * Skip characters processing has been fixed in StringToAscii function.
+ *
  * Revision 1.4  2002/01/18 19:24:13  ivanov
  * Changed result char's upper limit from 0xFF to 0x7F in StringToChar()
  *
