@@ -150,7 +150,7 @@ static string s_GetGOText(const CUser_field& field, bool is_ftable)
             }
             if ( pmid != 0 ) {
                 go_text += " [pmid ";
-                go_text += pmid;
+                go_text += NStr::IntToString(pmid);
                 go_text += ']';
             }
         }
@@ -936,6 +936,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2005/03/31 14:55:14  shomrat
+* Bug fix - formatting pmid in go qual
+*
 * Revision 1.26  2005/03/28 17:23:36  shomrat
 * Changes to synonym formatting
 *
