@@ -73,15 +73,6 @@ CMultiSeqInfo::~CMultiSeqInfo()
     m_ivSeqBlkVec.clear();
 }
 
-// Moved to blast_objmgr_tools.cpp
-//
-// void* CMultiSeqInfo::GetSeqId(int index);
-
-void* CMultiSeqInfo::GetSeqLoc(int index)
-{
-    return (void*) &m_vSeqVector[index];
-}
-
 /** Retrieves the length of the longest sequence in the BlastSeqSrc.
  * @param multiseq_handle Pointer to the structure containing sequences [in]
  */
@@ -279,29 +270,6 @@ static char* MultiSeqGetSeqIdStr(void* multiseq_handle, void* args)
     return seqid_str;
 }
 
-/** Retrieves the sequence identifier given its index into the sequence vector.
- * Client code is responsible for deallocating the return value. 
- * @param multiseq_handle Pointer to the structure containing sequences [in]
- * @param args Pointer to integer indicating ordinal id [in]
- * @return Sequence id structure generated from ASN.1 spec, 
- *         cast to a void pointer.
- */
-static ListNode* MultiSeqGetSeqLoc(void* multiseq_handle, void* args)
-{
-    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
-    Int4 index;
-    ListNode* seqloc_wrap;
-
-    ASSERT(seq_info);
-    ASSERT(args);
-
-    index = *((Int4*) args);
-
-    seqloc_wrap = ListNodeAddPointer(NULL, BLAST_SEQSRC_CPP_SEQLOC, 
-                                     seq_info->GetSeqLoc(index));
-    return seqloc_wrap;
-}
-
 /** Retrieve length of a given sequence.
  * @param multiseq_handle Pointer to the structure containing sequences [in]
  * @param args Pointer to integer indicating index into the sequences 
@@ -394,7 +362,6 @@ BlastSeqSrc* MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
     SetGetSequence(retval, &MultiSeqGetSequence);
     SetGetSeqIdStr(retval, &MultiSeqGetSeqIdStr);
     SetGetSeqId(retval, &MultiSeqGetSeqId);
-    SetGetSeqLoc(retval, &MultiSeqGetSeqLoc);
     SetGetSeqLen(retval, &MultiSeqGetSeqLen);
     SetGetNextChunk(retval, &MultiSeqGetNextChunk);
     SetIterNext(retval, &MultiSeqIteratorNext);
@@ -458,6 +425,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2004/07/19 13:54:31  dondosha
+ * Removed GetSeqLoc method
+ *
  * Revision 1.18  2004/06/02 20:43:30  ucko
  * +<memory> (previously included indirectly via sequence.hpp) due to
  * use of auto_ptr<>.

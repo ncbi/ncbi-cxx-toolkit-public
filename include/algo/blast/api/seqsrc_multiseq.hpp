@@ -71,7 +71,6 @@ public:
     Uint4 GetNumSeqs();
     BLAST_SequenceBlk* GetSeqBlk(int index);
     void* GetSeqId(int index);
-    void* GetSeqLoc(int index);
     Blast_Message* GetErrorMessage();
 private:
     /// Passed from outside - not owned:
@@ -162,6 +161,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/07/19 13:53:49  dondosha
+ * Removed GetSeqLoc method
+ *
  * Revision 1.6  2004/03/25 17:18:28  camacho
  * typedef not needed for C++ structs
  *

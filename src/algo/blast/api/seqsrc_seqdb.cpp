@@ -57,7 +57,6 @@ static char* SeqDbGetName(void* seqdb_handle, void* ignoreme);
 static char* SeqDbGetDefinition(void* seqdb_handle, void* ignoreme);
 static char* SeqDbGetDate(void* seqdb_handle, void* ignoreme);
 static Boolean SeqDbGetIsProt(void* seqdb_handle, void* ignoreme);
-static ListNode* SeqDbGetSeqLoc(void* seqdb_handle, void* args);
 static ListNode* SeqDbGetError(void* seqdb_handle, void* args);
 
 /** Retrieves the length of the longest sequence in the BlastSeqSrc.
@@ -293,13 +292,6 @@ static char* SeqDbGetSeqIdStr(void* seqdb_handle, void* args)
     return seqid_str;
 }
 
-/* There is no need to return locations from seqdb, since we always search
-   whole sequences in the database */
-static ListNode* SeqDbGetSeqLoc(void*, void*)
-{
-   return NULL;
-}
-
 /** Retrieve length of a given database sequence.
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  * @param args Pointer to integer indicating ordinal id [in]
@@ -439,7 +431,6 @@ BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* retval, void* args)
     SetGetSequence(retval, &SeqDbGetSequence);
     SetGetSeqIdStr(retval, &SeqDbGetSeqIdStr);
     SetGetSeqId(retval, &SeqDbGetSeqId);
-    SetGetSeqLoc(retval, &SeqDbGetSeqLoc);
     SetGetSeqLen(retval, &SeqDbGetSeqLen);
     SetGetNextChunk(retval, &SeqDbGetNextChunk);
     SetIterNext(retval, &SeqDbIteratorNext);
@@ -505,6 +496,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2004/07/19 13:55:04  dondosha
+ * Removed GetSeqLoc method
+ *
  * Revision 1.16  2004/07/13 17:31:04  dondosha
  * Test sequence block pointer for null in SeqDbRetSequence
  *

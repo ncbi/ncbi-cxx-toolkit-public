@@ -260,8 +260,6 @@ BlastSeqSrc* BlastSeqSrcCopy(const BlastSeqSrc* seq_src);
     (*GetGetSeqIdStr(bssp))(GetDataStructure(bssp), arg)
 #define BLASTSeqSrcGetSeqId(bssp, arg) \
     (*GetGetSeqId(bssp))(GetDataStructure(bssp), arg)
-#define BLASTSeqSrcGetSeqLoc(bssp, arg) \
-    (*GetGetSeqLoc(bssp))(GetDataStructure(bssp), arg)
 #define BLASTSeqSrcGetSeqLen(bssp, arg) \
     (*GetGetSeqLen(bssp))(GetDataStructure(bssp), arg)
 #define BLASTSeqSrcGetNextChunk(bssp, iterator) \
@@ -298,7 +296,6 @@ DECLARE_MEMBER_FUNCTIONS(GetBoolFnPtr, GetIsProt, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetStrFnPtr, GetSeqIdStr, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetGenDataFnPtr, GetSeqId, BlastSeqSrc*);
-DECLARE_MEMBER_FUNCTIONS(GetGenDataFnPtr, GetSeqLoc, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetNextChunkFnPtr, GetNextChunk, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext, BlastSeqSrc*);
