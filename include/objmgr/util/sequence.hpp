@@ -55,9 +55,11 @@ class CSeq_point;
 class CPacked_seqpnt;
 class CScope;
 class CBioseq_Handle;
+class CSeqVector;
 class CCdregion;
 class CSeq_feat;
 class CSeq_entry;
+class CGenetic_code;
 
 BEGIN_SCOPE(sequence)
 
@@ -163,6 +165,23 @@ enum EGetTitleFlags {
 typedef int TGetTitleFlags;
 NCBI_XOBJUTIL_EXPORT
 string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags = 0);
+
+
+/// Retrieve a particular seq-id from a given bioseq handle.  This uses
+/// CSynonymsSet internally to decide which seq-id should be used.
+enum EGetIdType {
+    eGetId_ForceGi,         // return only a gi-based seq-id
+    eGetId_Best,            // return the "best" gi (uses FindBestScore(),
+                            // with CSeq_id::CalculateScore() as the score
+                            // function
+    eGetId_HandleDefault,   // returns the ID associated with a bioseq-handle
+
+    eGetId_Default = eGetId_Best
+};
+NCBI_XOBJUTIL_EXPORT
+const CSeq_id& GetId(const CBioseq_Handle& handle,
+                     EGetIdType type = eGetId_Default);
+
 
 // Change a CSeq_id to the one for the CBioseq that it represents
 // that has the best rank or worst rank according on value of best.
@@ -388,6 +407,36 @@ public:
 };
 
 
+class NCBI_XOBJUTIL_EXPORT CSeqTranslator
+{
+public:
+
+    // translate a string using a specified genetic code
+    // if the code is NULL, then the default genetic code is used
+    static void Translate(const string& seq,
+                          string& prot,
+                          const CGenetic_code* code = NULL,
+                          bool include_stop = true,
+                          bool remove_trailing_X = false);
+
+    // translate a seq-vector using a specified genetic code
+    // if the code is NULL, then the default genetic code is used
+    static void Translate(const CSeqVector& seq,
+                          string& prot,
+                          const CGenetic_code* code = NULL,
+                          bool include_stop = true,
+                          bool remove_trailing_X = false);
+
+    // utility function: translate a given location on a sequence
+    static void Translate(const CSeq_loc& loc,
+                          const CBioseq_Handle& handle,
+                          string& prot,
+                          const CGenetic_code* code = NULL,
+                          bool include_stop = true,
+                          bool remove_trailing_X = false);
+};
+
+
 
 /// Location relative to a base Seq-loc: one (usually) or more ranges
 /// of offsets.
@@ -555,6 +604,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.36  2004/01/30 17:22:52  dicuccio
+* Added sequence::GetId(const CBioseq_Handle&) - returns a selected ID class
+* (best, GI).  Added CSeqTranslator - utility class to translate raw sequence
+* data
+*
 * Revision 1.35  2004/01/28 17:17:14  shomrat
 * Added SeqLocMerge
 *

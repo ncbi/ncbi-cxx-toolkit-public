@@ -38,6 +38,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
+#include <objmgr/impl/synonyms.hpp>
 
 #include <objects/general/Int_fuzz.hpp>
 
@@ -204,6 +205,94 @@ bool IsOneBioseq(const CSeq_loc& loc, CScope* scope)
     } catch (CNotUnique&) {
         return false;
     }
+}
+
+
+class CSeqIdFromHandleException : EXCEPTION_VIRTUAL_BASE public CException
+{
+public:
+    // Enumerated list of document management errors
+    enum EErrCode {
+        eNoSynonyms,
+        eRequestedIdNotFound
+    };
+
+    // Translate the specific error code into a string representations of
+    // that error code.
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eNoSynonyms:           return "eNoSynonyms";
+        case eRequestedIdNotFound:  return "eRequestedIdNotFound";
+        default:                    return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CSeqIdFromHandleException, CException);
+};
+
+
+const CSeq_id& GetId(const CBioseq_Handle& handle,
+                     EGetIdType type)
+{
+    switch (type) {
+    case eGetId_HandleDefault:
+        return *handle.GetSeqId();
+
+    case eGetId_ForceGi:
+        if (handle.GetSeqId().GetPointer()  &&  handle.GetSeqId()->IsGi()) {
+            return *handle.GetSeqId();
+        }
+        {{
+            CConstRef<CSynonymsSet> syns =
+                handle.GetScope().GetSynonyms(*handle.GetSeqId());
+            if ( !syns ) {
+                string msg("No synonyms found for sequence ");
+                handle.GetSeqId()->GetLabel(&msg);
+                NCBI_THROW(CSeqIdFromHandleException, eNoSynonyms, msg);
+            }
+
+            ITERATE (CSynonymsSet, iter, *syns) {
+                CSeq_id_Handle idh = CSynonymsSet::GetSeq_id_Handle(iter);
+                if (idh.GetSeqId()->IsGi()) {
+                    return *idh.GetSeqId();
+                }
+            }
+        }}
+        break;
+
+    case eGetId_Best:
+        {{
+            CConstRef<CSynonymsSet> syns =
+                handle.GetScope().GetSynonyms(*handle.GetSeqId());
+            if ( !syns ) {
+                string msg("No synonyms found for sequence ");
+                handle.GetSeqId()->GetLabel(&msg);
+                NCBI_THROW(CSeqIdFromHandleException, eNoSynonyms, msg);
+            }
+
+            list< CRef<CSeq_id> > ids;
+            ITERATE (CSynonymsSet, iter, *syns) {
+                CSeq_id_Handle idh = CSynonymsSet::GetSeq_id_Handle(iter);
+                ids.push_back
+                    (CRef<CSeq_id>(const_cast<CSeq_id*>(idh.GetSeqId().GetPointer())));
+            }
+
+            CConstRef<CSeq_id> best_id = FindBestChoice(ids, CSeq_id::Score);
+            if (best_id) {
+                return *best_id;
+            }
+        }}
+        break;
+
+    default:
+        NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
+                   "Unhandled seq-id type");
+        break;
+    }
+
+    NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
+               "No best seq-id could be found");
 }
 
 
@@ -2921,6 +3010,98 @@ void CFastaOstream::Write(CBioseq& seq, const CSeq_loc* location)
 }
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// sequence translation
+//
+
+
+template <class Container>
+void x_Translate(const Container& seq,
+                 string& prot,
+                 const CGenetic_code* code)
+{
+    // reserve our space
+    const size_t mod = seq.size() % 3;
+    prot.erase();
+    prot.reserve(seq.size() / 3 + (mod ? 1 : 0));
+
+    // get appropriate translation table
+    const CTrans_table & tbl =
+        (code ? CGen_code_table::GetTransTable(*code) :
+                CGen_code_table::GetTransTable(1));
+
+    // main loop through bases
+    Container::const_iterator start = seq.begin();
+
+    size_t i;
+    size_t k;
+    size_t state = 0;
+    size_t length = seq.size() / 3 + ((seq.size() % 3) ? 1 : 0);
+    for (i = 0;  i < length;  ++i) {
+
+        // loop through one codon at a time
+        for (k = 0;  k < 3;  ++k, ++start) {
+            state = tbl.NextCodonState(state, *start);
+        }
+
+        // save translated amino acid
+        prot.append(1, tbl.GetCodonResidue(state));
+    }
+
+    if (mod) {
+        LOG_POST(Warning <<
+                 "translation of sequence whose length "
+                 "is not an even number of codons");
+        for (k = 0;  k < mod;  ++k, ++start) {
+            state = tbl.NextCodonState(state, *start);
+        }
+
+        for ( ;  k < 3;  ++k) {
+            state = tbl.NextCodonState(state, 'N');
+        }
+
+        // save translated amino acid
+        prot.append(1, tbl.GetCodonResidue(state));
+    }
+}
+
+
+void CSeqTranslator::Translate(const string& seq, string& prot,
+                               const CGenetic_code* code,
+                               bool include_stop,
+                               bool remove_trailing_X)
+{
+    x_Translate(seq, prot, code);
+}
+
+
+void CSeqTranslator::Translate(const CSeqVector& seq, string& prot,
+                               const CGenetic_code* code,
+                               bool include_stop,
+                               bool remove_trailing_X)
+{
+    x_Translate(seq, prot, code);
+}
+
+
+void CSeqTranslator::Translate(const CSeq_loc& loc,
+                               const CBioseq_Handle& handle,
+                               string& prot,
+                               const CGenetic_code* code,
+                               bool include_stop,
+                               bool remove_trailing_X)
+{
+    CSeqVector seq =
+        handle.GetSequenceView(loc, CBioseq_Handle::eViewConstructed,
+                               CBioseq_Handle::eCoding_Iupac);
+    x_Translate(seq, prot, code);
+}
+
+
+
+
 void CCdregion_translate::ReadSequenceByLocation (string& seq,
                                                   const CBioseq_Handle& bsh,
                                                   const CSeq_loc& loc)
@@ -3689,6 +3870,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.68  2004/01/30 17:22:53  dicuccio
+* Added sequence::GetId(const CBioseq_Handle&) - returns a selected ID class
+* (best, GI).  Added CSeqTranslator - utility class to translate raw sequence
+* data
+*
 * Revision 1.67  2004/01/28 17:19:04  shomrat
 * Implemented SeqLocMerge
 *
