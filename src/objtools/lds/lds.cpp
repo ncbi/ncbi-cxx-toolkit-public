@@ -106,6 +106,11 @@ void CLDS_Database::Create()
     m_db.annot2obj_db.Open(m_LDS_DbName.c_str(),
                            "annot2obj",
                            CBDB_RawFile::eCreate);
+
+    LOG_POST(Info << "Creating LDS table: " << "seq_id_list");
+    m_db.seq_id_list.Open(m_LDS_DbName.c_str(),
+                          "seq_id_list",
+                          CBDB_RawFile::eCreate);
 }
 
 
@@ -135,6 +140,10 @@ void CLDS_Database::Open()
     m_db.annot2obj_db.Open(m_LDS_DbName.c_str(),
                            "annot2obj",
                            CBDB_RawFile::eReadWrite);
+
+    m_db.seq_id_list.Open(m_LDS_DbName.c_str(),
+                          "seq_id_list",
+                           CBDB_RawFile::eReadWrite);
 }
 
 void CLDS_Database::x_LoadTypeMap()
@@ -154,6 +163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/07/09 19:33:40  kuznets
+ * Modified databse Open/Create procedures. (Reflecting new sequence id list table)
+ *
  * Revision 1.5  2003/06/25 18:30:11  kuznets
  * Fixed bug with creation of object attributes table
  *
