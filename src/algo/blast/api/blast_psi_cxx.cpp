@@ -283,14 +283,14 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
     Blast_Message* errors = NULL;
     const double kScaleFactor = 1.0;
     const bool kIsPhiBlast = false;
-    status = BlastSetup_GetScoreBlock(query_blk,
-                                      query_info,
-                                      opts,
-                                      kProgramType,
-                                      kIsPhiBlast,
-                                      &retval,
-                                      kScaleFactor,
-                                      &errors);
+    status = BlastSetup_ScoreBlkInit(query_blk,
+                                     query_info,
+                                     opts,
+                                     kProgramType,
+                                     kIsPhiBlast,
+                                     &retval,
+                                     kScaleFactor,
+                                     &errors);
     if (status != 0) {
         retval = BlastScoreBlkFree(retval);
         if (errors) {
@@ -527,6 +527,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2004/12/09 15:23:30  dondosha
+ * BlastSetup_GetScoreBlock renamed to BlastSetup_ScoreBlkInit
+ *
  * Revision 1.24  2004/12/08 14:34:37  camacho
  * Call PSIBlastOptions validation function
  *
