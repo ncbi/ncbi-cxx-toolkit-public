@@ -33,13 +33,14 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 
+#include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
-
+#include <objects/submit/Seq_submit.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_ci.hpp>
@@ -106,16 +107,16 @@ void CAsn2FlatApp::Init(void)
             "Input file name", CArgDescriptions::eInputFile);
         
         // input file serial format (AsnText\AsnBinary\XML, default: AsnText)
-        arg_desc->AddDefaultKey("serial", "SerialFormat", "Input file format",
-            CArgDescriptions::eString, "text");
+        arg_desc->AddOptionalKey("serial", "SerialFormat", "Input file format",
+            CArgDescriptions::eString);
         arg_desc->SetConstraint("serial", &(*new CArgAllow_Strings,
             "text", "binary", "XML"));
+        arg_desc->AddFlag("sub", "Submission");
     }}
 
     // batch processing
     {{
-        arg_desc->AddOptionalKey("batch", "BatchMode",
-            "Process NCBI release file", CArgDescriptions::eString);
+        arg_desc->AddFlag("batch", "Process NCBI release file");
         // compression
         arg_desc->AddFlag("c", "Compressed file");
         // propogate top descriptors
@@ -129,14 +130,6 @@ void CAsn2FlatApp::Init(void)
             "Output file name", CArgDescriptions::eOutputFile);
     }}
     
-    // loaders
-    {{
-        arg_desc->AddOptionalKey("load", "Loader", "Add data loader",
-            CArgDescriptions::eString);
-        // currently we support only the Genbank loader.
-        arg_desc->SetConstraint("load", &(*new CArgAllow_Strings, "gb"));
-    }}
-
     // report
     {{
         // format (default: genbank)
@@ -183,8 +176,18 @@ void CAsn2FlatApp::Init(void)
         // strand
         
         // accession to extract
+
+        // html
+        arg_desc->AddFlag("html", "Produce HTML output");
     }}
     
+    // misc
+    {{
+        // no-cleanup
+        arg_desc->AddFlag("nocleanup",
+            "Do not perform data cleanup prior to formatting");
+
+    }}
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -198,9 +201,9 @@ int CAsn2FlatApp::Run(void)
     if ( !m_Objmgr ) {
         NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
     }
-    if ( args["load"]  &&  args["load"].AsString() == "gb" ) {
-        CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
-    }
+    //if ( args["load"]  &&  args["load"].AsString() == "gb" ) {
+    CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+    //}
 
     // open the output stream
     m_Os = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
@@ -211,25 +214,46 @@ int CAsn2FlatApp::Run(void)
     // create the flat-file generator
     m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
 
-    if ( args["batch"] ) {
-        CGBReleaseFile in(args["i"].AsString());
-        in.RegisterHandler(this);
-        in.Read();  // HandleSeqEntry will be called from this function
-    } else {
-        // open the input file (default: stdin)
-        auto_ptr<CObjectIStream> in(x_OpenIStream(args));
-
-        // read in the seq-entry
-        CRef<CSeq_entry> se(new CSeq_entry);
-        if ( !se ) {
-            NCBI_THROW(CFlatException, eInternal, 
-                "Could not allocate Seq-entry object");
+    // open the input file (default: stdin)
+    auto_ptr<CObjectIStream> is(x_OpenIStream(args));
+    if (is.get() != NULL) {
+        if ( args["batch"] ) {
+            CGBReleaseFile in(*is.release());
+            in.RegisterHandler(this);
+            in.Read();  // HandleSeqEntry will be called from this function
+        } else {
+            if (args["sub"]) {  // submission
+                CRef<CSeq_submit> sub(new CSeq_submit);
+                if (sub.Empty()) {
+                    NCBI_THROW(CFlatException, eInternal, 
+                        "Could not allocate Seq-submit object");
+                }
+                *is >> *sub;
+                if (sub->IsSetSub()  &&  sub->IsSetData()) {
+                    CRef<CScope> scope(new CScope(*m_Objmgr));
+                    if ( !scope ) {
+                        NCBI_THROW(CFlatException, eInternal, "Could not create scope");
+                    }
+                    scope->AddDefaults();
+                    m_FFGenerator->Generate(*sub, *scope, *m_Os);
+                }
+            } else {  // seq-entry
+                CRef<CSeq_entry> se(new CSeq_entry);
+                if ( !se ) {
+                    NCBI_THROW(CFlatException, eInternal, 
+                        "Could not allocate Seq-entry object");
+                }
+                *is >> *se;
+                if (se->Which() == CSeq_entry::e_not_set) {
+                    NCBI_THROW(CFlatException, eInternal, "Invalid Seq-entry");
+                }
+                HandleSeqEntry(se);
+            }
         }
-        in->Read(ObjectInfo(*se));
-        if ( se->Which() == CSeq_entry::e_not_set ) {
-            NCBI_THROW(CFlatException, eInternal, "Invalid Seq-entry");
-        }
-        HandleSeqEntry(se);
+    } else {  // error opening input file
+        string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
+                                "Unable to read data from stdin";
+        NCBI_THROW(CFlatException, eInternal, msg);
     }
 
     m_Os->flush();
@@ -240,7 +264,18 @@ int CAsn2FlatApp::Run(void)
 
 bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 {
+    if (!se) {
+        return false;
+    }
+
     const CArgs&   args = GetArgs();
+
+    if (!args["nocleanup"]) {
+        //se->BasicCleanup();
+    }
+
+    string label;
+    se->GetLabel(&label, CSeq_entry::eBoth);
 
     // create new scope
     CRef<CScope> scope(new CScope(*m_Objmgr));
@@ -261,7 +296,11 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         x_GetLocation(entry, args, loc);
         m_FFGenerator->Generate(loc, *scope, *m_Os);
     } else {
-        m_FFGenerator->Generate(entry, *m_Os);
+        try {
+            m_FFGenerator->Generate(entry, *m_Os);
+        } catch (CException& e) {
+            _TRACE(e.ReportThis() + " " + label);
+        }
     }
 
     m_FFGenerator->Reset();
@@ -273,9 +312,8 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
 {
     // determine the file serialization format.
-    // use user specifications (if available) otherwise the defualt
-    // is AsnText.
-    ESerialDataFormat serial = eSerial_AsnText;
+    // deafult for batch files is binary, otherwise text.
+    ESerialDataFormat serial = args["batch"] ? eSerial_AsnBinary :eSerial_AsnText;
     if ( args["serial"] ) {
         const string& val = args["serial"].AsString();
         if ( val == "text" ) {
@@ -369,7 +407,12 @@ CAsn2FlatApp::TStyle CAsn2FlatApp::x_GetStyle(const CArgs& args)
 
 CAsn2FlatApp::TFlags CAsn2FlatApp::x_GetFlags(const CArgs& args)
 {
-    return args["flags"].AsInteger();
+    TFlags flags = args["flags"].AsInteger();
+    if (args["html"]) {
+        flags |= CFlatFileConfig::fDoHTML;
+    }
+
+    return flags;
 }
 
 
@@ -495,13 +538,16 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char** argv)
 {
-    return CAsn2FlatApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CAsn2FlatApp().AppMain(argc, argv, 0, eDS_ToStderr, "config.ini");
 }
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/02/07 15:04:35  shomrat
+* Basic support for Seq-submit formatting
+*
 * Revision 1.11  2004/07/21 15:51:24  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added
