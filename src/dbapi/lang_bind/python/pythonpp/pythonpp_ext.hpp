@@ -369,11 +369,12 @@ private:
 
 private:
     typedef vector<TMethodVarArgsFunc> TMethodList;
-    static TMethodList sm_MethodList;
 
     static TMethodList& GetMethodList(void)
     {
-        return sm_MethodList;
+        static TMethodList m_MethodList;
+
+        return m_MethodList;
     }
 };
 
@@ -483,6 +484,11 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/01/18 22:26:18  ssikorsk
+* Fixed: ucko's fix was rolled back because of a logical error.
+* Explanation: we must have a separate m_MethodList member for each
+* CExtObject instantiation, not one for all CExtObject's instantiations.
+*
 * Revision 1.2  2005/01/18 21:31:05  ucko
 * Tweak to fix build errors with GCC 2.95.
 *
