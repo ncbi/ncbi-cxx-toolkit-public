@@ -433,6 +433,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.5  2003/04/19 16:38:45  dicuccio
+* Remove compiler warning about nested comments
+*
 * Revision 6.4  2003/04/18 21:21:25  kans
 * added GetTypeFromSubtype, moved log to end of file
 *
@@ -449,4 +452,5 @@ END_NCBI_SCOPE
 *
 *
 * ===========================================================================
+*/
 /* Original file checksum: lines: 61, chars: 1894, CRC32: 86fb976 */
