@@ -81,7 +81,8 @@ protected:
     CT_CHAR_TYPE*  m_OutBuf;        // Output buffer, m_Buf + m_InBufSize
     streamsize     m_InBufSize;     // Input buffer size
     streamsize     m_OutBufSize;    // Output buffer size
-    bool           m_Dying;         // True if Finalize() is calling.
+    bool           m_Dying;         // True if destructor is calling.
+    bool           m_Finalized;     // True if Finalized() already done.
 };
 
 
@@ -235,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/04/15 16:51:12  ivanov
+ * Fixed error with flushing the streambuf after it finalizaton
+ *
  * Revision 1.1  2003/04/11 19:54:47  ivanov
  * Move streambuf.hpp from 'include/...' to 'src/...'
  *

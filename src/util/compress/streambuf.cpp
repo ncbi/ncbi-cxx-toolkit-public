@@ -53,7 +53,7 @@ CCompressionBaseStreambuf::CCompressionBaseStreambuf(CCompression* compressor,
     : m_Compressor(compressor), m_Streambuf(stream_buf),
       m_InBufSize(in_buf_size ? in_buf_size : kCompressionDefaultInBufSize),
       m_OutBufSize(out_buf_size ? out_buf_size :kCompressionDefaultOutBufSize),
-      m_Dying(false)
+      m_Dying(false), m_Finalized(false)
 {
     // Allocate memory for buffers
     auto_ptr<CT_CHAR_TYPE> bp(new CT_CHAR_TYPE[m_InBufSize + m_OutBufSize]);
@@ -94,7 +94,7 @@ void CCompressionBaseStreambuf::x_Throw(const char* file, int line,
     string message(msg + ". Compressor status (" +
         NStr::IntToString(m_Compressor->GetLastError()) + ").");
     if ( m_Dying ) {
-        _TRACE(message);
+        ERR_POST(message);
     } else {
         throw CCompressionException(file, line, 0, err, message);
     }
@@ -128,6 +128,7 @@ CCompressionOStreambuf::CCompressionOStreambuf(CCompression* compressor,
 
 CCompressionOStreambuf::~CCompressionOStreambuf()
 {
+    m_Dying = true;
     try {
         Finalize();
     } catch(CException& e) {
@@ -138,11 +139,15 @@ CCompressionOStreambuf::~CCompressionOStreambuf()
 
 void CCompressionOStreambuf::Finalize(void)
 {
+    // To do nothing is a streambuf is already finalized
+    if (m_Finalized) {
+        return;
+    }
     // Do not to do a finalization if a compressor has already finalized
     if ( !m_Compressor->IsBusy() ) {
         return;
     }
-    m_Dying = true;
+
     sync();
 
     CCompression::EStatus status;
@@ -169,6 +174,8 @@ void CCompressionOStreambuf::Finalize(void)
     if ( status != CCompression::eStatus_Success ) {
         X_THROW(eDeflate, "CCompressionOStreambuf: DeflateEnd() failed");
     }
+    // Streambuf is finalized
+    m_Finalized = true;
 }
 
 
@@ -205,6 +212,10 @@ bool CCompressionOStreambuf::ProcessBlock()
 
 int CCompressionOStreambuf::sync()
 {
+    // To do nothing is a streambuf is already finalized
+    if (m_Finalized) {
+        return 0;
+    }
     // Process remaining data in the input buffer
     if ( !ProcessBlock() ) {
         return -1;
@@ -232,6 +243,10 @@ int CCompressionOStreambuf::sync()
 
 CT_INT_TYPE CCompressionOStreambuf::overflow(CT_INT_TYPE c)
 {
+    // To do nothing is a streambuf is already finalized
+    if (m_Finalized) {
+        return CT_EOF;
+    }
     if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
         // Put this character in the last position
         // (this function is called when pptr() == eptr() but we
@@ -251,6 +266,10 @@ CT_INT_TYPE CCompressionOStreambuf::overflow(CT_INT_TYPE c)
 streamsize CCompressionOStreambuf::xsputn(const CT_CHAR_TYPE* buf,
                                           streamsize count)
 {
+    // To do nothing is a streambuf is already finalized
+    if (m_Finalized) {
+        return 0;
+    }
     // Check parameters
     if ( !buf  ||  count <= 0 ) {
         return 0;
@@ -313,6 +332,7 @@ CCompressionIStreambuf::CCompressionIStreambuf(CCompression* compressor,
 
 CCompressionIStreambuf::~CCompressionIStreambuf()
 {
+    m_Dying = true;
     try {
         Finalize();
     } catch(CException& e) {
@@ -324,11 +344,15 @@ CCompressionIStreambuf::~CCompressionIStreambuf()
 
 void CCompressionIStreambuf::Finalize(void)
 {
+    // To do nothing is a streambuf is already finalized
+    if (m_Finalized) {
+        return;
+    }
     // Do not to do a finalization if a compressor has already finalized
     if ( !m_Compressor->IsBusy() ) {
         return;
     }
-    m_Dying = true;
+
     sync();
 
     CCompression::EStatus status;
@@ -352,6 +376,8 @@ void CCompressionIStreambuf::Finalize(void)
     if ( status != CCompression::eStatus_Success ) {
         X_THROW(eInflate, "CCompressionIStreambuf: DeflateEnd() failed");
     }
+    // Streambuf is finalized
+    m_Finalized = true;
 }
 
 
@@ -409,6 +435,10 @@ bool CCompressionIStreambuf::ProcessBlock()
 
 int CCompressionIStreambuf::sync()
 {
+    // To do nothing is a streambuf is already finalized
+    if (m_Finalized) {
+        return 0;
+    }
     // Sync the underlying stream buffer
     if ( m_Streambuf->PUBSYNC() ) {
         return -1;
@@ -438,6 +468,10 @@ int CCompressionIStreambuf::sync()
 
 CT_INT_TYPE CCompressionIStreambuf::underflow(void)
 {
+    // To do nothing is a streambuf is already finalized
+    if (m_Finalized) {
+        return CT_EOF;
+    }
     // Reset pointer of the end of compressed data
     setg(m_OutBuf, m_OutBuf, m_OutBuf);
 
@@ -451,6 +485,10 @@ CT_INT_TYPE CCompressionIStreambuf::underflow(void)
 
 streamsize CCompressionIStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize count)
 {
+    // To do nothing is a streambuf is already finalized
+///    if (m_Finalized) {
+///        return 0;
+///    }
     // Check parameters
     if ( !buf  ||  count <= 0 ) {
         return 0;
@@ -508,6 +546,7 @@ CDecompressionOStreambuf::CDecompressionOStreambuf(CCompression* compressor,
 
 CDecompressionOStreambuf::~CDecompressionOStreambuf()
 {
+    m_Dying = true;
     try {
         Finalize();
     } catch(CException& e) {
@@ -519,11 +558,15 @@ CDecompressionOStreambuf::~CDecompressionOStreambuf()
 
 void CDecompressionOStreambuf::Finalize(void)
 {
+    // To do nothing is a streambuf is already finalized
+    if (m_Finalized) {
+        return;
+    }
     // Do not to do a finalization if a compressor has already finalized
     if ( !m_Compressor->IsBusy() ) {
         return;
     }
-    m_Dying = true;
+
     sync();
 
     // Cleanup
@@ -531,6 +574,8 @@ void CDecompressionOStreambuf::Finalize(void)
     if ( status != CCompression::eStatus_Success ) {
         X_THROW(eInflate, "CDecompressionOStreambuf: InflateEnd() failed");
     }
+    // Streambuf is finalized
+    m_Finalized = true;
 }
 
 
@@ -568,6 +613,10 @@ bool CDecompressionOStreambuf::ProcessBlock()
 
 int CDecompressionOStreambuf::sync()
 {
+    // To do nothing is a streambuf is already finalized
+    if (m_Finalized) {
+        return 0;
+    }
     // Process remaining data in the input buffer
     if ( !ProcessBlock() ) {
         return -1;
@@ -578,6 +627,10 @@ int CDecompressionOStreambuf::sync()
 
 CT_INT_TYPE CDecompressionOStreambuf::overflow(CT_INT_TYPE c)
 {
+    // To do nothing is a streambuf is already finalized
+    if (m_Finalized) {
+        return CT_EOF;
+    }
     if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
         // Put this character in the last position
         // (this function is called when pptr() == eptr() but we
@@ -597,6 +650,10 @@ CT_INT_TYPE CDecompressionOStreambuf::overflow(CT_INT_TYPE c)
 streamsize CDecompressionOStreambuf::xsputn(const CT_CHAR_TYPE* buf,
                                             streamsize count)
 {
+    // To do nothing is a streambuf is already finalized
+    if (m_Finalized) {
+        return 0;
+    }
     // Check parameters
     if ( !buf  ||  count <= 0 ) {
         return 0;
@@ -656,6 +713,7 @@ CDecompressionIStreambuf::CDecompressionIStreambuf(CCompression* compressor,
 
 CDecompressionIStreambuf::~CDecompressionIStreambuf()
 {
+    m_Dying = true;
     try {
         Finalize();
     } catch(CException& e) {
@@ -667,11 +725,15 @@ CDecompressionIStreambuf::~CDecompressionIStreambuf()
 
 void CDecompressionIStreambuf::Finalize(void)
 {
+    // To do nothing is a streambuf is already finalized
+    if (m_Finalized) {
+        return;
+    }
     // Do not to do a finalization if a compressor has already finalized
     if ( !m_Compressor->IsBusy() ) {
         return;
     }
-    m_Dying = true;
+
     sync();
 
     // Cleanup
@@ -679,6 +741,8 @@ void CDecompressionIStreambuf::Finalize(void)
     if ( status != CCompression::eStatus_Success ) {
         X_THROW(eInflate, "CDecompressionIStreambuf: InflateEnd() failed");
     }
+    // Streambuf is finalized
+    m_Finalized = true;
 }
 
 
@@ -727,6 +791,10 @@ bool CDecompressionIStreambuf::ProcessBlock()
 
 int CDecompressionIStreambuf::sync()
 {
+    // To do nothing is a streambuf is already finalized
+    if (m_Finalized) {
+        return 0;
+    }
     // Sync the underlying stream buffer
     if ( m_Streambuf->PUBSYNC() ) {
         return -1;
@@ -741,6 +809,10 @@ int CDecompressionIStreambuf::sync()
 
 CT_INT_TYPE CDecompressionIStreambuf::underflow(void)
 {
+    // To do nothing is a streambuf is already finalized
+    if (m_Finalized) {
+        return CT_EOF;
+    }
     // Reset pointers to the decompressed data
     setg(m_OutBuf, m_OutBuf, m_OutBuf);
 
@@ -754,6 +826,10 @@ CT_INT_TYPE CDecompressionIStreambuf::underflow(void)
 
 streamsize CDecompressionIStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize count)
 {
+    // To do nothing is a streambuf is already finalized
+    if (m_Finalized) {
+        return 0;
+    }
     // Check parameters
     if ( !buf  ||  count <= 0 ) {
         return 0;
@@ -789,6 +865,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/04/15 16:51:12  ivanov
+ * Fixed error with flushing the streambuf after it finalizaton
+ *
  * Revision 1.2  2003/04/11 19:55:28  ivanov
  * Move streambuf.hpp from 'include/...' to 'src/...'
  *
