@@ -523,11 +523,136 @@
 /* ========================================================================= */
 
 
-
-/** @defgroup GUI
- *  HTML members
+/** @defgroup GUI GUI Framework
+ *  The GUI framework provides GU support for toolkit functions.
  */
 
+/** @defgroup GUI_UTILS GUI Utility Classes and Modules
+ *  @ingroup GUI
+ * Utility and support routines for the GUI framework
+ */
+
+/** @defgroup GUI_CONFIG GUI Configuration Classes and Modules
+ *  @ingroup GUI
+ * Generic configuration support for GUI projects.  This includes management of
+ * configuration data in a hierarchical, key/value pair structure, as well as
+ * support for named sets of options and themes.
+ */
+
+/** @defgroup GUI_WIDGETS GUI Widget Classes and Modules
+ *  @ingroup GUI
+ * General widget support for GUI projects.  This includes simple extensions on
+ * top of FLTK designed to provide basic building blocks (such as extended text
+ * viewers), as well as heavier-weight widgets designed with specific tasks in
+ * mind (such as graphical sequence and alignment viewers)
+ */
+
+/** @defgroup GUI_FltkWidgets Simple Extensions and Wrappers Wround FLTK
+ *  @ingroup GUI_WIDGETS
+ */
+
+/** @defgroup GUI_GlWidgets Simple OpenGL Widgets and Utilities
+ *  @ingroup GUI_WIDGETS
+ */
+
+/** @defgroup GUI_SeqWidgets Sequence Viewer Widgets and Utilities
+ *  @ingroup GUI_WIDGETS
+ */
+
+/** @defgroup GUI_AlnWidgets Alignment Viewer Widgets and Utilities
+ *  @ingroup GUI_WIDGETS
+ */
+
+/** @defgroup GUI_MiscWidgets Miscellaneous Widgets
+ *  @ingroup GUI_WIDGETS
+ */
+
+/** @defgroup GUI_OPENGL GUI OpenGL Classes and Modules
+ *  @ingroup GUI
+ * OpenGL wrappers and customization
+ */
+
+/** @defgroup GUI_OPENGL_MESA MESA Off-Screen Rendering Classes and Modules
+ *  @ingroup GUI
+ * Support classes that wrap MesaLib's off-screen renderer
+ */
+
+/** @defgroup GUI_CORE GUI Core Classes and Modules
+ *  @ingroup GUI
+ * Core routines offering full framework support for Genome Workbench and other
+ * GUI applications.  The core framework provides support for managing plugins
+ * as well as support for the document/view architecture of Genome Workbench
+ */
+
+/** @defgroup GUI_CORE_PluginArch Plugin Architecture Support Classes
+ *  @ingroup GUI_CORE
+ */
+
+/** @defgroup GUI_CORE_DocView Document/View Architecture Support Classes
+ *  @ingroup GUI_CORE
+ */
+
+/** @defgroup GUI_PLUGIN GUI Plugin Interface Classes and Modules
+ *  @ingroup GUI
+ * ASN.1 definitions and support routines for the plugin interface of the GUI
+ * toolkit
+ */
+
+/** @defgroup GUI_PLUGINS_ALGO GUI Algorithm Plugin Classes and Modules
+ *  @ingroup GUI
+ * Algorithm plugins for Genome Workbench
+ */
+
+/** @defgroup GUI_PLUGINS_ALGO_Basic Basic / Intrinsic Plugin Libraries
+ *  @ingroup GUI_PLUGINS_ALGO
+ * These classes support basic or "intrinsic" functions of sequence analysis,
+ * such as sequence searching, simple pattern recognition, and sequence
+ * compostion.
+ */
+
+/** @defgroup GUI_PLUGINS_ALGO_Align Alignment Generation Plugins
+ *  @ingroup GUI_PLUGINS_ALGO
+ *  These classes support the generation and management of alignments, both
+ *  locally and through network services.
+ */
+
+/** @defgroup GUI_PLUGINS_DOC GUI Data Loader Plugin Classes and Modules
+ *  @ingroup GUI
+ * Data loader plugins for Genome Workbench
+ */
+
+/** @defgroup GUI_PLUGINS_DOC_Basic Basic Data Loaders
+ *  @ingroup GUI_PLUGINS_DOC
+ *  These classes support a subset of "standard" data loaders, such as
+ *  retrieval of data from GenBank, loading of files, and management of indexed
+ *  directories.
+ */
+
+/** @defgroup GUI_PLUGINS_VIEW GUI View Plugin Classes and Modules
+ *  @ingroup GUI
+ * View plugins for Genome Workbench
+ */
+
+/** @defgroup GUI_PLUGINS_VIEW_Alignment Alignment Viewers
+ *  @ingroup GUI_PLUGINS_VIEW
+ */
+
+/** @defgroup GUI_PLUGINS_VIEW_SeqGraphic Graphical Sequence Viewers
+ *  @ingroup GUI_PLUGINS_VIEW
+ */
+
+/** @defgroup GUI_PLUGINS_VIEW_SeqText Text-based Sequence Viewers
+ *  @ingroup GUI_PLUGINS_VIEW
+ */
+
+/** @defgroup GUI_PLUGINS_VIEW_Tree Tree Viewers
+ *  @ingroup GUI_PLUGINS_VIEW
+ */
+
+/** @defgroup GUI_GBENCH Genome Workbench Classes and Modules
+ *  @ingroup GUI
+ * Genome Workbench application and support classes
+ */
 
 /* ========================================================================= */
 
