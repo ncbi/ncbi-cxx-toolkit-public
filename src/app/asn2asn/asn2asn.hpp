@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/08/30 16:22:47  vasilche
+* Added MT mode to asn2asn
+*
 * Revision 1.2  2000/12/12 14:28:33  vasilche
 * Changed the way arguments are processed.
 *
@@ -43,9 +46,14 @@
 
 USING_NCBI_SCOPE;
 
+class CAsn2AsnThread;
+
 class CAsn2Asn : public CNcbiApplication
 {
 protected:
     void Init(void);
     int Run(void);
+    void RunAsn2Asn(const string& outFileSuffix);
+
+    friend class CAsn2AsnThread;
 };

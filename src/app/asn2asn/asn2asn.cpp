@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2002/08/30 16:22:47  vasilche
+* Added MT mode to asn2asn
+*
 * Revision 1.40  2001/08/31 20:05:44  ucko
 * Fix ICC build.
 *
@@ -163,6 +166,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
+#include <corelib/ncbithr.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <memory>
@@ -342,14 +346,54 @@ void CAsn2Asn::Init(void)
     d->AddDefaultKey("c", "count",
                       "perform command <count> times",
                       CArgDescriptions::eInteger, "1");
+    d->AddDefaultKey("tc", "threadCount",
+                      "perform command in <threadCount> thread",
+                      CArgDescriptions::eInteger, "1");
     
     d->AddFlag("ih",
                "Use read hooks");
     d->AddFlag("oh",
                "Use write hooks");
 
+    d->AddFlag("q",
+               "Quiet execution");
+
     SetupArgDescriptions(d.release());
 }
+
+class CAsn2AsnThread : public CThread
+{
+public:
+    CAsn2AsnThread(int index, CAsn2Asn* asn2asn)
+        : m_Index(index), m_Asn2Asn(asn2asn), m_DoneOk(false)
+    {
+    }
+
+    void* Main()
+    {
+        string suffix = '.'+NStr::IntToString(m_Index);
+        try {
+            m_Asn2Asn->RunAsn2Asn(suffix);
+        }
+        catch (exception& e) {
+            CNcbiDiag() << Error << "[asn2asn thread " << m_Index << "]" <<
+                "Exception: " << e.what();
+            return 0;
+        }
+        m_DoneOk = true;
+        return 0;
+    }
+
+    bool DoneOk() const
+    {
+        return m_DoneOk;
+    }
+
+private:
+    int m_Index;
+    CAsn2Asn* m_Asn2Asn;
+    bool m_DoneOk;
+};
 
 int CAsn2Asn::Run(void)
 {
@@ -359,6 +403,37 @@ int CAsn2Asn::Run(void)
 
     if ( const CArgValue& l = args["l"] )
         SetDiagStream(&l.AsOutputFile());
+
+
+    size_t threadCount = args["tc"].AsInteger();
+    vector< CRef<CAsn2AsnThread> > threads(threadCount);
+    for ( size_t i = 1; i < threadCount; ++i ) {
+        threads[i] = new CAsn2AsnThread(i, this);
+        threads[i]->Run();
+    }
+    
+    try {
+      RunAsn2Asn("");
+    }
+    catch (exception& e) {
+        CNcbiDiag() << Error << "[asn2asn]" << "Exception: " << e.what();
+        return 1;
+    }
+
+    for ( size_t i = 1; i < threadCount; ++i ) {
+        threads[i]->Join();
+        if ( !threads[i]->DoneOk() ) {
+            NcbiCerr << "Error in thread: " << i << NcbiEndl;
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
+{
+    const CArgs& args = GetArgs();
 
     string inFile = args["i"].AsString();
     ESerialDataFormat inFormat = eSerial_AsnText;
@@ -378,6 +453,7 @@ int CAsn2Asn::Run(void)
         else if ( args["x"] )
             outFormat = eSerial_Xml;
     }
+    outFile += outFileSuffix;
 
     bool inSeqEntry = args["e"];
     bool skip = args["S"];
@@ -386,9 +462,9 @@ int CAsn2Asn::Run(void)
     bool writeHook = args["oh"];
 
     size_t count = args["c"].AsInteger();
-
+    
     for ( size_t i = 1; i <= count; ++i ) {
-        bool displayMessages = count != 1;
+        bool displayMessages = count != 1 && !args["q"];
         if ( displayMessages )
             NcbiCerr << "Step " << i << ':' << NcbiEndl;
         auto_ptr<CObjectIStream> in(CObjectIStream::Open(inFormat, inFile,
@@ -411,7 +487,7 @@ int CAsn2Asn::Run(void)
             }
             else {
                 TSeqEntry entry;
-                entry.DoNotDeleteThisObject();
+                //entry.DoNotDeleteThisObject();
                 if ( displayMessages )
                     NcbiCerr << "Reading Seq-entry..." << NcbiEndl;
                 *in >> entry;
@@ -437,7 +513,7 @@ int CAsn2Asn::Run(void)
             }
             else {
                 CBioseq_set entries;
-                entries.DoNotDeleteThisObject();
+                //entries.DoNotDeleteThisObject();
                 if ( displayMessages )
                     NcbiCerr << "Reading Bioseq-set..." << NcbiEndl;
                 if ( readHook ) {
@@ -475,7 +551,6 @@ int CAsn2Asn::Run(void)
             }
         }
     }
-	return 0;
 }
 
 
@@ -501,7 +576,7 @@ void CReadSeqSetHook::ReadClassMember(CObjectIStream& in,
         // process it somehow, and... not store it in the container.
         for ( CIStreamContainerIterator i(in, member); i; ++i ) {
             TSeqEntry entry;
-            entry.DoNotDeleteThisObject();
+            //entry.DoNotDeleteThisObject();
             i >> entry;
             SeqEntryProcess(entry);
         }
