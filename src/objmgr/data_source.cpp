@@ -361,7 +361,7 @@ void x_UnmapObject(Map& info_map, const Ref& ref, const Info& _DEBUG_ARG(info))
     _ASSERT(ref);
     typename Map::iterator iter = info_map.lower_bound(ref);
     if ( iter != info_map.end() && iter->first == ref ) {
-        _ASSERT(iter->second == info);
+        _ASSERT(iter->second.GetPointer() == info);
         info_map.erase(iter);
     }
     else {
