@@ -70,8 +70,6 @@ int main (int argc, char* argv[])
   CDB_LangCmd* ins_cmd=NULL;
   CStopWatch timer;
 
-
-
   // Command line args
   string server_name, driver_name;
   int row_count;
@@ -247,7 +245,7 @@ int main (int argc, char* argv[])
 
     timer.Start();
 
-    // Bind data from a program variables
+    // Bind program variables as data source
     if(bcp) {
       bcp->Bind(0, &int_val);
       if(col_count>1) bcp->Bind(1, &fl_val  );
@@ -310,7 +308,7 @@ int main (int argc, char* argv[])
   }
   catch (CDB_Exception& e) {
     HandleIt(&e);
-    DeleteTable(con, table_name);
+    //DeleteTable(con, table_name);
     return 1;
   }
 
