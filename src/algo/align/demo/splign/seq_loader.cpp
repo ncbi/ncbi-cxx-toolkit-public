@@ -182,7 +182,8 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
       }
       CT_POS_TYPE i1 = input->tellg();
       if(i1 - i0 > 1) {
-	CT_OFF_TYPE line_size = i1 - i0 - 1;
+	CT_OFF_TYPE line_size = i1 - i0;
+	line_size = line_size - 1;
 	if(buf[0] == '>') break;
 	size_t size_old = seq->size();
 	seq->resize(size_old + line_size);
@@ -207,10 +208,11 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
       }
       i1 = input->tellg();
 
-      if(i1 - i0 > 1) {
-	src_read += i1 - i0 - 1;
+      CT_OFF_TYPE off = i1 - i0;
+      if (off > 1) {
+	src_read += off - 1;
       }
-      else if(i1 - i0 == 1) {
+      else if (off == 1) {
 	continue;
       }
       else { 
@@ -218,11 +220,12 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
       }
 
       if(src_read > from) {
-	size_t line_size = i1 - i0 - 1;
+	CT_OFF_TYPE line_size = i1 - i0;
+	line_size = line_size - 1;
 	size_t start  = dst_read? 0: (line_size - (src_read - from));
 	size_t finish = (src_read > to)?
 	                (line_size - (src_read - to) + 1):
-	                line_size;
+	                (size_t)line_size;
 	transform(buf + start, buf + finish, seq->begin() + dst_read, (int(*)(int))toupper);
 	dst_read += finish - start;
 	if(dst_read >= dst_seq_len) {
@@ -243,6 +246,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/02/20 00:26:18  ucko
+ * Tweak previous fix for portability.
+ *
  * Revision 1.11  2004/02/19 22:57:54  ucko
  * Accommodate stricter implementations of CT_POS_TYPE.
  *
