@@ -2886,9 +2886,7 @@ Int2 PHIGappedAlignmentWithTraceback(Uint1 program,
     Int4 score_right, score_left, private_q_length, private_s_length, tmp;
     Int4 prev;
     Int4* tback,* tback1,* p = NULL,* q;
-    Boolean is_ooframe = score_options->is_ooframe;
     Int2 status = 0;
-    Boolean switch_seq = FALSE;
     Int4 pat_length;
     
     if (gap_align == NULL)
@@ -3003,7 +3001,6 @@ static Int2 PHIGappedAlignment(Uint1 program,
    Int4 q_length=0, s_length=0, score_right, score_left;
    Int4 private_q_start, private_s_start;
    Uint1* query,* subject;
-   Boolean switch_seq = FALSE;
     
    if (gap_align == NULL)
       return FALSE;
