@@ -182,7 +182,7 @@
 #  define NCBI_GUIWIDGETS_FL_EXPORTS
 #  define NCBI_GUIWIDGETS_GL_EXPORTS
 #  define NCBI_GUIWIDGETS_FLTABLE_EXPORTS
-#  define NCBI_GUIWIDGETS_FLEK_EXPORTS
+#  define NCBI_GUIWIDGETS_FLU_EXPORTS
 #  define NCBI_GUIWIDGETS_TABLE_EXPORTS
 #  define NCBI_GUIWIDGETS_TOPLEVEL_EXPORTS
 #endif
@@ -854,10 +854,10 @@
 /*
  * Export specifier for library gui_widgets_flek
  */
-#ifdef NCBI_GUIWIDGETS_FLEK_EXPORTS
-#  define NCBI_GUIWIDGETS_FLEK_EXPORT    __declspec(dllexport)
+#ifdef NCBI_GUIWIDGETS_FLU_EXPORTS
+#  define NCBI_GUIWIDGETS_FLU_EXPORT    __declspec(dllexport)
 #else
-#  define NCBI_GUIWIDGETS_FLEK_EXPORT    __declspec(dllimport)
+#  define NCBI_GUIWIDGETS_FLU_EXPORT    __declspec(dllimport)
 #endif
 
 /*
@@ -1109,7 +1109,7 @@
 #  define NCBI_GUIWIDGETS_ALNTEXTALN_EXPORT
 #  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORT
 #  define NCBI_GUIWIDGETS_EXPORT
-#  define NCBI_GUIWIDGETS_FLEK_EXPORT
+#  define NCBI_GUIWIDGETS_FLU_EXPORT
 #  define NCBI_GUIWIDGETS_FLTABLE_EXPORT
 #  define NCBI_GUIWIDGETS_FL_EXPORT
 #  define NCBI_GUIWIDGETS_GL_EXPORT
@@ -1181,6 +1181,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.49  2003/12/09 15:59:03  dicuccio
+ * Dropped NCBI_GUIWIDGETS_FLEK_EXPORT - repalced with NCBI_GUIWIDGETS_FLU_EXPORT
+ *
  * Revision 1.48  2003/11/17 21:38:10  yazhuk
  * Added export specifiers for Hit Matrix library
  *
