@@ -123,7 +123,7 @@ private:
     };
     typedef list< CRef<SConvertionRec> >      TIdConvList;
     typedef map<CSeq_id_Handle, TIdConvList>  TConvMap;
-    typedef set< CRef<CAnnotObject> >         TAnnotSet;
+    typedef set<CRef<CAnnotObject>, CAnnotObject_Less> TAnnotSet;
 
     // Initialize the iterator
     void x_Initialize(const CSeq_loc& loc);
@@ -181,6 +181,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/11/01 20:46:41  grichenk
+* Added sorting to set< CRef<CAnnotObject> >
+*
 * Revision 1.19  2002/10/08 18:57:27  grichenk
 * Added feature sorting to the iterator class.
 *
