@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/02/17 20:00:24  vasilche
+* Added EResetVariant enum for serialization package.
+*
 * Revision 1.35  2000/01/20 16:24:20  vakatov
 * Kludging around the "NcbiEmptyString" to ensure its initialization when
 * it is used by the constructor of a statically allocated object
@@ -233,6 +236,11 @@ bool AStrEquiv( const string& x, const string& y, Pred pr )
 
 class CTypeInfo;
 class CEnumeratedTypeValues;
+
+enum EResetVariant {
+    eDoResetVariant,
+    eDoNotResetVariant
+};
 
 // auto_ptr
 
