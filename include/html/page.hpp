@@ -36,6 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <html/html_exception.hpp>
 #include <html/html.hpp>
 #include <html/nodemap.hpp>
 #include <html/jsmenu.hpp>
@@ -251,7 +252,7 @@ inline void CHTMLPage::SetTemplateFile(const string& template_file)
         if (size <= 0) {
             m_TemplateSize = 0;
         } else if (size >= numeric_limits<size_t>::max()) {
-            NCBI_THROW(CException, eUnknown,
+            NCBI_THROW(CHTMLException, eTemplateTooBig,
                        "CHTMLPage: input template " + template_file
                        + " too big to handle");
         } else {
@@ -292,6 +293,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/07/08 17:12:40  gouriano
+* changed thrown exceptions to CException-derived ones
+*
 * Revision 1.29  2003/05/23 17:34:10  ucko
 * CHTMLPage::SetTemplateFile: fix logic for setting m_TemplateSize.
 *

@@ -196,8 +196,8 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
         }
 
         ERR_POST( "CHTMLPage::CreateTemplate: rdstate: " << int(is.rdstate()));
-        THROW1_TRACE(runtime_error, "CHTMLPage::CreateTemplate():  \
-                     failed to open template");
+        NCBI_THROW(CHTMLException, eTemplateAccess,
+                   "CHTMLPage::CreateTemplate(): failed to open template");
     }
 
     // special case: stream large templates on the first pass to reduce latency
@@ -223,8 +223,8 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
         }
 
         if ( !is.eof() ) {
-            THROW1_TRACE(runtime_error, "CHTMLPage::CreateTemplate():  \
-                     error reading template");
+            NCBI_THROW(CHTMLException, eTemplateAccess,
+                       "CHTMLPage::CreateTemplate(): error reading template");
         }
         
         return node.release();
@@ -245,8 +245,8 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
     }
 
     if ( !is.eof() ) {
-        THROW1_TRACE(runtime_error, "CHTMLPage::CreateTemplate():  \
-                     error reading template");
+        NCBI_THROW(CHTMLException, eTemplateAccess,
+                   "CHTMLPage::CreateTemplate(): error reading template");
     }
 
     // Insert code in end of <HEAD> and <BODY> blocks for support popup menus
@@ -413,6 +413,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.38  2003/07/08 17:13:53  gouriano
+ * changed thrown exceptions to CException-derived ones
+ *
  * Revision 1.37  2003/05/15 13:07:32  ucko
  * Fix a more serious (and correctly diagnosed ;-)) logic error: include
  * the last line of streamed templates that don't end in newlines.

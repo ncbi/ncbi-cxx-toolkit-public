@@ -33,6 +33,7 @@
 #include <html/html.hpp>
 #include <html/htmlhelper.hpp>
 #include <html/indentstream.hpp>
+#include <html/html_exception.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -374,7 +375,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
         SIZE_TYPE tagNameEnd = s_Find(text, KTagEnd, tagNameStart);
         if ( tagNameEnd == NPOS ) {
             // tag not closed
-            THROW1_TRACE(runtime_error, "tag not closed");
+            NCBI_THROW(CHTMLException,eTextUnclosedTag,"tag not closed");
         }
         else {
             // tag found
@@ -953,7 +954,7 @@ void CHTML_tc::ResetTableCache(void)
 void CHTML_tc_Cache::SetUsed()
 {
     if ( IsUsed() )
-        THROW1_TRACE(runtime_error, "Overlapped table cells");
+        NCBI_THROW(CHTMLException,eTableCellUse,"Overlapped table cells");
     m_Used = true;
 }
 
@@ -1151,13 +1152,13 @@ CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
             switch ( type ) {
             case CHTML_table::eHeaderCell:
                 if ( !dynamic_cast<CHTML_th*>(cell) )
-                    THROW1_TRACE(runtime_error,
-                                 "wrong cell type: TH expected");
+                    NCBI_THROW(CHTMLException,eTableCellType,
+                               "wrong cell type: TH expected");
                 break;
             case CHTML_table::eDataCell:
                 if ( !dynamic_cast<CHTML_td*>(cell) )
-                    THROW1_TRACE(runtime_error,
-                                 "wrong cell type: TD expected");
+                    NCBI_THROW(CHTMLException,eTableCellType,
+                               "wrong cell type: TD expected");
                 break;
             default:
                 break;
@@ -1165,7 +1166,8 @@ CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
             return cell;
         }
         if ( cellCache.IsUsed() )
-            THROW1_TRACE(runtime_error, "invalid use of big table cell");
+            NCBI_THROW(CHTMLException,eTableCellUse,
+                       "invalid use of big table cell");
     }
     CHTML_tc* cell;
     if ( type == CHTML_table::eHeaderCell )
@@ -1188,24 +1190,26 @@ CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
             switch ( type ) {
             case CHTML_table::eHeaderCell:
                 if ( !dynamic_cast<CHTML_th*>(cell) )
-                    THROW1_TRACE(runtime_error,
-                                 "wrong cell type: TH expected");
+                    NCBI_THROW(CHTMLException,eTableCellType,
+                               "wrong cell type: TH expected");
                 break;
             case CHTML_table::eDataCell:
                 if ( !dynamic_cast<CHTML_td*>(cell) )
-                    THROW1_TRACE(runtime_error,
-                                 "wrong cell type: TD expected");
+                    NCBI_THROW(CHTMLException,eTableCellType,
+                               "wrong cell type: TD expected");
                 break;
             default:
                 break;
             }
             if ( x_GetSpan(cell, "rowspan") != rowSpan ||
                  x_GetSpan(cell, "colspan") != colSpan )
-                THROW1_TRACE(runtime_error, "cannot change table cell size");
+                NCBI_THROW(CHTMLException,eTableCellUse,
+                           "cannot change table cell size");
             return cell;
         }
         if ( cellCache.IsUsed() )
-            THROW1_TRACE(runtime_error, "invalid use of big table cell");
+            NCBI_THROW(CHTMLException,eTableCellUse,
+                       "invalid use of big table cell");
     }
 
     CHTML_tc* cell;
@@ -2077,6 +2081,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.86  2003/07/08 17:13:53  gouriano
+ * changed thrown exceptions to CException-derived ones
+ *
  * Revision 1.85  2003/05/30 18:39:33  lavr
  * Replace endl's with explicit '\n' to avoid premature flushing
  *

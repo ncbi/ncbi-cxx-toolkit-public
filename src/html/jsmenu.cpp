@@ -30,6 +30,7 @@
  */
 
 #include <html/jsmenu.hpp>
+#include <html/html_exception.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -100,8 +101,8 @@ void CHTMLPopupMenu::AddItem(const char*   title,
                              const string& mouseover, const string& mouseout)
 {
     if ( !title ) {
-        THROW1_TRACE(runtime_error,
-                     "CHTMLPopupMenu::AddItem() passed NULL title");
+        NCBI_THROW(CHTMLException,eNullPtr,
+                   "CHTMLPopupMenu::AddItem() passed NULL title");
     }
     const string x_title(title);
     AddItem(x_title, action, color, mouseover, mouseout);
@@ -359,6 +360,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2003/07/08 17:13:53  gouriano
+ * changed thrown exceptions to CException-derived ones
+ *
  * Revision 1.15  2003/06/30 21:16:50  ivanov
  * Updated Sergey Kurdin's popup menu to v2.2
  *
