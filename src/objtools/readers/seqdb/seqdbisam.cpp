@@ -160,7 +160,7 @@ CSeqDBIsam::x_SearchIndexNumeric(int              Number,
     Int4 Start     (0);
     Int4 Stop      (m_NumSamples - 1);
     
-    int obj_size = sizeof(SNumericKeyData);
+    int obj_size = (int) sizeof(SNumericKeyData);
     
     while(Stop >= Start) {
         SampleNum = ((Uint4)(Stop + Start)) >> 1;
