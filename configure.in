@@ -62,6 +62,8 @@ AC_ARG_WITH(dll,
    [ --with-dll              build all libraries as DLLs])
 AC_ARG_WITH(mt,
    [ --with-mt               compile in a MultiThread-safe manner])
+AC_ARG_WITH(mt,
+   [ --with-64               compile to 64-bit code])
 AC_ARG_WITH(exe,
    [ --without-exe           do not build executables])
 
@@ -76,6 +78,10 @@ AC_ARG_WITH(suffix,
    [ --without-suffix        no Release/Debug and MT suffixes in the build dir name])
 AC_ARG_WITH(hostspec,
    [ --with-hostspec         add full host specs to the build dir name])
+AC_ARG_WITH(execopy,
+   [ --without-execopy       do not copy built executables to the BIN area])
+AC_ARG_WITH(bincopy,
+   [ --without-bincopy       no check if libs or apps need to be copied to BIN])
 
 ## Third-party and system packages
 AC_ARG_WITH(ncbi-c,
@@ -108,7 +114,7 @@ AC_ARG_WITH(manuals,
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug optimization dll mt exe autodep suffix hostspec \
+debug optimization dll mt 64 exe autodep suffix hostspec execopy bincopy \
 ncbi-c fastcgi sss sssdb sssutils pubmed sybase serial objects internal"
 
 changequote(, )dnl
@@ -239,7 +245,6 @@ case "$compiler" in
 esac
 
 
-
 #### Use full path to the compiler, if possible
 set $CC
 x_CC="`which $1`"
@@ -248,6 +253,7 @@ if test -x "$x_CC" ; then
   CC="$x_CC $*"
   echo "adjusted C   compiler: $CC"
 fi
+CC_PATH="`dirname $x_CC`"
 x_CC=
 
 set $CXX
@@ -257,11 +263,11 @@ if test -x "$x_CXX" ; then
   CXX="$x_CXX $*"
   echo "adjusted C++ compiler: $CXX"
 fi
+CXX_PATH="`dirname $x_CXX`"
 x_CXX=
 
 
 #### Provide default environment setup for known platforms/compilers
-compiler_extra=
 DEPFLAGS="-M"
 case "$host:$compiler" in
  sparc-sun-solaris2\.6:GCC )
@@ -286,22 +292,10 @@ case "$host:$compiler" in
 
  *:WorkShop* )
    with_bincopy=${with_bincopy:="no"}
-   if test -n "$WS64_CFLAGS" ; then
-      if test "$host" != "sparc-sun-solaris2.7" ; then
-        echo "64-bit flags are for sparc-sun-solaris2.7 only:  $WS64_CFLAGS"
-        exit 1
-      fi
-      bit64_sfx="64"
-      compiler_extra="_$bit64_sfx"
-   else
-      bit64_sfx=""
-      compiler_extra=""
-   fi
-   CFLAGS="$WS64_CFLAGS"
-   CXXFLAGS="+w +w2 $WS64_CFLAGS"
+   CXXFLAGS="+w +w2 $CXXFLAGS"
    DEPFLAGS="-xM1"
-   LDFLAGS="-xildoff $WS64_CFLAGS $LDFLAGS"
-   AR="$CXX -xar -o"
+   LDFLAGS="-xildoff $LDFLAGS"
+   AR=${AR:="$CXX -xar -o"}
    STRIP=":"
    if test "$with_debug" = "no" ; then
       LDFLAGS="-s $LDFLAGS"
@@ -312,13 +306,11 @@ case "$host:$compiler" in
    ;;
 
  *:MIPSpro73 )
-   compiler_extra=`echo $ARCH_FLAG | sed 's/-/_/g'`
-   COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared $ARCH_FLAG"
+   COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared"
    CFLAGS="$COMMON_FLAGS"
    CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424"
-   CPPFLAGS="$ARCH_FLAG -D__LONGLONG $CPPFLAGS"
-   LDFLAGS="$ARCH_FLAG -LANG:std $LDFLAGS"
-   AR=${AR:="$CXX $ARCH_FLAG -ar -WR,-v -o"}
+   LDFLAGS="-LANG:std $LDFLAGS"
+   CPPFLAGS="-D__LONGLONG $CPPFLAGS"
    NETWORK_LIBS=" "
    ;;
 
@@ -361,6 +353,48 @@ if test -z "$compiler" ; then
 fi
 
 
+#### 32/64-bit compilation, and extra LIBS
+with_64=${with_64:="no"}
+if test "$with_64" = "yes" ; then
+   bit64_sfx="64"
+   case "$compiler" in
+    WorkShop5 )
+      ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
+      ;;
+    WorkShop6 )
+      ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
+      LIBS="-Bstatic -L$CXX_PATH/../lib -lCrun -Bdynamic $LIBS"
+      ;;
+    MIPSpro73 )
+      ARCH_CFLAGS="-64"
+      CPPFLAGS="$ARCH_CFLAGS $CPPFLAGS"
+      AR=${AR:="$CXX $ARCH_CFLAGS -ar -WR,-v -o"}
+      ;;
+    * )
+      AC_MSG_ERROR(["Dont know how to compile 64-bit with compiler $CXX $compiler_ver"])
+      ;;
+   esac
+else
+   bit64_sfx=
+   ARCH_CFLAGS=
+   case "$compiler" in
+    WorkShop5 )
+      LIBS="-Bstatic -L$CXX_PATH/../SC5.0/lib -lm -Bdynamic $LIBS"
+      ;;
+    WorkShop6 )
+      LIBS="-Bstatic -L$CXX_PATH/../lib -lCrun -lm -Bdynamic $LIBS"
+      ;;
+    MIPSpro73 )
+      ARCH_CFLAGS="-n32"
+      ;;
+   esac
+fi
+
+CFLAGS="$ARCH_CFLAGS $CFLAGS"
+CXXFLAGS="$ARCH_CFLAGS $CXXFLAGS"
+LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
+
+
 #### DLLs
 case "$compiler" in
  GCC )
@@ -400,10 +434,10 @@ fi
 
 case "$compiler" in
  GCC | MIPSpro73 )
-   LINK_DLL="$CXX -shared -o"
+   LINK_DLL="$CXX $ARCH_CFLAGS -shared -o"
    ;;
  WorkShop* )
-   LINK_DLL="$CXX $WS64_CFLAGS -G -h \$@ -o"
+   LINK_DLL="$CXX $ARCH_CFLAGS -G -h \$@ -o"
    ;;
  * )
    if test "$with_dll" = "yes"  &&  test -z "$LINK_DLL" ; then
@@ -432,7 +466,7 @@ if test "$with_mt" = "yes" ; then
       AC_MSG_ERROR(["Dont know how to build MT-safe with compiler $CXX $compiler_ver"])
       ;;
    esac
-   LIBS="$LIBS $THREAD_LIBS "
+   LIBS="$LIBS $THREAD_LIBS"
    AC_DEFINE_UNQUOTED(NCBI_MT, 1)
 else
    THREAD_LIBS=
@@ -471,7 +505,7 @@ AC_CHECK_PROG(STRIP, strip, strip, :)
 
 #### Check if "${exec_prefix}" is defined;  provide a default one
 if test -z "${exec_prefix}"  ||  test "${exec_prefix}" = "NONE" ; then
-   exec_prefix="${srcdir}/${compiler}${compiler_extra}"
+   exec_prefix="${srcdir}/${compiler}"
 else
    with_suffix=${with_suffix:="no"}
 fi
@@ -489,6 +523,9 @@ if test "$with_suffix" != "no" ; then
    fi
    if test "$with_dll" = "yes" ; then
       exec_prefix="${exec_prefix}DLL"
+   fi
+   if test "$with_64" = "yes" ; then
+      exec_prefix="${exec_prefix}${bit64_sfx}"
    fi
 fi
 
