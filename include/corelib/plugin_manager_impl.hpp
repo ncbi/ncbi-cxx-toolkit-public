@@ -103,6 +103,29 @@ public:
     {
         info_list.push_back(TDriverInfo(m_DriverName, m_DriverVersionInfo));
     }
+protected:
+    /// Utility function to get an element of parameter tree
+    /// Throws an exception when mandatory parameter is missing
+    /// (or returns the deafult value)
+    const string& GetParam(const TPluginManagerParamTree* params,
+                           const string&                  param_name, 
+                           bool                           mandatory,
+                           const string&                  default_value) const
+    {
+        const TPluginManagerParamTree* tn = params->FindSubNode(param_name);
+
+        if (tn == 0 || tn->GetValue().empty()) {
+            if (mandatory) {
+                string msg = 
+                    "Cannot init " + m_DriverName 
+                                   + ", missing parameter:" + param_name;
+                NCBI_THROW(CPluginManagerException, eParameterMissing, msg);
+            } else {
+                return default_value;
+            }
+        }
+        return tn->GetValue();        
+    }
 
 protected:
     CVersionInfo  m_DriverVersionInfo;
@@ -198,6 +221,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/07/26 14:02:36  kuznets
+ * +CSimpleClassFactoryImpl::GetParam
+ *
  * Revision 1.3  2004/02/17 21:07:18  vasilche
  * Commented out unused argument.
  *
