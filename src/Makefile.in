@@ -3,5 +3,5 @@
 # Master (top-level) makefile
 #################################
 
-SUB_PROJ = corelib cgi html @serial@ @internal@
+SUB_PROJ = corelib cgi html hello @serial@ @internal@
 include @builddir@/Makefile.meta

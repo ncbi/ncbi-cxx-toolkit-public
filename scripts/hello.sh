@@ -8,7 +8,7 @@
 #################################
 # Useful paths, etc.
 
-project="internal/hello"
+project="hello"
 cvs_topdir="internal/c++"
 
 scriptdir=`dirname $0`
@@ -55,19 +55,25 @@ rm -r $tmpdir
 
 
 #################################
-# Adjust project makefile
+# Adjust project makefiles
 
 cd $targetdir  ||  Usage "cd $targetdir"
-sed 's/^LOCAL_CPPFLAGS *=.*/LOCAL_CPPFLAGS = -I.. -I./' < Makefile.${target}_app > makefile
-rm Makefile.*
+for mfile in Makefile.*_* ; do
+    sed 's/^LOCAL_CPPFLAGS *=.*/LOCAL_CPPFLAGS = -I.. -I./' < $mfile > makefile.$$
+    rm $mfile
+    mv makefile.$$ $mfile
+done
 
 
 #################################
 # Build & Run
 
-make
+make -f Makefile.hello_app
 mv hello hello.cgi
 ./hello.cgi > hello.html
+
+make -f Makefile.fasthello_app
+mv fasthello hello.fcgi
 
 echo DONE.
 echo See the result in:  `pwd`/hello.html

@@ -20,24 +20,24 @@ Note:  by default, [builddir] will be:  /netopt/ncbi_tools/ver0.0/c++/Debug/buil
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-/tmp> $NCBI/ver0.0/c++/src/import_project.sh internal/hello
+/tmp> $NCBI/ver0.0/c++/src/import_project.sh hello
 
-cvs checkout: Updating internal/c++/include/internal/hello
-U internal/c++/include/internal/hello/hellocmd.hpp
-U internal/c++/include/internal/hello/hellores.hpp
-cvs checkout: Updating internal/c++/src/internal/hello
-U internal/c++/src/internal/hello/Makefile.hello.app
-U internal/c++/src/internal/hello/Makefile.in
-U internal/c++/src/internal/hello/README
-U internal/c++/src/internal/hello/helloapp.cpp
-U internal/c++/src/internal/hello/helloapp.hpp
-U internal/c++/src/internal/hello/hellocmd.cpp
-U internal/c++/src/internal/hello/hellores.cpp
-cvs checkout: Updating internal/c++/src/internal/hello/html
-U internal/c++/src/internal/hello/html/nosidebar.html
-U internal/c++/src/internal/hello/html/template.html
+cvs checkout: Updating internal/c++/include/hello
+U internal/c++/include/hello/hellocmd.hpp
+U internal/c++/include/hello/hellores.hpp
+cvs checkout: Updating internal/c++/src/hello
+U internal/c++/src/hello/Makefile.hello.app
+U internal/c++/src/hello/Makefile.in
+U internal/c++/src/hello/README
+U internal/c++/src/hello/helloapp.cpp
+U internal/c++/src/hello/helloapp.hpp
+U internal/c++/src/hello/hellocmd.cpp
+U internal/c++/src/hello/hellores.cpp
+cvs checkout: Updating internal/c++/src/hello/html
+U internal/c++/src/hello/html/nosidebar.html
+U internal/c++/src/hello/html/template.html
 Scanning and creating makefiles under /tmp/internal/c++/src/...
-Creating "internal/hello/Makefile.hello_app"  (from "internal/hello/Makefile.hello.app")
+Creating "hello/Makefile.hello_app"  (from "hello/Makefile.hello.app")
 DONE
 
 
@@ -45,13 +45,13 @@ DONE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-/tmp> cd internal/c++/src/internal/hello/
-/tmp/internal/c++/src/internal/hello> cat Makefile.hello_app 
+/tmp> cd internal/c++/src/hello/
+/tmp/internal/c++/src/hello> cat Makefile.hello_app 
 
 
-# Makefile:  internal/hello/Makefile.hello_app
+# Makefile:  hello/Makefile.hello_app
 #
-# This file is generated from "internal/hello/Makefile.hello.app"
+# This file is generated from "hello/Makefile.hello.app"
 # by shell script "import_project.sh"
 
 
@@ -70,7 +70,7 @@ LOCAL_CPPFLAGS =  -I../../../include -I../../../include/internal
 ###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
 
 #################################
-# $Id: new_project.import.session,v 1.1 1999/11/26 21:34:27 vakatov Exp $
+# $Id: new_project.import.session,v 1.2 1999/12/28 19:37:19 vakatov Exp $
 # Author:  Lewis Geer
 #################################
 
@@ -107,7 +107,7 @@ include $(builddir)/Makefile.app
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-/tmp/internal/c++/src/internal/hello> make -f Makefile.hello_app
+/tmp/internal/c++/src/hello> make -f Makefile.hello_app
 
 
 /netopt/SUNWspro6/bin/CC -c  -mt +w +w2 -g -I../../../include -I../../../include/internal -D_DEBUG  -I/netopt/ncbi_tools.master/ver0.0/c++/Debug/inc -I/netopt/ncbi_tools.master/ver0.0/c++/include -I/netopt/ncbi_tools.master/ver0.0/c++/include/internal helloapp.cpp -o helloapp.o
@@ -123,6 +123,6 @@ include $(builddir)/Makefile.app
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-/tmp/internal/c++/src/internal/hello> hello.cgi
+/tmp/internal/c++/src/hello> hello.cgi
 
 Content-Type: text/html
