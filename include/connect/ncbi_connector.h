@@ -95,7 +95,7 @@ typedef EIO_Status (*FConnectorOpen)
 
 
 /* Wait until either read or write (dep. on the "direction" value) becomes
- * available, or until "timeout" is expired, or until error occurs.
+ * available, or until "timeout" expires, or until error occurs.
  * NOTE 1:  FConnectorWait is guaranteed to be called after FConnectorOpen,
  *          and only if FConnectorOpen returned "eIO_Success".
  * NOTE 2:  "event" is guaranteed to be either "eIO_Read" or "eIO_Write".
@@ -107,9 +107,9 @@ typedef EIO_Status (*FConnectorWait)
  );
 
 
-/* The passed "n_written" always non-NULL, and "*n_written" always zero.
- * It returns "eIO_Success" iff all requested data have been successfully
- * written.
+/* The passed "n_written" is always non-NULL, and "*n_written" is always zero.
+ * It returns "eIO_Success" if at least some data have been successfully
+ * written; other error code if no data at all have been written.
  * It returns the # of successfully written data (in bytes) in "*n_written".
  * NOTE:  FConnectorWrite is guaranteed to be called after FConnectorOpen,
  *        and only if the latter succeeded (returned "eIO_Success").
@@ -133,7 +133,10 @@ typedef EIO_Status (*FConnectorFlush)
  );
 
 
-/* The passed "n_read" always non-NULL, and "*n_read" always zero.
+/* The passed "n_read" is always non-NULL, and "*n_read" is always zero.
+ * It returns "eIO_Success" if at least some data have been successfully
+ * read; other error code if no data at all have been read.
+ * The number of successfully read bytes returned in "*n_read".
  * NOTE:  FConnectorRead is guaranteed to be called after FConnectorOpen,
  *        and only if the latter succeeded (returned "eIO_Success").
  */
@@ -290,6 +293,9 @@ typedef EIO_Status (*FConnectorWaitAsync)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2003/05/21 17:52:37  lavr
+ * Pre- and post-conditions clarified for read and write virtual methods
+ *
  * Revision 6.14  2003/05/14 03:47:53  lavr
  * +(*FConnectorDescr)()
  *
