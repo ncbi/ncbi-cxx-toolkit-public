@@ -212,6 +212,12 @@
 #  define NCBI_GUIWIDGETS_SEQINFO_EXPORTS
 #endif
 
+/*
+ * Definitions for GUI_WIDGETS_SEQ.DLL
+ */
+#ifdef NCBI_GUIWIDGETSMISC_EXPORTS
+#  define NCBI_GUIWIDGETS_TAXPLOT_EXPORTS
+#endif
 
 /*
  * Definitions for NCBI_ALGO_MS.DLL
@@ -990,6 +996,16 @@
 #endif
 
 /*
+ * Export specifier for library gui_widgets_taxplot3d
+ */
+#ifdef NCBI_GUIWIDGETS_TAXPLOT_EXPORTS
+#  define NCBI_GUIWIDGETS_TAXPLOT_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_GUIWIDGETS_TAXPLOT_EXPORT     __declspec(dllimport)
+#endif
+
+
+/*
  * Export specifier for library objects_validator
  */
 #ifdef NCBI_VALIDATOR_EXPORTS
@@ -1179,6 +1195,7 @@
 #  define NCBI_GUIWIDGETS_ALNMULTIPLE_EXPORT
 #  define NCBI_GUIWIDGETS_ALNTEXTALN_EXPORT
 #  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORT
+#  define NCBI_GUIWIDGETS_TAXPLOT_EXPORT
 #  define NCBI_GUIWIDGETS_EXPORT
 #  define NCBI_GUIWIDGETS_FLU_EXPORT
 #  define NCBI_GUIWIDGETS_FLTABLE_EXPORT
@@ -1257,6 +1274,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.56  2004/01/14 16:28:55  tereshko
+ * Added NCBI_GUIWIDGETSMISC_EXPORTS for Taxplot viewer
+ *
  * Revision 1.55  2004/01/13 16:38:34  vasilche
  * Added NCBI_XREADER_EXPORT
  *
