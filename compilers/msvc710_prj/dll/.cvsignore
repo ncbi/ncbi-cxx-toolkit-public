@@ -3,13 +3,15 @@
 *.log
 Debug*
 Release*
-algo
+algo*
 app
 cgi
 connect
 corelib
 ctools
 dbapi*
+dload_table
+gui_*
 hello
 html
 ncbi_*
@@ -18,4 +20,5 @@ objmgr
 objtools
 serial
 util
+view_*
 
