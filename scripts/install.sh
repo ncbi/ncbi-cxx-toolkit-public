@@ -16,6 +16,7 @@
 
 
 cvs_location=`echo '$Source$' | sed "s%\$\Source: *\([^$][^$]*\)\$.*%\1%"`
+cvs_revision=`echo '$Revision$' | sed "s%\$\Revision: *\([^$][^$]*\)\$.*%\1%"`
 
 script_name=`basename $0`
 script_dir=`dirname $0`
@@ -48,8 +49,8 @@ Arguments:
    --with-purge   - delete all(!) build dirs under the <install_dir>
    --with-cvs     - install CVS sub-dirs
 
-Script:  CVS location, run directory, and run command:
-   $cvs_location
+Script:  CVS location/revision, run directory, and run command:
+   $cvs_location | R$cvs_revision
    $run_dir
    $run_cmd
 
