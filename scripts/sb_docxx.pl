@@ -8,8 +8,8 @@
 # Using DOC++:
 #    http://src.doc.ic.ac.uk/packages/Linux/sunsite.unc-mirror/apps/doctools/
 
-#retrieve();
-#genlists();
+retrieve();
+genlists();
 preprocess();
 docxx();
 exit;
