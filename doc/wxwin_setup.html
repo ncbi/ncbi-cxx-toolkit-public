@@ -1,0 +1,35 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="Author" content="Anton Lavrentiev">
+   <title>wxWindows setup changes</title>
+</head>
+<body>
+
+<h2>
+wxWindows setup changes</h2>
+
+We made the following changes in the master setup file <b>include\wx\msw\setup.h</b> of wxWindows library:
+<ul>
+	<li><tt>#define wxUSE_SOCKETS 0</tt> to exclude (not to double) the network stuff, which is normally supported
+	in the standard core library, therefore <tt>class wxSocket</tt> disabled.</li>
+	<li><tt>#define wxUSE_THREADS 0</tt> as the multi-thread support is weak in the wxWindows library.</li>
+	<li><tt>#define wxUSE_GLCANVAS 1</tt> to enable GUI applications to use OpenGL library.</li>
+	<li><tt>#define wxUSE_IOSTREAMH 0</tt> to eliminate conflicts with the rest of the C++ Toolkit,
+	which uses new <tt>&lt;iostream&gt;</tt> library.</li>
+</ul>
+
+<br>
+<hr>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:lavr@ncbi.nlm.nih.gov">Anton Lavrentiev</a></address>
+</td>
+<!-- <td align=center><i>$Revision$</i></td> -->
+<td align=right><i>$Date$</i></td>
+</tr>
+</table>
+</body>
+</html>

@@ -1216,8 +1216,8 @@ to make sure that it is built compatible with the chosen NCBI C++ libraries.
 </a>
 
 <p>
-The pre-built versions of this library (with, however, <tt>class wxSocket</tt> disabled by <tt>#define wxUSE_SOCKETS 0</tt>
-in the include file <b>include\wx\msw\setup.h</b>), along with include files, sources, documentation and project files,
+The pre-built versions of this library (<a href="wxwin_setup.html">modified</a> to suit certain requirements),
+along with include files, sources, documentation and project files,
 which we provide, are all put to:
 <ul>
   <li> <i>\\dizzy\public\wxwin\<b>Debug</b></i>
@@ -1280,13 +1280,18 @@ Instead,
        <i>cxx\compilers\<b>wxwin_prj</b></i> (C++ Toolkit).
    </li>
 	<li>Make sure that <tt>msdev.exe</tt> is in you <tt>PATH</tt>, then change directory to <tt>wxwin/wxwin_prj</tt>
-	and start batch file <tt>wxwin.bat</tt> there. This script accepts one argument, either <tt>DLL</tt> or <tt>LIB</tt>:</li>
+	and start batch file <tt>wxwin.bat</tt> there. This script accepts one of the following arguments, <tt>DLL</tt>,
+	<tt>LIB</tt>, or <tt>ALL</tt>:</li>
 	<ul>
 		<li><tt>DLL</tt>: build DLL versions of wxWindows libraries, and store them in <tt>wxwin/ReleaseDLL</tt>
 			and <tt>wxwin/DebugDLL</tt> directories (for <tt>ReleaseDLL</tt> and <tt>DebugDLL</tt> configurations
 			respectvely).</li>
 		<li><tt>LIB</tt>: build static versions of wxWindows libraries, and store them in directories
 			<tt>wxwin/Debug</tt>, <tt>wxwin/DebugMT</tt>, <tt>wxwin/Release</tt>, and <tt>wxwin/ReleaseMT</tt>.</li>
+		<li><tt>ALL</tt>: build everything listed above.</li>
+		<br>
+		Note that with both <tt>DLL</tt> and <tt>LIB</tt> options you may limit the build to be done only for
+		certain configurations by listing the configuration names in the command line after the option.
 	</ul>
 	That is, the batch file builds libraries in the directories where <i>our</i> project files
 	<a href="#refWxwinPaths">expect</a> to locate them when using local copies of the Toolkit libraries.
@@ -1385,7 +1390,7 @@ you have to make sure that your projects are built in MT-safe mode as well.
 </tr>
 <tr>
 <td align=left>
-  <address><a href="mailto:lavr@ncbi.nlm.nih.gov">Anton Lavrentiev</a></address>
+  <address><a href="mailto:lavr@ncbi.nlm.nih.gov">Anton Lavrentiev</a> (Part of MSVC++ support)</address> 
 </td>
 </tr>
 </table>
