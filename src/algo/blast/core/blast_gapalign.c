@@ -2435,6 +2435,7 @@ s_MBToGapEditScript (MBGapEditScript* ed_script)
           esp->op_type = eGapAlignSub; 
           break;
       default:
+          /** @todo do not use "fprintf(stderr, ..." for error reporting */
          fprintf(stderr, "invalid op_type encountered\n"); break;
       }
       if (i==0)
