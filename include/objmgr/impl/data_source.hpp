@@ -102,6 +102,9 @@ struct SBlobIdComp
 };
 
 
+class CDSAnnotLockReadGuard;
+class CDSAnnotLockWriteGuard;
+
 class NCBI_XOBJMGR_EXPORT CDataSource : public CObject
 {
 public:
@@ -340,28 +343,10 @@ private:
     typedef CRWLock TAnnotLock;
     typedef CRWLock TCacheLock;
 
-    class CAnnotLockReadGuard
-    {
-    public:
-        CAnnotLockReadGuard(CDataSource& ds);
-
-    private:
-        CDataSource::TMainLock::TReadLockGuard     m_MainGuard;
-        CDataSource::TAnnotLock::TReadLockGuard    m_AnnotGuard;
-    };
-    class CAnnotLockWriteGuard
-    {
-    public:
-        CAnnotLockWriteGuard(CDataSource& ds);
-
-    private:
-        CDataSource::TMainLock::TReadLockGuard      m_MainGuard;
-        CDataSource::TAnnotLock::TWriteLockGuard    m_AnnotGuard;
-    };
-    friend class CAnnotLockReadGuard;
-    friend class CAnnotLockWriteGuard;
-    typedef CAnnotLockReadGuard TAnnotLockReadGuard;
-    typedef CAnnotLockWriteGuard TAnnotLockWriteGuard;
+    friend class CDSAnnotLockReadGuard;
+    friend class CDSAnnotLockWriteGuard;
+    typedef CDSAnnotLockReadGuard TAnnotLockReadGuard;
+    typedef CDSAnnotLockWriteGuard TAnnotLockWriteGuard;
 
     // Used to lock: m_*_InfoMap, m_TSE_seq
     // Is locked before locks in CTSE_Info
@@ -402,6 +387,30 @@ private:
     CDataSource(const CDataSource&);
     CDataSource& operator=(const CDataSource&);
 };
+
+
+class CDSAnnotLockReadGuard
+{
+public:
+    CDSAnnotLockReadGuard(CDataSource& ds);
+
+private:
+    CDataSource::TMainLock::TReadLockGuard     m_MainGuard;
+    CDataSource::TAnnotLock::TReadLockGuard    m_AnnotGuard;
+};
+
+
+class CDSAnnotLockWriteGuard
+{
+public:
+    CDSAnnotLockWriteGuard(CDataSource& ds);
+
+private:
+    CDataSource::TMainLock::TReadLockGuard      m_MainGuard;
+    CDataSource::TAnnotLock::TWriteLockGuard    m_AnnotGuard;
+};
+
+
 
 inline
 CDataLoader* CDataSource::GetDataLoader(void) const
