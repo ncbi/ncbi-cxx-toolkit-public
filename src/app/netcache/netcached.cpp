@@ -131,7 +131,8 @@ struct NetCache_RequestStat
     time_t    conn_time;    ///< request incoming time in seconds
     unsigned  req_code;     ///< 'P' put, 'G' get
     size_t    blob_size;    ///< BLOB size
-    double    elapsed;      ///< time in seconds to process request
+    double    elapsed;      ///< total time in seconds to process request
+    double    comm_elapsed; ///< time spent reading/sending data
 };
 
 /// @internal
@@ -160,6 +161,8 @@ public:
         msg += tmp;
         msg += ';';
         msg += NStr::DoubleToString(stat.elapsed, 5);
+        msg += ';';
+        msg += NStr::DoubleToString(stat.comm_elapsed, 5);
         msg += "\n";
 
         m_Log << msg;
@@ -366,9 +369,9 @@ void CNetCacheServer::Process(SOCK sock)
         bool is_log = IsLog();
 
         if (is_log) {
-            CTime tm(CTime::eCurrent);
-            stat.conn_time = tm.GetTimeT();
+            stat.conn_time = CTime(CTime::eCurrent).GetTimeT();
             stat.blob_size = 0;
+            stat.comm_elapsed = 0;
             sw.Start();
         }
 
@@ -486,7 +489,7 @@ void CNetCacheServer::ProcessShutdown(CSocket& sock, const Request& req)
 
 void CNetCacheServer::ProcessVersion(CSocket& sock, const Request& req)
 {
-    WriteMsg(sock, "OK:", "NCBI NetCache server version=1.1");
+    WriteMsg(sock, "OK:", "NCBI NetCache server version=1.2");
 }
 
 void CNetCacheServer::ProcessRemove(CSocket& sock, const Request& req)
@@ -584,7 +587,11 @@ blob_not_found:
         }
 
         // translate BLOB fragment to the network
+        CStopWatch  sw(true);
+
         x_WriteBuf(sock, buf, ba_descr.blob_size);
+
+        stat.comm_elapsed += sw.Elapsed();
 
         return;
 
@@ -617,7 +624,11 @@ blob_not_found:
             }
 
             // translate BLOB fragment to the network
+            CStopWatch  sw(true);
+
             x_WriteBuf(sock, buf, bytes_read);
+
+            stat.comm_elapsed += sw.Elapsed();
 
         } else {
             break;
@@ -669,8 +680,15 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
 
     do {
         size_t nn_read;
+
+        CStopWatch  sw(true);
+
         not_eof = ReadBuffer(sock, buf, buf_size, &nn_read);
+
+        stat.comm_elapsed += sw.Elapsed();
+
         if (nn_read) {
+            stat.blob_size += nn_read;
             if (iwrt.get() == 0) { // first read
 
                 if (not_eof == false) { // complete read
@@ -1138,6 +1156,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/01/03 14:29:51  kuznets
+ * Improved logging
+ *
  * Revision 1.31  2004/12/29 15:35:37  kuznets
  * Fixed bug in comm. protocol
  *
