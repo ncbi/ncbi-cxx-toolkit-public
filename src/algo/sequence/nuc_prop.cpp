@@ -156,7 +156,7 @@ int CNucProp::GetPercentGC(CSeqVector& seqvec)
         }
     }
 
-    return (int) ((gc_count * 100) / len);
+    return (int) ((gc_count * 100.0) / len + 0.5);
 }
 
 
@@ -167,6 +167,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/28 20:41:01  jcherry
+ * Changed GetPercentGC() to round properly
+ *
  * Revision 1.3  2003/07/28 11:54:34  dicuccio
  * Changed Int2Nmer to use std::string instead of char*
  *
