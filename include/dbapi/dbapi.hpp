@@ -367,6 +367,9 @@ public:
     // Get current database
     virtual string GetDatabase() = 0;
 
+    // Check if the connection is alive
+    virtual bool IsAlive() = 0;
+
     // Get statement object for regular SQL queries
     virtual IStatement* CreateStatement() = 0;
   
@@ -441,6 +444,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/03/07 21:22:31  kholodov
+ * Added: IsAlive() method
+ *
  * Revision 1.19  2003/02/12 15:53:23  kholodov
  * Added: WasNull() method
  *

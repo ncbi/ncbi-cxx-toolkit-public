@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.20  2003/03/07 21:21:15  kholodov
+* Added: IsAlive() method
+*
 * Revision 1.19  2003/01/09 16:10:17  sapojnik
 * CConnection::Connect -- do not attempt SetDbName() if connection failed
 *
@@ -194,6 +197,14 @@ void CConnection::SetDatabase(const string& name)
 string CConnection::GetDatabase()
 {
     return m_database;
+}
+
+bool CConnection::IsAlive()
+{
+    if( m_connection != 0 )
+        return m_connection->IsAlive();
+    else
+        return false;
 }
 
 void CConnection::SetDbName(const string& name,

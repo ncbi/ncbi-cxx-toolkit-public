@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.11  2003/03/07 21:21:15  kholodov
+* Added: IsAlive() method
+*
 * Revision 1.10  2002/11/27 17:19:49  kholodov
 * Added: Error output redirection to CToMultiExHandler object.
 *
@@ -121,6 +124,8 @@ public:
 
     virtual void SetDatabase(const string& name);
     virtual string GetDatabase();
+
+    virtual bool IsAlive();
 
     void SetDbName(const string& name, CDB_Connection* conn = 0);
 
