@@ -147,7 +147,10 @@ string& CAlnVec::GetAlnSeqString(string& buffer,
                                    seq_vec_size - chunk->GetRange().GetFrom(),
                                    buff);
             }
-            buffer += buff;
+            if (GetWidth(row) == 3) {
+                TranslateNAToAA(buff, buff);
+            }
+           buffer += buff;
         } else {
             // add appropriate number of gap/end chars
             const int n = chunk->GetAlnRange().GetLength();
@@ -671,7 +674,9 @@ void CAlnVec::TranslateNAToAA(const string& na, string& aa)
 
     unsigned int i, j = 0, state = 0;
 
-    aa.resize(na.size() / 3);
+    if (aa != na) {
+        aa.resize(na.size() / 3);
+    }
 
     string::const_iterator res = na.begin();
     while (res != na.end()) {
@@ -679,6 +684,11 @@ void CAlnVec::TranslateNAToAA(const string& na, string& aa)
             state = tbl.NextCodonState(state, *res);
         }
         aa[j++] = tbl.GetCodonResidue(state);
+    }
+
+    if (aa == na) {
+        aa[j] = 0;
+        aa.resize(j);
     }
 }
 
@@ -834,6 +844,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.61  2004/09/13 14:33:58  todorov
+* TranslateNAToAA now can use the same string buffer for both aa & na; Added translation for GetAlnSeqString
+*
 * Revision 1.60  2004/06/16 12:03:26  dicuccio
 * int -> size_t (avoid compiler warning)
 *
