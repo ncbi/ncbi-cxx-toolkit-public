@@ -42,6 +42,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/05/17 18:07:15  vakatov
+ * Logging::  always call the logger if severity is eLOG_Fatal
+ *
  * Revision 6.3  2001/01/08 22:37:36  lavr
  * Added GNU attribute to g_CORE_sprintf for compiler to trace
  * format specifier/parameter correspondence
@@ -88,7 +91,7 @@ extern MT_LOCK g_CORE_MT_Lock;
 extern LOG g_CORE_Log;
 
 #define CORE_LOG(level, message)  do { \
-    if ( g_CORE_Log ) { \
+    if (g_CORE_Log  ||  level == eLOG_Fatal) { \
         CORE_LOCK_READ; \
         LOG_WRITE(g_CORE_Log, level, message); \
         CORE_UNLOCK; \
@@ -110,7 +113,7 @@ extern const char* g_CORE_Sprintf(const char* fmt, ...)
 ;
 
 #define CORE_LOGF(level, fmt_args)  do { \
-    if ( g_CORE_Log ) { \
+    if (g_CORE_Log  ||  level == eLOG_Fatal) { \
         CORE_LOCK_READ; \
         LOG_WRITE(g_CORE_Log, level, g_CORE_Sprintf fmt_args); \
         CORE_UNLOCK; \
@@ -126,7 +129,7 @@ extern const char* g_CORE_Sprintf(const char* fmt, ...)
 } while (0)
 
 #define CORE_LOG_SYS_ERRNO(level, message)  do { \
-    if ( g_CORE_Log ) { \
+    if (g_CORE_Log  ||  level == eLOG_Fatal) { \
         CORE_LOCK_READ; \
         LOG_WRITE_ERRNO(g_CORE_Log, level, message); \
         CORE_UNLOCK; \
@@ -134,7 +137,7 @@ extern const char* g_CORE_Sprintf(const char* fmt, ...)
 } while (0)
 
 #define CORE_LOG_ERRNO(x_errno, level, message)  do { \
-    if ( g_CORE_Log ) { \
+    if (g_CORE_Log  ||  level == eLOG_Fatal) { \
         char buf[2048]; \
         int xx_errno = x_errno; \
         CORE_LOCK_READ; \
