@@ -440,7 +440,6 @@ public:
     // set the mass tolerance.  input in Daltons.
     void SetTolerance(double tolin);
     int GetTol(void);
-    const char *GetUsed(int Which) const;
     char *SetUsed(int Which);
 
     // clear used arrays for one cull type
@@ -583,10 +582,6 @@ inline int CMSPeak::GetTol(void)
     return tol; 
 }
 
-inline const char *CMSPeak::GetUsed(int Which) const
-{
-}
-
 inline char *CMSPeak::SetUsed(int Which)
 {
     return Used[Which];
@@ -699,6 +694,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.8  2003/12/05 13:10:32  lewisg
+  delete GetUsed
+
   Revision 1.7  2003/12/04 23:39:08  lewisg
   no-overlap hits and various bugfixes
 
