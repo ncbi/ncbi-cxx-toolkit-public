@@ -43,6 +43,8 @@ class CPythonDBAPITest : public CPPUNIT_NS::TestFixture
   CPPUNIT_TEST_SUITE( CPythonDBAPITest );
   CPPUNIT_TEST( TestBasic );
   CPPUNIT_TEST( TestExecute );
+  CPPUNIT_TEST( TestFetch );
+  CPPUNIT_TEST( TestParameters );
   // CPPUNIT_TEST( TestExecuteMany );
   CPPUNIT_TEST( TestTransaction );
   CPPUNIT_TEST( TestFromFile );
@@ -61,6 +63,8 @@ public:
     // Test particular methods.
     void TestBasic();
     void TestExecute();
+    void TestFetch();
+    void TestParameters();
     void TestExecuteMany();
 
     // Test scenarios.
@@ -83,6 +87,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/02/08 19:21:18  ssikorsk
+ * + Test "rowcount" attribute and support hte "simple mode" interface
+ *
  * Revision 1.1  2005/02/03 16:11:16  ssikorsk
  * python_ncbi_dbapi_test was adapted to the cppunit testing framework
  *
