@@ -10,4 +10,4 @@ APP = cgidemo
 OBJ = cgidemo
 LIB = xcgi xncbi
 
-LIBS = $(FASTCGI_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+LIBS = $(FASTCGI_LIBS) $(ORIG_LIBS)
