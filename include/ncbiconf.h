@@ -39,6 +39,8 @@
 #  include <corelib/config/ncbiconf_msvc.h>
 #elif defined(__MWERKS__)
 #  include <corelib/config/ncbiconf_mwerks.h>
+#elif defined(NCBI_XCODE_BUILD)
+#  include <corelib/config/ncbiconf_xcode.h>
 #else
 /*
  * Otherwise, we expect to be using the Unix build system, in which case
@@ -62,6 +64,9 @@
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/06/18 15:39:07  ucko
+ * Support using a canned ncbiconf.h with xcode.
+ *
  * Revision 1.2  2003/09/23 20:44:40  ucko
  * Fix the C++-style comment that slipped in.
  * Add a long comment explaining how to avoid triggering the #error on Unix.
