@@ -3,7 +3,7 @@
 SRC = variant active_obj dbapi driver_mgr err_handler ds_impl conn_impl \
 	 stmt_impl rs_impl rsmeta_impl cstmt_impl  \
 	 bytestreambuf blobstream \
-	 cursor_impl bulkinsert 
+	 cursor_impl bulkinsert
 
 LIB    = dbapi
 
