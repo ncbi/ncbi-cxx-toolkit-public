@@ -34,7 +34,7 @@ trap 'rm -f $res_file' 1 2 15
 
 # Send result to Nagios server
 
-if test "$1" == "--nagios"; then
+if test "$1" = "--nagios"; then
    if [ ! -x "$stable_client" ]; then
       echo "$stable_client not found"
       exit 1
