@@ -1,7 +1,4 @@
 # $Id$
 
-LIBOBJ = ncbidiag ncbiexpt ncbistre ncbiapp ncbireg ncbienv ncbistd \
-         ncbi_socket ncbi_buffer
+LIBOBJ = ncbidiag ncbiexpt ncbistre ncbiapp ncbireg ncbienv ncbistd
 LIB    = xncbi
-
-DLL_LIBS = $(NETWORK_LIBS)
