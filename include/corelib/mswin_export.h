@@ -152,6 +152,14 @@
 #endif
 
 /*
+ * Definitions for NCBI_WEB.DLL
+ */
+#ifdef NCBI_WEB_EXPORTS
+#  define NCBI_XHTML_EXPORTS
+#  define NCBI_XCGI_EXPORTS
+#endif
+
+/*
  * Definitions for GUI_UTILS.DLL
  */
 #ifdef NCBI_GUIUTILS_EXPORTS
@@ -245,7 +253,6 @@
 #else
 #  define NCBI_XIMAGE_EXPORT       __declspec(dllimport)
 #endif
-
  
 /*
  * Export specifier for library xser
@@ -254,6 +261,24 @@
 #  define NCBI_XSERIAL_EXPORT       __declspec(dllexport)
 #else
 #  define NCBI_XSERIAL_EXPORT       __declspec(dllimport)
+#endif
+ 
+/*
+ * Export specifier for library xhtml
+ */
+#ifdef NCBI_XHTML_EXPORTS
+#  define NCBI_XHTML_EXPORT       __declspec(dllexport)
+#else
+#  define NCBI_XHTML_EXPORT       __declspec(dllimport)
+#endif
+ 
+/*
+ * Export specifier for library xcgi
+ */
+#ifdef NCBI_XCGI_EXPORTS
+#  define NCBI_XCGI_EXPORT       __declspec(dllexport)
+#else
+#  define NCBI_XCGI_EXPORT       __declspec(dllimport)
 #endif
 
 /*
@@ -1118,7 +1143,9 @@
 #  define NCBI_XALNMGR_EXPORT
 #  define NCBI_XALNUTIL_EXPORT
 #  define NCBI_XBLAST_EXPORT
+#  define NCBI_XCGI_EXPORT
 #  define NCBI_XGBPLUGIN_EXPORT
+#  define NCBI_XHTML_EXPORT
 #  define NCBI_XIMAGE_EXPORT
 #  define NCBI_XLOADER_BLASTDB_EXPORT
 #  define NCBI_XLOADER_CDD_EXPORT
@@ -1143,6 +1170,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.47  2003/11/05 18:40:07  dicuccio
+ * Added CGI/HTML library export specifiers
+ *
  * Revision 1.46  2003/10/30 15:45:44  ivanov
  * Add NCBI_GUIWIDGETS_GL_EXPORT to the null define list
  *
