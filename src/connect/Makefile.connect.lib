@@ -1,6 +1,7 @@
 # $Id$
 
-LIBOBJ = ncbi_buffer ncbi_core ncbi_util ncbi_socket_
+LIBOBJ = ncbi_buffer ncbi_priv ncbi_core ncbi_util ncbi_socket_ \
+         ncbi_connutil ncbi_connection
 LIB    = xconnect
 
 DLL_LIBS = $(NETWORK_LIBS)

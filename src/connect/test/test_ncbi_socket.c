@@ -30,6 +30,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/03/24 23:12:13  vakatov
+ * Starting the development quasi-branch to implement CONN API.
+ * All development is performed in the NCBI C++ tree only, while
+ * the NCBI C tree still contains "frozen" (see the last revision) code.
+ *
  * Revision 6.5  2000/02/24 23:09:42  vakatov
  * Use C++ Toolkit specific wrapper "test_ncbi_socket_.c" for
  * "test_ncbi_socket.c"
@@ -609,19 +614,16 @@ extern int main(int argc, char** argv)
 
     /* Try to set various fake MT safety locks
      */
-    SOCK_SetLOCK( MT_LOCK_Create(0, TEST_LockHandler, TEST_LockCleanup) );
-    SOCK_SetLOCK(0);
-    SOCK_SetLOCK(0);
-    SOCK_SetLOCK( MT_LOCK_Create(&TEST_LockUserData,
+    CORE_SetLOCK( MT_LOCK_Create(0, TEST_LockHandler, TEST_LockCleanup) );
+    CORE_SetLOCK(0);
+    CORE_SetLOCK(0);
+    CORE_SetLOCK( MT_LOCK_Create(&TEST_LockUserData,
                                  TEST_LockHandler, TEST_LockCleanup) );
 
-    /* Setup the SOCK error post stream
+    /* Setup log stream
      */
-    {{
-      LOG lg = LOG_Create(0, 0, 0, 0);
-      LOG_ToFILE(lg, log_fp, 0/*false*/);
-      SOCK_SetLOG(lg);
-    }}
+    CORE_SetLOGFILE(stderr, 0/*false*/);
+
 
     /* Printout local hostname
      */
@@ -648,6 +650,8 @@ extern int main(int argc, char** argv)
 
         TEST__server((unsigned short) port);
         assert(SOCK_ShutdownAPI() == eIO_Success);
+        CORE_SetLOG(0);
+        CORE_SetLOCK(0);
         return 0;
     }
 
@@ -683,6 +687,8 @@ extern int main(int argc, char** argv)
 
         TEST__client(server_host, (unsigned short)server_port, timeout);
         assert(SOCK_ShutdownAPI() == eIO_Success);
+        CORE_SetLOG(0);
+        CORE_SetLOCK(0);
         return 0;
     }
     } /* switch */
@@ -696,5 +702,7 @@ extern int main(int argc, char** argv)
             "  Server: %s <port>\n"
             " where <port> is greater than %d, and [conn_timeout] is double\n",
             argv[0], argv[0], (int)MIN_PORT);
+    CORE_SetLOG(0);
+    CORE_SetLOCK(0);
     return 1;
 }

@@ -32,13 +32,19 @@
  *   Auxiliary (optional) code for "ncbi_core.[ch]"
  *
  *********************************
- * Tracing and logging:
- *    methods:    LOG_ComposeMessage(), LOG_ToFILE(), MessagePlusErrno()
+ *    methods:    LOG_ComposeMessage(), LOG_ToFILE(), MessagePlusErrno(),
+ *                CORE_SetLOCK(), CORE_GetLOCK(),
+ *                CORE_SetLOG(),  CORE_GetLOG(),   CORE_SetLOGFILE()
  *    flags:      TLOG_FormatFlags, ELOG_FormatFlags
  *    macro:      LOG_WRITE_ERRNO()
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/03/24 23:12:05  vakatov
+ * Starting the development quasi-branch to implement CONN API.
+ * All development is performed in the NCBI C++ tree only, while
+ * the NCBI C tree still contains "frozen" (see the last revision) code.
+ *
  * Revision 6.1  2000/02/23 22:30:40  vakatov
  * Initial revision
  *
@@ -49,15 +55,49 @@
 #include <stdio.h>
 #include <errno.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
 /******************************************************************************
+ *  MT locking
+ */
+
+/* Set the MT critical section lock/unlock handler -- to be used by the core
+ * internals to protect internal static variables and other MT-sensitive
+ * code from being accessed/changed by several threads simultaneously.
+ * It is also to protect fully the core log handler, including its setting up
+ * (see CORE_SetLOG below), and its callback and cleanup functions.
+ * NOTES:
+ * This function itself is so NOT MT-safe!
+ * If there is an active MT-lock handler set already, and it is different from
+ * the new one, then MT_LOCK_Delete() is called for the old(replaced) handler.
+ */
+extern void    CORE_SetLOCK(MT_LOCK lk);
+extern MT_LOCK CORE_GetLOCK(void);
+
+
+
+/******************************************************************************
  *  ERROR HANDLING and LOGGING
  */
+
+/* Set the log handler (no logging if "lg" is passed zero) -- to be used by
+ * the core internals.
+ * If there is an active log handler set already, and it is different from
+ * the new one, then LOG_Delete() is called for the old(replaced) logger.
+ */
+extern void CORE_SetLOG(LOG lg);
+extern LOG  CORE_GetLOG(void);
+
+
+/* Standard logging to the specified file stream
+ */
+extern void CORE_SetLOGFILE
+(FILE*       fp,         /* the file stream to log to */
+ int/*bool*/ auto_close  /* do "fclose(fp)" when the LOG is reset/destroyed */
+ );
 
 
 /* Compose message using the "call_data" info.
@@ -92,7 +132,7 @@ extern void LOG_ToFILE
 
 
 /* Add current "errno" (and maybe its description) to the message:
- *   <message> {errno:<errno> <descr>}
+ *   <message> {errno=<errno>,<descr>}
  * Return "buf".
  */
 extern char* MessagePlusErrno
@@ -108,8 +148,22 @@ extern char* MessagePlusErrno
     char buf[2048]; \
     LOG_WRITE(lg, level, \
               MessagePlusErrno(message, errno, 0, buf, sizeof(buf))); \
-    } \
+  } \
 } while (0)
+
+
+
+/******************************************************************************
+ *  REGISTRY
+ */
+
+/* Set the registry (no registry if "rg" is passed zero) -- to be used by
+ * the core internals.
+ * If there is an active registry set already, and it is different from
+ * the new one, then REG_Delete() is called for the old(replaced) registry.
+ */
+extern void CORE_SetREG(REG rg);
+extern REG  CORE_GetREG(void);
 
 
 #ifdef __cplusplus

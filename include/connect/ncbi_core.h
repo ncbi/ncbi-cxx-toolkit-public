@@ -36,9 +36,9 @@
  *    struct STimeout
  *
  * I/O status and direction:
- *    enum:  EIO_ReadMethod
- *    enum:  EIO_Status,  verbal: IO_StatusStr()
- *    enum:  EIO_Event
+ *    enum:       EIO_ReadMethod
+ *    enum:       EIO_Status,  verbal: IO_StatusStr()
+ *    enum:       EIO_Event
  *
  * Critical section (basic multi-thread synchronization):
  *    handle:     MT_LOCK
@@ -52,17 +52,32 @@
  *    enum:       ELOG_Level,  verbal: LOG_LevelStr()
  *    flags:      TLOG_FormatFlags, ELOG_FormatFlags
  *    callbacks:  (*FLOG_Handler)(),  (*FLOG_Cleanup)()
- *    methods:    LOG_Greate(),  LOG_Reset(),
- *                LOG_AddRef(),  LOG_Delete(),  LOG_Write()
+ *    methods:    LOG_Greate(),  LOG_Reset(),  LOG_AddRef(),  LOG_Delete(),
+ *                LOG_Write()
  *    macro:      LOG_WRITE(),  THIS_FILE, THIS_MODULE
+ *
+ * Registry:
+ *    handle:     REG
+ *    enum:       EREG_Storage
+ *    callbacks:  (*FREG_Get)(),  (*FREG_Set)(),  (*FREG_Cleanup)()
+ *    methods:    REG_Greate(),  REG_Reset(),  REG_AddRef(),  REG_Delete(),
+ *                REG_Get(),  REG_Set()
+ *
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/03/24 23:12:03  vakatov
+ * Starting the development quasi-branch to implement CONN API.
+ * All development is performed in the NCBI C++ tree only, while
+ * the NCBI C tree still contains "frozen" (see the last revision) code.
+ *
  * Revision 6.1  2000/02/23 22:30:40  vakatov
  * Initial revision
  *
  * ===========================================================================
  */
+
+#include <stddef.h>
 
 #include <assert.h>
 #if defined(NDEBUG)
@@ -135,7 +150,7 @@ extern const char* IO_StatusStr(EIO_Status status);
  */
 
 
-/* Lock handle (keeps all data needed for the locking and for the cleanup)
+/* Lock handle -- keeps all data needed for the locking and for the cleanup
  */
 struct MT_LOCK_tag;
 typedef struct MT_LOCK_tag* MT_LOCK;
@@ -180,7 +195,7 @@ extern MT_LOCK MT_LOCK_Create
  );
 
 
-/* Increment ref.counter by 1,  then return "lk". 
+/* Increment ref.counter by 1,  then return "lk"
  */
 extern MT_LOCK MT_LOCK_AddRef(MT_LOCK lk);
 
@@ -210,7 +225,7 @@ extern int/*bool*/ MT_LOCK_DoInternal
  */
 
 
-/* Log handle (keeps all data needed for the logging and for the cleanup).
+/* Log handle -- keeps all data needed for the logging and for the cleanup
  */
 struct LOG_tag;
 typedef struct LOG_tag* LOG;
@@ -229,7 +244,7 @@ typedef enum {
 } ELOG_Level;
 
 
-/* Return verbal description of the log level.
+/* Return verbal description of the log level
  */
 extern const char* LOG_LevelStr(ELOG_Level level);
 
@@ -254,7 +269,7 @@ typedef void (*FLOG_Handler)
  );
 
 
-/* Log cleanup function;  see "LOG_Reset()" for more details.
+/* Log cleanup function;  see "LOG_Reset()" for more details
  */
 typedef void (*FLOG_Cleanup)
 (void* user_data  /* see "user_data" in LOG_Create() or LOG_Reset() */
@@ -285,7 +300,7 @@ extern void LOG_Reset
  );
 
 
-/* Increment ref.counter by 1,  then return "lg". 
+/* Increment ref.counter by 1,  then return "lg"
  */
 extern LOG LOG_AddRef(LOG lg);
 
@@ -328,6 +343,128 @@ extern void LOG_WriteInternal
 #if !defined(THIS_MODULE)
 #  define THIS_MODULE 0
 #endif
+
+
+/******************************************************************************
+ *  REGISTRY
+ */
+
+
+/* Registry handle (keeps all data needed for the registry get/set/cleanup)
+ */
+struct REG_tag;
+typedef struct REG_tag* REG;
+
+
+/* Transient/Persistent storage
+ */
+typedef enum {
+  eREG_Transient = 0,
+  eREG_Persistent
+} EREG_Storage;
+
+
+/* Copy the registry value stored in "section" under name "name"
+ * to buffer "value". Look for the matching entry first in the transient
+ * storage, and then in the persistent storage.
+ * If the specified entry is not found in the registry then just copy '\0'.
+ * Note:  always terminate value by '\0'.
+ * Note:  dont put more than "value_size" bytes to "value".
+ */
+typedef void (*FREG_Get)
+(const char* section,
+ const char* name,
+ char*       value,      /* always passed in as non-NULL, empty string */
+ size_t      value_size  /* always > 0 */
+ );
+
+
+/* Store the "value" to  the registry section "section" under name "name",
+ * in storage "storage".
+ */
+typedef void (*FREG_Set)
+(const char*  section,
+ const char*  name,
+ const char*  value,
+ EREG_Storage storage
+ );
+
+
+/* Registry cleanup function;  see "LOG_Reset()" for more details
+ */
+typedef void (*FREG_Cleanup)
+(void* user_data  /* see "user_data" in REG_Create() or REG_Reset() */
+ );
+
+
+/* Create new REG (with reference counter := 1).
+ * ATTENTION:  if non-NULL "lk" is specified then MT_LOCK_Delete() will be
+ *             called when this REG is destroyed -- be aware of it!
+ */
+extern REG REG_Create
+(void*        user_data, /* the data to call "handler" and "cleanup" with */
+ FREG_Get     get,       /* the get method */
+ FREG_Set     set,       /* the set method */
+ FREG_Cleanup cleanup,   /* cleanup */
+ MT_LOCK      mt_lock    /* protective MT lock (can be NULL) */
+ );
+
+
+/* Reset the "lg" to use the new "user_data", "handler" and "cleanup".
+ * NOTE:  it does not change ref.counter.
+ */
+extern void REG_Reset
+(REG          rg,         /* created by REG_Create() */
+ void*        user_data,  /* new user data */
+ FREG_Get     get,        /* the get method */
+ FREG_Set     set,        /* the set method */
+ FREG_Cleanup cleanup,    /* cleanup */
+ int/*bool*/  do_cleanup  /* call cleanup(if any specified) for the old data */
+ );
+
+
+/* Increment ref.counter by 1,  then return "reg"
+ */
+extern REG REG_AddRef(REG rg);
+
+
+/* Decrement ref.counter by 1.
+ * Now, if ref.counter becomes 0, then
+ * call "reg->cleanup(reg->user_data)", destroy the handle, and return NULL.
+ * Otherwise (if ref.counter is still > 0), return "reg".
+ */
+extern REG REG_Delete(REG rg);
+
+
+/* Copy the registry value stored in "section" under name "name"
+ * to buffer "value";  if the entry is found in both transient and persistent
+ * storages, then copy the one from the transient storage.
+ * If the specified entry is not found in the registry, and "def_value"
+ * is not NULL, then copy "def_value" to "value".
+ * Return "value" (however, if "value_size" is zero, then return NULL).
+ * Note:  always terminate "value" by '\0'.
+ * Note:  dont put more than "value_size" bytes to "value".
+ */
+extern char* REG_Get
+(REG         rg,         /* created by REG_Create() */
+ const char* section,    /* registry section name */
+ const char* name,       /* registry entry name  */
+ char*       value,      /* buffer to put the value of the requsted entry to */
+ size_t      value_size, /* max. size of buffer "value" */
+ const char* def_value   /* default value (none if passed NULL) */
+ );
+
+
+/* Store the "value" to  the registry section "section" under name "name",
+ * in storage "storage".
+ */
+extern void REG_Set
+(REG          rg,        /* created by REG_Create() */
+ const char*  section,
+ const char*  name,
+ const char*  value,
+ EREG_Storage storage
+ );
 
 
 #ifdef __cplusplus

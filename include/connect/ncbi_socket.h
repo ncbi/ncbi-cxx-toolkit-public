@@ -40,11 +40,8 @@
  *
  *  SOCK, LSOCK
  *
- *  SOCK_SetLOCK
- *
  *  SOCK_InitializeAPI
  *  SOCK_ShutdownAPI
- *  SOCK_SetLOG
  *
  * Listening socket (handle LSOCK):
  *
@@ -75,6 +72,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/03/24 23:12:04  vakatov
+ * Starting the development quasi-branch to implement CONN API.
+ * All development is performed in the NCBI C++ tree only, while
+ * the NCBI C tree still contains "frozen" (see the last revision) code.
+ *
  * Revision 6.2  2000/02/23 22:33:38  vakatov
  * Can work both "standalone" and as a part of NCBI C++ or C toolkits
  *
@@ -85,7 +87,6 @@
  */
 
 #include <connect/ncbi_core.h>
-#include <stddef.h>
 
 
 #ifdef __cplusplus
@@ -115,62 +116,35 @@ struct LSOCK_tag;                /* listening socket:  internal storage  */
 typedef struct LSOCK_tag* LSOCK; /* listening socket:  handle */
 
 struct SOCK_tag;                 /* socket:  internal storage  */
-typedef struct SOCK_tag* SOCK;   /* socket:  handle */
+typedef struct SOCK_tag*  SOCK;  /* socket:  handle */
 
 
 
 /******************************************************************************
- *  Multi-Thread SAFETY
+ *  Multi-Thread safety
  *
- * SOCK_InitializeAPI(), SOCK_ShutdownAPI(),  and SOCK_SetLOG()
- * manipulate with the API-wide static data, and thus you must take a
- * special care to avoid different threads to call these functions at
- * the same moment of time.
+ * If you are using this API in a multi-thread application, and there is
+ * more than one thread using this API, it is safe to call SOCK_InitializeAPI()
+ * explicitely in the beginning of your main thread, before you run any other
+ * threads, and to call SOCK_ShutdownAPI() after all threads are exited.
  *
- * For this reason, in multi-thread applications where there are more than
- * one thread using this API, it is usually better to call
- * SOCK_InitializeAPI() explicitely in the beginning of your main thread,
- * before you run any other threads, and to call SOCK_ShutdownAPI() after
- * all threads are exited.  SOCK_SetLOG() should be called under
- * the critical section protection as well.
- *
- * As soon as the API is initialized it becomes relatively MT-safe, but
- * you must not handle the same LSOCK or SOCK from different threads
- * simultaneously.
+ * As soon as the API is initialized it becomes relatively MT-safe, however
+ * you still must not operate with the same LSOCK or SOCK objects from
+ * different threads simultaneously.
  *
  * A MUCH BETTER WAY of dealing with this issue is to provide your own MT
- * locking callback (see SOCK_SetLOCK). This will also
+ * locking callback (see CORE_SetLOCK in "ncbi_core.h"). This will also
  * guarantee the proper MT protection should some other SOCK functions
  * start to access any static data in the future.
  */
 
 
-/* Set the MT critical section lock/unlock callback function (and its data).
- * This function will be used to protect the package's static variables
- * used by SOCK_InitializeAPI(), SOCK_ShutdownAPI(), and  SOCK_SetLOG()
- * from being accessed/changed by several threads simultaneously. It 'll
- * also protect your error posting callback and its cleanup func.
- * NOTES:
- * This function itself is so NOT MT-safe!
- * If there is an active MT-lock handler set already, and it is different from
- * the new one, then MT_LOCK_Delete() is called for the old(replaced) handler;
- * MT_LOCK_Delete() will also be called for this handler by SOCK_ShutdownAPI().
- */
-extern void SOCK_SetLOCK(MT_LOCK lk);
-
-
 
 /******************************************************************************
- *  ERROR HANDLING
+ *   Error Logging
+ *
+ * Use CORE_SetLOG() from "ncbi_core.h" to setup the log handler.
  */
-
-
-/* Set global error handling callback (no err.handling if "lg" is passed zero).
- * If there is an active err.handler set already, and it is different from
- * the new one, then LOG_Delete() is called for the old(replaced) handler.
- * LOG_Delete() will also be called for this handler by SOCK_ShutdownAPI().
- */
-extern void SOCK_SetLOG(LOG lg);
 
 
 
@@ -186,14 +160,13 @@ extern void SOCK_SetLOG(LOG lg);
  * NOTE:
  *  Usually, SOCK API does not require an explicit initialization -- as it is
  *  guaranteed to initialize itself automagically, in one of API functions,
- *  when necessary. Also, see the "MultiThread-SAFETY" remark above.
+ *  when necessary. Yet, see the "Multi Thread safety" remark above.
  */
 extern EIO_Status SOCK_InitializeAPI(void);
 
 
 /* Cleanup; destroy all internal/system data & resources used by the SOCK API.
  * ATTENTION:  no function from the SOCK API should be called after this call!
- * NOTE: it also calls SOCK_SetLOG(0) and then SOCK_SetLOCK(0).
  * NOTE: you can safely call it more than once; just, all calls after the first
  *       one will have no result. 
  */
@@ -362,9 +335,9 @@ extern int SOCK_Eof(SOCK sock);
  */
 extern EIO_Status SOCK_Write
 (SOCK        sock,
- const void* buf,       /* [in]  data to write to the socket             */
- size_t      size,      /* [in]  # of bytes (starting at "buf") to write */
- size_t*     n_written  /* [out] # of successfully written bytes         */
+ const void* buf,       /* [in]  data to write to the socket                */
+ size_t      size,      /* [in]  # of bytes (starting at "buf") to write    */
+ size_t*     n_written  /* [out] # of successf. written bytes (can be NULL) */
  );
 
 

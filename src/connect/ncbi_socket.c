@@ -33,6 +33,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/03/24 23:12:08  vakatov
+ * Starting the development quasi-branch to implement CONN API.
+ * All development is performed in the NCBI C++ tree only, while
+ * the NCBI C tree still contains "frozen" (see the last revision) code.
+ *
  * Revision 6.4  2000/02/23 22:34:35  vakatov
  * Can work both "standalone" and as a part of NCBI C++ or C toolkits
  *
@@ -114,7 +119,7 @@ extern void bzero(char* target, long numbytes);
 
 /* NCBI core headers
  */
-#include <connect/ncbi_util.h>
+#include "ncbi_priv.h"
 #include <connect/ncbi_buffer.h>
 #include <connect/ncbi_socket.h>
 
@@ -223,66 +228,6 @@ typedef struct SOCK_tag {
 
 
 /******************************************************************************
- *  Multi-Thread SAFETY
- *
- *  To protect static data, such like "s_Log" and "s_Initialized".
- */
-
-#define SOCK_LOCK_WRITE  verify( MT_LOCK_Do(s_MT_Lock, eMT_Lock    ) )
-#define SOCK_LOCK_READ   verify( MT_LOCK_Do(s_MT_Lock, eMT_LockRead) )
-#define SOCK_UNLOCK      verify( MT_LOCK_Do(s_MT_Lock, eMT_Unlock  ) )
-
-static MT_LOCK s_MT_Lock;
-
-extern void SOCK_SetLOCK(MT_LOCK lk)
-{
-    if (s_MT_Lock  &&  lk != s_MT_Lock) {
-        MT_LOCK_Delete(s_MT_Lock);
-    }
-    s_MT_Lock = lk;
-}
-
-
-
-/******************************************************************************
- *  ERROR HANDLING
- */
-
-#define SOCK_LOG(level, message)  do { \
-    if ( s_Log ) { \
-        SOCK_LOCK_READ; \
-        LOG_WRITE(s_Log, level, message); \
-        SOCK_UNLOCK; \
-    } \
-} while(0)
-
-#define SOCK_LOG_ERRNO(x_errno, level, message)  do { \
-    if ( s_Log ) { \
-        char buf[2048]; \
-        int xx_errno = x_errno; \
-        SOCK_LOCK_READ; \
-        LOG_WRITE(s_Log, level, \
-                  MessagePlusErrno(message, xx_errno, "", buf, sizeof(buf))); \
-        SOCK_UNLOCK; \
-    } \
-} while(0)
-
-
-static LOG s_Log;
-
-extern void SOCK_SetLOG(LOG lg)
-{
-    SOCK_LOCK_WRITE;
-    if (s_Log  &&  lg != s_Log) {
-        LOG_Delete(s_Log);
-    }
-    s_Log = lg;
-    SOCK_UNLOCK;
-}
-
-
-
-/******************************************************************************
  *  API Initialization and Shutdown/Cleanup
  */
 
@@ -292,10 +237,10 @@ static int/*bool*/ s_Initialized = 0/*false*/;
 
 extern EIO_Status SOCK_InitializeAPI(void)
 {
-    SOCK_LOCK_WRITE;
+    CORE_LOCK_WRITE;
 
     if ( s_Initialized ) {
-        SOCK_UNLOCK;
+        CORE_UNLOCK;
         return eIO_Success;
     }
 
@@ -304,8 +249,8 @@ extern EIO_Status SOCK_InitializeAPI(void)
         WSADATA wsadata;
         int x_errno = WSAStartup(MAKEWORD(1,1), &wsadata);
         if (x_errno != 0) {
-            SOCK_UNLOCK;
-            SOCK_LOG_ERRNO(x_errno, eLOG_Error,
+            CORE_UNLOCK;
+            CORE_LOG_ERRNO(x_errno, eLOG_Error,
                            "[SOCK_InitializeAPI]  Failed WSAStartup()");
             return eIO_Unknown;
         }
@@ -315,38 +260,35 @@ extern EIO_Status SOCK_InitializeAPI(void)
 #endif
 
     s_Initialized = 1/*true*/;
-    SOCK_UNLOCK;
+    CORE_UNLOCK;
     return eIO_Success;
 }
 
 
 extern EIO_Status SOCK_ShutdownAPI(void)
 {
-    EIO_Status status = eIO_Success;
-
-    SOCK_LOCK_WRITE;
-    if ( s_Initialized ) {
-        s_Initialized = 0/*false*/;
-#if defined(NCBI_OS_MSWIN)
-        {{
-            int x_errno = WSACleanup() ? SOCK_ERRNO : 0;
-            SOCK_UNLOCK;
-            if ( x_errno ) {
-                SOCK_LOG_ERRNO(x_errno, eLOG_Warning,
-                               "[SOCK_ShutdownAPI]  Failed WSACleanup()");
-                status = eIO_Unknown;
-            }
-        }}
-#else
-        SOCK_UNLOCK;
-#endif
-    } else {
-        SOCK_UNLOCK;
+    CORE_LOCK_WRITE;
+    if ( !s_Initialized ) {
+        CORE_UNLOCK;
+        return eIO_Success;
     }
 
-    SOCK_SetLOG(0);
-    SOCK_SetLOCK(0);
-    return status;
+    s_Initialized = 0/*false*/;
+#if defined(NCBI_OS_MSWIN)
+    {{
+        int x_errno = WSACleanup() ? SOCK_ERRNO : 0;
+        CORE_UNLOCK;
+        if ( x_errno ) {
+            CORE_LOG_ERRNO(x_errno, eLOG_Warning,
+                           "[SOCK_ShutdownAPI]  Failed WSACleanup()");
+            return eIO_Unknown;
+        }
+    }}
+#else
+    CORE_UNLOCK;
+#endif
+
+    return eIO_Success;
 }
 
 
@@ -414,7 +356,7 @@ static EIO_Status s_Select(TSOCK_Handle          sock,
 
     /* just checking */
     if (sock == SOCK_INVALID) {
-        SOCK_LOG(eLOG_Error,
+        CORE_LOG(eLOG_Error,
                  "[SOCK::s_Select]  Attempted to wait on an invalid socket");
         assert(0);
         return eIO_Unknown;
@@ -467,7 +409,7 @@ extern EIO_Status LSOCK_Create(unsigned short port,
 
     /* Create new(listening) socket */
     if ((x_lsock = socket(AF_INET, SOCK_STREAM, 0)) == SOCK_INVALID) {
-        SOCK_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
+        CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
                        "[LSOCK_Create]  Cannot create listening socket");
         return eIO_Unknown;
     }
@@ -484,7 +426,7 @@ extern EIO_Status LSOCK_Create(unsigned short port,
         int reuse_addr = 1;
         if (setsockopt(x_lsock, SOL_SOCKET, SO_REUSEADDR, 
                        (const char*) &reuse_addr, sizeof(reuse_addr)) != 0) {
-            SOCK_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
+            CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
                            "[LSOCK_Create]  Failed setsockopt(REUSEADDR)");
             SOCK_CLOSE(x_lsock);
             return eIO_Unknown;
@@ -498,7 +440,7 @@ extern EIO_Status LSOCK_Create(unsigned short port,
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     addr.sin_port        = htons(port);
     if (bind(x_lsock, (struct sockaddr*)&addr, sizeof(struct sockaddr)) != 0) {
-        SOCK_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
+        CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
                        "[LSOCK_Create]  Failed bind()");
         SOCK_CLOSE(x_lsock);
         return eIO_Unknown;
@@ -506,7 +448,7 @@ extern EIO_Status LSOCK_Create(unsigned short port,
 
     /* Listen */
     if (listen(x_lsock, backlog) != 0) {
-        SOCK_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
+        CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
                        "[LSOCK_Create]  Failed listen()");
         SOCK_CLOSE(x_lsock);
         return eIO_Unknown;
@@ -514,7 +456,7 @@ extern EIO_Status LSOCK_Create(unsigned short port,
 
     /* Set to non-blocking mode */
     if ( !s_SetNonblock(x_lsock, 1/*true*/) ) {
-        SOCK_LOG(eLOG_Error,
+        CORE_LOG(eLOG_Error,
                  "[LSOCK_Create]  Cannot set socket to non-blocking mode");
         SOCK_CLOSE(x_lsock);
         return eIO_Unknown;
@@ -552,7 +494,7 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
 #endif
         if ((x_sock = accept(lsock->sock, (struct sockaddr *)&addr, &addrlen))
             == SOCK_INVALID) {
-            SOCK_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
+            CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
                            "[LSOCK_Accept]  Failed accept()");
             return eIO_Unknown;
         }
@@ -575,7 +517,7 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
 {
     /* Set the socket back to blocking mode */
     if ( !s_SetNonblock(lsock->sock, 0/*false*/) ) {
-        SOCK_LOG(eLOG_Warning,
+        CORE_LOG(eLOG_Warning,
                  "[LSOCK_Close]  Cannot set socket back to blocking mode");
     }
 
@@ -587,7 +529,7 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
 
         /* error */
         if (SOCK_ERRNO != SOCK_EINTR) {
-            SOCK_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
+            CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
                            "[LSOCK_Close]  Failed close()");
             return eIO_Unknown;
         }
@@ -604,7 +546,7 @@ extern EIO_Status LSOCK_GetOSHandle(LSOCK  lsock,
                                     size_t handle_size)
 {
     if (handle_size != sizeof(lsock->sock)) {
-        SOCK_LOG(eLOG_Error, "[LSOCK_GetOSHandle]  Invalid handle size");
+        CORE_LOG(eLOG_Error, "[LSOCK_GetOSHandle]  Invalid handle size");
         assert(0);
         return eIO_Unknown;
     }
@@ -652,18 +594,18 @@ static EIO_Status s_Connect(SOCK            sock,
         if ( hp )
             memcpy(&x_host, hp->h_addr, sizeof(x_host));
 #else
-        SOCK_LOCK_WRITE;
+        CORE_LOCK_WRITE;
         hp = gethostbyname(host);
         if ( hp )
             memcpy(&x_host, hp->h_addr, sizeof(x_host));
-        SOCK_UNLOCK;
+        CORE_UNLOCK;
 #endif
         if ( !hp ) {
-            if ( s_Log ) {
+            if ( CORE_GetLOG() ) {
                 char str[128];
                 sprintf(str, "[SOCK::s_Connect]  Failed gethostbyname(%.64s)",
                         host ? host : "");
-                SOCK_LOG(eLOG_Error, str);
+                CORE_LOG(eLOG_Error, str);
             }
             return eIO_Unknown;
         }
@@ -680,14 +622,14 @@ static EIO_Status s_Connect(SOCK            sock,
 
     /* Create new socket */
     if ((x_sock = socket(AF_INET, SOCK_STREAM, 0)) == SOCK_INVALID) {
-        SOCK_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
+        CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
                        "[SOCK::s_Connect]  Cannot create socket");
         return eIO_Unknown;
     }
 
     /* Set the socket i/o to non-blocking mode */
     if ( !s_SetNonblock(x_sock, 1/*true*/) ) {
-        SOCK_LOG(eLOG_Error,
+        CORE_LOG(eLOG_Error,
                  "[SOCK::s_Connect]  Cannot set socket to non-blocking mode");
         SOCK_CLOSE(x_sock);
         return eIO_Unknown;
@@ -697,12 +639,12 @@ static EIO_Status s_Connect(SOCK            sock,
     if (connect(x_sock, (struct sockaddr*) &server, sizeof(server)) != 0) {
         if (SOCK_ERRNO != SOCK_EINTR  &&  SOCK_ERRNO != SOCK_EINPROGRESS  &&
             SOCK_ERRNO != SOCK_EWOULDBLOCK) {
-            if ( s_Log ) {
+            if ( CORE_GetLOG() ) {
                 char str[256];
                 sprintf(str,
                         "[SOCK::s_Connect]  Failed connect() to %.64s:%d",
                         host ? host : "???", (int)ntohs(x_port));
-                SOCK_LOG_ERRNO(SOCK_ERRNO, eLOG_Error, str);
+                CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error, str);
             }
             SOCK_CLOSE(x_sock);
             return eIO_Unknown; /* unrecoverable error */
@@ -716,7 +658,7 @@ static EIO_Status s_Connect(SOCK            sock,
             struct timeval tv;
             EIO_Status status =
                 s_Select(x_sock, eIO_Write,s_to2tv(timeout, &tv));
-            if (status != eIO_Success  &&  s_Log) {
+            if (status != eIO_Success  &&  CORE_GetLOG()) {
                 char str[256];
                 sprintf(str,
                         "[SOCK::s_Connect]  Failed pending connect to "
@@ -724,7 +666,7 @@ static EIO_Status s_Connect(SOCK            sock,
                         host ? host : "???",
                         (int) ntohs(x_port),
                         IO_StatusStr(status));
-                SOCK_LOG(eLOG_Error, str);
+                CORE_LOG(eLOG_Error, str);
                 SOCK_CLOSE(x_sock);
                 return status;
             }
@@ -751,7 +693,7 @@ static EIO_Status s_Shutdown(SOCK sock)
 
   /* Just checking */
     if (sock->sock == SOCK_INVALID) {
-        SOCK_LOG(eLOG_Warning,
+        CORE_LOG(eLOG_Warning,
                  "[SOCK::s_Shutdown]  Attempt to shutdown an invalid socket");
         return eIO_Unknown;
     }
@@ -759,7 +701,7 @@ static EIO_Status s_Shutdown(SOCK sock)
     {{ /* Reset the auxiliary data buffer */
         size_t buf_size = BUF_Size(sock->buf);
         if (BUF_Read(sock->buf, 0, buf_size) != buf_size) {
-            SOCK_LOG(eLOG_Error,
+            CORE_LOG(eLOG_Error,
                      "[SOCK::s_Shutdown]  Cannot reset aux. data buffer");
             return eIO_Unknown;
         }
@@ -767,7 +709,7 @@ static EIO_Status s_Shutdown(SOCK sock)
 
     /* Set the socket back to blocking mode */
     if ( !s_SetNonblock(sock->sock, 0/*false*/) ) {
-        SOCK_LOG(eLOG_Error,
+        CORE_LOG(eLOG_Error,
                  "[SOCK::s_Shutdown]  Cannot set socket to blocking mode");
     }
 
@@ -778,7 +720,7 @@ static EIO_Status s_Shutdown(SOCK sock)
         lgr.l_linger = sock->c_timeout->tv_sec ? sock->c_timeout->tv_sec : 1;
         if (setsockopt(sock->sock, SOL_SOCKET, SO_LINGER, 
                        (char*) &lgr, sizeof(lgr)) != 0) {
-            SOCK_LOG_ERRNO(SOCK_ERRNO, eLOG_Warning,
+            CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Warning,
                            "[SOCK::s_Shutdown]  Failed setsockopt()");
         }
     }   
@@ -791,7 +733,7 @@ static EIO_Status s_Shutdown(SOCK sock)
 
         /* error */
         if (SOCK_ERRNO != SOCK_EINTR) {
-            SOCK_LOG_ERRNO(SOCK_ERRNO, eLOG_Warning,
+            CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Warning,
                            "[SOCK::s_Shutdown]  Failed close()");
             sock->sock = SOCK_INVALID;
             return (SOCK_ERRNO == SOCK_ECONNRESET || SOCK_ERRNO == SOCK_EPIPE)
@@ -858,7 +800,7 @@ static EIO_Status s_Recv(SOCK        sock,
 
     /* just checking */
     if (sock->sock == SOCK_INVALID) {
-        SOCK_LOG(eLOG_Error,
+        CORE_LOG(eLOG_Error,
                  "[SOCK::s_Recv]  Attempted to read from an invalid socket");
         assert(0);
         return eIO_Unknown;
@@ -1086,9 +1028,10 @@ extern EIO_Status SOCK_SetTimeout(SOCK            sock,
         sock->c_timeout = s_to2tv(timeout, &sock->c_tv);
         break;
     default:
-        assert(0);  return eIO_Unknown;
+        CORE_LOG(eLOG_Error, "[SOCK::SetTimeout]  Invalid argument");
+        assert(0);
+        return eIO_Unknown;
     }
-
     return eIO_Success;
 }
 
@@ -1167,7 +1110,7 @@ extern EIO_Status SOCK_Write(SOCK        sock,
 {
     /* just checking */
     if (sock->sock == SOCK_INVALID) {
-        SOCK_LOG(eLOG_Error,
+        CORE_LOG(eLOG_Error,
                  "[SOCK_Write]  Attempted to write to an invalid socket");
         assert(0);
         return eIO_Unknown;
@@ -1198,13 +1141,12 @@ extern void SOCK_GetAddress(SOCK            sock,
 }
 
 
-extern EIO_Status SOCK_GetOSHandle
-(SOCK   sock,
- void*  handle_buf,
- size_t handle_size)
+extern EIO_Status SOCK_GetOSHandle(SOCK   sock,
+                                   void*  handle_buf,
+                                   size_t handle_size)
 {
     if (handle_size != sizeof(sock->sock)) {
-        SOCK_LOG(eLOG_Error, "[SOCK_GetOSHandle]  Invalid handle size!");
+        CORE_LOG(eLOG_Error, "[SOCK_GetOSHandle]  Invalid handle size!");
         assert(0);
         return eIO_Unknown;
     }
@@ -1224,7 +1166,7 @@ extern int SOCK_gethostname(char*  name,
     name[0] = name[namelen-1] = '\0';
     x_errno = gethostname(name, (int)namelen);
     if (x_errno  ||  name[namelen-1]) {
-        SOCK_LOG_ERRNO(x_errno, eLOG_Error,
+        CORE_LOG_ERRNO(x_errno, eLOG_Error,
                        "[SOCK_gethostname]  Cannot get local hostname");
         name[0] = '\0';
         return 1/*failed*/;
@@ -1243,18 +1185,18 @@ extern int SOCK_host2inaddr(unsigned int host,
     if ( !buf )
         return 1/*failed*/;
 
-    SOCK_LOCK_WRITE;
+    CORE_LOCK_WRITE;
     addr_struct.s_addr = host;
     addr_string = inet_ntoa(addr_struct);
     if (!addr_string  ||  strlen(addr_string) >= buflen) {
         char str[96];
         sprintf(str, "[SOCK_host2inaddr]  Cannot convert %x", host);
-        SOCK_LOG(eLOG_Error, str);
+        CORE_LOG(eLOG_Error, str);
         buf[0] = '\0';
         return 1/*failed*/;
     }
     strcpy(buf, addr_string);
-    SOCK_UNLOCK;
+    CORE_UNLOCK;
 
     return 0/*success*/;
 }

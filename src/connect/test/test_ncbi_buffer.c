@@ -30,6 +30,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/03/24 23:12:12  vakatov
+ * Starting the development quasi-branch to implement CONN API.
+ * All development is performed in the NCBI C++ tree only, while
+ * the NCBI C tree still contains "frozen" (see the last revision) code.
+ *
  * Revision 6.4  2000/02/23 22:34:37  vakatov
  * Can work both "standalone" and as a part of NCBI C++ or C toolkits
  *
@@ -50,6 +55,7 @@
 #endif 
 
 #include <connect/ncbi_buffer.h>
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
