@@ -61,8 +61,8 @@ class CSimpleClassFactoryImpl : public IClassFactory<IFace>
 {
 public:
 
-    typedef IFace                          IFace;
-    typedef TDriver                        TDriver;
+    typedef IFace                          TInterface;
+    typedef TDriver                        TImplementation;
     typedef IClassFactory<IFace>           TParent;
     typedef typename TParent::SDriverInfo  TDriverInfo;
     typedef typename TParent::TDriverList  TDriverList;
@@ -86,7 +86,7 @@ public:
     }
 
     /// Create instance of TDriver
-    virtual IFace*
+    virtual TInterface*
     CreateInstance(const string& driver  = kEmptyStr,
                    CVersionInfo version = NCBI_INTERFACE_VERSION(IFace),
                    const TPluginManagerParamTree* /*params*/ = 0) const
@@ -95,7 +95,7 @@ public:
         if (driver.empty() || driver == m_DriverName) {
             if (version.Match(NCBI_INTERFACE_VERSION(IFace))
                                 != CVersionInfo::eNonCompatible) {
-                drv = new TDriver();
+                drv = new TImplementation();
             }
         }
         return drv;
@@ -263,6 +263,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/02/28 17:55:08  ssikorsk
+ * Fixed the CSimpleClassFactoryImpl typedefs for GCC
+ *
  * Revision 1.13  2005/02/28 17:45:29  ssikorsk
  * Added new typedefs to the CSimpleClassFactoryImpl
  *
