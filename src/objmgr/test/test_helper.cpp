@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/05/09 14:21:50  grichenk
+* Turned GetTitle() test on, removed unresolved seq-map test
+*
 * Revision 1.9  2002/05/06 03:28:53  vakatov
 * OM/OM1 renaming
 *
@@ -810,8 +813,7 @@ CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
         enumerate alignments for an interval
 ************************************************************************/
 void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
-                             TSeqPos seq_len_unresolved,
-                             TSeqPos seq_len_resolved,
+                             TSeqPos seq_len,
                              string seq_str, string seq_str_compl,
                              int seq_desc_cnt,
                              int seq_feat_cnt, int seq_featrg_cnt,
@@ -828,7 +830,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
 
     handle.GetTopLevelSeqEntry();
-//    handle.GetTitle();
+    handle.GetTitle();
     CBioseq_Handle::TBioseqCore seq_core = handle.GetBioseqCore();
     {{
         CSeqMap seq_map = handle.GetSeqMap();
@@ -853,7 +855,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
         _ASSERT(seq_map[seq_map.size()-1].GetType() ==
                 CSeqMap::eSeqEnd);
-        _ASSERT(seq_len_unresolved == 0  ||  len == seq_len_unresolved);
+        _ASSERT(len == seq_len);
     }}
 
     {{
@@ -876,33 +878,6 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     else {
         _ASSERT(seq_str_compl.empty());
     }
-
-    {{
-        // Get another seq-map - some lengths may have been resolved
-        CSeqMap seq_map = handle.GetSeqMap();
-        // Iterate seq-map except the last element
-        TSeqPos len = 0;
-        for (size_t i = 0; i < seq_map.size(); i++) {
-            switch (seq_map[i].GetType()) {
-            case CSeqMap::eSeqData:
-                len += seq_map[i].GetLength();
-                break;
-            case CSeqMap::eSeqRef:
-                len += seq_map[i].GetLength();
-                break;
-            case CSeqMap::eSeqGap:
-                len += seq_map[i].GetLength();
-                break;
-            case CSeqMap::eSeqEnd:
-                break;
-            default:
-                break;
-            }
-        }
-        _ASSERT(seq_map[seq_map.size()-1].GetType() ==
-                CSeqMap::eSeqEnd);
-        _ASSERT(len == seq_len_resolved);
-    }}
 
     CConstRef<CBioseq> bioseq = &(handle.GetBioseq());
 
@@ -1017,45 +992,40 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
 
 
 void CTestHelper::TestDataRetrieval( CScope& scope, int idx,
-    int delta, bool check_unresolved)
+    int delta)
 {
     CSeq_id id;
 
     // find seq. by local id
     id.SetLocal().SetStr("seq" + NStr::IntToString(11+idx*1000));
     // iterate through the whole Scope
-    ProcessBioseq(scope, id,
-        40, 40,
+    ProcessBioseq(scope, id, 40,
         "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
         "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
         2, 4+delta, 2+delta, 1, 0, 2+delta, 2+delta, 1, 0);
     // iterate through the specific sequence only
-    ProcessBioseq(scope, id,
-        40, 40,
+    ProcessBioseq(scope, id, 40,
         "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
         "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
         2, 2+delta, 1+delta, 1, 0, 1+delta, 1+delta, 1, 0, true);
     // find seq. by GI
     id.SetGi(12+idx*1000);
-    ProcessBioseq(scope, id,
-        40, 40,
+    ProcessBioseq(scope, id, 40,
         "CAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCC",
         "GTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGG",
         1, 3, 2, 1, 1, 2, 2, 1, 1);
     // segmented sequence
     id.SetGi(21+idx*1000);
-    ProcessBioseq(scope, id,
-        check_unresolved ? 22 : 0, 62,
+    ProcessBioseq(scope, id, 62,
         "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
         "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
         1, 1, 1, 0, 0, 1, 1, 0, 0);
     id.SetGi(22+idx*1000);
-    ProcessBioseq(scope, id, 20, 20, "QGCGEQTMTLLAPTLAASRY", "",
+    ProcessBioseq(scope, id, 20, "QGCGEQTMTLLAPTLAASRY", "",
         0, 0, 0, 0, 0, 0, 0, 0, 0);
     // another seq.data format
     id.SetGi(23+idx*1000);
-    ProcessBioseq(scope, id,
-        13, 13,
+    ProcessBioseq(scope, id, 13,
         "\\0\\x03\\x02\\x01\\0\\x02\\x01\\x03\\x02\\x03\\0\\x01\\x02",
         "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
         0, 0, 0, 0, 0, 0, 0, 0, 0);

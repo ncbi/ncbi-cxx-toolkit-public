@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/05/09 14:21:50  grichenk
+* Turned GetTitle() test on, removed unresolved seq-map test
+*
 * Revision 1.22  2002/04/25 18:15:25  grichenk
 * Adjusted tests to work with the updated CSeqVector
 *
@@ -142,6 +145,7 @@ private:
 
 int CTestApp::Run(void)
 {
+    SetDiagPostFlag(eDPF_All);
     NcbiCout << "Testing ObjectManager..." << NcbiEndl;
     CSeq_id id;
     int idx;
@@ -157,7 +161,7 @@ int CTestApp::Run(void)
         CRef<CSeq_entry> entry2 = &CDataGenerator::CreateTestEntry2(idx);
         Scope.AddTopLevelSeqEntry(*entry2);
         // retrieve data
-        CTestHelper::TestDataRetrieval( Scope, 0, 0, true);
+        CTestHelper::TestDataRetrieval( Scope, 0, 0);
 
         // Find seq_id
         {
@@ -174,7 +178,7 @@ int CTestApp::Run(void)
         CRef<CSeq_entry> entry2 = &CDataGenerator::CreateTestEntry2(idx);
         pScope->AddTopLevelSeqEntry(*entry2);
         // retrieve data
-        CTestHelper::TestDataRetrieval( *pScope, idx, 0, true);
+        CTestHelper::TestDataRetrieval( *pScope, idx, 0);
     }
 
     // 1.2.5 add annotation to one sequence
@@ -191,7 +195,7 @@ int CTestApp::Run(void)
         CRef<CSeq_annot> annot = &CDataGenerator::CreateAnnotation1(idx);
         pScope->AttachAnnot(*entry1, *annot);
         // retrieve data  (delta=1 - one more annotation)
-        CTestHelper::TestDataRetrieval( *pScope, idx, 1, true);
+        CTestHelper::TestDataRetrieval( *pScope, idx, 1);
     }
 
     // 1.2.6. Constructed bio sequences
@@ -205,19 +209,9 @@ int CTestApp::Run(void)
             Scope.AddTopLevelSeqEntry(*constr_entry);
             // test
             id.SetLocal().SetStr("constructed1");
-            CTestHelper::ProcessBioseq(Scope, id,
-                27, 27, "GCGGTACAATAACCTCAGCAGCAACAA", "",
+            CTestHelper::ProcessBioseq(Scope, id, 27,
+                "GCGGTACAATAACCTCAGCAGCAACAA", "",
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-            /*
-            CRef<CSeq_entry> constr_ex_entry =
-                &CDataGenerator::CreateConstructedExclusionEntry( idx, 1);
-            Scope.AddTopLevelSeqEntry(*constr_ex_entry);
-            // test
-            id.SetLocal().SetStr("construct_exclusion1");
-            CTestHelper::ProcessBioseq(Scope, id,
-                22, 22, "GCGTAGACATCCCAGAGCGGTG", "",
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-            */
         }}
         {{
             CRef<CSeq_entry> constr_entry =
@@ -225,19 +219,9 @@ int CTestApp::Run(void)
             Scope.AddTopLevelSeqEntry(*constr_entry);
             // test
             id.SetLocal().SetStr("constructed2");
-            CTestHelper::ProcessBioseq(Scope, id,
-                27, 27, "TACCGCCAATAACCTCAGCAGCAACAA", "",
+            CTestHelper::ProcessBioseq(Scope, id, 27,
+                "TACCGCCAATAACCTCAGCAGCAACAA", "",
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-            /*
-            CRef<CSeq_entry> constr_ex_entry =
-                &CDataGenerator::CreateConstructedExclusionEntry( idx, 2);
-            Scope.AddTopLevelSeqEntry(*constr_ex_entry);
-            // test
-            id.SetLocal().SetStr("construct_exclusion2");
-            CTestHelper::ProcessBioseq(Scope, id,
-                22, 22, "GCGTAGACATCCCAGAGCGGTG", "",
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-            */
         }}
     }
 
@@ -253,8 +237,7 @@ int CTestApp::Run(void)
         pScope2->AddTopLevelSeqEntry(*entry2);
         // Test with unresolvable references
         id.SetGi(21+idx*1000);
-        CTestHelper::ProcessBioseq(*pScope2, id,
-            22, 22,
+        CTestHelper::ProcessBioseq(*pScope2, id, 22,
             "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
             "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
             1, 1, 1, 0, 0, 1, 1, 0, 0);
@@ -264,8 +247,7 @@ int CTestApp::Run(void)
         pScope2->AddTopLevelSeqEntry(*entry1a);
         // Test with resolvable references
         id.SetGi(21+idx*1000);
-        CTestHelper::ProcessBioseq(*pScope2, id,
-            22, 62,
+        CTestHelper::ProcessBioseq(*pScope2, id, 62,
             "AAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTAAAAATTTTTTTTTTTT",
             "TTTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTAAAAAAAAAAAA",
             1, 1, 1, 0, 0, 1, 1, 0, 0);
@@ -275,11 +257,10 @@ int CTestApp::Run(void)
         pScope2->AddTopLevelSeqEntry(*entry1b);
         id.SetLocal().SetStr("seq"+NStr::IntToString(11+idx*1000));
         // gi|11 from entry1a must be selected
-        CTestHelper::ProcessBioseq(*pScope2, id,
-            40, 40,
+        CTestHelper::ProcessBioseq(*pScope2, id, 40,
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
             "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-            0, 4, 2, 1, 0, 2, 2, 1, 0);
+            0, 2, 1, 0, 0, 1, 1, 0, 0);
     }
 
     NcbiCout << " Passed" << NcbiEndl << NcbiEndl;

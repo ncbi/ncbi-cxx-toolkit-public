@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/05/09 14:21:50  grichenk
+* Turned GetTitle() test on, removed unresolved seq-map test
+*
 * Revision 1.5  2002/05/06 03:28:53  vakatov
 * OM/OM1 renaming
 *
@@ -81,7 +84,7 @@ class CTestHelper
 {
 public:
     static void ProcessBioseq(CScope& scope, CSeq_id& id,
-        TSeqPos seq_len_unresolved, TSeqPos seq_len_resolved,
+        TSeqPos seq_len,
         string seq_str, string seq_str_compl,
         int seq_desc_cnt,
         int seq_feat_cnt, int seq_featrg_cnt,
@@ -90,8 +93,7 @@ public:
         size_t align_annots_cnt, size_t alignrg_annots_cnt,
         bool tse_feat_test = false);
 
-    static void TestDataRetrieval( CScope& scope, int idx,
-        int delta, bool check_unresolved);
+    static void TestDataRetrieval( CScope& scope, int idx, int delta);
 };
 
 END_SCOPE(objects)
