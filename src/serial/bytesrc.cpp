@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/28 19:14:37  vasilche
+* Fixed stream position and offset typedefs.
+*
 * Revision 1.1  2000/04/28 16:58:11  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -156,10 +159,10 @@ CSubFileByteSourceReader::CSubFileByteSourceReader(ECanDelete canDelete,
 
 size_t CSubFileByteSourceReader::Read(char* buffer, size_t bufferLength)
 {
-    if ( bufferLength > m_Length )
+    if ( TFileOff(bufferLength) > m_Length )
         bufferLength = size_t(m_Length);
     size_t count = CParent::Read(buffer, bufferLength);
-    m_Length -= count;
+    m_Length -= TFileOff(count);
     return count;
 }
 
@@ -180,19 +183,19 @@ CFileSourceCollector::CFileSourceCollector(ECanDelete canDelete,
                                            TFilePos start, size_t addBytes)
     : CSubSourceCollector(canDelete),
       m_FileSource(s),
-      m_Start(start - addBytes), m_Length(addBytes)
+      m_Start(start - TFileOff(addBytes)), m_Length(addBytes)
 {
 }
 
 void CFileSourceCollector::AddChunk(const char* /*buffer*/,
                                     size_t bufferLength)
 {
-    m_Length += bufferLength;
+    m_Length += TFileOff(bufferLength);
 }
 
 void CFileSourceCollector::ReduceLastChunkBy(size_t unused)
 {
-    m_Length -= unused;
+    m_Length -= TFileOff(unused);
 }
 
 CRef<CByteSource> CFileSourceCollector::GetSource(void)

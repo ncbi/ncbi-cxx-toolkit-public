@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/28 19:14:30  vasilche
+* Fixed stream position and offset typedefs.
+*
 * Revision 1.1  2000/04/28 16:58:00  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -283,8 +286,13 @@ private:
 class CFileSourceCollector : public CSubSourceCollector
 {
 public:
-    typedef long long TFilePos;
-    typedef long long TFileOff;
+#ifdef HAVE_NO_IOS_BASE
+    typedef streampos TFilePos;
+    typedef streamoff TFileOff;
+#else
+    typedef CNcbiIstream::pos_type TFilePos;
+    typedef CNcbiIstream::off_type TFileOff;
+#endif
 
     CFileSourceCollector(ECanDelete canDelete,
                          const CConstRef<CFileByteSource>& source,
