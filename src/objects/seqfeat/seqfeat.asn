@@ -1,4 +1,4 @@
---$Revision: 1.16 $
+--$Revision: 1.17 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -49,7 +49,7 @@ Seq-feat ::= SEQUENCE {
     exp-ev ENUMERATED {           -- evidence for existence of feature
         experimental (1) ,        -- any reasonable experimental check
         not-experimental (2) } OPTIONAL , -- similarity, pattern, etc
-	xref SET OF SeqFeatXref }   -- cite other relevant features
+	xref SET OF SeqFeatXref OPTIONAL }   -- cite other relevant features
 
 SeqFeatData ::= CHOICE {
     gene Gene-ref ,
