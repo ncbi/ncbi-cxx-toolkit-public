@@ -919,7 +919,7 @@ int CTestApplication::Run(void)
     {{
         bool err_catch = false;
         try {
-            Uint8 v = NStr::StringToUInt8_DataSize("1GBx");
+            NStr::StringToUInt8_DataSize("1GBx");
         }
         catch (exception&)
         {
@@ -931,7 +931,7 @@ int CTestApplication::Run(void)
     {{
         bool err_catch = false;
         try {
-            Uint8 v = NStr::StringToUInt8_DataSize("10000000000000GB");
+            NStr::StringToUInt8_DataSize("10000000000000GB");
         }
         catch (exception&)
         {
@@ -986,6 +986,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.36  2004/10/21 15:25:41  vakatov
+ * Warning fixes
+ *
  * Revision 6.35  2004/10/15 12:02:46  ivanov
  * Renamed NStr::StringToUInt_DataSize -> NStr::StringToUInt8_DataSize.
  *
