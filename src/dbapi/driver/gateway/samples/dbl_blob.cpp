@@ -53,7 +53,7 @@ int main()
             return 1;
         }
 
-        CRemoteDBContext my_context(sssConnection);
+        CGWContext my_context(sssConnection);
 
         SampleDBAPI_Blob(my_context, "MSSQL3");
     } catch (CDB_Exception& e) {
@@ -74,6 +74,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/03/14 22:53:22  sapojnik
+ * Inheriting from I_ interfaces instead of CDB_ classes from driver/public.hpp
+ *
  * Revision 1.1  2002/03/14 20:00:42  sapojnik
  * A driver that communicates with a dbapi driver on another machine via CompactProtocol(aka ssssrv)
  *

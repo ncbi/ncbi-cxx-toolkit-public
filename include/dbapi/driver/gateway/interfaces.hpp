@@ -46,12 +46,12 @@ BEGIN_NCBI_SCOPE
 
 // DllExport ...
 
-class CRemoteDBContext;
-class CRDB_Connection;
-class CRDB_RPCCmd;
+class CGWContext;
+class CGW_Connection;
+class CGW_RPCCmd;
 
 /*
-class CRDB_LangCmd;
+class CGW_LangCmd;
 class CRDB_CursorCmd;
 class CRDB_BCPInCmd;
 class CRDB_SendDataCmd;
@@ -62,37 +62,34 @@ class CRDB_StatusResult;
 class CRDB_BlobResult;
 */
 
-// const unsigned int kDBLibMaxNameLen = 128 + 4;
-
-class CRemoteDBContext : public I_DriverContext
+class CGWContext : public I_DriverContext
 {
-    // friend class CDB_Connection;
     int remoteObj;
 
 public:
-    CRemoteDBContext(CSSSConnection& sssConnection);
+    CGWContext(CSSSConnection& sssConnection);
 
     virtual bool SetLoginTimeout (unsigned int nof_secs = 0)
     {
-      return comprot_bool1( "RDBLib:Context:SetLoginTimeout", remoteObj, &nof_secs );
+      return comprot_bool1( "GWLib:Context:SetLoginTimeout", remoteObj, &nof_secs );
     }
     virtual bool SetTimeout(unsigned int nof_secs = 0)
     {
-      return comprot_bool1( "RDBLib:Context:SetTimeout", remoteObj, &nof_secs );
+      return comprot_bool1( "GWLib:Context:SetTimeout", remoteObj, &nof_secs );
     }
     virtual bool SetMaxTextImageSize(size_t nof_bytes)
     {
-      return comprot_bool1( "RDBLib:Context:SetMaxTextImageSize", remoteObj, (int*)&nof_bytes );
+      return comprot_bool1( "GWLib:Context:SetMaxTextImageSize", remoteObj, (int*)&nof_bytes );
     }
 
     virtual unsigned int NofConnections(const string& srv_name = kEmptyStr) const
     {
-      return (unsigned int)(comprot_int1( "RDBLib:Context:NofConnections", remoteObj, srv_name.c_str() ));
+      return (unsigned int)(comprot_int1( "GWLib:Context:NofConnections", remoteObj, srv_name.c_str() ));
     }
 
-    virtual ~CRemoteDBContext()
+    virtual ~CGWContext()
     {
-      comprot_void( "RDBLib:Context:delete", remoteObj );
+      comprot_void( "GWLib:Context:delete", remoteObj );
     }
 
 
@@ -103,57 +100,16 @@ public:
         TConnectionMode mode,
         bool            reusable  = false,
         const string&   pool_name = kEmptyStr);
-
-/*
-    //
-    // DBLIB specific functionality
-    //
-
-    // the following methods are optional (driver will use the default values if not called)
-    // the values will affect the new connections only
-
-    virtual void DBLIB_SetApplicationName(const string& a_name);
-    virtual void DBLIB_SetHostName(const string& host_name);
-    virtual void DBLIB_SetPacketSize(int p_size);
-    virtual bool DBLIB_SetMaxNofConns(int n);
-    static  int  DBLIB_dberr_handler(DBPROCESS*    dblink,   int     severity,
-                                     int           dberr,    int     oserr,
-                                     const string& dberrstr,
-                                     const string& oserrstr);
-    static  void DBLIB_dbmsg_handler(DBPROCESS*    dblink,   DBINT   msgno,
-                                     int           msgstate, int     severity,
-                                     const string& msgtxt,
-                                     const string& srvname,
-                                     const string& procname,
-                                     int           line);
-
-private:
-    static CRemoteDBContext* m_pDBLibContext;
-    string                m_AppName;
-    string                m_HostName;
-    short                 m_PacketSize;
-    LOGINREC*             m_Login;
-
-    DBPROCESS* x_ConnectToServer(const string&   srv_name,
-                                 const string&   user_name,
-                                 const string&   passwd,
-                                 TConnectionMode mode);\
-*/
 };
 
 
-/////////////////////////////////////////////////////////////////////////////
-//
-//  CTL_Connection::
-//
-
-class CRDB_Connection : public CDB_Connection
+class CGW_Connection : public I_Connection
 {
-    /*
-    friend class CRemoteDBContext;
+    friend class CGWContext;
     friend class CDB_Connection;
-    friend class CRDB_LangCmd;
-    friend class CRDB_RPCCmd;
+    /*
+    friend class CGW_LangCmd;
+    friend class CGW_RPCCmd;
     friend class CRDB_CursorCmd;
     friend class CRDB_BCPInCmd;
     friend class CRDB_SendDataCmd;
@@ -161,203 +117,200 @@ class CRDB_Connection : public CDB_Connection
 
 protected:
     int remoteObj;
-    CRemoteDBContext* localContext;
+    CGWContext* localContext;
 
-public:
-    // CRDB_Connection(CRemoteDBContext* cntx, DBPROCESS* con,
-    //                bool reusable, const string& pool_name);
-    CRDB_Connection(CRemoteDBContext* localContext_arg, int remoteObj_arg)
+    CGW_Connection(CGWContext* localContext_arg, int remoteObj_arg)
     {
       localContext = localContext_arg;
       remoteObj    = remoteObj_arg;
     }
 
-    ~CRDB_Connection()
+    // virtual
+    ~CGW_Connection()
     {
-      comprot_void( "RDBLib:Connection:delete", remoteObj );
+      comprot_void( "GWLib:Connection:delete", remoteObj );
     }
 
     virtual bool IsAlive()
     {
-      return comprot_bool( "RDBLib:Connection:IsAlive", remoteObj );
+      return comprot_bool( "GWLib:Connection:IsAlive", remoteObj );
     }
 
     virtual CDB_RPCCmd* RPC( const string& rpc_name, unsigned int nof_args);
     virtual CDB_LangCmd* LangCmd(const string&  lang_query, unsigned int nof_params = 0);
 
-    /*
+    //// Most methods below are not implemented yet:
     virtual CDB_BCPInCmd* BCPIn(
       const string&  table_name,
       unsigned int   nof_columns)
-    {
-      return NULL;
-    }
+    { return NULL; }
 
     virtual CDB_CursorCmd* Cursor(
       const string&  cursor_name,
       const string&  query,
       unsigned int   nof_params,
       unsigned int   batch_size = 1)
-    {
-      return NULL;
-    }
+    { return NULL; }
 
     virtual CDB_SendDataCmd* SendDataCmd(
       I_ITDescriptor& desc,
       size_t          data_size,
       bool            log_it = true)
-    {
-      return NULL;
-    }
+    { return NULL; }
 
 
     virtual bool SendData(
       I_ITDescriptor& desc, CDB_Image& img, bool log_it = true)
-    {
-      return false;
-    }
+    { return false; }
 
     virtual bool SendData(
       I_ITDescriptor& desc, CDB_Text&  txt, bool log_it = true)
-    {
-      return false;
-    }
+    { return false; }
 
     virtual bool Refresh()
     {
-      return comprot_bool("RDBLib:Connection:Refresh", remoteObj);
+      return comprot_bool("GWLib:Connection:Refresh", remoteObj);
     }
 
-    virtual const string& ServerName() const;
-    virtual const string& UserName()   const;
-    virtual const string& Password()   const;
-    virtual I_DriverContext::TConnectionMode ConnectMode() const;
-    virtual bool IsReusable() const;
-    virtual const string& PoolName() const;
-    virtual I_DriverContext* Context() const;
-    virtual void PushMsgHandler(CDB_UserHandler* h);
-    virtual void PopMsgHandler (CDB_UserHandler* h);
-    virtual void Release();
-
-    virtual ~CRDB_Connection();
-
-    void DropCmd(CDB_BaseEnt& cmd);
-    */
-
+    virtual const string& ServerName() const
+    { return NcbiEmptyString; }
+    virtual const string& UserName()   const
+    { return NcbiEmptyString; }
+    virtual const string& Password()   const
+    { return NcbiEmptyString; }
+    virtual I_DriverContext::TConnectionMode ConnectMode() const
+    { return 0; }
+    virtual bool IsReusable() const
+    { return false; }
+    virtual const string& PoolName() const
+    { return NcbiEmptyString; }
+    virtual I_DriverContext* Context() const
+    { return localContext; }
+    virtual void PushMsgHandler(CDB_UserHandler* h)
+    {}
+    virtual void PopMsgHandler (CDB_UserHandler* h)
+    {}
+    virtual void Release()
+    {}
+    void DropCmd(CDB_BaseEnt& cmd)
+    {}
 };
 
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//  CDBL_LangCmd::
-//
-
-class CRDB_LangCmd : public CDB_LangCmd
+class CGW_LangCmd : public I_LangCmd
 {
+    friend class CGW_Connection;
 protected:
-    CRDB_Connection* con;
+    CGW_Connection* con;
     int remoteObj;
-public:
-    CRDB_LangCmd(CRDB_Connection* con_arg, int remoteObj_arg)
+
+    CGW_LangCmd(CGW_Connection* con_arg, int remoteObj_arg)
     {
       con       = con_arg;
       remoteObj = remoteObj_arg;
     }
-    ~CRDB_LangCmd()
+    ~CGW_LangCmd()
     {
-      comprot_void( "RDBLib:LangCmd:delete", remoteObj );
+      comprot_void( "GWLib:LangCmd:delete", remoteObj );
     }
 
     virtual bool More(const string& query_text)
     {
-      return comprot_bool1("RDBLib:LangCmd:More", remoteObj, query_text.c_str() );
+      return comprot_bool1("GWLib:LangCmd:More", remoteObj, query_text.c_str() );
     }
-    /*
-    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
-    virtual bool SetParam(const string& param_name, CDB_Object* param_ptr);
-    */
+
+    // Not implemented
+    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr)
+    { return false; }
+    virtual bool SetParam(const string& param_name, CDB_Object* param_ptr)
+    { return false; }
+
     virtual bool Send()
     {
-      return comprot_bool("RDBLib:LangCmd:Send", remoteObj );
+      return comprot_bool("GWLib:LangCmd:Send", remoteObj );
     }
-    /*
-    virtual bool WasSent() const;
-    virtual bool Cancel();
-    virtual bool WasCanceled() const;
-    */
+
+    // Not implemented
+    virtual bool WasSent() const
+    { return false; }
+    virtual bool Cancel()
+    { return false; }
+    virtual bool WasCanceled() const
+    { return false; }
+
     virtual CDB_Result* Result();
     virtual bool HasMoreResults() const
     {
-      return comprot_bool("RDBLib:LangCmd:HasMoreResults", remoteObj );
+      return comprot_bool("GWLib:LangCmd:HasMoreResults", remoteObj );
     }
     virtual bool HasFailed() const
     {
-      return comprot_bool("RDBLib:LangCmd:HasFailed", remoteObj );
+      return comprot_bool("GWLib:LangCmd:HasFailed", remoteObj );
     }
     virtual int  RowCount() const
     {
-      return comprot_int("RDBLib:LangCmd:HasFailed", remoteObj );
+      return comprot_int("GWLib:LangCmd:HasFailed", remoteObj );
     }
 };
 
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//  CRDB_RPCCmd::
-//
-
-class CRDB_RPCCmd : public CDB_RPCCmd
+class CGW_RPCCmd : public I_RPCCmd
 {
-    //friend class CRDB_Connection;
+    friend class CGW_Connection;
 protected:
-    CRDB_Connection* con;
+    CGW_Connection* con;
     int remoteObj;
-public:
-    CRDB_RPCCmd(CRDB_Connection* con_arg, int remoteObj_arg)
+
+    CGW_RPCCmd(CGW_Connection* con_arg, int remoteObj_arg)
     {
       con       = con_arg;
       remoteObj = remoteObj_arg;
     }
-    ~CRDB_RPCCmd()
+    ~CGW_RPCCmd()
     {
-      comprot_void( "RDBLib:RPCCmd:delete", remoteObj );
-    }
-    /*
-    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr,
-                           bool out_param = false);
-    virtual bool SetParam(const string& param_name, CDB_Object* param_ptr,
-                          bool out_param = false);
-    */
-    virtual bool Send()
-    {
-      return comprot_bool( "RDBLib:RPCCmd:Send", remoteObj );
+      comprot_void( "GWLib:RPCCmd:delete", remoteObj );
     }
 
-    /*
-    virtual bool WasSent() const;
-    virtual bool Cancel();
-    virtual bool WasCanceled() const;
-    */
+
+    // Not implemented
+    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr,
+                           bool out_param = false)
+    {
+      return false;
+    }
+    virtual bool SetParam(const string& param_name, CDB_Object* param_ptr,
+                          bool out_param = false)
+    { return false; }
+
+    virtual bool Send()
+    {
+      return comprot_bool( "GWLib:RPCCmd:Send", remoteObj );
+    }
+
+    // Not implemented
+    virtual bool WasSent() const {return false;}
+    virtual bool Cancel() {return false;}
+    virtual bool WasCanceled() const {return false;}
+
     virtual CDB_Result* Result();
     virtual bool HasMoreResults() const
     {
-      return comprot_bool( "RDBLib:RPCCmd:HasMoreResults", remoteObj );
+      return comprot_bool( "GWLib:RPCCmd:HasMoreResults", remoteObj );
     }
-    /*
-    virtual bool HasFailed() const ;
-    virtual int  RowCount() const;
-    virtual void SetRecompile(bool recompile = true);
-    */
+
+    // Not implemented
+    virtual bool HasFailed() const {return false;}
+    virtual int  RowCount() const {return 0;}
+    virtual void SetRecompile(bool recompile = true) {}
+
 };
 
-class CRDB_ITDescriptor : public I_ITDescriptor
+class CGW_ITDescriptor : public I_ITDescriptor
 {
 private:
   int remoteObj;
 public:
-  CRDB_ITDescriptor(int remoteObj_arg)
+  CGW_ITDescriptor(int remoteObj_arg)
   {
     remoteObj = remoteObj_arg;
   }
@@ -367,7 +320,7 @@ public:
   }
 };
 
-class CRDB_Result : public CDB_Result
+class CGW_Result : public I_Result
 {
 protected:
     // I_BaseCmd* cmd;
@@ -378,27 +331,27 @@ protected:
 
 public:
 
-    CRDB_Result(int remoteObj_arg)
+    CGW_Result(int remoteObj_arg)
     {
       remoteObj = remoteObj_arg;
     }
 
-    ~CRDB_Result()
+    ~CGW_Result()
     {
       //mapItemNames.clear();
-      comprot_void( "RDBLib:Result:delete", remoteObj );
+      comprot_void( "GWLib:Result:delete", remoteObj );
     }
 
     virtual EDB_ResType ResultType() const
     {
-      return (EDB_ResType)comprot_int("RDBLib:Result:ResultType",remoteObj);
+      return (EDB_ResType)comprot_int("GWLib:Result:ResultType",remoteObj);
     }
 
 
     // Get # of columns in the result
     virtual unsigned int NofItems() const
     {
-      return comprot_int("RDBLib:Result:NofItems",remoteObj);
+      return comprot_int("GWLib:Result:NofItems",remoteObj);
     }
 
     // Get name of a result item.
@@ -406,7 +359,7 @@ public:
     virtual const char* ItemName(unsigned int item_num) const
     {
       char buf[1024];
-      const char* res = comprot_chars1( "RDBLib:Result:ItemName", remoteObj, (int*)&item_num, buf, sizeof(buf) );
+      const char* res = comprot_chars1( "GWLib:Result:ItemName", remoteObj, (int*)&item_num, buf, sizeof(buf) );
       if(!res) return NULL;
 
       //mapItemNames[item_num] = buf;
@@ -427,28 +380,28 @@ public:
     // Return zero if "item_num" >= NofItems().
     virtual size_t ItemMaxSize(unsigned int item_num) const
     {
-      return comprot_int1("RDBLib:Result:ItemMaxSize",remoteObj,(int*)&item_num);
+      return comprot_int1("GWLib:Result:ItemMaxSize",remoteObj,(int*)&item_num);
     }
 
     // Get datatype of a result item.
     // Return 'eDB_UnsupportedType' if "item_num" >= NofItems().
     virtual EDB_Type ItemDataType(unsigned int item_num) const
     {
-      return (EDB_Type) comprot_int1("RDBLib:Result:ItemDataType",remoteObj,(int*)&item_num);
+      return (EDB_Type) comprot_int1("GWLib:Result:ItemDataType",remoteObj,(int*)&item_num);
     }
 
     // Fetch next row.
     // Return FALSE if no more rows to fetch. Throw exception on any error.
     virtual bool Fetch()
     {
-      return comprot_bool( "RDBLib:Result:Fetch", remoteObj );
+      return comprot_bool( "GWLib:Result:Fetch", remoteObj );
     }
 
     // Return current item number we can retrieve (0,1,...)
     // Return "-1" if no more items left (or available) to read.
     virtual int CurrentItemNo() const
     {
-      return comprot_int( "RDBLib:Result:CurrentItemNo", remoteObj );
+      return comprot_int( "GWLib:Result:CurrentItemNo", remoteObj );
     }
 
     // Get a result item (you can use either GetItem or ReadItem).
@@ -473,9 +426,9 @@ public:
     //       before calling this method!
     virtual I_ITDescriptor* GetImageOrTextDescriptor()
     {
-      int res = comprot_int( "RDBLib:Result:GetImageOrTextDescriptor", remoteObj );
+      int res = comprot_int( "GWLib:Result:GetImageOrTextDescriptor", remoteObj );
       if(res) {
-        return new CRDB_ITDescriptor(res);
+        return new CGW_ITDescriptor(res);
       }
       else{
         return NULL;
@@ -485,24 +438,9 @@ public:
     // Skip result item
     virtual bool SkipItem()
     {
-      return comprot_bool( "RDBLib:Result:SkipItem", remoteObj );
+      return comprot_bool( "GWLib:Result:SkipItem", remoteObj );
     }
 
-/*
-    // Destructor
-    virtual ~CDB_Result();
-private:
-    I_Result* m_Res;
-
-    // The constructor should be called by "I_***Cmd" only!
-    friend class CDB_BaseEnt;
-    CDB_Result(I_Result* r);
-
-    // Prohibit default- and copy- constructors, and assignment
-    CDB_Result& operator= (const CDB_Result&);
-    CDB_Result(const CDB_Result&);
-    CDB_Result();
-*/
 };
 
 
@@ -516,6 +454,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/03/14 22:53:23  sapojnik
+ * Inheriting from I_ interfaces instead of CDB_ classes from driver/public.hpp
+ *
  * Revision 1.1  2002/03/14 20:00:41  sapojnik
  * A driver that communicates with a dbapi driver on another machine via CompactProtocol(aka ssssrv)
  *

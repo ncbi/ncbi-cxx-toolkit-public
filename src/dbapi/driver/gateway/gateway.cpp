@@ -40,15 +40,15 @@ BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  CRemoteDBContext::
+//  CGWContext::
 //
 
-CDB_Connection* CRemoteDBContext::Connect(
+CDB_Connection* CGWContext::Connect(
   const string& srv_name, const string& user_name, const string& passwd,
   TConnectionMode mode, bool reusable, const string&   pool_name)
 {
   IGate* pGate = conn->getProtocol();
-  pGate->set_RPC_call  ( "RDBLib:Context:Connect" );
+  pGate->set_RPC_call  ( "GWLib:Context:Connect" );
   pGate->set_output_arg( "object"   , &remoteObj   );
   pGate->set_output_arg( "srv_name" , srv_name .c_str() );
   pGate->set_output_arg( "user_name", user_name.c_str() );
@@ -58,7 +58,7 @@ CDB_Connection* CRemoteDBContext::Connect(
   pGate->set_output_arg( "pool_name", pool_name.c_str() );
   pGate->send_data();
 
-  // cerr << "CRemoteDBContext::Connect\n";
+  // cerr << "CGWContext::Connect\n";
 
   int res;
   if( pGate->get_input_arg("result", &res) != IGate::eGood ) {
@@ -66,63 +66,65 @@ CDB_Connection* CRemoteDBContext::Connect(
     return NULL;
   }
 
-  // cerr << "result=" << res << "\n";
   if(res) {
-    return new CRDB_Connection(this,res);
+    CGW_Connection* p = new CGW_Connection(this,res);
+    return Create_Connection( *p );
   }
   else{
     return NULL;
   }
 }
 
-CDB_RPCCmd* CRDB_Connection::RPC( const string&  rpc_name, unsigned int nof_args )
+CDB_RPCCmd* CGW_Connection::RPC( const string&  rpc_name, unsigned int nof_args )
 {
   int cmdObj = comprot_int2(
-    "RDBLib:Connection:RPC", remoteObj,
+    "GWLib:Connection:RPC", remoteObj,
     "rpc_name", rpc_name.c_str(),
     "nof_args", (int*)&nof_args);
-  // remote object wrapped twice: CDB_*(CRDB_*(cmdObj))
 
   if(cmdObj) {
-    return new CRDB_RPCCmd(this, cmdObj);
+    CGW_RPCCmd* p = new CGW_RPCCmd(this, cmdObj);
+    return Create_RPCCmd( *p );
   }
   else{
     return NULL;
   }
 }
 
-CDB_LangCmd* CRDB_Connection::LangCmd( const string& lang_query, unsigned int nof_params)
+CDB_LangCmd* CGW_Connection::LangCmd( const string& lang_query, unsigned int nof_params)
 {
   int cmdObj = comprot_int2(
-    "RDBLib:Connection:LangCmd", remoteObj,
+    "GWLib:Connection:LangCmd", remoteObj,
     "lang_query", lang_query.c_str(),
     "nof_params", (int*)&nof_params);
-  // remote object wrapped twice: CDB_*(CRDB_*(cmdObj))
 
   if(cmdObj) {
-    return new CRDB_LangCmd(this, cmdObj);
+    CGW_LangCmd* p = new CGW_LangCmd(this, cmdObj);
+    return Create_LangCmd( *p );
   }
   else{
     return NULL;
   }
 }
 
-CDB_Result* CRDB_RPCCmd::Result()
+CDB_Result* CGW_RPCCmd::Result()
 {
-  int remoteResult = comprot_int( "RDBLib:RPCCmd:Result", remoteObj );
+  int remoteResult = comprot_int( "GWLib:RPCCmd:Result", remoteObj );
   if(remoteResult) {
-    return new CRDB_Result(remoteResult);
+    CGW_Result* p = new CGW_Result(remoteResult);
+    return Create_Result( *p );
   }
   else {
     return NULL;
   }
 }
 
-CDB_Result* CRDB_LangCmd::Result()
+CDB_Result* CGW_LangCmd::Result()
 {
-  int remoteResult = comprot_int( "RDBLib:LangCmd:Result", remoteObj );
+  int remoteResult = comprot_int( "GWLib:LangCmd:Result", remoteObj );
   if(remoteResult) {
-    return new CRDB_Result(remoteResult);
+    CGW_Result* p = new CGW_Result(remoteResult);
+    return Create_Result( *p );
   }
   else {
     return NULL;
@@ -276,7 +278,7 @@ CDB_Object* read_CDB_Object(CDB_Object* obj)
 /* A more complex function than the rest:
  * needs to handle all possible EDB_Type-s and memory allocation.
  */
-CDB_Object* CRDB_Result::GetItem(CDB_Object* item_buf)
+CDB_Object* CGW_Result::GetItem(CDB_Object* item_buf)
 {
   // Send the type and size to server (if they are available),
   // so that an appropriate receiving object might be created.
@@ -298,7 +300,7 @@ CDB_Object* CRDB_Result::GetItem(CDB_Object* item_buf)
   }
 
   IGate* pGate = conn->getProtocol();
-  pGate->set_RPC_call("RDBLib:Result:GetItem");
+  pGate->set_RPC_call("GWLib:Result:GetItem");
   pGate->set_output_arg( "object", &remoteObj );
   pGate->set_output_arg( "type"  , &type      );
   if(size>=0) {
@@ -309,13 +311,13 @@ CDB_Object* CRDB_Result::GetItem(CDB_Object* item_buf)
   return read_CDB_Object(item_buf);
 }
 
-// A client callback invoked by comprot server from "RDBLib:Result:ReadItem"
+// A client callback invoked by comprot server from "GWLib:Result:ReadItem"
 // May be called multiple times ( once on each send_data() ), to transfer
 // smaller chunks of blob data. This allows to save both client and server memory.
 class C_RDBLib_Result_ReadItem : public CRegProcCli
 {
 public:
-  // In/out args to be passed to exec() from CRDB_Result::ReadItem() via
+  // In/out args to be passed to exec() from CGW_Result::ReadItem() via
   // IGate::set/getUserData().
   struct SContext {
     // In
@@ -336,7 +338,7 @@ public:
       bytesReceived=0;
     }
   };
-  C_RDBLib_Result_ReadItem() : CRegProcCli("RDBLib:Result:ReadItem") {}
+  C_RDBLib_Result_ReadItem() : CRegProcCli("GWLib:Result:ReadItem") {}
 
   virtual bool begin(IGate*) { return false; }
   virtual void end(IGate*, bool) {}
@@ -383,16 +385,16 @@ public:
 };
 
 
-size_t CRDB_Result::ReadItem(void* buffer, size_t buffer_size, bool* is_null)
+size_t CGW_Result::ReadItem(void* buffer, size_t buffer_size, bool* is_null)
 {
-  // cerr << "CRDB_Result::ReadItem\n";
+  // cerr << "CGW_Result::ReadItem\n";
   IGate* pGate = conn->getProtocol();
 
   C_RDBLib_Result_ReadItem::SContext callback_args( (char*)buffer, buffer_size, is_null );
   void* pOldUserData = pGate->get_user_data();
   pGate->set_user_data(&callback_args);
 
-  pGate->set_RPC_call("RDBLib:Result:ReadItem");
+  pGate->set_RPC_call("GWLib:Result:ReadItem");
   pGate->set_output_arg( "object",       &remoteObj   );
   pGate->set_output_arg( "size"  , (int*)&buffer_size );
   pGate->send_data();
@@ -430,7 +432,7 @@ size_t CRDB_Result::ReadItem(void* buffer, size_t buffer_size, bool* is_null)
   */
 }
 
-CRemoteDBContext::CRemoteDBContext(CSSSConnection& sssConnection)
+CGWContext::CGWContext(CSSSConnection& sssConnection)
 {
   conn = &sssConnection;
 
@@ -438,7 +440,7 @@ CRemoteDBContext::CRemoteDBContext(CSSSConnection& sssConnection)
   pBin->regProc( new C_RDBLib_Result_ReadItem() );
 
   DBINT version = DBVERSION_UNKNOWN;
-  remoteObj = comprot_int1( "RDBLib:Context:new", 0, (int*)&version );
+  remoteObj = comprot_int1( "GWLib:Context:new", 0, (int*)&version );
 }
 
 END_NCBI_SCOPE
@@ -448,6 +450,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/03/14 22:53:22  sapojnik
+ * Inheriting from I_ interfaces instead of CDB_ classes from driver/public.hpp
+ *
  * Revision 1.1  2002/03/14 20:00:41  sapojnik
  * A driver that communicates with a dbapi driver on another machine via CompactProtocol(aka ssssrv)
  *
