@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/03/06 23:57:49  lavr
+ * Minor beautifications
+ *
  * Revision 6.6  2000/12/29 18:12:51  lavr
  * SERV_Print added to private interface
  *
@@ -67,7 +70,7 @@ extern "C" {
  */
 typedef struct {
     SSERV_Info* (*GetNextInfo)(SERV_ITER iter);
-    int/*bool*/ (*Update)(SERV_ITER iter, const char *text);
+    int/*bool*/ (*Update)(SERV_ITER iter, const char* text);
     void        (*Close)(SERV_ITER iter);
 } SSERV_VTable;
 
@@ -91,8 +94,7 @@ struct SSERV_IterTag {
 /* Private interface: update mapper information from the given text
  * (<CR><LF> separated lines, usually kept from HTTP header).
  */
-int/*bool*/ SERV_Update(SERV_ITER iter,
-                        const char *text);
+int/*bool*/ SERV_Update(SERV_ITER iter, const char* text);
 
 
 /* Private interface: print and return the HTTP-compliant header portion
