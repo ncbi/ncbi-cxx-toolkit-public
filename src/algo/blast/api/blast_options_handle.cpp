@@ -27,7 +27,9 @@
  *
  */
 
-/// @file blast_options_factory.cpp
+/// @file blast_options_handle.cpp
+/// Implementation for the CBlastOptionsHandle and the
+/// CBlastOptionsFactory classes.
 
 #include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_exception.hpp>
@@ -41,7 +43,7 @@
 #include <algo/blast/api/blast_rps_options.hpp>
 
 
-/** @addtogroup Miscellaneous
+/** @addtogroup AlgoBlast
  *
  * @{
  */
@@ -137,6 +139,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/03/17 19:40:06  camacho
+ * Correct @file doxygen directive
+ *
  * Revision 1.3  2004/03/10 14:53:06  madden
  * Add case of eRPSBlast
  *
