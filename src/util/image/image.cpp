@@ -41,6 +41,7 @@ CImage::CImage()
       m_Height(0),
       m_Depth(3)
 {
+    return;
 }
 
 
@@ -68,10 +69,8 @@ void CImage::Init(size_t width, size_t height, size_t depth)
              msg += NStr::IntToString(depth);
              msg += " not implemented";
              NCBI_THROW(CImageException, eInvalidDimension, msg);
-         }}
-        return;
+        }}
     }
-
     m_Width  = width;
     m_Height = height;
     m_Depth  = depth;
@@ -176,14 +175,13 @@ void CImage::SetDepth(size_t depth)
             }
         }
         break;
-
+        
     default:
         {{
-             string msg("CImage::SetDepth(): invalid depth: ");
-             msg += NStr::IntToString(depth);
-             NCBI_THROW(CImageException, eInvalidDimension, msg);
-         }}
-        break;
+            string msg("CImage::SetDepth(): invalid depth: ");
+            msg += NStr::IntToString(depth);
+            NCBI_THROW(CImageException, eInvalidDimension, msg);
+        }}
     }
 }
 
@@ -287,6 +285,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/10/02 15:37:33  ivanov
+ * Get rid of compilation warnings
+ *
  * Revision 1.3  2003/06/12 19:49:56  dicuccio
  * Added Flip() to flip an image along the y-axis
  *
@@ -298,4 +299,3 @@ END_NCBI_SCOPE
  *
  * ===========================================================================
  */
-

@@ -1,35 +1,34 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Aaron Ucko
-*
-* File Description:
-*   Protein alignment score matrices; shared between the two toolkits.
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Aaron Ucko
+ *
+ * File Description:
+ *   Protein alignment score matrices; shared between the two toolkits.
+ *
+ */
 
 #include <util/tables/raw_scoremat.h>
 
@@ -43,6 +42,7 @@
 #include "sm_pam70.c"
 
 static const char kNCBIstdaa[] = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
+
 
 int NCBISM_GetIndex(const SNCBIPackedScoreMatrix* sm, int aa)
 {
@@ -93,7 +93,7 @@ void NCBISM_Unpack(const SNCBIPackedScoreMatrix* psm,
         }
         /* extend horizontally */
         for (aa2 = 0;  aa2 < sizeof(kNCBIstdaa);  ++aa2) {
-            fsm->s[aa1][aa2] = fsm->s[aa1][kNCBIstdaa[aa2]];
+            fsm->s[aa1][aa2] = fsm->s[aa1][(int)kNCBIstdaa[aa2]];
         }
         for (aa2 = 'a';  aa2 <= 'z';  ++aa2) {
             fsm->s[aa1][aa2] = fsm->s[aa1][toupper(aa2)];
@@ -101,7 +101,7 @@ void NCBISM_Unpack(const SNCBIPackedScoreMatrix* psm,
     }
     /* extend vertically */
     for (aa1 = 0;  aa1 < sizeof(kNCBIstdaa);  ++aa1) {
-        memcpy(fsm->s[aa1], fsm->s[kNCBIstdaa[aa1]], NCBI_FSM_DIM);
+        memcpy(fsm->s[aa1], fsm->s[(int)kNCBIstdaa[aa1]], NCBI_FSM_DIM);
     }
     for (aa1 = 'a';  aa1 <= 'z';  ++aa1) {
         memcpy(fsm->s[aa1], fsm->s[toupper(aa1)], NCBI_FSM_DIM);
@@ -110,12 +110,13 @@ void NCBISM_Unpack(const SNCBIPackedScoreMatrix* psm,
 
 
 /*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2003/08/21 19:48:20  ucko
-* Add tables library (shared with C) for raw score matrices, etc.
-*
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ * $Log$
+ * Revision 1.2  2003/10/02 15:37:34  ivanov
+ * Get rid of compilation warnings
+ *
+ * Revision 1.1  2003/08/21 19:48:20  ucko
+ * Add tables library (shared with C) for raw score matrices, etc.
+ *
+ * ===========================================================================
+ */

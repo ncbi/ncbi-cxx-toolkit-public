@@ -50,7 +50,7 @@
 // jpeglib include (not extern'ed already (!))
 extern "C" {
 #include <jpeglib.h>
-};
+}
 
 
 BEGIN_NCBI_SCOPE
@@ -102,7 +102,7 @@ CImage* CImageIOJpeg::ReadImage(const string& file)
     jpeg_finish_decompress(&cinfo);
     jpeg_destroy_decompress(&cinfo);
     fclose(fp);
-
+    
     return image.Release();
 }
 
@@ -116,7 +116,7 @@ CImage* CImageIOJpeg::ReadImage(const string& file,
                                 size_t x, size_t y, size_t w, size_t h)
 {
     // open our image for reading
-    FILE * fp = fopen(file.c_str(), "rb");
+    FILE* fp = fopen(file.c_str(), "rb");
     if ( !fp ) {
         string msg("CImageIOJpeg::ReadImage(): can't open file ");
         msg += file;
@@ -328,6 +328,7 @@ void CImageIOJpeg::WriteImage(const CImage& image, const string& file,
 
 END_NCBI_SCOPE
 
+
 #else // !HAVE_LIBJPEG
 
 //
@@ -371,11 +372,16 @@ void CImageIOJpeg::WriteImage(const CImage& image, const string& file,
 
 END_NCBI_SCOPE
 
+
 #endif  // HAVE_LIBJPEG
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/10/02 15:37:33  ivanov
+ * Get rid of compilation warnings
+ *
  * Revision 1.2  2003/06/16 19:20:02  dicuccio
  * Added guard for libjpeg on Win32
  *
