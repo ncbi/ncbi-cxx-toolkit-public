@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile("ctools test" project)
+#################################
+
+APP_PROJ = test_asn_converter
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

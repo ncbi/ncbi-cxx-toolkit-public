@@ -7,7 +7,7 @@
 
 LIB_PROJ = ctools
 
-SUB_PROJ = asn
+SUB_PROJ = asn test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
