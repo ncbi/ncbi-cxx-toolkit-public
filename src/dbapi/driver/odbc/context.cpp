@@ -364,24 +364,42 @@ void CODBCContext::xReportConError(SQLHDBC con)
 // Driver manager related functions
 //
 
-I_DriverContext* ODBC_CreateContext(map<string,string>* attr = 0)
+I_DriverContext* ODBC_CreateContext(const map<string,string>* attr = 0)
 {
     SQLINTEGER version= SQL_OV_ODBC3;
     bool use_dsn= false;
+    map<string,string>::const_iterator citer;
 
     if(attr) {
-        string vers= (*attr)["version"];
+        // Old code ...
+//         string vers= (*attr)["version"];
+        string vers;
+        citer = attr->find("version");
+        if (citer != attr->end()) {
+            vers = citer->second;
+        }
         if(vers.find("3") != string::npos)
             version= SQL_OV_ODBC3;
         else if(vers.find("2") != string::npos)
             version= SQL_OV_ODBC2;
-        use_dsn= (*attr)["use_dsn"] == "true";
+        // Old code ...
+//         use_dsn= (*attr)["use_dsn"] == "true";
+        citer = attr->find("use_dsn");
+        if (citer != attr->end()) {
+            use_dsn = citer->second == "true";
+        }
     }
 
     CODBCContext* cntx=  new CODBCContext(version, use_dsn);
     if(cntx && attr) {
-      string page_size= (*attr)["packet"];
-      if(!page_size.empty()) {
+        // Old code ...
+//       string page_size= (*attr)["packet"];
+        string page_size;
+        citer = attr->find("packet");
+        if (citer != attr->end()) {
+            page_size = citer->second;
+        }
+        if(!page_size.empty()) {
 	SQLUINTEGER s= atoi(page_size.c_str());
 	cntx->ODBC_SetPacketSize(s);
       }
@@ -413,6 +431,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/12/20 19:17:33  ssikorsk
+ * Refactoring of dbapi/driver/samples
+ *
  * Revision 1.14  2004/05/17 21:16:05  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
