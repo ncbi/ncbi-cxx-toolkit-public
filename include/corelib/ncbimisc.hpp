@@ -36,6 +36,9 @@
 
 
 #include <corelib/ncbistl.hpp>
+#ifdef NCBI_OS_UNIX
+#  include <sys/types.h>
+#endif
 
 
 /** @addtogroup AppFramework
@@ -436,6 +439,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2003/12/01 20:44:46  ucko
+ * +<sys/types.h> on Unix for ssize_t
+ *
  * Revision 1.68  2003/12/01 19:04:20  grichenk
  * Moved Add and Sub from serialutil to ncbimisc, made them methods
  * of CRawPointer class.
