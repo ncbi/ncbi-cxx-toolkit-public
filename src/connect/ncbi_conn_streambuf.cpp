@@ -62,7 +62,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
                      "CConn_Streambuf(): CONN_Create() failed") !=eIO_Success){
         return;
     }
-    assert(m_Conn != 0);
+    _ASSERT(m_Conn != 0);
 
     CONN_SetTimeout(m_Conn, eIO_Open,  timeout);
     CONN_SetTimeout(m_Conn, eIO_Read,  timeout);
@@ -75,11 +75,11 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
 
 CConn_Streambuf::~CConn_Streambuf(void)
 {
-    if ( m_Conn ) {
-        sync();
-        if (CONN_Close(m_Conn) != eIO_Success) {
-            _TRACE("CConn_Streambuf::~CConn_Streambuf(): CONN_Close() failed");
-        }
+    sync();
+    EIO_Status status;
+    if (m_Conn  &&  (status = CONN_Close(m_Conn)) != eIO_Success) {
+        _TRACE("CConn_Streambuf::~CConn_Streambuf(): "
+               "CONN_Close() failed (" << IO_StatusStr(status) << ")");
     }
     delete[] m_Buf;
 }
@@ -287,6 +287,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2003/05/20 19:07:57  lavr
+ * Constructor changed (assert -> _ASSERT);  better destructor
+ *
  * Revision 6.31  2003/05/20 18:24:06  lavr
  * Set non-zero ptrs (but still empty buf) in constructor to explicitly show
  * (to the stream level) that this streambuf has a memory-resident buffer
