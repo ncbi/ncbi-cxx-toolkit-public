@@ -34,6 +34,7 @@
  * Private interface for Position Iterated BLAST API, contains the
  * PSSM generation engine.
  *
+ * <pre>
  * Calculating PSSMs from Seq-aligns is a multi-stage process. These stages
  * include:
  * 1) Processing the Seq-align
@@ -47,6 +48,7 @@
  * 5) Compute residue frequencies
  * 6) Convert residue frequencies to PSSM
  * 7) Scale the resulting PSSM
+ * </pre>
  */
 
 #include <algo/blast/core/blast_psi.h>
@@ -164,13 +166,16 @@ _PSISequenceWeightsFree(PsiSequenceWeights* seq_weights);
 /* Return values for internal PSI-BLAST functions */
 
 #define PSI_SUCCESS             (0)
-#define PSIERR_BADPARAM         (-1)   /**< Bad parameter used in function */
-#define PSIERR_OUTOFMEM         (-2)   /**< Out of memory */
-#define PSIERR_BADSEQWEIGHTS    (-3)   /**< Sequence weights do not add to 1 */
-#define PSIERR_NOFREQRATIOS     (-4)   /**< No frequency ratios were found
-                                         for the given scoring matrix */
-#define PSIERR_POSITIVEAVGSCORE (-5)   /**< Positive average score found
-                                         when scaling matrix */
+/** Bad parameter used in function */
+#define PSIERR_BADPARAM         (-1)
+/** Out of memory */
+#define PSIERR_OUTOFMEM         (-2)   
+/** Sequence weights do not add to 1 */
+#define PSIERR_BADSEQWEIGHTS    (-3)   
+/** No frequency ratios were found for the given scoring matrix */
+#define PSIERR_NOFREQRATIOS     (-4)   
+/** Positive average score found when scaling matrix */
+#define PSIERR_POSITIVEAVGSCORE (-5)   
 
 /****************************************************************************/
 /* Function prototypes for the various stages of the PSSM generation engine */
@@ -305,6 +310,9 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/06/09 14:20:30  camacho
+ * Updated comments
+ *
  * Revision 1.4  2004/05/28 16:00:10  camacho
  * + first port of PSSM generation engine
  *
