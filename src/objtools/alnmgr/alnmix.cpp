@@ -103,7 +103,7 @@ void CAlnMix::x_Reset()
     m_Segments.clear();
     m_Rows.clear();
     m_ExtraRows.clear();
-    iterate (TSeqs, seq_i, m_Seqs) {
+    ITERATE (TSeqs, seq_i, m_Seqs) {
         (*seq_i)->m_Starts.clear();
     }
 }
@@ -354,7 +354,7 @@ void CAlnMix::x_Merge()
     // Find the refseq (if such exists)
     {{
         m_SingleRefseq = false;
-        non_const_iterate (TSeqs, it, m_Seqs){
+        NON_CONST_ITERATE (TSeqs, it, m_Seqs){
             if ((*it)->m_DS_Count == m_InputDSs.size()) {
                 m_SingleRefseq = true;
                 if ( !first_refseq ) {
@@ -371,7 +371,7 @@ void CAlnMix::x_Merge()
     // Index the sequences
     {{
         int seq_idx=0;
-        iterate (TSeqs, seq_i, m_Seqs) {
+        ITERATE (TSeqs, seq_i, m_Seqs) {
             (*seq_i)->m_SeqIndex = seq_idx++;
         }
     }}
@@ -497,7 +497,7 @@ void CAlnMix::x_Merge()
                         starts[start1] = seg;
 
                         // create rows info
-                        iterate (CAlnMixSegment::TStartIterators, it, 
+                        ITERATE (CAlnMixSegment::TStartIterators, it, 
                                 prev_seg->m_StartIts) {
                             CAlnMixSeq * seq = it->first;
                             tmp_start_i = it->second;
@@ -543,7 +543,7 @@ void CAlnMix::x_Merge()
                         prev_seg->m_Len = curr_len;
                         
                         // create rows info
-                        iterate (CAlnMixSegment::TStartIterators, it, 
+                        ITERATE (CAlnMixSegment::TStartIterators, it, 
                                 prev_seg->m_StartIts) {
                             CAlnMixSeq * seq = it->first;
                             tmp_start_i = it->second;
@@ -665,7 +665,7 @@ void CAlnMix::x_Merge()
             refseq->m_RefBy = 0;
 
             // try to find the best scoring 'connected' candidate
-            iterate (TSeqs, it, m_Seqs){
+            ITERATE (TSeqs, it, m_Seqs){
                 if ( !((*it)->m_MatchList.empty())  &&
                      (*it)->m_RefBy == refseq) {
                     refseq = *it;
@@ -675,7 +675,7 @@ void CAlnMix::x_Merge()
             if (refseq->m_RefBy == 0) {
                 // no candidate was found 'connected' to the refseq
                 // continue with the highest scoring candidate
-                iterate (TSeqs, it, m_Seqs){
+                ITERATE (TSeqs, it, m_Seqs){
                     if ( !((*it)->m_MatchList.empty()) ) {
                         refseq = *it;
                         break;
@@ -693,7 +693,7 @@ void CAlnMix::x_Merge()
             if ( !m_SingleRefseq ) {
                 // TEMPORARY, for the single refseq version of mix,
                 // clear all MatchLists and exit
-                iterate (TSeqs, it, m_Seqs){
+                ITERATE (TSeqs, it, m_Seqs){
                     if ( !((*it)->m_MatchList.empty()) ) {
                         (*it)->m_MatchList.clear();
                     }
@@ -824,7 +824,7 @@ void CAlnMix::x_CreateRowsVector()
     m_Rows.clear();
 
     int count = 0;
-    iterate (TSeqs, i, m_Seqs) {
+    ITERATE (TSeqs, i, m_Seqs) {
         CAlnMixSeq * seq = *i;
         m_Rows.push_back(seq);
         seq->m_RowIndex = count++;
@@ -841,7 +841,7 @@ void CAlnMix::x_CreateSegmentsVector()
     TSegmentsContainer gapped_segs;
 
     // init the start iterators for each row
-    non_const_iterate (TSeqs, row_i, m_Rows) {
+    NON_CONST_ITERATE (TSeqs, row_i, m_Rows) {
         CAlnMixSeq * row = *row_i;
         if (row->m_Starts.size()) {
             if (row->m_PositiveStrand) {
@@ -860,7 +860,7 @@ void CAlnMix::x_CreateSegmentsVector()
     }
 
     // init the start iterators for each extra row
-    non_const_iterate (list<CRef<CAlnMixSeq> >, row_i, m_ExtraRows) {
+    NON_CONST_ITERATE (list<CRef<CAlnMixSeq> >, row_i, m_ExtraRows) {
         CAlnMixSeq * row = *row_i;
         if (row->m_PositiveStrand) {
             row->m_StartIt = row->m_Starts.begin();
@@ -883,7 +883,7 @@ void CAlnMix::x_CreateSegmentsVector()
         CAlnMixSegment * refseq_seg = refseq_start_i->second;
 
         // check the gapped segments on the left
-        iterate (CAlnMixSegment::TStartIterators, start_its_i,
+        ITERATE (CAlnMixSegment::TStartIterators, start_its_i,
                 refseq_seg->m_StartIts) {
             CAlnMixSeq * row = start_its_i->first;
             if (row == refseq) {
@@ -932,7 +932,7 @@ void CAlnMix::x_CreateSegmentsVector()
                 // request for trying to align all gapped segments
                 x_MinimizeGaps(gapped_segs);
             }
-            non_const_iterate (TSegmentsContainer, seg_i, gapped_segs) {
+            NON_CONST_ITERATE (TSegmentsContainer, seg_i, gapped_segs) {
                 m_Segments.push_back(&**seg_i);
             }
             gapped_segs.clear();
@@ -978,7 +978,7 @@ void CAlnMix::x_ConsolidateGaps(TSegmentsContainer& gapped_segs)
             seq2 = seg2->m_StartIts.begin()->first;
 
             // check if this seq was already used
-            iterate (CAlnMixSegment::TStartIterators,
+            ITERATE (CAlnMixSegment::TStartIterators,
                      st_it,
                      (*seg1_i)->m_StartIts) {
                 if (st_it->first == seq2) {
@@ -1094,7 +1094,7 @@ void CAlnMix::x_MinimizeGaps(TSegmentsContainer& gapped_segs)
             seg1 = *seg_i;
             seg2 = *seg_i_end;
             
-            iterate (CAlnMixSegment::TStartIterators,
+            ITERATE (CAlnMixSegment::TStartIterators,
                      st_it,
                      seg2->m_StartIts) {
                 seq = st_it->first;
@@ -1135,7 +1135,7 @@ void CAlnMix::x_MinimizeGaps(TSegmentsContainer& gapped_segs)
                 len_i_end++;
 
                 // loop through its sequences
-                non_const_iterate (CAlnMixSegment::TStartIterators,
+                NON_CONST_ITERATE (CAlnMixSegment::TStartIterators,
                                    st_it,
                                    (*seg_i)->m_StartIts) {
 
@@ -1163,7 +1163,7 @@ void CAlnMix::x_MinimizeGaps(TSegmentsContainer& gapped_segs)
                 }
                 seg_i++;
             }
-            non_const_iterate (TLenMap, len_it, len_map) {
+            NON_CONST_ITERATE (TLenMap, len_it, len_map) {
                 new_segs.push_back(len_it->second);
             }
             len_map.clear();
@@ -1171,7 +1171,7 @@ void CAlnMix::x_MinimizeGaps(TSegmentsContainer& gapped_segs)
         }
     }
     gapped_segs.clear();
-    iterate (TSegmentsContainer, new_seg_i, new_segs) {
+    ITERATE (TSegmentsContainer, new_seg_i, new_segs) {
         gapped_segs.push_back(*new_seg_i);
     }
 }
@@ -1216,7 +1216,7 @@ void CAlnMix::x_CreateDenseg()
         lens[numseg] = m_Segments[numseg]->m_Len;
 
         // starts
-        iterate (CAlnMixSegment::TStartIterators, start_its_i,
+        ITERATE (CAlnMixSegment::TStartIterators, start_its_i,
                 m_Segments[numseg]->m_StartIts) {
             starts[offset + start_its_i->first->m_RowIndex] =
                 start_its_i->second->first;
@@ -1276,6 +1276,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2003/03/12 15:39:47  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.36  2003/03/10 22:12:02  todorov
 * fixed x_CompareAlnMatchScores callback
 *
