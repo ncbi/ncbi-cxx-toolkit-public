@@ -506,7 +506,7 @@ private:
     void ValidateSeqDescContext(const CBioseq& seq);
     void ValidateSeqIds(const CBioseq& seq);
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq& seq,
-        char* prefix);
+        const char* prefix);
     void ValidateInst(const CBioseq& seq);
     bool ValidateRepr(const CSeq_inst& inst, const CBioseq& seq);
     void ValidateSeqLen(const CBioseq& seq);
@@ -1120,7 +1120,7 @@ static void s_GetSeqLabel
 (const CBioseq& seq,
  string*        lbl,
  CScope*        scope,
- char*  default_label = "prot?")
+ const char*  default_label = "prot?")
 {
     if (!lbl) {
         return;
@@ -1388,7 +1388,9 @@ static unsigned int s_GetSeqlocPartialInfo(const CSeq_loc& loc, CScope* scope)
 
 
 // TO BE REPLACED
-static bool s_SeqLocMixedStrands(const CBioseq& seq, const CSeq_loc& loc)
+static bool s_SeqLocMixedStrands
+(const CBioseq&,  //seq, 
+ const CSeq_loc&) // loc)
 {
     return true;
 }
@@ -1398,7 +1400,7 @@ static bool s_SeqLocMixedStrands(const CBioseq& seq, const CSeq_loc& loc)
 // Returns true if an object of type T is embedded in in object of type K,
 // else false
 template <class T, class K>
-static bool s_AnyObj(const K& obj)
+bool s_AnyObj(const K& obj)
 {
     CTypeConstIterator<T> i(ConstBegin(obj));
     return i ? true : false;
@@ -1407,7 +1409,7 @@ static bool s_AnyObj(const K& obj)
 
 // Returns true if first CBioseq in se has CSeq_id of type C.
 template <CSeq_id::E_Choice C>
-static bool s_IsType(const CSeq_entry& se)
+bool s_IsType(const CSeq_entry& se)
 {
     // Get first CBioseq
     CTypeConstIterator<CBioseq> seq(ConstBegin(se));
@@ -2054,31 +2056,31 @@ void CValidError_impl::ValidateSeqDesc(const CSeqdesc& desc)
 }
 
 
-void CValidError_impl::ValidateSeqSet(const CBioseq_set& seqset)
+void CValidError_impl::ValidateSeqSet(const CBioseq_set& ) //seqset)
 {
 
 }
 
 
-void CValidError_impl::ValidateSeqAnnot(const CSeq_annot& annot)
+ void CValidError_impl::ValidateSeqAnnot(const CSeq_annot& ) //annot)
 {
 
 }
 
 
-void CValidError_impl::ValidateSeqAlign(const CSeq_align& align)
+void CValidError_impl::ValidateSeqAlign(const CSeq_align& ) //align)
 {
 
 }
 
 
-void CValidError_impl::ValidateSeqGraph(const CSeq_graph& graph)
+void CValidError_impl::ValidateSeqGraph(const CSeq_graph& ) //graph)
 {
 
 }
 
 
-void CValidError_impl::ValidateSeqFeatContext(const CBioseq& seq)
+void CValidError_impl::ValidateSeqFeatContext(const CBioseq& ) //seq)
 {
 
 }
@@ -2117,7 +2119,7 @@ void CValidError_impl::ValidateSeqFeat(const CSeq_feat& feat)
 void CValidError_impl::ValidateSeqLoc
 (const CSeq_loc& loc,
  const CBioseq&  seq,
- char*           prefix)
+ const char*     prefix)
 {
     bool circular = false;
     if (seq.GetInst().IsSetTopology()) {
@@ -2836,7 +2838,7 @@ public:
 };
 
 
-void CValidError_impl::ValidateDupOrOverlapFeats(const CBioseq& seq)
+void CValidError_impl::ValidateDupOrOverlapFeats(const CBioseq& ) //seq)
 {
 }
 
@@ -2855,7 +2857,7 @@ public:
 };
 
 
-void CValidError_impl::ValidateCollidingGeneNames(const CBioseq& seq)
+void CValidError_impl::ValidateCollidingGeneNames(const CBioseq& ) //seq)
 {
     /*
     // Loop through features and insert into multimap sorted by
@@ -3346,8 +3348,8 @@ void CValidError_impl::ValidateDelta(const CBioseq& seq)
 
 
 void CValidError_impl::ValidatePubdesc
-(const CPubdesc&      pub,
- const CSerialObject& obj)
+(const CPubdesc&,      //      pub,
+ const CSerialObject& )// obj)
 {
 }
 
@@ -4656,6 +4658,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.16  2002/10/23 16:35:10  clausen
+* Fixed various warning messages in WorkShop53
+*
 * Revision 1.15  2002/10/23 15:34:12  clausen
 * Fixed local variable scope warnings
 *
