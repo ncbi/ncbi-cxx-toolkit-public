@@ -46,7 +46,7 @@ extern "C" {
 #define sfree(x) __sfree((void**)&(x))
 #endif
 NCBI_XBLAST_EXPORT
-void __sfree(void** x); /* implemented in lib/util.c */
+void __sfree(void** x); /* implemented in lookup_util.c */
 
 /******************** Preprocessor definitions ******************************/
 
@@ -58,6 +58,7 @@ typedef enum {
     eBlastTypeBlastx,
     eBlastTypeTblastn,
     eBlastTypeTblastx,
+    eBlastTypePsiBlast,
     eBlastTypeRpsBlast,
     eBlastTypeRpsTblastn,
     eBlastTypeUndefined
