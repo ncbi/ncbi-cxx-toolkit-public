@@ -40,9 +40,9 @@
 
 #include <corelib/ncbicntr.hpp>
 
-#ifdef NCBI_OS_DARWIN
+#if defined(NCBI_OS_DARWIN)  &&  !defined(NCBI_NO_THREADS)
 // Needed for SwapPointers, even if not for CAtomicCounter
-#  include <CarbonCore/DriverSynchronization.h>
+#  include <CoreServices/CoreServices.h>
 #endif
 
 BEGIN_NCBI_SCOPE
@@ -186,6 +186,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/03 19:28:18  ucko
+ * Darwin: include the master CoreServices header because
+ * DriverSynchronization.h is officially internal, but limit its use to
+ * threaded builds.
+ *
  * Revision 1.5  2004/01/21 22:07:37  ucko
  * SwapPointers: use XCHG opcode on x86-64 in addition to vanilla x86.
  *
