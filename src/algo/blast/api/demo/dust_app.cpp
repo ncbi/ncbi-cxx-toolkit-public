@@ -292,10 +292,10 @@ int CDustApplication::Run(void)
 
                     // Print result
                     start = 0;
-                    TSeqPos seq_length = copy_data.size();
-                    while (start < seq_length)
+                    TSeqPos copy_size = copy_data.size();
+                    while (start < copy_size)
                     {
-                        end = ((start+FASTA_LEN) >= seq_length) ? seq_length : start+FASTA_LEN;
+                        end = ((start+FASTA_LEN) >= copy_size) ? copy_size : start+FASTA_LEN;
                         output_stream << copy_data.substr(start, end-start) << endl;
                         start = end;
                     }
