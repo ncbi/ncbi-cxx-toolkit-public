@@ -35,6 +35,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2002/05/06 19:08:35  lavr
+ * Removed mention of IP substitutions (mistakenly left behind a while ago)
+ *
  * Revision 6.24  2002/04/13 06:35:10  lavr
  * Fast track routine SERV_GetInfoEx(), many syscalls optimizations
  *
@@ -168,18 +171,15 @@ SERV_ITER SERV_OpenEx
 
 /* Get the next server meta-address, optionally accompanied by host
  * environment, specified in LBSMD configuration file on that host.
- * Return 0 if no more servers were found for the service requested.
+ * Return 0 if no more servers were found for the service requested
+ * (parameter 'env' remains untouched in this case).
  * Only when completing successfully, i.e. returning non-NULL info,
  * this function can also provide the host environment as follows:
  * when 'env' parameter is passed as a non-NULL pointer, then a copy of
  * the host environment is allocated, and pointer to it is stored in *env.
- * If the environment starts with '@', then the following (up to the end or
- * up to '\n' whatever comes first) is the IP:port substitution provided
- * by the mapper for the host:port combination, which the info refers to.
- * Ordinary environment pairs (if any), in the form "name=value" come after
- * '\n' following the substitution, and separated from each other by '\n's.
- * NULL value stored if no environment is available for the host, which
- * is referred to by returned server info. Otherwise, *env remains untouched.
+ * Environment is the set of pairs in the form "name=value" separated by
+ * '\n' from each other. NULL value stored if no environment is available for
+ * the host, which is referred to by returned server info.
  * NOTE that the application program should NOT destroy returned server info:
  * it will be freed automatically upon iterator destruction. On the other hand,
  * environment has to be explicitly free()'d when no longer needed.
@@ -197,7 +197,8 @@ const SSERV_Info* SERV_GetNextInfoEx
  * However, this call is optimized for an application, which only needs
  * a single entry (the first one), and which is not interested in iterating
  * over all available entries. Both returned server info and env have to be
- * explicitly free()'d by the application when no longer needed. 
+ * explicitly free()'d by the application when no longer needed.
+ * Note that env is only supplied if the function returned non-NULL result.
  */
 SSERV_Info* SERV_GetInfoEx
 (const char*         service,       /* service name                          */
