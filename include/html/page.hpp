@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/04/15 22:06:46  vakatov
+* CQueryBox:: use "enum { kNo..., };" rather than "static const int kNo...;"
+* Fixed "class BaseTagMapper" to "struct ..."
+*
 * Revision 1.13  1998/12/28 23:29:03  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -83,7 +87,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class BaseTagMapper;
+struct BaseTagMapper;
 
 inline BaseTagMapper* CreateTagMapper(CNCBINode* node);
 inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(void));
@@ -159,9 +163,11 @@ public:
 
     ////////// flags
 
-    static const int kNoTITLE = 0x1;
-    static const int kNoVIEW = 0x2;
-    static const int kNoTEMPLATE = 0x4;
+    enum flags {
+        kNoTITLE    = 0x1,
+        kNoVIEW     = 0x2,
+        kNoTEMPLATE = 0x4
+    };
 
     ////////// page parameters
 
