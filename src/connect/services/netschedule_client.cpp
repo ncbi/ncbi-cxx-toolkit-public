@@ -44,6 +44,26 @@ BEGIN_NCBI_SCOPE
 
 const string kNetSchedule_KeyPrefix = "JSID";
 
+unsigned CNetSchedule_GetJobId(const string&  key_str)
+{
+    unsigned job_id;
+    const char* ch = key_str.c_str();
+
+    for (;*ch != 0 && *ch != '_'; ++ch) {
+    }
+    ++ch;
+    for (;*ch != 0 && *ch != '_'; ++ch) {
+    }
+    ++ch;
+    if (*ch) {
+        job_id = (unsigned) atoi(ch);
+        if (job_id) {
+            return job_id;
+        }
+    }
+    NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
+}
+
 void CNetSchedule_ParseJobKey(CNetSchedule_Key* key, const string& key_str)
 {
     _ASSERT(key);
@@ -79,11 +99,11 @@ void CNetSchedule_ParseJobKey(CNetSchedule_Key* key, const string& key_str)
     ++ch;
 
     // id
-    key->id = atoi(ch);
+    key->id = (unsigned) atoi(ch);
     while (*ch && *ch != '_') {
         ++ch;
     }
-    if (*ch == 0) {
+    if (*ch == 0 || key->id == 0) {
         NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
     }
     ++ch;
@@ -159,8 +179,14 @@ CNetScheduleClient::~CNetScheduleClient()
 {
 }
 
+
 string CNetScheduleClient::SubmitJob(const string& input)
 {
+    if (input.length() > kNetScheduleMaxDataSize) {
+        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+            "Input data too long.");
+    }
+
     CheckConnect(kEmptyStr);
     CSockGuard sg(*m_Sock);
 
@@ -174,14 +200,7 @@ string CNetScheduleClient::SubmitJob(const string& input)
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
     }
-
-    if (NStr::FindCase(m_Tmp, "ID:") != 0) {
-        // Answer is not in "ID:....." format
-        string msg = "Unexpected server response:";
-        msg += m_Tmp;
-        NCBI_THROW(CNetServiceException, eCommunicationError, msg);
-    }
-    m_Tmp.erase(0, 3);
+    TrimPrefix(&m_Tmp);
 
     if (m_Tmp.empty()) {
         NCBI_THROW(CNetServiceException, eCommunicationError, 
@@ -191,6 +210,103 @@ string CNetScheduleClient::SubmitJob(const string& input)
     return m_Tmp;
 }
 
+void CNetScheduleClient::CancelJob(const string& job_key)
+{
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    CommandInitiate("CANCEL ", job_key, &m_Tmp);
+
+    CheckOK(&m_Tmp);
+}
+
+CNetScheduleClient::EJobStatus 
+CNetScheduleClient::GetStatus(const string& job_key)
+{
+    EJobStatus status;
+
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    CommandInitiate("STATUS ", job_key, &m_Tmp);
+
+    TrimPrefix(&m_Tmp);
+
+    if (m_Tmp.empty()) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Invalid server response. Empty key.");
+    }
+    int st = NStr::StringToInt(m_Tmp);
+    status = (EJobStatus) st;
+
+    return status;
+}
+
+
+void CNetScheduleClient::ShutdownServer()
+{
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "SHUTDOWN ");
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+}
+
+string CNetScheduleClient::ServerVersion()
+{
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "VERSION ");
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    TrimPrefix(&m_Tmp);
+
+    if (m_Tmp.empty()) {
+        NCBI_THROW(CNetServiceException, 
+                   eCommunicationError, 
+                   "Invalid server response. Empty version.");
+    }
+    return m_Tmp;
+}
+
+void CNetScheduleClient::CommandInitiate(const string& command, 
+                                         const string& job_key,
+                                         string*       answer)
+{
+    _ASSERT(answer);
+    MakeCommandPacket(&m_Tmp, command);
+    m_Tmp.append(job_key);
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, answer)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+}
+
+
+void CNetScheduleClient::TrimPrefix(string* str)
+{
+    CheckOK(str);
+    str->erase(0, 3); // "OK:"
+}
+
+void CNetScheduleClient::CheckOK(string* str)
+{
+    if (str->find("OK:") != 0) {
+        // Answer is not in "OK:....." format
+        string msg = "Server error:";
+        TrimErr(str);
+        msg += *str;
+        NCBI_THROW(CNetServiceException, eCommunicationError, msg);
+    }
+}
 
 void CNetScheduleClient::MakeCommandPacket(string* out_str, 
                                            const string& cmd_str)
@@ -255,6 +371,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/09 18:59:08  kuznets
+ * Implemented job submission part of the API
+ *
  * Revision 1.1  2005/02/07 13:02:47  kuznets
  * Initial revision
  *

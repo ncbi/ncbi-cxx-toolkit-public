@@ -55,7 +55,8 @@ class CSocket;
 
 /// Client API for NCBI NetSchedule server
 ///
-/// 
+/// @sa CNetServiceException, CNetScheduleException
+///
 class NCBI_XCONNECT_EXPORT CNetScheduleClient : protected CNetServiceClient
 {
 public:
@@ -105,9 +106,34 @@ public:
 
     /// Submit job to server
     ///
+    /// @param input
+    ///    Input data. Arbitrary string (cannot exceed 1K). This string
+    ///    encodes input data for the job. It is suggested to use NetCache
+    ///    to keep the actual data and pass NetCache key as job input.
+    ///
     /// @return job key
     string SubmitJob(const string& input);
 
+    /// Cancel job
+    ///
+    /// @param job_key
+    ///    Job identification string
+    void CancelJob(const string& job_key);
+
+    /// Request of current job status
+    /// eJobNotFound is returned if job status cannot be found 
+    /// (job record timed out)
+    EJobStatus GetStatus(const string& job_key);
+
+    /// Return version string
+    string ServerVersion();
+
+
+protected:
+
+    /// Shutdown the server daemon.
+    ///
+    void ShutdownServer();
 
 
 protected:
@@ -115,8 +141,20 @@ protected:
     void CheckConnect(const string& key);
     bool IsError(const char* str);
 
+    /// Adds trailing: "client\r\n queue\r\n COMMAND"
     void MakeCommandPacket(string* out_str, 
                            const string& cmd_str);
+
+    /// check string for "OK:" prefix, throws an exception if "ERR:"
+    void TrimPrefix(string* str);
+
+    /// Check if server returned "OK:"
+    void CheckOK(string* str);
+
+    void CommandInitiate(const string& command, 
+                         const string& job_key,
+                         string*       answer);
+
 private:
     CNetScheduleClient(const CNetScheduleClient&);
     CNetScheduleClient& operator=(const CNetScheduleClient&);
@@ -139,7 +177,8 @@ public:
         eKeyFormatError,
         eInvalidJobStatus,
         eUnknownQueue,
-        eTooManyPendingJobs
+        eTooManyPendingJobs,
+        eDataTooLong
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -151,6 +190,7 @@ public:
         case eInvalidJobStatus:   return "eInvalidJobStatus";
         case eUnknownQueue:       return "eUnknownQueue";
         case eTooManyPendingJobs: return "eTooManyPendingJobs";
+        case eDataTooLong:        return "eDataTooLong";
         default:                  return CException::GetErrCodeString();
         }
     }
@@ -175,6 +215,10 @@ struct CNetSchedule_Key
 extern NCBI_XCONNECT_EXPORT
 void CNetSchedule_ParseJobKey(CNetSchedule_Key* key, const string& key_str);
 
+/// Parse blob key, extract job id
+extern NCBI_XCONNECT_EXPORT
+unsigned CNetSchedule_GetJobId(const string&  key_str);
+
 
 /// Generate job key string
 ///
@@ -189,6 +233,8 @@ void CNetSchedule_GenerateJobKey(string*        key,
                                   unsigned short port);
 
 
+/// @internal
+const unsigned int kNetScheduleMaxDataSize = 1024;
 
 /* @} */
 
@@ -199,6 +245,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/09 18:58:04  kuznets
+ * Implemented job submission part of the API
+ *
  * Revision 1.1  2005/02/07 13:02:32  kuznets
  * Initial revision
  *
