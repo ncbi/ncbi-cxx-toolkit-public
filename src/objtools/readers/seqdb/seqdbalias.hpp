@@ -53,6 +53,7 @@ BEGIN_NCBI_SCOPE
 
 using namespace ncbi::objects;
 
+
 /// CSeqDBAliasWalker class
 /// 
 /// Derivatives of this abstract class can be used to gather summary
@@ -69,7 +70,7 @@ public:
     virtual const char * GetFileKey() const = 0;
     
     /// This will be called with each CVolume that is in the alias
-    /// file tree structure.
+    /// file tree structure (in order of traversal).
     virtual void Accumulate(const CSeqDBVol &) = 0;
     
     /// This will be called with the value associated with this key in
@@ -77,8 +78,40 @@ public:
     virtual void AddString (const string &) = 0;
 };
 
+
+/// CSeqDBAliasNode class
+///
+/// This is one node of the alias node tree, an n-ary tree which
+/// represents the relationships of the alias files and volumes used
+/// by a CSeqDB instance.  The children of this node are the other
+/// alias files mentioned in this node's DBLIST key.  Each node may
+/// also have volumes, which are not strictly children (not the same
+/// species), but are treated that way for the purpose of some
+/// computations.  The volumes are the non-alias objects mentioned in
+/// the DBLIST, and are the containers for actual sequence, header,
+/// and summary data.
+///
+/// As a special case, an alias node which mentions its own name in
+/// the DBLIST is interpreted as referring to an index file with the
+/// same base name and path.  Alias node trees can be quite complex
+/// and nodes can share database volumes; sometimes there are hundreds
+/// of nodes which refer to only a few underlying database volumes.
+///
+/// Nodes have two primary purposes: to override summary data (such as
+/// the "title" field) which would otherwise be taken from the volume,
+/// and to aggregate other alias files or volumes.  The top level
+/// alias node is virtual - it does not refer to a real file on disk.
+/// It's purpose is to aggregate the space-seperated list of databases
+/// which are provided to the CSeqDB constructor.
+
 class CSeqDBAliasNode : public CObject {
 public:
+    /// Public Constructor
+    ///
+    /// This is the user-visible constructor, which builds the top level
+    /// node in the dbalias node tree.  This design effectively treats the
+    /// user-input database list as if it were an alias file containing
+    /// only the DBLIST specification.
     CSeqDBAliasNode(CSeqDBAtlas    & atlas,
                     const string   & name_list,
                     char             prot_nucl);
@@ -208,6 +241,12 @@ private:
     TSubNodeList  m_SubNodes;
 };
 
+
+/// CSeqDBAliasFile class
+///
+/// This class is an interface to the alias node tree.  It provides
+/// functionality to classes like CSeqDBImpl (and others) that do not
+/// need to understand alias walkers, nodes, and tree traversal.
 
 class CSeqDBAliasFile {
 public:

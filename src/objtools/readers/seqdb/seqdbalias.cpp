@@ -28,8 +28,18 @@
  */
 
 /// @file seqdbalias.cpp
-/// Implementation for CSeqDBAliasFile and several related classes,
-/// which manage a hierarchical tree of alias file data.
+/// Code which manages a hierarchical tree of alias file data.
+/// 
+/// Defines classes:
+///     CSeqDB_TitleWalker 
+///     CSeqDB_MaxLengthWalker 
+///     CSeqDB_NSeqsWalker 
+///     CSeqDB_NOIDsWalker 
+///     CSeqDB_TotalLengthWalker 
+///     CSeqDB_VolumeLengthWalker 
+///     CSeqDB_MembBitWalker 
+/// 
+/// Implemented for: UNIX, MS-Windows
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
@@ -41,18 +51,12 @@
 
 BEGIN_NCBI_SCOPE
 
-/// Index file.
+/// Public Constructor
 ///
-/// Index files (extension nin or pin) contain information on where to
-/// find information in other files.  The OID is the (implied) key.
-
-
-// Public Constructor
-//
-// This is the user-visible constructor, which builds the top level
-// node in the dbalias node tree.  This design effectively treats the
-// user-input database list as if it were an alias file containing
-// only the DBLIST specification.
+/// This is the user-visible constructor, which builds the top level
+/// node in the dbalias node tree.  This design effectively treats the
+/// user-input database list as if it were an alias file containing
+/// only the DBLIST specification.
 
 CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
                                  const string   & dbname_list,
@@ -394,29 +398,56 @@ void CSeqDBAliasNode::x_GetVolumeNames(set<string> & vols) const
     }
 }
 
+
+/// Walker for TITLE field of alias file
+///
+/// The TITLE field of the alias file is a string describing the set
+/// of sequences collected by that file.  The title is reported via
+/// the "CSeqDB::GetTitle()" method.
+
 class CSeqDB_TitleWalker : public CSeqDB_AliasWalker {
 public:
+    /// This provides the alias file key used for this field.
     virtual const char * GetFileKey() const
     {
         return "TITLE";
     }
     
+    /// Collect data from a volume
+    ///
+    /// If the TITLE field is not specified in an alias file, we can
+    /// use the title(s) in the database volume(s).  Values from alias
+    /// node tree siblings are concatenated with "; " used as a
+    /// delimiter.
+    ///
+    /// @param vol
+    ///   A database volume
     virtual void Accumulate(const CSeqDBVol & vol)
     {
         AddString( vol.GetTitle() );
     }
     
+    /// Collect data from an alias file
+    ///
+    /// If the TITLE field is specified in an alias file, it will be
+    /// used unmodified.  Values from alias node tree siblings are
+    /// concatenated with "; " used as a delimiter.
+    ///
+    /// @param vol
+    ///   A database volume
     virtual void AddString(const string & value)
     {
         SeqDB_JoinDelim(m_Value, value, "; ");
     }
     
+    /// Returns the database title string.
     string GetTitle()
     {
         return m_Value;
     }
     
 private:
+    /// The title string we are accumulating.
     string m_Value;
 };
 
@@ -430,20 +461,36 @@ private:
 // disjoint.  This design should prevent undercounting but allows
 // overcounting in some cases.
 
+
+/// Walker for MAX_SEQ_LENGTH field of alias file
+///
+/// This functor encapsulates the specifics of the MAX_SEQ_LENGTH
+/// field of the alias file.  The NSEQ fields specifies the number of
+/// sequences to use when reporting information via the
+/// "CSeqDB::GetNumSeqs()" method.  It is not the same as the number
+/// of OIDs unless there are no filtering mechanisms in use.
+
 class CSeqDB_MaxLengthWalker : public CSeqDB_AliasWalker {
 public:
+    /// Constructor
     CSeqDB_MaxLengthWalker()
     {
         m_Value = 0;
     }
     
+    /// This provides the alias file key used for this field.
     virtual const char * GetFileKey() const
     {
-        // This field is not overrideable.
-        
         return "MAX_SEQ_LENGTH";
     }
     
+    /// Collect data from the volume
+    ///
+    /// If the MAX_SEQ_LENGTH field is not specified in an alias file,
+    /// the maximum values of all contributing volumes is used.
+    ///
+    /// @param vol
+    ///   A database volume
     virtual void Accumulate(const CSeqDBVol & vol)
     {
         Uint4 new_max = vol.GetMaxLength();
@@ -452,137 +499,230 @@ public:
             m_Value = new_max;
     }
     
+    /// Collect data from an alias file
+    ///
+    /// Values from alias node tree siblings are compared, and the
+    /// maximum value is used as the result.
+    ///
+    /// @param vol
+    ///   A database volume
     virtual void AddString(const string & value)
     {
-        m_Value = NStr::StringToUInt(value);
+        Uint4 new_max = NStr::StringToUInt(value);
+        
+        if (new_max > m_Value)
+            m_Value = new_max;
     }
     
+    /// Returns the maximum sequence length.
     Uint4 GetMaxLength()
     {
         return m_Value;
     }
     
 private:
+    /// The maximum sequence length.
     Uint4 m_Value;
 };
 
 
+/// Walker for NSEQ field of alias file
+///
+/// The NSEQ field of the alias file specifies the number of sequences
+/// to use when reporting information via the "CSeqDB::GetNumSeqs()"
+/// method.  It is not the same as the number of OIDs unless there are
+/// no filtering mechanisms in use.
+
 class CSeqDB_NSeqsWalker : public CSeqDB_AliasWalker {
 public:
+    /// Constructor
     CSeqDB_NSeqsWalker()
     {
         m_Value = 0;
     }
     
+    /// This provides the alias file key used for this field.
     virtual const char * GetFileKey() const
     {
         return "NSEQ";
     }
     
+    /// Collect data from the volume
+    ///
+    /// If the NSEQ field is not specified in an alias file, the
+    /// number of OIDs in the volume is used instead.
+    ///
+    /// @param vol
+    ///   A database volume
     virtual void Accumulate(const CSeqDBVol & vol)
     {
         m_Value += vol.GetNumOIDs();
     }
     
+    /// Collect data from an alias file
+    ///
+    /// If the NSEQ field is specified in an alias file, it will be
+    /// used.  Values from alias node tree siblings are summed.
+    ///
+    /// @param vol
+    ///   A database volume
     virtual void AddString(const string & value)
     {
         m_Value += NStr::StringToUInt(value);
     }
     
+    /// Returns the accumulated number of OIDs.
     Uint4 GetNum() const
     {
         return m_Value;
     }
     
 private:
+    /// The accumulated number of OIDs.
     Uint4 m_Value;
 };
 
 
+/// Walker for OID count accumulation.
+///
+/// The number of OIDs should be like the number of sequences, but
+/// without the value adjustments made by alias files.  To preserve
+/// this relationship, this class inherits from CSeqDB_NSeqsWalker.
+
 class CSeqDB_NOIDsWalker : public CSeqDB_NSeqsWalker {
 public:
+    /// This disables the key; the spaces would not be preserved, so
+    /// this is a non-matchable string in this context.
     virtual const char * GetFileKey() const
     {
-        // Override to disable the key.  (The embedded spaces would
-        // break the parse, so the following non-key is safe.)
-        
         return " no key ";
     }
 };
 
 
+/// Walker for total length accumulation.
+///
+/// The total length of the database is the sum of the lengths of all
+/// volumes of the database (measured in bases).
+
 class CSeqDB_TotalLengthWalker : public CSeqDB_AliasWalker {
 public:
+    /// Constructor
     CSeqDB_TotalLengthWalker()
     {
         m_Value = 0;
     }
     
+    /// This provides the alias file key used for this field.
     virtual const char * GetFileKey() const
     {
         return "LENGTH";
     }
     
+    /// Collect data from the volume
+    ///
+    /// If the LENGTH field is not specified in an alias file, the
+    /// sum of the volume lengths will be used.
+    ///
+    /// @param vol
+    ///   A database volume
     virtual void Accumulate(const CSeqDBVol & vol)
     {
         m_Value += vol.GetVolumeLength();
     }
     
+    /// Collect data from an alias file
+    ///
+    /// If the LENGTH field is specified in an alias file, it will be
+    /// used.  Values from alias node tree siblings are summed.
+    ///
+    /// @param vol
+    ///   A database volume
     virtual void AddString(const string & value)
     {
         m_Value += NStr::StringToUInt8(value);
     }
     
+    /// Returns the accumulated volume length.
     Uint8 GetLength() const
     {
         return m_Value;
     }
     
 private:
+    /// The accumulated volume length.
     Uint8 m_Value;
 };
 
 
+/// Walker for volume length accumulation.
+///
+/// The volume length should be like total length, but without the
+/// value adjustments made by alias files.  To preserve this
+/// relationship, this class inherits from CSeqDB_TotalLengthWalker.
+
 class CSeqDB_VolumeLengthWalker : public CSeqDB_TotalLengthWalker {
 public:
+    /// This disables the key; the spaces would not be preserved, so
+    /// this is a non-matchable string in this context.
     virtual const char * GetFileKey() const
     {
-        // Override to disable the key.  (The embedded spaces would
-        // break the parse, so the following non-key is safe.)
-        
         return " no key ";
     }
 };
 
 
+/// Walker for membership bit
+///
+/// This just searches alias files for the membership bit if one is
+/// specified.
+
 class CSeqDB_MembBitWalker : public CSeqDB_AliasWalker {
 public:
+    /// Constructor
     CSeqDB_MembBitWalker()
     {
         m_Value = 0;
     }
     
+    /// This provides the alias file key used for this field.
     virtual const char * GetFileKey() const
     {
         return "MEMB_BIT";
     }
     
+    /// Collect data from the volume
+    ///
+    /// If the MEMB_BIT field is not specified in an alias file, then
+    /// it is not needed.  This field is intended to allow filtration
+    /// of deflines by taxonomic category, which is only needed if an
+    /// alias file reduces the taxonomic scope.
     virtual void Accumulate(const CSeqDBVol &)
     {
         // Volumes don't have this data, only alias files.
     }
     
+    /// Collect data from an alias file
+    ///
+    /// If the MEMB_BIT field is specified in an alias file, it will
+    /// be used unmodified.  No attempt is made to combine or collect
+    /// bit values - currently, only one can be used at a time.
+    ///
+    /// @param vol
+    ///   A database volume
     virtual void AddString(const string & value)
     {
         m_Value = NStr::StringToUInt(value);
     }
     
+    /// Returns the membership bit.
     Uint4 GetMembBit() const
     {
         return m_Value;
     }
     
 private:
+    /// The membership bit.
     Uint4 m_Value;
 };
 
