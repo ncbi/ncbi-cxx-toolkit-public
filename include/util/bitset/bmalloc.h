@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #ifndef BMALLOC__H__INCLUDED__
 #define BMALLOC__H__INCLUDED__
 
-#include <malloc.h>
+#include <stdlib.h>
 
 namespace bm
 {
