@@ -408,7 +408,7 @@ typedef struct PSIBlastOptions {
      * set to FALSE by default as it enables the following behavior in the 
      * PSSM engine:
      * <pre>
-     * 1) Ignores the query sequence
+     * 1) Ignores the query sequence (on certain stages of PSSM creation only)
      * 2) Skips validation of multiple sequence alignment data
      * 3) Disables assertions and validation in _PSICheckSequenceWeights
      * 4) If no aligned sequences are provided in the multiple sequence
@@ -801,7 +801,11 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
                            double evalue, Int4 hitlist_size,
                            Boolean is_gapped);
 
-/** Initialize default options for PSI BLAST */
+/** Initialize default options for PSI BLAST 
+ * @param psi_options pointer to pointer where structure will be allocated [in]
+ * @return 1 in case of memory allocation failure or if psi_options is NULL, 0
+ * in case of success
+ */
 Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options);
 
 /** Validates the PSI BLAST options so that they have sane values.
