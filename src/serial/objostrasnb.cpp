@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2001/01/03 15:22:27  vasilche
+* Fixed limited buffer size for REAL data in ASN.1 binary format.
+* Fixed processing non ASCII symbols in ASN.1 text format.
+*
 * Revision 1.56  2000/12/26 23:01:54  vakatov
 * Another tiny Mac specific fix
 *
@@ -751,23 +755,24 @@ void CObjectOStreamAsnBinary::WriteUint8(Uint8 data)
     WriteNumberValue(*this, data);
 }
 
+static const size_t kMaxDoubleLength = 64;
+
 void CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
 {
     int shift = int(ceil(log10(fabs(data))));
     int precision = int(digits - shift);
     if ( precision < 0 )
         precision = 0;
-    if ( precision > 64 ) // limit precision of data
-        precision = 64;
+    else if ( size_t(precision) > kMaxDoubleLength ) // limit precision of data
+        precision = int(kMaxDoubleLength);
 
-    char buffer[128];
     // ensure buffer is large enough to fit result
     // (additional bytes are for sign, dot and exponent)
-    _ASSERT(sizeof(buffer) > size_t(precision + 16));
+    char buffer[kMaxDoubleLength + 16];
     int width = sprintf(buffer, "%.*f", precision, data);
     if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
         ThrowError(eOverflow, "buffer overflow");
-    _ASSERT(int(strlen(buffer)) == width);
+    _ASSERT(strlen(buffer) == size_t(width));
     if ( precision != 0 ) { // skip trailing zeroes
         while ( buffer[width - 1] == '0' ) {
             --width;
@@ -777,7 +782,7 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
     }
 
     WriteSysTag(eReal);
-    WriteShortLength(width + 1);
+    WriteLength(width + 1);
     WriteByte(eDecimal);
     WriteBytes(buffer, width);
 }

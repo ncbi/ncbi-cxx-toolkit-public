@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2001/01/03 15:22:26  vasilche
+* Fixed limited buffer size for REAL data in ASN.1 binary format.
+* Fixed processing non ASCII symbols in ASN.1 text format.
+*
 * Revision 1.49  2000/12/26 22:24:11  vasilche
 * Fixed errors of compilation on Mac.
 *
@@ -707,20 +711,22 @@ Uint8 CObjectIStreamAsnBinary::ReadUint8(void)
     return data;
 }
 
+static const size_t kMaxDoubleLength = 256;
+
 double CObjectIStreamAsnBinary::ReadDouble(void)
 {
     ExpectSysTag(eReal);
-    size_t length = ReadShortLength();
+    size_t length = ReadLength();
     if ( length < 2 ) {
         ThrowError(eFormatError, "too short REAL data");
     }
-    if ( length > 32 ) {
+    if ( length > kMaxDoubleLength ) {
         ThrowError(eFormatError, "too long REAL data");
     }
 
     ExpectByte(eDecimal);
     length--;
-    char buffer[32];
+    char buffer[kMaxDoubleLength + 2];
     ReadBytes(buffer, length);
     EndOfTag();
     buffer[length] = 0;
@@ -1185,13 +1191,11 @@ void CObjectIStreamAsnBinary::SkipUNumber(void)
 void CObjectIStreamAsnBinary::SkipFNumber(void)
 {
     ExpectSysTag(eReal);
-    size_t length = ReadShortLength();
-    if ( length < 2 ) {
+    size_t length = ReadLength();
+    if ( length < 2 )
         ThrowError(eFormatError, "too short REAL data");
-    }
-    if ( length > 32 ) {
+    if ( length > kMaxDoubleLength )
         ThrowError(eFormatError, "too long REAL data");
-    }
 
     ExpectByte(eDecimal);
     length--;

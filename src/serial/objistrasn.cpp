@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2001/01/03 15:22:26  vasilche
+* Fixed limited buffer size for REAL data in ASN.1 binary format.
+* Fixed processing non ASCII symbols in ASN.1 text format.
+*
 * Revision 1.63  2000/12/26 22:24:11  vasilche
 * Fixed errors of compilation on Mac.
 *
@@ -711,7 +715,7 @@ double CObjectIStreamAsn::ReadDouble(void)
 void CObjectIStreamAsn::BadStringChar(size_t startLine, char c)
 {
     ThrowError(eFormatError,
-               "bad char in string stating at line "+
+               "bad char in string starting at line "+
                NStr::UIntToString(startLine)+": "+
                NStr::IntToString(c));
 }
@@ -757,10 +761,15 @@ void CObjectIStreamAsn::ReadString(string& s)
                 }
                 break;
             default:
-                if ( c < ' ' )
+                if ( (c & 0xff) > '~' ) {
+                    // non ascii
+                    if ( (GetFlags() & eFlagAllowNonAsciiChars) == 0 )
+                        BadStringChar(startLine, c);
+                }
+                else if ( c < ' ' ) {
+                    // control
                     BadStringChar(startLine, c);
-                if ( c > '~' && (GetFlags() & eFlagAllowNonAsciiChars) == 0 )
-                    BadStringChar(startLine, c);
+                }
 
                 // ok: append char
                 if ( ++i == 128 ) {
@@ -903,10 +912,15 @@ void CObjectIStreamAsn::SkipString(void)
                 }
                 break;
             default:
-                if ( c < ' ' )
+                if ( (c & 0xff) > '~' ) {
+                    // non ascii
+                    if ( (GetFlags() & eFlagAllowNonAsciiChars) == 0 )
+                        BadStringChar(startLine, c);
+                }
+                else if ( c < ' ' ) {
+                    // control
                     BadStringChar(startLine, c);
-                if ( c > '~' && (GetFlags() & eFlagAllowNonAsciiChars) == 0 )
-                    BadStringChar(startLine, c);
+                }
 
                 // ok: skip char
                 if ( ++i == 128 ) {

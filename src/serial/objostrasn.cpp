@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2001/01/03 15:22:27  vasilche
+* Fixed limited buffer size for REAL data in ASN.1 binary format.
+* Fixed processing non ASCII symbols in ASN.1 text format.
+*
 * Revision 1.60  2000/12/26 22:24:13  vasilche
 * Fixed errors of compilation on Mac.
 *
@@ -470,13 +474,23 @@ void CObjectOStreamAsn::WriteNull(void)
 
 void CObjectOStreamAsn::WriteString(const char* ptr, size_t length)
 {
+    size_t startLine = m_Output.GetLine();
     m_Output.PutChar('"');
     while ( length > 0 ) {
         char c = *ptr++;
         --length;
-        if ( c < ' ' ||
-             c > '~' && (GetFlags() & eFlagAllowNonAsciiChars) == 0 ) {
-            ERR_POST("bad char in string: " << (c & 0xff));
+        if ( (c & 0xff) > '~' ) {
+            // non ascii
+            if ( (GetFlags() & eFlagAllowNonAsciiChars) == 0 ) {
+                ERR_POST("bad char in string starting at line " << startLine <<
+                         ": " << (c & 0xff));
+                c = '#';
+            }
+        }
+        else if ( c < ' ' ) {
+            // control
+            ERR_POST("bad char in string starting at line " << startLine <<
+                     ": " << (c & 0xff));
             c = '#';
         }
         m_Output.WrapAt(78, true);
