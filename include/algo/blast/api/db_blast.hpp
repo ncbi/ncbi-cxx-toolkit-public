@@ -57,10 +57,10 @@ public:
 
     /// Contructor, creating default options for a given program
     CDbBlast(const TSeqLocVector& queries, 
-             BlastSeqSrc* bssp, EProgram p);
+             BlastSeqSrc* bssp, EProgram p, RPSInfo* rps_info=0);
     // Constructor using a prebuilt options handle
-    CDbBlast(const TSeqLocVector& queries, 
-             BlastSeqSrc* bssp, CBlastOptionsHandle& opts);
+    CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* bssp, 
+             CBlastOptionsHandle& opts, RPSInfo* rps_info=0);
 
     virtual ~CDbBlast();
 
@@ -98,6 +98,7 @@ protected:
     virtual void RunSearchEngine();
     virtual TSeqAlignVector x_Results2SeqAlign();
     virtual void x_ResetQueryDs();
+    virtual void x_InitFields();
 
     BlastScoringOptions* GetScoringOpts() const;
     BlastEffectiveLengthsOptions* GetEffLenOpts() const;
@@ -108,23 +109,24 @@ protected:
     PSIBlastOptions * GetProtOpts() const;    
 
     /// Internal data structures used in this and all derived classes 
-    bool                mi_bQuerySetUpDone;
-    CBLAST_SequenceBlk  mi_clsQueries;  // one for all queries
-    CBlastQueryInfo     mi_clsQueryInfo; // one for all queries
-    BlastScoreBlk*      mi_pScoreBlock; // Karlin-Altschul parameters
+    bool                m_ibQuerySetUpDone;
+    CBLAST_SequenceBlk  m_iclsQueries;  // one for all queries
+    CBlastQueryInfo     m_iclsQueryInfo; // one for all queries
+    BlastScoreBlk*      m_ipScoreBlock; // Karlin-Altschul parameters
     /// Statistical return structures
-    BlastReturnStat*    mi_pReturnStats;
+    BlastReturnStat*    m_ipReturnStats;
     /// Error (info, warning) messages
-    TBlastError         mi_vErrors;
+    TBlastError         m_ivErrors;
    
     /// Results structure - not private, because derived class will need to
     /// set it
-    BlastHSPResults*    mi_pResults;
+    BlastHSPResults*    m_ipResults;
 
 private:
     // Data members received from client code
     TSeqLocVector        m_tQueries;         //< query sequence(s)
     BlastSeqSrc*         m_pSeqSrc;          //< Subject sequences sorce
+    RPSInfo*             m_pRpsInfo; ///< RPS BLAST database information
     CRef<CBlastOptionsHandle>  m_OptsHandle; //< Blast options
 
     /// Prohibit copy constructor
@@ -133,12 +135,11 @@ private:
     CDbBlast& operator=(const CDbBlast& rhs);
 
     /************ Internal data structures (m_i = internal members)**********/
-    LookupTableWrap*    mi_pLookupTable; // one for all queries
-    ListNode*           mi_pLookupSegments; /* Intervals for which lookup 
+    LookupTableWrap*    m_ipLookupTable; // one for all queries
+    ListNode*           m_ipLookupSegments; /* Intervals for which lookup 
                                                table is created: complement of
                                                filtered regions */
-    BlastMaskLoc*       mi_pFilteredRegions; // Filtered regions
-
+    BlastMaskLoc*       m_ipFilteredRegions; // Filtered regions
 };
 
 inline void
@@ -158,7 +159,7 @@ CDbBlast::GetQueries() const
 inline CBlastOptions&
 CDbBlast::SetOptions()
 {
-    mi_bQuerySetUpDone = false;
+    m_ibQuerySetUpDone = false;
     return m_OptsHandle->SetOptions();
 }
 
@@ -171,7 +172,7 @@ CDbBlast::GetOptions() const
 inline CBlastOptionsHandle&
 CDbBlast::SetOptionsHandle()
 {
-    mi_bQuerySetUpDone = false;
+    m_ibQuerySetUpDone = false;
     return *m_OptsHandle;
 }
 
@@ -184,7 +185,7 @@ CDbBlast::GetOptionsHandle() const
 inline const BlastMaskLoc*
 CDbBlast::GetFilteredQueryRegions() const
 {
-    return mi_pFilteredRegions;
+    return m_ipFilteredRegions;
 }
 
 inline BlastSeqSrc* CDbBlast::GetSeqSrc() const
@@ -194,28 +195,28 @@ inline BlastSeqSrc* CDbBlast::GetSeqSrc() const
 
 inline BlastHSPResults* CDbBlast::GetResults() const
 {
-    return mi_pResults;
+    return m_ipResults;
 }
 
 inline BlastReturnStat* CDbBlast::GetReturnStats() const
 {
-    return mi_pReturnStats;
+    return m_ipReturnStats;
 }
 
 inline BlastScoreBlk* CDbBlast::GetScoreBlk() const
 {
-    return mi_pScoreBlock;
+    return m_ipScoreBlock;
 }
 
 inline const CBlastQueryInfo& CDbBlast::GetQueryInfo() const
 {
-    return mi_clsQueryInfo;
+    return m_iclsQueryInfo;
 
 }
 
 inline TBlastError& CDbBlast::GetErrorMessage()
 {
-    return mi_vErrors;
+    return m_ivErrors;
 }
 
 inline BlastScoringOptions* CDbBlast::GetScoringOpts() const
@@ -254,6 +255,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/03/16 23:29:55  dondosha
+* Added optional RPSInfo* argument to constructors; added function x_InitFields; changed mi_ to m_i in member field names
+*
 * Revision 1.12  2004/02/27 15:42:18  rsmith
 * No class specifiers inside that class's declaration
 *
