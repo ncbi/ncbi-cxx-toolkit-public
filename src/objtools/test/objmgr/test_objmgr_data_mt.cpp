@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/02/17 21:13:20  vasilche
+* Added flags to skip some tests.
+*
 * Revision 1.1  2003/12/16 17:51:18  kuznets
 * Code reorganization
 *
@@ -166,6 +169,9 @@ protected:
     int m_gi_from;
     int m_gi_to;
 
+    bool m_load_only;
+    bool m_no_snp;
+
     bool failed;
 };
 
@@ -213,7 +219,7 @@ bool CTestOM::Thread_Run(int idx)
     const int kMaxErrorCount = 3;
     static int error_count = 0;
     for (int i = from;
-        ((delta > 0) && (i <= to)) || ((delta < 0) && (i >= to)); i += delta) {
+         ((delta > 0) && (i <= to)) || ((delta < 0) && (i >= to)); i += delta) {
         try {
 // load sequence
             CSeq_id sid;
@@ -225,43 +231,48 @@ bool CTestOM::Thread_Run(int idx)
                 continue;
             }
 
-            int count = 0;
+            if ( m_load_only ) {
+                int count = 0;
 
 // enumerate descriptions
-            // Seqdesc iterator
-            for (CSeqdesc_CI desc_it(handle); desc_it;  ++desc_it) {
-                count++;
-            }
+                // Seqdesc iterator
+                for (CSeqdesc_CI desc_it(handle); desc_it;  ++desc_it) {
+                    count++;
+                }
 // verify result
-            SetValue(m_mapGiToDesc, i, count);
+                SetValue(m_mapGiToDesc, i, count);
 
 // enumerate features
-            CSeq_loc loc;
-            loc.SetWhole(sid);
-            count = 0;
-            if ( idx%2 == 0 ) {
-                for (CFeat_CI feat_it(scope, loc,
-                                      CSeqFeatData::e_not_set,
-                                      SAnnotSelector::eOverlap_Intervals,
-                                      CAnnotTypes_CI::eResolve_All);
-                    feat_it;  ++feat_it) {
-                    count++;
+                CSeq_loc loc;
+                loc.SetWhole(sid);
+                SAnnotSelector sel(CSeqFeatData::e_not_set);
+                if ( idx%2 == 0 ) {
+                    sel.SetOverlapType(sel.eOverlap_Intervals);
+                    sel.SetResolveMethod(sel.eResolve_All);
                 }
-// verify result
-                SetValue(m_mapGiToFeat0, i, count);
-            }
-            else {
-                for (CFeat_CI feat_it(handle, 0, 0, CSeqFeatData::e_not_set);
-                    feat_it;  ++feat_it) {
-                    count++;
+                if ( m_no_snp ) {
+                    sel.ExcludedAnnotName("SNP");
                 }
+                count = 0;
+                if ( idx%2 == 0 ) {
+                    for (CFeat_CI feat_it(scope, loc, sel); feat_it;  ++feat_it) {
+                        count++;
+                    }
+// verify resultila
+                    SetValue(m_mapGiToFeat0, i, count);
+                }
+                else {
+                    for (CFeat_CI feat_it(handle, 0, 0, sel); feat_it;  ++feat_it) {
+                        count++;
+                    }
 // verify result
-                SetValue(m_mapGiToFeat1, i, count);
+                    SetValue(m_mapGiToFeat1, i, count);
+                }
             }
         }
         catch (CLoaderException& e) {
             LOG_POST("T" << idx << ": gi = " << i 
-                << ": EXCEPTION = " << e.what());
+                     << ": EXCEPTION = " << e.what());
             ok = false;
             if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
                 break;
@@ -272,7 +283,7 @@ bool CTestOM::Thread_Run(int idx)
         }
         catch (exception& e) {
             LOG_POST("T" << idx << ": gi = " << i 
-                << ": EXCEPTION = " << e.what());
+                     << ": EXCEPTION = " << e.what());
             ok = false;
             if ( ++error_count > kMaxErrorCount ) {
                 break;
@@ -296,6 +307,8 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
         ("togi", "ToGi",
          "Process sequences in the interval TO this Gi",
          CArgDescriptions::eInteger, NStr::IntToString(g_gi_to));
+    args.AddFlag("load_only", "Do not work with sequences - only load them");
+    args.AddFlag("no_snp", "Exclude SNP features from processing");
     return true;
 }
 
@@ -308,6 +321,8 @@ bool CTestOM::TestApp_Init(void)
     const CArgs& args = GetArgs();
     m_gi_from = args["fromgi"].AsInteger();
     m_gi_to   = args["togi"].AsInteger();
+    m_load_only = args["load_only"];
+    m_no_snp = args["no_snp"];
 
     NcbiCout << "Testing ObjectManager (" << s_NumThreads
         << " threads, gi from "
