@@ -652,17 +652,15 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     CDirEntry::SplitPath(subtree, NULL, NULL, &ext);
     if (NStr::CompareNocase(ext, ".lst") == 0) {
         //If this is *.lst file
-        m_ProjectTreeInfo->m_IProjectFilter = 
-            auto_ptr<IProjectFilter>(new CProjectsLstFileFilter
-                                             (m_ProjectTreeInfo->m_Src,
-                                              subtree));
+        m_ProjectTreeInfo->m_IProjectFilter.reset
+            (new CProjectsLstFileFilter(m_ProjectTreeInfo->m_Src,
+                                        subtree));
     } else {
         //Simple subtree
         subtree = CDirEntry::AddTrailingPathSeparator(subtree);
-        m_ProjectTreeInfo->m_IProjectFilter = 
-            auto_ptr<IProjectFilter>(new CProjectOneNodeFilter
-                                             (m_ProjectTreeInfo->m_Src,
-                                              subtree));
+        m_ProjectTreeInfo->m_IProjectFilter.reset
+            (new CProjectOneNodeFilter(m_ProjectTreeInfo->m_Src,
+                                        subtree));
     }
 
 
@@ -817,6 +815,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/06/15 19:01:40  gorelenk
+ * Fixed compilation errors on GCC 2.95 .
+ *
  * Revision 1.42  2004/06/14 14:16:58  gorelenk
  * Changed implementation of CProjBulderApp::GetProjectTreeInfo - added
  * m_TreeNode .

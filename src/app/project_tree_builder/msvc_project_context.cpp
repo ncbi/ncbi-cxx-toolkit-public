@@ -55,9 +55,8 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
     m_Requires       = project.m_Requires;
     
     // Get msvc project makefile
-    m_MsvcProjectMakefile = 
-        auto_ptr<CMsvcProjectMakefile>
-            (new CMsvcProjectMakefile
+    m_MsvcProjectMakefile.reset
+        (new CMsvcProjectMakefile
                     (CDirEntry::ConcatPath
                             (m_SourcesBaseDir, 
                              CreateMsvcProjectMakefileName(project))));
@@ -536,61 +535,46 @@ CMsvcTools::CMsvcTools(const CMsvcPrjGeneralContext& general_context,
                        const CMsvcPrjProjectContext& project_context)
 {
     //configuration
-    m_Configuration = 
-        auto_ptr<IConfiguration>(s_CreateConfiguration(general_context, 
-                                                       project_context));
+    m_Configuration.reset
+        (s_CreateConfiguration(general_context, project_context));
     //compiler
-    m_Compiler = 
-        auto_ptr<ICompilerTool>(s_CreateCompilerTool(general_context, 
-                                                     project_context));
+    m_Compiler.reset
+        (s_CreateCompilerTool(general_context, project_context));
     //Linker:
-    m_Linker = 
-        auto_ptr<ILinkerTool>(s_CreateLinkerTool(general_context, 
-                                                 project_context));
+    m_Linker.reset(s_CreateLinkerTool(general_context, project_context));
     //Librarian
-    m_Librarian = 
-        auto_ptr<ILibrarianTool>(s_CreateLibrarianTool(general_context, 
-                                                       project_context));
+    m_Librarian.reset(s_CreateLibrarianTool
+                                     (general_context, project_context));
     //Dummies
-    m_CustomBuid = auto_ptr<ICustomBuildTool>(new CCustomBuildToolDummyImpl());
-    m_MIDL       = auto_ptr<IMIDLTool>(new CMIDLToolDummyImpl());
-    m_PostBuildEvent =
-        auto_ptr<IPostBuildEventTool>(new CPostBuildEventToolDummyImpl());
+    m_CustomBuid.reset    (new CCustomBuildToolDummyImpl());
+    m_MIDL.reset          (new CMIDLToolDummyImpl());
+    m_PostBuildEvent.reset(new CPostBuildEventToolDummyImpl());
 
     //Pre-build event - special case for LIB projects
     if (project_context.ProjectType() == CProjKey::eLib) {
-        m_PreBuildEvent = 
-            auto_ptr<IPreBuildEventTool>(new CPreBuildEventToolLibImpl
+        m_PreBuildEvent.reset(new CPreBuildEventToolLibImpl
                                                 (project_context.PreBuilds()));
     } else {
-        m_PreBuildEvent = 
-            auto_ptr<IPreBuildEventTool>(new CPreBuildEventToolDummyImpl());
+        m_PreBuildEvent.reset(new CPreBuildEventToolDummyImpl());
     }
-    m_PreLinkEvent = 
-        auto_ptr<IPreLinkEventTool>(new CPreLinkEventToolDummyImpl());
+    m_PreLinkEvent.reset(new CPreLinkEventToolDummyImpl());
 
     //Resource Compiler
-    m_ResourceCompiler =
-        auto_ptr<IResourceCompilerTool>
-                        (s_CreateResourceCompilerTool(general_context, 
-                                                      project_context));
+    m_ResourceCompiler.reset(s_CreateResourceCompilerTool
+                                     (general_context,project_context));
 
     //Dummies
-    m_WebServiceProxyGenerator =
-        auto_ptr<IWebServiceProxyGeneratorTool>
-                        (new CWebServiceProxyGeneratorToolDummyImpl());
+    m_WebServiceProxyGenerator.reset
+        (new CWebServiceProxyGeneratorToolDummyImpl());
 
-    m_XMLDataGenerator = 
-        auto_ptr<IXMLDataGeneratorTool>
-                        (new CXMLDataGeneratorToolDummyImpl());
+    m_XMLDataGenerator.reset
+        (new CXMLDataGeneratorToolDummyImpl());
 
-    m_ManagedWrapperGenerator =
-        auto_ptr<IManagedWrapperGeneratorTool>
-                        (new CManagedWrapperGeneratorToolDummyImpl());
+    m_ManagedWrapperGenerator.reset
+        (new CManagedWrapperGeneratorToolDummyImpl());
 
-    m_AuxiliaryManagedWrapperGenerator=
-        auto_ptr<IAuxiliaryManagedWrapperGeneratorTool> 
-                        (new CAuxiliaryManagedWrapperGeneratorToolDummyImpl());
+    m_AuxiliaryManagedWrapperGenerator.reset
+        (new CAuxiliaryManagedWrapperGeneratorToolDummyImpl());
 }
 
 
@@ -861,6 +845,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/06/15 19:01:40  gorelenk
+ * Fixed compilation errors on GCC 2.95 .
+ *
  * Revision 1.32  2004/06/10 15:16:46  gorelenk
  * Changed macrodefines to be comply with GCC 3.4.0 .
  *
