@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2004/09/27 18:28:40  gouriano
+* Improved diagnostics when creating DataMember with no name
+*
 * Revision 1.51  2004/06/18 15:27:35  gouriano
 * Improved diagnostics
 *
@@ -787,9 +790,9 @@ CDataMember::CDataMember(const string& name, const AutoPtr<CDataType>& type)
 
 {
     if ( m_Name.empty() ) {
-        string loc("Unnamed member in ASN.1 specification");
+        string loc("Invalid identifier name in ASN.1 specification");
         if (type) {
-            loc += " (" + type->LocationString() + ")";
+            loc += " (line " + NStr::IntToString(type->GetSourceLine()) + ")";
         }
         NCBI_THROW(CDatatoolException,eInvalidData, loc);
     }
