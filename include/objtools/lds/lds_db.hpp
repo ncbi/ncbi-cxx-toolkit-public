@@ -90,7 +90,6 @@ struct NCBI_LDS_EXPORT SLDS_ObjectDB : public CBDB_File
     CBDB_FieldInt4    seqlist_id; 
     CBDB_FieldInt4    object_type;
     CBDB_FieldInt4    file_offset;
-//    CBDB_FieldInt4    object_attr_id;
     CBDB_FieldInt4    TSE_object_id;     // TOP level seq entry object id
     CBDB_FieldInt4    parent_object_id;  // Parent SeqEntry object id
 
@@ -112,19 +111,6 @@ struct NCBI_LDS_EXPORT SLDS_Annot2ObjectDB : public CBDB_File
     SLDS_Annot2ObjectDB();
 };
 
-/*
-struct NCBI_LDS_EXPORT SLDS_ObjectAttrDB : public CBDB_File
-{
-    CBDB_FieldInt4    object_attr_id;
-
-    CBDB_FieldString  object_title;
-    CBDB_FieldString  organism;
-    CBDB_FieldString  keywords;
-    CBDB_FieldString  seq_ids;
-
-    SLDS_ObjectAttrDB();
-};
-*/
 
 //////////////////////////////////////////////////////////////////
 //
@@ -136,7 +122,6 @@ struct NCBI_LDS_EXPORT SLDS_TablesCollection
     SLDS_FileDB          file_db;
     SLDS_ObjectTypeDB    object_type_db;
     SLDS_ObjectDB        object_db;
-//    SLDS_ObjectAttrDB    object_attr_db;
     SLDS_AnnotDB         annot_db;
     SLDS_Annot2ObjectDB  annot2obj_db;
     SLDS_SeqId_List      seq_id_list;
@@ -201,7 +186,6 @@ SLDS_ObjectDB::SLDS_ObjectDB()
     BindData("seqlist_id", &seqlist_id);
     BindData("object_type", &object_type);
     BindData("file_offset", &file_offset);
-//    BindData("object_attr_id", &object_attr_id);
     BindData("TSE_object_id", &TSE_object_id);
     BindData("parent_object_id", &parent_object_id);
 
@@ -211,18 +195,6 @@ SLDS_ObjectDB::SLDS_ObjectDB()
     BindData("seq_ids", &seq_ids, 65536, eNullable);
 }
 
-/*
-inline 
-SLDS_ObjectAttrDB::SLDS_ObjectAttrDB()
-{
-    BindKey("object_attr_id", &object_attr_id);
-
-    BindData("object_title", &object_title, 1024);
-    BindData("organism", &organism, 256);
-    BindData("keywords", &keywords, 2048);
-    BindData("seq_ids", &seq_ids, 65536);
-}
-*/
 
 
 inline 
@@ -239,6 +211,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.14  2004/03/17 17:20:59  kuznets
+* Code clean up
+*
 * Revision 1.13  2004/03/09 17:16:32  kuznets
 * Merge object attributes with objects
 *
