@@ -63,7 +63,8 @@ struct SMakeProjectT
         typedef enum {
             eApp,
             eLib,
-            eAsn 
+            eAsn,
+            eMsvc
         } TMakeinType;
 
         SMakeInInfo(TMakeinType          type,
@@ -114,6 +115,8 @@ struct SMakeProjectT
 
 
     static bool   IsMakeAppFile           (const string& name);
+
+    static bool   IsUserProjFile          (const string& name);
 
     static void   ConvertLibDepends       (const list<string>& depends_libs, 
                                            list<CProjKey>*     depends_ids);
@@ -235,6 +238,24 @@ struct SAsnProjectMultipleT : public SAsnProjectT
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// SUserProjectT --
+///
+/// Traits and policies for user project makefiles
+///
+/// Traits and policies specific for user-generated projects
+
+struct SMsvcProjectT : public SMakeProjectT
+{
+    static CProjKey DoCreate(const string&      source_base_dir,
+                             const string&      proj_name,
+                             const string&      applib_mfilepath,
+                             const TFiles&      makemsvc, 
+                             CProjectItemsTree* tree);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// CProjectTreeBuilder --
 ///
 /// Builder class for project tree.
@@ -254,6 +275,7 @@ public:
         TFiles m_In;
         TFiles m_Lib;
         TFiles m_App;
+        TFiles m_User;
     };
 
 
@@ -272,14 +294,17 @@ private:
                             const IProjectFilter* filter,
                             SMakeFiles*           makefiles);
 
-    static void ProcessMakeInFile (const string& file_name, 
-                                   SMakeFiles*   makefiles);
+    static void ProcessMakeInFile  (const string& file_name, 
+                                    SMakeFiles*   makefiles);
 
-    static void ProcessMakeLibFile(const string& file_name, 
-                                   SMakeFiles*   makefiles);
+    static void ProcessMakeLibFile (const string& file_name, 
+                                    SMakeFiles*   makefiles);
 
-    static void ProcessMakeAppFile(const string& file_name, 
-                                   SMakeFiles*   makefiles);
+    static void ProcessMakeAppFile (const string& file_name, 
+                                    SMakeFiles*   makefiles);
+
+    static void ProcessUserProjFile (const string& file_name, 
+                                     SMakeFiles*   makefiles);
 
     static void ResolveDefs(CSymResolver& resolver, SMakeFiles& makefiles);
 
@@ -294,6 +319,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/05/10 19:48:21  gorelenk
+ * + SMsvcProjectT .
+ *
  * Revision 1.4  2004/04/06 17:12:37  gorelenk
  * Added member-functions IsConfigurableDefine and StripConfigurableDefine
  * to struct SMakeProjectT .
