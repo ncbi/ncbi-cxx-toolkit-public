@@ -121,7 +121,7 @@ case "$host:$compiler" in
    NETWORK_LIBS=${NETWORK_LIBS:=" "}
    ;;
 
- *-osf1*:GCC )
+ *-osf*:GCC )
    CXXFLAGS="-fsquangle $CXXFLAGS"
    ;;
 
