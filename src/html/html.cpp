@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  1999/02/02 17:57:49  vasilche
+* Added CHTML_table::Row(int row).
+* Linkbar now have equal image spacing.
+*
 * Revision 1.28  1999/01/28 21:58:08  vasilche
 * QueryBox now inherits from CHTML_table (not CHTML_form as before).
 * Use 'new CHTML_form("url", queryBox)' as replacement of old QueryBox.
@@ -240,6 +244,7 @@ const string KHTMLAttributeName_size = "SIZE";
 const string KHTMLAttributeName_src = "SRC";
 const string KHTMLAttributeName_start = "START";
 const string KHTMLAttributeName_type = "TYPE";
+const string KHTMLAttributeName_valign = "VALIGN";
 const string KHTMLAttributeName_value = "VALUE";
 const string KHTMLAttributeName_width = "WIDTH";
 
@@ -501,6 +506,32 @@ int CHTML_table::sx_GetSpan(const CNCBINode* node,
         return 1;
     }
     return span;
+}
+
+CHTMLNode* CHTML_table::Row(int needRow)  // todo: exception
+{
+    // beginning with row 0
+    int row = 0;
+    // scan all children (which should be <TR> tags)
+    for ( TChildList::const_iterator iRow = ChildBegin();
+          iRow != ChildEnd(); ++iRow ) {
+        CHTMLNode* trNode = dynamic_cast<CHTMLNode*>(*iRow);
+        if ( !trNode || !sx_IsRow(trNode) ) {
+            throw runtime_error("Table contains non <TR> tag");
+        }
+
+        if ( row == needRow ) {
+            return trNode;
+        }
+    }
+
+    CHTMLNode* trNode;
+    while ( row <= needRow ) {
+        // add needed rows
+        AppendChild(trNode = new CHTML_tr);
+        ++row;
+    }
+    return trNode;
 }
 
 CHTMLNode* CHTML_table::Cell(int needRow, int needCol)  // todo: exception

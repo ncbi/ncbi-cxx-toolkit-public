@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/02/02 17:57:47  vasilche
+* Added CHTML_table::Row(int row).
+* Linkbar now have equal image spacing.
+*
 * Revision 1.1  1999/01/29 20:48:01  vasilche
 * Added class CLinkBar.
 *
@@ -51,11 +55,11 @@ class CLinkDefinition
 public:
     CLinkDefinition(const string& name,
                     const string& linkImage = NcbiEmptyString,
-                    const string& noLonkImage = NcbiEmptyString);
+                    const string& noLinkImage = NcbiEmptyString);
     CLinkDefinition(const string& name,
                     int width, int height,
                     const string& linkImage = NcbiEmptyString,
-                    const string& noLonkImage = NcbiEmptyString);
+                    const string& noLinkImage = NcbiEmptyString);
 
     string m_LinkName;
     string m_LinkImage;

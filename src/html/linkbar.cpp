@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/02/02 17:57:50  vasilche
+* Added CHTML_table::Row(int row).
+* Linkbar now have equal image spacing.
+*
 * Revision 1.1  1999/01/29 20:48:04  vasilche
 * Added class CLinkBar.
 *
@@ -63,8 +67,11 @@ CLinkDefinition::CLinkDefinition(const string& name,
 CLinkBar::CLinkBar(const TLinkBarTemplate* templ)
     : m_Template(templ)
 {
+/*
     SetCellSpacing(0);
     SetCellPadding(0);
+*/
+    Row(0)->SetVAlign("baseline");
 }
 
 CLinkBar::~CLinkBar(void)
@@ -76,7 +83,12 @@ void CLinkBar::CreateSubNodes(void)
     int col = 0;
     for ( TLinkBarTemplate::const_iterator i = m_Template->begin();
           i != m_Template->end(); ++i ) {
-        Cell(0, col++)->AppendChild(CreateLink(*i));
+        CHTMLNode* cell = Cell(0, col++);
+        cell->AppendChild(CreateLink(*i));
+        if ( i->m_Width > 0 )
+            cell->SetWidth(i->m_Width);
+        if ( i->m_Height > 0 )
+            cell->SetHeight(i->m_Height);
     }
 }
 
@@ -91,15 +103,15 @@ CHTMLNode* CLinkBar::CreateLink(const CLinkDefinition& def)
     }
     else {
         img = new CHTML_img(def.m_LinkImage);
+        img->SetAttribute("BORDER", 0);
         node = new CHTML_a(ptr->second, img);
     }
-
-    img->SetAttribute("BORDER", 0);
+/*
     if ( def.m_Width > 0 )
         img->SetWidth(def.m_Width);
     if ( def.m_Height > 0 )
         img->SetHeight(def.m_Height);
-
+*/
     return node;
 }
 

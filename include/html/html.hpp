@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/02/02 17:57:46  vasilche
+* Added CHTML_table::Row(int row).
+* Linkbar now have equal image spacing.
+*
 * Revision 1.24  1999/01/28 21:58:05  vasilche
 * QueryBox now inherits from CHTML_table (not CHTML_form as before).
 * Use 'new CHTML_form("url", queryBox)' as replacement of old QueryBox.
@@ -144,6 +148,7 @@ public:
     CHTMLNode* SetHeight(const string& width);
     CHTMLNode* SetSize(int size);
     CHTMLNode* SetAlign(const string& align);
+    CHTMLNode* SetVAlign(const string& align);
     CHTMLNode* SetBgColor(const string& color);
     CHTMLNode* SetColor(const string& color);
 
@@ -361,6 +366,7 @@ extern const string KHTMLAttributeName_size;
 extern const string KHTMLAttributeName_src;
 extern const string KHTMLAttributeName_start;
 extern const string KHTMLAttributeName_type;
+extern const string KHTMLAttributeName_valign;
 extern const string KHTMLAttributeName_value;
 extern const string KHTMLAttributeName_width;
 
@@ -523,6 +529,9 @@ class CHTML_table : public CHTML_table_Base
 public:
     CHTML_table(void);
 
+    // returns row, will add rows if needed
+    // throws exception if it is not left upper corner of cell
+    CHTMLNode* Row(int row);
     // returns cell, will add rows/columns if needed
     // throws exception if it is not left upper corner of cell
     CHTMLNode* Cell(int row, int column);

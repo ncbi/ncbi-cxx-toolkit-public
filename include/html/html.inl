@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/02/02 17:57:47  vasilche
+* Added CHTML_table::Row(int row).
+* Linkbar now have equal image spacing.
+*
 * Revision 1.10  1999/01/28 16:58:59  vasilche
 * Added several constructors for CHTML_hr.
 * Added CHTMLNode::SetSize method.
@@ -120,6 +124,12 @@ inline CHTMLNode* CHTMLNode::SetSize(int size)
 inline CHTMLNode* CHTMLNode::SetAlign(const string& align)
 {
     SetOptionalAttribute(KHTMLAttributeName_align, align);
+    return this;
+}
+
+inline CHTMLNode* CHTMLNode::SetVAlign(const string& align)
+{
+    SetOptionalAttribute(KHTMLAttributeName_valign, align);
     return this;
 }
 
