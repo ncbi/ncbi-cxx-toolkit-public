@@ -51,25 +51,25 @@ BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
 CBlastFormatOptions::CBlastFormatOptions(EProgram program, CNcbiOstream &ostr)
-        : m_ostr(&ostr)
+        : m_pOstr(&ostr)
 {
-   m_believe_query = FALSE;
-   m_descriptions = BLAST_NUM_DESCRIPTIONS;
-   m_alignments = BLAST_NUM_ALIGNMENTS;
+   m_bBelieveQuery = FALSE;
+   m_NumDescriptions = BLAST_NUM_DESCRIPTIONS;
+   m_NumAlignments = BLAST_NUM_ALIGNMENTS;
    
-   m_print_options = 0;
-   m_align_options = 0;
-   m_align_options += ALIGN_COMPRESS;
-   m_align_options += ALIGN_END_NUM;
-   m_align_options += ALIGN_SHOW_GI;
-   m_print_options += ALIGN_SHOW_GI;
+   m_PrintOptions = 0;
+   m_AlignOptions = 0;
+   m_AlignOptions += ALIGN_COMPRESS;
+   m_AlignOptions += ALIGN_END_NUM;
+   m_AlignOptions += ALIGN_SHOW_GI;
+   m_PrintOptions += ALIGN_SHOW_GI;
    
-   m_align_options += ALIGN_MATRIX_VAL;
-   m_align_options += ALIGN_SHOW_QS;
+   m_AlignOptions += ALIGN_MATRIX_VAL;
+   m_AlignOptions += ALIGN_SHOW_QS;
    if (program == eBlastx)
-      m_align_options += ALIGN_BLASTX_SPECIAL;
+      m_AlignOptions += ALIGN_BLASTX_SPECIAL;
    
-   m_align_view = BLAST_ALIGN_VIEW;
+   m_AlignView = BLAST_ALIGN_VIEW;
 }
 
 CBlastFormatOptions::~CBlastFormatOptions()
@@ -137,7 +137,7 @@ BLAST_FormatResults(TSeqAlignVector &seqalignv,
         if (!seqalignv[index]->IsSet())
             continue;
         
-        query[index].scope->AddDataLoader("BLASTDB");
+        query[index].scope->AddDataLoader(format_options->GetDbLoaderName());
         CDisplaySeqalign display(*seqalignv[index], maskv[index], 
                                  featureInfo, 0, *query[index].scope);
         SetDisplayParameters(display, format_options, program);
