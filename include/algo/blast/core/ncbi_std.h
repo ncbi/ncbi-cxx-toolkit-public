@@ -75,7 +75,7 @@ extern "C" {
 /* So does GCC, normally, but it may be running with strict options
    that require the extra underscores */
 #define NCBI_INLINE __inline__
-#elif defined(_MSC_VER)  ||  defined(__sgi)
+#elif defined(_MSC_VER)  ||  defined(__sgi) || defined(HPUX)
 /* MSVC and (older) MIPSpro always require leading underscores */
 #define NCBI_INLINE __inline
 #else
