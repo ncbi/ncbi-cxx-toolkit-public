@@ -379,7 +379,7 @@ CGBDataLoader::x_UpdateDropList(STSEinfo *tse)
 void
 CGBDataLoader::x_DropTSEinfo(STSEinfo *tse)
 {
-    LOG_POST( "DropTse(" << tse <<")" );
+    _TRACE( "DropTse(" << tse <<")" );
     if(!tse) return;
   
     m_Sr2TseInfo.erase(CCmpTSE(tse->key));
@@ -776,7 +776,7 @@ bool CGBDataLoader::x_GetData(STSEinfo *tse,
                 tse_up->m_tse    = blob->Seq_entry();
                 if(tse_up->m_tse) {
                     tse_up->m_mode   = CTSEUpload::eDone;
-                    LOG_POST("GetBlob(" << srp.print() << ") " << "- "
+                    _TRACE("GetBlob(" << srp.print() << ") " << "- "
                              "whole blob retrieved");
                     new_tse=true;
                     tse->tseinfop=GetDataSource()->AddTSE(*(tse_up->m_tse));
@@ -828,6 +828,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2003/05/13 20:21:10  vasilche
+* *** empty log message ***
+*
 * Revision 1.66  2003/05/13 20:14:40  vasilche
 * Catching exceptions and reconnection were moved from readers to genbank loader.
 *
