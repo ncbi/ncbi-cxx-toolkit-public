@@ -10,6 +10,7 @@
   <li> <a href="#cobject"> The <i>CObject</i> Class </a>
   <li> <a href="#exmpl"> The <i>CObjectFor</i> class: Using smart pointers for standard types</a>
   <li> <a href="#usage"> When to use <i>CRef</i>s and <i>auto_ptr</i>s</a>
+  <li> <a href="#pitfalls"> <i>CRef</i> Pitfalls</a>
 </ul>
 
 <a name="autoptr"></a>
@@ -210,7 +211,51 @@ object. If that object's destructor also handles the deallocation of its embedde
 it is sufficient to use a <i>CRef</i> on the containing object only.
 
 <p>
+<a name="pitfalls"></a>
+<h3> <i>CRef</i> Pitfalls</h3>
 
+<dl>
+    <dt> <b>Inadvertent Object Destruction</b><p>
+    <dd> When the last reference to a <i>CRef</i> object goes out of scope or
+        the <i>CRef</i> is otherwise marked for garbage collection, the object to
+        which the <i>CRef</i> points is also destroyed.  This  feature
+        helps to prevent memory leaks, but it also requires care in the use of
+        <i>CRef</i>s within methods and functions.
+
+<pre>
+    class CMy : public CObject
+    {
+    .....
+    };
+
+    void f(CMy* a)
+    {
+        CRef<CMy> b = a;
+        return;
+    }
+
+    CMy* a = new CMy();
+    f(a);
+    <b>// the object "a" is now destroyed!</b>
+</pre>
+
+        In this example the function <tt>f()</tt> establishes a local <i>CRef</i> to the
+        <tt>CMy</tt> object <tt>a</tt>.  On exitting <tt>f()</tt> the <i>CRef</i> <tt>b</tt>
+        is destroyed, including the implied destruction of the <tt>CMy</tt> objects <tt>a</tt>.
+        To avoid this behavior, pass a <i>CRef</i> to the function <tt>f()</tt> instead of
+        a normal pointer variable:
+<pre>
+    CRef<CMy> a = new CMy();
+    f(a);
+    <b>// the CMy object pointed to by "a" is <i>not</i> destroyed!</b>
+</pre>
+        </dd>
+
+</dl>
+
+
+<p>
+<hr>
 <a href="exceptions.html"> <i> previous</i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="../index.html"> <i> up </i> </a>
