@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/04/19 12:58:25  thiessen
+* allow merge and delete of individual updates
+*
 * Revision 1.32  2001/04/17 20:15:23  thiessen
 * load 'pending' Cdd alignments into update window
 *
@@ -136,6 +139,7 @@
 
 #include <list>
 #include <vector>
+#include <map>
 
 #include "cn3d/vector_math.hpp"
 #include "cn3d/show_hide_callback.hpp"
@@ -199,7 +203,10 @@ public:
     void ShowUpdateWindow(void) const;
     void RealignSlaveSequences(BlockMultipleAlignment *multiple, const std::vector < int >& slavesToRealign);
     void ThreadUpdates(const ThreaderOptions& options);
-    void MergeUpdates(void);
+
+    // merge functions
+    typedef std::map < BlockMultipleAlignment *, bool > UpdateMap;
+    void MergeUpdates(const UpdateMap& updates);
 
     // calculates row scores using the threader
     void CalculateRowScoresWithThreader(double weightPSSM);

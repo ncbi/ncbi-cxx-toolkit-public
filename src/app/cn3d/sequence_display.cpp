@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/04/19 12:58:32  thiessen
+* allow merge and delete of individual updates
+*
 * Revision 1.13  2001/04/18 15:46:53  thiessen
 * show description, length, and PDB numbering in status line
 *
@@ -90,6 +93,8 @@
 #include "cn3d/sequence_viewer.hpp"
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/cn3d_colors.hpp"
+#include "cn3d/update_viewer.hpp"
+#include "cn3d/update_viewer_window.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -415,6 +420,7 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
     BlockMultipleAlignment *alignment = GetAlignmentForRow(row);
     if (alignment && column >= 0) {
 
+        // operations for any viewer window
         if ((*viewerWindow)->DoSplitBlock()) {
             if (alignment->SplitBlock(column)) {
                 (*viewerWindow)->SplitBlockOff();
@@ -431,6 +437,7 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
             return false;
         }
 
+        // operations specific to the sequence window
         SequenceViewerWindow *sequenceWindow = dynamic_cast<SequenceViewerWindow*>(*viewerWindow);
         if (sequenceWindow && row >= 0 &&
             (sequenceWindow->DoRealignRow() || sequenceWindow->DoDeleteRow())) {
@@ -481,6 +488,27 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                     if (molecule && sequenceWindow->AlwaysSyncStructures())
                         GlobalMessenger()->PostRedrawMolecule(molecule);
                 }
+                return false;
+            }
+        }
+
+        // operations specific to the update window
+        UpdateViewerWindow *updateWindow = dynamic_cast<UpdateViewerWindow*>(*viewerWindow);
+        if (updateWindow && row >= 0) {
+
+            // merge single
+            if (updateWindow->DoMergeSingle()) {
+                AlignmentManager::UpdateMap single;
+                single[alignment] = true;
+                updateWindow->updateViewer->alignmentManager->MergeUpdates(single);
+                updateWindow->MergeSingleOff();
+                return false;
+            }
+
+            // delete alignment
+            if (updateWindow->DoDeleteAlignment()) {
+                updateWindow->updateViewer->DeleteAlignment(alignment);
+                updateWindow->DeleteAlignmentOff();
                 return false;
             }
         }

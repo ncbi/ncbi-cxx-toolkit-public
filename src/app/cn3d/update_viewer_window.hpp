@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/04/19 12:58:25  thiessen
+* allow merge and delete of individual updates
+*
 * Revision 1.5  2001/04/12 18:09:40  thiessen
 * add block freezing
 *
@@ -63,28 +66,52 @@ class SequenceDisplay;
 
 class UpdateViewerWindow : public ViewerWindowBase
 {
+    friend SequenceDisplay;
+
 public:
     UpdateViewerWindow(UpdateViewer *parentUpdateViewer);
     ~UpdateViewerWindow(void);
 
     void EnableDerivedEditorMenuItems(bool enabled);
 
+private:
     DECLARE_EVENT_TABLE()
 
-private:
     UpdateViewer *updateViewer;
 
     // menu identifiers - additional items beyond base class items
     enum {
-        MID_RUN_THREADER = START_VIEWER_WINDOW_DERIVED_MID,
-        MID_MERGE_ALL
+        MID_THREAD_ALL = START_VIEWER_WINDOW_DERIVED_MID,
+        MID_MERGE_ONE,
+        MID_MERGE_ALL,
+        MID_DELETE_ALN
     };
 
     void OnCloseWindow(wxCloseEvent& event);
     void OnRunThreader(wxCommandEvent& event);
     void OnMerge(wxCommandEvent& event);
+    void OnDeleteAlignment(wxCommandEvent& event);
+
+    void MergeSingleOff(void)
+    {
+        menuBar->Check(MID_MERGE_ONE, false);
+        SetCursor(wxNullCursor);
+    }
+    void DeleteAlignmentOff(void)
+    {
+        menuBar->Check(MID_DELETE_ALN, false);
+        SetCursor(wxNullCursor);
+    }
 
 public:
+    bool DoMergeSingle(void) const { return menuBar->IsChecked(MID_MERGE_ONE); }
+    bool DoDeleteAlignment(void) const { return menuBar->IsChecked(MID_DELETE_ALN); }
+
+    void CancelDerivedSpecialModes(void)
+    {
+        if (DoMergeSingle()) MergeSingleOff();
+        if (DoDeleteAlignment()) DeleteAlignmentOff();
+    }
 };
 
 

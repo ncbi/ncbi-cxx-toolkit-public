@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/04/19 12:58:25  thiessen
+* allow merge and delete of individual updates
+*
 * Revision 1.5  2001/04/05 22:54:51  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -67,6 +70,7 @@ class AlignmentManager;
 class UpdateViewer : public ViewerBase
 {
     friend class UpdateViewerWindow;
+    friend class SequenceDisplay;
 
 public:
 
@@ -82,6 +86,9 @@ public:
 
     // replace contents of update window with given alignments
     void ReplaceAlignments(const AlignmentList& alignmentList);
+
+    // delete a single alignment
+    void DeleteAlignment(BlockMultipleAlignment *toDelete);
 
 private:
 

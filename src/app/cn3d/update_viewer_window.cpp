@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/04/19 12:58:32  thiessen
+* allow merge and delete of individual updates
+*
 * Revision 1.7  2001/04/12 18:10:00  thiessen
 * add block freezing
 *
@@ -79,8 +82,9 @@ BEGIN_SCOPE(Cn3D)
 BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     INCLUDE_VIEWER_WINDOW_BASE_EVENTS
     EVT_CLOSE     (                                     UpdateViewerWindow::OnCloseWindow)
-    EVT_MENU      (MID_RUN_THREADER,                    UpdateViewerWindow::OnRunThreader)
-    EVT_MENU      (MID_MERGE_ALL,                       UpdateViewerWindow::OnMerge)
+    EVT_MENU      (MID_THREAD_ALL,                    UpdateViewerWindow::OnRunThreader)
+    EVT_MENU_RANGE(MID_MERGE_ONE, MID_MERGE_ALL,        UpdateViewerWindow::OnMerge)
+    EVT_MENU      (MID_DELETE_ALN,                      UpdateViewerWindow::OnDeleteAlignment)
 END_EVENT_TABLE()
 
 UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *parentUpdateViewer) :
@@ -88,14 +92,17 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *parentUpdateViewer) :
     updateViewer(parentUpdateViewer)
 {
     wxMenu *menu = new wxMenu;
-    menu->Append(MID_RUN_THREADER, "&Run Threader");
+    menu->Append(MID_THREAD_ALL, "Thread &All");
     menuBar->Append(menu, "&Threader");
 
     menuBar->Enable(MID_SELECT_COLS, false);
 
     menu = new wxMenu;
+    menu->Append(MID_MERGE_ONE, "&Merge Single", "", true);
     menu->Append(MID_MERGE_ALL, "Merge &All");
-    menuBar->Append(menu, "&Merge");
+    menu->AppendSeparator();
+    menu->Append(MID_DELETE_ALN, "&Delete Single", "", true);
+    menuBar->Append(menu, "&Alignments");
 
     // editor always on
     EnableBaseEditorMenuItems(true);
@@ -140,10 +147,34 @@ void UpdateViewerWindow::OnRunThreader(wxCommandEvent& event)
 void UpdateViewerWindow::OnMerge(wxCommandEvent& event)
 {
     switch (event.GetId()) {
-        case MID_MERGE_ALL:
-            UpdateViewerWindow::updateViewer->alignmentManager->MergeUpdates();
+        case MID_MERGE_ONE:
+            if (DoDeleteAlignment()) DeleteAlignmentOff();
+            CancelBaseSpecialModes();
+            if (DoMergeSingle())
+                SetCursor(*wxCROSS_CURSOR);
+            else
+                MergeSingleOff();
             break;
+        case MID_MERGE_ALL:
+        {
+            AlignmentManager::UpdateMap all;    // construct map/list of all updates
+            const ViewerBase::AlignmentList *currentUpdates = updateViewer->GetCurrentAlignments();
+            ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates->end();
+            for (u=currentUpdates->begin(); u!=ue; u++) all[*u] = true;
+            UpdateViewerWindow::updateViewer->alignmentManager->MergeUpdates(all);
+            break;
+        }
     }
+}
+
+void UpdateViewerWindow::OnDeleteAlignment(wxCommandEvent& event)
+{
+    if (DoMergeSingle()) MergeSingleOff();
+    CancelBaseSpecialModes();
+    if (DoDeleteAlignment())
+        SetCursor(*wxCROSS_CURSOR);
+    else
+       DeleteAlignmentOff();
 }
 
 

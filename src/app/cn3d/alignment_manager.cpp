@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2001/04/19 12:58:32  thiessen
+* allow merge and delete of individual updates
+*
 * Revision 1.52  2001/04/17 20:15:38  thiessen
 * load 'pending' Cdd alignments into update window
 *
@@ -645,14 +648,9 @@ void AlignmentManager::ThreadUpdates(const ThreaderOptions& options)
     }
 }
 
-void AlignmentManager::MergeUpdates(void)
+void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesToMerge)
 {
-    BlockMultipleAlignment *multiple = sequenceViewer->GetCurrentAlignments() ?
-        sequenceViewer->GetCurrentAlignments()->front() : NULL;
-    if (!multiple) return;
-
-    const ViewerBase::AlignmentList *updates = updateViewer->GetCurrentAlignments();
-    if (updates->size() == 0) return;
+    if (updatesToMerge.size() == 0) return;
 
     // make sure the editor is on in the sequenceViewer
     if (!sequenceViewer->EditorIsOn()) {
@@ -660,17 +658,24 @@ void AlignmentManager::MergeUpdates(void)
         return;
     }
 
+    BlockMultipleAlignment *multiple = sequenceViewer->GetCurrentAlignments() ?
+        sequenceViewer->GetCurrentAlignments()->front() : NULL;
+    if (!multiple) return;
+
+    const ViewerBase::AlignmentList *currentUpdates = updateViewer->GetCurrentAlignments();
+    if (currentUpdates->size() == 0) return;
+
     int nSuccessfulMerges = 0;
-    ViewerBase::AlignmentList failedMerges;
-    ViewerBase::AlignmentList::const_iterator u, ue = updates->end();
-    for (u=updates->begin(); u!=ue; u++) {
-        if (multiple->MergeAlignment(*u))
+    ViewerBase::AlignmentList updatesToKeep;
+    ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates->end();
+    for (u=currentUpdates->begin(); u!=ue; u++) {
+        if (updatesToMerge.find(*u) != updatesToMerge.end() && multiple->MergeAlignment(*u))
             nSuccessfulMerges += (*u)->NRows() - 1;
         else
-            failedMerges.push_back((*u)->Clone());
+            updatesToKeep.push_back((*u)->Clone());
     }
 
-    updateViewer->ReplaceAlignments(failedMerges);
+    updateViewer->ReplaceAlignments(updatesToKeep);
     if (nSuccessfulMerges > 0)
         sequenceViewer->GetCurrentDisplay()->RowsAdded(nSuccessfulMerges, multiple);
 }

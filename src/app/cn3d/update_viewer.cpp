@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/04/19 12:58:32  thiessen
+* allow merge and delete of individual updates
+*
 * Revision 1.7  2001/04/05 22:55:36  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -64,6 +67,8 @@
 #include "cn3d/cn3d_colors.hpp"
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/cn3d_threader.hpp"
+#include "cn3d/structure_set.hpp"
+#include "cn3d/molecule.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -135,9 +140,11 @@ void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
             display->AddRowFromAlignment(row, *a);
 
         // always show geometry violations in updates
-        Threader::GeometryViolationsForRow violations;
-        alignmentManager->threader->GetGeometryViolations(*a, &violations);
-        (*a)->ShowGeometryViolations(violations);
+        if ((*a)->GetMaster()->molecule && !(*a)->GetMaster()->molecule->parentSet->isAlphaOnly) {
+            Threader::GeometryViolationsForRow violations;
+            alignmentManager->threader->GetGeometryViolations(*a, &violations);
+            (*a)->ShowGeometryViolations(violations);
+        }
     }
 
     if (alignments.size() > 0) {
@@ -159,6 +166,17 @@ void UpdateViewer::ReplaceAlignments(const AlignmentList& alignmentList)
     displayStack.back() = new SequenceDisplay(true, viewerWindow);
 
     AddAlignments(alignmentList);
+}
+
+void UpdateViewer::DeleteAlignment(BlockMultipleAlignment *toDelete)
+{
+    AlignmentList keepAlignments;
+    AlignmentList::const_iterator a, ae = alignmentStack.back().end();
+    for (a=alignmentStack.back().begin(); a!=ae; a++)
+        if (*a != toDelete)
+            keepAlignments.push_back((*a)->Clone());
+
+    ReplaceAlignments(keepAlignments);
 }
 
 END_SCOPE(Cn3D)

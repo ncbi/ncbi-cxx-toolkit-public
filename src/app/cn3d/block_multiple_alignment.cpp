@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/04/19 12:58:32  thiessen
+* allow merge and delete of individual updates
+*
 * Revision 1.13  2001/04/05 22:55:34  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -245,7 +248,7 @@ bool BlockMultipleAlignment::UpdateBlockMapAndColors(bool clearRowInfo)
     // reset old stuff, recalculate width
     totalWidth = 0;
     for (b=blocks.begin(); b!=be; b++) totalWidth += (*b)->width;
-    TESTMSG("alignment display size: " << totalWidth << " x " << NRows());
+//    TESTMSG("alignment display size: " << totalWidth << " x " << NRows());
 
     // fill out the block map
     conservationColorer->Clear();
