@@ -26,57 +26,58 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Classes to hold sets of coordinates for atoms and features
+*      Classes to information about atomic elements
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2000/07/12 23:27:49  thiessen
+* Revision 1.1  2000/07/12 23:30:47  thiessen
 * now draws basic CPK model
-*
-* Revision 1.1  2000/07/11 13:45:29  thiessen
-* add modules to parse chemical graph; many improvements
 *
 * ===========================================================================
 */
 
-#include <objects/mmdb2/Model_coordinate_set.hpp>
-#include <objects/mmdb2/Coordinates.hpp>
+#ifndef CN3D_PERIODICTABLE__HPP
+#define CN3D_PERIODICTABLE__HPP
 
-#include "cn3d/coord_set.hpp"
-#include "cn3d/atom_set.hpp"
+#include <map>
+
+#include "cn3d/vector_math.hpp"
 
 USING_NCBI_SCOPE;
-using namespace objects;
 
 BEGIN_SCOPE(Cn3D)
 
-CoordSet::CoordSet(StructureBase *parent, 
-                   const CBiostruc_model::TModel_coordinates& modelCoords) :
-    StructureBase(parent), atomSet(NULL)
+class Element
 {
-    // iterate SEQUENCE OF Model-coordinate-set
-    CBiostruc_model::TModel_coordinates::const_iterator j, je=modelCoords.end();
-    for (j=modelCoords.begin(); j!=je; j++) {
-        const CModel_coordinate_set::C_Coordinates& 
-            coordSet = (*j).GetObject().GetCoordinates();
-        if (coordSet.IsLiteral()) {
-            const CCoordinates& coords = coordSet.GetLiteral();
-            if (coords.IsAtomic()) {
-                if (!atomSet)
-                    atomSet = new AtomSet(this, coords.GetAtomic());
-                else
-                    ERR_POST(Fatal << "confused by multiple atomic coords");
-            }
-            // will eventually unpack feature coordinates here
-        }
-    }
-}
+public:
+  const char *name, *symbol;
+  double vdWRadius;
+  Vector color;
 
-bool CoordSet::Draw(void) const
+  Element(const char *n, const char *s,
+          double r, double g, double b, double v) :
+    name(n), symbol(s), color(r,g,b), vdWRadius(v) { }
+};
+
+class PeriodicTableClass
 {
-    TESTMSG("drawing CoordSet");
-    return true;
-}
+private:
+  typedef std::map < int, const Element * > ZMapType;
+  ZMapType ZMap;
+
+public:
+  PeriodicTableClass(void);
+  ~PeriodicTableClass(void);
+
+  const Element * GetElement(int) const;
+  void AddElement(int Z, const char * name,
+                  const char * symbol,
+                  double r, double g, double b,
+                  double vdW);
+};
+
+extern PeriodicTableClass PeriodicTable; // one global copy for now
 
 END_SCOPE(Cn3D)
 
+#endif // CN3D_PERIODICTABLE__HPP

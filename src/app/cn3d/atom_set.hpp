@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/07/12 23:28:27  thiessen
+* now draws basic CPK model
+*
 * Revision 1.5  2000/07/12 02:00:39  thiessen
 * add basic wxWindows GUI
 *
@@ -87,6 +90,7 @@ public:
     static const double NO_ALTCONFID;
 
     // public methods
+    //bool Draw(void) const;
     bool HasTemp(void) const { return (averageTemperature!=NO_TEMPERATURE); }
     bool HasOccup(void) const { return (occupancy!=NO_OCCUPANCY); }
     bool HasAlt(void) const { return (altConfID!=NO_ALTCONFID); }
@@ -105,6 +109,7 @@ public:
     EnsembleList ensembles;
 
     // public methods
+    bool Draw(void) const;
     const Atom* GetAtom(int moleculeID, int residueID, int atomID, 
                         const std::string *ensemble = NULL,
                         bool suppressWarning = false) const;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/12 23:27:48  thiessen
+* now draws basic CPK model
+*
 * Revision 1.4  2000/07/11 13:45:28  thiessen
 * add modules to parse chemical graph; many improvements
 *
@@ -59,6 +62,11 @@
 
 #include "cn3d/atom_set.hpp"
 #include "cn3d/vector_math.hpp"
+#include "cn3d/structure_set.hpp"
+#include "cn3d/chemical_graph.hpp"
+#include "cn3d/residue.hpp"
+#include "cn3d/periodic_table.hpp"
+#include "cn3d/opengl_renderer.hpp"
 
 USING_NCBI_SCOPE;
 using namespace objects;
@@ -223,6 +231,27 @@ AtomSet::~AtomSet(void)
         delete const_cast<std::string *>(*i);
 }
 
+bool AtomSet::Draw(void) const
+{
+    TESTMSG("drawing AtomSet");
+
+    const StructureObject *object;
+    if (!GetParentOfType(&object))
+        ERR_POST(Error << "can't get StructureObject parent from Atom");
+
+    AtomMap::const_iterator a, ae=atomMap.end();
+    for (a=atomMap.begin(); a!=ae; a++) {
+        // get element info for this atom
+        const Residue::AtomInfo *info = object->graph->GetAtomInfo(
+            (*a).first.first, (*a).first.second.first, (*a).first.second.second);
+        const Element *element = PeriodicTable.GetElement(info->atomicNumber);
+        // just draw the first altConf for now
+        DrawSphere((*a).second.front()->site, element->vdWRadius, element->color);
+    }
+
+    return false; // don't draw Atom children
+}
+
 const double Atom::NO_TEMPERATURE = -1.0;
 const double Atom::NO_OCCUPANCY = -1.0;
 const double Atom::NO_ALTCONFID = '-';
@@ -261,6 +290,13 @@ Atom::Atom(StructureBase *parent) :
     altConfID(NO_ALTCONFID)
 {
 }
+
+//bool Atom::Draw(void) const
+//{
+//    TESTMSG("drawing Atom");
+//    return true;
+//}
+
 
 END_SCOPE(Cn3D)
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/12 23:28:28  thiessen
+* now draws basic CPK model
+*
 * Revision 1.3  2000/06/29 19:18:19  thiessen
 * improved atom map
 *
@@ -49,6 +52,7 @@
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbidiag.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -61,6 +65,14 @@ public:
     Vector(double xi = 0, double yi = 0, double zi = 0)
     {
         x=xi; y=yi; z=zi;
+    }
+    double operator [] (SIZE_TYPE i) const
+    {
+        if (i == 0) return x;
+        else if (i == 1) return y;
+        else if (i == 2) return z;
+        else ERR_POST(Error << "Vector operator [] access out of range : " << i);
+        return 0.0;
     }
     friend Vector operator + (const Vector& a, const Vector& b)
     {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/12 23:28:27  thiessen
+* now draws basic CPK model
+*
 * Revision 1.2  2000/07/12 02:00:39  thiessen
 * add basic wxWindows GUI
 *
@@ -77,7 +80,7 @@ public:
     // public methods
     const Residue::AtomInfo * GetAtomInfo(int mID, int rID, int aID) const
     { 
-        MoleculeMap::const_iterator info=molecules.find(rID);
+        MoleculeMap::const_iterator info=molecules.find(mID);
         if (info != molecules.end()) return (*info).second->GetAtomInfo(rID, aID);
         ERR_POST(Warning << "Graph: can't find molecule #" << mID);
         return NULL;

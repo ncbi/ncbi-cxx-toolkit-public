@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/12 23:27:49  thiessen
+* now draws basic CPK model
+*
 * Revision 1.1  2000/07/11 13:45:29  thiessen
 * add modules to parse chemical graph; many improvements
 *
@@ -109,8 +112,8 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
 
 bool ChemicalGraph::Draw(void) const
 {
-    TESTMSG("drawing ChemicalGraph");
-    return true;
+    TESTMSG("not drawing ChemicalGraph yet");
+    return false;
 }
 
 END_SCOPE(Cn3D)

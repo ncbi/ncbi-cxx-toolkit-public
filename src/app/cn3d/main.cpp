@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/07/12 23:27:49  thiessen
+* now draws basic CPK model
+*
 * Revision 1.7  2000/07/12 14:11:29  thiessen
 * added initial OpenGL rendering engine
 *
@@ -66,8 +69,26 @@ USING_NCBI_SCOPE;
 using namespace objects;
 using namespace Cn3D;
 
-static wxFrame *logFrame = NULL;
+
+// Set the NCBI diagnostic streams to go to this method, which then pastes them
+// into a wxWindow. This log window can be closed anytime, and will be recreated
+// if necessary. More serious errors will bring up a dialog, so that the user
+// will get a chance to see the error before the program halts upon a fatal error.
+
+class MsgFrame;
+
+static MsgFrame *logFrame = NULL;
 static wxTextCtrl *logText = NULL;
+
+class MsgFrame : public wxFrame
+{
+public:
+    MsgFrame(wxWindow* parent, wxWindowID id, const wxString& title, 
+        const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, 
+        long style = wxDEFAULT_FRAME_STYLE, const wxString& name = "frame") :
+        wxFrame(parent, id, title, pos, size, style, name) { }
+    ~MsgFrame(void) { logFrame = NULL; logText = NULL; }
+};
 
 void DisplayDiagnostic(const SDiagMessage& diagMsg)
 {
@@ -82,9 +103,8 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
 		delete dlg;
     } else {
         if (!logFrame) {
-            logFrame = new wxFrame(NULL, -1, "Cn3D++ Message Log", 
-                wxPoint(50, 50), wxSize(400, 200),
-                wxMINIMIZE_BOX | wxMAXIMIZE_BOX | wxCAPTION | wxTHICK_FRAME);
+            logFrame = new MsgFrame(NULL, -1, "Cn3D++ Message Log", 
+                wxPoint(50, 50), wxSize(400, 200), wxDEFAULT_FRAME_STYLE);
             logFrame->SetSizeHints(150, 100);
             logText = new wxTextCtrl(logFrame, -1, "", 
                 wxPoint(0,0), wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxHSCROLL);
@@ -94,7 +114,8 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
     }
 }
 
-// `Main program' equivalent, creating windows and returning main app frame
+
+// `Main program' equivalent, creating GUI framework
 IMPLEMENT_APP(Cn3DApp)
 
 bool Cn3DApp::OnInit(void)
@@ -117,25 +138,38 @@ bool Cn3DApp::OnInit(void)
     return TRUE;
 }
 
+
+// data and methods for the main program window (a Cn3DMainFrame)
+
 BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
-    EVT_MENU(MID_OPEN, Cn3DMainFrame::OnOpen)
-    EVT_MENU(MID_EXIT, Cn3DMainFrame::OnExit)
+    EVT_MENU(MID_OPEN,      Cn3DMainFrame::OnOpen)
+    EVT_MENU(MID_EXIT,      Cn3DMainFrame::OnExit)
+    EVT_MENU(MID_ZOOM_IN,   Cn3DMainFrame::OnZoomIn)
+    EVT_MENU(MID_ZOOM_OUT,  Cn3DMainFrame::OnZoomOut)
+    EVT_MENU(MID_RESET,     Cn3DMainFrame::OnReset)
 END_EVENT_TABLE()
 
-// frame constructor
 Cn3DMainFrame::Cn3DMainFrame(wxFrame *frame, const wxString& title, const wxPoint& pos,
     const wxSize& size, long style) :
     wxFrame(frame, -1, title, pos, size, style | wxTHICK_FRAME)
 {
     SetSizeHints(150, 150); // min size
 
-    // Make a menubar
-    menuBar = new wxMenuBar;
-    menu1 = new wxMenu;
-    menu1->Append(MID_OPEN, "&Open");
-    menu1->AppendSeparator();
-    menu1->Append(MID_EXIT, "E&xit");
-    menuBar->Append(menu1, "&File");
+    // File menu
+    wxMenuBar *menuBar = new wxMenuBar;
+    wxMenu *menu = new wxMenu;
+    menu->Append(MID_OPEN, "&Open");
+    menu->AppendSeparator();
+    menu->Append(MID_EXIT, "E&xit");
+    menuBar->Append(menu, "&File");
+
+    // View menu
+    menu = new wxMenu;
+    menu->Append(MID_ZOOM_IN, "Zoom &In");
+    menu->Append(MID_ZOOM_OUT, "Zoom &Out");
+    menu->Append(MID_RESET, "&Reset");
+    menuBar->Append(menu, "&View");
+
     SetMenuBar(menuBar);
 
     // Make a GLCanvas
@@ -156,11 +190,6 @@ Cn3DMainFrame::Cn3DMainFrame(wxFrame *frame, const wxString& title, const wxPoin
     Show(TRUE);
 }
 
-void Cn3DMainFrame::OnExit(wxCommandEvent& event)
-{
-	Destroy();
-}
-
 Cn3DMainFrame::~Cn3DMainFrame(void)
 {
     delete glCanvas;
@@ -172,8 +201,36 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
     }
 }
 
+void Cn3DMainFrame::OnExit(wxCommandEvent& event)
+{
+	Destroy();
+}
+
+void Cn3DMainFrame::OnZoomIn(wxCommandEvent& event)
+{
+    glCanvas->SetCurrent();
+    glCanvas->renderer.ChangeView(OpenGLRenderer::eZoomIn);
+    glCanvas->Refresh(FALSE);
+}
+
+void Cn3DMainFrame::OnZoomOut(wxCommandEvent& event)
+{
+    glCanvas->SetCurrent();
+    glCanvas->renderer.ChangeView(OpenGLRenderer::eZoomOut);
+    glCanvas->Refresh(FALSE);
+}
+
+void Cn3DMainFrame::OnReset(wxCommandEvent& event)
+{
+    glCanvas->SetCurrent();
+    glCanvas->renderer.ResetCamera();
+    glCanvas->Refresh(FALSE);
+}
+
 void Cn3DMainFrame::LoadFile(const char *filename)
 {
+    glCanvas->SetCurrent();
+
     // clear old data
     if (glCanvas->structureSet) {
         delete glCanvas->structureSet;
@@ -200,6 +257,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
     // Create StructureSet from mime data
     glCanvas->structureSet = new StructureSet(mime);
     glCanvas->renderer.AttachStructureSet(glCanvas->structureSet);
+    glCanvas->Refresh();
 }
 
 void Cn3DMainFrame::OnOpen(wxCommandEvent& event)
@@ -210,16 +268,14 @@ void Cn3DMainFrame::OnOpen(wxCommandEvent& event)
 }
 
 
-/*
- * Cn3DGLCanvas implementation
- */
+// data and methods for the GLCanvas used for rendering structures (Cn3DGLCanvas)
 
 BEGIN_EVENT_TABLE(Cn3DGLCanvas, wxGLCanvas)
-    EVT_SIZE(Cn3DGLCanvas::OnSize)
-    EVT_PAINT(Cn3DGLCanvas::OnPaint)
+    EVT_SIZE                (Cn3DGLCanvas::OnSize)
+    EVT_PAINT               (Cn3DGLCanvas::OnPaint)
     //EVT_CHAR(Cn3DGLCanvas::OnChar)
-    EVT_MOUSE_EVENTS(Cn3DGLCanvas::OnMouseEvent)
-    EVT_ERASE_BACKGROUND(Cn3DGLCanvas::OnEraseBackground)
+    EVT_MOUSE_EVENTS        (Cn3DGLCanvas::OnMouseEvent)
+    EVT_ERASE_BACKGROUND    (Cn3DGLCanvas::OnEraseBackground)
 END_EVENT_TABLE()
 
 Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent, wxWindowID id,
@@ -271,11 +327,12 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
     if (!GetContext()) return;
 #endif
 
+    SetCurrent();
     if (event.LeftIsDown()) {
         if (!dragging) {
             dragging = true;
         } else {
-            renderer.MouseDragged(
+            renderer.ChangeView(OpenGLRenderer::eXYRotateHV,
                 event.GetX()-last_x, event.GetY()-last_y);
             Refresh(FALSE);
         }

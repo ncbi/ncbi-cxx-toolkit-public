@@ -30,12 +30,28 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/12 23:27:49  thiessen
+* now draws basic CPK model
+*
 * Revision 1.1  2000/07/12 14:11:30  thiessen
 * added initial OpenGL rendering engine
 *
 * ===========================================================================
 */
 
+#if defined(WIN32)
+#include <windows.h>
+
+#elif defined(macintosh)
+#include <agl.h>
+
+#elif defined(WIN_MOTIF)
+#include <GL/glx.h>
+
+#endif
+
+#include <GL/gl.h>
+#include <GL/glu.h>
 #include <math.h>
 
 #include "cn3d/opengl_renderer.hpp"
@@ -51,8 +67,11 @@ static void ConstructLogo(void);
 static void SetColor(GLenum type, GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha = 1.0);
 
 static const double PI = acos(-1);
-inline double DegreesToRad(double deg) { return deg*PI/180.0; }
-inline double RadToDegrees(double rad) { return rad*180.0/PI; }
+static inline double DegreesToRad(double deg) { return deg*PI/180.0; }
+static inline double RadToDegrees(double rad) { return rad*180.0/PI; }
+
+static const GLuint FIRST_LIST = 1;
+static GLUquadricObj *qobj = NULL;
 
 /* these are used for both matrial colors and light colors */
 static const GLfloat Color_Off[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -60,8 +79,19 @@ static const GLfloat Color_MostlyOff[4] = { 0.05f, 0.05f, 0.05f, 1.0f };
 static const GLfloat Color_MostlyOn[4] = { 0.95f, 0.95f, 0.95f, 1.0f };
 static const GLfloat Color_On[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
+
+// OpenGLRenderer methods - initialization and setup
+
 OpenGLRenderer::OpenGLRenderer(void)
 {
+    // initialize global qobj
+    if (!qobj) {
+        qobj = gluNewQuadric();
+        if (!qobj) ERR_POST(Fatal << "unable to allocate GLUQuadricObj");
+        gluQuadricDrawStyle(qobj, GLU_FILL);
+        gluQuadricNormals(qobj, GLU_SMOOTH);
+        gluQuadricOrientation(qobj, GLU_OUTSIDE);
+    }
     AttachStructureSet(NULL);
 }
 
@@ -81,18 +111,23 @@ void OpenGLRenderer::Init(void) const
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
 
-    /* clear these material colors */
+    // clear these material colors
     glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, Color_Off);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, Color_Off);
 
-    glShadeModel(GL_SMOOTH);
-    glEnable(GL_DEPTH_TEST);
-
-    /* turn on culling to speed rendering */
+    // turn on culling to speed rendering
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
+
+    // misc options
+    glShadeModel(GL_SMOOTH);
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_NORMALIZE);
 }
+
+
+// methods dealing with the view
 
 void OpenGLRenderer::NewView(void) const
 {
@@ -103,17 +138,94 @@ void OpenGLRenderer::NewView(void) const
     glLoadIdentity();
 
     GLdouble aspect = ((GLfloat)(Viewport[2])) / Viewport[3];
-    gluPerspective(RadToDegrees(cameraAngleRad),    //viewing angle (degrees)
+    gluPerspective(RadToDegrees(cameraAngleRad),    // viewing angle (degrees)
                    aspect,                          // w/h aspect
                    cameraClipNear,                  // near clipping plane
-                   cameraClipFar);                  //far clipping plane 
+                   cameraClipFar);                  // far clipping plane 
     gluLookAt(0.0,0.0,cameraDistance,               // the camera position
-                cameraLookAtX,                      // the "look-at" point
-                cameraLookAtY,
-                0.0,
-                0.0,1.0,0.0);                      // the up direction
+              cameraLookAtX,                        // the "look-at" point
+              cameraLookAtY,
+              0.0,
+              0.0,1.0,0.0);                         // the up direction
 
     glMatrixMode(GL_MODELVIEW);
+}
+
+void OpenGLRenderer::ResetCamera(void)
+{
+    glLoadIdentity();
+    glGetDoublev(GL_MODELVIEW_MATRIX, viewMatrix);
+    rotateSpeed = 0.5;
+
+    // set up initial camera
+    cameraLookAtX = cameraLookAtY = 0.0;
+    if (structureSet) { // for structure
+        cameraDistance = 200;
+        cameraAngleRad = DegreesToRad(35.0);
+    } else { // for logo
+        cameraAngleRad = PI / 14;
+        cameraDistance = 200;
+    }
+    cameraClipNear = 0.5*cameraDistance;
+    cameraClipFar = 1.5*cameraDistance;
+    NewView();
+}
+
+void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int Y2)
+{
+    glLoadIdentity();
+
+    switch (control) {
+    case eXYRotateHV:
+        glRotated(rotateSpeed*dY, 1.0, 0.0, 0.0);
+        glRotated(rotateSpeed*dX, 0.0, 1.0, 0.0);
+        break;
+    case eZRotateH:
+        glRotated(rotateSpeed*dX, 0.0, 0.0, 1.0);
+        break;
+    case eScaleH:
+        break;
+    case eXYTranslateHV:
+        break;
+    case eZoomHHVV:
+        break;
+    case eZoomOut:
+        cameraAngleRad *= 1.5;
+        NewView();
+        break;
+    case eZoomIn:
+        cameraAngleRad /= 1.5;
+        NewView();
+        break;
+    }
+
+    glMultMatrixd(viewMatrix);
+    glGetDoublev(GL_MODELVIEW_MATRIX, viewMatrix);
+}
+
+void OpenGLRenderer::SetSize(GLint width, GLint height) const
+{
+    glViewport(0, 0, width, height);
+    NewView();
+}
+
+
+// methods dealing with structure data and drawing
+
+void OpenGLRenderer::Display(void) const
+{
+    glClearColor(background[0], background[1], background[2], 1.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glLoadIdentity();
+    glMultMatrixd(viewMatrix);
+
+    if (structureSet) {
+        glCallList(FIRST_LIST);
+    } else {
+        glCallList(FIRST_LIST); // draw logo
+    }
+    glFlush();
 }
 
 void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
@@ -123,48 +235,32 @@ void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
     // make sure general GL stuff is set up
     background[0] = background[1] = background[2] = 0.0;
     Init();
-    
-    // set up initial camera
-    cameraLookAtX = cameraLookAtY = 0.0;
-    if (structureSet) { // for structure
-        cameraAngleRad = DegreesToRad(35.0);
-    } else { // for logo
-        cameraAngleRad = PI / 14;
-        cameraDistance = 200;
-        ConstructLogo();
-    }
-    cameraClipNear = 0.5*cameraDistance;
-    cameraClipFar = 1.5*cameraDistance;
-    NewView();
+    ResetCamera();
+    Construct();
 }
 
-void OpenGLRenderer::SetSize(GLint width, GLint height) const
+void OpenGLRenderer::Construct(void)
 {
-    glViewport(0, 0, width, height);
-    NewView();
-}
-
-void OpenGLRenderer::MouseDragged(int dY, int dX)
-{
-}
-
-void OpenGLRenderer::Display(void) const
-{
-    glClearColor(background[0], background[1], background[2], 1.0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
     if (structureSet) {
+        glNewList(FIRST_LIST, GL_COMPILE);
+        structureSet->DrawAll();
+        glEndList();
     } else {
-        glCallList(1); // draw logo
+        ConstructLogo();
     }
-    glFlush();
 }
 
+
+// non-object (static) functions
+
+// set current GL color; don't change color if it's same as what's current
 static void SetColor(GLenum type, GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
     static GLfloat pr, pg, pb, pa;
     static GLenum pt = GL_NONE;
-    static GLfloat rgb[4] = { red, green, blue, alpha};
 
 //#ifdef _DEBUG
     if (red == 0.0 && green == 0.0 && blue == 0.0)
@@ -173,7 +269,7 @@ static void SetColor(GLenum type, GLfloat red, GLfloat green, GLfloat blue, GLfl
         ERR_POST(Warning << "SetColor request alpha 0.0");
 //#endif
 
-    if (rgb[0] != pr || rgb[1] != pg || rgb[2] != pb || rgb[3] != pa || type != pt) {
+    if (red != pr || green != pg || blue != pb || alpha != pa || type != pt) {
         if (type != pt) {
             if (type == GL_DIFFUSE) {
                 glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, Color_MostlyOff);
@@ -184,41 +280,35 @@ static void SetColor(GLenum type, GLfloat red, GLfloat green, GLfloat blue, GLfl
             }
             pt = type;
         }
+        GLfloat rgb[4] = { red, green, blue, alpha };
         glMaterialfv(GL_FRONT_AND_BACK, type, rgb);
         if (type == GL_AMBIENT) {
             /* this is necessary so that fonts are rendered in correct
                 color in SGI's OpenGL implementation, and maybe others */
-            glColor4f(rgb[0], rgb[1], rgb[2], rgb[3]);
+            glColor4f(red, green, blue, alpha);
         }
-        pr = rgb[0];
-        pg = rgb[1];
-        pb = rgb[2];
-        pa = rgb[3];
+        pr = red;
+        pg = green;
+        pb = blue;
+        pa = alpha;
     }
 }
 
 /* create display list with logo */
 static void ConstructLogo(void)
 {
-    GLfloat logoColor[3] = { 100.0f/255, 240.0f/255, 150.0f/255 };
+    static const GLfloat logoColor[3] = { 100.0f/255, 240.0f/255, 150.0f/255 };
+    static const int LOGO_SIDES = 36, segments = 180;
     int i, n, s, g;
-
-    static const int LOGO_SIDES = 36;
-    int segments = 180;
     GLdouble bigRad = 12.0, height = 24.0,
         minRad = 0.1, maxRad = 2.0,
         ringPts[LOGO_SIDES * 3], *pRingPts = ringPts,
         prevRing[LOGO_SIDES * 3], *pPrevRing = prevRing, *tmp,
         ringNorm[LOGO_SIDES * 3], *pRingNorm = ringNorm,
         prevNorm[LOGO_SIDES * 3], *pPrevNorm = prevNorm,
-        PI = acos(-1), length,
-        startRad, midRad, phase, currentRad, CR[3], H[3], V[3];
+        length, startRad, midRad, phase, currentRad, CR[3], H[3], V[3];
 
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    glNewList(1, GL_COMPILE);
+    glNewList(FIRST_LIST, GL_COMPILE);
 
     /* create logo */
     SetColor(GL_DIFFUSE, logoColor[0], logoColor[1], logoColor[2]);
@@ -305,8 +395,16 @@ static void ConstructLogo(void)
     glEndList();
 }
 
-void OpenGLRenderer::Construct(void)
+
+// exported function for drawing primitives
+
+void DrawSphere(const Vector& site, double radius, const Vector& color)
 {
+    SetColor(GL_DIFFUSE, color[0], color[1], color[2]);
+    glPushMatrix();
+    glTranslated(site.x, site.y, site.z);
+    gluSphere(qobj, radius, 12, 8);
+    glPopMatrix();
 }
 
 END_SCOPE(Cn3D)

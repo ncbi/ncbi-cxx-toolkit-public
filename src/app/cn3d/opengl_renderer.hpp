@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/12 23:28:27  thiessen
+* now draws basic CPK model
+*
 * Revision 1.1  2000/07/12 14:10:45  thiessen
 * added initial OpenGL rendering engine
 *
@@ -39,23 +42,17 @@
 #ifndef CN3D_OPENGL_RENDERER__HPP
 #define CN3D_OPENGL_RENDERER__HPP
 
-#if defined(WIN32)
-#include <windows.h>
+// do not include GL headers here, so that other modules can more easily
+// access this without potential name conflicts
 
-#elif defined(macintosh)
-#include <agl.h>
-
-#elif defined(WIN_MOTIF)
-#include <GL/glx.h>
-
-#endif
-
-#include <GL/gl.h>
-#include <GL/glu.h>
-
-#include <corelib/ncbistl.hpp>
+#include "cn3d/vector_math.hpp"
 
 BEGIN_SCOPE(Cn3D)
+
+// non-object functions to draw primitives in OpenGL
+void DrawSphere(const Vector& site, double radius, const Vector& color);
+
+// the OpenGLRenderer class
 
 class StructureSet;
 
@@ -72,34 +69,50 @@ public:
     // the rendering context is established and the renderer made current)
     void Init(void) const;
 
+    // sets the size of the viewport
+    void SetSize(int width, int height) const;
+
     // tells the renderer that new camera settings need to be applied
     void NewView(void) const;
 
-    // tells the renderer what structure(s) it's to draw
-    void AttachStructureSet(StructureSet *targetStructureSet);
+    // reset camera to original state
+    void ResetCamera(void);
 
-    // constructs the display lists (but doesn't draw them)
-    void Construct(void);
+    // called to change view (according to mouse movements)
+    enum eViewAdjust {
+        eXYRotateHV,        // rotate about X,Y axes according to horiz. & vert. movement
+        eZRotateH,          // rotate in plane (about Z) according to horiz. movement
+        eScaleH,            // scale according to horiz. movement
+        eXYTranslateHV,     // translate in X,Y according to horiz. & vert. movement
+        eZoomHHVV,          // zoom according to (H1,V1),(H2,V2) box
+        eZoomIn,            // zoom in
+        eZoomOut            // zoom out
+    };
+    void ChangeView(eViewAdjust control, int dX = 0, int dY = 0, int X2 = 0, int Y2 = 0);
 
     // draws the display lists
     void Display(void) const;
 
-    // sets the size of the viewport
-    void SetSize(GLint width, GLint height) const;
+    // tells the renderer what structure(s) it's to draw
+    void AttachStructureSet(StructureSet *targetStructureSet);
 
-    // called when mouse is click-dragged in window
-    void MouseDragged(int dY, int dX);
+    // constructs the structure display lists (but doesn't draw them)
+    void Construct(void);
 
 private:
     StructureSet *structureSet;
 
     // camera data
-    GLdouble cameraDistance, cameraAngleRad, 
+    double cameraDistance, cameraAngleRad, 
         cameraLookAtX, cameraLookAtY,
-        cameraClipNear, cameraClipFar;
+        cameraClipNear, cameraClipFar,
+        viewMatrix[16];
+
+    // controls for view changes
+    double rotateSpeed;
 
     // background color
-    GLclampf background[3];
+    float background[3];
 };
 
 END_SCOPE(Cn3D)

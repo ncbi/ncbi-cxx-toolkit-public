@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/07/12 23:28:28  thiessen
+* now draws basic CPK model
+*
 * Revision 1.5  2000/07/11 13:49:29  thiessen
 * add modules to parse chemical graph; many improvements
 *
@@ -116,11 +119,24 @@ private:
         if (on) _flags |= flag; else _flags &= ~flag;
     }
 
-public:
     // to set/query specific flags
     bool IsVisible(void) const { return GetFlag(_eVisible); }
     void SetVisible(bool on) { SetFlag(_eVisible, on); }
 #endif
+
+public:
+    // go up the hierarchy to find a parent of the desired type
+    template < class T >
+    bool GetParentOfType(T* *ptr) const
+    {
+        *ptr = NULL;
+        for (const StructureBase *parent=this; parent; parent=parent->_parent) {
+            if ((*ptr = dynamic_cast<T*>(parent)) != NULL) {
+                return true;
+            }
+        }
+        return false;
+    }
 };
 
 END_SCOPE(Cn3D)

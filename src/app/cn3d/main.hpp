@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/12 23:28:27  thiessen
+* now draws basic CPK model
+*
 * Revision 1.3  2000/07/12 14:10:44  thiessen
 * added initial OpenGL rendering engine
 *
@@ -99,25 +102,27 @@ public:
 
     // public data
     Cn3DGLCanvas *glCanvas;
-    wxMenuBar *menuBar;
-    wxMenu *menu1;
 
     // public methods
     void LoadFile(const char *filename);
 
+    // menu-associated methods
+    enum {
+        MENU1_FILE,
+            MID_OPEN,
+            MID_EXIT,
+        MENU2_VIEW,
+            MID_ZOOM_IN,
+            MID_ZOOM_OUT,
+            MID_RESET,
+    };
     void OnOpen(wxCommandEvent& event);
     void OnExit(wxCommandEvent& event);
+    void OnZoomIn(wxCommandEvent& event);
+    void OnZoomOut(wxCommandEvent& event);
+    void OnReset(wxCommandEvent& event);
 
 DECLARE_EVENT_TABLE()
-};
-
-/* 
- * Menu identifiers
- */
-enum {
-    MENU1_FILE,         // File
-        MID_OPEN,                   // Open
-        MID_EXIT                    // Exit
 };
 
 #endif // CN3D_MAIN__HPP
