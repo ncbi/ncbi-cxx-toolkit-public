@@ -115,7 +115,7 @@ public:
     void SetWindowSize(int w);
 
     int GetExtendWordMethod() const;
-    void SetExtendWordMethod(int ew);
+    void SetExtendWordMethod(int ew, bool set);
 
     double GetXDropoff() const;
     void SetXDropoff(double x);
@@ -380,6 +380,10 @@ inline void
 CBlastOptions::SetLookupTableType(int type)
 {
     m_LutOpts->lut_type = type;
+    if (type == MB_LOOKUP_TABLE) {
+       m_LutOpts->max_positions = INT4_MAX;
+       m_LutOpts->word_size = BLAST_WORDSIZE_MEGABLAST;
+    } 
 }
 
 inline short
@@ -557,9 +561,12 @@ CBlastOptions::GetExtendWordMethod() const
 }
 
 inline void
-CBlastOptions::SetExtendWordMethod(int ew)
+CBlastOptions::SetExtendWordMethod(int ew, bool set)
 {
-    m_InitWordOpts->extend_word_method |= ew;
+    if (set)
+        m_InitWordOpts->extend_word_method |= ew;
+    else
+        m_InitWordOpts->extend_word_method &= ~ew;
 }
 
 inline double
@@ -1022,6 +1029,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2003/09/26 15:42:42  dondosha
+* Added second argument to SetExtendWordMethod, so bit can be set or unset
+*
 * Revision 1.24  2003/09/25 15:25:22  dondosha
 * Set phi_align in hit saving options for PHI BLAST
 *

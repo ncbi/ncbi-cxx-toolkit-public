@@ -289,14 +289,13 @@ CBlast2seqApplication::ProcessCommandLineArgs(CBlastOptions& opt)
 
     // The next 3 apply to nucleotide searches only
     string program = args["program"].AsString();
-    if (args["ag"].AsBoolean() && program == "blastn") {
-        opt.SetExtendWordMethod(EXTEND_WORD_AG);
-    }
-    if (args["varword"].AsBoolean() && program == "blastn") {
-        opt.SetExtendWordMethod(EXTEND_WORD_VARIABLE_SIZE);
-    }
-    if (args["stride"].AsInteger() && program == "blastn") {
-        opt.SetScanStep(args["stride"].AsInteger());
+    if (program == "blastn") {
+        opt.SetExtendWordMethod(EXTEND_WORD_AG, args["ag"].AsBoolean());
+        opt.SetExtendWordMethod(EXTEND_WORD_VARIABLE_SIZE,
+                                args["varword"].AsBoolean());
+        if (args["stride"].AsInteger()) {
+            opt.SetScanStep(args["stride"].AsInteger());
+        }
     }
 
     if (args["xungap"].AsDouble()) {
@@ -316,6 +315,7 @@ CBlast2seqApplication::ProcessCommandLineArgs(CBlastOptions& opt)
 
     if (args["greedy"].AsBoolean()) {
         opt.SetGapExtnAlgorithm(EXTEND_GREEDY);
+        opt.SetExtendWordMethod(EXTEND_WORD_UNGAPPED, false);
     }
     if (args["xgap"].AsDouble()) {
         opt.SetGapXDropoff(args["xgap"].AsDouble());
@@ -485,6 +485,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/09/26 15:42:23  dondosha
+ * Added second argument to SetExtendWordMethod, so bit can be set or unset
+ *
  * Revision 1.18  2003/09/11 17:46:16  camacho
  * Changed CBlastOption -> CBlastOptions
  *
