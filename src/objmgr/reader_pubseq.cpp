@@ -209,15 +209,21 @@ bool CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& sr,
 {
     int gi = 0;
 
-    if(seqId.IsGi())
+    if(seqId.IsGi()) {
         gi = seqId.GetGi();
-    else {
+    } else {
         CNcbiOstrstream oss;
         {
             CObjectOStreamAsn ooss(oss);
             ooss << seqId;
         }
-        CDB_VarChar asnIn(static_cast<string>(CNcbiOstrstreamToString(oss)));
+
+        // note: this was
+        //CDB_VarChar asnIn(static_cast<string>(CNcbiOstrstreamToString(oss)));
+        // but MSVC doesn't like this.  This is the only version that
+        // will compile:
+        CDB_VarChar asnIn;
+        asnIn = CNcbiOstrstreamToString(oss);
         
         auto_ptr<CDB_RPCCmd> cmd(m_Pool[con]->RPC("id_gi_by_seqid_asn", 1));
         cmd->SetParam("@asnin", &asnIn);
@@ -485,6 +491,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.25  2003/04/15 16:33:29  dicuccio
+* Minor logic reorganization to appease MSVC - wasn't dealing well with a verbose
+* cast
+*
 * Revision 1.24  2003/04/15 15:30:15  vasilche
 * Added include <memory> when needed.
 * Removed buggy buffer in printing methods.
