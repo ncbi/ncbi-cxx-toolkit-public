@@ -76,13 +76,13 @@ public:
     /// Flags for compile regular expressions.
     ///
     /// PCRE compiler flags used in the constructor and in Set().
-    /// If eCompile_ignore_case is set, matches are case insensitive.
-    /// If eCompile_dotall is set, a dot metacharater in the pattern matches
+    /// If fCompile_ignore_case is set, matches are case insensitive.
+    /// If fCompile_dotall is set, a dot metacharater in the pattern matches
     /// all characters, including newlines. Without it, newlines are excluded.
-    /// If eCompile_newline is set then ^ matches the start of a line and
+    /// If fCompile_newline is set then ^ matches the start of a line and
     /// $ matches the end of a line. If not set, ^ matches only the start
     /// of the entire string and $ matches only the end of the entire string.
-    /// If eCompile_ungreedy inverts the "greediness" of the quantifiers so
+    /// If fCompile_ungreedy inverts the "greediness" of the quantifiers so
     /// that they are not greedy by default, but become greedy if followed by
     /// "?".
     /// It is not compatible with Perl. 
@@ -96,26 +96,41 @@ public:
     ///   x  for PCRE_EXTENDED
     ///   U  for PCRE_UNGREEDY
     enum ECompile {
-        eCompile_default     = 0x80000000,
-        eCompile_ignore_case = 0x80000001,
-        eCompile_dotall      = 0x80000002,
-        eCompile_newline     = 0x80000004,
-        eCompile_ungreedy    = 0x80000008
+        fCompile_default     = 0x80000000,
+        fCompile_ignore_case = 0x80000001,
+        fCompile_dotall      = 0x80000002,
+        fCompile_newline     = 0x80000004,
+        fCompile_ungreedy    = 0x80000008
+    };
+    // Deprecated flags
+    enum ECompile_deprecated {
+        eCompile_default     = fCompile_default,
+        eCompile_ignore_case = fCompile_ignore_case,
+        eCompile_dotall      = fCompile_dotall,
+        eCompile_newline     = fCompile_newline,
+        eCompile_ungreedy    = fCompile_ungreedy
     };
 
     /// Flags for match string against a pre-compiled pattern.
     ///
-    /// Setting eMatch_not_begin causes ^ not to match before the
-    /// first character of a line. Without setting eCompile_newline,
-    /// ^ won't match anything if eMatch_not_begin is set.
-    /// Setting eMatch_not_end causes $ not to match immediately before a new
-    /// line. Without setting eCompile_newline, $ won't match anything
-    /// if eMatch_not_end is set.
+    /// Setting fMatch_not_begin causes ^ not to match before the
+    /// first character of a line. Without setting fCompile_newline,
+    /// ^ won't match anything if fMatch_not_begin is set.
+    /// Setting fMatch_not_end causes $ not to match immediately before a new
+    /// line. Without setting fCompile_newline, $ won't match anything
+    /// if fMatch_not_end is set.
     enum EMatch {
-        eMatch_default       = 0x80000000,
-        eMatch_not_begin     = 0x80000001,   ///< ^ won't match string begin.
-        eMatch_not_end       = 0x80000002,   ///< $ won't match string end.
-        eMatch_not_both      = eMatch_not_begin | eMatch_not_end
+        fMatch_default       = 0x80000000,
+        fMatch_not_begin     = 0x80000001,   ///< ^ won't match string begin.
+        fMatch_not_end       = 0x80000002,   ///< $ won't match string end.
+        fMatch_not_both      = fMatch_not_begin | fMatch_not_end
+    };
+    // Deprecated flags
+    enum EMatch_deprecated {
+        eMatch_default       = fMatch_default,
+        eMatch_not_begin     = fMatch_not_begin,
+        eMatch_not_end       = fMatch_not_end,
+        eMatch_not_both      = fMatch_not_both
     };
 
     /// Constructor.
@@ -128,7 +143,7 @@ public:
     ///   Regular expression compilation flags.
     /// @sa
     ///   ECompile
-    CRegexp(const string& pattern, TCompile flags = eCompile_default);
+    CRegexp(const string& pattern, TCompile flags = fCompile_default);
 
     /// Destructor.
     ///
@@ -145,7 +160,7 @@ public:
     ///   Regular expression compilation flags.
     /// @sa
     ///   ECompile
-    void Set(const string& pattern, TCompile flags = eCompile_default);
+    void Set(const string& pattern, TCompile flags = fCompile_default);
 
     /// Get matching pattern and subpatterns.
     ///
@@ -175,7 +190,7 @@ public:
         const string& str,
         TSeqPos       offset   = 0,
         size_t        idx      = 0,
-        TMatch        flags    = eMatch_default,
+        TMatch        flags    = fMatch_default,
         bool          noreturn = false
     );
 
@@ -301,8 +316,8 @@ public:
     ///   CRegexp, CRegexp::GetMatch()
     bool Exists(
         const string&      pattern,
-        CRegexp::TCompile  compile_flags = CRegexp::eCompile_default,
-        CRegexp::TMatch    match_flags   = CRegexp::eMatch_default
+        CRegexp::TCompile  compile_flags = CRegexp::fCompile_default,
+        CRegexp::TMatch    match_flags   = CRegexp::fMatch_default
     );
 
     /// Get matching pattern/subpattern from string.
@@ -323,8 +338,8 @@ public:
     ///   CRegexp, CRegexp::GetMatch()
     string Extract(
         const string&      pattern,
-        CRegexp::TCompile  compile_flags = CRegexp::eCompile_default,
-        CRegexp::TMatch    match_flags   = CRegexp::eMatch_default,
+        CRegexp::TCompile  compile_flags = CRegexp::fCompile_default,
+        CRegexp::TMatch    match_flags   = CRegexp::fMatch_default,
         size_t             pattern_idx   = 0
     );
 
@@ -352,8 +367,8 @@ public:
     size_t Replace(
         const string&      search,
         const string&      replace,
-        CRegexp::TCompile  compile_flags = CRegexp::eCompile_default,
-        CRegexp::TMatch    match_flags   = CRegexp::eMatch_default,
+        CRegexp::TCompile  compile_flags = CRegexp::fCompile_default,
+        CRegexp::TMatch    match_flags   = CRegexp::fMatch_default,
         size_t             max_replace   = 0
     );
 
@@ -436,8 +451,8 @@ public:
     size_t ReplaceRange(
         const string&       search,
         const string&       replace,
-        CRegexp::TCompile   compile_flags  = CRegexp::eCompile_default,
-        CRegexp::TMatch     match_flags    = CRegexp::eMatch_default,
+        CRegexp::TCompile   compile_flags  = CRegexp::fCompile_default,
+        CRegexp::TMatch     match_flags    = CRegexp::fMatch_default,
         CRegexpUtil::ERange process_within = eInside,
         size_t              max_replace    = 0
     );
@@ -561,6 +576,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/11/22 17:15:23  ivanov
+ * Introduce fCompile_* and fMatch_* flags.
+ * The eCompile_* and eMatch_* are depricated now.
+ *
  * Revision 1.11  2004/11/22 16:46:13  ivanov
  * Moved #include <pcre.h> from .hpp to .cpp.
  * Do not assume that default compile and match flags are equal 0,

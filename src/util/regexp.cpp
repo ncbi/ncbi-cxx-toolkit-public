@@ -77,20 +77,21 @@ static int s_GetRealCompileFlags(CRegexp::TCompile compile_flags)
 {
     int flags = 0;
 
-    if ( !F_ISSET(compile_flags, CRegexp::eCompile_default ) {
+    if ( !compile_flags  &&
+         !F_ISSET(compile_flags, CRegexp::fCompile_default ) {
         NCBI_THROW(CRegexpException, eBadFlags,
                    "Bad regular expression compilation flags");
     }
-    if ( F_ISSET(compile_flags, CRegexp::eCompile_ignore_case ) {
+    if ( F_ISSET(compile_flags, CRegexp::fCompile_ignore_case ) {
         flags |= PCRE_CASELESS;
     }
-    if ( F_ISSET(compile_flags, CRegexp::eCompile_dotall ) {
+    if ( F_ISSET(compile_flags, CRegexp::fCompile_dotall ) {
         flags |= PCRE_DOTALL;
     }
-    if ( F_ISSET(compile_flags, CRegexp::eCompile_newline ) {
+    if ( F_ISSET(compile_flags, CRegexp::fCompile_newline ) {
         flags |= PCRE_MULTILINE;
     }
-    if ( F_ISSET(compile_flags, CRegexp::eCompile_ungreedy ) {
+    if ( F_ISSET(compile_flags, CRegexp::fCompile_ungreedy ) {
         flags |= PCRE_UNGREEDY;
     }
     return flags;
@@ -100,14 +101,15 @@ static int s_GetRealMatchFlags(CRegexp::TMatch match_flags)
 {
     int flags = 0;
 
-    if ( !F_ISSET(match_flags, CRegexp::eMatch_default ) {
+    if ( !match_flags  &&
+         !F_ISSET(match_flags, CRegexp::fMatch_default ) {
         NCBI_THROW(CRegexpException, eBadFlags,
                    "Bad regular expression match flags");
     }
-    if ( F_ISSET(match_flags, CRegexp::eMatch_not_begin ) {
+    if ( F_ISSET(match_flags, CRegexp::fMatch_not_begin ) {
         flags |= PCRE_NOTBOL;
     }
-    if ( F_ISSET(match_flags, CRegexp::eMatch_not_end ) {
+    if ( F_ISSET(match_flags, CRegexp::fMatch_not_end ) {
         flags |= PCRE_NOTEOL;
     }
     return flags;
@@ -329,7 +331,7 @@ size_t CRegexpUtil::ReplaceRange(
         // Check beginning of block [addr_re_start:addr_re_end]
         if ( !inside  &&  !m_RangeStart.empty() ) {
             CRegexp re(m_RangeStart.c_str());
-            re.GetMatch(line.c_str(), 0, 0, CRegexp::eMatch_default, true);
+            re.GetMatch(line.c_str(), 0, 0, CRegexp::fMatch_default, true);
             inside = (re.NumFound() > 0);
         } else {
             inside = true;
@@ -348,7 +350,7 @@ size_t CRegexpUtil::ReplaceRange(
         if ( inside  &&  !m_RangeEnd.empty() ) {
             // Two addresses
             CRegexp re(m_RangeEnd.c_str());
-            re.GetMatch(line.c_str(), 0, 0, CRegexp::eMatch_default, true);
+            re.GetMatch(line.c_str(), 0, 0, CRegexp::fMatch_default, true);
             inside = (re.NumFound() <= 0);
         } else {
             // One address -- process one current string only
@@ -406,6 +408,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/11/22 17:15:23  ivanov
+ * Introduce fCompile_* and fMatch_* flags.
+ * The eCompile_* and eMatch_* are depricated now.
+ *
  * Revision 1.9  2004/11/22 16:45:40  ivanov
  * Moved #include <pcre.h> from .hpp to .cpp.
  * Do not assume that default compile and match flags are equal 0,
