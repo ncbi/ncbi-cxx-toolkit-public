@@ -528,6 +528,99 @@ protected:
 };
 
 
+/// Service class for DLLs resolution.
+/// 
+/// Class is used by CPluginManager to scan directories for DLLs, 
+/// loading and resolving entry points.
+///
+class NCBI_XNCBI_EXPORT CPluginManager_DllResolver
+{
+public:
+
+    CPluginManager_DllResolver(void);
+    virtual ~CPluginManager_DllResolver(void);
+
+    /// Return dll file name. Name does not include path.
+    ///
+    /// Example:
+    ///    "ncbi_plugin_dbapi_ftds_3_1_7".
+    ///    "ncbi_pulgin_dbapi_ftds.so.3.1.7"
+    /// In this case, the DLL will be searched for in the standard
+    /// DLL search paths, with automatic addition of any platform-specific
+    /// prefixes and suffixes.
+    ///
+    /// @param plugin_name 
+    ///    - plugin family name ( "dbapi", "objmgr", ect.")
+    /// @param driver_name
+    ///    - driver name ( "id1", "lds", etc)
+    /// @param version
+    ///    - version of the driver
+    virtual
+    string GetDllName(
+         const string&       plugin_name,
+         const string&       driver_name  = kEmptyStr,
+         const CVersionInfo& version      = CVersionInfo::kAny) const;
+
+    /// Return dll name mask 
+    ///
+    /// Dll name mask is used for DLL file search.
+    ///
+    /// Example:
+    ///    "ncbi_plugin_objmgr_*.dll"
+    ///    "ncbi_plugin_dbapi_ftds.so.*"
+    /// 
+    virtual
+    string GetDllNameMask(
+         const string&       plugin_name,
+         const string&       driver_name  = kEmptyStr,
+         const CVersionInfo& version      = CVersionInfo::kAny) const;
+
+    /// Return DLL entry point name:
+    ///
+    /// Default name pattern is:
+    ///  - "NCBI_EntryPoint_interface_driver"
+    /// Alternative variants:
+    ///  - "NCBI_EntryPoint"
+    ///  - "NCBI_EntryPoint_interface"
+    ///  - "NCBI_EntryPoint_driver"
+    ///
+    /// @sa GetEntryPointPrefix
+    virtual
+    string GetEntryPointName(
+          const string&       interface_name = kEmptyStr,
+          const string&       driver_name    = kEmptyStr) const;
+
+
+    /// Return DLL entry point prefix ("NCBI_EntryPoint")
+    virtual string GetEntryPointPrefix() const;
+
+
+
+    /// Return DLL file name prefix ("ncbi_plugin")
+    virtual string GetDllNamePrefix() const;
+
+    /// Set DLL file name prefix
+    virtual void SetDllNamePrefix(const string& prefix);
+
+    /// Return name of the plugin family
+    const string& GetPluginName() const
+    { 
+        return m_PluginFamilyName; 
+    }
+
+    /// Set plugin family name
+    void SetPluginName(const string& name) 
+    { 
+        m_PluginFamilyName = name; 
+    }
+
+protected:
+    string  m_DllNamePrefix;
+    string  m_EntryPointPrefix;
+    string  m_PluginFamilyName;
+};
+
+
 //!!!  The above API is by-and-large worked through, all the rest of
 //!!!  the file is absolutely not...
 
@@ -637,7 +730,7 @@ public:
     const TPath& GetPath(void) const;
 
     /// Get the standard OS- and program-environment specific DLL search path.
-    static const TPath& GetStdPath(void);
+//    static const TPath& GetStdPath(void);
 
     /// Change filename mask(s)
     void SetMask(const TMask& path, ESet method);
@@ -654,7 +747,6 @@ public:
     /// Default:  "ncbi_plugin_*<sfx>*",
     ///           where <sfx> is OS-dependent (such as '.dll', '.so')
     static const TMask& GetStdMask(const string& prefix  = kEmptyStr,
-                                   const string& family  = kEmptyStr,
                                    const string& family  = kEmptyStr,
                                    CVersionInfo& version = CVersionInfo::kAny);
 
@@ -682,6 +774,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/11/07 17:02:48  kuznets
+ * Drafted CPluginManager_DllResolver.
+ *
  * Revision 1.9  2003/11/03 20:08:01  kuznets
  * Fixing various compiler warnings
  *
