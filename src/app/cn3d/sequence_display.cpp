@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/06/01 13:35:58  thiessen
+* add aligned block number to status line
+*
 * Revision 1.20  2001/05/31 18:47:08  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -397,10 +400,17 @@ void SequenceDisplay::MouseOver(int column, int row) const
                     }
                 }
 
-                // show any alignment row-wise string
+                // show alignment block number and row-wise string
                 const DisplayRowFromAlignment *alnRow =
                     dynamic_cast<const DisplayRowFromAlignment *>(displayRow);
-                if (alnRow) status = alnRow->alignment->GetRowStatusLine(alnRow->row).c_str();
+                if (alnRow) {
+                    int blockNum = alnRow->alignment->GetAlignedBlockNumber(column);
+                    if (blockNum > 0) status.Printf("Block #%i", blockNum);
+                    if (alnRow->alignment->GetRowStatusLine(alnRow->row).size() > 0) {
+                        if (blockNum > 0) status += " ; ";
+                        status += alnRow->alignment->GetRowStatusLine(alnRow->row).c_str();
+                    }
+                }
             }
 
             // else show length and description if we're in the title area

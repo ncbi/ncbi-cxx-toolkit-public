@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/06/01 13:35:58  thiessen
+* add aligned block number to status line
+*
 * Revision 1.20  2001/05/31 18:47:06  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -272,7 +275,7 @@ bool BlockMultipleAlignment::AddUnalignedBlocks(void)
 
 bool BlockMultipleAlignment::UpdateBlockMapAndColors(bool clearRowInfo)
 {
-    int i = 0, j;
+    int i = 0, j, n = 0;
     BlockList::iterator b, be = blocks.end();
 
     // reset old stuff, recalculate width
@@ -283,14 +286,18 @@ bool BlockMultipleAlignment::UpdateBlockMapAndColors(bool clearRowInfo)
     // fill out the block map
     conservationColorer->Clear();
     blockMap.resize(totalWidth);
-    UngappedAlignedBlock *uaBlock;
+    UngappedAlignedBlock *aBlock;
     for (b=blocks.begin(); b!=be; b++) {
+        aBlock = dynamic_cast<UngappedAlignedBlock*>(*b);
+        if (aBlock) {
+            conservationColorer->AddBlock(aBlock);
+            n++;
+        }
         for (j=0; j<(*b)->width; j++, i++) {
             blockMap[i].block = *b;
             blockMap[i].blockColumn = j;
+            blockMap[i].alignedBlockNum = aBlock ? n : -1;
         }
-        uaBlock = dynamic_cast<UngappedAlignedBlock*>(*b);
-        if (uaBlock) conservationColorer->AddBlock(uaBlock);
     }
 
     // if alignment changes, any scores/status/special colors become invalid

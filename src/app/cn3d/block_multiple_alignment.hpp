@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/06/01 13:35:39  thiessen
+* add aligned block number to status line
+*
 * Revision 1.15  2001/05/17 18:34:00  thiessen
 * spelling fixes; change dialogs to inherit from wxDialog
 *
@@ -262,7 +265,7 @@ private:
 
     typedef struct {
         Block *block;
-        int blockColumn;
+        int blockColumn, alignedBlockNum;
     } BlockInfo;
     typedef std::vector < BlockInfo > BlockMap;
     BlockMap blockMap;
@@ -304,6 +307,9 @@ public:
     int NBlocks(void) const { return blocks.size(); }
     int NRows(void) const { return sequences->size(); }
     int AlignmentWidth(void) const { return totalWidth; }
+
+    // return a number from 1..n for aligned blocks, -1 for unaligned
+    int GetAlignedBlockNumber(int alignmentIndex) const { return blockMap[alignmentIndex].alignedBlockNum; }
 
     // for storing/querying info
     double GetRowDouble(int row) const { return rowDoubles[row]; }
