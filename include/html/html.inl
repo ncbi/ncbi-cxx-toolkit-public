@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/10/18 13:25:47  vasilche
+* Added missing constructors to CHTML_font.
+*
 * Revision 1.23  2000/07/18 17:21:34  vasilche
 * Added possibility to force output of empty attribute value.
 * Added caching to CHTML_table, now large tables work much faster.
@@ -453,20 +456,6 @@ CHTML_font::CHTML_font(void)
 }
 
 inline
-CHTML_font::CHTML_font(int size, CNCBINode* node)
-    : CParent(sm_TagName, node)
-{
-    SetRelativeSize(size);
-}
-
-inline
-CHTML_font::CHTML_font(int size, const string& text)
-    : CParent(sm_TagName, text)
-{
-    SetRelativeSize(size);
-}
-
-inline
 CHTML_font* CHTML_font::SetFontSize(int size, bool absolute)
 {
     if ( absolute )
@@ -477,35 +466,80 @@ CHTML_font* CHTML_font::SetFontSize(int size, bool absolute)
 }
 
 inline
-CHTML_font::CHTML_font(int size, bool absolute, CNCBINode* node)
+CHTML_font::CHTML_font(int size,
+                       CNCBINode* node)
+    : CParent(sm_TagName, node)
+{
+    SetRelativeSize(size);
+}
+
+inline
+CHTML_font::CHTML_font(int size,
+                       const string& text)
+    : CParent(sm_TagName, text)
+{
+    SetRelativeSize(size);
+}
+
+inline
+CHTML_font::CHTML_font(int size,
+                       const char* text)
+    : CParent(sm_TagName, text)
+{
+    SetRelativeSize(size);
+}
+
+inline
+CHTML_font::CHTML_font(int size, bool absolute,
+                       CNCBINode* node)
     : CParent(sm_TagName, node)
 {
     SetFontSize(size, absolute);
 }
 
 inline
-CHTML_font::CHTML_font(int size, bool absolute, const string& text)
+CHTML_font::CHTML_font(int size, bool absolute,
+                       const string& text)
     : CParent(sm_TagName, text)
 {
     SetFontSize(size, absolute);
 }
 
 inline
-CHTML_font::CHTML_font(const string& typeface, CNCBINode* node)
+CHTML_font::CHTML_font(int size, bool absolute,
+                       const char* text)
+    : CParent(sm_TagName, text)
+{
+    SetFontSize(size, absolute);
+}
+
+inline
+CHTML_font::CHTML_font(const string& typeface,
+                       CNCBINode* node)
     : CParent(sm_TagName, node)
 {
     SetTypeFace(typeface);
 }
 
 inline
-CHTML_font::CHTML_font(const string& typeface, const string& text)
+CHTML_font::CHTML_font(const string& typeface,
+                       const string& text)
     : CParent(sm_TagName, text)
 {
     SetTypeFace(typeface);
 }
 
 inline
-CHTML_font::CHTML_font(const string& typeface, int size, CNCBINode* node)
+CHTML_font::CHTML_font(const string& typeface,
+                       const char* text)
+    : CParent(sm_TagName, text)
+{
+    SetTypeFace(typeface);
+}
+
+inline
+CHTML_font::CHTML_font(const string& typeface, int size,
+                       CNCBINode* node)
     : CParent(sm_TagName, node)
 {
     SetTypeFace(typeface);
@@ -513,7 +547,17 @@ CHTML_font::CHTML_font(const string& typeface, int size, CNCBINode* node)
 }
 
 inline
-CHTML_font::CHTML_font(const string& typeface, int size, const string& text)
+CHTML_font::CHTML_font(const string& typeface, int size,
+                       const string& text)
+    : CParent(sm_TagName, text)
+{
+    SetTypeFace(typeface);
+    SetRelativeSize(size);
+}
+
+inline
+CHTML_font::CHTML_font(const string& typeface, int size,
+                       const char* text)
     : CParent(sm_TagName, text)
 {
     SetTypeFace(typeface);
@@ -532,6 +576,15 @@ CHTML_font::CHTML_font(const string& typeface, int size, bool absolute,
 inline
 CHTML_font::CHTML_font(const string& typeface, int size, bool absolute,
                        const string& text)
+    : CParent(sm_TagName, text)
+{
+    SetTypeFace(typeface);
+    SetFontSize(size, absolute);
+}
+
+inline
+CHTML_font::CHTML_font(const string& typeface, int size, bool absolute,
+                       const char* text)
     : CParent(sm_TagName, text)
 {
     SetTypeFace(typeface);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2000/10/18 13:25:46  vasilche
+* Added missing constructors to CHTML_font.
+*
 * Revision 1.47  2000/09/27 14:11:10  vasilche
 * Newline '\n' will not be generated after tags LABEL, A, FONT, CITE, CODE, EM,
 * KBD, STRIKE STRONG, VAR, B, BIG, I, S, SMALL, SUB, SUP, TT, U and BLINK.
@@ -995,18 +998,36 @@ class CHTML_font : public CHTMLInlineElement
     static const char sm_TagName[];
 public:
     CHTML_font(void);
-    CHTML_font(int size, CNCBINode* node = 0);
-    CHTML_font(int size, const string& text);
-    CHTML_font(int size, bool absolute, CNCBINode* node = 0);
-    CHTML_font(int size, bool absolute, const string& text);
-    CHTML_font(const string& typeface, CNCBINode* node = 0);
-    CHTML_font(const string& typeface, const string& text);
-    CHTML_font(const string& typeface, int size, CNCBINode* node = 0);
-    CHTML_font(const string& typeface, int size, const string& text);
+    CHTML_font(int size,
+               CNCBINode* node = 0);
+    CHTML_font(int size,
+               const char* text);
+    CHTML_font(int size,
+               const string& text);
+    CHTML_font(int size, bool absolute,
+               CNCBINode* node = 0);
+    CHTML_font(int size, bool absolute,
+               const string& text);
+    CHTML_font(int size, bool absolute,
+               const char* text);
+    CHTML_font(const string& typeface,
+               CNCBINode* node = 0);
+    CHTML_font(const string& typeface,
+               const string& text);
+    CHTML_font(const string& typeface,
+               const char* text);
     CHTML_font(const string& typeface, int size,
-               bool absolute, CNCBINode* node = 0);
+               CNCBINode* node = 0);
     CHTML_font(const string& typeface, int size,
-               bool absolute, const string& text);
+               const string& text);
+    CHTML_font(const string& typeface, int size,
+               const char* text);
+    CHTML_font(const string& typeface, int size, bool absolute,
+               CNCBINode* node = 0);
+    CHTML_font(const string& typeface, int size, bool absolute,
+               const string& text);
+    CHTML_font(const string& typeface, int size, bool absolute,
+               const char* text);
     ~CHTML_font(void);
 
     CHTML_font* SetTypeFace(const string& typeface);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/10/18 13:25:51  vasilche
+* Added missing constructors to CHTML_font.
+*
 * Revision 1.16  2000/07/18 19:09:03  vasilche
 * Fixed uninitialized members.
 * Fixed NextCell to advance to next cell.
@@ -224,6 +227,7 @@ int CMyApp::ProcessRequest(CCgiContext& ctx)
         }
         Page->AppendChild(new CHTMLComment("this is comment"));
         Page->AppendChild(CreateQueryBox());
+        Page->AppendChild(new CHTML_font(-1, "I want to see this string :)"));
         ctx.GetResponse().WriteHeader();
         Page->Print(ctx.GetResponse().out());
         return 0;
