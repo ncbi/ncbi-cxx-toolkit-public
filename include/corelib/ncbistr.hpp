@@ -277,8 +277,6 @@ const string& CNcbiEmptyString::Get(void)
 //  NStr::
 //
 
-//!!!!!!!!!!!!!!!!!
-    #define HAVE_STRCASECMP 1
 
 inline
 int NStr::strcmp(const char* s1, const char* s2)
@@ -295,12 +293,13 @@ int NStr::strncmp(const char* s1, const char* s2, size_t n)
 inline
 int NStr::strcasecmp(const char* s1, const char* s2)
 {
-#if defined(NCBI_OS_MSWIN)
+#if defined(HAVE_STRICMP)
     return ::stricmp(s1, s2);
-#else
-#  if defined(HAVE_STRCASECMP)
+
+#elseif defined(HAVE_STRCASECMP)
     return ::strcasecmp(s1, s2);
-#  else
+
+#else
     int diff = 0;
     for ( ;; ++s1, ++s2) {
         char c1 = *s1;
@@ -311,19 +310,19 @@ int NStr::strcasecmp(const char* s1, const char* s2)
             break; // return difference
     }
     return diff;
-#  endif
 #endif
 }
 
 inline
 int NStr::strncasecmp(const char* s1, const char* s2, size_t n)
 {
-#if defined(NCBI_OS_MSWIN)
+#if defined(HAVE_STRICMP)
     return ::strnicmp(s1, s2, n);
-#else
-#  if defined(HAVE_STRCASECMP)
+
+#elseif defined(HAVE_STRCASECMP)
     return ::strncasecmp(s1, s2, n);
-#  else
+
+#else
     int diff = 0;
     for ( ; ; ++s1, ++s2, --n) {
         char c1 = *s1;
@@ -336,7 +335,6 @@ int NStr::strncasecmp(const char* s1, const char* s2, size_t n)
            return 0;
     }
     return diff;
-#  endif
 #endif
 }
 
@@ -485,6 +483,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2002/02/22 19:51:57  ivanov
+ * Changed NCBI_OS_WIN to HAVE_STRICMP in the NStr::strncasecmp and
+ * NStr::strcasecmp functions
+ *
  * Revision 1.9  2002/02/22 17:50:22  ivanov
  * Added compatible compare functions strcmp, strncmp, strcasecmp, strncasecmp.
  * Was speed-up some Compare..() functions.
