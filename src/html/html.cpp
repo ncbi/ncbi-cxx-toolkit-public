@@ -426,7 +426,8 @@ CHTMLElement::~CHTMLElement(void)
 CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
 {
     CParent::PrintEnd(out, mode);
-    if ( mode != ePlainText ) {
+
+    if ( mode == eHTML ) {
         const TMode* previous = mode.GetPreviousContext();
         if ( previous ) {
             CNCBINode* parent = previous->GetNode();
@@ -437,6 +438,9 @@ CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
         else {
             out << endl;
         }
+    }
+    if ( mode == ePlainText ) {
+        out << endl;
     }
     return out;
 }
@@ -2025,6 +2029,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.77  2002/12/18 19:46:18  ivanov
+ * Added line break after elements of the class CHTMLElement in plain text mode
+ *
  * Revision 1.76  2002/12/09 22:11:33  ivanov
  * Added support for Sergey Kurdin's popup menu.
  * Added CHTMLNode::AttachPopupMenu().
