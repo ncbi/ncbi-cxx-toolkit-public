@@ -129,10 +129,10 @@ int CTestNetScheduleClient::Run(void)
 
     NcbiCout << "SubmitAndWait..." << NcbiEndl;
     int ret_code;
-    string output;
+    string output, err_msg;
     unsigned wait_time = 60;
     status = 
-        cl.SubmitJobAndWait(input, &job_key, &ret_code, &output, 
+        cl.SubmitJobAndWait(input, &job_key, &ret_code, &output, &err_msg, 
                             wait_time, 9112);
     if (status == CNetScheduleClient::eDone) {
         NcbiCout << job_key << " done." << NcbiEndl;
@@ -249,6 +249,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/03/17 21:11:59  kuznets
+ * Reflacting changes in SubmitAndWait
+ *
  * Revision 1.7  2005/03/15 20:14:59  kuznets
  * Added test for SubmitJobAndWait()
  *
