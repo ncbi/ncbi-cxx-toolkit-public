@@ -102,13 +102,47 @@ fwd_compare_hsps(const void* v1, const void* v2)
 	h1 = *hp1;
 	h2 = *hp2;
 
-	if (SIGN(h1->query.frame) != SIGN(h2->query.frame))
-	{
-		if (h1->query.frame < h2->query.frame)
-			return 1;
-		else
-			return -1;
-	}
+	if (h1->context < h2->context)
+      return -1;
+   else if (h1->context > h2->context)
+      return 1;
+
+	if (h1->query.offset < h2->query.offset) 
+		return -1;
+	if (h1->query.offset > h2->query.offset) 
+		return 1;
+	/* Necessary in case both HSP's have the same query offset. */
+	if (h1->subject.offset < h2->subject.offset) 
+		return -1;
+	if (h1->subject.offset > h2->subject.offset) 
+		return 1;
+
+	return 0;
+}
+
+/** Sort the HSP's by starting position of the query.  Called by qsort.  
+ *	The first function sorts in forward, the second in reverse order.
+*/
+static int
+fwd_compare_hsps_transl(const void* v1, const void* v2)
+{
+	BlastHSP* h1,* h2;
+	BlastHSP** hp1,** hp2;
+   Int4 context1, context2;
+
+	hp1 = (BlastHSP**) v1;
+	hp2 = (BlastHSP**) v2;
+	h1 = *hp1;
+	h2 = *hp2;
+
+   context1 = h1->context/3;
+   context2 = h2->context/3;
+
+   if (context1 < context2)
+      return 1;
+   else if (context1 > context2)
+      return -1;
+
 	if (h1->query.offset < h2->query.offset) 
 		return -1;
 	if (h1->query.offset > h2->query.offset) 
@@ -134,13 +168,11 @@ end_compare_hsps(const void* v1, const void* v2)
 	h1 = *hp1;
 	h2 = *hp2;
 
-	if (SIGN(h1->query.frame) != SIGN(h2->query.frame))
-	{
-		if (h1->query.frame < h2->query.frame)
-			return 1;
-		else
-			return -1;
-	}
+   if (h1->context < h2->context)
+      return 1;
+   else if (h1->context > h2->context)
+      return -1;
+
 	if (h1->query.end < h2->query.end) 
 		return -1;
 	if (h1->query.end > h2->query.end) 
@@ -266,9 +298,66 @@ rev_compare_hsps(const void *v1, const void *v2)
 	h1 = *hp1;
 	h2 = *hp2;
 	
-	if (SIGN(h1->query.frame) != SIGN(h2->query.frame))
+   if (h1->context > h2->context)
+      return 1;
+   else if (h1->context < h2->context)
+      return -1;
+
+	if (h1->query.offset < h2->query.offset) 
+		return  1;
+	if (h1->query.offset > h2->query.offset) 
+		return -1;
+	return 0;
+}
+
+static int
+rev_compare_hsps_transl(const void *v1, const void *v2)
+
+{
+	BlastHSP* h1,* h2;
+	BlastHSP** hp1,** hp2;
+   Int4 context1, context2;
+
+	hp1 = (BlastHSP**) v1;
+	hp2 = (BlastHSP**) v2;
+	h1 = *hp1;
+	h2 = *hp2;
+	
+   context1 = h1->context/3;
+   context2 = h2->context/3;
+
+   if (context1 > context2)
+      return 1;
+   else if (context1 < context2)
+      return -1;
+
+	if (h1->query.offset < h2->query.offset) 
+		return  1;
+	if (h1->query.offset > h2->query.offset) 
+		return -1;
+	return 0;
+}
+
+static int
+rev_compare_hsps_tbn(const void *v1, const void *v2)
+
+{
+	BlastHSP* h1,* h2;
+	BlastHSP** hp1,** hp2;
+
+	hp1 = (BlastHSP**) v1;
+	hp2 = (BlastHSP**) v2;
+	h1 = *hp1;
+	h2 = *hp2;
+
+   if (h1->context > h2->context)
+      return 1;
+   else if (h1->context < h2->context)
+      return -1;
+
+	if (SIGN(h1->subject.frame) != SIGN(h2->subject.frame))
 	{
-		if (h1->query.frame > h2->query.frame)
+		if (h1->subject.frame > h2->subject.frame)
 			return 1;
 		else
 			return -1;
@@ -281,27 +370,27 @@ rev_compare_hsps(const void *v1, const void *v2)
 	return 0;
 }
 
-
 static int
-rev_compare_hsps_cfj(const void *v1, const void *v2)
+rev_compare_hsps_tbx(const void *v1, const void *v2)
 
 {
 	BlastHSP* h1,* h2;
 	BlastHSP** hp1,** hp2;
+   Int4 context1, context2;
 
 	hp1 = (BlastHSP**) v1;
 	hp2 = (BlastHSP**) v2;
 	h1 = *hp1;
 	h2 = *hp2;
 
-	if (SIGN(h1->query.frame) != SIGN(h2->query.frame))
-	{
-		if (h1->query.frame > h2->query.frame)
-			return 1;
-		else
-			return -1;
-	}
+   context1 = h1->context/3;
+   context2 = h2->context/3;
 
+   if (context1 > context2)
+      return 1;
+   else if (context1 < context2)
+      return -1;
+   
 	if (SIGN(h1->subject.frame) != SIGN(h2->subject.frame))
 	{
 		if (h1->subject.frame > h2->subject.frame)
@@ -323,15 +412,16 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    BlastScoreBlk* sbp, BlastHitSavingParameters* hit_params,
    Boolean gapped_calculation)
 {
-	BlastHSP* H,* H2,* best[2],* first_hsp,* last_hsp,* hp_frame_start[3*2];
+	BlastHSP* H,* H2,* best[2],* first_hsp,* last_hsp,** hp_frame_start;
 	BlastHSP hp_start;
    BlastHSP** hsp_array;
 	BLAST_KarlinBlk** kbp;
 	Int4 maxscore, cutoff[2];
 	Boolean frame_change, linked_set, ignore_small_gaps;
 	double gap_decay_rate, gap_prob, prob[2];
-	Int4 index, index1, ordering_method, num_links, frame_index, number_of_query_frames;
-	Int4 hp_frame_number[3*2];
+	Int4 index, index1, ordering_method, num_links, frame_index;
+   Int4 num_query_frames, num_subject_frames;
+	Int4 *hp_frame_number;
 	Int4 gap_size, number_of_hsps, total_number_of_hsps;
    Int4 query_length, subject_length;
 	void* link;
@@ -343,6 +433,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 	LinkHelpStruct *lh_helper=0;
    Int4 lh_helper_size;
 	Int4 query_context; /* AM: to support query concatenation. */
+   Boolean translated_query;
 
 	if (hsp_list == NULL)
 		return -1;
@@ -365,26 +456,39 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 	gap_size = hit_params->gap_size;
 	gap_prob = hit_params->gap_prob;
 	gap_decay_rate = hit_params->gap_decay_rate;
+
+	translated_query = (program_number == blast_type_blastx || 
+                       program_number == blast_type_tblastx);
+   if (program_number == blast_type_tblastn ||
+       program_number == blast_type_tblastx)
+      num_subject_frames = 2;
+   else
+      num_subject_frames = 1;
+
    /* Sort by (reverse) position. */
-	qsort(hsp_array,total_number_of_hsps,sizeof(BlastHSP*), rev_compare_hsps_cfj);
+   if (translated_query) {
+      qsort(hsp_array,total_number_of_hsps,sizeof(BlastHSP*), 
+            rev_compare_hsps_tbx);
+   } else {
+      qsort(hsp_array,total_number_of_hsps,sizeof(BlastHSP*), 
+            rev_compare_hsps_tbn);
+   }
 
 	cutoff[0] = hit_params->cutoff_small_gap;
 	cutoff[1] = hit_params->cutoff_big_gap;
 	ignore_small_gaps = hit_params->ignore_small_gaps;
 	
-	if (program_number == blast_type_blastn || 
-       program_number == blast_type_blastx || 
-       program_number == blast_type_tblastx)
-		number_of_query_frames = 2;
+	if (translated_query)
+		num_query_frames = 2*query_info->num_queries;
 	else
-		number_of_query_frames = 1;
+		num_query_frames = query_info->num_queries;
+   
+    hp_frame_start = calloc(num_subject_frames*num_query_frames, sizeof(BlastHSP*));
+   hp_frame_number = calloc(num_subject_frames*num_query_frames, sizeof(Int4));
 
 /* hook up the HSP's */
 	hp_frame_start[0] = hsp_array[0];
-	hp_frame_number[0] = hp_frame_number[1] = 0;
-	hp_frame_number[2] = hp_frame_number[3] = 0;
 	frame_change = FALSE;
-
 
 	/* Put entries with different frame parity into separate 'query_frame's. -cfj */
 	{
@@ -408,7 +512,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
            frame_change = TRUE;
         }
      }
-     number_of_query_frames = cur_frame+1;
+     num_query_frames = cur_frame+1;
 	}
 
 	/* max_q_diff is the maximum amount q.offset can differ from q.offset_trim */
@@ -423,7 +527,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    }	    
    max_q_diff = 5;
 
-	for (frame_index=0; frame_index<number_of_query_frames; frame_index++)
+	for (frame_index=0; frame_index<num_query_frames; frame_index++)
 	{
       memset(&hp_start, 0, sizeof(hp_start));
       hp_start.next = hp_frame_start[frame_index];
@@ -839,11 +943,23 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
       } /* end while num_hsps... */
 	} /* end for frame_index ... */
 
+   sfree(hp_frame_start);
+   sfree(hp_frame_number);
 
-	qsort(hsp_array,total_number_of_hsps,sizeof(BlastHSP*), rev_compare_hsps);
+   if (translated_query) {
+      qsort(hsp_array,total_number_of_hsps,sizeof(BlastHSP*), 
+            rev_compare_hsps_transl);
+      qsort(hsp_array, total_number_of_hsps,sizeof(BlastHSP*), 
+            fwd_compare_hsps_transl);
+   } else {
+      qsort(hsp_array,total_number_of_hsps,sizeof(BlastHSP*), 
+            rev_compare_hsps);
+      qsort(hsp_array, total_number_of_hsps,sizeof(BlastHSP*), 
+            fwd_compare_hsps);
+   }
+
    /* Sort by starting position. */
    
-	qsort(hsp_array, total_number_of_hsps,sizeof(BlastHSP*), fwd_compare_hsps);
 
 	for (index=0, last_hsp=NULL;index<total_number_of_hsps; index++) 
 	{
