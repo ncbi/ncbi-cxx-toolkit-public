@@ -96,7 +96,7 @@
  * only used blocks can follow each other sequentially.
  *
  * To discontinue to use the heap, 'HEAP_Destroy' or 'HEAP_Detach' can be
- * called. The former deallocated the heap (by means of call to 'expand'),
+ * called. The former deallocates the heap (by means of a call to 'expand'),
  * the latter just removes the heap handle, retaining the heap data intact.
  * Later, such a heap could be used again if attached with 'HEAP_Attach'.
  *
@@ -117,10 +117,11 @@
 
 
 struct SHEAP_tag {
-    char*         base;
+    void*         base;
     TNCBI_Size    size;
     TNCBI_Size    chunk;
     FHEAP_Expand  expand;
+    void*         arg;
     int/*bool*/   copy;    /* (!=0) keeps user's serial number if provided */
 };
 
@@ -136,8 +137,9 @@ struct SHEAP_tag {
 #define HEAP_ISLAST(b)        ((b)->flag & HEAP_LAST)
 
 
-HEAP HEAP_Create(char* base, TNCBI_Size size,
-                 TNCBI_Size chunk, FHEAP_Expand expand)
+HEAP HEAP_Create(void* base, TNCBI_Size size,
+                 TNCBI_Size chunk, FHEAP_Expand expand,
+                 void* arg)
 {
     SHEAP_Block* b;
     HEAP heap;
@@ -147,7 +149,7 @@ HEAP HEAP_Create(char* base, TNCBI_Size size,
     chunk = (TNCBI_Size) HEAP_ALIGN(chunk);
     if (!base) {
         size = (TNCBI_Size) _HEAP_ALIGN(sizeof(*b) + 1, chunk);
-        if (!size || !expand || !(base = (*expand)(0, size))) {
+        if (!size || !expand || !(base = (*expand)(0, size, arg))) {
             CORE_LOGF(eLOG_Warning,
                       ("Heap Create: Cannot create (size = %u)",
                        (unsigned)(size ? size : sizeof(*b))));
@@ -155,7 +157,7 @@ HEAP HEAP_Create(char* base, TNCBI_Size size,
             return 0;
         }
     }
-    if ((char*) HEAP_ALIGN(base) != base) {
+    if ((void*) HEAP_ALIGN(base) != base) {
         CORE_LOGF(eLOG_Warning,
                   ("Heap Create: Unaligned base (0x%08lX)", (long) base));
     }
@@ -167,6 +169,7 @@ HEAP HEAP_Create(char* base, TNCBI_Size size,
     heap->size   = size;
     heap->chunk  = chunk;
     heap->expand = expand;
+    heap->arg    = expand ? arg : 0;
     heap->copy   = 0/*original*/;
     b = (SHEAP_Block*) heap->base;
     b->flag = HEAP_FREE | HEAP_LAST;
@@ -175,13 +178,13 @@ HEAP HEAP_Create(char* base, TNCBI_Size size,
 }
 
 
-HEAP HEAP_AttachEx(char* base, size_t size)
+HEAP HEAP_AttachEx(void* base, size_t size)
 {
     HEAP heap;
 
     if (!base || !size || !(heap = malloc(sizeof(*heap))))
         return 0;
-    if ((char*) HEAP_ALIGN(base) != base) {
+    if ((void*) HEAP_ALIGN(base) != base) {
         CORE_LOGF(eLOG_Warning,
                   ("Heap Attach: Unaligned base (0x%08lX)", (long) base));
     }
@@ -189,12 +192,13 @@ HEAP HEAP_AttachEx(char* base, size_t size)
     heap->size   = size;
     heap->chunk  = 0/*read-only*/;
     heap->expand = 0;
+    heap->arg    = 0;
     heap->copy   = 0/*original*/;
     return heap;
 }
 
 
-HEAP HEAP_Attach(char* base)
+HEAP HEAP_Attach(void* base)
 {
     TNCBI_Size size;
     SHEAP_Block* b;
@@ -252,7 +256,7 @@ static SHEAP_Block* s_HEAP_Collect(HEAP heap)
 {
     SHEAP_Block* b = (SHEAP_Block*) heap->base, *f = 0;
 
-    while ((char*) b < heap->base + heap->size) {
+    while ((char*) b < (char*) heap->base + heap->size) {
         if (HEAP_ISFREE(b))
             f = b;
         else if (HEAP_ISUSED(b) && f) {
@@ -322,7 +326,7 @@ SHEAP_Block* HEAP_Alloc(HEAP heap, TNCBI_Size size)
     size = (TNCBI_Size) HEAP_ALIGN(sizeof(*b) + size);
 
     b = (SHEAP_Block*) heap->base;
-    while ((char*) b < heap->base + heap->size) {
+    while ((char*) b < (char*) heap->base + heap->size) {
         if (HEAP_ISFREE(b)) {
             if (b->size >= size)
                 /* Empty, large enough block found, take it! */
@@ -346,18 +350,18 @@ SHEAP_Block* HEAP_Alloc(HEAP heap, TNCBI_Size size)
     else {
         TNCBI_Size hsize =
             (TNCBI_Size) _HEAP_ALIGN(heap->size + size, heap->chunk);
-        ptrdiff_t dp = (char*) p - heap->base;
-        char* base;
+        ptrdiff_t dp = (char*) p - (char*) heap->base;
+        void* base;
 
-        if (!(base = (*heap->expand)(heap->base, hsize)))
+        if (!(base = (*heap->expand)(heap->base, hsize, heap->arg)))
             return 0;
-        p = (SHEAP_Block*) (base + dp);
+        p = (SHEAP_Block*) ((char*) base + dp);
         if (!HEAP_ISLAST(p))
             CORE_LOG(eLOG_Warning, "Heap Alloc: Last block lost");
         if (HEAP_ISUSED(p)) {
             p->flag &= ~HEAP_LAST;
             /* New block is the very top on the heap */
-            b = (SHEAP_Block*) (base + heap->size);
+            b = (SHEAP_Block*) ((char*) base + heap->size);
             b->size = hsize - heap->size;
             b->flag = HEAP_FREE | HEAP_LAST;
         } else {
@@ -388,7 +392,7 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
     }
 
     b = (SHEAP_Block*) heap->base;
-    while ((char*) b < heap->base + heap->size) {
+    while ((char*) b < (char*) heap->base + heap->size) {
         if (HEAP_ISFREE(b)) {
             if (b == ptr) {
                 CORE_LOG(eLOG_Warning, "Heap Free: Freeing free block");
@@ -413,7 +417,7 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
 }
 
 
-SHEAP_Block* HEAP_Walk(HEAP heap, const SHEAP_Block* p)
+SHEAP_Block* HEAP_Walk(const HEAP heap, const SHEAP_Block* p)
 {
     SHEAP_Block* b;
 
@@ -422,12 +426,13 @@ SHEAP_Block* HEAP_Walk(HEAP heap, const SHEAP_Block* p)
         return 0;
     }
     if (!p ||
-        ((char*) p >= heap->base && (char*) p < heap->base + heap->size)) {
-        b = (SHEAP_Block*) (p ? (char*) p + p->size : heap->base);
-        if ((char*) b < heap->base + heap->size) {
+        ((char*) p >= (char*) heap->base &&
+         (char*) p <  (char*) heap->base + heap->size)) {
+        b = (SHEAP_Block*) (p ? (char*) p + p->size : (char*) heap->base);
+        if ((char*) b < (char*) heap->base + heap->size) {
             if (b->size >= sizeof(*b) &&
                 b->size == (TNCBI_Size) HEAP_ALIGN(b->size) &&
-                (char*) b + b->size <= heap->base + heap->size &&
+                (char*) b + b->size <= (char*) heap->base + heap->size &&
                 (HEAP_ISFREE(b) || HEAP_ISUSED(b))) {
                 /* Block 'b' seems valid, but... */
                 if (!p)
@@ -451,7 +456,7 @@ SHEAP_Block* HEAP_Walk(HEAP heap, const SHEAP_Block* p)
                 CORE_LOGF(eLOG_Warning,
                           ("Heap Walk: Heap corrupted (0x%08X, %u)",
                            b->flag, (unsigned) b->size));
-        } else if ((char*) b > heap->base + heap->size)
+        } else if ((char*) b > (char*) heap->base + heap->size)
             CORE_LOG(eLOG_Warning, "Heap Walk: Heap corrupted");
         else if (!HEAP_ISLAST(p))
             CORE_LOG(eLOG_Warning, "Heap Walk: Last block lost");
@@ -473,10 +478,10 @@ TNCBI_Size HEAP_Trim(HEAP heap)
         return 0;
     }
 
-    if (!(f = s_HEAP_Collect(heap)) || HEAP_ISUSED(f) || f->size < heap->chunk)
-        return heap->size;
-
-    if ((char*) f != heap->base) {
+    if (!(f =s_HEAP_Collect(heap)) || HEAP_ISUSED(f) || f->size < heap->chunk){
+        last_size = 0;
+        size      = heap->size;
+    } else if ((char*) f != heap->base) {
         assert(f->size >= _HEAP_ALIGNMENT);
         last_size = f->size % heap->chunk;
         if (last_size) {
@@ -499,39 +504,40 @@ TNCBI_Size HEAP_Trim(HEAP heap)
     }
 
     assert(size % heap->chunk == 0);
-    if (size != heap->size) {
-        if (heap->expand) {
-            ptrdiff_t dp = (char*) f - heap->base;
-            char* base = (*heap->expand)(heap->base, size);
-            if (!base)
-                return 0;
+    if (heap->expand) {
+        void* base = (*heap->expand)(heap->base, size, heap->arg);
+        if (!base)
+            return 0;
+        if (f) {
+            ptrdiff_t dp = (char*) f - (char*) heap->base;
             f = (SHEAP_Block*)(base + dp);
             f->flag |= HEAP_LAST;
             if (last_size)
                 f->size = last_size;
-            heap->base = base;
-            heap->size = size;
-        } else
-            CORE_LOG(eLOG_Error, "Heap Trim: Heap is not trimmable");
-    }
+        }
+        heap->base = base;
+        heap->size = size;
+    } else if (size != heap->size)
+        CORE_LOG(eLOG_Error, "Heap Trim: Heap is not trimmable");
     return heap->size;
 }
 
 
-HEAP HEAP_CopySerial(HEAP heap, int serial)
+HEAP HEAP_CopySerial(const HEAP heap, int serial)
 {
-    HEAP newheap;
-    char* buf;
-
+    HEAP  newheap;
+    void* newbase;
+    
     if (!heap ||
-        !(buf = (char*) malloc(HEAP_ALIGN(heap->size) + sizeof(*newheap))))
+        !(newbase = malloc(HEAP_ALIGN(heap->size) + sizeof(*newheap))))
         return 0;
-    memcpy(buf, heap->base, heap->size);
-    newheap = (HEAP) (buf + HEAP_ALIGN(heap->size));
-    newheap->base   = buf;
+    memcpy(newbase, heap->base, heap->size);
+    newheap = (HEAP) ((char*) newbase + HEAP_ALIGN(heap->size));
+    newheap->base   = newbase;
     newheap->size   = heap->size;
     newheap->chunk  = 0/*read-only*/;
     newheap->expand = 0;
+    newheap->arg    = 0;
     newheap->copy   = serial ? serial : 1/*copy*/;
     return newheap;
 }
@@ -539,12 +545,8 @@ HEAP HEAP_CopySerial(HEAP heap, int serial)
 
 void HEAP_Detach(HEAP heap)
 {
-    if (heap) {
-        if (heap->copy)
-            free(heap->base);
-        else
-            free(heap);
-    }
+    if (heap)
+        free(heap->copy ? heap->base : heap);
 }
 
 
@@ -556,39 +558,36 @@ void HEAP_Destroy(HEAP heap)
             return;
         }
         if (heap->expand)
-            (*heap->expand)(heap->base, 0);
+            (*heap->expand)(heap->base, 0, heap->arg);
         HEAP_Detach(heap);
     }
 }
 
 
-char* HEAP_Base(const HEAP heap)
+void* HEAP_Base(const HEAP heap)
 {
-    if (heap)
-        return heap->base;
-    return 0;
+    return heap ? heap->base : 0;
 }
 
 
-size_t HEAP_Size(const HEAP heap)
+TNCBI_Size HEAP_Size(const HEAP heap)
 {
-    if (heap)
-        return heap->size;
-    return 0;
+    return heap ? heap->size : 0;
 }
 
 
 int HEAP_Serial(const HEAP heap)
 {
-    if (heap)
-        return heap->copy;
-    return 0;
+    return heap ? heap->copy : 0;
 }
 
 
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2003/08/25 14:50:50  lavr
+ * Heap arena ptrs changed to be "void*";  expand routine to take user arg
+ *
  * Revision 6.19  2003/08/11 19:08:04  lavr
  * HEAP_Attach() reimplemented via HEAP_AttachEx() [not public yet]
  * HEAP_Trim() fixed to call expansion routine where applicable
@@ -603,7 +602,7 @@ int HEAP_Serial(const HEAP heap)
  * Warn if allocation attempted on a NULL heap
  *
  * Revision 6.15  2002/08/12 15:15:15  lavr
- * More thorough check for free-in-the-middle heap block
+ * More thorough check for the free-in-the-middle heap blocks
  *
  * Revision 6.14  2002/04/13 06:33:52  lavr
  * +HEAP_Base(), +HEAP_Size(), +HEAP_Serial(), new HEAP_CopySerial()
