@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/02/02 19:07:38  vasilche
+* Added THROWS_NONE to constructor/destructor of exception.
+*
 * Revision 1.1  2000/02/01 21:44:36  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Added buffering to CObjectIStreamAsn.
@@ -45,15 +48,15 @@
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbidbg.hpp>
-#include <stdexcept>
+#include <corelib/ncbiexpt.hpp>
 
 BEGIN_NCBI_SCOPE
 
 class CEofException : public runtime_error
 {
 public:
-    CEofException(void);
-    ~CEofException(void);
+    CEofException(void) THROWS_NONE;
+    ~CEofException(void) THROWS_NONE;
 };
 
 class CStreamBuffer

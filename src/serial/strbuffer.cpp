@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/02/02 19:07:41  vasilche
+* Added THROWS_NONE to constructor/destructor of exception.
+*
 * Revision 1.1  2000/02/01 21:47:23  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Added buffering to CObjectIStreamAsn.
@@ -165,12 +168,12 @@ size_t CStreamBuffer::ReadLine(char* buff, size_t size)
     }
 }
 
-CEofException::CEofException(void)
+CEofException::CEofException(void) THROWS_NONE
     : runtime_error("end of file")
 {
 }
 
-CEofException::~CEofException(void)
+CEofException::~CEofException(void) THROWS_NONE
 {
 }
 
