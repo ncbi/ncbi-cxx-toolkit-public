@@ -55,9 +55,10 @@ BEGIN_SCOPE(objects)
 
 CMutexPool_Base<CScope> CScope::sm_Scope_MP;
 #ifdef NCBI_COMPILER_MIPSPRO
-template <> // theoretically needed, but only MIPSpro actually wants it...
-#endif
+#pragma instantiate CMutex CMutexPool_Base<CScope>::sm_Pool[kMutexPoolSize]
+#else
 CMutex CMutexPool_Base<CScope>::sm_Pool[kMutexPoolSize];
+#endif
 
 CScope::CScope(CObjectManager& objmgr)
     : m_pObjMgr(&objmgr), m_FindMode(eFirst)
@@ -390,6 +391,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/10/16 20:44:29  ucko
+* *** empty log message ***
+*
 * Revision 1.29  2002/10/02 17:58:23  grichenk
 * Added sequence type filter to CBioseq_CI
 *
