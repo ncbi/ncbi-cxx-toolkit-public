@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/06/21 14:41:32  kholodov
+* Fixed: reset total bytes written for debug output
+*
 * Revision 1.6  2002/05/16 22:09:19  kholodov
 * Fixed: incorrect start of BLOB column
 *
@@ -160,6 +163,7 @@ CT_INT_TYPE CByteStreamBuf::overflow(CT_INT_TYPE c)
     }
     else {
         _TRACE("Total sent: " << total);
+        total = 0;
         return CT_EOF;
     }
     
