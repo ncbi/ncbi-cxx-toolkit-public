@@ -161,6 +161,8 @@ private:
     list<string> m_Defines;
 
     list<string> m_PreBuilds;
+
+    list<string> m_NcbiCLibs;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -509,6 +511,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/24 17:17:45  gorelenk
+ * Added member m_NcbiCLibs to class CMsvcPrjProjectContext.
+ *
  * Revision 1.9  2004/02/23 20:43:42  gorelenk
  * Added support of MSVC ResourceCompiler tool.
  *
