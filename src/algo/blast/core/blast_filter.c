@@ -201,8 +201,8 @@ CombineMaskLocations(BlastSeqLocPtr mask_loc, BlastSeqLocPtr *mask_loc_out)
 {
    Int2 status=0;		/* return value. */
    Int4 start, stop;	/* USed to merge overlapping SeqLoc's. */
-   DoubleIntPtr di = NULL, di_next = NULL, di_tmp;
-   BlastSeqLocPtr loc_head=NULL, last_loc, loc_var;
+   DoubleIntPtr di = NULL, di_next = NULL, di_tmp=NULL;
+   BlastSeqLocPtr loc_head=NULL, last_loc=NULL, loc_var=NULL;
    BlastSeqLocPtr new_loc = NULL, new_loc_last = NULL;
    
    if (!mask_loc) {
@@ -645,7 +645,6 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
    BlastSeqLocPtr dust_loc = NULL, seg_loc = NULL;
    BlastSeqLocPtr cc_loc = NULL, vs_loc = NULL, repeat_loc = NULL;
 	PccDatPtr pccp;
-	Nlm_FloatHiPtr scores;
 	Nlm_FloatHi cutoff_cc;
 	SegParametersPtr sparamsp=NULL;
 #ifdef TEMP_BLAST_OPTIONS
