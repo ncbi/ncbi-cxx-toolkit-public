@@ -38,7 +38,7 @@ public:
 </font><font color="#FF0000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Required arguments:
 </font><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("n","integer","integer between 1 and 10",argDesc.eInteger);
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("f","float","float between 0.0 and 1.0",argDesc.eDouble);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("i","inputFile","data file in",ArgDescriptions::eInputFile);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("i","inputFile","data file in",CArgDescriptions::eInputFile);
 
 </font><font color="#FF0000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // optional arguments:
 </font><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddOptionalKey("l","logFile","log errors to &lt;logFile>",
@@ -67,11 +67,11 @@ public:
 &nbsp;&nbsp;&nbsp; string inFile = (*args)["i"].AsString();
 &nbsp;&nbsp;&nbsp;&nbsp;
 </font><font color="#FF0000">&nbsp;&nbsp;&nbsp; // process optional args
-</font><font color="#000000">&nbsp;&nbsp;&nbsp; if ( args->IsProvided("l") ) {
+</font><font color="#000000">&nbsp;&nbsp;&nbsp; if ( args->Exest("l") ) {
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SetDiagStream(&amp;(*args)["l"].AsOutputFile());
 &nbsp;&nbsp;&nbsp; }
 
-&nbsp;&nbsp;&nbsp; bool textIn = args->IsProvided("it");
+&nbsp;&nbsp;&nbsp; bool textIn = args->Exist("it");
 &nbsp;&nbsp;&nbsp; bool binIn = (*args)["ib"].AsBoolean();
 
 &nbsp;&nbsp;&nbsp; if (! (textIn ^ binIn) ) {
