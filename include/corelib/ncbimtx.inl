@@ -304,47 +304,6 @@ bool CFastMutex::TryLock(void)
     return m_Mutex.TryLock();
 }
 
-// CFastMutexGuard
-
-inline
-CFastMutexGuard::CFastMutexGuard(void)
-    : m_Mutex(0)
-{
-}
-
-inline
-CFastMutexGuard::CFastMutexGuard(SSystemFastMutex& mtx)
-    : m_Mutex(&mtx)
-{
-    mtx.Lock();
-}
-
-inline
-CFastMutexGuard::~CFastMutexGuard(void)
-{
-    if (m_Mutex)
-        m_Mutex->Unlock();
-}
-
-inline
-void CFastMutexGuard::Release(void)
-{
-    if ( m_Mutex ) {
-        m_Mutex->Unlock();
-        m_Mutex = 0;
-    }
-}
-
-inline
-void CFastMutexGuard::Guard(SSystemFastMutex& mtx)
-{
-    if ( &mtx != m_Mutex ) {
-        Release();
-        mtx.Lock();
-        m_Mutex = &mtx;
-    }
-}
-
 inline
 CMutex::CMutex(void)
 {
@@ -381,49 +340,15 @@ bool CMutex::TryLock(void)
     return m_Mutex.TryLock();
 }
 
-inline
-CMutexGuard::CMutexGuard(void)
-    : m_Mutex(0)
-{
-}
-
-inline
-CMutexGuard::CMutexGuard(SSystemMutex& mtx)
-    : m_Mutex(&mtx)
-{
-    mtx.Lock();
-}
-
-inline
-CMutexGuard::~CMutexGuard(void)
-{
-    if ( m_Mutex ) {
-        m_Mutex->Unlock();
-    }
-}
-
-inline
-void CMutexGuard::Release(void)
-{
-    if ( m_Mutex ) {
-        m_Mutex->Unlock();
-        m_Mutex = 0;
-    }
-}
-
-inline
-void CMutexGuard::Guard(SSystemMutex& mtx)
-{
-    if ( &mtx != m_Mutex ) {
-        Release();
-        mtx.Lock();
-        m_Mutex = &mtx;
-    }
-}
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/06/16 11:37:33  dicuccio
+ * Refactored CMutexGuard, CFastMutexGuard, CReadLockGuard, and CWriteLockGuard to
+ * use a templated implementation (CGuard<>).  Provided typedefs for forward and
+ * backward compatibility.
+ *
  * Revision 1.5  2003/09/02 16:08:48  vasilche
  * Fixed race condition with optimization on some compilers - added 'volatile'.
  * Moved mutex Lock/Unlock methods out of inline section - they are quite complex.

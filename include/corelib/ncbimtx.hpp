@@ -58,6 +58,7 @@
 
 #include <corelib/ncbithr_conf.hpp>
 #include <corelib/ncbicntr.hpp>
+#include <corelib/guard.hpp>
 #include <vector>
 #include <memory>
 
@@ -213,7 +214,6 @@ public:
 //
 
 class CFastMutex;
-class CFastMutexGuard;
 
 
 
@@ -321,14 +321,18 @@ protected:
     friend class CAutoInitializeStaticFastMutex;
 
     friend class CFastMutex;
-    friend class CFastMutexGuard;
 
     friend class CSafeStaticPtr_Base;
 };
 
+/// typedefs for ease of use
+typedef CGuard<SSystemFastMutex> TFastMutexGuard;
+
+/// ...and backward compatibility
+typedef TFastMutexGuard          CFastMutexGuard;
+
 
 class CMutex;
-class CMutexGuard;
 
 
 
@@ -404,8 +408,14 @@ protected:
 
     friend class CAutoInitializeStaticMutex;
     friend class CMutex;
-    friend class CMutexGuard;
 };
+
+
+/// typedefs for ease of use
+typedef CGuard<SSystemMutex> TMutexGuard;
+
+/// ...and backward compatibility
+typedef TMutexGuard          CMutexGuard;
 
 
 /// Determine type of system mutex initialization.
@@ -645,50 +655,6 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-///
-/// CFastMutexGuard --
-///
-/// For acquiring fast mutex, then guaranting its release.
-
-class CFastMutexGuard
-{
-public:
-    /// Constructor.
-    CFastMutexGuard(void);
-
-    /// Constructor.
-    ///
-    /// Register the mutex "mtx", to be released by the guard destructor.
-    CFastMutexGuard(SSystemFastMutex& mtx);
-
-    /// Destructor.
-    ///
-    /// Release the mutex, if it was (and still is) successfully acquired.
-    ~CFastMutexGuard(void);
-
-    /// Release the mutex right now but do not release it in the guard
-    /// destructor.
-    void Release(void);
-
-    /// Guard the specified mutex.
-    ///
-    /// Lock on mutex "mtx" (if it's not guarded yet) and start guarding it.
-    /// NOTE: It never holds more than one lock on the guarded mutex!
-    void Guard(SSystemFastMutex& mtx);
-
-private:
-    SSystemFastMutex* m_Mutex;  ///< The mutex - is NULL if released.
-
-    /// Private copy constructor to disallow initialization.
-    CFastMutexGuard(const CFastMutexGuard&);
-
-    /// Private assignment operator to disallow assignment.
-    CFastMutexGuard& operator= (const CFastMutexGuard&);
-};
-
-
-
-/////////////////////////////////////////////////////////////////////////////
 //
 //  MUTEX
 //
@@ -776,55 +742,6 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-///
-/// CMutexGuard --
-///
-/// Guarded mutex.
-///
-/// Acquires the mutex and then gurantees its release.
-
-class CMutexGuard
-{
-public:
-    /// Constructor.
-    CMutexGuard(void);
-
-    /// Constructor.
-    ///
-    /// Acquire the mutex "mtx"; register it to be released by the guard
-    /// destructor.
-    CMutexGuard(SSystemMutex& mtx);
-
-    /// Destructor.
-    ///
-    /// Release the mutex, if it was (and still is) successfully acquired.
-    ~CMutexGuard(void);
-
-    /// Release mutex.
-    ///
-    /// Release the mutex right now -- do not release it in the guard
-    /// destructor.
-    void Release(void);
-
-    /// Guard mutex.
-    ///
-    /// Lock on mutex "mtx" (if it's not guarded yet) and start guarding it.
-    /// NOTE: it never holds more than one lock on the guarded mutex!
-    void Guard(SSystemMutex& mtx);
-
-private:
-    SSystemMutex* m_Mutex;  ///< The mutex -- NULL if released.
-
-    /// Private copy constructor to disallow initialization.
-    CMutexGuard(const CMutexGuard&);
-
-    /// Private assignment operator to disallow assignment.
-    CMutexGuard& operator= (const CMutexGuard&);
-};
-
-
-
-/////////////////////////////////////////////////////////////////////////////
 //
 //  RW-LOCK
 //
@@ -837,9 +754,47 @@ private:
 
 // Forward declaration of internal (platform-dependent) RW-lock representation
 class CInternalRWLock;
-class CReadLockGuard;
-class CWriteLockGuard;
+//class CReadLockGuard;
+//class CWriteLockGuard;
 
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SSimpleReadLock --
+///
+/// Acquire a read lock
+template <class Class>
+struct SSimpleReadLock
+{
+    bool operator()(Class& inst)
+    {
+        inst.ReadLock();
+        return true;
+    }
+};
+
+typedef CGuard<CRWLock, SSimpleReadLock<CRWLock> > TReadLockGuard;
+typedef TReadLockGuard                             CReadLockGuard;
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SSimpleWriteLock --
+///
+/// Acquire a write lock
+template <class Class>
+struct SSimpleWriteLock
+{
+    bool operator()(Class& inst)
+    {
+        inst.WriteLock();
+        return true;
+    }
+};
+
+typedef CGuard<CRWLock, SSimpleWriteLock<CRWLock> > TWriteLockGuard;
+typedef TReadLockGuard                              CWriteLockGuard;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -926,149 +881,6 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CAutoRW --
-///
-/// Guarantee RW-lock release.
-///
-/// Acts in a way like "auto_ptr<>": guarantees RW-Lock release.
-
-class CAutoRW
-{
-public:
-    /// Constructor.
-    ///
-    /// Register the RW-lock to be released by the guard destructor.
-    /// Do NOT acquire the RW-lock though!
-    CAutoRW(void) : m_RW(0)
-        {
-        }
-
-    /// Destructor.
-    ///
-    /// Release the R-lock, if it was successfully acquired and
-    /// not released already by Release().
-    ~CAutoRW(void)
-        {
-            Release();
-        }
-
-    /// Release the RW-lock right now - don't release it in the guard
-    /// destructor.
-    void Release(void)
-        {
-            if ( m_RW ) {
-                m_RW->Unlock();
-                m_RW = 0;
-            }
-        }
-
-protected:
-    /// Get the RW-lock being guarded.
-    CRWLock* GetRW(void) const { return m_RW; }
-
-    CRWLock* m_RW;  /// The RW-lock -- NULL if not acquired.
-
-    /// Private copy constructor to disallow initialization.
-    CAutoRW(const CAutoRW&);
-
-    /// Private assignment operator to disallow assignment.
-    CAutoRW& operator= (const CAutoRW&);
-};
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CReadLockGuard --
-///
-/// Acquire the R-lock, then guarantee for its release.
-
-class CReadLockGuard : public CAutoRW
-{
-public:
-    /// Constructor.
-    ///
-    /// Default constructor - do nothing.
-    CReadLockGuard(void)
-        {
-        }
-
-    /// Constructor.
-    ///
-    /// Acquire the R-lock;  register it to be released by the guard
-    /// destructor.
-    CReadLockGuard(CRWLock& rw)
-        {
-            rw.ReadLock();
-            m_RW = &rw;
-        }
-
-    void Guard(CRWLock& rw)
-        {
-            if ( &rw != m_RW ) {
-                Release();
-                rw.ReadLock();
-                m_RW = &rw;
-            }
-        }
-
-private:
-    /// Private copy constructor to disallow initialization.
-    CReadLockGuard(const CReadLockGuard&);
-
-    /// Private assignment operator to disallow assignment.
-    CReadLockGuard& operator= (const CReadLockGuard&);
-};
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CWriteLockGuard --
-///
-/// Acquire the W-lock, then guarantee for its release.
-
-class CWriteLockGuard : public CAutoRW
-{
-public:
-    /// Constructor.
-    ///
-    /// Default constructor - do nothing.
-    CWriteLockGuard(void)
-        {
-        }
-
-    /// Constructor.
-    ///
-    /// Acquire the W-lock;  register it to be released by the guard
-    /// destructor.
-    CWriteLockGuard(CRWLock& rw)
-        {
-            rw.WriteLock();
-            m_RW = &rw;
-        }
-
-    void Guard(CRWLock& rw)
-        {
-            if ( &rw != m_RW ) {
-                Release();
-                rw.WriteLock();
-                m_RW = &rw;
-            }
-        }
-
-private:
-    /// Private copy constructor to disallow initialization.
-    CWriteLockGuard(const CWriteLockGuard&);
-
-    /// Private assignment operator to disallow assignment.
-    CWriteLockGuard& operator= (const CWriteLockGuard&);
-};
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
 /// CSemaphore --
 ///
 /// Implement the semantics of an application-wide semaphore.
@@ -1130,6 +942,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/06/16 11:37:33  dicuccio
+ * Refactored CMutexGuard, CFastMutexGuard, CReadLockGuard, and CWriteLockGuard to
+ * use a templated implementation (CGuard<>).  Provided typedefs for forward and
+ * backward compatibility.
+ *
  * Revision 1.35  2004/03/10 20:00:24  gorelenk
  * Added NCBI_XNCBI_EXPORT prefix to SSystemMutex struct members Lock, Unlock,
  * Trylock.
