@@ -145,6 +145,8 @@ public:
 
     EIO_Status Read(void* buf, size_t size, size_t* n_read = 0,
                     EIO_ReadMethod how = eIO_ReadPlain);
+    // Read up to '\r\n', '\n' or '\0', discarding any of the EOLs
+    EIO_Status ReadLine(string& str);
 
     EIO_Status PushBack(const void* buf, size_t size);
 
@@ -637,6 +639,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.40  2004/11/09 21:13:00  lavr
+ * +ReadLine
+ *
  * Revision 6.39  2004/10/26 14:45:53  lavr
  * <ncbi_socket.hpp> -> <ncbi_socket_unix.hpp>
  *

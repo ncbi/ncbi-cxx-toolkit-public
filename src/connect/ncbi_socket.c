@@ -3213,26 +3213,60 @@ extern EIO_Status SOCK_Read(SOCK           sock,
 }
 
 
-/*
 extern EIO_Status SOCK_ReadLine(SOCK    sock,
                                 char*   buf,
                                 size_t  size,
                                 size_t* n_read)
 {
     EIO_Status status = eIO_Success;
+    int/*bool*/ cr_seen = 0/*false*/;
     size_t x_read = 0;
-    char   w[1024];
-    size_t x_size;
-    char*  x_buf;
 
     while (x_read < size) {
-        char w[1024];
+        char   w[1024];
         size_t x_size = BUF_Size(sock->r_buf);
-        
+        char*  x_buf = size - x_read < sizeof(w) ? w : buf + x_read;
+        EIO_Status status = SOCK_Read(sock, x_buf, x_size,
+                                      &x_size, eIO_ReadPlain);
+        size_t i;
+        for (i = 0; i < x_size  &&  x_read < size; i++) {
+            char c = x_buf[i];
+            if (c == '\0'  ||  c == '\n') {
+                i++;
+                break;
+            }
+            if (c == '\r') {
+                if (!cr_seen) {
+                    cr_seen = 1/*true*/;
+                    continue;
+                }
+            }
+            if (cr_seen) {
+                buf[x_read++] = '\r';
+                if (x_read >= size)
+                    break;
+            }
+            if (c != '\r')
+                cr_seen = 0/*false*/;
+            if (x_buf == w) {
+                buf[x_read] = c;
+            }
+            x_read++;
+        }
+        if (i < x_size) {
+            if (SOCK_PushBack(sock, x_buf + i, size - i) != eIO_Success)
+                status = eIO_Unknown;
+        }
+        if (status != eIO_Success)
+            break;
     }
+    if (x_read < size)
+        buf[x_read] = '\0';
+    if (n_read)
+        *n_read = x_read;
     return status;
 }
-*/
+
 
 extern EIO_Status SOCK_PushBack(SOCK        sock,
                                 const void* buf,
@@ -4313,6 +4347,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.159  2004/11/09 21:13:28  lavr
+ * +ReadLine
+ *
  * Revision 6.158  2004/10/26 20:27:10  ucko
  * Ensure that "sun" isn't defined as a macro.
  *

@@ -629,6 +629,14 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Read
  );
 
 
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ReadLine
+(SOCK           sock,
+ char*          buf,    /* [out] data buffer to read to          */
+ size_t         size,   /* [in]  max # of bytes to read to "buf" */
+ size_t*        n_read  /* [out] # of bytes read  (can be NULL)  */
+ );
+
+
 /* Push the specified data back to the socket input queue (in the socket's
  * internal read buffer). These can be any data, not necessarily the data
  * previously read from the socket.
@@ -992,6 +1000,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.53  2004/11/09 21:13:00  lavr
+ * +ReadLine
+ *
  * Revision 6.52  2004/10/26 14:46:06  lavr
  * <ncbi_socket.h> -> <ncbi_socket_unix.h>
  *

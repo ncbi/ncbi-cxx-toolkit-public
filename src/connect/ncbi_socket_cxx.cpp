@@ -327,6 +327,24 @@ EIO_Status CSocket::Read(void*          buf,
 }
 
 
+EIO_Status CSocket::ReadLine(string& str)
+{
+    if ( !m_Socket )
+        return eIO_Closed;
+    EIO_Status status;
+    char buf[1024];
+    size_t size;
+    str.erase();
+    do {
+        status = SOCK_ReadLine(m_Socket, buf, sizeof(buf), &size);
+        if (!size)
+            break;
+        str += string(buf, size);
+    } while (status == eIO_Success  &&  size == sizeof(buf));
+    return status;
+}
+
+
 EIO_Status CSocket::Write(const void*     buf,
                           size_t          size,
                           size_t*         n_written,
@@ -631,6 +649,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2004/11/09 21:13:28  lavr
+ * +ReadLine
+ *
  * Revision 6.27  2004/10/26 14:48:28  lavr
  * Implement UNIX socket extensions to the socket API
  *
