@@ -68,16 +68,16 @@ public:
 };
 
 
-// CThreadedServer - abstract class for network servers using thread pools.
-//   This code maintains a pool of threads (initially m_InitThreads, but
-//   potentially as many as m_MaxThreads) to deal with incoming connections;
-//   each connection gets assigned to one of the worker threads, allowing
-//   the server to handle multiple requests in parallel while still checking
-//   for new requests.
-//
-//   You must define Process() to indicate what to do with each incoming
-//   connection; .../src/connect/test_threaded_server.cpp illustrates
-//   how you might do this.
+/// CThreadedServer - abstract class for network servers using thread pools.
+///   This code maintains a pool of threads (initially m_InitThreads, but
+///   potentially as many as m_MaxThreads) to deal with incoming connections;
+///   each connection gets assigned to one of the worker threads, allowing
+///   the server to handle multiple requests in parallel while still checking
+///   for new requests.
+///
+///   You must define Process() to indicate what to do with each incoming
+///   connection; .../src/connect/test_threaded_server.cpp illustrates
+///   how you might do this.
 
 class NCBI_XCONNECT_EXPORT CThreadedServer
 {
@@ -88,40 +88,43 @@ public:
         m_TemporarilyStopListening(false), m_Port(port)
         {}
 
+    /// Enter the main loop.
     void Run(void);
 
-    // Runs asynchronously (from a separate thread) for each request
-    // Implementor must take care of closing socket when done
+    /// Runs asynchronously (from a separate thread) for each request.
+    /// Implementor must take care of closing socket when done.
     virtual void Process(SOCK sock) = 0;
 
+    /// Get the listening port number back.
     unsigned short GetPort() const { return m_Port; }
 
 protected:
-    // Runs synchronously when request queue is full
-    // Implementor must take care of closing socket when done
+    /// Runs synchronously when request queue is full.
+    /// Implementor must take care of closing socket when done.
     virtual void ProcessOverflow(SOCK sock) { SOCK_Close(sock); }
 
-    // Runs synchronously when accept has timed out
+    /// Runs synchronously when accept has timed out.
     virtual void ProcessTimeout(void) {}
 
-    // Runs synchronously between iterations
+    /// Runs synchronously between iterations.
     virtual bool ShutdownRequested(void) { return false; }
 
-    // Called at the beginning of Run, before creating thread pool
+    /// Called at the beginning of Run, before creating thread pool.
     virtual void SetParams() {}
 
-    // Settings for thread pool
-    unsigned int    m_InitThreads;     // Number of initial threads
-    unsigned int    m_MaxThreads;      // Maximum simultaneous threads
-    unsigned int    m_QueueSize;       // Maximum size of request queue
-    unsigned int    m_SpawnThreshold;  // Controls when to spawn more threads
-    const STimeout* m_AcceptTimeout;   // Maximum time between exit checks
+    /// Settings for thread pool (which is local to Run):
 
-    // Temporarily close listener when queue fills?
+    unsigned int    m_InitThreads;     ///< Number of initial threads
+    unsigned int    m_MaxThreads;      ///< Maximum simultaneous threads
+    unsigned int    m_QueueSize;       ///< Maximum size of request queue
+    unsigned int    m_SpawnThreshold;  ///< Controls when to spawn more threads
+    const STimeout* m_AcceptTimeout;   ///< Maximum time between exit checks
+
+    /// Temporarily close listener when queue fills?
     bool            m_TemporarilyStopListening;
 
 private:
-    unsigned short  m_Port; // TCP port to listen on
+    unsigned short  m_Port; ///< TCP port to listen on
 };
 
 
@@ -134,6 +137,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2005/01/05 15:09:44  ucko
+ * Complete "DOXYGENization"
+ *
  * Revision 6.12  2004/10/08 12:41:49  lavr
  * Cosmetics
  *
