@@ -40,6 +40,7 @@ static char const rcsid[] =
 
 #include <algo/blast/core/greedy_align.h>
 #include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE macros */
+#include "greedy_align_pri.h"
 
 /** Constants used during greedy alignment */
 enum {
@@ -56,7 +57,7 @@ enum {
     @return 0 if successful, nonzero otherwise
 */
 static Int2 
-edit_script_realloc(MBGapEditScript *script, Uint4 total_ops)
+s_EditScriptRealloc(MBGapEditScript *script, Uint4 total_ops)
 {
     if (script->num_ops_allocated <= total_ops) {
         Uint4 new_size = total_ops * 3 / 2;
@@ -81,10 +82,10 @@ edit_script_realloc(MBGapEditScript *script, Uint4 total_ops)
   @return 0 on success, nonzero otherwise
 */
 static Int2 
-edit_script_add_new(MBGapEditScript *script, 
+s_EditScriptAddNew(MBGapEditScript *script, 
                 enum EOpType op_type, Uint4 num_ops)
 {
-    if (edit_script_realloc(script, script->num_ops + 2) != 0)
+    if (s_EditScriptRealloc(script, script->num_ops + 2) != 0)
         return -1;
 
     ASSERT(op_type != eEditOpError);
@@ -103,13 +104,13 @@ edit_script_add_new(MBGapEditScript *script,
   @return The initialized edit script
 */
 static MBGapEditScript *
-edit_script_init(MBGapEditScript *script)
+s_EditScriptInit(MBGapEditScript *script)
 {
         script->edit_ops = NULL;
         script->num_ops_allocated = 0;
         script->num_ops = 0;
         script->last_op = eEditOpError;
-        edit_script_realloc(script, 8);
+        s_EditScriptRealloc(script, 8);
         return script;
 }
 
@@ -122,7 +123,7 @@ edit_script_init(MBGapEditScript *script)
     @return 0 on success, nonzero otherwise
 */
 static Int2 
-edit_script_add(MBGapEditScript *script, 
+s_EditScriptAdd(MBGapEditScript *script, 
                  enum EOpType op_type, Uint4 num_ops)
 {
     if (op_type == eEditOpError) {
@@ -136,7 +137,7 @@ edit_script_add(MBGapEditScript *script,
     if (script->last_op == op_type)
         script->edit_ops[script->num_ops-1].num_ops += num_ops;
     else
-        edit_script_add_new(script, op_type, num_ops);
+        s_EditScriptAddNew(script, op_type, num_ops);
 
     return 0;
 }
@@ -146,12 +147,12 @@ MBGapEditScript *
 MBGapEditScriptAppend(MBGapEditScript *dest_script, 
                       MBGapEditScript *src_script)
 {
-    Int4 i;
+    Uint4 i;
 
     for (i = 0; i < src_script->num_ops; i++) {
         MBEditOp *edit_op = src_script->edit_ops + i;
 
-        edit_script_add(dest_script, edit_op->op_type, edit_op->num_ops);
+        s_EditScriptAdd(dest_script, edit_op->op_type, edit_op->num_ops);
     }
 
     return dest_script;
@@ -163,7 +164,7 @@ MBGapEditScriptNew(void)
 {
     MBGapEditScript *script = calloc(1, sizeof(MBGapEditScript));
     if (script != NULL)
-        return edit_script_init(script);
+        return s_EditScriptInit(script);
     return NULL;
 }
 
@@ -187,17 +188,17 @@ MBGapEditScriptFree(MBGapEditScript *script)
     @return Pointer to the updated edit script
 */
 static MBGapEditScript *
-edit_script_reverse_inplace(MBGapEditScript *script)
+s_EditScriptReverseInPlace(MBGapEditScript *script)
 {
     Uint4 i;
-    const Uint4 num_ops = script->num_ops;
-    const Uint4 mid = num_ops / 2;
-    const Uint4 end = num_ops - 1;
+    const Uint4 kNumOps = script->num_ops;
+    const Uint4 kMid = kNumOps / 2;
+    const Uint4 kEnd = kNumOps - 1;
     
-    for (i = 0; i < mid; ++i) {
-        const MBEditOp t = script->edit_ops[i];
-        script->edit_ops[i] = script->edit_ops[end - i];
-        script->edit_ops[end - i] = t;
+    for (i = 0; i < kMid; ++i) {
+        const MBEditOp kOp = script->edit_ops[i];
+        script->edit_ops[i] = script->edit_ops[kEnd - i];
+        script->edit_ops[kEnd - i] = kOp;
     }
     return script;
 }
@@ -232,7 +233,7 @@ MBSpaceNew()
    @param space The space to mark
 */
 static void 
-refresh_mb_space(SMBSpace* space)
+s_RefreshMBSpace(SMBSpace* space)
 {
     while (space != NULL) {
         space->space_used = 0;
@@ -261,7 +262,7 @@ void MBSpaceFree(SMBSpace* space)
     @return Pointer to the allocated memory, or NULL in case of error
 */
 static SThreeVal* 
-get_mb_space(SMBSpace* pool, Int4 num_alloc)
+s_GetMBSpace(SMBSpace* pool, Int4 num_alloc)
 {
     SThreeVal* out_ptr;
     if (num_alloc < 0) 
@@ -286,13 +287,8 @@ get_mb_space(SMBSpace* pool, Int4 num_alloc)
     return out_ptr;
 }
 
-/** Compute the greatest common divisor of two numbers
-    @param a First number [in]
-    @param b Second number [in]
-    @return The computed gcd
-*/
-static Int4 
-gcd(Int4 a, Int4 b)
+Int4 
+BLAST_gcd(Int4 a, Int4 b)
 {
     Int4 c;
     if (a < b) {
@@ -306,21 +302,14 @@ gcd(Int4 a, Int4 b)
     return b;
 }
 
-/** Compute the greatest common divisor of three numbers,
-    divide that quantity out of each number, and return the computed GCD
-    @param a Pointer to first number [in/modified]
-    @param b Pointer to second number [in/modified]
-    @param c Pointer to third number [in/modified]
-    @return The computed gcd
-*/
-static Int4 
-gdb3(Int4* a, Int4* b, Int4* c)
+Int4 
+BLAST_gdb3(Int4* a, Int4* b, Int4* c)
 {
     Int4 g;
     if (*b == 0) 
-        g = gcd(*a, *c);
+        g = BLAST_gcd(*a, *c);
     else 
-        g = gcd(*a, gcd(*b, *c));
+        g = BLAST_gcd(*a, BLAST_gcd(*b, *c));
     if (g > 1) {
         *a /= g;
         *b /= g;
@@ -345,7 +334,7 @@ gdb3(Int4* a, Int4* b, Int4* c)
     @return The state for the next traceback operation
 */
 static enum EOpType 
-get_lastC(SThreeVal** flast_d, Int4* lower, Int4* upper, 
+s_GetLastC(SThreeVal** flast_d, Int4* lower, Int4* upper, 
           Int4* d, Int4 diag, Int4 Mis_cost, Int4* row1)
 {
     Int4 row;
@@ -386,7 +375,7 @@ get_lastC(SThreeVal** flast_d, Int4* lower, Int4* upper,
     @return The state for the next traceback operation
 */
 static enum EOpType 
-get_last_ID(SThreeVal** flast_d, Int4* lower, Int4* upper, 
+s_GetLastID(SThreeVal** flast_d, Int4* lower, Int4* upper, 
             Int4* d, Int4 diag, Int4 GO_cost, 
             Int4 GE_cost, enum EOpType IorD)
 {
@@ -432,7 +421,7 @@ get_last_ID(SThreeVal** flast_d, Int4* lower, Int4* upper,
     @return The next diagonal in the traceback
 */
 static Int4 
-get_last(Int4 **flast_d, Int4 d, Int4 diag, Int4 *row1)
+s_GetLast(Int4 **flast_d, Int4 d, Int4 diag, Int4 *row1)
 {
     if (flast_d[d-1][diag-1] > MAX(flast_d[d-1][diag], flast_d[d-1][diag+1])) {
         *row1 = flast_d[d-1][diag-1];
@@ -530,7 +519,7 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
     *extent2 = row;
     if (row == len1 || row == len2) {
         if (script != NULL)
-            edit_script_add(script, eEditOpReplace, row);
+            s_EditScriptAdd(script, eEditOpReplace, row);
         return final_dist;
     }
 
@@ -543,7 +532,7 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
        aux_data->space = mem_pool = MBSpaceNew();
     } 
     else { 
-        refresh_mb_space(mem_pool);
+        s_RefreshMBSpace(mem_pool);
     }
     
     max_row = max_row_free + d_dropoff;
@@ -664,7 +653,7 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
            /* space array consists of SThreeVal structures which are 
               3 times larger than Int4, so divide requested amount by 3
            */
-           flast_d[d] = (Int4*) get_mb_space(mem_pool, 
+           flast_d[d] = (Int4*) s_GetMBSpace(mem_pool, 
                                              (fupper - flower + 7) / 3);
            if (flast_d[d] != NULL)
               flast_d[d] = flast_d[d] - flower + 2;
@@ -685,33 +674,33 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
 
         while (d > 0) {
             Int4 row1, col1, diag1;
-            diag1 = get_last(flast_d, d, diag, &row1);
+            diag1 = s_GetLast(flast_d, d, diag, &row1);
             col1 = row1 + diag1 - ORIGIN;
             if (diag1 == diag) {
                 if (row - row1 > 0) {
-                    edit_script_add(script, eEditOpReplace, row - row1);
+                    s_EditScriptAdd(script, eEditOpReplace, row - row1);
                 }
             } 
             else if (diag1 < diag) {
                 if (row - row1 > 0) {
-                    edit_script_add(script, eEditOpReplace, row - row1);
+                    s_EditScriptAdd(script, eEditOpReplace, row - row1);
                 }
-                edit_script_add(script, eEditOpInsert, 1);
+                s_EditScriptAdd(script, eEditOpInsert, 1);
             } 
             else {
                 if (row - row1 - 1 > 0) {
-                    edit_script_add(script, eEditOpReplace, row - row1 - 1);
+                    s_EditScriptAdd(script, eEditOpReplace, row - row1 - 1);
                 }
-                edit_script_add(script, eEditOpDelete, 1);
+                s_EditScriptAdd(script, eEditOpDelete, 1);
             }
             d--; 
             diag = diag1; 
             col = col1; 
             row = row1;
         }
-        edit_script_add(script, eEditOpReplace, flast_d[0][ORIGIN]);
+        s_EditScriptAdd(script, eEditOpReplace, flast_d[0][ORIGIN]);
         if (!reverse) 
-            edit_script_reverse_inplace(script);
+            s_EditScriptReverseInPlace(script);
     }
     return final_dist;
 }
@@ -772,7 +761,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
     Mis_cost = mismatch_score + match_score;
     GO_cost = gap_open;
     GE_cost = gap_extend + match_score_half;
-    gd = gdb3(&Mis_cost, &GO_cost, &GE_cost);
+    gd = BLAST_gdb3(&Mis_cost, &GO_cost, &GE_cost);
     D_diff = ICEIL(xdrop_threshold + match_score_half, gd);
     
     MAX_D = (Int4) (len1/GREEDY_MAX_COST_FRACTION + 1);
@@ -829,7 +818,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
     *extent2 = row;
     if (row == len1 || row == len2) {
         if (script != NULL)
-            edit_script_add(script, eEditOpReplace, row);
+            s_EditScriptAdd(script, eEditOpReplace, row);
         return row * match_score;
     }
 
@@ -842,7 +831,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
        aux_data->space = mem_pool = MBSpaceNew();
     } 
     else { 
-        refresh_mb_space(mem_pool);
+        s_RefreshMBSpace(mem_pool);
     }
 
     flast_d = aux_data->flast_d_affine;
@@ -1033,7 +1022,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                flast_d[d] = flast_d[d - max_cost-1];
            } 
            else {
-               flast_d[d] = get_mb_space(mem_pool, fupper-flower+1)-flower;
+               flast_d[d] = s_GetMBSpace(mem_pool, fupper-flower+1)-flower;
                if (flast_d[d] == NULL)
                    return final_score;
            }
@@ -1053,32 +1042,32 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
         while (d > 0) {
             if (state == eEditOpReplace) {
                 /* diag unchanged */
-                state = get_lastC(flast_d, lower, upper, 
+                state = s_GetLastC(flast_d, lower, upper, 
                                   &d, diag, Mis_cost, &row1);
                 if (row - row1 > 0) 
-                    edit_script_add(script, eEditOpReplace, row-row1);
+                    s_EditScriptAdd(script, eEditOpReplace, row-row1);
                 row = row1;
             } 
             else {
                 if (state == eEditOpInsert) {
                     /*row unchanged */
-                    state = get_last_ID(flast_d, lower, upper, &d, 
+                    state = s_GetLastID(flast_d, lower, upper, &d, 
                                   diag, GO_cost, GE_cost, eEditOpInsert);
                     diag--;
-                    edit_script_add(script, eEditOpInsert, 1);
+                    s_EditScriptAdd(script, eEditOpInsert, 1);
                 } 
                 else {
-                    edit_script_add(script, eEditOpDelete, 1);
-                    state = get_last_ID(flast_d, lower, upper, &d, 
+                    s_EditScriptAdd(script, eEditOpDelete, 1);
+                    state = s_GetLastID(flast_d, lower, upper, &d, 
                                   diag, GO_cost, GE_cost, eEditOpDelete);
                     diag++;
                     row--;
                 }
             }
         }
-        edit_script_add(script, eEditOpReplace, flast_d[0][ORIGIN].C);
+        s_EditScriptAdd(script, eEditOpReplace, flast_d[0][ORIGIN].C);
         if (!reverse) 
-            edit_script_reverse_inplace(script);
+            s_EditScriptReverseInPlace(script);
     }
     final_score = max_row[final_score];
     return final_score;
