@@ -172,35 +172,28 @@ void CFlatGatherer::x_GatherSeqEntry(const CSeq_entry_Handle& entry) const
         }
     }
 
-    // visit each bioseq in the entry (excluding segments)
-    CBioseq_CI seq_iter(entry, CSeq_inst::eMol_not_set,
-        CBioseq_CI::eLevel_Mains);
+    CSeq_inst::TMol mol_type;
+    const CFlatFileConfig& cfg = Config();
+    if (cfg.IsViewAll()) {
+        mol_type = CSeq_inst::eMol_not_set;
+    } else if (cfg.IsViewNuc()) {
+        mol_type = CSeq_inst::eMol_na;
+    } else if (cfg.IsViewProt()) {
+        mol_type = CSeq_inst::eMol_aa;
+    } else {
+        return;
+    }
+
+    // visit bioseqs in the entry (excluding segments)
+    CBioseq_CI seq_iter(entry, mol_type, CBioseq_CI::eLevel_Mains);
     for ( ; seq_iter; ++seq_iter ) {
-        if ( x_DisplayBioseq(entry, *seq_iter) ) {
-            x_GatherBioseq(*seq_iter);
+        CSeq_id_Handle id = GetId(*seq_iter, eGetId_Best);
+        if (id.GetSeqId()->IsLocal()  &&  cfg.SuppressLocalId()) {
+            continue;
         }
+        x_GatherBioseq(*seq_iter);
     }
 } 
-
-
-bool CFlatGatherer::x_DisplayBioseq
-(const CSeq_entry_Handle& entry,
- const CBioseq_Handle& seq) const
-{
-    const CFlatFileConfig& cfg = Config();
-
-    CSeq_id_Handle id = GetId(seq, eGetId_Best);
-    if ( id.GetSeqId()->IsLocal()  &&  cfg.SuppressLocalId() ) {
-        return false;
-    }
-
-    if ( (CSeq_inst::IsNa(seq.GetInst_Mol())  &&  cfg.IsViewNuc())  ||
-         (CSeq_inst::IsAa(seq.GetInst_Mol())  &&  cfg.IsViewProt()) ) {
-        return true;
-    }
-
-    return false;
-}
 
 
 static bool s_IsSegmented(const CBioseq_Handle& seq)
@@ -828,12 +821,12 @@ void CFlatGatherer::x_FeatComments(CBioseqContext& ctx) const
 // We use multiple items to represent the sequence.
 void CFlatGatherer::x_GatherSequence(void) const
 {
-    static const TSeqPos kChunkSize = 2400; // 20 lines
+    static const TSeqPos kChunkSize = 4800;
     
     bool first = true;
     TSeqPos size = GetLength(m_Current->GetLocation(), &m_Current->GetScope());
-    for ( TSeqPos start = 0; start < size; start += kChunkSize ) {
-        TSeqPos end = min(start + kChunkSize, size);
+    for ( TSeqPos start = 1; start <= size; start += kChunkSize ) {
+        TSeqPos end = min(start + kChunkSize - 1, size);
         *m_ItemOS << new CSequenceItem(start, end, first, *m_Current);
         first = false;
     }
@@ -1128,7 +1121,7 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
                .SetAdaptiveDepth(true)
                .SetSegmentSelectFirst();
         } else {
-            sel.SetLimitTSE(ctx.GetHandle().GetTopLevelEntry())
+            sel.SetLimitTSE(ctx.GetHandle().GetTSE_Handle())
                .SetResolveTSE();
         }
     }
@@ -1279,7 +1272,10 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             // feature iterator is inadequate for the flat-file needs.
             CConstRef<CSeq_loc> feat_loc(&original_feat.GetLocation());
             if (mapper) {
-                feat_loc.Reset(mapper->Map(*feat_loc));
+                CRef<CSeq_loc> temp;
+                temp.Reset(mapper->Map(*feat_loc));
+                temp->SetId(*ctx.GetPrimaryId());
+                feat_loc = temp;
             }
             if (!feat_loc  ||  feat_loc->IsNull()) {
                 continue;
@@ -1475,6 +1471,27 @@ static bool s_IsCDD(const CSeq_feat_Handle& feat)
 }
 
 
+SAnnotSelector& s_GetCdsProductSel(CBioseqContext& ctx)
+{
+    static SAnnotSelector sel;
+    static bool initialized = false;
+
+    if (!initialized) {
+        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_region)
+           .IncludeFeatSubtype(CSeqFeatData::eSubtype_site)
+           .IncludeFeatSubtype(CSeqFeatData::eSubtype_bond)
+           .IncludeFeatSubtype(CSeqFeatData::eSubtype_mat_peptide_aa)
+           .IncludeFeatSubtype(CSeqFeatData::eSubtype_sig_peptide_aa)
+           .IncludeFeatSubtype(CSeqFeatData::eSubtype_transit_peptide_aa)
+           .IncludeFeatSubtype(CSeqFeatData::eSubtype_preprotein);
+        initialized = true;
+    }
+    sel.SetLimitTSE(ctx.GetHandle().GetTSE_Handle());
+
+    return sel;
+}
+
+
 void CFlatGatherer::x_GetFeatsOnCdsProduct
 (const CSeq_feat& feat,
  CBioseqContext& ctx,
@@ -1491,11 +1508,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
     }
 
     CScope& scope = ctx.GetScope();
-    CConstRef<CSeq_id> prot_id;
-    try {
-        prot_id.Reset(&GetId(feat.GetProduct(), &scope));
-    } catch (CException&) {
-    }
+    CConstRef<CSeq_id> prot_id(feat.GetProduct().GetId());
     if (!prot_id) {
         return;
     }
@@ -1507,23 +1520,16 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
     if (!prot) {
         return;
     }
+    CFeat_CI it(prot, s_GetCdsProductSel(ctx));
+    if (!it) {
+        return;
+    }
 
     // map from cds product to nucleotide
     CSeq_loc_Mapper prot_to_cds(feat, CSeq_loc_Mapper::eProductToLocation, &scope);
     
-    // explore mat_peptides, sites, etc.
-    SAnnotSelector sel;
-    sel.SetLimitTSE(ctx.GetHandle().GetTopLevelEntry())
-       .IncludeFeatSubtype(CSeqFeatData::eSubtype_region)
-       .IncludeFeatSubtype(CSeqFeatData::eSubtype_site)
-       .IncludeFeatSubtype(CSeqFeatData::eSubtype_bond)
-       .IncludeFeatSubtype(CSeqFeatData::eSubtype_mat_peptide_aa)
-       .IncludeFeatSubtype(CSeqFeatData::eSubtype_sig_peptide_aa)
-       .IncludeFeatSubtype(CSeqFeatData::eSubtype_transit_peptide_aa)
-       .IncludeFeatSubtype(CSeqFeatData::eSubtype_preprotein);
-
     CSeq_feat_Handle prev;  // keep track of the previous feature
-    for ( CFeat_CI it(prot, sel); it; ++it ) {
+    for ( ; it; ++it ) {
         CSeq_feat_Handle curr = it->GetSeq_feat_Handle();
         const CSeq_loc& curr_loc = curr.GetLocation();
         CSeqFeatData::ESubtype subtype = curr.GetFeatSubtype();
@@ -1543,7 +1549,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
         // map prot location to nuc location
         CRef<CSeq_loc> loc(prot_to_cds.Map(curr_loc));
         // possibly map again (e.g. from part to master)
-        if ( loc.NotEmpty()  &&  mapper.NotEmpty() ) {
+        if ( mapper.NotEmpty()  &&  loc.NotEmpty() ) {
             loc.Reset(mapper->Map(*loc));
         }
         if (loc) {
@@ -1602,6 +1608,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2005/03/28 17:20:59  shomrat
+* Optimizing bioseq iteration and cds product feature collection
+*
 * Revision 1.43  2005/03/14 18:19:02  grichenk
 * Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
 * SAnnotSelector.
