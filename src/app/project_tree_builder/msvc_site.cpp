@@ -86,6 +86,10 @@ void CMsvcSite::GetLibInfo(const string& lib,
     libinfo->Clear();
 
     libinfo->m_IncludeDir = GetOpt(m_Registry, lib, "INCLUDE", config);
+    
+    string defines_str    = GetOpt(m_Registry, lib, "DEFINES", config);
+    NStr::Split(defines_str, LIST_SEPARATOR, libinfo->m_LibDefines);
+
     libinfo->m_LibPath    = GetOpt(m_Registry, lib, "LIBPATH", config);
 
     string libs_str = GetOpt(m_Registry, lib, "LIB", config);
@@ -130,6 +134,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/03/22 14:48:38  gorelenk
+ * Changed implementation of CMsvcSite::GetLibInfo .
+ *
  * Revision 1.8  2004/02/24 20:53:16  gorelenk
  * Added implementation of member function IsLibEnabledInConfig
  * of class  CMsvcSite.
