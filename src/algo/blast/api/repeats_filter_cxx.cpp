@@ -237,7 +237,6 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
     opts.SetXDropoff(40);
     opts.SetGapOpeningCost(2);
     opts.SetGapExtensionCost(1);
-    opts.SetSeedExtensionMethod(eRight);
     opts.SetFilterString("F");
 
     CDbBlast blaster(query, seq_src, opts);
@@ -255,6 +254,9 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.12  2005/01/10 13:37:14  madden
+ *  Call to SetSeedExtensionMethod removed as it has been removed
+ *
  *  Revision 1.11  2004/12/20 15:13:58  dondosha
  *  Two small memory leak fixes
  *
