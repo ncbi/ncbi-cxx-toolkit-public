@@ -19,7 +19,6 @@
 
 
 ####  ERROR STREAM
-
 err_log="/tmp/check.sh.err.$$"
 exec 2>$err_log
 trap "rm -f $err_log" 1 2 15
@@ -46,8 +45,8 @@ done
 script_name=`basename $0`
 script_args="$*"
 
-short_res="check.sh.log"
-full_res="check.sh.out"
+summary_res="check.sh.log"
+error_res="check.sh.out"
 
 mailx="mailx -r `whoami | cut -f1 -d' '`"
 
@@ -149,45 +148,59 @@ for dest in "$@" ; do
 done
 
 # Compose "full" results archive, if necessary
-echo "$*" | grep ':full:' >/dev/null  &&   $run_script ./check.sh concat_err
+$run_script ./check.sh concat_err
 
 # Post results to the specified locations
 if test -n "$file_list_full" ; then
    for loc in $file_list_full ; do
-      cp -p $full_res $loc  ||  \
+      cp -p $error_res $loc  ||  \
          err_list="$err_list COPY_ERR:\"$loc\""
    done
 fi
 
 if test -n "$file_list" ; then
    for loc in $file_list ; do
-      cp -p $short_res $loc  ||  \
+      cp -p $summary_res $loc  ||  \
          err_list="$err_list COPY_ERR:\"$loc\""
    done
 fi
 
-subject="[C++ CHECK RESULTS]  ${signature}"
+n_ok=`grep '^OK  --  '                   "$summary_res" | wc -l | sed 's/ //g'`
+n_err=`grep '^ERR \[[0-9][0-9]*\] --  '  "$summary_res" | wc -l | sed 's/ //g'`
+n_abs=`grep '^ABS --  '                  "$summary_res" | wc -l | sed 's/ //g'`
+
+subject="${signature}   OK:$n_ok ERR:$n_err ABS:$n_abs"
 
 if test -n "$mail_list_full" ; then
    for loc in $mail_list_full ; do
       mailto=`echo "$loc" | sed 's/,/ /g'`
-      cat $full_res | $mailx -s "$subject" $mailto  || \
-         err_list="$err_list MAIL_ERR:\"$loc\""
+      {
+        echo "$subject"; echo
+        cat $summary_res
+        echo ; echo '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%' ; echo
+        cat $error_res
+      } | $mailx -s "[C++ CHECK RESULTS]  $subject" $mailto \
+           ||  err_list="$err_list MAIL_ERR:\"$loc\""
    done
 fi
 
-if test -n "$mail_list" ; then
+if test -n "$mail_list"  -a  -s "$error_res" ; then
    for loc in $mail_list ; do
       mailto=`echo "$loc" | sed 's/,/ /g'`
-      cat $short_res | $mailx -s "$subject" $mailto  ||  \
-         err_list="$err_list MAIL_ERR:\"$loc\""
+      {
+        echo "$subject"; echo
+        cat $error_res
+      } | $mailx -s "[C++ CHECK ERRORS]  $subject" $mailto \
+           || err_list="$err_list MAIL_ERR:\"$loc\""
    done
 fi
 
 # Post errors to watchers
-if test -n "$err_list"  -o  "$debug" = "yes" ; then
-   ( echo "$err_list" ; echo ; echo "====================" ; cat $err_log ) | \
-    $mailx -s "[C++ CHECK ERR]  ${signature}" $watch_list
+if test -n "$watch_list" ; then
+   if test -n "$err_list"  -o  "$debug" = "yes" ; then
+      { echo "$err_list"; echo; echo "====================";  cat $err_log; } \
+       | $mailx -s "[C++ CHECK WATCH]  ${signature}" $watch_list
+   fi
 fi
 
 
