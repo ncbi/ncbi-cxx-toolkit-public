@@ -114,8 +114,17 @@ public:
     int GetWindowSize() const;
     void SetWindowSize(int w);
 
-    int GetExtendWordMethod() const;
-    void SetExtendWordMethod(int ew, bool set);
+    int GetSeedContainerType() const;
+    void SetSeedContainerType(int t);
+
+    int GetSeedExtensionMethod() const;
+    void SetSeedExtensionMethod(bool t);
+
+    bool GetVariableWordsize() const;
+    void SetVariableWordsize(bool val);
+
+    bool GetUngappedExtension() const;
+    void SetUngappedExtension(bool val);
 
     double GetXDropoff() const;
     void SetXDropoff(double x);
@@ -523,18 +532,68 @@ CBlastOptions::SetWindowSize(int s)
 }
 
 inline int
-CBlastOptions::GetExtendWordMethod() const
+CBlastOptions::GetSeedContainerType() const
 {
-    return m_InitWordOpts->extend_word_method;
+    return m_InitWordOpts->container_type;
 }
 
-inline void
-CBlastOptions::SetExtendWordMethod(int ew, bool set)
+inline void 
+CBlastOptions::SetSeedContainerType(int type)
 {
-    if (set)
-        m_InitWordOpts->extend_word_method |= ew;
+    if (type < eMaxContainerType)
+        m_InitWordOpts->container_type = (SeedContainerType) type;
+}
+
+inline int
+CBlastOptions::GetSeedExtensionMethod() const
+{
+    return (int) m_InitWordOpts->extension_method;
+}
+
+inline void 
+CBlastOptions::SetSeedExtensionMethod(bool ag)
+{
+    if (ag)
+        m_InitWordOpts->extension_method = eRightAndLeft;
     else
-        m_InitWordOpts->extend_word_method &= ~ew;
+        m_InitWordOpts->extension_method = eRight;
+}
+
+inline bool
+CBlastOptions::GetVariableWordsize() const
+{
+    if (m_InitWordOpts->variable_wordsize)
+        return true;
+    else 
+        return false;
+}
+
+inline void 
+CBlastOptions::SetVariableWordsize(bool val)
+{
+    if (val)
+        m_InitWordOpts->variable_wordsize = TRUE;
+    else
+        m_InitWordOpts->variable_wordsize = FALSE;
+}
+
+inline bool
+CBlastOptions::GetUngappedExtension() const
+{
+    if (m_InitWordOpts->ungapped_extension)
+        return true;
+    else 
+        return false;
+}
+
+inline void 
+CBlastOptions::SetUngappedExtension(bool val)
+{
+    if (val)
+        m_InitWordOpts->ungapped_extension = TRUE;
+    else
+        m_InitWordOpts->ungapped_extension = FALSE;
+    
 }
 
 inline double
@@ -997,6 +1056,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2003/10/17 18:43:14  dondosha
+* Use separate variables for different initial word extension options
+*
 * Revision 1.26  2003/10/07 17:27:38  dondosha
 * Lower case mask removed from options, added to the SSeqLoc structure
 *
