@@ -1443,10 +1443,23 @@ _PSIPurgeAlignedRegion(PsiAlignmentData* alignment,
 
     sequence_position = alignment->desc_matrix[seq_index];
     for (i = start; i < stop; i++) {
+        /**
+           @todo This function is the successor to posit.c's posCancel and it
+           has been implemented to be consistent with it. However, its choice
+           of sentinel values to flag positions as unused is inconsistent with
+           the state of newly allocated positions (which would be preferred).
+           This behavior should be fixed once the algo/blast implementation the
+           PSSM engine replaces posit.c 
         sequence_position[i].letter = (unsigned char) -1;
-        sequence_position[i].used = FALSE;
         sequence_position[i].e_value = kDefaultEvalueForPosition;
         sequence_position[i].extents.left = (unsigned int) -1;
+        */
+        /* posCancel initializes positions differently than when they are
+         * allocated, why?*/
+        sequence_position[i].letter = 0;
+        sequence_position[i].used = FALSE;
+        sequence_position[i].e_value = PSI_INCLUSION_ETHRESH;
+        sequence_position[i].extents.left = 0;
         sequence_position[i].extents.right = alignment->dimensions->query_sz;
     }
 
@@ -1512,6 +1525,9 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/06/16 15:22:47  camacho
+ * Fixes to add new unit tests
+ *
  * Revision 1.9  2004/06/09 14:21:03  camacho
  * Removed msvc compiler warnings
  *
