@@ -184,10 +184,11 @@ property gui_print : {name:"gui_print", path:"gui:print"}
 property gui_math : {name:"gui_math", path:"gui:math"}
 property xgbplugin : {name:"xgbplugin", path:"gui:plugin", inc:{"plugin__.cpp", "plugin___.cpp"}, asn1:true}
 
+property gui_dlg_basic : {name:"gui_dlg_entry_form", path:"gui:dialogs:basic"}
 property gui_dlg_entry_form : {name:"gui_dlg_entry_form", path:"gui:dialogs:entry_form"}
-property gui_dlg_multi_col : {name:"gui_dlg_multi_col", path:"gui:dialogs:col"}
+--property gui_dlg_multi_col : {name:"gui_dlg_multi_col", path:"gui:dialogs:col"}
 property gui_dlg_registry : {name:"gui_dlg_registry", path:"gui:dialogs:registry"}
-property gui_dlg_progress : {name:"gui_dlg_progress", path:"gui:dialogs:progress"}
+--property gui_dlg_progress : {name:"gui_dlg_progress", path:"gui:dialogs:progress"}
 property gui_dlg_config : {name:"gui_dlg_config", path:"gui:dialogs:config"}
 property gui_dlg_featedit : {name:"gui_dlg_featedit", path:"gui:dialogs:edit:feature"}
 property gui_dlg_edit : {name:"gui_dlg_edit", path:"gui:dialogs:edit"}
@@ -287,7 +288,7 @@ property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_open
 property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncbi_core ncbi_seq ncbi_seqext"}
 property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core"}
 property gui_widgets : {name:"gui_widgets", libs:{w_toplevel, w_workspace, w_fltk, w_gl, w_flu, w_fltable}, dep:"gui_utils ncbi_image ncbi_core"}
-property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_multi_col, gui_dlg_progress, gui_dlg_config, gui_dlg_featedit, gui_dlg_edit}, dep:"gui_config gui_utils gui_widgets ncbi_core ncbi_seq ncbi_seqext"} -- gui_dlg_registry
+property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_basic, gui_dlg_config, gui_dlg_featedit, gui_dlg_edit}, dep:"gui_config gui_utils gui_widgets ncbi_core ncbi_seq ncbi_seqext"} -- gui_dlg_registry
 property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext"}
 property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_utils gui_graph gui_widgets"}
 property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_serial_browse}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_widgets"}
@@ -342,6 +343,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/09/03 14:34:42  lebedev
+ * dlg_basic added to dialogs
+ *
  * Revision 1.21  2004/08/23 12:24:53  lebedev
  * Added seqtest to ncbi_seq
  *
