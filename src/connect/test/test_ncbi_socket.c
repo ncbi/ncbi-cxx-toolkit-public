@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2000/06/23 19:39:22  vakatov
+ * Test the logging of socket I/O (incl. binary data)
+ *
  * Revision 6.6  2000/03/24 23:12:13  vakatov
  * Starting the development quasi-branch to implement CONN API.
  * All development is performed in the NCBI C++ tree only, while
@@ -123,10 +126,13 @@ static void TEST__client_1(SOCK sock)
     fprintf(log_fp, "[INFO] TEST__client_1(TC1)\n");
 
     /* Send a short string */
+    SOCK_SetDataLoggingAPI(eOn);
     n_io = strlen(s_C1) + 1;
     status = SOCK_Write(sock, s_C1, n_io, &n_io_done);
     assert(status == eIO_Success  &&  n_io == n_io_done);
 
+    SOCK_SetDataLoggingAPI(eOff);
+    SOCK_SetDataLogging(sock, eOn);
     n_io = strlen(s_S1) + 1;
     status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_Peek);
     status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_Plain);
@@ -142,11 +148,14 @@ static void TEST__client_1(SOCK sock)
            == eIO_Success);
     assert(strcmp(buf, s_S1) == 0);
 
+    SOCK_SetDataLoggingAPI(eDefault);
+    SOCK_SetDataLogging(sock, eDefault);
+
     /* Send a very big binary blob */
     {{
         size_t i;
-        char* blob = (char*) malloc(BIG_BLOB_SIZE);
-        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (char)i, i++)
+        unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
+        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char) i, i++)
             continue;
         for (i = 0;  i < 10;  i++) {
             status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
@@ -167,6 +176,7 @@ static void TEST__server_1(SOCK sock)
     fprintf(log_fp, "[INFO] TEST__server_1(TS1)\n");
 
     /* Receive and send back a short string */
+    SOCK_SetDataLogging(sock, eOn);
     n_io = strlen(s_C1) + 1;
     status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_Plain);
     assert(status == eIO_Success  &&  n_io == n_io_done);
@@ -176,17 +186,31 @@ static void TEST__server_1(SOCK sock)
     return 212;
 #endif
 
+    SOCK_SetDataLogging(sock, eDefault);
+    SOCK_SetDataLoggingAPI(eOn);
     n_io = strlen(s_S1) + 1;
     status = SOCK_Write(sock, s_S1, n_io, &n_io_done);
     assert(status == eIO_Success  &&  n_io == n_io_done);
+    SOCK_SetDataLoggingAPI(eOff);
 
     /* Receive a very big binary blob, and check its content */
     {{
-        char* blob = (char*) malloc(BIG_BLOB_SIZE);
-        status = SOCK_Read(sock, blob, BIG_BLOB_SIZE, &n_io_done, eIO_Persist);
-        assert(status == eIO_Success  &&  n_io_done == BIG_BLOB_SIZE);
+#define DO_LOG_SIZE    300
+#define DONT_LOG_SIZE  BIG_BLOB_SIZE - DO_LOG_SIZE
+        unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
+
+        status = SOCK_Read(sock, blob, DONT_LOG_SIZE, &n_io_done, eIO_Persist);
+        assert(status == eIO_Success  &&  n_io_done == DONT_LOG_SIZE);
+
+        SOCK_SetDataLogging(sock, eOn);
+        status = SOCK_Read(sock, blob + DONT_LOG_SIZE, DO_LOG_SIZE,
+                           &n_io_done, eIO_Persist);
+        assert(status == eIO_Success  &&  n_io_done == DO_LOG_SIZE);
+        SOCK_SetDataLogging(sock, eDefault);
+        SOCK_SetDataLoggingAPI(eDefault);
+
         for (n_io = 0;  n_io < BIG_BLOB_SIZE;  n_io++)
-            assert( blob[n_io] == (char)n_io );
+            assert(blob[n_io] == (unsigned char) n_io);
         free(blob);
     }}
 }
