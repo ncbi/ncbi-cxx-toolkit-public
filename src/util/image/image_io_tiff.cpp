@@ -209,19 +209,23 @@ CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
         }
 
         // extract the size parameters
-        int width = 0;
+        int width  = 0;
         int height = 0;
-        int depth = 0;
+        int depth  = 0;
         TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH,  &width);
         TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &height);
         TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &depth);
 
-        if (depth != 3  &&  depth != 4) {
+        if (depth != 1  &&  depth != 3  &&  depth != 4) {
             string msg("CImageIOTiff::ReadImage(): unhandled image depth: ");
             msg += NStr::IntToString(depth);
             NCBI_THROW(CImageException, eReadError, msg);
         }
 
+        // NB: we treat single plane images as RGB
+        if (depth == 1) {
+            depth = 3;
+        }
 
         // allocate a temporary buffer for the image
         raster = (uint32*)_TIFFmalloc(width * height * sizeof(uint32));
@@ -464,6 +468,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/12/19 20:58:29  dicuccio
+ * Added special case: single-channel TIFF images -> interpret as RGB
+ *
  * Revision 1.6  2003/12/18 13:50:15  dicuccio
  * Fixed image reversal bug: TIFFReadRGBAImage() reads the image in raster-order,
  * not image-order.  Fixed setting of correct depth on image read.
