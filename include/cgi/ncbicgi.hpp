@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1998/11/24 17:52:14  vakatov
+* Starting to implement CCgiRequest::
+* Fully implemented CCgiRequest::ParseEntries() static function
+*
 * Revision 1.16  1998/11/20 22:36:38  vakatov
 * Added destructor to CCgiCookies:: class
 * + Save the works on CCgiRequest:: class in a "compilable" state
@@ -226,8 +230,10 @@ typedef multimap<string, string> TCgiEntries;
 //
 class CCgiRequest {
 public:
-    // the startup initialization
+    // Startup initialization
     CCgiRequest(void);
+    // Destructor
+    ~CCgiRequest(void);
 
     // Get "standard" properties(empty string if not found)
     const string& GetProperty(ECgiProp prop) const;
@@ -255,11 +261,12 @@ public:
      */
     CNcbiIstream& GetContent(void);
 
-    // Decode the URL-encoded stream "istr" into a set of entries
+    // Decode the URL-encoded string "str" into a set of entries
     // (<name, value>) and add them to the "entries" set
     // The new entries are added without overriding the original ones, even
     // if they have the same names
-    static void ParseEntries(CNcbiIstream& istr, TCgiEntries& entries);
+    // On success, return zero, otherwise return location(in "str") of error
+    static SIZE_TYPE ParseEntries(const string& str, TCgiEntries& entries);
 
 private:
     // "true" after m_Entries() or m_Content() call

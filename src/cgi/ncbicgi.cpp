@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/11/24 17:52:17  vakatov
+* Starting to implement CCgiRequest::
+* Fully implemented CCgiRequest::ParseEntries() static function
+*
 * Revision 1.6  1998/11/20 22:36:40  vakatov
 * Added destructor to CCgiCookies:: class
 * + Save the works on CCgiRequest:: class in a "compilable" state
@@ -375,6 +379,7 @@ Uint2 CCgiRequest::GetServerPort(void) const
 //     return addr;
 // }
 
+
 size_t CCgiRequest::GetContentLength(void) const
 {
     long l = -1;
@@ -382,6 +387,106 @@ size_t CCgiRequest::GetContentLength(void) const
     if (sscanf(str.c_str(), "%ld", &l) != 1  ||  l < 0)
         throw runtime_error("CCgiRequest:: Invalid content length: " + str);
     return (size_t)l;
+}
+
+
+static int s_HexChar(char ch) THROWS_NONE
+{
+    if ('0' <= ch  &&  ch <= '9')
+        return ch - '0';
+    ch = ::tolower(ch);
+    if ('a' <= ch  &&  ch <= 'f')
+        return 10 + (ch - 'a');
+    return -1;
+}
+
+static SIZE_TYPE s_URL_Decode(string& str)
+{
+    SIZE_TYPE len = str.length();
+    if ( !len )
+        return 0;
+
+    SIZE_TYPE p = 0;
+    for (SIZE_TYPE pos = 0;  pos < len;  p++) {
+        switch ( str[pos] ) {
+        case '%': {
+            if (pos + 2 > len)
+                return pos;
+            int i1 = s_HexChar(str[pos+1]);
+            if (i1 < 0  ||  15 < i1)
+                return (pos + 1);
+            int i2 = s_HexChar(str[pos+1]);
+            if (i2 < 0  ||  15 < i2)
+                return (pos + 2);
+            str[p] = s_HexChar(str[pos+1]) * 16 + s_HexChar(str[pos+2]);
+            pos += 3;
+            break;
+        }
+        case '+': {
+            str[p] = ' ';
+            pos++;
+            break;
+        }
+        default:
+            str[p] = str[pos++];
+        }
+    }
+
+    if (p < len) {
+        str[p] = '\0';
+        str.resize(p);
+    }
+
+    return 0;
+}
+
+
+SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
+{
+    SIZE_TYPE len = str.length();
+    if ( !len )
+        return 0;
+
+    // Parse into entries
+    SIZE_TYPE err_pos = 0;
+    for (SIZE_TYPE beg = 0;  beg < len;  ) {
+        // parse and URL-decode name
+        SIZE_TYPE mid = str.find_first_of(" =&", beg);
+        if (mid == beg  ||  mid == NPOS  ||  str[mid] != '=') {
+            err_pos = (mid == NPOS) ? len : (mid ? mid : 1);
+            break;  // error
+        }
+
+        string name = str.substr(beg, mid - beg);
+        if ((err_pos = s_URL_Decode(name)) != 0) {
+            err_pos += (beg || err_pos) ? beg : 1;
+            break; // error
+        }
+
+        // parse and URL-decode value
+        mid++;
+        SIZE_TYPE end = str.find_first_of(" =&", mid);
+        if (end != NPOS  &&  str[end] != '&') {
+            err_pos = end;
+            break;  // error
+        }
+        if (end == NPOS)
+            end = len;
+
+        string value = str.substr(mid, end - mid);
+        if ((err_pos = s_URL_Decode(value)) != 0) {
+            err_pos += mid;
+            break; // error
+        }
+
+        // compose & store the name-value pair
+        pair<const string, string> entry(name,value);
+        entries.insert(entry);
+
+        // continue
+        beg = end + 1;
+    }
+    return err_pos;
 }
 
 
