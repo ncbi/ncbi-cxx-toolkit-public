@@ -1,0 +1,12 @@
+*.def0
+*.dtd
+*.files
+*.mod
+[A-Z]*.cpp
+tinyseq__.cpp
+tinyseq___.cpp
+.cvsignore
+Makefile.*.lib
+Makefile.in
+gmon.out
+gprof.out
