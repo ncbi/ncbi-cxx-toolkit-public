@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/02/21 17:04:56  ucko
+* [AIX] Include <strings.h> before <sys/time.h> for bzero.
+*
 * Revision 1.23  2001/10/07 05:05:04  vakatov
 * [UNIX]  include <sys/time.h>
 *
@@ -112,6 +115,9 @@
 #include <cgi/cgiapp.hpp>
 
 #ifdef NCBI_OS_UNIX
+#  ifdef _AIX32 // version 3.2 *or higher*
+#    include <strings.h> // needed for bzero
+#  endif
 #  include <sys/time.h>
 #endif
 
