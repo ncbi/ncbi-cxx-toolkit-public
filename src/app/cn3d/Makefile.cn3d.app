@@ -72,7 +72,7 @@ LIB = \
 
 CPPFLAGS = \
 	$(ORIG_CPPFLAGS) \
-	-I$(srcdir)/.. -I$(top_srcdir)/src/algo/structure \
+	-I$(srcdir)/.. \
 	$(WXWIN_INCLUDE) \
 	$(NCBI_C_INCLUDE)
 
