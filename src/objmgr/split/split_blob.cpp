@@ -36,7 +36,6 @@
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <objects/id2/ID2S_Split_Info.hpp>
-#include <objects/id2/ID2S_Chunk_Id.hpp>
 #include <objects/id2/ID2S_Chunk.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -110,6 +109,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/12/02 19:12:24  vasilche
+* Fixed compilation on MSVC.
+*
 * Revision 1.2  2003/11/26 23:05:00  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *

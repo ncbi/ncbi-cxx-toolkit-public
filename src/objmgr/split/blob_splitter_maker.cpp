@@ -452,7 +452,7 @@ void CBlobSplitterImpl::AttachToSkeleton(const SChunkInfo& info)
     ITERATE ( SChunkInfo::TChunkAnnots, it, info.m_Annots ) {
         TBioseqs::iterator seq_it = m_Bioseqs.find(it->first);
         _ASSERT(seq_it != m_Bioseqs.end());
-        _ASSERT(seq_it->second.m_Bioseq || seq_it->second.m_Bioseq_set);
+        _ASSERT(bool(seq_it->second.m_Bioseq) || bool(seq_it->second.m_Bioseq_set));
         ITERATE ( SChunkInfo::TIdAnnots, annot_it, it->second ) {
             CRef<CSeq_annot> annot = MakeSeq_annot(*annot_it->first,
                                                    annot_it->second);
@@ -540,6 +540,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/12/02 19:12:24  vasilche
+* Fixed compilation on MSVC.
+*
 * Revision 1.4  2003/12/01 18:37:10  vasilche
 * Separate different annotation types in split info to reduce memory usage.
 *

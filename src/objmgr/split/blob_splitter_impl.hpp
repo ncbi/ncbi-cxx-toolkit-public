@@ -43,6 +43,8 @@
 
 #include "blob_splitter_params.hpp"
 #include "splitted_blob.hpp"
+#include "chunk_info.hpp"
+#include "object_splitinfo.hpp"
 #include "size.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -70,7 +72,7 @@ class CBioseq_SplitInfo;
 
 struct SAnnotPiece;
 struct SIdAnnotPieces;
-struct CAnnotPieces;
+class CAnnotPieces;
 struct SChunkInfo;
 
 class CBlobSplitterImpl
@@ -142,6 +144,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/12/02 19:12:23  vasilche
+* Fixed compilation on MSVC.
+*
 * Revision 1.2  2003/11/26 23:04:58  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *

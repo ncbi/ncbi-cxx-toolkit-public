@@ -162,10 +162,6 @@ private:
 };
 
 
-#define WAIT_LINE CLog line(this); line
-#define LINE(Msg) do { WAIT_LINE << Msg; } while(0)
-
-
 CSplitCacheApp::CSplitCacheApp(void)
     : m_DumpAsnText(false), m_DumpAsnBinary(false),
       m_Resplit(false),
@@ -474,62 +470,6 @@ string GetFileName(const string& key, const string& suffix, const string& ext)
     return CDirEntry::MakePath(dir, file, ext);
 }
 
-template<class C>
-inline
-void CSplitCacheApp::Dump(const C& obj, ESerialDataFormat format,
-                          const string& key, const string& suffix)
-{
-    string ext;
-    switch ( format ) {
-    case eSerial_AsnText:   ext = "asn"; break;
-    case eSerial_AsnBinary: ext = "asb"; break;
-    case eSerial_Xml:       ext = "xml"; break;
-    }
-    string file_name = GetFileName(key, suffix, ext);
-    WAIT_LINE << "Dumping to " << file_name << " ...";
-    AutoPtr<CObjectOStream> out(CObjectOStream::Open(file_name, format));
-    *out << obj;
-}
-
-
-template<class C>
-inline
-void CSplitCacheApp::DumpData(const C& obj, EDataType data_type,
-                              const string& key, const string& suffix)
-{
-    string file_name = GetFileName(key, suffix, "bin");
-    WAIT_LINE << "Storing to " << file_name << " ...";
-    CSplitDataMaker data(m_SplitterParams, data_type);
-    data << obj;
-    AutoPtr<CObjectOStream> out
-        (CObjectOStream::Open(file_name, eSerial_AsnBinary));
-    *out << data.GetData();
-}
-
-
-template<class C>
-inline
-void CSplitCacheApp::StoreToCache(const C& obj, EDataType data_type,
-                                  const CSeqref& seqref, const string& suffix)
-{
-    string key = m_Reader->GetBlobKey(seqref) + suffix;
-    WAIT_LINE << "Storing to cache " << key << " ...";
-    CNcbiOstrstream stream;
-    {{
-        CSplitDataMaker data(m_SplitterParams, data_type);
-        data << obj;
-        AutoPtr<CObjectOStream> out
-            (CObjectOStream::Open(eSerial_AsnBinary, stream));
-        *out << data.GetData();
-    }}
-    size_t size = stream.pcount();
-    line << setiosflags(ios::fixed) << setprecision(2) <<
-        " " << setw(7) << (size/1024.0) << " KB";
-    const char* data = stream.str();
-    stream.freeze(false);
-    m_Cache->Store(key, seqref.GetVersion(), data, size);
-}
-
 
 void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
 {
@@ -694,6 +634,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/12/02 19:12:24  vasilche
+* Fixed compilation on MSVC.
+*
 * Revision 1.4  2003/11/28 20:27:44  vasilche
 * Correctly print log lines in LINE macro.
 *

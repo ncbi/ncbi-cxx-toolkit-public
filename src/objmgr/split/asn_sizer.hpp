@@ -39,6 +39,7 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <serial/serial.hpp>
+#include <serial/objostr.hpp>
 
 #include <vector>
 
@@ -48,7 +49,7 @@ class CObjectOStream;
 
 BEGIN_SCOPE(objects)
 
-class SSplitterParams;
+struct SSplitterParams;
 
 class CAsnSizer
 {
@@ -118,6 +119,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/12/02 19:12:23  vasilche
+* Fixed compilation on MSVC.
+*
 * Revision 1.2  2003/11/26 23:04:57  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *
