@@ -68,19 +68,25 @@ GTK_CONFIG = $(HOME)/Programs/GTK-1.2-$(DEBUG_SFX)/install/bin/gtk-config
 GTK_CFLAGS = $(shell $(GTK_CONFIG) --cflags)
 GTK_LIBS = $(shell $(GTK_CONFIG) --libs)
 
+# platform-specific libs
+CURRENT_PLATFORM = $(shell uname)
+EXTRA_LIBS =
+ifeq ($(CURRENT_PLATFORM), SunOS)
+	EXTRA_LIBS = -lposix4
+endif
+
 # ...the following two assignments switch to the development configuration:
 WXWIN_INCLUDE = $(WX_CPPFLAGS) $(GTK_CFLAGS)
-WXWIN_LIBS    = $(WX_LIBS) $(GTK_LIBS)
-
+WXWIN_LIBS    = $(WX_LIBS) $(GTK_LIBS) $(EXTRA_LIBS)
 
 CPPFLAGS = \
-   $(ORIG_CPPFLAGS) \
-   -I$(srcdir)/.. \
-   $(WXWIN_INCLUDE) \
-   $(NCBI_C_INCLUDE)
+	$(ORIG_CPPFLAGS) \
+	-I$(srcdir)/.. \
+	$(WXWIN_INCLUDE) \
+	$(NCBI_C_INCLUDE)
 
 LIBS = \
-   $(ORIG_LIBS) \
-   $(WXWIN_LIBS) \
-   $(NCBI_C_LIBPATH) \
-      -lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi
+	$(WXWIN_LIBS) \
+	$(NCBI_C_LIBPATH) \
+		-lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi \
+	$(ORIG_LIBS)
