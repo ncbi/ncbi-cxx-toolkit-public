@@ -192,7 +192,7 @@ private:
 
 
 // Facilitate access to compartments over a hit set
-class CCompartmentAccessor
+class NCBI_XALGOALIGN_EXPORT CCompartmentAccessor
 {
 public:
 
@@ -241,6 +241,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/28 18:26:52  jcherry
+ * Added export specifier
+ *
  * Revision 1.3  2005/03/28 17:38:22  jcherry
  * Added export specifiers
  *
