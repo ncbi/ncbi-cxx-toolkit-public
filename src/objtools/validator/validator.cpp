@@ -366,6 +366,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_DESCR_StructuredSourceNote",
     "SEQ_DESCR_MultipleTitles",
     "SEQ_DESCR_Obsolete",
+    "SEQ_DESCR_UnnecessaryBioSourceFocus",
 
     "GENERIC_NonAsciiAsn",
     "GENERIC_Spell",
@@ -616,7 +617,7 @@ block visible in the flatfile.",
 "The Bioseq has one or more N bases at the end.",
 
 "The set of sequence identifiers on a Bioseq are not consistent with the \
-previous version of the record in the database."
+previous version of the record in the database.",
 
 /* SEQ_DESCR */
 
@@ -702,6 +703,9 @@ The data should probably be put into the appropriate field instead.",
 "There are multiple title descriptors in the same chain.",
 
 "Obsolete descriptor type.",
+
+"Focus should not be set on a BioSource descriptor in records where there is no \
+BioSource feature.",
 
 /* SEQ_GENERIC */
 
@@ -1086,6 +1090,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/03/21 21:10:26  shomrat
+* Added SEQ_DESCR_UnnecessaryBioSourceFocus
+*
 * Revision 1.14  2003/03/21 16:20:33  shomrat
 * Added error SEQ_INST_UnexpectedIdentifierChange
 *
