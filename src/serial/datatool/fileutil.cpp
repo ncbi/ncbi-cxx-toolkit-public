@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/01/05 19:34:53  vasilche
+* Fixed warning on MS VC
+*
 * Revision 1.5  1999/12/30 21:33:39  vasilche
 * Changed arguments - more structured.
 * Added intelligence in detection of source directories.
@@ -95,7 +98,7 @@ bool SourceFile::x_Open(const string& name, bool binary)
                                     binary?
                                         IOS_BASE::in | IOS_BASE::binary:
                                         IOS_BASE::in);
-    m_Open = *m_StreamPtr;
+    m_Open = m_StreamPtr->good();
     if ( !m_Open ) {
         delete m_StreamPtr;
         m_StreamPtr = 0;
