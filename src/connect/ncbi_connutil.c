@@ -1279,7 +1279,7 @@ extern void BASE64_Encode
         ((dst_size - (max_len ? dst_size/(max_len + 1) : 0)) >> 2) * 3;
     unsigned char* src = (unsigned char*) src_buf;
     unsigned char* dst = (unsigned char*) dst_buf;
-    size_t len = 0, i = 0, j;
+    size_t len = 0, i = 0, j = 0;
     unsigned char shift = 2;
     unsigned char temp = 0;
     if (!max_src) {
@@ -1293,34 +1293,35 @@ extern void BASE64_Encode
     if (src_size > max_src) {
         src_size = max_src;
     }
-    for (j = 0; j < dst_size; j++) {
+    for (;;) {
         unsigned char c = i < src_size ? src[i] : 0;
         unsigned char bits = (c >> shift) & 0x3F;
         assert((temp | bits) < sizeof(syms) - 1);
-        dst[j] = syms[temp | bits];
+        dst[j++] = syms[temp | bits];
         if (max_len  &&  ++len >= max_len) {
-            dst[++j] = '\n';
+            dst[j++] = '\n';
             len = 0;
+        }
+        if (i >= src_size) {
+            break;
         }
         shift += 2;
         shift &= 7;
         if (shift) {
-            if (i == src_size) {
-                break;
-            }
             i++;
         }
         temp = (c << (8 - shift)) & 0x3F;
     }
-    assert(temp == 0);
+    assert(j <= dst_size);
     *src_read = i;
-    for (i = 0; i < src_size % 3; i++) {
+    for (i = 0; i < (3 - src_size % 3) % 3; i++) {
         dst[j++] = '=';
         if (max_len  &&  ++len >= max_len) {
             dst[j++] = '\n';
             len = 0;
         }
     }
+    assert(j <= dst_size);
     *dst_written = j;
     if (j < dst_size) {
         dst[j] = '\0';
@@ -1338,17 +1339,17 @@ extern int/*bool*/ BASE64_Decode
 {
     unsigned char* src = (unsigned char*) src_buf;
     unsigned char* dst = (unsigned char*) dst_buf;
-    size_t i = 0, j = 0, k = 0;
+    size_t i = 0, j = 0, k = 0, l;
     unsigned int temp = 0;
     if (src_size < 4  ||  dst_size < 3) {
         *src_read    = 0;
         *dst_written = 0;
         return 0/*false*/;
     }
-    while (i < src_size) {
-        unsigned char c = src[i++];
+    for (;;) {
+        unsigned char c = i < src_size ? src[i++] : '=';
         if (c == '=') {
-            c  = 64;
+            c  = 64; /*end*/
         } else if (c >= 'A'  &&  c <= 'Z') {
             c -= 'A';
         } else if (c >= 'a'  &&  c <= 'z') {
@@ -1360,41 +1361,60 @@ extern int/*bool*/ BASE64_Decode
         } else if (c == '/') {
             c  = 63;
         } else {
-            c  = 128;
+            continue;
         }
-        if (c < 128) {
-            temp <<= 6;
-            temp  |= c & 0x3F;
-            if (!(++k & 3)  ||  c == 64) {
-                if (c != 64) {
-                    k = 0;
+        temp <<= 6;
+        temp  |= c & 0x3F;
+        if (!(++k & 3)  ||  c == 64) {
+            if (c == 64) {
+                if (k < 2) {
+                    --i;
+                    break;
                 }
                 switch (k) {
-                case 0:
-                    dst[j++] = (temp & 0xFF0000) >> 16;
-                    /*FALLTHRU*/;
-                case 4:
-                    dst[j++] = (temp & 0xFF00) >> 8;
-                    /*FALLTHRU*/
-                case 3:
                 case 2:
-                    /*FALLTHRU*/
-                    dst[j++] = (temp & 0xFF);
+                    temp >>= 4;
+                    break;
+                case 3:
+                    temp >>= 10;
+                    break;
+                case 4:
+                    temp >>= 8;
                     break;
                 default:
                     break;
                 }
-                temp = 0;
-                k = 0;
-                if (j + 3 >= dst_size  ||  c == 64) {
-                    break;
+                for (l = k; l < 4; l++) {
+                    if (i < src_size  &&  src[i] == '=') {
+                        i++;
+                    }
                 }
+            } else {
+                k = 0;
             }
+            switch (k) {
+            case 0:
+                dst[j++] = (temp & 0xFF0000) >> 16;
+                /*FALLTHRU*/;
+            case 4:
+                dst[j++] = (temp & 0xFF00) >> 8;
+                /*FALLTHRU*/
+            case 3:
+                dst[j++] = (temp & 0xFF);
+                break;
+            default:
+                break;
+            }
+            if (j + 3 >= dst_size  ||  c == 64) {
+                break;
+            }
+            temp = 0;
+            k = 0;
         }
     }
     *src_read    = i;
     *dst_written = j;
-    return k ? 0/*false*/ : 1/*true*/;
+    return i ? 1/*true*/ : 0/*false*/;
 }
 
 
@@ -1646,6 +1666,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.70  2005/03/21 17:04:35  lavr
+ * BASE64_{En|De}code few bugs fixed
+ *
  * Revision 6.69  2005/03/19 02:13:55  lavr
  * +BASE64_{En|De}code
  *
