@@ -84,7 +84,10 @@
  *
  *  SOCK_gethostname
  *  SOCK_ntoa
- *  SOCK_htonl
+ *  SOCK_HostToNetShort
+ *  SOCK_HostToNetLong
+ *  SOCK_NetToHostShort
+ *  SOCK_NetToHostLong
  *
  */
 
@@ -518,15 +521,21 @@ extern int SOCK_ntoa
  );
 
 
-/* See man for the BSD htonl() and htons().
+/* See man for the BSDisms, htonl() and htons().
  */
-extern unsigned int SOCK_htonl(unsigned int value);
+extern unsigned int SOCK_HostToNetLong(unsigned int value);
 
-#define SOCK_ntohl SOCK_htonl
+#define SOCK_NetToHostLong SOCK_HostToNetLong
 
-extern unsigned short SOCK_htons(unsigned short value);
+extern unsigned short SOCK_HostToNetShort(unsigned short value);
 
-#define SOCK_ntohs SOCK_htons
+#define SOCK_NetToHostShort SOCK_HostToNetShort
+
+/* Deprecated */
+#define SOCK_htonl SOCK_HostToNetLong
+#define SOCK_ntohl SOCK_NetToHostLong
+#define SOCK_htons SOCK_HostToNetShort
+#define SOCK_ntohs SOCK_NetToHostShort
 
 
 /* Return INET host address (in network byte order) of the
@@ -559,6 +568,10 @@ extern char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2002/08/27 03:15:01  lavr
+ * Deprecate SOCK_{nh}to{hn}{ls}, define more elaborate call names
+ * SOCK_{Net|Host}To{Host|Net}{Long|Short} instead
+ *
  * Revision 6.20  2002/08/15 18:44:18  lavr
  * SOCK_Poll() documented in more details
  *
