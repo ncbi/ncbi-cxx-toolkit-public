@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/08/08 02:25:27  thiessen
+* add <memory>
+*
 * Revision 1.28  2001/07/10 16:39:55  thiessen
 * change selection control keys; add CDD name/notes dialogs
 *
@@ -124,6 +127,7 @@
 #include <corelib/ncbi_limits.h>
 
 #include <algorithm>
+#include <memory>
 
 #include "cn3d/sequence_display.hpp"
 #include "cn3d/viewer_window_base.hpp"

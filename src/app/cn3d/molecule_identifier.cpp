@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/08/08 02:25:27  thiessen
+* add <memory>
+*
 * Revision 1.2  2001/07/04 19:39:17  thiessen
 * finish user annotation system
 *
@@ -41,6 +44,9 @@
 */
 
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbistl.hpp>
+
+#include <memory>
 
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/structure_set.hpp"
