@@ -493,9 +493,8 @@ int CNcbiApplication::AppMain
     }
     catch (CArgException& e) {
         // Print USAGE and the exception error message
-        string str;
-        LOG_POST(string(72, '='));
         if ( m_ArgDesc.get() ) {
+            string str;
             LOG_POST(m_ArgDesc->PrintUsage(str) << string(72, '='));
         }
         NCBI_REPORT_EXCEPTION("", e);
@@ -904,6 +903,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.89  2004/06/18 18:44:42  vakatov
+ * CNcbiApplication::AppMain() not to printout line of '=' before USAGE
+ * (in case of invalid args)
+ *
  * Revision 1.88  2004/06/15 17:54:15  vakatov
  * Indentation
  *
