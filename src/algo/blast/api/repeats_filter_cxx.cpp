@@ -77,7 +77,7 @@ char* GetRepeatsFilterOption(const char* filter_string)
     
     if (ptr) {
         const char* end = strstr(ptr, ";");
-        int length;
+        ptrdiff_t length;
         if (end)
             length = end - ptr;
         else
@@ -283,6 +283,9 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.14  2005/01/26 18:38:40  camacho
+ *  Fix compiler error
+ *
  *  Revision 1.13  2005/01/24 15:45:30  dondosha
  *  If lower case mask present, remove it for the repeats search, then combine repeats and lower case locations
  *
