@@ -46,6 +46,8 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 
+#include <objects/seq/Annotdesc.hpp>
+#include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Delta_ext.hpp>
@@ -709,21 +711,53 @@ bool CValidError_bioseq::NotPeptideException
 }
 
 
-bool CValidError_bioseq::IsEqualSeqAnnot
+bool CValidError_bioseq::IsSameSeqAnnot
 (const CFeat_CI& fi1,
  const CFeat_CI& fi2)
 {
-    // !!!
-    return true;
+    CValidError_imp::TFeatAnnotMap fa_map = m_Imp.GetFeatAnnotMap();
+
+    return fa_map[&(*fi1)] == fa_map[&(*fi2)];
 }
 
 
-bool CValidError_bioseq::IsEqualSeqAnnotDesc
+bool CValidError_bioseq::IsSameSeqAnnotDesc
 (const CFeat_CI& fi1,
  const CFeat_CI& fi2)
 {
-    // !!!
-    return true;
+    CValidError_imp::TFeatAnnotMap fa_map = m_Imp.GetFeatAnnotMap();
+    const CSeq_annot* annot1 = fa_map[&(*fi1)];
+    const CSeq_annot* annot2 = fa_map[&(*fi2)];
+
+    if ( !(annot1->IsSetDesc())  ||  !(annot2->IsSetDesc()) ) {
+        return true;
+    }
+
+    CAnnot_descr::Tdata descr1 = annot1->GetDesc().Get();
+    CAnnot_descr::Tdata descr2 = annot2->GetDesc().Get();
+
+    // !!! Check only on the first? (same as in C toolkit)
+    const CAnnotdesc& desc1 = descr1.begin()->GetObject();
+    const CAnnotdesc& desc2 = descr2.begin()->GetObject();
+
+    if ( desc1.Which() == desc2.Which() ) {
+        if ( desc1.Which() == CAnnotdesc::e_Title   ||
+            desc1.Which() == CAnnotdesc::e_Name ) {
+            string str1, str2;
+            if ( desc1.IsName() ) {
+                str1 = desc1.GetName();
+                str2 = desc2.GetName();
+            }
+            if ( desc1.IsTitle() ) {
+                str1 = desc1.GetTitle();
+                str2 = desc2.GetTitle();
+            }
+
+            return (NStr::CompareNocase(str1, str2) == 0);
+        }
+
+    }
+    return false;
 }
 
 
@@ -1680,18 +1714,17 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
         prev_subtype = prev->GetData().GetSubtype();
 
         // if same location, subtype and strand
-        if ( Compare(*curr_location, *prev_location, m_Scope) == eSame &&
+        if ( Compare(*curr_location, *prev_location, m_Scope) == eSame  &&
              curr_subtype == prev_subtype ) {
 
-            curr_strand = GetStrand(curr->GetLocation(), m_Scope);
-            prev_strand = GetStrand(prev->GetLocation(), m_Scope);
+            curr_strand = GetStrand(*curr_location, m_Scope);
+            prev_strand = GetStrand(*prev_location, m_Scope);
             if ( curr_strand == prev_strand         || 
                  curr_strand == eNa_strand_unknown  ||
                  prev_strand == eNa_strand_unknown  ) {
 
-                if ( (Compare(*curr_location, *prev_location) == eSame)  &&
-                     IsEqualSeqAnnot(curr, prev)  ||
-                     IsEqualSeqAnnotDesc(curr, prev) ) {
+                if ( IsSameSeqAnnot(curr, prev)  ||
+                     IsSameSeqAnnotDesc(curr, prev) ) {
                     severity = eDiag_Error;
 
                     // compare labels and comments
@@ -1747,7 +1780,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                         IsDifferentDbxrefs(curr->GetDbxref(), prev->GetDbxref()) ) {
                         // do not report if both have dbxrefs and they are 
                         // different.
-                    } else if ( IsEqualSeqAnnot(curr, prev) ) {  // !!!
+                    } else if ( IsSameSeqAnnot(curr, prev) ) {
                         if (same_label) {
                             PostErr (severity, eErr_SEQ_FEAT_FeatContentDup, 
                                 "Duplicate feature", *curr);
@@ -1912,6 +1945,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/01/08 18:37:25  shomrat
+* Implemented IsSameSeqAnnot and IsSameSeqAnnotDesc
+*
 * Revision 1.5  2003/01/06 16:43:42  shomrat
 * variable intialization
 *
