@@ -33,7 +33,7 @@
  */
 
 #include <objmgr/data_loader.hpp>
-#include <objtools/readers/sqlite_table.hpp>
+#include <objtools/data_loaders/table/sqlite_table.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -103,6 +103,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/10/02 17:50:00  dicuccio
+ * Moved table reader into the data loader project, as it depends on SQLite
+ *
  * Revision 1.1  2003/10/02 17:34:40  dicuccio
  * Initial revision
  *
