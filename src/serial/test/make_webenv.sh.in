@@ -1,0 +1,16 @@
+#! /bin/sh
+
+cd "@srcdir@" || exit 2
+if test ! -d webenv; then
+    mkdir webenv
+fi
+if test -x "@exec_prefix@/bin/datatool"; then
+    "@exec_prefix@/bin/datatool" -m twebenv.asn -oA \
+        -oph webenv -opc webenv
+else
+    echo Error: datatool not found
+fi
+cat webenv/*_.cpp > we_cpp___.cpp
+rm webenv/*_.cpp
+cat webenv/*.cpp > we_cpp__.cpp
+rm webenv/*.cpp
