@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.106  2004/05/14 17:11:03  dondosha
+ * Minor correction in setting X-dropoffs
+ *
  * Revision 1.105  2004/05/14 13:14:15  camacho
  * Use correct definition for inclusion threshold
  *
@@ -678,6 +681,13 @@ BlastInitialWordParametersUpdate(Uint1 program_number,
                     hit_params->gap_decay_rate);
       s2 *= (Int4)sbp->scale_factor;
       parameters->cutoff_score = MIN(hit_params->cutoff_score, s2);
+
+      if (parameters->x_dropoff != 0 && parameters->cutoff_score != 0) {
+         parameters->x_dropoff = 
+            MIN(parameters->x_dropoff, parameters->cutoff_score);
+      } else if (parameters->cutoff_score != 0) {
+         parameters->x_dropoff = parameters->cutoff_score;
+      }
    }
 
    return 0;
@@ -741,8 +751,13 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
 
    if (x_dropoff)
       options->gap_x_dropoff = x_dropoff;
-   if (x_dropoff_final)
+   if (x_dropoff_final) {
       options->gap_x_dropoff_final = x_dropoff_final;
+   } else {
+      /* Final X-dropoff can't be smaller than preliminary X-dropoff */
+      options->gap_x_dropoff_final = 
+         MAX(options->gap_x_dropoff_final, x_dropoff);
+   }
 
    return 0;
 
