@@ -184,6 +184,10 @@ esac
 
 # Run
 
+# Export some global vars
+top_srcdir="\$root_dir"
+export top_srcdir
+
 # Add current, build and scripts directories to PATH
 PATH=".:\${build_dir}:\${root_dir}/scripts:\${PATH}"
 export PATH
@@ -222,6 +226,8 @@ RunTest() {
             ;;
       esac
    done
+   features="\$x_requires"
+   export features
 
    # Determine test directory
    result=1
