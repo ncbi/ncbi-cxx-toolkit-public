@@ -60,7 +60,7 @@ implement the same interface defined in <a href="../docxx/I_DriverContext.html">
 class. If you are working on a library which could be used with various
 RDBMS it is a good idea do not create the driver context inside the library,
 but take a pointer to
-<a href="lxr/ident?i=I_DriverContext&d=C">I_DriverContext</a>
+<a href="../lxr/ident?i=I_DriverContext&d=C">I_DriverContext</a>
 instead. There is no factory for the driver contexts provided. The reason
 for that is it's not always possible to statically link in one binary the
 RDBMS libraries from the different vendors. Most of them are written in
@@ -334,7 +334,7 @@ error handler</a> with a pointer to this object as an argument. It's not
 always convenient to process all types of error messages in one error handler.
 Some users may want to use a special error message handler inside some
 function or block and a default error handler outside. To accommodate these
-cases the driver provides a <a href="lxr/ident?i=CDBHandlerStack&d=C">handler
+cases the driver provides a <a href="../lxr/ident?i=CDBHandlerStack&d=C">handler
 stack mechanism</a>. The top handler in the stack gets the error message
 object first. If it knows how to deal with this message, then it processes
 the message and returns <b>true</b>. If handler wants to pass this message
@@ -414,7 +414,7 @@ context</a>. The first three arguments: server name, user name and password
 are obvious. Values for <i>mode</i> are constructed by a bitwise-inclusive-OR
 of flags defined in EConnectionMode. If <i>reusable</i> is <b>false</b>,
 then driver creates a new connection which will be destroyed as soon as
-user delete the correspondent <a href="lxr/ident?i=CDB_Connection&d=C">CDB_Connection</a>
+user delete the correspondent <a href="../lxr/ident?i=CDB_Connection&d=C">CDB_Connection</a>
 (the <i>pool_name</i> is ignored in this case).
 <p>Opening a connection to a server is an expensive operation. If program
 opens and closes connections to the same server multiple times it worth
@@ -496,9 +496,9 @@ Looks ugly, but could save you a lot of memory.
 process. For small texts and images it is possible to use just SQL <i>insert</i>
 and <i>update</i> statements, but it will be inefficient (if possible at
 all) for the large ones. The better ways to insert and to update the texts
-and images is to use <i>SendData()</i> method of <a href="lxr/ident?i=CDB_Connection&d=C">CDB_Connection</a>
+and images is to use <i>SendData()</i> method of <a href="../lxr/ident?i=CDB_Connection&d=C">CDB_Connection</a>
 object or to use the
-<a href="lxr/ident?i=CDB_SendDataCmd&d=C">CDB_SendDataCmd</a>
+<a href="../lxr/ident?i=CDB_SendDataCmd&d=C">CDB_SendDataCmd</a>
 object.
 <p>Recommended algorithm for inserting the text/image data:
 <ul>
