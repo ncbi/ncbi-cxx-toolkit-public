@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.297 2004/04/27 20:10:15 ucko Exp $
+#  $Id: configure.ac,v 1.298 2004/04/27 20:59:55 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1012,9 +1012,10 @@ case "$compiler:$compiler_version" in
   GCC:3* )
     # Need to specify runpath for compiler-provided libraries
     case $compiler_version in
-        30* ) major=3 ;;
-        31* ) major=4 ;;
-        *   ) major=5 ;; # ABI theoretically stable from 3.2 on
+        30*   ) major=3 ;;
+        31*   ) major=4 ;;
+        3[23]*) major=5 ;;
+        3*    ) major=6 ;;
     esac
     found=false
     for f in libstdc++.so.$major libgcc_s.so.1 libstdc++.a; do
@@ -1027,11 +1028,11 @@ case "$compiler:$compiler_version" in
         esac
     done
     if test "$found" = "true" -a -n "$CONF_f_runpath"; then
-        LDFLAGS="$CONF_f_runpath$dir $LDFLAGS"
+        LDFLAGS="$CONF_f_runpath$dir:/usr/local/lib $LDFLAGS"
         case "$host_os" in
            osf*)
               # the linker doesn't merge -rpath flags...
-              CONF_f_runpath="$CONF_f_runpath$dir:"
+              CONF_f_runpath="$CONF_f_runpath$dir:/usr/local/lib:"
               ;;
         esac
     fi
