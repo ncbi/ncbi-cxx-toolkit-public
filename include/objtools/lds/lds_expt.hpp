@@ -40,7 +40,7 @@ BEGIN_SCOPE(objects)
 // Thrown if error is specific to the local data storage.
 //
 
-class NCBI_LDS_EXPORT CLDS_Exception : public CBDB_Exception
+class CLDS_Exception : EXCEPTION_VIRTUAL_BASE public CBDB_Exception
 {
 public:
     enum EErrCode {
@@ -82,6 +82,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/08/19 13:07:14  dicuccio
+ * Dropped export specifiers on inlined exceptions
+ *
  * Revision 1.4  2003/08/12 14:07:56  kuznets
  * Added eCannotCreateDir exception type
  *

@@ -41,7 +41,7 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
 
-class NCBI_XOBJEDIT_EXPORT CEditException : public CException
+class CEditException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
@@ -78,6 +78,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/08/19 13:06:45  dicuccio
+* Dropped export specifiers on inlined exceptions
+*
 * Revision 1.1  2004/06/16 15:19:08  shomrat
 * Initial Revision
 *

@@ -45,7 +45,7 @@ class CSeq_loc;
 class CSeqVector;
 
 
-class NCBI_XOBJUTIL_EXPORT CBadResidueException : public runtime_error
+class CBadResidueException : public runtime_error
 {
 public:
     CBadResidueException(const string& s) : runtime_error(s) { }
@@ -72,6 +72,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2004/08/19 13:06:18  dicuccio
+* Dropped export specifiers on inlined exceptions
+*
 * Revision 1.9  2004/05/25 15:38:12  ucko
 * Remove inappropriate THROWS declaration from GetProteinWeight.
 *

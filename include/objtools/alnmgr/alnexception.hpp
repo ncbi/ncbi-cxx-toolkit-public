@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 
-class NCBI_XALNMGR_EXPORT CAlnException : EXCEPTION_VIRTUAL_BASE public CException
+class CAlnException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
@@ -53,8 +53,6 @@ public:
         eMergeFailure,
         eUnknownMergeFailure
     };
-
-    NCBI_EXCEPTION_DEFAULT(CAlnException,CException);
 
     virtual const char *GetErrCodeString(void) const
     {
@@ -71,6 +69,8 @@ public:
         default:                    return CException::GetErrCodeString();
         }
     }
+
+    NCBI_EXCEPTION_DEFAULT(CAlnException,CException);
 };
 
 
@@ -82,6 +82,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/08/19 13:06:18  dicuccio
+ * Dropped export specifiers on inlined exceptions
+ *
  * Revision 1.8  2003/08/20 14:35:14  todorov
  * Support for NA2AA Densegs
  *
