@@ -1,4 +1,4 @@
---$Revision: 6.3 $
+--$Revision: 6.4 $
 --**********************************************************************
 --
 --  NCBI General Data elements
@@ -87,7 +87,8 @@ Person-id ::= CHOICE {
     name Name-std ,             -- structured name
     ml VisibleString ,          -- MEDLINE name (semi-structured)
                                 --    eg. "Jones RM"
-    str VisibleString }         -- unstructured name
+    str VisibleString,          -- unstructured name
+    consortium VisibleString }  -- consortium name
 
 Name-std ::= SEQUENCE { -- Structured names
     last VisibleString ,
