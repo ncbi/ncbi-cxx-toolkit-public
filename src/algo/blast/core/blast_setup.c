@@ -70,7 +70,6 @@ BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp,
 		else
 			BlastScoreBlkMatFill(sbp, "BLOSUM62");
 
-		BlastScoreBlkMaxScoreSet(sbp);
 		for (tmp_index=0; tmp_index<sbp->number_of_contexts; tmp_index++)
 		{
 			sbp->kbp_gap_std[tmp_index] = BlastKarlinBlkCreate();
