@@ -1,4 +1,4 @@
---$Revision: 1.5 $
+--$Revision: 1.6 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -75,7 +75,7 @@ Cdd-descr ::= CHOICE {
 					-- expression in free-text format
   comment       VisibleString,          -- this is where long names go
   reference     Pub,                    -- a citation describing the domain
-  create-date   Date,                   -- valid for the current version
+  create-date   Date,                   -- Date of first creation/dump
   tax-source    Org-ref,                -- holds the highest common tax node
   source        VisibleString,          -- the database the seeds were created
                                         -- from, e.g. SMART, PFAM, etc..
@@ -90,7 +90,9 @@ Cdd-descr ::= CHOICE {
 			  auto-updated(6),    -- update finished, no
 				              -- work necessary
 			  claimed(7),         -- is earmarked for curation
-                          other(255) }        -- for CD production?
+                          other(255) },       -- for CD production?
+  update-date   Date,                         -- Date of last change
+  scrapbook     SEQUENCE OF VisibleString     -- for storing curation notes
 }
 
 Cdd-descr-set ::= SET OF Cdd-descr
@@ -132,7 +134,8 @@ Matrix ::= SEQUENCE {
 
 Triangle ::= SEQUENCE {
   nelements     INTEGER,
-  scores        Score-set
+  scores        Score-set OPTIONAL,
+  div-ranks     SEQUENCE OF INTEGER OPTIONAL
 }
 
 -- Update-align is supposed to contain alignments that still need some work
