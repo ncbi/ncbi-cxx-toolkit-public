@@ -48,35 +48,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-extern "C" {
-
-/** SeqDb sequence source constructor 
- * @param seq_src BlastSeqSrc structure (already allocated) to populate [in]
- * @param args Pointer to internal CSeqDbSrcNewArgs structure (@sa
- * CSeqDbSrcNewArgs) [in]
- * @return Updated seq_src structure (with all function pointers initialized
- */
-NCBI_XBLAST_EXPORT
-BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* seq_src, void* args);
-
-/** SeqDb sequence source destructor: frees its internal data structure and the
- * BlastSeqSrc structure itself.
- * @param seq_src BlastSeqSrc structure to free [in]
- * @return NULL
- */
-NCBI_XBLAST_EXPORT
-BlastSeqSrc* SeqDbSrcFree(BlastSeqSrc* seq_src);
-
-/** SeqDb sequence source copier: creates a new reference to the CSeqDB object
- * and copies the rest of the BlastSeqSrc structure.
- * @param seq_src BlastSeqSrc structure to copy [in]
- * @return Pointer to the new BlastSeqSrc.
- */
-NCBI_XBLAST_EXPORT
-BlastSeqSrc* SeqDbSrcCopy(BlastSeqSrc* seq_src);
-
-}
-
 /** Initialize the sequence source structure.
  * @param dbname BLAST database name [in]
  * @param is_prot Is this a protein or nucleotide database? [in]
@@ -106,6 +77,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/01/26 21:02:57  dondosha
+ * Made internal functions static, moved internal class to .cpp file
+ *
  * Revision 1.10  2004/12/20 17:02:10  bealer
  * - New SeqSrc construction function to share existing SeqDB object.
  *

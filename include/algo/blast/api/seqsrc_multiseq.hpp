@@ -47,87 +47,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-/// Contains information about all sequences in a set.
-class CMultiSeqInfo : public CObject 
-{
-public: 
-    /// Constructor from a vector of sequence location/scope pairs and a 
-    /// BLAST program type.
-    CMultiSeqInfo(const TSeqLocVector& seq_vector, EProgram program);
-    ~CMultiSeqInfo();
-    /// Setter and getter functions for the private fields
-    Uint4 GetMaxLength();
-    void SetMaxLength(Uint4 val);
-    Uint4 GetAvgLength();
-    void SetAvgLength(Uint4 val);
-    bool GetIsProtein();
-    Uint4 GetNumSeqs();
-    BLAST_SequenceBlk* GetSeqBlk(int index);
-private:
-    /// Internal fields
-    bool m_ibIsProt; ///< Are these sequences protein or nucleotide? 
-    vector<BLAST_SequenceBlk*> m_ivSeqBlkVec; ///< Vector of sequence blocks
-    unsigned int m_iMaxLength; ///< Length of the longest sequence in this set
-    unsigned int m_iAvgLength; ///< Average length of sequences in this set
-};
-
-inline Uint4 CMultiSeqInfo::GetMaxLength()
-{
-    return m_iMaxLength;
-}
-
-inline void CMultiSeqInfo::SetMaxLength(Uint4 length)
-{
-    m_iMaxLength = length;
-}
-
-inline Uint4 CMultiSeqInfo::GetAvgLength()
-{
-    return m_iAvgLength;
-}
-
-inline void CMultiSeqInfo::SetAvgLength(Uint4 length)
-{
-    m_iAvgLength = length;
-}
-
-inline bool CMultiSeqInfo::GetIsProtein()
-{
-    return m_ibIsProt;
-}
-
-inline Uint4 CMultiSeqInfo::GetNumSeqs()
-{
-    return m_ivSeqBlkVec.size();
-}
-
-inline BLAST_SequenceBlk* CMultiSeqInfo::GetSeqBlk(int index)
-{
-    return m_ivSeqBlkVec[index];
-}
-
-/// The following 2 functions interact with the C API, and have to be 
-/// declared extern "C".
-extern "C" {
-
-/** Multi-sequence source constructor 
- * @param seq_src BlastSeqSrc structure (already allocated) to populate [in]
- * @param args Pointer to MultiSeqSrcNewArgs structure above [in]
- * @return Updated bssp structure (with all function pointers initialized
- */
-BlastSeqSrc* MultiSeqSrcNew(BlastSeqSrc* seq_src, void* args);
-
-/** Multi sequence source destructor: frees its internal data structure and the
- * BlastSeqSrc structure itself.
- * @param seq_src BlastSeqSrc structure to free [in]
- * @return NULL
- */
-BlastSeqSrc* MultiSeqSrcFree(BlastSeqSrc* seq_src);
-
-/** @todo FIXME: what about the copy function? */
-
-} // extern "C"
-
 /** Initialize the sequence source structure.
  * @param seq_vector Vector of sequence locations [in]
  * @param program Type of BLAST to be performed [in]
@@ -146,6 +65,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/01/26 21:02:57  dondosha
+ * Made internal functions static, moved internal class to .cpp file
+ *
  * Revision 1.11  2004/11/18 16:23:21  camacho
  * Remove unneeded header
  *
