@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2000/11/22 19:29:16  vakatov
+ * SOCK_Create() -- pre-set the sock handle to SOCK_INVALID before connect
+ *
  * Revision 6.8  2000/11/15 18:51:21  vakatov
  * Add SOCK_Shutdown() and SOCK_Status().  Remove SOCK_Eof().
  * Add more checking and diagnostics.
@@ -1059,13 +1062,16 @@ extern EIO_Status SOCK_Create(const char*     host,
 {
     /* Allocate memory for the internal socket structure */
     SOCK x_sock = (SOCK_struct*) calloc(1, sizeof(SOCK_struct));
+    x_sock->sock = SOCK_INVALID;
 
     /* Connect */
-    EIO_Status status = s_Connect(x_sock, host, port, timeout);
-    if (status != eIO_Success) {
-        free(x_sock);
-        return status;
-    }
+    {{
+        EIO_Status status;
+        if ((status = s_Connect(x_sock, host, port, timeout)) != eIO_Success) {
+            free(x_sock);
+            return status;
+        }
+    }}
 
     /* Setup the input data buffer properties */
     BUF_SetChunkSize(&x_sock->buf, SOCK_BUF_CHUNK_SIZE);
