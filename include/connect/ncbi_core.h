@@ -62,6 +62,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2002/05/06 19:07:48  lavr
+ * Added notes to EIO_Event enum type
+ *
  * Revision 6.14  2002/03/28 13:28:43  kans
  * undef verify if already defined, such as on Mac OS X Darwin (EN)
  *
@@ -142,20 +145,23 @@ extern "C" {
 /* I/O read method
  */
 typedef enum {
-    eIO_Plain,  /* read the presently available data only */
+    eIO_Plain,  /* read the presently available data only                  */
     eIO_Peek,   /* eREAD_Plain, but dont discard the data from input queue */
     eIO_Persist /* try to read exactly "size" bytes;  wait for enough data */
 } EIO_ReadMethod;
 
 
 /* I/O event (or direction)
+ * Note: Internally, these constants are used as bit-values, and thus should
+ *       not be changed in this header. However, user code should not rely
+ *       on the values of these constants.
  */
 typedef enum {
-    eIO_Open,
-    eIO_Read,
-    eIO_Write,
-    eIO_ReadWrite,
-    eIO_Close
+    eIO_Open      = 0x0, /* also serves as no-event indicator in SOCK_Poll() */
+    eIO_Read      = 0x1,
+    eIO_Write     = 0x2,
+    eIO_ReadWrite = 0x3, /* eIO_Read | eIO_Write                             */
+    eIO_Close     = 0x4  /* also serves as error indicator in SOCK_Poll()    */
 } EIO_Event;
 
 
