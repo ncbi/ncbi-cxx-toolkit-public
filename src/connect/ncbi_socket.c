@@ -272,10 +272,10 @@ typedef struct SOCK_tag {
     /* for the tracing/statistics */
     unsigned int    id;         /* the internal ID (see also "s_ID_Counter") */
     ESwitch         log_data;
-    size_t          n_read;
-    size_t          n_written;
-    size_t          n_in;
-    size_t          n_out;
+    size_t          n_read;     /* DSOCK: total #; SOCK: last connect/ only  */
+    size_t          n_written;  /* DSOCK: total #; SOCK: last /session only  */
+    size_t          n_in;       /* DSOCK: msg #; SOCK: total # of bytes read */
+    size_t          n_out;      /* DSOCK: msg #; SOCK: total # of bytes sent */
 
     ESockType       type;       /* socket type: client- or server-side, dgram*/
 } SOCK_struct;
@@ -547,9 +547,9 @@ static void s_DoLogData
             if (sock->type == eSOCK_Datagram  ||
                 sock->n_in != sock->n_read) {
                 sprintf(tail + n, "/%lu %s%s",
-                        (unsigned long) sock->n_out,
+                        (unsigned long) sock->n_in,
                         sock->type == eSOCK_Datagram ? "msg" : "total byte",
-                        sock->n_out == 1 ? "" : "s");
+                        sock->n_in == 1 ? "" : "s");
             }
         }}
         CORE_LOGF(eLOG_Trace, ("SOCK#%u[%u] -- closing (out: %s, in: %s)",
@@ -1228,6 +1228,8 @@ static EIO_Status s_Connect(SOCK            sock,
     sock->host      = x_host;
     sock->port      = x_port;
     sock->is_eof    = 0/*false*/;
+    sock->n_read    = 0;
+    sock->n_written = 0;
     sock->r_status  = eIO_Success;
     sock->w_status  = eIO_Success;
     return eIO_Success;
@@ -1299,21 +1301,14 @@ static EIO_Status s_Close(SOCK sock)
 #endif /*(NCBI_OS_UNIX && !NCBI_OS_BEOS) || NCBI_OS_MSWIN*/
 
         /* shutdown in both directions */
-        if (SOCK_Shutdown(sock, eIO_Write) != eIO_Success) {
-            CORE_LOG(eLOG_Warning,
-                     "[SOCK::s_Close]  Cannot shutdown socket for writing");
-        }
-        if (SOCK_Shutdown(sock, eIO_Read) != eIO_Success) {
-            CORE_LOG(eLOG_Warning,
-                     "[SOCK::s_Close]  Cannot shutdown socket for reading");
-        }
+        SOCK_Shutdown(sock, eIO_ReadWrite);
     }
 
     /* statistics & logging */
-    sock->n_in     += sock->n_read;
-    sock->n_read    = 0;
-    sock->n_out    += sock->n_written;
-    sock->n_written = 0;
+    if (sock->type != eSOCK_Datagram) {
+        sock->n_in  += sock->n_read;
+        sock->n_out += sock->n_written;
+    }
     if (sock->log_data == eOn  ||
         (sock->log_data == eDefault  &&  s_LogData == eOn)) {
         s_DoLogData(sock, eIO_Close, 0, 0, 0);
@@ -1373,7 +1368,7 @@ static int s_Recv(SOCK        sock,
         n_read = peek ?
             BUF_Peek(sock->r_buf, x_buffer, size) :
             BUF_Read(sock->r_buf, x_buffer, size);
-        if ((n_read  &&  (n_read == size ||  !peek))  ||
+        if ((n_read  &&  (n_read == size  ||  !peek))  ||
             sock->r_status == eIO_Closed  ||  sock->is_eof) {
             return (int) n_read;
         }
@@ -1844,8 +1839,13 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
         sock->w_status = eIO_Closed;
         break;
     case eIO_ReadWrite:
-        verify(SOCK_Shutdown(sock, eIO_Write) == eIO_Success);
-        verify(SOCK_Shutdown(sock, eIO_Read ) == eIO_Success);
+        {{
+            EIO_Status sw = SOCK_Shutdown(sock, eIO_Write);
+            EIO_Status sr = SOCK_Shutdown(sock, eIO_Read );
+            if (sw != eIO_Success || sr != eIO_Success)
+                return (sw == eIO_Success ? sr :
+                        sr == eIO_Success ? sw : eIO_Unknown);
+        }}
         return eIO_Success;
     default:
         CORE_LOG(eLOG_Warning, "[SOCK::Shutdown]  Invalid direction");
@@ -1853,8 +1853,13 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
     }
 
     if (SOCK_SHUTDOWN(sock->sock, x_how) != 0) {
-        CORE_LOGF(eLOG_Warning, ("[SOCK::Shutdown]  shutdown(%s) failed",
-                                 how == eIO_Read ? "read" : "write"));
+        int x_errno = SOCK_ERRNO;
+#ifdef NCBI_OS_LINUX
+        if (x_errno != SOCK_ENOTCONN)
+#endif
+            CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
+                               ("[SOCK::Shutdown]  shutdown(%s) failed",
+                                how == eIO_Read ? "read" : "write"));
     }
     return eIO_Success;
 }
@@ -1895,9 +1900,8 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
                        sock->is_eof ? "closed" : "shutdown"));
             return eIO_Closed;
         }
-        if (sock->is_eof) {
+        if (sock->is_eof)
             return sock->r_status;
-        }
         break;
     case eIO_Write:
         if (sock->type == eSOCK_Datagram)
@@ -1916,9 +1920,8 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
                      "[SOCK::Wait(RW)]  Attempt to wait on shutdown socket");
             return eIO_Closed;
         }
-        if (sock->is_eof) {
+        if (sock->is_eof)
             return sock->r_status;
-        }
         if (sock->r_status == eIO_Closed) {
             CORE_LOGF(eLOG_Note,
                       ("[SOCK::Wait(RW)]  Attempt to wait on %s socket",
@@ -2951,6 +2954,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.83  2003/02/04 22:03:54  lavr
+ * Workaround for ENOTCONN in shutdown() on Linux; few more fixes
+ *
  * Revision 6.82  2003/01/17 16:56:59  lavr
  * Always clear all pending data when reconnecting
  *
