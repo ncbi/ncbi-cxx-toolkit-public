@@ -292,11 +292,15 @@ extern char* strdup(const char* str);
 // than its expansion, which may change.
 typedef unsigned int TSeqPos;
 
+const TSeqPos kInvalidSeqPos = ((TSeqPos) (-1));
+
+
 // Use this type when and only when negative values are a possibility
 // (for differences between positions or error reporting -- though
 // exceptions are generally better for the latter).  Again, the
 // expansion may change.
 typedef int TSignedSeqPos;
+
 
 END_NCBI_SCOPE
 
@@ -304,6 +308,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2002/09/19 22:17:11  vakatov
+ * + kInvalidSeqPos
+ *
  * Revision 1.58  2002/08/12 14:57:52  lavr
  * +EOwnership
  *
