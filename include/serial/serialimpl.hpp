@@ -211,6 +211,10 @@ private:
     Check<T>& operator=(const Check<T>&);
 };
 
+// Functions preventing memory leaks due to undestroyed type info objects
+void RegisterEnumTypeValuesObject(CEnumeratedTypeValues* object);
+void RegisterTypeInfoObject(CTypeInfo* object);
+
 template<typename T>
 inline
 TTypeInfo EnumTypeInfo(const T* member, const CEnumeratedTypeValues* enumInfo)
@@ -229,10 +233,11 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 { \
     typedef ClassName CClass; \
 	typedef BaseClassName CClass_Base; \
-    static InfoType* info; \
+    static InfoType* info = 0; \
     if ( !info ) { \
         DECLARE_BASE_OBJECT(CClass); \
-        info = Code;
+        info = Code; \
+        RegisterTypeInfoObject(info);
 #define BEGIN_TYPE_INFO(ClassName, Method, InfoType, Code) \
 	BEGIN_BASE_TYPE_INFO(ClassName, ClassName, Method, InfoType, Code)
     
@@ -419,8 +424,10 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 // enum definition macros
 #define BEGIN_ENUM_INFO_METHOD(MethodName, EnumAlias, EnumName, IsInteger) \
 const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
-{ static NCBI_NS_NCBI::CEnumeratedTypeValues* enumInfo; if ( !enumInfo ) { \
+{   static NCBI_NS_NCBI::CEnumeratedTypeValues* enumInfo = 0; \
+    if ( !enumInfo ) { \
     enumInfo = new NCBI_NS_NCBI::CEnumeratedTypeValues(EnumAlias, IsInteger); \
+    RegisterEnumTypeValuesObject(enumInfo); \
     EnumName enumValue;
 #define END_ENUM_INFO_METHOD } return enumInfo; }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/08/24 13:48:02  grichenk
+* Prevented some memory leaks
+*
 * Revision 1.16  2000/11/07 17:25:41  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -109,6 +112,8 @@
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <serial/memberlist.hpp>
+#include <corelib/ncbi_safe_static.hpp>
+
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
@@ -131,12 +136,15 @@ void Read(CObjectIStream& in, TObjectPtr object, const CTypeRef& type)
 }
 
 static set<string>* sx_Modules = 0;
+static auto_ptr< set<string> > sx_AP_Modules(0);
 
 static const string& GetModuleName(const char* moduleName)
 {
     set<string>* modules = sx_Modules;
-    if ( !modules )
+    if ( !modules ) {
         sx_Modules = modules = new set<string>;
+        sx_AP_Modules.reset(modules);
+    }
     return *modules->insert(moduleName).first;
 }
 
@@ -529,6 +537,31 @@ void SetPreWrite(CChoiceTypeInfo* info, TPreWriteFunction func)
 void SetPostRead(CChoiceTypeInfo* info, TPostReadFunction func)
 {
     info->SetPostReadFunction(func);
+}
+
+
+// Functions preventing memory leaks due to undestroyed type info objects
+
+void RegisterEnumTypeValuesObject(CEnumeratedTypeValues* object)
+{
+    typedef AutoPtr<CEnumeratedTypeValues> TEnumTypePtr;
+    typedef list<TEnumTypePtr>             TEnumTypeList;
+
+    static CSafeStaticPtr<TEnumTypeList> s_EnumTypeList;
+
+    TEnumTypePtr ap(object);
+    s_EnumTypeList.Get().push_back(ap);
+}
+
+void RegisterTypeInfoObject(CTypeInfo* object)
+{
+    typedef AutoPtr<CTypeInfo> TTypeInfoPtr;
+    typedef list<TTypeInfoPtr> TTypeInfoList;
+
+    static CSafeStaticPtr<TTypeInfoList> s_TypeInfoList;
+
+    TTypeInfoPtr ap(object);
+    s_TypeInfoList.Get().push_back(ap);
 }
 
 END_NCBI_SCOPE

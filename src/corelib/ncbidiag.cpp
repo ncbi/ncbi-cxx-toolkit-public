@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/08/24 13:48:01  grichenk
+* Prevented some memory leaks
+*
 * Revision 1.35  2001/08/09 16:26:11  lavr
 * Added handling for new eDPF_OmitInfoSev format flag
 *
@@ -160,6 +163,18 @@
 BEGIN_NCBI_SCOPE
 
 static CMutex s_DiagMutex;
+
+
+class CDiagRecycler {
+public:
+    CDiagRecycler(void) {};
+    ~CDiagRecycler(void)
+    {
+        SetDiagHandler(0, 0, 0);
+    }
+};
+
+static CSafeStaticPtr<CDiagRecycler> s_DiagRecycler;
 
 
 ///////////////////////////////////////////////////////
@@ -580,6 +595,7 @@ extern void SetDiagStream
         return;
     }
 
+    s_DiagRecycler.Get();
     SToStream_Data* data = new SToStream_Data;
     data->os           = os;
     data->quick_flush  = quick_flush;
