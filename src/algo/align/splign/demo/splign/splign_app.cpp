@@ -397,6 +397,11 @@ string CSplignApp::x_RunOnPair( vector<CHit>* hits )
   const vector<CSplign::SSegment>* segments = splign.Run();
   const size_t seg_dim = segments->size();
 
+  if(seg_dim == 0) {
+    NCBI_THROW( CSplignAppException, eGeneral,
+		"No alignment found.");
+  }
+
   // try to extend the last segment into PolyA area  
   if(polya_start < kMax_UInt && seg_dim && (*segments)[seg_dim-1].m_exon) {
     CSplign::SSegment& s = const_cast<CSplign::SSegment&>(
@@ -570,6 +575,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/12/04 19:26:37  kapustin
+ * Account for zero-length segment vector
+ *
  * Revision 1.9  2003/12/03 19:47:02  kapustin
  * Increase exon search scope at the ends
  *

@@ -245,6 +245,7 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
         "Spliced aligner object not set" );
     }
 
+    m_out.clear();
     deque<SSegment> segments;
     for(size_t i = 0, map_dim = m_alnmap.size(); i < map_dim; ++i) {
 
@@ -340,6 +341,9 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
     // them into gaps.
 
     size_t seg_dim = segments.size();
+    if(seg_dim == 0) {
+        return &m_out;
+    }
 
     // First go from the ends end see if we
     // can improve boundary exons
@@ -421,7 +425,6 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
     }
 
     // now merge all adjacent gaps
-    m_out.clear();
     int gap_start_idx = -1;
     if(segments.size() && segments[0].m_exon == false) {
         gap_start_idx = 0;
@@ -686,6 +689,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/12/04 19:26:37  kapustin
+ * Account for zero-length segment vector
+ *
  * Revision 1.5  2003/11/20 17:58:20  kapustin
  * Make the code msvc6.0-friendly
  *
