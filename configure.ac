@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.46 2002/03/19 21:05:02 vakatov Exp $
+#  $Id: configure.ac,v 1.47 2002/03/19 21:46:36 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2244,8 +2244,7 @@ fi
 if test "$with_internal" = "yes" ; then
    OPT_GROUPS="$OPT_GROUPS internal"
    if test "$with_sybase" = "no"  -o  "$with_ncbi_c" = "no"  -o  \
-           "$with_sss" = "no"  -o  "$with_pubmed" = "no" -o \
-           "$with_sp" = "no"  -o  "$with_sp" = "no"
+           "$with_sss" = "no"  -o  "$with_pubmed" = "no"
    then
       AC_MSG_ERROR(["--with-internal:  Cannot build INTERNAL projects"])
    fi

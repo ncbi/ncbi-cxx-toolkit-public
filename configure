@@ -7943,8 +7943,7 @@ fi
 if test "$with_internal" = "yes" ; then
    OPT_GROUPS="$OPT_GROUPS internal"
    if test "$with_sybase" = "no"  -o  "$with_ncbi_c" = "no"  -o  \
-           "$with_sss" = "no"  -o  "$with_pubmed" = "no" -o \
-           "$with_sp" = "no"  -o  "$with_sp" = "no"
+           "$with_sss" = "no"  -o  "$with_pubmed" = "no"
    then
       { { echo "$as_me:$LINENO: error: \"--with-internal:  Cannot build INTERNAL projects\"" >&5
 echo "$as_me: error: \"--with-internal:  Cannot build INTERNAL projects\"" >&2;}
