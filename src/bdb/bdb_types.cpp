@@ -911,6 +911,12 @@ CBDB_FieldFactory::EType CBDB_FieldFactory::GetType(const string& type) const
 	} else 
 	if (NStr::CompareNocase(type, "uchar")==0) {
 		return eUChar;
+	} else 
+	if (NStr::CompareNocase(type, "blob")==0) {
+		return eBlob;
+	} else 
+	if (NStr::CompareNocase(type, "lob")==0) {
+		return eBlob;
 	} else {
 		return eUnknown;
 	}
@@ -961,6 +967,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/06/21 15:06:45  kuznets
+ * Added BLOB (eBlob) to the list of types
+ *
  * Revision 1.25  2004/06/17 16:25:50  kuznets
  * + ownership flag to BufferManager
  *

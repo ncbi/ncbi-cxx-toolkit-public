@@ -1332,7 +1332,8 @@ public:
 		eInt2,
 		eFloat,
 		eDouble,
-		eUChar
+		eUChar,
+		eBlob
 	};
 	
 public:
@@ -1875,6 +1876,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/06/21 15:06:18  kuznets
+ * Added BLOB (eBlob) to the list of types
+ *
  * Revision 1.38  2004/06/17 16:25:27  kuznets
  * + ownership flag to BufferManager
  *
