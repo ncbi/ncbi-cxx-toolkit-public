@@ -58,7 +58,7 @@
 #endif /* _MSC_VER >= 1200 */
 
 
-/** @addtogroup stl STL Use Hints
+/** @addtogroup STL
  *
  * @{
  */
@@ -131,6 +131,9 @@ typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/04/14 11:34:27  siyan
+ * Fixed STL group name
+ *
  * Revision 1.30  2003/04/01 14:20:37  siyan
  * Added doxygen support
  *
