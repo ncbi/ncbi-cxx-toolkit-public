@@ -77,12 +77,17 @@ BLASTGetTranslation(const Uint1* nucl_seq, const Uint1* nucl_seq_rev,
  */
 unsigned char* BLASTFindGeneticCode(int genetic_code);
 
+char* BLASTGetMatrixPath(const char* matrix_name, bool is_prot);
+
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/08/01 22:35:02  camacho
+* Added function to get matrix path (fixme)
+*
 * Revision 1.3  2003/07/30 15:00:01  camacho
 * Do not use Malloc/MemNew/MemFree
 *

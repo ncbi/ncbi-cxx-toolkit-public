@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbireg.hpp>
+#include <corelib/ncbifile.hpp>
+
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -240,12 +244,126 @@ BLASTFindGeneticCode(int genetic_code)
     return retval;
 }
 
+char* 
+BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
+{
+    char* retval = NULL;
+    string full_path;       // full path to matrix file
+
+    if (!matrix_name)
+        return NULL;
+
+    string mtx(matrix_name);
+    transform(mtx.begin(), mtx.end(), mtx.begin(), (int (*)(int))toupper);
+
+    // Look for matrix file in local directory
+    full_path = mtx;
+    cerr << "Trying " << full_path << "..." << endl;
+    if (CFile(full_path).Exists()) {
+        retval = strdup(full_path.c_str());
+        return retval;
+    }
+
+    // FIXME: Try the ncbi configuration file
+    ifstream is("/netopt/ncbi_tools/.ncbirc");
+    CNcbiRegistry reg(is);
+    string path = reg.Get("NCBI", "Data");
+
+    full_path = CFile::MakePath(path, mtx);
+    cerr << "Trying " << full_path << "..." << endl;
+    if (CFile(full_path).Exists()) {
+        retval = strdup(full_path.c_str());
+        return retval;
+    }
+
+    // Try appending "aa" or "nt" 
+    full_path = path;
+    full_path += CFile::AddTrailingPathSeparator(full_path);
+    full_path += is_prot ? "aa" : "nt";
+    full_path += CFile::AddTrailingPathSeparator(full_path);
+    full_path += mtx;
+    cerr << "Trying " << full_path << "..." << endl;
+    if (CFile(full_path).Exists()) {
+        retval = strdup(full_path.c_str());
+        return retval;
+    }
+
+    // Try using local "data" directory
+    full_path = "data";
+    full_path += CFile::AddTrailingPathSeparator(full_path);
+    full_path += mtx;
+    cerr << "Trying " << full_path << "..." << endl;
+    if (CFile(full_path).Exists()) {
+        retval = strdup(full_path.c_str());
+        return retval;
+    }
+
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (!app)
+        return NULL;
+
+    const string& blastmat_env = app->GetEnvironment().Get("BLASTMAT");
+    if (CFile(blastmat_env).Exists()) {
+        full_path = blastmat_env;
+        full_path += CFile::AddTrailingPathSeparator(full_path);
+        full_path += is_prot ? "aa" : "nt";
+        full_path += CFile::AddTrailingPathSeparator(full_path);
+        full_path += mtx;
+        cerr << "Trying " << full_path << "..." << endl;
+        if (CFile(full_path).Exists()) {
+            retval = strdup(full_path.c_str());
+            return retval;
+        }
+    }
+
+#ifdef OS_UNIX
+    full_path = BLASTMAT_DIR;
+    full_path += CFile::AddTrailingPathSeparator(full_path);
+    full_path += is_prot ? "aa" : "nt";
+    full_path += CFile::AddTrailingPathSeparator(full_path);
+    full_path += mtx;
+    cerr << "Trying " << full_path << "..." << endl;
+    if (CFile(full_path).Exists()) {
+        retval = strdup(full_path.c_str());
+        return retval;
+    }
+#endif
+
+    // Try again without the "aa" or "nt"
+    if (CFile(blastmat_env).Exists()) {
+        full_path = blastmat_env;
+        full_path += CFile::AddTrailingPathSeparator(full_path);
+        full_path += mtx;
+        cerr << "Trying " << full_path << "..." << endl;
+        if (CFile(full_path).Exists()) {
+            retval = strdup(full_path.c_str());
+            return retval;
+        }
+    }
+
+#ifdef OS_UNIX
+    full_path = BLASTMAT_DIR;
+    full_path += CFile::AddTrailingPathSeparator(full_path);
+    full_path += mtx;
+    cerr << "Trying " << full_path << "..." << endl;
+    if (CFile(full_path).Exists()) {
+        retval = strdup(full_path.c_str());
+        return retval;
+    }
+#endif
+
+    return retval;
+}
+
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/08/01 22:35:02  camacho
+* Added function to get matrix path (fixme)
+*
 * Revision 1.7  2003/08/01 17:40:56  dondosha
 * Use renamed functions and structures from local blastkar.h
 *
