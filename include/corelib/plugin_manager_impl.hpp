@@ -132,6 +132,23 @@ protected:
                                 default_value);
     }
 
+    /// Utility function to get an integer of parameter tree
+    /// Throws an exception when mandatory parameter is missing
+    /// (or returns the deafult value)
+    unsigned int 
+    GetParamDataSize(const TPluginManagerParamTree* params,
+                const string&                  param_name, 
+                bool                           mandatory,
+                unsigned int                   default_value) const
+    {
+        return ParamTree_GetDataSize(m_DriverName,
+                                     params,
+                                     param_name,
+                                     eConfErr_NoThrow,
+                                     default_value);
+    }
+
+
     /// Utility function to get an bool of parameter tree
     /// Throws an exception when mandatory parameter is missing
     /// (or returns the deafult value)
@@ -242,6 +259,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/09/23 14:19:59  kuznets
+ * +GetParamDataSize
+ *
  * Revision 1.8  2004/09/23 13:49:20  kuznets
  * Some functions reimplemented using ncbi_config.hpp
  *
