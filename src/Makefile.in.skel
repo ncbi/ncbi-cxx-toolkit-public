@@ -10,6 +10,7 @@
 
 ## Libraries to be built as usual.
 # ASN_PROJ =
+# DTD_PROJ =
 # LIB_PROJ =
 # EXPENDABLE_LIB_PROJ =
 
