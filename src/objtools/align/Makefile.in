@@ -1,6 +1,6 @@
 # $Id$
 
-LIB_PROJ = xalnutool
+LIB_PROJ = xalntool
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
