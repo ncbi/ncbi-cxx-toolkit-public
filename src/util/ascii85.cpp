@@ -80,7 +80,7 @@ size_t CAscii85::s_Encode(const char* src_buf, size_t src_len,
             const unsigned long quot = val / 85;
             const unsigned long rem = val - quot * 85; // val % 85
             val = quot;
-            out[i] = rem + '!';
+            out[i] = char(rem + '!');
         }
 
         if (dst_len < grplen) {
@@ -110,6 +110,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/06/30 21:58:40  vasilche
+ * Fixed cast warning.
+ *
  * Revision 1.2  2004/05/17 21:06:02  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
