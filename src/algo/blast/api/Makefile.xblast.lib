@@ -18,7 +18,6 @@ disc_nucl_options \
 blast_rps_options \
 remote_blast \
 multiseq_src \
-blast_exception \
 bl2seq \
 db_blast \
 db_traceback
