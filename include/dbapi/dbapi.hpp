@@ -311,6 +311,9 @@ public:
 
     virtual ~IConnection();
 
+    // Get parent datasource object
+    virtual IDataSource* GetDataSource() = 0;
+
     // Connect to the database
     virtual void Connect(const string& user,
 			 const string& password,
@@ -360,7 +363,16 @@ public:
     virtual IConnection* CreateConnection() = 0;
 
     virtual void SetLoginTimeout(unsigned int i) = 0;
+    // Set the output stream for server messages.
+    // Set it to zero to disable any output and collect
+    // messages in CDB_MultiEx (see below)
     virtual void SetLogStream(ostream* out) = 0;
+
+    // Returns all server messages as CDB_MultiEx object
+    virtual CDB_MultiEx* GetErrorAsEx() = 0;
+
+    // Returns all server messages as single string
+    virtual string GetErrorInfo() = 0;
 
     // Returns the pointer to the general driver interface
     virtual I_DriverContext* GetDriverContext() = 0;
@@ -373,6 +385,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/09/23 18:24:12  kholodov
+ * Added: IDataSource: GetErrorInfo() and GetErrorAsEx() methods.
+ * Added: IConnection: GetDataSource() method.
+ *
  * Revision 1.10  2002/09/16 19:34:41  kholodov
  * Added: bulk insert support
  *
