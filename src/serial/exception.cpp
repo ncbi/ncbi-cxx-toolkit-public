@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/03 20:47:22  vasilche
+* Removed unused variables/functions.
+*
 * Revision 1.2  2000/07/03 18:42:43  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -96,7 +99,7 @@ const char* CInvalidChoiceSelection::GetName(unsigned index,
                                              const char* const names[],
                                              unsigned namesCount)
 {
-    if ( index < 0 || index > namesCount )
+    if ( index > namesCount )
         return "?unknown?";
     return names[index];
     

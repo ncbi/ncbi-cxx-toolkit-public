@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/07/03 20:47:18  vasilche
+* Removed unused variables/functions.
+*
 * Revision 1.14  2000/06/16 20:01:21  vasilche
 * Avoid use of unexpected_exception() which is unimplemented on Mac.
 *
@@ -128,7 +131,6 @@ public:
     char PeekChar(size_t offset = 0)
         THROWS1((CSerialIOException, bad_alloc))
         {
-            _ASSERT(offset >= 0);
             char* pos = m_CurrentPos + offset;
             if ( pos >= m_DataEndPos )
                 pos = FillBuffer(pos);
@@ -137,7 +139,6 @@ public:
     char PeekCharNoEOF(size_t offset = 0)
         THROWS1((CSerialIOException, bad_alloc))
         {
-            _ASSERT(offset >= 0);
             char* pos = m_CurrentPos + offset;
             if ( pos >= m_DataEndPos )
                 return FillBufferNoEOF(pos);

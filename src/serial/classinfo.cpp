@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2000/07/03 20:47:22  vasilche
+* Removed unused variables/functions.
+*
 * Revision 1.48  2000/07/03 18:42:42  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -329,18 +332,6 @@ void CClassTypeInfo::RegisterSubClasses(void) const
             if ( classInfo )
                 classInfo->RegisterSubClasses();
         }
-    }
-}
-
-static inline
-void CheckMemberOptional(CObjectIStream& in,
-                         const CMembersInfo& members, size_t index)
-{
-    const CMemberInfo* info = members.GetMemberInfo(index);
-    if ( !info->Optional() ) {
-        in.ThrowError(in.eFormatError,
-                      "member "+members.GetMemberId(index).ToString()+
-                      " expected");
     }
 }
 

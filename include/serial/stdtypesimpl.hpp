@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/03 20:47:18  vasilche
+* Removed unused variables/functions.
+*
 * Revision 1.2  2000/07/03 19:04:25  vasilche
 * Fixed type references in templates.
 *
@@ -45,6 +48,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/stdtypes.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2000/07/03 20:47:22  vasilche
+* Removed unused variables/functions.
+*
 * Revision 1.39  2000/07/03 20:39:56  vasilche
 * Fixed comments.
 *
@@ -218,12 +221,6 @@ static inline
 ETag ExtractTag(TByte byte)
 {
     return ETag(byte & 0x1f);
-}
-
-static inline
-bool IsLongTag(TByte byte)
-{
-    return ExtractTag(byte) == eLongTag;
 }
 
 static inline

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2000/07/03 20:47:22  vasilche
+* Removed unused variables/functions.
+*
 * Revision 1.50  2000/07/03 20:39:55  vasilche
 * Fixed comments.
 *
@@ -1131,8 +1134,7 @@ void CObjectIStreamAsn::EndBytes(const ByteBlock& )
 
 CObjectIStream::EPointerType CObjectIStreamAsn::ReadPointerType(void)
 {
-    char c;
-    switch ( (c = PeekChar(true)) ) {
+    switch ( PeekChar(true) ) {
     case 'N':
         m_Input.SkipChar();
         ExpectString("ULL");

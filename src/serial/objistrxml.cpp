@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/07/03 20:47:23  vasilche
+* Removed unused variables/functions.
+*
 * Revision 1.5  2000/07/03 18:42:45  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -1006,8 +1009,6 @@ void CObjectIStreamXml::ReadChoiceVariant(CObjectChoiceReader& reader,
     CloseTag(variant);
     variant.End();
 }
-
-static const char* const HEX = "0123456789ABCDEF";
 
 void CObjectIStreamXml::BeginBytes(ByteBlock& )
 {

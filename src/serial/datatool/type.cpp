@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2000/07/03 20:47:28  vasilche
+* Removed unused variables/functions.
+*
 * Revision 1.49  2000/06/27 16:34:47  vasilche
 * Fixed generated comments.
 * Fixed class names conflict. Now internal classes' names begin with "C_".
@@ -379,6 +382,7 @@ const CDataType* CDataType::InheritFromType(void) const
     if ( !parentName.empty() )
         return GetModule()->Resolve(parentName);
 
+#if 0
     // try to detect implicit inheritance
     if ( IsInChoice() ) // directly in CHOICE
         return 0; //GetInChoice();
@@ -414,6 +418,7 @@ const CDataType* CDataType::InheritFromType(void) const
             return 0; // unnamedParent;
         }
     }
+#endif
     return 0;
 }
 
