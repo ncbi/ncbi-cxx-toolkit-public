@@ -28,13 +28,14 @@
  */
 
 /// @file blast_rps_options.cpp
+/// Implements the CBlastRPSOptionsHandle class.
 
 #include <algo/blast/api/blast_rps_options.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include "blast_setup.hpp"
 
 
-/** @addtogroup Miscellaneous
+/** @addtogroup AlgoBlast
  *
  * @{
  */
@@ -125,6 +126,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/03/19 15:13:34  camacho
+ * Move to doxygen group AlgoBlast
+ *
  * Revision 1.1  2004/03/10 14:52:13  madden
  * Options handle for RPSBlast searches
  *

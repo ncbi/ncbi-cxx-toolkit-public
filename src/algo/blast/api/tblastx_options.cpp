@@ -28,12 +28,13 @@
  */
 
 /// @file tblastx_options.cpp
+/// Implements the CTBlastxOptionsHandle class.
 
 #include <algo/blast/api/tblastx_options.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include "blast_setup.hpp"
 
-/** @addtogroup Miscellaneous
+/** @addtogroup AlgoBlast
  *
  * @{
  */
@@ -105,6 +106,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/03/19 15:13:34  camacho
+ * Move to doxygen group AlgoBlast
+ *
  * Revision 1.3  2004/01/16 21:49:27  bealer
  * - Add locality flag for Blast4 API
  *

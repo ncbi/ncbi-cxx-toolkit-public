@@ -28,13 +28,14 @@
  */
 
 /// @file blast_prot_options.cpp
+/// Implements the CBlastProteinOptionsHandle class.
 
 #include <algo/blast/api/blast_prot_options.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include "blast_setup.hpp"
 
 
-/** @addtogroup Miscellaneous
+/** @addtogroup AlgoBlast
  *
  * @{
  */
@@ -148,6 +149,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/19 15:13:34  camacho
+ * Move to doxygen group AlgoBlast
+ *
  * Revision 1.5  2004/02/18 00:35:48  dondosha
  * Typo fix in previous commit
  *

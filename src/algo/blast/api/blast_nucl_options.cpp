@@ -28,12 +28,13 @@
  */
 
 /// @file blast_nucl_options.cpp
+/// Implements the CBlastNucleotideOptionsHandle class.
 
 #include <algo/blast/api/blast_nucl_options.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include "blast_setup.hpp"
 
-/** @addtogroup Miscellaneous
+/** @addtogroup AlgoBlast
  *
  * @{
  */
@@ -242,6 +243,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/03/19 15:13:34  camacho
+ * Move to doxygen group AlgoBlast
+ *
  * Revision 1.6  2004/03/17 19:15:28  dondosha
  * Corrected order of defaults setting, so scanning stride is set properly
  *

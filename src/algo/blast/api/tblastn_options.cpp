@@ -28,11 +28,12 @@
  */
 
 /// @file tblastn_options.cpp
+/// Implements the CTBlastnOptionsHandle class.
 
 #include <algo/blast/api/tblastn_options.hpp>
 #include "blast_setup.hpp"
 
-/** @addtogroup Miscellaneous
+/** @addtogroup AlgoBlast
  *
  * @{
  */
@@ -87,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/03/19 15:13:34  camacho
+ * Move to doxygen group AlgoBlast
+ *
  * Revision 1.3  2004/01/16 21:54:51  bealer
  * - Blast4 API changes.
  *

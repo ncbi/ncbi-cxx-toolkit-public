@@ -28,12 +28,13 @@
  */
 
 /// @file disc_nucl_options.cpp
+/// Implements the CDiscNucleotideOptionsHandle class.
 
 #include <algo/blast/api/disc_nucl_options.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include "blast_setup.hpp"
 
-/** @addtogroup Miscellaneous
+/** @addtogroup AlgoBlast
  *
  * @{
  */
@@ -99,6 +100,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/19 15:13:34  camacho
+ * Move to doxygen group AlgoBlast
+ *
  * Revision 1.4  2004/03/17 21:48:32  dondosha
  * Added custom SetMBInitialWordOptionsDefaults and SetMBGappedExtensionDefaults methods
  *
