@@ -110,6 +110,11 @@ for i in $imports; do
 done
 
 # detect datatool program path
+if test "`echo $bindir/*`" = "bindir/*"; then
+    # empty or non-existent (--without-execopy?)
+    bindir=$build_root/build/serial/datatool
+fi
+
 if test -x "$bindir/datatool"; then
     datatool=$bindir/datatool
     COMMON_AddRunpath "$libdir"
