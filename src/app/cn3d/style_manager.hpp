@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/10/04 17:40:48  thiessen
+* rearrange STL #includes
+*
 * Revision 1.15  2000/09/20 22:22:03  thiessen
 * working conservation coloring; split and center unaligned justification
 *
@@ -80,6 +83,8 @@
 
 #ifndef CN3D_STYLE_MANAGER__HPP
 #define CN3D_STYLE_MANAGER__HPP
+
+#include <corelib/ncbistl.hpp>
 
 #include <string>
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/10/04 17:40:47  thiessen
+* rearrange STL #includes
+*
 * Revision 1.7  2000/09/20 22:22:03  thiessen
 * working conservation coloring; split and center unaligned justification
 *
@@ -56,6 +59,8 @@
 
 #ifndef CN3D_SEQUENCE_VIEWER__HPP
 #define CN3D_SEQUENCE_VIEWER__HPP
+
+#include <corelib/ncbistl.hpp>
 
 #include <list>
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/10/04 17:40:45  thiessen
+* rearrange STL #includes
+*
 * Revision 1.7  2000/08/27 18:50:55  thiessen
 * extract sequence information
 *
@@ -56,6 +59,8 @@
 
 #ifndef CN3D_COORDSET__HPP
 #define CN3D_COORDSET__HPP
+
+#include <corelib/ncbistl.hpp>
 
 #include <map>
 

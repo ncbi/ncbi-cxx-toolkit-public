@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/10/04 17:40:46  thiessen
+* rearrange STL #includes
+*
 * Revision 1.6  2000/09/03 18:45:57  thiessen
 * working generalized sequence viewer
 *
@@ -53,6 +56,8 @@
 
 #ifndef CN3D_SEQUENCE_SET__HPP
 #define CN3D_SEQUENCE_SET__HPP
+
+#include <corelib/ncbistl.hpp>
 
 #include <string>
 #include <list>

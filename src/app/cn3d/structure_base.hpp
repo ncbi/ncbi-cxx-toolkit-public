@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/10/04 17:40:47  thiessen
+* rearrange STL #includes
+*
 * Revision 1.14  2000/08/18 23:07:03  thiessen
 * minor efficiency tweaks
 *
@@ -77,6 +80,8 @@
 
 #ifndef CN3D_STRUCTUREBASE__HPP
 #define CN3D_STRUCTUREBASE__HPP
+
+#include <corelib/ncbistl.hpp>
 
 // container type used for various lists
 #include <list>

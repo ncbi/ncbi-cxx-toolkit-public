@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/10/04 17:40:45  thiessen
+* rearrange STL #includes
+*
 * Revision 1.4  2000/10/02 23:25:07  thiessen
 * working sequence identifier window in sequence viewer
 *
@@ -49,11 +52,11 @@
 #ifndef CN3D_MESSENGER__HPP
 #define CN3D_MESSENGER__HPP
 
+#include <corelib/ncbistl.hpp>
+
 #include <list>
 #include <map>
 #include <vector>
-
-#include <corelib/ncbistl.hpp>
 
 
 BEGIN_SCOPE(Cn3D)

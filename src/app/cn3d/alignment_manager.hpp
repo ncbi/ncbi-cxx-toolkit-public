@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/10/04 17:40:44  thiessen
+* rearrange STL #includes
+*
 * Revision 1.10  2000/10/02 23:25:06  thiessen
 * working sequence identifier window in sequence viewer
 *
@@ -66,10 +69,10 @@
 #ifndef CN3D_ALIGNMENT_MANAGER__HPP
 #define CN3D_ALIGNMENT_MANAGER__HPP
 
+#include <corelib/ncbistl.hpp>
+
 #include <list>
 #include <vector>
-
-#include <corelib/ncbistl.hpp>
 
 #include "cn3d/vector_math.hpp"
 
@@ -194,8 +197,9 @@ public:
 class Block
 {
 public:
-    const bool isAligned;
     int width;
+
+    virtual bool IsAligned(void) const = 0;
 
     typedef struct {
         int from, to;
@@ -224,8 +228,8 @@ protected:
     const SequenceList *sequences;
 
 public:
-    Block(const SequenceList *sequenceList, bool isAlignedBlock) :
-        isAligned(isAlignedBlock), sequences(sequenceList), ranges(sequenceList->size()) { }
+    Block(const SequenceList *sequenceList) :
+        sequences(sequenceList), ranges(sequenceList->size()) { }
 
     int NSequences(void) const { return ranges.size(); }
 };
@@ -234,7 +238,9 @@ public:
 class UngappedAlignedBlock : public Block
 {
 public:
-    UngappedAlignedBlock(const SequenceList *sequenceList) : Block(sequenceList, true) { }
+    UngappedAlignedBlock(const SequenceList *sequenceList) : Block(sequenceList) { }
+
+    bool IsAligned(void) const { return true; }
 
     int GetIndexAt(int blockColumn, int row,
         BlockMultipleAlignment::eUnalignedJustification justification =
@@ -250,7 +256,10 @@ public:
 class UnalignedBlock : public Block
 {
 public:
-    UnalignedBlock(const SequenceList *sequenceList) : Block(sequenceList, false) { }
+    UnalignedBlock(const SequenceList *sequenceList) : Block(sequenceList) { }
+
+    bool IsAligned(void) const { return false; }
+
     int GetIndexAt(int blockColumn, int row,
         BlockMultipleAlignment::eUnalignedJustification justification) const;
 };
@@ -261,11 +270,10 @@ public:
 class AlignmentManager
 {
 public:
-    AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet, Messenger *messenger);
+    AlignmentManager(const SequenceSet *sSet, AlignmentSet *aSet, Messenger *messenger);
     ~AlignmentManager(void);
 
-    const SequenceSet *sequenceSet;
-    const AlignmentSet *alignmentSet;
+    void NewAlignments(const SequenceSet *sSet, AlignmentSet *aSet);
 
     // creates the current multiple alignment from the given pairwise alignments (which are
     // assumed to be members of the AlignmentSet).
@@ -274,6 +282,9 @@ public:
 		CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments);
 
 private:
+    const SequenceSet *sequenceSet;
+    AlignmentSet *alignmentSet;
+
     // viewer for the current alignment
     SequenceViewer *sequenceViewer;
     

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/10/04 17:40:46  thiessen
+* rearrange STL #includes
+*
 * Revision 1.11  2000/08/30 19:49:04  thiessen
 * working sequence window
 *
@@ -68,6 +71,8 @@
 
 #ifndef CN3D_RESIDUE__HPP
 #define CN3D_RESIDUE__HPP
+
+#include <corelib/ncbistl.hpp>
 
 #include <map>
 #include <string>

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/10/04 17:40:47  thiessen
+* rearrange STL #includes
+*
 * Revision 1.7  2000/10/03 18:59:55  thiessen
 * added row/column selection
 *
@@ -84,13 +87,14 @@ public:
 
     // should set the character and its traits to display at the given location;
     // both columns and rows are numbered from zero. If the return value is false,
-    // the cell for this character will be left blank. If 'isHighlighted' is set
-    // to true, the character will be drawn with the character color against
-    // a highlight-color background.
+    // the cell for this character will be left blank. If drawBackground is true,
+    // then the cell's background will be redrawn with the given color (e.g.,
+    // for highlights).
     virtual bool GetCharacterTraitsAt(int column, int row,      // location
         char *character,                                        // character to draw
         wxColour *color,                                        // color of this character
-        bool *isHighlighted                                     // highlighed residue?
+        bool *drawBackground,                                   // special background color?
+        wxColour *cellBackgroundColor                           // background color
     ) const = 0;
 
 
@@ -192,9 +196,6 @@ public:
 
     // sets the background color for the window after refresh
     void SetBackgroundColor(const wxColor& backgroundColor);
-
-    // set the background color for highlighted characters after refresh
-    void SetHighlightColor(const wxColor& highlightColor);
 
     // set the font for the characters; refreshes automatically. This font
     // object will be owned and destroyed by the SequenceViewerWidget

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/10/04 17:40:46  thiessen
+* rearrange STL #includes
+*
 * Revision 1.20  2000/08/30 19:49:03  thiessen
 * working sequence window
 *
@@ -98,6 +101,8 @@
 
 // do not include GL headers here, so that other modules can more easily
 // access this without potential name conflicts
+
+#include <corelib/ncbistl.hpp>
 
 #include <list>
 #include <map>

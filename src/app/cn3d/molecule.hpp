@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/10/04 17:40:46  thiessen
+* rearrange STL #includes
+*
 * Revision 1.13  2000/09/08 20:16:10  thiessen
 * working dynamic alignment views
 *
@@ -74,6 +77,8 @@
 
 #ifndef CN3D_MOLECULE__HPP
 #define CN3D_MOLECULE__HPP
+
+#include <corelib/ncbistl.hpp>
 
 #include <map>
 #include <string>

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/04 17:40:45  thiessen
+* rearrange STL #includes
+*
 * Revision 1.1  2000/09/20 22:24:57  thiessen
 * working conservation coloring; split and center unaligned justification
 *
@@ -38,6 +41,8 @@
 
 #ifndef CN3D_CONSERVATION_COLORER__HPP
 #define CN3D_CONSERVATION_COLORER__HPP
+
+#include <corelib/ncbistl.hpp>
 
 #include <map>
 #include <vector>
@@ -62,7 +67,7 @@ public:
     // create colors - should be done only after all blocks have been added
     void CalculateConservationColors(void);
 
-    static const Vector ZeroIdentityColor, FullIdentityColor;
+    static const Vector MinimumConservationColor, MaximumConservationColor;
 
 private:
     typedef std::map < const UngappedAlignedBlock *, std::vector < int > > BlockMap;
@@ -81,7 +86,7 @@ public:
     // color accessors
     const Vector *GetIdentityColor(const UngappedAlignedBlock *block, int blockColumn) const
         { return &(identities[GetProfileIndex(block, blockColumn)]
-            ? FullIdentityColor : ZeroIdentityColor); }
+            ? MaximumConservationColor : MinimumConservationColor); }
 
     const Vector *GetVarietyColor(const UngappedAlignedBlock *block, int blockColumn) const
         { return &(varietyColors[GetProfileIndex(block, blockColumn)]); }

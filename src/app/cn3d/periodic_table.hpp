@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/10/04 17:40:46  thiessen
+* rearrange STL #includes
+*
 * Revision 1.3  2000/08/24 18:43:15  thiessen
 * tweaks for transparent sphere display
 *
@@ -44,6 +47,8 @@
 
 #ifndef CN3D_PERIODICTABLE__HPP
 #define CN3D_PERIODICTABLE__HPP
+
+#include <corelib/ncbistl.hpp>
 
 #include <map>
 

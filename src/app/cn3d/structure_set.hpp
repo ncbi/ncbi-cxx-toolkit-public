@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/10/04 17:40:47  thiessen
+* rearrange STL #includes
+*
 * Revision 1.25  2000/09/15 19:24:33  thiessen
 * allow repeated structures w/o different local id
 *
@@ -111,6 +114,8 @@
 #ifndef CN3D_STRUCTURESET__HPP
 #define CN3D_STRUCTURESET__HPP
 
+#include <corelib/ncbistl.hpp>
+
 #include <string>
 #include <map>
 #include <vector>
@@ -151,12 +156,12 @@ public:
     typedef LIST_TYPE < const StructureObject * > ObjectList;
     ObjectList objects;
 
-    // sequence information
+    // sequence and alignment information
     const SequenceSet *sequenceSet;
-    const AlignmentSet *alignmentSet;
+    AlignmentSet *alignmentSet;
     AlignmentManager *alignmentManager;
 
-    // handle to Messenger - is owned by wxApp
+    // messenger - is owned by wxApp
     Messenger *messenger;
 
     OpenGLRenderer *renderer;

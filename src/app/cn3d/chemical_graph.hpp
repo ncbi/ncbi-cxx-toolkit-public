@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/10/04 17:40:45  thiessen
+* rearrange STL #includes
+*
 * Revision 1.10  2000/09/14 14:55:26  thiessen
 * add row reordering; misc fixes
 *
@@ -65,6 +68,8 @@
 
 #ifndef CN3D_CHEMICALGRAPH__HPP
 #define CN3D_CHEMICALGRAPH__HPP
+
+#include <corelib/ncbistl.hpp>
 
 #include <map>
 #include <string>

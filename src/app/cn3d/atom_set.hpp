@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/10/04 17:40:44  thiessen
+* rearrange STL #includes
+*
 * Revision 1.11  2000/08/25 14:21:32  thiessen
 * minor tweaks
 *
@@ -68,6 +71,8 @@
 
 #ifndef CN3D_ATOMSET__HPP
 #define CN3D_ATOMSET__HPP
+
+#include <corelib/ncbistl.hpp>
 
 #include <string>
 #include <map>

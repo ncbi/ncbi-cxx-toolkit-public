@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/10/04 17:40:44  thiessen
+* rearrange STL #includes
+*
 * Revision 1.4  2000/09/15 19:24:33  thiessen
 * allow repeated structures w/o different local id
 *
@@ -47,6 +50,8 @@
 
 #ifndef CN3D_ALIGNMENT_SET__HPP
 #define CN3D_ALIGNMENT_SET__HPP
+
+#include <corelib/ncbistl.hpp>
 
 #include <list>
 #include <vector>
