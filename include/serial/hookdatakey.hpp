@@ -58,6 +58,9 @@ public:
 
     void Clear(void);
 
+    typedef pair<THookData*, CRef<THook> > TValue;
+    typedef vector<TValue> THooks;
+
 protected:
     void ResetHook(THookData* key);
     void SetHook(THookData* key, THook* hook);
@@ -69,9 +72,6 @@ private:
 
     friend class CHookDataBase;
 
-    typedef pair<THookData*, CRef<THook> > TValue;
-    typedef vector<TValue> THooks;
-
     struct Compare
     {
         bool operator()(const TValue& value, const THookData* key) const
@@ -79,7 +79,6 @@ private:
                 return value.first < key;
             }
     };
-
 
     THooks::iterator x_Find(const THookData* key);
     THooks::const_iterator x_Find(const THookData* key) const;
@@ -119,6 +118,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/07/29 18:59:21  vasilche
+* Fixed compilation errors.
+*
 * Revision 1.4  2003/07/29 18:47:46  vasilche
 * Fixed thread safeness of object stream hooks.
 *

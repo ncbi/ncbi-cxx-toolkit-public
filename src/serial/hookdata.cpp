@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/07/29 18:59:21  vasilche
+* Fixed compilation errors.
+*
 * Revision 1.5  2003/07/29 18:47:47  vasilche
 * Fixed thread safeness of object stream hooks.
 *
@@ -177,7 +180,7 @@ void CHookDataBase::ResetLocalHook(TLocalHooks& key)
 }
 
 
-void CHookDataBase::ForgetLocalHook(TLocalHooks& key)
+void CHookDataBase::ForgetLocalHook(TLocalHooks& _DEBUG_ARG(key))
 {
     _ASSERT(!Empty());
     _ASSERT(m_HookCount.Get() > bool(m_GlobalHook));
