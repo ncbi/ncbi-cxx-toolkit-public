@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/09/23 18:56:52  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
 * Revision 1.17  1999/09/22 20:11:49  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -127,27 +130,23 @@ public:
     virtual string ReadTypeName(void);
     virtual string ReadEnumName(void);
 
-    using CObjectIStream::ReadStd;
-    virtual void ReadStd(bool& data);
-    virtual void ReadStd(char& data);
-    virtual void ReadStd(unsigned char& data);
-    virtual void ReadStd(signed char& data);
-    virtual void ReadStd(short& data);
-    virtual void ReadStd(unsigned short& data);
-    virtual void ReadStd(int& data);
-    virtual void ReadStd(unsigned int& data);
-    virtual void ReadStd(long& data);
-    virtual void ReadStd(unsigned long& data);
-    virtual void ReadStd(float& data);
-    virtual void ReadStd(double& data);
-
     virtual void SkipValue(void);
 
     TByte ReadByte(void);
     void ReadBytes(TByte* bytes, unsigned size);
+
+protected:
     TIndex ReadIndex(void);
-    virtual string ReadString(void);
     string ReadId(void);
+
+    virtual bool ReadBool(void);
+    virtual char ReadChar(void);
+    virtual int ReadInt(void);
+    virtual unsigned ReadUInt(void);
+    virtual long ReadLong(void);
+    virtual unsigned long ReadULong(void);
+    virtual double ReadDouble(void);
+    virtual string ReadString(void);
 
     virtual unsigned GetAsnFlags(void);
     virtual void AsnOpen(AsnIo& asn);

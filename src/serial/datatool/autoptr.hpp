@@ -71,8 +71,7 @@ template<typename T1, typename T2>
 inline
 void Assign(AutoPtr<T1>& t1, const AutoPtr<T2>& t2)
 {
-    t1 = t2.get();
-    t2.release();
+    t1 = t2.release();
 }
 
 #endif

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/09/23 18:56:54  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
 * Revision 1.12  1999/09/22 20:11:50  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -95,20 +98,6 @@ public:
     CObjectOStreamAsnBinary(CNcbiOstream& out);
     virtual ~CObjectOStreamAsnBinary(void);
 
-    using CObjectOStream::WriteStd;
-    virtual void WriteStd(const bool& data);
-    virtual void WriteStd(const char& data);
-    virtual void WriteStd(const unsigned char& data);
-    virtual void WriteStd(const signed char& data);
-    virtual void WriteStd(const short& data);
-    virtual void WriteStd(const unsigned short& data);
-    virtual void WriteStd(const int& data);
-    virtual void WriteStd(const unsigned int& data);
-    virtual void WriteStd(const long& data);
-    virtual void WriteStd(const unsigned long& data);
-    virtual void WriteStd(const float& data);
-    virtual void WriteStd(const double& data);
-
     virtual void WriteEnumValue(int value);
 
     void WriteNull(void);
@@ -126,10 +115,19 @@ public:
 
     void WriteEndOfContent(void);
 
+protected:
+    virtual void WriteBool(bool data);
+    virtual void WriteChar(char data);
+    virtual void WriteInt(int data);
+    virtual void WriteUInt(unsigned data);
+    virtual void WriteLong(long data);
+    virtual void WriteULong(unsigned long data);
+    virtual void WriteDouble(double data);
+    virtual void WriteString(const string& s);
+    virtual void WriteCString(const char* str);
+
     virtual unsigned GetAsnFlags(void);
     virtual void AsnWrite(AsnIo& asn, const char* data, size_t length);
-
-protected:
 
     virtual void WriteMemberPrefix(const CMemberId& id);
     virtual void WriteMemberSuffix(const CMemberId& id);
@@ -142,10 +140,8 @@ protected:
     virtual void StartMember(Member& member, const CMemberId& id);
     virtual void EndMember(const Member& member);
 	virtual void Begin(const ByteBlock& block);
-	virtual void WriteBytes(const ByteBlock& block, const char* bytes, size_t length);
-
-    virtual void WriteString(const string& s);
-    virtual void WriteCString(const char* str);
+	virtual void WriteBytes(const ByteBlock& block, const char* bytes,
+                            size_t length);
 
 private:
     CNcbiOstream& m_Output;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/09/23 18:56:51  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
 * Revision 1.13  1999/09/22 20:11:47  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -301,29 +304,12 @@ public:
     typedef map<string, TValue> TNameToValue;
     typedef map<TValue, string> TValueToName;
 
-    CEnumeratedTypeInfo(const string& name, bool isInteger = false)
-        : CParent(name), m_Integer(isInteger)
-        {
-        }
+    CEnumeratedTypeInfo(const string& name, bool isInteger = false);
 
     void AddValue(const string& name, TValue value);
 
-    TValue FindValue(const string& name) const
-        {
-            TNameToValue::const_iterator i = m_NameToValue.find(name);
-            if ( i == m_NameToValue.end() )
-                THROW1_TRACE(runtime_error,
-                             "invalid value of enumerated type");
-            return i->second;
-        }
-    const string& FindName(TValue value) const
-        {
-            TValueToName::const_iterator i = m_ValueToName.find(value);
-            if ( i == m_ValueToName.end() )
-                THROW1_TRACE(runtime_error,
-                             "invalid value of enumerated type");
-            return i->second;
-        }
+    TValue FindValue(const string& name) const;
+    const string& FindName(TValue value) const;
 
 protected:
     void ReadData(CObjectIStream& in, TObjectPtr object) const;

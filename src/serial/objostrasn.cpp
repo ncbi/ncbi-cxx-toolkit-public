@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/09/23 18:57:01  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
 * Revision 1.22  1999/08/13 20:22:58  vasilche
 * Fixed lot of bugs in datatool
 *
@@ -148,18 +151,6 @@ bool CObjectOStreamAsn::WriteEnumName(const string& name)
     return true;
 }
 
-void CObjectOStreamAsn::WriteStd(const bool& data)
-{
-    m_Output << (data? "TRUE": "FALSE");
-}
-
-void CObjectOStreamAsn::WriteStd(const char& data)
-{
-    m_Output << '\'';
-    WriteEscapedChar(data);
-    m_Output << '\'';
-}
-
 void CObjectOStreamAsn::WriteEscapedChar(char c)
 {
     switch ( c ) {
@@ -192,52 +183,37 @@ void CObjectOStreamAsn::WriteEscapedChar(char c)
     }
 }
 
-void CObjectOStreamAsn::WriteStd(const unsigned char& data)
+void CObjectOStreamAsn::WriteBool(bool data)
 {
-    m_Output << unsigned(data);
+    m_Output << (data? "TRUE": "FALSE");
 }
 
-void CObjectOStreamAsn::WriteStd(const signed char& data)
+void CObjectOStreamAsn::WriteChar(char data)
 {
-    m_Output << int(data);
+    m_Output << '\'' << data << '\'';
 }
 
-void CObjectOStreamAsn::WriteStd(const short& data)
-{
-    m_Output << data;
-}
-
-void CObjectOStreamAsn::WriteStd(const unsigned short& data)
+void CObjectOStreamAsn::WriteInt(int data)
 {
     m_Output << data;
 }
 
-void CObjectOStreamAsn::WriteStd(const int& data)
+void CObjectOStreamAsn::WriteUInt(unsigned data)
 {
     m_Output << data;
 }
 
-void CObjectOStreamAsn::WriteStd(const unsigned int& data)
+void CObjectOStreamAsn::WriteLong(long data)
 {
     m_Output << data;
 }
 
-void CObjectOStreamAsn::WriteStd(const long& data)
+void CObjectOStreamAsn::WriteULong(unsigned long data)
 {
     m_Output << data;
 }
 
-void CObjectOStreamAsn::WriteStd(const unsigned long& data)
-{
-    m_Output << data;
-}
-
-void CObjectOStreamAsn::WriteStd(const float& data)
-{
-    m_Output << data;
-}
-
-void CObjectOStreamAsn::WriteStd(const double& data)
+void CObjectOStreamAsn::WriteDouble(double data)
 {
     m_Output << data;
 }
@@ -368,8 +344,8 @@ unsigned CObjectOStreamAsn::GetAsnFlags(void)
 
 void CObjectOStreamAsn::AsnOpen(AsnIo& asn)
 {
-#ifdef NCBI_OS_MSWIN
-	THROW1_TRACE(runtime_error, "illegal call in Windows");
+#ifdef HAVE_NO_NCBI_LIB
+	THROW1_TRACE(runtime_error, "ASN.1 toolkit is not accessible");
 #else
     size_t indent = asn->indent_level = m_Ident;
     size_t max_indent = asn->max_indent;

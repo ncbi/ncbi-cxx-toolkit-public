@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/09/23 18:57:02  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
 * Revision 1.8  1999/09/14 18:54:20  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -65,10 +68,6 @@
 
 BEGIN_NCBI_SCOPE
 
-#if 0
-#define INIT_TYPE_INFO(T) \
-TTypeInfo const CStdTypeInfo<T>::sm_TypeInfo = new CStdTypeInfo<T>(#T)
-#else
 #define INIT_TYPE_INFO(T) \
 template<> \
 TTypeInfo CStdTypeInfo<T>::GetTypeInfo(void) \
@@ -77,7 +76,6 @@ TTypeInfo CStdTypeInfo<T>::GetTypeInfo(void) \
         new CStdTypeInfo<T>(typeid(T).name()); \
     return typeInfo; \
 }
-#endif
 
 INIT_TYPE_INFO(bool)
 INIT_TYPE_INFO(char)
@@ -182,61 +180,4 @@ void CStdTypeInfo<string>::WriteData(CObjectOStream& out, TConstObjectPtr object
 	out.WriteStd(Get(object));
 }
 
-/*
-TTypeInfo CStdTypeInfo<const char*>::GetTypeInfo(void)
-{
-    static TTypeInfo typeInfo = new CStdTypeInfo;
-    return typeInfo;
-}
-
-bool CStdTypeInfo<const char*>::IsDefault(TConstObjectPtr object) const
-{
-    return Get(object) == 0;
-}
-
-void CStdTypeInfo<const char*>::SetDefault(TObjectPtr object) const
-{
-    Get(object) = 0;
-}
-
-void CStdTypeInfo<const char*>::ReadData(CObjectIStream& in,
-                                         TObjectPtr object) const
-{
-    in.ReadStd(Get(object));
-}
-
-void CStdTypeInfo<const char*>::WriteData(CObjectOStream& out,
-                                          TConstObjectPtr object) const
-{
-    out.WriteStd(Get(object));
-}
-
-TTypeInfo CStdTypeInfo<char*>::GetTypeInfo(void)
-{
-    static TTypeInfo typeInfo = new CStdTypeInfo;
-    return typeInfo;
-}
-
-bool CStdTypeInfo<char*>::IsDefault(TConstObjectPtr object) const
-{
-    return Get(object) == 0;
-}
-
-void CStdTypeInfo<char*>::SetDefault(TObjectPtr object) const
-{
-    Get(object) = 0;
-}
-
-void CStdTypeInfo<char*>::ReadData(CObjectIStream& in,
-                                   TObjectPtr object) const
-{
-    in.ReadStd(Get(object));
-}
-
-void CStdTypeInfo<char*>::WriteData(CObjectOStream& out,
-                                    TConstObjectPtr object) const
-{
-    out.WriteStd(Get(object));
-}
-*/
 END_NCBI_SCOPE

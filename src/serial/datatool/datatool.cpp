@@ -184,17 +184,17 @@ int main(int argc, const char*argv[])
     SetDiagStream(&NcbiCerr);
 
     string sourceInFile;
-    EFileType sourceInType;
+    EFileType sourceInType = eNone;
 
     string sourceOutFile;
-    EFileType sourceOutType;
+    EFileType sourceOutType = eNone;
 
     string dataInFile;
-    EFileType dataInType;
+    EFileType dataInType = eNone;
     string dataInName;
 
     string dataOutFile;
-    EFileType dataOutType;
+    EFileType dataOutType = eNone;
 
     string codeInFile;
     string headersDir;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/09/23 18:56:54  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
 * Revision 1.11  1999/09/22 20:11:50  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -85,25 +88,23 @@ public:
     CObjectOStreamBinary(CNcbiOstream& out);
     virtual ~CObjectOStreamBinary(void);
 
-    using CObjectOStream::WriteStd;
-    virtual void WriteStd(const bool& data);
-    virtual void WriteStd(const char& data);
-    virtual void WriteStd(const unsigned char& data);
-    virtual void WriteStd(const signed char& data);
-    virtual void WriteStd(const short& data);
-    virtual void WriteStd(const unsigned short& data);
-    virtual void WriteStd(const int& data);
-    virtual void WriteStd(const unsigned int& data);
-    virtual void WriteStd(const long& data);
-    virtual void WriteStd(const unsigned long& data);
-    virtual void WriteStd(const float& data);
-    virtual void WriteStd(const double& data);
-
     void WriteNull(void);
     void WriteByte(TByte byte);
     void WriteBytes(const char* bytes, size_t size);
+
+protected:
     void WriteIndex(TIndex index);
     void WriteSize(unsigned size);
+
+    virtual void WriteBool(bool data);
+    virtual void WriteChar(char data);
+    virtual void WriteUChar(unsigned char data);
+    virtual void WriteSChar(signed char data);
+    virtual void WriteInt(int data);
+    virtual void WriteUInt(unsigned data);
+    virtual void WriteLong(long data);
+    virtual void WriteULong(unsigned long data);
+    virtual void WriteDouble(double data);
     virtual void WriteString(const string& str);
     virtual void WriteCString(const char* str);
 

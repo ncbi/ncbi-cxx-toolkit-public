@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/09/23 18:57:01  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
 * Revision 1.18  1999/09/22 20:11:55  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -373,13 +376,6 @@ void CObjectOStreamAsnBinary::WriteNull(void)
     WriteShortLength(0);
 }
 
-void CObjectOStreamAsnBinary::WriteStd(const bool& data)
-{
-    WriteSysTag(eBoolean);
-    WriteShortLength(1);
-    WriteByte(data);
-}
-
 template<typename T>
 static inline
 void WriteNumberValue(CObjectOStreamAsnBinary& out, const T& data)
@@ -423,65 +419,49 @@ void WriteStdNumber(CObjectOStreamAsnBinary& out, const T& data)
     WriteNumberValue(out, data);
 }
 
-void CObjectOStreamAsnBinary::WriteStd(const char& data)
+void CObjectOStreamAsnBinary::WriteBool(bool data)
+{
+    WriteSysTag(eBoolean);
+    WriteShortLength(1);
+    WriteByte(data);
+}
+
+void CObjectOStreamAsnBinary::WriteChar(char data)
 {
     WriteSysTag(eGeneralString);
     WriteShortLength(1);
     WriteByte(data);
 }
 
-void CObjectOStreamAsnBinary::WriteStd(const signed char& data)
+void CObjectOStreamAsnBinary::WriteInt(int data)
 {
     WriteStdNumber(*this, data);
 }
 
-void CObjectOStreamAsnBinary::WriteStd(const unsigned char& data)
+void CObjectOStreamAsnBinary::WriteUInt(unsigned data)
 {
     WriteStdNumber(*this, data);
 }
 
-void CObjectOStreamAsnBinary::WriteStd(const short& data)
+void CObjectOStreamAsnBinary::WriteLong(long data)
 {
+#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
+    WriteStdNumber(*this, int(data));
+#else
     WriteStdNumber(*this, data);
+#endif
 }
 
-void CObjectOStreamAsnBinary::WriteStd(const unsigned short& data)
+void CObjectOStreamAsnBinary::WriteULong(unsigned long data)
 {
+#if ULONG_MAX == UINT_MAX
+    WriteStdNumber(*this, unsigned(data));
+#else
     WriteStdNumber(*this, data);
+#endif
 }
 
-void CObjectOStreamAsnBinary::WriteStd(const int& data)
-{
-    WriteStdNumber(*this, data);
-}
-
-void CObjectOStreamAsnBinary::WriteStd(const unsigned& data)
-{
-    WriteStdNumber(*this, data);
-}
-
-void CObjectOStreamAsnBinary::WriteStd(const long& data)
-{
-    WriteStdNumber(*this, data);
-}
-
-void CObjectOStreamAsnBinary::WriteStd(const unsigned long& data)
-{
-    WriteStdNumber(*this, data);
-}
-
-void CObjectOStreamAsnBinary::WriteStd(const float& data)
-{
-    WriteSysTag(eReal);
-    char buffer[128];
-    sprintf(buffer, "%.7g", data);
-    size_t length = strlen(buffer);
-    WriteShortLength(length + 1);
-    WriteByte(eDecimal);
-    WriteBytes(buffer, length);
-}
-
-void CObjectOStreamAsnBinary::WriteStd(const double& data)
+void CObjectOStreamAsnBinary::WriteDouble(double data)
 {
     WriteSysTag(eReal);
     char buffer[128];

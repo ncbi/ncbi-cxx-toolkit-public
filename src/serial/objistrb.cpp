@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  1999/09/23 18:56:59  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
 * Revision 1.27  1999/09/22 20:11:55  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -510,144 +513,6 @@ void ReadStdUnsigned(CObjectIStreamBinary& in, T& data)
     }
 }
 
-void CObjectIStreamBinary::ReadStd(bool& data)
-{
-    CObjectIStreamBinary::TByte code = ReadByte();
-    switch ( code ) {
-    case eStd_false:
-        data = false;
-        return;
-    case eStd_true:
-        data = true;
-        return;
-    default:
-        ThrowError(eFormatError,
-                   "bad number code: " + NStr::UIntToString(code));
-    }
-}
-
-void CObjectIStreamBinary::ReadStd(char& data)
-{
-    CObjectIStreamBinary::TByte code = ReadByte();
-    switch ( code ) {
-    case eNull:
-        data = 0;
-        return;
-    case eStd_char:
-        data = ReadByte();
-        return;
-    default:
-        ThrowError(eFormatError,
-                   "bad number code: " + NStr::UIntToString(code));
-    }
-}
-
-void CObjectIStreamBinary::ReadStd(signed char& data)
-{
-    CObjectIStreamBinary::TByte code = ReadByte();
-    switch ( code ) {
-    case eNull:
-        data = 0;
-        return;
-    case eStd_sbyte:
-        data = ReadByte();
-        return;
-    case eStd_ubyte:
-        if ( (data = ReadByte()) & 0x80 ) {
-            // unsigned -> signed overflow
-            ThrowError(eOverflow,
-                       "unsigned char doesn't fit in signed char");
-        }
-        return;
-    default:
-        ThrowError(eFormatError,
-                   "bad number code: " + NStr::UIntToString(code));
-    }
-}
-
-void CObjectIStreamBinary::ReadStd(unsigned char& data)
-{
-    CObjectIStreamBinary::TByte code = ReadByte();
-    switch ( code ) {
-    case eNull:
-        data = 0;
-        return;
-    case eStd_ubyte:
-        data = ReadByte();
-        return;
-    case eStd_sbyte:
-        if ( (data = ReadByte()) & 0x80 ) {
-            // signed -> unsigned overflow
-            ThrowError(eOverflow,
-                       "signed char doesn't fit in unsigned char");
-        }
-        return;
-    default:
-        ThrowError(eFormatError,
-                   "bad number code: " + NStr::UIntToString(code));
-    }
-}
-
-void CObjectIStreamBinary::ReadStd(short& data)
-{
-    int i;
-    ReadStdSigned(*this, i);
-    if ( i < SHRT_MIN || i > SHRT_MAX )
-        ThrowError(eOverflow, "short overflow error");
-    data = (short)i;
-}
-
-void CObjectIStreamBinary::ReadStd(unsigned short& data)
-{
-    unsigned i;
-    ReadStdUnsigned(*this, i);
-    if ( i > USHRT_MAX )
-        ThrowError(eOverflow, "unsigned short overflow error");
-    data = (unsigned short)i;
-}
-
-void CObjectIStreamBinary::ReadStd(int& data)
-{
-    ReadStdSigned(*this, data);
-}
-
-void CObjectIStreamBinary::ReadStd(unsigned int& data)
-{
-    ReadStdUnsigned(*this, data);
-}
-
-void CObjectIStreamBinary::ReadStd(long& data)
-{
-#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
-    int i;
-    ReadStdSigned(*this, i);
-    data = i;
-#else
-    ReadStdSigned(*this, data);
-#endif
-}
-
-void CObjectIStreamBinary::ReadStd(unsigned long& data)
-{
-#if ULONG_MAX == UINT_MAX
-    unsigned i;
-    ReadStdUnsigned(*this, i);
-    data = i;
-#else
-    ReadStdUnsigned(*this, data);
-#endif
-}
-
-void CObjectIStreamBinary::ReadStd(float& )
-{
-    throw runtime_error("float is not supported");
-}
-
-void CObjectIStreamBinary::ReadStd(double& )
-{
-    throw runtime_error("double is not supported");
-}
-
 CObjectIStreamBinary::TIndex CObjectIStreamBinary::ReadIndex(void)
 {
     unsigned index;
@@ -660,6 +525,120 @@ unsigned CObjectIStreamBinary::ReadSize(void)
     unsigned size;
     ReadStdUnsigned(*this, size, false);
     return size;
+}
+
+bool CObjectIStreamBinary::ReadBool(void)
+{
+    CObjectIStreamBinary::TByte code = ReadByte();
+    switch ( code ) {
+    default:
+        ThrowError(eFormatError, "bad number code: " + NStr::UIntToString(code));
+    case eStd_false:
+        return false;
+    case eStd_true:
+        return true;
+    }
+}
+
+char CObjectIStreamBinary::ReadChar(void)
+{
+    CObjectIStreamBinary::TByte code = ReadByte();
+    switch ( code ) {
+    default:
+        ThrowError(eFormatError, "bad number code: " + NStr::UIntToString(code));
+    case eNull:
+        return 0;
+    case eStd_char:
+        return ReadByte();
+    }
+}
+
+signed char CObjectIStreamBinary::ReadSChar(void)
+{
+    CObjectIStreamBinary::TByte code = ReadByte();
+    switch ( code ) {
+    default:
+        ThrowError(eFormatError, "bad number code: " + NStr::UIntToString(code));
+    case eNull:
+        return 0;
+    case eStd_sbyte:
+        return ReadByte();
+    case eStd_ubyte:
+        {
+            unsigned char c = ReadByte();
+            if ( c > SCHAR_MAX ) {
+                // unsigned -> signed overflow
+                ThrowError(eOverflow,
+                           "unsigned char doesn't fit in signed char");
+            }
+            return c;
+        }
+    }
+}
+
+unsigned char CObjectIStreamBinary::ReadUChar(void)
+{
+    CObjectIStreamBinary::TByte code = ReadByte();
+    switch ( code ) {
+    default:
+        ThrowError(eFormatError, "bad number code: " + NStr::UIntToString(code));
+    case eNull:
+        return 0;
+    case eStd_ubyte:
+        return ReadByte();
+    case eStd_sbyte:
+        {
+            signed c = ReadByte();
+            if ( c < 0 ) {
+                // signed -> unsigned overflow
+                ThrowError(eOverflow,
+                           "signed char doesn't fit in unsigned char");
+            }
+            return c;
+        }
+    }
+}
+
+int CObjectIStreamBinary::ReadInt(void)
+{
+    int data;
+    ReadStdSigned(*this, data);
+    return data;
+}
+
+unsigned CObjectIStreamBinary::ReadUInt(void)
+{
+    unsigned data;
+    ReadStdUnsigned(*this, data);
+    return data;
+}
+
+long CObjectIStreamBinary::ReadLong(void)
+{
+#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
+    return ReadInt();
+#else
+    long data;
+    ReadStdSigned(*this, data);
+    return data;
+#endif
+}
+
+unsigned long CObjectIStreamBinary::ReadULong(void)
+{
+#if ULONG_MAX == UINT_MAX
+    return ReadUInt();
+#else
+    unsigned long data;
+    ReadStdUnsigned(*this, data);
+    return data;
+#endif
+}
+
+double CObjectIStreamBinary::ReadDouble(void)
+{
+    ThrowError(eFormatError, "double is not supported");
+    return 0;
 }
 
 string CObjectIStreamBinary::ReadString(void)
@@ -687,14 +666,11 @@ const string& CObjectIStreamBinary::ReadStringValue(void)
             s += char(ReadByte());
         return s;
     }
-    else if ( index < m_Strings.size() ) {
-        return m_Strings[index];
-    }
-    else {
-        ERR_POST(index);
+    else if ( index >= m_Strings.size() ) {
         ThrowError(eFormatError,
                    "invalid string index: " + NStr::UIntToString(index));
     }
+    return m_Strings[index];
 }
 
 void CObjectIStreamBinary::FBegin(Block& block)

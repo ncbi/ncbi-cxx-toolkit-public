@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/09/23 18:56:51  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
 * Revision 1.23  1999/09/22 20:11:48  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -144,22 +147,66 @@ public:
     void SetTypeMapper(CTypeMapper* typeMapper);
 
     // std C types readers
-    virtual void ReadStd(bool& data) = 0;
-    virtual void ReadStd(char& data) = 0;
-    virtual void ReadStd(unsigned char& data) = 0;
-    virtual void ReadStd(signed char& data) = 0;
-    virtual void ReadStd(short& data) = 0;
-    virtual void ReadStd(unsigned short& data) = 0;
-    virtual void ReadStd(int& data) = 0;
-    virtual void ReadStd(unsigned int& data) = 0;
-    virtual void ReadStd(long& data) = 0;
-    virtual void ReadStd(unsigned long& data) = 0;
-    virtual void ReadStd(float& data) = 0;
-    virtual void ReadStd(double& data) = 0;
-
-    virtual void ReadStd(char*& data);
-    virtual void ReadStd(const char*& data);
-    virtual void ReadStd(string& data);
+    void ReadStd(bool& data)
+        {
+            data = ReadBool();
+        }
+    void ReadStd(char& data)
+        {
+            data = ReadChar();
+        }
+    void ReadStd(signed char& data)
+        {
+            data = ReadSChar();
+        }
+    void ReadStd(unsigned char& data)
+        {
+            data = ReadUChar();
+        }
+    void ReadStd(short& data)
+        {
+            data = ReadShort();
+        }
+    void ReadStd(unsigned short& data)
+        {
+            data = ReadUShort();
+        }
+    void ReadStd(int& data)
+        {
+            data = ReadInt();
+        }
+    void ReadStd(unsigned& data)
+        {
+            data = ReadUInt();
+        }
+    void ReadStd(long& data)
+        {
+            data = ReadLong();
+        }
+    void ReadStd(unsigned long& data)
+        {
+            data = ReadULong();
+        }
+    void ReadStd(float& data)
+        {
+            data = ReadFloat();
+        }
+    void ReadStd(double& data)
+        {
+            data = ReadDouble();
+        }
+    void ReadStd(char*& data)
+        {
+            data = ReadCString();
+        }
+    void ReadStd(const char*& data)
+        {
+            data = ReadCString();
+        }
+    void ReadStd(string& data)
+        {
+            data = ReadString();
+        }
 
     // object level readers
     void ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo);
@@ -437,6 +484,18 @@ protected:
     virtual bool HaveMemberSuffix(void);
     virtual string ReadMemberSuffix(void);
 
+    virtual bool ReadBool(void) = 0;
+    virtual char ReadChar(void) = 0;
+    virtual signed char ReadSChar(void);
+    virtual unsigned char ReadUChar(void);
+    virtual short ReadShort(void);
+    virtual unsigned short ReadUShort(void);
+    virtual int ReadInt(void);
+    virtual unsigned ReadUInt(void);
+    virtual long ReadLong(void) = 0;
+    virtual unsigned long ReadULong(void) = 0;
+    virtual float ReadFloat(void);
+    virtual double ReadDouble(void) = 0;
     virtual string ReadString(void) = 0;
     virtual char* ReadCString(void);
 

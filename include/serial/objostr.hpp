@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/09/23 18:56:53  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
 * Revision 1.21  1999/09/22 20:11:49  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -136,22 +139,66 @@ public:
     virtual void WriteEnumValue(int value);
 
     // std C types readers
-    virtual void WriteStd(const bool& data) = 0;
-    virtual void WriteStd(const char& data) = 0;
-    virtual void WriteStd(const unsigned char& data) = 0;
-    virtual void WriteStd(const signed char& data) = 0;
-    virtual void WriteStd(const short& data) = 0;
-    virtual void WriteStd(const unsigned short& data) = 0;
-    virtual void WriteStd(const int& data) = 0;
-    virtual void WriteStd(const unsigned int& data) = 0;
-    virtual void WriteStd(const long& data) = 0;
-    virtual void WriteStd(const unsigned long& data) = 0;
-    virtual void WriteStd(const float& data) = 0;
-    virtual void WriteStd(const double& data) = 0;
-
-    virtual void WriteStd(const char* const& data);
-    virtual void WriteStd(char* const& data);
-    virtual void WriteStd(const string& data);
+    void WriteStd(const bool& data)
+        {
+            WriteBool(data);
+        }
+    void WriteStd(const char& data)
+        {
+            WriteChar(data);
+        }
+    void WriteStd(const unsigned char& data)
+        {
+            WriteUChar(data);
+        }
+    void WriteStd(const signed char& data)
+        {
+            WriteSChar(data);
+        }
+    void WriteStd(const short& data)
+        {
+            WriteShort(data);
+        }
+    void WriteStd(const unsigned short& data)
+        {
+            WriteUShort(data);
+        }
+    void WriteStd(const int& data)
+        {
+            WriteInt(data);
+        }
+    void WriteStd(const unsigned int& data)
+        {
+            WriteUInt(data);
+        }
+    void WriteStd(const long& data)
+        {
+            WriteLong(data);
+        }
+    void WriteStd(const unsigned long& data)
+        {
+            WriteULong(data);
+        }
+    void WriteStd(const float& data)
+        {
+            WriteFloat(data);
+        }
+    void WriteStd(const double& data)
+        {
+            WriteDouble(data);
+        }
+    void WriteStd(const char* const& data)
+        {
+            WriteCString(data);
+        }
+    void WriteStd(char* const& data)
+        {
+            WriteCString(data);
+        }
+    void WriteStd(const string& data)
+        {
+            WriteString(data);
+        }
 
     // object level writers
     void WriteExternalObject(TConstObjectPtr object, TTypeInfo typeInfo);
@@ -323,8 +370,21 @@ protected:
     virtual void WriteObjectReference(TIndex index) = 0;
     virtual void WriteThis(TConstObjectPtr object, TTypeInfo typeInfo);
     virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo) = 0;
-    virtual void WriteString(const string& str) = 0;
+
+    virtual void WriteBool(bool data) = 0;
+    virtual void WriteChar(char data) = 0;
+    virtual void WriteSChar(signed char data);
+    virtual void WriteUChar(unsigned char data);
+    virtual void WriteShort(short data);
+    virtual void WriteUShort(unsigned short data);
+    virtual void WriteInt(int data);
+    virtual void WriteUInt(unsigned int data);
+    virtual void WriteLong(long data) = 0;
+    virtual void WriteULong(unsigned long data) = 0;
+    virtual void WriteFloat(float data);
+    virtual void WriteDouble(double data) = 0;
 	virtual void WriteCString(const char* str);
+    virtual void WriteString(const string& str) = 0;
 
     COObjectList m_Objects;
     void RegisterObject(CORootObjectInfo& info)

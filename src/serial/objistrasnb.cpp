@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/09/23 18:56:59  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
 * Revision 1.14  1999/09/22 20:11:55  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -548,137 +551,61 @@ void ReadStdUnsigned(CObjectIStreamAsnBinary& in, T& data)
     data = n;
 }
 
-static
-void ReadInt(CObjectIStreamAsnBinary& in, int& data)
-{
-    ReadStdSigned(in, data);
-}
-
-static
-void ReadUInt(CObjectIStreamAsnBinary& in, unsigned& data)
-{
-    ReadStdUnsigned(in, data);
-}
-
-#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
-inline
-void ReadLong(CObjectIStreamAsnBinary& in, long& data)
-{
-    int i;
-    ReadInt(in, i);
-    data = i;
-}
-#else
-static
-void ReadLong(CObjectIStreamAsnBinary& in, long& data)
-{
-    ReadStdSigned(in, data);
-}
-#endif
-
-#if ULONG_MAX == UINT_MAX
-inline
-void ReadULong(CObjectIStreamAsnBinary& in, unsigned long& data)
-{
-    unsigned i;
-    ReadUInt(in, i);
-    data = i;
-}
-#else
-static
-void ReadULong(CObjectIStreamAsnBinary& in, unsigned long& data)
-{
-    ReadStdUnsigned(in, data);
-}
-#endif
-
-void CObjectIStreamAsnBinary::ReadStd(bool& data)
+bool CObjectIStreamAsnBinary::ReadBool(void)
 {
     ExpectSysTag(eBoolean);
     ExpectShortLength(1);
-    data = ReadByte() != 0;
+    return ReadByte() != 0;
 }
 
-void CObjectIStreamAsnBinary::ReadStd(char& data)
+char CObjectIStreamAsnBinary::ReadChar(void)
 {
     ExpectSysTag(eGeneralString);
     ExpectShortLength(1);
-    data = ReadByte();
+    return ReadByte();
 }
 
-void CObjectIStreamAsnBinary::ReadStd(signed char& data)
+int CObjectIStreamAsnBinary::ReadInt(void)
 {
     ExpectSysTag(eInteger);
-    int i;
-    ReadInt(*this, i);
-    if ( i < CHAR_MIN || i > CHAR_MAX )
-        ThrowError(eOverflow, "signed char overflow");
-    data = (signed char)i;
+    int data;
+    ReadStdSigned(*this, data);
+    return data;
 }
 
-void CObjectIStreamAsnBinary::ReadStd(unsigned char& data)
+unsigned CObjectIStreamAsnBinary::ReadUInt(void)
 {
     ExpectSysTag(eInteger);
-    unsigned i;
-    ReadUInt(*this, i);
-    if ( i > UCHAR_MAX )
-        ThrowError(eOverflow, "unsigned char overflow");
-    data = (unsigned char)i;
+    unsigned data;
+    ReadStdUnsigned(*this, data);
+    return data;
 }
 
-void CObjectIStreamAsnBinary::ReadStd(short& data)
+long CObjectIStreamAsnBinary::ReadLong(void)
 {
+#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
+    return ReadInt();
+#else
     ExpectSysTag(eInteger);
-    int i;
-    ReadInt(*this, i);
-    if ( i < SHRT_MIN || i > SHRT_MAX )
-        ThrowError(eOverflow, "short overflow");
-    data = (short)i;
+    long data;
+    ReadStdSigned(*this, data);
+    return data;
+#endif
 }
 
-void CObjectIStreamAsnBinary::ReadStd(unsigned short& data)
+unsigned long CObjectIStreamAsnBinary::ReadULong(void)
 {
+#if ULONG_MAX == UINT_MAX
+    return ReadUInt();
+#else
     ExpectSysTag(eInteger);
-    unsigned i;
-    ReadUInt(*this, i);
-    if ( i > USHRT_MAX )
-        ThrowError(eOverflow, "unsigned short overflow");
-    data = (unsigned short)i;
+    unsigned long data;
+    ReadStdUnsigned(*this, data);
+    return data;
+#endif
 }
 
-void CObjectIStreamAsnBinary::ReadStd(int& data)
-{
-    ExpectSysTag(eInteger);
-    ReadInt(*this, data);
-}
-
-void CObjectIStreamAsnBinary::ReadStd(unsigned int& data)
-{
-    ExpectSysTag(eInteger);
-    ReadUInt(*this, data);
-}
-
-void CObjectIStreamAsnBinary::ReadStd(long& data)
-{
-    ExpectSysTag(eInteger);
-    ReadLong(*this, data);
-}
-
-void CObjectIStreamAsnBinary::ReadStd(unsigned long& data)
-{
-    ExpectSysTag(eInteger);
-    ReadULong(*this, data);
-}
-
-void CObjectIStreamAsnBinary::ReadStd(float& data)
-{
-    double d;
-    ReadStd(d);
-
-    data = d;
-}
-
-void CObjectIStreamAsnBinary::ReadStd(double& data)
+double CObjectIStreamAsnBinary::ReadDouble(void)
 {
     ExpectSysTag(eReal);
     size_t length = ReadShortLength();
@@ -691,9 +618,11 @@ void CObjectIStreamAsnBinary::ReadStd(double& data)
     char buffer[128];
     ReadBytes(buffer, length);
     buffer[length] = 0;
+    double data;
     if ( sscanf(buffer, "%lg", &data) != 1 ) {
         ThrowError(eFormatError, "bad REAL data string");
     }
+    return data;
 }
 
 string CObjectIStreamAsnBinary::ReadString(void)
@@ -798,9 +727,7 @@ CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
 int CObjectIStreamAsnBinary::ReadEnumValue(void)
 {
     ExpectSysTag(eEnumerated);
-    int value;
-    ReadInt(*this, value);
-    return value;
+    return ReadInt();
 }
 
 string CObjectIStreamAsnBinary::ReadMemberPointer(void)
@@ -816,9 +743,7 @@ void CObjectIStreamAsnBinary::ReadMemberPointerEnd(void)
 
 CObjectIStream::TIndex CObjectIStreamAsnBinary::ReadObjectPointer(void)
 {
-    TIndex index;
-    ReadUInt(*this, index);
-    return index;
+    return ReadUInt();
 }
 
 string CObjectIStreamAsnBinary::ReadOtherPointer(void)

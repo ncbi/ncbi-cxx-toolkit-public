@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/09/23 18:56:58  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
 * Revision 1.23  1999/09/22 20:11:54  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -163,7 +166,7 @@ void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
         THROW1_TRACE(runtime_error, "incompatible type " + name + "<>" + typeInfo->GetName());
     TIndex index = RegisterObject(object, typeInfo);
     _TRACE("CObjectIStream::ReadData(" << unsigned(object) << ", "
-           << typeInfo->GetName() << ") @" << (index = index));
+           << typeInfo->GetName() << ") @" << index);
     ReadData(object, typeInfo);
 }
 
@@ -173,7 +176,7 @@ void CObjectIStream::ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo)
            << typeInfo->GetName() << ")");
     TIndex index = RegisterObject(object, typeInfo);
     _TRACE("CObjectIStream::ReadData(" << unsigned(object) << ", "
-           << typeInfo->GetName() << ") @" << (index = index));
+           << typeInfo->GetName() << ") @" << index);
     ReadData(object, typeInfo);
 }
 
@@ -511,19 +514,60 @@ void CObjectIStream::End(const ByteBlock& )
 {
 }
 
-void CObjectIStream::ReadStd(string& data)
+signed char CObjectIStream::ReadSChar(void)
 {
-	data = ReadString();
+    int data = ReadInt();
+    if ( data < SCHAR_MIN || data > SCHAR_MAX )
+        ThrowError(eOverflow, "integer overflow");
+    return (signed char)data;
 }
 
-void CObjectIStream::ReadStd(const char*& data)
+unsigned char CObjectIStream::ReadUChar(void)
 {
-	data = ReadCString();
+    unsigned data = ReadUInt();
+    if ( data > UCHAR_MAX )
+        ThrowError(eOverflow, "integer overflow");
+    return (unsigned char)data;
 }
 
-void CObjectIStream::ReadStd(char*& data)
+short CObjectIStream::ReadShort(void)
 {
-	data = ReadCString();
+    int data = ReadInt();
+    if ( data < SHRT_MIN || data > SHRT_MAX )
+        ThrowError(eOverflow, "integer overflow");
+    return short(data);
+}
+
+unsigned short CObjectIStream::ReadUShort(void)
+{
+    unsigned data = ReadUInt();
+    if ( data > USHRT_MAX )
+        ThrowError(eOverflow, "integer overflow");
+    return (unsigned short)data;
+}
+
+int CObjectIStream::ReadInt(void)
+{
+    long data = ReadLong();
+    if ( data < INT_MIN || data > INT_MAX )
+        ThrowError(eOverflow, "integer overflow");
+    return int(data);
+}
+
+unsigned CObjectIStream::ReadUInt(void)
+{
+    unsigned long data = ReadULong();
+    if ( data > UINT_MAX )
+        ThrowError(eOverflow, "integer overflow");
+    return unsigned(data);
+}
+
+float CObjectIStream::ReadFloat(void)
+{
+    double data = ReadDouble();
+    if ( data < FLT_MIN || data > FLT_MAX )
+        ThrowError(eOverflow, "float overflow");
+    return float(data);
 }
 
 char* CObjectIStream::ReadCString(void)
@@ -561,8 +605,8 @@ extern "C" {
 CObjectIStream::AsnIo::AsnIo(CObjectIStream& in)
     : m_In(in), m_Count(0)
 {
-#ifdef NCBI_OS_MSWIN
-	THROW1_TRACE(runtime_error, "illegal call in Windows");
+#ifdef HAVE_NO_NCBI_LIB
+	THROW1_TRACE(runtime_error, "ASN.1 toolkit is not accessible");
 #else
     m_AsnIo = AsnIoNew(in.GetAsnFlags() | ASNIO_IN, 0, this, ReadAsn, 0);
     in.AsnOpen(*this);
@@ -571,8 +615,8 @@ CObjectIStream::AsnIo::AsnIo(CObjectIStream& in)
 
 CObjectIStream::AsnIo::~AsnIo(void)
 {
-#ifdef NCBI_OS_MSWIN
-	THROW1_TRACE(runtime_error, "illegal call in Windows");
+#ifdef HAVE_NO_NCBI_LIB
+	THROW1_TRACE(runtime_error, "ASN.1 toolkit is not accessible");
 #else
     AsnIoClose(*this);
     m_In.AsnClose(*this);

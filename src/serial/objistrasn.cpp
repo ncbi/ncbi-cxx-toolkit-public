@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/09/23 18:56:58  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
 * Revision 1.23  1999/09/22 20:11:55  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -347,27 +350,6 @@ string CObjectIStreamAsn::ReadEnumName()
         return NcbiEmptyString;
 }
 
-void CObjectIStreamAsn::ReadStd(bool& data)
-{
-    string s = ReadId();
-    if ( s == "FALSE" )
-        data = false;
-    else if ( s == "TRUE" )
-        data = true;
-    else {
-        ThrowError(eFormatError, "TRUE or FALSE expected");
-    }
-}
-
-void CObjectIStreamAsn::ReadStd(char& data)
-{
-    string s = ReadString();
-    if ( s.size() != 1 ) {
-        ThrowError(eFormatError, "one char string expected");
-    }
-    data = s[0];
-}
-
 template<typename T>
 void ReadStdSigned(CObjectIStreamAsn& in, T& data)
 {
@@ -419,136 +401,65 @@ void ReadStdUnsigned(CObjectIStreamAsn& in, T& data)
     data = n;
 }
 
-static
-void ReadInt(CObjectIStreamAsn& in, int& data)
+bool CObjectIStreamAsn::ReadBool(void)
 {
-    ReadStdSigned(in, data);
+    string s = ReadId();
+    if ( s == "TRUE" )
+        return true;
+    if ( s != "FALSE" )
+        ThrowError(eFormatError, "TRUE or FALSE expected");
+    return false;
 }
 
-static
-void ReadUInt(CObjectIStreamAsn& in, unsigned& data)
+char CObjectIStreamAsn::ReadChar(void)
 {
-    ReadStdUnsigned(in, data);
+    string s = ReadString();
+    if ( s.size() != 1 ) {
+        ThrowError(eFormatError, "one char string expected");
+    }
+    return s[0];
 }
 
+int CObjectIStreamAsn::ReadInt(void)
+{
+    int data;
+    ReadStdSigned(*this, data);
+    return data;
+}
+
+unsigned CObjectIStreamAsn::ReadUInt(void)
+{
+    unsigned data;
+    ReadStdUnsigned(*this, data);
+    return data;
+}
+
+long CObjectIStreamAsn::ReadLong(void)
+{
 #if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
-inline
-void ReadLong(CObjectIStreamAsn& in, long& data)
-{
-    int i;
-    ReadInt(in, i);
-    data = i;
-}
+    return ReadInt();
 #else
-static
-void ReadLong(CObjectIStreamAsn& in, long& data)
-{
-    ReadStdSigned(in, data);
-}
+    long data;
+    ReadStdSigned(*this, data);
+    return data;
 #endif
+}
 
+unsigned long CObjectIStreamAsn::ReadULong(void)
+{
 #if ULONG_MAX == UINT_MAX
-inline
-void ReadULong(CObjectIStreamAsn& in, unsigned long& data)
-{
-    unsigned i;
-    ReadUInt(in, i);
-    data = i;
-}
+    return ReadUInt();
 #else
-static
-void ReadULong(CObjectIStreamAsn& in, unsigned long& data)
-{
-    ReadStdUnsigned(in, data);
-}
+    unsigned long data;
+    ReadStdUnsigned(*this, data);
+    return data;
 #endif
-
-void ReadStdReal(CObjectIStreamAsn& in, double& data)
-{
-    in.ThrowError(in.eIllegalCall, "REAL format unsupported");
 }
 
-void CObjectIStreamAsn::ReadStd(signed char& data)
+double CObjectIStreamAsn::ReadDouble(void)
 {
-    int i;
-    ReadInt(*this, i);
-    if ( i < CHAR_MIN || i > CHAR_MAX ) {
-        ThrowError(eOverflow, "signed char overflow error");
-    }
-    data = (char)i;
-}
-
-void CObjectIStreamAsn::ReadStd(unsigned char& data)
-{
-    unsigned i;
-    ReadUInt(*this, i);
-    if ( i > UCHAR_MAX ) {
-        ThrowError(eOverflow, "unsigned char overflow error");
-    }
-    data = (unsigned char)i;
-}
-
-void CObjectIStreamAsn::ReadStd(short& data)
-{
-    int i;
-    ReadInt(*this, i);
-    if ( i < SHRT_MIN || i > SHRT_MAX ) {
-        ThrowError(eOverflow, "short overflow error");
-    }
-    data = (short)i;
-}
-
-void CObjectIStreamAsn::ReadStd(unsigned short& data)
-{
-    unsigned i;
-    ReadUInt(*this, i);
-    if ( i > USHRT_MAX ) {
-        ThrowError(eOverflow, "unsigned short overflow error");
-    }
-    data = (unsigned short)i;
-}
-
-void CObjectIStreamAsn::ReadStd(int& data)
-{
-    ReadInt(*this, data);
-}
-
-void CObjectIStreamAsn::ReadStd(unsigned int& data)
-{
-    ReadUInt(*this, data);
-}
-
-void CObjectIStreamAsn::ReadStd(long& data)
-{
-    ReadLong(*this, data);
-}
-
-void CObjectIStreamAsn::ReadStd(unsigned long& data)
-{
-    ReadULong(*this, data);
-}
-
-void CObjectIStreamAsn::ReadStd(float& data)
-{
-    double d;
-    ReadStdReal(*this, d);
-
-    data = (float)d;
-}
-
-void CObjectIStreamAsn::ReadStd(double& data)
-{
-    ReadStdReal(*this, data);
-}
-
-CObjectIStreamAsn::TIndex CObjectIStreamAsn::ReadIndex(void)
-{
-    unsigned i;
-    ReadUInt(*this, i);
-    if ( i > TIndex(-1) ) {
-        ThrowError(eOverflow, "index overflow error");
-    }
-    return TIndex(i);
+    ThrowError(eIllegalCall, "REAL format unsupported");
+    return 0;
 }
 
 string CObjectIStreamAsn::ReadString(void)
@@ -584,6 +495,11 @@ string CObjectIStreamAsn::ReadString(void)
             break;
         }
     }
+}
+
+CObjectIStreamAsn::TIndex CObjectIStreamAsn::ReadIndex(void)
+{
+    return ReadUInt();
 }
 
 string CObjectIStreamAsn::ReadId(void)

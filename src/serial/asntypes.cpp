@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/09/23 18:56:57  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
 * Revision 1.21  1999/09/22 20:11:54  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -165,29 +168,32 @@ T* Alloc(T*& ptr)
 	return ptr = static_cast<T*>(Alloc(sizeof(T)));
 }
 
-#ifdef WINDOWS
+#ifdef HAVE_NO_NCBI_LIB
+END_NCBI_SCOPE
+
+extern "C" {
 static inline
-bsunit* BSUnitNew(size_t size)
+bsunit* BSUnitNew(Int4 size)
 {
 	bsunit* unit;
-	Alloc(unit);
+	NCBI_NS_NCBI::Alloc(unit);
 	if ( size ) {
 		unit->len_avail = size;
-		unit->str = static_cast<char*>(Alloc(size));
+		unit->str = static_cast<char*>(NCBI_NS_NCBI::Alloc(size));
 	}
 	return unit;
 }
 
 static
-bytestore* BSNew(size_t size)
+bytestore* BSNew(Int4 size)
 {
 	bytestore* bs;
-	Alloc(bs)->chain = BSUnitNew(size);
+	NCBI_NS_NCBI::Alloc(bs)->chain = BSUnitNew(size);
 	return bs;
 }
 
 static
-void BSFree(bytestore* bs)
+bytestore* BSFree(bytestore* bs)
 {
 	if ( bs ) {
 		bsunit* unit = bs->chain;
@@ -199,10 +205,11 @@ void BSFree(bytestore* bs)
 		}
 		free(bs);
 	}
+    return 0;
 }
 
 static
-bytestore* BSDup(const bytestore* bs)
+bytestore* BSDup(bytestore* bs)
 {
 	bytestore* copy = BSNew(0);
 	size_t totlen = copy->totlen = bs->totlen;
@@ -221,22 +228,26 @@ bytestore* BSDup(const bytestore* bs)
 }
 
 static
-void BSWrite(bytestore* bs, char* data, size_t length)
+Int4 BSWrite(bytestore* bs, VoidPtr vdata, Int4 vlength)
 {
+    char* data = static_cast<char*>(vdata);
+    Int4 length = vlength;
 	bsunit* unit = bs->curchain;
 	if ( !unit ) {
 		_ASSERT(bs->chain_offset == 0);
 		_ASSERT(bs->totlen == 0);
 		if ( length == 0 )
-			return;
+			return 0;
 		unit = bs->chain;
 		if ( !unit )
 			unit = bs->chain = BSUnitNew(length);
 		bs->curchain = unit;
 	}
 	while ( length > 0 ) {
-		size_t currLen = unit->len;
-		size_t count = min(length, unit->len_avail - currLen);
+		Int4 currLen = unit->len;
+		Int4 count = unit->len_avail - currLen;
+        if ( length < count )
+            count = length;
 		if ( !count ) {
 			_ASSERT(unit->next == 0);
 			bs->curchain = unit = unit->next = BSUnitNew(length);
@@ -245,7 +256,7 @@ void BSWrite(bytestore* bs, char* data, size_t length)
 			memcpy(unit->str, data, length);
 			bs->totlen += length;
 			bs->seekptr += length;
-			return;
+			return vlength;
 		}
 		unit->len = currLen + count;
 		memcpy(static_cast<char*>(unit->str) + currLen, data, count);
@@ -254,7 +265,11 @@ void BSWrite(bytestore* bs, char* data, size_t length)
 		data += count;
 		length -= count;
 	}
+    return vlength;
 }
+};
+
+BEGIN_NCBI_SCOPE
 #endif
 
 CTypeInfoMap<CSequenceOfTypeInfo> CSequenceOfTypeInfo::sm_Map;
@@ -800,6 +815,29 @@ void COldAsnTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
     if ( (Get(object) = m_ReadProc(CObjectIStream::AsnIo(in), 0)) == 0 )
         THROW1_TRACE(runtime_error, "read fault");
+}
+
+CEnumeratedTypeInfo::CEnumeratedTypeInfo(const string& name, bool isInteger)
+    : CParent(name), m_Integer(isInteger)
+{
+}
+
+int CEnumeratedTypeInfo::FindValue(const string& name) const
+{
+    TNameToValue::const_iterator i = m_NameToValue.find(name);
+    if ( i == m_NameToValue.end() )
+        THROW1_TRACE(runtime_error,
+                     "invalid value of enumerated type");
+    return i->second;
+}
+
+const string& CEnumeratedTypeInfo::FindName(TValue value) const
+{
+    TValueToName::const_iterator i = m_ValueToName.find(value);
+    if ( i == m_ValueToName.end() )
+        THROW1_TRACE(runtime_error,
+                     "invalid value of enumerated type");
+    return i->second;
 }
 
 void CEnumeratedTypeInfo::AddValue(const string& name, TValue value)

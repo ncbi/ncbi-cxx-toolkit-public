@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/09/23 18:57:00  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
 * Revision 1.19  1999/09/14 18:54:19  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -219,19 +222,39 @@ void CObjectOStream::WritePointer(COObjectInfo& info, TTypeInfo typeInfo)
     }
 }
 
-void CObjectOStream::WriteStd(const string& data)
+void CObjectOStream::WriteSChar(signed char data)
 {
-	WriteString(data);
+    WriteInt(data);
 }
 
-void CObjectOStream::WriteStd(const char* const& data)
+void CObjectOStream::WriteUChar(unsigned char data)
 {
-	WriteCString(data);
+    WriteUInt(data);
 }
 
-void CObjectOStream::WriteStd(char* const& data)
+void CObjectOStream::WriteShort(short data)
 {
-	WriteCString(data);
+    WriteInt(data);
+}
+
+void CObjectOStream::WriteUShort(unsigned short data)
+{
+    WriteUInt(data);
+}
+
+void CObjectOStream::WriteInt(int data)
+{
+    WriteLong(data);
+}
+
+void CObjectOStream::WriteUInt(unsigned data)
+{
+    WriteULong(data);
+}
+
+void CObjectOStream::WriteFloat(float data)
+{
+    WriteDouble(data);
 }
 
 void CObjectOStream::WriteCString(const char* str)
@@ -360,8 +383,8 @@ extern "C" {
 CObjectOStream::AsnIo::AsnIo(CObjectOStream& out)
     : m_Out(out)
 {
-#ifdef NCBI_OS_MSWIN
-	THROW1_TRACE(runtime_error, "illegal call in Windows");
+#ifdef HAVE_NO_NCBI_LIB
+	THROW1_TRACE(runtime_error, "ASN.1 toolkit is not accessible");
 #else
     m_AsnIo = AsnIoNew(out.GetAsnFlags() | ASNIO_OUT, 0, this, 0, WriteAsn);
     out.AsnOpen(*this);
@@ -370,8 +393,8 @@ CObjectOStream::AsnIo::AsnIo(CObjectOStream& out)
 
 CObjectOStream::AsnIo::~AsnIo(void)
 {
-#ifdef NCBI_OS_MSWIN
-	THROW1_TRACE(runtime_error, "illegal call in Windows");
+#ifdef HAVE_NO_NCBI_LIB
+	THROW1_TRACE(runtime_error, "ASN.1 toolkit is not accessible");
 #else
     AsnIoClose(*this);
     m_Out.AsnClose(*this);

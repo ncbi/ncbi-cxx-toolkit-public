@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/09/23 18:57:02  vasilche
+* Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
+*
 * Revision 1.18  1999/07/26 18:31:40  vasilche
 * Implemented skipping of unused values.
 * Added more useful error report.
@@ -128,105 +131,102 @@ void CObjectOStreamBinary::WriteNull(void)
 }
 
 template<class TYPE>
-void WriteNumber(CObjectOStreamBinary* out, TYPE data)
+void WriteSigned(CObjectOStreamBinary* out, TYPE data)
 {
     typedef CObjectOStreamBinary::TByte TByte;
 
-    if ( !(TYPE(-1) < TYPE(0)) ) { // signed
-        // unsigned number
-        if ( data < 0x80 ) {
-            // one byte: 0xxxxxxx
-            out->WriteByte(TByte(data));
-        }
-        else if ( data < 0x4000 ) {
-            // two bytes: 10xxxxxx xxxxxxxx
-            out->WriteByte(TByte((data >> 8) | 0x80));
-            out->WriteByte(TByte(data));
-        }
-        else if ( data < 0x200000 ) {
-            // three bytes: 110xxxxx xxxxxxxx xxxxxxxx
-            out->WriteByte(TByte((data >> 16) | 0xC0));
-            out->WriteByte(TByte(data >> 8));
-            out->WriteByte(TByte(data));
-        }
-        else if ( data < 0x10000000 ) {
-            // four bytes: 1110xxxx xxxxxxxx xxxxxxxx xxxxxxxx
-            out->WriteByte(TByte((data >> 24) | 0xE0));
-            out->WriteByte(TByte(data >> 16));
-            out->WriteByte(TByte(data >> 8));
-            out->WriteByte(TByte(data));
-        }
-        else {
-            // 1111xxxx (xxxxxxxx)*
-            out->WriteByte(TByte((sizeof(TYPE) - 4) | 0xF0));
-            for ( size_t b = sizeof(TYPE) - 1; b > 0; --b ) {
-                out->WriteByte(TByte(data >> (b * 8)));
-            }
-            out->WriteByte(TByte(data));
-        }
+    _ASSERT(TYPE(-1) < TYPE(0));
+    // signed number
+    if ( data < 0x40 && data >= -0x40 ) {
+        // one byte: 0xxxxxxx
+        out->WriteByte(TByte(data) & 0x7F);
+    }
+    else if ( data < 0x2000 && data >= -0x2000 ) {
+        // two bytes: 10xxxxxx xxxxxxxx
+        out->WriteByte(TByte(((data >> 8) & 0x3F) | 0x80));
+        out->WriteByte(TByte(data));
+    }
+    else if ( data < 0x100000 && data >= -0x100000 ) {
+        // three bytes: 110xxxxx xxxxxxxx xxxxxxxx
+        out->WriteByte(TByte(((data >> 16) & 0x1F) | 0xC0));
+        out->WriteByte(TByte(data >> 8));
+        out->WriteByte(TByte(data));
+    }
+    else if ( data < 0x08000000 && data >= -0x08000000 ) {
+        // four bytes: 1110xxxx xxxxxxxx xxxxxxxx xxxxxxxx
+        out->WriteByte(TByte(((data >> 24) & 0x0F) | 0xE0));
+        out->WriteByte(TByte(data >> 16));
+        out->WriteByte(TByte(data >> 8));
+        out->WriteByte(TByte(data));
     }
     else {
-        // signed number
-        if ( data < 0x40 && data >= -0x40 ) {
-            // one byte: 0xxxxxxx
-            out->WriteByte(TByte(data) & 0x7F);
+        // 1111xxxx (xxxxxxxx)*
+        out->WriteByte(TByte((sizeof(TYPE) - 4) | 0xF0));
+        for ( size_t b = sizeof(TYPE) - 1; b > 0; --b ) {
+            out->WriteByte(TByte(data >> (b * 8)));
         }
-        else if ( data < 0x2000 && data >= -0x2000 ) {
-            // two bytes: 10xxxxxx xxxxxxxx
-            out->WriteByte(TByte(((data >> 8) & 0x3F) | 0x80));
-            out->WriteByte(TByte(data));
-        }
-        else if ( data < 0x100000 && data >= -0x100000 ) {
-            // three bytes: 110xxxxx xxxxxxxx xxxxxxxx
-            out->WriteByte(TByte(((data >> 16) & 0x1F) | 0xC0));
-            out->WriteByte(TByte(data >> 8));
-            out->WriteByte(TByte(data));
-        }
-        else if ( data < 0x08000000 && data >= -0x08000000 ) {
-            // four bytes: 1110xxxx xxxxxxxx xxxxxxxx xxxxxxxx
-            out->WriteByte(TByte(((data >> 24) & 0x0F) | 0xE0));
-            out->WriteByte(TByte(data >> 16));
-            out->WriteByte(TByte(data >> 8));
-            out->WriteByte(TByte(data));
-        }
-        else {
-            // 1111xxxx (xxxxxxxx)*
-            out->WriteByte(TByte((sizeof(TYPE) - 4) | 0xF0));
-            for ( size_t b = sizeof(TYPE) - 1; b > 0; --b ) {
-                out->WriteByte(TByte(data >> (b * 8)));
-            }
-            out->WriteByte(TByte(data));
-        }
+        out->WriteByte(TByte(data));
     }
 }
 
-void CObjectOStreamBinary::WriteStd(const bool& data)
+template<class TYPE>
+void WriteUnsigned(CObjectOStreamBinary* out, TYPE data)
 {
-    WriteByte(data? eStd_true: eStd_false);
-}
+    typedef CObjectOStreamBinary::TByte TByte;
 
-void CObjectOStreamBinary::WriteStd(const char& data)
-{
-    if ( data == '\0' )
-        WriteNull();
+    _ASSERT(TYPE(-1) > TYPE(0));
+    // unsigned number
+    if ( data < 0x80 ) {
+        // one byte: 0xxxxxxx
+        out->WriteByte(TByte(data));
+    }
+    else if ( data < 0x4000 ) {
+        // two bytes: 10xxxxxx xxxxxxxx
+        out->WriteByte(TByte((data >> 8) | 0x80));
+        out->WriteByte(TByte(data));
+    }
+    else if ( data < 0x200000 ) {
+        // three bytes: 110xxxxx xxxxxxxx xxxxxxxx
+        out->WriteByte(TByte((data >> 16) | 0xC0));
+        out->WriteByte(TByte(data >> 8));
+        out->WriteByte(TByte(data));
+    }
+    else if ( data < 0x10000000 ) {
+        // four bytes: 1110xxxx xxxxxxxx xxxxxxxx xxxxxxxx
+        out->WriteByte(TByte((data >> 24) | 0xE0));
+        out->WriteByte(TByte(data >> 16));
+        out->WriteByte(TByte(data >> 8));
+        out->WriteByte(TByte(data));
+    }
     else {
-        WriteByte(eStd_char);
-        WriteByte(data);
+        // 1111xxxx (xxxxxxxx)*
+        out->WriteByte(TByte((sizeof(TYPE) - 4) | 0xF0));
+        for ( size_t b = sizeof(TYPE) - 1; b > 0; --b ) {
+            out->WriteByte(TByte(data >> (b * 8)));
+        }
+        out->WriteByte(TByte(data));
     }
 }
 
 template<typename TYPE>
-void WriteStdOrdinal(CObjectOStreamBinary* out, const TYPE& data)
+void WriteStdSigned(CObjectOStreamBinary* out, const TYPE& data)
 {
     if ( data == 0 )
         out->WriteNull();
-    else if ( sizeof(TYPE) == 1 ) {
-        out->WriteByte((TYPE(-1) < TYPE(0))? eStd_sbyte: eStd_ubyte);
-        out->WriteByte(data);
-    }
     else {
-        out->WriteByte((TYPE(-1) < TYPE(0))? eStd_sordinal: eStd_uordinal);
-        WriteNumber(out, data);
+        out->WriteByte(eStd_sordinal);
+        WriteSigned(out, data);
+    }
+}
+
+template<typename TYPE>
+void WriteStdUnsigned(CObjectOStreamBinary* out, const TYPE& data)
+{
+    if ( data == 0 )
+        out->WriteNull();
+    else {
+        out->WriteByte(eStd_uordinal);
+        WriteUnsigned(out, data);
     }
 }
 
@@ -237,68 +237,82 @@ void WriteStdFloat(CObjectOStreamBinary* out, const TYPE& data)
         out->WriteNull();
     else {
         out->WriteByte(eStd_float);
+        THROW1_TRACE(runtime_error, "double is not supported");
     }
 }
 
-void CObjectOStreamBinary::WriteStd(const unsigned char& data)
+void CObjectOStreamBinary::WriteBool(bool data)
 {
-    WriteStdOrdinal(this, data);
+    WriteByte(data? eStd_true: eStd_false);
 }
 
-void CObjectOStreamBinary::WriteStd(const signed char& data)
+void CObjectOStreamBinary::WriteChar(char data)
 {
-    WriteStdOrdinal(this, data);
+    if ( data == '\0' )
+        WriteNull();
+    else {
+        WriteByte(eStd_char);
+        WriteByte(data);
+    }
 }
 
-void CObjectOStreamBinary::WriteStd(const short& data)
+void CObjectOStreamBinary::WriteUChar(unsigned char data)
 {
-    WriteStdOrdinal(this, data);
+    if ( data == 0 )
+        WriteNull();
+    else {
+        WriteByte(eStd_ubyte);
+        WriteByte(data);
+    }
 }
 
-void CObjectOStreamBinary::WriteStd(const unsigned short& data)
+void CObjectOStreamBinary::WriteSChar(signed char data)
 {
-    WriteStdOrdinal(this, data);
+    if ( data == 0 )
+        WriteNull();
+    else {
+        WriteByte(eStd_sbyte);
+        WriteByte(data);
+    }
 }
 
-void CObjectOStreamBinary::WriteStd(const int& data)
+void CObjectOStreamBinary::WriteInt(int data)
 {
-    WriteStdOrdinal(this, data);
+    WriteStdSigned(this, data);
 }
 
-void CObjectOStreamBinary::WriteStd(const unsigned int& data)
+void CObjectOStreamBinary::WriteUInt(unsigned int data)
 {
-    WriteStdOrdinal(this, data);
+    WriteStdUnsigned(this, data);
 }
 
-void CObjectOStreamBinary::WriteStd(const long& data)
+void CObjectOStreamBinary::WriteLong(long data)
 {
-    WriteStdOrdinal(this, data);
+#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
+    WriteStdSigned(this, int(data));
+#else
+    WriteStdSigned(this, data);
+#endif
 }
 
-void CObjectOStreamBinary::WriteStd(const unsigned long& data)
+void CObjectOStreamBinary::WriteULong(unsigned long data)
 {
-    WriteStdOrdinal(this, data);
+#if ULONG_MAX == UINT_MAX
+    WriteStdUnsigned(this, unsigned(data));
+#else
+    WriteStdUnsigned(this, data);
+#endif
 }
 
-void CObjectOStreamBinary::WriteStd(const float& data)
-{
-    WriteStdFloat(this, data);
-}
-
-void CObjectOStreamBinary::WriteStd(const double& data)
+void CObjectOStreamBinary::WriteDouble(double data)
 {
     WriteStdFloat(this, data);
 }
 
 void CObjectOStreamBinary::WriteString(const string& str)
 {
-    if ( str.empty() ) {
-        WriteNull();
-    }
-    else {
-        WriteByte(eStd_string);
-        WriteStringValue(str);
-    }
+    WriteByte(eStd_string);
+    WriteStringValue(str);
 }
 
 void CObjectOStreamBinary::WriteCString(const char* str)
@@ -314,12 +328,12 @@ void CObjectOStreamBinary::WriteCString(const char* str)
 
 void CObjectOStreamBinary::WriteIndex(TIndex index)
 {
-    WriteNumber(this, index);
+    WriteStdUnsigned(this, index);
 }
 
 void CObjectOStreamBinary::WriteSize(unsigned size)
 {
-    WriteNumber(this, size);
+    WriteStdUnsigned(this, size);
 }
 
 void CObjectOStreamBinary::WriteStringValue(const string& str)
