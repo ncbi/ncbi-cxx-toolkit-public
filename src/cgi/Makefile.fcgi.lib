@@ -5,7 +5,7 @@
 #################################
 
 LIBOBJ = ncbicgi cgiapp cgictx ncbicgir ncbires dbres \
-	fcgi_run $(FASTCGI_OBJS)
+	$(FASTCGI_OBJS) fcgi_run
 LIB    = xfcgi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE)
