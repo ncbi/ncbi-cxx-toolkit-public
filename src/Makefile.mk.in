@@ -164,7 +164,8 @@ signature = @signature@
 Rules=@Rules@
 ### Kludge module to workaround an RTTI bug (Sun WorkShop only)
 serial_ws50_rtti_kludge=@serial_ws50_rtti_kludge@
-
+### Special object file needed for atomic counters
+ncbicntr=@ncbicntr@
 
 #################################
 # Some platform-specific system libs that can be linked eventually

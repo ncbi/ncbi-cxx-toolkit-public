@@ -34,6 +34,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbicntr.hpp>
 #include <corelib/ddumpable.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbimtx.hpp>
@@ -94,15 +95,22 @@ public:
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
 private:
-    typedef unsigned TCounter; // TCounter must be unsigned
+    typedef CAtomicCounter   TCounter;
+    typedef TCounter::TValue TCount;
 
     // special flag in counter meaning that object is not allocated in heap
-    // 0x...xxx - non valid object -> cannot be referenced
-    // 1c...cc0 - object non in heap -> can (not?) be referenced
-    // 1c...cc1 - object in heap -> can be referenced
+    // [0]0x...xxx - non valid object -> cannot be referenced
+    // [0]1c...cc0 - object non in heap -> can (not?) be referenced
+    // [0]1c...cc1 - object in heap -> can be referenced
+    // When TCounter is signed, all valid values start with 01;
+    // when it is unsigned, they start with 1.
     enum EObjectState {
         eStateBitsInHeap  = 1 << 0,
-        eStateBitsValid   = int(1 << (sizeof(TCounter) * 8 - 1)), // high bit
+#ifdef NCBI_COUNTER_UNSIGNED
+        eStateBitsValid   = int(1 << (sizeof(TCount) * 8 - 1)),
+#else
+        eStateBitsValid   = int(1 << (sizeof(TCount) * 8 - 2)),
+#endif
         eStateMask        = eStateBitsValid | eStateBitsInHeap,
         eCounterStep      = 1 << 1, // over InHeap bit
 
@@ -111,18 +119,19 @@ private:
 
         eCounterValid     = eStateBitsValid,
 
+        eSpecialValueMask = eStateBitsValid - eCounterStep,
         eCounterDeleted   = int((0x5b4d9f34 | ((0xada87e65 << 16) << 16))
-                                      & ~eStateBitsValid & ~eStateBitsInHeap),
+                                & eSpecialValueMask),
         eCounterNew       = int((0x3423cb13 | ((0xfe234228 << 16) << 16))
-                                & ~eStateBitsValid & ~eStateBitsInHeap)
+                                & eSpecialValueMask)
     };
 
     // special methods for parsing object state number
-    static bool ObjectStateValid(TCounter counter);
-    static bool ObjectStateCanBeDeleted(TCounter counter);
-    static bool ObjectStateReferenced(TCounter counter);
-    static bool ObjectStateDoubleReferenced(TCounter counter);
-    static bool ObjectStateReferencedOnlyOnce(TCounter counter);
+    static bool ObjectStateValid(TCount count);
+    static bool ObjectStateCanBeDeleted(TCount count);
+    static bool ObjectStateReferenced(TCount count);
+    static bool ObjectStateDoubleReferenced(TCount count);
+    static bool ObjectStateReferencedOnlyOnce(TCount count);
 
     // initialize
     void InitCounter(void);
@@ -132,7 +141,7 @@ private:
 
     // report different kinds of error
     void InvalidObject(void) const; // using of deleted object
-    void AddReferenceOverflow(TCounter counter) const; // counter overflow/bad
+    void AddReferenceOverflow(TCount count) const; // counter overflow/bad
 
     mutable TCounter  m_Counter;  // reference counter
     static CFastMutex sm_ObjectMutex;   // reference counter's protective mutex
@@ -686,6 +695,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2002/05/23 22:24:21  ucko
+ * Use low-level atomic operations for reference counts
+ *
  * Revision 1.30  2002/05/17 14:25:40  gouriano
  * added DebugDump base class and function to CObject
  *

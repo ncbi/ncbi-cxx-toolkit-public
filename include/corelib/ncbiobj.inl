@@ -54,59 +54,59 @@ void CObject::operator delete[](void* ptr)
 
 
 inline
-bool CObject::ObjectStateCanBeDeleted(TCounter counter)
+bool CObject::ObjectStateCanBeDeleted(TCount count)
 {
-    return (counter & eStateBitsInHeap) != 0;
+    return (count & eStateBitsInHeap) != 0;
 }
 
 
 inline
-bool CObject::ObjectStateValid(TCounter counter)
+bool CObject::ObjectStateValid(TCount count)
 {
-    return counter >= TCounter(eCounterValid);
+    return count >= TCount(eCounterValid);
 }
 
 
 inline
-bool CObject::ObjectStateReferenced(TCounter counter)
+bool CObject::ObjectStateReferenced(TCount count)
 {
-    return counter >= TCounter(eCounterValid + eCounterStep);
+    return count >= TCount(eCounterValid + eCounterStep);
 }
 
 
 inline
-bool CObject::ObjectStateDoubleReferenced(TCounter counter)
+bool CObject::ObjectStateDoubleReferenced(TCount count)
 {
-    return counter >= TCounter(eCounterValid + eCounterStep * 2);
+    return count >= TCount(eCounterValid + eCounterStep * 2);
 }
 
 
 inline
-bool CObject::ObjectStateReferencedOnlyOnce(TCounter counter)
+bool CObject::ObjectStateReferencedOnlyOnce(TCount count)
 {
-    return ObjectStateReferenced(counter) &&
-        !ObjectStateDoubleReferenced(counter);
+    return ObjectStateReferenced(count) &&
+        !ObjectStateDoubleReferenced(count);
 }
 
 
 inline
 bool CObject::CanBeDeleted(void) const THROWS_NONE
 {
-    return ObjectStateCanBeDeleted(m_Counter);
+    return ObjectStateCanBeDeleted(m_Counter.Get());
 }
 
 
 inline
 bool CObject::Referenced(void) const THROWS_NONE
 {
-    return ObjectStateReferenced(m_Counter);
+    return ObjectStateReferenced(m_Counter.Get());
 }
 
 
 inline
 bool CObject::ReferencedOnlyOnce(void) const THROWS_NONE
 {
-    return ObjectStateReferencedOnlyOnce(m_Counter);
+    return ObjectStateReferencedOnlyOnce(m_Counter.Get());
 }
 
 
@@ -120,41 +120,30 @@ CObject& CObject::operator=(const CObject& ) THROWS_NONE
 inline
 void CObject::AddReference(void) const
 {
-    TCounter oldCounter;
-
-    {{
-        CFastMutexGuard LOCK(sm_ObjectMutex);
-        oldCounter = m_Counter;
-
-        TCounter newCounter = oldCounter + TCounter(eCounterStep);
-        if ( ObjectStateReferenced(newCounter) ) {
-            m_Counter = newCounter;
-            return;
-        }
-    }}
-    
-    AddReferenceOverflow(oldCounter);
+    TCount newCount = m_Counter.Add(eCounterStep);
+    if ( !ObjectStateReferenced(newCount) ) {
+        m_Counter.Add(-eCounterStep); // undo
+        AddReferenceOverflow(newCount - eCounterStep);
+    }
 }
 
 
 inline
 void CObject::RemoveReference(void) const
 {
-    {{
-        CFastMutexGuard LOCK(sm_ObjectMutex);
-        if ( ObjectStateDoubleReferenced(m_Counter) ) {
-            m_Counter -= eCounterStep;
-            return;
-        }
-    }}
-
-    RemoveLastReference();
+    TCount newCount = m_Counter.Add(-eCounterStep);
+    if ( !ObjectStateReferenced(newCount) ) {
+        RemoveLastReference();
+    }
 }
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/05/23 22:24:21  ucko
+ * Use low-level atomic operations for reference counts
+ *
  * Revision 1.6  2002/04/11 20:39:18  ivanov
  * CVS log moved to end of the file
  *

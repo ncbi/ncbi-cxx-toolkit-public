@@ -134,18 +134,18 @@ void* CObject::operator new(size_t size)
 #  if USE_COMPLEX_MASK
     TCounter* ttt = &(static_cast<CObject*>(ptr)->m_Counter);
     if (size >= 2*sizeof(TCounter)) {
-        *(++ttt) = eCounterNew;
+        (++ttt)->Set(eCounterNew);
     }
 #  endif// USE_COMPLEX_MASK
 #endif// USE_HEAPOBJ_LIST
-    static_cast<CObject*>(ptr)->m_Counter = eCounterNew;
+    static_cast<CObject*>(ptr)->m_Counter.Set(eCounterNew);
     return ptr;
 }
 
 
 void* CObject::operator new[](size_t size)
 {
-#ifdef HAVE_WINDOWS_H
+#ifdef NCBI_OS_MSWIN
     void* ptr = ::operator new(size);
 #else
     void* ptr = ::operator new[](size);
@@ -159,14 +159,14 @@ void* CObject::operator new[](size_t size)
 void CObject::operator delete(void* ptr)
 {
     CObject* objectPtr = static_cast<CObject*>(ptr);
-    _ASSERT(objectPtr->m_Counter == TCounter(eCounterDeleted) ||
-            objectPtr->m_Counter == TCounter(eCounterNew));
+    _ASSERT(objectPtr->m_Counter.Get() == eCounterDeleted  ||
+            objectPtr->m_Counter.Get() == eCounterNew);
     ::operator delete(ptr);
 }
 
 void CObject::operator delete[](void* ptr)
 {
-#  ifdef HAVE_WINDOWS_H
+#  ifdef NCBI_OS_MSWIN
     ::operator delete(ptr);
 #  else
     ::operator delete[](ptr);
@@ -178,9 +178,9 @@ void CObject::operator delete[](void* ptr)
 // initialization in debug mode
 void CObject::InitCounter(void)
 {
-    if ( m_Counter != eCounterNew ) {
+    if ( m_Counter.Get() != eCounterNew ) {
         // takes care of statically allocated case
-        m_Counter = TCounter(eCounterNotInHeap);
+        m_Counter.Set(eCounterNotInHeap);
     }
     else {
         bool inStack = false;
@@ -199,7 +199,7 @@ void CObject::InitCounter(void)
 #  if USE_COMPLEX_MASK
         TCounter* ttt = &m_Counter;
         ++ttt;
-        inStack = (*ttt != eCounterNew);
+        inStack = (ttt->Get() != eCounterNew);
 #  endif // USE_COMPLEX_MASK
         // m_Counter == eCounterNew -> possibly in heap
         if (!inStack) {
@@ -222,9 +222,9 @@ void CObject::InitCounter(void)
 
         // surely not in heap
         if ( inStack )
-            m_Counter = TCounter(eCounterNotInHeap);
+            m_Counter.Set(eCounterNotInHeap);
         else
-            m_Counter = eCounterInHeap;
+            m_Counter.Set(eCounterInHeap);
     }
 }
 
@@ -243,18 +243,18 @@ CObject::CObject(const CObject& /*src*/)
 
 CObject::~CObject(void)
 {
-    TCounter counter = m_Counter;
-    if ( counter == TCounter(eCounterInHeap) ||
-         counter == TCounter(eCounterNotInHeap) ) {
+    TCount count = m_Counter.Get();
+    if ( count == TCount(eCounterInHeap)
+        ||  count == TCount(eCounterNotInHeap) ) {
         // reference counter is zero -> ok
     }
-    else if ( ObjectStateValid(counter) ) {
-        _ASSERT(ObjectStateReferenced(counter));
+    else if ( ObjectStateValid(count) ) {
+        _ASSERT(ObjectStateReferenced(count));
         // referenced object
         THROW1_TRACE(runtime_error,
                      "deletion of referenced CObject");
     }
-    else if ( counter == TCounter(eCounterDeleted) ) {
+    else if ( count == eCounterDeleted ) {
         // deleted object
         THROW1_TRACE(runtime_error,
                      "double deletion of CObject");
@@ -265,13 +265,13 @@ CObject::~CObject(void)
                      "deletion of corrupted CObject");
     }
     // mark object as deleted
-    m_Counter = TCounter(eCounterDeleted);
+    m_Counter.Set(eCounterDeleted);
 }
 
 
-void CObject::AddReferenceOverflow(TCounter counter) const
+void CObject::AddReferenceOverflow(TCount count) const
 {
-    if ( ObjectStateValid(counter) ) {
+    if ( ObjectStateValid(count) ) {
         // counter overflow
         THROW1_TRACE(runtime_error,
                      "AddReference: CObject reference counter overflow");
@@ -286,18 +286,16 @@ void CObject::AddReferenceOverflow(TCounter counter) const
 
 void CObject::RemoveLastReference(void) const
 {
-    TCounter counter = m_Counter;
-    if ( counter == TCounter(eCounterInHeap + eCounterStep) ) {
+    TCount count = m_Counter.Get();
+    if ( count == TCount(eCounterInHeap) ) {
         // last reference to heap object -> delete
-        m_Counter = eCounterInHeap;
         delete this;
     }
-    else if ( counter == TCounter(eCounterNotInHeap + eCounterStep) ) {
+    else if ( count == TCount(eCounterNotInHeap) ) {
         // last reference to non heap object -> do nothing
-        m_Counter = TCounter(eCounterNotInHeap);
     }
     else {
-        _ASSERT(!ObjectStateValid(counter));
+        _ASSERT(!ObjectStateValid(count + eCounterStep));
         // bad object
         THROW1_TRACE(runtime_error,
                      "RemoveReference of unreferenced CObject");
@@ -307,19 +305,14 @@ void CObject::RemoveLastReference(void) const
 
 void CObject::ReleaseReference(void) const
 {
-    TCounter counter;
-    {{
-        CFastMutexGuard LOCK(sm_ObjectMutex);
-        counter = m_Counter;
-        if ( ObjectStateReferenced(counter) ) {
-            // release reference to object in heap
-            m_Counter = TCounter(counter - eCounterStep);
-            return;
-        }
-    }}
+    TCount count = m_Counter.Add(-eCounterStep) + eCounterStep;
+    if ( ObjectStateReferenced(count) ) {
+        return;
+    }
+    m_Counter.Add(eCounterStep); // undo
 
     // error
-    if ( !ObjectStateValid(counter) ) {
+    if ( !ObjectStateValid(count) ) {
         THROW1_TRACE(runtime_error,
                      "ReleaseReference of corrupted CObject");
     } else {
@@ -334,9 +327,10 @@ void CObject::DoNotDeleteThisObject(void)
     bool is_valid;
     {{
         CFastMutexGuard LOCK(sm_ObjectMutex);
-        is_valid = ObjectStateValid(m_Counter);
-        if (is_valid  &&  !ObjectStateReferenced(m_Counter)) {
-            m_Counter = TCounter(eCounterNotInHeap);
+        TCount count = m_Counter.Get();
+        is_valid = ObjectStateValid(count);
+        if (is_valid  &&  !ObjectStateReferenced(count)) {
+            m_Counter.Set(eCounterNotInHeap);
             return;
         }
     }}
@@ -356,8 +350,11 @@ void CObject::DoDeleteThisObject(void)
 {
     {{
         CFastMutexGuard LOCK(sm_ObjectMutex);
-        if ( ObjectStateValid(m_Counter) ) {
-            m_Counter |= eStateBitsInHeap;
+        TCount count = m_Counter.Get();
+        if ( ObjectStateValid(count) ) {
+            if ( !(count & eStateBitsInHeap) ) {
+                m_Counter.Add(eStateBitsInHeap);
+            }
             return;
         }
     }}
@@ -380,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2002/05/23 22:24:23  ucko
+ * Use low-level atomic operations for reference counts
+ *
  * Revision 1.24  2002/05/17 14:27:12  gouriano
  * added DebugDump base class and function to CObject
  *
