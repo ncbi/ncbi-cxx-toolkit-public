@@ -285,21 +285,21 @@ struct SSubtypeAbbr {
 
 
 static SSubtypeAbbr s_aSubtypes[] = {
-    { s_achSubsp, sizeof(s_achSubsp)-1, COrgMod::eSubtype_sub_species };
-    { s_achSsp,   sizeof(s_achSsp)-1,   COrgMod::eSubtype_sub_species };
-    { s_achF_Sp,  sizeof(s_achF_Sp)-1,  COrgMod::eSubtype_forma_specialis };
-    { s_achFSp,   sizeof(s_achFSp)-1,   COrgMod::eSubtype_forma_specialis };
-    { s_achStr,   sizeof(s_achStr)-1,   COrgMod::eSubtype_strain };
-    { s_achSubstr,sizeof(s_achSubstr)-1,COrgMod::eSubtype_substrain };
-    { s_achVar,   sizeof(s_achVar)-1,   COrgMod::eSubtype_variety };
-    { s_achSv,    sizeof(s_achSv)-1,    COrgMod::eSubtype_serovar };
-    { s_achCv,    sizeof(s_achCv)-1,    COrgMod::eSubtype_cultivar };
-    { s_achPv,    sizeof(s_achPv)-1,    COrgMod::eSubtype_pathovar };
-    { s_achBv,    sizeof(s_achBv)-1,    COrgMod::eSubtype_biovar };
-    { s_achF,     sizeof(s_achF)-1,     COrgMod::eSubtype_forma };
-    { s_achFo,    sizeof(s_achFo)-1,    COrgMod::eSubtype_forma };
-    { s_achGrp,   sizeof(s_achGrp)-1,   COrgMod::eSubtype_group };
-    { NULL,       0,                    COrgMod::eSubtype_other };
+    { s_achSubsp, sizeof(s_achSubsp)-1, COrgMod::eSubtype_sub_species },
+    { s_achSsp,   sizeof(s_achSsp)-1,   COrgMod::eSubtype_sub_species },
+    { s_achF_Sp,  sizeof(s_achF_Sp)-1,  COrgMod::eSubtype_forma_specialis },
+    { s_achFSp,   sizeof(s_achFSp)-1,   COrgMod::eSubtype_forma_specialis },
+    { s_achStr,   sizeof(s_achStr)-1,   COrgMod::eSubtype_strain },
+    { s_achSubstr,sizeof(s_achSubstr)-1,COrgMod::eSubtype_substrain },
+    { s_achVar,   sizeof(s_achVar)-1,   COrgMod::eSubtype_variety },
+    { s_achSv,    sizeof(s_achSv)-1,    COrgMod::eSubtype_serovar },
+    { s_achCv,    sizeof(s_achCv)-1,    COrgMod::eSubtype_cultivar },
+    { s_achPv,    sizeof(s_achPv)-1,    COrgMod::eSubtype_pathovar },
+    { s_achBv,    sizeof(s_achBv)-1,    COrgMod::eSubtype_biovar },
+    { s_achF,     sizeof(s_achF)-1,     COrgMod::eSubtype_forma },
+    { s_achFo,    sizeof(s_achFo)-1,    COrgMod::eSubtype_forma },
+    { s_achGrp,   sizeof(s_achGrp)-1,   COrgMod::eSubtype_group },
+    { NULL,       0,                    COrgMod::eSubtype_other }
 };
 
 COrgMod::ESubtype
@@ -1014,6 +1014,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.15  2003/03/06 16:13:14  domrach
+ * Typo fix
+ *
  * Revision 6.14  2003/03/06 16:11:29  domrach
  * More static initialization work
  *
