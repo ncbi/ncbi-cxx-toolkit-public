@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.26  2003/07/31 18:48:49  dondosha
+ * Use Int4 instead of BLAST_Score
+ *
  * Revision 1.25  2003/07/31 17:48:06  madden
  * Remove call to FileLength
  *
@@ -738,13 +741,18 @@ BLAST_ScoreBlkNew(Uint1 alphabet, Int2 number_of_contexts)
 			return sbp;
 		}
 		sbp->matrix = sbp->matrix_struct->matrix;
-		sbp->maxscore = (BLAST_ScorePtr) calloc(BLAST_MATRIX_SIZE, sizeof(BLAST_Score));
+		sbp->maxscore = (Int4 *) calloc(BLAST_MATRIX_SIZE, sizeof(Int4));
 		sbp->number_of_contexts = number_of_contexts;
-		sbp->sfp = calloc(sbp->number_of_contexts, sizeof(BLAST_ScoreFreq*));
-		sbp->kbp_std = calloc(sbp->number_of_contexts, sizeof(BLAST_KarlinBlk*));
-		sbp->kbp_gap_std = calloc(sbp->number_of_contexts, sizeof(BLAST_KarlinBlk*));
-		sbp->kbp_psi = calloc(sbp->number_of_contexts, sizeof(BLAST_KarlinBlk*));
-		sbp->kbp_gap_psi = calloc(sbp->number_of_contexts, sizeof(BLAST_KarlinBlk*));
+		sbp->sfp = (BLAST_ScoreFreq**) 
+         calloc(sbp->number_of_contexts, sizeof(BLAST_ScoreFreq*));
+		sbp->kbp_std = (BLAST_KarlinBlk**)
+         calloc(sbp->number_of_contexts, sizeof(BLAST_KarlinBlk*));
+		sbp->kbp_gap_std = (BLAST_KarlinBlk**)
+         calloc(sbp->number_of_contexts, sizeof(BLAST_KarlinBlk*));
+		sbp->kbp_psi = (BLAST_KarlinBlk**)
+         calloc(sbp->number_of_contexts, sizeof(BLAST_KarlinBlk*));
+		sbp->kbp_gap_psi = (BLAST_KarlinBlk**)
+         calloc(sbp->number_of_contexts, sizeof(BLAST_KarlinBlk*));
 	}
 
 	return sbp;
@@ -821,7 +829,7 @@ BlastScoreSetAmbigRes(BLAST_ScoreBlk* sbp, char ambiguous_res)
 	if (sbp->ambig_occupy >= sbp->ambig_size)
 	{
 		sbp->ambig_size += 5;
-		ambig_buffer = calloc(sbp->ambig_size, sizeof(Uint1));
+		ambig_buffer = (Uint1 *) calloc(sbp->ambig_size, sizeof(Uint1));
 		for (index=0; index<sbp->ambig_occupy; index++)
 		{
 			ambig_buffer[index] = sbp->ambiguous_res[index];
@@ -905,7 +913,7 @@ BLAST_MatrixFill(BLAST_ScoreBlk* sbp)
     BLAST_Matrix* blast_matrix;
     double karlinK = 0.0;
     Int4 index1, index2, dim1, dim2;
-    Int4** matrix,** original_matrix;
+    Int4 **matrix, **original_matrix;
     double **posFreqs = NULL;
 
     if (sbp == NULL)
@@ -920,9 +928,9 @@ BLAST_MatrixFill(BLAST_ScoreBlk* sbp)
     if (sbp->kbp_gap_psi[0])
         karlinK = sbp->kbp_gap_psi[0]->K;
     
-    matrix = calloc(dim1, sizeof(Int4*));
+    matrix = (Int4 **) calloc(dim1, sizeof(Int4*));
     for (index1=0; index1<dim1; index1++) {
-        matrix[index1] = calloc(dim2, sizeof(Int4));
+        matrix[index1] = (Int4 *) calloc(dim2, sizeof(Int4));
         for (index2=0; index2<dim2; index2++) {
             matrix[index1][index2] = original_matrix[index1][index2];
         }
@@ -935,9 +943,9 @@ BLAST_MatrixFill(BLAST_ScoreBlk* sbp)
         dim1 = sbp->query_length + 1;
         dim2 = sbp->alphabet_size;
         original_matrix = sbp->posMatrix;
-        matrix = calloc(dim1, sizeof(Int4*));
+        matrix = (Int4 **) calloc(dim1, sizeof(Int4*));
         for (index1=0; index1<dim1; index1++) {
-           matrix[index1] = calloc(dim2, sizeof(Int4));
+           matrix[index1] = (Int4 *) calloc(dim2, sizeof(Int4));
            for (index2=0; index2<dim2; index2++) {
               matrix[index1][index2] = original_matrix[index1][index2];
            }
@@ -947,9 +955,9 @@ BLAST_MatrixFill(BLAST_ScoreBlk* sbp)
 
     /* Copying posFreqs to the BLAST_Matrix */
     if ((sbp->posFreqs != NULL) && (sbp->posMatrix != NULL)) {
-        posFreqs = calloc(dim1, sizeof(double *));
+        posFreqs = (double **) calloc(dim1, sizeof(double *));
         for (index1 = 0; index1 < dim1; index1++) {
-            posFreqs[index1] = calloc(dim2, sizeof(double));
+            posFreqs[index1] = (double *) calloc(dim2, sizeof(double));
             for (index2=0; index2 < dim2; index2++) {
                 posFreqs[index1][index2] = sbp->posFreqs[index1][index2];
             }
@@ -978,7 +986,7 @@ BLAST_MatrixFill(BLAST_ScoreBlk* sbp)
         if matrix==NULL, it is allocated and returned.
 */
 
-BLAST_ScorePtr* BlastScoreBlkMatCreateEx(BLAST_ScorePtr* matrix,BLAST_Score penalty, BLAST_Score reward)
+Int4 **BlastScoreBlkMatCreateEx(Int4 **matrix,Int4 penalty, Int4 reward)
 {
 
 	Int2	index1, index2, degen;
@@ -1221,9 +1229,9 @@ BlastScoreBlkMatRead(BLAST_ScoreBlk* sbp, FILE *fp)
     char	temp[512];
     char*	cp,* lp;
     char		ch;
-    BLAST_ScorePtr*	matrix;
-    BLAST_ScorePtr	m;
-    BLAST_Score	score;
+    Int4 **	matrix;
+    Int4 *	m;
+    Int4	score;
     Uint4	a1cnt = 0, a2cnt = 0;
     char    a1chars[BLAST_MAX_ALPHABET], a2chars[BLAST_MAX_ALPHABET];
     long	lineno = 0;
@@ -1363,7 +1371,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlk* sbp, FILE *fp)
                     return 2;
                 }
                 xscore += (xscore >= 0. ? 0.5 : -0.5);
-                score = (BLAST_Score)xscore;
+                score = (Int4)xscore;
             }
             
             m[(int)a2chars[index2++]] = score;
@@ -1392,8 +1400,8 @@ BlastScoreBlkMatRead(BLAST_ScoreBlk* sbp, FILE *fp)
 Int2
 BlastScoreBlkMaxScoreSet(BLAST_ScoreBlk* sbp)
 {
-	BLAST_Score score, maxscore;
-	BLAST_ScorePtr*  matrix; 
+	Int4 score, maxscore;
+	Int4 ** matrix; 
 	Int2 index1, index2;
 
 	sbp->loscore = BLAST_SCORE_1MAX;
@@ -1432,17 +1440,17 @@ gaps), then use other scores. */
 /* maxscore for PSI Blast depends not on the residue, but on the position
    in the posMatrix, so maxscore array has size of the length of posMatrix */
 /* SSH */
-BLAST_ScorePtr BlastPSIMaxScoreGet(BLAST_ScorePtr* posMatrix, 
-                                   Int4 start, Int4 length)
+Int4 *BlastPSIMaxScoreGet(Int4 **posMatrix, 
+                          Int4 start, Int4 length)
 {
-    BLAST_Score score, maxscore;
-    BLAST_ScorePtr maxscore_pos;
+    Int4 score, maxscore;
+    Int4 *maxscore_pos;
     Int4 index1, index2;
     
     if(posMatrix == NULL)
         return NULL;
     
-    maxscore_pos = calloc(length , sizeof(BLAST_Score));
+    maxscore_pos = (Int4 *) calloc(length , sizeof(Int4));
     
     for (index1 = start; index1 < length; index1++) {
         maxscore = BLAST_SCORE_MIN;
@@ -1579,7 +1587,7 @@ BlastResCompStr(BLAST_ScoreBlk* sbp, BLAST_ResComp* rcp, char* str, Int4 length)
 }
 
 static Int2
-BlastScoreChk(BLAST_Score lo, BLAST_Score hi)
+BlastScoreChk(Int4 lo, Int4 hi)
 {
 	if (lo >= 0 || hi <= 0 ||
 			lo < BLAST_SCORE_1MIN || hi > BLAST_SCORE_1MAX)
@@ -1592,10 +1600,10 @@ BlastScoreChk(BLAST_Score lo, BLAST_Score hi)
 }
 
 BLAST_ScoreFreq*
-BlastScoreFreqNew(BLAST_Score score_min, BLAST_Score score_max)
+BlastScoreFreqNew(Int4 score_min, Int4 score_max)
 {
 	BLAST_ScoreFreq*	sfp;
-	BLAST_Score	range;
+	Int4	range;
 
 	if (BlastScoreChk(score_min, score_max) != 0)
 		return NULL;
@@ -1636,8 +1644,8 @@ BlastScoreFreqDestruct(BLAST_ScoreFreq* sfp)
 static Int2
 BlastScoreFreqCalc(BLAST_ScoreBlk* sbp, BLAST_ScoreFreq* sfp, BLAST_ResFreq* rfp1, BLAST_ResFreq* rfp2)
 {
-	BLAST_ScorePtr*	matrix;
-	BLAST_Score	score, obs_min, obs_max;
+	Int4 **	matrix;
+	Int4	score, obs_min, obs_max;
 	double		score_sum, score_avg;
 	Int2 		alphabet_start, alphabet_end, index1, index2;
 
@@ -2199,13 +2207,16 @@ BlastKarlinGetMatrixValuesEx2(char* matrix, Int4** open, Int4** extension, Int4*
 	if (found_matrix)
 	{
 		if (open)
-			*open = open_array = calloc(max_number_values, sizeof(Int4));
+			*open = open_array = (Int4 *) calloc(max_number_values, sizeof(Int4));
 		if (extension)
-			*extension = extension_array = calloc(max_number_values, sizeof(Int4));
+			*extension = extension_array = 
+            (Int4 *) calloc(max_number_values, sizeof(Int4));
 		if (decline_align)
-			*decline_align = decline_align_array = calloc(max_number_values, sizeof(Int4));
+			*decline_align = decline_align_array = 
+            (Int4 *) calloc(max_number_values, sizeof(Int4));
 		if (lambda)
-			*lambda = lambda_array = (double*) calloc(max_number_values, sizeof(double));
+			*lambda = lambda_array = 
+            (double*) calloc(max_number_values, sizeof(double));
 		if (K)
 			*K = K_array = (double*) calloc(max_number_values, sizeof(double));
 		if (H)
@@ -2215,7 +2226,8 @@ BlastKarlinGetMatrixValuesEx2(char* matrix, Int4** open, Int4** extension, Int4*
 		if (beta)
 			*beta = beta_array = (double*) calloc(max_number_values, sizeof(double));
 		if (pref_flags)
-			*pref_flags = pref_flags_array = calloc(max_number_values, sizeof(Int4));
+			*pref_flags = pref_flags_array = 
+            (Int4 *) calloc(max_number_values, sizeof(Int4));
 
 		for (index=0; index<max_number_values; index++)
 		{
@@ -2483,7 +2495,7 @@ BlastKarlinkGapBlkFill(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int
 char*
 PrintMatrixMessage(const char *matrix_name)
 {
-	char* buffer=calloc(1024, sizeof(char));
+	char* buffer= (char *) calloc(1024, sizeof(char));
 	char* ptr;
 	MatrixInfo* matrix_info;
         ListNode* vnp,* head;
@@ -2517,7 +2529,7 @@ PrintAllowedValuesMessage(const char *matrix_name, Int4 gap_open, Int4 gap_exten
 	MatrixInfo* matrix_info;
 	ListNode* vnp,* head;
 
-	ptr = buffer = calloc(2048, sizeof(char));
+	ptr = buffer = (char *) calloc(2048, sizeof(char));
 
         if (decline_align == INT2_MAX)
               sprintf(ptr, "Gap existence and extension values of %ld and %ld not supported for %s\nsupported values are:\n", 
@@ -2724,12 +2736,12 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double	lambda, double H)
 #else
 	double	P0 [DIMOFP0_MAX];
 #endif
-	BLAST_Score	low;	/* Lowest score (must be negative) */
-	BLAST_Score	high;	/* Highest score (must be positive) */
+	Int4	low;	/* Lowest score (must be negative) */
+	Int4	high;	/* Highest score (must be positive) */
 	double	K;			/* local copy of K */
 	double	ratio;
 	int		i, j;
-	BLAST_Score	range, lo, hi, first, last, d;
+	Int4	range, lo, hi, first, last, d;
 	register double	sum;
 	double	Sum, av, oldsum, oldsum2, score_avg;
 	int		iter;
@@ -2867,7 +2879,7 @@ BlastKarlinLambdaBis(BLAST_ScoreFreq* sfp)
 {
 	register double* sprob;
 	double	lambda, up, newval;
-	BLAST_Score	i, low, high, d;
+	Int4	i, low, high, d;
 	int		j;
 	register double	sum, x0, x1;
 
@@ -2939,10 +2951,10 @@ BlastKarlinLambdaBis(BLAST_ScoreFreq* sfp)
 double
 BlastKarlinLambdaNR(BLAST_ScoreFreq* sfp)
 {
-	BLAST_Score	low;			/* Lowest score (must be negative)  */
-	BLAST_Score	high;			/* Highest score (must be positive) */
+	Int4	low;			/* Lowest score (must be negative)  */
+	Int4	high;			/* Highest score (must be positive) */
 	int		j;
-	BLAST_Score	i, d;
+	Int4	i, d;
 	double*	sprob;
 	double	lambda0, sum, slope, temp, x0, x1, amt;
 
@@ -3002,7 +3014,7 @@ BlastKarlinLambdaNR(BLAST_ScoreFreq* sfp)
 double
 BlastKarlinLtoH(BLAST_ScoreFreq* sfp, double	lambda)
 {
-	BLAST_Score	score;
+	Int4	score;
 	double	av, etolam, etolami;
 
 	if (lambda < 0.) {
@@ -3056,7 +3068,7 @@ BlastGapDecay(double pvalue, unsigned nsegs, double decayrate)
 	WRG (later modified by TLM).
 */
 Int2
-BlastCutoffs(BLAST_ScorePtr S, /* cutoff score */
+BlastCutoffs(Int4 *S, /* cutoff score */
 	double* E, /* expected no. of HSPs scoring at or above S */
 	BLAST_KarlinBlk* kbp,
 	double qlen, /* length of query sequence */
@@ -3067,13 +3079,13 @@ BlastCutoffs(BLAST_ScorePtr S, /* cutoff score */
 }
 
 Int2
-BlastCutoffs_simple(BLAST_ScorePtr S, /* cutoff score */
+BlastCutoffs_simple(Int4 *S, /* cutoff score */
 	double* E, /* expected no. of HSPs scoring at or above S */
 	BLAST_KarlinBlk* kbp,
 	double searchsp, /* size of search space. */
 	Boolean dodecay) /* TRUE ==> use gapdecay feature */
 {
-	BLAST_Score	s = *S, es;
+	Int4	s = *S, es;
 	double	e = *E, esave;
 	Boolean		s_changed = FALSE;
 
@@ -3120,7 +3132,7 @@ BlastCutoffs_simple(BLAST_ScorePtr S, /* cutoff score */
 
 	Error return value is BLAST_SCORE_MIN
 */
-BLAST_Score
+Int4
 BlastKarlinEtoS(double	E,	/* Expect value */
 	BLAST_KarlinBlk*	kbp,
 	double	qlen,	/* length of query sequence */
@@ -3131,18 +3143,18 @@ BlastKarlinEtoS(double	E,	/* Expect value */
 
 
 /* Smallest float that might not cause a floating point exception in
-	S = (BLAST_Score) (ceil( log((double)(K * searchsp / E)) / Lambda ));
+	S = (Int4) (ceil( log((double)(K * searchsp / E)) / Lambda ));
 below.
 */
 #define BLASTKAR_SMALL_FLOAT 1.0e-297
-BLAST_Score
+Int4
 BlastKarlinEtoS_simple(double	E,	/* Expect value */
 	BLAST_KarlinBlk*	kbp,
 	double	searchsp)	/* size of search space */
 {
 
 	double	Lambda, K, H; /* parameters for Karlin statistics */
-	BLAST_Score	S;
+	Int4	S;
 
 	Lambda = kbp->Lambda;
 	K = kbp->K;
@@ -3154,7 +3166,7 @@ BlastKarlinEtoS_simple(double	E,	/* Expect value */
 
 	E = MAX(E, BLASTKAR_SMALL_FLOAT);
 
-	S = (BLAST_Score) (ceil( log((double)(K * searchsp / E)) / Lambda ));
+	S = (Int4) (ceil( log((double)(K * searchsp / E)) / Lambda ));
 	return S;
 }
 
@@ -3167,7 +3179,7 @@ BlastKarlinEtoS_simple(double	E,	/* Expect value */
 	On error, return value is -1. (same as BlastKarlinStoE()).
 */
 double
-BlastKarlinStoP(BLAST_Score S,
+BlastKarlinStoP(Int4 S,
 		BLAST_KarlinBlk* kbp,
 		double	qlen,	/* length of query sequence */
 		double	dblen)	/* length of database */
@@ -3176,7 +3188,7 @@ BlastKarlinStoP(BLAST_Score S,
 }
 
 double
-BlastKarlinStoP_simple(BLAST_Score S,
+BlastKarlinStoP_simple(Int4 S,
 		BLAST_KarlinBlk* kbp,
 		double	searchsp)	/* size of search space. */
 {
@@ -3196,7 +3208,7 @@ BlastKarlinStoP_simple(BLAST_Score S,
 	Error return value is -1.
 */
 double
-BlastKarlinStoE(BLAST_Score S,
+BlastKarlinStoE(Int4 S,
 		BLAST_KarlinBlk* kbp,
 		double	qlen,	/* length of query sequence */
 		double	dblen)	/* length of database */
@@ -3205,7 +3217,7 @@ BlastKarlinStoE(BLAST_Score S,
 }
 
 double
-BlastKarlinStoE_simple(BLAST_Score S,
+BlastKarlinStoE_simple(Int4 S,
 		BLAST_KarlinBlk* kbp,
 		double	searchsp)	/* size of search space. */
 {
@@ -3253,7 +3265,7 @@ BlastKarlinEtoP(double x)
 	Given a score, return the length expected for an HSP of that score
 */
 double
-BlastKarlinStoLen(BLAST_KarlinBlk* kbp, BLAST_Score S)
+BlastKarlinStoLen(BLAST_KarlinBlk* kbp, Int4 S)
 {
 	return kbp->Lambda * S / kbp->H;
 }
