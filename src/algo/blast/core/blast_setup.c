@@ -63,14 +63,9 @@ Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
         for (index = query_info->first_context;
              index <= query_info->last_context; index++) {
             if (sbp->kbp_std[index] != NULL) {
-                Blast_KarlinBlk *kbp_gap = NULL;
-                Blast_KarlinBlk *kbp = NULL;
- 
                 sbp->kbp_gap_std[index] = Blast_KarlinBlkNew();
-                kbp_gap = sbp->kbp_gap_std[index];
-                kbp     = sbp->kbp_std[index];
-
-                Blast_KarlinBlkCopy(kbp_gap, kbp);
+                Blast_KarlinBlkCopy(sbp->kbp_gap_std[index],
+                                    sbp->kbp_std[index]);
             }
         }
 
@@ -100,7 +95,9 @@ Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
         }
     }
 
-    sbp->kbp_gap = sbp->kbp_gap_std;
+    /* Set gapped Blast_KarlinBlk* alias */
+    sbp->kbp_gap = (program == eBlastTypePsiBlast) ? 
+        sbp->kbp_gap_psi : sbp->kbp_gap_std;
 
     return 0;
 }
