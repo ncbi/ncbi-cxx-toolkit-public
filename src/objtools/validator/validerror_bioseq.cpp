@@ -1347,7 +1347,6 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
             m_Scope->GetBioseqHandle(seq).GetSeqVector();
 
         size_t bad_cnt = 0;
-        size_t seq_size = sv.size();
         TSeqPos pos = 0;
         for ( CSeqVector_CI sv_iter(sv); sv_iter; ++sv_iter ) {
             CSeqVector::TResidue res = *sv_iter;
@@ -3136,6 +3135,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2003/07/02 21:05:25  shomrat
+* removed unused variables
+*
 * Revision 1.39  2003/06/19 13:55:36  shomrat
 * synthetic biosource should have molinfo biomol other
 *
