@@ -144,6 +144,7 @@ CProjItem::CProjItem(TProjType type,
     m_ID      (id),
     m_ProjType(type),
     m_SourcesBaseDir (sources_base),
+    m_MsvcProjectMakefileDir(sources_base),
     m_Sources (sources), 
     m_Depends (depends),
     m_Requires(requires),
@@ -174,6 +175,7 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_ID		     = item.m_ID;
     m_ProjType       = item.m_ProjType;
     m_SourcesBaseDir = item.m_SourcesBaseDir;
+    m_MsvcProjectMakefileDir = item.m_MsvcProjectMakefileDir;
     m_Sources        = item.m_Sources;
     m_Depends        = item.m_Depends;
     m_Requires       = item.m_Requires;
@@ -191,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/01/10 15:40:09  gouriano
+ * Make PTB pick up MSVC tune-up for DLLs
+ *
  * Revision 1.25  2004/10/12 16:17:33  ivanov
  * Cosmetics
  *

@@ -60,7 +60,7 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
     m_MsvcProjectMakefile.reset
         (new CMsvcProjectMakefile
                     (CDirEntry::ConcatPath
-                            (m_SourcesBaseDir, 
+                            (project.m_MsvcProjectMakefileDir, 
                              CreateMsvcProjectMakefileName(project))));
 
     // Done if this is ready MSVC project
@@ -955,6 +955,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/01/10 15:40:09  gouriano
+ * Make PTB pick up MSVC tune-up for DLLs
+ *
  * Revision 1.44  2005/01/04 14:10:48  gouriano
  * Removed unused variable
  *

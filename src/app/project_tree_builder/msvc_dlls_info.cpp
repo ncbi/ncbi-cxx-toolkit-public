@@ -245,6 +245,7 @@ static void s_InitalizeDllProj(const string&                  dll_id,
     dll_project_dir = CDirEntry::AddTrailingPathSeparator(dll_project_dir);
 
     dll->m_SourcesBaseDir = dll_project_dir;
+    dll->m_MsvcProjectMakefileDir.erase();
 
     dll->m_Sources.clear();
     dll->m_Sources.push_back("..\\..\\dll_main");
@@ -403,13 +404,27 @@ static void s_AddProjItemToDll(const CProjItem& lib, CProjItem* dll)
     dll->m_NcbiCLibs.sort();
     dll->m_NcbiCLibs.unique();
 
+    if (dll->m_MsvcProjectMakefileDir.empty()) {
+        dll->m_MsvcProjectMakefileDir = lib.m_MsvcProjectMakefileDir;
+    } else {
+        string dll_project_dir = GetApp().GetProjectTreeInfo().m_Compilers;
+        dll_project_dir = 
+            CDirEntry::ConcatPath(dll_project_dir, 
+                                GetApp().GetRegSettings().m_CompilersSubdir);
+        dll_project_dir = 
+            CDirEntry::ConcatPath(dll_project_dir, 
+                                GetApp().GetBuildType().GetTypeStr());
+
+        dll->m_MsvcProjectMakefileDir = CDirEntry::AddTrailingPathSeparator(dll_project_dir);
+    }
+/*
     auto_ptr<CMsvcProjectMakefile> msvc_project_makefile = 
         auto_ptr<CMsvcProjectMakefile>
             (new CMsvcProjectMakefile
                     (CDirEntry::ConcatPath
                             (lib.m_SourcesBaseDir, 
                              CreateMsvcProjectMakefileName(lib))));
-
+*/
 }
 
 
@@ -565,6 +580,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/01/10 15:40:09  gouriano
+ * Make PTB pick up MSVC tune-up for DLLs
+ *
  * Revision 1.27  2004/12/20 21:07:33  gouriano
  * Eliminate compiler warnings
  *

@@ -121,6 +121,9 @@ public:
     /// Base directory of source files (....c++/src/a/ )
     string       m_SourcesBaseDir;
 
+    /// Directory of the MsvcProjectMakefile
+    string       m_MsvcProjectMakefileDir;
+
     /// List of source files without extension ( *.cpp or *.c ) -
     /// with relative pathes from m_SourcesBaseDir.
     list<string> m_Sources;
@@ -162,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/01/10 15:40:49  gouriano
+ * Make PTB pick up MSVC tune-up for DLLs
+ *
  * Revision 1.19  2004/08/04 13:24:58  gouriano
  * Added processing of EXPENDABLE projects
  *
