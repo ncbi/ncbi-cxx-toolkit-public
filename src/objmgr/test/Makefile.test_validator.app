@@ -10,3 +10,4 @@ LIB = xobjutil xobjmgr id1 submit seqset $(SEQ_LIBS) pub medline biblio general 
 LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_validator
+CHECK_COPY = current.prt
