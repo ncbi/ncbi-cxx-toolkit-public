@@ -37,24 +37,35 @@
 
 #include <ncbi_pch.hpp>
 #include <util/compress/zlib.hpp>
+#include <zlib.h>
 
 #include <stdio.h>
-
-// Identify as Unix by default.
-#ifndef OS_CODE
-#define OS_CODE 0x03
-#endif
-
 
 BEGIN_NCBI_SCOPE
 
 
+// Define some macro if not defined
+#ifndef DEF_MEM_LEVEL
+#  if MAX_MEM_LEVEL >= 8
+#    define DEF_MEM_LEVEL 8
+#  else
+#    define DEF_MEM_LEVEL  MAX_MEM_LEVEL
+#  endif
+#endif
+
+// Identify as Unix by default.
+#ifndef OS_CODE
+#  define OS_CODE 0x03
+#endif
+
 // Macro to check bits
 #define F_ISSET(mask) ((GetFlags() & (mask)) == (mask))
 
+// Get compression stream pointer
+#define STREAM ((z_stream*)m_Stream)
+
 // Maximum size of memory buffer for data caching.
 const unsigned long kMaxCacheSize = 1024;
-
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -62,21 +73,28 @@ const unsigned long kMaxCacheSize = 1024;
 // CZipCompression
 //
 
-
 CZipCompression::CZipCompression(ELevel level,  int window_bits,
                                  int mem_level, int strategy)
-
-    : CCompression(level), m_WindowBits(window_bits), m_MemLevel(mem_level),
-      m_Strategy(strategy)
+    : CCompression(level)
 {
+    m_WindowBits = ( window_bits == kZlibDefaultWbits ) ? MAX_WBITS :
+                                                          window_bits;
+    m_MemLevel   = ( mem_level == kZlibDefaultMemLevel )? DEF_MEM_LEVEL :
+                                                          mem_level;
+    m_Strategy   = ( strategy == kZlibDefaultStrategy ) ? Z_DEFAULT_STRATEGY :
+                                                          strategy;
     // Initialize the compressor stream structure
-    memset(&m_Stream, 0, sizeof(m_Stream));
+    m_Stream = new z_stream;
+    if ( m_Stream ) {
+        memset(m_Stream, 0, sizeof(z_stream));
+    }
     return;
 }
 
 
 CZipCompression::~CZipCompression()
 {
+    delete m_Stream;
     return;
 }
 
@@ -395,7 +413,7 @@ string CZipCompression::FormatErrorMessage(string where,
         str += ";  error code = " +
                NStr::IntToString(GetErrorCode()) +
                ", number of processed bytes = " +
-               NStr::UIntToString(m_Stream.total_in);
+               NStr::UIntToString(STREAM->total_in);
     }
     return str + ".";
 }
@@ -566,9 +584,9 @@ CCompressionProcessor::EStatus CZipCompressor::Init(void)
     m_Cache.reserve(kMaxCacheSize);
 
     // Initialize the compressor stream structure
-    memset(&m_Stream, 0, sizeof(m_Stream));
+    memset(STREAM, 0, sizeof(z_stream));
     // Create a compressor stream
-    int errcode = deflateInit2(&m_Stream, GetLevel(), Z_DEFLATED,
+    int errcode = deflateInit2(STREAM, GetLevel(), Z_DEFLATED,
                                F_ISSET(fWriteGZipFormat) ? -m_WindowBits :
                                                             m_WindowBits,
                                m_MemLevel, m_Strategy); 
@@ -599,15 +617,15 @@ CCompressionProcessor::EStatus CZipCompressor::Process(
         }
         m_NeedWriteHeader = false;
     }
-    m_Stream.next_in   = (unsigned char*)const_cast<char*>(in_buf);
-    m_Stream.avail_in  = in_len;
-    m_Stream.next_out  = (unsigned char*)out_buf + header_len;
-    m_Stream.avail_out = out_size - header_len;
+    STREAM->next_in   = (unsigned char*)const_cast<char*>(in_buf);
+    STREAM->avail_in  = in_len;
+    STREAM->next_out  = (unsigned char*)out_buf + header_len;
+    STREAM->avail_out = out_size - header_len;
 
-    int errcode = deflate(&m_Stream, Z_NO_FLUSH);
+    int errcode = deflate(STREAM, Z_NO_FLUSH);
     SetError(errcode, zError(errcode));
-    *in_avail  = m_Stream.avail_in;
-    *out_avail = out_size - m_Stream.avail_out;
+    *in_avail  = STREAM->avail_in;
+    *out_avail = out_size - STREAM->avail_out;
     IncreaseProcessedSize(in_len - *in_avail);
     IncreaseOutputSize(*out_avail);
 
@@ -631,18 +649,18 @@ CCompressionProcessor::EStatus CZipCompressor::Flush(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    m_Stream.next_in   = 0;
-    m_Stream.avail_in  = 0;
-    m_Stream.next_out  = (unsigned char*)out_buf;
-    m_Stream.avail_out = out_size;
+    STREAM->next_in   = 0;
+    STREAM->avail_in  = 0;
+    STREAM->next_out  = (unsigned char*)out_buf;
+    STREAM->avail_out = out_size;
 
-    int errcode = deflate(&m_Stream, Z_SYNC_FLUSH);
+    int errcode = deflate(STREAM, Z_SYNC_FLUSH);
     SetError(errcode, zError(errcode));
-    *out_avail = out_size - m_Stream.avail_out;
+    *out_avail = out_size - STREAM->avail_out;
     IncreaseOutputSize(*out_avail);
 
     if ( errcode == Z_OK  ||  errcode == Z_BUF_ERROR ) {
-        if ( m_Stream.avail_out == 0) {
+        if ( STREAM->avail_out == 0) {
             return eStatus_Overflow;
         }
         return eStatus_Success;
@@ -659,14 +677,14 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    m_Stream.next_in   = 0;
-    m_Stream.avail_in  = 0;
-    m_Stream.next_out  = (unsigned char*)out_buf;
-    m_Stream.avail_out = out_size;
+    STREAM->next_in   = 0;
+    STREAM->avail_in  = 0;
+    STREAM->next_out  = (unsigned char*)out_buf;
+    STREAM->avail_out = out_size;
 
-    int errcode = deflate(&m_Stream, Z_FINISH);
+    int errcode = deflate(STREAM, Z_FINISH);
     SetError(errcode, zError(errcode));
-    *out_avail = out_size - m_Stream.avail_out;
+    *out_avail = out_size - STREAM->avail_out;
     IncreaseOutputSize(*out_avail);
 
     switch (errcode) {
@@ -676,7 +694,7 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
         // Write .gz file footer
         if ( F_ISSET(fWriteGZipFormat) ) {
             unsigned int footer_len = 
-                s_WriteGZipFooter(out_buf + *out_avail, m_Stream.avail_out,
+                s_WriteGZipFooter(out_buf + *out_avail, STREAM->avail_out,
                                   GetProcessedSize(), m_CRC32);
             if ( !footer_len ) {
                 ERR_POST("CZipCompressor::Finish: Cannot write gzip footer");
@@ -693,7 +711,7 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
 
 CCompressionProcessor::EStatus CZipCompressor::End(void)
 {
-    int errcode = deflateEnd(&m_Stream);
+    int errcode = deflateEnd(STREAM);
     SetError(errcode, zError(errcode));
     SetBusy(false);
 
@@ -735,9 +753,9 @@ CCompressionProcessor::EStatus CZipDecompressor::Init(void)
     m_Cache.reserve(kMaxCacheSize);
 
     // Initialize the compressor stream structure
-    memset(&m_Stream, 0, sizeof(m_Stream));
+    memset(STREAM, 0, sizeof(z_stream));
     // Create a compressor stream
-    int errcode = inflateInit2(&m_Stream, m_WindowBits);
+    int errcode = inflateInit2(STREAM, m_WindowBits);
 
     SetError(errcode, zError(errcode));
 
@@ -758,10 +776,10 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    m_Stream.next_in   = (unsigned char*)const_cast<char*>(in_buf);
-    m_Stream.avail_in  = in_len;
-    m_Stream.next_out  = (unsigned char*)out_buf;
-    m_Stream.avail_out = out_size;
+    STREAM->next_in   = (unsigned char*)const_cast<char*>(in_buf);
+    STREAM->avail_in  = in_len;
+    STREAM->next_out  = (unsigned char*)out_buf;
+    STREAM->avail_out = out_size;
 
     bool          from_cache   = false;
     unsigned long avail_adj    = in_len;
@@ -788,7 +806,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
             // If gzip header found, skip it
             if ( header_len ) {
                 m_Cache.erase(0, header_len);
-                int errcode = inflateInit2(&m_Stream,
+                int errcode = inflateInit2(STREAM,
                                            header_len ? -MAX_WBITS :
                                                         m_WindowBits);
                 SetError(errcode, zError(errcode));
@@ -803,32 +821,32 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
         }
         // Have some cached unprocessed data
         if ( m_Cache.size() ) {
-            m_Stream.next_in   = (unsigned char*)(m_Cache.c_str());
-            m_Stream.avail_in  = m_Cache.size();
-            m_Stream.next_out  = (unsigned char*)out_buf;
-            m_Stream.avail_out = out_size;
-            from_cache         = true;
-            old_avail_in       = m_Stream.avail_in;
+            STREAM->next_in   = (unsigned char*)(m_Cache.c_str());
+            STREAM->avail_in  = m_Cache.size();
+            STREAM->next_out  = (unsigned char*)out_buf;
+            STREAM->avail_out = out_size;
+            from_cache        = true;
+            old_avail_in      = STREAM->avail_in;
         }
     }
 
-    int errcode = inflate(&m_Stream, Z_SYNC_FLUSH);
+    int errcode = inflate(STREAM, Z_SYNC_FLUSH);
     SetError(errcode, zError(errcode));
 
     if ( from_cache ) {
-        m_Cache.erase(0, old_avail_in - m_Stream.avail_in);
+        m_Cache.erase(0, old_avail_in - STREAM->avail_in);
         *in_avail = avail_adj;
-        IncreaseProcessedSize(old_avail_in - m_Stream.avail_in);
+        IncreaseProcessedSize(old_avail_in - STREAM->avail_in);
     } else {
-        *in_avail = m_Stream.avail_in;
+        *in_avail = STREAM->avail_in;
         IncreaseProcessedSize(in_len - *in_avail);
     }
-    *out_avail = out_size - m_Stream.avail_out;
+    *out_avail = out_size - STREAM->avail_out;
     IncreaseOutputSize(*out_avail);
 
     switch (errcode) {
     case Z_OK:
-        if ( from_cache  &&  avail_adj == 0  &&  m_Stream.avail_in > 0 ) {
+        if ( from_cache  &&  avail_adj == 0  &&  STREAM->avail_in > 0 ) {
             return eStatus_Overflow;
         }
         return eStatus_Success;
@@ -870,7 +888,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Finish(
 
 CCompressionProcessor::EStatus CZipDecompressor::End(void)
 {
-    int errcode = inflateEnd(&m_Stream);
+    int errcode = inflateEnd(STREAM);
     SetBusy(false);
     if ( errcode == Z_OK ) {
         return eStatus_Success;
@@ -886,6 +904,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/11/17 18:00:17  ivanov
+ * Moved #include <zlib.h> from .hpp to .cpp
+ *
  * Revision 1.15  2004/11/12 17:37:16  ivanov
  * Fixed bug in CZipDecompressor::Process() if fCheckFileHeader flag is set.
  *

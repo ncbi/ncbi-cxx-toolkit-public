@@ -35,16 +35,6 @@
  */
 
 #include <util/compress/stream.hpp>
-#include <zlib.h>
-
-#ifndef DEF_MEM_LEVEL
-#  if MAX_MEM_LEVEL >= 8
-#    define DEF_MEM_LEVEL 8
-#  else
-#    define DEF_MEM_LEVEL  MAX_MEM_LEVEL
-#  endif
-#endif
-
 
 /** @addtogroup Compression
  *
@@ -83,6 +73,11 @@ BEGIN_NCBI_SCOPE
 //    The strategy parameter only affects the compression ratio but not the
 //    correctness of the compressed output even if it is not set appropriately.
 
+// Use default values, defined in zlib library
+const int kZlibDefaultWbits       = -1;
+const int kZlibDefaultMemLevel    = -1;
+const int kZlibDefaultStrategy    = -1;
+const int kZlibDefaultCompression = -1;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -90,7 +85,7 @@ BEGIN_NCBI_SCOPE
 // CCompressionZip class
 //
 
-class NCBI_XUTIL_EXPORT CZipCompression : public CCompression 
+class NCBI_XUTIL_EXPORT CZipCompression : public CCompression
 {
 public:
     /// Zip stream processing flags.
@@ -104,15 +99,15 @@ public:
     // 'ctors
     CZipCompression(
         ELevel level       = eLevel_Default,
-        int    window_bits = MAX_WBITS,             // [8..15]
-        int    mem_level   = DEF_MEM_LEVEL,         // [1..9] 
-        int    strategy    = Z_DEFAULT_STRATEGY     // [0,1]
+        int    window_bits = kZlibDefaultWbits,     // [8..15]
+        int    mem_level   = kZlibDefaultMemLevel,  // [1..9] 
+        int    strategy    = kZlibDefaultStrategy   // [0..2]
     );
     virtual ~CZipCompression(void);
 
     // Returns default compression level for a compression algorithm
     virtual ELevel GetDefaultLevel(void) const
-        { return ELevel(Z_DEFAULT_COMPRESSION); };
+        { return ELevel(kZlibDefaultCompression); };
 
     //
     // Utility functions 
@@ -159,12 +154,12 @@ protected:
     string FormatErrorMessage(string where, bool use_stream_data =true) const;
 
 protected:
-    z_stream  m_Stream;     // Compressor stream;
-    int       m_WindowBits; // The base two logarithm of the window size
-                            // (the size of the history buffer). 
-    int       m_MemLevel;   // The allocation memory level for the
-                            // internal compression state;
-    int       m_Strategy;   // The parameter to tune the compression algorithm
+    void*  m_Stream;      // Compressor stream
+    int    m_WindowBits;  // The base two logarithm of the window size
+                          // (the size of the history buffer). 
+    int    m_MemLevel;    // The allocation memory level for the
+                          // internal compression state.
+    int    m_Strategy;    // The parameter to tune the compression algorithm.
 };
 
  
@@ -190,15 +185,15 @@ public:
         const string& file_name,
         EMode         mode,
         ELevel        level       = eLevel_Default,
-        int           window_bits = MAX_WBITS,
-        int           mem_level   = DEF_MEM_LEVEL,
-        int           strategy    = Z_DEFAULT_STRATEGY
+        int           window_bits = kZlibDefaultWbits,
+        int           mem_level   = kZlibDefaultMemLevel,
+        int           strategy    = kZlibDefaultStrategy
     );
     CZipCompressionFile(
         ELevel        level       = eLevel_Default,
-        int           window_bits = MAX_WBITS,
-        int           mem_level   = DEF_MEM_LEVEL,
-        int           strategy    = Z_DEFAULT_STRATEGY
+        int           window_bits = kZlibDefaultWbits,
+        int           mem_level   = kZlibDefaultMemLevel,
+        int           strategy    = kZlibDefaultStrategy
     );
     ~CZipCompressionFile(void);
 
@@ -240,9 +235,9 @@ public:
     // 'ctors
     CZipCompressor(
         ELevel               level       = eLevel_Default,
-        int                  window_bits = MAX_WBITS,
-        int                  mem_level   = DEF_MEM_LEVEL,
-        int                  strategy    = Z_DEFAULT_STRATEGY,
+        int                  window_bits = kZlibDefaultWbits,
+        int                  mem_level   = kZlibDefaultMemLevel,
+        int                  strategy    = kZlibDefaultStrategy,
         CCompression::TFlags flags       = 0
     );
     virtual ~CZipCompressor(void);
@@ -279,7 +274,7 @@ class NCBI_XUTIL_EXPORT CZipDecompressor : public CZipCompression,
 public:
     // 'ctors
     CZipDecompressor(
-        int                  window_bits = MAX_WBITS,
+        int                  window_bits = kZlibDefaultWbits,
         CCompression::TFlags flags       = 0
     );
     virtual ~CZipDecompressor(void);
@@ -333,14 +328,16 @@ public:
         CCompression::TFlags  flags = 0
         )
         : CCompressionStreamProcessor(
-              new CZipCompressor(level, MAX_WBITS, DEF_MEM_LEVEL,
-                                 Z_DEFAULT_STRATEGY, flags),
+              new CZipCompressor(level, kZlibDefaultWbits,
+                                 kZlibDefaultMemLevel, kZlibDefaultStrategy,
+                                 flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
     CZipStreamCompressor(CCompression::TFlags flags = 0)
         : CCompressionStreamProcessor(
-              new CZipCompressor(CCompression::eLevel_Default, MAX_WBITS,
-                                 DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, flags),
+              new CZipCompressor(CCompression::eLevel_Default,
+                                 kZlibDefaultWbits, kZlibDefaultMemLevel,
+                                 kZlibDefaultStrategy, flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
 };
@@ -365,7 +362,7 @@ public:
     // Conventional constructor
     CZipStreamDecompressor(CCompression::TFlags flags = 0)
         : CCompressionStreamProcessor( 
-              new CZipDecompressor(MAX_WBITS, flags),
+              new CZipDecompressor(kZlibDefaultWbits, flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
 };
@@ -380,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/11/17 18:00:08  ivanov
+ * Moved #include <zlib.h> from .hpp to .cpp
+ *
  * Revision 1.12  2004/11/15 13:16:13  ivanov
  * Cosmetics
  *
