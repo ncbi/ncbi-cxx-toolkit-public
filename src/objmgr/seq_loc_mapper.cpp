@@ -191,7 +191,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_feat&  map_feat,
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
       m_UseWidth(false),
-      m_Dst_width(0)
+      m_Dst_width(0),
+      m_ReverseRangeOrder(false)
 {
     _ASSERT(map_feat.IsSetProduct());
     int frame = 0;
@@ -215,7 +216,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_loc& source,
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
       m_UseWidth(false),
-      m_Dst_width(0)
+      m_Dst_width(0),
+      m_ReverseRangeOrder(false)
 {
     x_Initialize(source, target);
 }
@@ -229,7 +231,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
       m_UseWidth(false),
-      m_Dst_width(0)
+      m_Dst_width(0),
+      m_ReverseRangeOrder(false)
 {
     x_Initialize(map_align, to_id);
 }
@@ -243,7 +246,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
       m_UseWidth(false),
-      m_Dst_width(0)
+      m_Dst_width(0),
+      m_ReverseRangeOrder(false)
 {
     x_Initialize(map_align, to_row);
 }
@@ -256,7 +260,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq,
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
       m_UseWidth(false),
-      m_Dst_width(0)
+      m_Dst_width(0),
+      m_ReverseRangeOrder(false)
 {
     CConstRef<CSeq_id> dst_id = target_seq.GetSeqId();
     if ( !dst_id ) {
@@ -298,7 +303,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
       m_UseWidth(false),
-      m_Dst_width(0)
+      m_Dst_width(0),
+      m_ReverseRangeOrder(false)
 {
     x_Initialize(seq_map, dst_id);
     if (dst_locs == eDestinationPreserve) {
@@ -314,7 +320,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t          depth,
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
       m_UseWidth(false),
-      m_Dst_width(0)
+      m_Dst_width(0),
+      m_ReverseRangeOrder(false)
 {
     if (depth > 0) {
         depth--;
@@ -349,7 +356,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t         depth,
       m_GapFlag(eGapPreserve),
       m_KeepNonmapping(false),
       m_UseWidth(false),
-      m_Dst_width(0)
+      m_Dst_width(0),
+      m_ReverseRangeOrder(false)
 {
     if (depth > 0) {
         depth--;
@@ -726,6 +734,9 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_loc& source,
             dst_start = dst_it.GetRange().GetFrom()*src_width;
             dst_len = x_GetRangeLength(dst_it)*src_width;
         }
+    }
+    if (source.IsReverseStrand() != target.IsReverseStrand()) {
+        m_ReverseRangeOrder = true;
     }
 }
 
@@ -1780,7 +1791,12 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
                     // Empty seq-loc
                     CRef<CSeq_loc> loc(new CSeq_loc);
                     loc->SetEmpty().Assign(*id_it->first.GetSeqId());
-                    dst_mix.push_back(loc);
+                    if ( m_ReverseRangeOrder ) {
+                        dst_mix.push_front(loc);
+                    }
+                    else {
+                        dst_mix.push_back(loc);
+                    }
                     continue;
                 }
                 if (to == kInvalidSeqPos) {
@@ -1815,15 +1831,27 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
                     }
                 }
                 // Add new interval or point
-                dst_mix.push_back(x_RangeToSeq_loc(id_it->first, from, to,
-                    str, fuzz));
+                if ( m_ReverseRangeOrder ) {
+                    dst_mix.push_front(x_RangeToSeq_loc(id_it->first, from, to,
+                        str, fuzz));
+                }
+                else {
+                    dst_mix.push_back(x_RangeToSeq_loc(id_it->first, from, to,
+                        str, fuzz));
+                }
                 from = rg_it->first.GetFrom();
                 to = rg_it->first.GetTo();
                 fuzz = rg_it->second;
             }
             // last interval or point
-            dst_mix.push_back(x_RangeToSeq_loc(id_it->first, from, to,
-                str, fuzz));
+            if ( m_ReverseRangeOrder ) {
+                dst_mix.push_front(x_RangeToSeq_loc(id_it->first, from, to,
+                    str, fuzz));
+            }
+            else {
+                dst_mix.push_back(x_RangeToSeq_loc(id_it->first, from, to,
+                    str, fuzz));
+            }
         }
     }
     m_MappedLocs.clear();
@@ -1854,6 +1882,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/09/27 16:52:27  grichenk
+* Fixed order of mapped intervals
+*
 * Revision 1.25  2004/09/27 14:36:52  grichenk
 * Set eDestinationPreserve in some constructors by default
 *

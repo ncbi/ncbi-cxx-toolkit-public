@@ -328,6 +328,9 @@ private:
     mutable TRangesById m_MappedLocs;
     CRef<CSeq_loc>      m_Dst_loc;
     TDstStrandMap       m_DstRanges;
+    // True if mapped ranges order should be reversed
+    // (e.g. when mapping from plus to minus strand).
+    bool                m_ReverseRangeOrder;
 };
 
 
@@ -445,6 +448,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/09/27 16:52:27  grichenk
+* Fixed order of mapped intervals
+*
 * Revision 1.17  2004/09/27 14:36:52  grichenk
 * Set eDestinationPreserve in some constructors by default
 *
