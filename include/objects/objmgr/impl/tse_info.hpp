@@ -96,8 +96,7 @@ public:
     // Dead seq-entry flag
     bool m_Dead;
     TBioseqMap m_BioseqMap;
-    TAnnotMap  m_AnnotMap_ByInt;
-    TAnnotMap  m_AnnotMap_ByTotal;
+    TAnnotMap  m_AnnotMap;
 
     void CounterOverflow(void) const;
     void CounterUnderflow(void) const;
@@ -397,6 +396,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/02/25 20:10:38  grichenk
+* Reverted to single total-range index for annotations
+*
 * Revision 1.20  2003/02/25 14:48:07  vasilche
 * Added Win32 export modifier to object manager classes.
 *

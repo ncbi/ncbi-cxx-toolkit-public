@@ -1598,20 +1598,13 @@ void CDataSource::x_MapAnnot(CTSE_Info& tse,
         m_TSE_ref[mapit->first].insert(CRef<CTSE_Info>(&tse));
 
         CTSE_Info::TAnnotSelectorMap& selMapTotal =
-            tse.m_AnnotMap_ByTotal[mapit->first];
-        CTSE_Info::TAnnotSelectorMap& selMapInt =
-            tse.m_AnnotMap_ByInt[mapit->first];
+            tse.m_AnnotMap[mapit->first];
 
         // repeat for more generic types of selector
         do {
             x_MapAnnot(selMapTotal[annotSelector], 
                        mapit->second.GetOverlappingRange(),
                        annotRef);
-
-            CTSE_Info::TRangeMap& mapInt = selMapInt[annotSelector];
-            iterate ( CHandleRange::TRanges, rgit, mapit->second ) {
-                x_MapAnnot(mapInt, rgit->first, annotRef);
-            }
         } while ( x_MakeGenericSelector(annotSelector) );
     }
 }
@@ -1640,9 +1633,7 @@ void CDataSource::x_DropAnnot(CTSE_Info& tse,
     // Iterate id handles
     iterate ( CHandleRangeMap::TLocMap, mapit, hrm.GetMap() ) {
         CTSE_Info::TAnnotSelectorMap& selMapTotal =
-            tse.m_AnnotMap_ByTotal[mapit->first];
-        CTSE_Info::TAnnotSelectorMap& selMapInt =
-            tse.m_AnnotMap_ByInt[mapit->first];
+            tse.m_AnnotMap[mapit->first];
 
         // repeat for more generic types of selector
         do {
@@ -1651,19 +1642,10 @@ void CDataSource::x_DropAnnot(CTSE_Info& tse,
                              annotObj) ) {
                 selMapTotal.erase(annotSelector);
             }
-
-            CTSE_Info::TRangeMap& mapInt = selMapInt[annotSelector];
-            iterate ( CHandleRange::TRanges, rgit, mapit->second ) {
-                if ( x_DropAnnot(mapInt, rgit->first, annotObj) ) {
-                    selMapInt.erase(annotSelector);
-                    break;
-                }
-            }
         } while ( x_MakeGenericSelector(annotSelector) );
 
-        if ( selMapTotal.empty()  &&  selMapInt.empty() ) {
-            tse.m_AnnotMap_ByTotal.erase(mapit->first);
-            tse.m_AnnotMap_ByInt.erase(mapit->first);
+        if ( selMapTotal.empty() ) {
+            tse.m_AnnotMap.erase(mapit->first);
             m_TSE_ref[mapit->first].erase(CRef<CTSE_Info>(&tse));
             if (m_TSE_ref[mapit->first].empty()) {
                 m_TSE_ref.erase(mapit->first);
@@ -2169,6 +2151,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2003/02/25 20:10:40  grichenk
+* Reverted to single total-range index for annotations
+*
 * Revision 1.83  2003/02/24 18:57:22  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

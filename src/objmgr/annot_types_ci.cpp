@@ -578,16 +578,14 @@ void CAnnotTypes_CI::x_SearchMain(CHandleRangeMap loc)
         m_TSESet.insert(*tse_it);
         const CTSE_Info& tse_info = **tse_it;
 
-        const CTSE_Info::TAnnotMap& annot_map = tse_info.m_AnnotMap_ByTotal;
-        
         iterate ( CHandleRangeMap::TLocMap, idit, loc.GetMap() ) {
             if ( idit->second.Empty() ) {
                 continue;
             }
 
             CTSE_Info::TAnnotMap::const_iterator amit =
-                annot_map.find(idit->first);
-            if (amit == annot_map.end()) {
+                tse_info.m_AnnotMap.find(idit->first);
+            if (amit == tse_info.m_AnnotMap.end()) {
                 continue;
             }
 
@@ -669,7 +667,6 @@ void CAnnotTypes_CI::x_SearchLocation(const CSeqMap_CI& seg,
         m_TSESet.insert(*tse_it);
         const CTSE_Info& tse_info = **tse_it;
         CTSE_Guard guard(tse_info);
-        const CTSE_Info::TAnnotMap& annot_map = tse_info.m_AnnotMap_ByTotal;
 
         iterate ( CHandleRangeMap, idit, ref_loc ) {
             CSeq_loc_Conversion cvt(master_loc->first.GetSeqId(),
@@ -677,8 +674,8 @@ void CAnnotTypes_CI::x_SearchLocation(const CSeqMap_CI& seg,
                                     m_Scope);
 
             CTSE_Info::TAnnotMap::const_iterator ait =
-                annot_map.find(idit->first);
-            if ( ait == annot_map.end() )
+                tse_info.m_AnnotMap.find(idit->first);
+            if ( ait == tse_info.m_AnnotMap.end() )
                 continue;
 
             CTSE_Info::TAnnotSelectorMap::const_iterator sit =
@@ -715,6 +712,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/02/25 20:10:40  grichenk
+* Reverted to single total-range index for annotations
+*
 * Revision 1.43  2003/02/24 21:35:22  vasilche
 * Reduce checks in CAnnotObject_Ref comparison.
 * Fixed compilation errors on MS Windows.

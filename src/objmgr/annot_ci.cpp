@@ -79,13 +79,12 @@ CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
       m_OverlapType(overlap_type)
 {
     CTSE_Guard guard(tse);
-    const TAnnotMap* annot_map = m_OverlapType == eOverlap_Intervals ?
-        &m_TSEInfo->m_AnnotMap_ByInt : &m_TSEInfo->m_AnnotMap_ByTotal;
+    const TAnnotMap* annot_map = &m_TSEInfo->m_AnnotMap;
     iterate ( CHandleRangeMap::TLocMap, it, m_HandleRangeMap->GetMap() ) {
         if ( !it->second.Empty() ) {
             TAnnotMap::const_iterator ait =
-                annot_map->find(it->first);
-            if (ait == annot_map->end())
+                m_TSEInfo->m_AnnotMap.find(it->first);
+            if (ait == m_TSEInfo->m_AnnotMap.end())
                 continue;
             TAnnotSelectorMap::const_iterator sit =
                 ait->second.find(selector);
@@ -195,13 +194,11 @@ void CAnnot_CI::x_Walk(void)
     // to select the next one.
     CHandleRangeMap::TLocMap::const_iterator h =
         m_HandleRangeMap->GetMap().find(m_CurrentHandle);
-    const TAnnotMap* annot_map = m_OverlapType == eOverlap_Intervals ?
-        &m_TSEInfo->m_AnnotMap_ByInt : &m_TSEInfo->m_AnnotMap_ByTotal;
     for (++h; h != m_HandleRangeMap->GetMap().end(); ++h) {
         if ( !h->second.Empty() ) {
             TAnnotMap::const_iterator ait =
-                annot_map->find(h->first);
-            if (ait == annot_map->end())
+                m_TSEInfo->m_AnnotMap.find(h->first);
+            if (ait == m_TSEInfo->m_AnnotMap.end())
                 continue;
             TAnnotSelectorMap::const_iterator sit =
                 ait->second.find(m_Selector);
@@ -228,6 +225,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/02/25 20:10:40  grichenk
+* Reverted to single total-range index for annotations
+*
 * Revision 1.18  2003/02/24 18:57:22  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.
