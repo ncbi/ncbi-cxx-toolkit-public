@@ -48,44 +48,57 @@
 
 BEGIN_NCBI_SCOPE
 
-// CRPCClient -- prototype client for ASN.1/XML-based RPC.
-// Normally connects automatically on the first real request and
-// disconnects automatically in the destructor, but allows both events
-// to occur explicitly.
+/// CRPCClient -- prototype client for ASN.1/XML-based RPC.
+/// Normally connects automatically on the first real request and
+/// disconnects automatically in the destructor, but allows both events
+/// to occur explicitly.
 
 template <class TRequest, class TReply>
 class CRPCClient : public CObject
 {
 public:
-    CRPCClient(const string& service = kEmptyStr,
-               ESerialDataFormat format = eSerial_AsnBinary)
-        : m_Service(service), m_Format(format)
+    CRPCClient(const string&     service     = kEmptyStr,
+               ESerialDataFormat format      = eSerial_AsnBinary,
+               unsigned int      retry_limit = 3)
+        : m_Service(service), m_Format(format), m_RetryLimit(retry_limit)
         { }
     virtual ~CRPCClient(void) { Disconnect(); }
 
     virtual void Ask(const TRequest& request, TReply& reply);
             void Connect(void);
             void Disconnect(void);
-            void Reset(void) { Disconnect(); Connect(); }
+            void Reset(void);
+      EIO_Status SetTimeout(const STimeout* timeout,
+                            EIO_Event direction = eIO_ReadWrite);
 
 protected:
-    // These run with m_Mutex already acquired
+    /// These run with m_Mutex already acquired.
     virtual void x_Connect(void);
     virtual void x_Disconnect(void);
             void x_SetStream(CNcbiIostream* stream);
 
+    /// Retry policy; by default, just _TRACEs the event and returns
+    /// true.  May reset the connection (or do anything else, really),
+    /// but note that Ask will already automatically reconnect if the
+    /// stream is explicitly bad.  (Ask also takes care of enforcing
+    /// m_RetryLimit.)
+    virtual bool x_ShouldRetry(unsigned int tries);
+
 private:
     typedef CRPCClient<TRequest, TReply> TSelf;
-    // prohibit default copy constructor and assignment operator
+    /// Prohibit default copy constructor and assignment operator.
     CRPCClient(const TSelf& x);
     bool operator= (const TSelf& x);
 
     auto_ptr<CNcbiIostream>  m_Stream;
     auto_ptr<CObjectIStream> m_In;
     auto_ptr<CObjectOStream> m_Out;
-    string                   m_Service; // used by default Connect()
+    string                   m_Service; ///< Used by default Connect().
     ESerialDataFormat        m_Format;
-    CMutex                   m_Mutex; // to allow sharing across threads
+    CMutex                   m_Mutex;   ///< To allow sharing across threads.
+
+protected:
+    unsigned int             m_RetryLimit;
 };
 
 
@@ -97,12 +110,12 @@ template <class TRequest, class TReply>
 inline
 void CRPCClient<TRequest, TReply>::Connect(void)
 {
-    if (m_Stream.get()) {
+    if (m_Stream.get()  &&  m_Stream->good()) {
         return; // already connected
     }
     CMutexGuard LOCK(m_Mutex);
     // repeat test with mutex held to avoid races
-    if (m_Stream.get()) {
+    if (m_Stream.get()  &&  m_Stream->good()) {
         return; // already connected
     }
     x_Connect();
@@ -114,7 +127,7 @@ inline
 void CRPCClient<TRequest, TReply>::Disconnect(void)
 {
     CMutexGuard LOCK(m_Mutex);
-    if ( !m_Stream.get() ) {
+    if ( !m_Stream.get()  ||  !m_Stream->good() ) {
         // not connected -- don't call x_Disconnect, which might
         // temporarily reconnect to send a fini!
         return;
@@ -125,12 +138,48 @@ void CRPCClient<TRequest, TReply>::Disconnect(void)
 
 template <class TRequest, class TReply>
 inline
+void CRPCClient<TRequest, TReply>::Reset(void)
+{
+    CMutexGuard LOCK(m_Mutex);
+    if (m_Stream.get()  &&  m_Stream->good()) {
+        x_Disconnect();
+    }
+    x_Connect();
+}
+
+
+template <class TRequest, class TReply>
+inline
+EIO_Status CRPCClient<TRequest, TReply>::SetTimeout(const STimeout* timeout,
+                                                    EIO_Event direction)
+{
+    CConn_IOStream conn_stream = dynamic_cast<CConn_IOStream*>(m_Stream);
+    if (conn_stream) {
+        return CONN_SetTimeout(conn_stream.GetCONN(), direction, timeout);
+    } else {
+        return eIO_NotSupported;
+    }
+}
+
+
+template <class TRequest, class TReply>
+inline
 void CRPCClient<TRequest, TReply>::Ask(const TRequest& request, TReply& reply)
 {
     CMutexGuard LOCK(m_Mutex);
-    Connect(); // No-op if already connected
-    *m_Out << request;
-    *m_In >> reply;
+    
+    for (unsigned int tries = 1;  tries <= m_RetryLimit;  ++tries) {
+        try {
+            Connect(); // No-op if already connected
+            *m_Out << request;
+            *m_In >> reply;
+            break;
+        } catch (CSerialException& e) {
+            if ( !x_ShouldRetry(tries) ) {
+                throw;
+            }
+        }
+    }
 }
 
 
@@ -163,6 +212,16 @@ void CRPCClient<TRequest, TReply>::x_SetStream(CNcbiIostream* stream)
 }
 
 
+template <class TRequest, class TReply>
+inline
+bool CRPCClient<TRequest, TReply>::x_ShouldRetry(unsigned int tries)
+{
+    _TRACE("CRPCClient<>::x_ShouldRetry: retrying after " << tries
+           << " failures");
+    return true;
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -173,12 +232,15 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/12/12 21:31:43  ucko
+* Support (configurably) retrying requests that run into I/O errors.
+* Partially doxygenize.
+*
 * Revision 1.2  2003/04/15 16:18:43  siyan
 * Added doxygen support
 *
 * Revision 1.1  2002/11/13 00:46:05  ucko
 * Add RPC client generator; CVS logs to end in generate.?pp
-*
 *
 * ===========================================================================
 */
