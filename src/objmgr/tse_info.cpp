@@ -198,7 +198,8 @@ void CTSE_Info::x_Initialize(void)
 void CTSE_Info::SetBlobVersion(TBlobVersion version)
 {
     _ASSERT(version >= 0);
-    _ASSERT(m_BlobVersion < 0 || m_BlobVersion == version);
+    _ASSERT(m_LoadState == eNotLoaded || !m_Object ||
+            m_BlobVersion < 0 || m_BlobVersion == version);
     m_BlobVersion = version;
 }
 
