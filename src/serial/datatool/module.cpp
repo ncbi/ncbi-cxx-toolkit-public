@@ -1,5 +1,5 @@
-#include "asnmodule.hpp"
-#include "asntype.hpp"
+#include <module.hpp>
+#include <type.hpp>
 
 void Warning(const string& message)
 {

@@ -1,6 +1,6 @@
-#include "asntype.hpp"
-#include "asnvalue.hpp"
-#include "asnmodule.hpp"
+#include <type.hpp>
+#include <value.hpp>
+#include <module.hpp>
 
 ASNType::ASNType()
     : line(0)
@@ -18,7 +18,7 @@ void ASNType::Warning(const string& mess) const
     cerr << ": " << mess << endl;
 }
 
-bool ASNType::Check(const ASNModule& module)
+bool ASNType::Check(const ASNModule& )
 {
     return true;
 }
@@ -36,7 +36,7 @@ ASNFixedType::ASNFixedType(const string& kw)
 {
 }
 
-ostream& ASNFixedType::Print(ostream& out, int indent) const
+ostream& ASNFixedType::Print(ostream& out, int ) const
 {
     return out << keyword;
 }
@@ -51,7 +51,7 @@ if ( dynamic_cast<const type*>(&(value)) == 0 ) { \
     (value).Warning(name " value expected"); return false; \
 } } while(0)
 
-bool ASNNullType::CheckValue(const ASNModule& module, const ASNValue& value)
+bool ASNNullType::CheckValue(const ASNModule& , const ASNValue& value)
 {
     CheckValueType(value, ASNNullValue, "NULL");
     return true;
@@ -62,7 +62,7 @@ ASNBooleanType::ASNBooleanType()
 {
 }
 
-bool ASNBooleanType::CheckValue(const ASNModule& module, const ASNValue& value)
+bool ASNBooleanType::CheckValue(const ASNModule& , const ASNValue& value)
 {
     CheckValueType(value, ASNBoolValue, "BOOLEAN");
     return true;
@@ -73,7 +73,7 @@ ASNRealType::ASNRealType()
 {
 }
 
-bool ASNRealType::CheckValue(const ASNModule& module, 
+bool ASNRealType::CheckValue(const ASNModule& , 
                              const ASNValue& value)
 {
     const ASNBlockValue* block = dynamic_cast<const ASNBlockValue*>(&value);
@@ -97,7 +97,7 @@ ASNVisibleStringType::ASNVisibleStringType()
 {
 }
 
-bool ASNVisibleStringType::CheckValue(const ASNModule& module,
+bool ASNVisibleStringType::CheckValue(const ASNModule& ,
                                       const ASNValue& value)
 {
     CheckValueType(value, ASNStringValue, "string");
@@ -109,7 +109,7 @@ ASNStringStoreType::ASNStringStoreType()
 {
 }
 
-bool ASNStringStoreType::CheckValue(const ASNModule& module,
+bool ASNStringStoreType::CheckValue(const ASNModule& ,
                                     const ASNValue& value)
 {
     CheckValueType(value, ASNStringValue, "string");
@@ -121,7 +121,7 @@ ASNBitStringType::ASNBitStringType()
 {
 }
 
-bool ASNBitStringType::CheckValue(const ASNModule& module,
+bool ASNBitStringType::CheckValue(const ASNModule& ,
                                   const ASNValue& value)
 {
     CheckValueType(value, ASNBitStringValue, "BIT STRING");
@@ -133,7 +133,7 @@ ASNOctetStringType::ASNOctetStringType()
 {
 }
 
-bool ASNOctetStringType::CheckValue(const ASNModule& module,
+bool ASNOctetStringType::CheckValue(const ASNModule& ,
                                     const ASNValue& value)
 {
     CheckValueType(value, ASNBitStringValue, "OCTET STRING");
@@ -172,7 +172,7 @@ ostream& ASNEnumeratedType::Print(ostream& out, int indent) const
     return out << "}";
 }
 
-bool ASNEnumeratedType::CheckValue(const ASNModule& module,
+bool ASNEnumeratedType::CheckValue(const ASNModule& ,
                                    const ASNValue& value)
 {
     const ASNIdValue* id = dynamic_cast<const ASNIdValue*>(&value);
@@ -193,7 +193,7 @@ ASNIntegerType::ASNIntegerType()
 {
 }
 
-bool ASNIntegerType::CheckValue(const ASNModule& module,
+bool ASNIntegerType::CheckValue(const ASNModule& ,
                                 const ASNValue& value)
 {
     CheckValueType(value, ASNIntegerValue, "INTEGER");
@@ -205,7 +205,7 @@ ASNUserType::ASNUserType(const string& n)
 {
 }
 
-ostream& ASNUserType::Print(ostream& out, int indent) const
+ostream& ASNUserType::Print(ostream& out, int ) const
 {
     return out << name;
 }

@@ -16,7 +16,8 @@ public:
 
     ~AutoPtr()
         {
-            delete ptr;
+            if ( ptr )
+                delete ptr;
         }
 
     AutoPtr& operator=(const AutoPtr& p)
@@ -50,9 +51,11 @@ public:
         {
             return ptr;
         }
-    void release() const
+    T* release() const
         {
+            T* ret = ptr;
             ptr = 0;
+            return ret;
         }
 
     operator bool() const

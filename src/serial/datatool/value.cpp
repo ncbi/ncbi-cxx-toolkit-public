@@ -1,5 +1,5 @@
-#include <asnvalue.hpp>
-#include <asntype.hpp>
+#include <value.hpp>
+#include <type.hpp>
 
 inline
 ostream& NewLine(ostream& out, int indent)
@@ -23,7 +23,7 @@ void ASNValue::Warning(const string& mess) const
     cerr << ": " << mess << endl;
 }
 
-ostream& ASNNullValue::Print(ostream& out, int indent)
+ostream& ASNNullValue::Print(ostream& out, int )
 {
     return out << "NULL";
 }
@@ -33,7 +33,7 @@ ASNBoolValue::ASNBoolValue(bool v)
 {
 }
 
-ostream& ASNBoolValue::Print(ostream& out, int indent)
+ostream& ASNBoolValue::Print(ostream& out, int )
 {
     return out << (value? "TRUE": "FALSE");
 }
@@ -43,7 +43,7 @@ ASNIntegerValue::ASNIntegerValue(long v)
 {
 }
 
-ostream& ASNIntegerValue::Print(ostream& out, int indent)
+ostream& ASNIntegerValue::Print(ostream& out, int )
 {
     return out << value;
 }
@@ -53,9 +53,9 @@ ASNStringValue::ASNStringValue(const string& v)
 {
 }
 
-ostream& ASNStringValue::Print(ostream& out, int indent)
+ostream& ASNStringValue::Print(ostream& out, int )
 {
-    return out << '"' << value << '"';
+    return out << value;
 }
 
 ASNBitStringValue::ASNBitStringValue(const string& v)
@@ -63,9 +63,9 @@ ASNBitStringValue::ASNBitStringValue(const string& v)
 {
 }
 
-ostream& ASNBitStringValue::Print(ostream& out, int indent)
+ostream& ASNBitStringValue::Print(ostream& out, int )
 {
-    return out << '\'' << value << "'B";
+    return out << value;
 }
 
 ASNIdValue::ASNIdValue(const string& v)
@@ -73,7 +73,7 @@ ASNIdValue::ASNIdValue(const string& v)
 {
 }
 
-ostream& ASNIdValue::Print(ostream& out, int indent)
+ostream& ASNIdValue::Print(ostream& out, int )
 {
     return out << id;
 }

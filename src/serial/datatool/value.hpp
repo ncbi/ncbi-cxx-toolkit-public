@@ -3,7 +3,7 @@
 
 #include <list>
 #include <ostream>
-#include "autoptr.hpp"
+#include <autoptr.hpp>
 
 using namespace std;
 
