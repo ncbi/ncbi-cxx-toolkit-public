@@ -6,7 +6,7 @@
 REQUIRES = bdb
 
 LIB = lds
-SRC = lds.cpp lds_reader lds_query 
+SRC = lds lds_reader lds_query 
 
 # Dependencies for shared library
 DLL_LIB = bdb
