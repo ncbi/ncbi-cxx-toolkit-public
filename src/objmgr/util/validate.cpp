@@ -4984,7 +4984,7 @@ void CValidError_impl::ValidateCdregion (
     if ( diter ) {
         const CBioSource& src = diter->GetSource();
         
-        int biopgencode = src.GetGcode();
+        int biopgencode = src.GetGenCode();
         
         if (cdregion.IsSetCode ()) {
             int cdsgencode = cdregion.GetCode().GetId();
@@ -5046,7 +5046,7 @@ void CValidError_impl::CheckTrnaCodons(const CTrna_ext& trna, const CSeq_feat& f
     int gcode = 0;
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
     for ( CSeqdesc_CI diter (bsh, CSeqdesc::e_Source); diter; ++diter) {
-        gcode = diter->GetSource().GetGcode();
+        gcode = diter->GetSource().GetGenCode();
         break; // need only the closest biosoure.
     }
     
@@ -5963,6 +5963,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.30  2002/11/26 19:10:50  shomrat
+* Bug fix - GetGcode changed to GetGenCode
+*
 * Revision 1.29  2002/11/26 18:56:37  shomrat
 * Implement CheckTrnaCodons
 *
