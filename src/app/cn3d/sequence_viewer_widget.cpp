@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/05/02 16:35:15  thiessen
+* launch entrez web page on sequence identifier
+*
 * Revision 1.19  2001/04/18 15:46:53  thiessen
 * show description, length, and PDB numbering in status line
 *
@@ -122,7 +125,7 @@ public:
     // destructor
     ~SequenceViewerWidget_TitleArea(void);
 
-    void ShowTitles(const ViewableAlignment *newAlignment);
+    void ShowTitles(ViewableAlignment *newAlignment);
     void SetCharacterFont(wxFont *font, int newCellHeight);
     void SetBackgroundColor(const wxColor& backgroundColor);
 
@@ -132,7 +135,7 @@ private:
 
     const SequenceViewerWidget_SequenceArea *sequenceArea;
 
-    const ViewableAlignment *alignment;
+    ViewableAlignment *alignment;
 
     wxColor currentBackgroundColor;
     wxFont *titleFont;
@@ -796,7 +799,7 @@ SequenceViewerWidget_TitleArea::~SequenceViewerWidget_TitleArea(void)
     if (titleFont) delete titleFont;
 }
 
-void SequenceViewerWidget_TitleArea::ShowTitles(const ViewableAlignment *newAlignment)
+void SequenceViewerWidget_TitleArea::ShowTitles(ViewableAlignment *newAlignment)
 {
     alignment = newAlignment;
     if (!alignment) return;
@@ -944,6 +947,18 @@ void SequenceViewerWidget_TitleArea::OnMouseEvent(wxMouseEvent& event)
     if (MOY != prevMOY)
         alignment->MouseOver(-1, MOY);
     prevMOY = MOY;
+
+    // process button press
+    if (event.LeftDown()) {
+        // find out which (if any) control keys are down at this time
+        unsigned int controls = 0;
+        if (event.ShiftDown()) controls |= ViewableAlignment::eShiftDown;
+        if (event.ControlDown()) controls |= ViewableAlignment::eControlDown;
+        if (event.AltDown() || event.MetaDown()) controls |= ViewableAlignment::eAltOrMetaDown;
+
+        // send MouseDown message
+        alignment->MouseDown(-1, MOY, controls);
+    }
 }
 
 //////////////////////////////////////////////////////////////////////

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/05/02 16:35:18  thiessen
+* launch entrez web page on sequence identifier
+*
 * Revision 1.18  2001/04/18 15:46:32  thiessen
 * show description, length, and PDB numbering in status line
 *
@@ -146,6 +149,9 @@ public:
 	ncbi::objects::CSeq_id * CreateSeqId(void) const;
     std::string GetTitle(void) const;
     int GetOrSetMMDBLink(void) const;
+
+    // launch web browser with entrez page for this sequence
+    void LaunchWebBrowserWithInfo(void) const;
 };
 
 END_SCOPE(Cn3D)

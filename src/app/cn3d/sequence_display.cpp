@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/05/02 16:35:15  thiessen
+* launch entrez web page on sequence identifier
+*
 * Revision 1.14  2001/04/19 12:58:32  thiessen
 * allow merge and delete of individual updates
 *
@@ -412,11 +415,19 @@ void SequenceDisplay::UpdateAfterEdit(const BlockMultipleAlignment *forAlignment
 bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
 {
     TESTMSG("got MouseDown");
-    controlDown = ((controls & ViewableAlignment::eControlDown) > 0);
 
+    // process events in title area (launch of browser for entrez page on a sequence)
+    if (column < 0 && row >= 0 && row < NRows()) {
+        const Sequence *seq = rows[row]->GetSequence();
+        if (seq) seq->LaunchWebBrowserWithInfo();
+        return false;
+    }
+
+    controlDown = ((controls & ViewableAlignment::eControlDown) > 0);
     if (!controlDown && column == -1)
         GlobalMessenger()->RemoveAllHighlights(true);
 
+    // process events in sequence area
     BlockMultipleAlignment *alignment = GetAlignmentForRow(row);
     if (alignment && column >= 0) {
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/05/02 16:35:15  thiessen
+* launch entrez web page on sequence identifier
+*
 * Revision 1.23  2001/04/20 18:03:22  thiessen
 * add ncbistdaa parsing
 *
@@ -102,6 +105,11 @@
 *
 * ===========================================================================
 */
+
+#ifdef WIN32
+#include <windows.h>
+#include <shellapi.h>   // for ShellExecute, needed to launch browser
+#endif
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
@@ -403,6 +411,69 @@ int Sequence::GetOrSetMMDBLink(void) const
     if (!molecule->GetParentOfType(&object)) return mmdbLink;
     const_cast<Sequence*>(this)->mmdbLink = object->mmdbID;
     return mmdbLink;
+}
+
+
+#ifdef WIN32
+// code borrowed (and modified) from Nlm_MSWin_OpenDocument() in vibutils.c
+static bool MSWin_OpenDocument(const char* doc_name)
+{
+  int status = (int) ShellExecute(0, "open", doc_name, NULL, NULL, SW_SHOWNORMAL);
+  if (status <= 32) {
+    ERR_POST(Error << "Unable to open document \"" << doc_name << "\", error = " << status);
+    return false;
+  }
+  return true;
+}
+#endif
+
+// code borrowed (and modified a lot) from Nlm_LaunchWebPage in bspview.c
+static void LaunchWebPage(const char *url)
+{
+    if(!url) return;
+
+#ifdef WIN32
+    if (!MSWin_OpenDocument(url)) {
+        ERR_POST(Error << "Unable to launch browser");
+    }
+#endif
+/*
+#ifdef WIN_MOTIF
+    argv [0] = "netscape";
+    CharPtr            argv [8];
+    int child;
+    argv [1] = url;
+    argv [2] = NULL;
+    child = fork();
+    if(child == 0) {
+        if (execvp ("netscape", argv) == -1) {
+            ERR_POST(Error << "Unable to launch netscape");
+            exit(-1);
+        }
+    }
+#endif
+#ifdef WIN_MAC
+    Nlm_SendURLAppleEvent (url, "MOSS", NULL);
+#endif
+*/
+}
+
+void Sequence::LaunchWebBrowserWithInfo(void) const
+{
+    CNcbiOstrstream oss;
+    oss << "http://www.ncbi.nlm.nih.gov/entrez/utils/qmap.cgi?form=6&db=p&Dopt=g&uid=";
+    if (pdbID.size() > 0) {
+         oss << pdbID.c_str();
+        if (pdbChain != ' ')
+            oss << (char) pdbChain;
+    } else if (gi != VALUE_NOT_SET)
+        oss << gi;
+    else if (accession.size() > 0)
+        oss << accession.c_str();
+    oss << '\0';
+    TESTMSG("launching url " << oss.str());
+    LaunchWebPage(oss.str());
+    delete oss.str();
 }
 
 END_SCOPE(Cn3D)
