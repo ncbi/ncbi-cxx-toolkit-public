@@ -2,5 +2,7 @@
 
 ASN = seq seqalign seqblock seqfeat seqloc seqres
 
+ASN_DEP = seqcode
+
 LIB = seq
 SRC = $(ASN:%=%__) $(ASN:%=%___) seqport_util
