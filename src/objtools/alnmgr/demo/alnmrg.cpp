@@ -57,7 +57,7 @@
 #include <objmgr/seq_vector.hpp>
 
 #include <objtools/alnmgr/alnmix.hpp>
-#include <objtools/alnmgr/alnvwr.hpp>
+#include <objtools/alnmgr/alnvec.hpp>
 
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
@@ -418,25 +418,26 @@ void CAlnMrgApp::ViewMergedAlignment(void)
     if (args["v"]) {
         switch (args["v"].AsInteger()) {
         case 1: 
-            CAlnVwr::CsvTable(aln_vec, NcbiCout);
+            CAlnMapPrinter(aln_vec, NcbiCout).CsvTable();
             break;
         case 2:
-            CAlnVwr::Segments(aln_vec, NcbiCout);
+            CAlnMapPrinter(aln_vec, NcbiCout).Segments();
             break;
         case 3:
-            CAlnVwr::Chunks(aln_vec, NcbiCout, args["cf"].AsInteger());
+            CAlnMapPrinter(aln_vec, NcbiCout).Chunks(args["cf"].AsInteger());
             break;
         case 4:
-            CAlnVwr::PopsetStyle(aln_vec, NcbiCout, screen_width,
-                                 CAlnVwr::eUseAlnSeqString);
+            CAlnVecPrinter(aln_vec, NcbiCout)
+                .PopsetStyle(screen_width, CAlnVecPrinter::eUseAlnSeqString);
             break;
         case 5: 
-            CAlnVwr::PopsetStyle(aln_vec, NcbiCout, screen_width,
-                                 CAlnVwr::eUseSeqString);
+            CAlnVecPrinter(aln_vec, NcbiCout)
+                .PopsetStyle(screen_width, CAlnVecPrinter::eUseSeqString);
             break;
         case 6:
-            CAlnVwr::PopsetStyle(aln_vec, NcbiCout, screen_width,
-                                 CAlnVwr::eUseWholeAlnSeqString);
+            CAlnVecPrinter(aln_vec, NcbiCout)
+                .PopsetStyle(screen_width,
+                             CAlnVecPrinter::eUseWholeAlnSeqString);
             break;
         default:
             NcbiCout << "Unknown view format." << NcbiEndl;
@@ -478,6 +479,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2005/03/15 20:28:32  ucko
+* Port to new CAln*Printer interface.
+*
 * Revision 1.31  2005/03/01 17:19:27  todorov
 * 1) Added a sortseqbyscore flag
 * 2) Extended to reading multiple dense-segs.
