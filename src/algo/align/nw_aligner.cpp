@@ -871,7 +871,7 @@ size_t CNWAligner::x_CheckSequence(const char* seq, size_t len) const
 
 bool CNWAligner::x_CheckMemoryLimit()
 {
-    return double(m_SeqLen1 + 1)*(m_SeqLen2 + 1) > kMax_UInt;
+    return double(m_SeqLen1 + 1)*(m_SeqLen2 + 1) < kMax_UInt;
 }
 
 
@@ -881,11 +881,16 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/03/19 16:36:39  kapustin
+ * Reverse memory limit condition
+ *
  * Revision 1.18  2003/03/18 15:15:51  kapustin
- * Implement virtual memory checking function. Allow separate free end gap specification
+ * Implement virtual memory checking function. Allow separate free end
+ * gap specification
  *
  * Revision 1.17  2003/03/17 15:31:46  kapustin
- * Forced conversion to double in memory limit checking to avoid integer overflow
+ * Forced conversion to double in memory limit checking to avoid integer
+ * overflow
  *
  * Revision 1.16  2003/03/14 19:18:50  kapustin
  * Add memory limit checking. Fix incorrect seq index references when
@@ -896,7 +901,8 @@ END_NCBI_SCOPE
  * Use zero-based indices to specify seq coordinates in ASN
  *
  * Revision 1.14  2003/03/05 20:13:48  kapustin
- * Simplify FormatAsText(). Fix FormatAsSeqAlign(). Convert sequence alphabets to capitals
+ * Simplify FormatAsText(). Fix FormatAsSeqAlign(). Convert sequence
+ * alphabets to capitals
  *
  * Revision 1.13  2003/02/11 16:06:54  kapustin
  * Add end-space free alignment support
