@@ -60,8 +60,14 @@ void CLDS_CoreObjectsReader::OnTopObjectFoundPre(const CObjectInfo& object,
 {
     m_Objects.clear();
 
-    m_TopDescr = SObjectParseDescr(&object, stream_offset);
-    m_Stack.push(SObjectParseDescr(&object, stream_offset));
+    // GetStreamOffset() returns offset of the most recent top level object
+    // In case of the Text ASN.1 it can differ from the stream_offset variable
+    // because reader first reads the file header and only then calls the main
+    // Read function.
+    size_t offset = GetStreamOffset();
+
+    m_TopDescr = SObjectParseDescr(&object, offset);
+    m_Stack.push(SObjectParseDescr(&object, offset));
 }
 
 void CLDS_CoreObjectsReader::OnTopObjectFoundPost(const CObjectInfo& object)
@@ -142,6 +148,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/07/14 19:44:40  kuznets
+ * Fixed a bug with objects offset in for ASN.1 text files
+ *
  * Revision 1.2  2003/06/16 16:24:43  kuznets
  * Fixed #include paths (lds <-> lds_admin separation)
  *
