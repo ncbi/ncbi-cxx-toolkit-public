@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFlatDDBJFormatter : public CFlatTextFormatter
+class NCBI_FLAT_EXPORT CFlatDDBJFormatter : public CFlatTextFormatter
 {
 public:
     CFlatDDBJFormatter(IFlatTextOStream& stream, CScope& scope, EMode mode,
@@ -59,6 +59,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/10/09 17:01:48  dicuccio
+* Added export specifiers
+*
 * Revision 1.2  2003/06/02 16:01:39  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

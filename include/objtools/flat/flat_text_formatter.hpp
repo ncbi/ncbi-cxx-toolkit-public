@@ -53,7 +53,7 @@ public:
 };
 
 
-class CFlatTextOStream : public IFlatTextOStream
+class NCBI_FLAT_EXPORT CFlatTextOStream : public IFlatTextOStream
 {
 public:
     CFlatTextOStream(CNcbiOstream& stream, bool trace_topics = false);
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/10/09 17:01:49  dicuccio
+* Added export specifiers
+*
 * Revision 1.5  2003/06/02 16:01:39  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

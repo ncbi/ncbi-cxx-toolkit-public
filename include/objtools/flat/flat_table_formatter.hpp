@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFlatTableFormatter : public IFlatFormatter
+class NCBI_FLAT_EXPORT CFlatTableFormatter : public IFlatFormatter
 {
 public:
     CFlatTableFormatter(IFlatTextOStream& stream, CScope& scope,
@@ -79,6 +79,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/10/09 17:01:49  dicuccio
+* Added export specifiers
+*
 * Revision 1.4  2003/10/09 15:53:58  ucko
 * Remember to define GetDatabase (-> NCBI)
 *

@@ -54,7 +54,7 @@ BEGIN_SCOPE(objects)
 
 class CFlatFeature;
 
-class CFlatGFFFormatter : public IFlatFormatter
+class NCBI_FLAT_EXPORT CFlatGFFFormatter : public IFlatFormatter
 {
 public:
     enum EGFFFlags {
@@ -114,6 +114,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/10/09 17:01:48  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.1  2003/10/08 21:11:29  ucko
  * New GFF/GTF formatter
  *
