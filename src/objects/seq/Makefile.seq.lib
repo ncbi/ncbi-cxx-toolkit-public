@@ -1,4 +1,6 @@
 # $Id$
 
+ASN = seq seqalign seqblock seqfeat seqloc seqres
+
 LIB = seq
-SRC = seqall seqall_ gencode seqport_util
+SRC = $(ASN:%=%__) $(ASN:%=%___) gencode seqport_util

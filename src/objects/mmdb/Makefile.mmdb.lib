@@ -1,2 +1,6 @@
+# $Id$
+
+ASN = mmdb1 mmdb2 mmdb3
+
 LIB = mmdb
-SRC = mmdb mmdb_
+SRC = $(ASN:%=%__) $(ASN:%=%___)
