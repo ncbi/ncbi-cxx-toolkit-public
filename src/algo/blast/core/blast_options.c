@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.12  2003/05/01 16:56:30  dondosha
+ * Fixed strict compiler warnings
+ *
  * Revision 1.11  2003/05/01 15:33:39  dondosha
  * Reorganized the setup of BLAST search
  *
@@ -966,7 +969,7 @@ Int2 BlastHitSavingOptionsNew(const Char *program,
 
 Int2
 BLAST_FillHitSavingOptions(BlastHitSavingOptionsPtr options, 
-   const Char *program, Boolean is_gapped, FloatHi evalue, Int4 hitlist_size)
+   Boolean is_gapped, FloatHi evalue, Int4 hitlist_size)
 {
    if (!options)
       return 1;

@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.13  2003/05/01 16:56:30  dondosha
+* Fixed strict compiler warnings
+*
 * Revision 1.12  2003/05/01 15:33:39  dondosha
 * Reorganized the setup of BLAST search
 *
@@ -1698,9 +1701,7 @@ static Int2 BlastSetUp_CalcEffLengths (const Char *program,
 Int2 BLAST_MainSetUp(SeqLocPtr query_slp, Char *program,
         const QuerySetUpOptionsPtr qsup_options,
         const BlastScoringOptionsPtr scoring_options,
-        const BlastEffectiveLengthsOptionsPtr eff_len_options,
         const LookupTableOptionsPtr lookup_options,	
-        const BlastInitialWordOptionsPtr word_options,
         const BlastHitSavingOptionsPtr hit_options,
         const Int4Ptr frame, BLAST_SequenceBlkPtr *query_blk,
         ValNodePtr PNTR lookup_segments,
@@ -2030,6 +2031,7 @@ Int2 BLAST_SetUpAuxStructures(Char *program,
                 "Cannot allocate memory for gapped extension");
       return status;
    }
+   return status;
 }
 
 #define MAX_NUM_QUERIES 16383 /* == 1/2 INT2_MAX */
@@ -2131,13 +2133,13 @@ Int2 BLAST_SetUpSubject(CharPtr file_name, CharPtr blast_program,
       return (1);
    }
       
-   BLAST_GetQuerySeqLoc(infp2, is_na, NULL, subject_slp, 0);
-   FileClose(infp2);
-
    BlastProgram2Number(blast_program, &program_number);
    is_na = (program_number != blast_type_blastp && 
             program_number != blast_type_blastx);
  
+   BLAST_GetQuerySeqLoc(infp2, is_na, NULL, subject_slp, 0);
+   FileClose(infp2);
+
    /* Fill the sequence block for the subject sequence */
 
    encoding = (is_na ? NCBI2NA_ENCODING : BLASTP_ENCODING);

@@ -90,7 +90,7 @@ MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr PNTR seq_blk,
 Int2 BlastSequenceBlkClean(BLAST_SequenceBlkPtr seq_blk)
 {
    if (!seq_blk)
-      return NULL;
+      return 1;
 
    if (seq_blk->sequence_allocated) 
       seq_blk->sequence = MemFree(seq_blk->sequence);

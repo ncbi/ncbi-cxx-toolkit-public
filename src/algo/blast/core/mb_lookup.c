@@ -280,36 +280,36 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
                      ecode1 = GET_WORD_INDEX_12_16_OPT(ecode);
                      break;
                   case TEMPL_11_18:
-                     ecode1 = (GET_WORD_INDEX_11_18(ecode) |
-                               GET_EXTRA_CODE_18(seq));
+                     ecode1 = (GET_WORD_INDEX_11_18(ecode)) |
+                               (GET_EXTRA_CODE_18(seq));
                      break;
                   case TEMPL_12_18:
-                     ecode1 = (GET_WORD_INDEX_12_18(ecode) |
-                               GET_EXTRA_CODE_18(seq));
+                     ecode1 = (GET_WORD_INDEX_12_18(ecode)) |
+                               (GET_EXTRA_CODE_18(seq));
                      break;
                   case TEMPL_11_18_OPT:
-                     ecode1 = (GET_WORD_INDEX_11_18_OPT(ecode) |
-                               GET_EXTRA_CODE_18_OPT(seq));
+                     ecode1 = (GET_WORD_INDEX_11_18_OPT(ecode)) |
+                               (GET_EXTRA_CODE_18_OPT(seq));
                      break;
                   case TEMPL_12_18_OPT:
-                     ecode1 = (GET_WORD_INDEX_12_18_OPT(ecode) |
-                               GET_EXTRA_CODE_18_OPT(seq));
+                     ecode1 = (GET_WORD_INDEX_12_18_OPT(ecode)) |
+                               (GET_EXTRA_CODE_18_OPT(seq));
                      break;
                   case TEMPL_11_21:
-                     ecode1 = (GET_WORD_INDEX_11_21(ecode) |
-                               GET_EXTRA_CODE_21(seq));
+                     ecode1 = (GET_WORD_INDEX_11_21(ecode)) |
+                               (GET_EXTRA_CODE_21(seq));
                      break;
                   case TEMPL_12_21:
-                     ecode1 = (GET_WORD_INDEX_12_21(ecode) |
-                               GET_EXTRA_CODE_21(seq));
+                     ecode1 = (GET_WORD_INDEX_12_21(ecode)) |
+                               (GET_EXTRA_CODE_21(seq));
                      break;
                   case TEMPL_11_21_OPT:
-                     ecode1 = (GET_WORD_INDEX_11_21_OPT(ecode) |
-                               GET_EXTRA_CODE_21_OPT(seq));
+                     ecode1 = (GET_WORD_INDEX_11_21_OPT(ecode)) |
+                               (GET_EXTRA_CODE_21_OPT(seq));
                      break;
                   case TEMPL_12_21_OPT:
-                     ecode1 = (GET_WORD_INDEX_12_21_OPT(ecode) |
-                               GET_EXTRA_CODE_21_OPT(seq));
+                     ecode1 = (GET_WORD_INDEX_12_21_OPT(ecode)) |
+                               (GET_EXTRA_CODE_21_OPT(seq));
                      break;
                   default: /* Contiguous word */
                      ecode1 = ecode;
@@ -332,20 +332,20 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
                         ecode2 = GET_WORD_INDEX_12_16_OPT(ecode);
                         break;
                      case TEMPL_11_18:
-                        ecode2 = GET_WORD_INDEX_11_18_OPT(ecode) |
-                           GET_EXTRA_CODE_18_OPT(seq) | SECOND_TEMPLATE_BIT;
+                        ecode2 = (GET_WORD_INDEX_11_18_OPT(ecode)) |
+                           (GET_EXTRA_CODE_18_OPT(seq)) | SECOND_TEMPLATE_BIT;
                         break;
                      case TEMPL_12_18:
-                        ecode2 = GET_WORD_INDEX_12_18_OPT(ecode) |
-                           GET_EXTRA_CODE_18_OPT(seq);
+                        ecode2 = (GET_WORD_INDEX_12_18_OPT(ecode)) |
+                           (GET_EXTRA_CODE_18_OPT(seq));
                         break;
                      case TEMPL_11_21:
-                        ecode2 = GET_WORD_INDEX_11_21_OPT(ecode) |
-                           GET_EXTRA_CODE_21_OPT(seq) | SECOND_TEMPLATE_BIT;
+                        ecode2 = (GET_WORD_INDEX_11_21_OPT(ecode)) |
+                           (GET_EXTRA_CODE_21_OPT(seq)) | SECOND_TEMPLATE_BIT;
                         break;
                      case TEMPL_12_21:
-                        ecode2 = GET_WORD_INDEX_12_21_OPT(ecode) |
-                           GET_EXTRA_CODE_21_OPT(seq);
+                        ecode2 = (GET_WORD_INDEX_12_21_OPT(ecode)) |
+                           (GET_EXTRA_CODE_21_OPT(seq));
                         break;
                      default:
                         ecode2 = 0; break;

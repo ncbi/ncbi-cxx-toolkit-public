@@ -252,11 +252,14 @@ MB_ExtendInitialHit(BLAST_SequenceBlkPtr query,
       diag = (s_off + diag_table->diag_array_length - q_off) & diag_mask;
       diag_array_elem = &diag_array[diag];
       step = s_pos - diag_array_elem->last_hit;
+      if (step <= 0)
+         return 0;
 
+      hit_ready = FALSE;
       if (!two_hits) {
          /* Single hit version */
          new_hit = (step > scan_step);
-         hit_ready = (step > 0) && 
+         hit_ready = 
             (step + diag_array_elem->diag_level == word_extra_length);
       } else {
          /* Two hit version */
@@ -265,8 +268,8 @@ MB_ExtendInitialHit(BLAST_SequenceBlkPtr query,
             new_hit = (step > scan_step);
          } else {
             new_hit = (step > window);
-         hit_ready = (diag_array_elem->diag_level == word_extra_length) &&
-            (step > 0 && step <= window);
+            hit_ready = (diag_array_elem->diag_level == word_extra_length) &&
+               (step <= window);
          }
       }
 
@@ -314,13 +317,13 @@ MB_ExtendInitialHit(BLAST_SequenceBlkPtr query,
       stack_top = stack_table->stack_index[index1] - 1;
       
       for (index = 0; index <= stack_top; ) {
+         step = s_off - estack[index].level;
          if (estack[index].diag == s_off - q_off) {
-            step = s_off - estack[index].level;
             if (step <= 0) {
-               ++index;
+               stack_table->stack_index[index1] = stack_top + 1;
                return 0;
             }
-
+            hit_ready = FALSE;
             if (!two_hits) {
                /* Single hit version */
                new_hit = (step > scan_step);
@@ -377,7 +380,7 @@ MB_ExtendInitialHit(BLAST_SequenceBlkPtr query,
             return 0;
          } else if (step <= scan_step || (step <= window && 
                       estack[index].length >= word_extra_length)) {
-            /* Hit from a different diagonal, and it can continued */
+            /* Hit from a different diagonal, and it can be continued */
             index++;
          } else {
             /* Hit from a different diagonal that does not continue: remove
@@ -690,7 +693,6 @@ BlastnExtendInitialHit(BLAST_SequenceBlkPtr query,
    DiagStructPtr diag_array_elem;
    Boolean do_ungapped_extension = 
       (word_options->extend_word_method & EXTEND_WORD_UNGAPPED);
-   Boolean discontiguous = FALSE;
 
    diag_table = ewp->diag_table;
 
@@ -939,7 +941,6 @@ Int4 MB_WordFinder(BLAST_SequenceBlkPtr subject,
    Int4 hitsfound=0;
    Int4 hit_counter=0, i;
    Int4 start_offset, next_start, last_start, last_end;
-   Int4 min_hit_length = COMPRESSION_RATIO*(mb_lt->compressed_wordsize);
    Uint4 word_length, reduced_word_length;
    Uint4 max_bases_left, max_bases_right;
    Int4 query_length = query->length;
@@ -1049,7 +1050,7 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlkPtr subject,
       (word_options->extend_word_method & EXTEND_WORD_VARIABLE_SIZE);
    Int4 extended_right;
    Uint1Ptr q_tmp, s_tmp;
-   Int4 length;
+   Uint4 length;
 
    s_end = subject->sequence + subject_length/COMPRESSION_RATIO;
    bases_in_last_byte = subject_length % COMPRESSION_RATIO;
@@ -1160,4 +1161,5 @@ BLAST_ExtendWordPtr BlastExtendWordFree(BLAST_ExtendWordPtr ewp)
 {
    BlastDiagTableFree(ewp->diag_table);
    MBStackTableFree(ewp->stack_table);
+   return NULL;
 }

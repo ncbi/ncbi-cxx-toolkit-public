@@ -40,6 +40,7 @@ Contents: High level BLAST functions
 #include <aa_ungapped.h>
 #include <blast_util.h>
 #include <blast_gapalign.h>
+#include <blast_traceback.h>
 
 extern Uint1Ptr
 GetPrivatTranslationTable PROTO((CharPtr genetic_code,
