@@ -522,6 +522,8 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
          
          if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
             q_off = mb_lt->hashtable[index];
+            if (q_off && (total_hits >= max_hits))
+               break;
             s_off = 
                ((s - abs_start) + compressed_wordsize)*COMPRESSION_RATIO;
             while (q_off) {
@@ -529,8 +531,6 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
                s_offsets[total_hits++] = s_off;
                q_off = mb_lt->next_pos[q_off];
             }
-            if (total_hits >= max_hits)
-               break;
          }
       }
       *end_offset = (s - abs_start)*COMPRESSION_RATIO;
@@ -551,13 +551,13 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
          
          if (NA_PV_TEST(pv_array, adjusted_index, pv_array_bts)) {
             q_off = mb_lt->hashtable[adjusted_index];
+            if (q_off && (total_hits >= max_hits))
+               break;
             while (q_off) {
                q_offsets[total_hits] = q_off;
                s_offsets[total_hits++] = s_off + word_size; 
                q_off = mb_lt->next_pos[q_off];
             }
-            if (total_hits >= max_hits)
-               break;
          }
       }
       *end_offset = s_off;
@@ -769,6 +769,8 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
    while (s <= s_end) {
       if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
          query_offset = mb_lt->hashtable[index];
+         if (query_offset && (hitsfound >= max_hits))
+            break;
          subject_offset = (s - abs_start)*COMPRESSION_RATIO;
          while (query_offset) {
 #ifdef DEBUG_LOG
@@ -780,8 +782,6 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
             ++hitsfound;
             query_offset = mb_lt->next_pos[query_offset];
          }
-         if (hitsfound >= max_hits)
-            break;
       }
       /* Compute the next value of the lookup index 
          (shifting sequence by a full byte) */
@@ -843,6 +843,8 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
        }
        if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
           query_offset = mb_lt->hashtable[index];
+          if (query_offset && (hitsfound >= max_hits))
+             break;
           subject_offset = (s - abs_start)*COMPRESSION_RATIO;
           while (query_offset) {
 #ifdef DEBUG_LOG
@@ -854,11 +856,11 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
              ++hitsfound;
              query_offset = mb_lt->next_pos[query_offset];
           }
-          if (hitsfound >= max_hits)
-             break;
        }
        if (two_templates && NA_PV_TEST(pv_array, index2, pv_array_bts)) {
           query_offset = mb_lt->hashtable2[index2];
+          if (query_offset && (hitsfound >= max_hits))
+             break;
           subject_offset = (s - abs_start)*COMPRESSION_RATIO;
           while (query_offset) {
              q_offsets[hitsfound] = query_offset;
@@ -888,6 +890,8 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
 
          if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
             query_offset = mb_lt->hashtable[index];
+            if (query_offset && (hitsfound >= max_hits))
+               break;
             subject_offset = (s - abs_start)*COMPRESSION_RATIO + bit/2;
             while (query_offset) {
 #ifdef DEBUG_LOG
@@ -899,11 +903,11 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
                ++hitsfound;
                query_offset = mb_lt->next_pos[query_offset];
             }
-            if (hitsfound >= max_hits)
-               break;
          }
          if (two_templates && NA_PV_TEST(pv_array, index2, pv_array_bts)) {
             query_offset = mb_lt->hashtable2[index2];
+            if (query_offset && (hitsfound >= max_hits))
+               break;
             subject_offset = (s - abs_start)*COMPRESSION_RATIO + bit/2;
             while (query_offset) {
                q_offsets[hitsfound] = query_offset;
