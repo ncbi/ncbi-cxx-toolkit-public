@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2001/09/14 14:46:22  thiessen
+* working GL fonts
+*
 * Revision 1.80  2001/09/06 21:38:43  thiessen
 * tweak message log / diagnostic system
 *
@@ -604,7 +607,7 @@ void Cn3DApp::InitRegistry(void)
 #elif defined(__WXGTK__)
     RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, 14);
 #elif defined(__WXMAC__)
-    RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, 12);
+    RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, 14);
 #endif
     RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_FAMILY, wxSWISS);
     RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_STYLE, wxNORMAL);
@@ -618,7 +621,7 @@ void Cn3DApp::InitRegistry(void)
 #elif defined(__WXGTK__)
     RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, 14);
 #elif defined(__WXMAC__)
-    RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, 10);
+    RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, 12);
 #endif
     RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_FAMILY, wxROMAN);
     RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_STYLE, wxNORMAL);
@@ -662,7 +665,7 @@ bool Cn3DApp::OnInit(void)
     wxString dictFile = wxString(dataDir.c_str()) + "bstdt.val";
     LoadStandardDictionary(dictFile.c_str());
 
-    // set up registry anbd favorite styles (must be done before structure window creation)
+    // set up registry and favorite styles (must be done before structure window creation)
     InitRegistry();
     LoadFavorites();
 
@@ -672,8 +675,10 @@ bool Cn3DApp::OnInit(void)
 
     // show log if set to do so
     bool showLog = false;
-    if (RegistryGetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, &showLog) && showLog)
-        RaiseLogWindow();
+    RegistryGetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, &showLog);
+#ifndef __WXMAC__    
+    if (showLog) RaiseLogWindow();
+#endif
 
     // get file name from command line, if present
     if (argc > 2)
@@ -686,6 +691,9 @@ bool Cn3DApp::OnInit(void)
     // give structure window initial focus
     structureWindow->Raise();
     structureWindow->SetFocus();
+#ifdef __WXMAC__    
+    if (showLog) RaiseLogWindow();
+#endif
     return true;
 }
 
@@ -1522,6 +1530,17 @@ void Cn3DGLCanvas::SetGLFontFromRegistry(void)
 
 #elif defined(__WXGTK__)
     glXUseXFont(gdk_font_id(font.GetInternalFont()), 0, 256, renderer->FONT_BASE);
+    
+#elif defined(__WXMAC__)
+    wxFontRefData *fontRefData = (wxFontRefData *) font.GetRefData();
+    if (RealFont(fontRefData->m_macFontNum, fontRefData->m_macFontSize)) {
+        if (aglUseFont(aglGetCurrentContext(), 
+                (GLint) fontRefData->m_macFontNum, 
+                fontRefData->m_macFontStyle, fontRefData->m_macFontSize, 
+                0, 256, renderer->FONT_BASE) != GL_TRUE)
+            ERR_POST(Error << "OpenGLRenderer::SetFont() - aglUseFont() failed");
+    } else 
+        ERR_POST(Error << "OpenGLRenderer::SetFont() - RealFont() returned false");
 #endif
 }
 
@@ -1538,6 +1557,9 @@ bool Cn3DGLCanvas::MeasureText(const std::string& text, int *width, int *height)
 #elif defined(__WXGTK__)
     *height *= 0.6;
     *width *= 0.8;
+#elif defined(__WXMAC__)
+    *height *= 0.7;
+    *width *= 0.9;
 #endif
 	return true;
 }
