@@ -33,6 +33,7 @@
 #include <app/project_tree_builder/msvc_tools_implement.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/msvc_site.hpp>
+#include <app/project_tree_builder/msvc_prj_defines.hpp>
 
 #include <set>
 
@@ -141,14 +142,16 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
         string dir_abs = 
             CDirEntry::AddTrailingPathSeparator
                 (CDirEntry::ConcatPath(m_SourcesBaseDir, dir));
-
+        dir_abs = CDirEntry::NormalizePath(dir_abs);
         add_include_dirs += ", ";
         add_include_dirs += 
             CDirEntry::CreateRelativePath
                         (m_ProjectDir, dir_abs);
     }
-
-    ITERATE(list<string>, p, m_Requires) {
+    //take into account default libs from site:
+    list<string> libs_list(m_Requires);
+    libs_list.push_back(MSVC_DEFAULT_LIBS_TAG);
+    ITERATE(list<string>, p, libs_list) {
         const string& requires = *p;
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
@@ -167,11 +170,14 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
 {
     string libs_str("");
 
-    ITERATE(list<string>, p, m_Requires) {
+    // Take into account default libs from site:
+    list<string> libs_list(m_Requires);
+    libs_list.push_back(MSVC_DEFAULT_LIBS_TAG);
+    ITERATE(list<string>, p, libs_list) {
         const string& requires = *p;
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
-        if ( !lib_info.IsEmpty() ) {
+        if ( !lib_info.m_Libs.empty() ) {
             libs_str += " ";
             libs_str += NStr::Join(lib_info.m_Libs, " ");
         }
@@ -192,12 +198,16 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
                                             (const SConfigInfo& cfg_info) const
 {
     string dirs_str("");
-    ITERATE(list<string>, p, m_Requires) {
+
+    // Take into account default libs from site:
+    list<string> libs_list(m_Requires);
+    libs_list.push_back(MSVC_DEFAULT_LIBS_TAG);
+    ITERATE(list<string>, p, libs_list) {
         const string& requires = *p;
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
         if ( !lib_info.IsEmpty() ) {
-            dirs_str += lib_info.m_IncludeDir;
+            dirs_str += lib_info.m_LibPath;
             dirs_str += ", ";
         }
     }
@@ -596,6 +606,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/01/29 15:46:44  gorelenk
+ * Added support of default libs, defined in user site
+ *
  * Revision 1.6  2004/01/28 17:55:49  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,
