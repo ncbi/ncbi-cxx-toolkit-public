@@ -1136,7 +1136,7 @@ public:
         }
     static void Assign(TObjectPtr dst, TConstObjectPtr src)
         {
-            CPrimitiveTypeFunctions<T>::TObjectType value = Get(src);
+            typename CPrimitiveTypeFunctions<T>::TObjectType value = Get(src);
             _ASSERT(Get(dst) != value);
             free(const_cast<char*>(Get(dst)));
             if ( value )
@@ -1294,17 +1294,32 @@ public:
             CObjectIStream::ByteBlock block(in);
             if ( block.KnownLength() ) {
                 size_t length = block.GetExpectedLength();
+#if 1
+                o.clear();
+                o.reserve(length);
+                Char buf[2048];
+                size_t count;
+                while ( (count = block.Read(ToChar(buf), sizeof(buf))) != 0 ) {
+                    o.insert(o.end(), buf, buf + count);
+                }
+#else
                 o.resize(length);
                 block.Read(ToChar(&o.front()), length, true);
+#endif
             }
             else {
                 // length is unknown -> copy via buffer
-                Char buffer[4096];
-                size_t count;
                 o.clear();
-                while ( (count = block.Read(ToChar(buffer),
-                                            sizeof(buffer))) != 0 ) {
-                    o.insert(o.end(), buffer, buffer + count);
+                Char buf[4096];
+                size_t count;
+                while ( (count = block.Read(ToChar(buf), sizeof(buf))) != 0 ) {
+#ifdef RESERVE_VECTOR_SIZE
+                    size_t new_size = o.size() + count;
+                    if ( new_size > o.capacity() ) {
+                        o.reserve(RESERVE_VECTOR_SIZE(new_size));
+                    }
+#endif
+                    o.insert(o.end(), buf, buf + count);
                 }
             }
             block.End();
@@ -1472,6 +1487,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2004/02/02 14:42:48  vasilche
+* Try to avoid filling vector<char> by zeroes.
+*
 * Revision 1.39  2004/01/27 17:09:12  ucko
 * CStringFunctions::Create: tweak to compile with default IBM VisualAge
 * settings.
