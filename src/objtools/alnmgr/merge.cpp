@@ -110,7 +110,7 @@ void CAlnMix::x_Merge()
         }
         if (m_DS) {
             // the one and only ds has been found, no need to merge
-            return;
+            //return;
         }
     }
 
@@ -118,7 +118,7 @@ void CAlnMix::x_Merge()
 
     // convert the c++ aln list to c aln lst
     SeqAlignPtr sap = 0, sap_curr = 0, sap_tmp = 0;
-    iterate (TAlns, sa_it, m_Alns) {
+    iterate (TConstAlns, sa_it, m_Alns) {
         sap_tmp = converter.ToC(**sa_it);
         if (sap_tmp) {
             if (sap_curr) {
@@ -166,6 +166,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/10/08 18:02:34  todorov
+* changed the aln lst input param
+*
 * Revision 1.2  2002/09/27 17:35:08  todorov
 * added a merge exception
 *

@@ -49,7 +49,9 @@ class CAlnMix
 {
 public:
 
-    typedef list< CConstRef< CSeq_align > > TAlns;
+    typedef list< CRef< CSeq_align > > TAlns;
+    typedef list< CConstRef< CSeq_align > > TConstAlns;
+    
 
     // constructor
     CAlnMix(void);
@@ -87,7 +89,7 @@ private:
 
     CRef<CObjectManager>     m_ObjMgr;
     CRef<CScope>             m_Scope;
-    TAlns                    m_Alns;
+    TConstAlns               m_Alns;
     CRef<CDense_seg>         m_DS;
     TMergeFlags              m_MergeFlags;
 };
@@ -150,6 +152,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/10/08 18:02:09  todorov
+* changed the aln lst input param
+*
 * Revision 1.1  2002/08/23 14:43:50  ucko
 * Add the new C++ alignment manager to the public tree (thanks, Kamen!)
 *
