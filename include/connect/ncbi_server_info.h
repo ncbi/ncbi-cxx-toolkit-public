@@ -114,7 +114,7 @@ typedef struct {
 
 typedef struct {
     char         pad[8];        /* reserved for the future use, must be zero */
-} SSERV_DNSInfo;
+} SSERV_DnsInfo;
 
 
 /* Generic NCBI server meta-address
@@ -124,7 +124,7 @@ typedef union {
     SSERV_StandaloneInfo standalone;
     SSERV_HttpInfo       http;
     SSERV_FirewallInfo   firewall;
-    SSERV_DNSInfo        dns;
+    SSERV_DnsInfo        dns;
 } USERV_Info;
 
 typedef struct {
@@ -358,6 +358,9 @@ int/*bool*/ SERV_EqualInfo(const SSERV_Info* info1, const SSERV_Info* info2);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2002/09/16 14:59:04  lavr
+ * Rename SSERV_DnsInfo to follow naming convention for other Info's
+ *
  * Revision 6.31  2002/09/04 15:09:17  lavr
  * Add quorum field to SSERV_Info::, log moved to end
  *
