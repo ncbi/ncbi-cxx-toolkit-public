@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/05/12 18:33:23  gouriano
+* Added type conversion check (when using _type DEF file directive)
+*
 * Revision 1.11  2003/05/14 14:42:55  gouriano
 * added generation of XML schema
 *
@@ -130,6 +133,7 @@ public:
     typedef CEnumDataTypeValue TValue;
     typedef list<TValue> TValues;
 
+    CEnumDataType(void);
     virtual bool IsInteger(void) const;
     virtual const char* GetASNKeyword(void) const;
 

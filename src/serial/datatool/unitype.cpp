@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/05/12 18:33:01  gouriano
+* Added type conversion check (when using _type DEF file directive)
+*
 * Revision 1.28  2004/04/02 16:56:33  gouriano
 * made it possible to create named CTypeInfo for containers
 *
@@ -149,6 +152,14 @@ CUniSequenceDataType::CUniSequenceDataType(const AutoPtr<CDataType>& element)
 {
     SetElementType(element);
     m_NonEmpty = false;
+    ForbidVar("_type", "short");
+    ForbidVar("_type", "int");
+    ForbidVar("_type", "long");
+    ForbidVar("_type", "unsigned");
+    ForbidVar("_type", "unsigned short");
+    ForbidVar("_type", "unsigned int");
+    ForbidVar("_type", "unsigned long");
+    ForbidVar("_type", "string");
 }
 
 const char* CUniSequenceDataType::GetASNKeyword(void) const
@@ -321,7 +332,7 @@ AutoPtr<CTypeStrings> CUniSequenceDataType::GetFullCType(void) const
 {
     AutoPtr<CTypeStrings> tData = GetElementType()->GetFullCType();
     CTypeStrings::AdaptForSTL(tData);
-    string templ = GetVar("_type");
+    string templ = GetAndVerifyVar("_type");
     if ( templ.empty() )
         templ = "list";
     return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, tData));
@@ -344,7 +355,7 @@ CTypeInfo* CUniSetDataType::CreateTypeInfo(void)
 
 AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
 {
-    string templ = GetVar("_type");
+    string templ = GetAndVerifyVar("_type");
     const CDataSequenceType* seq =
         dynamic_cast<const CDataSequenceType*>(GetElementType());
     if ( seq && seq->GetMembers().size() == 2 ) {

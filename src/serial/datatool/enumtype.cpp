@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/05/12 18:33:01  gouriano
+* Added type conversion check (when using _type DEF file directive)
+*
 * Revision 1.24  2003/06/16 14:41:05  gouriano
 * added possibility to convert DTD to XML schema
 *
@@ -132,6 +135,11 @@
 #include <serial/enumerated.hpp>
 
 BEGIN_NCBI_SCOPE
+
+CEnumDataType::CEnumDataType(void)
+{
+    ForbidVar("_type", "string");
+}
 
 const char* CEnumDataType::GetASNKeyword(void) const
 {
@@ -370,7 +378,7 @@ string CEnumDataType::DefaultEnumName(void) const
 
 CEnumDataType::SEnumCInfo CEnumDataType::GetEnumCInfo(void) const
 {
-    string typeName = GetVar("_type");
+    string typeName = GetAndVerifyVar("_type");
     string enumName;
     if ( !typeName.empty() && typeName[0] == 'E' ) {
         enumName = typeName;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/05/12 18:33:23  gouriano
+* Added type conversion check (when using _type DEF file directive)
+*
 * Revision 1.22  2003/10/21 13:48:48  grichenk
 * Redesigned type aliases in serialization library.
 * Fixed the code (removed CRef-s, added explicit
@@ -217,6 +220,9 @@ public:
     string InheritFromClass(void) const;
     const CDataType* InheritFromType(void) const;
     const string GetVar(const string& value) const;
+    void  ForbidVar(const string& var, const string& value);
+    void  AllowVar(const string& var, const string& value);
+    const string GetAndVerifyVar(const string& value) const;
 
     bool InChoice(void) const;
 
@@ -384,6 +390,7 @@ private:
     mutable auto_ptr<CNamespace> m_CachedNamespace;
     int m_Tag;
     bool m_IsAlias;
+    multimap<string,string> m_ForbidVar;
 
     CDataType(const CDataType&);
     CDataType& operator=(const CDataType&);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/05/12 18:33:01  gouriano
+* Added type conversion check (when using _type DEF file directive)
+*
 * Revision 1.33  2004/04/02 16:55:32  gouriano
 * Added CRealDataType::CreateDefault method
 *
@@ -236,7 +239,7 @@ void CStaticDataType::PrintXMLSchemaElementWithTag(
 
 AutoPtr<CTypeStrings> CStaticDataType::GetFullCType(void) const
 {
-    string type = GetVar("_type");
+    string type = GetAndVerifyVar("_type");
     if ( type.empty() )
         type = GetDefaultCType();
     return AutoPtr<CTypeStrings>(new CStdTypeStrings(type));
@@ -370,6 +373,11 @@ const char* CBoolDataType::GetDefaultCType(void) const
     return "bool";
 }
 
+CRealDataType::CRealDataType(void)
+{
+    ForbidVar("_type", "string");
+}
+
 const char* CRealDataType::GetASNKeyword(void) const
 {
     return "REAL";
@@ -433,6 +441,13 @@ const char* CRealDataType::GetDefaultCType(void) const
 CStringDataType::CStringDataType(EType type)
     : m_Type(type)
 {
+    ForbidVar("_type", "short");
+    ForbidVar("_type", "int");
+    ForbidVar("_type", "long");
+    ForbidVar("_type", "unsigned");
+    ForbidVar("_type", "unsigned short");
+    ForbidVar("_type", "unsigned int");
+    ForbidVar("_type", "unsigned long");
 }
 
 const char* CStringDataType::GetASNKeyword(void) const
@@ -508,7 +523,7 @@ bool CStringDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
 
 AutoPtr<CTypeStrings> CStringDataType::GetFullCType(void) const
 {
-    string type = GetVar("_type");
+    string type = GetAndVerifyVar("_type");
     if ( type.empty() )
         type = GetDefaultCType();
     return AutoPtr<CTypeStrings>(new CStringTypeStrings(type));
@@ -543,7 +558,7 @@ bool CStringStoreDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
 
 AutoPtr<CTypeStrings> CStringStoreDataType::GetFullCType(void) const
 {
-    string type = GetVar("_type");
+    string type = GetAndVerifyVar("_type");
     if ( type.empty() )
         type = GetDefaultCType();
     return AutoPtr<CTypeStrings>(new CStringStoreTypeStrings(type));
@@ -616,6 +631,11 @@ AutoPtr<CTypeStrings> COctetStringDataType::GetFullCType(void) const
     if ( charType.empty() )
         charType = "char";
     return AutoPtr<CTypeStrings>(new CVectorTypeStrings(charType));
+}
+
+CIntDataType::CIntDataType(void)
+{
+    ForbidVar("_type", "string");
 }
 
 const char* CIntDataType::GetASNKeyword(void) const
@@ -743,7 +763,7 @@ TObjectPtr CAnyContentDataType::CreateDefault(const CDataValue& value) const
 AutoPtr<CTypeStrings> CAnyContentDataType::GetFullCType(void) const
 {
 // TO BE CHANGED !!!
-    string type = GetVar("_type");
+    string type = GetAndVerifyVar("_type");
     if ( type.empty() )
         type = GetDefaultCType();
     return AutoPtr<CTypeStrings>(new CAnyContentTypeStrings(type));

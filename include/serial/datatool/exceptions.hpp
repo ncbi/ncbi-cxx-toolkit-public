@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/05/12 18:33:23  gouriano
+* Added type conversion check (when using _type DEF file directive)
+*
 * Revision 1.8  2004/04/30 11:27:14  kuznets
 * Use THROWS macro to specify exceptions
 *
@@ -90,7 +93,8 @@ public:
         eNotImplemented,
         eWrongInput,
         eInvalidData,
-        eIllegalCall
+        eIllegalCall,
+        eForbidden
     };
     virtual const char* GetErrCodeString(void) const
     {
@@ -99,6 +103,7 @@ public:
         case eWrongInput:     return "eWrongInput";
         case eInvalidData:    return "eInvalidData";
         case eIllegalCall:    return "eIllegalCall";
+        case eForbidden:      return "eForbidden";
         default:              return CException::GetErrCodeString();
         }
     }

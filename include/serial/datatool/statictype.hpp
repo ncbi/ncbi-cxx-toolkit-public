@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/05/12 18:33:23  gouriano
+* Added type conversion check (when using _type DEF file directive)
+*
 * Revision 1.14  2004/04/02 16:55:02  gouriano
 * Added CRealDataType::CreateDefault method
 *
@@ -163,6 +166,7 @@ public:
 class CRealDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
+    CRealDataType(void);
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
     virtual string GetDefaultString(const CDataValue& value) const;
@@ -235,6 +239,7 @@ public:
 class CIntDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
+    CIntDataType(void);
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
     virtual string GetDefaultString(const CDataValue& value) const;

@@ -271,6 +271,47 @@ const string CDataType::GetVar(const string& varName) const
     }
 }
 
+void  CDataType::ForbidVar(const string& var, const string& value)
+{
+    if (!var.empty() && !value.empty()) {
+        multimap<string,string>::const_iterator it = m_ForbidVar.find(var);
+        for ( ; it != m_ForbidVar.end() && it->first == var; ++it) {
+            if (it->second == value) {
+                return;
+            }
+        }
+        m_ForbidVar.insert( pair<string,string>(var,value));
+    }
+}
+
+void  CDataType::AllowVar(const string& var, const string& value)
+{
+    if (!var.empty() && !value.empty()) {
+        multimap<string,string>::iterator it = m_ForbidVar.find(var);
+        for ( ; it != m_ForbidVar.end() && it->first == var; ++it) {
+            if (it->second == value) {
+                m_ForbidVar.erase(it);
+                return;
+            }
+        }
+    }
+}
+
+const string CDataType::GetAndVerifyVar(const string& var) const
+{
+    const string tmp = GetVar(var);
+    if (!tmp.empty()) {
+        multimap<string,string>::const_iterator it = m_ForbidVar.find(var);
+        for ( ; it != m_ForbidVar.end() && it->first == var; ++it) {
+            if (it->second == tmp) {
+                NCBI_THROW(CDatatoolException,eForbidden,
+                    IdName()+": forbidden "+var+"="+tmp);
+            }
+        }
+    }
+    return tmp;
+}
+
 const string& CDataType::GetSourceFileName(void) const
 {
     return GetModule()->GetSourceFileName();
@@ -649,6 +690,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.77  2004/05/12 18:33:01  gouriano
+* Added type conversion check (when using _type DEF file directive)
+*
 * Revision 1.76  2004/03/25 21:55:41  ucko
 * CDataType::FileName: if we have a parent, (recursively) defer to it,
 * since internal classes don't have their own files.
