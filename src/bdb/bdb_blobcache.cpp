@@ -149,17 +149,20 @@ public:
     virtual ERW_Result PendingCount(size_t* count)
     {
         if ( m_Buffer ) {
-            *count = m_BufferSize;
+            *count = m_BufferPtr - m_Buffer;
             return eRW_Success;
         }
         else if ( m_OverflowFile ) {
             *count = m_OverflowFile->good()? 1: 0;
             return eRW_Success;
         }
-        else {
-            *count = 0;
-            return eRW_Error;
+        else if (m_BlobStream) {
+            *count = m_BlobStream->PendingCount();
+            return eRW_Success;
         }
+
+        *count = 0;
+        return eRW_Error;
     }
 
 
@@ -920,6 +923,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/10/24 13:41:23  kuznets
+ * Completed PendingCount implementaion
+ *
  * Revision 1.24  2003/10/24 12:37:42  kuznets
  * Implemented cache locking using PID guard
  *
