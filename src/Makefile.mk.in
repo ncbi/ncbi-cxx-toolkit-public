@@ -151,6 +151,7 @@ RPCSVC_LIBS  = @RPCSVC_LIBS@
 # Sybase:  headers and libs
 SYBASE_INCLUDE = @SYBASE_INCLUDE@
 SYBASE_LIBS    = @SYBASE_LIBS@
+SYBASE_DLLS    = @SYBASE_DLLS@
 
 # NCBI C Toolkit:  headers and libs
 NCBI_C_INCLUDE = @NCBI_C_INCLUDE@

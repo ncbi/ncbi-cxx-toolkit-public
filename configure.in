@@ -958,19 +958,23 @@ AC_MSG_CHECKING(if SYBASE libraries are available)
 if test "$with_sybase" != "no" ; then
    SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
    SYBASE_INCLUDE="-I$SYBASE_PATH/include"
-   SYBASE_LIBLIST="-lblk -lct -lcs -ltcl -lcomn -lintl -ltli"
+   SYBASE_LIBLIST="-lblk -lct -lcs -ltcl -lcomn -lintl"
+   SYBASE_DLLLIST="-ltli"
    changequote(<<, >>)dnl
    if test "$with_mt" = "yes" ; then
-      SYBASE_LIBLIST=`echo $SYBASE_LIBLIST | sed 's/\(-l[a-z][a-z]*\)/\1_r/g'`
+      SYBASE_LIBLIST=`echo $SYBASE_LIBLIST | sed 's/\(-l[a-z][a-z_]*\)/\1_r/g'`
+      SYBASE_DLLLIST=`echo $SYBASE_DLLLIST | sed 's/\(-l[a-z][a-z_]*\)/\1_r/g'`
    fi
    if test -n "$bit64_sfx" ; then
       SYBASE_INCLUDE="$SYBASE_INCLUDE -DSYB_LP64"
-      SYBASE_LIBLIST=`echo $SYBASE_LIBLIST | sed 's/\(-l[a-z][a-z]*\)/\1'${bit64_sfx}'/g'`
+      SYBASE_LIBLIST=`echo $SYBASE_LIBLIST | sed 's/\(-l[a-z][a-z_]*\)/\1'${bit64_sfx}'/g'`
+      SYBASE_DLLLIST=`echo $SYBASE_DLLLIST | sed 's/\(-l[a-z][a-z_]*\)/\1'${bit64_sfx}'/g'`
    fi
    changequote([, ])dnl
    SYBASE_LIBS="-L$SYBASE_PATH/lib${bit64_sfx} -R/export/home/sybase/clients/current/lib${bit64_sfx}:$SYBASE_PATH/lib${bit64_sfx} $SYBASE_LIBLIST"
+   SYBASE_DLLS="$SYBASE_DLLLIST"
    CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
-   LIBS="$SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
+   LIBS="$SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $orig_LIBS"
    AC_TRY_LINK(
       [#include <ctpublic.h>],
       [CS_RETCODE i = ct_init(0,0);  i = cs_ctx_global(0,0); ],
@@ -982,6 +986,7 @@ if test "$with_sybase" = "no" ; then
    SYBASE_PATH="No_Sybase"
    SYBASE_INCLUDE=
    SYBASE_LIBS=
+   SYBASE_DLLS=
    WithoutPackages="$WithoutPackages Sybase"
 else
    WithPackages="$WithPackages Sybase"
@@ -1350,6 +1355,7 @@ AC_SUBST(KSTAT_LIBS)
 AC_SUBST(RPCSVC_LIBS)
 AC_SUBST(SYBASE_INCLUDE)
 AC_SUBST(SYBASE_LIBS)
+AC_SUBST(SYBASE_DLLS)
 AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
 AC_SUBST(WXWIN_INCLUDE)
