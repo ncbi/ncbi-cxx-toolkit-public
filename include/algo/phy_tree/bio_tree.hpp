@@ -127,6 +127,9 @@ public:
     {
         return GetFeatureValue(id);
     }
+
+    /// Return reference on the internal container
+    const TFeatureList& GetFeatureList() const { return m_FeatureList; }
 protected:
     TFeatureList  m_FeatureList;
 };
@@ -252,6 +255,9 @@ public:
 
     /// Clear the dictionary
     void Clear();
+
+    /// Get reference on the internal map
+    const TFeatureDict& GetFeatureDict() const { return m_Dict; }
 
 protected:
     TFeatureDict     m_Dict;        ///< id -> feature name map
@@ -432,6 +438,8 @@ public:
     }
 
     CBioTreeFeatureDictionary& GetFeatureDict() { return m_FeatureDict; }
+    const CBioTreeFeatureDictionary& GetFeatureDict() const 
+    { return m_FeatureDict; }
 
 protected:
 
@@ -471,11 +479,12 @@ protected:
 
 /// Bio tree without static elements. Everything is stored as features.
 ///
-
+/// @internal
 typedef 
   CBioTree<BioTreeBaseNode<CBioTreeEmptyNodeData, CBioTreeFeatureList> >
   CBioTreeDynamic;
 
+/*
 template<class TDynamicTree, class TSrcBioTree, class TNodeConvFunc>
 class CBioTreeConvert2DynamicFunc
 {
@@ -567,12 +576,142 @@ void BioTreeConvert2Dynamic(TDynamicTree&      dyn_tree,
 
 
 
+/// Functor to convert dynamic tree nodes to ASN.1 BioTree container
+///
+/// @internal
+template<class TBioTreeContainer, class TDynamicTree>
+class CBioTreeConvert2ContainerFunc
+{
+protected:
+    typedef typename TDynamicTree::TBioTreeNode         TDynamicNodeType;
+    typedef typename TDynamicNodeType::TValueType       TDynamicNodeValueType;
+
+    typedef typename TBioTreeContainer::TNodes           TCNodeSet;
+    typedef typename TCNodeSet::Tdata                    TNodeList;
+    typedef typename TNodeList::value_type::element_type TCNode;
+    typedef typename TCNode::TFeatures                   TCNodeFeatureSet;
+    typedef typename TCNodeFeatureSet::Tdata             TNodeFeatureList;
+    typedef typename 
+       TNodeFeatureList::value_type::element_type        TCNodeFeature;
+public:
+    CBioTreeConvert2ContainerFunc(TBioTreeContainer* tree_container)
+    : m_Container(tree_container)
+    {
+        m_NodeList = &(tree_container->SetNodes().Set());
+    }
+
+    ETreeTraverseCode 
+    operator()(const TDynamicNodeType& node, 
+               int                     delta_level)
+    {
+        if (delta_level < 0) {
+            return eTreeTraverse;
+        }
+
+        const TDynamicNodeValueType& v = node.GetValue();
+        TBioTreeNodeId uid = v.GetId();
+
+        CRef<TCNode> cnode(new TCNode);
+        cnode->SetId(uid);
+
+        const TDynamicNodeType* node_parent = node.GetParent();
+        if (node_parent) {
+            cnode->SetParent(node_parent->GetValue().GetId());
+        }
+        
+        typedef typename 
+           TDynamicNodeValueType::TNodeFeaturesType::TFeatureList TFList;
+        const TFList& flist = v.features.GetFeatureList();
+
+        if (!flist.empty()) {
+            
+            TCNodeFeatureSet& fset = cnode->SetFeatures();
+
+            ITERATE(typename TFList, it, flist) {
+                TBioTreeFeatureId fid = it->id;
+                const string fvalue = it->value;
+
+                CRef<TCNodeFeature>  cfeat(new TCNodeFeature);
+                cfeat->SetFeatureid(fid);
+                cfeat->SetValue(fvalue);
+                
+                fset.Set().push_back(cfeat);
+
+            
+            } // ITERATE
+        }
+
+        m_NodeList->push_back(cnode);
+
+        return eTreeTraverse;
+    }
+
+private:
+    TBioTreeContainer*   m_Container;
+    TNodeList*           m_NodeList;
+};
+
+
+
+/// Convert Dynamic tree to ASN.1 BioTree container
+///
+template<class TBioTreeContainer, class TDynamicTree>
+void BioTreeConvert2Container(TBioTreeContainer&      tree_container,
+                              const TDynamicTree&     dyn_tree)
+{
+    // Convert feature dictionary
+
+    typedef typename TBioTreeContainer::TFdict  TContainerDict;
+
+    const CBioTreeFeatureDictionary& dict = dyn_tree.GetFeatureDict();
+    const CBioTreeFeatureDictionary::TFeatureDict& dict_map = 
+                                                dict.GetFeatureDict();
+
+    TContainerDict& fd = tree_container.SetFdict();
+    typename TContainerDict::Tdata& feat_list = fd.Set();
+    typedef 
+    typename TContainerDict::Tdata::value_type::element_type TCFeatureDescr;
+    
+    ITERATE(CBioTreeFeatureDictionary::TFeatureDict, it, dict_map) {
+        TBioTreeFeatureId fid = it->first;
+        const string& fvalue = it->second;
+
+        {{
+        CRef<TCFeatureDescr> d(new TCFeatureDescr);
+        d->SetId(fid);
+        d->SetName(fvalue);
+
+        feat_list.push_back(d);
+        }}
+    } // ITERATE
+
+
+    // convert tree data (nodes)
+
+    typedef typename TBioTreeContainer::TNodes  TDynNodes;
+    TDynNodes& nodes = tree_container.SetNodes();
+
+    typedef typename TDynamicTree::TBioTreeNode TTreeNode;
+    const TTreeNode *n = dyn_tree.GetTreeNode();
+
+    CBioTreeConvert2ContainerFunc<TBioTreeContainer, TDynamicTree>
+        func(&tree_container);
+    TreeDepthFirstTraverse(*(const_cast<TTreeNode*>(n)), func);
+    
+}
+
+*/
+
 END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/26 15:14:33  kuznets
+ * Tree convertion algorithms migrated to bio_tree_conv.hpp, plus multiple
+ * minor changes.
+ *
  * Revision 1.7  2004/05/19 14:37:03  ucko
  * Remove extraneous "typename" that confused some compilers.
  *
