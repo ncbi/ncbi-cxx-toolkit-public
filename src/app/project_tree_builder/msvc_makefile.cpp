@@ -214,6 +214,16 @@ CMsvcProjectMakefile::GetCustomBuildInfo(list<SCustomBuildInfo>* info) const
 }
 
 
+void CMsvcProjectMakefile::GetResourceFiles(const SConfigInfo& config, 
+                                            list<string>*      files) const
+{
+    string files_string = 
+        GetOpt(m_MakeFile, "AddToProject", "ResourceFiles", config);
+    
+    NStr::Split(files_string, LIST_SEPARATOR, *files);
+}
+
+
 //-----------------------------------------------------------------------------
 string GetCompilerOpt(const CMsvcMetaMakefile&    meta_file, 
                       const CMsvcProjectMakefile& project_file,
@@ -258,6 +268,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/23 18:50:31  gorelenk
+ * Added implementation of GetResourceFiles member-function
+ * of class CMsvcProjectMakefile.
+ *
  * Revision 1.6  2004/02/20 22:53:25  gorelenk
  * Added analysis of ASN projects depends.
  *
