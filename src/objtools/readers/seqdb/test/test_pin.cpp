@@ -11,6 +11,7 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <assert.h>
 
 USING_NCBI_SCOPE;
 
