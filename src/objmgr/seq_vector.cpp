@@ -137,8 +137,9 @@ CSeqVector::CSeqVector(void)
 
 
 CSeqVector::CSeqVector(const CSeqVector& vec)
-    : m_SeqMap(vec.m_SeqMap),
-      m_Scope(vec.m_Scope),
+    : m_Scope(vec.m_Scope),
+      m_SeqMap(vec.m_SeqMap),
+      m_TSE(vec.m_TSE),
       m_Size(vec.m_Size),
       m_Mol(vec.m_Mol),
       m_Strand(vec.m_Strand),
@@ -148,11 +149,41 @@ CSeqVector::CSeqVector(const CSeqVector& vec)
 }
 
 
+CSeqVector::CSeqVector(const CBioseq_Handle& bioseq,
+                       EVectorCoding coding, ENa_strand strand)
+    : m_Scope(bioseq.GetScope()),
+      m_SeqMap(&bioseq.GetSeqMap()),
+      m_TSE(bioseq.GetTSE_Handle()),
+      m_Size(bioseq.GetBioseqLength()),
+      m_Mol(bioseq.GetBioseqMolType()),
+      m_Strand(strand),
+      m_Coding(CSeq_data::e_not_set)
+{
+    m_Iterator.x_SetVector(*this);
+    SetCoding(coding);
+}
+
+
 CSeqVector::CSeqVector(const CSeqMap& seqMap, CScope& scope,
                        EVectorCoding coding, ENa_strand strand)
-    : m_SeqMap(&seqMap),
-      m_Scope(&scope),
+    : m_Scope(&scope),
+      m_SeqMap(&seqMap),
       m_Size(seqMap.GetLength(&scope)),
+      m_Mol(seqMap.GetMol()),
+      m_Strand(strand),
+      m_Coding(CSeq_data::e_not_set)
+{
+    m_Iterator.x_SetVector(*this);
+    SetCoding(coding);
+}
+
+
+CSeqVector::CSeqVector(const CSeqMap& seqMap, const CTSE_Handle& top_tse,
+                       EVectorCoding coding, ENa_strand strand)
+    : m_Scope(top_tse.GetScope()),
+      m_SeqMap(&seqMap),
+      m_TSE(top_tse),
+      m_Size(seqMap.GetLength(&top_tse.GetScope())),
       m_Mol(seqMap.GetMol()),
       m_Strand(strand),
       m_Coding(CSeq_data::e_not_set)
@@ -164,9 +195,24 @@ CSeqVector::CSeqVector(const CSeqMap& seqMap, CScope& scope,
 
 CSeqVector::CSeqVector(const CSeq_loc& loc, CScope& scope,
                        EVectorCoding coding, ENa_strand strand)
-    : m_SeqMap(CSeqMap::CreateSeqMapForSeq_loc(loc, &scope)),
-      m_Scope(&scope),
+    : m_Scope(&scope),
+      m_SeqMap(CSeqMap::CreateSeqMapForSeq_loc(loc, &scope)),
       m_Size(m_SeqMap->GetLength(&scope)),
+      m_Mol(m_SeqMap->GetMol()),
+      m_Strand(strand),
+      m_Coding(CSeq_data::e_not_set)
+{
+    m_Iterator.x_SetVector(*this);
+    SetCoding(coding);
+}
+
+
+CSeqVector::CSeqVector(const CSeq_loc& loc, const CTSE_Handle& top_tse,
+                       EVectorCoding coding, ENa_strand strand)
+    : m_Scope(top_tse.GetScope()),
+      m_SeqMap(CSeqMap::CreateSeqMapForSeq_loc(loc, &top_tse.GetScope())),
+      m_TSE(top_tse),
+      m_Size(m_SeqMap->GetLength(&top_tse.GetScope())),
       m_Mol(m_SeqMap->GetMol()),
       m_Strand(strand),
       m_Coding(CSeq_data::e_not_set)
@@ -184,8 +230,9 @@ CSeqVector::~CSeqVector(void)
 CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
 {
     if ( &vec != this ) {
-        m_SeqMap = vec.m_SeqMap;
         m_Scope  = vec.m_Scope;
+        m_SeqMap = vec.m_SeqMap;
+        m_TSE = vec.m_TSE;
         m_Size   = vec.m_Size;
         m_Mol    = vec.m_Mol;
         m_Strand = vec.m_Strand;
@@ -198,8 +245,10 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
 
 bool CSeqVector::CanGetRange(TSeqPos from, TSeqPos to) const
 {
-    return m_SeqMap->CanResolveRange(m_Scope.GetScopeOrNull(),
-                                     from, to, m_Strand);
+    SSeqMapSelector sel;
+    sel.SetRange(from, to-from).SetStrand(m_Strand).SetLinkUsedTSE(m_TSE)
+        .SetResolveCount(size_t(-1));
+    return m_SeqMap->CanResolveRange(m_Scope.GetScopeOrNull(), sel);
 }
 
 
@@ -399,6 +448,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2004/12/22 15:56:17  vasilche
+* Added CTSE_Handle.
+* Added CSeqVector constructor from CBioseq_Handle to allow used TSE linking.
+*
 * Revision 1.71  2004/12/06 17:10:50  grichenk
 * Removed constructor accepting CConstRef<CSeqMap>
 *

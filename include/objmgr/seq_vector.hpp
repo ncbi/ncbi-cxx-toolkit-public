@@ -90,10 +90,19 @@ public:
     typedef TSignedSeqPos difference_type;
 
     CSeqVector(void);
+    CSeqVector(const CBioseq_Handle& bioseq,
+               EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
+               ENa_strand strand = eNa_strand_unknown);
     CSeqVector(const CSeqMap& seqMap, CScope& scope,
                EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
                ENa_strand strand = eNa_strand_unknown);
+    CSeqVector(const CSeqMap& seqMap, const CTSE_Handle& top_tse,
+               EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
+               ENa_strand strand = eNa_strand_unknown);
     CSeqVector(const CSeq_loc& loc, CScope& scope,
+               EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
+               ENa_strand strand = eNa_strand_unknown);
+    CSeqVector(const CSeq_loc& loc, const CTSE_Handle& top_tse,
                EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
                ENa_strand strand = eNa_strand_unknown);
     CSeqVector(const CSeqVector& vec);
@@ -168,8 +177,9 @@ private:
     static const char* sx_GetConvertTable(TCoding src, TCoding dst,
                                           bool reverse);
 
-    CConstRef<CSeqMap>       m_SeqMap;
     CHeapScope               m_Scope;
+    CConstRef<CSeqMap>       m_SeqMap;
+    CTSE_Handle              m_TSE;
     TSeqPos                  m_Size;
     TMol                     m_Mol;
     ENa_strand               m_Strand;
@@ -349,6 +359,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2004/12/22 15:56:17  vasilche
+* Added CTSE_Handle.
+* Added CSeqVector constructor from CBioseq_Handle to allow used TSE linking.
+*
 * Revision 1.55  2004/12/06 17:10:50  grichenk
 * Removed constructor accepting CConstRef<CSeqMap>
 *
