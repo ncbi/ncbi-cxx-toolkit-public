@@ -150,7 +150,7 @@ void CAlnMix::Add(const CSeq_align& aln, TAddFlags flags)
         if (aln.GetSegs().IsDenseg()) {
             Add(aln.GetSegs().GetDenseg(), flags);
         } else if (aln.GetSegs().IsStd()) {
-            CRef<CSeq_align> sa = aln.CreateDensegFromStdseg();
+            CRef<CSeq_align> sa = aln.CreateDensegFromStdseg(this);
             Add(*sa, flags);
         } else if (aln.GetSegs().IsDisc()) {
             ITERATE (CSeq_align_set::Tdata,
@@ -1859,7 +1859,7 @@ void CAlnMix::x_IdentifyAlnMixSeq(CRef<CAlnMixSeq>& aln_seq, const CSeq_id& seq_
         GetScope().GetBioseqHandle(seq_id);
 
     if ( !bioseq_handle ) {
-        string errstr = string("CAlnMix::IdentifyAlnMixSeq(): ") 
+        string errstr = string("CAlnMix::x_IdentifyAlnMixSeq(): ") 
             + "Seq-id cannot be resolved: "
             + (seq_id.AsFastaString());
         
@@ -1896,6 +1896,76 @@ void CAlnMix::x_IdentifyAlnMixSeq(CRef<CAlnMixSeq>& aln_seq, const CSeq_id& seq_
 }
 
 
+void CAlnMix::ChooseSeqId(CSeq_id& id1, const CSeq_id& id2)
+{
+    CRef<CAlnMixSeq> aln_seq1, aln_seq2;
+    x_IdentifyAlnMixSeq(aln_seq1, id1);
+    x_IdentifyAlnMixSeq(aln_seq2, id2);
+    if (aln_seq1->m_BioseqHandle != aln_seq2->m_BioseqHandle) {
+        string errstr = 
+            string("CAlnMix::ChooseSeqId(CSeq_id& id1, const CSeq_id& id2):")
+            + " Seq-ids: " + id1.AsFastaString() +
+            + " and " + id2.AsFastaString() +
+            + " do not resolve to the same bioseq handle,"
+            " but are used on the same 'row' in different segments."
+            " This is legally allowed in a Std-seg, but conversion to"
+            " Dense-seg cannot be performed.";
+        NCBI_THROW(CAlnException, eInvalidSeqId, errstr);
+    }
+    if (x_RankSeqId(id1) > x_RankSeqId(id2)) {
+        id1.Reset();
+        SerialAssign<CSeq_id>(id1, id2);
+    }
+}    
+
+
+int CAlnMix::x_RankSeqId(const CSeq_id& id)
+{
+    switch (id.Which()) {
+    case CSeq_id::e_Gi:
+        return 51;
+
+    case CSeq_id::e_Patent:
+        return 55;
+
+    case CSeq_id::e_Gibbsq:
+        return 55;
+
+    case CSeq_id::e_Gibbmt:
+        return 56;
+
+    case CSeq_id::e_Genbank:
+    case CSeq_id::e_Embl:
+    case CSeq_id::e_Pir:
+    case CSeq_id::e_Swissprot:
+    case CSeq_id::e_Ddbj:
+    case CSeq_id::e_Prf:
+    case CSeq_id::e_Pdb:
+    case CSeq_id::e_Tpg:
+    case CSeq_id::e_Tpe:
+    case CSeq_id::e_Tpd:
+        return 60;
+
+    case CSeq_id::e_Other:
+        return 65;
+
+    case CSeq_id::e_Giim:
+        return 70;
+
+    case CSeq_id::e_General:
+    case CSeq_id::e_Local:
+        return 80;
+
+    case CSeq_id::e_not_set:
+        return 83;
+
+    default:
+        NCBI_THROW(CAlnException, eInvalidSeqId,
+                   "CAlnMix::x_RankSeqId: Invalid Seq-id choice");
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -1903,6 +1973,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.87  2004/03/09 17:16:16  todorov
+* + SSeqIdChooser implementation
+*
 * Revision 1.86  2004/01/16 23:59:45  todorov
 * + missing width in seg calcs
 *

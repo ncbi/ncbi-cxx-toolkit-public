@@ -50,7 +50,8 @@ class CAlnMixSegment;
 class CAlnMixSeq;
 class CAlnMixMatch;
 
-class NCBI_XALNMGR_EXPORT CAlnMix : public CObject
+class NCBI_XALNMGR_EXPORT CAlnMix : public CObject,
+                                    public CSeq_align::SSeqIdChooser
 {
 public:
 
@@ -118,6 +119,7 @@ private:
         }
     };
 
+
     typedef map<void *, CConstRef<CDense_seg> >           TConstDSsMap;
     typedef map<void *, CConstRef<CSeq_align> >           TConstAlnsMap;
     typedef vector<CAlnMixSeq*>                           TSeqs;
@@ -138,7 +140,11 @@ private:
     void x_CreateDenseg        (void);
     void x_ConsolidateGaps     (TSegmentsContainer& gapped_segs);
     void x_MinimizeGaps        (TSegmentsContainer& gapped_segs);
-    void  x_IdentifyAlnMixSeq   (CRef<CAlnMixSeq>& aln_seq, const CSeq_id& seq_id);
+    void x_IdentifyAlnMixSeq   (CRef<CAlnMixSeq>& aln_seq, const CSeq_id& seq_id);
+
+
+    // SChooseSeqId implementation
+    virtual void ChooseSeqId(CSeq_id& id1, const CSeq_id& id2);
 
 
     CRef<CDense_seg> x_ExtendDSWithWidths(const CDense_seg& ds);
@@ -150,8 +156,8 @@ private:
                                         const CRef<CAlnMixMatch>& aln_match2);
     static bool x_CompareAlnSegIndexes (const CAlnMixSegment* aln_seg1,
                                         const CAlnMixSegment* aln_seg2);
-
-
+    static int  x_RankSeqId            (const CSeq_id& id);
+        
     mutable CRef<CScope>        m_Scope;
     TConstDSs                   m_InputDSs;
     TConstAlns                  m_InputAlns;
@@ -319,6 +325,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2004/03/09 17:15:46  todorov
+* + SSeqIdChooser implementation
+*
 * Revision 1.34  2003/12/22 18:30:38  todorov
 * ObjMgr is no longer created internally. Scope should be passed as a reference in the ctor
 *
