@@ -806,6 +806,7 @@ static void s_Destroy(CONNECTOR connector)
     BUF_Destroy(uuu->obuf);
     BUF_Destroy(uuu->ibuf);
     free(uuu);
+    connector->handle = 0;
     free(connector);
 }
 
@@ -865,6 +866,7 @@ extern CONNECTOR HTTP_CreateConnectorEx
     uuu->http = 0;
     uuu->c_timeout = CONN_DEFAULT_TIMEOUT; /* intentionally bad values --    */
     uuu->w_timeout = CONN_DEFAULT_TIMEOUT; /* should be reset prior to usage */
+    uuu->can_connect = eCC_Once;           /* will be properly reset at open */
 
     /* initialize connector structure */
     ccc->handle  = uuu;
@@ -880,6 +882,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2002/10/22 15:11:24  lavr
+ * Zero connector's handle to crash if revisited
+ *
  * Revision 6.33  2002/09/06 15:46:45  lavr
  * Few bug fixes about corner cases of I/O waiting, flushing and logging
  *

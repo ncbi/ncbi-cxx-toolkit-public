@@ -269,6 +269,7 @@ static void s_Destroy
     free(xxx->inp_file_name);
     free(xxx->out_file_name);
     free(xxx);
+    connector->handle = 0;
     free(connector);
 }
 
@@ -317,6 +318,9 @@ extern CONNECTOR FILE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/10/22 15:11:24  lavr
+ * Zero connector's handle to crash if revisited
+ *
  * Revision 6.8  2002/09/24 15:06:00  lavr
  * Log moved to end
  *

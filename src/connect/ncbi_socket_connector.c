@@ -282,6 +282,7 @@ static void s_Destroy
     if (xxx->init_data)
         free(xxx->init_data);
     free(xxx);
+    connector->handle = 0;
     free(connector);
 }
 
@@ -375,6 +376,9 @@ extern CONNECTOR SOCK_CreateConnectorOnTopEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2002/10/22 15:11:24  lavr
+ * Zero connector's handle to crash if revisited
+ *
  * Revision 6.11  2002/08/12 15:12:46  lavr
  * Use persistent SOCK_Write()
  *

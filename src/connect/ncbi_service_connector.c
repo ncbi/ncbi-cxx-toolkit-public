@@ -140,8 +140,10 @@ static int/*bool*/ s_OpenDispatcher(SServiceConnector* uuu)
 
 static void s_CloseDispatcher(SServiceConnector* uuu)
 {
-    if (uuu->user_header)
+    if (uuu->user_header) {
         free((void*) uuu->user_header);
+        uuu->user_header = 0;
+    }
     SERV_Close(uuu->iter);
     uuu->iter = 0;
 }
@@ -721,6 +723,7 @@ static void s_Destroy(CONNECTOR connector)
         free((void*) uuu->name);
     free((void*) uuu->service);
     free(uuu);
+    connector->handle = 0;
     free(connector);
 }
 
@@ -791,6 +794,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.45  2002/10/22 15:11:24  lavr
+ * Zero connector's handle to crash if revisited
+ *
  * Revision 6.44  2002/10/21 18:32:28  lavr
  * Append service arguments "address" and "platform" in dispatcher requests
  *
