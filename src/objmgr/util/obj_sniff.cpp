@@ -81,7 +81,7 @@ void CObjectsSniffer::Probe(CObjectIStream& input)
 
     TCandidates::const_iterator it;
 
-    for(it = m_Candidates.begin(); it < m_Candidates.end(); ++it) {
+    for (it = m_Candidates.begin(); it < m_Candidates.end(); ++it) {
         CRef<COffsetReadHook> h(new COffsetReadHook());
         
         it->SetLocalReadHook(input, &(*h));
@@ -90,6 +90,58 @@ void CObjectsSniffer::Probe(CObjectIStream& input)
     } // for
 
     m_TopLevelMap.clear();
+
+
+    if (input.GetDataFormat() == eSerial_AsnText) {
+        ProbeASN1_Text(input);
+    } else {
+        ProbeASN1_Bin(input);
+    }
+
+    //
+    // Reset(clean) the hooks
+    //
+
+    _ASSERT(hooks.size() == m_Candidates.size());
+    for (it = m_Candidates.begin(); it < m_Candidates.end(); ++it) {
+        it->ResetLocalReadHook(input);
+    } // for
+}
+
+
+void CObjectsSniffer::ProbeASN1_Text(CObjectIStream& input)
+{
+    TCandidates::const_iterator it;
+
+    while (true) {
+        try {
+            size_t offset = input.GetStreamOffset();
+            string header = input.ReadFileHeader();
+
+            for (it = m_Candidates.begin(); it < m_Candidates.end(); ++it) {
+                if (header == it->GetTypeInfo()->GetName()) {
+                    CObjectInfo object_info(it->GetTypeInfo());
+
+                    input.Read(object_info, CObjectIStream::eNoFileHeader);
+                    m_TopLevelMap.push_back(SObjectDescription(*it, offset));
+                }
+            } // for
+        }
+        catch (CEofException& ) {
+            break;
+        }
+        catch (CException& e) {
+            LOG_POST(Info << "Exception reading ASN.1 text " << e.what());
+            break;
+        }
+
+    } // while
+}
+
+
+void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
+{
+    TCandidates::const_iterator it;
 
     //
     // Brute force interrogation of the source file.
@@ -120,16 +172,7 @@ void CObjectsSniffer::Probe(CObjectIStream& input)
         }
     }
 
-    //
-    // Reset(clean) the hooks
-    //
-
-    _ASSERT(hooks.size() == m_Candidates.size());
-    for (it = m_Candidates.begin(); it < m_Candidates.end(); ++it) {
-        it->ResetLocalReadHook(input);
-    } // for
 }
-
 
 
 END_SCOPE(objects)
@@ -138,6 +181,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2003/05/19 16:38:51  kuznets
+* Added support for ASN text
+*
 * Revision 1.1  2003/05/16 19:34:55  kuznets
 * Initial revision.
 *

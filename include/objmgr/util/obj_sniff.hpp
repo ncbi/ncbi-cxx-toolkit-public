@@ -101,6 +101,11 @@ public:
     // (like remembering the read object, initialization of UI, etc).
     virtual void TopObjectFound(CObjectInfo& object);
 
+protected:
+    void ProbeASN1_Text(CObjectIStream& input);
+    void ProbeASN1_Bin(CObjectIStream& input);
+
+
 private:
     typedef vector<CObjectTypeInfo> TCandidates;
 
@@ -117,6 +122,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/05/19 16:38:37  kuznets
+ * Added support for ASN text
+ *
  * Revision 1.1  2003/05/16 19:34:32  kuznets
  * Initial revision.
  *
