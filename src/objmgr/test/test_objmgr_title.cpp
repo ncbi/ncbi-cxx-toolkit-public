@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/29 18:21:07  grichenk
+* CScope::GetTitle() -> CBioseq_Handle::GetTitle()
+*
 * Revision 1.3  2002/01/23 21:59:34  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -121,18 +124,18 @@ int CTitleTester::Run(void)
     }
 #endif
 
-    CBioseq_Handle         handle = scope.GetBioseqHandle(id);
-    CScope::TGetTitleFlags flags  = 0;
+    CBioseq_Handle handle = scope.GetBioseqHandle(id);
+    CBioseq_Handle::TGetTitleFlags flags  = 0;
     if (args["reconstruct"]) {
-        flags |= CScope::fGetTitle_Reconstruct;
+        flags |= CBioseq_Handle::fGetTitle_Reconstruct;
     }
     if (args["accession"]) {
-        flags |= CScope::fGetTitle_Accession;
+        flags |= CBioseq_Handle::fGetTitle_Accession;
     }
     if (args["organism"]) {
-        flags |= CScope::fGetTitle_Organism;
+        flags |= CBioseq_Handle::fGetTitle_Organism;
     }
-    NcbiCout << scope.GetTitle(handle, flags) << NcbiEndl;
+    NcbiCout << handle.GetTitle(flags) << NcbiEndl;
     return 0;
 }
 
