@@ -75,6 +75,9 @@ protected:
   // mandatory end gaps detection flag
   bool m_endgaps;
 
+  // presume no Poly(A) tail when true
+  bool m_nopolya;
+
   // status log
   ofstream m_logstream;
   void   x_LogStatus(const string& query, const string& subj,
@@ -88,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/11/20 14:38:10  kapustin
+ * Add -nopolya flag to suppress Poly(A) detection.
+ *
  * Revision 1.2  2003/11/05 20:32:11  kapustin
  * Include source information into the index
  *

@@ -95,6 +95,8 @@ void CSplignApp::Init()
       
   argdescr->AddFlag ("norle", "Do not encode alignment transcripts.", true);
 
+  argdescr->AddFlag ("nopolya", "Do not detect Poly(A).", true);
+
   argdescr->AddOptionalKey
     ("index", "index",
      "Batch mode index file (use -mkidx to generate).",
@@ -210,6 +212,7 @@ int CSplignApp::Run()
   m_minidty = args["min_idty"].AsDouble();
   m_endgaps = args["endgaps"];
   m_min_query_coverage = args["min_query_cov"].AsDouble();
+  m_nopolya = args["nopolya"];
 
   // open log stream
 
@@ -290,7 +293,7 @@ string CSplignApp::x_RunOnPair( vector<CHit>* hits )
   m_seqloader.Load(query, &mrna, 0, kMax_UInt);
   const size_t mrna_size = mrna.size();
   
-  size_t polya_start = TestPolyA(mrna);
+  size_t polya_start = m_nopolya? kMax_UInt: TestPolyA(mrna);
   if(polya_start < kMax_UInt) {
     CleaveOffByTail(hits, polya_start + 1); // cleave off hits beyond cds
     if(hits->size() == 0) {
@@ -422,22 +425,24 @@ string CSplignApp::x_RunOnPair( vector<CHit>* hits )
     }
   }
 
-  // look for PolyA in trailing segments:
-  // if a segment is mostly 'A's then
-  // we add it to Poly(A)
-  int j = seg_dim - 1;
-  for(; j >= 0; --j) {
-    const char* p0 = &mrna[qmin] + (*segments)[j].m_box[0];
-    const char* p1 = &mrna[qmin] + (*segments)[j].m_box[1] + 1;
-    size_t count = 0;
-    for(const char* pc = p0; pc != p1; ++pc) {
+    int j = seg_dim - 1;
+    if(!m_nopolya) {
+    // look for PolyA in trailing segments:
+    // if a segment is mostly 'A's then
+    // we add it to Poly(A)
+    for(; j >= 0; --j) {
+      const char* p0 = &mrna[qmin] + (*segments)[j].m_box[0];
+      const char* p1 = &mrna[qmin] + (*segments)[j].m_box[1] + 1;
+      size_t count = 0;
+      for(const char* pc = p0; pc != p1; ++pc) {
         if(*pc == 'A') ++count;
+      }
+      double ac = double(count) / double(p1 - p0);
+      if(ac < 0.9) break;
     }
-    double ac = double(count) / double(p1 - p0);
-    if(ac < 0.9) break;
-  }
-  if(j >= 0 && j < int(seg_dim - 1)) {
-    polya_start = (*segments)[j].m_box[1] + 1;
+    if(j >= 0 && j < int(seg_dim - 1)) {
+      polya_start = (*segments)[j].m_box[1] + 1;
+    }
   }
 
   CNcbiOstrstream oss;
@@ -563,6 +568,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/11/20 14:38:10  kapustin
+ * Add -nopolya flag to suppress Poly(A) detection.
+ *
  * Revision 1.4  2003/11/10 19:20:26  kapustin
  * Generate encoded alignment transcript by default
  *
