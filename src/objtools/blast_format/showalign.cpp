@@ -193,6 +193,7 @@ CDisplaySeqalign::~CDisplaySeqalign(){
   delete [] m_Matrix;
   delete m_ConfigFile;
   delete m_Reg;
+
 }
 
 static void AddSpace(CNcbiOstream& out, int number);
@@ -203,7 +204,7 @@ static string getNameInitials(string& name);
 static string GetSeqForm(char* formName, bool dbIsNa);
 static const string GetSeqIdStringByFastaOrder(const CSeq_id& id, CScope& sp, bool with_version);
 static int GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids);
-static void setFeatureInfo(CDisplaySeqalign::FeatureInfo* featInfo, const CSeq_loc& seqloc, int alnFrom, int alnTo, int alnStop, char patternChar, string patternId);
+
 static string MakeURLSafe(char* src);
 static void getAlnScores(const CSeq_align& aln, int& score, double& bits, double& evalue);
 
@@ -390,7 +391,9 @@ static int GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids){
 
 //To display the seqalign represented by internal alnvec
 void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){ 
-    int maxIdLen=0;
+
+  CRange<TSignedSeqPos> alnRange;
+  int maxIdLen=0;
   int maxStartLen=0;
   int startLen=0;
   int actualLineLen=0;
@@ -408,17 +411,24 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
   CAlnMap::TSeqPosList*  seqStops = new CAlnMap::TSeqPosList[rowNum];
   string* seqidArray=new string[rowNum];
   string middleLine;
-  list<FeatureInfo*>* bioseqFeature= new list<FeatureInfo*>[rowNum];
+  list<alnFeatureInfo*>* bioseqFeature= new list<alnFeatureInfo*>[rowNum];
   CAlnMap::TSignedRange* rowRng = new CAlnMap::TSignedRange[rowNum];
 
   //conver to aln coordinates for mask seqloc
+  list<alnSeqlocInfo*> alnLocList;
   for (list<SeqlocInfo>::iterator iter=m_Seqloc.begin();  iter!=m_Seqloc.end(); iter++){
+    alnSeqlocInfo* alnloc = new alnSeqlocInfo;    
+   
     for (int i=0; i<rowNum; i++){
       if((*iter).seqloc->GetInt().GetId().Match(m_AV->GetSeqId(i))){
-        (*iter).alnRange.Set(m_AV->GetAlnPosFromSeqPos(i, (*iter).seqloc->GetInt().GetFrom()), m_AV->GetAlnPosFromSeqPos(i, (*iter).seqloc->GetInt().GetTo()));       
+        alnloc->alnRange.Set(m_AV->GetAlnPosFromSeqPos(i, (*iter).seqloc->GetInt().GetFrom()), m_AV->GetAlnPosFromSeqPos(i, (*iter).seqloc->GetInt().GetTo()));      
+	break;
       }
     }
+    alnloc->seqloc = &(*iter);   
+    alnLocList.push_back(alnloc);
   }
+  m_Alnloc = alnLocList;
   //Add external query feature info such as phi blast pattern
   for (list<FeatureInfo>::iterator iter=m_QueryFeature.begin();  iter!=m_QueryFeature.end(); iter++){
     for(int i = 0; i < rowNum; i++){
@@ -426,7 +436,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 	int alnFrom = m_AV->GetAlnPosFromSeqPos(i, iter->seqloc->GetInt().GetFrom() < m_AV->GetSeqStart(i) ? m_AV->GetSeqStart(i):iter->seqloc->GetInt().GetFrom());
 	int alnTo = m_AV->GetAlnPosFromSeqPos(i, iter->seqloc->GetInt().GetTo() > m_AV->GetSeqStop(i) ? m_AV->GetSeqStop(i):iter->seqloc->GetInt().GetTo());
 	
-	FeatureInfo* featInfo = new FeatureInfo;
+	alnFeatureInfo* featInfo = new alnFeatureInfo;
 	setFeatureInfo(featInfo, *(iter->seqloc), alnFrom, alnTo, aln_stop, iter->featureChar, iter->featureId);    
 	bioseqFeature[i].push_back(featInfo);
       }
@@ -486,8 +496,8 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
   }
   //adjust max id length for feature id 
   for(int i = 0; i < rowNum; i ++){
-    for (list<FeatureInfo*>::iterator iter=bioseqFeature[i].begin();  iter != bioseqFeature[i].end(); iter++){
-      maxIdLen=max<int>((*iter)->featureId.size(), maxIdLen );
+    for (list<alnFeatureInfo*>::iterator iter=bioseqFeature[i].begin();  iter != bioseqFeature[i].end(); iter++){
+      maxIdLen=max<int>((*iter)->feature->featureId.size(), maxIdLen );
     }
   }  //end of preparing row data
   
@@ -607,16 +617,16 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 	} 
 	//display feature. Feature, if set, will be displayed for query regardless
 
-	for (list<FeatureInfo*>::iterator iter=bioseqFeature[row].begin();  iter != bioseqFeature[row].end(); iter++){
+	for (list<alnFeatureInfo*>::iterator iter=bioseqFeature[row].begin();  iter != bioseqFeature[row].end(); iter++){
 	  if ( curRange.IntersectingWith((*iter)->alnRange)){  
 	    if((m_AlignOption&eHtml)&&(m_AlignOption&eMultiAlign) && (m_AlignOption&eSequenceRetrieval && m_IsDbGi)){
 	      char checkboxBuf[200];
 	      sprintf(checkboxBuf, "<input type=\"checkbox\" name=\"getSeqMaster\" value=\"\" onClick=\"uncheckable('getSeqAlignment', 'getSeqMaster')\">");
 	      out << checkboxBuf;
 	    }
-	    out<<(*iter)->featureId;
-	    AddSpace(out, maxIdLen+m_IdStartMargin+maxStartLen+m_StartSequenceMargin-(*iter)->featureId.size());
-	    OutputSeq((*iter)->featureString, CSeq_id(), j, actualLineLen, out);
+	    out<<(*iter)->feature->featureId;
+	    AddSpace(out, maxIdLen+m_IdStartMargin+maxStartLen+m_StartSequenceMargin-(*iter)->feature->featureId.size());
+	    OutputSeq((*iter)->feature->featureString, CSeq_id(), j, actualLineLen, out);
 	    out<<endl;
 	  }
 	}
@@ -640,10 +650,16 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
  
   //free allocation
   for(int i = 0; i < rowNum; i ++){
-    for (list<FeatureInfo*>::iterator iter=bioseqFeature[i].begin();  iter != bioseqFeature[i].end(); iter++){
+    for (list<alnFeatureInfo*>::iterator iter=bioseqFeature[i].begin();  iter != bioseqFeature[i].end(); iter++){
+      delete (*iter)->feature;
       delete (*iter);
     }
   } 
+
+  for (list<alnSeqlocInfo*>::const_iterator iter = alnLocList.begin();  iter != alnLocList.end(); iter++){
+    delete (*iter);
+  }
+  
   delete [] bioseqFeature;
   delete [] seqidArray;
   delete [] rowRng;
@@ -884,10 +900,10 @@ const void CDisplaySeqalign::OutputSeq(string& sequence, const CSeq_id& id, int 
   list<CRange<int> > actualSeqloc;
   string actualSeq = sequence.substr(start, len);
   //go through seqloc containing mask info
-  for (list<SeqlocInfo>::iterator iter=m_Seqloc.begin();  iter!=m_Seqloc.end(); iter++){
-    int from=(*iter).alnRange.GetFrom();
-    int to=(*iter).alnRange.GetTo();
-    if(id.Match((*iter).seqloc->GetInt().GetId())){
+  for (list<alnSeqlocInfo*>::const_iterator iter = m_Alnloc.begin();  iter != m_Alnloc.end(); iter++){
+    int from=(*iter)->alnRange.GetFrom();
+    int to=(*iter)->alnRange.GetTo();
+    if(id.Match((*iter)->seqloc->seqloc->GetInt().GetId())){
       bool isFirstChar = true;
       CRange<int> eachSeqloc(0, 0);
       //go through each residule and mask it
@@ -1039,7 +1055,7 @@ static string GetTaxNames(const CBioseq& cbsp, int taxid){
   return name;
 }
 
-void CDisplaySeqalign::getFeatureInfo(list<FeatureInfo*>& feature, CScope& scope, CSeqFeatData::E_Choice choice, int row) const {
+void CDisplaySeqalign::getFeatureInfo(list<alnFeatureInfo*>& feature, CScope& scope, CSeqFeatData::E_Choice choice, int row) const {
   //Only fetch features for seq that has a gi
   CRef<CSeq_id> id = GetSeqIdByType(m_AV->GetBioseqHandle(row).GetBioseq().GetId(), CSeq_id::e_Gi);
   if(!(id.Empty())){
@@ -1052,7 +1068,7 @@ void CDisplaySeqalign::getFeatureInfo(list<FeatureInfo*>& feature, CScope& scope
       int alnStop = m_AV->GetAlnStop();
 
       if(loc.IsInt()){
-	FeatureInfo* featInfo = new FeatureInfo;
+	alnFeatureInfo* featInfo = new alnFeatureInfo;
      
 	int alnFrom = m_AV->GetAlnPosFromSeqPos(row, loc.GetInt().GetFrom() < m_AV->GetSeqStart(row) ? m_AV->GetSeqStart(row):loc.GetInt().GetFrom());
 	int alnTo = m_AV->GetAlnPosFromSeqPos(row, loc.GetInt().GetTo() > m_AV->GetSeqStop(row) ? m_AV->GetSeqStop(row):loc.GetInt().GetTo());
@@ -1072,17 +1088,19 @@ void CDisplaySeqalign::getFeatureInfo(list<FeatureInfo*>& feature, CScope& scope
   }
 }
 
-void setFeatureInfo(CDisplaySeqalign::FeatureInfo* featInfo, const CSeq_loc& seqloc, int alnFrom, int alnTo, int alnStop, char patternChar, string patternId){
-  featInfo->seqloc = &seqloc;
+void  CDisplaySeqalign::setFeatureInfo(alnFeatureInfo* featInfo, const CSeq_loc& seqloc, int alnFrom, int alnTo, int alnStop, char patternChar, string patternId) const{
+  FeatureInfo* feat = new FeatureInfo;
+  feat->seqloc = &seqloc;
+  feat->featureChar = patternChar;
+  feat->featureId = patternId;
+  //fill feature string
+  string line(alnStop+1, ' ');  
+  for (int j = alnFrom; j <= alnTo; j++){
+    line[j] = feat->featureChar;
+  }
+  feat->featureString = line;
   featInfo->alnRange.Set(alnFrom, alnTo); 
-  featInfo->featureChar = patternChar;
-    featInfo->featureId = patternId;
-    //fill feature string
-    string line(alnStop+1, ' ');  
-    for (int j = alnFrom; j <= alnTo; j++){
-      line[j] = featInfo->featureChar;
-    }
-    featInfo->featureString = line;
+  featInfo->feature = feat;
 }
 
 //May need to add a "|" to the current insert for insert on next rows

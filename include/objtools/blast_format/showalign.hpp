@@ -50,23 +50,15 @@ public:
   //Defines
   struct SeqlocInfo {
     CRef<CSeq_loc> seqloc;
-    CRange<TSignedSeqPos> alnRange;
     int frame;
   };
-  struct FeatureInfo{
+  struct FeatureInfo {
     CConstRef<CSeq_loc> seqloc;
-    CRange<TSignedSeqPos> alnRange;
     char featureChar;
     string featureId;
     string featureString;
   };
-  struct alnInfo { //store alnvec and score info
-      CRef<CAlnVec> alnVec;
-      int score;
-      double bits;
-      double eValue;
-    };
-    
+
   static const int m_PMatrixSize = 23;  //number of amino acid symbol in matrix
   static const int m_NumAsciiChar = 128;  //number of ASCII char
   static const int m_NumColor=3;
@@ -75,7 +67,7 @@ public:
     eHtml = (1 << 0),    //html output. Default text.
     eLinkout = (1 <<1 ),  //linkout gifs. 
     eSequenceRetrieval = (1 << 2),  //Get sequence feature
-    eMultiAlign = (1 << 3 ),   //Flat query anchored. Default pairwise
+    eMultiAlign = (1 << 3 ),   //Multiple alignment view. Default pairwise
     eShowBarMiddleLine = (1 << 4),  //show "|" as identity between query and hit. 
     eShowCharMiddleLine = (1 << 5),  //show character or "+" as identity between query and hit.
     eShowGi = (1 << 6),
@@ -85,7 +77,7 @@ public:
     eNewTargetWindow = (1 << 10),  //clicking url link will open a new window
     eShowCdsFeature = (1 << 11),  //show cds for sequence 
     eShowGeneFeature = (1 << 12), //show gene for sequence
-    eMasterAnchored = (1 << 13)  //Query anchored, for multialignment only
+    eMasterAnchored = (1 << 13)  //Query anchored, for multialignment only, default not anchored
   };
 
   //character used to display seqloc
@@ -120,12 +112,15 @@ public:
   ~CDisplaySeqalign();
 
   //Set functions
+  /*These are for all alignment display*/
   void SetAlignOption (int option) {m_AlignOption = option;} //Set according to DsiplayOption
   void SetSeqLocChar (SeqLocCharOption option = eX) {m_SeqLocChar = option;}
   void SetSeqLocColor (SeqLocColorOption option = eBlack) {m_SeqLocColor=option;}
-  void SetAlignType (AlignType type) {m_AlignType = type;}  //Needed only if you want to display blast-related information
   void SetLineLen (int len) {m_LineLen = len;}  //number of bases or amino acids per line
   void SetNumAlignToShow (int num) {m_NumAlignToShow = num;}  //Display top num seqalign
+
+  /*These are for blast alignment style display only*/
+  void SetAlignType (AlignType type) {m_AlignType = type;}  //Needed only if you want to display blast-related information  
   void SetDbName (string name) {m_DbName = name;}  //blastdb name.  
   void SetDbType(bool isNa) {m_IsDbNa = isNa;}  //for seq fetching from blast db
   void SetQueryType(bool isNa) {m_IsQueryNa = isNa;} //type for query sequence
@@ -140,8 +135,25 @@ public:
   
   static CRef<CSeq_id> GetSeqIdByType(const list<CRef<CSeq_id> >& ids, CSeq_id::E_Choice choice);
 
-protected:
+private:
 
+  struct alnInfo { //store alnvec and score info
+    CRef<CAlnVec> alnVec;
+    int score;
+    double bits;
+    double eValue;
+  };
+   
+  struct alnFeatureInfo {
+    FeatureInfo* feature;
+    CRange<TSignedSeqPos> alnRange;
+  };
+
+  struct alnSeqlocInfo {
+    SeqlocInfo* seqloc;
+    CRange<TSignedSeqPos> alnRange;
+  };
+  
   list <SeqlocInfo>& m_Seqloc;  //display character option for list of seqloc 
   list <FeatureInfo>& m_QueryFeature;  //external feature such as phiblast pattern
   CScope& m_Scope;
@@ -175,6 +187,7 @@ protected:
   map<string, string> m_Segs;
   CRef<CObjectManager> m_FeatObj; //used for fetching feature
   CRef<CScope> m_featScope; //used for fetching feature
+  list<alnSeqlocInfo*> m_Alnloc; //seqloc display info (i.e., mask) for current alnvec
 
   //helper functions
   void DisplayAlnvec(CNcbiOstream& out);
@@ -186,12 +199,13 @@ protected:
   void AddLinkout(const CBioseq& cbsp, const CBlast_def_line& bdl, int firstGi,int gi, CNcbiOstream& out) const;
   string getUrl(const list<CRef<CSeq_id> >& ids, int row) const;
   string getDumpgnlLink(const list<CRef<CSeq_id> >& ids, int row) const;
-  void getFeatureInfo(list<FeatureInfo*>& feature, CScope& scope, CSeqFeatData::E_Choice choice, int row) const;
+  void getFeatureInfo(list<alnFeatureInfo*>& feature, CScope& scope, CSeqFeatData::E_Choice choice, int row) const;
 
   void fillInserts(int row, CAlnMap::TSignedRange& alnRange, int alnStart, list<string>& inserts, string& insertPosString) const;
   void doFills(int row, CAlnMap::TSignedRange& alnRange, int alnStart, list<CConstRef<CAlnMap::CAlnChunk> >& chunks, list<string>& inserts) const;
   string getSegs(int row) const;
   const void fillIdentityInfo(const string& sequenceStandard, const string& sequence , int& match, int& positive, string& middleLine);
+  void setFeatureInfo(alnFeatureInfo* featInfo, const CSeq_loc& seqloc, int alnFrom, int alnTo, int alnStop, char patternChar, string patternId) const;
 
 };
 
