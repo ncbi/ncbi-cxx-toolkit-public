@@ -62,6 +62,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/feature.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objmgr/annot_selector.hpp>
@@ -556,6 +557,8 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx) const
 
     string genome_build_number = s_GetGenomeBuildNumber(ctx.GetHandle());
     bool has_ref_track_status = s_HasRefTrackStatus(ctx.GetHandle());
+    CCommentItem::ECommentFormat format = ctx.Config().DoHTML() ?
+        CCommentItem::eFormat_Html : CCommentItem::eFormat_Text;
 
     ITERATE( CBioseq::TId, id_iter, ctx.GetBioseqIds() ) {
         const CSeq_id& id = **id_iter;
@@ -579,7 +582,7 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx) const
                      ctx.IsRSWGSProt() ) {
                     SModelEvidance me;
                     if ( GetModelEvidance(ctx.GetHandle(), me) ) {
-                        string str = CCommentItem::GetStringForModelEvidance(me);
+                        string str = CCommentItem::GetStringForModelEvidance(me, format);
                         if ( !str.empty() ) {
                             x_AddComment(new CCommentItem(str, ctx));
                         }
@@ -647,7 +650,9 @@ void CFlatGatherer::x_RefSeqComments(CBioseqContext& ctx) const
         // RefTrack
         {{
             if ( !did_ref_track ) {
-                string str = CCommentItem::GetStringForRefTrack(uo);
+                CCommentItem::ECommentFormat format = ctx.Config().DoHTML() ?
+                    CCommentItem::eFormat_Html : CCommentItem::eFormat_Text;
+                string str = CCommentItem::GetStringForRefTrack(uo, format);
                 if ( !str.empty() ) {
 
                     x_AddComment(new CCommentItem(str, ctx, &uo));
@@ -1224,15 +1229,26 @@ static bool s_IsDuplicateFeatures(const CSeq_feat_Handle& f1, const CSeq_feat_Ha
 {
     _ASSERT(f1  &&  f2);
 
-    CSeq_annot_Handle annot = f1.GetAnnot();
-    if (f1.GetFeatSubtype() == f2.GetFeatSubtype()) {
-        if (f1.GetAnnot() == f2.GetAnnot()) {
-            if (f1.GetSeq_feat()->Equals(*f2.GetSeq_feat())) {
-                return true;
-            }
-        }
+    return f1.GetFeatSubtype() == f2.GetFeatSubtype()  &&
+           f1.GetAnnot() == f2.GetAnnot()              &&
+           f1.GetLocation().Equals(f2.GetLocation())   &&
+           f1.GetSeq_feat()->Equals(*f2.GetSeq_feat());
+}
+
+
+static string s_GetFeatDesc(const CSeq_feat_Handle& feat)
+{
+    string desc;
+    feature::GetLabel(*feat.GetSeq_feat(), &desc, feature::eBoth, &feat.GetScope());
+
+    // Add feature location part of label
+    string loc_label;
+    feat.GetLocation().GetLabel(&loc_label);
+    if (loc_label.size() > 100) {
+        loc_label.replace(97, NPOS, "...");
     }
-    return false;
+    desc += loc_label;
+    return desc.c_str();
 }
 
 
@@ -1321,7 +1337,9 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             }
         } catch (CException& e) {
             // post to log, go on to next feature
-            LOG_POST(Error << "Error processing feature [" << e.what() << "]");
+            LOG_POST(Error << "Error processing feature "
+                           << s_GetFeatDesc(it->GetSeq_feat_Handle())
+                           << " [" << e.what() << "]");
         }
     }  //  end of for loop
 
@@ -1519,11 +1537,8 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
         }
 
         // suppress duplicate features (on protein)
-        if (prev) {
-            if (prev.GetSeq_feat()->Compare(*curr.GetSeq_feat(), curr_loc,
-                prev.GetLocation()) == 0) {
-                continue;
-            }
+        if (prev  &&  s_IsDuplicateFeatures(curr, prev)) {
+            continue;
         }
 
         // map prot location to nuc location
@@ -1588,6 +1603,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2005/02/09 14:56:10  shomrat
+* initial support for HTML output
+*
 * Revision 1.39  2005/02/07 14:59:46  shomrat
 * Added submission reference
 *

@@ -63,7 +63,8 @@ BEGIN_SCOPE(objects)
 // static variables initialization
 bool CCommentItem::sm_FirstComment = true;
 
-
+static const string kRefSeq = "REFSEQ";
+static const string kRefSeqLink = "<a href=http://www.ncbi.nlm.nih.gov/RefSeq/>REFSEQ</a>";
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -277,7 +278,9 @@ CCommentItem::TRefTrackStatus CCommentItem::GetRefTrackStatus
 }
 
 
-string CCommentItem::GetStringForRefTrack(const CUser_object& uo)
+string CCommentItem::GetStringForRefTrack
+(const CUser_object& uo,
+ ECommentFormat format)
 {
     if ( !uo.CanGetType()  ||  !uo.GetType().IsStr()  ||
          uo.GetType().GetStr() != "RefGeneTracking" ) {
@@ -306,8 +309,10 @@ string CCommentItem::GetStringForRefTrack(const CUser_object& uo)
         }
     }
 
+    const string *refseq = (format == eFormat_Html ? &kRefSeqLink : &kRefSeq);
+
     CNcbiOstrstream oss;
-    oss << status_str << " REFSEQ: ";
+    oss << status_str << ' ' << *refseq << ": ";
     switch ( status ) {
     case eRefTrackStatus_Inferred:
         oss << "This record is predicted by genome sequence analysis and is "
@@ -379,7 +384,8 @@ string CCommentItem::GetStringForRefTrack(const CUser_object& uo)
             if ( i > 0  ) {
                 oss << ((i < assembly_size - 1) ? ", " : " and ");
             }
-            oss << *(assembly[i].first);
+            const string& acc = *(assembly[i].first);
+            NcbiId(oss, acc, format == CCommentItem::eFormat_Html);
         }
         oss << '.';
     }
@@ -561,11 +567,15 @@ string CCommentItem::GetStringForHTGS(CBioseqContext& ctx)
 }
 
 
-string CCommentItem::GetStringForModelEvidance(const SModelEvidance& me)
+string CCommentItem::GetStringForModelEvidance
+(const SModelEvidance& me,
+ ECommentFormat format)
 {
+    const string *refseq = (format == eFormat_Html ? &kRefSeqLink : &kRefSeq);
+
     CNcbiOstrstream text;
 
-    text << "MODEL " << "REFSEQ" << ":  " << "This record is predicted by "
+    text << "MODEL " << *refseq << ":  " << "This record is predicted by "
          << "automated computational analysis. This record is derived from"
          << "an annotated genomic sequence (" << me.name << ")";
     if ( !me.method.empty() ) {
@@ -840,11 +850,13 @@ CGenomeAnnotComment::CGenomeAnnotComment
 }
 
 
-void CGenomeAnnotComment::x_GatherInfo(CBioseqContext&)
+void CGenomeAnnotComment::x_GatherInfo(CBioseqContext& ctx)
 {
+    const string *refseq = ctx.Config().DoHTML() ? &kRefSeqLink : &kRefSeq;
+
     CNcbiOstrstream text;
 
-    text << "GENOME ANNOTATION " << "REFSEQ" << ":  ";
+    text << "GENOME ANNOTATION " << *refseq << ":  ";
     if ( !m_GenomeBuildNumber.empty() ) {
          text << "Features on this sequence have been produced for build "
               << m_GenomeBuildNumber << " of the NCBI's genome annotation"
@@ -875,7 +887,8 @@ CHistComment::CHistComment
 string s_CreateHistCommentString
 (const string& prefix,
  const string& suffix,
- const CSeq_hist_rec& hist)
+ const CSeq_hist_rec& hist,
+ bool do_html)
 {
     //if (!hist.CanGetDate()  ||  !hist.CanGetIds()) {
     //    return "???";
@@ -907,7 +920,8 @@ string s_CreateHistCommentString
         if ( count != 0 ) {
             text << ",";
         }
-        text << " gi:" << NStr::IntToString(gis[count]);
+        text << " gi:";
+        NcbiId(text, gis[count], do_html);
     }
     text << '.' << endl;
 
@@ -915,7 +929,7 @@ string s_CreateHistCommentString
 }
 
 
-void CHistComment::x_GatherInfo(CBioseqContext&)
+void CHistComment::x_GatherInfo(CBioseqContext& ctx)
 {
     _ASSERT(m_Hist);
 
@@ -924,13 +938,15 @@ void CHistComment::x_GatherInfo(CBioseqContext&)
         x_SetComment(s_CreateHistCommentString(
             "[WARNING] On",
             "this sequence was replaced by a newer version",
-            m_Hist->GetReplaced_by()));
+            m_Hist->GetReplaced_by(),
+            ctx.Config().DoHTML()));
         break;
     case eReplaces:
         x_SetComment(s_CreateHistCommentString(
             "On",
             "this sequence version replaced",
-            m_Hist->GetReplaces()));
+            m_Hist->GetReplaces(),
+            ctx.Config().DoHTML()));
         break;
     }
 }
@@ -995,6 +1011,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2005/02/09 14:55:37  shomrat
+* initial support for HTML output
+*
 * Revision 1.15  2005/02/02 19:35:29  shomrat
 * Added barcode comment
 *
