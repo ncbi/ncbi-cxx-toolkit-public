@@ -191,6 +191,9 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
         context <= query_info->last_context; ++context) {
       start_offset = query_info->context_offsets[context];
       end_offset = query_info->context_offsets[context+1] - 2;
+      /* For blastn: check if this strand is not searched at all */
+      if (end_offset < start_offset)
+          continue;
       index = (is_na ? context / 2 : context);
       reverse = (is_na && ((context & 1) != 0));
       first = TRUE;
