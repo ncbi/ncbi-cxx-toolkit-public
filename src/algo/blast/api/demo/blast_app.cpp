@@ -42,6 +42,7 @@ Contents: C++ driver for running BLAST
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <objmgr/gbloader.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -82,6 +83,7 @@ private:
     void InitOptions(void);
     void SetOptions(const CArgs& args);
     int BlastSearch(void);
+    void RegisterBlastDbLoader(char* dbname, bool is_na);
 
     CRef<CObjectManager> m_ObjMgr;
     CRef<CScope>         m_Scope;
@@ -93,7 +95,7 @@ private:
     BlastScoreBlk*       m_sbp;
     BlastMask*           m_filter_loc;/* Masking/filtering locations */
     BlastReturnStat*     m_return_stats;
-    CRef<CSeq_align_set> m_seqalign;
+    TSeqAlignVector     m_seqalign;
 };
 
 void CBlastApplication::Init(void)
@@ -229,10 +231,18 @@ CBlastApplication::InitScope(void)
     }
 }
 
+void 
+CBlastApplication::RegisterBlastDbLoader(char *dbname, bool db_is_na)
+{
+    m_ObjMgr->RegisterDataLoader(*new CBlastDbDataLoader("BLASTDB", dbname, 
+                  db_is_na? (CBlastDbDataLoader::eNucleotide) : 
+                            (CBlastDbDataLoader::eProtein)),  
+                  CObjectManager::eDefault);
+}
 
 void CBlastApplication::SetOptions(const CArgs& args)
 {
-    CBlastOption::EProgram program = m_Options->GetProgram();
+    EProgram program = m_Options->GetProgram();
 
     bool ag_blast = TRUE, variable_wordsize = FALSE;
     int lut;
@@ -242,15 +252,15 @@ void CBlastApplication::SetOptions(const CArgs& args)
     int numseqs = 0;
     bool db_is_na, translated_db;
     
-    db_is_na = (program == CBlastOption::eBlastn || 
-                program == CBlastOption::eTblastn || 
-                program == CBlastOption::eTblastx);
+    db_is_na = (program == eBlastn || 
+                program == eTblastn || 
+                program == eTblastx);
 
-    translated_db = (program == CBlastOption::eTblastn ||
-                     program == CBlastOption::eTblastx);
+    translated_db = (program == eTblastn ||
+                     program == eTblastx);
 
     /* The following options are for blastn only */
-    if (program == CBlastOption::eBlastn) {
+    if (program == eBlastn) {
         if (args["templen"].AsInteger() == 0) {
             ag_blast = args["ag"].AsBoolean();
             lut = args["lookup"].AsInteger();
@@ -281,8 +291,8 @@ void CBlastApplication::SetOptions(const CArgs& args)
     BLAST_FillQuerySetUpOptions(m_Options->GetQueryOpts(), program, 
         args["filter"].AsString().c_str(), args["stride"].AsInteger());
     if (args["gencode"].AsInteger() &&
-       (program == CBlastOption::eBlastx || 
-        program == CBlastOption::eTblastx))
+       (program == eBlastx || 
+        program == eTblastx))
       m_Options->SetQueryGeneticCode(args["gencode"].AsInteger());
    
     BLAST_FillInitialWordOptions(m_Options->GetInitWordOpts(), program, 
@@ -298,7 +308,7 @@ void CBlastApplication::SetOptions(const CArgs& args)
         args["gext"].AsInteger());
 
     m_Options->SetMatrixPath(BLASTGetMatrixPath(m_Options->GetMatrixName(), 
-                                 (program != CBlastOption::eBlastn)));
+                                 (program != eBlastn)));
 
     m_Options->SetFrameShiftPenalty(args["frameshift"].AsInteger());
 
@@ -343,7 +353,7 @@ void CBlastApplication::SetOptions(const CArgs& args)
 
 int CBlastApplication::BlastSearch()
 {
-    CBlastOption::EProgram program = m_Options->GetProgram();
+    EProgram program = m_Options->GetProgram();
     QuerySetUpOptions* query_options = m_Options->GetQueryOpts();
     BLAST_SequenceBlk* query_blk = NULL;
     ListNode* lookup_segments = NULL;
@@ -352,16 +362,16 @@ int CBlastApplication::BlastSearch()
     LookupTableWrap* lookup_wrap;
     int status;
 
-    bool translated_query = (program == CBlastOption::eBlastx || 
-                             program == CBlastOption::eTblastx);
+    bool translated_query = (program == eBlastx || 
+                             program == eTblastx);
 
     if (translated_query) {
         /* Translated lower case mask must be converted to protein 
            coordinates here */
-        BlastMaskDNAToProtein(&query_options->lcase_mask, *m_query);
+        BlastMaskDNAToProtein(&query_options->lcase_mask, m_query);
     }
 
-    status = BLAST_SetUpQuery(program, *m_query, query_options,
+    status = BLAST_SetUpQuery(program, m_query, query_options,
                               &m_query_info, &query_blk);
     m_sbp = 0;
     status = 
@@ -373,7 +383,7 @@ int CBlastApplication::BlastSearch()
     if (translated_query) {
         /* Filter locations were returned in protein coordinates; 
            convert them back to nucleotide here */
-        BlastMaskProteinToDNA(&m_filter_loc, *m_query);
+        BlastMaskProteinToDNA(&m_filter_loc, m_query);
     }
         
     if (status) {
@@ -402,9 +412,9 @@ int CBlastApplication::BlastSearch()
     lookup_segments = ListNodeFreeData(lookup_segments);
 
     // Convert results to the SeqAlign form 
-    m_seqalign = BLAST_Results2CSeqAlign(results, program, *m_query,
+    m_seqalign = BLAST_Results2CSeqAlign(results, program, m_query,
                      m_bssp, 0, m_Options->GetScoringOpts(), m_sbp,
-                     m_Options->GetHitSavingOpts()->is_gapped);
+                     m_Options->GetGappedMode());
 
     results = BLAST_ResultsFree(results);
 
@@ -423,11 +433,11 @@ int CBlastApplication::Run(void)
     const CArgs& args = GetArgs();
     
     BlastProgram2Number(args["program"].AsString().c_str(), &program_number);
-    CBlastOption::EProgram e_program = BLASTGetEProgram(program_number);
+    EProgram e_program = BLASTGetEProgram(program_number);
 
-    db_is_na = (e_program == CBlastOption::eBlastn || 
-                e_program == CBlastOption::eTblastn || 
-                e_program == CBlastOption::eTblastx);
+    db_is_na = (e_program == eBlastn || 
+                e_program == eTblastn || 
+                e_program == eTblastx);
 
     readdb_args.dbname = const_cast<char*>(args["db"].AsString().c_str());
     readdb_args.is_protein = !db_is_na;
@@ -473,23 +483,30 @@ int CBlastApplication::Run(void)
 
     status = BlastSearch();
 
-    // Convert CSeq_align_set to linked list of SeqAlign structs
-    DECLARE_ASN_CONVERTER(CSeq_align, SeqAlign, converter);
-    SeqAlignPtr salp = NULL, tmp = NULL, tail = NULL;
-    
-    ITERATE(list< CRef<CSeq_align> >, itr, m_seqalign->Get()) {
-        tmp = converter.ToC(**itr);
-        
-        if (!salp)
-            salp = tail = tmp;
-        else {
-            tail->next = tmp;
-            while (tail->next)
-                tail = tail->next;
-        }
-    }
-    
     if (args["asnout"]) {
+        int query_index;
+        // Convert CSeq_align_set to linked list of SeqAlign structs
+        DECLARE_ASN_CONVERTER(CSeq_align, SeqAlign, converter);
+        SeqAlignPtr salp = NULL, tmp = NULL, tail = NULL;
+        
+        for (query_index = 0; query_index < m_seqalign.size();
+             ++query_index)
+        {
+            ITERATE(list< CRef<CSeq_align> >, itr, 
+                    m_seqalign[query_index]->Get())
+            {
+                tmp = converter.ToC(**itr);
+                
+                if (!salp)
+                    salp = tail = tmp;
+                else {
+                    tail->next = tmp;
+                    while (tail->next)
+                        tail = tail->next;
+                }
+            }
+        }
+
         AsnIoPtr aip = 
             AsnIoOpen((char*)args["asnout"].AsString().c_str(), (char*)"w");
         GenericSeqAlignSetAsnWrite(salp, aip);
@@ -497,12 +514,12 @@ int CBlastApplication::Run(void)
         AsnIoClose(aip);
     }
 
-#ifdef C_FORMATTING
+    RegisterBlastDbLoader(readdb_args.dbname, !readdb_args.is_protein);
     /* Format the results */
-    status = BLAST_FormatResults(seqalign, readdb_args.dbname, 
-                 blast_program, m_query_info->num_queries, query_slp,
-                 m_filter_loc, format_options, score_options->is_ooframe);
-#endif
+    status = BLAST_FormatResults(m_seqalign, 
+                 e_program, m_query, m_filter_loc, 
+                 m_format_options, 
+                 m_Options->GetOutOfFrameMode());
     
 #ifdef C_FORMATTING
     PrintOutputFooter(program_number, format_options, score_options, 
