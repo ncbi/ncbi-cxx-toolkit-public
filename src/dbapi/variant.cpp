@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.24  2003/12/05 15:05:06  kholodov
+* Added: float->double implicit conversion
+*
 * Revision 1.23  2003/11/18 16:59:18  kholodov
 * Added: operator=(const char*)
 *
@@ -512,6 +515,8 @@ float CVariant::GetFloat() const
 double CVariant::GetDouble() const
 {
     switch( GetType() ) {
+    case eDB_Float:
+        return ((CDB_Float*)GetData())->Value();
     case eDB_Double:
         return ((CDB_Double*)GetData())->Value();
     case eDB_Int:
