@@ -168,8 +168,8 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
                              const string   & dbname,
                              char             prot_nucl)
     : CSeqDBExtFile(atlas, dbname + ".-in", prot_nucl),
-      m_NumSeqs       (0),
-      m_TotLen        (0),
+      m_NumOIDs       (0),
+      m_VolLen        (0),
       m_MaxLen        (0),
       m_HdrRegion     (0),
       m_SeqRegion     (0),
@@ -211,11 +211,11 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
         offset = x_ReadSwapped(lease, offset, & f_db_seqtype, locked);
         offset = x_ReadSwapped(lease, offset, & m_Title,      locked);
         offset = x_ReadSwapped(lease, offset, & m_Date,       locked);
-        offset = x_ReadSwapped(lease, offset, & m_NumSeqs,    locked);
-        offset = x_ReadSwapped(lease, offset, & m_TotLen,     locked);
+        offset = x_ReadSwapped(lease, offset, & m_NumOIDs,    locked);
+        offset = x_ReadSwapped(lease, offset, & m_VolLen,     locked);
         offset = x_ReadSwapped(lease, offset, & m_MaxLen,     locked);
         
-        TIndx region_bytes = 4 * (m_NumSeqs + 1);
+        TIndx region_bytes = 4 * (m_NumOIDs + 1);
         
         off1   = offset;
         off2   = off1 + region_bytes;

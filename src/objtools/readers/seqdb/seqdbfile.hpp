@@ -277,14 +277,14 @@ public:
         return m_Date;
     }
     
-    Uint4 GetNumSeqs(void) const
+    Uint4 GetNumOIDs(void) const
     {
-        return m_NumSeqs;
+        return m_NumOIDs;
     }
     
-    Uint8 GetTotalLength(void) const
+    Uint8 GetVolumeLength(void) const
     {
-        return m_TotLen;
+        return m_VolLen;
     }
     
     Uint4 GetMaxLength(void) const
@@ -301,8 +301,8 @@ private:
     
     string m_Title;
     string m_Date;
-    Uint4  m_NumSeqs;
-    Uint8  m_TotLen;
+    Uint4  m_NumOIDs;
+    Uint8  m_VolLen;
     Uint4  m_MaxLen;
     
     // Other pointers and indices
