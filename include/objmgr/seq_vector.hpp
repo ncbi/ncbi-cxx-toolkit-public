@@ -79,10 +79,10 @@ private:
 
     // Created by CBioseq_Handle only.
     CSeqVector(const CBioseq_Handle& handle,
-        bool use_iupac_coding,               // Set coding to IUPACna or IUPACaa?
-        bool plus_strand,                    // Use plus strand coordinates?
+        CBioseq_Handle::EVectorCoding coding,  // Set coding to IUPACna or IUPACaa?
+        CBioseq_Handle::EVectorStrand strand,  // Use plus strand coordinates?
         CScope& scope,
-        CConstRef<CSeq_loc> view_loc);       // Restrict visible area with a seq-loc
+        CConstRef<CSeq_loc> view_loc);         // Restrict visible area with a seq-loc
 
     // Process seq-loc, create visible area ranges
     void x_SetVisibleArea(const CSeq_loc& view_loc);
@@ -209,6 +209,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/09/03 21:26:58  grichenk
+* Replaced bool arguments in CSeqVector constructor and getters
+* with enums.
+*
 * Revision 1.17  2002/07/08 20:50:56  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

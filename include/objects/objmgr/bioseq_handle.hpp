@@ -100,9 +100,22 @@ public:
     // reference.
     virtual const CSeqMap& CreateResolvedSeqMap(void) const;
 
+    // CSeqVector constructor flags
+    enum EVectorCoding {
+        eCoding_NotSet, // Do not change sequence coding
+        eCoding_Iupac   // Set coding to Iupacna or Iupacaa
+    };
+    enum EVectorStrand {
+        eStrand_Plus,   // Plus strand
+        eStrand_Minus   // Minus strand
+    };
+
     // Get sequence: Iupacna or Iupacaa if use_iupac_coding is true
-    virtual CSeqVector GetSeqVector(bool use_iupac_coding = false,
-        bool plus_strand = true) const;
+    // NOTE: this function is deprecated, use enum arguments instead.
+    virtual CSeqVector GetSeqVector(bool use_iupac_coding,
+        bool plus_strand) const;
+    virtual CSeqVector GetSeqVector(EVectorCoding coding = eCoding_NotSet,
+        EVectorStrand strand = eStrand_Plus) const;
 
     // Sequence filtering: get a seq-vector for a part of the sequence.
     // The part shown depends oon the mode selected. If the location
@@ -116,10 +129,15 @@ public:
         eViewMerged,         // Merge overlapping intervals, sort by location
         eViewExcluded        // Show intervals not included in the seq-loc
     };
+    // NOTE: this function is deprecated, use enum arguments instead.
     virtual CSeqVector GetSequenceView(const CSeq_loc& location,
                                        ESequenceViewMode mode,
-                                       bool use_iupac_coding = false,
-                                       bool plus_strand = true) const;
+                                       bool use_iupac_coding,
+                                       bool plus_strand) const;
+    virtual CSeqVector GetSequenceView(const CSeq_loc& location,
+                                       ESequenceViewMode mode,
+                                       EVectorCoding coding = eCoding_NotSet,
+                                       EVectorStrand strand = eStrand_Plus) const;
    
     CScope& GetScope(void) const;
 
@@ -252,6 +270,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/09/03 21:26:58  grichenk
+* Replaced bool arguments in CSeqVector constructor and getters
+* with enums.
+*
 * Revision 1.23  2002/08/23 16:49:06  grichenk
 * Added warning about using CreateResolvedSeqMap()
 *

@@ -157,7 +157,7 @@ void GetProteinWeights(CBioseq_Handle& handle, TWeights& weights)
     }
 
     if (locations.empty()) {
-        CSeqVector v = handle.GetSeqVector(true);
+        CSeqVector v = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
         if ( signal.NotEmpty() ) {
             // Expects to see at beginning; is this assumption safe?
             CSeq_interval& interval = whole->SetInt();
@@ -189,6 +189,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2002/09/03 21:27:04  grichenk
+* Replaced bool arguments in CSeqVector constructor and getters
+* with enums.
+*
 * Revision 1.11  2002/06/12 14:39:05  grichenk
 * Renamed enumerators
 *

@@ -87,7 +87,17 @@ const CSeqMap& CBioseq_Handle::GetSeqMap(void) const
 CSeqVector CBioseq_Handle::GetSeqVector(bool use_iupac_coding,
                                         bool plus_strand) const
 {
-    return CSeqVector(*this, use_iupac_coding, plus_strand, *m_Scope, 0);
+    return CSeqVector(*this,
+        use_iupac_coding ? eCoding_Iupac : eCoding_NotSet,
+        plus_strand ? eStrand_Plus : eStrand_Minus,
+        *m_Scope, 0);
+}
+
+
+CSeqVector CBioseq_Handle::GetSeqVector(EVectorCoding coding,
+                                        EVectorStrand strand) const
+{
+    return CSeqVector(*this, coding, strand, *m_Scope, 0);
 }
 
 
@@ -107,6 +117,17 @@ CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
                                            ESequenceViewMode mode,
                                            bool use_iupac_coding,
                                            bool plus_strand) const
+{
+    return GetSequenceView(location, mode,
+        use_iupac_coding ? eCoding_Iupac : eCoding_NotSet,
+        plus_strand ? eStrand_Plus : eStrand_Minus);
+}
+
+
+CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
+                                           ESequenceViewMode mode,
+                                           EVectorCoding coding,
+                                           EVectorStrand strand) const
 {
     // Parse the location
     CHandleRange rlist(m_Value);      // all intervals pointing to the sequence
@@ -171,8 +192,7 @@ CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
         seg_loc->SetInt().SetTo(rit->first.GetTo());
         view_loc->SetMix().Set().push_back(seg_loc);
     }
-    return CSeqVector(*this, use_iupac_coding, plus_strand,
-        *m_Scope, view_loc);
+    return CSeqVector(*this, coding, strand, *m_Scope, view_loc);
 }
 
 
@@ -203,6 +223,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/09/03 21:27:01  grichenk
+* Replaced bool arguments in CSeqVector constructor and getters
+* with enums.
+*
 * Revision 1.21  2002/07/10 16:49:29  grichenk
 * Removed commented reference to old CDataSource mutex
 *

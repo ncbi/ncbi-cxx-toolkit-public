@@ -60,13 +60,13 @@ BEGIN_SCOPE(objects)
 const TSeqPos CSeqVector::kPosUnknown = numeric_limits<TSeqPos>::max();
 
 CSeqVector::CSeqVector(const CBioseq_Handle& handle,
-                       bool use_iupac_coding,
-                       bool plus_strand,
+                       CBioseq_Handle::EVectorCoding coding,
+                       CBioseq_Handle::EVectorStrand strand,
                        CScope& scope,
                        CConstRef<CSeq_loc> view_loc)
     : m_Scope(&scope),
       m_Handle(handle),
-      m_PlusStrand(plus_strand),
+      m_PlusStrand(strand == CBioseq_Handle::eStrand_Plus),
       m_Size(kPosUnknown),
       m_CachedData(""),
       m_CachedPos(kPosUnknown),
@@ -88,7 +88,7 @@ CSeqVector::CSeqVector(const CBioseq_Handle& handle,
             TRange::GetWholeFrom(), TRange::GetWholeTo()), true);
     }
     m_SelRange = m_Ranges.end();
-    if (use_iupac_coding)
+    if (coding == CBioseq_Handle::eCoding_Iupac)
         SetIupacCoding();
 }
 
@@ -517,6 +517,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/09/03 21:27:01  grichenk
+* Replaced bool arguments in CSeqVector constructor and getters
+* with enums.
+*
 * Revision 1.26  2002/07/08 20:51:02  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

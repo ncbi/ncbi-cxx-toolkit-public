@@ -1525,8 +1525,8 @@ void CFastaOstream::WriteSequence(CBioseq_Handle& handle,
     CSeqVector v = (location
                     ? handle.GetSequenceView(*location,
                                              CBioseq_Handle::eViewMerged,
-                                             true)
-                    : handle.GetSeqVector(true));
+                                             CBioseq_Handle::eCoding_Iupac)
+                    : handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
     bool is_na = inst.GetMol() != CSeq_inst::eMol_aa;
     // autodetection is sometimes broken (!)
     v.SetCoding(is_na ? CSeq_data::e_Iupacna : CSeq_data::e_Iupacaa);
@@ -1600,6 +1600,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2002/09/03 21:27:04  grichenk
+* Replaced bool arguments in CSeqVector constructor and getters
+* with enums.
+*
 * Revision 1.3  2002/08/27 21:41:15  ucko
 * Add CFastaOstream.
 *

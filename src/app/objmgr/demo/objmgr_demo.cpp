@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/09/03 21:27:03  grichenk
+* Replaced bool arguments in CSeqVector constructor and getters
+* with enums.
+*
 * Revision 1.6  2002/06/12 14:39:03  grichenk
 * Renamed enumerators
 *
@@ -160,7 +164,7 @@ int CDemoApp::Run(void)
 
     // Get the sequence using CSeqVector. Use default encoding:
     // CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
-    CSeqVector seq_vect = handle.GetSeqVector(true);
+    CSeqVector seq_vect = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     // -- use the vector: print length and the first 10 symbols
     NcbiCout << "Sequence: length=" << seq_vect.size();
     NcbiCout << " data=";
@@ -211,7 +215,7 @@ int CDemoApp::Run(void)
         // e_ViewMerged flag forces each residue to be shown only once.
         CSeqVector cds_vect = handle.GetSequenceView
             (feat_it->GetLocation(), CBioseq_Handle::eViewMerged,
-             true);
+             CBioseq_Handle::eCoding_Iupac);
         // Print first 10 characters of each cd-region
         NcbiCout << "cds" << count << " len=" << cds_vect.size() << " data=";
         sout = "";
