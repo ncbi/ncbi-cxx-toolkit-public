@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/04/20 13:51:59  vasilche
+* Removed unused parameter name to avoid warning.
+*
 * Revision 1.15  1999/04/19 20:11:47  vakatov
 * CreateTagMapper() template definitions moved from "page.inl" to
 * "page.hpp" because MSVC++ gets confused(cannot understand what
@@ -105,13 +108,13 @@ template<class C>
 BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(C* node, const string& name));
 
 template<class C>
-inline BaseTagMapper* CreateTagMapper(const C* _this, CNCBINode* (C::*method)(void))
+inline BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)(void))
 {
     return new TagMapper<C>(method);
 }
 
 template<class C>
-inline BaseTagMapper* CreateTagMapper(const C* _this, CNCBINode* (C::*method)(const string& name))
+inline BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)(const string& name))
 {
     return new TagMapperByName<C>(method);
 }
