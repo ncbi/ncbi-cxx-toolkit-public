@@ -32,16 +32,6 @@
 *   
 * File Description:  Auxiliary templates
 *
-*
-* $Log$
-* Revision 1.2  2002/04/15 19:07:33  kholodov
-* Removed global typecheck for CVariant
-*
-* Revision 1.1  2002/01/30 14:51:22  kholodov
-* User DBAPI implementation, first commit
-*
-*
-*
 */
 
 #include <exception>
@@ -72,16 +62,34 @@ private:
 template<class D, class T>
 D CastTo(T* t) {
   if( t == 0 )
-    throw runtime_error("CastTo(): null source data");
+    throw std::runtime_error("CastTo(): null source data");
     
   D temp = dynamic_cast<D>(t);
   //if( temp == 0 )
-  //throw runtime_error("CastTo(): invalid cast");
+  //throw std::runtime_error("CastTo(): invalid cast");
   
   return temp;
 }
 
 
 
-//=================================================================
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.3  2004/04/26 16:46:56  ucko
+* Explicitly scope runtime_error as std::, since CastTo is not in any
+* namespace.
+* Move CVS log to end per current practice.
+*
+* Revision 1.2  2002/04/15 19:07:33  kholodov
+* Removed global typecheck for CVariant
+*
+* Revision 1.1  2002/01/30 14:51:22  kholodov
+* User DBAPI implementation, first commit
+*
+* ===========================================================================
+*/
+
+
 #endif // _ARRAY_HPP_
