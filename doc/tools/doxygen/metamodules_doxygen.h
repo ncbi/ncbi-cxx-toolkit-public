@@ -376,3 +376,67 @@
  *  Util members
  */
 
+/** @defgroup Checksum
+ *  @ingroup UTIL
+ */
+
+/** @defgroup ConsoleDebug Console Debug Dump Viewer
+ *  @ingroup UTIL
+ */
+
+/** @defgroup IntervalTree Interval Search Tree
+ *  @ingroup UTIL
+ */
+
+/** @defgroup LightStr Lightweight String
+ *  @ingroup UTIL
+ */
+
+/** @defgroup LinkedSet Linked Set
+ *  @ingroup UTIL
+ */
+
+/** @defgroup RandomGen Random Number Generation
+ *  @ingroup UTIL
+ */
+
+/** @defgroup RangeSupport Range Support
+ *  @ingroup UTIL
+ */
+
+/** @defgroup RegistryDNS Registry-based DNS
+ *  @ingroup UTIL
+ */
+
+/** @defgroup ResizingIterator Resizing Iterator
+ *  @ingroup UTIL
+ */
+
+/** @defgroup RotatingLog Rotating Log Streams
+ *  @ingroup UTIL
+ */
+
+/** @defgroup StreamSupport Stream Support
+ *  @ingroup UTIL
+ */
+
+/** @defgroup StringSearch String Search
+ *  @ingroup UTIL
+ */
+
+/** @defgroup ThreadedPools Threaded Pools for Request Handling
+ *  @ingroup UTIL
+ */
+
+/** @defgroup utf8 UTF-8 Conversion
+ *  @ingroup UTIL
+ */
+
+/** @defgroup UtilExcep Utility Exceptions
+ *  @ingroup UTIL
+ */
+
+/** @defgroup WeakMap Weak Map Template
+ *  @ingroup UTIL
+ */
+
