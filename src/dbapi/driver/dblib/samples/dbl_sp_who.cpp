@@ -31,8 +31,6 @@
 
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/dblib/interfaces.hpp>
-#include <dbapi/driver/samples/dbapi_driver_samples.hpp>
-
 
 USING_NCBI_SCOPE;
 
@@ -96,6 +94,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/04/25 20:43:25  soussov
+ * removes needless include
+ *
  * Revision 1.7  2002/04/25 20:36:42  soussov
  * makes it plain
  *
