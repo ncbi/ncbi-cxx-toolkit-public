@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: favor-static,v 1.5 2004/02/12 19:20:06 ucko Exp $
+# $Id: favor-static,v 1.6 2004/10/28 14:41:20 ucko Exp $
 # Author: Aaron Ucko, NCBI
 
 linker=$1
@@ -58,7 +58,9 @@ case $style in
         gcc_ver=`$1 -dumpversion`
         case "$gcc_ver" in
             3.[1-9]* )
-                eval set `"$@" -static-libgcc '-###' 2>&1 | $AWK '/\/ld"/ || /\/collect/'`
+                shift
+                set "$linker" -static "$@"
+                eval set `"$@" '-###' 2>&1 | $AWK '/\/ld"/ || /\/collect/'`
                 sys=/usr/lib
                 flag=-B
                 ;;
