@@ -1,0 +1,263 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Anatoliy Kuznetsov
+ *
+ * File Description:
+ *   Implementation of NetSchedule client.
+ *
+ */
+
+#include <ncbi_pch.hpp>
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbitime.hpp>
+#include <connect/ncbi_socket.hpp>
+#include <connect/ncbi_conn_exception.hpp>
+#include <connect/netschedule_client.hpp>
+#include <memory>
+
+
+BEGIN_NCBI_SCOPE
+
+
+const string kNetSchedule_KeyPrefix = "JSID";
+
+void CNetSchedule_ParseJobKey(CNetSchedule_Key* key, const string& key_str)
+{
+    _ASSERT(key);
+
+    // JSID_01_1_MYHOST_9000
+
+    const char* ch = key_str.c_str();
+    key->hostname = key->prefix = kEmptyStr;
+
+    // prefix
+
+    for (;*ch && *ch != '_'; ++ch) {
+        key->prefix += *ch;
+    }
+    if (*ch == 0) {
+        NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
+    }
+    ++ch;
+
+    if (key->prefix != kNetSchedule_KeyPrefix) {
+        NCBI_THROW(CNetScheduleException, eKeyFormatError, 
+                                       "Key syntax error. Invalid prefix.");
+    }
+
+    // version
+    key->version = atoi(ch);
+    while (*ch && *ch != '_') {
+        ++ch;
+    }
+    if (*ch == 0) {
+        NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
+    }
+    ++ch;
+
+    // id
+    key->id = atoi(ch);
+    while (*ch && *ch != '_') {
+        ++ch;
+    }
+    if (*ch == 0) {
+        NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
+    }
+    ++ch;
+
+
+    // hostname
+    for (;*ch && *ch != '_'; ++ch) {
+        key->hostname += *ch;
+    }
+    if (*ch == 0) {
+        NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
+    }
+    ++ch;
+
+    // port
+    key->port = atoi(ch);
+}
+
+void CNetSchedule_GenerateJobKey(string*        key, 
+                                  unsigned       id, 
+                                  const string&  host, 
+                                  unsigned short port)
+{
+    string tmp;
+    *key = "JSID_01";  
+
+    NStr::IntToString(tmp, id);
+    *key += "_";
+    *key += tmp;
+
+    *key += "_";
+    *key += host;    
+
+    NStr::IntToString(tmp, port);
+    *key += "_";
+    *key += tmp;
+}
+
+
+
+
+
+
+CNetScheduleClient::CNetScheduleClient(const string& client_name,
+                                       const string& queue_name)
+    : CNetServiceClient(client_name),
+      m_Queue(queue_name)
+{
+}
+
+CNetScheduleClient::CNetScheduleClient(const string&  host,
+                                       unsigned short port,
+                                       const string&  client_name,
+                                       const string&  queue_name)
+    : CNetServiceClient(host, port, client_name),
+      m_Queue(queue_name)
+{
+}
+
+CNetScheduleClient::CNetScheduleClient(CSocket*      sock,
+                                       const string& client_name,
+                                       const string& queue_name)
+    : CNetServiceClient(sock, client_name),
+      m_Queue(queue_name)
+{
+    if (m_Sock) {
+        m_Sock->DisableOSSendDelay();
+        RestoreHostPort();
+    }
+}
+
+CNetScheduleClient::~CNetScheduleClient()
+{
+}
+
+string CNetScheduleClient::SubmitJob(const string& input)
+{
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "SUBMIT \"");
+    m_Tmp.append(input);
+    m_Tmp.append("\"");
+
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+
+    if (NStr::FindCase(m_Tmp, "ID:") != 0) {
+        // Answer is not in "ID:....." format
+        string msg = "Unexpected server response:";
+        msg += m_Tmp;
+        NCBI_THROW(CNetServiceException, eCommunicationError, msg);
+    }
+    m_Tmp.erase(0, 3);
+
+    if (m_Tmp.empty()) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Invalid server response. Empty key.");
+    }
+
+    return m_Tmp;
+}
+
+
+void CNetScheduleClient::MakeCommandPacket(string* out_str, 
+                                           const string& cmd_str)
+{
+    unsigned client_len = m_ClientName.length();
+    if (client_len < 3) {
+        NCBI_THROW(CNetScheduleException, 
+                   eAuthenticationError, "Client name too small or empty");
+    }
+    if (m_Queue.empty()) {
+        NCBI_THROW(CNetScheduleException, 
+                   eAuthenticationError, "Empty queue name");
+    }
+
+    *out_str = m_ClientName;
+    const string& client_name_comment = GetClientNameComment();
+    if (!client_name_comment.empty()) {
+        out_str->append(" ");
+        out_str->append(client_name_comment);
+    }
+    out_str->append("\r\n");
+    out_str->append(m_Queue);
+    out_str->append("\r\n");
+    out_str->append(cmd_str);
+}
+
+
+void CNetScheduleClient::CheckConnect(const string& key)
+{
+    if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
+        return; // we are connected, nothing to do
+    }
+
+    // not connected
+
+    if (!m_Host.empty()) { // we can restore connection
+        CreateSocket(m_Host, m_Port);
+        return;
+    }
+
+    // no primary host information
+
+    if (key.empty()) {
+        NCBI_THROW(CNetServiceException, eCommunicationError,
+           "Cannot establish connection with a server. Unknown host name.");
+    }
+
+    CNetSchedule_Key job_key;
+    CNetSchedule_ParseJobKey(&job_key, key);
+    CreateSocket(job_key.hostname, job_key.port);
+}
+
+bool CNetScheduleClient::IsError(const char* str)
+{
+    int cmp = NStr::strncasecmp(str, "ERR:", 4);
+    return cmp == 0;
+}
+
+
+END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.1  2005/02/07 13:02:47  kuznets
+ * Initial revision
+ *
+ *
+ * ===========================================================================
+ */
