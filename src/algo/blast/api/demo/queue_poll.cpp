@@ -234,14 +234,48 @@ public:
     bool NeedRemote(void) { return true; }
 };
 
+enum EDefaultsFlag {
+    eNone = 0,
+    eMegablastDefaults,
+    eBlastnDefaults
+};
+
+template<class T>
+void SetAdditionalDefaults(T & obj, EDefaultsFlag flag)
+{
+}
+
+template<>
+void SetAdditionalDefaults<CBlastNucleotideOptionsHandle>
+    (CBlastNucleotideOptionsHandle & obj, EDefaultsFlag flag)
+{
+    switch(flag) {
+    case eMegablastDefaults:
+        obj.SetTraditionalMegablastDefaults();
+        break;
+        
+    case eBlastnDefaults:
+        obj.SetTraditionalBlastnDefaults();
+        break;
+        
+    case eNone:
+        break;
+    }
+}
 
 template<class T> void
 s_SetSearchParams(CRef<CRemoteBlast>  & cb4o,
-                  CNetblastSearchOpts & opts)
+                  CNetblastSearchOpts & opts,
+                  EDefaultsFlag         flag)
 {
     CRef<T> cboh;
     
     cboh.Reset(new T(CBlastOptions::eRemote));
+    
+    if (flag != eNone) {
+        SetAdditionalDefaults(*cboh, flag);
+    }
+    
     cb4o.Reset(new CRemoteBlast(cboh));
     
     CSearchParamBuilder spb;
@@ -264,24 +298,34 @@ s_SetBlast4Params(string              & program,
     // search_opts.hpp that handles argument setting, i.e. the
     // OPT_HANDLER_SUPPORT_ALL() macro.
     
+    EDefaultsFlag flag = eNone;
+    
     if (program == "blastp" && service == "plain") {
-        s_SetSearchParams<CBlastProteinOptionsHandle>(cb4o, opts);
+        s_SetSearchParams<CBlastProteinOptionsHandle>(cb4o, opts, flag);
     }
     else if (program  == "blastn" &&
              (service == "plain"  || service == "megablast")) {
-        s_SetSearchParams<CBlastNucleotideOptionsHandle>(cb4o, opts);
+        
+        if (service == "plain") {
+            flag = eBlastnDefaults;
+        }
+        else if (service == "megablast") {
+            flag = eMegablastDefaults;
+        }
+        
+        s_SetSearchParams<CBlastNucleotideOptionsHandle>(cb4o, opts, flag);
     }
     else if (program == "tblastn" && service == "plain") {
-        s_SetSearchParams<CTBlastnOptionsHandle>(cb4o, opts);
+        s_SetSearchParams<CTBlastnOptionsHandle>(cb4o, opts, flag);
     }
     else if (program == "tblastx" && service == "plain") {
-        s_SetSearchParams<CTBlastxOptionsHandle>(cb4o, opts);
+        s_SetSearchParams<CTBlastxOptionsHandle>(cb4o, opts, flag);
     }
     else if (program == "blastx" && service == "plain") {
-        s_SetSearchParams<CBlastxOptionsHandle>(cb4o, opts);
+        s_SetSearchParams<CBlastxOptionsHandle>(cb4o, opts, flag);
     }
     else if (program == "blastx" && service == "plain") {
-        s_SetSearchParams<CBlastxOptionsHandle>(cb4o, opts);
+        s_SetSearchParams<CBlastxOptionsHandle>(cb4o, opts, flag);
     }
     
     if (cb4o.Empty()) {
@@ -536,6 +580,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/08/24 21:58:58  bealer
+ * - Special casing for megablast vs. blastn.
+ *
  * Revision 1.10  2004/08/18 15:58:43  bealer
  * - Prevent warning message.
  *
