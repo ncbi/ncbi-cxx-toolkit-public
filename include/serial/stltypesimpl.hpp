@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/09/04 14:08:27  ucko
+* Handle CConstRef analogously to CRef in type macros
+*
 * Revision 1.3  2000/11/07 17:25:13  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -65,6 +68,7 @@ class CStlClassInfoUtil
 public:
     static TTypeInfo Get_auto_ptr(TTypeInfo arg, TTypeInfoCreator1 f);
     static TTypeInfo Get_CRef(TTypeInfo arg, TTypeInfoCreator1 f);
+    static TTypeInfo Get_CConstRef(TTypeInfo arg, TTypeInfoCreator1 f);
     static TTypeInfo Get_AutoPtr(TTypeInfo arg, TTypeInfoCreator1 f);
     static TTypeInfo Get_list(TTypeInfo arg, TTypeInfoCreator1 f);
     static TTypeInfo GetSet_list(TTypeInfo arg, TTypeInfoCreator1 f);

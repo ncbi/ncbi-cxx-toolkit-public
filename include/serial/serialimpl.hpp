@@ -171,6 +171,11 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 #define SERIAL_REF_STL_CRef(TypeMacro,TypeMacroArgs) \
     &NCBI_NS_NCBI::CRefTypeInfo<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
+#define SERIAL_TYPE_STL_CConstRef(TypeMacro,TypeMacroArgs) \
+    NCBI_NS_NCBI::CConstRef<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+#define SERIAL_REF_STL_CConstRef(TypeMacro,TypeMacroArgs) \
+    &NCBI_NS_NCBI::CConstRefTypeInfo<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+
 #define SERIAL_TYPE_CHOICE(TypeMacro,TypeMacroArgs) \
     SERIAL_TYPE(TypeMacro)TypeMacroArgs
 #define SERIAL_REF_CHOICE(TypeMacro,TypeMacroArgs) \

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/09/04 14:08:28  ucko
+* Handle CConstRef analogously to CRef in type macros
+*
 * Revision 1.35  2001/05/17 15:07:09  lavr
 * Typos corrected
 *
@@ -193,6 +196,7 @@ BEGIN_NCBI_SCOPE
 
 static CTypeInfoMap s_TypeMap_auto_ptr;
 static CTypeInfoMap s_TypeMap_CRef;
+static CTypeInfoMap s_TypeMap_CConstRef;
 static CTypeInfoMap s_TypeMap_AutoPtr;
 static CTypeInfoMap s_TypeMap_list;
 static CTypeInfoMap s_TypeMapSet_list;
@@ -208,6 +212,11 @@ TTypeInfo CStlClassInfoUtil::Get_auto_ptr(TTypeInfo arg, TTypeInfoCreator1 f)
 TTypeInfo CStlClassInfoUtil::Get_CRef(TTypeInfo arg, TTypeInfoCreator1 f)
 {
     return s_TypeMap_CRef.GetTypeInfo(arg, f);
+}
+
+TTypeInfo CStlClassInfoUtil::Get_CConstRef(TTypeInfo arg, TTypeInfoCreator1 f)
+{
+    return s_TypeMap_CConstRef.GetTypeInfo(arg, f);
 }
 
 TTypeInfo CStlClassInfoUtil::Get_AutoPtr(TTypeInfo arg, TTypeInfoCreator1 f)

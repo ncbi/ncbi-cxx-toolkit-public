@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2001/09/04 14:08:27  ucko
+* Handle CConstRef analogously to CRef in type macros
+*
 * Revision 1.57  2001/05/17 14:59:47  lavr
 * Typos corrected
 *
@@ -331,6 +334,42 @@ protected:
                               TObjectPtr objectPtr)
         {
             return CTypeConverter<TObjectType>::Get(objectPtr).GetPointer();
+        }
+    static void SetData(const CPointerTypeInfo* /*objectType*/,
+                        TObjectPtr objectPtr,
+                        TObjectPtr dataPtr)
+        {
+            CTypeConverter<TObjectType>::Get(objectPtr).
+                Reset(&CTypeConverter<TDataType>::Get(dataPtr));
+        }
+};
+
+template<typename Data>
+class CConstRefTypeInfo
+{
+public:
+    typedef Data TDataType;
+    typedef CConstRef<TDataType> TObjectType;
+
+    static TTypeInfo GetTypeInfo(TTypeInfo dataType)
+        {
+            return CStlClassInfoUtil::Get_CConstRef(dataType, &CreateTypeInfo);
+        }
+    static CTypeInfo* CreateTypeInfo(TTypeInfo dataType)
+        {
+            CPointerTypeInfo* typeInfo =
+                new CPointerTypeInfo(sizeof(TObjectType), dataType);
+            typeInfo->SetFunctions(&GetData, &SetData);
+            return typeInfo;
+        }
+
+protected:
+    static TObjectPtr GetData(const CPointerTypeInfo* /*objectType*/,
+                                   TObjectPtr objectPtr)
+        {
+            // Bleh.  Need to return a void* rather than a const Data*
+            return const_cast<TDataType*>
+                (CTypeConverter<TObjectType>::Get(objectPtr).GetPointer());
         }
     static void SetData(const CPointerTypeInfo* /*objectType*/,
                         TObjectPtr objectPtr,
