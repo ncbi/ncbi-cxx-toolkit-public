@@ -38,6 +38,7 @@ blast_setup \
 blast_traceback \
 blast_util \
 blast_seqsrc \
+blastkar \
 gapinfo \
 greedy_align \
 mb_lookup \
