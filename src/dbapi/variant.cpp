@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.25  2003/12/10 21:08:48  kholodov
+* Fixed: size of the fixed size columns is now correct for NULL value
+*
 * Revision 1.24  2003/12/05 15:05:06  kholodov
 * Added: float->double implicit conversion
 *
@@ -177,7 +180,7 @@ CVariant CVariant::Bit(bool *p)
 
 CVariant CVariant::LongChar(const char *p, size_t len)
 {
-    return CVariant(p ? new CDB_LongChar(len, p) : new CDB_LongChar());
+    return CVariant(p ? new CDB_LongChar(len, p) : new CDB_LongChar(len));
 }
 
 CVariant CVariant::VarChar(const char *p, size_t len)
@@ -188,7 +191,7 @@ CVariant CVariant::VarChar(const char *p, size_t len)
 
 CVariant CVariant::Char(size_t size, const char *p)
 {
-    return CVariant(p ? new CDB_Char(size, p) : new CDB_Char());
+    return CVariant(p ? new CDB_Char(size, p) : new CDB_Char(size));
 }
 
 CVariant CVariant::LongBinary(const void *p, size_t len)
@@ -203,7 +206,7 @@ CVariant CVariant::VarBinary(const void *p, size_t len)
 
 CVariant CVariant::Binary(size_t size, const void *p, size_t len)
 {
-    return CVariant(p ? new CDB_Binary(size, p, len) : new CDB_Binary());
+    return CVariant(p ? new CDB_Binary(size, p, len) : new CDB_Binary(size));
 }
 
 CVariant CVariant::SmallDateTime(CTime *p)
@@ -225,7 +228,7 @@ CVariant CVariant::Numeric(unsigned int precision,
 }
 
 
-CVariant::CVariant(EDB_Type type)
+CVariant::CVariant(EDB_Type type, size_t size)
     : m_data(0)
 {
     switch ( type ) {
@@ -242,22 +245,22 @@ CVariant::CVariant(EDB_Type type)
         m_data = new CDB_BigInt();
         return;  
     case eDB_LongChar:
-        m_data = new CDB_LongChar();
+        m_data = new CDB_LongChar(size);
         return;  
     case eDB_VarChar:
         m_data = new CDB_VarChar();
         return;  
     case eDB_Char:
-        m_data = new CDB_Char();
+        m_data = new CDB_Char(size);
         return;  
     case eDB_LongBinary:
-        m_data = new CDB_LongBinary();
+        m_data = new CDB_LongBinary(size);
         return;  
     case eDB_VarBinary:
         m_data = new CDB_VarBinary();
         return;  
     case eDB_Binary:
-        m_data = new CDB_Binary();
+        m_data = new CDB_Binary(size);
         return;  
     case eDB_Float:
         m_data = new CDB_Float();
