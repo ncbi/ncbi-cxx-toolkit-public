@@ -33,6 +33,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/05/13 16:43:29  vakatov
+* Added Mac(#NCBI_OS_MAC) to the list of supported platforms
+* Also, use #NCBI_OS to specify a string representation of the
+* current platform("UNIX", "WINDOWS", or "MAC")
+*
 * Revision 1.11  1999/05/10 14:26:07  vakatov
 * Fixes to compile and link with the "egcs" C++ compiler under Linux
 *
@@ -78,15 +83,19 @@
 
 #include <ncbiconf.h>
 
-// Deduce the generic platform
-// (this header is not right place for it; to be moved somewhere else later...)
-#if defined(HAVE_UNISTD_H)
-#  define NCBI_OS_UNIX
-#elif defined(HAVE_WINDOWS_H)
-#  define NCBI_OS_MSWIN
-#else
-#  error "Unknown platform(must be one of:  UNIX, MS-Windows)!"
-#endif
+// Deduce the generic platform if not defined yet
+#  if defined(NCBI_OS_MAC)
+#    define NCBI_OS "MAC"
+#  elif defined(HAVE_WINDOWS_H)
+#    define NCBI_OS_MSWIN
+#    define NCBI_OS "WINDOWS"
+#  elif defined(HAVE_UNISTD_H)
+#    define NCBI_OS_UNIX
+#    define NCBI_OS "UNIX"
+#  else
+#    error "Unknown platform(must be one of:  UNIX, MS-Windows, Mac)!"
+#  endif
+
 
 // Use of the STLport package("http://corp.metabyte.com/~fbp/stl/effort.html")
 #if defined(NCBI_SGI_STL_PORT)
