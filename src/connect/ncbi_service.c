@@ -454,7 +454,7 @@ char* SERV_Print(SERV_ITER iter)
  * n >= 2
  * Hence, the formula below always yields a value in the range [0.0 .. 1.0].
  */
-double SERV_Preference(double pref, double gap, int n)
+double SERV_Preference(double pref, double gap, unsigned int n)
 {
     assert(0.0 <= pref && pref <= 1.0);
     assert(0.0 <  gap  && gap  <= 1.0);
@@ -471,6 +471,9 @@ double SERV_Preference(double pref, double gap, int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.45  2003/02/28 14:49:04  lavr
+ * SERV_Preference(): redeclare last argument 'unsigned'
+ *
  * Revision 6.44  2003/02/13 22:04:16  lavr
  * Document SERV_Preference() domain, change last argument, tweak formula
  *

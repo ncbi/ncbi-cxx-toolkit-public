@@ -124,7 +124,7 @@ char* SERV_GetConfig(void);
 /* Given the status gap and wanted preference, calculate
  * acceptable stretch for the gap (the number of candidates is n).
  */
-double SERV_Preference(double pref, double gap, int n);
+double SERV_Preference(double pref, double gap, unsigned int n);
 
 
 #ifdef __cplusplus
@@ -135,6 +135,9 @@ double SERV_Preference(double pref, double gap, int n);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2003/02/28 14:49:09  lavr
+ * SERV_Preference(): redeclare last argument 'unsigned'
+ *
  * Revision 6.19  2003/02/13 21:37:28  lavr
  * Comment SERV_Preference(), change last argument
  *
