@@ -168,6 +168,7 @@ static void PrintEntries(TCgiEntries& entries)
 {
     for (TCgiEntries::iterator iter = entries.begin();
          iter != entries.end();  ++iter) {
+        assert( !NStr::StartsWith(iter->first, "amp;", NStr::eNocase) );
         NcbiCout << "  (\"" << iter->first << "\", \""
                  << iter->second << "\")" << NcbiEndl;
     }
@@ -233,6 +234,10 @@ static void TestCgi_Request_Static(void)
     assert(  TestEntries(entries, "UUU") );
     assert( !TestEntries(entries, "a=d&&eee") );
     assert(  TestEntries(entries, "a%21%2f%25aa=%2Fd%2c&eee=%3f") );
+
+    // some older browsers fail to parse &amp; in HREFs; ensure that
+    // we handle it properly.
+    assert(  TestEntries(entries, "a=b&amp;c=d&amp;e=f") );
 
     // Test CCgiRequest::ParseIndexes()
     TCgiIndexes indexes;
@@ -594,6 +599,9 @@ int main(int argc, const char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.18  2003/11/24 18:15:21  ucko
+ * Verify &amp; -> & conversion.
+ *
  * Revision 1.17  2003/08/20 22:48:38  ucko
  * Allow equal signs in values.
  *
