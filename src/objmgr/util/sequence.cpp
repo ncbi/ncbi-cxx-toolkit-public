@@ -1502,7 +1502,6 @@ ESeqLocCheck SeqLocCheck(const CSeq_loc& loc, CScope* scope)
 }
 
 
-// XXX - handle fuzz?
 CRef<CSeq_loc> SourceToProduct(const CSeq_feat& feat,
                                const CSeq_loc& source_loc, TS2PFlags flags,
                                CScope* scope, int* frame)
@@ -1531,6 +1530,11 @@ CRef<CSeq_loc> SourceToProduct(const CSeq_feat& feat,
             prot_length = numeric_limits<TSeqPos>::max();
         }
         NON_CONST_ITERATE (SRelLoc::TRanges, it, rl.m_Ranges) {
+            if (IsReverse((*it)->GetStrand())) {
+                ERR_POST(Warning
+                         << "SourceToProduct:"
+                         " parent and child have opposite orientations");
+            }
             (*it)->SetFrom(((*it)->GetFrom() - base_frame) / 3);
             (*it)->SetTo  (((*it)->GetTo()   - base_frame) / 3);
             if ((flags & fS2P_AllowTer)  &&  (*it)->GetTo() == prot_length) {
@@ -1547,7 +1551,6 @@ CRef<CSeq_loc> SourceToProduct(const CSeq_feat& feat,
 }
 
 
-// XXX - handle fuzz?
 CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
                                TP2SFlags flags, CScope* scope)
 {
@@ -1573,6 +1576,7 @@ CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
             prot_length = numeric_limits<TSeqPos>::max();
         }
         NON_CONST_ITERATE(SRelLoc::TRanges, it, rl.m_Ranges) {
+            _ASSERT( !IsReverse((*it)->GetStrand()) );
             TSeqPos from, to;
             if ((flags & fP2S_Extend)  &&  (*it)->GetFrom() == 0) {
                 from = 0;
@@ -2686,7 +2690,8 @@ SRelLoc::SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope,
         ENa_strand     cstrand = cit.GetStrand();
         TSeqPos        pos     = 0;
         for (CSeq_loc_CI pit(parent);  pit;  ++pit) {
-            TRange0 prange = pit.GetRange();
+            ENa_strand pstrand = pit.GetStrand();
+            TRange0    prange  = pit.GetRange();
             if (prange.IsWholeTo()  &&  scope) {
                 // determine actual end
                 prange.SetToOpen(sequence::GetLength(pit.GetSeq_id(), scope));
@@ -2695,31 +2700,132 @@ SRelLoc::SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope,
                 pos += prange.GetLength();
                 continue;
             }
-            CRef<TRange> intersection(new TRange);
-            intersection->SetFrom(max(prange.GetFrom(), crange.GetFrom()));
-            intersection->SetTo  (min(prange.GetTo(),   crange.GetTo()));
-            if (intersection->GetFrom() <= intersection->GetTo()) {
-                if ( !SameOrientation(cstrand, pit.GetStrand()) ) {
-                    ERR_POST(Warning
-                             << "SRelLoc::SRelLoc:"
-                             " parent and child have opposite orientations");
+            CRef<TRange>         intersection(new TRange);
+            TSeqPos              abs_from, abs_to;
+            CConstRef<CInt_fuzz> fuzz_from, fuzz_to;
+            if (crange.GetFrom() >= prange.GetFrom()) {
+                abs_from  = crange.GetFrom();
+                fuzz_from = cit.GetFuzzFrom();
+                if (abs_from == prange.GetFrom()) {
+                    // subtract out parent fuzz, if any
+                    const CInt_fuzz* pfuzz = pit.GetFuzzFrom();
+                    if (pfuzz) {
+                        if (fuzz_from) {
+                            CRef<CInt_fuzz> f(new CInt_fuzz);
+                            f->Assign(*fuzz_from);
+                            f->Subtract(*pfuzz, abs_from, abs_from);
+                            if (f->IsP_m()  &&  !f->GetP_m() ) {
+                                fuzz_from.Reset(); // cancelled
+                            } else {
+                                fuzz_from = f;
+                            }
+                        } else {
+                            fuzz_from = pfuzz->Negative(abs_from);
+                        }
+                    }
                 }
-                if (IsReverse(cstrand)) { // both strands reverse
+            } else {
+                abs_from  = prange.GetFrom();
+                // fuzz_from = pit.GetFuzzFrom();
+                CRef<CInt_fuzz> f(new CInt_fuzz);
+                f->SetLim(CInt_fuzz::eLim_lt);
+                fuzz_from = f;
+            }
+            if (crange.GetTo() <= prange.GetTo()) {
+                abs_to  = crange.GetTo();
+                fuzz_to = cit.GetFuzzTo();
+                if (abs_to == prange.GetTo()) {
+                    // subtract out parent fuzz, if any
+                    const CInt_fuzz* pfuzz = pit.GetFuzzTo();
+                    if (pfuzz) {
+                        if (fuzz_to) {
+                            CRef<CInt_fuzz> f(new CInt_fuzz);
+                            f->Assign(*fuzz_to);
+                            f->Subtract(*pfuzz, abs_to, abs_to);
+                            if (f->IsP_m()  &&  !f->GetP_m() ) {
+                                fuzz_to.Reset(); // cancelled
+                            } else {
+                                fuzz_to = f;
+                            }
+                        } else {
+                            fuzz_to = pfuzz->Negative(abs_to);
+                        }
+                    }
+                }
+            } else {
+                abs_to  = prange.GetTo();
+                // fuzz_to = pit.GetFuzzTo();
+                CRef<CInt_fuzz> f(new CInt_fuzz);
+                f->SetLim(CInt_fuzz::eLim_gt);
+                fuzz_to = f;
+            }
+            if (abs_from <= abs_to) {
+                if (IsReverse(pstrand)) {
                     TSeqPos sigma = pos + prange.GetTo();
-                    TSeqPos from0 = intersection->GetFrom();
-                    intersection->SetFrom(sigma - intersection->GetTo());
-                    intersection->SetTo  (sigma - from0);
-                } else { // both strands forward
+                    intersection->SetFrom(sigma - abs_to);
+                    intersection->SetTo  (sigma - abs_from);
+                    if (fuzz_from) {
+                        intersection->SetFuzz_to().AssignTranslated
+                            (*fuzz_from, intersection->GetTo(), abs_from);
+                        intersection->SetFuzz_to().Negate
+                            (intersection->GetTo());
+                    }
+                    if (fuzz_to) {
+                        intersection->SetFuzz_from().AssignTranslated
+                            (*fuzz_to, intersection->GetFrom(), abs_to);
+                        intersection->SetFuzz_from().Negate
+                            (intersection->GetFrom());
+                    }
+                    if (cstrand == eNa_strand_unknown) {
+                        intersection->SetStrand(pstrand);
+                    } else {
+                        intersection->SetStrand(Reverse(cstrand));
+                    }
+                } else {
                     TSignedSeqPos delta = pos - prange.GetFrom();
-                    intersection->SetFrom(intersection->GetFrom() + delta);
-                    intersection->SetTo  (intersection->GetTo()   + delta);
+                    intersection->SetFrom(abs_from + delta);
+                    intersection->SetTo  (abs_to   + delta);
+                    if (fuzz_from) {
+                        intersection->SetFuzz_from().AssignTranslated
+                            (*fuzz_from, intersection->GetFrom(), abs_from);
+                    }
+                    if (fuzz_to) {
+                        intersection->SetFuzz_to().AssignTranslated
+                            (*fuzz_to, intersection->GetTo(), abs_to);
+                    }
+                    if (cstrand == eNa_strand_unknown) {
+                        intersection->SetStrand(pstrand);
+                    } else {
+                        intersection->SetStrand(cstrand);
+                    }
                 }
                 // add to m_Ranges, combining with the previous
                 // interval if possible
                 if ( !(flags & fNoMerge)  &&  !m_Ranges.empty()
-                    && m_Ranges.back()->GetTo() == intersection->GetFrom() - 1)
-                {
-                    m_Ranges.back()->SetTo(intersection->GetTo());
+                    &&  SameOrientation(intersection->GetStrand(),
+                                        m_Ranges.back()->GetStrand()) ) {
+                    if (m_Ranges.back()->GetTo() == intersection->GetFrom() - 1
+                        &&  !IsReverse(intersection->GetStrand()) ) {
+                        m_Ranges.back()->SetTo(intersection->GetTo());
+                        if (intersection->IsSetFuzz_to()) {
+                            m_Ranges.back()->SetFuzz_to
+                                (intersection->SetFuzz_to());
+                        } else {
+                            m_Ranges.back()->ResetFuzz_to();
+                        }
+                    } else if (m_Ranges.back()->GetFrom()
+                               == intersection->GetTo() + 1
+                               &&  IsReverse(intersection->GetStrand())) {
+                        m_Ranges.back()->SetFrom(intersection->GetFrom());
+                        if (intersection->IsSetFuzz_from()) {
+                            m_Ranges.back()->SetFuzz_from
+                                (intersection->SetFuzz_from());
+                        } else {
+                            m_Ranges.back()->ResetFuzz_from();
+                        }
+                    } else {
+                        m_Ranges.push_back(intersection);
+                    }
                 } else {
                     m_Ranges.push_back(intersection);
                 }
@@ -2731,7 +2837,9 @@ SRelLoc::SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope,
 
 
 // Bother trying to merge?
-CRef<CSeq_loc> SRelLoc::Resolve(CScope* scope, SRelLoc::TFlags /* flags */)
+// XXX - deal with fuzz
+CRef<CSeq_loc> SRelLoc::Resolve(const CSeq_loc& new_parent, CScope* scope,
+                                SRelLoc::TFlags /* flags */)
     const
 {
     typedef CSeq_loc::TRange TRange0;
@@ -2741,7 +2849,7 @@ CRef<CSeq_loc> SRelLoc::Resolve(CScope* scope, SRelLoc::TFlags /* flags */)
         _ASSERT((*it)->GetFrom() <= (*it)->GetTo());
         TSeqPos pos = 0, start = (*it)->GetFrom();
         bool    keep_going = true;
-        for (CSeq_loc_CI pit(*m_ParentLoc);  pit;  ++pit) {
+        for (CSeq_loc_CI pit(new_parent);  pit;  ++pit) {
             TRange0 prange = pit.GetRange();
             if (prange.IsWholeTo()  &&  scope) {
                 // determine actual end
@@ -2749,7 +2857,9 @@ CRef<CSeq_loc> SRelLoc::Resolve(CScope* scope, SRelLoc::TFlags /* flags */)
             }
             TSeqPos length = prange.GetLength();
             if (start >= pos  &&  start < pos + length) {
-                TSeqPos from, to;
+                TSeqPos              from, to;
+                CConstRef<CInt_fuzz> fuzz_from, fuzz_to;
+                ENa_strand           strand;
                 if (IsReverse(pit.GetStrand())) {
                     TSeqPos sigma = pos + prange.GetTo();
                     from = sigma - (*it)->GetTo();
@@ -2759,6 +2869,49 @@ CRef<CSeq_loc> SRelLoc::Resolve(CScope* scope, SRelLoc::TFlags /* flags */)
                         keep_going = true;
                     } else {
                         keep_going = false;
+                    }
+                    if ( !(*it)->IsSetStrand()
+                        ||  (*it)->GetStrand() == eNa_strand_unknown) {
+                        strand = pit.GetStrand();
+                    } else {
+                        strand = Reverse((*it)->GetStrand());
+                    }
+                    if (from == prange.GetFrom()) {
+                        fuzz_from = pit.GetFuzzFrom();
+                    }
+                    if ( !keep_going  &&  (*it)->IsSetFuzz_to() ) {
+                        CRef<CInt_fuzz> f(new CInt_fuzz);
+                        if (fuzz_from) {
+                            f->Assign(*fuzz_from);
+                        } else {
+                            f->SetP_m(0);
+                        }
+                        f->Subtract((*it)->GetFuzz_to(), from, (*it)->GetTo(),
+                                    CInt_fuzz::eAmplify);
+                        if (f->IsP_m()  &&  !f->GetP_m() ) {
+                            fuzz_from.Reset(); // cancelled
+                        } else {
+                            fuzz_from = f;
+                        }
+                    }
+                    if (to == prange.GetTo()) {
+                        fuzz_to = pit.GetFuzzTo();
+                    }
+                    if (start == (*it)->GetFrom()
+                        &&  (*it)->IsSetFuzz_from()) {
+                        CRef<CInt_fuzz> f(new CInt_fuzz);
+                        if (fuzz_to) {
+                            f->Assign(*fuzz_to);
+                        } else {
+                            f->SetP_m(0);
+                        }
+                        f->Subtract((*it)->GetFuzz_from(), to,
+                                    (*it)->GetFrom(), CInt_fuzz::eAmplify);
+                        if (f->IsP_m()  &&  !f->GetP_m() ) {
+                            fuzz_to.Reset(); // cancelled
+                        } else {
+                            fuzz_to = f;
+                        }
                     }
                 } else {
                     TSignedSeqPos delta = prange.GetFrom() - pos;
@@ -2770,13 +2923,65 @@ CRef<CSeq_loc> SRelLoc::Resolve(CScope* scope, SRelLoc::TFlags /* flags */)
                     } else {
                         keep_going = false;
                     }
+                    if ( !(*it)->IsSetStrand()
+                        ||  (*it)->GetStrand() == eNa_strand_unknown) {
+                        strand = pit.GetStrand();
+                    } else {
+                        strand = (*it)->GetStrand();
+                    }
+                    if (from == prange.GetFrom()) {
+                        fuzz_from = pit.GetFuzzFrom();
+                    }
+                    if (start == (*it)->GetFrom()
+                        &&  (*it)->IsSetFuzz_from()) {
+                        CRef<CInt_fuzz> f(new CInt_fuzz);
+                        if (fuzz_from) {
+                            f->Assign(*fuzz_from);
+                            f->Add((*it)->GetFuzz_from(), from,
+                                   (*it)->GetFrom());
+                        } else {
+                            f->AssignTranslated((*it)->GetFuzz_from(), from,
+                                                (*it)->GetFrom());
+                        }
+                        if (f->IsP_m()  &&  !f->GetP_m() ) {
+                            fuzz_to.Reset(); // cancelled
+                        } else {
+                            fuzz_to = f;
+                        }
+                    }
+                    if (to == prange.GetTo()) {
+                        fuzz_to = pit.GetFuzzTo();
+                    }
+                    if ( !keep_going  &&  (*it)->IsSetFuzz_to() ) {
+                        CRef<CInt_fuzz> f(new CInt_fuzz);
+                        if (fuzz_to) {
+                            f->Assign(*fuzz_to);
+                            f->Add((*it)->GetFuzz_to(), to, (*it)->GetTo());
+                        } else {
+                            f->AssignTranslated((*it)->GetFuzz_to(), to,
+                                                (*it)->GetTo());
+                        }
+                        if (f->IsP_m()  &&  !f->GetP_m() ) {
+                            fuzz_to.Reset(); // cancelled
+                        } else {
+                            fuzz_to = f;
+                        }
+                    }
                 }
-                if (from == to) {
+                if (from == to
+                    &&  (fuzz_from == fuzz_to
+                         ||  (fuzz_from  &&  fuzz_to
+                              &&  fuzz_from->Equals(*fuzz_to)))) {
                     // just a point
                     CRef<CSeq_loc> loc(new CSeq_loc);
                     CSeq_point& point = loc->SetPnt();
                     point.SetPoint(from);
-                    point.SetStrand(pit.GetStrand());
+                    if (strand != eNa_strand_unknown) {
+                        point.SetStrand(strand);
+                    }
+                    if (fuzz_from) {
+                        point.SetFuzz().Assign(*fuzz_from);
+                    }
                     point.SetId().Assign(pit.GetSeq_id());
                     mix.Set().push_back(loc);
                 } else {
@@ -2784,7 +2989,15 @@ CRef<CSeq_loc> SRelLoc::Resolve(CScope* scope, SRelLoc::TFlags /* flags */)
                     CSeq_interval& ival = loc->SetInt();
                     ival.SetFrom(from);
                     ival.SetTo(to);
-                    ival.SetStrand(pit.GetStrand());
+                    if (strand != eNa_strand_unknown) {
+                        ival.SetStrand(strand);
+                    }
+                    if (fuzz_from) {
+                        ival.SetFuzz_from().Assign(*fuzz_from);
+                    }
+                    if (fuzz_to) {
+                        ival.SetFuzz_to().Assign(*fuzz_to);
+                    }
                     ival.SetId().Assign(pit.GetSeq_id());
                     mix.Set().push_back(loc);
                 }
@@ -2799,9 +3012,9 @@ CRef<CSeq_loc> SRelLoc::Resolve(CScope* scope, SRelLoc::TFlags /* flags */)
         if (keep_going) {
             TSeqPos total_length;
             string  label;
-            m_ParentLoc->GetLabel(&label);
+            new_parent.GetLabel(&label);
             try {
-                total_length = sequence::GetLength(*m_ParentLoc, scope);
+                total_length = sequence::GetLength(new_parent, scope);
                 ERR_POST(Warning << "SRelLoc::Resolve: Relative position "
                          << start << " exceeds length (" << total_length
                          << ") of parent location " << label);
@@ -3098,6 +3311,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.62  2003/10/15 19:52:18  ucko
+* More adjustments to SRelLoc: support fuzz, opposite-strand children,
+* and resolving against an alternate parent.
+*
 * Revision 1.61  2003/10/08 21:08:38  ucko
 * CCdregion_translate: take const Bioseq_Handles, since there's no need
 * to modify them.
