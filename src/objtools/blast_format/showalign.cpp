@@ -1074,52 +1074,56 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                  alnIter = actual_aln_list.Get().begin(); 
              alnIter != actual_aln_list.Get().end() 
                  && num_align<m_NumAlignToShow; alnIter ++, num_align++) {
-            //need to convert to denseg for stdseg
-            if((*alnIter)->GetSegs().Which() == CSeq_align::C_Segs::e_Std) {
-                CTypeConstIterator<CStd_seg> ss = ConstBegin(**alnIter); 
-                CRef<CSeq_align> convertedDs = 
-                    (*alnIter)->CreateDensegFromStdseg();
-                if((convertedDs->GetSegs().GetDenseg().IsSetWidths() 
-                    && convertedDs->GetSegs().GetDenseg().GetWidths()[0] == 3)
-                   || m_AlignOption & eTranslateNucToNucAlignment){
-                    //only do this for translated master
-                    int frame = s_GetStdsegMasterFrame(*ss, m_Scope);
-                    switch(frame){
-                    case 1:
-                        alnVector[0]->Set().push_back(convertedDs);
-                        break;
-                    case 2:
-                        alnVector[1]->Set().push_back(convertedDs);
-                        break;
-                    case 3:
-                        alnVector[2]->Set().push_back(convertedDs);
-                        break;
-                    case -1:
-                        alnVector[3]->Set().push_back(convertedDs);
-                        break;
-                    case -2:
-                        alnVector[4]->Set().push_back(convertedDs);
-                        break;
-                    case -3:
-                        alnVector[5]->Set().push_back(convertedDs);
-                        break;
-                    default:
-                        break;
+            const CBioseq_Handle& subj_handle = 
+                m_Scope.GetBioseqHandle((*alnIter)->GetSeq_id(1));
+            if(subj_handle){
+                //need to convert to denseg for stdseg
+                if((*alnIter)->GetSegs().Which() == CSeq_align::C_Segs::e_Std) {
+                    CTypeConstIterator<CStd_seg> ss = ConstBegin(**alnIter); 
+                    CRef<CSeq_align> convertedDs = 
+                        (*alnIter)->CreateDensegFromStdseg();
+                    if((convertedDs->GetSegs().GetDenseg().IsSetWidths() 
+                        && convertedDs->GetSegs().GetDenseg().GetWidths()[0] == 3)
+                       || m_AlignOption & eTranslateNucToNucAlignment){
+                        //only do this for translated master
+                        int frame = s_GetStdsegMasterFrame(*ss, m_Scope);
+                        switch(frame){
+                        case 1:
+                            alnVector[0]->Set().push_back(convertedDs);
+                            break;
+                        case 2:
+                            alnVector[1]->Set().push_back(convertedDs);
+                            break;
+                        case 3:
+                            alnVector[2]->Set().push_back(convertedDs);
+                            break;
+                        case -1:
+                            alnVector[3]->Set().push_back(convertedDs);
+                            break;
+                        case -2:
+                            alnVector[4]->Set().push_back(convertedDs);
+                            break;
+                        case -3:
+                            alnVector[5]->Set().push_back(convertedDs);
+                            break;
+                        default:
+                            break;
+                        }
                     }
+                    else {
+                        alnVector[0]->Set().push_back(convertedDs);
+                    }
+                } else if((*alnIter)->GetSegs().Which() == CSeq_align::C_Segs::
+                          e_Denseg){
+                    alnVector[0]->Set().push_back(*alnIter);
+                } else if((*alnIter)->GetSegs().Which() == CSeq_align::C_Segs::
+                          e_Dendiag){
+                    alnVector[0]->Set().\
+                        push_back(s_CreateDensegFromDendiag(**alnIter));
+                } else {
+                    NCBI_THROW(CException, eUnknown, 
+                               "Input Seq-align should be Denseg, Stdseg or Dendiag!");
                 }
-                else {
-                    alnVector[0]->Set().push_back(convertedDs);
-                }
-            } else if((*alnIter)->GetSegs().Which() == CSeq_align::C_Segs::
-                      e_Denseg){
-                alnVector[0]->Set().push_back(*alnIter);
-            } else if((*alnIter)->GetSegs().Which() == CSeq_align::C_Segs::
-                      e_Dendiag){
-                alnVector[0]->Set().\
-                    push_back(s_CreateDensegFromDendiag(**alnIter));
-            } else {
-                NCBI_THROW(CException, eUnknown, 
-                           "Input Seq-align should be Denseg, Stdseg or Dendiag!");
             }
         }
         for(int i = 0; i < (int)alnVector.size(); i ++){
@@ -1134,7 +1138,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                     } else {
                         mix[i]->Add(*ds);
                     }
-                } catch (const CException&){
+                } catch (const CException& e){
+                    out << "Warning: " << e.what();
                     continue;
                 }
                 hasAln = true;
@@ -2371,6 +2376,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.65  2005/03/07 22:20:12  jianye
+*Not adding to multialnment if bioseq is withdrawn
+*
 *Revision 1.64  2005/03/02 18:19:58  jianye
 *fixed some sun solaris compiler warnings
 *
