@@ -398,9 +398,9 @@ Kappa_MatchRecordInsertSwAlign(
  * and the last element has smallest (best) evalue. 
  */
 typedef struct SWheapRecord {
-  double bestEvalue;       /* best (smallest) evalue of all alignments
+  double bestEvalue;       /**< best (smallest) evalue of all alignments
                                  * in the record */
-  SWResults *theseAlignments;   /* a list of alignments */
+  SWResults *theseAlignments;   /**< a list of alignments */
 } SWheapRecord;
 
 
@@ -2031,8 +2031,8 @@ struct Kappa_SearchParameters {
                                  * in the gap */
   Int4          gapDecline;     /**< a penalty for declining to align a pair of 
                                  * residues */
-  Int4          mRows, nCols;   /**< the number of rows an columns in a scoring 
-                                 * matrix */
+  Int4          mRows;   /**< the number of rows in a scoring matrix. */
+  Int4          nCols;   /**< the number of columns in a scoring * matrix */
   double   scaledUngappedLambda;   /**< The value of Karlin-Altchul
                                          * parameter lambda, rescaled
                                          * to allow scores to have
@@ -2047,7 +2047,7 @@ struct Kappa_SearchParameters {
                                   * a matching sequence */
   double  *queryProb;       /**< array of probabilities for each residue in 
                                   * the query */
-  Boolean       adjustParameters;
+  Boolean       adjustParameters; /**< Use composition-based statistics if true. */
 
   Blast_ScoreFreq* return_sfp;        /**< score frequency pointers to
                                          * compute lambda */
@@ -2204,7 +2204,7 @@ Kappa_RecordInitialSearch(Kappa_SearchParameters * searchParams,
  * @param queryBlk query sequence [in]
  * @param queryInfo query sequence information [in]
  * @param sbp Scoring Blk (contains Karlin-Altschul parameters) [in]
- * @param scoring gap-open/extend/decline_align information [in]
+ * @param scoringParams gap-open/extend/decline_align information [in]
  * @return scaling-factor to be used.
  */
 static double

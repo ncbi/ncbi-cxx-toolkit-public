@@ -56,6 +56,7 @@ extern "C" {
  * @param query_info query information [in]
  * @param sbp (Karlin-Altschul) information for search [in]
  * @param seqSrc used to fetch database/match sequences [in]
+ * @param hsp_stream used to fetch hits for further processing [in]
  * @param scoringParams parameters used for scoring (matrix, gap costs etc.) [in]
  * @param extendParams parameters used for extension [in]
  * @param hitsavingParams parameters used for saving hits [in]
@@ -69,11 +70,11 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
                   BlastQueryInfo* query_info,
                   BlastScoreBlk* sbp,
                   BlastHSPStream* hsp_stream,
-                  const BlastSeqSrc* seq_src,
+                  const BlastSeqSrc* seqSrc,
                   BlastScoringParameters* scoringParams,
                   const BlastExtensionParameters* extendParams,
                   const BlastHitSavingParameters* hitsavingParams,
-                  const PSIBlastOptions* psi_options,
+                  const PSIBlastOptions* psiOptions,
                   BlastHSPResults* results);
 
 #ifdef __cplusplus
@@ -85,6 +86,9 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/06/21 14:53:09  madden
+ * Doxygen fixes
+ *
  * Revision 1.7  2004/06/16 14:53:03  dondosha
  * Moved extern "C" after the #includes
  *

@@ -42,12 +42,13 @@
 extern "C" {
 #endif
 
-/*
-	Defines for the matrix 'preferences' (as specified by S. Altschul).
-*/
-#define BLAST_MATRIX_NOMINAL 0
-#define BLAST_MATRIX_PREFERRED 1
-#define BLAST_MATRIX_BEST 2
+/**
+ * Defines for the matrix 'preferences' (as specified by S. Altschul).
+ * Used in arrays such as blosum45_prefs in blast_stat.c
+ */
+#define BLAST_MATRIX_NOMINAL 0   /**< acceptable values, not recommended. */
+#define BLAST_MATRIX_PREFERRED 1 /**< These value are preferred over others. */
+#define BLAST_MATRIX_BEST 2      /**< This is the best value, only one per matrix. */
 
 
 #define BLASTMAT_DIR "/usr/ncbi/blast/matrix" /**< Default location for blast databases. */
@@ -108,10 +109,8 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	SBLASTMatrixStructure* matrix_struct;	/**< Holds info about matrix. */
 	Int4 **matrix;  /**< Substitution matrix */
 	Int4 **posMatrix;  /**< Sub matrix for position depend BLAST. */
-        /* double karlinK; */ /**< Karlin-Altschul parameter associated with posMatrix */
 	Int2	mat_dim1;	/**< dimensions of matrix. */
 	Int2	mat_dim2;	/**< dimensions of matrix. */
- /*	Int4    *maxscore; */ /**< Max. score for each letter */
 	Int4	loscore;   /**< Min.  substitution scores */
 	Int4	hiscore;   /**< Max. substitution scores */
 	Int4	penalty;   /**< penalty for mismatch in blastn. */
@@ -475,7 +474,7 @@ Int2 Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp);
  * system.
  * @param score_min Minimum score [in]
  * @param score_max Maximum score [in]
- * @param allocated and initialized pointer to Blast_ScoreFreq
+ * @return allocated and initialized pointer to Blast_ScoreFreq
  */
 Blast_ScoreFreq*
 Blast_ScoreFreqNew(Int4 score_min, Int4 score_max);
@@ -490,14 +489,14 @@ Blast_ScoreFreqDestruct(Blast_ScoreFreq* sfp);
 /** Fills a buffer with the 'standard' alphabet 
  * (given by STD_AMINO_ACID_FREQS[index].ch).
  *
- * @param alphabet_size number of characters in alphabet [in]
+ * @param alphabet_code specifies alphabet [in]
  * @param residues buffer to be filled in [in|out]
  * @param residue_size size of "residues" buffer [in]
  * @return Number of residues in alphabet or negative returns upon error.
  */
 Int2
 Blast_GetStdAlphabet(Uint1 alphabet_code, Uint1* residues, 
-                     Uint4 residues_size);
+                     Uint4 residue_size);
 
 /** Computes the parameters lambda, H K for use in calculating the
  *   statistical significance of high-scoring segments or subalignments. 
