@@ -75,6 +75,7 @@
 
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Score.hpp>
+#include <objects/seqalign/Std_seg.hpp>
 
 #include <objtools/alnmgr/alnmix.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
@@ -626,7 +627,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 	    }
 	    out<<(*iter)->feature->featureId;
 	    AddSpace(out, maxIdLen+m_IdStartMargin+maxStartLen+m_StartSequenceMargin-(*iter)->feature->featureId.size());
-	    OutputSeq((*iter)->feature->featureString, CSeq_id(), j, actualLineLen, out);
+	    OutputSeq((*iter)->featureString, CSeq_id(), j, actualLineLen, out);
 	    out<<endl;
 	  }
 	}
@@ -679,19 +680,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
     m_featScope->AddDefaults();	     
   }	
   
-  //determine if the database has gi by looking at the 1st hit.  Could be wrong but simple for now
-  CTypeConstIterator<CSeq_align> saTemp = ConstBegin(*m_SeqalignSetRef); 
-  CTypeConstIterator<CDense_seg> dsTemp = ConstBegin(*saTemp);
-  const vector< CRef< CSeq_id > >& idsTemp = dsTemp->GetIds();
-  vector< CRef< CSeq_id > >::const_iterator iterTemp = idsTemp.begin();
-  iterTemp++;
-  const CBioseq_Handle& handleTemp = m_Scope.GetBioseqHandle(**iterTemp);
-  if(handleTemp){
-    int giTemp = GetGiForSeqIdList(handleTemp.GetBioseq().GetId());
-    if(giTemp >0 ) { 
-      m_IsDbGi = true;
-    }
-  }
+  setDbGi(); //for whether to add get sequence feature
   if(m_AlignOption & eHtml){
     out<<"<script src=\"blastResult.js\"></script>";
   }
@@ -1098,7 +1087,7 @@ void  CDisplaySeqalign::setFeatureInfo(alnFeatureInfo* featInfo, const CSeq_loc&
   for (int j = alnFrom; j <= alnTo; j++){
     line[j] = feat->featureChar;
   }
-  feat->featureString = line;
+  featInfo->featureString = line;
   featInfo->alnRange.Set(alnFrom, alnTo); 
   featInfo->feature = feat;
 }
@@ -1392,6 +1381,39 @@ string CDisplaySeqalign::getDumpgnlLink(const list<CRef<CSeq_id> >& ids, int row
   delete [] dbname;
   return link;
 }
+
+void CDisplaySeqalign::setDbGi() {
+  //determine if the database has gi by looking at the 1st hit.  Could be wrong but simple for now
+ 
+  CTypeConstIterator<CSeq_align> saTemp = ConstBegin(*m_SeqalignSetRef);
+  if(saTemp->GetSegs().Which() == CSeq_align::C_Segs::e_Denseg){
+    CTypeConstIterator<CDense_seg> dsTemp = ConstBegin(*saTemp); 
+    const vector< CRef< CSeq_id > >& idTemp = (dsTemp->GetIds());
+    vector< CRef< CSeq_id > >::const_iterator iterTemp = idTemp.begin();
+    iterTemp++;
+    const CBioseq_Handle& handleTemp = m_Scope.GetBioseqHandle(**iterTemp);
+    if(handleTemp){
+      int giTemp = GetGiForSeqIdList(handleTemp.GetBioseq().GetId());
+      if(giTemp >0 ) { 
+	m_IsDbGi = true;
+      }
+    }
+  } else if (saTemp->GetSegs().Which() == CSeq_align::C_Segs::e_Std){
+    CTypeConstIterator<CStd_seg> dsTemp = ConstBegin(*saTemp); 
+    const list< CRef< CSeq_id > >& idTemp = (dsTemp->GetIds());
+    list< CRef< CSeq_id > >::const_iterator iterTemp = idTemp.begin();
+    iterTemp++;
+    const CBioseq_Handle& handleTemp = m_Scope.GetBioseqHandle(**iterTemp);
+    if(handleTemp){
+      int giTemp = GetGiForSeqIdList(handleTemp.GetBioseq().GetId());
+      if(giTemp >0 ) { 
+	m_IsDbGi = true;
+      }
+    }
+  }
+ 
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

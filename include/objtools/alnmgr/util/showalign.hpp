@@ -49,14 +49,13 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign{
 public:
   //Defines
   struct SeqlocInfo {
-    CRef<CSeq_loc> seqloc;
-    int frame;
+    CRef<CSeq_loc> seqloc; //must be seqloc int
+    int frame;  //For translated nucleotide sequence
   };
   struct FeatureInfo {
-    CConstRef<CSeq_loc> seqloc;
-    char featureChar;
-    string featureId;
-    string featureString;
+    CConstRef<CSeq_loc> seqloc;  //must be seqloc int
+    char featureChar;  //Character for feature
+    string featureId;  //ID for feature
   };
 
   static const int m_PMatrixSize = 23;  //number of amino acid symbol in matrix
@@ -84,7 +83,7 @@ public:
   enum SeqLocCharOption {
     eX = 0,  //use X to replace sequence character. Default 
     eN, //use n to replace sequence character
-    eLowerCase  //lower case 
+    eLowerCase  //use lower case of the original sequence letter
   };
   //color for seqloc
   enum SeqLocColorOption{
@@ -100,8 +99,8 @@ public:
     eProt
   };
   //Constructors
-  /* CSeq_align_set: seqalign to display
-     maskSeqloc: seqloc to be displayed with different color
+  /* CSeq_align_set: seqalign to display.
+     maskSeqloc: seqloc to be displayed with different characters such as masked sequence.  Must be seqloc-int
      externalFeature: Feature to display such as phiblast pattern.  Must be seqloc-int
      matrix: customized matrix for computing positive protein matchs.  Note the matrix must exactly consist of "ARNDCQEGHILKMFPSTWYVBZX", default matrix is blosum62
      scope: scope to fetch your sequence
@@ -146,6 +145,7 @@ private:
    
   struct alnFeatureInfo {
     FeatureInfo* feature;
+    string featureString;
     CRange<TSignedSeqPos> alnRange;
   };
 
@@ -205,8 +205,8 @@ private:
   void doFills(int row, CAlnMap::TSignedRange& alnRange, int alnStart, list<CConstRef<CAlnMap::CAlnChunk> >& chunks, list<string>& inserts) const;
   string getSegs(int row) const;
   const void fillIdentityInfo(const string& sequenceStandard, const string& sequence , int& match, int& positive, string& middleLine);
-  void setFeatureInfo(alnFeatureInfo* featInfo, const CSeq_loc& seqloc, int alnFrom, int alnTo, int alnStop, char patternChar, string patternId) const;
-
+  void setFeatureInfo(alnFeatureInfo* featInfo, const CSeq_loc& seqloc, int alnFrom, int alnTo, int alnStop, char patternChar, string patternId) const;  
+  void setDbGi();
 };
 
 
