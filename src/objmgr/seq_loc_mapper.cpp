@@ -168,8 +168,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_loc& source,
 }
 
 
-CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
-                                 const CSeq_id&    to_id,
+CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& /*map_align*/,
+                                 const CSeq_id&    /*to_id*/,
                                  CScope*           scope)
     : m_Scope(scope),
       m_MergeFlag(eMergeNone)
@@ -705,7 +705,6 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
 }
 
 
-inline
 CSeq_loc_Mapper::TMappedRanges&
 CSeq_loc_Mapper::x_GetMappedRanges(const CSeq_id_Handle& id,
                                    int strand_idx) const
@@ -857,6 +856,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/03/11 04:54:48  grichenk
+* Removed inline
+*
 * Revision 1.1  2004/03/10 16:22:29  grichenk
 * Initial revision
 *
