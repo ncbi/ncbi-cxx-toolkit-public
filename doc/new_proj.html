@@ -8,13 +8,22 @@
 	 <h1>Starting new C++ project</h1>
 
 	 <ul>
+		<li> <a href="#ref_Checkout">Retrieve NCBI C++ source tree from CVS</a>
 		<li> <a href="#ref_Structure">CVS tree structure of NCBI C++ projects</a>
 		<li> <a href="#ref_Create">Adding CVS directory for a new C++ project</a>
 		<li> <a href="#ref_CVS">Using CVS</a>
 	 </ul>
 
 	 <br></br>
+	 <a name="ref_Checkout"><h2>Retrieve NCBI C++ source tree from CVS</h2></a>
+	 To checkout the whole NCBI C++ source tree from CVS to you local
+	 directory use:
+<pre>
+cvs checkout -d cpp internal/cpp
+</pre>
 
+
+	 <br></br>
 	 <a name="ref_Structure"><h2>CVS tree structure of NCBI C++ projects</h2></a>
 
 	 (For the overall NCBI C++ CVS tree structure see in
@@ -64,6 +73,7 @@ mkdir MyNewProject
 cd MyNewProject
 mkdir include
 mkdir src
+mkdir test
 mkdir doc
 	 </pre>
 
