@@ -58,7 +58,7 @@ class CAccessionItem : public CFlatItem
 {
 public:
     // typedef
-    typedef list<string>    TExtra_accessions;
+    typedef vector<string>  TExtra_accessions;
     typedef CRange<TSeqPos> TRegion;
 
     CAccessionItem(CBioseqContext& ctx);
@@ -128,6 +128,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/03/02 16:26:49  shomrat
+* Changed contaier type for secondary accessions
+*
 * Revision 1.3  2004/04/22 15:33:58  shomrat
 * Changes in context; + Region
 *
