@@ -46,10 +46,42 @@ USING_SCOPE (objects);
 
 
 /** This class contains misc functions for displaying BLAST results. */
+ 
+///blast related url
+/* url */
+const string kEntrezUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entre\
+z/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s\" %s>";
+
+const string kTraceUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/Traces\
+/trace.cgi?cmd=retrieve&dopt=fasta&val=%s\">";
+
+const string kUnigeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entr\
+ez/query.fcgi?db=unigene&cmd=search&term=%d[Nucleotide+UID]\"><img border=0 h\
+eight=16 width=16 src=\"/blast/images/U.gif\" alt=\"UniGene info\"></a>";
+
+const string kStructureUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/St\
+ructure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&blast_CD_RID=%s\
+&blast_view=%s&hsp=0&taxname=%s&client=blast\"><img border=0 height=16 width=\
+16 src=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Re\
+lated structures\"></a>";
+
+const string kStructure_Overview = "<a href=\"http://www.ncbi.nlm.nih.\
+gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&blast_CD_\
+RID=%s&blast_view=%s&hsp=0&taxname=%s&client=blast\">Related Structures</a>";
+
+const string kGeoUrl =  "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
+query.fcgi?db=geo&term=%d[gi]\"><img border=0 height=16 width=16 src=\"/blast\
+/images/E.gif\" alt=\"Geo\"></a>";
+
+const string kGeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
+query.fcgi?db=gene&cmd=search&term=%d[%s]\"><img border=0 height=16 width=16 \
+src=\"/blast/images/G.gif\" alt=\"Gene info\"></a>";
+
 class CBlastFormatUtil 
 {
-    
+   
 public:
+   
     ///Error info structure
     struct SBlastError {
         EDiagSev level;
@@ -173,6 +205,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.6  2005/02/09 17:35:30  jianye
+add common url
+
 Revision 1.5  2005/02/02 16:31:57  jianye
 int to size_t to get rid of compiler warning
 
