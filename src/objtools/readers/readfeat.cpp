@@ -63,6 +63,7 @@
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 
@@ -151,6 +152,7 @@ public:
     typedef map< string, COrgMod::ESubtype > TOrgModReaderMap;
     typedef map< string, CSeqFeatData::EBond > TBondReaderMap;
     typedef map< string, CSeqFeatData::ESite > TSiteReaderMap;
+    typedef map< string, int > TTrnaReaderMap;
 
     // constructor
     CFeature_table_reader_imp(void);
@@ -193,6 +195,8 @@ private:
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
                                    COrgMod::ESubtype mtype, const string& val);
 
+    int x_ParseTrnaString (const string& val);
+
     TFeatReaderMap   m_FeatKeys;
     TQualReaderMap   m_QualKeys;
     TOrgRefReaderMap m_OrgRefKeys;
@@ -200,6 +204,7 @@ private:
     TOrgModReaderMap m_OrgModKeys;
     TBondReaderMap   m_BondKeys;
     TSiteReaderMap   m_SiteKeys;
+    TTrnaReaderMap   m_TrnaKeys;
 };
 
 auto_ptr<CFeature_table_reader_imp> CFeature_table_reader::sm_Implementation;
@@ -505,6 +510,42 @@ static SiteInit site_key_to_subtype [] = {
     { "",                            CSeqFeatData::eSite_other                       }
 };
 
+typedef struct trnainit {
+    const char * key;
+    int          subtype;
+} TrnaInit;
+
+static TrnaInit trna_key_to_subtype [] = {
+    { "Ala",   'A' },
+    { "Asx",   'B' },
+    { "Cys",   'C' },
+    { "Asp",   'D' },
+    { "Glu",   'E' },
+    { "Phe",   'F' },
+    { "Gly",   'G' },
+    { "His",   'H' },
+    { "Ile",   'I' },
+    { "Lys",   'K' },
+    { "Leu",   'L' },
+    { "Met",   'M' },
+    { "fMet",  'M' },
+    { "Asn",   'N' },
+    { "Pro",   'P' },
+    { "Gln",   'Q' },
+    { "Arg",   'R' },
+    { "Ser",   'S' },
+    { "Thr",   'T' },
+    { "Val",   'V' },
+    { "Trp",   'W' },
+    { "Xxx",   'X' },
+    { "OTHER", 'X' },
+    { "Tyr",   'Y' },
+    { "Glx",   'Z' },
+    { "Sec",   'U' },
+    { "Ter",   '*' },
+    { "TERM",  '*' }
+};
+
 // constructor
 CFeature_table_reader_imp::CFeature_table_reader_imp(void)
 {
@@ -542,6 +583,11 @@ CFeature_table_reader_imp::CFeature_table_reader_imp(void)
     for (int i = 0; i < sizeof (site_key_to_subtype) / sizeof (SiteInit); i++) {
         string str = string (site_key_to_subtype [i].key);
         m_SiteKeys [string (site_key_to_subtype [i].key)] = site_key_to_subtype [i].subtype;
+    }
+
+    for (int i = 0; i < sizeof (trna_key_to_subtype) / sizeof (TrnaInit); i++) {
+        string str = string (trna_key_to_subtype [i].key);
+        m_TrnaKeys [string (trna_key_to_subtype [i].key)] = trna_key_to_subtype [i].subtype;
     }
 }
 
@@ -754,6 +800,24 @@ bool CFeature_table_reader_imp::x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, C
 }
 
 
+int CFeature_table_reader_imp::x_ParseTrnaString (const string& val)
+
+{
+    string fst, scd;
+
+    scd = val;
+    if (NStr::StartsWith (val, "tRNA-")) {
+        NStr::SplitInTwo (val, "-", fst, scd);
+    }
+
+    if (m_TrnaKeys.find (scd) != m_TrnaKeys.end ()) {
+        return m_TrnaKeys [scd];
+    }
+
+    return 0;
+}
+
+
 bool CFeature_table_reader_imp::x_AddQualifierToRna (CSeqFeatData& sfdata,
                                                      EQual qtype, const string& val)
 
@@ -783,7 +847,20 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (CSeqFeatData& sfdata,
             break;
         case CRNA_ref::eType_tRNA:
             switch (qtype) {
-                case eQual_product:
+                case eQual_product: {
+                        CRNA_ref::TExt& tex = rrp.SetExt ();
+                        CRNA_ref::C_Ext::E_Choice exttype = tex.Which ();
+                        if (exttype == CRNA_ref::C_Ext::e_Name) return false;
+                        CTrna_ext& trx = tex.SetTRNA ();
+                        int aaval = x_ParseTrnaString (val);
+                        if (aaval > 0) {
+                            CTrna_ext::TAa& taa = trx.SetAa ();
+                            taa.SetNcbieaa (aaval);
+                            trx.SetAa (taa);
+                            tex.SetTRNA (trx);
+                            return true;
+                        }
+                    }
                     break;
                 default:
                     break;
