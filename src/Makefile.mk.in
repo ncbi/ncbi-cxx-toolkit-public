@@ -101,6 +101,12 @@ LIBS     = $(CONF_LIBS)
 
 
 #################################
+# Some platform-specific system libs that can be linked eventually
+THREAD_LIBS  = @THREAD_LIBS@
+NETWORK_LIBS = @NETWORK_LIBS@
+
+
+#################################
 # Optional variables that may be needed to build some projects
 # (see in "configure.in" for the pre-set defaults)
 #
@@ -113,5 +119,8 @@ NCBI_C_INCLUDE = @NCBI_C_INCLUDE@
 # Path to the precompiled NCBI C toolkit libs
 NCBI_C_LIB = @NCBI_C_LIB@
 
+# Fast-CGI lib(external) and C++ modules(internal)
+FASTCGI_LIBS = @FASTCGI_LIBS@
+FASTCGI_OBJS = @FASTCGI_OBJS@
 
 #################################
