@@ -80,52 +80,16 @@ void CLocusItem::Format
 }
 
 
-const string& CLocusItem::GetName(void) const
-{
-    return m_Name;
-}
-
-
-size_t CLocusItem::GetLength(void) const
-{
-    return m_Length;
-}
-
-
-CLocusItem::TStrand CLocusItem::GetStrand(void) const
-{
-    return m_Strand;
-}
-
-
-CLocusItem::TBiomol CLocusItem::GetBiomol(void) const
-{
-    return m_Biomol;
-}
-
-
-CLocusItem::TTopology CLocusItem::GetTopology (void) const
-{
-    return m_Topology;
-}
-
-
-const string& CLocusItem::GetDivision(void) const
-{
-    return m_Division;
-}
-
-
-const string& CLocusItem::GetDate(void) const
-{
-    return m_Date;
-}
-
-
 /***************************************************************************/
 /*                                  PRIVATE                                */
 /***************************************************************************/
 
+
+static bool s_IsGenomeView(const CBioseqContext& ctx)
+{
+    return ((ctx.IsSegmented()  &&  !ctx.HasParts())  ||
+        (ctx.IsDelta()  &&  !ctx.IsDeltaLitOnly()));
+}
 
 void CLocusItem::x_GatherInfo(CBioseqContext& ctx)
 {
@@ -147,17 +111,80 @@ void CLocusItem::x_GatherInfo(CBioseqContext& ctx)
 
 // Name
 
+
+static bool s_IsSeperatorNeeded(const string& basename, size_t suffix_len)
+{
+    // This first check put here to emulate what may be a bug in the original
+    // code which adds an 'S' segment seperator only if it DOES make the
+    // string longer than the max.
+
+    if (basename.length() + suffix_len < 16) {
+        return false;
+    }
+
+    char last = basename[basename.length() - 1];
+    char next_to_last = basename[basename.length() - 2];
+
+    // If the last character is not a digit then don't use a seperator.
+    if (!isdigit(last)) {
+        return false;
+    }
+
+    // If the last two characters are a non-digit followed by a '0',
+    // then don't use seperator.
+    if ((last == '0')  &&  (!isdigit(next_to_last))) {
+        return false;
+    }
+
+    // If we made it to here, use a seperator
+    return true;
+}
+
+
+static void s_AddLocusSuffix(string &basename, CBioseqContext& ctx)
+{
+    size_t numsegs = ctx.GetMaster().GetNumParts();
+    // If there's one or less segments, no suffix is needed.
+    if (numsegs <= 1) {
+        return;
+    }
+    // If the basestring has one or less characters, no suffix is needed.
+    if (basename.length() <= 1) {
+        return;
+    }
+
+    // Add the suffix
+    CNcbiOstrstream locus;
+    locus << basename;
+
+    size_t suffix_len = NStr::IntToString(numsegs).length();
+
+    if (s_IsSeperatorNeeded(basename, suffix_len)) {
+        locus << 'S';
+    }
+    locus << setfill('0') << setw(suffix_len) << ctx.GetPartNumber();
+    basename = CNcbiOstrstreamToString(locus);
+}
+
+
 void CLocusItem::x_SetName(CBioseqContext& ctx)
 {
     CBioseq_Handle::TBioseqCore seq  = ctx.GetHandle().GetBioseqCore();
 
-    CConstRef<CSeq_id> id = FindBestChoice(seq->GetId(), CSeq_id::Score);
-    const CTextseq_id* tsid = id->GetTextseq_Id();
-    if ( tsid  &&  tsid->CanGetName() ) {
-        m_Name = tsid->GetName();
-    }
-    if ( m_Name.empty()  ||  x_NameHasBadChars(m_Name) ) {
-        m_Name = id->GetSeqIdString();
+    if (ctx.IsPart()) {
+        m_Name = ctx.GetMaster().GetBaseName();
+        if (!m_Name.empty()) {
+            s_AddLocusSuffix(m_Name, ctx);
+        }
+    } else {
+        CConstRef<CSeq_id> id = FindBestChoice(seq->GetId(), CSeq_id::Score);
+        const CTextseq_id* tsid = id->GetTextseq_Id();
+        if ( tsid  &&  tsid->CanGetName() ) {
+            m_Name = tsid->GetName();
+        }
+        if (m_Name.empty()  ||  x_NameHasBadChars(m_Name)) {
+            m_Name = id->GetSeqIdString();
+        }
     }
 }
 
@@ -275,8 +302,7 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
         return;
     }
     // "genome view" forces CON division
-    if ( (ctx.IsSegmented()  &&  !ctx.HasParts())  ||
-         (ctx.IsDelta()  &&  !ctx.IsDeltaLitOnly()) ) {
+    if (s_IsGenomeView(ctx)){
         m_Division = "CON";
         return;
     }
@@ -356,7 +382,10 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
             break;
         }
 
-        if ( origin == CBioSource::eOrigin_synthetic  ||  is_transgenic ) {
+        if ( origin == CBioSource::eOrigin_synthetic   ||
+             origin == CBioSource::eOrigin_mut         ||
+             origin == CBioSource::eOrigin_artificial  ||
+             is_transgenic ) {
             m_Division = "SYN";
         }
 
@@ -528,6 +557,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/08/19 16:35:03  shomrat
+* Fixed locus name
+*
 * Revision 1.9  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
