@@ -408,6 +408,20 @@ static streamsize s_Readsome(CNcbiIstream& is,
     // Special case: GCC had no readsome() prior to ver 3.0;
     // read() will set "eof" (and "fail") flag if gcount() < buf_size
     streamsize avail = is.rdbuf()->in_avail();
+    if ( !avail ) {
+#ifdef NCBI_COMPILER_GCC
+        CGCC_ShowmanycStreambuf* sb
+            = dynamic_cast<CGCC_ShowmanycStreambuf*>(is.rdbuf());
+#else
+        CNcbiStreambuf* sb = is.rdbuf();
+#endif
+        if (sb) {
+            avail = sb->showmanyc(); // may be an underestimate
+            if ( !avail ) {
+                return 0; // would block
+            }
+        }
+    }
     if (avail  &&  avail < buf_size)
         buf_size = avail;
     is.read(buf, buf_size);
@@ -458,6 +472,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.33  2003/12/18 03:44:29  ucko
+ * s_Readsome(): If in_avail() and showmanyc() both return 0, do likewise
+ * rather than potentially blocking.
+ *
  * Revision 1.32  2003/11/21 19:58:47  lavr
  * x_FillBuffer() not to have default parameter: crucial in underflow()
  *
