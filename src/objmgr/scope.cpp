@@ -713,7 +713,7 @@ CScope_Impl::x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
                               CSeqMatch_Info& match_info)
 {
     // skip already matched CDataSource
-    if ( match_info && 
+    if ( match_info &&
          &match_info.GetDataSource() == &ds_info.GetDataSource() ) {
         return 0;
     }
@@ -730,6 +730,15 @@ CScope_Impl::x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
                     CSeqMatch_Info new_info(idh, **tse_it);
                     // Both are in the history -
                     // can not resolve the conflict
+                    if (&info.GetDataSource() == &new_info.GetDataSource()) {
+                        CSeqMatch_Info* best_info =
+                            info.GetDataSource().ResolveConflict(
+                                idh, info, new_info);
+                        if (best_info) {
+                            info = *best_info;
+                            continue;
+                        }
+                    }
                     x_ThrowConflict(eConflict_History, info, new_info);
                 }
                 info = CSeqMatch_Info(idh, **tse_it);
@@ -1059,6 +1068,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2003/12/12 16:59:51  grichenk
+* Fixed conflicts resolving (ask data source).
+*
 * Revision 1.92  2003/12/03 20:55:12  grichenk
 * Check value returned by x_GetBioseq_Info()
 *
