@@ -214,6 +214,8 @@ void CDemoApp::Init(void)
                              "exclude features from named Seq-annots"
                              "(comma separated list)",
                              CArgDescriptions::eString);
+    arg_desc->AddFlag("noexternal",
+                      "include external annotations");
     arg_desc->AddOptionalKey("feat_type", "FeatType",
                              "Type of features to select",
                              CArgDescriptions::eString);
@@ -346,6 +348,7 @@ int CDemoApp::Run(void)
     bool nosnp = args["nosnp"];
     bool include_unnamed = args["unnamed"];
     bool include_allnamed = args["allnamed"];
+    bool noexternal = args["noexternal"];
     bool whole_tse = args["whole_tse"];
     bool whole_sequence = args["whole_sequence"];
     bool used_memory_check = args["used_memory_check"];
@@ -726,6 +729,9 @@ int CDemoApp::Run(void)
         ITERATE ( set<string>, it, exclude_named ) {
             base_sel.ExcludeNamedAnnots(*it);
         }
+        if ( noexternal ) {
+            base_sel.SetExcludeExternal();
+        }
         string sel_msg = "any";
         if ( feat_type != CSeqFeatData::e_not_set ) {
             base_sel.SetFeatType(feat_type);
@@ -1038,6 +1044,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.96  2005/01/05 18:58:41  vasilche
+* Added -noexternal option.
+*
 * Revision 1.95  2004/12/23 17:01:45  grichenk
 * Use BDB_CACHE_LIB and HAVE_BDB_CACHE
 *
