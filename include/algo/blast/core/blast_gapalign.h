@@ -43,6 +43,7 @@ Contents: Structures and functions prototypes used for BLAST gapped extension
 #include <blast_extend.h>
 #include <gapxdrop.h>
 #include <mbalign.h>
+#include <readdb.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,6 +59,63 @@ extern "C" {
 #define MIN_NEIGHBOR_PERC_IDENTITY 96
 
 #define MAX_DBSEQ_LEN 5000000
+
+/* One sequence segment within an HSP */
+typedef struct BlastSeg {
+   Int2 frame;  /**< Translation frame */
+   Int4 offset; /**< Start of hsp */
+   Int4 length; /**< Length of hsp */
+   Int4 end;    /**< End of HSP */
+   Int4 offset_trim; /**< Start of trimmed hsp */
+   Int4 end_trim;    /**< End of trimmed HSP */
+   Int4 gapped_start;/**< Where the gapped extension started. */
+} BlastSeg, PNTR BlastSegPtr;
+
+/** BLAST_NUMBER_OF_ORDERING_METHODS tells how many methods are used
+ * to "order" the HSP's.
+*/
+#define BLAST_NUMBER_OF_ORDERING_METHODS 2
+
+/** The following structure is used in "link_hsps" to decide between
+ * two different "gapping" models.  Here link is used to hook up
+ * a chain of HSP's (this is a VoidPtr as _blast_hsp is not yet
+ * defined), num is the number of links, and sum is the sum score.
+ * Once the best gapping model has been found, this information is
+ * transferred up to the BlastHSP.  This structure should not be
+ * used outside of the function link_hsps.
+*/
+typedef struct BlastHSPLink {
+   VoidPtr link[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Used to order the HSPs
+                                           (i.e., hook-up w/o overlapping). */
+   Int2 num[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< number of HSP in the
+                                                  ordering. */
+   Int4 sum[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Sum-Score of HSP. */
+   Nlm_FloatHi xsum[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Sum-Score of HSP,
+                                     multiplied by the appropriate Lambda. */
+   Int4 changed;
+} BlastHSPLink, PNTR BlastHSPLinkPtr;
+
+/** Structure holding all information about an HSP */
+typedef struct BlastHSP {
+   struct BlastHSP PNTR next; /**< The next HSP */
+   struct BlastHSP PNTR prev; /**< The previous HSP. */
+   BlastHSPLink  hsp_link;
+   Boolean linked_set;        /**< Is this HSp part of a linked set? */
+   Int2 ordering_method;/**< Which method (max or no max for gaps) was used? */
+   Int4 num;            /**< How many HSP's make up this (sum) segment */
+   BLAST_Score sumscore;/**< Sumscore of a set of "linked" HSP's. */
+   Boolean start_of_chain; /**< If TRUE, this HSP starts a chain along the
+                              "link" pointer. */
+   BLAST_Score score;         /**< This HSP's raw score */
+   Int4 num_ident;         /**< Number of identical base pairs in this HSP */
+   Nlm_FloatHi evalue;        /**< This HSP's e-value */
+   BlastSeg query;            /**< Query sequence info. */
+   BlastSeg subject;          /**< Subject sequence info. */
+   Int2     context;          /**< Context number of query */
+   GapXEditBlockPtr gap_info; /**< ALL gapped alignment is here */
+   Int4 num_ref;              /**< Number of references in the linked set */
+   Int4 linked_to;            /**< Where this HSP is linked to? */
+} BlastHSP, PNTR BlastHSPPtr;
 
 /** Auxiliary structure for dynamic programming gapped extension */
 typedef struct BlastGapDP {
