@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/03/20 22:14:08  lavr
+ * Second test added to list service by server type (yet #if 0'ed out)
+ *
  * Revision 6.5  2001/03/09 04:58:26  lavr
  * Typo (made of pretty styling by vakatov) corrected in comparison
  *
@@ -79,6 +82,24 @@ int main(int argc, const char* argv[])
         CORE_LOGF(eLOG_Note, ("Test complete: %d server(s) found", n_found));
     else
         CORE_LOG(eLOG_Fatal, "Requested service not found");
+
+#if 0
+    {{
+        SConnNetInfo* net_info;
+        net_info = ConnNetInfo_Create(service);
+        iter = SERV_Open(service, fSERV_Http, SERV_LOCALHOST, net_info);
+        ConnNetInfo_Destroy(net_info);
+    }}
+
+    if (iter != 0) {
+        while ((info = SERV_GetNextInfo(iter)) != 0) {
+            char* info_str = SERV_WriteInfo(info);
+            CORE_LOGF(eLOG_Note, ("Service `%s' = %s", service, info_str));
+            n_found++;
+        }
+        SERV_Close(iter);
+    }
+#endif
 
     return 0;
 }
