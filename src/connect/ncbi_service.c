@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/10/05 22:36:21  lavr
+ * Additional parameters in call to DISPD mapper
+ *
  * Revision 6.4  2000/05/31 23:12:23  lavr
  * First try to assemble things together to get working service mapper
  *
@@ -56,14 +59,14 @@
 
 SERV_ITER SERV_OpenSimple(const char* service)
 {
-    return SERV_OpenEx(service, 0, 0, 0, 0);
+    return SERV_OpenEx(service, 0, 0, 0, 0, 0);
 }
 
 
 SERV_ITER SERV_Open(const char* service, TSERV_Type type,
-                    unsigned int preferred_host)
+                    unsigned int preferred_host, SConnNetInfo *info)
 {
-    return SERV_OpenEx(service, type, preferred_host, 0, 0);
+    return SERV_OpenEx(service, type, preferred_host, info, 0, 0);
 }
 
 
@@ -90,7 +93,7 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info *info)
 
 
 SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
-                      unsigned int preferred_host,
+                      unsigned int preferred_host, SConnNetInfo *info,
                       const SSERV_Info **skip, size_t n_skip)
 {
     size_t i;
@@ -106,6 +109,7 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
     iter->preferred_host = preferred_host;
     iter->skip = 0;
     iter->n_skip = iter->n_max_skip = 0;
+    iter->data = 0;
 
     for (i = 0; i < n_skip; i++) {
         size_t infolen = SERV_SizeOfInfo(skip[i]);
@@ -123,11 +127,19 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
     }
     assert(n_skip == iter->n_skip);
 
-    if (!(op = SERV_LBSMD_Open(iter)) && !(op = SERV_DISPD_Open(iter))) {
+    if (!info && !(op = SERV_LBSMD_Open(iter))) {
+        /* LBSMD failed in non-DISPD mapping */
         SERV_Close(iter);
         return 0;
     }
-    
+
+    if (info && (info->lb_disable || !(op = SERV_LBSMD_Open(iter))) &&
+        !(op = SERV_DISPD_Open(iter, info))) {
+        SERV_Close(iter);
+        return 0;
+    }
+
+    assert(op != 0);
     iter->op = op;
     return iter;
 }

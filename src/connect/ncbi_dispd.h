@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/10/05 22:36:21  lavr
+ * Additional parameters in call to DISPD mapper
+ *
  * Revision 6.2  2000/05/22 16:53:13  lavr
  * Rename service_info -> server_info everywhere (including
  * file names) as the latter name is more relevant
@@ -44,6 +47,7 @@
  * ==========================================================================
  */
 
+#include <connect/ncbi_connutil.h>
 #include "ncbi_servicep.h"
 
 #ifdef __cplusplus
@@ -51,7 +55,7 @@ extern "C" {
 #endif
 
 
-const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter);
+const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter, SConnNetInfo *info);
 
 
 #ifdef __cplusplus
