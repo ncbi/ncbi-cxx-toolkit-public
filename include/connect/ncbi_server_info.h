@@ -39,6 +39,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2001/03/06 23:52:57  lavr
+ * SERV_ReadInfo can now consume either hostname or IP address
+ *
  * Revision 6.16  2001/03/05 23:09:20  lavr
  * SERV_WriteInfo & SERV_ReadInfo both take only one argument now
  *
@@ -213,7 +216,8 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *
  * TYPE := { STANDALONE | NCBID | HTTP | HTTP_GET | HTTP_POST }
  *
- * Host should be specified in a dotted notation as an IP address.
+ * Host should be specified as either an IP address (in dotted notation),
+ * or as a host name (using domain notation if necessary).
  * Port number must be preceded by a colon.
  * Both host and port get their default values if not specified.
  *

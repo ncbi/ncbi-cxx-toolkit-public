@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2001/03/06 23:53:07  lavr
+ * SERV_ReadInfo can now consume either hostname or IP address
+ *
  * Revision 6.22  2001/03/05 23:10:11  lavr
  * SERV_WriteInfo & SERV_ReadInfo both take only one argument now
  *
@@ -116,6 +119,9 @@
 
 
 #define MAX_IP_ADDR_LEN 16 /* sizeof("255.255.255.255") */
+#ifndef MAXHOSTNAMELEN
+#define MAXHOSTNAMELEN 64
+#endif
 
 
 /*****************************************************************************
@@ -184,27 +190,33 @@ const char* SERV_ReadType(const char* str, ESERV_Type* type)
 static const char* s_Read_HostPort(const char* str,
                                    unsigned int* host, unsigned short* port)
 {
-    const char *s = strchr(str, ':');
-    char abuf[MAX_IP_ADDR_LEN];
-    unsigned short p = 0;
-    unsigned int h = 0;
+    char abuf[MAXHOSTNAMELEN];
+    unsigned short p;
+    unsigned int h;
+    const char* s;
     size_t alen;
     int n = 0;
 
-    if (!s && !(s = strchr(str, ' ')))
-        return str;
+    *host = 0;
+    *port = 0;
+    for (s = str; *s; s++) {
+        if (isspace((unsigned int)(*s)) || *s == ':')
+            break;
+    }
     if ((alen = (size_t)(s - str)) > sizeof(abuf) - 1)
         return str;
     if (alen) {
         strncpy(abuf, str, alen);
         abuf[alen] = '\0';
-        if (strchr(abuf, ' ') || !(h = SOCK_gethostaddr(abuf)))
+        if (!(h = SOCK_gethostbyname(abuf)))
             return str;
-    }
+    } else
+        h = 0;
     if (*s == ':') {
         if (sscanf(++s, "%hu%n", &p, &n) < 1)
-            return str;
-    }
+            return h || s == str ? 0 : str;
+    } else
+        p = 0;
     *host = h;
     *port = p;
     return s + n;
