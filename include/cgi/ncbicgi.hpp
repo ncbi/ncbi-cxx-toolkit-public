@@ -599,14 +599,23 @@ private:
 };  // CCgiRequest
 
 
+// URL encode flags
+enum EUrlEncode {
+    eUrlEncode_SkipMarkChars,
+    eUrlEncode_ProcessMarkChars
+};
 
 // Decode the URL-encoded string "str";  return the result of decoding
 // If "str" format is invalid then throw CParseException
 extern string URL_DecodeString(const string& str);
 
 
-// URL-encode regular string "str";  return the result of encoding
-extern string URL_EncodeString(const string& str);
+// URL-encode a string "str" to the "x-www-form-urlencoded" form;
+// return the result of encoding. If 
+extern string URL_EncodeString
+    (const      string& str,
+     EUrlEncode encode_mark_chars = eUrlEncode_SkipMarkChars
+     );
 
 
 /* @} */
@@ -741,6 +750,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.62  2003/07/08 19:03:59  ivanov
+* Added optional parameter to the URL_Encode() to enable mark charactres encoding
+*
 * Revision 1.61  2003/04/16 21:48:17  vakatov
 * Slightly improved logging format, and some minor coding style fixes.
 *
