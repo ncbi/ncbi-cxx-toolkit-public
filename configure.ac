@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.178 2003/04/01 20:59:32 ucko Exp $
+#  $Id: configure.ac,v 1.179 2003/04/17 18:52:05 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -161,6 +161,10 @@ AC_ARG_WITH(wxwin2,
    [ --with-wxwin=DIR        use wxWindows installation in DIR])
 AC_ARG_WITH(fastcgi,
    [ --without-fastcgi       do not use Fast-CGI library])
+AC_ARG_WITH(fastcgi2,
+   [ --with-fastcgi=VERSION  use Fast-CGI installation in \$NCBI/fcgi-VERSION])
+AC_ARG_WITH(fastcgi3,
+   [ --with-fastcgi=DIR      use Fast-CGI installation in DIR])
 AC_ARG_WITH(sp,
    [ --without-sp            do not use SP libraries])
 AC_ARG_WITH(orbacus,
@@ -234,7 +238,7 @@ for x_arg in "$@" ; do
       | --cache-file=* | --build=* | --host=* \
       | [[A-Z]*=*] \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
-      | --with-ftds=* | --with-mysql=* | --with-fltk=* \
+      | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -2429,7 +2433,11 @@ fi
 
 ## In-house Fast-CGI library
 if test "$with_fastcgi" != "no" ; then
-   FASTCGI_PATH=${FASTCGI_PATH:="$NCBI/fcgi-current"}
+   case "$with_fastcgi" in
+      yes | "" ) : ${FASTCGI_PATH:="$NCBI/fcgi-current"} ;;
+      */*      ) FASTCGI_PATH=$with_fastcgi              ;;
+      *        ) FASTCGI_PATH=$NCBI/fcgi-${with_fastcgi} ;;
+   esac
    FASTCGI_INCLUDE="-I$FASTCGI_PATH/include${bit64_sfx}"
    if test "$with_debug" = "no" ; then
       FASTCGI_LIBS="-L$FASTCGI_PATH/lib${bit64_sfx} -lfcgi $NETWORK_LIBS"
