@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.131  2002/04/25 17:48:59  thiessen
+* fix bitmap->image conversion
+*
 * Revision 1.130  2002/04/09 23:59:09  thiessen
 * add cdd annotations read-only option
 *
@@ -2179,7 +2182,7 @@ bool Cn3DGLCanvas::MeasureText(const std::string& text, int *width, int *height,
     memoryDC.EndDrawing();
 
     // then convert bitmap to image so that we can read individual pixels (ugh...)
-    wxImage image(memoryBitmap);
+    wxImage image(memoryBitmap.ConvertToImage());
 //    wxInitAllImageHandlers();
 //    image.SaveFile("text.png", wxBITMAP_TYPE_PNG); // for testing
 
