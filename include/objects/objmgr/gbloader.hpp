@@ -48,7 +48,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-#if !defined(NDEBUG) // && defined(DEBUG_SYNC)
+#if !defined(NDEBUG) && defined(DEBUG_SYNC)
 #if defined(_REENTRANT)
 #define GBLOG_POST(x) LOG_POST(CThread::GetSelf() << ":: " << x)
 #else
@@ -243,6 +243,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.14  2002/04/09 15:53:42  kimelman
+ * turn off debug messages
+ *
  * Revision 1.13  2002/04/08 23:09:23  vakatov
  * CMutexPool::Select()  -- fixed for 64-bit compilation
  *
