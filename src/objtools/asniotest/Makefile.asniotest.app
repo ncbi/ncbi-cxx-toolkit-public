@@ -24,4 +24,4 @@ LIB = \
 
 CHECK_CMD =
 # Must keep on a single line!
-CHECK_COPY = 1doi.bin ADF.bin badAtom.txt badMSP.txt goodAtom.txt goodColor.txt goodGID.txt goodMSP.txt goodRC.txt pdbSeqId.txt
+CHECK_COPY = 1doi.bin ADF.bin badAtom.txt badMSP.txt goodAtom.txt goodColor.txt goodGID.txt goodMSP.txt goodRC.txt pdbSeqId.txt userObject.txt
