@@ -44,6 +44,8 @@ BlastDiagnostics* Blast_DiagnosticsFree(BlastDiagnostics* diagnostics)
       sfree(diagnostics->ungapped_stat);
       sfree(diagnostics->gapped_stat);
       sfree(diagnostics->cutoffs);
+      if (diagnostics->mt_lock)
+         diagnostics->mt_lock = MT_LOCK_Delete(diagnostics->mt_lock);
       sfree(diagnostics);
    }
    return NULL;
@@ -64,6 +66,14 @@ BlastDiagnostics* Blast_DiagnosticsInit()
    return diagnostics;
 }
 
+BlastDiagnostics* Blast_DiagnosticsInitMT(MT_LOCK mt_lock)
+{
+   BlastDiagnostics* retval = Blast_DiagnosticsInit();
+   retval->mt_lock = mt_lock;
+
+   return retval;
+}
+
 void Blast_UngappedStatsUpdate(BlastUngappedStats* ungapped_stats, 
                                Int4 total_hits, Int4 extended_hits,
                                Int4 saved_hits)
@@ -77,4 +87,47 @@ void Blast_UngappedStatsUpdate(BlastUngappedStats* ungapped_stats,
    ungapped_stats->good_init_extends += saved_hits;
    if (saved_hits > 0)
       ++ungapped_stats->num_seqs_passed;
+}
+
+void 
+Blast_DiagnosticsUpdate(BlastDiagnostics* global, BlastDiagnostics* local)
+{
+   if (global->mt_lock) 
+      MT_LOCK_Do(global->mt_lock, eMT_Lock);
+
+   if (global->ungapped_stat && local->ungapped_stat) {
+      global->ungapped_stat->lookup_hits += 
+         local->ungapped_stat->lookup_hits;
+      global->ungapped_stat->num_seqs_lookup_hits += 
+         local->ungapped_stat->num_seqs_lookup_hits;
+      global->ungapped_stat->init_extends += 
+         local->ungapped_stat->init_extends;
+      global->ungapped_stat->good_init_extends += 
+         local->ungapped_stat->good_init_extends;
+      global->ungapped_stat->num_seqs_passed += 
+         local->ungapped_stat->num_seqs_passed;
+   }
+
+   if (global->gapped_stat && local->gapped_stat) {
+      global->gapped_stat->seqs_ungapped_passed += 
+         local->gapped_stat->seqs_ungapped_passed;
+      global->gapped_stat->extra_extensions += 
+         local->gapped_stat->extra_extensions;
+      global->gapped_stat->extensions += 
+         local->gapped_stat->extensions;
+      global->gapped_stat->good_extensions += 
+         local->gapped_stat->good_extensions;
+      global->gapped_stat->num_seqs_passed += 
+         local->gapped_stat->num_seqs_passed;
+   }
+
+   if (global->cutoffs && local->cutoffs) {
+      global->cutoffs->x_drop_ungapped = local->cutoffs->x_drop_ungapped;
+      global->cutoffs->x_drop_gap = local->cutoffs->x_drop_gap;
+      global->cutoffs->x_drop_gap_final = local->cutoffs->x_drop_gap_final;
+      global->cutoffs->gap_trigger = local->cutoffs->gap_trigger;
+   }
+
+   if (global->mt_lock) 
+      MT_LOCK_Do(global->mt_lock, eMT_Unlock);
 }
