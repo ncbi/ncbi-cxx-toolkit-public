@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/05/06 23:02:40  vakatov
+* Use the new(template-based, std::) stream library by default
+*
 * Revision 1.4  1998/12/30 23:15:11  vakatov
 * [NCBI_USE_NEW_IOSTREAM] NcbiGetline() -- use "smart" getline()
 *
@@ -57,7 +60,7 @@ BEGIN_NCBI_SCOPE
 
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 {
-#if defined(NCBI_USE_NEW_IOSTREAM)
+#if !defined(NCBI_USE_OLD_IOSTREAM)
     return getline(is, str, delim);
 #else
     int ch;
@@ -86,7 +89,7 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 
     is.isfx();
     return is;
-#endif /* NCBI_USE_NEW_IOSTREAM */
+#endif /* ndef!else NCBI_USE_OLD_IOSTREAM */
 }
 
 
@@ -95,7 +98,7 @@ END_NCBI_SCOPE
 
 
 // See in the header why it's outside the NCBI scope(SunPro bug workaround...)
-#if !defined(NCBI_USE_NEW_IOSTREAM)
+#if defined(NCBI_USE_OLD_IOSTREAM)
 extern NCBI_NS_NCBI::CNcbiOstream& operator<<(NCBI_NS_NCBI::CNcbiOstream& os,
                                               const NCBI_NS_STD::string& str)
 {
@@ -132,5 +135,5 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
     is.width(0);
     return is;
 }
-#endif  /* ndef NCBI_USE_NEW_IOSTREAM */
+#endif  /* NCBI_USE_OLD_IOSTREAM */
 

@@ -34,6 +34,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/05/06 23:02:38  vakatov
+* Use the new(template-based, std::) stream library by default
+*
 * Revision 1.11  1998/12/28 17:56:29  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -61,29 +64,14 @@
 
 
 // Determine which iostream library to use, include appropriate
-// headers, and #define specific preprocessor variables
-#if !defined(HAVE_IOSTREAM_H)
-#  define NCBI_USE_NEW_IOSTREAM
+// headers, and #define specific preprocessor variables.
+// The default is the new(template-based, std::) one.
+
+#if !defined(HAVE_IOSTREAM)  &&  !defined(NCBI_USE_OLD_IOSTREAM)
+#  define NCBI_USE_OLD_IOSTREAM
 #endif
 
-#if defined(HAVE_IOSTREAM)  &&  defined(NCBI_USE_NEW_IOSTREAM)
-#  include <iostream>
-#  include <fstream>
-#  include <strstream>
-#  include <iomanip>
-#  if defined(NCBI_NO_NAMESPACE)
-#    define IO_PREFIX
-#  else
-#    define IO_PREFIX  NCBI_NS_STD
-#  endif
-#  define IOS_BASE    IO_PREFIX::ios_base
-#  define IOS_PREFIX  IO_PREFIX::ios
-#  define SEEKOFF     pubseekoff
-
-#elif defined(HAVE_IOSTREAM_H)
-#  if defined(NCBI_USE_NEW_IOSTREAM)
-#    undef NCBI_USE_NEW_IOSTREAM
-#  endif
+#if defined(HAVE_IOSTREAM_H)  &&  defined(NCBI_USE_OLD_IOSTREAM)
 #  include <iostream.h>
 #  include <fstream.h>
 #  if defined(HAVE_STRSTREA_H)
@@ -96,6 +84,23 @@
 #  define IOS_BASE   ::ios
 #  define IOS_PREFIX ::ios
 #  define SEEKOFF    seekoff
+
+#elif defined(HAVE_IOSTREAM)
+#  if defined(NCBI_USE_OLD_IOSTREAM)
+#    undef NCBI_USE_OLD_IOSTREAM
+#  endif
+#  include <iostream>
+#  include <fstream>
+#  include <strstream>
+#  include <iomanip>
+#  if defined(NCBI_NO_NAMESPACE)
+#    define IO_PREFIX
+#  else
+#    define IO_PREFIX  NCBI_NS_STD
+#  endif
+#  define IOS_BASE    IO_PREFIX::ios_base
+#  define IOS_PREFIX  IO_PREFIX::ios
+#  define SEEKOFF     pubseekoff
 
 #else
 #  error "Cannot find neither <iostream> nor <iostream.h>!"
@@ -168,7 +173,7 @@ END_NCBI_SCOPE
 // Provide formatted I/O of standard C++ "string" by "old-fashioned" IOSTREAMs
 // NOTE:  these must have been inside the _NCBI_SCOPE and without the
 //        "ncbi::" and "std::" prefixes, but there is some bug in SunPro 5.0...
-#if !defined(NCBI_USE_NEW_IOSTREAM)
+#if defined(NCBI_USE_OLD_IOSTREAM)
 extern NCBI_NS_NCBI::CNcbiOstream& operator<<(NCBI_NS_NCBI::CNcbiOstream& os,
                                               const NCBI_NS_STD::string& str);
 extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
