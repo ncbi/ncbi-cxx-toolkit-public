@@ -520,7 +520,7 @@ static void s_TEST_BDB_IdTable_FillStress(void)
 
     }}
 
-    env.Remove();
+    env.CheckRemove();
 
     cout << "======== Id table stress filling test ok." << endl;
 
@@ -1796,7 +1796,12 @@ static void s_TEST_ICache(void)
     CBDB_Cache  bdb_cache;
     int top = bdb_cache.GetTimeStampPolicy();
     bdb_cache.SetTimeStampPolicy(top, 30);
-    bdb_cache.Open(".", "bcache", CBDB_Cache::eNoLock, 1024*1024 * 100);
+    bdb_cache.Open("cache", "bcache", CBDB_Cache::ePidLock, 1024*1024 * 100);
+    {{
+    CBDB_Cache  bdb_cache2;
+    bdb_cache2.Open("cache", "bcache", CBDB_Cache::ePidLock, 1024*1024 * 100);
+
+    }}
 
     bdb_cache.Store("test_key1", 1, "", dp, data.size() * sizeof(int));
 
@@ -1844,7 +1849,6 @@ static void s_TEST_ICache(void)
     bdb_cache.Store("test_key11", 1, "", dp, data.size() * sizeof(int));
     sz = bdb_cache.GetSize("test_key11", 1, "");
     assert(sz == 0);
-
 }
 
 
@@ -1914,6 +1918,7 @@ int CBDB_Test::Run(void)
 
         s_TEST_BDB_IdTable_FillStress();
 
+
     }
     catch (CBDB_ErrnoException& ex)
     {
@@ -1946,6 +1951,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2004/08/24 14:08:29  kuznets
+ * Cache test improved
+ *
  * Revision 1.50  2004/08/13 11:51:16  kuznets
  * Stress test improvements
  *
