@@ -1,4 +1,4 @@
---$Revision: 6.1 $
+--$Revision: 6.2 $
 --*********************************************************
 --
 -- ASN.1 and XML for the components of a GenBank format sequence
@@ -152,6 +152,8 @@ GBSeq ::= SEQUENCE {
 		name VisibleString ,
 		value VisibleString OPTIONAL }
 
+
+	GBSet ::= SEQUENCE OF GBSeq
 		
 END
 
