@@ -1,3 +1,6 @@
+#ifndef ALGO_PHY_TREE___PHY_TREE_SERIAL__HPP
+#define ALGO_PHY_TREE___PHY_TREE_SERIAL__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -31,23 +34,27 @@
  */
 
 
-#ifndef ALGO_PHY_TREE___PHY_TREE_SERIAL__HPP
-#define ALGO_PHY_TREE___PHY_TREE_SERIAL__HPP
-
 #include <algo/phy_tree/phy_node.hpp>
 #include <serial/serialimpl.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CPhyTreeSerial : public CSerialObject
+class NCBI_XALGOPHYTREE_EXPORT CPhyTreeSerial : public CSerialObject
 {
 public:
-    CPhyTreeSerial(void) {};
-    CPhyTreeSerial(const TPhyTreeNode& val) : m_Tree(val) {};
-    const TPhyTreeNode& GetTree(void) const {return m_Tree;};
-    TPhyTreeNode& SetTree(void) {return m_Tree;};
-    void SetTree(const TPhyTreeNode& val) {m_Tree = val;};
+    CPhyTreeSerial(void) {}
+
+    CPhyTreeSerial(const TPhyTreeNode& val)
+        : m_Tree(val) {}
+
+    const TPhyTreeNode& GetTree(void) const {return m_Tree;}
+
+    TPhyTreeNode& SetTree(void) {return m_Tree;}
+
+    void SetTree(const TPhyTreeNode& val) {m_Tree = val;}
+
     DECLARE_INTERNAL_TYPE_INFO();
+
 private:
     TPhyTreeNode m_Tree;
 };
@@ -55,15 +62,18 @@ private:
 END_NCBI_SCOPE
 
 
-#endif  // ALGO_PHY_TREE___PHY_TREE_SERIAL__HPP
-
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/10 17:02:29  dicuccio
+ * Formatting changes.  Added export specifiers
+ *
  * Revision 1.1  2004/02/10 15:15:57  jcherry
  * Initial version
  *
  * ===========================================================================
  */
 
+
+#endif  // ALGO_PHY_TREE___PHY_TREE_SERIAL__HPP

@@ -1,3 +1,6 @@
+#ifndef ALGO_PHY_TREE___PHY_NODE__HPP
+#define ALGO_PHY_TREE___PHY_NODE__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -31,9 +34,6 @@
  */
 
 
-#ifndef ALGO_PHY_TREE___PHY_NODE__HPP
-#define ALGO_PHY_TREE___PHY_NODE__HPP
-
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_tree.hpp>
 
@@ -45,22 +45,30 @@ BEGIN_NCBI_SCOPE
 /// Distance may not be set; IsSetDist() reports whether it is.
 /// id == -1 indicates that the id is not set.
 
-class CPhyNodeData
+class NCBI_XALGOPHYTREE_EXPORT CPhyNodeData
 {
 public:
-    CPhyNodeData(void) : m_Id(-1), m_DistSet(false) {};
-    int GetId(void) const {return m_Id;};
-    void SetId(int id) {m_Id = id;};
+    CPhyNodeData(void)
+        : m_Id(-1), m_DistSet(false)
+    {
+    }
+
+    int GetId(void) const {return m_Id;}
+
+    void SetId(int id) {m_Id = id;}
+
     /// Is the distance set?
-    bool IsSetDist(void) const {return m_DistSet;};
+    bool IsSetDist(void) const {return m_DistSet;}
+
     /// Return the distance; does NOT check whether it's really set.
-    double GetDist(void) const {return m_Dist;};
-    void SetDist(double dist) {m_Dist = dist; m_DistSet = true;};
+    double GetDist(void) const {return m_Dist;}
+    void SetDist(double dist) {m_Dist = dist; m_DistSet = true;}
+
     /// Make it no longer set.
-    void ResetDist(void) {m_DistSet = false; m_Dist = 0;};
-    const string& GetLabel(void) const {return m_Label;};
-    void SetLabel(const string& label) {m_Label = label;};
-    string& SetLabel(void) {return m_Label;};
+    void ResetDist(void) {m_DistSet = false; m_Dist = 0;}
+    const string& GetLabel(void) const {return m_Label;}
+    void SetLabel(const string& label) {m_Label = label;}
+    string& SetLabel(void) {return m_Label;}
 
 private:
     int m_Id;
@@ -73,22 +81,28 @@ private:
 typedef CTreeNode<CPhyNodeData> TPhyTreeNode;
 
 /// Newick format output
+NCBI_XALGOPHYTREE_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& os, const TPhyTreeNode& tree);
+
 /// Newick but without the terminal ';'
+NCBI_XALGOPHYTREE_EXPORT
 void PrintNode(CNcbiOstream& os, const TPhyTreeNode& node);
 
 END_NCBI_SCOPE
 
 
-#endif  // ALGO_PHY_TREE___PHY_NODE__HPP
-
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/10 17:02:29  dicuccio
+ * Formatting changes.  Added export specifiers
+ *
  * Revision 1.1  2004/02/10 15:15:57  jcherry
  * Initial version
  *
  * ===========================================================================
  */
 
+
+#endif  // ALGO_PHY_TREE___PHY_NODE__HPP

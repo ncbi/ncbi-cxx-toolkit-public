@@ -1,3 +1,6 @@
+#ifndef ALGO_PHY_TREE___DIST_METHODS__HPP
+#define ALGO_PHY_TREE___DIST_METHODS__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -30,9 +33,6 @@
  */
 
 
-#ifndef ALGO_PHY_TREE___DIST_METHODS__HPP
-#define ALGO_PHY_TREE___DIST_METHODS__HPP
-
 #include <objtools/alnmgr/alnvec.hpp>
 #include <util/creaders/alignment_file.hpp>
 #include <util/math/matrix.hpp>
@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CDistMethods
+class NCBI_XALGOPHYTREE_EXPORT CDistMethods
 {
 public:
     typedef CNcbiMatrix<double> TMatrix;
@@ -56,14 +56,17 @@ public:
     /// d = -3/4 ln(1 - (4/3)p).
     static void JukesCantorDist(const TMatrix& frac_diff,
                                 TMatrix& result);
+
     /// Simple distance calculation for protein sequences:
     /// d = -ln(1 - p).
     static void PoissonDist(const TMatrix& frac_diff,
                             TMatrix& result);
+
     /// Kimura's distance for protein sequences:
     /// d = -ln(1 - p - 0.2p^2).
     static void KimuraDist(const TMatrix& frac_diff,
                            TMatrix& result);
+
     /// Calculate pairwise fractions of non-identity
     static double Divergence(const string& seq1, const string& seq2);
     static void Divergence(const objects::CAlnVec& avec_in, TMatrix& result);
@@ -86,15 +89,18 @@ public:
 END_NCBI_SCOPE
 
 
-#endif  // ALGO_PHY_TREE___DIST_METHODS__HPP
-
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/10 17:02:28  dicuccio
+ * Formatting changes.  Added export specifiers
+ *
  * Revision 1.1  2004/02/10 15:15:56  jcherry
  * Initial version
  *
  * ===========================================================================
  */
 
+
+#endif  // ALGO_PHY_TREE___DIST_METHODS__HPP
