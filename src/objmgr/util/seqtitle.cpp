@@ -187,7 +187,8 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     if (!(flags & fGetTitle_Reconstruct)) {
         size_t search_depth = 0;
         // Ignore parents' titles for non-PDB proteins.
-        if (hnd.GetInst_Mol() == CSeq_inst::eMol_aa  &&  pdb_id.IsNull()) {
+        if (hnd.GetBioseqMolType() == CSeq_inst::eMol_aa
+            &&  pdb_id.IsNull()) {
             search_depth = 1;
         }
         CSeqdesc_CI it(hnd, CSeqdesc::e_Title, search_depth);
@@ -296,7 +297,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             + ' ' + pat_id->GetCit().GetId().GetNumber();
     }
 
-    if (title.empty()  &&  hnd.GetInst_Mol() == CSeq_inst::eMol_aa) {
+    if (title.empty()  &&  hnd.GetBioseqMolType() == CSeq_inst::eMol_aa) {
         title = s_TitleFromProtein(hnd, scope, organism);
         if ( !title.empty() ) {
             flags |= fGetTitle_Organism;
@@ -860,6 +861,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.42  2004/10/07 15:55:00  ucko
+* s/GetInst_Mol/GetBioseqMolType/
+*
 * Revision 1.41  2004/10/07 15:12:08  ucko
 * Also eliminate use of GetBioseqCore in favor of appropriate objmgr APIs.
 *
