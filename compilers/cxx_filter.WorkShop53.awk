@@ -44,6 +44,7 @@ function print_if_interesting()
   if (0 ||
       m ~ /Warning: Could not find source for ncbi::CTreeIteratorTmpl<ncbi::C(Const)?TreeLevelIterator>::/ ||
       m ~ /Warning: Could not find source for ncbi::CTypes?IteratorBase<ncbi::CTreeIterator(Tmpl<ncbi::C(Const)?TreeLevelIterator>)?>::/ ||
+      m ~ /Warning: ncbi:CQ[A-Za-z]+::FromAsn hides the function/ ||
       m ~ /Where: While instantiating "(__rw)?std::.*<.*>::__(de)?allocate_.*()"/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/algorithm.cc", line 427: .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/deque", line (639|671|679): .*non-const reference/ ||
@@ -54,8 +55,9 @@ function print_if_interesting()
       m ~ /^".*\/include\/CC\/Cstd\/\.\/vector", line (147|156|161|268|273|310|318|399|463|472|483|513|1146): .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/vector.cc", line 113: .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/std\/errno\.h", line 20: .*extra text on this line/ ||
+      m ~ /^".*\/include\/internal\/webenv2\/[a-z]+\.hpp", line [0-9]+: Warning: ncbi::CQ[A-Za-z]+::FromAsn hides the function/ ||
       m ~ /^".*\/include\/sybdb\.h".*two consecutive underbars in "db__.*"\./ ||
-      m ~ /^".*\/include\/serial\/objostr.*\.hpp".*hides the function ncbi::CObjectOStream::WriteClassMember/ ||
+      m ~ /^".*\/include\/serial\/objostr[a-z]+\.hpp".*hides the function ncbi::CObjectOStream::WriteClassMember/ ||
       m ~ /two consecutive underbars in "___errno"\./ ||
       0)
     return;
