@@ -69,7 +69,7 @@ CSeq_data::CSeq_data(const string& value, E_Choice index)
     case e_Iupacna:
     case e_Iupacaa:
     case e_Ncbieaa:
-        DoContrsuct (value, index);
+        DoConstruct (value, index);
         break;
 
     case e_Ncbi2na:
@@ -83,7 +83,7 @@ CSeq_data::CSeq_data(const string& value, E_Choice index)
         vector< char > v;
         v.resize (value.size());
         memcpy(&v[0], value.c_str(), value.size());
-        DoContrsuct (v, index);
+        DoConstruct (v, index);
         break;
     }
     default:
@@ -104,7 +104,7 @@ CSeq_data::CSeq_data(const vector< char >& value, E_Choice index)
     {
         string s;
         s.assign (&value[0], value.size());
-        DoContrsuct (s, index);
+        DoConstruct (s, index);
         break;
     }
     case e_Ncbi2na:
@@ -114,7 +114,7 @@ CSeq_data::CSeq_data(const vector< char >& value, E_Choice index)
     case e_Ncbi8aa:
     case e_Ncbipaa:
     case e_Ncbistdaa:
-        DoContrsuct (value, index);
+        DoConstruct (value, index);
         break;
 
     default:
@@ -189,6 +189,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/01/03 02:56:05  ucko
+* Fixed spelling of DoConstruct in more places.
+*
 * Revision 1.2  2003/01/03 01:24:00  ucko
 * Dropped CException:: from calls to NCBI_THROW; fixed spelling of DoConstruct.
 *
