@@ -89,22 +89,12 @@ public:
 
         // Check the seqids vector against the primary seq id
         //
-        vector<string>::const_iterator it;
-        for (it = m_SeqIds.begin(); it != m_SeqIds.end(); ++it) {
-            CSeq_id seq_id(*it);
-
-            if (seq_id.Which() == CSeq_id::e_not_set) {
-                seq_id.SetLocal().SetStr(*it);
-                if (seq_id.Which() == CSeq_id::e_not_set) {
-                    continue;
-                }
-            }
-
-            if (seq_id.Match(seq_id_db)) {
+        ITERATE (vector<string>, it, m_SeqIds) {
+            if (MatchSeqId(seq_id_db, *it)) {
                 m_ResultSet->insert(tse_id ? tse_id : object_id);
                 return;
             }
-        } // for
+        }
 
         // Primary seq id gave no hit. Scanning the supplemental list (attributes)
         //
@@ -122,7 +112,8 @@ public:
         vector<string> seq_id_arr;
         
         NStr::Tokenize(attr_seq_ids, " ", seq_id_arr, NStr::eMergeDelims);
-        for (it = seq_id_arr.begin(); it != seq_id_arr.end(); ++it) {
+
+        ITERATE (vector<string>, it, seq_id_arr) {
             CSeq_id seq_id_db(*it);
 
             if (seq_id_db.Which() == CSeq_id::e_not_set) {
@@ -132,26 +123,43 @@ public:
                 }
             }
 
-            vector<string>::const_iterator it2;
-            for (it2 = m_SeqIds.begin(); it2 != m_SeqIds.end(); ++it2) {
-                CSeq_id seq_id(*it2);
-
-                if (seq_id.Which() == CSeq_id::e_not_set) {
-                    seq_id.SetLocal().SetStr(*it2);
-                    if (seq_id.Which() == CSeq_id::e_not_set) {
-                        continue;
-                    }
-                }
-                
-                if (seq_id.Match(seq_id_db)) {
+            ITERATE (vector<string>, it2, m_SeqIds) {
+                if (MatchSeqId(seq_id_db, *it2)) {
                     m_ResultSet->insert(tse_id ? tse_id : object_id);
                     return;
                 }
+            }
+        }
 
-            } // for
-            
-        } // for
+    }
+protected:
 
+    bool MatchSeqId(const CSeq_id& seq_id_db, const string& candidate_str)
+    {
+        CSeq_id seq_id(candidate_str);
+        if (seq_id.Which() == CSeq_id::e_not_set) {
+            seq_id.SetLocal().SetStr(candidate_str);
+            if (seq_id.Which() == CSeq_id::e_not_set) {
+                return false;
+            }
+        }
+        if (seq_id.Match(seq_id_db)) {
+            return true;
+        }
+        // Sequence does not match, lets try "force it local" strategy
+        //
+        if (seq_id.Which() != CSeq_id::e_Local) {
+            if (candidate_str.find('|') == NPOS) {
+                seq_id.SetLocal().SetStr(candidate_str);
+                if (seq_id.Which() != CSeq_id::e_Local) {
+                    return false;
+                }
+                if (seq_id.Match(seq_id_db)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 private:
@@ -195,6 +203,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/24 18:32:39  kuznets
+ * Code clean up. Improved sequence id comparison.
+ *
  * Revision 1.3  2003/06/24 15:40:30  kuznets
  * Working on sequence id scan search. Improved recognition of local sequences.
  *
