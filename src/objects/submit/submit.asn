@@ -1,4 +1,4 @@
---$Revision: 3.0 $
+--$Revision: 3.1 $
 --********************************************************************
 --
 --  Direct Submission of Sequence Data
@@ -53,7 +53,10 @@ Contact-info ::= SEQUENCE {      -- who to contact to discuss the submission
     email VisibleString OPTIONAL ,
     telex VisibleString OPTIONAL ,
     owner-id Object-id OPTIONAL ,         -- for owner accounts
-    password OCTET STRING OPTIONAL }
+    password OCTET STRING OPTIONAL ,
+    last_name VisibleString OPTIONAL ,  -- structured to replace name above
+    first_name VisibleString OPTIONAL ,
+    middle_initial VisibleString OPTIONAL }
 
 END
 
