@@ -4,7 +4,7 @@
 	An AppleScript to compile some NCBI C++ Toolkit test applications with
 	Metrowerks CodeWarrior.
 
-	$Id$
+	$Id: maketests.met,v 1.1 2000/07/27 17:16:52 thiessen Exp $
 	
    ================================================================================ *)
 
@@ -271,10 +271,10 @@ on DoCreateDefaultProject(projName, projPath, projFiles, projNCBILibs)
 		
 		my DoSetPreferences()
 		Set Preferences of panel "Access Paths" to {User Paths:{{name:SOURCEFILES & projPath, origin:absolute}}}
-		if BUILDRELEASEBINS = "TRUE" then
-			Set Preferences of panel "PPC Project" to {File Name:projName}
-		else
+		if DODEBUG = "TRUE" then
 			Set Preferences of panel "PPC Project" to {File Name:(projName & " debug")}
+		else
+			Set Preferences of panel "PPC Project" to {File Name:projName}
 		end if
 		my DoSetPaths2()
 		
