@@ -228,7 +228,6 @@ class CFastMutexGuard;
 
 struct SSystemFastMutex
 {
-    NCBI_XNCBI_EXPORT
     TSystemMutex m_Handle;      ///< Mutex handle
 
     /// Initialization flag values.
@@ -236,7 +235,6 @@ struct SSystemFastMutex
         eMutexUninitialized = 0,        ///< Uninitialized value.
         eMutexInitialized = 0x2487adab  ///< Magic initialized value,
     };
-    NCBI_XNCBI_EXPORT
     volatile EMagic m_Magic;    ///< Magic flag
 
     /// Acquire mutex for the current thread with no nesting checks.
@@ -345,13 +343,10 @@ class CMutexGuard;
 
 struct SSystemMutex
 {
-    NCBI_XNCBI_EXPORT
     SSystemFastMutex m_Mutex; ///< Mutex value
 
-    NCBI_XNCBI_EXPORT
     volatile CThreadSystemID m_Owner; ///< Platform-dependent owner thread ID
 
-    NCBI_XNCBI_EXPORT
     volatile int m_Count; ///< # of recursive (in the same thread) locks
 
     /// Acquire mutex for the current thread.
@@ -1132,6 +1127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/03/10 18:40:21  gorelenk
+ * Added/Removed NCBI_XNCBI_EXPORT prefixes.
+ *
  * Revision 1.33  2004/03/10 17:34:05  gorelenk
  * Removed NCBI_XNCBI_EXPORT prefix for classes members-functions
  * that are implemented as a inline functions.

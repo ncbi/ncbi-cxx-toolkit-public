@@ -223,6 +223,7 @@ public:
     const CNcbiDiag& operator<< (const ErrCode& err_code) const;
 
     /// Report specified exception to diagnostic stream.
+    NCBI_XNCBI_EXPORT
     const CNcbiDiag& operator<< (const CException& ex) const;
 
     /// Function-based manipulators.
@@ -887,6 +888,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.67  2004/03/10 18:40:21  gorelenk
+ * Added/Removed NCBI_XNCBI_EXPORT prefixes.
+ *
  * Revision 1.66  2004/03/10 17:34:05  gorelenk
  * Removed NCBI_XNCBI_EXPORT prefix for classes members-functions
  * that are implemented as a inline functions.

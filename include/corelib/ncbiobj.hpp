@@ -276,6 +276,7 @@ private:
     void InitCounter(void);
 
     /// Remove the last reference.
+    NCBI_XNCBI_EXPORT
     void RemoveLastReference(void) const;
 
     // report different kinds of error
@@ -286,6 +287,7 @@ private:
     void InvalidObject(void) const;
 
     /// Report that counter has overflowed.
+    NCBI_XNCBI_EXPORT
     void CheckReferenceOverflow(TCount count) const;
 
     mutable TCounter  m_Counter;  ///< The actual reference counter
@@ -1346,6 +1348,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2004/03/10 18:40:21  gorelenk
+ * Added/Removed NCBI_XNCBI_EXPORT prefixes.
+ *
  * Revision 1.54  2004/03/10 17:34:05  gorelenk
  * Removed NCBI_XNCBI_EXPORT prefix for classes members-functions
  * that are implemented as a inline functions.
