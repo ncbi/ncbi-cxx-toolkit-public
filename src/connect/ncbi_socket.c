@@ -1061,6 +1061,7 @@ static EIO_Status s_Select(size_t                n,
             if (polls[i].event  &&
                 (EIO_Event)(polls[i].event | eIO_ReadWrite) == eIO_ReadWrite) {
                 TSOCK_Handle fd = polls[i].sock->sock;
+#if !defined(NCBI_OS_MSWIN)
 #ifdef FD_SETSIZE
                 if (fd >= FD_SETSIZE) {
                     polls[i].revent = eIO_Close;
@@ -1068,6 +1069,7 @@ static EIO_Status s_Select(size_t                n,
                     continue;
                 }
 #endif /*FD_SETSIZE*/
+#endif /*!NCBI_OS_MSWIN*/
                 if (fd != SOCK_INVALID) {
                     int/*bool*/ ls = IS_LISTENING(polls[i].sock);
                     if (!ls && n != 1 && polls[i].sock->type == eSOCK_Datagram)
@@ -1188,7 +1190,11 @@ static EIO_Status s_Select(size_t                n,
         if ( polls[i].sock ) {
             TSOCK_Handle fd = polls[i].sock->sock;
             assert(polls[i].revent == eIO_Open);
-            if (fd != SOCK_INVALID  &&  fd < FD_SETSIZE) {
+            if (fd != SOCK_INVALID
+#if !defined(NCBI_OS_MSWIN)
+                &&  fd < FD_SETSIZE
+#endif /*!NCBI_OS_MSWIN*/
+                ) {
                 if (!write_only  &&  FD_ISSET(fd, &r_fds))
                     polls[i].revent = eIO_Read;
                 if (!read_only   &&  FD_ISSET(fd, &w_fds))
@@ -4106,6 +4112,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.154  2004/10/19 23:48:54  vakatov
+ * [MSWIN]  Do not check filedes against FD_SETSIZE
+ *
  * Revision 6.153  2004/10/19 19:12:52  kans
  * netinet/tcp.h only included if not COMP_METRO - already includes headers in library project
  *
