@@ -546,11 +546,125 @@ void CBDB_FileScanner::ResolveFields(CBDB_Query& query)
 }
 
 
+
+
+
+
+/// The main tree printing functor class.
+/// Used for internal debugging purposes.
+///
+/// @internal
+///
+class CQueryTreePrintFunc
+{
+public: 
+    CQueryTreePrintFunc(CNcbiOstream& os)
+    : m_OStream(os),
+      m_Level(0)
+    {}
+
+    void PrintLevelMargin()
+    {
+        for (int i = 0; i < m_Level; ++i) {
+            m_OStream << "  ";
+        }
+    }
+  
+    ETreeTraverseCode 
+    operator()(const CTreeNode<CBDB_QueryNode>& tr, int delta) 
+    {
+        const CBDB_QueryNode& qnode = tr.GetValue();
+
+        m_Level += delta;
+
+        if (delta < 0)
+            return eTreeTraverse;
+
+        PrintLevelMargin();
+
+        switch (qnode.GetType()) {
+        case CBDB_QueryNode::eValue:
+            m_OStream << qnode.GetValue();
+            break;
+        case CBDB_QueryNode::eOperator:
+            {
+                CBDB_QueryNode::EOperatorType eop = qnode.GetOperatorType();
+                switch (eop) {
+                case CBDB_QueryNode::eEQ:
+                    m_OStream << "EQ";
+                    break;
+                default:
+                    _ASSERT(0);
+                } // switch eop
+            }
+            if (qnode.HasValue()) {
+                m_OStream << " => " << qnode.GetValue();
+            }
+            break;
+        case CBDB_QueryNode::eLogical:
+            {
+                CBDB_QueryNode::ELogicalType elogic = qnode.GetLogicType();
+                switch (elogic) {
+                case CBDB_QueryNode::eAnd:
+                    m_OStream << "AND";
+                    break;
+                case CBDB_QueryNode::eOr:
+                    m_OStream << "OR";
+                    break;
+                default:
+                    _ASSERT(0);
+                } // switch elogic
+            }
+            if (qnode.HasValue()) {
+                m_OStream << " => " << qnode.GetValue();
+            }
+            break;
+        case CBDB_QueryNode::eDBField:
+            m_OStream << "@" << qnode.GetValue();
+            break;
+        default:
+            if (qnode.HasValue()) {
+                m_OStream << qnode.GetValue();
+            }
+            break;
+        } // switch node type
+
+
+        m_OStream << "\n";
+
+        return eTreeTraverse;
+    }
+
+private:
+    CNcbiOstream&  m_OStream;
+    int            m_Level;
+};
+
+
+
+void BDB_PrintQueryTree(CNcbiOstream& os, const CBDB_Query& query)
+{
+    // Here I use a const cast hack because TreeDepthFirstTraverse
+    // uses a non-cost iterators and semantics in the algorithm.
+    // When a const version of TreeDepthFirstTraverse is ready
+    // we can get rid of this...
+
+    const CBDB_Query::TQueryClause& qtree = query.GetQueryClause();
+    CBDB_Query::TQueryClause& qtree_nc = 
+           const_cast<CBDB_Query::TQueryClause&>(qtree);
+
+    CQueryTreePrintFunc func(os);
+    TreeDepthFirstTraverse(qtree_nc, func);
+}
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/19 17:35:57  kuznets
+ * + BDB_PrintQueryTree (tree printing utility function for debugging)
+ *
  * Revision 1.1  2004/02/17 17:26:45  kuznets
  * Initial revision
  *

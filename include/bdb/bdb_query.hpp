@@ -198,11 +198,18 @@ private:
 };
 
 
+/// Function prints the query tree on the specified ostream
+/// (Intended more for debugging purposes)
+void BDB_PrintQueryTree(CNcbiOstream& os, const CBDB_Query& query);
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/19 17:35:15  kuznets
+ * + BDB_PrintQueryTree (tree printing utility function for debugging)
+ *
  * Revision 1.2  2004/02/17 19:06:27  kuznets
  * GCC warning fix
  *
