@@ -341,6 +341,7 @@ on SetProjectData()
 		AddSimpleProject("lds_admin", {}, "objtools:lds:admin")
 		AddSimpleProject("xvalidate", {}, "objtools:validator")
 		AddSimpleProject("xobjread", {}, "objtools:readers")
+		AddSimpleProject("ncbi_xloader_lds", {}, "objtools:data_loaders:lds")
 	end if
 	
 	-- GUI libs.
@@ -409,7 +410,7 @@ on SetProjectData()
 		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign"})
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
 			{"xalgoseq", "gui_multi_col_dlg", "w_fltable"})
-		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {})
+		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"ncbi_xloader_lds"})
 		AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", Â
 			{"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"})
 		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate"})
