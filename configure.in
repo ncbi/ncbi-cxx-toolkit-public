@@ -247,12 +247,10 @@ case "$compiler" in
        echo
        echo "Compiler \"${compiler}\" requires a special tuning, so you"
        echo "better use a special shell script located in \"compilers/*.sh\"!"
-       echo
 changequote(, )dnl
        echo "Do you still want to proceed (at your own risk)? [n/y]"
 changequote([, ])dnl
        read answer
-       echo
        case "$answer" in
          y )  AC_MSG_WARN([Proceeding at your own risk...]) ; echo ;;
          * )  AC_MSG_WARN([Configuration has been canceled by user.]) ; exit ;;
@@ -374,12 +372,10 @@ changequote(, )dnl
   Compiler $CXX $compiler_ver is not fully supported.
   Consult doc/config.html#ref_Compilers for the list of
   fully supported platforms/compilers.
-
   Do you still want to proceed (at your own risk)? [n/y]
 EOF
 changequote([, ])dnl
    read answer
-   echo
    case "$answer" in
       y )  AC_MSG_WARN([Proceeding at your own risk...]) ; echo ;;
       * )  AC_MSG_WARN([Configuration has been canceled by user.]) ; exit ;;
@@ -854,7 +850,9 @@ AC_MSG_RESULT()
 
 AC_MSG_CHECKING(for sysmp)
 AC_TRY_COMPILE(
-   [#include <sys/sysmp.h>],
+   [#include <sys/sysinfo.h>
+    #include <sys/sysmp.h>
+   ],
    [ struct sysinfo si;  sysmp(MP_SAGET, MPSA_SINFO, &si, sizeof(si)); ],
    AC_DEFINE_UNQUOTED(HAVE_SYSMP, 1)
 )
