@@ -114,8 +114,7 @@ void CSequenceItem::x_GatherInfo(CFFContext& ctx)
 
     CSeqVector::TCoding code = CSeq_data::e_Iupacna;
     if ( ctx.IsProt() ) {
-        code = ctx.GetMode() == CFlatFileGenerator::eMode_Release ?
-            CSeq_data::e_Iupacaa : CSeq_data::e_Ncbieaa;
+        code = ctx.IsModeRelease() ? CSeq_data::e_Iupacaa : CSeq_data::e_Ncbieaa;
     }
     m_Sequence.SetCoding(code);
 }
@@ -129,6 +128,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/02/11 22:56:37  shomrat
+* use IsModeRelease method
+*
 * Revision 1.2  2003/12/18 17:43:36  shomrat
 * context.hpp moved
 *

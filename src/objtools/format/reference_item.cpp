@@ -784,8 +784,8 @@ void CReferenceItem::x_SetJournal(const CTitle& title, CFFContext& ctx)
             return;
         }
     }
-    if ( ctx.GetMode() == CFlatFileGenerator::eMode_Release ) {
-        // complain
+    if ( ctx.IsModeRelease() ) {
+        // !!! complain
     } else if ( !title.Get().empty() ) {
         m_Journal = title.GetTitle();
     }
@@ -1026,6 +1026,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/11 22:55:44  shomrat
+* use IsModeRelease method
+*
 * Revision 1.3  2004/02/11 17:00:46  shomrat
 * minor changes to Matches method
 *
