@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.18  2001/10/12 15:29:08  ucko
+ * Drop */util/asciiseqdata.* in favor of CSeq_vector.
+ * Rewrite GenBank output code to take fuller advantage of the object manager.
+ *
  * Revision 1.17  2001/10/10 16:02:53  ucko
  * Clean up includes.
  *
@@ -132,7 +136,6 @@
 #include <objects/seqres/Byte_graph.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqset/Seq_entry.hpp>
-#include <objects/util/asciiseqdata.hpp>
 #include <objects/util/genbank.hpp>
 
 #include <memory>
@@ -731,9 +734,8 @@ int CId1FetchApp::LookUpSeqID(CRef<CSeq_id> id)
     if ( reply.IsError() ) {
         CNcbiOstrstream oss;
         id->WriteAsFasta(oss);
-        string s(oss.str(), oss.pcount());
-        oss.freeze(0);
-        THROW1_TRACE(runtime_error, "Unable to find seq_id for " + s);
+        THROW1_TRACE(runtime_error, "Unable to find seq_id for "
+            + (string)CNcbiOstrstreamToString(oss));
     }
 
     return reply.GetGotgi();
@@ -781,17 +783,12 @@ void CId1FetchApp::WriteFastaEntry(const CID1server_back& id1_reply)
 
         // Now print the actual sequence in an appropriate ASCII format.
         {{
-#ifdef USE_SEQ_VECTOR
-            TASCIISeqData asd
-                = m_Scope->GetSequence(m_Scope->GetBioseqHandle
-                                       (*it->GetId().front()));
-#else
-            TASCIISeqData asd = ToASCII(it->GetInst());
-#endif
-            for (size_t pos = 0;  pos < asd.size();  ++pos) {
-                if (pos % 70 == 0)
+            CSeq_vector vec = m_Scope->GetSequence(m_Scope->GetBioseqHandle
+                                                   (*it->GetId().front()));
+            for (size_t pos = 1;  pos <= vec.size();  ++pos) {
+                if (pos % 70 == 1)
                     *m_OutputFile << NcbiEndl;
-                *m_OutputFile << asd[pos];
+                *m_OutputFile << vec[pos];
             }
             *m_OutputFile << NcbiEndl;
         }}
@@ -842,8 +839,7 @@ void CId1FetchApp::WriteHistoryTable(const CID1server_back& id1_reply)
             const CDate_std& date = it->GetDate().GetStd();
             oss << setfill('0') << setw(2) << date.GetMonth() << '/'
                 << setw(2) << date.GetDay() << '/' << date.GetYear();
-            dates.Add(string(oss.str(), oss.pcount()));
-            oss.freeze(0);
+            dates.Add(CNcbiOstrstreamToString(oss));
         }
 
         iterate (CSeq_hist_rec::TIds, it2, it->GetIds()) {

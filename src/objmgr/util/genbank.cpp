@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/10/12 15:29:07  ucko
+* Drop */util/asciiseqdata.* in favor of CSeq_vector.
+* Rewrite GenBank output code to take fuller advantage of the object manager.
+*
 * Revision 1.3  2001/10/04 19:11:55  ucko
 * Centralize (rudimentary) code to get a sequence's title.
 *
@@ -136,7 +140,6 @@
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqset/Seq_entry.hpp>
-#include <objects/util/asciiseqdata.hpp>
 
 
 #ifdef NCBI_COMPILER_WORKSHOP // workaround for compiler bug
@@ -148,28 +151,6 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
-
-typedef CConstRef<CSeq_descr> TDescRef;
-
-class CDescList {
-public:
-    typedef list<TDescRef> TData;
-    
-    CDescList& Add(const TDescRef& ref)
-        { m_Data.push_front(ref);  return *this; }
-    DECLARE_INTERNAL_TYPE_INFO();
-
-private:
-    TData m_Data;
-};
-
-
-BEGIN_CLASS_INFO(CDescList)
-{
-    ADD_MEMBER(m_Data, STL_list, (STL_CConstRef, (CLASS, (CSeq_descr))));
-}
-END_CLASS_INFO
 
 
 static string s_Pad(const string& s, SIZE_TYPE width)
@@ -190,15 +171,9 @@ const unsigned int CGenbankWriter::sm_FeatureNameIndent = 5;
 const unsigned int CGenbankWriter::sm_FeatureNameWidth = 16;
 
 
-bool CGenbankWriter::Write(CSeq_entry& entry)
+bool CGenbankWriter::Write(const CSeq_entry& entry)
 {
-    return Write(entry, CDescList());
-}
-
-
-bool CGenbankWriter::Write(const CSeq_entry& entry, const CDescList& descs)
-{
-    typedef bool (CGenbankWriter::*TFun)(const CBioseq&, const CDescList&);
+    typedef bool (CGenbankWriter::*TFun)(const CBioseqHandle&);
     static const TFun funlist[]
         = { &CGenbankWriter::WriteLocus,
             &CGenbankWriter::WriteDefinition,
@@ -214,15 +189,10 @@ bool CGenbankWriter::Write(const CSeq_entry& entry, const CDescList& descs)
             &CGenbankWriter::WriteSequence,
             NULL};
 
-    CDescList new_descs(descs);
-
     if (entry.IsSet()) {
         const CBioseq_set& s = entry.GetSet();
-        if (s.IsSetDescr()) {
-            new_descs.Add(TDescRef(&s.GetDescr()));
-        }
         iterate(CBioseq_set::TSeq_set, it, s.GetSeq_set()) {
-            if (!Write(**it, new_descs)) {
+            if (!Write(**it)) {
                 return false;
             }
         }
@@ -254,11 +224,9 @@ bool CGenbankWriter::Write(const CSeq_entry& entry, const CDescList& descs)
             }
         }}
 
-        if (seq.IsSetDescr()) {
-            new_descs.Add(TDescRef(&seq.GetDescr()));
-        }
+        CBioseqHandle handle = m_Scope.GetBioseqHandle(*seq.GetId().front());
         for (unsigned int i = 0;  funlist[i];  ++i) {
-            if (!(this->*funlist[i])(seq, new_descs)) {
+            if (!(this->*funlist[i])(handle)) {
                 return false;
             }
         }
@@ -315,9 +283,7 @@ static string s_FormatDate(const CDate& date) {
     oss << setfill('0') << setw(2) << std.GetDay() << '-'
         << kMonthNames[std.GetMonth()] << '-' << setw(4) << std.GetYear();
 
-    string result(oss.str(), oss.pcount());
-    oss.freeze(0);
-    return result;
+    return CNcbiOstrstreamToString(oss);
 }
 
 
@@ -330,8 +296,9 @@ static string s_StripDot(const string& s) {
 }
 
 
-bool CGenbankWriter::WriteLocus(const CBioseq& seq, const CDescList& descs)
+bool CGenbankWriter::WriteLocus(const CBioseqHandle& handle)
 {
+    const CBioseq& seq = m_Scope.GetBioseq(handle);
     const CSeq_inst& inst = seq.GetInst();
 
     {{
@@ -443,22 +410,26 @@ bool CGenbankWriter::WriteLocus(const CBioseq& seq, const CDescList& descs)
 
     {{
         string division;
-        CTypesConstIterator it;
-        Type<COrgName>::AddTo(it);
-        Type<CGB_block>::AddTo(it);
         // Deal with translating EMBL divisions?
 
-        for (it = ConstBegin(descs);  it;  ++it) {
-            if (Type<COrgName>::Match(it)) {
-                const COrgName* info = Type<COrgName>::Get(it);
-                if (info->IsSetDiv()) {
-                    division = info->GetDiv();
+        for (CSeqdesc_CI it = m_Scope.BeginDescr(handle);  it;  ++it) {
+            if (it->IsOrg()  &&  it->GetOrg().IsSetOrgname()) {
+                const COrgName& info = it->GetOrg().GetOrgname();
+                if (info.IsSetDiv()) {
+                    division = info.GetDiv();
                     continue; // in hopes of finding a GB_block
                 }
-            } else if (Type<CGB_block>::Match(it)) {
-                const CGB_block* info = Type<CGB_block>::Get(it);
-                if (info->IsSetDiv()) {
-                    division = info->GetDiv();
+            } else if (it->IsSource()
+                       &&  it->GetSource().GetOrg().IsSetOrgname()) {
+                const COrgName& info = it->GetSource().GetOrg().GetOrgname();
+                if (info.IsSetDiv()) {
+                    division = info.GetDiv();
+                    continue; // in hopes of finding a GB_block
+                }
+            } else if (it->IsGenbank()) {
+                const CGB_block& info = it->GetGenbank();
+                if (info.IsSetDiv()) {
+                    division = info.GetDiv();
                     BREAK(it);
                 }
             }
@@ -468,11 +439,11 @@ bool CGenbankWriter::WriteLocus(const CBioseq& seq, const CDescList& descs)
 
     {{
         const CDate* date = NULL;
-        for (CTypeConstIterator<CSeqdesc> it = ConstBegin(descs);  it;  ++it) {
-            if (it->IsUpdate_date()) {
-                date = &it->GetUpdate_date();
-                BREAK(it);
-            }
+        for (CSeqdesc_CI it(m_Scope.BeginDescr(handle),
+                            CSeqdesc::e_Update_date);
+             it;  ++it) {
+            date = &it->GetUpdate_date();
+            BREAK(it);
         }
         if (date) {
             m_Stream << s_FormatDate(*date);
@@ -484,10 +455,9 @@ bool CGenbankWriter::WriteLocus(const CBioseq& seq, const CDescList& descs)
 }
 
 
-bool CGenbankWriter::WriteDefinition(const CBioseq& seq,
-                                     const CDescList& /* descs */)
+bool CGenbankWriter::WriteDefinition(const CBioseqHandle& handle)
 {
-    string definition = seq.GetTitle();
+    string definition = m_Scope.GetBioseq(handle).GetTitle();
     if (definition.empty()  ||  definition[definition.size()-1] != '.') {
         definition += '.';
     }
@@ -496,9 +466,9 @@ bool CGenbankWriter::WriteDefinition(const CBioseq& seq,
 }
 
 
-bool CGenbankWriter::WriteAccession(const CBioseq& seq,
-                                    const CDescList& /* descs */)
+bool CGenbankWriter::WriteAccession(const CBioseqHandle& handle)
 {
+    const CBioseq& seq = m_Scope.GetBioseq(handle);
     string accessions;
     for (CTypeConstIterator<CTextseq_id> it = ConstBegin(seq);  it;  ++it) {
         accessions = it->GetAccession();
@@ -535,9 +505,9 @@ bool CGenbankWriter::WriteAccession(const CBioseq& seq,
 }
 
 
-bool CGenbankWriter::WriteVersion(const CBioseq& seq,
-                                  const CDescList& /* descs */)
+bool CGenbankWriter::WriteVersion(const CBioseqHandle& handle)
 {
+    const CBioseq& seq = m_Scope.GetBioseq(handle);
     string accession;
     int version;
     for (CTypeConstIterator<CTextseq_id> it = ConstBegin(seq);  it;  ++it) {
@@ -559,15 +529,15 @@ bool CGenbankWriter::WriteVersion(const CBioseq& seq,
 }
 
 
-bool CGenbankWriter::WriteID(const CBioseq& seq, const CDescList& /* descs */)
+bool CGenbankWriter::WriteID(const CBioseqHandle& handle)
 {
     if (m_Format == eFormat_Genbank) {
         return true;
     }
 
-    for (CTypeConstIterator<CSeq_id> it = ConstBegin(seq);  it;  ++it) {
-        if (it->IsGi()) {
-            m_Stream << s_Pad("PID", sm_KeywordWidth) << 'g' << it->GetGi()
+    iterate(CBioseq::TId, it, m_Scope.GetBioseq(handle).GetId()) {
+        if ((*it)->IsGi()) {
+            m_Stream << s_Pad("PID", sm_KeywordWidth) << 'g' << (*it)->GetGi()
                      << NcbiEndl;
             BREAK(it);
         }
@@ -576,47 +546,59 @@ bool CGenbankWriter::WriteID(const CBioseq& seq, const CDescList& /* descs */)
 }
 
 
-bool CGenbankWriter::WriteKeywords(const CBioseq& /* seq */,
-                                   const CDescList& descs)
+bool CGenbankWriter::WriteKeywords(const CBioseqHandle& handle)
 {
     vector<string> keywords;
-    CTypesConstIterator it;
-    Type<CEMBL_block>::AddTo(it);
-    Type<CSP_block>::AddTo(it);
-    Type<CPIR_block>::AddTo(it);
-    Type<CGB_block>::AddTo(it);
-    Type<CPRF_block>::AddTo(it);
-    for (it = ConstBegin(descs);  it;  ++it) {
-        if (Type<CEMBL_block>::Match(it)) {
-            const CEMBL_block::TKeywords& kw
-                = Type<CEMBL_block>::Get(it)->GetKeywords();
-            iterate (CEMBL_block::TKeywords, k, kw) {
-                keywords.push_back(*k);
-            }
-        } else if (Type<CSP_block>::Match(it)) {
-            const CSP_block::TKeywords& kw
-                = Type<CSP_block>::Get(it)->GetKeywords();
-            iterate (CSP_block::TKeywords, k, kw) {
-                keywords.push_back(*k);
-            }
-        } else if (Type<CPIR_block>::Match(it)) {
-            const CPIR_block::TKeywords& kw
-                = Type<CPIR_block>::Get(it)->GetKeywords();
-            iterate (CPIR_block::TKeywords, k, kw) {
-                keywords.push_back(*k);
-            }
-        } else if (Type<CGB_block>::Match(it)) {
-            const CGB_block::TKeywords& kw
-                = Type<CGB_block>::Get(it)->GetKeywords();
+
+    for (CSeqdesc_CI it = m_Scope.BeginDescr(handle);  it;  ++it) {
+        switch (it->Which()) {
+        case CSeqdesc::e_Genbank:
+        {
+            const CGB_block::TKeywords& kw = it->GetGenbank().GetKeywords();
             iterate (CGB_block::TKeywords, k, kw) {
                 keywords.push_back(*k);
             }
-        } else if (Type<CPRF_block>::Match(it)) {
-            const CPRF_block::TKeywords& kw
-                = Type<CPRF_block>::Get(it)->GetKeywords();
+            break;
+        }
+
+        case CSeqdesc::e_Embl:
+        {
+            const CEMBL_block::TKeywords& kw = it->GetEmbl().GetKeywords();
+            iterate (CEMBL_block::TKeywords, k, kw) {
+                keywords.push_back(*k);
+            }
+            break;
+        }
+        
+        case CSeqdesc::e_Pir:
+        {
+            const CPIR_block::TKeywords& kw = it->GetPir().GetKeywords();
+            iterate (CPIR_block::TKeywords, k, kw) {
+                keywords.push_back(*k);
+            }
+            break;
+        }
+        
+        case CSeqdesc::e_Sp:
+        {
+            const CSP_block::TKeywords& kw = it->GetSp().GetKeywords();
+            iterate (CSP_block::TKeywords, k, kw) {
+                keywords.push_back(*k);
+            }
+            break;
+        }
+        
+        case CSeqdesc::e_Prf:
+        {
+            const CPRF_block::TKeywords& kw = it->GetPrf().GetKeywords();
             iterate (CPRF_block::TKeywords, k, kw) {
                 keywords.push_back(*k);
             }
+            break;
+        }
+        
+        default:
+            break;
         }
     }
 
@@ -647,9 +629,9 @@ bool CGenbankWriter::WriteKeywords(const CBioseq& /* seq */,
 }
 
 
-bool CGenbankWriter::WriteSegment(const CBioseq& seq,
-                                  const CDescList& /* descs */)
+bool CGenbankWriter::WriteSegment(const CBioseqHandle& handle)
 {
+    const CBioseq& seq = m_Scope.GetBioseq(handle);
     const CSeq_entry* parent_entry = seq.GetParentEntry()->GetParentEntry();
     if (parent_entry == NULL  ||  !parent_entry->IsSet()) {
         return true; // nothing to do
@@ -676,29 +658,33 @@ bool CGenbankWriter::WriteSegment(const CBioseq& seq,
 }
 
 
-bool CGenbankWriter::WriteSource(const CBioseq& /* seq */,
-                                 const CDescList& descs)
+bool CGenbankWriter::WriteSource(const CBioseqHandle& handle)
 {
     string source, taxname, lineage;
-    for (CTypeConstIterator<CGB_block> it = ConstBegin(descs);  it;  ++it) {
-        if (it->IsSetSource()  &&  source.empty()) {
-            source = it->GetSource();
+    for (CSeqdesc_CI it(m_Scope.BeginDescr(handle), CSeqdesc::e_Genbank);
+         it;  ++it) {
+        const CGB_block& gb = it->GetGenbank();
+        if (gb.IsSetSource()  &&  source.empty()) {
+            source = gb.GetSource();
         }
-        if (it->IsSetTaxonomy()  &&  lineage.empty()) {
-            lineage = it->GetTaxonomy();
-        }                        
-    }
+        if (gb.IsSetTaxonomy()  &&  lineage.empty()) {
+            lineage = gb.GetTaxonomy();
+        }
+    }            
 
-    for (CTypeConstIterator<COrg_ref> it = ConstBegin(descs); it;  ++it) {
-        if (it->IsSetCommon()  &&  source.empty()) {
-            source = it->GetCommon();
-        }
-        if (it->IsSetTaxname()  &&  taxname.empty()) {
-            taxname = it->GetTaxname();
-        }
-        if (it->IsSetOrgname()  &&  it->GetOrgname().IsSetLineage()
-            &&  lineage.empty()) {
-            lineage = it->GetOrgname().GetLineage();
+    for (CDesc_CI desc_it = m_Scope.BeginDescr(handle);  desc_it;  ++desc_it) {
+        for (CTypeConstIterator<COrg_ref> it = ConstBegin(*desc_it);
+             it;  ++it) {
+            if (it->IsSetCommon()  &&  source.empty()) {
+                source = it->GetCommon();
+            }
+            if (it->IsSetTaxname()  &&  taxname.empty()) {
+                taxname = it->GetTaxname();
+            }
+            if (it->IsSetOrgname()  &&  it->GetOrgname().IsSetLineage()
+                &&  lineage.empty()) {
+                lineage = it->GetOrgname().GetLineage();
+            }
         }
     }
 
@@ -825,9 +811,7 @@ string FormatImprint(const T& imprint) {
         oss << " (" << imprint.GetDate().GetStd().GetYear() << ')';
     }
 
-    string result(oss.str(), oss.pcount());
-    oss.freeze(0);
-    return result;
+    return CNcbiOstrstreamToString(oss);
 }
 
 
@@ -989,8 +973,9 @@ bool operator<(const SReference& ref1, const SReference& ref2) {
 }
 
 
-bool CGenbankWriter::WriteReference(const CBioseq& seq, const CDescList& descs)
+bool CGenbankWriter::WriteReference(const CBioseqHandle& handle)
 {
+    const CBioseq& seq = m_Scope.GetBioseq(handle);
     vector<SReference> v;
     {{
         CSeq_loc everywhere;
@@ -1012,9 +997,9 @@ bool CGenbankWriter::WriteReference(const CBioseq& seq, const CDescList& descs)
             si.SetId().SetGi(id->GetGi());
         }}
 
-        for (CTypeConstIterator<CPubdesc> pub = ConstBegin(descs);
-             pub;  ++pub) {
-            v.push_back(SReference(*pub, everywhere, m_LengthUnit));
+        for (CSeqdesc_CI it(m_Scope.BeginDescr(handle), CSeqdesc::e_Pub);
+             it;  ++it) {
+            v.push_back(SReference(it->GetPub(), everywhere, m_LengthUnit));
         }
 
         // get references from features
@@ -1320,19 +1305,17 @@ bool CGenbankWriter::WriteReference(const CBioseq& seq, const CDescList& descs)
 }
 
 
-bool CGenbankWriter::WriteComment(const CBioseq& /* seq */,
-                                  const CDescList& descs)
+bool CGenbankWriter::WriteComment(const CBioseqHandle& handle)
 {
     string comments;
-    for (CTypeConstIterator<CSeqdesc> it = ConstBegin(descs);  it;  ++it) {
-        if (it->IsComment()) {
-            if (!comments.empty()) {
-                comments += "~~"; // blank line between comments
-            }
-            comments += it->GetComment();
-            if (comments[comments.size() - 1] != '.') {
-                comments += '.';
-            }
+    for (CSeqdesc_CI it(m_Scope.BeginDescr(handle), CSeqdesc::e_Comment);
+         it;  ++it) {
+        if (!comments.empty()) {
+            comments += "~~"; // blank line between comments
+        }
+        comments += it->GetComment();
+        if (comments[comments.size() - 1] != '.') {
+            comments += '.';
         }
     }
     Wrap("COMMENT", comments);
@@ -1517,8 +1500,9 @@ static const char* s_ASCIIToAbbrev(char aa)
 }
 
 
-bool CGenbankWriter::WriteFeatures(const CBioseq& seq, const CDescList& descs)
+bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
 {
+    const CBioseq& seq = m_Scope.GetBioseq(handle);
     CSeq_loc everywhere;
     everywhere.SetWhole(seq.GetId().front());
     // Try to substitute a GI id, since the object manager seems to care
@@ -1536,9 +1520,9 @@ bool CGenbankWriter::WriteFeatures(const CBioseq& seq, const CDescList& descs)
     {{
         WriteFeatureLocation("source", everywhere, seq);
         bool found_source = false;
-        for (CTypeConstIterator<CBioSource> it = ConstBegin(descs);
+        for (CSeqdesc_CI it(m_Scope.BeginDescr(handle), CSeqdesc::e_Source);
              it;  ++it) {
-            WriteSourceQualifiers(*it);
+            WriteSourceQualifiers(it->GetSource());
             found_source = true;
             BREAK(it);
         }
@@ -1567,10 +1551,8 @@ bool CGenbankWriter::WriteFeatures(const CBioseq& seq, const CDescList& descs)
             CNcbiOstrstream loc_stream, prod_stream;
             FormatFeatureLocation((*feat)->GetLocation(), seq, loc_stream);
             FormatFeatureLocation((*feat)->GetProduct(),  seq, prod_stream);
-            string location(loc_stream.str(),  loc_stream.pcount());
-            string product (prod_stream.str(), prod_stream.pcount());
-            loc_stream.freeze(0);
-            prod_stream.freeze(0);
+            string location = CNcbiOstrstreamToString(loc_stream);
+            string product  = CNcbiOstrstreamToString(prod_stream);
             if (location.find(':') != NPOS  &&  product.find(':') == NPOS) {
                 WriteFeatureLocation(name, (*feat)->GetProduct(), seq);
                 WriteFeatureQualifier("coded_by", location, true);
@@ -1659,8 +1641,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq& seq, const CDescList& descs)
                     oss << "/transl_except=(pos:";
                     FormatFeatureLocation((*it)->GetLoc(), seq, oss);
                     oss << ",aa:" << abbrev << ')';
-                    WriteFeatureQualifier(string(oss.str(), oss.pcount()));
-                    oss.freeze(0);
+                    WriteFeatureQualifier(CNcbiOstrstreamToString(oss));
                 }
             }
             break;
@@ -1711,8 +1692,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq& seq, const CDescList& descs)
                 oss << "/anticodon=(pos:";
                 FormatFeatureLocation(trna.GetAnticodon(), seq, oss);
                 oss << ",aa:" << abbrev << ')';
-                WriteFeatureQualifier(string(oss.str(), oss.pcount()));
-                oss.freeze(0);
+                WriteFeatureQualifier(CNcbiOstrstreamToString(oss));
                 break;
             }
             case CRNA_ref::eType_snoRNA:
@@ -1746,9 +1726,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq& seq, const CDescList& descs)
             CNcbiOstrstream oss;
             oss << "origin: ";
             FormatFeatureLocation((*feat)->GetData().GetSeq(), seq, oss);
-            WriteFeatureQualifier("note", string(oss.str(), oss.pcount()),
-                                  true);
-            oss.freeze(0);
+            WriteFeatureQualifier("note", CNcbiOstrstreamToString(oss), true);
             break;
         }
         
@@ -1907,9 +1885,9 @@ bool CGenbankWriter::WriteFeatures(const CBioseq& seq, const CDescList& descs)
                 ERR_POST(Warning << e.what());
             } 
             {{
-                const CBioseq& prot_seq
-                    = m_Scope.GetBioseq(m_Scope.GetBioseqHandle
-                                        (s_GetID((*feat)->GetProduct())));
+                const CBioseqHandle& prot_handle
+                    = m_Scope.GetBioseqHandle(s_GetID((*feat)->GetProduct()));
+                const CBioseq& prot_seq = m_Scope.GetBioseq(prot_handle);
                 const CTextseq_id* tsid;
                 iterate(CBioseq::TId, it, prot_seq.GetId()) {
                     if ((tsid = (*it)->GetTextseq_Id()) != NULL) {
@@ -1926,22 +1904,15 @@ bool CGenbankWriter::WriteFeatures(const CBioseq& seq, const CDescList& descs)
                                               true);
                     }
                 }
-#ifdef USE_SEQ_VECTOR
                 {{
-                    TASCIISeqData asd
-                        = m_Scope.GetSequence(m_Scope.GetBioseqHandle
-                                              (*prot_seq.GetId().front()));
+                    CSeq_vector vec = m_Scope.GetSequence(prot_handle);
                     string data;
-                    data.resize(asd.size());
-                    for (SIZE_TYPE n = 0; n < asd.size(); n++) {
-                        data[n] = asd[n];
+                    data.resize(vec.size());
+                    for (SIZE_TYPE n = 0; n < vec.size(); n++) {
+                        data[n] = vec[n + 1];
                     }
                     WriteFeatureQualifier("translation", data, true);
                 }}
-#else
-                WriteFeatureQualifier("translation",
-                                      ToASCII(prot_seq.GetInst()), true);
-#endif                    
             }}
         }
 
@@ -2244,19 +2215,13 @@ void CGenbankWriter::WriteSourceQualifiers(const CBioSource& source)
 }
 
 
-bool CGenbankWriter::WriteSequence(const CBioseq& seq,
-                                   const CDescList& /* descs */)
+bool CGenbankWriter::WriteSequence(const CBioseqHandle& handle)
 {
-#ifdef USE_SEQ_VECTOR
-    TASCIISeqData asd
-        = m_Scope.GetSequence(m_Scope.GetBioseqHandle(*seq.GetId().front()));
-#else
-    TASCIISeqData asd = ToASCII(seq.GetInst());
-#endif
+    CSeq_vector vec = m_Scope.GetSequence(handle);
     if (m_Format == eFormat_Genbank) {
         size_t a = 0, c = 0, g = 0, t = 0, other = 0;
-        for (size_t pos = 0;  pos < asd.size();  ++pos) {
-            switch (asd[pos]) {
+        for (size_t pos = 1;  pos <= vec.size();  ++pos) {
+            switch (vec[pos]) {
             case 'A': ++a;     break;
             case 'C': ++c;     break;
             case 'G': ++g;     break;
@@ -2276,13 +2241,13 @@ bool CGenbankWriter::WriteSequence(const CBioseq& seq,
         m_Stream << NcbiEndl;
     }
     m_Stream << s_Pad("ORIGIN", sm_KeywordWidth);
-    for (size_t n = 0;  n < asd.size();  ++n) {
-        if (n % 60 == 0) {
-            m_Stream << NcbiEndl << setw(9) << n + 1 << ' ';
-        } else if (n % 10 == 0) {
+    for (size_t n = 1;  n <= vec.size();  ++n) {
+        if (n % 60 == 1) {
+            m_Stream << NcbiEndl << setw(9) << n << ' ';
+        } else if (n % 10 == 1) {
             m_Stream << ' ';
         }
-        m_Stream << static_cast<char>(tolower(asd[n]));
+        m_Stream << static_cast<char>(tolower(vec[n]));
     }
     m_Stream << NcbiEndl;
     return true;
@@ -2690,8 +2655,7 @@ void CGenbankWriter::WriteFeatureLocation(const string& name,
 {
     CNcbiOstrstream oss;
     FormatFeatureLocation(location, default_seq, oss);
-    WriteFeatureLocation(name, string(oss.str(), oss.pcount()));
-    oss.freeze(0);
+    WriteFeatureLocation(name, CNcbiOstrstreamToString(oss));
 }
 
 

@@ -3,5 +3,5 @@
 # Build library "xobjutil"
 ###############################
 
-LIBOBJ = asciiseqdata genbank
+LIBOBJ = genbank
 LIB    = xobjutil

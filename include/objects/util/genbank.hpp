@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/10/12 15:29:04  ucko
+* Drop */util/asciiseqdata.* in favor of CSeq_vector.
+* Rewrite GenBank output code to take fuller advantage of the object manager.
+*
 * Revision 1.1  2001/09/25 20:12:04  ucko
 * More cleanups from Denis.
 * Put utility code in the objects namespace.
@@ -55,8 +59,6 @@ BEGIN_SCOPE(objects)
 
 // forward declarations
 class CBioSource;
-class CBioseq;
-class CDescList; // internal
 class CFeat_id;
 class COrg_ref;
 class CSeq_descr;
@@ -84,7 +86,7 @@ public:
         m_Stream(stream), m_Scope(scope), m_Format(format), m_Version(version)
         { SetParameters(); }
 
-    bool Write(CSeq_entry& entry); // returns true on success
+    bool Write(const CSeq_entry& entry); // returns true on success
 
 private:
     // useful constants
@@ -96,21 +98,18 @@ private:
 
     void SetParameters(void); // sets formatting parameters (below)
 
-    // The descriptions in descs are in decreasing order of specificity.
-    bool Write          (const CSeq_entry& entry, const CDescList& descs);
-
-    bool WriteLocus     (const CBioseq&    seq,   const CDescList& descs);
-    bool WriteDefinition(const CBioseq&    seq,   const CDescList& descs);
-    bool WriteAccession (const CBioseq&    seq,   const CDescList& descs);
-    bool WriteVersion   (const CBioseq&    seq,   const CDescList& descs);
-    bool WriteID        (const CBioseq&    seq,   const CDescList& descs);
-    bool WriteKeywords  (const CBioseq&    seq,   const CDescList& descs);
-    bool WriteSegment   (const CBioseq&    seq,   const CDescList& descs);
-    bool WriteSource    (const CBioseq&    seq,   const CDescList& descs);
-    bool WriteReference (const CBioseq&    seq,   const CDescList& descs);
-    bool WriteComment   (const CBioseq&    seq,   const CDescList& descs);
-    bool WriteFeatures  (const CBioseq&    seq,   const CDescList& descs);
-    bool WriteSequence  (const CBioseq&    seq,   const CDescList& descs);
+    bool WriteLocus     (const CBioseqHandle& handle);
+    bool WriteDefinition(const CBioseqHandle& handle);
+    bool WriteAccession (const CBioseqHandle& handle);
+    bool WriteVersion   (const CBioseqHandle& handle);
+    bool WriteID        (const CBioseqHandle& handle);
+    bool WriteKeywords  (const CBioseqHandle& handle);
+    bool WriteSegment   (const CBioseqHandle& handle);
+    bool WriteSource    (const CBioseqHandle& handle);
+    bool WriteReference (const CBioseqHandle& handle);
+    bool WriteComment   (const CBioseqHandle& handle);
+    bool WriteFeatures  (const CBioseqHandle& handle);
+    bool WriteSequence  (const CBioseqHandle& handle);
 
     void Wrap(const string& keyword, const string& contents,
               unsigned int indent = sm_KeywordWidth);
