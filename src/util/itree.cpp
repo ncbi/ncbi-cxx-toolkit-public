@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/01/11 15:08:20  vasilche
+* Removed missing header.
+*
 * Revision 1.1  2001/01/11 15:00:44  vasilche
 * Added CIntervalTree for seraching on set of intervals.
 *
@@ -38,7 +41,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <util/itree.hpp>
-#include <util/itreeimpl.hpp>
 
 BEGIN_NCBI_SCOPE
 
