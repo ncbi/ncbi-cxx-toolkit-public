@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/12/29 22:30:22  vakatov
+* Use "exit()" rather than "abort()" in non-#_DEBUG mode
+*
 * Revision 1.15  1999/12/28 18:55:24  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -87,15 +90,10 @@
 *
 * Revision 1.2  1998/10/27 23:06:58  vakatov
 * Use NCBI C++ interface to iostream's
-*
-* Revision 1.1  1998/10/23 23:22:10  vakatov
-* Initial revision
-*
 * ==========================================================================
 */
 
 #include <corelib/ncbistre.hpp>
-#include <stdlib.h>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE

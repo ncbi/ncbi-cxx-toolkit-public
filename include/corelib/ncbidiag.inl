@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/12/29 22:30:22  vakatov
+* Use "exit()" rather than "abort()" in non-#_DEBUG mode
+*
 * Revision 1.14  1999/12/28 18:55:24  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -75,13 +78,6 @@
 *
 * Revision 1.3  1998/10/30 20:08:25  vakatov
 * Fixes to (first-time) compile and test-run on MSVS++
-*
-* Revision 1.2  1998/10/27 23:08:15  vakatov
-* Finished with a draft redesign(from 1.1)
-*
-* Revision 1.1  1998/10/24 00:25:43  vakatov
-* Initial revision(incomplete transition from "ncbimsg.inl")
-*
 * ==========================================================================
 */
 
@@ -282,11 +278,6 @@ CNcbiDiag& Trace(CNcbiDiag& diag)  {
 inline
 CDiagBuffer::CDiagBuffer(void) {
     m_Diag = 0;
-}
-
-inline CDiagBuffer::~CDiagBuffer(void) {
-    if (m_Diag  ||  m_Stream.pcount())
-        ::abort();
 }
 
 inline

@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/12/29 22:30:25  vakatov
+* Use "exit()" rather than "abort()" in non-#_DEBUG mode
+*
 * Revision 1.14  1999/12/29 21:22:30  vakatov
 * Fixed "delete" to "delete[]"
 *
@@ -68,9 +71,6 @@
 * Use #define'd manipulators(like "NcbiFlush" instead of "flush") to
 * make it compile and work with new(templated) version of C++ streams
 *
-* Revision 1.5  1998/11/03 22:30:20  vakatov
-* cosmetics...
-*
 * Revision 1.4  1998/11/03 22:28:35  vakatov
 * Renamed Die/Post...Severity() to ...Level()
 *
@@ -79,14 +79,11 @@
 *
 * Revision 1.2  1998/10/30 20:08:37  vakatov
 * Fixes to (first-time) compile and test-run on MSVS++
-*
-* Revision 1.1  1998/10/27 23:04:56  vakatov
-* Initial revision
-*
 * ==========================================================================
 */
 
 #include <corelib/ncbidiag.hpp>
+#include <stdlib.h>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
@@ -120,6 +117,11 @@ FDiagHandler CDiagBuffer::sm_HandlerFunc    = 0;
 void*        CDiagBuffer::sm_HandlerData    = 0;
 FDiagCleanup CDiagBuffer::sm_HandlerCleanup = 0;
 
+
+CDiagBuffer::~CDiagBuffer(void) {
+    if (m_Diag  ||  m_Stream.pcount())
+        ::abort();
+}
 
 void CDiagBuffer::DiagHandler(SDiagMessage& mess)
 {
@@ -162,8 +164,14 @@ void CDiagBuffer::Flush(void)
         Reset(*m_Diag);
     }
 
-    if (sev >= sm_DieSeverity  &&  sev != eDiag_Trace)
+    if (sev >= sm_DieSeverity  &&  sev != eDiag_Trace) {
+        m_Diag = 0;
+#if defined(_DEBUG)
         ::abort();
+#else
+        ::exit(-1);
+#endif
+    }
 }
 
 char* SDiagMessage::Compose(void) const
