@@ -10,9 +10,9 @@
 <h2>
 cvs_core.sh MSVC++-related options</h2>
 
-When script <i>cvs_core.sh</i> checks out project files, it by default expands them to have
+A project file, checked out by script <i>cvs_core.sh</i>, is by default expanded to contain
 all 6 configurations (<tt>Debug</tt>, <tt>DebugMT</tt>, <tt>DebugDLL</tt>, <tt>Release</tt>,
-<tt>ReleaseMT</tt>, <tt>ReleaseDLL</tt>). However for a developer this might not be very convenient,
+<tt>ReleaseMT</tt>, <tt>ReleaseDLL</tt>). However, for a developer this might not be very convenient,
 as the resulting project file (if modified) <a href="msvc_prj.html#commit_sh">cannot be</a>
 checked in back to the CVS repository. Therefore, we provide an option (to be used by Toolkit developers), which
 allows to check out C++ Toolkit "as is", i.e. without expanding the project files:
@@ -42,7 +42,13 @@ or:
 	<li>Move entire Toolkit tree to your PC.</li>
 	<li>Run "<i>all.bat</i>" to build the Toolkit.</li>
 </ol>
-
+<p>
+Another recently added MSVC-specific option is <i>--without-dizzy</i>, which is propagated
+to the script <a href="msvc_prj.html#one2all_sh"><i>one2all.sh</i></a>, called to build
+6 configurations in every project file; therefore, this option cannot be combined with <i>--without-vc-cfgs</i>.
+<p>
+<u>Note</u> that although is it acceptable to specify default behavior with <i>--with-vc-cfgs</i> and <i>--with-dizzy</i>,
+we strongly recommend not to use these forms of the options.
 <br>
 <hr>
 <table border=0 width="100%" cellspacing=0>

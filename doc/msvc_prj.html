@@ -12,9 +12,9 @@ MSVC++ Project File Conversion Tools</h2>
 This manual assumes that the UNIX-like environment is used to prepare
 and manage MSVC++ project files, which in turn can be used to build NCBI
 C++ Toolkit by MSVC++ Developer Studio. The following tools must be available in order for
-the conversion scripts to work: <b>cat</b>, <b>cp</b>, <b>echo</b>,
+the conversion scripts to work: <b>cat</b>, <b>cp</b>, <b>diff</b>, <b>echo</b>,
 <b>egrep</b>, <b>expr</b>, <b>find</b>, <b>grep</b>,<b> head</b>, <b>mv</b>,<b> rm</b>,
-<b>sh</b>, <b>tail</b>, <b>test</b>,<b> touch</b>, and <b>tr</b>. In the examples of command
+<b>sh</b>, <b>tail</b>, <b>test</b>, <b>touch</b>, and <b>tr</b>. In the examples of command
 sequences below, a prompt of the operating system is shown as <b><tt><font color="#CC33CC">$</font></tt></b>,
 and the user input is rendered <tt><font color="#009900">like this</font></tt>.
 <br>
@@ -46,7 +46,7 @@ following shell <a name="scripts">scripts</a>:
 
 <ul>
 <li>
-<a name="all2one_sh"><i><font color="#3333FF">all2one.sh</font></i></a> - looks through the given project
+<a name="all2one_sh"><i><tt><font color="#3333FF">all2one.sh</font></tt></i></a> - looks through the given project
 file, prints out available configurations, and allows to extract any of
 those. If there is only one configuration, the script does nothing. Special
 care is taken to first check the project file consistency to avoid corrupting
@@ -62,11 +62,14 @@ is used as a name of configuration to extract without interactive inquiry. If th
 is not found, the script aborts with an error message.
 
 <li>
-<a name="one2all_sh"><i><font color="#3333FF">one2all.sh</font></i></a> - takes a single-configuration
-project file (perhaps the one created by <i><font color="#3333FF">all2one.sh</font></i>)
+<a name="one2all_sh"><i><tt><font color="#3333FF">one2all.sh</font></tt></i></a> - takes a single-configuration
+project file (perhaps the one created by <tt><font color="#3333FF">all2one.sh</font></tt>)
 and derives multi-configuration project file containing 3 production configurations:
 <tt>Release</tt>, <tt>ReleaseMT</tt>, and <tt>ReleaseDLL</tt>; and 3 debug configurations: <tt>Debug</tt>,
-<tt>DebugMT</tt>, and <tt>DebugDLL</tt>. Output file is always produced in DOS text file format (that is suitable
+<tt>DebugMT</tt>, and <tt>DebugDLL</tt>. One option, <i><font color="#3333FF">--without-dizzy</font></i>,
+can precede the file name. If specified, then the C compiler, resource compiler and linker options,
+which refer to additional paths, involving <tt><font color="#3333FF">\\DIZZY\</font></tt>, are removed.
+Output file is always produced in DOS text file format (that is suitable
 for immediate consumption by MSVC++), whereas input file can be in either UNIX or DOS format.</li>
 <br>
 <u>Note</u>: There is one additional argument, which is reserved for internal use only.
@@ -75,15 +78,18 @@ are placed to the output file. When specified as <tt>4</tt>, only the following 
 appear: <tt>Debug</tt>, <tt>DebugMT</tt>, <tt>Release</tt>, and <tt>ReleaseMT</tt>.
 
 <li>
-<a name="one2one_sh"><i><font color="#3333FF">one2one.sh</font></i></a> - takes two arguments:
+<a name="one2one_sh"><i><tt><font color="#3333FF">one2one.sh</font></tt></i></a> - takes two arguments:
 single-configuration project file name and one of standard configuration names
 (<tt>Debug</tt>, <tt>DebugMT</tt>, <tt>DebugDLL</tt>, <tt>Release</tt>, <tt>ReleaseMT</tt>, <tt>ReleaseDLL</tt>) and replaces
 the given project file with a new one, having the requested configuration. In case of non-standard configuration name,
-an error results. Output file is created in UNIX text file format.</li>
+an error results. Being an 'interface' script to both <tt><font color="#3333FF">all2one.sh</font></tt> and
+<tt><font color="#3333FF">one2all.sh</font></tt>, this scipt can accept one option,
+<tt><font color="#3333FF">--without-dizzy</font></tt>, as described above.
+Output file is created in UNIX text file format.</li>
 
 <li>
-<a name="include_sh"><i><font color="#3333FF">include.sh</font></i></a> - takes an optional argument list, each entry of
-which is a relative path to include file directory (default is the standard NCBI C++ Toolkit include
+<a name="include_sh"><i><tt><font color="#3333FF">include.sh</font></tt></i></a> - takes an optional argument list, each
+entry of which is a relative path to include file directory (default is the standard NCBI C++ Toolkit include
 directory). The script then recursively looks through all project files, and tries to update compiler
 switches with the given directory list. Directories, already specified in project files, are either replaced
 (when the new directory resembles the old one), or added to the current list of include directories.
@@ -94,7 +100,7 @@ directory each time, when the project file subtree is a kind rearranged and must
 Therefore, the project files are always produced in UNIX text file format.</li>
 
 <li>
-<a name="commit_sh"><i><font color="#3333FF">commit.sh</font></i></a> -
+<a name="commit_sh"><i><tt><font color="#3333FF">commit.sh</font></tt></i></a> -
 control script for use from inside the CVS upon each commit to ensure
 that the project being checked in contains one fixed configuration only (namely, <tt>DebugMT</tt>).
 This script as well checks that the file being committed is in UNIX text file format, and rejects if not.
@@ -112,6 +118,10 @@ the project using either local or pre-built libraries. We require that if a tool
 <tt><font color="#3333FF">\\DIZZY\public</font></tt>), then the upper-level directory of the toolkit has to be placed
 at the same level as the NCBI C++ Toolkit top-level directory. We reserve that <tt>wxwin</tt> and <tt>ncbi</tt> subdirectories, when appear in the same parent directory as <tt>cxx</tt>, contain wxWindows and NCBI C Toolkit correspondingly.
 Click <a href="config.html#ref_MsvcProjWxwin">here</a> to know how to use the wxWindows package in these requirements.
+One can later remove absolute references to <tt><font color="#3333FF">\\DIZZY\</font></tt> using option
+<tt><font color="#3333FF">--without-dizzy</font></tt> with either
+<a href="#one2all_sh"><tt><font color="#3333FF">one2all.sh</font></tt></a>, or
+<a href="#one2one_sh"><tt><font color="#3333FF">one2one.sh</font></tt></a>.
 
 <br>
 <a name="notes"><br><b><u>Please note</u></b></a> that the above tools are <b><i>not</i></b> project file <i>generation</i>
