@@ -112,6 +112,10 @@ public:
                EPosition byPosition, TSeqPos position,
                size_t maxResolveCount = 0,
                TFlags flags = fDefaultFlags);
+    CSeqMap_CI(const CConstRef<CSeqMap>& seqMap, CScope* scope,
+               EPosition byPosition, TSeqPos position,
+               ENa_strand strand,
+               size_t maxResolveCount, TFlags flags = fDefaultFlags);
     CSeqMap_CI(const CConstRef<CSeqMap>& seqmap, CScope* scope,
                EBegin toBegin,
                size_t maxResolveCount = 0,
@@ -227,6 +231,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/05/20 20:36:13  vasilche
+* Added FindResolved() with strand argument.
+*
 * Revision 1.5  2003/05/20 15:44:37  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.
 * Fixed some warnings on WorkShop.

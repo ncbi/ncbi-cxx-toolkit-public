@@ -435,6 +435,15 @@ CSeqMap::TSegment_CI CSeqMap::FindResolved(TSeqPos pos, CScope* scope,
 }
 
 
+CSeqMap::TSegment_CI CSeqMap::FindResolved(TSeqPos pos, CScope* scope,
+                                           ENa_strand strand,
+                                           size_t maxResolveCount,
+                                           TFlags flags) const
+{
+    return find_resolved(pos, scope, strand, maxResolveCount, flags);
+}
+
+
 CSeqMap::const_iterator CSeqMap::begin_resolved(CScope* scope,
                                                 size_t maxResolveCount,
                                                 TFlags flags) const
@@ -461,6 +470,17 @@ CSeqMap::const_iterator CSeqMap::find_resolved(TSeqPos pos, CScope* scope,
 {
     return TSegment_CI(CConstRef<CSeqMap>(this), scope,
                        TSegment_CI::ePosition, pos,
+                       maxResolveCount, flags);
+}
+
+
+CSeqMap::const_iterator CSeqMap::find_resolved(TSeqPos pos, CScope* scope,
+                                               ENa_strand strand,
+                                               size_t maxResolveCount,
+                                               TFlags flags) const
+{
+    return TSegment_CI(CConstRef<CSeqMap>(this), scope,
+                       TSegment_CI::ePosition, pos, strand,
                        maxResolveCount, flags);
 }
 
@@ -767,6 +787,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/05/20 20:36:14  vasilche
+* Added FindResolved() with strand argument.
+*
 * Revision 1.34  2003/05/20 15:44:38  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.
 * Fixed some warnings on WorkShop.

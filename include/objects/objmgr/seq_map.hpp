@@ -173,6 +173,10 @@ public:
     const_iterator find_resolved(TSeqPos pos, CScope* scope,
                                  size_t maxResolveCount = size_t(-1),
                                  TFlags flags = fDefaultFlags) const;
+    const_iterator find_resolved(TSeqPos pos, CScope* scope,
+                                 ENa_strand strand,
+                                 size_t maxResolveCount,
+                                 TFlags flags) const;
     const_iterator end_resolved(CScope* scope,
                                 size_t maxResolveCount = size_t(-1),
                                 TFlags flags = fDefaultFlags) const;
@@ -181,6 +185,10 @@ public:
                               size_t maxResolveCount = size_t(-1),
                               TFlags flags = fDefaultFlags) const;
     TSegment_CI FindResolved(TSeqPos pos, CScope* scope,
+                             size_t maxResolveCount = size_t(-1),
+                             TFlags flags = fDefaultFlags) const;
+    TSegment_CI FindResolved(TSeqPos pos, CScope* scope,
+                             ENa_strand strand,
                              size_t maxResolveCount = size_t(-1),
                              TFlags flags = fDefaultFlags) const;
     TSegment_CI EndResolved(CScope* scope,
@@ -331,6 +339,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/05/20 20:36:13  vasilche
+* Added FindResolved() with strand argument.
+*
 * Revision 1.33  2003/02/24 18:57:21  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.
