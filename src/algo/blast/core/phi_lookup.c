@@ -45,24 +45,26 @@ static char const rcsid[] =
 #define seedepsilon 0.00001
 #define allone  ((1 << ALPHABET_SIZE) - 1)
 
+/** Parameters for a seed search in PHI BLAST. */
 typedef struct seedSearchItems {
     double  charMultiple[ALPHABET_SIZE];
-    double  paramC; /*used in e-value computation*/
-    double  paramLambda; /*used in e-value computation*/
-    double  paramK; /*used in the bit score computation*/
-    Int4         cutoffScore; /*lower bound for what is a hit*/
-    double  standardProb[ALPHABET_SIZE]; /*probability of each letter*/
+    double  paramC; /**< used in e-value computation*/
+    double  paramLambda; /**< used in e-value computation*/
+    double  paramK; /**< used in the bit score computation*/
+    Int4         cutoffScore; /**< lower bound for what is a hit*/
+    double  standardProb[ALPHABET_SIZE]; /**< probability of each letter*/
     char         order[ASCII_SIZE];
     char         pchars[ALPHABET_SIZE+1];
-    char         name_space[BUF_SIZE];  /*name of a pattern*/
-    char         pat_space[PATTERN_SPACE_SIZE];  /*string description
+    char         name_space[BUF_SIZE];  /**< name of a pattern*/
+    char         pat_space[PATTERN_SPACE_SIZE];  /**< string description
                                                    of pattern*/
 } seedSearchItems;
 
-/*Initialize the order of letters in the alphabet, the score matrix,
-and the row sums of the score matrix. matrixToFill is the
-score matrix, program_flag says which variant of the program is
-used; is_dna tells whether the strings are DNA or protein*/
+/** Initialize the order of letters in the alphabet, the score matrix,
+ * and the row sums of the score matrix. matrixToFill is the
+ * score matrix, program_flag says which variant of the program is
+ * used; is_dna tells whether the strings are DNA or protein.
+ */
 static void init_order(Int4 **matrix, Int4 program_flag, Boolean is_dna, seedSearchItems *seedSearch)
 {
     Uint1 i, j; /*loop indices for matrix*/ 
@@ -96,7 +98,7 @@ static void init_order(Int4 **matrix, Int4 program_flag, Boolean is_dna, seedSea
     }
 }
 
-/*Initialize occurrence probabilities for each amino acid*/
+/** Initialize occurrence probabilities for each amino acid */
 static void initProbs(seedSearchItems * seedSearch)
 {
    double totalCount;  /*for Robinson frequencies*/
@@ -156,13 +158,14 @@ static void initProbs(seedSearchItems * seedSearch)
    seedSearch->standardProb[24] = 0.0;   /*U*/
 }
 
-/*set uo matches for words that encode 4 DNA characters; figure out
-  for each of 256 possible DNA 4-mers, where a prefix matches the pattern
- and where a suffix matches the pattern; store in prefixPos and
- suffixPos; mask has 1 bits for whatever lengths of string
-the pattern can match, mask2 has 4 1 bits corresponding to
-the last 4 positions of a match; they are used to
-do the prefixPos and suffixPos claculations with bit arithmetic*/
+/** Set uo matches for words that encode 4 DNA characters; figure out
+ * for each of 256 possible DNA 4-mers, where a prefix matches the pattern
+ * and where a suffix matches the pattern; store in prefixPos and
+ * suffixPos; mask has 1 bits for whatever lengths of string
+ * the pattern can match, mask2 has 4 1 bits corresponding to
+ * the last 4 positions of a match; they are used to
+ * do the prefixPos and suffixPos calculations with bit arithmetic.
+ */
 static void setting_tt(Int4* S, Int4 mask, Int4 mask2, Uint4* prefixPos, 
 		       Uint4* suffixPos)
 {
@@ -195,7 +198,7 @@ static void setting_tt(Int4* S, Int4 mask, Int4 mask2, Uint4* prefixPos,
   }
 }
 
-/*initialize mask and other arrays for DNA patterns*/
+/** Initialize mask and other arrays for DNA patterns*/
 static void init_pattern_DNA(patternSearchItems *patternSearch)
 {
   Int4 mask1; /*mask for one word in a set position*/
@@ -223,9 +226,13 @@ static void init_pattern_DNA(patternSearchItems *patternSearch)
   }
 }
 
-/*length is the length of inputPattern, maxLength is a limit on
-   how long inputPattern can get;
-   return the final length of the pattern or -1 if too long*/
+/** Expands pattern.
+ * @param inputPatternMasked Masked input pattern [in]
+ * @Param inputPattern Input pattern [in]
+ * @param length Length of inputPattern [in]
+ * @param maxLength Limit on how long inputPattern can get [in]
+ * @return the final length of the pattern or -1 if too long.
+ */
 static Int4 expanding(Int4 *inputPatternMasked, Uint1 *inputPattern, 
 		      Int4 length, Int4 maxLength)
 {
@@ -289,9 +296,12 @@ static Int4 expanding(Int4 *inputPatternMasked, Uint1 *inputPattern,
     return length;
 }
 
-/*Pack the next length bytes of inputPattern into a bit vector
-  where the bit is 1 if and only if the byte is non-0 
-  Returns packed bit vector*/
+/** Pack the next length bytes of inputPattern into a bit vector
+ * where the bit is 1 if and only if the byte is non-0.
+ * @param inputPattern Input pattern [in]
+ * @param length How many bytes to pack? [in]
+ * @return packed bit vector.
+ */
 static Int4 packing(Uint1 *inputPattern, Int4 length)
 {
     Int4 i; /*loop index*/
@@ -303,11 +313,11 @@ static Int4 packing(Uint1 *inputPattern, Int4 length)
     return returnValue;
 }
 
-/*Pack the bit representation of the inputPattern into
-   the array patternSearch->match_maskL
-   numPlaces is the number of positions in
-   inputPattern
-   Also packs patternSearch->bitPatternByLetter  */
+/** Pack the bit representation of the inputPattern into
+ * the array patternSearch->match_maskL. Also packs 
+ * patternSearch->bitPatternByLetter.
+ * @param numPlaces Number of positions in inputPattern [in]
+ */
 static void longpacking(Int4 numPlaces, Uint1 *inputPattern, patternSearchItems *patternSearch)
 {
     Int4 charIndex; /*index over characters in alphabet*/
@@ -338,7 +348,7 @@ static void longpacking(Int4 numPlaces, Uint1 *inputPattern, patternSearchItems 
     }
 }
 
-/*Return the number of 1 bits in the base 2 representation of a*/
+/** Return the number of 1 bits in the base 2 representation of a*/
 static Int4 num_of_one(Int4 a)
 {
   Int4 returnValue;
@@ -351,7 +361,7 @@ static Int4 num_of_one(Int4 a)
   return returnValue;
 }
 
-/*Sets up field in patternSearch when pattern is very long*/
+/** Sets up field in patternSearch when pattern is very long*/
 static void longpacking2(Int4 *inputPatternMasked, Int4 numPlacesInPattern, patternSearchItems *patternSearch)
 {
     Int4 placeIndex; /*index over places in pattern rep.*/
@@ -408,8 +418,13 @@ static void longpacking2(Int4 *inputPatternMasked, Int4 numPlacesInPattern, patt
     patternSearch->numWords = wordIndex;
 }
 
-/*pattern is a string describing the pattern to search for;
-  is_dna is a boolean describing the strings are DNA or protein*/
+/** Initialize the pattern information structure.
+ * @param pattern String describing the pattern to search for [in]
+ * @param is_dna boolean describing whether the strings are DNA or protein [in]
+ * @param sbp Scoring block with statistical parameters [in]
+ * @param pattern_info The initialized structure [out]
+ * @error_msg Error message, if any.
+ */
 static Int4 
 init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp, 
              patternSearchItems* *pattern_info,
@@ -658,6 +673,7 @@ Int2 PHILookupTableNew(const LookupTableOptions* opt, PHILookupTable* * lut,
    return 0;
 }
 
+/** Frees the PHI BLAST pseudo lookup table. */
 PHILookupTable* PHILookupTableDestruct(PHILookupTable* lut)
 {
    sfree(lut->pattern_info);
@@ -667,6 +683,11 @@ PHILookupTable* PHILookupTableDestruct(PHILookupTable* lut)
    return NULL;
 }
 
+/** Adds a new pattern hit to the PHI BLAST pseudo lookup table.
+ * @param lookup The lookup table structure [in] [out]
+ * @param offset Offset in query at which pattern was found. [in]
+ * @param length Length of the pattern at this offset. [in] 
+ */
 static Int2 PHIBlastAddPatternHit(PHILookupTable* lookup, Int4 offset, 
                                   Int4 length)
 {
@@ -686,6 +707,14 @@ static Int2 PHIBlastAddPatternHit(PHILookupTable* lookup, Int4 offset,
    return 0;
 }
 
+/** Finds all pattern hits in a given query and saves them in the PHI BLAST 
+ * lookup table structure. 
+ * @param lookup The lookup table structure [in] [out]
+ * @param query Query sequence(s) [in]
+ * @param location Segments in the query sequence where to look for 
+ *                 pattern [in]
+ * @param is_dna Is this a nucleotide sequence? [in]
+ */
 Int4 PHIBlastIndexQuery(PHILookupTable* lookup, 
         BLAST_SequenceBlk* query, ListNode* location, Boolean is_dna)
 {
@@ -717,6 +746,12 @@ Int4 PHIBlastIndexQuery(PHILookupTable* lookup,
    return lookup->num_matches;
 }
 
+/** Check if two sequences segments are identical.
+ * @param subject Subject sequence [in]
+ * @param query Query sequence [in]
+ * @param length Length to match [in]
+ * @return Do the two sequences match? 
+ */
 static Boolean 
 PHIBlastMatchPatterns(Uint1* subject, Uint1* query, Int4 length)
 {
@@ -729,6 +764,8 @@ PHIBlastMatchPatterns(Uint1* subject, Uint1* query, Int4 length)
    return (index == length);
 }
 
+/** Implementation of the ScanSubject function for PHI BLAST.
+ */
 Int4 PHIBlastScanSubject(const LookupTableWrap* lookup_wrap,
         const BLAST_SequenceBlk *query_blk, 
         const BLAST_SequenceBlk *subject_blk, 

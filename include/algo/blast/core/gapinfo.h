@@ -60,36 +60,46 @@ typedef struct GapEditScript {
    struct GapEditScript* next; /**< Pointer to next link */
 } GapEditScript;
 
+/** Editing block structure containing all information returned from a 
+ * single gapped extension. */
 typedef struct GapEditBlock {
-    Int4 start1,  start2,       /* starts of alignments. */
-        length1, length2,       /* total lengths of the sequences. */
-        original_length1,	/* Untranslated lengths of the sequences. */
-        original_length2;	
-    Int2 frame1, frame2;	    /* frames of the sequences. */
-    Boolean translate1,	translate2; /* are either of these be translated. */
-    Boolean reverse;	/* reverse sequence 1 and 2 when producing SeqALign? */
-    Boolean is_ooframe; /* Is this out_of_frame edit block? */
-    Boolean discontinuous; /* Is this OK to produce discontinuous SeqAlign? */
-    GapEditScript* esp;
+   Int4 start1,  start2,       /**< starts of alignments. */
+      length1, length2,       /**< total lengths of the sequences. */
+      original_length1, original_length2; /**< Untranslated lengths of the 
+                                             sequences. */
+   Int2 frame1, frame2;	    /**< frames of the sequences. */
+   Boolean translate1,	translate2; /**< are either of these be translated. */
+   Boolean reverse;	/**< reverse sequence 1 and 2 when producing SeqALign? */
+   Boolean is_ooframe; /**< Is this out_of_frame edit block? */
+   Boolean discontinuous; /**< Is this OK to produce discontinuous SeqAlign? */
+   GapEditScript* esp; /**< Editing script for the traceback. */
 } GapEditBlock;
 
-/*
-	Structure to keep memory for state structure.
-*/
+/** Structure to keep memory for state structure. */ 
 typedef struct GapStateArrayStruct {
-	Int4 	length,		/* length of the state_array. */
-		used;		/* how much of length is used. */
-	Uint1* state_array;	/* array to be used. */
-	struct GapStateArrayStruct* next;
+	Int4 	length,		/**< length of the state_array. */
+		used;		/**< how much of length is used. */
+	Uint1* state_array;	/**< array to be used. */
+	struct GapStateArrayStruct* next; /**< Next link in the list. */
 } GapStateArrayStruct;
 
+/** Initialize the gap editing script structure. */
 GapEditScript* 
 GapEditScriptNew (GapEditScript* old);
 
+/** Free the gap editing script structure. */
 GapEditScript* GapEditScriptDelete (GapEditScript* esp);
 
+/** Initialize the gap editing block structure. 
+ * @param start1 Offset to start alignment in first sequence. [in]
+ * @param start2 Offset to start alignment in second sequence. [in]
+ */
 GapEditBlock* GapEditBlockNew (Int4 start1, Int4 start2);
+
+/** Free the edit block structure. */
 GapEditBlock* GapEditBlockDelete (GapEditBlock* edit_block);
+
+/** Free the gap state structure. */
 GapStateArrayStruct* 
 GapStateFree(GapStateArrayStruct* state_struct);
 
