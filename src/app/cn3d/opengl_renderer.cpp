@@ -162,6 +162,7 @@ void OpenGLRenderer::Init(void) const
     // set these material colors
     glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, Color_Off);
     glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, Shininess);
+    glEnable(GL_COLOR_MATERIAL);
 
     // turn on culling to speed rendering
     glEnable(GL_CULL_FACE);
@@ -485,7 +486,7 @@ void OpenGLRenderer::StartDisplayList(unsigned int list)
         return;
     }
     ClearTransparentSpheresForList(list);
-    SetColor(GL_NONE); // reset color caches in SetColor
+    SetColor(eResetCache); // reset color caches in SetColor
 
     glNewList(list, GL_COMPILE);
     currentDisplayList = list;
@@ -663,50 +664,58 @@ void OpenGLRenderer::Construct(void)
         structureSet->DrawAll();
 
     } else {
-        SetColor(GL_NONE);
+        SetColor(eResetCache);
         ConstructLogo();
     }
 
     GlobalMessenger()->UnPostStructureRedraws();
 }
 
-// set current GL color; don't change color if it's same as what's current
-void OpenGLRenderer::SetColor(int type, double red, double green, double blue, double alpha)
+void OpenGLRenderer::SetColor(OpenGLRenderer::EColorAction action, int type, double red, double green, double blue, double alpha)
 {
-    static double pr, pg, pb, pa;
-    static GLenum pt = GL_NONE;
+    static double cr, cg, cb, ca;
+    static GLenum cachedType = GL_NONE, lastType = GL_NONE;
 
-    if (type == GL_NONE) {
-        pt = GL_NONE;
+    if (action == eResetCache) {
+        cachedType = lastType = GL_NONE;
         return;
     }
-    if (alpha <= 0.0) WARNINGMSG("SetColor request alpha <= 0.0");
 
-    if (red != pr || green != pg || blue != pb || type != pt || alpha != pa) {
-        if (type != pt) {
-            if (type == GL_DIFFUSE) {
-                glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, Color_MostlyOff);
-                glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,
-                    highlightsOn ? Color_Specular : Color_Off);
-            } else if (type == GL_AMBIENT) {
-                glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, Color_Off);
-                glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, Color_Off); // no specular for ambient coloring
-            } else {
-                ERRORMSG("don't know how to handle material type " << type);
-            }
-            pt = (GLenum) type;
+    if (action == eSetColorIfDifferent && type == lastType && red == cr && green == cg && blue == cb && alpha == ca)
+        return;
+
+    if (action == eUseCachedValues) {
+        if (cachedType == GL_NONE) {
+            ERRORMSG("can't do SetColor(eUseCachedValues) w/o previously doing eSetCacheValues or eSetColorIfDifferent");
+            return;
         }
-        GLfloat rgba[4] = { red, green, blue, alpha };
-        glMaterialfv(GL_FRONT_AND_BACK, (GLenum) type, rgba);
-        // this is necessary so that fonts are rendered in correct
-        // color in SGI's OpenGL implementation, and maybe others
-        if (type == GL_AMBIENT) glColor4fv(rgba);
-
-        pr = red;
-        pg = green;
-        pb = blue;
-        pa = alpha;
+    } else {   // eSetCacheValues, or eSetColorIfDifferent and is different
+        cachedType = type;
+        cr = red;
+        cg = green;
+        cb = blue;
+        ca = alpha;
+        if (action == eSetCacheValues)
+            return;
     }
+
+    if (cachedType != lastType) {
+        if (cachedType == GL_DIFFUSE) {
+            glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);     // needs to go before glMaterial calls for some reason, at least on PC
+            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, Color_MostlyOff);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, highlightsOn ? Color_Specular : Color_Off);
+        } else if (cachedType == GL_AMBIENT) {
+            glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, Color_Off);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, Color_Off);
+        } else {
+            ERRORMSG("don't know how to handle material type " << cachedType);
+        }
+        lastType = (GLenum) cachedType;
+    }
+
+    GLfloat rgba[4] = { cr, cg, cb, ca };
+    glColor4fv(rgba);
 }
 
 /* create display list with logo */
@@ -727,7 +736,7 @@ void OpenGLRenderer::ConstructLogo(void)
     glNewList(FIRST_LIST, GL_COMPILE);
 
     /* create logo */
-    SetColor(GL_DIFFUSE, logoColor[0], logoColor[1], logoColor[2]);
+    SetColor(eSetColorIfDifferent, GL_DIFFUSE, logoColor[0], logoColor[1], logoColor[2]);
 
     for (n = 0; n < 2; ++n) { /* helix strand */
         if (n == 0) {
@@ -869,12 +878,12 @@ void OpenGLRenderer::RenderTransparentSpheres(void)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    SetColor(GL_NONE); // reset color caches in SetColor
+    SetColor(eResetCache); // reset color caches in SetColor
 
     // render spheres in order (farthest first)
     SpherePtrList::reverse_iterator i, ie=transparentSpheresToRender.rend();
     for (i=transparentSpheresToRender.rbegin(); i!=ie; ++i) {
-        SetColor(GL_DIFFUSE, i->ptr->color[0], i->ptr->color[1], i->ptr->color[2], i->ptr->alpha);
+        SetColor(eSetColorIfDifferent, GL_DIFFUSE, i->ptr->color[0], i->ptr->color[1], i->ptr->color[2], i->ptr->alpha);
         glLoadName(static_cast<GLuint>(i->ptr->name));
         glPushMatrix();
         glTranslated(i->siteGL.x, i->siteGL.y, i->siteGL.z);
@@ -901,7 +910,7 @@ void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle)
         return;
 
     if (atomStyle.style == StyleManager::eSolidAtom) {
-        SetColor(GL_DIFFUSE, atomStyle.color[0], atomStyle.color[1], atomStyle.color[2]);
+        SetColor(eSetColorIfDifferent, GL_DIFFUSE, atomStyle.color[0], atomStyle.color[1], atomStyle.color[2]);
         glLoadName(static_cast<GLuint>(atomStyle.name));
         glPushMatrix();
         glTranslated(site.x, site.y, site.z);
@@ -1196,8 +1205,8 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
             (style.end1.style == StyleManager::eLineBond ||
             style.end1.style == StyleManager::eLineWormBond ||
             style.end1.radius <= 0.0)
-            ? GL_AMBIENT : GL_DIFFUSE;
-        SetColor(colorType, style.end1.color[0], style.end1.color[1], style.end1.color[2]);
+                ? GL_AMBIENT : GL_DIFFUSE;
+        SetColor(eSetColorIfDifferent, colorType, style.end1.color[0], style.end1.color[1], style.end1.color[2]);
         glLoadName(static_cast<GLuint>(style.end1.name));
         if (style.end1.style == StyleManager::eLineWormBond ||
             style.end1.style == StyleManager::eThickWormBond)
@@ -1217,8 +1226,8 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
             (style.end2.style == StyleManager::eLineBond ||
             style.end2.style == StyleManager::eLineWormBond ||
             style.end2.radius <= 0.0)
-            ? GL_AMBIENT : GL_DIFFUSE;
-        SetColor(colorType, style.end2.color[0], style.end2.color[1], style.end2.color[2]);
+                ? GL_AMBIENT : GL_DIFFUSE;
+        SetColor(eSetColorIfDifferent, colorType, style.end2.color[0], style.end2.color[1], style.end2.color[2]);
         glLoadName(static_cast<GLuint>(style.end2.name));
         if (style.end2.style == StyleManager::eLineWormBond ||
             style.end2.style == StyleManager::eThickWormBond)
@@ -1236,7 +1245,7 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
 
 void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const HelixStyle& style)
 {
-    SetColor(GL_DIFFUSE, style.color[0], style.color[1], style.color[2]);
+    SetColor(eSetColorIfDifferent, GL_DIFFUSE, style.color[0], style.color[1], style.color[2]);
     glLoadName(static_cast<GLuint>(NO_NAME));
 
     double wholeLength = (Nterm - Cterm).length();
@@ -1303,7 +1312,7 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
     Vector a, h;
     int i;
 
-    SetColor(GL_DIFFUSE, style.color[0], style.color[1], style.color[2]);
+    SetColor(eSetColorIfDifferent, GL_DIFFUSE, style.color[0], style.color[1], style.color[2]);
     glLoadName(static_cast<GLuint>(NO_NAME));
 
     /* in this brick's world coordinates, the long axis (N-C direction) is
@@ -1456,7 +1465,7 @@ void OpenGLRenderer::DrawLabel(const string& text, const Vector& center, const V
     if (!glCanvas->MeasureText(text, &width, &height, &textCenterX, &textCenterY))
         WARNINGMSG("MeasureText() failed");
 
-    SetColor(GL_AMBIENT, color[0], color[1], color[2]);
+    SetColor(eSetColorIfDifferent, GL_AMBIENT, color[0], color[1], color[2]);
     glListBase(FONT_BASE);
     glRasterPos3d(center.x, center.y, center.z);
     glBitmap(0, 0, 0.0, 0.0, -textCenterX, -textCenterY, NULL);
@@ -1615,6 +1624,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2004/08/09 19:17:48  thiessen
+* rewrite SetColor to use glColorMaterial+glColor, and prepare for caching
+*
 * Revision 1.79  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *

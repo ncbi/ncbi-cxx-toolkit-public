@@ -165,7 +165,14 @@ private:
     StructureSet *structureSet;
     Cn3DGLCanvas *glCanvas;
 
-    void SetColor(int type, double red = 0.0, double green = 0.0, double blue = 0.0, double alpha = 1.0);
+    enum EColorAction {
+        eResetCache,                // reset cached values (no call to glMaterial)
+        eSetCacheValues,            // set values in cache, but don't call glMaterial
+        eUseCachedValues,           // set color with cached values
+        eSetColorIfDifferent        // set color IFF values are different from cached values (+ set cache to new values)
+    };
+    void SetColor(EColorAction action, int type = 0, double red = 0.0, double green = 0.0, double blue = 0.0, double alpha = 1.0);
+
     void ConstructLogo(void);
 
     // camera data
@@ -231,6 +238,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2004/08/09 19:17:48  thiessen
+* rewrite SetColor to use glColorMaterial+glColor, and prepare for caching
+*
 * Revision 1.43  2004/02/19 17:05:00  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *
