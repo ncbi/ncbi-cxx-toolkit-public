@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.3  2002/01/24 20:18:56  ucko
+* Add comments
+* Add magic TemporarilyStopListening overflow processor
+*
 * Revision 6.2  2002/01/24 18:36:07  ucko
 * Allow custom queue-overflow handling.
 *
@@ -53,7 +57,25 @@ typedef void (*FConnStreamProcessor)(CConn_IOStream& stream);
 typedef void (*FConnectionProcessor)(CONN conn);
 typedef void (*FSockProcessor)(SOCK sock);
 
-// Default overflow behavior is to silently close the socket
+void TemporarilyStopListening(SOCK sock);
+
+// Arguments to RunThreadedServer:
+//  proc - What to do with each incoming connection in normal circumstances
+//       - Runs asynchronously, in a separate thread from RunThreadedServer
+//       - Use whichever argument type is most convenient
+//       - Do NOT close anything; this happens automatically
+//
+//  port - TCP port to listen on
+//
+//  init_threads, max_threads, queue_size, spawn_threshold
+//       - Passed directly to thread pool constructor
+//
+//  overflow_proc - What to do with each incoming connection when queue is full
+//                - Runs synchronously, from within RunThreadedServer
+//                - The special value TemporarilyStopListening closes the
+//                  listening socket until the queue has room again
+//                - Do NOT close the socket; this happens automatically
+//                - Default is a no-op (aside from automatic socket closing)
 
 void RunThreadedServer(FConnStreamProcessor proc, unsigned int port,
                        unsigned int init_threads = 5,
