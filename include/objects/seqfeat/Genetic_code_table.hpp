@@ -92,7 +92,7 @@ class CTrans_table : public CObject
 {
 public:
     // constructor
-    CTrans_table(const CGenetic_code &);
+    CTrans_table(const CGenetic_code&);
     // destructor
     ~CTrans_table(void);
 
@@ -143,11 +143,26 @@ class CGen_code_table
 {
 public:
     // return initialized translation table given genetic code
-    static const CTrans_table & GetTransTable (int id);
-    static const CTrans_table & GetTransTable (const CGenetic_code & gc);
+    static const CTrans_table& GetTransTable (int id);
+    static const CTrans_table& GetTransTable (const CGenetic_code& gc);
 
     // return table of loaded genetic codes for iteration
-    static const CGenetic_code_table & GetCodeTable (void);
+    static const CGenetic_code_table& GetCodeTable (void);
+
+    // Get the ncbieaa string for a specific genetic code.
+    static const string& GetNcbieaa(int id);
+    static const string& GetNcbieaa(const CGenetic_code& gc);
+
+    // Get the sncbieaa string for a specific genetic code
+    static const string& GetSncbieaa(int id);
+    static const string& GetSncbieaa(const CGenetic_code& gc);
+
+    // Convert the numeric representation of a codon to a base one.
+    static string IndexToCodon(int index);
+
+    // Convert the base representation of a codon to a numeric one.
+    static int CodonToIndex(char base1, char base2, char base3);
+    static int CodonToIndex(const string& codon);
 
 private:
     // this class uses a singleton internally to manage the specifics
@@ -158,6 +173,7 @@ private:
     static void                 x_InitImplementation(void);
     static CGen_code_table_imp& x_GetImplementation (void);
 };
+
 
 inline
 CGen_code_table_imp& CGen_code_table::x_GetImplementation(void)
@@ -262,6 +278,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2002/11/26 18:40:16  shomrat
+* Add convenience method for codon conversions and ncbieaa string retrieval
+*
 * Revision 1.5  2002/09/13 00:44:58  ucko
 * #include <memory> for auto_ptr<> template
 *
