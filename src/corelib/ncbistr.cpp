@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/05/17 20:10:36  vasilche
+* Fixed bug in NStr::StringToUInt which cause an exception.
+*
 * Revision 1.12  1999/05/04 00:03:13  vakatov
 * Removed the redundant severity arg from macro ERR_POST()
 *
@@ -95,7 +98,7 @@ unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */ )
     errno = 0;
     char* error = 0;
     long value = ::strtol(str.c_str(), &error, base);
-    if (errno  ||  (error && *error)  ||  value < 0 || value > (long)kMax_UInt)
+    if (errno  ||  (error && *error)  ||  value < 0 || value > kMax_UInt)
         throw runtime_error("bad number");
     return value;
 }
