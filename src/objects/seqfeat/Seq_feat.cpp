@@ -271,17 +271,17 @@ CConstRef<CDbtag> CSeq_feat::GetNamedDbxref(const string& db) const
 }
 
 
-string CSeq_feat::GetNamedQual(const string& qual_name) const
+const string& CSeq_feat::GetNamedQual(const string& qual_name) const
 {
     if (IsSetQual()) {
         ITERATE (TQual, iter, GetQual()) {
-            if ( (*iter)->GetQual() == qual_name) {
+            if ( (*iter)->GetQual() == qual_name  &&  (*iter)->IsSetVal()) {
                 return (*iter)->GetVal();
             }
         }
     }
 
-    return string();
+    return kEmptyStr;
 }
 
 
@@ -293,6 +293,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.22  2004/10/13 13:57:15  shomrat
+ * GetNamedQual return const string& instead of string
+ *
  * Revision 6.21  2004/10/12 13:28:18  dicuccio
  * GetNamedDbxref() / GetNamedQual(): made const
  *

@@ -91,7 +91,7 @@ public:
     /// Return a named qualifier.  This will return the first item matching the
     /// qualifier name.  If no such qualifier is found, an empty string is
     /// returned.
-    string GetNamedQual(const string& qual_name) const;
+    const string& GetNamedQual(const string& qual_name) const;
 
     /// Optional locations are used for features with locations
     /// re-mapped to a master sequence
@@ -167,6 +167,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.19  2004/10/13 13:57:02  shomrat
+* GetNamedQual return const string& instead of string
+*
 * Revision 1.18  2004/10/12 13:36:56  dicuccio
 * GetNamedDbxref() / GetNamedQual(): made const
 *
