@@ -15,6 +15,7 @@ NCBI_COMPILER="MIPSpro73"
 CC="cc"
 CXX="CC"
 CXXCPP="$CXX -E -LANG:std"
+LIBS="-lm"
 
 
 ## Configure
