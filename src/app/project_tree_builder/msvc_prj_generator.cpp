@@ -519,7 +519,7 @@ void CreateDatatoolCustomBuildInfo(const CProjItem&             prj,
         CDirEntry::ConcatPath(src.m_SourceBaseDir, src.m_SourceFile);
 
     //CommandLine
-    //exe location
+    //exe location - path is supposed to be relative encoded
     string tool_exe_location("");
     if (prj.m_ProjType == CProjItem::eApp)
         tool_exe_location = GetApp().GetDatatoolPathForApp();
@@ -532,8 +532,7 @@ void CreateDatatoolCustomBuildInfo(const CProjItem&             prj,
     tool_cmd_prfx += " -or ";
     tool_cmd_prfx += 
         CDirEntry::CreateRelativePath(GetApp().GetProjectTreeInfo().m_Src,
-                                      prj.m_SourcesBaseDir);
-
+                                      src.m_SourceBaseDir);
     tool_cmd_prfx += " -oR ";
     tool_cmd_prfx += CDirEntry::CreateRelativePath(context.ProjectDir(),
                                          GetApp().GetProjectTreeInfo().m_Root);
@@ -544,7 +543,8 @@ void CreateDatatoolCustomBuildInfo(const CProjItem&             prj,
         tool_cmd += NStr::Join(src.m_ImportModules, " ");
         tool_cmd += '"';
     }
-    build_info->m_CommandLine = "@echo on\n" + tool_exe_location + " " + tool_cmd;
+    build_info->m_CommandLine = 
+        "@echo on\n" + tool_exe_location + " " + tool_cmd;
 
     //Description
     build_info->m_Description = 
@@ -745,6 +745,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/02/13 20:31:20  gorelenk
+ * Changed source relative path for datatool input files.
+ *
  * Revision 1.15  2004/02/12 16:27:57  gorelenk
  * Changed generation of command line for datatool.
  *
