@@ -130,12 +130,17 @@ void CNetCache_GenerateBlobKey(string*        key,
 
 
 
+static 
+STimeout s_DefaultCommTimeout = {4, 0};
+
+
 
 
 CNetCacheClient::CNetCacheClient(const string&  client_name)
     : m_Sock(0),
       m_OwnSocket(eNoOwnership),
-      m_ClientName(client_name)
+      m_ClientName(client_name),
+      m_Timeout(s_DefaultCommTimeout)
 {
 }
 
@@ -147,9 +152,9 @@ CNetCacheClient::CNetCacheClient(const string&  host,
       m_Host(host),
       m_Port(port),
       m_OwnSocket(eNoOwnership),
-      m_ClientName(client_name)
+      m_ClientName(client_name),
+      m_Timeout(s_DefaultCommTimeout)
 {
-    //CreateSocket(m_Host, m_Port);
 }
 
 
@@ -159,7 +164,8 @@ CNetCacheClient::CNetCacheClient(CSocket*      sock,
       m_Host(kEmptyStr),
       m_Port(0),
       m_OwnSocket(eNoOwnership),
-      m_ClientName(client_name)
+      m_ClientName(client_name),
+      m_Timeout(s_DefaultCommTimeout)
 {
     if (m_Sock) {
         m_Sock->DisableOSSendDelay();
@@ -180,6 +186,18 @@ CNetCacheClient::~CNetCacheClient()
 }
 
 
+void CNetCacheClient::SetDefaultCommunicationTimeout(const STimeout& to)
+{
+    s_DefaultCommTimeout = to;
+}
+
+void CNetCacheClient::SetCommunicationTimeout(const STimeout& to)
+{
+    m_Timeout = to;
+    if (m_Sock) {
+        m_Sock->SetTimeout(eIO_ReadWrite, &m_Timeout);
+    }
+}
 
 
 void CNetCacheClient::CreateSocket(const string& hostname,
@@ -190,6 +208,7 @@ void CNetCacheClient::CreateSocket(const string& hostname,
     }
     m_Sock = new CSocket(hostname, port);
     m_Sock->DisableOSSendDelay();
+    m_Sock->SetTimeout(eIO_ReadWrite, &m_Timeout);
     m_OwnSocket = eTakeOwnership;
 }
 
@@ -533,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/12/16 17:43:50  kuznets
+ * + methods to change comm.timeouts
+ *
  * Revision 1.25  2004/11/16 17:01:35  kuznets
  * Close connection after receiving server version
  *
