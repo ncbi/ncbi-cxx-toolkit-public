@@ -406,6 +406,12 @@ void CGenbankFormatter::x_Journal
 {
     string journal;
     x_FormatRefJournal(journal, ref);
+
+    if ((ref.GetPrepub() == CImprint::ePrepub_in_press)  ||
+        (ref.GetPubstatus() == 10  &&  NStr::IsBlank(ref.GetPages()))) {
+        journal += " In press";
+    }
+
     Wrap(l, "JOURNAL", journal, eSubp);
 }
 
@@ -702,6 +708,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2004/11/15 20:10:17  shomrat
+* Handle electronic publications
+*
 * Revision 1.20  2004/10/18 18:49:10  shomrat
 * fixed reference TITLE
 *

@@ -50,6 +50,7 @@
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/biblio/Imprint.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 
 #include <algorithm>
 
@@ -286,7 +287,7 @@ static void s_FixPages(string& pages)
 CReferenceItem::CReferenceItem(const CSeqdesc& desc, CBioseqContext& ctx) :
     CFlatItem(&ctx), m_PMID(0), m_MUID(0), m_Category(eUnpublished),
     m_Serial(kMax_Int), m_JustUids(false), m_Prepub(CImprint::ePrepub_other),
-    m_UseDate(true), m_IsElectronicPub(false)
+    m_Pubstatus(0), m_UseDate(true), m_IsElectronicPub(false)
 {
     _ASSERT(desc.IsPub());
     
@@ -306,37 +307,21 @@ CReferenceItem::CReferenceItem(const CSeqdesc& desc, CBioseqContext& ctx) :
 CReferenceItem::CReferenceItem(const CSeq_feat& feat, CBioseqContext& ctx) :
     CFlatItem(&ctx), m_PMID(0), m_MUID(0), m_Category(eUnpublished),
     m_Serial(kMax_Int), m_JustUids(false), m_Prepub(CImprint::ePrepub_other),
-    m_UseDate(true), m_IsElectronicPub(false)
+    m_Pubstatus(0), m_UseDate(true), m_IsElectronicPub(false)
 {
     _ASSERT(feat.GetData().IsPub());
 
     x_SetObject(feat);
 
     m_Pubdesc.Reset(&(feat.GetData().GetPub()));
+
     if ( ctx.GetMapper() != 0 ) {
         m_Loc.Reset(ctx.GetMapper()->Map(feat.GetLocation()));
     } else {
         m_Loc.Reset(&(feat.GetLocation()));
     }
-}
-
-
-CReferenceItem::CReferenceItem
-(const CPubdesc& pub,
- CBioseqContext& ctx,
- const CSeq_loc* loc) :
-    CFlatItem(&ctx), m_Pubdesc(&pub), m_Loc(loc), m_PMID(0), m_MUID(0),
-    m_Category(eUnpublished), m_Serial(kMax_Int), m_JustUids(false),
-    m_Prepub(CImprint::ePrepub_other), m_UseDate(true), m_IsElectronicPub(false)
-{
-    x_SetObject(pub);
-
-    if ( !m_Loc ) {
-        m_Loc.Reset(&ctx.GetLocation());
-    }
-    if ( ctx.GetMapper() != 0 ) {
-        m_Loc.Reset(ctx.GetMapper()->Map(*m_Loc));
-    }
+    m_Loc = SeqLocMergeOne(ctx.GetHandle(), *m_Loc, fMergeIntervals | fFuseAbutting);
+    //m_Loc = Seq_loc_Merge(*m_Loc, eMerge, ePreserveStrand, &ctx.GetScope());
 
     x_GatherInfo(ctx);
 }
@@ -650,6 +635,9 @@ void CReferenceItem::x_Init(const CCit_gen& gen, CBioseqContext& ctx)
             }
         }
     }
+    if (!m_Title.empty()  &&  NStr::StartsWith(m_Title, "(er)")) {
+        m_IsElectronicPub = true;
+    }
     
     // Journal
     x_SetJournal(gen, ctx);
@@ -682,7 +670,9 @@ void CReferenceItem::x_Init(const CCit_gen& gen, CBioseqContext& ctx)
     // Pages
     if ( gen.CanGetPages()  &&  m_Pages.empty() ) {
         m_Pages = gen.GetPages();
-        s_FixPages(m_Pages);
+        if (!m_IsElectronicPub) {
+            s_FixPages(m_Pages);
+        }
     }
 
     // Date
@@ -993,17 +983,16 @@ void CReferenceItem::x_SetJournal(const CTitle& title, CBioseqContext& ctx)
             break;
         }
     }
-
     
-    if ( ttl == 0 ) {
+    if (ttl == NULL) {
         ttl = title.Get().front();
-        if ( ttl != 0  &&  ttl->IsName() ) {
-            if ( NStr::StartsWith(ttl->GetName(), "(er)", NStr::eNocase) ) {
+        if (ttl != NULL  &&  ttl->IsName()) {
+            if (NStr::StartsWith(ttl->GetName(), "(er)", NStr::eNocase)) {
                 m_IsElectronicPub = true;
             }
         }
         // release mode requires iso_jta title
-        if ( require_iso_jta  &&  !m_IsElectronicPub ) {
+        if (require_iso_jta  &&  !m_IsElectronicPub) {
             return;
         }
 
@@ -1087,36 +1076,13 @@ void CReferenceItem::x_SetJournal(const CCit_gen& gen, CBioseqContext& ctx)
     }
 }
 
-/*
-void s_DoSup
-(const string& part_sup,
- const string& part_supi,
- srting& issue
- string& volume)
-{
-    string str;
-
-    if (!NStr::IsBlank(part_sup)) {
-        str += ' ';
-        str += part_sup;
-    }
-    if (NStr::IsBlank(issue)  &&  NStr::IsBlank(part_supi)) {
-        retval += str;
-        return;
-    }
-    
-   
-    if (!NStr::IsBlank(part_supi)) {
-        issue += ' ';
-        issue += part_supi;
-    }
-   
-   
-}
-*/
 
 void CReferenceItem::x_AddImprint(const CImprint& imp, CBioseqContext& ctx)
 {
+    if (imp.IsSetPubstatus()) {
+        m_Pubstatus = imp.GetPubstatus();
+        m_IsElectronicPub = (imp.GetPubstatus() == 3  || imp.GetPubstatus() == 10);
+    }
     if (!m_Date) {
         m_Date.Reset(&imp.GetDate());
     }
@@ -1148,9 +1114,6 @@ void CReferenceItem::x_AddImprint(const CImprint& imp, CBioseqContext& ctx)
             m_Prepub != CImprint::ePrepub_in_press ? eUnpublished : ePublished;
     } else {
         m_Category = ePublished;
-    }
-    if ( imp.IsSetPubstatus() ) {
-        m_IsElectronicPub = (imp.GetPubstatus() == 3  || imp.GetPubstatus() == 10);
     }
 }
 
@@ -1215,7 +1178,16 @@ string CReferenceItem::GetAuthString(const CAuth_list* alp)
     bool first = true;
     ITERATE(list<string>, it, authors) {
         if ( it == last ) {
-            separator = " and ";
+            if (it->size() < 7) {
+                if (NStr::StartsWith(*it, "et al", NStr::eNocase)  ||
+                    NStr::StartsWith(*it, "et,al", NStr::eNocase)) {
+                    separator = " ";
+                } else {
+                    separator = " and ";
+                }
+            } else {
+                separator = " and ";
+            }
         }
         auth_line << (first ? kEmptyStr : separator) << *it;
         separator = ", ";
@@ -1425,9 +1397,9 @@ bool LessEqual::operator()
     const CDate* d1 = ref1->GetDate();
     const CDate* d2 = ref2->GetDate();
     if ( (d1 != 0)  &&  (d2 == 0) ) {
-        return true;
-    } else if ( (d1 == 0)  &&  (d2 != 0) ) {
         return false;
+    } else if ( (d1 == 0)  &&  (d2 != 0) ) {
+        return true;
     }
     if ( (d1 != 0)  &&  (d2 != 0) ) {
         CDate::ECompare status = d1->Compare(*d2);
@@ -1442,7 +1414,7 @@ bool LessEqual::operator()
                                 (status == CDate::eCompare_before);
         }
     }
-    // dates are the same, or both missing.
+    // after: dates are the same, or both missing.
     
     // distinguish by uids (swap order for RefSeq)
     if ( ref1->GetPMID() != 0  &&  ref2->GetPMID() != 0  &&
@@ -1468,7 +1440,16 @@ bool LessEqual::operator()
 
     // put sites after pubs that refer to all or a range of bases
     if (ref1->GetReftype() != ref2->GetReftype()) {
-        return ref1->GetReftype() > ref2->GetReftype();
+        return ref1->GetReftype() < ref2->GetReftype();
+    }
+
+    // put pub descriptors before features
+    const CSeq_feat* f1 = dynamic_cast<const CSeq_feat*>(ref1->GetObject());
+    const CSeq_feat* f2 = dynamic_cast<const CSeq_feat*>(ref2->GetObject());
+    if (f1 == NULL  &&  f2 != NULL) {
+        return true;
+    } else if (f1 != NULL  &&  f2 == NULL) {
+        return false;
     }
 
     // next use AUTHOR string
@@ -1504,6 +1485,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2004/11/15 20:11:09  shomrat
+* Handle electronic publications
+*
 * Revision 1.23  2004/10/18 18:57:25  shomrat
 * Fix page numbers; Handle electronic publications
 *

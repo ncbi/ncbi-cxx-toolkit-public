@@ -247,7 +247,7 @@ void CFlatItemFormatter::x_FormatRefJournal
         case CReferenceItem::eSubmission:
         {{
             journal = "Submitted ";
-            if ( ref.GetDate() != 0 ) {
+            if (ref.GetDate() != NULL) {
                 journal += '(';
                 DateToString(*ref.GetDate(), journal, true);
                 journal += ") ";
@@ -259,8 +259,15 @@ void CFlatItemFormatter::x_FormatRefJournal
         {{
             string year;
             if (ref.GetContext()->Config().DropBadCitGens()) {
-                if ( ref.GetDate() != 0 ) {
-                    ref.GetDate()->GetDate(&year, " (%Y)");
+                if (ref.GetDate() != NULL) {
+                    const CDate& date = *ref.GetDate();
+                    if (date.IsStr()) {
+                        year += " (";
+                        year += date.GetStr();
+                        year += ')';
+                    } else if (date.IsStd()  &&  date.GetStd().IsSetYear()  &&  date.GetStd().GetYear() != 0) {
+                        date.GetDate(&year, " (%Y)");
+                    }
                 }
             }
             journal = 
@@ -298,9 +305,9 @@ void CFlatItemFormatter::x_FormatRefJournal
         default:
             break;
         }
-        if ( ref.GetPrepub() == CImprint::ePrepub_in_press ) {
+        /*if ( ref.GetPrepub() == CImprint::ePrepub_in_press ) {
             journal += " In press";
-        }
+        }*/
 
         if ( journal.empty() ) {
             journal = "Unpublished";
@@ -308,12 +315,21 @@ void CFlatItemFormatter::x_FormatRefJournal
     } else {
         while ( true ) {
             const CCit_book& book = *ref.GetBook();
-            _ASSERT(book.CanGetImp()  &&  book.CanGetTitle());
+            if (!(book.CanGetImp()  &&  book.CanGetTitle())) {
+                return;
+            }
             
             string year;
 
-            if ( ref.GetDate() != 0 ) {
-                ref.GetDate()->GetDate(&year, "(%Y)");
+            if (ref.GetDate() != NULL) {
+                const CDate& date = *ref.GetDate();
+                if (date.IsStr()) {
+                    year += "(";
+                    year += date.GetStr();
+                    year += ')';
+                } else if (date.IsStd()  &&  date.GetStd().IsSetYear()  &&  date.GetStd().GetYear() != 0) {
+                    ref.GetDate()->GetDate(&year, "(%Y)");
+                }
             }
             
             if ( ref.GetCategory() == CReferenceItem::eUnpublished ) {
@@ -364,15 +380,18 @@ void CFlatItemFormatter::x_FormatRefJournal
 
             jour << year;
 
-            if ( ref.GetPrepub() == CImprint::ePrepub_in_press ) {
+            /*if ( ref.GetPrepub() == CImprint::ePrepub_in_press ) {
                 jour << " In press";
-            }
+            }*/
 
             journal = CNcbiOstrstreamToString(jour);
             break;
         }
     }
 
+    if (ref.IsEPublish()  &&  !NStr::StartsWith(journal, "(er) ")) {
+        journal.insert(0, "(er) ");
+    }
     StripSpaces(journal);
 }
 
@@ -397,6 +416,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/11/15 20:10:10  shomrat
+* Handle electronic publications
+*
 * Revision 1.16  2004/10/18 18:49:44  shomrat
 * Handle str dates in journal format
 *
