@@ -404,7 +404,7 @@ public:
             return m_Ptr != 0;
         }
 
-    /// Check if pointer is null -- same affect as Empty().
+    /// Check if pointer is null -- same effect as Empty().
     ///
     /// @sa
     ///   Empty()
@@ -413,22 +413,13 @@ public:
             return m_Ptr == 0;
         }
 
-    /// Operator to test object.
+    /// Check if pointer is not null -- same effect as NotEmpty().
     ///
-    /// @return
-    ///   TRUE if there is a pointer to object; FALSE, otherwise.
-    operator bool(void) THROWS_NONE
+    /// @sa
+    ///   NotEmpty()
+    bool NotNull(void) const THROWS_NONE
         {
-            return NotEmpty();
-        }
-
-    /// Operator to test object -- const version.
-    ///
-    /// @return
-    ///   TRUE if there is a pointer to object; FALSE, otherwise.
-    operator bool(void) const THROWS_NONE
-        {
-            return NotEmpty();
+            return m_Ptr != 0;
         }
 
     /// Operator to test object.
@@ -859,7 +850,7 @@ public:
             return m_Ptr != 0;
         }
 
-    /// Check if pointer is null -- same affect as Empty().
+    /// Check if pointer is null -- same effect as Empty().
     ///
     /// @sa
     ///   Empty()
@@ -868,22 +859,13 @@ public:
             return m_Ptr == 0;
         }
 
-    /// Operator to test object.
+    /// Check if pointer is not null -- same effect as NotEmpty().
     ///
-    /// @return
-    ///   TRUE if there is a pointer to object; FALSE, otherwise.
-    operator bool(void) THROWS_NONE
+    /// @sa
+    ///   NotEmpty()
+    bool NotNull(void) const THROWS_NONE
         {
-            return NotEmpty();
-        }
-
-    /// Operator to test object.
-    ///
-    /// @return
-    ///   TRUE if there is a pointer to object; FALSE, otherwise.
-    operator bool(void) const THROWS_NONE
-        {
-            return NotEmpty();
+            return m_Ptr != 0;
         }
 
     /// Operator to test object -- const version.
@@ -1408,6 +1390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2005/01/12 16:53:03  vasilche
+ * Removed operator bool(). Pointer conversion will be used instead.
+ *
  * Revision 1.57  2004/12/08 14:40:05  dicuccio
  * Added conditional includ eof ncbi_os_mswin.hpp to work around Win32's
  * definitions of GetObject(), which clash with CRef<>::GetObject()
