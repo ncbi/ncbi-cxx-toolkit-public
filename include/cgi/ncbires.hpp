@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1998/12/21 17:19:36  sandomir
+* VC++ fixes in ncbistd; minor fixes in Resource
+*
 * Revision 1.8  1998/12/17 21:50:43  sandomir
 * CNCBINode fixed in Resource; case insensitive string comparison predicate added
 *
@@ -137,7 +140,7 @@ class CNcbiCommand
 {
 public:
 
-  CNcbiCommand( const CNcbiResource& resource );
+  CNcbiCommand( CNcbiResource& resource );
   virtual ~CNcbiCommand( void );
 
   virtual CNcbiCommand* Clone( void ) const = 0;
@@ -150,25 +153,11 @@ public:
 
   virtual bool IsRequested( const CCgiRequest& request ) const;
 
-  // inner class CFind to be used to find command(s) corresponding to the request
-  // TCmdList l; 
-  // TCmdList::iterator it = find_if( l.begin(), l.end(), CNcbiCommand::CFind( request ) ); 
-  class CFind : public unary_function<CNcbiCommand,bool>
-  {
-    const CCgiRequest& m_request;
-
-  public:
-
-    explicit CFind( const CCgiRequest& request ) : m_request( request ) {}
-    bool operator() ( const CNcbiCommand* cmd ) const
-      { return cmd->IsRequested( m_request ); }
-  }; // class CFind 
-    
 protected:
 
   virtual string GetEntry() const;
 
-  const CNcbiResource& m_resource;
+  CNcbiResource& m_resource;
 };
 
 //
@@ -186,21 +175,13 @@ public:
   virtual const CNcbiDbPresentation* GetPresentation() const
     { return 0; }
 
-  virtual bool CheckName( const string& name ) const = 0;
+  virtual bool IsRequested( const CCgiRequest& request ) const;
 
-  // inner class CFind to be used to find db(s) corresponding to the request
-  // TDbInfoList l; 
-  // TDbInfoList::iterator it = find_if( l.begin(), l.end(), CNcbiDatabaseInfo::CFind( alias ) ); 
-  class CFind : public unary_function<CNcbiDatabaseInfo,bool>
-  {
-    const string& m_name;
-    
-  public:
-    
-    explicit CFind( const string& name ) : m_name( name ) {}
-    bool operator() ( const CNcbiDatabaseInfo* dbinfo ) const
-      { return dbinfo->CheckName( m_name ); }
-  }; // class CFind
+protected:
+
+  virtual bool CheckName( const string& name ) const = 0;
+  virtual string GetEntry() const;
+  
 };
                      
 //
@@ -265,7 +246,7 @@ public:
   virtual ~CNcbiDbPresentation() {}
 
   virtual CNCBINode* GetLogo( void ) const { return 0; }
-  virtual string GetName( void ) const = 0;
+  virtual string GetName( void ) const = 0; // this is printable name
   virtual CHTML_a* GetLink( void ) const { return 0; }
 };
 
@@ -320,22 +301,30 @@ public:
 
   virtual bool IsRequested( const CCgiRequest& request ) const;
 
-  class CFind : public unary_function<CNcbiDataObjectReport,bool>
-  {
-    const CCgiRequest& m_request;
-
-  public:
-
-    explicit CFind( const CCgiRequest& request ) : m_request( request ) {}
-    bool operator() ( const CNcbiDataObjectReport* rpt ) const
-      { return rpt->IsRequested( m_request ); }
-  }; // class CFind
-
 protected:
 
   virtual string GetEntry() const;
   
 };
+
+//
+// PRequested
+//
+
+template<class T>
+class PRequested : public unary_function<T,bool>
+{  
+  const CCgiRequest& m_request;
+  
+public:
+  
+  explicit PRequested( const CCgiRequest& request ) 
+    : m_request( request ) {}
+
+  bool operator() ( const T* t ) const 
+    { return t->IsRequested( m_request ); }
+
+}; // class PRequested
 
 END_NCBI_SCOPE
 

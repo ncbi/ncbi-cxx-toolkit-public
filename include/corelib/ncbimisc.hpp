@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1998/12/21 17:19:36  sandomir
+* VC++ fixes in ncbistd; minor fixes in Resource
+*
 * Revision 1.11  1998/12/17 21:50:43  sandomir
 * CNCBINode fixed in Resource; case insensitive string comparison predicate added
 *
@@ -56,7 +59,6 @@
 #include <ncbistl.hpp>
 #include <ncbidbg.hpp>
 #include <ncbiexpt.hpp>
-
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/21 17:19:37  sandomir
+* VC++ fixes in ncbistd; minor fixes in Resource
+*
 * Revision 1.3  1998/12/17 21:50:45  sandomir
 * CNCBINode fixed in Resource; case insensitive string comparison predicate added
 *
@@ -51,6 +54,10 @@
 
 BEGIN_NCBI_SCOPE
 
+#ifdef WIN32
+#define snprintf _snprintf
+#endif
+
 int StringToInt(const string& str)
 {
     errno = 0;
@@ -67,7 +74,7 @@ unsigned int StringToUInt(const string& str)
 {
     errno = 0;
     char* error = 0;
-    long long value = strtoll(str.c_str(), &error, 0);
+    long value = strtol(str.c_str(), &error, 0);
     if ( errno || error && *error ||
          value < numeric_limits<unsigned int>::min() ||
          value > numeric_limits<unsigned int>::max() )

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/12/21 17:19:37  sandomir
+* VC++ fixes in ncbistd; minor fixes in Resource
+*
 * Revision 1.6  1998/12/17 21:50:44  sandomir
 * CNCBINode fixed in Resource; case insensitive string comparison predicate added
 *
@@ -73,17 +76,19 @@ void CNcbiResource::HandleRequest( const CCgiRequest& request )
 {
   try {
     TCmdList::iterator it = find_if( m_cmd.begin(), m_cmd.end(), 
-                                     CNcbiCommand::CFind( request ) );
+                                     PRequested<CNcbiCommand>( request ) );
+    
     if( it == m_cmd.end() ) {
-      // command not found
-      throw runtime_error( "unknown command" );
+      throw runtime_error( "Unknown command" );      
+    } 
 
-    } else for( ; it != m_cmd.end(); it++ ) {
+    for( ; it != m_cmd.end(); it++ ) {
       auto_ptr<CNcbiCommand> cmd( (*it)->Clone() );
       cmd->Execute( request );
-    } // else
-
+    } // for
+    
   } catch( exception& e ) {
+    _TRACE( e.what() );
     auto_ptr<CNcbiCommand> cmd( GetDefaultCommand() );
     cmd->Execute( request );
   }
@@ -93,7 +98,7 @@ void CNcbiResource::HandleRequest( const CCgiRequest& request )
 // class CNcbiCommand
 //
 
-CNcbiCommand::CNcbiCommand( const CNcbiResource& resource )
+CNcbiCommand::CNcbiCommand( CNcbiResource& resource )
   : m_resource( resource )
 {}
 
@@ -105,10 +110,10 @@ bool CNcbiCommand::IsRequested( const CCgiRequest& request ) const
   const string value = GetName();
   
   TCgiEntries& entries = const_cast<TCgiEntries&>( request.GetEntries() );
-  pair<TCgiEntriesI,TCgiEntriesI> it = entries.equal_range( 
+  pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( 
                                           CNcbiCommand::GetEntry() );
 
-  for( TCgiEntriesI itEntr = it.first; itEntr != it.second; itEntr++ ) {
+  for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
     if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
       return true;
     } // if
@@ -120,6 +125,30 @@ bool CNcbiCommand::IsRequested( const CCgiRequest& request ) const
 string CNcbiCommand::GetEntry() const
 {
   return "cmd";
+}
+
+//
+// class CNcbiDatabaseInfo
+//
+
+bool CNcbiDatabaseInfo::IsRequested( const CCgiRequest& request ) const
+{  
+  TCgiEntries& entries = const_cast<TCgiEntries&>( request.GetEntries() );
+  pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( 
+                                          CNcbiDatabaseInfo::GetEntry() );
+  
+  for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
+    if( CheckName( itEntr->second ) == true ) {
+      return true;
+    } // if
+  } // for
+
+  return false;
+}
+
+string CNcbiDatabaseInfo::GetEntry() const
+{
+  return "db";
 }
 
 //
@@ -142,10 +171,10 @@ bool CNcbiDataObjectReport::IsRequested( const CCgiRequest& request ) const
   const string value = GetName();
   
   TCgiEntries& entries = const_cast<TCgiEntries&>( request.GetEntries() );
-  pair<TCgiEntriesI,TCgiEntriesI> it = entries.equal_range( 
+  pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( 
                                           CNcbiDataObjectReport::GetEntry() );
 
-  for( TCgiEntriesI itEntr = it.first; itEntr != it.second; itEntr++ ) {
+  for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
     if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
       return true;
     } // if
