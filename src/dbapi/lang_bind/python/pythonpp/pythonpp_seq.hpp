@@ -269,7 +269,7 @@ public:
     // Iterators ...
 
     class iterator
-        : public std::iterator<std::random_access_iterator_tag, CSequnceProxy<T>, int>
+    // : public std::iterator<std::random_access_iterator_tag, CSequnceProxy<T>, int>
     {
     protected:
         friend class CSequnceHelper<T>;
@@ -412,7 +412,7 @@ public:
         return iterator(this, GetLength());
     }
 
-    class const_iterator : public std::iterator<std::random_access_iterator_tag, CObject, int>
+    class const_iterator // : public std::iterator<std::random_access_iterator_tag, CObject, int>
     {
     protected:
         friend class CSequnceHelper<T>;
@@ -888,6 +888,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/01/18 21:31:38  ucko
+* Don't inherit from std::iterator<>, which GCC 2.95 lacks.
+*
 * Revision 1.1  2005/01/18 19:26:08  ssikorsk
 * Initial version of a Python DBAPI module
 *
