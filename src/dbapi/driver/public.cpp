@@ -56,11 +56,11 @@ bool CDB_Connection::IsAlive()
 }
 
 
-inline void s_CheckConnection(I_Connection* conn, const string& method_name)
+inline void s_CheckConnection(I_Connection* conn, const char* method_name)
 {
     if ( !conn ) {
         throw CDB_ClientEx(eDB_Warning, 200002,
-                           "CDB_Connection::" + method_name,
+                           "CDB_Connection::" + string(method_name),
                            "Connection has been closed");
     }
 }
@@ -68,6 +68,7 @@ inline void s_CheckConnection(I_Connection* conn, const string& method_name)
 CDB_LangCmd* CDB_Connection::LangCmd(const string& lang_query,
                                      unsigned int  nof_params)
 {
+  
     s_CheckConnection(m_Connect, "LangCmd");
     return m_Connect->LangCmd(lang_query, nof_params);
 }
@@ -200,11 +201,11 @@ CDB_Result::CDB_Result(I_Result* r)
 }
 
 
-inline void s_CheckResult(I_Result* res, const string& method_name)
+inline void s_CheckResult(I_Result* res, const char* method_name)
 {
     if ( !res ) {
         throw CDB_ClientEx(eDB_Warning, 200003,
-                           "CDB_Result::" + method_name,
+                           "CDB_Result::" + string(method_name),
                            "This result is not available anymore");
     }
 }
@@ -301,11 +302,11 @@ CDB_LangCmd::CDB_LangCmd(I_LangCmd* c)
 }
 
 
-inline void s_CheckLangCmd(I_LangCmd* cmd, const string& method_name)
+inline void s_CheckLangCmd(I_LangCmd* cmd, const char* method_name)
 {
     if ( !cmd ) {
         throw CDB_ClientEx(eDB_Warning, 200005,
-                           "CDB_LangCmd::" + method_name,
+                           "CDB_LangCmd::" + string(method_name),
                            "This command can not be used anymore");
     }
 }
@@ -402,11 +403,11 @@ CDB_RPCCmd::CDB_RPCCmd(I_RPCCmd* c)
 }
 
 
-inline void s_CheckRPCCmd(I_RPCCmd* cmd, const string& method_name)
+inline void s_CheckRPCCmd(I_RPCCmd* cmd, const char* method_name)
 {
     if ( !cmd ) {
         throw CDB_ClientEx(eDB_Warning, 200005,
-                           "CDB_RPCCmd::" + method_name,
+                           "CDB_RPCCmd::" + string(method_name),
                            "This command can not be used anymore");
     }
 }
@@ -505,11 +506,11 @@ CDB_BCPInCmd::CDB_BCPInCmd(I_BCPInCmd* c)
 }
 
 
-inline void s_CheckBCPInCmd(I_BCPInCmd* cmd, const string& method_name)
+inline void s_CheckBCPInCmd(I_BCPInCmd* cmd, const char* method_name)
 {
     if ( !cmd ) {
         throw CDB_ClientEx(eDB_Warning, 200005,
-                           "CDB_BCPInCmd::" + method_name,
+                           "CDB_BCPInCmd::" + string(method_name),
                            "This command can not be used anymore");
     }
 }
@@ -570,11 +571,11 @@ CDB_CursorCmd::CDB_CursorCmd(I_CursorCmd* c)
 }
 
 
-inline void s_CheckCursorCmd(I_CursorCmd* cmd, const string& method_name)
+inline void s_CheckCursorCmd(I_CursorCmd* cmd, const char* method_name)
 {
     if ( !cmd ) {
         throw CDB_ClientEx(eDB_Warning, 200005,
-                           "CDB_CursorCmd::" + method_name,
+                           "CDB_CursorCmd::" + string(method_name),
                            "This command can not be used anymore");
     }
 }
@@ -687,6 +688,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/01/29 22:35:05  soussov
+ * replaces const string& with const char* in inlines
+ *
  * Revision 1.4  2002/03/26 15:32:24  soussov
  * new image/text operations added
  *
