@@ -55,6 +55,10 @@
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/readers/agp_read.hpp>
 
+// On Mac OS X 10.3, FixMath.h defines ff as a one-argument macro(!)
+#ifdef ff
+#  undef ff
+#endif
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -289,6 +293,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/05/03 18:01:34  ucko
+* Kill unwanted definition of ff as a macro, if present (as on Mac OS 10.3)
+*
 * Revision 1.3  2004/02/27 20:07:10  jcherry
 * Added agp as input format
 *
