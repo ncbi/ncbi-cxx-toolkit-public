@@ -142,6 +142,9 @@ int CSampleObjmgrApplication::Run(void)
     CConstRef<CBioseq> bioseq = &bioseq_handle.GetBioseq();
     // Printout each Seq-id from the Bioseq.
     cout << "ID: ";
+    // "iterate" is the same as:
+    // for (CBioseq::TId::const_iterator id_it = bioseq->GetId().begin();
+    //      id_it != bioseq->GetId().end(); ++id_it)
     iterate (CBioseq::TId, id_it, bioseq->GetId()) {
         if (id_it != bioseq->GetId().begin())
             cout << " + "; // print id separator
@@ -261,6 +264,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2002/05/31 13:51:31  grichenk
+ * Added comment about iterate()
+ *
  * Revision 1.3  2002/05/22 14:29:25  grichenk
  * +registry and logs setup; +iterating over CRef<> container
  *
