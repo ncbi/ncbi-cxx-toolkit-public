@@ -658,6 +658,9 @@ occurrences of "<i>{}</i>" will be replaced by the build dir name.
 There is a predefined set of tools and flags used in the build process.
 User can alternate these tools and flags by setting the following
 environment variables for the <b><i>configure</i></b> script.
+In particular, if you intend to debug the toolkit with Insure++, you
+should run <b><i>configure</i></b> with <b>CC</b> and <b>CXX</b> set
+to <b>insure</b>.
 
 <br></br>
 <a name="ref_TableToolsAndFlags"></a>
@@ -681,13 +684,13 @@ environment variables for the <b><i>configure</i></b> script.
   </tr>
 
   <tr>
-	 <td><b>cpp</b></td>
+	 <td><b>CPP</b></td>
 	 <td><i>$CC -E</i></td>
 	 <td>C preprocessor</td>
   </tr>
 
   <tr>
-	 <td><b>CXXcpp</b></td>
+	 <td><b>CXXCPP</b></td>
 	 <td><i>$CXX -E</i></td>
 	 <td>C++ preprocessor</td>
   </tr>
@@ -721,7 +724,7 @@ environment variables for the <b><i>configure</i></b> script.
   </tr>
 
   <tr>
-	 <td><b>cppFLAGS</b></td>
+	 <td><b>CPPFLAGS</b></td>
 	 <td><i>-D_DEBUG</i>
     <a href="#ref_DebugVsRelease">or/and/nor</a>
     <i>-DNDEBUG</i></td>
@@ -754,9 +757,9 @@ be engaged in the makefiles:
 <a name="ref_StdBuildRules"></a>
 <ul>
   <li> To compile C sources:
-    <br> <b><i>$(CC) -c $(CFLAGS) $(cppFLAGS) .....</i></b>
+    <br> <b><i>$(CC) -c $(CFLAGS) $(CPPFLAGS) .....</i></b>
   <li> To compile C++ sources:
-    <br> <b><i>$(CXX) -c $(CXXFLAGS) $(cppFLAGS) .....</i></b>
+    <br> <b><i>$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) .....</i></b>
   <li> To compose a library:
     <br> <b><i> $(AR)     </i></b> <i>libXXX.a xxx1.o xxx2.o xxx3.o .....</i>
 	 <br> <b><i> $(RANLIB) </i></b> <i>libXXX.a</i>
@@ -785,7 +788,7 @@ the given local host's working environment.
 The following localization environment variables can be set in addition
 to the "generic" ones
 <a href="#ref_ToolsAndFlags">
-<b>(CC, CXX, cpp, AR,RANLIB, STRIP, CFLAGS, CXXFLAGS, cppFLAGS, LDFLAGS, LIBS)
+<b>(CC, CXX, CPP, AR,RANLIB, STRIP, CFLAGS, CXXFLAGS, CPPFLAGS, LDFLAGS, LIBS)
 </b></a>:
 
 <br></br>
