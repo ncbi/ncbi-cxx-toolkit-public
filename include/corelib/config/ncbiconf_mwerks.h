@@ -18,6 +18,8 @@
 #define NCBI_OS      "MAC OSX"
 #define HOST         "PowerPC-Apple-MacOSX"
 #define HOST_OS      "MacOSX"
+/* fix for /usr/include/ctype.h */
+#define _USE_CTYPE_INLINE_ 1
 #else
 #define NCBI_OS_MAC  1
 #define NCBI_OS      "MAC"
