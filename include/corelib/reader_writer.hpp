@@ -52,7 +52,7 @@ enum EIO_Result {
     eIO_Error,
     eIO_Eof
 };
- below
+
 
 /// A very basic data-read interface.
 ///
@@ -116,6 +116,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/09/25 13:35:50  kuznets
+ * Minor syntax issue corrected.
+ *
  * Revision 1.5  2003/09/24 21:12:39  lavr
  * Doxygenification
  *
