@@ -187,7 +187,7 @@ string& CAlnVec::GetAlnSeqString(string& buffer,
             memset(ch_buff, fill_ch, n);
             ch_buff[n] = 0;
             buffer += ch_buff;
-            delete ch_buff;
+            delete[] ch_buff;
         }
     }
     return buffer;
@@ -630,6 +630,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/03/29 07:07:31  todorov
+* deallocation bug fixed
+*
 * Revision 1.23  2003/03/05 16:18:17  todorov
 * + str len err check
 *
