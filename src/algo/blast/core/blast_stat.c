@@ -3390,6 +3390,7 @@ RPSfindUngappedLambda(const char *matrixName)
  *       score -k 
  *FIXME: This can be replaced by _PSIComputeScoreProbabilities??
  * @param matrix a position-specific score matrix with matrixLength positions [in]
+ * @param matrixLength number of positions in the pssm (arg above) [in]
  * @param queryProbArray an array containing the probability of occurrence
  *       of each residue in the query [in]
  * @param scoreArray an array of probabilities for each score that is
@@ -3642,6 +3643,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.111  2005/01/27 13:59:17  madden
+ * Minor doxygen fix
+ *
  * Revision 1.110  2005/01/27 13:17:16  madden
  * 1.) moved #define BLAST_SUMP_EPSILON_DEFAULT to a const variable within s_BlastSumPCalc.
  * 2.) made static arrays tab[234] etc. const static arrays within one function.
