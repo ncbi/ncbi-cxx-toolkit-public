@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.316 2004/08/23 19:28:17 ucko Exp $
+#  $Id: configure.ac,v 1.317 2004/08/24 18:06:16 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1394,7 +1394,7 @@ fi
 
 case "$host_os" in
    linux*)
-      kver=`uname -r`
+      kver=`uname -r | sed -e 's/-.*//'`
       libcver=`ldd --version | awk 'NR == 1 { print $NF }'`
       verbose_host=$host_cpu-$host_vendor-linux$kver-gnu$libcver
       ;;
