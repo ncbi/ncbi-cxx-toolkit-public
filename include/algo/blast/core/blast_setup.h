@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.34  2004/03/15 19:54:51  dondosha
+* Removed unneeded arguments in BLAST_GapAlignSetUp
+*
 * Revision 1.33  2004/03/11 18:31:06  papadopo
 * fix doxygen warnings
 *
@@ -277,11 +280,8 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
  *                        calculating effective lengths [in]
  * @param ext_options options for gapped extension. [in]
  * @param hit_options options for saving hits. [in]
- * @param query The query sequence block [in]
  * @param query_info The query information block [in]
  * @param sbp Contains scoring information. [in]
- * @param subject_length Length of the subject sequence in two 
- *                       sequences case [in]
  * @param ext_params Parameters for gapped extension [out]
  * @param hit_params Parameters for saving hits [out]
  * @param eff_len_params Parameters for search space calculations [out]
@@ -294,8 +294,8 @@ BLAST_GapAlignSetUp(Uint1 program_number,
    const BlastEffectiveLengthsOptions* eff_len_options,
    const BlastExtensionOptions* ext_options,
    const BlastHitSavingOptions* hit_options,
-   BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
-   BlastScoreBlk* sbp, Uint4 subject_length, 
+   BlastQueryInfo* query_info, 
+   BlastScoreBlk* sbp, 
    BlastExtensionParameters** ext_params,
    BlastHitSavingParameters** hit_params,
    BlastEffectiveLengthsParameters** eff_len_params,
