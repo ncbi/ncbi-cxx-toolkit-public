@@ -418,8 +418,10 @@ int CBlast2seqApplication::Run(void)
         ENa_strand query_strand = eNa_strand_unknown;
         ENa_strand subject_strand = eNa_strand_unknown;
 
-        if (program == eBlastn ||
-            program == eBlastx) {
+        if (program == eBlastx) {
+            query_strand = eNa_strand_plus;
+        }
+        else if (program == eBlastn) { 
             int cmdline_strand = args["strand"].AsInteger();
 
             if (cmdline_strand == 1)
@@ -433,7 +435,7 @@ int CBlast2seqApplication::Run(void)
         if (program == eBlastn ||
             program == eTblastn ||
             program == eTblastx)
-            subject_strand = eNa_strand_both;
+            subject_strand = eNa_strand_plus;
 
         // Retrieve input sequences
         TSeqLocVector query_loc = 
@@ -493,6 +495,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/04/23 13:51:56  papadopo
+ * handle strands for blastx correctly
+ *
  * Revision 1.41  2004/04/19 21:35:23  papadopo
  * explicitly calculate strands for input sequences
  *
