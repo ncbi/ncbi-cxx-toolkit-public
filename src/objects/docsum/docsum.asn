@@ -1,4 +1,4 @@
--- $Id: docsum.asn,v 1.47 2004/10/28 21:16:55 kholodov Exp $
+-- $Id: docsum.asn,v 1.48 2005/02/24 19:39:31 kholodov Exp $
 
 NSE DEFINITIONS ::=
 BEGIN
@@ -354,7 +354,8 @@ NSE-rsMaploc ::= SEQUENCE {		-- Position of a single hit of a variation on a con
 		reverse (2) } OPTIONAL,		-- if SNPContigLoc.orientation = 1
 	physmap-str  VisibleString OPTIONAL,	-- chromosome position of var as seq-loc in # of bases 		SNPContigLoc.phys_pos
 	physmap-int INTEGER OPTIONAL,		-- chromosome position as integer for sorting			SNPContigLoc.phys_pos_from
-	fxn-set SET OF NSE-FxnSet OPTIONAL	-- functional relationship of SNP (and possibly alleles) to genes at contig location
+    contig-allele VisibleString OPTIONAL,     -- contig allele string for interval [asn-from, asn-to]    SNPContigLoc.contig_allele
+    fxn-set SET OF NSE-FxnSet OPTIONAL	-- functional relationship of SNP (and possibly alleles) to genes at contig location
 										-- fxn-set analysis is only available for NCBI contig-set
 }
 
@@ -492,6 +493,9 @@ NSE-Date-std ::= SEQUENCE {        		-- NOTE: this is NOT a unix tm struct
 END
 
 -- $Log: docsum.asn,v $
+-- Revision 1.48  2005/02/24 19:39:31  kholodov
+-- Added: contig-allele
+--
 -- Revision 1.47  2004/10/28 21:16:55  kholodov
 -- Added: rs merge history
 --
