@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/09/06 18:28:46  thiessen
+* fix show object bug
+*
 * Revision 1.26  2002/08/15 22:13:12  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -833,9 +836,11 @@ void CDDAnnotateDialog::ShowEvidence(void)
                 for (d=structureSet->frameMap[frame].begin(); d!=de; d++) {
                     if (*d == displayList) { // is display list in this frame?
                         structureSet->showHideManager->MakeAllVisible();
+                        // force redrawing of structures, so the frame that contains
+                        // this object isn't empty (otherwise, renderer won't show it)
+                        GlobalMessenger()->ProcessRedraws();
                         structureSet->renderer->ShowFrameNumber(frame);
-                        GetParent()->Refresh(false);    // assumes parent is structure window
-                        frame = structureSet->frameMap.size();
+                        frame = structureSet->frameMap.size(); // to exit out of next-up loop
                         break;
                     }
                 }
