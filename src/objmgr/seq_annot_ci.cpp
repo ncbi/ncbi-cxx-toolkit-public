@@ -150,6 +150,9 @@ inline
 void CSeq_annot_CI::x_SetEntry(const CSeq_entry_Handle& entry)
 {
     m_CurrentEntry = entry;
+    if ( !m_CurrentEntry ) {
+        return;
+    }
     m_AnnotIter = x_GetAnnots().begin();
     if ( !m_EntryStack.empty() ) {
         x_Push();
@@ -225,6 +228,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/02/11 15:43:07  grichenk
+* Check m_CurrentEntry
+*
 * Revision 1.10  2004/12/22 15:56:04  vasilche
 * Introduced CTSE_Handle.
 *
