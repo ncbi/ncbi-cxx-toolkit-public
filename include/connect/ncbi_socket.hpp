@@ -173,6 +173,8 @@ public:
     ESwitch SetInterruptOnSignal(ESwitch interrupt = eOn);
     // NOTE:  use CSocketAPI::SetReuseAddress() to set the default value
     void    SetReuseAddress(ESwitch reuse = eOff);
+    //
+    void    DisableOSSendDelay(bool on_off = true);
 
     bool IsClientSide(void) const;
     bool IsServerSide(void) const;
@@ -456,6 +458,13 @@ inline void CSocket::SetReuseAddress(ESwitch reuse)
 }
 
 
+inline void CSocket::DisableOSSendDelay(bool on_off)
+{
+    if ( m_Socket)
+        SOCK_DisableOSSendDelay(m_Socket, on_off);
+}
+
+
 inline bool CSocket::IsClientSide(void) const
 {
     return m_Socket && SOCK_IsClientSide(m_Socket) ? true : false;
@@ -617,6 +626,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.38  2004/10/19 18:13:06  lavr
+ * +CSocket::DisableOSSendDelay()
+ *
  * Revision 6.37  2004/07/23 19:05:13  lavr
  * CListeningSocket(), CListeningSocket::Listen() to accept flags
  *
