@@ -62,6 +62,22 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 USING_SCOPE(sequence);
 
+/////////////////////////////////////////////////////////////////////////////
+//
+// LessEqual - predicate class for sorting references
+
+class LessEqual
+{
+public:
+    LessEqual(bool serial_first, bool is_refseq);
+    bool operator()(const CRef<CReferenceItem>& ref1, const CRef<CReferenceItem>& ref2);
+private:
+    bool m_SerialFirst;
+    bool m_IsRefSeq;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
 
 void CReferenceItem::FormatAffil(const CAffil& affil, string& result)
 {
@@ -199,24 +215,78 @@ CReferenceItem::CReferenceItem
 }
 
 
-void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
+void CReferenceItem::SetLoc(const CConstRef<CSeq_loc>& loc)
 {
-    if ( !m_Pubdesc->CanGetPub() ) {
-        x_SetSkip();
+    m_Loc = loc;
+}
+
+
+static void s_MergeDuplicates
+(CReferenceItem::TReferences& refs,
+ CBioseqContext& ctx)
+{
+    if ( refs.size() < 2 ) {
+        return;
     }
 
-    if ( ctx.GetSubmitBlock() != 0 ) {
-        m_Title = "Direct Submission";
-        m_Category = eSubmission;
-    }
-    ITERATE (CPub_equiv::Tdata, it, m_Pubdesc->GetPub().Get()) {
-        x_Init(**it, ctx);
-    }
-    x_CleanData();
+    CReferenceItem::TReferences::iterator curr = refs.begin();
+    CReferenceItem::TReferences::iterator prev = curr;
 
-    // gather Genbank specific fields (formats: Genbank, GBSeq, DDBJ)
-    if ( ctx.IsGenbankFormat() ) {
-        x_GatherRemark(ctx);
+    while ( curr != refs.end() ) {
+        if ( !*curr ) {
+            curr = refs.erase(curr);
+            if ( curr == refs.end() ) {
+                break;
+            }
+        }
+        _ASSERT(*curr);
+        bool remove = false;
+        bool merge  = true;
+
+        const CReferenceItem& curr_ref = **curr;
+        if ( curr_ref.JustUids() ) {
+            remove = true;
+        } else {
+            // EMBL patent records do not need author or title - A29528.1
+            // do not allow no author reference to appear by itself - U07000.1
+            if ( !(ctx.IsEMBL()  &&  ctx.IsPatent())  &&
+                 curr_ref.GetAuthors() == 0 ) {
+                remove = true;
+                merge = false;
+            }
+        }
+        if ( (prev != curr)  &&  prev->NotEmpty() ) {
+            const CReferenceItem& prev_ref = **prev;
+            if ( curr_ref.GetPMID() == prev_ref.GetPMID()  &&  curr_ref.GetPMID() != 0 ) {
+                remove = true;
+            }
+            if ( remove  &&
+                 prev_ref.GetReftype() == CPubdesc::eReftype_seq  &&
+                 curr_ref.GetReftype() != CPubdesc::eReftype_seq ) {
+                // real range trumps sites
+                merge = false;
+            }
+            if ( prev_ref.GetLoc() == 0 ) {
+                merge = false;
+            }
+        } else {
+            merge = false;
+        }
+        if ( remove ) {
+            CConstRef<CSeq_loc> merged_loc;
+            if ( merge  &&  (curr_ref.GetLoc() != 0) ) {
+                merged_loc.Reset(SeqLocMerge(ctx.GetHandle(),
+                    *(*prev)->GetLoc(), *curr_ref.GetLoc(), fFuseAbutting));
+            }
+            (*prev)->SetLoc(merged_loc);
+            curr = refs.erase(curr);
+            if ( curr == refs.end() ) {
+                break;
+            }
+        } else {
+            prev = curr;
+            ++curr;
+        }
     }
 }
 
@@ -228,7 +298,8 @@ void CReferenceItem::Rearrange(TReferences& refs, CBioseqContext& ctx)
     }}
 
     {{
-        // !!! remove duplicate references
+        // merge duplicate references
+        s_MergeDuplicates(refs, ctx);
     }}
 
     {{
@@ -295,6 +366,27 @@ bool CReferenceItem::Matches(const CPub_set& ps) const
     return false;
 }
 
+
+void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
+{
+    if ( !m_Pubdesc->CanGetPub() ) {
+        x_SetSkip();
+    }
+
+    if ( ctx.GetSubmitBlock() != 0 ) {
+        m_Title = "Direct Submission";
+        m_Category = eSubmission;
+    }
+    ITERATE (CPub_equiv::Tdata, it, m_Pubdesc->GetPub().Get()) {
+        x_Init(**it, ctx);
+    }
+    x_CleanData();
+
+    // gather Genbank specific fields (formats: Genbank, GBSeq, DDBJ)
+    if ( ctx.IsGenbankFormat() ) {
+        x_GatherRemark(ctx);
+    }
+}
  
 
 void CReferenceItem::x_Init(const CPub& pub, CBioseqContext& ctx)
@@ -1076,6 +1168,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/05/06 17:59:30  shomrat
+* Handle duplicate references
+*
 * Revision 1.12  2004/04/27 15:14:04  shomrat
 * Added logic for partial range formatting
 *
