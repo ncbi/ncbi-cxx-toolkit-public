@@ -37,6 +37,13 @@
 #include <serial/classinfob.hpp>
 #include <serial/variant.hpp>
 
+
+/** @addtogroup TypeInfoCPP
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CChoiceTypeInfoReader;
@@ -127,6 +134,10 @@ protected:
     TSelectDelayFunction m_SelectDelayFunction;
 };
 
+
+/* @} */
+
+
 #include <serial/choice.inl>
 
 END_NCBI_SCOPE
@@ -137,6 +148,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/04/15 14:14:54  siyan
+* Added doxygen support
+*
 * Revision 1.21  2002/12/23 18:38:50  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

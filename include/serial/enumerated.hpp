@@ -36,6 +36,13 @@
 #include <serial/stdtypes.hpp>
 #include <serial/enumvalues.hpp>
 
+
+/** @addtogroup TypeInfoCPP
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class NCBI_XSERIAL_EXPORT CEnumeratedTypeInfo : public CPrimitiveTypeInfo
@@ -100,9 +107,14 @@ END_NCBI_SCOPE
 #endif  /* ENUMERATED__HPP */
 
 
+/* @} */
+
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/04/15 14:15:09  siyan
+* Added doxygen support
+*
 * Revision 1.14  2002/12/23 18:38:50  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

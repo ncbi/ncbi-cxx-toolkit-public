@@ -40,6 +40,13 @@
 #include <vector>
 #include <map>
 
+
+/** @addtogroup FieldsComplex
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CConstObjectInfo;
@@ -127,6 +134,10 @@ private:
     mutable auto_ptr<TItemsByOffset> m_ItemsByOffset;
 };
 
+
+/* @} */
+
+
 #include <serial/memberlist.inl>
 
 END_NCBI_SCOPE
@@ -137,6 +148,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/04/15 14:15:26  siyan
+* Added doxygen support
+*
 * Revision 1.23  2003/03/26 16:13:32  vasilche
 * Removed TAB symbols. Some formatting.
 *

@@ -43,6 +43,13 @@
 #include <set>
 #include <memory>
 
+
+/** @addtogroup TypeInfoCPP
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class NCBI_XSERIAL_EXPORT CClassTypeInfoBase : public CTypeInfo {
@@ -136,6 +143,10 @@ private:
     static TClassesByName& ClassesByName(void);
 };
 
+
+/* @} */
+
+
 #include <serial/classinfob.inl>
 
 END_NCBI_SCOPE
@@ -144,6 +155,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/04/15 14:14:58  siyan
+* Added doxygen support
+*
 * Revision 1.13  2002/12/26 21:36:27  gouriano
 * corrected handling choice's XML attributes
 *

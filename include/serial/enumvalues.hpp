@@ -39,6 +39,13 @@
 #include <map>
 #include <memory>
 
+
+/** @addtogroup TypeInfoCPP
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class NCBI_XSERIAL_EXPORT CEnumeratedTypeValues
@@ -94,6 +101,10 @@ private:
     mutable auto_ptr<TValueToName> m_ValueToName;
 };
 
+
+/* @} */
+
+
 //#include <serial/enumvalues.inl>
 
 END_NCBI_SCOPE
@@ -104,6 +115,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/04/15 14:15:10  siyan
+* Added doxygen support
+*
 * Revision 1.7  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

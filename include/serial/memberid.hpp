@@ -34,6 +34,13 @@
 
 #include <corelib/ncbistd.hpp>
 
+
+/** @addtogroup FieldsComplex
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 // CMemberId class holds information about logical object member access:
@@ -89,6 +96,10 @@ private:
     bool m_Notag;
 };
 
+
+/* @} */
+
+
 #include <serial/memberid.inl>
 
 END_NCBI_SCOPE
@@ -99,6 +110,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/04/15 14:15:24  siyan
+* Added doxygen support
+*
 * Revision 1.16  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -35,6 +35,13 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
 
+
+/** @addtogroup HookSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
@@ -95,6 +102,7 @@ typedef void (*TVariantCopyFunction)(CObjectStreamCopier& copier,
 typedef void (*TVariantSkipFunction)(CObjectIStream& in,
                                      const CVariantInfo* variantInfo);
 
+/* @}
 
 
 //#include <serial/hookfunc.inl>
@@ -107,6 +115,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/04/15 14:15:18  siyan
+* Added doxygen support
+*
 * Revision 1.3  2003/03/26 16:13:32  vasilche
 * Removed TAB symbols. Some formatting.
 *

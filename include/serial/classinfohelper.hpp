@@ -38,6 +38,13 @@
 #include <serial/typeinfoimpl.hpp>
 #include <typeinfo>
 
+
+/** @addtogroup GenClassSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CClassTypeInfoBase;
@@ -242,6 +249,10 @@ private:
         }
 };
 
+
+/* @} */
+
+
 //#include <serial/classinfohelper.inl>
 
 END_NCBI_SCOPE
@@ -252,6 +263,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/04/15 14:15:00  siyan
+* Added doxygen support
+*
 * Revision 1.7  2003/04/10 20:13:37  vakatov
 * Rollback the "uninitialized member" verification -- it still needs to
 * be worked upon...

@@ -34,6 +34,13 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiexpt.hpp>
 
+
+/** @addtogroup SerialExcep
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 // root class for all serialization exceptions
@@ -119,9 +126,14 @@ END_NCBI_SCOPE
 #endif /* EXCEPTION__HPP */
 
 
+/* @} */
+
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/04/15 14:15:12  siyan
+* Added doxygen support
+*
 * Revision 1.11  2003/04/03 21:46:09  gouriano
 * verify initialization of data members
 *

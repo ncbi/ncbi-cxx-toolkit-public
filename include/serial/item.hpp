@@ -38,6 +38,13 @@
 #include <serial/typeref.hpp>
 #include <serial/memberid.hpp>
 
+
+/** @addtogroup FieldsComplex
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CItemsInfo;
@@ -87,6 +94,10 @@ private:
     CTypeRef m_Type;
 };
 
+
+/* @} */
+
+
 #include <serial/item.inl>
 
 END_NCBI_SCOPE
@@ -97,6 +108,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/04/15 14:15:19  siyan
+* Added doxygen support
+*
 * Revision 1.7  2003/04/10 20:13:37  vakatov
 * Rollback the "uninitialized member" verification -- it still needs to
 * be worked upon...

@@ -36,6 +36,13 @@
 #include <corelib/ncbiobj.hpp>
 #include <util/weakmap.hpp>
 
+
+/** @addtogroup HookSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class NCBI_XSERIAL_EXPORT CHookDataKeyData
@@ -73,6 +80,10 @@ public:
     mutable TMap m_LocalHooks;
 };
 
+
+/* @} */
+
+
 //#include <serial/hookdataimpl.inl>
 
 END_NCBI_SCOPE
@@ -83,6 +94,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/04/15 14:15:15  siyan
+* Added doxygen support
+*
 * Revision 1.5  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

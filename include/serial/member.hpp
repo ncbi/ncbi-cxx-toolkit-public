@@ -39,6 +39,13 @@
 #include <serial/hookfunc.hpp>
 #include <serial/typeinfo.hpp>
 
+
+/** @addtogroup FieldsComplex
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CClassTypeInfoBase;
@@ -180,6 +187,10 @@ private:
     friend class CMemberInfoFunctions;
 };
 
+
+/* @} */
+
+
 #include <serial/member.inl>
 
 END_NCBI_SCOPE
@@ -190,6 +201,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/04/15 14:15:23  siyan
+* Added doxygen support
+*
 * Revision 1.25  2003/04/10 20:13:37  vakatov
 * Rollback the "uninitialized member" verification -- it still needs to
 * be worked upon...

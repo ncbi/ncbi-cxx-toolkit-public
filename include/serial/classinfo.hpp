@@ -37,6 +37,13 @@
 #include <serial/member.hpp>
 #include <list>
 
+
+/** @addtogroup TypeInfoCPP
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
@@ -164,6 +171,10 @@ private:
                                    TTypeInfo objectType);
 };
 
+
+/* @} */
+
+
 #include <serial/classinfo.inl>
 
 END_NCBI_SCOPE
@@ -174,6 +185,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/04/15 14:14:57  siyan
+* Added doxygen support
+*
 * Revision 1.41  2003/04/10 20:13:37  vakatov
 * Rollback the "uninitialized member" verification -- it still needs to
 * be worked upon...

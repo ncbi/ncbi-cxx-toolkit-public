@@ -41,6 +41,13 @@
 #include <set>
 #include <stack>
 
+
+/** @addtogroup ObjHierarchy
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CTreeIterator;
@@ -796,6 +803,10 @@ CConstBeginInfo Begin(const C& obj, EDetectLoops)
     return CConstBeginInfo(&obj, C::GetTypeInfo(), true);
 }
 
+
+/* @} */
+
+
 //#include <serial/iterator.inl>
 
 END_NCBI_SCOPE
@@ -805,6 +816,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/04/15 14:15:21  siyan
+* Added doxygen support
+*
 * Revision 1.26  2003/03/26 16:13:32  vasilche
 * Removed TAB symbols. Some formatting.
 *

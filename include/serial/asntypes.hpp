@@ -43,6 +43,13 @@
 #include <serial/typeref.hpp>
 #include <serial/serialasndef.hpp>
 
+
+/** @addtogroup TypeInfoC
+ *
+ * @{
+ */
+
+
 struct valnode;
 struct bytestore;
 struct asnio;
@@ -223,9 +230,15 @@ END_NCBI_SCOPE
 #endif  /* ASNTYPES__HPP */
 
 
+/* @} */
+
+
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.39  2003/04/15 14:14:51  siyan
+ * Added doxygen support
+ *
  * Revision 1.38  2003/03/26 16:13:32  vasilche
  * Removed TAB symbols. Some formatting.
  *
