@@ -189,6 +189,44 @@ struct CNameGetter
     }
 };
 
+// These templates may yield 0 if no (suitable) elements exist.  Also,
+// in part for consistency with the C Toolkit, lower scores are
+// better, and earlier elements win ties.
+
+template <typename T, typename F>
+class CBestChoiceTracker : public unary_function<T, void>
+{
+public:
+    CBestChoiceTracker(F func) : m_Func(func), m_Value(T()), m_Score(kMax_Int)
+        { }
+    void operator() (const T& x)
+        {
+            int score = m_Func(x);
+            if (score < m_Score) {
+                m_Value = x;
+                m_Score = score;
+            }
+        }
+    const T& GetBestChoice() { return m_Value; }
+
+private:
+    F   m_Func;
+    T   m_Value;
+    int m_Score;
+};
+
+template <typename C, typename F>
+inline
+typename C::value_type
+FindBestChoice(const C& container, F score_func)
+{
+    CBestChoiceTracker<typename C::value_type, F> tracker(score_func);
+    iterate (typename C, it, container) {
+        tracker(*it);
+    }
+    return tracker.GetBestChoice();
+}
+
 
 END_NCBI_SCOPE
 
@@ -196,6 +234,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2002/08/22 21:24:24  ucko
+ * Added templates for finding the best element (e.g., CRef<CSeq_id>) in
+ * a container according to some score function.
+ *
  * Revision 1.23  2002/07/15 18:54:40  gouriano
  * typo correction
  *
