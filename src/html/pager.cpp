@@ -240,11 +240,11 @@ CNCBINode* CPager::GetPageInfo(void) const
 CNCBINode* CPager::GetItemInfo(void) const
 {
     if( m_ItemCount == 0 )
-        return new CHTMLText("<div class=pager>0 items found</div>");
+        return new CHTMLText("<div class=medium2>0 items found</div>");
     int firstItem = m_DisplayPage * m_PageSize + 1;
     int endItem = min((m_DisplayPage + 1) * m_PageSize, m_ItemCount);
     return new CHTMLText(
-        "<div class=pager>Items " + NStr::IntToString(firstItem) + "-" + NStr::IntToString(endItem) +
+        "<div class=medium2>Items " + NStr::IntToString(firstItem) + "-" + NStr::IntToString(endItem) +
         " of " + NStr::IntToString(m_ItemCount) + "</div>");
 }
 
@@ -377,13 +377,13 @@ void CPagerViewButtons::CreateSubNodes()
                                     "frm.cmd.value=''; frm.inputpage.value=" +
                                     NStr::IntToString(currentPage) + 
                                     "; frm.submit();", "Previous");
-        prev->SetAttribute("class", "pager");
+        prev->SetAttribute("class", "dblinks");
         InsertAt(0, column, prev);
         InsertAt(0, column++, new CHTMLText("&nbsp;"));
     }
         
     CHTML_input* butt = new CHTML_input("BUTTON", "GoToPage");
-    butt->SetAttribute("class", "pager");
+    butt->SetAttribute("class", "dblinks");
     butt->SetAttribute("value", "Page");
     butt->SetAttribute("onClick", "javascript:form.cmd.value='';form." + CPager::KParam_InputPage +
                                   ".value=form.textpage" + m_jssuffix +
@@ -393,7 +393,7 @@ void CPagerViewButtons::CreateSubNodes()
 
     CHTML_input* textpage =  new CHTML_text("textpage" + m_jssuffix, 4,
                                          NStr::IntToString(currentPage + 1));
-    textpage->SetAttribute("class", "pager");
+    textpage->SetAttribute("class", "dblinks");
     
     string suffix = kEmptyStr;
     if ( m_jssuffix == "" ) {
@@ -409,7 +409,7 @@ void CPagerViewButtons::CreateSubNodes()
                                          
     InsertAt(0, column++, textpage);
 
-    InsertAt(0, column++, new CHTMLText("<div class=pager>&nbsp;of&nbsp;" +
+    InsertAt(0, column++, new CHTMLText("<div class=medium2>&nbsp;of&nbsp;" +
                                         NStr::IntToString(lastPage + 1) +
                                         "</div>" ));
     
@@ -422,7 +422,7 @@ void CPagerViewButtons::CreateSubNodes()
                                     "frm.cmd.value=''; frm.inputpage.value=" +
                                     NStr::IntToString(currentPage + 2) + 
                                     ";frm.submit();", "Next");
-        next->SetAttribute("class", "pager");
+        next->SetAttribute("class", "dblinks");
         InsertAt(0, column, next);
         InsertAt(0, column++, new CHTMLText("&nbsp;&nbsp;"));
     }
