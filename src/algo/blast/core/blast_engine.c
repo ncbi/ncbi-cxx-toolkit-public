@@ -405,7 +405,8 @@ static Int2
 FillReturnCutoffsInfo(BlastRawCutoffs* return_cutoffs, 
    BlastScoringParameters* score_params, 
    BlastInitialWordParameters* word_params, 
-   BlastExtensionParameters* ext_params)
+   BlastExtensionParameters* ext_params,
+   BlastHitSavingParameters* hit_params)
 {
    /* since the cutoff score here will be used for display
       putposes, strip out any internal scaling of the scores */
@@ -421,6 +422,7 @@ FillReturnCutoffsInfo(BlastRawCutoffs* return_cutoffs,
    return_cutoffs->x_drop_gap_final = ext_params->gap_x_dropoff_final / 
                                                         scale_factor;
    return_cutoffs->gap_trigger = ext_params->gap_trigger / scale_factor;
+   return_cutoffs->cutoff_score = hit_params->cutoff_score;
 
    return 0;
 }
@@ -607,7 +609,7 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
    if (diagnostics->cutoffs)
       raw_cutoffs = diagnostics->cutoffs;
 
-   FillReturnCutoffsInfo(raw_cutoffs, score_params, word_params, ext_params);
+   FillReturnCutoffsInfo(raw_cutoffs, score_params, word_params, ext_params, hit_params);
 
    /* Save the resulting list of HSPs. 'query' and 'subject' are
       still reversed */
@@ -781,7 +783,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    if (diagnostics && diagnostics->cutoffs)
       raw_cutoffs = diagnostics->cutoffs;
 
-   FillReturnCutoffsInfo(raw_cutoffs, score_params, word_params, ext_params);
+   FillReturnCutoffsInfo(raw_cutoffs, score_params, word_params, ext_params, hit_params);
 
    if (hit_options->phi_align) {
       /* Save the product of effective occurrencies of pattern in query and
