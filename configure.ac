@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.321 2004/09/09 19:23:45 ucko Exp $
+#  $Id: configure.ac,v 1.322 2004/09/09 20:12:48 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2251,7 +2251,9 @@ else
                [Define to 1 if you have the `getaddrinfo' function.])
    AC_CACHE_CHECK([for getnameinfo], ac_cv_func_getnameinfo,
       [AC_LINK_IFELSE([AC_LANG_PROGRAM(
-          [[#include <netdb.h>]],
+          [[#include <netdb.h>
+            #include <sys/types.h>
+            #include <sys/socket.h>]],
           [[struct sockaddr p; char buf[256], buf2[256];
             getnameinfo(&p, sizeof(p), buf, 256, buf2, 256, 0);]])],
           [ac_cv_func_getnameinfo=yes], [ac_cv_func_getnameinfo=no])])
