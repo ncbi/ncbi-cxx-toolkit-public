@@ -409,7 +409,7 @@ Int4 _BlastAaLookupIndexQuery(LookupTable* lookup,
   for(loc=location; loc; loc=loc->next)
     {
       from = ((DoubleInt*) loc->ptr)->i1;
-      to = ((DoubleInt*) loc->ptr)->i2 - lookup->wordsize;
+      to = ((DoubleInt*) loc->ptr)->i2 - lookup->wordsize + 1;
 
       for(w=from;w<=to;w++)
 	{
