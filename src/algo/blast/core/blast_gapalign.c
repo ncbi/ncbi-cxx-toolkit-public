@@ -2984,48 +2984,41 @@ score_compare_match(const void* v1, const void* v2)
 
 #define HSP_MAX_WINDOW 11
 
-/** Function to look for the highest scoring window (of size HSP_MAX_WINDOW)
- * in an HSP and return the middle of this.  Used by the gapped-alignment
- * functions to start the gapped alignments.
- * @param gap_align The structure holding gapped alignment information [in]
- * @param init_hsp The initial HSP information [in]
- * @param query The query sequence [in]
- * @param subject The subject sequence [in]
- * @return The offset at which alignment should be started [out]
-*/
-static Int4 BLAST_GetStartForGappedAlignment (BlastGapAlignStruct* gap_align,
-        BlastInitHSP* init_hsp, Uint1* query, Uint1* subject)
+Int4 
+BlastGetStartForGappedAlignment (Uint1* query, Uint1* subject,
+   const BlastScoreBlk* sbp, Uint4 q_start, Uint4 q_length, 
+   Uint4 s_start, Uint4 s_length)
 {
     Int4 index1, max_offset, score, max_score, hsp_end;
     Uint1* query_var,* subject_var;
-    BlastUngappedData* uhsp = init_hsp->ungapped_data;
+    Boolean positionBased = (sbp->posMatrix != NULL);
     
-    if (uhsp->length <= HSP_MAX_WINDOW) {
-        max_offset = uhsp->q_start + uhsp->length/2;
+    if (q_length <= HSP_MAX_WINDOW) {
+        max_offset = q_start + q_length/2;
         return max_offset;
     }
 
-    hsp_end = uhsp->q_start + HSP_MAX_WINDOW;
-    query_var = query + uhsp->q_start;
-    subject_var = subject + uhsp->s_start;
+    hsp_end = q_start + HSP_MAX_WINDOW;
+    query_var = query + q_start;
+    subject_var = subject + s_start;
     score=0;
-    for (index1=uhsp->q_start; index1<hsp_end; index1++) {
-        if (!(gap_align->positionBased))
-            score += gap_align->sbp->matrix[*query_var][*subject_var];
+    for (index1=q_start; index1<hsp_end; index1++) {
+        if (!(positionBased))
+            score += sbp->matrix[*query_var][*subject_var];
         else
-            score += gap_align->sbp->posMatrix[index1][*subject_var];
+            score += sbp->posMatrix[index1][*subject_var];
         query_var++; subject_var++;
     }
     max_score = score;
     max_offset = hsp_end - 1;
-    hsp_end = uhsp->q_start + uhsp->length;
-    for (index1=uhsp->q_start + HSP_MAX_WINDOW; index1<hsp_end; index1++) {
-        if (!(gap_align->positionBased)) {
-            score -= gap_align->sbp->matrix[*(query_var-HSP_MAX_WINDOW)][*(subject_var-HSP_MAX_WINDOW)];
-            score += gap_align->sbp->matrix[*query_var][*subject_var];
+    hsp_end = q_start + MIN(q_length, s_length);
+    for (index1=q_start + HSP_MAX_WINDOW; index1<hsp_end; index1++) {
+        if (!(positionBased)) {
+            score -= sbp->matrix[*(query_var-HSP_MAX_WINDOW)][*(subject_var-HSP_MAX_WINDOW)];
+            score += sbp->matrix[*query_var][*subject_var];
         } else {
-            score -= gap_align->sbp->posMatrix[index1-HSP_MAX_WINDOW][*(subject_var-HSP_MAX_WINDOW)];
-            score += gap_align->sbp->posMatrix[index1][*subject_var];
+            score -= sbp->posMatrix[index1-HSP_MAX_WINDOW][*(subject_var-HSP_MAX_WINDOW)];
+            score += sbp->posMatrix[index1][*subject_var];
         }
         if (score > max_score) {
             max_score = score;
@@ -3036,7 +3029,7 @@ static Int4 BLAST_GetStartForGappedAlignment (BlastGapAlignStruct* gap_align,
     if (max_score > 0)
        max_offset -= HSP_MAX_WINDOW/2;
     else 
-       max_offset = uhsp->q_start;
+       max_offset = q_start;
 
     return max_offset;
 }
@@ -3231,8 +3224,13 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
 #endif
  
          if(is_prot && !score_options->is_ooframe) {
-            max_offset = BLAST_GetStartForGappedAlignment(gap_align, init_hsp,
-                            query_tmp.sequence, subject->sequence);
+            max_offset = 
+               BlastGetStartForGappedAlignment(query_tmp.sequence, 
+                  subject->sequence, gap_align->sbp,
+                  init_hsp->ungapped_data->q_start,
+                  init_hsp->ungapped_data->length,
+                  init_hsp->ungapped_data->s_start,
+                  init_hsp->ungapped_data->length);
             init_hsp->s_off += max_offset - init_hsp->q_off;
             init_hsp->q_off = max_offset;
          }

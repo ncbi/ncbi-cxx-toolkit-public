@@ -144,12 +144,18 @@ static void BLASTCheckHSPInclusion(BlastHSP* *hsp_array, Int4 hspcnt,
 
 /** Function to check that the highest scoring region in an HSP still gives a 
  * positive score. This value was originally calcualted by 
- * GetStartForGappedAlignment but it may have changed due to the introduction of 
- * ambiguity characters. Such a change can lead to 'strange' results from ALIGN. 
+ * GetStartForGappedAlignment but it may have changed due to the introduction 
+ * of ambiguity characters. Such a change can lead to 'strange' results from 
+ * ALIGN. 
+ * @param hsp An HSP structure [in]
+ * @param query Query sequence buffer [in]
+ * @param subject Subject sequence buffer [in]
+ * @param sbp Scoring block containing matrix [in]
+ * @return TRUE if region aroung starting offsets gives a positive score
 */
 static Boolean
 BLAST_CheckStartForGappedAlignment (BlastHSP* hsp, Uint1* query, 
-                                    Uint1* subject, BlastScoreBlk* sbp)
+                                    Uint1* subject, const BlastScoreBlk* sbp)
 {
    Int4 index1, score, start, end, width;
    Uint1* query_var,* subject_var;
@@ -177,62 +183,6 @@ BLAST_CheckStartForGappedAlignment (BlastHSP* hsp, Uint1* query,
       return FALSE;
    
    return TRUE;
-}
-
-/** Function to look for the highest scoring window (of size HSP_MAX_WINDOW)
- * in an HSP and return the middle of this.  Used by the gapped-alignment
- * functions to start the gapped alignments.
-*/
-static Int4 
-BLAST_GetStartForGappedAlignment (BlastHSP* hsp, Uint1* query, 
-                                  Uint1* subject, BlastScoreBlk* sbp)
-{
-   Int4 index1, max_offset, score, max_score, hsp_end;
-   Uint1* query_var,* subject_var;
-   Boolean positionBased = (sbp->posMatrix != NULL);
-   
-   if (hsp->query.length <= HSP_MAX_WINDOW) {
-      max_offset = hsp->query.offset + hsp->query.length/2;
-      return max_offset;
-   }
-   
-   hsp_end = hsp->query.offset + HSP_MAX_WINDOW;
-   query_var = query + hsp->query.offset;
-   subject_var = subject + hsp->subject.offset;
-   score=0;
-   for (index1=hsp->query.offset; index1<hsp_end; index1++) {
-      if (!positionBased)
-         score += sbp->matrix[*query_var][*subject_var];
-      else
-         score += sbp->posMatrix[index1][*subject_var];
-      query_var++; subject_var++;
-   }
-   max_score = score;
-   max_offset = hsp_end - 1;
-   hsp_end = hsp->query.end - 
-      MAX(0, hsp->query.length - hsp->subject.length);
-   for (index1=hsp->query.offset + HSP_MAX_WINDOW; index1<hsp_end; index1++) {
-      if (!positionBased) {
-         score -= 
-         sbp->matrix[*(query_var-HSP_MAX_WINDOW)][*(subject_var-HSP_MAX_WINDOW)];
-         score += sbp->matrix[*query_var][*subject_var];
-      } else {
-         score -= 
-            sbp->posMatrix[index1-HSP_MAX_WINDOW][*(subject_var-HSP_MAX_WINDOW)];
-         score += sbp->posMatrix[index1][*subject_var];
-      }
-      if (score > max_score) {
-         max_score = score;
-         max_offset = index1;
-      }
-      query_var++; subject_var++;
-   }
-   if (max_score > 0)
-      max_offset -= HSP_MAX_WINDOW/2;
-   else 
-      max_offset = hsp->query.offset;
-   
-   return max_offset;
 }
 
 static Int4 GetPatternLengthFromBlastHSP(BlastHSP* hsp)
@@ -764,8 +714,10 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
                 hsp->subject.gapped_start == 0) ||
                !BLAST_CheckStartForGappedAlignment(hsp, query, 
                    subject, sbp)))) {
-            Int4 max_offset = BLAST_GetStartForGappedAlignment(hsp, query, 
-                            subject, sbp);
+            Int4 max_offset = 
+               BlastGetStartForGappedAlignment(query, subject, sbp,
+                  hsp->query.offset, hsp->query.length,
+                  hsp->subject.offset, hsp->subject.length);
             q_start = max_offset;
             s_start = 
                (hsp->subject.offset - hsp->query.offset) + max_offset;
