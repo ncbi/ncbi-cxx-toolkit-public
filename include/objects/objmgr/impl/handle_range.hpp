@@ -148,10 +148,13 @@ bool CHandleRange::IntersectingWith(const CHandleRange& hloc) const
                 continue;
             if ( it2->first.GetFrom() > it1->first.GetTo() )
                 break;
-            if ( x_IntersectingStrands(it1->second, it2->second) )
-                return it1->first.IntersectingWith(it2->first);
+            if ( x_IntersectingStrands(it1->second, it2->second)  &&
+                it1->first.IntersectingWith(it2->first)) {
+                return true;
+            }
         }
     }
+    cout << "no intersections found";
     return false;
 }
 
@@ -162,6 +165,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/07/31 16:52:36  grichenk
+* Fixed bug in IntersectingWith()
+*
 * Revision 1.10  2002/07/08 20:51:01  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex
