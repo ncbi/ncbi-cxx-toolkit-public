@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/04/14 19:50:28  vasilche
+* Fixed coredump. One more bug with map::const_iterator
+*
 * Revision 1.7  1999/04/14 17:29:01  vasilche
 * Added parsing of CGI parameters from IMAGE input tag like "cmd.x=1&cmd.y=2"
 * As a result special parameter is added with empty name: "=cmd"
@@ -114,7 +117,7 @@ CPager::CPager(CCgiRequest& request, int pageBlockSize, int defaultPageSize)
         }
     }
     if ( !m_PageChanged ) {
-        TCgiEntriesCI page = entries.find(KParam_DisplayPage);
+        TCgiEntriesI page = entries.find(KParam_DisplayPage);
         if ( page != entries.end() ) {
             try {
                 m_DisplayPage = NStr::StringToInt(page->second);
