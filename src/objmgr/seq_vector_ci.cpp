@@ -55,6 +55,15 @@ BEGIN_SCOPE(objects)
 
 static const TSeqPos kCacheSize = 1024;
 
+namespace {
+    void ThrowOutOfRangeSeq_inst(TSeqPos pos)
+    {
+        NCBI_THROW(CSeqVectorException, eOutOfRange,
+                   "reference out of range of Seq-inst data: "+
+                   NStr::UIntToString(pos));
+    }
+}
+
 template<class DstIter, class SrcCont>
 inline
 void copy_8bit_any(DstIter dst, size_t count,
@@ -63,8 +72,7 @@ void copy_8bit_any(DstIter dst, size_t count,
 {
     size_t endPos = srcPos + count;
     if ( endPos < srcPos || endPos > srcCont.size() ) {
-        NCBI_THROW(CSeqVectorException, eOutOfRange,
-                   "reference out of range of Seq-inst data");
+        ThrowOutOfRangeSeq_inst(endPos);
     }
     if ( table ) {
         if ( reverse ) {
@@ -93,8 +101,7 @@ void copy_4bit_any(DstIter dst, size_t count,
 {
     size_t endPos = srcPos + count;
     if ( endPos < srcPos || endPos / 2 > srcCont.size() ) {
-        NCBI_THROW(CSeqVectorException, eOutOfRange,
-                   "reference out of range of Seq-inst data");
+        ThrowOutOfRangeSeq_inst(endPos);
     }
     if ( table ) {
         if ( reverse ) {
@@ -123,8 +130,7 @@ void copy_2bit_any(DstIter dst, size_t count,
 {
     size_t endPos = srcPos + count;
     if ( endPos < srcPos || endPos / 4 > srcCont.size() ) {
-        NCBI_THROW(CSeqVectorException, eOutOfRange,
-                   "reference out of range of Seq-inst data");
+        ThrowOutOfRangeSeq_inst(endPos);
     }
     if ( table ) {
         if ( reverse ) {
@@ -247,6 +253,15 @@ void CSeqVector_CI::x_InitSeg(TSeqPos pos)
     SSeqMapSelector sel(CSeqMap::fDefaultFlags, kMax_UInt);
     sel.SetStrand(m_Strand).SetLinkUsedTSE(m_TSE);
     m_Seg = CSeqMap_CI(m_SeqMap, m_Scope.GetScopeOrNull(), sel, pos);
+}
+
+
+void CSeqVector_CI::x_ThrowOutOfRange(void) const
+{
+    NCBI_THROW(CSeqVectorException, eOutOfRange,
+               "iterator out of range: "+
+               NStr::UIntToString(GetPos())+">="+
+               NStr::UIntToString(x_GetSize()));
 }
 
 
@@ -773,6 +788,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2005/03/28 19:23:06  vasilche
+* Added restricted post-increment and post-decrement operators.
+*
 * Revision 1.40  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

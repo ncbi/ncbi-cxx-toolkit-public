@@ -82,6 +82,42 @@ public:
     CSeqVector_CI& operator++(void);
     CSeqVector_CI& operator--(void);
 
+    /// special temporary holder for return value from postfix operators
+    class CTempValue
+    {
+    public:
+        CTempValue(value_type value)
+            : m_Value(value)
+            {
+            }
+
+        value_type operator*(void) const
+            {
+                return m_Value;
+            }
+    private:
+        value_type m_Value;
+    };
+    /// Restricted postfix operators.
+    /// They allow only get value from old position by operator*,
+    /// like in commonly used copying cycle:
+    /// CSeqVector_CI src;
+    /// for ( ... ) {
+    ///     *dst++ = *src++;
+    /// }
+    CTempValue operator++(int)
+        {
+            value_type value(**this);
+            ++*this;
+            return value;
+        }
+    CTempValue operator--(int)
+        {
+            value_type value(**this);
+            --*this;
+            return value;
+        }
+
     TSeqPos GetPos(void) const;
     CSeqVector_CI& SetPos(TSeqPos pos);
 
@@ -150,6 +186,8 @@ private:
 
     void x_ResetCache(void);
     void x_ResetBackup(void);
+
+    void x_ThrowOutOfRange(void) const;
 
     friend class CSeqVector;
     void x_SetVector(CSeqVector& seq_vector);
@@ -341,8 +379,7 @@ inline
 CSeqVector_CI::TResidue CSeqVector_CI::operator*(void) const
 {
     if ( !bool(*this) ) {
-        NCBI_THROW(CSeqVectorException, eOutOfRange,
-                   "Can not return residue: iterator out of range");
+        x_ThrowOutOfRange();
     }
     return *m_Cache;
 }
@@ -358,7 +395,6 @@ bool CSeqVector_CI::IsInGap(void) const
 inline
 CSeqVector_CI& CSeqVector_CI::operator++(void)
 {
-    _ASSERT(*this);
     if ( ++m_Cache >= m_CacheEnd ) {
         x_NextCacheSeg();
     }
@@ -469,6 +505,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2005/03/28 19:23:06  vasilche
+* Added restricted post-increment and post-decrement operators.
+*
 * Revision 1.27  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *
