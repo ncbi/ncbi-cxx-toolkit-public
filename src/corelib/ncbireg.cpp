@@ -57,29 +57,6 @@ BEGIN_NCBI_SCOPE
 } while (0)
 
 
-
-/* Get the next line taking into account platform specifics of End-of-Line
- */
-static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str)
-{
-#if   defined(NCBI_OS_MAC)
-    NcbiGetline(is, str, '\r');
-#elif defined(NCBI_OS_MSWIN)
-    NcbiGetline(is, str, '\n');
-    if (!str.empty()  &&  str[str.length()-1] == '\r')
-        str.resize(str.length() - 1);
-#else /* assume UNIX-like EOLs */
-    NcbiGetline(is, str, '\n');
-#endif
-
-    // special case -- an empty line
-    if (is.fail()  &&  !is.eof()  &&  !is.gcount()  &&  str.empty())
-        is.clear(is.rdstate() & ~IOS_BASE::failbit);
-
-    return is;
-}
-
-
 /* Valid symbols for a section/entry name
  */
 inline bool s_IsNameSectionSymbol(char ch)
@@ -215,7 +192,7 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
     string    section;      // current section name
     string    comment;      // current comment
 
-    for (line = 1;  s_NcbiGetline(is, str);  line++) {
+    for (line = 1;  NcbiGetlineEOL(is, str);  line++) {
         SIZE_TYPE len = str.length();
         SIZE_TYPE beg;
 
@@ -361,7 +338,7 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
 "Badly placed '\\' in the registry value: '" + str + "'", line);
                     }
                 }
-            } while (read_next_line  &&  s_NcbiGetline(is, str));
+            } while (read_next_line  &&  NcbiGetlineEOL(is, str));
 
             Set(section, name, value, flags, comment);
             comment.erase();
@@ -785,6 +762,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2002/08/01 18:43:57  ivanov
+ * Using NcbiGetlineEOL() instead s_NcbiGetline()
+ *
  * Revision 1.23  2002/07/11 14:18:27  gouriano
  * exceptions replaced by CNcbiException-type ones
  *
