@@ -953,7 +953,7 @@ Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
    Boolean ag_blast, variable_wordsize;
    Uint4 extended_right;
    Uint4 q_off, s_off; 
-   Uint1 remainder;
+   Uint4 remainder;
 
    s_start = subject->sequence;
    q_start = query->sequence;
@@ -994,7 +994,7 @@ Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
          for (index = 0; index < hitsfound; ++index) {
             /* Adjust offsets to the start of the next full byte in the
                subject sequence */
-            remainder = (-s_offsets[index])%COMPRESSION_RATIO;
+            remainder = ((Uint4)(-s_offsets[index]))%COMPRESSION_RATIO;
             q_off = q_offsets[index] + remainder;
             s_off = s_offsets[index] + remainder;
             s = s_start + s_off/COMPRESSION_RATIO;
@@ -1058,11 +1058,11 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
    Int4 hitsfound, total_hits = 0;
    Uint4 word_length;
    Int4 start_offset, end_offset, next_start;
-   Uint1 max_bases_left, max_bases_right;
+   Uint4 max_bases_left, max_bases_right;
    Boolean variable_wordsize = word_options->variable_wordsize;
    Uint4 extended_right;
    Uint4 q_off, s_off; /* Adjusted offsets */
-   Uint1 remainder; 
+   Uint4 remainder; 
 
    word_length = lookup->word_length;
    start_offset = 0;
@@ -1076,7 +1076,7 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
       
       total_hits += hitsfound;
       for (index = 0; index < hitsfound; ++index) {
-         remainder = (-s_offsets[index])%COMPRESSION_RATIO;
+         remainder = ((Uint4)(-s_offsets[index]))%COMPRESSION_RATIO;
          q_off = q_offsets[index] + remainder;
          s_off = s_offsets[index] + remainder;
          s = s_start + s_off/COMPRESSION_RATIO;
