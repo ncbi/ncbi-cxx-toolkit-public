@@ -49,8 +49,8 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-typedef pair<const CSeq_loc*, CScope*>  TSeqLoc;
-typedef vector<TSeqLoc>                 TSeqLocVector;
+typedef pair< CRef<CSeq_loc>, CScope*> TSeqLoc;
+typedef vector<TSeqLoc>   TSeqLocVector;
 
 /** Converts a CSeq_loc into a BlastMaskPtr structure used in NewBlast
  * @param sl CSeq_loc to convert [in]
@@ -131,6 +131,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/08/14 19:08:45  dondosha
+* Use CRef instead of pointer to CSeq_loc in the TSeqLoc type definition
+*
 * Revision 1.11  2003/08/12 19:17:58  dondosha
 * Added TSeqLocVector typedef so it can be used from all sources; removed scope argument from functions
 *
