@@ -86,7 +86,7 @@ s_BlastFindValidKarlinBlk(Blast_KarlinBlk** kbp_in, const BlastQueryInfo* query_
  * @return suggested extension method.  eMaxSeedExtensionMethod means 
  *     the input lookup table was not found. 
  */
-ESeedExtensionMethod
+static ESeedExtensionMethod
 s_GetBestExtensionMethod(const LookupTableWrap* lookup_wrap)
 {
    ESeedExtensionMethod retval = eMaxSeedExtensionMethod;
@@ -739,6 +739,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/01/18 15:58:21  dondosha
+ * Added missing static keyword to s_GetBestExtensionMethod declaration
+ *
  * Revision 1.3  2005/01/13 15:14:43  madden
  * Set params->cutoff_score_max to zero before calling BLASTCutoffs in BlastHitSavingParametersUpdate, prevents last value from overriding new calculation
  *
