@@ -59,7 +59,8 @@ static void s_SendData(FILE* fp, SOCK sock)
             buf[len++] = '\n';
         }
 
-        assert(SOCK_Write(sock, buf, len, &n_written) == eIO_Success);
+        assert(SOCK_Write(sock, buf, len, &n_written, eIO_WritePersist) ==
+               eIO_Success);
     }
     assert(feof(fp));
 }
@@ -132,6 +133,9 @@ extern int main(int argc, char** argv)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/10/17 20:49:25  lavr
+ * SOCK_Write(): forgotten write mode argument added
+ *
  * Revision 6.6  2002/08/07 16:38:08  lavr
  * EIO_ReadMethod enums changed accordingly; log moved to end
  *
