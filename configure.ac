@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.274 2004/02/24 20:10:02 ucko Exp $
+#  $Id: configure.ac,v 1.275 2004/03/11 17:30:10 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -663,7 +663,6 @@ case "$host_os:$compiler" in
    if test "$with_debug" = "no" -a "$with_profiling" != "yes" ; then
       LDFLAGS="-s $LDFLAGS"
    fi
-   RANLIB=":"
    CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/cxx_filter.$compiler.sh"
    LINK_FILTER="$CXX_FILTER"
    AR_FILTER="$CXX_FILTER"
@@ -1175,6 +1174,38 @@ fi
 AC_PROG_LN_S
 AC_PROG_RANLIB
 AC_CHECK_PROG(AR, ar, ar cr, ErrorCannotFind_AR)
+if test "x$RANLIB" != "x:"; then
+   AC_CACHE_CHECK([ranlib's effectiveness], ncbi_cv_prog_ranlib_effect,
+      [AC_LANG_CONFTEST([AC_LANG_SOURCE([[int libfunc(void) { return 0; }]])])
+       echo $CXX $CPPFLAGS $CXXFLAGS -c conftest.$ac_ext >&AS_MESSAGE_LOG_FD
+       $CXX $CPPFLAGS $CXXFLAGS -c conftest.$ac_ext >&AS_MESSAGE_LOG_FD
+       echo $AR conftest.a conftest.o >&AS_MESSAGE_LOG_FD
+       $AR conftest.a conftest.o >&AS_MESSAGE_LOG_FD
+       save_LIBS=$LIBS
+       LIBS="conftest.a $LIBS"
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([[extern int libfunc(void);]],
+                                       [[return libfunc();]])],
+                      [ok_without=true], [ok_without=false])
+       echo $RANLIB conftest.a >&AS_MESSAGE_LOG_FD
+       $RANLIB conftest.a >&AS_MESSAGE_LOG_FD
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([[extern int libfunc(void);]],
+                                       [[return libfunc();]])],
+                      [ok_with=true], [ok_with=false])
+       LIBS=$save_LIBS
+       case $ok_with:$ok_without in
+          true:false)  ncbi_cv_prog_ranlib_effect=positive ;;
+          false:true)  ncbi_cv_prog_ranlib_effect=negative ;;
+          true:true)   ncbi_cv_prog_ranlib_effect=neutral  ;;
+          false:false) ncbi_cv_prog_ranlib_effect=unknown  ;;
+       esac
+      ])
+   case "$ncbi_cv_prog_ranlib_effect" in
+      negative) RANLIB=: ;;
+      unknown)
+        AC_MSG_WARN([Failed to make a working library with or without ranlib.])
+        ;;
+   esac
+fi
 if test "$with_strip" = yes; then
    AC_CHECK_PROG(STRIP, strip, strip, @:)
 else

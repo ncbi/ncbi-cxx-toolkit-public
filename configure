@@ -3776,7 +3776,6 @@ case "$host_os:$compiler" in
    if test "$with_debug" = "no" -a "$with_profiling" != "yes" ; then
       LDFLAGS="-s $LDFLAGS"
    fi
-   RANLIB=":"
    CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/cxx_filter.$compiler.sh"
    LINK_FILTER="$CXX_FILTER"
    AR_FILTER="$CXX_FILTER"
@@ -4412,6 +4411,121 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
+if test "x$RANLIB" != "x:"; then
+
+echo "$as_me:$LINENO: checking ranlib's effectiveness" >&5
+echo $ECHO_N "checking ranlib's effectiveness... $ECHO_C" >&6
+if test "${ncbi_cv_prog_ranlib_effect+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+int libfunc(void) { return 0; }
+_ACEOF
+       echo $CXX $CPPFLAGS $CXXFLAGS -c conftest.$ac_ext >&5
+       $CXX $CPPFLAGS $CXXFLAGS -c conftest.$ac_ext >&5
+       echo $AR conftest.a conftest.o >&5
+       $AR conftest.a conftest.o >&5
+       save_LIBS=$LIBS
+       LIBS="conftest.a $LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+extern int libfunc(void);
+int
+main ()
+{
+return libfunc();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ok_without=true
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ok_without=false
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+       echo $RANLIB conftest.a >&5
+       $RANLIB conftest.a >&5
+       cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+extern int libfunc(void);
+int
+main ()
+{
+return libfunc();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ok_with=true
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ok_with=false
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+       LIBS=$save_LIBS
+       case $ok_with:$ok_without in
+          true:false)  ncbi_cv_prog_ranlib_effect=positive ;;
+          false:true)  ncbi_cv_prog_ranlib_effect=negative ;;
+          true:true)   ncbi_cv_prog_ranlib_effect=neutral  ;;
+          false:false) ncbi_cv_prog_ranlib_effect=unknown  ;;
+       esac
+
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_prog_ranlib_effect" >&5
+echo "${ECHO_T}$ncbi_cv_prog_ranlib_effect" >&6
+   case "$ncbi_cv_prog_ranlib_effect" in
+      negative) RANLIB=: ;;
+      unknown)
+        { echo "$as_me:$LINENO: WARNING: Failed to make a working library with or without ranlib." >&5
+echo "$as_me: WARNING: Failed to make a working library with or without ranlib." >&2;}
+        ;;
+   esac
+fi
 if test "$with_strip" = yes; then
    # Extract the first word of "strip", so it can be a program name with args.
 set dummy strip; ac_word=$2
@@ -5042,7 +5156,6 @@ fi
 ### ------------------------------------------------------------------
 
 ### Check for header files.
-
 ac_ext=cc
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
