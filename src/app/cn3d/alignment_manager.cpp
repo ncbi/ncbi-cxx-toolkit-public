@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2002/02/12 17:19:20  thiessen
+* first working structure import
+*
 * Revision 1.68  2001/12/06 23:13:43  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -882,6 +885,9 @@ void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesTo
     updateViewer->ReplaceAlignments(updatesToKeep);
     if (nSuccessfulMerges > 0)
         sequenceViewer->GetCurrentDisplay()->RowsAdded(nSuccessfulMerges, multiple);
+
+    // add pending imported structures to asn data
+    updateViewer->SavePendingStructures();
 }
 
 void AlignmentManager::CalculateRowScoresWithThreader(double weightPSSM)

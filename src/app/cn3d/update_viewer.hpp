@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/02/12 17:19:23  thiessen
+* first working structure import
+*
 * Revision 1.10  2001/10/01 16:03:58  thiessen
 * make CDD annotation window non-modal; add SetWindowTitle to viewers
 *
@@ -68,6 +71,8 @@
 
 #include <corelib/ncbistl.hpp>
 
+#include <objects/mmdb1/Biostruc.hpp>
+
 #include <list>
 
 #include "cn3d/viewer_base.hpp"
@@ -78,6 +83,8 @@ BEGIN_SCOPE(Cn3D)
 class UpdateViewerWindow;
 class BlockMultipleAlignment;
 class AlignmentManager;
+class Sequence;
+class StructureSet;
 
 class UpdateViewer : public ViewerBase
 {
@@ -103,7 +110,8 @@ public:
     void DeleteAlignment(BlockMultipleAlignment *toDelete);
 
     // import
-    void ImportSequence(void);
+    void ImportSequences(void);
+    void ImportStructure(void);
 
     // turns the current alignments+display into the "initial state" (the bottom) of the undo stack
     void SetInitialState(void);
@@ -119,8 +127,22 @@ public:
     // set window title
     void SetWindowTitle(const std::string& title) const;
 
+    // save pending structures
+    void SavePendingStructures(void);
+
 private:
     UpdateViewerWindow *updateWindow;
+
+    const Sequence * GetMasterSequence(void) const;
+    typedef std::list < const Sequence * > SequenceList;
+    void FetchSequenceViaHTTP(int gi, SequenceList *newSequences, StructureSet *sSet) const;
+    void ReadSequencesFromFile(SequenceList *newSequences, StructureSet *sSet, int specificGI = -1) const;
+    void FetchSequences(StructureSet *sSet, SequenceList *newSequences, int specificGI = -1) const;
+    void MakeNewAlignments(const SequenceList& newSequences,
+        const Sequence *master, AlignmentList *newAlignments) const;
+
+    typedef std::list < ncbi::CRef < ncbi::objects::CBiostruc > > BiostrucList;
+    BiostrucList pendingStructures;
 };
 
 END_SCOPE(Cn3D)

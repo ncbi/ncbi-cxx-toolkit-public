@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/02/12 17:19:23  thiessen
+* first working structure import
+*
 * Revision 1.16  2001/09/27 15:36:48  thiessen
 * decouple sequence import and BLAST
 *
@@ -123,7 +126,8 @@ private:
         MID_MERGE_ALL,
         MID_DELETE_ONE,
         MID_DELETE_ALL,
-        MID_IMPORT
+        MID_IMPORT_SEQUENCES,
+        MID_IMPORT_STRUCTURE
     };
 
     void OnCloseWindow(wxCloseEvent& event);

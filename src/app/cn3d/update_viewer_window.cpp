@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/02/12 17:19:23  thiessen
+* first working structure import
+*
 * Revision 1.28  2001/12/06 23:13:47  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -147,7 +150,7 @@ BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_THREAD_ONE, MID_THREAD_ALL,      UpdateViewerWindow::OnRunThreader)
     EVT_MENU_RANGE(MID_MERGE_ONE, MID_MERGE_ALL,        UpdateViewerWindow::OnMerge)
     EVT_MENU_RANGE(MID_DELETE_ONE, MID_DELETE_ALL,      UpdateViewerWindow::OnDelete)
-    EVT_MENU      (MID_IMPORT,                          UpdateViewerWindow::OnImport)
+    EVT_MENU_RANGE(MID_IMPORT_SEQUENCES, MID_IMPORT_STRUCTURE,  UpdateViewerWindow::OnImport)
     EVT_MENU      (MID_BLAST_ONE,                       UpdateViewerWindow::OnRunBlast)
 END_EVENT_TABLE()
 
@@ -159,7 +162,8 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
 {
     // Edit menu
     editMenu->AppendSeparator();
-    editMenu->Append(MID_IMPORT, "&Import Sequence");
+    editMenu->Append(MID_IMPORT_SEQUENCES, "&Import Sequences");
+    editMenu->Append(MID_IMPORT_STRUCTURE, "Import S&tructure");
 
     // Mouse mode menu
     menuBar->Enable(MID_SELECT_COLS, false);
@@ -328,7 +332,8 @@ bool UpdateViewerWindow::SaveDialog(bool canCancel)
 
 void UpdateViewerWindow::OnImport(wxCommandEvent& event)
 {
-    if (event.GetId() == MID_IMPORT) updateViewer->ImportSequence();
+    if (event.GetId() == MID_IMPORT_SEQUENCES) updateViewer->ImportSequences();
+    else if (event.GetId() == MID_IMPORT_STRUCTURE) updateViewer->ImportStructure();
 }
 
 void UpdateViewerWindow::OnRunBlast(wxCommandEvent& event)

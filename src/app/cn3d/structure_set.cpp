@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.95  2002/02/12 17:19:22  thiessen
+* first working structure import
+*
 * Revision 1.94  2002/02/05 18:53:26  thiessen
 * scroll to residue in sequence windows when selected in structure window
 *
@@ -664,7 +667,8 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
                     }
                 }
                 if (l == le)
-                    ERR_POST(Error << "Structure " << object->pdbID << " doesn't have matching slave sequence");
+                    ERR_POST(Error << "Warning: Structure " << object->pdbID
+                        << " doesn't have a matching slave sequence in the multiple alignment");
             }
         }
 
@@ -845,6 +849,14 @@ void StructureSet::CreateAllBioseqs(const BlockMultipleAlignment *multiple)
         GetOrCreateBioseq(multiple->GetSequenceOfRow(row));
 }
 
+bool StructureSet::AddBiostrucToASN(ncbi::objects::CBiostruc *biostruc)
+{
+    bool added = dataManager->AddBiostrucToASN(biostruc);
+    if (added && objects.size() == 1)
+        InitStructureAlignments(objects.front()->mmdbID);
+    return added;
+}
+
 static const int NO_DOMAIN = -1, MULTI_DOMAIN = 0;
 
 void StructureSet::InitStructureAlignments(int masterMMDBID)
@@ -881,8 +893,9 @@ void StructureSet::AddStructureAlignment(CBiostruc_feature *feature,
 {
     CBiostruc_annot_set *structureAlignments = dataManager->GetStructureAlignments();
     if (!structureAlignments) {
-        ERR_POST(Error << "StructureSet::AddStructureAlignment() - no structure alignment list present");
-        return;
+        ERR_POST(Warning << "StructureSet::AddStructureAlignment() - creating new structure alignment list");
+        InitStructureAlignments(objects.front()->mmdbID);
+        structureAlignments = dataManager->GetStructureAlignments();
     }
 
     // check master domain ID, to see if alignments have crossed master's domain boundaries

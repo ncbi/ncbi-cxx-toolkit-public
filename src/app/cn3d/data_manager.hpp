@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/02/12 17:19:21  thiessen
+* first working structure import
+*
 * Revision 1.4  2001/12/15 03:15:59  thiessen
 * adjustments for slightly changed object loader Set...() API
 *
@@ -120,6 +123,9 @@ public:
     bool IsGeneralMime(void) const { return (mimeData.NotEmpty() && mimeData->IsGeneral()); }
     const ncbi::objects::CBiostruc * GetMasterStructure(void) const { return masterBiostruc; }
     const BiostrucList * GetStructureList(void) const { return biostrucList; }
+
+    // store new structure, if appropriate
+    bool AddBiostrucToASN(ncbi::objects::CBiostruc *biostruc);
 
     // retrieve structure alignments
     ncbi::objects::CBiostruc_annot_set * GetStructureAlignments(void) const { return structureAlignments; }

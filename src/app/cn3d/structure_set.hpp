@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2002/02/12 17:19:22  thiessen
+* first working structure import
+*
 * Revision 1.62  2002/01/03 16:18:40  thiessen
 * add distance selection
 *
@@ -350,6 +353,9 @@ public:
     // creates Bioseq from Sequence; registed with SeqMgr and stored in BioseqMap
     Bioseq * GetOrCreateBioseq(const Sequence *sequence);
     void CreateAllBioseqs(const BlockMultipleAlignment *multiple);
+
+    // adds a new Biostruc to the asn data, if appropriate
+    bool AddBiostrucToASN(ncbi::objects::CBiostruc *biostruc);
 
     // for manipulating structure alignment features
     void InitStructureAlignments(int masterMMDBID);

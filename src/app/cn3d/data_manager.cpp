@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/02/12 17:19:21  thiessen
+* first working structure import
+*
 * Revision 1.5  2002/01/19 02:34:40  thiessen
 * fixes for changes in asn serialization API
 *
@@ -388,20 +391,39 @@ void ASNDataManager::RemoveUserAnnotations(void)
         cddData->ResetUser_annotations();
 }
 
-void ASNDataManager::SetStructureAlignments(ncbi::objects::CBiostruc_annot_set *structureAlignments)
+void ASNDataManager::SetStructureAlignments(ncbi::objects::CBiostruc_annot_set *strucAligns)
 {
     if (mimeData.NotEmpty() && mimeData->IsGeneral() && mimeData->GetGeneral().GetSeq_align_data().IsBundle()) {
-        if (structureAlignments)
-            mimeData->SetGeneral().SetSeq_align_data().SetBundle().SetStrucaligns(*structureAlignments);
+        if (strucAligns)
+            mimeData->SetGeneral().SetSeq_align_data().SetBundle().SetStrucaligns(*strucAligns);
         else
             mimeData->SetGeneral().SetSeq_align_data().SetBundle().ResetStrucaligns();
     } else if (cddData.NotEmpty()) {
-        if (structureAlignments)
-            cddData->SetFeatures(*structureAlignments);
+        if (strucAligns)
+            cddData->SetFeatures(*strucAligns);
         else
             cddData->ResetFeatures();
     } else
         ERR_POST(Error << "ASNDataManager::SetStructureAlignments() - can't add to this data type");
+    structureAlignments = strucAligns;
+}
+
+bool ASNDataManager::AddBiostrucToASN(ncbi::objects::CBiostruc *biostruc)
+{
+    // if can't store add'l Biostrucs currently, try to convert to general mime if possible
+    if (!biostrucList && mimeData.NotEmpty() && !mimeData->IsGeneral())
+        ConvertMimeToGeneral();
+
+    // add structure to list if there is one
+    if (biostrucList) {
+        biostrucList->push_back(CRef<CBiostruc>(biostruc));
+        return true;
+    }
+
+    // if this is a CDD, we never store Biostrucs; but return true to pretend success
+    if (IsCDD()) return true;
+
+    return false;
 }
 
 bool ASNDataManager::ConvertMimeToGeneral(void)
@@ -415,12 +437,12 @@ bool ASNDataManager::ConvertMimeToGeneral(void)
 
     // copy structures
     if (biostrucList)
-        newMime->SetGeneral().SetStructures() = *biostrucList;
+        newMime->SetGeneral().SetStructures() = *biostrucList; // copy list
     if (masterBiostruc) {
         newMime->SetGeneral().SetStructures().push_front(CRef<CBiostruc>(masterBiostruc));
         masterBiostruc = NULL;
     }
-    biostrucList = (newMime->SetGeneral().SetStructures().size() > 0) ?
+    biostrucList = (newMime->GetGeneral().GetStructures().size() > 0) ?
         &(newMime->SetGeneral().SetStructures()) : NULL;
 
     // copy alignment data into bundle
