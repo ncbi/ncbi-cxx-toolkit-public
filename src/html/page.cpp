@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/09/27 16:17:18  vasilche
+* Fixed several incompatibilities with Windows
+*
 * Revision 1.21  1999/09/23 15:51:42  vakatov
 * Added <unistd.h> for the getcwd() proto
 *
@@ -91,10 +94,6 @@
 #include <corelib/ncbiutil.hpp>
 
 #include <errno.h>
-#if defined(HAVE_UNISTD_H)
-#  include <unistd.h>
-#endif
-
 
 BEGIN_NCBI_SCOPE
  
@@ -219,11 +218,6 @@ CNCBINode* CHTMLPage::CreateTemplate(void)
 		ERR_POST( "CHTMLPage::CreateTemplate: errno: " << strerror( errno ) );
 	  }
 	  
-	  char* wd = getcwd( 0, PATH_MAX );
-	  if( wd ) {
-		ERR_POST( "CHTMLPage::CreateTemplate: wd " << wd );
-		free( wd );
-	  }
 	  ERR_POST( "CHTMLPage::CreateTemplate: rdstate: " << ifstr.rdstate() );	  
 	  
 	  // //

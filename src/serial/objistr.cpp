@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  1999/09/27 16:17:19  vasilche
+* Fixed several incompatibilities with Windows
+*
 * Revision 1.29  1999/09/27 14:18:02  vasilche
 * Fixed bug with overloaded construtors of Block.
 *
@@ -129,6 +132,10 @@
 #include <serial/member.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/typemapper.hpp>
+#if HAVE_WINDOWS_H
+// In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
+# include <float.h>
+#endif
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif

@@ -153,12 +153,19 @@ void CTypeStrings::SetComplex(const string& c, const string& m,
     macro = mm;
 }
 
+template<class C>
+inline
+void insert(C& dst, const C& src)
+{
+	for ( typename C::const_iterator i = src.begin(); i != src.end(); ++i )
+		dst.insert(*i);
+}
+
 void CTypeStrings::AddIncludes(const CTypeStrings& arg)
 {
-    m_HPPIncludes.insert(arg.m_HPPIncludes.begin(), arg.m_HPPIncludes.end());
-    m_CPPIncludes.insert(arg.m_CPPIncludes.begin(), arg.m_CPPIncludes.end());
-    m_ForwardDeclarations.insert(arg.m_ForwardDeclarations.begin(),
-                                 arg.m_ForwardDeclarations.end());
+    insert(m_HPPIncludes, arg.m_HPPIncludes);
+    insert(m_CPPIncludes, arg.m_CPPIncludes);
+    insert(m_ForwardDeclarations, arg.m_ForwardDeclarations);
 }
 
 void CTypeStrings::ToSimple(void)

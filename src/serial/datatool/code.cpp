@@ -77,7 +77,8 @@ void CFileCode::AddCPPIncludes(const TIncludes& includes)
 
 void CFileCode::AddForwardDeclarations(const TForwards& forwards)
 {
-    m_ForwardDeclarations.insert(forwards.begin(), forwards.end());
+	for ( TForwards::const_iterator i = forwards.begin(); i != forwards.end(); ++i )
+		m_ForwardDeclarations.insert(*i);
 }
 
 void CFileCode::GenerateHPP(const string& path) const
