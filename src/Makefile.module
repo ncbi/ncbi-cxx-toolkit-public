@@ -15,11 +15,11 @@ sources: $(FILES)
 clean_sources:
 	-rm $(FILES)
 
-clean_all_sources:
-	-rm $(FILES) *.cpp $(INCLUDEDIR)/*.hpp
-
 purge_sources:
 	-rm $(FILES) *_Base.cpp $(INCLUDEDIR)/*_Base.hpp
+
+purge_all_sources:
+	-rm $(FILES) *.cpp $(INCLUDEDIR)/*.hpp
 
 .NO_PARALLEL:
 $(FILES): $(ASNFILE) $(IMPFILES:%=$(top_srcdir)/src/%) $(DATATOOL)
