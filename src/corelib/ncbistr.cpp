@@ -333,6 +333,12 @@ string NStr::IntToString(long value, bool sign /* = false */ )
     return buffer;
 }
 
+void NStr::IntToString(string& out_str, long value, bool sign)
+{
+    char buffer[64];
+    ::sprintf(buffer, sign ? "%+ld" : "%ld", value);
+    out_str = buffer;
+}
 
 string NStr::UIntToString(unsigned long value)
 {
@@ -341,8 +347,21 @@ string NStr::UIntToString(unsigned long value)
     return buffer;
 }
 
+void NStr::UIntToString(string& out_str, unsigned long value)
+{
+    char buffer[64];
+    ::sprintf(buffer, "%lu", value);
+    out_str = buffer;
+}
 
 string NStr::Int8ToString(Int8 value, bool sign /* = false */ )
+{
+    string ret;
+    NStr::Int8ToString(ret, value, sign);
+    return ret;
+}
+
+void NStr::Int8ToString(string& out_str, Int8 value, bool sign)
 {
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 3 + 2;
     char buffer[kBufSize];
@@ -367,7 +386,8 @@ string NStr::Int8ToString(Int8 value, bool sign /* = false */ )
             *--pos = '+';
     }
 
-    return string(pos, buffer + kBufSize - pos);
+    out_str.resize(0);
+    out_str.append(pos, buffer + kBufSize - pos);
 }
 
 
@@ -463,8 +483,7 @@ Uint8 NStr::StringToUInt8(const string& str, int base /* = 10  */)
     return n;
 }
 
-
-string NStr::UInt8ToString(Uint8 value)
+void NStr::UInt8ToString(string& out_str, Uint8 value)
 {
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 3 + 2;
     char buffer[kBufSize];
@@ -478,17 +497,17 @@ string NStr::UInt8ToString(Uint8 value)
             value /= 10;
         } while ( value );
     }
-
-    return string(pos, buffer + kBufSize - pos);
+    out_str.resize(0);
+    out_str.append(pos, buffer + kBufSize - pos);
 }
 
-
-string NStr::DoubleToString(double value)
+string NStr::UInt8ToString(Uint8 value)
 {
-    char buffer[64];
-    ::sprintf(buffer, "%g", value);
-    return buffer;
+    string ret;
+    NStr::UInt8ToString(ret, value);
+    return ret;
 }
+
 
 
 // A maximal double precision used in the double to string conversion
@@ -501,6 +520,20 @@ const unsigned int kMaxDoublePrecision = 308;
 // Exponent size + sign + dot + ending '\0' + max.precision
 const unsigned int kMaxDoubleStringSize = 308 + 3 + kMaxDoublePrecision;
 
+
+string NStr::DoubleToString(double value)
+{
+    char buffer[kMaxDoubleStringSize];
+    ::sprintf(buffer, "%g", value);
+    return buffer;
+}
+
+void NStr::DoubleToString(string& out_str, double value)
+{
+    char buffer[kMaxDoubleStringSize];
+    ::sprintf(buffer, "%g", value);
+    out_str = buffer;
+}
 
 string NStr::DoubleToString(double value, unsigned int precision)
 {
@@ -533,6 +566,12 @@ string NStr::PtrToString(const void* value)
     return buffer;
 }
 
+void NStr::PtrToString(string& out_str, const void* value)
+{
+    char buffer[64];
+    ::sprintf(buffer, "%p", value);
+    out_str = buffer;
+}
 
 const void* NStr::StringToPtr(const string& str)
 {
@@ -1390,6 +1429,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.105  2004/03/04 13:38:57  kuznets
+ * + set of ToString conversion functions taking outout string as a parameter,
+ * not a return value (should give a performance advantage in some cases)
+ *
  * Revision 1.104  2004/02/19 16:44:55  vasilche
  * WorkShop compiler doesn't support static templates.
  *

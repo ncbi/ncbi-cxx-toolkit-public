@@ -223,6 +223,17 @@ public:
     ///   Converted string value.
     static string IntToString(long value, bool sign = false);
 
+    /// Convert Int to String.
+    ///
+    /// @param out_str
+    ///   Output string variable
+    /// @param value
+    ///   Integer value (long) to be converted.
+    /// @param sign
+    ///   Whether converted value should be preceded by the sign (+-) character.  
+    static void IntToString(string& out_str, long value, bool sign = false);
+
+
     /// Convert UInt to string.
     ///
     /// @param value
@@ -230,6 +241,14 @@ public:
     /// @return
     ///   Converted string value.
     static string UIntToString(unsigned long value);
+
+    /// Convert UInt to string.
+    ///
+    /// @param out_str
+    ///   Output string variable
+    /// @param value
+    ///   Integer value (unsigned long) to be converted.
+    static void UIntToString(string& out_str, unsigned long value);
 
     /// Convert Int8 to string.
     ///
@@ -241,6 +260,17 @@ public:
     ///   Converted string value.
     static string Int8ToString(Int8 value, bool sign = false);
 
+
+    /// Convert Int8 to string.
+    ///
+    /// @param out_str
+    ///   Output string variable
+    /// @param value
+    ///   Integer value (Int8) to be converted.
+    /// @param sign
+    ///   Whether converted value should be preceded by the sign (+-) character.  
+    static void Int8ToString(string& out_str, Int8 value, bool sign = false);
+
     /// Convert UInt8 to string.
     ///
     /// @param value
@@ -249,6 +279,14 @@ public:
     ///   Converted string value.
     static string UInt8ToString(Uint8 value);
 
+    /// Convert UInt8 to string.
+    ///
+    /// @param out_str
+    ///   Output string variable
+    /// @param value
+    ///   Integer value (UInt8) to be converted.
+    static void UInt8ToString(string& out_str, Uint8 value);
+
     /// Convert double to string.
     ///
     /// @param value
@@ -256,6 +294,15 @@ public:
     /// @return
     ///   Converted string value.
     static string DoubleToString(double value);
+
+    /// Convert double to string.
+    ///
+    /// @param out_str
+    ///   Output string variable
+    /// @param value
+    ///   Double value to be converted.
+    static void DoubleToString(string& out_str, double value);
+
 
     /// Convert double to string with specified precision.
     ///
@@ -285,6 +332,14 @@ public:
     ///   terminating '\0'.
     static SIZE_TYPE DoubleToString(double value, unsigned int precision,
                                     char* buf, SIZE_TYPE buf_size);
+
+    /// Convert pointer to string.
+    ///
+    /// @param out_str
+    ///   Output string variable
+    /// @param str
+    ///   Pointer to be converted.
+    static void PtrToString(string& out_str, const void* ptr);
 
     /// Convert pointer to string.
     ///
@@ -733,6 +788,7 @@ public:
     ///   case-insensitive compare (eNocase) while checking.
     static bool EndsWith(const string& str, const string& end,
                          ECase use_case = eCase);
+
 
     /// Whether it is the first or last occurrence.
     enum EOccurrence {
@@ -1829,6 +1885,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.49  2004/03/04 13:38:39  kuznets
+ * + set of ToString conversion functions taking outout string as a parameter,
+ * not a return value (should give a performance advantage in some cases)
+ *
  * Revision 1.48  2003/12/12 17:26:45  ucko
  * +FormatVarargs
  *
