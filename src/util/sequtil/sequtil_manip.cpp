@@ -395,6 +395,9 @@ SIZE_TYPE CSeqManip::Complement
     case CSeqUtil::e_Ncbi8na:
     case CSeqUtil::e_Ncbi4na_expand:
         return convert_1_to_1(src, pos, length, dst, C8naCmp::GetTable());
+
+    default:
+        break;
     }
 
     NCBI_THROW(CSeqUtilException, eInvalidCoding,
@@ -586,6 +589,8 @@ SIZE_TYPE CSeqManip::ReverseComplement
     case CSeqUtil::e_Ncbi4na_expand:
         return copy_1_to_1_reverse(src, pos, length, dst, 
                                    C8naCmp::GetTable());
+    default:
+        break;
     }
 
     NCBI_THROW(CSeqUtilException, eInvalidCoding,
@@ -717,6 +722,9 @@ SIZE_TYPE CSeqManip::ReverseComplement
     case CSeqUtil::e_Ncbi8na:
     case CSeqUtil::e_Ncbi4na_expand:
         return revcmp(src, pos, length, C8naCmp::GetTable());
+
+    default:
+        break;
     }
 
     NCBI_THROW(CSeqUtilException, eInvalidCoding,
@@ -730,6 +738,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/03/04 14:46:32  lavr
+* Add default cases to make GCC less annoying with warnings
+*
 * Revision 1.3  2004/05/17 21:08:53  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *

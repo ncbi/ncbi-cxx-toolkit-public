@@ -93,6 +93,8 @@ SIZE_TYPE CSeqConvert_imp::Convert
         case CSeqUtil::e_Ncbi4na_expand:
         case CSeqUtil::e_Ncbi8na:
             return x_ConvertIupacnaTo8na(src, pos, length, dst);
+        default:
+            break;
         }
         break;
     
@@ -108,6 +110,8 @@ SIZE_TYPE CSeqConvert_imp::Convert
         case CSeqUtil::e_Ncbi4na_expand:
         case CSeqUtil::e_Ncbi8na:
             return x_Convert2naTo8na(src, pos, length, dst);
+        default:
+            break;
         }
         break;
 
@@ -123,6 +127,8 @@ SIZE_TYPE CSeqConvert_imp::Convert
         case CSeqUtil::e_Ncbi4na_expand:
         case CSeqUtil::e_Ncbi8na:
             return x_Convert2naExpandTo8na(src, pos, length, dst);
+        default:
+            break;
         }
         break;
         
@@ -138,6 +144,8 @@ SIZE_TYPE CSeqConvert_imp::Convert
         case CSeqUtil::e_Ncbi4na_expand:
         case CSeqUtil::e_Ncbi8na:
             return x_Convert4naTo8na(src, pos, length, dst);
+        default:
+            break;
         }
         break;
         
@@ -156,6 +164,8 @@ SIZE_TYPE CSeqConvert_imp::Convert
         case CSeqUtil::e_Ncbi8na:
         case CSeqUtil::e_Ncbi4na_expand:
             return Subseq(src, src_coding, pos, length, dst);
+        default:
+            break;
         }
         break;
         
@@ -171,6 +181,8 @@ SIZE_TYPE CSeqConvert_imp::Convert
         case CSeqUtil::e_Ncbistdaa:
         case CSeqUtil::e_Ncbi8aa:
             return x_ConvertIupacaaToStdaa(src, pos, length, dst);
+        default:
+            break;
         }
         break;
         
@@ -181,7 +193,9 @@ SIZE_TYPE CSeqConvert_imp::Convert
             return x_ConvertEaaToIupacaa(src, pos, length, dst);
         case CSeqUtil::e_Ncbistdaa:
         case CSeqUtil::e_Ncbi8aa:
-            return x_ConvertEaaToStdaa(src, pos, length, dst);            
+            return x_ConvertEaaToStdaa(src, pos, length, dst);
+        default:
+            break;
         }
         break;
         
@@ -196,7 +210,12 @@ SIZE_TYPE CSeqConvert_imp::Convert
         case CSeqUtil::e_Ncbi8aa:
         case CSeqUtil::e_Ncbistdaa:
             return Subseq(src, src_coding, pos, length, dst);
+        default:
+            break;
         }
+        break;
+
+    default:
         break;
     }
 
@@ -650,7 +669,6 @@ SIZE_TYPE CSeqConvert_imp::x_Convert4naTo2na
     
     size_t overhang = length % 4;
 
-    
     const char* iter = src + (pos / 2);
     
     switch ( offset ) {
@@ -1062,6 +1080,9 @@ bool CSeqConvert_imp::x_HasAmbig
     case CSeqUtil::e_Ncbi2na:
     case CSeqUtil::e_Ncbi2na_expand:
         return false;
+
+    default:
+        break;
     }
     
     return false;
@@ -1123,6 +1144,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/03/04 14:46:18  lavr
+* Add default cases to make GCC less annoying with warnings
+*
 * Revision 1.2  2004/05/17 21:08:53  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
