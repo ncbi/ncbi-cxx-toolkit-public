@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/03/06 04:32:00  lavr
+ * Better custom header processing
+ *
  * Revision 6.5  2001/03/02 20:09:06  lavr
  * Typo fixed
  *
@@ -350,16 +353,37 @@ const char* CORE_SendMailEx(const char*          to,
     }
 
     if (!s_SockWrite(sock,
-                     "X-Mailer: CORE_SendMail (NCBI C++ Toolkit)" MX_CRLF))
+                     "X-Mailer: CORE_SendMail (NCBI "
+                     NCBI_SENDMAIL_TOOLKIT " Toolkit)" MX_CRLF))
         SENDMAIL_RETURN("Write error in sending mailer information");
 
+    assert(sizeof(buffer) > sizeof(MX_CRLF) && sizeof(MX_CRLF) >= 3);
+
     if (info->header && *info->header) {
-        if (!s_SockWrite(sock, info->header) ||
-            !s_SockWrite(sock, MX_CRLF))
-            SENDMAIL_RETURN("Write error in sending custom header");
+        int/*bool*/ newline = 0/*false*/;
+        size_t n = 0, m = strlen(info->header);
+        while (n < m) {
+            size_t k = 0;
+            while (k < sizeof(buffer) - sizeof(MX_CRLF)) {
+                if (info->header[n] == '\n') {
+                    memcpy(&buffer[k], MX_CRLF, sizeof(MX_CRLF) - 1);
+                    k += sizeof(MX_CRLF) - 1;
+                    newline = 1/*true*/;
+                } else {
+                    buffer[k++] = info->header[n];
+                    newline = 0/*false*/;
+                }
+                if (++n >= m)
+                    break;
+            }
+            buffer[k] = 0;
+            if (!s_SockWrite(sock, buffer))
+                SENDMAIL_RETURN("Write error in sending custom header");
+        }
+        if (!newline && !s_SockWrite(sock, MX_CRLF))
+            SENDMAIL_RETURN("Write error in finalizing custom header");
     }
     
-    assert(sizeof(buffer) > sizeof(MX_CRLF) && sizeof(MX_CRLF) >= 3);
     if (body && *body) {
         int/*bool*/ newline = 0/*false*/;
         size_t n = 0, m = strlen(body);
@@ -371,23 +395,21 @@ const char* CORE_SendMailEx(const char*          to,
             
             while (k < sizeof(buffer) - sizeof(MX_CRLF)) {
                 if (body[n] == '\n') {
-                    strcpy(&buffer[k], MX_CRLF);
+                    memcpy(&buffer[k], MX_CRLF, sizeof(MX_CRLF) - 1);
                     k += sizeof(MX_CRLF) - 1;
                     newline = 1/*true*/;
                 } else {
                     if (body[n] == '.' && (newline || !n)) {
-                        buffer[k]   = '.';
-                        buffer[++k] = '.';
-                        buffer[++k] = '\0';
-                    } else {
-                        buffer[k]   = body[n];
-                        buffer[++k] = '\0';
-                    }
+                        buffer[k++] = '.';
+                        buffer[k++] = '.';
+                    } else
+                        buffer[k++]   = body[n];
                     newline = 0/*false*/;
                 }
                 if (++n >= m)
                     break;
             }
+            buffer[k] = 0;
             if (!s_SockWrite(sock, buffer))
                 SENDMAIL_RETURN("Write error in sending text body");
         }
