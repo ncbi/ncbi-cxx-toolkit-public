@@ -498,6 +498,7 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
     if (args["maxintron"].AsInteger()) {
         opt.SetLongestIntronLength(args["maxintron"].AsInteger());
     }
+
     if (args["frameshift"].AsInteger()) {
         opt.SetFrameShiftPenalty(args["frameshift"].AsInteger());
         opt.SetOutOfFrameMode();
@@ -858,14 +859,14 @@ int CBlastApplication::Run(void)
 
        if (!tabular_output) {
 	  CRef<CDbBlast> blaster(new CDbBlast(query_loc, seq_src, *opts, 
-				       rps_info, hsp_stream, (num_threads>1)));
+				       rps_info, hsp_stream, num_threads));
 	  seqalignv = blaster->Run();
 	  FormatResults(blaster, seqalignv);
        } else {
 	  hsp_stream = Blast_HSPListCQueueInit();
 	  
 	  CRef<CDbBlast> blaster(new CDbBlast(query_loc, seq_src, *opts, 
-                                       rps_info, hsp_stream, (num_threads>1)));
+                                       rps_info, hsp_stream, num_threads));
 	  blaster->SetupSearch();
 	  
 	  // Start the on-the-fly formatting thread
