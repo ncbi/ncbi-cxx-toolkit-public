@@ -1,4 +1,4 @@
---$Revision: 1.18 $
+--$Revision: 1.19 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -22,7 +22,7 @@ NCBI-Cdd DEFINITIONS ::=
 
 BEGIN
 
-EXPORTS  Cdd-id, Cdd-id-set, Cdd, Cdd-set, Cdd-tree, Cdd-tree-set;
+EXPORTS  Cdd-id, Cdd-id-set, Cdd, Cdd-set, Cdd-tree, Cdd-tree-set, Cdd-pref-nodes;
 
 IMPORTS  Date                    FROM NCBI-General
          Pub                     FROM NCBI-Pub
@@ -39,6 +39,28 @@ IMPORTS  Date                    FROM NCBI-General
          Cn3d-style-dictionary,
          Cn3d-user-annotations   FROM NCBI-Cn3d
          Score-matrix-parameters FROM NCBI-ScoreMat;
+	 
+-- dealing with lists of preferred tax-nodes 
+
+Cdd-org-ref ::= SEQUENCE {
+  reference   Org-ref,
+  active      BOOLEAN DEFAULT TRUE 
+}
+Cdd-org-ref-set ::= SET OF Cdd-org-ref
+
+Cdd-pref-node-descr ::= CHOICE {
+  create-date      Date,
+  description      VisibleString
+}
+
+Cdd-pref-node-descr-set ::= SET OF Cdd-pref-node-descr
+
+Cdd-pref-nodes ::= SEQUENCE {
+   preferred-nodes Cdd-org-ref-set,
+   model-organisms Cdd-org-ref-set OPTIONAL,
+   optional-nodes  Cdd-org-ref-set OPTIONAL,
+   description     Cdd-pref-node-descr-set OPTIONAL
+}	 
 
 -- Cdd's should not exist without a unique accession, but alternative id's may
 -- be present as well. It is conceivable that a CD which is created as a merged
