@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/08/09 16:26:11  lavr
+* Added handling for new eDPF_OmitInfoSev format flag
+*
 * Revision 1.34  2001/07/30 14:42:10  lavr
 * eDiag_Trace and eDiag_Fatal always print as much as possible
 *
@@ -254,8 +257,8 @@ void CDiagBuffer::Flush(void)
         SDiagMessage mess
             (sev, message, ostr->pcount(), 0,
              m_Diag->GetFile(), m_Diag->GetLine(),
-             m_Diag->GetPostFlags() | (sev == eDiag_Trace ||
-                                       sev == eDiag_Fatal ? eDPF_Trace : 0),
+             m_Diag->GetPostFlags() | (sev == eDiag_Trace || sev == eDiag_Fatal
+                                       ? eDPF_Trace : 0),
              0, m_Diag->GetErrorCode(), m_Diag->GetErrorSubCode());
         DiagHandler(mess);
 
@@ -360,7 +363,8 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
         os << ": ";
 
     // <severity>:
-    if ( IsSetDiagPostFlag(eDPF_Severity, m_Flags) )
+    if (IsSetDiagPostFlag(eDPF_Severity, m_Flags)  &&
+        (m_Severity != eDiag_Info || !IsSetDiagPostFlag(eDPF_OmitInfoSev)))
         os << CNcbiDiag::SeverityName(m_Severity) << ": ";
 
     // (<err_code>.<err_subcode>)
