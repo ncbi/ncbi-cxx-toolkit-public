@@ -1,0 +1,10 @@
+[Rule]
+Priority  = 127
+
+
+[Linker]
+subSystem = 2
+
+
+[AddToProject]
+SourceFiles = winmain
