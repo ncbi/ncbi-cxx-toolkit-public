@@ -1319,7 +1319,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     CSeq_annot::C_Data::TFtable& ftable = sap->SetData().SetFtable();
     CRef<CSeq_feat> sfp;
     CSeq_loc_mix *mix = 0;
-    CT_POS_TYPE pos;
+    CT_POS_TYPE pos(0);
 
     if (! annotname.empty ()) {
       CAnnot_descr& descr = sap->SetDesc ();
@@ -1656,7 +1656,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 
 {
     string line, fst, scd, seqid, annotname;
-    CT_POS_TYPE pos;
+    CT_POS_TYPE pos(0);
 
     // first look for >Feature line, extract seqid and optional annotname
 
