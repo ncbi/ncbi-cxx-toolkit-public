@@ -1138,7 +1138,8 @@ double retval;
 #else
     retval =  exp(-Mean) * pow(Mean, i) / exp(lgamma(i+1));
 #endif
-retval *= 1.0L - pow((1.0L-TopHitProb), i);
+// conditional needed because zero to the zeroth is zero, not one
+if(TopHitProb != 1.0L) retval *= 1.0L - pow((1.0L-TopHitProb), i);
 return retval;
 }
 
@@ -1173,11 +1174,11 @@ double CSearch::CalcNormalTopHit(double Mean, double TopHitProb)
     int i;
     double retval(0.0L), before(-1.0L), increment;
 	
-    for(i = 1; i < 1000; i++) {
+    for(i = 0; i < 1000; i++) {
 	increment = CalcPoissonTopHit(Mean, i, TopHitProb);
 	// convergence hack -- on linux (at least) convergence test doesn't work
 	// for gcc release build
-	if(increment <= MSDOUBLELIMIT) break;
+	if(increment <= MSDOUBLELIMIT && i > 10) break;
 	//	if(increment <= numeric_limits<double>::epsilon()) break;
 	retval += increment;
 	if(retval == before) break;  // convergence
@@ -1194,9 +1195,9 @@ double CSearch::CalcPvalueTopHit(double Mean, int Hits, int n, double Normal, do
     int i;
     double retval(0.0L), increment;
 	
-    for(i = 1; i < Hits; i++) {
+    for(i = 0; i < Hits; i++) {
 	increment = CalcPoissonTopHit(Mean, i, TopHitProb);
-	if(increment <= MSDOUBLELIMIT) break;
+//	if(increment <= MSDOUBLELIMIT) break;
 	retval += increment;
     }
 
@@ -1261,6 +1262,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.38  2005/03/16 23:01:34  lewisg
+fix i=0 poisson summation
+
 Revision 1.37  2005/03/14 22:29:54  lewisg
 add mod file input
 
