@@ -205,10 +205,15 @@ void CFlatGatherer::x_GatherBioseq(const CBioseq_Handle& seq) const
     bool segmented = s_IsSegmented(seq);
     const CFlatFileConfig& cfg = Config();
 
-    // Always do master style for FTable format
-    if ( segmented  &&  !cfg.IsFormatFTable()  &&
-         (cfg.IsStyleNormal()  ||  cfg.IsStyleSegment()) ) {
-        // display individual segments (multiple sections)
+    // Do multiple sections (segmented style) if:
+    // a. the bioseq is segmented
+    // b. style is normal or segmented (not master)
+    // c. user didn't specify a location
+    // d. not FTable format
+    if ( segmented                                        &&
+         (cfg.IsStyleNormal()  ||  cfg.IsStyleSegment())  &&
+         (m_Context->GetLocation() == 0)                  &&
+         !cfg.IsFormatFTable() ) {
         x_DoMultipleSections(seq);
     } else {
         // display as a single bioseq (single section)
@@ -668,39 +673,41 @@ void CFlatGatherer::x_GatherSequence(void) const
 // source
 
 void CFlatGatherer::x_CollectSourceDescriptors
-(CBioseq_Handle& bh,
- const CRange<TSeqPos>& range,
+(const CBioseq_Handle& bh,
  CBioseqContext& ctx,
  TSourceFeatSet& srcs) const
 {
     CRef<CSourceFeatureItem> sf;
     CScope* scope = &ctx.GetScope();
+    const CSeq_loc& loc = ctx.GetLocation();
+
+    TRange print_range;
+    print_range.SetFrom(0);
+    print_range.SetTo(GetLength(loc, scope) - 1);
 
     for ( CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit;  ++dit) {
-        sf.Reset(new CSourceFeatureItem(dit->GetSource(), range, ctx));
+        sf.Reset(new CSourceFeatureItem(dit->GetSource(), print_range, ctx));
         srcs.push_back(sf);
     }
     
     // if segmented collect descriptors from segments
     if ( ctx.IsSegmented() ) {
-        const CSeqMap& seq_map = bh.GetSeqMap();
-        
+        CConstRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForSeq_loc(loc, scope);
+              
         // iterate over segments
-        CSeqMap_CI smit(seq_map.begin_resolved(scope, 1, CSeqMap::fFindRef));
+        CSeqMap_CI smit(seq_map->begin_resolved(scope, 1, CSeqMap::fFindRef));
         for ( ; smit; ++smit ) {
             CBioseq_Handle segh = scope->GetBioseqHandle(smit.GetRefSeqid());
-            if ( !segh ) {
+            if ( !segh  ||  !segh.IsSetDescr() ) {
                 continue;
             }
+
             CRange<TSeqPos> seg_range(smit.GetPosition(), smit.GetEndPosition());
             // collect descriptors only from the segment 
-            const CBioseq& seq = *segh.GetCompleteBioseq();
-            if ( seq.CanGetDescr() ) {
-                ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
-                    if ( (*it)->IsSource() ) {
-                        sf.Reset(new CSourceFeatureItem((*it)->GetSource(), seg_range, ctx));
-                        srcs.push_back(sf);
-                    }
+            ITERATE(CBioseq_Handle::TDescr::Tdata, it, segh.GetDescr().Get()) {
+                if ( (*it)->IsSource() ) {
+                    sf.Reset(new CSourceFeatureItem((*it)->GetSource(), seg_range, ctx));
+                    srcs.push_back(sf);
                 }
             }
         }
@@ -709,8 +716,8 @@ void CFlatGatherer::x_CollectSourceDescriptors
 
 
 void CFlatGatherer::x_CollectSourceFeatures
-(CBioseq_Handle& bh,
- const CRange<TSeqPos>& range,
+(const CBioseq_Handle& bh,
+ const TRange& range,
  CBioseqContext& ctx,
  TSourceFeatSet& srcs) const
 {
@@ -732,8 +739,8 @@ void CFlatGatherer::x_CollectSourceFeatures
 
 
 void CFlatGatherer::x_CollectBioSourcesOnBioseq
-(CBioseq_Handle bh,
- CRange<TSeqPos> range,
+(const CBioseq_Handle& bh,
+ const TRange& range,
  CBioseqContext& ctx,
  TSourceFeatSet& srcs) const
 {
@@ -741,7 +748,7 @@ void CFlatGatherer::x_CollectBioSourcesOnBioseq
 
     // collect biosources descriptors on bioseq
     if ( !cfg.IsFormatFTable()  ||  cfg.IsModeDump() ) {
-        x_CollectSourceDescriptors(bh, range, ctx, srcs);
+        x_CollectSourceDescriptors(bh, ctx, srcs);
     }
 
     // collect biosources features on bioseq
@@ -758,7 +765,7 @@ void CFlatGatherer::x_CollectBioSources(TSourceFeatSet& srcs) const
     const CFlatFileConfig& cfg = ctx.Config();
 
     x_CollectBioSourcesOnBioseq(ctx.GetHandle(),
-                                CRange<TSeqPos>::GetWhole(),
+                                ctx.GetLocation().GetTotalRange(),
                                 ctx,
                                 srcs);
     
@@ -935,18 +942,23 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
     CFlatItemOStream& out = *m_ItemOS;
 
     for ( CFeat_CI it(scope, loc, sel); it; ++it ) {
-        // if segment show only features ending on that segment
+        // if part show only features ending on that part
         if ( ctx.IsPart()  &&  
              !s_FeatEndsOnBioseq(it->GetOriginalFeature(), ctx.GetHandle()) ) {
             continue;
         }
-    
-        if ( ctx.IsPart() ) {
-            out << new CFeatureItem(it->GetOriginalFeature(), ctx);
-        } else {
-            out << new CFeatureItem(*it, ctx);
+
+        CConstRef<CSeq_loc> featloc(ctx.IsPart() ? 
+            &it->GetOriginalFeature().GetLocation() : &it->GetLocation());
+        if ( ctx.GetMapper() != 0 ) {
+            featloc.Reset(ctx.GetMapper()->Map(*featloc));
+        }
+        // !!! need to fix for part        
+        if ( !featloc  ||  featloc->IsNull() ) {
+            continue;
         }
 
+        out << new CFeatureItem(it->GetOriginalFeature(), ctx, featloc);
         // Add more features depending on user preferences
         switch ( it->GetData().GetSubtype() ) {
         case CSeqFeatData::eSubtype_mRNA:
@@ -1175,6 +1187,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/04/27 15:12:16  shomrat
+* Added logic for partial range formatting
+*
 * Revision 1.18  2004/04/22 16:00:25  shomrat
 * Changes in context
 *

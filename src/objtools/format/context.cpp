@@ -159,33 +159,42 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
 
 void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
 {
-    CRef<CSeq_loc> loc;
+    _ASSERT(user_loc == 0  ||  user_loc->IsInt()  ||  user_loc->IsWhole());
+    CRef<CSeq_loc> source;
+
     if ( user_loc != 0 ) {
         // map the location to the current bioseq
         CSeq_loc_Mapper mapper(m_Handle);
-        loc.Reset(mapper.Map(*user_loc));
+        source.Reset(mapper.Map(*user_loc));
         
-        if ( loc->IsWhole()  ||
-             loc->GetStart(kInvalidSeqPos) == 0  &&
-             loc->GetEnd(kInvalidSeqPos) == m_Handle.GetInst_Length() - 1) {
-            loc.Reset();
+        if ( source->IsWhole()  ||
+             source->GetStart(kInvalidSeqPos) == 0  &&
+             source->GetEnd(kInvalidSeqPos) == m_Handle.GetInst_Length() - 1) {
+            source.Reset();
         }
-        if ( loc ) {
+        _ASSERT(!source  ||  source->IsInt());
+
+        if ( source ) {
             CScope& scope = GetScope();
-            CSeq_loc dummy;
-            CSeq_interval& ival = dummy.SetInt();
-            ival.SetFrom(0);
-            ival.SetTo(GetLength(*loc, &scope));
-            dummy.SetId(*(new CSeq_id("lcl|dummy")));
-            m_Mapper.Reset(new CSeq_loc_Mapper(*loc, dummy, &scope));
+
+            CSeq_loc target;
+            target.SetInt().SetFrom(0);
+            target.SetInt().SetTo(GetLength(*source, &scope) - 1);
+            target.SetId(*m_PrimaryId);
+
+            m_Mapper.Reset(new CSeq_loc_Mapper(*source, target, &scope));
+            m_Mapper->SetMergeAll();
         }
     }
     // if no location is specified do the entire sequence
-    if ( !loc ) {
-        loc.Reset(new CSeq_loc);
-        loc->SetWhole(*m_PrimaryId);
+    if ( !source ) {
+        source.Reset(new CSeq_loc);
+        source->SetWhole(*m_PrimaryId);
     }
-    m_Location = loc;
+    _ASSERT(source);
+    m_Location = source;
+
+    
 }
 
 
@@ -477,6 +486,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/04/27 15:12:24  shomrat
+* Added logic for partial range formatting
+*
 * Revision 1.14  2004/04/22 15:52:00  shomrat
 * Refactring of context
 *

@@ -47,6 +47,7 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
+#include <objects/biblio/Imprint.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <algorithm>
@@ -142,41 +143,56 @@ static void s_FixPages(string& pages)
 
 
 CReferenceItem::CReferenceItem(const CSeqdesc& desc, CBioseqContext& ctx) :
-    CFlatItem(&ctx), m_Category(eUnknown), m_Serial(0)
+    CFlatItem(&ctx), m_PMID(0), m_MUID(0), m_Category(eUnknown), m_Serial(0),
+    m_JustUids(false), m_Prepub(CImprint::ePrepub_other)
 {
     _ASSERT(desc.IsPub());
     
     x_SetObject(desc.GetPub());
     m_Pubdesc.Reset(&(desc.GetPub()));
 
-    m_Loc.Reset(&ctx.GetLocation());
+    if ( ctx.GetMapper() != 0 ) {
+        m_Loc.Reset(ctx.GetMapper()->Map(ctx.GetLocation()));
+    } else {
+        m_Loc.Reset(&ctx.GetLocation());
+    }
 
     x_GatherInfo(ctx);
 }
 
 
 CReferenceItem::CReferenceItem(const CSeq_feat& feat, CBioseqContext& ctx) :
-    CFlatItem(&ctx)
+    CFlatItem(&ctx), m_PMID(0), m_MUID(0), m_Category(eUnknown), m_Serial(0),
+    m_JustUids(false), m_Prepub(CImprint::ePrepub_other)
 {
     _ASSERT(feat.GetData().IsPub());
 
     x_SetObject(feat);
 
     m_Pubdesc.Reset(&(feat.GetData().GetPub()));
-    m_Loc.Reset(&(feat.GetLocation()));
+    if ( ctx.GetMapper() != 0 ) {
+        m_Loc.Reset(ctx.GetMapper()->Map(feat.GetLocation()));
+    } else {
+        m_Loc.Reset(&(feat.GetLocation()));
+    }
 }
 
 
 CReferenceItem::CReferenceItem
 (const CPubdesc& pub,
  CBioseqContext& ctx,
- const CSeq_loc* loc)
-    : CFlatItem(&ctx), m_Pubdesc(&pub), m_Loc(loc), m_Category(eUnknown), m_Serial(0)
+ const CSeq_loc* loc) :
+    CFlatItem(&ctx), m_Pubdesc(&pub), m_Loc(loc), m_PMID(0), m_MUID(0),
+    m_Category(eUnknown), m_Serial(0), m_JustUids(false),
+    m_Prepub(CImprint::ePrepub_other)
 {
     x_SetObject(pub);
 
     if ( !m_Loc ) {
         m_Loc.Reset(&ctx.GetLocation());
+    }
+    if ( ctx.GetMapper() != 0 ) {
+        m_Loc.Reset(ctx.GetMapper()->Map(*m_Loc));
     }
 
     x_GatherInfo(ctx);
@@ -189,12 +205,6 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
         x_SetSkip();
     }
 
-    /*
-    CScope* scope = &ctx.GetScope();
-    TSeqPos len = GetLength(ctx.GetLocation(), scope);
-    m_From = LocationOffset(ctx.GetLocation(), *m_Loc, eOffset_FromLeft, scope) + 1;
-    m_To   = len + LocationOffset(ctx.GetLocation(), *m_Loc, eOffset_FromRight, scope);
-    */
     if ( ctx.GetSubmitBlock() != 0 ) {
         m_Title = "Direct Submission";
         m_Category = eSubmission;
@@ -204,9 +214,8 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
     }
     x_CleanData();
 
-    // gather Genbank specific fields (formats: Genbank, GBSeq)
-    const CFlatFileConfig& cfg = ctx.Config();
-    if ( cfg.IsFormatGenbank()  ||  cfg.IsFormatGBSeq() ) {
+    // gather Genbank specific fields (formats: Genbank, GBSeq, DDBJ)
+    if ( ctx.IsGenbankFormat() ) {
         x_GatherRemark(ctx);
     }
 }
@@ -592,25 +601,6 @@ void CReferenceItem::x_Init(const CCit_let& man, CBioseqContext& ctx)
 }
 
 
-/*
-static string& s_FixMedlineName(string& s)
-{
-    SIZE_TYPE space = s.find(' ');
-    if (space) {
-        s[space] = ',';
-        for (SIZE_TYPE i = space + 1;  i < s.size();  ++i) {
-            if (s[i] == ' ') {
-                break;
-            } else if (isupper(s[i])) {
-                s.insert(++i, 1, ',');
-            }
-        }
-    }
-    return s;
-}
-*/
-
-
 void CReferenceItem::x_AddAuthors(const CAuth_list& auth_list)
 {
     m_Authors.Reset(&auth_list);
@@ -766,12 +756,15 @@ void CReferenceItem::x_AddImprint(const CImprint& imp, CBioseqContext& ctx)
         m_Pages = imp.GetPages();
         s_FixPages(m_Pages);
     }
-    if ( imp.IsSetPrepub()  &&  imp.GetPrepub() != CImprint::ePrepub_in_press ) {
-        m_Category = eUnpublished;
+    if ( imp.IsSetPrepub() ) {
+        m_Prepub = imp.GetPrepub();
+        m_Category = 
+            m_Prepub != CImprint::ePrepub_in_press ? eUnpublished : ePublished;
     } else {
         m_Category = ePublished;
     }
 }
+
 
 
 void CReferenceItem::GetAuthNames
@@ -1083,6 +1076,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/04/27 15:14:04  shomrat
+* Added logic for partial range formatting
+*
 * Revision 1.11  2004/04/22 15:56:30  shomrat
 * Changes in context
 *
