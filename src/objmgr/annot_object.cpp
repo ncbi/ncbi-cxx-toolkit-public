@@ -92,6 +92,15 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
         {
             const CSeq_align::C_Segs::TDenseg& denseg =
                 align.GetSegs().GetDenseg();
+            int dim    = denseg.GetDim();
+            int numseg = denseg.GetNumseg();
+            // claimed dimension may not be accurate :-/
+            if (dim * numseg > denseg.GetStarts().size()) {
+                dim = denseg.GetStarts().size() / numseg;
+            }
+            if (dim > denseg.GetLens().size()) {
+                dim = denseg.GetLens().size();
+            }
             CDense_seg::TStarts::const_iterator it_start =
                 denseg.GetStarts().begin();
             CDense_seg::TLens::const_iterator it_len =
@@ -99,12 +108,14 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
             CDense_seg::TStrands::const_iterator it_strand;
             if ( denseg.IsSetStrands() ) {
                 it_strand = denseg.GetStrands().begin();
+                if (dim * numseg > denseg.GetStrands().size()) {
+                    dim = denseg.GetStrands().size() / numseg;
+                }
             }
-            for (int seg = 0; seg < denseg.GetNumseg(); seg++, ++it_len) {
+            for (int seg = 0;  seg < numseg;  seg++, ++it_len) {
                 CDense_seg::TIds::const_iterator it_id =
                     denseg.GetIds().begin();
-                for (int seq = 0; seq < denseg.GetDim(); seq++,
-                    ++it_start, ++it_id) {
+                for (int seq = 0;  seq < dim;  seq++, ++it_start, ++it_id) {
                     if ( *it_start < 0 )
                         continue;
                     CSeq_loc* loc = new CSeq_loc;
@@ -137,6 +148,18 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
         {
             const CSeq_align::C_Segs::TPacked& packed =
                 align.GetSegs().GetPacked();
+            int dim    = packed.GetDim();
+            int numseg = packed.GetNumseg();
+            // claimed dimension may not be accurate :-/
+            if (dim * numseg > packed.GetStarts().size()) {
+                dim = packed.GetStarts().size() / numseg;
+            }
+            if (dim * numseg > packed.GetPresent().size()) {
+                dim = packed.GetPresent().size() / numseg;
+            }
+            if (dim > packed.GetLens().size()) {
+                dim = packed.GetLens().size();
+            }
             CPacked_seg::TStarts::const_iterator it_start =
                 packed.GetStarts().begin();
             CPacked_seg::TLens::const_iterator it_len =
@@ -146,11 +169,14 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
             CPacked_seg::TStrands::const_iterator it_strand;
             if ( packed.IsSetStrands() ) {
                 it_strand = packed.GetStrands().begin();
+                if (dim * numseg > packed.GetStrands().size()) {
+                    dim = packed.GetStrands().size() / numseg;
+                }
             }
-            for (int seg = 0; seg < packed.GetNumseg(); seg++, ++it_len) {
+            for (int seg = 0;  seg < numseg;  seg++, ++it_len) {
                 CPacked_seg::TIds::const_iterator it_id =
                     packed.GetIds().begin();
-                for (int seq = 0; seq < packed.GetDim(); seq++, ++it_pres) {
+                for (int seq = 0;  seq < dim;  seq++, ++it_pres) {
                     if ( *it_pres ) {
                         CSeq_loc* loc = new CSeq_loc;
                         loc->SetInt().SetId().Assign(**it_id);
@@ -258,6 +284,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/09/03 17:45:45  ucko
+* Avoid overrunning alignment data when the claimed dimensions are too high.
+*
 * Revision 1.11  2002/07/25 15:01:51  grichenk
 * Replaced non-const GetXXX() with SetXXX()
 *
