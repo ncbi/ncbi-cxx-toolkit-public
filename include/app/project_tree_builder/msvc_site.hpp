@@ -50,13 +50,15 @@ struct SLibInfo
     list<string> m_LibDefines;
     string       m_LibPath;
     list<string> m_Libs;
+    list<string>  m_Macro;
 
     bool IsEmpty(void) const
     {
         return m_IncludeDir.empty() &&
                m_LibDefines.empty() &&
                m_LibPath.empty()    && 
-               m_Libs.empty();
+               m_Libs.empty()       &&
+               m_Macro.empty();
     }
     void Clear(void)
     {
@@ -64,6 +66,7 @@ struct SLibInfo
         m_LibDefines.clear();
         m_LibPath.erase();
         m_Libs.clear();
+        m_Macro.clear();
     }
 };
 bool IsLibOk(const SLibInfo& lib_info);
@@ -171,6 +174,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/08/25 19:39:04  gouriano
+ * Implemented optional dependency on a third party library
+ *
  * Revision 1.17  2004/07/20 13:39:29  gouriano
  * Added conditional macro definition
  *

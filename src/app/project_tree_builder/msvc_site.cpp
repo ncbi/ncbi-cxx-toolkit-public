@@ -111,7 +111,10 @@ void CMsvcSite::GetLibInfo(const string& lib,
     libinfo->m_LibPath    = GetOpt(m_Registry, lib, "LIBPATH", config);
 
     string libs_str = GetOpt(m_Registry, lib, "LIB", config);
-    NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_Libs); //TODO
+    NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_Libs);
+
+    string macro_str = GetOpt(m_Registry, lib, "MACRO", config);
+    NStr::Split(macro_str, LIST_SEPARATOR, libinfo->m_Macro);
 }
 
 
@@ -379,6 +382,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/08/25 19:38:40  gouriano
+ * Implemented optional dependency on a third party library
+ *
  * Revision 1.17  2004/07/20 13:38:40  gouriano
  * Added conditional macro definition
  *

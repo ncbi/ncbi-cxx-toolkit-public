@@ -36,6 +36,7 @@
 #include <app/project_tree_builder/msvc_site.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
 
+#include <algorithm>
 #include <set>
 
 
@@ -157,6 +158,9 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 
     // LIBS from Makefiles
     // m_ProjectLibs = project.m_Libs3Party;
+    list<string> installed_3party;
+    GetApp().GetSite().GetThirdPartyLibsToInstall(&installed_3party);
+
     ITERATE(list<string>, p, project.m_Libs3Party) {
         const string& lib_id = *p;
         if ( GetApp().GetSite().IsLibWithChoice(lib_id) ) {
@@ -165,7 +169,31 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
         } else {
             m_ProjectLibs.push_back(lib_id);
         }
+
+        ITERATE(list<string>, i, installed_3party) {
+            const string& component = *i;
+            bool lib_ok = true;
+            ITERATE(list<SConfigInfo>, j, GetApp().GetRegSettings().m_ConfigInfo) {
+                const SConfigInfo& config = *j;
+                SLibInfo lib_info;
+                GetApp().GetSite().GetLibInfo(component, config, &lib_info);
+                if (find( lib_info.m_Macro.begin(), lib_info.m_Macro.end(), lib_id) ==
+                          lib_info.m_Macro.end()) {
+                    lib_ok = false;
+                    break;
+                }
+                if ( !IsLibOk(lib_info) ) {
+                    lib_ok = false;
+                    break;
+                }
+            }
+            if (lib_ok) {
+                m_Requires.push_back(component);
+            }
+        }
     }
+    m_Requires.sort();
+    m_Requires.unique();
 
     // Proprocessor definitions from makefiles:
     m_Defines = project.m_Defines;
@@ -847,6 +875,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/08/25 19:38:40  gouriano
+ * Implemented optional dependency on a third party library
+ *
  * Revision 1.35  2004/08/04 13:27:24  gouriano
  * Added processing of EXPENDABLE projects
  *
