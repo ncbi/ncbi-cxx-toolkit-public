@@ -127,6 +127,20 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* q
     Uint1 program_number, char* filter_string, BlastMaskLoc* *filter_out, Boolean* mask_at_hash,
     Blast_Message* *blast_message);
 
+/** Masks the letters in buffer.
+ * This is a low-level routine and takes a raw buffer which it assumes
+ * to be in ncbistdaa (protein) or blastna (nucleotide).
+ * @param buffer the sequence to be masked (will be modified). [out]
+ * @param length length of the sequence to be masked . [in]
+ * @param is_na nucleotide if TRUE [in]
+ * @param mask_loc the SeqLoc to use for masking [in] 
+ * @param reverse minus strand if TRUE [in]
+ * @param offset how far along sequence is 1st residuse in buffer [in]
+ *
+*/
+Int2
+Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na, 
+    ListNode * mask_loc, Boolean reverse, Int4 offset);
 
 /** Masks the sequence given a BlastMaskLoc
  * @param query_blk sequence to be filtered [in]
