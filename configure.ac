@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.44 2002/03/18 21:14:14 ucko Exp $
+#  $Id: configure.ac,v 1.45 2002/03/19 04:39:46 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -55,13 +55,6 @@ AC_DIVERT_POP
 AC_INIT(ncbi-tools++, 0.0, cpp-core@ncbi.nlm.nih.gov)
 AC_CONFIG_SRCDIR(src/Makefile.mk.in)
 
-# Work around bug in autoconf 2.53
-case "$CONFIG_SHELL" in
-   */bash)
-      CONFIG_SHELL="$CONFIG_SHELL -norc"
-      SHELL="$CONFIG_SHELL"
-   ;;
-esac
 
 
 #############################################################################
