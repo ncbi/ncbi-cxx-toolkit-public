@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/10/15 23:16:22  vakatov
+ * + AddItem(const char* title, ...) to avoid "string/CNCBINode" ambiguity
+ *
  * Revision 1.3  2001/08/15 19:43:13  ivanov
  * Added AddMenuItem( node, ...)
  *
@@ -93,6 +96,21 @@ void CHTMLPopupMenu::AddItem(const string& title,
 {
     SItem item(title, action, color, mouseover, mouseout);
     m_Items.push_back(item);
+}
+
+
+void CHTMLPopupMenu::AddItem(const char*   title,
+                             const string& action, 
+                             const string& color,
+                             const string& mouseover, const string& mouseout)
+{
+    if ( !title ) {
+        THROW1_TRACE(runtime_error,
+                     "CHTMLPopupMenu::AddItem() passed NULL title");
+    }
+
+    const string x_title(title);
+    AddItem(x_title, action, color, mouseover, mouseout);
 }
 
 
@@ -249,7 +267,7 @@ string CHTMLPopupMenu::GetCodeHead(const string& menu_lib_url)
     string url = menu_lib_url.empty() ? kJSMenuDefaultURL : menu_lib_url;
 
     // Include the menu script loading
-    return "<script language=\"JavaScript1.2\" src=\""+url+"\"></script>\n";
+    return "<script language=\"JavaScript1.2\" src=\"" + url + "\"></script>\n";
 }
 
 
@@ -260,5 +278,6 @@ string CHTMLPopupMenu::GetCodeBody(void)
         "defaultjsmenu.writeMenus();\n}\n" \
         "// For IE\nif (document.all) onLoad();\n//-->\n</script>\n";
 }
+
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/10/15 23:16:19  vakatov
+ * + AddItem(const char* title, ...) to avoid "string/CNCBINode" ambiguity
+ *
  * Revision 1.3  2001/08/15 19:43:30  ivanov
  * Added AddMenuItem( node, ...)
  *
@@ -114,8 +117,14 @@ public:
                  const string& mouseover = kEmptyStr,  // JS code
                  const string& mouseout  = kEmptyStr); // JS code
 
-    // NOTE: The "node" will convert to string inside this function.
-    //       The Print() method for "node" not must change "node" structure.
+    void AddItem(const char*   title,                  // Text or HTML-code
+                 const string& action    = kEmptyStr,  // JS code
+                 const string& color     = kEmptyStr,
+                 const string& mouseover = kEmptyStr,  // JS code
+                 const string& mouseout  = kEmptyStr); // JS code
+
+    // NOTE: The "node" will convert to string inside this function, so
+    //       the "node"'s Print() method for must not change "node" structure.
     void AddItem(CNCBINode& node,
                  const string& action    = kEmptyStr,  // JS code
                  const string& color     = kEmptyStr,
