@@ -78,11 +78,8 @@ void CBaseCountItem::x_GatherInfo(CFFContext& ctx)
             CBioseq_Handle::eViewConstructed,
             CBioseq_Handle::eCoding_Iupac);
 
-    CSeqVector::const_iterator end = v.end();
-    for ( CSeqVector::const_iterator iter = v.begin();
-          iter != end;
-          ++iter ) {
-        CSeqVector_CI::TResidue res = toupper(*iter);
+    ITERATE (CSeqVector, it, v) {
+        CSeqVector_CI::TResidue res = toupper(*it);
         switch ( res ) {
         case 'A':
             ++m_A;
@@ -112,6 +109,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/03/05 18:43:30  shomrat
+* Use ITERATE instead of for
+*
 * Revision 1.2  2003/12/18 17:43:31  shomrat
 * context.hpp moved
 *
