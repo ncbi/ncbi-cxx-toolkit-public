@@ -18,3 +18,9 @@ void AbstractParser::ParseError(const char* error, const char* expected,
                         ": Parse error: " + error + ": " +
                         expected + " expected");
 }
+
+string AbstractParser::Location(void) const
+{
+    const AbstractToken& token = NextToken();
+    return NStr::IntToString(token.GetLine()) + ':';
+}

@@ -115,7 +115,7 @@ void ASNLexer::LookupString(void)
         case '\n':
             LexerWarning("unclosed string");
             return;
-        case '\0':
+        case 0:
             if ( Eof() ) {
                 LexerWarning("unclosed string");
                 return;
@@ -150,7 +150,7 @@ TToken ASNLexer::LookupBinHexString(void)
         case '\n':
             LexerWarning("unclosed bit string");
             return token;
-        case '\0':
+        case 0:
             if ( Eof() ) {
                 LexerWarning("unclosed bit string");
                 return token;

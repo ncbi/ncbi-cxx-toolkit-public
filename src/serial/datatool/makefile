@@ -3,7 +3,7 @@ ANTLR_DIR=../../../external/pccts
 include $(ANTLR_DIR)/makefile.mk
 
 # user defined names
-CFLAGS=-O2 +w +w2 -DNCBI_USE_NEW_HEADERS -D_DEBUG -I. -I../../../include -I../../../inc $(COTHER)
+CFLAGS=-O +w +w2 -D_DEBUG0 -DNCBI_USE_NEW_HEADERS -I. -I../../../include -I../../../inc $(COTHER)
 COTHER = 
 OBJ = alexer.o aparser.o parser.o lexer.o type.o value.o module.o main.o
 

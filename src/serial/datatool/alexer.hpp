@@ -16,7 +16,7 @@ public:
     
     const AbstractToken& NextToken(void)
         {
-            if ( m_TokenStart >= 0 )
+            if ( TokenStarted() )
                 return m_NextToken;
             else
                 return FillNextToken();
@@ -24,27 +24,20 @@ public:
 
     void Consume(void)
         {
-            if ( m_TokenStart < 0 )
+            if ( !TokenStarted() )
                 LexerError("illegal call: Consume() without NextToken()");
-            m_TokenStart = -1;
+            m_TokenStart = 0;
         }
-    string ConsumeAndValue(void)
+    string ConsumeAndValue(void);
+
+    string CurrentTokenText(void) const
         {
-            if ( m_TokenStart < 0 )
-                LexerError("illegal call: Consume() without NextToken()");
-            const char* token = CurrentTokenStart();
-            int length = CurrentTokenLength();
-            m_TokenStart = -1;
-            return string(token, length);
+            _ASSERT(TokenStarted());
+            return string(CurrentTokenStart(), CurrentTokenEnd());
         }
 
     virtual void LexerError(const char* error);
     virtual void LexerWarning(const char* error);
-
-    string CurrentTokenText(void) const
-        {
-            return string(CurrentTokenStart(), CurrentTokenLength());
-        }
 
 protected:
     virtual TToken LookupToken(void) = 0;
@@ -55,12 +48,15 @@ protected:
         }
     void StartToken(void)
         {
+            _ASSERT(!TokenStarted());
             m_TokenStart = m_Position;
             m_NextToken.line = m_Line;
         }
     void AddChars(int count)
         {
+            _ASSERT(TokenStarted());
             m_Position += count;
+            _ASSERT(m_Position <= m_DataEnd);
         }
     void AddChar(void)
         {
@@ -68,17 +64,19 @@ protected:
         }
     void SkipChars(int count)
         {
-            AddChars(count);
+            _ASSERT(!TokenStarted());
+            m_Position += count;
+            _ASSERT(m_Position <= m_DataEnd);
         }
     void SkipChar(void)
         {
-            AddChar();
+            SkipChars(1);
         }
     char Char(int index)
         {
-            int pos = m_Position + index;
-            if ( pos < m_Buffer.size() )
-                return m_Buffer[pos];
+            char* pos = m_Position + index;
+            if ( pos < m_DataEnd )
+                return *pos;
             else
                 return FillChar(index);
         }
@@ -92,22 +90,32 @@ protected:
         }
     const char* CurrentTokenStart(void) const
         {
-            return &m_Buffer[m_TokenStart];
+            return m_TokenStart;
+        }
+    const char* CurrentTokenEnd(void) const
+        {
+            return m_Position;
         }
     int CurrentTokenLength(void) const
         {
-            return m_Position - m_TokenStart;
+            return CurrentTokenEnd() - CurrentTokenStart();
         }
 
 private:
-    const AbstractToken& FillNextToken();
+    bool TokenStarted(void) const
+        {
+            return m_TokenStart != 0;
+        }
+    const AbstractToken& FillNextToken(void);
     char FillChar(int index);
 
     CNcbiIstream& m_Input;
-    vector<char> m_Buffer;
     int m_Line;  // current line in source
-    int m_Position; // current position in buffer
-    int m_TokenStart; // token start in buffer (-1: not parsed yet)
+    char* m_Buffer;
+    char* m_AllocEnd;
+    char* m_Position; // current position in buffer
+    char* m_DataEnd; // end of read data in buffer
+    char* m_TokenStart; // token start in buffer (0: not parsed yet)
     AbstractToken m_NextToken;
 };
 

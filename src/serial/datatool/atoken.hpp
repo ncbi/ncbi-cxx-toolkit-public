@@ -19,17 +19,12 @@ public:
 
     string GetText(void) const
         {
-            return string(start, end);
+            return string(start, length);
         }
 
     char GetSymbol(void) const
         {
             return *start;
-        }
-
-    const string& GetValue(void) const
-        {
-            return value;
         }
 
     int GetLine(void) const
@@ -39,8 +34,7 @@ public:
 
     TToken token;
     const char* start;
-    const char* end;
-    string value;
+    int length;
     int line;
 };
 

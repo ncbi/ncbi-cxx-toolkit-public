@@ -24,11 +24,13 @@ public:
             ParseError("", expected);
         }
 
-    const AbstractToken& NextToken(void)
+    string Location(void) const;
+
+    const AbstractToken& NextToken(void) const
         {
             return m_Lexer.NextToken();
         }
-    TToken Next(void)
+    TToken Next(void) const
         {
             return NextToken().token;
         }

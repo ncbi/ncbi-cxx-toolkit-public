@@ -18,12 +18,6 @@ AutoPtr<ASNModule> ASNParser::Module(void)
     Consume(K_DEFINITIONS, "DEFINITIONS");
     Consume(T_DEFINE, "::=");
     Consume(K_BEGIN, "BEGIN");
-    if ( ConsumeIf(K_EXPORTS) ) {
-        Exports(module.get());
-    }
-    if ( ConsumeIf(K_IMPORTS) ) {
-        Imports(module.get());
-    }
     ModuleBody(module.get());
     Consume(K_END, "END");
 
@@ -46,16 +40,51 @@ void ASNParser::Imports(ASNModule* module)
 
 void ASNParser::Exports(ASNModule* module)
 {
-    TypeList(module->exports);
+    try {
+        TypeList(module->exports);
+    }
+    catch (runtime_error e) {
+        ERR_POST(e.what());
+    }
     ConsumeSymbol(';');
 }
 
 void ASNParser::ModuleBody(ASNModule* module)
 {
-    while ( Next() == T_TYPE_REFERENCE ) {
-        string name = TypeReference();
-        Consume(T_DEFINE, "::=");
-        module->AddDefinition(name, Type());
+    while ( true ) {
+        try {
+            switch ( Next() ) {
+            case K_EXPORTS:
+                Consume();
+                Exports(module);
+                break;
+            case K_IMPORTS:
+                Consume();
+                Imports(module);
+                break;
+            case T_TYPE_REFERENCE:
+            case T_IDENTIFIER:
+                {
+                    string name = TypeReference();
+                    Consume(T_DEFINE, "::=");
+                    module->AddDefinition(name, Type());
+                }
+                break;
+            case T_DEFINE:
+                ERR_POST(Location() << "type name omitted");
+                Consume();
+                module->AddDefinition("unnamed type", Type());
+                break;
+            case K_END:
+                return;
+            default:
+                ERR_POST(Location() << "type definition expected");
+                return;
+            }
+        }
+        catch (runtime_error e) {
+            ERR_POST(e.what());
+        }
     }
 }
 
@@ -225,6 +254,9 @@ AutoPtr<ASNValue> ASNParser::x_Value(void)
             else
                 return new ASNNamedValue(id, Value());
         }
+    case T_BINARY_STRING:
+    case T_HEXADECIMAL_STRING:
+        return new ASNBitStringValue(ConsumeAndValue());
     case T_SYMBOL:
         switch ( NextToken().GetSymbol() ) {
         case '-':
@@ -265,25 +297,39 @@ string ASNParser::String(void)
 
 string ASNParser::Identifier(void)
 {
-    return ValueOf(T_IDENTIFIER, "identifier");
+    switch ( Next() ) {
+    case T_TYPE_REFERENCE:
+        ERR_POST(Location() << "identifier must begin with lowercase letter");
+        return ConsumeAndValue();
+    case T_IDENTIFIER:
+        return ConsumeAndValue();
+    default:
+        ParseError("identifier");
+    }
 }
 
 string ASNParser::TypeReference(void)
 {
-    return ValueOf(T_TYPE_REFERENCE, "type reference");
+    switch ( Next() ) {
+    case T_TYPE_REFERENCE:
+        return ConsumeAndValue();
+    case T_IDENTIFIER:
+        ERR_POST(Location() << "type name must begin with uppercase letter");
+        return ConsumeAndValue();
+    default:
+        ParseError("type name");
+    }
 }
 
 string ASNParser::ModuleReference(void)
 {
-    return TypeReference();
-}
-
-string ASNParser::BinaryString(void)
-{
-    return ValueOf(T_BINARY_STRING, "binary string");
-}
-
-string ASNParser::HexadecimalString(void)
-{
-    return ValueOf(T_HEXADECIMAL_STRING, "hexadecimal string");
+    switch ( Next() ) {
+    case T_TYPE_REFERENCE:
+        return ConsumeAndValue();
+    case T_IDENTIFIER:
+        ERR_POST(Location() << "module name must begin with uppercase letter");
+        return ConsumeAndValue();
+    default:
+        ParseError("module name");
+    }
 }
