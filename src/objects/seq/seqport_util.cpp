@@ -38,6 +38,8 @@
 
 #include <objects/seq/NCBI2na.hpp>
 #include <objects/seq/NCBI4na.hpp>
+#include <objects/seq/NCBI8na.hpp>
+#include <objects/seq/NCBI8aa.hpp>
 #include <objects/seq/IUPACna.hpp>
 #include <objects/seq/IUPACaa.hpp>
 #include <objects/seq/NCBIeaa.hpp>
@@ -47,6 +49,10 @@
 #include <objects/seqcode/Seq_code_table.hpp>
 #include <objects/seqcode/Seq_code_type.hpp>
 #include <objects/seqcode/Seq_map_table.hpp>
+
+#include <util/sequtil/sequtil.hpp>
+#include <util/sequtil/sequtil_convert.hpp>
+#include <util/sequtil/sequtil_manip.hpp>
 
 #include <algorithm>
 #include <string.h>
@@ -109,7 +115,6 @@ public:
 
     TSeqPos Pack
     (CSeq_data*   in_seq,
-     TSeqPos      uBeginidx,
      TSeqPos      uLength)
         const;
 
@@ -349,6 +354,7 @@ private:
     CRef<CCode_rev> InitNcbi4naRev();
 
     // Member variables holding map tables
+    
     CRef<CMap_table> m_Ncbi2naIupacna;
     CRef<CMap_table> m_Ncbi2naNcbi4na;
     CRef<CMap_table> m_Ncbi4naIupacna;
@@ -361,6 +367,16 @@ private:
     CRef<CMap_table> m_NcbieaaNcbistdaa;
     CRef<CMap_table> m_NcbistdaaNcbieaa;
     CRef<CMap_table> m_NcbistdaaIupacaa;
+    
+
+    TSeqPos x_ConvertAmbig
+    (const CSeq_data&      in_seq,
+     CSeq_data*            out_seq,
+     CSeq_data::E_Choice   to_code,
+     TSeqPos               uBeginIdx,
+     TSeqPos               uLength,
+     CRandom::TValue       seed)
+        const;
 
     // Helper function to initialize map tables
     CRef<CMap_table> InitMaps(ESeq_code_type from_type,
@@ -370,15 +386,15 @@ private:
 
     // Takes a byte as an index and returns a unsigned int with
     // 4 characters, each character being one of ATGC
-    CRef<CFast_table4> m_FastNcbi2naIupacna;
+    //CRef<CFast_table4> m_FastNcbi2naIupacna;
 
     // Takes a byte (each byte with 4 Ncbi2na codes) as an index and
     // returns a Unit2 with 2 bytes, each byte formated as 2 Ncbi4na codes
-    CRef<CFast_table2> m_FastNcbi2naNcbi4na;
+    //CRef<CFast_table2> m_FastNcbi2naNcbi4na;
 
     // Takes a byte (each byte with 2 Ncbi4na codes) as an index and
     // returns a 2 byte string, each byte with an Iupacna code.
-    CRef<CFast_table2> m_FastNcbi4naIupacna;
+    //CRef<CFast_table2> m_FastNcbi4naIupacna;
 
     // Table used for fast compression from Iupacna to Ncbi2na (4 bytes to 1
     // byte). This table is a 2 dimensional table. The first dimension
@@ -403,7 +419,7 @@ private:
     vector<TIndex> m_StartAt;
         
     // Helper function to initialize fast conversion tables
-    CRef<CFast_table4> InitFastNcbi2naIupacna();
+    //CRef<CFast_table4> InitFastNcbi2naIupacna();
     CRef<CFast_table2> InitFastNcbi2naNcbi4na();
     CRef<CFast_table2> InitFastNcbi4naIupacna();
     CRef<CFast_4_1>    InitFastIupacnaNcbi2na();
@@ -446,6 +462,7 @@ private:
     // Alphabet conversion functions. Functions return
     // the number of converted codes.
 
+    /*
     // Fuction to convert ncbi2na (1 byte) to iupacna (4 bytes)
     TSeqPos MapNcbi2naToIupacna(const CSeq_data&  in_seq,
                                 CSeq_data*        out_seq,
@@ -466,7 +483,7 @@ private:
                                 TSeqPos          uBeginIdx,
                                 TSeqPos          uLength)
         const;
-
+    */
     // Function to convert iupacna (4 bytes) to ncbi2na (1 byte)
     TSeqPos MapIupacnaToNcbi2na(const CSeq_data& in_seq,
                                 CSeq_data*       out_seq,
@@ -475,6 +492,7 @@ private:
                                 bool             bAmbig,
                                 CRandom::TValue  seed)
         const;
+    /*
 
     // Function to convert iupacna (2 bytes) to ncbi4na (1 byte)
     TSeqPos MapIupacnaToNcbi4na(const CSeq_data& in_seq,
@@ -482,7 +500,7 @@ private:
                                 TSeqPos          uBeginIdx,
                                 TSeqPos          uLength)
         const;
-
+    */
     // Function to convert ncbi4na (2 bytes) to ncbi2na (1 byte)
     TSeqPos MapNcbi4naToNcbi2na(const CSeq_data& in_seq,
                                 CSeq_data*       out_seq,
@@ -491,6 +509,7 @@ private:
                                 bool             bAmbig,
                                 CRandom::TValue  seed)
         const;
+    /*
 
     // Function to convert iupacaa (byte) to ncbieaa (byte)
     TSeqPos MapIupacaaToNcbieaa(const CSeq_data& in_seq,
@@ -532,6 +551,7 @@ private:
                                   TSeqPos          uBeginIdx,
                                   TSeqPos          uLength)
         const;
+        */
 
     // Fast Validation functions
     bool FastValidateIupacna(const CSeq_data& in_seq,
@@ -853,6 +873,15 @@ private:
                           TSeqPos           uBeginIdx2,
                           TSeqPos           uLength2)
         const;
+
+    void x_GetSeqFromSeqData(const CSeq_data& data, 
+                             const string** str,
+                             const vector<char>** vec)
+        const;
+    void x_GetSeqFromSeqData(CSeq_data& data, 
+                             string** str,
+                             vector<char>** vec)
+        const;
 };
 
 
@@ -891,11 +920,10 @@ TSeqPos CSeqportUtil::Convert
 
 TSeqPos CSeqportUtil::Pack
 (CSeq_data*   in_seq,
- TSeqPos      uBeginIdx,
- TSeqPos      uLength)
+ TSeqPos uLength)
 {
     return x_GetImplementation().Pack
-        (in_seq, uBeginIdx, uLength);
+        (in_seq, uLength);
 }
 
 
@@ -1164,6 +1192,7 @@ CSeqportUtil_implementation::CSeqportUtil_implementation()
 
 
     // Initialize map tables
+
     m_Ncbi2naIupacna = InitMaps(eSeq_code_type_ncbi2na,
                                 eSeq_code_type_iupacna);
 
@@ -1201,9 +1230,9 @@ CSeqportUtil_implementation::CSeqportUtil_implementation()
                                   eSeq_code_type_iupacaa);
 
     // Initialize fast conversion tables
-    m_FastNcbi2naIupacna = InitFastNcbi2naIupacna();
-    m_FastNcbi2naNcbi4na = InitFastNcbi2naNcbi4na();
-    m_FastNcbi4naIupacna = InitFastNcbi4naIupacna();
+    //m_FastNcbi2naIupacna = InitFastNcbi2naIupacna();
+    //m_FastNcbi2naNcbi4na = InitFastNcbi2naNcbi4na();
+    //m_FastNcbi4naIupacna = InitFastNcbi4naIupacna();
     m_FastIupacnaNcbi2na = InitFastIupacnaNcbi2na();
     m_FastIupacnaNcbi4na = InitFastIupacnaNcbi4na();
     m_FastNcbi4naNcbi2na = InitFastNcbi4naNcbi2na();
@@ -1539,6 +1568,7 @@ CSeqportUtil_implementation::InitMaps
 
 // Functions to initialize fast conversion tables
 // Function to initialize FastNcib2naIupacna
+/*
 CRef<CSeqportUtil_implementation::CFast_table4> CSeqportUtil_implementation::InitFastNcbi2naIupacna()
 {
 
@@ -1566,7 +1596,7 @@ CRef<CSeqportUtil_implementation::CFast_table4> CSeqportUtil_implementation::Ini
                      }
     return fastTable;
 }
-
+*/
 
 // Function to initialize FastNcib2naNcbi4na
 CRef<CSeqportUtil_implementation::CFast_table2> CSeqportUtil_implementation::InitFastNcbi2naNcbi4na()
@@ -1873,7 +1903,76 @@ CRef<CSeqportUtil_implementation::CAmbig_detect> CSeqportUtil_implementation::In
     return ambig_detect;
 }
 
+/*
+struct SSeqDataToSeqUtil
+{
+    CSeq_data::E_Choice  seq_data_coding;
+    CSeqConvert::TCoding seq_convert_coding;
+};
 
+
+static SSeqDataToSeqUtil s_SeqDataToSeqUtilMap[] = {
+    { CSeq_data::e_Iupacna,   CSeqUtil::e_Iupacna },
+    { CSeq_data::e_Iupacaa,   CSeqUtil::e_Iupacna },
+    { CSeq_data::e_Ncbi2na,   CSeqUtil::e_Ncbi2na },
+    { CSeq_data::e_Ncbi4na,   CSeqUtil::e_Ncbi4na },
+    { CSeq_data::e_Ncbi8na,   CSeqUtil::e_Ncbi8na },
+    { CSeq_data::e_Ncbi8aa,   CSeqUtil::e_Ncbi8aa },
+    { CSeq_data::e_Ncbieaa,   CSeqUtil::e_Ncbieaa },
+    { CSeq_data::e_Ncbistdaa, CSeqUtil::e_Ncbistdaa }
+};
+*/
+
+static CSeqUtil::TCoding s_SeqDataToSeqUtil[] = {
+    CSeqUtil::e_not_set,
+    CSeqUtil::e_Iupacna,
+    CSeqUtil::e_Iupacaa,
+    CSeqUtil::e_Ncbi2na,
+    CSeqUtil::e_Ncbi4na,
+    CSeqUtil::e_Ncbi8na,
+    CSeqUtil::e_not_set,
+    CSeqUtil::e_Ncbi8aa,
+    CSeqUtil::e_Ncbieaa,
+    CSeqUtil::e_not_set,
+    CSeqUtil::e_Ncbistdaa
+};
+
+
+// Convert from one coding scheme to another. The following
+// 12 conversions are supported: ncbi2na<=>ncbi4na;
+// ncbi2na<=>iupacna; ncbi4na<=>iupacna; ncbieaa<=>ncbistdaa;
+// ncbieaa<=>iupacaa; ncbistdaa<=>iupacaa. Convert is
+// really just a dispatch function--it calls the appropriate
+// priviate conversion function.
+TSeqPos CSeqportUtil_implementation::x_ConvertAmbig
+(const CSeq_data&      in_seq,
+ CSeq_data*            out_seq,
+ CSeq_data::E_Choice   to_code,
+ TSeqPos               uBeginIdx,
+ TSeqPos               uLength,
+ CRandom::TValue       seed)
+    const
+{
+    CSeq_data::E_Choice from_code = in_seq.Which();
+
+    if(to_code == CSeq_data::e_not_set || from_code == CSeq_data::e_not_set)
+        throw std::runtime_error("to_code or from_code not set");
+
+    if ( to_code != CSeq_data::e_Ncbi2na ) {
+        throw std::runtime_error("to_code is not Ncbi2na");
+    }
+
+    switch (from_code) {
+    case CSeq_data::e_Iupacna:
+        return MapIupacnaToNcbi2na(in_seq, out_seq,
+            uBeginIdx, uLength, true, seed);
+    case CSeq_data::e_Ncbi4na:
+        return MapNcbi4naToNcbi2na(in_seq, out_seq,
+            uBeginIdx, uLength, true, seed);
+    default:
+        throw runtime_error("Requested conversion not implemented");
+    }
+}
 
 // Convert from one coding scheme to another. The following
 // 12 conversions are supported: ncbi2na<=>ncbi4na;
@@ -1893,109 +1992,93 @@ TSeqPos CSeqportUtil_implementation::Convert
 {
     CSeq_data::E_Choice from_code = in_seq.Which();
 
-    if(to_code == CSeq_data::e_not_set || from_code == CSeq_data::e_not_set)
+    if(to_code == CSeq_data::e_not_set || from_code == CSeq_data::e_not_set) {
         throw std::runtime_error("to_code or from_code not set");
-
-    switch (to_code) {
-    case CSeq_data::e_Iupacna:
-        switch (from_code) {
-        case CSeq_data::e_Ncbi2na:
-            return MapNcbi2naToIupacna(in_seq, out_seq, uBeginIdx, uLength);
-        case CSeq_data::e_Ncbi4na:
-            return MapNcbi4naToIupacna(in_seq, out_seq, uBeginIdx, uLength);
-        default:
-            throw runtime_error("Requested conversion not implemented");
-        }
-    case CSeq_data::e_Iupacaa:
-        switch (from_code) {
-        case CSeq_data::e_Ncbieaa:
-            return MapNcbieaaToIupacaa(in_seq, out_seq, uBeginIdx, uLength);
-        case CSeq_data::e_Ncbistdaa:
-            return MapNcbistdaaToIupacaa(in_seq, out_seq, uBeginIdx, uLength);
-        default:
-            throw runtime_error("Requested conversion not implemented");
-        }
-    case CSeq_data::e_Ncbi2na:
-        switch (from_code) {
-        case CSeq_data::e_Iupacna:
-            return MapIupacnaToNcbi2na(in_seq, out_seq,
-                                       uBeginIdx, uLength, bAmbig, seed);
-        case CSeq_data::e_Ncbi4na:
-            return MapNcbi4naToNcbi2na(in_seq, out_seq,
-                                       uBeginIdx, uLength, bAmbig, seed);
-        default:
-            throw runtime_error("Requested conversion not implemented");
-        }
-    case CSeq_data::e_Ncbi4na:
-        switch (from_code) {
-        case CSeq_data::e_Ncbi2na:
-            return MapNcbi2naToNcbi4na(in_seq, out_seq, uBeginIdx, uLength);
-        case CSeq_data::e_Iupacna:
-            return MapIupacnaToNcbi4na(in_seq, out_seq, uBeginIdx, uLength);
-        default:
-            throw runtime_error("Requested conversion not implemented");
-        }
-    case CSeq_data::e_Ncbieaa:
-        switch (from_code) {
-        case CSeq_data::e_Iupacaa:
-            return MapIupacaaToNcbieaa(in_seq, out_seq, uBeginIdx, uLength);
-        case CSeq_data::e_Ncbistdaa:
-            return MapNcbistdaaToNcbieaa(in_seq, out_seq, uBeginIdx, uLength);
-        default:
-            throw runtime_error("Requested conversion not implemented");
-        }
-    case CSeq_data::e_Ncbistdaa:
-        switch (from_code) {
-        case CSeq_data::e_Iupacaa:
-            return MapIupacaaToNcbistdaa(in_seq, out_seq, uBeginIdx, uLength);
-        case CSeq_data::e_Ncbieaa:
-            return MapNcbieaaToNcbistdaa(in_seq, out_seq, uBeginIdx, uLength);
-        default:
-            throw runtime_error("Requested conversion not implemented");
-        }
-    default:
+    }
+    if ( s_SeqDataToSeqUtil[to_code]  == CSeqUtil::e_not_set  ||
+         s_SeqDataToSeqUtil[from_code] == CSeqUtil::e_not_set ) {
         throw runtime_error("Requested conversion not implemented");
     }
+
+    // Note: for now use old code to convert to ncbi2na with random
+    // conversion of ambiguous characters.
+    if ( (to_code == CSeq_data::e_Ncbi2na)  &&  (bAmbig == true) ) {
+        return x_ConvertAmbig(in_seq, out_seq, to_code, uBeginIdx, uLength, seed);
+    }
+
+    const string* in_str = 0;
+    const vector<char>* in_vec = 0;
+
+    x_GetSeqFromSeqData(in_seq, &in_str, &in_vec);
+    
+    TSeqPos retval = 0;
+    if ( in_str != 0 ) {
+        string result;
+        retval = CSeqConvert::Convert(*in_str, s_SeqDataToSeqUtil[from_code],
+                                      uBeginIdx, uLength,
+                                      result, s_SeqDataToSeqUtil[to_code]);
+        CSeq_data temp(result, to_code);
+        out_seq->Assign(temp);
+    } else if ( in_vec != 0 ) {
+        vector<char> result;
+        retval = CSeqConvert::Convert(*in_vec, s_SeqDataToSeqUtil[from_code],
+                                      uBeginIdx, uLength,
+                                      result, s_SeqDataToSeqUtil[to_code]);
+        CSeq_data temp(result, to_code);
+        out_seq->Assign(temp);
+    }
+    return retval;
 }
 
 
 // Provide maximum packing without loss of information
 TSeqPos CSeqportUtil_implementation::Pack
 (CSeq_data*   in_seq,
- TSeqPos      uBeginIdx,
  TSeqPos      uLength)
     const
 {
-    CRef<CSeq_data> os(new CSeq_data);
-    CSeq_data* pos = os.GetPointer();
+    _ASSERT(in_seq != 0);
 
-    vector<TSeqPos> oi;
+    CSeq_data::E_Choice from_code = in_seq->Which();
+    _ASSERT(from_code != CSeq_data::e_not_set);
 
-    switch (in_seq->Which()) {
-    case CSeq_data::e_Iupacna:
-        if (GetAmbigs_iupacna_ncbi2na(*in_seq, pos, &oi, uBeginIdx, uLength)
-            > 0)
-            {
-                MapIupacnaToNcbi4na(*in_seq, pos, uBeginIdx, uLength);
-                return GetNcbi4naCopy(*os, in_seq, 0, 0);
-            }
-        else
-            {
-                MapIupacnaToNcbi2na(*in_seq, pos, uBeginIdx, uLength,
-                                    false, 1);
-                return GetNcbi2naCopy(*os, in_seq, 0, 0);
-            }
-    case CSeq_data::e_Ncbi4na:
-        if (GetAmbigs_ncbi4na_ncbi2na(*in_seq, pos, &oi, uBeginIdx, uLength)
-            > 0)
-            return 0;
-
-        MapNcbi4naToNcbi2na(*in_seq, pos, uBeginIdx, uLength, false, 1);
-        return GetNcbi2naCopy(*pos, in_seq, 0, 0);
-
-    default:
-        return 0;
+    if ( s_SeqDataToSeqUtil[from_code] == CSeqUtil::e_not_set ) {
+        throw runtime_error("Unable tp pack requested coding");
     }
+
+    // nothing to convert
+    if ( from_code == CSeq_data::e_Ncbi2na  &&
+         in_seq->GetNcbi2na().Get().size() * 4 <= uLength ) {
+        return in_seq->GetNcbi2na().Get().size() * 4;
+    }
+
+    const string*       in_str = 0;
+    const vector<char>* in_vec = 0;
+
+    x_GetSeqFromSeqData(*in_seq, &in_str, &in_vec);
+
+    vector<char> out_vec;
+    CSeqUtil::TCoding coding = CSeqUtil::e_not_set;
+
+    TSeqPos retval = 0;
+    if ( in_str != 0 ) {
+        retval =
+            CSeqConvert::Pack(*in_str, s_SeqDataToSeqUtil[from_code],
+                              out_vec, coding, uLength);
+    } else if ( in_vec != 0 ) {
+        retval = 
+            CSeqConvert::Pack(*in_vec, s_SeqDataToSeqUtil[from_code],
+                              out_vec, coding, uLength);
+    }
+
+    _ASSERT(coding == CSeqUtil::e_Ncbi2na  ||  coding == CSeqUtil::e_Ncbi4na);
+
+    CSeq_data::E_Choice out_code = (coding == CSeqUtil::e_Ncbi2na) ?
+        CSeq_data::e_Ncbi2na : CSeq_data::e_Ncbi4na;
+    CSeq_data temp(out_vec, out_code);
+    in_seq->Assign(temp);
+
+    return retval;
 }
 
 
@@ -2217,23 +2300,13 @@ TSeqPos CSeqportUtil_implementation::Complement
  TSeqPos      uLength)
     const
 {
-    //Check that in_seq is not null
-    if(!in_seq) {
-        return 0;
-    }
-    
-    // Determine type of sequeence and which complement method to call
-    switch (in_seq->Which()) {
-    case CSeq_data::e_Iupacna:
-        return ComplementIupacna(in_seq, uBeginIdx, uLength);
-    case CSeq_data::e_Ncbi2na:
-        return ComplementNcbi2na(in_seq, uBeginIdx, uLength);
-    case CSeq_data::e_Ncbi4na:
-        return ComplementNcbi4na(in_seq, uBeginIdx, uLength);
-    default:
-        throw runtime_error
-            ("Complement of requested sequence type not supported.");
-    }
+    _ASSERT(in_seq != 0);
+
+    CSeq_data complement;
+    TSeqPos retval = Complement(*in_seq, &complement, uBeginIdx, uLength);
+    in_seq->Assign(complement);
+
+    return retval;
 }
 
 
@@ -2245,18 +2318,28 @@ TSeqPos CSeqportUtil_implementation::Complement
  TSeqPos            uLength)
     const
 {
-    // Determine type of sequeence and which complement method to call
-    switch (in_seq.Which()) {
-    case CSeq_data::e_Iupacna:
-        return ComplementIupacna(in_seq, out_seq, uBeginIdx, uLength);
-    case CSeq_data::e_Ncbi2na:
-        return ComplementNcbi2na(in_seq, out_seq, uBeginIdx, uLength);
-    case CSeq_data::e_Ncbi4na:
-        return ComplementNcbi4na(in_seq, out_seq, uBeginIdx, uLength);
-    default:
-        throw runtime_error
-            ("Complement of requested sequence type not supported.");
+    _ASSERT(out_seq != 0);
+    
+    CSeq_data::E_Choice in_code = in_seq.Which();
+    _ASSERT(in_code != CSeq_data::e_not_set);
+
+    const string* in_str = 0;
+    const vector<char>* in_vec = 0;
+    x_GetSeqFromSeqData(in_seq, &in_str, &in_vec);
+
+    TSeqPos retval = 0;
+    if ( in_str ) {
+        string out_str;
+        retval = CSeqManip::Complement(*in_str, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength, out_str);
+        CSeq_data temp(out_str, in_code);
+        out_seq->Assign(temp);
+    } else {
+        vector<char> out_vec;
+        retval = CSeqManip::Complement(*in_vec, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength, out_vec);
+        CSeq_data temp(out_vec, in_code);
+        out_seq->Assign(temp);
     }
+    return retval;
 }
 
 
@@ -2270,22 +2353,11 @@ TSeqPos CSeqportUtil_implementation::Reverse
  TSeqPos      uLength)
     const
 {
-    // Check that in_seq is not null
-    if (!in_seq) {
-        return 0;
-    }
-    
-    // Determine type of sequeence and which reverse method to call
-    switch (in_seq->Which()) {
-    case CSeq_data::e_Iupacna:
-        return ReverseIupacna(in_seq, uBeginIdx, uLength);
-    case CSeq_data::e_Ncbi2na:
-        return ReverseNcbi2na(in_seq, uBeginIdx, uLength);
-    case CSeq_data::e_Ncbi4na:
-        return ReverseNcbi4na(in_seq, uBeginIdx, uLength);
-    default:
-        throw runtime_error("Reverse of in_seq type is not supported.");
-    }
+    CSeq_data temp;
+    TSeqPos retval = Reverse(*in_seq, &temp, uBeginIdx, uLength);
+    in_seq->Assign(temp);
+
+    return retval;
 }
 
 
@@ -2297,17 +2369,28 @@ TSeqPos CSeqportUtil_implementation::Reverse
  TSeqPos           uLength)
     const
 {
-    // Determine type of sequeence and which reverse method to call
-    switch (in_seq.Which()) {
-    case CSeq_data::e_Iupacna:
-        return ReverseIupacna(in_seq, out_seq, uBeginIdx, uLength);
-    case CSeq_data::e_Ncbi2na:
-        return ReverseNcbi2na(in_seq, out_seq, uBeginIdx, uLength);
-    case CSeq_data::e_Ncbi4na:
-        return ReverseNcbi4na(in_seq, out_seq, uBeginIdx, uLength);
-    default:
-        throw runtime_error("Reverse of in_seq type is not supported.");
+    _ASSERT(out_seq != 0);
+
+    CSeq_data::E_Choice in_code = in_seq.Which();
+    _ASSERT(in_code != CSeq_data::e_not_set);
+
+    const string* in_str = 0;
+    const vector<char>* in_vec = 0;
+    x_GetSeqFromSeqData(in_seq, &in_str, &in_vec);
+
+    TSeqPos retval = 0;
+    if ( in_str ) {
+        string out_str;
+        retval = CSeqManip::Reverse(*in_str, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength, out_str);
+        CSeq_data temp(out_str, in_code);
+        out_seq->Assign(temp);
+    } else {
+        vector<char> out_vec;
+        retval = CSeqManip::Reverse(*in_vec, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength, out_vec);
+        CSeq_data temp(out_vec, in_code);
+        out_seq->Assign(temp);
     }
+    return retval;
 }
 
 
@@ -2322,22 +2405,19 @@ TSeqPos CSeqportUtil_implementation::ReverseComplement
  TSeqPos     uLength)
     const
 {
-    //Check that in_seq is not null
-    if (!in_seq) {
-        return 0;
-    }
-    
-    // Determine type of sequeence and which rev_comp method to call
-    switch (in_seq->Which()) {
-    case CSeq_data::e_Iupacna:
-        return ReverseComplementIupacna(in_seq, uBeginIdx, uLength);
-    case CSeq_data::e_Ncbi2na:
-        return ReverseComplementNcbi2na(in_seq, uBeginIdx, uLength);
-    case CSeq_data::e_Ncbi4na:
-        return ReverseComplementNcbi4na(in_seq, uBeginIdx, uLength);
-    default:
-        throw runtime_error
-            ("ReverseComplement of in_seq type is not supported.");
+    _ASSERT(in_seq != 0);
+
+    CSeq_data::E_Choice in_code = in_seq->Which();
+    _ASSERT(in_code != CSeq_data::e_not_set);
+
+    string* in_str = 0;
+    vector<char>* in_vec = 0;
+    x_GetSeqFromSeqData(*in_seq, &in_str, &in_vec);
+
+    if ( in_str ) {
+        return CSeqManip::ReverseComplement(*in_str, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength);
+    } else {
+        return CSeqManip::ReverseComplement(*in_vec, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength);
     }
 }
 
@@ -2350,17 +2430,29 @@ TSeqPos CSeqportUtil_implementation::ReverseComplement
  TSeqPos           uLength)
     const
 {
-    // Determine type of sequeence and which rev_comp method to call
-    switch (in_seq.Which()) {
-    case CSeq_data::e_Iupacna:
-        return ReverseComplementIupacna(in_seq, out_seq, uBeginIdx, uLength);
-    case CSeq_data::e_Ncbi2na:
-        return ReverseComplementNcbi2na(in_seq, out_seq, uBeginIdx, uLength);
-    case CSeq_data::e_Ncbi4na:
-        return ReverseComplementNcbi4na(in_seq, out_seq, uBeginIdx, uLength);
-    default:
-        throw runtime_error("ReverseComplement of in_seq type not supported.");
+    _ASSERT(out_seq != 0);
+
+    CSeq_data::E_Choice in_code = in_seq.Which();
+    _ASSERT(in_code != CSeq_data::e_not_set);
+
+    const string* in_str = 0;
+    const vector<char>* in_vec = 0;
+    x_GetSeqFromSeqData(in_seq, &in_str, &in_vec);
+
+    TSeqPos retval = 0;
+    if ( in_str ) {
+        string out_str;
+        retval = CSeqManip::ReverseComplement(*in_str, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength, out_str);
+        CSeq_data temp(out_str, in_code);
+        out_seq->Assign(temp);
+    } else {
+        vector<char> out_vec;
+        retval = CSeqManip::ReverseComplement(*in_vec, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength, out_vec);
+        CSeq_data temp(out_vec, in_code);
+        out_seq->Assign(temp);
     }
+
+    return retval;
 }
 
 
@@ -2369,7 +2461,7 @@ TSeqPos CSeqportUtil_implementation::ReverseComplement
 
 // Methods to convert between coding schemes
 
-
+/*
 // Convert in_seq from ncbi2na (1 byte) to iupacna (4 bytes)
 // and put result in out_seq
 TSeqPos CSeqportUtil_implementation::MapNcbi2naToIupacna
@@ -2601,7 +2693,7 @@ TSeqPos CSeqportUtil_implementation::MapNcbi4naToIupacna
 
     return uLenSav;
 }
-
+*/
 
 // Function to convert iupacna (4 bytes) to ncbi2na (1 byte)
 TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
@@ -2760,7 +2852,7 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
 
     return uLenSav;
 }
-
+/*
 
 // Function to convert iupacna (2 bytes) to ncbi4na (1 byte)
 TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi4na
@@ -2824,7 +2916,7 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi4na
 
     return uLenSav;
 }
-
+*/
 
 // Function to convert ncbi4na (2 bytes) to ncbi2na (1 byte)
 TSeqPos CSeqportUtil_implementation::MapNcbi4naToNcbi2na
@@ -2960,7 +3052,7 @@ TSeqPos CSeqportUtil_implementation::MapNcbi4naToNcbi2na
     return uLenSav;
 }
 
-
+/*
 // Function to convert iupacaa (byte) to ncbieaa (byte)
 TSeqPos CSeqportUtil_implementation::MapIupacaaToNcbieaa
 (const CSeq_data&  in_seq,
@@ -3214,7 +3306,7 @@ TSeqPos CSeqportUtil_implementation::MapNcbistdaaToIupacaa
 
     return uLength;
 }
-
+*/
 
 // Fast validation of iupacna sequence
 bool CSeqportUtil_implementation::FastValidateIupacna
@@ -5595,6 +5687,98 @@ CSeqportUtil::TIndex CSeqportUtil_implementation::GetMapToIndex
 
 }
 
+
+void CSeqportUtil_implementation::x_GetSeqFromSeqData
+(const CSeq_data& data, 
+ const string** str,
+ const vector<char>** vec)
+    const
+{
+    *str = 0;
+    *vec = 0;
+
+    switch ( data.Which() ) {
+    case CSeq_data::e_Iupacna:
+        *str = &(data.GetIupacna().Get());
+        break;
+
+    case CSeq_data::e_Ncbi2na:
+        *vec = &(data.GetNcbi2na().Get());
+        break;
+
+    case CSeq_data::e_Ncbi4na:
+        *vec = &(data.GetNcbi4na().Get());
+        break;
+
+    case CSeq_data::e_Ncbi8na:
+        *vec = &(data.GetNcbi8na().Get());
+        break;
+
+    case CSeq_data::e_Iupacaa:
+        *str = &(data.GetIupacaa().Get());
+        break;
+
+    case CSeq_data::e_Ncbi8aa:
+        *vec = &(data.GetNcbi8aa().Get());
+        break;
+
+    case CSeq_data::e_Ncbieaa:
+        *str = &(data.GetNcbieaa().Get());
+        break;
+
+    case CSeq_data::e_Ncbistdaa:
+        *vec = &(data.GetNcbistdaa().Get());
+        break;
+    } // end of switch statemen
+}
+
+
+// same as above, but takes a non-const CSeq_data object.
+void CSeqportUtil_implementation::x_GetSeqFromSeqData
+(CSeq_data& data, 
+ string** str,
+ vector<char>** vec)
+    const
+{
+    *str = 0;
+    *vec = 0;
+
+    switch ( data.Which() ) {
+    case CSeq_data::e_Iupacna:
+        *str = &(data.SetIupacna().Set());
+        break;
+
+    case CSeq_data::e_Ncbi2na:
+        *vec = &(data.SetNcbi2na().Set());
+        break;
+
+    case CSeq_data::e_Ncbi4na:
+        *vec = &(data.SetNcbi4na().Set());
+        break;
+
+    case CSeq_data::e_Ncbi8na:
+        *vec = &(data.SetNcbi8na().Set());
+        break;
+
+    case CSeq_data::e_Iupacaa:
+        *str = &(data.SetIupacaa().Set());
+        break;
+
+    case CSeq_data::e_Ncbi8aa:
+        *vec = &(data.SetNcbi8aa().Set());
+        break;
+
+    case CSeq_data::e_Ncbieaa:
+        *str = &(data.SetNcbieaa().Set());
+        break;
+
+    case CSeq_data::e_Ncbistdaa:
+        *vec = &(data.SetNcbistdaa().Set());
+        break;
+    } // end of switch statemen
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  CSeqportUtil_implementation::sm_StrAsnData  --  some very long and ugly string
 //
@@ -6264,13 +6448,15 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
 };
 
 
-
 END_objects_SCOPE
 END_NCBI_SCOPE
 
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2003/11/06 16:12:32  shomrat
+ * changed seqport_util to use sequtil
+ *
  * Revision 6.17  2003/06/04 17:03:11  rsmith
  * Move static mutex out of function to work around CW complex initialization bug.
  *
