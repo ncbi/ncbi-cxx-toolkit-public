@@ -309,6 +309,21 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
             const CSeq_align::C_Segs::TDendiag& dendiag =
                 align.GetSegs().GetDendiag();
             ITERATE ( CSeq_align::C_Segs::TDendiag, it, dendiag ) {
+                const CDense_diag& diag = **it;
+                int dim = diag.GetDim();
+                if (dim != (int)diag.GetIds().size()) {
+                    ERR_POST(Warning << "Invalid 'ids' size in dendiag");
+                    dim = min(dim, (int)diag.GetIds().size());
+                }
+                if (dim != (int)diag.GetStarts().size()) {
+                    ERR_POST(Warning << "Invalid 'starts' size in dendiag");
+                    dim = min(dim, (int)diag.GetStarts().size());
+                }
+                if (diag.IsSetStrands()
+                    && dim != (int)diag.GetStrands().size()) {
+                    ERR_POST(Warning << "Invalid 'strands' size in dendiag");
+                    dim = min(dim, (int)diag.GetStrands().size());
+                }
                 CDense_diag::TIds::const_iterator it_id =
                     (*it)->GetIds().begin();
                 CDense_diag::TStarts::const_iterator it_start =
@@ -342,11 +357,27 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
             int dim    = denseg.GetDim();
             int numseg = denseg.GetNumseg();
             // claimed dimension may not be accurate :-/
-            if (numseg > (int)denseg.GetLens().size()) {
-                numseg = denseg.GetLens().size();
+            if (numseg != (int)denseg.GetLens().size()) {
+                ERR_POST(Warning << "Invalid 'lens' size in denseg");
+                numseg = min(numseg, (int)denseg.GetLens().size());
             }
-            if (dim * numseg > (int)denseg.GetStarts().size()) {
-                dim = denseg.GetStarts().size() / numseg;
+            if (denseg.IsSetScores()
+                && numseg != (int)denseg.GetScores().size()) {
+                ERR_POST(Warning << "Invalid 'scores' size in denseg");
+                numseg = min(numseg, (int)denseg.GetScores().size());
+            }
+            if (dim != (int)denseg.GetIds().size()) {
+                ERR_POST(Warning << "Invalid 'ids' size in denseg");
+                dim = min(dim, (int)denseg.GetIds().size());
+            }
+            if (dim*numseg != (int)denseg.GetStarts().size()) {
+                ERR_POST(Warning << "Invalid 'starts' size in denseg");
+                dim = min(dim*numseg, (int)denseg.GetStarts().size()) / numseg;
+            }
+            if (denseg.IsSetStrands()
+                && dim*numseg != (int)denseg.GetStrands().size()) {
+                ERR_POST(Warning << "Invalid 'strands' size in denseg");
+                dim = min(dim*numseg, (int)denseg.GetStrands().size()) / numseg;
             }
             CDense_seg::TStarts::const_iterator it_start =
                 denseg.GetStarts().begin();
@@ -355,9 +386,6 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
             CDense_seg::TStrands::const_iterator it_strand;
             if ( denseg.IsSetStrands() ) {
                 it_strand = denseg.GetStrands().begin();
-                if (dim * numseg > (int)denseg.GetStrands().size()) {
-                    dim = denseg.GetStrands().size() / numseg;
-                }
             }
             for (int seg = 0;  seg < numseg;  seg++, ++it_len) {
                 CDense_seg::TIds::const_iterator it_id =
@@ -483,6 +511,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/08/26 21:28:47  grichenk
+* Added seq-align verification
+*
 * Revision 1.23  2003/07/18 16:58:23  grichenk
 * Fixed alignment coordinates
 *
