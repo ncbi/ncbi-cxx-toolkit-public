@@ -347,25 +347,20 @@ extern NCBI_BDB_EXPORT const char* kBDBCacheDriverName;
 extern "C" 
 {
 
-void NCBI_BDB_EXPORT NCBI_BDB_ICacheEntryPoint(
+NCBI_BDB_EXPORT 
+void  NCBI_BDB_ICacheEntryPoint(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
      CPluginManager<ICache>::EEntryPointRequest method);
 
-inline 
-void NCBI_BDB_EXPORT NCBI_EntryPoint_ICache_bdb(
+NCBI_BDB_EXPORT 
+void NCBI_EntryPoint_ICache_bdb(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
-     CPluginManager<ICache>::EEntryPointRequest method)
-{
-    NCBI_BDB_ICacheEntryPoint(info_list, method);
-}
+     CPluginManager<ICache>::EEntryPointRequest method);
 
-inline 
-void NCBI_BDB_EXPORT NCBI_EntryPoint_ICache_bdbcache(
+NCBI_BDB_EXPORT
+void NCBI_EntryPoint_ICache_bdbcache(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
-     CPluginManager<ICache>::EEntryPointRequest method)
-{
-    NCBI_BDB_ICacheEntryPoint(info_list, method);
-}
+     CPluginManager<ICache>::EEntryPointRequest method);
 
 
 } // extern C
@@ -404,6 +399,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/08/10 12:19:50  kuznets
+ * Entry points made non-inline to make sure they always instantiate
+ *
  * Revision 1.27  2004/08/09 20:56:03  kuznets
  * Fixed compilation (WorkShop)
  *

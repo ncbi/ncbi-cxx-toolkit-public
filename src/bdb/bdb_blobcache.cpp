@@ -1590,6 +1590,20 @@ void NCBI_BDB_ICacheEntryPoint(
        NCBI_EntryPointImpl(info_list, method);
 }
 
+void NCBI_EntryPoint_ICache_bdb(
+     CPluginManager<ICache>::TDriverInfoList&   info_list,
+     CPluginManager<ICache>::EEntryPointRequest method)
+{
+    NCBI_BDB_ICacheEntryPoint(info_list, method);
+}
+
+void NCBI_EntryPoint_ICache_bdbcache(
+     CPluginManager<ICache>::TDriverInfoList&   info_list,
+     CPluginManager<ICache>::EEntryPointRequest method)
+{
+    NCBI_BDB_ICacheEntryPoint(info_list, method);
+}
+
 
 CBDB_CacheHolder::CBDB_CacheHolder(ICache* blob_cache, ICache* id_cache) 
 : m_BlobCache(blob_cache),
@@ -1607,6 +1621,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2004/08/10 12:19:57  kuznets
+ * Entry points made non-inline to make sure they always instantiate
+ *
  * Revision 1.65  2004/08/10 11:53:20  kuznets
  * Set locking and transaction timeouts
  *
