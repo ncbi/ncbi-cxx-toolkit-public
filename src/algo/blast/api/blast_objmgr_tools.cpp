@@ -327,8 +327,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
             strand = strand_opt;
         }
 
-        // mask->seqloc_array[index] = CSeqLoc2BlastSeqLoc(itr->mask, index);
-        bsl_tmp = CSeqLoc2BlastSeqLoc(itr->mask, index);
+        bsl_tmp = CSeqLoc2BlastSeqLoc(itr->mask);
 
 
         pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf;
@@ -475,7 +474,7 @@ SetupSubjects(const TSeqLocVector& subjects,
 
         /* Set the lower case mask, if it exists */
         if (subj->lcase_mask)  /*FIXME?? */
-            subj->lcase_mask->seqloc_array[index] = CSeqLoc2BlastSeqLoc(itr->mask, index);
+            subj->lcase_mask->seqloc_array[index] = CSeqLoc2BlastSeqLoc(itr->mask);
         ++index;
 
         if (subj_is_na) {
@@ -960,6 +959,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/09/13 15:55:04  madden
+* Remove unused parameter from CSeqLoc2BlastSeqLoc
+*
 * Revision 1.18  2004/09/13 12:47:06  madden
 * Changes for redefinition of BlastSeqLoc and BlastMaskLoc
 *

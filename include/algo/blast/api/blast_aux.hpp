@@ -72,14 +72,13 @@ BEGIN_SCOPE(blast)
 NCBI_XBLAST_EXPORT
 EProgram ProgramNameToEnum(const std::string& program_name);
 
-/** Converts a CSeq_loc into a BlastMaskLoc structure used in NewBlast
+/** Converts a CSeq_loc into a BlastSeqLoc structure used in NewBlast
  * @param slp CSeq_loc to convert [in]
- * @param index Number of frame/query number? this CSeq_loc applies to [in]
  * @return Linked list of BlastSeqLoc structures
  */
 NCBI_XBLAST_EXPORT
 BlastSeqLoc*
-CSeqLoc2BlastSeqLoc(const objects::CSeq_loc* slp, int index);
+CSeqLoc2BlastSeqLoc(const objects::CSeq_loc* slp);
 
 /** Convert coordinates in masking locations for one sequence from DNA to 
  * protein, creating mask locations for each of the 6 translation frames.
@@ -181,6 +180,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2004/09/13 15:55:20  madden
+* Remove unused parameter from CSeqLoc2BlastSeqLoc
+*
 * Revision 1.42  2004/09/13 12:44:37  madden
 * Changes for redefinition of BlastSeqLoc and BlastMaskLoc
 *

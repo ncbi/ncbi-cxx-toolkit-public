@@ -126,7 +126,7 @@ FillMaskLocFromBlastResults(TSeqLocVector& query, BlastHSPResults* results)
         }
         query_length = sequence::GetLength(*query[query_index].seqloc, 
                                            query[query_index].scope);
-        loc_list = CSeqLoc2BlastSeqLoc(query[query_index].mask, query_index);
+        loc_list = CSeqLoc2BlastSeqLoc(query[query_index].mask);
         last_loc = NULL;
         
         /* Find all HSP intervals in query */
@@ -216,6 +216,9 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.7  2004/09/13 15:55:04  madden
+ *  Remove unused parameter from CSeqLoc2BlastSeqLoc
+ *
  *  Revision 1.6  2004/09/13 12:47:06  madden
  *  Changes for redefinition of BlastSeqLoc and BlastMaskLoc
  *

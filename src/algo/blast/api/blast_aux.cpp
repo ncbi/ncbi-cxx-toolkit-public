@@ -312,7 +312,7 @@ CPSIDiagnosticsResponse::DebugDump(CDebugDumpContext ddc,
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 BlastSeqLoc*
-CSeqLoc2BlastSeqLoc(const objects::CSeq_loc* slp, int index)
+CSeqLoc2BlastSeqLoc(const objects::CSeq_loc* slp)
 {
     if (!slp || slp->IsNull())
         return NULL;
@@ -422,6 +422,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.50  2004/09/13 15:55:04  madden
+ * Remove unused parameter from CSeqLoc2BlastSeqLoc
+ *
  * Revision 1.49  2004/09/13 12:47:06  madden
  * Changes for redefinition of BlastSeqLoc and BlastMaskLoc
  *
