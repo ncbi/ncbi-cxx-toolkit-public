@@ -79,6 +79,7 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
     CRef<CSeq_inst> seq_inst;
     int last_to;
     int part_num, last_part_num;
+    TSeqPos length;
 
     int line_num = 0;
     while (NcbiGetlineEOL(is, line)) {
@@ -107,6 +108,7 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
         if (fields[0] != current_object || !bioseq) {
             // close out old one, start a new one
             if (bioseq) {
+                seq_inst->SetLength(length);
                 bioseq->SetInst(*seq_inst);
                 bioseqs.push_back(bioseq);
             }
@@ -124,6 +126,7 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
 
             last_to = 0;
             last_part_num = 0;
+            length = 0;
         }
 
         // validity checks
@@ -152,7 +155,9 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
 
         if (fields[4] == "N") {
             // a gap
-            delta_seq->SetLiteral().SetLength(NStr::StringToInt(fields[5]));
+            TSeqPos gap_len = NStr::StringToInt(fields[5]);
+            delta_seq->SetLiteral().SetLength(gap_len);
+            length += gap_len;
         } else if (fields[4].size() == 1 && 
                    fields[4].find_first_of("ADFGPOW") == 0) {
             CSeq_loc& loc = delta_seq->SetLoc();
@@ -160,6 +165,7 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
             loc.SetInt().SetId(*comp_id);
             loc.SetInt().SetFrom(NStr::StringToInt(fields[6]) - 1);
             loc.SetInt().SetTo  (NStr::StringToInt(fields[7]) - 1);
+            length += loc.GetInt().GetTo() - loc.GetInt().GetFrom() + 1;
             if (fields[8] == "+") {
                 loc.SetInt().SetStrand(eNa_strand_plus);
             } else if (fields[8] == "-") {
@@ -183,6 +189,7 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
 
     // deal with the last one
     if (bioseq) {
+        seq_inst->SetLength(length);
         bioseq->SetInst(*seq_inst);
         bioseqs.push_back(bioseq);
     }
@@ -195,6 +202,9 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.2  2003/12/08 23:39:20  jcherry
+ * Set length of Seq-inst
+ *
  * Revision 1.1  2003/12/08 15:49:32  jcherry
  * Initial version
  *
