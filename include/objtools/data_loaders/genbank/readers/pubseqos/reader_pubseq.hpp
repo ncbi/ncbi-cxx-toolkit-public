@@ -57,9 +57,11 @@ public:
 
     ~CPubseqReader();
 
-    virtual void ResolveSeq_id(CLoadLockBlob_ids& ids,
+    virtual void ResolveSeq_id(CReaderRequestResult& result,
+                               CLoadLockBlob_ids& ids,
                                const CSeq_id& id, TConn conn);
-    virtual void ResolveSeq_id(CLoadLockSeq_ids& ids, const CSeq_id& id,
+    virtual void ResolveSeq_id(CReaderRequestResult& result,
+                               CLoadLockSeq_ids& ids, const CSeq_id& id,
                                TConn conn);
     virtual TBlobVersion GetVersion(const CBlob_id& blob_id, TConn conn);
 

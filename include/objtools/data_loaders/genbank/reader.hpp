@@ -145,10 +145,12 @@ public:
     void LoadChunk(CReaderRequestResult& result,
                    const TBlob_id& blob_id, TChunk_id chunk_id);
 
-    virtual void ResolveSeq_id(CLoadLockBlob_ids& ids,
+    virtual void ResolveSeq_id(CReaderRequestResult& result,
+                               CLoadLockBlob_ids& ids,
                                const CSeq_id& id,
                                TConn conn) = 0;
-    virtual void ResolveSeq_id(CLoadLockSeq_ids& ids,
+    virtual void ResolveSeq_id(CReaderRequestResult& result,
+                               CLoadLockSeq_ids& ids,
                                const CSeq_id& id,
                                TConn conn) = 0;
     

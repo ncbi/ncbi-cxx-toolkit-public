@@ -69,9 +69,11 @@ public:
     //////////////////////////////////////////////////////////////////
     // Id resolution methods:
 
-    virtual void ResolveSeq_id(CLoadLockBlob_ids& ids, const CSeq_id& id,
+    virtual void ResolveSeq_id(CReaderRequestResult& result,
+                               CLoadLockBlob_ids& ids, const CSeq_id& id,
                                TConn conn);
-    virtual void ResolveSeq_id(CLoadLockSeq_ids& ids, const CSeq_id& id,
+    virtual void ResolveSeq_id(CReaderRequestResult& result,
+                               CLoadLockSeq_ids& ids, const CSeq_id& id,
                                TConn conn);
     virtual int ResolveSeq_id_to_gi(const CSeq_id& seqId,
                                     TConn conn);

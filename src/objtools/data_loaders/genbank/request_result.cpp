@@ -66,12 +66,37 @@ CLoadInfo::~CLoadInfo(void)
 /////////////////////////////////////////////////////////////////////////////
 
 CLoadInfoSeq_ids::CLoadInfoSeq_ids(void)
+    : m_GiLoaded(false)
 {
 }
 
 
 CLoadInfoSeq_ids::~CLoadInfoSeq_ids(void)
 {
+}
+
+
+bool CLoadInfoSeq_ids::IsLoadedGi(void)
+{
+    if ( !m_GiLoaded ) {
+        if ( IsLoaded() ) {
+            ITERATE ( CLoadInfoSeq_ids, it, *this ) {
+                if ( it->IsGi() ) {
+                    SetLoadedGi(it->GetGi());
+                    break;
+                }
+            }
+        }
+    }
+    return m_GiLoaded;
+}
+
+
+void CLoadInfoSeq_ids::SetLoadedGi(int gi)
+{
+    _ASSERT(!m_GiLoaded || m_Gi == gi);
+    m_Gi = gi;
+    m_GiLoaded = true;
 }
 
 
