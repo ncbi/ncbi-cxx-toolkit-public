@@ -341,6 +341,25 @@ private:
                          bool           & done,
                          CSeqDBLockHold & locked);
     
+    /// GiList Translation
+    /// 
+    /// Given a GI list, this routine finds the OID for each GI in the
+    /// list not already having a translation.
+    /// 
+    /// @param vol_start
+    ///   The starting OID for this ISAM file's database volume.
+    /// @param vol_end
+    ///   The ending OID for this ISAM file's database volume.
+    /// @param gis
+    ///   The GI list to translate.
+    /// @param locked
+    ///   The lock holder object for this thread.
+    void
+    x_SearchIndexNumericMulti(int              vol_start,
+                              int              vol_end,
+                              CSeqDBGiList   & gis,
+                              CSeqDBLockHold & locked);
+    
     /// Data file search
     /// 
     /// Given a numeric identifier, this routine finds the OID in the
@@ -364,6 +383,33 @@ private:
                         Uint4          * Index,
                         Int4             SampleNum,
                         CSeqDBLockHold & locked);
+    
+    /// GiList translation for one page of a data file.
+    /// 
+    /// Given a GI list, this routine finds the OID for each GI in the
+    /// list using the mappings in one page of the data file.  It
+    /// updates the provided GI list index to skip past any GIs it
+    /// translates.
+    /// 
+    /// @param vol_start
+    ///   The starting OID for this ISAM file's database volume.
+    /// @param vol_end
+    ///   The fist OID past the end of this volume.
+    /// @param gis
+    ///   The GI list to translate.
+    /// @param gilist_index
+    ///   The index of the first unexamined GI in the GI list.
+    /// @param sample_index
+    ///   Indicates which data page should be used.
+    /// @param locked
+    ///   The lock holder object for this thread.
+    void
+    x_SearchDataNumericMulti(int              vol_start,
+                             int              vol_end,
+                             CSeqDBGiList   & gis,
+                             int            & gilist_index,
+                             int              sample_index,
+                             CSeqDBLockHold & locked);
     
     /// Numeric identifier lookup
     /// 
@@ -667,6 +713,88 @@ private:
                     const char     ** endp,
                     CSeqDBLockHold &  locked);
     
+    /// Test a sample key value from a numeric index.
+    ///
+    /// This method reads the key value of an index file sample
+    /// element from a numeric index file.  The calling code should
+    /// insure that the data is mapped in, and that the file type is
+    /// correct.  The key value found will be compared to the search
+    /// key.  This method will return 0 for an exact match, -1 if the
+    /// key is less than the sample, or 1 if the key is greater.  If
+    /// the match is exact, it will also return the data in data_out
+    /// (if no_data is not specified).
+    ///
+    /// @param index
+    ///   The index of the sample to get.
+    /// @param key_in
+    ///   The key for which the user is searching.
+    /// @param no_data
+    ///   Specify true for ISAM indices that omit value data.
+    /// @param key_out
+    ///   The key found will be returned here.
+    /// @param data_out
+    ///   If an exact match, the data found will be returned here.
+    /// @return
+    ///   -1, 0 or 1 when key_in is less, equal greater than key_out.
+    int x_TestNumericSample(CSeqDBMemLease & index_lease,
+                            int              index,
+                            int              key_in,
+                            bool             no_data,
+                            int            & key_out,
+                            int            & data_out);
+    
+    /// Get a sample key value from a numeric index.
+    ///
+    /// Given the index of a sample value, this code will get the key.
+    /// If data values are stored in the index file, the corresponding
+    /// data value will also be returned.  The offset of the data
+    /// block is computed and returned as well.
+    ///
+    /// @param index
+    ///   The index of the sample to get.
+    /// @param no_data
+    ///   Specify true for ISAM indices that omit value data.
+    /// @param key_out
+    ///   The key found will be returned here.
+    /// @param data_out
+    ///   If an exact match, the data found will be returned here.
+    void x_GetNumericSample(CSeqDBMemLease & index_lease,
+                            int   index,
+                            bool  no_data,
+                            int & key_out,
+                            int & data_out);
+    
+    bool x_AdvanceGiList(int            vol_start,
+                         int            vol_end,
+                         CSeqDBGiList & gis,
+                         int          & index,
+                         bool           no_data,
+                         int            key,
+                         int            data);
+    
+    bool x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,
+                            int            & index,
+                            int              target_gi,
+                            bool             no_data,
+                            int            & isam_key,
+                            int            & isam_data);
+    
+    void x_MapDataPage(int                sample_index,
+                       int                no_data,
+                       int              & start,
+                       int              & num_elements,
+                       Int4            ** key_page_begin,
+                       SNumericKeyData ** data_page_begin,
+                       CSeqDBLockHold   & locked);
+    
+    void x_GetDataElement(Int4            * kpage,
+                          SNumericKeyData * dpage,
+                          bool              no_data,
+                          int               index,
+                          int             & key,
+                          int             & data);
+    
+    
     // Data
     
     /// The memory management layer
@@ -729,6 +857,250 @@ private:
     /// First and last offset's of last page.
     Int4 m_LastOffset;
 };
+
+inline int
+CSeqDBIsam::x_TestNumericSample(CSeqDBMemLease & index_lease,
+                                int              index,
+                                int              key_in,
+                                bool             no_data,
+                                int            & key_out,
+                                int            & data_out)
+{
+    SNumericKeyData * keydatap = 0;
+    
+    if (no_data) {
+        int obj_size = (int) sizeof(Int4);
+        TIndx offset_begin = m_KeySampleOffset + (obj_size * index);
+        
+        key_out = (int)
+            SeqDB_GetStdOrd((Int4*) index_lease.GetPtr(offset_begin));
+    } else {
+        int obj_size = (int) sizeof(SNumericKeyData);
+        TIndx offset_begin = m_KeySampleOffset + (obj_size * index);
+        
+        keydatap = (SNumericKeyData*) index_lease.GetPtr(offset_begin);
+        key_out = (int) SeqDB_GetStdOrd(& (keydatap->key));
+    }
+    
+    int rv = 0;
+    
+    if (key_in < key_out) {
+        rv = -1;
+    } else if (key_in > key_out) {
+        rv = 1;
+    } else {
+        rv = 0;
+        
+        if (! no_data) {
+            data_out = (int) SeqDB_GetStdOrd(& (keydatap->data));
+        }
+    }
+    
+    return rv;
+}
+
+inline void
+CSeqDBIsam::x_GetNumericSample(CSeqDBMemLease & index_lease,
+                               int   index,
+                               bool  no_data,
+                               int & key_out,
+                               int & data_out)
+{
+    SNumericKeyData * keydatap = 0;
+    
+    if (no_data) {
+        int obj_size = (int) sizeof(Int4);
+        TIndx offset_begin = m_KeySampleOffset + (obj_size * index);
+        
+        key_out = (int)
+            SeqDB_GetStdOrd((Int4*) index_lease.GetPtr(offset_begin));
+    } else {
+        int obj_size = (int) sizeof(SNumericKeyData);
+        TIndx offset_begin = m_KeySampleOffset + (obj_size * index);
+        
+        keydatap = (SNumericKeyData*) index_lease.GetPtr(offset_begin);
+        key_out = (int) SeqDB_GetStdOrd(& (keydatap->key));
+        data_out = (int) SeqDB_GetStdOrd(& (keydatap->data));
+    }
+}
+
+inline bool
+CSeqDBIsam::x_AdvanceGiList(int            vol_start,
+                            int            vol_end,
+                            CSeqDBGiList & gis,
+                            int          & index,
+                            bool           no_data,
+                            int            key,
+                            int            data)
+{
+    // Skip any that are less than key.
+    
+    bool advanced = false;
+    int gis_size = gis.Size();
+    
+    while((index < gis_size) && (gis[index].gi < key)) {
+        advanced = true;
+        index++;
+        
+        int jump = 2;
+        
+        while((index + jump) < gis_size &&
+              gis[index + jump].gi < key) {
+            index += jump;
+            jump += jump;
+        }
+    }
+    
+    // Translate any that are equal to key (and not yet translated).
+    
+    // If the sample is an exact match to one (or more) GIs, apply
+    // the translation (if we have it) for those GIs.
+    
+    if (! no_data) {
+        while((index < gis_size) &&
+              (gis[index].gi == key)) {
+            
+            if (gis[index].oid == -1) {
+                if ((data + vol_start) < vol_end) {
+                    gis.SetTranslation(index, data + vol_start);
+                }
+            }
+            
+            advanced = true;
+            index ++;
+        }
+    }
+    
+    // Continue skipping to eliminate any gi/oid pairs that are
+    // already translated.
+    
+    while(gis[index].oid != -1) {
+        advanced = true;
+        index++;
+    }
+    
+    return advanced;
+}
+    
+inline bool
+CSeqDBIsam::x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,
+                               int            & index,
+                               int              target_gi,
+                               bool             no_data,
+                               int            & isam_key,
+                               int            & isam_data)
+{
+    bool advanced = false;
+    
+    int num_samples = m_NumSamples;
+    
+    // Use Parabolic Binary Search to find the largest sample that
+    // is less-than-or-equal-to the first untranslated target GI.
+    
+    // The following is basically equivalent to (but faster than):
+    //   while(first_gi >= sample[i+1]) i++;
+    
+    int post_key(0), post_data(0);
+    
+    while((index + 1 < num_samples) &&
+          (x_TestNumericSample(index_lease,
+                               index + 1,
+                               target_gi,
+                               no_data,
+                               post_key,
+                               post_data) >= 0)) {
+        
+        advanced = true;
+        index ++;
+        
+        isam_key = post_key;
+        isam_data = post_data;
+        
+        // The starting value for jump could be tuned by counting
+        // the total number of "test numeric" calls made.
+        
+        int jump = 2;
+        
+        while(((index + jump + 1) < num_samples) &&
+              (x_TestNumericSample(index_lease,
+                                   index + jump + 1,
+                                   target_gi,
+                                   no_data,
+                                   post_key,
+                                   post_data) >= 0)) {
+            index += jump + 1;
+            jump += jump;
+            
+            isam_key = post_key;
+            isam_data = post_data;
+        }
+    }
+    
+    return advanced;
+}
+
+inline void
+CSeqDBIsam::x_MapDataPage(int                sample_index,
+                          int                no_data,
+                          int              & start,
+                          int              & num_elements,
+                          Int4            ** key_page_begin,
+                          SNumericKeyData ** data_page_begin,
+                          CSeqDBLockHold   & locked)
+{
+    num_elements =
+        x_GetPageNumElements(sample_index, & start);
+    
+    if (no_data) {
+        TIndx offset_begin = start * sizeof(Int4);
+        TIndx offset_end = offset_begin + sizeof(Int4) * num_elements;
+        
+        m_Atlas.Lock(locked);
+        
+        if (! m_DataLease.Contains(offset_begin, offset_end)) {
+            m_Atlas.GetRegion(m_DataLease,
+                              m_DataFname,
+                              offset_begin,
+                              offset_end);
+        }
+        
+        *key_page_begin = (Int4*) m_DataLease.GetPtr(offset_begin);
+        *data_page_begin = 0;
+    } else {
+        TIndx offset_begin = start * sizeof(SNumericKeyData);
+        TIndx offset_end =
+            offset_begin + sizeof(SNumericKeyData) * num_elements;
+        
+        m_Atlas.Lock(locked);
+        
+        if (! m_DataLease.Contains(offset_begin, offset_end)) {
+            m_Atlas.GetRegion(m_DataLease,
+                              m_DataFname,
+                              offset_begin,
+                              offset_end);
+        }
+        
+        *key_page_begin = 0;
+        *data_page_begin = (SNumericKeyData*) m_DataLease.GetPtr(offset_begin);
+    }
+}
+
+inline void
+CSeqDBIsam::x_GetDataElement(Int4            * kpage,
+                             SNumericKeyData * dpage,
+                             bool              no_data,
+                             int               index,
+                             int             & key,
+                             int             & data)
+{
+    if (no_data) {
+        key = (int) SeqDB_GetStdOrd((Int4*) & kpage[index]);
+        data = -1;
+    } else {
+        key = (int) SeqDB_GetStdOrd((Int4*) & dpage[index].key);
+        data = (int) SeqDB_GetStdOrd((Int4*) & dpage[index].data);
+    }
+}
 
 END_NCBI_SCOPE
 

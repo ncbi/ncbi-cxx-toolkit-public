@@ -118,20 +118,20 @@ CSeqDBIsam::x_InitSearch(CSeqDBLockHold & locked)
     return eNoError;
 }
 
-Int4 CSeqDBIsam::x_GetPageNumElements(Int4   SampleNum,
-                                      Int4 * Start)
+Int4 CSeqDBIsam::x_GetPageNumElements(Int4   sample_num,
+                                      Int4 * start)
 {
-    Int4 NumElements(0);
+    Int4 num_elements(0);
     
-    *Start = SampleNum * m_PageSize;
+    *start = sample_num * m_PageSize;
     
-    if (SampleNum + 1 == m_NumSamples) {
-        NumElements = m_NumTerms - *Start;
+    if (sample_num + 1 == m_NumSamples) {
+        num_elements = m_NumTerms - *start;
     } else {
-        NumElements = m_PageSize;
+        num_elements = m_PageSize;
     }
     
-    return NumElements;
+    return num_elements;
 }
 
 CSeqDBIsam::EErrorCode
@@ -169,7 +169,7 @@ CSeqDBIsam::x_SearchIndexNumeric(int              Number,
         TIndx offset_end   = offset_begin + obj_size;
 	
         m_Atlas.Lock(locked);
-            
+        
         if (! m_IndexLease.Contains(offset_begin, offset_end)) {
             m_Atlas.GetRegion(m_IndexLease,
                               m_IndexFname,
@@ -231,6 +231,158 @@ CSeqDBIsam::x_SearchIndexNumeric(int              Number,
     done = false;
     return eNoError;
 }
+
+void
+CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
+                                      int              vol_end,
+                                      CSeqDBGiList   & gis,
+                                      CSeqDBLockHold & locked)
+{
+    m_Atlas.Lock(locked);
+    
+    if(m_Initialized == false) {
+        EErrorCode error = x_InitSearch(locked);
+        
+        if(error != eNoError) {
+            // Most ordinary errors (missing GIs for example) are
+            // ignored for "multi" mode searches.  But if a GI list is
+            // specified, and cannot be interpreted, it is an error.
+            // Note that multiple searches
+            
+            NCBI_THROW(CSeqDBException,
+                       eArgErr,
+                       "Error: Unable to use ISAM index in batch mode.");
+        }
+    }
+    
+    // Index file will remain mapped for the duration.
+    
+    m_Atlas.Lock(locked);
+    
+    // A seperate memory lease is used for the index, to avoid garbage
+    // collection issue.
+    
+    CSeqDBMemLease index_lease(m_Atlas);
+    
+    if (! index_lease.Contains(0, m_IndexFileLength)) {
+        m_Atlas.GetRegion(index_lease,
+                          m_IndexFname,
+                          0,
+                          m_IndexFileLength);
+    }
+    
+    bool no_data = (m_Type == eNumericNoData);
+    
+    //......................................................................
+    //
+    // Translate the entire Gi List.
+    //
+    //......................................................................
+    
+    int gilist_size = gis.Size();
+    int num_samples = m_NumSamples;
+    
+    int gilist_index = 0;
+    int samples_index = 0;
+    
+    // Note: whenever updating samples_index, we also update isam_key
+    // and isam_data to the corresponding values.
+    
+    int isam_key(0), isam_data(0);
+    x_GetNumericSample(index_lease, samples_index, no_data, isam_key, isam_data);
+    
+    while((gilist_index < gilist_size) && (samples_index < num_samples)) {
+        bool advanced = true;
+        
+        while (advanced) {
+            // Use Parabolic Binary Search to skip any GIs that fall
+            // before the first unused data block's sample value, also
+            // skipping any that are already translated.
+            
+            advanced =
+                x_AdvanceGiList(vol_start,
+                                vol_end,
+                                gis,
+                                gilist_index,
+                                no_data,
+                                isam_key,
+                                isam_data);
+            
+            if (gilist_index >= gilist_size)
+                break;
+            
+            // Use PBS to skip any ISAM blocks fall before the first
+            // untranslated GI.
+            
+            if (x_AdvanceIsamIndex(index_lease,
+                                   samples_index,
+                                   gis[gilist_index].gi,
+                                   no_data,
+                                   isam_key,
+                                   isam_data)) {
+                advanced = true;
+            }
+            
+            // If either of the above calls returned true, we may
+            // benefit from another round.  There is a more complex
+            // test that would be a better here, but I'm not sure what
+            // exactly it is.  It will be rare to be able to advance
+            // GI list and ISAM more than once, but it *can* happen.
+            
+            // With no_data true, we can advance at least four times:
+            //
+            // 1. GIs: remove GIs that are previous to first GI in
+            //    ISAM index.
+            //
+            // 2. ISAM: advance over blocks until finding one that
+            //    matches the first target GI.
+            //
+            // 3. GIs: advance past that ISAM block due to *previously
+            //    translated* GIs (this will run until it finds a
+            //    non-previously-translated GI).
+            //
+            // 4. ISAM: skip blocks again until the new first GI's
+            //    block is found.
+            //
+            // With no_data == false, this process can run
+            // indefinitely because each GI in the target list could
+            // be a sample GI, which means the data file will never
+            // need to be consulted, and all translation can happen
+            // here.  It is unlikely on any given search, but at
+            // volume it becomes a statistical eventuality.
+        }
+        
+        // We can be done here because we exhausted the GI list, but
+        // not because of exhausting the ISAM file.
+        
+        if (gilist_index >= gilist_size) {
+            break;
+        }
+        
+        // Now we should be ready to search a data block.
+        
+        x_SearchDataNumericMulti(vol_start,
+                                 vol_end,
+                                 gis,
+                                 gilist_index,
+                                 samples_index,
+                                 locked);
+        
+        // We must be done with that one by now..
+        
+        samples_index ++;
+        
+        if (samples_index < num_samples)
+            x_GetNumericSample(index_lease,
+                               samples_index,
+                               no_data,
+                               isam_key,
+                               isam_data);
+    }
+    
+    m_Atlas.RetRegion(index_lease);
+}
+
 
 CSeqDBIsam::EErrorCode
 CSeqDBIsam::x_SearchDataNumeric(int              Number,
@@ -343,6 +495,171 @@ CSeqDBIsam::x_SearchDataNumeric(int              Number,
         *Index = Start + current;
     
     return eNoError;
+}
+
+void
+CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
+                                     int              vol_end,
+                                     CSeqDBGiList   & gis,
+                                     int            & gilist_index,
+                                     int              sample_index,
+                                     CSeqDBLockHold & locked)
+{
+    m_Atlas.Lock(locked);
+    
+    //......................................................................
+    //
+    // Translate the area of the Gi List corresponding to this block.
+    //
+    //......................................................................
+    
+    
+    // 1. Get mapping of entire data block from atlas layer.
+    
+    // (what good is this?)
+    bool no_data = (m_Type == eNumericNoData);
+    
+    Int4            * key_page  (0);
+    SNumericKeyData * data_page (0);
+    
+    int start(0);
+    int num_elements(0);
+    
+    x_MapDataPage(sample_index,
+                  no_data,
+                  start,
+                  num_elements,
+                  & key_page,
+                  & data_page,
+                  locked);
+    
+    // 2. Consider the block as an array of elements of size N.
+    //    (this is data_page_begin[num_elements])
+    
+    // 3. Find the last value in array.
+    
+    int last_key = SeqDB_GetStdOrd(& data_page[num_elements-1].key);
+    
+    // 4. Loop till out of target gis or out of data elements:
+    
+    int gis_size = gis.Size();
+    int elem_index(0);
+    
+    int data_gi(0);
+    int data_oid(0);
+    
+    // Get the current data element
+    
+    x_GetDataElement(key_page,
+                     data_page,
+                     no_data,
+                     elem_index,
+                     data_gi,
+                     data_oid);
+    
+    // 5. While neither list is exhausted, and next target GI is in
+    // this page, continue.
+    
+    while((gilist_index < gis_size) &&
+          (elem_index < num_elements) &&
+          (gis[gilist_index].gi <= last_key)) {
+        
+        bool advanced = true;
+        
+        while(advanced) {
+            advanced = false;
+            
+            // Skip translated elements
+            
+            while((gilist_index < gis_size) &&
+                  (gis[gilist_index].oid != -1)) {
+                advanced = true;
+                gilist_index ++;
+            }
+            
+            // Skip elements less than the first data element.
+            // (But skip this test when elem == 0.)
+            
+            while((elem_index != 0) &&
+                  (gilist_index < gis_size) &&
+                  (gis[gilist_index].gi < data_gi)) {
+                advanced = true;
+                gilist_index ++;
+            }
+        }
+        
+        if (gis[gilist_index].gi > last_key) {
+            break;
+        }
+        
+        // 6.   PBS search for the first target gi.
+        
+        int target_gi = gis[gilist_index].gi;
+        
+        while((elem_index < num_elements) && (target_gi > data_gi)) {
+            x_GetDataElement(key_page,
+                             data_page,
+                             no_data,
+                             ++elem_index,
+                             data_gi,
+                             data_oid);
+            
+            int jump = 2;
+            
+            while((elem_index + jump) < num_elements) {
+                int next_gi(0);
+                int next_oid(0);
+                
+                x_GetDataElement(key_page,
+                                 data_page,
+                                 no_data,
+                                 elem_index + jump,
+                                 next_gi,
+                                 next_oid);
+                
+                if (next_gi > target_gi) {
+                    break;
+                }
+                
+                data_gi = next_gi;
+                data_oid = next_oid;
+                
+                elem_index += jump;
+                jump *= 2;
+            }
+        }
+        
+        
+        // 7. If found, translate it.  If the translation works, try
+        //    the next one in each index.  This case is cheap to test
+        //    for and will win in certain high-density GI lists.
+        
+        while((gilist_index < gis_size) &&
+              (elem_index < num_elements) &&
+              (data_gi == gis[gilist_index].gi)) {
+            
+            while((gilist_index < gis_size) && (gis[gilist_index].gi == data_gi)) {
+                if (gis[gilist_index].oid == -1) {
+                    if ((data_oid + vol_start) < vol_end) {
+                        gis.SetTranslation(gilist_index, data_oid + vol_start);
+                    }
+                }
+                gilist_index ++;
+            }
+            
+            elem_index++;
+            
+            if (elem_index >= num_elements)
+                break;
+            
+            x_GetDataElement(key_page,
+                             data_page,
+                             no_data,
+                             elem_index,
+                             data_gi,
+                             data_oid);
+        }
+    }
 }
 
 // ------------------------NumericSearch--------------------------
@@ -1509,31 +1826,12 @@ void CSeqDBIsam::GisToOids(int              vol_start,
                            CSeqDBGiList   & gis,
                            CSeqDBLockHold & locked)
 {
+    _ASSERT(m_IdentType == eGi);
+    
+    m_Atlas.Lock(locked);
     gis.InsureOrder(CSeqDBGiList::eGi);
     
-    int gis_size = (int) gis.Size();
-    int vol_size = vol_end - vol_start;
-    
-    for(int i = 0; i < gis_size; i++) {
-        CSeqDBGiList::SGiOid gi_oid = gis[i];
-        
-        // For multivolume cases, each subsequent call to this code
-        // will skip already translated elements.
-        
-        if (gi_oid.oid == -1) {
-            int oid(-1);
-            
-            if (GiToOid(gi_oid.gi, oid, locked)) {
-                _ASSERT(oid != -1);
-                
-                if (oid < vol_size) {
-                    gis.SetTranslation(i, oid + vol_start);
-                }
-            } else {
-                _ASSERT(oid == -1);
-            }
-        }
-    }
+    x_SearchIndexNumericMulti(vol_start, vol_end, gis, locked);
 }
 
 END_NCBI_SCOPE
