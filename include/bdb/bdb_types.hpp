@@ -1004,7 +1004,7 @@ public:
     // Default (zero) value of 'buf_size' uses GetBufferSize().
     virtual CBDB_Field* Construct(size_t buf_size) const;
 
-    operator const char* () const;
+//    operator const char* () const;
     operator string() const { return GetString(); }
     const CBDB_FieldLString& operator= (const CBDB_FieldLString& str);
     const CBDB_FieldLString& operator= (const char*             str);
@@ -1721,6 +1721,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/02/04 17:02:34  kuznets
+ * Commented operator char* for LString type to avoid ambuiguity
+ *
  * Revision 1.30  2004/02/04 15:08:12  kuznets
  * + CBDB_FieldLString::operator string() const
  *
