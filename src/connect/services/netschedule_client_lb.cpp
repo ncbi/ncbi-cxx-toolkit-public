@@ -69,7 +69,8 @@ CNetScheduleClient_LB::CNetScheduleClient_LB(const string& client_name,
   m_LastRebalanceTime(0),
   m_Requests(0),
   m_StickToHost(false),
-  m_LB_ServiceDiscovery(true)
+  m_LB_ServiceDiscovery(true),
+  m_ConnFailPenalty(5 * 60)
 {
     if (lb_service_name.empty()) {
         NCBI_THROW(CNetServiceException, eCommunicationError,
@@ -241,7 +242,15 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
     for (unsigned k = 0; k < 2; ++k, left_right ^= 1) {
         if (left_right) {
             for (int i = (int)pivot; i >= 0; --i) {
-                const SServiceAddress& sa = m_ServList[i];
+                SServiceAddress& sa = m_ServList[i];
+                // if service connection failed before we do not make
+                // another attempts to connect for some time
+                // (service may recover)
+                if (sa.conn_fail_time) {
+                    if (sa.conn_fail_time + m_ConnFailPenalty > (unsigned)curr) {
+                        continue;
+                    }
+                }
                 bool job_received = 
                     x_TryGetJob(sa, job_key, input, udp_port);
                 if (job_received) {
@@ -250,7 +259,12 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
             }
         } else {
             for (unsigned i = pivot + 1; i < serv_size; ++i) {
-                const SServiceAddress& sa = m_ServList[i];
+                SServiceAddress& sa = m_ServList[i];
+                if (sa.conn_fail_time) {
+                    if (sa.conn_fail_time + m_ConnFailPenalty > (unsigned)curr) {
+                        continue;
+                    }
+                }
                 bool job_received = 
                     x_TryGetJob(sa, job_key, input, udp_port);
                 if (job_received) {
@@ -263,14 +277,17 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
     return false;
 }
 
-bool CNetScheduleClient_LB::x_TryGetJob(const SServiceAddress& sa,
+bool CNetScheduleClient_LB::x_TryGetJob(SServiceAddress& sa,
                                         string* job_key, 
                                         string* input, 
                                         unsigned short udp_port)
 {
     EIO_Status st = Connect(sa.host, sa.port);
     if (st != eIO_Success) {
+        sa.conn_fail_time = time(0);
         return false;
+    } else {
+        sa.conn_fail_time = 0;
     }
 
     CJS_BoolGuard bg(&m_StickToHost);
@@ -308,7 +325,12 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
     for (unsigned k = 0; k < 2; ++k, left_right ^= 1) {
         if (left_right) {
             for (int i = (int)pivot; i >= 0; --i) {
-                const SServiceAddress& sa = m_ServList[i];
+                SServiceAddress& sa = m_ServList[i];
+                if (sa.conn_fail_time) {
+                    if (sa.conn_fail_time + m_ConnFailPenalty > (unsigned)curr) {
+                        continue;
+                    }
+                }
                 bool job_received = 
                     x_GetJobWaitNotify(sa, 
                         job_key, input, notification_time, udp_port);
@@ -318,7 +340,12 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
             }
         } else {
             for (unsigned i = pivot + 1; i < serv_size; ++i) {
-                const SServiceAddress& sa = m_ServList[i];
+                SServiceAddress& sa = m_ServList[i];
+                if (sa.conn_fail_time) {
+                    if (sa.conn_fail_time + m_ConnFailPenalty > (unsigned)curr) {
+                        continue;
+                    }
+                }
                 bool job_received = 
                     x_GetJobWaitNotify(sa, 
                         job_key, input, notification_time, udp_port);
@@ -334,7 +361,7 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
     return GetJob(job_key, input, udp_port);
 }
 
-bool CNetScheduleClient_LB::x_GetJobWaitNotify(const SServiceAddress& sa,
+bool CNetScheduleClient_LB::x_GetJobWaitNotify(SServiceAddress& sa,
                                                string*    job_key, 
                                                string*    input, 
                                                unsigned   wait_time,
@@ -342,7 +369,10 @@ bool CNetScheduleClient_LB::x_GetJobWaitNotify(const SServiceAddress& sa,
 {
     EIO_Status st = Connect(sa.host, sa.port);
     if (st != eIO_Success) {
+        sa.conn_fail_time = time(0);
         return false;
+    } else {
+        sa.conn_fail_time = 0;
     }
 
     CJS_BoolGuard bg(&m_StickToHost);
@@ -358,6 +388,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/04/01 15:16:52  kuznets
+ * Added penalty to unavailable service
+ *
  * Revision 1.4  2005/03/28 15:32:27  didenko
  * Made destructors virtual
  *
