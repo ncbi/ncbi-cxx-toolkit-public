@@ -70,6 +70,7 @@
 #include <objects/seq/NCBIpaa.hpp>
 #include <objects/seq/NCBIpna.hpp>
 #include <objects/seq/NCBIstdaa.hpp>
+#include <objects/seq/GIBB_mol.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -1008,9 +1009,9 @@ void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
                     }
                     len += lit->GetLength();
                 }
-                if (len > 350000  && litHasData) {
-                    PostErr(eDiag_Critical, eErr_SEQ_INST_LongLiteralSequence,
-                        "Length of sequence literals exceeds 350kbp limit",
+                if ( len > 500000  && litHasData ) {
+                    PostErr(eDiag_Error, eErr_SEQ_INST_LongLiteralSequence,
+                        "Length of sequence literals exceeds 500kbp limit",
                         seq);
                 }
             }
@@ -1837,6 +1838,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                 }
                 break;
                 
+            case CSeqFeatData::e_Gene:
             case CSeqFeatData::e_Cdregion:
             case CSeqFeatData::e_Rna:
             case CSeqFeatData::e_Rsite:
@@ -2149,6 +2151,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
     CConstRef<CDate> create_date, update_date;
     string create_str;
     int biomol = -1;
+    EGIBB_mol seq_na_mol = eGIBB_mol_unknown;
     CConstRef<COrg_ref> org;
 
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
@@ -2226,12 +2229,18 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
             break;
 
         case CSeqdesc::e_Source:
-            if ( desc.GetSource(). IsSetIs_focus()  &&
+            if ( desc.GetSource().IsSetIs_focus()  &&
                  desc.GetSource().GetIs_focus() ) {
-                if ( !CFeat_CI(bsh, 0, 0, CSeqFeatData::e_Biosrc) ) {
-                    PostErr(eDiag_Error, eErr_SEQ_DESCR_UnnecessaryBioSourceFocus,
-                        "BioSource descriptor has focus, "
-                        "but no BioSource feature", seq, desc);
+                // skip proteins, segmented bioseqs, or segmented parts
+                if ( !seq.IsAa()  &&
+                     !(seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg)  &&
+                     !(m_Imp.GetAncestor(seq, CBioseq_set::eClass_parts) != 0) ) {
+                    if ( !CFeat_CI(bsh, 0, 0, CSeqFeatData::e_Biosrc) ) {
+                        PostErr(eDiag_Error,
+                            eErr_SEQ_DESCR_UnnecessaryBioSourceFocus,
+                            "BioSource descriptor has focus, "
+                            "but no BioSource feature", seq, desc);
+                    }
                 }
             }
             if ( !org ) {
@@ -2243,6 +2252,9 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
         case CSeqdesc::e_Molinfo:
             ValidateMolInfoContext(desc.GetMolinfo(), biomol, seq, desc);
             break;
+
+        case CSeqdesc::e_Mol_type:
+            ValidateMolTypeContext(desc.GetMol_type(), seq_na_mol, seq, desc);
 
         default:
             break;
@@ -2297,7 +2309,7 @@ void CValidError_bioseq::ValidateMolInfoContext
         case CMolInfo::eBiomol_peptide:
             if ( seq.IsNa() ) {
                 PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                    "Nuclic acid with Molinfo-biomol = peptide", seq, desc);
+                    "Nucleic acid with Molinfo-biomol = peptide", seq, desc);
             }
             break;
             
@@ -2360,6 +2372,49 @@ void CValidError_bioseq::ValidateMolInfoContext
         default:
             break;
         }
+    }
+}
+
+
+void CValidError_bioseq::ValidateMolTypeContext
+(const EGIBB_mol& gibb_mol,
+ EGIBB_mol& seq_na_mol,
+ const CBioseq& seq,
+ const CSeqdesc& desc)
+{
+    switch ( gibb_mol ) {
+    case eGIBB_mol_peptide:
+        if ( seq.IsNa() ) {
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                "Nucleic acid with GIBB-mol = peptide", seq, desc);
+        }
+        break;
+
+    case eGIBB_mol_unknown:
+    case eGIBB_mol_other:
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+            "GIBB-mol unknown or other used", seq, desc);
+        break;
+
+    default:                   // the rest are nucleic acid
+        if ( seq.IsAa() ) {
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                "GIBB-mol [" + 
+                ENUM_METHOD_NAME(EGIBB_mol)()->FindName(gibb_mol, true) + 
+                "] used on protein", seq, desc);
+        } else if ( seq_na_mol != eGIBB_mol_unknown ) {
+            if ( seq_na_mol != gibb_mol ) {
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+                    "Inconsistent GIBB-mol [" + 
+                    ENUM_METHOD_NAME(EGIBB_mol)()->FindName(seq_na_mol, true) +
+                    "] and [" + 
+                    ENUM_METHOD_NAME(EGIBB_mol)()->FindName(gibb_mol, true) +
+                    "]", seq, desc);
+            } else {
+                seq_na_mol = gibb_mol;
+            }
+        }
+        break;
     }
 }
 
@@ -2986,6 +3041,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2003/04/10 19:32:50  shomrat
+* Added ValidateMolTypeContext; UnnecessaryBioSourceFocus not done on proteins, segmented bioseqs, or segmented parts
+*
 * Revision 1.30  2003/04/07 14:58:16  shomrat
 * Added information to error postings
 *
