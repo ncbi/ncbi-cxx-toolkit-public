@@ -62,11 +62,18 @@ SetupSubjects(const TSeqLocVector& subjects,
 
 /** Retrieves a sequence using the object manager
  * @param sl seqloc of the sequence to obtain [in]
- * @param encoding encoding for the sequence retrieved [in]
+ * @param encoding encoding for the sequence retrieved.
+ *        Supported encodings include: NCBI2NA_ENCODING, NCBI4NA_ENCODING,
+ *        BLASTNA_ENCODING, and BLASTP_ENCODING. [in]
  * @param scope Scope from which the sequences are retrieved [in]
- * @param strand strand to retrieve [in]
+ * @param strand strand to retrieve (applies to nucleotide only).
+ *        N.B.: When requesting the NCBI2NA_ENCODING, only the plus strand
+ *        is retrieved, because BLAST only requires one strand on the subject
+ *        sequences (as in BLAST databases). [in]
  * @param add_nucl_sentinel true to guard nucleotide sequence with sentinel 
- * bytes (ignored for protein sequences, which always have sentinels) [in]
+ *        bytes (ignored for protein sequences, which always have sentinels) 
+ *        When using NCBI2NA_ENCODING, this argument should be set to false as
+ *        a sentinel byte cannot be represented in this encoding. [in]
  * @return pair containing the buffer and its length. 
  */
 pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos>
@@ -117,6 +124,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/12/29 17:03:47  camacho
+* Added documentation to GetSequence
+*
 * Revision 1.16  2003/10/29 04:45:58  camacho
 * Use fixed AutoPtr for GetSequence return value
 *
