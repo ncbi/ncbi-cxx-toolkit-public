@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/11/22 19:44:29  vakatov
+* s_Demo() -- made "static"
+*
 * Revision 1.9  1999/10/28 13:40:38  vasilche
 * Added reference counters to CNCBINode.
 *
@@ -68,7 +71,7 @@
 USING_NCBI_SCOPE;  // this turns on the ncbi namespace
 
 
-int s_Demo(void)
+static int s_Demo(void)
 {
     CCgiResponse Response; // used to write out the html
     CNodeRef Html; // the following are tags used in the page.
