@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/08/04 21:41:05  thiessen
+* fix GetObject problem
+*
 * Revision 1.6  2002/08/01 12:51:36  thiessen
 * add E-value display to block aligner
 *
@@ -179,8 +182,8 @@ static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(const CSeq_align& sa,
         // check to make sure query is first id, master is second id
         if ((*s)->GetDim() != 2 || !(*s)->GetSegs().IsDenseg() || (*s)->GetSegs().GetDenseg().GetDim() != 2 ||
             (*s)->GetSegs().GetDenseg().GetIds().size() != 2 ||
-            !query->identifier->MatchesSeqId((*s)->GetSegs().GetDenseg().GetIds().front().GetObject()) ||
-            !master->identifier->MatchesSeqId((*s)->GetSegs().GetDenseg().GetIds().back().GetObject()))
+            !query->identifier->MatchesSeqId(*((*s)->GetSegs().GetDenseg().GetIds().front())) ||
+            !master->identifier->MatchesSeqId(*((*s)->GetSegs().GetDenseg().GetIds().back())))
         {
             ERR_POST(Error << "Confused by seg format in block aligner's result");
             return NULL;
