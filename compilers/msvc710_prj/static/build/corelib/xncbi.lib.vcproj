@@ -578,6 +578,46 @@
           <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
         </FileConfiguration>
       </File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbidiag_p.cpp">
+        <FileConfiguration Name="Debug|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="DebugDLL|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="DebugMT|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="Release|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseMT|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbi_paramtree.cpp">
+        <FileConfiguration Name="Debug|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="DebugDLL|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="DebugMT|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="Release|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseMT|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+      </File>
     </Filter>
     <Filter Name="Header Files" Filter="h;hpp;hxx;hm;inc;xsd">
       <File RelativePath="..\..\..\..\..\include\corelib\mswin_export.h"></File>
@@ -616,6 +656,7 @@
       <File RelativePath="..\..\..\..\..\include\corelib\ncbi_os_mac.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\corelib\ncbi_os_mswin.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\corelib\ncbi_os_unix.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_paramtree.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\corelib\ncbi_process.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\corelib\ncbi_safe_static.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\corelib\ncbi_system.hpp"></File>
@@ -627,6 +668,7 @@
       <Filter Name="Private" Filter="h;hpp;hxx;hm;inc;xsd">
         <File RelativePath="..\..\..\..\..\src\corelib\ncbiargs_p.hpp"></File>
         <File RelativePath="..\..\..\..\..\src\corelib\ncbidbg_p.hpp"></File>
+        <File RelativePath="..\..\..\..\..\src\corelib\ncbidiag_p.hpp"></File>
       </Filter>
     </Filter>
     <Filter Name="Inline Files" Filter="inl">
