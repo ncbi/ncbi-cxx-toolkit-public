@@ -187,7 +187,7 @@ static double GetCutoffEvalue(EBlastProgramType program)
       return CUTOFF_E_TBLASTX;
    case eBlastTypeUndefined:
    default:
-      abort(); /* should never happer */
+      abort(); /* should never happen */
    }
    return 0;
 }
@@ -273,7 +273,18 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
    } else {
       cutoff_s = ext_params->gap_trigger;
    }
-   
+
+   if (parameters->options->window_size == 0 && 
+       program_number != eBlastTypeBlastn) {
+      /* One-hit protein word finder method. Reduce cutoff score. */
+      cutoff_s = MIN(cutoff_s, ext_params->gap_trigger);
+      if (hit_params->link_hsp_params && 
+          hit_params->link_hsp_params->cutoff_small_gap > 0) {
+         cutoff_s = 
+            MIN(cutoff_s, hit_params->link_hsp_params->cutoff_small_gap);
+      }
+   }
+
    parameters->cutoff_score = MIN(hit_params->cutoff_score, cutoff_s);
    
    if (parameters->x_dropoff_init != 0 && parameters->cutoff_score != 0) {
@@ -1426,6 +1437,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.124  2004/07/16 17:31:19  dondosha
+ * When one-hit word finder is used for protein searches, reduce cutoff score, like it is done in old engine
+ *
  * Revision 1.123  2004/07/07 15:05:03  camacho
  * Handle eBlastTypeUndefined in switch stmt
  *
