@@ -62,6 +62,7 @@ public:
     const_iterator end(void) const;
     iterator find(const CSeq_id_Handle& id);
     const_iterator find(const CSeq_id_Handle& id) const;
+    bool empty(void) const;
     size_t size(void) const;
 
     void AddSynonym(const CSeq_id_Handle& id);
@@ -126,6 +127,12 @@ size_t CSynonymsSet::size(void) const
 }
 
 inline
+bool CSynonymsSet::empty(void) const
+{
+    return m_IdSet.empty();
+}
+
+inline
 void CSynonymsSet::AddSynonym(const CSeq_id_Handle& id)
 {
     m_IdSet.insert(id);
@@ -149,6 +156,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2003/02/28 21:54:16  grichenk
+ * +CSynonymsSet::empty(), removed _ASSERT() in CScope::GetSynonyms()
+ *
  * Revision 1.1  2003/02/28 20:02:03  grichenk
  * Initial revision
  *

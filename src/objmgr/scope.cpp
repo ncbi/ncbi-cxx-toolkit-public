@@ -459,7 +459,6 @@ const CSynonymsSet* CScope::x_GetSynonyms(const CSeq_id_Handle& id)
     // Map the original ID which may be not in the resulting set,
     // e.g. id="A", set={"A.1", gi1}
     m_SynCache[id] = synset;
-    _ASSERT(synset->size() > 0);
     return synset;
 }
 
@@ -507,6 +506,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/02/28 21:54:18  grichenk
+* +CSynonymsSet::empty(), removed _ASSERT() in CScope::GetSynonyms()
+*
 * Revision 1.44  2003/02/28 20:02:37  grichenk
 * Added synonyms cache and x_GetSynonyms()
 *
