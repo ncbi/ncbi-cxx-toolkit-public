@@ -53,7 +53,7 @@
 // Object Manager
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 // Objtools
 #include <objtools/readers/fasta.hpp>
@@ -550,6 +550,17 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/01/05 17:59:31  vasilche
+ * Moved genbank loader and its readers sources to new location in objtools.
+ * Genbank is now in library libncbi_xloader_genbank.
+ * Id1 reader is now in library libncbi_xreader_id1.
+ * OBJMGR_LIBS macro updated correspondingly.
+ *
+ * Old headers temporarily will contain redirection to new location
+ * for compatibility:
+ * objmgr/gbloader.hpp > objtools/data_loaders/genbank/gbloader.hpp
+ * objmgr/reader_id1.hpp > objtools/data_loaders/genbank/readers/id1/reader_id1.hpp
+ *
  * Revision 1.5  2003/12/29 19:48:30  bealer
  * - Change code to accomodate first half of new ASN changes.
  *

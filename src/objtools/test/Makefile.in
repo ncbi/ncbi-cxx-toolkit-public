@@ -1,10 +1,9 @@
 # $Id$
 
-# Meta-makefile("CACHE" project)
+# Meta-makefile("objtools/test" project)
 #################################
 
-LIB_PROJ = id2_split
-SUB_PROJ = 
+SUB_PROJ = objmgr
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

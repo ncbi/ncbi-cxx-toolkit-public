@@ -6,7 +6,7 @@ REQUIRES = dbapi
 
 APP = test_objmgr_data
 SRC = test_objmgr_data
-LIB = $(NOBJMGR_LIBS)
+LIB = $(OBJMGR_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

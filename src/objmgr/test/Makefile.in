@@ -3,10 +3,7 @@
 # Meta-makefile (tests for object manager)
 #################################
 
-APP_PROJ = test_objmgr_basic test_objmgr test_objmgr_mt \
-	test_objmgr_gbloader test_objmgr_gbloader_mt test_objmgr_data \
-	test_objmgr_data_mt test_reader_id1 test_reader_pubseq \
-	test_objmgr_mem test_seqvector_ci seqvec_bench
+APP_PROJ = test_objmgr_basic test_objmgr test_objmgr_mt
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

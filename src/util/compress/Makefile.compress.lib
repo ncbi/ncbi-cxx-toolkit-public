@@ -3,3 +3,5 @@
 SRC = compress stream streambuf bzip2 zlib reader_zlib
 
 LIB = xcompress
+
+DLL_LIB = $(COMPRESS_LDEP)

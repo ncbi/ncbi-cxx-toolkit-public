@@ -12,5 +12,4 @@ REQUIRES =
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-#DLL_LIB = ncbi_xreader_id1
-LIBS = $(ORIG_LIBS)
+DLL_LIB = $(GENBANK_READER_ID1_LDEP)

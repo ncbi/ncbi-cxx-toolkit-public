@@ -10,9 +10,9 @@ REQUIRES = dbapi
 
 APP = test_seqvector_ci
 SRC = test_seqvector_ci
-LIB = $(NOBJMGR_LIBS)
+LIB = $(OBJMGR_LIBS)
 
-LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_seqvector_ci
 CHECK_TIMEOUT = 500

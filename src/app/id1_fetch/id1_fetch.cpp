@@ -62,7 +62,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_descr.hpp>
@@ -744,6 +744,17 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2004/01/05 17:59:32  vasilche
+* Moved genbank loader and its readers sources to new location in objtools.
+* Genbank is now in library libncbi_xloader_genbank.
+* Id1 reader is now in library libncbi_xreader_id1.
+* OBJMGR_LIBS macro updated correspondingly.
+*
+* Old headers temporarily will contain redirection to new location
+* for compatibility:
+* objmgr/gbloader.hpp > objtools/data_loaders/genbank/gbloader.hpp
+* objmgr/reader_id1.hpp > objtools/data_loaders/genbank/readers/id1/reader_id1.hpp
+*
 * Revision 1.46  2003/10/21 13:48:48  grichenk
 * Redesigned type aliases in serialization library.
 * Fixed the code (removed CRef-s, added explicit

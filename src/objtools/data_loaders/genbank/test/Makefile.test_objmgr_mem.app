@@ -10,8 +10,8 @@ REQUIRES = dbapi
 
 APP = test_objmgr_mem
 SRC = test_objmgr_mem
-LIB = $(NOBJMGR_LIBS)
+LIB = $(OBJMGR_LIBS)
 
-LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_objmgr_mem

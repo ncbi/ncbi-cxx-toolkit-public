@@ -3,9 +3,9 @@
 # Meta-makefile (tests for object manager)
 #################################
 
+SUB_PROJ = util
 APP_PROJ = \
-	test_objmgr_gbloader test_objmgr_gbloader_mt test_objmgr_data \
-	test_objmgr_data_mt test_reader_id1 test_reader_pubseq \
+	test_objmgr_data test_objmgr_data_mt \
 	test_objmgr_mem test_seqvector_ci seqvec_bench
 
 srcdir = @srcdir@

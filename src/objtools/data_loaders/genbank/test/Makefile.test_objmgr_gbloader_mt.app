@@ -6,9 +6,9 @@ REQUIRES = dbapi
 
 APP = test_objmgr_gbloader_mt
 SRC = test_objmgr_gbloader_mt
-LIB = test_mt $(NOBJMGR_LIBS)
+LIB = test_mt $(OBJMGR_LIBS)
 
-LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
 # CHECK_CMD = test_objmgr_loaders.sh test_objmgr_gbloader_mt
 # CHECK_COPY = test_objmgr_loaders.sh

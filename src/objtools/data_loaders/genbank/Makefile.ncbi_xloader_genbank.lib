@@ -5,3 +5,9 @@ SRC = gbloader gbload_util
 LIB = ncbi_xloader_genbank
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
+
+# Build shared version when possible
+LIB_OR_DLL = both
+
+# Dependencies for shared library
+DLL_LIB = $(GENBANK_LDEP)
