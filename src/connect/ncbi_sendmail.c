@@ -245,6 +245,8 @@ extern const char* CORE_SendMail(const char* to,
 
 #define SENDMAIL_RETURN(reason)                                            \
     do {                                                                   \
+        if (sock)                                                          \
+            SOCK_Close(sock);                                              \
         CORE_LOGF(eLOG_Error, ("[SendMail]  %s", reason));                 \
         if (reason/*always true, though, to trick "smart" compiler*/)      \
             return reason;                                                 \
@@ -252,6 +254,8 @@ extern const char* CORE_SendMail(const char* to,
 
 #define SENDMAIL_RETURN2(reason, explanation)                              \
     do {                                                                   \
+       if (sock)                                                           \
+           SOCK_Close(sock);                                               \
        CORE_LOGF(eLOG_Error, ("[SendMail]  %s: %s", reason, explanation)); \
        if (reason/*always true, though, to trick "smart" compiler*/)       \
            return reason;                                                  \
@@ -269,7 +273,7 @@ const char* CORE_SendMailEx(const char*          to,
     const SSendMailInfo* info;
     SSendMailInfo ainfo;
     char buffer[1024];
-    SOCK sock;
+    SOCK sock = 0;
 
     info = uinfo ? uinfo : SendMailInfo_Init(&ainfo);
     if (info->magic_number != MX_MAGIC_NUMBER)
@@ -279,17 +283,17 @@ const char* CORE_SendMailEx(const char*          to,
         (!info->cc || !*info->cc) &&
         (!info->bcc || !*info->bcc))
         SENDMAIL_RETURN("At least one message recipient must be specified");
-    
+
     /* Open connection to sendmail */
     if (SOCK_Create(info->mx_host, info->mx_port, &info->mx_timeout, &sock)
         != eIO_Success)
         SENDMAIL_RETURN("Cannot connect to sendmail");
     SOCK_SetTimeout(sock, eIO_ReadWrite, &info->mx_timeout);
-    
+
     /* Follow the protocol conversation, RFC821 */
     if (!SENDMAIL_READ_RESPONSE(220, 0, buffer))
         SENDMAIL_RETURN2("Protocol error in connection init", buffer);
-    
+
     if (SOCK_gethostname(buffer, sizeof(buffer)) != 0)
         SENDMAIL_RETURN("Unable to get local host name");
     if (!s_SockWrite(sock, "HELO ") ||
@@ -298,7 +302,7 @@ const char* CORE_SendMailEx(const char*          to,
         SENDMAIL_RETURN("Write error in HELO command");
     if (!SENDMAIL_READ_RESPONSE(250, 0, buffer))
         SENDMAIL_RETURN2("Protocol error in HELO command", buffer);
-    
+
     if (!s_SockWrite(sock, "MAIL FROM: <") ||
         !s_SockWrite(sock, info->from) ||
         !s_SockWrite(sock, ">" MX_CRLF))
@@ -332,12 +336,12 @@ const char* CORE_SendMailEx(const char*          to,
         if (!SENDMAIL_READ_RESPONSE(250, 251, buffer))
             SENDMAIL_RETURN2("Protocol error in RCPT (Bcc) command", buffer);
     }
-    
+
     if (!s_SockWrite(sock, "DATA" MX_CRLF))
         SENDMAIL_RETURN("Write error in DATA command");
     if (!SENDMAIL_READ_RESPONSE(354, 0, buffer))
         SENDMAIL_RETURN2("Protocol error in DATA command", buffer);
-    
+
     /* Follow RFC822 to compose message headers. Note that
      * 'Date:'and 'From:' are both added by sendmail automatically.
      */ 
@@ -391,7 +395,7 @@ const char* CORE_SendMailEx(const char*          to,
         if (!newline && !s_SockWrite(sock, MX_CRLF))
             SENDMAIL_RETURN("Write error in finalizing custom header");
     }
-    
+
     if (body && *body) {
         int/*bool*/ newline = 0/*false*/;
         size_t n = 0, m = strlen(body);
@@ -428,12 +432,12 @@ const char* CORE_SendMailEx(const char*          to,
         SENDMAIL_RETURN("Write error in finishing message");
     if (!SENDMAIL_READ_RESPONSE(250, 0, buffer))
         SENDMAIL_RETURN2("Protocol error in sending message body", buffer);
-    
+
     if (!s_SockWrite(sock, "QUIT" MX_CRLF))
         SENDMAIL_RETURN("Write error in QUIT command");
     if (!SENDMAIL_READ_RESPONSE(221, 0, buffer))
         SENDMAIL_RETURN2("Protocol error in QUIT command", buffer);
-    
+
     SOCK_Close(sock);
     return 0;
 }
@@ -446,6 +450,9 @@ const char* CORE_SendMailEx(const char*          to,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2002/08/14 18:55:39  lavr
+ * Close socket on error return (was forgotten)
+ *
  * Revision 6.13  2002/08/12 15:12:31  lavr
  * Use persistent SOCK_Write()
  *
