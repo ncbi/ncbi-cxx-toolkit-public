@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/04/17 21:07:59  grichenk
+* String pre-allocation added
+*
 * Revision 1.10  2002/04/03 18:06:48  grichenk
 * Fixed segmented sequence bugs (invalid positioning of literals
 * and gaps). Improved CSeqVector performance.
@@ -252,6 +255,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
             case CSeq_data::e_Ncbi2na:
                 {
                     m_CachedData = "";
+                    m_CachedData.reserve(m_CachedLen);
                     const vector<char>& buf = out->GetNcbi2na().Get();
                     for (int i = start; i < start + m_CachedLen; i++) {
                         m_CachedData += (buf[i/4] >> (6-(i%4)*2)) & 0x03;
@@ -261,6 +265,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
             case CSeq_data::e_Ncbi4na:
                 {
                     m_CachedData = "";
+                    m_CachedData.reserve(m_CachedLen);
                     const vector<char>& buf = out->GetNcbi4na().Get();
                     for (int i = start; i < start + m_CachedLen; i++) {
                         m_CachedData += (buf[i/2] >> (4-(i % 2)*4)) & 0x0f;
@@ -270,6 +275,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
             case CSeq_data::e_Ncbi8na:
                 {
                     m_CachedData = "";
+                    m_CachedData.reserve(m_CachedLen);
                     const vector<char>& buf = out->GetNcbi8na().Get();
                     for (int i = start; i < start + m_CachedLen; i++) {
                         m_CachedData += buf[i];
