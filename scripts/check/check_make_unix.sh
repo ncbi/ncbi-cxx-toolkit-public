@@ -75,8 +75,10 @@ if [ ! -z "$x_top_srcdir" ]; then
    fi
    x_root_dir=`(cd "$x_top_srcdir"; pwd | sed -e 's/\/$//g')`
 else
-   # Get top src dir name from the build directory
-   x_root_dir=`dirname "$x_conf_dir"`
+   # Get top src dir name from the script directory
+   x_check_scripts_dir=`dirname "$0"`
+   x_scripts_dir=`dirname "$x_check_scripts_dir"`
+   x_root_dir=`dirname "$x_scripts_dir"`
 fi
 
 # Check for target dir
