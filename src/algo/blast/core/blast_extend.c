@@ -563,17 +563,18 @@ BlastnWordUngappedExtend(BLAST_SequenceBlkPtr query,
  * exact match has already been extended to the word size parameter.
  * @param query The query sequence [in]
  * @param subject The subject sequence [in]
- * @param word_options The options related to initial word extension [in]
+ * @param word_params The parameters related to initial word extension [in]
  * @param matrix the substitution matrix [in]
  * @param ewp The structure containing word extension information [in]
  * @param q_off The offset in the query sequence [in]
  * @param s_start The start of this hit in the subject sequence [in]
  * @param s_off The offset in the subject sequence [in]
- * @param init_hitlist The structure containing information about all initial hits [in] [out]
+ * @param init_hitlist The structure containing information about all 
+ *                     initial hits [in] [out]
  */
 static Int2
 BlastnExtendInitialHit(BLAST_SequenceBlkPtr query, 
-   BLAST_SequenceBlkPtr subject, BlastInitialWordOptionsPtr word_options, 
+   BLAST_SequenceBlkPtr subject, BlastInitialWordParametersPtr word_params, 
    Int4Ptr PNTR matrix, BLAST_ExtendWordPtr ewp, Int4 q_off, Int4 s_start,
    Int4 s_off, BlastInitHitListPtr init_hitlist)
 {
@@ -581,6 +582,7 @@ BlastnExtendInitialHit(BLAST_SequenceBlkPtr query,
    Int4 s_pos, last_hit;
    BLAST_DiagTablePtr     diag_table;
    BlastUngappedDataPtr ungapped_data;
+   BlastInitialWordOptionsPtr word_options = word_params->options;
    Int4 window_size = word_options->window_size;
    Boolean hit_ready;
    Boolean new_hit, second_hit;
@@ -610,8 +612,9 @@ BlastnExtendInitialHit(BLAST_SequenceBlkPtr query,
          ungapped_data = (BlastUngappedDataPtr) 
             Malloc(sizeof(BlastUngappedData));
          /* Perform ungapped extension */
-         BlastnWordUngappedExtend(query, subject, matrix, q_off, s_off, 0, 
-            word_options->x_dropoff, &ungapped_data);
+         BlastnWordUngappedExtend(query, subject, matrix, q_off, s_off, 
+            word_params->cutoff_score, -word_params->x_dropoff, 
+            &ungapped_data);
       
          diag_table->diag_array[real_diag].last_hit = 
             ungapped_data->length - 1 + ungapped_data->s_start 
@@ -710,7 +713,7 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject,
 
 	 if (left + right >= extra_bases) {
 	    /* Check if this diagonal has already been explored. */
-	    BlastnExtendInitialHit(query, subject, word_options, matrix, ewp, 
+	    BlastnExtendInitialHit(query, subject, word_params, matrix, ewp,
                q_offsets[i], s_offsets[i] - reduced_word_length - left, 
                s_offsets[i], init_hitlist);
          }
@@ -862,7 +865,7 @@ Int4 MB_WordFinder(BLAST_SequenceBlkPtr subject,
                    word_length, !variable_wordsize, &extended_left)) {
                /* Check if this diagonal has already been explored and save
                   the hit if needed. */
-               BlastnExtendInitialHit(query, subject, word_options, matrix, 
+               BlastnExtendInitialHit(query, subject, word_params, matrix, 
                   ewp, q_offsets[i], s_offsets[i] - extended_left, 
                   s_offsets[i], init_hitlist);
             }
@@ -942,7 +945,7 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlkPtr subject,
          if (BlastNaExactMatchExtend(q, s, max_bases_left, max_bases_right, 
                 word_length, !variable_wordsize, &extended_left)) {
 	    /* Check if this diagonal has already been explored. */
-	    BlastnExtendInitialHit(query, subject, word_options, matrix, ewp, 
+	    BlastnExtendInitialHit(query, subject, word_params, matrix, ewp,
                q_offsets[i], s_offsets[i] - extended_left, s_offsets[i], 
                init_hitlist);
          }
