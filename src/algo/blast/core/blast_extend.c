@@ -260,8 +260,9 @@ MB_ExtendInitialHit(BLAST_SequenceBlk* query,
       if (!two_hits) {
          /* Single hit version */
          new_hit = (step > scan_step);
-         hit_ready = 
-            (step + diag_array_elem->diag_level == word_extra_length);
+         hit_ready = (new_hit && (word_extra_length == 0)) || 
+            (!new_hit && 
+             (step + diag_array_elem->diag_level == word_extra_length));
       } else {
          /* Two hit version */
          if (diag_array_elem->diag_level > word_extra_length) {
@@ -270,7 +271,7 @@ MB_ExtendInitialHit(BLAST_SequenceBlk* query,
          } else {
             new_hit = (step > window);
             hit_ready = (diag_array_elem->diag_level == word_extra_length) &&
-               (step <= window);
+               !new_hit;
          }
       }
 
@@ -328,8 +329,9 @@ MB_ExtendInitialHit(BLAST_SequenceBlk* query,
             if (!two_hits) {
                /* Single hit version */
                new_hit = (step > scan_step);
-               hit_ready = (step + estack[index].length == 
-                            word_extra_length);
+               hit_ready = (!new_hit && 
+                  (step + estack[index].length == word_extra_length)) ||
+                  (new_hit && (word_extra_length == 0));
             } else {
                /* Two hit version */
                if (estack[index].length > word_extra_length) {
@@ -338,7 +340,7 @@ MB_ExtendInitialHit(BLAST_SequenceBlk* query,
                } else {
                   new_hit = (step > window);
                   hit_ready = (estack[index].length == word_extra_length) &&
-                     (step <= window);
+                     !new_hit;
                }
             }
             if (hit_ready) {
