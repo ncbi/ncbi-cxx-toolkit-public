@@ -568,6 +568,13 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'R':                               return eAcc_embl_genome;
                 // no specific assignments for CS-CU yet
             case 'S': case 'T': case 'U':           return eAcc_embl_other_nuc;
+            case 'X': case 'Y': case 'Z':           return eAcc_gb_other_nuc;
+            default:                                return eAcc_unreserved_nuc;
+            }
+
+        case 'D':
+            switch (pfx[1]) {
+            case 'A': case 'B': case 'C':           return eAcc_ddbj_est;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1516,6 +1523,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.90  2004/10/13 17:39:08  ucko
+ * CSeq_id::IdentifyAccession: CX-CZ are reserved for GenBank
+ * nucleotides, and DA-DZ are DDBJ ESTs.
+ *
  * Revision 6.89  2004/09/15 14:10:12  ucko
  * IdentifyAccession: CW -> eAcc_gb_gss
  *
