@@ -374,7 +374,7 @@ public:
     void SetAnnotSelector(const SAnnotSelector&);
 
     // flags
-    bool SupressLocalId    (void) const { return x_Flags().SupressLocalId();     }
+    bool SuppressLocalId   (void) const { return x_Flags().SuppressLocalId();    }
     bool ValidateFeats     (void) const { return x_Flags().ValidateFeats();      }
     bool IgnorePatPubs     (void) const { return x_Flags().IgnorePatPubs();      }
     bool DropShortAA       (void) const { return x_Flags().DropShortAA();        }
@@ -392,7 +392,7 @@ public:
     bool UseEmblMolType    (void) const { return x_Flags().UseEmblMolType();     }
     bool HideBankItComment (void) const { return x_Flags().HideBankItComment();  }
     bool CheckCDSProductId (void) const { return x_Flags().CheckCDSProductId();  }
-    bool SupressSegLoc     (void) const { return x_Flags().SupressSegLoc();      }
+    bool SuppressSegLoc    (void) const { return x_Flags().SuppressSegLoc();     }
     bool SrcQualsToNote    (void) const { return x_Flags().SrcQualsToNote();     }
     bool HideEmptySource   (void) const { return x_Flags().HideEmptySource();    }
     bool GoQualsToNote     (void) const { return x_Flags().GoQualsToNote();      }
@@ -422,6 +422,7 @@ public:
     bool TranslateIfNoProd  (void) const { return x_Flags().TranslateIfNoProd();   }
     bool ShowTranscript     (void) const { return x_Flags().ShowTranscript();      }
     bool ShowPeptides       (void) const { return x_Flags().ShowPeptides();        }
+    bool ShowFtableRefs     (void) const { return x_Flags().ShowFtableRefs();      }
     bool DoHtml             (void) const { return x_Flags().DoHtml();              }
 
     bool ShowGBBSource(void) const;
@@ -435,7 +436,7 @@ private:
         CFlags(TMode mode, TFlags flags);
         
         // mode dependant flags
-        bool SupressLocalId      (void) const { return m_SupressLocalId;       }
+        bool SuppressLocalId     (void) const { return m_SuppressLocalId;       }
         bool ValidateFeats       (void) const { return m_ValidateFeats;        }
         bool IgnorePatPubs       (void) const { return m_IgnorePatPubs;        }
         bool DropShortAA         (void) const { return m_DropShortAA;          }
@@ -453,7 +454,7 @@ private:
         bool UseEmblMolType      (void) const { return m_UseEmblMolType;       }
         bool HideBankItComment   (void) const { return m_HideBankItComment;    }
         bool CheckCDSProductId   (void) const { return m_CheckCDSProductId;    }
-        bool SupressSegLoc       (void) const { return m_SupressSegLoc;        }
+        bool SuppressSegLoc      (void) const { return m_SuppressSegLoc;       }
         bool SrcQualsToNote      (void) const { return m_SrcQualsToNote;       }
         bool HideEmptySource     (void) const { return m_HideEmptySource;      }
         bool GoQualsToNote       (void) const { return m_GoQualsToNote;        }
@@ -484,6 +485,7 @@ private:
         bool TranslateIfNoProd  (void) const { return m_TranslateIfNoProd;   }
         bool ShowTranscript     (void) const { return m_ShowTranscript;      }
         bool ShowPeptides       (void) const { return m_ShowPeptides;        }
+        bool ShowFtableRefs     (void) const { return m_ShowFtableRefs;      }
         bool DoHtml             (void) const { return m_DoHtml;              }
         
     private:
@@ -494,7 +496,7 @@ private:
         void x_SetDumpFlags(void);
 
         // flags
-        bool m_SupressLocalId;
+        bool m_SuppressLocalId;
         bool m_ValidateFeats;
         bool m_IgnorePatPubs;
         bool m_DropShortAA;
@@ -512,7 +514,7 @@ private:
         bool m_UseEmblMolType;
         bool m_HideBankItComment;
         bool m_CheckCDSProductId;
-        bool m_SupressSegLoc;
+        bool m_SuppressSegLoc;
         bool m_SrcQualsToNote;
         bool m_HideEmptySource;
         bool m_GoQualsToNote;
@@ -543,6 +545,7 @@ private:
         bool m_TranslateIfNoProd;
         bool m_ShowTranscript;
         bool m_ShowPeptides;
+        bool m_ShowFtableRefs;
         bool m_DoHtml;
     };
 
@@ -1436,6 +1439,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/03/18 15:29:38  shomrat
+* + flag ShowFtableRefs
+*
 * Revision 1.10  2004/03/16 19:07:48  vasilche
 * Include <memory> for auto_ptr<>.
 *
