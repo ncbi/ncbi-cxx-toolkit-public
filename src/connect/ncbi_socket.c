@@ -33,6 +33,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2001/07/11 16:16:39  vakatov
+ * Fixed comments for HAVE_GETHOSTBYNAME_R, HAVE_GETHOSTBYADDR_R; other
+ * minor (style and messages) fixes
+ *
  * Revision 6.33  2001/07/11 00:54:35  vakatov
  * SOCK_gethostbyname() and SOCK_gethostbyaddr() -- now can work with
  * gethostbyname_r() with 6 args and gethostbyaddr_r() with 8 args
@@ -78,7 +82,8 @@
  * Cleaned up after R6.23 (and get rid of the C++ style comments)
  *
  * Revision 6.23  2001/04/03 20:30:15  juran
- * Changes to work with OT sockets.  Not all of pjc's changes are here -- I will test them shortly.
+ * Changes to work with OT sockets.
+ * Not all of pjc's changes are here -- I will test them shortly.
  *
  * Revision 6.22  2001/03/29 21:15:36  lavr
  * More accurate length calculation in 'SOCK_gethostbyaddr'
@@ -171,14 +176,22 @@
 #endif
 
 
-/* Uncomment this (or specify "-DHAVE_GETHOSTBYNAME_R=1") only if:
+/* Uncomment this (or specify "-DHAVE_GETHOSTBY***_R=") only if:
  * 0) you are compiling this outside of the NCBI C or C++ Toolkits
  *    (USE_NCBICONF is not #define'd), and
  * 1) your platform has "gethostbyname_r()", and
  * 2) you are going to use this API code in multi-thread application, and
  * 3) "gethostbyname()" gets called somewhere else in your code
  */
-/* #define HAVE_GETHOSTBYNAME_R 1 */
+
+/*   Solaris: */
+/* #define HAVE_GETHOSTBYNAME_R 5 */
+/* #define HAVE_GETHOSTBYADDR_R 7 */
+
+/*   Linux, IRIX: */
+/* #define HAVE_GETHOSTBYNAME_R 6 */
+/* #define HAVE_GETHOSTBYADDR_R 8 */
+
 
 
 /* Platform-specific system headers
@@ -788,10 +801,10 @@ static EIO_Status s_Connect(SOCK            sock,
     /* Get address of the remote host (assume the same host if it is NULL) */
     assert(host  ||  sock->host);
     x_host = host ? SOCK_gethostbyname(host) : sock->host;
-    if (!x_host) {
+    if ( !x_host ) {
         if ( CORE_GetLOG() ) {
             char str[128];
-            sprintf(str, "[SOCK::s_Connect]  Failed SOCK_gethostaddr(%.64s)",
+            sprintf(str, "[SOCK::s_Connect]  Failed SOCK_gethostbyname(%.64s)",
                     host ? host : "");
             CORE_LOG(eLOG_Error, str);
         }
@@ -1634,7 +1647,8 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
         char           x_buf[1024];
         int            x_err;
 #  if (HAVE_GETHOSTBYNAME_R == 5)
-        he = gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf), &x_err);
+        he = gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf),
+                             &x_err);
 #  elif (HAVE_GETHOSTBYNAME_R == 6)
         if (gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf),
                             &he, &x_err) != 0) {
@@ -1677,8 +1691,8 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
         int            x_errno;
 
 #  if (HAVE_GETHOSTBYADDR_R == 7)
-        he = gethostbyaddr_r((char*) &host, sizeof(host), AF_INET,
-                             &x_he, x_buf, sizeof(x_buf), &x_errno);
+        he = gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
+                             x_buf, sizeof(x_buf), &x_errno);
 #  elif (HAVE_GETHOSTBYADDR_R == 8)
         if (gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
                             x_buf, sizeof(x_buf), &he, &x_errno) != 0) {
