@@ -60,6 +60,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/02/26 16:56:41  vakatov
+ * Comment SConnNetInfo.
+ *
  * Revision 6.9  2001/01/23 23:06:15  lavr
  * SConnNetInfo.debug_printout converted from boolean to enum
  * BUF_StripToPattern() introduced
@@ -122,7 +125,10 @@ typedef enum {
 } EDebugPrintout;
 
 
-/* Network connection related configurable info struct
+/* Network connection related configurable info struct.
+ * ATTENTION:  Do NOT fill out this structure (SConnNetInfo) "from scratch"!
+ *             Instead, use ConnNetInfo_Create() described below to create
+ *             it, and then fix (hard-code) some fields, if really necessary.
  */
 typedef struct {
     char           client_host[64];  /* effective client hostname            */
