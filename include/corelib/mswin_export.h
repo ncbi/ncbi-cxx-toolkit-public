@@ -552,6 +552,7 @@
 #  define NCBI_GBSEQ_EXPORT
 #  define NCBI_GENERAL_EXPORT
 #  define NCBI_GUICORE_EXPORT
+#  define NCBI_GUIDIALOGS_EXPORT
 #  define NCBI_GUIOPENGL_EXPORT
 #  define NCBI_GUIUTILS_EXPORT
 #  define NCBI_GUIWIDGETS_EXPORT
@@ -594,6 +595,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2003/01/16 19:53:13  dicuccio
+ * Add NCBI_GUIDIALOGS_EXPORT to the null define list...
+ *
  * Revision 1.7  2003/01/16 18:23:15  dicuccio
  * Added export specifiers for library GUI_DIALOGS.DLL
  *
