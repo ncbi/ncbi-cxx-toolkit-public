@@ -473,9 +473,14 @@ void tds_setTDS_version(TDSLOGIN *tds_login, int version)
         case DBVERSION_80:
             tds_set_version(tds_login, 8, 0);
             break;
-        case DBVERSION_100:
-            tds_set_version(tds_login, 5, 0);
-            break;
+            // !!! DBVERSION_100 may not be used with MS SQL server. !!!
+            // MS SQL server does not understand protocol version 5.0 (DBVERSION_100)
+            // FreeTDS work with Sybase using protocol version 4.2. So, there
+            // are no reasons at all to use protocol version 5.0
+            // (DBVERSION_100) with FreeTDS.
+//         case DBVERSION_100:
+//             tds_set_version(tds_login, 5, 0);
+//             break;
     }
 }
 #endif

@@ -176,6 +176,8 @@ CDbapiSampleApp::Run()
         // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
         // BcpIn to it using protocol version other than "100".
         SetDatabaseParameter("version", "100");
+//     } else if ( GetDriverName() == "ftds"  &&  GetServerType() == eMsSql ) {
+//         SetDatabaseParameter("version", "100");
     } else if ( GetDriverName() == "ftds"  &&  GetServerType() == eSybase ) {
         // ftds forks with Sybase databases using protocol v42 only ...
         SetDatabaseParameter("version", "42");
@@ -455,6 +457,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/12/21 22:38:00  ssikorsk
+ * Ignore protocol v5.0 (DBVERSION_100) with FreeTDS
+ *
  * Revision 1.1  2004/12/20 16:46:52  ssikorsk
  * Refactoring of dbapi/driver/samples
  *
