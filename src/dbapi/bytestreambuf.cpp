@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/05/13 19:11:53  kholodov
+* Modified: added proper handling of EOFs while reading column data using CDB_Result::CurrentItemNo().
+*
 * Revision 1.3  2002/04/03 20:06:25  ucko
 * Always return >= 1 from showmanyc() to avoid spurious "EOF"s.
 * Pass status messages to _TRACE rather than writing them to cout.
@@ -52,6 +55,9 @@
 #include <dbapi/driver/interfaces.hpp>
 #include <dbapi/driver/public.hpp>
 
+BEGIN_NCBI_SCOPE
+
+static const streamsize DEF_BUFSIZE = 2048;
 
 CByteStreamBuf::CByteStreamBuf(streamsize bufsize)
     : m_buf(0), 
@@ -62,6 +68,7 @@ CByteStreamBuf::CByteStreamBuf(streamsize bufsize)
     setg(0, 0, 0); // call underflow on the first read
 
     setp(getPBuf(), getPBuf() + m_size);
+    _TRACE("I/O buffer size: " << m_size);
 }
 
 CByteStreamBuf::~CByteStreamBuf()
@@ -101,14 +108,18 @@ CT_INT_TYPE CByteStreamBuf::underflow()
         throw runtime_error("CByteStreamBuf::underflow(): CDB_Result* is null");
   
     static size_t total = 0;
+    static int column = m_rs->CurrentItemNo();
 
-    m_len = m_rs->ReadItem(getGBuf(), m_size);
-    total += m_len;
-    if( m_len == 0 ) {
-        _TRACE("Total read from readItem: " << total);
+    if( column != m_rs->CurrentItemNo() ) {
+        _TRACE("Total read from ReadItem: " << total);
+        total = 0;
+        column = m_rs->CurrentItemNo();
         return CT_EOF;
     }
     else {
+        m_len = m_rs->ReadItem(getGBuf(), m_size);
+        _TRACE("Column: " << column << ", Bytes read to buffer: " << m_len);
+        total += m_len;
         setg(getGBuf(), getGBuf(), getGBuf() + m_len);
         return CT_TO_INT_TYPE(*getGBuf());
     }
@@ -159,3 +170,4 @@ streamsize CByteStreamBuf::showmanyc()
     return min(left, (streamsize)1);
 }
 //======================================================
+END_NCBI_SCOPE

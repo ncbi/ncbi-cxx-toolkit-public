@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/05/13 19:11:53  kholodov
+* Modified: added proper handling of EOFs while reading column data using CDB_Result::CurrentItemNo().
+*
 * Revision 1.1  2002/01/30 14:51:22  kholodov
 * User DBAPI implementation, first commit
 *
@@ -46,8 +49,7 @@
 //#include <iostream>
 #include <dbapi/driver/interfaces.hpp>
 
-USING_NCBI_SCOPE;
-//using namespace std;
+BEGIN_NCBI_SCOPE
 
 class CByteStreamBuf : public streambuf
 {
@@ -78,8 +80,8 @@ private:
   class CDB_Result* m_rs;
   class CDB_SendDataCmd* m_cmd;
 
-  static const streamsize DEF_BUFSIZE = 1024;
 };
 
+END_NCBI_SCOPE
 //=================================================================
 #endif // _BYTESTREAMBUF_HPP_
