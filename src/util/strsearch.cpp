@@ -232,7 +232,7 @@ bool CBoyerMooreMatcher::IsWholeWord(const char*  text,
     SIZE_TYPE left, right;
     left = right = 1;
 
-    // Words at the begging and end of text are also considered "whole"
+    // Words at the beginning and end of text are also considered "whole"
 
     // check on the left  
     if (m_WholeWord & ePrefixMatch) {
@@ -259,6 +259,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/03/11 17:02:53  kuznets
+* Fixed misspelling in comments
+*
 * Revision 1.13  2004/03/11 16:56:33  kuznets
 * Minor reformatting
 *
