@@ -153,7 +153,6 @@ bool CResultSet::Next()
 
     more = m_rs->Fetch();
 
-    ++m_totalRows;
 
     if( more && !IsDisableBind() ) {
 
@@ -202,6 +201,9 @@ bool CResultSet::Next()
         }
 
         Notify(CDbapiFetchCompletedEvent(this));
+    }
+    else {
+        ++m_totalRows;
     }
   
     return more;
@@ -381,6 +383,9 @@ void CResultSet::CheckIdx(unsigned int idx)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.35  2004/07/21 19:27:27  kholodov
+* Fixed: incorrect amount of rows in resulset reported
+*
 * Revision 1.34  2004/07/21 18:43:58  kholodov
 * Added: separate row counter for resultsets
 *
