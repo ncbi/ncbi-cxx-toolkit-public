@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2001/05/24 19:13:23  thiessen
+* fix to compile on SGI
+*
 * Revision 1.43  2001/05/22 19:09:30  thiessen
 * many minor fixes to compile/run on Solaris/GTK
 *
@@ -560,8 +563,10 @@ bool Cn3DMainFrame::SaveDialog(bool canCancel)
 
     if (option == wxID_CANCEL) return false; // user cancelled this operation
 
-    if (option == wxID_YES)
-        OnSave(wxCommandEvent());    // save data
+    if (option == wxID_YES) {
+        wxCommandEvent event;
+        OnSave(event);    // save data
+    }
 
     return true;
 }
