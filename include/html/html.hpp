@@ -936,11 +936,11 @@ public:
     void SetUsedCells(TIndex rowBegin, TIndex rowEnd,
                       TIndex colBegin, TIndex colEnd);
 private:
-    CHTML_table* m_Node;
-    TIndex m_RowCount;
-    TIndex m_RowsSize;
+    CHTML_table*     m_Node;
+    TIndex           m_RowCount;
+    TIndex           m_RowsSize;
     CHTML_tr_Cache** m_Rows;
-    TIndex m_FilledRowCount;
+    TIndex           m_FilledRowCount;
 
     CHTML_table_Cache(const CHTML_table_Cache&);
     CHTML_table_Cache& operator=(const CHTML_table_Cache&);
@@ -1245,6 +1245,70 @@ public:
     virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);
 };
 
+
+// <map> tag.
+class NCBI_XHTML_EXPORT CHTML_map : public CHTMLElement
+{
+    typedef CHTMLElement CParent;
+public:
+    CHTML_map(const string& name);
+    ~CHTML_map(void);
+
+    CHTML_map* AddRect   (const string& href, int x1, int y1, int x2, int y2,
+                          const string& alt = kEmptyStr);
+    CHTML_map* AddCircle (const string& href, int x, int y, int radius,
+                          const string& alt = kEmptyStr);
+    CHTML_map* AddPolygon(const string& href, int coords[], int count,
+                          const string& alt = kEmptyStr);
+    CHTML_map* AddPolygon(const string& href, vector<int> coords,
+                          const string& alt = kEmptyStr);
+    CHTML_map* AddPolygon(const string& href, list<int> coords,
+                          const string& alt = kEmptyStr);
+};
+
+
+// <area> tag.
+class NCBI_XHTML_EXPORT CHTML_area : public CHTMLInlineElement
+{
+    typedef CHTMLInlineElement CParent;
+    static const char sm_TagName[];
+public:
+    // Shape of area region
+    enum EShape {
+        eRect,      // rectangular region
+        eCircle,    // circular region
+        ePoly       // polygonal region
+    };
+
+    CHTML_area(void);
+    CHTML_area(const string& href, int x1, int y1, int x2, int y2,
+               const string& alt = kEmptyStr);
+    CHTML_area(const string& href, int x, int y, int radius,
+               const string& alt = kEmptyStr);
+    CHTML_area(const string& href, int coords[], int count,
+               const string& alt = kEmptyStr);
+    CHTML_area(const string& href, vector<int> coords,
+               const string& alt = kEmptyStr);
+    CHTML_area(const string& href, list<int> coords,
+               const string& alt = kEmptyStr);
+
+    // Destructor
+    ~CHTML_area(void);
+
+    CHTML_area* SetHref(const string& href);
+
+    // Define a rectangular region
+    CHTML_area* DefineRect(int x1, int y1, int x2, int y2);
+    // Define a circular region
+    CHTML_area* DefineCircle(int x, int y, int radius);
+    // Define a polygonal region
+    // Array should contains pairs x1,y1,x2,y2,...
+    CHTML_area* DefinePolygon(int coords[], int count);
+    CHTML_area* DefinePolygon(vector<int> coords);
+    CHTML_area* DefinePolygon(list<int> coords);
+};
+
+
 // <img> tag.
 class NCBI_XHTML_EXPORT CHTML_img : public CHTMLOpenElement
 {
@@ -1254,6 +1318,8 @@ public:
     CHTML_img(const string& url, int width, int height, 
               const string& alt = kEmptyStr);
     ~CHTML_img(void);
+    void UseMap(const string& mapname);
+    void UseMap(const CHTML_map* const mapnode);
 };
 
 
@@ -1507,8 +1573,6 @@ DECLARE_HTML_ELEMENT( tt,         CHTMLInlineElement);
 DECLARE_HTML_ELEMENT( u,          CHTMLInlineElement);
 DECLARE_HTML_ELEMENT( blink,      CHTMLInlineElement);
 DECLARE_HTML_ELEMENT( span,       CHTMLInlineElement);
-DECLARE_HTML_ELEMENT( map,        CHTMLElement);
-DECLARE_HTML_ELEMENT( area,       CHTMLElement);
 
 DECLARE_HTML_SPECIAL_CHAR( nbsp, " ");
 DECLARE_HTML_SPECIAL_CHAR( gt,   ">");
@@ -1531,6 +1595,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.81  2004/12/13 13:49:40  ivanov
+ * Added CHTML_map and CHTML_area classes
+ *
  * Revision 1.80  2004/10/27 18:25:17  ivanov
  * CHTMLText : Added flag fDisableBuffering to disable internal buffering
  * at the cost of loss some functionality relative to tag mapping.

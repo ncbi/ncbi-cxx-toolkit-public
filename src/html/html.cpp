@@ -1949,12 +1949,6 @@ CHTML_a::~CHTML_a(void)
     return;
 }
 
-CHTML_a* CHTML_a::SetHref(const string& href)
-{
-    SetAttribute("href", href);
-    return this;
-}
-
 
 // <br> tag.
 
@@ -2010,6 +2004,110 @@ CHTML_img::CHTML_img(const string& url, int width, int height,
 CHTML_img::~CHTML_img(void)
 {
     return;
+}
+
+void CHTML_img::UseMap(const string& mapname)
+{
+    if ( mapname.find("#") == NPOS ) {
+        SetAttribute("usemap", "#" + mapname);
+    } else {
+        SetAttribute("usemap", mapname);
+    }
+}
+
+void CHTML_img::UseMap(const CHTML_map* const mapnode)
+{
+    UseMap(mapnode->GetNameAttribute());
+}
+
+
+
+// <map> tag.
+
+CHTML_map::CHTML_map(const string& name)
+    : CParent("map")
+{
+    SetNameAttribute(name);
+}
+
+CHTML_map::~CHTML_map(void)
+{
+    return;
+}
+
+
+// <area> tag.
+
+const char CHTML_area::sm_TagName[] = "area";
+
+CHTML_area::~CHTML_area(void)
+{
+    return;
+}
+
+CHTML_area* CHTML_area::DefineRect(int x1, int y1, int x2, int y2)
+{
+    vector<string> c;
+    c.push_back(NStr::IntToString(x1));
+    c.push_back(NStr::IntToString(y1));
+    c.push_back(NStr::IntToString(x2));
+    c.push_back(NStr::IntToString(y2));
+    SetAttribute("shape", "rect");
+    SetAttribute("coords", NStr::Join(c, ","));
+    return this;
+}
+
+CHTML_area* CHTML_area::DefineCircle(int x, int y, int radius)
+{
+    vector<string> c;
+    c.push_back(NStr::IntToString(x));
+    c.push_back(NStr::IntToString(y));
+    c.push_back(NStr::IntToString(radius));
+    SetAttribute("shape", "circle");
+    SetAttribute("coords", NStr::Join(c, ","));
+    return this;
+}
+
+CHTML_area* CHTML_area::DefinePolygon(int coords[], int count)
+{
+    string c;
+    for(int i = 0; i<count; i++) {
+        if ( i ) {
+            c += ",";
+        }
+        c += NStr::IntToString(coords[i]);
+    }
+    SetAttribute("shape", "poly");
+    SetAttribute("coords", c);
+    return this;
+}
+
+CHTML_area* CHTML_area::DefinePolygon(vector<int> coords)
+{
+    string c;
+    ITERATE(vector<int>, it, coords) {
+        if ( it != coords.begin() ) {
+            c += ",";
+        }
+        c += NStr::IntToString(*it);
+    }
+    SetAttribute("shape", "poly");
+    SetAttribute("coords", c);
+    return this;
+}
+
+CHTML_area* CHTML_area::DefinePolygon(list<int> coords)
+{
+    string c;
+    ITERATE(list<int>, it, coords) {
+        if ( it != coords.begin() ) {
+            c += ",";
+        }
+        c += NStr::IntToString(*it);
+    }
+    SetAttribute("shape", "poly");
+    SetAttribute("coords", c);
+    return this;
 }
 
 
@@ -2290,8 +2388,6 @@ DEFINE_HTML_ELEMENT(tt);
 DEFINE_HTML_ELEMENT(u);
 DEFINE_HTML_ELEMENT(blink);
 DEFINE_HTML_ELEMENT(span);
-DEFINE_HTML_ELEMENT(map);
-DEFINE_HTML_ELEMENT(area);
 
 
 END_NCBI_SCOPE
@@ -2300,6 +2396,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.113  2004/12/13 13:49:41  ivanov
+ * Added CHTML_map and CHTML_area classes
+ *
  * Revision 1.112  2004/11/12 13:25:54  ivanov
  * Added macro INIT_STREAM_WRITE to init the errno variable.
  *

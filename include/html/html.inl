@@ -311,6 +311,13 @@ CHTML_a::CHTML_a(const string& href, const string& text)
 }
 
 inline
+CHTML_a* CHTML_a::SetHref(const string& href)
+{
+    SetAttribute("href", href);
+    return this;
+}
+
+inline
 CHTML_option::CHTML_option(const string& value, bool selected)
     : CParent(sm_TagName, value)
 {
@@ -390,6 +397,104 @@ CHTML_br::CHTML_br(void)
     : CParent(sm_TagName)
 {
     return;
+}
+
+inline
+CHTML_map* CHTML_map::AddRect(const string& href, int x1, int y1, int x2, int y2,
+                              const string& alt)
+{
+    AppendChild(new CHTML_area(href, x1, y1, x2, y2, alt));
+    return this;
+}
+
+inline
+CHTML_map* CHTML_map::AddCircle(const string& href, int x, int y, int radius,
+                                const string& alt)
+{
+    AppendChild(new CHTML_area(href, x, y, radius, alt));
+    return this;
+}
+
+inline
+CHTML_map* CHTML_map::AddPolygon(const string& href, int coords[], int count,
+                                 const string& alt)
+{
+    AppendChild(new CHTML_area(href, coords, count, alt));
+    return this;
+}
+
+inline
+CHTML_map* CHTML_map::AddPolygon(const string& href, vector<int> coords,
+                                 const string& alt)
+{
+    AppendChild(new CHTML_area(href, coords, alt));
+    return this;
+}
+
+inline
+CHTML_map* CHTML_map::AddPolygon(const string& href, list<int> coords,
+                                 const string& alt)
+{
+    AppendChild(new CHTML_area(href, coords, alt));
+    return this;
+}
+
+
+inline
+CHTML_area::CHTML_area(const string& href, int x1, int y1, int x2, int y2,
+                       const string& alt)
+    : CParent(sm_TagName)
+{
+    SetHref(href);
+    DefineRect(x1, y1, x2, y2);
+    SetOptionalAttribute("alt", alt);
+}
+
+inline
+CHTML_area::CHTML_area(const string& href, int x, int y, int radius,
+                       const string& alt)
+    : CParent(sm_TagName)
+{
+    SetHref(href);
+    DefineCircle(x, y, radius);
+    SetOptionalAttribute("alt", alt);
+}
+
+inline
+CHTML_area::CHTML_area(const string& href, int coords[], int count,
+                       const string& alt)
+    : CParent(sm_TagName)
+{
+    SetHref(href);
+    DefinePolygon(coords, count);
+    SetOptionalAttribute("alt", alt);
+}
+
+inline
+CHTML_area::CHTML_area(const string& href, vector<int> coords,
+                       const string& alt)
+    : CParent(sm_TagName)
+{
+    SetHref(href);
+    DefinePolygon(coords);
+    SetOptionalAttribute("alt", alt);
+}
+
+inline
+CHTML_area::CHTML_area(const string& href, list<int> coords,
+                       const string& alt)
+    : CParent(sm_TagName)
+{
+    SetHref(href);
+    DefinePolygon(coords);
+    SetOptionalAttribute("alt", alt);
+}
+
+inline
+CHTML_area* CHTML_area::SetHref(const string& href)
+{
+    SetAttribute("href", href);
+    return this;
 }
 
 inline
@@ -626,6 +731,9 @@ CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/12/13 13:49:40  ivanov
+ * Added CHTML_map and CHTML_area classes
+ *
  * Revision 1.36  2004/07/20 16:36:37  ivanov
  * + CHTML_table::SetColumnWidth
  *
