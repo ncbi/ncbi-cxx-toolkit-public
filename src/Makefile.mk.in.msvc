@@ -85,7 +85,7 @@ PreprocessorDefinitions=
 # Precompiled headers
 
 [UsePch]
-UsePch      = FALSE
+UsePch      = TRUE
 corelib     = ncbi_pch.hpp
 DoNotUsePch = test_mt
 
