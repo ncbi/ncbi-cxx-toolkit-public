@@ -57,7 +57,8 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CAlnVec::CAlnVec(const CDense_seg& ds) 
     : CAlnMap(ds),
       m_ConsensusSeq(-1),
-      m_EndChar(' ')
+      m_set_GapChar(false),
+      m_set_EndChar(false)
 {
 }
 
@@ -65,7 +66,8 @@ CAlnVec::CAlnVec(const CDense_seg& ds)
 CAlnVec::CAlnVec(const CDense_seg& ds, TNumrow anchor)
     : CAlnMap(ds, anchor),
       m_ConsensusSeq(-1),
-      m_EndChar(' ')
+      m_set_GapChar(false),
+      m_set_EndChar(false)
 {
 }
 
@@ -74,7 +76,8 @@ CAlnVec::CAlnVec(const CDense_seg& ds, CScope& scope)
     : CAlnMap(ds),
       m_Scope(&scope),
       m_ConsensusSeq(-1),
-      m_EndChar(' ')
+      m_set_GapChar(false),
+      m_set_EndChar(false)
 {
 }
 
@@ -83,7 +86,8 @@ CAlnVec::CAlnVec(const CDense_seg& ds, TNumrow anchor, CScope& scope)
     : CAlnMap(ds, anchor),
       m_Scope(&scope),
       m_ConsensusSeq(-1),
-      m_EndChar(' ')
+      m_set_GapChar(false),
+      m_set_EndChar(false)
 {
 }
 
@@ -433,6 +437,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/01/16 20:46:17  todorov
+* Added Gap/EndChar set flags
+*
 * Revision 1.13  2003/01/08 16:50:56  todorov
 * Fixed TGetChunkFlags in GetAlnSeqString
 *

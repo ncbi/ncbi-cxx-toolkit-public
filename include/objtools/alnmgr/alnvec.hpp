@@ -121,7 +121,9 @@ private:
     CAlnVec& operator=(const CAlnVec&);
 
     TResidue m_GapChar;
+    bool     m_set_GapChar;
     TResidue m_EndChar;
+    bool     m_set_EndChar;
 };
 
 
@@ -200,18 +202,19 @@ inline
 void CAlnVec::SetGapChar(TResidue gap_char)
 {
     m_GapChar = gap_char;
+    m_set_GapChar = true;
 }
 
 inline
 void CAlnVec::UnsetGapChar()
 {
-    m_GapChar = (TResidue) 0;
+    m_set_GapChar = false;
 }
 
 inline
 bool CAlnVec::IsSetGapChar() const
 {
-    return m_GapChar;
+    return m_set_GapChar;
 }
 
 inline
@@ -228,18 +231,23 @@ inline
 void CAlnVec::SetEndChar(TResidue end_char)
 {
     m_EndChar = end_char;
+    m_set_EndChar = true;
 }
 
 inline
 bool CAlnVec::IsSetEndChar() const
 {
-    return m_EndChar;
+    return m_set_EndChar;
 }
 
 inline
 CSeqVector::TResidue CAlnVec::GetEndChar() const
 {
-    return m_EndChar;
+    if (IsSetEndChar()) {
+        return m_EndChar;
+    } else {
+        return ' ';
+    }
 }
 
 
@@ -295,6 +303,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2003/01/16 20:46:30  todorov
+ * Added Gap/EndChar set flags
+ *
  * Revision 1.12  2002/12/26 12:38:08  dicuccio
  * Added Win32 export specifiers
  *
