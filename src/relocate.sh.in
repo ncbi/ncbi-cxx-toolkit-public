@@ -86,8 +86,8 @@ done
 
 #### Relocate GBench
 
-gbench_dir=$bld_tree/bin/.gbench/bin
-gbench_move=$gbench_dir/move-gbench.sh
+gbench_dir=$bld_tree/bin/.gbench
+gbench_move=$gbench_dir/bin/move-gbench.sh
 
 if [ -x $gbench_move ]; then
    echo GBench relocation started...
