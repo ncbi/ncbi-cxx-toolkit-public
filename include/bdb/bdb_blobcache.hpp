@@ -110,12 +110,30 @@ public:
     /// @param lm          Locking mode, protection against using the 
     ///                    cache from multiple applications
     /// @param cache_size  Berkeley DB memory cache settings
+    ///
+    /// @sa OpenReadOnly
+    ///
     void Open(const char*  cache_path, 
               const char*  cache_name,
               ELockMode    lm = eNoLock,
               unsigned int cache_ram_size = 0);
 
+    /// Open local cache in read-only mode.
+    /// This is truely passive mode of operations. 
+    /// All modification calls are ignored, no statistics is going to 
+    /// be collected, no timestamps. PID locking is also not available.
+    ///
+    /// @sa Open
+    ///
+    void OpenReadOnly(const char*  cache_path, 
+                      const char*  cache_name,
+                      unsigned int cache_ram_size = 0);
+
     void Close();
+
+    /// Return TRUE if cache is read-only
+    bool IsReadOnly() const { return m_ReadOnly; }
+
 
     // ICache interface 
 
@@ -202,6 +220,7 @@ private:
     string                  m_Path;       ///< Path to storage
     string                  m_Name;       ///< Cache name
     CPIDGuard*              m_PidGuard;   ///< Cache lock
+    bool                    m_ReadOnly;   ///< read-only flag
 
     CBDB_Env*               m_Env;          ///< Common environment for cache DBs
     SCacheDB*               m_CacheDB;      ///< Cache BLOB storage
@@ -258,6 +277,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/06/14 16:10:36  kuznets
+ * Added read-only mode
+ *
  * Revision 1.18  2004/06/10 17:14:57  kuznets
  * Fixed work with overflow files
  *

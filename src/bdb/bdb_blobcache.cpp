@@ -50,23 +50,9 @@ BEGIN_NCBI_SCOPE
 // All requests are protected with one mutex
 DEFINE_STATIC_FAST_MUTEX(x_BDB_BLOB_CacheMutex);
 
-// Mutex to sync int cache requests coming from different threads
-// All requests are protected with one mutex
-/*
-DEFINE_STATIC_FAST_MUTEX(x_BDB_IntCacheMutex);
-*/
 
 static const unsigned int s_WriterBufferSize = 256 * 1024;
 
-/*
-static void s_MakeOverflowFileName(string& buf,
-                                   const string& path, 
-                                   const string& blob_key,
-                                   int           version)
-{
-    buf = path + blob_key + '_' + NStr::IntToString(version) + ".ov_";
-}
-*/
 		
 static void s_MakeOverflowFileName(string& buf,
                                    const string& path, 
@@ -429,6 +415,7 @@ private:
 
 CBDB_Cache::CBDB_Cache()
 : m_PidGuard(0),
+  m_ReadOnly(false),
   m_Env(0),
   m_CacheDB(0),
   m_CacheAttrDB(0),
@@ -532,6 +519,41 @@ void CBDB_Cache::Open(const char* cache_path,
         Purge(GetTimeout());
     }
     m_Env->TransactionCheckpoint();
+
+    m_ReadOnly = false;
+}
+
+
+void CBDB_Cache::OpenReadOnly(const char*  cache_path, 
+                              const char*  cache_name,
+                              unsigned int cache_ram_size)
+{
+    {{
+    
+    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+
+    Close();
+
+    m_Path = CDirEntry::AddTrailingPathSeparator(cache_path);
+
+    m_CacheDB = new SCacheDB();
+    m_CacheAttrDB = new SCache_AttrDB();
+
+    m_CacheDB->SetPageSize(32 * 1024);
+    if (cache_ram_size)
+        m_CacheDB->SetCacheSize(cache_ram_size);
+
+    string cache_db_name = 
+       string("lcs_") + string(cache_name) + string(".db");
+    string attr_db_name = 
+       string("lcs_") + string(cache_name) + string("_attr") + string(".db");
+
+    m_CacheDB->Open(cache_db_name.c_str(),    CBDB_RawFile::eReadOnly);
+    m_CacheAttrDB->Open(attr_db_name.c_str(), CBDB_RawFile::eReadOnly);
+    
+    }}
+
+    m_ReadOnly = true;
 }
 
 
@@ -579,6 +601,10 @@ void CBDB_Cache::Store(const string&  key,
                        const void*    data,
                        size_t         size)
 {
+    if (IsReadOnly()) {
+        return;
+    }
+
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
         Purge(key, subkey, 0, m_VersionFlag);
     }
@@ -821,6 +847,11 @@ IWriter* CBDB_Cache::GetWriteStream(const string&    key,
                                     int              version,
                                     const string&    subkey)
 {
+    if (IsReadOnly()) {
+        return 0;
+    }
+
+
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
         Purge(key, subkey, 0, m_VersionFlag);
     }
@@ -856,6 +887,10 @@ IWriter* CBDB_Cache::GetWriteStream(const string&    key,
 
 void CBDB_Cache::Remove(const string& key)
 {
+    if (IsReadOnly()) {
+        return;
+    }
+
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
     vector<SCacheDescr>  cache_elements;
@@ -951,6 +986,10 @@ time_t CBDB_Cache::GetAccessTime(const string&  key,
 void CBDB_Cache::Purge(time_t           access_timeout,
                        EKeepVersions    keep_last_version)
 {
+    if (IsReadOnly()) {
+        return;
+    }
+
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
     if (keep_last_version == eDropAll && access_timeout == 0) {
@@ -1007,6 +1046,10 @@ void CBDB_Cache::Purge(const string&    key,
                        time_t           access_timeout,
                        EKeepVersions    keep_last_version)
 {
+    if (IsReadOnly()) {
+        return;
+    }
+
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
     if (key.empty() || 
@@ -1090,6 +1133,10 @@ void CBDB_Cache::x_UpdateAccessTime(const string&  key,
                                     int            version,
                                     const string&  subkey)
 {
+    if (IsReadOnly()) {
+        return;
+    }
+
     CBDB_Transaction trans(*m_Env);
     m_CacheDB->SetTransaction(&trans);
     m_CacheAttrDB->SetTransaction(&trans);
@@ -1104,6 +1151,10 @@ void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
                                              int            version,
                                              const string&  subkey)
 {
+    if (IsReadOnly()) {
+        return;
+    }
+
     m_CacheAttrDB->key = key;
     m_CacheAttrDB->version = version;
     m_CacheAttrDB->subkey = (m_TimeStampFlag & fTrackSubKey) ? subkey : "";
@@ -1122,6 +1173,10 @@ void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
 
 void CBDB_Cache::x_TruncateDB()
 {
+    if (IsReadOnly()) {
+        return;
+    }
+
     LOG_POST(Info << "CBDB_BLOB_Cache:: cache database truncated");
     m_CacheDB->Truncate();
     m_CacheAttrDB->Truncate();
@@ -1181,6 +1236,10 @@ void CBDB_Cache::x_DropBlob(const char*    key,
 {
     _ASSERT(key);
     _ASSERT(subkey);
+
+    if (IsReadOnly()) {
+        return;
+    }
 
     if (overflow == 1) {
         string path;
@@ -1253,6 +1312,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2004/06/14 16:10:43  kuznets
+ * Added read-only mode
+ *
  * Revision 1.55  2004/06/10 17:14:41  kuznets
  * Fixed work with overflow files
  *
