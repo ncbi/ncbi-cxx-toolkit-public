@@ -113,9 +113,8 @@ int CSampleObjmgrApplication::Run(void)
     // Create GenBank data loader and register it with the OM.
     // * The last argument "eDefault" informs the OM that the loader must
     // * be included in scopes during the CScope::AddDefaults() call.
-    object_manager->RegisterDataLoader
-        (*new CGBDataLoader("ID", new CId1Reader, 2),
-         CObjectManager::eDefault);
+    object_manager->RegisterDataLoader(*new CGBDataLoader("ID", 0, 2),
+                                       CObjectManager::eDefault);
 
     // Create a new scope ("attached" to our OM).
     CScope scope(*object_manager);
@@ -261,6 +260,10 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2002/08/30 18:10:20  ucko
+ * Let CGBDataLoader pick a driver automatically rather than forcing it
+ * to use ID1.
+ *
  * Revision 1.5  2002/06/12 18:35:16  ucko
  * Take advantage of new CONNECT_Init() function.
  *
