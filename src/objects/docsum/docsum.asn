@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.37 2003/07/09 19:36:33 kholodov Exp $
+-- $Id: docsum.asn,v 1.38 2003/09/22 20:14:58 kholodov Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.38  2003/09/22 20:14:58  kholodov
+-- Added: copyright notice
+--
 -- Revision 1.37  2003/07/09 19:36:33  kholodov
 -- Syntax error fixed
 --
@@ -248,6 +251,7 @@ NSE-Pop ::= SEQUENCE {
 }
 
 NSE-ExchangeSet ::= SEQUENCE {
+	copyright SEQUENCE OF VisibleString OPTIONAL,
 	version VisibleString,			-- version number of docsum.asn/docsum.dtd specification
 	dbSNP-build-number INTEGER,		-- build number of database for this export
 	generated NSE-Date OPTIONAL ,		-- Date set-list generated
