@@ -77,7 +77,10 @@ void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse_info)
         x_GetBase(*it).x_AddAnnotChunkId(GetChunkId());
     }
     ITERATE ( TBioseqPlaces, it, m_BioseqPlaces ) {
-        x_GetBioseq_set(it->first).x_AddBioseqChunkId(GetChunkId());
+        TPlaceId bioseq_set_id = it->first;
+        if ( bioseq_set_id != 0 ) {
+            x_GetBioseq_set(bioseq_set_id).x_AddBioseqChunkId(GetChunkId());
+        }
         ITERATE ( TBioseqIds, idit, it->second ) {
             tse_info.x_SetBioseqChunk(*idit, GetChunkId());
         }
@@ -327,6 +330,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/08/19 16:54:56  vasilche
+* Treat Bioseq-set zero as anonymous set.
+*
 * Revision 1.14  2004/08/19 14:20:58  vasilche
 * Added splitting of whole Bioseqs.
 *
