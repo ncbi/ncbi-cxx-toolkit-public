@@ -297,26 +297,30 @@ BlastHSPGetNumIdentical(Uint1* query, Uint1* subject, BlastHSP* hsp,
 
 static Int2
 BlastOOFGetNumIdentical(Uint1* query_seq, Uint1* subject_seq, 
-   BlastHSP* hsp, Int4* num_ident_ptr, Int4* align_length_ptr)
+   BlastHSP* hsp, Uint1 program, 
+   Int4* num_ident_ptr, Int4* align_length_ptr)
 {
    Int4 i, num_ident, align_length, q_off, s_off;
    Int2 context;
    Uint1* q,* s;
    GapEditScript* esp;
 
-   if (!hsp->gap_info)
+   if (!hsp->gap_info || !subject_seq || !query_seq)
       return -1;
 
    context = hsp->context;
-   s_off = hsp->query.offset;
-   q_off = hsp->subject.offset;
 
-   if (!subject_seq || !query_seq)
-      return -1;
-
-   q = &query_seq[q_off];
-   s = &subject_seq[s_off];
-
+   if (program == blast_type_tblastn) {
+       q_off = hsp->query.offset;
+       s_off = hsp->subject.offset;
+       q = &query_seq[q_off];
+       s = &subject_seq[s_off];
+   } else {
+       s_off = hsp->query.offset;
+       q_off = hsp->subject.offset;
+       s = &query_seq[q_off];
+       q = &subject_seq[s_off];
+   }
    num_ident = 0;
    align_length = 0;
 
@@ -587,7 +591,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
 
             keep = TRUE;
             if (is_ooframe) {
-               BlastOOFGetNumIdentical(query, subject, hsp, 
+               BlastOOFGetNumIdentical(query, subject, hsp, program_number,
                                        &hsp->num_ident, &align_length);
                /* Adjust subject offsets for negative frames */
                if (hsp->subject.frame < 0) {
