@@ -590,7 +590,7 @@ void FixVisibleChar(char& c, EFixNonPrint fix_method, size_t at_line = 0);
 /// CObjectIStream::EndDelayBuffer() call. If it's not called we have a delay 
 /// buffer leak. This class works as an guard (or auto pointer) to avoid call
 /// leaks.
-class CStreamDelayBufferGuard 
+class NCBI_XSERIAL_EXPORT CStreamDelayBufferGuard 
 {
 public:
     /// Construct instance on a given CObjectIStream object.
@@ -633,6 +633,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2003/09/25 12:39:08  kuznets
+* Added dllexport for CStreamDelayBufferGuard
+*
 * Revision 1.90  2003/09/24 20:55:13  kuznets
 * Implemented CStreamDelayBufferGuard
 *
