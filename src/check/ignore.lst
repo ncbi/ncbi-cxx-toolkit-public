@@ -1,4 +1,4 @@
-# $Id: ignore.lst,v 1.6 2002/07/08 14:32:08 ivanov Exp $
+# $Id: ignore.lst,v 1.7 2002/07/10 20:07:45 vakatov Exp $
 #
 # List of pairs "test/signature" that will not be checked
 #
@@ -43,14 +43,15 @@ util/test/test_resize_iter  KCC_400-Release--i686-pc-linux-gnuaout
 
 ; ObjMgr
 ;     Loader is unstable in MT mode.
+;;  It looks that the bug is fixed now (by A.Grichenko and M.Kimelman)
 
-objects/objmgr/test/testobjmgr1_mt  GCC_300-DebugMT--i686-pc-linux-gnu
-objects/objmgr/test/testobjmgr1_mt  GCC_300-ReleaseMT--i686-pc-linux-gnu
-objects/objmgr/test/testobjmgr1_mt  WorkShop53_530-ReleaseMT--i386-pc-solaris2.7
+; objects/objmgr/test/testobjmgr1_mt  GCC_300-DebugMT--i686-pc-linux-gnu
+; objects/objmgr/test/testobjmgr1_mt  GCC_300-ReleaseMT--i686-pc-linux-gnu
+; objects/objmgr/test/testobjmgr1_mt  WorkShop53_530-ReleaseMT--i386-pc-solaris2.7
 
-objects/objmgr/test/test_objmgr1_data_mt  GCC_300-DebugMT--i686-pc-linux-gnu
-objects/objmgr/test/test_objmgr1_data_mt  GCC_300-ReleaseMT--i686-pc-linux-gnu
-objects/objmgr/test/test_objmgr1_data_mt  WorkShop53_530-ReleaseMT--i386-pc-solaris2.7
+; objects/objmgr/test/test_objmgr1_data_mt  GCC_300-DebugMT--i686-pc-linux-gnu
+; objects/objmgr/test/test_objmgr1_data_mt  GCC_300-ReleaseMT--i686-pc-linux-gnu
+; objects/objmgr/test/test_objmgr1_data_mt  WorkShop53_530-ReleaseMT--i386-pc-solaris2.7
 
 
 ; Other
