@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CMolInfo : public CMolInfo_Base
+class NCBI_SEQ_EXPORT CMolInfo : public CMolInfo_Base
 {
     typedef CMolInfo_Base Tparent;
 public:
@@ -89,6 +89,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/08/17 14:35:23  dicuccio
+* Export CMolInfo
+*
 * Revision 1.2  2002/10/03 19:05:23  clausen
 * Removed extra whitespace
 *
