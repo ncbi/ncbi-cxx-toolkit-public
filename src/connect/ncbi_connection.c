@@ -356,7 +356,7 @@ extern EIO_Status CONN_Wait
     if (status != eIO_Success) {
         if (status != eIO_Timeout)
             CONN_LOG(eLOG_Error, "[CONN_Wait]  Error waiting on I/O");
-        else if (timeout  &&  timeout->sec + timeout->usec != 0)
+        else if (!timeout || timeout->sec || timeout->usec)
             CONN_LOG(eLOG_Warning, "[CONN_Wait]  I/O timed out");
     }
 
@@ -720,6 +720,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.35  2003/05/21 17:53:06  lavr
+ * Better check for {0,0} timeout in CONN_Read()
+ *
  * Revision 6.34  2003/05/20 21:21:45  lavr
  * CONN_Write(): log with different log levels on write errors
  *
