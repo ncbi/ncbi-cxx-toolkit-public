@@ -137,6 +137,11 @@ public:
 	///
 	void AddModsToHit(CMSHits *Hit, CMSHit *MSHit);
 
+    ///
+    ///  Adds ion information to hitset
+    ///
+    void AddIonsToHit(CMSHits *Hit, CMSHit *MSHit);
+
 	///
 	///  Makes a string hashed out of the sequence plus mods
 	///
@@ -255,6 +260,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.15  2004/09/15 18:35:00  lewisg
+  cz ions
+
   Revision 1.14  2004/07/22 22:22:58  lewisg
   output mods
 

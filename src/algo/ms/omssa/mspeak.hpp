@@ -67,17 +67,17 @@ class CMSPeak;
 class NCBI_XOMSSA_EXPORT CMSHitInfo {
 public:
     char& SetCharge(void) { return Charge; }
-    const char GetCharge(void) { return Charge; }
+    const char GetCharge(void) const { return Charge; }
     char& SetIon(void) { return Ion; }
-    const char GetIon(void) { return Ion; }
+    const char GetIon(void) const { return Ion; }
     short int& SetNumber(void) { return Number; }
-    const short  GetNumber(void) { return Number; }
+    const short  GetNumber(void) const { return Number; }
     unsigned& SetIntensity(void) { return Intensity; }
-    const unsigned GetIntensity(void) { return Intensity; }
+    const unsigned GetIntensity(void) const { return Intensity; }
 
   // for poisson test
     int& SetMz(void) { return mz; }
-    const int GetMz(void) { return mz; }
+    const int GetMz(void) const { return mz; }
   //
 
 private:
@@ -170,6 +170,7 @@ public:
     void SetHits(int HitsIn);
     const int GetCharge(void) const;
     void SetCharge(int ChargeIn);
+    const CMSHitInfo& GetHitInfo(int n) const;
     CMSHitInfo& SetHitInfo(int n);
 	const CMSModInfo& GetModInfo(int n) const;
 	const int GetNumModInfo(void) const;
@@ -342,6 +343,12 @@ CMSHitInfo& CMSHit::SetHitInfo(int n)
 }
 
 inline 
+const CMSHitInfo& CMSHit::GetHitInfo(int n) const
+{
+    return *(HitInfo.get() + n);
+}
+
+inline 
 CMSModInfo& CMSHit::SetModInfo(int n)
 {
     return *(ModInfo.get() + n);
@@ -452,10 +459,7 @@ typedef CMSHit * TMSHitList;
 #define MSNUMTOP 3
 
 // the maximum charge state that can be considered
-#define MSMAXCHARGE 4
-
-// the precursor charge state at which to begin considering 2+ product ions
-const int kConsiderMult = 3;
+#define MSMAXCHARGE 10
 
 // function object for cull iterate
 typedef bool (*TMZIbool) (const CMZI&, const CMZI&, int tol);
@@ -510,12 +514,19 @@ public:
     // note that this only culls the water or ammonia loss if these peaks have a lesser
     // less intensity
     void CullH20NH3(CMZI *Temp, int& TempLen);
+
     // recursively culls the peaks
-    void SmartCull(double Threshold, int Charge,
-		   int SingleWindow,  // size of the charge 1 window in Da
-		   int DoubleWindow,  // size of the charge 2 window in Da
-		   int SingleNum,     // number of peaks allowed in charge 1 window
-		   int DoubleNum);    // number of peaks allowed in charge 2 window
+    void SmartCull(double Threshold,
+				   int SingleWindow,  // size of the charge 1 window in Da
+				   int DoubleWindow,  // size of the charge 2 window in Da
+				   int SingleNum,     // number of peaks allowed in charge 1 window
+				   int DoubleNum,     // number of peaks allowed in charge 2 window
+				   CMZI *Temp,        // array of m/z intensity values
+				   int& TempLen,
+				   bool ConsiderMultProduct  // assume multiply charged products?
+				   );
+
+
     // use smartcull on all charges
     void CullAll(double Threshold, 
 		 int SingleWindow,
@@ -525,6 +536,17 @@ public:
 		 int Tophitnum // the number of top hits where at least one has to match
 		 );
 
+	///
+	///  Performs culling based on whether to consider multiply charged ions or not
+	///
+
+	void CullChargeAndWhich(bool ConsiderMultProduct,  // should we use multiply charged products?
+							double Threshold,
+							int SingleWindow,
+							int DoubleWindow,
+							int SingleHit, 
+							int DoubleHit
+							);
 
     // return the lowest culled peak and the highest culled peak less than the
     // precursor mass passed in
@@ -553,7 +575,7 @@ public:
     // is the data charge +1?
     bool IsPlus1(double PercentBelowIn);
     // calculates charge based on threshold and sets charge value 
-    void SetComputedCharge(int MaxCharge);
+    void SetComputedCharge(int MinChargeIn, int MaxChargeIn, int ConsiderMultIn);
     EChargeState GetComputedCharge(void);
     // return allowed computed charges
     int* GetCharges(void) { return Charges;}
@@ -600,6 +622,8 @@ public:
     int GetMass(void);
     // get charge that came from input file
     int GetCharge(void);
+	// gets min precursor charge to consider multiply charged product ions
+	int GetConsiderMult(void);  
     EMSHitError GetError(void);
     void SetError(EMSHitError ErrorIn);
     CMSSpectrum::TIds& SetName(void);
@@ -636,6 +660,9 @@ private:
     int tol;        // error tolerance of peptide
     double PlusOne;  // value used to determine if spectra is +1
     EChargeState ComputedCharge;  // algorithmically calculated 
+	int ConsiderMult;  // at what precursor charge should multiply charged products be considered?
+	int MaxCharge;  // maximum precursor charge to consider
+	int MinCharge;  // minimum precursor charge to consider
     CAA AA;
     char *AAMap;
 
@@ -709,6 +736,12 @@ inline int CMSPeak::GetCharge(void)
     return Charge; 
 }
 
+inline
+int CMSPeak::GetConsiderMult(void)  
+{
+	return ConsiderMult;
+}
+
 inline EMSHitError CMSPeak::GetError(void) 
 {
     return Error; 
@@ -771,7 +804,7 @@ inline void CMSPeak::ClearUsedAll(void)
 // returns the cull array index
 inline int CMSPeak::GetWhich(int Charge)
 {
-    if(Charge <  kConsiderMult) return MSCULLED1;
+    if(Charge < ConsiderMult) return MSCULLED1;
     else return MSCULLED2;
 }
 
@@ -872,6 +905,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.17  2004/09/15 18:35:00  lewisg
+  cz ions
+
   Revision 1.16  2004/07/22 22:22:58  lewisg
   output mods
 

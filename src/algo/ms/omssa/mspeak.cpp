@@ -145,7 +145,7 @@ void CMSHit::RecordMatches(CLadder& BLadder,
     int Which = Peaks->GetWhich(Charge);
 
     // scan thru each ladder
-    if(Charge >= kConsiderMult) {
+    if(Charge >= Peaks->GetConsiderMult()) {
 		RecordMatchesScan(BLadder, iHitInfo, Peaks, Which);
 		RecordMatchesScan(YLadder, iHitInfo, Peaks, Which);
 		RecordMatchesScan(B2Ladder, iHitInfo, Peaks, Which);
@@ -495,15 +495,21 @@ double CMSPeak::RangeRatio(double Start, double Middle, double Stop)
 }
 
 // calculate the charge
-void CMSPeak::SetComputedCharge(int MaxCharge)
+void CMSPeak::SetComputedCharge(int MinChargeIn, int MaxChargeIn, int ConsiderMultIn)
 {
+	ConsiderMult = min(ConsiderMultIn, MSMAXCHARGE);
+	MinCharge = min(MinChargeIn, MSMAXCHARGE);
+	MaxCharge = min(MaxChargeIn, MSMAXCHARGE);
+
     if(IsPlus1(PercentBelow())) {
-	ComputedCharge = eCharge1;
-	Charges[0] = 1;
-	NumCharges = 1;
+		ComputedCharge = eCharge1;
+		Charges[0] = 1;
+		NumCharges = 1;
     }
     else {
+
 #if 0
+    // ratio search.  doesn't work that well.
 	NumCharges = 1;
 	if(RangeRatio(0.5, 1.0, 1.5) > 1.25 ) {
 	    Charges[0] = 2;
@@ -518,11 +524,14 @@ void CMSPeak::SetComputedCharge(int MaxCharge)
 	    ComputedCharge = eCharge4;
 	}
 #endif
-	ComputedCharge = eChargeNot1; 
-	Charges[0] = 2;
-	Charges[1] = 3;
-	NumCharges = 2;
-    }
+
+		ComputedCharge = eChargeNot1; 
+		int i;
+		NumCharges = MaxCharge - MinCharge + 1;
+		for(i = 0; i < NumCharges; i++) {
+			Charges[i] = i + MinCharge;
+		}
+	}
 }
 
 // initializes arrays used to track hits
@@ -594,8 +603,7 @@ void CMSPeak::TruncatePlus1(void)
 void CMSPeak::CullBaseLine(double Threshold, CMZI *Temp, int& TempLen)
 {
     unsigned iMZI;
-    for(iMZI = 0; iMZI < Num[MSORIGINAL] && MZI[MSORIGINAL][iMZI].Intensity > Threshold * MZI[MSORIGINAL][0].Intensity; iMZI++);
-    copy(&MZI[MSORIGINAL][0], &MZI[MSORIGINAL][iMZI], Temp);
+    for(iMZI = 0; iMZI < TempLen && Temp[iMZI].Intensity > Threshold * Temp[0].Intensity; iMZI++);
     TempLen = iMZI;
 }
 
@@ -678,15 +686,70 @@ void CMSPeak::CullH20NH3(CMZI *Temp, int& TempLen)
 }
 
 
+void CMSPeak::CullChargeAndWhich(bool ConsiderMultProduct,
+								 double Threshold, int SingleWindow,
+								 int DoubleWindow, int SingleHit, int DoubleHit)
+{
+    int TempLen(0);
+    CMZI *Temp = new CMZI [Num[MSORIGINAL]]; // temporary holder
+    copy(MZI[MSORIGINAL], MZI[MSORIGINAL] + Num[MSORIGINAL], Temp);
+    TempLen = Num[MSORIGINAL];
+
+    int iCharges;
+	double Precursor;
+	for(iCharges = 0; iCharges < GetNumCharges(); iCharges++){
+		Precursor = GetMass()/(double)(GetCharges()[iCharges]);
+		CullPrecursor(Temp, TempLen, Precursor);
+	}
+#define DEBUG_PEAKS1
+#ifdef DEBUG_PEAKS1
+    {
+	sort(Temp, Temp+TempLen , CMZICompare());
+	ofstream FileOut("afterprecurse.dta");
+	xWrite(FileOut, Temp, TempLen);
+	sort(Temp, Temp+TempLen , CMZICompareIntensity());
+    }
+#endif
+
+	SmartCull(Threshold, SingleWindow,
+			  DoubleWindow, SingleHit, DoubleHit,
+			  Temp, TempLen, ConsiderMultProduct);
+
+    // make the array of culled peaks
+	int Which = ConsiderMultProduct?MSCULLED2:MSCULLED1;
+    if(MZI[Which]) delete [] MZI[Which];
+    if(Used[Which]) delete [] Used[Which];
+    Num[Which] = TempLen;
+    MZI[Which] = new CMZI [TempLen];
+    Used[Which] = new char [TempLen];
+    ClearUsed(Which);
+    copy(Temp, Temp+TempLen, MZI[Which]);
+    Sort(Which);
+
+    delete [] Temp;
+}
+
+
 // use smartcull on all charges
 void CMSPeak::CullAll(double Threshold, int SingleWindow,
 		      int DoubleWindow, int SingleHit, int DoubleHit,
 		      int Tophitnum)
 {    
     int iCharges;
-    for(iCharges = 0; iCharges < GetNumCharges(); iCharges++)
-	SmartCull(Threshold, GetCharges()[iCharges], SingleWindow,
-		  DoubleWindow, SingleHit, DoubleHit);
+
+    sort(MZI[MSORIGINAL], MZI[MSORIGINAL] + Num[MSORIGINAL], CMZICompareIntensity());
+    Sorted[MSORIGINAL] = false;
+
+	if(MinCharge < ConsiderMult) {	
+		CullChargeAndWhich(false,
+						   Threshold, SingleWindow,
+						   DoubleWindow, SingleHit, DoubleHit);
+	}
+	if(MaxCharge >= ConsiderMult) {
+		CullChargeAndWhich(true,
+						   Threshold, SingleWindow,
+						   DoubleWindow, SingleHit, DoubleHit);
+	}
 
     // make the high intensity list
     iCharges = GetNumCharges() - 1;
@@ -728,20 +791,11 @@ bool CMSPeak::IsMajorPeak(int BigMZ, int TestMZ, int tol)
 }
 
 // recursively culls the peaks
-void CMSPeak::SmartCull(double Threshold, int Charge, int SingleWindow,
-			int DoubleWindow, int SingleNum, int DoubleNum)
+void CMSPeak::SmartCull(double Threshold, int SingleWindow,
+						int DoubleWindow, int SingleNum, int DoubleNum,
+						CMZI *Temp, int& TempLen, bool ConsiderMultProduct)
 {
-    //       sort(MZI[MSORIGINAL], MZI[MSORIGINAL] + Num[MSORIGINAL], CMZICompare());
-    sort(MZI[MSORIGINAL], MZI[MSORIGINAL] + Num[MSORIGINAL], CMZICompareIntensity());
-    Sorted[MSORIGINAL] = false;
-    double Precursor;
-    int Which = GetWhich(Charge);
-    Precursor = GetMass()/(double)Charge;
-
     int iMZI = 0;  // starting point
-
-    int TempLen(0);
-    CMZI *Temp = new CMZI [Num[MSORIGINAL]]; // temporary holder
 
     // prep the data
     CullBaseLine(Threshold, Temp, TempLen);
@@ -753,14 +807,8 @@ void CMSPeak::SmartCull(double Threshold, int Charge, int SingleWindow,
 	sort(Temp, Temp+TempLen , CMZICompareIntensity());
     }
 #endif
+#if 0
     CullPrecursor(Temp, TempLen, Precursor);
-#ifdef DEBUG_PEAKS1
-    {
-	sort(Temp, Temp+TempLen , CMZICompare());
-	ofstream FileOut("afterprecurse.dta");
-	xWrite(FileOut, Temp, TempLen);
-	sort(Temp, Temp+TempLen , CMZICompareIntensity());
-    }
 #endif
     CullIsotope(Temp, TempLen);
 #ifdef DEBUG_PEAKS1
@@ -790,7 +838,7 @@ void CMSPeak::SmartCull(double Threshold, int Charge, int SingleWindow,
     for(iMZI = 0; iMZI < TempLen - 1; iMZI++) { 
 	if(Deleted.count(iMZI) != 0) continue;
 	HitCount = 0;
-	if(Charge <  kConsiderMult || Temp[iMZI].MZ > Precursor) {
+	if(!ConsiderMultProduct || Temp[iMZI].MZ > GetMass()/2.0) {
 	    // if charge 1 region, allow fewer peaks
 	    Window = SingleWindow; //27;
 	    HitsAllowed = SingleNum;
@@ -830,31 +878,22 @@ void CMSPeak::SmartCull(double Threshold, int Charge, int SingleWindow,
     
     // delete the culled peaks
     for(iMZI = 0; iMZI < TempLen; iMZI++) {
-	if(Deleted.count(iMZI) == 0) {
-	    Temp[iTemp] = Temp[iMZI];
-	    iTemp++;
-	}
+		if(Deleted.count(iMZI) == 0) {
+			Temp[iTemp] = Temp[iMZI];
+			iTemp++;
+		}
     }
     TempLen = iTemp;
 
-
-    // make the array of culled peaks
-    if(MZI[Which]) delete [] MZI[Which];
-    if(Used[Which]) delete [] Used[Which];
-    Num[Which] = TempLen;
-    MZI[Which] = new CMZI [TempLen];
-    Used[Which] = new char [TempLen];
-    ClearUsed(Which);
-    copy(Temp, Temp+TempLen, MZI[Which]);
-    Sort(Which);
 #ifdef DEBUG_PEAKS1
     {
+	sort(Temp, Temp+TempLen , CMZICompare());
 	ofstream FileOut("aftercull.dta");
-	xWrite(FileOut, MZI[Which], Num[Which]);
+	xWrite(FileOut, Temp, TempLen);
+	sort(Temp, Temp+TempLen , CMZICompareIntensity());
     }
 #endif
 
-    delete [] Temp;
 }
 
 // return the lowest culled peak and the highest culled peak less than the

@@ -89,7 +89,7 @@ const double AverageMass[] = {0.0, 71.08, 0.0, 103.15, 115.09, 129.12, 147.18, 5
 const int AAIntervals[] = { 57, 71, 87, 97, 99, 101, 103, 113, 114, 115, 128, 129, 131, 137, 147, 150, 156, 163, 186 };
 
 const double kTermMass[] =  {1.008, 1.008, 1.008, 17.007, 17.007, 17.007};
-const double kIonTypeMass[] = { -28.01, 0.0, 16.023, 28.01, 2.016, 15.015 };
+const double kIonTypeMass[] = { -28.01, 0.0, 17.01, 30.026, 2.016, -13.985 };
 // direction.  1 = N->C, -1 = C->N
 const int kIonDirection[] = { 1, 1, 1, -1, -1, -1 };
 
@@ -458,6 +458,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.11  2004/09/15 18:35:00  lewisg
+  cz ions
+
   Revision 1.10  2004/07/22 22:22:58  lewisg
   output mods
 

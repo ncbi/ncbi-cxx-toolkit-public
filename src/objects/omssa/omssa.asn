@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.12 2004/07/22 22:22:58 lewisg Exp $
+-- $Id: omssa.asn,v 1.13 2004/09/15 18:35:55 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -11,7 +11,7 @@
 --
 --**********************************************************************
 
-OMMSA DEFINITIONS ::=
+OMSSA DEFINITIONS ::=
 BEGIN
 
 
@@ -87,10 +87,25 @@ MSMod ::= INTEGER {
 -- on this.  For example, a dta file only specifies one charge, 
 -- even though the charge is not really known.
 
-MSChargeHandle ::= INTEGER {
-	calculate (0),  -- guess the charge(s) from the data
-	usefile (1)     -- use what the input file says
+MSCalcPlusOne ::= INTEGER {
+	dontcalc (0),  -- don't guess charge one
+	calc (1)       -- guess charge one
 	}
+	
+MSCalcCharge ::= INTEGER {
+	calculate (0),  -- guess the charge(s) from the data
+	usefile (1),    -- use what the input file says
+	userange (2)    -- use the charge range specified
+	}
+
+MSChargeHandle ::= SEQUENCE {
+        calcplusone MSCalcPlusOne DEFAULT 1,  -- do we guess charge one?
+	calccharge MSCalcCharge DEFAULT 2,    -- how do we handle other charges?
+	mincharge INTEGER DEFAULT 2,          -- if userange, what is the min?
+	maxcharge INTEGER DEFAULT 3,          -- if userange, what is the max?
+	considermult INTEGER DEFAULT 3        -- at which precursor charge to consider +2 ions?
+	}
+	
 
 -- Search type
 MSSearchType ::= INTEGER {

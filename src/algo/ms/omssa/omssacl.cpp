@@ -153,7 +153,7 @@ void COMSSA::Init()
 
     auto_ptr<CArgDescriptions> argDesc(new CArgDescriptions);
 
-    argDesc->AddDefaultKey("d", "blastdb", "Blast sequence library to search",
+    argDesc->AddDefaultKey("d", "blastdb", "Blast sequence library to search. Do not include .p* filename suffixes.",
 			   CArgDescriptions::eString, "nr");
     argDesc->AddDefaultKey("f", "infile", "single dta file to search",
 			   CArgDescriptions::eString, "");
@@ -240,6 +240,18 @@ void COMSSA::Init()
 			   CArgDescriptions::eInteger, 
 			   NStr::IntToString(eMSEnzymes_trypsin));
     argDesc->AddFlag("el", "print a list of enzymes and their corresponding id number");
+	argDesc->AddDefaultKey("zh", "maxcharge", 
+				"maximum precursor charge to search when not 1+",
+				CArgDescriptions::eInteger, 
+				"3");
+	argDesc->AddDefaultKey("zl", "mincharge", 
+				"minimum precursor charge to search when not 1+",
+				CArgDescriptions::eInteger, 
+				"2");
+	argDesc->AddDefaultKey("zt", "chargethresh", 
+				 "minimum precursor charge to start considering multiply charged products",
+				 CArgDescriptions::eInteger, 
+				 "3");
 
 
     SetupArgDescriptions(argDesc.release());
@@ -366,6 +378,9 @@ int COMSSA::Run()
 	    InsertTax(List, Request.SetSettings().SetTaxids());
 	}
 
+	Request.SetSettings().SetChargehandling().SetConsidermult(args["zt"].AsInteger());
+	Request.SetSettings().SetChargehandling().SetMincharge(args["zl"].AsInteger());
+	Request.SetSettings().SetChargehandling().SetMaxcharge(args["zh"].AsInteger());
 
 	// validate the input
         list <string> ValidError;
@@ -375,6 +390,7 @@ int COMSSA::Run()
 		ERR_POST(Warning << *iErr);
 	    ERR_POST(Fatal << "Unable to validate settings");
 	}
+
 
 	_TRACE("omssa: search begin");
 	Search.Search(Request, Response);
@@ -435,7 +451,7 @@ int COMSSA::Run()
 	    CNcbiOfstream os(args["ox"].AsString().c_str());
 	    auto_ptr<CObjectOStreamXml>
 		txt_out(new CObjectOStreamXml(os, false));
-	    //txt_out->SetEnforcedStdXml();
+        txt_out->SetReferenceSchema();
 	    txt_out->Write(ObjectInfo(Response));
 	}
 
@@ -457,7 +473,7 @@ int COMSSA::Run()
 	    CNcbiOfstream os(args["wix"].AsString().c_str());
 	    auto_ptr<CObjectOStreamXml>
 		txt_out(new CObjectOStreamXml(os, false));
-	    //txt_out->SetEnforcedStdXml();
+		txt_out->SetReferenceSchema();
 	    txt_out->Write(ObjectInfo(Request));
 	}
 
@@ -486,6 +502,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.17  2004/09/15 18:35:00  lewisg
+  cz ions
+
   Revision 1.16  2004/07/06 22:38:05  lewisg
   tax list input and user settable modmax
 

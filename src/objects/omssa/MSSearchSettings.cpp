@@ -320,10 +320,35 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
     }
 
     if(IsSetChargehandling()) {
-	if( GetChargehandling() < 0 || GetChargehandling() > 1 ) {
-	    Error.push_back("unknown chargehandling option");
-	    retval = 1;
-	}
+		if(!GetChargehandling().CanGetMaxcharge() ||
+			!GetChargehandling().CanGetMincharge() ||
+			!GetChargehandling().CanGetCalccharge() ||
+			!GetChargehandling().CanGetCalcplusone() ||
+			!GetChargehandling().CanGetConsidermult()) {
+			Error.push_back("unknown chargehandling option");
+			retval = 1;
+		}
+		else {
+			if(GetChargehandling().GetMaxcharge() < 1 ||
+			   GetChargehandling().GetMincharge() < 1) {
+				Error.push_back("invalid min/max charge value");
+				retval = 1;
+			}
+			if(GetChargehandling().GetConsidermult() < 0) {
+				 Error.push_back("consider multiply charge product ions value out of range");
+				 retval = 1;
+			 }
+			if(GetChargehandling().GetCalccharge() < 0 ||
+			   GetChargehandling().GetCalccharge() > 2) {
+				Error.push_back("invalid calc charge setting");
+				retval = 1;
+			}
+			if(GetChargehandling().GetCalcplusone() < 0 ||
+				 GetChargehandling().GetCalcplusone() > 1) {
+				Error.push_back("invalid 1+ charge calc setting");
+				retval = 1;
+			}
+		}
     }
     
     return retval;
@@ -339,6 +364,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/09/15 18:35:55  lewisg
+* cz ions
+*
 * Revision 1.1  2004/06/08 19:46:20  lewisg
 * input validation, additional user settable parameters
 *

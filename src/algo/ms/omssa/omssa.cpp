@@ -106,20 +106,45 @@ int CSearch::CreateLadders(unsigned char *Sequence, int iSearch, int position,
 			   int *DeltaMass,
 			   int NumMod)
 {
-    if(!BLadder.CreateLadder(kBIon, 1, (char *)Sequence, iSearch,
+    if(!BLadder.CreateLadder(
+#define _HUNT
+#ifndef _HUNT
+		kCIon
+#else
+		kBIon
+#endif
+		, 1, (char *)Sequence, iSearch,
 			     position, endposition, Masses[iMissed], 
 			     MassArray, AA, ModMask, Site, DeltaMass,
 			     NumMod)) return 1;
-    if(!YLadder.CreateLadder(kYIon, 1, (char *)Sequence, iSearch,
+    if(!YLadder.CreateLadder(
+#ifndef _HUNT
+		kZIon
+#else
+		kYIon
+#endif
+		, 1, (char *)Sequence, iSearch,
 			 position, endposition, Masses[iMissed], 
 			     MassArray, AA, ModMask, Site, DeltaMass,
 			     NumMod)) return 1;
-    B2Ladder.CreateLadder(kBIon, 2, (char *)Sequence, iSearch,
+    B2Ladder.CreateLadder(
+#ifndef _HUNT
+		kCIon
+#else
+		kBIon
+#endif
+		, 2, (char *)Sequence, iSearch,
 			  position, endposition, 
 			  Masses[iMissed], 
 			  MassArray, AA, ModMask, Site, DeltaMass,
 			  NumMod);
-    Y2Ladder.CreateLadder(kYIon, 2, (char *)Sequence, iSearch,
+    Y2Ladder.CreateLadder(
+#ifndef _HUNT
+		kZIon
+#else
+		kYIon
+#endif
+		, 2, (char *)Sequence, iSearch,
 			  position, endposition,
 			  Masses[iMissed], 
 			  MassArray, AA, ModMask, Site, DeltaMass,
@@ -135,19 +160,19 @@ int CSearch::CompareLadders(CLadder& BLadder,
 			    CLadder& Y2Ladder, CMSPeak *Peaks,
 			    bool OrLadders,  TMassPeak *MassPeak)
 {
-    if(MassPeak && MassPeak->Charge >= kConsiderMult) {
-	Peaks->CompareSorted(BLadder, MSCULLED2, 0); 
-	Peaks->CompareSorted(YLadder, MSCULLED2, 0); 
-	Peaks->CompareSorted(B2Ladder, MSCULLED2, 0); 
-	Peaks->CompareSorted(Y2Ladder, MSCULLED2, 0);
+    if(MassPeak && MassPeak->Charge >= Peaks->GetConsiderMult()) {
+		Peaks->CompareSorted(BLadder, MSCULLED2, 0); 
+		Peaks->CompareSorted(YLadder, MSCULLED2, 0); 
+		Peaks->CompareSorted(B2Ladder, MSCULLED2, 0); 
+		Peaks->CompareSorted(Y2Ladder, MSCULLED2, 0);
 	if(OrLadders) {
 	    BLadder.Or(B2Ladder);
 	    YLadder.Or(Y2Ladder);	
 	}
     }
     else {
-	Peaks->CompareSorted(BLadder, MSCULLED1, 0); 
-	Peaks->CompareSorted(YLadder, MSCULLED1, 0); 
+		Peaks->CompareSorted(BLadder, MSCULLED1, 0); 
+		Peaks->CompareSorted(YLadder, MSCULLED1, 0); 
     }
     return 0;
 }
@@ -158,32 +183,31 @@ bool CSearch::CompareLaddersTop(CLadder& BLadder,
 			    CLadder& Y2Ladder, CMSPeak *Peaks,
 			    TMassPeak *MassPeak)
 {
-    if(MassPeak && MassPeak->Charge >=  kConsiderMult ) {
-	if(Peaks->CompareTop(BLadder)) return true; 
-	if(Peaks->CompareTop(YLadder)) return true; 
-	if(Peaks->CompareTop(B2Ladder)) return true; 
-	if(Peaks->CompareTop(Y2Ladder)) return true;
+    if(MassPeak && MassPeak->Charge >=  Peaks->GetConsiderMult() ) {
+		if(Peaks->CompareTop(BLadder)) return true; 
+		if(Peaks->CompareTop(YLadder)) return true; 
+		if(Peaks->CompareTop(B2Ladder)) return true; 
+		if(Peaks->CompareTop(Y2Ladder)) return true;
     }
     else {
-	if(Peaks->CompareTop(BLadder)) return true; 
-	if(Peaks->CompareTop(YLadder)) return true; 
+		if(Peaks->CompareTop(BLadder)) return true; 
+		if(Peaks->CompareTop(YLadder)) return true; 
     }
     return false;
 }
 
-#ifdef _DEBUG
-#define CHECKGI
+//#define CHECKGI
 #ifdef CHECKGI
 bool CheckGi(int gi)
 {
-    if(gi == 21742354) {
+    if(gi == 41393573 || gi == 45645212 || gi == 3978464 || gi == 18203659 || gi ==  29387351){
 	ERR_POST(Info << "test seq");
 	return true;
     }
     return false;
 }
 #endif
-#endif
+
 
 // loads spectra into peaks
 void CSearch::Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet)
@@ -214,7 +238,9 @@ void CSearch::Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet)
 	    Peaks->SetNumber() = Spectrum->GetNumber();
 		
 	Peaks->Sort();
-	Peaks->SetComputedCharge(3);
+	Peaks->SetComputedCharge(MyRequest.GetSettings().GetChargehandling().GetMincharge(),
+							 MyRequest.GetSettings().GetChargehandling().GetMaxcharge(), 
+							 MyRequest.GetSettings().GetChargehandling().GetConsidermult());
 	Peaks->InitHitList(MyRequest.GetSettings().GetMinhit());
 	Peaks->CullAll(MyRequest.GetSettings().GetCutlo(),
 		       MyRequest.GetSettings().GetSinglewin(),
@@ -767,6 +793,24 @@ void CSearch::AddModsToHit(CMSHits *Hit, CMSHit *MSHit)
 
 
 ///
+///  Adds ion information to hitset
+///
+
+void CSearch::AddIonsToHit(CMSHits *Hit, CMSHit *MSHit)
+{
+	int i;
+	for (i = 0; i < MSHit->GetHits(); i++) {
+		CRef<CMSMZHit> IonHit(new CMSMZHit);
+		IonHit->SetIon() = MSHit->GetHitInfo(i).GetIon();
+        IonHit->SetCharge() = MSHit->GetHitInfo(i).GetCharge();
+        IonHit->SetNumber() = MSHit->GetHitInfo(i).GetNumber();
+        IonHit->SetMz() = MSHit->GetHitInfo(i).GetMz();
+		Hit->SetMzhits().push_back(IonHit);
+	}
+}
+
+
+///
 ///  Makes a string hashed out of the sequence plus mods
 ///
 
@@ -891,6 +935,8 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 		    Hit->SetMass(MSHit->GetMass());
 			// insert mods here
 			AddModsToHit(Hit, MSHit);
+            // insert ions here
+            AddIonsToHit(Hit, MSHit);
 		    CRef<CMSHits> hitref(Hit);
 		    HitSet->SetHits().push_back(hitref);  
 		    PepDone[modseqstring] = Hit;
@@ -1104,14 +1150,14 @@ double CSearch::CalcPoissonMean(int Start, int Stop, int Mass, CMSPeak *Peaks,
     // see 12/13/02 notebook, pg. 127
 	
     retval = 4.0 * t * h * v / m;
-    if(Charge >= kConsiderMult) {
+    if(Charge >= Peaks->GetConsiderMult()) {
 	retval *= (m - 3*o + r)/(r - o);
     }    
 #if 0
     // variation that counts +1 and +2 separately
     // see 8/19/03 notebook, pg. 71
     retval = 4.0 * t * h / m;
-    if(Charge >= kConsiderMult) {
+    if(Charge >= Peaks->GetConsiderMult()) {
 	//		retval *= (m - 3*o + r)/(r - o);
 	retval *= (3 * v2 + v1);
     }
@@ -1129,6 +1175,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.26  2004/09/15 18:35:00  lewisg
+cz ions
+
 Revision 1.25  2004/07/22 22:22:58  lewisg
 output mods
 
