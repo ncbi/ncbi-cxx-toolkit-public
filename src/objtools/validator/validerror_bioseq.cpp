@@ -1803,6 +1803,9 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                     "Invalid feature for a protein Bioseq.",
                         fi->GetMappedFeature());
                 break;
+
+	    default:
+	        break;
             }
         } else {                            // nucleotide
             switch ( ftype ) {
@@ -1812,6 +1815,9 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                     "Invalid feature for a nucleotide Bioseq.",
                         fi->GetMappedFeature());
                 break;
+
+	    default:
+	        break;
             }
         }
         
@@ -1857,6 +1863,9 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                     }
                 }
                 break;
+
+	    default:
+	        break;
             }
         } else if ( IsPrerna(bsh) ) { // preRNA
             switch ( ftype ) {
@@ -1870,6 +1879,9 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                     }
                 }
                 break;
+
+	    default:
+	        break;
             }
         }
 
@@ -2385,6 +2397,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/02/24 20:34:47  shomrat
+* Added default to supress warning in gcc 2.95
+*
 * Revision 1.18  2003/02/19 21:59:32  shomrat
 * Set coding to ncbieaa, only if bioseq is AA (bug fix)
 *
