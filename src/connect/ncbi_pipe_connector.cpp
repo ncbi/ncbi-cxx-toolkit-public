@@ -276,8 +276,11 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2003/09/03 14:35:30  ivanov
+ * Fixed previous accidentally commited log message
+ *
  * Revision 1.2  2003/09/03 14:29:58  ivanov
- * Set r/w status to eIO_Success in the CNamedPipeHandle::Open/Create
+ * Cosmetic changes
  *
  * Revision 1.1  2003/09/02 20:33:04  ivanov
  * Initial revision

@@ -1396,8 +1396,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/09/03 14:35:59  ivanov
+ * Fixed previous accidentally commited log message
+ *
  * Revision 1.24  2003/09/03 14:29:58  ivanov
- * Set r/w status to eIO_Success in the CNamedPipeHandle::Open/Create
+ * Set r/w status to eIO_Success in the CPipe::Open()
  *
  * Revision 1.23  2003/09/02 20:32:34  ivanov
  * Moved ncbipipe to CONNECT library from CORELIB.
