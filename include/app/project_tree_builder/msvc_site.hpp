@@ -72,15 +72,24 @@ struct SLibInfo
 
 class CMsvcSite
 {
-public:    
+public:
     CMsvcSite(const CNcbiRegistry& registry);
 
+    // Is REQUIRES provided?
     bool IsProvided(const string& thing) const;
 
+    // Get library (LIBS) description
     void GetLibInfo(const string& lib, 
                     const SConfigInfo& config, SLibInfo* libinfo) const;
     
+    // Resolve define (now from CPPFLAGS)
     string ResolveDefine(const string& define) const;
+
+    // Configure related:
+    // Path from tree root to file where configure defines must be.
+    string GetConfigureDefinesPath(void) const;
+    // What we have to define:
+    void   GetConfigureDefines    (list<string>* defines) const;
 
 private:
     const CNcbiRegistry& m_Registry;
@@ -98,6 +107,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/02/05 15:28:14  gorelenk
+ * + Configuration information provision.
+ *
  * Revision 1.4  2004/02/04 23:16:25  gorelenk
  * To class CMsvcSite added member function ResolveDefine.
  *

@@ -71,10 +71,27 @@ string CMsvcSite::ResolveDefine(const string& define) const
     return m_Registry.GetString("Defines", define, "");
 }
 
+
+string CMsvcSite::GetConfigureDefinesPath(void) const
+{
+    return m_Registry.GetString("msvc7", "ConfigureDefinesPath", "");
+}
+
+
+void CMsvcSite::GetConfigureDefines(list<string>* defines) const
+{
+    defines->clear();
+    string defines_str = m_Registry.GetString("msvc7", "ConfigureDefines", "");
+    NStr::Split(defines_str, " \t,", *defines);
+}
+
 END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/02/05 15:29:06  gorelenk
+ * + Configuration information provision.
+ *
  * Revision 1.4  2004/02/05 00:02:09  gorelenk
  * Added support of user site and  Makefile defines.
  *
