@@ -181,6 +181,7 @@ public:
     bool operator!=(const CRSpec& rhs) const {
         return !(*this == rhs);
     }
+    bool operator<(const CRSpec& rhs) const;
 
     // reset everything
     void Reset(void);
@@ -265,6 +266,14 @@ public:
 
     // reset everything
     void Reset(void);
+
+    // Given a vector of CREnzyme, lump together all
+    // enzymes with identical specificities.
+    // The cleavage sites must be the same for specificities
+    // to be considered indentical (in addition to the
+    // recognition sequenence).
+    static void CombineIsoschizomers(vector<CREnzyme>& enzymes);
+
 private:
     string m_Name;
     vector<CRSpec> m_Specs;
@@ -361,34 +370,20 @@ CREnzResult::CREnzResult(const string& enzyme_name,
 }
 
 
-struct SCompareLocation
-{
-    bool operator() (const CRSite& lhs, const CRSite& rhs) const
-    {
-        return lhs.GetStart() < rhs.GetStart();
-    }
-};
-
-
-/// this class contains the static member function Find,
-/// which finds restriction sites in a sequence
+/// this class contains the static member functions Find,
+/// which find restriction sites in a sequence
 class CFindRSites
 {
 public:
-    /// Find all definite and possible sites in a sequence
-    /// for a vector of enzymes, using a finite state machine.
-    /// seq must be a string containing ncbi8na
     static void Find(const string& seq,
-                      const vector<CREnzyme>& enzymes,
-                      vector<CRef<CREnzResult> >& results);
-
-private:
-    static void x_AddPattern(const string& pat, 
-                             CTextFsm<int>& fsm, int match_value);
-    static void x_ExpandRecursion(string& s, unsigned int pos,
-                                  CTextFsm<int>& fsm, int match_value);
-    // Determine whether an ncbi8na nuc is ambiguous
-    static bool x_IsAmbig(char nuc);
+                     const vector<CREnzyme>& enzymes,
+                     vector<CRef<CREnzResult> >& results);
+    static void Find(const vector<char>& seq,
+                     const vector<CREnzyme>& enzymes,
+                     vector<CRef<CREnzResult> >& results);
+    static void Find(const CSeqVector& seq,
+                     const vector<CREnzyme>& enzymes,
+                     vector<CRef<CREnzResult> >& results);
 };
 
 
@@ -401,6 +396,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/08/21 18:38:31  jcherry
+ * Overloaded CFindRSites::Find to take several sequence containers.
+ * Added option to lump together enzymes with identical specificities.
+ *
  * Revision 1.10  2003/08/20 22:57:44  jcherry
  * Reimplemented restriction site finding using finite state machine
  *
