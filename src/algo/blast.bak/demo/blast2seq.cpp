@@ -260,7 +260,7 @@ CBlast2seqApplication::GetOutputFilePtr(void)
 // Should go into something like blast_input.cpp
 vector< CConstRef<CSeq_loc> >
 BLASTGetSeqLocFromStream(CNcbiIstream& in, CRef<CScope>& scope, 
-        CSeq_loc* lcase_mask = NULL)
+                         vector<CRef<CSeq_loc> >* lcase_mask = NULL)
 {
     _ASSERT(scope);
     vector< CConstRef<CSeq_loc> > retval;
@@ -389,6 +389,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/08/06 19:40:45  ucko
+ * Adjust for new ReadFasta usage.
+ *
  * Revision 1.2  2003/08/04 15:31:29  dicuccio
  * FIxed #include specification for C++ code
  *
