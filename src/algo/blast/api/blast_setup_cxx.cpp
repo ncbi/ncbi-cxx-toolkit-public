@@ -406,7 +406,9 @@ SetupSubjects(const TSeqLocVector& subjects,
         ASSERT(subj);
 
         /* Set the lower case mask, if it exists */
-        subj->lcase_mask = CSeqLoc2BlastMask(*itr->mask, index);
+        if (itr->mask)
+            subj->lcase_mask = CSeqLoc2BlastMask(*itr->mask, index);
+
         ++index;
 
         /* If subject sequence is nucleotide, create compressed sequence 
@@ -746,6 +748,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2003/10/08 15:13:56  dondosha
+* Test if subject mask is not NULL before converting to a C structure
+*
 * Revision 1.36  2003/10/08 15:05:47  dondosha
 * Test if mask is not NULL before converting to a C structure
 *
