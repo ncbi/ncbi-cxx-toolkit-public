@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/04/18 23:24:24  kimelman
+* bugfix: out of bounds...
+*
 * Revision 1.10  2002/04/12 22:57:34  kimelman
 * warnings cleanup(linux-gcc)
 *
@@ -242,21 +245,20 @@ int CTestApplication::Run()
   unsigned timing[4/*threads*/][2/*om*/][3/*scope*/];
   unsigned tc = sizeof(timing)/sizeof(*timing);
 
-  //CPubseqReader q(1);
   memset(timing,0,sizeof(timing));
   
   LOG_POST("START: " << time(0) );;
   
-  for(unsigned thr=tc-1,i=0 ; thr >= 0 ; --thr)
-    for(unsigned global_om=0;global_om<=(thr>0?1:0); ++global_om)
-      for(unsigned global_scope=0;global_scope<=(thr==0?1:(global_om==0?1:2)); ++global_scope)
+  for(unsigned thr=tc,i=0 ; thr > 0 ; --thr)
+    for(unsigned global_om=0;global_om<=(thr>1?1:0); ++global_om)
+      for(unsigned global_scope=0;global_scope<=(thr==1?1:(global_om==0?1:2)); ++global_scope)
         {
           unsigned mode = (global_om<<2) + global_scope ;
-          LOG_POST("TEST: threads:" << thr+1 << ", om=" << (global_om?"global":"local ") <<
+          LOG_POST("TEST: threads:" << thr << ", om=" << (global_om?"global":"local ") <<
                    ", scope=" << (global_scope==0?"auto      ":(global_scope==1?"per thread":"global    ")));
           time_t start=time(0);
-          Test(mode,thr+1);
-          timing[thr][global_om][global_scope] = time(0)-start ;
+          Test(mode,thr);
+          timing[thr-1][global_om][global_scope] = time(0)-start ;
           LOG_POST("==================================================");
           LOG_POST("Test(" << i++ << ") completed  ===============");
         }
