@@ -311,6 +311,11 @@ CLDS_Query::GetObjectDescr(const map<string, int>& type_map,
         descr.file_name = m_db.file_db.file_name;
         descr.offset = m_db.object_db.file_offset;
 
+        m_db.object_attr_db.object_attr_id = id;
+        if (m_db.object_attr_db.Fetch() == eBDB_Ok) {
+            descr.title = m_db.object_attr_db.object_title;
+        }
+
         return descr;
     }
 
@@ -358,6 +363,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/08/06 20:49:13  kuznets
+ * SObjectDescr::title handled in CLDS_Query::GetObjectDescr
+ *
  * Revision 1.8  2003/07/14 19:48:04  kuznets
  * Minor changes to improve debugging
  *
