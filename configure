@@ -3534,8 +3534,10 @@ case "$host_os:$compiler" in
    if $CXX -v 2>&1 | grep -q Apple; then
       # Suppress warnings about potential changes in the size of long double;
       # our ABI isn't too stable yet anyway.
-      CFLAGS="-Wno-long-double $CFLAGS"
-      CXXFLAGS="-Wno-long-double $CXXFLAGS"
+      # -fno-common is only necessary when building shared libraries,
+      # but sometimes they include static libs....
+      CFLAGS="-Wno-long-double -fno-common $CFLAGS"
+      CXXFLAGS="-Wno-long-double -fno-common $CXXFLAGS"
    fi
    ;;
 esac
@@ -3698,8 +3700,9 @@ fi
 if test -z "$CFLAGS_DLL"  -a  -z "$CXXFLAGS_DLL" ; then
    case "$host_os:$compiler" in
     darwin*:GCC )
-      CFLAGS_DLL="-fno-common"
-      CXXFLAGS_DLL="-fno-common"
+      # Moved to regular flags, due to some cases of inclusion.
+      # CFLAGS_DLL="-fno-common"
+      # CXXFLAGS_DLL="-fno-common"
       ;;
     *:GCC | linux*:KCC )
       CFLAGS_DLL="-fPIC"
@@ -3734,7 +3737,8 @@ case "$compiler:$compiler_version" in
     if test "$found" = "true"; then
         case "$host_os" in
            solaris*) LDFLAGS="-Wl,-R$dir $LDFLAGS" ;;
-           darwin*)  ;;
+           darwin*)  ;; # each shared library specifies a preferred path
+           aix*)     ;; # automatically sets based on -L flags
            *)        LDFLAGS="-Wl,-rpath,$dir $LDFLAGS" ;;
         esac
     fi
