@@ -1,0 +1,296 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="Author" content="Anton Lavrentiev">
+   <title>MSVC++ Project File Automation</title>
+</head>
+<body>
+
+<h2>
+Automatic Project File Conversion</h2>
+This manual assumes that the UNIX-like environment is used to prepare
+and manage MSVC++ project files, which in turn can be used to build NCBI
+C++ Toolkit by MSVC++ Developer Studio. The following tools must be available in order for
+the conversion scripts to work: <b>cat</b>, <b>cp</b>, <b>echo</b>,
+<b>egrep</b>, <b>find</b>, <b>grep</b>,<b> head</b>, <b>mv</b>,<b> rm</b>,
+<b>sh</b>, <b>tail</b>, <b>test</b>,<b> touch</b>, and <b>tr</b>. In the examples of command
+sequences below, a prompt of the operating system is shown as <b><tt><font color="#CC33CC">$</font></tt></b>,
+and the user input is rendered <tt><font color="#009900">like this</font></tt>.
+<br>
+<hr WIDTH="100%">
+<br>The idea behind the automatic project file conversion is that usually developer
+works only with some fixed configuration (e.g. debug, single-threaded),
+yet he/she must keep all other configurations in-sync.
+Hereby we provide the developer with the means to work with (and make changes to)
+a single configuration at any given moment of time. Then,
+when the build process is about to occur, all other deficient configuration(s)
+can be generated automatically from that fixed (template) configuration.
+<p>
+There are some limitations to the above scheme:
+<ul>
+<li>The per configuration dependencies are not supported, they are ignored and excluded from the resulting project file,
+	with warning printed.</li>
+<li>If libraries or object files are explicitly included in the project file list,
+	they usually refer to fixed file placements (e.g. <tt><font color="#3333FF">src\connect\DebugMT\ncbi_socket.obj</font></tt>),
+	i.e. bound to the particular configuration it was built with. Therefore, you must <i><b>never</b></i> use the explicit
+	inclusion of this kind when creating your single-configuration (template) project files.
+	Instead, use workspace file (<tt><font color="#3333FF">.dsw</font></tt>) <i>dependency mechanism</i>
+	to link with such libraries and object files, and use linker options (<a href="config.html#ref_MsvcProjCXX">library list</a>)
+	without explicit paths.</li>
+</ul>
+
+<h4>
+Working with project files</h4>
+<ol>
+<li>
+Create a temporary directory, copy the entire project
+file subtree (assuming it's your current directory) there, and then generate
+multi-configuration project files, using script <a href="#one2all_sh"><i><tt><font color="#3333FF">one2all.sh</font></tt></i></a>:</li>
+
+<ol>
+<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> mkdir ~/temp</font></tt>
+<br><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> tar cvf . - | ( cd ~/temp; tar xf - )</font></tt>
+<br><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> find ~/temp -name CVS -exec rm -rf {} \;</font></tt>
+<br><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> find ~/temp -name "*.dsp" -print -exec ./one2all.sh {} \;</font></tt></ol>
+</ol>
+The generated project files replace originals,
+which are saved as backup copies (<tt><font color="#3333FF">.bak</font></tt>). Remove backup copies:
+<ol>
+<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> find ~/temp -name "*.dsp.bak" -exec rm -f {}  \;</font></tt></ol>
+</ol>
+<li>
+We recommend to do the above step in a separate directory
+just to be sure that nothing is clobbered. You can however do this in the
+checked out copy of the mentioned directory, and even do CVS update later.
+As the CVS tracks the file modification by first checking the date
+and time of the file, and the scripts do not modify either, so none
+of the project files will be committed to the repository (despite the contents of the files
+have been altered). This behavior (or bug/feature) could however change in a further version of
+CVS, and then <a href="#commit_sh"><i><tt><font color="#3333FF">commit.sh</font></tt></i></a> will not allow the commit
+to go through, because all the project files became multi-configuration.</li>
+<br>
+Note that when obtainting the entire NCBI C++ Toolkit tree by using the script
+<a href="config.html#ref_MsvcProjDownload"><i><tt><font color="#3333FF">cvs_core.sh</font></tt></i></a> the
+complete procedure of conversion is automatically done unless
+you specify <i><tt><font color="#3333FF">--wihout-vc-cfgs</font></tt></i> option.
+
+<li>
+Now, you can transfer the project file subtree to PC (just override the project files,
+which were extracted by CVS), and then start building the Toolkit.</li>
+
+<li>
+<a name="all_bat"></a>Batch file <i><tt><font color="#3333FF">all.bat</font></tt></i> can
+generate all projects in a batch mode, provided that <tt><font color="#3333FF">msdev.exe</font></tt>
+is in your <tt><font color="#3333FF">PATH</font></tt>.
+As an argument to the batch file you can specify either ALL (or no arguments at all),
+or any combination of Debug, DebugMT, DebugDLL, Release, ReleaseMT, ReleaseDLL to build either
+all available, or particular configuration(s) respectively.</li>
+</ol>
+<p>
+Please also see <a href="#notes"><b>notes</b></a>.
+
+<h4>
+Transition</h4>
+During this step all current project files are converted to single-configuration
+files, which later can be automatically expanded to multi-configuration
+project files, used for (production and/or regular) builds.
+<ol>
+<li>
+Check out the MSVC++ project files and tool scripts from <tt><font color="#3333FF">internal/c++/compilers/msvc_prj</font></tt>
+directory:</li>
+
+<ol>
+<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> mkdir ~/msvc_prj; cd ~/msvc_prj</font></tt></ol>
+<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cvs co -d . internal/c++/compilers/msvc_prj</font></tt></ol>
+</ol>
+
+The scripts are:<a name="scripts"></a>
+
+<ul>
+<li>
+<a name="all2one_sh"><i><font color="#3333FF">all2one.sh</font></i></a> - looks through the given project
+file, prints out available configurations, and allows to extract any of
+those. If there is only one configuration, the script does nothing. Special
+care is taken to first check the project file consistency to avoid corrupting
+the vital project file structure. Note, however, that the warning is printed if the
+project file contains per configuration issues, which cannot be handled in a graceful
+way, and thus ignored. Input file can be in either DOS or UNIX text file format
+(respectively, with or without CR (carriage return) incorporated before LF (life feed) at
+line ends). Output file is always in UNIX text file format, which is suitable for
+CVS repository.</li>
+
+<li>
+<a name="one2all_sh"><i><font color="#3333FF">one2all.sh</font></i></a> - takes a single-configuration
+project file (perhaps the one created by <i><font color="#3333FF">all2one.sh</font></i>)
+and derives multi-configuration project file containing 3 production configurations:
+Release, ReleaseMT, and ReleaseDLL; and 3 debug configurations: Debug,
+DebugMT, DebugDLL. Output file is always produced in DOS text file format (that is suitable
+for immediate consumption by MSVC++), whereas input file can be in either UNIX or DOS format.</li>
+
+<p>
+<u>Note</u>: Aside the project file name, the second argument can be given to the script. This argument
+is used as a name of configuration to extract, without interactive inquiry. If the specified configuration
+is not found, the script aborts with an error message.
+
+<li>
+<a name="one2one_sh"><i><font color="#3333FF">one2one.sh</font></i></a> - takes two arguments:
+single-configuration project file name and one of standard configuration names
+(Debug, DebugMT, DebugDLL, Release, ReleaseMT, ReleaseDLL) and replaces the given project file with a new one,
+having the requested configuration. In case of non-standard configuration name, an error results.
+Output file is created in UNIX text file format.</li>
+
+<li>
+<a name="include_sh"><i><font color="#3333FF">include.sh</font></i></a> - takes an optional argument list, each entry of
+which is a relative path to include file directory (default is the standard NCBI C++ Toolkit include
+directory). The script then recursively looks through all project files, and tries to update compiler
+switches with the given directory list. Directories, already specified in project files, are either replaced
+(when the new directory resembles the old one), or added to the current list of include directories.
+The main purpose of the script is to eliminate "global" configuration through "Tool/Options",
+which is otherwise required to specify include file directories. Generated paths to include files are
+always relative to the project file. The script is to be used from the <tt><font color="#3333FF">msvc_prj</font></tt>
+directory each time, when the project file subtree
+is a kind rearranged and must be updated in the CVS. Therefore the project files are always produced in UNIX
+text file format.</li>
+
+<li>
+<a name="commit_sh"><i><font color="#3333FF">commit.sh</font></i></a> -
+control script for use from inside the CVS upon each commit to ensure
+that the project being checked in contains one fixed configuration only (namely, DebugMT).
+This script as well checks that the file being committed is in UNIX text file format, and
+rejects if not. The extensions (and only in directories specified in <tt><font color="#3333FF">DIRLIST</font></tt>
+parameter, as described below) checked are: <tt><font color="#3333FF">.dsw</font></tt>,
+<tt><font color="#3333FF">.dsp</font></tt>, <tt><font color="#3333FF">.bat</font></tt>.</li></ul>
+
+<a name="notes"><br><b><u>Please note</u></b></a> that the above tools are <b><i>not</i></b> project file <i>generation</i>
+tools, but rather the project file <i>conversion</i> tools. That is, the resulting project file is correct if and only if the
+source project file is. When a project file gets converted to a single-configuration template,
+all the compiler switches and definitions, as well as other vital environment, have to be defined in a right way.
+<p>
+
+<li>
+Apply the following command to convert multi-configuration
+project files to single-configuration project files:</li>
+
+<ol>
+<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> find . -name "*.dsp" -print -exec ./all2one.sh
+{} \;</font></tt></ol>
+</ol>
+For each project file choose the configuration (among available),
+which was tested, and known to work. Note that many project
+files were created automatically by MSVC++, and contain 2 or more configurations,
+but in most cases only one (notably: Debug) was customized to work and
+to build this particular project, the others are just dummies.
+
+<li>
+Be sure that the process completed successfully and then delete backup copies:</li>
+
+<ol>
+<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> find . -name "*.dsp.bak" -exec rm -f {}
+\;</font></tt></ol>
+</ol>
+
+<li>
+You may wish to use the script <a href="#one2one_sh"><i><tt><font color="#3333FF">one2one.sh</font></tt></i></a>
+for converting all project files to standard single configuration DebugMT, if configurations,
+different from DebugMT, have been chosen in step 2 above:</li>
+
+<ol>
+<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> find . -name "*.dsp" -print -exec ./one2one.sh
+{} DebugMT \;</font></tt></ol>
+</ol>
+
+<li>
+Check out <tt><font color="#3333FF">CVSROOT</font></tt>
+directory (this is an administrative directory used to control the entire
+CVS tree):</li>
+
+<ol>
+<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> mkdir ~/myCVSROOT; cd ~/myCVSROOT</font></tt>
+<br><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cvs co CVSROOT</font></tt></ol>
+</ol>
+
+<li>
+Chdir to the checked out copy of <tt><font color="#3333FF">CVSROOT</font></tt>:</li>
+
+<ol>
+<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cd CVSROOT</font></tt></ol>
+</ol>
+
+<li>
+Install (by copying and giving execution permissions)
+the following scripts in <tt><font color="#3333FF">CVSROOT</font></tt> directory:</li>
+
+<ol>
+<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> ( cd internal/c++/compilers/msvc_prj; \</font></tt>
+<ol><tt><font color="#009900">cp commit.sh all2one.sh ~/myCVSROOT )</font></tt></ol>
+<tt><b><font color="#CC33CC">$</font></b><font color="#009900"> chmod a+x commit.sh all2one.sh</font></tt>
+<br><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cat >> checkoutlist</font></tt>
+<br><tt><font color="#009900">commit.sh</font></tt>
+<br><tt><font color="#009900">all2one.sh</font></tt>
+<br><tt><font color="#009900">&lt;press Ctrl-D></font></tt>
+<br><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cat >> commitinfo</font></tt>
+<br><tt><font color="#009900">ALL $CVSROOT/CVSROOT/commit.sh</font></tt>
+<br><tt><font color="#009900">&lt;press Ctrl-D></font></tt></ol>
+</ol>
+
+<li>
+Make sure that the files <tt><font color="#3333FF">checkoutlist</font></tt>
+and <tt><font color="#3333FF">commitinfo</font></tt>
+contain only one entry per each shell script, delete any other entries
+if they exist.</li>
+
+<li>
+Edit script <a href="#commit_sh"><i><tt><font color="#3333FF">commit.sh</font></tt></i></a>
+so that the line starting from <tt><font color="#3333FF">DIRLIST=</font></tt>
+would contain a list of directories, delimited by spaces, relative to CVS
+tree origin, and which must be checked against for having single-configuration
+project files only.</li>
+
+<li>
+Now check in the changes made in <tt><font color="#3333FF">CVSROOT</font></tt>
+directory back to the CVS repository:</li>
+
+<ol>
+<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cvs add commit.sh all2one.sh</font></tt>
+<br><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cvs commit -m "MSVC++ Project File Control Added" .</font></tt></ol>
+</ol>
+
+You should see message, saying that the CVS administrative
+directory is being rebuilt. Erase local copy of <tt><font color="#3333FF">CVSROOT</font></tt>
+directory.
+
+<li>
+Now chdir back to checked out copy of directory <tt><font color="#3333FF">internal/c++/compilers/msvc_prj</font></tt>,
+which now should contain single-configuration projects only. You can commit
+the projects back to the CVS. This is a bit tricky, as formerly the project
+files were kept in binary form, and now they have to be stored in a native text file format.
+The easiest way of workaround is to do the following:</li>
+
+<ol>
+<ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> ( cd $CVSROOT/internal/c++/compilers; \</font></tt>
+<ol><tt><font color="#009900">mv msvc_prj msvc_prj.old )</font></tt></ol>
+<tt><b><font color="#CC33CC">$</font></b><font color="#009900"> find . -name CVS -exec rm -rf {} \;</font></tt>
+<br><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> cvs import -m "New projects" internal/c++/compilers/msvc_prj
+NCBI Exp</font></tt></ol>
+</ol>
+
+<li>
+Erase the local copy of project file directory. If
+you wish to work further with projects, you should re-check them out again
+to ensure that everything is connected back to the repository in a right
+way.</li>
+</ol>
+
+<hr>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:lavr@ncbi.nlm.nih.gov">Anton Lavrentiev</a></address>
+</td>
+<!-- <td align=center><i>$Revision$</i></td> -->
+<td align=right><i>$Date$</i></td>
+</tr>
+</table>
+</body>
+</html>
