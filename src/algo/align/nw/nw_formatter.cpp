@@ -96,7 +96,7 @@ CRef<CSeq_align> CNWFormatter::AsSeqAlign(
     {{
     CRef<CScore> score (new CScore);
     CRef<CObject_id> id (new CObject_id);
-    id->SetStr("global");
+    id->SetStr("global_score");
     score->SetId(*id);
     CRef< CScore::C_Value > val (new CScore::C_Value);
     val->SetInt(m_aligner->GetScore());
@@ -115,7 +115,7 @@ CRef<CSeq_align> CNWFormatter::AsSeqAlign(
     const double idty = double(matches) / transcript.size();
     CRef<CScore> score (new CScore);
     CRef<CObject_id> id (new CObject_id);
-    id->SetStr("idty");
+    id->SetStr("identity");
     score->SetId(*id);
     CRef< CScore::C_Value > val (new CScore::C_Value);
     val->SetReal(idty);
@@ -528,6 +528,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/03/23 20:33:53  kapustin
+ * Change printed name for the scores
+ *
  * Revision 1.15  2005/02/23 22:11:42  kapustin
  * Add default non-zero seqid
  *
