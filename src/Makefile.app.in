@@ -21,9 +21,9 @@
 ### C/C++ source file compilation rules
 
 %@obj_ext@: $(srcdir)/%.cpp
-	$(CXX) @f_compile@ $(CXXFLAGS) $(CPPFLAGS) $< @f_outobj@ $@
+	$(CXX) @f_compile@ $(CXXFLAGS) $(CPPFLAGS) $< @f_outobj@$@
 %@obj_ext@: $(srcdir)/%.c
-	$(CC)  @f_compile@ $(CFLAGS)   $(CPPFLAGS) $< @f_outobj@ $@
+	$(CC)  @f_compile@ $(CFLAGS)   $(CPPFLAGS) $< @f_outobj@$@
 
 
 ### Library dependencies
@@ -35,12 +35,12 @@
 ### Standard application build rules
 
 XAPP = $(APP)@exe_ext@
-XOBJ = $(APPOBJ_APP:=@obj_ext@)
+XOBJ = $(OBJ:=@obj_ext@)
 XLIB = @f_libpath@$(libdir) $(LIB:%=@lib_l_pre@%@lib_l_ext@)
 XLIBDEP = $(LIB:=.dep)
 
 $(XAPP): $(XOBJ) $(XLIBDEP)
-	$(LINK) $(LDFLAGS) $(XOBJ) $(XLIB) $(LIBS)
+	$(LINK) $(LDFLAGS) $(XOBJ) $(XLIB) $(LIBS) @f_outexe@$(XAPP)
 
 
 ### Standard targets(non-recursive)
