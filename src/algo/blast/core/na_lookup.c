@@ -472,7 +472,7 @@ static Int4 BlastNaLookupAddWordHit(LookupTable* lookup, Uint1* w,
      /* Word contains ambiguities, skip it */
      return 0;
 
-  assert(index < lookup->backbone_size);
+  ASSERT(index < lookup->backbone_size);
       
   /* If backbone cell is null, initialize a new chain */
   if (lookup->thin_backbone[index] == NULL)

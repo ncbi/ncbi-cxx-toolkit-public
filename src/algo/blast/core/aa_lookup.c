@@ -108,7 +108,7 @@ Int4 BlastAaLookupAddWordHit(LookupTable* lookup, /* in/out: the lookup table */
   /* compute its index, */
   _ComputeIndex(lookup->wordsize,lookup->charsize,lookup->mask, w, &index);
 
-  assert(index < lookup->backbone_size);
+  ASSERT(index < lookup->backbone_size);
       
   /* if backbone cell is null, initialize a new chain */
   if (lookup->thin_backbone[index] == NULL)
@@ -319,8 +319,7 @@ Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap,
 	{
 	  numhits = lookup->thick_backbone[index].num_used;
 
-          if (numhits == 0)
-                continue;
+          ASSERT(numhits != 0);
     
 	  /* ...and there is enough space in the destination array, */
 	  if ( numhits <= (array_size - totalhits) )
