@@ -23,6 +23,7 @@ egrep -v -e '
 ^"/netopt/SUNWspro6/SC5\.0/include/CC/\./fstream", line 362: 
 ^"/netopt/SUNWspro6/SC5\.0/include/CC/\./sstream", line 203:
 ^"/netopt/SUNWspro6/SC5\.0/include/CC/\./sstream", line 161:
+^"/netopt/SUNWspro6/SC5\.0/include/CC/\./sstream", line 126:
 ^"/netopt/ncbi_tools/include/..*\.h", line [0-9]*: Warning \(Anachronism\): Attempt to redefine .* without using #undef\.$
 ^"/netopt/Sybase/clients/current/include/sybdb\.h", line [0-9]*: Warning: There are two consecutive underbars in "db__
 : Warning: Could not find source for std::is[a-z][a-z]*\(int\)
