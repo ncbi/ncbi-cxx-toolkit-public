@@ -151,7 +151,7 @@ PSIDiagnosticsFree(PsiDiagnostics* diags);
  * sequence alignment 
  * @param diagnostics If non-NULL this structure will be populated and it is
  *        the caller's responsibility to deallocate this structure.
- * @retval The PSSM along with residue frequencies and statistical information
+ * @return The PSSM along with residue frequencies and statistical information
  * (the latter is returned in the sbp)
  */
 PsiMatrix*
