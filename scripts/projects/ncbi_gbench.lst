@@ -1,3 +1,4 @@
 gui
 app/project_tree_builder
+dbapi/driver/dblib
 
