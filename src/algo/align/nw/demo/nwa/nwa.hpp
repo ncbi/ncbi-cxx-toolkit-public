@@ -1,5 +1,5 @@
-#ifndef ALGO___NWA_APP__HPP
-#define ALGO___NWA_APP__HPP
+#ifndef ALGO_ALIGN_NW__NWA_APP__HPP
+#define ALGO_ALIGN_NW__NWA_APP__HPP
 
 /* $Id$
 * ===========================================================================
@@ -39,7 +39,12 @@
 
 #include <algo/align/nw/align_exception.hpp>
 
+
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(objects)
+    class CSeq_id;
+END_SCOPE(objects)
 
 // Exceptions
 //
@@ -87,9 +92,8 @@ private:
     void x_RunOnPair() const
         THROWS((CAppNWAException, CAlgoAlignException));
 
-    bool x_ReadFastaFile(const string& filename,
-                         string*       seqname,
-                         vector<char>* sequence) const;
+    CRef<objects::CSeq_id> x_ReadFastaFile(const string& filename,
+                                                 vector<char>* sequence) const;
 };
 
 
@@ -100,6 +104,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/23 16:59:38  kapustin
+ * +CNWAligner::SetTranscript. Use CSeq_id's instead of strings in CNWFormatter. Modify CNWFormatter::AsSeqAlign to allow specification of alignment's starts and strands.
+ *
  * Revision 1.1  2004/12/16 22:38:08  kapustin
  * Move to algo/align/nw/demo/nwa
  *

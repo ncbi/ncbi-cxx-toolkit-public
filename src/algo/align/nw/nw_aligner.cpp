@@ -594,6 +594,14 @@ CNWAligner::TTranscript CNWAligner::GetTranscript(bool reversed) const
 }
 
 
+// alignment 'restore' - set raw transcript
+void CNWAligner::SetTranscript(const TTranscript& transcript)
+{
+    m_Transcript = transcript;
+    m_score = ScoreFromTranscript(transcript);
+}
+
+
 // Return transcript as a readable string
 string CNWAligner::GetTranscriptString(void) const
 {
@@ -608,9 +616,25 @@ string CNWAligner::GetTranscriptString(void) const
         char c = 0;
         switch ( c0 ) {
 
-            case eTS_Match: 
+            case eTS_Match: {
+                if(m_Seq1 && m_Seq2) {
+                    // always verify when sequences are available
+                    c = (m_Seq1[i1++] == m_Seq2[i2++])? 'M': 'R';
+                }
+                else {
+                    c = 'M';
+                }
+            }
+            break;
+
             case eTS_Replace: {
-                c = (m_Seq1[i1++] == m_Seq2[i2++])? 'M': 'R';
+                if(m_Seq1 && m_Seq2) {
+                    // always verify when sequences are available
+                    c = (m_Seq1[i1++] == m_Seq2[i2++])? 'M': 'R';
+                }
+                else {
+                    c = 'R';
+                }
             }
             break;
 
@@ -640,6 +664,7 @@ string CNWAligner::GetTranscriptString(void) const
 
         s[i++] = c;
     }
+
     if(i < s.size()) {
         s.resize(i + 1);
     }
@@ -1145,6 +1170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2005/02/23 16:59:38  kapustin
+ * +CNWAligner::SetTranscript. Use CSeq_id's instead of strings in CNWFormatter. Modify CNWFormatter::AsSeqAlign to allow specification of alignment's starts and strands.
+ *
  * Revision 1.61  2004/12/16 22:42:22  kapustin
  * Move to algo/align/nw
  *

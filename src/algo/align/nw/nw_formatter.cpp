@@ -55,15 +55,19 @@ CNWFormatter::CNWFormatter (const CNWAligner& aligner):
 }
 
 
-void CNWFormatter::AsSeqAlign(CSeq_align* seqalign) const
+void CNWFormatter::SetSeqIds(CConstRef<CSeq_id> id1, CConstRef<CSeq_id> id2)
 {
-    if(seqalign == 0) {
-        NCBI_THROW(CAlgoAlignException,
-                   eBadParameter,
-                   g_msg_InvalidAddress);
-    }
+    m_Seq1Id = id1;
+    m_Seq2Id = id2;
+}
 
-#ifdef USE_RAW_TRANCSRIPT
+
+CRef<CSeq_align> CNWFormatter::AsSeqAlign(
+    TSeqPos query_start, ENa_strand query_strand,
+    TSeqPos subj_start,  ENa_strand subj_strand) const
+{
+
+#ifdef USE_RAW_TRANSCRIPT
     const vector<CNWAligner::ETranscriptSymbol>& transcript = 
         *(m_aligner->GetTranscript());
 #else
@@ -71,12 +75,10 @@ void CNWFormatter::AsSeqAlign(CSeq_align* seqalign) const
 #endif
 
     if(transcript.size() == 0) {
-        NCBI_THROW(CAlgoAlignException,
-                   eNoData,
-                   g_msg_NoAlignment);
+        NCBI_THROW(CAlgoAlignException, eNoData, g_msg_NoAlignment);
     }
 
-    seqalign->Reset();
+    CRef<CSeq_align> seqalign (new CSeq_align);
 
     // the alignment is pairwise
     seqalign->SetDim(2);
@@ -84,48 +86,68 @@ void CNWFormatter::AsSeqAlign(CSeq_align* seqalign) const
     // this is a global alignment
     seqalign->SetType(CSeq_align::eType_global);
 
-    // seq-ids
-    CRef< CSeq_id > id1 ( new CSeq_id );
-    CRef< CObject_id > local_oid1 (new CObject_id);
-    local_oid1->SetStr(m_Seq1Id);
-    id1->SetLocal(*local_oid1);
+    CSeq_align::TScore& scorelist = seqalign->SetScore();
 
-    CRef< CSeq_id > id2 ( new CSeq_id );
-    CRef< CObject_id > local_oid2 (new CObject_id);
-    local_oid2->SetStr(m_Seq2Id);
-    id2->SetLocal(*local_oid2);
-    
-    // the score was calculated during the main process
-    CRef< CScore > score (new CScore);
-    CRef< CObject_id > id (new CObject_id);
-    id->SetStr("score");
+    // add dynprog score
+    {{
+    CRef<CScore> score (new CScore);
+    CRef<CObject_id> id (new CObject_id);
+    id->SetStr("global");
     score->SetId(*id);
     CRef< CScore::C_Value > val (new CScore::C_Value);
     val->SetInt(m_aligner->GetScore());
     score->SetValue(*val);
-    CSeq_align::TScore& scorelist = seqalign->SetScore();
     scorelist.push_back(score);
+    }}
+
+    // add identity score
+    {{
+    TSeqPos matches = 0;
+    ITERATE(string, ii, transcript) { 
+        if(*ii == 'M') {
+            ++matches;  // std::count() not supported by some compilers
+        }
+    }
+    const double idty = double(matches) / transcript.size();
+    CRef<CScore> score (new CScore);
+    CRef<CObject_id> id (new CObject_id);
+    id->SetStr("idty");
+    score->SetId(*id);
+    CRef< CScore::C_Value > val (new CScore::C_Value);
+    val->SetReal(idty);
+    score->SetValue(*val);
+    scorelist.push_back(score);
+    }}
 
     // create segments and add them to this seq-align
     CRef< CSeq_align::C_Segs > segs (new CSeq_align::C_Segs);
     CDense_seg& ds = segs->SetDenseg();
 
-    ds.FromTranscript(0, eNa_strand_plus, 0, eNa_strand_plus,
+    ds.FromTranscript(query_start, query_strand,
+                      subj_start,  subj_strand,
                       transcript);
     
     CDense_seg::TIds& ids = ds.SetIds();
-    ids.push_back( id1 );
-    ids.push_back( id2 );
 
-#ifdef USE_RAW_TRANCSRIPT
+    CRef<CSeq_id> id_query (new CSeq_id);
+    id_query->Assign(*m_Seq1Id);
+    ids.push_back(id_query);
 
-    // this will treat introns as long inserts
+    CRef<CSeq_id> id_subj (new CSeq_id);
+    id_subj->Assign(*m_Seq2Id);
+    ids.push_back(id_subj);
+
+
+#ifdef USE_RAW_TRANSCRIPT
+
+    // this will treat introns as long inserts;
+    // plus strand is assumed on query and subj
 
     ds.SetDim(2);
 
     CDense_seg::TIds& ids = ds.SetIds();
-    ids.push_back( id1 );
-    ids.push_back( id2 );
+    ids.push_back( m_Seq1Id );
+    ids.push_back( m_Seq2Id );
 
     CDense_seg::TStarts&  starts  = ds.SetStarts();
     CDense_seg::TLens&    lens    = ds.SetLens();
@@ -174,6 +196,7 @@ void CNWFormatter::AsSeqAlign(CSeq_align* seqalign) const
             if(seg_type != 1) ++seq1;
             if(seg_type != 2) ++seq2;
         }
+
         // the last one
         starts.push_back( (seg_type0 == 1)? -1: start1 - S1 );
         starts.push_back( (seg_type0 == 2)? -1: start2 - S2 );
@@ -188,7 +211,7 @@ void CNWFormatter::AsSeqAlign(CSeq_align* seqalign) const
 #endif
 
     seqalign->SetSegs(*segs);
-
+    return seqalign;
 }
 
 
@@ -206,12 +229,15 @@ void CNWFormatter::AsText(string* output, ETextFormatType type,
                    g_msg_NoAlignment);
     }
 
+    const string strid_query = m_Seq1Id->GetSeqIdString(true);
+    const string strid_subj = m_Seq2Id->GetSeqIdString(true);
+
     switch (type) {
 
     case eFormatType1: {
-        if(m_Seq1Id.size() && m_Seq2Id.size()) {
-            ss << '>' << m_Seq1Id << '\t' << m_Seq2Id << endl;
-        }
+
+        ss << '>' << strid_query << '\t' << strid_subj << endl;
+
         vector<char> v1, v2;
         size_t aln_size = x_ApplyTranscript(&v1, &v2);
         unsigned i1 = 0, i2 = 0;
@@ -245,9 +271,9 @@ void CNWFormatter::AsText(string* output, ETextFormatType type,
     break;
 
     case eFormatType2: {
-        if(m_Seq1Id.size() && m_Seq2Id.size()) {
-            ss << '>' << m_Seq1Id << '\t' << m_Seq2Id << endl;
-        }
+
+        ss << '>' << strid_query << '\t' << strid_subj << endl;
+
         vector<char> v1, v2;
         size_t aln_size = x_ApplyTranscript(&v1, &v2);
         unsigned i1 = 0, i2 = 0;
@@ -282,10 +308,11 @@ void CNWFormatter::AsText(string* output, ETextFormatType type,
     break;
 
     case eFormatAsn: {
-        CSeq_align seq_align;
-        AsSeqAlign(&seq_align);
+
+        CRef<CSeq_align> sa = AsSeqAlign(0, eNa_strand_plus,
+                                         0, eNa_strand_plus);
         CObjectOStreamAsn asn_stream (ss);
-        asn_stream << seq_align;
+        asn_stream << *sa;
         asn_stream << Separator;
     }
     break;
@@ -294,7 +321,7 @@ void CNWFormatter::AsText(string* output, ETextFormatType type,
         vector<char> v1, v2;
         size_t aln_size = x_ApplyTranscript(&v1, &v2);
         
-        ss << '>' << m_Seq1Id << endl;
+        ss << '>' << strid_query << endl;
         const vector<char>* pv = &v1;
         for(size_t i = 0; i < aln_size; ++i) {
             for(size_t j = 0; j < line_width && i < aln_size; ++j, ++i) {
@@ -303,7 +330,7 @@ void CNWFormatter::AsText(string* output, ETextFormatType type,
             ss << endl;
         }
 
-        ss << '>' << m_Seq2Id << endl;
+        ss << '>' << strid_subj << endl;
         pv = &v2;
         for(size_t i = 0; i < aln_size; ++i) {
             for(size_t j = 0; j < line_width && i < aln_size; ++j, ++i) {
@@ -388,12 +415,8 @@ void CNWFormatter::AsText(string* output, ETextFormatType type,
 
             if(exon_aln_size > 0) {
 
-                if(m_Seq1Id.size() && m_Seq2Id.size()) {
-                    ss << m_Seq1Id << '\t' << m_Seq2Id << '\t';
-                }
-		else {
-		    ss << "-\t-\t";
-		}
+                ss << strid_query << '\t' << strid_subj << '\t';
+
                 float identity = float(matches) / exon_aln_size;
                 ss << identity << '\t' << exon_aln_size << '\t';
                 size_t beg1  = p1_beg - start1, end1 = p1 - start1 - 1;
@@ -501,6 +524,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/02/23 16:59:38  kapustin
+ * +CNWAligner::SetTranscript. Use CSeq_id's instead of strings in CNWFormatter. Modify CNWFormatter::AsSeqAlign to allow specification of alignment's starts and strands.
+ *
  * Revision 1.13  2004/12/16 22:42:22  kapustin
  * Move to algo/align/nw
  *

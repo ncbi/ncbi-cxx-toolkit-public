@@ -30,19 +30,23 @@
 */
 
 #include <ncbi_pch.hpp>
+
+#include "nwa.hpp"
+
 #include <algo/align/nw/nw_band_aligner.hpp>
 #include <algo/align/nw/mm_aligner.hpp>
 #include <algo/align/nw/nw_spliced_aligner16.hpp>
 #include <algo/align/nw/nw_spliced_aligner32.hpp>
 #include <algo/align/nw/nw_formatter.hpp>
-#include "nwa.hpp"
 
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/general/Object_id.hpp>
 
 #define SPLALIGNER CSplicedAligner32
 
 
 BEGIN_NCBI_SCOPE
-
+USING_SCOPE(objects);
 
 void CAppNWA::Init()
 {
@@ -260,18 +264,9 @@ void CAppNWA::x_RunOnPair() const
 
     // read input sequences
     vector<char> v1, v2;
-    string seqname1, seqname2;
 
-    if ( !x_ReadFastaFile(args["seq1"].AsString(), &seqname1, &v1)) {
-        NCBI_THROW(CAppNWAException,
-                   eCannotReadFile,
-                   "Cannot read file " + args["seq1"].AsString());
-    }
-    if ( !x_ReadFastaFile(args["seq2"].AsString(), &seqname2, &v2)) {
-        NCBI_THROW(CAppNWAException,
-                   eCannotReadFile,
-                   "Cannot read file" + args["seq2"].AsString());
-    }
+    CRef<CSeq_id> seqid1 = x_ReadFastaFile(args["seq1"].AsString(), &v1);
+    CRef<CSeq_id> seqid2 = x_ReadFastaFile(args["seq2"].AsString(), &v2);
 
     // determine sequence/score matrix type
     const SNCBIPackedScoreMatrix* psm = 
@@ -359,7 +354,7 @@ void CAppNWA::x_RunOnPair() const
     cerr << "Score = " << score << endl;
 
     CNWFormatter formatter (*aligner);
-    formatter.SetSeqIds(seqname1, seqname2);
+    formatter.SetSeqIds(seqid1, seqid2);
 
     const size_t line_width = 100;
     string s;
@@ -403,25 +398,22 @@ void CAppNWA::Exit()
 }
 
 
-bool CAppNWA::x_ReadFastaFile (const string& filename, string* seqname,
-                               vector<char>* sequence) const
+CRef<CSeq_id> CAppNWA::x_ReadFastaFile (const string& filename,
+                                        vector<char>* sequence) const
 {
     vector<char>& vOut = *sequence;
     vOut.clear();
 
     ifstream ifs(filename.c_str());
 
-    // read sequence's name
+    // read the defline
     string str;
     getline(ifs, str);
-    if(!ifs)
-        return false;
-    istrstream iss (str.c_str());
 
-    char c;
-    iss >> c >> *seqname;
-    if(!iss)
-        return false;
+    CRef<CSeq_id> seqid (new CSeq_id(str));
+    if(seqid->Which() == CSeq_id::e_not_set) {
+        seqid->SetLocal().SetStr(str);
+    }
 
     // read the sequence
     while ( ifs ) {
@@ -431,8 +423,9 @@ bool CAppNWA::x_ReadFastaFile (const string& filename, string* seqname,
         copy(s.begin(), s.end(), back_inserter(vOut));
     }
 
-    return true;
+    return seqid;
 }
+
 
 END_NCBI_SCOPE
 
@@ -448,6 +441,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/23 16:59:38  kapustin
+ * +CNWAligner::SetTranscript. Use CSeq_id's instead of strings in CNWFormatter. Modify CNWFormatter::AsSeqAlign to allow specification of alignment's starts and strands.
+ *
  * Revision 1.1  2004/12/16 22:38:08  kapustin
  * Move to algo/align/nw/demo/nwa
  *
