@@ -124,7 +124,7 @@ UnicodeToAscii(TUnicode character, const TUnicodeTable* table)
     }
     unsigned int thePlanNo   = (character & 0xFF00) >> 8;
     unsigned int theOffset = character & 0xFF;
-    TUnicodePlan* thePlan = (*table)[thePlanNo];
+    const TUnicodePlan* thePlan = (*table)[thePlanNo];
     if ( !thePlan ) return 0;
     return &((*thePlan)[theOffset]);
 }
@@ -358,6 +358,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2004/05/13 21:18:12  ucko
+ * Respect constness in UnicodeToAscii.
+ *
  * Revision 1.1  2004/05/06 18:15:29  gouriano
  * Imported from pubmed/xmldb
  *
