@@ -45,6 +45,8 @@
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/Date.hpp>
+#include <objects/general/Date_std.hpp>
 
 // generated classes
 
@@ -1106,6 +1108,173 @@ CSeq_id::x_Init
 }
 
 
+void CSeq_id::x_AssignTextseq_id(const CTextseq_id& src,
+                                        CTextseq_id& dest)
+{
+    if (src.IsSetName())
+        dest.SetName(src.GetName());
+    if (src.IsSetAccession())
+        dest.SetAccession(src.GetAccession());
+    if (src.IsSetRelease())
+        dest.SetRelease(src.GetRelease());
+    if (src.IsSetVersion())
+        dest.SetVersion(src.GetVersion());
+}
+
+
+void CSeq_id::Assign(const CSerialObject& source)
+{
+    if ( typeid(source) != typeid(*this) ) {
+        ERR_POST(Fatal <<
+            "CSeq_id::Assign() -- Assignment of incompatible types: " <<
+            typeid(*this).name() << " = " << typeid(source).name());
+    }
+    Reset();
+    const CSeq_id& src_id = static_cast<const CSeq_id&>(source);
+    switch (src_id.Which()) {
+    case e_not_set:
+        // do not go to default to avoid CSerialObject::Assign() overhead
+        break;
+    case e_Local:
+        switch (src_id.GetLocal().Which()) {
+        case CObject_id::e_Id:
+            SetLocal().SetId(src_id.GetLocal().GetId());
+            break;
+        case CObject_id::e_Str:
+            SetLocal().SetStr(src_id.GetLocal().GetStr());
+            break;
+        default:
+            SetLocal().Assign(src_id.GetLocal());
+        }
+        break;
+    case e_Gibbsq:
+        SetGibbsq(src_id.GetGibbsq());
+        break;
+    case e_Gibbmt:
+        SetGibbmt(src_id.GetGibbmt());
+        break;
+    case e_Giim:
+        SetGiim().SetId(src_id.GetGiim().GetId());
+        if (src_id.GetGiim().IsSetDb())
+            SetGiim().SetDb(src_id.GetGiim().GetDb());
+        if (src_id.GetGiim().IsSetRelease())
+            SetGiim().SetRelease(src_id.GetGiim().GetRelease());
+        break;
+    case e_Genbank:
+        x_AssignTextseq_id(src_id.GetGenbank(), SetGenbank());
+        break;
+    case e_Embl:
+        x_AssignTextseq_id(src_id.GetEmbl(), SetEmbl());
+        break;
+    case e_Pir:
+        x_AssignTextseq_id(src_id.GetPir(), SetPir());
+        break;
+    case e_Swissprot:
+        x_AssignTextseq_id(src_id.GetSwissprot(), SetSwissprot());
+        break;
+    case e_Patent:
+        {
+            const CId_pat& spat = src_id.GetPatent().GetCit();
+            CId_pat& dpat = SetPatent().SetCit();
+            SetPatent().SetSeqid(src_id.GetPatent().GetSeqid());
+            switch (spat.GetId().Which()) {
+            case CId_pat::C_Id::e_Number:
+                dpat.SetId().SetNumber(
+                    spat.GetId().GetNumber());
+                break;
+            case CId_pat::C_Id::e_App_number:
+                dpat.SetId().SetApp_number(
+                    spat.GetId().GetApp_number());
+                break;
+            default:
+                dpat.SetId().Assign(spat.GetId());
+            }
+            dpat.SetCountry(spat.GetCountry());
+            if (spat.IsSetDoc_type())
+                dpat.SetDoc_type(spat.GetDoc_type());
+            break;
+        }
+    case e_Other:
+        x_AssignTextseq_id(src_id.GetOther(), SetOther());
+        break;
+    case e_General:
+        SetGeneral().SetDb(src_id.GetGeneral().GetDb());
+        switch (src_id.GetGeneral().GetTag().Which()) {
+        case CObject_id::e_Id:
+            SetGeneral().SetTag().SetId(src_id.GetGeneral().GetTag().GetId());
+            break;
+        case CObject_id::e_Str:
+            SetGeneral().SetTag().SetStr(src_id.GetGeneral().GetTag().GetStr());
+            break;
+        default:
+            SetGeneral().SetTag().Assign(src_id.GetGeneral().GetTag());
+        }
+        break;
+    case e_Gi:
+        SetGi(src_id.GetGi());
+        break;
+    case e_Ddbj:
+        x_AssignTextseq_id(src_id.GetDdbj(), SetDdbj());
+        break;
+    case e_Prf:
+        x_AssignTextseq_id(src_id.GetPrf(), SetPrf());
+        break;
+    case e_Pdb:
+        {
+            const CPDB_seq_id& sid = src_id.GetPdb();
+            CPDB_seq_id& did = SetPdb();
+            did.SetMol().Set(sid.GetMol().Get());
+            if (sid.IsSetChain())
+                did.SetChain(sid.GetChain());
+            if (sid.IsSetRel()) {
+                switch (sid.GetRel().Which()) {
+                case CDate::e_Str:
+                    did.SetRel().SetStr(sid.GetRel().GetStr());
+                    break;
+                case CDate::e_Std:
+                    {
+                        const CDate_std& sd = sid.GetRel().GetStd();
+                        CDate_std& dd = did.SetRel().SetStd();
+                        dd.SetYear(sd.GetYear());
+                        if (sd.IsSetMonth()) dd.SetMonth(sd.GetMonth());
+                        if (sd.IsSetDay()) dd.SetDay(sd.GetDay());
+                        if (sd.IsSetSeason()) dd.SetSeason(sd.GetSeason());
+                        if (sd.IsSetHour()) dd.SetHour(sd.GetHour());
+                        if (sd.IsSetMinute()) dd.SetMinute(sd.GetMinute());
+                        if (sd.IsSetSecond()) dd.SetSecond(sd.GetSecond());
+                        break;
+                    }
+                default:
+                    did.SetRel().Assign(sid.GetRel());
+                }
+            }
+            break;
+        }
+    case e_Tpg:
+        x_AssignTextseq_id(src_id.GetTpg(), SetTpg());
+        break;
+    case e_Tpe:
+        x_AssignTextseq_id(src_id.GetTpe(), SetTpe());
+        break;
+    case e_Tpd:
+        x_AssignTextseq_id(src_id.GetTpd(), SetTpd());
+        break;
+    default:
+        CSerialObject::Assign(source);
+    }
+}
+
+
+bool CSeq_id::Equals(const CSerialObject& object) const
+{
+    if ( typeid(object) != typeid(*this) ) {
+        ERR_POST(Fatal <<
+            "CSeq_id::Assign() -- Assignment of incompatible types: " <<
+            typeid(*this).name() << " = " << typeid(object).name());
+    }
+    return CSerialObject::Equals(object);
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
@@ -1114,6 +1283,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.50  2003/02/04 15:15:12  grichenk
+ * Overrided Assign() for CSeq_loc and CSeq_id
+ *
  * Revision 6.49  2003/01/18 08:40:03  kimelman
  * addes seqid constructor for numeric types
  *

@@ -90,10 +90,17 @@ public:
     bool IsPartialLeft  (void) const;
     bool IsPartialRight (void) const;
 
+    virtual void Assign(const CSerialObject& source);
+    virtual bool Equals(const CSerialObject& object) const;
+
 private:
     // Prohibit copy constructor & assignment operator
     CSeq_loc(const CSeq_loc&);
     CSeq_loc& operator= (const CSeq_loc&);
+
+    static void x_AssignSeq_int(const CSeq_interval& src, CSeq_interval& dest);
+    static void x_AssignSeq_pnt(const CSeq_point& src, CSeq_point& dest);
+    static void x_AssignFuzz(const CInt_fuzz& src, CInt_fuzz& dest);
 };
 
 
@@ -297,6 +304,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/02/04 15:15:11  grichenk
+ * Overrided Assign() for CSeq_loc and CSeq_id
+ *
  * Revision 1.19  2003/01/22 20:13:57  vasilche
  * Use more effective COpenRange<> methods.
  *

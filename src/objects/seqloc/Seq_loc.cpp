@@ -35,11 +35,13 @@
  *
  * ===========================================================================
  */
+
 #include <serial/enumvalues.hpp>
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -559,6 +561,213 @@ void CSeq_loc::GetLabel(string* label) const
     s_GetLabel(*this, 0, label, true);
 }
 
+
+void CSeq_loc::x_AssignFuzz(const CInt_fuzz& src, CInt_fuzz& dest)
+{
+    switch (src.Which()) {
+    case CInt_fuzz::e_not_set:
+        break;
+    case CInt_fuzz::e_P_m:
+        dest.SetP_m(src.GetP_m());
+        break;
+    case CInt_fuzz::e_Range:
+        dest.SetRange().SetMin(src.GetRange().GetMin());
+        dest.SetRange().SetMax(src.GetRange().GetMax());
+        break;
+    case CInt_fuzz::e_Pct:
+        dest.SetPct(src.GetPct());
+        break;
+    case CInt_fuzz::e_Lim:
+        dest.SetLim(src.GetLim());
+        break;
+    case CInt_fuzz::e_Alt:
+        // Ok to use merge, since elements are simple (TSeqPos)
+        dest.SetAlt().assign(src.GetAlt().begin(), src.GetAlt().end());
+        break;
+    default:
+        dest.Assign(src);
+    }
+}
+
+
+void CSeq_loc::x_AssignSeq_int(const CSeq_interval& src,
+                                      CSeq_interval& dest)
+{
+    dest.SetId().Assign(src.GetId());
+    dest.SetFrom(src.GetFrom());
+    dest.SetTo(src.GetTo());
+    if (src.IsSetStrand())
+        dest.SetStrand(src.GetStrand());
+    if (src.IsSetFuzz_from())
+        x_AssignFuzz(src.GetFuzz_from(), dest.SetFuzz_from());
+    if (src.IsSetFuzz_to())
+        x_AssignFuzz(src.GetFuzz_to(), dest.SetFuzz_to());
+}
+
+
+void CSeq_loc::x_AssignSeq_pnt(const CSeq_point& src,
+                                      CSeq_point& dest)
+{
+    dest.SetPoint(src.GetPoint());
+    dest.SetId().Assign(src.GetId());
+    if (src.IsSetStrand())
+        dest.SetStrand(src.GetStrand());
+    if (src.IsSetFuzz())
+        x_AssignFuzz(src.GetFuzz(), dest.SetFuzz());
+}
+
+
+void CSeq_loc::Assign(const CSerialObject& source)
+{
+    if ( typeid(source) != typeid(*this) ) {
+        ERR_POST(Fatal <<
+            "CSeq_loc::Assign() -- Assignment of incompatible types: " <<
+            typeid(*this).name() << " = " << typeid(source).name());
+    }
+    Reset();
+    const CSeq_loc& src_loc = static_cast<const CSeq_loc&>(source);
+    switch (src_loc.Which()) {
+    case e_Null:
+        SetNull(src_loc.GetNull());
+        break;
+    case e_Empty:
+        SetEmpty().Assign(src_loc.GetEmpty());
+        break;
+    case e_Whole:
+        SetWhole().Assign(src_loc.GetWhole());
+        break;
+    case e_Int:
+        x_AssignSeq_int(src_loc.GetInt(), SetInt());
+        break;
+    case e_Packed_int:
+        {
+            CRef<CSeq_interval> sint;
+            // Can not use merge(), need to copy elements
+            CPacked_seqint::Tdata& data_copy = SetPacked_int().Set();
+            iterate (CPacked_seqint::Tdata, it, src_loc.GetPacked_int().Get()) {
+                sint.Reset(new CSeq_interval);
+                x_AssignSeq_int(**it, *sint);
+                data_copy.push_back(sint);
+            }
+            break;
+        }
+    case e_Pnt:
+        {
+            x_AssignSeq_pnt(src_loc.GetPnt(), SetPnt());
+            break;
+        }
+    case e_Packed_pnt:
+        {
+            const CPacked_seqpnt& sp = src_loc.GetPacked_pnt();
+            CPacked_seqpnt& dp = SetPacked_pnt();
+            dp.SetId().Assign(sp.GetId());
+            if (sp.IsSetStrand())
+                dp.SetStrand(sp.GetStrand());
+            if (sp.IsSetFuzz())
+                x_AssignFuzz(sp.GetFuzz(), dp.SetFuzz());
+            dp.SetPoints().assign(sp.GetPoints().begin(), sp.GetPoints().end());
+            break;
+        }
+    case e_Mix:
+        {
+            CRef<CSeq_loc> tmp;
+            const CSeq_loc_mix::Tdata& smix = src_loc.GetMix().Get();
+            CSeq_loc_mix::Tdata& dmix = SetMix().Set();
+            iterate (CSeq_loc_mix::Tdata, it, smix) {
+                tmp.Reset(new CSeq_loc);
+                tmp->Assign(**it);
+                dmix.push_back(tmp);
+            }
+            break;
+        }
+    case e_Equiv:
+        {
+            CRef<CSeq_loc> tmp;
+            const CSeq_loc_equiv::Tdata& sequ = src_loc.GetMix().Get();
+            CSeq_loc_equiv::Tdata& dequ = SetMix().Set();
+            iterate (CSeq_loc_equiv::Tdata, it, sequ) {
+                tmp.Reset(new CSeq_loc);
+                tmp->Assign(**it);
+                dequ.push_back(tmp);
+            }
+            break;
+        }
+    case e_Bond:
+        x_AssignSeq_pnt(src_loc.GetBond().GetA(), SetBond().SetA());
+        if (src_loc.GetBond().IsSetB())
+            x_AssignSeq_pnt(src_loc.GetBond().GetB(), SetBond().SetB());
+        break;
+    case e_Feat:
+        {
+            switch (src_loc.GetFeat().Which()) {
+            case CFeat_id::e_not_set:
+                SetFeat();
+                break;
+            case CFeat_id::e_Gibb:
+                SetFeat().SetGibb(src_loc.GetFeat().GetGibb());
+                break;
+            case CFeat_id::e_Giim:
+                {
+                    const CGiimport_id& sid = src_loc.GetFeat().GetGiim();
+                    CGiimport_id& did = SetFeat().SetGiim();
+                    did.SetId(sid.GetId());
+                    if (sid.IsSetDb())
+                        did.SetDb(sid.GetDb());
+                    if (sid.IsSetRelease())
+                        did.SetRelease(sid.GetRelease());
+                    break;
+                }
+            case CFeat_id::e_Local:
+                switch (src_loc.GetFeat().GetLocal().Which()) {
+                case CObject_id::e_Id:
+                    SetFeat().SetLocal().SetId(src_loc.GetFeat().GetLocal().GetId());
+                    break;
+                case CObject_id::e_Str:
+                    SetFeat().SetLocal().SetStr(src_loc.GetFeat().GetLocal().GetStr());
+                    break;
+                default:
+                    SetFeat().SetLocal().Assign(src_loc.GetFeat().GetLocal());
+                }
+                break;
+            case CFeat_id::e_General:
+                {
+                    const CDbtag& stag = src_loc.GetFeat().GetGeneral();
+                    CDbtag& dtag = SetFeat().SetGeneral();
+                    dtag.SetDb(stag.GetDb());
+                    switch (stag.GetTag().Which()) {
+                    case CObject_id::e_Id:
+                        dtag.SetTag().SetId(stag.GetTag().GetId());
+                        break;
+                    case CObject_id::e_Str:
+                        dtag.SetTag().SetStr(stag.GetTag().GetStr());
+                        break;
+                    default:
+                        dtag.SetTag().Assign(stag.GetTag());
+                    }
+                    break;
+                }
+            default:
+                SetFeat().Assign(src_loc.GetFeat());
+            }
+            break;
+        }
+    default:
+        Assign(source);
+    }
+}
+
+
+bool CSeq_loc::Equals(const CSerialObject& object) const
+{
+    if ( typeid(object) != typeid(*this) ) {
+        ERR_POST(Fatal <<
+            "CSeq_loc::Assign() -- Assignment of incompatible types: " <<
+            typeid(*this).name() << " = " << typeid(object).name());
+    }
+    return CSerialObject::Equals(object);
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -566,6 +775,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.24  2003/02/04 15:15:15  grichenk
+ * Overrided Assign() for CSeq_loc and CSeq_id
+ *
  * Revision 6.23  2003/01/24 20:11:33  vasilche
  * Fixed trigraph warning on GCC.
  *

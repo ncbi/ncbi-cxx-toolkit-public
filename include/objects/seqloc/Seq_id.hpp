@@ -275,6 +275,9 @@ public:
     static int BestRank(const CRef<CSeq_id>& id);
     static int WorstRank(const CRef<CSeq_id>& id);
 
+    virtual void Assign(const CSerialObject& source);
+    virtual bool Equals(const CSerialObject& object) const;
+
 private:
     void x_Init
     (CSeq_id_Base::E_Choice the_type,
@@ -290,6 +293,9 @@ private:
     CSeq_id& operator= (const CSeq_id&);
 
     //CRef<CAbstractObjectManager> m_ObjectManager;
+
+    static void x_AssignTextseq_id(const CTextseq_id& src,
+                                   CTextseq_id& dest);
 };
 
 
@@ -366,6 +372,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.33  2003/02/04 15:15:11  grichenk
+ * Overrided Assign() for CSeq_loc and CSeq_id
+ *
  * Revision 1.32  2003/01/18 08:40:04  kimelman
  * addes seqid constructor for numeric types
  *
