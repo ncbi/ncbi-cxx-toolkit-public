@@ -41,7 +41,7 @@
 /* Hard-coded pseudo-registry getter
  */
 
-#define TEST_HOST            "yar.nlm.nih.gov"
+#define TEST_HOST            "yar.ncbi.nlm.nih.gov"
 #define TEST_PORT            "6224"
 #define TEST_PATH            "/tools/vakatov/con_url.cgi"
 #define TEST_ARGS            "arg1+arg2+arg3"
@@ -139,6 +139,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2003/04/15 14:06:09  lavr
+ * Changed ray.nlm.nih.gov -> ray.ncbi.nlm.nih.gov
+ *
  * Revision 6.11  2002/12/04 16:59:21  lavr
  * Open log file in append mode
  *

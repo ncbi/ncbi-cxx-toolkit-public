@@ -130,7 +130,7 @@ int main(int argc, const char* argv[])
     if (argc < 4) {
         fprintf(stderr,
                 "Usage:   %s host port path [args] [inp_file] [user_header]\n"
-                "Example: %s yar.nlm.nih.gov 6224 "
+                "Example: %s yar.ncbi.nlm.nih.gov 6224 "
                 "/tools/vakatov/con_url.cgi 'arg1+arg2+arg3'\n",
                 argv[0], argv[0]);
         fprintf(stderr, "Too few arguments.\n");
@@ -197,6 +197,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2003/04/15 14:06:09  lavr
+ * Changed ray.nlm.nih.gov -> ray.ncbi.nlm.nih.gov
+ *
  * Revision 6.10  2002/11/22 15:09:40  lavr
  * Replace all occurances of "ray" with "yar"
  *

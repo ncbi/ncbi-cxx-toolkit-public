@@ -54,7 +54,7 @@ static CNcbiRegistry* s_CreateRegistry(void)
     reg->Set("ID1", "CONN_" REG_CONN_HOST, DEF_CONN_HOST);
     reg->Set("ID1", "CONN_" REG_CONN_PATH, DEF_CONN_PATH);
     reg->Set("ID1", "CONN_" REG_CONN_ARGS, DEF_CONN_ARGS);
-    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_HOST,          "yar.nlm.nih.gov");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_HOST,     "yar.ncbi.nlm.nih.gov");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,      "/Service/bounce.cgi");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_ARGS,           "arg1+arg2+arg3");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "POST");
@@ -250,6 +250,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2003/04/15 14:06:09  lavr
+ * Changed ray.nlm.nih.gov -> ray.ncbi.nlm.nih.gov
+ *
  * Revision 6.24  2003/03/25 22:16:38  lavr
  * Show that timeouts are set from CONN stream ctors
  *

@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
     SetDiagPostFlag(eDPF_All);
     CONNECT_Init(0);
 
-    string host = "yar.nlm.nih.gov";
+    string host = "yar.ncbi.nlm.nih.gov";
     string path = "/Service/bounce.cgi";
     string args = kEmptyStr;
     string uhdr = kEmptyStr;
@@ -70,6 +70,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2003/04/15 14:06:09  lavr
+ * Changed ray.nlm.nih.gov -> ray.ncbi.nlm.nih.gov
+ *
  * Revision 1.8  2002/11/22 15:09:40  lavr
  * Replace all occurances of "ray" with "yar"
  *
