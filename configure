@@ -2601,7 +2601,10 @@ if test "$exec_prefix" != "$top_srcdir" ; then
 
    cd "$src_dir"
    ( find . -name '*.sh' -print ; find . -name 'Makefile*' -print ) |
-   grep -v 'Makefile.*\.in' | grep -v 'Makefile*~' |
+   grep -v 'Makefile.*\.in'  |
+   grep -v 'Makefile*~'      |
+   grep -v 'Makefile\..*\.lib' | 
+   grep -v 'Makefile\..*\.app' | 
    while read x_file ; do
       dest_dir="$builddir"/`dirname "$x_file"`
       test -d "$dest_dir"  ||  mkdir -p "$dest_dir"
