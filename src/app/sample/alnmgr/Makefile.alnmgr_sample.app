@@ -2,7 +2,7 @@
 # $Id$
 #################################
 
-REQUIRES = objects dbapi C-Toolkit
+REQUIRES = objects dbapi
 
 APP = alnmgr_sample
 SRC = alnmgr_sample
@@ -14,7 +14,5 @@ SRC = alnmgr_sample
 ### BEGIN COPIED SETTINGS
 LIB = xalnmgr xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
       dbapi_driver xser xutil xconnect xncbi
-# The merging code needs some C libraries for now. :-/
-LIBS = $(NCBI_C_LIBPATH) -lncbiid1 -lncbiobj -lnetcli $(NCBI_C_ncbi) \
-       $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+LIBS = $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
