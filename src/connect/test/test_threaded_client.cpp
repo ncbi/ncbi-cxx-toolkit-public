@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.3  2002/01/15 22:24:42  ucko
+* Take advantage of MT_LOCK_cxx2c
+*
 * Revision 6.2  2002/01/07 17:08:44  ucko
 * Display progress.
 *
@@ -110,7 +113,7 @@ public:
 void CThreadedClientApp::Init(void)
 {
     CORE_SetLOG(LOG_cxx2c());
-    // CORE_SetLOCK(...) ??
+    CORE_SetLOCK(MT_LOCK_cxx2c());
 
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),

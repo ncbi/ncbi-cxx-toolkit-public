@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.2  2002/01/15 22:24:43  ucko
+* Take advantage of MT_LOCK_cxx2c
+*
 * Revision 6.1  2001/12/11 19:55:24  ucko
 * Introduce thread-pool-based servers.
 *
@@ -67,7 +70,7 @@ public:
 void CThreadedServerApp::Init(void)
 {
     CORE_SetLOG(LOG_cxx2c());
-    // CORE_SetLOCK(...) ??
+    CORE_SetLOCK(MT_LOCK_cxx2c());
 
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
