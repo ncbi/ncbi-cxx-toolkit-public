@@ -38,14 +38,18 @@
 BEGIN_NCBI_SCOPE
 
 
-extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
+static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str, char delim, char delim2)
 {
-#if !defined(NCBI_USE_OLD_IOSTREAM)
-    return getline(is, str, delim);
-#else
     int ch;
+
+#ifdef NO_PUBSYNC
     if ( !is.ipfx(1) )
       return is;
+#else
+    CNcbiIstream::sentry s(is);
+    if ( !s)
+      return is;
+#endif
 
     str.erase();
 
@@ -53,7 +57,7 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
     SIZE_TYPE i = 0;
     for (ch = is.rdbuf()->sbumpc();  ch != EOF;  ch = is.rdbuf()->sbumpc()) {
       i++;
-      if ((char)ch == delim)
+      if ((char)ch == delim || (char)ch == delim2)
         break;
       if (i == end) {
           is.clear(NcbiFailbit | is.rdstate());      
@@ -67,8 +71,19 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
     if (!i)
       is.clear(NcbiFailbit | is.rdstate());      
 
+#ifdef NO_PUBSYNC
     is.isfx();
+#endif
+
     return is;
+}
+
+extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
+{
+#if !defined(NCBI_USE_OLD_IOSTREAM)
+    return getline(is, str, delim);
+#else
+    return s_NcbiGetline(is, str, delim, delim);
 #endif /* ndef!else NCBI_USE_OLD_IOSTREAM */
 
 }
@@ -97,6 +112,8 @@ CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str)
     NcbiGetline(is, str, '\n');
     if (!str.empty()  &&  str[str.length()-1] == '\r')
         str.resize(str.length() - 1);
+#elif defined(NCBI_OS_DARWIN)
+    s_NcbiGetline(is, str, '\r', '\n');
 #else /* assume UNIX-like EOLs */
     NcbiGetline(is, str, '\n');
 #endif
@@ -303,6 +320,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/03/26 21:18:54  kans
+ * s_NcbiGetline takes two delimiters, NcbiGetlineEOL calls this if NCBI_OS_DARWIN to handle both kinds of newlines
+ *
  * Revision 1.19  2003/03/10 18:57:08  kuznets
  * iterate->ITERATE
  *
