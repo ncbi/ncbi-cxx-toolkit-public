@@ -138,7 +138,7 @@ public:
 
     enum EOrgRef {
         eOrgRef_organism,
-        eOrgRef_mitochondrion,
+        eOrgRef_organelle,
         eOrgRef_div,
         eOrgRef_lineage,
         eOrgRef_gcode,
@@ -148,11 +148,13 @@ public:
     typedef map< string, CSeqFeatData::ESubtype > TFeatReaderMap;
     typedef map< string, EQual > TQualReaderMap;
     typedef map< string, EOrgRef > TOrgRefReaderMap;
+    typedef map< string, CBioSource::EGenome > TGenomeReaderMap;
     typedef map< string, CSubSource::ESubtype > TSubSrcReaderMap;
     typedef map< string, COrgMod::ESubtype > TOrgModReaderMap;
     typedef map< string, CSeqFeatData::EBond > TBondReaderMap;
     typedef map< string, CSeqFeatData::ESite > TSiteReaderMap;
     typedef map< string, int > TTrnaReaderMap;
+    typedef vector< string > TSingleQualList;
 
     // constructor
     CFeature_table_reader_imp(void);
@@ -200,11 +202,13 @@ private:
     TFeatReaderMap   m_FeatKeys;
     TQualReaderMap   m_QualKeys;
     TOrgRefReaderMap m_OrgRefKeys;
+    TGenomeReaderMap m_GenomeKeys;
     TSubSrcReaderMap m_SubSrcKeys;
     TOrgModReaderMap m_OrgModKeys;
     TBondReaderMap   m_BondKeys;
     TSiteReaderMap   m_SiteKeys;
     TTrnaReaderMap   m_TrnaKeys;
+    TSingleQualList  m_SingleKeys;
 };
 
 auto_ptr<CFeature_table_reader_imp> CFeature_table_reader::sm_Implementation;
@@ -378,12 +382,45 @@ typedef struct orgrefinit {
 } OrgRefInit;
 
 static OrgRefInit orgref_key_to_subtype [] = {
-    { "div",            CFeature_table_reader_imp::eOrgRef_div           },
-    { "gcode",          CFeature_table_reader_imp::eOrgRef_gcode         },
-    { "lineage",        CFeature_table_reader_imp::eOrgRef_lineage       },
-    { "mgcode",         CFeature_table_reader_imp::eOrgRef_mgcode        },
-    { "mitochondrion",  CFeature_table_reader_imp::eOrgRef_mitochondrion },
-    { "organism",       CFeature_table_reader_imp::eOrgRef_organism      }
+    { "div",        CFeature_table_reader_imp::eOrgRef_div       },
+    { "gcode",      CFeature_table_reader_imp::eOrgRef_gcode     },
+    { "lineage",    CFeature_table_reader_imp::eOrgRef_lineage   },
+    { "mgcode",     CFeature_table_reader_imp::eOrgRef_mgcode    },
+    { "organelle",  CFeature_table_reader_imp::eOrgRef_organelle },
+    { "organism",   CFeature_table_reader_imp::eOrgRef_organism  }
+};
+
+typedef struct genomeinit {
+    const char *        key;
+    CBioSource::EGenome subtype;
+} GenomeInit;
+
+static GenomeInit genome_key_to_subtype [] = {
+    { "unknown",                   CBioSource::eGenome_unknown          },
+    { "genomic",                   CBioSource::eGenome_genomic          },
+    { "chloroplast",               CBioSource::eGenome_chloroplast      },
+    { "plastid:chloroplast",       CBioSource::eGenome_chloroplast      },
+    { "chromoplast",               CBioSource::eGenome_chromoplast      },
+    { "plastid:chromoplast",       CBioSource::eGenome_chromoplast      },
+    { "kinetoplast",               CBioSource::eGenome_kinetoplast      },
+    { "mitochondrion:kinetoplast", CBioSource::eGenome_kinetoplast      },
+    { "mitochondrion",             CBioSource::eGenome_mitochondrion    },
+    { "plastid",                   CBioSource::eGenome_plastid          },
+    { "macronuclear",              CBioSource::eGenome_macronuclear     },
+    { "extrachrom",                CBioSource::eGenome_extrachrom       },
+    { "plasmid",                   CBioSource::eGenome_plasmid          },
+    { "transposon",                CBioSource::eGenome_transposon       },
+    { "insertion_seq",             CBioSource::eGenome_insertion_seq    },
+    { "cyanelle",                  CBioSource::eGenome_cyanelle         },
+    { "plastid:cyanelle",          CBioSource::eGenome_cyanelle         },
+    { "proviral",                  CBioSource::eGenome_proviral         },
+    { "virion",                    CBioSource::eGenome_virion           },
+    { "nucleomorph",               CBioSource::eGenome_nucleomorph      },
+    { "apicoplast",                CBioSource::eGenome_apicoplast       },
+    { "plastid:apicoplast",        CBioSource::eGenome_apicoplast       },
+    { "plastid:leucoplast",        CBioSource::eGenome_leucoplast       },
+    { "plastid:proplastid",        CBioSource::eGenome_proplastid       },
+    { "endogenous_virus",          CBioSource::eGenome_endogenous_virus }
 };
 
 typedef struct subsrcinit {
@@ -546,6 +583,18 @@ static TrnaInit trna_key_to_subtype [] = {
     { "TERM",  '*' }
 };
 
+typedef struct singleinit {
+    const char * key;
+} SingleInit;
+
+static SingleInit single_key_list [] = {
+    { "pseudo" },
+    { "germline" },
+    { "rearranged" },
+    { "transgenic" },
+    { "environmental_sample" }
+};
+
 // constructor
 CFeature_table_reader_imp::CFeature_table_reader_imp(void)
 {
@@ -563,6 +612,11 @@ CFeature_table_reader_imp::CFeature_table_reader_imp(void)
     for (int i = 0; i < sizeof (orgref_key_to_subtype) / sizeof (OrgRefInit); i++) {
         string str = string (orgref_key_to_subtype [i].key);
         m_OrgRefKeys [string (orgref_key_to_subtype [i].key)] = orgref_key_to_subtype [i].subtype;
+    }
+
+    for (int i = 0; i < sizeof (genome_key_to_subtype) / sizeof (GenomeInit); i++) {
+        string str = string (genome_key_to_subtype [i].key);
+        m_GenomeKeys [string (genome_key_to_subtype [i].key)] = genome_key_to_subtype [i].subtype;
     }
 
     for (int i = 0; i < sizeof (subsrc_key_to_subtype) / sizeof (SubSrcInit); i++) {
@@ -588,6 +642,11 @@ CFeature_table_reader_imp::CFeature_table_reader_imp(void)
     for (int i = 0; i < sizeof (trna_key_to_subtype) / sizeof (TrnaInit); i++) {
         string str = string (trna_key_to_subtype [i].key);
         m_TrnaKeys [string (trna_key_to_subtype [i].key)] = trna_key_to_subtype [i].subtype;
+    }
+
+    for (int i = 0; i < sizeof (single_key_list) / sizeof (SingleInit); i++) {
+        string str = string (single_key_list [i].key);
+        m_SingleKeys.push_back (str);
     }
 }
 
@@ -724,9 +783,6 @@ bool CFeature_table_reader_imp::x_AddQualifierToGene (CSeqFeatData& sfdata,
             return true;
         case eQual_locus_tag:
             grp.SetLocus_tag (val);
-            return true;
-        case eQual_pseudo:
-            grp.SetPseudo (true);
             return true;
         default:
             break;
@@ -930,9 +986,14 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
                 orp.SetTaxname (val);
                 return true;
             }
-        case eOrgRef_mitochondrion:
-            bsp.SetGenome (CBioSource::eGenome_mitochondrion);
-            return true;
+        case eOrgRef_organelle:
+            {
+                if (m_GenomeKeys.find (val) != m_GenomeKeys.end ()) {
+                    CBioSource::EGenome gtype = m_GenomeKeys [val];
+                    bsp.SetGenome (gtype);
+                    return true;
+                }
+            }
         case eOrgRef_div:
             {
                 CBioSource::TOrg& orp = bsp.SetOrg ();
@@ -1356,6 +1417,15 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIstream
 
                     x_AddQualifierToFeature (sfp, qual, val);
 
+                } else if ((! qual.empty ()) && (val.empty ())) {
+
+                    // check for the few qualifiers that do not need a value
+
+                    if (find (m_SingleKeys.begin (), m_SingleKeys.end (), qual) != m_SingleKeys.end ()) {
+
+                        x_AddQualifierToFeature (sfp, qual, val);
+
+                    }
                 }
             }
         }
