@@ -560,15 +560,14 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
                     uids[alnRow] = indexAlnLocToSeqLocRows[alnRow]->sequence->pdbID;
                     if (indexAlnLocToSeqLocRows[alnRow]->sequence->pdbChain != ' ')
                         uids[alnRow] += (char) indexAlnLocToSeqLocRows[alnRow]->sequence->pdbChain;
-                    uids[alnRow] += "%5BACCN%5D";
                 }
             } else if (indexAlnLocToSeqLocRows[alnRow]->sequence->gi != Sequence::NOT_SET) {
                 CNcbiOstrstream uidoss;
-                uidoss << indexAlnLocToSeqLocRows[alnRow]->sequence->gi << "%5BUID%5D" << '\0';
+                uidoss << indexAlnLocToSeqLocRows[alnRow]->sequence->gi << '\0';
                 uids[alnRow] = uidoss.str();
                 delete uidoss.str();
             } else if (indexAlnLocToSeqLocRows[alnRow]->sequence->accession.size() > 0) {
-                uids[alnRow] = indexAlnLocToSeqLocRows[alnRow]->sequence->accession + "%5BACCN%5D";
+                uids[alnRow] = indexAlnLocToSeqLocRows[alnRow]->sequence->accession;
             }
         }
     }
@@ -780,15 +779,14 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
                     uids[alnRow] = indexAlnLocToSeqLocRows[alnRow]->sequence->pdbID;
                     if (indexAlnLocToSeqLocRows[alnRow]->sequence->pdbChain != ' ')
                         uids[alnRow] += (char) indexAlnLocToSeqLocRows[alnRow]->sequence->pdbChain;
-                    uids[alnRow] += "%5BACCN%5D";
                 }
             } else if (indexAlnLocToSeqLocRows[alnRow]->sequence->gi != Sequence::NOT_SET) {
                 CNcbiOstrstream uidoss;
-                uidoss << indexAlnLocToSeqLocRows[alnRow]->sequence->gi << "%5BUID%5D" << '\0';
+                uidoss << indexAlnLocToSeqLocRows[alnRow]->sequence->gi << '\0';
                 uids[alnRow] = uidoss.str();
                 delete uidoss.str();
             } else if (indexAlnLocToSeqLocRows[alnRow]->sequence->accession.size() > 0) {
-                uids[alnRow] = indexAlnLocToSeqLocRows[alnRow]->sequence->accession + "%5BACCN%5D";
+                uids[alnRow] = indexAlnLocToSeqLocRows[alnRow]->sequence->accession;
             }
         }
     }
@@ -1225,6 +1223,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/11/15 13:16:04  thiessen
+* fix uid link urls
+*
 * Revision 1.2  2003/06/02 16:06:41  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
