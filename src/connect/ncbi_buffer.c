@@ -49,7 +49,7 @@
 typedef struct SBufChunkTag {
     struct SBufChunkTag* next;
     size_t size;       /* of data (including the discarded "n_skip" bytes)  */
-    size_t alloc_size; /* maximum avail. (allocated) size of "data"         */
+    size_t alloc_size; /* maximum available (allocated) size of "data"      */
     size_t n_skip;     /* # of bytes already discarded(read) from the chunk */
     char   data[1];    /* data stored in this chunk                         */
 } SBufChunk;
@@ -58,7 +58,7 @@ typedef struct SBufChunkTag {
 /* Buffer
  */
 typedef struct BUF_tag {
-    size_t     chunk_size;
+    size_t     chunk_size; /* this is actually a chunk size unit */
     SBufChunk* list;
 } BUF_struct;
 
@@ -68,10 +68,10 @@ extern size_t BUF_SetChunkSize(BUF* pBuf, size_t chunk_size)
 {
     /* create buffer internals, if not created yet */
     if ( !*pBuf ) {
-      *pBuf = (BUF_struct*) malloc(sizeof(BUF_struct));
-      if ( !*pBuf )
-          return 0;
-      (*pBuf)->list = 0;
+        *pBuf = (BUF_struct*) malloc(sizeof(BUF_struct));
+        if ( !*pBuf )
+            return 0;
+        (*pBuf)->list = 0;
     }
 
     /* and set the min. mem. chunk size */
@@ -289,6 +289,9 @@ extern void BUF_Destroy(BUF buf)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2003/05/14 03:49:53  lavr
+ * Some indentation; added comment on chunk_size being a chunk size unit
+ *
  * Revision 6.11  2003/01/08 02:01:01  lavr
  * Reindented in accordance with current coding rules
  *
