@@ -7,7 +7,7 @@
 #################################
 
 APP = testobjmgr1_mt
-SRC = testobjmgr1_mt
+SRC = testobjmgr1_mt test_helper
 LIB = xobjmgr1 id1 seqset $(SEQ_LIBS) pub medline biblio general \
       xser xutil xconnect xncbi
 
