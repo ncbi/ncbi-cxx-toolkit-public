@@ -339,14 +339,17 @@ CBlast2seqApplication::ProcessCommandLineArgs() THROWS((CBlastException))
     switch (args["greedy"].AsInteger()) {
     case 1: /* Immediate greedy gapped extension with traceback */
         opt.SetGapExtnAlgorithm(eGreedyWithTracebackExt);
+        opt.SetGapTracebackAlgorithm(eSkipTbck);
         opt.SetUngappedExtension(false);
         break;
     case 2: /* Two-step greedy extension, no ungapped extension */
         opt.SetGapExtnAlgorithm(eGreedyExt);
+        opt.SetGapTracebackAlgorithm(eGreedyTbck);
         opt.SetUngappedExtension(false);
         break;
     case 3: /* Two-step greedy extension after ungapped extension*/
         opt.SetGapExtnAlgorithm(eGreedyExt);
+        opt.SetGapTracebackAlgorithm(eGreedyTbck);
         break;
     default: break;
     }
@@ -497,6 +500,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2004/06/08 15:21:44  dondosha
+ * Set traceback algorithm properly
+ *
  * Revision 1.46  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *
