@@ -296,8 +296,11 @@ SHEAP_Block* HEAP_Alloc(HEAP heap, TNCBI_Size size)
     SHEAP_Block* b, *p = 0;
     TNCBI_Size free = 0;
 
-    if (!heap || size < 1)
+    if (!heap || size < 1) {
+        if (size)
+            CORE_LOG(eLOG_Warning, "Heap Alloc: Cannot alloc in NULL heap");
         return 0;
+    }
 
     if (!heap->chunk) {
         CORE_LOG(eLOG_Warning, "Heap Alloc: Heap is read-only");
@@ -517,6 +520,9 @@ int HEAP_Serial(const HEAP heap)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2002/08/16 15:37:22  lavr
+ * Warn if allocation attempted on a NULL heap
+ *
  * Revision 6.15  2002/08/12 15:15:15  lavr
  * More thorough check for free-in-the-middle heap block
  *
