@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/03/30 22:49:22  grichenk
+* KCC freeze() bug workaround
+*
 * Revision 1.26  2001/03/26 21:45:54  vakatov
 * Made MT-safe (with A.Grichenko)
 *
@@ -223,6 +226,14 @@ void CDiagBuffer::Flush(void)
                           m_Diag->GetFile(), m_Diag->GetLine(),
                           m_Diag->GetPostFlags());
         DiagHandler(mess);
+
+#if defined(NCBI_COMPILER_KCC)
+        // KCC's implementation of "freeze(0)" makes the ostrstream buffer
+        // stuck. We need to replace the frozen stream with the new one.
+        delete ostr;
+        m_Stream = new CNcbiOstrstream;
+#endif
+
         Reset(*m_Diag);
     }
 
