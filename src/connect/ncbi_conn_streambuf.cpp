@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.7  2001/05/11 20:40:48  lavr
+* Workaround of compiler warning about comparison of streamsize and size_t
+*
 * Revision 6.6  2001/05/11 14:04:07  grichenk
 * + CConn_Streambuf::xsgetn(), CConn_Streambuf::showmanyc()
 *
@@ -162,16 +165,17 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 static const STimeout s_ZeroTimeout = {0, 0};
 
 
-streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize n)
+streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
     /* Flush output buffer, if tied up to it */
     if (m_Tie  &&  pbase()  &&  pptr() > pbase()) {
         _VERIFY(!CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF));
     }
 
-    if (!buf  ||  !n)
+    if (!buf  ||  m <= 0)
         return 0;
 
+    size_t n = (size_t) m;
     size_t n_read;
 
     /* Read from the C++ stream buffer */
