@@ -88,8 +88,8 @@ script ProjBuilder
 	on Initialize()
 		
 		set libraryPath to ""
-		set headerPath to "" --TheNCBIPath & "/GCC-DebugDLL/inc "
-		set headerPath to headerPath & TheNCBIPath & "/include"
+		set headerPath to TheNCBIPath & "/include/util/regexp" -- for local pcre library
+		set headerPath to headerPath & " " & TheNCBIPath & "/include"
 		
 		set pack to {TheFLTKPath, TheBDBPath, TheSQLPath, ThePCREPath}
 		
@@ -589,6 +589,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/03/10 14:22:55  lebedev
+ * Link warnings fixed (no more pcre multiple defined symbols)
+ *
  * Revision 1.21  2005/03/08 14:34:57  lebedev
  * A default -fno-permissive GCC flag added
  *
