@@ -87,6 +87,8 @@ protected:
     friend class CDataSource;
     friend class CBioseq_Info;
     friend class CSeq_annot_Info;
+    friend class SAnnotILevel;
+    friend class CSeq_annot_CI;
 
     CSeq_entry_Info(CSeq_entry& entry);
 
@@ -182,6 +184,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/07/25 15:25:24  grichenk
+* Added CSeq_annot_CI class
+*
 * Revision 1.1  2003/04/24 16:12:37  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

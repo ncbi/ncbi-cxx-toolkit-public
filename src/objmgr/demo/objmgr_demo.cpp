@@ -64,7 +64,7 @@
 #include <objmgr/align_ci.hpp>
 #include <objmgr/gbloader.hpp>
 #include <objmgr/bioseq_ci.hpp>
-
+#include <objmgr/seq_annot_ci.hpp>
 
 BEGIN_NCBI_SCOPE
 using namespace objects;
@@ -732,6 +732,13 @@ int CDemoApp::Run(void)
                 count++;
             }
             NcbiCout << "Desc count: " << count << NcbiEndl;
+
+            count = 0;
+            for (CSeq_annot_CI ai(scope, handle.GetTopLevelSeqEntry());
+                 ai; ++ai) {
+                ++count;
+            }
+            NcbiCout << "Seq_annot count: " << count << NcbiEndl;
         }
 
         // CSeq_feat iterator: iterates all features which can be found in the
@@ -894,6 +901,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/07/25 15:25:27  grichenk
+* Added CSeq_annot_CI class
+*
 * Revision 1.32  2003/07/24 20:36:17  vasilche
 * Added arguemnt to choose ID1<->PUBSEQOS on Windows easier.
 *

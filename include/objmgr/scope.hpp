@@ -208,6 +208,9 @@ private:
     // if necessary.
     const CSeq_entry& x_GetTSEFromInfo(const TTSE_Lock& tse);
 
+    // Get Seq-entry info for the seq-entry
+    CConstRef<CSeq_entry_Info> x_GetSeq_entry_Info(const CSeq_entry& entry);
+
     // Get bioseq handles for sequences from the given TSE using the filter
     void x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
                                     set<CBioseq_Handle>& handles,
@@ -255,6 +258,7 @@ private:
     friend class CAnnotTypes_CI;
     friend class CBioseq_Handle;
     friend class CTSE_CI;
+    friend class CSeq_annot_CI;
 };
 
 
@@ -278,6 +282,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2003/07/25 15:25:22  grichenk
+* Added CSeq_annot_CI class
+*
 * Revision 1.54  2003/07/17 20:07:55  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.

@@ -757,6 +757,19 @@ CConstRef<CSynonymsSet> CScope::x_GetSynonyms(CRef<CBioseq_ScopeInfo> info)
 }
 
 
+CConstRef<CSeq_entry_Info> CScope::x_GetSeq_entry_Info(const CSeq_entry& entry)
+{
+    CConstRef<CSeq_entry_Info> info;
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        info = it->GetDataSource().GetSeq_entry_Info(entry);
+        if ( info ) {
+            break;
+        }
+    }
+    return info;
+}
+
+
 void CScope::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
     ddc.SetFrame("CScope");
@@ -786,6 +799,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2003/07/25 15:25:25  grichenk
+* Added CSeq_annot_CI class
+*
 * Revision 1.76  2003/07/17 20:07:56  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.
