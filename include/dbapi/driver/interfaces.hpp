@@ -597,6 +597,7 @@ public:
 };
 
 #if defined(NCBI_OS_MSWIN)
+#include <io.h>
 inline int close(int fd)
 {
     return _close(fd);
@@ -612,6 +613,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/02/24 15:49:03  soussov
+ * adds io.h MSWIN
+ *
  * Revision 1.28  2005/02/24 15:45:23  soussov
  * adds close(int fd) to MSWIN
  *
