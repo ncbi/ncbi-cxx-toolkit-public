@@ -399,15 +399,25 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
 
                             //verify that we were able to load all data
                             if (s1.length() != len || s2.length() != len) {
-                                string errstr = string("CAlnMix::Add(): ") +
-                                    "Unable to load data for segment " +
+
+                                string symptoms  = "Input Dense-seg " +
+                                    NStr::IntToString(m_InputDSs.size()) + ":" +
+                                    " Unable to load data for segment=" +
                                     NStr::IntToString(seg) +
-                                    " of input denseg " +
-                                    NStr::IntToString(m_InputDSs.size()) +
+                                    " (length=" + NStr::IntToString(len) + ") " +
                                     ", rows " + NStr::IntToString(row1) +
-                                    " (" + aln_seq1->m_SeqId->AsFastaString() + ")" +
+                                    " (seq-id=\"" + aln_seq1->m_SeqId->AsFastaString() +
+                                    "\" start=" + NStr::IntToString(start1) + ")" +
                                     " and " + NStr::IntToString(row2) +
-                                    " (" + aln_seq2->m_SeqId->AsFastaString() + ")";
+                                    " (seq-id\"" + aln_seq2->m_SeqId->AsFastaString() +
+                                    "\" start=" + NStr::IntToString(start2) + ").";
+                                
+                                string diagnosis = "Looks like the sequence coords for row " +
+                                    NStr::IntToString(s1.length() < + len ? row1 : row2) +
+                                    " are out of range.";
+
+                                string errstr = string("CAlnMix::Add(): ") +
+                                    symptoms + " " + diagnosis;
                                 NCBI_THROW(CAlnException, eInvalidSegment,
                                            errstr);
                             }
@@ -2052,6 +2062,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.103  2004/09/01 17:36:07  todorov
+* extended the unable-to-load-data exception msg even further
+*
 * Revision 1.102  2004/09/01 15:38:05  todorov
 * extended exception msg in case unable to load data for segment
 *
