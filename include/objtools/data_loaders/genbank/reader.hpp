@@ -216,6 +216,21 @@ END_SCOPE(objects)
 
 NCBI_DECLARE_INTERFACE_VERSION(objects::CReader,  "xreader", 1, 1, 0);
 
+template<>
+class CDllResolver_Getter<objects::CReader>
+{
+public:
+    CPluginManager_DllResolver* operator()(void)
+    {
+        CPluginManager_DllResolver* resolver =
+            new CPluginManager_DllResolver(
+            CInterfaceVersion<objects::CReader>::GetName());
+        resolver->SetDllNamePrefix("ncbi");
+        return resolver;
+    }
+};
+
+
 END_NCBI_SCOPE
 
 #endif // READER__HPP_INCLUDED
