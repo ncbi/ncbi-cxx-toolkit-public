@@ -47,7 +47,6 @@ CSplicedAligner::CSplicedAligner():
 
 CSplicedAligner::CSplicedAligner(const char* seq1, size_t len1,
                                  const char* seq2, size_t len2)
-    throw(CAlgoAlignException)
     : CNWAligner(seq1, len1, seq2, len2, eSMT_Nucl),
       m_IntronMinSize(GetDefaultIntronMinSize())
 {
@@ -56,7 +55,6 @@ CSplicedAligner::CSplicedAligner(const char* seq1, size_t len1,
 
 
 CNWAligner::TScore CSplicedAligner::GetDefaultWi(unsigned char splice_type)
-    throw(CAlgoAlignException)
 {
     switch(splice_type) {
         case 0: return -30; // GT/AG
@@ -255,6 +253,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/26 14:43:18  kapustin
+ * Remove exception specifications
+ *
  * Revision 1.1  2003/09/02 22:34:49  kapustin
  * Initial revision
  *

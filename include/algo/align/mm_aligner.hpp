@@ -65,8 +65,7 @@ public:
 
     CMMAligner(const char* seq1, size_t len1,
                const char* seq2, size_t len2,
-               EScoringMatrixType matrix_type)
-        throw(CAlgoAlignException);
+               EScoringMatrixType matrix_type);
 
     virtual ~CMMAligner() {}
 
@@ -143,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/09/26 14:43:01  kapustin
+ * Remove exception specifications
+ *
  * Revision 1.12  2003/09/02 22:29:19  kapustin
  * Add default constructor
  *

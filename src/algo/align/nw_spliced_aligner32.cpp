@@ -107,7 +107,6 @@ CSplicedAligner32::CSplicedAligner32():
 
 CSplicedAligner32::CSplicedAligner32(const char* seq1, size_t len1,
                                        const char* seq2, size_t len2)
-    throw(CAlgoAlignException)
     : CSplicedAligner(seq1, len1, seq2, len2),
       m_Wd1(GetDefaultWd1()),
       m_Wd2(GetDefaultWd2())
@@ -119,7 +118,6 @@ CSplicedAligner32::CSplicedAligner32(const char* seq1, size_t len1,
 
 
 CNWAligner::TScore CSplicedAligner32::GetDefaultWi(unsigned char splice_type)
-    throw(CAlgoAlignException)
 {
     return CSplicedAligner::GetDefaultWi(splice_type);
 }
@@ -414,7 +412,6 @@ void CSplicedAligner32::x_DoBackTrace ( const Uint4* backtrace_matrix,
 
 
 CNWAligner::TScore CSplicedAligner32::x_ScoreByTranscript() const
-    throw (CAlgoAlignException)
 {
     const size_t dim = m_Transcript.size();
     if(dim == 0) return 0;
@@ -557,6 +554,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/09/26 14:43:18  kapustin
+ * Remove exception specifications
+ *
  * Revision 1.4  2003/09/10 20:25:21  kapustin
  * Use unsigned char for score matrix index
  *

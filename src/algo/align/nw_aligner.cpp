@@ -108,7 +108,7 @@ CNWAligner::CNWAligner()
 CNWAligner::CNWAligner( const char* seq1, size_t len1,
                         const char* seq2, size_t len2,
                         EScoringMatrixType matrix_type )
-    throw(CAlgoAlignException)
+
     : m_Wm(GetDefaultWm()),
       m_Wms(GetDefaultWms()),
       m_Wg(GetDefaultWg()),
@@ -126,7 +126,6 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
 
 
 void CNWAligner::SetMatrixType(EScoringMatrixType matrix_type)
-        throw(CAlgoAlignException)
 {
     m_MatrixType = matrix_type;
     x_LoadScoringMatrix();
@@ -136,7 +135,6 @@ void CNWAligner::SetMatrixType(EScoringMatrixType matrix_type)
 void CNWAligner::SetSequences(const char* seq1, size_t len1,
 			      const char* seq2, size_t len2,
 			      bool verify)
-    throw(CAlgoAlignException)
 {
     if(m_MatrixType == eSMT_None) {
         NCBI_THROW(
@@ -457,7 +455,6 @@ void CNWAligner::x_DoBackTrace(const unsigned char* backtrace,
 
 
 void  CNWAligner::SetGuides(const vector<size_t>& guides)
-    throw (CAlgoAlignException)
 {
     size_t dim = guides.size();
     const char* err = 0;
@@ -657,6 +654,20 @@ size_t CNWAligner::x_CheckSequence(const char* seq, size_t len) const
 }
 
 
+CNWAligner::TScore CNWAligner::GetScore() const 
+{
+  if(m_Transcript.size()) {
+      return m_score;
+  }
+  else {
+    NCBI_THROW(
+	       CAlgoAlignException,
+	       eNoData,
+	       "Sequences not aligned yet");
+  }
+}
+
+
 bool CNWAligner::x_CheckMemoryLimit()
 {
     size_t gdim = m_guides.size();
@@ -688,7 +699,6 @@ bool CNWAligner::x_CheckMemoryLimit()
 
 
 CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
-    throw (CAlgoAlignException)
 {
     const size_t dim = m_Transcript.size();
     if(dim == 0) return 0;
@@ -1061,6 +1071,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2003/09/26 14:43:18  kapustin
+ * Remove exception specifications
+ *
  * Revision 1.36  2003/09/15 20:49:11  kapustin
  * Clear the transcript when setting new sequences
  *

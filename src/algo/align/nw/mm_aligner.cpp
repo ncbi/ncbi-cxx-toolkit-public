@@ -49,8 +49,7 @@ CMMAligner::CMMAligner():
 CMMAligner::CMMAligner( const char* seq1, size_t len1,
                         const char* seq2, size_t len2,
                         EScoringMatrixType matrix_type )
-    throw(CAlgoAlignException):
-    CNWAligner(seq1, len1, seq2, len2, matrix_type),
+  : CNWAligner(seq1, len1, seq2, len2, matrix_type),
     m_mt(false),
     m_maxthreads(1)
 {
@@ -955,6 +954,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/09/26 14:43:18  kapustin
+ * Remove exception specifications
+ *
  * Revision 1.15  2003/09/04 16:07:38  kapustin
  * Use STL vectors for exception-safe dynamic arrays and matrices
  *

@@ -53,8 +53,8 @@ public:
     void SetIntronMinSize( size_t s )  { m_IntronMinSize  = s; }
 
     // Getters
-    static TScore GetDefaultWi  (unsigned char splice_type)
-        throw(CAlgoAlignException);
+    static TScore GetDefaultWi  (unsigned char splice_type);
+
     static size_t GetDefaultIntronMinSize () {
         return 50;
     }
@@ -66,7 +66,7 @@ protected:
 
     CSplicedAligner();
     CSplicedAligner( const char* seq1, size_t len1,
-                     const char* seq2, size_t len2) throw(CAlgoAlignException);
+                     const char* seq2, size_t len2);
 
     size_t  m_IntronMinSize;
     virtual size_t  x_GetSpliceTypeCount()  = 0;
@@ -93,6 +93,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/26 14:43:01  kapustin
+ * Remove exception specifications
+ *
  * Revision 1.2  2003/09/10 20:12:47  kapustin
  * Update Doxygen tags
  *

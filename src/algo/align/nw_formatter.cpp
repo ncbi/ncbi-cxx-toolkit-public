@@ -168,8 +168,6 @@ void CNWFormatter::AsSeqAlign(CSeq_align* seqalign) const
 
 void CNWFormatter::AsText(string* output, ETextFormatType type,
                           size_t line_width) const
-    throw(CAlgoAlignException)
-
 {
     CNcbiOstrstream ss;
 
@@ -469,6 +467,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/09/26 14:43:18  kapustin
+ * Remove exception specifications
+ *
  * Revision 1.4  2003/09/15 21:32:03  kapustin
  * Minor code cleanup
  *

@@ -67,25 +67,24 @@ public:
         eSMT_Blosum62
     };
 
-    CNWAligner();
+    CNWAligner(void);
 
     CNWAligner(const char* seq1, size_t len1,
                const char* seq2, size_t len2,
-               EScoringMatrixType matrix_type)
-        throw(CAlgoAlignException);
+               EScoringMatrixType matrix_type);
 
-    virtual ~CNWAligner() {}
+    virtual ~CNWAligner(void) {}
 
     // Run the Needleman-Wunsch algorithm, return the alignment's score
     virtual TScore Run();
 
     // Setters
-    void SetMatrixType(EScoringMatrixType matrix_type)
-        throw(CAlgoAlignException);
+    void SetMatrixType(EScoringMatrixType matrix_type);
+
     void SetSequences(const char* seq1, size_t len1,
 		      const char* seq2, size_t len2,
-		      bool verify = true)
-        throw(CAlgoAlignException);
+		      bool verify = true);
+
 
     void SetWm  (TScore value)  { m_Wm  = value; }   // match (na)
     void SetWms (TScore value)  { m_Wms = value; }   // mismatch (na)
@@ -96,8 +95,7 @@ public:
     void SetEndSpaceFree(bool Left1, bool Right1, bool Left2, bool Right2);
 
     // guiding hits
-    void  SetGuides(const vector<size_t>& guides)
-        throw (CAlgoAlignException);
+    void  SetGuides(const vector<size_t>& guides);
 
     // progress reporting
     struct SProgressInfo
@@ -113,20 +111,20 @@ public:
     void SetProgressCallback ( FProgressCallback prg_callback, void* data );
 
     // Getters
-    static TScore GetDefaultWm  () { return  1; }
-    static TScore GetDefaultWms () { return -2; }
-    static TScore GetDefaultWg  () { return -5; }
-    static TScore GetDefaultWs  () { return -2; }
+    static TScore GetDefaultWm  (void) { return  1; }
+    static TScore GetDefaultWms (void) { return -2; }
+    static TScore GetDefaultWg  (void) { return -5; }
+    static TScore GetDefaultWs  (void) { return -2; }
 
-    const char*   GetSeq1() const { return m_Seq1; }
-    size_t        GetSeqLen1() const { return m_SeqLen1; }
-    const char*   GetSeq2() const { return m_Seq2; }
-    size_t        GetSeqLen2() const { return m_SeqLen2; }
+    const char*   GetSeq1(void) const { return m_Seq1; }
+    size_t        GetSeqLen1(void) const { return m_SeqLen1; }
+    const char*   GetSeq2(void) const { return m_Seq2; }
+    size_t        GetSeqLen2(void) const { return m_SeqLen2; }
 
     void          GetEndSpaceFree(bool* L1, bool* R1, bool* L2, bool* R2)
                       const;
 
-    TScore        GetScore() const { return m_score; }
+    TScore        GetScore(void) const;
     
     // transcript symbols
     enum ETranscriptSymbol {
@@ -139,7 +137,7 @@ public:
     };
 
     // raw transcript
-    const vector<ETranscriptSymbol>* GetTranscript() const {
+    const vector<ETranscriptSymbol>* GetTranscript(void) const {
         return &m_Transcript;
     }
     // converted transcript vector
@@ -168,16 +166,16 @@ protected:
     // Pairwise scoring matrix
     EScoringMatrixType        m_MatrixType;
     TScore                    m_Matrix [256][256];
-    void x_LoadScoringMatrix();
+    void x_LoadScoringMatrix(void);
 
     // progress callback (true return value indicates exit request)
-    FProgressCallback     m_prg_callback;
+    FProgressCallback         m_prg_callback;
 
     // progress status
-    mutable SProgressInfo m_prg_info;
+    mutable SProgressInfo     m_prg_info;
 
     // termination flag
-    mutable  bool         m_terminate;
+    mutable  bool             m_terminate;
 
     // Source sequences
     string                    m_Seq1Id;
@@ -187,7 +185,7 @@ protected:
     const char*               m_Seq2;
     size_t                    m_SeqLen2;
     size_t x_CheckSequence(const char* seq, size_t len) const;
-    virtual bool x_CheckMemoryLimit();
+    virtual bool x_CheckMemoryLimit(void);
 
     // Transcript, score and guiding hits
     vector<ETranscriptSymbol> m_Transcript;
@@ -195,14 +193,14 @@ protected:
     vector<size_t>            m_guides;
 
     // facilitate guide pre- and  post-processing, if applicable
-    virtual TScore x_Run   ();
+    virtual TScore x_Run   (void);
 
     // core dynamic programming
     virtual TScore x_Align (const char* seg1, size_t len1,
                             const char* seg2, size_t len2,
                             vector<ETranscriptSymbol>* transcript);
 
-    virtual TScore x_ScoreByTranscript() const throw (CAlgoAlignException);
+    virtual TScore x_ScoreByTranscript(void) const;
 
     // overflow safe "infinity"
     enum { kInfMinus = kMin_Int / 2 };
@@ -213,7 +211,7 @@ protected:
                        vector<ETranscriptSymbol>* transcript);
   
     // returns the size of a single backtrace matrix element
-    virtual size_t x_GetElemSize() const {
+    virtual size_t x_GetElemSize(void) const {
         return 1;
     }
 };
@@ -228,6 +226,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/09/26 14:43:01  kapustin
+ * Remove exception specifications
+ *
  * Revision 1.27  2003/09/10 20:12:47  kapustin
  * Update Doxygen tags
  *

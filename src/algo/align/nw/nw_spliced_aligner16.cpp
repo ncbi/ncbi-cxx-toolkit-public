@@ -56,7 +56,6 @@ CSplicedAligner16::CSplicedAligner16()
 
 CSplicedAligner16::CSplicedAligner16(const char* seq1, size_t len1,
                                        const char* seq2, size_t len2)
-    throw(CAlgoAlignException)
     : CSplicedAligner(seq1, len1, seq2, len2)
 {
     for(unsigned char st = 0; st < splice_type_count_16; ++st) {
@@ -66,7 +65,6 @@ CSplicedAligner16::CSplicedAligner16(const char* seq1, size_t len1,
 
 
 CNWAligner::TScore CSplicedAligner16::GetDefaultWi(unsigned char splice_type)
-    throw(CAlgoAlignException)
 {
     if(splice_type == 3) {
         return -40; //arbitrary splice
@@ -376,7 +374,6 @@ void CSplicedAligner16::x_DoBackTrace ( const Uint2* backtrace_matrix,
 
 
 CNWAligner::TScore CSplicedAligner16::x_ScoreByTranscript() const
-    throw (CAlgoAlignException)
 {
     const size_t dim = m_Transcript.size();
     if(dim == 0) return 0;
@@ -520,6 +517,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/26 14:43:18  kapustin
+ * Remove exception specifications
+ *
  * Revision 1.2  2003/09/04 16:07:38  kapustin
  * Use STL vectors for exception-safe dynamic arrays and matrices
  *

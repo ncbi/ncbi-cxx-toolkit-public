@@ -70,7 +70,7 @@ public:
     };
 
     void AsText(string* output, ETextFormatType type,
-                size_t line_width = 100) const throw(CAlgoAlignException);
+                size_t line_width = 100) const;
 
     void AsSeqAlign(CSeq_align* output) const;
 
@@ -91,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/26 14:43:01  kapustin
+ * Remove exception specifications
+ *
  * Revision 1.2  2003/09/10 20:12:47  kapustin
  * Update Doxygen tags
  *

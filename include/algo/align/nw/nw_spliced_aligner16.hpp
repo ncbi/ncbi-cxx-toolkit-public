@@ -50,12 +50,10 @@ public:
     CSplicedAligner16();
 
     CSplicedAligner16( const char* seq1, size_t len1,
-                       const char* seq2, size_t len2)
-        throw(CAlgoAlignException);
+                       const char* seq2, size_t len2);
 
     // Getters
-    static TScore GetDefaultWi  (unsigned char splice_type)
-        throw(CAlgoAlignException);
+    static TScore GetDefaultWi  (unsigned char splice_type);
 
 protected:
 
@@ -76,7 +74,7 @@ protected:
                         size_t N1, size_t N2,
                         vector<ETranscriptSymbol>* transcript );
     // included primarily for test purpose
-    virtual TScore  x_ScoreByTranscript() const throw(CAlgoAlignException);
+    virtual TScore  x_ScoreByTranscript() const;
 
     // returns the size of a single backtrace matrix element
     virtual size_t x_GetElemSize() const {
@@ -92,6 +90,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/26 14:43:01  kapustin
+ * Remove exception specifications
+ *
  * Revision 1.2  2003/09/10 20:12:47  kapustin
  * Update Doxygen tags
  *
