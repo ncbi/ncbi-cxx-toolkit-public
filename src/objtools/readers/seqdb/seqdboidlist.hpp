@@ -78,10 +78,28 @@ private:
     void x_Setup(CSeqDBVolSet   & volset,
                  CSeqDBLockHold & locked);
     
-    void x_OrFileBits(const string   & mask_fname,
+    void x_OrMaskBits(const string   & mask_fname,
                       Uint4            oid_start,
                       Uint4            oid_end,
                       CSeqDBLockHold & locked);
+    
+    void x_OrGiFileBits(const string    & gilist_fname,
+                        const CSeqDBVol * volp,
+                        Uint4             oid_start,
+                        Uint4             oid_end,
+                        CSeqDBLockHold  & locked);
+    
+    void x_ReadBinaryGiList(CSeqDBRawFile  & gilist,
+                            CSeqDBMemLease & lease,
+                            Uint4            start, // 8
+                            Uint4            num_gis,
+                            vector<Uint4>  & gis,
+                            CSeqDBLockHold & locked);
+    
+    void x_ReadTextGiList(CSeqDBRawFile  & gilist,
+                          CSeqDBMemLease & lease,
+                          vector<Uint4>  & gis,
+                          CSeqDBLockHold & locked);
     
     void x_SetBitRange(Uint4 oid_start, Uint4 oid_end);
     

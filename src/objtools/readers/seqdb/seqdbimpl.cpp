@@ -57,7 +57,7 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
 {
     m_Aliases.SetMasks(m_VolSet);
     
-    if ( m_VolSet.HasMask() ) {
+    if ( m_VolSet.HasFilter() ) {
         m_OIDList.Reset( new CSeqDBOIDList(m_Atlas, m_VolSet) );
     }
     

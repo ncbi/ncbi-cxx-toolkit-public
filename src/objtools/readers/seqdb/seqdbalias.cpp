@@ -598,25 +598,30 @@ CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker,
 
 void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
 {
-    TVarList::iterator gilist_iter = m_Values.find(string("GILIST"));
-    TVarList::iterator oid_iter    = m_Values.find(string("OIDLIST"));
-    TVarList::iterator db_iter     = m_Values.find(string("DBLIST"));
+    TVarList::iterator gil_iter = m_Values.find(string("GILIST"));
+    TVarList::iterator oid_iter = m_Values.find(string("OIDLIST"));
+    TVarList::iterator db_iter  = m_Values.find(string("DBLIST"));
     
-    if ((oid_iter != m_Values.end()) &&
-        (db_iter  != m_Values.end())) {
+    if (db_iter != m_Values.end()) {
+        bool filtered = false;
         
         string vol_path (SeqDB_CombinePath(m_DBPath, (*db_iter).second));
-        string mask_path(SeqDB_CombinePath(m_DBPath, (*oid_iter).second));
         
-        if (gilist_iter != m_Values.end()) {
-            string gilist_path(SeqDB_CombinePath(m_DBPath, (*oid_iter).second));
-            
-            volset.AddMaskedVolume(vol_path, mask_path, gilist_path);
-        } else {
+        if (oid_iter != m_Values.end()) {
+            string mask_path(SeqDB_CombinePath(m_DBPath, (*oid_iter).second));
             volset.AddMaskedVolume(vol_path, mask_path);
+            filtered = true;
         }
         
-        return;
+        if (gil_iter != m_Values.end()) {
+            string gilist_path(SeqDB_CombinePath(m_DBPath, (*gil_iter).second));
+            volset.AddGiListVolume(vol_path, gilist_path);
+            filtered = true;
+        }
+        
+        if (filtered) {
+            return;
+        }
     }
     
     Uint4 i;

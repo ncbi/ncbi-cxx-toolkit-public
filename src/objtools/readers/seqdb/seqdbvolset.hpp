@@ -169,10 +169,10 @@ public:
         return m_VolList.size();
     }
     
-    bool HasMask(void) const
+    bool HasFilter(void) const
     {
         for(Uint4 i = 0; i < m_VolList.size(); i++) {
-            if (0 != m_VolList[i].NumMasks()) {
+            if (0 != m_VolList[i].HasFilter()) {
                 return true;
             }
         }
@@ -181,8 +181,9 @@ public:
     
     bool HasSimpleMask(void) const
     {
-        return ((m_VolList.size()        == 1) &&
-                (m_VolList[0].NumMasks() == 1));
+        return ((m_VolList.size()          == 1) &&
+                (m_VolList[0].NumMasks()   == 1) &&
+                (m_VolList[0].NumGiLists() == 0));
     }
     
     string GetSimpleMask(void) const
@@ -199,6 +200,7 @@ public:
     void GetMaskFiles(Uint4          index,
                       bool         & all_oids,
                       list<string> & mask_files,
+                      list<string> & gilist_files,
                       Uint4        & oid_start,
                       Uint4        & oid_end) const
     {
@@ -209,15 +211,14 @@ public:
         } else {
             all_oids = false;
             mask_files.clear();
-            v.GetMaskFiles(mask_files);
+            v.GetFilterFiles(mask_files, gilist_files);
         }
         
         oid_start = v.OIDStart();
         oid_end   = v.OIDEnd();
     }
     
-    void AddMaskedVolume(const string & volname,
-                         const string & maskfile,
+    void AddGiListVolume(const string & volname,
                          const string & gilist)
     {
         CVolEntry * v = x_FindVolName(volname);
@@ -225,7 +226,6 @@ public:
             NCBI_THROW(CSeqDBException, eFileErr,
                        "Error: Could not find volume (" + volname + ").");
         }
-        v->AddMask(maskfile);
         v->AddGiList(gilist);
     }
     
@@ -328,16 +328,28 @@ private:
         {
             m_AllOIDs = true;
             m_MaskFiles.clear();
+            m_GiListFiles.clear();
         }
         
         bool GetIncludeAll(void) const
         {
-            return (m_AllOIDs || m_MaskFiles.empty());
+            return (m_AllOIDs ||
+                    (m_MaskFiles.empty() && m_GiListFiles.empty()));
+        }
+        
+        bool HasFilter(void) const
+        {
+            return (NumMasks() != 0) || (NumGiLists() != 0);
         }
         
         Uint4 NumMasks(void) const
         {
             return m_MaskFiles.size();
+        }
+        
+        Uint4 NumGiLists(void) const
+        {
+            return m_GiListFiles.size();
         }
         
         Uint4 OIDStart(void) const
@@ -362,17 +374,18 @@ private:
         
         string GetSimpleMask(void) const
         {
-            _ASSERT(1 == m_MaskFiles.size());
+            _ASSERT((1 == m_MaskFiles.size()) && (m_GiListFiles.empty()));
             return *(m_MaskFiles.begin());
         }
         
-        void GetMaskFiles(list<string> & mask_files) const
+        void GetFilterFiles(list<string> & mask_files, list<string> & gilist_files) const
         {
-            set<string>::const_iterator i = m_MaskFiles.begin();
-            
-            while(i != m_MaskFiles.end()) {
+            ITERATE(set<string>, i, m_MaskFiles) {
                 mask_files.push_back(*i);
-                i++;
+            }
+            
+            ITERATE(set<string>, i, m_GiListFiles) {
+                gilist_files.push_back(*i);
             }
         }
         

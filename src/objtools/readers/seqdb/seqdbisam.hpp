@@ -30,9 +30,14 @@
  *
  */
 
-/// Isam access objects for CSeqDB
-///
-/// This object defines access to the various ISAM index files.
+/// @file seqdbisam.hpp
+/// ISAM index database access object.
+/// 
+/// Defines classes:
+///     CSeqDBIsam
+/// 
+/// Implemented for: UNIX, MS-Windows
+
 
 #include "seqdbfile.hpp"
 #include <objects/seqloc/Seq_id.hpp>
@@ -41,8 +46,8 @@ BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 
-/// ISAM file.
-///
+/// CSeqDBIsam
+/// 
 /// Manages one ISAM file, which will translate either PIGs, GIs, or
 /// Accessions to OIDs.  Translation in the other direction is done in
 /// the CSeqDBVol code.  Files managed by this class include those
