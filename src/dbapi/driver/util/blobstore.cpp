@@ -416,6 +416,7 @@ bool CSimpleBlobStore::Fini(void)
  * the image/text data from a C++ application.
  */
 
+
 CBlobStoreBase::CBlobStoreBase(const string& table_name,
                                ECompressMethod cm,
                                size_t image_limit,
@@ -533,6 +534,47 @@ CBlobStoreBase::SetTableDescr(const string& tableName,
 
     for(unsigned i=0; i<m_NofBC; ++i)
         m_BlobColumn[i] = blobColNames[i];
+}
+
+void
+CBlobStoreBase::SetTextSizeServerSide(CDB_Connection* pConn, size_t textSize)
+{
+    string s("set TEXTSIZE ");
+    s += NStr::UIntToString(textSize);
+    CDB_LangCmd* lcmd = pConn->LangCmd(s.c_str(), 0);
+
+    if(!lcmd->Send())
+    {
+        delete lcmd;
+        throw CDB_ClientEx(eDB_Error, 1000035,
+                           "CBlobStoreBase::SetTextSizeServerSide",
+                           "Failed to send a command to the server");
+    }
+
+    while(lcmd->HasMoreResults())
+    {
+        CDB_Result* r= lcmd->Result();
+        if(!r) continue;
+        if(r->ResultType() == eDB_StatusResult)
+        {
+            while(r->Fetch())
+            {
+                CDB_Int status;
+                r->GetItem(&status);
+                if(status.Value() != 0)
+                {
+                    delete r;
+                    delete lcmd;
+                    throw CDB_ClientEx(eDB_Error, 1000036,
+                                       "CBlobStoreBase::SetTextSizeServerSide",
+                                       "Wrong status");
+                }
+            }
+        }
+        else
+            while(r->Fetch());
+        delete r;
+    }
 }
 
 void CBlobStoreBase::GenReadQuery()
@@ -710,6 +752,7 @@ CBlobStoreStatic::CBlobStoreStatic(CDB_Connection* pConn,
       m_pConn(pConn)
 {
     ReadTableDescr();
+    SetTextSizeServerSide(m_pConn);
 }
 
 CBlobStoreStatic::CBlobStoreStatic(CDB_Connection* pConn,
@@ -727,6 +770,7 @@ CBlobStoreStatic::CBlobStoreStatic(CDB_Connection* pConn,
 {
     SetTableDescr(tableName, keyColName, numColName,
                   blobColNames, nofBC, isText);
+    SetTextSizeServerSide(m_pConn);
 }
 
 
@@ -787,13 +831,14 @@ CBlobStoreDynamic::GetConn()
         throw CDB_ClientEx(eDB_Error, 1000010, "CBlobStoreDynamic",
                            "Null pointer to driver context");
     }
-    CDB_Connection* pConn = 
+    CDB_Connection* pConn =
         m_Cntxt->Connect(m_Server, m_User, m_Passwd, 0, true, m_Pool);
     if(!pConn)
     {
         throw CDB_ClientEx(eDB_Error, 1000020, "CBlobStoreDynamic",
                            "Can not open connection to SQL server");
     }
+    SetTextSizeServerSide(pConn);
 
     return pConn;
 }

@@ -241,10 +241,10 @@ protected:
 
 class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobStoreBase {
 public:
-    
+
     enum
     {
-        // Default image limit  
+        // Default image limit
         IMAGE_LIMIT_16MB = 0x1000000
     };
 
@@ -280,6 +280,8 @@ protected:
                        const string* blobColNames,
                        unsigned nofBC,
                        bool isText = false);
+    void SetTextSizeServerSide(CDB_Connection* pConn,
+                               size_t textSize = 2147483647);
     virtual void GenReadQuery();
     virtual CDB_Connection* GetConn() = 0;
     // Returns true if connection should be deleted.
@@ -379,6 +381,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/11/24 19:11:07  ivanovsk
+ * Set TEXTSIZE on server in CBlobStore classes.
+ *
  * Revision 1.7  2004/10/25 14:32:08  ivanovsk
  * Replace #define of default image size by enum.
  *
