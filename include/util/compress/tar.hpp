@@ -156,17 +156,24 @@ public:
     /// General flags
     enum EFlags {
         // create
-        //fDereferenceLinks    = 0x001,   ///< Don't put in archive symlinks; put the files they point to
 
+        // Don't put in archive symlinks; put the files they point to
         // list / extract 
-        fIgnoreZeroBlocks    = 0x002,   ///< Ignore blocks of zeros in archive (normally mean EOF)
-        fKeepOldFiles        = 0x004,   ///< Keep existing files; don't overwrite them from archive
-        //fRestoreOwner        = 0x010,   ///< Create extracted files with the same ownership
-        //fRestorePermissions  = 0x020,   ///< Create extracted files with the same permissions
-        //fRestoreTimestamp    = 0x040,   ///< Restore timestamp for extracted files
-        //fRestoreAll          = fRestoreOwner | fRestorePermissions | fRestoreTimestamp,
+        // fDereferenceLinks    = 0x001,   
+        // Ignore blocks of zeros in archive (normally mean EOF)
+        fIgnoreZeroBlocks    = 0x002,
+        // Keep existing files; don't overwrite them from archive
+        fKeepOldFiles        = 0x004,
+        // Create extracted files with the same ownership
+        //fRestoreOwner        = 0x010,
+        // Create extracted files with the same permissions
+        //fRestorePermissions  = 0x020,
+        // Restore timestamp for extracted files
+        //fRestoreTimestamp    = 0x040,
+        //fRestoreAll          = fRestoreOwner | fRestorePermissions |
+        //                       fRestoreTimestamp,
 
-        // default flags
+        // Default flags
         fDefault             = 0
     };
     typedef int TFlags;  ///< Binary OR of "EFlags"
@@ -338,8 +345,8 @@ protected:
     TFlags         m_Flags;          ///< Bitwise OR of flags
     CMask*         m_Mask;           ///< Masks for list/test/extract
     EOwnership     m_MaskOwned;      ///< Flag to take ownership for m_Mask
-    string         m_BaseDir;        ///< Base directory to seek added files without full pathes
-                   
+    string         m_BaseDir;        ///< Base directory to seek added files
+                                     ///<  without full pathes
     string         m_LongName;       ///< Previously defined long name
     string         m_LongLinkName;   ///< Previously defined long link name
 };
@@ -459,6 +466,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/01/31 15:30:59  ivanov
+ * Lines wrapped at 79th column
+ *
  * Revision 1.3  2005/01/31 14:23:35  ivanov
  * Added class CTarEntryInfo to store information about TAR entry.
  * Added CTar methods:           Create, Append, List, Test.

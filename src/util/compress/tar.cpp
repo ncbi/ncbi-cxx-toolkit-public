@@ -218,13 +218,18 @@ void CTar::x_Open(EOpenMode mode)
         // Open file using specified mode
         switch(mode) {
         case eCreate:
-            m_FileStream->open(m_FileName.c_str(), IOS_BASE::binary | IOS_BASE::out | IOS_BASE::trunc);
+            m_FileStream->open(m_FileName.c_str(),
+                               IOS_BASE::binary | IOS_BASE::out |
+                               IOS_BASE::trunc);
             break;
         case eRead:
-            m_FileStream->open(m_FileName.c_str(), IOS_BASE::binary | IOS_BASE::in);
+            m_FileStream->open(m_FileName.c_str(),
+                               IOS_BASE::binary | IOS_BASE::in);
             break;
         case eUpdate:
-            m_FileStream->open(m_FileName.c_str(), IOS_BASE::binary | IOS_BASE::in | IOS_BASE::out);
+            m_FileStream->open(m_FileName.c_str(),
+                               IOS_BASE::binary | IOS_BASE::in |
+                               IOS_BASE::out);
             m_FileStream->seekg(0, IOS_BASE::end);
             m_StreamPos = m_FileStream->tellg();
             break;
@@ -237,7 +242,8 @@ void CTar::x_Open(EOpenMode mode)
 
     // Check result
     if ( !m_Stream->good() ) {
-        NCBI_THROW(CTarException, eOpen, "Unable to open archive '" + m_FileName + "'");
+        NCBI_THROW(CTarException, eOpen,
+                   "Unable to open archive '" + m_FileName + "'");
     }
 }
 
@@ -270,8 +276,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     // Get checksum from header
     int checksum = 0;
     if ( h->checksum[0] ) {
-        checksum = NStr::StringToInt(NStr::TruncateSpaces(h->checksum),
-                                     8, NStr::eCheck_Skip);
+        checksum = NStr::StringToInt(NStr::TruncateSpaces(h->checksum), 8,
+                                     NStr::eCheck_Skip);
     }
     // Compute real checksum
     if ( checksum != 0 ) {
@@ -294,7 +300,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     }
     // Check file format
     if ( memcmp(h->magic, "ustar", 5) != 0 ) {
-        NCBI_THROW(CTarException, eUnsupportedEntryType, "Unknown archive format");
+        NCBI_THROW(CTarException, eUnsupportedEntryType,
+                   "Unknown archive format");
     }
 
     // Mode 
@@ -331,7 +338,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
                 ALIGN_BLOCK_SIZE(name_size);
                 streamsize n = x_ReadStream(m_Buffer, name_size);
                 if ( n != name_size ) {
-                    NCBI_THROW(CTarException, eRead, "Unexpected EOF in archive");
+                    NCBI_THROW(CTarException, eRead,
+                               "Unexpected EOF in archive");
                 }
                 // Save name
                 m_LongName.assign(m_Buffer, info.m_Size); 
@@ -372,7 +380,9 @@ void CTar::x_WriteEntryInfo(const string& entry_name, CDirEntry::EType type)
     errcode = lstat(entry_name.c_str(), &st);
 #  endif
     if (errcode != 0) {
-        NCBI_THROW(CTarException, eOpen, "Unable to get status information for '" + entry_name + "'");
+        NCBI_THROW(CTarException, eOpen,
+                   "Unable to get status information for '" +
+                   entry_name + "'");
     }
 
     // Get internal archive name for entry
@@ -389,7 +399,8 @@ void CTar::x_WriteEntryInfo(const string& entry_name, CDirEntry::EType type)
         memcpy(&h->name, iname.c_str(), iname.length());
     } else {
         if ( iname.length() > kNameFieldSize + kPrefixFieldSize ) {
-            NCBI_THROW(CTarException, eLongName, "Entry name '" + entry_name + "' is to long");
+            NCBI_THROW(CTarException, eLongName,
+                       "Entry name '" + entry_name + "' is to long");
         }
         // Split long name to prefix and short name
         size_t i = iname.length();
@@ -398,7 +409,8 @@ void CTar::x_WriteEntryInfo(const string& entry_name, CDirEntry::EType type)
         }
         while ( i > 0  &&  iname[i] != kSlash ) i--;
         if ( !i  ||  iname.length() - i > kNameFieldSize ) {
-            NCBI_THROW(CTarException, eLongName, "Entry name '" + entry_name + "' is to long");
+            NCBI_THROW(CTarException, eLongName,
+                       "Entry name '" + entry_name + "' is to long");
         }
         memcpy(&h->name, iname.c_str() + i + 1, iname.length() - i - 1);
         memcpy(&h->prefix, iname.c_str(), i);
@@ -521,7 +533,8 @@ void CTar::x_ReadAndProcess(EAction action, void* data)
                     {{
                     CTarEntryInfo* pinfo = new CTarEntryInfo(info);
                     if ( !pinfo ) {
-                        NCBI_THROW(CTarException, eMemory, "Cannot allocate memory");
+                        NCBI_THROW(CTarException, eMemory,
+                                   "Cannot allocate memory");
                     }
                     // Save entry info
                     if ( matched ) {
@@ -582,14 +595,19 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool do_process,
                 string base_dir = CDirEntry(dst_path).GetDir();
                 CDir dir(base_dir);
                 if ( !dir.CreatePath() ) {
-                    NCBI_THROW(CTarException, eCreate, "Unable to create directory '" + base_dir + "'");
+                    NCBI_THROW(CTarException, eCreate,
+                               "Unable to create directory '" +
+                               base_dir + "'");
                 }
 
                 // Create output file
-                auto_ptr<CNcbiOfstream> osp(new CNcbiOfstream(dst_path.c_str(), IOS_BASE::out | IOS_BASE::binary));
+                auto_ptr<CNcbiOfstream> osp(
+                   new CNcbiOfstream(dst_path.c_str(),
+                                     IOS_BASE::out | IOS_BASE::binary));
                 os = osp;
                 if ( !*os  ||  !os->good() ) {
-                    NCBI_THROW(CTarException, eCreate, "Unable to create file '" + dst_path + "'");
+                    NCBI_THROW(CTarException, eCreate,
+                               "Unable to create file '" + dst_path + "'");
                 }
             }
             // Read file contents
@@ -598,10 +616,12 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool do_process,
 
             while ( m_Stream->good() &&  to_read > 0 ) {
                 // Read archive
-                streamsize x_nread = ( to_read > m_BufferSize) ? m_BufferSize : to_read;
+                streamsize x_nread = (to_read > m_BufferSize) ? m_BufferSize :
+                                                                to_read;
                 streamsize nread = x_ReadStream(m_Buffer, x_nread);
                 if ( !nread ) {
-                    NCBI_THROW(CTarException, eRead, "Cannot read TAR file '" + info.GetName() + "'");
+                    NCBI_THROW(CTarException, eRead, "Cannot read TAR file '"+
+                               info.GetName() + "'");
                 }
                 to_read -= nread;
 
@@ -610,7 +630,8 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool do_process,
                     if (to_write > 0) {
                         os->write(m_Buffer, min(nread, to_write));
                         if ( !*os ) {
-                            NCBI_THROW(CTarException, eWrite, "Cannot write file '" + dst_path + "'");
+                            NCBI_THROW(CTarException, eWrite,
+                                       "Cannot write file '" + dst_path +"'");
                         }
                         to_write -= nread;
                     }
@@ -628,7 +649,8 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool do_process,
             if ( do_process  &&  action == eExtract ) {
                 CDir dir(dst_path);
                 if ( !dir.CreatePath() ) {
-                    NCBI_THROW(CTarException, eCreate, "Unable to create directory '" + dst_path + "'");
+                    NCBI_THROW(CTarException, eCreate,
+                               "Unable to create directory '" + dst_path+"'");
                 }
             }
             break;
@@ -712,7 +734,8 @@ void CTar::x_Append(const string& entry_name)
                 // Append directory info
                 x_WriteEntryInfo(x_name, CDirEntry::eDir);
                 // Append all files in directory
-                CDir::TEntries contents = entry.GetEntries("*", CDir::eIgnoreRecursive);
+                CDir::TEntries contents = 
+                    entry.GetEntries("*", CDir::eIgnoreRecursive);
                 ITERATE(CDir::TEntries, i, contents) {
                     string name = (*i)->GetPath();
                     x_Append(name);
@@ -720,9 +743,11 @@ void CTar::x_Append(const string& entry_name)
             }}
             break;
         case CDirEntry::eUnknown:
-            NCBI_THROW(CTarException, eBadName, "Cannot find '" + entry_name + "'");
+            NCBI_THROW(CTarException, eBadName,
+                       "Cannot find '" + entry_name + "'");
         default:
-            ERR_POST(Warning << "Unsupported entry type of '" + entry_name + "'. Skipped.");
+            ERR_POST(Warning << "Unsupported entry type of '" +
+                     entry_name + "'. Skipped.");
 //            NCBI_THROW(CTarException, eUnsupportedEntryType,
 //                       "Unsupported entry type of '" + entry_name + "'");
     }
@@ -735,7 +760,8 @@ void CTar::x_AppendFile(const string& file_name)
     CNcbiIfstream is;
     is.open(file_name.c_str(), IOS_BASE::binary | IOS_BASE::in);
     if ( !is ) {
-        NCBI_THROW(CTarException, eOpen, "Unable to open file '" + file_name + "'");
+        NCBI_THROW(CTarException, eOpen,
+                   "Unable to open file '" + file_name + "'");
     }
 
     // Write file header
@@ -747,7 +773,7 @@ void CTar::x_AppendFile(const string& file_name)
     // Write file contents
     while ( is.good()  &&  to_read > 0 ) {
         // Read file
-        streamsize x_nread = ( to_read > m_BufferSize) ? m_BufferSize : to_read;
+        streamsize x_nread = (to_read > m_BufferSize) ? m_BufferSize :to_read;
         is.read(m_Buffer, x_nread);
         streamsize nread = is.gcount();
         to_read -= nread;
@@ -757,7 +783,8 @@ void CTar::x_AppendFile(const string& file_name)
     }
     // 
     if ( to_read > 0 ) {
-        NCBI_THROW(CTarException, eRead, "Error reading file '" + file_name + "'");
+        NCBI_THROW(CTarException, eRead,
+                   "Error reading file '" + file_name + "'");
     }
 
     // Write zeros to have a written size be multiple of kBlockSize
@@ -790,6 +817,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/01/31 15:31:22  ivanov
+ * Lines wrapped at 79th column
+ *
  * Revision 1.6  2005/01/31 15:09:55  ivanov
  * Fixed include path to tar.hpp
  *
