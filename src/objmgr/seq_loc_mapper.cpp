@@ -1403,7 +1403,7 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
         TSeqPos src_to = kInvalidSeqPos;
         if ( m_Scope ) {
             CBioseq_Handle bh = m_Scope->GetBioseqHandle(src_id);
-            src_to = bh ? bh.GetBioseqLength() : kInvalidSeqPos;
+            src_to = bh ? bh.GetBioseqLength() - 1 : kInvalidSeqPos;
         }
         bool res = x_MapInterval(src_id, TRange(0, src_to),
             false, eNa_strand_unknown,
@@ -1788,6 +1788,17 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
                         continue;
                     }
                 }
+                if (m_MergeFlag == eMergeContained) {
+                    // Ignore interval completely covered by another one
+                    if (rg_it->first.GetTo() <= to) {
+                        continue;
+                    }
+                    if (rg_it->first.GetFrom() == from) {
+                        to = rg_it->first.GetTo();
+                        fuzz.second = rg_it->second.second;
+                        continue;
+                    }
+                }
                 if (m_MergeFlag == eMergeAll) {
                     if (rg_it->first.GetFrom() <= to + 1) {
                         to = rg_it->first.GetTo();
@@ -1835,6 +1846,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/08/11 17:23:09  grichenk
+* Added eMergeContained flag. Fixed convertion of whole to seq-interval.
+*
 * Revision 1.21  2004/08/06 15:28:16  grichenk
 * Changed PreserveDestinationLocs() to map all synonyms to the target seq-id.
 *

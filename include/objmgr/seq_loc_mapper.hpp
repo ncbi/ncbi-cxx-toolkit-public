@@ -154,8 +154,13 @@ public:
     ~CSeq_loc_Mapper(void);
 
     // Intervals' merging mode
+    // No merging
     CSeq_loc_Mapper& SetMergeNone(void);
+    // Merge only abutting intervals, keep overlapping
     CSeq_loc_Mapper& SetMergeAbutting(void);
+    // Merge intervals only if one is completely covered by another
+    CSeq_loc_Mapper& SetMergeContained(void);
+    // Merge any abutting or overlapping intervals
     CSeq_loc_Mapper& SetMergeAll(void);
 
     CSeq_loc_Mapper& SetGapPreserve(void);
@@ -188,6 +193,7 @@ private:
     enum EMergeFlags {
         eMergeNone,      // no merging
         eMergeAbutting,  // merge only abutting intervals, keep overlapping
+        eMergeContained, // merge if one is contained in another
         eMergeAll        // merge both abutting and overlapping intervals
     };
     enum EGapFlags {
@@ -374,6 +380,14 @@ CSeq_loc_Mapper& CSeq_loc_Mapper::SetMergeAbutting(void)
 
 
 inline
+CSeq_loc_Mapper& CSeq_loc_Mapper::SetMergeContained(void)
+{
+    m_MergeFlag = eMergeContained;
+    return *this;
+}
+
+
+inline
 CSeq_loc_Mapper& CSeq_loc_Mapper::SetMergeAll(void)
 {
     m_MergeFlag = eMergeAll;
@@ -424,6 +438,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/08/11 17:23:09  grichenk
+* Added eMergeContained flag. Fixed convertion of whole to seq-interval.
+*
 * Revision 1.15  2004/08/06 15:28:16  grichenk
 * Changed PreserveDestinationLocs() to map all synonyms to the target seq-id.
 *
