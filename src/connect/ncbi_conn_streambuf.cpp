@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.4  2001/03/24 00:34:40  lavr
+* Accurate converions between CT_CHAR_TYPE and CT_INT_TYPE
+* (BUGFIX: promotion of 255 as signed char to int caused EOF (-1) gets returned)
+*
 * Revision 6.3  2001/01/12 23:49:20  lavr
 * Timeout and GetCONN method added
 *
@@ -107,13 +111,15 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         setp(m_WriteBuf + n_write - n_written, m_WriteBuf + m_BufSize);
 
         // store char
-        return c == CT_EOF ? CT_NOT_EOF(CT_EOF) : sputc(c);
+        return CT_EQ_INT_TYPE(c, CT_EOF)
+            ? CT_NOT_EOF(CT_EOF) : sputc(CT_TO_CHAR_TYPE(c));
     }
 
     if (c != CT_EOF) {
+        CT_CHAR_TYPE b = CT_TO_CHAR_TYPE(c);
         // send char
         x_CheckThrow
-            (CONN_Write(m_Conn, &c, 1, &n_written),
+            (CONN_Write(m_Conn, &b, sizeof(b), &n_written),
              "overflow(): CONN_Write(1) failed");
         _ASSERT(n_written);
         
@@ -140,7 +146,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 
     setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read);
 
-    return m_ReadBuf[0];
+    return CT_TO_INT_TYPE(m_ReadBuf[0]);
 }
 
 
