@@ -1239,7 +1239,63 @@ string CCdd::GetUpdateDate() {
 }
 
 
-string CCdd::GetCurationStatus() {
+void CCdd::SetCurationStatus(int Status) {
+//-------------------------------------------------------------------------
+// set curation status of CD
+//-------------------------------------------------------------------------
+  CCdd_descr_set::Tdata::const_iterator i;
+
+  if (IsSetDescription()) {
+    // if curation-status is set, reset it
+    for (i=GetDescription().Get().begin(); i!=GetDescription().Get().end(); i++) {
+      if ((*i)->IsCuration_status()) {
+        (*i)->SetCuration_status(Status);
+        return;
+      }
+    }
+    // otherwise add another description with curation-status
+    CRef < CCdd_descr > Description(new CCdd_descr());
+    Description->SetCuration_status(Status);
+    SetDescription().Set().push_back(Description);
+  }
+}
+
+
+bool CCdd::IsCurationStatus() {
+//-------------------------------------------------------------------------
+// indicate if curation-status field is populated
+//-------------------------------------------------------------------------
+  CCdd_descr_set::Tdata::const_iterator i;
+
+  if (IsSetDescription()) {
+    for (i=GetDescription().Get().begin(); i!=GetDescription().Get().end(); i++) {
+      if ((*i)->IsCuration_status()) {
+        return(true);
+      }
+    }
+  }
+  return(false);
+}
+
+
+int CCdd::GetCurationStatus() {
+//-------------------------------------------------------------------------
+// get string indicating curation status of this CD
+//-------------------------------------------------------------------------
+  CCdd_descr_set::Tdata::const_iterator i;
+
+  if (IsSetDescription()) {
+    for (i=GetDescription().Get().begin(); i!=GetDescription().Get().end(); i++) {
+      if ((*i)->IsCuration_status()) {
+        return((*i)->GetCuration_status());
+      }
+    }
+  }
+  return(-1);
+}
+
+
+string CCdd::GetCurationStatusStr() {
 //-------------------------------------------------------------------------
 // get string indicating curation status of this CD
 //-------------------------------------------------------------------------
@@ -1248,17 +1304,17 @@ string CCdd::GetCurationStatus() {
 
   if (IsSetDescription()) {
     for (i=GetDescription().Get().begin(); i!=GetDescription().Get().end(); i++) {
-      if ((*i)->IsStatus()) {
-        switch((*i)->GetStatus()) {
+      if ((*i)->IsCuration_status()) {
+        switch((*i)->GetCuration_status()) {
           case 0:   return("unassigned");
-          case 1:   return("finished_ok");
-          case 2:   return("pending_release");
-          case 3:   return("other_asis");
-          case 4:   return("matrix_only");
-          case 5:   return("update_running");
-          case 6:   return("auto_updated");
-          case 7:   return("claimed");
-          case 8:   return("curated_complete");
+          case 1:   return("pre-in");
+          case 2:   return("out for curation");
+          case 3:   return("in after curation");
+          case 4:   return("out for validation 1");
+          case 5:   return("in after validation 1");
+          case 6:   return("out for validation 2");
+          case 7:   return("in after validation 2");
+          case 8:   return("post-in");
           default:  return("other");
         }
       }
@@ -1286,6 +1342,106 @@ string CCdd::GetParentAccession(int& Version) {
     }
   }
   return(Str);
+}
+
+
+bool CCdd::IsOldRoot() {
+//-------------------------------------------------------------------------
+// indicate if old-root field is populated
+//-------------------------------------------------------------------------
+  CCdd_descr_set::Tdata::const_iterator i;
+
+  if (IsSetDescription()) {
+    for (i=GetDescription().Get().begin(); i!=GetDescription().Get().end(); i++) {
+      if ((*i)->IsOld_root()) {
+        return(true);
+      }
+    }
+  }
+  return(false);
+}
+
+
+int CCdd::GetNumIdsInOldRoot() {
+//-------------------------------------------------------------------------
+// get size of list of ids
+//-------------------------------------------------------------------------
+  CCdd_descr_set::Tdata::const_iterator i;
+  CCdd_id_set::Tdata  SetOfIds;
+
+  // look through the descriptions
+  if (IsSetDescription()) {
+    // if there is an old-root
+    for (i=GetDescription().Get().begin(); i!=GetDescription().Get().end(); i++) {
+      if ((*i)->IsOld_root()) {
+        return((*i)->GetOld_root().Get().size());
+      }
+    }
+  }
+  return(0);
+}
+
+
+bool CCdd::GetOldRoot(int Index, string& Accession, int& Version) {
+//-------------------------------------------------------------------------
+// get accession and version of Index-th old-root
+//-------------------------------------------------------------------------
+  CCdd_descr_set::Tdata::const_iterator i;
+  CCdd_id_set::Tdata  SetOfIds;
+  CCdd_id_set::Tdata::const_iterator j;
+  int IdIndex=0;
+
+  // look through the descriptions
+  if (IsSetDescription()) {
+    // if there is an old-root
+    for (i=GetDescription().Get().begin(); i!=GetDescription().Get().end(); i++) {
+      if ((*i)->IsOld_root()) {
+        SetOfIds = (*i)->GetOld_root().Get();
+        for (j=SetOfIds.begin(); j!=SetOfIds.end(); j++) {
+          if (IdIndex == Index) {
+            Accession = (*j)->GetGid().GetAccession();
+            Version = (*j)->GetGid().GetVersion();
+            return(true);
+          }
+        }
+      }
+    }
+  }
+  return(false);
+}
+
+
+void CCdd::SetOldRoot(string Accession, int Version) {
+//-------------------------------------------------------------------------
+// set accession and version of old-root
+//-------------------------------------------------------------------------
+  CCdd_descr_set::Tdata::const_iterator i;
+
+  // make a new old-root
+  CRef< CCdd_id > ID(new CCdd_id);
+  CRef< CGlobal_id > GID(new CGlobal_id);
+  GID->SetAccession(Accession);
+  GID->SetVersion(Version);
+  ID->SetGid(*GID);
+
+  // look through the descriptions
+  if (IsSetDescription()) {
+    // if there is an old-root
+    for (i=GetDescription().Get().begin(); i!=GetDescription().Get().end(); i++) {
+      if ((*i)->IsOld_root()) {
+        // reset it, and set the new one
+        (*i)->SetOld_root().Reset();
+        (*i)->SetOld_root().Set().push_back(ID);
+        return;
+      }
+    }
+    // otherwise add another description, this one with a new old-root
+    CRef < CCdd_descr > Description(new CCdd_descr);
+    CRef < CCdd_id_set> SetOfIds(new CCdd_id_set);
+    SetOfIds->Set().push_back(ID);
+    Description->SetOld_root(*SetOfIds);
+    SetDescription().Set().push_back(Description);
+  }
 }
 
 
@@ -1381,6 +1537,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2002/10/16 23:33:13  hurwitz
+ * added functions for curation-status and old-root descriptions
+ *
  * Revision 1.18  2002/10/10 23:55:06  ucko
  * Replace <cstdio>, which does not exist on all our platforms, with good
  * old <stdio.h>.

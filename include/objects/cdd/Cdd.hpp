@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2002/10/16 23:33:46  hurwitz
+ * added functions for curation-status and old-root descriptions
+ *
  * Revision 1.10  2002/10/09 21:22:17  hurwitz
  * small change to previous commit
  *
@@ -115,7 +118,6 @@ public:
     }
     void   SetParentAccession(string Parent, int Version);   // set accession and version of parent
     string GetLongDescription();                      // long description of CD
-    string GetCurationStatus();                       // curation status of CD
     string GetUpdateDate();                           // last update date of CD
     int    GetNumRows();                              // number of rows in CD
     int    GetNumSequences();                         // number of sequences in CD
@@ -163,6 +165,14 @@ public:
     // get the list of Seq-aligns
     bool   IsSeqAligns();
     const  list< CRef< CSeq_align > >& GetSeqAligns();
+    string GetCurationStatusStr();                    // curation status of CD
+    int    GetCurationStatus();
+    bool   IsCurationStatus();
+    void   SetCurationStatus(int Status);
+    bool   IsOldRoot();                               // old-root of CD
+    void   SetOldRoot(string Accession, int Version);
+    bool   GetOldRoot(int Index, string& Accession, int& Version);
+    int    GetNumIdsInOldRoot();
 
 private:
     // get dense-diag info for one row
