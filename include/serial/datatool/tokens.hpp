@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/02/25 19:45:48  gouriano
+* Made it possible to define DEFAULT for data members of type REAL
+*
 * Revision 1.9  2003/05/22 20:09:04  gouriano
 * added UTF8 strings
 *
@@ -85,6 +88,7 @@ static const TToken T_BINARY_STRING = 5;
 static const TToken T_HEXADECIMAL_STRING = 6;
 static const TToken T_DEFINE = 7;
 static const TToken T_TAG = 8;
+static const TToken T_DOUBLE = 9;
 
 static const TToken K_DEFINITIONS = 101;
 static const TToken K_BEGIN = 102;

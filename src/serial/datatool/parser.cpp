@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/02/25 19:45:19  gouriano
+* Made it possible to define DEFAULT for data members of type REAL
+*
 * Revision 1.32  2003/10/21 13:48:51  grichenk
 * Redesigned type aliases in serialization library.
 * Fixed the code (removed CRef-s, added explicit
@@ -437,6 +440,8 @@ AutoPtr<CDataValue> ASNParser::x_Value(void)
     switch ( Next() ) {
     case T_NUMBER:
         return AutoPtr<CDataValue>(new CIntDataValue(Number()));
+    case T_DOUBLE:
+        return AutoPtr<CDataValue>(new CDoubleDataValue(Double()));
     case T_STRING:
         return AutoPtr<CDataValue>(new CStringDataValue(String()));
     case K_NULL:
@@ -484,11 +489,12 @@ AutoPtr<CDataValue> ASNParser::x_Value(void)
 
 Int4 ASNParser::Number(void)
 {
-    bool minus = ConsumeIfSymbol('-');
-    Int4 value = NStr::StringToUInt(ValueOf(T_NUMBER, "number"));
-    if ( minus )
-        value = -value;
-    return value;
+    return NStr::StringToInt(ValueOf(T_NUMBER, "number"));
+}
+
+double ASNParser::Double(void)
+{
+    return NStr::StringToDouble(ValueOf(T_DOUBLE, "double"));
 }
 
 const string& ASNParser::String(void)

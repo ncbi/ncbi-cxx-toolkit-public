@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/02/25 19:45:20  gouriano
+* Made it possible to define DEFAULT for data members of type REAL
+*
 * Revision 1.16  2003/05/22 20:10:25  gouriano
 * added UTF8 strings
 *
@@ -115,6 +118,12 @@ TToken ASNLexer::LookupToken(void)
         }
         return T_SYMBOL;
     case '-':
+    case '+':
+        if ( IsDigit(Char(1)) ) {
+            StartToken();
+            AddChar();
+            return LookupNumber();
+        }
         return T_SYMBOL;
     case '\"':
         StartToken();
@@ -132,11 +141,10 @@ TToken ASNLexer::LookupToken(void)
         LookupTag();
         return T_TAG;
     default:
-        if ( c >= '0' && c <= '9' ) {
+        if ( IsDigit(c) ) {
             StartToken();
             AddChar();
-            LookupNumber();
-            return T_NUMBER;
+            return LookupNumber();
         }
         else if ( c >= 'a' && c <= 'z' ) {
             StartToken();
@@ -317,11 +325,18 @@ void ASNLexer::LookupIdentifier(void)
     }
 }
 
-void ASNLexer::LookupNumber(void)
+TToken ASNLexer::LookupNumber(void)
 {
     while ( IsDigit(Char()) ) {
         AddChar();
     }
+    char c = Char();
+    if (c == '.' || c == 'e' || c == 'E' || c == '-' || c == '+') {
+        AddChar();
+        LookupNumber();
+        return T_DOUBLE;
+    }
+    return T_NUMBER;
 }
 
 void ASNLexer::LookupTag(void)

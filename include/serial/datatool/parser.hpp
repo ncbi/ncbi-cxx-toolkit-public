@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/02/25 19:45:48  gouriano
+* Made it possible to define DEFAULT for data members of type REAL
+*
 * Revision 1.8  2000/12/15 15:38:35  vasilche
 * Added support of Int8 and long double.
 * Added support of BigInt ASN.1 extension - mapped to Int8.
@@ -135,6 +138,7 @@ public:
     AutoPtr<CDataValue> Value(void);
     AutoPtr<CDataValue> x_Value(void);
     Int4 Number(void);
+    double Double(void);
     const string& String(void);
     const string& Identifier(void);
     const string& TypeReference(void);

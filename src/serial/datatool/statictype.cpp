@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/02/25 19:45:19  gouriano
+* Made it possible to define DEFAULT for data members of type REAL
+*
 * Revision 1.31  2004/01/22 20:44:25  gouriano
 * Corrected generation of XML schema for boolean types
 *
@@ -384,8 +387,7 @@ bool CRealDataType::CheckValue(const CDataValue& value) const
 {
     const CBlockDataValue* block = dynamic_cast<const CBlockDataValue*>(&value);
     if ( !block ) {
-        value.Warning("REAL value expected");
-        return false;
+        return dynamic_cast<const CDoubleDataValue*>(&value) != 0;
     }
     if ( block->GetValues().size() != 3 ) {
         value.Warning("wrong number of elements in REAL value");
@@ -396,6 +398,16 @@ bool CRealDataType::CheckValue(const CDataValue& value) const
         CheckValueType(**i, CIntDataValue, "INTEGER");
     }
     return true;
+}
+
+string CRealDataType::GetDefaultString(const CDataValue& value) const
+{
+    const CDoubleDataValue* dbl = dynamic_cast<const CDoubleDataValue*>(&value);
+    if (dbl) {
+        return NStr::DoubleToString(dbl->GetValue());
+    }
+    value.Warning("REAL value expected");
+    return kEmptyStr;
 }
 
 TTypeInfo CRealDataType::GetRealTypeInfo(void)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/02/25 19:45:48  gouriano
+* Made it possible to define DEFAULT for data members of type REAL
+*
 * Revision 1.12  2003/08/13 15:45:00  gouriano
 * implemented generation of code, which uses AnyContent objects
 *
@@ -158,6 +161,7 @@ class CRealDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
     bool CheckValue(const CDataValue& value) const;
+    virtual string GetDefaultString(const CDataValue& value) const;
 
     const CTypeInfo* GetRealTypeInfo(void);
     virtual const char* GetDefaultCType(void) const;

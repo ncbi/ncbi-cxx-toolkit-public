@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/02/25 19:45:48  gouriano
+* Made it possible to define DEFAULT for data members of type REAL
+*
 * Revision 1.5  2003/10/02 19:39:48  gouriano
 * properly handle invalid enumeration values in ASN spec
 *
@@ -143,6 +146,7 @@ private:
 
 typedef CDataValueTmpl<bool> CBoolDataValue;
 typedef CDataValueTmpl<Int4> CIntDataValue;
+typedef CDataValueTmpl<double> CDoubleDataValue;
 typedef CDataValueTmpl<string> CStringDataValue;
 
 class CBitStringDataValue : public CStringDataValue {

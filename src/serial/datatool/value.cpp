@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/02/25 19:45:19  gouriano
+* Made it possible to define DEFAULT for data members of type REAL
+*
 * Revision 1.21  2003/10/02 19:40:14  gouriano
 * properly handle invalid enumeration values in ASN spec
 *
@@ -170,6 +173,20 @@ void CDataValueTmpl<Int4>::PrintASN(CNcbiOstream& out, int ) const
 }
 EMPTY_TEMPLATE
 string CDataValueTmpl<Int4>::GetXmlString(void) const
+{
+    CNcbiOstrstream buffer;
+    PrintASN( buffer, 0);
+    return CNcbiOstrstreamToString(buffer);
+}
+
+
+EMPTY_TEMPLATE
+void CDataValueTmpl<double>::PrintASN(CNcbiOstream& out, int ) const
+{
+    out << GetValue();
+}
+EMPTY_TEMPLATE
+string CDataValueTmpl<double>::GetXmlString(void) const
 {
     CNcbiOstrstream buffer;
     PrintASN( buffer, 0);

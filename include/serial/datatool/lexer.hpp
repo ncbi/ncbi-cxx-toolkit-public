@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/02/25 19:45:47  gouriano
+* Made it possible to define DEFAULT for data members of type REAL
+*
 * Revision 1.7  2002/09/26 16:57:31  vasilche
 * Added flag for compatibility with asntool
 *
@@ -102,7 +105,7 @@ protected:
     void AddStringChar(char c);
 
     void SkipComment(void);
-    void LookupNumber(void);
+    TToken LookupNumber(void);
     void LookupIdentifier(void);
     void LookupString(void);
     void LookupTag(void);
