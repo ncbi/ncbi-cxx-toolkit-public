@@ -236,7 +236,9 @@ export PATH
 
 # Define time-guard script to run tests from other scripts
 CHECK_EXEC="${x_root_dir}/scripts/check/check_exec_test.sh"
+CHECK_EXEC_STDIN="\$CHECK_EXEC -stdin"
 export CHECK_EXEC
+export CHECK_EXEC_STDIN
 
 EOF
 
