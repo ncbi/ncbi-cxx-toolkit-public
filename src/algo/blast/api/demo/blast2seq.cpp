@@ -140,17 +140,23 @@ void CBlast2seqApplication::Init(void)
     arg_desc->AddDefaultKey("templen", "templen", 
         "Discontiguous word template length",
         CArgDescriptions::eInteger, "0");
+    arg_desc->SetConstraint("templen", 
+                            &(*new CArgAllow_Strings, "0", "16", "18", "21"));
+
     arg_desc->AddDefaultKey("templtype", "templtype", 
         "Discontiguous word template type",
         CArgDescriptions::eInteger, "0");
+    arg_desc->SetConstraint("templtype", new CArgAllow_Integers(0,2));
     arg_desc->AddDefaultKey("thresh", "threshold", 
         "Score threshold for neighboring words",
         CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("window","window", "Window size for two-hit extension",
                             CArgDescriptions::eInteger, "0");
-    arg_desc->AddDefaultKey("ag", "ag", 
-        "Should AG method be used for scanning the database?",
-        CArgDescriptions::eBoolean, "T");
+    arg_desc->AddDefaultKey("scantype", "scantype", 
+        "Method for scanning the database: 0 traditional, 1 AG",
+        CArgDescriptions::eInteger, "1");
+    arg_desc->SetConstraint("scantype", new CArgAllow_Integers(0,1));
+
     arg_desc->AddDefaultKey("varword", "varword", 
         "Should variable word size be used?",
         CArgDescriptions::eBoolean, "F");
@@ -295,14 +301,17 @@ CBlast2seqApplication::ProcessCommandLineArgs(CBlastOptions& opt)
     // The next 3 apply to nucleotide searches only
     string program = args["program"].AsString();
     if (program == "blastn") {
-        SeedExtensionMethod sem;
-        if (args["ag"].AsBoolean()) {
-            sem = eRightAndLeft;
-        } else {
-            sem = eRight;
-        }
-        opt.SetSeedExtensionMethod(sem);
         opt.SetVariableWordsize(args["varword"].AsBoolean());
+        switch(args["scantype"].AsInteger()) {
+        case 1:
+            opt.SetSeedExtensionMethod(eRightAndLeft);
+            opt.SetScanStep(GetDefaultStride(opt.GetWordSize(),
+                (Boolean)opt.GetVariableWordsize(), opt.GetLookupTableType()));
+            break;
+        default:
+            opt.SetSeedExtensionMethod(eRight);
+            break;
+        }
         if (args["stride"].AsInteger()) {
             opt.SetScanStep(args["stride"].AsInteger());
         }
@@ -512,6 +521,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/10/22 16:48:09  dondosha
+ * Changed "ag" option to "scantype";
+ * Use function from core library to calculate default value of stride if AG
+ * scanning method is used.
+ *
  * Revision 1.25  2003/10/21 22:15:33  camacho
  * Rearranging of C options structures, fix seed extension method
  *
