@@ -70,8 +70,8 @@ $(builddir)/corelib/ncbi_pch.hpp.d.$(PCHMODE): $(pchsrc)
 	@$(CXX_WRAPPER) $(CXX) $(D_TAIL_PCH)
 
 .d .o:
-	@echo "*** Illegal whitespace detected at the end of your makefile's"
-	@echo "*** SRC setting; please remove it."
+	@echo "*** $(TMPL): Illegal whitespace detected at the end of"
+	@echo "*** your makefile's SRC setting; please remove it."
 	@false
 
 
