@@ -62,19 +62,36 @@ static void s_TEST_SimpleDll(void)
     string* (* Dll_StrRepeat) (const string&, unsigned int) = NULL;
 
     // Get addresses from DLL
+#if defined(NCBI_OS_DARWIN)
+    DllVar_Counter = dll.GetEntryPoint("_DllVar_Counter", &DllVar_Counter );
+#else
     DllVar_Counter = dll.GetEntryPoint("DllVar_Counter", &DllVar_Counter );
+#endif
+
     if ( !DllVar_Counter ) {
         ERR_POST(Fatal << "Error get address of variable DllVar_Counter.");
     }
+#if defined(NCBI_OS_DARWIN)
+    Dll_Inc = dll.GetEntryPoint("_Dll_Inc", &Dll_Inc );
+#else
     Dll_Inc = dll.GetEntryPoint("Dll_Inc", &Dll_Inc );
+#endif
     if ( !Dll_Inc ) {
         ERR_POST(Fatal << "Error get address of function Dll_Inc().");
     }
+#if defined(NCBI_OS_DARWIN)
+    Dll_Add = dll.GetEntryPoint("_Dll_Add", &Dll_Add );
+#else
     Dll_Add = dll.GetEntryPoint("Dll_Add", &Dll_Add );
+#endif
     if ( !Dll_Add ) {
         ERR_POST(Fatal << "Error get address of function Dll_Add().");
     }
+#if defined(NCBI_OS_DARWIN)
+    Dll_StrRepeat = dll.GetEntryPoint("_Dll_StrRepeat", &Dll_StrRepeat );
+#else
     Dll_StrRepeat = dll.GetEntryPoint("Dll_StrRepeat", &Dll_StrRepeat );
+#endif
     if ( !Dll_StrRepeat ) {
         ERR_POST(Fatal << "Error get address of function Dll_StrRepeat().");
     }
@@ -218,6 +235,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2002/06/26 18:58:00  lebedev
+ * Darwin specific: use underscores in libdl calls in test_ncbidll
+ *
  * Revision 6.7  2002/04/16 18:49:08  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.
