@@ -164,7 +164,7 @@ BlastScoreBlk* BlastScoreBlkNew (Uint1 alphabet, Int4 number_of_contexts);
 BlastScoreBlk* BlastScoreBlkFree (BlastScoreBlk* sbp);
 
 /**  Sets sbp->matrix field using sbp->name field using
- *   the matrices in the toolkit (util/tables/rawscoremat.h).
+ *   the matrices in the toolkit (util/tables/raw_scoremat.h).
  * @param sbp the object containing matrix and name [in|out]
  * @return zero on success, -1 otherwise.
  */
