@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/04/21 19:53:11  vakatov
+ * Minor cosmetic changes
+ *
  * Revision 6.1  2000/04/07 20:03:01  vakatov
  * Initial revision
  *
@@ -55,7 +58,9 @@
 /* Standard error report
  */
 #define TEST_LOG(status, descr) \
-  CORE_LOGF(status == eIO_Success ? eLOG_Note : eLOG_Error, \
+  CORE_LOGF(status == eIO_Success ? eLOG_Note : \
+            status == eIO_Closed  ? eLOG_Warning : \
+                                    eLOG_Error, \
             ("%s (status: \"%s\")", descr, IO_StatusStr(status)))
 
 
@@ -200,8 +205,8 @@ static void s_SingleBounceCheck
                 assert(status == eIO_Timeout);
             }
             if (n_read < n_to_read) {
-                TEST_LOG(status, "Not all of the expected data is peeked yet"
-                         "Continue...");
+                TEST_LOG(status, "Not all of the expected data is peeked yet."
+                         " Continue...");
             }
         } while (n_read != n_to_read);
 
