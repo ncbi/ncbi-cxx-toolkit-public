@@ -29,10 +29,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/06/20 14:46:17  vakatov
+* Get rid of the '^M' symbols introduced in the R1.10 log
+*
 * Revision 1.10  2001/06/19 23:03:46  juran
-* Replace timezone and daylight with macros.
-Implement for Mac OS.
-Note:  This compiles, but it may not work correctly yet.
+* Replace timezone and daylight with macros
+* Implement for Mac OS
+* Note:  This compiles, but it may not work correctly yet.
 *
 * Revision 1.9  2001/05/29 20:14:03  ivanov
 * Added #include <sys/time.h> for UNIX platforms.
