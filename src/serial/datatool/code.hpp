@@ -7,110 +7,27 @@
 #include <list>
 #include "autoptr.hpp"
 
-BEGIN_NCBI_SCOPE
-
-class CNcbiRegistry;
-
-END_NCBI_SCOPE
-
 USING_NCBI_SCOPE;
 
-class ASNType;
-class CClassCode;
-
-class CFileCode
-{
-public:
-    typedef set<string> TIncludes;
-    typedef map<string, string> TForwards;
-    typedef map<string, AutoPtr<CClassCode> > TClasses;
-
-    CFileCode(const CNcbiRegistry& registry,
-              const string& baseName, const string& headerPrefix);
-    ~CFileCode(void);
-
-    bool AddType(const ASNType* type);
-
-    string Include(const string& s) const;
-    const string& GetFileBaseName(void) const
-        {
-            return m_BaseName;
-        }
-    const string& GetHeaderPrefix(void) const
-        {
-            return m_HeaderPrefix;
-        }
-    string GetHPPName(void) const;
-    string GetCPPName(void) const;
-    string GetUserHPPName(void) const;
-    string GetUserCPPName(void) const;
-    string GetBaseDefine(void) const;
-    string GetHPPDefine(void) const;
-    string GetUserHPPDefine(void) const;
-
-    void AddHPPInclude(const string& s);
-    void AddCPPInclude(const string& s);
-    void AddForwardDeclaration(const string& cls,
-                               const string& ns = NcbiEmptyString);
-    void AddHPPIncludes(const TIncludes& includes);
-    void AddCPPIncludes(const TIncludes& includes);
-    void AddForwardDeclarations(const TForwards& forwards);
-
-    void GenerateHPP(const string& path) const;
-    void GenerateCPP(const string& path) const;
-    bool GenerateUserHPP(const string& path) const;
-    bool GenerateUserCPP(const string& path) const;
-
-    const CNcbiRegistry& GetRegistry(void) const
-        {
-            return m_Registry;
-        }
-    operator const CNcbiRegistry&(void) const
-        {
-            return m_Registry;
-        }
-    
-private:
-    // current type state
-    const CNcbiRegistry& m_Registry;
-
-    // file names
-    string m_BaseName;
-    string m_HeaderPrefix;
-
-    TIncludes m_HPPIncludes;
-    TIncludes m_CPPIncludes;
-    TForwards m_ForwardDeclarations;
-
-    // classes code
-    TClasses m_Classes;
-
-};
+class CDataType;
+class CChoiceDataType;
+class CFileCode;
 
 class CClassCode
 {
 public:
-    typedef CFileCode::TIncludes TIncludes;
-    typedef CFileCode::TForwards TForwards;
+    typedef set<string> TIncludes;
+    typedef map<string, string> TForwards;
     typedef list< pair<string, string> > TMethods;
 
-    CClassCode(CFileCode& file, const string& typeName, const ASNType* type);
+    CClassCode(CFileCode& file, const string& typeName, const CDataType* type);
     ~CClassCode(void);
     
-    const CNcbiRegistry& GetRegistry(void) const
-        {
-            return m_Code.GetRegistry();
-        }
-    operator const CNcbiRegistry&(void) const
-        {
-            return m_Code.GetRegistry();
-        }
-
     const string& GetTypeName(void) const
         {
             return m_TypeName;
         }
-    const ASNType* GetType(void) const
+    const CDataType* GetType(void) const
         {
             return m_Type;
         }
@@ -124,63 +41,43 @@ public:
             return m_ClassName;
         }
 
-    const ASNType* GetParentType(void) const;
+    const CDataType* GetParentType(void) const;
     string GetParentClass(void) const;
 
-    void SetAbstract(bool abstract = true)
+    enum EClassType {
+        eNormal,
+        eAbstract,
+        eEnum,
+        eAlias
+    };
+    void SetClassType(EClassType type);
+    EClassType GetClassType(void) const
         {
-            m_Abstract = abstract;
-        }
-    bool IsAbstract(void) const
-        {
-            return m_Abstract;
-        }
-    void SetNonClass(bool nonClass = true)
-        {
-            m_NonClass = nonClass;
-        }
-    bool IsNonClass(void) const
-        {
-            return m_NonClass;
+            return m_ClassType;
         }
 
-    void AddHPPInclude(const string& s)
-        {
-            m_Code.AddHPPInclude(s);
-        }
-    void AddCPPInclude(const string& s)
-        {
-            m_Code.AddCPPInclude(s);
-        }
-    void AddForwardDeclaration(const string& s, const string& ns)
-        {
-            m_Code.AddForwardDeclaration(s, ns);
-        }
-    void AddHPPIncludes(const TIncludes& includes)
-        {
-            m_Code.AddHPPIncludes(includes);
-        }
-    void AddCPPIncludes(const TIncludes& includes)
-        {
-            m_Code.AddCPPIncludes(includes);
-        }
-    void AddForwardDeclarations(const TForwards& forwards)
-        {
-            m_Code.AddForwardDeclarations(forwards);
-        }
-    void AddMethod(const string& hpp, const string& cpp)
-        {
-            m_Methods.push_back(make_pair(hpp, cpp));
-        }
+    void AddHPPInclude(const string& s);
+    void AddCPPInclude(const string& s);
+    void AddForwardDeclaration(const string& s, const string& ns);
+    void AddHPPIncludes(const TIncludes& includes);
+    void AddCPPIncludes(const TIncludes& includes);
+    void AddForwardDeclarations(const TForwards& forwards);
 
-    CNcbiOstream& HPP(void)
+    CNcbiOstream& ClassPublic(void)
         {
-            return m_HPP;
+            return m_ClassPublic;
         }
-
-    CNcbiOstream& CPP(void)
+    CNcbiOstream& ClassPrivate(void)
         {
-            return m_CPP;
+            return m_ClassPrivate;
+        }
+    CNcbiOstream& Methods(void)
+        {
+            return m_Methods;
+        }
+    CNcbiOstream& TypeInfoBody(void)
+        {
+            return m_TypeInfoBody;
         }
 
     CNcbiOstream& GenerateHPP(CNcbiOstream& header) const;
@@ -191,89 +88,17 @@ public:
 private:
     CFileCode& m_Code;
     string m_TypeName;
-    const ASNType* m_Type;
+    const CDataType* m_Type;
     string m_Namespace;
     string m_ClassName;
     string m_ParentClass;
-    bool m_Abstract;
-    bool m_NonClass;
 
-    mutable CNcbiOstrstream m_HPP;
-    mutable CNcbiOstrstream m_CPP;
-    TMethods m_Methods;
-};
+    CNcbiOstrstream m_ClassPublic;
+    CNcbiOstrstream m_ClassPrivate;
+    CNcbiOstrstream m_Methods;
+    CNcbiOstrstream m_TypeInfoBody;
 
-class CTypeStrings {
-public:
-    typedef set<string> TIncludes;
-    typedef map<string, string> TForwards;
-
-    enum ETypeType {
-        eStdType,
-        eClassType,
-        eComplexType,
-        ePointerType,
-        eEnumType
-    };
-    void SetStd(const string& c);
-    void SetClass(const string& c);
-    void SetEnum(const string& c, const string& e);
-    void SetComplex(const string& c, const string& m);
-    void SetComplex(const string& c, const string& m,
-                    const CTypeStrings& arg);
-    void SetComplex(const string& c, const string& m,
-                    const CTypeStrings& arg1, const CTypeStrings& arg2);
-
-    ETypeType type;
-    string cType;
-    string macro;
-
-    void ToSimple(void);
-        
-    string GetRef(void) const;
-
-    void AddHPPInclude(const string& s)
-        {
-            m_HPPIncludes.insert(s);
-        }
-    void AddCPPInclude(const string& s)
-        {
-            m_CPPIncludes.insert(s);
-        }
-    void AddForwardDeclaration(const string& s, const string& ns)
-        {
-            m_ForwardDeclarations[s] = ns;
-        }
-    void AddIncludes(const CTypeStrings& arg);
-
-    void AddMember(CClassCode& code,
-                   const string& member) const;
-    void AddMember(CClassCode& code,
-                   const string& name, const string& member) const;
-private:
-    void x_AddMember(CClassCode& code,
-                     const string& name, const string& member) const;
-
-    TIncludes m_HPPIncludes;
-    TIncludes m_CPPIncludes;
-    TForwards m_ForwardDeclarations;
-};
-
-class CNamespace
-{
-public:
-    CNamespace(CNcbiOstream& out);
-    ~CNamespace(void);
-    
-    void Set(const string& ns);
-
-    void End(void);
-
-private:
-    void Begin(void);
-
-    CNcbiOstream& m_Out;
-    string m_Namespace;
+    EClassType m_ClassType;
 };
 
 #endif

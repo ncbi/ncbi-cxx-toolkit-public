@@ -4,125 +4,226 @@
 #include "type.hpp"
 #include "exceptions.hpp"
 
-CModuleSet::CModuleSet(void)
+CModuleContainer::~CModuleContainer(void)
 {
 }
 
-CModuleSet::~CModuleSet(void)
+CModuleSet::CModuleSet(const string& name)
+    : m_ModuleContainer(0), m_SourceFileName(name)
 {
 }
 
-void CModuleSet::DumpTypes(CNcbiOstream& out) const
+void CModuleSet::AddModule(const AutoPtr<CDataTypeModule>& module)
 {
-    for ( TModules::const_iterator mi = modules.begin();
-          mi != modules.end(); ++mi ) {
-        const ASNModule* module = mi->second.get();
-        for ( ASNModule::TDefinitions::const_iterator di =
-                  module->definitions.begin();
-              di != module->definitions.end();
-              ++di ) {
-            out << module->name << '.' << di->first << " ::= " <<
-                typeid(*di->second).name() << endl;
-        }
+    module->SetModuleContainer(this);
+    AutoPtr<CDataTypeModule>& mptr = m_Modules[module->GetName()];
+    if ( mptr ) {
+        ERR_POST(GetSourceFileName() << ": duplicate module: " <<
+                 module->GetName());
     }
-}
-
-void CModuleSet::SetMainTypes(void)
-{
-    for ( TModules::iterator mi = modules.begin();
-          mi != modules.end(); ++mi ) {
-        ASNModule* module = mi->second.get();
-        for ( ASNModule::TDefinitions::iterator di = module->definitions.begin();
-              di != module->definitions.end();
-              ++di ) {
-            di->second->main = true;
-        }
+    else {
+        mptr = module;
     }
 }
 
 bool CModuleSet::Check(void) const
 {
     bool ok = true;
-	{
-		for ( TModules::const_iterator mi = modules.begin();
-			  mi != modules.end(); ++mi ) {
-			if ( !mi->second->CheckNames() )
-				ok = false;
-		}
-	}
-	{
-		for ( TModules::const_iterator mi = modules.begin();
-		     mi != modules.end(); ++mi ) {
-			if ( !mi->second->Check() )
-	            ok = false;
-		}
-	}
+    for ( TModules::const_iterator mi = m_Modules.begin();
+          mi != m_Modules.end(); ++mi ) {
+        if ( !mi->second->Check() )
+            ok = false;
+    }
     return ok;
 }
 
-TTypeInfo CModuleSet::MapType(const string& n)
+bool CModuleSet::CheckNames(void) const
 {
-    string name(n.empty()? rootTypeName: n);
-    // find cached typeinfo
-    TTypes::const_iterator ti = m_Types.find(name);
-    if ( ti != m_Types.end() )
-        return ti->second;
-
-    // find type definition
-    for ( TModules::const_iterator i = modules.begin();
-          i != modules.end(); ++i ) {
-        ASNModule* module = i->second.get();
-        const ASNModule::TypeInfo* typeInfo = module->FindType(name);
-        if ( typeInfo && typeInfo->type && typeInfo->type->exported )
-            return (m_Types[name] = typeInfo->type->GetTypeInfo());
+    bool ok = true;
+    for ( TModules::const_iterator mi = m_Modules.begin();
+          mi != m_Modules.end(); ++mi ) {
+        if ( !mi->second->CheckNames() )
+            ok = false;
     }
-    THROW1_TRACE(runtime_error, "type not found: " + name);
+    return ok;
 }
 
-ASNType* CModuleSet::ResolveFull(const string& fullName) const
+void CModuleSet::PrintASN(CNcbiOstream& out) const
 {
-    SIZE_TYPE dot = fullName.find('.');
-    if ( dot != NPOS ) {
-        // module specified
-        return Resolve(fullName.substr(0, dot), fullName.substr(dot + 1));
+    for ( TModules::const_iterator mi = m_Modules.begin();
+          mi != m_Modules.end(); ++mi ) {
+        mi->second->PrintASN(out);
     }
-
-    // module not specified - we'll scan all modules for type
-    const ASNModule::TypeInfo* type = 0;
-    for ( TModules::const_iterator i = modules.begin();
-          i != modules.end(); ++i ) {
-        ASNModule* module = i->second.get();
-        const ASNModule::TypeInfo* t = module->FindType(fullName);
-        if ( t && t->type && t->type->main ) {
-            if ( type == 0 )
-                type = t;
-            else {
-                THROW1_TRACE(CTypeNotFound, "ambiguous type: " + fullName);
-            }
-        }
-    }
-    if ( !type )
-        THROW1_TRACE(CTypeNotFound, "type not found: " + fullName);
-    return type->type;
 }
 
-ASNType* CModuleSet::Resolve(const string& moduleName,
-                             const string& typeName) const
+const CNcbiRegistry& CModuleSet::GetConfig(void) const
+{
+    return GetModuleContainer().GetConfig();
+}
+
+const string& CModuleSet::GetSourceFileName(void) const
+{
+    return m_SourceFileName;
+}
+
+CDataType* CModuleSet::InternalResolve(const string& moduleName,
+                                       const string& typeName) const
+{
+    return GetModuleContainer().InternalResolve(moduleName, typeName);
+}
+
+CDataType* CModuleSet::ExternalResolve(const string& moduleName,
+                                       const string& typeName,
+                                       bool allowInternal) const
 {
     // find module definition
-    TModules::const_iterator mi = modules.find(moduleName);
-    if ( mi == modules.end() ) {
+    TModules::const_iterator mi = m_Modules.find(moduleName);
+    if ( mi == m_Modules.end() ) {
         // no such module
         THROW1_TRACE(CModuleNotFound, "module not found: " + moduleName +
                      " for type " + typeName);
     }
-    ASNModule* module = mi->second.get();
-    const ASNModule::TypeInfo* t = module->FindType(typeName);
-    if ( t && t->type ) {
-        if ( !t->type->exported )
-            ERR_POST("not exported: " + moduleName + "." + typeName);
-        return t->type;
-    }
-    THROW1_TRACE(CTypeNotFound,
-                 "type not found: " + moduleName + '.' + typeName);
+    return mi->second->ExternalResolve(typeName, allowInternal);
 }
+
+CDataType* CModuleSet::ResolveInAnyModule(const string& typeName,
+                                          bool allowInternal) const
+{
+    int count = 0;
+    CDataType* type = 0;
+    for ( TModules::const_iterator i = m_Modules.begin();
+          i != m_Modules.end(); ++i ) {
+        try {
+            type = i->second->ExternalResolve(typeName, allowInternal);
+            count += 1;
+        }
+        catch ( CAmbiguiousTypes& exc ) {
+            count += 2;
+        }
+        catch ( CTypeNotFound& exc ) {
+        }
+    }
+    switch ( count ) {
+    case 0:
+        THROW1_TRACE(CTypeNotFound, "type not found: " + typeName);
+    case 1:
+        return type;
+    default:
+        THROW1_TRACE(CAmbiguiousTypes,
+                     "ambiguous type definition: " + typeName);
+    }
+}
+
+CFileSet::CFileSet(const CModuleContainer& container)
+    : m_Parent(container)
+{
+}
+
+void CFileSet::AddFile(const AutoPtr<CModuleSet>& moduleSet)
+{
+    moduleSet->m_ModuleContainer = this;
+    m_ModuleSets.push_back(moduleSet);
+}
+
+const CNcbiRegistry& CFileSet::GetConfig(void) const
+{
+    return m_Parent.GetConfig();
+}
+
+const string& CFileSet::GetSourceFileName(void) const
+{
+    return m_Parent.GetSourceFileName();
+}
+
+CDataType* CFileSet::InternalResolve(const string& module,
+                                     const string& type) const
+{
+    return m_Parent.InternalResolve(module, type);
+}
+
+void CFileSet::PrintASN(CNcbiOstream& out) const
+{
+    for ( TModuleSets::const_iterator i = m_ModuleSets.begin();
+          i != m_ModuleSets.end(); ++i ) {
+        (*i)->PrintASN(out);
+    }
+}
+
+CDataType* CFileSet::ExternalResolve(const string& module, const string& name,
+                                     bool allowInternal) const
+{
+    int count = 0;
+    CDataType* type = 0;
+    for ( TModuleSets::const_iterator i = m_ModuleSets.begin();
+          i != m_ModuleSets.end(); ++i ) {
+        try {
+            type = (*i)->ExternalResolve(module, name, allowInternal);
+            count += 1;
+        }
+        catch ( CAmbiguiousTypes& exc ) {
+            count += 2;
+        }
+        catch ( CTypeNotFound& exc ) {
+        }
+    }
+    switch ( count ) {
+    case 0:
+        THROW1_TRACE(CTypeNotFound, "type not found: " + module + '.' + name);
+    case 1:
+        return type;
+    default:
+        THROW1_TRACE(CAmbiguiousTypes,
+                     "ambiguous type definition: " + module + '.' + name);
+    }
+}
+
+CDataType* CFileSet::ResolveInAnyModule(const string& name,
+                                        bool allowInternal) const
+{
+    int count = 0;
+    CDataType* type = 0;
+    for ( TModuleSets::const_iterator i = m_ModuleSets.begin();
+          i != m_ModuleSets.end(); ++i ) {
+        try {
+            type = (*i)->ResolveInAnyModule(name, allowInternal);
+            count += 1;
+        }
+        catch ( CAmbiguiousTypes& exc ) {
+            count += 2;
+        }
+        catch ( CTypeNotFound& exc ) {
+        }
+    }
+    switch ( count ) {
+    case 0:
+        THROW1_TRACE(CTypeNotFound, "type not found: " + name);
+    case 1:
+        return type;
+    default:
+        THROW1_TRACE(CAmbiguiousTypes,
+                     "ambiguous type definition: " + name);
+    }
+}
+
+bool CFileSet::Check(void) const
+{
+    bool ok = true;
+    for ( TModuleSets::const_iterator mi = m_ModuleSets.begin();
+          mi != m_ModuleSets.end(); ++mi ) {
+        if ( !(*mi)->Check() )
+            ok = false;
+    }
+    return ok;
+}
+
+bool CFileSet::CheckNames(void) const
+{
+    bool ok = true;
+    for ( TModuleSets::const_iterator mi = m_ModuleSets.begin();
+          mi != m_ModuleSets.end(); ++mi ) {
+        if ( !(*mi)->CheckNames() )
+            ok = false;
+    }
+    return ok;
+}
+

@@ -1,99 +1,139 @@
-#ifndef ASNVALUE_HPP
-#define ASNVALUE_HPP
+#ifndef VALUE_HPP
+#define VALUE_HPP
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <list>
 #include "autoptr.hpp"
-#include "typecontext.hpp"
 
 USING_NCBI_SCOPE;
 
-class ASNValue {
-public:
-    ASNValue(const CFilePosition& pos);
-    virtual ~ASNValue();
+class CDataTypeModule;
 
-    virtual CNcbiOstream& Print(CNcbiOstream& out, int indent) = 0;
+class CDataValue {
+public:
+    CDataValue(void);
+    virtual ~CDataValue(void);
+
+    virtual void PrintASN(CNcbiOstream& out, int indent) const = 0;
 
     void Warning(const string& mess) const;
+
+    string LocationString(void) const;
+    const string& GetSourceFileName(void) const;
+    void SetModule(const CDataTypeModule* module);
+    int GetSourceLine(void) const
+        {
+            return m_SourceLine;
+        }
+    void SetSourceLine(int line);
     
-    CFilePosition filePos;
+    virtual bool IsComplex(void) const;
+
+private:
+    const CDataTypeModule* m_Module;
+    int m_SourceLine;
 };
 
-class ASNNullValue : public ASNValue {
+class CNullDataValue : public CDataValue {
 public:
-    ASNNullValue(const CFilePosition& pos);
-
-    CNcbiOstream& Print(CNcbiOstream& out, int indent);
+    void PrintASN(CNcbiOstream& out, int indent) const;
 };
 
-class ASNBoolValue : public ASNValue {
+template<typename Type>
+class CDataValueTmpl : public CDataValue {
 public:
-    ASNBoolValue(const CFilePosition& pos, bool v);
+    typedef Type TValueType;
 
-    CNcbiOstream& Print(CNcbiOstream& out, int indent);
+    CDataValueTmpl(const TValueType& v)
+        : m_Value(v)
+        {
+        }
 
-    bool value;
+    void PrintASN(CNcbiOstream& out, int indent) const;
+
+    const TValueType& GetValue(void) const
+        {
+            return m_Value;
+        }
+
+private:
+    TValueType m_Value;
 };
 
-class ASNIntegerValue : public ASNValue {
+typedef CDataValueTmpl<bool> CBoolDataValue;
+typedef CDataValueTmpl<long> CIntDataValue;
+typedef CDataValueTmpl<string> CStringDataValue;
+
+class CBitStringDataValue : public CStringDataValue {
 public:
-    ASNIntegerValue(const CFilePosition& pos, int v);
+    CBitStringDataValue(const string& v)
+        : CStringDataValue(v)
+        {
+        }
 
-    CNcbiOstream& Print(CNcbiOstream& out, int indent);
-
-    int value;
+    void PrintASN(CNcbiOstream& out, int indent) const;
 };
 
-class ASNStringValue : public ASNValue {
+class CIdDataValue : public CStringDataValue {
 public:
-    ASNStringValue(const CFilePosition& pos, const string& v);
+    CIdDataValue(const string& v)
+        : CStringDataValue(v)
+        {
+        }
 
-    CNcbiOstream& Print(CNcbiOstream& out, int indent);
-
-    string value;
+    void PrintASN(CNcbiOstream& out, int indent) const;
 };
 
-class ASNBitStringValue : public ASNValue {
+class CNamedDataValue : public CDataValue {
 public:
-    ASNBitStringValue(const CFilePosition& pos, const string& v);
+    CNamedDataValue(const string& id, const AutoPtr<CDataValue>& v)
+        : m_Name(id), m_Value(v)
+        {
+        }
 
-    CNcbiOstream& Print(CNcbiOstream& out, int indent);
+    void PrintASN(CNcbiOstream& out, int indent) const;
 
-    string value;
+    const string& GetName(void) const
+        {
+            return m_Name;
+        }
+
+    const CDataValue& GetValue(void) const
+        {
+            return *m_Value;
+        }
+    CDataValue& GetValue(void)
+        {
+            return *m_Value;
+        }
+
+    virtual bool IsComplex(void) const;
+
+private:
+    string m_Name;
+    AutoPtr<CDataValue> m_Value;
 };
 
-class ASNIdValue : public ASNValue {
+class CBlockDataValue : public CDataValue {
 public:
-    ASNIdValue(const CFilePosition& pos, const string& v);
+    typedef list<AutoPtr<CDataValue> > TValues;
 
-    CNcbiOstream& Print(CNcbiOstream& out, int indent);
+    void PrintASN(CNcbiOstream& out, int indent) const;
 
-    string id;
-};
+    TValues& GetValues(void)
+        {
+            return m_Values;
+        }
+    const TValues& GetValues(void) const
+        {
+            return m_Values;
+        }
 
-class ASNNamedValue : public ASNValue {
-public:
-    ASNNamedValue(const CFilePosition& pos);
-    ASNNamedValue(const CFilePosition& pos,
-                  const string& id, const AutoPtr<ASNValue>& v);
+    virtual bool IsComplex(void) const;
 
-    CNcbiOstream& Print(CNcbiOstream& out, int indent);
-
-    string name;
-    AutoPtr<ASNValue> value;
-};
-
-class ASNBlockValue : public ASNValue {
-public:
-    typedef list<AutoPtr<ASNValue> > TValues;
-
-    ASNBlockValue(const CFilePosition& pos);
-
-    CNcbiOstream& Print(CNcbiOstream& out, int indent);
-
-    TValues values;
+private:
+    TValues m_Values;
 };
 
 #endif

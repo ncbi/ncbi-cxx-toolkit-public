@@ -1,5 +1,6 @@
-#include "typecontext.hpp"
 #include <corelib/ncbireg.hpp>
+#include "typecontext.hpp"
+#include "module.hpp"
 
 CNcbiOstream& operator<<(CNcbiOstream& out, const CFilePosition& filePos)
 {
@@ -28,7 +29,7 @@ CConfigPosition::CConfigPosition(const CConfigPosition& base,
 }
 
 CConfigPosition::CConfigPosition(const CConfigPosition& base,
-                                 const ASNType* type, const string& member)
+                                 const CDataType* type, const string& member)
     : m_ParentType(type), m_CurrentMember(member)
 {
     m_Section = base.GetSection();
@@ -66,3 +67,10 @@ const string& CConfigPosition::GetVar(const CNcbiRegistry& registry,
         return registry.Get(defaultSection, keyName);
     return NcbiEmptyString;
 }
+
+const string& CDataTypeContext::GetVar(const CNcbiRegistry& registry,
+                                       const string& value) const
+{
+    return GetConfigPos().GetVar(registry, GetModule().GetName(), value);
+}
+

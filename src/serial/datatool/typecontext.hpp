@@ -13,8 +13,17 @@ END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 
-class ASNModule;
-class ASNType;
+class CDataTypeModule;
+class CDataType;
+
+class CDataTypeResolver
+{
+    virtual ~CDataTypeResolver(void)
+        {
+        }
+    
+    virtual const CDataType* ResolveDataType(const string& name) const = 0;
+};
 
 class CFilePosition
 {
@@ -55,9 +64,9 @@ public:
     CConfigPosition(const CConfigPosition& base,
                     const string& member);
     CConfigPosition(const CConfigPosition& base,
-                    const ASNType* type, const string& member);
+                    const CDataType* type, const string& member);
 
-    const ASNType* GetParentType(void) const
+    const CDataType* GetParentType(void) const
         {
             return m_ParentType;
         }
@@ -79,7 +88,7 @@ public:
                          const string& defSection, const string& value) const;
 
 private:
-    const ASNType* m_ParentType;
+    const CDataType* m_ParentType;
     string m_CurrentMember;
     string m_Section;
     string m_KeyPrefix;
@@ -92,7 +101,7 @@ public:
         : m_Module(0), m_FilePos(pos)
         {
         }
-    CDataTypeContext(const CDataTypeContext& base, ASNModule& module)
+    CDataTypeContext(const CDataTypeContext& base, CDataTypeModule& module)
         : m_Module(&module), m_FilePos(base), m_ConfigPos(base)
         {
         }
@@ -106,14 +115,14 @@ public:
         {
         }
     // start new subtype
-    CDataTypeContext(const CDataTypeContext& base, const ASNType* type,
+    CDataTypeContext(const CDataTypeContext& base, const CDataType* type,
                      const string& member = NcbiEmptyString)
         : m_Module(base.m_Module), m_FilePos(base),
           m_ConfigPos(base, type, member)
         {
         }
     
-    ASNModule& GetModule(void) const
+    CDataTypeModule& GetModule(void) const
         {
             _ASSERT(m_Module);
             return *m_Module;
@@ -151,39 +160,12 @@ public:
             return m_ConfigPos;
         }
     
+    const string& GetVar(const CNcbiRegistry& registry, const string& name) const;
+
 private:
-    ASNModule* m_Module;
+    CDataTypeModule* m_Module;
     CFilePosition m_FilePos;
     CConfigPosition m_ConfigPos;
-};
-
-typedef int TInteger;
-
-struct AnyType {
-    union {
-        bool booleanValue;
-        TInteger integerValue;
-        double realValue;
-        void* pointerValue;
-    };
-    AnyType(void)
-        {
-            pointerValue = 0;
-        }
-};
-
-class CAnyTypeSource : public CTypeInfoSource
-{
-public:
-    CAnyTypeSource(ASNType* type)
-        : m_Type(type)
-        {
-        }
-
-    TTypeInfo GetTypeInfo(void);
-
-private:
-    ASNType* m_Type;
 };
 
 #endif

@@ -4,18 +4,34 @@
 #include "moduleset.hpp"
 #include "module.hpp"
 #include "type.hpp"
-#include "code.hpp"
+#include "statictype.hpp"
+#include "reftype.hpp"
+#include "unitype.hpp"
+#include "enumtype.hpp"
+#include "blocktype.hpp"
+#include "filecode.hpp"
 #include "generate.hpp"
+#include "exceptions.hpp"
 
 USING_NCBI_SCOPE;
 
 CCodeGenerator::CCodeGenerator(void)
-    : m_ExcludeAllTypes(false)
+    : m_MainFiles(*this), m_ImportFiles(*this), m_ExcludeRecursion(false)
 {
 }
 
 CCodeGenerator::~CCodeGenerator(void)
 {
+}
+
+const string& CCodeGenerator::GetSourceFileName(void) const
+{
+    return NcbiEmptyString;
+}
+
+const CNcbiRegistry& CCodeGenerator::GetConfig(void) const
+{
+    return m_Config;
 }
 
 void CCodeGenerator::LoadConfig(const string& fileName)
@@ -32,21 +48,80 @@ void CCodeGenerator::LoadConfig(const string& fileName)
     }
 }
 
-void CCodeGenerator::GetAllTypes(void)
+CDataType* CCodeGenerator::InternalResolve(const string& module,
+                                           const string& name) const
 {
-    for ( CModuleSet::TModules::const_iterator mi = m_Modules.modules.begin();
-          mi != m_Modules.modules.end();
-          ++mi ) {
-        const ASNModule* module = mi->second.get();
-        for ( ASNModule::TDefinitions::const_iterator ti =
-                  module->definitions.begin();
-              ti != module->definitions.end();
-              ++ti ) {
-            const string& name = ti->first;
-            const ASNType* type = ti->second.get();
-            if ( !name.empty() && type->main &&
-                 type->ClassName(m_Config) != "-" )
-                m_GenerateTypes.insert(module->name + '.' + name);
+    return ExternalResolve(module, name);
+}
+
+CDataType* CCodeGenerator::ExternalResolve(const string& module,
+                                           const string& name,
+                                           bool exported) const
+{
+    try {
+        return m_MainFiles.ExternalResolve(module, name, exported);
+    }
+    catch ( CAmbiguiousTypes& exc ) {
+        _TRACE(exc.what());
+        throw;
+    }
+    catch ( CTypeNotFound& exc ) {
+        _TRACE(exc.what());
+        return m_ImportFiles.ExternalResolve(module, name, exported);
+    }
+}
+
+CDataType* CCodeGenerator::ResolveInAnyModule(const string& name,
+                                              bool exported) const
+{
+    try {
+        return m_MainFiles.ResolveInAnyModule(name, exported);
+    }
+    catch ( CAmbiguiousTypes& exc ) {
+        _TRACE(exc.what());
+        throw;
+    }
+    catch ( CTypeNotFound& exc ) {
+        _TRACE(exc.what());
+        return m_ImportFiles.ResolveInAnyModule(name, exported);
+    }
+}
+
+CDataType* CCodeGenerator::ResolveMain(const string& fullName) const
+{
+    SIZE_TYPE dot = fullName.find('.');
+    if ( dot != NPOS ) {
+        // module specified
+        return m_MainFiles.ExternalResolve(fullName.substr(0, dot),
+                                           fullName.substr(dot + 1),
+                                           true);
+    }
+    else {
+        // module not specified - we'll scan all modules for type
+        return m_MainFiles.ResolveInAnyModule(fullName, true);
+    }
+}
+
+void CCodeGenerator::IncludeAllMainTypes(void)
+{
+    const CFileSet::TModuleSets& moduleSets = m_MainFiles.GetModuleSets();
+    for ( CFileSet::TModuleSets::const_iterator msi = moduleSets.begin();
+          msi != moduleSets.end();
+          ++msi ) {
+        const CModuleSet::TModules& modules = (*msi)->GetModules();
+        for ( CModuleSet::TModules::const_iterator mi = modules.begin();
+              mi != modules.end(); ++mi ) {
+            const CDataTypeModule* module = mi->second.get();
+            for ( CDataTypeModule::TDefinitions::const_iterator ti =
+                      module->GetDefinitions().begin();
+                  ti != module->GetDefinitions().end();
+                  ++ti ) {
+                const string& name = ti->first;
+                const CDataType* type = ti->second.get();
+                if ( !name.empty() && !type->Skipped() ) {
+                    m_GenerateTypes.insert(module->GetName() + '.' + name);
+                }
+            }
         }
     }
 }
@@ -61,6 +136,27 @@ void CCodeGenerator::GetTypes(TTypeNames& typeSet, const string& types)
         next = types.find(',', pos);
     }
     typeSet.insert(types.substr(pos));
+}
+
+bool CCodeGenerator::Check(void) const
+{
+    return m_MainFiles.CheckNames() && m_ImportFiles.CheckNames() &&
+        m_MainFiles.Check();
+}
+
+void CCodeGenerator::ExcludeTypes(const string& typeList)
+{
+    TTypeNames typeNames;
+    GetTypes(typeNames, typeList);
+    for ( TTypeNames::const_iterator i = typeNames.begin();
+          i != typeNames.end(); ++i ) {
+        m_Config.Set(*i, "_class", "-");
+    }
+}
+
+void CCodeGenerator::IncludeTypes(const string& typeList)
+{
+    GetTypes(m_GenerateTypes, typeList);
 }
 
 static inline
@@ -83,7 +179,7 @@ void CCodeGenerator::GenerateCode(void)
     for ( TTypeNames::const_iterator ti = m_GenerateTypes.begin();
           ti != m_GenerateTypes.end();
           ++ti ) {
-        CollectTypes(m_Modules.ResolveFull(*ti), eRoot);
+        CollectTypes(ResolveMain(*ti), eRoot);
     }
     
     // generate output files
@@ -108,7 +204,7 @@ void CCodeGenerator::GenerateCode(void)
                 fileList << ' ' << filei->first << "_Base";
             }
         }
-        fileList << endl;
+        fileList << NcbiEndl;
 
         fileList << "GENUSERFILES =";
         {
@@ -118,56 +214,80 @@ void CCodeGenerator::GenerateCode(void)
                 fileList << ' ' << filei->first;
             }
         }
-        fileList << endl;
+        fileList << NcbiEndl;
     }
 }
 
-bool CCodeGenerator::AddType(const ASNType* type)
+bool CCodeGenerator::AddType(const CDataType* type)
 {
-    string fileName = type->FileName(m_Config);
+    string fileName = type->FileName();
     AutoPtr<CFileCode>& file = m_Files[fileName];
     if ( !file )
-        file = new CFileCode(m_Config, fileName, m_HeaderPrefix);
+        file = new CFileCode(fileName, m_HeaderPrefix);
     return file->AddType(type);
 }
 
-void CCodeGenerator::CollectTypes(const ASNType* type, EContext context)
+bool CCodeGenerator::Imported(const CDataType* type) const
 {
-    const ASNOfType* array = dynamic_cast<const ASNOfType*>(type);
+    try {
+        m_MainFiles.ExternalResolve(type->GetModule()->GetName(),
+                                    type->IdName(),
+                                    true);
+        
+        return false;
+    }
+    catch ( CTypeNotFound& exc ) {
+    }
+    return true;
+}
+
+void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
+{
+    const CUniSequenceDataType* array =
+        dynamic_cast<const CUniSequenceDataType*>(type);
     if ( array != 0 ) {
         // SET OF or SEQUENCE OF
         if ( context != eOther ) {
             if ( !AddType(type) )
                 return;
         }
-        if ( m_ExcludeAllTypes )
+        if ( m_ExcludeRecursion )
             return;
         // we should add element type
-        CollectTypes(array->type.get());
+        CollectTypes(array->GetElementType());
         return;
     }
 
-    const ASNUserType* user = dynamic_cast<const ASNUserType*>(type);
+    const CReferenceDataType* user =
+        dynamic_cast<const CReferenceDataType*>(type);
     if ( user != 0 ) {
         // reference to another type
-        if ( m_ExcludeTypes.find(user->userTypeName) != m_ExcludeTypes.end() ) {
-            ERR_POST(Warning << "Skipping type: " << user->userTypeName);
+        const CDataType* resolved = user->Resolve();
+        if ( resolved->Skipped() ) {
+            ERR_POST(Warning << "Skipping type: " << user->GetUserTypeName());
             return;
         }
-        const ASNType* resolved = user->Resolve();
         if ( context == eChoice ) {
             // in choice
-            if ( !user->choices.empty() || resolved->choices.size() != 1 ) {
+            if ( /*user->InChoice() ||*/ resolved->GetChoices().size() != 1 ) {
                 // in unnamed choice OR in several choices
+                _TRACE("Will create adapter class for member " << user->LocationString() << ": " << resolved->ClassName() << " uc=" << user->GetChoices().size() << " rc=" << resolved->GetChoices().size());
                 AddType(user);
             }
         }
-        CollectTypes(resolved, eReference);
+        else if ( context == eRoot ) {
+            // alias declaration
+            // generate empty class
+            AddType(user);
+        }
+        if ( !Imported(resolved) ) {
+            CollectTypes(resolved, eReference);
+        }
         return;
     }
 
-    if ( dynamic_cast<const ASNFixedType*>(type) != 0 ||
-         dynamic_cast<const ASNEnumeratedType*>(type) != 0 ) {
+    if ( dynamic_cast<const CStaticDataType*>(type) != 0 ||
+         dynamic_cast<const CEnumDataType*>(type) != 0 ) {
         // STD type
         if ( context != eOther ) {
             AddType(type);
@@ -176,46 +296,46 @@ void CCodeGenerator::CollectTypes(const ASNType* type, EContext context)
     }
 
     if ( context != eOther ) {
-        if ( type->Skipped(m_Config) ) {
+        if ( type->Skipped() ) {
             ERR_POST(Warning << "Skipping type: " << type->IdName());
             return;
         }
     }
     
-    const ASNChoiceType* choice =
-        dynamic_cast<const ASNChoiceType*>(type);
+    const CChoiceDataType* choice =
+        dynamic_cast<const CChoiceDataType*>(type);
     if ( choice != 0 ) {
         if ( !AddType(type) )
             return;
 
-        if ( m_ExcludeAllTypes )
+        if ( m_ExcludeRecursion )
             return;
 
         // collect member's types
-        for ( ASNMemberContainerType::TMembers::const_iterator mi =
-                  choice->members.begin();
-              mi != choice->members.end(); ++mi ) {
-            const ASNType* memberType = mi->get()->type.get();
+        for ( CDataMemberContainerType::TMembers::const_iterator mi =
+                  choice->GetMembers().begin();
+              mi != choice->GetMembers().end(); ++mi ) {
+            const CDataType* memberType = mi->get()->GetType();
             CollectTypes(memberType, eChoice);
         }
     }
 
-    const ASNMemberContainerType* cont =
-        dynamic_cast<const ASNMemberContainerType*>(type);
+    const CDataMemberContainerType* cont =
+        dynamic_cast<const CDataMemberContainerType*>(type);
     if ( cont != 0 ) {
         if ( context != eOther ) {
             if ( !AddType(type) )
                 return;
         }
 
-        if ( m_ExcludeAllTypes )
+        if ( m_ExcludeRecursion )
             return;
 
         // collect member's types
-        for ( ASNMemberContainerType::TMembers::const_iterator mi =
-                  cont->members.begin();
-              mi != cont->members.end(); ++mi ) {
-            const ASNType* memberType = mi->get()->type.get();
+        for ( CDataMemberContainerType::TMembers::const_iterator mi =
+                  cont->GetMembers().begin();
+              mi != cont->GetMembers().end(); ++mi ) {
+            const CDataType* memberType = mi->get()->GetType();
             CollectTypes(memberType);
         }
         return;

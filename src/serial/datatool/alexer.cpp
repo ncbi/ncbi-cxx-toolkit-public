@@ -25,7 +25,7 @@ void AbstractLexer::LexerError(const char* error)
 
 void AbstractLexer::LexerWarning(const char* error)
 {
-    NcbiCerr << m_Line << ": lexer error: " << error << endl;
+    NcbiCerr << m_Line << ": lexer error: " << error << NcbiEndl;
 }
 
 string AbstractLexer::ConsumeAndValue(void)

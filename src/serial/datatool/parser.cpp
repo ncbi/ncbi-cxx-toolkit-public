@@ -3,55 +3,54 @@
 #include "module.hpp"
 #include "moduleset.hpp"
 #include "type.hpp"
+#include "statictype.hpp"
+#include "enumtype.hpp"
+#include "reftype.hpp"
+#include "unitype.hpp"
+#include "blocktype.hpp"
 #include "value.hpp"
 
-void ASNParser::Modules(const CFilePosition& filePos, CModuleSet& moduleSet,
-                        CModuleSet::TModules& modules)
+AutoPtr<CModuleSet> ASNParser::Modules(const string& fileName)
 {
-    CDataTypeContext ctx(filePos);
+    AutoPtr<CModuleSet> modules(new CModuleSet(fileName));
     while ( Next() != T_EOF ) {
-        Module(ctx, moduleSet, modules);
+        modules->AddModule(Module());
     }
+    return modules;
 }
 
-void ASNParser::Module(const CDataTypeContext& ctx, CModuleSet& moduleSet,
-                       CModuleSet::TModules& modules)
+AutoPtr<CDataTypeModule> ASNParser::Module(void)
 {
     string moduleName = ModuleReference();
-    AutoPtr<ASNModule>& module = modules[moduleName];
-    if ( !module )
-        module = new ASNModule(moduleSet, moduleName);
+    AutoPtr<CDataTypeModule> module(new CDataTypeModule(moduleName));
 
     Consume(K_DEFINITIONS, "DEFINITIONS");
     Consume(T_DEFINE, "::=");
     Consume(K_BEGIN, "BEGIN");
-    ModuleBody(CDataTypeContext(ctx, *module));
+    ModuleBody(*module);
     Consume(K_END, "END");
+    return module;
 }
 
-void ASNParser::Imports(const CDataTypeContext& ctx)
+void ASNParser::Imports(CDataTypeModule& module)
 {
     do {
-        AutoPtr<ASNModule::Import> imp(new ASNModule::Import);
-        TypeList(imp->types);
+        list<string> types;
+        TypeList(types);
         Consume(K_FROM, "FROM");
-        imp->module = ModuleReference();
-        ctx.GetModule().imports.push_back(imp);
+        module.AddImports(ModuleReference(), types);
     } while ( !ConsumeIfSymbol(';') );
 }
 
-void ASNParser::Exports(const CDataTypeContext& ctx)
+void ASNParser::Exports(CDataTypeModule& module)
 {
-    try {
-        TypeList(ctx.GetModule().exports);
-    }
-    catch (runtime_error e) {
-        ERR_POST(e.what());
-    }
+    list<string> types;
+    TypeList(types);
+    module.AddExports(types);
     ConsumeSymbol(';');
 }
 
-void ASNParser::ModuleBody(const CDataTypeContext& ctx)
+void ASNParser::ModuleBody(CDataTypeModule& module)
 {
     string name;
     while ( true ) {
@@ -59,23 +58,22 @@ void ASNParser::ModuleBody(const CDataTypeContext& ctx)
             switch ( Next() ) {
             case K_EXPORTS:
                 Consume();
-                Exports(ctx);
+                Exports(module);
                 break;
             case K_IMPORTS:
                 Consume();
-                Imports(ctx);
+                Imports(module);
                 break;
             case T_TYPE_REFERENCE:
             case T_IDENTIFIER:
                 name = TypeReference();
                 Consume(T_DEFINE, "::=");
-                ctx.GetModule().AddDefinition(name,
-                    Type(CDataTypeContext(ctx, name)));
+                module.AddDefinition(name, Type());
                 break;
             case T_DEFINE:
                 ERR_POST(Location() << "type name omitted");
                 Consume();
-                ctx.GetModule().AddDefinition("unnamed type", Type(ctx));
+                module.AddDefinition("unnamed type", Type());
                 break;
             case K_END:
                 return;
@@ -90,123 +88,107 @@ void ASNParser::ModuleBody(const CDataTypeContext& ctx)
     }
 }
 
-AutoPtr<ASNType> ASNParser::Type(const CDataTypeContext& ctx)
+AutoPtr<CDataType> ASNParser::Type(void)
 {
-    return x_Type(CDataTypeContext(ctx, NextToken().GetLine()));
+    int line = NextToken().GetLine();
+    AutoPtr<CDataType> type(x_Type());
+    type->SetSourceLine(line);
+    return type;
 }
 
-AutoPtr<ASNType> ASNParser::x_Type(const CDataTypeContext& ctx)
+AutoPtr<CDataType> ASNParser::x_Type(void)
 {
     switch ( Next() ) {
     case K_BOOLEAN:
         Consume();
-        return new ASNBooleanType(ctx);
+        return new CBoolDataType();
     case K_INTEGER:
         Consume();
         if ( CheckSymbol('{') )
-            return EnumeratedBlock(ctx, "INTEGER");
+            return EnumeratedBlock(new CIntEnumDataType());
         else
-            return new ASNIntegerType(ctx);
+            return new CIntDataType();
     case K_ENUMERATED:
         Consume();
-        return EnumeratedBlock(ctx, "ENUMERATED");
+        return EnumeratedBlock(new CEnumDataType());
     case K_REAL:
         Consume();
-        return new ASNRealType(ctx);
+        return new CRealDataType();
     case K_BIT:
         Consume();
         Consume(K_STRING, "STRING");
-        return new ASNBitStringType(ctx);
+        return new CBitStringDataType();
     case K_OCTET:
         Consume();
         Consume(K_STRING, "STRING");
-        return new ASNOctetStringType(ctx);
+        return new COctetStringDataType();
     case K_NULL:
         Consume();
-        return new ASNNullType(ctx);
+        return new CNullDataType();
     case K_SEQUENCE:
         Consume();
-        if ( ConsumeIf(K_OF) ) {
-            AutoPtr<ASNOfType> s(new ASNSequenceOfType(ctx));
-            s->type = Type(CDataTypeContext(ctx, s.get(), "_data"));
-            return s.release();
-        }
-        else {
-            AutoPtr<ASNSequenceType> s(new ASNSequenceType(ctx));
-            TypesBlock(CDataTypeContext(ctx, s.get()), *s);
-            return s.release();
-        }
+        if ( ConsumeIf(K_OF) )
+            return new CUniSequenceDataType(Type());
+        else
+            return TypesBlock(new CDataSequenceType());
     case K_SET:
         Consume();
-        if ( ConsumeIf(K_OF) ) {
-            AutoPtr<ASNOfType> s(new ASNSetOfType(ctx));
-            s->type = Type(CDataTypeContext(ctx, s.get(), "_data"));
-            return s.release();
-        }
-        else {
-            AutoPtr<ASNSetType> s(new ASNSetType(ctx));
-            TypesBlock(CDataTypeContext(ctx, s.get()), *s);
-            return s.release();
-        }
+        if ( ConsumeIf(K_OF) )
+            return new CUniSetDataType(Type());
+        else
+            return TypesBlock(new CDataSetType());
     case K_CHOICE:
         Consume();
-        {
-            AutoPtr<ASNChoiceType> choice(new ASNChoiceType(ctx));
-            TypesBlock(CDataTypeContext(ctx, choice.get()), *choice);
-            return choice.release();
-        }
+        return TypesBlock(new CChoiceDataType());
     case K_VisibleString:
         Consume();
-        return new ASNVisibleStringType(ctx);
+        return new CStringDataType();
     case K_StringStore:
         Consume();
-        return new ASNStringStoreType(ctx);
+        return new CStringDataType("StringStore");
     case T_IDENTIFIER:
     case T_TYPE_REFERENCE:
-        return new ASNUserType(ctx, TypeReference());
+        return new CReferenceDataType(TypeReference());
     }
     ParseError("type");
 	return 0;
 }
 
-void ASNParser::TypesBlock(const CDataTypeContext& ctx,
-                           ASNMemberContainerType& container)
+AutoPtr<CDataType>
+ASNParser::TypesBlock(CDataMemberContainerType* containerType)
 {
+    AutoPtr<CDataMemberContainerType> container(containerType);
     ConsumeSymbol('{');
     do {
-        container.members.push_back(NamedDataType(ctx));
+        container->AddMember(NamedDataType());
     } while ( ConsumeIfSymbol(',') );
     ConsumeSymbol('}');
+    return container.release();
 }
 
-AutoPtr<ASNMember> ASNParser::NamedDataType(const CDataTypeContext& ctx)
+AutoPtr<CDataMember> ASNParser::NamedDataType(void)
 {
-    AutoPtr<ASNMember> member(new ASNMember);
-    string memberKeyAdd;
-    if ( Next() == T_IDENTIFIER ) {
-        memberKeyAdd = member->name = Identifier();
-    }
-    else {
-        memberKeyAdd = "_parent";
-    }
-    member->type = Type(CDataTypeContext(ctx, memberKeyAdd));
+    string name;
+    if ( Next() == T_IDENTIFIER )
+        name = Identifier();
+
+    AutoPtr<CDataMember> member(new CDataMember(name, Type()));
     switch ( Next() ) {
     case K_OPTIONAL:
         Consume();
-        member->optional = true;
+        member->SetOptional();
         break;
     case K_DEFAULT:
         Consume();
-        member->defaultValue = Value(ctx);
+        member->SetDefault(Value());
         break;
     }
-    return member.release();
+    return member;
 }
 
-AutoPtr<ASNType> ASNParser::EnumeratedBlock(const CDataTypeContext& ctx,
-                                            const string& keyword)
+AutoPtr<CDataType> ASNParser::EnumeratedBlock(CEnumDataType* enumType)
 {
-    AutoPtr<ASNEnumeratedType> e(new ASNEnumeratedType(ctx, keyword));
+    AutoPtr<CEnumDataType> e(enumType);
     ConsumeSymbol('{');
     do {
         EnumeratedValue(*e);
@@ -215,11 +197,11 @@ AutoPtr<ASNType> ASNParser::EnumeratedBlock(const CDataTypeContext& ctx,
     return e.release();
 }
 
-void ASNParser::EnumeratedValue(ASNEnumeratedType& t)
+void ASNParser::EnumeratedValue(CEnumDataType& t)
 {
     string id = Identifier();
     ConsumeSymbol('(');
-    int value = Number();
+    long value = Number();
     ConsumeSymbol(')');
     t.AddValue(id, value);
 }
@@ -231,49 +213,52 @@ void ASNParser::TypeList(list<string>& ids)
     } while ( ConsumeIfSymbol(',') );
 }
 
-AutoPtr<ASNValue> ASNParser::Value(const CDataTypeContext& ctx)
+AutoPtr<CDataValue> ASNParser::Value(void)
 {
-    return x_Value(CDataTypeContext(ctx, NextToken().GetLine()));
+    int line = NextToken().GetLine();
+    AutoPtr<CDataValue> value(x_Value());
+    value->SetSourceLine(line);
+    return value;
 }
 
-AutoPtr<ASNValue> ASNParser::x_Value(const CDataTypeContext& ctx)
+AutoPtr<CDataValue> ASNParser::x_Value(void)
 {
     switch ( Next() ) {
     case T_NUMBER:
-        return new ASNIntegerValue(ctx, Number());
+        return new CIntDataValue(Number());
     case T_STRING:
-        return new ASNStringValue(ctx, String());
+        return new CStringDataValue(String());
     case K_NULL:
         Consume();
-        return new ASNNullValue(ctx);
+        return new CNullDataValue();
     case K_FALSE:
         Consume();
-        return new ASNBoolValue(ctx, false);
+        return new CBoolDataValue(false);
     case K_TRUE:
         Consume();
-        return new ASNBoolValue(ctx, true);
+        return new CBoolDataValue(true);
     case T_IDENTIFIER:
         {
             string id = Identifier();
             if ( CheckSymbols(',', '}') )
-                return new ASNIdValue(ctx, id);
+                return new CIdDataValue(id);
             else
-                return new ASNNamedValue(ctx, id, Value(ctx));
+                return new CNamedDataValue(id, Value());
         }
     case T_BINARY_STRING:
     case T_HEXADECIMAL_STRING:
-        return new ASNBitStringValue(ctx, ConsumeAndValue());
+        return new CBitStringDataValue(ConsumeAndValue());
     case T_SYMBOL:
         switch ( NextToken().GetSymbol() ) {
         case '-':
-            return new ASNIntegerValue(ctx, Number());
+            return new CIntDataValue(Number());
         case '{':
             {
                 Consume();
-                AutoPtr<ASNBlockValue> b(new ASNBlockValue(ctx));
+                AutoPtr<CBlockDataValue> b(new CBlockDataValue());
                 if ( !CheckSymbol('}') ) {
                     do {
-                        b->values.push_back(Value(ctx));
+                        b->GetValues().push_back(Value());
                     } while ( ConsumeIfSymbol(',') );
                 }
                 ConsumeSymbol('}');
@@ -286,10 +271,10 @@ AutoPtr<ASNValue> ASNParser::x_Value(const CDataTypeContext& ctx)
 	return 0;
 }
 
-int ASNParser::Number(void)
+long ASNParser::Number(void)
 {
     bool minus = ConsumeIfSymbol('-');
-    int value = NStr::StringToUInt(ValueOf(T_NUMBER, "number"));
+    long value = NStr::StringToUInt(ValueOf(T_NUMBER, "number"));
     if ( minus )
         value = -value;
     return value;

@@ -1,5 +1,5 @@
-#ifndef ASNMODULE_HPP
-#define ASNMODULE_HPP
+#ifndef MODULE_HPP
+#define MODULE_HPP
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
@@ -9,53 +9,78 @@
 
 USING_NCBI_SCOPE;
 
-class ASNType;
-class CModuleSet;
+class CDataType;
+class CModuleContainer;
 
-class ASNModule {
+class CDataTypeModule {
 public:
-    ASNModule(CModuleSet& moduleSet, const string& name);
-    virtual ~ASNModule();
+    CDataTypeModule(const string& name);
+    virtual ~CDataTypeModule();
 
-    typedef list< string > TExports;
     class Import {
     public:
-        string module;
+        string moduleName;
         list<string> types;
     };
     typedef list< AutoPtr<Import> > TImports;
-    typedef list< pair< string, AutoPtr<ASNType> > > TDefinitions;
+    typedef list< string > TExports;
+    typedef list< pair< string, AutoPtr<CDataType> > > TDefinitions;
 
-    void AddDefinition(const string& name, const AutoPtr<ASNType> type);
+    bool Errors(void) const
+        {
+            return m_Errors;
+        }
 
-    virtual CNcbiOstream& Print(CNcbiOstream& out) const;
+    const string& GetVar(const string& section, const string& value) const;
+    const string& GetSourceFileName(void) const;
+    
+    void AddDefinition(const string& name, const AutoPtr<CDataType>& type);
+    void AddExports(const TExports& exports);
+    void AddImports(const TImports& imports);
+    void AddImports(const string& module, const list<string>& types);
+
+    virtual void PrintASN(CNcbiOstream& out) const;
 
     bool Check();
     bool CheckNames();
 
-    CModuleSet& moduleSet;
+    const string& GetName(void) const
+        {
+            return m_Name;
+        }
+    const CModuleContainer& GetModuleContainer(void) const
+        {
+            _ASSERT(m_ModuleContainer != 0);
+            return *m_ModuleContainer;
+        }
+    void SetModuleContainer(const CModuleContainer* container);
+    const TDefinitions& GetDefinitions(void) const
+        {
+            return m_Definitions;
+        }
 
-    string name;
-    TExports exports;
-    TImports imports;
-    TDefinitions definitions;
+    // return type visible from inside, or throw CTypeNotFound if none
+    CDataType* InternalResolve(const string& name) const;
+    // return type visible from outside, or throw CTypeNotFound if none
+    CDataType* ExternalResolve(const string& name,
+                               bool allowInternal = false) const;
 
-    class TypeInfo {
-    public:
-        TypeInfo(const string& n)
-            : name(n), type(0)
-            {
-            }
-        string name;
-        string module;  // non empty for imports
-        ASNType* type;  // non empty for non imports
-    };
+private:
+    bool m_Errors;
+    string m_Name;
 
-    const TypeInfo* FindType(const string& name) const;
-    ASNType* Resolve(const string& name) const;
+    const CModuleContainer* m_ModuleContainer;
 
-    typedef map<string, TypeInfo> TTypes;
-    TTypes types;
+    TExports m_Exports;
+    TImports m_Imports;
+    TDefinitions m_Definitions;
+
+    typedef map<string, CDataType*> TTypesByName;
+    typedef map<string, string> TImportsByName;
+
+    TTypesByName m_LocalTypes;
+    TTypesByName m_ExportedTypes;
+    TImportsByName m_ImportedTypes;
 };
 
 #endif

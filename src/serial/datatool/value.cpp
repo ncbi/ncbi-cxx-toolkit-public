@@ -1,65 +1,81 @@
+#include <corelib/ncbidiag.hpp>
 #include "value.hpp"
-#include "type.hpp"
+//#include "type.hpp"
+#include "module.hpp"
 
 inline
 CNcbiOstream& NewLine(CNcbiOstream& out, int indent)
 {
-    return ASNType::NewLine(out, indent);
+    out << NcbiEndl;
+    for ( int i = 0; i < indent; ++i )
+        out << "  ";
+    return out;
 }
 
-ASNValue::ASNValue(const CFilePosition& pos)
-    : filePos(pos)
+CDataValue::CDataValue(void)
+    : m_Module(0), m_SourceLine(0)
 {
 }
 
-ASNValue::~ASNValue()
+CDataValue::~CDataValue(void)
 {
 }
 
-void ASNValue::Warning(const string& mess) const
+void CDataValue::SetModule(const CDataTypeModule* module)
 {
-    cerr << filePos << ": " << mess << endl;
+    _ASSERT(module != 0);
+    _ASSERT(m_Module == 0);
+    m_Module = module;
 }
 
-ASNNullValue::ASNNullValue(const CFilePosition& pos)
-    : ASNValue(pos)
+const string& CDataValue::GetSourceFileName(void) const
 {
+    _ASSERT(m_Module != 0);
+    return m_Module->GetSourceFileName();
 }
 
-CNcbiOstream& ASNNullValue::Print(CNcbiOstream& out, int )
+void CDataValue::SetSourceLine(int line)
 {
-    return out << "NULL";
+    m_SourceLine = line;
 }
 
-ASNBoolValue::ASNBoolValue(const CFilePosition& pos, bool v)
-    : ASNValue(pos), value(v)
+string CDataValue::LocationString(void) const
 {
+    return GetSourceFileName() + ": " + NStr::IntToString(GetSourceLine());
 }
 
-CNcbiOstream& ASNBoolValue::Print(CNcbiOstream& out, int )
+void CDataValue::Warning(const string& mess) const
 {
-    return out << (value? "TRUE": "FALSE");
+    CNcbiDiag() << LocationString() << ": " << mess;
 }
 
-ASNIntegerValue::ASNIntegerValue(const CFilePosition& pos, int v)
-    : ASNValue(pos), value(v)
+bool CDataValue::IsComplex(void) const
 {
+    return false;
 }
 
-CNcbiOstream& ASNIntegerValue::Print(CNcbiOstream& out, int )
+void CNullDataValue::PrintASN(CNcbiOstream& out, int ) const
 {
-    return out << value;
+    out << "NULL";
 }
 
-ASNStringValue::ASNStringValue(const CFilePosition& pos, const string& v)
-    : ASNValue(pos), value(v)
+template<>
+void CDataValueTmpl<bool>::PrintASN(CNcbiOstream& out, int ) const
 {
+    out << (GetValue()? "TRUE": "FALSE");
 }
 
-CNcbiOstream& ASNStringValue::Print(CNcbiOstream& out, int )
+template<>
+void CDataValueTmpl<long>::PrintASN(CNcbiOstream& out, int ) const
+{
+    out << GetValue();
+}
+
+template<>
+void CDataValueTmpl<string>::PrintASN(CNcbiOstream& out, int ) const
 {
     out << '"';
-    for ( string::const_iterator i = value.begin(), end = value.end();
+    for ( string::const_iterator i = GetValue().begin(), end = GetValue().end();
           i != end; ++i ) {
         char c = *i;
         if ( c == '"' )
@@ -67,70 +83,54 @@ CNcbiOstream& ASNStringValue::Print(CNcbiOstream& out, int )
         else
             out << c;
     }
-    return out << '"';
+    out << '"';
 }
 
-ASNBitStringValue::ASNBitStringValue(const CFilePosition& pos, const string& v)
-    : ASNValue(pos), value(v)
+void CBitStringDataValue::PrintASN(CNcbiOstream& out, int ) const
 {
+    out << GetValue();
 }
 
-CNcbiOstream& ASNBitStringValue::Print(CNcbiOstream& out, int )
+void CIdDataValue::PrintASN(CNcbiOstream& out, int ) const
 {
-    return out << value;
+    out << GetValue();
 }
 
-ASNIdValue::ASNIdValue(const CFilePosition& pos, const string& v)
-    : ASNValue(pos), id(v)
+void CNamedDataValue::PrintASN(CNcbiOstream& out, int indent) const
 {
-}
-
-CNcbiOstream& ASNIdValue::Print(CNcbiOstream& out, int )
-{
-    return out << id;
-}
-
-ASNNamedValue::ASNNamedValue(const CFilePosition& pos)
-    : ASNValue(pos)
-{
-}
-
-ASNNamedValue::ASNNamedValue(const CFilePosition& pos,
-                             const string& n, const AutoPtr<ASNValue>& v)
-    : ASNValue(pos), name(n), value(v)
-{
-}
-
-CNcbiOstream& ASNNamedValue::Print(CNcbiOstream& out, int indent)
-{
-    out << name;
-    if ( dynamic_cast<const ASNNamedValue*>(value.get()) ||
-         dynamic_cast<const ASNBlockValue*>(value.get()) ) {
+    out << GetName();
+    if ( GetValue().IsComplex() ) {
         indent++;
         NewLine(out, indent);
     }
     else {
         out << ' ';
     }
-    return value->Print(out, indent);
+    GetValue().PrintASN(out, indent);
 }
 
-ASNBlockValue::ASNBlockValue(const CFilePosition& pos)
-    : ASNValue(pos)
+bool CNamedDataValue::IsComplex(void) const
 {
+    return true;
 }
 
-CNcbiOstream& ASNBlockValue::Print(CNcbiOstream& out, int indent)
+void CBlockDataValue::PrintASN(CNcbiOstream& out, int indent) const
 {
     out << '{';
     indent++;
-    for ( TValues::const_iterator i = values.begin();
-          i != values.end(); ++i ) {
-        if ( i != values.begin() )
+    for ( TValues::const_iterator i = GetValues().begin();
+          i != GetValues().end(); ++i ) {
+        if ( i != GetValues().begin() )
             out << ',';
         NewLine(out, indent);
-        (*i)->Print(out, indent);
+        (*i)->PrintASN(out, indent);
     }
     NewLine(out, indent - 1);
-    return out << '}';
+    out << '}';
 }
+
+bool CBlockDataValue::IsComplex(void) const
+{
+    return true;
+}
+

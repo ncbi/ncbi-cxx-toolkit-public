@@ -7,38 +7,116 @@
 #include <map>
 #include "autoptr.hpp"
 
-class ASNModule;
-class ASNType;
+class CDataType;
+class CDataTypeModule;
+
+BEGIN_NCBI_SCOPE
+
+class CNcbiRegistry;
+
+END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 
-class CModuleSet : public CTypeMapper
+class CModuleContainer;
+class CModuleSet;
+class CFileSet;
+
+class CModuleContainer
 {
 public:
-    typedef map<string, AutoPtr<ASNModule> > TModules;
-    typedef map<string, const CTypeInfo*> TTypes;
+    typedef map<string, AutoPtr<CDataTypeModule> > TModules;
 
-    CModuleSet(void);
-    virtual ~CModuleSet(void);
+    virtual ~CModuleContainer(void);
 
-    void DumpTypes(CNcbiOstream& out) const;
+    virtual const CNcbiRegistry& GetConfig(void) const = 0;
+    virtual const string& GetSourceFileName(void) const = 0;
+    virtual CDataType* InternalResolve(const string& moduleName,
+                                       const string& typeName) const = 0;
 
-    void SetMainTypes(void);
+    
+};
+
+class CFileSet : public CModuleContainer
+{
+public:
+    typedef list< AutoPtr< CModuleSet > > TModuleSets;
+
+    CFileSet(const CModuleContainer& parent);
+
+    void AddFile(const AutoPtr<CModuleSet>& moduleSet);
+
+    const CNcbiRegistry& GetConfig(void) const;
+    const string& GetSourceFileName(void) const;
+    CDataType* InternalResolve(const string& moduleName,
+                               const string& typeName) const;
+
+    const TModuleSets& GetModuleSets(void) const
+        {
+            return m_ModuleSets;
+        }
+    TModuleSets& GetModuleSets(void)
+        {
+            return m_ModuleSets;
+        }
 
     bool Check(void) const;
+    bool CheckNames(void) const;
 
-    TTypeInfo MapType(const string& name);
+    void PrintASN(CNcbiOstream& out) const;
 
-    // main types
-    TModules modules;
-
-    string rootTypeName;
-
-    ASNType* Resolve(const string& moduleName, const string& typeName) const;
-    ASNType* ResolveFull(const string& fullName) const;
+    CDataType* ExternalResolve(const string& moduleName,
+                               const string& typeName,
+                               bool allowInternal = false) const;
+    CDataType* ResolveInAnyModule(const string& fullName,
+                                  bool allowInternal = false) const;
 
 private:
-    TTypes m_Types;
+    const CModuleContainer& m_Parent;
+    TModuleSets m_ModuleSets;
+};
+
+class CModuleSet : public CModuleContainer
+{
+public:
+    CModuleSet(const string& fileName);
+
+    bool Check(void) const;
+    bool CheckNames(void) const;
+
+    void PrintASN(CNcbiOstream& out) const;
+
+    const CNcbiRegistry& GetConfig(void) const;
+    const string& GetSourceFileName(void) const;
+
+    void AddModule(const AutoPtr<CDataTypeModule>& module);
+
+    const CModuleContainer& GetModuleContainer(void) const
+        {
+            _ASSERT(m_ModuleContainer != 0);
+            return *m_ModuleContainer;
+        }
+
+    const TModules& GetModules(void) const
+        {
+            return m_Modules;
+        }
+
+    CDataType* InternalResolve(const string& moduleName,
+                               const string& typeName) const;
+
+    CDataType* ExternalResolve(const string& moduleName,
+                               const string& typeName,
+                               bool allowInternal = false) const;
+    CDataType* ResolveInAnyModule(const string& fullName,
+                                  bool allowInternal = false) const;
+
+private:
+    TModules m_Modules;
+    string m_SourceFileName;
+    const CFileSet* m_ModuleContainer;
+
+    friend class CFileSet;
 };
 
 #endif

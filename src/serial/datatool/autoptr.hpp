@@ -74,4 +74,9 @@ void Assign(AutoPtr<T1>& t1, const AutoPtr<T2>& t2)
     t1 = t2.release();
 }
 
+#define iterate(Type, Var, Cont) \
+    for ( typename Type::const_iterator Var = Cont.begin(); Var != Cont.end(); ++Var )
+#define non_const_iterate(Type, Var, Cont) \
+    for ( typename Type::iterator Var = Cont.begin(); Var != Cont.end(); ++Var )
+
 #endif

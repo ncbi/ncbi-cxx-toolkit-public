@@ -16,7 +16,7 @@ USING_NCBI_SCOPE;
 
 static void Error(const char* msg, const char* msg2 = "")
 {
-    NcbiCerr << msg << msg2 << endl;
+    NcbiCerr << msg << msg2 << NcbiEndl;
     exit(1);
 }
 
@@ -123,6 +123,8 @@ struct FileInfo {
 
     operator bool(void) const
         { return !name.empty(); }
+    operator const string&(void) const
+        { return name; }
     string name;
     EFileType type;
 };
@@ -131,30 +133,30 @@ typedef pair<AnyType, TTypeInfo> TObject;
 
 static void Help(void)
 {
-    NcbiCout << endl <<
-        "DataTool 1.0 arguments:" << endl <<
-        endl <<
-        "  -m  ASN.1 module file [File In] Optional" << endl <<
-        "  -mx XML module file [File In] Optional" << endl <<
-        "  -M  external ASN.1 module files [File In] Optional" << endl <<
-        "  -Mx external XML module files [File In] Optional" << endl <<
-        "  -f  ASN.1 module file [File Out]  Optional" << endl <<
-        "  -fx XML module file [File Out]  Optional" << endl <<
-        "  -v  Read value in ASN.1 text format [File In]  Optional" << endl <<
-        "  -p  Print value in ASN.1 text format [File Out]  Optional" << endl <<
-        "  -vx Read value in XML format [File In]  Optional" << endl <<
-        "  -px Print value in XML format [File Out]  Optional" << endl <<
-        "  -d  Read value in ASN.1 binary format (type required) [File In]  Optional" << endl <<
-        "  -t  Binary value type [String]  Optional" << endl <<
-        "  -e  Write value in ASN.1 binary format [File Out]  Optional" << endl <<
-        "  -oA generate C++ files for all types Optional" << endl <<
-        "  -ot generate C++ files for listed types [Types] Optional" << endl <<
-        "  -ox exclude listed types from generation [Types] Optional" << endl <<
-        "  -oX exclude all other types from generation Optional" << endl <<
-        "  -od C++ code definition file [File In] Optional" << endl <<
-        "  -oh Directory for generated C++ headers [Directory] Optional" << endl <<
-        "  -oc Directory for generated C++ code [Directory] Optional" << endl <<
-        "  -of File for list of generated C++ files [File Out] Optional" << endl;
+    NcbiCout << NcbiEndl <<
+        "DataTool 1.0 arguments:" << NcbiEndl <<
+        NcbiEndl <<
+        "  -m  ASN.1 module file [File In] Optional" << NcbiEndl <<
+        "  -mx XML module file [File In] Optional" << NcbiEndl <<
+        "  -M  external ASN.1 module files [File In] Optional" << NcbiEndl <<
+        "  -Mx external XML module files [File In] Optional" << NcbiEndl <<
+        "  -f  ASN.1 module file [File Out]  Optional" << NcbiEndl <<
+        "  -fx XML module file [File Out]  Optional" << NcbiEndl <<
+        "  -v  Read value in ASN.1 text format [File In]  Optional" << NcbiEndl <<
+        "  -p  Print value in ASN.1 text format [File Out]  Optional" << NcbiEndl <<
+        "  -vx Read value in XML format [File In]  Optional" << NcbiEndl <<
+        "  -px Print value in XML format [File Out]  Optional" << NcbiEndl <<
+        "  -d  Read value in ASN.1 binary format (type required) [File In]  Optional" << NcbiEndl <<
+        "  -t  Binary value type [String]  Optional" << NcbiEndl <<
+        "  -e  Write value in ASN.1 binary format [File Out]  Optional" << NcbiEndl <<
+        "  -oA generate C++ files for all types Optional" << NcbiEndl <<
+        "  -ot generate C++ files for listed types [Types] Optional" << NcbiEndl <<
+        "  -ox exclude listed types from generation [Types] Optional" << NcbiEndl <<
+        "  -oX exclude all other types from generation Optional" << NcbiEndl <<
+        "  -od C++ code definition file [File In] Optional" << NcbiEndl <<
+        "  -oh Directory for generated C++ headers [Directory] Optional" << NcbiEndl <<
+        "  -oc Directory for generated C++ code [Directory] Optional" << NcbiEndl <<
+        "  -of File for list of generated C++ files [File Out] Optional" << NcbiEndl;
 }
 
 static
@@ -184,9 +186,9 @@ const char* FileOutArgument(const char* arg)
     return StringArgument(arg);
 }
 
-static void LoadDefinition(const FileInfo& file, CModuleSet& types);
-static void StoreDefinition(const CModuleSet& types, const FileInfo& file);
-static TObject LoadValue(CModuleSet& types, const FileInfo& file,
+static void LoadDefinitions(CFileSet& fileSet, const list<FileInfo>& file);
+static void StoreDefinition(const CFileSet& types, const FileInfo& file);
+static TObject LoadValue(CFileSet& types, const FileInfo& file,
                          const string& typeName);
 static void StoreValue(const TObject& object, const FileInfo& file);
 
@@ -239,7 +241,7 @@ int main(int argc, const char*argv[])
 {
     SetDiagStream(&NcbiCerr);
 
-    FileInfo moduleIn;
+    list<FileInfo> mainModules;
     list<FileInfo> importModules;
     FileInfo moduleOut;
     FileInfo dataIn;
@@ -261,7 +263,7 @@ int main(int argc, const char*argv[])
             }
             switch ( arg[1] ) {
             case 'm':
-                GetFileIn(moduleIn, arg, argv[++i]);
+                GetFilesIn(mainModules, arg, argv[++i]);
                 break;
             case 'M':
                 GetFilesIn(importModules, arg, argv[++i]);
@@ -290,27 +292,25 @@ int main(int argc, const char*argv[])
                     generateAllTypes = true;
                     break;
                 case 't':
-                    generator.GetTypes(generator.m_GenerateTypes,
-                                       StringArgument(argv[++i]));
+                    generator.IncludeTypes(StringArgument(argv[++i]));
                     break;
                 case 'x':
-                    generator.GetTypes(generator.m_ExcludeTypes,
-                                       StringArgument(argv[++i]));
+                    generator.ExcludeTypes(StringArgument(argv[++i]));
                     break;
                 case 'X':
-                    generator.m_ExcludeAllTypes = true;
+                    generator.ExcludeRecursion();
                     break;
                 case 'd':
                     generator.LoadConfig(FileInArgument(argv[++i]));
                     break;
                 case 'h':
-                    generator.m_HeadersDir = DirArgument(argv[++i]);
+                    generator.SetHeadersDir(DirArgument(argv[++i]));
                     break;
                 case 'c':
-                    generator.m_SourcesDir = DirArgument(argv[++i]);
+                    generator.SetSourcesDir(DirArgument(argv[++i]));
                     break;
                 case 'f':
-                    generator.m_FileListFileName = FileOutArgument(argv[++i]);
+                    generator.SetFileListFileName(FileOutArgument(argv[++i]));
                     break;
                 default:
                     Error("Invalid argument: ", arg);
@@ -323,36 +323,30 @@ int main(int argc, const char*argv[])
     }
 
     try {
-        if ( !moduleIn )
+        if ( mainModules.empty() )
             Error("Module file not specified");
 
-        LoadDefinition(moduleIn, generator.m_Modules);
+        
+        LoadDefinitions(generator.GetMainModules(), mainModules);
         if ( moduleOut )
-            StoreDefinition(generator.m_Modules, moduleOut);
+            StoreDefinition(generator.GetMainModules(), moduleOut);
 
-        generator.m_Modules.SetMainTypes();
-
-        for ( list<FileInfo>::const_iterator fi = importModules.begin();
-              fi != importModules.end();
-              ++fi ) {
-            LoadDefinition(*fi, generator.m_Modules);
-        }
-        if ( !generator.m_Modules.Check() )
+        LoadDefinitions(generator.GetImportModules(), importModules);
+        if ( !generator.Check() )
             Error("Errors was found...");
     
         if ( generateAllTypes )
-            generator.GetAllTypes();
+            generator.IncludeAllMainTypes();
 
         if ( dataIn ) {
-            TObject object = LoadValue(generator.m_Modules,
+            TObject object = LoadValue(generator.GetMainModules(),
                                        dataIn, dataInTypeName);
             
             if ( dataOut )
                 StoreValue(object, dataOut);
         }
 
-        if ( !generator.m_GenerateTypes.empty() )
-            generator.GenerateCode();
+        generator.GenerateCode();
     }
     catch (exception& e) {
         Error("Error: ", e.what());
@@ -366,42 +360,37 @@ int main(int argc, const char*argv[])
 }
 
 
-void LoadDefinition(const FileInfo& file, CModuleSet& types)
+void LoadDefinitions(CFileSet& fileSet, const list<FileInfo>& names)
 {
-    if ( file.type != eASNText )
-        Error("data definition format not supported");
-
-    SourceFile in(file.name);
-    ASNLexer lexer(in);
-    ASNParser parser(lexer);
-    try {
-        parser.Modules(CFilePosition(file.name), types, types.modules);
-    }
-    catch (...) {
-        NcbiCerr << "Current token: " << parser.Next() << " '" <<
-            lexer.CurrentTokenText() << "'" << endl;
-        NcbiCerr << "Parsing failed" << endl;
-        throw;
+    for ( list<FileInfo>::const_iterator fi = names.begin();
+          fi != names.end(); ++fi ) {
+        const string& name = *fi;
+        if ( fi->type != eASNText ) {
+            ERR_POST("data definition format not supported: " << name);
+            continue;
+        }
+        try {
+            fileSet.AddFile(ASNParser(ASNLexer(SourceFile(name))).Modules(name));
+        }
+        catch (...) {
+            ERR_POST("Parsing failed: " << name);
+        }
     }
 }
 
-void StoreDefinition(const CModuleSet& types, const FileInfo& file)
+void StoreDefinition(const CFileSet& fileSet, const FileInfo& file)
 {
     if ( file.type != eASNText )
         Error("data definition format not supported");
     
-    DestinationFile out(file.name);
-    
-    for ( CModuleSet::TModules::const_iterator i = types.modules.begin();
-          i != types.modules.end(); ++i ) {
-        i->second->Print(out);
-    }
+    DestinationFile out(file);
+    fileSet.PrintASN(out);
 }
 
-TObject LoadValue(CModuleSet& types, const FileInfo& file,
+TObject LoadValue(CFileSet& types, const FileInfo& file,
                   const string& defTypeName)
 {
-    SourceFile in(file.name, file.type == eASNBinary);
+    SourceFile in(file, file.type == eASNBinary);
 
     auto_ptr<CObjectIStream> objIn;
     switch ( file.type ) {
@@ -422,7 +411,7 @@ TObject LoadValue(CModuleSet& types, const FileInfo& file,
         typeName = defTypeName;
     }
     TTypeInfo typeInfo =
-        CTypeRef(new CAnyTypeSource(types.ResolveFull(typeName))).Get();
+        CTypeRef(new CAnyTypeSource(types.ResolveInAnyModule(typeName, true))).Get();
     AnyType value;
     objIn->ReadExternalObject(&value, typeInfo);
     return make_pair(value, typeInfo);
@@ -430,7 +419,7 @@ TObject LoadValue(CModuleSet& types, const FileInfo& file,
 
 void StoreValue(const TObject& object, const FileInfo& file)
 {
-    DestinationFile out(file.name, file.type == eASNBinary);
+    DestinationFile out(file, file.type == eASNBinary);
 
     auto_ptr<CObjectOStream> objOut;
     switch ( file.type ) {

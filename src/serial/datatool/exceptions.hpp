@@ -21,4 +21,13 @@ public:
         }
 };
 
+class CAmbiguiousTypes : public CTypeNotFound
+{
+public:
+    CAmbiguiousTypes(const string& msg)
+        : CTypeNotFound(msg)
+        {
+        }
+};
+
 #endif

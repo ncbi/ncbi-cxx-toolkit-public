@@ -7,8 +7,9 @@
 #################################
 
 APP = datatool
-OBJ = moduleset alexer aparser parser lexer type value module \
-      main generate code typecontext
+OBJ = type statictype enumtype reftype unitype blocktype \
+	value module moduleset generate typestr filecode code \
+	main alexer aparser parser lexer
 LIB = xser xncbi
 
 CPPFLAGS = -I. $(ORIG_CPPFLAGS)
