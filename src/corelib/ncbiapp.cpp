@@ -352,12 +352,14 @@ int CNcbiApplication::AppMain
             }
         }
         catch (CArgHelpException&) {
-            m_ArgDesc->AddOptionalKey(&s_ArgLogFile[1], "File_Name",
-                "File to which the program log will be redirected",
-                CArgDescriptions::eOutputFile);
-            m_ArgDesc->AddOptionalKey(&s_ArgCfgFile[1], "File_Name",
-                "File with the program's configuration (registry) data",
-                CArgDescriptions::eInputFile);
+            if (!m_DisableArgDesc) {
+                m_ArgDesc->AddOptionalKey(&s_ArgLogFile[1], "File_Name",
+                    "File to which the program log will be redirected",
+                    CArgDescriptions::eOutputFile);
+                m_ArgDesc->AddOptionalKey(&s_ArgCfgFile[1], "File_Name",
+                    "File with the program's configuration (registry) data",
+                    CArgDescriptions::eInputFile);
+            }
             // Print USAGE
             string str;
             LOG_POST(string(72, '='));
@@ -634,6 +636,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2002/08/08 13:39:06  gouriano
+ * logfile & conffile-related correction
+ *
  * Revision 1.47  2002/08/02 20:13:06  gouriano
  * added possibility to disable arg descriptions
  *
