@@ -35,7 +35,7 @@ E_LIB     = $(EXPORT)/lib
 E_BIN     = $(EXPORT)/bin
 
 CXX       = /netopt/SUNWspro6/bin/CC
-CPPFLAGS  = -I../include -I$(I_INCLUDE) -D_DEBUG
+CPPFLAGS  = -I../include -I$(I_INCLUDE) -D_DEBUG -DUNIX
 # -DNCBI_USE_NEW_IOSTREAM
 CXXFLAGS  = +w2 -g
 LFLAGS    = -L../src -L$(I_LIB)
