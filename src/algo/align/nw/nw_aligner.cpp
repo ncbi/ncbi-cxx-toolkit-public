@@ -46,13 +46,12 @@ BEGIN_NCBI_SCOPE
 
 
 // Nucleotides: IUPACna coding
-
 static const char nucleotides [] = 
 { 
     // base set
     'A', 'G', 'T', 'C',
 
-    // extensions - ambiguity characters
+    // extension: ambiguity characters
     'B', 'D', 'H', 'K', 
     'M', 'N', 'R', 'S', 
     'V', 'W', 'Y'
@@ -60,10 +59,13 @@ static const char nucleotides [] =
 
 
 // Aminoacids: IUPACaa
-
 static const char aminoacids [] = 
-         { 'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M',
-           'F', 'P', 'S', 'T', 'W', 'Y', 'V', 'B', 'Z', 'X' };
+{ 'A', 'R', 'N', 'D', 'C',
+  'Q', 'E', 'G', 'H', 'I',
+  'L', 'K', 'M', 'F', 'P',
+  'S', 'T', 'W', 'Y', 'V',
+  'B', 'Z', 'X'
+};
 
 
 static const size_t kBlosumSize = sizeof aminoacids;
@@ -110,23 +112,26 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
       m_score(kInfMinus),
       m_prg_callback(0)
 {
-    if(!seq1 || !seq2)
+    if(!seq1 || !seq2) {
         NCBI_THROW(
                    CNWAlignerException,
                    eBadParameter,
                    "NULL sequence pointer(s) passed");
+    }
 
-    if(!len1 || !len2)
+    if(!len1 || !len2) {
         NCBI_THROW(
                    CNWAlignerException,
                    eBadParameter,
                    "Zero length specified for sequence(s)");
+    }
 
-    if(double(len1)*len2 > kMax_UInt)
+    if( double(len1 + 1)*(len2 + 1) > kMax_UInt ) {
         NCBI_THROW(
                    CNWAlignerException,
                    eMemoryLimit,
                    "Memory limit exceeded");
+    }
 
     x_LoadScoringMatrix();
 
@@ -149,7 +154,7 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
             << "scoring matrix type. Symbol " << seq2[iErrPos2] << " at "
             << iErrPos2;
         string message = CNcbiOstrstreamToString(oss);
-        NCBI_THROW(
+        NCBI_THROW (
                    CNWAlignerException,
                    eInvalidCharacter,
                    message );
@@ -867,8 +872,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/03/17 15:31:46  kapustin
+ * Forced conversion to double in memory limit checking to avoid integer overflow
+ *
  * Revision 1.16  2003/03/14 19:18:50  kapustin
- * Add memory limit checking. Fix incorrect seq index references when reporting about incorrect input seq character. Support all characters within IUPACna coding
+ * Add memory limit checking. Fix incorrect seq index references when
+ * reporting about incorrect input seq character. Support all characters
+ * within IUPACna coding
  *
  * Revision 1.15  2003/03/07 13:51:11  kapustin
  * Use zero-based indices to specify seq coordinates in ASN
