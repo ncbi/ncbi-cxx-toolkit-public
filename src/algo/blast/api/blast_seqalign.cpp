@@ -1044,7 +1044,9 @@ BLASTUngappedHspListToSeqAlign(EProgram program,
     /* All HSPs are put in one seqalign, containing a list of 
      * DenseDiag for same molecule search, or StdSeg for translated searches.
     */
-    if (program == eBlastn || program == eBlastp) {
+    if (program == eBlastn || 
+        program == eBlastp ||
+        program == eRPSBlast) {
         for (index=0; index<hsp_list->hspcnt; index++) { 
             BlastHSP* hsp = hsp_array[index];
             retval->SetSegs().SetDendiag().push_back(
@@ -1359,6 +1361,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2004/04/16 14:28:19  papadopo
+* add use of eRPSBlast program
+*
 * Revision 1.36  2004/04/06 20:47:14  dondosha
 * Check if BLASTSeqSrcGetSeqId returns a pointer to CRef instead of a simple pointer to CSeq_id
 *
