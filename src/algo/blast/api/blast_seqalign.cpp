@@ -1126,6 +1126,7 @@ x_GetSequenceLengthAndId(const SSeqLoc* ss,          // [in]
         seqid_wrap = BLASTSeqSrcGetSeqId(seq_src, (void*) &oid);
         if (seqid_wrap && seqid_wrap->choice == BLAST_SEQSRC_CPP_SEQID) {
             *seqid = (CSeq_id*)seqid_wrap->ptr;
+            ListNodeFree(seqid_wrap);
         } else {
             /** FIXME!!! This is wrong, because the id created here will 
                 not be registered! However if sequence source returns a 
@@ -1337,6 +1338,7 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                 subject_loc = (SSeqLoc*) subject_loc_wrap->ptr;
             x_RemapAlignmentCoordinates(hit_align, &query[index], 
                                         subject_loc);
+            ListNodeFree(subject_loc_wrap);
             seq_aligns.Reset(new CSeq_align_set());
             seq_aligns->Set().push_back(hit_align);
         } else {
@@ -1357,6 +1359,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2004/03/23 18:22:06  dondosha
+* Minor memory leak fix
+*
 * Revision 1.33  2004/03/23 14:10:50  camacho
 * Minor doxygen fix
 *
