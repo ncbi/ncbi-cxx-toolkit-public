@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/12 02:00:39  thiessen
+* add basic wxWindows GUI
+*
 * Revision 1.1  2000/07/11 13:49:27  thiessen
 * add modules to parse chemical graph; many improvements
 *
@@ -45,6 +48,7 @@
 
 #include "cn3d/structure_base.hpp"
 #include "cn3d/molecule.hpp"
+#include "cn3d/residue.hpp"
 
 USING_NCBI_SCOPE;
 using namespace objects;

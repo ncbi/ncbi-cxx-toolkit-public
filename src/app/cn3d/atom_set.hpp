@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/12 02:00:39  thiessen
+* add basic wxWindows GUI
+*
 * Revision 1.4  2000/07/11 13:49:25  thiessen
 * add modules to parse chemical graph; many improvements
 *
@@ -113,7 +116,7 @@ private:
     {
         return std::make_pair(moleculeID, std::make_pair(residueID, atomID)); 
     }
-    typedef LIST_TYPE < const Atom *> AtomAltList;
+    typedef LIST_TYPE < const Atom * > AtomAltList;
     typedef std::map < AtomPntrKey, AtomAltList > AtomMap;
     AtomMap atomMap;
 

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/12 02:00:39  thiessen
+* add basic wxWindows GUI
+*
 * Revision 1.1  2000/06/27 20:08:12  thiessen
 * initial checkin
 *
@@ -38,15 +41,80 @@
 #ifndef CN3D_MAIN__HPP
 #define CN3D_MAIN__HPP
 
-#include <corelib/ncbiapp.hpp>
+// For now, this module will contain a simple wxWindows + wxGLCanvas interface
 
-USING_NCBI_SCOPE;
+#include <wx/wx.h>
+#if !wxUSE_GLCANVAS
+#error Please set wxUSE_GLCANVAS to 1 in setup.h.
+#endif
 
-// class CCn3DApp
+#include <wx/glcanvas.h>
+#include <GL/gl.h>
 
-class CCn3DApp : public CNcbiApplication {
+#include "cn3d/structure_set.hpp"
+
+using namespace Cn3D;
+
+class Cn3DMainFrame;
+
+// Define a new application type
+class Cn3DApp: public wxApp
+{
 public:
-    virtual int Run ();
+    bool OnInit(void);
+    Cn3DMainFrame *frame;
+};
+
+class Cn3DGLCanvas: public wxGLCanvas
+{
+public:
+    Cn3DGLCanvas(wxWindow *parent, const wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize, long style = 0, const wxString& name = "Cn3DGLCanvas",
+        int *gl_attrib = NULL);
+    ~Cn3DGLCanvas(void);
+
+    // public data
+    GLfloat xrot, yrot;
+
+    // public methods
+    void OnPaint(wxPaintEvent& event);
+    void OnSize(wxSizeEvent& event);
+    void OnEraseBackground(wxEraseEvent& event);
+    //void OnChar(wxKeyEvent& event);
+    void OnMouseEvent(wxMouseEvent& event);
+
+DECLARE_EVENT_TABLE()
+};
+
+class Cn3DMainFrame: public wxFrame
+{
+public:
+    Cn3DMainFrame(wxFrame *frame, const wxString& title, const wxPoint& pos, const wxSize& size,
+        long style = wxDEFAULT_FRAME_STYLE);
+    ~Cn3DMainFrame();
+
+    // public data
+    StructureSet *structureSet;
+    Cn3DGLCanvas *glCanvas;
+    wxMenuBar *menuBar;
+    wxMenu *menu1;
+
+    // public methods
+    void LoadFile(const char *filename);
+
+    void OnOpen(wxCommandEvent& event);
+    void OnExit(wxCommandEvent& event);
+
+DECLARE_EVENT_TABLE()
+};
+
+/* 
+ * Menu identifiers
+ */
+enum {
+    MENU1_FILE,         // File
+        MID_OPEN,                   // Open
+        MID_EXIT                    // Exit
 };
 
 #endif // CN3D_MAIN__HPP

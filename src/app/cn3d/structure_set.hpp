@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/07/12 02:00:39  thiessen
+* add basic wxWindows GUI
+*
 * Revision 1.6  2000/07/11 13:49:30  thiessen
 * add modules to parse chemical graph; many improvements
 *
@@ -98,6 +101,7 @@ public:
 
     // public data
     const bool isMaster;
+    static const int NO_MMDB_ID;
     int mmdbID;
     std::string pdbID;
 

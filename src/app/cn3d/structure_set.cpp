@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/07/12 02:00:15  thiessen
+* add basic wxWindows GUI
+*
 * Revision 1.6  2000/07/11 13:45:31  thiessen
 * add modules to parse chemical graph; many improvements
 *
@@ -108,39 +111,41 @@ bool StructureSet::Draw(void) const
     return true;
 }
 
+const int StructureObject::NO_MMDB_ID = -1;
+
 StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostruc, bool master) :
-    StructureBase(parent), isMaster(master), 
-    mmdbID(-1), pdbID("(unknown)")
+    StructureBase(parent), isMaster(master), mmdbID(NO_MMDB_ID)
 {
     // get MMDB id
-    const CBiostruc_id& id = biostruc.GetId().front().GetObject();
-    if (id.IsMmdb_id())
-        mmdbID = id.GetMmdb_id().Get();
-    else
-        ERR_POST(Warning << "expecting MMDB ID as first id item in biostruc");
+    CBiostruc::TId::const_iterator j, je=biostruc.GetId().end();
+    for (j=biostruc.GetId().begin(); j!=je; j++) {
+        if ((*j).GetObject().IsMmdb_id()) {
+            mmdbID = (*j).GetObject().GetMmdb_id().Get();
+            break;
+        }
+    }
     TESTMSG("MMDB id " << mmdbID);
 
     // get PDB id
     if (biostruc.IsSetDescr()) {
-        const CBiostruc_descr& descr = biostruc.GetDescr().front().GetObject();
-        if (descr.IsName())
-            pdbID = descr.GetName();
-        else
-            ERR_POST(Warning << "biostruc " << mmdbID
-                        << ": expecting PDB name as first descr item");
+        CBiostruc::TDescr::const_iterator k, ke=biostruc.GetDescr().end();
+        for (k=biostruc.GetDescr().begin(); k!=ke; k++) {
+            if ((*k).GetObject().IsName()) {
+                pdbID = (*k).GetObject().GetName();
+                break;
+            }
+        }
     }
     TESTMSG("PDB id " << pdbID);
 
     // get atom and feature spatial coordinates
     if (biostruc.IsSetModel()) {
-
         // iterate SEQUENCE OF Biostruc-model
         CBiostruc::TModel::const_iterator i, ie=biostruc.GetModel().end();
         for (i=biostruc.GetModel().begin(); i!=ie; i++) {
-            const CBiostruc_model& models = (*i).GetObject();
-            if (models.IsSetModel_coordinates()) {
+            if ((*i).GetObject().IsSetModel_coordinates()) {
                 CoordSet *coordSet =
-                    new CoordSet(this, models.GetModel_coordinates());
+                    new CoordSet(this, (*i).GetObject().GetModel_coordinates());
                 coordSets.push_back(coordSet);
             }
         }
