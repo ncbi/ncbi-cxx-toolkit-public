@@ -235,7 +235,8 @@ static size_t s_NumAuthors(const CCit_book::TAuthors& authors)
 
 
 void CFlatItemFormatter::x_FormatRefJournal
-(string& journal, const CReferenceItem& ref) const
+(string& journal,
+ const CReferenceItem& ref) const
 {
     if ( ref.GetBook() == 0 ) {  // not from a book
         
@@ -270,7 +271,10 @@ void CFlatItemFormatter::x_FormatRefJournal
         default:
             break;
         }
-        
+        if ( ref.GetPrepub() == CImprint::ePrepub_in_press ) {
+            journal += " In press";
+        }
+
         if ( journal.empty() ) {
             journal = "Unpublished";
         }
@@ -330,8 +334,7 @@ void CFlatItemFormatter::x_FormatRefJournal
 
             jour << year;
 
-            if ( imp.CanGetPrepub()  &&
-                 imp.GetPrepub() == CImprint::ePrepub_in_press ) {
+            if ( ref.GetPrepub() == CImprint::ePrepub_in_press ) {
                 jour << " In press";
             }
 
@@ -369,6 +372,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/04/27 15:12:50  shomrat
+* fixed Journal formatting
+*
 * Revision 1.8  2004/04/22 16:00:58  shomrat
 * Changes in context
 *
