@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/08/15 20:27:14  juran
+* Convert native pathnames to unix-style for include directives.
+*
 * Revision 1.26  2001/01/05 20:10:57  vasilche
 * CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
 * were moved to util.
@@ -215,7 +218,7 @@ string CFileCode::Include(const string& s) const
     case '"':
         return s;
     default:
-        return '<' + s + ".hpp>";
+        return '<' + GetStdPath(s) + ".hpp>";
     }
 }
 
@@ -479,7 +482,7 @@ void CFileCode::GenerateCPP(const string& path) const
         "#include <serial/serialimpl.hpp>\n"
         "\n"
         "// generated includes\n"
-        "#include <" << GetUserHPPName() << ">\n";
+        "#include <" << GetStdPath(GetUserHPPName()) << ">\n";
 
     if ( !m_CPPIncludes.empty() ) {
         iterate ( TIncludes, i, m_CPPIncludes ) {
@@ -699,7 +702,7 @@ void CFileCode::GenerateUserHPPCode(CNcbiOstream& header) const
     header <<
         "\n"
         "// generated includes\n"
-        "#include <" << GetBaseHPPName() << ">\n";
+        "#include <" << GetStdPath(GetBaseHPPName()) << ">\n";
     
     CNamespace ns;
     if ( !m_Classes.empty() ) {
@@ -726,7 +729,7 @@ void CFileCode::GenerateUserCPPCode(CNcbiOstream& code) const
         "// standard includes\n"
         "\n"
         "// generated includes\n"
-        "#include <" << GetUserHPPName() << ">\n";
+        "#include <" << GetStdPath(GetUserHPPName()) << ">\n";
 
     CNamespace ns;
     if ( !m_Classes.empty() ) {
