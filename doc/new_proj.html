@@ -18,7 +18,7 @@
 		  Project makefiles and sub-projects</a>
 	 <ul>
 		<li> <a href="#ref_MakeMeta">
-		  Meta-makefiles (to provide multiple and/or recursive builds)</a>
+		  <i>Meta-makefiles</i> (to provide multiple and/or recursive builds)</a>
 		<li> <a href="#ref_MakeProj">
 		  Project makefiles (to build a particular library or application)</a>
 	   <ul>
@@ -77,17 +77,25 @@ cvs checkout -d c++ internal/c++
 		that provide both local and recursive builds
 	   <li> <b><i>Makefile.lib.in</i></b> -- to be included to all makefiles
 		that perform a "standard" library build
+	   <li> <b><i>Makefile.lib.tmpl.in</i></b> -- serve as a template for the
+		project <i>customized makefiles</i> (<b><i>Makefile.*.lib[.in]</i></b>) that perform
+      a "standard" library build
 	   <li> <b><i>Makefile.app.in</i></b> -- to be included to all makefiles
 		that perform a "standard" application build
+	   <li> <b><i>Makefile.lib.tmpl.in</i></b> -- serve as a template for the
+		project <i>customized makefiles</i> (<b><i>Makefile.*.app[.in]</i></b>) that perform
+      a "standard" application build
 		<p>
 	 </ul>
 	 <li> Project directories, each contains:
 	 <ul>
 		<li> <b><i>*.cpp</i></b> -- project source files
 		<li> <b><i>*.hpp, *.inl</i></b> -- project internal header files
-		<li> <b><i>Makefile.*.in</i></b> -- project library and application makefiles
+		<li> <b><i>Makefile.*[.in]</i></b> -- library and application makefiles
+		<li> <b><i>Makefile.*.lib[.in], Makefile.*.app[.in]</i></b> --
+		<i>customized makefiles</i> to build a library or an application
 		<li> <b><i>Makefile.in</i></b> -- a
-		<a href="#ref_MakeMeta">meta-makefile</a>
+		<a href="#ref_MakeMeta"><i>meta-makefile</i></a>
       that directs which local projects (described in <i>Makefile.*.in</i>)
       and sub-projects (located in the project subdirectories) must be built
 		<li> sub-project directories (if any)
@@ -113,8 +121,8 @@ cd foo/c++/src     && mkdir bar_proj && cvs add -m "Project Bar" bar_proj
 	 files in there.
 
 	 <p>
-	 NOTE: remember to add this new project directory to <i>$(SUBPROJ)</i>
-	 list of the upper level meta-makefile <b><i>"Makefile.in"</i></b> template
+	 NOTE: remember to add this new project directory to <i>$(SUB_PROJ)</i>
+	 list of the upper level <i>meta-makefile</i> <b><i>"Makefile.in"</i></b> template
 	 (e.g., for this particular case, to <b><i>"foo/c++/src/Makefile.in"</i></b>).
 
 
@@ -126,48 +134,65 @@ cd foo/c++/src     && mkdir bar_proj && cvs add -m "Project Bar" bar_proj
 	 <h3><i>Meta-makefiles (to provide multiple and/or recursive builds)</i></h3></a>
 
 	 All projects from the NCBI C++ hierarchy are tied together with a
-	 set of "meta-makefiles" that provide a uniform and easy way to perform
+	 set of <i>meta-makefiles</i> that provide a uniform and easy way to perform
 	 both local and recursive build. 
 
-	 A typical "meta-makefile" template(e.g. "Makefile.in" in the
+	 A typical <i>meta-makefile</i> template(e.g. "Makefile.in" in the
 	 <b><i>foo/c++/src/bar_proj/</i></b> dir) looks like that:
 <pre>
-PROJECT = bar_proj1 bar_proj2 .....
-SUBPROJ = bar_test bar_sub_proj1 .....
+LIB_PROJ = bar_l1 bar_l2 ...  # Makefile.bar_l1.lib Makefile.bar_l1.lib ...
+APP_PROJ = bar_a1 bar_l2 ...  # Makefile.bar_a1.app Makefile.bar_a1.app ...
+USR_PROJ = bar_u1 bar_u2 ...  # Makefile.bar_u1 Makefile.bar_u1 ...
+SUB_PROJ = app sub_proj1 sub_proj2
+
+srcdir = @srcdir@
 include @builddir@/Makefile.meta
 </pre> 
-	 The mandatory "include @builddir@/Makefile.meta" provides the rules
-	 for the following standard targets:
+	 The mandatory <i>"srcdir = @srcdir@ ; include @builddir@/Makefile.meta"</i>
+	 provide the rules for the following standard targets:
 	 <ul>
-		<li> <b>all</b> -- run <i>"make  -f {Makefile.*} all"</i>, for <i>Makefiles</i> with
-		the suffixes enlisted in <i>$(PROJECT)</i>:
-	 <pre>
-make -f Makefile.bar_proj1 all
-make -f Makefile.bar_proj2 all
+		<li> <a href="#ref_MakeProjTarget"><b>all</b></a>:
+		<ul>
+		  <li> build library(ies) using attributes defined in the
+		  <i>customized makefiles</i> <b>Makefile.*.lib</b> with the suffixes
+        enlisted in macro <b>LIB_PROJ</b>
+		  <li> build application(s) using attributes defined in the
+		  <i>customized makefiles</i> <b>Makefile.*.app</b> with the suffixes
+        enlisted in macro <b>APP_PROJ</b>
+		  <li> run <i>"make  -f {Makefile.*} all"</i> for the makefiles with
+		  the suffixes enlisted in macro <b>USR_PROJ</b>:
+	     <pre>
+make -f Makefile.bar_u1 all
+make -f Makefile.bar_u2 all
 ......
-	 </pre>
-	 <li> <b>all_r</b> -- first do target <b>"all"</b>, then run <i>"make  all_r"</i>
-	 in all subdirectories enlisted in <i>$(SUBPROJ)</i>:
+	     </pre>
+      </ul>
+	 <li> <a href="#ref_MakeProjTarget"><b>all_r</b></a> --
+	 first do target <b>"all"</b>, then run <i>"make  all_r"</i>
+	 in all subdirectories enlisted in <i>$(SUB_PROJ)</i>:
 	 <pre>
 cd bar_test       &&  make -f Makefile all_r
-cd bar_sub_proj1  &&  make -f Makefile.bar_proj2 all_r
+cd bar_sub_proj1  &&  make -f Makefile all_r
 ......
 	 </pre>
-	 <li> <b>clean, clean_r</b> -- just the same, but with targets <b>"clean"</b>
-	 and <b>"clean_r"</b>, respectively
-	 <li> <b>purge, purge_r</b> -- just the same, but with targets <b>"purge"</b>
-	 and <b>"purge_r"</b>, respectively </ul>
+	 <li> <a href="#ref_MakeProjTarget"><b>clean, clean_r</b></a> --
+	 just the same, but with targets <b>"clean"</b> and <b>"clean_r"</b>, respectively
+	 <li> <a href="#ref_MakeProjTarget"><b>purge, purge_r</b></a> --
+	 just the same, but with targets <b>"purge"</b> and <b>"purge_r"</b>,
+	 respectively
+    </ul>
 
 
 	 <a name="ref_MakeProj">
 	 <h3><i>Project makefiles (to build a particular library or application)</i></h3></a>
 
 	 Just like <b><i>"Makefile.meta.in"</i></b> template is used to ease and
-	 standatize the writing of meta-makefiles, so there are templates
+	 standatize the writing of <i>meta-makefiles</i>, so there are templates
 	 to help in the creation of "regular" project makefiles to build
 	 a library or an application. These auxiliary template makefiles
-	 are <b><i>"Makefile.mk.in"</i></b>, <b><i>"Makefile.lib.in"</i></b> and
-	 <b><i>"Makefile.app.in"</i></b>. The <b><i>configure</i></b>'d versions of
+	 are <b><i>"Makefile.mk.in"</i></b>, <b><i>"Makefile.lib.in"</i></b>,
+	 <b><i>"Makefile.app.in"</i></b>, <b><i>"Makefile.lib.tmpl.in"</i></b> and
+	 <b><i>"Makefile.app.tmpl.in"</i></b>. The <b><i>configure</i></b>'d versions of
     them are located in the very top of a <i>build tree</i>.
 
 	 <a name="ref_MakeProjMk">
@@ -188,27 +213,40 @@ cd bar_sub_proj1  &&  make -f Makefile.bar_proj2 all_r
 	 <a name="ref_MakeProjLib">
 	 <h4><i>Customized makefile to build a library</i></h4></a>
 
-	 Here is an example of customized makefile that uses
+	 Here is an example of a user makefile (enlisted in the <b>USR_PROJ</b>
+	 macro of relevant <i>meta-makefile</i>). It uses
 	 <b><i>"Makefile.mk"</i></b> and <b><i>"Makefile.lib"</i></b> templates to build
-	 a library(it also illustrates how to alternate macro <b>CXXFLAGS</b>):
+	 a library; it also illustrates how to alternate macro <b>CXXFLAGS</b>
+	 originally defined in <b><i>"Makefile.mk"</i></b>:
 
 	 <pre>
 srcdir = @srcdir@
 include @builddir@/Makefile.mk
 
-LIB     = p1
-OBJ     = p1_src1 p1_src2
+LIB      = p1
+OBJ      = p1_src1 p1_src2
 CXXFLAGS = -g $(ORIG_CXXFLAGS) -D_DEBUG -DXYZ_P1_PROJECT
 
 include @builddir@/Makefile.lib
 	 </pre>
 
+	 And this is an example of a <i>customized makefile</i> (enlisted in the
+	 <b>LIB_PROJ</b> macro of relevant <i>meta-makefile</i>) doing just the same:
+
+	 <pre>
+LIB      = p1
+OBJ      = p1_src1 p1_src2
+CXXFLAGS = -g $(ORIG_CXXFLAGS) -D_DEBUG -DXYZ_P1_PROJECT
+	 </pre>
+
 	 <a name="ref_MakeProjApp">
 	 <h4><i>Customized makefile to build an application</i></h4></a>
 
-	 Here is an example of customized makefile that uses
+	 Here is an example of a user makefile (enlisted in the <b>USR_PROJ</b>
+	 macro of relevant <i>meta-makefile</i>). It uses
 	 <b><i>"Makefile.mk"</i></b> and <b><i>"Makefile.app"</i></b> templates to build
-	 an application(it also illustrates how to alternate macro <b>CPPFLAGS</b>):
+	 an application; it also illustrates how to alternate macro <b>CPPFLAGS</b>
+	 originally defined in <b><i>"Makefile.mk"</i></b>:
 
 	 <pre>
 srcdir = @srcdir@
@@ -221,6 +259,17 @@ CPPFLAGS = $(ORIG_CPPFLAGS) -DXYZ_MY_APP
 
 include @builddir@/Makefile.app
 	 </pre>
+
+	 And this is an example of a <i>customized makefile</i> (enlisted in the
+	 <b>APP_PROJ</b> macro of relevant <i>meta-makefile</i>) doing just the same:
+
+	 <pre>
+APP = my_app
+OBJ = my_main my_obj1 my_obj2
+LIB = foo bar
+CPPFLAGS = $(ORIG_CPPFLAGS) -DXYZ_MY_APP
+	 </pre>
+
 
 	 <br></br>
 	 <a name="ref_MakeProjTarget">
@@ -241,7 +290,7 @@ include @builddir@/Makefile.app
 	 The recursive targets <b>all_r, clean_r, purge_r</b> gets processed exactly like
 	 <b>all, clean, purge</b>, with no recursion, etc. -- as the
     recursion and multiple build is entirely up to the
-	 <a href="#ref_MakeMeta">meta-makefiles</a>.
+	 <a href="#ref_MakeMeta"><i>meta-makefiles</i></a>.
 
 
 	 <br></br>
