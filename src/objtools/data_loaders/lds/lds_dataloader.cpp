@@ -63,9 +63,28 @@ private:
     int    m_RecId;
 };
 
+/// @internal
+///
+struct SLDS_ObjectDisposition
+{
+    SLDS_ObjectDisposition(int object, int parent, int tse)
+      : object_id(object), parent_id(parent), tse_id(tse)
+    {}
 
+    int     object_id;
+    int     parent_id;
+    int     tse_id;
+};
+
+/// Objects scanner
+///
+/// @internal
+///
 class CLDS_FindSeqIdFunc
 {
+public:
+    typedef vector<SLDS_ObjectDisposition>  TDisposition;
+
 public:
     CLDS_FindSeqIdFunc(SLDS_TablesCollection& db,
                        const CHandleRangeMap&  hrmap)
@@ -78,7 +97,9 @@ public:
         if (dbf.primary_seqid.IsNull())
             return;
         int object_id = dbf.object_id;
-        int tse_id = dbf.TSE_object_id;
+        int parent_id = dbf.parent_object_id;
+        int tse_id    = dbf.TSE_object_id;
+
 
         string seq_id_str = (const char*)dbf.primary_seqid;
         if (seq_id_str.empty())
@@ -96,7 +117,8 @@ public:
                 CSeq_id_Handle seq_id_hnd = it->first;
                 CConstRef<CSeq_id> seq_id = seq_id_hnd.GetSeqId();
                 if (seq_id->Match(seq_id_db)) {
-                    m_ids.insert(tse_id ? tse_id : object_id);
+                    m_Disposition.push_back(
+                        SLDS_ObjectDisposition(object_id, parent_id, tse_id));
                     return;
                 }
             } // ITERATE
@@ -141,7 +163,8 @@ public:
                 CConstRef<CSeq_id> seq_id = seq_id_hnd.GetSeqId();
 
                 if (seq_id->Match(seq_id_db)) {
-                    m_ids.insert(tse_id ? tse_id : object_id);
+                    m_Disposition.push_back(
+                        SLDS_ObjectDisposition(object_id, parent_id, tse_id));
                     return;
                 }
             } // ITERATE
@@ -151,12 +174,14 @@ public:
         } // ITERATE
     }
 
-    CLDS_Set& GetIds() { return m_ids; }
-
+    const TDisposition& GetResultDisposition() const 
+    {
+        return m_Disposition;
+    }
 private:
-    const CHandleRangeMap&  m_HrMap;  // Range map of seq ids to search
-    SLDS_TablesCollection&  m_db;     // The LDS database
-    CLDS_Set                m_ids;    // TSE results, found
+    const CHandleRangeMap&  m_HrMap;        ///< Range map of seq ids to search
+    SLDS_TablesCollection&  m_db;          ///< The LDS database
+    TDisposition            m_Disposition; ///< Search result (found objects)
 };
 
 
@@ -288,22 +313,53 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
 
     BDB_iterate_file(db.object_db, search_func);
 
-    const CLDS_Set& ids = search_func.GetIds();
+    const CLDS_FindSeqIdFunc::TDisposition& disposition = 
+                                        search_func.GetResultDisposition();
 
     CDataSource* data_source = GetDataSource();
     _ASSERT(data_source);
 
-    CLDS_Set::const_iterator it;
-    for (it = ids.begin(); it != ids.end(); ++it) {
-        int object_id = *it;
+    CLDS_FindSeqIdFunc::TDisposition::const_iterator it;
+    for (it = disposition.begin(); it != disposition.end(); ++it) {
+        const SLDS_ObjectDisposition& obj_disp = *it;
 
-        if (LDS_SetTest(m_LoadedObjects, object_id)) {
-            // Object has already been loaded. Ignore.
+        if (LDS_SetTest(m_LoadedObjects, obj_disp.object_id) ||
+            LDS_SetTest(m_LoadedObjects, obj_disp.parent_id) ||
+            LDS_SetTest(m_LoadedObjects, obj_disp.tse_id)
+           ) {
+            // Object or its parent has already been loaded. Ignore.
             continue;
         }
 
+        int object_id = 
+            obj_disp.tse_id ? obj_disp.tse_id : obj_disp.object_id;
+
+
+        // check if we can extract seq-entry out of binary bioseq-set file
+        //
+        //   (this trick has been added by kuznets (Jan-12-2005) to read 
+        //    molecules out of huge refseq files)
+        {
+            CLDS_Query query(db);
+            CLDS_Query::SObjectDescr obj_descr = 
+                query.GetObjectDescr(
+                                 m_LDS_db->GetObjTypeMap(),
+                                 obj_disp.tse_id, false/*do not trace to top*/);
+            if ((obj_descr.is_object && obj_descr.id > 0)      &&
+                (obj_descr.format == CFormatGuess::eBinaryASN) &&
+                (obj_descr.type_str == "Bioseq-set")
+               ) {
+               obj_descr = 
+                    query.GetTopSeqEntry(m_LDS_db->GetObjTypeMap(),
+                                         obj_disp.object_id);
+               object_id = obj_descr.id;
+            }
+        }
+
+
         CRef<CSeq_entry> seq_entry = 
-            LDS_LoadTSE(db, m_LDS_db->GetObjTypeMap(), object_id);
+            LDS_LoadTSE(db, m_LDS_db->GetObjTypeMap(), 
+                        object_id, false/*dont trace to top*/);
 
         if (seq_entry) {
             CConstRef<CObject> blob_id(new CLDS_BlobId(object_id));
@@ -425,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/01/13 17:52:16  kuznets
+ * Tweak dataloader to read seq entries out of large binary ASN bioseq-sets
+ *
  * Revision 1.24  2005/01/12 15:55:38  vasilche
  * Use correct constructor of CTSE_Info (detected by new bool operator).
  *
