@@ -142,5 +142,5 @@ else
 fi
 
 # run command
-echo $MAKE -f "$makemodule" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT=$imports" "IMPDEPS=$impdeps" "top_srcdir=$p" "DATATOOL=$datatool" "MODULE_SEARCH=$search" "$@"
+echo $MAKE -f "$makemodule" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT='$imports'" "IMPDEPS='$impdeps'" "top_srcdir=$p" "DATATOOL=$datatool" "MODULE_SEARCH=$search" "$@"
 $MAKE -f "$makemodule" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT=$imports" "IMPDEPS=$impdeps" "top_srcdir=$p" "DATATOOL=$datatool" "MODULE_SEARCH=$search" "$@"
