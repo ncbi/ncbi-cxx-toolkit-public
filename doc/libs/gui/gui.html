@@ -1,10 +1,22 @@
+<!-- $Id$ -->
 <!--#set var="TITLE" value="NCBI C++ CGI library" -->
-<!--#set var="DOCROOT" value=".." -->
-<!--#include virtual="../ssi/header.shtml" -->
+<!--#set var="DOCROOT" value="../.." -->
+<!--#include virtual="../../ssi/header.shtml" -->
 
 <b><font FACE="Arial" SIZE=4><p>NCBI C++ GUI Development</p>
 </b></font>
 <p>Last Revision: 24 Sep 2002</p>
+
+<p>
+We have decided to use <a href="http://www.fltk.org/documentation.php">FLTK</a>
+and <a href="http://www.opengl.org/">OpenGL</a> for our GUI needs.
+
+<p>
+Presently, we use FLTK Release 1.1. Internal developers can use pre-built FLTK
+from <i>$NCBI/fltk/</i> on UNIX platforms, and from <i>\\DISSY\public\fltk\</i>
+on MS-Windows. Its full source archive is available internally at
+<i>$NCBI/fltk/share/src/fltk-1.1.0-source.tar.bz2</i>.
+
 
 <p>&nbsp;</p>
 <p>GUI part of the NCBI C++ Toolkit defines its own namespace: "gui". GUI namespace will also include NCBI namespace. In your code use BEGIN_GUI_SCOPE and END_GUI_SCOPE when working on GUI projects</p>
@@ -22,5 +34,5 @@
 
 
 
-<!--#include virtual="../ssi/navlinks.shtml" -->
-<!--#include virtual="../ssi/footer.shtml" -->
+<!--#include virtual="../../ssi/navlinks.shtml" -->
+<!--#include virtual="../../ssi/footer.shtml" -->
