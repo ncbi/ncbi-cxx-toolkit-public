@@ -37,6 +37,10 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbiapp.hpp>
 
+#if defined(NCBI_OS_MAC) || (defined(NCBI_OS_DARWIN)  && defined(NCBI_COMPILER_METROWERKS))
+#include <Processes.h>
+#include <Files.h>
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -165,17 +169,46 @@ int CNcbiApplication::AppMain
     // Get program name
     string appname = name;
     if (appname.empty()) {
+#if defined(NCBI_OS_DARWIN)  && defined(NCBI_COMPILER_METROWERKS)
+        OSErr               err;
+        ProcessSerialNumber psn;
+        FSRef               fsRef;
+        char                filePath[1024];
+        
+        err = GetCurrentProcess (&psn);
+        if (err == noErr) {
+            err = GetProcessBundleLocation (&psn, &fsRef);
+            if (err == noErr) {
+                err = FSRefMakePath (&fsRef, (UInt8 *) filePath, 1024);
+            }
+        }        
+        if (err == noErr)
+        {
+            char    *extp;
+            /* strip .app extension */
+            if (NULL != (extp = strrchr(filePath, '.'))) {
+                if (strcmp(extp, ".app") == 0) {
+                    *extp = '\0';
+                }
+            }
+            appname = filePath;
+        }
+        else
+            appname = "ncbi";
+
+#else
         if (argc > 0  &&  argv[0] != NULL  &&  *argv[0] != '\0') {
             appname = argv[0];
         } else {
             appname = "ncbi";
         }
+#endif
     }
 
     // We do not know standard way of passing arguments to C++ program on Mac,
     // so we will read arguments from special file having extension ".args"
     // and name equal to name of program (name argument of AppMain).
-#if defined(NCBI_OS_MAC)
+#if defined(NCBI_OS_MAC) || (defined(NCBI_OS_DARWIN)  && defined(NCBI_COMPILER_METROWERKS))
 #  define MAX_ARGC 256
 #  define MAX_ARG_LEN 1024
     if (argc <= 1) {
@@ -689,6 +722,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2003/03/13 22:04:27  rsmith
+ * Changes to AppMain so MacOSX can find out the appname and arguments.
+ *
  * Revision 1.52  2003/02/17 06:30:05  vakatov
  * Get rid of an unused variable
  *
