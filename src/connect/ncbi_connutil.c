@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2001/01/11 23:07:08  lavr
+ * ConnNetInfo_Print() prints user-header 'as is'; pretty-printing undone
+ *
  * Revision 6.12  2001/01/08 23:46:27  lavr
  * REQUEST_METHOD -> REQ_METHOD to be consistent with SConnNetInfo
  *
@@ -315,18 +318,7 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 
 
 static void s_PrintString(FILE* fp, const char* name, const char* str) {
-    if ( str ) {
-        size_t i, n = strlen(str);
-        fprintf(fp, "%-16.16s: \"", name);
-        for (i = 0; i < n; i++)
-            if (str[i] != '\n') {
-                if (str[i] != '\r')
-                    fputc(str[i], fp);
-            } else if (i != n - 1)
-                fprintf(fp, "\n%16c:  ", ' ');
-        fprintf(fp, "\"\n");
-    } else
-        fprintf(fp, "%-16.16s: <NULL>\n", name);
+    fprintf(fp, "%-16.16s: \"%s\"\n", name, str ? str : "<NULL>");
 }
 static void s_PrintULong(FILE* fp, const char* name, unsigned long lll) {
     fprintf(fp, "%-16.16s: %lu\n", name, lll);
