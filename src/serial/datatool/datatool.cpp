@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/03/10 17:59:31  vasilche
+* Fixed error reporting.
+*
 * Revision 1.26  2000/02/01 21:48:01  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -106,7 +109,7 @@ static void Help(void)
         "  -p <file>    write value in ASN.1 text format (optional)\n"
         "  -vx <file>   read value in XML format (optional)\n"
         "  -px <file>   write value in XML format (optional)\n"
-        "  -d <file>    read value in ASN.1 binary format (type required) (optianal)\n"
+        "  -d <file>    read value in ASN.1 binary format (type required) (optional)\n"
         "  -t <type>    binary value type (optional)\n"
         "  -e <file>    write value in ASN.1 binary format (optional)\n" <<
         NcbiFlush;
