@@ -574,88 +574,88 @@ BlastnWordUngappedExtend(BLAST_SequenceBlk* query,
 	Int2 remainder, base;
 	Int4 q_avail, s_avail;
 
-        base = 3 - (s_off % 4);
+   base = 3 - (s_off % 4);
 
 	subject0 = subject->sequence;
-        q_avail = query->length - q_off;
-        s_avail = subject->length - s_off;
+   q_avail = query->length - q_off;
+   s_avail = subject->length - s_off;
 
 	q = q_beg = q_end = query->sequence + q_off;
 	s = s_end = subject0 + s_off/COMPRESSION_RATIO;
 	if (q_off < s_off) {
-           start = subject0 + (s_off-q_off)/COMPRESSION_RATIO;
-           remainder = 3 - ((s_off-q_off)%COMPRESSION_RATIO);
+      start = subject0 + (s_off-q_off)/COMPRESSION_RATIO;
+      remainder = 3 - ((s_off-q_off)%COMPRESSION_RATIO);
 	} else {
-           start = subject0;
-           remainder = 3;
+      start = subject0;
+      remainder = 3;
 	}
 
 	/* Find where positive scoring starts & ends within the word hit */
 	score = 0;
-        sum = 0;
+   sum = 0;
 
 	/* extend to the left */
 	do {
-           if (base == 3) {
-              s--;
-              base = 0;
-           } else
-              base++;
-           ch = *s;
-           if ((sum += matrix[*--q][READDB_UNPACK_BASE_N(ch, base)]) > 0) {
-              q_beg = q;
-              score += sum;
-              sum = 0;
-           } else if (sum < X)
-              break;
+      if (base == 3) {
+         s--;
+         base = 0;
+      } else
+         base++;
+      ch = *s;
+      if ((sum += matrix[*--q][READDB_UNPACK_BASE_N(ch, base)]) > 0) {
+         q_beg = q;
+         score += sum;
+         sum = 0;
+      } else if (sum < X)
+         break;
 	} while ((s > start) || (s == start && base < remainder));
-
-        if (score >= cutoff && !ungapped_data) 
-           return FALSE;
-
+   
+   if (score >= cutoff && !ungapped_data) 
+      return FALSE;
+   
 	if (ungapped_data) {
-           *ungapped_data = (BlastUngappedData*) 
-              malloc(sizeof(BlastUngappedData));
+      *ungapped_data = (BlastUngappedData*) 
+         malloc(sizeof(BlastUngappedData));
 	   (*ungapped_data)->q_start = q_beg - query->sequence;
 	   (*ungapped_data)->s_start = 
 	      s_off - (q_off - (*ungapped_data)->q_start);
 	}
 
-        if (q_avail < s_avail) {
-           sf = subject0 + (s_off + q_avail)/COMPRESSION_RATIO;
-           remainder = 3 - ((s_off + q_avail)%COMPRESSION_RATIO);
-        } else {
-           sf = subject0 + (subject->length)/COMPRESSION_RATIO;
-           remainder = 3 - ((subject->length)%COMPRESSION_RATIO);
-        }
+   if (q_avail < s_avail) {
+      sf = subject0 + (s_off + q_avail)/COMPRESSION_RATIO;
+      remainder = 3 - ((s_off + q_avail)%COMPRESSION_RATIO);
+   } else {
+      sf = subject0 + (subject->length)/COMPRESSION_RATIO;
+      remainder = 3 - ((subject->length)%COMPRESSION_RATIO);
+   }
 	/* extend to the right */
 	q = q_end;
 	s = s_end;
 	sum = 0;
-        base = 3 - (s_off % COMPRESSION_RATIO);
+   base = 3 - (s_off % COMPRESSION_RATIO);
 
-	while (s < sf || (s == sf && base >= remainder)) {
-           ch = *s;
-           if ((sum += matrix[*q++][READDB_UNPACK_BASE_N(ch, base)]) > 0) {
-              q_end = q;
-              score += sum;
-              sum = 0;
-           } else if (sum < X)
-              break;
-           if (base == 0) {
-              base = 3;
-              s++;
-           } else
-              base--;
+	while (s < sf || (s == sf && base > remainder)) {
+      ch = *s;
+      if ((sum += matrix[*q++][READDB_UNPACK_BASE_N(ch, base)]) > 0) {
+         q_end = q;
+         score += sum;
+         sum = 0;
+      } else if (sum < X)
+         break;
+      if (base == 0) {
+         base = 3;
+         s++;
+      } else
+         base--;
 	}
-        
+   
 	if (ungapped_data) {
 	   (*ungapped_data)->length = q_end - q_beg;
 	   (*ungapped_data)->score = score;
-           (*ungapped_data)->frame = 0;
+      (*ungapped_data)->frame = 0;
 	}
 
-        return (score < cutoff);
+   return (score < cutoff);
 }
 
 /** Perform ungapped extension given an offset pair, and save the initial 
