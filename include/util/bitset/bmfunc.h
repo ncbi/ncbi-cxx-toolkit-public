@@ -1413,6 +1413,23 @@ bm::id_t gap_bitset_or_count(const unsigned* block, const T*  buf)
     return count;
 }
 
+/*!
+   \brief Bitblock memset operation. 
+
+   \param dst - destination block.
+   \param value - value to set.
+
+   @ingroup bitfunc
+*/
+inline 
+void bit_block_set(bm::word_t* BMRESTRICT dst, bm::word_t value)
+{
+//#ifdef BMVECTOPT
+//    VECT_SET_BLOCK(dst, dst + bm::set_block_size, value);
+//#else
+    ::memset(dst, value, bm::set_block_size * sizeof(bm::word_t));
+//#endif
+}
 
 
 /*!
@@ -2382,23 +2399,6 @@ void bit_block_copy(bm::word_t* BMRESTRICT dst, const bm::word_t* BMRESTRICT src
 #endif
 }
 
-/*!
-   \brief Bitblock memset operation. 
-
-   \param dst - destination block.
-   \param value - value to set.
-
-   @ingroup bitfunc
-*/
-inline 
-void bit_block_set(bm::word_t* BMRESTRICT dst, bm::word_t value)
-{
-//#ifdef BMVECTOPT
-//    VECT_SET_BLOCK(dst, dst + bm::set_block_size, value);
-//#else
-    ::memset(dst, value, bm::set_block_size * sizeof(bm::word_t));
-//#endif
-}
 
 /*!
    \brief Plain bitblock AND operation. 
