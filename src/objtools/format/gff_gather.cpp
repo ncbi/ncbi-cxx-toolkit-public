@@ -69,9 +69,8 @@ void CGFFGatherer::x_DoSingleSection
 
     ItemOS() << new CDateItem(ctx);  // for UpdateDate
     ItemOS() << new CLocusItem(ctx); // for strand
-    //x_GatherSourceFeatures();
-    x_GatherFeatures(true);  // !!!temporary
-    x_GatherFeatures(false);
+    x_GatherSourceFeatures();
+    x_GatherFeatures();
     ItemOS() << new CBaseCountItem(ctx);
     x_GatherSequence();
 
@@ -88,6 +87,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/02/11 16:53:57  shomrat
+* separate gather of features and source-features
+*
 * Revision 1.1  2004/01/14 16:07:18  shomrat
 * Initial Revision
 *
