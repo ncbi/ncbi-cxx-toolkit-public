@@ -86,6 +86,15 @@ static bool IsAMatch(const Sequence *seq, const CSeq_id& sid)
     if (sid.IsSwissprot() && sid.GetSwissprot().IsSetAccession()) {
         return (sid.GetSwissprot().GetAccession() == seq->accession);
     }
+    if (sid.IsOther() && sid.GetOther().IsSetAccession())
+        return (sid.GetOther().GetAccession() == seq->accession);
+    if (sid.IsEmbl() && sid.GetEmbl().IsSetAccession())
+        return (sid.GetEmbl().GetAccession() == seq->accession);
+    if (sid.IsDdbj() && sid.GetDdbj().IsSetAccession())
+        return (sid.GetDdbj().GetAccession() == seq->accession);
+    if (sid.IsPir() && sid.GetPir().IsSetAccession())
+        return (sid.GetPir().GetAccession() == seq->accession);
+
     ERR_POST(Error << "IsAMatch - can't match this type of Seq-id");
     return false;
 }
@@ -346,6 +355,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/09/15 18:27:51  thiessen
+* add more types of accessions
+*
 * Revision 1.5  2004/05/21 21:42:51  gorelenk
 * Added PCH ncbi_pch.hpp
 *
