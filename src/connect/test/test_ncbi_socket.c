@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/02/24 23:09:42  vakatov
+ * Use C++ Toolkit specific wrapper "test_ncbi_socket_.c" for
+ * "test_ncbi_socket.c"
+ *
  * Revision 6.4  2000/02/23 22:34:37  vakatov
  * Can work both "standalone" and as a part of NCBI C++ or C toolkits
  *
@@ -56,30 +60,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-
-/* Kludge to compile with the NCBI C or C++ toolkits -- when the platform
- * (NCBI_OS_{UNIX, MSWIN, MAC}) is not specified in the command-line
- */
-#if !defined(NCBI_OS_UNIX) && !defined(NCBI_OS_MSWIN) && !defined(NCBI_OS_MAC)
-#  if defined(NCBI_C)
-#    include <ncbilcl.h>
-#    if defined(OS_UNIX)
-#      define NCBI_OS_UNIX 1
-#      if !defined(HAVE_GETHOSTBYNAME_R)  &&  defined(OS_UNIX_SOL)
-#        define HAVE_GETHOSTBYNAME_R 1
-#      endif
-#    elif defined(OS_MSWIN)
-#      define NCBI_OS_MSWIN 1
-#    elif defined(OS_MAC)
-#      define NCBI_OS_MAC 1
-#    else
-#      error "Unknown OS, must be one of OS_UNIX, OS_MSWIN, OS_MAC!"
-#    endif
-#  else /* else!NCBI_C */
-#    include <ncbiconf.h>
-#  endif /* NCBI_C */
-#endif /* !NCBI_OS_{UNIX, MSWIN, MAC} */
 
 
 #if defined(NCBI_OS_UNIX)
