@@ -255,7 +255,7 @@ RunTest() {
    # Run check
    check_exec=\${NCBI:-/netopt/ncbi_tools}/c++/scripts/check/check_exec.sh
    test -x \$check_exec  ||  check_exec="$x_build_dir/check_exec.sh"
-   \$check_exec "\$x_timeout" "PATH=.:\$PATH; \$x_run" >> \$x_test_out 2>&1
+   \$check_exec "\$x_timeout" "\$x_run" >> \$x_test_out 2>&1
    result=\$?
 
    # Write result of the test into the his output file
