@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/08/13 15:53:42  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.2  1999/06/30 16:04:21  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -72,6 +75,7 @@ public:
     size_t GetEndOffset(void) const;
 
 private:
+    bool m_Optional;
     // default value
     TConstObjectPtr m_Default;
 };

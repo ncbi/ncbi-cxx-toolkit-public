@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/08/13 15:53:46  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.4  1999/07/13 20:18:12  vasilche
 * Changed types naming.
 *
@@ -53,60 +56,110 @@
 
 BEGIN_NCBI_SCOPE
 
+class CTypeRef;
+
+class CTypeInfoSource
+{
+public:
+    CTypeInfoSource(void);
+    virtual ~CTypeInfoSource(void);
+    
+    virtual TTypeInfo GetTypeInfo(void) = 0;
+
+protected:
+    int m_RefCount;
+    friend class CTypeRef;
+};
+
 class CTypeRef
 {
 public:
     CTypeRef(void)
-        : m_Resolver(s_Abort)
-        { }
+        : m_Getter(sx_Abort), m_Source(0), m_TypeInfo(0)
+        {
+        }
     CTypeRef(TTypeInfo typeInfo)
-        : m_Resolver(s_Return), m_TypeInfo(typeInfo)
-        { }
-    CTypeRef(TTypeInfo (*getter)(void))
-        : m_Resolver(s_Resolve0), m_Getter0(getter)
-        { }
-    CTypeRef(TTypeInfo (*getter)(TTypeInfo typeInfo), const CTypeRef& arg)
-        : m_Resolver(s_Resolve1), m_TypeInfo(arg.Get()), m_Getter1(getter)
-        { }
+        : m_Getter(sx_Return), m_Source(0), m_TypeInfo(typeInfo)
+        {
+        }
+    CTypeRef(TTypeInfo (*getter)(void));
+    CTypeRef(TTypeInfo (*getter)(TTypeInfo typeInfo), const CTypeRef& arg);
+    CTypeRef(CTypeInfoSource* source)
+        : m_Getter(sx_Resolve), m_Source(source), m_TypeInfo(0)
+        {
+        }
+    CTypeRef(const CTypeRef& typeRef)
+        : m_Getter(typeRef.m_Getter), m_Source(Ref(typeRef.m_Source)),
+          m_TypeInfo(typeRef.m_TypeInfo)
+        {
+        }
+    CTypeRef& operator=(const CTypeRef& typeRef)
+        {
+            CTypeInfoSource* source = Ref(typeRef.m_Source);
+            m_Getter = sx_Abort;
+            Unref();
+            m_Getter = typeRef.m_Getter;
+            m_Source = source;
+            m_TypeInfo = typeRef.m_TypeInfo;
+            return *this;
+        }
+    ~CTypeRef(void)
+        {
+            Unref();
+        }
 
     TTypeInfo Get(void) const
-        { return m_Resolver(*this); }
+        {
+            return m_Getter(*this);
+        }
 
 private:
 
-    static TTypeInfo s_Abort(const CTypeRef& )
+    static CTypeInfoSource* Ref(CTypeInfoSource* source)
         {
-            THROW1_TRACE(runtime_error, "uninitialized type ref");
+            if ( source )
+                ++source->m_RefCount;
+            return source;
         }
-    static TTypeInfo s_Return(const CTypeRef& typeRef)
+    void Unref(void) const
         {
-            return typeRef.m_TypeInfo;
+            CTypeInfoSource* source = m_Source;
+            m_Source = 0;
+            if ( source && --source->m_RefCount <= 0 )
+                delete source;
         }
-    static TTypeInfo s_Resolve0(const CTypeRef& typeRef)
-        {
-            TTypeInfo typeInfo = typeRef.m_Getter0();
-            if ( !typeInfo )
-                THROW1_TRACE(runtime_error, "cannot resolve type ref");
-            typeRef.m_TypeInfo = typeInfo;
-            typeRef.m_Resolver = s_Return;
-            return typeInfo;
-        }
-    static TTypeInfo s_Resolve1(const CTypeRef& typeRef)
-        {
-            TTypeInfo typeInfo = typeRef.m_Getter1(typeRef.m_TypeInfo);
-            if ( !typeInfo )
-                THROW1_TRACE(runtime_error, "cannot resolve type ref");
-            typeRef.m_TypeInfo = typeInfo;
-            typeRef.m_Resolver = s_Return;
-            return typeInfo;
-        }
+    
+    static TTypeInfo sx_Abort(const CTypeRef& typeRef);
+    static TTypeInfo sx_Return(const CTypeRef& typeRef);
+    static TTypeInfo sx_Resolve(const CTypeRef& typeRef);
 
-    mutable TTypeInfo (*m_Resolver)(const CTypeRef& typeRef);
+    mutable TTypeInfo (*m_Getter)(const CTypeRef& );
+    mutable CTypeInfoSource* m_Source;
     mutable TTypeInfo m_TypeInfo;
-    union {
-        TTypeInfo (*m_Getter0)(void);
-        TTypeInfo (*m_Getter1)(TTypeInfo arg);
-    };
+};
+
+class CGetTypeInfoSource : public CTypeInfoSource
+{
+public:
+    CGetTypeInfoSource(TTypeInfo (*getter)(void));
+
+    virtual TTypeInfo GetTypeInfo(void);
+
+private:
+    TTypeInfo (*m_Getter)(void);
+};
+
+class CGet1TypeInfoSource : public CTypeInfoSource
+{
+public:
+    CGet1TypeInfoSource(TTypeInfo (*getter)(TTypeInfo ),
+                        const CTypeRef& arg);
+
+    virtual TTypeInfo GetTypeInfo(void);
+
+private:
+    TTypeInfo (*m_Getter)(TTypeInfo );
+    CTypeRef m_Argument;
 };
 
 #include <serial/typeref.inl>

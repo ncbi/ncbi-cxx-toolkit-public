@@ -5,6 +5,7 @@
 #include <autoptr.hpp>
 #include <list>
 
+class CModuleSet;
 class ASNModule;
 class ASNType;
 class ASNValue;
@@ -19,16 +20,16 @@ public:
         {
         }
 
-    void Modules(list<AutoPtr<ASNModule> >& modules);
-    AutoPtr<ASNModule> Module(void);
+    void Modules(CModuleSet& modules);
+    void Module(CModuleSet& modules);
     void Imports(ASNModule* module);
     void Exports(ASNModule* module);
     void ModuleBody(ASNModule* module);
-    AutoPtr<ASNType> Type(void);
-    AutoPtr<ASNType> x_Type(void);
-    void TypesBlock(list<AutoPtr<ASNMember> >& members);
-    AutoPtr<ASNMember> NamedDataType(void);
-    AutoPtr<ASNType> EnumeratedBlock(const string& keyword);
+    AutoPtr<ASNType> Type(ASNModule& module);
+    AutoPtr<ASNType> x_Type(ASNModule& module);
+    void TypesBlock(ASNModule& module, list<AutoPtr<ASNMember> >& members);
+    AutoPtr<ASNMember> NamedDataType(ASNModule& module);
+    AutoPtr<ASNType> EnumeratedBlock(ASNModule& module, const string& keyword);
     void EnumeratedValue(ASNEnumeratedType* t);
     void TypeList(list<string>& ids);
     AutoPtr<ASNValue> Value(void);

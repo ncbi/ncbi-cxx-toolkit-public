@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/08/13 15:53:51  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.15  1999/07/22 17:33:55  vasilche
 * Unified reading/writing of objects in all three formats.
 *
@@ -115,6 +118,7 @@ void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
         _TRACE("CTypeInfo::Write: " << unsigned(object)
                << " @" << info.GetRootObjectInfo().GetIndex());
     }
+    WriteTypeName(typeInfo->GetName());
     WriteData(object, typeInfo);
     m_Objects.CheckAllWritten();
 }
@@ -139,6 +143,16 @@ void CObjectOStream::WriteExternalObject(TConstObjectPtr object,
                << " @" << info.GetRootObjectInfo().GetIndex());
     }
     WriteData(object, typeInfo);
+}
+
+void CObjectOStream::WriteTypeName(const string& )
+{
+    // do nothing by default
+}
+
+bool CObjectOStream::WriteEnumName(const string& )
+{
+    return false;
 }
 
 void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)

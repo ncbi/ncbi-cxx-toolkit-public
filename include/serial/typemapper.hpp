@@ -1,5 +1,5 @@
-#if defined(TYPEREF__HPP)  &&  !defined(TYPEREF__INL)
-#define TYPEREF__INL
+#ifndef TYPEMAPPER__HPP
+#define TYPEMAPPER__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -33,30 +33,25 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  1999/08/13 15:53:46  vasilche
+* Revision 1.1  1999/08/13 15:53:45  vasilche
 * C++ analog of asntool: datatool
-*
-* Revision 1.2  1999/07/13 20:18:13  vasilche
-* Changed types naming.
-*
-* Revision 1.1  1999/06/24 14:44:48  vasilche
-* Added binary ASN.1 output.
 *
 * ===========================================================================
 */
 
-inline
-CTypeRef::CTypeRef(TTypeInfo (*getter)(void))
-    : m_Getter(sx_Resolve), m_Source(new CGetTypeInfoSource(getter)),
-      m_TypeInfo(0)
-{
-}
+#include <corelib/ncbistd.hpp>
+#include <serial/serialdef.hpp>
 
-inline
-CTypeRef::CTypeRef(TTypeInfo (*getter)(TTypeInfo ), const CTypeRef& arg)
-    : m_Getter(sx_Resolve), m_Source(new CGet1TypeInfoSource(getter, arg)),
-      m_TypeInfo(0)
-{
-}
+BEGIN_NCBI_SCOPE
 
-#endif /* def TYPEREF__HPP  &&  ndef TYPEREF__INL */
+class CTypeMapper
+{
+public:
+    virtual TTypeInfo MapType(const string& name) = 0;
+};
+
+//#include <serial/typemapper.inl>
+
+END_NCBI_SCOPE
+
+#endif  /* TYPEMAPPER__HPP */

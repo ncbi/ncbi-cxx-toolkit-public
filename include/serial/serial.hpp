@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/08/13 15:53:45  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.23  1999/07/21 14:20:01  vasilche
 * Added serialization of bool.
 *
@@ -209,7 +212,7 @@ inline
 CTypeRef GetSetTypeRef(const T* const* )
 {
     const T* p = 0;
-    return CTypeRef(CSetTypeInfo::GetTypeInfo, GetTypeRef(p));
+    return CTypeRef(CAutoPointerTypeInfo::GetTypeInfo, GetTypeRef(p));
 }
 
 template<typename T>
@@ -217,7 +220,7 @@ inline
 CTypeRef GetSequenceTypeRef(const T* const* )
 {
     const T* p = 0;
-    return CTypeRef(CSequenceTypeInfo::GetTypeInfo, GetTypeRef(p));
+    return CTypeRef(CAutoPointerTypeInfo::GetTypeInfo, GetTypeRef(p));
 }
 
 template<typename T>
@@ -239,7 +242,7 @@ CTypeRef GetSequenceOfTypeRef(const T* const* )
 inline
 CTypeRef GetChoiceTypeRef(TTypeInfo (*func)(void))
 {
-    return CTypeRef(CChoiceTypeInfo::GetTypeInfo, CTypeRef(func));
+    return CTypeRef(CAutoPointerTypeInfo::GetTypeInfo, CTypeRef(func));
 }
 
 template<typename T>
@@ -527,7 +530,7 @@ BEGIN_TYPE_INFO(NAME2(struct_, Class), NAME2(GetTypeInfo_struct_, Class), \
 
 #define BEGIN_CHOICE_INFO2(Name, Class) \
 BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
-                CChoiceValNodeInfo, (Name))
+                CChoiceTypeInfo, (Name))
 #define BEGIN_CHOICE_INFO(Class) BEGIN_CHOICE_INFO2(#Class, Class)
 #define END_CHOICE_INFO END_TYPE_INFO
 

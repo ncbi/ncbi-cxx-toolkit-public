@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/08/13 15:53:44  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.7  1999/07/20 18:22:55  vasilche
 * Added interface to old ASN.1 routines.
 * Added fixed choice of subclasses to use for pointers.
@@ -79,6 +82,9 @@ public:
     CPointerTypeInfo(TTypeInfo type)
         : CTypeInfo(type->GetName() + '*'), m_DataType(type)
         { }
+    CPointerTypeInfo(const string& name, TTypeInfo type)
+        : CTypeInfo(name), m_DataType(type)
+        { }
 
     static TTypeInfo GetTypeInfo(TTypeInfo base)
         {
@@ -91,6 +97,8 @@ public:
         }
 
     virtual size_t GetSize(void) const;
+
+    virtual TObjectPtr Create(void) const;
 
     virtual TConstObjectPtr GetDefault(void) const;
 
@@ -110,6 +118,27 @@ private:
     TTypeInfo m_DataType;
 
     static CTypeInfoMap<CPointerTypeInfo> sm_Map;
+};
+
+class CAutoPointerTypeInfo : public CPointerTypeInfo {
+public:
+    CAutoPointerTypeInfo(TTypeInfo type)
+        : CPointerTypeInfo(type->GetName(), type)
+        { }
+
+    static TTypeInfo GetTypeInfo(TTypeInfo base)
+        {
+            return sm_Map.GetTypeInfo(base);
+        }
+
+protected:
+    
+    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+
+    void ReadData(CObjectIStream& in, TObjectPtr object) const;
+
+private:
+    static CTypeInfoMap<CAutoPointerTypeInfo> sm_Map;
 };
 
 //#include <ptrinfo.inl>

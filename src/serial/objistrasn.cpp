@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/08/13 15:53:50  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.20  1999/07/26 18:31:35  vasilche
 * Implemented skipping of unused values.
 * Added more useful error report.
@@ -141,11 +144,18 @@ bool IsAlphaNum(char c)
 }
 
 CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in)
-    : m_Input(in)
+    : m_Input(in), m_Line(1)
 #if !USE_UNGET
 	, m_GetChar(-1), m_UngetChar(-1)
 #endif
 {
+}
+
+unsigned CObjectIStreamAsn::SetFailFlags(unsigned flags)
+{
+    if ( flags & ~eEOF )
+        ERR_POST("ASN.1 error at " << m_Line);
+    return CObjectIStream::SetFailFlags(flags);
 }
 
 void CObjectIStreamAsn::CheckError(void)
@@ -167,14 +177,14 @@ char CObjectIStreamAsn::GetChar(void)
 	char c;
 	m_Input.get(c);
     CheckError();
-	_TRACE("GetChar(): '" << c << "'");
+	//_TRACE("GetChar(): '" << c << "'");
 	return c;
 #else
 	int unget = m_UngetChar;
 	if ( unget >= 0 ) {
 	    m_UngetChar = -1;
 		m_GetChar = unget;
-        _TRACE("GetChar(): '" << char(unget) << "'");
+        //_TRACE("GetChar(): '" << char(unget) << "'");
 		return char(unget);
 	}
 	else {
@@ -182,7 +192,7 @@ char CObjectIStreamAsn::GetChar(void)
 		m_Input.get(c);
         CheckError();
 		m_GetChar = (unsigned char)c;
-        _TRACE("GetChar(): '" << c << "'");
+        //_TRACE("GetChar(): '" << c << "'");
 		return c;
 	}
 #endif
@@ -196,7 +206,7 @@ char CObjectIStreamAsn::GetChar0(void)
 #else
 	int unget = m_UngetChar;
 	if ( unget >= 0 ) {
-        _TRACE("GetChar0(): '" << char(unget) << "'");
+        //_TRACE("GetChar0(): '" << char(unget) << "'");
 	    m_UngetChar = -1;
 		m_GetChar = unget;
 		return char(unget);
@@ -212,7 +222,7 @@ inline
 void CObjectIStreamAsn::UngetChar(void)
 {
 #if USE_UNGET
-	_TRACE("UngetChar...");
+	//_TRACE("UngetChar...");
 	m_Input.unget();
     CheckError();
 #else
@@ -220,7 +230,7 @@ void CObjectIStreamAsn::UngetChar(void)
         SetFailFlags(eIllegalCall);
         throw runtime_error("cannot unget");
     }
-    _TRACE("UngetChar(): '" << char(m_GetChar) << "'");
+    //_TRACE("UngetChar(): '" << char(m_GetChar) << "'");
 	m_UngetChar = m_GetChar;
 	m_GetChar = -1;
 #endif
@@ -311,8 +321,15 @@ char CObjectIStreamAsn::SkipWhiteSpace(void)
         case ' ':
         case '\r':
         case '\t':
-        case '\n':
             break;
+        case '\n':
+            m_Line++;
+            break;
+/*
+        case '-':
+            // check for comments
+            if ( GetChar() == '-' )
+*/
         default:
             UngetChar();
             return c;
@@ -322,6 +339,7 @@ char CObjectIStreamAsn::SkipWhiteSpace(void)
 
 bool CObjectIStreamAsn::ReadEscapedChar(char& out, char terminator)
 {
+#if CPLUSPLUS_STRINGS
     char c = GetChar();
     if ( c == '\\' ) {
         c = GetChar();
@@ -355,6 +373,8 @@ bool CObjectIStreamAsn::ReadEscapedChar(char& out, char terminator)
         return true;
     }
     else if ( c < ' ' ) {
+        if ( c == '\n' )
+            m_Line++;
         SetFailFlags(eFormatError);
         THROW1_TRACE(runtime_error, "bad char in string");
     }
@@ -365,21 +385,43 @@ bool CObjectIStreamAsn::ReadEscapedChar(char& out, char terminator)
         out = c;
         return true;
     }
+#else
+    char c;
+    while ( (c = GetChar()) != terminator ) {
+        if ( c == '\n' ) {
+            m_Line++;
+        }
+        else if ( c < ' ' && c >= 0 ) {
+            SetFailFlags(eFormatError);
+            THROW1_TRACE(runtime_error, "bad char in string");
+        }
+        else {
+            out = c;
+            return true;
+        }
+    }
+    if ( GetChar() != terminator ) {
+        UngetChar();
+        return false;
+    }
+    out = terminator;
+    return true;
+#endif
 }
 
-void CObjectIStreamAsn::Read(TObjectPtr object, TTypeInfo typeInfo)
+string CObjectIStreamAsn::ReadTypeName()
 {
-	char c = SkipWhiteSpace();
-    if ( c == typeInfo->GetName()[0] || c == '[' ) {
-        string id = ReadId();
-        if ( id != typeInfo->GetName() ) {
-            SetFailFlags(eFormatError);
-            THROW1_TRACE(runtime_error, "invalid object type: " + id +
-                         ", expected: " + typeInfo->GetName());
-        }
-        ExpectString("::=", true);
-    }
-    CObjectIStream::Read(object, typeInfo);
+    string name = ReadId();
+    ExpectString("::=", true);
+    return name;
+}
+
+string CObjectIStreamAsn::ReadEnumName()
+{
+    if ( IsAlphaNum(SkipWhiteSpace()) )
+        return ReadId();
+    else
+        return NcbiEmptyString;
 }
 
 void CObjectIStreamAsn::ReadStd(bool& data)
@@ -562,7 +604,7 @@ string CObjectIStreamAsn::ReadId(void)
             return NcbiEmptyString;
 	    }
 	    s += c;
-		while ( IsAlphaNum(c = GetChar()) || c == '-' ) {
+		while ( IsAlphaNum(c = GetChar()) || c == '-' || c == '.' ) {
 			s += c;
 	    }
 		UngetChar();

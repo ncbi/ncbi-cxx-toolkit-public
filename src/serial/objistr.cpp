@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/08/13 15:53:50  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.17  1999/07/26 18:31:34  vasilche
 * Implemented skipping of unused values.
 * Added more useful error report.
@@ -91,12 +94,13 @@
 #include <serial/objistr.hpp>
 #include <serial/member.hpp>
 #include <serial/classinfo.hpp>
+#include <serial/typemapper.hpp>
 #include <asn.h>
 
 BEGIN_NCBI_SCOPE
 
 CObjectIStream::CObjectIStream(void)
-    : m_Fail(0), m_CurrentMember(0)
+    : m_Fail(0), m_CurrentMember(0), m_TypeMapper(0)
 {
 }
 
@@ -109,6 +113,9 @@ void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
 {
     _TRACE("CObjectIStream::Read(" << unsigned(object) << ", "
            << typeInfo->GetName() << ")");
+    string name = ReadTypeName();
+    if ( !name.empty() && name != typeInfo->GetName() )
+        THROW1_TRACE(runtime_error, "incompatible type " + name + "<>" + typeInfo->GetName());
     TIndex index = RegisterObject(object, typeInfo);
     _TRACE("CObjectIStream::ReadData(" << unsigned(object) << ", "
            << typeInfo->GetName() << ") @" << index);
@@ -125,10 +132,39 @@ void CObjectIStream::ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo)
     ReadData(object, typeInfo);
 }
 
+CObject CObjectIStream::ReadObject(void)
+{
+    CObject object(MapType(ReadTypeName()));
+    ReadExternalObject(object.GetObject(), object.GetTypeInfo());
+    return object;
+}
+
+string CObjectIStream::ReadTypeName(void)
+{
+    return NcbiEmptyString;
+}
+
+string CObjectIStream::ReadEnumName(void)
+{
+    return NcbiEmptyString;
+}
+
+void CObjectIStream::SetTypeMapper(CTypeMapper* typeMapper)
+{
+    m_TypeMapper = typeMapper;
+}
+
+TTypeInfo CObjectIStream::MapType(const string& name)
+{
+    if ( m_TypeMapper != 0 )
+        return m_TypeMapper->MapType(name);
+    return CClassInfoTmpl::GetClassInfoByName(name);
+}
+
 TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
 {
     _TRACE("CObjectIStream::ReadPointer(" << declaredType->GetName() << ")");
-    CIObjectInfo info;
+    CObject info;
     switch ( ReadPointerType() ) {
     case eNullPointer:
         _TRACE("CObjectIStreamAsn::ReadPointer: null");
@@ -173,11 +209,11 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
         {
             string className = ReadOtherPointer();
             _TRACE("CObjectIStream::ReadPointer: new " << className);
-            TTypeInfo typeInfo = CClassInfoTmpl::GetClassInfoByName(className);
+            TTypeInfo typeInfo = MapType(className);
             TObjectPtr object = typeInfo->Create();
             ReadExternalObject(object, typeInfo);
             ReadOtherPointerEnd();
-            info = CIObjectInfo(object, typeInfo);
+            info = CObject(object, typeInfo);
             break;
         }
     default:
@@ -196,7 +232,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
         }
         const CMemberInfo* memberInfo =
             info.GetTypeInfo()->GetMemberInfo(index);
-        info = CIObjectInfo(memberInfo->GetMember(info.GetObject()),
+        info = CObject(memberInfo->GetMember(info.GetObject()),
                             memberInfo->GetTypeInfo());
     }
     if ( info.GetTypeInfo() != declaredType ) {
@@ -206,7 +242,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
     return info.GetObject();
 }
 
-CIObjectInfo CObjectIStream::ReadObjectInfo(void)
+CObject CObjectIStream::ReadObjectInfo(void)
 {
     _TRACE("CObjectIStream::ReadObjectInfo()");
     switch ( ReadPointerType() ) {
@@ -220,7 +256,7 @@ CIObjectInfo CObjectIStream::ReadObjectInfo(void)
         {
             string memberName = ReadMemberPointer();
             _TRACE("CObjectIStream::ReadPointer: member " << memberName);
-            CIObjectInfo info = ReadObjectInfo();
+            CObject info = ReadObjectInfo();
             ReadMemberPointerEnd();
             CTypeInfo::TMemberIndex index =
                 info.GetTypeInfo()->FindMember(memberName);
@@ -231,19 +267,19 @@ CIObjectInfo CObjectIStream::ReadObjectInfo(void)
             }
             const CMemberInfo* memberInfo =
                 info.GetTypeInfo()->GetMemberInfo(index);
-            return CIObjectInfo(memberInfo->GetMember(info.GetObject()),
+            return CObject(memberInfo->GetMember(info.GetObject()),
                                 memberInfo->GetTypeInfo());
         }
     case eOtherPointer:
         {
             const string& className = ReadOtherPointer();
             _TRACE("CObjectIStream::ReadPointer: new " << className);
-            TTypeInfo typeInfo = CClassInfoTmpl::GetClassInfoByName(className);
+            TTypeInfo typeInfo = MapType(className);
             TObjectPtr object = typeInfo->Create();
             RegisterObject(object, typeInfo);
             Read(object, typeInfo);
             ReadOtherPointerEnd();
-            return CIObjectInfo(object, typeInfo);
+            return CObject(object, typeInfo);
         }
     default:
         SetFailFlags(eFormatError);
@@ -443,11 +479,11 @@ CObjectIStream::TIndex CObjectIStream::RegisterObject(TObjectPtr object,
                                                       TTypeInfo typeInfo)
 {
     TIndex index = m_Objects.size();
-    m_Objects.push_back(CIObjectInfo(object, typeInfo));
+    m_Objects.push_back(CObject(object, typeInfo));
     return index;
 }
 
-const CIObjectInfo& CObjectIStream::GetRegisteredObject(TIndex index) const
+const CObject& CObjectIStream::GetRegisteredObject(TIndex index) const
 {
     if ( index >= m_Objects.size() ) {
         const_cast<CObjectIStream*>(this)->SetFailFlags(eFormatError);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/08/13 15:53:44  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.13  1999/07/26 18:31:30  vasilche
 * Implemented skipping of unused values.
 * Added more useful error report.
@@ -133,8 +136,6 @@ protected:
     
 
 private:
-    CIObjectInfo ReadObjectInfo(void);
-
     void SkipObjectData(void);
     void SkipObjectPointer(void);
     void SkipBlock(void);

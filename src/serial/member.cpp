@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/08/13 15:53:50  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.2  1999/07/01 17:55:28  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -56,13 +59,24 @@ size_t CMemberInfo::GetSize(void) const
 
 CMemberInfo* CMemberInfo::SetOptional(void)
 {
-    return SetDefault(GetTypeInfo()->GetDefault());
+    m_Optional = true;
+    return this;
 }
 
 CMemberInfo* CMemberInfo::SetDefault(TConstObjectPtr def)
 {
+    m_Optional = true;
     m_Default = def;
     return this;
+}
+
+TConstObjectPtr CMemberInfo::GetDefault(void) const
+{
+    if ( !m_Optional )
+        return 0;
+    if ( m_Default )
+        return m_Default;
+    return GetTypeInfo()->GetDefault();
 }
 
 size_t CRealMemberInfo::GetOffset(void) const

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/08/13 15:53:42  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.14  1999/07/20 18:22:53  vasilche
 * Added interface to old ASN.1 routines.
 * Added fixed choice of subclasses to use for pointers.
@@ -189,10 +192,12 @@ protected:
                               TConstObjectPtr object) const;
     virtual TObjectPtr ReadPointer(CObjectIStream& in) const;
 
-    virtual const type_info& GetCPlusPlusTypeInfo(TConstObjectPtr object) const = 0;
+    virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const;
+
     TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const
         {
-            return GetClassInfoById(GetCPlusPlusTypeInfo(object));
+            const type_info* ti = GetCPlusPlusTypeInfo(object);
+            return ti == 0? this: GetClassInfoById(*ti);
         }
 
 private:

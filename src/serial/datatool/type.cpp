@@ -1,9 +1,133 @@
 #include <type.hpp>
 #include <value.hpp>
 #include <module.hpp>
+#include <moduleset.hpp>
+#include <serial/stdtypes.hpp>
+#include <serial/stltypes.hpp>
+#include <serial/classinfo.hpp>
+#include <serial/member.hpp>
+#include <serial/asntypes.hpp>
+#include <serial/ptrinfo.hpp>
 
-ASNType::ASNType()
-    : line(0)
+class CTypeSource : public CTypeInfoSource
+{
+public:
+    CTypeSource(ASNType* type)
+        : m_Type(type)
+        {
+        }
+
+    TTypeInfo GetTypeInfo(void)
+        {
+            return m_Type->GetTypeInfo();
+        }
+
+private:
+    ASNType* m_Type;
+};
+
+class CEnumeratedTypeInfo : public CStdTypeInfoTmpl<long>
+{
+    typedef CStdTypeInfoTmpl<long> CParent;
+public:
+    typedef CParent::TObjectType TValue;
+    typedef map<string, TValue> TNameToValue;
+    typedef map<TValue, string> TValueToName;
+
+    CEnumeratedTypeInfo(const string& name)
+        : CParent(name), m_NextValue(0)
+        {
+        }
+
+    void AddValue(const string& name, bool hasValue, TValue v);
+
+    TValue FindValue(const string& name) const
+        {
+            TNameToValue::const_iterator i = m_NameToValue.find(name);
+            if ( i == m_NameToValue.end() )
+                THROW1_TRACE(runtime_error,
+                             "invalid value of enumerated type");
+            return i->second;
+        }
+    const string& FindName(TValue value) const
+        {
+            TValueToName::const_iterator i = m_ValueToName.find(value);
+            if ( i == m_ValueToName.end() )
+                THROW1_TRACE(runtime_error,
+                             "invalid value of enumerated type");
+            return i->second;
+        }
+
+    virtual TConstObjectPtr GetDefault(void) const;
+
+protected:
+    void ReadData(CObjectIStream& in, TObjectPtr object) const;
+    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+
+private:
+    TValue m_NextValue;
+    TNameToValue m_NameToValue;
+    TValueToName m_ValueToName;
+};
+
+void CEnumeratedTypeInfo::AddValue(const string& name,
+                                   bool hasValue, TValue v)
+{
+    if ( name.empty() )
+        THROW1_TRACE(runtime_error, "empty enum value name");
+    TValue value = hasValue? v: m_NextValue;
+    pair<TNameToValue::iterator, bool> p1 =
+        m_NameToValue.insert(TNameToValue::value_type(name, value));
+    if ( !p1.second )
+        THROW1_TRACE(runtime_error,
+                     "duplicated enum value name " + name);
+    pair<TValueToName::iterator, bool> p2 =
+        m_ValueToName.insert(TValueToName::value_type(value, name));
+    if ( !p2.second ) {
+        m_NameToValue.erase(p1.first);
+        THROW1_TRACE(runtime_error,
+                     "duplicated enum value " + name);
+            }
+    m_NextValue = value + 1;
+}
+
+static CEnumeratedTypeInfo::TValue zeroValue = 0;
+
+TConstObjectPtr CEnumeratedTypeInfo::GetDefault(void) const
+{
+    return &zeroValue;
+}
+
+void CEnumeratedTypeInfo::ReadData(CObjectIStream& in,
+                                   TObjectPtr object) const
+{
+    string name = in.ReadEnumName();
+    if ( name.empty() ) {
+        in.ReadStd(Get(object));
+        FindName(Get(object));
+    }
+    else {
+        Get(object) = FindValue(name);
+    }
+}
+
+void CEnumeratedTypeInfo::WriteData(CObjectOStream& out,
+                                    TConstObjectPtr object) const
+{
+    const string& name = FindName(Get(object));
+    if ( !out.WriteEnumName(name) )
+        out.WriteStd(Get(object));
+}
+
+union dataval {
+    bool booleanValue;
+    long integerValue;
+    double realValue;
+    void* pointerValue;
+};
+
+ASNType::ASNType(ASNModule& module, const string& n)
+    : m_Module(module), line(0), name(n)
 {
 }
 
@@ -18,7 +142,7 @@ void ASNType::Warning(const string& mess) const
     cerr << ": " << mess << endl;
 }
 
-bool ASNType::Check(const ASNModule& )
+bool ASNType::Check(void)
 {
     return true;
 }
@@ -31,8 +155,32 @@ ostream& ASNType::NewLine(ostream& out, int indent)
     return out;
 }
 
-ASNFixedType::ASNFixedType(const string& kw)
-    : keyword(kw)
+TTypeInfo ASNType::GetTypeInfo(void)
+{
+    _TRACE(name << "::GetTypeInfo()");
+    if ( !m_CreatedTypeInfo ) {
+        if ( !(m_CreatedTypeInfo = CreateTypeInfo()) )
+            THROW1_TRACE(runtime_error, "type undefined");
+    }
+    _TRACE(name << "::GetTypeInfo(): " << m_CreatedTypeInfo->GetName());
+    return m_CreatedTypeInfo.get();
+}
+
+CTypeInfo* ASNType::CreateTypeInfo(void)
+{
+    return 0;
+}
+
+
+#define CheckValueType(value, type, name) do{ \
+if ( dynamic_cast<const type*>(&(value)) == 0 ) { \
+    (value).Warning(name " value expected"); return false; \
+} } while(0)
+
+
+
+ASNFixedType::ASNFixedType(ASNModule& module, const string& kw)
+    : ASNType(module, kw), keyword(kw)
 {
 }
 
@@ -41,40 +189,44 @@ ostream& ASNFixedType::Print(ostream& out, int ) const
     return out << keyword;
 }
 
-ASNNullType::ASNNullType()
-    : ASNFixedType("NULL")
+ASNNullType::ASNNullType(ASNModule& module)
+    : ASNFixedType(module, "NULL")
 {
 }
 
-#define CheckValueType(value, type, name) do{ \
-if ( dynamic_cast<const type*>(&(value)) == 0 ) { \
-    (value).Warning(name " value expected"); return false; \
-} } while(0)
-
-bool ASNNullType::CheckValue(const ASNModule& , const ASNValue& value)
+bool ASNNullType::CheckValue(const ASNValue& value)
 {
     CheckValueType(value, ASNNullValue, "NULL");
     return true;
 }
 
-ASNBooleanType::ASNBooleanType()
-    : ASNFixedType("BOOLEAN")
+TTypeInfo ASNNullType::GetTypeInfo(void)
+{
+    THROW1_TRACE(runtime_error, "NULL type not implemented");
+}
+
+ASNBooleanType::ASNBooleanType(ASNModule& module)
+    : ASNFixedType(module, "BOOLEAN")
 {
 }
 
-bool ASNBooleanType::CheckValue(const ASNModule& , const ASNValue& value)
+bool ASNBooleanType::CheckValue(const ASNValue& value)
 {
     CheckValueType(value, ASNBoolValue, "BOOLEAN");
     return true;
 }
 
-ASNRealType::ASNRealType()
-    : ASNFixedType("REAL")
+TTypeInfo ASNBooleanType::GetTypeInfo(void)
+{
+    return CStdTypeInfo<bool>::GetTypeInfo();
+}
+
+ASNRealType::ASNRealType(ASNModule& module)
+    : ASNFixedType(module, "REAL")
 {
 }
 
-bool ASNRealType::CheckValue(const ASNModule& , 
-                             const ASNValue& value)
+bool ASNRealType::CheckValue(const ASNValue& value)
 {
     const ASNBlockValue* block = dynamic_cast<const ASNBlockValue*>(&value);
     if ( !block ) {
@@ -92,67 +244,80 @@ bool ASNRealType::CheckValue(const ASNModule& ,
     return true;
 }
 
-ASNVisibleStringType::ASNVisibleStringType()
-    : ASNFixedType("VisibleString")
+TTypeInfo ASNRealType::GetTypeInfo(void)
+{
+    return CStdTypeInfo<double>::GetTypeInfo();
+}
+
+ASNVisibleStringType::ASNVisibleStringType(ASNModule& module)
+    : ASNFixedType(module, "VisibleString")
 {
 }
 
-bool ASNVisibleStringType::CheckValue(const ASNModule& ,
-                                      const ASNValue& value)
-{
-    CheckValueType(value, ASNStringValue, "string");
-    return true;
-}
-
-ASNStringStoreType::ASNStringStoreType()
-    : ASNFixedType("StringStore")
-{
-}
-
-bool ASNStringStoreType::CheckValue(const ASNModule& ,
-                                    const ASNValue& value)
+bool ASNVisibleStringType::CheckValue(const ASNValue& value)
 {
     CheckValueType(value, ASNStringValue, "string");
     return true;
 }
 
-ASNBitStringType::ASNBitStringType()
-    : ASNFixedType("BIT STRING")
+TTypeInfo ASNVisibleStringType::GetTypeInfo(void)
+{
+    return CAutoPointerTypeInfo::GetTypeInfo(
+        CStdTypeInfo<string>::GetTypeInfo());
+}
+
+ASNStringStoreType::ASNStringStoreType(ASNModule& module)
+    : ASNFixedType(module, "StringStore")
 {
 }
 
-bool ASNBitStringType::CheckValue(const ASNModule& ,
-                                  const ASNValue& value)
+bool ASNStringStoreType::CheckValue(const ASNValue& value)
+{
+    CheckValueType(value, ASNStringValue, "string");
+    return true;
+}
+
+TTypeInfo ASNStringStoreType::GetTypeInfo(void)
+{
+    return CAutoPointerTypeInfo::GetTypeInfo(
+        CStdTypeInfo<string>::GetTypeInfo());
+}
+
+ASNBitStringType::ASNBitStringType(ASNModule& module)
+    : ASNFixedType(module, "BIT STRING")
+{
+}
+
+bool ASNBitStringType::CheckValue(const ASNValue& value)
 {
     CheckValueType(value, ASNBitStringValue, "BIT STRING");
     return true;
 }
 
-ASNOctetStringType::ASNOctetStringType()
-    : ASNFixedType("OCTET STRING")
+ASNOctetStringType::ASNOctetStringType(ASNModule& module)
+    : ASNFixedType(module, "OCTET STRING")
 {
 }
 
-bool ASNOctetStringType::CheckValue(const ASNModule& ,
-                                    const ASNValue& value)
+bool ASNOctetStringType::CheckValue(const ASNValue& value)
 {
     CheckValueType(value, ASNBitStringValue, "OCTET STRING");
     return true;
 }
 
-ASNEnumeratedType::ASNEnumeratedType(const string& kw)
-    : keyword(kw)
+ASNEnumeratedType::ASNEnumeratedType(ASNModule& module, const string& kw)
+    : ASNType(module, kw), keyword(kw)
 {
 }
 
-void ASNEnumeratedType::AddValue(const string& name)
+void ASNEnumeratedType::AddValue(const string& valueName)
 {
-    values.push_back(TValues::value_type(name));
+    values.push_back(TValues::value_type(valueName));
 }
 
-void ASNEnumeratedType::AddValue(const string& name, long value)
+void ASNEnumeratedType::AddValue(const string& valueName, long value)
 {
-    values.push_back(TValues::value_type(name, value));
+    values.push_back(TValues::value_type(valueName, value));
 }
 
 ostream& ASNEnumeratedType::Print(ostream& out, int indent) const
@@ -172,8 +337,7 @@ ostream& ASNEnumeratedType::Print(ostream& out, int indent) const
     return out << "}";
 }
 
-bool ASNEnumeratedType::CheckValue(const ASNModule& ,
-                                   const ASNValue& value)
+bool ASNEnumeratedType::CheckValue(const ASNValue& value)
 {
     const ASNIdValue* id = dynamic_cast<const ASNIdValue*>(&value);
     if ( id == 0 ) {
@@ -188,51 +352,80 @@ bool ASNEnumeratedType::CheckValue(const ASNModule& ,
     return false;
 }
 
-ASNIntegerType::ASNIntegerType()
-    : ASNFixedType("INTEGER")
+CTypeInfo* ASNEnumeratedType::CreateTypeInfo(void)
+{
+    AutoPtr<CEnumeratedTypeInfo> info(new CEnumeratedTypeInfo(name));
+    for ( TValues::const_iterator i = values.begin();
+          i != values.end(); ++i ) {
+        info->AddValue(i->id, i->hasValue, i->value);
+    }
+    return info.release();
+}
+
+ASNIntegerType::ASNIntegerType(ASNModule& module)
+    : ASNFixedType(module, "INTEGER")
 {
 }
 
-bool ASNIntegerType::CheckValue(const ASNModule& ,
-                                const ASNValue& value)
+bool ASNIntegerType::CheckValue(const ASNValue& value)
 {
     CheckValueType(value, ASNIntegerValue, "INTEGER");
     return true;
 }
 
-ASNUserType::ASNUserType(const string& n)
-    : name(n)
+TTypeInfo ASNIntegerType::GetTypeInfo(void)
+{
+    return CStdTypeInfo<long>::GetTypeInfo();
+}
+
+ASNUserType::ASNUserType(ASNModule& module, const string& n)
+    : ASNType(module, n), userTypeName(n)
 {
 }
 
 ostream& ASNUserType::Print(ostream& out, int ) const
 {
-    return out << name;
+    return out << userTypeName;
 }
 
-bool ASNUserType::Check(const ASNModule& module)
+bool ASNUserType::Check(void)
 {
-    const ASNModule::TypeInfo* typeInfo =  module.FindType(name);
+    const ASNModule::TypeInfo* typeInfo =  GetModule().FindType(userTypeName);
     if ( typeInfo == 0 ) {
-        Warning("type " + name + " undefined");
+        Warning("type " + userTypeName + " undefined");
         return false;
     }
     return true;
 }
 
-bool ASNUserType::CheckValue(const ASNModule& module,
-                             const ASNValue& value)
+bool ASNUserType::CheckValue(const ASNValue& value)
 {
-    const ASNModule::TypeInfo* typeInfo =  module.FindType(name);
+    const ASNModule::TypeInfo* typeInfo =  GetModule().FindType(userTypeName);
     if ( !typeInfo || !typeInfo->type ) {
-        Warning("type " + name + " undefined");
+        Warning("type " + userTypeName + " undefined");
         return false;
     }
-    return typeInfo->type->CheckValue(module, value);
+    return typeInfo->type->CheckValue(value);
+}
+
+TTypeInfo ASNUserType::GetTypeInfo(void)
+{
+    const ASNModule::TypeInfo* typeInfo =  GetModule().FindType(userTypeName);
+    if ( !typeInfo )
+        THROW1_TRACE(runtime_error, "type " + userTypeName + " undefined");
+    
+    if ( typeInfo->type )
+        return typeInfo->type->GetTypeInfo();
+
+    typeInfo = GetModule().moduleSet->FindType(typeInfo);
+    if ( !typeInfo->type )
+        THROW1_TRACE(runtime_error, "type " + userTypeName + " undefined");
+
+    return typeInfo->type->GetTypeInfo();
 }
 
 ASNOfType::ASNOfType(const string& kw, const AutoPtr<ASNType>& t)
-    : keyword(kw), type(t)
+    : ASNType(t->GetModule(), kw + " OF " + t->name), keyword(kw), type(t)
 {
 }
 
@@ -242,13 +435,12 @@ ostream& ASNOfType::Print(ostream& out, int indent) const
     return type->Print(out, indent);
 }
 
-bool ASNOfType::Check(const ASNModule& module)
+bool ASNOfType::Check(void)
 {
-    return type->Check(module);
+    return type->Check();
 }
 
-bool ASNOfType::CheckValue(const ASNModule& module,
-                           const ASNValue& value)
+bool ASNOfType::CheckValue(const ASNValue& value)
 {
     const ASNBlockValue* block = dynamic_cast<const ASNBlockValue*>(&value);
     if ( !block ) {
@@ -258,7 +450,7 @@ bool ASNOfType::CheckValue(const ASNModule& module,
     bool ok = true;
     for ( ASNBlockValue::TValues::const_iterator i = block->values.begin();
           i != block->values.end(); ++i ) {
-        if ( !type->CheckValue(module, **i) )
+        if ( !type->CheckValue(**i) )
             ok = false;
     }
     return ok;
@@ -269,13 +461,23 @@ ASNSetOfType::ASNSetOfType(const AutoPtr<ASNType>& type)
 {
 }
 
+CTypeInfo* ASNSetOfType::CreateTypeInfo(void)
+{
+    return new CSetOfTypeInfo(name, type->GetTypeInfo());
+}
+
 ASNSequenceOfType::ASNSequenceOfType(const AutoPtr<ASNType>& type)
     : ASNOfType("SEQUENCE", type)
 {
 }
 
-ASNContainerType::ASNContainerType(const string& kw)
-    : keyword(kw)
+CTypeInfo* ASNSequenceOfType::CreateTypeInfo(void)
+{
+    return new CSequenceOfTypeInfo(name, type->GetTypeInfo());
+}
+
+ASNContainerType::ASNContainerType(ASNModule& module, const string& kw)
+    : ASNType(module, kw), keyword(kw)
 {
 }
 
@@ -294,23 +496,45 @@ ostream& ASNContainerType::Print(ostream& out, int indent) const
     return out << "}";
 }
 
-bool ASNContainerType::Check(const ASNModule& module)
+bool ASNContainerType::Check(void)
 {
     bool ok = true;
     for ( TMembers::const_iterator i = members.begin();
           i != members.end(); ++i ) {
-        (*i)->Check(module);
+        (*i)->Check();
     }
     return ok;
 }
 
-ASNSetType::ASNSetType()
-    : ASNContainerType("SET")
+CTypeInfo* ASNContainerType::CreateTypeInfo(void)
+{
+    auto_ptr<CClassInfoTmpl> typeInfo(new CStructInfoTmpl(name,
+                                                          typeid(void),
+                                                          (members.size() + 1)*sizeof(dataval),
+                                                          keyword == "SET"));
+    int index = 0;
+    for ( TMembers::const_iterator i = members.begin();
+          i != members.end(); ++i, ++index ) {
+        ASNMember* member = i->get();
+        CMemberInfo* memberInfo =
+            typeInfo->AddMember(member->name,
+                                new CRealMemberInfo((index+1)*sizeof(dataval),
+                                                    new CTypeSource(member->type.get())));
+        if ( member->Optional() )
+            memberInfo->SetOptional();
+        else if ( member->defaultValue ) {
+            _TRACE("skipped DEFAULT value");
+        }
+    }
+    return new CAutoPointerTypeInfo(typeInfo.release());
+}
+
+ASNSetType::ASNSetType(ASNModule& module)
+    : ASNContainerType(module, "SET")
 {
 }
 
-bool ASNSetType::CheckValue(const ASNModule& module,
-                            const ASNValue& value)
+bool ASNSetType::CheckValue(const ASNValue& value)
 {
     const ASNBlockValue* block = dynamic_cast<const ASNBlockValue*>(&value);
     if ( !block ) {
@@ -338,7 +562,7 @@ bool ASNSetType::CheckValue(const ASNModule& module,
             currvalue->Warning("unexpected member");
             return false;
         }
-        if ( !member->second->type->CheckValue(module, *currvalue->value) ) {
+        if ( !member->second->type->CheckValue(*currvalue->value) ) {
             return false;
         }
         mms.erase(member);
@@ -354,13 +578,12 @@ bool ASNSetType::CheckValue(const ASNModule& module,
     return true;
 }
 
-ASNSequenceType::ASNSequenceType()
-    : ASNContainerType("SEQUENCE")
+ASNSequenceType::ASNSequenceType(ASNModule& module)
+    : ASNContainerType(module, "SEQUENCE")
 {
 }
 
-bool ASNSequenceType::CheckValue(const ASNModule& module,
-                                 const ASNValue& value)
+bool ASNSequenceType::CheckValue(const ASNValue& value)
 {
     const ASNBlockValue* block = dynamic_cast<const ASNBlockValue*>(&value);
     if ( !block ) {
@@ -389,7 +612,7 @@ bool ASNSequenceType::CheckValue(const ASNModule& module,
             }
             ++member;
         }
-        if ( !(*member)->type->CheckValue(module, *currvalue->value) ) {
+        if ( !(*member)->type->CheckValue(*currvalue->value) ) {
             return false;
         }
         ++member;
@@ -404,13 +627,12 @@ bool ASNSequenceType::CheckValue(const ASNModule& module,
     return true;
 }
 
-ASNChoiceType::ASNChoiceType()
-    : ASNContainerType("CHOICE")
+ASNChoiceType::ASNChoiceType(ASNModule& module)
+    : ASNContainerType(module, "CHOICE")
 {
 }
 
-bool ASNChoiceType::CheckValue(const ASNModule& module,
-                               const ASNValue& value)
+bool ASNChoiceType::CheckValue(const ASNValue& value)
 {
     const ASNNamedValue* choice = dynamic_cast<const ASNNamedValue*>(&value);
     if ( !choice ) {
@@ -420,9 +642,20 @@ bool ASNChoiceType::CheckValue(const ASNModule& module,
     for ( TMembers::const_iterator i = members.begin();
           i != members.end(); ++i ) {
         if ( (*i)->name == choice->name )
-            return (*i)->type->CheckValue(module, *choice->value);
+            return (*i)->type->CheckValue(*choice->value);
     }
     return false;
+}
+
+CTypeInfo* ASNChoiceType::CreateTypeInfo(void)
+{
+    auto_ptr<CChoiceTypeInfo> typeInfo(new CChoiceTypeInfo(name));
+    for ( TMembers::const_iterator i = members.begin();
+          i != members.end(); ++i ) {
+        ASNMember* member = i->get();
+        typeInfo->AddVariant(member->name, new CTypeSource(member->type.get()));
+    }
+    return new CAutoPointerTypeInfo(typeInfo.release());
 }
 
 ostream& ASNMember::Print(ostream& out, int indent) const
@@ -436,11 +669,11 @@ ostream& ASNMember::Print(ostream& out, int indent) const
     return out;
 }
 
-bool ASNMember::Check(const ASNModule& module)
+bool ASNMember::Check(void)
 {
-    if ( !type->Check(module) )
+    if ( !type->Check() )
         return false;
     if ( !defaultValue )
         return true;
-    return type->CheckValue(module, *defaultValue);
+    return type->CheckValue(*defaultValue);
 }

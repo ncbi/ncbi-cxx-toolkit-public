@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/08/13 15:53:52  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.14  1999/07/26 18:31:39  vasilche
 * Implemented skipping of unused values.
 * Added more useful error report.
@@ -146,7 +149,7 @@ inline
 void CObjectOStreamAsnBinary::WriteByte(TByte byte)
 {
 #if CHECK_STREAM_INTEGRITY
-    _TRACE("WriteByte: " << unsigned(byte));
+    //_TRACE("WriteByte: " << unsigned(byte));
     if ( m_CurrentPosition >= m_CurrentTagLimit )
         THROW1_TRACE(runtime_error, "tag size overflow");
     switch ( m_CurrentTagState ) {
@@ -206,7 +209,7 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
     if ( size == 0 )
         return;
 #if CHECK_STREAM_INTEGRITY
-    _TRACE("WriteBytes: " << size);
+    //_TRACE("WriteBytes: " << size);
     if ( m_CurrentTagState != eData )
         THROW1_TRACE(runtime_error, "WriteBytes only allowed in DATA");
     if ( m_CurrentPosition + size > m_CurrentTagLimit )

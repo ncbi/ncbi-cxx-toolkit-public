@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/08/13 15:53:43  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.14  1999/07/26 18:31:29  vasilche
 * Implemented skipping of unused values.
 * Added more useful error report.
@@ -109,7 +112,14 @@ public:
 
     CObjectIStreamAsn(CNcbiIstream& in);
 
-    virtual void Read(TObjectPtr object, TTypeInfo typeInfo);
+    int GetLine(void) const
+        {
+            return m_Line;
+        }
+    unsigned SetFailFlags(unsigned flags);
+
+    virtual string ReadTypeName(void);
+    virtual string ReadEnumName(void);
 
     virtual void ReadStd(bool& data);
     virtual void ReadStd(char& data);
@@ -174,6 +184,7 @@ private:
     char SkipWhiteSpace(void);
 
     CNcbiIstream& m_Input;
+    int m_Line;
 #if !USE_UNGET
 	int m_GetChar;
 	int m_UngetChar;

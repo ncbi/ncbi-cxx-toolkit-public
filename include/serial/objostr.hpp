@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/08/13 15:53:44  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.17  1999/07/22 17:33:43  vasilche
 * Unified reading/writing of objects in all three formats.
 *
@@ -93,6 +96,7 @@
 #include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/objlist.hpp>
+#include <serial/object.hpp>
 #include <map>
 
 struct asnio;
@@ -109,7 +113,16 @@ public:
     virtual ~CObjectOStream(void);
 
     // root writer
-    virtual void Write(TConstObjectPtr object, TTypeInfo typeInfo);
+    void Write(TConstObjectPtr object, TTypeInfo typeInfo);
+    void WriteObject(const CObject& object)
+        {
+            Write(object.GetObject(), object.GetTypeInfo());
+        }
+
+    virtual void WriteTypeName(const string& name);
+
+    // try to write enum value name, false if none
+    virtual bool WriteEnumName(const string& name);
 
     // std C types readers
     virtual void WriteStd(const bool& data) = 0;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/08/13 15:53:43  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.19  1999/07/26 18:31:28  vasilche
 * Implemented skipping of unused values.
 * Added more useful error report.
@@ -100,34 +103,14 @@
 #include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/memberid.hpp>
+#include <serial/object.hpp>
 #include <vector>
 
 struct asnio;
 
 BEGIN_NCBI_SCOPE
 
-class CIObjectInfo
-{
-public:
-    CIObjectInfo(void)
-        : m_Object(0), m_TypeInfo(0)
-        {
-        }
-    CIObjectInfo(TObjectPtr object, TTypeInfo typeInfo)
-        : m_Object(object), m_TypeInfo(typeInfo)
-        {
-        }
-
-    TObjectPtr GetObject(void) const
-        { return m_Object; }
-
-    TTypeInfo GetTypeInfo(void) const
-        { return m_TypeInfo; }
-
-private:
-    TObjectPtr m_Object;
-    TTypeInfo m_TypeInfo;
-};
+class CTypeMapper;
 
 class CObjectIStream
 {
@@ -138,7 +121,16 @@ public:
     virtual ~CObjectIStream(void);
 
     // root reader
-    virtual void Read(TObjectPtr object, TTypeInfo typeInfo);
+    void Read(TObjectPtr object, TTypeInfo typeInfo);
+    CObject ReadObject(void);
+
+    virtual string ReadTypeName(void);
+    
+    // try to read enum value name, "" if none
+    virtual string ReadEnumName(void);
+
+    virtual TTypeInfo MapType(const string& name);
+    void SetTypeMapper(CTypeMapper* typeMapper);
 
     // std C types readers
     virtual void ReadStd(bool& data) = 0;
@@ -406,7 +398,7 @@ protected:
     virtual size_t AsnRead(AsnIo& asn, char* data, size_t length);
 
     // low level readers
-    CIObjectInfo ReadObjectInfo(void);
+    CObject ReadObjectInfo(void);
     virtual EPointerType ReadPointerType(void) = 0;
     virtual string ReadMemberPointer(void);
     virtual void ReadMemberPointerEnd(void);
@@ -420,7 +412,7 @@ protected:
     virtual string ReadString(void) = 0;
     virtual char* ReadCString(void);
 
-    const CIObjectInfo& GetRegisteredObject(TIndex index) const;
+    const CObject& GetRegisteredObject(TIndex index) const;
     TIndex RegisterObject(TObjectPtr object, TTypeInfo typeInfo);
     TIndex RegisterInvalidObject(void)
         { return RegisterObject(0, 0); }
@@ -431,10 +423,12 @@ protected:
         }
     
 private:
-    vector<CIObjectInfo> m_Objects;
+    vector<CObject> m_Objects;
 
     unsigned m_Fail;
     Member* m_CurrentMember;
+
+    CTypeMapper* m_TypeMapper;
 };
 
 //#include <serial/objistr.inl>

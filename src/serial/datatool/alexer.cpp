@@ -74,7 +74,7 @@ char AbstractLexer::FillChar(int index)
             // skip nonused data at the beginning of buffer
             size_t dataSize = m_DataEnd - used;
             if ( dataSize > 0 ) {
-                _TRACE("memmove(" << dataSize << ")");
+                //                _TRACE("memmove(" << dataSize << ")");
                 memmove(m_Buffer, used, dataSize);
             }
             size_t skip = used - m_Buffer;
@@ -95,7 +95,7 @@ char AbstractLexer::FillChar(int index)
             // new buffer
             char* buffer = new char[bufferSize];
             // copy old data
-            _TRACE("memcpy(" << dataEnd << ")");
+            //            _TRACE("memcpy(" << dataEnd << ")");
             memcpy(buffer, m_Buffer, dataEnd);
             // delete old buffer
             delete []m_Buffer;
@@ -113,7 +113,7 @@ char AbstractLexer::FillChar(int index)
         size_t space = m_AllocEnd - m_DataEnd;
         m_Input.read(m_DataEnd, space);
         size_t read = m_Input.gcount();
-        _TRACE("read(" << space << ") = " << read);
+        //        _TRACE("read(" << space << ") = " << read);
         if ( read == 0 )
             return 0;
         m_DataEnd += read;

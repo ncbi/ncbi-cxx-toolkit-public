@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/08/13 15:53:51  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.9  1999/07/20 18:23:11  vasilche
 * Added interface to old ASN.1 routines.
 * Added fixed choice of subclasses to use for pointers.
@@ -80,7 +83,9 @@ COObjectList::~COObjectList(void)
 
 bool COObjectList::Add(TConstObjectPtr object, TTypeInfo typeInfo)
 {
-    _TRACE("COObjectList::Add(" << unsigned(object) << ", " << typeInfo->GetName() << ")");
+    _TRACE("COObjectList::Add(" << unsigned(object) << ", " <<
+           typeInfo->GetName() << ") size: " << typeInfo->GetSize() <<
+           ", end: " << (unsigned(object) + typeInfo->GetSize()));
     // note that TObject have reverse sort order
     // just in case typedef in header file will be redefined:
     typedef map<TConstObjectPtr, CORootObjectInfo, greater<TConstObjectPtr> > TObject;

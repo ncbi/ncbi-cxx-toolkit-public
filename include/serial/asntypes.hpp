@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/08/13 15:53:42  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.8  1999/07/19 15:50:14  vasilche
 * Added interface to old ASN.1 routines.
 * Added naming of key/value in STL map.
@@ -77,78 +80,43 @@ struct asntype;
 
 BEGIN_NCBI_SCOPE
 
-class CSequenceTypeInfo : public CTypeInfo {
+class CSequenceOfTypeInfo : public CTypeInfo {
 public:
-    CSequenceTypeInfo(TTypeInfo dataType)
-        : CTypeInfo(dataType->GetName()), m_DataType(dataType)
-        {
-        }
+    CSequenceOfTypeInfo(const string& name, TTypeInfo type);
 
-    static TObjectPtr& Get(TObjectPtr object)
+    static TObjectPtr& First(TObjectPtr object)
         {
             return *static_cast<TObjectPtr*>(object);
         }
-    static const TConstObjectPtr& Get(TConstObjectPtr object)
+    static const TConstObjectPtr& First(TConstObjectPtr object)
         {
-            return *static_cast<const TObjectPtr*>(object);
+            return *static_cast<const TConstObjectPtr*>(object);
+        }
+    TObjectPtr& Next(TObjectPtr object) const
+        {
+            return *static_cast<TObjectPtr*>(Add(object, m_NextOffset));
+        }
+    const TConstObjectPtr& Next(TConstObjectPtr object) const
+        {
+            return *static_cast<const TConstObjectPtr*>(Add(object, m_NextOffset));
+        }
+    TObjectPtr Data(TObjectPtr object) const
+        {
+            return Add(object, m_DataOffset);
+        }
+    TConstObjectPtr Data(TConstObjectPtr object) const
+        {
+            return Add(object, m_DataOffset);
         }
 
+    virtual bool RandomOrder(void) const;
+    
     static TTypeInfo GetTypeInfo(TTypeInfo base)
         {
             return sm_Map.GetTypeInfo(base);
         }
 
     virtual size_t GetSize(void) const;
-
-    virtual TConstObjectPtr CreateDefault(void) const;
-
-    TTypeInfo GetDataTypeInfo(void) const
-        {
-            return m_DataType;
-        }
-
-    virtual bool Equals(TConstObjectPtr object1,
-                        TConstObjectPtr object2) const;
-
-    virtual void Assign(TObjectPtr dst,
-                        TConstObjectPtr src) const;
-
-protected:
-
-    virtual void CollectExternalObjects(COObjectList& list,
-                                        TConstObjectPtr object) const;
-
-    virtual void WriteData(CObjectOStream& out,
-                           TConstObjectPtr obejct) const;
-
-    virtual void ReadData(CObjectIStream& in,
-                          TObjectPtr object) const;
-
-private:
-    TTypeInfo m_DataType;
-
-    static CTypeInfoMap<CSequenceTypeInfo> sm_Map;
-};
-
-class CSetTypeInfo : public CSequenceTypeInfo {
-public:
-    CSetTypeInfo(TTypeInfo type)
-        : CSequenceTypeInfo(type)
-        { }
-};
-
-class CSequenceOfTypeInfo : public CSequenceTypeInfo {
-public:
-    CSequenceOfTypeInfo(TTypeInfo type)
-        : CSequenceTypeInfo(type)
-        { }
-
-    virtual bool RandomOrder(void) const;
-
-    static TTypeInfo GetTypeInfo(TTypeInfo base)
-        {
-            return sm_Map.GetTypeInfo(base);
-        }
 
     virtual TConstObjectPtr GetDefault(void) const;
 
@@ -157,6 +125,23 @@ public:
 
     virtual void Assign(TObjectPtr dst,
                         TConstObjectPtr src) const;
+
+private:
+    // set this sequence to have next field first element of data struct
+    // (used for SET OF SEQUENCE, SET etc.)
+    void SetInlineNext(void);
+    // set this sequence to have ValNode as data holder
+    // (used for SET OF (INTEGER, STRING, SET OF etc.)
+    void SetValNodeNext(void);
+    // SET OF CHOICE
+    void SetChoiceNext(void);
+
+    TTypeInfo GetDataTypeInfo(void) const
+        {
+            return m_DataType;
+        }
+
+    TObjectPtr CreateData(void) const;
 
 protected:
 
@@ -171,13 +156,15 @@ protected:
 
 private:
     static CTypeInfoMap<CSequenceOfTypeInfo> sm_Map;
+
+    TTypeInfo m_DataType;
+    size_t m_NextOffset;  // offset in struct of pointer to next object (def 0)
+    size_t m_DataOffset;  // offset in struct of data struct (def 0)
 };
 
 class CSetOfTypeInfo : public CSequenceOfTypeInfo {
 public:
-    CSetOfTypeInfo(TTypeInfo type)
-        : CSequenceOfTypeInfo(type)
-        { }
+    CSetOfTypeInfo(const string& name, TTypeInfo type);
 
     static TTypeInfo GetTypeInfo(TTypeInfo base)
         {
@@ -190,10 +177,11 @@ private:
     static CTypeInfoMap<CSetOfTypeInfo> sm_Map;
 };
 
-class CChoiceTypeInfo : public CTypeInfo {
+#if 0
+class CAsnPointerTypeInfo : public CTypeInfo {
 public:
-    CChoiceTypeInfo(TTypeInfo choices)
-        : CTypeInfo(choices->GetName()), m_ChoiceTypeInfo(choices)
+    CAsnPointerTypeInfo(TTypeInfo asnType)
+        : CTypeInfo(asnType->GetName()), m_AsnType(asnType)
         { }
 
     static TObjectPtr& Get(TObjectPtr object)
@@ -218,8 +206,8 @@ public:
 
     virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const;
 
-    TTypeInfo GetChoiceTypeInfo(void) const
-        { return m_ChoiceTypeInfo; }
+    TTypeInfo GetAsnTypeInfo(void) const
+        { return m_AsnType; }
 
 protected:
     
@@ -232,14 +220,15 @@ protected:
 
 private:
     
-    TTypeInfo m_ChoiceTypeInfo;
+    TTypeInfo m_AsnType;
 
-    static CTypeInfoMap<CChoiceTypeInfo> sm_Map;
+    static CTypeInfoMap<CAsnPointerTypeInfo> sm_Map;
 };
+#endif
 
-class CChoiceValNodeInfo : public CTypeInfo {
+class CChoiceTypeInfo : public CTypeInfo {
 public:
-    CChoiceValNodeInfo(const string& name)
+    CChoiceTypeInfo(const string& name)
         : CTypeInfo(name)
         { }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/08/13 15:53:51  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.24  1999/07/26 18:31:38  vasilche
 * Implemented skipping of unused values.
 * Added more useful error report.
@@ -142,20 +145,20 @@ unsigned char CObjectIStreamBinary::ReadByte(void)
     char c;
     m_Input.get(c);
     CheckError();
-    _TRACE("CObjectIStreamBinary::ReadByte: " << NStr::IntToString(c & 0xff));
+    //_TRACE("CObjectIStreamBinary::ReadByte: " << NStr::IntToString(c & 0xff));
     return c;
 }
 
 void CObjectIStreamBinary::ReadBytes(char* mem, size_t count)
 {
-    _TRACE("CObjectIStreamBinary::ReadBytes: " << NStr::UIntToString(count));
+    //_TRACE("CObjectIStreamBinary::ReadBytes: " << NStr::UIntToString(count));
     m_Input.read(mem, count);
     CheckError();
 }
 
 void CObjectIStreamBinary::SkipBytes(size_t count)
 {
-    _TRACE("CObjectIStreamBinary::SkipBytes: " << NStr::UIntToString(count));
+    //_TRACE("CObjectIStreamBinary::SkipBytes: " << NStr::UIntToString(count));
     m_Input.seekg(count, ios::cur);
     CheckError();
 }

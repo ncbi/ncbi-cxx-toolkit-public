@@ -1,4 +1,5 @@
 #include <module.hpp>
+#include <moduleset.hpp>
 #include <type.hpp>
 
 void Warning(const string& message)
@@ -7,6 +8,7 @@ void Warning(const string& message)
 }
 
 ASNModule::ASNModule()
+    : moduleSet(0)
 {
 }
 
@@ -14,8 +16,9 @@ ASNModule::~ASNModule()
 {
 }
 
-void ASNModule::AddDefinition(const string& def, const AutoPtr<ASNType>& type)
+void ASNModule::AddDefinition(const string& def, const AutoPtr<ASNType> type)
 {
+    type->name = def;
     definitions.push_back(make_pair(def, type));
 }
 
@@ -56,7 +59,7 @@ ostream& ASNModule::Print(ostream& out) const
 
     for ( TDefinitions::const_iterator i = definitions.begin();
           i != definitions.end(); ++i ) {
-        out << i->first << " ::= "; i->second->Print(cout, 0);
+        out << i->first << " ::= "; i->second->Print(out, 0);
         out << endl << endl;
     }
 
@@ -68,7 +71,7 @@ bool ASNModule::Check()
     bool ok = CheckNames();
     for ( TDefinitions::const_iterator d = definitions.begin();
           d != definitions.end(); ++d ) {
-        if ( !d->second->Check(*this) )
+        if ( !d->second->Check() )
             ok = false;
     }
     return ok;
@@ -79,8 +82,7 @@ const ASNModule::TypeInfo* ASNModule::FindType(const string& type) const
     TTypes::const_iterator t = types.find(type);
     if ( t == types.end() )
         return 0;
-    else
-        return &t->second;
+    return &t->second;
 }
 
 bool ASNModule::CheckNames()
@@ -103,9 +105,13 @@ bool ASNModule::CheckNames()
     for ( TExports::const_iterator e = exports.begin();
           e != exports.end(); ++e ) {
         const string& n = *e;
-        if ( types.find(n) == types.end() ) {
+        TTypes::iterator it = types.find(n);
+        if ( it == types.end() ) {
             Warning("undefined export type: " + n);
             ok = false;
+        }
+        else {
+            it->second.exported = true;
         }
     }
     for ( TImports::const_iterator i = imports.begin();

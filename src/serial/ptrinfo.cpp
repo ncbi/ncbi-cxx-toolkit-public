@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/08/13 15:53:52  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.8  1999/07/20 18:23:13  vasilche
 * Added interface to old ASN.1 routines.
 * Added fixed choice of subclasses to use for pointers.
@@ -72,6 +75,11 @@ CTypeInfoMap<CPointerTypeInfo> CPointerTypeInfo::sm_Map;
 size_t CPointerTypeInfo::GetSize(void) const
 {
     return sizeof(void*);
+}
+
+TObjectPtr CPointerTypeInfo::Create(void) const
+{
+    return new void*(0);
 }
 
 static const TConstObjectPtr zeroPointer = 0;
@@ -135,6 +143,33 @@ void CPointerTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
     _TRACE("CPointerTypeInfo::ReadData: " << unsigned(GetObject(object)) << " type: " << GetDataTypeInfo()->GetName());
     GetObject(object) = GetDataTypeInfo()->ReadPointer(in);
+}
+
+CTypeInfoMap<CAutoPointerTypeInfo> CAutoPointerTypeInfo::sm_Map;
+
+void CAutoPointerTypeInfo::WriteData(CObjectOStream& out,
+                                     TConstObjectPtr object) const
+{
+    object = GetObject(object);
+    if ( object == 0 )
+        THROW1_TRACE(runtime_error, "null auto pointer");
+    TTypeInfo dataType = GetDataTypeInfo()->GetRealTypeInfo(object);
+    out.WriteExternalObject(object, dataType);
+}
+
+void CAutoPointerTypeInfo::ReadData(CObjectIStream& in,
+                                    TObjectPtr object) const
+{
+    TTypeInfo dataType = GetDataTypeInfo();
+    TObjectPtr objData = GetObject(object);
+    if ( objData == 0 ) {
+        _TRACE("null auto pointer");
+        objData = GetObject(object) = dataType->Create();
+        _TRACE("new " << dataType->GetName() << ": " << unsigned(objData));
+    }
+    object = objData;
+
+    in.ReadExternalObject(object, dataType);
 }
 
 END_NCBI_SCOPE

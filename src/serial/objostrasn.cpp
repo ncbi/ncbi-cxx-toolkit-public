@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/08/13 15:53:52  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.20  1999/07/22 19:48:57  vasilche
 * Reversed hack with embedding old ASN.1 output to new.
 *
@@ -128,12 +131,18 @@ CObjectOStreamAsn::~CObjectOStreamAsn(void)
 {
 }
 
-void CObjectOStreamAsn::Write(TConstObjectPtr object, TTypeInfo typeInfo)
+void CObjectOStreamAsn::WriteTypeName(const string& name)
 {
     if ( m_Ident == 0 ) {
-        m_Output << typeInfo->GetName() << " ::= ";
+        WriteId(name);
+        m_Output << " ::= ";
     }
-    CObjectOStream::Write(object, typeInfo);
+}
+
+bool CObjectOStreamAsn::WriteEnumName(const string& name)
+{
+    WriteId(name);
+    return true;
 }
 
 void CObjectOStreamAsn::WriteStd(const bool& data)

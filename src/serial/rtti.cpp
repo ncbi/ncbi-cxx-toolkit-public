@@ -1,5 +1,7 @@
-#include <iostream>
+#include <typeinfo>
 #include <string>
+
+using namespace std;
 
 int initRTTI()
 {
@@ -18,5 +20,7 @@ int initRTTI()
 	r += typeid(unsigned long).name()[0];
     r += typeid(char*).name()[0];
     r += typeid(const char*).name()[0];
+	r += typeid(float).name()[0];
+	r += typeid(double).name()[0];
 	return r;
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/08/13 15:53:51  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.9  1999/07/26 18:31:37  vasilche
 * Implemented skipping of unused values.
 * Added more useful error report.
@@ -101,13 +104,13 @@ void CObjectIStreamAsnBinary::StartTag(TByte code)
     m_CurrentTagCode = code;
     m_CurrentTagPosition = m_CurrentPosition;
     m_CurrentTagState = (code & 0x1f) == eLongTag? eTagValue: eLengthStart;
-    _TRACE("StartTag(" << (unsigned)code << " @ " << m_CurrentPosition);
+    //_TRACE("StartTag(" << (unsigned)code << ") @ " << m_CurrentPosition);
 }
 
 inline
 void CObjectIStreamAsnBinary::EndTag(void)
 {
-    _TRACE("EndTag @ " << (m_CurrentPosition + 1));
+    //_TRACE("EndTag @ " << (m_CurrentPosition + 1));
     if ( m_Limits.empty() ) {
         SetFailFlags(eFormatError);
         THROW1_TRACE(runtime_error, "too many tag ends");
@@ -155,7 +158,7 @@ unsigned char CObjectIStreamAsnBinary::ReadByte(void)
     CheckError();
 #if CHECK_STREAM_INTEGRITY
     TByte byte = TByte(c);
-    _TRACE("ReadByte: " << unsigned(byte));
+    //_TRACE("ReadByte: " << unsigned(byte));
     if ( m_CurrentPosition >= m_CurrentTagLimit ) {
         SetFailFlags(eOverflow);
         THROW1_TRACE(runtime_error, "tag size overflow");
@@ -227,7 +230,7 @@ void CObjectIStreamAsnBinary::ReadBytes(char* buffer, size_t count)
     if ( count == 0 )
         return;
 #if CHECK_STREAM_INTEGRITY
-    _TRACE("ReadBytes: " << count);
+    //_TRACE("ReadBytes: " << count);
     if ( m_CurrentTagState != eData ) {
         SetFailFlags(eIllegalCall);
         THROW1_TRACE(runtime_error, "ReadBytes only allowed in DATA");
@@ -251,7 +254,7 @@ void CObjectIStreamAsnBinary::SkipBytes(size_t count)
     if ( count == 0 )
         return;
 #if CHECK_STREAM_INTEGRITY
-    _TRACE("SkipBytes: " << count);
+    //_TRACE("SkipBytes: " << count);
     if ( m_CurrentTagState != eData ) {
         SetFailFlags(eIllegalCall);
         THROW1_TRACE(runtime_error, "SkipBytes only allowed in DATA");
@@ -280,7 +283,7 @@ void CObjectIStreamAsnBinary::ExpectByte(TByte byte)
 
 ETag CObjectIStreamAsnBinary::ReadSysTag(void)
 {
-    _TRACE("ReadSysTag...");
+    //_TRACE("ReadSysTag...");
     switch ( m_LastTagState ) {
     case eNoTagRead:
         m_LastTagState = eSysTagRead;
@@ -293,15 +296,15 @@ ETag CObjectIStreamAsnBinary::ReadSysTag(void)
         m_LastTagState = eSysTagRead;
         break;
     }
-    _TRACE("ReadSysTag: " << (m_LastTagByte >> 6) << ", " <<
-           ((m_LastTagByte & 0x20) != 0) << ", " << (m_LastTagByte & 0x1f)); 
+    //_TRACE("ReadSysTag: " << (m_LastTagByte >> 6) << ", " <<
+    //((m_LastTagByte & 0x20) != 0) << ", " << (m_LastTagByte & 0x1f)); 
     return ETag(m_LastTagByte & 0x1f);
 }
 
 inline
 void CObjectIStreamAsnBinary::BackSysTag(void)
 {
-    _TRACE("BackSysTag...");
+    //_TRACE("BackSysTag...");
     switch ( m_LastTagState ) {
     case eNoTagRead:
         SetFailFlags(eIllegalCall);
@@ -318,7 +321,7 @@ void CObjectIStreamAsnBinary::BackSysTag(void)
 inline
 void CObjectIStreamAsnBinary::FlushSysTag(bool constructed)
 {
-    _TRACE("FlushSysTag...");
+    //_TRACE("FlushSysTag...");
     switch ( m_LastTagState ) {
     case eNoTagRead:
         SetFailFlags(eIllegalCall);

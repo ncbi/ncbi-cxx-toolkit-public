@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/08/13 15:53:50  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.17  1999/07/20 18:23:09  vasilche
 * Added interface to old ASN.1 routines.
 * Added fixed choice of subclasses to use for pointers.
@@ -228,7 +231,7 @@ size_t CClassInfoTmpl::GetSize(void) const
 
 CMemberInfo* CClassInfoTmpl::AddMember(const CMemberId& id, CMemberInfo* member)
 {
-    _TRACE(GetName() << ".AddMember:" << id.ToString() << ", " << member->GetOffset() << ", " << member->GetTypeInfo()->GetName());
+    _TRACE(GetName() << ".AddMember:" << id.ToString() << ", " << member->GetOffset());
     m_MembersByOffset.reset(0);
     m_Members.AddMember(id);
     m_MembersInfo.push_back(member);
@@ -266,15 +269,14 @@ void CClassInfoTmpl::WriteData(CObjectOStream& out,
     CObjectOStream::Block block(out, RandomOrder());
     CMemberId currentId;
     for ( TMemberIndex i = 0, size = m_MembersInfo.size(); i < size; ++i ) {
-        const CMemberInfo& memberInfo = *m_MembersInfo[i];
-        TTypeInfo memberTypeInfo = memberInfo.GetTypeInfo();
-        TConstObjectPtr member = memberInfo.GetMember(object);
-        TConstObjectPtr def = memberInfo.GetDefault();
+        const CMemberInfo& info = *m_MembersInfo[i];
+        TConstObjectPtr member = info.GetMember(object);
         currentId.SetNext(m_Members.GetMemberId(i));
-        if ( !def || !memberTypeInfo->Equals(member, def) ) {
+        if ( !info.Optional() ||
+             !info.GetTypeInfo()->Equals(member, info.GetDefault()) ) {
             block.Next();
             CObjectOStream::Member m(out, currentId);
-            memberTypeInfo->WriteData(out, member);
+            info.GetTypeInfo()->WriteData(out, member);
         }
     }
 }
@@ -299,21 +301,19 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
                 in.SkipValue();
                 continue;
             }
-            const CMemberInfo& memberInfo = *m_MembersInfo[index];
-            TTypeInfo memberTypeInfo = memberInfo.GetTypeInfo();
-            TObjectPtr member = memberInfo.GetMember(object);
-            memberTypeInfo->ReadData(in, member);
+            const CMemberInfo& info = *m_MembersInfo[index];
+            TObjectPtr member = info.GetMember(object);
+            info.GetTypeInfo()->ReadData(in, member);
         }
         // init all absent members
         for ( TMemberIndex i = 0, size = m_MembersInfo.size(); i < size; ++i ) {
             if ( read.find(i) == read.end() ) {
                 // check if this member have defaults
-                const CMemberInfo& memberInfo = *m_MembersInfo[i];
-                TConstObjectPtr def = memberInfo.GetDefault();
-                if ( def != 0 ) {
+                const CMemberInfo& info = *m_MembersInfo[i];
+                TObjectPtr member = info.GetMember(object);
+                if ( info.Optional() ) {
                     // copy defult
-                    memberInfo.GetTypeInfo()->
-                        Assign(memberInfo.GetMember(object), def);
+                    info.GetTypeInfo()->Assign(member, info.GetDefault());
                 }
                 else {
                     // error: absent member w/o defult
@@ -331,8 +331,7 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
         while ( block.Next() ) {
             CObjectIStream::Member memberId(in);
             // find desired member
-            const CMemberInfo* memberInfo;
-            TTypeInfo typeInfo;
+            const CMemberInfo* info;
             TObjectPtr member;
             for ( ;; ++currentIndex ) {
                 if ( currentIndex == size ) {
@@ -340,33 +339,29 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
                                  "unexpected member: " + memberId.ToString());
                 }
                 currentId.SetNext(m_Members.GetMemberId(currentIndex));
-                memberInfo = m_MembersInfo[currentIndex];
-                typeInfo = memberInfo->GetTypeInfo();
-                member = memberInfo->GetMember(object);
+                info = m_MembersInfo[currentIndex];
+                member = info->GetMember(object);
                 if ( currentId == memberId )
                     break;
 
-                TConstObjectPtr def = memberInfo->GetDefault();
-                if ( def == 0 ) {
+                if ( !info->Optional() ) {
                     THROW1_TRACE(runtime_error, "member " +
                                  currentId.ToString() + " expected");
                 }
-                typeInfo->Assign(member, def);
+                info->GetTypeInfo()->Assign(member, info->GetDefault());
             }
             ++currentIndex;
-            typeInfo->ReadData(in, member);
+            info->GetTypeInfo()->ReadData(in, member);
         }
         for ( ; currentIndex != size; ++currentIndex ) {
-            const CMemberInfo* memberInfo = m_MembersInfo[currentIndex];
-            TTypeInfo typeInfo = memberInfo->GetTypeInfo();
-            TObjectPtr member = memberInfo->GetMember(object);
-            TConstObjectPtr def = memberInfo->GetDefault();
-            if ( def == 0 ) {
+            const CMemberInfo* info = m_MembersInfo[currentIndex];
+            TObjectPtr member = info->GetMember(object);
+            if ( !info->Optional() ) {
                 THROW1_TRACE(runtime_error, "member " +
                              m_Members.GetMemberId(currentIndex).ToString() +
                              " expected");
             }
-            typeInfo->Assign(member, def);
+            info->GetTypeInfo()->Assign(member, info->GetDefault());
         }
     }
 }
@@ -504,14 +499,19 @@ void CClassInfoTmpl::CollectPointer(COObjectList& objectList,
             THROW1_TRACE(runtime_error, "null is not allowed");
 
         TSubClassesById& subclasses = SubClassesById();
-        const type_info& id = GetCPlusPlusTypeInfo(object);
-        _TRACE("CollectPointer: " << id.name());
-        TSubClassesById::const_iterator p = subclasses.find(&id);
-        if ( p == subclasses.end() ) {
-            THROW1_TRACE(runtime_error,
-                         "incompatible type: " + string(id.name()));
+        const type_info* id = GetCPlusPlusTypeInfo(object);
+        TTypeInfo typeInfo;
+        if ( id == 0 )
+            typeInfo = this;
+        else {
+            TSubClassesById::const_iterator p = subclasses.find(id);
+            if ( p == subclasses.end() ) {
+                THROW1_TRACE(runtime_error,
+                             "incompatible type: " + string(id->name()));
+            }
+            typeInfo = m_SubClassesInfo[p->second].Get();
         }
-        m_SubClassesInfo[p->second].Get()->CollectObjects(objectList, object);
+        typeInfo->CollectObjects(objectList, object);
     }
 }
 
@@ -526,14 +526,21 @@ void CClassInfoTmpl::WritePointer(CObjectOStream& out,
             THROW1_TRACE(runtime_error, "null is not allowed");
 
         TSubClassesById& subclasses = SubClassesById();
-        const type_info& id = GetCPlusPlusTypeInfo(object);
-        _TRACE("WritePointer: " << id.name());
-        TSubClassesById::const_iterator p = subclasses.find(&id);
-        if ( p == subclasses.end() )
-            THROW1_TRACE(runtime_error,
-                         "incompatible type: " + string(id.name()));
-        TTypeInfo typeInfo = m_SubClassesInfo[p->second].Get();
-        const CMemberId& tag = m_SubClasses.GetCompleteMemberId(p->second);
+        const type_info* id = GetCPlusPlusTypeInfo(object);
+        TTypeInfo typeInfo;
+        CMemberId tag;
+        if ( id == 0 ) {
+            typeInfo = this;
+            tag.SetTag(0);
+        }
+        else {
+            TSubClassesById::const_iterator p = subclasses.find(id);
+            if ( p == subclasses.end() )
+                THROW1_TRACE(runtime_error,
+                             "incompatible type: " + string(id->name()));
+            typeInfo = m_SubClassesInfo[p->second].Get();
+            tag = m_SubClasses.GetCompleteMemberId(p->second);
+        }
         CObjectOStream::Member m(out, tag);
         out.WritePointer(object, typeInfo);
     }
@@ -554,9 +561,18 @@ TObjectPtr CClassInfoTmpl::ReadPointer(CObjectIStream& in) const
     }
 }
 
+const type_info* CClassInfoTmpl::GetCPlusPlusTypeInfo(TConstObjectPtr ) const
+{
+    return 0;
+}
+
 TObjectPtr CStructInfoTmpl::Create(void) const
 {
-    return calloc(GetSize(), 1);
+    TObjectPtr object = calloc(GetSize(), 1);
+    if ( object == 0 )
+        THROW_TRACE(bad_alloc, ());
+    _TRACE("Create: " << GetName() << ": " << unsigned(object));
+    return object;
 }
 
 END_NCBI_SCOPE

@@ -10,6 +10,7 @@
 using namespace std;
 
 class ASNType;
+class CModuleSet;
 
 void Warning(const string& message);
 
@@ -27,7 +28,7 @@ public:
     typedef list< AutoPtr<Import> > TImports;
     typedef list< pair< string, AutoPtr< ASNType > > > TDefinitions;
 
-    void AddDefinition(const string& name, const AutoPtr<ASNType>& type);
+    void AddDefinition(const string& name, const AutoPtr<ASNType> type);
 
     virtual ostream& Print(ostream& out) const;
 
@@ -42,18 +43,21 @@ public:
     class TypeInfo {
     public:
         TypeInfo(const string& n)
-            : name(n), type(0)
+            : name(n), type(0), exported(false)
             {
             }
         string name;
-        string module;
-        ASNType* type;
+        string module;  // non empty for imports
+        ASNType* type;  // non empty for non imports
+        bool exported;  // true for exports
     };
 
     const TypeInfo* FindType(const string& name) const;
 
     typedef map<string, TypeInfo> TTypes;
     TTypes types;
+
+    CModuleSet* moduleSet;
 };
 
 #endif

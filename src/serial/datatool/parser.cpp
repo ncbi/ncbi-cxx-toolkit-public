@@ -1,19 +1,21 @@
 #include <parser.hpp>
 #include <tokens.hpp>
 #include <module.hpp>
+#include <moduleset.hpp>
 #include <type.hpp>
 #include <value.hpp>
 
-void ASNParser::Modules(list<AutoPtr<ASNModule> >& modules)
+void ASNParser::Modules(CModuleSet& modules)
 {
     while ( Next() != T_EOF ) {
-        modules.push_back(Module());
+        Module(modules);
     }
 }
 
-AutoPtr<ASNModule> ASNParser::Module(void)
+void ASNParser::Module(CModuleSet& modules)
 {
     AutoPtr<ASNModule> module(new ASNModule());
+    module->moduleSet = &modules;
     module->name = ModuleReference();
     Consume(K_DEFINITIONS, "DEFINITIONS");
     Consume(T_DEFINE, "::=");
@@ -24,7 +26,7 @@ AutoPtr<ASNModule> ASNParser::Module(void)
     if ( !module->Check() )
         Warning("Errors was found in module " + module->name);
 
-    return module;
+    modules.modules.push_back(module);
 }
 
 void ASNParser::Imports(ASNModule* module)
@@ -67,13 +69,13 @@ void ASNParser::ModuleBody(ASNModule* module)
                 {
                     string name = TypeReference();
                     Consume(T_DEFINE, "::=");
-                    module->AddDefinition(name, Type());
+                    module->AddDefinition(name, Type(*module));
                 }
                 break;
             case T_DEFINE:
                 ERR_POST(Location() << "type name omitted");
                 Consume();
-                module->AddDefinition("unnamed type", Type());
+                module->AddDefinition("unnamed type", Type(*module));
                 break;
             case K_END:
                 return;
@@ -88,96 +90,96 @@ void ASNParser::ModuleBody(ASNModule* module)
     }
 }
 
-AutoPtr<ASNType> ASNParser::Type(void)
+AutoPtr<ASNType> ASNParser::Type(ASNModule& module)
 {
     int line = NextToken().GetLine();
-    AutoPtr<ASNType> type(x_Type());
+    AutoPtr<ASNType> type(x_Type(module));
     type->line = line;
     return type;
 }
 
-AutoPtr<ASNType> ASNParser::x_Type(void)
+AutoPtr<ASNType> ASNParser::x_Type(ASNModule& module)
 {
     switch ( Next() ) {
     case K_BOOLEAN:
         Consume();
-        return new ASNBooleanType;
+        return new ASNBooleanType(module);
     case K_INTEGER:
         Consume();
         if ( CheckSymbol('{') )
-            return EnumeratedBlock("INTEGER");
+            return EnumeratedBlock(module, "INTEGER");
         else
-            return new ASNIntegerType;
+            return new ASNIntegerType(module);
     case K_ENUMERATED:
         Consume();
-        return EnumeratedBlock("ENUMERATED");
+        return EnumeratedBlock(module, "ENUMERATED");
     case K_REAL:
         Consume();
-        return new ASNRealType;
+        return new ASNRealType(module);
     case K_BIT:
         Consume();
         Consume(K_STRING, "STRING");
-        return new ASNBitStringType;
+        return new ASNBitStringType(module);
     case K_OCTET:
         Consume();
         Consume(K_STRING, "STRING");
-        return new ASNOctetStringType;
+        return new ASNOctetStringType(module);
     case K_NULL:
         Consume();
-        return new ASNNullType;
+        return new ASNNullType(module);
     case K_SEQUENCE:
         Consume();
         if ( ConsumeIf(K_OF) )
-            return new ASNSequenceOfType(Type());
+            return new ASNSequenceOfType(Type(module));
         else {
-            AutoPtr<ASNSequenceType> s(new ASNSequenceType);
-            TypesBlock(s->members);
+            AutoPtr<ASNSequenceType> s(new ASNSequenceType(module));
+            TypesBlock(module, s->members);
             return s.release();
         }
     case K_SET:
         Consume();
         if ( ConsumeIf(K_OF) )
-            return new ASNSetOfType(Type());
+            return new ASNSetOfType(Type(module));
         else {
-            AutoPtr<ASNSetType> s(new ASNSetType);
-            TypesBlock(s->members);
+            AutoPtr<ASNSetType> s(new ASNSetType(module));
+            TypesBlock(module, s->members);
             return s.release();
         }
     case K_CHOICE:
         Consume();
         {
-            AutoPtr<ASNChoiceType> choice(new ASNChoiceType);
-            TypesBlock(choice->members);
+            AutoPtr<ASNChoiceType> choice(new ASNChoiceType(module));
+            TypesBlock(module, choice->members);
             return choice.release();
         }
     case K_VisibleString:
         Consume();
-        return new ASNVisibleStringType;
+        return new ASNVisibleStringType(module);
     case K_StringStore:
         Consume();
-        return new ASNStringStoreType;
+        return new ASNStringStoreType(module);
     case T_IDENTIFIER:
     case T_TYPE_REFERENCE:
-        return new ASNUserType(TypeReference());
+        return new ASNUserType(module, TypeReference());
     default:
         ParseError("type");
     }
 }
 
-void ASNParser::TypesBlock(list<AutoPtr<ASNMember> >& members)
+void ASNParser::TypesBlock(ASNModule& module, list<AutoPtr<ASNMember> >& members)
 {
     ConsumeSymbol('{');
     do {
-        members.push_back(NamedDataType());
+        members.push_back(NamedDataType(module));
     } while ( ConsumeIfSymbol(',') );
     ConsumeSymbol('}');
 }
 
-AutoPtr<ASNMember> ASNParser::NamedDataType(void)
+AutoPtr<ASNMember> ASNParser::NamedDataType(ASNModule& module)
 {
     AutoPtr<ASNMember> member(new ASNMember);
     member->name = Identifier();
-    member->type = Type();
+    member->type = Type(module);
     switch ( Next() ) {
     case K_OPTIONAL:
         Consume();
@@ -191,9 +193,10 @@ AutoPtr<ASNMember> ASNParser::NamedDataType(void)
     return member.release();
 }
 
-AutoPtr<ASNType> ASNParser::EnumeratedBlock(const string& keyword)
+AutoPtr<ASNType> ASNParser::EnumeratedBlock(ASNModule& module,
+                                            const string& keyword)
 {
-    AutoPtr<ASNEnumeratedType> e(new ASNEnumeratedType(keyword));
+    AutoPtr<ASNEnumeratedType> e(new ASNEnumeratedType(module, keyword));
     ConsumeSymbol('{');
     do {
         EnumeratedValue(e.get());

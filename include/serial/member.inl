@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/08/13 15:53:42  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.2  1999/06/30 16:04:22  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -44,20 +47,14 @@
 
 inline
 CMemberInfo::CMemberInfo(void)
-    : m_Default(0)
+    : m_Optional(false), m_Default(0)
 {
-}
-
-inline
-TConstObjectPtr CMemberInfo::GetDefault(void) const
-{
-    return m_Default;
 }
 
 inline
 bool CMemberInfo::Optional(void) const
 {
-    return GetDefault() != 0;
+    return m_Optional;
 }
 
 inline

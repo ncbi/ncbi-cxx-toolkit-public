@@ -60,7 +60,7 @@ public:
 
     operator bool() const
         {
-            return ptr;
+            return ptr != 0;
         }
 
 private:

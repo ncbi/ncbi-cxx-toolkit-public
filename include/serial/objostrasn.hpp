@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/08/13 15:53:44  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.13  1999/07/22 17:33:44  vasilche
 * Unified reading/writing of objects in all three formats.
 *
@@ -97,7 +100,8 @@ public:
     CObjectOStreamAsn(CNcbiOstream& out);
     virtual ~CObjectOStreamAsn(void);
 
-    virtual void Write(TConstObjectPtr object, TTypeInfo typeInfo);
+    virtual void WriteTypeName(const string& name);
+    virtual bool WriteEnumName(const string& name);
 
     virtual void WriteStd(const bool& data);
     virtual void WriteStd(const char& data);

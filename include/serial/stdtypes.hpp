@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/08/13 15:53:45  vasilche
+* C++ analog of asntool: datatool
+*
 * Revision 1.9  1999/07/13 20:18:08  vasilche
 * Changed types naming.
 *
@@ -107,6 +110,10 @@ public:
 protected:
     CStdTypeInfoTmpl()
         : CTypeInfo(typeid(TObjectType).name())
+        {
+        }
+    CStdTypeInfoTmpl(const string& name)
+        : CTypeInfo(name)
         {
         }
 };
