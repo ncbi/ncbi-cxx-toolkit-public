@@ -65,6 +65,12 @@ class NCBI_XBLAST_EXPORT CBlast4Options : public CObject
 {
 public:
     // Protein = blastp/plain
+    CBlast4Options(const string & RID)
+    {
+        x_Init(RID);
+    }
+    
+    // Protein = blastp/plain
     CBlast4Options(CBlastProteinOptionsHandle * algo_opts)
     {
         x_Init(algo_opts, "blastp", "plain");
@@ -125,6 +131,11 @@ public:
     }
     
     /******************* DB/subject *******************/
+    void SetDatabase(const string & x)
+    {
+        SetDatabase(x.c_str());
+    }
+    
     void SetDatabase(const char * x)
     {
         CRef<objects::CBlast4_subject> subject_p(new objects::CBlast4_subject);
@@ -214,12 +225,13 @@ private:
     string m_Err;
     string m_RID;
     
+    int    m_ErrIgn;
     bool   m_Pending;
     bool   m_Verbose;
-    int    m_ErrIgn;
     
     // Initialize request (called by constructors)
     void x_Init(CBlastOptionsHandle * algo_opts, const char * program, const char * service);
+    void x_Init(const string & RID);
     
     // Parameter setting
     void x_SetOneParam(const char * name, const int * x); // not currently used
@@ -251,6 +263,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/06 00:15:39  bealer
+ * - Add RID capability.
+ *
  * Revision 1.5  2004/02/05 19:21:05  bealer
  * - Add retry capability to API code.
  *
