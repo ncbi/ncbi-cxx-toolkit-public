@@ -352,6 +352,18 @@ CBlast_Message::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
     // code and subcode are unused
 }
 
+void
+CBlastHSPResults::DebugDump(CDebugDumpContext ddc, 
+                            unsigned int /*depth*/) const
+{
+    ddc.SetFrame("CBlastHSPResults");
+    if (!m_Ptr)
+        return;
+
+    ddc.Log("num_queries", m_Ptr->num_queries);
+    // hitlist itself is not printed
+}
+
 void 
 CBlastMaskLoc::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
@@ -494,6 +506,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.69  2005/03/28 16:26:06  camacho
+ * + CBlastHSPResults::DebugDump
+ *
  * Revision 1.68  2005/03/02 16:45:36  camacho
  * Remove use_real_db_size
  *
