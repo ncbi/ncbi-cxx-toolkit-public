@@ -1273,8 +1273,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.98  2003/10/31 13:15:20  lavr
+ * Fix typos in the log of the previous commit :-)
+ *
  * Revision 1.97  2003/10/31 12:59:46  lavr
- * Better diagnostics messages from expections; some other cosmetic changes
+ * Better diagnostics messages from exceptions; some other cosmetic changes
  *
  * Revision 1.96  2003/10/03 15:16:02  ucko
  * NStr::Join: preallocate as much space as we need for result.
