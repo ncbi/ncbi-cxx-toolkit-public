@@ -55,6 +55,7 @@ class CTrna_ext;
 class CProt_ref;
 class CSeq_loc;
 class CFeat_CI;
+class CPub_set;
 
 BEGIN_SCOPE(validator)
 
@@ -366,7 +367,6 @@ private:
 
     bool IsMixedStrands(const CBioseq& seq, const CSeq_loc& loc);
 
-
     CObjectManager* const m_ObjMgr;
     CRef<CScope> m_Scope;
 
@@ -548,7 +548,10 @@ public:
     void ValidateSeqFeat(const CSeq_feat& feat);
 
 private:
-    void ValidateGene(const CGene_ref& gene, const CSerialObject& obj);
+    void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat);
+
+    void ValidateGene(const CGene_ref& gene, const CSeq_feat& feat);
+    void ValidateGeneXRef(const CSeq_feat& feat);
 
     void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
     void ValidateCdTrans(const CSeq_feat& feat);
@@ -577,7 +580,12 @@ private:
     void ValidateFeatPartialness(const CSeq_feat& feat);
     void ValidateExcept(const CSeq_feat& feat);
     void ValidateExceptText(const string& text, const CSeq_feat& feat);
-    
+
+    void ValidateFeatCit(const CPub_set& cit, const CSeq_feat& feat);
+    void ValidateFeatComment(const string& comment, const CSeq_feat& feat);
+    void ValidateFeatBioSource(const CBioSource& bsrc, const CSeq_feat& feat);
+
+
     bool SerialNumberInComment(const string& comment);
     bool IsPlastid(int genome);
     bool IsOverlappingGenePseudo(const CSeq_feat& feat);
@@ -588,9 +596,8 @@ private:
     string MapToNTCoords(const CSeq_feat& feat, const CSeq_loc& product,
         TSeqPos pos);
 
-    void ValidateGeneXRef(const CSeq_feat& feat);
-    
     bool IsPartialAtSpliceSite(const CSeq_loc& loc, unsigned int errtype);
+    bool IsTransgenic(const CBioSource& bsrc);
 };
 
 
@@ -676,6 +683,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/01/10 16:31:23  shomrat
+* Added private functions to CValidError_feat
+*
 * Revision 1.5  2003/01/08 18:35:31  shomrat
 * Added mapping features to their enclosing annotation
 *
