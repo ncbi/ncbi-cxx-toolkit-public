@@ -87,31 +87,18 @@ BEGIN_SCOPE(Cn3D)
 // whether to use my (limited) GLU quadric functions, or the native ones
 #define USE_MY_GLU_QUADS 1
 
-// enables "uniform data" gl calls - e.g. glMaterial and normal for every vertex, not just when the values change
+// enables "uniform data" gl calls - e.g. glMaterial for every vertex, not just when the color changes
 #ifdef __WXMAC__
 
 #define MAC_GL_OPTIMIZE 1
 #define MAC_GL_SETCOLOR SetColor(eUseCachedValues);
-#define MAC_GL_SETCOLOR_NORMAL(x, y, z) \
-            SetColor(eUseCachedValues); \
-            glNormal3d((x), (y), (z));
-#define MAC_GL_SETCOLOR_NORMAL_V(n) \
-            SetColor(eUseCachedValues); \
-            glNormal3dv(n);
-#define NON_MAC_GL_NORMAL(x, y, z)
-#define NON_MAC_GL_NORMAL_V(n)
-
 #ifndef USE_MY_GLU_QUADS
 #define USE_MY_GLU_QUADS 1    // necessary for mac GL optimization
 #endif
 
 #else // !__WXMAC__
 
-#define NON_MAC_GL_NORMAL(x, y, z) glNormal3d((x), (y), (z));
-#define NON_MAC_GL_NORMAL_V(n) glNormal3dv(n);
 #define MAC_GL_SETCOLOR
-#define MAC_GL_SETCOLOR_NORMAL(x, y, z)
-#define MAC_GL_SETCOLOR_NORMAL_V(n)
 
 #endif // __WXMAC__
 
@@ -202,7 +189,7 @@ void OpenGLRenderer::MyGluDisk(GLdouble innerRadius, GLdouble outerRadius, GLint
         glVertex3dv(origin);
         for (s=0; s<=slices; ++s) {
             i = (s == slices) ? 0 : s;
-            MAC_GL_SETCOLOR_NORMAL_V(unitZ)
+            MAC_GL_SETCOLOR
             glVertex3d(x[i] * f, y[i] * f, 0.0);
         }
         glEnd();
@@ -214,12 +201,12 @@ void OpenGLRenderer::MyGluDisk(GLdouble innerRadius, GLdouble outerRadius, GLint
         f = innerRadius + (outerRadius - innerRadius) * l / loops;
         f2 = innerRadius + (outerRadius - innerRadius) * (l + 1) / loops;
         glBegin(GL_QUAD_STRIP);
-        NON_MAC_GL_NORMAL_V(unitZ)
+        glNormal3dv(unitZ);
         for (s=0; s<=slices; ++s) {
             i = (s == slices) ? 0 : s;
-            MAC_GL_SETCOLOR_NORMAL_V(unitZ)
+            MAC_GL_SETCOLOR
             glVertex3d(x[i] * f, y[i] * f, 0.0);
-            MAC_GL_SETCOLOR_NORMAL_V(unitZ)
+            MAC_GL_SETCOLOR
             glVertex3d(x[i] * f2, y[i] * f2, 0.0);
         }
         glEnd();
@@ -262,7 +249,7 @@ void OpenGLRenderer::MyGluCylinder(GLdouble baseRadius, GLdouble topRadius, GLdo
             MAC_GL_SETCOLOR
             glNormal3d(N[i].x, N[i].y, N[i].z);
             glVertex3d(x[i] * f2, y[i] * f2, height * (k + 1) / stacks);
-            MAC_GL_SETCOLOR_NORMAL(N[i].x, N[i].y, N[i].z)
+            MAC_GL_SETCOLOR
             glVertex3d(x[i] * f, y[i] * f, height * k / stacks);
         }
         glEnd();
@@ -1355,9 +1342,9 @@ void OpenGLRenderer::DrawHalfWorm(const Vector *p0, const Vector& p1,
             if (cap1 && i == 0) {
                 dQt.normalize();
                 glBegin(GL_POLYGON);
-                NON_MAC_GL_NORMAL(-dQt.x, -dQt.y, -dQt.z)
+                glNormal3d(-dQt.x, -dQt.y, -dQt.z);
                 for (j = wormSides - 1; j >= 0; --j) {
-                    MAC_GL_SETCOLOR_NORMAL(-dQt.x, -dQt.y, -dQt.z)
+                    MAC_GL_SETCOLOR
                     glVertex3d(Cx[j], Cy[j], Cz[j]);
                 }
                 glEnd();
@@ -1365,11 +1352,11 @@ void OpenGLRenderer::DrawHalfWorm(const Vector *p0, const Vector& p1,
             else if (cap2 && i == wormSegments) {
                 dQt.normalize();
                 glBegin(GL_POLYGON);
-                NON_MAC_GL_NORMAL(dQt.x, dQt.y, dQt.z)
+                glNormal3d(dQt.x, dQt.y, dQt.z);
                 for (j = 0; j < wormSides; ++j) {
                     k = j + offset;
                     if (k >= wormSides) k -= wormSides;
-                    MAC_GL_SETCOLOR_NORMAL(dQt.x, dQt.y, dQt.z)
+                    MAC_GL_SETCOLOR
                     glVertex3d(Cx[k], Cy[k], Cz[k]);
                 }
                 glEnd();
@@ -1608,55 +1595,55 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
     MAC_GL_SETCOLOR
     glNormal3dv(n);
     glVertex3dv(c010);
-    MAC_GL_SETCOLOR_NORMAL_V(n);
+    MAC_GL_SETCOLOR
     glVertex3dv(c011);
-    MAC_GL_SETCOLOR_NORMAL_V(n);
+    MAC_GL_SETCOLOR
     glVertex3dv(c111);
-    MAC_GL_SETCOLOR_NORMAL_V(n);
+    MAC_GL_SETCOLOR
     glVertex3dv(c110);
 
     for (i=0; i<3; ++i) n[i] = -unitNormal[i];
     MAC_GL_SETCOLOR
     glNormal3dv(n);
     glVertex3dv(c000);
-    MAC_GL_SETCOLOR_NORMAL_V(n);
+    MAC_GL_SETCOLOR
     glVertex3dv(c100);
-    MAC_GL_SETCOLOR_NORMAL_V(n);
+    MAC_GL_SETCOLOR
     glVertex3dv(c101);
-    MAC_GL_SETCOLOR_NORMAL_V(n);
+    MAC_GL_SETCOLOR
     glVertex3dv(c001);
 
     for (i=0; i<3; ++i) n[i] = h[i];
     MAC_GL_SETCOLOR
     glNormal3dv(n);
     glVertex3dv(c100);
-    MAC_GL_SETCOLOR_NORMAL_V(n);
+    MAC_GL_SETCOLOR
     glVertex3dv(c110);
-    MAC_GL_SETCOLOR_NORMAL_V(n);
+    MAC_GL_SETCOLOR
     glVertex3dv(c111);
-    MAC_GL_SETCOLOR_NORMAL_V(n);
+    MAC_GL_SETCOLOR
     glVertex3dv(c101);
 
     for (i=0; i<3; ++i) n[i] = -h[i];
     MAC_GL_SETCOLOR
     glNormal3dv(n);
     glVertex3dv(c000);
-    MAC_GL_SETCOLOR_NORMAL_V(n);
+    MAC_GL_SETCOLOR
     glVertex3dv(c001);
-    MAC_GL_SETCOLOR_NORMAL_V(n);
+    MAC_GL_SETCOLOR
     glVertex3dv(c011);
-    MAC_GL_SETCOLOR_NORMAL_V(n);
+    MAC_GL_SETCOLOR
     glVertex3dv(c010);
 
     for (i=0; i<3; ++i) n[i] = -a[i];
     MAC_GL_SETCOLOR
     glNormal3dv(n);
     glVertex3dv(c000);
-    MAC_GL_SETCOLOR_NORMAL_V(n);
+    MAC_GL_SETCOLOR
     glVertex3dv(c010);
-    MAC_GL_SETCOLOR_NORMAL_V(n);
+    MAC_GL_SETCOLOR
     glVertex3dv(c110);
-    MAC_GL_SETCOLOR_NORMAL_V(n);
+    MAC_GL_SETCOLOR
     glVertex3dv(c100);
 
     if (style.style == StyleManager::eObjectWithoutArrow) {
@@ -1664,11 +1651,11 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
         MAC_GL_SETCOLOR
         glNormal3dv(n);
         glVertex3dv(c001);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(c101);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(c111);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(c011);
 
     } else {
@@ -1694,20 +1681,20 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
         MAC_GL_SETCOLOR
         glNormal3dv(n);
         glVertex3dv(c111);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(LT);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(LB);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(c101);
 
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(c011);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(c001);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(RB);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(RT);
 
         // the left side of the arrow
@@ -1718,11 +1705,11 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
         MAC_GL_SETCOLOR
         glNormal3dv(n);
         glVertex3dv(FT);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(FB);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(LB);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(LT);
 
         // the right side of the arrow
@@ -1733,11 +1720,11 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
         MAC_GL_SETCOLOR
         glNormal3dv(n);
         glVertex3dv(FT);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(RT);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(RB);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(FB);
 
         glEnd();
@@ -1748,18 +1735,18 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
         MAC_GL_SETCOLOR
         glNormal3dv(n);
         glVertex3dv(FT);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(LT);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(RT);
 
         for (i=0; i<3; ++i) n[i] = -unitNormal[i];
         MAC_GL_SETCOLOR
         glNormal3dv(n);
         glVertex3dv(FB);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(RB);
-        MAC_GL_SETCOLOR_NORMAL_V(n);
+        MAC_GL_SETCOLOR
         glVertex3dv(LB);
     }
 
@@ -1934,6 +1921,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2004/08/19 15:26:49  thiessen
+* don't need to do glNormal for all vertexes for mac gl optimization
+*
 * Revision 1.82  2004/08/13 18:26:45  thiessen
 * continue with Mac GL optimization, as well as adding local GLU quadric equivalents (disk, cylinder, sphere)
 *
