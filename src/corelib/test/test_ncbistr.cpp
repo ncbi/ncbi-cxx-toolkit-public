@@ -147,6 +147,8 @@ void CTestApplication::Init(void)
     SetDiagPostLevel(eDiag_Info);
 }
 
+//#define TEST_MEMORY_USAGE
+#ifdef TEST_MEMORY_USAGE
 enum ContainerType {
     eVector,
     eList,
@@ -224,12 +226,13 @@ void Test(ContainerType cont)
         TestAllocate(cont, 1000000, j);
     }
 }
-
+#endif
 
 int CTestApplication::Run(void)
 {
-    //Test(eRef);
-
+#ifdef TEST_MEMORY_USAGE
+    Test(eRef);
+#endif
 
     static const string s_Strings[] = {
         "",
@@ -765,6 +768,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2003/07/23 17:49:55  vasilche
+ * Commented out memory usage test.
+ *
  * Revision 6.21  2003/07/22 21:45:05  vasilche
  * Commented out memory usage test.
  *
