@@ -78,7 +78,7 @@ public:
 
     // Create a client-side socket connected to "host:port"
     CSocket(const string&   host,
-            unsigned short  port,
+            unsigned short  port,  // always in host byte order
             const STimeout* timeout = 0);
 
     // Call Close() and destruct
@@ -95,7 +95,7 @@ public:
     // Connect to "host:port".
     // NOTE:  should not be called if already connected.
     EIO_Status Connect(const string&   host,
-                       unsigned short  port,
+                       unsigned short  port,  // always in host byte order
                        const STimeout* timeout = 0);
 
     // Reconnect to the same address.
@@ -122,6 +122,10 @@ public:
     EIO_Status Write(const void* buf, size_t size, size_t* n_written = 0,
                      EIO_WriteMethod how = eIO_WritePersist);
 
+    // NOTE 1:  either of "host", "port" can be NULL to opt out from storing
+    //          obtaining the corresponding value;
+    // NOTE 2:  both "*host" and "*port" come out in the same
+    //          byte order requested by the third argument.
     void GetPeerAddress(unsigned int* host, unsigned short* port,
                         ENH_ByteOrder byte_order) const;
 
@@ -165,6 +169,7 @@ class CListeningSocket
 {
 public:
     CListeningSocket(void);
+    // NOTE:  "port" ought to be in host byte order
     CListeningSocket(unsigned short port, unsigned short backlog = 5);
     ~CListeningSocket(void);
 
@@ -172,6 +177,7 @@ public:
     // Return eIO_Closed if not yet bound or Close()'d.
     EIO_Status GetStatus(void) const;
 
+    // NOTE:  "port" ought to be in host byte order
     EIO_Status Listen(unsigned short port, unsigned short backlog = 5);
     EIO_Status Accept(CSocket*& sock, const STimeout* timeout = 0) const;
     EIO_Status Accept(CSocket&  sock, const STimeout* timeout = 0) const;
@@ -224,17 +230,17 @@ public:
                            const STimeout* timeout,
                            size_t*         n_ready = 0);
 
-    // Misc  (mostly BSD-like)
+    // Misc  (mostly BSD-like); "host" ought to be in network byte order
     static string gethostname  (void);               // empty string on error
     static string ntoa         (unsigned int host);
     static string gethostbyaddr(unsigned int host);  // empty string on error
 
     static unsigned int gethostbyname(const string& hostname);  // 0 on error
 
-    static unsigned int htonl(unsigned int   value);
-    static unsigned int ntohl(unsigned int   value);
-    static unsigned int htons(unsigned short value);
-    static unsigned int ntohs(unsigned short value);
+    static unsigned int htonl(unsigned int   value);  // host-to-net, long
+    static unsigned int ntohl(unsigned int   value);  // net-to-host, long
+    static unsigned int htons(unsigned short value);  // host-to-net, short
+    static unsigned int ntohs(unsigned short value);  // net-to-host, short
 };
 
 
@@ -633,6 +639,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/08/12 20:58:09  lavr
+ * More comments on parameters usage of certain methods
+ *
  * Revision 6.2  2002/08/12 20:24:04  lavr
  * Resolve expansion mess with byte order marcos (use calls instead) -- FreeBSD
  *
