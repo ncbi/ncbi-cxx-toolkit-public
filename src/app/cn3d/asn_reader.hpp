@@ -165,8 +165,8 @@ bool GetAsnDataViaHTTP(
         *inObject >> *asnObject;
         okay = true;
 
-    } catch (std::exception& e) {
-        *err = e.what();
+    } catch (std::exception&) {
+        *err = "Network connection failed or data is not in expected format";
     }
     ncbi::SetDiagTrace(ncbi::eDT_Default);
 
@@ -181,6 +181,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/06/28 19:31:38  thiessen
+* more user-friendly error message
+*
 * Revision 1.19  2004/05/25 17:48:19  ucko
 * Qualify diag-trace manipulation with ncbi::.
 *
