@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/09/05 21:22:51  vasilche
+* Added mutex for module names set
+*
 * Revision 1.17  2001/08/24 13:48:02  grichenk
 * Prevented some memory leaks
 *
@@ -103,6 +106,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <serial/serial.hpp>
 #include <serial/serialimpl.hpp>
 #include <serial/serialbase.hpp>
@@ -135,17 +139,13 @@ void Read(CObjectIStream& in, TObjectPtr object, const CTypeRef& type)
     in.Read(object, type.Get());
 }
 
-static set<string>* sx_Modules = 0;
-static auto_ptr< set<string> > sx_AP_Modules(0);
+static CFastMutex s_ModuleNameMutex;
 
 static const string& GetModuleName(const char* moduleName)
 {
-    set<string>* modules = sx_Modules;
-    if ( !modules ) {
-        sx_Modules = modules = new set<string>;
-        sx_AP_Modules.reset(modules);
-    }
-    return *modules->insert(moduleName).first;
+    CFastMutexGuard GUARD(s_ModuleNameMutex);
+    static CSafeStaticPtr< set<string> > s_ModuleNames;
+    return *s_ModuleNames.Get().insert(moduleName).first;
 }
 
 void SetModuleName(CTypeInfo* info, const char* moduleName)
