@@ -1,0 +1,12 @@
+#################################
+# $Id$
+# Author:  Maxim Didenko (didenko@ncbi.nlm.nih.gov)
+#################################
+
+# Meta-makefile for the "GridCgi" lib
+#################################
+
+LIB_PROJ = xgridcgi
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,9 @@
+# $Id$
+
+# Build library "XGRIDCGI"
+#################################
+
+SRC = grid_cgiapp
+LIB = xgridcgi
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE)
