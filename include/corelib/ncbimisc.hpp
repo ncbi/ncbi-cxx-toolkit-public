@@ -35,6 +35,7 @@
 /// Miscellaneous common-use basic types and functionality
 
 
+#include <ncbiconf.h>
 #include <corelib/ncbistl.hpp>
 #ifdef NCBI_OS_UNIX
 #  include <sys/types.h>
@@ -439,6 +440,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2004/01/20 17:06:42  ivanov
+ * Added #include <ncbiconf.h>
+ *
  * Revision 1.69  2003/12/01 20:44:46  ucko
  * +<sys/types.h> on Unix for ssize_t
  *
