@@ -175,7 +175,7 @@ public:
     // Executes the last command (with changed parameters, if any)
     virtual void ExecuteLast() = 0;
 
-    // Set input parameter
+    // Set input/output parameter
     virtual void SetParam(const CVariant& v, 
 	  		  const string& name) = 0;
 
@@ -401,6 +401,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2002/10/04 12:53:20  kholodov
+ * Fixed: IStatement::SetParam() accepts both imput and output parameters
+ *
  * Revision 1.13  2002/10/03 18:51:03  kholodov
  * Added: IStatement::ExecuteLast() method
  * Added: IBulkInsert::Close() method
