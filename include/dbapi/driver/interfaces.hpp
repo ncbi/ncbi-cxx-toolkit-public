@@ -402,7 +402,8 @@ public:
     // Connection mode
     enum EConnectionMode {
         fBcpIn             = 0x1,
-        fPasswordEncrypted = 0x2
+        fPasswordEncrypted = 0x2,
+        fDoNotConnect      = 0x4   // Use just connections from NotInUse pool
         // all driver-specific mode flags > 0x100
     };
     typedef int TConnectionMode;  // holds a binary OR of "EConnectionMode"
@@ -596,6 +597,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/11/14 20:45:22  soussov
+ * adds DoNotConnect mode
+ *
  * Revision 1.24  2003/07/17 22:08:02  soussov
  * I_DriverContext to be friend of I_Connection
  *
