@@ -211,7 +211,7 @@ EDB_Type CDB_Char::GetType() const
 
 CDB_Object* CDB_Char::Clone() const
 {
-    return m_Null ? new CDB_Char : new CDB_Char(*this);
+    return new CDB_Char(*this);
 }
 
 void CDB_Char::AssignValue(CDB_Object& v)
@@ -245,7 +245,7 @@ EDB_Type CDB_LongChar::GetType() const
 
 CDB_Object* CDB_LongChar::Clone() const
 {
-    return m_Null ? new CDB_LongChar : new CDB_LongChar(*this);
+    return new CDB_LongChar(*this);
 }
 
 void CDB_LongChar::AssignValue(CDB_Object& v)
@@ -337,7 +337,7 @@ EDB_Type CDB_LongBinary::GetType() const
 
 CDB_Object* CDB_LongBinary::Clone() const
 {
-    return m_Null ? new CDB_LongBinary(m_Size) : new CDB_LongBinary(*this);
+    return new CDB_LongBinary(*this);
 }
 
 void CDB_LongBinary::AssignValue(CDB_Object& v)
@@ -874,6 +874,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/05/05 15:58:22  soussov
+ * fixed bug in Clone() method for CDB_Char, CDB_LongChar and CDB_LongBinary when NULL value is cloned
+ *
  * Revision 1.11  2003/04/29 21:13:57  soussov
  * new datatypes CDB_LongChar and CDB_LongBinary added
  *
