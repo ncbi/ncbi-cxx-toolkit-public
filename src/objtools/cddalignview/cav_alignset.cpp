@@ -94,6 +94,8 @@ static bool IsAMatch(const Sequence *seq, const CSeq_id& sid)
         return (sid.GetDdbj().GetAccession() == seq->accession);
     if (sid.IsPir() && sid.GetPir().IsSetAccession())
         return (sid.GetPir().GetAccession() == seq->accession);
+    if (sid.IsPir() && sid.GetPir().IsSetName())
+        return (sid.GetPir().GetName() == seq->accession);
 
     ERR_POST(Error << "IsAMatch - can't match this type of Seq-id");
     return false;
@@ -355,6 +357,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/01/18 16:10:27  thiessen
+* handle name-type pir seq-id
+*
 * Revision 1.6  2004/09/15 18:27:51  thiessen
 * add more types of accessions
 *
