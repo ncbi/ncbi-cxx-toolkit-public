@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/05/22 13:44:47  grichenk
+* CMemberInfoFunctions::GetWithSetFlagMember() -- do not change SetFlag
+*
 * Revision 1.19  2001/05/17 15:07:06  lavr
 * Typos corrected
 *
@@ -551,7 +554,6 @@ TObjectPtr CMemberInfoFunctions::GetWithSetFlagMember(const CMemberInfo* memberI
 {
     _ASSERT(!memberInfo->CanBeDelayed());
     _ASSERT(memberInfo->HaveSetFlag());
-    memberInfo->GetSetFlag(classPtr) = true;
     return memberInfo->GetItemPtr(classPtr);
 }
 
