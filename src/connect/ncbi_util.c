@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/06/23 19:34:45  vakatov
+ * Added means to log binary data
+ *
  * Revision 6.4  2000/05/30 23:23:26  vakatov
  * + CORE_SetLOGFILE_NAME()
  *
@@ -51,6 +54,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <errno.h>
 
 
@@ -133,6 +137,11 @@ extern char* LOG_ComposeMessage
 (const SLOG_Handler* call_data,
  TLOG_FormatFlags    format_flags)
 {
+    static const char s_RawData_Begin[] =
+        "\n#################### [BEGIN] Raw Data (%lu bytes):\n";
+    static const char s_RawData_End[] =
+        "\n#################### [END] Raw Data\n";
+
     char* str;
 
     /* Calculated length of ... */
@@ -140,6 +149,7 @@ extern char* LOG_ComposeMessage
     size_t file_line_len = 0;
     size_t module_len    = 0;
     size_t message_len   = 0;
+    size_t data_len      = 0;
     size_t total_len;
 
     /* Adjust formatting flags */
@@ -169,8 +179,23 @@ extern char* LOG_ComposeMessage
         message_len = strlen(call_data->message);
     }
 
+    if ( call_data->raw_data ) {
+        const unsigned char* d = (const unsigned char*) call_data->raw_data;
+        size_t      i = call_data->raw_size;
+        for (data_len = 0;  i;  i--, d++) {
+            if (*d == '\\'  ||  *d == '\r'  ||  *d == '\t') {
+                data_len++;
+            } else if (!isprint(*d)  &&  *d != '\n') {
+                data_len += 2;
+            }
+        }
+        data_len += sizeof(s_RawData_Begin) + 20 + call_data->raw_size +
+            sizeof(s_RawData_End);
+    }
+
     /* Allocate memory for the resulting message */
-    total_len = file_line_len + module_len + level_len + message_len;
+    total_len =
+        file_line_len + module_len + level_len + message_len + data_len;
     str = (char*) malloc(total_len + 1);
     if ( !str ) {
         assert(0);
@@ -195,6 +220,42 @@ extern char* LOG_ComposeMessage
     if ( message_len ) {
         strcat(str, call_data->message);
     }
+    if ( data_len ) {
+        size_t i;
+        char* s;
+        const unsigned char* d;
+
+        s = str + strlen(str);
+        sprintf(s, s_RawData_Begin, (unsigned long) call_data->raw_size);
+        s += strlen(s);
+
+        d = (const unsigned char*) call_data->raw_data;
+        for (i = call_data->raw_size;  i;  i--, d++) {
+            if (*d == '\\') {
+                *s++ = '\\';
+                *s++ = '\\';
+            } else if (*d == '\r') {
+                *s++ = '\\';
+                *s++ = 'r';
+            } else if (*d == '\t') {
+                *s++ = '\\';
+                *s++ = 't';
+            } else if (!isprint(*d)  &&  *d != '\n') {
+                static const char s_Hex[16] = {
+                    '0', '1', '2', '3', '4', '5', '6', '7',
+                    '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+                };
+                *s++ = '\\';
+                *s++ = s_Hex[*d / 16];
+                *s++ = s_Hex[*d % 16];
+            } else {
+                *s++ = (char) *d;
+            }
+        }
+
+        strcpy(s, s_RawData_End);
+    }
+
     assert(strlen(str) <= total_len);
     return str;
 }

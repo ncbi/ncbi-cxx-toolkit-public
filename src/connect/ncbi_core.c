@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/06/23 19:34:43  vakatov
+ * Added means to log binary data
+ *
  * Revision 6.3  2000/05/30 23:21:36  vakatov
  * LOG_WriteInternal():  exit/abort on "eLOG_Fatal"
  *
@@ -274,21 +277,27 @@ extern void LOG_WriteInternal
  const char* module,
  const char* file,
  int         line,
- const char* message)
+ const char* message,
+ const void* raw_data,
+ size_t      raw_size)
 {
     if ( !lg )
         return;
 
     LOG_LOCK_READ;
     LOG_VALID;
+    assert((raw_data == 0) == (raw_size == 0));
 
     if ( lg->handler ) {
         SLOG_Handler call_data;
-        call_data.level   = level;
-        call_data.module  = module;
-        call_data.file    = file;
-        call_data.line    = line;
-        call_data.message = message;
+
+        call_data.level    = level;
+        call_data.module   = module;
+        call_data.file     = file;
+        call_data.line     = line;
+        call_data.message  = message;
+        call_data.raw_data = raw_data;
+        call_data.raw_size = raw_size;
 
         lg->handler(lg->user_data, &call_data);
     }

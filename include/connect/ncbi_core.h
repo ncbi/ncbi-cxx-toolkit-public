@@ -53,8 +53,8 @@
  *    flags:      TLOG_FormatFlags, ELOG_FormatFlags
  *    callbacks:  (*FLOG_Handler)(),  (*FLOG_Cleanup)()
  *    methods:    LOG_Greate(),  LOG_Reset(),  LOG_AddRef(),  LOG_Delete(),
- *                LOG_Write()
- *    macro:      LOG_WRITE(),  THIS_FILE, THIS_MODULE
+ *                LOG_Write(), LOG_Data(),
+ *    macro:      LOG_WRITE(), LOG_DATA(),  THIS_FILE, THIS_MODULE
  *
  * Registry:
  *    handle:     REG
@@ -66,6 +66,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/06/23 19:34:41  vakatov
+ * Added means to log binary data
+ *
  * Revision 6.3  2000/04/07 19:55:14  vakatov
  * Standard identation
  *
@@ -101,6 +104,15 @@ typedef struct {
     unsigned int sec;  /* seconds (truncated to the platf.-dep. max. limit) */
     unsigned int usec; /* microseconds (always truncated by mod. 1,000,000) */
 } STimeout;
+
+
+/* Aux. enum to set/unset/default various features
+ */
+typedef enum {
+    eOff = 0,
+    eOn,
+    eDefault
+} ESwitch;
 
 
 
@@ -256,11 +268,13 @@ extern const char* LOG_LevelStr(ELOG_Level level);
  * For more details, see LOG_Write().
  */
 typedef struct {
-  const char* message;  /* can be NULL */
-  ELOG_Level  level;
-  const char* module;   /* can be NULL */
-  const char* file;     /* can be NULL */
-  int         line;
+    const char* message;   /* can be NULL */
+    ELOG_Level  level;
+    const char* module;    /* can be NULL */
+    const char* file;      /* can be NULL */
+    int         line;
+    const void* raw_data;  /* raw data to log (usually NULL)*/
+    size_t      raw_size;  /* size of the raw data (usually zero)*/
 } SLOG_Handler;
 
 
@@ -316,25 +330,34 @@ extern LOG LOG_AddRef(LOG lg);
 extern LOG LOG_Delete(LOG lg);
 
 
-/* Write message to the log -- e.g. call:
+/* Write message (maybe, with raw data attached) to the log -- e.g. call:
  *   "lg->handler(lg->user_data, SLOG_Handler*)"
- * NOTE: use the LOG_Write()  to avoid overhead!
+ * NOTE:  use LOG_WRITE() and LOG_DATA() macros if possible!
  */
-#define LOG_Write(lg,level,module,file,line,message) \
-  (void) (lg ? (LOG_WriteInternal(lg,level,module,file,line,message),0) : 1)
 extern void LOG_WriteInternal
-(LOG         lg,      /* created by LOG_Create() */
- ELOG_Level  level,   /* severity */
- const char* module,  /* module name */
- const char* file,    /* source file */
- int         line,    /* source line */
- const char* message  /* message content */
+(LOG         lg,        /* created by LOG_Create() */
+ ELOG_Level  level,     /* severity */
+ const char* module,    /* module name */
+ const char* file,      /* source file */
+ int         line,      /* source line */
+ const char* message,   /* message content */
+ const void* raw_data,  /* raw data to log (can be NULL)*/
+ size_t      raw_size   /* size of the raw data (can be zero)*/
  );
 
-/* Auxiliary plain macro to write message to the log
+#define LOG_Write(lg,level,module,file,line,message) (void) (lg ? \
+  (LOG_WriteInternal(lg,level,module,file,line,message,0,0), 0) : 1)
+#define LOG_Data(lg,level,module,file,line,data,size,message) (void) (lg ? \
+  (LOG_WriteInternal(lg,level,module,file,line,message,data,size), 0) : 1)
+
+
+/* Auxiliary plain macro to write message (maybe, with raw data) to the log
  */
 #define LOG_WRITE(lg, level, message) \
   LOG_Write(lg, level, THIS_MODULE, THIS_FILE, __LINE__, message)
+
+#define LOG_DATA(lg, data, size, message) \
+  LOG_Data(lg, eLOG_Trace, 0, 0, 0, data, size, message)
 
 
 /* Defaults for the THIS_FILE and THIS_MODULE macros (used by LOG_WRITE)

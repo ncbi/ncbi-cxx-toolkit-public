@@ -40,6 +40,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/06/23 19:34:41  vakatov
+ * Added means to log binary data
+ *
  * Revision 6.4  2000/05/30 23:23:24  vakatov
  * + CORE_SetLOGFILE_NAME()
  *
@@ -116,6 +119,11 @@ extern int/*bool*/ CORE_SetLOGFILE_NAME
 /* Compose message using the "call_data" info.
  * Full format:
  *     "<file>", line <line>: [<module>] <level>: <message>
+ *     \n----- [BEGIN] Raw Data (<raw_size> bytes) -----\n
+ *     <raw_data>
+ *     \n----- [END] Raw Data -----\n
+ *
+ *
  * NOTE:  the returned string must be deallocated using "free()".
  */
 typedef unsigned int TLOG_FormatFlags;  /* binary OR of "ELOG_FormatFlags" */

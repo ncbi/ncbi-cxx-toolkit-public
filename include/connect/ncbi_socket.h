@@ -64,6 +64,11 @@
  *  SOCK_Write
  *  SOCK_GetAddress
  *
+ * Data logging:
+ *
+ *  SOCK_SetDataLoggingAPI
+ *  SOCK_SetDataLogging
+ *
  * Auxiliary:
  *
  *  SOCK_gethostname
@@ -72,6 +77,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/06/23 19:34:41  vakatov
+ * Added means to log binary data
+ *
  * Revision 6.4  2000/05/30 23:31:37  vakatov
  * SOCK_host2inaddr() renamed to SOCK_ntoa(), the home-made out-of-scratch
  * implementation to work properly with GCC on IRIX64 platforms
@@ -147,8 +155,22 @@ typedef struct SOCK_tag*  SOCK;  /* socket:  handle */
 /******************************************************************************
  *   Error Logging
  *
- * Use CORE_SetLOG() from "ncbi_core.h" to setup the log handler.
+ * NOTE:  Use CORE_SetLOG() from "ncbi_core.h" to setup the log handler.
  */
+
+
+/* By default("log_data" == eDefault), the data is not logged.
+ * To start logging the data, call this func with "log_data" == eOn.
+ * To stop  logging the data, call this func with "log_data" == eOff.
+ */
+extern void SOCK_SetDataLoggingAPI(ESwitch log_data);
+
+
+/* Control the data logging for socket "sock" individually.
+ * To reset to the global default behavior (as set by SOCK_SetDataLoggingAPI),
+ * call this function with "log_data" == eDefault.
+ */
+extern void SOCK_SetDataLogging(SOCK sock, ESwitch log_data);
 
 
 

@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2000/06/23 19:34:44  vakatov
+ * Added means to log binary data
+ *
  * Revision 6.6  2000/05/30 23:31:44  vakatov
  * SOCK_host2inaddr() renamed to SOCK_ntoa(), the home-made out-of-scratch
  * implementation to work properly with GCC on IRIX64 platforms
@@ -227,7 +230,57 @@ typedef struct SOCK_tag {
     unsigned short  port;       /* peer port (in the network byte order) */
     BUF             buf;        /* read buffer */
     int/*bool*/     is_eof;     /* if EOF has been detected (on read) */
+
+    /* for the tracing/statistics */
+    ESwitch      log_data;
+    unsigned int id;        /* the internal ID (see also "s_ID_Counter") */
+    size_t       n_read;
+    size_t       n_written;
 } SOCK_struct;
+
+
+/* Global SOCK counter
+ */
+static unsigned int s_ID_Counter = 0;
+
+
+
+/******************************************************************************
+ *   Error Logging
+ */
+
+/* Global data logging switch.
+ * NOTE: no data logging by default
+ */
+static ESwitch s_LogData = eDefault;
+
+
+/* Put socket description to the message, then log the transfered data
+ */
+static void s_DoLogData
+(SOCK sock, EIO_Event event, const void* data, size_t size)
+{
+    char message[128];
+    assert(event == eIO_Read  ||  event == eIO_Write);
+    sprintf(message, "SOCK#%u -- %s at offset %lu",
+            (unsigned int) sock->id,
+            (event == eIO_Read) ? "read" : "written",
+            (unsigned long) ((event == eIO_Read) ?
+            sock->n_read : sock->n_written));
+    CORE_DATA(data, size, message);
+}
+
+
+extern void SOCK_SetDataLoggingAPI(ESwitch log_data)
+{
+    s_LogData = log_data;
+}
+
+
+extern void SOCK_SetDataLogging(SOCK sock, ESwitch log_data)
+{
+    sock->log_data = log_data;
+}
 
 
 
@@ -513,6 +566,8 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     (*sock)->host = x_host;
     (*sock)->port = x_port;
     BUF_SetChunkSize(&(*sock)->buf, SOCK_BUF_CHUNK_SIZE);
+    (*sock)->log_data = eDefault;
+    (*sock)->id = ++s_ID_Counter * 1000;
     return eIO_Success;
 }
 
@@ -787,7 +842,14 @@ static int s_NCBI_Recv(SOCK          sock,
     if ( peek )
         verify(BUF_Write(&sock->buf, x_buffer, n_readsock));
 
-    return (int)(n_readbuf + n_readsock);
+    /* statistics & logging */
+    if (sock->log_data == eOn  ||
+        (sock->log_data == eDefault  &&  s_LogData == eOn)) {
+        s_DoLogData(sock, eIO_Read, x_buffer, (size_t) n_readsock);
+    }
+    sock->n_read += n_readsock;
+
+    return (int) (n_readbuf + n_readsock);
 }
 
 
@@ -890,8 +952,16 @@ static EIO_Status s_WriteWhole(SOCK        sock,
 
     for (;;) {
         /* try to write */
-        int buf_written = send(sock->sock, (char*)x_buf, x_size, 0);
+        int buf_written = send(sock->sock, (char*) x_buf, x_size, 0);
         if (buf_written >= 0) {
+            /* statistics & logging */
+            if (sock->log_data == eOn  ||
+                (sock->log_data == eDefault  &&  s_LogData == eOn)) {
+                s_DoLogData(sock, eIO_Write, x_buf, (size_t) buf_written);
+            }
+            sock->n_written += buf_written;
+
+            /* */
             if ( n_written )
                 *n_written += buf_written;
             if (buf_written == x_size)
@@ -937,7 +1007,7 @@ static EIO_Status s_WriteSliced(SOCK        sock,
                                 size_t*     n_written)
 {
     EIO_Status status    = eIO_Success;
-    size_t       x_written = 0;
+    size_t     x_written = 0;
 
     while (size  &&  status == eIO_Success) {
         size_t n_io = (size > SOCK_WRITE_SLICE) ? SOCK_WRITE_SLICE : size;
@@ -965,7 +1035,7 @@ extern EIO_Status SOCK_Create(const char*     host,
     /* Allocate memory for the internal socket structure */
     SOCK x_sock = (SOCK_struct*) calloc(1, sizeof(SOCK_struct));
 
-  /* Connect */
+    /* Connect */
     EIO_Status status = s_Connect(x_sock, host, port, timeout);
     if (status != eIO_Success) {
         free(x_sock);
@@ -976,6 +1046,8 @@ extern EIO_Status SOCK_Create(const char*     host,
     BUF_SetChunkSize(&x_sock->buf, SOCK_BUF_CHUNK_SIZE);
 
     /* Success */
+    x_sock->log_data = eDefault;
+    x_sock->id = ++s_ID_Counter * 1000;
     *sock = x_sock;
     return eIO_Success;
 }
@@ -990,7 +1062,8 @@ extern EIO_Status SOCK_Reconnect(SOCK            sock,
     if (sock->sock != SOCK_INVALID)
         s_Shutdown(sock);
 
-  /* Connect */
+    /* Connect */
+    sock->id++;
     return s_Connect(sock, host, port, timeout);
 }
 

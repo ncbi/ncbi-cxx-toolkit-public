@@ -37,10 +37,14 @@
  *    macro:      CORE_LOCK_WRITE, CORE_LOCK_READ, CORE_UNLOCK
  * Tracing and logging:
  *    private:    g_CORE_Log
- *    macro:      CORE_LOG(), CORE_LOG_SYS_ERRNO(), CORE_LOG_ERRNO()
+ *    macro:      CORE_LOG(), CORE_DATA(),
+ *                CORE_LOG_SYS_ERRNO(), CORE_LOG_ERRNO()
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/06/23 19:34:44  vakatov
+ * Added means to log binary data
+ *
  * Revision 6.1  2000/03/24 22:53:35  vakatov
  * Initial revision
  *
@@ -87,11 +91,28 @@ extern LOG g_CORE_Log;
     } \
 } while (0)
 
+#define CORE_DATA(data, size, message)  do { \
+    if ( g_CORE_Log ) { \
+        CORE_LOCK_READ; \
+        LOG_DATA(g_CORE_Log, data, size, message); \
+        CORE_UNLOCK; \
+    } \
+} while (0)
+
 extern const char* g_CORE_Sprintf(const char* fmt, ...);
+
 #define CORE_LOGF(level, fmt_args)  do { \
     if ( g_CORE_Log ) { \
         CORE_LOCK_READ; \
         LOG_WRITE(g_CORE_Log, level, g_CORE_Sprintf fmt_args); \
+        CORE_UNLOCK; \
+    } \
+} while (0)
+
+#define CORE_DATAF(data, size, fmt_args)  do { \
+    if ( g_CORE_Log ) { \
+        CORE_LOCK_READ; \
+        LOG_DATA(g_CORE_Log, data, size, g_CORE_Sprintf fmt_args); \
         CORE_UNLOCK; \
     } \
 } while (0)
