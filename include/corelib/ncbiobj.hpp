@@ -107,9 +107,9 @@ private:
     enum EObjectState {
         eStateBitsInHeap  = 1 << 0,
 #ifdef NCBI_COUNTER_UNSIGNED
-        eStateBitsValid   = int(1 << (sizeof(TCount) * 8 - 1)),
+        eStateBitsValid   = (unsigned int)(1 << (sizeof(TCount) * 8 - 1)),
 #else
-        eStateBitsValid   = int(1 << (sizeof(TCount) * 8 - 2)),
+        eStateBitsValid   = (unsigned int)(1 << (sizeof(TCount) * 8 - 2)),
 #endif
         eStateMask        = eStateBitsValid | eStateBitsInHeap,
         eCounterStep      = 1 << 1, // over InHeap bit
@@ -695,6 +695,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2002/05/30 18:32:14  gouriano
+ * changed eStateBitsValid to "unsigned int" to make some compilers happy
+ *
  * Revision 1.31  2002/05/23 22:24:21  ucko
  * Use low-level atomic operations for reference counts
  *
