@@ -190,6 +190,10 @@
  *  @ingroup BDB
  */
 
+/** @defgroup BDB_BLOB_Cache	BDB library BLOB support
+ *  @ingroup BDB
+ */
+
 
 /* ========================================================================= */
 
