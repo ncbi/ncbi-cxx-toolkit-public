@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2001/01/23 23:19:34  lavr
+ * Typo fixed in comment
+ *
  * Revision 6.13  2000/12/28 21:26:27  lavr
  * Cosmetic fix to get rid of "converting -1 to unsigned" warning
  *
@@ -735,8 +738,9 @@ static EIO_Status s_Connect(SOCK            sock,
         }
 
         /* The connect could be interrupted by a signal or just cannot be
-         * established immediately;  yet, the connect must have been in progess
-         * (asynchroneous), so wait here for it to succeed (become writeable).
+         * established immediately;  yet, the connect must have been in
+         * progress (asynchronous), so wait here for it to succeed
+         * (become writeable).
          */
         {{
             struct timeval tv;
